@@ -42,6 +42,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Models\Airport.cs" />
+    <Compile Include="Models\Location.cs" />
+    <Compile Include="Models\Runway.cs" />
+    <Compile Include="Models\Runways.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup />

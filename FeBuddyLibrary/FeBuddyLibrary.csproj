@@ -42,11 +42,16 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Models\Airport.cs" />
+    <Compile Include="Models\AirwayModel.cs" />
+    <Compile Include="Models\AptModel.cs" />
+    <Compile Include="Models\ArbModel.cs" />
+    <Compile Include="Models\AwyPointModel.cs" />
     <Compile Include="Models\Location.cs" />
     <Compile Include="Models\MetaFileModels\AiracDateCycleModel.cs" />
     <Compile Include="Models\MetaFileModels\MetaAirportModel.cs" />
     <Compile Include="Models\MetaFileModels\MetaRecordModel.cs" />
     <Compile Include="Models\Runway.cs" />
+    <Compile Include="Models\RunwayModel.cs" />
     <Compile Include="Models\Runways.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

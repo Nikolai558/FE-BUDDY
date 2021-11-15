@@ -49,6 +49,13 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DataAccess\GetAwyData.cs" />
+    <Compile Include="DataAccess\GetFaaMetaFileData.cs" />
+    <Compile Include="DataAccess\GetFixData.cs" />
+    <Compile Include="DataAccess\GetNavData.cs" />
+    <Compile Include="DataAccess\GetStarDpData.cs" />
+    <Compile Include="DataAccess\GetTelephony.cs" />
+    <Compile Include="DataAccess\PublicationParser.cs" />
     <Compile Include="GlobalConfig.cs" />
     <Compile Include="Models\Airport.cs" />
     <Compile Include="Models\AirwayModel.cs" />

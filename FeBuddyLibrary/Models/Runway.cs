@@ -2,7 +2,6 @@
 
 namespace FeBuddyLibrary.Models
 {
-    // TODO - Can "public class Runway" be Internal/not public?
     public class Runway
     {
         [XmlAttribute]

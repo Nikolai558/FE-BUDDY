@@ -2,7 +2,7 @@
 
 namespace FeBuddyLibrary.Models
 {
-    class Waypoint
+    public class Waypoint
     {
         [XmlAttribute]
         public string Type { get; set; }

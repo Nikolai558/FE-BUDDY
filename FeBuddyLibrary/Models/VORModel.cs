@@ -1,6 +1,6 @@
 ﻿namespace FeBuddyLibrary.Models
 {
-    class VORModel
+    public class VORModel
     {
         public string Id { get; set; }
 

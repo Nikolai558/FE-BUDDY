@@ -8,7 +8,6 @@
 
 namespace FeBuddyLibrary.Models
 {
-    // TODO - Can "public class Location" be Internal/not public?
     public class Location
     {
         [XmlAttribute]

@@ -61,6 +61,9 @@
     <Compile Include="Models\RunwayModel.cs" />
     <Compile Include="Models\Runways.cs" />
     <Compile Include="Models\StarAndDpModel.cs" />
+    <Compile Include="Models\TelephonyModel.cs" />
+    <Compile Include="Models\VORModel.cs" />
+    <Compile Include="Models\Waypoint.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup />

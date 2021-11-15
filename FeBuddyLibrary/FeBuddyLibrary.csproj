@@ -43,6 +43,9 @@
   <ItemGroup>
     <Compile Include="Models\Airport.cs" />
     <Compile Include="Models\Location.cs" />
+    <Compile Include="Models\MetaFileModels\AiracDateCycleModel.cs" />
+    <Compile Include="Models\MetaFileModels\MetaAirportModel.cs" />
+    <Compile Include="Models\MetaFileModels\MetaRecordModel.cs" />
     <Compile Include="Models\Runway.cs" />
     <Compile Include="Models\Runways.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

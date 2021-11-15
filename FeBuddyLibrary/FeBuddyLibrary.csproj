@@ -49,6 +49,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DataAccess\GetAptData.cs" />
+    <Compile Include="DataAccess\GetArbData.cs" />
+    <Compile Include="DataAccess\GetAtsAwyData.cs" />
     <Compile Include="DataAccess\GetAwyData.cs" />
     <Compile Include="DataAccess\GetFaaMetaFileData.cs" />
     <Compile Include="DataAccess\GetFixData.cs" />

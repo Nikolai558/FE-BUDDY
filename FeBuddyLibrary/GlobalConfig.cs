@@ -16,7 +16,7 @@ namespace FeBuddyLibrary
 {
     public class GlobalConfig
     {
-        public static readonly string ProgramVersion = "0.8.3";
+        public static readonly string ProgramVersion = "1.0.0";
 
         public static string GithubVersion = "";
 
@@ -39,26 +39,20 @@ namespace FeBuddyLibrary
 
         public static List<AptModel> allAptModelsForCheck = null;
 
-        // XML Serializer for our Waypoints.xml file.
         private static XmlRootAttribute xmlRootAttribute = new XmlRootAttribute("Waypoints");
         public static XmlSerializer WaypointSerializer = new XmlSerializer(typeof(Waypoint[]), xmlRootAttribute);
 
-        // Global Waypoints storage so we can collect all airports, fixes, vors, and ndbs for the Waypoints.xml file.
         public static Waypoint[] waypoints = new Waypoint[] { };
 
-        // Store the Current and Next AIRAC effective Date.
         public static string currentAiracDate;
         public static string nextAiracDate;
 
-        // Store the users Output directory choice. 
         public static string outputDirectory = null;
         public static string outputDirBase;
 
-        // Store the users Choice if they want to convert East Cordinates.
         public static bool Convert = false;
 
-        // Temp path for the user. ie: C:\Users\nik\AppData\Local\Temp\NASR_TO_SCT
-        public static readonly string tempPath = $"{Path.GetTempPath()}NASR2SCT";
+        public static readonly string tempPath = $"{Path.GetTempPath()}FE-BUDDY";
 
         public static List<MetaAirportModel> AllMetaFileAirports = new List<MetaAirportModel>();
 
@@ -117,7 +111,7 @@ namespace FeBuddyLibrary
 
         public static void DownloadAssets()
         {
-            foreach (AssetsModel asset in GlobalConfig.AllAssetsToDownload)
+            foreach (AssetsModel asset in AllAssetsToDownload)
             {
                 var client = new WebClient();
                 client.DownloadFile(asset.DownloadURL, $"{tempPath}\\{asset.Name}");
@@ -158,11 +152,11 @@ namespace FeBuddyLibrary
             {
                 string warningMSG = "\n" +
                     "WARNING:\n" +
-                    "	Since NASR2SCT was ran before the FAA    \n" +
+                    "	Since FE-BUDDY was ran before the FAA    \n" +
                     "	meta file was completed for this AIRAC,  \n" +
                     "	the following files are not generated!   \n\n" +
                     "	If you need the following files, please  \n" +
-                    "	run NASR2SCT again when the FAA meta     \n" +
+                    "	run FE-BUDDY again when the FAA meta     \n" +
                     "	file is ready. This is usually available \n" +
                     "	15-18 days before the AIRAC Effective    \n" +
                     "	Date.                                    \n\n" +
@@ -252,73 +246,56 @@ namespace FeBuddyLibrary
 
         public static void CheckTempDir()
         {
-            // Check to see if the TEMP Directory Exists
             if (Directory.Exists(tempPath) && !updateProgram)
             {
-                // This variable holds all information for the temp path ie. Directories and files.
                 DirectoryInfo di = new DirectoryInfo(tempPath);
 
-                // Loop through the Files in our TempPath
                 foreach (FileInfo file in di.EnumerateFiles())
                 {
-                    // Delete each file it finds inside of this directory. IE Temp Path
                     file.Delete();
                 }
 
-                // Loop through the Directories in our TempPath
                 foreach (DirectoryInfo dir in di.EnumerateDirectories())
                 {
-                    // Delete the folder it finds.
                     dir.Delete(true);
                 }
             }
             else
             {
-                // The file does not exist, we need to create it. 
                 Directory.CreateDirectory(tempPath);
             }
         }
 
         public static void UpdateCheck()
         {
-            // Set our Repository Link Details
             string owner = "Nikolai558";
-            string repo = "NASR2SCT";
+            string repo = "FE-BUDDY";
 
-            // Set our full API Repository Link.
             string latestReleaseURL = $"https://api.github.com/repos/{owner}/{repo}/releases/latest";
 
-            // Get the JSON Response back from the API Call
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(latestReleaseURL);
             request.Accept = "application/vnd.github.v3+json";
             request.UserAgent = "request";
             request.AllowAutoRedirect = true;
             HttpWebResponse response = (HttpWebResponse)request.GetResponse();
 
-            // Create our Variables for what we get from the JSON API Call to Github
             List<JObject> listOfAssests = new List<JObject>();
 
-            // Read the Response we get from API Call.
             using (var reader = new StreamReader(response.GetResponseStream()))
             {
-                // Get the Content from the response.
                 string content = reader.ReadToEnd();
 
-                // Parse the JSON response we get back.
                 var jsonobj = JObject.Parse(content);
 
-                // Assign our Temp Variables to our Latest release values. 
                 GithubVersion = jsonobj["tag_name"].ToString();
                 ReleaseBody = jsonobj["body"].ToString();
 
-                // Get all the Assets in this release
                 foreach (JObject asset in jsonobj["assets"])
                 {
                     listOfAssests.Add(asset);
                 }
             }
 
-            // Create our Assets Models.
             foreach (JObject asset in listOfAssests)
             {
                 AssetsModel downloadAsset = new AssetsModel() { Name = asset["name"].ToString(), DownloadURL = asset["browser_download_url"].ToString() };
@@ -656,8 +633,8 @@ namespace FeBuddyLibrary
             Directory.CreateDirectory($"{outputDirectory}\\VRC");
             Directory.CreateDirectory($"{outputDirectory}\\VSTARS");
             Directory.CreateDirectory($"{outputDirectory}\\VERAM");
-            Directory.CreateDirectory($"{GlobalConfig.outputDirectory}\\VRC\\[SID]");
-            Directory.CreateDirectory($"{GlobalConfig.outputDirectory}\\VRC\\[STAR]");
+            Directory.CreateDirectory($"{outputDirectory}\\VRC\\[SID]");
+            Directory.CreateDirectory($"{outputDirectory}\\VRC\\[STAR]");
         }
 
         /// <summary>
@@ -721,40 +698,6 @@ namespace FeBuddyLibrary
             File.WriteAllText(saveFilePath, sb.ToString());
         }
 
-        //public static void WriteAptXmlOutput()
-        //{
-        //    StringBuilder sb = new StringBuilder();
-
-        //    sb.AppendLine("        <GeoMapObject Description=\"APT\" TdmOnly=\"false\">");
-        //    sb.AppendLine("          <SymbolDefaults Bcg=\"10\" Filters=\"10\" Style=\"Airport\" Size=\"1\" />");
-        //    sb.AppendLine("          <Elements>");
-
-
-        //    string readFilePath = $"{outputDirectory}\\VERAM\\Airports.xml";
-        //    string saveFilePath = $"{ outputDirectory}\\VERAM\\AIRPORTS_GEOMAP.xml";
-
-        //    foreach (string line in File.ReadAllLines(readFilePath))
-        //    {
-        //        if (line.Length > 13)
-        //        {
-        //            if (line.Substring(5, 8) == "Location")
-        //            {
-        //                int locLength = line.Length - 17;
-        //                List<string> latLonSplitValue = line.Substring(14, locLength).Split(' ').ToList();
-
-        //                string printString = $"            <Element xsi:type=\"Symbol\" Filters=\"\" Size=\"2\" {latLonSplitValue[1]} {latLonSplitValue[0]} />";
-
-        //                sb.AppendLine(printString);
-        //            }
-        //        }
-        //    }
-
-        //    sb.AppendLine("          </Elements>");
-        //    sb.AppendLine("        </GeoMapObject>");
-
-        //    File.WriteAllText(saveFilePath, sb.ToString());
-        //}
-
         /// <summary>
         /// Add Coment to the end of the XML file for Kyle's Batch File
         /// </summary>
@@ -777,7 +720,7 @@ namespace FeBuddyLibrary
         public static void WriteTestSctFile()
         {
             // Write the file INFO section.
-            File.WriteAllText($"{outputDirectory}\\{GlobalConfig.testSectorFileName}", $"[INFO]\nTEST_SECTOR\nTST_CTR\nXXXX\nN043.31.08.418\nW112.03.50.103\n60.043\n43.536\n-11.8\n1.000\n\n\n\n\n");
+            File.WriteAllText($"{outputDirectory}\\{testSectorFileName}", $"[INFO]\nTEST_SECTOR\nTST_CTR\nXXXX\nN043.31.08.418\nW112.03.50.103\n60.043\n43.536\n-11.8\n1.000\n\n\n\n\n");
         }
     }
 }

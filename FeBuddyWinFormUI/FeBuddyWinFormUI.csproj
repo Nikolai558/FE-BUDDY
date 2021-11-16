@@ -8,7 +8,7 @@
     <ProjectGuid>{5A339417-5097-473A-B6E9-B36727ADECD3}</ProjectGuid>
     <OutputType>WinExe</OutputType>
     <RootNamespace>FeBuddyWinFormUI</RootNamespace>
-    <AssemblyName>FeBuddyWinFormUI</AssemblyName>
+    <AssemblyName>FE-BUDDY</AssemblyName>
     <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>

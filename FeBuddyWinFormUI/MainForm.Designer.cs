@@ -51,11 +51,11 @@
             this.exitButton = new System.Windows.Forms.Button();
             this.menuStrip1 = new System.Windows.Forms.MenuStrip();
             this.instructionsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.roadmapToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.fAQToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.creditsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.changeLogToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.uninstallToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.roadmapToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.airacCycleGroupBox.SuspendLayout();
             this.convertGroupBox.SuspendLayout();
             this.startGroupBox.SuspendLayout();
@@ -317,8 +317,12 @@
             // 
             // exitButton
             // 
+            this.exitButton.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(20)))), ((int)(((byte)(20)))), ((int)(((byte)(20)))));
             this.exitButton.Enabled = false;
-            this.exitButton.FlatStyle = System.Windows.Forms.FlatStyle.System;
+            this.exitButton.FlatAppearance.BorderColor = System.Drawing.Color.Gray;
+            this.exitButton.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Gray;
+            this.exitButton.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Gray;
+            this.exitButton.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.exitButton.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.exitButton.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.exitButton.Location = new System.Drawing.Point(346, 88);
@@ -326,7 +330,7 @@
             this.exitButton.Size = new System.Drawing.Size(182, 34);
             this.exitButton.TabIndex = 17;
             this.exitButton.Text = "Exit";
-            this.exitButton.UseVisualStyleBackColor = true;
+            this.exitButton.UseVisualStyleBackColor = false;
             this.exitButton.Visible = false;
             this.exitButton.Click += new System.EventHandler(this.exitButton_Click);
             // 
@@ -355,6 +359,15 @@
             this.instructionsToolStripMenuItem.Size = new System.Drawing.Size(93, 20);
             this.instructionsToolStripMenuItem.Text = "Instructions";
             this.instructionsToolStripMenuItem.Click += new System.EventHandler(this.instructionsToolStripMenuItem_Click);
+            // 
+            // roadmapToolStripMenuItem
+            // 
+            this.roadmapToolStripMenuItem.Font = new System.Drawing.Font("Romantic", 11.25F);
+            this.roadmapToolStripMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
+            this.roadmapToolStripMenuItem.Name = "roadmapToolStripMenuItem";
+            this.roadmapToolStripMenuItem.Size = new System.Drawing.Size(80, 20);
+            this.roadmapToolStripMenuItem.Text = "Roadmap";
+            this.roadmapToolStripMenuItem.Click += new System.EventHandler(this.roadmapToolStripMenuItem_Click);
             // 
             // fAQToolStripMenuItem
             // 
@@ -392,15 +405,6 @@
             this.uninstallToolStripMenuItem.Size = new System.Drawing.Size(76, 20);
             this.uninstallToolStripMenuItem.Text = "Uninstall";
             this.uninstallToolStripMenuItem.Click += new System.EventHandler(this.uninstallToolStripMenuItem_Click);
-            // 
-            // roadmapToolStripMenuItem
-            // 
-            this.roadmapToolStripMenuItem.Font = new System.Drawing.Font("Romantic", 11.25F);
-            this.roadmapToolStripMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
-            this.roadmapToolStripMenuItem.Name = "roadmapToolStripMenuItem";
-            this.roadmapToolStripMenuItem.Size = new System.Drawing.Size(80, 20);
-            this.roadmapToolStripMenuItem.Text = "Roadmap";
-            this.roadmapToolStripMenuItem.Click += new System.EventHandler(this.roadmapToolStripMenuItem_Click);
             // 
             // MainForm
             // 

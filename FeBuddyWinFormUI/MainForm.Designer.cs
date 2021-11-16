@@ -55,6 +55,7 @@
             this.creditsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.changeLogToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.uninstallToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.roadmapToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.airacCycleGroupBox.SuspendLayout();
             this.convertGroupBox.SuspendLayout();
             this.startGroupBox.SuspendLayout();
@@ -335,6 +336,7 @@
             this.menuStrip1.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.instructionsToolStripMenuItem,
+            this.roadmapToolStripMenuItem,
             this.fAQToolStripMenuItem,
             this.creditsToolStripMenuItem,
             this.changeLogToolStripMenuItem,
@@ -390,6 +392,15 @@
             this.uninstallToolStripMenuItem.Size = new System.Drawing.Size(76, 20);
             this.uninstallToolStripMenuItem.Text = "Uninstall";
             this.uninstallToolStripMenuItem.Click += new System.EventHandler(this.uninstallToolStripMenuItem_Click);
+            // 
+            // roadmapToolStripMenuItem
+            // 
+            this.roadmapToolStripMenuItem.Font = new System.Drawing.Font("Romantic", 11.25F);
+            this.roadmapToolStripMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
+            this.roadmapToolStripMenuItem.Name = "roadmapToolStripMenuItem";
+            this.roadmapToolStripMenuItem.Size = new System.Drawing.Size(80, 20);
+            this.roadmapToolStripMenuItem.Text = "Roadmap";
+            this.roadmapToolStripMenuItem.Click += new System.EventHandler(this.roadmapToolStripMenuItem_Click);
             // 
             // MainForm
             // 
@@ -459,6 +470,7 @@
         private System.Windows.Forms.ToolStripMenuItem uninstallToolStripMenuItem;
         private System.Windows.Forms.ComboBox facilityIdCombobox;
         private System.Windows.Forms.ToolStripMenuItem fAQToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem roadmapToolStripMenuItem;
     }
 }
 

@@ -451,53 +451,51 @@ namespace FeBuddyWinFormUI
 
         private void uninstallToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            // - Leave this to uninstall NASR2SCT.
-            // TODO - ADD NOTE ABOUT NASR2SCT Here? 
-            DialogResult dialogResult = MessageBox.Show("Would you like to UNINSTALL NASR2SCT?", "Uninstall NASR2SCT", MessageBoxButtons.YesNo);
+            DialogResult dialogResult = MessageBox.Show("Would you like to UNINSTALL FE-BUDDY?", "Uninstall FE-BUDDY", MessageBoxButtons.YesNo);
             if (dialogResult == DialogResult.Yes)
             {
-                string uninstall_start_string = $"start \"\" \"{Path.GetTempPath()}UNINSTALL_NASR2SCT.bat\"";
+                string uninstall_start_string = $"start \"\" \"{Path.GetTempPath()}UNINSTALL_FE-BUDDY.bat\"";
 
                 string uninstallBatchFileString = "@echo off\n"
                         + "PING 127.0.0.1 - n 5 > nul\n"
-                        + "tasklist /FI \"IMAGENAME eq NASR2SCT.exe\" 2>NUL | find /I /N \"NASR2SCT.exe\">NUL\n"
-                        + "if \"%ERRORLEVEL%\"==\"0\" taskkill /F /im NASR2SCT.exe\n"
+                        + "tasklist /FI \"IMAGENAME eq FE-BUDDY.exe\" 2>NUL | find /I /N \"FE-BUDDY.exe\">NUL\n"
+                        + "if \"%ERRORLEVEL%\"==\"0\" taskkill /F /im FE-BUDDY.exe\n"
                         + "\n"
-                        + "TITLE NASR_2_SCT UNINSTALL\n"
+                        + "TITLE FE-BUDDY UNINSTALL\n"
                         + "\n"
                         + "SET /A NOT_FOUND_COUNT=0\n"
                         + "\n"
                         + "CD \"%temp%\"\n"
-                        + "	if NOT exist NASR2SCT (\n"
+                        + "	if NOT exist FE-BUDDY (\n"
                         + "		SET /A NOT_FOUND_COUNT=%NOT_FOUND_COUNT% + 1\n"
-                        + "		SET NASR_TEMP_FOLDER=NOT_FOUND\n"
+                        + "		SET FE-BUDDY_TEMP_FOLDER=NOT_FOUND\n"
                         + "	)\n"
                         + "	\n"
-                        + "	if exist NASR2SCT (\n"
-                        + "		SET NASR_TEMP_FOLDER=FOUND\n"
-                        + "		RD /Q /S \"NASR2SCT\"\n"
+                        + "	if exist FE-BUDDY (\n"
+                        + "		SET FE-BUDDY_TEMP_FOLDER=FOUND\n"
+                        + "		RD /Q /S \"FE-BUDDY\"\n"
                         + "	)\n"
                         + "\n"
                         + "CD \"%userprofile%\\AppData\\Local\"\n"
-                        + "	if NOT exist NASR2SCT (\n"
+                        + "	if NOT exist FE-BUDDY (\n"
                         + "		SET /A NOT_FOUND_COUNT=%NOT_FOUND_COUNT% + 1\n"
-                        + "		SET NASR_APPDATA_FOLDER=NOT_FOUND\n"
+                        + "		SET FE-BUDDY_APPDATA_FOLDER=NOT_FOUND\n"
                         + "	)\n"
                         + "	\n"
-                        + "	if exist NASR2SCT (\n"
-                        + "		SET NASR_APPDATA_FOLDER=FOUND\n"
-                        + "		RD /Q /S \"NASR2SCT\"\n"
+                        + "	if exist FE-BUDDY (\n"
+                        + "		SET FE-BUDDY_APPDATA_FOLDER=FOUND\n"
+                        + "		RD /Q /S \"FE-BUDDY\"\n"
                         + "	)\n"
                         + "\n"
                         + "CD \"%userprofile%\\Desktop\"\n"
-                        + "	if NOT exist NASR2SCT.lnk (\n"
+                        + "	if NOT exist FE-BUDDY.lnk (\n"
                         + "		SET /A NOT_FOUND_COUNT=%NOT_FOUND_COUNT% + 1\n"
-                        + "		SET NASR_SHORTCUT=NOT_FOUND\n"
+                        + "		SET FE-BUDDY_SHORTCUT=NOT_FOUND\n"
                         + "	)\n"
                         + "\n"
-                        + "	if exist NASR2SCT.lnk (\n"
-                        + "		SET NASR_SHORTCUT=FOUND\n"
-                        + "		DEL /Q \"NASR2SCT.lnk\"\n"
+                        + "	if exist FE-BUDDY.lnk (\n"
+                        + "		SET FE-BUDDY_SHORTCUT=FOUND\n"
+                        + "		DEL /Q \"FE-BUDDY.lnk\"\n"
                         + "	)\n"
                         + "\n"
                         + "IF %NOT_FOUND_COUNT%==0 SET UNINSTALL_STATUS=COMPLETE\n"
@@ -517,9 +515,9 @@ namespace FeBuddyWinFormUI
                         + "ECHO.\n"
                         + "ECHO SUCCESSFULLY UNINSTALLED THE FOLLOWING:\n"
                         + "ECHO.\n"
-                        + "IF %NASR_TEMP_FOLDER%==FOUND ECHO        -temp\\NASR2SCT\n"
-                        + "IF %NASR_APPDATA_FOLDER%==FOUND ECHO        -AppData\\Local\\NASR2SCT\n"
-                        + "IF %NASR_SHORTCUT%==FOUND ECHO        -Desktop\\NASR2SCT Shortcut\n"
+                        + "IF %FE-BUDDY_TEMP_FOLDER%==FOUND ECHO        -temp\\FE-BUDDY\n"
+                        + "IF %FE-BUDDY_APPDATA_FOLDER%==FOUND ECHO        -AppData\\Local\\FE-BUDDY\n"
+                        + "IF %FE-BUDDY_SHORTCUT%==FOUND ECHO        -Desktop\\FE-BUDDY Shortcut\n"
                         + "\n"
                         + ":FAILED\n"
                         + "\n"
@@ -531,10 +529,10 @@ namespace FeBuddyWinFormUI
                         + "	IF %UNINSTALL_STATUS%==PARTIAL ECHO NOT ABLE TO COMPLETELY UNINSTALL BECAUSE THE FOLLOWING COULD NOT BE FOUND:\n"
                         + "	IF %UNINSTALL_STATUS%==FAIL ECHO UNINSTALL FAILED COMPLETELY BECAUSE THE FOLLOWING COULD NOT BE FOUND:\n"
                         + "	ECHO.\n"
-                        + "	IF %NASR_TEMP_FOLDER%==NOT_FOUND ECHO        -temp\\NASR2SCT\n"
-                        + "	IF %NASR_APPDATA_FOLDER%==NOT_FOUND ECHO        -AppData\\Local\\NASR2SCT\n"
-                        + "	IF %NASR_SHORTCUT%==NOT_FOUND (\n"
-                        + "		ECHO        -Desktop\\NASR2SCT Shortcut\n"
+                        + "	IF %FE-BUDDY_TEMP_FOLDER%==NOT_FOUND ECHO        -temp\\FE-BUDDY\n"
+                        + "	IF %FE-BUDDY_APPDATA_FOLDER%==NOT_FOUND ECHO        -AppData\\Local\\FE-BUDDY\n"
+                        + "	IF %FE-BUDDY_SHORTCUT%==NOT_FOUND (\n"
+                        + "		ECHO        -Desktop\\FE-BUDDY Shortcut\n"
                         + "		ECHO             --If the shortcut was renamed, delete the shortcut manually.\n"
                         + "	)\n"
                         + ")\n"
@@ -548,13 +546,13 @@ namespace FeBuddyWinFormUI
                         + "\n"
                         + "PAUSE>NUL\n";
 
-                File.WriteAllText($"{Path.GetTempPath()}UNINSTALL_NASR2SCT.bat", uninstallBatchFileString);
-                File.WriteAllText($"{Path.GetTempPath()}UNINSTALL_START_NASR2SCT.bat", uninstall_start_string);
+                File.WriteAllText($"{Path.GetTempPath()}UNINSTALL_FE-BUDDY.bat", uninstallBatchFileString);
+                File.WriteAllText($"{Path.GetTempPath()}UNINSTALL_START_FE-BUDDY.bat", uninstall_start_string);
 
                 ProcessStartInfo ProcessInfo;
                 Process Process;
 
-                ProcessInfo = new ProcessStartInfo("cmd.exe", "/c " + $"\"{Path.GetTempPath()}UNINSTALL_START_NASR2SCT.bat\"");
+                ProcessInfo = new ProcessStartInfo("cmd.exe", "/c " + $"\"{Path.GetTempPath()}UNINSTALL_START_FE-BUDDY.bat\"");
                 ProcessInfo.CreateNoWindow = false;
                 ProcessInfo.UseShellExecute = false;
 

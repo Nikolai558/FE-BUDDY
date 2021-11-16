@@ -20,6 +20,9 @@ The following is a list of features that we are considering or actively working 
 
 - [ ] GoogleEarthPro Converter (for airport diagrams and other like-constructs)
 
+- [ ] Limit certain NAVDATA features to only the selected ARTCC
+  - Reference the FAQ for this feature.
+
 - [ ] Artificial Intelligence (AI) Option that:
   - Allows the program to call the users phone number (US numbers at first for testing).
   - Will give the user "someone" to speaking to, considering now the FE will be pretty much useless

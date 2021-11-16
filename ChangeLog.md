@@ -1,9 +1,11 @@
 ---
-- ## Version 0.9.2
-  - blah blah test test
+- ## Version 1.0.0
+  - New Github Repository 
+  - Name changed from "NASR2SCT" to "FE-BUDDY".
+  - GUI Color changed.
+  - "Credits" button takes you to a link in the in the github repository. 
+  - Added Roadmap button.
+  - Updated License to GPLv3
+  - Fixed compatability issue with users that use drives other than "C:"
+  - Backend code changes such as comments, c# namespaces, and file structures. 
 
-- ## Version 0.9.1
-  - blah blah test test
-
-- ## Version 0.9.0
-  - blah blah test test

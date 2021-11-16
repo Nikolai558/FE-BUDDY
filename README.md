@@ -1,4 +1,5 @@
 # FE-BUDDY
+(Previously known as NASR2SCT)
 
 ![GitHub repo size](https://img.shields.io/github/repo-size/Nikolai558/FE-BUDDY?style=for-the-badge)
 ![GitHub contributors](https://img.shields.io/github/contributors/Nikolai558/FE-BUDDY?style=for-the-badge)
@@ -11,7 +12,7 @@
 - Nikolas Boling - [Github Profile](https://github.com/Nikolai558)
 
 ### FUNCTION:
-Converts the FAA National Airspace System Resource (NASR) Data to formats that may be used by Virtual RADAR Clients on the VATSIM network for free up to 28 days prior to an AIRAC effective date.
+Converts the FAA National Airspace System Resource (NASR) Data (and other sources) to formats that may be used by Virtual RADAR Clients on the VATSIM network for free up to 28 days prior to an AIRAC effective date.
 - Alias Files
 - SCT2 Files
 - GeoMaps

@@ -5,12 +5,12 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("FeBuddyWinFormUI")]
+[assembly: AssemblyTitle("FE-BUDDY")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("FeBuddyWinFormUI")]
-[assembly: AssemblyCopyright("Copyright ©  2021")]
+[assembly: AssemblyProduct("FE-BUDDY")]
+[assembly: AssemblyCopyright("Copyright ©  2021 Nikolas Boling, Kyle Sanders")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

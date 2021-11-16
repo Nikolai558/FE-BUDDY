@@ -1,5 +1,4 @@
 # FE-BUDDY
-(previously known as NASR-2-SCT)
 
 ![GitHub repo size](https://img.shields.io/github/repo-size/Nikolai558/FE-BUDDY?style=for-the-badge)
 ![GitHub contributors](https://img.shields.io/github/contributors/Nikolai558/FE-BUDDY?style=for-the-badge)

@@ -66,12 +66,12 @@
             // 
             this.currentAiracSelection.AutoSize = true;
             this.currentAiracSelection.Checked = true;
-            this.currentAiracSelection.FlatStyle = System.Windows.Forms.FlatStyle.Popup;
             this.currentAiracSelection.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.currentAiracSelection.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.currentAiracSelection.Location = new System.Drawing.Point(91, 68);
             this.currentAiracSelection.Margin = new System.Windows.Forms.Padding(6);
             this.currentAiracSelection.Name = "currentAiracSelection";
-            this.currentAiracSelection.Size = new System.Drawing.Size(128, 25);
+            this.currentAiracSelection.Size = new System.Drawing.Size(129, 25);
             this.currentAiracSelection.TabIndex = 0;
             this.currentAiracSelection.TabStop = true;
             this.currentAiracSelection.Text = "Current AIRAC";
@@ -81,12 +81,12 @@
             // nextAiracSelection
             // 
             this.nextAiracSelection.AutoSize = true;
-            this.nextAiracSelection.FlatStyle = System.Windows.Forms.FlatStyle.Popup;
             this.nextAiracSelection.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.nextAiracSelection.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.nextAiracSelection.Location = new System.Drawing.Point(232, 68);
             this.nextAiracSelection.Margin = new System.Windows.Forms.Padding(6);
             this.nextAiracSelection.Name = "nextAiracSelection";
-            this.nextAiracSelection.Size = new System.Drawing.Size(107, 25);
+            this.nextAiracSelection.Size = new System.Drawing.Size(108, 25);
             this.nextAiracSelection.TabIndex = 1;
             this.nextAiracSelection.Text = "Next AIRAC";
             this.nextAiracSelection.UseVisualStyleBackColor = true;
@@ -96,6 +96,7 @@
             // airacLabel
             // 
             this.airacLabel.Font = new System.Drawing.Font("Segoe UI", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.airacLabel.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.airacLabel.Location = new System.Drawing.Point(1, 29);
             this.airacLabel.Margin = new System.Windows.Forms.Padding(6, 0, 6, 0);
             this.airacLabel.Name = "airacLabel";
@@ -108,6 +109,7 @@
             // 
             this.facilityIDLabel.AutoSize = true;
             this.facilityIDLabel.Font = new System.Drawing.Font("Segoe UI", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.facilityIDLabel.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.facilityIDLabel.Location = new System.Drawing.Point(25, 32);
             this.facilityIDLabel.Margin = new System.Windows.Forms.Padding(6, 0, 6, 0);
             this.facilityIDLabel.Name = "facilityIDLabel";
@@ -119,6 +121,7 @@
             // 
             this.convertLabel.AutoSize = true;
             this.convertLabel.Font = new System.Drawing.Font("Segoe UI", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.convertLabel.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.convertLabel.Location = new System.Drawing.Point(33, 29);
             this.convertLabel.Margin = new System.Windows.Forms.Padding(6, 0, 6, 0);
             this.convertLabel.Name = "convertLabel";
@@ -129,12 +132,12 @@
             // convertNo
             // 
             this.convertNo.AutoSize = true;
-            this.convertNo.FlatStyle = System.Windows.Forms.FlatStyle.Popup;
             this.convertNo.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.convertNo.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.convertNo.Location = new System.Drawing.Point(232, 194);
             this.convertNo.Margin = new System.Windows.Forms.Padding(6);
             this.convertNo.Name = "convertNo";
-            this.convertNo.Size = new System.Drawing.Size(48, 25);
+            this.convertNo.Size = new System.Drawing.Size(49, 25);
             this.convertNo.TabIndex = 7;
             this.convertNo.TabStop = true;
             this.convertNo.Text = "No";
@@ -144,12 +147,12 @@
             // 
             this.convertYes.AutoSize = true;
             this.convertYes.Checked = true;
-            this.convertYes.FlatStyle = System.Windows.Forms.FlatStyle.Popup;
             this.convertYes.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.convertYes.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.convertYes.Location = new System.Drawing.Point(148, 194);
             this.convertYes.Margin = new System.Windows.Forms.Padding(6);
             this.convertYes.Name = "convertYes";
-            this.convertYes.Size = new System.Drawing.Size(50, 25);
+            this.convertYes.Size = new System.Drawing.Size(51, 25);
             this.convertYes.TabIndex = 6;
             this.convertYes.TabStop = true;
             this.convertYes.Text = "Yes";
@@ -159,6 +162,7 @@
             // 
             this.convertDescriptionLabel.AutoSize = true;
             this.convertDescriptionLabel.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.convertDescriptionLabel.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.convertDescriptionLabel.Location = new System.Drawing.Point(18, 71);
             this.convertDescriptionLabel.Margin = new System.Windows.Forms.Padding(6, 0, 6, 0);
             this.convertDescriptionLabel.Name = "convertDescriptionLabel";
@@ -169,6 +173,7 @@
             // 
             // filePathLabel
             // 
+            this.filePathLabel.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.filePathLabel.Location = new System.Drawing.Point(6, 100);
             this.filePathLabel.Name = "filePathLabel";
             this.filePathLabel.Size = new System.Drawing.Size(257, 82);
@@ -179,26 +184,36 @@
             // 
             // chooseDirButton
             // 
-            this.chooseDirButton.FlatStyle = System.Windows.Forms.FlatStyle.System;
+            this.chooseDirButton.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(20)))), ((int)(((byte)(20)))), ((int)(((byte)(20)))));
+            this.chooseDirButton.FlatAppearance.BorderColor = System.Drawing.Color.Gray;
+            this.chooseDirButton.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Gray;
+            this.chooseDirButton.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Gray;
+            this.chooseDirButton.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.chooseDirButton.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.chooseDirButton.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.chooseDirButton.Location = new System.Drawing.Point(40, 185);
             this.chooseDirButton.Name = "chooseDirButton";
             this.chooseDirButton.Size = new System.Drawing.Size(182, 34);
             this.chooseDirButton.TabIndex = 10;
             this.chooseDirButton.Text = "Choose Output Location";
-            this.chooseDirButton.UseVisualStyleBackColor = true;
+            this.chooseDirButton.UseVisualStyleBackColor = false;
             this.chooseDirButton.Click += new System.EventHandler(this.chooseDirButton_Click);
             // 
             // startButton
             // 
-            this.startButton.FlatStyle = System.Windows.Forms.FlatStyle.System;
+            this.startButton.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(20)))), ((int)(((byte)(20)))), ((int)(((byte)(20)))));
+            this.startButton.FlatAppearance.BorderColor = System.Drawing.Color.Gray;
+            this.startButton.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Gray;
+            this.startButton.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Gray;
+            this.startButton.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.startButton.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.startButton.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.startButton.Location = new System.Drawing.Point(40, 302);
             this.startButton.Name = "startButton";
             this.startButton.Size = new System.Drawing.Size(182, 34);
             this.startButton.TabIndex = 11;
             this.startButton.Text = "Start";
-            this.startButton.UseVisualStyleBackColor = true;
+            this.startButton.UseVisualStyleBackColor = false;
             this.startButton.Click += new System.EventHandler(this.startButton_Click);
             // 
             // airacCycleGroupBox
@@ -239,8 +254,9 @@
             // 
             // facilityIdCombobox
             // 
-            this.facilityIdCombobox.BackColor = System.Drawing.SystemColors.ScrollBar;
-            this.facilityIdCombobox.ForeColor = System.Drawing.SystemColors.ActiveCaptionText;
+            this.facilityIdCombobox.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(20)))), ((int)(((byte)(20)))), ((int)(((byte)(20)))));
+            this.facilityIdCombobox.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.facilityIdCombobox.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.facilityIdCombobox.FormattingEnabled = true;
             this.facilityIdCombobox.IntegralHeight = false;
             this.facilityIdCombobox.Location = new System.Drawing.Point(40, 64);
@@ -254,6 +270,7 @@
             // 
             this.processingDataLabel.Enabled = false;
             this.processingDataLabel.Font = new System.Drawing.Font("Segoe UI", 26.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.processingDataLabel.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.processingDataLabel.Location = new System.Drawing.Point(6, 17);
             this.processingDataLabel.Name = "processingDataLabel";
             this.processingDataLabel.Size = new System.Drawing.Size(545, 68);
@@ -302,6 +319,7 @@
             this.exitButton.Enabled = false;
             this.exitButton.FlatStyle = System.Windows.Forms.FlatStyle.System;
             this.exitButton.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.exitButton.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.exitButton.Location = new System.Drawing.Point(346, 88);
             this.exitButton.Name = "exitButton";
             this.exitButton.Size = new System.Drawing.Size(182, 34);
@@ -313,7 +331,7 @@
             // 
             // menuStrip1
             // 
-            this.menuStrip1.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(60)))), ((int)(((byte)(60)))), ((int)(((byte)(60)))));
+            this.menuStrip1.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(10)))), ((int)(((byte)(10)))), ((int)(((byte)(10)))));
             this.menuStrip1.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.instructionsToolStripMenuItem,
@@ -330,7 +348,7 @@
             // instructionsToolStripMenuItem
             // 
             this.instructionsToolStripMenuItem.Font = new System.Drawing.Font("Romantic", 11.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(2)));
-            this.instructionsToolStripMenuItem.ForeColor = System.Drawing.SystemColors.Control;
+            this.instructionsToolStripMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.instructionsToolStripMenuItem.Name = "instructionsToolStripMenuItem";
             this.instructionsToolStripMenuItem.Size = new System.Drawing.Size(93, 20);
             this.instructionsToolStripMenuItem.Text = "Instructions";
@@ -339,7 +357,7 @@
             // fAQToolStripMenuItem
             // 
             this.fAQToolStripMenuItem.Font = new System.Drawing.Font("Romantic", 11.25F);
-            this.fAQToolStripMenuItem.ForeColor = System.Drawing.SystemColors.Control;
+            this.fAQToolStripMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.fAQToolStripMenuItem.Name = "fAQToolStripMenuItem";
             this.fAQToolStripMenuItem.Size = new System.Drawing.Size(50, 20);
             this.fAQToolStripMenuItem.Text = "FAQ";
@@ -348,7 +366,7 @@
             // creditsToolStripMenuItem
             // 
             this.creditsToolStripMenuItem.Font = new System.Drawing.Font("Romantic", 11.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(2)));
-            this.creditsToolStripMenuItem.ForeColor = System.Drawing.SystemColors.Control;
+            this.creditsToolStripMenuItem.ForeColor = System.Drawing.SystemColors.ActiveBorder;
             this.creditsToolStripMenuItem.Name = "creditsToolStripMenuItem";
             this.creditsToolStripMenuItem.Size = new System.Drawing.Size(64, 20);
             this.creditsToolStripMenuItem.Text = "Credits";
@@ -356,9 +374,9 @@
             // 
             // changeLogToolStripMenuItem
             // 
-            this.changeLogToolStripMenuItem.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(60)))), ((int)(((byte)(60)))), ((int)(((byte)(60)))));
+            this.changeLogToolStripMenuItem.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(10)))), ((int)(((byte)(10)))), ((int)(((byte)(10)))));
             this.changeLogToolStripMenuItem.Font = new System.Drawing.Font("Romantic", 11.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(2)));
-            this.changeLogToolStripMenuItem.ForeColor = System.Drawing.SystemColors.Control;
+            this.changeLogToolStripMenuItem.ForeColor = System.Drawing.SystemColors.ActiveBorder;
             this.changeLogToolStripMenuItem.Name = "changeLogToolStripMenuItem";
             this.changeLogToolStripMenuItem.Size = new System.Drawing.Size(97, 20);
             this.changeLogToolStripMenuItem.Text = "Change Log";
@@ -367,7 +385,7 @@
             // uninstallToolStripMenuItem
             // 
             this.uninstallToolStripMenuItem.Font = new System.Drawing.Font("Romantic", 11.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(2)));
-            this.uninstallToolStripMenuItem.ForeColor = System.Drawing.SystemColors.Control;
+            this.uninstallToolStripMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.uninstallToolStripMenuItem.Name = "uninstallToolStripMenuItem";
             this.uninstallToolStripMenuItem.Size = new System.Drawing.Size(76, 20);
             this.uninstallToolStripMenuItem.Text = "Uninstall";
@@ -378,7 +396,7 @@
             this.AutoScaleDimensions = new System.Drawing.SizeF(11F, 25F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.AutoSize = true;
-            this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(60)))), ((int)(((byte)(60)))), ((int)(((byte)(60)))));
+            this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(10)))), ((int)(((byte)(10)))), ((int)(((byte)(10)))));
             this.ClientSize = new System.Drawing.Size(785, 404);
             this.Controls.Add(this.processingGroupBox);
             this.Controls.Add(this.startGroupBox);

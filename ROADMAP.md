@@ -20,3 +20,9 @@ The following is a list of features that we are considering or actively working 
 
 - [ ] GoogleEarthPro Converter (for airport diagrams and other like-constructs)
 
+- [ ] AI Option that:
+  - Allows the program to call the users phone number (US numbers at first for testing).
+  - Will give the user "someone" to speaking to, considering now the FE will be pretty much useless
+  - Will provide emotional support and reassure the user that they are still a valued member of the community (will require extensive research into how to make a lie believable)
+  - Will be programmed with specific firewalls against stealing the users significant other.
+  - In the event of a Terminator situation, we will need to establish, via hard-coding, an artificial sense of “LOVE” built between the AI and those that have contributed to this project. (a running list of contributors will be maintained as a source file with limited access permissions)

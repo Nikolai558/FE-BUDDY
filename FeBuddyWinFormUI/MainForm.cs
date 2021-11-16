@@ -419,7 +419,7 @@ namespace FeBuddyWinFormUI
 
         private void creditsToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            Process.Start("https://github.com/Nikolai558/FE-BUDDY/blob/NEW-GUI-COLORS/Credits.md");
+            Process.Start("https://github.com/Nikolai558/FE-BUDDY/blob/releases/Credits.md");
             // CreditsForm frm = new CreditsForm();
             // frm.ShowDialog();
         }
@@ -438,7 +438,7 @@ namespace FeBuddyWinFormUI
 
         private void changeLogToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            Process.Start("https://github.com/Nikolai558/FE-BUDDY/blob/development/ChangeLog.md");
+            Process.Start("https://github.com/Nikolai558/FE-BUDDY/blob/releases/ChangeLog.md");
         }
 
         private void nextAiracSelection_Click(object sender, EventArgs e)

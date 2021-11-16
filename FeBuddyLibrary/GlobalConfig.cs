@@ -16,7 +16,7 @@ namespace FeBuddyLibrary
 {
     public class GlobalConfig
     {
-        public static readonly string ProgramVersion = "0.9.0";
+        public static readonly string ProgramVersion = "0.9.1";
 
         public static string GithubVersion = "";
 

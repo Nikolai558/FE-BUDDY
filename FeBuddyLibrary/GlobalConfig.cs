@@ -564,8 +564,8 @@ namespace FeBuddyLibrary
         private static void CreateCurlBatchFile(string name, string url, string outputFileName)
         {
             string filePath = $"{tempPath}\\{name}";
-            string writeMe = $"cd \"{tempPath}\"\n" +
-                $"curl \"{url}\">{outputFileName}";
+            string writeMe = $"cd /d \"{tempPath}\"\n" +
+                $"curl \"{url}\" > {outputFileName}";
             File.WriteAllText(filePath, writeMe);
         }
 

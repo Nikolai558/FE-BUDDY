@@ -12,7 +12,7 @@
 - Nikolas Boling - [Github Profile](https://github.com/Nikolai558)
 
 ### FUNCTION:
-Converts the FAA National Airspace System Resource (NASR) Data to formats that may be used by Virtual RADAR Clients on the VATSIM network for free up to 28 days prior to an AIRAC effective date.
+Converts the FAA National Airspace System Resource (NASR) Data (and other sources) to formats that may be used by Virtual RADAR Clients on the VATSIM network for free up to 28 days prior to an AIRAC effective date.
 - Alias Files
 - SCT2 Files
 - GeoMaps

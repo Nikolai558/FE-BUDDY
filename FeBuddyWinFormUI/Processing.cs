@@ -78,7 +78,7 @@ namespace FeBuddyWinFormUI
             string output = "";
             string content = "";
 
-            string url = "https://raw.githubusercontent.com/Nikolai558/FE-BUDDY/development/ChangeLog.md";
+            string url = "https://raw.githubusercontent.com/Nikolai558/FE-BUDDY/releases/ChangeLog.md";
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
             HttpWebResponse response = (HttpWebResponse)request.GetResponse();
 

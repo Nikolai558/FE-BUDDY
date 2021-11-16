@@ -437,7 +437,7 @@ namespace FeBuddyWinFormUI
 
         private void changeLogToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            Process.Start("https://github.com/Nikolai558/NASR2SCT/blob/development/ChangeLog.md");
+            Process.Start("https://github.com/Nikolai558/FE-BUDDY/blob/development/ChangeLog.md");
         }
 
         private void nextAiracSelection_Click(object sender, EventArgs e)

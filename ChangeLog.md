@@ -6,6 +6,6 @@
   - "Credits" button takes you to a link in the in the github repository. 
   - Added Roadmap button.
   - Updated License to GPLv3
-  - Fixed compatability issue with users that use drives other than "C:"
+  - Fixed compatibility issue with users that use drives other than "C:"
   - Backend code changes such as comments, c# namespaces, and file structures. 
 

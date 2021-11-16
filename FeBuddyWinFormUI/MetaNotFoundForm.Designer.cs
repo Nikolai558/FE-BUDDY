@@ -36,6 +36,7 @@
             // headerLabel
             // 
             this.headerLabel.AutoSize = true;
+            this.headerLabel.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.headerLabel.Location = new System.Drawing.Point(97, 9);
             this.headerLabel.Name = "headerLabel";
             this.headerLabel.Size = new System.Drawing.Size(278, 25);
@@ -45,6 +46,7 @@
             // descLabel
             // 
             this.descLabel.AutoSize = true;
+            this.descLabel.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.descLabel.Location = new System.Drawing.Point(10, 62);
             this.descLabel.Name = "descLabel";
             this.descLabel.Size = new System.Drawing.Size(452, 275);
@@ -56,7 +58,7 @@
             this.AutoScaleDimensions = new System.Drawing.SizeF(11F, 25F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.AutoSize = true;
-            this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(60)))), ((int)(((byte)(60)))), ((int)(((byte)(60)))));
+            this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(10)))), ((int)(((byte)(10)))), ((int)(((byte)(10)))));
             this.ClientSize = new System.Drawing.Size(473, 367);
             this.Controls.Add(this.descLabel);
             this.Controls.Add(this.headerLabel);

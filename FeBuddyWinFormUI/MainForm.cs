@@ -10,7 +10,7 @@ using FeBuddyLibrary;
 using FeBuddyLibrary.Models.MetaFileModels;
 using FeBuddyLibrary.DataAccess;
 using FeBuddyLibrary.Models;
-
+ 
 namespace FeBuddyWinFormUI
 {
     public partial class MainForm : Form
@@ -413,14 +413,15 @@ namespace FeBuddyWinFormUI
         private void instructionsToolStripMenuItem_Click(object sender, EventArgs e)
         {
 
-            Process.Start("https://docs.google.com/presentation/d/e/2PACX-1vR79DqYD9FxQhA-mUK1FQLO4Xx4mg5xO05NOIJMeB4mbIbs3CY5pIOYtrFtqo8BfmlCFaJSFMSxI_ut/embed?");
+            Process.Start("https://docs.google.com/presentation/d/e/2PACX-1vRMd6PIRrj0lPb4sAi9KB7iM3u5zn0dyUVLqEcD9m2e71nf0UPyEmkOs4ZwYsQdl7smopjdvw_iWEyP/embed");
 
         }
 
         private void creditsToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            CreditsForm frm = new CreditsForm();
-            frm.ShowDialog();
+            Process.Start("https://github.com/Nikolai558/FE-BUDDY/blob/releases/Credits.md");
+            // CreditsForm frm = new CreditsForm();
+            // frm.ShowDialog();
         }
 
         private void MainForm_Load(object sender, EventArgs e)
@@ -433,11 +434,12 @@ namespace FeBuddyWinFormUI
             changeLogToolStripMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
             uninstallToolStripMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
             fAQToolStripMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
+            roadmapToolStripMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
         }
 
         private void changeLogToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            Process.Start("https://github.com/Nikolai558/FE-BUDDY/blob/development/ChangeLog.md");
+            Process.Start("https://github.com/Nikolai558/FE-BUDDY/blob/releases/ChangeLog.md");
         }
 
         private void nextAiracSelection_Click(object sender, EventArgs e)
@@ -465,7 +467,7 @@ namespace FeBuddyWinFormUI
                         + "\n"
                         + "SET /A NOT_FOUND_COUNT=0\n"
                         + "\n"
-                        + "CD \"%temp%\"\n"
+                        + "CD /d \"%temp%\"\n"
                         + "	if NOT exist FE-BUDDY (\n"
                         + "		SET /A NOT_FOUND_COUNT=%NOT_FOUND_COUNT% + 1\n"
                         + "		SET FE-BUDDY_TEMP_FOLDER=NOT_FOUND\n"
@@ -476,7 +478,7 @@ namespace FeBuddyWinFormUI
                         + "		RD /Q /S \"FE-BUDDY\"\n"
                         + "	)\n"
                         + "\n"
-                        + "CD \"%userprofile%\\AppData\\Local\"\n"
+                        + "CD /d \"%userprofile%\\AppData\\Local\"\n"
                         + "	if NOT exist FE-BUDDY (\n"
                         + "		SET /A NOT_FOUND_COUNT=%NOT_FOUND_COUNT% + 1\n"
                         + "		SET FE-BUDDY_APPDATA_FOLDER=NOT_FOUND\n"
@@ -487,7 +489,7 @@ namespace FeBuddyWinFormUI
                         + "		RD /Q /S \"FE-BUDDY\"\n"
                         + "	)\n"
                         + "\n"
-                        + "CD \"%userprofile%\\Desktop\"\n"
+                        + "CD /d \"%userprofile%\\Desktop\"\n"
                         + "	if NOT exist FE-BUDDY.lnk (\n"
                         + "		SET /A NOT_FOUND_COUNT=%NOT_FOUND_COUNT% + 1\n"
                         + "		SET FE-BUDDY_SHORTCUT=NOT_FOUND\n"
@@ -571,7 +573,12 @@ namespace FeBuddyWinFormUI
 
         private void fAQToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            System.Diagnostics.Process.Start("https://docs.google.com/presentation/d/e/2PACX-1vSlhz1DhDwZ-43BY4Q2vg-ff0QBGssxpmv4-nhZlz9LpGJvWjqLsHVaQwwsV1AGMWFFF_x_j_b3wTBO/embed");
+            Process.Start("https://docs.google.com/presentation/d/e/2PACX-1vSlhz1DhDwZ-43BY4Q2vg-ff0QBGssxpmv4-nhZlz9LpGJvWjqLsHVaQwwsV1AGMWFFF_x_j_b3wTBO/embed");
+        }
+
+        private void roadmapToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Process.Start("https://github.com/Nikolai558/FE-BUDDY/blob/releases/ROADMAP.md");
         }
     }
 }

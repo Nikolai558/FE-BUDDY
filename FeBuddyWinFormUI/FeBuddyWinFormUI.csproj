@@ -169,7 +169,6 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="FE_BUDDY_icon.ico" />
-    <Content Include="NASR_2_SCT_icon.ico" />
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include=".NETFramework,Version=v4.7.2">

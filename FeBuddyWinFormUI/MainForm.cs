@@ -419,8 +419,9 @@ namespace FeBuddyWinFormUI
 
         private void creditsToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            CreditsForm frm = new CreditsForm();
-            frm.ShowDialog();
+            Process.Start("https://github.com/Nikolai558/FE-BUDDY/blob/NEW-GUI-COLORS/Credits.md");
+            // CreditsForm frm = new CreditsForm();
+            // frm.ShowDialog();
         }
 
         private void MainForm_Load(object sender, EventArgs e)

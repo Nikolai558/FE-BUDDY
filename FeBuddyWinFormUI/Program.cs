@@ -20,11 +20,6 @@ namespace FeBuddyWinFormUI
             Application.SetCompatibleTextRenderingDefault(false);
 
             GlobalConfig.CheckTempDir(true);
-            //GlobalConfig.CheckTempDir();
-
-            //GetFaaMetaFileData ParseMeta = new GetFaaMetaFileData();
-            //ParseMeta.QuarterbackFunc();
-
             // API CALL TO GITHUB, WARNING ONLY 60 PER HOUR IS ALLOWED, WILL BREAK IF WE DO MORE!
             try
             {

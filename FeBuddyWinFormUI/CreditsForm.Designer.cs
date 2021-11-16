@@ -40,6 +40,7 @@
             // 
             this.developedByHeader.AutoSize = true;
             this.developedByHeader.Font = new System.Drawing.Font("Segoe UI", 15.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.developedByHeader.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.developedByHeader.Location = new System.Drawing.Point(12, 9);
             this.developedByHeader.Name = "developedByHeader";
             this.developedByHeader.Size = new System.Drawing.Size(166, 30);
@@ -50,6 +51,7 @@
             // 
             this.nikolasBolingLabel.AutoSize = true;
             this.nikolasBolingLabel.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.nikolasBolingLabel.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.nikolasBolingLabel.Location = new System.Drawing.Point(32, 49);
             this.nikolasBolingLabel.Name = "nikolasBolingLabel";
             this.nikolasBolingLabel.Size = new System.Drawing.Size(360, 63);
@@ -62,6 +64,7 @@
             // 
             this.kyleSandersLabel.AutoSize = true;
             this.kyleSandersLabel.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.kyleSandersLabel.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.kyleSandersLabel.Location = new System.Drawing.Point(32, 137);
             this.kyleSandersLabel.Name = "kyleSandersLabel";
             this.kyleSandersLabel.Size = new System.Drawing.Size(385, 63);
@@ -74,6 +77,7 @@
             // 
             this.logoHeader.AutoSize = true;
             this.logoHeader.Font = new System.Drawing.Font("Segoe UI", 15.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.logoHeader.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.logoHeader.Location = new System.Drawing.Point(12, 238);
             this.logoHeader.Name = "logoHeader";
             this.logoHeader.Size = new System.Drawing.Size(169, 30);
@@ -84,6 +88,7 @@
             // 
             this.johnLewisLabel.AutoSize = true;
             this.johnLewisLabel.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.johnLewisLabel.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.johnLewisLabel.Location = new System.Drawing.Point(32, 277);
             this.johnLewisLabel.Name = "johnLewisLabel";
             this.johnLewisLabel.Size = new System.Drawing.Size(178, 42);

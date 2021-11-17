@@ -10,12 +10,10 @@ namespace FeBuddyLibrary.Helpers
 {
     public static class BatchFileHelpers
     {
-        private static string ProgramTempPath { get; } = GlobalConfig.tempPath;
-
         public static void CreateCurlBatchFile(string name, string url, string outputFileName)
         {
-            string filePath = $"{ProgramTempPath}\\{name}";
-            string writeMe = $"cd /d \"{ProgramTempPath}\"\n" +
+            string filePath = $"{GlobalConfig.tempPath}\\{name}";
+            string writeMe = $"cd /d \"{GlobalConfig.tempPath}\"\n" +
                 $"curl \"{url}\" > {outputFileName}";
             File.WriteAllText(filePath, writeMe);
         }
@@ -25,7 +23,7 @@ namespace FeBuddyLibrary.Helpers
             ProcessStartInfo ProcessInfo;
             Process Process;
 
-            ProcessInfo = new ProcessStartInfo("cmd.exe", "/c " + $"\"{ProgramTempPath}\\{batchFileName}\"")
+            ProcessInfo = new ProcessStartInfo("cmd.exe", "/c " + $"\"{GlobalConfig.tempPath}\\{batchFileName}\"")
             {
                 CreateNoWindow = true,
                 UseShellExecute = false

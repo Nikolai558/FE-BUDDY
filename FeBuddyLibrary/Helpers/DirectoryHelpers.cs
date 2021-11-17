@@ -10,15 +10,11 @@ namespace FeBuddyLibrary.Helpers
 {
     public static class DirectoryHelpers
     {
-        private static string TempPath { get; } = GlobalConfig.tempPath;
-        private static string OutputPath { get; } = GlobalConfig.outputDirectory;
-
-
         public static void CheckTempDir()
         {
-            if (Directory.Exists(TempPath) && !GlobalConfig.updateProgram)
+            if (Directory.Exists(GlobalConfig.tempPath) && !GlobalConfig.updateProgram)
             {
-                DirectoryInfo di = new DirectoryInfo(TempPath);
+                DirectoryInfo di = new DirectoryInfo(GlobalConfig.tempPath);
 
                 foreach (FileInfo file in di.EnumerateFiles())
                 {
@@ -32,7 +28,7 @@ namespace FeBuddyLibrary.Helpers
             }
             else
             {
-                Directory.CreateDirectory(TempPath);
+                Directory.CreateDirectory(GlobalConfig.tempPath);
             }
         }
 
@@ -52,13 +48,13 @@ namespace FeBuddyLibrary.Helpers
         /// </summary>
         public static void CreateDirectories()
         {
-            Directory.CreateDirectory(OutputPath);
-            Directory.CreateDirectory($"{OutputPath}\\ALIAS");
-            Directory.CreateDirectory($"{OutputPath}\\VRC");
-            Directory.CreateDirectory($"{OutputPath}\\VSTARS");
-            Directory.CreateDirectory($"{OutputPath}\\VERAM");
-            Directory.CreateDirectory($"{OutputPath}\\VRC\\[SID]");
-            Directory.CreateDirectory($"{OutputPath}\\VRC\\[STAR]");
+            Directory.CreateDirectory(GlobalConfig.outputDirectory);
+            Directory.CreateDirectory($"{GlobalConfig.outputDirectory}\\ALIAS");
+            Directory.CreateDirectory($"{GlobalConfig.outputDirectory}\\VRC");
+            Directory.CreateDirectory($"{GlobalConfig.outputDirectory}\\VSTARS");
+            Directory.CreateDirectory($"{GlobalConfig.outputDirectory}\\VERAM");
+            Directory.CreateDirectory($"{GlobalConfig.outputDirectory}\\VRC\\[SID]");
+            Directory.CreateDirectory($"{GlobalConfig.outputDirectory}\\VRC\\[STAR]");
         }
     }
 }

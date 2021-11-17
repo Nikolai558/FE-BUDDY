@@ -9,8 +9,6 @@ namespace FeBuddyLibrary.Helpers
 {
     public class FileHelpers
     {
-        private static string OutputPath { get; } = GlobalConfig.outputDirectory;
-
         public static void WriteWarnMeFile() 
         {
             string warningMSG = "\n" +
@@ -32,7 +30,7 @@ namespace FeBuddyLibrary.Helpers
                     "**		                                   **\n" +
                     "*********************************************\n";
 
-            File.WriteAllText($"{OutputPath}\\WARN-README.txt", warningMSG);
+            File.WriteAllText($"{GlobalConfig.outputDirectory}\\WARN-README.txt", warningMSG);
         }
 
         public static void CreateAwyGeomapHeadersAndEnding(bool CreateStart)
@@ -47,7 +45,7 @@ namespace FeBuddyLibrary.Helpers
             {
                 GlobalConfig.AwyGeoMap.AppendLine("          </Elements>");
                 GlobalConfig.AwyGeoMap.AppendLine("        </GeoMapObject>");
-                File.WriteAllText($"{OutputPath}\\VERAM\\{GlobalConfig.AwyGeoMapFileName}", GlobalConfig.AwyGeoMap.ToString());
+                File.WriteAllText($"{GlobalConfig.outputDirectory}\\VERAM\\{GlobalConfig.AwyGeoMapFileName}", GlobalConfig.AwyGeoMap.ToString());
             }
         }
 
@@ -58,7 +56,7 @@ namespace FeBuddyLibrary.Helpers
         public static void WriteWaypointsXML()
         {
             // File path for the waypoints.xml that we want to store to.
-            string filePath = $"{OutputPath}\\VERAM\\Waypoints.xml";
+            string filePath = $"{GlobalConfig.outputDirectory}\\VERAM\\Waypoints.xml";
 
             // Write the XML Serializer to the file.
             TextWriter writer = new StreamWriter(filePath);
@@ -74,8 +72,8 @@ namespace FeBuddyLibrary.Helpers
             sb.AppendLine("          <SymbolDefaults Bcg=\"13\" Filters=\"13\" Style=\"VOR\" Size=\"1\" />");
             sb.AppendLine("          <Elements>");
 
-            string readFilePath = $"{OutputPath}\\VERAM\\Waypoints.xml";
-            string saveFilePath = $"{OutputPath}\\VERAM\\NAVAID_GEOMAP.xml";
+            string readFilePath = $"{GlobalConfig.outputDirectory}\\VERAM\\Waypoints.xml";
+            string saveFilePath = $"{GlobalConfig.outputDirectory}\\VERAM\\NAVAID_GEOMAP.xml";
 
             bool grabLocation = false;
 
@@ -119,13 +117,13 @@ namespace FeBuddyLibrary.Helpers
         public static void AppendCommentToXML(string AiracDate)
         {
             // File path to the Waypoints.xml File.
-            string filepath = $"{OutputPath}\\VERAM\\Waypoints.xml";
+            string filepath = $"{GlobalConfig.outputDirectory}\\VERAM\\Waypoints.xml";
 
             // Add the Airac effective date in comment form to the end of the file.
             File.AppendAllText(filepath, $"\n<!--AIRAC_EFFECTIVE_DATE {AiracDate}-->");
 
             // Copy the file from VERAM to VSTARS. - They use the same format. 
-            File.Copy($"{OutputPath}\\VERAM\\Waypoints.xml", $"{OutputPath}\\VSTARS\\Waypoints.xml");
+            File.Copy($"{GlobalConfig.outputDirectory}\\VERAM\\Waypoints.xml", $"{GlobalConfig.outputDirectory}\\VSTARS\\Waypoints.xml");
         }
 
         /// <summary>
@@ -134,7 +132,7 @@ namespace FeBuddyLibrary.Helpers
         public static void WriteTestSctFile()
         {
             // Write the file INFO section.
-            File.WriteAllText($"{OutputPath}\\{GlobalConfig.testSectorFileName}", $"[INFO]\nTEST_SECTOR\nTST_CTR\nXXXX\nN043.31.08.418\nW112.03.50.103\n60.043\n43.536\n-11.8\n1.000\n\n\n\n\n");
+            File.WriteAllText($"{GlobalConfig.outputDirectory}\\{GlobalConfig.testSectorFileName}", $"[INFO]\nTEST_SECTOR\nTST_CTR\nXXXX\nN043.31.08.418\nW112.03.50.103\n60.043\n43.536\n-11.8\n1.000\n\n\n\n\n");
         }
     }
 }

@@ -10,15 +10,12 @@ namespace FeBuddyLibrary.Helpers
 {
     public class DownloadHelpers
     {
-        private static string TempPath { get; } = GlobalConfig.tempPath;
-
-
         public static void DownloadAssets()
         {
             foreach (AssetsModel asset in GlobalConfig.AllAssetsToDownload)
             {
                 var client = new WebClient();
-                client.DownloadFile(asset.DownloadURL, $"{TempPath}\\{asset.Name}");
+                client.DownloadFile(asset.DownloadURL, $"{GlobalConfig.tempPath}\\{asset.Name}");
             }
         }
 
@@ -86,12 +83,12 @@ namespace FeBuddyLibrary.Helpers
                             }
                             else
                             {
-                                client.DownloadFile(allURLs[fileName], $"{TempPath}\\{fileName}");
+                                client.DownloadFile(allURLs[fileName], $"{GlobalConfig.tempPath}\\{fileName}");
                             }
                         }
                         else
                         {
-                            client.DownloadFile(allURLs[fileName], $"{TempPath}\\{fileName}");
+                            client.DownloadFile(allURLs[fileName], $"{GlobalConfig.tempPath}\\{fileName}");
                         }
                     }
                     catch (Exception)
@@ -99,7 +96,7 @@ namespace FeBuddyLibrary.Helpers
                         MessageBoxHelpers.FileDownloadErrorMB(fileName, allURLs);
                         Environment.Exit(-1);
                     }
-                    GlobalConfig.DownloadedFilePaths.Add($"{TempPath}\\{fileName}");
+                    GlobalConfig.DownloadedFilePaths.Add($"{GlobalConfig.tempPath}\\{fileName}");
                 }
             }
         }

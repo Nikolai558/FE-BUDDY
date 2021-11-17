@@ -39,7 +39,7 @@ namespace FeBuddyLibrary
 
         public static List<AptModel> allAptModelsForCheck = null;
 
-        private static XmlRootAttribute xmlRootAttribute = new XmlRootAttribute("Waypoints");
+        private static readonly XmlRootAttribute xmlRootAttribute = new XmlRootAttribute("Waypoints");
         public static XmlSerializer WaypointSerializer = new XmlSerializer(typeof(Waypoint[]), xmlRootAttribute);
 
         public static Waypoint[] waypoints = new Waypoint[] { };
@@ -76,13 +76,14 @@ namespace FeBuddyLibrary
             {
                 var request = HttpWebRequest.Create(nextUrl);
                 request.Method = "HEAD";
-                using (HttpWebResponse response = request.GetResponse() as HttpWebResponse)
+                if (request.GetResponse() is HttpWebResponse response)
                 {
                     if (response != null)
                     {
                         result = response.StatusCode;
-                        response.Close();
                     }
+
+                    response.Close();
                 }
 
                 return true;

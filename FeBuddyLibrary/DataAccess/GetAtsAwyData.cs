@@ -1,4 +1,5 @@
-﻿using FeBuddyLibrary.Models;
+﻿using FeBuddyLibrary.Helpers;
+using FeBuddyLibrary.Models;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -70,10 +71,10 @@ namespace FeBuddyLibrary.DataAccess
 
 
                     atsPoint.Name = line.Substring(25, 40).Trim();
-                    atsPoint.Lat = GlobalConfig.CorrectLatLon(line.Substring(109, 14).Trim(), true, GlobalConfig.Convert);
-                    atsPoint.Lon = GlobalConfig.CorrectLatLon(line.Substring(123, 14).Trim(), false, GlobalConfig.Convert);
-                    atsPoint.Dec_Lat = GlobalConfig.CreateDecFormat(atsPoint.Lat, true);
-                    atsPoint.Dec_Lon = GlobalConfig.CreateDecFormat(atsPoint.Lon, true);
+                    atsPoint.Lat = LatLonHelpers.CorrectLatLon(line.Substring(109, 14).Trim(), true, GlobalConfig.Convert);
+                    atsPoint.Lon = LatLonHelpers.CorrectLatLon(line.Substring(123, 14).Trim(), false, GlobalConfig.Convert);
+                    atsPoint.Dec_Lat = LatLonHelpers.CreateDecFormat(atsPoint.Lat, true);
+                    atsPoint.Dec_Lon = LatLonHelpers.CreateDecFormat(atsPoint.Lon, true);
 
                     if (line.Substring(65, 25).Trim() == "NDB")
                     {

@@ -1,4 +1,5 @@
 ﻿using FeBuddyLibrary;
+using FeBuddyLibrary.Helpers;
 using Squirrel;
 using System;
 using System.Collections.Generic;
@@ -19,11 +20,11 @@ namespace FeBuddyWinFormUI
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
 
-            GlobalConfig.CheckTempDir(true);
+            DirectoryHelpers.CheckTempDir();
             // API CALL TO GITHUB, WARNING ONLY 60 PER HOUR IS ALLOWED, WILL BREAK IF WE DO MORE!
             try
             {
-                GlobalConfig.UpdateCheck();
+                WebHelpers.UpdateCheck();
             }
             catch (Exception)
             {
@@ -43,8 +44,10 @@ namespace FeBuddyWinFormUI
             // Check to see if Version's match.
             if (GlobalConfig.ProgramVersion != GlobalConfig.GithubVersion)
             {
-                Processing processForm = new Processing();
-                processForm.Size = new Size(600, 600);
+                Processing processForm = new Processing
+                {
+                    Size = new Size(600, 600)
+                };
                 processForm.ChangeTitle("Update Available");
                 processForm.ChangeUpdatePanel(new Point(12, 52));
                 processForm.ChangeUpdatePanel(new Size(560, 370));
@@ -58,7 +61,7 @@ namespace FeBuddyWinFormUI
                         "Once the program has fully updated, it will restart.";
 
                     MessageBox.Show(updateInformationMessage);
-                    GlobalConfig.DownloadAssets();
+                    DownloadHelpers.DownloadAssets();
 
                     UpdateProgram();
                     StartNewVersion();
@@ -94,19 +97,19 @@ namespace FeBuddyWinFormUI
                 $"start \"\" \"%userprofile%\\AppData\\Local\\FE-BUDDY\\app-{GlobalConfig.GithubVersion}\\FE-BUDDY.exe\"\n";
             
             File.WriteAllText(filePath, writeMe);
-            int ExitCode;
-
             ProcessStartInfo ProcessInfo;
             Process Process;
 
-            ProcessInfo = new ProcessStartInfo("cmd.exe", "/c " + $"\"{GlobalConfig.tempPath}\\startNewVersion.bat\"");
-            ProcessInfo.CreateNoWindow = true;
-            ProcessInfo.UseShellExecute = false;
+            ProcessInfo = new ProcessStartInfo("cmd.exe", "/c " + $"\"{GlobalConfig.tempPath}\\startNewVersion.bat\"")
+            {
+                CreateNoWindow = true,
+                UseShellExecute = false
+            };
 
             Process = Process.Start(ProcessInfo);
             Process.WaitForExit();
 
-            ExitCode = Process.ExitCode;
+            _ = Process.ExitCode;
             Process.Close();
         }
     }

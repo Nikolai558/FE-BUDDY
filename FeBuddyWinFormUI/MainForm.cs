@@ -10,7 +10,8 @@ using FeBuddyLibrary;
 using FeBuddyLibrary.Models.MetaFileModels;
 using FeBuddyLibrary.DataAccess;
 using FeBuddyLibrary.Models;
- 
+using FeBuddyLibrary.Helpers;
+
 namespace FeBuddyWinFormUI
 {
     public partial class MainForm : Form
@@ -48,19 +49,19 @@ namespace FeBuddyWinFormUI
             filePathLabel.MaximumSize = new Size(257, 82);
         }
 
-        private void currentAiracSelection_CheckedChanged(object sender, EventArgs e)
+        private void CurrentAiracSelection_CheckedChanged(object sender, EventArgs e)
         {
             currentAiracSelection.Text = GlobalConfig.currentAiracDate;
             nextAiracSelection.Text = GlobalConfig.nextAiracDate;
         }
 
-        private void nextAiracSelection_CheckedChanged(object sender, EventArgs e)
+        private void NextAiracSelection_CheckedChanged(object sender, EventArgs e)
         {
             currentAiracSelection.Text = GlobalConfig.currentAiracDate;
             nextAiracSelection.Text = GlobalConfig.nextAiracDate;
         }
 
-        private void chooseDirButton_Click(object sender, EventArgs e)
+        private void ChooseDirButton_Click(object sender, EventArgs e)
         {
             FolderBrowserDialog outputDir = new FolderBrowserDialog();
 
@@ -73,7 +74,7 @@ namespace FeBuddyWinFormUI
             filePathLabel.MaximumSize = new Size(257, 82);
         }
 
-        private void startButton_Click(object sender, EventArgs e)
+        private void StartButton_Click(object sender, EventArgs e)
         {
             if (GlobalConfig.outputDirBase == null || GlobalConfig.outputDirBase == "")
             {
@@ -107,7 +108,7 @@ namespace FeBuddyWinFormUI
 
                 if (Directory.Exists(GlobalConfig.outputDirectory))
                 {
-                    GlobalConfig.outputDirectory += $"-{DateTime.Now.ToString("MMddHHmmss")}";
+                    GlobalConfig.outputDirectory += $"-{DateTime.Now:MMddHHmmss}";
                 }
 
                 GlobalConfig.outputDirectory += "\\";
@@ -118,15 +119,15 @@ namespace FeBuddyWinFormUI
 
                 if (Directory.Exists(GlobalConfig.outputDirectory))
                 {
-                    GlobalConfig.outputDirectory += $"-{DateTime.Now.ToString("MMddHHmmss")}";
+                    GlobalConfig.outputDirectory += $"-{DateTime.Now:MMddHHmmss}";
                 }
 
                 GlobalConfig.outputDirectory += "\\";
             }
 
-            GlobalConfig.CreateDirectories();
+            DirectoryHelpers.CreateDirectories();
 
-            GlobalConfig.WriteTestSctFile();
+            FileHelpers.WriteTestSctFile();
 
             menuStrip1.Visible = false;
             chooseDirButton.Enabled = false;
@@ -156,10 +157,10 @@ namespace FeBuddyWinFormUI
             processingDataLabel.Visible = true;
             processingDataLabel.Enabled = true;
 
-            startParsing();
+            StartParsing();
         }
 
-        private void exitButton_Click(object sender, EventArgs e)
+        private void ExitButton_Click(object sender, EventArgs e)
         {
             Application.Exit();
         }
@@ -188,7 +189,7 @@ namespace FeBuddyWinFormUI
             }
         }
 
-        private void startParsing()
+        private void StartParsing()
         {
             AdjustProcessingBox();
 
@@ -216,7 +217,7 @@ namespace FeBuddyWinFormUI
 
         private void Worker_StartParsingDoWork(object sender, DoWorkEventArgs e)
         {
-            GlobalConfig.CheckTempDir();
+            DirectoryHelpers.CheckTempDir();
 
             if (currentAiracSelection.Checked)
             {
@@ -231,10 +232,10 @@ namespace FeBuddyWinFormUI
             {
 
                 SetControlPropertyThreadSafe(processingDataLabel, "Text", "Downloading FAA Data");
-                GlobalConfig.DownloadAllFiles(GlobalConfig.airacEffectiveDate, AiracDateCycleModel.AllCycleDates[GlobalConfig.airacEffectiveDate], false);
+                DownloadHelpers.DownloadAllFiles(GlobalConfig.airacEffectiveDate, AiracDateCycleModel.AllCycleDates[GlobalConfig.airacEffectiveDate], false);
 
                 SetControlPropertyThreadSafe(processingDataLabel, "Text", "Unzipping Files");
-                GlobalConfig.UnzipAllDownloaded();
+                DirectoryHelpers.UnzipAllDownloaded();
 
                 SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Telephony");
                 GetTelephony Telephony = new GetTelephony();
@@ -257,7 +258,7 @@ namespace FeBuddyWinFormUI
                 ParseArb.ArbMain(GlobalConfig.airacEffectiveDate);
 
                 SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Airways");
-                GlobalConfig.CreateAwyGeomapHeadersAndEnding(true);
+                FileHelpers.CreateAwyGeomapHeadersAndEnding(true);
 
                 GetAwyData ParseAWY = new GetAwyData();
                 ParseAWY.AWYQuarterbackFunc(GlobalConfig.airacEffectiveDate);
@@ -265,16 +266,16 @@ namespace FeBuddyWinFormUI
                 SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing ATS Airways");
                 GetAtsAwyData ParseAts = new GetAtsAwyData();
                 ParseAts.AWYQuarterbackFunc(GlobalConfig.airacEffectiveDate);
-                GlobalConfig.CreateAwyGeomapHeadersAndEnding(false);
+                FileHelpers.CreateAwyGeomapHeadersAndEnding(false);
 
                 SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing NDBs");
                 GetNavData ParseNDBs = new GetNavData();
                 ParseNDBs.NAVQuarterbackFunc(GlobalConfig.airacEffectiveDate, GlobalConfig.facilityID);
 
                 SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Waypoints XML");
-                GlobalConfig.WriteWaypointsXML();
-                GlobalConfig.AppendCommentToXML(GlobalConfig.airacEffectiveDate);
-                GlobalConfig.WriteNavXmlOutput();
+                FileHelpers.WriteWaypointsXML();
+                FileHelpers.AppendCommentToXML(GlobalConfig.airacEffectiveDate);
+                FileHelpers.WriteNavXmlOutput();
 
                 SetControlPropertyThreadSafe(processingDataLabel, "Text", "Checking Alias Commands");
                 AliasCheck aliasCheck = new AliasCheck();
@@ -283,10 +284,10 @@ namespace FeBuddyWinFormUI
             else 
             {
                 SetControlPropertyThreadSafe(processingDataLabel, "Text", "Downloading FAA Data");
-                GlobalConfig.DownloadAllFiles(GlobalConfig.airacEffectiveDate, AiracDateCycleModel.AllCycleDates[GlobalConfig.airacEffectiveDate]);
+                DownloadHelpers.DownloadAllFiles(GlobalConfig.airacEffectiveDate, AiracDateCycleModel.AllCycleDates[GlobalConfig.airacEffectiveDate]);
 
                 SetControlPropertyThreadSafe(processingDataLabel, "Text", "Unzipping Files");
-                GlobalConfig.UnzipAllDownloaded();
+                DirectoryHelpers.UnzipAllDownloaded();
 
                 SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Telephony");
                 GetTelephony Telephony = new GetTelephony();
@@ -317,7 +318,7 @@ namespace FeBuddyWinFormUI
                 ParseArb.ArbMain(GlobalConfig.airacEffectiveDate);
 
                 SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Airways");
-                GlobalConfig.CreateAwyGeomapHeadersAndEnding(true);
+                FileHelpers.CreateAwyGeomapHeadersAndEnding(true);
 
                 GetAwyData ParseAWY = new GetAwyData();
                 ParseAWY.AWYQuarterbackFunc(GlobalConfig.airacEffectiveDate);
@@ -325,16 +326,16 @@ namespace FeBuddyWinFormUI
                 SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing ATS Airways");
                 GetAtsAwyData ParseAts = new GetAtsAwyData();
                 ParseAts.AWYQuarterbackFunc(GlobalConfig.airacEffectiveDate);
-                GlobalConfig.CreateAwyGeomapHeadersAndEnding(false);
+                FileHelpers.CreateAwyGeomapHeadersAndEnding(false);
 
                 SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing NDBs");
                 GetNavData ParseNDBs = new GetNavData();
                 ParseNDBs.NAVQuarterbackFunc(GlobalConfig.airacEffectiveDate, GlobalConfig.facilityID);
 
                 SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Waypoints XML");
-                GlobalConfig.WriteWaypointsXML();
-                GlobalConfig.AppendCommentToXML(GlobalConfig.airacEffectiveDate);
-                GlobalConfig.WriteNavXmlOutput();
+                FileHelpers.WriteWaypointsXML();
+                FileHelpers.AppendCommentToXML(GlobalConfig.airacEffectiveDate);
+                FileHelpers.WriteNavXmlOutput();
 
                 SetControlPropertyThreadSafe(processingDataLabel, "Text", "Checking Alias Commands");
                 AliasCheck aliasCheck = new AliasCheck();
@@ -356,7 +357,7 @@ namespace FeBuddyWinFormUI
             exitButton.Enabled = true;
         }
 
-        private void getAiracDate() 
+        private void GetAiracDate() 
         {
             var Worker = new BackgroundWorker();
             Worker.RunWorkerCompleted += Worker_RunWorkerCompleted;
@@ -367,7 +368,7 @@ namespace FeBuddyWinFormUI
 
         private void MainForm_Shown(object sender, EventArgs e)
         {
-            getAiracDate();
+            GetAiracDate();
             currentAiracSelection.Text = GlobalConfig.currentAiracDate;
             nextAiracSelection.Text = GlobalConfig.nextAiracDate;
         }
@@ -376,9 +377,9 @@ namespace FeBuddyWinFormUI
         {
             if (GlobalConfig.nextAiracDate == null)
             {
-                GlobalConfig.GetAiracDateFromFAA();
+                WebHelpers.GetAiracDateFromFAA();
             }
-            nextAiracAvailable = GlobalConfig.GetMetaUrlResponse();
+            nextAiracAvailable = WebHelpers.GetMetaUrlResponse();
         }
 
         private void Worker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
@@ -410,14 +411,14 @@ namespace FeBuddyWinFormUI
             startGroupBox.Visible = true;
         }
 
-        private void instructionsToolStripMenuItem_Click(object sender, EventArgs e)
+        private void InstructionsToolStripMenuItem_Click(object sender, EventArgs e)
         {
 
             Process.Start("https://docs.google.com/presentation/d/e/2PACX-1vRMd6PIRrj0lPb4sAi9KB7iM3u5zn0dyUVLqEcD9m2e71nf0UPyEmkOs4ZwYsQdl7smopjdvw_iWEyP/embed");
 
         }
 
-        private void creditsToolStripMenuItem_Click(object sender, EventArgs e)
+        private void CreditsToolStripMenuItem_Click(object sender, EventArgs e)
         {
             Process.Start("https://github.com/Nikolai558/FE-BUDDY/blob/releases/Credits.md");
             // CreditsForm frm = new CreditsForm();
@@ -437,12 +438,12 @@ namespace FeBuddyWinFormUI
             roadmapToolStripMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
         }
 
-        private void changeLogToolStripMenuItem_Click(object sender, EventArgs e)
+        private void ChangeLogToolStripMenuItem_Click(object sender, EventArgs e)
         {
             Process.Start("https://github.com/Nikolai558/FE-BUDDY/blob/releases/ChangeLog.md");
         }
 
-        private void nextAiracSelection_Click(object sender, EventArgs e)
+        private void NextAiracSelection_Click(object sender, EventArgs e)
         {
             if (!nextAiracAvailable)
             {
@@ -451,7 +452,7 @@ namespace FeBuddyWinFormUI
             }
         }
 
-        private void uninstallToolStripMenuItem_Click(object sender, EventArgs e)
+        private void UninstallToolStripMenuItem_Click(object sender, EventArgs e)
         {
             DialogResult dialogResult = MessageBox.Show("Would you like to UNINSTALL FE-BUDDY?", "Uninstall FE-BUDDY", MessageBoxButtons.YesNo);
             if (dialogResult == DialogResult.Yes)
@@ -554,9 +555,11 @@ namespace FeBuddyWinFormUI
                 ProcessStartInfo ProcessInfo;
                 Process Process;
 
-                ProcessInfo = new ProcessStartInfo("cmd.exe", "/c " + $"\"{Path.GetTempPath()}UNINSTALL_START_FE-BUDDY.bat\"");
-                ProcessInfo.CreateNoWindow = false;
-                ProcessInfo.UseShellExecute = false;
+                ProcessInfo = new ProcessStartInfo("cmd.exe", "/c " + $"\"{Path.GetTempPath()}UNINSTALL_START_FE-BUDDY.bat\"")
+                {
+                    CreateNoWindow = false,
+                    UseShellExecute = false
+                };
 
                 Process = Process.Start(ProcessInfo);
 
@@ -566,17 +569,17 @@ namespace FeBuddyWinFormUI
             }
         }
 
-        private void facilityIdCombobox_SelectedIndexChanged(object sender, EventArgs e)
+        private void FacilityIdCombobox_SelectedIndexChanged(object sender, EventArgs e)
         {
             GlobalConfig.facilityID = facilityIdCombobox.SelectedItem.ToString();
         }
 
-        private void fAQToolStripMenuItem_Click(object sender, EventArgs e)
+        private void FAQToolStripMenuItem_Click(object sender, EventArgs e)
         {
             Process.Start("https://docs.google.com/presentation/d/e/2PACX-1vSlhz1DhDwZ-43BY4Q2vg-ff0QBGssxpmv4-nhZlz9LpGJvWjqLsHVaQwwsV1AGMWFFF_x_j_b3wTBO/embed");
         }
 
-        private void roadmapToolStripMenuItem_Click(object sender, EventArgs e)
+        private void RoadmapToolStripMenuItem_Click(object sender, EventArgs e)
         {
             Process.Start("https://github.com/Nikolai558/FE-BUDDY/blob/releases/ROADMAP.md");
         }

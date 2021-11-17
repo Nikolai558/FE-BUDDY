@@ -8,12 +8,14 @@ using System.Threading.Tasks;
 
 namespace FeBuddyLibrary.Helpers
 {
-    public class BatchFileHelpers
+    public static class BatchFileHelpers
     {
+        private static string ProgramTempPath { get; } = GlobalConfig.tempPath;
+
         public static void CreateCurlBatchFile(string name, string url, string outputFileName)
         {
-            string filePath = $"{GlobalConfig.tempPath}\\{name}";
-            string writeMe = $"cd /d \"{GlobalConfig.tempPath}\"\n" +
+            string filePath = $"{ProgramTempPath}\\{name}";
+            string writeMe = $"cd /d \"{ProgramTempPath}\"\n" +
                 $"curl \"{url}\" > {outputFileName}";
             File.WriteAllText(filePath, writeMe);
         }
@@ -23,7 +25,7 @@ namespace FeBuddyLibrary.Helpers
             ProcessStartInfo ProcessInfo;
             Process Process;
 
-            ProcessInfo = new ProcessStartInfo("cmd.exe", "/c " + $"\"{GlobalConfig.tempPath}\\{batchFileName}\"")
+            ProcessInfo = new ProcessStartInfo("cmd.exe", "/c " + $"\"{ProgramTempPath}\\{batchFileName}\"")
             {
                 CreateNoWindow = true,
                 UseShellExecute = false

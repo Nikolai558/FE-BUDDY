@@ -1,4 +1,5 @@
-﻿using FeBuddyLibrary.Models;
+﻿using FeBuddyLibrary.Helpers;
+using FeBuddyLibrary.Models;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -158,7 +159,7 @@ namespace FeBuddyLibrary.DataAccess
                 // Metar Id and Airport Code (FAA or ICAO) matches Exactly.
                 if (aptInfo.Keys.Contains(metar_id))
                 {
-                    labelLineToBeAdded = $"\"{metar_id} {aptInfo[metar_id][0].Replace('"', '-')}\" {GlobalConfig.CreateDMS(stationInfo[metar_id][0], true)} {GlobalConfig.CreateDMS(stationInfo[metar_id][1], false)} 11579568";
+                    labelLineToBeAdded = $"\"{metar_id} {aptInfo[metar_id][0].Replace('"', '-')}\" {LatLonHelpers.CreateDMS(stationInfo[metar_id][0], true)} {LatLonHelpers.CreateDMS(stationInfo[metar_id][1], false)} 11579568";
                     sb.AppendLine(labelLineToBeAdded);
 
                 }
@@ -184,7 +185,7 @@ namespace FeBuddyLibrary.DataAccess
 
                             if (station_lat == airport_lat && station_lon == airport_lon)
                             {
-                                labelLineToBeAdded = $"\"{metar_id} {aptInfo[metar_id.Substring(1)][0].Replace('"', '-')}\" {GlobalConfig.CreateDMS(stationInfo[metar_id][0], true)} {GlobalConfig.CreateDMS(stationInfo[metar_id][1], false)} 11579568";
+                                labelLineToBeAdded = $"\"{metar_id} {aptInfo[metar_id.Substring(1)][0].Replace('"', '-')}\" {LatLonHelpers.CreateDMS(stationInfo[metar_id][0], true)} {LatLonHelpers.CreateDMS(stationInfo[metar_id][1], false)} 11579568";
                                 sb.AppendLine(labelLineToBeAdded);
                                 break;
                             }
@@ -231,7 +232,7 @@ namespace FeBuddyLibrary.DataAccess
 
                         if (splitValue.Count >= 3)
                         {
-                            string printString = $"            <Element xsi:type=\"Text\" Filters=\"\" Lat=\"{GlobalConfig.CreateDecFormat(splitValue[0], true)}\" Lon=\"{GlobalConfig.CreateDecFormat(splitValue[1], true)}\" Lines={line.Substring(0, line.LastIndexOf('"') + 1)} />";
+                            string printString = $"            <Element xsi:type=\"Text\" Filters=\"\" Lat=\"{LatLonHelpers.CreateDecFormat(splitValue[0], true)}\" Lon=\"{LatLonHelpers.CreateDecFormat(splitValue[1], true)}\" Lines={line.Substring(0, line.LastIndexOf('"') + 1)} />";
                             sb.AppendLine(printString);
                         }
                     }
@@ -269,18 +270,18 @@ namespace FeBuddyLibrary.DataAccess
                         Type = line.Substring(14, 13).Trim(removeChars),
                         Id = line.Substring(27, 4).Trim(removeChars),
                         Name = line.Substring(133, 50).Trim(removeChars),
-                        Lat = GlobalConfig.CorrectLatLon(line.Substring(523, 15).Trim(removeChars), true, GlobalConfig.Convert),
+                        Lat = LatLonHelpers.CorrectLatLon(line.Substring(523, 15).Trim(removeChars), true, GlobalConfig.Convert),
                         Elv = Math.Round(double.Parse(line.Substring(578, 7).Trim(removeChars)), 0).ToString(),
                         ResArtcc = line.Substring(674, 4).Trim(removeChars),
                         Status = line.Substring(840, 2).Trim(removeChars),
                         Twr = line.Substring(980, 1).Trim(removeChars),
                         Ctaf = line.Substring(988, 7).Trim(removeChars),
                         Icao = line.Substring(1210, 7).Trim(removeChars),
-                        Lon = GlobalConfig.CorrectLatLon(line.Substring(550, 15).Trim(removeChars), false, GlobalConfig.Convert)
+                        Lon = LatLonHelpers.CorrectLatLon(line.Substring(550, 15).Trim(removeChars), false, GlobalConfig.Convert)
                     };
 
-                    airport.Lat_Dec = GlobalConfig.CreateDecFormat(airport.Lat, true);
-                    airport.Lon_Dec = GlobalConfig.CreateDecFormat(airport.Lon, true);
+                    airport.Lat_Dec = LatLonHelpers.CreateDecFormat(airport.Lat, true);
+                    airport.Lon_Dec = LatLonHelpers.CreateDecFormat(airport.Lon, true);
                     airport.magVariation = line.Substring(586, 3).Trim();
 
                     if (airport.magVariation != string.Empty)
@@ -336,14 +337,14 @@ namespace FeBuddyLibrary.DataAccess
 
                     if (line.Substring(88, 15).Trim() != string.Empty && line.Substring(115, 15).Trim() != string.Empty)
                     {
-                        rwy.BaseStartLat = GlobalConfig.CorrectLatLon(line.Substring(88, 15).Trim(), true, GlobalConfig.Convert);
-                        rwy.BaseStartLon = GlobalConfig.CorrectLatLon(line.Substring(115, 15).Trim(), false, GlobalConfig.Convert);
+                        rwy.BaseStartLat = LatLonHelpers.CorrectLatLon(line.Substring(88, 15).Trim(), true, GlobalConfig.Convert);
+                        rwy.BaseStartLon = LatLonHelpers.CorrectLatLon(line.Substring(115, 15).Trim(), false, GlobalConfig.Convert);
                     }
 
                     if (line.Substring(310, 15).Trim() != string.Empty && line.Substring(337, 15).Trim() != string.Empty)
                     {
-                        rwy.BaseEndLat = GlobalConfig.CorrectLatLon(line.Substring(310, 15).Trim(), true, GlobalConfig.Convert);
-                        rwy.BaseEndLon = GlobalConfig.CorrectLatLon(line.Substring(337, 15).Trim(), false, GlobalConfig.Convert);
+                        rwy.BaseEndLat = LatLonHelpers.CorrectLatLon(line.Substring(310, 15).Trim(), true, GlobalConfig.Convert);
+                        rwy.BaseEndLon = LatLonHelpers.CorrectLatLon(line.Substring(337, 15).Trim(), false, GlobalConfig.Convert);
                     }
 
                     airport.Runways.Add(rwy);
@@ -424,13 +425,13 @@ namespace FeBuddyLibrary.DataAccess
                             Width = runwayModel.RwyWidth,
                             StartLoc = new StartLoc
                             {
-                                Lon = GlobalConfig.CreateDecFormat(runwayModel.BaseStartLon, true),
-                                Lat = GlobalConfig.CreateDecFormat(runwayModel.BaseStartLat, true)
+                                Lon = LatLonHelpers.CreateDecFormat(runwayModel.BaseStartLon, true),
+                                Lat = LatLonHelpers.CreateDecFormat(runwayModel.BaseStartLat, true)
                             },
                             EndLoc = new EndLoc
                             {
-                                Lon = GlobalConfig.CreateDecFormat(runwayModel.BaseEndLon, true),
-                                Lat = GlobalConfig.CreateDecFormat(runwayModel.BaseEndLat, true)
+                                Lon = LatLonHelpers.CreateDecFormat(runwayModel.BaseEndLon, true),
+                                Lat = LatLonHelpers.CreateDecFormat(runwayModel.BaseEndLat, true)
                             }
                         };
 
@@ -442,13 +443,13 @@ namespace FeBuddyLibrary.DataAccess
                             Width = runwayModel.RwyWidth,
                             StartLoc = new StartLoc
                             {
-                                Lon = GlobalConfig.CreateDecFormat(runwayModel.RecStartLon, true),
-                                Lat = GlobalConfig.CreateDecFormat(runwayModel.RecStartLat, true)
+                                Lon = LatLonHelpers.CreateDecFormat(runwayModel.RecStartLon, true),
+                                Lat = LatLonHelpers.CreateDecFormat(runwayModel.RecStartLat, true)
                             },
                             EndLoc = new EndLoc
                             {
-                                Lon = GlobalConfig.CreateDecFormat(runwayModel.RecEndLon, true),
-                                Lat = GlobalConfig.CreateDecFormat(runwayModel.RecEndLat, true)
+                                Lon = LatLonHelpers.CreateDecFormat(runwayModel.RecEndLon, true),
+                                Lat = LatLonHelpers.CreateDecFormat(runwayModel.RecEndLat, true)
                             }
                         };
 

@@ -1,4 +1,5 @@
-﻿using FeBuddyLibrary.Models;
+﻿using FeBuddyLibrary.Helpers;
+using FeBuddyLibrary.Models;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
@@ -90,12 +91,12 @@ namespace FeBuddyLibrary.DataAccess
                     if (awyPoint.Name.IndexOf("BORDER", 0, awyPoint.Name.Length) == -1)
                     {
                         // Set the Lat Lon
-                        awyPoint.Lat = GlobalConfig.CorrectLatLon(line.Substring(83, 14).Trim(), true, GlobalConfig.Convert);
-                        awyPoint.Lon = GlobalConfig.CorrectLatLon(line.Substring(97, 14).Trim(), false, GlobalConfig.Convert);
+                        awyPoint.Lat = LatLonHelpers.CorrectLatLon(line.Substring(83, 14).Trim(), true, GlobalConfig.Convert);
+                        awyPoint.Lon = LatLonHelpers.CorrectLatLon(line.Substring(97, 14).Trim(), false, GlobalConfig.Convert);
 
                         // Set the Decimal Version of Lat and Lon
-                        awyPoint.Dec_Lat = GlobalConfig.CreateDecFormat(awyPoint.Lat, true);
-                        awyPoint.Dec_Lon = GlobalConfig.CreateDecFormat(awyPoint.Lon, true);
+                        awyPoint.Dec_Lat = LatLonHelpers.CreateDecFormat(awyPoint.Lat, true);
+                        awyPoint.Dec_Lon = LatLonHelpers.CreateDecFormat(awyPoint.Lon, true);
 
                         // Add this point to our List
                         allAWYPoints.Add(awyPoint);

@@ -1,4 +1,5 @@
-﻿using FeBuddyLibrary.Models;
+﻿using FeBuddyLibrary.Helpers;
+using FeBuddyLibrary.Models;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
@@ -38,8 +39,8 @@ namespace FeBuddyLibrary.DataAccess
                     FixModel individualFixData = new FixModel
                     {
                         Id = line.Substring(4, 5).Trim(removeChars),
-                        Lat = GlobalConfig.CorrectLatLon(line.Substring(66, 14).Trim(removeChars), true, GlobalConfig.Convert),
-                        Lon = GlobalConfig.CorrectLatLon(line.Substring(80, 14).Trim(removeChars), false, GlobalConfig.Convert),
+                        Lat = LatLonHelpers.CorrectLatLon(line.Substring(66, 14).Trim(removeChars), true, GlobalConfig.Convert),
+                        Lon = LatLonHelpers.CorrectLatLon(line.Substring(80, 14).Trim(removeChars), false, GlobalConfig.Convert),
                         Catagory = line.Substring(94, 3).Trim(removeChars),
                         Use = line.Substring(213, 15).Trim(removeChars),
                         HiArtcc = line.Substring(233, 4).Trim(removeChars),
@@ -47,8 +48,8 @@ namespace FeBuddyLibrary.DataAccess
                     };
 
                     // Set the Decimal Format for the Lat and Lon
-                    individualFixData.Lat_Dec = GlobalConfig.CreateDecFormat(individualFixData.Lat, true);
-                    individualFixData.Lon_Dec = GlobalConfig.CreateDecFormat(individualFixData.Lon, true);
+                    individualFixData.Lat_Dec = LatLonHelpers.CreateDecFormat(individualFixData.Lat, true);
+                    individualFixData.Lon_Dec = LatLonHelpers.CreateDecFormat(individualFixData.Lon, true);
 
                     // Add this FIX MODEL to the list of all Fixes.
                     allFixesInData.Add(individualFixData);

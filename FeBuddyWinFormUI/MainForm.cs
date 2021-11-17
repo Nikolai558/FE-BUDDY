@@ -10,7 +10,8 @@ using FeBuddyLibrary;
 using FeBuddyLibrary.Models.MetaFileModels;
 using FeBuddyLibrary.DataAccess;
 using FeBuddyLibrary.Models;
- 
+using FeBuddyLibrary.Helpers;
+
 namespace FeBuddyWinFormUI
 {
     public partial class MainForm : Form
@@ -124,9 +125,9 @@ namespace FeBuddyWinFormUI
                 GlobalConfig.outputDirectory += "\\";
             }
 
-            GlobalConfig.CreateDirectories();
+            DirectoryHelpers.CreateDirectories();
 
-            GlobalConfig.WriteTestSctFile();
+            FileHelpers.WriteTestSctFile();
 
             menuStrip1.Visible = false;
             chooseDirButton.Enabled = false;
@@ -216,7 +217,7 @@ namespace FeBuddyWinFormUI
 
         private void Worker_StartParsingDoWork(object sender, DoWorkEventArgs e)
         {
-            GlobalConfig.CheckTempDir();
+            DirectoryHelpers.CheckTempDir();
 
             if (currentAiracSelection.Checked)
             {
@@ -231,10 +232,10 @@ namespace FeBuddyWinFormUI
             {
 
                 SetControlPropertyThreadSafe(processingDataLabel, "Text", "Downloading FAA Data");
-                GlobalConfig.DownloadAllFiles(GlobalConfig.airacEffectiveDate, AiracDateCycleModel.AllCycleDates[GlobalConfig.airacEffectiveDate], false);
+                DownloadHelpers.DownloadAllFiles(GlobalConfig.airacEffectiveDate, AiracDateCycleModel.AllCycleDates[GlobalConfig.airacEffectiveDate], false);
 
                 SetControlPropertyThreadSafe(processingDataLabel, "Text", "Unzipping Files");
-                GlobalConfig.UnzipAllDownloaded();
+                DirectoryHelpers.UnzipAllDownloaded();
 
                 SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Telephony");
                 GetTelephony Telephony = new GetTelephony();
@@ -257,7 +258,7 @@ namespace FeBuddyWinFormUI
                 ParseArb.ArbMain(GlobalConfig.airacEffectiveDate);
 
                 SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Airways");
-                GlobalConfig.CreateAwyGeomapHeadersAndEnding(true);
+                FileHelpers.CreateAwyGeomapHeadersAndEnding(true);
 
                 GetAwyData ParseAWY = new GetAwyData();
                 ParseAWY.AWYQuarterbackFunc(GlobalConfig.airacEffectiveDate);
@@ -265,16 +266,16 @@ namespace FeBuddyWinFormUI
                 SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing ATS Airways");
                 GetAtsAwyData ParseAts = new GetAtsAwyData();
                 ParseAts.AWYQuarterbackFunc(GlobalConfig.airacEffectiveDate);
-                GlobalConfig.CreateAwyGeomapHeadersAndEnding(false);
+                FileHelpers.CreateAwyGeomapHeadersAndEnding(false);
 
                 SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing NDBs");
                 GetNavData ParseNDBs = new GetNavData();
                 ParseNDBs.NAVQuarterbackFunc(GlobalConfig.airacEffectiveDate, GlobalConfig.facilityID);
 
                 SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Waypoints XML");
-                GlobalConfig.WriteWaypointsXML();
-                GlobalConfig.AppendCommentToXML(GlobalConfig.airacEffectiveDate);
-                GlobalConfig.WriteNavXmlOutput();
+                FileHelpers.WriteWaypointsXML();
+                FileHelpers.AppendCommentToXML(GlobalConfig.airacEffectiveDate);
+                FileHelpers.WriteNavXmlOutput();
 
                 SetControlPropertyThreadSafe(processingDataLabel, "Text", "Checking Alias Commands");
                 AliasCheck aliasCheck = new AliasCheck();
@@ -283,10 +284,10 @@ namespace FeBuddyWinFormUI
             else 
             {
                 SetControlPropertyThreadSafe(processingDataLabel, "Text", "Downloading FAA Data");
-                GlobalConfig.DownloadAllFiles(GlobalConfig.airacEffectiveDate, AiracDateCycleModel.AllCycleDates[GlobalConfig.airacEffectiveDate]);
+                DownloadHelpers.DownloadAllFiles(GlobalConfig.airacEffectiveDate, AiracDateCycleModel.AllCycleDates[GlobalConfig.airacEffectiveDate]);
 
                 SetControlPropertyThreadSafe(processingDataLabel, "Text", "Unzipping Files");
-                GlobalConfig.UnzipAllDownloaded();
+                DirectoryHelpers.UnzipAllDownloaded();
 
                 SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Telephony");
                 GetTelephony Telephony = new GetTelephony();
@@ -317,7 +318,7 @@ namespace FeBuddyWinFormUI
                 ParseArb.ArbMain(GlobalConfig.airacEffectiveDate);
 
                 SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Airways");
-                GlobalConfig.CreateAwyGeomapHeadersAndEnding(true);
+                FileHelpers.CreateAwyGeomapHeadersAndEnding(true);
 
                 GetAwyData ParseAWY = new GetAwyData();
                 ParseAWY.AWYQuarterbackFunc(GlobalConfig.airacEffectiveDate);
@@ -325,16 +326,16 @@ namespace FeBuddyWinFormUI
                 SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing ATS Airways");
                 GetAtsAwyData ParseAts = new GetAtsAwyData();
                 ParseAts.AWYQuarterbackFunc(GlobalConfig.airacEffectiveDate);
-                GlobalConfig.CreateAwyGeomapHeadersAndEnding(false);
+                FileHelpers.CreateAwyGeomapHeadersAndEnding(false);
 
                 SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing NDBs");
                 GetNavData ParseNDBs = new GetNavData();
                 ParseNDBs.NAVQuarterbackFunc(GlobalConfig.airacEffectiveDate, GlobalConfig.facilityID);
 
                 SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Waypoints XML");
-                GlobalConfig.WriteWaypointsXML();
-                GlobalConfig.AppendCommentToXML(GlobalConfig.airacEffectiveDate);
-                GlobalConfig.WriteNavXmlOutput();
+                FileHelpers.WriteWaypointsXML();
+                FileHelpers.AppendCommentToXML(GlobalConfig.airacEffectiveDate);
+                FileHelpers.WriteNavXmlOutput();
 
                 SetControlPropertyThreadSafe(processingDataLabel, "Text", "Checking Alias Commands");
                 AliasCheck aliasCheck = new AliasCheck();
@@ -376,9 +377,9 @@ namespace FeBuddyWinFormUI
         {
             if (GlobalConfig.nextAiracDate == null)
             {
-                GlobalConfig.GetAiracDateFromFAA();
+                WebHelpers.GetAiracDateFromFAA();
             }
-            nextAiracAvailable = GlobalConfig.GetMetaUrlResponse();
+            nextAiracAvailable = WebHelpers.GetMetaUrlResponse();
         }
 
         private void Worker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)

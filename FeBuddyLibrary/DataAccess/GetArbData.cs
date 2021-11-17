@@ -1,4 +1,5 @@
-﻿using FeBuddyLibrary.Models;
+﻿using FeBuddyLibrary.Helpers;
+using FeBuddyLibrary.Models;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -35,8 +36,8 @@ namespace FeBuddyLibrary.DataAccess
                     Identifier = line.Substring(0, 4).Trim(),
                     CenterName = line.Substring(12, 40).Trim(),
                     DecodeName = line.Substring(52, 10).Trim(),
-                    Lat = GlobalConfig.CorrectLatLon(line.Substring(62, 14).Trim(), true, GlobalConfig.Convert),
-                    Lon = GlobalConfig.CorrectLatLon(line.Substring(76, 14).Trim(), false, GlobalConfig.Convert),
+                    Lat = LatLonHelpers.CorrectLatLon(line.Substring(62, 14).Trim(), true, GlobalConfig.Convert),
+                    Lon = LatLonHelpers.CorrectLatLon(line.Substring(76, 14).Trim(), false, GlobalConfig.Convert),
                     Description = line.Substring(90, 300).Trim(),
                     Sequence = line.Substring(390, 6).Trim(),
                     Legal = line.Substring(396, 1).Trim()

@@ -1,4 +1,5 @@
 ﻿using FeBuddyLibrary;
+using FeBuddyLibrary.Helpers;
 using Squirrel;
 using System;
 using System.Collections.Generic;
@@ -19,11 +20,11 @@ namespace FeBuddyWinFormUI
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
 
-            GlobalConfig.CheckTempDir();
+            DirectoryHelpers.CheckTempDir();
             // API CALL TO GITHUB, WARNING ONLY 60 PER HOUR IS ALLOWED, WILL BREAK IF WE DO MORE!
             try
             {
-                GlobalConfig.UpdateCheck();
+                WebHelpers.UpdateCheck();
             }
             catch (Exception)
             {
@@ -60,7 +61,7 @@ namespace FeBuddyWinFormUI
                         "Once the program has fully updated, it will restart.";
 
                     MessageBox.Show(updateInformationMessage);
-                    GlobalConfig.DownloadAssets();
+                    DownloadHelpers.DownloadAssets();
 
                     UpdateProgram();
                     StartNewVersion();

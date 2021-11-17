@@ -1,4 +1,5 @@
-﻿using FeBuddyLibrary.Models;
+﻿using FeBuddyLibrary.Helpers;
+using FeBuddyLibrary.Models;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -120,11 +121,11 @@ namespace FeBuddyLibrary.DataAccess
                     {
                         if (point.Type == "S")
                         {
-                            allStarGeoMaps.AppendLine($"            <Element xsi:type=\"Line\" Filters=\"\" StartLat=\"{GlobalConfig.CreateDecFormat(prevPoint.Lat, true)}\" StartLon=\"{GlobalConfig.CreateDecFormat(prevPoint.Lon, true)}\" EndLat=\"{GlobalConfig.CreateDecFormat(point.Lat, true)}\" EndLon=\"{GlobalConfig.CreateDecFormat(point.Lon, true)}\" />");
+                            allStarGeoMaps.AppendLine($"            <Element xsi:type=\"Line\" Filters=\"\" StartLat=\"{LatLonHelpers.CreateDecFormat(prevPoint.Lat, true)}\" StartLon=\"{LatLonHelpers.CreateDecFormat(prevPoint.Lon, true)}\" EndLat=\"{LatLonHelpers.CreateDecFormat(point.Lat, true)}\" EndLon=\"{LatLonHelpers.CreateDecFormat(point.Lon, true)}\" />");
                         }
                         else
                         {
-                            allDpGeoMaps.AppendLine($"            <Element xsi:type=\"Line\" Filters=\"\" StartLat=\"{GlobalConfig.CreateDecFormat(prevPoint.Lat, true)}\" StartLon=\"{GlobalConfig.CreateDecFormat(prevPoint.Lon, true)}\" EndLat=\"{GlobalConfig.CreateDecFormat(point.Lat, true)}\" EndLon=\"{GlobalConfig.CreateDecFormat(point.Lon, true)}\" />");
+                            allDpGeoMaps.AppendLine($"            <Element xsi:type=\"Line\" Filters=\"\" StartLat=\"{LatLonHelpers.CreateDecFormat(prevPoint.Lat, true)}\" StartLon=\"{LatLonHelpers.CreateDecFormat(prevPoint.Lon, true)}\" EndLat=\"{LatLonHelpers.CreateDecFormat(point.Lat, true)}\" EndLon=\"{LatLonHelpers.CreateDecFormat(point.Lon, true)}\" />");
                         }
 
                         prevPoint = point;

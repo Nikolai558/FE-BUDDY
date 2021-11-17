@@ -60,6 +60,13 @@
     <Compile Include="DataAccess\GetTelephony.cs" />
     <Compile Include="DataAccess\PublicationParser.cs" />
     <Compile Include="GlobalConfig.cs" />
+    <Compile Include="Helpers\BatchFileHelpers.cs" />
+    <Compile Include="Helpers\DirectoryHelpers.cs" />
+    <Compile Include="Helpers\DownloadHelpers.cs" />
+    <Compile Include="Helpers\FileHelpers.cs" />
+    <Compile Include="Helpers\LatLonHelpers.cs" />
+    <Compile Include="Helpers\MessageBoxHelpers.cs" />
+    <Compile Include="Helpers\WebHelpers.cs" />
     <Compile Include="Models\Airport.cs" />
     <Compile Include="Models\AirwayModel.cs" />
     <Compile Include="Models\AliasCheck.cs" />
@@ -91,5 +98,6 @@
   <ItemGroup>
     <Content Include="FE_BUDDY_icon.ico" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

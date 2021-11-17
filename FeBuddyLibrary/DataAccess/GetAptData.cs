@@ -158,7 +158,7 @@ namespace FeBuddyLibrary.DataAccess
                 // Metar Id and Airport Code (FAA or ICAO) matches Exactly.
                 if (aptInfo.Keys.Contains(metar_id))
                 {
-                    labelLineToBeAdded = $"\"{metar_id} {aptInfo[metar_id][0].Replace('"', '-')}\" {GlobalConfig.createDMS(stationInfo[metar_id][0], true)} {GlobalConfig.createDMS(stationInfo[metar_id][1], false)} 11579568";
+                    labelLineToBeAdded = $"\"{metar_id} {aptInfo[metar_id][0].Replace('"', '-')}\" {GlobalConfig.CreateDMS(stationInfo[metar_id][0], true)} {GlobalConfig.CreateDMS(stationInfo[metar_id][1], false)} 11579568";
                     sb.AppendLine(labelLineToBeAdded);
 
                 }
@@ -184,7 +184,7 @@ namespace FeBuddyLibrary.DataAccess
 
                             if (station_lat == airport_lat && station_lon == airport_lon)
                             {
-                                labelLineToBeAdded = $"\"{metar_id} {aptInfo[metar_id.Substring(1)][0].Replace('"', '-')}\" {GlobalConfig.createDMS(stationInfo[metar_id][0], true)} {GlobalConfig.createDMS(stationInfo[metar_id][1], false)} 11579568";
+                                labelLineToBeAdded = $"\"{metar_id} {aptInfo[metar_id.Substring(1)][0].Replace('"', '-')}\" {GlobalConfig.CreateDMS(stationInfo[metar_id][0], true)} {GlobalConfig.CreateDMS(stationInfo[metar_id][1], false)} 11579568";
                                 sb.AppendLine(labelLineToBeAdded);
                                 break;
                             }

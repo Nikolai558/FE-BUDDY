@@ -70,7 +70,7 @@ namespace FeBuddyLibrary
             string nextUrl = $"https://aeronav.faa.gov/d-tpp/{AiracDateCycleModel.AllCycleDates[nextAiracDate]}/xml_data/d-tpp_Metafile.xml";
             //string testUrl = $"https://aeronav.faa.gov/d-tpp/2201/xml_data/d-tpp_Metafile.xml";
 
-            HttpStatusCode result = default(HttpStatusCode);
+            HttpStatusCode result;
 
             try
             {
@@ -115,14 +115,6 @@ namespace FeBuddyLibrary
             {
                 var client = new WebClient();
                 client.DownloadFile(asset.DownloadURL, $"{tempPath}\\{asset.Name}");
-            }
-        }
-
-        public static void CheckTempDir(bool onlyCreateTempFolder)
-        {
-            if (!Directory.Exists(tempPath))
-            {
-                Directory.CreateDirectory(tempPath);
             }
         }
 
@@ -313,7 +305,7 @@ namespace FeBuddyLibrary
         public static string CorrectLatLon(string value, bool Lat, bool ConvertEast)
         {
             // Valid format is N000.00.00.000 W000.00.000
-            string correctedValue = "";
+            string correctedValue;
 
             // Split the value based on these char
             char[] splitValue = new char[] { '.', '-' };
@@ -435,7 +427,7 @@ namespace FeBuddyLibrary
 
                 newDecForm = (newDecForm + 180) * -1;
 
-                correctedValue = createDMS(newDecForm, false);
+                correctedValue = CreateDMS(newDecForm, false);
 
                 // Return the corrected value. 
                 return correctedValue;
@@ -450,7 +442,7 @@ namespace FeBuddyLibrary
 
         }
 
-        public static string createDMS(double value, bool lat)
+        public static string CreateDMS(double value, bool lat)
         {
 
             int degrees;
@@ -499,7 +491,7 @@ namespace FeBuddyLibrary
             {
                 if (degrees < 0)
                 {
-                    degrees = degrees * -1;
+                    degrees *= -1;
                     dms = $"S{degrees.ToString().PadLeft(3, '0')}.{minutes.ToString().PadLeft(2, '0')}.{seconds.ToString().PadLeft(2, '0')}.{miliseconds.ToString().PadLeft(3, '0')}";
                 }
                 else
@@ -511,7 +503,7 @@ namespace FeBuddyLibrary
             {
                 if (degrees < 0)
                 {
-                    degrees = degrees * -1;
+                    degrees *= -1;
                     dms = $"W{degrees.ToString().PadLeft(3, '0')}.{minutes.ToString().PadLeft(2, '0')}.{seconds.ToString().PadLeft(2, '0')}.{miliseconds.ToString().PadLeft(3, '0')}";
                 }
                 else
@@ -574,9 +566,11 @@ namespace FeBuddyLibrary
             ProcessStartInfo ProcessInfo;
             Process Process;
 
-            ProcessInfo = new ProcessStartInfo("cmd.exe", "/c " + $"\"{tempPath}\\{batchFileName}\"");
-            ProcessInfo.CreateNoWindow = true;
-            ProcessInfo.UseShellExecute = false;
+            ProcessInfo = new ProcessStartInfo("cmd.exe", "/c " + $"\"{tempPath}\\{batchFileName}\"")
+            {
+                CreateNoWindow = true,
+                UseShellExecute = false
+            };
 
             Process = Process.Start(ProcessInfo);
             Process.WaitForExit();

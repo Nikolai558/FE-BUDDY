@@ -1,16 +1,9 @@
-﻿using FeBuddyLibrary.Helpers;
-using FeBuddyLibrary.Models;
+﻿using FeBuddyLibrary.Models;
 using FeBuddyLibrary.Models.MetaFileModels;
-using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
-using System.IO.Compression;
-using System.Linq;
-using System.Net;
 using System.Text;
-using System.Windows;
 using System.Xml.Serialization;
 
 namespace FeBuddyLibrary

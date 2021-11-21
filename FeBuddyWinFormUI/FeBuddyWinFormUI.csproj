@@ -97,43 +97,34 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="CreditsForm.cs">
+    <Compile Include="WinForms\MainForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="CreditsForm.designer.cs">
-      <DependentUpon>CreditsForm.cs</DependentUpon>
-    </Compile>
-    <Compile Include="MainForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="MainForm.designer.cs">
+    <Compile Include="WinForms\MainForm.designer.cs">
       <DependentUpon>MainForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="MetaNotFoundForm.cs">
+    <Compile Include="WinForms\MetaNotFoundForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="MetaNotFoundForm.designer.cs">
+    <Compile Include="WinForms\MetaNotFoundForm.designer.cs">
       <DependentUpon>MetaNotFoundForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="Processing.cs">
+    <Compile Include="WinForms\UpdateForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Processing.designer.cs">
-      <DependentUpon>Processing.cs</DependentUpon>
+    <Compile Include="WinForms\UpdateForm.designer.cs">
+      <DependentUpon>UpdateForm.cs</DependentUpon>
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <EmbeddedResource Include="CreditsForm.resx">
-      <DependentUpon>CreditsForm.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="MainForm.resx">
+    <EmbeddedResource Include="WinForms\MainForm.resx">
       <DependentUpon>MainForm.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="MetaNotFoundForm.resx">
+    <EmbeddedResource Include="WinForms\MetaNotFoundForm.resx">
       <DependentUpon>MetaNotFoundForm.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Processing.resx">
-      <DependentUpon>Processing.cs</DependentUpon>
+    <EmbeddedResource Include="WinForms\UpdateForm.resx">
+      <DependentUpon>UpdateForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>

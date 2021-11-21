@@ -44,7 +44,7 @@ namespace FeBuddyWinFormUI
             // Check to see if Version's match.
             if (GlobalConfig.ProgramVersion != GlobalConfig.GithubVersion)
             {
-                Processing processForm = new Processing
+                UpdateForm processForm = new UpdateForm
                 {
                     Size = new Size(600, 600)
                 };

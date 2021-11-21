@@ -1,6 +1,6 @@
 ﻿namespace FeBuddyWinFormUI
 {
-    partial class Processing
+    partial class UpdateForm
     {
         /// <summary>
         /// Required designer variable.
@@ -28,7 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Processing));
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(UpdateForm));
             this.processingLabel = new System.Windows.Forms.Label();
             this.updatePanel = new System.Windows.Forms.Panel();
             this.githubMessagelabel = new System.Windows.Forms.Label();
@@ -153,7 +153,7 @@
             this.noButton.Visible = false;
             this.noButton.Click += new System.EventHandler(this.noButton_Click);
             // 
-            // Processing
+            // UpdateForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;

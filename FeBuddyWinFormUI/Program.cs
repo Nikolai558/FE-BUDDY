@@ -2,12 +2,9 @@
 using FeBuddyLibrary.Helpers;
 using Squirrel;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace FeBuddyWinFormUI
@@ -95,7 +92,7 @@ namespace FeBuddyWinFormUI
                 "GOTO CHK\n\n" +
                 ":FOUND\n" +
                 $"start \"\" \"%userprofile%\\AppData\\Local\\FE-BUDDY\\app-{GlobalConfig.GithubVersion}\\FE-BUDDY.exe\"\n";
-            
+
             File.WriteAllText(filePath, writeMe);
             ProcessStartInfo ProcessInfo;
             Process Process;

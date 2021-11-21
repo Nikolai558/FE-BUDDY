@@ -499,7 +499,7 @@ namespace FeBuddyLibrary.DataAccess
                     File.WriteAllText($"{GlobalConfig.outputDirectory}\\VRC\\[SID]\\{dp.Split(' ')[0]}.sct2", dpDiagramSb.ToString());
                 }
             }
-            
+
             File.WriteAllText($"{GlobalConfig.outputDirectory}\\VRC\\[STAR]\\000_All_STAR_Combined.sct2", combinedDataStar.ToString());
             File.WriteAllText($"{GlobalConfig.outputDirectory}\\VRC\\[SID]\\000_All_DP_Combined.sct2", combinedDataDp.ToString());
 

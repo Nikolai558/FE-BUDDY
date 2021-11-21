@@ -41,7 +41,7 @@ namespace FeBuddyWinFormUI
 
         public void ChangeUpdatePanel(Point newPoint) { updatePanel.Location = newPoint; }
 
-        public void DisplayMessages(bool visible) 
+        public void DisplayMessages(bool visible)
         {
             processingLabel.Enabled = !visible;
             processingLabel.Visible = !visible;
@@ -104,7 +104,7 @@ namespace FeBuddyWinFormUI
             return output;
         }
 
-        private void InputVariables() 
+        private void InputVariables()
         {
             string msg = ReadChangeLog();
 

@@ -187,8 +187,8 @@
             // 
             this.chooseDirButton.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(20)))), ((int)(((byte)(20)))), ((int)(((byte)(20)))));
             this.chooseDirButton.FlatAppearance.BorderColor = System.Drawing.Color.Gray;
-            this.chooseDirButton.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Gray;
-            this.chooseDirButton.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Gray;
+            this.chooseDirButton.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Black;
+            this.chooseDirButton.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Black;
             this.chooseDirButton.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.chooseDirButton.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.chooseDirButton.ForeColor = System.Drawing.SystemColors.AppWorkspace;
@@ -204,8 +204,8 @@
             // 
             this.startButton.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(20)))), ((int)(((byte)(20)))), ((int)(((byte)(20)))));
             this.startButton.FlatAppearance.BorderColor = System.Drawing.Color.Gray;
-            this.startButton.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Gray;
-            this.startButton.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Gray;
+            this.startButton.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Maroon;
+            this.startButton.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Black;
             this.startButton.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.startButton.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.startButton.ForeColor = System.Drawing.SystemColors.AppWorkspace;
@@ -324,8 +324,8 @@
             this.exitButton.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(20)))), ((int)(((byte)(20)))), ((int)(((byte)(20)))));
             this.exitButton.Enabled = false;
             this.exitButton.FlatAppearance.BorderColor = System.Drawing.Color.Gray;
-            this.exitButton.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Gray;
-            this.exitButton.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Gray;
+            this.exitButton.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Maroon;
+            this.exitButton.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Black;
             this.exitButton.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.exitButton.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.exitButton.ForeColor = System.Drawing.SystemColors.AppWorkspace;

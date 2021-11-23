@@ -204,7 +204,7 @@
             // 
             this.startButton.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(20)))), ((int)(((byte)(20)))), ((int)(((byte)(20)))));
             this.startButton.FlatAppearance.BorderColor = System.Drawing.Color.Gray;
-            this.startButton.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Maroon;
+            this.startButton.FlatAppearance.MouseDownBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(64)))), ((int)(((byte)(0)))));
             this.startButton.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Black;
             this.startButton.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.startButton.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));

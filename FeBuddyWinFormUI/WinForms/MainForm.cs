@@ -152,6 +152,8 @@ namespace FeBuddyWinFormUI
             startGroupBox.Enabled = false;
             startGroupBox.Visible = false;
 
+            //TODO - Create Processing box instead of already having it. 
+
             processingGroupBox.Visible = true;
             processingGroupBox.Enabled = true;
             processingDataLabel.Visible = true;

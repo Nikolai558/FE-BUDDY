@@ -21,6 +21,8 @@ namespace FeBuddyWinFormUI
         public MainForm()
         {
             InitializeComponent();
+            menuStrip1.Renderer = new MyRenderer();
+            
 
             // It should grab from the assembily info. 
             this.Text = $"FE-BUDDY - V{GlobalConfig.ProgramVersion}";
@@ -47,6 +49,27 @@ namespace FeBuddyWinFormUI
             filePathLabel.Text = GlobalConfig.outputDirBase;
             filePathLabel.Visible = true;
             filePathLabel.MaximumSize = new Size(257, 82);
+        }
+
+        private class MyRenderer : ToolStripProfessionalRenderer
+        {
+            public MyRenderer() : base(new MyColors()) { }
+        }
+
+        private class MyColors : ProfessionalColorTable
+        {
+            public override Color MenuItemSelected
+            {
+                get { return Color.Black; }
+            }
+            public override Color MenuItemSelectedGradientBegin
+            {
+                get { return Color.Black; }
+            }
+            public override Color MenuItemSelectedGradientEnd
+            {
+                get { return Color.Black; }
+            }
         }
 
         private void CurrentAiracSelection_CheckedChanged(object sender, EventArgs e)

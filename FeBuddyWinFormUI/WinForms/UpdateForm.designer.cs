@@ -1,6 +1,6 @@
 ﻿namespace FeBuddyWinFormUI
 {
-    partial class Processing
+    partial class UpdateForm
     {
         /// <summary>
         /// Required designer variable.
@@ -28,7 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Processing));
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(UpdateForm));
             this.processingLabel = new System.Windows.Forms.Label();
             this.updatePanel = new System.Windows.Forms.Panel();
             this.githubMessagelabel = new System.Windows.Forms.Label();
@@ -128,6 +128,9 @@
             // yesButton
             // 
             this.yesButton.Enabled = false;
+            this.yesButton.FlatAppearance.BorderColor = System.Drawing.Color.Gray;
+            this.yesButton.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Gray;
+            this.yesButton.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Gray;
             this.yesButton.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.yesButton.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.yesButton.Location = new System.Drawing.Point(166, 478);
@@ -142,6 +145,9 @@
             // noButton
             // 
             this.noButton.Enabled = false;
+            this.noButton.FlatAppearance.BorderColor = System.Drawing.Color.Gray;
+            this.noButton.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Gray;
+            this.noButton.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Gray;
             this.noButton.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.noButton.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.noButton.Location = new System.Drawing.Point(329, 478);
@@ -153,24 +159,24 @@
             this.noButton.Visible = false;
             this.noButton.Click += new System.EventHandler(this.noButton_Click);
             // 
-            // Processing
+            // UpdateForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.AutoSize = true;
-            this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(60)))), ((int)(((byte)(60)))), ((int)(((byte)(60)))));
+            this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(10)))), ((int)(((byte)(10)))), ((int)(((byte)(10)))));
             this.ClientSize = new System.Drawing.Size(584, 561);
             this.Controls.Add(this.noButton);
             this.Controls.Add(this.yesButton);
             this.Controls.Add(this.questionLabel);
             this.Controls.Add(this.questionHeaderlabel);
             this.Controls.Add(this.updatePanel);
-            this.ForeColor = System.Drawing.SystemColors.Control;
+            this.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MaximizeBox = false;
             this.MinimizeBox = false;
-            this.Name = "Processing";
+            this.Name = "UpdateForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Processing Data";
             this.updatePanel.ResumeLayout(false);

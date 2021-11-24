@@ -2,12 +2,9 @@
 using FeBuddyLibrary.Helpers;
 using Squirrel;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace FeBuddyWinFormUI
@@ -44,7 +41,7 @@ namespace FeBuddyWinFormUI
             // Check to see if Version's match.
             if (GlobalConfig.ProgramVersion != GlobalConfig.GithubVersion)
             {
-                Processing processForm = new Processing
+                UpdateForm processForm = new UpdateForm
                 {
                     Size = new Size(600, 600)
                 };
@@ -95,7 +92,7 @@ namespace FeBuddyWinFormUI
                 "GOTO CHK\n\n" +
                 ":FOUND\n" +
                 $"start \"\" \"%userprofile%\\AppData\\Local\\FE-BUDDY\\app-{GlobalConfig.GithubVersion}\\FE-BUDDY.exe\"\n";
-            
+
             File.WriteAllText(filePath, writeMe);
             ProcessStartInfo ProcessInfo;
             Process Process;

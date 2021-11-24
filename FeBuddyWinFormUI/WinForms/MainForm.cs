@@ -1,16 +1,16 @@
-﻿using System;
-using System.ComponentModel;
-using System.Drawing;
-using System.Windows.Forms;
-using System.IO;
-using System.Drawing.Text;
-using System.Reflection;
-using System.Diagnostics;
-using FeBuddyLibrary;
-using FeBuddyLibrary.Models.MetaFileModels;
+﻿using FeBuddyLibrary;
 using FeBuddyLibrary.DataAccess;
-using FeBuddyLibrary.Models;
 using FeBuddyLibrary.Helpers;
+using FeBuddyLibrary.Models;
+using FeBuddyLibrary.Models.MetaFileModels;
+using System;
+using System.ComponentModel;
+using System.Diagnostics;
+using System.Drawing;
+using System.Drawing.Text;
+using System.IO;
+using System.Reflection;
+using System.Windows.Forms;
 
 namespace FeBuddyWinFormUI
 {
@@ -21,6 +21,8 @@ namespace FeBuddyWinFormUI
         public MainForm()
         {
             InitializeComponent();
+            menuStrip1.Renderer = new MyRenderer();
+            
 
             // It should grab from the assembily info. 
             this.Text = $"FE-BUDDY - V{GlobalConfig.ProgramVersion}";
@@ -47,6 +49,27 @@ namespace FeBuddyWinFormUI
             filePathLabel.Text = GlobalConfig.outputDirBase;
             filePathLabel.Visible = true;
             filePathLabel.MaximumSize = new Size(257, 82);
+        }
+
+        private class MyRenderer : ToolStripProfessionalRenderer
+        {
+            public MyRenderer() : base(new MyColors()) { }
+        }
+
+        private class MyColors : ProfessionalColorTable
+        {
+            public override Color MenuItemSelected
+            {
+                get { return Color.Black; }
+            }
+            public override Color MenuItemSelectedGradientBegin
+            {
+                get { return Color.Black; }
+            }
+            public override Color MenuItemSelectedGradientEnd
+            {
+                get { return Color.Black; }
+            }
         }
 
         private void CurrentAiracSelection_CheckedChanged(object sender, EventArgs e)
@@ -152,6 +175,8 @@ namespace FeBuddyWinFormUI
             startGroupBox.Enabled = false;
             startGroupBox.Visible = false;
 
+            //TODO - Create Processing box instead of already having it. 
+
             processingGroupBox.Visible = true;
             processingGroupBox.Enabled = true;
             processingDataLabel.Visible = true;
@@ -200,7 +225,7 @@ namespace FeBuddyWinFormUI
             worker.RunWorkerAsync();
         }
 
-        private void AdjustProcessingBox() 
+        private void AdjustProcessingBox()
         {
             outputDirectoryLabel.Text = GlobalConfig.outputDirectory;
             outputDirectoryLabel.Visible = true;
@@ -281,7 +306,7 @@ namespace FeBuddyWinFormUI
                 AliasCheck aliasCheck = new AliasCheck();
                 aliasCheck.CheckForDuplicates($"{GlobalConfig.outputDirectory}\\ALIAS\\AliasTestFile.txt");
             }
-            else 
+            else
             {
                 SetControlPropertyThreadSafe(processingDataLabel, "Text", "Downloading FAA Data");
                 DownloadHelpers.DownloadAllFiles(GlobalConfig.airacEffectiveDate, AiracDateCycleModel.AllCycleDates[GlobalConfig.airacEffectiveDate]);
@@ -350,14 +375,14 @@ namespace FeBuddyWinFormUI
 
             processingGroupBox.Visible = true;
             processingGroupBox.Enabled = true;
-            
+
             menuStrip1.Visible = true;
 
             exitButton.Visible = true;
             exitButton.Enabled = true;
         }
 
-        private void GetAiracDate() 
+        private void GetAiracDate()
         {
             var Worker = new BackgroundWorker();
             Worker.RunWorkerCompleted += Worker_RunWorkerCompleted;

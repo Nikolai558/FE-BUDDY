@@ -1,15 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace FeBuddyLibrary.Helpers
 {
     public class FileHelpers
     {
-        public static void WriteWarnMeFile() 
+        public static void WriteWarnMeFile()
         {
             string warningMSG = "\n" +
                     "WARNING:\n" +

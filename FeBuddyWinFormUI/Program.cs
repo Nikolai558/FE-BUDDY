@@ -14,6 +14,10 @@ namespace FeBuddyWinFormUI
         [STAThread]
         static void Main()
         {
+            Logger.LogMessage("INFO", "PROGRAM STARTED");
+
+            //Console.WriteLine(Logger.logFilePath);
+
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
 

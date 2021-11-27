@@ -65,6 +65,7 @@
     <Compile Include="Helpers\DownloadHelpers.cs" />
     <Compile Include="Helpers\FileHelpers.cs" />
     <Compile Include="Helpers\LatLonHelpers.cs" />
+    <Compile Include="Helpers\logger.cs" />
     <Compile Include="Helpers\MessageBoxHelpers.cs" />
     <Compile Include="Helpers\WebHelpers.cs" />
     <Compile Include="Models\Airport.cs" />

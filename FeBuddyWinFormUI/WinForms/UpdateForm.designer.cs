@@ -179,6 +179,7 @@
             this.Name = "UpdateForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Processing Data";
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.UpdateForm_Closing);
             this.updatePanel.ResumeLayout(false);
             this.updatePanel.PerformLayout();
             this.ResumeLayout(false);

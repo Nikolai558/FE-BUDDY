@@ -21,6 +21,8 @@ namespace FeBuddyLibrary.DataAccess
         /// <param name="artcc">Selected ARTCC (e.x. "FAA")</param>
         public void AptAndWxMain(string effectiveDate, string artcc)
         {
+            Logger.LogMessage("INFO", $"STARTING APT AND WEATHER");
+
             ParseAptData(effectiveDate);
             WriteAptISR(artcc);
             WriteAptSctData();
@@ -34,6 +36,8 @@ namespace FeBuddyLibrary.DataAccess
 
             ParseAndWriteWxStation(effectiveDate);
             WriteWxXmlOutput();
+            Logger.LogMessage("INFO", $"COMPLETED APT AND WEATHER");
+
         }
 
         /// <summary>
@@ -41,6 +45,8 @@ namespace FeBuddyLibrary.DataAccess
         /// </summary>
         public void WriteAptGeoMap()
         {
+            Logger.LogMessage("INFO", $"STARTING GEOMAP WRITER");
+
             string saveFilePath = $"{GlobalConfig.outputDirectory}\\VERAM\\AIRPORTS_GEOMAP.xml";
             StringBuilder sb = new StringBuilder();
 
@@ -63,6 +69,8 @@ namespace FeBuddyLibrary.DataAccess
             sb.AppendLine("        </GeoMapObject>");
 
             File.WriteAllText(saveFilePath, sb.ToString());
+            Logger.LogMessage("INFO", $"COMPLETED GEOMAP WRITER");
+
         }
 
         /// <summary>
@@ -70,6 +78,8 @@ namespace FeBuddyLibrary.DataAccess
         /// </summary>
         private void WriteAptTextGeoMap()
         {
+            Logger.LogMessage("INFO", $"STARTED GEOMAP TEXT WRITER");
+
             string saveFilePath = $"{GlobalConfig.outputDirectory}\\vERAM\\AIRPORT_TEXT_GEOMAP.xml";
             StringBuilder sb = new StringBuilder();
 
@@ -112,6 +122,8 @@ namespace FeBuddyLibrary.DataAccess
             sb.AppendLine("        </GeoMapObject>");
 
             File.WriteAllText(saveFilePath, sb.ToString());
+            Logger.LogMessage("INFO", $"COMPLETED GEOMAP TEXT WRITER");
+
         }
 
         /// <summary>
@@ -120,6 +132,8 @@ namespace FeBuddyLibrary.DataAccess
         /// <param name="effectiveDate">Airacc Effective Date (e.x. "2021-10-07")</param>
         private void ParseAndWriteWxStation(string effectiveDate)
         {
+            Logger.LogMessage("INFO", $"STARTED WX STATION PARSER");
+
             string metarDataFilepath = $"{GlobalConfig.tempPath}\\{effectiveDate}_NWS-WX-STATIONS.xml";
             string outputFilepath = $"{GlobalConfig.outputDirectory}\\VRC\\[LABELS].sct2";
             Dictionary<string, List<double>> stationInfo = new Dictionary<string, List<double>>();
@@ -204,6 +218,9 @@ namespace FeBuddyLibrary.DataAccess
 
             File.WriteAllText(outputFilepath, sb.ToString());
             File.AppendAllText($"{GlobalConfig.outputDirectory}\\{GlobalConfig.testSectorFileName}", File.ReadAllText(outputFilepath));
+
+            Logger.LogMessage("INFO", $"COMPLETED WX STATION PARSER");
+
         }
 
         /// <summary>
@@ -211,6 +228,8 @@ namespace FeBuddyLibrary.DataAccess
         /// </summary>
         public static void WriteWxXmlOutput()
         {
+            Logger.LogMessage("INFO", $"STARTED WX STATION XML");
+
             string readFilePath = $"{GlobalConfig.outputDirectory}\\VRC\\[LABELS].sct2";
             string saveFilePath = $"{GlobalConfig.outputDirectory}\\VERAM\\WX_STATIONS_GEOMAP.xml";
             StringBuilder sb = new StringBuilder();
@@ -244,6 +263,8 @@ namespace FeBuddyLibrary.DataAccess
             sb.AppendLine("        </GeoMapObject>");
 
             File.WriteAllText(saveFilePath, sb.ToString());
+            Logger.LogMessage("INFO", $"COMPLETED WX STATION XML");
+
         }
 
         /// <summary>
@@ -252,6 +273,8 @@ namespace FeBuddyLibrary.DataAccess
         /// <param name="effectiveDate">Airacc Effective Date (e.x. "2021-10-07")</param>
         private void ParseAptData(string effectiveDate)
         {
+            Logger.LogMessage("INFO", $"STARTED PARSING APT DATA");
+
             char[] removeChars = { ' ', '.' };
             AptModel airport = null;
 
@@ -357,6 +380,8 @@ namespace FeBuddyLibrary.DataAccess
             }
 
             GlobalConfig.allAptModelsForCheck = allAptModels;
+            Logger.LogMessage("INFO", $"COMPLETED PARSING APT DATA");
+
         }
 
         /// <summary>
@@ -365,6 +390,8 @@ namespace FeBuddyLibrary.DataAccess
         /// <param name="effectiveDate">Airacc Effective Date (e.x. "2021-10-07")</param>
         public void WriteEramAirportsXML(string effectiveDate)
         {
+            Logger.LogMessage("INFO", $"STARTED ERAM APT XML");
+
             string filePath = $"{GlobalConfig.outputDirectory}\\VERAM\\Airports.xml";
             List<Airport> allAptForXML = new List<Airport>();
 
@@ -489,6 +516,8 @@ namespace FeBuddyLibrary.DataAccess
 
             File.AppendAllText(filePath, $"\n<!--AIRAC_EFFECTIVE_DATE {effectiveDate}-->");
             File.Copy($"{GlobalConfig.outputDirectory}\\VERAM\\Airports.xml", $"{GlobalConfig.outputDirectory}\\VSTARS\\Airports.xml");
+            Logger.LogMessage("INFO", $"COMPLETED ERAM APT XML");
+
         }
 
         /// <summary>
@@ -496,6 +525,8 @@ namespace FeBuddyLibrary.DataAccess
         /// </summary>
         public void StoreWaypointsXMLData()
         {
+            Logger.LogMessage("INFO", $"STARTED STORING ERAM APT XML DATA");
+
             List<Waypoint> waypointList = new List<Waypoint>();
 
             foreach (AptModel apt in allAptModels)
@@ -525,6 +556,8 @@ namespace FeBuddyLibrary.DataAccess
             }
 
             GlobalConfig.waypoints = waypointList.ToArray();
+            Logger.LogMessage("INFO", $"COMPLETED STORING ERAM APT XML DATA");
+
         }
 
         /// <summary>
@@ -533,6 +566,8 @@ namespace FeBuddyLibrary.DataAccess
         /// <param name="Artcc">Selected ARTCC (e.x. "FAA")</param>
         private void WriteAptISR(string Artcc)
         {
+            Logger.LogMessage("INFO", $"STARTED APT ISR");
+
             string filePath = $"{GlobalConfig.outputDirectory}\\ALIAS\\ISR_APT.txt";
             StringBuilder sb = new StringBuilder();
 
@@ -558,6 +593,8 @@ namespace FeBuddyLibrary.DataAccess
 
             File.WriteAllText(filePath, sb.ToString());
             File.AppendAllText($"{GlobalConfig.outputDirectory}\\ALIAS\\AliasTestFile.txt", sb.ToString());
+            Logger.LogMessage("INFO", $"COMPLETED APT ISR");
+
         }
 
         /// <summary>
@@ -565,6 +602,8 @@ namespace FeBuddyLibrary.DataAccess
         /// </summary>
         private void WriteRunwayData()
         {
+            Logger.LogMessage("INFO", $"STARTED RUNWAY DATA");
+
             string filePath = $"{GlobalConfig.outputDirectory}\\VRC\\[RUNWAY].sct2";
             string aptId;
             StringBuilder sb = new StringBuilder();
@@ -619,7 +658,13 @@ namespace FeBuddyLibrary.DataAccess
 
             File.WriteAllText(filePath, sb.ToString());
             File.AppendAllText(filePath, $"\n\n\n\n\n\n");
+            Logger.LogMessage("DEBUG", $"SAVING RUNWAY DATA INTO SCT");
+
             File.AppendAllText($"{GlobalConfig.outputDirectory}\\{GlobalConfig.testSectorFileName}", File.ReadAllText(filePath));
+            Logger.LogMessage("DEBUG", $"SAVING RUNWAY DATA INTO TEST SCT");
+
+            Logger.LogMessage("INFO", $"COMPLETED RUNWAY DATA");
+
         }
 
         /// <summary>
@@ -627,6 +672,8 @@ namespace FeBuddyLibrary.DataAccess
         /// </summary>
         private void WriteAptSctData()
         {
+            Logger.LogMessage("INFO", $"STARTED APT SCT DATA");
+
             string filePath = $"{GlobalConfig.outputDirectory}\\VRC\\[AIRPORT].sct2";
             StringBuilder sb = new StringBuilder();
 
@@ -649,7 +696,14 @@ namespace FeBuddyLibrary.DataAccess
             sb.AppendLine("\n\n\n\n\n\n");
 
             File.WriteAllText(filePath, sb.ToString());
+            Logger.LogMessage("DEBUG", $"SAVED AIRPORT DATA TO SCT FILE");
+
+
             File.AppendAllText($"{GlobalConfig.outputDirectory}\\{GlobalConfig.testSectorFileName}", File.ReadAllText(filePath));
+            Logger.LogMessage("DEBUG", $"ADDED AIRPORT DATA TO TEST SCT FILE");
+            Logger.LogMessage("INFO", $"COMPLETED APT SCT DATA");
+
+
         }
     }
 }

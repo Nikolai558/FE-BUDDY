@@ -1,4 +1,5 @@
 ﻿using FeBuddyLibrary;
+using FeBuddyLibrary.Helpers;
 using System;
 using System.Drawing;
 using System.IO;
@@ -13,6 +14,11 @@ namespace FeBuddyWinFormUI
         {
             InitializeComponent();
         }
+        private void UpdateForm_Closing(object sender, EventArgs e)
+        {
+            Logger.LogMessage("DEBUG", "UPDATE FORM CLOSING");
+        }
+
         /// <summary>
         /// Change the Form Tilte
         /// </summary>

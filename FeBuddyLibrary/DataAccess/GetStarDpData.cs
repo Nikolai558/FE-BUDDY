@@ -15,15 +15,21 @@ namespace FeBuddyLibrary.DataAccess
 
         public void StarDpQuaterBackFunc(string EffectiveDate)
         {
+            Logger.LogMessage("DEBUG", $"STARTING STAR AND DP");
+
             ParseStarDp(EffectiveDate);
             //WriteSctData();
             WriteGeoMap();
             WriteAlias();
             WriteSctDiagrams();
+            Logger.LogMessage("DEBUG", $"COMPLETED STAR AND DP");
+
         }
 
         private void ParseStarDp(string effectiveDate)
         {
+            Logger.LogMessage("DEBUG", $"STARTING STAR AND DP PARSING");
+
             foreach (string line in File.ReadAllLines($"{GlobalConfig.tempPath}\\{effectiveDate}_STARDP\\STARDP.txt"))
             {
 
@@ -62,10 +68,14 @@ namespace FeBuddyLibrary.DataAccess
                     procedures[procId].Add(Star_Dp);
                 }
             }
+            Logger.LogMessage("DEBUG", $"COMPLETED STAR AND DP PARSING");
+
         }
 
         private void WriteGeoMap()
         {
+            Logger.LogMessage("DEBUG", $"CREATING STAR AND DP GEOMAP");
+
             StringBuilder allDpGeoMaps = new StringBuilder();
             allDpGeoMaps.AppendLine("        <GeoMapObject Description=\"ALL_DPs\" TdmOnly=\"false\">");
             allDpGeoMaps.AppendLine("          <LineDefaults Bcg=\"8\" Filters=\"8\" Style=\"Solid\" Thickness=\"1\" />");
@@ -148,10 +158,13 @@ namespace FeBuddyLibrary.DataAccess
 
             File.WriteAllText($"{GlobalConfig.outputDirectory}\\VERAM\\ALL_DP_GEOMAP.xml", allDpGeoMaps.ToString());
             File.WriteAllText($"{GlobalConfig.outputDirectory}\\VERAM\\ALL_STAR_GEOMAP.xml", allStarGeoMaps.ToString());
+            Logger.LogMessage("DEBUG", $"SAVING STAR AND DP GEOMAP");
         }
 
         private void WriteAlias()
         {
+            Logger.LogMessage("DEBUG", $"CREATING STAR AND DP ALIAS");
+
             string saveFilePath = $"{GlobalConfig.outputDirectory}\\ALIAS\\STAR_DP_Fixes_Alias.txt";
             StringBuilder sb = new StringBuilder();
 
@@ -352,11 +365,14 @@ namespace FeBuddyLibrary.DataAccess
 
             File.WriteAllText(saveFilePath, sb.ToString());
             File.AppendAllText($"{GlobalConfig.outputDirectory}\\ALIAS\\AliasTestFile.txt", sb.ToString());
+            Logger.LogMessage("DEBUG", $"SAVED STAR AND DP ALIAS");
 
         }
 
         private void WriteSctDiagrams()
         {
+            Logger.LogMessage("DEBUG", $"CREATING STAR AND DP SCT DIAGRAMS");
+
             StringBuilder combinedDataDp = new StringBuilder();
             combinedDataDp.AppendLine("[SID]");
             combinedDataDp.AppendLine($"{"All_DPs".PadRight(26, ' ')}N000.00.00.000 E000.00.00.000 N000.00.00.000 E000.00.00.000");
@@ -501,10 +517,15 @@ namespace FeBuddyLibrary.DataAccess
             }
 
             File.WriteAllText($"{GlobalConfig.outputDirectory}\\VRC\\[STAR]\\000_All_STAR_Combined.sct2", combinedDataStar.ToString());
+            Logger.LogMessage("INFO", $"SAVED ALL STAR SCT2 FILE");
+            
             File.WriteAllText($"{GlobalConfig.outputDirectory}\\VRC\\[SID]\\000_All_DP_Combined.sct2", combinedDataDp.ToString());
+            Logger.LogMessage("INFO", $"SAVED ALL DP SCT2 FILE");
 
             File.AppendAllText($"{GlobalConfig.outputDirectory}{GlobalConfig.testSectorFileName}", combinedDataStar.ToString());
             File.AppendAllText($"{GlobalConfig.outputDirectory}{GlobalConfig.testSectorFileName}", combinedDataDp.ToString());
+            Logger.LogMessage("INFO", $"ADDED STAR AND DP TO TEST SCT2 FILE");
+
         }
     }
 }

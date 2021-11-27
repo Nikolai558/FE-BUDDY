@@ -7,6 +7,8 @@ namespace FeBuddyLibrary.Helpers
     {
         public static void CreateCurlBatchFile(string name, string url, string outputFileName)
         {
+            Logger.LogMessage("DEBUG", $"CREATING BATCH FILE {name}");
+
             string filePath = $"{GlobalConfig.tempPath}\\{name}";
             string writeMe = $"cd /d \"{GlobalConfig.tempPath}\"\n" +
                 $"curl \"{url}\" > {outputFileName}";
@@ -15,6 +17,8 @@ namespace FeBuddyLibrary.Helpers
 
         public static void ExecuteCurlBatchFile(string batchFileName)
         {
+            Logger.LogMessage("DEBUG", $"EXECUTING BATCH FILE {batchFileName}");
+
             ProcessStartInfo ProcessInfo;
             Process Process;
 

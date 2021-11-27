@@ -9,6 +9,8 @@ namespace FeBuddyLibrary.Helpers
     {
         public static void WriteWarnMeFile()
         {
+            Logger.LogMessage("DEBUG", "WRITING WARNME FILE FOR META NOT BEING INCLUDED IN DOWNLOAD / PARSING");
+
             string warningMSG = "\n" +
                     "WARNING:\n" +
                     "	Since FE-BUDDY was ran before the FAA    \n" +
@@ -33,17 +35,24 @@ namespace FeBuddyLibrary.Helpers
 
         public static void CreateAwyGeomapHeadersAndEnding(bool CreateStart)
         {
+
             if (CreateStart)
             {
+                Logger.LogMessage("DEBUG", "CREATING AWY GEOMAP HEADERS");
+
                 GlobalConfig.AwyGeoMap.AppendLine("        <GeoMapObject Description=\"AIRWAYS\" TdmOnly=\"false\">");
                 GlobalConfig.AwyGeoMap.AppendLine("          <LineDefaults Bcg=\"4\" Filters=\"4\" Style=\"ShortDashed\" Thickness=\"1\" />");
                 GlobalConfig.AwyGeoMap.AppendLine("          <Elements>");
             }
             else
             {
+                Logger.LogMessage("DEBUG", "CREATING AWY GEOMAP ENDINGS");
+
                 GlobalConfig.AwyGeoMap.AppendLine("          </Elements>");
                 GlobalConfig.AwyGeoMap.AppendLine("        </GeoMapObject>");
                 File.WriteAllText($"{GlobalConfig.outputDirectory}\\VERAM\\{GlobalConfig.AwyGeoMapFileName}", GlobalConfig.AwyGeoMap.ToString());
+                Logger.LogMessage("INFO", "SAVED AWY GEOMAP");
+
             }
         }
 
@@ -53,6 +62,8 @@ namespace FeBuddyLibrary.Helpers
         /// </summary>
         public static void WriteWaypointsXML()
         {
+            Logger.LogMessage("INFO", "STARTED WAYPOINTS XML WRITER");
+
             // File path for the waypoints.xml that we want to store to.
             string filePath = $"{GlobalConfig.outputDirectory}\\VERAM\\Waypoints.xml";
 
@@ -60,10 +71,14 @@ namespace FeBuddyLibrary.Helpers
             TextWriter writer = new StreamWriter(filePath);
             GlobalConfig.WaypointSerializer.Serialize(writer, GlobalConfig.waypoints);
             writer.Close();
+            Logger.LogMessage("INFO", "COMPLETED WAYPOINTS XML WRITER");
+
         }
 
         public static void WriteNavXmlOutput()
         {
+            Logger.LogMessage("INFO", "STARTED NAV XML WRITER");
+
             StringBuilder sb = new StringBuilder();
 
             sb.AppendLine("        <GeoMapObject Description=\"NAVAIDS\" TdmOnly=\"false\">");
@@ -106,6 +121,8 @@ namespace FeBuddyLibrary.Helpers
             sb.AppendLine("        </GeoMapObject>");
 
             File.WriteAllText(saveFilePath, sb.ToString());
+            Logger.LogMessage("INFO", "COMPLETED NAV XML WRITER");
+
         }
 
         /// <summary>
@@ -114,6 +131,7 @@ namespace FeBuddyLibrary.Helpers
         /// <param name="AiracDate">Correct Format: YYYY-MM-DD</param>
         public static void AppendCommentToXML(string AiracDate)
         {
+
             // File path to the Waypoints.xml File.
             string filepath = $"{GlobalConfig.outputDirectory}\\VERAM\\Waypoints.xml";
 
@@ -122,6 +140,7 @@ namespace FeBuddyLibrary.Helpers
 
             // Copy the file from VERAM to VSTARS. - They use the same format. 
             File.Copy($"{GlobalConfig.outputDirectory}\\VERAM\\Waypoints.xml", $"{GlobalConfig.outputDirectory}\\VSTARS\\Waypoints.xml");
+            Logger.LogMessage("INFO", "ADDED COMMENTS TO WAYPOINTS XML");
         }
 
         /// <summary>
@@ -130,6 +149,7 @@ namespace FeBuddyLibrary.Helpers
         public static void WriteTestSctFile()
         {
             // Write the file INFO section.
+            Logger.LogMessage("DEBUG", "CREATING THE TEST SECTOR FILE ");
             File.WriteAllText($"{GlobalConfig.outputDirectory}\\{GlobalConfig.testSectorFileName}", $"[INFO]\nTEST_SECTOR\nTST_CTR\nXXXX\nN043.31.08.418\nW112.03.50.103\n60.043\n43.536\n-11.8\n1.000\n\n\n\n\n");
         }
     }

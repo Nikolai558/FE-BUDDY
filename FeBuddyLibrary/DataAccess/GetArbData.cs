@@ -19,8 +19,12 @@ namespace FeBuddyLibrary.DataAccess
         /// <param name="effectiveDate">Airacc Effective Date (e.x. "2021-10-07")</param>
         public void ArbMain(string effectiveDate)
         {
+            Logger.LogMessage("INFO", "STARTED ARB");
+
             ParseArb(effectiveDate);
             WriteArbSct();
+            Logger.LogMessage("INFO", "COMPLETED ARB");
+
         }
 
         /// <summary>
@@ -29,6 +33,8 @@ namespace FeBuddyLibrary.DataAccess
         /// <param name="effectiveDate">Airacc Effective Date (e.x. "2021-10-07")</param>
         private void ParseArb(string effectiveDate)
         {
+            Logger.LogMessage("INFO", "STARTED ARB PARSING");
+
             foreach (string line in File.ReadAllLines($"{GlobalConfig.tempPath}\\{effectiveDate}_ARB\\ARB.txt"))
             {
                 ArbModel arb = new ArbModel
@@ -89,6 +95,8 @@ namespace FeBuddyLibrary.DataAccess
                     allBoundaries.Add(Boundary);
                 }
             }
+            Logger.LogMessage("INFO", "COMPLETED ARB PARSING");
+
         }
 
         /// <summary>
@@ -96,6 +104,8 @@ namespace FeBuddyLibrary.DataAccess
         /// </summary>
         private void WriteArbSct()
         {
+            Logger.LogMessage("INFO", "STARTED ARB SAVING SCT DATA");
+
             // HIGH ARTCC = HIGH, FIR_ONLY, UTA
             // LOW ARTCC  = LOW, CTA, BDRY
 
@@ -143,8 +153,15 @@ namespace FeBuddyLibrary.DataAccess
 
             File.WriteAllText(highFilePath, highArb.ToString());
             File.WriteAllText(lowFilePath, lowArb.ToString());
+            Logger.LogMessage("DEBUG", "SAVED HIGH AND LOW ARB SCT FILES");
+
             File.AppendAllText($"{GlobalConfig.outputDirectory}\\{GlobalConfig.testSectorFileName}", File.ReadAllText(highFilePath));
             File.AppendAllText($"{GlobalConfig.outputDirectory}\\{GlobalConfig.testSectorFileName}", File.ReadAllText(lowFilePath));
+            Logger.LogMessage("DEBUG", "ADDING TO TEST SCT FILE");
+
+
+            Logger.LogMessage("INFO", "COMPLETED ARB SAVING SCT DATA");
+
         }
     }
 }

@@ -18,11 +18,15 @@ namespace FeBuddyLibrary.Helpers
 
         public static void DownloadAllFiles(string effectiveDate, string airacCycle, bool getMetaFile = true)
         {
+            Logger.LogMessage("DEBUG", "DOWNLOADING ALL FILES REQUIRED");
+
             GlobalConfig.DownloadedFilePaths = new List<string>();
             Dictionary<string, string> allURLs;
             // TODO - This should be a static readonly dictionary, then grab only what we need in terms of meta info or not
             if (getMetaFile)
             {
+                Logger.LogMessage("DEBUG", "INCLUDING META FILES");
+
                 allURLs = new Dictionary<string, string>()
                 {
                     { $"{effectiveDate}_STARDP.zip", $"https://nfdc.faa.gov/webContent/28DaySub/{effectiveDate}/STARDP.zip" },
@@ -39,6 +43,8 @@ namespace FeBuddyLibrary.Helpers
             }
             else
             {
+                Logger.LogMessage("DEBUG", "EXCLUDING META FILES");
+
                 FileHelpers.WriteWarnMeFile();
                 allURLs = new Dictionary<string, string>()
                 {
@@ -61,6 +67,8 @@ namespace FeBuddyLibrary.Helpers
                 {
                     try
                     {
+                        Logger.LogMessage("INFO", $"ATTEMPTING TO DOWNLOAD: {fileName}");
+
                         if (GlobalConfig.hasCurl)
                         {
                             if (fileName == $"{effectiveDate}_NWS-WX-STATIONS.xml")
@@ -87,10 +95,16 @@ namespace FeBuddyLibrary.Helpers
                         {
                             client.DownloadFile(allURLs[fileName], $"{GlobalConfig.tempPath}\\{fileName}");
                         }
+                        Logger.LogMessage("INFO", $"DOWNLOAD SUCCESSFUL: {fileName}");
+
                     }
                     catch (Exception)
                     {
+                        Logger.LogMessage("ERROR", $"DOWNLOAD FAILED: {fileName}");
+
                         MessageBoxHelpers.FileDownloadErrorMB(fileName, allURLs);
+                        Logger.LogMessage("ERROR", $"PROGRAM CLOSING: {fileName}");
+
                         Environment.Exit(-1);
                     }
                     GlobalConfig.DownloadedFilePaths.Add($"{GlobalConfig.tempPath}\\{fileName}");

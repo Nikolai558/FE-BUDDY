@@ -16,9 +16,13 @@ namespace FeBuddyLibrary.DataAccess
         /// <param name="effectiveDate">Format: YYYY-MM-DD</param>
         public void FixQuarterbackFunc(string effectiveDate)
         {
+            Logger.LogMessage("INFO", "STARTED FIXES");
+
             ParseFixData(effectiveDate);
             WriteFixSctData();
             StoreXMLData();
+            Logger.LogMessage("INFO", "COMPLETED FIXES");
+
         }
 
         /// <summary>
@@ -26,6 +30,8 @@ namespace FeBuddyLibrary.DataAccess
         /// </summary>
         private void ParseFixData(string effectiveDate)
         {
+            Logger.LogMessage("INFO", "STARTED PARSING FIXES");
+
             // Variable for all the 'bad' characters. We will remove all these characters from the data.
             char[] removeChars = { ' ', '.' };
 
@@ -55,6 +61,8 @@ namespace FeBuddyLibrary.DataAccess
                     allFixesInData.Add(individualFixData);
                 }
             }
+            Logger.LogMessage("INFO", "COMPLETED PARSING FIXES");
+
         }
 
         /// <summary>
@@ -64,6 +72,8 @@ namespace FeBuddyLibrary.DataAccess
         /// </summary>
         private void StoreXMLData()
         {
+            Logger.LogMessage("INFO", "STARTED STORING FIX XML DATA");
+
             // Create an Empty list of Waypoints, So that we can add our waypoints to this list.
             List<Waypoint> waypointList = new List<Waypoint>();
 
@@ -96,6 +106,9 @@ namespace FeBuddyLibrary.DataAccess
 
             // Set our Global Waypoint list (includes airports, vor, ndb, fixes) to our List we just made. AND convert it to an Array instead of a list.
             GlobalConfig.waypoints = waypointList.ToArray();
+
+            Logger.LogMessage("INFO", "COMPLETED STORING FIX XML DATA");
+
         }
 
         /// <summary>
@@ -103,6 +116,8 @@ namespace FeBuddyLibrary.DataAccess
         /// </summary>
         private void WriteFixSctData()
         {
+            Logger.LogMessage("INFO", "STARTED SAVING FIX SCT DATA");
+
             // This is where the new SCT2 File will be saved to.
             string filePath = $"{GlobalConfig.outputDirectory}\\VRC\\[FIXES].sct2";
 
@@ -124,9 +139,16 @@ namespace FeBuddyLibrary.DataAccess
 
             // Add some blank lines to the end of the file. 
             File.AppendAllText(filePath, $"\n\n\n\n\n\n");
+            Logger.LogMessage("INFO", "SAVED FIX SCT FILE");
+
 
             // Add this file to our Test Sector File.
             File.AppendAllText($"{GlobalConfig.outputDirectory}\\{GlobalConfig.testSectorFileName}", File.ReadAllText(filePath));
+            Logger.LogMessage("INFO", "SAVED FIX SCT DATA TO TEST SCT FILE");
+
+
+            Logger.LogMessage("INFO", "COMPLETED SAVING FIX SCT DATA");
+
         }
     }
 }

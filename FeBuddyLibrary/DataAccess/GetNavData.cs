@@ -17,10 +17,14 @@ namespace FeBuddyLibrary.DataAccess
         /// <param name="effectiveDate">Format: YYYY-MM-DD"</param>
         public void NAVQuarterbackFunc(string effectiveDate, string Artcc)
         {
+            Logger.LogMessage("INFO", "STARTED NAV");
+
             ParseNAVData(effectiveDate);
             StoreXMLData();
             WriteNAVSctData();
             WriteNavISR(Artcc);
+            Logger.LogMessage("INFO", "COMPLETED NAV");
+
         }
 
         /// <summary>
@@ -29,6 +33,8 @@ namespace FeBuddyLibrary.DataAccess
         /// </summary>
         private void ParseNAVData(string effectiveDate)
         {
+            Logger.LogMessage("INFO", "STARTED NAV PARSING");
+
             // FAA Provides data for ALL types of NDB and VOR, we only need certain types. Exclude the one we are on if it has any of these.
             List<string> excludeTypes = new List<string> { "VOT", "FAN MARKER", "CONSOLAN", "MARINE NDB", "DECOMMISSIONED", "MARINE NDB/DME" };
 
@@ -108,6 +114,8 @@ namespace FeBuddyLibrary.DataAccess
                     }
                 }
             }
+            Logger.LogMessage("INFO", "COMPLETED NAV PARSING");
+
         }
 
         /// <summary>
@@ -117,6 +125,8 @@ namespace FeBuddyLibrary.DataAccess
         /// </summary>
         private void StoreXMLData()
         {
+            Logger.LogMessage("INFO", "STARTED NAV XML STORE");
+
             // Create an Empty list for our Waypoints 
             List<Waypoint> waypointList = new List<Waypoint>();
 
@@ -169,6 +179,8 @@ namespace FeBuddyLibrary.DataAccess
 
             // Set our GLOBAL storage of waypoints for the xml file to our list and convert it to an array.
             GlobalConfig.waypoints = waypointList.ToArray();
+            Logger.LogMessage("INFO", "COMPLETED NAV XML STORE");
+
         }
 
         /// <summary>
@@ -177,6 +189,8 @@ namespace FeBuddyLibrary.DataAccess
         /// <param name="Artcc">User Artcc Code</param>
         private void WriteNavISR(string Artcc)
         {
+            Logger.LogMessage("INFO", "STARTED NAV ISR WRITER");
+
             // File path to save the ISR file
             string filePath = $"{GlobalConfig.outputDirectory}\\ALIAS\\ISR_NAVAID.txt";
             string navTextGeoMapFile = $"{GlobalConfig.outputDirectory}\\vERAM\\NAVAID_TEXT_GEOMAP.xml";
@@ -262,6 +276,7 @@ namespace FeBuddyLibrary.DataAccess
 
             File.AppendAllText($"{GlobalConfig.outputDirectory}\\ALIAS\\AliasTestFile.txt", sb.ToString());
 
+            Logger.LogMessage("INFO", "COMPLETED NAV ISR WRITER");
         }
 
         /// <summary>
@@ -269,6 +284,8 @@ namespace FeBuddyLibrary.DataAccess
         /// </summary>
         private void WriteNAVSctData()
         {
+            Logger.LogMessage("INFO", "STARTED NAV WRITER");
+
             // Variable for the full file path for our two types.
             string NDBfilePath = $"{GlobalConfig.outputDirectory}\\VRC\\[NDB].sct2";
             string VORfilePath = $"{GlobalConfig.outputDirectory}\\VRC\\[VOR].sct2";
@@ -316,6 +333,8 @@ namespace FeBuddyLibrary.DataAccess
 
             // Add this file data to our TEST sector File.
             File.AppendAllText($"{GlobalConfig.outputDirectory}\\{GlobalConfig.testSectorFileName}", File.ReadAllText(VORfilePath));
+            Logger.LogMessage("INFO", "COMPLETED NAV WRITER");
+
         }
     }
 }

@@ -21,6 +21,8 @@ namespace FeBuddyLibrary.DataAccess
         /// <param name="effectiveDate">Format: YYYY-MM-DD</param>
         public void AWYQuarterbackFunc(string effectiveDate)
         {
+            Logger.LogMessage("INFO", "STARTED AWY");
+
             ParseAwyData(effectiveDate);
             WriteAwySctData();
             WriteAwyAlias();
@@ -31,6 +33,8 @@ namespace FeBuddyLibrary.DataAccess
         /// </summary>
         private void ParseAwyData(string effectiveDate)
         {
+            Logger.LogMessage("INFO", "STARTED AWY PARSING");
+
             // Create our AWY point Model
             AwyPointModel awyPoint = new AwyPointModel();
 
@@ -146,10 +150,14 @@ namespace FeBuddyLibrary.DataAccess
                     allAwy.Add(awy);
                 }
             }
+            Logger.LogMessage("INFO", "COMPLETED AWY PARSING");
+
         }
 
         private void WriteAwyAlias()
         {
+            Logger.LogMessage("INFO", "STARTED AWY ALIAS");
+
             foreach (AwyPointModel pointModel in allAWYPoints)
             {
 
@@ -175,6 +183,7 @@ namespace FeBuddyLibrary.DataAccess
             File.WriteAllText(awyAliasFilePath, sb.ToString());
             File.AppendAllText($"{GlobalConfig.outputDirectory}\\ALIAS\\AliasTestFile.txt", sb.ToString());
 
+            Logger.LogMessage("INFO", "COMPLETED AWY ALIAS");
         }
 
 
@@ -183,6 +192,8 @@ namespace FeBuddyLibrary.DataAccess
         /// </summary>
         private void WriteAwySctData()
         {
+            Logger.LogMessage("INFO", "STARTED AWY SCT FILE WRITER");
+
             // Set our File Path
             string filePath = $"{GlobalConfig.outputDirectory}\\VRC\\[HIGH AIRWAY].sct2";
 
@@ -242,9 +253,16 @@ namespace FeBuddyLibrary.DataAccess
 
             // Add some blank lines at the end of the file.
             File.AppendAllText(filePath, $"\n\n\n\n\n\n");
+            Logger.LogMessage("DEBUG", "SAVED AWY SCT FILE");
+
 
             // Add the file to our Test Sector File.
             File.AppendAllText($"{GlobalConfig.outputDirectory}\\{GlobalConfig.testSectorFileName}", File.ReadAllText(filePath));
+            Logger.LogMessage("DEBUG", "ADDED AWY TO TEST SCT FILE");
+
+
+            Logger.LogMessage("INFO", "COMPLETED AWY SCT FILE WRITER");
+
         }
     }
 }

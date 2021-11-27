@@ -7,6 +7,8 @@ namespace FeBuddyLibrary.Helpers
     {
         public static void CheckTempDir()
         {
+            Logger.LogMessage("DEBUG", "CHECKING TEMP DIRECTORY");
+
             if (Directory.Exists(GlobalConfig.tempPath) && !GlobalConfig.updateProgram)
             {
                 DirectoryInfo di = new DirectoryInfo(GlobalConfig.tempPath);
@@ -14,16 +16,19 @@ namespace FeBuddyLibrary.Helpers
                 foreach (FileInfo file in di.EnumerateFiles())
                 {
                     file.Delete();
+                    Logger.LogMessage("DEBUG", $"DELETED FILE: {file.FullName}");
                 }
 
                 foreach (DirectoryInfo dir in di.EnumerateDirectories())
                 {
                     dir.Delete(true);
+                    Logger.LogMessage("DEBUG", $"DELETED DIRECTORY: {dir.FullName}");
                 }
             }
             else
             {
                 Directory.CreateDirectory(GlobalConfig.tempPath);
+                Logger.LogMessage("DEBUG", $"CREATED DIRECTORY: {GlobalConfig.tempPath}");
             }
         }
 
@@ -33,6 +38,7 @@ namespace FeBuddyLibrary.Helpers
             {
                 if (filePath.Contains(".zip"))
                 {
+                    Logger.LogMessage("INFO", $"UNZIPING: {filePath}");
                     ZipFile.ExtractToDirectory(filePath, filePath.Replace(".zip", string.Empty));
                 }
             }
@@ -43,6 +49,7 @@ namespace FeBuddyLibrary.Helpers
         /// </summary>
         public static void CreateDirectories()
         {
+            Logger.LogMessage("DEBUG", "CREATING OUTPUT DIRECTORIES");
             Directory.CreateDirectory(GlobalConfig.outputDirectory);
             Directory.CreateDirectory($"{GlobalConfig.outputDirectory}\\ALIAS");
             Directory.CreateDirectory($"{GlobalConfig.outputDirectory}\\VRC");

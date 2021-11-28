@@ -1,4 +1,5 @@
-﻿using FeBuddyLibrary.Models;
+﻿using FeBuddyLibrary.Helpers;
+using FeBuddyLibrary.Models;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -13,6 +14,8 @@ namespace FeBuddyLibrary.DataAccess
 
         public void readFAAData(string websiteFilePath)
         {
+            Logger.LogMessage("DEBUG", $"STARTING TELEPHONY");
+
             string[] allLines = File.ReadAllLines(websiteFilePath);
 
             bool inTableRow = false;
@@ -142,12 +145,15 @@ namespace FeBuddyLibrary.DataAccess
                     }
                 }
             }
+            Logger.LogMessage("DEBUG", $"COMPLETED TELEPHONY MODEL");
 
             WriteTelephony();
         }
 
         public void WriteTelephony()
         {
+            Logger.LogMessage("DEBUG", $"SAVING TELEPHONY MODEL");
+
             string filePath = $"{GlobalConfig.outputDirectory}ALIAS\\TELEPHONY.txt";
             StringBuilder sb = new StringBuilder();
 
@@ -158,6 +164,8 @@ namespace FeBuddyLibrary.DataAccess
             }
 
             File.WriteAllText(filePath, sb.ToString());
+            Logger.LogMessage("DEBUG", $"COMPLETED TELEPHONY");
+
         }
     }
 }

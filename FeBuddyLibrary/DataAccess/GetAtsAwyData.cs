@@ -1,4 +1,5 @@
-﻿using FeBuddyLibrary.Models;
+﻿using FeBuddyLibrary.Helpers;
+using FeBuddyLibrary.Models;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -21,9 +22,13 @@ namespace FeBuddyLibrary.DataAccess
         /// <param name="effectiveDate">Format: YYYY-MM-DD</param>
         public void AWYQuarterbackFunc(string effectiveDate)
         {
+            Logger.LogMessage("INFO", "STARTED AWY");
+
             ParseAtsData(effectiveDate);
             WriteAwySctData();
             WriteAwyAlias();
+            Logger.LogMessage("INFO", "COMPLETED AWY");
+
         }
 
         /// <summary>
@@ -31,6 +36,8 @@ namespace FeBuddyLibrary.DataAccess
         /// </summary>
         private void ParseAtsData(string effectiveDate)
         {
+            Logger.LogMessage("INFO", "STARTED AWY PARSING");
+
             atsAwyPointModel atsPoint = new atsAwyPointModel();
 
             foreach (string line in File.ReadAllLines($"{GlobalConfig.tempPath}\\{effectiveDate}_ATS\\ATS.txt"))
@@ -70,10 +77,10 @@ namespace FeBuddyLibrary.DataAccess
 
 
                     atsPoint.Name = line.Substring(25, 40).Trim();
-                    atsPoint.Lat = GlobalConfig.CorrectLatLon(line.Substring(109, 14).Trim(), true, GlobalConfig.Convert);
-                    atsPoint.Lon = GlobalConfig.CorrectLatLon(line.Substring(123, 14).Trim(), false, GlobalConfig.Convert);
-                    atsPoint.Dec_Lat = GlobalConfig.CreateDecFormat(atsPoint.Lat, true);
-                    atsPoint.Dec_Lon = GlobalConfig.CreateDecFormat(atsPoint.Lon, true);
+                    atsPoint.Lat = LatLonHelpers.CorrectLatLon(line.Substring(109, 14).Trim(), true, GlobalConfig.Convert);
+                    atsPoint.Lon = LatLonHelpers.CorrectLatLon(line.Substring(123, 14).Trim(), false, GlobalConfig.Convert);
+                    atsPoint.Dec_Lat = LatLonHelpers.CreateDecFormat(atsPoint.Lat, true);
+                    atsPoint.Dec_Lon = LatLonHelpers.CreateDecFormat(atsPoint.Lon, true);
 
                     if (line.Substring(65, 25).Trim() == "NDB")
                     {
@@ -131,10 +138,14 @@ namespace FeBuddyLibrary.DataAccess
                     allAtsAwy.Add(atsAwy);
                 }
             }
+            Logger.LogMessage("INFO", "COMPLETED AWY PARSING");
+
         }
 
         private void WriteAwyAlias()
         {
+            Logger.LogMessage("INFO", "STARTED AWY ALIAS");
+
             foreach (atsAwyPointModel pointModel in allAtsAwyPoints)
             {
 
@@ -159,6 +170,7 @@ namespace FeBuddyLibrary.DataAccess
 
             File.AppendAllText(awyAliasFilePath, sb.ToString());
             File.AppendAllText($"{GlobalConfig.outputDirectory}\\ALIAS\\AliasTestFile.txt", sb.ToString());
+            Logger.LogMessage("INFO", "COMPLTED AWY ALIAS");
 
         }
 
@@ -167,6 +179,8 @@ namespace FeBuddyLibrary.DataAccess
         /// </summary>
         private void WriteAwySctData()
         {
+            Logger.LogMessage("INFO", "STARTED AWY SCT WRITER");
+
             // Set our File Path
             string filePath = $"{GlobalConfig.outputDirectory}\\VRC\\[LOW AIRWAY].sct2";
 
@@ -206,7 +220,12 @@ namespace FeBuddyLibrary.DataAccess
             }
             File.WriteAllText(filePath, sb.ToString());
             File.AppendAllText(filePath, $"\n\n\n\n\n\n");
+            Logger.LogMessage("DEBUG", "SAVED AWY SCT FILE");
+
             File.AppendAllText($"{GlobalConfig.outputDirectory}\\{GlobalConfig.testSectorFileName}", File.ReadAllText(filePath));
+            Logger.LogMessage("DEBUG", "ADDED AWY TO TEST SCT FILE");
+            Logger.LogMessage("INFO", "COMPLETED AWY SCT WRITER");
+
         }
     }
 }

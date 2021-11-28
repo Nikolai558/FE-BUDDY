@@ -72,6 +72,7 @@
             this.Name = "MetaNotFoundForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
             this.Text = "FAA Meta File Not Found";
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.MetaNotFoundForm_Closing);
             this.ResumeLayout(false);
             this.PerformLayout();
 

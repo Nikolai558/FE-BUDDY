@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using FeBuddyLibrary.Helpers;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
@@ -8,6 +9,8 @@ namespace FeBuddyLibrary.Models
     {
         public void CheckForDuplicates(string CompleteAliasFilePath)
         {
+            Logger.LogMessage("INFO", "STARTED DUPLICATE ALIAS CHECK");
+
             List<string> allAliasLines = File.ReadAllLines(CompleteAliasFilePath).ToList();
             List<string> allCommands = new List<string>();
             List<string> duplicateCommands = new List<string>();
@@ -44,6 +47,9 @@ namespace FeBuddyLibrary.Models
                 }
             }
 
+            //IEnumerable<string> duplicates = allCommands.GroupBy(x => x).Where(g => g.Count() > 1).Select(x => x.Key);
+
+
             // sort it so its easy to see the duplicate command lines.
             duplicateCommandLines.Sort();
 
@@ -64,6 +70,8 @@ namespace FeBuddyLibrary.Models
             }
 
             WriteDupFile(duplicateCommandLines, GlobalConfig.allAptModelsForCheck);
+            Logger.LogMessage("INFO", "COMPLETED DUPLICATE ALIAS CHECK");
+
         }
 
 

@@ -1,4 +1,5 @@
 ﻿using FeBuddyLibrary;
+using FeBuddyLibrary.Helpers;
 using System;
 using System.Drawing;
 using System.IO;
@@ -7,12 +8,17 @@ using System.Windows.Forms;
 
 namespace FeBuddyWinFormUI
 {
-    public partial class Processing : Form
+    public partial class UpdateForm : Form
     {
-        public Processing()
+        public UpdateForm()
         {
             InitializeComponent();
         }
+        private void UpdateForm_Closing(object sender, EventArgs e)
+        {
+            Logger.LogMessage("DEBUG", "UPDATE FORM CLOSING");
+        }
+
         /// <summary>
         /// Change the Form Tilte
         /// </summary>
@@ -20,13 +26,13 @@ namespace FeBuddyWinFormUI
         public void ChangeTitle(string titleText) { Text = titleText; }
 
         /// <summary>
-        /// Change the Processing Label Text
+        /// Change the UpdateForm Label Text
         /// </summary>
         /// <param name="text">String Text for Label</param>
         public void ChangeProcessingLabel(string text) { processingLabel.Text = text; }
 
         /// <summary>
-        /// Change Processing Label Location
+        /// Change UpdateForm Label Location
         /// </summary>
         /// <param name="location">Point Location (X, Y)</param>
         public void ChangeProcessingLabel(Point location) { processingLabel.Location = location; }
@@ -41,7 +47,7 @@ namespace FeBuddyWinFormUI
 
         public void ChangeUpdatePanel(Point newPoint) { updatePanel.Location = newPoint; }
 
-        public void DisplayMessages(bool visible) 
+        public void DisplayMessages(bool visible)
         {
             processingLabel.Enabled = !visible;
             processingLabel.Visible = !visible;
@@ -104,7 +110,7 @@ namespace FeBuddyWinFormUI
             return output;
         }
 
-        private void InputVariables() 
+        private void InputVariables()
         {
             string msg = ReadChangeLog();
 

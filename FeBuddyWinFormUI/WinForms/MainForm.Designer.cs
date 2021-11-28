@@ -70,14 +70,14 @@
             this.currentAiracSelection.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.currentAiracSelection.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.currentAiracSelection.Location = new System.Drawing.Point(91, 68);
-            this.currentAiracSelection.Margin = new System.Windows.Forms.Padding(6);
+            this.currentAiracSelection.Margin = new System.Windows.Forms.Padding(6, 7, 6, 7);
             this.currentAiracSelection.Name = "currentAiracSelection";
             this.currentAiracSelection.Size = new System.Drawing.Size(129, 25);
             this.currentAiracSelection.TabIndex = 0;
             this.currentAiracSelection.TabStop = true;
             this.currentAiracSelection.Text = "Current AIRAC";
             this.currentAiracSelection.UseVisualStyleBackColor = true;
-            this.currentAiracSelection.CheckedChanged += new System.EventHandler(this.currentAiracSelection_CheckedChanged);
+            this.currentAiracSelection.CheckedChanged += new System.EventHandler(this.CurrentAiracSelection_CheckedChanged);
             // 
             // nextAiracSelection
             // 
@@ -85,14 +85,14 @@
             this.nextAiracSelection.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.nextAiracSelection.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.nextAiracSelection.Location = new System.Drawing.Point(232, 68);
-            this.nextAiracSelection.Margin = new System.Windows.Forms.Padding(6);
+            this.nextAiracSelection.Margin = new System.Windows.Forms.Padding(6, 7, 6, 7);
             this.nextAiracSelection.Name = "nextAiracSelection";
             this.nextAiracSelection.Size = new System.Drawing.Size(108, 25);
             this.nextAiracSelection.TabIndex = 1;
             this.nextAiracSelection.Text = "Next AIRAC";
             this.nextAiracSelection.UseVisualStyleBackColor = true;
-            this.nextAiracSelection.CheckedChanged += new System.EventHandler(this.nextAiracSelection_CheckedChanged);
-            this.nextAiracSelection.Click += new System.EventHandler(this.nextAiracSelection_Click);
+            this.nextAiracSelection.CheckedChanged += new System.EventHandler(this.NextAiracSelection_CheckedChanged);
+            this.nextAiracSelection.Click += new System.EventHandler(this.NextAiracSelection_Click);
             // 
             // airacLabel
             // 
@@ -135,8 +135,8 @@
             this.convertNo.AutoSize = true;
             this.convertNo.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.convertNo.ForeColor = System.Drawing.SystemColors.AppWorkspace;
-            this.convertNo.Location = new System.Drawing.Point(232, 194);
-            this.convertNo.Margin = new System.Windows.Forms.Padding(6);
+            this.convertNo.Location = new System.Drawing.Point(232, 193);
+            this.convertNo.Margin = new System.Windows.Forms.Padding(6, 7, 6, 7);
             this.convertNo.Name = "convertNo";
             this.convertNo.Size = new System.Drawing.Size(49, 25);
             this.convertNo.TabIndex = 7;
@@ -150,8 +150,8 @@
             this.convertYes.Checked = true;
             this.convertYes.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.convertYes.ForeColor = System.Drawing.SystemColors.AppWorkspace;
-            this.convertYes.Location = new System.Drawing.Point(148, 194);
-            this.convertYes.Margin = new System.Windows.Forms.Padding(6);
+            this.convertYes.Location = new System.Drawing.Point(148, 193);
+            this.convertYes.Margin = new System.Windows.Forms.Padding(6, 7, 6, 7);
             this.convertYes.Name = "convertYes";
             this.convertYes.Size = new System.Drawing.Size(51, 25);
             this.convertYes.TabIndex = 6;
@@ -187,8 +187,8 @@
             // 
             this.chooseDirButton.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(20)))), ((int)(((byte)(20)))), ((int)(((byte)(20)))));
             this.chooseDirButton.FlatAppearance.BorderColor = System.Drawing.Color.Gray;
-            this.chooseDirButton.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Gray;
-            this.chooseDirButton.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Gray;
+            this.chooseDirButton.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Black;
+            this.chooseDirButton.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Black;
             this.chooseDirButton.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.chooseDirButton.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.chooseDirButton.ForeColor = System.Drawing.SystemColors.AppWorkspace;
@@ -198,14 +198,14 @@
             this.chooseDirButton.TabIndex = 10;
             this.chooseDirButton.Text = "Choose Output Location";
             this.chooseDirButton.UseVisualStyleBackColor = false;
-            this.chooseDirButton.Click += new System.EventHandler(this.chooseDirButton_Click);
+            this.chooseDirButton.Click += new System.EventHandler(this.ChooseDirButton_Click);
             // 
             // startButton
             // 
             this.startButton.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(20)))), ((int)(((byte)(20)))), ((int)(((byte)(20)))));
             this.startButton.FlatAppearance.BorderColor = System.Drawing.Color.Gray;
-            this.startButton.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Gray;
-            this.startButton.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Gray;
+            this.startButton.FlatAppearance.MouseDownBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(64)))), ((int)(((byte)(0)))));
+            this.startButton.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Black;
             this.startButton.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.startButton.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.startButton.ForeColor = System.Drawing.SystemColors.AppWorkspace;
@@ -215,10 +215,11 @@
             this.startButton.TabIndex = 11;
             this.startButton.Text = "Start";
             this.startButton.UseVisualStyleBackColor = false;
-            this.startButton.Click += new System.EventHandler(this.startButton_Click);
+            this.startButton.Click += new System.EventHandler(this.StartButton_Click);
             // 
             // airacCycleGroupBox
             // 
+            this.airacCycleGroupBox.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(10)))), ((int)(((byte)(10)))), ((int)(((byte)(10)))));
             this.airacCycleGroupBox.Controls.Add(this.airacLabel);
             this.airacCycleGroupBox.Controls.Add(this.currentAiracSelection);
             this.airacCycleGroupBox.Controls.Add(this.nextAiracSelection);
@@ -230,6 +231,7 @@
             // 
             // convertGroupBox
             // 
+            this.convertGroupBox.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(10)))), ((int)(((byte)(10)))), ((int)(((byte)(10)))));
             this.convertGroupBox.Controls.Add(this.convertLabel);
             this.convertGroupBox.Controls.Add(this.convertYes);
             this.convertGroupBox.Controls.Add(this.convertNo);
@@ -242,6 +244,7 @@
             // 
             // startGroupBox
             // 
+            this.startGroupBox.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(10)))), ((int)(((byte)(10)))), ((int)(((byte)(10)))));
             this.startGroupBox.Controls.Add(this.facilityIdCombobox);
             this.startGroupBox.Controls.Add(this.facilityIDLabel);
             this.startGroupBox.Controls.Add(this.startButton);
@@ -265,7 +268,7 @@
             this.facilityIdCombobox.Name = "facilityIdCombobox";
             this.facilityIdCombobox.Size = new System.Drawing.Size(182, 33);
             this.facilityIdCombobox.TabIndex = 12;
-            this.facilityIdCombobox.SelectedIndexChanged += new System.EventHandler(this.facilityIdCombobox_SelectedIndexChanged);
+            this.facilityIdCombobox.SelectedIndexChanged += new System.EventHandler(this.FacilityIdCombobox_SelectedIndexChanged);
             // 
             // processingDataLabel
             // 
@@ -282,6 +285,7 @@
             // 
             // processingGroupBox
             // 
+            this.processingGroupBox.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(10)))), ((int)(((byte)(10)))), ((int)(((byte)(10)))));
             this.processingGroupBox.Controls.Add(this.outputDirectoryLabel);
             this.processingGroupBox.Controls.Add(this.outputLocationLabel);
             this.processingGroupBox.Controls.Add(this.exitButton);
@@ -320,8 +324,8 @@
             this.exitButton.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(20)))), ((int)(((byte)(20)))), ((int)(((byte)(20)))));
             this.exitButton.Enabled = false;
             this.exitButton.FlatAppearance.BorderColor = System.Drawing.Color.Gray;
-            this.exitButton.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Gray;
-            this.exitButton.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Gray;
+            this.exitButton.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Maroon;
+            this.exitButton.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Black;
             this.exitButton.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.exitButton.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.exitButton.ForeColor = System.Drawing.SystemColors.AppWorkspace;
@@ -332,11 +336,11 @@
             this.exitButton.Text = "Exit";
             this.exitButton.UseVisualStyleBackColor = false;
             this.exitButton.Visible = false;
-            this.exitButton.Click += new System.EventHandler(this.exitButton_Click);
+            this.exitButton.Click += new System.EventHandler(this.ExitButton_Click);
             // 
             // menuStrip1
             // 
-            this.menuStrip1.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(10)))), ((int)(((byte)(10)))), ((int)(((byte)(10)))));
+            this.menuStrip1.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))));
             this.menuStrip1.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.instructionsToolStripMenuItem,
@@ -358,7 +362,7 @@
             this.instructionsToolStripMenuItem.Name = "instructionsToolStripMenuItem";
             this.instructionsToolStripMenuItem.Size = new System.Drawing.Size(93, 20);
             this.instructionsToolStripMenuItem.Text = "Instructions";
-            this.instructionsToolStripMenuItem.Click += new System.EventHandler(this.instructionsToolStripMenuItem_Click);
+            this.instructionsToolStripMenuItem.Click += new System.EventHandler(this.InstructionsToolStripMenuItem_Click);
             // 
             // roadmapToolStripMenuItem
             // 
@@ -367,7 +371,7 @@
             this.roadmapToolStripMenuItem.Name = "roadmapToolStripMenuItem";
             this.roadmapToolStripMenuItem.Size = new System.Drawing.Size(80, 20);
             this.roadmapToolStripMenuItem.Text = "Roadmap";
-            this.roadmapToolStripMenuItem.Click += new System.EventHandler(this.roadmapToolStripMenuItem_Click);
+            this.roadmapToolStripMenuItem.Click += new System.EventHandler(this.RoadmapToolStripMenuItem_Click);
             // 
             // fAQToolStripMenuItem
             // 
@@ -376,7 +380,7 @@
             this.fAQToolStripMenuItem.Name = "fAQToolStripMenuItem";
             this.fAQToolStripMenuItem.Size = new System.Drawing.Size(50, 20);
             this.fAQToolStripMenuItem.Text = "FAQ";
-            this.fAQToolStripMenuItem.Click += new System.EventHandler(this.fAQToolStripMenuItem_Click);
+            this.fAQToolStripMenuItem.Click += new System.EventHandler(this.FAQToolStripMenuItem_Click);
             // 
             // creditsToolStripMenuItem
             // 
@@ -385,17 +389,17 @@
             this.creditsToolStripMenuItem.Name = "creditsToolStripMenuItem";
             this.creditsToolStripMenuItem.Size = new System.Drawing.Size(64, 20);
             this.creditsToolStripMenuItem.Text = "Credits";
-            this.creditsToolStripMenuItem.Click += new System.EventHandler(this.creditsToolStripMenuItem_Click);
+            this.creditsToolStripMenuItem.Click += new System.EventHandler(this.CreditsToolStripMenuItem_Click);
             // 
             // changeLogToolStripMenuItem
             // 
-            this.changeLogToolStripMenuItem.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(10)))), ((int)(((byte)(10)))), ((int)(((byte)(10)))));
+            this.changeLogToolStripMenuItem.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))));
             this.changeLogToolStripMenuItem.Font = new System.Drawing.Font("Romantic", 11.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(2)));
             this.changeLogToolStripMenuItem.ForeColor = System.Drawing.SystemColors.ActiveBorder;
             this.changeLogToolStripMenuItem.Name = "changeLogToolStripMenuItem";
             this.changeLogToolStripMenuItem.Size = new System.Drawing.Size(97, 20);
             this.changeLogToolStripMenuItem.Text = "Change Log";
-            this.changeLogToolStripMenuItem.Click += new System.EventHandler(this.changeLogToolStripMenuItem_Click);
+            this.changeLogToolStripMenuItem.Click += new System.EventHandler(this.ChangeLogToolStripMenuItem_Click);
             // 
             // uninstallToolStripMenuItem
             // 
@@ -404,7 +408,7 @@
             this.uninstallToolStripMenuItem.Name = "uninstallToolStripMenuItem";
             this.uninstallToolStripMenuItem.Size = new System.Drawing.Size(76, 20);
             this.uninstallToolStripMenuItem.Text = "Uninstall";
-            this.uninstallToolStripMenuItem.Click += new System.EventHandler(this.uninstallToolStripMenuItem_Click);
+            this.uninstallToolStripMenuItem.Click += new System.EventHandler(this.UninstallToolStripMenuItem_Click);
             // 
             // MainForm
             // 
@@ -412,6 +416,8 @@
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.AutoSize = true;
             this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(10)))), ((int)(((byte)(10)))), ((int)(((byte)(10)))));
+            this.BackgroundImage = global::FeBuddyWinFormUI.Properties.Resources.window_background;
+            this.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
             this.ClientSize = new System.Drawing.Size(785, 404);
             this.Controls.Add(this.processingGroupBox);
             this.Controls.Add(this.startGroupBox);
@@ -424,13 +430,14 @@
             this.HelpButton = true;
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MainMenuStrip = this.menuStrip1;
-            this.Margin = new System.Windows.Forms.Padding(6);
+            this.Margin = new System.Windows.Forms.Padding(6, 7, 6, 7);
             this.MaximizeBox = false;
             this.Name = "MainForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "FE-BUDDY";
             this.Load += new System.EventHandler(this.MainForm_Load);
             this.Shown += new System.EventHandler(this.MainForm_Shown);
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.MainForm_Closing);
             this.airacCycleGroupBox.ResumeLayout(false);
             this.airacCycleGroupBox.PerformLayout();
             this.convertGroupBox.ResumeLayout(false);

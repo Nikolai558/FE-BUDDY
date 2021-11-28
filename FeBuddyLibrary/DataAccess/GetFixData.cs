@@ -1,4 +1,5 @@
-﻿using FeBuddyLibrary.Models;
+﻿using FeBuddyLibrary.Helpers;
+using FeBuddyLibrary.Models;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
@@ -15,9 +16,13 @@ namespace FeBuddyLibrary.DataAccess
         /// <param name="effectiveDate">Format: YYYY-MM-DD</param>
         public void FixQuarterbackFunc(string effectiveDate)
         {
+            Logger.LogMessage("INFO", "STARTED FIXES");
+
             ParseFixData(effectiveDate);
             WriteFixSctData();
             StoreXMLData();
+            Logger.LogMessage("INFO", "COMPLETED FIXES");
+
         }
 
         /// <summary>
@@ -25,6 +30,8 @@ namespace FeBuddyLibrary.DataAccess
         /// </summary>
         private void ParseFixData(string effectiveDate)
         {
+            Logger.LogMessage("INFO", "STARTED PARSING FIXES");
+
             // Variable for all the 'bad' characters. We will remove all these characters from the data.
             char[] removeChars = { ' ', '.' };
 
@@ -38,8 +45,8 @@ namespace FeBuddyLibrary.DataAccess
                     FixModel individualFixData = new FixModel
                     {
                         Id = line.Substring(4, 5).Trim(removeChars),
-                        Lat = GlobalConfig.CorrectLatLon(line.Substring(66, 14).Trim(removeChars), true, GlobalConfig.Convert),
-                        Lon = GlobalConfig.CorrectLatLon(line.Substring(80, 14).Trim(removeChars), false, GlobalConfig.Convert),
+                        Lat = LatLonHelpers.CorrectLatLon(line.Substring(66, 14).Trim(removeChars), true, GlobalConfig.Convert),
+                        Lon = LatLonHelpers.CorrectLatLon(line.Substring(80, 14).Trim(removeChars), false, GlobalConfig.Convert),
                         Catagory = line.Substring(94, 3).Trim(removeChars),
                         Use = line.Substring(213, 15).Trim(removeChars),
                         HiArtcc = line.Substring(233, 4).Trim(removeChars),
@@ -47,13 +54,15 @@ namespace FeBuddyLibrary.DataAccess
                     };
 
                     // Set the Decimal Format for the Lat and Lon
-                    individualFixData.Lat_Dec = GlobalConfig.CreateDecFormat(individualFixData.Lat, true);
-                    individualFixData.Lon_Dec = GlobalConfig.CreateDecFormat(individualFixData.Lon, true);
+                    individualFixData.Lat_Dec = LatLonHelpers.CreateDecFormat(individualFixData.Lat, true);
+                    individualFixData.Lon_Dec = LatLonHelpers.CreateDecFormat(individualFixData.Lon, true);
 
                     // Add this FIX MODEL to the list of all Fixes.
                     allFixesInData.Add(individualFixData);
                 }
             }
+            Logger.LogMessage("INFO", "COMPLETED PARSING FIXES");
+
         }
 
         /// <summary>
@@ -63,6 +72,8 @@ namespace FeBuddyLibrary.DataAccess
         /// </summary>
         private void StoreXMLData()
         {
+            Logger.LogMessage("INFO", "STARTED STORING FIX XML DATA");
+
             // Create an Empty list of Waypoints, So that we can add our waypoints to this list.
             List<Waypoint> waypointList = new List<Waypoint>();
 
@@ -95,6 +106,9 @@ namespace FeBuddyLibrary.DataAccess
 
             // Set our Global Waypoint list (includes airports, vor, ndb, fixes) to our List we just made. AND convert it to an Array instead of a list.
             GlobalConfig.waypoints = waypointList.ToArray();
+
+            Logger.LogMessage("INFO", "COMPLETED STORING FIX XML DATA");
+
         }
 
         /// <summary>
@@ -102,6 +116,8 @@ namespace FeBuddyLibrary.DataAccess
         /// </summary>
         private void WriteFixSctData()
         {
+            Logger.LogMessage("INFO", "STARTED SAVING FIX SCT DATA");
+
             // This is where the new SCT2 File will be saved to.
             string filePath = $"{GlobalConfig.outputDirectory}\\VRC\\[FIXES].sct2";
 
@@ -123,9 +139,16 @@ namespace FeBuddyLibrary.DataAccess
 
             // Add some blank lines to the end of the file. 
             File.AppendAllText(filePath, $"\n\n\n\n\n\n");
+            Logger.LogMessage("INFO", "SAVED FIX SCT FILE");
+
 
             // Add this file to our Test Sector File.
             File.AppendAllText($"{GlobalConfig.outputDirectory}\\{GlobalConfig.testSectorFileName}", File.ReadAllText(filePath));
+            Logger.LogMessage("INFO", "SAVED FIX SCT DATA TO TEST SCT FILE");
+
+
+            Logger.LogMessage("INFO", "COMPLETED SAVING FIX SCT DATA");
+
         }
     }
 }

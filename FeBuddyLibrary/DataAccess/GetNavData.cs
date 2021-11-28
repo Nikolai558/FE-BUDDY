@@ -1,4 +1,5 @@
-﻿using FeBuddyLibrary.Models;
+﻿using FeBuddyLibrary.Helpers;
+using FeBuddyLibrary.Models;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
@@ -16,10 +17,14 @@ namespace FeBuddyLibrary.DataAccess
         /// <param name="effectiveDate">Format: YYYY-MM-DD"</param>
         public void NAVQuarterbackFunc(string effectiveDate, string Artcc)
         {
+            Logger.LogMessage("INFO", "STARTED NAV");
+
             ParseNAVData(effectiveDate);
             StoreXMLData();
             WriteNAVSctData();
             WriteNavISR(Artcc);
+            Logger.LogMessage("INFO", "COMPLETED NAV");
+
         }
 
         /// <summary>
@@ -28,6 +33,8 @@ namespace FeBuddyLibrary.DataAccess
         /// </summary>
         private void ParseNAVData(string effectiveDate)
         {
+            Logger.LogMessage("INFO", "STARTED NAV PARSING");
+
             // FAA Provides data for ALL types of NDB and VOR, we only need certain types. Exclude the one we are on if it has any of these.
             List<string> excludeTypes = new List<string> { "VOT", "FAN MARKER", "CONSOLAN", "MARINE NDB", "DECOMMISSIONED", "MARINE NDB/DME" };
 
@@ -71,13 +78,13 @@ namespace FeBuddyLibrary.DataAccess
                                 Type = line.Substring(8, 20).Trim(removeChars),
                                 Name = line.Substring(42, 30).Trim(removeChars),
                                 Freq = line.Substring(533, 6).Trim(removeChars),
-                                Lat = GlobalConfig.CorrectLatLon(line.Substring(371, 14).Trim(removeChars), true, GlobalConfig.Convert),
-                                Lon = GlobalConfig.CorrectLatLon(line.Substring(396, 14).Trim(removeChars), false, GlobalConfig.Convert)
+                                Lat = LatLonHelpers.CorrectLatLon(line.Substring(371, 14).Trim(removeChars), true, GlobalConfig.Convert),
+                                Lon = LatLonHelpers.CorrectLatLon(line.Substring(396, 14).Trim(removeChars), false, GlobalConfig.Convert)
                             };
 
                             // Get the Decimal Format for Lat Lon and set it in our Model.
-                            individualNDB.Dec_Lat = GlobalConfig.CreateDecFormat(individualNDB.Lat, true);
-                            individualNDB.Dec_Lon = GlobalConfig.CreateDecFormat(individualNDB.Lon, true);
+                            individualNDB.Dec_Lat = LatLonHelpers.CreateDecFormat(individualNDB.Lat, true);
+                            individualNDB.Dec_Lon = LatLonHelpers.CreateDecFormat(individualNDB.Lon, true);
 
                             // Add the NDB model we just created to our LIST of NDB Models
                             allNDBData.Add(individualNDB);
@@ -93,13 +100,13 @@ namespace FeBuddyLibrary.DataAccess
                                 Type = line.Substring(8, 20).Trim(removeChars),
                                 Name = line.Substring(42, 30).Trim(removeChars),
                                 Freq = line.Substring(533, 6).Trim(removeChars),
-                                Lat = GlobalConfig.CorrectLatLon(line.Substring(371, 14).Trim(removeChars), true, GlobalConfig.Convert),
-                                Lon = GlobalConfig.CorrectLatLon(line.Substring(396, 14).Trim(removeChars), false, GlobalConfig.Convert)
+                                Lat = LatLonHelpers.CorrectLatLon(line.Substring(371, 14).Trim(removeChars), true, GlobalConfig.Convert),
+                                Lon = LatLonHelpers.CorrectLatLon(line.Substring(396, 14).Trim(removeChars), false, GlobalConfig.Convert)
                             };
 
                             // Get the Decimal Format for Lat Lon and set it in our Model.
-                            individualVOR.Dec_Lat = GlobalConfig.CreateDecFormat(individualVOR.Lat, true);
-                            individualVOR.Dec_Lon = GlobalConfig.CreateDecFormat(individualVOR.Lon, true);
+                            individualVOR.Dec_Lat = LatLonHelpers.CreateDecFormat(individualVOR.Lat, true);
+                            individualVOR.Dec_Lon = LatLonHelpers.CreateDecFormat(individualVOR.Lon, true);
 
                             // Add the VOR model we just created to our LIST of VOR Models.
                             allVORData.Add(individualVOR);
@@ -107,6 +114,8 @@ namespace FeBuddyLibrary.DataAccess
                     }
                 }
             }
+            Logger.LogMessage("INFO", "COMPLETED NAV PARSING");
+
         }
 
         /// <summary>
@@ -116,6 +125,8 @@ namespace FeBuddyLibrary.DataAccess
         /// </summary>
         private void StoreXMLData()
         {
+            Logger.LogMessage("INFO", "STARTED NAV XML STORE");
+
             // Create an Empty list for our Waypoints 
             List<Waypoint> waypointList = new List<Waypoint>();
 
@@ -168,6 +179,8 @@ namespace FeBuddyLibrary.DataAccess
 
             // Set our GLOBAL storage of waypoints for the xml file to our list and convert it to an array.
             GlobalConfig.waypoints = waypointList.ToArray();
+            Logger.LogMessage("INFO", "COMPLETED NAV XML STORE");
+
         }
 
         /// <summary>
@@ -176,6 +189,8 @@ namespace FeBuddyLibrary.DataAccess
         /// <param name="Artcc">User Artcc Code</param>
         private void WriteNavISR(string Artcc)
         {
+            Logger.LogMessage("INFO", "STARTED NAV ISR WRITER");
+
             // File path to save the ISR file
             string filePath = $"{GlobalConfig.outputDirectory}\\ALIAS\\ISR_NAVAID.txt";
             string navTextGeoMapFile = $"{GlobalConfig.outputDirectory}\\vERAM\\NAVAID_TEXT_GEOMAP.xml";
@@ -261,6 +276,7 @@ namespace FeBuddyLibrary.DataAccess
 
             File.AppendAllText($"{GlobalConfig.outputDirectory}\\ALIAS\\AliasTestFile.txt", sb.ToString());
 
+            Logger.LogMessage("INFO", "COMPLETED NAV ISR WRITER");
         }
 
         /// <summary>
@@ -268,6 +284,8 @@ namespace FeBuddyLibrary.DataAccess
         /// </summary>
         private void WriteNAVSctData()
         {
+            Logger.LogMessage("INFO", "STARTED NAV WRITER");
+
             // Variable for the full file path for our two types.
             string NDBfilePath = $"{GlobalConfig.outputDirectory}\\VRC\\[NDB].sct2";
             string VORfilePath = $"{GlobalConfig.outputDirectory}\\VRC\\[VOR].sct2";
@@ -315,6 +333,8 @@ namespace FeBuddyLibrary.DataAccess
 
             // Add this file data to our TEST sector File.
             File.AppendAllText($"{GlobalConfig.outputDirectory}\\{GlobalConfig.testSectorFileName}", File.ReadAllText(VORfilePath));
+            Logger.LogMessage("INFO", "COMPLETED NAV WRITER");
+
         }
     }
 }

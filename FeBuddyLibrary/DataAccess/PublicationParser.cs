@@ -74,7 +74,19 @@ namespace FeBuddyLibrary.DataAccess
                                     {
                                         if (recordModel1.UserAction != "" && recordModel1.UserAction != " ")
                                         {
-                                            airportProcedureChanges.AppendLine($"\t({recordModel1.UserAction}) {recordModel1.ChartName} | https://aeronav.faa.gov/d-tpp/{AiracDateCycleModel.AllCycleDates[GlobalConfig.airacEffectiveDate]}/compare_pdf/{recordModel1.PdfName.Substring(0, recordModel1.PdfName.Length - 4)}_cmp.pdf");
+                                            if (recordModel1.UserAction == "A")
+                                            {
+                                                airportProcedureChanges.AppendLine($"\t({recordModel1.UserAction}) {recordModel1.ChartName} | This procedure is new and has no previous version to compare.");
+                                            }
+                                            else if (recordModel1.UserAction == "D")
+                                            {
+                                                airportProcedureChanges.AppendLine($"\t({recordModel1.UserAction}) {recordModel1.ChartName} | This procedure has been deleted this AIRAC.");
+                                            }
+                                            else
+                                            {
+                                                // TODO - Check link here.
+                                                airportProcedureChanges.AppendLine($"\t({recordModel1.UserAction}) {recordModel1.ChartName} | https://aeronav.faa.gov/d-tpp/{AiracDateCycleModel.AllCycleDates[GlobalConfig.airacEffectiveDate]}/compare_pdf/{recordModel1.PdfName.Substring(0, recordModel1.PdfName.Length - 4)}_cmp.pdf");
+                                            }
                                         }
                                     }
                                 }
@@ -134,7 +146,19 @@ namespace FeBuddyLibrary.DataAccess
                                 {
                                     if (recordModel1.UserAction != "" && recordModel1.UserAction != " ")
                                     {
-                                        airportProcedureChanges.AppendLine($"\t({recordModel1.UserAction}) {recordModel1.ChartName} | https://aeronav.faa.gov/d-tpp/{AiracDateCycleModel.AllCycleDates[GlobalConfig.airacEffectiveDate]}/compare_pdf/{recordModel1.PdfName.Substring(0, recordModel1.PdfName.Length - 4)}_cmp.pdf");
+                                        if (recordModel1.UserAction == "A")
+                                        {
+                                            airportProcedureChanges.AppendLine($"\t({recordModel1.UserAction}) {recordModel1.ChartName} | This procedure is new and has no previous version to compare.");
+                                        }
+                                        else if (recordModel1.UserAction == "D")
+                                        {
+                                            airportProcedureChanges.AppendLine($"\t({recordModel1.UserAction}) {recordModel1.ChartName} | This procedure has been deleted this AIRAC.");
+                                        }
+                                        else
+                                        {
+                                            // TODO - Check link here.
+                                            airportProcedureChanges.AppendLine($"\t({recordModel1.UserAction}) {recordModel1.ChartName} | https://aeronav.faa.gov/d-tpp/{AiracDateCycleModel.AllCycleDates[GlobalConfig.airacEffectiveDate]}/compare_pdf/{recordModel1.PdfName.Substring(0, recordModel1.PdfName.Length - 4)}_cmp.pdf");
+                                        }
                                     }
                                 }
                             }

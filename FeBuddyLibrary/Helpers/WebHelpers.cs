@@ -43,27 +43,6 @@ namespace FeBuddyLibrary.Helpers
             }
         }
 
-        public static bool is404WebsiteLink(string link)
-        {
-            try
-            {
-                var request = HttpWebRequest.Create(link);
-                request.Method = "GET";
-                if (request.GetResponse() is HttpWebResponse response)
-                {
-                    response.Close();
-                }
-
-                return false;
-            }
-            catch (WebException)
-            {
-                Logger.LogMessage("DEBUG", $"NOT VALID LINK: {link}");
-                return true;
-            }
-        }
-
-
     public static void UpdateCheck()
         {
             Logger.LogMessage("DEBUG", "PREFORMING UPDATE CHECK");

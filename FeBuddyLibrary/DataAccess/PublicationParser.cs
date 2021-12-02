@@ -1,4 +1,5 @@
-﻿using FeBuddyLibrary.Models;
+﻿using FeBuddyLibrary.Helpers;
+using FeBuddyLibrary.Models;
 using FeBuddyLibrary.Models.MetaFileModels;
 using System;
 using System.Collections.Generic;
@@ -15,12 +16,16 @@ namespace FeBuddyLibrary.DataAccess
 
         public void WriteAirportInfoTxt(string responsibleArtcc)
         {
+            Logger.LogMessage("INFO", "STARTING PUBLICATION PARSER");
+
             StringBuilder airportInArtccInfo = new StringBuilder();
             StringBuilder airportProcedureChanges = new StringBuilder();
             StringBuilder airportProcedures = new StringBuilder();
 
             if (responsibleArtcc == "FAA")
             {
+                Logger.LogMessage("DEBUG", "RESPONSIBLE ARTCC IS FAA");
+
                 foreach (string artcc in allArtcc)
                 {
                     if (artcc == "FAA")
@@ -114,6 +119,8 @@ namespace FeBuddyLibrary.DataAccess
             }
             else if (allArtcc.Contains(responsibleArtcc))
             {
+                Logger.LogMessage("DEBUG", $"RESPONSIBLE ARTCC IS {responsibleArtcc}");
+
                 foreach (AptModel airport in GlobalConfig.allAptModelsForCheck)
                 {
                     if (airport.ResArtcc == responsibleArtcc)
@@ -197,8 +204,12 @@ namespace FeBuddyLibrary.DataAccess
             }
             else
             {
+                Logger.LogMessage("ERROR", $"RESPONSIBLE ARTCC IS NOT VALID! NEW EXCEPTION THROWN, THIS CAUSED CRASH.");
+
                 throw new NotImplementedException();
             }
+            Logger.LogMessage("INFO", "COMPLETED PUBLICATION PARSER");
+
         }
 
         /// <summary>
@@ -207,13 +218,19 @@ namespace FeBuddyLibrary.DataAccess
         /// <param name="fullFilePath">Full File Path</param>
         private void CreateDirAndFile(string fullFilePath)
         {
+            Logger.LogMessage("DEBUG", $"TRYING TO CREATE {fullFilePath}");
+
             if (!Directory.Exists(fullFilePath.Substring(0, fullFilePath.LastIndexOf('\\'))))
             {
+                Logger.LogMessage("DEBUG", $"DIRECTORY DOES NOT EXIST, CREATING DIRECTORY FOR {fullFilePath}");
+
                 Directory.CreateDirectory(fullFilePath.Substring(0, fullFilePath.LastIndexOf('\\')));
             }
 
             if (!File.Exists(fullFilePath))
             {
+                Logger.LogMessage("WARNING", $"FILE ALREADY EXITS FOR {fullFilePath}");
+
                 //File.Create(fullFilePath);
             }
         }

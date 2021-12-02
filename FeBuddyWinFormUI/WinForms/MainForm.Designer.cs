@@ -259,6 +259,7 @@
             // facilityIdCombobox
             // 
             this.facilityIdCombobox.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(20)))), ((int)(((byte)(20)))), ((int)(((byte)(20)))));
+            this.facilityIdCombobox.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.facilityIdCombobox.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.facilityIdCombobox.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.facilityIdCombobox.FormattingEnabled = true;
@@ -435,9 +436,9 @@
             this.Name = "MainForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "FE-BUDDY";
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.MainForm_Closing);
             this.Load += new System.EventHandler(this.MainForm_Load);
             this.Shown += new System.EventHandler(this.MainForm_Shown);
-            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.MainForm_Closing);
             this.airacCycleGroupBox.ResumeLayout(false);
             this.airacCycleGroupBox.PerformLayout();
             this.convertGroupBox.ResumeLayout(false);

@@ -84,8 +84,18 @@ namespace FeBuddyLibrary.DataAccess
                                             }
                                             else
                                             {
-                                                // TODO - Check link here.
-                                                airportProcedureChanges.AppendLine($"\t({recordModel1.UserAction}) {recordModel1.ChartName} | https://aeronav.faa.gov/d-tpp/{AiracDateCycleModel.AllCycleDates[GlobalConfig.airacEffectiveDate]}/compare_pdf/{recordModel1.PdfName.Substring(0, recordModel1.PdfName.Length - 4)}_cmp.pdf");
+                                                string link = $"https://aeronav.faa.gov/d-tpp/{AiracDateCycleModel.AllCycleDates[GlobalConfig.airacEffectiveDate]}/compare_pdf/{recordModel1.PdfName.Substring(0, recordModel1.PdfName.Length - 4)}_cmp.pdf";
+                                                //// TODO - Check link here, if this takes to long comment it out.
+                                                //if (Helpers.WebHelpers.is404WebsiteLink(link))
+                                                //{
+                                                //    airportProcedureChanges.AppendLine($"\t({recordModel1.UserAction}) {recordModel1.ChartName} | This procedure has changed but the FAA does not seem to have a comparative document. This is common with DOD facilities such as KHIF and KMUO.");
+                                                //}
+                                                //else
+                                                //{
+                                                //    airportProcedureChanges.AppendLine($"\t({recordModel1.UserAction}) {recordModel1.ChartName} | {link}");
+                                                //}
+                                                airportProcedureChanges.AppendLine($"\t({recordModel1.UserAction}) {recordModel1.ChartName} | {link}");
+
                                             }
                                         }
                                     }
@@ -156,8 +166,19 @@ namespace FeBuddyLibrary.DataAccess
                                         }
                                         else
                                         {
-                                            // TODO - Check link here.
-                                            airportProcedureChanges.AppendLine($"\t({recordModel1.UserAction}) {recordModel1.ChartName} | https://aeronav.faa.gov/d-tpp/{AiracDateCycleModel.AllCycleDates[GlobalConfig.airacEffectiveDate]}/compare_pdf/{recordModel1.PdfName.Substring(0, recordModel1.PdfName.Length - 4)}_cmp.pdf");
+                                            string link = $"https://aeronav.faa.gov/d-tpp/{AiracDateCycleModel.AllCycleDates[GlobalConfig.airacEffectiveDate]}/compare_pdf/{recordModel1.PdfName.Substring(0, recordModel1.PdfName.Length - 4)}_cmp.pdf";
+                                            //// TODO - Check link here, if this takes to long comment it out.
+                                            //// This works however it does add some time to it. Maybe use setting option for this? Or just forget it all together and just do a message at the top of the file. 
+                                            //if (Helpers.WebHelpers.is404WebsiteLink(link))
+                                            //{
+                                            //    airportProcedureChanges.AppendLine($"\t({recordModel1.UserAction}) {recordModel1.ChartName} | This procedure has changed but the FAA does not seem to have a comparative document. This is common with DOD facilities such as KHIF and KMUO.");
+                                            //}
+                                            //else
+                                            //{
+                                            //    airportProcedureChanges.AppendLine($"\t({recordModel1.UserAction}) {recordModel1.ChartName} | {link}");
+                                            //}
+                                            airportProcedureChanges.AppendLine($"\t({recordModel1.UserAction}) {recordModel1.ChartName} | {link}");
+
                                         }
                                     }
                                 }

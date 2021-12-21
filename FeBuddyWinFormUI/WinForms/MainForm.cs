@@ -671,5 +671,11 @@ namespace FeBuddyWinFormUI
             // CreditsForm frm = new CreditsForm();
             // frm.ShowDialog();
         }
+
+        private void reportIssuesToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Logger.LogMessage("DEBUG", "REPORT ISSUES MENU ITEM CLICKED");
+            Process.Start("https://github.com/Nikolai558/FE-BUDDY/issues");
+        }
     }
 }

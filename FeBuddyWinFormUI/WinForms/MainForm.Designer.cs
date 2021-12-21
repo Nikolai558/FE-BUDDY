@@ -58,6 +58,7 @@
             this.CreditsMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.settingsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.UninstallMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.reportIssuesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.airacCycleGroupBox.SuspendLayout();
             this.convertGroupBox.SuspendLayout();
             this.startGroupBox.SuspendLayout();
@@ -347,6 +348,7 @@
             this.menuStrip.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.menuStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.informationToolStripMenuItem,
+            this.reportIssuesToolStripMenuItem,
             this.settingsToolStripMenuItem});
             this.menuStrip.Location = new System.Drawing.Point(0, 0);
             this.menuStrip.Name = "menuStrip";
@@ -445,6 +447,15 @@
             this.UninstallMenuItem.Text = "Uninstall";
             this.UninstallMenuItem.Click += new System.EventHandler(this.UninstallMenuItem_Click);
             // 
+            // reportIssuesToolStripMenuItem
+            // 
+            this.reportIssuesToolStripMenuItem.Font = new System.Drawing.Font("Romantic", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(2)));
+            this.reportIssuesToolStripMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
+            this.reportIssuesToolStripMenuItem.Name = "reportIssuesToolStripMenuItem";
+            this.reportIssuesToolStripMenuItem.Size = new System.Drawing.Size(105, 22);
+            this.reportIssuesToolStripMenuItem.Text = "Report Issues";
+            this.reportIssuesToolStripMenuItem.Click += new System.EventHandler(this.reportIssuesToolStripMenuItem_Click);
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(11F, 25F);
@@ -519,6 +530,7 @@
         private System.Windows.Forms.ToolStripMenuItem FAQMenuItem;
         private System.Windows.Forms.ToolStripMenuItem ChangeLogMenuItem;
         private System.Windows.Forms.ToolStripMenuItem CreditsMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem reportIssuesToolStripMenuItem;
     }
 }
 

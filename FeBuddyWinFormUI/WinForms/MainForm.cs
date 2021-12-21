@@ -72,6 +72,15 @@ namespace FeBuddyWinFormUI
             {
                 get { return Color.Black; }
             }
+            public override Color MenuItemPressedGradientBegin
+            {
+                get { return Color.Black; }
+            }
+
+            public override Color MenuItemPressedGradientEnd
+            {
+                get { return Color.Black; }
+            }
         }
 
         private void MainForm_Closing(object sender, EventArgs e)
@@ -500,6 +509,7 @@ namespace FeBuddyWinFormUI
             RoadmapMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
             informationToolStripMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
             settingsToolStripMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
+            reportIssuesToolStripMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
         }
 
         private void NextAiracSelection_Click(object sender, EventArgs e)

@@ -485,40 +485,19 @@ namespace FeBuddyWinFormUI
             Logger.LogMessage("DEBUG", "AIRAC DATE WORKER COMPLETED");
         }
 
-        private void InstructionsToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            Logger.LogMessage("DEBUG", "INSTRUCTIONS MENU ITEM CLICKED");
-
-            Process.Start("https://docs.google.com/presentation/d/e/2PACX-1vRMd6PIRrj0lPb4sAi9KB7iM3u5zn0dyUVLqEcD9m2e71nf0UPyEmkOs4ZwYsQdl7smopjdvw_iWEyP/embed");
-
-        }
-
-        private void CreditsToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            Logger.LogMessage("DEBUG", "CREDITS MENU ITEM CLICKED");
-            Process.Start("https://github.com/Nikolai558/FE-BUDDY/blob/releases/Credits.md");
-            // CreditsForm frm = new CreditsForm();
-            // frm.ShowDialog();
-        }
-
         private void MainForm_Load(object sender, EventArgs e)
         {
             Logger.LogMessage("DEBUG", "LOADING MAIN FORM");
 
             var pfc = new PrivateFontCollection();
             pfc.AddFontFile("Properties\\romantic.ttf");
-            instructionsToolStripMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
-            creditsToolStripMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
-            changeLogToolStripMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
-            uninstallToolStripMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
-            fAQToolStripMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
-            roadmapToolStripMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
-        }
-
-        private void ChangeLogToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            Logger.LogMessage("DEBUG", "CHANGELOG MENU ITEM CLICKED");
-            Process.Start("https://github.com/Nikolai558/FE-BUDDY/blob/releases/ChangeLog.md");
+            // TODO - Add fonts to buttons. 
+            //instructionsToolStripMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
+            //creditsToolStripMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
+            //changeLogToolStripMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
+            //uninstallToolStripMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
+            //fAQToolStripMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
+            //roadmapToolStripMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
         }
 
         private void NextAiracSelection_Click(object sender, EventArgs e)
@@ -532,7 +511,13 @@ namespace FeBuddyWinFormUI
             }
         }
 
-        private void UninstallToolStripMenuItem_Click(object sender, EventArgs e)
+        private void FacilityIdCombobox_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            Logger.LogMessage("DEBUG", "FACILITY COMBOBOX CLICKED");
+            GlobalConfig.facilityID = facilityIdCombobox.SelectedItem.ToString();
+        }
+
+        private void toolStripMenuItem1_Click(object sender, EventArgs e)
         {
             Logger.LogMessage("WARNING", "UNINSTALL MENU ITEM CLICKED");
 
@@ -652,22 +637,37 @@ namespace FeBuddyWinFormUI
             }
         }
 
-        private void FacilityIdCombobox_SelectedIndexChanged(object sender, EventArgs e)
+        private void toolStripMenuItem2_Click(object sender, EventArgs e)
         {
-            Logger.LogMessage("DEBUG", "FACILITY COMBOBOX CLICKED");
-            GlobalConfig.facilityID = facilityIdCombobox.SelectedItem.ToString();
+            Logger.LogMessage("DEBUG", "INSTRUCTIONS MENU ITEM CLICKED");
+
+            Process.Start("https://docs.google.com/presentation/d/e/2PACX-1vRMd6PIRrj0lPb4sAi9KB7iM3u5zn0dyUVLqEcD9m2e71nf0UPyEmkOs4ZwYsQdl7smopjdvw_iWEyP/embed");
         }
 
-        private void FAQToolStripMenuItem_Click(object sender, EventArgs e)
+        private void toolStripMenuItem3_Click(object sender, EventArgs e)
+        {
+            Logger.LogMessage("DEBUG", "ROADMAP MENU ITEM CLICKED");
+            Process.Start("https://github.com/Nikolai558/FE-BUDDY/blob/releases/ROADMAP.md");
+        }
+
+        private void toolStripMenuItem4_Click(object sender, EventArgs e)
         {
             Logger.LogMessage("DEBUG", "FAQ MENU ITEM CLICKED");
             Process.Start("https://docs.google.com/presentation/d/e/2PACX-1vSlhz1DhDwZ-43BY4Q2vg-ff0QBGssxpmv4-nhZlz9LpGJvWjqLsHVaQwwsV1AGMWFFF_x_j_b3wTBO/embed");
         }
 
-        private void RoadmapToolStripMenuItem_Click(object sender, EventArgs e)
+        private void toolStripMenuItem5_Click(object sender, EventArgs e)
         {
-            Logger.LogMessage("DEBUG", "ROADMAP MENU ITEM CLICKED");
-            Process.Start("https://github.com/Nikolai558/FE-BUDDY/blob/releases/ROADMAP.md");
+            Logger.LogMessage("DEBUG", "CHANGELOG MENU ITEM CLICKED");
+            Process.Start("https://github.com/Nikolai558/FE-BUDDY/blob/releases/ChangeLog.md");
+        }
+
+        private void toolStripMenuItem6_Click(object sender, EventArgs e)
+        {
+            Logger.LogMessage("DEBUG", "CREDITS MENU ITEM CLICKED");
+            Process.Start("https://github.com/Nikolai558/FE-BUDDY/blob/releases/Credits.md");
+            // CreditsForm frm = new CreditsForm();
+            // frm.ShowDialog();
         }
     }
 }

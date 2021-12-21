@@ -43,7 +43,7 @@ namespace FeBuddyLibrary.Helpers
             }
         }
 
-        public static void UpdateCheck()
+    public static void UpdateCheck()
         {
             Logger.LogMessage("DEBUG", "PREFORMING UPDATE CHECK");
 

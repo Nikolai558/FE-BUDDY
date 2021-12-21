@@ -1,4 +1,5 @@
-﻿using FeBuddyLibrary.Models.MetaFileModels;
+﻿using FeBuddyLibrary.Helpers;
+using FeBuddyLibrary.Models.MetaFileModels;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
@@ -12,7 +13,12 @@ namespace FeBuddyLibrary.DataAccess
 
         public void QuarterbackFunc()
         {
+            Logger.LogMessage("DEBUG", $"STARTING META FILE PARSING");
+
             ParseMetaFile();
+
+            Logger.LogMessage("DEBUG", $"COMPLETED META FILE PARSING");
+
         }
 
         private void ParseMetaFile()

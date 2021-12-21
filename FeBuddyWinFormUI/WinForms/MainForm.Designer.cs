@@ -49,20 +49,20 @@
             this.outputDirectoryLabel = new System.Windows.Forms.Label();
             this.outputLocationLabel = new System.Windows.Forms.Label();
             this.exitButton = new System.Windows.Forms.Button();
-            this.menuStrip1 = new System.Windows.Forms.MenuStrip();
+            this.menuStrip = new System.Windows.Forms.MenuStrip();
             this.informationToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.toolStripMenuItem2 = new System.Windows.Forms.ToolStripMenuItem();
-            this.toolStripMenuItem3 = new System.Windows.Forms.ToolStripMenuItem();
-            this.toolStripMenuItem4 = new System.Windows.Forms.ToolStripMenuItem();
-            this.toolStripMenuItem5 = new System.Windows.Forms.ToolStripMenuItem();
-            this.toolStripMenuItem6 = new System.Windows.Forms.ToolStripMenuItem();
+            this.InstructionsMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.RoadmapMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.FAQMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.ChangeLogMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.CreditsMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.settingsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.toolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
+            this.UninstallMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.airacCycleGroupBox.SuspendLayout();
             this.convertGroupBox.SuspendLayout();
             this.startGroupBox.SuspendLayout();
             this.processingGroupBox.SuspendLayout();
-            this.menuStrip1.SuspendLayout();
+            this.menuStrip.SuspendLayout();
             this.SuspendLayout();
             // 
             // currentAiracSelection
@@ -341,109 +341,109 @@
             this.exitButton.Visible = false;
             this.exitButton.Click += new System.EventHandler(this.ExitButton_Click);
             // 
-            // menuStrip1
+            // menuStrip
             // 
-            this.menuStrip1.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))));
-            this.menuStrip1.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.menuStrip.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))));
+            this.menuStrip.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.menuStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.informationToolStripMenuItem,
             this.settingsToolStripMenuItem});
-            this.menuStrip1.Location = new System.Drawing.Point(0, 0);
-            this.menuStrip1.Name = "menuStrip1";
-            this.menuStrip1.Size = new System.Drawing.Size(785, 26);
-            this.menuStrip1.TabIndex = 15;
-            this.menuStrip1.Text = "menuStrip1";
+            this.menuStrip.Location = new System.Drawing.Point(0, 0);
+            this.menuStrip.Name = "menuStrip";
+            this.menuStrip.Size = new System.Drawing.Size(785, 26);
+            this.menuStrip.TabIndex = 15;
+            this.menuStrip.Text = "menuStrip1";
             // 
             // informationToolStripMenuItem
             // 
             this.informationToolStripMenuItem.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))));
             this.informationToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.toolStripMenuItem2,
-            this.toolStripMenuItem3,
-            this.toolStripMenuItem4,
-            this.toolStripMenuItem5,
-            this.toolStripMenuItem6});
+            this.InstructionsMenuItem,
+            this.RoadmapMenuItem,
+            this.FAQMenuItem,
+            this.ChangeLogMenuItem,
+            this.CreditsMenuItem});
             this.informationToolStripMenuItem.Font = new System.Drawing.Font("Romantic", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(2)));
             this.informationToolStripMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.informationToolStripMenuItem.Name = "informationToolStripMenuItem";
             this.informationToolStripMenuItem.Size = new System.Drawing.Size(94, 22);
             this.informationToolStripMenuItem.Text = "Information";
             // 
-            // toolStripMenuItem2
+            // InstructionsMenuItem
             // 
-            this.toolStripMenuItem2.BackColor = System.Drawing.Color.Black;
-            this.toolStripMenuItem2.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
-            this.toolStripMenuItem2.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
-            this.toolStripMenuItem2.ForeColor = System.Drawing.SystemColors.AppWorkspace;
-            this.toolStripMenuItem2.Name = "toolStripMenuItem2";
-            this.toolStripMenuItem2.Size = new System.Drawing.Size(180, 22);
-            this.toolStripMenuItem2.Text = "Instructions";
-            this.toolStripMenuItem2.Click += new System.EventHandler(this.toolStripMenuItem2_Click);
+            this.InstructionsMenuItem.BackColor = System.Drawing.Color.Black;
+            this.InstructionsMenuItem.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
+            this.InstructionsMenuItem.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
+            this.InstructionsMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
+            this.InstructionsMenuItem.Name = "InstructionsMenuItem";
+            this.InstructionsMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.InstructionsMenuItem.Text = "Instructions";
+            this.InstructionsMenuItem.Click += new System.EventHandler(this.InstructionsMenuItem_Click);
             // 
-            // toolStripMenuItem3
+            // RoadmapMenuItem
             // 
-            this.toolStripMenuItem3.BackColor = System.Drawing.Color.Black;
-            this.toolStripMenuItem3.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
-            this.toolStripMenuItem3.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
-            this.toolStripMenuItem3.ForeColor = System.Drawing.SystemColors.AppWorkspace;
-            this.toolStripMenuItem3.Name = "toolStripMenuItem3";
-            this.toolStripMenuItem3.Size = new System.Drawing.Size(180, 22);
-            this.toolStripMenuItem3.Text = "Roadmap";
-            this.toolStripMenuItem3.Click += new System.EventHandler(this.toolStripMenuItem3_Click);
+            this.RoadmapMenuItem.BackColor = System.Drawing.Color.Black;
+            this.RoadmapMenuItem.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
+            this.RoadmapMenuItem.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
+            this.RoadmapMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
+            this.RoadmapMenuItem.Name = "RoadmapMenuItem";
+            this.RoadmapMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.RoadmapMenuItem.Text = "Roadmap";
+            this.RoadmapMenuItem.Click += new System.EventHandler(this.RoadmapMenuItem_Click);
             // 
-            // toolStripMenuItem4
+            // FAQMenuItem
             // 
-            this.toolStripMenuItem4.BackColor = System.Drawing.Color.Black;
-            this.toolStripMenuItem4.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
-            this.toolStripMenuItem4.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
-            this.toolStripMenuItem4.ForeColor = System.Drawing.SystemColors.AppWorkspace;
-            this.toolStripMenuItem4.Name = "toolStripMenuItem4";
-            this.toolStripMenuItem4.Size = new System.Drawing.Size(180, 22);
-            this.toolStripMenuItem4.Text = "FAQ";
-            this.toolStripMenuItem4.Click += new System.EventHandler(this.toolStripMenuItem4_Click);
+            this.FAQMenuItem.BackColor = System.Drawing.Color.Black;
+            this.FAQMenuItem.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
+            this.FAQMenuItem.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
+            this.FAQMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
+            this.FAQMenuItem.Name = "FAQMenuItem";
+            this.FAQMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.FAQMenuItem.Text = "FAQ";
+            this.FAQMenuItem.Click += new System.EventHandler(this.FAQMenuItem_Click);
             // 
-            // toolStripMenuItem5
+            // ChangeLogMenuItem
             // 
-            this.toolStripMenuItem5.BackColor = System.Drawing.Color.Black;
-            this.toolStripMenuItem5.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
-            this.toolStripMenuItem5.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
-            this.toolStripMenuItem5.ForeColor = System.Drawing.SystemColors.AppWorkspace;
-            this.toolStripMenuItem5.Name = "toolStripMenuItem5";
-            this.toolStripMenuItem5.Size = new System.Drawing.Size(180, 22);
-            this.toolStripMenuItem5.Text = "Change Log";
-            this.toolStripMenuItem5.Click += new System.EventHandler(this.toolStripMenuItem5_Click);
+            this.ChangeLogMenuItem.BackColor = System.Drawing.Color.Black;
+            this.ChangeLogMenuItem.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
+            this.ChangeLogMenuItem.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
+            this.ChangeLogMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
+            this.ChangeLogMenuItem.Name = "ChangeLogMenuItem";
+            this.ChangeLogMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.ChangeLogMenuItem.Text = "Change Log";
+            this.ChangeLogMenuItem.Click += new System.EventHandler(this.ChangeLogMenuItem_Click);
             // 
-            // toolStripMenuItem6
+            // CreditsMenuItem
             // 
-            this.toolStripMenuItem6.BackColor = System.Drawing.Color.Black;
-            this.toolStripMenuItem6.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
-            this.toolStripMenuItem6.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
-            this.toolStripMenuItem6.ForeColor = System.Drawing.SystemColors.AppWorkspace;
-            this.toolStripMenuItem6.Name = "toolStripMenuItem6";
-            this.toolStripMenuItem6.Size = new System.Drawing.Size(180, 22);
-            this.toolStripMenuItem6.Text = "Credits";
-            this.toolStripMenuItem6.Click += new System.EventHandler(this.toolStripMenuItem6_Click);
+            this.CreditsMenuItem.BackColor = System.Drawing.Color.Black;
+            this.CreditsMenuItem.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
+            this.CreditsMenuItem.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
+            this.CreditsMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
+            this.CreditsMenuItem.Name = "CreditsMenuItem";
+            this.CreditsMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.CreditsMenuItem.Text = "Credits";
+            this.CreditsMenuItem.Click += new System.EventHandler(this.CreditsMenuItem_Click);
             // 
             // settingsToolStripMenuItem
             // 
             this.settingsToolStripMenuItem.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))));
             this.settingsToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.toolStripMenuItem1});
+            this.UninstallMenuItem});
             this.settingsToolStripMenuItem.Font = new System.Drawing.Font("Romantic", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(2)));
             this.settingsToolStripMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.settingsToolStripMenuItem.Name = "settingsToolStripMenuItem";
             this.settingsToolStripMenuItem.Size = new System.Drawing.Size(70, 22);
             this.settingsToolStripMenuItem.Text = "Settings";
             // 
-            // toolStripMenuItem1
+            // UninstallMenuItem
             // 
-            this.toolStripMenuItem1.BackColor = System.Drawing.Color.Black;
-            this.toolStripMenuItem1.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
-            this.toolStripMenuItem1.ForeColor = System.Drawing.SystemColors.AppWorkspace;
-            this.toolStripMenuItem1.Name = "toolStripMenuItem1";
-            this.toolStripMenuItem1.Size = new System.Drawing.Size(180, 22);
-            this.toolStripMenuItem1.Text = "Uninstall";
-            this.toolStripMenuItem1.Click += new System.EventHandler(this.toolStripMenuItem1_Click);
+            this.UninstallMenuItem.BackColor = System.Drawing.Color.Black;
+            this.UninstallMenuItem.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
+            this.UninstallMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
+            this.UninstallMenuItem.Name = "UninstallMenuItem";
+            this.UninstallMenuItem.Size = new System.Drawing.Size(133, 22);
+            this.UninstallMenuItem.Text = "Uninstall";
+            this.UninstallMenuItem.Click += new System.EventHandler(this.UninstallMenuItem_Click);
             // 
             // MainForm
             // 
@@ -458,13 +458,13 @@
             this.Controls.Add(this.startGroupBox);
             this.Controls.Add(this.convertGroupBox);
             this.Controls.Add(this.airacCycleGroupBox);
-            this.Controls.Add(this.menuStrip1);
+            this.Controls.Add(this.menuStrip);
             this.Font = new System.Drawing.Font("Segoe UI", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.ForeColor = System.Drawing.SystemColors.Control;
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.HelpButton = true;
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
-            this.MainMenuStrip = this.menuStrip1;
+            this.MainMenuStrip = this.menuStrip;
             this.Margin = new System.Windows.Forms.Padding(6, 7, 6, 7);
             this.MaximizeBox = false;
             this.Name = "MainForm";
@@ -481,8 +481,8 @@
             this.startGroupBox.PerformLayout();
             this.processingGroupBox.ResumeLayout(false);
             this.processingGroupBox.PerformLayout();
-            this.menuStrip1.ResumeLayout(false);
-            this.menuStrip1.PerformLayout();
+            this.menuStrip.ResumeLayout(false);
+            this.menuStrip.PerformLayout();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -507,18 +507,18 @@
         private System.Windows.Forms.Label processingDataLabel;
         private System.Windows.Forms.GroupBox processingGroupBox;
         private System.Windows.Forms.Button exitButton;
-        private System.Windows.Forms.MenuStrip menuStrip1;
+        private System.Windows.Forms.MenuStrip menuStrip;
         private System.Windows.Forms.Label outputDirectoryLabel;
         private System.Windows.Forms.Label outputLocationLabel;
         private System.Windows.Forms.ComboBox facilityIdCombobox;
         private System.Windows.Forms.ToolStripMenuItem settingsToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem toolStripMenuItem1;
+        private System.Windows.Forms.ToolStripMenuItem UninstallMenuItem;
         private System.Windows.Forms.ToolStripMenuItem informationToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem toolStripMenuItem2;
-        private System.Windows.Forms.ToolStripMenuItem toolStripMenuItem3;
-        private System.Windows.Forms.ToolStripMenuItem toolStripMenuItem4;
-        private System.Windows.Forms.ToolStripMenuItem toolStripMenuItem5;
-        private System.Windows.Forms.ToolStripMenuItem toolStripMenuItem6;
+        private System.Windows.Forms.ToolStripMenuItem InstructionsMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem RoadmapMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem FAQMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem ChangeLogMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem CreditsMenuItem;
     }
 }
 

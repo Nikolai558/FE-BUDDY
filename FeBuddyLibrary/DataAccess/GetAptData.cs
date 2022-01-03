@@ -414,6 +414,7 @@ namespace FeBuddyLibrary.DataAccess
 
                 foreach (RunwayModel runwayModel in aptModel.Runways)
                 {
+                    doNotUseThisRwy = false;
                     List<string> rwyProperties = new List<string>()
                     {
                         runwayModel.RwyGroup,

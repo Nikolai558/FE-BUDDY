@@ -1,4 +1,7 @@
 ---
+- ## Version 1.0.3
+  - #26 KASE and many other airports were effected by a bug causing some airports and runways to be missing from the Airports.xml file.
+
 - ## Version 1.0.2
   - In the Publications Output, if a procedure is Added (A) or Deleted (D), the link is NOT generated and instead will display a quick explanation. #20
   - Restructured Menu Buttons

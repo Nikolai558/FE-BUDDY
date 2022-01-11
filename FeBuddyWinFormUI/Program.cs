@@ -92,7 +92,7 @@ namespace FeBuddyWinFormUI
         {
             Logger.LogMessage("INFO", "UPDATING PROGRAM");
 
-            using (var updateManager = new UpdateManager($"{GlobalConfig.tempPath}"))
+            using (var updateManager = new UpdateManager($"{GlobalConfig.tempPath}", "FE-Buddy"))
             {
                 var releaseEntry = await updateManager.UpdateApp();
             }

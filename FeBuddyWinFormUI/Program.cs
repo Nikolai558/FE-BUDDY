@@ -21,6 +21,7 @@ namespace FeBuddyWinFormUI
             //Console.WriteLine(Logger.logFilePath);
 
             Application.EnableVisualStyles();
+            Application.SetHighDpiMode(HighDpiMode.SystemAware);
             Application.SetCompatibleTextRenderingDefault(false);
 
             DirectoryHelpers.CheckTempDir();

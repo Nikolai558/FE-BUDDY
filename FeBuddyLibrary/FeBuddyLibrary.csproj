@@ -1,104 +1,26 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{33E2E53F-D8E3-4428-A608-7495094B6674}</ProjectGuid>
+    <TargetFramework>net6.0-windows</TargetFramework>
     <OutputType>Library</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>FeBuddyLibrary</RootNamespace>
-    <AssemblyName>FeBuddyLibrary</AssemblyName>
-    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
-    <FileAlignment>512</FileAlignment>
-    <Deterministic>true</Deterministic>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <UseWPF>true</UseWPF>
+    <ImportWindowsDesktopTargets>true</ImportWindowsDesktopTargets>
   </PropertyGroup>
   <PropertyGroup>
     <ApplicationIcon>FE_BUDDY_icon.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Newtonsoft.Json, Version=13.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <HintPath>..\packages\Newtonsoft.Json.13.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
-    </Reference>
-    <Reference Include="PresentationFramework" />
-    <Reference Include="System" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.IO.Compression.FileSystem" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Net.Http" />
-    <Reference Include="System.Xml" />
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Include="DataAccess\GetAptData.cs" />
-    <Compile Include="DataAccess\GetArbData.cs" />
-    <Compile Include="DataAccess\GetAtsAwyData.cs" />
-    <Compile Include="DataAccess\GetAwyData.cs" />
-    <Compile Include="DataAccess\GetFaaMetaFileData.cs" />
-    <Compile Include="DataAccess\GetFixData.cs" />
-    <Compile Include="DataAccess\GetNavData.cs" />
-    <Compile Include="DataAccess\GetStarDpData.cs" />
-    <Compile Include="DataAccess\GetTelephony.cs" />
-    <Compile Include="DataAccess\PublicationParser.cs" />
-    <Compile Include="GlobalConfig.cs" />
-    <Compile Include="Helpers\BatchFileHelpers.cs" />
-    <Compile Include="Helpers\DirectoryHelpers.cs" />
-    <Compile Include="Helpers\DownloadHelpers.cs" />
-    <Compile Include="Helpers\FileHelpers.cs" />
-    <Compile Include="Helpers\LatLonHelpers.cs" />
-    <Compile Include="Helpers\logger.cs" />
-    <Compile Include="Helpers\MessageBoxHelpers.cs" />
-    <Compile Include="Helpers\WebHelpers.cs" />
-    <Compile Include="Models\Airport.cs" />
-    <Compile Include="Models\AirwayModel.cs" />
-    <Compile Include="Models\AliasCheck.cs" />
-    <Compile Include="Models\AptModel.cs" />
-    <Compile Include="Models\ArbModel.cs" />
-    <Compile Include="Models\AssetsModel.cs" />
-    <Compile Include="Models\AtsAirwayModel.cs" />
-    <Compile Include="Models\atsAwyPointModel.cs" />
-    <Compile Include="Models\AwyPointModel.cs" />
-    <Compile Include="Models\BoundryModel.cs" />
-    <Compile Include="Models\FixModel.cs" />
-    <Compile Include="Models\Location.cs" />
-    <Compile Include="Models\MetaFileModels\AiracDateCycleModel.cs" />
-    <Compile Include="Models\MetaFileModels\MetaAirportModel.cs" />
-    <Compile Include="Models\MetaFileModels\MetaRecordModel.cs" />
-    <Compile Include="Models\NDBModel.cs" />
-    <Compile Include="Models\Runway.cs" />
-    <Compile Include="Models\RunwayModel.cs" />
-    <Compile Include="Models\Runways.cs" />
-    <Compile Include="Models\StarAndDpModel.cs" />
-    <Compile Include="Models\TelephonyModel.cs" />
-    <Compile Include="Models\VORModel.cs" />
-    <Compile Include="Models\Waypoint.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="packages.config" />
+    <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
+    <PackageReference Include="System.Data.DataSetExtensions" Version="4.5.0" />
+    <PackageReference Include="Microsoft.DotNet.UpgradeAssistant.Extensions.Default.Analyzers" Version="0.3.261602">
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.Windows.Compatibility" Version="6.0.0" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="FE_BUDDY_icon.ico" />
   </ItemGroup>
-  <ItemGroup />
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+  </ItemGroup>
 </Project>

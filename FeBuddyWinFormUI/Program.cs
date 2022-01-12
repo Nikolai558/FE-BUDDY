@@ -14,6 +14,9 @@ namespace FeBuddyWinFormUI
         [STAThread]
         static void Main()
         {
+            // Create a shortcut on initial install using Squirrel
+            SquirrelAwareApp.HandleEvents((onInitialInstall) => new UpdateManager($"{GlobalConfig.tempPath}", "FE-Buddy").CreateShortcutForThisExe(ShortcutLocation.StartMenu | ShortcutLocation.Desktop));
+
             // TODO - Get system info and log it into file first thing. -https://docs.microsoft.com/en-us/previous-versions/windows/embedded/ee436483(v=msdn.10)
             Logger.CreateLogFile();
             Logger.LogMessage("DEBUG", "PROGRAM STARTED");
@@ -75,7 +78,8 @@ namespace FeBuddyWinFormUI
                     DownloadHelpers.DownloadAssets();
 
                     UpdateProgram();
-                    StartNewVersion();
+                    UpdateManager.RestartApp();
+                    //StartNewVersion();
                     Logger.LogMessage("INFO", "CLOSING OLD PROGRAM VERSION");
                     Environment.Exit(1);
                 }
@@ -98,6 +102,7 @@ namespace FeBuddyWinFormUI
             }
         }
 
+        //TODO - remove if updating function works, see line 81
         private static void StartNewVersion()
         {
             Logger.LogMessage("DEBUG", "PREPARING TO START NEW PROGRAM VERSION");

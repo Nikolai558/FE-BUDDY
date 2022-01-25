@@ -14,14 +14,27 @@ namespace FeBuddyWinFormUI
         [STAThread]
         static void Main()
         {
-            // Create a shortcut on initial install using Squirrel
-            SquirrelAwareApp.HandleEvents((onInitialInstall) => new UpdateManager($"{GlobalConfig.tempPath}", "FE-Buddy").CreateShortcutForThisExe(ShortcutLocation.StartMenu | ShortcutLocation.Desktop));
+            
+            
 
             // TODO - Get system info and log it into file first thing. -https://docs.microsoft.com/en-us/previous-versions/windows/embedded/ee436483(v=msdn.10)
             Logger.CreateLogFile();
             Logger.LogMessage("DEBUG", "PROGRAM STARTED");
 
-            //Console.WriteLine(Logger.logFilePath);
+            // Remove the Start Menu shortcut in the Kyle Sanders directory and replace with one in the root on initial install and update
+            SquirrelAwareApp.HandleEvents(onAppUpdate: (v) =>
+            {
+                new UpdateManager($"{GlobalConfig.tempPath}", "FE-Buddy").CreateShortcutForThisExe(ShortcutLocation.StartMenuRoot | ShortcutLocation.Desktop);
+                var appdata = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+                if (Directory.Exists(appdata + @"\Microsoft\Windows\Start Menu\Programs\Kyle Sanders"))
+                {
+                    Directory.Delete(appdata + @"\Microsoft\Windows\Start Menu\Programs\Kyle Sanders", true);
+                    Logger.LogMessage("DEBUG", "FDELETED OLD START SHORTCUT");
+                    Debug.WriteLine("deleted");
+                }
+            });
+
+            //Debug.WriteLine(Logger.logFilePath);
 
             Application.EnableVisualStyles();
             Application.SetHighDpiMode(HighDpiMode.SystemAware);

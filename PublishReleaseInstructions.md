@@ -20,7 +20,7 @@
     * Download and extract the ZIP archive from the latest release of [Clowd.Squirrel](https://github.com/clowd/clowd.squirrel)
     * Move the entire `FeBuddyWinFormUI\bin\Release\net6.0-windows\publish\Releases\win-x86` to the folder you extracted the ZIP archive in
     * Run the following command in PowerShell while your working directory is the folder you extracted the ZIP archive in
-        + `.\Squirrel pack --packName "FE-BUDDY" --packVersion "1.1.0" --packAuthors "Kyle Sanders" --packDirectory win-x86`. I have the author set to Kyle Sanders because of the current Start Menu folder.
+        + `.\Squirrel pack --packName "FE-BUDDY" --packVersion "1.1.0" --packAuthors "FE-Buddy" --packDirectory win-x86`.
 6. Go to GitHub
     * Publish source code on the DEVELOPMENT branch
         + NEVER PUBLISH SOURCE CODE TO RELEASE BRANCH. THIS MUST BE DONE THROUGH A MERGE.
@@ -31,5 +31,5 @@
 8. Ready to publish the release
     * Go to Releases on GitHub, draft new release.
     * Put in the info.
-    * Upload the FE-BUDDYSetup.exe found in the Releases folder where you extracted the ZIP archive, as well as the .nuget package.
+    * Upload the FE-BUDDYSetup.exe found in the Releases folder where you extracted the ZIP archive, as well as the .nuget package and RELEASES file.
     * Publish the release.

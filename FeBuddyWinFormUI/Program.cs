@@ -24,10 +24,19 @@ namespace FeBuddyWinFormUI
             SquirrelAwareApp.HandleEvents(OnAppInstalled, OnAppUpdated, null, OnAppUninstalled);
 
             Application.EnableVisualStyles();
-            Application.SetHighDpiMode(HighDpiMode.SystemAware);
             Application.SetCompatibleTextRenderingDefault(false);
 
+            // CS: we should set DPI awareness as PerMonitorV2 in the application manifest
+            // ideally, however currently this currently causes the application to break on
+            // high-dpi monitors since the forms have not been re-written to accomodate the 
+            // new scaling requirements. See the following for more details:
+            // - https://docs.microsoft.com/en-us/windows/win32/hidpi/setting-the-default-dpi-awareness-for-a-process
+            // - https://docs.microsoft.com/en-us/dotnet/desktop/winforms/high-dpi-support-in-windows-forms?view=netframeworkdesktop-4.8
+
+            //Application.SetHighDpiMode(HighDpiMode.SystemAware);
+
             DirectoryHelpers.CheckTempDir();
+
             // API CALL TO GITHUB, WARNING ONLY 60 PER HOUR IS ALLOWED, WILL BREAK IF WE DO MORE!
             // CS: Note, this GitHub limit is based on IP, so is shared with every process at a
             // household or organisation. A read-only github token should be generated to remove

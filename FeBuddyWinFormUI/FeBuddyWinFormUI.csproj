@@ -16,7 +16,6 @@
 
   <ItemGroup>
     <PackageReference Include="Clowd.Squirrel" Version="2.7.34-pre" />
-    <PackageReference Include="System.Data.DataSetExtensions" Version="4.5.0" />
   </ItemGroup>
 
   <ItemGroup>

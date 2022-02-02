@@ -16,7 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Clowd.Squirrel" Version="2.7.34-pre" />
+    <PackageReference Include="Clowd.Squirrel" Version="2.7.89-pre" />
   </ItemGroup>
 
   <ItemGroup>

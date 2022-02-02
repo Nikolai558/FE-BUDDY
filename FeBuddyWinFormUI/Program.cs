@@ -5,6 +5,7 @@ using System;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace FeBuddyWinFormUI
@@ -14,27 +15,13 @@ namespace FeBuddyWinFormUI
         [STAThread]
         static void Main()
         {
-            
-            
-
             // TODO - Get system info and log it into file first thing. -https://docs.microsoft.com/en-us/previous-versions/windows/embedded/ee436483(v=msdn.10)
             Logger.CreateLogFile();
             Logger.LogMessage("DEBUG", "PROGRAM STARTED");
 
-            // Remove the Start Menu shortcut in the Kyle Sanders directory and replace with one in the root on initial install and update
-            SquirrelAwareApp.HandleEvents(onAppUpdate: (v) =>
-            {
-                new UpdateManager($"{GlobalConfig.tempPath}", "FE-Buddy").CreateShortcutForThisExe(ShortcutLocation.StartMenuRoot | ShortcutLocation.Desktop);
-                var appdata = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-                if (Directory.Exists(appdata + @"\Microsoft\Windows\Start Menu\Programs\Kyle Sanders"))
-                {
-                    Directory.Delete(appdata + @"\Microsoft\Windows\Start Menu\Programs\Kyle Sanders", true);
-                    Logger.LogMessage("DEBUG", "FDELETED OLD START SHORTCUT");
-                    Debug.WriteLine("deleted");
-                }
-            });
-
-            //Debug.WriteLine(Logger.logFilePath);
+            // Squirrel starts our app during updates, sometimes we need to handle these events.
+            // Our program may exit after and exit after handling one of these events.
+            SquirrelAwareApp.HandleEvents(OnAppInstalled, OnAppUpdated, null, OnAppUninstalled);
 
             Application.EnableVisualStyles();
             Application.SetHighDpiMode(HighDpiMode.SystemAware);
@@ -42,6 +29,9 @@ namespace FeBuddyWinFormUI
 
             DirectoryHelpers.CheckTempDir();
             // API CALL TO GITHUB, WARNING ONLY 60 PER HOUR IS ALLOWED, WILL BREAK IF WE DO MORE!
+            // CS: Note, this GitHub limit is based on IP, so is shared with every process at a
+            // household or organisation. A read-only github token should be generated to remove
+            // this limit.
             try
             {
                 WebHelpers.UpdateCheck();
@@ -58,6 +48,43 @@ namespace FeBuddyWinFormUI
 
             // Start the application
             Application.Run(new MainForm());
+        }
+
+        private static void OnAppInstalled(SemanticVersion ver, IAppTools tools)
+        {
+            // create initial application shortcuts
+            tools.CreateShortcutForThisExe(ShortcutLocation.StartMenuRoot | ShortcutLocation.Desktop);
+        }
+
+        private static void OnAppUpdated(SemanticVersion ver, IAppTools tools)
+        {
+            // Remove the Start Menu shortcut in the Kyle Sanders directory if it exists
+            var startmenuDir = Environment.GetFolderPath(Environment.SpecialFolder.StartMenu);
+            var oldShortcutDir = Path.Combine(startmenuDir, "Programs", "Kyle Sanders");
+            if (Directory.Exists(oldShortcutDir))
+            {
+                try
+                {
+                    // CS: if the previous directory exists during an update, lets replace it
+                    // with a new shortcut in the start menu root. We can't use 
+                    // 'CreateShortcutForThisExe' here, as it's ignored during updates.
+                    var myExeName = Path.GetFileName(AssemblyRuntimeInfo.EntryExePath);
+                    tools.CreateShortcutsForExecutable(myExeName, ShortcutLocation.StartMenuRoot, false, null, null);
+
+                    // delete old shortcut
+                    Directory.Delete(oldShortcutDir);
+                    Logger.LogMessage("DEBUG", "REPLACED OLD START SHORTCUT");
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogMessage("DEBUG", "FAILED TO REMOVE OLD SHORTCUT " + ex.Message);
+                }
+            }
+        }
+
+        private static void OnAppUninstalled(SemanticVersion ver, IAppTools tools)
+        {
+            tools.RemoveShortcutForThisExe(ShortcutLocation.StartMenuRoot | ShortcutLocation.Desktop);
         }
 
         private static void CheckVersion()
@@ -90,10 +117,9 @@ namespace FeBuddyWinFormUI
                     MessageBox.Show(updateInformationMessage);
                     DownloadHelpers.DownloadAssets();
 
-                    UpdateProgram();
-                    UpdateManager.RestartApp();
-                    //StartNewVersion();
+                    UpdateProgram().Wait();
                     Logger.LogMessage("INFO", "CLOSING OLD PROGRAM VERSION");
+                    UpdateManager.RestartApp();
                     Environment.Exit(1);
                 }
                 else
@@ -105,49 +131,14 @@ namespace FeBuddyWinFormUI
             }
         }
 
-        private static async void UpdateProgram()
+        private static async Task<ReleaseEntry> UpdateProgram()
         {
             Logger.LogMessage("INFO", "UPDATING PROGRAM");
 
             using (var updateManager = new UpdateManager($"{GlobalConfig.tempPath}", "FE-Buddy"))
             {
-                var releaseEntry = await updateManager.UpdateApp();
+                return await updateManager.UpdateApp();
             }
-        }
-
-        //TODO - remove if updating function works, see line 81
-        private static void StartNewVersion()
-        {
-            Logger.LogMessage("DEBUG", "PREPARING TO START NEW PROGRAM VERSION");
-
-            string filePath = $"{GlobalConfig.tempPath}\\startNewVersion.bat";
-            string writeMe =
-                "SET /A COUNT=0\n\n" +
-                ":CHK\n" +
-                $"IF EXIST \"%userprofile%\\AppData\\Local\\FE-BUDDY\\app-{GlobalConfig.GithubVersion}\\FE-BUDDY.exe\" goto FOUND\n" +
-                "SET /A COUNT=%COUNT% + 1\n" +
-                "IF %COUNT% GEQ 12 GOTO FOUND\n" +
-                "PING 127.0.0.1 -n 3 >nul\n" +
-                "GOTO CHK\n\n" +
-                ":FOUND\n" +
-                $"start \"\" \"%userprofile%\\AppData\\Local\\FE-BUDDY\\app-{GlobalConfig.GithubVersion}\\FE-BUDDY.exe\"\n";
-
-            File.WriteAllText(filePath, writeMe);
-            ProcessStartInfo ProcessInfo;
-            Process Process;
-
-            ProcessInfo = new ProcessStartInfo("cmd.exe", "/c " + $"\"{GlobalConfig.tempPath}\\startNewVersion.bat\"")
-            {
-                CreateNoWindow = true,
-                UseShellExecute = false
-            };
-
-            Logger.LogMessage("INFO", "STARTING NEW PROGRAM VERSION");
-            Process = Process.Start(ProcessInfo);
-            Process.WaitForExit();
-
-            _ = Process.ExitCode;
-            Process.Close();
         }
     }
 }

@@ -24,13 +24,13 @@ namespace FeBuddyWinFormUI
             // Remove the Start Menu shortcut in the Kyle Sanders directory and replace with one in the root on initial install and update
             SquirrelAwareApp.HandleEvents(onAppUpdate: (v) =>
             {
-                new UpdateManager($"{GlobalConfig.tempPath}", "FE-Buddy").CreateShortcutForThisExe(ShortcutLocation.StartMenuRoot | ShortcutLocation.Desktop);
+                using var um = new UpdateManager($"{GlobalConfig.tempPath}", "FE-Buddy");
+                um.CreateShortcutForThisExe(ShortcutLocation.StartMenuRoot | ShortcutLocation.Desktop);
                 var appdata = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
                 if (Directory.Exists(appdata + @"\Microsoft\Windows\Start Menu\Programs\Kyle Sanders"))
                 {
                     Directory.Delete(appdata + @"\Microsoft\Windows\Start Menu\Programs\Kyle Sanders", true);
-                    Logger.LogMessage("DEBUG", "FDELETED OLD START SHORTCUT");
-                    Debug.WriteLine("deleted");
+                    Logger.LogMessage("DEBUG", "DELETED OLD START SHORTCUT");
                 }
             });
 

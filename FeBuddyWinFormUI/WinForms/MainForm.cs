@@ -18,16 +18,15 @@ namespace FeBuddyWinFormUI
     {
         private bool nextAiracAvailable;
 
-        public MainForm()
+        public MainForm(string currentVersion)
         {
             Logger.LogMessage("DEBUG", "INITIALIZING COMPONENT");
 
             InitializeComponent();
             menuStrip.Renderer = new MyRenderer();
-            
 
             // It should grab from the assembily info. 
-            this.Text = $"FE-BUDDY - V{GlobalConfig.ProgramVersion}";
+            this.Text = $"FE-BUDDY - V{currentVersion}";
 
             chooseDirButton.Enabled = false;
             startButton.Enabled = false;

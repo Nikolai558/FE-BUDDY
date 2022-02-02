@@ -1,4 +1,4 @@
-using FeBuddyLibrary;
+﻿using FeBuddyLibrary;
 using FeBuddyLibrary.Helpers;
 using Squirrel;
 using System;
@@ -42,22 +42,10 @@ namespace FeBuddyWinFormUI
             // CS: Note, this GitHub limit is based on IP, so is shared with every process at a
             // household or organisation. A read-only github token should be generated to remove
             // this limit.
-            try
-            {
-                WebHelpers.UpdateCheck();
-
-                // Check Current Program Against Github, if different ask user if they want to update.
-                CheckVersion();
-            }
-            catch (Exception)
-            {
-                Logger.LogMessage("WARNING", "COULD NOT PERFORM UPDATE CHECK");
-                MessageBox.Show($"FE-BUDDY could not perform an update check due to either your internet connection or GitHub Server issues.\n\n");
-                //Environment.Exit(-1);
-            }
+            var version = CheckForUpdates();
 
             // Start the application
-            Application.Run(new MainForm());
+            Application.Run(new MainForm(version));
         }
 
         private static void OnAppInstalled(SemanticVersion ver, IAppTools tools)
@@ -95,60 +83,80 @@ namespace FeBuddyWinFormUI
         private static void OnAppUninstalled(SemanticVersion ver, IAppTools tools)
         {
             tools.RemoveShortcutForThisExe(ShortcutLocation.StartMenuRoot | ShortcutLocation.Desktop);
+
+            // TODO this should delete all the temporary directories.. everything created by this app.
         }
 
-        private static void CheckVersion()
+        /// <summary>
+        /// Checks for updates, asks the user if they want to update now, and then
+        /// returns the current version.
+        /// </summary>
+        private static string CheckForUpdates()
         {
-            Logger.LogMessage("DEBUG", "CHECKING PROGRAM VERSION AGAINST GITHUB VERSION");
+            using var ghu = new GithubUpdateManager("https://github.com/Nikolai558/FE-BUDDY");
+            var currentVersion = ghu.CurrentlyInstalledVersion();
 
-            // Check to see if Version's match.
-            if (GlobalConfig.ProgramVersion != GlobalConfig.GithubVersion)
+            if (currentVersion == null || !ghu.IsInstalledApp)
             {
-                Logger.LogMessage("INFO", $"PROGRAM VERSION {GlobalConfig.ProgramVersion} / GITHUB VERSION {GlobalConfig.GithubVersion}");
+                // we can't update if we're not a published app!
+                return "dev";
+            }
 
-                UpdateForm processForm = new UpdateForm
+            try
+            {
+                var updateInfo = ghu.CheckForUpdate().Result;
+                if (updateInfo != null && updateInfo.ReleasesToApply.Count > 0)
                 {
-                    Size = new Size(600, 600)
-                };
-                processForm.ChangeTitle("Update Available");
-                processForm.ChangeUpdatePanel(new Point(12, 52));
-                processForm.ChangeUpdatePanel(new Size(560, 370));
-                processForm.ChangeProcessingLabel(new Point(5, 5));
-                processForm.DisplayMessages(true);
-                processForm.ShowDialog();
+                    // there are updates available
+                    Logger.LogMessage("INFO", "Update available: " +
+                        $"CURRENT VERSION {currentVersion} / " +
+                        $"GITHUB VERSION {updateInfo.FutureReleaseEntry.Version}");
 
-                if (GlobalConfig.updateProgram)
-                {
-                    Logger.LogMessage("DEBUG", "USER WANTS TO UPDATE");
+                    UpdateForm processForm = new UpdateForm(
+                        updateInfo.CurrentlyInstalledVersion?.Version.ToString() ?? "dev",
+                        updateInfo.FutureReleaseEntry.Version.ToString())
+                    {
+                        Size = new Size(600, 600)
+                    };
+                    processForm.ChangeTitle("Update Available");
+                    processForm.ChangeUpdatePanel(new Point(12, 52));
+                    processForm.ChangeUpdatePanel(new Size(560, 370));
+                    processForm.ChangeProcessingLabel(new Point(5, 5));
+                    processForm.DisplayMessages(true);
+                    var result = processForm.ShowDialog();
+                    if (result == DialogResult.Yes)
+                    {
+                        Logger.LogMessage("DEBUG", "USER WANTS TO UPDATE");
 
-                    string updateInformationMessage = "Once you click 'OK', all screens related to FE-BUDDY will close.\n\n" +
-                        "Once the program has fully updated, it will restart.";
+                        string updateInformationMessage =
+                            "Once you click 'OK', all screens related to FE-BUDDY will close.\n\n" +
+                            "Once the program has fully updated, it will restart. This may take some time.";
 
-                    MessageBox.Show(updateInformationMessage);
-                    DownloadHelpers.DownloadAssets();
+                        MessageBox.Show(updateInformationMessage);
 
-                    UpdateProgram().Wait();
-                    Logger.LogMessage("INFO", "CLOSING OLD PROGRAM VERSION");
-                    UpdateManager.RestartApp();
-                    Environment.Exit(1);
-                }
-                else
-                {
-                    Logger.LogMessage("INFO", "USER DID NOT WANT TO UPDATE");
-
-                    // User does not want to Update
+                        // TODO: we should show some progress UI while doing this.
+                        var installedUpdate = ghu.UpdateApp().Result;
+                        if (installedUpdate != null)
+                        {
+                            Logger.LogMessage("INFO", "RESTARTING...");
+                            UpdateManager.RestartApp();
+                        }
+                        else
+                        {
+                            Logger.LogMessage("INFO", "Update detected but no release was downloaded.");
+                            MessageBox.Show("The update has failed, please check the log file.");
+                        }
+                    }
                 }
             }
-        }
-
-        private static async Task<ReleaseEntry> UpdateProgram()
-        {
-            Logger.LogMessage("INFO", "UPDATING PROGRAM");
-
-            using (var updateManager = new UpdateManager($"{GlobalConfig.tempPath}", "FE-Buddy"))
+            catch (Exception e)
             {
-                return await updateManager.UpdateApp();
+                Logger.LogMessage("WARNING", "Unable to check for updates: " + e.Message);
+                MessageBox.Show($"FE-BUDDY could not perform an update check due to either your internet connection or GitHub Server issues.\n\n" + e.ToString());
             }
+
+            // we have decided not to update, lets return current version
+            return currentVersion.ToString();
         }
     }
 }

@@ -7,15 +7,6 @@ namespace FeBuddyLibrary.Helpers
 {
     public class DownloadHelpers
     {
-        public static void DownloadAssets()
-        {
-            foreach (AssetsModel asset in GlobalConfig.AllAssetsToDownload)
-            {
-                var client = new WebClient();
-                client.DownloadFile(asset.DownloadURL, $"{GlobalConfig.tempPath}\\{asset.Name}");
-            }
-        }
-
         public static void DownloadAllFiles(string effectiveDate, string airacCycle, bool getMetaFile = true)
         {
             Logger.LogMessage("DEBUG", "DOWNLOADING ALL FILES REQUIRED");

@@ -43,45 +43,6 @@ namespace FeBuddyLibrary.Helpers
             }
         }
 
-    public static void UpdateCheck()
-        {
-            Logger.LogMessage("DEBUG", "PREFORMING UPDATE CHECK");
-
-            string owner = "Nikolai558";
-            string repo = "FE-BUDDY";
-
-            string latestReleaseURL = $"https://api.github.com/repos/{owner}/{repo}/releases/latest";
-
-            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(latestReleaseURL);
-            request.Accept = "application/vnd.github.v3+json";
-            request.UserAgent = "request";
-            request.AllowAutoRedirect = true;
-            HttpWebResponse response = (HttpWebResponse)request.GetResponse();
-
-            List<JObject> listOfAssests = new List<JObject>();
-
-            using (var reader = new StreamReader(response.GetResponseStream()))
-            {
-                string content = reader.ReadToEnd();
-
-                var jsonobj = JObject.Parse(content);
-
-                GlobalConfig.GithubVersion = jsonobj["tag_name"].ToString();
-                GlobalConfig.ReleaseBody = jsonobj["body"].ToString();
-
-                foreach (JObject asset in jsonobj["assets"])
-                {
-                    listOfAssests.Add(asset);
-                }
-            }
-
-            foreach (JObject asset in listOfAssests)
-            {
-                AssetsModel downloadAsset = new AssetsModel() { Name = asset["name"].ToString(), DownloadURL = asset["browser_download_url"].ToString() };
-                GlobalConfig.AllAssetsToDownload.Add(downloadAsset);
-            }
-        }
-
         /// <summary>
         /// Get the Airac Effective Dates and Set our Global Variables to it.
         /// </summary>

@@ -20,7 +20,7 @@ The following is a list of features that we are considering or actively working 
 
 - [ ] GoogleEarthPro Converter (for airport diagrams and other like-constructs)
 
-- [ ] Limit certain NAVDATA features to only the selected ARTCC
+- [ ] Limit Airway Lines to only the selected ARTCC up to about 150 miles outside of the boundary
   - Reference the FAQ for this feature.
 
 - [ ] Artificial Intelligence (AI) Option that:

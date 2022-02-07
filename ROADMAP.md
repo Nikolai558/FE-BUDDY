@@ -8,13 +8,18 @@ The following is a list of features that we are considering or actively working 
 - [ ] FAA RVM .DAT (foia requests) converter.
   - See: https://github.com/glott/DAT2Sector
 
-- [ ] AutoCAD Converter
+- [ ] SCT2 2 AutoCAD Converter
+  - Hard to find a GH repo of someone doing this already but maybe we can reverse engineer the sct_2_dxf.exe & dxf_2_sct.exe
 
 - [ ] GoogleEarthPro Converter (for airport diagrams and other like-constructs)
+  - See: https://github.com/VATSIM-UK/UK-Sector-File
 
 - [ ] FAA GeoMAP (foia requests) converter.
+  - See: https://github.com/justinshannon/geo-map-converter
+    - Word is that the FAA may have changed their format of GeoMaps so this guy's may not work anymore.
 
-- [ ] Hygieia by dhawton (https://github.com/dhawton/hygieia)
+- [ ] Hygieia by dhawton
+  - See: https://github.com/dhawton/hygieia
 
 - [ ] Limit Airway Lines to only the selected ARTCC up to about 150 miles outside of the boundary
   - Reference the FAQ for this feature.

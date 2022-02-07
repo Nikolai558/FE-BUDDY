@@ -5,7 +5,7 @@ The following is a list of features that we are considering or actively working 
 
 ---
 
-- [ ] Create a local facility breakdown management system for user. (REF: FE-ASSISTANT Batch File by KSanders7070)
+- [ ] `on hold until more information about CRC comes out` Create a local facility breakdown management system for user. (REF: FE-ASSISTANT Batch File by KSanders7070)
   - Split local Filter and RVM maps up into individual files to make easier to edit
   - Recombine the files in the appropriate formats.
   - Will transfer certain NASR and other commonly updated data into the appropriate individual files prior to recombining the files, allowing an AIRAC update to be seamless.

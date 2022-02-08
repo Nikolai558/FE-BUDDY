@@ -58,9 +58,9 @@ namespace FeBuddyWinFormUI
             }
         }
 
-        private void MainForm_Closing(object sender, EventArgs e)
+        private void LandingForm_Closing(object sender, EventArgs e)
         {
-            Logger.LogMessage("DEBUG", "MAIN FORM CLOSING");
+            Logger.LogMessage("DEBUG", "Landing FORM CLOSING");
         }
 
         private delegate void SetControlPropertyThreadSafeDelegate(Control control, string propertyName, object propertyValue);
@@ -87,14 +87,14 @@ namespace FeBuddyWinFormUI
             }
         }
 
-        private void MainForm_Shown(object sender, EventArgs e)
+        private void LandingForm_Shown(object sender, EventArgs e)
         {
-            Logger.LogMessage("DEBUG", "SHOWING MAIN FORM");
+            Logger.LogMessage("DEBUG", "SHOWING Landing FORM");
         }
 
-        private void MainForm_Load(object sender, EventArgs e)
+        private void LandingForm_Load(object sender, EventArgs e)
         {
-            Logger.LogMessage("DEBUG", "LOADING MAIN FORM");
+            Logger.LogMessage("DEBUG", "LOADING Landing FORM");
 
             var pfc = new PrivateFontCollection();
             pfc.AddFontFile("Properties\\romantic.ttf");

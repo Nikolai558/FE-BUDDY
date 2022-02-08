@@ -358,9 +358,9 @@
             this.Name = "LandingForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "FE-BUDDY";
-            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.MainForm_Closing);
-            this.Load += new System.EventHandler(this.MainForm_Load);
-            this.Shown += new System.EventHandler(this.MainForm_Shown);
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.LandingForm_Closing);
+            this.Load += new System.EventHandler(this.LandingForm_Load);
+            this.Shown += new System.EventHandler(this.LandingForm_Shown);
             this.airacCycleGroupBox.ResumeLayout(false);
             this.airacCycleGroupBox.PerformLayout();
             this.menuStrip.ResumeLayout(false);

@@ -11,6 +11,7 @@ The following is a list of features that we are considering or actively working 
 
 - [ ] SCT2 2 AutoCAD Converter
   - Hard to find a GH repo of someone doing this already but maybe we can reverse engineer the sct_2_dxf.exe & dxf_2_sct.exe
+  - See: https://docs.fileformat.com/cad/dxf/
 
 - [ ] GoogleEarthPro Converter (for airport diagrams and other like-constructs)
   - See: https://github.com/VATSIM-UK/UK-Sector-File

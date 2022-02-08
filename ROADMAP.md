@@ -1,27 +1,36 @@
 # FE-BUDDY ROADMAP
 
 
-The following is a list of features that we are considering or actively working on. These are in no particular order.
+The following is a list of features that we are considering or actively working on in priority order.
 
 ---
 
-- [ ] Create a local facility breakdown management system for user. (REF: FE-ASSISTANT Batch File by KSanders7070)
+- [ ] FAA RVM .DAT (foia requests) converter.
+  - See: https://github.com/glott/DAT2Sector
+  - See also: https://drakedesignlabs.com/converter/source.txt
+
+- [ ] SCT2 2 AutoCAD Converter
+  - Hard to find a GH repo of someone doing this already but maybe we can reverse engineer the sct_2_dxf.exe & dxf_2_sct.exe
+  - See: https://docs.fileformat.com/cad/dxf/
+  - See Also: https://ezdxf.mozman.at/docs/introduction.html
+
+- [ ] GoogleEarthPro Converter (for airport diagrams and other like-constructs)
+  - See: https://github.com/VATSIM-UK/UK-Sector-File
+
+- [ ] FAA GeoMAP (foia requests) converter.
+  - See: https://github.com/justinshannon/geo-map-converter
+    - Word is that the FAA may have changed their format of GeoMaps so this guy's may not work anymore.
+
+- [ ] Hygieia by dhawton
+  - See: https://github.com/dhawton/hygieia
+
+- [ ] Limit Airway Lines to only the selected ARTCC up to about 150 miles outside of the boundary
+  - Reference the FAQ for this feature.
+
+- [ ] `on hold until more information about CRC comes out` Create a local facility breakdown management system for user. (REF: FE-ASSISTANT Batch File by KSanders7070)
   - Split local Filter and RVM maps up into individual files to make easier to edit
   - Recombine the files in the appropriate formats.
   - Will transfer certain NASR and other commonly updated data into the appropriate individual files prior to recombining the files, allowing an AIRAC update to be seamless.
-
-- [ ] FAA .DAT (foia requests) converter.
-
-- [ ] FAA GeoMAP (foia requests) converter.
-
-- [ ] Hygieia by dhawton (https://github.com/dhawton/hygieia)
-
-- [ ] AutoCAD Converter
-
-- [ ] GoogleEarthPro Converter (for airport diagrams and other like-constructs)
-
-- [ ] Limit certain NAVDATA features to only the selected ARTCC
-  - Reference the FAQ for this feature.
 
 - [ ] Artificial Intelligence (AI) Option that:
   - Allows the program to call the users phone number (US numbers at first for testing).

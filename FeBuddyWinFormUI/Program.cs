@@ -39,6 +39,8 @@ namespace FeBuddyWinFormUI
                 //Environment.Exit(-1);
             }
 
+            Application.Run(new Landing());
+
             // Start the application
             Application.Run(new MainForm());
         }

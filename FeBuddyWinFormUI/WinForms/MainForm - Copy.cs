@@ -16,6 +16,8 @@ namespace FeBuddyWinFormUI
 {
     public partial class Landing : Form
     {
+        private bool nextAiracAvailable;
+
         public Landing()
         {
             Logger.LogMessage("DEBUG", "INITIALIZING COMPONENT");
@@ -27,7 +29,28 @@ namespace FeBuddyWinFormUI
             // It should grab from the assembily info. 
             this.Text = $"FE-BUDDY - V{GlobalConfig.ProgramVersion}";
 
+            chooseDirButton.Enabled = false;
+            startButton.Enabled = false;
+            airacCycleGroupBox.Enabled = false;
+            airacCycleGroupBox.Visible = false;
+
+            convertGroupBox.Enabled = false;
+            convertGroupBox.Visible = false;
+
+            startGroupBox.Enabled = false;
+            startGroupBox.Visible = false;
+
+            processingGroupBox.Visible = true;
+            processingGroupBox.Enabled = true;
+            processingDataLabel.Visible = true;
+            processingDataLabel.Enabled = true;
+
+            facilityIdCombobox.DataSource = GlobalConfig.allArtcc;
+
             GlobalConfig.outputDirBase = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+            filePathLabel.Text = GlobalConfig.outputDirBase;
+            filePathLabel.Visible = true;
+            filePathLabel.MaximumSize = new Size(257, 82);
         }
 
         private class MyRenderer : ToolStripProfessionalRenderer
@@ -65,6 +88,18 @@ namespace FeBuddyWinFormUI
             Logger.LogMessage("DEBUG", "MAIN FORM CLOSING");
         }
 
+        private void CurrentAiracSelection_CheckedChanged(object sender, EventArgs e)
+        {
+            currentAiracSelection.Text = GlobalConfig.currentAiracDate;
+            nextAiracSelection.Text = GlobalConfig.nextAiracDate;
+        }
+
+        private void NextAiracSelection_CheckedChanged(object sender, EventArgs e)
+        {
+            currentAiracSelection.Text = GlobalConfig.currentAiracDate;
+            nextAiracSelection.Text = GlobalConfig.nextAiracDate;
+        }
+
         private void ChooseDirButton_Click(object sender, EventArgs e)
         {
             Logger.LogMessage("DEBUG", "USER CHOOSING DIFFERENT OUTPUT DIRECTORY");
@@ -74,6 +109,10 @@ namespace FeBuddyWinFormUI
             outputDir.ShowDialog();
 
             GlobalConfig.outputDirBase = outputDir.SelectedPath;
+
+            filePathLabel.Text = GlobalConfig.outputDirBase;
+            filePathLabel.Visible = true;
+            filePathLabel.MaximumSize = new Size(257, 82);
         }
 
         private void StartButton_Click(object sender, EventArgs e)
@@ -145,12 +184,38 @@ namespace FeBuddyWinFormUI
             FileHelpers.WriteTestSctFile();
 
             menuStrip.Visible = false;
+            chooseDirButton.Enabled = false;
             //startButton.Enabled = false;
+
+
+            if (convertYes.Checked)
+            {
+                Logger.LogMessage("DEBUG", "CONVERT COORDS 'YES' SELECTED");
+
+                GlobalConfig.Convert = true;
+            }
+            else if (convertNo.Checked)
+            {
+                Logger.LogMessage("DEBUG", "CONVERT COORDS 'NO' SELECTED");
+
+                GlobalConfig.Convert = false;
+            }
 
             airacCycleGroupBox.Enabled = false;
             airacCycleGroupBox.Visible = false;
 
+            convertGroupBox.Enabled = false;
+            convertGroupBox.Visible = false;
+
+            startGroupBox.Enabled = false;
+            startGroupBox.Visible = false;
+
             //TODO - Create Processing box instead of already having it. 
+
+            processingGroupBox.Visible = true;
+            processingGroupBox.Enabled = true;
+            processingDataLabel.Visible = true;
+            processingDataLabel.Enabled = true;
 
             StartParsing();
         }
@@ -202,6 +267,18 @@ namespace FeBuddyWinFormUI
         private void AdjustProcessingBox()
         {
             Logger.LogMessage("DEBUG", "ADJUSTING PROCESSING BOX");
+
+            outputDirectoryLabel.Text = GlobalConfig.outputDirectory;
+            outputDirectoryLabel.Visible = true;
+            outputLocationLabel.Visible = true;
+
+            processingGroupBox.Location = new Point(114, 59);
+            processingGroupBox.Size = new Size(557, 213);
+
+            outputLocationLabel.Location = new Point(9, 22);
+            outputDirectoryLabel.Location = new Point(24, 47);
+            processingDataLabel.Location = new Point(6, 102);
+            exitButton.Location = new Point(187, 173);
         }
 
         private void Worker_StartParsingDoWork(object sender, DoWorkEventArgs e)
@@ -210,17 +287,132 @@ namespace FeBuddyWinFormUI
 
             DirectoryHelpers.CheckTempDir();
 
-            if (getparseAiracDataSelection.Checked)
+            if (currentAiracSelection.Checked)
             {
                 Logger.LogMessage("DEBUG", "CURRENT AIRAC IS SELECTED");
 
-                GlobalConfig.airacEffectiveDate = getparseAiracDataSelection.Text;
+                GlobalConfig.airacEffectiveDate = currentAiracSelection.Text;
             }
-            else if (convertDat2SctSelection.Checked)
+            else if (nextAiracSelection.Checked)
             {
                 Logger.LogMessage("DEBUG", "NEXT AIRAC IS SELECTED");
 
-                GlobalConfig.airacEffectiveDate = convertDat2SctSelection.Text;
+                GlobalConfig.airacEffectiveDate = nextAiracSelection.Text;
+            }
+
+            if (nextAiracSelection.Checked == true && nextAiracAvailable == false)
+            {
+                Logger.LogMessage("DEBUG", "NEXT AIRAC IS SELECTED, HOWEVER THE NEXT AIRAC IS NOT AVAILABLE YET");
+
+                SetControlPropertyThreadSafe(processingDataLabel, "Text", "Downloading FAA Data");
+                DownloadHelpers.DownloadAllFiles(GlobalConfig.airacEffectiveDate, AiracDateCycleModel.AllCycleDates[GlobalConfig.airacEffectiveDate], false);
+
+                SetControlPropertyThreadSafe(processingDataLabel, "Text", "Unzipping Files");
+                DirectoryHelpers.UnzipAllDownloaded();
+
+                SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Telephony");
+                GetTelephony Telephony = new GetTelephony();
+                Telephony.readFAAData($"{GlobalConfig.tempPath}\\{AiracDateCycleModel.AllCycleDates[GlobalConfig.airacEffectiveDate]}_TELEPHONY.html");
+
+                SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing DPs and STARs");
+                GetStarDpData ParseStarDp = new GetStarDpData();
+                ParseStarDp.StarDpQuaterBackFunc(GlobalConfig.airacEffectiveDate);
+
+                SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Airports");
+                GetAptData ParseAPT = new GetAptData();
+                ParseAPT.AptAndWxMain(GlobalConfig.airacEffectiveDate, GlobalConfig.facilityID);
+
+                SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Fixes");
+                GetFixData ParseFixes = new GetFixData();
+                ParseFixes.FixQuarterbackFunc(GlobalConfig.airacEffectiveDate);
+
+                SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Boundaries");
+                GetArbData ParseArb = new GetArbData();
+                ParseArb.ArbMain(GlobalConfig.airacEffectiveDate);
+
+                SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Airways");
+                FileHelpers.CreateAwyGeomapHeadersAndEnding(true);
+
+                GetAwyData ParseAWY = new GetAwyData();
+                ParseAWY.AWYQuarterbackFunc(GlobalConfig.airacEffectiveDate);
+
+                SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing ATS Airways");
+                GetAtsAwyData ParseAts = new GetAtsAwyData();
+                ParseAts.AWYQuarterbackFunc(GlobalConfig.airacEffectiveDate);
+                FileHelpers.CreateAwyGeomapHeadersAndEnding(false);
+
+                SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing NDBs");
+                GetNavData ParseNDBs = new GetNavData();
+                ParseNDBs.NAVQuarterbackFunc(GlobalConfig.airacEffectiveDate, GlobalConfig.facilityID);
+
+                SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Waypoints XML");
+                FileHelpers.WriteWaypointsXML();
+                FileHelpers.AppendCommentToXML(GlobalConfig.airacEffectiveDate);
+                FileHelpers.WriteNavXmlOutput();
+
+                SetControlPropertyThreadSafe(processingDataLabel, "Text", "Checking Alias Commands");
+                AliasCheck aliasCheck = new AliasCheck();
+                aliasCheck.CheckForDuplicates($"{GlobalConfig.outputDirectory}\\ALIAS\\AliasTestFile.txt");
+            }
+            else
+            {
+                SetControlPropertyThreadSafe(processingDataLabel, "Text", "Downloading FAA Data");
+                DownloadHelpers.DownloadAllFiles(GlobalConfig.airacEffectiveDate, AiracDateCycleModel.AllCycleDates[GlobalConfig.airacEffectiveDate]);
+
+                SetControlPropertyThreadSafe(processingDataLabel, "Text", "Unzipping Files");
+                DirectoryHelpers.UnzipAllDownloaded();
+
+                SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Telephony");
+                GetTelephony Telephony = new GetTelephony();
+                Telephony.readFAAData($"{GlobalConfig.tempPath}\\{AiracDateCycleModel.AllCycleDates[GlobalConfig.airacEffectiveDate]}_TELEPHONY.html");
+
+                SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing DPs and STARs");
+                GetStarDpData ParseStarDp = new GetStarDpData();
+                ParseStarDp.StarDpQuaterBackFunc(GlobalConfig.airacEffectiveDate);
+
+                SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Airports");
+                GetAptData ParseAPT = new GetAptData();
+                ParseAPT.AptAndWxMain(GlobalConfig.airacEffectiveDate, GlobalConfig.facilityID);
+
+                SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Chart Recalls");
+                GetFaaMetaFileData ParseMeta = new GetFaaMetaFileData();
+                ParseMeta.QuarterbackFunc();
+
+                SetControlPropertyThreadSafe(processingDataLabel, "Text", "Getting Publications");
+                PublicationParser publications = new PublicationParser();
+                publications.WriteAirportInfoTxt(GlobalConfig.facilityID);
+
+                SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Fixes");
+                GetFixData ParseFixes = new GetFixData();
+                ParseFixes.FixQuarterbackFunc(GlobalConfig.airacEffectiveDate);
+
+                SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Boundaries");
+                GetArbData ParseArb = new GetArbData();
+                ParseArb.ArbMain(GlobalConfig.airacEffectiveDate);
+
+                SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Airways");
+                FileHelpers.CreateAwyGeomapHeadersAndEnding(true);
+
+                GetAwyData ParseAWY = new GetAwyData();
+                ParseAWY.AWYQuarterbackFunc(GlobalConfig.airacEffectiveDate);
+
+                SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing ATS Airways");
+                GetAtsAwyData ParseAts = new GetAtsAwyData();
+                ParseAts.AWYQuarterbackFunc(GlobalConfig.airacEffectiveDate);
+                FileHelpers.CreateAwyGeomapHeadersAndEnding(false);
+
+                SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing NDBs");
+                GetNavData ParseNDBs = new GetNavData();
+                ParseNDBs.NAVQuarterbackFunc(GlobalConfig.airacEffectiveDate, GlobalConfig.facilityID);
+
+                SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Waypoints XML");
+                FileHelpers.WriteWaypointsXML();
+                FileHelpers.AppendCommentToXML(GlobalConfig.airacEffectiveDate);
+                FileHelpers.WriteNavXmlOutput();
+
+                SetControlPropertyThreadSafe(processingDataLabel, "Text", "Checking Alias Commands");
+                AliasCheck aliasCheck = new AliasCheck();
+                aliasCheck.CheckForDuplicates($"{GlobalConfig.outputDirectory}\\ALIAS\\AliasTestFile.txt");
             }
         }
 
@@ -229,7 +421,16 @@ namespace FeBuddyWinFormUI
             Logger.LogMessage("INFO", "PROCESSING COMPLETED");
             File.Copy(Logger.logFilePath, $"{GlobalConfig.outputDirectory}\\FE-BUDDY_LOG.txt");
 
+            processingDataLabel.Text = "Complete";
+            processingDataLabel.Refresh();
+
+            processingGroupBox.Visible = true;
+            processingGroupBox.Enabled = true;
+
             menuStrip.Visible = true;
+
+            exitButton.Visible = true;
+            exitButton.Enabled = true;
         }
 
         private void GetAiracDate()
@@ -246,6 +447,10 @@ namespace FeBuddyWinFormUI
         private void MainForm_Shown(object sender, EventArgs e)
         {
             Logger.LogMessage("DEBUG", "SHOWING MAIN FORM");
+
+            GetAiracDate();
+            currentAiracSelection.Text = GlobalConfig.currentAiracDate;
+            nextAiracSelection.Text = GlobalConfig.nextAiracDate;
         }
 
         private void Worker_DoWork(object sender, DoWorkEventArgs e)
@@ -256,16 +461,36 @@ namespace FeBuddyWinFormUI
             {
                 WebHelpers.GetAiracDateFromFAA();
             }
+            nextAiracAvailable = WebHelpers.GetMetaUrlResponse();
         }
 
         private void Worker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
-            getparseAiracDataSelection.Text = GlobalConfig.currentAiracDate;
-            convertDat2SctSelection.Text = GlobalConfig.nextAiracDate;
+            currentAiracSelection.Text = GlobalConfig.currentAiracDate;
+            nextAiracSelection.Text = GlobalConfig.nextAiracDate;
+
+            processingGroupBox.Visible = false;
+            processingGroupBox.Enabled = false;
+
+            exitButton.Visible = false;
+            exitButton.Enabled = false;
+
+            processingDataLabel.Text = "Processing Data, Please Wait.";
+
+            processingDataLabel.Visible = false;
+            processingDataLabel.Enabled = false;
+
+            chooseDirButton.Enabled = true;
+            startButton.Enabled = true;
 
             airacCycleGroupBox.Enabled = true;
             airacCycleGroupBox.Visible = true;
 
+            convertGroupBox.Enabled = true;
+            convertGroupBox.Visible = true;
+
+            startGroupBox.Enabled = true;
+            startGroupBox.Visible = true;
             Logger.LogMessage("DEBUG", "AIRAC DATE WORKER COMPLETED");
         }
 
@@ -290,11 +515,18 @@ namespace FeBuddyWinFormUI
         private void NextAiracSelection_Click(object sender, EventArgs e)
         {
             Logger.LogMessage("DEBUG", "NEXT AIRAC SELECTED");
+            if (!nextAiracAvailable)
+            {
+                Logger.LogMessage("DEBUG", "NEXT AIRAC SELECTED, NOT AVAILABLE YET");
+                MetaNotFoundForm frm = new MetaNotFoundForm();
+                frm.ShowDialog();
+            }
         }
 
         private void FacilityIdCombobox_SelectedIndexChanged(object sender, EventArgs e)
         {
             Logger.LogMessage("DEBUG", "FACILITY COMBOBOX CLICKED");
+            GlobalConfig.facilityID = facilityIdCombobox.SelectedItem.ToString();
         }
 
         private void UninstallMenuItem_Click(object sender, EventArgs e)
@@ -459,16 +691,6 @@ namespace FeBuddyWinFormUI
             Logger.LogMessage("DEBUG", "REPORT ISSUES MENU ITEM CLICKED");
             Process.Start(new ProcessStartInfo("https://github.com/Nikolai558/FE-BUDDY/issues") { UseShellExecute = true });
             //Process.Start("https://github.com/Nikolai558/FE-BUDDY/issues");
-        }
-
-        private void airacCycleGroupBox_Enter(object sender, EventArgs e)
-        {
-
-        }
-
-        private void airacLabel_Click(object sender, EventArgs e)
-        {
-
         }
     }
 }

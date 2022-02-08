@@ -117,6 +117,14 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="convertDescriptionLabel.Text" xml:space="preserve">
+    <value>This will convert any East Coordinates to West Coordinates.
+This is to trick the radar client into displaying them properly.
+
+    Original:   AAMYY     N051.30.18.800     E171.09.11.700
+Converted:   AAMYY     N051.30.18.800   W188.50.48.300
+</value>
+  </data>
   <metadata name="menuStrip.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
     <value>17, 17</value>
   </metadata>

@@ -97,6 +97,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="WinForms\Landing.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="WinForms\Landing.designer.cs">
+      <DependentUpon>Landing.cs</DependentUpon>
+    </Compile>
     <Compile Include="WinForms\MainForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -117,6 +123,9 @@
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <EmbeddedResource Include="WinForms\Landing.resx">
+      <DependentUpon>Landing.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="WinForms\MainForm.resx">
       <DependentUpon>MainForm.cs</DependentUpon>
     </EmbeddedResource>

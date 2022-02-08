@@ -33,6 +33,14 @@
             this.convertDat2SctSelection = new System.Windows.Forms.RadioButton();
             this.airacLabel = new System.Windows.Forms.Label();
             this.airacCycleGroupBox = new System.Windows.Forms.GroupBox();
+            this.landingStartButton = new System.Windows.Forms.Button();
+            this.manageFacDataSelector = new System.Windows.Forms.RadioButton();
+            this.convertSct2FaaGeoMap = new System.Windows.Forms.RadioButton();
+            this.convertFaaGeoMap2SCT = new System.Windows.Forms.RadioButton();
+            this.convertSct2KmlSelection = new System.Windows.Forms.RadioButton();
+            this.convertKml2SCTSelection = new System.Windows.Forms.RadioButton();
+            this.convertDxf2SctSelection = new System.Windows.Forms.RadioButton();
+            this.convertSct2DxfSelection = new System.Windows.Forms.RadioButton();
             this.menuStrip = new System.Windows.Forms.MenuStrip();
             this.informationToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.InstructionsMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -43,14 +51,6 @@
             this.reportIssuesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.settingsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.UninstallMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.convertSct2DxfSelection = new System.Windows.Forms.RadioButton();
-            this.convertDxf2SctSelection = new System.Windows.Forms.RadioButton();
-            this.convertKml2SCTSelection = new System.Windows.Forms.RadioButton();
-            this.convertSct2KmlSelection = new System.Windows.Forms.RadioButton();
-            this.convertFaaGeoMap2SCT = new System.Windows.Forms.RadioButton();
-            this.convertSct2FaaGeoMap = new System.Windows.Forms.RadioButton();
-            this.landingStartButton = new System.Windows.Forms.Button();
-            this.manageFacDataSelector = new System.Windows.Forms.RadioButton();
             this.airacCycleGroupBox.SuspendLayout();
             this.menuStrip.SuspendLayout();
             this.SuspendLayout();
@@ -118,6 +118,116 @@
             this.airacCycleGroupBox.TabStop = false;
             this.airacCycleGroupBox.Enter += new System.EventHandler(this.airacCycleGroupBox_Enter);
             // 
+            // landingStartButton
+            // 
+            this.landingStartButton.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(20)))), ((int)(((byte)(20)))), ((int)(((byte)(20)))));
+            this.landingStartButton.FlatAppearance.BorderColor = System.Drawing.Color.Gray;
+            this.landingStartButton.FlatAppearance.MouseDownBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(64)))), ((int)(((byte)(0)))));
+            this.landingStartButton.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Black;
+            this.landingStartButton.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.landingStartButton.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.landingStartButton.ForeColor = System.Drawing.SystemColors.AppWorkspace;
+            this.landingStartButton.Location = new System.Drawing.Point(527, 306);
+            this.landingStartButton.Name = "landingStartButton";
+            this.landingStartButton.Size = new System.Drawing.Size(182, 34);
+            this.landingStartButton.TabIndex = 12;
+            this.landingStartButton.Text = "Let\'s Start, Friend.";
+            this.landingStartButton.UseVisualStyleBackColor = false;
+            this.landingStartButton.MouseHover += new System.EventHandler(this.landingStartButton_MouseHover);
+            // 
+            // manageFacDataSelector
+            // 
+            this.manageFacDataSelector.AutoSize = true;
+            this.manageFacDataSelector.Checked = true;
+            this.manageFacDataSelector.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.manageFacDataSelector.ForeColor = System.Drawing.SystemColors.AppWorkspace;
+            this.manageFacDataSelector.Location = new System.Drawing.Point(394, 117);
+            this.manageFacDataSelector.Margin = new System.Windows.Forms.Padding(6, 7, 6, 7);
+            this.manageFacDataSelector.Name = "manageFacDataSelector";
+            this.manageFacDataSelector.Size = new System.Drawing.Size(197, 25);
+            this.manageFacDataSelector.TabIndex = 9;
+            this.manageFacDataSelector.TabStop = true;
+            this.manageFacDataSelector.Text = "Manage My Facility Data";
+            this.manageFacDataSelector.UseVisualStyleBackColor = true;
+            // 
+            // convertSct2FaaGeoMap
+            // 
+            this.convertSct2FaaGeoMap.AutoSize = true;
+            this.convertSct2FaaGeoMap.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.convertSct2FaaGeoMap.ForeColor = System.Drawing.SystemColors.AppWorkspace;
+            this.convertSct2FaaGeoMap.Location = new System.Drawing.Point(394, 234);
+            this.convertSct2FaaGeoMap.Margin = new System.Windows.Forms.Padding(6, 7, 6, 7);
+            this.convertSct2FaaGeoMap.Name = "convertSct2FaaGeoMap";
+            this.convertSct2FaaGeoMap.Size = new System.Drawing.Size(273, 25);
+            this.convertSct2FaaGeoMap.TabIndex = 8;
+            this.convertSct2FaaGeoMap.Text = "Convert SCT2 to FAA GeoMap (.???)";
+            this.convertSct2FaaGeoMap.UseVisualStyleBackColor = true;
+            // 
+            // convertFaaGeoMap2SCT
+            // 
+            this.convertFaaGeoMap2SCT.AutoSize = true;
+            this.convertFaaGeoMap2SCT.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.convertFaaGeoMap2SCT.ForeColor = System.Drawing.SystemColors.AppWorkspace;
+            this.convertFaaGeoMap2SCT.Location = new System.Drawing.Point(394, 195);
+            this.convertFaaGeoMap2SCT.Margin = new System.Windows.Forms.Padding(6, 7, 6, 7);
+            this.convertFaaGeoMap2SCT.Name = "convertFaaGeoMap2SCT";
+            this.convertFaaGeoMap2SCT.Size = new System.Drawing.Size(273, 25);
+            this.convertFaaGeoMap2SCT.TabIndex = 7;
+            this.convertFaaGeoMap2SCT.Text = "Convert FAA GeoMap (.???) to SCT2";
+            this.convertFaaGeoMap2SCT.UseVisualStyleBackColor = true;
+            // 
+            // convertSct2KmlSelection
+            // 
+            this.convertSct2KmlSelection.AutoSize = true;
+            this.convertSct2KmlSelection.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.convertSct2KmlSelection.ForeColor = System.Drawing.SystemColors.AppWorkspace;
+            this.convertSct2KmlSelection.Location = new System.Drawing.Point(68, 273);
+            this.convertSct2KmlSelection.Margin = new System.Windows.Forms.Padding(6, 7, 6, 7);
+            this.convertSct2KmlSelection.Name = "convertSct2KmlSelection";
+            this.convertSct2KmlSelection.Size = new System.Drawing.Size(176, 25);
+            this.convertSct2KmlSelection.TabIndex = 6;
+            this.convertSct2KmlSelection.Text = "Convert SCT2 to KML";
+            this.convertSct2KmlSelection.UseVisualStyleBackColor = true;
+            // 
+            // convertKml2SCTSelection
+            // 
+            this.convertKml2SCTSelection.AutoSize = true;
+            this.convertKml2SCTSelection.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.convertKml2SCTSelection.ForeColor = System.Drawing.SystemColors.AppWorkspace;
+            this.convertKml2SCTSelection.Location = new System.Drawing.Point(68, 234);
+            this.convertKml2SCTSelection.Margin = new System.Windows.Forms.Padding(6, 7, 6, 7);
+            this.convertKml2SCTSelection.Name = "convertKml2SCTSelection";
+            this.convertKml2SCTSelection.Size = new System.Drawing.Size(176, 25);
+            this.convertKml2SCTSelection.TabIndex = 5;
+            this.convertKml2SCTSelection.Text = "Convert KML to SCT2";
+            this.convertKml2SCTSelection.UseVisualStyleBackColor = true;
+            // 
+            // convertDxf2SctSelection
+            // 
+            this.convertDxf2SctSelection.AutoSize = true;
+            this.convertDxf2SctSelection.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.convertDxf2SctSelection.ForeColor = System.Drawing.SystemColors.AppWorkspace;
+            this.convertDxf2SctSelection.Location = new System.Drawing.Point(68, 195);
+            this.convertDxf2SctSelection.Margin = new System.Windows.Forms.Padding(6, 7, 6, 7);
+            this.convertDxf2SctSelection.Name = "convertDxf2SctSelection";
+            this.convertDxf2SctSelection.Size = new System.Drawing.Size(173, 25);
+            this.convertDxf2SctSelection.TabIndex = 4;
+            this.convertDxf2SctSelection.Text = "Convert DXF to SCT2";
+            this.convertDxf2SctSelection.UseVisualStyleBackColor = true;
+            // 
+            // convertSct2DxfSelection
+            // 
+            this.convertSct2DxfSelection.AutoSize = true;
+            this.convertSct2DxfSelection.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.convertSct2DxfSelection.ForeColor = System.Drawing.SystemColors.AppWorkspace;
+            this.convertSct2DxfSelection.Location = new System.Drawing.Point(68, 156);
+            this.convertSct2DxfSelection.Margin = new System.Windows.Forms.Padding(6, 7, 6, 7);
+            this.convertSct2DxfSelection.Name = "convertSct2DxfSelection";
+            this.convertSct2DxfSelection.Size = new System.Drawing.Size(173, 25);
+            this.convertSct2DxfSelection.TabIndex = 3;
+            this.convertSct2DxfSelection.Text = "Convert SCT2 to DXF";
+            this.convertSct2DxfSelection.UseVisualStyleBackColor = true;
+            // 
             // menuStrip
             // 
             this.menuStrip.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))));
@@ -154,7 +264,7 @@
             this.InstructionsMenuItem.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
             this.InstructionsMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.InstructionsMenuItem.Name = "InstructionsMenuItem";
-            this.InstructionsMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.InstructionsMenuItem.Size = new System.Drawing.Size(155, 22);
             this.InstructionsMenuItem.Text = "Instructions";
             this.InstructionsMenuItem.Click += new System.EventHandler(this.InstructionsMenuItem_Click);
             // 
@@ -165,7 +275,7 @@
             this.RoadmapMenuItem.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
             this.RoadmapMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.RoadmapMenuItem.Name = "RoadmapMenuItem";
-            this.RoadmapMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.RoadmapMenuItem.Size = new System.Drawing.Size(155, 22);
             this.RoadmapMenuItem.Text = "Roadmap";
             this.RoadmapMenuItem.Click += new System.EventHandler(this.RoadmapMenuItem_Click);
             // 
@@ -176,7 +286,7 @@
             this.FAQMenuItem.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
             this.FAQMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.FAQMenuItem.Name = "FAQMenuItem";
-            this.FAQMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.FAQMenuItem.Size = new System.Drawing.Size(155, 22);
             this.FAQMenuItem.Text = "FAQ";
             this.FAQMenuItem.Click += new System.EventHandler(this.FAQMenuItem_Click);
             // 
@@ -187,7 +297,7 @@
             this.ChangeLogMenuItem.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
             this.ChangeLogMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.ChangeLogMenuItem.Name = "ChangeLogMenuItem";
-            this.ChangeLogMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.ChangeLogMenuItem.Size = new System.Drawing.Size(155, 22);
             this.ChangeLogMenuItem.Text = "Change Log";
             this.ChangeLogMenuItem.Click += new System.EventHandler(this.ChangeLogMenuItem_Click);
             // 
@@ -198,7 +308,7 @@
             this.CreditsMenuItem.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
             this.CreditsMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.CreditsMenuItem.Name = "CreditsMenuItem";
-            this.CreditsMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.CreditsMenuItem.Size = new System.Drawing.Size(155, 22);
             this.CreditsMenuItem.Text = "Credits";
             this.CreditsMenuItem.Click += new System.EventHandler(this.CreditsMenuItem_Click);
             // 
@@ -228,118 +338,9 @@
             this.UninstallMenuItem.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
             this.UninstallMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.UninstallMenuItem.Name = "UninstallMenuItem";
-            this.UninstallMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.UninstallMenuItem.Size = new System.Drawing.Size(133, 22);
             this.UninstallMenuItem.Text = "Uninstall";
             this.UninstallMenuItem.Click += new System.EventHandler(this.UninstallMenuItem_Click);
-            // 
-            // convertSct2DxfSelection
-            // 
-            this.convertSct2DxfSelection.AutoSize = true;
-            this.convertSct2DxfSelection.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.convertSct2DxfSelection.ForeColor = System.Drawing.SystemColors.AppWorkspace;
-            this.convertSct2DxfSelection.Location = new System.Drawing.Point(68, 156);
-            this.convertSct2DxfSelection.Margin = new System.Windows.Forms.Padding(6, 7, 6, 7);
-            this.convertSct2DxfSelection.Name = "convertSct2DxfSelection";
-            this.convertSct2DxfSelection.Size = new System.Drawing.Size(173, 25);
-            this.convertSct2DxfSelection.TabIndex = 3;
-            this.convertSct2DxfSelection.Text = "Convert SCT2 to DXF";
-            this.convertSct2DxfSelection.UseVisualStyleBackColor = true;
-            // 
-            // convertDxf2SctSelection
-            // 
-            this.convertDxf2SctSelection.AutoSize = true;
-            this.convertDxf2SctSelection.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.convertDxf2SctSelection.ForeColor = System.Drawing.SystemColors.AppWorkspace;
-            this.convertDxf2SctSelection.Location = new System.Drawing.Point(68, 195);
-            this.convertDxf2SctSelection.Margin = new System.Windows.Forms.Padding(6, 7, 6, 7);
-            this.convertDxf2SctSelection.Name = "convertDxf2SctSelection";
-            this.convertDxf2SctSelection.Size = new System.Drawing.Size(173, 25);
-            this.convertDxf2SctSelection.TabIndex = 4;
-            this.convertDxf2SctSelection.Text = "Convert DXF to SCT2";
-            this.convertDxf2SctSelection.UseVisualStyleBackColor = true;
-            // 
-            // convertKml2SCTSelection
-            // 
-            this.convertKml2SCTSelection.AutoSize = true;
-            this.convertKml2SCTSelection.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.convertKml2SCTSelection.ForeColor = System.Drawing.SystemColors.AppWorkspace;
-            this.convertKml2SCTSelection.Location = new System.Drawing.Point(68, 234);
-            this.convertKml2SCTSelection.Margin = new System.Windows.Forms.Padding(6, 7, 6, 7);
-            this.convertKml2SCTSelection.Name = "convertKml2SCTSelection";
-            this.convertKml2SCTSelection.Size = new System.Drawing.Size(176, 25);
-            this.convertKml2SCTSelection.TabIndex = 5;
-            this.convertKml2SCTSelection.Text = "Convert KML to SCT2";
-            this.convertKml2SCTSelection.UseVisualStyleBackColor = true;
-            // 
-            // convertSct2KmlSelection
-            // 
-            this.convertSct2KmlSelection.AutoSize = true;
-            this.convertSct2KmlSelection.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.convertSct2KmlSelection.ForeColor = System.Drawing.SystemColors.AppWorkspace;
-            this.convertSct2KmlSelection.Location = new System.Drawing.Point(68, 273);
-            this.convertSct2KmlSelection.Margin = new System.Windows.Forms.Padding(6, 7, 6, 7);
-            this.convertSct2KmlSelection.Name = "convertSct2KmlSelection";
-            this.convertSct2KmlSelection.Size = new System.Drawing.Size(176, 25);
-            this.convertSct2KmlSelection.TabIndex = 6;
-            this.convertSct2KmlSelection.Text = "Convert SCT2 to KML";
-            this.convertSct2KmlSelection.UseVisualStyleBackColor = true;
-            // 
-            // convertFaaGeoMap2SCT
-            // 
-            this.convertFaaGeoMap2SCT.AutoSize = true;
-            this.convertFaaGeoMap2SCT.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.convertFaaGeoMap2SCT.ForeColor = System.Drawing.SystemColors.AppWorkspace;
-            this.convertFaaGeoMap2SCT.Location = new System.Drawing.Point(394, 195);
-            this.convertFaaGeoMap2SCT.Margin = new System.Windows.Forms.Padding(6, 7, 6, 7);
-            this.convertFaaGeoMap2SCT.Name = "convertFaaGeoMap2SCT";
-            this.convertFaaGeoMap2SCT.Size = new System.Drawing.Size(273, 25);
-            this.convertFaaGeoMap2SCT.TabIndex = 7;
-            this.convertFaaGeoMap2SCT.Text = "Convert FAA GeoMap (.???) to SCT2";
-            this.convertFaaGeoMap2SCT.UseVisualStyleBackColor = true;
-            // 
-            // convertSct2FaaGeoMap
-            // 
-            this.convertSct2FaaGeoMap.AutoSize = true;
-            this.convertSct2FaaGeoMap.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.convertSct2FaaGeoMap.ForeColor = System.Drawing.SystemColors.AppWorkspace;
-            this.convertSct2FaaGeoMap.Location = new System.Drawing.Point(394, 234);
-            this.convertSct2FaaGeoMap.Margin = new System.Windows.Forms.Padding(6, 7, 6, 7);
-            this.convertSct2FaaGeoMap.Name = "convertSct2FaaGeoMap";
-            this.convertSct2FaaGeoMap.Size = new System.Drawing.Size(273, 25);
-            this.convertSct2FaaGeoMap.TabIndex = 8;
-            this.convertSct2FaaGeoMap.Text = "Convert SCT2 to FAA GeoMap (.???)";
-            this.convertSct2FaaGeoMap.UseVisualStyleBackColor = true;
-            // 
-            // landingStartButton
-            // 
-            this.landingStartButton.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(20)))), ((int)(((byte)(20)))), ((int)(((byte)(20)))));
-            this.landingStartButton.FlatAppearance.BorderColor = System.Drawing.Color.Gray;
-            this.landingStartButton.FlatAppearance.MouseDownBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(64)))), ((int)(((byte)(0)))));
-            this.landingStartButton.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Black;
-            this.landingStartButton.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.landingStartButton.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.landingStartButton.ForeColor = System.Drawing.SystemColors.AppWorkspace;
-            this.landingStartButton.Location = new System.Drawing.Point(527, 306);
-            this.landingStartButton.Name = "landingStartButton";
-            this.landingStartButton.Size = new System.Drawing.Size(182, 34);
-            this.landingStartButton.TabIndex = 12;
-            this.landingStartButton.Text = "Let\'s Start, Friend.";
-            this.landingStartButton.UseVisualStyleBackColor = false;
-            // 
-            // manageFacDataSelector
-            // 
-            this.manageFacDataSelector.AutoSize = true;
-            this.manageFacDataSelector.Checked = true;
-            this.manageFacDataSelector.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.manageFacDataSelector.ForeColor = System.Drawing.SystemColors.AppWorkspace;
-            this.manageFacDataSelector.Location = new System.Drawing.Point(394, 117);
-            this.manageFacDataSelector.Margin = new System.Windows.Forms.Padding(6, 7, 6, 7);
-            this.manageFacDataSelector.Name = "manageFacDataSelector";
-            this.manageFacDataSelector.Size = new System.Drawing.Size(197, 25);
-            this.manageFacDataSelector.TabIndex = 9;
-            this.manageFacDataSelector.TabStop = true;
-            this.manageFacDataSelector.Text = "Manage My Facility Data";
-            this.manageFacDataSelector.UseVisualStyleBackColor = true;
             // 
             // Landing
             // 

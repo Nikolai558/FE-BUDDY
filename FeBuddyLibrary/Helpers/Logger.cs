@@ -24,7 +24,6 @@ namespace FeBuddyLibrary.Helpers
         {
             string logHeader = "This file may serve useful to the developers in the case of program issues. Please send this file with your bug report.";
 
-
             File.WriteAllText(logFilePath, logHeader += "\n\n");
         }
     }

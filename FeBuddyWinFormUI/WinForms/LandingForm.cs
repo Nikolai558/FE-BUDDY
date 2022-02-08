@@ -16,7 +16,7 @@ namespace FeBuddyWinFormUI
 {
     public partial class LandingForm : Form
     {
-        public LandingForm()
+        public LandingForm(string currentVersion)
         {
             Logger.LogMessage("DEBUG", "INITIALIZING COMPONENT");
 
@@ -25,7 +25,7 @@ namespace FeBuddyWinFormUI
             
 
             // It should grab from the assembily info. 
-            this.Text = $"FE-BUDDY - V{GlobalConfig.ProgramVersion}";
+            this.Text = $"FE-BUDDY - V{currentVersion}";
         }
 
         private class MyRenderer : ToolStripProfessionalRenderer

@@ -44,7 +44,8 @@ namespace FeBuddyWinFormUI
             // this limit.
             var version = CheckForUpdates();
 
-            Application.Run(new LandingForm());
+            // TODO Only for testing right now. 
+            Application.Run(new LandingForm(version));
 
             // Start the application
             Application.Run(new MainForm(version));

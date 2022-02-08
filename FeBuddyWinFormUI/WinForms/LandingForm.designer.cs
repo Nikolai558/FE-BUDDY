@@ -1,6 +1,6 @@
 ﻿namespace FeBuddyWinFormUI
 {
-    partial class Landing
+    partial class LandingForm
     {
         /// <summary>
         /// Required designer variable.
@@ -28,7 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Landing));
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(LandingForm));
             this.getparseAiracDataSelection = new System.Windows.Forms.RadioButton();
             this.convertDat2SctSelection = new System.Windows.Forms.RadioButton();
             this.airacLabel = new System.Windows.Forms.Label();
@@ -66,7 +66,6 @@
             this.getparseAiracDataSelection.Name = "getparseAiracDataSelection";
             this.getparseAiracDataSelection.Size = new System.Drawing.Size(267, 25);
             this.getparseAiracDataSelection.TabIndex = 0;
-            this.getparseAiracDataSelection.TabStop = true;
             this.getparseAiracDataSelection.Text = "Get, Parse, and Format AIRAC Data";
             this.getparseAiracDataSelection.UseVisualStyleBackColor = true;
             // 
@@ -82,7 +81,6 @@
             this.convertDat2SctSelection.TabIndex = 1;
             this.convertDat2SctSelection.Text = "Convert DAT file to SCT2";
             this.convertDat2SctSelection.UseVisualStyleBackColor = true;
-            this.convertDat2SctSelection.Click += new System.EventHandler(this.NextAiracSelection_Click);
             // 
             // airacLabel
             // 
@@ -95,7 +93,6 @@
             this.airacLabel.TabIndex = 2;
             this.airacLabel.Text = "Select what you would like to do, Pal.";
             this.airacLabel.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
-            this.airacLabel.Click += new System.EventHandler(this.airacLabel_Click);
             // 
             // airacCycleGroupBox
             // 
@@ -116,7 +113,6 @@
             this.airacCycleGroupBox.Size = new System.Drawing.Size(746, 365);
             this.airacCycleGroupBox.TabIndex = 12;
             this.airacCycleGroupBox.TabStop = false;
-            this.airacCycleGroupBox.Enter += new System.EventHandler(this.airacCycleGroupBox_Enter);
             // 
             // landingStartButton
             // 
@@ -138,7 +134,6 @@
             // manageFacDataSelector
             // 
             this.manageFacDataSelector.AutoSize = true;
-            this.manageFacDataSelector.Checked = true;
             this.manageFacDataSelector.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.manageFacDataSelector.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.manageFacDataSelector.Location = new System.Drawing.Point(394, 117);
@@ -146,7 +141,6 @@
             this.manageFacDataSelector.Name = "manageFacDataSelector";
             this.manageFacDataSelector.Size = new System.Drawing.Size(197, 25);
             this.manageFacDataSelector.TabIndex = 9;
-            this.manageFacDataSelector.TabStop = true;
             this.manageFacDataSelector.Text = "Manage My Facility Data";
             this.manageFacDataSelector.UseVisualStyleBackColor = true;
             // 
@@ -342,7 +336,7 @@
             this.UninstallMenuItem.Text = "Uninstall";
             this.UninstallMenuItem.Click += new System.EventHandler(this.UninstallMenuItem_Click);
             // 
-            // Landing
+            // LandingForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(11F, 25F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
@@ -361,7 +355,7 @@
             this.MainMenuStrip = this.menuStrip;
             this.Margin = new System.Windows.Forms.Padding(6, 7, 6, 7);
             this.MaximizeBox = false;
-            this.Name = "Landing";
+            this.Name = "LandingForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "FE-BUDDY";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.MainForm_Closing);

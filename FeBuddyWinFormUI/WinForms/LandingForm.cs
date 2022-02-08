@@ -14,9 +14,9 @@ using System.Windows.Forms;
 
 namespace FeBuddyWinFormUI
 {
-    public partial class Landing : Form
+    public partial class LandingForm : Form
     {
-        public Landing()
+        public LandingForm()
         {
             Logger.LogMessage("DEBUG", "INITIALIZING COMPONENT");
 
@@ -26,8 +26,6 @@ namespace FeBuddyWinFormUI
 
             // It should grab from the assembily info. 
             this.Text = $"FE-BUDDY - V{GlobalConfig.ProgramVersion}";
-
-            GlobalConfig.outputDirBase = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
         }
 
         private class MyRenderer : ToolStripProfessionalRenderer
@@ -65,103 +63,6 @@ namespace FeBuddyWinFormUI
             Logger.LogMessage("DEBUG", "MAIN FORM CLOSING");
         }
 
-        private void ChooseDirButton_Click(object sender, EventArgs e)
-        {
-            Logger.LogMessage("DEBUG", "USER CHOOSING DIFFERENT OUTPUT DIRECTORY");
-
-            FolderBrowserDialog outputDir = new FolderBrowserDialog();
-
-            outputDir.ShowDialog();
-
-            GlobalConfig.outputDirBase = outputDir.SelectedPath;
-        }
-
-        private void StartButton_Click(object sender, EventArgs e)
-        {
-            Logger.LogMessage("DEBUG", "USER CLICKED START BUTTON");
-
-            if (GlobalConfig.outputDirBase == null || GlobalConfig.outputDirBase == "")
-            {
-                Logger.LogMessage("WARNING", "OUTPUT DIRECTORY BASE IS NULL OR EMPTY");
-
-                DialogResult dialogResult = MessageBox.Show("Seems there may be an error.\n Please verify you have chosen an output location.", "ERROR: NO Output Location", MessageBoxButtons.OK);
-                if (dialogResult == DialogResult.OK)
-                {
-                    return;
-                }
-                else
-                {
-                    return;
-                }
-            }
-
-            if (GlobalConfig.facilityID == "" || GlobalConfig.facilityID.Trim() == null)
-            {
-                Logger.LogMessage("WARNING", "FACILITY ID IS NULL OR EMPTY");
-
-                DialogResult dialogResult = MessageBox.Show("Seems there may be an error.\n Please verify you have selected a correct Facility ID.", "ERROR: NO Facility ID", MessageBoxButtons.OK);
-                if (dialogResult == DialogResult.OK)
-                {
-                    return;
-                }
-                else
-                {
-                    return;
-                }
-            }
-
-            if (GlobalConfig.outputDirectory == null)
-            {
-                Logger.LogMessage("DEBUG", "SETTING OUTPUT DIRECTORY FULL FILE PATH FROM NULL");
-
-                GlobalConfig.outputDirectory = $"{GlobalConfig.outputDirBase}\\FE-BUDDY_Output";
-
-                if (Directory.Exists(GlobalConfig.outputDirectory))
-                {
-                    Logger.LogMessage("DEBUG", "OUTPUT DIRECTORY FILE PATH EXISTS, ADDING DATETIME VARIABLE TO END OF DIRECTORY NAME");
-
-                    GlobalConfig.outputDirectory += $"-{DateTime.Now:MMddHHmmss}";
-                }
-
-                GlobalConfig.outputDirectory += "\\";
-            }
-            else
-            {
-                Logger.LogMessage("DEBUG", "SETTING OUTPUT DIRECTORY FULL FILE PATH FROM EXISTING");
-
-                GlobalConfig.outputDirectory = $"{GlobalConfig.outputDirBase}\\FE-BUDDY_Output";
-
-                if (Directory.Exists(GlobalConfig.outputDirectory))
-                {
-                    Logger.LogMessage("DEBUG", "OUTPUT DIRECTORY FILE PATH EXISTS, ADDING DATETIME VARIABLE TO END OF DIRECTORY NAME");
-                    GlobalConfig.outputDirectory += $"-{DateTime.Now:MMddHHmmss}";
-                }
-
-                GlobalConfig.outputDirectory += "\\";
-            }
-
-            DirectoryHelpers.CreateDirectories();
-
-            FileHelpers.WriteTestSctFile();
-
-            menuStrip.Visible = false;
-            //startButton.Enabled = false;
-
-            airacCycleGroupBox.Enabled = false;
-            airacCycleGroupBox.Visible = false;
-
-            //TODO - Create Processing box instead of already having it. 
-
-            StartParsing();
-        }
-
-        private void ExitButton_Click(object sender, EventArgs e)
-        {
-            Logger.LogMessage("INFO", "EXIT BUTTON CLICKED");
-
-            Application.Exit();
-        }
-
         private delegate void SetControlPropertyThreadSafeDelegate(Control control, string propertyName, object propertyValue);
 
         public static void SetControlPropertyThreadSafe(
@@ -186,87 +87,9 @@ namespace FeBuddyWinFormUI
             }
         }
 
-        private void StartParsing()
-        {
-            Logger.LogMessage("INFO", "SETTING UP PARSING WORKER");
-
-            AdjustProcessingBox();
-
-            var worker = new BackgroundWorker();
-            worker.RunWorkerCompleted += Worker_StartParsingCompleted;
-            worker.DoWork += Worker_StartParsingDoWork;
-
-            worker.RunWorkerAsync();
-        }
-
-        private void AdjustProcessingBox()
-        {
-            Logger.LogMessage("DEBUG", "ADJUSTING PROCESSING BOX");
-        }
-
-        private void Worker_StartParsingDoWork(object sender, DoWorkEventArgs e)
-        {
-            Logger.LogMessage("INFO", "PROCESSING STARTED");
-
-            DirectoryHelpers.CheckTempDir();
-
-            if (getparseAiracDataSelection.Checked)
-            {
-                Logger.LogMessage("DEBUG", "CURRENT AIRAC IS SELECTED");
-
-                GlobalConfig.airacEffectiveDate = getparseAiracDataSelection.Text;
-            }
-            else if (convertDat2SctSelection.Checked)
-            {
-                Logger.LogMessage("DEBUG", "NEXT AIRAC IS SELECTED");
-
-                GlobalConfig.airacEffectiveDate = convertDat2SctSelection.Text;
-            }
-        }
-
-        private void Worker_StartParsingCompleted(object sender, RunWorkerCompletedEventArgs e)
-        {
-            Logger.LogMessage("INFO", "PROCESSING COMPLETED");
-            File.Copy(Logger.logFilePath, $"{GlobalConfig.outputDirectory}\\FE-BUDDY_LOG.txt");
-
-            menuStrip.Visible = true;
-        }
-
-        private void GetAiracDate()
-        {
-            Logger.LogMessage("DEBUG", "SETTING UP AIRAC DATE WORKER");
-
-            var Worker = new BackgroundWorker();
-            Worker.RunWorkerCompleted += Worker_RunWorkerCompleted;
-            Worker.DoWork += Worker_DoWork;
-
-            Worker.RunWorkerAsync();
-        }
-
         private void MainForm_Shown(object sender, EventArgs e)
         {
             Logger.LogMessage("DEBUG", "SHOWING MAIN FORM");
-        }
-
-        private void Worker_DoWork(object sender, DoWorkEventArgs e)
-        {
-            Logger.LogMessage("DEBUG", "GETTING AIRAC DATE");
-
-            if (GlobalConfig.nextAiracDate == null)
-            {
-                WebHelpers.GetAiracDateFromFAA();
-            }
-        }
-
-        private void Worker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
-        {
-            getparseAiracDataSelection.Text = GlobalConfig.currentAiracDate;
-            convertDat2SctSelection.Text = GlobalConfig.nextAiracDate;
-
-            airacCycleGroupBox.Enabled = true;
-            airacCycleGroupBox.Visible = true;
-
-            Logger.LogMessage("DEBUG", "AIRAC DATE WORKER COMPLETED");
         }
 
         private void MainForm_Load(object sender, EventArgs e)
@@ -286,17 +109,7 @@ namespace FeBuddyWinFormUI
             settingsToolStripMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
             reportIssuesToolStripMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
         }
-
-        private void NextAiracSelection_Click(object sender, EventArgs e)
-        {
-            Logger.LogMessage("DEBUG", "NEXT AIRAC SELECTED");
-        }
-
-        private void FacilityIdCombobox_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            Logger.LogMessage("DEBUG", "FACILITY COMBOBOX CLICKED");
-        }
-
+        
         private void UninstallMenuItem_Click(object sender, EventArgs e)
         {
             Logger.LogMessage("WARNING", "UNINSTALL MENU ITEM CLICKED");
@@ -459,16 +272,6 @@ namespace FeBuddyWinFormUI
             Logger.LogMessage("DEBUG", "REPORT ISSUES MENU ITEM CLICKED");
             Process.Start(new ProcessStartInfo("https://github.com/Nikolai558/FE-BUDDY/issues") { UseShellExecute = true });
             //Process.Start("https://github.com/Nikolai558/FE-BUDDY/issues");
-        }
-
-        private void airacCycleGroupBox_Enter(object sender, EventArgs e)
-        {
-
-        }
-
-        private void airacLabel_Click(object sender, EventArgs e)
-        {
-
         }
 
         private void landingStartButton_MouseHover(object sender, EventArgs e)

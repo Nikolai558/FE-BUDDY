@@ -7,6 +7,7 @@ The following is a list of features that we are considering or actively working 
 
 - [ ] FAA RVM .DAT (foia requests) converter.
   - See: https://github.com/glott/DAT2Sector
+  - See also: https://drakedesignlabs.com/converter/source.txt
 
 - [ ] SCT2 2 AutoCAD Converter
   - Hard to find a GH repo of someone doing this already but maybe we can reverse engineer the sct_2_dxf.exe & dxf_2_sct.exe

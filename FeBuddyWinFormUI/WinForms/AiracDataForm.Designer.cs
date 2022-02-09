@@ -1,6 +1,6 @@
 ﻿namespace FeBuddyWinFormUI
 {
-    partial class MainForm
+    partial class AiracDataForm
     {
         /// <summary>
         /// Required designer variable.
@@ -28,7 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(AiracDataForm));
             this.currentAiracSelection = new System.Windows.Forms.RadioButton();
             this.nextAiracSelection = new System.Windows.Forms.RadioButton();
             this.airacLabel = new System.Windows.Forms.Label();

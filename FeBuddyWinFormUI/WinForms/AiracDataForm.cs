@@ -14,11 +14,11 @@ using System.Windows.Forms;
 
 namespace FeBuddyWinFormUI
 {
-    public partial class MainForm : Form
+    public partial class AiracDataForm : Form
     {
         private bool nextAiracAvailable;
 
-        public MainForm(string currentVersion)
+        public AiracDataForm(string currentVersion)
         {
             Logger.LogMessage("DEBUG", "INITIALIZING COMPONENT");
 

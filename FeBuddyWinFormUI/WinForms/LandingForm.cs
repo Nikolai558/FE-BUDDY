@@ -289,7 +289,7 @@ namespace FeBuddyWinFormUI
 
             if (getparseAiracDataSelection.Checked)
             {
-                var airacDataForm = new MainForm(_currentVersion);
+                var airacDataForm = new AiracDataForm(_currentVersion);
                 airacDataForm.FormClosed += (s, args) => this.Close();
                 airacDataForm.Show();
             }

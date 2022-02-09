@@ -16,16 +16,19 @@ namespace FeBuddyWinFormUI
 {
     public partial class LandingForm : Form
     {
+        private readonly string _currentVersion;
+
         public LandingForm(string currentVersion)
         {
             Logger.LogMessage("DEBUG", "INITIALIZING COMPONENT");
+            _currentVersion = currentVersion;
 
             InitializeComponent();
             menuStrip.Renderer = new MyRenderer();
             
 
             // It should grab from the assembily info. 
-            this.Text = $"FE-BUDDY - V{currentVersion}";
+            this.Text = $"FE-BUDDY - V{_currentVersion}";
         }
 
         private class MyRenderer : ToolStripProfessionalRenderer
@@ -278,6 +281,18 @@ namespace FeBuddyWinFormUI
         {
             var startToolTip = new ToolTip();
             startToolTip.SetToolTip(landingStartButton, "I'm not your friend, Guy...");
+        }
+
+        private void landingStartButton_Click(object sender, EventArgs e)
+        {
+            this.Hide();
+
+            if (getparseAiracDataSelection.Checked)
+            {
+                var airacDataForm = new MainForm(_currentVersion);
+                airacDataForm.FormClosed += (s, args) => this.Close();
+                airacDataForm.Show();
+            }
         }
     }
 }

@@ -48,7 +48,7 @@ namespace FeBuddyWinFormUI
             Application.Run(new LandingForm(version));
 
             // Start the application
-            Application.Run(new MainForm(version));
+            // Application.Run(new MainForm(version));
         }
 
         private static void OnAppInstalled(SemanticVersion ver, IAppTools tools)

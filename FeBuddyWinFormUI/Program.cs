@@ -93,7 +93,10 @@ namespace FeBuddyWinFormUI
         /// </summary>
         private static string CheckForUpdates()
         {
-            using var ghu = new GithubUpdateManager("https://github.com/Nikolai558/FE-BUDDY");
+            // By default (on install) AllowPreRelease is false. This setting will only change if the user
+            // "checks" the "Opt-In PreRelease" button under the settings menu
+            using var ghu = new GithubUpdateManager("https://github.com/Nikolai558/FE-BUDDY", Properties.Settings.Default.AllowPreRelease);
+
             var currentVersion = ghu.CurrentlyInstalledVersion();
 
             if (currentVersion == null || !ghu.IsInstalledApp)

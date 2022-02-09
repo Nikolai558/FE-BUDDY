@@ -25,10 +25,11 @@ namespace FeBuddyWinFormUI
 
             InitializeComponent();
             menuStrip.Renderer = new MyRenderer();
-            
+
 
             // It should grab from the assembily info. 
             this.Text = $"FE-BUDDY - V{_currentVersion}";
+            this.allowBetaMenuItem.Checked = Properties.Settings.Default.AllowPreRelease;
         }
 
         private class MyRenderer : ToolStripProfessionalRenderer
@@ -299,6 +300,14 @@ namespace FeBuddyWinFormUI
                 MessageBox.Show("This feature has not been implemented yet.");
             }
 
+        }
+
+        private void allowBetaMenuItem_Click(object sender, EventArgs e)
+        {
+            allowBetaMenuItem.Checked = !allowBetaMenuItem.Checked;
+
+            Properties.Settings.Default.AllowPreRelease = allowBetaMenuItem.Checked;
+            Properties.Settings.Default.Save();
         }
     }
 }

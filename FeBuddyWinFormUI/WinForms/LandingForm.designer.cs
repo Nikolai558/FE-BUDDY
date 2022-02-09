@@ -51,6 +51,7 @@
             this.reportIssuesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.settingsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.UninstallMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.allowBetaMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.airacCycleGroupBox.SuspendLayout();
             this.menuStrip.SuspendLayout();
             this.SuspendLayout();
@@ -321,7 +322,8 @@
             // 
             this.settingsToolStripMenuItem.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))));
             this.settingsToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.UninstallMenuItem});
+            this.UninstallMenuItem,
+            this.allowBetaMenuItem});
             this.settingsToolStripMenuItem.Font = new System.Drawing.Font("Romantic", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.settingsToolStripMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.settingsToolStripMenuItem.Name = "settingsToolStripMenuItem";
@@ -334,9 +336,21 @@
             this.UninstallMenuItem.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
             this.UninstallMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.UninstallMenuItem.Name = "UninstallMenuItem";
-            this.UninstallMenuItem.Size = new System.Drawing.Size(133, 22);
+            this.UninstallMenuItem.Size = new System.Drawing.Size(192, 22);
             this.UninstallMenuItem.Text = "Uninstall";
             this.UninstallMenuItem.Click += new System.EventHandler(this.UninstallMenuItem_Click);
+            // 
+            // allowBetaMenuItem
+            // 
+            this.allowBetaMenuItem.BackColor = System.Drawing.Color.Black;
+            this.allowBetaMenuItem.Checked = true;
+            this.allowBetaMenuItem.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.allowBetaMenuItem.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
+            this.allowBetaMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
+            this.allowBetaMenuItem.Name = "allowBetaMenuItem";
+            this.allowBetaMenuItem.Size = new System.Drawing.Size(192, 22);
+            this.allowBetaMenuItem.Text = "Opt-In PreRelease";
+            this.allowBetaMenuItem.Click += new System.EventHandler(this.allowBetaMenuItem_Click);
             // 
             // LandingForm
             // 
@@ -396,6 +410,7 @@
         private System.Windows.Forms.RadioButton convertSct2DxfSelection;
         private System.Windows.Forms.Button landingStartButton;
         private System.Windows.Forms.RadioButton manageFacDataSelector;
+        private System.Windows.Forms.ToolStripMenuItem allowBetaMenuItem;
     }
 }
 

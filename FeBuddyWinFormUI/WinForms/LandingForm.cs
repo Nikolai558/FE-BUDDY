@@ -285,14 +285,20 @@ namespace FeBuddyWinFormUI
 
         private void landingStartButton_Click(object sender, EventArgs e)
         {
-            this.Hide();
+            
 
             if (getparseAiracDataSelection.Checked)
             {
                 var airacDataForm = new AiracDataForm(_currentVersion);
                 airacDataForm.FormClosed += (s, args) => this.Close();
                 airacDataForm.Show();
+                this.Hide();
             }
+            else
+            {
+                MessageBox.Show("This feature has not been implemented yet.");
+            }
+
         }
     }
 }

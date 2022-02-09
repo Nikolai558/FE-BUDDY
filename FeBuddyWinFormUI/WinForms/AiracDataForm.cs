@@ -14,20 +14,19 @@ using System.Windows.Forms;
 
 namespace FeBuddyWinFormUI
 {
-    public partial class MainForm : Form
+    public partial class AiracDataForm : Form
     {
         private bool nextAiracAvailable;
 
-        public MainForm()
+        public AiracDataForm(string currentVersion)
         {
             Logger.LogMessage("DEBUG", "INITIALIZING COMPONENT");
 
             InitializeComponent();
             menuStrip.Renderer = new MyRenderer();
-            
 
             // It should grab from the assembily info. 
-            this.Text = $"FE-BUDDY - V{GlobalConfig.ProgramVersion}";
+            this.Text = $"FE-BUDDY - V{currentVersion}";
 
             chooseDirButton.Enabled = false;
             startButton.Enabled = false;
@@ -582,10 +581,29 @@ namespace FeBuddyWinFormUI
                         + "		DEL /Q \"FE-BUDDY.lnk\"\n"
                         + "	)\n"
                         + "\n"
+                        + "CD /d \"%appdata%\\Microsoft\\Windows\\Start Menu\\Programs\"\n"
+                        + " if NOT exist \"Kyle Sanders\" (\n"
+                        + "     SET OLD_START_SHORTCUT=NOT_FOUND\n"
+                        + ")\n"
+                        + "\n"
+                        + "	if exist \"Kyle Sanders\" (\n"
+                        + "		SET OLD_START_SHORTCUT=FOUND\n"
+                        + "		RD /Q /S \"Kyle Sanders\"\n"
+                        + "	)\n"
+                        + "\n"
+                        + "	if NOT exist FE-BUDDY.lnk (\n"
+                        + "		SET /A NOT_FOUND_COUNT=%NOT_FOUND_COUNT% + 1\n"
+                        + "		SET NEW_START_SHORTCUT=NOT_FOUND\n"
+                        + "	)\n"
+                        + "\n"
+                        + "	if exist FE-BUDDY.lnk (\n"
+                        + "		SET NEW_START_SHORTCUT=FOUND\n"
+                        + "		DEL /Q \"FE-BUDDY.lnk\"\n"
+                        + "	)\n"
+                        + "\n"
                         + "IF %NOT_FOUND_COUNT%==0 SET UNINSTALL_STATUS=COMPLETE\n"
-                        + "IF %NOT_FOUND_COUNT%==1 SET UNINSTALL_STATUS=PARTIAL\n"
-                        + "IF %NOT_FOUND_COUNT%==2 SET UNINSTALL_STATUS=PARTIAL\n"
-                        + "IF %NOT_FOUND_COUNT%==3 SET UNINSTALL_STATUS=FAIL\n"
+                        + "IF %NOT_FOUND_COUNT% GEQ 1 SET UNINSTALL_STATUS=PARTIAL\n"
+                        + "IF %NOT_FOUND_COUNT%==4 SET UNINSTALL_STATUS=FAIL\n"
                         + "\n"
                         + "IF %UNINSTALL_STATUS%==COMPLETE GOTO UNINSTALLED\n"
                         + "IF %UNINSTALL_STATUS%==PARTIAL GOTO UNINSTALLED\n"
@@ -602,6 +620,8 @@ namespace FeBuddyWinFormUI
                         + "IF %FE-BUDDY_TEMP_FOLDER%==FOUND ECHO        -temp\\FE-BUDDY\n"
                         + "IF %FE-BUDDY_APPDATA_FOLDER%==FOUND ECHO        -AppData\\Local\\FE-BUDDY\n"
                         + "IF %FE-BUDDY_SHORTCUT%==FOUND ECHO        -Desktop\\FE-BUDDY Shortcut\n"
+                        + "IF %OLD_START_SHORTCUT%==FOUND ECHO        -Start Menu\\Kyle Sanders\n"
+                        + "IF %NEW_START_SHORTCUT%==FOUND ECHO        -Start Menu\\FE-BUDDY Shortcut\n"
                         + "\n"
                         + ":FAILED\n"
                         + "\n"
@@ -619,6 +639,7 @@ namespace FeBuddyWinFormUI
                         + "		ECHO        -Desktop\\FE-BUDDY Shortcut\n"
                         + "		ECHO             --If the shortcut was renamed, delete the shortcut manually.\n"
                         + "	)\n"
+                        + " IF %NEW_START_SHORTCUT%==NOT_FOUND ECHO        -Start Menu\\FE-BUDDY Shortcut\n"
                         + ")\n"
                         + "\n"
                         + "ECHO.\n"

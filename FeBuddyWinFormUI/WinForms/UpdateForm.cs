@@ -10,10 +10,16 @@ namespace FeBuddyWinFormUI
 {
     public partial class UpdateForm : Form
     {
-        public UpdateForm()
+        public string CurrentVersion { get; }
+        public string NewVersion { get; }
+
+        public UpdateForm(string currentVersion, string newVersion)
         {
             InitializeComponent();
+            CurrentVersion = currentVersion;
+            NewVersion = newVersion;
         }
+
         private void UpdateForm_Closing(object sender, EventArgs e)
         {
             Logger.LogMessage("DEBUG", "UPDATE FORM CLOSING");
@@ -99,7 +105,7 @@ namespace FeBuddyWinFormUI
                 {
                     string version = line.Substring(13, 5);
 
-                    if (GlobalConfig.ProgramVersion == version)
+                    if (CurrentVersion == version)
                     {
                         break;
                     }
@@ -115,20 +121,8 @@ namespace FeBuddyWinFormUI
             string msg = ReadChangeLog();
 
             githubMessagelabel.Text = msg;
-            programVersionLabel.Text = $"Your program version: {GlobalConfig.ProgramVersion}";
-            githubVersionLabel.Text = $"Latest release version: {GlobalConfig.GithubVersion}";
-        }
-
-        private void yesButton_Click(object sender, EventArgs e)
-        {
-            GlobalConfig.updateProgram = true;
-            this.Close();
-        }
-
-        private void noButton_Click(object sender, EventArgs e)
-        {
-            GlobalConfig.updateProgram = false;
-            this.Close();
+            programVersionLabel.Text = $"Your program version: {CurrentVersion}";
+            githubVersionLabel.Text = $"Latest release version: {NewVersion}";
         }
     }
 }

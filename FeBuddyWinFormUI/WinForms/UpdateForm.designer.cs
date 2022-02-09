@@ -1,4 +1,4 @@
-﻿namespace FeBuddyWinFormUI
+namespace FeBuddyWinFormUI
 {
     partial class UpdateForm
     {
@@ -127,6 +127,7 @@
             // 
             // yesButton
             // 
+            this.yesButton.DialogResult = System.Windows.Forms.DialogResult.Yes;
             this.yesButton.Enabled = false;
             this.yesButton.FlatAppearance.BorderColor = System.Drawing.Color.Gray;
             this.yesButton.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Gray;
@@ -140,10 +141,10 @@
             this.yesButton.Text = "Yes";
             this.yesButton.UseVisualStyleBackColor = true;
             this.yesButton.Visible = false;
-            this.yesButton.Click += new System.EventHandler(this.yesButton_Click);
             // 
             // noButton
             // 
+            this.noButton.DialogResult = System.Windows.Forms.DialogResult.No;
             this.noButton.Enabled = false;
             this.noButton.FlatAppearance.BorderColor = System.Drawing.Color.Gray;
             this.noButton.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Gray;
@@ -157,7 +158,6 @@
             this.noButton.Text = "No";
             this.noButton.UseVisualStyleBackColor = true;
             this.noButton.Visible = false;
-            this.noButton.Click += new System.EventHandler(this.noButton_Click);
             // 
             // UpdateForm
             // 

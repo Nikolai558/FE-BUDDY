@@ -9,7 +9,7 @@ namespace FeBuddyLibrary.Helpers
         {
             Logger.LogMessage("DEBUG", "CHECKING TEMP DIRECTORY");
 
-            if (Directory.Exists(GlobalConfig.tempPath) && !GlobalConfig.updateProgram)
+            if (Directory.Exists(GlobalConfig.tempPath))
             {
                 DirectoryInfo di = new DirectoryInfo(GlobalConfig.tempPath);
 

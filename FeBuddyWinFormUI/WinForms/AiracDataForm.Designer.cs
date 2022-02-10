@@ -219,7 +219,7 @@
             this.startButton.TabIndex = 11;
             this.startButton.Text = "Start";
             this.startButton.UseVisualStyleBackColor = false;
-            this.startButton.Click += new System.EventHandler(this.StartButton_Click);
+            this.startButton.Click += new System.EventHandler(this.AiracDataStartButton_Click);
             // 
             // airacCycleGroupBox
             // 
@@ -341,7 +341,7 @@
             this.exitButton.Text = "Return To Main Menu";
             this.exitButton.UseVisualStyleBackColor = false;
             this.exitButton.Visible = false;
-            this.exitButton.Click += new System.EventHandler(this.ExitButton_Click);
+            this.exitButton.Click += new System.EventHandler(this.AiracDataExitButton_Click);
             // 
             // menuStrip
             // 
@@ -484,9 +484,9 @@
             this.Name = "AiracDataForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "FE-BUDDY";
-            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.MainForm_Closing);
-            this.Load += new System.EventHandler(this.MainForm_Load);
-            this.Shown += new System.EventHandler(this.MainForm_Shown);
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.AiracDataForm_Closing);
+            this.Load += new System.EventHandler(this.AiracDataForm_Load);
+            this.Shown += new System.EventHandler(this.AiracDataForm_Shown);
             this.airacCycleGroupBox.ResumeLayout(false);
             this.airacCycleGroupBox.PerformLayout();
             this.convertGroupBox.ResumeLayout(false);

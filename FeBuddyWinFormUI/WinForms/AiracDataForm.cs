@@ -18,9 +18,8 @@ namespace FeBuddyWinFormUI
     {
         private bool nextAiracAvailable;
         private readonly string _currentVersion;
-        private readonly LandingForm _mainform;
 
-        public AiracDataForm(string currentVersion, LandingForm mainform)
+        public AiracDataForm(string currentVersion)
         {
             Logger.LogMessage("DEBUG", "INITIALIZING COMPONENT");
 
@@ -53,7 +52,6 @@ namespace FeBuddyWinFormUI
             filePathLabel.Visible = true;
             filePathLabel.MaximumSize = new Size(257, 82);
             _currentVersion = currentVersion;
-            _mainform = mainform;
         }
 
         private class MyRenderer : ToolStripProfessionalRenderer
@@ -86,7 +84,7 @@ namespace FeBuddyWinFormUI
             }
         }
 
-        private void MainForm_Closing(object sender, EventArgs e)
+        private void AiracDataForm_Closing(object sender, EventArgs e)
         {
             Logger.LogMessage("DEBUG", "MAIN FORM CLOSING");
         }
@@ -118,7 +116,7 @@ namespace FeBuddyWinFormUI
             filePathLabel.MaximumSize = new Size(257, 82);
         }
 
-        private void StartButton_Click(object sender, EventArgs e)
+        private void AiracDataStartButton_Click(object sender, EventArgs e)
         {
             Logger.LogMessage("DEBUG", "USER CLICKED START BUTTON");
 
@@ -223,7 +221,7 @@ namespace FeBuddyWinFormUI
             StartParsing();
         }
 
-        private void ExitButton_Click(object sender, EventArgs e)
+        private void AiracDataExitButton_Click(object sender, EventArgs e)
         {
             Logger.LogMessage("INFO", "EXIT BUTTON CLICKED");
             //this.Hide();
@@ -447,7 +445,7 @@ namespace FeBuddyWinFormUI
             Worker.RunWorkerAsync();
         }
 
-        private void MainForm_Shown(object sender, EventArgs e)
+        private void AiracDataForm_Shown(object sender, EventArgs e)
         {
             Logger.LogMessage("DEBUG", "SHOWING MAIN FORM");
 
@@ -497,7 +495,7 @@ namespace FeBuddyWinFormUI
             Logger.LogMessage("DEBUG", "AIRAC DATE WORKER COMPLETED");
         }
 
-        private void MainForm_Load(object sender, EventArgs e)
+        private void AiracDataForm_Load(object sender, EventArgs e)
         {
             Logger.LogMessage("DEBUG", "LOADING MAIN FORM");
 

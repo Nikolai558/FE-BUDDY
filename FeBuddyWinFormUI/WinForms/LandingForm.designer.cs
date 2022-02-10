@@ -50,8 +50,8 @@
             this.CreditsMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.reportIssuesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.settingsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.UninstallMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.allowBetaMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.UninstallMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.airacCycleGroupBox.SuspendLayout();
             this.menuStrip.SuspendLayout();
             this.SuspendLayout();
@@ -155,9 +155,9 @@
             this.convertSct2FaaGeoMap.Location = new System.Drawing.Point(394, 234);
             this.convertSct2FaaGeoMap.Margin = new System.Windows.Forms.Padding(6, 7, 6, 7);
             this.convertSct2FaaGeoMap.Name = "convertSct2FaaGeoMap";
-            this.convertSct2FaaGeoMap.Size = new System.Drawing.Size(273, 25);
+            this.convertSct2FaaGeoMap.Size = new System.Drawing.Size(270, 25);
             this.convertSct2FaaGeoMap.TabIndex = 8;
-            this.convertSct2FaaGeoMap.Text = "Convert SCT2 to FAA GeoMap (.???)";
+            this.convertSct2FaaGeoMap.Text = "Convert SCT2 to FAA GeoMap XML";
             this.convertSct2FaaGeoMap.UseVisualStyleBackColor = true;
             // 
             // convertFaaGeoMap2SCT
@@ -168,9 +168,9 @@
             this.convertFaaGeoMap2SCT.Location = new System.Drawing.Point(394, 195);
             this.convertFaaGeoMap2SCT.Margin = new System.Windows.Forms.Padding(6, 7, 6, 7);
             this.convertFaaGeoMap2SCT.Name = "convertFaaGeoMap2SCT";
-            this.convertFaaGeoMap2SCT.Size = new System.Drawing.Size(273, 25);
+            this.convertFaaGeoMap2SCT.Size = new System.Drawing.Size(270, 25);
             this.convertFaaGeoMap2SCT.TabIndex = 7;
-            this.convertFaaGeoMap2SCT.Text = "Convert FAA GeoMap (.???) to SCT2";
+            this.convertFaaGeoMap2SCT.Text = "Convert FAA GeoMap XML to SCT2";
             this.convertFaaGeoMap2SCT.UseVisualStyleBackColor = true;
             // 
             // convertSct2KmlSelection
@@ -322,13 +322,23 @@
             // 
             this.settingsToolStripMenuItem.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))));
             this.settingsToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.UninstallMenuItem,
-            this.allowBetaMenuItem});
+            this.allowBetaMenuItem,
+            this.UninstallMenuItem});
             this.settingsToolStripMenuItem.Font = new System.Drawing.Font("Romantic", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.settingsToolStripMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.settingsToolStripMenuItem.Name = "settingsToolStripMenuItem";
             this.settingsToolStripMenuItem.Size = new System.Drawing.Size(70, 22);
             this.settingsToolStripMenuItem.Text = "Settings";
+            // 
+            // allowBetaMenuItem
+            // 
+            this.allowBetaMenuItem.BackColor = System.Drawing.Color.Black;
+            this.allowBetaMenuItem.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
+            this.allowBetaMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
+            this.allowBetaMenuItem.Name = "allowBetaMenuItem";
+            this.allowBetaMenuItem.Size = new System.Drawing.Size(195, 22);
+            this.allowBetaMenuItem.Text = "Dev Testing Mode";
+            this.allowBetaMenuItem.Click += new System.EventHandler(this.allowBetaMenuItem_Click);
             // 
             // UninstallMenuItem
             // 
@@ -336,21 +346,9 @@
             this.UninstallMenuItem.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
             this.UninstallMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.UninstallMenuItem.Name = "UninstallMenuItem";
-            this.UninstallMenuItem.Size = new System.Drawing.Size(192, 22);
+            this.UninstallMenuItem.Size = new System.Drawing.Size(195, 22);
             this.UninstallMenuItem.Text = "Uninstall";
             this.UninstallMenuItem.Click += new System.EventHandler(this.UninstallMenuItem_Click);
-            // 
-            // allowBetaMenuItem
-            // 
-            this.allowBetaMenuItem.BackColor = System.Drawing.Color.Black;
-            this.allowBetaMenuItem.Checked = true;
-            this.allowBetaMenuItem.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.allowBetaMenuItem.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
-            this.allowBetaMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
-            this.allowBetaMenuItem.Name = "allowBetaMenuItem";
-            this.allowBetaMenuItem.Size = new System.Drawing.Size(192, 22);
-            this.allowBetaMenuItem.Text = "Opt-In PreRelease";
-            this.allowBetaMenuItem.Click += new System.EventHandler(this.allowBetaMenuItem_Click);
             // 
             // LandingForm
             // 

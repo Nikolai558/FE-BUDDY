@@ -7,6 +7,7 @@ using System;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.Drawing.Text;
 using System.IO;
 using System.Reflection;
@@ -35,6 +36,21 @@ namespace FeBuddyWinFormUI
         private class MyRenderer : ToolStripProfessionalRenderer
         {
             public MyRenderer() : base(new MyColors()) { }
+
+            protected override void OnRenderItemCheck(ToolStripItemImageRenderEventArgs e)
+            {
+                e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                var r = new Rectangle(e.ImageRectangle.Location, e.ImageRectangle.Size);
+                r.Inflate(-4, -6);
+                e.Graphics.DrawLines(new Pen(Color.Green, 2), new Point[]{
+                new Point(r.Left, r.Bottom - r.Height /2),
+                new Point(r.Left + r.Width /3,  r.Bottom),
+                new Point(r.Right, r.Top)});
+
+                // this is incharge of changing the checkbox apearance..... figure out how I want it to look and what I can do to get it there.
+                // This is base render (default) leave this until our custom apearance can be "rendered"
+                // base.OnRenderItemCheck(e);
+            }
         }
 
         private class MyColors : ProfessionalColorTable
@@ -55,8 +71,23 @@ namespace FeBuddyWinFormUI
             {
                 get { return Color.Black; }
             }
-
             public override Color MenuItemPressedGradientEnd
+            {
+                get { return Color.Black; }
+            }
+            public override Color CheckBackground
+            {
+                get { return Color.Black; }
+            }
+            public override Color MenuItemBorder
+            {
+                get { return Color.Gray; }
+            }
+            public override Color ToolStripBorder
+            {
+                get { return Color.Black; }
+            }
+            public override Color ToolStripDropDownBackground
             {
                 get { return Color.Black; }
             }
@@ -65,30 +96,6 @@ namespace FeBuddyWinFormUI
         private void LandingForm_Closing(object sender, EventArgs e)
         {
             Logger.LogMessage("DEBUG", "Landing FORM CLOSING");
-        }
-
-        private delegate void SetControlPropertyThreadSafeDelegate(Control control, string propertyName, object propertyValue);
-
-        public static void SetControlPropertyThreadSafe(
-            Control control,
-            string propertyName,
-            object propertyValue)
-        {
-            if (control.InvokeRequired)
-            {
-                control.Invoke(new SetControlPropertyThreadSafeDelegate
-                (SetControlPropertyThreadSafe),
-                new object[] { control, propertyName, propertyValue });
-            }
-            else
-            {
-                control.GetType().InvokeMember(
-                    propertyName,
-                    BindingFlags.SetProperty,
-                    null,
-                    control,
-                    new object[] { propertyValue });
-            }
         }
 
         private void LandingForm_Shown(object sender, EventArgs e)
@@ -112,6 +119,7 @@ namespace FeBuddyWinFormUI
             informationToolStripMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
             settingsToolStripMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
             reportIssuesToolStripMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
+            allowBetaMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular); 
         }
         
         private void UninstallMenuItem_Click(object sender, EventArgs e)
@@ -286,8 +294,6 @@ namespace FeBuddyWinFormUI
 
         private void landingStartButton_Click(object sender, EventArgs e)
         {
-            
-
             if (getparseAiracDataSelection.Checked)
             {
                 var airacDataForm = new AiracDataForm(_currentVersion);
@@ -304,10 +310,32 @@ namespace FeBuddyWinFormUI
 
         private void allowBetaMenuItem_Click(object sender, EventArgs e)
         {
-            allowBetaMenuItem.Checked = !allowBetaMenuItem.Checked;
+            if (!Properties.Settings.Default.AllowPreRelease)
+            {
 
-            Properties.Settings.Default.AllowPreRelease = allowBetaMenuItem.Checked;
-            Properties.Settings.Default.Save();
+                DialogResult warningMSG = MessageBox.Show(
+                    "WARNING: \nDO NOT ENABLE THIS UNLESS \nTOLD TO DO SO BY THE DEVELOPER\n\n Enable Dev testing Mode?",
+                    "DEV TESTING MODE",
+                    MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Stop,
+                    MessageBoxDefaultButton.Button2);
+
+
+                if ( warningMSG == DialogResult.Yes)
+                {
+                    allowBetaMenuItem.Checked = !allowBetaMenuItem.Checked;
+
+                    Properties.Settings.Default.AllowPreRelease = allowBetaMenuItem.Checked;
+                    Properties.Settings.Default.Save();
+                }
+            }
+            else
+            {
+                allowBetaMenuItem.Checked = !allowBetaMenuItem.Checked;
+
+                Properties.Settings.Default.AllowPreRelease = allowBetaMenuItem.Checked;
+                Properties.Settings.Default.Save();
+            }
         }
     }
 }

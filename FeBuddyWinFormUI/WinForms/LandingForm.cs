@@ -289,28 +289,6 @@ namespace FeBuddyWinFormUI
             //Process.Start("https://github.com/Nikolai558/FE-BUDDY/issues");
         }
 
-        private void landingStartButton_MouseHover(object sender, EventArgs e)
-        {
-            var startToolTip = new ToolTip();
-            startToolTip.SetToolTip(landingStartButton, "I'm not your friend, Guy...");
-        }
-
-        private void landingStartButton_Click(object sender, EventArgs e)
-        {
-            if (getparseAiracDataSelection.Checked)
-            {
-                var airacDataForm = new AiracDataForm(_currentVersion);
-                airacDataForm.FormClosing += (s, args) => this.Close();
-                airacDataForm.Show();
-                this.Hide();
-            }
-            else
-            {
-                MessageBox.Show("This feature has not been implemented yet.");
-            }
-
-        }
-
         private void allowBetaMenuItem_Click(object sender, EventArgs e)
         {
             if (!Properties.Settings.Default.AllowPreRelease)
@@ -340,5 +318,28 @@ namespace FeBuddyWinFormUI
                 Properties.Settings.Default.Save();
             }
         }
+
+        private void landingStartButton_MouseHover(object sender, EventArgs e)
+        {
+            var startToolTip = new ToolTip();
+            startToolTip.SetToolTip(landingStartButton, "I'm not your friend, Guy...");
+        }
+
+        private void landingStartButton_Click(object sender, EventArgs e)
+        {
+            if (getparseAiracDataSelection.Checked)
+            {
+                var airacDataForm = new AiracDataForm(_currentVersion);
+                airacDataForm.FormClosing += (s, args) => this.Close();
+                airacDataForm.Show();
+                this.Hide();
+            }
+            else
+            {
+                MessageBox.Show("This feature has not been implemented yet.");
+            }
+
+        }
+
     }
 }

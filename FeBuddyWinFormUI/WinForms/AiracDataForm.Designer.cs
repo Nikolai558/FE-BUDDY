@@ -338,7 +338,7 @@
             this.exitButton.Name = "exitButton";
             this.exitButton.Size = new System.Drawing.Size(182, 34);
             this.exitButton.TabIndex = 17;
-            this.exitButton.Text = "Return To Main Menu";
+            this.exitButton.Text = "Exit";
             this.exitButton.UseVisualStyleBackColor = false;
             this.exitButton.Visible = false;
             this.exitButton.Click += new System.EventHandler(this.AiracDataExitButton_Click);
@@ -379,7 +379,7 @@
             this.InstructionsMenuItem.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
             this.InstructionsMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.InstructionsMenuItem.Name = "InstructionsMenuItem";
-            this.InstructionsMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.InstructionsMenuItem.Size = new System.Drawing.Size(155, 22);
             this.InstructionsMenuItem.Text = "Instructions";
             this.InstructionsMenuItem.Click += new System.EventHandler(this.InstructionsMenuItem_Click);
             // 
@@ -390,7 +390,7 @@
             this.RoadmapMenuItem.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
             this.RoadmapMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.RoadmapMenuItem.Name = "RoadmapMenuItem";
-            this.RoadmapMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.RoadmapMenuItem.Size = new System.Drawing.Size(155, 22);
             this.RoadmapMenuItem.Text = "Roadmap";
             this.RoadmapMenuItem.Click += new System.EventHandler(this.RoadmapMenuItem_Click);
             // 
@@ -401,7 +401,7 @@
             this.FAQMenuItem.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
             this.FAQMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.FAQMenuItem.Name = "FAQMenuItem";
-            this.FAQMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.FAQMenuItem.Size = new System.Drawing.Size(155, 22);
             this.FAQMenuItem.Text = "FAQ";
             this.FAQMenuItem.Click += new System.EventHandler(this.FAQMenuItem_Click);
             // 
@@ -412,7 +412,7 @@
             this.ChangeLogMenuItem.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
             this.ChangeLogMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.ChangeLogMenuItem.Name = "ChangeLogMenuItem";
-            this.ChangeLogMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.ChangeLogMenuItem.Size = new System.Drawing.Size(155, 22);
             this.ChangeLogMenuItem.Text = "Change Log";
             this.ChangeLogMenuItem.Click += new System.EventHandler(this.ChangeLogMenuItem_Click);
             // 
@@ -423,7 +423,7 @@
             this.CreditsMenuItem.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
             this.CreditsMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.CreditsMenuItem.Name = "CreditsMenuItem";
-            this.CreditsMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.CreditsMenuItem.Size = new System.Drawing.Size(155, 22);
             this.CreditsMenuItem.Text = "Credits";
             this.CreditsMenuItem.Click += new System.EventHandler(this.CreditsMenuItem_Click);
             // 

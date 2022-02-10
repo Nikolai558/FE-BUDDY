@@ -49,14 +49,22 @@
             this.outputDirectoryLabel = new System.Windows.Forms.Label();
             this.outputLocationLabel = new System.Windows.Forms.Label();
             this.exitButton = new System.Windows.Forms.Button();
-            this.menuStrip1 = new System.Windows.Forms.MenuStrip();
-            this.exitMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.mainMenuMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuStrip = new System.Windows.Forms.MenuStrip();
+            this.informationToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.InstructionsMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.RoadmapMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.FAQMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.ChangeLogMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.CreditsMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.reportIssuesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.settingsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.allowBetaMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.UninstallMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.airacCycleGroupBox.SuspendLayout();
             this.convertGroupBox.SuspendLayout();
             this.startGroupBox.SuspendLayout();
             this.processingGroupBox.SuspendLayout();
-            this.menuStrip1.SuspendLayout();
+            this.menuStrip.SuspendLayout();
             this.SuspendLayout();
             // 
             // currentAiracSelection
@@ -335,43 +343,122 @@
             this.exitButton.Visible = false;
             this.exitButton.Click += new System.EventHandler(this.ExitButton_Click);
             // 
-            // menuStrip1
+            // menuStrip
             // 
-            this.menuStrip1.Anchor = System.Windows.Forms.AnchorStyles.Top;
-            this.menuStrip1.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))));
-            this.menuStrip1.Dock = System.Windows.Forms.DockStyle.None;
-            this.menuStrip1.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-            this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.exitMenuItem,
-            this.mainMenuMenuItem});
-            this.menuStrip1.Location = new System.Drawing.Point(380, 1);
-            this.menuStrip1.MaximumSize = new System.Drawing.Size(400, 0);
-            this.menuStrip1.MinimumSize = new System.Drawing.Size(400, 0);
-            this.menuStrip1.Name = "menuStrip1";
-            this.menuStrip1.Padding = new System.Windows.Forms.Padding(0);
-            this.menuStrip1.RightToLeft = System.Windows.Forms.RightToLeft.Yes;
-            this.menuStrip1.Size = new System.Drawing.Size(400, 24);
-            this.menuStrip1.TabIndex = 16;
-            this.menuStrip1.Text = "menuStrip1";
+            this.menuStrip.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))));
+            this.menuStrip.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.menuStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.informationToolStripMenuItem,
+            this.reportIssuesToolStripMenuItem,
+            this.settingsToolStripMenuItem});
+            this.menuStrip.Location = new System.Drawing.Point(0, 0);
+            this.menuStrip.Name = "menuStrip";
+            this.menuStrip.Size = new System.Drawing.Size(784, 26);
+            this.menuStrip.TabIndex = 16;
+            this.menuStrip.Text = "menuStrip1";
             // 
-            // exitMenuItem
+            // informationToolStripMenuItem
             // 
-            this.exitMenuItem.Font = new System.Drawing.Font("Romantic", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-            this.exitMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
-            this.exitMenuItem.Name = "exitMenuItem";
-            this.exitMenuItem.Size = new System.Drawing.Size(46, 24);
-            this.exitMenuItem.Text = "Exit";
-            this.exitMenuItem.Click += new System.EventHandler(this.exitMenuItem_Click);
+            this.informationToolStripMenuItem.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))));
+            this.informationToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.InstructionsMenuItem,
+            this.RoadmapMenuItem,
+            this.FAQMenuItem,
+            this.ChangeLogMenuItem,
+            this.CreditsMenuItem});
+            this.informationToolStripMenuItem.Font = new System.Drawing.Font("Romantic", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.informationToolStripMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
+            this.informationToolStripMenuItem.Name = "informationToolStripMenuItem";
+            this.informationToolStripMenuItem.Size = new System.Drawing.Size(94, 22);
+            this.informationToolStripMenuItem.Text = "Information";
             // 
-            // mainMenuMenuItem
+            // InstructionsMenuItem
             // 
-            this.mainMenuMenuItem.Enabled = false;
-            this.mainMenuMenuItem.Font = new System.Drawing.Font("Romantic", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-            this.mainMenuMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
-            this.mainMenuMenuItem.Name = "mainMenuMenuItem";
-            this.mainMenuMenuItem.Size = new System.Drawing.Size(94, 24);
-            this.mainMenuMenuItem.Text = "Main Menu";
-            this.mainMenuMenuItem.Click += new System.EventHandler(this.mainMenuMenuItem_Click);
+            this.InstructionsMenuItem.BackColor = System.Drawing.Color.Black;
+            this.InstructionsMenuItem.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
+            this.InstructionsMenuItem.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
+            this.InstructionsMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
+            this.InstructionsMenuItem.Name = "InstructionsMenuItem";
+            this.InstructionsMenuItem.Size = new System.Drawing.Size(155, 22);
+            this.InstructionsMenuItem.Text = "Instructions";
+            // 
+            // RoadmapMenuItem
+            // 
+            this.RoadmapMenuItem.BackColor = System.Drawing.Color.Black;
+            this.RoadmapMenuItem.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
+            this.RoadmapMenuItem.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
+            this.RoadmapMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
+            this.RoadmapMenuItem.Name = "RoadmapMenuItem";
+            this.RoadmapMenuItem.Size = new System.Drawing.Size(155, 22);
+            this.RoadmapMenuItem.Text = "Roadmap";
+            // 
+            // FAQMenuItem
+            // 
+            this.FAQMenuItem.BackColor = System.Drawing.Color.Black;
+            this.FAQMenuItem.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
+            this.FAQMenuItem.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
+            this.FAQMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
+            this.FAQMenuItem.Name = "FAQMenuItem";
+            this.FAQMenuItem.Size = new System.Drawing.Size(155, 22);
+            this.FAQMenuItem.Text = "FAQ";
+            // 
+            // ChangeLogMenuItem
+            // 
+            this.ChangeLogMenuItem.BackColor = System.Drawing.Color.Black;
+            this.ChangeLogMenuItem.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
+            this.ChangeLogMenuItem.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
+            this.ChangeLogMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
+            this.ChangeLogMenuItem.Name = "ChangeLogMenuItem";
+            this.ChangeLogMenuItem.Size = new System.Drawing.Size(155, 22);
+            this.ChangeLogMenuItem.Text = "Change Log";
+            // 
+            // CreditsMenuItem
+            // 
+            this.CreditsMenuItem.BackColor = System.Drawing.Color.Black;
+            this.CreditsMenuItem.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
+            this.CreditsMenuItem.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
+            this.CreditsMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
+            this.CreditsMenuItem.Name = "CreditsMenuItem";
+            this.CreditsMenuItem.Size = new System.Drawing.Size(155, 22);
+            this.CreditsMenuItem.Text = "Credits";
+            // 
+            // reportIssuesToolStripMenuItem
+            // 
+            this.reportIssuesToolStripMenuItem.Font = new System.Drawing.Font("Romantic", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.reportIssuesToolStripMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
+            this.reportIssuesToolStripMenuItem.Name = "reportIssuesToolStripMenuItem";
+            this.reportIssuesToolStripMenuItem.Size = new System.Drawing.Size(105, 22);
+            this.reportIssuesToolStripMenuItem.Text = "Report Issues";
+            // 
+            // settingsToolStripMenuItem
+            // 
+            this.settingsToolStripMenuItem.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))));
+            this.settingsToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.allowBetaMenuItem,
+            this.UninstallMenuItem});
+            this.settingsToolStripMenuItem.Font = new System.Drawing.Font("Romantic", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.settingsToolStripMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
+            this.settingsToolStripMenuItem.Name = "settingsToolStripMenuItem";
+            this.settingsToolStripMenuItem.Size = new System.Drawing.Size(70, 22);
+            this.settingsToolStripMenuItem.Text = "Settings";
+            // 
+            // allowBetaMenuItem
+            // 
+            this.allowBetaMenuItem.BackColor = System.Drawing.Color.Black;
+            this.allowBetaMenuItem.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
+            this.allowBetaMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
+            this.allowBetaMenuItem.Name = "allowBetaMenuItem";
+            this.allowBetaMenuItem.Size = new System.Drawing.Size(195, 22);
+            this.allowBetaMenuItem.Text = "Dev Testing Mode";
+            // 
+            // UninstallMenuItem
+            // 
+            this.UninstallMenuItem.BackColor = System.Drawing.Color.Black;
+            this.UninstallMenuItem.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
+            this.UninstallMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
+            this.UninstallMenuItem.Name = "UninstallMenuItem";
+            this.UninstallMenuItem.Size = new System.Drawing.Size(195, 22);
+            this.UninstallMenuItem.Text = "Uninstall";
             // 
             // AiracDataForm
             // 
@@ -382,8 +469,7 @@
             this.BackgroundImage = global::FeBuddyWinFormUI.Properties.Resources.window_background;
             this.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
             this.ClientSize = new System.Drawing.Size(784, 404);
-            this.ControlBox = false;
-            this.Controls.Add(this.menuStrip1);
+            this.Controls.Add(this.menuStrip);
             this.Controls.Add(this.processingGroupBox);
             this.Controls.Add(this.startGroupBox);
             this.Controls.Add(this.convertGroupBox);
@@ -409,8 +495,8 @@
             this.startGroupBox.PerformLayout();
             this.processingGroupBox.ResumeLayout(false);
             this.processingGroupBox.PerformLayout();
-            this.menuStrip1.ResumeLayout(false);
-            this.menuStrip1.PerformLayout();
+            this.menuStrip.ResumeLayout(false);
+            this.menuStrip.PerformLayout();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -438,9 +524,17 @@
         private System.Windows.Forms.Label outputDirectoryLabel;
         private System.Windows.Forms.Label outputLocationLabel;
         private System.Windows.Forms.ComboBox facilityIdCombobox;
-        private System.Windows.Forms.MenuStrip menuStrip1;
-        private System.Windows.Forms.ToolStripMenuItem exitMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem mainMenuMenuItem;
+        private System.Windows.Forms.MenuStrip menuStrip;
+        private System.Windows.Forms.ToolStripMenuItem informationToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem InstructionsMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem RoadmapMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem FAQMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem ChangeLogMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem CreditsMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem reportIssuesToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem settingsToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem allowBetaMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem UninstallMenuItem;
     }
 }
 

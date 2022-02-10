@@ -17,13 +17,15 @@ namespace FeBuddyWinFormUI
     public partial class AiracDataForm : Form
     {
         private bool nextAiracAvailable;
-        public AiracDataForm(string currentVersion)
+        private readonly string _currentVersion;
+        private readonly LandingForm _mainform;
+
+        public AiracDataForm(string currentVersion, LandingForm mainform)
         {
             Logger.LogMessage("DEBUG", "INITIALIZING COMPONENT");
 
             InitializeComponent();
-            //menuStrip.Renderer = new MyRenderer();
-            menuStrip1.Renderer = new MyRenderer();
+            menuStrip.Renderer = new MyRenderer();
 
             // It should grab from the assembily info. 
             this.Text = $"FE-BUDDY - V{currentVersion}";
@@ -50,6 +52,8 @@ namespace FeBuddyWinFormUI
             filePathLabel.Text = GlobalConfig.outputDirBase;
             filePathLabel.Visible = true;
             filePathLabel.MaximumSize = new Size(257, 82);
+            _currentVersion = currentVersion;
+            _mainform = mainform;
         }
 
         private class MyRenderer : ToolStripProfessionalRenderer
@@ -182,7 +186,7 @@ namespace FeBuddyWinFormUI
 
             FileHelpers.WriteTestSctFile();
 
-            //menuStrip.Visible = false;
+            menuStrip.Visible = false;
             chooseDirButton.Enabled = false;
             //startButton.Enabled = false;
 
@@ -222,9 +226,8 @@ namespace FeBuddyWinFormUI
         private void ExitButton_Click(object sender, EventArgs e)
         {
             Logger.LogMessage("INFO", "EXIT BUTTON CLICKED");
-            this.Close();
-            // TODO Rename this button to "Return to Menu" 
-            //Application.Exit();
+            //this.Hide();
+            Application.Exit();
         }
 
         private delegate void SetControlPropertyThreadSafeDelegate(Control control, string propertyName, object propertyValue);
@@ -427,7 +430,7 @@ namespace FeBuddyWinFormUI
             processingGroupBox.Visible = true;
             processingGroupBox.Enabled = true;
 
-            //menuStrip.Visible = true;
+            menuStrip.Visible = true;
 
             exitButton.Visible = true;
             exitButton.Enabled = true;
@@ -501,17 +504,17 @@ namespace FeBuddyWinFormUI
             var pfc = new PrivateFontCollection();
             pfc.AddFontFile("Properties\\romantic.ttf");
             // TODO - Add fonts to buttons. 
-            //InstructionsMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
-            //CreditsMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
-            //ChangeLogMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
-            //UninstallMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
-            //FAQMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
-            //RoadmapMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
-            //informationToolStripMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
-            //settingsToolStripMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
-            //reportIssuesToolStripMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
-            mainMenuMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
-            exitMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
+            InstructionsMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
+            CreditsMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
+            ChangeLogMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
+            UninstallMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
+            FAQMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
+            RoadmapMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
+            informationToolStripMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
+            settingsToolStripMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
+            reportIssuesToolStripMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
+            //mainMenuMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
+            //exitMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
 
         }
 
@@ -716,17 +719,6 @@ namespace FeBuddyWinFormUI
             Logger.LogMessage("DEBUG", "REPORT ISSUES MENU ITEM CLICKED");
             Process.Start(new ProcessStartInfo("https://github.com/Nikolai558/FE-BUDDY/issues") { UseShellExecute = true });
             //Process.Start("https://github.com/Nikolai558/FE-BUDDY/issues");
-        }
-
-        private void exitMenuItem_Click(object sender, EventArgs e)
-        {
-            // TODO should be aplication.exit but I cant get it to work properly.
-            this.Close();
-        }
-
-        private void mainMenuMenuItem_Click(object sender, EventArgs e)
-        {
-            this.Close();
         }
     }
 }

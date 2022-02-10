@@ -22,6 +22,9 @@ namespace FeBuddyWinFormUI
         public LandingForm(string currentVersion)
         {
             Logger.LogMessage("DEBUG", "INITIALIZING COMPONENT");
+
+            this.FormClosed += (s, args) => Application.Exit();
+
             _currentVersion = currentVersion;
 
             InitializeComponent();
@@ -296,8 +299,8 @@ namespace FeBuddyWinFormUI
         {
             if (getparseAiracDataSelection.Checked)
             {
-                var airacDataForm = new AiracDataForm(_currentVersion);
-                airacDataForm.FormClosed += (s, args) => this.Close();
+                var airacDataForm = new AiracDataForm(_currentVersion, this);
+                airacDataForm.FormClosing += (s, args) => this.Close();
                 airacDataForm.Show();
                 this.Hide();
             }

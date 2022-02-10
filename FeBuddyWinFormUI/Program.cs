@@ -44,11 +44,11 @@ namespace FeBuddyWinFormUI
             // this limit.
             var version = CheckForUpdates();
 
-            LandingForm landingForm = new LandingForm(version);
-            landingForm.Show();
+            //LandingForm landingForm = new LandingForm(version);
+            //landingForm.Show();
 
             // Start the application
-            Application.Run();
+            Application.Run(new LandingForm(version));
         }
 
         private static void OnAppInstalled(SemanticVersion ver, IAppTools tools)

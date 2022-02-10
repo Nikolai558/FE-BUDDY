@@ -718,5 +718,35 @@ namespace FeBuddyWinFormUI
             Process.Start(new ProcessStartInfo("https://github.com/Nikolai558/FE-BUDDY/issues") { UseShellExecute = true });
             //Process.Start("https://github.com/Nikolai558/FE-BUDDY/issues");
         }
+
+        private void allowBetaMenuItem_Click(object sender, EventArgs e)
+        {
+            if (!Properties.Settings.Default.AllowPreRelease)
+            {
+
+                DialogResult warningMSG = MessageBox.Show(
+                    "WARNING: \nDO NOT ENABLE THIS UNLESS \nTOLD TO DO SO BY THE DEVELOPER\n\n Enable Dev testing Mode?",
+                    "DEV TESTING MODE",
+                    MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Stop,
+                    MessageBoxDefaultButton.Button2);
+
+
+                if (warningMSG == DialogResult.Yes)
+                {
+                    allowBetaMenuItem.Checked = !allowBetaMenuItem.Checked;
+
+                    Properties.Settings.Default.AllowPreRelease = allowBetaMenuItem.Checked;
+                    Properties.Settings.Default.Save();
+                }
+            }
+            else
+            {
+                allowBetaMenuItem.Checked = !allowBetaMenuItem.Checked;
+
+                Properties.Settings.Default.AllowPreRelease = allowBetaMenuItem.Checked;
+                Properties.Settings.Default.Save();
+            }
+        }
     }
 }

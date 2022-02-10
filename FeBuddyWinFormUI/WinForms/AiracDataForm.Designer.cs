@@ -379,8 +379,9 @@
             this.InstructionsMenuItem.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
             this.InstructionsMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.InstructionsMenuItem.Name = "InstructionsMenuItem";
-            this.InstructionsMenuItem.Size = new System.Drawing.Size(155, 22);
+            this.InstructionsMenuItem.Size = new System.Drawing.Size(180, 22);
             this.InstructionsMenuItem.Text = "Instructions";
+            this.InstructionsMenuItem.Click += new System.EventHandler(this.InstructionsMenuItem_Click);
             // 
             // RoadmapMenuItem
             // 
@@ -389,8 +390,9 @@
             this.RoadmapMenuItem.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
             this.RoadmapMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.RoadmapMenuItem.Name = "RoadmapMenuItem";
-            this.RoadmapMenuItem.Size = new System.Drawing.Size(155, 22);
+            this.RoadmapMenuItem.Size = new System.Drawing.Size(180, 22);
             this.RoadmapMenuItem.Text = "Roadmap";
+            this.RoadmapMenuItem.Click += new System.EventHandler(this.RoadmapMenuItem_Click);
             // 
             // FAQMenuItem
             // 
@@ -399,8 +401,9 @@
             this.FAQMenuItem.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
             this.FAQMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.FAQMenuItem.Name = "FAQMenuItem";
-            this.FAQMenuItem.Size = new System.Drawing.Size(155, 22);
+            this.FAQMenuItem.Size = new System.Drawing.Size(180, 22);
             this.FAQMenuItem.Text = "FAQ";
+            this.FAQMenuItem.Click += new System.EventHandler(this.FAQMenuItem_Click);
             // 
             // ChangeLogMenuItem
             // 
@@ -409,8 +412,9 @@
             this.ChangeLogMenuItem.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
             this.ChangeLogMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.ChangeLogMenuItem.Name = "ChangeLogMenuItem";
-            this.ChangeLogMenuItem.Size = new System.Drawing.Size(155, 22);
+            this.ChangeLogMenuItem.Size = new System.Drawing.Size(180, 22);
             this.ChangeLogMenuItem.Text = "Change Log";
+            this.ChangeLogMenuItem.Click += new System.EventHandler(this.ChangeLogMenuItem_Click);
             // 
             // CreditsMenuItem
             // 
@@ -419,8 +423,9 @@
             this.CreditsMenuItem.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
             this.CreditsMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.CreditsMenuItem.Name = "CreditsMenuItem";
-            this.CreditsMenuItem.Size = new System.Drawing.Size(155, 22);
+            this.CreditsMenuItem.Size = new System.Drawing.Size(180, 22);
             this.CreditsMenuItem.Text = "Credits";
+            this.CreditsMenuItem.Click += new System.EventHandler(this.CreditsMenuItem_Click);
             // 
             // reportIssuesToolStripMenuItem
             // 
@@ -429,6 +434,7 @@
             this.reportIssuesToolStripMenuItem.Name = "reportIssuesToolStripMenuItem";
             this.reportIssuesToolStripMenuItem.Size = new System.Drawing.Size(105, 22);
             this.reportIssuesToolStripMenuItem.Text = "Report Issues";
+            this.reportIssuesToolStripMenuItem.Click += new System.EventHandler(this.reportIssuesToolStripMenuItem_Click);
             // 
             // settingsToolStripMenuItem
             // 
@@ -450,6 +456,7 @@
             this.allowBetaMenuItem.Name = "allowBetaMenuItem";
             this.allowBetaMenuItem.Size = new System.Drawing.Size(195, 22);
             this.allowBetaMenuItem.Text = "Dev Testing Mode";
+            this.allowBetaMenuItem.Click += new System.EventHandler(this.allowBetaMenuItem_Click);
             // 
             // UninstallMenuItem
             // 
@@ -459,6 +466,7 @@
             this.UninstallMenuItem.Name = "UninstallMenuItem";
             this.UninstallMenuItem.Size = new System.Drawing.Size(195, 22);
             this.UninstallMenuItem.Text = "Uninstall";
+            this.UninstallMenuItem.Click += new System.EventHandler(this.UninstallMenuItem_Click);
             // 
             // AiracDataForm
             // 

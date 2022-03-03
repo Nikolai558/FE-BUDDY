@@ -24,8 +24,7 @@ The following is a list of features that we are considering or actively working 
 - [ ] Hygieia by dhawton
   - See: https://github.com/dhawton/hygieia
 
-- [ ] Limit Airway Lines to only the selected ARTCC up to about 150 miles outside of the boundary
-  - Reference the FAQ for this feature.
+- [ ] Limit Airway Lines to only the selected ARTCC up to about 150 miles (or user defined distance) outside of the ARTCC boundary
 
 - [ ] `on hold until more information about CRC comes out` Create a local facility breakdown management system for user. (REF: FE-ASSISTANT Batch File by KSanders7070)
   - Split local Filter and RVM maps up into individual files to make easier to edit

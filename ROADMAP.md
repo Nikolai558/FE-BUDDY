@@ -31,6 +31,11 @@ The following is a list of features that we are considering or actively working 
   - Recombine the files in the appropriate formats.
   - Will transfer certain NASR and other commonly updated data into the appropriate individual files prior to recombining the files, allowing an AIRAC update to be seamless.
 
+- [ ] Prepare program for CRC formats.
+
+- [ ] Complete ARTCC File management and editing
+  - Break each facility up into individual maps and properties and allow the user to edit their data via GUI and have the program rebuild it each time there is a release. Ref: ZLC FE ASSISTANT batch file system.
+
 - [ ] Artificial Intelligence (AI) Option that:
   - Allows the program to call the users phone number (US numbers at first for testing).
   - Will give the user "someone" to speaking to, considering now the FE will be pretty much useless

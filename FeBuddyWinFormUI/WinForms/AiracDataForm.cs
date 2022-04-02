@@ -301,80 +301,27 @@ namespace FeBuddyWinFormUI
                 GlobalConfig.airacEffectiveDate = nextAiracSelection.Text;
             }
 
+            SetControlPropertyThreadSafe(processingDataLabel, "Text", "Downloading FAA Data");
+            DownloadHelpers.DownloadAllFiles(GlobalConfig.airacEffectiveDate, AiracDateCycleModel.AllCycleDates[GlobalConfig.airacEffectiveDate]);
+
+            SetControlPropertyThreadSafe(processingDataLabel, "Text", "Unzipping Files");
+            DirectoryHelpers.UnzipAllDownloaded();
+
+            SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Telephony");
+            GetTelephony Telephony = new GetTelephony();
+            Telephony.readFAAData($"{GlobalConfig.tempPath}\\{AiracDateCycleModel.AllCycleDates[GlobalConfig.airacEffectiveDate]}_TELEPHONY.html");
+
+            SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing DPs and STARs");
+            GetStarDpData ParseStarDp = new GetStarDpData();
+            ParseStarDp.StarDpQuaterBackFunc(GlobalConfig.airacEffectiveDate);
+
+            SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Airports");
+            GetAptData ParseAPT = new GetAptData();
+            ParseAPT.AptAndWxMain(GlobalConfig.airacEffectiveDate, GlobalConfig.facilityID);
+
             if (nextAiracSelection.Checked == true && nextAiracAvailable == false)
             {
                 Logger.LogMessage("DEBUG", "NEXT AIRAC IS SELECTED, HOWEVER THE NEXT AIRAC IS NOT AVAILABLE YET");
-
-                SetControlPropertyThreadSafe(processingDataLabel, "Text", "Downloading FAA Data");
-                DownloadHelpers.DownloadAllFiles(GlobalConfig.airacEffectiveDate, AiracDateCycleModel.AllCycleDates[GlobalConfig.airacEffectiveDate], false);
-
-                SetControlPropertyThreadSafe(processingDataLabel, "Text", "Unzipping Files");
-                DirectoryHelpers.UnzipAllDownloaded();
-
-                SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Telephony");
-                GetTelephony Telephony = new GetTelephony();
-                Telephony.readFAAData($"{GlobalConfig.tempPath}\\{AiracDateCycleModel.AllCycleDates[GlobalConfig.airacEffectiveDate]}_TELEPHONY.html");
-
-                SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing DPs and STARs");
-                GetStarDpData ParseStarDp = new GetStarDpData();
-                ParseStarDp.StarDpQuaterBackFunc(GlobalConfig.airacEffectiveDate);
-
-                SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Airports");
-                GetAptData ParseAPT = new GetAptData();
-                ParseAPT.AptAndWxMain(GlobalConfig.airacEffectiveDate, GlobalConfig.facilityID);
-
-                SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Fixes");
-                GetFixData ParseFixes = new GetFixData();
-                ParseFixes.FixQuarterbackFunc(GlobalConfig.airacEffectiveDate);
-
-                SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Boundaries");
-                GetArbData ParseArb = new GetArbData();
-                ParseArb.ArbMain(GlobalConfig.airacEffectiveDate);
-
-                SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Airways");
-                FileHelpers.CreateAwyGeomapHeadersAndEnding(true);
-
-                GetAwyData ParseAWY = new GetAwyData();
-                ParseAWY.AWYQuarterbackFunc(GlobalConfig.airacEffectiveDate);
-
-                SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing ATS Airways");
-                GetAtsAwyData ParseAts = new GetAtsAwyData();
-                ParseAts.AWYQuarterbackFunc(GlobalConfig.airacEffectiveDate);
-                FileHelpers.CreateAwyGeomapHeadersAndEnding(false);
-
-                SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing NDBs");
-                GetNavData ParseNDBs = new GetNavData();
-                ParseNDBs.NAVQuarterbackFunc(GlobalConfig.airacEffectiveDate, GlobalConfig.facilityID);
-
-                SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Waypoints XML");
-                FileHelpers.WriteWaypointsXML();
-                FileHelpers.AppendCommentToXML(GlobalConfig.airacEffectiveDate);
-                FileHelpers.WriteNavXmlOutput();
-
-                SetControlPropertyThreadSafe(processingDataLabel, "Text", "Checking Alias Commands");
-                AliasCheck aliasCheck = new AliasCheck();
-                aliasCheck.CheckForDuplicates($"{GlobalConfig.outputDirectory}\\ALIAS\\AliasTestFile.txt");
-            }
-            else
-            {
-                SetControlPropertyThreadSafe(processingDataLabel, "Text", "Downloading FAA Data");
-                DownloadHelpers.DownloadAllFiles(GlobalConfig.airacEffectiveDate, AiracDateCycleModel.AllCycleDates[GlobalConfig.airacEffectiveDate]);
-
-                SetControlPropertyThreadSafe(processingDataLabel, "Text", "Unzipping Files");
-                DirectoryHelpers.UnzipAllDownloaded();
-
-                SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Telephony");
-                GetTelephony Telephony = new GetTelephony();
-                Telephony.readFAAData($"{GlobalConfig.tempPath}\\{AiracDateCycleModel.AllCycleDates[GlobalConfig.airacEffectiveDate]}_TELEPHONY.html");
-
-                SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing DPs and STARs");
-                GetStarDpData ParseStarDp = new GetStarDpData();
-                ParseStarDp.StarDpQuaterBackFunc(GlobalConfig.airacEffectiveDate);
-
-                SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Airports");
-                GetAptData ParseAPT = new GetAptData();
-                ParseAPT.AptAndWxMain(GlobalConfig.airacEffectiveDate, GlobalConfig.facilityID);
-
                 SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Chart Recalls");
                 GetFaaMetaFileData ParseMeta = new GetFaaMetaFileData();
                 ParseMeta.QuarterbackFunc();
@@ -382,39 +329,39 @@ namespace FeBuddyWinFormUI
                 SetControlPropertyThreadSafe(processingDataLabel, "Text", "Getting Publications");
                 PublicationParser publications = new PublicationParser();
                 publications.WriteAirportInfoTxt(GlobalConfig.facilityID);
-
-                SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Fixes");
-                GetFixData ParseFixes = new GetFixData();
-                ParseFixes.FixQuarterbackFunc(GlobalConfig.airacEffectiveDate);
-
-                SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Boundaries");
-                GetArbData ParseArb = new GetArbData();
-                ParseArb.ArbMain(GlobalConfig.airacEffectiveDate);
-
-                SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Airways");
-                FileHelpers.CreateAwyGeomapHeadersAndEnding(true);
-
-                GetAwyData ParseAWY = new GetAwyData();
-                ParseAWY.AWYQuarterbackFunc(GlobalConfig.airacEffectiveDate);
-
-                SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing ATS Airways");
-                GetAtsAwyData ParseAts = new GetAtsAwyData();
-                ParseAts.AWYQuarterbackFunc(GlobalConfig.airacEffectiveDate);
-                FileHelpers.CreateAwyGeomapHeadersAndEnding(false);
-
-                SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing NDBs");
-                GetNavData ParseNDBs = new GetNavData();
-                ParseNDBs.NAVQuarterbackFunc(GlobalConfig.airacEffectiveDate, GlobalConfig.facilityID);
-
-                SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Waypoints XML");
-                FileHelpers.WriteWaypointsXML();
-                FileHelpers.AppendCommentToXML(GlobalConfig.airacEffectiveDate);
-                FileHelpers.WriteNavXmlOutput();
-
-                SetControlPropertyThreadSafe(processingDataLabel, "Text", "Checking Alias Commands");
-                AliasCheck aliasCheck = new AliasCheck();
-                aliasCheck.CheckForDuplicates($"{GlobalConfig.outputDirectory}\\ALIAS\\AliasTestFile.txt");
             }
+
+            SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Fixes");
+            GetFixData ParseFixes = new GetFixData();
+            ParseFixes.FixQuarterbackFunc(GlobalConfig.airacEffectiveDate);
+
+            SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Boundaries");
+            GetArbData ParseArb = new GetArbData();
+            ParseArb.ArbMain(GlobalConfig.airacEffectiveDate);
+
+            SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Airways");
+            FileHelpers.CreateAwyGeomapHeadersAndEnding(true);
+
+            GetAwyData ParseAWY = new GetAwyData();
+            ParseAWY.AWYQuarterbackFunc(GlobalConfig.airacEffectiveDate);
+
+            SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing ATS Airways");
+            GetAtsAwyData ParseAts = new GetAtsAwyData();
+            ParseAts.AWYQuarterbackFunc(GlobalConfig.airacEffectiveDate);
+            FileHelpers.CreateAwyGeomapHeadersAndEnding(false);
+
+            SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing NDBs");
+            GetNavData ParseNDBs = new GetNavData();
+            ParseNDBs.NAVQuarterbackFunc(GlobalConfig.airacEffectiveDate, GlobalConfig.facilityID);
+
+            SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Waypoints XML");
+            FileHelpers.WriteWaypointsXML();
+            FileHelpers.AppendCommentToXML(GlobalConfig.airacEffectiveDate);
+            FileHelpers.WriteNavXmlOutput();
+
+            SetControlPropertyThreadSafe(processingDataLabel, "Text", "Checking Alias Commands");
+            AliasCheck aliasCheck = new AliasCheck();
+            aliasCheck.CheckForDuplicates($"{GlobalConfig.outputDirectory}\\ALIAS\\AliasTestFile.txt");
         }
 
         private void Worker_StartParsingCompleted(object sender, RunWorkerCompletedEventArgs e)

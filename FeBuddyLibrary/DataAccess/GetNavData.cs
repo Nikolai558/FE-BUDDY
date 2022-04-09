@@ -322,7 +322,7 @@ namespace FeBuddyLibrary.DataAccess
             foreach (VORModel vor in allVORData)
             {
                 // add the line with all the data into our string builder
-                sb.AppendLine($"{vor.Id.PadRight(4)}{vor.Freq.PadRight(8)}{vor.Lat} {vor.Lon} ;{vor.Name} {vor.Type}");
+                sb.AppendLine($"{vor.Id.PadRight(4)}{vor.Freq.PadRight(6, '0').PadRight(8)}{vor.Lat} {vor.Lon} ;{vor.Name} {vor.Type}");
             }
 
             // write the string builder to a file.

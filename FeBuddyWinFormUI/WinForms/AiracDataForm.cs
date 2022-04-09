@@ -307,10 +307,6 @@ namespace FeBuddyWinFormUI
             SetControlPropertyThreadSafe(processingDataLabel, "Text", "Unzipping Files");
             DirectoryHelpers.UnzipAllDownloaded();
 
-            SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing FAA Aircraft Data");
-            AircraftData ACData = new AircraftData();
-            ACData.CreateAircraftDataAlias($"{GlobalConfig.outputDirectory}\\ALIAS\\AircraftDataInfo.txt");
-
             SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Telephony");
             GetTelephony Telephony = new GetTelephony();
             Telephony.readFAAData($"{GlobalConfig.tempPath}\\{AiracDateCycleModel.AllCycleDates[GlobalConfig.airacEffectiveDate]}_TELEPHONY.html");
@@ -323,7 +319,18 @@ namespace FeBuddyWinFormUI
             GetAptData ParseAPT = new GetAptData();
             ParseAPT.AptAndWxMain(GlobalConfig.airacEffectiveDate, GlobalConfig.facilityID);
 
-            if (nextAiracSelection.Checked == true && nextAiracAvailable == false)
+            if (currentAiracSelection.Checked == true)
+            {
+                Logger.LogMessage("DEBUG", "NEXT AIRAC IS SELECTED, HOWEVER THE NEXT AIRAC IS NOT AVAILABLE YET");
+                SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Chart Recalls");
+                GetFaaMetaFileData ParseMeta = new GetFaaMetaFileData();
+                ParseMeta.QuarterbackFunc();
+
+                SetControlPropertyThreadSafe(processingDataLabel, "Text", "Getting Publications");
+                PublicationParser publications = new PublicationParser();
+                publications.WriteAirportInfoTxt(GlobalConfig.facilityID);
+            }
+            else if (nextAiracSelection.Checked == true && nextAiracAvailable == true )
             {
                 Logger.LogMessage("DEBUG", "NEXT AIRAC IS SELECTED, HOWEVER THE NEXT AIRAC IS NOT AVAILABLE YET");
                 SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Chart Recalls");
@@ -357,6 +364,10 @@ namespace FeBuddyWinFormUI
             SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing NDBs");
             GetNavData ParseNDBs = new GetNavData();
             ParseNDBs.NAVQuarterbackFunc(GlobalConfig.airacEffectiveDate, GlobalConfig.facilityID);
+
+            SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing FAA Aircraft Data");
+            AircraftData ACData = new AircraftData();
+            ACData.CreateAircraftDataAlias($"{GlobalConfig.outputDirectory}\\ALIAS\\AircraftDataInfo.txt");
 
             SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Waypoints XML");
             FileHelpers.WriteWaypointsXML();

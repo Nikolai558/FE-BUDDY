@@ -89,6 +89,7 @@ namespace FeBuddyLibrary.DataAccess
             }
 
             File.WriteAllText(outputFilePath, aliasFileSB.ToString());
+            File.AppendAllText($"{GlobalConfig.outputDirectory}\\ALIAS\\AliasTestFile.txt", aliasFileSB.ToString());
         }
 
         private Dictionary<string, AircraftDataInformation> getUniqueACData(AircraftDataRootObject aircraftData)

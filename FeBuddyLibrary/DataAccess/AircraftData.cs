@@ -11,8 +11,6 @@ namespace FeBuddyLibrary.DataAccess
 {
     public class AircraftData
     {
-        private AircraftDataRootObject AllACData = new();
-
         public async void CreateAircraftDataAlias()
         {
             AircraftDataRootObject aircraftData = await GetACDataAsync();
@@ -47,7 +45,11 @@ namespace FeBuddyLibrary.DataAccess
 
         private void WriteACData(AircraftDataRootObject aircraftData)
         {
+            // .acinfoc172 ->
+            //      *** [CODE] C172 ::: [MAKE] CESSNA
+            // .ACINFOC172 .MSG FAA_ISR *** [CODE] C172 ::: [MAKE] CESSNA AIRCRAFT COMPANY ::: [MODEL] 172, P172, R172, Skyhawk, Hawk XP, Cutlass (T-41, Mescalero) ::: [ENGINE] 1/PistonProp ::: [WEIGHT] Small ::: [C/D] 600/1000 ::: [SRS] 1
 
+            throw new NotImplementedException();
         }
     }
 }

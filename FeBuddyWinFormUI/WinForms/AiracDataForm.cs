@@ -307,6 +307,10 @@ namespace FeBuddyWinFormUI
             SetControlPropertyThreadSafe(processingDataLabel, "Text", "Unzipping Files");
             DirectoryHelpers.UnzipAllDownloaded();
 
+            //SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing FAA Aircraft Data");
+            //AircraftData ACData = new AircraftData();
+            //ACData.CreateAircraftDataAlias();
+
             SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Telephony");
             GetTelephony Telephony = new GetTelephony();
             Telephony.readFAAData($"{GlobalConfig.tempPath}\\{AiracDateCycleModel.AllCycleDates[GlobalConfig.airacEffectiveDate]}_TELEPHONY.html");

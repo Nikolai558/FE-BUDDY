@@ -6,6 +6,7 @@ using System.Net.Http;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using FeBuddyLibrary.Helpers;
 using FeBuddyLibrary.Models;
 using Newtonsoft.Json;
 
@@ -49,6 +50,8 @@ namespace FeBuddyLibrary.DataAccess
 
         private void WriteACData(string outputFilePath)
         {
+            string command;
+            
             StringBuilder aliasFileSB = new StringBuilder();
 
             Dictionary<string, AircraftDataInformation> uniqueACData = getUniqueACData(AllAircraftData);
@@ -71,7 +74,16 @@ namespace FeBuddyLibrary.DataAccess
             {
                 AircraftDataInformation currentAircraftData = uniqueACData[acDesignator];
                 // TODO - Figure out SRS and C/D
-                string command = $".ACINFO{acDesignator} .MSG FAA_ISR *** [CODE] {acDesignator} ::: [MAKE] {currentAircraftData.ManufacturerCode} ::: [MODEL] {currentAircraftData.ModelFullName} ::: [ENGINE] {currentAircraftData.EngineCount}/{currentAircraftData.EngineType} ::: [WEIGHT] {weights[currentAircraftData.WTC]} ::: [C/D] ???/??? ::: [SRS] ???";
+                try
+                {
+                    command = $".ACINFO{acDesignator} .MSG FAA_ISR *** [CODE] {acDesignator} ::: [MAKE] {currentAircraftData.ManufacturerCode} ::: [MODEL] {currentAircraftData.ModelFullName} ::: [ENGINE] {currentAircraftData.EngineCount}/{currentAircraftData.EngineType} ::: [WEIGHT] {weights[currentAircraftData.WTC]} ::: [C/D] ???/??? ::: [SRS] ???";
+                }
+                catch (KeyNotFoundException e)
+                {
+                    Logger.LogMessage("WARNING", e.Message);
+                    command = $".ACINFO{acDesignator} .MSG FAA_ISR *** [CODE] {acDesignator} ::: [MAKE] {currentAircraftData.ManufacturerCode} ::: [MODEL] {currentAircraftData.ModelFullName} ::: [ENGINE] {currentAircraftData.EngineCount}/{currentAircraftData.EngineType} ::: [WEIGHT] {currentAircraftData.WTC} ::: [C/D] ???/??? ::: [SRS] ???";
+                }
+
 
                 aliasFileSB.AppendLine(command);
             }

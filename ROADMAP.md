@@ -5,14 +5,30 @@ The following is a list of features that we are considering or actively working 
 
 ---
 
-- [ ] FAA RVM .DAT (foia requests) converter.
-  - See: https://github.com/glott/DAT2Sector
-  - See also: https://drakedesignlabs.com/converter/source.txt
-
 - [ ] SCT2 2 AutoCAD Converter
   - Hard to find a GH repo of someone doing this already but maybe we can reverse engineer the sct_2_dxf.exe & dxf_2_sct.exe
   - See: https://docs.fileformat.com/cad/dxf/
   - See Also: https://ezdxf.mozman.at/docs/introduction.html
+
+- [ ] GeoJSON Output
+  - In preparation for CRC compatibility along with general usability of files
+  - For now, create in the format to work with https://geojson.io/
+  - The user should be able to select this option on or off.
+  - Data Points to Convert:
+    - AIRPORTS [Point with text properites and the name/type in the text description]
+    - ARTCC BOUNDARIES - High
+    - ARTCC BOUDNARIES - Low
+    - FIXES [Point with text properites and the name/type in the text description]
+    - AIRWAYS (all in one file at first)
+    - WX STATIONS [Point with text properites and the name/type in the text description]
+    - NDB [Point with text properites and the name/type in the text description]
+    - VOR [Point with text properites and the name/type in the text description]
+    - DPs (individual files and then another file with all combined)
+    - STARSs (individual files and then another file with all combined)
+
+- [ ] FAA RVM .DAT (foia requests) converter.
+  - See: https://github.com/glott/DAT2Sector
+  - See also: https://drakedesignlabs.com/converter/source.txt
 
 - [ ] GoogleEarthPro Converter (for airport diagrams and other like-constructs)
   - See: https://github.com/VATSIM-UK/UK-Sector-File
@@ -32,6 +48,8 @@ The following is a list of features that we are considering or actively working 
   - Will transfer certain NASR and other commonly updated data into the appropriate individual files prior to recombining the files, allowing an AIRAC update to be seamless.
 
 - [ ] Prepare program for CRC formats.
+
+- [ ] Separate "Low" and "High" airways by appropriate altitudes
 
 - [ ] Complete ARTCC File management and editing
   - Break each facility up into individual maps and properties and allow the user to edit their data via GUI and have the program rebuild it each time there is a release. Ref: ZLC FE ASSISTANT batch file system.

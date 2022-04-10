@@ -365,9 +365,9 @@ namespace FeBuddyWinFormUI
             GetNavData ParseNDBs = new GetNavData();
             ParseNDBs.NAVQuarterbackFunc(GlobalConfig.airacEffectiveDate, GlobalConfig.facilityID);
 
-            SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing FAA Aircraft Data");
-            AircraftData ACData = new AircraftData();
-            ACData.CreateAircraftDataAlias($"{GlobalConfig.outputDirectory}\\ALIAS\\AircraftDataInfo.txt");
+            //SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing FAA Aircraft Data");
+            //AircraftData ACData = new AircraftData();
+            //ACData.CreateAircraftDataAlias($"{GlobalConfig.outputDirectory}\\ALIAS\\AircraftDataInfo.txt");
 
             SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Waypoints XML");
             FileHelpers.WriteWaypointsXML();

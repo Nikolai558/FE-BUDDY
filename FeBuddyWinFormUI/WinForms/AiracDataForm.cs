@@ -18,10 +18,13 @@ namespace FeBuddyWinFormUI
     {
         private bool nextAiracAvailable;
         private readonly string _currentVersion;
+        readonly PrivateFontCollection _pfc = new PrivateFontCollection();
+        
 
         public AiracDataForm(string currentVersion)
         {
             Logger.LogMessage("DEBUG", "INITIALIZING COMPONENT");
+            _pfc.AddFontFile("Properties\\romantic.ttf");
 
             InitializeComponent();
             menuStrip.Renderer = new MyRenderer();
@@ -224,8 +227,9 @@ namespace FeBuddyWinFormUI
         private void AiracDataExitButton_Click(object sender, EventArgs e)
         {
             Logger.LogMessage("INFO", "EXIT BUTTON CLICKED");
+            this.Close();
             //this.Hide();
-            Application.Exit();
+            //Application.Exit();
         }
 
         private delegate void SetControlPropertyThreadSafeDelegate(Control control, string propertyName, object propertyValue);
@@ -460,22 +464,20 @@ namespace FeBuddyWinFormUI
         private void AiracDataForm_Load(object sender, EventArgs e)
         {
             Logger.LogMessage("DEBUG", "LOADING MAIN FORM");
-
-            var pfc = new PrivateFontCollection();
-            pfc.AddFontFile("Properties\\romantic.ttf");
-            // TODO - Add fonts to buttons. 
-            InstructionsMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
-            CreditsMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
-            ChangeLogMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
-            UninstallMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
-            FAQMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
-            RoadmapMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
-            informationToolStripMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
-            settingsToolStripMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
-            reportIssuesToolStripMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
+            
+            // TODO - Add fonts to buttons?
+            InstructionsMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
+            CreditsMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
+            ChangeLogMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
+            UninstallMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
+            FAQMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
+            RoadmapMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
+            informationToolStripMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
+            settingsToolStripMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
+            reportIssuesToolStripMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
+            discordToolStripMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
             //mainMenuMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
             //exitMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
-
         }
 
         private void NextAiracSelection_Click(object sender, EventArgs e)
@@ -709,6 +711,12 @@ namespace FeBuddyWinFormUI
                 Properties.Settings.Default.AllowPreRelease = allowBetaMenuItem.Checked;
                 Properties.Settings.Default.Save();
             }
+        }
+
+        private void discordToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Logger.LogMessage("DEBUG", "DISCORD MENU ITEM CLICKED");
+            Process.Start(new ProcessStartInfo("https://discord.com/invite/GB46aeauH4") { UseShellExecute = true });
         }
     }
 }

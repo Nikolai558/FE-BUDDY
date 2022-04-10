@@ -56,6 +56,7 @@
             this.FAQMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.ChangeLogMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.CreditsMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.discordToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.reportIssuesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.settingsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.allowBetaMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -349,6 +350,7 @@
             this.menuStrip.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.menuStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.informationToolStripMenuItem,
+            this.discordToolStripMenuItem,
             this.reportIssuesToolStripMenuItem,
             this.settingsToolStripMenuItem});
             this.menuStrip.Location = new System.Drawing.Point(0, 0);
@@ -426,6 +428,15 @@
             this.CreditsMenuItem.Size = new System.Drawing.Size(155, 22);
             this.CreditsMenuItem.Text = "Credits";
             this.CreditsMenuItem.Click += new System.EventHandler(this.CreditsMenuItem_Click);
+            // 
+            // discordToolStripMenuItem
+            // 
+            this.discordToolStripMenuItem.Font = new System.Drawing.Font("Romantic", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.discordToolStripMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
+            this.discordToolStripMenuItem.Name = "discordToolStripMenuItem";
+            this.discordToolStripMenuItem.Size = new System.Drawing.Size(72, 22);
+            this.discordToolStripMenuItem.Text = "Buddies";
+            this.discordToolStripMenuItem.Click += new System.EventHandler(this.discordToolStripMenuItem_Click);
             // 
             // reportIssuesToolStripMenuItem
             // 
@@ -545,6 +556,7 @@
         private System.Windows.Forms.ToolStripMenuItem settingsToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem allowBetaMenuItem;
         private System.Windows.Forms.ToolStripMenuItem UninstallMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem discordToolStripMenuItem;
     }
 }
 

@@ -2,9 +2,9 @@
 using FeBuddyLibrary.Helpers;
 using Squirrel;
 using System;
-using System.Diagnostics;
 using System.Drawing;
 using System.IO;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace FeBuddyWinFormUI
@@ -16,119 +16,154 @@ namespace FeBuddyWinFormUI
         {
             // TODO - Get system info and log it into file first thing. -https://docs.microsoft.com/en-us/previous-versions/windows/embedded/ee436483(v=msdn.10)
             Logger.CreateLogFile();
+            SquirrelLogger.Register(); // wire up Squirrel logging to our log file too
+          
             Logger.LogMessage("DEBUG", "PROGRAM STARTED");
 
-            //Console.WriteLine(Logger.logFilePath);
+            // Squirrel starts our app during updates, sometimes we need to handle these events.
+            // Our program may exit after and exit after handling one of these events.
+            SquirrelAwareApp.HandleEvents(OnAppInstalled, OnAppUpdated, null, OnAppUninstalled);
 
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
 
-            DirectoryHelpers.CheckTempDir();
-            // API CALL TO GITHUB, WARNING ONLY 60 PER HOUR IS ALLOWED, WILL BREAK IF WE DO MORE!
-            try
-            {
-                WebHelpers.UpdateCheck();
+            // CS: we should set DPI awareness as PerMonitorV2
+            // however currently this currently causes the application to break on
+            // high-dpi monitors since the forms have not been re-written to accomodate the 
+            // new scaling requirements. See the following for more details:
+            // - https://docs.microsoft.com/en-us/windows/win32/hidpi/setting-the-default-dpi-awareness-for-a-process
+            // - https://docs.microsoft.com/en-us/dotnet/desktop/winforms/high-dpi-support-in-windows-forms?view=netframeworkdesktop-4.8
 
-                // Check Current Program Against Github, if different ask user if they want to update.
-                CheckVersion();
-            }
-            catch (Exception)
-            {
-                Logger.LogMessage("WARNING", "COULD NOT PERFORM UPDATE CHECK");
-                MessageBox.Show($"FE-BUDDY could not perform an update check due to either your internet connection or GitHub Server issues.\n\n");
-                //Environment.Exit(-1);
-            }
+            Application.SetHighDpiMode(HighDpiMode.DpiUnaware);
+
+            DirectoryHelpers.CheckTempDir();
+
+            // API CALL TO GITHUB, WARNING ONLY 60 PER HOUR IS ALLOWED, WILL BREAK IF WE DO MORE!
+            // CS: Note, this GitHub limit is based on IP, so is shared with every process at a
+            // household or organisation. A read-only github token should be generated to remove
+            // this limit.
+            var version = CheckForUpdates();
+
+            //LandingForm landingForm = new LandingForm(version);
+            //landingForm.Show();
 
             // Start the application
-            Application.Run(new MainForm());
+            //Application.Run(new LandingForm(version));
+            Application.Run(new AiracDataForm(version));
         }
 
-        private static void CheckVersion()
+        private static void OnAppInstalled(SemanticVersion ver, IAppTools tools)
         {
-            Logger.LogMessage("DEBUG", "CHECKING PROGRAM VERSION AGAINST GITHUB VERSION");
+            // create initial application shortcuts
+            tools.CreateShortcutForThisExe(ShortcutLocation.StartMenuRoot | ShortcutLocation.Desktop);
+        }
 
-            // Check to see if Version's match.
-            if (GlobalConfig.ProgramVersion != GlobalConfig.GithubVersion)
+        private static void OnAppUpdated(SemanticVersion ver, IAppTools tools)
+        {
+            // Remove the Start Menu shortcut in the Kyle Sanders directory if it exists
+            var startmenuDir = Environment.GetFolderPath(Environment.SpecialFolder.StartMenu);
+            var oldShortcutDir = Path.Combine(startmenuDir, "Programs", "Kyle Sanders");
+            if (Directory.Exists(oldShortcutDir))
             {
-                Logger.LogMessage("INFO", $"PROGRAM VERSION {GlobalConfig.ProgramVersion} / GITHUB VERSION {GlobalConfig.GithubVersion}");
-
-                UpdateForm processForm = new UpdateForm
+                try
                 {
-                    Size = new Size(600, 600)
-                };
-                processForm.ChangeTitle("Update Available");
-                processForm.ChangeUpdatePanel(new Point(12, 52));
-                processForm.ChangeUpdatePanel(new Size(560, 370));
-                processForm.ChangeProcessingLabel(new Point(5, 5));
-                processForm.DisplayMessages(true);
-                processForm.ShowDialog();
+                    // CS: if the previous directory exists during an update, lets replace it
+                    // with a new shortcut in the start menu root. We can't use 
+                    // 'CreateShortcutForThisExe' here, as it's ignored during updates.
+                    var myExeName = Path.GetFileName(AssemblyRuntimeInfo.EntryExePath);
+                    tools.CreateShortcutsForExecutable(myExeName, ShortcutLocation.StartMenuRoot, false, null, null);
 
-                if (GlobalConfig.updateProgram)
-                {
-                    Logger.LogMessage("DEBUG", "USER WANTS TO UPDATE");
-
-                    string updateInformationMessage = "Once you click 'OK', all screens related to FE-BUDDY will close.\n\n" +
-                        "Once the program has fully updated, it will restart.";
-
-                    MessageBox.Show(updateInformationMessage);
-                    DownloadHelpers.DownloadAssets();
-
-                    UpdateProgram();
-                    StartNewVersion();
-                    Logger.LogMessage("INFO", "CLOSING OLD PROGRAM VERSION");
-                    Environment.Exit(1);
+                    // delete old shortcut
+                    Directory.Delete(oldShortcutDir);
+                    Logger.LogMessage("DEBUG", "REPLACED OLD START SHORTCUT");
                 }
-                else
+                catch (Exception ex)
                 {
-                    Logger.LogMessage("INFO", "USER DID NOT WANT TO UPDATE");
-
-                    // User does not want to Update
+                    Logger.LogMessage("DEBUG", "FAILED TO REMOVE OLD SHORTCUT " + ex.Message);
                 }
             }
         }
 
-        private static async void UpdateProgram()
+        private static void OnAppUninstalled(SemanticVersion ver, IAppTools tools)
         {
-            Logger.LogMessage("INFO", "UPDATING PROGRAM");
+            tools.RemoveShortcutForThisExe(ShortcutLocation.StartMenuRoot | ShortcutLocation.Desktop);
 
-            using (var updateManager = new UpdateManager($"{GlobalConfig.tempPath}"))
-            {
-                var releaseEntry = await updateManager.UpdateApp();
-            }
+            // TODO this should delete all the temporary directories.. everything created by this app.
         }
 
-        private static void StartNewVersion()
+        /// <summary>
+        /// Checks for updates, asks the user if they want to update now, and then
+        /// returns the current version.
+        /// </summary>
+        private static string CheckForUpdates()
         {
-            Logger.LogMessage("DEBUG", "PREPARING TO START NEW PROGRAM VERSION");
+            // By default (on install) AllowPreRelease is false. This setting will only change if the user
+            // "checks" the "Opt-In PreRelease" button under the settings menu
+            using var ghu = new GithubUpdateManager("https://github.com/Nikolai558/FE-BUDDY", Properties.Settings.Default.AllowPreRelease);
 
-            string filePath = $"{GlobalConfig.tempPath}\\startNewVersion.bat";
-            string writeMe =
-                "SET /A COUNT=0\n\n" +
-                ":CHK\n" +
-                $"IF EXIST \"%userprofile%\\AppData\\Local\\FE-BUDDY\\app-{GlobalConfig.GithubVersion}\\FE-BUDDY.exe\" goto FOUND\n" +
-                "SET /A COUNT=%COUNT% + 1\n" +
-                "IF %COUNT% GEQ 12 GOTO FOUND\n" +
-                "PING 127.0.0.1 -n 3 >nul\n" +
-                "GOTO CHK\n\n" +
-                ":FOUND\n" +
-                $"start \"\" \"%userprofile%\\AppData\\Local\\FE-BUDDY\\app-{GlobalConfig.GithubVersion}\\FE-BUDDY.exe\"\n";
+            var currentVersion = ghu.CurrentlyInstalledVersion();
 
-            File.WriteAllText(filePath, writeMe);
-            ProcessStartInfo ProcessInfo;
-            Process Process;
-
-            ProcessInfo = new ProcessStartInfo("cmd.exe", "/c " + $"\"{GlobalConfig.tempPath}\\startNewVersion.bat\"")
+            if (currentVersion == null || !ghu.IsInstalledApp)
             {
-                CreateNoWindow = true,
-                UseShellExecute = false
-            };
+                // we can't update if we're not a published app!
+                return "dev";
+            }
 
-            Logger.LogMessage("INFO", "STARTING NEW PROGRAM VERSION");
-            Process = Process.Start(ProcessInfo);
-            Process.WaitForExit();
+            try
+            {
+                var updateInfo = ghu.CheckForUpdate().Result;
+                if (updateInfo != null && updateInfo.ReleasesToApply.Count > 0)
+                {
+                    // there are updates available
+                    Logger.LogMessage("INFO", "Update available: " +
+                        $"CURRENT VERSION {currentVersion} / " +
+                        $"GITHUB VERSION {updateInfo.FutureReleaseEntry.Version}");
 
-            _ = Process.ExitCode;
-            Process.Close();
+                    UpdateForm processForm = new UpdateForm(
+                        updateInfo.CurrentlyInstalledVersion?.Version.ToString() ?? "dev",
+                        updateInfo.FutureReleaseEntry.Version.ToString())
+                    {
+                        Size = new Size(600, 600)
+                    };
+                    processForm.ChangeTitle("Update Available");
+                    processForm.ChangeUpdatePanel(new Point(12, 52));
+                    processForm.ChangeUpdatePanel(new Size(560, 370));
+                    processForm.ChangeProcessingLabel(new Point(5, 5));
+                    processForm.DisplayMessages(true);
+                    var result = processForm.ShowDialog();
+                    if (result == DialogResult.Yes)
+                    {
+                        Logger.LogMessage("DEBUG", "USER WANTS TO UPDATE");
+
+                        string updateInformationMessage =
+                            "Once you click 'OK', all screens related to FE-BUDDY will close.\n\n" +
+                            "Once the program has fully updated, it will restart. This may take some time.";
+
+                        MessageBox.Show(updateInformationMessage);
+
+                        // TODO: we should show some progress UI while doing this.
+                        var installedUpdate = ghu.UpdateApp().Result;
+                        if (installedUpdate != null)
+                        {
+                            Logger.LogMessage("INFO", "RESTARTING...");
+                            UpdateManager.RestartApp();
+                        }
+                        else
+                        {
+                            Logger.LogMessage("INFO", "Update detected but no release was downloaded.");
+                            MessageBox.Show("The update has failed, please check the log file.");
+                        }
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Logger.LogMessage("WARNING", "Unable to check for updates: " + e.Message);
+                MessageBox.Show($"FE-BUDDY could not perform an update check due to either your internet connection or GitHub Server issues.\n\n" + e.ToString());
+            }
+
+            // we have decided not to update, lets return current version
+            return currentVersion.ToString();
         }
     }
 }

@@ -1,4 +1,22 @@
 ---
+- ## Version 2.0.0
+  ### FOR USERS:
+    - Modified menu presentation
+    - Fixed frequency formatting in [VOR].SCT2; All frequencies will be formatted as xxx.xx
+    - Added ASOS/AWOS frequencies to APT_ISR.txt
+  ### FOR DEVELOPERS:
+    - Conversion from .Net Framework 4.7 to .Net Core 6
+    - Connected Squirrel Logging to FE-Buddy Logging
+    - Updater now uses Delta Nuget Packages when updating. Install will use Full Nuget Package
+    - New landing page and winforms added (commented out) in preparation for future feature releases.
+    - Backend code file and function name changes/refactoring
+    - Added feature-not-implemented popup
+    - Refactored parsing controls (backend)
+    - Added aircraft data alias command output (AircraftDataInfo.txt)
+      - Commented out until we can figure out how to get updated C/D and SRS data in an automated way
+    - Added Error Handling on various functions
+
+---
 - ## Version 1.0.3
   - #26 KASE and many other airports were effected by a bug causing some airports and runways to be missing from the Airports.xml file.
 

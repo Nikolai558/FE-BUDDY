@@ -24,7 +24,7 @@ on:
 jobs:
   analyze:
     name: Analyze
-    runs-on: windows-latest
+    runs-on: windows-2019
     permissions:
       actions: read
       contents: read
@@ -38,6 +38,11 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v2
+      
+    - name: Setup .NET 6.* SDK
+      uses: actions/setup-dotnet@v1.9.0
+      with:
+        dotnet-version: '6.*'
 
     - name: Initialize CodeQL
       uses: github/codeql-action/init@v1

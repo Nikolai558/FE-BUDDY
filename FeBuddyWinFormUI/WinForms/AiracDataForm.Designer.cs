@@ -1,6 +1,6 @@
 ﻿namespace FeBuddyWinFormUI
 {
-    partial class MainForm
+    partial class AiracDataForm
     {
         /// <summary>
         /// Required designer variable.
@@ -28,7 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(AiracDataForm));
             this.currentAiracSelection = new System.Windows.Forms.RadioButton();
             this.nextAiracSelection = new System.Windows.Forms.RadioButton();
             this.airacLabel = new System.Windows.Forms.Label();
@@ -56,9 +56,10 @@
             this.FAQMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.ChangeLogMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.CreditsMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.settingsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.UninstallMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.reportIssuesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.settingsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.allowBetaMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.UninstallMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.airacCycleGroupBox.SuspendLayout();
             this.convertGroupBox.SuspendLayout();
             this.startGroupBox.SuspendLayout();
@@ -70,7 +71,7 @@
             // 
             this.currentAiracSelection.AutoSize = true;
             this.currentAiracSelection.Checked = true;
-            this.currentAiracSelection.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.currentAiracSelection.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.currentAiracSelection.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.currentAiracSelection.Location = new System.Drawing.Point(91, 68);
             this.currentAiracSelection.Margin = new System.Windows.Forms.Padding(6, 7, 6, 7);
@@ -85,7 +86,7 @@
             // nextAiracSelection
             // 
             this.nextAiracSelection.AutoSize = true;
-            this.nextAiracSelection.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.nextAiracSelection.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.nextAiracSelection.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.nextAiracSelection.Location = new System.Drawing.Point(232, 68);
             this.nextAiracSelection.Margin = new System.Windows.Forms.Padding(6, 7, 6, 7);
@@ -99,7 +100,7 @@
             // 
             // airacLabel
             // 
-            this.airacLabel.Font = new System.Drawing.Font("Segoe UI", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.airacLabel.Font = new System.Drawing.Font("Segoe UI", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.airacLabel.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.airacLabel.Location = new System.Drawing.Point(1, 29);
             this.airacLabel.Margin = new System.Windows.Forms.Padding(6, 0, 6, 0);
@@ -112,7 +113,7 @@
             // facilityIDLabel
             // 
             this.facilityIDLabel.AutoSize = true;
-            this.facilityIDLabel.Font = new System.Drawing.Font("Segoe UI", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.facilityIDLabel.Font = new System.Drawing.Font("Segoe UI", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.facilityIDLabel.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.facilityIDLabel.Location = new System.Drawing.Point(25, 32);
             this.facilityIDLabel.Margin = new System.Windows.Forms.Padding(6, 0, 6, 0);
@@ -124,7 +125,7 @@
             // convertLabel
             // 
             this.convertLabel.AutoSize = true;
-            this.convertLabel.Font = new System.Drawing.Font("Segoe UI", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.convertLabel.Font = new System.Drawing.Font("Segoe UI", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.convertLabel.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.convertLabel.Location = new System.Drawing.Point(33, 29);
             this.convertLabel.Margin = new System.Windows.Forms.Padding(6, 0, 6, 0);
@@ -136,7 +137,7 @@
             // convertNo
             // 
             this.convertNo.AutoSize = true;
-            this.convertNo.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.convertNo.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.convertNo.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.convertNo.Location = new System.Drawing.Point(232, 193);
             this.convertNo.Margin = new System.Windows.Forms.Padding(6, 7, 6, 7);
@@ -151,7 +152,7 @@
             // 
             this.convertYes.AutoSize = true;
             this.convertYes.Checked = true;
-            this.convertYes.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.convertYes.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.convertYes.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.convertYes.Location = new System.Drawing.Point(148, 193);
             this.convertYes.Margin = new System.Windows.Forms.Padding(6, 7, 6, 7);
@@ -165,7 +166,7 @@
             // convertDescriptionLabel
             // 
             this.convertDescriptionLabel.AutoSize = true;
-            this.convertDescriptionLabel.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.convertDescriptionLabel.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.convertDescriptionLabel.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.convertDescriptionLabel.Location = new System.Drawing.Point(18, 71);
             this.convertDescriptionLabel.Margin = new System.Windows.Forms.Padding(6, 0, 6, 0);
@@ -193,7 +194,7 @@
             this.chooseDirButton.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Black;
             this.chooseDirButton.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Black;
             this.chooseDirButton.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.chooseDirButton.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.chooseDirButton.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.chooseDirButton.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.chooseDirButton.Location = new System.Drawing.Point(40, 185);
             this.chooseDirButton.Name = "chooseDirButton";
@@ -210,7 +211,7 @@
             this.startButton.FlatAppearance.MouseDownBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(64)))), ((int)(((byte)(0)))));
             this.startButton.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Black;
             this.startButton.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.startButton.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.startButton.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.startButton.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.startButton.Location = new System.Drawing.Point(40, 302);
             this.startButton.Name = "startButton";
@@ -218,7 +219,7 @@
             this.startButton.TabIndex = 11;
             this.startButton.Text = "Start";
             this.startButton.UseVisualStyleBackColor = false;
-            this.startButton.Click += new System.EventHandler(this.StartButton_Click);
+            this.startButton.Click += new System.EventHandler(this.AiracDataStartButton_Click);
             // 
             // airacCycleGroupBox
             // 
@@ -277,7 +278,7 @@
             // processingDataLabel
             // 
             this.processingDataLabel.Enabled = false;
-            this.processingDataLabel.Font = new System.Drawing.Font("Segoe UI", 26.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.processingDataLabel.Font = new System.Drawing.Font("Segoe UI", 26.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
             this.processingDataLabel.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.processingDataLabel.Location = new System.Drawing.Point(6, 17);
             this.processingDataLabel.Name = "processingDataLabel";
@@ -305,7 +306,7 @@
             // outputDirectoryLabel
             // 
             this.outputDirectoryLabel.AutoSize = true;
-            this.outputDirectoryLabel.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.outputDirectoryLabel.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.outputDirectoryLabel.Location = new System.Drawing.Point(522, 170);
             this.outputDirectoryLabel.Name = "outputDirectoryLabel";
             this.outputDirectoryLabel.Size = new System.Drawing.Size(96, 21);
@@ -331,7 +332,7 @@
             this.exitButton.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Maroon;
             this.exitButton.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Black;
             this.exitButton.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.exitButton.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.exitButton.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.exitButton.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.exitButton.Location = new System.Drawing.Point(346, 88);
             this.exitButton.Name = "exitButton";
@@ -340,20 +341,20 @@
             this.exitButton.Text = "Exit";
             this.exitButton.UseVisualStyleBackColor = false;
             this.exitButton.Visible = false;
-            this.exitButton.Click += new System.EventHandler(this.ExitButton_Click);
+            this.exitButton.Click += new System.EventHandler(this.AiracDataExitButton_Click);
             // 
             // menuStrip
             // 
             this.menuStrip.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))));
-            this.menuStrip.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.menuStrip.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.menuStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.informationToolStripMenuItem,
             this.reportIssuesToolStripMenuItem,
             this.settingsToolStripMenuItem});
             this.menuStrip.Location = new System.Drawing.Point(0, 0);
             this.menuStrip.Name = "menuStrip";
-            this.menuStrip.Size = new System.Drawing.Size(785, 26);
-            this.menuStrip.TabIndex = 15;
+            this.menuStrip.Size = new System.Drawing.Size(784, 26);
+            this.menuStrip.TabIndex = 16;
             this.menuStrip.Text = "menuStrip1";
             // 
             // informationToolStripMenuItem
@@ -365,7 +366,7 @@
             this.FAQMenuItem,
             this.ChangeLogMenuItem,
             this.CreditsMenuItem});
-            this.informationToolStripMenuItem.Font = new System.Drawing.Font("Romantic", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(2)));
+            this.informationToolStripMenuItem.Font = new System.Drawing.Font("Romantic", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.informationToolStripMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.informationToolStripMenuItem.Name = "informationToolStripMenuItem";
             this.informationToolStripMenuItem.Size = new System.Drawing.Size(94, 22);
@@ -378,7 +379,7 @@
             this.InstructionsMenuItem.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
             this.InstructionsMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.InstructionsMenuItem.Name = "InstructionsMenuItem";
-            this.InstructionsMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.InstructionsMenuItem.Size = new System.Drawing.Size(155, 22);
             this.InstructionsMenuItem.Text = "Instructions";
             this.InstructionsMenuItem.Click += new System.EventHandler(this.InstructionsMenuItem_Click);
             // 
@@ -389,7 +390,7 @@
             this.RoadmapMenuItem.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
             this.RoadmapMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.RoadmapMenuItem.Name = "RoadmapMenuItem";
-            this.RoadmapMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.RoadmapMenuItem.Size = new System.Drawing.Size(155, 22);
             this.RoadmapMenuItem.Text = "Roadmap";
             this.RoadmapMenuItem.Click += new System.EventHandler(this.RoadmapMenuItem_Click);
             // 
@@ -400,7 +401,7 @@
             this.FAQMenuItem.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
             this.FAQMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.FAQMenuItem.Name = "FAQMenuItem";
-            this.FAQMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.FAQMenuItem.Size = new System.Drawing.Size(155, 22);
             this.FAQMenuItem.Text = "FAQ";
             this.FAQMenuItem.Click += new System.EventHandler(this.FAQMenuItem_Click);
             // 
@@ -411,7 +412,7 @@
             this.ChangeLogMenuItem.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
             this.ChangeLogMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.ChangeLogMenuItem.Name = "ChangeLogMenuItem";
-            this.ChangeLogMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.ChangeLogMenuItem.Size = new System.Drawing.Size(155, 22);
             this.ChangeLogMenuItem.Text = "Change Log";
             this.ChangeLogMenuItem.Click += new System.EventHandler(this.ChangeLogMenuItem_Click);
             // 
@@ -422,20 +423,42 @@
             this.CreditsMenuItem.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
             this.CreditsMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.CreditsMenuItem.Name = "CreditsMenuItem";
-            this.CreditsMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.CreditsMenuItem.Size = new System.Drawing.Size(155, 22);
             this.CreditsMenuItem.Text = "Credits";
             this.CreditsMenuItem.Click += new System.EventHandler(this.CreditsMenuItem_Click);
+            // 
+            // reportIssuesToolStripMenuItem
+            // 
+            this.reportIssuesToolStripMenuItem.Font = new System.Drawing.Font("Romantic", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.reportIssuesToolStripMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
+            this.reportIssuesToolStripMenuItem.Name = "reportIssuesToolStripMenuItem";
+            this.reportIssuesToolStripMenuItem.Size = new System.Drawing.Size(105, 22);
+            this.reportIssuesToolStripMenuItem.Text = "Report Issues";
+            this.reportIssuesToolStripMenuItem.Click += new System.EventHandler(this.reportIssuesToolStripMenuItem_Click);
             // 
             // settingsToolStripMenuItem
             // 
             this.settingsToolStripMenuItem.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))));
             this.settingsToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.allowBetaMenuItem,
             this.UninstallMenuItem});
-            this.settingsToolStripMenuItem.Font = new System.Drawing.Font("Romantic", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(2)));
+            this.settingsToolStripMenuItem.Font = new System.Drawing.Font("Romantic", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.settingsToolStripMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.settingsToolStripMenuItem.Name = "settingsToolStripMenuItem";
             this.settingsToolStripMenuItem.Size = new System.Drawing.Size(70, 22);
             this.settingsToolStripMenuItem.Text = "Settings";
+            // 
+            // allowBetaMenuItem
+            // 
+            this.allowBetaMenuItem.BackColor = System.Drawing.Color.Black;
+            this.allowBetaMenuItem.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
+            this.allowBetaMenuItem.Enabled = false;
+            this.allowBetaMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
+            this.allowBetaMenuItem.Name = "allowBetaMenuItem";
+            this.allowBetaMenuItem.Size = new System.Drawing.Size(195, 22);
+            this.allowBetaMenuItem.Text = "Dev Testing Mode";
+            this.allowBetaMenuItem.Visible = false;
+            this.allowBetaMenuItem.Click += new System.EventHandler(this.allowBetaMenuItem_Click);
             // 
             // UninstallMenuItem
             // 
@@ -443,20 +466,11 @@
             this.UninstallMenuItem.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
             this.UninstallMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.UninstallMenuItem.Name = "UninstallMenuItem";
-            this.UninstallMenuItem.Size = new System.Drawing.Size(133, 22);
+            this.UninstallMenuItem.Size = new System.Drawing.Size(195, 22);
             this.UninstallMenuItem.Text = "Uninstall";
             this.UninstallMenuItem.Click += new System.EventHandler(this.UninstallMenuItem_Click);
             // 
-            // reportIssuesToolStripMenuItem
-            // 
-            this.reportIssuesToolStripMenuItem.Font = new System.Drawing.Font("Romantic", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(2)));
-            this.reportIssuesToolStripMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
-            this.reportIssuesToolStripMenuItem.Name = "reportIssuesToolStripMenuItem";
-            this.reportIssuesToolStripMenuItem.Size = new System.Drawing.Size(105, 22);
-            this.reportIssuesToolStripMenuItem.Text = "Report Issues";
-            this.reportIssuesToolStripMenuItem.Click += new System.EventHandler(this.reportIssuesToolStripMenuItem_Click);
-            // 
-            // MainForm
+            // AiracDataForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(11F, 25F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
@@ -464,26 +478,25 @@
             this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(10)))), ((int)(((byte)(10)))), ((int)(((byte)(10)))));
             this.BackgroundImage = global::FeBuddyWinFormUI.Properties.Resources.window_background;
             this.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
-            this.ClientSize = new System.Drawing.Size(785, 404);
+            this.ClientSize = new System.Drawing.Size(784, 404);
+            this.Controls.Add(this.menuStrip);
             this.Controls.Add(this.processingGroupBox);
             this.Controls.Add(this.startGroupBox);
             this.Controls.Add(this.convertGroupBox);
             this.Controls.Add(this.airacCycleGroupBox);
-            this.Controls.Add(this.menuStrip);
-            this.Font = new System.Drawing.Font("Segoe UI", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.Font = new System.Drawing.Font("Segoe UI", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.ForeColor = System.Drawing.SystemColors.Control;
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.HelpButton = true;
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
-            this.MainMenuStrip = this.menuStrip;
             this.Margin = new System.Windows.Forms.Padding(6, 7, 6, 7);
             this.MaximizeBox = false;
-            this.Name = "MainForm";
+            this.Name = "AiracDataForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "FE-BUDDY";
-            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.MainForm_Closing);
-            this.Load += new System.EventHandler(this.MainForm_Load);
-            this.Shown += new System.EventHandler(this.MainForm_Shown);
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.AiracDataForm_Closing);
+            this.Load += new System.EventHandler(this.AiracDataForm_Load);
+            this.Shown += new System.EventHandler(this.AiracDataForm_Shown);
             this.airacCycleGroupBox.ResumeLayout(false);
             this.airacCycleGroupBox.PerformLayout();
             this.convertGroupBox.ResumeLayout(false);
@@ -518,12 +531,10 @@
         private System.Windows.Forms.Label processingDataLabel;
         private System.Windows.Forms.GroupBox processingGroupBox;
         private System.Windows.Forms.Button exitButton;
-        private System.Windows.Forms.MenuStrip menuStrip;
         private System.Windows.Forms.Label outputDirectoryLabel;
         private System.Windows.Forms.Label outputLocationLabel;
         private System.Windows.Forms.ComboBox facilityIdCombobox;
-        private System.Windows.Forms.ToolStripMenuItem settingsToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem UninstallMenuItem;
+        private System.Windows.Forms.MenuStrip menuStrip;
         private System.Windows.Forms.ToolStripMenuItem informationToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem InstructionsMenuItem;
         private System.Windows.Forms.ToolStripMenuItem RoadmapMenuItem;
@@ -531,6 +542,9 @@
         private System.Windows.Forms.ToolStripMenuItem ChangeLogMenuItem;
         private System.Windows.Forms.ToolStripMenuItem CreditsMenuItem;
         private System.Windows.Forms.ToolStripMenuItem reportIssuesToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem settingsToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem allowBetaMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem UninstallMenuItem;
     }
 }
 

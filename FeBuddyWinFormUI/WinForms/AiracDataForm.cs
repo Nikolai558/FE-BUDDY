@@ -14,20 +14,20 @@ using System.Windows.Forms;
 
 namespace FeBuddyWinFormUI
 {
-    public partial class MainForm : Form
+    public partial class AiracDataForm : Form
     {
         private bool nextAiracAvailable;
+        private readonly string _currentVersion;
 
-        public MainForm()
+        public AiracDataForm(string currentVersion)
         {
             Logger.LogMessage("DEBUG", "INITIALIZING COMPONENT");
 
             InitializeComponent();
             menuStrip.Renderer = new MyRenderer();
-            
 
             // It should grab from the assembily info. 
-            this.Text = $"FE-BUDDY - V{GlobalConfig.ProgramVersion}";
+            this.Text = $"FE-BUDDY - V{currentVersion}";
 
             chooseDirButton.Enabled = false;
             startButton.Enabled = false;
@@ -51,6 +51,7 @@ namespace FeBuddyWinFormUI
             filePathLabel.Text = GlobalConfig.outputDirBase;
             filePathLabel.Visible = true;
             filePathLabel.MaximumSize = new Size(257, 82);
+            _currentVersion = currentVersion;
         }
 
         private class MyRenderer : ToolStripProfessionalRenderer
@@ -83,7 +84,7 @@ namespace FeBuddyWinFormUI
             }
         }
 
-        private void MainForm_Closing(object sender, EventArgs e)
+        private void AiracDataForm_Closing(object sender, EventArgs e)
         {
             Logger.LogMessage("DEBUG", "MAIN FORM CLOSING");
         }
@@ -115,7 +116,7 @@ namespace FeBuddyWinFormUI
             filePathLabel.MaximumSize = new Size(257, 82);
         }
 
-        private void StartButton_Click(object sender, EventArgs e)
+        private void AiracDataStartButton_Click(object sender, EventArgs e)
         {
             Logger.LogMessage("DEBUG", "USER CLICKED START BUTTON");
 
@@ -220,10 +221,10 @@ namespace FeBuddyWinFormUI
             StartParsing();
         }
 
-        private void ExitButton_Click(object sender, EventArgs e)
+        private void AiracDataExitButton_Click(object sender, EventArgs e)
         {
             Logger.LogMessage("INFO", "EXIT BUTTON CLICKED");
-
+            //this.Hide();
             Application.Exit();
         }
 
@@ -300,80 +301,27 @@ namespace FeBuddyWinFormUI
                 GlobalConfig.airacEffectiveDate = nextAiracSelection.Text;
             }
 
-            if (nextAiracSelection.Checked == true && nextAiracAvailable == false)
+            SetControlPropertyThreadSafe(processingDataLabel, "Text", "Downloading FAA Data");
+            DownloadHelpers.DownloadAllFiles(GlobalConfig.airacEffectiveDate, AiracDateCycleModel.AllCycleDates[GlobalConfig.airacEffectiveDate]);
+
+            SetControlPropertyThreadSafe(processingDataLabel, "Text", "Unzipping Files");
+            DirectoryHelpers.UnzipAllDownloaded();
+
+            SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Telephony");
+            GetTelephony Telephony = new GetTelephony();
+            Telephony.readFAAData($"{GlobalConfig.tempPath}\\{AiracDateCycleModel.AllCycleDates[GlobalConfig.airacEffectiveDate]}_TELEPHONY.html");
+
+            SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing DPs and STARs");
+            GetStarDpData ParseStarDp = new GetStarDpData();
+            ParseStarDp.StarDpQuaterBackFunc(GlobalConfig.airacEffectiveDate);
+
+            SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Airports");
+            GetAptData ParseAPT = new GetAptData();
+            ParseAPT.AptAndWxMain(GlobalConfig.airacEffectiveDate, GlobalConfig.facilityID);
+
+            if (currentAiracSelection.Checked == true)
             {
                 Logger.LogMessage("DEBUG", "NEXT AIRAC IS SELECTED, HOWEVER THE NEXT AIRAC IS NOT AVAILABLE YET");
-
-                SetControlPropertyThreadSafe(processingDataLabel, "Text", "Downloading FAA Data");
-                DownloadHelpers.DownloadAllFiles(GlobalConfig.airacEffectiveDate, AiracDateCycleModel.AllCycleDates[GlobalConfig.airacEffectiveDate], false);
-
-                SetControlPropertyThreadSafe(processingDataLabel, "Text", "Unzipping Files");
-                DirectoryHelpers.UnzipAllDownloaded();
-
-                SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Telephony");
-                GetTelephony Telephony = new GetTelephony();
-                Telephony.readFAAData($"{GlobalConfig.tempPath}\\{AiracDateCycleModel.AllCycleDates[GlobalConfig.airacEffectiveDate]}_TELEPHONY.html");
-
-                SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing DPs and STARs");
-                GetStarDpData ParseStarDp = new GetStarDpData();
-                ParseStarDp.StarDpQuaterBackFunc(GlobalConfig.airacEffectiveDate);
-
-                SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Airports");
-                GetAptData ParseAPT = new GetAptData();
-                ParseAPT.AptAndWxMain(GlobalConfig.airacEffectiveDate, GlobalConfig.facilityID);
-
-                SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Fixes");
-                GetFixData ParseFixes = new GetFixData();
-                ParseFixes.FixQuarterbackFunc(GlobalConfig.airacEffectiveDate);
-
-                SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Boundaries");
-                GetArbData ParseArb = new GetArbData();
-                ParseArb.ArbMain(GlobalConfig.airacEffectiveDate);
-
-                SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Airways");
-                FileHelpers.CreateAwyGeomapHeadersAndEnding(true);
-
-                GetAwyData ParseAWY = new GetAwyData();
-                ParseAWY.AWYQuarterbackFunc(GlobalConfig.airacEffectiveDate);
-
-                SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing ATS Airways");
-                GetAtsAwyData ParseAts = new GetAtsAwyData();
-                ParseAts.AWYQuarterbackFunc(GlobalConfig.airacEffectiveDate);
-                FileHelpers.CreateAwyGeomapHeadersAndEnding(false);
-
-                SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing NDBs");
-                GetNavData ParseNDBs = new GetNavData();
-                ParseNDBs.NAVQuarterbackFunc(GlobalConfig.airacEffectiveDate, GlobalConfig.facilityID);
-
-                SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Waypoints XML");
-                FileHelpers.WriteWaypointsXML();
-                FileHelpers.AppendCommentToXML(GlobalConfig.airacEffectiveDate);
-                FileHelpers.WriteNavXmlOutput();
-
-                SetControlPropertyThreadSafe(processingDataLabel, "Text", "Checking Alias Commands");
-                AliasCheck aliasCheck = new AliasCheck();
-                aliasCheck.CheckForDuplicates($"{GlobalConfig.outputDirectory}\\ALIAS\\AliasTestFile.txt");
-            }
-            else
-            {
-                SetControlPropertyThreadSafe(processingDataLabel, "Text", "Downloading FAA Data");
-                DownloadHelpers.DownloadAllFiles(GlobalConfig.airacEffectiveDate, AiracDateCycleModel.AllCycleDates[GlobalConfig.airacEffectiveDate]);
-
-                SetControlPropertyThreadSafe(processingDataLabel, "Text", "Unzipping Files");
-                DirectoryHelpers.UnzipAllDownloaded();
-
-                SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Telephony");
-                GetTelephony Telephony = new GetTelephony();
-                Telephony.readFAAData($"{GlobalConfig.tempPath}\\{AiracDateCycleModel.AllCycleDates[GlobalConfig.airacEffectiveDate]}_TELEPHONY.html");
-
-                SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing DPs and STARs");
-                GetStarDpData ParseStarDp = new GetStarDpData();
-                ParseStarDp.StarDpQuaterBackFunc(GlobalConfig.airacEffectiveDate);
-
-                SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Airports");
-                GetAptData ParseAPT = new GetAptData();
-                ParseAPT.AptAndWxMain(GlobalConfig.airacEffectiveDate, GlobalConfig.facilityID);
-
                 SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Chart Recalls");
                 GetFaaMetaFileData ParseMeta = new GetFaaMetaFileData();
                 ParseMeta.QuarterbackFunc();
@@ -381,39 +329,54 @@ namespace FeBuddyWinFormUI
                 SetControlPropertyThreadSafe(processingDataLabel, "Text", "Getting Publications");
                 PublicationParser publications = new PublicationParser();
                 publications.WriteAirportInfoTxt(GlobalConfig.facilityID);
-
-                SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Fixes");
-                GetFixData ParseFixes = new GetFixData();
-                ParseFixes.FixQuarterbackFunc(GlobalConfig.airacEffectiveDate);
-
-                SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Boundaries");
-                GetArbData ParseArb = new GetArbData();
-                ParseArb.ArbMain(GlobalConfig.airacEffectiveDate);
-
-                SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Airways");
-                FileHelpers.CreateAwyGeomapHeadersAndEnding(true);
-
-                GetAwyData ParseAWY = new GetAwyData();
-                ParseAWY.AWYQuarterbackFunc(GlobalConfig.airacEffectiveDate);
-
-                SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing ATS Airways");
-                GetAtsAwyData ParseAts = new GetAtsAwyData();
-                ParseAts.AWYQuarterbackFunc(GlobalConfig.airacEffectiveDate);
-                FileHelpers.CreateAwyGeomapHeadersAndEnding(false);
-
-                SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing NDBs");
-                GetNavData ParseNDBs = new GetNavData();
-                ParseNDBs.NAVQuarterbackFunc(GlobalConfig.airacEffectiveDate, GlobalConfig.facilityID);
-
-                SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Waypoints XML");
-                FileHelpers.WriteWaypointsXML();
-                FileHelpers.AppendCommentToXML(GlobalConfig.airacEffectiveDate);
-                FileHelpers.WriteNavXmlOutput();
-
-                SetControlPropertyThreadSafe(processingDataLabel, "Text", "Checking Alias Commands");
-                AliasCheck aliasCheck = new AliasCheck();
-                aliasCheck.CheckForDuplicates($"{GlobalConfig.outputDirectory}\\ALIAS\\AliasTestFile.txt");
             }
+            else if (nextAiracSelection.Checked == true && nextAiracAvailable == true )
+            {
+                Logger.LogMessage("DEBUG", "NEXT AIRAC IS SELECTED, HOWEVER THE NEXT AIRAC IS NOT AVAILABLE YET");
+                SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Chart Recalls");
+                GetFaaMetaFileData ParseMeta = new GetFaaMetaFileData();
+                ParseMeta.QuarterbackFunc();
+
+                SetControlPropertyThreadSafe(processingDataLabel, "Text", "Getting Publications");
+                PublicationParser publications = new PublicationParser();
+                publications.WriteAirportInfoTxt(GlobalConfig.facilityID);
+            }
+
+            SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Fixes");
+            GetFixData ParseFixes = new GetFixData();
+            ParseFixes.FixQuarterbackFunc(GlobalConfig.airacEffectiveDate);
+
+            SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Boundaries");
+            GetArbData ParseArb = new GetArbData();
+            ParseArb.ArbMain(GlobalConfig.airacEffectiveDate);
+
+            SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Airways");
+            FileHelpers.CreateAwyGeomapHeadersAndEnding(true);
+
+            GetAwyData ParseAWY = new GetAwyData();
+            ParseAWY.AWYQuarterbackFunc(GlobalConfig.airacEffectiveDate);
+
+            SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing ATS Airways");
+            GetAtsAwyData ParseAts = new GetAtsAwyData();
+            ParseAts.AWYQuarterbackFunc(GlobalConfig.airacEffectiveDate);
+            FileHelpers.CreateAwyGeomapHeadersAndEnding(false);
+
+            SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing NDBs");
+            GetNavData ParseNDBs = new GetNavData();
+            ParseNDBs.NAVQuarterbackFunc(GlobalConfig.airacEffectiveDate, GlobalConfig.facilityID);
+
+            //SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing FAA Aircraft Data");
+            //AircraftData ACData = new AircraftData();
+            //ACData.CreateAircraftDataAlias($"{GlobalConfig.outputDirectory}\\ALIAS\\AircraftDataInfo.txt");
+
+            SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Waypoints XML");
+            FileHelpers.WriteWaypointsXML();
+            FileHelpers.AppendCommentToXML(GlobalConfig.airacEffectiveDate);
+            FileHelpers.WriteNavXmlOutput();
+
+            SetControlPropertyThreadSafe(processingDataLabel, "Text", "Checking Alias Commands");
+            AliasCheck aliasCheck = new AliasCheck();
+            aliasCheck.CheckForDuplicates($"{GlobalConfig.outputDirectory}\\ALIAS\\AliasTestFile.txt");
         }
 
         private void Worker_StartParsingCompleted(object sender, RunWorkerCompletedEventArgs e)
@@ -444,7 +407,7 @@ namespace FeBuddyWinFormUI
             Worker.RunWorkerAsync();
         }
 
-        private void MainForm_Shown(object sender, EventArgs e)
+        private void AiracDataForm_Shown(object sender, EventArgs e)
         {
             Logger.LogMessage("DEBUG", "SHOWING MAIN FORM");
 
@@ -494,7 +457,7 @@ namespace FeBuddyWinFormUI
             Logger.LogMessage("DEBUG", "AIRAC DATE WORKER COMPLETED");
         }
 
-        private void MainForm_Load(object sender, EventArgs e)
+        private void AiracDataForm_Load(object sender, EventArgs e)
         {
             Logger.LogMessage("DEBUG", "LOADING MAIN FORM");
 
@@ -510,6 +473,9 @@ namespace FeBuddyWinFormUI
             informationToolStripMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
             settingsToolStripMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
             reportIssuesToolStripMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
+            //mainMenuMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
+            //exitMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
+
         }
 
         private void NextAiracSelection_Click(object sender, EventArgs e)
@@ -582,10 +548,29 @@ namespace FeBuddyWinFormUI
                         + "		DEL /Q \"FE-BUDDY.lnk\"\n"
                         + "	)\n"
                         + "\n"
+                        + "CD /d \"%appdata%\\Microsoft\\Windows\\Start Menu\\Programs\"\n"
+                        + " if NOT exist \"Kyle Sanders\" (\n"
+                        + "     SET OLD_START_SHORTCUT=NOT_FOUND\n"
+                        + ")\n"
+                        + "\n"
+                        + "	if exist \"Kyle Sanders\" (\n"
+                        + "		SET OLD_START_SHORTCUT=FOUND\n"
+                        + "		RD /Q /S \"Kyle Sanders\"\n"
+                        + "	)\n"
+                        + "\n"
+                        + "	if NOT exist FE-BUDDY.lnk (\n"
+                        + "		SET /A NOT_FOUND_COUNT=%NOT_FOUND_COUNT% + 1\n"
+                        + "		SET NEW_START_SHORTCUT=NOT_FOUND\n"
+                        + "	)\n"
+                        + "\n"
+                        + "	if exist FE-BUDDY.lnk (\n"
+                        + "		SET NEW_START_SHORTCUT=FOUND\n"
+                        + "		DEL /Q \"FE-BUDDY.lnk\"\n"
+                        + "	)\n"
+                        + "\n"
                         + "IF %NOT_FOUND_COUNT%==0 SET UNINSTALL_STATUS=COMPLETE\n"
-                        + "IF %NOT_FOUND_COUNT%==1 SET UNINSTALL_STATUS=PARTIAL\n"
-                        + "IF %NOT_FOUND_COUNT%==2 SET UNINSTALL_STATUS=PARTIAL\n"
-                        + "IF %NOT_FOUND_COUNT%==3 SET UNINSTALL_STATUS=FAIL\n"
+                        + "IF %NOT_FOUND_COUNT% GEQ 1 SET UNINSTALL_STATUS=PARTIAL\n"
+                        + "IF %NOT_FOUND_COUNT%==4 SET UNINSTALL_STATUS=FAIL\n"
                         + "\n"
                         + "IF %UNINSTALL_STATUS%==COMPLETE GOTO UNINSTALLED\n"
                         + "IF %UNINSTALL_STATUS%==PARTIAL GOTO UNINSTALLED\n"
@@ -602,6 +587,8 @@ namespace FeBuddyWinFormUI
                         + "IF %FE-BUDDY_TEMP_FOLDER%==FOUND ECHO        -temp\\FE-BUDDY\n"
                         + "IF %FE-BUDDY_APPDATA_FOLDER%==FOUND ECHO        -AppData\\Local\\FE-BUDDY\n"
                         + "IF %FE-BUDDY_SHORTCUT%==FOUND ECHO        -Desktop\\FE-BUDDY Shortcut\n"
+                        + "IF %OLD_START_SHORTCUT%==FOUND ECHO        -Start Menu\\Kyle Sanders\n"
+                        + "IF %NEW_START_SHORTCUT%==FOUND ECHO        -Start Menu\\FE-BUDDY Shortcut\n"
                         + "\n"
                         + ":FAILED\n"
                         + "\n"
@@ -619,6 +606,7 @@ namespace FeBuddyWinFormUI
                         + "		ECHO        -Desktop\\FE-BUDDY Shortcut\n"
                         + "		ECHO             --If the shortcut was renamed, delete the shortcut manually.\n"
                         + "	)\n"
+                        + " IF %NEW_START_SHORTCUT%==NOT_FOUND ECHO        -Start Menu\\FE-BUDDY Shortcut\n"
                         + ")\n"
                         + "\n"
                         + "ECHO.\n"
@@ -691,6 +679,36 @@ namespace FeBuddyWinFormUI
             Logger.LogMessage("DEBUG", "REPORT ISSUES MENU ITEM CLICKED");
             Process.Start(new ProcessStartInfo("https://github.com/Nikolai558/FE-BUDDY/issues") { UseShellExecute = true });
             //Process.Start("https://github.com/Nikolai558/FE-BUDDY/issues");
+        }
+
+        private void allowBetaMenuItem_Click(object sender, EventArgs e)
+        {
+            if (!Properties.Settings.Default.AllowPreRelease)
+            {
+
+                DialogResult warningMSG = MessageBox.Show(
+                    "WARNING: \nDO NOT ENABLE THIS UNLESS \nTOLD TO DO SO BY THE DEVELOPER\n\n Enable Dev testing Mode?",
+                    "DEV TESTING MODE",
+                    MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Stop,
+                    MessageBoxDefaultButton.Button2);
+
+
+                if (warningMSG == DialogResult.Yes)
+                {
+                    allowBetaMenuItem.Checked = !allowBetaMenuItem.Checked;
+
+                    Properties.Settings.Default.AllowPreRelease = allowBetaMenuItem.Checked;
+                    Properties.Settings.Default.Save();
+                }
+            }
+            else
+            {
+                allowBetaMenuItem.Checked = !allowBetaMenuItem.Checked;
+
+                Properties.Settings.Default.AllowPreRelease = allowBetaMenuItem.Checked;
+                Properties.Settings.Default.Save();
+            }
         }
     }
 }

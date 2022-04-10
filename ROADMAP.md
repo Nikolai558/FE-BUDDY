@@ -49,6 +49,8 @@ The following is a list of features that we are considering or actively working 
 
 - [ ] Prepare program for CRC formats.
 
+- [ ] Separate "Low" and "High" airways by appropriate altitudes
+
 - [ ] Complete ARTCC File management and editing
   - Break each facility up into individual maps and properties and allow the user to edit their data via GUI and have the program rebuild it each time there is a release. Ref: ZLC FE ASSISTANT batch file system.
 

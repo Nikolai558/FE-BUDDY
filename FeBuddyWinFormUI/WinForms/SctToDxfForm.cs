@@ -7,7 +7,6 @@ using System;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Drawing;
-using System.Drawing.Drawing2D;
 using System.Drawing.Text;
 using System.IO;
 using System.Reflection;
@@ -15,48 +14,32 @@ using System.Windows.Forms;
 
 namespace FeBuddyWinFormUI
 {
-    public partial class LandingForm : Form
+    public partial class SctToDxfForm : Form
     {
         private readonly string _currentVersion;
         readonly PrivateFontCollection _pfc = new PrivateFontCollection();
-        
-        public LandingForm(string currentVersion)
+
+        public SctToDxfForm(string currentVersion)
         {
             Logger.LogMessage("DEBUG", "INITIALIZING COMPONENT");
-
             _pfc.AddFontFile("Properties\\romantic.ttf");
-
-            this.FormClosed += (s, args) => Application.Exit();
-
-            _currentVersion = currentVersion;
 
             InitializeComponent();
             menuStrip.Renderer = new MyRenderer();
 
-
             // It should grab from the assembily info. 
-            this.Text = $"FE-BUDDY - V{_currentVersion}";
-            this.allowBetaMenuItem.Checked = Properties.Settings.Default.AllowPreRelease;
+            this.Text = $"FE-BUDDY - V{currentVersion}";
+
+            airacCycleGroupBox.Enabled = false;
+            airacCycleGroupBox.Visible = false;
+
+            GlobalConfig.outputDirBase = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+            _currentVersion = currentVersion;
         }
 
         private class MyRenderer : ToolStripProfessionalRenderer
         {
             public MyRenderer() : base(new MyColors()) { }
-
-            protected override void OnRenderItemCheck(ToolStripItemImageRenderEventArgs e)
-            {
-                e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
-                var r = new Rectangle(e.ImageRectangle.Location, e.ImageRectangle.Size);
-                r.Inflate(-4, -6);
-                e.Graphics.DrawLines(new Pen(Color.Green, 2), new Point[]{
-                new Point(r.Left, r.Bottom - r.Height /2),
-                new Point(r.Left + r.Width /3,  r.Bottom),
-                new Point(r.Right, r.Top)});
-
-                // this is incharge of changing the checkbox apearance..... figure out how I want it to look and what I can do to get it there.
-                // This is base render (default) leave this until our custom apearance can be "rendered"
-                // base.OnRenderItemCheck(e);
-            }
         }
 
         private class MyColors : ProfessionalColorTable
@@ -77,44 +60,23 @@ namespace FeBuddyWinFormUI
             {
                 get { return Color.Black; }
             }
+
             public override Color MenuItemPressedGradientEnd
             {
                 get { return Color.Black; }
             }
-            public override Color CheckBackground
-            {
-                get { return Color.Black; }
-            }
-            public override Color MenuItemBorder
-            {
-                get { return Color.Gray; }
-            }
-            public override Color ToolStripBorder
-            {
-                get { return Color.Black; }
-            }
-            public override Color ToolStripDropDownBackground
-            {
-                get { return Color.Black; }
-            }
         }
 
-        private void LandingForm_Closing(object sender, EventArgs e)
+        private void SctToDxfForm_Closing(object sender, EventArgs e)
         {
-            Logger.LogMessage("DEBUG", "Landing FORM CLOSING");
+            Logger.LogMessage("DEBUG", "SctToDxfForm_Closing");
         }
 
-        private void LandingForm_Shown(object sender, EventArgs e)
+        private void AiracDataForm_Load(object sender, EventArgs e)
         {
-            Logger.LogMessage("DEBUG", "SHOWING Landing FORM");
-        }
-
-        private void LandingForm_Load(object sender, EventArgs e)
-        {
-            Logger.LogMessage("DEBUG", "LOADING Landing FORM");
-
+            Logger.LogMessage("DEBUG", "LOADING MAIN FORM");
             
-            // TODO - Add fonts to buttons. 
+            // TODO - Add fonts to buttons?
             InstructionsMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
             CreditsMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
             ChangeLogMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
@@ -122,12 +84,13 @@ namespace FeBuddyWinFormUI
             FAQMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
             RoadmapMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
             informationToolStripMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
-            discordToolStripMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
             settingsToolStripMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
             reportIssuesToolStripMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
-            allowBetaMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular); 
+            discordToolStripMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
+            //mainMenuMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
+            //exitMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
         }
-        
+
         private void UninstallMenuItem_Click(object sender, EventArgs e)
         {
             Logger.LogMessage("WARNING", "UNINSTALL MENU ITEM CLICKED");
@@ -181,10 +144,29 @@ namespace FeBuddyWinFormUI
                         + "		DEL /Q \"FE-BUDDY.lnk\"\n"
                         + "	)\n"
                         + "\n"
+                        + "CD /d \"%appdata%\\Microsoft\\Windows\\Start Menu\\Programs\"\n"
+                        + " if NOT exist \"Kyle Sanders\" (\n"
+                        + "     SET OLD_START_SHORTCUT=NOT_FOUND\n"
+                        + ")\n"
+                        + "\n"
+                        + "	if exist \"Kyle Sanders\" (\n"
+                        + "		SET OLD_START_SHORTCUT=FOUND\n"
+                        + "		RD /Q /S \"Kyle Sanders\"\n"
+                        + "	)\n"
+                        + "\n"
+                        + "	if NOT exist FE-BUDDY.lnk (\n"
+                        + "		SET /A NOT_FOUND_COUNT=%NOT_FOUND_COUNT% + 1\n"
+                        + "		SET NEW_START_SHORTCUT=NOT_FOUND\n"
+                        + "	)\n"
+                        + "\n"
+                        + "	if exist FE-BUDDY.lnk (\n"
+                        + "		SET NEW_START_SHORTCUT=FOUND\n"
+                        + "		DEL /Q \"FE-BUDDY.lnk\"\n"
+                        + "	)\n"
+                        + "\n"
                         + "IF %NOT_FOUND_COUNT%==0 SET UNINSTALL_STATUS=COMPLETE\n"
-                        + "IF %NOT_FOUND_COUNT%==1 SET UNINSTALL_STATUS=PARTIAL\n"
-                        + "IF %NOT_FOUND_COUNT%==2 SET UNINSTALL_STATUS=PARTIAL\n"
-                        + "IF %NOT_FOUND_COUNT%==3 SET UNINSTALL_STATUS=FAIL\n"
+                        + "IF %NOT_FOUND_COUNT% GEQ 1 SET UNINSTALL_STATUS=PARTIAL\n"
+                        + "IF %NOT_FOUND_COUNT%==4 SET UNINSTALL_STATUS=FAIL\n"
                         + "\n"
                         + "IF %UNINSTALL_STATUS%==COMPLETE GOTO UNINSTALLED\n"
                         + "IF %UNINSTALL_STATUS%==PARTIAL GOTO UNINSTALLED\n"
@@ -201,6 +183,8 @@ namespace FeBuddyWinFormUI
                         + "IF %FE-BUDDY_TEMP_FOLDER%==FOUND ECHO        -temp\\FE-BUDDY\n"
                         + "IF %FE-BUDDY_APPDATA_FOLDER%==FOUND ECHO        -AppData\\Local\\FE-BUDDY\n"
                         + "IF %FE-BUDDY_SHORTCUT%==FOUND ECHO        -Desktop\\FE-BUDDY Shortcut\n"
+                        + "IF %OLD_START_SHORTCUT%==FOUND ECHO        -Start Menu\\Kyle Sanders\n"
+                        + "IF %NEW_START_SHORTCUT%==FOUND ECHO        -Start Menu\\FE-BUDDY Shortcut\n"
                         + "\n"
                         + ":FAILED\n"
                         + "\n"
@@ -218,6 +202,7 @@ namespace FeBuddyWinFormUI
                         + "		ECHO        -Desktop\\FE-BUDDY Shortcut\n"
                         + "		ECHO             --If the shortcut was renamed, delete the shortcut manually.\n"
                         + "	)\n"
+                        + " IF %NEW_START_SHORTCUT%==NOT_FOUND ECHO        -Start Menu\\FE-BUDDY Shortcut\n"
                         + ")\n"
                         + "\n"
                         + "ECHO.\n"
@@ -305,7 +290,7 @@ namespace FeBuddyWinFormUI
                     MessageBoxDefaultButton.Button2);
 
 
-                if ( warningMSG == DialogResult.Yes)
+                if (warningMSG == DialogResult.Yes)
                 {
                     allowBetaMenuItem.Checked = !allowBetaMenuItem.Checked;
 
@@ -320,34 +305,6 @@ namespace FeBuddyWinFormUI
                 Properties.Settings.Default.AllowPreRelease = allowBetaMenuItem.Checked;
                 Properties.Settings.Default.Save();
             }
-        }
-
-        private void landingStartButton_MouseHover(object sender, EventArgs e)
-        {
-            var startToolTip = new ToolTip();
-            startToolTip.SetToolTip(landingStartButton, "I'm not your friend, Guy...");
-        }
-
-        private void landingStartButton_Click(object sender, EventArgs e)
-        {
-            if (getparseAiracDataSelection.Checked)
-            {
-                var airacDataForm = new AiracDataForm(_currentVersion);
-                airacDataForm.FormClosing += (s, args) => this.Close();
-                airacDataForm.Show();
-                this.Hide();
-            }else if(convertSct2DxfSelection.Checked)
-            {
-                var sctToDxfForm = new SctToDxfForm(_currentVersion);
-                sctToDxfForm.FormClosing += (s, args) => this.Close();
-                sctToDxfForm.Show();
-                this.Hide();
-            }
-            else
-            {
-                MessageBox.Show("This feature has not been implemented yet.");
-            }
-
         }
 
         private void discordToolStripMenuItem_Click(object sender, EventArgs e)

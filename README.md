@@ -20,10 +20,8 @@
 
 ### FUNCTION:
 Converts the FAA National Airspace System Resource (NASR) Data (and other sources) to formats that may be used by Virtual RADAR Clients on the VATSIM network for free up to 28 days prior to an AIRAC effective date.
-- Alias Files
-- SCT2 Files
-- GeoMaps
-- vERAM/vSTARS NAVDATA
+
+See https://github.com/Nikolai558/FE-BUDDY/blob/development/ROADMAP.md for more information on future features.
 
 ---
 

@@ -35,5 +35,7 @@ namespace FeBuddyLibrary.Models
         public string magVariation { get; set; }
 
         public List<RunwayModel> Runways { get; set; }
+
+        public AptWxModel AptWx { get; set; }
     }
 }

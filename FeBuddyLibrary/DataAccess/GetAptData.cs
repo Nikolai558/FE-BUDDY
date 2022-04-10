@@ -379,6 +379,18 @@ namespace FeBuddyLibrary.DataAccess
                 allAptModels.Add(airport);
             }
 
+            GetAptWxData aptWxData = new GetAptWxData();
+            Dictionary<string, AptWxModel> allAptWxInfo = aptWxData.GetAptWxDataMain(effectiveDate);
+
+            foreach (string aptFaaCode in allAptWxInfo.Keys)
+            {
+                var aptModel = allAptModels.Find(x => x.Id == aptFaaCode);
+                if (aptModel is not null)
+                {
+                    aptModel.AptWx = allAptWxInfo[aptFaaCode];
+                }
+            }
+
             GlobalConfig.allAptModelsForCheck = allAptModels;
             Logger.LogMessage("INFO", $"COMPLETED PARSING APT DATA");
 
@@ -584,11 +596,17 @@ namespace FeBuddyLibrary.DataAccess
 
                 elvation = apt.Elv;
 
-                sb.AppendLine($".APT{apt.Id} .MSG {Artcc}_ISR *** FAA-{apt.Id} : ICAO-{icao} ___ {apt.Name} {apt.Type} ___ {elvation}'MSL ___ {tower} ___ {apt.ResArtcc}");
+                string aptWxString = "";
+                if (apt.AptWx is not null)
+                {
+                    aptWxString = $" ___ {apt.AptWx.SensorType}-{apt.AptWx.StationFreq}";
+                }
+
+                sb.AppendLine($".APT{apt.Id} .MSG {Artcc}_ISR *** FAA-{apt.Id} : ICAO-{icao} ___ {apt.Name} {apt.Type} ___ {elvation}'MSL ___ {tower} ___ {apt.ResArtcc}{aptWxString}");
 
                 if (apt.Icao != "")
                 {
-                    sb.AppendLine($".APT{apt.Icao} .MSG {Artcc}_ISR *** FAA-{apt.Id} : ICAO-{icao} ___ {apt.Name} {apt.Type} ___ {elvation}'MSL ___ {tower} ___ {apt.ResArtcc}");
+                    sb.AppendLine($".APT{apt.Icao} .MSG {Artcc}_ISR *** FAA-{apt.Id} : ICAO-{icao} ___ {apt.Name} {apt.Type} ___ {elvation}'MSL ___ {tower} ___ {apt.ResArtcc}{aptWxString}");
                 }
             }
 

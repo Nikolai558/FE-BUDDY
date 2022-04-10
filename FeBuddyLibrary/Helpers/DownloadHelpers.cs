@@ -29,7 +29,8 @@ namespace FeBuddyLibrary.Helpers
                     { $"{effectiveDate}_FIX.zip", $"https://nfdc.faa.gov/webContent/28DaySub/{effectiveDate}/FIX.zip" },
                     { $"{effectiveDate}_NAV.zip", $"https://nfdc.faa.gov/webContent/28DaySub/{effectiveDate}/NAV.zip"},
                     { $"{airacCycle}_TELEPHONY.html", $"https://www.faa.gov/air_traffic/publications/atpubs/cnt_html/chap3_section_2.html" },
-                    { $"{effectiveDate}_NWS-WX-STATIONS.xml", $"https://w1.weather.gov/xml/current_obs/index.xml" }
+                    { $"{effectiveDate}_NWS-WX-STATIONS.xml", $"https://w1.weather.gov/xml/current_obs/index.xml" },
+                    { $"{effectiveDate}_AWOS.zip", $"https://nfdc.faa.gov/webContent/28DaySub/{effectiveDate}/AWOS.zip" }
                 };
             }
             else
@@ -47,7 +48,8 @@ namespace FeBuddyLibrary.Helpers
                     { $"{effectiveDate}_FIX.zip", $"https://nfdc.faa.gov/webContent/28DaySub/{effectiveDate}/FIX.zip" },
                     { $"{effectiveDate}_NAV.zip", $"https://nfdc.faa.gov/webContent/28DaySub/{effectiveDate}/NAV.zip"},
                     { $"{airacCycle}_TELEPHONY.html", $"https://www.faa.gov/air_traffic/publications/atpubs/cnt_html/chap3_section_2.html" },
-                    { $"{effectiveDate}_NWS-WX-STATIONS.xml", $"https://w1.weather.gov/xml/current_obs/index.xml" }
+                    { $"{effectiveDate}_NWS-WX-STATIONS.xml", $"https://w1.weather.gov/xml/current_obs/index.xml" },
+                    { $"{effectiveDate}_AWOS.zip", $"https://nfdc.faa.gov/webContent/28DaySub/{effectiveDate}/AWOS.zip" }
                 };
             }
 

@@ -27,8 +27,8 @@ namespace FeBuddyLibrary.Dxf.Data
             {
                 SctFileColors = GetSctColors(GetSctFileSection("Colors")),
                 SctInfoSection = GetSctInfo(GetSctFileSection("[INFO]")),
-                SctVORSection = GetSctVors(GetSctFileSection("[VOR]")),
-                SctNDBSection = GetSctNnbs(GetSctFileSection("[NDB]")),
+                SctVORSection = GetSctNnbsAndVORS(GetSctFileSection("[VOR]")),
+                SctNDBSection = GetSctNnbsAndVORS(GetSctFileSection("[NDB]")),
                 SctAirportSection = GetSctAirports(GetSctFileSection("[AIRPORT]")),
                 SctRunwaySection = GetSctRunways(GetSctFileSection("[RUNWAY]")),
                 SctFixesSection = GetSctFixes(GetSctFileSection("[FIXES]")),
@@ -80,20 +80,12 @@ namespace FeBuddyLibrary.Dxf.Data
             return result;
             throw new NotImplementedException();
         }
-        private List<VORNDBModel> GetSctNnbs(string[] vs)
+        private List<VORNDBModel> GetSctNnbsAndVORS(string[] vs)
         {
             var result = new List<VORNDBModel>();
             return result;
             throw new NotImplementedException();
         }
-
-        private List<VORNDBModel> GetSctVors(string[] vs)
-        {
-            var result = new List<VORNDBModel>();
-            return result;
-            throw new NotImplementedException();
-        }
-
 
         private List<SctArtccModel> ParseArtccModels(string[] vs)
         {

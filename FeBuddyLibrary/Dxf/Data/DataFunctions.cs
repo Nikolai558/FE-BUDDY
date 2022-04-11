@@ -32,13 +32,13 @@ namespace FeBuddyLibrary.Dxf.Data
                 SctAirportSection = GetSctAirports(GetSctFileSection("[AIRPORT]")),
                 SctRunwaySection = GetSctRunways(GetSctFileSection("[RUNWAY]")),
                 SctFixesSection = GetSctFixes(GetSctFileSection("[FIXES]")),
-                SctArtccSection = GetSctArtcc(GetSctFileSection("[ARTCC]")),
-                SctArtccHighSection = GetSctHighArtcc(GetSctFileSection("[ARTCC HIGH]")),
-                SctArtccLowSection = GetSctLowArtcc(GetSctFileSection("[ARTCC LOW]")),
+                SctArtccSection = ParseArtccModels(GetSctFileSection("[ARTCC]")),
+                SctArtccHighSection = ParseArtccModels(GetSctFileSection("[ARTCC HIGH]")),
+                SctArtccLowSection = ParseArtccModels(GetSctFileSection("[ARTCC LOW]")),
                 SctSidSection = GetSctSidsAndStars(GetSctFileSection("[SID]")),
                 SctStarSection = GetSctSidsAndStars(GetSctFileSection("[STAR]")),
-                SctLowAirwaySection = GetSctLowAirway(GetSctFileSection("[LOW AIRWAY]")),
-                SctHighAirwaySection = GetSctHighAirway(GetSctFileSection("[HIGH AIRWAY]")),
+                SctLowAirwaySection = ParseArtccModels(GetSctFileSection("[LOW AIRWAY]")),
+                SctHighAirwaySection = ParseArtccModels(GetSctFileSection("[HIGH AIRWAY]")),
                 SctGeoSection = GetSctGeo(GetSctFileSection("[GEO]")),
                 SctRegionsSection = GetSctRegions(GetSctFileSection("[REGIONS]")),
                 SctLabelSection = GetSctLabels(GetSctFileSection("[LABELS]")),
@@ -67,19 +67,75 @@ namespace FeBuddyLibrary.Dxf.Data
             return result;
             throw new NotImplementedException();
         }
-
-        private List<SctArtccModel> GetSctHighAirway(string[] vs)
+        private List<SctFixesModel> GetSctFixes(string[] vs)
         {
-            var result = new List<SctArtccModel>();
+            var result = new List<SctFixesModel>();
             return result;
             throw new NotImplementedException();
         }
 
-        private List<SctArtccModel> GetSctLowAirway(string[] vs)
+        private List<SctRunwayModel> GetSctRunways(string[] vs)
         {
-            var result = new List<SctArtccModel>();
+            var result = new List<SctRunwayModel>();
             return result;
             throw new NotImplementedException();
+        }
+        private List<VORNDBModel> GetSctNnbs(string[] vs)
+        {
+            var result = new List<VORNDBModel>();
+            return result;
+            throw new NotImplementedException();
+        }
+
+        private List<VORNDBModel> GetSctVors(string[] vs)
+        {
+            var result = new List<VORNDBModel>();
+            return result;
+            throw new NotImplementedException();
+        }
+
+
+        private List<SctArtccModel> ParseArtccModels(string[] vs)
+        {
+            // Incharge of doing the [ARTCC], [ARTCC HIGH], [ARTCC LOW], [AIRWAY LOW], [AIRWAY HIGH]
+            List<SctArtccModel> results = new List<SctArtccModel>();
+
+            foreach (string line in vs)
+            {
+                Regex trimmer = new Regex(@"\s\s+");
+                string _line = trimmer.Replace(line, " ");
+
+                if (_line.Split(' ').Length >= 5)
+                {
+                    string[] splitLine;
+                    string comments = "";
+                    if (_line.Contains(';'))
+                    {
+                        comments = _line[_line.IndexOf(';')..];
+                        splitLine = _line[.._line.IndexOf(';')].Trim().Split(' ');
+                    }
+                    else
+                    {
+                        splitLine = _line.Split(' ');
+                    }
+
+                    SctArtccModel airportModel = new SctArtccModel()
+                    {
+                        Name = splitLine[0],
+                        StartLat = splitLine[1],
+                        StartLon = splitLine[2],
+                        EndLat = splitLine[3],
+                        EndLon = splitLine[4],
+                    };
+
+                    if (!string.IsNullOrEmpty(comments))
+                    {
+                        airportModel.Comments = comments;
+                    }
+                    results.Add(airportModel);
+                }
+            }
+            return results;
         }
 
         private List<SctSidStarModel> GetSctSidsAndStars(string[] vs)
@@ -89,25 +145,26 @@ namespace FeBuddyLibrary.Dxf.Data
             bool inDiagram = false;
             string diagramName = "";
             SctSidStarModel diagramModel = null;
+
             foreach (string line in vs)
             {
-                
-
                 if (line.Length < 26)
                 {
+                    // Line does not have enough characters to do the required parsing so we will just ignore it.
                     inDiagram = false;
                     continue;
                 }
-
                 if (!inDiagram && line[..26].Trim() == "")
                 {
+                    // Line is blank or We have not read the first part of the diagram yet
                     continue;
                 }
-
                 if (!string.IsNullOrWhiteSpace(line[..26].Trim()) && !line[..26].Contains('\t') && line[..26].Trim() != diagramName)
                 {
+                    // Line starts with diagram name so we are either a new diagram or the first diagram
                     if (inDiagram && diagramModel is not null)
                     {
+                        // We have completed the previous diagram so we need to add it to our list
                         result.Add(diagramModel);
                     }
                     inDiagram = true;
@@ -123,13 +180,16 @@ namespace FeBuddyLibrary.Dxf.Data
                     };
                     if (line[26..].Split(' ').Length > 4)
                     {
+                        // Some diagrams name lines do not have colors assigned to them. If it is there put it in else ignore.
                         diagramModel.Color = line[26..].Split(' ')[4];
                     }
                     continue;
                 }
 
+                // Some lines do not have colors associated with it. we have to check that. 
                 if (line[26..].Split(' ').Length > 4)
                 {
+                    // We are in a diagram this additional line segment goes with it
                     diagramModel.AdditionalLines.Add(new SctAditionalDiagramLineSegments()
                     {
                         StartLat = line[26..].Split(' ')[0],
@@ -141,6 +201,7 @@ namespace FeBuddyLibrary.Dxf.Data
                 }
                 else
                 {
+                    // We are in a diagram this additional line segment goes with it
                     diagramModel.AdditionalLines.Add(new SctAditionalDiagramLineSegments()
                     {
                         StartLat = line[26..].Split(' ')[0],
@@ -150,68 +211,58 @@ namespace FeBuddyLibrary.Dxf.Data
                     });
                 }
             }
+            // This is the last diagram we need to be sure to add it to our list.
             if (inDiagram && diagramModel is not null)
             {
                 result.Add(diagramModel);
             }
-
             return result;
-        }
-
-        private List<SctArtccModel> GetSctLowArtcc(string[] vs)
-        {
-            var result = new List<SctArtccModel>();
-            return result;
-            throw new NotImplementedException();
-        }
-
-        private List<SctArtccModel> GetSctHighArtcc(string[] vs)
-        {
-            var result = new List<SctArtccModel>();
-            return result;
-            throw new NotImplementedException();
-        }
-
-        private List<SctArtccModel> GetSctArtcc(string[] vs)
-        {
-            var result = new List<SctArtccModel>();
-            return result;
-            throw new NotImplementedException();
-        }
-
-        private List<SctFixesModel> GetSctFixes(string[] vs)
-        {
-            var result = new List<SctFixesModel>();
-            return result;
-            throw new NotImplementedException();
-        }
-
-        private List<SctRunwayModel> GetSctRunways(string[] vs)
-        {
-            var result = new List<SctRunwayModel>();
-            return result;
-            throw new NotImplementedException();
         }
 
         private List<SctAirportModel> GetSctAirports(string[] vs)
         {
-            var result = new List<SctAirportModel>();
-            return result;
-            throw new NotImplementedException();
-        }
+            List<SctAirportModel> results = new List<SctAirportModel>();
 
-        private List<VORNDBModel> GetSctNnbs(string[] vs)
-        {
-            var result = new List<VORNDBModel>();
-            return result;
-            throw new NotImplementedException();
-        }
+            foreach (string line in vs)
+            {
+                Regex trimmer = new Regex(@"\s\s+");
+                string _line = trimmer.Replace(line, " ");
 
-        private List<VORNDBModel> GetSctVors(string[] vs)
-        {
-            var result = new List<VORNDBModel>();
-            return result;
-            throw new NotImplementedException();
+                if (_line.Split(' ').Length > 3)
+                {
+                    string[] splitLine;
+                    string comments = "";
+                    if (_line.Contains(';'))
+                    {
+                        comments = _line[_line.IndexOf(';')..];
+                        splitLine = _line[.._line.IndexOf(';')].Trim().Split(' ');
+                    }
+                    else
+                    {
+                        splitLine = _line.Split(' ');
+                    }
+
+                    SctAirportModel airportModel = new SctAirportModel()
+                    {
+                        Id = splitLine[0],
+                        Frequency = splitLine[1],
+                        Lat = splitLine[2],
+                        Lon = splitLine[3],
+                    };
+
+                    if (splitLine.Length > 4)
+                    {
+                        airportModel.Airspace = splitLine[4];
+                    }
+
+                    if (!string.IsNullOrEmpty(comments))
+                    {
+                        airportModel.Comments = comments;
+                    }
+                    results.Add(airportModel);
+                }
+            }
+            return results;
         }
 
         private SctInfoModel GetSctInfo(string[] vs)

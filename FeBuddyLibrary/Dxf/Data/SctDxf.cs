@@ -22,6 +22,7 @@ namespace FeBuddyLibrary.Dxf.Data
 
         public void CreateSidDxf()
         {
+            // TODO Fix File path! 
             string _outputFilePath = @"C:\Users\nikol\Desktop\DXF Conversions";
             StringBuilder sb = new StringBuilder();
 
@@ -29,6 +30,8 @@ namespace FeBuddyLibrary.Dxf.Data
             foreach (SctSidStarModel sctSid in _sctFileModel.SctSidSection)
             {
                 diagramName = sctSid.DiagramName;
+                diagramName = diagramName.Replace('/', ' ');
+                // TODO - FIGURE OUT IF CONVERTING E CORDINATES IS NEEDED! 
                 sb.AppendLine("  0\nSECTION\n  2\nENTITIES");
                 sb.AppendLine("  0\nLINE\n 62\n7\n 8");
                 sb.AppendLine("SID_" + diagramName);
@@ -63,6 +66,7 @@ namespace FeBuddyLibrary.Dxf.Data
 
         public void CreateStarDxf()
         {
+            // TODO Fix File path! 
             string _outputFilePath = @"C:\Users\nikol\Desktop\DXF Conversions";
             StringBuilder sb = new StringBuilder();
 
@@ -71,7 +75,7 @@ namespace FeBuddyLibrary.Dxf.Data
             {
                 diagramName = sctSid.DiagramName;
                 diagramName = diagramName.Replace('/', ' ');
-
+                // TODO - FIGURE OUT IF CONVERTING E CORDINATES IS NEEDED! 
                 sb.AppendLine("  0\nSECTION\n  2\nENTITIES");
                 sb.AppendLine("  0\nLINE\n 62\n7\n 8");
                 sb.AppendLine("STAR_" + diagramName);

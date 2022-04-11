@@ -156,8 +156,6 @@ namespace FeBuddyLibrary.Dxf.Data
             }
 
             return result;
-
-            throw new NotImplementedException();
         }
 
         private List<SctArtccModel> GetSctLowArtcc(string[] vs)

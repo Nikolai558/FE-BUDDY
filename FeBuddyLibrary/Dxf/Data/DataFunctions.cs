@@ -157,6 +157,20 @@ namespace FeBuddyLibrary.Dxf.Data
 
         private string[] GetSctFileSection(string Category)
         {
+            // http://regexstorm.net/tester (Regex testing website.)
+            // https://regexr.com/ (Another Regex Website)
+
+            // TODO - Alot of these are the same, could probably simplifiy this function.
+            //string _category = $"\\{Category[..^1]}\\]";
+            //string _regexPattern = "(" + _category + @"(.|\n)*?(?=\[))";
+            //Regex _regex = new Regex(_regexPattern);
+
+            //return Category switch
+            //{
+            //    "Colors" => new Regex(@"#define.+").Matches(_sectorFileText).Cast<Match>().Select(match => match.Value.Trim()).ToArray(),
+            //    _ => _regex.Match(_sectorFileText).Value.Trim().Split("\n"),
+            //};
+
             return Category switch
             {
                 "Colors" => new Regex(@"#define.+").Matches(_sectorFileText).Cast<Match>().Select(match => match.Value.Trim()).ToArray(),

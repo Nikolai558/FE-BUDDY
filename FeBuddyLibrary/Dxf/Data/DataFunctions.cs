@@ -21,6 +21,8 @@ namespace FeBuddyLibrary.Dxf.Data
 
             _sectorFileText = File.ReadAllText(_sectorFilePath) + "\n[END]";
 
+            // TODO - What happens if a sct file does not have one or more of the following categories? 
+
             _sctFileModel = new SctFileModel()
             {
                 SctFileColors = GetSctColors(GetSctFileSection("Colors")),

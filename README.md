@@ -3,7 +3,7 @@
 
 ---
 
-## [DOWNLOAD](github.com/Nikolai558/FE-BUDDY/releases/latest/download/FE-BUDDYSetup.exe)
+## [DOWNLOAD](github.com/Nikolai558/FE-BUDDY/releases/download/latest/FE-BUDDYSetup.exe)
 
 ---
 

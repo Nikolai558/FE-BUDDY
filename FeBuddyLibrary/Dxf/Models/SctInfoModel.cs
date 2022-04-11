@@ -15,14 +15,14 @@ namespace FeBuddyLibrary.Dxf.Models
         public string NMPerLon { get; set; }
         public string MagneticVariation { get; set; }
         public string SctScale { get; set; }
-        public List<string> AdditionalLines { get; set; }
+        public string[] AdditionalLines { get; set; }
 
         public string AllInfo { 
             get
             {
                 string output = $"{Header}\n{SctFileName}\n{DefaultCallsign}\n{DefaultAirport}\n{CenterLat}\n{CenterLon}\n{NMPerLat}\n{NMPerLon}\n{MagneticVariation}\n{SctScale}\n";
 
-                if (AdditionalLines?.Count > 0)
+                if (AdditionalLines?.Length > 0)
                 {
                     foreach (string line in AdditionalLines)
                     {

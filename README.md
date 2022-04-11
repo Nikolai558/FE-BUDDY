@@ -3,6 +3,10 @@
 
 ---
 
+## [DOWNLOAD](github.com/Nikolai558/FE-BUDDY/releases/latest/download/FE-BUDDYSetup.exe)
+
+---
+
 ![GitHub release (latest by date)](https://img.shields.io/github/v/release/Nikolai558/FE-BUDDY?style=for-the-badge)
 ![GitHub repo size](https://img.shields.io/github/repo-size/Nikolai558/FE-BUDDY?style=for-the-badge)
 ![GitHub](https://img.shields.io/github/license/Nikolai558/FE-BUDDY?style=for-the-badge)

@@ -67,12 +67,6 @@ namespace FeBuddyLibrary.Dxf.Data
             return result;
             throw new NotImplementedException();
         }
-        private List<SctFixesModel> GetSctFixes(string[] vs)
-        {
-            var result = new List<SctFixesModel>();
-            return result;
-            throw new NotImplementedException();
-        }
 
         private List<SctRunwayModel> GetSctRunways(string[] vs)
         {
@@ -80,11 +74,85 @@ namespace FeBuddyLibrary.Dxf.Data
             return result;
             throw new NotImplementedException();
         }
+
+        private List<SctFixesModel> GetSctFixes(string[] vs)
+        {
+            var result = new List<SctFixesModel>();
+
+            foreach (string line in vs)
+            {
+                Regex trimmer = new Regex(@"\s\s+");
+                string _line = trimmer.Replace(line, " ");
+
+                string[] splitLine;
+                string comments = "";
+                if (_line.Contains(';'))
+                {
+                    comments = _line[_line.IndexOf(';')..];
+                    splitLine = _line[.._line.IndexOf(';')].Trim().Split(' ');
+                }
+                else
+                {
+                    splitLine = _line.Split(' ');
+                }
+
+                if (splitLine.Length > 2)
+                {
+                    SctFixesModel model = new SctFixesModel()
+                    {
+                        FixName = splitLine[0],
+                        Lat = splitLine[1],
+                        Lon = splitLine[2],
+                    };
+                    if (!string.IsNullOrWhiteSpace(comments))
+                    {
+                        model.Comments = comments;
+                    }
+                    result.Add(model);
+                }
+            }
+            return result;
+        }
+
         private List<VORNDBModel> GetSctNnbsAndVORS(string[] vs)
         {
-            var result = new List<VORNDBModel>();
-            return result;
-            throw new NotImplementedException();
+            List<VORNDBModel> results = new List<VORNDBModel>();
+
+            foreach (string line in vs)
+            {
+                Regex trimmer = new Regex(@"\s\s+");
+                string _line = trimmer.Replace(line, " ");
+
+                if (_line.Split(' ').Length > 3)
+                {
+                    string[] splitLine;
+                    string comments = "";
+                    if (_line.Contains(';'))
+                    {
+                        comments = _line[_line.IndexOf(';')..];
+                        splitLine = _line[.._line.IndexOf(';')].Trim().Split(' ');
+                    }
+                    else
+                    {
+                        splitLine = _line.Split(' ');
+                    }
+
+                    VORNDBModel newModel = new VORNDBModel()
+                    {
+                        Id = splitLine[0],
+                        Frequency = splitLine[1],
+                        Lat = splitLine[2],
+                        Lon = splitLine[3],
+                    };
+
+                    if (!string.IsNullOrEmpty(comments))
+                    {
+                        newModel.Comments = comments;
+                    }
+                    results.Add(newModel);
+                }
+            }
+            return results;
         }
 
         private List<SctArtccModel> ParseArtccModels(string[] vs)

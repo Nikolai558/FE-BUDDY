@@ -20,6 +20,38 @@ namespace FeBuddyLibrary.Dxf.Data
             CreateStarDxf();
             CreateAirportsDxf();
             CreateSctArtccModelStuff();
+            CreateNdbAndVorDxf();
+            CreateFixesDxf();
+        }
+
+        private void CreateFixesDxf()
+        {
+            // TODO Fix File path! 
+            string _outputFilePath = @"C:\Users\nikol\Desktop\DXF Conversions";
+            StringBuilder sb;
+
+            sb = new StringBuilder();
+            sb.AppendLine("  0\nSECTION\n  2\nENTITIES");
+
+
+            foreach (var model in _sctFileModel.SctFixesSection)
+            {
+                sb.AppendLine("  0\nINSERT\n  8\nFIX\n  2\nFIX");
+                sb.AppendLine(" 10");
+                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(model.Lon, false, false), false));
+                sb.AppendLine(" 20");
+                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(model.Lat, true, false), false));
+                sb.AppendLine("  0\nTEXT\n  8\nFIX");
+                sb.AppendLine(" 10");
+                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(model.Lon, false, false), false));
+                sb.AppendLine(" 20");
+                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(model.Lat, true, false), false));
+                sb.AppendLine(" 40\n0.006\n  1");
+                sb.AppendLine(model.FixName);
+            }
+            sb.AppendLine("  0\nENDSEC");
+            sb.AppendLine("  0\nEOF");
+            File.WriteAllText(_outputFilePath + @"\FIX.dxf", sb.ToString());
         }
 
         private void CreateSidDxf()
@@ -176,6 +208,45 @@ namespace FeBuddyLibrary.Dxf.Data
                     sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(artccModel.EndLat, true, false), false));
                 }
 
+                sb.AppendLine("  0\nENDSEC");
+                sb.AppendLine("  0\nEOF");
+                File.WriteAllText(_outputFilePath + $"\\{diagramType}.dxf", sb.ToString());
+            }
+        }
+
+        private void CreateNdbAndVorDxf()
+        {
+            // TODO Fix File path! 
+            string _outputFilePath = @"C:\Users\nikol\Desktop\DXF Conversions";
+            StringBuilder sb;
+
+            var sctArtccModelList = new Dictionary<string, List<VORNDBModel>>()
+            {
+                { "NDB",  _sctFileModel.SctNDBSection},
+                { "VOR",  _sctFileModel.SctVORSection},
+            };
+
+            foreach (string diagramType in sctArtccModelList.Keys)
+            {
+                sb = new StringBuilder();
+                sb.AppendLine("  0\nSECTION\n  2\nENTITIES");
+
+
+                foreach (var model in sctArtccModelList[diagramType])
+                {
+                    sb.AppendLine($"  0\nINSERT\n  8\n{diagramType}\n  2\n{diagramType}");
+                    sb.AppendLine(" 10");
+                    sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(model.Lon, false, false), false));
+                    sb.AppendLine(" 20");
+                    sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(model.Lat, true, false), false));
+                    sb.AppendLine($"  0\nTEXT\n  8\n{diagramType}");
+                    sb.AppendLine(" 10");
+                    sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(model.Lon, false, false), false));
+                    sb.AppendLine(" 20");
+                    sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(model.Lat, true, false), false));
+                    sb.AppendLine(" 40\n0.006\n  1");
+                    sb.AppendLine(model.Id);
+                }
                 sb.AppendLine("  0\nENDSEC");
                 sb.AppendLine("  0\nEOF");
                 File.WriteAllText(_outputFilePath + $"\\{diagramType}.dxf", sb.ToString());

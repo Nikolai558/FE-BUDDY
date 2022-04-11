@@ -35,88 +35,184 @@ namespace FeBuddyLibrary.Dxf.Data
                 SctArtccSection = GetSctArtcc(GetSctFileSection("[ARTCC]")),
                 SctArtccHighSection = GetSctHighArtcc(GetSctFileSection("[ARTCC HIGH]")),
                 SctArtccLowSection = GetSctLowArtcc(GetSctFileSection("[ARTCC LOW]")),
-                SctSidSection = GetSctSids(GetSctFileSection("[SID]")),
-                SctStarSection = GetSctStars(GetSctFileSection("[STAR]")),
+                SctSidSection = GetSctSidsAndStars(GetSctFileSection("[SID]")),
+                SctStarSection = GetSctSidsAndStars(GetSctFileSection("[STAR]")),
                 SctLowAirwaySection = GetSctLowAirway(GetSctFileSection("[LOW AIRWAY]")),
                 SctHighAirwaySection = GetSctHighAirway(GetSctFileSection("[HIGH AIRWAY]")),
                 SctGeoSection = GetSctGeo(GetSctFileSection("[GEO]")),
                 SctRegionsSection = GetSctRegions(GetSctFileSection("[REGIONS]")),
                 SctLabelSection = GetSctLabels(GetSctFileSection("[LABELS]")),
             };
+
+            SctDxf sctDxf = new SctDxf(_sctFileModel);
         }
 
         private List<SctLabelModel> GetSctLabels(string[] vs)
         {
+            var result = new List<SctLabelModel>();
+            return result;
             throw new NotImplementedException();
         }
 
         private List<SctRegionModel> GetSctRegions(string[] vs)
         {
+            var result = new List<SctRegionModel>();
+            return result;
             throw new NotImplementedException();
         }
 
         private List<SctGeoModel> GetSctGeo(string[] vs)
         {
+            var result = new List<SctGeoModel>();
+            return result;
             throw new NotImplementedException();
         }
 
         private List<SctArtccModel> GetSctHighAirway(string[] vs)
         {
+            var result = new List<SctArtccModel>();
+            return result;
             throw new NotImplementedException();
         }
 
         private List<SctArtccModel> GetSctLowAirway(string[] vs)
         {
+            var result = new List<SctArtccModel>();
+            return result;
             throw new NotImplementedException();
         }
 
-        private List<SctSidStarModel> GetSctStars(string[] vs)
+        private List<SctSidStarModel> GetSctSidsAndStars(string[] vs)
         {
-            throw new NotImplementedException();
-        }
+            List<SctSidStarModel> result = new List<SctSidStarModel>();
 
-        private List<SctSidStarModel> GetSctSids(string[] vs)
-        {
+            bool inDiagram = false;
+            string diagramName = "";
+            SctSidStarModel diagramModel = null;
+            foreach (string line in vs)
+            {
+                
+
+                if (line.Length < 26)
+                {
+                    inDiagram = false;
+                    continue;
+                }
+
+                if (!inDiagram && line[..26].Trim() == "")
+                {
+                    continue;
+                }
+
+                if (!string.IsNullOrWhiteSpace(line[..26].Trim()) && !line[..26].Contains('\t') && line[..26].Trim() != diagramName)
+                {
+                    if (inDiagram && diagramModel is not null)
+                    {
+                        result.Add(diagramModel);
+                    }
+                    inDiagram = true;
+                    diagramName = line[..26].Trim();
+                    diagramModel = new SctSidStarModel()
+                    {
+                        DiagramName = diagramName,
+                        StartLat = line[26..].Split(' ')[0],
+                        StartLon = line[26..].Split(' ')[1],
+                        EndLat = line[26..].Split(' ')[2],
+                        EndLon = line[26..].Split(' ')[3],
+                        AdditionalLines = new List<SctAditionalDiagramLineSegments>()
+                    };
+                    if (line[26..].Split(' ').Length > 4)
+                    {
+                        diagramModel.Color = line[26..].Split(' ')[4];
+                    }
+                    continue;
+                }
+
+                if (line[26..].Split(' ').Length > 4)
+                {
+                    diagramModel.AdditionalLines.Add(new SctAditionalDiagramLineSegments()
+                    {
+                        StartLat = line[26..].Split(' ')[0],
+                        StartLon = line[26..].Split(' ')[1],
+                        EndLat = line[26..].Split(' ')[2],
+                        EndLon = line[26..].Split(' ')[3],
+                        Color = line[26..].Split(' ')[4],
+                    });
+                }
+                else
+                {
+                    diagramModel.AdditionalLines.Add(new SctAditionalDiagramLineSegments()
+                    {
+                        StartLat = line[26..].Split(' ')[0],
+                        StartLon = line[26..].Split(' ')[1],
+                        EndLat = line[26..].Split(' ')[2],
+                        EndLon = line[26..].Split(' ')[3],
+                    });
+                }
+            }
+            if (inDiagram && diagramModel is not null)
+            {
+                result.Add(diagramModel);
+            }
+
+            return result;
+
             throw new NotImplementedException();
         }
 
         private List<SctArtccModel> GetSctLowArtcc(string[] vs)
         {
+            var result = new List<SctArtccModel>();
+            return result;
             throw new NotImplementedException();
         }
 
         private List<SctArtccModel> GetSctHighArtcc(string[] vs)
         {
+            var result = new List<SctArtccModel>();
+            return result;
             throw new NotImplementedException();
         }
 
         private List<SctArtccModel> GetSctArtcc(string[] vs)
         {
+            var result = new List<SctArtccModel>();
+            return result;
             throw new NotImplementedException();
         }
 
         private List<SctFixesModel> GetSctFixes(string[] vs)
         {
+            var result = new List<SctFixesModel>();
+            return result;
             throw new NotImplementedException();
         }
 
         private List<SctRunwayModel> GetSctRunways(string[] vs)
         {
+            var result = new List<SctRunwayModel>();
+            return result;
             throw new NotImplementedException();
         }
 
         private List<SctAirportModel> GetSctAirports(string[] vs)
         {
+            var result = new List<SctAirportModel>();
+            return result;
             throw new NotImplementedException();
         }
 
         private List<VORNDBModel> GetSctNnbs(string[] vs)
         {
+            var result = new List<VORNDBModel>();
+            return result;
             throw new NotImplementedException();
         }
 
         private List<VORNDBModel> GetSctVors(string[] vs)
         {
+            var result = new List<VORNDBModel>();
+            return result;
             throw new NotImplementedException();
         }
 

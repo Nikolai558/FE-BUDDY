@@ -24,6 +24,50 @@ namespace FeBuddyLibrary.Dxf.Data
             CreateFixesDxf();
             CreateRunwayDxf();
             CreateGeoDxf();
+            CreateRegionDxf();
+        }
+
+        private void CreateRegionDxf()
+        {
+            // TODO Fix File path! 
+            string _outputFilePath = @"C:\Users\nikol\Desktop\DXF Conversions";
+            StringBuilder sb = new StringBuilder();
+
+            string diagramName = "";
+            foreach (SctRegionModel model in _sctFileModel.SctRegionsSection)
+            {
+                int verticieCount = model.AdditionalRegionInfo.Count() + 2;
+                diagramName = model.RegionColorName;
+                diagramName = diagramName.Replace('/', ' ');
+                // TODO - FIGURE OUT IF CONVERTING E CORDINATES IS NEEDED! 
+                sb.AppendLine("  0\nSECTION\n  2\nENTITIES");
+                sb.AppendLine("  0\nLWPOLYLINE\n 5");
+                sb.AppendLine("REGION_" + diagramName);
+                sb.AppendLine("90\n    " + verticieCount.ToString());
+                sb.AppendLine("70\n    1\n43\n0.0");
+                sb.AppendLine(" 10");
+                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(model.Lon, false, false), false));
+                sb.AppendLine(" 20");
+                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(model.Lat, true, false), false));
+
+                foreach (RegionPolygonPoints lineSegments in model.AdditionalRegionInfo)
+                {
+                    sb.AppendLine(" 10");
+                    sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(lineSegments.Lon, false, false), false));
+                    sb.AppendLine(" 20");
+                    sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(lineSegments.Lat, true, false), false));
+                }
+
+                sb.AppendLine(" 10");
+                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(model.Lon, false, false), false));
+                sb.AppendLine(" 20");
+                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(model.Lat, true, false), false));
+
+                sb.AppendLine("  0\nENDSEC");
+            }
+            sb.AppendLine("  0\nEOF");
+
+            File.WriteAllText(_outputFilePath + @"\REGIONS.dxf", sb.ToString());
         }
 
         private void CreateGeoDxf()

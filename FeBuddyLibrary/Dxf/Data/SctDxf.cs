@@ -22,6 +22,64 @@ namespace FeBuddyLibrary.Dxf.Data
             CreateSctArtccModelStuff();
             CreateNdbAndVorDxf();
             CreateFixesDxf();
+            CreateRunwayDxf();
+            CreateGeoDxf();
+        }
+
+        private void CreateGeoDxf()
+        {
+            string _outputFilePath = @"C:\Users\nikol\Desktop\DXF Conversions";
+            StringBuilder sb;
+
+            sb = new StringBuilder();
+            sb.AppendLine("  0\nSECTION\n  2\nENTITIES");
+
+
+            foreach (var model in _sctFileModel.SctGeoSection)
+            {
+                sb.AppendLine("  0\nLINE\n 62\n56\n  8");
+                sb.AppendLine($"GEO_");
+                sb.AppendLine(" 10");
+                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(model.StartLon, false, false), false));
+                sb.AppendLine(" 20");
+                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(model.StartLat, true, false), false));
+                sb.AppendLine(" 11");
+                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(model.EndLon, false, false), false));
+                sb.AppendLine(" 21");
+                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(model.EndLat, true, false), false));
+            }
+
+            sb.AppendLine("  0\nENDSEC");
+            sb.AppendLine("  0\nEOF");
+            File.WriteAllText(_outputFilePath + $"\\GEO.dxf", sb.ToString());
+        }
+
+        private void CreateRunwayDxf()
+        {
+            string _outputFilePath = @"C:\Users\nikol\Desktop\DXF Conversions";
+            StringBuilder sb;
+
+            sb = new StringBuilder();
+            sb.AppendLine("  0\nSECTION\n  2\nENTITIES");
+
+
+            foreach (var model in _sctFileModel.SctRunwaySection)
+            {
+                sb.AppendLine("  0\nLINE\n 8");
+                sb.AppendLine($"RUNWAY {model.RunwayNumber} {model.OppositeRunwayNumber} {model.MagRunwayHeading} {model.OppositeMagRunwayHeading}");
+                sb.AppendLine(" 10");
+                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(model.StartLon, false, false), false));
+                sb.AppendLine(" 20");
+                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(model.StartLat, true, false), false));
+                sb.AppendLine(" 11");
+                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(model.EndLon, false, false), false));
+                sb.AppendLine(" 21");
+                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(model.EndLat, true, false), false));
+            }
+
+            sb.AppendLine("  0\nENDSEC");
+            sb.AppendLine("  0\nEOF");
+            File.WriteAllText(_outputFilePath + $"\\RUNWAYS.dxf", sb.ToString());
         }
 
         private void CreateFixesDxf()

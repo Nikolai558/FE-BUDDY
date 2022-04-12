@@ -56,23 +56,137 @@ namespace FeBuddyLibrary.Dxf.Data
 
         private List<SctRegionModel> GetSctRegions(string[] vs)
         {
+            // Current Sct_2_dxf.exe tool does not convert regions.... hmmm
             var result = new List<SctRegionModel>();
+            SctRegionModel regionModel = null;
+
+            foreach (string line in vs)
+            {
+                Regex trimmer = new Regex(@"\s\s+");
+                string _line = trimmer.Replace(line, " ").Trim();
+
+                if (string.IsNullOrEmpty(_line) || _line[0] == ';' || _line.Length < 29)
+                {
+                    continue;
+                }
+                if (_line.Contains(';'))
+                {
+                    _line = line[.._line.IndexOf(';')];
+                }
+
+                if (_line.Trim().Split(' ').Length == 3)
+                {
+                    if (regionModel is not null)
+                    {
+                        result.Add(regionModel);
+                    }
+                    string regionColorName = _line.Split(' ')[0].Trim().ToString();
+                    regionModel = new SctRegionModel()
+                    {
+                        RegionColorName = regionColorName,
+                        Lat = _line.Split(' ')[1].Trim(),
+                        Lon = _line.Split(' ')[2].Trim(),
+                        AdditionalRegionInfo = new List<RegionPolygonPoints>()
+                    };
+                    continue;
+                }
+
+                regionModel.AdditionalRegionInfo.Add(new RegionPolygonPoints()
+                {
+                    Lat = _line.Trim().Split(' ')[0].Trim(),
+                    Lon = _line.Trim().Split(' ')[1].Trim(),
+                });
+            }
+            if (regionModel is not null)
+            {
+                result.Add(regionModel);
+            }
             return result;
-            throw new NotImplementedException();
         }
 
         private List<SctGeoModel> GetSctGeo(string[] vs)
         {
             var result = new List<SctGeoModel>();
+
+            foreach (string line in vs)
+            {
+                Regex trimmer = new Regex(@"\s\s+");
+                string _line = trimmer.Replace(line, " ");
+
+                string[] splitLine;
+                string comments = "";
+                if (_line.Contains(';'))
+                {
+                    comments = _line[_line.IndexOf(';')..];
+                    splitLine = _line[.._line.IndexOf(';')].Trim().Split(' ');
+                }
+                else
+                {
+                    splitLine = _line.Split(' ');
+                }
+
+                if (splitLine.Length > 3)
+                {
+                    SctGeoModel sctRunwayModel = new SctGeoModel()
+                    {
+                        StartLat = splitLine[0],
+                        StartLon = splitLine[1],
+                        EndLat = splitLine[2],
+                        EndLon = splitLine[3],
+                        Color = splitLine[4]
+                    };
+                    
+                    result.Add(sctRunwayModel);
+                }
+            }
+
             return result;
-            throw new NotImplementedException();
         }
 
         private List<SctRunwayModel> GetSctRunways(string[] vs)
         {
             var result = new List<SctRunwayModel>();
+
+            foreach (string line in vs)
+            {
+                Regex trimmer = new Regex(@"\s\s+");
+                string _line = trimmer.Replace(line, " ");
+
+                string[] splitLine;
+                string comments = "";
+                if (_line.Contains(';'))
+                {
+                    comments = _line[_line.IndexOf(';')..];
+                    splitLine = _line[.._line.IndexOf(';')].Trim().Split(' ');
+                }
+                else
+                {
+                    splitLine = _line.Split(' ');
+                }
+
+                if (splitLine.Length > 7)
+                {
+                    SctRunwayModel sctRunwayModel = new SctRunwayModel()
+                    {
+                        RunwayNumber = splitLine[0],
+                        OppositeRunwayNumber = splitLine[1],
+                        MagRunwayHeading = splitLine[2],
+                        OppositeMagRunwayHeading = splitLine[3],
+                        StartLat = splitLine[4],
+                        StartLon = splitLine[5],
+                        EndLat = splitLine[6],
+                        EndLon = splitLine[7]
+                    };
+
+                    if (!string.IsNullOrWhiteSpace(comments))
+                    {
+                        sctRunwayModel.Comments = comments;
+                    }
+                    result.Add(sctRunwayModel);
+                }
+            }
+
             return result;
-            throw new NotImplementedException();
         }
 
         private List<SctFixesModel> GetSctFixes(string[] vs)

@@ -41,7 +41,7 @@ namespace FeBuddyLibrary.Dxf.Data
                 diagramName = diagramName.Replace('/', ' ');
                 // TODO - FIGURE OUT IF CONVERTING E CORDINATES IS NEEDED! 
                 sb.AppendLine("  0\nSECTION\n  2\nENTITIES");
-                sb.AppendLine("  0\nLWPOLYLINE\n 5");
+                sb.AppendLine("  0\nLWPOLYLINE\n 5\n100\n  8");
                 sb.AppendLine("REGION_" + diagramName);
                 sb.AppendLine("90\n    " + verticieCount.ToString());
                 sb.AppendLine("70\n    1\n43\n0.0");

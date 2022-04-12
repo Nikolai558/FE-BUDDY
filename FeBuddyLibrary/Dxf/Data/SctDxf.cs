@@ -25,6 +25,35 @@ namespace FeBuddyLibrary.Dxf.Data
             CreateRunwayDxf();
             CreateGeoDxf();
             CreateRegionDxf();
+            CreaeteLabelsDxf();
+        }
+
+        private void CreaeteLabelsDxf()
+        {
+            // TODO Fix File path! 
+            string _outputFilePath = @"C:\Users\nikol\Desktop\DXF Conversions";
+            StringBuilder sb = new StringBuilder();
+            sb.AppendLine("  0\nSECTION\n  2\nENTITIES");
+
+
+            foreach (var model in _sctFileModel.SctLabelSection)
+            {
+                sb.AppendLine($"  0\nINSERT\n  8\nLABELS\n  2\nLABELS");
+                sb.AppendLine(" 10");
+                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(model.Lon, false, false), false));
+                sb.AppendLine(" 20");
+                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(model.Lat, true, false), false));
+                sb.AppendLine($"  0\nTEXT\n  8\nLABELS");
+                sb.AppendLine(" 10");
+                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(model.Lon, false, false), false));
+                sb.AppendLine(" 20");
+                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(model.Lat, true, false), false));
+                sb.AppendLine(" 40\n0.006\n  1");
+                sb.AppendLine(model.LabelText);
+            }
+            sb.AppendLine("  0\nENDSEC");
+            sb.AppendLine("  0\nEOF");
+            File.WriteAllText(_outputFilePath + $"\\LABELS.dxf", sb.ToString());
         }
 
         private void CreateRegionDxf()

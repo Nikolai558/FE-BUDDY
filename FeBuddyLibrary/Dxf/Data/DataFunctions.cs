@@ -50,8 +50,43 @@ namespace FeBuddyLibrary.Dxf.Data
         private List<SctLabelModel> GetSctLabels(string[] vs)
         {
             var result = new List<SctLabelModel>();
+
+            foreach (string line in vs)
+            {
+                string _line = line;
+                string[] splitLine;
+                string labelText;
+                string comments = "";
+                if (_line.Contains('"'))
+                {
+                    if (_line.Contains(';'))
+                    {
+                        comments = _line[_line.IndexOf(';')..];
+                        labelText = _line[..(_line.LastIndexOf('"')+1)];
+                        splitLine = _line[(_line.LastIndexOf('"')+1).._line.IndexOf(';')].Trim().Split(' ');
+                    }
+                    else
+                    {
+                        labelText = _line[..(_line.LastIndexOf('"')+1)];
+                        splitLine = _line[(_line.LastIndexOf('"')+1)..].Trim().Split(' ');
+                    }
+
+                    if (splitLine.Length > 2)
+                    {
+                        SctLabelModel model = new SctLabelModel()
+                        {
+                            LabelText = labelText.Replace("\"", String.Empty),
+                            Lat = splitLine[0],
+                            Lon = splitLine[1],
+                            Color = splitLine[2]
+                        };
+                        result.Add(model);
+                    }
+                }
+
+            }
+
             return result;
-            throw new NotImplementedException();
         }
 
         private List<SctRegionModel> GetSctRegions(string[] vs)

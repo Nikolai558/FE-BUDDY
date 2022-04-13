@@ -11,7 +11,6 @@ The following is a list of features that we are considering or actively working 
   - See Also: https://ezdxf.mozman.at/docs/introduction.html
 
 - [ ] GoogleEarthPro Converter (for airport diagrams and other like-constructs)
-  - See: https://github.com/VATSIM-UK/UK-Sector-File
 
 - [ ] FAA RVM .DAT (foia requests) converter.
   - See: https://github.com/glott/DAT2Sector

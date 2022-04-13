@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using netDxf;
+using System.Reflection;
 
 namespace FeBuddyLibrary.Dxf.Data
 {
@@ -20,6 +21,8 @@ namespace FeBuddyLibrary.Dxf.Data
             string _outputFilePath = @"C:\Users\nikol\Desktop\DXF Conversions";
 
             _sctFileModel = SctFileModel;
+            CreateColorsDxf(); // Colors (#define ---.)
+            CreateInfoSectionDxf(); // [INFO]
             CreateNdbAndVorDxf(); // [NDB] [VOR]
             CreateAirportsDxf(); // [AIRPORT]
             CreateRunwayDxf(); // [RUNWAY]
@@ -31,7 +34,102 @@ namespace FeBuddyLibrary.Dxf.Data
             CreateRegionDxf(); // [REGIONS]
             CreaeteLabelsDxf(); // [LABELS]
 
-            //File.WriteAllText(_outputFilePath + "\\All.dxf", OneFileSB.ToString());
+            File.WriteAllText(_outputFilePath + "\\All.dxf", OneFileSB.ToString());
+        }
+
+        private void CreateColorsDxf()
+        {
+            // TODO Fix File path! 
+            string _outputFilePath = @"C:\Users\nikol\Desktop\DXF Conversions";
+            StringBuilder sb;
+
+            sb = new StringBuilder();
+            sb.AppendLine("  0\nSECTION\n  2\nENTITIES");
+
+            var model = _sctFileModel.SctFileColors;
+
+            foreach (SctColorModel colorLine in model)
+            {
+                sb.AppendLine("  0\nINSERT\n  8\nCOLOR__\n  2\nCOLOR");
+                sb.AppendLine(" 10");
+                sb.AppendLine(" -30.0");
+                sb.AppendLine(" 20");
+                sb.AppendLine("  30.0");
+                sb.AppendLine("  0\nTEXT\n  8\nCOLOR__");
+                sb.AppendLine(" 10");
+                sb.AppendLine(" -30.0");
+                sb.AppendLine(" 20");
+                sb.AppendLine("  30.0");
+                sb.AppendLine(" 40\n0.006\n  1");
+                sb.AppendLine(colorLine.SctColorLine.Trim());
+            }
+
+            sb.AppendLine("  0\nENDSEC");
+            //sb.AppendLine("  0\nEOF");
+            //File.WriteAllText(_outputFilePath + @"\FIX.dxf", sb.ToString());
+            OneFileSB.Append(sb.ToString());
+        }
+
+        private void CreateInfoSectionDxf()
+        {
+            // TODO Fix File path! 
+            string _outputFilePath = @"C:\Users\nikol\Desktop\DXF Conversions";
+            StringBuilder sb;
+
+            sb = new StringBuilder();
+            sb.AppendLine("  0\nSECTION\n  2\nENTITIES");
+
+            var model = _sctFileModel.SctInfoSection;
+
+            PropertyInfo[] properties = typeof(SctInfoModel).GetProperties();
+
+            foreach (PropertyInfo property in properties)
+            {
+                if (property.Name == "AllInfo")
+                {
+                    continue;
+                }
+
+                if (property.Name == "AdditionalLines")
+                {
+                    int currentIndex = 0;
+                    foreach (string additionalLine in model.AdditionalLines)
+                    {
+                        sb.AppendLine("  0\nINSERT\n  8\nINFO__\n  2\nINFO");
+                        sb.AppendLine(" 10");
+                        sb.AppendLine(" -30.0");
+                        sb.AppendLine(" 20");
+                        sb.AppendLine("  30.0");
+                        sb.AppendLine("  0\nTEXT\n  8\nINFO__");
+                        sb.AppendLine(" 10");
+                        sb.AppendLine(" -30.0");
+                        sb.AppendLine(" 20");
+                        sb.AppendLine("  30.0");
+                        sb.AppendLine(" 40\n0.006\n  1");
+                        sb.AppendLine(model.AdditionalLines[currentIndex].Trim());
+                        currentIndex += 1;
+                    }
+                    continue;
+                }
+
+                sb.AppendLine("  0\nINSERT\n  8\nINFO__\n  2\nINFO");
+                sb.AppendLine(" 10");
+                sb.AppendLine(" -30.0");
+                sb.AppendLine(" 20");
+                sb.AppendLine("  30.0");
+                sb.AppendLine("  0\nTEXT\n  8\nINFO__");
+                sb.AppendLine(" 10");
+                sb.AppendLine(" -30.0");
+                sb.AppendLine(" 20");
+                sb.AppendLine("  30.0");
+                sb.AppendLine(" 40\n0.006\n  1");
+                sb.AppendLine(property.GetValue(model).ToString().Trim());
+            }
+
+            sb.AppendLine("  0\nENDSEC");
+            //sb.AppendLine("  0\nEOF");
+            //File.WriteAllText(_outputFilePath + @"\FIX.dxf", sb.ToString());
+            OneFileSB.Append(sb.ToString());
         }
 
         private void CreaeteLabelsDxf()
@@ -42,14 +140,19 @@ namespace FeBuddyLibrary.Dxf.Data
             sb.AppendLine("  0\nSECTION\n  2\nENTITIES");
 
 
-            foreach (var model in _sctFileModel.SctLabelSection)
+            foreach (SctLabelModel model in _sctFileModel.SctLabelSection)
             {
-                sb.AppendLine($"  0\nINSERT\n  8\nLABELS__\n  2\nLABELS");
+                string _color = model.Color;
+                if (_color is not null)
+                {
+                    _color = _color.Trim();
+                }
+                sb.AppendLine($"  0\nINSERT\n  8\nLABELS__---{_color ?? string.Empty}---\n  2\nLABELS");
                 sb.AppendLine(" 10");
                 sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(model.Lon, false, false), false));
                 sb.AppendLine(" 20");
                 sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(model.Lat, true, false), false));
-                sb.AppendLine($"  0\nTEXT\n  8\nLABELS__");
+                sb.AppendLine($"  0\nTEXT\n  8\nLABELS__---{_color ?? string.Empty}---");
                 sb.AppendLine(" 10");
                 sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(model.Lon, false, false), false));
                 sb.AppendLine(" 20");
@@ -116,10 +219,15 @@ namespace FeBuddyLibrary.Dxf.Data
             sb.AppendLine("  0\nSECTION\n  2\nENTITIES");
 
 
-            foreach (var model in _sctFileModel.SctGeoSection)
+            foreach (SctGeoModel model in _sctFileModel.SctGeoSection)
             {
+                string _color = model.Color;
+                if (_color is not null)
+                {
+                    _color = _color.Trim();
+                }
                 sb.AppendLine("  0\nLINE\n 62\n56\n  8");
-                sb.AppendLine($"GEO__");
+                sb.AppendLine($"GEO__---{_color ?? string.Empty}---");
                 sb.AppendLine(" 10");
                 sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(model.StartLon, false, false), false));
                 sb.AppendLine(" 20");
@@ -131,8 +239,8 @@ namespace FeBuddyLibrary.Dxf.Data
             }
 
             sb.AppendLine("  0\nENDSEC");
-            sb.AppendLine("  0\nEOF");
-            File.WriteAllText(_outputFilePath + $"\\GEO.dxf", sb.ToString());
+            //sb.AppendLine("  0\nEOF");
+            //File.WriteAllText(_outputFilePath + $"\\GEO.dxf", sb.ToString());
             OneFileSB.Append(sb.ToString());
 
         }
@@ -146,7 +254,7 @@ namespace FeBuddyLibrary.Dxf.Data
             sb.AppendLine("  0\nSECTION\n  2\nENTITIES");
 
 
-            foreach (var model in _sctFileModel.SctRunwaySection)
+            foreach (SctRunwayModel model in _sctFileModel.SctRunwaySection)
             {
                 sb.AppendLine("  0\nLINE\n 8");
                 sb.AppendLine($"RUNWAY__{model.RunwayNumber} {model.OppositeRunwayNumber} {model.MagRunwayHeading} {model.OppositeMagRunwayHeading}");
@@ -177,7 +285,7 @@ namespace FeBuddyLibrary.Dxf.Data
             sb.AppendLine("  0\nSECTION\n  2\nENTITIES");
 
 
-            foreach (var model in _sctFileModel.SctFixesSection)
+            foreach (SctFixesModel model in _sctFileModel.SctFixesSection)
             {
                 sb.AppendLine("  0\nINSERT\n  8\nFIX__\n  2\nFIX");
                 sb.AppendLine(" 10");
@@ -208,12 +316,17 @@ namespace FeBuddyLibrary.Dxf.Data
             string diagramName = "";
             foreach (SctSidStarModel sctSid in _sctFileModel.SctSidSection)
             {
+                string _color = sctSid.Color;
+                if (_color is not null)
+                {
+                    _color = _color.Trim();
+                }
                 diagramName = sctSid.DiagramName;
                 diagramName = diagramName.Replace('/', ' ');
                 // TODO - FIGURE OUT IF CONVERTING E CORDINATES IS NEEDED! 
                 sb.AppendLine("  0\nSECTION\n  2\nENTITIES");
                 sb.AppendLine("  0\nLINE\n 62\n7\n 8");
-                sb.AppendLine("SID__" + diagramName);
+                sb.AppendLine("SID__" + diagramName+$"---{_color ?? string.Empty}---");
                 sb.AppendLine(" 10");
                 sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(sctSid.StartLon, false, false), false));
                 sb.AppendLine(" 20");
@@ -226,7 +339,7 @@ namespace FeBuddyLibrary.Dxf.Data
                 foreach (SctAditionalDiagramLineSegments lineSegments in sctSid.AdditionalLines)
                 {
                     sb.AppendLine("  0\nLINE\n 62\n7\n  8");
-                    sb.AppendLine("SID__" + diagramName);
+                    sb.AppendLine("SID__" + diagramName + $"---{_color ?? string.Empty}---");
                     sb.AppendLine(" 10");
                     sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(lineSegments.StartLon, false, false), false));
                     sb.AppendLine(" 20");
@@ -252,27 +365,32 @@ namespace FeBuddyLibrary.Dxf.Data
             StringBuilder sb = new StringBuilder();
 
             string diagramName = "";
-            foreach (SctSidStarModel sctSid in _sctFileModel.SctStarSection)
+            foreach (SctSidStarModel sctStar in _sctFileModel.SctStarSection)
             {
-                diagramName = sctSid.DiagramName;
+                string _color = sctStar.Color;
+                if (_color is not null)
+                {
+                    _color = _color.Trim();
+                }
+                diagramName = sctStar.DiagramName;
                 diagramName = diagramName.Replace('/', ' ');
                 // TODO - FIGURE OUT IF CONVERTING E CORDINATES IS NEEDED! 
                 sb.AppendLine("  0\nSECTION\n  2\nENTITIES");
                 sb.AppendLine("  0\nLINE\n 62\n7\n 8");
-                sb.AppendLine("STAR__" + diagramName);
+                sb.AppendLine("STAR__" + diagramName + $"---{_color ?? string.Empty}---");
                 sb.AppendLine(" 10");
-                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(sctSid.StartLon, false, false), false));
+                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(sctStar.StartLon, false, false), false));
                 sb.AppendLine(" 20");
-                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(sctSid.StartLat, true, false), false));
+                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(sctStar.StartLat, true, false), false));
                 sb.AppendLine(" 11");
-                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(sctSid.EndLon, false, false), false));
+                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(sctStar.EndLon, false, false), false));
                 sb.AppendLine(" 21");
-                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(sctSid.EndLat, true, false), false));
+                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(sctStar.EndLat, true, false), false));
 
-                foreach (SctAditionalDiagramLineSegments lineSegments in sctSid.AdditionalLines)
+                foreach (SctAditionalDiagramLineSegments lineSegments in sctStar.AdditionalLines)
                 {
                     sb.AppendLine("  0\nLINE\n 62\n7\n  8");
-                    sb.AppendLine("STAR__" + diagramName);
+                    sb.AppendLine("STAR__" + diagramName + $"---{_color ?? string.Empty}---");
                     sb.AppendLine(" 10");
                     sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(lineSegments.StartLon, false, false), false));
                     sb.AppendLine(" 20");

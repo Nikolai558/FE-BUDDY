@@ -357,72 +357,95 @@ namespace FeBuddyLibrary.Dxf.Data
 
             foreach (string line in vs)
             {
-                if (line.Length < 26)
+                string _line;
+                if (line.Contains(';'))
+                {
+                    _line = line[..line.IndexOf(";")];
+                }
+                else
+                {
+                    _line = line;
+                }
+
+                if (_line.Length < 26)
                 {
                     // Line does not have enough characters to do the required parsing so we will just ignore it.
                     inDiagram = false;
                     continue;
                 }
-                if (!inDiagram && line[..26].Trim() == "")
+                if (!inDiagram && _line[..26].Trim() == "")
                 {
                     // Line is blank or We have not read the first part of the diagram yet
                     continue;
                 }
-                if (!string.IsNullOrWhiteSpace(line[..26].Trim()) && !line[..26].Contains('\t') && line[..26].Trim() != diagramName)
+                if (!string.IsNullOrWhiteSpace(_line[..26].Trim()) && !_line[..26].Contains('\t') && _line[..26].Trim() != diagramName)
                 {
                     // Line starts with diagram name so we are either a new diagram or the first diagram
                     if (inDiagram && diagramModel is not null)
                     {
+                        if (diagramModel.Color is null)
+                        {
+                            diagramModel.Color = "NOCOLOR";
+                        }
                         // We have completed the previous diagram so we need to add it to our list
                         result.Add(diagramModel);
                     }
                     inDiagram = true;
-                    diagramName = line[..26].Trim();
+                    diagramName = _line[..26].Trim();
                     diagramModel = new SctSidStarModel()
                     {
                         DiagramName = diagramName,
-                        StartLat = line[26..].Split(' ')[0],
-                        StartLon = line[26..].Split(' ')[1],
-                        EndLat = line[26..].Split(' ')[2],
-                        EndLon = line[26..].Split(' ')[3],
+                        StartLat = _line[26..].Split(' ')[0],
+                        StartLon = _line[26..].Split(' ')[1],
+                        EndLat = _line[26..].Split(' ')[2],
+                        EndLon = _line[26..].Split(' ')[3],
                         AdditionalLines = new List<SctAditionalDiagramLineSegments>()
                     };
-                    if (line[26..].Split(' ').Length > 4)
+                    if (_line[26..].Split(' ').Length > 4)
                     {
                         // Some diagrams name lines do not have colors assigned to them. If it is there put it in else ignore.
-                        diagramModel.Color = line[26..].Split(' ')[4];
+                        diagramModel.Color = _line[26..].Split(' ')[4];
                     }
                     continue;
                 }
 
                 // Some lines do not have colors associated with it. we have to check that. 
-                if (line[26..].Split(' ').Length > 4)
+                if (_line[26..].Split(' ').Length > 4)
                 {
                     // We are in a diagram this additional line segment goes with it
                     diagramModel.AdditionalLines.Add(new SctAditionalDiagramLineSegments()
                     {
-                        StartLat = line[26..].Split(' ')[0],
-                        StartLon = line[26..].Split(' ')[1],
-                        EndLat = line[26..].Split(' ')[2],
-                        EndLon = line[26..].Split(' ')[3],
-                        Color = line[26..].Split(' ')[4],
+                        StartLat = _line[26..].Split(' ')[0],
+                        StartLon = _line[26..].Split(' ')[1],
+                        EndLat = _line[26..].Split(' ')[2],
+                        EndLon = _line[26..].Split(' ')[3],
+                        Color = _line[26..].Split(' ')[4],
                     });
+                    if (diagramModel.Color is null)
+                    {
+                        diagramModel.Color = _line[26..].Split(' ')[4];
+                    }
                 }
                 else
                 {
                     // We are in a diagram this additional line segment goes with it
                     diagramModel.AdditionalLines.Add(new SctAditionalDiagramLineSegments()
                     {
-                        StartLat = line[26..].Split(' ')[0],
-                        StartLon = line[26..].Split(' ')[1],
-                        EndLat = line[26..].Split(' ')[2],
-                        EndLon = line[26..].Split(' ')[3],
+                        StartLat = _line[26..].Split(' ')[0],
+                        StartLon = _line[26..].Split(' ')[1],
+                        EndLat = _line[26..].Split(' ')[2],
+                        EndLon = _line[26..].Split(' ')[3],
+                        Color = diagramModel.Color
                     });
                 }
             }
             // This is the last diagram we need to be sure to add it to our list.
             if (inDiagram && diagramModel is not null)
             {
+                if (diagramModel.Color is null)
+                {
+                    diagramModel.Color = "NOCOLOR";
+                }
                 result.Add(diagramModel);
             }
             return result;

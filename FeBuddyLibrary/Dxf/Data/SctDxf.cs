@@ -516,7 +516,7 @@ namespace FeBuddyLibrary.Dxf.Data
                     sb.AppendLine(" 20");
                     sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(model.Lat, true, false), false));
                     sb.AppendLine(" 40\n0.006\n  1");
-                    sb.AppendLine(model.Id);
+                    sb.AppendLine(model.Id + " " + model.Frequency);
                 }
                 sb.AppendLine("  0\nENDSEC");
                 //sb.AppendLine("  0\nEOF");

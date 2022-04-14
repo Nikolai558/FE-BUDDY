@@ -168,12 +168,103 @@ namespace FeBuddyLibrary.Dxf.Data
 
         private List<VORNDBModel> vorParser()
         {
-            throw new NotImplementedException();
+            List<VORNDBModel> results = new List<VORNDBModel>();
+
+            VORNDBModel model = null;
+
+            bool isInVorSection = false;
+
+            int currentIndex = -1;
+            foreach (string line in _dxfFilelines)
+            {
+                currentIndex += 1;
+                if (line.Contains("VOR__"))
+                {
+                    isInVorSection = true;
+                    if (model is not null && !string.IsNullOrEmpty(model.Id))
+                    {
+                        results.Add(model);
+                    }
+                    model = new VORNDBModel();
+                }
+
+                if (isInVorSection)
+                {
+                    switch (line.Trim())
+                    {
+                        case "10": model.Lon = _dxfFilelines[currentIndex + 1]; break;
+                        case "20": model.Lat = _dxfFilelines[currentIndex + 1]; break;
+                        case "0.006":
+                            {
+                                model.Id = _dxfFilelines[currentIndex + 2].Split(' ')[0];
+                                model.Frequency = _dxfFilelines[currentIndex + 2].Split(' ')[1];
+                                isInVorSection = false; 
+                                break;
+                            }
+                    }
+                }
+            }
+            if (model is not null)
+            {
+                results.Add(model);
+            }
+            return results;
         }
 
         private SctInfoModel infoParser()
         {
-            throw new NotImplementedException();
+            SctInfoModel model = new SctInfoModel();
+            List<string> additionalLines = new List<string>();
+
+            bool isInInfoSection = false;
+            bool isInInfoTextSection = false;
+
+            int currentIndex = -1;
+            int propertyCount = 0;
+            foreach (string line in _dxfFilelines)
+            {
+                currentIndex += 1;
+                if (line.Contains("INFO__")) isInInfoSection = true;
+
+                if (isInInfoSection)
+                {
+                    string text = "";
+
+                    switch (line.Trim())
+                    {
+                        case "40": isInInfoTextSection = true; continue;
+                        case "0.006": if(isInInfoTextSection) text = _dxfFilelines[currentIndex + 2]; break;
+                    }
+                    if (isInInfoTextSection)
+                    {
+                        isInInfoSection = false;
+                        isInInfoTextSection = false;
+
+                        if (!string.IsNullOrEmpty(text) && !string.IsNullOrWhiteSpace(text))
+                        {
+                            switch (propertyCount)
+                            {
+                                case 0: model.Header = text; break;
+                                case 1: model.SctFileName = text; break;
+                                case 2: model.DefaultCallsign = text; break;
+                                case 3: model.DefaultAirport = text; break;
+                                case 4: model.CenterLat = text; break;
+                                case 5: model.CenterLon = text; break;
+                                case 6: model.NMPerLat = text; break;
+                                case 7: model.NMPerLon = text; break;
+                                case 8: model.MagneticVariation = text; break;
+                                case 9: model.SctScale = text; break;
+                                default: additionalLines.Add(text); break;
+                            }
+                            propertyCount += 1;
+
+                        }
+                    }
+                }
+            }
+            model.AdditionalLines = additionalLines.ToArray();
+
+            return model;
         }
 
         private List<SctColorModel> colorParser()

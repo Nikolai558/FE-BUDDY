@@ -31,10 +31,10 @@ namespace FeBuddyLibrary.Dxf.Data
 
         private void CreateSctFileModle()
         {
-            _sctFileModel.SctFileColors = colorParser();
-            _sctFileModel.SctInfoSection = infoParser();
-            _sctFileModel.SctVORSection = vorParser();
-            _sctFileModel.SctNDBSection = ndbParser();
+            _sctFileModel.SctFileColors = colorParser(); // Done
+            _sctFileModel.SctInfoSection = infoParser(); // Done
+            _sctFileModel.SctVORSection = vorParser("VOR__"); // Done
+            _sctFileModel.SctNDBSection = vorParser("NDB__"); // Done
             _sctFileModel.SctAirportSection = airportParser();
             _sctFileModel.SctRunwaySection = runwayParser();
             _sctFileModel.SctFixesSection = fixesParser();
@@ -45,7 +45,7 @@ namespace FeBuddyLibrary.Dxf.Data
             _sctFileModel.SctStarSection = starParser();
             _sctFileModel.SctLowAirwaySection = lowAirwayParser();
             _sctFileModel.SctHighAirwaySection = highAirwayParser();
-            _sctFileModel.SctGeoSection = geoParser();
+            _sctFileModel.SctGeoSection = geoParser(); // Done
             _sctFileModel.SctRegionsSection = regionsParser();
             _sctFileModel.SctLabelSection = labelParser();
         }
@@ -161,13 +161,10 @@ namespace FeBuddyLibrary.Dxf.Data
             throw new NotImplementedException();
         }
 
-        private List<VORNDBModel> ndbParser()
+        private List<VORNDBModel> vorParser(string typeNDBorVOR)
         {
-            throw new NotImplementedException();
-        }
+            if (!new string[] { "VOR__", "NDB__" }.Contains(typeNDBorVOR)) throw new Exception("INCORRECT VALUE");
 
-        private List<VORNDBModel> vorParser()
-        {
             List<VORNDBModel> results = new List<VORNDBModel>();
 
             VORNDBModel model = null;
@@ -178,7 +175,7 @@ namespace FeBuddyLibrary.Dxf.Data
             foreach (string line in _dxfFilelines)
             {
                 currentIndex += 1;
-                if (line.Contains("VOR__"))
+                if (line.Contains(typeNDBorVOR))
                 {
                     isInVorSection = true;
                     if (model is not null && !string.IsNullOrEmpty(model.Id))

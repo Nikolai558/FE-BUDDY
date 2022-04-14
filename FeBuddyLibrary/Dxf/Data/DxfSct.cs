@@ -33,18 +33,18 @@ namespace FeBuddyLibrary.Dxf.Data
         {
             _sctFileModel.SctFileColors = colorParser(); // Done
             _sctFileModel.SctInfoSection = infoParser(); // Done
-            _sctFileModel.SctVORSection = vorParser("VOR__"); // Done
-            _sctFileModel.SctNDBSection = vorParser("NDB__"); // Done
+            _sctFileModel.SctVORSection = vorAndNDBParser("VOR__"); // Done
+            _sctFileModel.SctNDBSection = vorAndNDBParser("NDB__"); // Done
             _sctFileModel.SctAirportSection = airportParser();
             _sctFileModel.SctRunwaySection = runwayParser();
             _sctFileModel.SctFixesSection = fixesParser();
-            _sctFileModel.SctArtccSection = artccParser();
-            _sctFileModel.SctArtccHighSection = artccHighParser();
-            _sctFileModel.SctArtccLowSection = artccLowParser();
+            _sctFileModel.SctArtccSection = artccParser("ARTCC__"); // DONE
+            _sctFileModel.SctArtccHighSection = artccParser("ARTCC_HIGH__"); // DONE
+            _sctFileModel.SctArtccLowSection = artccParser("ARTCC_LOW__"); // DONE
             _sctFileModel.SctSidSection = sidParser();
             _sctFileModel.SctStarSection = starParser();
-            _sctFileModel.SctLowAirwaySection = lowAirwayParser();
-            _sctFileModel.SctHighAirwaySection = highAirwayParser();
+            _sctFileModel.SctLowAirwaySection = artccParser("LOW_AIRWAY__"); // DONE
+            _sctFileModel.SctHighAirwaySection = artccParser("HIGH_AIRWAY__"); // DONE
             _sctFileModel.SctGeoSection = geoParser(); // Done
             _sctFileModel.SctRegionsSection = regionsParser();
             _sctFileModel.SctLabelSection = labelParser();
@@ -111,16 +111,6 @@ namespace FeBuddyLibrary.Dxf.Data
             return models;
         }
 
-        private List<SctArtccModel> highAirwayParser()
-        {
-            throw new NotImplementedException();
-        }
-
-        private List<SctArtccModel> lowAirwayParser()
-        {
-            throw new NotImplementedException();
-        }
-
         private List<SctSidStarModel> starParser()
         {
             throw new NotImplementedException();
@@ -131,19 +121,60 @@ namespace FeBuddyLibrary.Dxf.Data
             throw new NotImplementedException();
         }
 
-        private List<SctArtccModel> artccLowParser()
+        private List<SctArtccModel> artccParser(string containsString)
         {
-            throw new NotImplementedException();
-        }
+            string[] validContainsString = new string[] 
+            { 
+                "ARTCC__", "ARTCC_HIGH__", "ARTCC_LOW__", "LOW_AIRWAY__", "HIGH_AIRWAY__"
+            };
+            if (!validContainsString.Contains(containsString)) throw new Exception("VALUE NOT ALLOWED");
 
-        private List<SctArtccModel> artccHighParser()
-        {
-            throw new NotImplementedException();
-        }
+            bool isInLineSection = false;
+            bool isInSectionNeeded = false;
 
-        private List<SctArtccModel> artccParser()
-        {
-            throw new NotImplementedException();
+            List<SctArtccModel> models = new List<SctArtccModel>();
+            SctArtccModel currentModel = null;
+
+            int currentIndex = -1;
+            string previous_line = "";
+            foreach (string current_line in _dxfFilelines)
+            {
+                string _currentLine = current_line.Trim();
+                currentIndex += 1;
+                if (previous_line == "0" && _currentLine == "LINE")
+                {
+                    isInLineSection = true;
+                }
+                if (isInLineSection && _currentLine.Contains(containsString))
+                {
+                    if (currentModel is not null)
+                    {
+                        models.Add(currentModel);
+                    }
+                    currentModel = new SctArtccModel();
+                    currentModel.Name = _currentLine[containsString.Length..]; // TODO DOUBLE CHECK THIS, MIGHT NEED TO ADD 1 TO IT.
+                    isInSectionNeeded = true;
+                }
+
+                if (isInLineSection && isInSectionNeeded)
+                {
+                    switch (_currentLine)
+                    {
+                        case "10": { currentModel.StartLon = LatLonHelpers.CreateDMS(double.Parse(_dxfFilelines[currentIndex + 1].Trim()), false); break; }
+                        case "20": { currentModel.StartLat = LatLonHelpers.CreateDMS(double.Parse(_dxfFilelines[currentIndex + 1].Trim()), true); break; }
+                        case "11": { currentModel.EndLon = LatLonHelpers.CreateDMS(double.Parse(_dxfFilelines[currentIndex + 1].Trim()), false); break; }
+                        case "21": { currentModel.EndLat = LatLonHelpers.CreateDMS(double.Parse(_dxfFilelines[currentIndex + 1].Trim()), true); isInSectionNeeded = false; isInLineSection = false; break; }
+                        default: { break; }
+                    }
+                }
+                previous_line = _currentLine;
+            }
+            if (currentModel is not null)
+            {
+                models.Add(currentModel);
+            }
+
+            return models;
         }
 
         private List<SctFixesModel> fixesParser()
@@ -161,9 +192,9 @@ namespace FeBuddyLibrary.Dxf.Data
             throw new NotImplementedException();
         }
 
-        private List<VORNDBModel> vorParser(string typeNDBorVOR)
+        private List<VORNDBModel> vorAndNDBParser(string containsString)
         {
-            if (!new string[] { "VOR__", "NDB__" }.Contains(typeNDBorVOR)) throw new Exception("INCORRECT VALUE");
+            if (!new string[] { "VOR__", "NDB__" }.Contains(containsString)) throw new Exception("INCORRECT VALUE");
 
             List<VORNDBModel> results = new List<VORNDBModel>();
 
@@ -175,7 +206,7 @@ namespace FeBuddyLibrary.Dxf.Data
             foreach (string line in _dxfFilelines)
             {
                 currentIndex += 1;
-                if (line.Contains(typeNDBorVOR))
+                if (line.Contains(containsString))
                 {
                     isInVorSection = true;
                     if (model is not null && !string.IsNullOrEmpty(model.Id))

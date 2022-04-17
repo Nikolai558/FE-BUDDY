@@ -7,7 +7,6 @@
   </PropertyGroup>
   
   <ItemGroup>
-    <PackageReference Include="netDXF" Version="2.2.0.1" />
     <PackageReference Include="System.Data.DataSetExtensions" Version="4.5.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
   </ItemGroup>

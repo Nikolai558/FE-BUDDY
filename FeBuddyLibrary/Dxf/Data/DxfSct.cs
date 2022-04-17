@@ -6,8 +6,6 @@ using System.Text;
 using System.Threading.Tasks;
 using FeBuddyLibrary.Dxf.Models;
 using FeBuddyLibrary.Helpers;
-using netDxf;
-using netDxf.Entities;
 
 namespace FeBuddyLibrary.Dxf.Data
 {

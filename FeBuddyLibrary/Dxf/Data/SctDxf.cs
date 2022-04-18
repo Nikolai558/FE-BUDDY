@@ -6,7 +6,6 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using netDxf;
 using System.Reflection;
 
 namespace FeBuddyLibrary.Dxf.Data
@@ -34,7 +33,7 @@ namespace FeBuddyLibrary.Dxf.Data
             CreateRegionDxf(); // [REGIONS]
             CreaeteLabelsDxf(); // [LABELS]
 
-            File.WriteAllText(_outputFilePath + "\\All.dxf", OneFileSB.ToString());
+            File.WriteAllText(_outputFilePath + "\\SmallTest.dxf", OneFileSB.ToString());
         }
 
         private void CreateColorsDxf()
@@ -431,7 +430,7 @@ namespace FeBuddyLibrary.Dxf.Data
                 sb.AppendLine(" 20");
                 sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(airportModel.Lat, true, false), false));
                 sb.AppendLine(" 40\n0.006\n  1");
-                sb.AppendLine(airportModel.Id);
+                sb.AppendLine(airportModel.Id + " " +airportModel.Frequency);
             }
             sb.AppendLine("  0\nENDSEC");
             //sb.AppendLine("  0\nEOF");

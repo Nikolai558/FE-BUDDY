@@ -21,7 +21,7 @@ namespace FeBuddyLibrary.Dxf.Data
             //Line entity = new Line();
             //doc.AddEntity(entity);
             //doc.Save(@"C:\Users\nikol\Desktop\DXF Conversions\testfromlib.dxf");
-            _dxfFilelines = readDxfFile(@"C:\Users\nikol\Desktop\DXF Conversions\All.dxf");
+            _dxfFilelines = readDxfFile(@"C:\Users\nikol\Desktop\DXF Conversions\SmallTest.dxf");
             _sctFileModel = new SctFileModel();
 
             CreateSctFileModle();
@@ -33,29 +33,148 @@ namespace FeBuddyLibrary.Dxf.Data
             _sctFileModel.SctInfoSection = infoParser(); // Done
             _sctFileModel.SctVORSection = vorAndNDBParser("VOR__"); // Done
             _sctFileModel.SctNDBSection = vorAndNDBParser("NDB__"); // Done
-            _sctFileModel.SctAirportSection = airportParser();
-            _sctFileModel.SctRunwaySection = runwayParser();
-            _sctFileModel.SctFixesSection = fixesParser();
+            _sctFileModel.SctAirportSection = airportParser(); // Done
+            _sctFileModel.SctRunwaySection = runwayParser(); // Done
+            _sctFileModel.SctFixesSection = fixesParser(); // Done
             _sctFileModel.SctArtccSection = artccParser("ARTCC__"); // DONE
             _sctFileModel.SctArtccHighSection = artccParser("ARTCC_HIGH__"); // DONE
             _sctFileModel.SctArtccLowSection = artccParser("ARTCC_LOW__"); // DONE
-            _sctFileModel.SctSidSection = sidParser();
-            _sctFileModel.SctStarSection = starParser();
+            _sctFileModel.SctSidSection = sidStarParser("SID__"); // Done
+            _sctFileModel.SctStarSection = sidStarParser("STAR__"); // Done
             _sctFileModel.SctLowAirwaySection = artccParser("LOW_AIRWAY__"); // DONE
             _sctFileModel.SctHighAirwaySection = artccParser("HIGH_AIRWAY__"); // DONE
             _sctFileModel.SctGeoSection = geoParser(); // Done
-            _sctFileModel.SctRegionsSection = regionsParser();
-            _sctFileModel.SctLabelSection = labelParser();
+            _sctFileModel.SctRegionsSection = regionsParser(); // Done
+            _sctFileModel.SctLabelSection = labelParser(); // Done
         }
 
         private List<SctLabelModel> labelParser()
         {
-            throw new NotImplementedException();
+            List<SctLabelModel> results = new List<SctLabelModel>();
+            bool isInText = false;
+            bool isInSectionNeeded = false;
+            int currentLine = -1;
+            SctLabelModel model = null;
+
+            foreach (string line in _dxfFilelines)
+            {
+                currentLine++;
+                if (line.Contains("TEXT"))
+                {
+                    isInText = true;
+                }
+
+                if (isInText && line.Contains("LABELS__"))
+                {
+                    isInSectionNeeded = true;
+                    if (model != null && !string.IsNullOrEmpty(model.LabelText))
+                    {
+                        results.Add(model);
+                    }
+                    model = new SctLabelModel()
+                    {
+                        Color = line[(line.IndexOf("---")+3)..line.LastIndexOf("---")].Trim()
+                    };
+                }
+
+                if (line.Contains("__") && !line.Contains("LABELS__"))
+                {
+                    isInSectionNeeded = false;
+                }
+
+                if (isInText && isInSectionNeeded)
+                {
+                    switch (line.Trim())
+                    {
+                        case "10": model.Lon = _dxfFilelines[currentLine + 1].Trim(); break;
+                        case "20": model.Lat = _dxfFilelines[currentLine + 1].Trim(); break;
+                        case "40":
+                            {
+                                model.LabelText = "\"" + _dxfFilelines[currentLine + 3].Trim() + "\"";
+                                isInText = false;
+                                isInSectionNeeded = false;
+                                break;
+                            }
+                    }
+                }
+            }
+
+            if (model != null)
+            {
+                results.Add(model);
+            }
+            return results;
         }
 
         private List<SctRegionModel> regionsParser()
         {
-            throw new NotImplementedException();
+            List<SctRegionModel> results = new List<SctRegionModel>();
+            bool isInPolyLine = false;
+            bool isInSectionNeeded = false;
+            bool firstCoordinate = true;
+
+            RegionPolygonPoints point = new RegionPolygonPoints();
+
+            int currentLine = -1;
+
+            SctRegionModel model = null;
+
+            foreach (string line in _dxfFilelines)
+            {
+                currentLine++;
+                if (line.Contains("LWPOLYLINE"))
+                {
+                    isInPolyLine = true;
+                }
+                if (isInPolyLine && line.Contains("REGION__"))
+                {
+                    isInSectionNeeded = true;
+                    if (model != null)
+                    {
+                        model.AdditionalRegionInfo.RemoveAt(model.AdditionalRegionInfo.Count -1);
+                        results.Add(model);
+                    }
+                    model = new SctRegionModel()
+                    {
+                        RegionColorName = line[(line.LastIndexOf("__")+2)..],
+                        AdditionalRegionInfo = new List<RegionPolygonPoints>()
+                    };
+                    firstCoordinate = true;
+                }
+
+                if (isInPolyLine && isInSectionNeeded)
+                {
+                    if (firstCoordinate)
+                    {
+                        switch (line.Trim())
+                        {
+                            case "10": model.Lon = _dxfFilelines[currentLine + 1].Trim(); break;
+                            case "20": model.Lat = _dxfFilelines[currentLine +1].Trim(); firstCoordinate = false; break;
+                        }
+                    }
+                    else
+                    {
+                        switch (line.Trim())
+                        {
+                            case "10": point.Lon = _dxfFilelines[currentLine + 1].Trim(); break;
+                            case "20":
+                                {
+                                    point.Lat = _dxfFilelines[currentLine + 1].Trim();
+                                    model.AdditionalRegionInfo.Add(point);
+                                    point = new RegionPolygonPoints();
+                                    break;
+                                }
+                            case "0": isInPolyLine = false; isInSectionNeeded = false; break;
+                        }
+                    }
+                }
+            }
+
+            if (model != null)
+            {
+                results.Add(model);
+            }
+            return results;
         }
 
         private List<SctGeoModel> geoParser()
@@ -109,14 +228,96 @@ namespace FeBuddyLibrary.Dxf.Data
             return models;
         }
 
-        private List<SctSidStarModel> starParser()
+        private List<SctSidStarModel> sidStarParser(string containsString)
         {
-            throw new NotImplementedException();
-        }
+            List<SctSidStarModel> results = new List<SctSidStarModel>();
 
-        private List<SctSidStarModel> sidParser()
-        {
-            throw new NotImplementedException();
+            bool isInSectionNeeded = false;
+            bool isInLineSection = false;
+            string currentDiagramName = "";
+            SctAditionalDiagramLineSegments additionalLineSegments = new SctAditionalDiagramLineSegments();
+
+            SctSidStarModel model = null;
+            int currentLine = -1;
+            bool firstDiagramOccurance = true;
+            foreach (string line in _dxfFilelines)
+            {
+                currentLine++;
+                if (line.Contains("LINE"))
+                {
+                    isInLineSection = true;
+                }
+
+                if (isInLineSection && line.Contains(containsString))
+                {
+                    isInSectionNeeded = true;
+                    if (currentDiagramName != line[containsString.Length..(line[..line.LastIndexOf("---")].LastIndexOf("---"))])
+                    {
+                        if (model != null && !string.IsNullOrEmpty(model.EndLat))
+                        {
+                            results.Add(model);
+                        }
+                        firstDiagramOccurance = true;
+                        currentDiagramName = line[containsString.Length..(line[..line.LastIndexOf("---")].LastIndexOf("---"))];
+                        model = new SctSidStarModel()
+                        {
+                            Color = line[(line[..line.LastIndexOf("---")].LastIndexOf("---") + 3)..line.LastIndexOf("---")],
+                            DiagramName = line[containsString.Length..(line[..line.LastIndexOf("---")].LastIndexOf("---"))],
+                            AdditionalLines = new List<SctAditionalDiagramLineSegments>()
+                        };
+                    }
+                }
+
+                if (line.Contains("__") && !line.Contains(containsString))
+                {
+                    isInSectionNeeded = false;
+                }
+
+
+                if (isInLineSection && isInSectionNeeded)
+                {
+                    switch (firstDiagramOccurance)
+                    {
+                        case true:
+                            {
+                                switch (line.Trim())
+                                {
+                                    case "10": model.StartLon = _dxfFilelines[currentLine + 1].Trim(); break;
+                                    case "20": model.StartLat = _dxfFilelines[currentLine + 1].Trim(); break;
+                                    case "11": model.EndLon = _dxfFilelines[currentLine + 1].Trim(); break;
+                                    case "21": model.EndLat = _dxfFilelines[currentLine + 1].Trim(); isInLineSection = false; isInSectionNeeded = false; firstDiagramOccurance = false; break;
+                                }
+                                break;
+                            }
+                        case false:
+                            {
+                                switch (line.Trim())
+                                {
+                                    case "10": additionalLineSegments.StartLon = _dxfFilelines[currentLine + 1].Trim(); break;
+                                    case "20": additionalLineSegments.StartLat = _dxfFilelines[currentLine + 1].Trim(); break;
+                                    case "11": additionalLineSegments.EndLon = _dxfFilelines[currentLine + 1].Trim(); break;
+                                    case "21":
+                                        {
+                                            additionalLineSegments.EndLat = _dxfFilelines[currentLine + 1].Trim();
+                                            additionalLineSegments.Color = model.Color;
+                                            model.AdditionalLines.Add(additionalLineSegments);
+                                            additionalLineSegments = new SctAditionalDiagramLineSegments();
+                                            isInLineSection = false; 
+                                            isInSectionNeeded = false;
+                                            break;
+                                        }
+                                }
+                                break;
+                            }
+                    }
+                }
+            }
+
+            if (model != null)
+            {
+                results.Add(model);
+            }
+            return results;
         }
 
         private List<SctArtccModel> artccParser(string containsString)
@@ -177,17 +378,167 @@ namespace FeBuddyLibrary.Dxf.Data
 
         private List<SctFixesModel> fixesParser()
         {
-            throw new NotImplementedException();
+            List<SctFixesModel> results = new List<SctFixesModel>();
+
+            bool isInFixSection = false;
+            bool isInTextSection = false;
+
+            SctFixesModel model = null;
+
+            int currentLine = -1;
+            foreach (string line in _dxfFilelines)
+            {
+                currentLine++;
+
+                if (line.Contains("TEXT"))
+                {
+                    isInTextSection = true;
+                }
+
+                if (isInTextSection && line.Contains("FIX__"))
+                {
+                    isInFixSection = true;
+                    if (model != null && !string.IsNullOrEmpty(model.FixName))
+                    {
+                        results.Add(model);
+                    }
+                    model = new SctFixesModel();
+                }
+
+                if (line.Contains("__") && !line.Contains("FIX__"))
+                {
+                    isInFixSection = false;
+                }
+
+                if (isInTextSection && isInFixSection)
+                {
+                    switch (line.Trim())
+                    {
+                        case "10": model.Lon = _dxfFilelines[currentLine + 1].Trim(); break;
+                        case "20": model.Lat = _dxfFilelines[currentLine + 1].Trim(); break;
+                        case "40": model.FixName = _dxfFilelines[currentLine + 3].Trim(); isInFixSection = false; isInTextSection = false; break;
+                    }
+                }
+            }
+            if (model != null)
+            {
+                results.Add(model);
+            }
+
+            return results;
         }
 
         private List<SctRunwayModel> runwayParser()
         {
-            throw new NotImplementedException();
+            List<SctRunwayModel> results = new List<SctRunwayModel>();
+
+            bool isInLineSection = false;
+            bool isInRunwaySection = false;
+            SctRunwayModel model = null;
+
+            int currentLine = -1;
+            foreach (string line in _dxfFilelines)
+            {
+                currentLine++;
+                if (line.Contains("LINE"))
+                {
+                    isInLineSection = true;
+                }
+                if (isInLineSection && line.Contains("RUNWAY__"))
+                {
+                    isInRunwaySection = true;
+                    if (model != null && !string.IsNullOrEmpty(model.EndLat))
+                    {
+                        results.Add(model);
+                    }
+                    string _line = line.Trim()[(line.LastIndexOf("_") + 1)..];
+                    string[] split = _line.Split(' ');
+                    model = new SctRunwayModel()
+                    {
+                        RunwayNumber = split[0],
+                        OppositeRunwayNumber = split[1],
+                        MagRunwayHeading = split[2],
+                        OppositeMagRunwayHeading = split[3],
+                    };
+                }
+
+                if (line.Contains("__") && !line.Contains("RUNWAY__"))
+                {
+                    isInRunwaySection = false;
+                }
+
+                if (isInLineSection && isInRunwaySection)
+                {
+                    switch (line.Trim())
+                    {
+                        case "10": model.StartLon = _dxfFilelines[currentLine +1].Trim(); break;
+                        case "20": model.StartLat = _dxfFilelines[currentLine + 1].Trim(); break;
+                        case "11": model.EndLon = _dxfFilelines[currentLine + 1].Trim(); break;
+                        case "21": model.EndLat = _dxfFilelines[currentLine + 1].Trim(); isInLineSection = false; isInRunwaySection = false; break;
+                    }
+                }
+            }
+
+            if (model != null)
+            {
+                results.Add(model);
+            }
+            return results;
         }
 
         private List<SctAirportModel> airportParser()
         {
-            throw new NotImplementedException();
+            List<SctAirportModel> results = new List<SctAirportModel>();
+            bool isInAirportSection = false;
+            bool isInTextSection = false;
+            SctAirportModel model = null;
+
+            int currentLine = -1;
+            foreach (string line in _dxfFilelines)
+            {
+                currentLine += 1;
+                if (line.Contains("AIRPORT__"))
+                {
+                    isInAirportSection = true;
+                    if (model != null && !string.IsNullOrEmpty(model.Id))
+                    {
+                        results.Add(model);
+                    }
+                    model = new SctAirportModel();
+                }
+
+                if (isInAirportSection && line.Contains("TEXT"))
+                {
+                    isInTextSection = true;
+                }
+
+                if (line.Contains("__") && !line.Contains("AIRPORT__"))
+                {
+                    isInAirportSection = false;
+                }
+
+                if (isInTextSection && isInAirportSection)
+                {
+                    switch (line.Trim())
+                    {
+                        case "10": model.Lon = _dxfFilelines[currentLine + 1]; break;
+                        case "20": model.Lat = _dxfFilelines[currentLine + 1]; break;
+                        case "40":
+                            {
+                                model.Id = _dxfFilelines[currentLine + 3].Split(' ')[0];
+                                model.Frequency = _dxfFilelines[currentLine + 3].Split(' ')[1];
+                                isInAirportSection = false;
+                                isInTextSection = false;
+                                break;
+                            }
+                    }
+                }
+            }
+            if (model != null && !string.IsNullOrEmpty(model.Id))
+            {
+                results.Add(model);
+            }
+            return results;
         }
 
         private List<VORNDBModel> vorAndNDBParser(string containsString)
@@ -212,6 +563,11 @@ namespace FeBuddyLibrary.Dxf.Data
                         results.Add(model);
                     }
                     model = new VORNDBModel();
+                }
+
+                if (line.Contains("__") && !line.Contains(containsString))
+                {
+                    isInVorSection = false;
                 }
 
                 if (isInVorSection)

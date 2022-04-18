@@ -15,7 +15,7 @@ namespace FeBuddyLibrary.Dxf.Data
         private string _sectorFilePath;
         private SctFileModel _sctFileModel;
         
-        public void CreateSctModel(string FullFilePath)
+        public void CreateSctModel(string FullFilePath, string outputFilePath)
         {
             _sectorFilePath = FullFilePath;
 
@@ -44,7 +44,7 @@ namespace FeBuddyLibrary.Dxf.Data
                 SctLabelSection = GetSctLabels(GetSctFileSection("[LABELS]")),
             };
 
-            SctDxf sctDxf = new SctDxf(_sctFileModel);
+            SctDxf sctDxf = new SctDxf(_sctFileModel, outputFilePath);
         }
 
         private List<SctLabelModel> GetSctLabels(string[] vs)

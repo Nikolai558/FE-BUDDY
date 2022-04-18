@@ -14,22 +14,22 @@ namespace FeBuddyLibrary.Dxf.Data
         List<string> _dxfFilelines;
         SctFileModel _sctFileModel;
 
-        public DxfSct()
+        public DxfSct(string dxfFilePath, string sctFilePath)
         {
             ////var test = DxfDocument.Load(@"C:\Users\nikol\Desktop\DXF Conversions\All.dxf");
             //DxfDocument doc = new DxfDocument();
             //Line entity = new Line();
             //doc.AddEntity(entity);
             //doc.Save(@"C:\Users\nikol\Desktop\DXF Conversions\testfromlib.dxf");
-            _dxfFilelines = readDxfFile(@"C:\Users\nikol\Desktop\DXF Conversions\SmallTest.dxf");
+            _dxfFilelines = readDxfFile(dxfFilePath);
             _sctFileModel = new SctFileModel();
 
             CreateSctFileModle();
 
-            WriteSectorFile();
+            WriteSectorFile(sctFilePath);
         }
 
-        private void WriteSectorFile()
+        private void WriteSectorFile(string sctFilePath)
         {
 
             StringBuilder sectorFileData = new StringBuilder();
@@ -84,7 +84,7 @@ namespace FeBuddyLibrary.Dxf.Data
             sectorFileData.AppendLine(_sctFileModel.GetSection(_sctFileModel.SctLabelSection));
 
 
-            File.WriteAllText(@"C:\Users\nikol\Desktop\DXF Conversions\DXF_Converted_to_SCT_Test.sct2", sectorFileData.ToString());
+            File.WriteAllText(sctFilePath, sectorFileData.ToString());
         }
 
         private void CreateSctFileModle()

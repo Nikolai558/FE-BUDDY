@@ -168,11 +168,11 @@ namespace FeBuddyLibrary.Helpers
 
             string dms;
 
-            degrees = int.Parse(value.ToString().Split('.')[0]);
+            degrees = int.Parse(value.ToString("0." + new string('#', 339)).Split('.')[0]);
 
             if (value.ToString().Split('.').Count() > 1)
             {
-                degreeFloat = decimal.Parse("0." + value.ToString().Split('.')[1]);
+                degreeFloat = decimal.Parse("0." + value.ToString("0." + new string('#', 339)).Split('.')[1]);
             }
 
             minutes = int.Parse((degreeFloat * 60).ToString().Split('.')[0]);

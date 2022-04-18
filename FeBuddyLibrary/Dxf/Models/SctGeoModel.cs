@@ -7,5 +7,14 @@
         public string EndLat { get; set; }
         public string EndLon { get; set; }
         public string Color { get; set; }
+
+        public string AllInfo
+        {
+            get
+            {
+                string output = $"{StartLat} {StartLon} {EndLat} {EndLon} {Color}";
+                return output;
+            }
+        }
     }
 }

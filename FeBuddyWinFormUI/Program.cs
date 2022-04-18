@@ -14,6 +14,13 @@ namespace FeBuddyWinFormUI
         [STAThread]
         static void Main()
         {
+            FeBuddyLibrary.Dxf.Data.DataFunctions testing = new();
+            testing.CreateSctModel(@"C:\Users\nikol\Desktop\DXF Conversions\SmallTest.SCT2");
+
+            FeBuddyLibrary.Dxf.Data.DxfSct testing2 = new FeBuddyLibrary.Dxf.Data.DxfSct();
+
+
+
             // TODO - Get system info and log it into file first thing. -https://docs.microsoft.com/en-us/previous-versions/windows/embedded/ee436483(v=msdn.10)
             Logger.CreateLogFile();
             SquirrelLogger.Register(); // wire up Squirrel logging to our log file too
@@ -48,8 +55,8 @@ namespace FeBuddyWinFormUI
             //landingForm.Show();
 
             // Start the application
-            //Application.Run(new LandingForm(version));
-            Application.Run(new AiracDataForm(version));
+            Application.Run(new LandingForm(version));
+            //Application.Run(new AiracDataForm(version));
         }
 
         private static void OnAppInstalled(SemanticVersion ver, IAppTools tools)

@@ -25,6 +25,66 @@ namespace FeBuddyLibrary.Dxf.Data
             _sctFileModel = new SctFileModel();
 
             CreateSctFileModle();
+
+            WriteSectorFile();
+        }
+
+        private void WriteSectorFile()
+        {
+
+            StringBuilder sectorFileData = new StringBuilder();
+
+            sectorFileData.AppendLine(_sctFileModel.GetSection(_sctFileModel.SctFileColors));
+
+            sectorFileData.AppendLine(_sctFileModel.GetInfoSection);
+
+            sectorFileData.AppendLine("[VOR]");
+            sectorFileData.AppendLine(_sctFileModel.GetSection(_sctFileModel.SctVORSection));
+
+            sectorFileData.AppendLine("[NDB]");
+            sectorFileData.AppendLine(_sctFileModel.GetSection(_sctFileModel.SctNDBSection));
+
+            sectorFileData.AppendLine("[AIRPORT]");
+            sectorFileData.AppendLine(_sctFileModel.GetSection(_sctFileModel.SctAirportSection));
+
+            sectorFileData.AppendLine("[RUNWAY]");
+            sectorFileData.AppendLine(_sctFileModel.GetSection(_sctFileModel.SctRunwaySection));
+
+            sectorFileData.AppendLine("[FIXES]");
+            sectorFileData.AppendLine(_sctFileModel.GetSection(_sctFileModel.SctFixesSection));
+
+            sectorFileData.AppendLine("[ARTCC]");
+            sectorFileData.AppendLine(_sctFileModel.GetSection(_sctFileModel.SctArtccSection));
+
+            sectorFileData.AppendLine("[ARTCC HIGH]");
+            sectorFileData.AppendLine(_sctFileModel.GetSection(_sctFileModel.SctArtccHighSection));
+
+            sectorFileData.AppendLine("[ARTCC LOW]");
+            sectorFileData.AppendLine(_sctFileModel.GetSection(_sctFileModel.SctArtccLowSection));
+
+            sectorFileData.AppendLine("[SID]");
+            sectorFileData.AppendLine(_sctFileModel.GetSection(_sctFileModel.SctSidSection));
+
+            sectorFileData.AppendLine("[STAR]");
+            sectorFileData.AppendLine(_sctFileModel.GetSection(_sctFileModel.SctStarSection));
+
+            sectorFileData.AppendLine("[LOW AIRWAY]");
+            sectorFileData.AppendLine(_sctFileModel.GetSection(_sctFileModel.SctLowAirwaySection));
+
+            sectorFileData.AppendLine("[HIGH AIRWAY]");
+            sectorFileData.AppendLine(_sctFileModel.GetSection(_sctFileModel.SctHighAirwaySection));
+
+            sectorFileData.AppendLine("[GEO]");
+            sectorFileData.AppendLine(_sctFileModel.GetSection(_sctFileModel.SctGeoSection));
+
+            sectorFileData.AppendLine("[REGIONS]");
+            sectorFileData.AppendLine(_sctFileModel.GetSection(_sctFileModel.SctRegionsSection));
+
+            sectorFileData.AppendLine("[LABELS]");
+            sectorFileData.AppendLine(_sctFileModel.GetSection(_sctFileModel.SctLabelSection));
+
+
+            File.WriteAllText(@"C:\Users\nikol\Desktop\DXF Conversions\DXF_Converted_to_SCT_Test.sct2", sectorFileData.ToString());
         }
 
         private void CreateSctFileModle()
@@ -86,8 +146,8 @@ namespace FeBuddyLibrary.Dxf.Data
                 {
                     switch (line.Trim())
                     {
-                        case "10": model.Lon = _dxfFilelines[currentLine + 1].Trim(); break;
-                        case "20": model.Lat = _dxfFilelines[currentLine + 1].Trim(); break;
+                        case "10": model.Lon = LatLonHelpers.CreateDMS(double.Parse(_dxfFilelines[currentLine + 1].Trim()), false); break;
+                        case "20": model.Lat = LatLonHelpers.CreateDMS(double.Parse(_dxfFilelines[currentLine + 1].Trim()), true); break;
                         case "40":
                             {
                                 model.LabelText = "\"" + _dxfFilelines[currentLine + 3].Trim() + "\"";
@@ -148,18 +208,18 @@ namespace FeBuddyLibrary.Dxf.Data
                     {
                         switch (line.Trim())
                         {
-                            case "10": model.Lon = _dxfFilelines[currentLine + 1].Trim(); break;
-                            case "20": model.Lat = _dxfFilelines[currentLine +1].Trim(); firstCoordinate = false; break;
+                            case "10": model.Lon = LatLonHelpers.CreateDMS(double.Parse(_dxfFilelines[currentLine + 1].Trim()), false); break;
+                            case "20": model.Lat = LatLonHelpers.CreateDMS(double.Parse(_dxfFilelines[currentLine +1].Trim()), true); firstCoordinate = false; break;
                         }
                     }
                     else
                     {
                         switch (line.Trim())
                         {
-                            case "10": point.Lon = _dxfFilelines[currentLine + 1].Trim(); break;
+                            case "10": point.Lon = LatLonHelpers.CreateDMS(double.Parse(_dxfFilelines[currentLine + 1].Trim()), false); break;
                             case "20":
                                 {
-                                    point.Lat = _dxfFilelines[currentLine + 1].Trim();
+                                    point.Lat = LatLonHelpers.CreateDMS(double.Parse(_dxfFilelines[currentLine + 1].Trim()), true);
                                     model.AdditionalRegionInfo.Add(point);
                                     point = new RegionPolygonPoints();
                                     break;
@@ -203,7 +263,7 @@ namespace FeBuddyLibrary.Dxf.Data
                         models.Add(currentModel);
                     }
                     currentModel = new SctGeoModel();
-                    currentModel.Color = _currentLine[_currentLine.IndexOf("---").._currentLine.LastIndexOf("---")];
+                    currentModel.Color = _currentLine[(_currentLine.IndexOf("---")+3).._currentLine.LastIndexOf("---")];
                     isInGeoSection = true;
                 }
 
@@ -282,10 +342,10 @@ namespace FeBuddyLibrary.Dxf.Data
                             {
                                 switch (line.Trim())
                                 {
-                                    case "10": model.StartLon = _dxfFilelines[currentLine + 1].Trim(); break;
-                                    case "20": model.StartLat = _dxfFilelines[currentLine + 1].Trim(); break;
-                                    case "11": model.EndLon = _dxfFilelines[currentLine + 1].Trim(); break;
-                                    case "21": model.EndLat = _dxfFilelines[currentLine + 1].Trim(); isInLineSection = false; isInSectionNeeded = false; firstDiagramOccurance = false; break;
+                                    case "10": model.StartLon = LatLonHelpers.CreateDMS(double.Parse(_dxfFilelines[currentLine + 1].Trim()), false); break;
+                                    case "20": model.StartLat = LatLonHelpers.CreateDMS(double.Parse(_dxfFilelines[currentLine + 1].Trim()), true); break;
+                                    case "11": model.EndLon = LatLonHelpers.CreateDMS(double.Parse(_dxfFilelines[currentLine + 1].Trim()), false); break;
+                                    case "21": model.EndLat = LatLonHelpers.CreateDMS(double.Parse(_dxfFilelines[currentLine + 1].Trim()), true); isInLineSection = false; isInSectionNeeded = false; firstDiagramOccurance = false; break;
                                 }
                                 break;
                             }
@@ -293,12 +353,12 @@ namespace FeBuddyLibrary.Dxf.Data
                             {
                                 switch (line.Trim())
                                 {
-                                    case "10": additionalLineSegments.StartLon = _dxfFilelines[currentLine + 1].Trim(); break;
-                                    case "20": additionalLineSegments.StartLat = _dxfFilelines[currentLine + 1].Trim(); break;
-                                    case "11": additionalLineSegments.EndLon = _dxfFilelines[currentLine + 1].Trim(); break;
+                                    case "10": additionalLineSegments.StartLon = LatLonHelpers.CreateDMS(double.Parse(_dxfFilelines[currentLine + 1].Trim()), false); break;
+                                    case "20": additionalLineSegments.StartLat = LatLonHelpers.CreateDMS(double.Parse(_dxfFilelines[currentLine + 1].Trim()), true); break;
+                                    case "11": additionalLineSegments.EndLon = LatLonHelpers.CreateDMS(double.Parse(_dxfFilelines[currentLine + 1].Trim()), false); break;
                                     case "21":
                                         {
-                                            additionalLineSegments.EndLat = _dxfFilelines[currentLine + 1].Trim();
+                                            additionalLineSegments.EndLat = LatLonHelpers.CreateDMS(double.Parse(_dxfFilelines[currentLine + 1].Trim()),true);
                                             additionalLineSegments.Color = model.Color;
                                             model.AdditionalLines.Add(additionalLineSegments);
                                             additionalLineSegments = new SctAditionalDiagramLineSegments();
@@ -414,8 +474,8 @@ namespace FeBuddyLibrary.Dxf.Data
                 {
                     switch (line.Trim())
                     {
-                        case "10": model.Lon = _dxfFilelines[currentLine + 1].Trim(); break;
-                        case "20": model.Lat = _dxfFilelines[currentLine + 1].Trim(); break;
+                        case "10": model.Lon = LatLonHelpers.CreateDMS(Double.Parse(_dxfFilelines[currentLine + 1].Trim()), false); break;
+                        case "20": model.Lat = LatLonHelpers.CreateDMS(Double.Parse(_dxfFilelines[currentLine + 1].Trim()), true); break;
                         case "40": model.FixName = _dxfFilelines[currentLine + 3].Trim(); isInFixSection = false; isInTextSection = false; break;
                     }
                 }
@@ -471,10 +531,10 @@ namespace FeBuddyLibrary.Dxf.Data
                 {
                     switch (line.Trim())
                     {
-                        case "10": model.StartLon = _dxfFilelines[currentLine +1].Trim(); break;
-                        case "20": model.StartLat = _dxfFilelines[currentLine + 1].Trim(); break;
-                        case "11": model.EndLon = _dxfFilelines[currentLine + 1].Trim(); break;
-                        case "21": model.EndLat = _dxfFilelines[currentLine + 1].Trim(); isInLineSection = false; isInRunwaySection = false; break;
+                        case "10": model.StartLon = LatLonHelpers.CreateDMS(Double.Parse(_dxfFilelines[currentLine +1].Trim()), false); break;
+                        case "20": model.StartLat = LatLonHelpers.CreateDMS(Double.Parse(_dxfFilelines[currentLine + 1].Trim()), true); break;
+                        case "11": model.EndLon = LatLonHelpers.CreateDMS(Double.Parse(_dxfFilelines[currentLine + 1].Trim()), false); break;
+                        case "21": model.EndLat = LatLonHelpers.CreateDMS(Double.Parse(_dxfFilelines[currentLine + 1].Trim()), true); isInLineSection = false; isInRunwaySection = false; break;
                     }
                 }
             }
@@ -521,8 +581,8 @@ namespace FeBuddyLibrary.Dxf.Data
                 {
                     switch (line.Trim())
                     {
-                        case "10": model.Lon = _dxfFilelines[currentLine + 1]; break;
-                        case "20": model.Lat = _dxfFilelines[currentLine + 1]; break;
+                        case "10": model.Lon = LatLonHelpers.CreateDMS(Double.Parse(_dxfFilelines[currentLine + 1]), false); break;
+                        case "20": model.Lat = LatLonHelpers.CreateDMS(Double.Parse(_dxfFilelines[currentLine + 1]), true); break;
                         case "40":
                             {
                                 model.Id = _dxfFilelines[currentLine + 3].Split(' ')[0];
@@ -574,8 +634,8 @@ namespace FeBuddyLibrary.Dxf.Data
                 {
                     switch (line.Trim())
                     {
-                        case "10": model.Lon = _dxfFilelines[currentIndex + 1]; break;
-                        case "20": model.Lat = _dxfFilelines[currentIndex + 1]; break;
+                        case "10": model.Lon = LatLonHelpers.CreateDMS(double.Parse(_dxfFilelines[currentIndex + 1]), false); break;
+                        case "20": model.Lat = LatLonHelpers.CreateDMS(double.Parse(_dxfFilelines[currentIndex + 1]), true); break;
                         case "0.006":
                             {
                                 model.Id = _dxfFilelines[currentIndex + 2].Split(' ')[0];

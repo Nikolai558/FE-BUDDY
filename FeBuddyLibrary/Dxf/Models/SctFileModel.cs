@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -25,5 +26,37 @@ namespace FeBuddyLibrary.Dxf.Models
         public List<SctGeoModel> SctGeoSection { get; set; } // Contains [GEO] Section, Need to put header before printing out if doing that.
         public List<SctRegionModel> SctRegionsSection { get; set; } // Contains [REGIONS] Section, Need to put header before printing out if doing that.
         public List<SctLabelModel> SctLabelSection { get; set; } // Contains [LABELS] Section, Need to put header before printing out if doing that.
+
+
+        public string GetSection<T>(List<T> sctObjects)
+        {
+            StringBuilder output = new StringBuilder();
+
+            Type myType = sctObjects[0].GetType();
+            IList<PropertyInfo> props = new List<PropertyInfo>(myType.GetProperties());
+
+            foreach (var item in sctObjects)
+            {
+                foreach (PropertyInfo prop in props)
+                {
+                    if (prop.Name == "AllInfo")
+                    {
+                        output.AppendLine(prop.GetValue(item).ToString());
+
+                        break;
+                    }
+                }
+            }
+
+            return output.ToString();
+        }
+
+        public string GetInfoSection 
+        { 
+            get 
+            {
+                return SctInfoSection.AllInfo;
+            }
+        }
     }
 }

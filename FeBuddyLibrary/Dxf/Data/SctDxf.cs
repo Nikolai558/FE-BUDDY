@@ -60,7 +60,7 @@ namespace FeBuddyLibrary.Dxf.Data
                 sb.AppendLine(" 20");
                 sb.AppendLine("  30.0");
                 sb.AppendLine(" 40\n0.006\n  1");
-                sb.AppendLine(colorLine.SctColorLine.Trim());
+                sb.AppendLine(colorLine.AllInfo.Trim());
             }
 
             sb.AppendLine("  0\nENDSEC");

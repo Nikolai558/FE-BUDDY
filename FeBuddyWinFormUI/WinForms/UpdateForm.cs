@@ -1,10 +1,9 @@
-﻿using FeBuddyLibrary;
-using FeBuddyLibrary.Helpers;
-using System;
+﻿using System;
 using System.Drawing;
 using System.IO;
 using System.Net;
 using System.Windows.Forms;
+using FeBuddyLibrary.Helpers;
 
 namespace FeBuddyWinFormUI
 {

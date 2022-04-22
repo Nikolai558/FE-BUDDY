@@ -1,6 +1,6 @@
-﻿using FeBuddyLibrary.Helpers;
-using System;
+﻿using System;
 using System.Windows.Forms;
+using FeBuddyLibrary.Helpers;
 
 namespace FeBuddyWinFormUI
 {

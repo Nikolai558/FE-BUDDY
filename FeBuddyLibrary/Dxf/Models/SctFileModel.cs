@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace FeBuddyLibrary.Dxf.Models
 {
@@ -51,9 +49,9 @@ namespace FeBuddyLibrary.Dxf.Models
             return output.ToString();
         }
 
-        public string GetInfoSection 
-        { 
-            get 
+        public string GetInfoSection
+        {
+            get
             {
                 return SctInfoSection.AllInfo;
             }

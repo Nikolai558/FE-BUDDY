@@ -51,7 +51,7 @@ namespace FeBuddyLibrary.DataAccess
         private void WriteACData(string outputFilePath)
         {
             string command;
-            
+
             StringBuilder aliasFileSB = new StringBuilder();
 
             Dictionary<string, AircraftDataInformation> uniqueACData = getUniqueACData(AllAircraftData);

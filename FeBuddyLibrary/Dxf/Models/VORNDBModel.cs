@@ -8,7 +8,7 @@
         public string Lon { get; set; }
         public string Comments { get; set; }
 
-        public string AllInfo 
+        public string AllInfo
         {
             get
             {

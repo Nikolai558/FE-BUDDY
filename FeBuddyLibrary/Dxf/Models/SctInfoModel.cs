@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace FeBuddyLibrary.Dxf.Models
+﻿namespace FeBuddyLibrary.Dxf.Models
 {
     public class SctInfoModel
     {
@@ -17,7 +15,8 @@ namespace FeBuddyLibrary.Dxf.Models
         public string SctScale { get; set; }
         public string[] AdditionalLines { get; set; }
 
-        public string AllInfo { 
+        public string AllInfo
+        {
             get
             {
                 string output = $"{Header}\n{SctFileName}\n{DefaultCallsign}\n{DefaultAirport}\n{CenterLat}\n{CenterLon}\n{NMPerLat}\n{NMPerLon}\n{MagneticVariation}\n{SctScale}\n";

@@ -1,17 +1,11 @@
-﻿using FeBuddyLibrary;
-using FeBuddyLibrary.DataAccess;
-using FeBuddyLibrary.Helpers;
-using FeBuddyLibrary.Models;
-using FeBuddyLibrary.Models.MetaFileModels;
-using System;
-using System.ComponentModel;
+﻿using System;
 using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Text;
 using System.IO;
-using System.Reflection;
 using System.Windows.Forms;
+using FeBuddyLibrary.Helpers;
 
 namespace FeBuddyWinFormUI
 {
@@ -19,7 +13,7 @@ namespace FeBuddyWinFormUI
     {
         private readonly string _currentVersion;
         readonly PrivateFontCollection _pfc = new PrivateFontCollection();
-        
+
         public LandingForm(string currentVersion)
         {
             Logger.LogMessage("DEBUG", "INITIALIZING COMPONENT");
@@ -113,7 +107,7 @@ namespace FeBuddyWinFormUI
         {
             Logger.LogMessage("DEBUG", "LOADING Landing FORM");
 
-            
+
             // TODO - Add fonts to buttons. 
             InstructionsMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
             CreditsMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
@@ -125,9 +119,9 @@ namespace FeBuddyWinFormUI
             discordToolStripMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
             settingsToolStripMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
             reportIssuesToolStripMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
-            allowBetaMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular); 
+            allowBetaMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
         }
-        
+
         private void UninstallMenuItem_Click(object sender, EventArgs e)
         {
             Logger.LogMessage("WARNING", "UNINSTALL MENU ITEM CLICKED");
@@ -305,7 +299,7 @@ namespace FeBuddyWinFormUI
                     MessageBoxDefaultButton.Button2);
 
 
-                if ( warningMSG == DialogResult.Yes)
+                if (warningMSG == DialogResult.Yes)
                 {
                     allowBetaMenuItem.Checked = !allowBetaMenuItem.Checked;
 
@@ -336,7 +330,8 @@ namespace FeBuddyWinFormUI
                 airacDataForm.FormClosing += (s, args) => this.Close();
                 airacDataForm.Show();
                 this.Hide();
-            }else if(convertSct2DxfSelection.Checked)
+            }
+            else if (convertSct2DxfSelection.Checked)
             {
                 var sctToDxfForm = new SctToDxfForm(_currentVersion);
                 sctToDxfForm.FormClosing += (s, args) => this.Close();

@@ -1,11 +1,9 @@
-﻿using FeBuddyLibrary.Dxf.Models;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
+using FeBuddyLibrary.Dxf.Models;
 
 namespace FeBuddyLibrary.Dxf.Data
 {
@@ -14,7 +12,7 @@ namespace FeBuddyLibrary.Dxf.Data
         private string _sectorFileText;
         private string _sectorFilePath;
         private SctFileModel _sctFileModel;
-        
+
         public void CreateSctModel(string FullFilePath, string outputFilePath)
         {
             _sectorFilePath = FullFilePath;
@@ -62,13 +60,13 @@ namespace FeBuddyLibrary.Dxf.Data
                     if (_line.Contains(';'))
                     {
                         comments = _line[_line.IndexOf(';')..];
-                        labelText = _line[..(_line.LastIndexOf('"')+1)];
-                        splitLine = _line[(_line.LastIndexOf('"')+1).._line.IndexOf(';')].Trim().Split(' ');
+                        labelText = _line[..(_line.LastIndexOf('"') + 1)];
+                        splitLine = _line[(_line.LastIndexOf('"') + 1).._line.IndexOf(';')].Trim().Split(' ');
                     }
                     else
                     {
-                        labelText = _line[..(_line.LastIndexOf('"')+1)];
-                        splitLine = _line[(_line.LastIndexOf('"')+1)..].Trim().Split(' ');
+                        labelText = _line[..(_line.LastIndexOf('"') + 1)];
+                        splitLine = _line[(_line.LastIndexOf('"') + 1)..].Trim().Split(' ');
                     }
 
                     if (splitLine.Length > 2)
@@ -170,7 +168,7 @@ namespace FeBuddyLibrary.Dxf.Data
                         EndLon = splitLine[3],
                         Color = splitLine[4]
                     };
-                    
+
                     result.Add(sctRunwayModel);
                 }
             }

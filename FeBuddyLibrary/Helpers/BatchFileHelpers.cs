@@ -27,7 +27,7 @@ namespace FeBuddyLibrary.Helpers
                 CreateNoWindow = true,
                 UseShellExecute = false
             };
-            
+
             Process = Process.Start(ProcessInfo);
             Process.WaitForExit();
             _ = Process.ExitCode;

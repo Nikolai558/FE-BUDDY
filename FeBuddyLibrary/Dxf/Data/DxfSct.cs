@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using FeBuddyLibrary.Dxf.Models;
 using FeBuddyLibrary.Helpers;
 
@@ -133,7 +132,7 @@ namespace FeBuddyLibrary.Dxf.Data
                     }
                     model = new SctLabelModel()
                     {
-                        Color = line[(line.IndexOf("---")+3)..line.LastIndexOf("---")].Trim()
+                        Color = line[(line.IndexOf("---") + 3)..line.LastIndexOf("---")].Trim()
                     };
                 }
 
@@ -191,12 +190,12 @@ namespace FeBuddyLibrary.Dxf.Data
                     isInSectionNeeded = true;
                     if (model != null)
                     {
-                        model.AdditionalRegionInfo.RemoveAt(model.AdditionalRegionInfo.Count -1);
+                        model.AdditionalRegionInfo.RemoveAt(model.AdditionalRegionInfo.Count - 1);
                         results.Add(model);
                     }
                     model = new SctRegionModel()
                     {
-                        RegionColorName = line[(line.LastIndexOf("__")+2)..],
+                        RegionColorName = line[(line.LastIndexOf("__") + 2)..],
                         AdditionalRegionInfo = new List<RegionPolygonPoints>()
                     };
                     firstCoordinate = true;
@@ -209,7 +208,7 @@ namespace FeBuddyLibrary.Dxf.Data
                         switch (line.Trim())
                         {
                             case "10": model.Lon = LatLonHelpers.CreateDMS(double.Parse(_dxfFilelines[currentLine + 1].Trim()), false); break;
-                            case "20": model.Lat = LatLonHelpers.CreateDMS(double.Parse(_dxfFilelines[currentLine +1].Trim()), true); firstCoordinate = false; break;
+                            case "20": model.Lat = LatLonHelpers.CreateDMS(double.Parse(_dxfFilelines[currentLine + 1].Trim()), true); firstCoordinate = false; break;
                         }
                     }
                     else
@@ -263,7 +262,7 @@ namespace FeBuddyLibrary.Dxf.Data
                         models.Add(currentModel);
                     }
                     currentModel = new SctGeoModel();
-                    currentModel.Color = _currentLine[(_currentLine.IndexOf("---")+3).._currentLine.LastIndexOf("---")];
+                    currentModel.Color = _currentLine[(_currentLine.IndexOf("---") + 3).._currentLine.LastIndexOf("---")];
                     isInGeoSection = true;
                 }
 
@@ -358,11 +357,11 @@ namespace FeBuddyLibrary.Dxf.Data
                                     case "11": additionalLineSegments.EndLon = LatLonHelpers.CreateDMS(double.Parse(_dxfFilelines[currentLine + 1].Trim()), false); break;
                                     case "21":
                                         {
-                                            additionalLineSegments.EndLat = LatLonHelpers.CreateDMS(double.Parse(_dxfFilelines[currentLine + 1].Trim()),true);
+                                            additionalLineSegments.EndLat = LatLonHelpers.CreateDMS(double.Parse(_dxfFilelines[currentLine + 1].Trim()), true);
                                             additionalLineSegments.Color = model.Color;
                                             model.AdditionalLines.Add(additionalLineSegments);
                                             additionalLineSegments = new SctAditionalDiagramLineSegments();
-                                            isInLineSection = false; 
+                                            isInLineSection = false;
                                             isInSectionNeeded = false;
                                             break;
                                         }
@@ -382,8 +381,8 @@ namespace FeBuddyLibrary.Dxf.Data
 
         private List<SctArtccModel> artccParser(string containsString)
         {
-            string[] validContainsString = new string[] 
-            { 
+            string[] validContainsString = new string[]
+            {
                 "ARTCC__", "ARTCC_HIGH__", "ARTCC_LOW__", "LOW_AIRWAY__", "HIGH_AIRWAY__"
             };
             if (!validContainsString.Contains(containsString)) throw new Exception("VALUE NOT ALLOWED");
@@ -531,7 +530,7 @@ namespace FeBuddyLibrary.Dxf.Data
                 {
                     switch (line.Trim())
                     {
-                        case "10": model.StartLon = LatLonHelpers.CreateDMS(Double.Parse(_dxfFilelines[currentLine +1].Trim()), false); break;
+                        case "10": model.StartLon = LatLonHelpers.CreateDMS(Double.Parse(_dxfFilelines[currentLine + 1].Trim()), false); break;
                         case "20": model.StartLat = LatLonHelpers.CreateDMS(Double.Parse(_dxfFilelines[currentLine + 1].Trim()), true); break;
                         case "11": model.EndLon = LatLonHelpers.CreateDMS(Double.Parse(_dxfFilelines[currentLine + 1].Trim()), false); break;
                         case "21": model.EndLat = LatLonHelpers.CreateDMS(Double.Parse(_dxfFilelines[currentLine + 1].Trim()), true); isInLineSection = false; isInRunwaySection = false; break;
@@ -640,7 +639,7 @@ namespace FeBuddyLibrary.Dxf.Data
                             {
                                 model.Id = _dxfFilelines[currentIndex + 2].Split(' ')[0];
                                 model.Frequency = _dxfFilelines[currentIndex + 2].Split(' ')[1];
-                                isInVorSection = false; 
+                                isInVorSection = false;
                                 break;
                             }
                     }
@@ -675,7 +674,7 @@ namespace FeBuddyLibrary.Dxf.Data
                     switch (line.Trim())
                     {
                         case "40": isInInfoTextSection = true; continue;
-                        case "0.006": if(isInInfoTextSection) text = _dxfFilelines[currentIndex + 2]; break;
+                        case "0.006": if (isInInfoTextSection) text = _dxfFilelines[currentIndex + 2]; break;
                     }
                     if (isInInfoTextSection)
                     {

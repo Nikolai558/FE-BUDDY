@@ -13,9 +13,9 @@ namespace FeBuddyLibrary.Dxf.Models
         public string Color { get; set; }
         public List<SctAditionalDiagramLineSegments> AdditionalLines { get; set; }
 
-        public string AllInfo 
-        { 
-            get 
+        public string AllInfo
+        {
+            get
             {
                 StringBuilder output = new StringBuilder();
                 output.Append($"{DiagramName.PadRight(26)}{StartLat} {StartLon} {EndLat} {EndLon} {Color}".Trim());

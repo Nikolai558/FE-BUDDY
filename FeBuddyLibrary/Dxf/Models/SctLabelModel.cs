@@ -7,13 +7,13 @@
         public string Lon { get; set; }
         public string Color { get; set; }
 
-        public string AllInfo 
-        { 
-            get 
+        public string AllInfo
+        {
+            get
             {
                 string output = $"{LabelText} {Lat} {Lon} {Color}";
                 return output;
-            } 
+            }
         }
 
     }

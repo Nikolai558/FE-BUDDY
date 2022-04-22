@@ -1,10 +1,4 @@
-﻿
-
-
-
-
-
-namespace FeBuddyLibrary.Dxf.Models
+﻿namespace FeBuddyLibrary.Dxf.Models
 {
     public class SctColorModel
     {

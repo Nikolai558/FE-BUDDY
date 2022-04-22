@@ -518,7 +518,6 @@ namespace FeBuddyLibrary.DataAccess
 
             File.WriteAllText($"{GlobalConfig.outputDirectory}\\VRC\\[STAR]\\000_All_STAR_Combined.sct2", combinedDataStar.ToString());
             Logger.LogMessage("INFO", $"SAVED ALL STAR SCT2 FILE");
-
             File.WriteAllText($"{GlobalConfig.outputDirectory}\\VRC\\[SID]\\000_All_DP_Combined.sct2", combinedDataDp.ToString());
             Logger.LogMessage("INFO", $"SAVED ALL DP SCT2 FILE");
 

@@ -73,7 +73,7 @@ namespace FeBuddyLibrary.Dxf.Data
                     {
                         SctLabelModel model = new SctLabelModel()
                         {
-                            LabelText = labelText.Replace("\"", String.Empty),
+                            LabelText = labelText.Replace("\"", string.Empty),
                             Lat = splitLine[0],
                             Lon = splitLine[1],
                             Color = splitLine[2]

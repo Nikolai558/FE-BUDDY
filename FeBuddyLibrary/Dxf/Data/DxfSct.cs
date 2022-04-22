@@ -473,8 +473,8 @@ namespace FeBuddyLibrary.Dxf.Data
                 {
                     switch (line.Trim())
                     {
-                        case "10": model.Lon = LatLonHelpers.CreateDMS(Double.Parse(_dxfFilelines[currentLine + 1].Trim()), false); break;
-                        case "20": model.Lat = LatLonHelpers.CreateDMS(Double.Parse(_dxfFilelines[currentLine + 1].Trim()), true); break;
+                        case "10": model.Lon = LatLonHelpers.CreateDMS(double.Parse(_dxfFilelines[currentLine + 1].Trim()), false); break;
+                        case "20": model.Lat = LatLonHelpers.CreateDMS(double.Parse(_dxfFilelines[currentLine + 1].Trim()), true); break;
                         case "40": model.FixName = _dxfFilelines[currentLine + 3].Trim(); isInFixSection = false; isInTextSection = false; break;
                     }
                 }
@@ -530,10 +530,10 @@ namespace FeBuddyLibrary.Dxf.Data
                 {
                     switch (line.Trim())
                     {
-                        case "10": model.StartLon = LatLonHelpers.CreateDMS(Double.Parse(_dxfFilelines[currentLine + 1].Trim()), false); break;
-                        case "20": model.StartLat = LatLonHelpers.CreateDMS(Double.Parse(_dxfFilelines[currentLine + 1].Trim()), true); break;
-                        case "11": model.EndLon = LatLonHelpers.CreateDMS(Double.Parse(_dxfFilelines[currentLine + 1].Trim()), false); break;
-                        case "21": model.EndLat = LatLonHelpers.CreateDMS(Double.Parse(_dxfFilelines[currentLine + 1].Trim()), true); isInLineSection = false; isInRunwaySection = false; break;
+                        case "10": model.StartLon = LatLonHelpers.CreateDMS(double.Parse(_dxfFilelines[currentLine + 1].Trim()), false); break;
+                        case "20": model.StartLat = LatLonHelpers.CreateDMS(double.Parse(_dxfFilelines[currentLine + 1].Trim()), true); break;
+                        case "11": model.EndLon = LatLonHelpers.CreateDMS(double.Parse(_dxfFilelines[currentLine + 1].Trim()), false); break;
+                        case "21": model.EndLat = LatLonHelpers.CreateDMS(double.Parse(_dxfFilelines[currentLine + 1].Trim()), true); isInLineSection = false; isInRunwaySection = false; break;
                     }
                 }
             }
@@ -580,8 +580,8 @@ namespace FeBuddyLibrary.Dxf.Data
                 {
                     switch (line.Trim())
                     {
-                        case "10": model.Lon = LatLonHelpers.CreateDMS(Double.Parse(_dxfFilelines[currentLine + 1]), false); break;
-                        case "20": model.Lat = LatLonHelpers.CreateDMS(Double.Parse(_dxfFilelines[currentLine + 1]), true); break;
+                        case "10": model.Lon = LatLonHelpers.CreateDMS(double.Parse(_dxfFilelines[currentLine + 1]), false); break;
+                        case "20": model.Lat = LatLonHelpers.CreateDMS(double.Parse(_dxfFilelines[currentLine + 1]), true); break;
                         case "40":
                             {
                                 model.Id = _dxfFilelines[currentLine + 3].Split(' ')[0];

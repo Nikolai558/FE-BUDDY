@@ -67,7 +67,7 @@ dotnet_naming_symbols.constant_fields.applicable_accessibilities  = *
 dotnet_naming_symbols.constant_fields.required_modifiers          = const
 dotnet_style_operator_placement_when_wrapping = beginning_of_line
 tab_width = 4
-end_of_line = crlf
+end_of_line = lf
 ###############################
 # C# Coding Conventions       #
 ###############################

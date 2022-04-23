@@ -6,22 +6,22 @@ The following is a list of features that we are considering or actively working 
 ---
 
 - [ ] SCT2 2 AutoCAD Converter
-  - Hard to find a GH repo of someone doing this already but maybe we can reverse engineer the sct_2_dxf.exe & dxf_2_sct.exe
-  - See: https://docs.fileformat.com/cad/dxf/
-  - See Also: https://ezdxf.mozman.at/docs/introduction.html
+  - Hard to find a GitHub repository of someone doing this already but maybe we can reverse engineer the sct_2_dxf.exe & dxf_2_sct.exe
+  - [DXF File Format](https://docs.fileformat.com/cad/dxf/)
+  - [EZDXF File Dormat](https://ezdxf.mozman.at/docs/introduction.html)
 
 - [ ] GoogleEarthPro Converter (for airport diagrams and other like-constructs)
 
 - [ ] FAA RVM .DAT (foia requests) converter.
-  - See: https://github.com/glott/DAT2Sector
-  - See also: https://drakedesignlabs.com/converter/source.txt
+  - [GitHub DAT2SCT](https://github.com/glott/DAT2Sector)
+  - [Other Converter](https://drakedesignlabs.com/converter/source.txt)
 
 - [ ] FAA GeoMAP (foia requests) converter.
-  - See: https://github.com/justinshannon/geo-map-converter
+  - [GeoMap converter](https://github.com/justinshannon/geo-map-converter)
     - Word is that the FAA may have changed their format of GeoMaps so this guy's may not work anymore.
 
 - [ ] Hygieia by dhawton
-  - See: https://github.com/dhawton/hygieia
+  - [Hygieia](https://github.com/dhawton/hygieia)
 
 - [ ] Separate "Low" and "High" airways by appropriate altitudes
 
@@ -29,7 +29,7 @@ The following is a list of features that we are considering or actively working 
 
 - [ ] GeoJSON Output
   - In preparation for CRC compatibility along with general usability of files
-  - For now, create in the format to work with https://geojson.io/
+  - For now, create in the format to work with [geojson](https://geojson.io/)
   - The user should be able to select this option on or off.
   - Data Points to Convert:
     - AIRPORTS [Point with text properites and the name/type in the text description]

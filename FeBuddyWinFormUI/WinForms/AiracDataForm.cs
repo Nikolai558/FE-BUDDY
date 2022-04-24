@@ -1,9 +1,4 @@
-﻿using FeBuddyLibrary;
-using FeBuddyLibrary.DataAccess;
-using FeBuddyLibrary.Helpers;
-using FeBuddyLibrary.Models;
-using FeBuddyLibrary.Models.MetaFileModels;
-using System;
+﻿using System;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Drawing;
@@ -11,6 +6,11 @@ using System.Drawing.Text;
 using System.IO;
 using System.Reflection;
 using System.Windows.Forms;
+using FeBuddyLibrary;
+using FeBuddyLibrary.DataAccess;
+using FeBuddyLibrary.Helpers;
+using FeBuddyLibrary.Models;
+using FeBuddyLibrary.Models.MetaFileModels;
 
 namespace FeBuddyWinFormUI
 {
@@ -19,7 +19,7 @@ namespace FeBuddyWinFormUI
         private bool nextAiracAvailable;
         private readonly string _currentVersion;
         readonly PrivateFontCollection _pfc = new PrivateFontCollection();
-        
+
 
         public AiracDataForm(string currentVersion)
         {
@@ -334,7 +334,7 @@ namespace FeBuddyWinFormUI
                 PublicationParser publications = new PublicationParser();
                 publications.WriteAirportInfoTxt(GlobalConfig.facilityID);
             }
-            else if (nextAiracSelection.Checked == true && nextAiracAvailable == true )
+            else if (nextAiracSelection.Checked == true && nextAiracAvailable == true)
             {
                 Logger.LogMessage("DEBUG", "NEXT AIRAC IS SELECTED, HOWEVER THE NEXT AIRAC IS NOT AVAILABLE YET");
                 SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Chart Recalls");
@@ -464,7 +464,7 @@ namespace FeBuddyWinFormUI
         private void AiracDataForm_Load(object sender, EventArgs e)
         {
             Logger.LogMessage("DEBUG", "LOADING MAIN FORM");
-            
+
             // TODO - Add fonts to buttons?
             InstructionsMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
             CreditsMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);

@@ -1,12 +1,10 @@
-﻿using FeBuddyLibrary.Dxf.Models;
-using FeBuddyLibrary.Helpers;
-using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Reflection;
+using System.Text;
+using FeBuddyLibrary.Dxf.Models;
+using FeBuddyLibrary.Helpers;
 
 namespace FeBuddyLibrary.Dxf.Data
 {
@@ -336,7 +334,7 @@ namespace FeBuddyLibrary.Dxf.Data
                 // TODO - FIGURE OUT IF CONVERTING E CORDINATES IS NEEDED! 
                 sb.AppendLine("  0\nSECTION\n  2\nENTITIES");
                 sb.AppendLine("  0\nLINE\n 62\n7\n 8");
-                sb.AppendLine("SID__" + diagramName+$"---{_color ?? string.Empty}---");
+                sb.AppendLine("SID__" + diagramName + $"---{_color ?? string.Empty}---");
                 sb.AppendLine(" 10");
                 sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(sctSid.StartLon, false, true), false));
                 sb.AppendLine(" 20");
@@ -355,7 +353,7 @@ namespace FeBuddyLibrary.Dxf.Data
                     sb.AppendLine(" 20");
                     sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(lineSegments.StartLat, true, true), false));
                     sb.AppendLine(" 11");
-                    sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(lineSegments.EndLon, false, true), false)); 
+                    sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(lineSegments.EndLon, false, true), false));
                     sb.AppendLine(" 21");
                     sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(lineSegments.EndLat, true, true), false));
                 }
@@ -441,7 +439,7 @@ namespace FeBuddyLibrary.Dxf.Data
                 sb.AppendLine(" 20");
                 sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(airportModel.Lat, true, true), false));
                 sb.AppendLine(" 40\n0.006\n  1");
-                sb.AppendLine(airportModel.Id + " " +airportModel.Frequency);
+                sb.AppendLine(airportModel.Id + " " + airportModel.Frequency);
             }
             sb.AppendLine("  0\nENDSEC");
             //sb.AppendLine("  0\nEOF");

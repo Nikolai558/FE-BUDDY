@@ -393,12 +393,21 @@ namespace FeBuddyLibrary.Dxf.Data
             List<SctArtccModel> models = new List<SctArtccModel>();
             SctArtccModel currentModel = null;
 
+            bool skipline = false;
+
             int currentIndex = -1;
             string previous_line = "";
             foreach (string current_line in _dxfFilelines)
             {
-                string _currentLine = current_line.Trim();
                 currentIndex += 1;
+                string _currentLine = current_line.Trim();
+
+                if (skipline)
+                {
+                    skipline = false;
+                    continue;
+                }
+
                 if (previous_line == "0" && _currentLine == "LINE")
                 {
                     isInLineSection = true;
@@ -418,10 +427,47 @@ namespace FeBuddyLibrary.Dxf.Data
                 {
                     switch (_currentLine)
                     {
-                        case "10": { currentModel.StartLon = LatLonHelpers.CreateDMS(double.Parse(_dxfFilelines[currentIndex + 1].Trim()), false); break; }
-                        case "20": { currentModel.StartLat = LatLonHelpers.CreateDMS(double.Parse(_dxfFilelines[currentIndex + 1].Trim()), true); break; }
-                        case "11": { currentModel.EndLon = LatLonHelpers.CreateDMS(double.Parse(_dxfFilelines[currentIndex + 1].Trim()), false); break; }
-                        case "21": { currentModel.EndLat = LatLonHelpers.CreateDMS(double.Parse(_dxfFilelines[currentIndex + 1].Trim()), true); isInSectionNeeded = false; isInLineSection = false; break; }
+                        case "10": 
+                            {
+                                skipline = true;
+                                if (currentModel.StartLon is null)
+                                {
+                                    currentModel.StartLon = LatLonHelpers.CreateDMS(double.Parse(_dxfFilelines[currentIndex + 1].Trim()), false);
+                                }
+                                break; 
+                            }
+                        case "20": 
+                            {
+                                skipline = true;
+
+                                if (currentModel.StartLat is null)
+                                {
+                                    currentModel.StartLat = LatLonHelpers.CreateDMS(double.Parse(_dxfFilelines[currentIndex + 1].Trim()), true);
+                                }
+                                break; 
+                            }
+                        case "11": 
+                            {
+                                skipline = true;
+
+                                if (currentModel.EndLon is null)
+                                {
+                                    currentModel.EndLon = LatLonHelpers.CreateDMS(double.Parse(_dxfFilelines[currentIndex + 1].Trim()), false);
+                                }
+                                break; 
+                            }
+                        case "21": 
+                            {
+                                skipline = true;
+
+                                if (currentModel.EndLat is null)
+                                {
+                                    currentModel.EndLat = LatLonHelpers.CreateDMS(double.Parse(_dxfFilelines[currentIndex + 1].Trim()), true);
+                                    isInSectionNeeded = false;
+                                    isInLineSection = false;
+                                }
+                                break;
+                            }
                         default: { break; }
                     }
                 }

@@ -189,13 +189,27 @@ namespace FeBuddyLibrary.Helpers
                 secondFloat = decimal.Parse("0." + (minuteFloat * 60).ToString().Split('.')[1]);
             }
 
-            secondFloat = Math.Round(secondFloat, 3);
+            secondFloat = Math.Round(secondFloat, 4);
+
+            if (secondFloat >= 1)
+            {
+                seconds += 1;
+            }
+            if (seconds >= 60)
+            {
+                minutes += 1;
+                seconds -= 60;
+            }
+            if (minutes >= 60)
+            {
+                degrees += 1;
+                minutes -= 60;
+            }
 
             if (secondFloat.ToString().Split('.').Count() > 1)
             {
-                miliseconds = secondFloat.ToString().Split('.')[1];
+                miliseconds = Math.Round(secondFloat, 3).ToString().Split('.')[1];
             }
-
 
             if (lat)
             {

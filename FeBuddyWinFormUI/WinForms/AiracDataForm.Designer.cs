@@ -201,7 +201,7 @@
             this.chooseDirButton.Name = "chooseDirButton";
             this.chooseDirButton.Size = new System.Drawing.Size(182, 34);
             this.chooseDirButton.TabIndex = 10;
-            this.chooseDirButton.Text = "Choose Output Location";
+            this.chooseDirButton.Text = "Select Output Location";
             this.chooseDirButton.UseVisualStyleBackColor = false;
             this.chooseDirButton.Click += new System.EventHandler(this.ChooseDirButton_Click);
             // 

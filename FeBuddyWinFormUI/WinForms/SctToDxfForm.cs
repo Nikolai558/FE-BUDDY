@@ -307,5 +307,15 @@ namespace FeBuddyWinFormUI
             Logger.LogMessage("DEBUG", "DISCORD MENU ITEM CLICKED");
             Process.Start(new ProcessStartInfo("https://discord.com/invite/GB46aeauH4") { UseShellExecute = true });
         }
+
+        private void inputButton_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void outputDirButton_Click(object sender, EventArgs e)
+        {
+
+        }
     }
 }

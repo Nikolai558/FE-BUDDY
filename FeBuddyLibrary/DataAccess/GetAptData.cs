@@ -415,8 +415,6 @@ namespace FeBuddyLibrary.DataAccess
                 Indent = true
             };
             XmlSerializer serializer = new(typeof(Airport[]), xmlRootAttribute);
-            
-
 
             foreach (AptModel aptModel in allAptModels)
             {

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Xml;
 using System.Xml.Linq;
 using System.Xml.Serialization;
 using FeBuddyLibrary.Helpers;
@@ -408,7 +409,15 @@ namespace FeBuddyLibrary.DataAccess
             List<Airport> allAptForXML = new List<Airport>();
 
             XmlRootAttribute xmlRootAttribute = new XmlRootAttribute("Airports");
-            XmlSerializer serializer = new XmlSerializer(typeof(Airport[]), xmlRootAttribute);
+
+            XmlWriterSettings xmlWriterSettings = new()
+            {
+                Indent = true
+            };
+            XmlSerializer serializer = new(typeof(Airport[]), xmlRootAttribute);
+            
+
+
             foreach (AptModel aptModel in allAptModels)
             {
                 bool doNotUseThisRwy = false;
@@ -523,9 +532,14 @@ namespace FeBuddyLibrary.DataAccess
             }
 
             Airport[] aptArrayForXML = allAptForXML.ToArray();
-            TextWriter writer = new StreamWriter(filePath);
-            serializer.Serialize(writer, aptArrayForXML);
-            writer.Close();
+            using (XmlWriter xmlWriter = XmlWriter.Create(filePath, xmlWriterSettings))
+            {
+                serializer.Serialize(xmlWriter, aptArrayForXML);
+            };
+
+            //TextWriter writer = new StreamWriter(filePath);
+            //serializer.Serialize(writer, aptArrayForXML);
+            //writer.Close();
 
             File.AppendAllText(filePath, $"\n<!--AIRAC_EFFECTIVE_DATE {effectiveDate}-->");
             File.Copy($"{GlobalConfig.outputDirectory}\\VERAM\\Airports.xml", $"{GlobalConfig.outputDirectory}\\VSTARS\\Airports.xml");

@@ -2,6 +2,7 @@
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Xml;
 
 namespace FeBuddyLibrary.Helpers
 {
@@ -64,13 +65,24 @@ namespace FeBuddyLibrary.Helpers
         {
             Logger.LogMessage("INFO", "STARTED WAYPOINTS XML WRITER");
 
+            XmlWriterSettings xmlWriterSettings = new()
+            {
+                Indent = true
+            };
+
             // File path for the waypoints.xml that we want to store to.
             string filePath = $"{GlobalConfig.outputDirectory}\\VERAM\\Waypoints.xml";
 
+
+            using (XmlWriter xmlWriter = XmlWriter.Create(filePath, xmlWriterSettings))
+            {
+                GlobalConfig.WaypointSerializer.Serialize(xmlWriter, GlobalConfig.waypoints);
+            };
+
             // Write the XML Serializer to the file.
-            TextWriter writer = new StreamWriter(filePath);
-            GlobalConfig.WaypointSerializer.Serialize(writer, GlobalConfig.waypoints);
-            writer.Close();
+            //TextWriter writer = new StreamWriter(filePath);
+            //GlobalConfig.WaypointSerializer.Serialize(writer, GlobalConfig.waypoints);
+            //writer.Close();
             Logger.LogMessage("INFO", "COMPLETED WAYPOINTS XML WRITER");
 
         }

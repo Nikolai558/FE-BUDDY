@@ -325,7 +325,7 @@ namespace FeBuddyWinFormUI
 
             if (currentAiracSelection.Checked == true)
             {
-                Logger.LogMessage("DEBUG", "NEXT AIRAC IS SELECTED, HOWEVER THE NEXT AIRAC IS NOT AVAILABLE YET");
+                Logger.LogMessage("DEBUG", "CURRENT AIRAC SELECTED");
                 SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Chart Recalls");
                 GetFaaMetaFileData ParseMeta = new GetFaaMetaFileData();
                 ParseMeta.QuarterbackFunc();
@@ -336,7 +336,7 @@ namespace FeBuddyWinFormUI
             }
             else if (nextAiracSelection.Checked == true && nextAiracAvailable == true)
             {
-                Logger.LogMessage("DEBUG", "NEXT AIRAC IS SELECTED, HOWEVER THE NEXT AIRAC IS NOT AVAILABLE YET");
+                Logger.LogMessage("DEBUG", "NEXT AIRAC IS SELECTED, and it is available");
                 SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Chart Recalls");
                 GetFaaMetaFileData ParseMeta = new GetFaaMetaFileData();
                 ParseMeta.QuarterbackFunc();

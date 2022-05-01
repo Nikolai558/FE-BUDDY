@@ -157,14 +157,14 @@ namespace FeBuddyLibrary.Dxf.Data
                 }
                 sb.AppendLine($"  0\nINSERT\n  8\nLABELS__---{_color ?? string.Empty}---\n  2\nLABELS");
                 sb.AppendLine(" 10");
-                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(model.Lon, false, true), false));
+                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(model.Lon, false, false), false));
                 sb.AppendLine(" 20");
-                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(model.Lat, true, true), false));
+                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(model.Lat, true, false), false));
                 sb.AppendLine($"  0\nTEXT\n  8\nLABELS__---{_color ?? string.Empty}---");
                 sb.AppendLine(" 10");
-                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(model.Lon, false, true), false));
+                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(model.Lon, false, false), false));
                 sb.AppendLine(" 20");
-                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(model.Lat, true, true), false));
+                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(model.Lat, true, false), false));
                 sb.AppendLine(" 40\n0.006\n  1");
                 sb.AppendLine(model.LabelText);
             }
@@ -193,22 +193,22 @@ namespace FeBuddyLibrary.Dxf.Data
                 sb.AppendLine("90\n    " + verticieCount.ToString());
                 sb.AppendLine("70\n    1\n43\n0.0");
                 sb.AppendLine(" 10");
-                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(model.Lon, false, true), false));
+                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(model.Lon, false, false), false));
                 sb.AppendLine(" 20");
-                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(model.Lat, true, true), false));
+                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(model.Lat, true, false), false));
 
                 foreach (RegionPolygonPoints lineSegments in model.AdditionalRegionInfo)
                 {
                     sb.AppendLine(" 10");
-                    sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(lineSegments.Lon, false, true), false));
+                    sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(lineSegments.Lon, false, false), false));
                     sb.AppendLine(" 20");
-                    sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(lineSegments.Lat, true, true), false));
+                    sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(lineSegments.Lat, true, false), false));
                 }
 
                 sb.AppendLine(" 10");
-                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(model.Lon, false, true), false));
+                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(model.Lon, false, false), false));
                 sb.AppendLine(" 20");
-                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(model.Lat, true, true), false));
+                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(model.Lat, true, false), false));
 
                 sb.AppendLine("  0\nENDSEC");
             }
@@ -237,13 +237,13 @@ namespace FeBuddyLibrary.Dxf.Data
                 sb.AppendLine("  0\nLINE\n 62\n56\n  8");
                 sb.AppendLine($"GEO__---{_color ?? string.Empty}---");
                 sb.AppendLine(" 10");
-                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(model.StartLon, false, true), false));
+                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(model.StartLon, false, false), false));
                 sb.AppendLine(" 20");
-                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(model.StartLat, true, true), false));
+                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(model.StartLat, true, false), false));
                 sb.AppendLine(" 11");
-                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(model.EndLon, false, true), false));
+                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(model.EndLon, false, false), false));
                 sb.AppendLine(" 21");
-                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(model.EndLat, true, true), false));
+                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(model.EndLat, true, false), false));
             }
 
             sb.AppendLine("  0\nENDSEC");
@@ -267,13 +267,13 @@ namespace FeBuddyLibrary.Dxf.Data
                 sb.AppendLine("  0\nLINE\n 8");
                 sb.AppendLine($"RUNWAY__{model.RunwayNumber} {model.OppositeRunwayNumber} {model.MagRunwayHeading} {model.OppositeMagRunwayHeading}");
                 sb.AppendLine(" 10");
-                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(model.StartLon, false, true), false));
+                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(model.StartLon, false, false), false));
                 sb.AppendLine(" 20");
-                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(model.StartLat, true, true), false));
+                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(model.StartLat, true, false), false));
                 sb.AppendLine(" 11");
-                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(model.EndLon, false, true), false));
+                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(model.EndLon, false, false), false));
                 sb.AppendLine(" 21");
-                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(model.EndLat, true, true), false));
+                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(model.EndLat, true, false), false));
             }
 
             sb.AppendLine("  0\nENDSEC");
@@ -297,14 +297,14 @@ namespace FeBuddyLibrary.Dxf.Data
             {
                 sb.AppendLine("  0\nINSERT\n  8\nFIX__\n  2\nFIX");
                 sb.AppendLine(" 10");
-                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(model.Lon, false, true), false));
+                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(model.Lon, false, false), false));
                 sb.AppendLine(" 20");
-                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(model.Lat, true, true), false));
+                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(model.Lat, true, false), false));
                 sb.AppendLine("  0\nTEXT\n  8\nFIX__");
                 sb.AppendLine(" 10");
-                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(model.Lon, false, true), false));
+                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(model.Lon, false, false), false));
                 sb.AppendLine(" 20");
-                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(model.Lat, true, true), false));
+                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(model.Lat, true, false), false));
                 sb.AppendLine(" 40\n0.006\n  1");
                 sb.AppendLine(model.FixName);
             }
@@ -336,26 +336,26 @@ namespace FeBuddyLibrary.Dxf.Data
                 sb.AppendLine("  0\nLINE\n 62\n7\n 8");
                 sb.AppendLine("SID__" + diagramName + $"---{_color ?? string.Empty}---");
                 sb.AppendLine(" 10");
-                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(sctSid.StartLon, false, true), false));
+                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(sctSid.StartLon, false, false), false));
                 sb.AppendLine(" 20");
-                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(sctSid.StartLat, true, true), false));
+                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(sctSid.StartLat, true, false), false));
                 sb.AppendLine(" 11");
-                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(sctSid.EndLon, false, true), false));
+                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(sctSid.EndLon, false, false), false));
                 sb.AppendLine(" 21");
-                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(sctSid.EndLat, true, true), false));
+                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(sctSid.EndLat, true, false), false));
 
                 foreach (SctAditionalDiagramLineSegments lineSegments in sctSid.AdditionalLines)
                 {
                     sb.AppendLine("  0\nLINE\n 62\n7\n  8");
                     sb.AppendLine("SID__" + diagramName + $"---{_color ?? string.Empty}---");
                     sb.AppendLine(" 10");
-                    sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(lineSegments.StartLon, false, true), false));
+                    sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(lineSegments.StartLon, false, false), false));
                     sb.AppendLine(" 20");
-                    sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(lineSegments.StartLat, true, true), false));
+                    sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(lineSegments.StartLat, true, false), false));
                     sb.AppendLine(" 11");
-                    sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(lineSegments.EndLon, false, true), false));
+                    sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(lineSegments.EndLon, false, false), false));
                     sb.AppendLine(" 21");
-                    sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(lineSegments.EndLat, true, true), false));
+                    sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(lineSegments.EndLat, true, false), false));
                 }
                 sb.AppendLine("  0\nENDSEC");
             }
@@ -387,26 +387,26 @@ namespace FeBuddyLibrary.Dxf.Data
                 sb.AppendLine("  0\nLINE\n 62\n7\n 8");
                 sb.AppendLine("STAR__" + diagramName + $"---{_color ?? string.Empty}---");
                 sb.AppendLine(" 10");
-                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(sctStar.StartLon, false, true), false));
+                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(sctStar.StartLon, false, false), false));
                 sb.AppendLine(" 20");
-                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(sctStar.StartLat, true, true), false));
+                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(sctStar.StartLat, true, false), false));
                 sb.AppendLine(" 11");
-                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(sctStar.EndLon, false, true), false));
+                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(sctStar.EndLon, false, false), false));
                 sb.AppendLine(" 21");
-                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(sctStar.EndLat, true, true), false));
+                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(sctStar.EndLat, true, false), false));
 
                 foreach (SctAditionalDiagramLineSegments lineSegments in sctStar.AdditionalLines)
                 {
                     sb.AppendLine("  0\nLINE\n 62\n7\n  8");
                     sb.AppendLine("STAR__" + diagramName + $"---{_color ?? string.Empty}---");
                     sb.AppendLine(" 10");
-                    sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(lineSegments.StartLon, false, true), false));
+                    sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(lineSegments.StartLon, false, false), false));
                     sb.AppendLine(" 20");
-                    sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(lineSegments.StartLat, true, true), false));
+                    sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(lineSegments.StartLat, true, false), false));
                     sb.AppendLine(" 11");
-                    sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(lineSegments.EndLon, false, true), false));
+                    sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(lineSegments.EndLon, false, false), false));
                     sb.AppendLine(" 21");
-                    sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(lineSegments.EndLat, true, true), false));
+                    sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(lineSegments.EndLat, true, false), false));
                 }
                 sb.AppendLine("  0\nENDSEC");
             }
@@ -430,14 +430,14 @@ namespace FeBuddyLibrary.Dxf.Data
             {
                 sb.AppendLine("  0\nINSERT\n  8\nAIRPORT__\n  2\nAIRPORT");
                 sb.AppendLine(" 10");
-                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(airportModel.Lon, false, true), false));
+                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(airportModel.Lon, false, false), false));
                 sb.AppendLine(" 20");
-                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(airportModel.Lat, true, true), false));
+                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(airportModel.Lat, true, false), false));
                 sb.AppendLine("  0\nTEXT\n  8\nAIRPORT__");
                 sb.AppendLine(" 10");
-                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(airportModel.Lon, false, true), false));
+                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(airportModel.Lon, false, false), false));
                 sb.AppendLine(" 20");
-                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(airportModel.Lat, true, true), false));
+                sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(airportModel.Lat, true, false), false));
                 sb.AppendLine(" 40\n0.006\n  1");
                 sb.AppendLine(airportModel.Id + " " + airportModel.Frequency);
             }
@@ -476,13 +476,13 @@ namespace FeBuddyLibrary.Dxf.Data
                     sb.AppendLine("  0\nLINE\n 8");
                     sb.AppendLine(diagramType + "__" + artccModel.Name);
                     sb.AppendLine(" 10");
-                    sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(artccModel.StartLon, false, true), false));
+                    sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(artccModel.StartLon, false, false), false));
                     sb.AppendLine(" 20");
-                    sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(artccModel.StartLat, true, true), false));
+                    sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(artccModel.StartLat, true, false), false));
                     sb.AppendLine(" 11");
-                    sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(artccModel.EndLon, false, true), false));
+                    sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(artccModel.EndLon, false, false), false));
                     sb.AppendLine(" 21");
-                    sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(artccModel.EndLat, true, true), false));
+                    sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(artccModel.EndLat, true, false), false));
                 }
 
                 sb.AppendLine("  0\nENDSEC");
@@ -515,14 +515,14 @@ namespace FeBuddyLibrary.Dxf.Data
                 {
                     sb.AppendLine($"  0\nINSERT\n  8\n{diagramType}__\n  2\n{diagramType}");
                     sb.AppendLine(" 10");
-                    sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(model.Lon, false, true), false));
+                    sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(model.Lon, false, false), false));
                     sb.AppendLine(" 20");
-                    sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(model.Lat, true, true), false));
+                    sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(model.Lat, true, false), false));
                     sb.AppendLine($"  0\nTEXT\n  8\n{diagramType}__");
                     sb.AppendLine(" 10");
-                    sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(model.Lon, false, true), false));
+                    sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(model.Lon, false, false), false));
                     sb.AppendLine(" 20");
-                    sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(model.Lat, true, true), false));
+                    sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(model.Lat, true, false), false));
                     sb.AppendLine(" 40\n0.006\n  1");
                     sb.AppendLine(model.Id + " " + model.Frequency);
                 }

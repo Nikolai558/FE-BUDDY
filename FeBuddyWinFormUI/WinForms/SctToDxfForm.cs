@@ -5,6 +5,7 @@ using System.Drawing.Text;
 using System.IO;
 using System.Windows.Forms;
 using FeBuddyLibrary;
+using FeBuddyLibrary.Dxf;
 using FeBuddyLibrary.Helpers;
 
 namespace FeBuddyWinFormUI
@@ -13,10 +14,15 @@ namespace FeBuddyWinFormUI
     {
         private readonly string _currentVersion;
         readonly PrivateFontCollection _pfc = new PrivateFontCollection();
+        private ConversionOptions _conversionOptions;
+        private ToolTip _toolTip;
 
         public SctToDxfForm(string currentVersion)
         {
             Logger.LogMessage("DEBUG", "INITIALIZING COMPONENT");
+            _conversionOptions = new ConversionOptions();
+            _toolTip = new ToolTip();
+
             _pfc.AddFontFile("Properties\\romantic.ttf");
 
             InitializeComponent();
@@ -25,11 +31,123 @@ namespace FeBuddyWinFormUI
             // It should grab from the assembily info. 
             this.Text = $"FE-BUDDY - V{currentVersion}";
 
-            airacCycleGroupBox.Enabled = false;
-            airacCycleGroupBox.Visible = false;
-
-            GlobalConfig.outputDirBase = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
             _currentVersion = currentVersion;
+        }
+
+        private void inputButton_Click(object sender, EventArgs e)
+        {
+            Logger.LogMessage("DEBUG", "USER CHOOSING DIFFERENT Input file for DXF Conversion tool");
+
+            OpenFileDialog inputFileDialog = new OpenFileDialog();
+
+            inputFileDialog.ShowDialog();
+
+            _conversionOptions.InputFilePath = inputFileDialog.FileName;
+
+            string text = _conversionOptions.InputFilePath;
+
+            if (text.Length >= 20)
+            {
+                if (text[^17..].Contains('\\'))
+                {
+                    text = "..\\" + text[^17..].Split('\\')[^1];
+                }
+                else
+                {
+                    text = "..\\.." + text[^15..];
+                }
+            }
+
+            sourceFileButton.Text = text;
+            sourceFileButton.TextAlign = ContentAlignment.MiddleCenter;
+            sourceFileButton.AutoSize = false;
+
+            //filePathLabel.Text = GlobalConfig.outputDirBase;
+            //filePathLabel.Visible = true;
+            //filePathLabel.MaximumSize = new Size(257, 82);
+
+        }
+
+        private void outputDirButton_Click(object sender, EventArgs e)
+        {
+            FolderBrowserDialog outputDirDialog = new FolderBrowserDialog();
+
+            outputDirDialog.ShowDialog();
+
+            _conversionOptions.outputDirectory = outputDirDialog.SelectedPath;
+
+            string text = _conversionOptions.outputDirectory;
+
+            if (text.Length >= 20)
+            {
+                if (text[^17..].Contains('\\'))
+                {
+                    text = "..\\" + text[^17..].Split('\\')[^1];
+                }
+                else
+                {
+                    text = "..\\.." + text[^15..];
+                }
+            }
+
+            outputDirButton.Text = text;
+            outputDirButton.TextAlign = ContentAlignment.MiddleCenter;
+            //outputDirButton.TextAlign
+            outputDirButton.AutoSize = false;
+            //outputDirButton.AutoEllipsis = true;
+        }
+
+        private void startButton_Click(object sender, EventArgs e)
+        {
+
+            // TODO MAKE SURE THEY SELECTED A .SCT2 .SCT or .DXF File
+            string inputFileName = "\\" + _conversionOptions.InputFilePath.Split('\\')[^1].Split('.')[0];
+
+            if (sctToDxfSelection.Checked)
+            {
+                // Convert SCT2 To DXF
+                FeBuddyLibrary.Dxf.Data.DataFunctions dataFunctions = new();
+
+                if (File.Exists(_conversionOptions.outputDirectory + inputFileName + ".dxf"))
+                {
+                    MessageBoxButtons buttons = MessageBoxButtons.YesNo;
+                    DialogResult result;
+
+                    result = MessageBox.Show("This file exists in this directory, would you like to write over it?", "File Exists!", buttons);
+
+                    if (result == DialogResult.No)
+                    {
+                        return;
+                    }
+                }
+
+
+
+                dataFunctions.CreateDxfFile(_conversionOptions.InputFilePath, _conversionOptions.outputDirectory + inputFileName + ".dxf");
+            }
+            else if (dxfToSctSelection.Checked)
+            {
+                if (File.Exists(_conversionOptions.outputDirectory + inputFileName + ".sct2"))
+                {
+                    MessageBoxButtons buttons = MessageBoxButtons.YesNo;
+                    DialogResult result;
+
+                    result = MessageBox.Show("This file exists in this directory, would you like to write over it?", "File Exists!", buttons);
+
+                    if (result == DialogResult.No)
+                    {
+                        return;
+                    }
+                }
+
+                // Convert DXF to SCT 2
+                FeBuddyLibrary.Dxf.Data.DxfSct dxfConverter = new FeBuddyLibrary.Dxf.Data.DxfSct(_conversionOptions.InputFilePath, _conversionOptions.outputDirectory + inputFileName + ".sct2");
+
+            }
+            else
+            {
+                throw new Exception("Invalid Selection for converter.");
+            }
         }
 
         private class MyRenderer : ToolStripProfessionalRenderer
@@ -308,14 +426,14 @@ namespace FeBuddyWinFormUI
             Process.Start(new ProcessStartInfo("https://discord.com/invite/GB46aeauH4") { UseShellExecute = true });
         }
 
-        private void inputButton_Click(object sender, EventArgs e)
+        private void outputDirButton_MouseHover(object sender, EventArgs e)
         {
-
+            _toolTip.SetToolTip(outputDirButton, _conversionOptions.outputDirectory);
         }
 
-        private void outputDirButton_Click(object sender, EventArgs e)
+        private void inputButton_MouseHover(object sender, EventArgs e)
         {
-
+            _toolTip.SetToolTip(sourceFileButton, _conversionOptions.InputFilePath);
         }
     }
 }

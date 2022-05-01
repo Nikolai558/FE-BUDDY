@@ -13,7 +13,7 @@ namespace FeBuddyLibrary.Dxf.Data
         private string _sectorFilePath;
         private SctFileModel _sctFileModel;
 
-        public void CreateSctModel(string FullFilePath, string outputFilePath)
+        public void CreateDxfFile(string FullFilePath, string outputFilePath)
         {
             _sectorFilePath = FullFilePath;
 

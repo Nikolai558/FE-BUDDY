@@ -13,11 +13,13 @@ namespace FeBuddyWinFormUI
     {
         private readonly string _currentVersion;
         readonly PrivateFontCollection _pfc = new PrivateFontCollection();
+        private ToolTip _toolTip;
 
         public LandingForm(string currentVersion)
         {
             Logger.LogMessage("DEBUG", "INITIALIZING COMPONENT");
 
+            _toolTip = new ToolTip();
             _pfc.AddFontFile("Properties\\romantic.ttf");
 
             this.FormClosed += (s, args) => Application.Exit();
@@ -318,8 +320,7 @@ namespace FeBuddyWinFormUI
 
         private void landingStartButton_MouseHover(object sender, EventArgs e)
         {
-            var startToolTip = new ToolTip();
-            startToolTip.SetToolTip(landingStartButton, "I'm not your friend, Guy...");
+            _toolTip.SetToolTip(landingStartButton, "I'm not your friend, Guy...");
         }
 
         private void landingStartButton_Click(object sender, EventArgs e)

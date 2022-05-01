@@ -100,17 +100,37 @@ namespace FeBuddyWinFormUI
 
         private void startButton_Click(object sender, EventArgs e)
         {
+            string errorMessages = "";
+
             // TODO Show Message box instead of just returning. 
-            if (string.IsNullOrWhiteSpace(_conversionOptions.InputFilePath)) return;
-            if (string.IsNullOrWhiteSpace(_conversionOptions.outputDirectory)) return;
+            if (string.IsNullOrWhiteSpace(_conversionOptions.InputFilePath)) errorMessages += "Input File Path is invalid.\n";
+            if (string.IsNullOrWhiteSpace(_conversionOptions.outputDirectory)) errorMessages += "Output Directory is invalid.\n";
 
             if (dxfToSctSelection.Checked)
             {
-                if (_conversionOptions.InputFilePath.Split('.')[^1] != "dxf") return;
+                if (_conversionOptions.InputFilePath?.Split('.')[^1] != "dxf") errorMessages += "DXF to SCT2 Selected, however, source file is not a .dxf\n";
             }
             if (sctToDxfSelection.Checked)
             {
-                if ((_conversionOptions.InputFilePath.Split('.')[^1].ToLower() != "sct" && _conversionOptions.InputFilePath.Split('.')[^1].ToLower() != "sct2")) return;
+                if ((_conversionOptions.InputFilePath?.Split('.')[^1].ToLower() != "sct" && _conversionOptions.InputFilePath?.Split('.')[^1].ToLower() != "sct2")) errorMessages += "SCT2 to DXF Selected, however, source file is not a .sct or .sct2\n";
+            }
+            if (!File.Exists(_conversionOptions.InputFilePath))
+            {
+                errorMessages += "Listen here, Buddy.... Do not change the file name after you've selected it in this program.\n";
+            }
+            if (!Directory.Exists(_conversionOptions.outputDirectory))
+            {
+                errorMessages += "Listen here, Buddy.... Do not change the folder name after you've selected it in this program.\n";
+            }
+
+
+            if (errorMessages != "")
+            {
+                MessageBoxButtons buttons = MessageBoxButtons.OK;
+                DialogResult result;
+
+                result = MessageBox.Show(errorMessages, "An invalid operation occured.", buttons);
+                return;
             }
 
             StartConversion();

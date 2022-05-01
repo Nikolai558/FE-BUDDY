@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Text;
@@ -99,14 +100,53 @@ namespace FeBuddyWinFormUI
 
         private void startButton_Click(object sender, EventArgs e)
         {
+            // TODO Show Message box instead of just returning. 
+            if (string.IsNullOrWhiteSpace(_conversionOptions.InputFilePath)) return;
+            if (string.IsNullOrWhiteSpace(_conversionOptions.outputDirectory)) return;
 
-            // TODO MAKE SURE THEY SELECTED A .SCT2 .SCT or .DXF File
+            if (dxfToSctSelection.Checked)
+            {
+                if (_conversionOptions.InputFilePath.Split('.')[^1] != "dxf") return;
+            }
+            if (sctToDxfSelection.Checked)
+            {
+                if ((_conversionOptions.InputFilePath.Split('.')[^1].ToLower() != "sct" && _conversionOptions.InputFilePath.Split('.')[^1].ToLower() != "sct2")) return;
+            }
+
+            StartConversion();
+        }
+
+        private void ToggleComponents(bool isEnabled)
+        {
+            //sctToDxfSelection.Enabled = isEnabled;
+            //dxfToSctSelection.Enabled = isEnabled;
+            sourceFileButton.Enabled = isEnabled;
+            outputDirButton.Enabled = isEnabled;
+            startButton.Enabled = isEnabled;
+        }
+
+        private void StartConversion()
+        {
+            ToggleComponents(false);
+            startButton.Text = "PROCESSING";
+
+            var worker = new BackgroundWorker();
+            worker.RunWorkerCompleted += Worker_StartConversionCompleted;
+            worker.DoWork += Worker_StartConversionDoWork;
+
+            worker.RunWorkerAsync();
+        }
+
+        private void Worker_StartConversionDoWork(object sender, DoWorkEventArgs e)
+        {
             string inputFileName = "\\" + _conversionOptions.InputFilePath.Split('\\')[^1].Split('.')[0];
 
             if (sctToDxfSelection.Checked)
             {
                 // Convert SCT2 To DXF
                 FeBuddyLibrary.Dxf.Data.DataFunctions dataFunctions = new();
+
+                // Subscribe to the event here? 
 
                 if (File.Exists(_conversionOptions.outputDirectory + inputFileName + ".dxf"))
                 {
@@ -120,9 +160,6 @@ namespace FeBuddyWinFormUI
                         return;
                     }
                 }
-
-
-
                 dataFunctions.CreateDxfFile(_conversionOptions.InputFilePath, _conversionOptions.outputDirectory + inputFileName + ".dxf");
             }
             else if (dxfToSctSelection.Checked)
@@ -139,15 +176,23 @@ namespace FeBuddyWinFormUI
                         return;
                     }
                 }
-
                 // Convert DXF to SCT 2
-                FeBuddyLibrary.Dxf.Data.DxfSct dxfConverter = new FeBuddyLibrary.Dxf.Data.DxfSct(_conversionOptions.InputFilePath, _conversionOptions.outputDirectory + inputFileName + ".sct2");
+                FeBuddyLibrary.Dxf.Data.DxfSct dxfConverter = new();
 
+                // Subscribe to the event here? 
+
+                dxfConverter.CreateSctFile(_conversionOptions.InputFilePath, _conversionOptions.outputDirectory + inputFileName + ".sct2");
             }
             else
             {
                 throw new Exception("Invalid Selection for converter.");
             }
+        }
+
+        private void Worker_StartConversionCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            startButton.Text = "Convert";
+            ToggleComponents(true);
         }
 
         private class MyRenderer : ToolStripProfessionalRenderer

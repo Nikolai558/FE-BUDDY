@@ -13,13 +13,8 @@ namespace FeBuddyLibrary.Dxf.Data
         List<string> _dxfFilelines;
         SctFileModel _sctFileModel;
 
-        public DxfSct(string dxfFilePath, string sctFilePath)
+        public void CreateSctFile(string dxfFilePath, string sctFilePath)
         {
-            ////var test = DxfDocument.Load(@"C:\Users\nikol\Desktop\DXF Conversions\All.dxf");
-            //DxfDocument doc = new DxfDocument();
-            //Line entity = new Line();
-            //doc.AddEntity(entity);
-            //doc.Save(@"C:\Users\nikol\Desktop\DXF Conversions\testfromlib.dxf");
             _dxfFilelines = readDxfFile(dxfFilePath);
             _sctFileModel = new SctFileModel();
 

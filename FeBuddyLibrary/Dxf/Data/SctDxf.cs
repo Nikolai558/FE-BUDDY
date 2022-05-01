@@ -347,7 +347,7 @@ namespace FeBuddyLibrary.Dxf.Data
                 foreach (SctAditionalDiagramLineSegments lineSegments in sctSid.AdditionalLines)
                 {
                     sb.AppendLine("  0\nLINE\n 62\n7\n  8");
-                    sb.AppendLine("SID__" + diagramName + $"---{_color ?? string.Empty}---");
+                    sb.AppendLine("SID__" + diagramName + $"---{lineSegments.Color?.Trim() ?? string.Empty}---");
                     sb.AppendLine(" 10");
                     sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(lineSegments.StartLon, false, false), false));
                     sb.AppendLine(" 20");
@@ -398,7 +398,7 @@ namespace FeBuddyLibrary.Dxf.Data
                 foreach (SctAditionalDiagramLineSegments lineSegments in sctStar.AdditionalLines)
                 {
                     sb.AppendLine("  0\nLINE\n 62\n7\n  8");
-                    sb.AppendLine("STAR__" + diagramName + $"---{_color ?? string.Empty}---");
+                    sb.AppendLine("STAR__" + diagramName + $"---{lineSegments.Color?.Trim() ?? string.Empty}---");
                     sb.AppendLine(" 10");
                     sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(lineSegments.StartLon, false, false), false));
                     sb.AppendLine(" 20");

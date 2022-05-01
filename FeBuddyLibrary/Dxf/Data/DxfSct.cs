@@ -350,6 +350,12 @@ namespace FeBuddyLibrary.Dxf.Data
                             }
                         case false:
                             {
+                                if (line.Trim().Contains(containsString))
+                                {
+                                    string trimmedLine = line.Trim();
+                                    additionalLineSegments.Color = trimmedLine[(trimmedLine[..trimmedLine.LastIndexOf("---")].LastIndexOf("---") + 3)..trimmedLine.LastIndexOf("---")];
+                                }
+
                                 switch (line.Trim())
                                 {
                                     case "10": additionalLineSegments.StartLon = LatLonHelpers.CreateDMS(double.Parse(_dxfFilelines[currentLine + 1].Trim()), false); break;
@@ -358,7 +364,10 @@ namespace FeBuddyLibrary.Dxf.Data
                                     case "21":
                                         {
                                             additionalLineSegments.EndLat = LatLonHelpers.CreateDMS(double.Parse(_dxfFilelines[currentLine + 1].Trim()), true);
-                                            additionalLineSegments.Color = model.Color;
+                                            if (string.IsNullOrEmpty(additionalLineSegments.Color) || string.IsNullOrWhiteSpace(additionalLineSegments.Color))
+                                            {
+                                                additionalLineSegments.Color = model.Color;
+                                            }
                                             model.AdditionalLines.Add(additionalLineSegments);
                                             additionalLineSegments = new SctAditionalDiagramLineSegments();
                                             isInLineSection = false;

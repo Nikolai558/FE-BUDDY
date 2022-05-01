@@ -433,7 +433,7 @@ namespace FeBuddyLibrary.Dxf.Data
                         StartLon = _line[26..].Split(' ')[1],
                         EndLat = _line[26..].Split(' ')[2],
                         EndLon = _line[26..].Split(' ')[3],
-                        Color = diagramModel.Color
+                        Color = diagramModel.Color //_line[26..].Split(' ')[4] // diagramModel.Color
                     });
                 }
             }

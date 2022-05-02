@@ -25,8 +25,7 @@ namespace FeBuddyLibrary.Helpers
                     }
                     catch (KeyNotFoundException)
                     {
-                        throw new Exception($"{value} is not defined. You must have this NAVAID defined in the appropriate section. Please fix this in your SCT file.");
-                        value = "N000.00.00.000";
+                        throw new Exception($"{value} is not defined. You must have this NAVAID/FIX defined in the appropriate section. Please fix this in your SCT file.");
                     }
                 }
                 else
@@ -37,8 +36,7 @@ namespace FeBuddyLibrary.Helpers
                     }
                     catch (KeyNotFoundException)
                     {
-                        throw new Exception($"{value} is not defined. You must have this NAVAID defined in the appropriate section. Please fix this in your SCT file.");
-                        value = "W000.00.00.000";
+                        throw new Exception($"{value} is not defined. You must have this NAVAID/FIX defined in the appropriate section. Please fix this in your SCT file.");
                     }
                 }
             }

@@ -846,26 +846,22 @@ namespace FeBuddyLibrary.Dxf.Data
             return Category switch
             {
                 "Colors" => new Regex(@"#define.+").Matches(_sectorFileText).Cast<Match>().Select(match => match.Value.Trim()).ToArray(),
-                "[INFO]" => new Regex(@"(\[INFO\](.|\n)*?(?=\[))").Match(_sectorFileText).Value.Trim().Split("\n"),
-
+                "[INFO]" => new Regex(@"(\[INFO\](.|\n)*?(?=\[))").Matches(_sectorFileText).Cast<Match>().SelectMany(match => match.Value.Trim().Split("\n")).ToArray(),
                 "[FIXES]" => new Regex(@"(\[FIXES\](.|\n)*?(?=\[))").Matches(_sectorFileText).Cast<Match>().SelectMany(match => match.Value.Trim().Split("\n")).ToArray(),
-
-
-                "[VOR]" => new Regex(@"(\[VOR\](.|\n)*?(?=\[))").Match(_sectorFileText).Value.Trim().Split("\n"),
-                "[NDB]" => new Regex(@"(\[NDB\](.|\n)*?(?=\[))").Match(_sectorFileText).Value.Trim().Split("\n"),
-                "[AIRPORT]" => new Regex(@"(\[AIRPORT\](.|\n)*?(?=\[))").Match(_sectorFileText).Value.Trim().Split("\n"),
-                "[RUNWAY]" => new Regex(@"(\[RUNWAY\](.|\n)*?(?=\[))").Match(_sectorFileText).Value.Trim().Split("\n"),
-                //"[FIXES]" => new Regex(@"(\[FIXES\](.|\n)*?(?=\[))").Match(_sectorFileText).Value.Trim().Split("\n"),
-                "[ARTCC]" => new Regex(@"(\[ARTCC\](.|\n)*?(?=\[))").Match(_sectorFileText).Value.Trim().Split("\n"),
-                "[ARTCC HIGH]" => new Regex(@"(\[ARTCC HIGH\](.|\n)*?(?=\[))").Match(_sectorFileText).Value.Trim().Split("\n"),
-                "[ARTCC LOW]" => new Regex(@"(\[ARTCC LOW\](.|\n)*?(?=\[))").Match(_sectorFileText).Value.Trim().Split("\n"),
-                "[SID]" => new Regex(@"(\[SID\](.|\n)*?(?=\[))").Match(_sectorFileText).Value.Trim().Split("\n"),
-                "[STAR]" => new Regex(@"(\[STAR\](.|\n)*?(?=\[))").Match(_sectorFileText).Value.Trim().Split("\n"),
-                "[LOW AIRWAY]" => new Regex(@"(\[LOW AIRWAY\](.|\n)*?(?=\[))").Match(_sectorFileText).Value.Trim().Split("\n"),
-                "[HIGH AIRWAY]" => new Regex(@"(\[HIGH AIRWAY\](.|\n)*?(?=\[))").Match(_sectorFileText).Value.Trim().Split("\n"),
-                "[GEO]" => new Regex(@"(\[GEO\](.|\n)*?(?=\[))").Match(_sectorFileText).Value.Trim().Split("\n"),
-                "[REGIONS]" => new Regex(@"(\[REGIONS\](.|\n)*?(?=\[))").Match(_sectorFileText).Value.Trim().Split("\n"),
-                "[LABELS]" => new Regex(@"(\[LABELS\](.|\n)*?(?=\[))").Match(_sectorFileText).Value.Trim().Split("\n"),
+                "[VOR]" => new Regex(@"(\[VOR\](.|\n)*?(?=\[))").Matches(_sectorFileText).Cast<Match>().SelectMany(Match => Match.Value.Trim().Split("\n")).ToArray(),
+                "[NDB]" => new Regex(@"(\[NDB\](.|\n)*?(?=\[))").Matches(_sectorFileText).Cast<Match>().SelectMany(match => match.Value.Trim().Split("\n")).ToArray(),
+                "[AIRPORT]" => new Regex(@"(\[AIRPORT\](.|\n)*?(?=\[))").Matches(_sectorFileText).Cast<Match>().SelectMany(match => match.Value.Trim().Split("\n")).ToArray(),
+                "[RUNWAY]" => new Regex(@"(\[RUNWAY\](.|\n)*?(?=\[))").Matches(_sectorFileText).Cast<Match>().SelectMany(match => match.Value.Trim().Split("\n")).ToArray(),
+                "[ARTCC]" => new Regex(@"(\[ARTCC\](.|\n)*?(?=\[))").Matches(_sectorFileText).Cast<Match>().SelectMany(match => match.Value.Trim().Split("\n")).ToArray(),
+                "[ARTCC HIGH]" => new Regex(@"(\[ARTCC HIGH\](.|\n)*?(?=\[))").Matches(_sectorFileText).Cast<Match>().SelectMany(match => match.Value.Trim().Split("\n")).ToArray(),
+                "[ARTCC LOW]" => new Regex(@"(\[ARTCC LOW\](.|\n)*?(?=\[))").Matches(_sectorFileText).Cast<Match>().SelectMany(match => match.Value.Trim().Split("\n")).ToArray(),
+                "[SID]" => new Regex(@"(\[SID\](.|\n)*?(?=\[))").Matches(_sectorFileText).Cast<Match>().SelectMany(match => match.Value.Trim().Split("\n")).ToArray(),
+                "[STAR]" => new Regex(@"(\[STAR\](.|\n)*?(?=\[))").Matches(_sectorFileText).Cast<Match>().SelectMany(match => match.Value.Trim().Split("\n")).ToArray(),
+                "[LOW AIRWAY]" => new Regex(@"(\[LOW AIRWAY\](.|\n)*?(?=\[))").Matches(_sectorFileText).Cast<Match>().SelectMany(match => match.Value.Trim().Split("\n")).ToArray(),
+                "[HIGH AIRWAY]" => new Regex(@"(\[HIGH AIRWAY\](.|\n)*?(?=\[))").Matches(_sectorFileText).Cast<Match>().SelectMany(match => match.Value.Trim().Split("\n")).ToArray(),
+                "[GEO]" => new Regex(@"(\[GEO\](.|\n)*?(?=\[))").Matches(_sectorFileText).Cast<Match>().SelectMany(match => match.Value.Trim().Split("\n")).ToArray(),
+                "[REGIONS]" => new Regex(@"(\[REGIONS\](.|\n)*?(?=\[))").Matches(_sectorFileText).Cast<Match>().SelectMany(match => match.Value.Trim().Split("\n")).ToArray(),
+                "[LABELS]" => new Regex(@"(\[LABELS\](.|\n)*?(?=\[))").Matches(_sectorFileText).Cast<Match>().SelectMany(match => match.Value.Trim().Split("\n")).ToArray(),
                 _ => throw new NotImplementedException(),
             };
         }

@@ -325,17 +325,20 @@ namespace FeBuddyWinFormUI
 
         private void landingStartButton_Click(object sender, EventArgs e)
         {
+            // this.show() => should be this.close()... I don't like hitting the X button and it taking us back to the main menu
+            // Need to do a button to handle that if it works PROPERLY... I had issues with that but maybe it is fixed or maybe I was doing it wrong before. 
+
             if (getparseAiracDataSelection.Checked)
             {
                 var airacDataForm = new AiracDataForm(_currentVersion);
-                airacDataForm.FormClosing += (s, args) => this.Close();
+                airacDataForm.FormClosing += (s, args) => this.Show();
                 airacDataForm.Show();
                 this.Hide();
             }
             else if (convertSct2DxfSelection.Checked)
             {
                 var sctToDxfForm = new SctToDxfForm(_currentVersion);
-                sctToDxfForm.FormClosing += (s, args) => this.Close();
+                sctToDxfForm.FormClosing += (s, args) => this.Show();
                 sctToDxfForm.Show();
                 this.Hide();
             }

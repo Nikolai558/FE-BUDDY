@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace FeBuddyLibrary.Helpers
@@ -12,8 +13,36 @@ namespace FeBuddyLibrary.Helpers
         /// <param name="Lat">Is this value a Lat, if so Put true</param>
         /// <param name="ConvertEast">Do you need ALL East Coords converted, if so put true.</param>
         /// <returns>standard [N-S-E-W]000.00.00.000 lat/lon format</returns>
-        public static string CorrectLatLon(string value, bool Lat, bool ConvertEast)
+        public static string CorrectLatLon(string value, bool Lat, bool ConvertEast, Dictionary<string, Dictionary<string,string>> navaidPostions = null)
         {
+            if (navaidPostions is not null && !value.Contains('.'))
+            {
+                if (Lat)
+                {
+                    try
+                    {
+                        value = navaidPostions[value]["Lat"];
+                    }
+                    catch (KeyNotFoundException)
+                    {
+                        throw new Exception($"{value} is not defined. You must have this NAVAID defined in the appropriate section. Please fix this in your SCT file.");
+                        value = "N000.00.00.000";
+                    }
+                }
+                else
+                {
+                    try
+                    {
+                        value = navaidPostions[value]["Lon"];
+                    }
+                    catch (KeyNotFoundException)
+                    {
+                        throw new Exception($"{value} is not defined. You must have this NAVAID defined in the appropriate section. Please fix this in your SCT file.");
+                        value = "W000.00.00.000";
+                    }
+                }
+            }
+
             // Valid format is N000.00.00.000 W000.00.000
             string correctedValue;
 

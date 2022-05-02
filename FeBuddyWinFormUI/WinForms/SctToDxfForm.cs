@@ -159,7 +159,7 @@ namespace FeBuddyWinFormUI
 
         private void Worker_StartConversionDoWork(object sender, DoWorkEventArgs e)
         {
-            string inputFileName = "\\" + _conversionOptions.InputFilePath.Split('\\')[^1].Split('.')[0];
+            string inputFileName = "\\" + _conversionOptions.InputFilePath.Split('\\')[^1].Split('.')[0] + "-converted";
 
             if (sctToDxfSelection.Checked)
             {

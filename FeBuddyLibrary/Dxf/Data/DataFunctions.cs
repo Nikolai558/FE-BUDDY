@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using FeBuddyLibrary.Dxf.Models;
+using FeBuddyLibrary.Helpers;
 
 namespace FeBuddyLibrary.Dxf.Data
 {
@@ -55,6 +56,8 @@ namespace FeBuddyLibrary.Dxf.Data
 
         private (bool, string) VerifyLine(string line)
         {
+            //Logger.LogMessage("Debug", $"Checking line: {line}");
+
             bool outputBool = false;
             string outputString = line;
 
@@ -77,12 +80,15 @@ namespace FeBuddyLibrary.Dxf.Data
             if (string.IsNullOrEmpty(outputString)) return (outputBool, outputString);
 
             // The string has been completely formatted, we can now return the string.
+            //Logger.LogMessage("Debug", $"Changed Line to: {outputString}");
             outputBool = true;
             return (outputBool, outputString);
         }
 
         private List<SctLabelModel> GetSctLabels(string[] vs)
         {
+            Logger.LogMessage("INFO", "Getting SctLabels");
+
             var result = new List<SctLabelModel>();
 
             Regex sRegexStaticText = new Regex(@"^""(.+)""\s+(\S+)\s+(\S+)\s+(\S+)", RegexOptions.Compiled);
@@ -95,24 +101,26 @@ namespace FeBuddyLibrary.Dxf.Data
                 {
                     continue;
                 }
-
+                
                 var match = sRegexStaticText.Match(_line);
 
                 if (match.Success)
                 {
-                    result.Add(new SctLabelModel()
+                    var model = new SctLabelModel()
                     {
                         LabelText = match.Groups[1].Value,
                         Lat = match.Groups[2].Value,
                         Lon = match.Groups[3].Value,
                         Color = match.Groups[4].Value
-                    });
+                    };
+                    result.Add(model);
+                    //Logger.LogMessage("DEBUG", $"Found Correct Label format: text={model.LabelText}, lat={model.Lat}, lon={model.Lon}, color={model.Color}");
                 }
 
                 //string[] splitLine;
                 //string labelText;
                 //string comments = "";
-                
+
                 //if (_line.Contains('"'))
                 //{
                 //    if (_line.Contains(';'))
@@ -140,12 +148,14 @@ namespace FeBuddyLibrary.Dxf.Data
                 //    }
                 //}
             }
-
+            Logger.LogMessage("INFO", "FOUND all labels in SCT2 file.");
             return result;
         }
 
         private List<SctRegionModel> GetSctRegions(string[] vs)
         {
+            Logger.LogMessage("INFO", "Getting SCT Regions");
+
             // Current Sct_2_dxf.exe tool does not convert regions.... hmmm
             var result = new List<SctRegionModel>();
             SctRegionModel regionModel = null;
@@ -171,6 +181,7 @@ namespace FeBuddyLibrary.Dxf.Data
                         {
                             result.Add(regionModel);
                         }
+
                         regionModel = new SctRegionModel()
                         {
                             RegionColorName = match.Groups[1].Value,
@@ -178,6 +189,8 @@ namespace FeBuddyLibrary.Dxf.Data
                             Lon = match.Groups[3].Value,
                             AdditionalRegionInfo = new List<RegionPolygonPoints>()
                         };
+
+                        //Logger.LogMessage("DEBUG", $"Found Correct Region Begining format: RegionColorName={regionModel.RegionColorName}, lat={regionModel.Lat}, lon={regionModel.Lon}");
                     }
                 }
                 else
@@ -189,12 +202,14 @@ namespace FeBuddyLibrary.Dxf.Data
                         {
                             throw new Exception("Found region continuation without having found the region start");
                         }
-
-                        regionModel.AdditionalRegionInfo.Add(new RegionPolygonPoints()
+                        var model = new RegionPolygonPoints()
                         {
                             Lat = match.Groups[1].Value,
                             Lon = match.Groups[2].Value
-                        });
+                        };
+
+                        //Logger.LogMessage("DEBUG", $"Found Correct Region Continuation format: RegionColorName={regionModel.RegionColorName}, lat={model.Lat}, lon={model.Lon}");
+                        regionModel.AdditionalRegionInfo.Add(model);
                     }
                 }
             }
@@ -203,6 +218,8 @@ namespace FeBuddyLibrary.Dxf.Data
             {
                 result.Add(regionModel);
             }
+
+            Logger.LogMessage("INFO", "FOUND ALL REGIONS IN SCT FILE");
             return result;
             //    if (string.IsNullOrEmpty(_line) || _line[0] == ';' || _line.Length < 29)
             //    {
@@ -241,6 +258,8 @@ namespace FeBuddyLibrary.Dxf.Data
 
         private List<SctGeoModel> GetSctGeo(string[] vs)
         {
+            Logger.LogMessage("INFO", "Getting SCT GEO");
+
             var result = new List<SctGeoModel>();
             Regex sRegexGeoSegment = new Regex(@"^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)(?:\s+(\S+))?", RegexOptions.Compiled);
 
@@ -256,14 +275,17 @@ namespace FeBuddyLibrary.Dxf.Data
                 var match = sRegexGeoSegment.Match(_line);
                 if (match.Success)
                 {
-                    result.Add(new SctGeoModel()
+                    var model = new SctGeoModel()
                     {
                         StartLat = match.Groups[1].Value,
                         StartLon = match.Groups[2].Value,
                         EndLat = match.Groups[3].Value,
                         EndLon = match.Groups[4].Value,
                         Color = match.Groups[5].Value
-                    });
+                    };
+                    result.Add(model);
+                    //Logger.LogMessage("DEBUG", $"Found Correct GEO LINE: startLat={model.StartLat}, startLon={model.StartLon}, endLat={model.EndLat}, endLon={model.EndLon}, color={model.Color}");
+
                 }
                 //string[] splitLine;
                 //string comments = "";
@@ -292,11 +314,15 @@ namespace FeBuddyLibrary.Dxf.Data
                 //}
             }
 
+            Logger.LogMessage("INFO", "FOUND ALL GEO LINES IN SCT FILE.");
+
             return result;
         }
 
         private List<SctRunwayModel> GetSctRunways(string[] vs)
         {
+            Logger.LogMessage("INFO", "Getting SCT RUNWAYS");
+
             var result = new List<SctRunwayModel>();
             Regex sRegexRunway = new Regex(@"^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)", RegexOptions.Compiled);
 
@@ -312,7 +338,7 @@ namespace FeBuddyLibrary.Dxf.Data
                 var match = sRegexRunway.Match(_line);
                 if (match.Success)
                 {
-                    result.Add(new SctRunwayModel()
+                    var model = new SctRunwayModel()
                     {
                         RunwayNumber = match.Groups[1].Value,
                         OppositeRunwayNumber = match.Groups[2].Value,
@@ -322,7 +348,11 @@ namespace FeBuddyLibrary.Dxf.Data
                         StartLon = match.Groups[6].Value,
                         EndLat = match.Groups[7].Value,
                         EndLon = match.Groups[8].Value,
-                    });
+                    };
+
+                    result.Add(model);
+                    //Logger.LogMessage("DEBUG", $"Found Correct RUNWAY: runwayNum={model.RunwayNumber}, opRunwayNum={model.OppositeRunwayNumber}, magHdg={model.MagRunwayHeading}, opMagHdg={model.OppositeMagRunwayHeading}, startLat={model.StartLat}, startLon={model.StartLon}, endLat={model.EndLat}, endLon={model.EndLon}");
+
                 }
                 //string[] splitLine;
                 //string comments = "";
@@ -357,12 +387,15 @@ namespace FeBuddyLibrary.Dxf.Data
                 //    result.Add(sctRunwayModel);
                 //}
             }
+            Logger.LogMessage("INGO", $"Found ALL RUNWAYS IN SCT FILE");
 
             return result;
         }
 
         private List<SctFixesModel> GetSctFixes(string[] vs)
         {
+            Logger.LogMessage("INFO", "Getting SCT FIXES");
+
             var result = new List<SctFixesModel>();
             Regex sRegexFix = new Regex(@"^(\S+)\s+(\S+)\s+(\S+)", RegexOptions.Compiled);
 
@@ -386,13 +419,16 @@ namespace FeBuddyLibrary.Dxf.Data
                             {"Lon", match.Groups[3].Value },
                         };
                     }
-
-                    result.Add(new SctFixesModel()
+                    var model = new SctFixesModel()
                     {
                         FixName = match.Groups[1].Value,
                         Lat = match.Groups[2].Value,
                         Lon = match.Groups[3].Value,
-                    });
+                    };
+
+                    result.Add(model);
+                    //Logger.LogMessage("DEBUG", $"Found Correct FIX: fixName={model.FixName}, lat={model.Lat}, lon={model.Lon}");
+
                 }
 
                 //string[] splitLine;
@@ -422,11 +458,15 @@ namespace FeBuddyLibrary.Dxf.Data
                 //    result.Add(model);
                 //}
             }
+            Logger.LogMessage("INFO", "FOUND ALL FIXES IN SCT FILE");
+
             return result;
         }
 
         private List<VORNDBModel> GetSctNnbsAndVORS(string[] vs)
         {
+            Logger.LogMessage("INFO", "Getting VOR/NDB");
+
             List<VORNDBModel> results = new List<VORNDBModel>();
             Regex sRegexVorNdb = new Regex(@"^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)", RegexOptions.Compiled);
 
@@ -450,14 +490,17 @@ namespace FeBuddyLibrary.Dxf.Data
                             {"Lon", match.Groups[4].Value },
                         };
                     }
-
-                    results.Add(new VORNDBModel()
+                    var model = new VORNDBModel()
                     {
                         Id = match.Groups[1].Value,
                         Frequency = match.Groups[2].Value,
                         Lat = match.Groups[3].Value,
                         Lon = match.Groups[4].Value,
-                    });
+                    };
+
+                    results.Add(model);
+                    //Logger.LogMessage("DEBUG", $"Found Correct VOR/NDB: id={model.Id}, frequency={model.Frequency}, lat={model.Lat}, lon={model.Lon}");
+
                 }
                 //if (_line.Split(' ').Length > 3)
                 //{
@@ -488,11 +531,15 @@ namespace FeBuddyLibrary.Dxf.Data
                 //    results.Add(newModel);
                 //}
             }
+            Logger.LogMessage("INFO", "FOUND ALL VOR/NDB in SCT FILE");
+
             return results;
         }
 
         private List<SctArtccModel> ParseArtccModels(string[] vs)
         {
+            Logger.LogMessage("INFO", "Getting [ARTCC], [ARTCC HIGH], [ARTCC LOW], [AIRWAY LOW], [AIRWAY HIGH]");
+
             // Incharge of doing the [ARTCC], [ARTCC HIGH], [ARTCC LOW], [AIRWAY LOW], [AIRWAY HIGH]
             List<SctArtccModel> results = new List<SctArtccModel>();
 
@@ -511,16 +558,20 @@ namespace FeBuddyLibrary.Dxf.Data
                 var match = sRegexBoundarySegment.Match(_line);
                 if (match.Success)
                 {
-                    
-
-                    results.Add(new SctArtccModel()
+                    var model = new SctArtccModel()
                     {
                         Name = match.Groups[1].Value,
                         StartLat = match.Groups[2].Value,
                         StartLon = match.Groups[3].Value,
                         EndLat = match.Groups[4].Value,
                         EndLon = match.Groups[5].Value
-                    });
+                    };
+
+                    results.Add(model);
+
+                    //Logger.LogMessage("DEBUG", $"Found Correct [ARTCC], [ARTCC HIGH], [ARTCC LOW], [AIRWAY LOW], OR [AIRWAY HIGH]:" +
+                    //    $" name={model.Name}, startLat={model.StartLat}, startLon={model.StartLon}, endLat={model.EndLat}, endLon={model.EndLon}");
+
                 }
                 //if (_line.Split(' ').Length >= 5)
                 //{
@@ -552,11 +603,15 @@ namespace FeBuddyLibrary.Dxf.Data
                 //    results.Add(airportModel);
                 //}
             }
+            Logger.LogMessage("INFO", "FOUND [ARTCC], [ARTCC HIGH], [ARTCC LOW], [AIRWAY LOW], OR [AIRWAY HIGH] in SCT File.");
+
             return results;
         }
 
         private List<SctSidStarModel> GetSctSidsAndStars(string[] vs)
         {
+            Logger.LogMessage("INFO", "Getting [SID] OR [STAR]");
+
             List<SctSidStarModel> result = new List<SctSidStarModel>();
 
             Regex sRegexDiagramBegin = new Regex(@"^(.{26})\s*(\S+)\s+(\S+)\s+(\S+)\s+(\S+)(?:\s+(\S+))?", RegexOptions.Compiled);
@@ -595,6 +650,7 @@ namespace FeBuddyLibrary.Dxf.Data
                             Color = match.Groups[6].Value,
                             AdditionalLines = new List<SctAditionalDiagramLineSegments>()
                         };
+                        //Logger.LogMessage("DEBUG", $"Found BEGINING OF SID/STAR: name={diagramName}, startLat={diagramModel.StartLat}, startLon={diagramModel.StartLon}, endLat={diagramModel.EndLat}, endLon={diagramModel.EndLon}, Color={diagramModel.Color}");
                     }
                 }
                 else
@@ -606,15 +662,16 @@ namespace FeBuddyLibrary.Dxf.Data
                         {
                             throw new Exception("Found diagram continuation without finding the diagram start");
                         }
-
-                        diagramModel.AdditionalLines.Add(new SctAditionalDiagramLineSegments()
+                        var model = new SctAditionalDiagramLineSegments()
                         {
                             StartLat = match.Groups[1].Value,
                             StartLon = match.Groups[2].Value,
                             EndLat = match.Groups[3].Value,
                             EndLon = match.Groups[4].Value,
                             Color = match.Groups[5].Value,
-                        });
+                        };
+                        diagramModel.AdditionalLines.Add(model);
+                        //Logger.LogMessage("DEBUG", $"Found Continuation OF SID/STAR: name={diagramName}, startLat={model.StartLat}, startLon={model.StartLon}, endLat={model.EndLat}, endLon={model.EndLon}, Color={model.Color}");
                     }
                 }
 
@@ -699,11 +756,14 @@ namespace FeBuddyLibrary.Dxf.Data
                 //}
                 result.Add(diagramModel);
             }
+            Logger.LogMessage("INFO", "FOUND ALL [SID] OR [STAR] in SCT File");
             return result;
         }
 
         private List<SctAirportModel> GetSctAirports(string[] vs)
         {
+            Logger.LogMessage("INFO", "GETTING SCT AIRPORTS");
+
             List<SctAirportModel> results = new List<SctAirportModel>();
             Regex sRegexAirport = new Regex(@"^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)(?:\s+([ABCDEG]))?", RegexOptions.Compiled);
 
@@ -728,14 +788,18 @@ namespace FeBuddyLibrary.Dxf.Data
                         };
                     }
 
-                    results.Add(new SctAirportModel()
+                    var model = new SctAirportModel()
                     {
                         Id = match.Groups[1].Value,
                         Frequency = match.Groups[2].Value,
                         Lat = match.Groups[3].Value,
                         Lon = match.Groups[4].Value,
                         Airspace = match.Groups[5].Value,
-                    });
+                    };
+
+                    results.Add(model);
+
+                    //Logger.LogMessage("DEBUG", $"Found Airport: id={model.Id}, frequency={model.Frequency}, lat={model.Lat}, lon={model.Lon}, airspace={model.Airspace}");
                 }
 
                 //if (_line.Split(' ').Length > 3)
@@ -772,11 +836,15 @@ namespace FeBuddyLibrary.Dxf.Data
                 //    results.Add(airportModel);
                 //}
             }
+            Logger.LogMessage("INFO", "FOUND ALL AIRPORTS in SCT FILE");
+
             return results;
         }
 
         private SctInfoModel GetSctInfo(string[] vs)
         {
+            Logger.LogMessage("INFO", "GETTING SCT INFO in SCT FILE");
+
             SctInfoModel result = new SctInfoModel()
             {
                 Header = vs[0],
@@ -792,11 +860,15 @@ namespace FeBuddyLibrary.Dxf.Data
                 AdditionalLines = vs[10..]
             };
 
+            Logger.LogMessage("INFO", "FOUND INFO in SCT FILE");
+
             return result;
         }
 
         private List<SctColorModel> GetSctColors(string[] SctColorSection)
         {
+            Logger.LogMessage("INFO", "GETTING COLORS IN SCT FILE");
+
             List<SctColorModel> result = new List<SctColorModel>();
             Regex sRegexColorDefinition = new Regex(@"^#define\s+(\S+)\s+(.+)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
@@ -812,11 +884,15 @@ namespace FeBuddyLibrary.Dxf.Data
                 var match = sRegexColorDefinition.Match(_line);
                 if (match.Success)
                 {
-                    result.Add(new SctColorModel()
+                    var model = new SctColorModel()
                     {
                         Name = match.Groups[1].Value,
                         ColorCode = match.Groups[2].Value
-                    });
+                    };
+
+                    result.Add(model);
+
+                    //Logger.LogMessage("DEBUG", $"Found COLOR: name={model.Name}, color={model.ColorCode}");
                 }
                 //result.Add(new SctColorModel()
                 //{
@@ -824,11 +900,14 @@ namespace FeBuddyLibrary.Dxf.Data
                 //    ColorCode = _line.Split(' ')[2]
                 //});
             }
+            Logger.LogMessage("INFO", "FOUND ALL COLORS IN SCT FILE");
             return result;
         }
 
         private string[] GetSctFileSection(string Category)
         {
+            Logger.LogMessage("INFO", $"GETTING SECTION - {Category} - FROM SCT FILE");
+
             // http://regexstorm.net/tester (Regex testing website.)
             // https://regexr.com/ (Another Regex Website)
 

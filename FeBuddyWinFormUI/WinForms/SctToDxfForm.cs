@@ -71,6 +71,8 @@ namespace FeBuddyWinFormUI
 
         private void outputDirButton_Click(object sender, EventArgs e)
         {
+            Logger.LogMessage("DEBUG", "USER CHOOSING DIFFERENT output directory for DXF Conversion tool");
+
             FolderBrowserDialog outputDirDialog = new FolderBrowserDialog();
 
             outputDirDialog.ShowDialog();
@@ -100,6 +102,8 @@ namespace FeBuddyWinFormUI
 
         private void startButton_Click(object sender, EventArgs e)
         {
+            Logger.LogMessage("DEBUG", "USER clicked start button");
+
             string errorMessages = "";
 
             // TODO Show Message box instead of just returning. 
@@ -114,11 +118,11 @@ namespace FeBuddyWinFormUI
             {
                 if ((_conversionOptions.InputFilePath?.Split('.')[^1].ToLower() != "sct" && _conversionOptions.InputFilePath?.Split('.')[^1].ToLower() != "sct2")) errorMessages += "SCT2 to DXF Selected, however, source file is not a .sct or .sct2\n";
             }
-            if (!File.Exists(_conversionOptions.InputFilePath))
+            if (!string.IsNullOrWhiteSpace(_conversionOptions.InputFilePath) && !File.Exists(_conversionOptions.InputFilePath))
             {
                 errorMessages += "Listen here, Buddy.... Do not change the file name after you've selected it in this program.\n";
             }
-            if (!Directory.Exists(_conversionOptions.outputDirectory))
+            if (!string.IsNullOrWhiteSpace(_conversionOptions.outputDirectory) && !Directory.Exists(_conversionOptions.outputDirectory))
             {
                 errorMessages += "Listen here, Buddy.... Do not change the folder name after you've selected it in this program.\n";
             }
@@ -180,6 +184,7 @@ namespace FeBuddyWinFormUI
                         return;
                     }
                 }
+                Logger.LogMessage("INFO", "Starting SCT2 to DXF Conversion.");
                 dataFunctions.CreateDxfFile(_conversionOptions.InputFilePath, _conversionOptions.outputDirectory + inputFileName + ".dxf");
             }
             else if (dxfToSctSelection.Checked)
@@ -199,8 +204,7 @@ namespace FeBuddyWinFormUI
                 // Convert DXF to SCT 2
                 FeBuddyLibrary.Dxf.Data.DxfSct dxfConverter = new();
 
-                // Subscribe to the event here? 
-
+                Logger.LogMessage("INFO", "Starting DXF to SCT2 Conversion.");
                 dxfConverter.CreateSctFile(_conversionOptions.InputFilePath, _conversionOptions.outputDirectory + inputFileName + ".sct2");
             }
             else

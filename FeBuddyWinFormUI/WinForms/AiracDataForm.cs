@@ -386,7 +386,7 @@ namespace FeBuddyWinFormUI
         private void Worker_StartParsingCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
             Logger.LogMessage("INFO", "PROCESSING COMPLETED");
-            File.Copy(Logger.logFilePath, $"{GlobalConfig.outputDirectory}\\FE-BUDDY_LOG.txt");
+            File.Copy(Logger._logFilePath, $"{GlobalConfig.outputDirectory}\\FE-BUDDY_LOG.txt");
 
             processingDataLabel.Text = "Complete";
             processingDataLabel.Refresh();

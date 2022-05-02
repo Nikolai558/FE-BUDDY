@@ -36,6 +36,7 @@ namespace FeBuddyLibrary.Dxf.Data
 
         private void CreateColorsDxf()
         {
+            Logger.LogMessage("INFO", "CREATING COLOR PORTION IN DXF");
             // TODO Fix File path! 
             string _outputFilePath = @"C:\Users\nikol\Desktop\DXF Conversions";
             StringBuilder sb;
@@ -59,6 +60,8 @@ namespace FeBuddyLibrary.Dxf.Data
                 sb.AppendLine("  30.0");
                 sb.AppendLine(" 40\n0.006\n  1");
                 sb.AppendLine(colorLine.AllInfo.Trim());
+                
+                //Logger.LogMessage("DEBUG", $"ADDED COLOR TO DXF FILE: {colorLine.AllInfo.Trim()}");
             }
 
             sb.AppendLine("  0\nINSERT\n  8\nCOLOR__\n  2\nCOLOR");
@@ -73,15 +76,19 @@ namespace FeBuddyLibrary.Dxf.Data
             sb.AppendLine("  30.0");
             sb.AppendLine(" 40\n0.006\n  1");
             sb.AppendLine("#define NOCOLOR 255");
+            //Logger.LogMessage("DEBUG", $"ADDED COLOR TO DXF FILE: #define NOCOLOR 255");
 
             sb.AppendLine("  0\nENDSEC");
             //sb.AppendLine("  0\nEOF");
             //File.WriteAllText(_outputFilePath + @"\FIX.dxf", sb.ToString());
             OneFileSB.Append(sb.ToString());
+            Logger.LogMessage("INFO", "COMPLETED COLORS IN DXF");
         }
 
         private void CreateInfoSectionDxf()
         {
+            Logger.LogMessage("INFO", "CREATING SCT INFO PORTION IN DXF");
+
             // TODO Fix File path! 
             string _outputFilePath = @"C:\Users\nikol\Desktop\DXF Conversions";
             StringBuilder sb;
@@ -118,6 +125,7 @@ namespace FeBuddyLibrary.Dxf.Data
                         sb.AppendLine(" 40\n0.006\n  1");
                         sb.AppendLine(model.AdditionalLines[currentIndex].Trim());
                         currentIndex += 1;
+                        //Logger.LogMessage("DEBUG", $"ADDED SCT INFO LINE TO DXF FILE: {model.AdditionalLines[currentIndex].Trim()}");
                     }
                     continue;
                 }
@@ -134,16 +142,21 @@ namespace FeBuddyLibrary.Dxf.Data
                 sb.AppendLine("  30.0");
                 sb.AppendLine(" 40\n0.006\n  1");
                 sb.AppendLine(property.GetValue(model).ToString().Trim());
+                //Logger.LogMessage("DEBUG", $"ADDED SCT INFO LINE TO DXF FILE: {property.GetValue(model).ToString().Trim()}");
+
             }
 
             sb.AppendLine("  0\nENDSEC");
             //sb.AppendLine("  0\nEOF");
             //File.WriteAllText(_outputFilePath + @"\FIX.dxf", sb.ToString());
             OneFileSB.Append(sb.ToString());
+            Logger.LogMessage("INFO", "COMPLETED SCT INFO PORTION IN DXF");
         }
 
         private void CreaeteLabelsDxf()
         {
+            Logger.LogMessage("INFO", "CREATING SCT LABELS PORTION IN DXF");
+
             // TODO Fix File path! 
             string _outputFilePath = @"C:\Users\nikol\Desktop\DXF Conversions";
             StringBuilder sb = new StringBuilder();
@@ -169,15 +182,20 @@ namespace FeBuddyLibrary.Dxf.Data
                 sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(model.Lat, true, false, _navaidPositions), false));
                 sb.AppendLine(" 40\n0.006\n  1");
                 sb.AppendLine(model.LabelText);
+                //Logger.LogMessage("DEBUG", $"ADDED SCT LABEL TO DXF FILE: {model.LabelText}");
             }
             sb.AppendLine("  0\nENDSEC");
             sb.AppendLine("  0\nEOF");
             //File.WriteAllText(_outputFilePath + $"\\LABELS.dxf", sb.ToString());
             OneFileSB.Append(sb.ToString());
+            Logger.LogMessage("INFO", "COMPLETED SCT LABELS PORTION IN DXF");
+
         }
 
         private void CreateRegionDxf()
         {
+            Logger.LogMessage("INFO", "CREATING SCT REGION PORTION IN DXF");
+
             // TODO Fix File path! 
             string _outputFilePath = @"C:\Users\nikol\Desktop\DXF Conversions";
             StringBuilder sb = new StringBuilder();
@@ -198,6 +216,8 @@ namespace FeBuddyLibrary.Dxf.Data
                 sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(model.Lon, false, false, _navaidPositions), false));
                 sb.AppendLine(" 20");
                 sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(model.Lat, true, false, _navaidPositions), false));
+                //Logger.LogMessage("DEBUG", $"ADDED SCT REGION START TO DXF FILE: {diagramName}, lat={model.Lat}, lon={model.Lon}");
+
 
                 foreach (RegionPolygonPoints lineSegments in model.AdditionalRegionInfo)
                 {
@@ -205,12 +225,14 @@ namespace FeBuddyLibrary.Dxf.Data
                     sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(lineSegments.Lon, false, false, _navaidPositions), false));
                     sb.AppendLine(" 20");
                     sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(lineSegments.Lat, true, false, _navaidPositions), false));
+                    //Logger.LogMessage("DEBUG", $"ADDED SCT REGION CONTINUATION TO DXF FILE: {diagramName}, lat={lineSegments.Lat}, lon={lineSegments.Lon}");
                 }
 
                 sb.AppendLine(" 10");
                 sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(model.Lon, false, false, _navaidPositions), false));
                 sb.AppendLine(" 20");
                 sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(model.Lat, true, false, _navaidPositions), false));
+                //Logger.LogMessage("DEBUG", $"ADDED SCT REGION CONTINUATION TO DXF FILE: {diagramName}, lat={model.Lat}, lon={model.Lon}");
 
                 sb.AppendLine("  0\nENDSEC");
             }
@@ -218,10 +240,13 @@ namespace FeBuddyLibrary.Dxf.Data
 
             //File.WriteAllText(_outputFilePath + @"\REGIONS.dxf", sb.ToString());
             OneFileSB.Append(sb.ToString());
+            Logger.LogMessage("INFO", "COMPLETED SCT REGION PORTION IN DXF");
         }
 
         private void CreateGeoDxf()
         {
+            Logger.LogMessage("INFO", "CREATING SCT GEO PORTION IN DXF");
+
             string _outputFilePath = @"C:\Users\nikol\Desktop\DXF Conversions";
             StringBuilder sb;
 
@@ -246,17 +271,21 @@ namespace FeBuddyLibrary.Dxf.Data
                 sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(model.EndLon, false, false, _navaidPositions), false));
                 sb.AppendLine(" 21");
                 sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(model.EndLat, true, false, _navaidPositions), false));
+                //Logger.LogMessage("DEBUG", $"ADDED SCT REGION CONTINUATION TO DXF FILE: color={_color}, startLat={model.StartLat}, startLon={model.StartLon} " +
+                //    $"endLat={model.EndLat}, endLon={model.EndLon}");
             }
 
             sb.AppendLine("  0\nENDSEC");
             //sb.AppendLine("  0\nEOF");
             //File.WriteAllText(_outputFilePath + $"\\GEO.dxf", sb.ToString());
             OneFileSB.Append(sb.ToString());
-
+            Logger.LogMessage("INFO", "COMPLETED SCT GEO PORTION IN DXF");
         }
 
         private void CreateRunwayDxf()
         {
+            Logger.LogMessage("INFO", "CREATING SCT RUNWAY PORTION IN DXF");
+
             string _outputFilePath = @"C:\Users\nikol\Desktop\DXF Conversions";
             StringBuilder sb;
 
@@ -276,17 +305,22 @@ namespace FeBuddyLibrary.Dxf.Data
                 sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(model.EndLon, false, false, _navaidPositions), false));
                 sb.AppendLine(" 21");
                 sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(model.EndLat, true, false, _navaidPositions), false));
+                
+                //Logger.LogMessage("DEBUG", $"ADDED SCT RUNWAY TO DXF FILE: {model.RunwayNumber} {model.OppositeRunwayNumber} {model.MagRunwayHeading} {model.OppositeMagRunwayHeading}" +
+                //    $" startLat={model.StartLat}, startLon={model.StartLon}, endLat={model.EndLat}, endLon={model.EndLon}");
             }
 
             sb.AppendLine("  0\nENDSEC");
             //sb.AppendLine("  0\nEOF");
             //File.WriteAllText(_outputFilePath + $"\\RUNWAYS.dxf", sb.ToString());
             OneFileSB.Append(sb.ToString());
-
+            Logger.LogMessage("INFO", "COMPLETED SCT RUNWAY PORTION IN DXF");
         }
 
         private void CreateFixesDxf()
         {
+            Logger.LogMessage("INFO", "CREATING SCT FIXES PORTION IN DXF");
+
             // TODO Fix File path! 
             string _outputFilePath = @"C:\Users\nikol\Desktop\DXF Conversions";
             StringBuilder sb;
@@ -309,16 +343,18 @@ namespace FeBuddyLibrary.Dxf.Data
                 sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(model.Lat, true, false, _navaidPositions), false));
                 sb.AppendLine(" 40\n0.006\n  1");
                 sb.AppendLine(model.FixName);
+                //Logger.LogMessage("DEBUG", $"ADDED SCT FIX TO DXF FILE: {model.FixName}, lat={model.Lat}, lon={model.Lon}");
             }
             sb.AppendLine("  0\nENDSEC");
             //sb.AppendLine("  0\nEOF");
             //File.WriteAllText(_outputFilePath + @"\FIX.dxf", sb.ToString());
             OneFileSB.Append(sb.ToString());
-
+            Logger.LogMessage("INFO", "COMPLETED SCT FIXES PORTION IN DXF");
         }
 
         private void CreateSidDxf()
         {
+            Logger.LogMessage("INFO", "CREATING SCT SID PORTION IN DXF");
             // TODO Fix File path! 
             string _outputFilePath = @"C:\Users\nikol\Desktop\DXF Conversions";
             StringBuilder sb = new StringBuilder();
@@ -345,6 +381,7 @@ namespace FeBuddyLibrary.Dxf.Data
                 sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(sctSid.EndLon, false, false, _navaidPositions), false));
                 sb.AppendLine(" 21");
                 sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(sctSid.EndLat, true, false, _navaidPositions), false));
+                //Logger.LogMessage("DEBUG", $"ADDED SCT SID START TO DXF FILE: name={diagramName}, startLat={sctSid.StartLat}, startLon={sctSid.StartLon}, endLat={sctSid.EndLat}, endLon={sctSid.EndLon}");
 
                 foreach (SctAditionalDiagramLineSegments lineSegments in sctSid.AdditionalLines)
                 {
@@ -358,6 +395,7 @@ namespace FeBuddyLibrary.Dxf.Data
                     sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(lineSegments.EndLon, false, false, _navaidPositions), false));
                     sb.AppendLine(" 21");
                     sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(lineSegments.EndLat, true, false, _navaidPositions), false));
+                    //Logger.LogMessage("DEBUG", $"ADDED SCT SID CONTINUATION TO DXF FILE: name={diagramName}, startLat={lineSegments.StartLat}, startLon={lineSegments.StartLon}, endLat={lineSegments.EndLat}, endLon={lineSegments.EndLon}");
                 }
                 sb.AppendLine("  0\nENDSEC");
             }
@@ -365,11 +403,13 @@ namespace FeBuddyLibrary.Dxf.Data
 
             //File.WriteAllText(_outputFilePath + @"\SID.dxf", sb.ToString());
             OneFileSB.Append(sb.ToString());
-
+            Logger.LogMessage("INFO", "COMPLETED SCT SID PORTION IN DXF");
         }
 
         private void CreateStarDxf()
         {
+            Logger.LogMessage("INFO", "CREATING SCT STAR PORTION IN DXF");
+
             // TODO Fix File path! 
             string _outputFilePath = @"C:\Users\nikol\Desktop\DXF Conversions";
             StringBuilder sb = new StringBuilder();
@@ -396,6 +436,7 @@ namespace FeBuddyLibrary.Dxf.Data
                 sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(sctStar.EndLon, false, false, _navaidPositions), false));
                 sb.AppendLine(" 21");
                 sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(sctStar.EndLat, true, false, _navaidPositions), false));
+                //Logger.LogMessage("DEBUG", $"ADDED SCT STAR START TO DXF FILE: name={diagramName}, startLat={sctStar.StartLat}, startLon={sctStar.StartLon}, endLat={sctStar.EndLat}, endLon={sctStar.EndLon}");
 
                 foreach (SctAditionalDiagramLineSegments lineSegments in sctStar.AdditionalLines)
                 {
@@ -409,6 +450,7 @@ namespace FeBuddyLibrary.Dxf.Data
                     sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(lineSegments.EndLon, false, false, _navaidPositions), false));
                     sb.AppendLine(" 21");
                     sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(lineSegments.EndLat, true, false, _navaidPositions), false));
+                    //Logger.LogMessage("DEBUG", $"ADDED SCT STAR CONTINUATION TO DXF FILE: name={diagramName}, startLat={lineSegments.StartLat}, startLon={lineSegments.StartLon}, endLat={lineSegments.EndLat}, endLon={lineSegments.EndLon}");
                 }
                 sb.AppendLine("  0\nENDSEC");
             }
@@ -416,11 +458,13 @@ namespace FeBuddyLibrary.Dxf.Data
 
             //File.WriteAllText(_outputFilePath + @"\STAR.dxf", sb.ToString());
             OneFileSB.Append(sb.ToString());
-
+            Logger.LogMessage("INFO", "COMPLETED SCT STAR PORTION IN DXF");
         }
 
         private void CreateAirportsDxf()
         {
+            Logger.LogMessage("INFO", "CREATING SCT AIRPORTS PORTION IN DXF");
+
             // TODO Fix File path! 
             string _outputFilePath = @"C:\Users\nikol\Desktop\DXF Conversions";
             StringBuilder sb = new StringBuilder();
@@ -442,16 +486,18 @@ namespace FeBuddyLibrary.Dxf.Data
                 sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(airportModel.Lat, true, false, _navaidPositions), false));
                 sb.AppendLine(" 40\n0.006\n  1");
                 sb.AppendLine(airportModel.Id + " " + airportModel.Frequency);
+                //Logger.LogMessage("DEBUG", $"ADDED SCT AIRPORT TO DXF FILE: name={airportModel.Id}, lat={airportModel.Lat}, lon={airportModel.Lon}");
             }
             sb.AppendLine("  0\nENDSEC");
             //sb.AppendLine("  0\nEOF");
             //File.WriteAllText(_outputFilePath + @"\AIRPORT.dxf", sb.ToString());
             OneFileSB.Append(sb.ToString());
-
+            Logger.LogMessage("INFO", "COMPLETED SCT AIRPORTS PORTION IN DXF");
         }
 
         private void CreateSctArtccModelStuff()
         {
+
             // TODO Fix File path! 
             string _outputFilePath = @"C:\Users\nikol\Desktop\DXF Conversions";
 
@@ -469,6 +515,8 @@ namespace FeBuddyLibrary.Dxf.Data
 
             foreach (string diagramType in sctArtccModelList.Keys)
             {
+                Logger.LogMessage("INFO", $"CREATING SCT {diagramType} PORTION IN DXF");
+
                 sb = new StringBuilder();
 
                 sb.AppendLine("  0\nSECTION\n  2\nENTITIES");
@@ -485,13 +533,14 @@ namespace FeBuddyLibrary.Dxf.Data
                     sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(artccModel.EndLon, false, false, _navaidPositions), false));
                     sb.AppendLine(" 21");
                     sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(artccModel.EndLat, true, false, _navaidPositions), false));
+                    //Logger.LogMessage("DEBUG", $"ADDED SCT {diagramType} TO DXF FILE: name={artccModel.Name}, startLat={artccModel.StartLat}, startLon={artccModel.StartLon}, endLat={artccModel.EndLat}, endLon={artccModel.EndLon}");
                 }
 
                 sb.AppendLine("  0\nENDSEC");
                 //sb.AppendLine("  0\nEOF");
                 //File.WriteAllText(_outputFilePath + $"\\{diagramType}.dxf", sb.ToString());
                 OneFileSB.Append(sb.ToString());
-
+                Logger.LogMessage("INFO", $"COMPLETED SCT {diagramType} PORTION IN DXF");
             }
         }
 
@@ -509,6 +558,8 @@ namespace FeBuddyLibrary.Dxf.Data
 
             foreach (string diagramType in sctArtccModelList.Keys)
             {
+                Logger.LogMessage("INFO", $"CREATING SCT {diagramType} PORTION IN DXF");
+
                 sb = new StringBuilder();
                 sb.AppendLine("  0\nSECTION\n  2\nENTITIES");
 
@@ -527,12 +578,13 @@ namespace FeBuddyLibrary.Dxf.Data
                     sb.AppendLine("  " + LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(model.Lat, true, false, _navaidPositions), false));
                     sb.AppendLine(" 40\n0.006\n  1");
                     sb.AppendLine(model.Id + " " + model.Frequency);
+                    //Logger.LogMessage("DEBUG", $"ADDED SCT AIRPORT TO DXF FILE: name={model.Id}, lat={model.Lat}, lon={model.Lon}");
                 }
                 sb.AppendLine("  0\nENDSEC");
                 //sb.AppendLine("  0\nEOF");
                 //File.WriteAllText(_outputFilePath + $"\\{diagramType}.dxf", sb.ToString());
                 OneFileSB.Append(sb.ToString());
-
+                Logger.LogMessage("INFO", $"COMPLETED SCT {diagramType} PORTION IN DXF");
             }
         }
     }

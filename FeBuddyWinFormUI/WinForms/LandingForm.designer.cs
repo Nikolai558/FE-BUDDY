@@ -51,6 +51,7 @@
             this.settingsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.allowBetaMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.UninstallMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.newsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.airacCycleGroupBox.SuspendLayout();
             this.menuStrip.SuspendLayout();
             this.SuspendLayout();
@@ -208,6 +209,7 @@
             this.informationToolStripMenuItem,
             this.discordToolStripMenuItem,
             this.reportIssuesToolStripMenuItem,
+            this.newsToolStripMenuItem,
             this.settingsToolStripMenuItem});
             this.menuStrip.Location = new System.Drawing.Point(0, 0);
             this.menuStrip.Name = "menuStrip";
@@ -335,6 +337,15 @@
             this.UninstallMenuItem.Text = "Uninstall";
             this.UninstallMenuItem.Click += new System.EventHandler(this.UninstallMenuItem_Click);
             // 
+            // newsToolStripMenuItem
+            // 
+            this.newsToolStripMenuItem.Font = new System.Drawing.Font("Romantic", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.newsToolStripMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
+            this.newsToolStripMenuItem.Name = "newsToolStripMenuItem";
+            this.newsToolStripMenuItem.Size = new System.Drawing.Size(57, 22);
+            this.newsToolStripMenuItem.Text = "News";
+            this.newsToolStripMenuItem.Click += new System.EventHandler(this.newsToolStripMenuItem_Click);
+            // 
             // LandingForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(11F, 25F);
@@ -393,6 +404,7 @@
         private System.Windows.Forms.RadioButton manageFacDataSelector;
         private System.Windows.Forms.ToolStripMenuItem allowBetaMenuItem;
         private System.Windows.Forms.ToolStripMenuItem discordToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem newsToolStripMenuItem;
     }
 }
 

@@ -12,10 +12,6 @@ namespace FeBuddyWinFormUI
         [STAThread]
         static void Main()
         {
-            
-
-
-
             // TODO - Get system info and log it into file first thing. -https://docs.microsoft.com/en-us/previous-versions/windows/embedded/ee436483(v=msdn.10)
             Logger.CreateLogFile();
             SquirrelLogger.Register(); // wire up Squirrel logging to our log file too
@@ -50,8 +46,8 @@ namespace FeBuddyWinFormUI
             //landingForm.Show();
 
             // Start the application
-            Application.Run(new LandingForm(version));
-            //Application.Run(new AiracDataForm(version));
+            //Application.Run(new LandingForm(version));
+            Application.Run(new AiracDataForm(version));
         }
 
         private static void OnAppInstalled(SemanticVersion ver, IAppTools tools)

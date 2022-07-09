@@ -1,58 +1,227 @@
 ﻿using System;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Drawing;
-using System.Drawing.Drawing2D;
 using System.Drawing.Text;
 using System.IO;
 using System.Windows.Forms;
+using FeBuddyLibrary;
+using FeBuddyLibrary.Dxf;
 using FeBuddyLibrary.Helpers;
 
 namespace FeBuddyWinFormUI
 {
-    public partial class LandingForm : Form
+    public partial class SctToDxfForm : Form
     {
         private readonly string _currentVersion;
         readonly PrivateFontCollection _pfc = new PrivateFontCollection();
+        private ConversionOptions _conversionOptions;
         private ToolTip _toolTip;
 
-        public LandingForm(string currentVersion)
+        public SctToDxfForm(string currentVersion)
         {
             Logger.LogMessage("DEBUG", "INITIALIZING COMPONENT");
-
+            _conversionOptions = new ConversionOptions();
             _toolTip = new ToolTip();
+
             _pfc.AddFontFile("Properties\\romantic.ttf");
-
-            this.FormClosed += (s, args) => Application.Exit();
-
-            _currentVersion = currentVersion;
 
             InitializeComponent();
             menuStrip.Renderer = new MyRenderer();
 
-
             // It should grab from the assembily info. 
-            this.Text = $"FE-BUDDY - V{_currentVersion}";
-            this.allowBetaMenuItem.Checked = Properties.Settings.Default.AllowPreRelease;
+            this.Text = $"FE-BUDDY - V{currentVersion}";
+
+            _currentVersion = currentVersion;
+        }
+
+        private void inputButton_Click(object sender, EventArgs e)
+        {
+            Logger.LogMessage("DEBUG", "USER CHOOSING DIFFERENT Input file for DXF Conversion tool");
+
+            OpenFileDialog inputFileDialog = new OpenFileDialog();
+
+            inputFileDialog.ShowDialog();
+
+            _conversionOptions.InputFilePath = inputFileDialog.FileName;
+
+            string text = _conversionOptions.InputFilePath;
+
+            if (text.Length >= 20)
+            {
+                if (text[^17..].Contains('\\'))
+                {
+                    text = "..\\" + text[^17..].Split('\\')[^1];
+                }
+                else
+                {
+                    text = "..\\.." + text[^15..];
+                }
+            }
+
+            sourceFileButton.Text = text;
+            sourceFileButton.TextAlign = ContentAlignment.MiddleCenter;
+            sourceFileButton.AutoSize = false;
+
+            //filePathLabel.Text = GlobalConfig.outputDirBase;
+            //filePathLabel.Visible = true;
+            //filePathLabel.MaximumSize = new Size(257, 82);
+
+        }
+
+        private void outputDirButton_Click(object sender, EventArgs e)
+        {
+            Logger.LogMessage("DEBUG", "USER CHOOSING DIFFERENT output directory for DXF Conversion tool");
+
+            FolderBrowserDialog outputDirDialog = new FolderBrowserDialog();
+
+            outputDirDialog.ShowDialog();
+
+            _conversionOptions.outputDirectory = outputDirDialog.SelectedPath;
+
+            string text = _conversionOptions.outputDirectory;
+
+            if (text.Length >= 20)
+            {
+                if (text[^17..].Contains('\\'))
+                {
+                    text = "..\\" + text[^17..].Split('\\')[^1];
+                }
+                else
+                {
+                    text = "..\\.." + text[^15..];
+                }
+            }
+
+            outputDirButton.Text = text;
+            outputDirButton.TextAlign = ContentAlignment.MiddleCenter;
+            //outputDirButton.TextAlign
+            outputDirButton.AutoSize = false;
+            //outputDirButton.AutoEllipsis = true;
+        }
+
+        private void startButton_Click(object sender, EventArgs e)
+        {
+            Logger.LogMessage("DEBUG", "USER clicked start button");
+
+            string errorMessages = "";
+
+            // TODO Show Message box instead of just returning. 
+            if (string.IsNullOrWhiteSpace(_conversionOptions.InputFilePath)) errorMessages += "Input File Path is invalid.\n";
+            if (string.IsNullOrWhiteSpace(_conversionOptions.outputDirectory)) errorMessages += "Output Directory is invalid.\n";
+
+            if (dxfToSctSelection.Checked)
+            {
+                if (_conversionOptions.InputFilePath?.Split('.')[^1] != "dxf") errorMessages += "DXF to SCT2 Selected, however, source file is not a .dxf\n";
+            }
+            if (sctToDxfSelection.Checked)
+            {
+                if ((_conversionOptions.InputFilePath?.Split('.')[^1].ToLower() != "sct" && _conversionOptions.InputFilePath?.Split('.')[^1].ToLower() != "sct2")) errorMessages += "SCT2 to DXF Selected, however, source file is not a .sct or .sct2\n";
+            }
+            if (!string.IsNullOrWhiteSpace(_conversionOptions.InputFilePath) && !File.Exists(_conversionOptions.InputFilePath))
+            {
+                errorMessages += "Listen here, Buddy.... Do not change the file name after you've selected it in this program.\n";
+            }
+            if (!string.IsNullOrWhiteSpace(_conversionOptions.outputDirectory) && !Directory.Exists(_conversionOptions.outputDirectory))
+            {
+                errorMessages += "Listen here, Buddy.... Do not change the folder name after you've selected it in this program.\n";
+            }
+
+
+            if (errorMessages != "")
+            {
+                MessageBoxButtons buttons = MessageBoxButtons.OK;
+                DialogResult result;
+
+                result = MessageBox.Show(errorMessages, "An invalid operation occured.", buttons);
+                return;
+            }
+
+            StartConversion();
+        }
+
+        private void ToggleComponents(bool isEnabled)
+        {
+            //sctToDxfSelection.Enabled = isEnabled;
+            //dxfToSctSelection.Enabled = isEnabled;
+            sourceFileButton.Enabled = isEnabled;
+            outputDirButton.Enabled = isEnabled;
+            startButton.Enabled = isEnabled;
+        }
+
+        private void StartConversion()
+        {
+            ToggleComponents(false);
+            startButton.Text = "PROCESSING";
+
+            var worker = new BackgroundWorker();
+            worker.RunWorkerCompleted += Worker_StartConversionCompleted;
+            worker.DoWork += Worker_StartConversionDoWork;
+
+            worker.RunWorkerAsync();
+        }
+
+        private void Worker_StartConversionDoWork(object sender, DoWorkEventArgs e)
+        {
+            string inputFileName = "\\" + _conversionOptions.InputFilePath.Split('\\')[^1].Split('.')[0] + "-converted";
+
+            if (sctToDxfSelection.Checked)
+            {
+                // Convert SCT2 To DXF
+                FeBuddyLibrary.Dxf.Data.DataFunctions dataFunctions = new();
+
+                // Subscribe to the event here? 
+
+                if (File.Exists(_conversionOptions.outputDirectory + inputFileName + ".dxf"))
+                {
+                    MessageBoxButtons buttons = MessageBoxButtons.YesNo;
+                    DialogResult result;
+
+                    result = MessageBox.Show("This file exists in this directory, would you like to write over it?", "File Exists!", buttons);
+
+                    if (result == DialogResult.No)
+                    {
+                        return;
+                    }
+                }
+                Logger.LogMessage("INFO", "Starting SCT2 to DXF Conversion.");
+                dataFunctions.CreateDxfFile(_conversionOptions.InputFilePath, _conversionOptions.outputDirectory + inputFileName + ".dxf");
+            }
+            else if (dxfToSctSelection.Checked)
+            {
+                if (File.Exists(_conversionOptions.outputDirectory + inputFileName + ".sct2"))
+                {
+                    MessageBoxButtons buttons = MessageBoxButtons.YesNo;
+                    DialogResult result;
+
+                    result = MessageBox.Show("This file exists in this directory, would you like to write over it?", "File Exists!", buttons);
+
+                    if (result == DialogResult.No)
+                    {
+                        return;
+                    }
+                }
+                // Convert DXF to SCT 2
+                FeBuddyLibrary.Dxf.Data.DxfSct dxfConverter = new();
+
+                Logger.LogMessage("INFO", "Starting DXF to SCT2 Conversion.");
+                dxfConverter.CreateSctFile(_conversionOptions.InputFilePath, _conversionOptions.outputDirectory + inputFileName + ".sct2");
+            }
+            else
+            {
+                throw new Exception("Invalid Selection for converter.");
+            }
+        }
+
+        private void Worker_StartConversionCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            startButton.Text = "Convert";
+            ToggleComponents(true);
         }
 
         private class MyRenderer : ToolStripProfessionalRenderer
         {
             public MyRenderer() : base(new MyColors()) { }
-
-            protected override void OnRenderItemCheck(ToolStripItemImageRenderEventArgs e)
-            {
-                e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
-                var r = new Rectangle(e.ImageRectangle.Location, e.ImageRectangle.Size);
-                r.Inflate(-4, -6);
-                e.Graphics.DrawLines(new Pen(Color.Green, 2), new Point[]{
-                new Point(r.Left, r.Bottom - r.Height /2),
-                new Point(r.Left + r.Width /3,  r.Bottom),
-                new Point(r.Right, r.Top)});
-
-                // this is incharge of changing the checkbox apearance..... figure out how I want it to look and what I can do to get it there.
-                // This is base render (default) leave this until our custom apearance can be "rendered"
-                // base.OnRenderItemCheck(e);
-            }
         }
 
         private class MyColors : ProfessionalColorTable
@@ -73,44 +242,23 @@ namespace FeBuddyWinFormUI
             {
                 get { return Color.Black; }
             }
+
             public override Color MenuItemPressedGradientEnd
             {
                 get { return Color.Black; }
             }
-            public override Color CheckBackground
-            {
-                get { return Color.Black; }
-            }
-            public override Color MenuItemBorder
-            {
-                get { return Color.Gray; }
-            }
-            public override Color ToolStripBorder
-            {
-                get { return Color.Black; }
-            }
-            public override Color ToolStripDropDownBackground
-            {
-                get { return Color.Black; }
-            }
         }
 
-        private void LandingForm_Closing(object sender, EventArgs e)
+        private void SctToDxfForm_Closing(object sender, EventArgs e)
         {
-            Logger.LogMessage("DEBUG", "Landing FORM CLOSING");
+            Logger.LogMessage("DEBUG", "SctToDxfForm_Closing");
         }
 
-        private void LandingForm_Shown(object sender, EventArgs e)
+        private void AiracDataForm_Load(object sender, EventArgs e)
         {
-            Logger.LogMessage("DEBUG", "SHOWING Landing FORM");
-        }
+            Logger.LogMessage("DEBUG", "LOADING MAIN FORM");
 
-        private void LandingForm_Load(object sender, EventArgs e)
-        {
-            Logger.LogMessage("DEBUG", "LOADING Landing FORM");
-
-
-            // TODO - Add fonts to buttons. 
+            // TODO - Add fonts to buttons?
             InstructionsMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
             CreditsMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
             ChangeLogMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
@@ -118,10 +266,11 @@ namespace FeBuddyWinFormUI
             FAQMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
             RoadmapMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
             informationToolStripMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
-            discordToolStripMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
             settingsToolStripMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
             reportIssuesToolStripMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
-            allowBetaMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
+            discordToolStripMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
+            //mainMenuMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
+            //exitMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
         }
 
         private void UninstallMenuItem_Click(object sender, EventArgs e)
@@ -177,10 +326,29 @@ namespace FeBuddyWinFormUI
                         + "		DEL /Q \"FE-BUDDY.lnk\"\n"
                         + "	)\n"
                         + "\n"
+                        + "CD /d \"%appdata%\\Microsoft\\Windows\\Start Menu\\Programs\"\n"
+                        + " if NOT exist \"Kyle Sanders\" (\n"
+                        + "     SET OLD_START_SHORTCUT=NOT_FOUND\n"
+                        + ")\n"
+                        + "\n"
+                        + "	if exist \"Kyle Sanders\" (\n"
+                        + "		SET OLD_START_SHORTCUT=FOUND\n"
+                        + "		RD /Q /S \"Kyle Sanders\"\n"
+                        + "	)\n"
+                        + "\n"
+                        + "	if NOT exist FE-BUDDY.lnk (\n"
+                        + "		SET /A NOT_FOUND_COUNT=%NOT_FOUND_COUNT% + 1\n"
+                        + "		SET NEW_START_SHORTCUT=NOT_FOUND\n"
+                        + "	)\n"
+                        + "\n"
+                        + "	if exist FE-BUDDY.lnk (\n"
+                        + "		SET NEW_START_SHORTCUT=FOUND\n"
+                        + "		DEL /Q \"FE-BUDDY.lnk\"\n"
+                        + "	)\n"
+                        + "\n"
                         + "IF %NOT_FOUND_COUNT%==0 SET UNINSTALL_STATUS=COMPLETE\n"
-                        + "IF %NOT_FOUND_COUNT%==1 SET UNINSTALL_STATUS=PARTIAL\n"
-                        + "IF %NOT_FOUND_COUNT%==2 SET UNINSTALL_STATUS=PARTIAL\n"
-                        + "IF %NOT_FOUND_COUNT%==3 SET UNINSTALL_STATUS=FAIL\n"
+                        + "IF %NOT_FOUND_COUNT% GEQ 1 SET UNINSTALL_STATUS=PARTIAL\n"
+                        + "IF %NOT_FOUND_COUNT%==4 SET UNINSTALL_STATUS=FAIL\n"
                         + "\n"
                         + "IF %UNINSTALL_STATUS%==COMPLETE GOTO UNINSTALLED\n"
                         + "IF %UNINSTALL_STATUS%==PARTIAL GOTO UNINSTALLED\n"
@@ -197,6 +365,8 @@ namespace FeBuddyWinFormUI
                         + "IF %FE-BUDDY_TEMP_FOLDER%==FOUND ECHO        -temp\\FE-BUDDY\n"
                         + "IF %FE-BUDDY_APPDATA_FOLDER%==FOUND ECHO        -AppData\\Local\\FE-BUDDY\n"
                         + "IF %FE-BUDDY_SHORTCUT%==FOUND ECHO        -Desktop\\FE-BUDDY Shortcut\n"
+                        + "IF %OLD_START_SHORTCUT%==FOUND ECHO        -Start Menu\\Kyle Sanders\n"
+                        + "IF %NEW_START_SHORTCUT%==FOUND ECHO        -Start Menu\\FE-BUDDY Shortcut\n"
                         + "\n"
                         + ":FAILED\n"
                         + "\n"
@@ -214,6 +384,7 @@ namespace FeBuddyWinFormUI
                         + "		ECHO        -Desktop\\FE-BUDDY Shortcut\n"
                         + "		ECHO             --If the shortcut was renamed, delete the shortcut manually.\n"
                         + "	)\n"
+                        + " IF %NEW_START_SHORTCUT%==NOT_FOUND ECHO        -Start Menu\\FE-BUDDY Shortcut\n"
                         + ")\n"
                         + "\n"
                         + "ECHO.\n"
@@ -221,7 +392,7 @@ namespace FeBuddyWinFormUI
                         + "ECHO.\n"
                         + "ECHO.\n"
                         + "ECHO.\n"
-                        + "ECHO ...Close this prompt when ready.\n"
+                        + "ECHO ...PRESS ANY KEY TO EXIT\n"
                         + "\n"
                         + "PAUSE>NUL\n";
 
@@ -318,41 +489,20 @@ namespace FeBuddyWinFormUI
             }
         }
 
-        private void landingStartButton_MouseHover(object sender, EventArgs e)
-        {
-            _toolTip.SetToolTip(landingStartButton, "I'm not your friend, Guy...");
-        }
-
-        private void landingStartButton_Click(object sender, EventArgs e)
-        {
-            // this.show() => should be this.close()... I don't like hitting the X button and it taking us back to the main menu
-            // Need to do a button to handle that if it works PROPERLY... I had issues with that but maybe it is fixed or maybe I was doing it wrong before. 
-
-            if (getparseAiracDataSelection.Checked)
-            {
-                var airacDataForm = new AiracDataForm(_currentVersion);
-                airacDataForm.FormClosing += (s, args) => this.Show();
-                airacDataForm.Show();
-                this.Hide();
-            }
-            else if (convertSct2DxfSelection.Checked)
-            {
-                var sctToDxfForm = new SctToDxfForm(_currentVersion);
-                sctToDxfForm.FormClosing += (s, args) => this.Show();
-                sctToDxfForm.Show();
-                this.Hide();
-            }
-            else
-            {
-                MessageBox.Show("This feature has not been implemented yet.");
-            }
-
-        }
-
         private void discordToolStripMenuItem_Click(object sender, EventArgs e)
         {
             Logger.LogMessage("DEBUG", "DISCORD MENU ITEM CLICKED");
             Process.Start(new ProcessStartInfo("https://discord.com/invite/GB46aeauH4") { UseShellExecute = true });
+        }
+
+        private void outputDirButton_MouseHover(object sender, EventArgs e)
+        {
+            _toolTip.SetToolTip(outputDirButton, _conversionOptions.outputDirectory);
+        }
+
+        private void inputButton_MouseHover(object sender, EventArgs e)
+        {
+            _toolTip.SetToolTip(sourceFileButton, _conversionOptions.InputFilePath);
         }
     }
 }

@@ -1,9 +1,9 @@
-﻿using FeBuddyLibrary.Helpers;
-using FeBuddyLibrary.Models;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using FeBuddyLibrary.Helpers;
+using FeBuddyLibrary.Models;
 
 namespace FeBuddyLibrary.DataAccess
 {
@@ -201,7 +201,7 @@ namespace FeBuddyLibrary.DataAccess
                     }
                     else
                     {
-                        sb.AppendLine($"{airway.Id.PadRight(27)}{prevPoint.Lat} {prevPoint.Lon} {point.Lat} {point.Lon}; {prevPoint.PointId.PadRight(5)} {point.PointId.PadRight(5)}");
+                        sb.AppendLine($"{airway.Id.PadRight(27)}{prevPoint.Lat} {prevPoint.Lon} {point.Lat} {point.Lon} ;{prevPoint.PointId.PadRight(5)} {point.PointId.PadRight(5)}");
                         GlobalConfig.AwyGeoMap.AppendLine($"            <Element xsi:type=\"Line\" Filters=\"\" StartLat=\"{prevPoint.Dec_Lat}\" StartLon=\"{prevPoint.Dec_Lon}\" EndLat=\"{point.Dec_Lat}\" EndLon=\"{point.Dec_Lon}\" />");
 
                         if (point.GapAfter)

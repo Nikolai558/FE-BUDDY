@@ -1,10 +1,9 @@
-﻿using FeBuddyLibrary.Helpers;
-using FeBuddyLibrary.Models;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text;
+using FeBuddyLibrary.Helpers;
+using FeBuddyLibrary.Models;
 
 namespace FeBuddyLibrary.DataAccess
 {
@@ -155,6 +154,7 @@ namespace FeBuddyLibrary.DataAccess
             Logger.LogMessage("DEBUG", $"SAVING TELEPHONY MODEL");
 
             string filePath = $"{GlobalConfig.outputDirectory}ALIAS\\TELEPHONY.txt";
+            string combinedFilePath = $"{GlobalConfig.outputDirectory}ALIAS\\AliasTestFile.txt";
             StringBuilder sb = new StringBuilder();
 
             foreach (TelephonyModel telephony in allTelephony)
@@ -164,6 +164,7 @@ namespace FeBuddyLibrary.DataAccess
             }
 
             File.WriteAllText(filePath, sb.ToString());
+            File.AppendAllText(combinedFilePath, sb.ToString());
             Logger.LogMessage("DEBUG", $"COMPLETED TELEPHONY");
 
         }

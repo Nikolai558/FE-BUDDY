@@ -12,10 +12,10 @@ assignees: Nikolai558
 
 **To Reproduce**
 Steps to reproduce the behavior:
-1. 
-2. 
-3. 
-4. 
+1.
+2.
+3.
+4.
 
 **Expected behavior**
 

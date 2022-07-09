@@ -1,7 +1,7 @@
-﻿using FeBuddyLibrary.Helpers;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using FeBuddyLibrary.Helpers;
 
 namespace FeBuddyLibrary.Models
 {

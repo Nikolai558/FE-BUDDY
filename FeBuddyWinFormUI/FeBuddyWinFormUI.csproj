@@ -4,7 +4,7 @@
     <TargetFramework>net6.0-windows</TargetFramework>
     <OutputType>WinExe</OutputType>
     <AssemblyName>FE-BUDDY</AssemblyName>
-    <Version>2.0.0</Version>
+    <Version>2.0.1</Version>
     <Copyright>Copyright © 2022 Nikolas Boling, Kyle Sanders</Copyright>
     <UseWindowsForms>true</UseWindowsForms>
     <ApplicationIcon>FE_BUDDY_icon.ico</ApplicationIcon>
@@ -17,7 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Clowd.Squirrel" Version="2.7.98-pre" />
+    <PackageReference Include="Clowd.Squirrel" Version="2.8.40" />
   </ItemGroup>
 
   <ItemGroup>
@@ -36,6 +36,9 @@
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
       <AutoGen>True</AutoGen>
       <DependentUpon>Settings.settings</DependentUpon>
+    </Compile>
+    <Compile Update="WinForms\SctToDxfForm.cs">
+      <SubType>Form</SubType>
     </Compile>
   </ItemGroup>
 

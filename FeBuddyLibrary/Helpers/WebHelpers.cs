@@ -1,9 +1,6 @@
-﻿using FeBuddyLibrary.Models;
-using FeBuddyLibrary.Models.MetaFileModels;
-using Newtonsoft.Json.Linq;
-using System.Collections.Generic;
-using System.IO;
+﻿using System.IO;
 using System.Net;
+using FeBuddyLibrary.Models.MetaFileModels;
 
 namespace FeBuddyLibrary.Helpers
 {
@@ -63,7 +60,7 @@ namespace FeBuddyLibrary.Helpers
             {
                 Logger.LogMessage("DEBUG", "GOT RESPONSE FROM FAA WEBSITE");
                 response = File.ReadAllText($"{GlobalConfig.tempPath}\\{GlobalConfig.FaaHtmlFileVariable}_FAA_NASR.HTML");
-                
+
                 Logger.LogMessage("DEBUG", "USER HAS CURL");
                 GlobalConfig.hasCurl = true;
             }

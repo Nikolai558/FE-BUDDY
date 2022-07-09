@@ -1,7 +1,6 @@
-﻿using FeBuddyLibrary.Helpers;
+﻿using System.ComponentModel;
+using FeBuddyLibrary.Helpers;
 using Squirrel.SimpleSplat;
-using System;
-using System.ComponentModel;
 
 namespace FeBuddyWinFormUI
 {

@@ -1,9 +1,9 @@
-﻿using FeBuddyLibrary.Helpers;
-using FeBuddyLibrary.Models;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using FeBuddyLibrary.Helpers;
+using FeBuddyLibrary.Models;
 
 namespace FeBuddyLibrary.DataAccess
 {
@@ -419,16 +419,16 @@ namespace FeBuddyLibrary.DataAccess
                     {
                         if (point.Type == "S")
                         {
-                            if (!allDiagrams["S"].ContainsKey($"{apt}_{currentComputerCode.PadRight(26, ' ')}N000.00.00.000 E000.00.00.000 N000.00.00.000 E000.00.00.000"))
+                            if (!allDiagrams["S"].ContainsKey($"{apt}_{currentComputerCode}".PadRight(26, ' ') + "N000.00.00.000 E000.00.00.000 N000.00.00.000 E000.00.00.000"))
                             {
-                                allDiagrams["S"][$"{apt}_{currentComputerCode.PadRight(26, ' ')}N000.00.00.000 E000.00.00.000 N000.00.00.000 E000.00.00.000"] = new List<string>();
+                                allDiagrams["S"][$"{apt}_{currentComputerCode}".PadRight(26, ' ') + "N000.00.00.000 E000.00.00.000 N000.00.00.000 E000.00.00.000"] = new List<string>();
                             }
                         }
                         else
                         {
-                            if (!allDiagrams["D"].ContainsKey($"{apt}_{currentComputerCode.PadRight(26, ' ')}N000.00.00.000 E000.00.00.000 N000.00.00.000 E000.00.00.000"))
+                            if (!allDiagrams["D"].ContainsKey($"{apt}_{currentComputerCode}".PadRight(26, ' ') + "N000.00.00.000 E000.00.00.000 N000.00.00.000 E000.00.00.000"))
                             {
-                                allDiagrams["D"][$"{apt}_{currentComputerCode.PadRight(26, ' ')}N000.00.00.000 E000.00.00.000 N000.00.00.000 E000.00.00.000"] = new List<string>();
+                                allDiagrams["D"][$"{apt}_{currentComputerCode}".PadRight(26, ' ') + "N000.00.00.000 E000.00.00.000 N000.00.00.000 E000.00.00.000"] = new List<string>();
                             }
                         }
                     }
@@ -458,21 +458,21 @@ namespace FeBuddyLibrary.DataAccess
                         {
                             if (point.Type == "S")
                             {
-                                allDiagrams["S"][$"{airport}_{currentComputerCode.PadRight(26, ' ')}N000.00.00.000 E000.00.00.000 N000.00.00.000 E000.00.00.000"].Add($"                          {prevPoint.Lat} {prevPoint.Lon} {point.Lat} {point.Lon}; {prevPoint.PointId} {point.PointId}");
+                                allDiagrams["S"][$"{airport}_{currentComputerCode}".PadRight(26, ' ') + "N000.00.00.000 E000.00.00.000 N000.00.00.000 E000.00.00.000"].Add($"                          {prevPoint.Lat} {prevPoint.Lon} {point.Lat} {point.Lon}; {prevPoint.PointId} {point.PointId}");
                             }
                             else
                             {
-                                allDiagrams["D"][$"{airport}_{currentComputerCode.PadRight(26, ' ')}N000.00.00.000 E000.00.00.000 N000.00.00.000 E000.00.00.000"].Add($"                          {prevPoint.Lat} {prevPoint.Lon} {point.Lat} {point.Lon}; {prevPoint.PointId} {point.PointId}");
+                                allDiagrams["D"][$"{airport}_{currentComputerCode}".PadRight(26, ' ') + "N000.00.00.000 E000.00.00.000 N000.00.00.000 E000.00.00.000"].Add($"                          {prevPoint.Lat} {prevPoint.Lon} {point.Lat} {point.Lon}; {prevPoint.PointId} {point.PointId}");
                             }
                         }
 
                         if (point.Type == "S")
                         {
-                            combinedDataStar.AppendLine($"                          {prevPoint.Lat} {prevPoint.Lon} {point.Lat} {point.Lon}; {prevPoint.PointId} {point.PointId}");
+                            combinedDataStar.AppendLine($"                          {prevPoint.Lat} {prevPoint.Lon} {point.Lat} {point.Lon} ;{prevPoint.PointId} {point.PointId}");
                         }
                         else
                         {
-                            combinedDataDp.AppendLine($"                          {prevPoint.Lat} {prevPoint.Lon} {point.Lat} {point.Lon}; {prevPoint.PointId} {point.PointId}");
+                            combinedDataDp.AppendLine($"                          {prevPoint.Lat} {prevPoint.Lon} {point.Lat} {point.Lon} ;{prevPoint.PointId} {point.PointId}");
                         }
 
                         prevPoint = point;
@@ -518,7 +518,6 @@ namespace FeBuddyLibrary.DataAccess
 
             File.WriteAllText($"{GlobalConfig.outputDirectory}\\VRC\\[STAR]\\000_All_STAR_Combined.sct2", combinedDataStar.ToString());
             Logger.LogMessage("INFO", $"SAVED ALL STAR SCT2 FILE");
-            
             File.WriteAllText($"{GlobalConfig.outputDirectory}\\VRC\\[SID]\\000_All_DP_Combined.sct2", combinedDataDp.ToString());
             Logger.LogMessage("INFO", $"SAVED ALL DP SCT2 FILE");
 

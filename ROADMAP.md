@@ -5,26 +5,43 @@ The following is a list of features that we are considering or actively working 
 
 ---
 
-- [ ] FAA RVM .DAT (foia requests) converter.
-  - See: https://github.com/glott/DAT2Sector
-  - See also: https://drakedesignlabs.com/converter/source.txt
-
 - [ ] SCT2 2 AutoCAD Converter
-  - Hard to find a GH repo of someone doing this already but maybe we can reverse engineer the sct_2_dxf.exe & dxf_2_sct.exe
-  - See: https://docs.fileformat.com/cad/dxf/
-  - See Also: https://ezdxf.mozman.at/docs/introduction.html
+  - Hard to find a GitHub repository of someone doing this already but maybe we can reverse engineer the sct_2_dxf.exe & dxf_2_sct.exe
+  - [DXF File Format](https://docs.fileformat.com/cad/dxf/)
+  - [EZDXF File Dormat](https://ezdxf.mozman.at/docs/introduction.html)
 
 - [ ] GoogleEarthPro Converter (for airport diagrams and other like-constructs)
-  - See: https://github.com/VATSIM-UK/UK-Sector-File
+
+- [ ] FAA RVM .DAT (foia requests) converter.
+  - [GitHub DAT2SCT](https://github.com/glott/DAT2Sector)
+  - [Other Converter](https://drakedesignlabs.com/converter/source.txt)
 
 - [ ] FAA GeoMAP (foia requests) converter.
-  - See: https://github.com/justinshannon/geo-map-converter
+  - [GeoMap converter](https://github.com/justinshannon/geo-map-converter)
     - Word is that the FAA may have changed their format of GeoMaps so this guy's may not work anymore.
 
 - [ ] Hygieia by dhawton
-  - See: https://github.com/dhawton/hygieia
+  - [Hygieia](https://github.com/dhawton/hygieia)
+
+- [ ] Separate "Low" and "High" airways by appropriate altitudes
 
 - [ ] Limit Airway Lines to only the selected ARTCC up to about 150 miles (or user defined distance) outside of the ARTCC boundary
+
+- [ ] GeoJSON Output
+  - In preparation for CRC compatibility along with general usability of files
+  - For now, create in the format to work with [geojson](https://geojson.io/)
+  - The user should be able to select this option on or off.
+  - Data Points to Convert:
+    - AIRPORTS [Point with text properites and the name/type in the text description]
+    - ARTCC BOUNDARIES - High
+    - ARTCC BOUDNARIES - Low
+    - FIXES [Point with text properites and the name/type in the text description]
+    - AIRWAYS (all in one file at first)
+    - WX STATIONS [Point with text properites and the name/type in the text description]
+    - NDB [Point with text properites and the name/type in the text description]
+    - VOR [Point with text properites and the name/type in the text description]
+    - DPs (individual files and then another file with all combined)
+    - STARSs (individual files and then another file with all combined)
 
 - [ ] `on hold until more information about CRC comes out` Create a local facility breakdown management system for user. (REF: FE-ASSISTANT Batch File by KSanders7070)
   - Split local Filter and RVM maps up into individual files to make easier to edit

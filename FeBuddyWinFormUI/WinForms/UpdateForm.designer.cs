@@ -1,4 +1,4 @@
-namespace FeBuddyWinFormUI
+﻿namespace FeBuddyWinFormUI
 {
     partial class UpdateForm
     {

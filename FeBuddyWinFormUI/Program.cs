@@ -1,11 +1,9 @@
-﻿using FeBuddyLibrary;
-using FeBuddyLibrary.Helpers;
-using Squirrel;
-using System;
+﻿using System;
 using System.Drawing;
 using System.IO;
-using System.Threading.Tasks;
 using System.Windows.Forms;
+using FeBuddyLibrary.Helpers;
+using Squirrel;
 
 namespace FeBuddyWinFormUI
 {
@@ -17,7 +15,7 @@ namespace FeBuddyWinFormUI
             // TODO - Get system info and log it into file first thing. -https://docs.microsoft.com/en-us/previous-versions/windows/embedded/ee436483(v=msdn.10)
             Logger.CreateLogFile();
             SquirrelLogger.Register(); // wire up Squirrel logging to our log file too
-          
+
             Logger.LogMessage("DEBUG", "PROGRAM STARTED");
 
             // Squirrel starts our app during updates, sometimes we need to handle these events.

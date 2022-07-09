@@ -1,9 +1,4 @@
-﻿using FeBuddyLibrary;
-using FeBuddyLibrary.DataAccess;
-using FeBuddyLibrary.Helpers;
-using FeBuddyLibrary.Models;
-using FeBuddyLibrary.Models.MetaFileModels;
-using System;
+﻿using System;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Drawing;
@@ -11,6 +6,11 @@ using System.Drawing.Text;
 using System.IO;
 using System.Reflection;
 using System.Windows.Forms;
+using FeBuddyLibrary;
+using FeBuddyLibrary.DataAccess;
+using FeBuddyLibrary.Helpers;
+using FeBuddyLibrary.Models;
+using FeBuddyLibrary.Models.MetaFileModels;
 
 namespace FeBuddyWinFormUI
 {
@@ -18,10 +18,13 @@ namespace FeBuddyWinFormUI
     {
         private bool nextAiracAvailable;
         private readonly string _currentVersion;
+        readonly PrivateFontCollection _pfc = new PrivateFontCollection();
+
 
         public AiracDataForm(string currentVersion)
         {
             Logger.LogMessage("DEBUG", "INITIALIZING COMPONENT");
+            _pfc.AddFontFile("Properties\\romantic.ttf");
 
             InitializeComponent();
             menuStrip.Renderer = new MyRenderer();
@@ -224,8 +227,9 @@ namespace FeBuddyWinFormUI
         private void AiracDataExitButton_Click(object sender, EventArgs e)
         {
             Logger.LogMessage("INFO", "EXIT BUTTON CLICKED");
+            this.Close();
             //this.Hide();
-            Application.Exit();
+            //Application.Exit();
         }
 
         private delegate void SetControlPropertyThreadSafeDelegate(Control control, string propertyName, object propertyValue);
@@ -321,7 +325,7 @@ namespace FeBuddyWinFormUI
 
             if (currentAiracSelection.Checked == true)
             {
-                Logger.LogMessage("DEBUG", "NEXT AIRAC IS SELECTED, HOWEVER THE NEXT AIRAC IS NOT AVAILABLE YET");
+                Logger.LogMessage("DEBUG", "CURRENT AIRAC SELECTED");
                 SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Chart Recalls");
                 GetFaaMetaFileData ParseMeta = new GetFaaMetaFileData();
                 ParseMeta.QuarterbackFunc();
@@ -330,9 +334,9 @@ namespace FeBuddyWinFormUI
                 PublicationParser publications = new PublicationParser();
                 publications.WriteAirportInfoTxt(GlobalConfig.facilityID);
             }
-            else if (nextAiracSelection.Checked == true && nextAiracAvailable == true )
+            else if (nextAiracSelection.Checked == true && nextAiracAvailable == true)
             {
-                Logger.LogMessage("DEBUG", "NEXT AIRAC IS SELECTED, HOWEVER THE NEXT AIRAC IS NOT AVAILABLE YET");
+                Logger.LogMessage("DEBUG", "NEXT AIRAC IS SELECTED, and it is available");
                 SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Chart Recalls");
                 GetFaaMetaFileData ParseMeta = new GetFaaMetaFileData();
                 ParseMeta.QuarterbackFunc();
@@ -382,7 +386,7 @@ namespace FeBuddyWinFormUI
         private void Worker_StartParsingCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
             Logger.LogMessage("INFO", "PROCESSING COMPLETED");
-            File.Copy(Logger.logFilePath, $"{GlobalConfig.outputDirectory}\\FE-BUDDY_LOG.txt");
+            File.Copy(Logger._logFilePath, $"{GlobalConfig.outputDirectory}\\FE-BUDDY_LOG.txt");
 
             processingDataLabel.Text = "Complete";
             processingDataLabel.Refresh();
@@ -461,21 +465,19 @@ namespace FeBuddyWinFormUI
         {
             Logger.LogMessage("DEBUG", "LOADING MAIN FORM");
 
-            var pfc = new PrivateFontCollection();
-            pfc.AddFontFile("Properties\\romantic.ttf");
-            // TODO - Add fonts to buttons. 
-            InstructionsMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
-            CreditsMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
-            ChangeLogMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
-            UninstallMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
-            FAQMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
-            RoadmapMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
-            informationToolStripMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
-            settingsToolStripMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
-            reportIssuesToolStripMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
+            // TODO - Add fonts to buttons?
+            InstructionsMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
+            CreditsMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
+            ChangeLogMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
+            UninstallMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
+            FAQMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
+            RoadmapMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
+            informationToolStripMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
+            settingsToolStripMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
+            reportIssuesToolStripMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
+            discordToolStripMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
             //mainMenuMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
             //exitMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
-
         }
 
         private void NextAiracSelection_Click(object sender, EventArgs e)
@@ -709,6 +711,19 @@ namespace FeBuddyWinFormUI
                 Properties.Settings.Default.AllowPreRelease = allowBetaMenuItem.Checked;
                 Properties.Settings.Default.Save();
             }
+        }
+
+        private void discordToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Logger.LogMessage("DEBUG", "DISCORD MENU ITEM CLICKED");
+            Process.Start(new ProcessStartInfo("https://discord.com/invite/GB46aeauH4") { UseShellExecute = true });
+        }
+
+        private void newsToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Logger.LogMessage("DEBUG", "REPORT ISSUES MENU ITEM CLICKED");
+            Process.Start(new ProcessStartInfo("https://github.com/Nikolai558/FE-BUDDY/wiki#news") { UseShellExecute = true });
+            //Process.Start("https://github.com/Nikolai558/FE-BUDDY/wiki#news");
         }
     }
 }

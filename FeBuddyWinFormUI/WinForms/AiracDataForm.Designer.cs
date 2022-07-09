@@ -56,7 +56,9 @@
             this.FAQMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.ChangeLogMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.CreditsMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.discordToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.reportIssuesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.newsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.settingsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.allowBetaMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.UninstallMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -200,7 +202,7 @@
             this.chooseDirButton.Name = "chooseDirButton";
             this.chooseDirButton.Size = new System.Drawing.Size(182, 34);
             this.chooseDirButton.TabIndex = 10;
-            this.chooseDirButton.Text = "Choose Output Location";
+            this.chooseDirButton.Text = "Select Output Location";
             this.chooseDirButton.UseVisualStyleBackColor = false;
             this.chooseDirButton.Click += new System.EventHandler(this.ChooseDirButton_Click);
             // 
@@ -349,7 +351,9 @@
             this.menuStrip.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.menuStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.informationToolStripMenuItem,
+            this.discordToolStripMenuItem,
             this.reportIssuesToolStripMenuItem,
+            this.newsToolStripMenuItem,
             this.settingsToolStripMenuItem});
             this.menuStrip.Location = new System.Drawing.Point(0, 0);
             this.menuStrip.Name = "menuStrip";
@@ -427,6 +431,15 @@
             this.CreditsMenuItem.Text = "Credits";
             this.CreditsMenuItem.Click += new System.EventHandler(this.CreditsMenuItem_Click);
             // 
+            // discordToolStripMenuItem
+            // 
+            this.discordToolStripMenuItem.Font = new System.Drawing.Font("Romantic", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.discordToolStripMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
+            this.discordToolStripMenuItem.Name = "discordToolStripMenuItem";
+            this.discordToolStripMenuItem.Size = new System.Drawing.Size(72, 22);
+            this.discordToolStripMenuItem.Text = "Buddies";
+            this.discordToolStripMenuItem.Click += new System.EventHandler(this.discordToolStripMenuItem_Click);
+            // 
             // reportIssuesToolStripMenuItem
             // 
             this.reportIssuesToolStripMenuItem.Font = new System.Drawing.Font("Romantic", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
@@ -435,6 +448,15 @@
             this.reportIssuesToolStripMenuItem.Size = new System.Drawing.Size(105, 22);
             this.reportIssuesToolStripMenuItem.Text = "Report Issues";
             this.reportIssuesToolStripMenuItem.Click += new System.EventHandler(this.reportIssuesToolStripMenuItem_Click);
+            // 
+            // newsToolStripMenuItem
+            // 
+            this.newsToolStripMenuItem.Font = new System.Drawing.Font("Romantic", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.newsToolStripMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
+            this.newsToolStripMenuItem.Name = "newsToolStripMenuItem";
+            this.newsToolStripMenuItem.Size = new System.Drawing.Size(57, 22);
+            this.newsToolStripMenuItem.Text = "News";
+            this.newsToolStripMenuItem.Click += new System.EventHandler(this.newsToolStripMenuItem_Click);
             // 
             // settingsToolStripMenuItem
             // 
@@ -545,6 +567,8 @@
         private System.Windows.Forms.ToolStripMenuItem settingsToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem allowBetaMenuItem;
         private System.Windows.Forms.ToolStripMenuItem UninstallMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem discordToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem newsToolStripMenuItem;
     }
 }
 

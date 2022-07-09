@@ -1,4 +1,24 @@
+# CHANGELOG
+
 ---
+- ## Version 2.0.1
+  ## FOR USERS:
+    - Added #42 - Added button ("Buddies") that links to the FE-BUDDY Discord server.
+    - Fixed #52 - Navaid Geomap for vERAM has no data
+    - Fixed #55 - Reading SCT2 Fixes in Place of Coordinates
+    - Fixed #58 - Changed Uninstall Prompt Message
+    - Fixed #54 - .ID alias commands are now added to the AliasTestFile
+    - Fixed #49 - Fixed the Star/DP Name Alignment in the SCT Files
+    - Fixed #45 - All comments in the SCT file should follow the same format.
+  ## FOR DEVELOPERS:
+    - Fixed #41 - Menu display Unhandled Exception
+    - Backend code cleanup and standardized.
+    - Updated Squirrel to latest stable (Squirrel is the auto updater system)
+    - Updated/Corrected logging messages
+    - Started development on SCT to DXF file conversions.
+      - This option is currently disabled as it is not fully functioning.
+    - Modified GUI - Different options for future updates.
+  
 - ## Version 2.0.0
   ### FOR USERS:
     - Modified menu presentation
@@ -31,19 +51,19 @@
 - ## Version 1.0.1
   - The Main Window has a background image instead of a solid color.
   - Changed the Update view background colors to match new main window colors.
-  - "Start" and "Exit" Buttons display a different color when clicking them. 
-  - The color of the Hover state of all buttons has changed. 
-  - Implemented a simple Logger. 
-    - This log file will be included in the output folder. 
+  - "Start" and "Exit" Buttons display a different color when clicking them.
+  - The color of the Hover state of all buttons has changed.
+  - Implemented a simple Logger.
+    - This log file will be included in the output folder.
   - Misc. code clean-up and function design changes.
 
 - ## Version 1.0.0
-  - New Github Repository 
+  - New GitHub Repository
   - Name changed from "NASR2SCT" to "FE-BUDDY".
   - GUI Color changed.
-  - "Credits" button takes you to a link in the in the github repository. 
+  - "Credits" button takes you to a link in the in the GitHub repository.
   - Added Roadmap button.
   - Updated License to GPLv3
   - Fixed compatibility issue with users that use drives other than "C:"
-  - Backend code changes such as comments, c# namespaces, and file structures. 
+  - Backend code changes such as comments, c# namespaces, and file structures.
 

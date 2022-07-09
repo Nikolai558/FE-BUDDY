@@ -37,7 +37,6 @@
             this.manageFacDataSelector = new System.Windows.Forms.RadioButton();
             this.convertSct2FaaGeoMap = new System.Windows.Forms.RadioButton();
             this.convertFaaGeoMap2SCT = new System.Windows.Forms.RadioButton();
-            this.convertSct2KmlSelection = new System.Windows.Forms.RadioButton();
             this.convertKml2SCTSelection = new System.Windows.Forms.RadioButton();
             this.convertSct2DxfSelection = new System.Windows.Forms.RadioButton();
             this.menuStrip = new System.Windows.Forms.MenuStrip();
@@ -76,7 +75,7 @@
             this.convertDat2SctSelection.AutoSize = true;
             this.convertDat2SctSelection.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.convertDat2SctSelection.ForeColor = System.Drawing.SystemColors.AppWorkspace;
-            this.convertDat2SctSelection.Location = new System.Drawing.Point(394, 156);
+            this.convertDat2SctSelection.Location = new System.Drawing.Point(69, 195);
             this.convertDat2SctSelection.Margin = new System.Windows.Forms.Padding(6, 7, 6, 7);
             this.convertDat2SctSelection.Name = "convertDat2SctSelection";
             this.convertDat2SctSelection.Size = new System.Drawing.Size(198, 25);
@@ -103,7 +102,6 @@
             this.airacCycleGroupBox.Controls.Add(this.manageFacDataSelector);
             this.airacCycleGroupBox.Controls.Add(this.convertSct2FaaGeoMap);
             this.airacCycleGroupBox.Controls.Add(this.convertFaaGeoMap2SCT);
-            this.airacCycleGroupBox.Controls.Add(this.convertSct2KmlSelection);
             this.airacCycleGroupBox.Controls.Add(this.convertKml2SCTSelection);
             this.airacCycleGroupBox.Controls.Add(this.convertSct2DxfSelection);
             this.airacCycleGroupBox.Controls.Add(this.airacLabel);
@@ -136,12 +134,13 @@
             // manageFacDataSelector
             // 
             this.manageFacDataSelector.AutoSize = true;
+            this.manageFacDataSelector.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.manageFacDataSelector.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-            this.manageFacDataSelector.ForeColor = System.Drawing.SystemColors.AppWorkspace;
+            this.manageFacDataSelector.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(46)))), ((int)(((byte)(46)))), ((int)(((byte)(46)))));
             this.manageFacDataSelector.Location = new System.Drawing.Point(394, 117);
             this.manageFacDataSelector.Margin = new System.Windows.Forms.Padding(6, 7, 6, 7);
             this.manageFacDataSelector.Name = "manageFacDataSelector";
-            this.manageFacDataSelector.Size = new System.Drawing.Size(197, 25);
+            this.manageFacDataSelector.Size = new System.Drawing.Size(196, 25);
             this.manageFacDataSelector.TabIndex = 9;
             this.manageFacDataSelector.Text = "Manage My Facility Data";
             this.manageFacDataSelector.UseVisualStyleBackColor = true;
@@ -149,12 +148,13 @@
             // convertSct2FaaGeoMap
             // 
             this.convertSct2FaaGeoMap.AutoSize = true;
+            this.convertSct2FaaGeoMap.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.convertSct2FaaGeoMap.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-            this.convertSct2FaaGeoMap.ForeColor = System.Drawing.SystemColors.AppWorkspace;
-            this.convertSct2FaaGeoMap.Location = new System.Drawing.Point(394, 234);
+            this.convertSct2FaaGeoMap.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(46)))), ((int)(((byte)(46)))), ((int)(((byte)(46)))));
+            this.convertSct2FaaGeoMap.Location = new System.Drawing.Point(394, 195);
             this.convertSct2FaaGeoMap.Margin = new System.Windows.Forms.Padding(6, 7, 6, 7);
             this.convertSct2FaaGeoMap.Name = "convertSct2FaaGeoMap";
-            this.convertSct2FaaGeoMap.Size = new System.Drawing.Size(270, 25);
+            this.convertSct2FaaGeoMap.Size = new System.Drawing.Size(269, 25);
             this.convertSct2FaaGeoMap.TabIndex = 8;
             this.convertSct2FaaGeoMap.Text = "Convert SCT2 to FAA GeoMap XML";
             this.convertSct2FaaGeoMap.UseVisualStyleBackColor = true;
@@ -162,40 +162,29 @@
             // convertFaaGeoMap2SCT
             // 
             this.convertFaaGeoMap2SCT.AutoSize = true;
+            this.convertFaaGeoMap2SCT.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.convertFaaGeoMap2SCT.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-            this.convertFaaGeoMap2SCT.ForeColor = System.Drawing.SystemColors.AppWorkspace;
-            this.convertFaaGeoMap2SCT.Location = new System.Drawing.Point(394, 195);
+            this.convertFaaGeoMap2SCT.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(46)))), ((int)(((byte)(46)))), ((int)(((byte)(46)))));
+            this.convertFaaGeoMap2SCT.Location = new System.Drawing.Point(394, 156);
             this.convertFaaGeoMap2SCT.Margin = new System.Windows.Forms.Padding(6, 7, 6, 7);
             this.convertFaaGeoMap2SCT.Name = "convertFaaGeoMap2SCT";
-            this.convertFaaGeoMap2SCT.Size = new System.Drawing.Size(270, 25);
+            this.convertFaaGeoMap2SCT.Size = new System.Drawing.Size(269, 25);
             this.convertFaaGeoMap2SCT.TabIndex = 7;
             this.convertFaaGeoMap2SCT.Text = "Convert FAA GeoMap XML to SCT2";
             this.convertFaaGeoMap2SCT.UseVisualStyleBackColor = true;
             // 
-            // convertSct2KmlSelection
-            // 
-            this.convertSct2KmlSelection.AutoSize = true;
-            this.convertSct2KmlSelection.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-            this.convertSct2KmlSelection.ForeColor = System.Drawing.SystemColors.AppWorkspace;
-            this.convertSct2KmlSelection.Location = new System.Drawing.Point(68, 234);
-            this.convertSct2KmlSelection.Margin = new System.Windows.Forms.Padding(6, 7, 6, 7);
-            this.convertSct2KmlSelection.Name = "convertSct2KmlSelection";
-            this.convertSct2KmlSelection.Size = new System.Drawing.Size(176, 25);
-            this.convertSct2KmlSelection.TabIndex = 6;
-            this.convertSct2KmlSelection.Text = "Convert SCT2 to KML";
-            this.convertSct2KmlSelection.UseVisualStyleBackColor = true;
-            // 
             // convertKml2SCTSelection
             // 
             this.convertKml2SCTSelection.AutoSize = true;
+            this.convertKml2SCTSelection.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.convertKml2SCTSelection.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-            this.convertKml2SCTSelection.ForeColor = System.Drawing.SystemColors.AppWorkspace;
-            this.convertKml2SCTSelection.Location = new System.Drawing.Point(68, 195);
+            this.convertKml2SCTSelection.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(46)))), ((int)(((byte)(46)))), ((int)(((byte)(46)))));
+            this.convertKml2SCTSelection.Location = new System.Drawing.Point(68, 234);
             this.convertKml2SCTSelection.Margin = new System.Windows.Forms.Padding(6, 7, 6, 7);
             this.convertKml2SCTSelection.Name = "convertKml2SCTSelection";
-            this.convertKml2SCTSelection.Size = new System.Drawing.Size(176, 25);
+            this.convertKml2SCTSelection.Size = new System.Drawing.Size(198, 25);
             this.convertKml2SCTSelection.TabIndex = 5;
-            this.convertKml2SCTSelection.Text = "Convert KML to SCT2";
+            this.convertKml2SCTSelection.Text = "SCT2 / KML Conversions";
             this.convertKml2SCTSelection.UseVisualStyleBackColor = true;
             // 
             // convertSct2DxfSelection
@@ -398,7 +387,6 @@
         private System.Windows.Forms.ToolStripMenuItem reportIssuesToolStripMenuItem;
         private System.Windows.Forms.RadioButton convertSct2FaaGeoMap;
         private System.Windows.Forms.RadioButton convertFaaGeoMap2SCT;
-        private System.Windows.Forms.RadioButton convertSct2KmlSelection;
         private System.Windows.Forms.RadioButton convertKml2SCTSelection;
         private System.Windows.Forms.RadioButton convertSct2DxfSelection;
         private System.Windows.Forms.Button landingStartButton;

@@ -38,6 +38,7 @@
             this.CreditsMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.discordToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.reportIssuesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.newsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.settingsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.allowBetaMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.UninstallMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -50,7 +51,6 @@
             this.convertGroupBox = new System.Windows.Forms.GroupBox();
             this.FormLabel = new System.Windows.Forms.Label();
             this.convertDescriptionLabel = new System.Windows.Forms.Label();
-            this.newsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.menuStrip.SuspendLayout();
             this.startGroupBox.SuspendLayout();
             this.convertGroupBox.SuspendLayout();
@@ -159,6 +159,15 @@
             this.reportIssuesToolStripMenuItem.Size = new System.Drawing.Size(105, 22);
             this.reportIssuesToolStripMenuItem.Text = "Report Issues";
             this.reportIssuesToolStripMenuItem.Click += new System.EventHandler(this.reportIssuesToolStripMenuItem_Click);
+            // 
+            // newsToolStripMenuItem
+            // 
+            this.newsToolStripMenuItem.Font = new System.Drawing.Font("Romantic", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.newsToolStripMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
+            this.newsToolStripMenuItem.Name = "newsToolStripMenuItem";
+            this.newsToolStripMenuItem.Size = new System.Drawing.Size(57, 22);
+            this.newsToolStripMenuItem.Text = "News";
+            this.newsToolStripMenuItem.Click += new System.EventHandler(this.newsToolStripMenuItem_Click);
             // 
             // settingsToolStripMenuItem
             // 
@@ -314,19 +323,11 @@
             this.convertDescriptionLabel.Location = new System.Drawing.Point(9, 68);
             this.convertDescriptionLabel.Margin = new System.Windows.Forms.Padding(6, 0, 6, 0);
             this.convertDescriptionLabel.Name = "convertDescriptionLabel";
-            this.convertDescriptionLabel.Size = new System.Drawing.Size(434, 176);
+            this.convertDescriptionLabel.Size = new System.Drawing.Size(434, 66);
             this.convertDescriptionLabel.TabIndex = 8;
-            this.convertDescriptionLabel.Text = resources.GetString("convertDescriptionLabel.Text");
+            this.convertDescriptionLabel.Text = "This process will convert your FAA .DAT RADAR Video Map (RVM)  into a .SCT2 file." +
+    "";
             this.convertDescriptionLabel.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
-            // 
-            // newsToolStripMenuItem
-            // 
-            this.newsToolStripMenuItem.Font = new System.Drawing.Font("Romantic", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-            this.newsToolStripMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
-            this.newsToolStripMenuItem.Name = "newsToolStripMenuItem";
-            this.newsToolStripMenuItem.Size = new System.Drawing.Size(57, 22);
-            this.newsToolStripMenuItem.Text = "News";
-            this.newsToolStripMenuItem.Click += new System.EventHandler(this.newsToolStripMenuItem_Click);
             // 
             // DatToSctForm
             // 

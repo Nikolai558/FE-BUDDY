@@ -718,5 +718,12 @@ namespace FeBuddyWinFormUI
             Logger.LogMessage("DEBUG", "DISCORD MENU ITEM CLICKED");
             Process.Start(new ProcessStartInfo("https://discord.com/invite/GB46aeauH4") { UseShellExecute = true });
         }
+
+        private void newsToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Logger.LogMessage("DEBUG", "REPORT ISSUES MENU ITEM CLICKED");
+            Process.Start(new ProcessStartInfo("https://github.com/Nikolai558/FE-BUDDY/wiki#news") { UseShellExecute = true });
+            //Process.Start("https://github.com/Nikolai558/FE-BUDDY/wiki#news");
+        }
     }
 }

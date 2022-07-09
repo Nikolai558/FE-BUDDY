@@ -12,10 +12,7 @@ namespace FeBuddyWinFormUI
         [STAThread]
         static void Main()
         {
-            //FeBuddyLibrary.Dxf.Data.DataFunctions testing = new();
-            //testing.CreateSctModel(@"C:\Users\nikol\Desktop\DXF Conversions\ZLC SECTOR.SCT2", @"C:\Users\nikol\Desktop\DXF Conversions\febuddyoutput.dxf");
-
-            //FeBuddyLibrary.Dxf.Data.DxfSct testing2 = new FeBuddyLibrary.Dxf.Data.DxfSct(@"C:\Users\nikol\Desktop\DXF Conversions\febuddyoutput.dxf", @"C:\Users\nikol\Desktop\DXF Conversions\febuddyoutput.sct2");
+            
 
 
 

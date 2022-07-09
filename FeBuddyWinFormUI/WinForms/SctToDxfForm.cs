@@ -1,10 +1,12 @@
 ﻿using System;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Text;
 using System.IO;
 using System.Windows.Forms;
 using FeBuddyLibrary;
+using FeBuddyLibrary.Dxf;
 using FeBuddyLibrary.Helpers;
 
 namespace FeBuddyWinFormUI
@@ -13,10 +15,15 @@ namespace FeBuddyWinFormUI
     {
         private readonly string _currentVersion;
         readonly PrivateFontCollection _pfc = new PrivateFontCollection();
+        private ConversionOptions _conversionOptions;
+        private ToolTip _toolTip;
 
         public SctToDxfForm(string currentVersion)
         {
             Logger.LogMessage("DEBUG", "INITIALIZING COMPONENT");
+            _conversionOptions = new ConversionOptions();
+            _toolTip = new ToolTip();
+
             _pfc.AddFontFile("Properties\\romantic.ttf");
 
             InitializeComponent();
@@ -25,11 +32,191 @@ namespace FeBuddyWinFormUI
             // It should grab from the assembily info. 
             this.Text = $"FE-BUDDY - V{currentVersion}";
 
-            airacCycleGroupBox.Enabled = false;
-            airacCycleGroupBox.Visible = false;
-
-            GlobalConfig.outputDirBase = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
             _currentVersion = currentVersion;
+        }
+
+        private void inputButton_Click(object sender, EventArgs e)
+        {
+            Logger.LogMessage("DEBUG", "USER CHOOSING DIFFERENT Input file for DXF Conversion tool");
+
+            OpenFileDialog inputFileDialog = new OpenFileDialog();
+
+            inputFileDialog.ShowDialog();
+
+            _conversionOptions.InputFilePath = inputFileDialog.FileName;
+
+            string text = _conversionOptions.InputFilePath;
+
+            if (text.Length >= 20)
+            {
+                if (text[^17..].Contains('\\'))
+                {
+                    text = "..\\" + text[^17..].Split('\\')[^1];
+                }
+                else
+                {
+                    text = "..\\.." + text[^15..];
+                }
+            }
+
+            sourceFileButton.Text = text;
+            sourceFileButton.TextAlign = ContentAlignment.MiddleCenter;
+            sourceFileButton.AutoSize = false;
+
+            //filePathLabel.Text = GlobalConfig.outputDirBase;
+            //filePathLabel.Visible = true;
+            //filePathLabel.MaximumSize = new Size(257, 82);
+
+        }
+
+        private void outputDirButton_Click(object sender, EventArgs e)
+        {
+            Logger.LogMessage("DEBUG", "USER CHOOSING DIFFERENT output directory for DXF Conversion tool");
+
+            FolderBrowserDialog outputDirDialog = new FolderBrowserDialog();
+
+            outputDirDialog.ShowDialog();
+
+            _conversionOptions.outputDirectory = outputDirDialog.SelectedPath;
+
+            string text = _conversionOptions.outputDirectory;
+
+            if (text.Length >= 20)
+            {
+                if (text[^17..].Contains('\\'))
+                {
+                    text = "..\\" + text[^17..].Split('\\')[^1];
+                }
+                else
+                {
+                    text = "..\\.." + text[^15..];
+                }
+            }
+
+            outputDirButton.Text = text;
+            outputDirButton.TextAlign = ContentAlignment.MiddleCenter;
+            //outputDirButton.TextAlign
+            outputDirButton.AutoSize = false;
+            //outputDirButton.AutoEllipsis = true;
+        }
+
+        private void startButton_Click(object sender, EventArgs e)
+        {
+            Logger.LogMessage("DEBUG", "USER clicked start button");
+
+            string errorMessages = "";
+
+            // TODO Show Message box instead of just returning. 
+            if (string.IsNullOrWhiteSpace(_conversionOptions.InputFilePath)) errorMessages += "Input File Path is invalid.\n";
+            if (string.IsNullOrWhiteSpace(_conversionOptions.outputDirectory)) errorMessages += "Output Directory is invalid.\n";
+
+            if (dxfToSctSelection.Checked)
+            {
+                if (_conversionOptions.InputFilePath?.Split('.')[^1] != "dxf") errorMessages += "DXF to SCT2 Selected, however, source file is not a .dxf\n";
+            }
+            if (sctToDxfSelection.Checked)
+            {
+                if ((_conversionOptions.InputFilePath?.Split('.')[^1].ToLower() != "sct" && _conversionOptions.InputFilePath?.Split('.')[^1].ToLower() != "sct2")) errorMessages += "SCT2 to DXF Selected, however, source file is not a .sct or .sct2\n";
+            }
+            if (!string.IsNullOrWhiteSpace(_conversionOptions.InputFilePath) && !File.Exists(_conversionOptions.InputFilePath))
+            {
+                errorMessages += "Listen here, Buddy.... Do not change the file name after you've selected it in this program.\n";
+            }
+            if (!string.IsNullOrWhiteSpace(_conversionOptions.outputDirectory) && !Directory.Exists(_conversionOptions.outputDirectory))
+            {
+                errorMessages += "Listen here, Buddy.... Do not change the folder name after you've selected it in this program.\n";
+            }
+
+
+            if (errorMessages != "")
+            {
+                MessageBoxButtons buttons = MessageBoxButtons.OK;
+                DialogResult result;
+
+                result = MessageBox.Show(errorMessages, "An invalid operation occured.", buttons);
+                return;
+            }
+
+            StartConversion();
+        }
+
+        private void ToggleComponents(bool isEnabled)
+        {
+            //sctToDxfSelection.Enabled = isEnabled;
+            //dxfToSctSelection.Enabled = isEnabled;
+            sourceFileButton.Enabled = isEnabled;
+            outputDirButton.Enabled = isEnabled;
+            startButton.Enabled = isEnabled;
+        }
+
+        private void StartConversion()
+        {
+            ToggleComponents(false);
+            startButton.Text = "PROCESSING";
+
+            var worker = new BackgroundWorker();
+            worker.RunWorkerCompleted += Worker_StartConversionCompleted;
+            worker.DoWork += Worker_StartConversionDoWork;
+
+            worker.RunWorkerAsync();
+        }
+
+        private void Worker_StartConversionDoWork(object sender, DoWorkEventArgs e)
+        {
+            string inputFileName = "\\" + _conversionOptions.InputFilePath.Split('\\')[^1].Split('.')[0] + "-converted";
+
+            if (sctToDxfSelection.Checked)
+            {
+                // Convert SCT2 To DXF
+                FeBuddyLibrary.Dxf.Data.DataFunctions dataFunctions = new();
+
+                // Subscribe to the event here? 
+
+                if (File.Exists(_conversionOptions.outputDirectory + inputFileName + ".dxf"))
+                {
+                    MessageBoxButtons buttons = MessageBoxButtons.YesNo;
+                    DialogResult result;
+
+                    result = MessageBox.Show("This file exists in this directory, would you like to write over it?", "File Exists!", buttons);
+
+                    if (result == DialogResult.No)
+                    {
+                        return;
+                    }
+                }
+                Logger.LogMessage("INFO", "Starting SCT2 to DXF Conversion.");
+                dataFunctions.CreateDxfFile(_conversionOptions.InputFilePath, _conversionOptions.outputDirectory + inputFileName + ".dxf");
+            }
+            else if (dxfToSctSelection.Checked)
+            {
+                if (File.Exists(_conversionOptions.outputDirectory + inputFileName + ".sct2"))
+                {
+                    MessageBoxButtons buttons = MessageBoxButtons.YesNo;
+                    DialogResult result;
+
+                    result = MessageBox.Show("This file exists in this directory, would you like to write over it?", "File Exists!", buttons);
+
+                    if (result == DialogResult.No)
+                    {
+                        return;
+                    }
+                }
+                // Convert DXF to SCT 2
+                FeBuddyLibrary.Dxf.Data.DxfSct dxfConverter = new();
+
+                Logger.LogMessage("INFO", "Starting DXF to SCT2 Conversion.");
+                dxfConverter.CreateSctFile(_conversionOptions.InputFilePath, _conversionOptions.outputDirectory + inputFileName + ".sct2");
+            }
+            else
+            {
+                throw new Exception("Invalid Selection for converter.");
+            }
+        }
+
+        private void Worker_StartConversionCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            startButton.Text = "Convert";
+            ToggleComponents(true);
         }
 
         private class MyRenderer : ToolStripProfessionalRenderer
@@ -306,6 +493,16 @@ namespace FeBuddyWinFormUI
         {
             Logger.LogMessage("DEBUG", "DISCORD MENU ITEM CLICKED");
             Process.Start(new ProcessStartInfo("https://discord.com/invite/GB46aeauH4") { UseShellExecute = true });
+        }
+
+        private void outputDirButton_MouseHover(object sender, EventArgs e)
+        {
+            _toolTip.SetToolTip(outputDirButton, _conversionOptions.outputDirectory);
+        }
+
+        private void inputButton_MouseHover(object sender, EventArgs e)
+        {
+            _toolTip.SetToolTip(sourceFileButton, _conversionOptions.InputFilePath);
         }
     }
 }

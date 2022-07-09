@@ -13,11 +13,13 @@ namespace FeBuddyWinFormUI
     {
         private readonly string _currentVersion;
         readonly PrivateFontCollection _pfc = new PrivateFontCollection();
+        private ToolTip _toolTip;
 
         public LandingForm(string currentVersion)
         {
             Logger.LogMessage("DEBUG", "INITIALIZING COMPONENT");
 
+            _toolTip = new ToolTip();
             _pfc.AddFontFile("Properties\\romantic.ttf");
 
             this.FormClosed += (s, args) => Application.Exit();
@@ -318,23 +320,25 @@ namespace FeBuddyWinFormUI
 
         private void landingStartButton_MouseHover(object sender, EventArgs e)
         {
-            var startToolTip = new ToolTip();
-            startToolTip.SetToolTip(landingStartButton, "I'm not your friend, Guy...");
+            _toolTip.SetToolTip(landingStartButton, "I'm not your friend, Guy...");
         }
 
         private void landingStartButton_Click(object sender, EventArgs e)
         {
+            // this.show() => should be this.close()... I don't like hitting the X button and it taking us back to the main menu
+            // Need to do a button to handle that if it works PROPERLY... I had issues with that but maybe it is fixed or maybe I was doing it wrong before. 
+
             if (getparseAiracDataSelection.Checked)
             {
                 var airacDataForm = new AiracDataForm(_currentVersion);
-                airacDataForm.FormClosing += (s, args) => this.Close();
+                airacDataForm.FormClosing += (s, args) => this.Show();
                 airacDataForm.Show();
                 this.Hide();
             }
             else if (convertSct2DxfSelection.Checked)
             {
                 var sctToDxfForm = new SctToDxfForm(_currentVersion);
-                sctToDxfForm.FormClosing += (s, args) => this.Close();
+                sctToDxfForm.FormClosing += (s, args) => this.Show();
                 sctToDxfForm.Show();
                 this.Hide();
             }

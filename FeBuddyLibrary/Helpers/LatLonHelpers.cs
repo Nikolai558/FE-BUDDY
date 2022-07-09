@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace FeBuddyLibrary.Helpers
@@ -12,8 +13,34 @@ namespace FeBuddyLibrary.Helpers
         /// <param name="Lat">Is this value a Lat, if so Put true</param>
         /// <param name="ConvertEast">Do you need ALL East Coords converted, if so put true.</param>
         /// <returns>standard [N-S-E-W]000.00.00.000 lat/lon format</returns>
-        public static string CorrectLatLon(string value, bool Lat, bool ConvertEast)
+        public static string CorrectLatLon(string value, bool Lat, bool ConvertEast, Dictionary<string, Dictionary<string,string>> navaidPostions = null)
         {
+            if (navaidPostions is not null && !value.Contains('.'))
+            {
+                if (Lat)
+                {
+                    try
+                    {
+                        value = navaidPostions[value]["Lat"];
+                    }
+                    catch (KeyNotFoundException)
+                    {
+                        throw new Exception($"{value} is not defined. You must have this NAVAID/FIX defined in the appropriate section. Please fix this in your SCT file.");
+                    }
+                }
+                else
+                {
+                    try
+                    {
+                        value = navaidPostions[value]["Lon"];
+                    }
+                    catch (KeyNotFoundException)
+                    {
+                        throw new Exception($"{value} is not defined. You must have this NAVAID/FIX defined in the appropriate section. Please fix this in your SCT file.");
+                    }
+                }
+            }
+
             // Valid format is N000.00.00.000 W000.00.000
             string correctedValue;
 
@@ -189,13 +216,27 @@ namespace FeBuddyLibrary.Helpers
                 secondFloat = decimal.Parse("0." + (minuteFloat * 60).ToString().Split('.')[1]);
             }
 
-            secondFloat = Math.Round(secondFloat, 3);
+            secondFloat = Math.Round(secondFloat, 4);
+
+            if (secondFloat >= 1)
+            {
+                seconds += 1;
+            }
+            if (seconds >= 60)
+            {
+                minutes += 1;
+                seconds -= 60;
+            }
+            if (minutes >= 60)
+            {
+                degrees += 1;
+                minutes -= 60;
+            }
 
             if (secondFloat.ToString().Split('.').Count() > 1)
             {
-                miliseconds = secondFloat.ToString().Split('.')[1];
+                miliseconds = Math.Round(secondFloat, 3).ToString().Split('.')[1];
             }
-
 
             if (lat)
             {

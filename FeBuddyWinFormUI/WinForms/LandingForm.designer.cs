@@ -39,7 +39,6 @@
             this.convertFaaGeoMap2SCT = new System.Windows.Forms.RadioButton();
             this.convertSct2KmlSelection = new System.Windows.Forms.RadioButton();
             this.convertKml2SCTSelection = new System.Windows.Forms.RadioButton();
-            this.convertDxf2SctSelection = new System.Windows.Forms.RadioButton();
             this.convertSct2DxfSelection = new System.Windows.Forms.RadioButton();
             this.menuStrip = new System.Windows.Forms.MenuStrip();
             this.informationToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -48,11 +47,11 @@
             this.FAQMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.ChangeLogMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.CreditsMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.discordToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.reportIssuesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.settingsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.allowBetaMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.UninstallMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.discordToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.airacCycleGroupBox.SuspendLayout();
             this.menuStrip.SuspendLayout();
             this.SuspendLayout();
@@ -106,7 +105,6 @@
             this.airacCycleGroupBox.Controls.Add(this.convertFaaGeoMap2SCT);
             this.airacCycleGroupBox.Controls.Add(this.convertSct2KmlSelection);
             this.airacCycleGroupBox.Controls.Add(this.convertKml2SCTSelection);
-            this.airacCycleGroupBox.Controls.Add(this.convertDxf2SctSelection);
             this.airacCycleGroupBox.Controls.Add(this.convertSct2DxfSelection);
             this.airacCycleGroupBox.Controls.Add(this.airacLabel);
             this.airacCycleGroupBox.Controls.Add(this.getparseAiracDataSelection);
@@ -179,7 +177,7 @@
             this.convertSct2KmlSelection.AutoSize = true;
             this.convertSct2KmlSelection.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.convertSct2KmlSelection.ForeColor = System.Drawing.SystemColors.AppWorkspace;
-            this.convertSct2KmlSelection.Location = new System.Drawing.Point(68, 273);
+            this.convertSct2KmlSelection.Location = new System.Drawing.Point(68, 234);
             this.convertSct2KmlSelection.Margin = new System.Windows.Forms.Padding(6, 7, 6, 7);
             this.convertSct2KmlSelection.Name = "convertSct2KmlSelection";
             this.convertSct2KmlSelection.Size = new System.Drawing.Size(176, 25);
@@ -192,26 +190,13 @@
             this.convertKml2SCTSelection.AutoSize = true;
             this.convertKml2SCTSelection.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.convertKml2SCTSelection.ForeColor = System.Drawing.SystemColors.AppWorkspace;
-            this.convertKml2SCTSelection.Location = new System.Drawing.Point(68, 234);
+            this.convertKml2SCTSelection.Location = new System.Drawing.Point(68, 195);
             this.convertKml2SCTSelection.Margin = new System.Windows.Forms.Padding(6, 7, 6, 7);
             this.convertKml2SCTSelection.Name = "convertKml2SCTSelection";
             this.convertKml2SCTSelection.Size = new System.Drawing.Size(176, 25);
             this.convertKml2SCTSelection.TabIndex = 5;
             this.convertKml2SCTSelection.Text = "Convert KML to SCT2";
             this.convertKml2SCTSelection.UseVisualStyleBackColor = true;
-            // 
-            // convertDxf2SctSelection
-            // 
-            this.convertDxf2SctSelection.AutoSize = true;
-            this.convertDxf2SctSelection.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-            this.convertDxf2SctSelection.ForeColor = System.Drawing.SystemColors.AppWorkspace;
-            this.convertDxf2SctSelection.Location = new System.Drawing.Point(68, 195);
-            this.convertDxf2SctSelection.Margin = new System.Windows.Forms.Padding(6, 7, 6, 7);
-            this.convertDxf2SctSelection.Name = "convertDxf2SctSelection";
-            this.convertDxf2SctSelection.Size = new System.Drawing.Size(173, 25);
-            this.convertDxf2SctSelection.TabIndex = 4;
-            this.convertDxf2SctSelection.Text = "Convert DXF to SCT2";
-            this.convertDxf2SctSelection.UseVisualStyleBackColor = true;
             // 
             // convertSct2DxfSelection
             // 
@@ -221,9 +206,9 @@
             this.convertSct2DxfSelection.Location = new System.Drawing.Point(68, 156);
             this.convertSct2DxfSelection.Margin = new System.Windows.Forms.Padding(6, 7, 6, 7);
             this.convertSct2DxfSelection.Name = "convertSct2DxfSelection";
-            this.convertSct2DxfSelection.Size = new System.Drawing.Size(173, 25);
+            this.convertSct2DxfSelection.Size = new System.Drawing.Size(196, 25);
             this.convertSct2DxfSelection.TabIndex = 3;
-            this.convertSct2DxfSelection.Text = "Convert SCT2 to DXF";
+            this.convertSct2DxfSelection.Text = "SCT2 / DXF Conversions";
             this.convertSct2DxfSelection.UseVisualStyleBackColor = true;
             // 
             // menuStrip
@@ -311,6 +296,15 @@
             this.CreditsMenuItem.Text = "Credits";
             this.CreditsMenuItem.Click += new System.EventHandler(this.CreditsMenuItem_Click);
             // 
+            // discordToolStripMenuItem
+            // 
+            this.discordToolStripMenuItem.Font = new System.Drawing.Font("Romantic", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.discordToolStripMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
+            this.discordToolStripMenuItem.Name = "discordToolStripMenuItem";
+            this.discordToolStripMenuItem.Size = new System.Drawing.Size(72, 22);
+            this.discordToolStripMenuItem.Text = "Buddies";
+            this.discordToolStripMenuItem.Click += new System.EventHandler(this.discordToolStripMenuItem_Click);
+            // 
             // reportIssuesToolStripMenuItem
             // 
             this.reportIssuesToolStripMenuItem.Font = new System.Drawing.Font("Romantic", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
@@ -351,15 +345,6 @@
             this.UninstallMenuItem.Size = new System.Drawing.Size(195, 22);
             this.UninstallMenuItem.Text = "Uninstall";
             this.UninstallMenuItem.Click += new System.EventHandler(this.UninstallMenuItem_Click);
-            // 
-            // discordToolStripMenuItem
-            // 
-            this.discordToolStripMenuItem.Font = new System.Drawing.Font("Romantic", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-            this.discordToolStripMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
-            this.discordToolStripMenuItem.Name = "discordToolStripMenuItem";
-            this.discordToolStripMenuItem.Size = new System.Drawing.Size(72, 22);
-            this.discordToolStripMenuItem.Text = "Buddies";
-            this.discordToolStripMenuItem.Click += new System.EventHandler(this.discordToolStripMenuItem_Click);
             // 
             // LandingForm
             // 
@@ -415,7 +400,6 @@
         private System.Windows.Forms.RadioButton convertFaaGeoMap2SCT;
         private System.Windows.Forms.RadioButton convertSct2KmlSelection;
         private System.Windows.Forms.RadioButton convertKml2SCTSelection;
-        private System.Windows.Forms.RadioButton convertDxf2SctSelection;
         private System.Windows.Forms.RadioButton convertSct2DxfSelection;
         private System.Windows.Forms.Button landingStartButton;
         private System.Windows.Forms.RadioButton manageFacDataSelector;

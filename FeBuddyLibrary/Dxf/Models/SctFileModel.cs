@@ -29,21 +29,27 @@ namespace FeBuddyLibrary.Dxf.Models
         public string GetSection<T>(List<T> sctObjects)
         {
             StringBuilder output = new StringBuilder();
-
-            Type myType = sctObjects[0].GetType();
-            IList<PropertyInfo> props = new List<PropertyInfo>(myType.GetProperties());
-
-            foreach (var item in sctObjects)
+            try
             {
-                foreach (PropertyInfo prop in props)
-                {
-                    if (prop.Name == "AllInfo")
-                    {
-                        output.AppendLine(prop.GetValue(item).ToString());
+                Type myType = sctObjects[0].GetType();
+                IList<PropertyInfo> props = new List<PropertyInfo>(myType.GetProperties());
 
-                        break;
+                foreach (var item in sctObjects)
+                {
+                    foreach (PropertyInfo prop in props)
+                    {
+                        if (prop.Name == "AllInfo")
+                        {
+                            output.AppendLine(prop.GetValue(item).ToString());
+
+                            break;
+                        }
                     }
                 }
+            }
+            catch (Exception ex)
+            {
+                
             }
 
             return output.ToString();

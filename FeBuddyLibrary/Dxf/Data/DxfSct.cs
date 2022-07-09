@@ -13,13 +13,8 @@ namespace FeBuddyLibrary.Dxf.Data
         List<string> _dxfFilelines;
         SctFileModel _sctFileModel;
 
-        public DxfSct(string dxfFilePath, string sctFilePath)
+        public void CreateSctFile(string dxfFilePath, string sctFilePath)
         {
-            ////var test = DxfDocument.Load(@"C:\Users\nikol\Desktop\DXF Conversions\All.dxf");
-            //DxfDocument doc = new DxfDocument();
-            //Line entity = new Line();
-            //doc.AddEntity(entity);
-            //doc.Save(@"C:\Users\nikol\Desktop\DXF Conversions\testfromlib.dxf");
             _dxfFilelines = readDxfFile(dxfFilePath);
             _sctFileModel = new SctFileModel();
 
@@ -350,6 +345,12 @@ namespace FeBuddyLibrary.Dxf.Data
                             }
                         case false:
                             {
+                                if (line.Trim().Contains(containsString))
+                                {
+                                    string trimmedLine = line.Trim();
+                                    additionalLineSegments.Color = trimmedLine[(trimmedLine[..trimmedLine.LastIndexOf("---")].LastIndexOf("---") + 3)..trimmedLine.LastIndexOf("---")];
+                                }
+
                                 switch (line.Trim())
                                 {
                                     case "10": additionalLineSegments.StartLon = LatLonHelpers.CreateDMS(double.Parse(_dxfFilelines[currentLine + 1].Trim()), false); break;
@@ -358,7 +359,10 @@ namespace FeBuddyLibrary.Dxf.Data
                                     case "21":
                                         {
                                             additionalLineSegments.EndLat = LatLonHelpers.CreateDMS(double.Parse(_dxfFilelines[currentLine + 1].Trim()), true);
-                                            additionalLineSegments.Color = model.Color;
+                                            if (string.IsNullOrEmpty(additionalLineSegments.Color) || string.IsNullOrWhiteSpace(additionalLineSegments.Color))
+                                            {
+                                                additionalLineSegments.Color = model.Color;
+                                            }
                                             model.AdditionalLines.Add(additionalLineSegments);
                                             additionalLineSegments = new SctAditionalDiagramLineSegments();
                                             isInLineSection = false;
@@ -393,12 +397,21 @@ namespace FeBuddyLibrary.Dxf.Data
             List<SctArtccModel> models = new List<SctArtccModel>();
             SctArtccModel currentModel = null;
 
+            bool skipline = false;
+
             int currentIndex = -1;
             string previous_line = "";
             foreach (string current_line in _dxfFilelines)
             {
-                string _currentLine = current_line.Trim();
                 currentIndex += 1;
+                string _currentLine = current_line.Trim();
+
+                if (skipline)
+                {
+                    skipline = false;
+                    continue;
+                }
+
                 if (previous_line == "0" && _currentLine == "LINE")
                 {
                     isInLineSection = true;
@@ -418,10 +431,47 @@ namespace FeBuddyLibrary.Dxf.Data
                 {
                     switch (_currentLine)
                     {
-                        case "10": { currentModel.StartLon = LatLonHelpers.CreateDMS(double.Parse(_dxfFilelines[currentIndex + 1].Trim()), false); break; }
-                        case "20": { currentModel.StartLat = LatLonHelpers.CreateDMS(double.Parse(_dxfFilelines[currentIndex + 1].Trim()), true); break; }
-                        case "11": { currentModel.EndLon = LatLonHelpers.CreateDMS(double.Parse(_dxfFilelines[currentIndex + 1].Trim()), false); break; }
-                        case "21": { currentModel.EndLat = LatLonHelpers.CreateDMS(double.Parse(_dxfFilelines[currentIndex + 1].Trim()), true); isInSectionNeeded = false; isInLineSection = false; break; }
+                        case "10": 
+                            {
+                                skipline = true;
+                                if (currentModel.StartLon is null)
+                                {
+                                    currentModel.StartLon = LatLonHelpers.CreateDMS(double.Parse(_dxfFilelines[currentIndex + 1].Trim()), false);
+                                }
+                                break; 
+                            }
+                        case "20": 
+                            {
+                                skipline = true;
+
+                                if (currentModel.StartLat is null)
+                                {
+                                    currentModel.StartLat = LatLonHelpers.CreateDMS(double.Parse(_dxfFilelines[currentIndex + 1].Trim()), true);
+                                }
+                                break; 
+                            }
+                        case "11": 
+                            {
+                                skipline = true;
+
+                                if (currentModel.EndLon is null)
+                                {
+                                    currentModel.EndLon = LatLonHelpers.CreateDMS(double.Parse(_dxfFilelines[currentIndex + 1].Trim()), false);
+                                }
+                                break; 
+                            }
+                        case "21": 
+                            {
+                                skipline = true;
+
+                                if (currentModel.EndLat is null)
+                                {
+                                    currentModel.EndLat = LatLonHelpers.CreateDMS(double.Parse(_dxfFilelines[currentIndex + 1].Trim()), true);
+                                    isInSectionNeeded = false;
+                                    isInLineSection = false;
+                                }
+                                break;
+                            }
                         default: { break; }
                     }
                 }

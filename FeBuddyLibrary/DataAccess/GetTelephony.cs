@@ -154,6 +154,7 @@ namespace FeBuddyLibrary.DataAccess
             Logger.LogMessage("DEBUG", $"SAVING TELEPHONY MODEL");
 
             string filePath = $"{GlobalConfig.outputDirectory}ALIAS\\TELEPHONY.txt";
+            string combinedFilePath = $"{GlobalConfig.outputDirectory}ALIAS\\AliasTestFile.txt";
             StringBuilder sb = new StringBuilder();
 
             foreach (TelephonyModel telephony in allTelephony)
@@ -163,6 +164,7 @@ namespace FeBuddyLibrary.DataAccess
             }
 
             File.WriteAllText(filePath, sb.ToString());
+            File.AppendAllText(combinedFilePath, sb.ToString());
             Logger.LogMessage("DEBUG", $"COMPLETED TELEPHONY");
 
         }

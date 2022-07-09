@@ -101,6 +101,8 @@ namespace FeBuddyWinFormUI
             settingsToolStripMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
             reportIssuesToolStripMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
             discordToolStripMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
+            newsToolStripMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
+
             //mainMenuMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
             //exitMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
         }
@@ -335,6 +337,13 @@ namespace FeBuddyWinFormUI
         private void inputButton_MouseHover(object sender, EventArgs e)
         {
             _toolTip.SetToolTip(sourceFileButton, _conversionOptions.InputFilePath);
+        }
+
+        private void newsToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Logger.LogMessage("DEBUG", "REPORT ISSUES MENU ITEM CLICKED");
+            Process.Start(new ProcessStartInfo("https://github.com/Nikolai558/FE-BUDDY/wiki#news") { UseShellExecute = true });
+            //Process.Start("https://github.com/Nikolai558/FE-BUDDY/wiki#news");
         }
     }
 }

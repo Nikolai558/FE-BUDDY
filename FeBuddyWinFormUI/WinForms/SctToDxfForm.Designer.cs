@@ -53,6 +53,7 @@
             this.airacLabel = new System.Windows.Forms.Label();
             this.sctToDxfSelection = new System.Windows.Forms.RadioButton();
             this.dxfToSctSelection = new System.Windows.Forms.RadioButton();
+            this.newsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.menuStrip.SuspendLayout();
             this.startGroupBox.SuspendLayout();
             this.convertGroupBox.SuspendLayout();
@@ -67,6 +68,7 @@
             this.informationToolStripMenuItem,
             this.discordToolStripMenuItem,
             this.reportIssuesToolStripMenuItem,
+            this.newsToolStripMenuItem,
             this.settingsToolStripMenuItem});
             this.menuStrip.Location = new System.Drawing.Point(0, 0);
             this.menuStrip.Name = "menuStrip";
@@ -360,6 +362,14 @@
             this.dxfToSctSelection.Text = "DXF to SCT2";
             this.dxfToSctSelection.UseVisualStyleBackColor = true;
             // 
+            // newsToolStripMenuItem
+            // 
+            this.newsToolStripMenuItem.Font = new System.Drawing.Font("Romantic", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.newsToolStripMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
+            this.newsToolStripMenuItem.Name = "newsToolStripMenuItem";
+            this.newsToolStripMenuItem.Size = new System.Drawing.Size(57, 22);
+            this.newsToolStripMenuItem.Text = "News";
+            // 
             // SctToDxfForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(11F, 25F);
@@ -421,6 +431,7 @@
         private System.Windows.Forms.Label airacLabel;
         private System.Windows.Forms.RadioButton sctToDxfSelection;
         private System.Windows.Forms.RadioButton dxfToSctSelection;
+        private System.Windows.Forms.ToolStripMenuItem newsToolStripMenuItem;
     }
 }
 

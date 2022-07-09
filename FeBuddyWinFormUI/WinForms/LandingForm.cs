@@ -122,6 +122,7 @@ namespace FeBuddyWinFormUI
             settingsToolStripMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
             reportIssuesToolStripMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
             allowBetaMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
+            newsToolStripMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
         }
 
         private void UninstallMenuItem_Click(object sender, EventArgs e)

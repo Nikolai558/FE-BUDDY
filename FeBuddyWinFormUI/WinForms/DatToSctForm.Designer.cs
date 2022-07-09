@@ -48,8 +48,9 @@
             this.outputLabel = new System.Windows.Forms.Label();
             this.outputDirButton = new System.Windows.Forms.Button();
             this.convertGroupBox = new System.Windows.Forms.GroupBox();
-            this.convertDescriptionLabel = new System.Windows.Forms.Label();
             this.FormLabel = new System.Windows.Forms.Label();
+            this.convertDescriptionLabel = new System.Windows.Forms.Label();
+            this.newsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.menuStrip.SuspendLayout();
             this.startGroupBox.SuspendLayout();
             this.convertGroupBox.SuspendLayout();
@@ -63,6 +64,7 @@
             this.informationToolStripMenuItem,
             this.discordToolStripMenuItem,
             this.reportIssuesToolStripMenuItem,
+            this.newsToolStripMenuItem,
             this.settingsToolStripMenuItem});
             this.menuStrip.Location = new System.Drawing.Point(0, 0);
             this.menuStrip.Name = "menuStrip";
@@ -293,18 +295,6 @@
             this.convertGroupBox.TabIndex = 18;
             this.convertGroupBox.TabStop = false;
             // 
-            // convertDescriptionLabel
-            // 
-            this.convertDescriptionLabel.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-            this.convertDescriptionLabel.ForeColor = System.Drawing.SystemColors.AppWorkspace;
-            this.convertDescriptionLabel.Location = new System.Drawing.Point(9, 68);
-            this.convertDescriptionLabel.Margin = new System.Windows.Forms.Padding(6, 0, 6, 0);
-            this.convertDescriptionLabel.Name = "convertDescriptionLabel";
-            this.convertDescriptionLabel.Size = new System.Drawing.Size(434, 176);
-            this.convertDescriptionLabel.TabIndex = 8;
-            this.convertDescriptionLabel.Text = resources.GetString("convertDescriptionLabel.Text");
-            this.convertDescriptionLabel.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
-            // 
             // FormLabel
             // 
             this.FormLabel.Font = new System.Drawing.Font("Segoe UI", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
@@ -317,7 +307,28 @@
             this.FormLabel.Text = "DAT To SCT2";
             this.FormLabel.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
-            // DatToSct
+            // convertDescriptionLabel
+            // 
+            this.convertDescriptionLabel.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.convertDescriptionLabel.ForeColor = System.Drawing.SystemColors.AppWorkspace;
+            this.convertDescriptionLabel.Location = new System.Drawing.Point(9, 68);
+            this.convertDescriptionLabel.Margin = new System.Windows.Forms.Padding(6, 0, 6, 0);
+            this.convertDescriptionLabel.Name = "convertDescriptionLabel";
+            this.convertDescriptionLabel.Size = new System.Drawing.Size(434, 176);
+            this.convertDescriptionLabel.TabIndex = 8;
+            this.convertDescriptionLabel.Text = resources.GetString("convertDescriptionLabel.Text");
+            this.convertDescriptionLabel.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            // 
+            // newsToolStripMenuItem
+            // 
+            this.newsToolStripMenuItem.Font = new System.Drawing.Font("Romantic", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.newsToolStripMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
+            this.newsToolStripMenuItem.Name = "newsToolStripMenuItem";
+            this.newsToolStripMenuItem.Size = new System.Drawing.Size(57, 22);
+            this.newsToolStripMenuItem.Text = "News";
+            this.newsToolStripMenuItem.Click += new System.EventHandler(this.newsToolStripMenuItem_Click);
+            // 
+            // DatToSctForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(11F, 25F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
@@ -336,7 +347,7 @@
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Margin = new System.Windows.Forms.Padding(6, 7, 6, 7);
             this.MaximizeBox = false;
-            this.Name = "DatToSct";
+            this.Name = "DatToSctForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "FE-BUDDY";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.DatToSctForm_Closing);
@@ -372,6 +383,7 @@
         private System.Windows.Forms.GroupBox convertGroupBox;
         private System.Windows.Forms.Label convertDescriptionLabel;
         private System.Windows.Forms.Label FormLabel;
+        private System.Windows.Forms.ToolStripMenuItem newsToolStripMenuItem;
     }
 }
 

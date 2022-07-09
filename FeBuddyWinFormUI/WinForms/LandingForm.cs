@@ -342,6 +342,13 @@ namespace FeBuddyWinFormUI
                 sctToDxfForm.Show();
                 this.Hide();
             }
+            else if (convertDat2SctSelection.Checked)
+            {
+                var datToSctForm = new DatToSctForm(_currentVersion);
+                datToSctForm.FormClosing += (s, args) => this.Show();
+                datToSctForm.Show();
+                this.Hide();
+            }
             else
             {
                 MessageBox.Show("This feature has not been implemented yet.");

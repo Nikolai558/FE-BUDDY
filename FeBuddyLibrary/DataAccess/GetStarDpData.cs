@@ -419,16 +419,16 @@ namespace FeBuddyLibrary.DataAccess
                     {
                         if (point.Type == "S")
                         {
-                            if (!allDiagrams["S"].ContainsKey($"{apt}_{currentComputerCode.PadRight(26, ' ')}N000.00.00.000 E000.00.00.000 N000.00.00.000 E000.00.00.000"))
+                            if (!allDiagrams["S"].ContainsKey($"{apt}_{currentComputerCode}".PadRight(26, ' ') + "N000.00.00.000 E000.00.00.000 N000.00.00.000 E000.00.00.000"))
                             {
-                                allDiagrams["S"][$"{apt}_{currentComputerCode.PadRight(26, ' ')}N000.00.00.000 E000.00.00.000 N000.00.00.000 E000.00.00.000"] = new List<string>();
+                                allDiagrams["S"][$"{apt}_{currentComputerCode}".PadRight(26, ' ') + "N000.00.00.000 E000.00.00.000 N000.00.00.000 E000.00.00.000"] = new List<string>();
                             }
                         }
                         else
                         {
-                            if (!allDiagrams["D"].ContainsKey($"{apt}_{currentComputerCode.PadRight(26, ' ')}N000.00.00.000 E000.00.00.000 N000.00.00.000 E000.00.00.000"))
+                            if (!allDiagrams["D"].ContainsKey($"{apt}_{currentComputerCode}".PadRight(26, ' ') + "N000.00.00.000 E000.00.00.000 N000.00.00.000 E000.00.00.000"))
                             {
-                                allDiagrams["D"][$"{apt}_{currentComputerCode.PadRight(26, ' ')}N000.00.00.000 E000.00.00.000 N000.00.00.000 E000.00.00.000"] = new List<string>();
+                                allDiagrams["D"][$"{apt}_{currentComputerCode}".PadRight(26, ' ') + "N000.00.00.000 E000.00.00.000 N000.00.00.000 E000.00.00.000"] = new List<string>();
                             }
                         }
                     }
@@ -458,11 +458,11 @@ namespace FeBuddyLibrary.DataAccess
                         {
                             if (point.Type == "S")
                             {
-                                allDiagrams["S"][$"{airport}_{currentComputerCode.PadRight(26, ' ')}N000.00.00.000 E000.00.00.000 N000.00.00.000 E000.00.00.000"].Add($"                          {prevPoint.Lat} {prevPoint.Lon} {point.Lat} {point.Lon}; {prevPoint.PointId} {point.PointId}");
+                                allDiagrams["S"][$"{airport}_{currentComputerCode}".PadRight(26, ' ') + "N000.00.00.000 E000.00.00.000 N000.00.00.000 E000.00.00.000"].Add($"                          {prevPoint.Lat} {prevPoint.Lon} {point.Lat} {point.Lon}; {prevPoint.PointId} {point.PointId}");
                             }
                             else
                             {
-                                allDiagrams["D"][$"{airport}_{currentComputerCode.PadRight(26, ' ')}N000.00.00.000 E000.00.00.000 N000.00.00.000 E000.00.00.000"].Add($"                          {prevPoint.Lat} {prevPoint.Lon} {point.Lat} {point.Lon}; {prevPoint.PointId} {point.PointId}");
+                                allDiagrams["D"][$"{airport}_{currentComputerCode}".PadRight(26, ' ') + "N000.00.00.000 E000.00.00.000 N000.00.00.000 E000.00.00.000"].Add($"                          {prevPoint.Lat} {prevPoint.Lon} {point.Lat} {point.Lon}; {prevPoint.PointId} {point.PointId}");
                             }
                         }
 

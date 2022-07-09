@@ -37,6 +37,9 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>Settings.settings</DependentUpon>
     </Compile>
+    <Compile Update="WinForms\DatToSctForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Update="WinForms\SctToDxfForm.cs">
       <SubType>Form</SubType>
     </Compile>

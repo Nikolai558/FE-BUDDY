@@ -127,6 +127,51 @@ namespace FeBuddyWinFormUI
             StartConversion();
         }
 
+        private void ToggleComponents(bool isEnabled)
+        {
+            sourceFileButton.Enabled = isEnabled;
+            outputDirButton.Enabled = isEnabled;
+            startButton.Enabled = isEnabled;
+        }
+
+        private void StartConversion()
+        {
+            ToggleComponents(false);
+            startButton.Text = "PROCESSING";
+
+            var worker = new BackgroundWorker();
+            worker.RunWorkerCompleted += Worker_StartConversionCompleted;
+            worker.DoWork += Worker_StartConversionDoWork;
+
+            worker.RunWorkerAsync();
+        }
+
+        private void Worker_StartConversionCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            startButton.Text = "Convert";
+            ToggleComponents(true);
+        }
+
+        private void Worker_StartConversionDoWork(object sender, DoWorkEventArgs e)
+        {
+            // TODO - Call conversion Logic Here.
+
+            string inputFileName = "\\" + _conversionOptions.InputFilePath.Split('\\')[^1].Split('.')[0] + "-converted";
+            if (File.Exists(_conversionOptions.outputDirectory + inputFileName + ".sct2"))
+            {
+                MessageBoxButtons buttons = MessageBoxButtons.YesNo;
+                DialogResult result;
+
+                result = MessageBox.Show("This file exists in this directory, would you like to write over it?", "File Exists!", buttons);
+
+                if (result == DialogResult.No)
+                {
+                    return;
+                }
+            }
+            Logger.LogMessage("INFO", "Starting DAT to SCT2 Conversion.");
+        }
+
         private class MyRenderer : ToolStripProfessionalRenderer
         {
             public MyRenderer() : base(new MyColors()) { }

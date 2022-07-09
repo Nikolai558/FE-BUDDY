@@ -1,6 +1,24 @@
 # CHANGELOG
 
 ---
+- ## Version 2.0.1
+  ## FOR USERS:
+    - Added #42 - Added button ("Buddies") that links to the FE-BUDDY Discord server.
+    - Fixed #52 - Navaid Geomap for vERAM has no data
+    - Fixed #55 - Reading SCT2 Fixes in Place of Coordinates
+    - Fixed #58 - Changed Uninstall Prompt Message
+    - Fixed #54 - .ID alias commands are now added to the AliasTestFile
+    - Fixed #49 - Fixed the Star/DP Name Alignment in the SCT Files
+    - Fixed #45 - All comments in the SCT file should follow the same format.
+  ## FOR DEVELOPERS:
+    - Fixed #41 - Menu display Unhandled Exception
+    - Backend code cleanup and standardized.
+    - Updated Squirrel to latest stable (Squirrel is the auto updater system)
+    - Updated/Corrected logging messages
+    - Started development on SCT to DXF file conversions.
+      - This option is currently disabled as it is not fully functioning.
+    - Modified GUI - Different options for future updates.
+  
 - ## Version 2.0.0
   ### FOR USERS:
     - Modified menu presentation

@@ -37,18 +37,94 @@ namespace FeBuddyWinFormUI
 
         private void inputButton_Click(object sender, EventArgs e)
         {
-            
+            Logger.LogMessage("DEBUG", "USER CHOOSING DIFFERENT Input file for DAT Conversion tool");
 
+            OpenFileDialog inputFileDialog = new OpenFileDialog();
+
+            inputFileDialog.ShowDialog();
+
+            _conversionOptions.InputFilePath = inputFileDialog.FileName;
+
+            string text = _conversionOptions.InputFilePath;
+
+            if (text.Length >= 20)
+            {
+                if (text[^17..].Contains('\\'))
+                {
+                    text = "..\\" + text[^17..].Split('\\')[^1];
+                }
+                else
+                {
+                    text = "..\\.." + text[^15..];
+                }
+            }
+
+            sourceFileButton.Text = text;
+            sourceFileButton.TextAlign = ContentAlignment.MiddleCenter;
+            sourceFileButton.AutoSize = false;
         }
 
         private void outputDirButton_Click(object sender, EventArgs e)
         {
-            
+            Logger.LogMessage("DEBUG", "USER CHOOSING DIFFERENT output directory for DAT Conversion tool");
+
+            FolderBrowserDialog outputDirDialog = new FolderBrowserDialog();
+
+            outputDirDialog.ShowDialog();
+
+            _conversionOptions.outputDirectory = outputDirDialog.SelectedPath;
+
+            string text = _conversionOptions.outputDirectory;
+
+            if (text.Length >= 20)
+            {
+                if (text[^17..].Contains('\\'))
+                {
+                    text = "..\\" + text[^17..].Split('\\')[^1];
+                }
+                else
+                {
+                    text = "..\\.." + text[^15..];
+                }
+            }
+
+            outputDirButton.Text = text;
+            outputDirButton.TextAlign = ContentAlignment.MiddleCenter;
+            outputDirButton.AutoSize = false;
         }
 
         private void startButton_Click(object sender, EventArgs e)
         {
+            Logger.LogMessage("DEBUG", "USER clicked start button");
+
+            string errorMessages = "";
+
+            // TODO Show Message box instead of just returning. 
+            if (string.IsNullOrWhiteSpace(_conversionOptions.InputFilePath)) errorMessages += "Input File Path is invalid.\n";
+            if (string.IsNullOrWhiteSpace(_conversionOptions.outputDirectory)) errorMessages += "Output Directory is invalid.\n";
+
+            if (_conversionOptions.InputFilePath?.Split('.')[^1] != "dat") errorMessages += "Source file is not a .dat\n";
             
+            if (!string.IsNullOrWhiteSpace(_conversionOptions.InputFilePath) && !File.Exists(_conversionOptions.InputFilePath))
+            {
+                errorMessages += "Listen here, Buddy.... Do not change the file name after you've selected it in this program.\n";
+            }
+            if (!string.IsNullOrWhiteSpace(_conversionOptions.outputDirectory) && !Directory.Exists(_conversionOptions.outputDirectory))
+            {
+                errorMessages += "Listen here, Buddy.... Do not change the folder name after you've selected it in this program.\n";
+            }
+
+
+            if (errorMessages != "")
+            {
+                MessageBoxButtons buttons = MessageBoxButtons.OK;
+                DialogResult result;
+
+                result = MessageBox.Show(errorMessages, "An invalid operation occured.", buttons);
+                return;
+            }
+
+            StartConversion();
         }
 
         private class MyRenderer : ToolStripProfessionalRenderer

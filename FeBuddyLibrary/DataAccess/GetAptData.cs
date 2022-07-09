@@ -682,7 +682,7 @@ namespace FeBuddyLibrary.DataAccess
 
                     if (doNotUseThisRwy == false)
                     {
-                        sb.AppendLine($"{runwayModel.BaseRwy.PadRight(4)}{runwayModel.RecRwy.PadRight(4)}{runwayModel.BaseRwyHdg.PadRight(4)}{runwayModel.RecRwyHdg.PadRight(4)}{runwayModel.BaseStartLat.PadRight(15)}{runwayModel.BaseStartLon.Substring(0, 14).PadRight(15)}{runwayModel.BaseEndLat.PadRight(15)}{runwayModel.BaseEndLon.Substring(0, 14).PadRight(14)}; {aptId} - {apt.Name}");
+                        sb.AppendLine($"{runwayModel.BaseRwy.PadRight(4)}{runwayModel.RecRwy.PadRight(4)}{runwayModel.BaseRwyHdg.PadRight(4)}{runwayModel.RecRwyHdg.PadRight(4)}{runwayModel.BaseStartLat.PadRight(15)}{runwayModel.BaseStartLon.Substring(0, 14).PadRight(15)}{runwayModel.BaseEndLat.PadRight(15)}{runwayModel.BaseEndLon.Substring(0, 14).PadRight(14)} ;{aptId} - {apt.Name}");
                     }
                 }
             }

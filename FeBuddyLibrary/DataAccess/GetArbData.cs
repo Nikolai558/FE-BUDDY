@@ -131,11 +131,11 @@ namespace FeBuddyLibrary.DataAccess
                     {
                         if (boundry.Type == "HIGH" || boundry.Type == "FIR ONLY" || boundry.Type == "UTA")
                         {
-                            highArb.AppendLine($"{boundry.Identifier} {prevPoint.Lat} {prevPoint.Lon} {arbPoint.Lat} {arbPoint.Lon}; {prevPoint.Sequence} {arbPoint.Sequence} / {prevPoint.DecodeName} {arbPoint.DecodeName}");
+                            highArb.AppendLine($"{boundry.Identifier} {prevPoint.Lat} {prevPoint.Lon} {arbPoint.Lat} {arbPoint.Lon} ;{prevPoint.Sequence} {arbPoint.Sequence} / {prevPoint.DecodeName} {arbPoint.DecodeName}");
                         }
                         else if (boundry.Type == "LOW" || boundry.Type == "CTA" || boundry.Type == "BDRY")
                         {
-                            lowArb.AppendLine($"{boundry.Identifier} {prevPoint.Lat} {prevPoint.Lon} {arbPoint.Lat} {arbPoint.Lon}; {prevPoint.Sequence} {arbPoint.Sequence} / {prevPoint.DecodeName} {arbPoint.DecodeName}");
+                            lowArb.AppendLine($"{boundry.Identifier} {prevPoint.Lat} {prevPoint.Lon} {arbPoint.Lat} {arbPoint.Lon} ;{prevPoint.Sequence} {arbPoint.Sequence} / {prevPoint.DecodeName} {arbPoint.DecodeName}");
                         }
                         else
                         {

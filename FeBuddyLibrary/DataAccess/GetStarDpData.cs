@@ -468,11 +468,11 @@ namespace FeBuddyLibrary.DataAccess
 
                         if (point.Type == "S")
                         {
-                            combinedDataStar.AppendLine($"                          {prevPoint.Lat} {prevPoint.Lon} {point.Lat} {point.Lon}; {prevPoint.PointId} {point.PointId}");
+                            combinedDataStar.AppendLine($"                          {prevPoint.Lat} {prevPoint.Lon} {point.Lat} {point.Lon} ;{prevPoint.PointId} {point.PointId}");
                         }
                         else
                         {
-                            combinedDataDp.AppendLine($"                          {prevPoint.Lat} {prevPoint.Lon} {point.Lat} {point.Lon}; {prevPoint.PointId} {point.PointId}");
+                            combinedDataDp.AppendLine($"                          {prevPoint.Lat} {prevPoint.Lon} {point.Lat} {point.Lon} ;{prevPoint.PointId} {point.PointId}");
                         }
 
                         prevPoint = point;

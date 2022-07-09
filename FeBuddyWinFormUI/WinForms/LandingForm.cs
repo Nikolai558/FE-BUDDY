@@ -221,7 +221,7 @@ namespace FeBuddyWinFormUI
                         + "ECHO.\n"
                         + "ECHO.\n"
                         + "ECHO.\n"
-                        + "ECHO ...PRESS ANY KEY TO EXIT\n"
+                        + "ECHO ...Close this prompt when ready.\n"
                         + "\n"
                         + "PAUSE>NUL\n";
 

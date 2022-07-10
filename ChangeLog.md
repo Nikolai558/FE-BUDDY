@@ -1,6 +1,14 @@
 # CHANGELOG
 
 ---
+- ## Version 2.1.0
+  - Added Feature - Convert DAT files into SCT2 files.
+  - Added Feature - Convert DXF files into SCT2 and vice versa.
+  - Fixed uninstall prompt ending message.
+  - Changed GUI - New landing page to select the different features available.
+  - Fixed #60 - Menu Fonts not displaying correctly.
+  - Changed Discord button Name from "Buddies" to "Discord"
+
 - ## Version 2.0.1
   ## FOR USERS:
     - Added #42 - Added button ("Buddies") that links to the FE-BUDDY Discord server.

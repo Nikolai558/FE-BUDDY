@@ -196,7 +196,16 @@ namespace FeBuddyWinFormUI
                 }
             }
             Logger.LogMessage("INFO", "Starting DAT to SCT2 Conversion.");
-            DatConversion.ReadDAT(_conversionOptions.InputFilePath, _conversionOptions.outputDirectory + outputFileName, -1);
+            double cropDistance;
+            if (cropingDistanceTextBox.Text.Trim() == "")
+            {
+                cropDistance = -1;
+            }
+            else
+            {
+                cropDistance = double.Parse(cropingDistanceTextBox.Text);
+            }
+            DatConversion.ReadDAT(_conversionOptions.InputFilePath, _conversionOptions.outputDirectory + outputFileName, cropDistance);
         }
 
         private class MyRenderer : ToolStripProfessionalRenderer

@@ -122,6 +122,7 @@ namespace FeBuddyWinFormUI
             settingsToolStripMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
             reportIssuesToolStripMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
             allowBetaMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
+            newsToolStripMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
         }
 
         private void UninstallMenuItem_Click(object sender, EventArgs e)
@@ -337,9 +338,22 @@ namespace FeBuddyWinFormUI
             }
             else if (convertSct2DxfSelection.Checked)
             {
+                DialogResult warningMSG = MessageBox.Show(
+                    "This feature is still a work-in-progress.\nWe have been able to get this to work with CAD programs in only very limited situations and we are asking for your help to see what works and what doesn't.\n\nIf you have a CAD program and want to assist us in troubleshooting, please use this feature and load the file in your CAD program.\n\nThen please join the FE-Buddy Discord, navigate to the #dxf-conversions channel and post:\n\n1) Successful or Not-Successful\n2) CAD program name\n3) Operating system\n4) Any further details such as error messages",
+                    "CAUTION",
+                    MessageBoxButtons.OK);
+
+
                 var sctToDxfForm = new SctToDxfForm(_currentVersion);
                 sctToDxfForm.FormClosing += (s, args) => this.Show();
                 sctToDxfForm.Show();
+                this.Hide();
+            }
+            else if (convertDat2SctSelection.Checked)
+            {
+                var datToSctForm = new DatToSctForm(_currentVersion);
+                datToSctForm.FormClosing += (s, args) => this.Show();
+                datToSctForm.Show();
                 this.Hide();
             }
             else
@@ -353,6 +367,13 @@ namespace FeBuddyWinFormUI
         {
             Logger.LogMessage("DEBUG", "DISCORD MENU ITEM CLICKED");
             Process.Start(new ProcessStartInfo("https://discord.com/invite/GB46aeauH4") { UseShellExecute = true });
+        }
+
+        private void newsToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Logger.LogMessage("DEBUG", "REPORT ISSUES MENU ITEM CLICKED");
+            Process.Start(new ProcessStartInfo("https://github.com/Nikolai558/FE-BUDDY/wiki#news") { UseShellExecute = true });
+            //Process.Start("https://github.com/Nikolai558/FE-BUDDY/wiki#news");
         }
     }
 }

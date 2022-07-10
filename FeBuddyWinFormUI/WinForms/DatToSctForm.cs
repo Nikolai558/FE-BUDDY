@@ -6,19 +6,20 @@ using System.Drawing.Text;
 using System.IO;
 using System.Windows.Forms;
 using FeBuddyLibrary;
+using FeBuddyLibrary.Dat;
 using FeBuddyLibrary.Dxf;
 using FeBuddyLibrary.Helpers;
 
 namespace FeBuddyWinFormUI
 {
-    public partial class SctToDxfForm : Form
+    public partial class DatToSctForm : Form
     {
         private readonly string _currentVersion;
         readonly PrivateFontCollection _pfc = new PrivateFontCollection();
         private ConversionOptions _conversionOptions;
         private ToolTip _toolTip;
 
-        public SctToDxfForm(string currentVersion)
+        public DatToSctForm(string currentVersion)
         {
             Logger.LogMessage("DEBUG", "INITIALIZING COMPONENT");
             _conversionOptions = new ConversionOptions();
@@ -37,7 +38,7 @@ namespace FeBuddyWinFormUI
 
         private void inputButton_Click(object sender, EventArgs e)
         {
-            Logger.LogMessage("DEBUG", "USER CHOOSING DIFFERENT Input file for DXF Conversion tool");
+            Logger.LogMessage("DEBUG", "USER CHOOSING DIFFERENT Input file for DAT Conversion tool");
 
             OpenFileDialog inputFileDialog = new OpenFileDialog();
 
@@ -62,16 +63,11 @@ namespace FeBuddyWinFormUI
             sourceFileButton.Text = text;
             sourceFileButton.TextAlign = ContentAlignment.MiddleCenter;
             sourceFileButton.AutoSize = false;
-
-            //filePathLabel.Text = GlobalConfig.outputDirBase;
-            //filePathLabel.Visible = true;
-            //filePathLabel.MaximumSize = new Size(257, 82);
-
         }
 
         private void outputDirButton_Click(object sender, EventArgs e)
         {
-            Logger.LogMessage("DEBUG", "USER CHOOSING DIFFERENT output directory for DXF Conversion tool");
+            Logger.LogMessage("DEBUG", "USER CHOOSING DIFFERENT output directory for DAT Conversion tool");
 
             FolderBrowserDialog outputDirDialog = new FolderBrowserDialog();
 
@@ -95,9 +91,7 @@ namespace FeBuddyWinFormUI
 
             outputDirButton.Text = text;
             outputDirButton.TextAlign = ContentAlignment.MiddleCenter;
-            //outputDirButton.TextAlign
             outputDirButton.AutoSize = false;
-            //outputDirButton.AutoEllipsis = true;
         }
 
         private void startButton_Click(object sender, EventArgs e)
@@ -110,14 +104,8 @@ namespace FeBuddyWinFormUI
             if (string.IsNullOrWhiteSpace(_conversionOptions.InputFilePath)) errorMessages += "Input File Path is invalid.\n";
             if (string.IsNullOrWhiteSpace(_conversionOptions.outputDirectory)) errorMessages += "Output Directory is invalid.\n";
 
-            if (dxfToSctSelection.Checked)
-            {
-                if (_conversionOptions.InputFilePath?.Split('.')[^1] != "dxf") errorMessages += "DXF to SCT2 Selected, however, source file is not a .dxf\n";
-            }
-            if (sctToDxfSelection.Checked)
-            {
-                if ((_conversionOptions.InputFilePath?.Split('.')[^1].ToLower() != "sct" && _conversionOptions.InputFilePath?.Split('.')[^1].ToLower() != "sct2")) errorMessages += "SCT2 to DXF Selected, however, source file is not a .sct or .sct2\n";
-            }
+            if (_conversionOptions.InputFilePath?.Split('.')[^1] != "dat") errorMessages += "Source file is not a .dat\n";
+            
             if (!string.IsNullOrWhiteSpace(_conversionOptions.InputFilePath) && !File.Exists(_conversionOptions.InputFilePath))
             {
                 errorMessages += "Listen here, Buddy.... Do not change the file name after you've selected it in this program.\n";
@@ -125,6 +113,17 @@ namespace FeBuddyWinFormUI
             if (!string.IsNullOrWhiteSpace(_conversionOptions.outputDirectory) && !Directory.Exists(_conversionOptions.outputDirectory))
             {
                 errorMessages += "Listen here, Buddy.... Do not change the folder name after you've selected it in this program.\n";
+            }
+            if (_conversionOptions.InputFilePath.Split('\\')[^1].Split('.')[0].Length >= 26)
+            {
+                errorMessages += "C'mon Mate, that's a bloody long name...Input file name must be less than 26 characters long.";
+            }
+            if (!string.IsNullOrWhiteSpace(cropingDistanceTextBox.Text))
+            {
+                if (!IsValidCroppingDistance(cropingDistanceTextBox.Text))
+                {
+                    errorMessages += "Cropping distance must be a number greater than 0.";
+                }
             }
 
 
@@ -140,10 +139,22 @@ namespace FeBuddyWinFormUI
             StartConversion();
         }
 
+        private bool IsValidCroppingDistance(string input)
+        {
+            double num;
+            if (double.TryParse(input, out num))
+            {
+                return num > 0;
+            }
+            else
+            {
+                return false;
+            }
+
+        }
+
         private void ToggleComponents(bool isEnabled)
         {
-            //sctToDxfSelection.Enabled = isEnabled;
-            //dxfToSctSelection.Enabled = isEnabled;
             sourceFileButton.Enabled = isEnabled;
             outputDirButton.Enabled = isEnabled;
             startButton.Enabled = isEnabled;
@@ -161,62 +172,40 @@ namespace FeBuddyWinFormUI
             worker.RunWorkerAsync();
         }
 
-        private void Worker_StartConversionDoWork(object sender, DoWorkEventArgs e)
-        {
-            string inputFileName = "\\" + _conversionOptions.InputFilePath.Split('\\')[^1].Split('.')[0] + "-converted";
-
-            if (sctToDxfSelection.Checked)
-            {
-                // Convert SCT2 To DXF
-                FeBuddyLibrary.Dxf.Data.DataFunctions dataFunctions = new();
-
-                // Subscribe to the event here? 
-
-                if (File.Exists(_conversionOptions.outputDirectory + inputFileName + ".dxf"))
-                {
-                    MessageBoxButtons buttons = MessageBoxButtons.YesNo;
-                    DialogResult result;
-
-                    result = MessageBox.Show("This file exists in this directory, would you like to write over it?", "File Exists!", buttons);
-
-                    if (result == DialogResult.No)
-                    {
-                        return;
-                    }
-                }
-                Logger.LogMessage("INFO", "Starting SCT2 to DXF Conversion.");
-                dataFunctions.CreateDxfFile(_conversionOptions.InputFilePath, _conversionOptions.outputDirectory + inputFileName + ".dxf");
-            }
-            else if (dxfToSctSelection.Checked)
-            {
-                if (File.Exists(_conversionOptions.outputDirectory + inputFileName + ".sct2"))
-                {
-                    MessageBoxButtons buttons = MessageBoxButtons.YesNo;
-                    DialogResult result;
-
-                    result = MessageBox.Show("This file exists in this directory, would you like to write over it?", "File Exists!", buttons);
-
-                    if (result == DialogResult.No)
-                    {
-                        return;
-                    }
-                }
-                // Convert DXF to SCT 2
-                FeBuddyLibrary.Dxf.Data.DxfSct dxfConverter = new();
-
-                Logger.LogMessage("INFO", "Starting DXF to SCT2 Conversion.");
-                dxfConverter.CreateSctFile(_conversionOptions.InputFilePath, _conversionOptions.outputDirectory + inputFileName + ".sct2");
-            }
-            else
-            {
-                throw new Exception("Invalid Selection for converter.");
-            }
-        }
-
         private void Worker_StartConversionCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
             startButton.Text = "Convert";
             ToggleComponents(true);
+        }
+
+        private void Worker_StartConversionDoWork(object sender, DoWorkEventArgs e)
+        {
+            // TODO - Call conversion Logic Here.
+
+            string outputFileName = "\\" + _conversionOptions.InputFilePath.Split('\\')[^1].Split('.')[0];
+            if (File.Exists(_conversionOptions.outputDirectory + outputFileName + ".sct2"))
+            {
+                MessageBoxButtons buttons = MessageBoxButtons.YesNo;
+                DialogResult result;
+
+                result = MessageBox.Show("This file exists in this directory, would you like to write over it?", "File Exists!", buttons);
+
+                if (result == DialogResult.No)
+                {
+                    return;
+                }
+            }
+            Logger.LogMessage("INFO", "Starting DAT to SCT2 Conversion.");
+            double cropDistance;
+            if (cropingDistanceTextBox.Text.Trim() == "")
+            {
+                cropDistance = -1;
+            }
+            else
+            {
+                cropDistance = double.Parse(cropingDistanceTextBox.Text);
+            }
+            DatConversion.ReadDAT(_conversionOptions.InputFilePath, _conversionOptions.outputDirectory + outputFileName, cropDistance);
         }
 
         private class MyRenderer : ToolStripProfessionalRenderer
@@ -249,7 +238,7 @@ namespace FeBuddyWinFormUI
             }
         }
 
-        private void SctToDxfForm_Closing(object sender, EventArgs e)
+        private void DatToSctForm_Closing(object sender, EventArgs e)
         {
             Logger.LogMessage("DEBUG", "SctToDxfForm_Closing");
         }
@@ -270,6 +259,7 @@ namespace FeBuddyWinFormUI
             reportIssuesToolStripMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
             discordToolStripMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
             newsToolStripMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
+
             //mainMenuMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
             //exitMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
         }
@@ -504,6 +494,21 @@ namespace FeBuddyWinFormUI
         private void inputButton_MouseHover(object sender, EventArgs e)
         {
             _toolTip.SetToolTip(sourceFileButton, _conversionOptions.InputFilePath);
+        }
+
+        private void newsToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Logger.LogMessage("DEBUG", "REPORT ISSUES MENU ITEM CLICKED");
+            Process.Start(new ProcessStartInfo("https://github.com/Nikolai558/FE-BUDDY/wiki#news") { UseShellExecute = true });
+            //Process.Start("https://github.com/Nikolai558/FE-BUDDY/wiki#news");
+        }
+
+        private void cropingDistanceTextBox_MouseHover(object sender, EventArgs e)
+        {
+            _toolTip.SetToolTip(cropingDistanceTextBox, "Type a numeric value here representing a distance from the \n.DAT file defined Point of Tangency that you want all lines drawn.\nLeave blank if you want the entire file drawn.\n\nExamples:\n106 = All lines within 106nm of the Point of Tangency will be drawn\nNothing = All lines will be drawn, regardless of distance");
+
+
+
         }
     }
 }

@@ -476,6 +476,7 @@ namespace FeBuddyWinFormUI
             settingsToolStripMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
             reportIssuesToolStripMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
             discordToolStripMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
+            newsToolStripMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
             //mainMenuMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
             //exitMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
         }
@@ -616,7 +617,7 @@ namespace FeBuddyWinFormUI
                         + "ECHO.\n"
                         + "ECHO.\n"
                         + "ECHO.\n"
-                        + "ECHO ...PRESS ANY KEY TO EXIT\n"
+                        + "ECHO ...Close this prompt when ready.\n"
                         + "\n"
                         + "PAUSE>NUL\n";
 

@@ -48,10 +48,10 @@
             this.CreditsMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.discordToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.reportIssuesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.newsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.settingsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.allowBetaMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.UninstallMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.newsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.airacCycleGroupBox.SuspendLayout();
             this.menuStrip.SuspendLayout();
             this.SuspendLayout();
@@ -292,8 +292,8 @@
             this.discordToolStripMenuItem.Font = new System.Drawing.Font("Romantic", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.discordToolStripMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.discordToolStripMenuItem.Name = "discordToolStripMenuItem";
-            this.discordToolStripMenuItem.Size = new System.Drawing.Size(72, 22);
-            this.discordToolStripMenuItem.Text = "Buddies";
+            this.discordToolStripMenuItem.Size = new System.Drawing.Size(70, 22);
+            this.discordToolStripMenuItem.Text = "Discord";
             this.discordToolStripMenuItem.Click += new System.EventHandler(this.discordToolStripMenuItem_Click);
             // 
             // reportIssuesToolStripMenuItem
@@ -304,6 +304,15 @@
             this.reportIssuesToolStripMenuItem.Size = new System.Drawing.Size(105, 22);
             this.reportIssuesToolStripMenuItem.Text = "Report Issues";
             this.reportIssuesToolStripMenuItem.Click += new System.EventHandler(this.reportIssuesToolStripMenuItem_Click);
+            // 
+            // newsToolStripMenuItem
+            // 
+            this.newsToolStripMenuItem.Font = new System.Drawing.Font("Romantic", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.newsToolStripMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
+            this.newsToolStripMenuItem.Name = "newsToolStripMenuItem";
+            this.newsToolStripMenuItem.Size = new System.Drawing.Size(57, 22);
+            this.newsToolStripMenuItem.Text = "News";
+            this.newsToolStripMenuItem.Click += new System.EventHandler(this.newsToolStripMenuItem_Click);
             // 
             // settingsToolStripMenuItem
             // 
@@ -336,15 +345,6 @@
             this.UninstallMenuItem.Size = new System.Drawing.Size(195, 22);
             this.UninstallMenuItem.Text = "Uninstall";
             this.UninstallMenuItem.Click += new System.EventHandler(this.UninstallMenuItem_Click);
-            // 
-            // newsToolStripMenuItem
-            // 
-            this.newsToolStripMenuItem.Font = new System.Drawing.Font("Romantic", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-            this.newsToolStripMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
-            this.newsToolStripMenuItem.Name = "newsToolStripMenuItem";
-            this.newsToolStripMenuItem.Size = new System.Drawing.Size(57, 22);
-            this.newsToolStripMenuItem.Text = "News";
-            this.newsToolStripMenuItem.Click += new System.EventHandler(this.newsToolStripMenuItem_Click);
             // 
             // LandingForm
             // 

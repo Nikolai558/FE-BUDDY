@@ -149,8 +149,8 @@
             this.discordToolStripMenuItem.Font = new System.Drawing.Font("Romantic", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.discordToolStripMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.discordToolStripMenuItem.Name = "discordToolStripMenuItem";
-            this.discordToolStripMenuItem.Size = new System.Drawing.Size(72, 22);
-            this.discordToolStripMenuItem.Text = "Buddies";
+            this.discordToolStripMenuItem.Size = new System.Drawing.Size(70, 22);
+            this.discordToolStripMenuItem.Text = "Discord";
             this.discordToolStripMenuItem.Click += new System.EventHandler(this.discordToolStripMenuItem_Click);
             // 
             // reportIssuesToolStripMenuItem

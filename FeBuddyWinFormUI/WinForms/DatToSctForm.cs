@@ -502,5 +502,13 @@ namespace FeBuddyWinFormUI
             Process.Start(new ProcessStartInfo("https://github.com/Nikolai558/FE-BUDDY/wiki#news") { UseShellExecute = true });
             //Process.Start("https://github.com/Nikolai558/FE-BUDDY/wiki#news");
         }
+
+        private void cropingDistanceTextBox_MouseHover(object sender, EventArgs e)
+        {
+            _toolTip.SetToolTip(cropingDistanceTextBox, "Type a numeric value here representing a distance from the \n.DAT file defined Point of Tangency that you want all lines drawn.\nLeave blank if you want the entire file drawn.\n\nExamples:\n106 = All lines within 106nm of the Point of Tangency will be drawn\nNothing = All lines will be drawn, regardless of distance");
+
+
+
+        }
     }
 }

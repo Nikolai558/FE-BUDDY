@@ -232,6 +232,7 @@
             this.cropingDistanceTextBox.Size = new System.Drawing.Size(182, 29);
             this.cropingDistanceTextBox.TabIndex = 15;
             this.cropingDistanceTextBox.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
+            this.cropingDistanceTextBox.MouseHover += new System.EventHandler(this.cropingDistanceTextBox_MouseHover);
             // 
             // cropingDistanceLabel
             // 

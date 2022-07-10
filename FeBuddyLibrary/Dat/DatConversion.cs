@@ -20,7 +20,7 @@ namespace FeBuddyLibrary.Dat
 
             // Point of Tangency
             string potString = datFileLines.Where(x => x.Contains("9900")).First().Split("9900")[^1].Trim();
-            Location_test PointOfTangencyCoord = new Location_test
+            Loc PointOfTangencyCoord = new Loc
             {
                 Latitude = double.Parse(CreateDecFormat(CorrectLatLon($"N0{potString.Split(' ')[0]}.{potString.Split(' ')[1]}.{potString.Split(' ')[2]}", true, false), false)),
                 Longitude = double.Parse(CreateDecFormat(CorrectLatLon($"W{potString.Split(' ')[4]}.{potString.Split(' ')[5]}.{potString.Split(' ')[6]}", false, false), false))
@@ -50,7 +50,7 @@ namespace FeBuddyLibrary.Dat
                     string lat_cord = CorrectLatLon($"N0{splitLine[1]}.{splitLine[2]}.{splitLine[3]}", true, false);
                     string lon_cord = CorrectLatLon($"W{splitLine[5]}.{splitLine[6]}.{splitLine[7]}", true, false);
 
-                    Location_test coord = new Location_test { Latitude = double.Parse(CreateDecFormat(lat_cord, true)), Longitude = double.Parse(CreateDecFormat(lon_cord, true)) };
+                    Loc coord = new Loc { Latitude = double.Parse(CreateDecFormat(lat_cord, true)), Longitude = double.Parse(CreateDecFormat(lon_cord, true)) };
 
                     if (isSecondCoord)
                     {
@@ -74,22 +74,7 @@ namespace FeBuddyLibrary.Dat
 
             File.WriteAllText(@"C:\Users\nikol\Desktop\DAT TESTING\Testing.sct2", sb.ToString());
         }
-        public double CalculateDistance(Location_test point1, Location_test point2)
-        {
-            var d1 = point1.Latitude * (Math.PI / 180.0);
-            var num1 = point1.Longitude * (Math.PI / 180.0);
-            var d2 = point2.Latitude * (Math.PI / 180.0);
-            var num2 = point2.Longitude * (Math.PI / 180.0) - num1;
-            var d3 = Math.Pow(Math.Sin((d2 - d1) / 2.0), 2.0) +
-                     Math.Cos(d1) * Math.Cos(d2) * Math.Pow(Math.Sin(num2 / 2.0), 2.0);
-            return 6376500.0 * (2.0 * Math.Atan2(Math.Sqrt(d3), Math.Sqrt(1.0 - d3)));
-        }
     }
-
 }
 
-public class Location_test
-{
-    public double Latitude { get; set; }
-    public double Longitude { get; set; }
-}
+

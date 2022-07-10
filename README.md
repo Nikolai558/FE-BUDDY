@@ -23,7 +23,7 @@
 ---
 
 ### FUNCTION
-Converts the FAA National Airspace System Resource (NASR) Data (and other sources) to formats that may be used by Virtual RADAR Clients on the VATSIM network for free up to 28 days prior to an AIRAC effective date.
+Assists Virtual ARTCC Facility Engineers with their daily tasks.
 
 See for more information on future features. [ROADMAP](https://github.com/Nikolai558/FE-BUDDY/blob/development/ROADMAP.md)
 

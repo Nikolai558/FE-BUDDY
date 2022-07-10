@@ -8,13 +8,15 @@ using static FeBuddyLibrary.Helpers.LatLonHelpers;
 
 namespace FeBuddyLibrary.Dat
 {
-    public class DatConversion
+    public static class DatConversion
     {
-        private void ReadDAT(string filepath, double distanceFromCenter = -1)
+        public static void ReadDAT(string datFilepath, string outputDirectory, double distanceFromCenter = -1)
         {
-            distanceFromCenter = distanceFromCenter * 1609.344;
-
-            var datFileLines = File.ReadAllLines(filepath).ToList();
+            if (distanceFromCenter != -1)
+            {
+                distanceFromCenter = distanceFromCenter * 1609.344;
+            }
+            var datFileLines = File.ReadAllLines(datFilepath).ToList();
 
             string datFileName = datFileLines.Where(x => x.Contains("Filename:")).First().Split(':')[^1].Trim().Split('.')[0];
 
@@ -28,7 +30,7 @@ namespace FeBuddyLibrary.Dat
 
             StringBuilder sb = new StringBuilder();
 
-            sb.AppendLine($"{datFileName.PadRight(26, ' ')}N000.00.00.000 W000.00.00.000 N000.00.00.000 W000.00.00.000");
+            sb.AppendLine($"{outputDirectory.Split('\\')[^1].PadRight(26, ' ')}N000.00.00.000 W000.00.00.000 N000.00.00.000 W000.00.00.000");
 
             bool isInLineSection = false;
             bool isSecondCoord = false;
@@ -59,6 +61,13 @@ namespace FeBuddyLibrary.Dat
                     }
                     else
                     {
+                        if (distanceFromCenter == -1)
+                        {
+                            previousCoords = $"{lat_cord} {lon_cord}";
+                            isSecondCoord = true;
+                            continue;
+                        }
+
                         if (Math.Abs(CalculateDistance(PointOfTangencyCoord, coord)) < distanceFromCenter)
                         {
                             previousCoords = $"{lat_cord} {lon_cord}";
@@ -71,8 +80,8 @@ namespace FeBuddyLibrary.Dat
                     }
                 }
             }
+            File.WriteAllText(outputDirectory + ".sct2", sb.ToString());
 
-            File.WriteAllText(@"C:\Users\nikol\Desktop\DAT TESTING\Testing.sct2", sb.ToString());
         }
     }
 }

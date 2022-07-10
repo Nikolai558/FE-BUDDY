@@ -6,6 +6,7 @@ using System.Drawing.Text;
 using System.IO;
 using System.Windows.Forms;
 using FeBuddyLibrary;
+using FeBuddyLibrary.Dat;
 using FeBuddyLibrary.Dxf;
 using FeBuddyLibrary.Helpers;
 
@@ -113,6 +114,17 @@ namespace FeBuddyWinFormUI
             {
                 errorMessages += "Listen here, Buddy.... Do not change the folder name after you've selected it in this program.\n";
             }
+            if (_conversionOptions.InputFilePath.Split('\\')[^1].Split('.')[0].Length >= 26)
+            {
+                errorMessages += "C'mon Mate, that's a bloody long name...Input file name must be less than 26 characters long.";
+            }
+            if (!string.IsNullOrWhiteSpace(cropingDistanceTextBox.Text))
+            {
+                if (!IsValidCroppingDistance(cropingDistanceTextBox.Text))
+                {
+                    errorMessages += "Cropping distance must be a number greater than 0.";
+                }
+            }
 
 
             if (errorMessages != "")
@@ -125,6 +137,20 @@ namespace FeBuddyWinFormUI
             }
 
             StartConversion();
+        }
+
+        private bool IsValidCroppingDistance(string input)
+        {
+            double num;
+            if (double.TryParse(input, out num))
+            {
+                return num > 0;
+            }
+            else
+            {
+                return false;
+            }
+
         }
 
         private void ToggleComponents(bool isEnabled)
@@ -156,8 +182,8 @@ namespace FeBuddyWinFormUI
         {
             // TODO - Call conversion Logic Here.
 
-            string inputFileName = "\\" + _conversionOptions.InputFilePath.Split('\\')[^1].Split('.')[0] + "-converted";
-            if (File.Exists(_conversionOptions.outputDirectory + inputFileName + ".sct2"))
+            string outputFileName = "\\" + _conversionOptions.InputFilePath.Split('\\')[^1].Split('.')[0];
+            if (File.Exists(_conversionOptions.outputDirectory + outputFileName + ".sct2"))
             {
                 MessageBoxButtons buttons = MessageBoxButtons.YesNo;
                 DialogResult result;
@@ -170,6 +196,7 @@ namespace FeBuddyWinFormUI
                 }
             }
             Logger.LogMessage("INFO", "Starting DAT to SCT2 Conversion.");
+            DatConversion.ReadDAT(_conversionOptions.InputFilePath, _conversionOptions.outputDirectory + outputFileName, -1);
         }
 
         private class MyRenderer : ToolStripProfessionalRenderer

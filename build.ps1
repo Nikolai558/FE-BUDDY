@@ -32,7 +32,7 @@ $ver = $verObj.ProductVersion
 Write-Output "Building version $ver"
 
 # Squirrel release
-Set-Alias Squirrel ($env:USERPROFILE + "\.nuget\packages\clowd.squirrel\2.8.40\tools\Squirrel.exe")
+Set-Alias Squirrel ($env:USERPROFILE + "\.nuget\packages\clowd.squirrel\2.9.42\tools\Squirrel.exe")
 New-Item -Path "$PSScriptRoot" -Name "releases" -ItemType "directory"
 Squirrel github-down --repoUrl "https://github.com/Nikolai558/FE-BUDDY" -r "$releasedir"
 Squirrel pack -u "FE-BUDDY" -v "$ver" -p "$pubdir" -r "$releasedir"

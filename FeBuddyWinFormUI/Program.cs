@@ -68,7 +68,7 @@ namespace FeBuddyWinFormUI
                     // CS: if the previous directory exists during an update, lets replace it
                     // with a new shortcut in the start menu root. We can't use 
                     // 'CreateShortcutForThisExe' here, as it's ignored during updates.
-                    var myExeName = Path.GetFileName(AssemblyRuntimeInfo.EntryExePath);
+                    var myExeName = Path.GetFileName(SquirrelRuntimeInfo.EntryExePath);
                     tools.CreateShortcutsForExecutable(myExeName, ShortcutLocation.StartMenuRoot, false, null, null);
 
                     // delete old shortcut

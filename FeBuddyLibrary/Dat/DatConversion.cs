@@ -28,9 +28,6 @@ namespace FeBuddyLibrary.Dat
 
             StringBuilder sb = new StringBuilder();
 
-            sb.AppendLine("[INFO]\nZLC ARTCC\nSLC_33_CTR\nKSLC\nN043.31.08.418\nW112.03.50.103\n60.043\n43.536\n-11.8");
-
-            sb.AppendLine("[STAR]");
             sb.AppendLine($"{datFileName.PadRight(26, ' ')}N000.00.00.000 W000.00.00.000 N000.00.00.000 W000.00.00.000");
 
             bool isInLineSection = false;

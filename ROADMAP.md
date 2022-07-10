@@ -5,23 +5,11 @@ The following is a list of features that we are considering or actively working 
 
 ---
 
-- [ ] SCT2 2 AutoCAD Converter
-  - Hard to find a GitHub repository of someone doing this already but maybe we can reverse engineer the sct_2_dxf.exe & dxf_2_sct.exe
-  - [DXF File Format](https://docs.fileformat.com/cad/dxf/)
-  - [EZDXF File Dormat](https://ezdxf.mozman.at/docs/introduction.html)
-
 - [ ] GoogleEarthPro Converter (for airport diagrams and other like-constructs)
-
-- [ ] FAA RVM .DAT (foia requests) converter.
-  - [GitHub DAT2SCT](https://github.com/glott/DAT2Sector)
-  - [Other Converter](https://drakedesignlabs.com/converter/source.txt)
 
 - [ ] FAA GeoMAP (foia requests) converter.
   - [GeoMap converter](https://github.com/justinshannon/geo-map-converter)
     - Word is that the FAA may have changed their format of GeoMaps so this guy's may not work anymore.
-
-- [ ] Hygieia by dhawton
-  - [Hygieia](https://github.com/dhawton/hygieia)
 
 - [ ] Separate "Low" and "High" airways by appropriate altitudes
 

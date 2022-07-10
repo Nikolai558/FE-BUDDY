@@ -46,8 +46,8 @@ namespace FeBuddyWinFormUI
             //landingForm.Show();
 
             // Start the application
-            //Application.Run(new LandingForm(version));
-            Application.Run(new AiracDataForm(version));
+            Application.Run(new LandingForm(version));
+            //Application.Run(new AiracDataForm(version));
         }
 
         private static void OnAppInstalled(SemanticVersion ver, IAppTools tools)

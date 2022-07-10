@@ -338,6 +338,12 @@ namespace FeBuddyWinFormUI
             }
             else if (convertSct2DxfSelection.Checked)
             {
+                DialogResult warningMSG = MessageBox.Show(
+                    "This feature is still a work-in-progress.\nWe have been able to get this to work with CAD programs in only very limited situations and we are asking for your help to see what works and what doesn't.\n\nIf you have a CAD program and want to assist us in troubleshooting, please use this feature and load the file in your CAD program.\n\nThen please join the FE-Buddy Discord, navigate to the #dxf-conversions channel and post:\n\n1) Successful or Not-Successful\n2) CAD program name\n3) Operating system\n4) Any further details such as error messages",
+                    "CAUTION",
+                    MessageBoxButtons.OK);
+
+
                 var sctToDxfForm = new SctToDxfForm(_currentVersion);
                 sctToDxfForm.FormClosing += (s, args) => this.Show();
                 sctToDxfForm.Show();

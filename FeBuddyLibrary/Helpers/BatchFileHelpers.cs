@@ -11,7 +11,7 @@ namespace FeBuddyLibrary.Helpers
 
             string filePath = $"{GlobalConfig.tempPath}\\{name}";
             string writeMe = $"cd /d \"{GlobalConfig.tempPath}\"\n" +
-                $"curl \"{url}\" > {outputFileName}";
+                $"curl -k \"{url}\" > {outputFileName}";
             File.WriteAllText(filePath, writeMe);
         }
 

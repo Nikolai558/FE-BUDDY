@@ -77,6 +77,8 @@ namespace FeBuddyLibrary.Models
 
         private void WriteDupFile(List<string> DuplicateCommandsList, List<AptModel> AirportModels)
         {
+            List<string> _duplicateCommandsList = DuplicateCommandsList;
+
             string outFilePath = $"{GlobalConfig.outputDirectory}\\ALIAS\\DUPLICATE_COMMANDS.txt";
             string currentAirportIatta = "";
             string aptIatta;
@@ -84,8 +86,14 @@ namespace FeBuddyLibrary.Models
             File.WriteAllText(outFilePath, "Duplicate Alias commands per ARTCC. Solutions are required at ARTCC level.\n" +
                 "\tConsult developers if unable to resolve at a local level.\n\n");
 
-            foreach (string line in DuplicateCommandsList)
+            bool printedOtherSection = false;
+            foreach (string line in _duplicateCommandsList)
             {
+                if (line.Contains("3LD:") && !printedOtherSection)
+                {
+                    File.AppendAllText(outFilePath, $"TELEPHONY\n");
+                    printedOtherSection = true;
+                }
                 aptIatta = line.Substring(1, 3);
 
                 if (currentAirportIatta == aptIatta)
@@ -103,7 +111,7 @@ namespace FeBuddyLibrary.Models
                             File.AppendAllText(outFilePath, $"{apt.ResArtcc}\n");
                             break;
                         }
-                        else if (count > AirportModels.Count())
+                        else if (count > AirportModels.Count() && !line.Contains("3LD:"))
                         {
                             File.AppendAllText(outFilePath, $"OTHER\n");
                         }

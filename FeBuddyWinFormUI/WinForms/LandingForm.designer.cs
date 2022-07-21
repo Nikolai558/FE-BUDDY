@@ -127,7 +127,7 @@
             this.landingStartButton.Name = "landingStartButton";
             this.landingStartButton.Size = new System.Drawing.Size(182, 34);
             this.landingStartButton.TabIndex = 12;
-            this.landingStartButton.Text = "Let\'s Start, Friend.";
+            this.landingStartButton.Text = "Let\'s Start, Buddy.";
             this.landingStartButton.UseVisualStyleBackColor = false;
             this.landingStartButton.Click += new System.EventHandler(this.landingStartButton_Click);
             this.landingStartButton.MouseHover += new System.EventHandler(this.landingStartButton_MouseHover);

@@ -321,7 +321,7 @@ namespace FeBuddyWinFormUI
 
         private void landingStartButton_MouseHover(object sender, EventArgs e)
         {
-            _toolTip.SetToolTip(landingStartButton, "I'm not your friend, Guy...");
+            _toolTip.SetToolTip(landingStartButton, "I'm not your Buddy, Guy...");
         }
 
         private void landingStartButton_Click(object sender, EventArgs e)

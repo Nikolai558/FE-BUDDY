@@ -90,7 +90,7 @@ namespace FeBuddyLibrary.DataAccess
             sb.AppendLine("          <Elements>");
 
             string id;
-            List<char> badChar = new List<char>() { '&', '"' };
+            List<char> badChar = new List<char>() { '"' };
             foreach (AptModel apt in allAptModels)
             {
                 string tempAptName = apt.Name;
@@ -293,7 +293,7 @@ namespace FeBuddyLibrary.DataAccess
                         Runways = new List<RunwayModel>(),
                         Type = line.Substring(14, 13).Trim(removeChars),
                         Id = line.Substring(27, 4).Trim(removeChars),
-                        Name = line.Substring(133, 50).Trim(removeChars),
+                        Name = line.Substring(133, 50).Trim(removeChars).Replace("&", "&amp;"),
                         Lat = LatLonHelpers.CorrectLatLon(line.Substring(523, 15).Trim(removeChars), true, GlobalConfig.Convert),
                         Elv = Math.Round(double.Parse(line.Substring(578, 7).Trim(removeChars)), 0).ToString(),
                         ResArtcc = line.Substring(674, 4).Trim(removeChars),
@@ -412,7 +412,7 @@ namespace FeBuddyLibrary.DataAccess
 
             XmlWriterSettings xmlWriterSettings = new()
             {
-                Indent = true
+                Indent = true,
             };
             XmlSerializer serializer = new(typeof(Airport[]), xmlRootAttribute);
 
@@ -508,7 +508,7 @@ namespace FeBuddyLibrary.DataAccess
                 Airport aptXMLFormat = new Airport
                 {
                     ID = aptIdTempVar,
-                    Name = aptModel.Name,
+                    Name = aptModel.Name.Replace("&amp;", "&"),
                     Elevation = aptModel.Elv,
                     MagVar = aptModel.magVariation,
                     Frequency = "0",

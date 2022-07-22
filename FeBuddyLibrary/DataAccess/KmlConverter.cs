@@ -15,6 +15,10 @@ namespace FeBuddyLibrary.DataAccess
 {
     public class KmlConverter
     {
+        // TODO - TO USE THIS USE THE FOLLOWING: 
+        //      KmlConverter test = new KmlConverter(@"C:\Users\Desktop\KML\ZLC SECTOR.kml", @"C:\Users\Desktop\KML\ZLC SECTOR.SCT2");
+        //      test.ConvertSctToKml();
+
         private KmlFile _kml;
         private string _kmlFilePath;
 
@@ -35,16 +39,82 @@ namespace FeBuddyLibrary.DataAccess
         {
             DataFunctions df = new DataFunctions();
             _sctFileModel = df.ReadSctFile(_sctFilePath);
-            //AddDefineSection();
-            //AddInfoSection();
-            //AddVorAndNdb();
-            //AddAirportSection();
-            //AddRunwaySection();
-            //AddFixesSection();
-            //AddArtccModelsSection();
-            //AddDiagramSections();
+            AddDefineSection();
+            AddInfoSection();
+            AddVorAndNdb();
+            AddAirportSection();
+            AddRunwaySection();
+            AddFixesSection();
+            AddArtccModelsSection();
+            AddDiagramSections();
             AddLabelSection();
+            AddRegionSection();
+            AddGeoSection();
             SaveKML();
+        }
+
+        private void AddGeoSection()
+        {
+            Folder geoFolder = new Folder();
+            geoFolder.Name = "[GEO]";
+
+            int count = 0;
+            foreach (SctGeoModel item in _sctFileModel.SctGeoSection)
+            {
+                LineString line = new LineString();
+                line.Coordinates = new CoordinateCollection();
+                line.Coordinates.Add(new Vector(double.Parse(LatLonHelpers.CreateDecFormat(item.StartLat, false)), double.Parse(LatLonHelpers.CreateDecFormat(item.StartLon, false))));
+                line.Coordinates.Add(new Vector(double.Parse(LatLonHelpers.CreateDecFormat(item.EndLat, false)), double.Parse(LatLonHelpers.CreateDecFormat(item.EndLon, false))));
+                Placemark geoPlacemark = new Placemark();
+                geoPlacemark.Geometry = line;
+                geoPlacemark.Name = "GeoLine_" + count;
+                geoPlacemark.Visibility = false;
+
+                geoFolder.AddFeature(geoPlacemark);
+                count += 1;
+            }
+
+            geoFolder.Visibility = false;
+            _facilityRoot.AddFeature(geoFolder);
+        }
+
+        private void AddRegionSection()
+        {
+            Folder regionsFolder = new Folder();
+            regionsFolder.Name = "[REGIONS]";
+
+            foreach (var item in _sctFileModel.SctRegionsSection)
+            {
+                CoordinateCollection coordinates = new CoordinateCollection();
+
+                // Starting Point
+                coordinates.Add(new Vector(double.Parse(LatLonHelpers.CreateDecFormat(item.Lat, false)), double.Parse(LatLonHelpers.CreateDecFormat(item.Lon, false))));
+
+                foreach (var addlCoords in item.AdditionalRegionInfo)
+                {
+                    coordinates.Add(new Vector(double.Parse(LatLonHelpers.CreateDecFormat(addlCoords.Lat, false)), double.Parse(LatLonHelpers.CreateDecFormat(addlCoords.Lon, false))));
+                }
+
+                // Starting point but at the end of the list to complete the region. 
+                coordinates.Add(new Vector(double.Parse(LatLonHelpers.CreateDecFormat(item.Lat, false)), double.Parse(LatLonHelpers.CreateDecFormat(item.Lon, false))));
+
+                OuterBoundary outerBoundary = new OuterBoundary();
+                outerBoundary.LinearRing = new LinearRing();
+                outerBoundary.LinearRing.Coordinates = coordinates;
+
+                Polygon polygon = new Polygon();
+                polygon.Tessellate = true;
+                polygon.OuterBoundary = outerBoundary;
+
+                Placemark regionPlacemark = new Placemark();
+                regionPlacemark.Name = item.RegionColorName;
+                regionPlacemark.Geometry = polygon;
+
+                regionsFolder.AddFeature(regionPlacemark);
+            }
+
+            regionsFolder.Visibility = false;
+            _facilityRoot.AddFeature(regionsFolder);
         }
 
         private void AddLabelSection()
@@ -279,10 +349,17 @@ namespace FeBuddyLibrary.DataAccess
         private void SaveKML()
         {
             _kml = KmlFile.Create(_facilityRoot, true);
-            using (var stream = System.IO.File.Create(_kmlFilePath))
+            var kmz = KmzFile.Create(_kml);
+            using (var stream = File.Create(_kmlFilePath))
             {
                 _kml.Save(stream);
             }
+
+            using (var stream = File.Create(_kmlFilePath.Replace(".kml", ".kmz")))
+            {
+                kmz.Save(stream);
+            }
+
         }
 
         private void AddInfoSection()

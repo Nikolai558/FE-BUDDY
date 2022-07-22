@@ -260,6 +260,9 @@ namespace FeBuddyWinFormUI
         private void StartParsing()
         {
             Logger.LogMessage("INFO", "SETTING UP PARSING WORKER");
+
+            AdjustProcessingBox();
+
             var worker = new BackgroundWorker();
             worker.RunWorkerCompleted += Worker_StartParsingCompleted;
             worker.DoWork += Worker_StartParsingDoWork;

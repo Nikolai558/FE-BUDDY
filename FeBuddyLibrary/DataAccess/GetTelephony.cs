@@ -15,6 +15,7 @@ namespace FeBuddyLibrary.DataAccess
         {
             Logger.LogMessage("DEBUG", $"STARTING TELEPHONY");
 
+            
             string[] allLines = File.ReadAllLines(websiteFilePath);
 
             bool inTableRow = false;
@@ -155,16 +156,22 @@ namespace FeBuddyLibrary.DataAccess
 
             string filePath = $"{GlobalConfig.outputDirectory}ALIAS\\TELEPHONY.txt";
             string combinedFilePath = $"{GlobalConfig.outputDirectory}ALIAS\\AliasTestFile.txt";
-            StringBuilder sb = new StringBuilder();
+            StringBuilder NameSB = new StringBuilder();
+            StringBuilder threeLD_SB = new StringBuilder();
 
             foreach (TelephonyModel telephony in allTelephony)
             {
-                sb.AppendLine($".id{telephony.ThreeLD} .MSG FAA_ISR *** 3LD: {telephony.ThreeLD} ___ TELEPHONY: {telephony.Telephony}");
-                sb.AppendLine($".id{telephony.TelephonyAltered} .MSG FAA_ISR *** 3LD: {telephony.ThreeLD} ___ TELEPHONY: {telephony.Telephony}");
+                threeLD_SB.AppendLine($".id{telephony.ThreeLD} .MSG FAA_ISR *** 3LD: {telephony.ThreeLD} ___ TELEPHONY: {telephony.Telephony}");
+                
+                if (telephony.TelephonyAltered != telephony.ThreeLD)
+                {
+                    NameSB.AppendLine($".id{telephony.TelephonyAltered} .MSG FAA_ISR *** 3LD: {telephony.ThreeLD} ___ TELEPHONY: {telephony.Telephony}");
+                }
             }
-
-            File.WriteAllText(filePath, sb.ToString());
-            File.AppendAllText(combinedFilePath, sb.ToString());
+            File.WriteAllText(filePath, threeLD_SB.ToString());
+            File.WriteAllText(filePath, NameSB.ToString());
+            File.AppendAllText(combinedFilePath, threeLD_SB.ToString());
+            File.AppendAllText(combinedFilePath, NameSB.ToString());
             Logger.LogMessage("DEBUG", $"COMPLETED TELEPHONY");
 
         }

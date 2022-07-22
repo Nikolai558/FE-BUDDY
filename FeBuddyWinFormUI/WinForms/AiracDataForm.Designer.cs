@@ -276,6 +276,7 @@
             this.facilityIdCombobox.Size = new System.Drawing.Size(182, 33);
             this.facilityIdCombobox.TabIndex = 12;
             this.facilityIdCombobox.SelectedIndexChanged += new System.EventHandler(this.FacilityIdCombobox_SelectedIndexChanged);
+            this.facilityIdCombobox.Click += new System.EventHandler(this.facilityIdCombobox_Click);
             // 
             // processingDataLabel
             // 

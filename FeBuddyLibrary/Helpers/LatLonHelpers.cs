@@ -110,7 +110,7 @@ namespace FeBuddyLibrary.Helpers
                 }
 
                 // Correct Format is now set.
-                correctedValue = $"{declination}{degrees.PadLeft(3, '0')}.{minutes.PadRight(2, '0')}.{seconds.PadRight(2, '0')}.{milSeconds.PadRight(3, '0')}";
+                correctedValue = $"{declination}{degrees.PadLeft(3, '0')}.{minutes.PadLeft(2, '0')}.{seconds.PadLeft(2, '0')}.{milSeconds.PadRight(3, '0')}";
             }
 
             // Value is a Lon
@@ -164,7 +164,7 @@ namespace FeBuddyLibrary.Helpers
 
 
                 // Set the Corrected Value
-                correctedValue = $"{declination}{degrees.PadLeft(3, '0')}.{minutes.PadRight(2, '0')}.{seconds.PadRight(2, '0')}.{milSeconds.PadRight(3, '0')}";
+                correctedValue = $"{declination}{degrees.PadLeft(3, '0')}.{minutes.PadLeft(2, '0')}.{seconds.PadLeft(2, '0')}.{milSeconds.PadRight(3, '0')}";
             }
 
             // Check to see if Convert E is True and Check our Value's Declination to make sure it is an E Coord.

@@ -18,6 +18,7 @@ namespace FeBuddyWinFormUI
     {
         private bool nextAiracAvailable;
         private readonly string _currentVersion;
+        private bool userClicked = false;
         readonly PrivateFontCollection _pfc = new PrivateFontCollection();
 
 
@@ -259,9 +260,6 @@ namespace FeBuddyWinFormUI
         private void StartParsing()
         {
             Logger.LogMessage("INFO", "SETTING UP PARSING WORKER");
-
-            AdjustProcessingBox();
-
             var worker = new BackgroundWorker();
             worker.RunWorkerCompleted += Worker_StartParsingCompleted;
             worker.DoWork += Worker_StartParsingDoWork;
@@ -458,6 +456,9 @@ namespace FeBuddyWinFormUI
 
             startGroupBox.Enabled = true;
             startGroupBox.Visible = true;
+
+            facilityIdCombobox.SelectedIndex = Properties.Settings.Default.UserArtccSetting;
+
             Logger.LogMessage("DEBUG", "AIRAC DATE WORKER COMPLETED");
         }
 
@@ -496,6 +497,12 @@ namespace FeBuddyWinFormUI
         {
             Logger.LogMessage("DEBUG", "FACILITY COMBOBOX CLICKED");
             GlobalConfig.facilityID = facilityIdCombobox.SelectedItem.ToString();
+
+            if (userClicked)
+            {
+                Properties.Settings.Default.UserArtccSetting = facilityIdCombobox.SelectedIndex;
+                Properties.Settings.Default.Save();
+            }
         }
 
         private void UninstallMenuItem_Click(object sender, EventArgs e)
@@ -725,6 +732,11 @@ namespace FeBuddyWinFormUI
             Logger.LogMessage("DEBUG", "REPORT ISSUES MENU ITEM CLICKED");
             Process.Start(new ProcessStartInfo("https://github.com/Nikolai558/FE-BUDDY/wiki#news") { UseShellExecute = true });
             //Process.Start("https://github.com/Nikolai558/FE-BUDDY/wiki#news");
+        }
+
+        private void facilityIdCombobox_Click(object sender, EventArgs e)
+        {
+            userClicked = true;
         }
     }
 }

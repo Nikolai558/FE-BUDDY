@@ -109,6 +109,7 @@ namespace FeBuddyLibrary.DataAccess
                 Placemark regionPlacemark = new Placemark();
                 regionPlacemark.Name = item.RegionColorName;
                 regionPlacemark.Geometry = polygon;
+                regionPlacemark.Visibility = false;
 
                 regionsFolder.AddFeature(regionPlacemark);
             }

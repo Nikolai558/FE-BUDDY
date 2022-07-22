@@ -49,6 +49,35 @@ namespace FeBuddyLibrary.Dxf.Data
             SctDxf sctDxf = new SctDxf(_sctFileModel, outputFilePath, _navaidPositions);
         }
 
+        public SctFileModel ReadSctFile(string filePath)
+        {
+            _sectorFileText = File.ReadAllText(filePath) + "\n[END]";
+
+            // TODO - What happens if a sct file does not have one or more of the following categories? 
+
+            _sctFileModel = new SctFileModel()
+            {
+                SctFileColors = GetSctColors(GetSctFileSection("Colors")),
+                SctInfoSection = GetSctInfo(GetSctFileSection("[INFO]")),
+                SctVORSection = GetSctNnbsAndVORS(GetSctFileSection("[VOR]")),
+                SctNDBSection = GetSctNnbsAndVORS(GetSctFileSection("[NDB]")),
+                SctAirportSection = GetSctAirports(GetSctFileSection("[AIRPORT]")),
+                SctRunwaySection = GetSctRunways(GetSctFileSection("[RUNWAY]")),
+                SctFixesSection = GetSctFixes(GetSctFileSection("[FIXES]")),
+                SctArtccSection = ParseArtccModels(GetSctFileSection("[ARTCC]")),
+                SctArtccHighSection = ParseArtccModels(GetSctFileSection("[ARTCC HIGH]")),
+                SctArtccLowSection = ParseArtccModels(GetSctFileSection("[ARTCC LOW]")),
+                SctSidSection = GetSctSidsAndStars(GetSctFileSection("[SID]")),
+                SctStarSection = GetSctSidsAndStars(GetSctFileSection("[STAR]")),
+                SctLowAirwaySection = ParseArtccModels(GetSctFileSection("[LOW AIRWAY]")),
+                SctHighAirwaySection = ParseArtccModels(GetSctFileSection("[HIGH AIRWAY]")),
+                SctGeoSection = GetSctGeo(GetSctFileSection("[GEO]")),
+                SctRegionsSection = GetSctRegions(GetSctFileSection("[REGIONS]")),
+                SctLabelSection = GetSctLabels(GetSctFileSection("[LABELS]")),
+            };
+            return _sctFileModel;
+        }
+
         private static bool IsWhitespace(char c)
         {
             return c == ' ' || c == '\t' || c == '\r' || c == '\n' || c == '\f';

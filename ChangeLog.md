@@ -1,6 +1,13 @@
 # CHANGELOG
 
 ---
+- ## Version 2.1.1
+  - Fixed #69 - WX station website was not downloading on certain computers, this has been fixed.
+  - Fixed #68 - .id commands using the 3ld will appear before the ones that use the name.
+  - Fixed #67 - Checks for '&' characters in all necessary items 
+  - Fixed #65 - Changed the landing page button text.
+  - Started work on the new feature for SCT2 to KML and vise versa
+
 - ## Version 2.1.0
   - Added Feature - Convert DAT files into SCT2 files.
   - Added Feature - Convert DXF files into SCT2 and vice versa.

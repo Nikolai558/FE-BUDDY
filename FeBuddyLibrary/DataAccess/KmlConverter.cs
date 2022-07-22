@@ -39,17 +39,17 @@ namespace FeBuddyLibrary.DataAccess
         {
             DataFunctions df = new DataFunctions();
             _sctFileModel = df.ReadSctFile(_sctFilePath);
-            AddDefineSection();
-            AddInfoSection();
-            AddVorAndNdb();
-            AddAirportSection();
-            AddRunwaySection();
-            AddFixesSection();
-            AddArtccModelsSection();
+            //AddDefineSection();
+            //AddInfoSection();
+            //AddVorAndNdb();
+            //AddAirportSection();
+            //AddRunwaySection();
+            //AddFixesSection();
+            //AddArtccModelsSection();
             AddDiagramSections();
-            AddLabelSection();
-            AddRegionSection();
-            AddGeoSection();
+            //AddLabelSection();
+            //AddRegionSection();
+            //AddGeoSection();
             SaveKML();
         }
 
@@ -63,8 +63,8 @@ namespace FeBuddyLibrary.DataAccess
             {
                 LineString line = new LineString();
                 line.Coordinates = new CoordinateCollection();
-                line.Coordinates.Add(new Vector(double.Parse(LatLonHelpers.CreateDecFormat(item.StartLat, false)), double.Parse(LatLonHelpers.CreateDecFormat(item.StartLon, false))));
-                line.Coordinates.Add(new Vector(double.Parse(LatLonHelpers.CreateDecFormat(item.EndLat, false)), double.Parse(LatLonHelpers.CreateDecFormat(item.EndLon, false))));
+                line.Coordinates.Add(new Vector(double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.StartLat, true, false), false)), double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.StartLon, false, false), false))));
+                line.Coordinates.Add(new Vector(double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.EndLat, true, false), false)), double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.EndLon, false, false), false))));
                 Placemark geoPlacemark = new Placemark();
                 geoPlacemark.Geometry = line;
                 geoPlacemark.Name = "GeoLine_" + count;
@@ -88,15 +88,16 @@ namespace FeBuddyLibrary.DataAccess
                 CoordinateCollection coordinates = new CoordinateCollection();
 
                 // Starting Point
-                coordinates.Add(new Vector(double.Parse(LatLonHelpers.CreateDecFormat(item.Lat, false)), double.Parse(LatLonHelpers.CreateDecFormat(item.Lon, false))));
+
+                coordinates.Add(new Vector(double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.Lat, true, false), false)), double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.Lon, false, false), false))));
 
                 foreach (var addlCoords in item.AdditionalRegionInfo)
                 {
-                    coordinates.Add(new Vector(double.Parse(LatLonHelpers.CreateDecFormat(addlCoords.Lat, false)), double.Parse(LatLonHelpers.CreateDecFormat(addlCoords.Lon, false))));
+                    coordinates.Add(new Vector(double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(addlCoords.Lat, true, false), false)), double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(addlCoords.Lon, false, false), false))));
                 }
 
                 // Starting point but at the end of the list to complete the region. 
-                coordinates.Add(new Vector(double.Parse(LatLonHelpers.CreateDecFormat(item.Lat, false)), double.Parse(LatLonHelpers.CreateDecFormat(item.Lon, false))));
+                coordinates.Add(new Vector(double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.Lat, true, false), false)), double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.Lon, false, false), false))));
 
                 OuterBoundary outerBoundary = new OuterBoundary();
                 outerBoundary.LinearRing = new LinearRing();
@@ -128,7 +129,7 @@ namespace FeBuddyLibrary.DataAccess
                 var point = new Point();
                 Placemark labelPlaceMark = new Placemark();
                 labelPlaceMark.Name = item.LabelText ;
-                point.Coordinate = new Vector(double.Parse(LatLonHelpers.CreateDecFormat(item.Lat, false)), double.Parse(LatLonHelpers.CreateDecFormat(item.Lon, false)));
+                point.Coordinate = new Vector(double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.Lat, true, false), false)), double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.Lon, false, false), false)));
                 labelPlaceMark.Geometry = point;
                 labelPlaceMark.Visibility = false;
                 leablesFolder.AddFeature(labelPlaceMark);
@@ -141,8 +142,8 @@ namespace FeBuddyLibrary.DataAccess
         {
             Dictionary<string, List<SctSidStarModel>> collections = new Dictionary<string, List<SctSidStarModel>>
             {
-                {"SID", _sctFileModel.SctStarSection},
-                {"STAR", _sctFileModel.SctSidSection}
+                {"SID", _sctFileModel.SctSidSection},
+                {"STAR", _sctFileModel.SctStarSection}
             };
             foreach (var collectionName in collections.Keys)
             {
@@ -157,8 +158,8 @@ namespace FeBuddyLibrary.DataAccess
                     
                     LineString line = new LineString();
                     line.Coordinates = new CoordinateCollection();
-                    line.Coordinates.Add(new Vector(double.Parse(LatLonHelpers.CreateDecFormat(item.StartLat, false)), double.Parse(LatLonHelpers.CreateDecFormat(item.StartLon, false))));
-                    line.Coordinates.Add(new Vector(double.Parse(LatLonHelpers.CreateDecFormat(item.EndLat, false)), double.Parse(LatLonHelpers.CreateDecFormat(item.EndLon, false))));
+                    line.Coordinates.Add(new Vector(double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.StartLat, true, false), false)), double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.StartLon, false, false), false))));
+                    line.Coordinates.Add(new Vector(double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.EndLat, true, false), false)), double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.EndLon, false, false), false))));
                     Placemark itemPlacemark = new Placemark();
                     itemPlacemark.Geometry = line;
                     itemPlacemark.Name = "LineCollection_" + collectionCount;
@@ -186,8 +187,8 @@ namespace FeBuddyLibrary.DataAccess
                             additionalLinesPlacemark = new Placemark();
                         }
 
-                        additionalLines.Coordinates.Add(new Vector(double.Parse(LatLonHelpers.CreateDecFormat(lineSeg.StartLat, false)), double.Parse(LatLonHelpers.CreateDecFormat(lineSeg.StartLon, false))));
-                        additionalLines.Coordinates.Add(new Vector(double.Parse(LatLonHelpers.CreateDecFormat(lineSeg.EndLat, false)), double.Parse(LatLonHelpers.CreateDecFormat(lineSeg.EndLon, false))));
+                        additionalLines.Coordinates.Add(new Vector(double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(lineSeg.StartLat, true, false), false)), double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(lineSeg.StartLon, false, false), false))));
+                        additionalLines.Coordinates.Add(new Vector(double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(lineSeg.EndLat, true, false), false)), double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(lineSeg.EndLon, false, false), false))));
                         previousEndingCoord = lineSeg.EndLat + " " + lineSeg.EndLon;
                     }
                     collectionCount += 1;
@@ -223,8 +224,8 @@ namespace FeBuddyLibrary.DataAccess
                 {
                     LineString line = new LineString();
                     line.Coordinates = new CoordinateCollection();
-                    line.Coordinates.Add(new Vector(double.Parse(LatLonHelpers.CreateDecFormat(item.StartLat, false)), double.Parse(LatLonHelpers.CreateDecFormat(item.StartLon, false))));
-                    line.Coordinates.Add(new Vector(double.Parse(LatLonHelpers.CreateDecFormat(item.EndLat, false)), double.Parse(LatLonHelpers.CreateDecFormat(item.EndLon, false))));
+                    line.Coordinates.Add(new Vector(double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.StartLat, true, false), false)), double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.StartLon, false, false), false))));
+                    line.Coordinates.Add(new Vector(double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.EndLat, true, false), false)), double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.EndLon, false, false), false))));
                     Placemark itemPlacemark = new Placemark();
                     itemPlacemark.Geometry = line;
                     itemPlacemark.Name = item.Name;
@@ -247,7 +248,7 @@ namespace FeBuddyLibrary.DataAccess
                 var point = new Point();
                 Placemark fixPlaceMark = new Placemark();
                 fixPlaceMark.Name = item.FixName;
-                point.Coordinate = new Vector(double.Parse(LatLonHelpers.CreateDecFormat(item.Lat, false)), double.Parse(LatLonHelpers.CreateDecFormat(item.Lon, false)));
+                point.Coordinate = new Vector(double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.Lat, true, false), false)), double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.Lon, false, false), false)));
                 fixPlaceMark.Geometry = point;
                 fixPlaceMark.Visibility = false;
                 fixFolder.AddFeature(fixPlaceMark);
@@ -267,8 +268,8 @@ namespace FeBuddyLibrary.DataAccess
 
                 LineString line = new LineString();
                 line.Coordinates = new CoordinateCollection();
-                line.Coordinates.Add(new Vector(double.Parse(LatLonHelpers.CreateDecFormat(item.StartLat, false)), double.Parse(LatLonHelpers.CreateDecFormat(item.StartLon, false))));
-                line.Coordinates.Add(new Vector(double.Parse(LatLonHelpers.CreateDecFormat(item.EndLat, false)), double.Parse(LatLonHelpers.CreateDecFormat(item.EndLon, false))));
+                line.Coordinates.Add(new Vector(double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.StartLat, true, false), false)), double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.StartLon, false, false), false))));
+                line.Coordinates.Add(new Vector(double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.EndLat, true, false), false)), double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.EndLon, false, false), false))));
                 Placemark runwayPlacemark = new Placemark();
                 runwayPlacemark.Geometry = line;
                 runwayPlacemark.Name = item.RunwayNumber + "-" + item.OppositeRunwayNumber;
@@ -296,7 +297,7 @@ namespace FeBuddyLibrary.DataAccess
                 airportPlaceMark.Name = item.Id;
                 description.Text = item.AllInfo.Split(" ")[0] + " " + item.AllInfo.Split(" ")[1];
                 airportPlaceMark.Description = description;
-                point.Coordinate = new Vector(double.Parse(LatLonHelpers.CreateDecFormat(item.Lat, false)), double.Parse(LatLonHelpers.CreateDecFormat(item.Lon, false)));
+                point.Coordinate = new Vector(double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.Lat, true, false), false)), double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.Lon, false, false), false)));
                 airportPlaceMark.Geometry = point;
                 airportPlaceMark.Visibility = false;
                 airportFolder.AddFeature(airportPlaceMark);
@@ -322,7 +323,7 @@ namespace FeBuddyLibrary.DataAccess
                 vorPlaceMark.Name = item.Id + " - " + item.Frequency;
                 description.Text = item.Comments ?? "";
                 vorPlaceMark.Description = description;
-                point.Coordinate = new Vector(double.Parse(LatLonHelpers.CreateDecFormat(item.Lat, false)), double.Parse(LatLonHelpers.CreateDecFormat(item.Lon, false)));
+                point.Coordinate = new Vector(double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.Lat, true, false), false)), double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.Lon, false, false), false)));
                 vorPlaceMark.Geometry = point;
                 vorPlaceMark.Visibility = false;
                 vorFolder.AddFeature(vorPlaceMark);
@@ -338,7 +339,7 @@ namespace FeBuddyLibrary.DataAccess
                 NDBPlaceMark.Name = item.Id + " - " + item.Frequency;
                 description.Text = item.Comments ?? "";
                 NDBPlaceMark.Description = description;
-                point.Coordinate = new Vector(double.Parse(LatLonHelpers.CreateDecFormat(item.Lat, false)), double.Parse(LatLonHelpers.CreateDecFormat(item.Lon, false)));
+                point.Coordinate = new Vector(double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.Lat, true, false), false)), double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.Lon, false, false), false)));
                 NDBPlaceMark.Geometry = point;
                 NDBPlaceMark.Visibility = false;
                 ndbFolder.AddFeature(NDBPlaceMark);

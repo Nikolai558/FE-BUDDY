@@ -1,58 +1,61 @@
 ﻿using System;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Drawing;
-using System.Drawing.Drawing2D;
 using System.Drawing.Text;
 using System.IO;
+using System.Reflection;
 using System.Windows.Forms;
+using FeBuddyLibrary;
+using FeBuddyLibrary.DataAccess;
 using FeBuddyLibrary.Helpers;
+using FeBuddyLibrary.Models;
+using FeBuddyLibrary.Models.MetaFileModels;
 
 namespace FeBuddyWinFormUI
 {
-    public partial class LandingForm : Form
+    public partial class KmlConversionForm : Form
     {
+        private bool nextAiracAvailable;
         private readonly string _currentVersion;
+        private bool userClicked = false;
         readonly PrivateFontCollection _pfc = new PrivateFontCollection();
-        private ToolTip _toolTip;
 
-        public LandingForm(string currentVersion)
+
+        public KmlConversionForm(string currentVersion)
         {
             Logger.LogMessage("DEBUG", "INITIALIZING COMPONENT");
-
-            _toolTip = new ToolTip();
             _pfc.AddFontFile("Properties\\romantic.ttf");
-
-            this.FormClosed += (s, args) => Application.Exit();
-
-            _currentVersion = currentVersion;
 
             InitializeComponent();
             menuStrip.Renderer = new MyRenderer();
 
-
             // It should grab from the assembily info. 
-            this.Text = $"FE-BUDDY - V{_currentVersion}";
-            this.allowBetaMenuItem.Checked = Properties.Settings.Default.AllowPreRelease;
+            this.Text = $"FE-BUDDY - V{currentVersion}";
+
+            chooseDirButton.Enabled = false;
+            startButton.Enabled = false;
+            airacCycleGroupBox.Enabled = false;
+            airacCycleGroupBox.Visible = false;
+
+            convertGroupBox.Enabled = false;
+            convertGroupBox.Visible = false;
+
+            startGroupBox.Enabled = false;
+            startGroupBox.Visible = false;
+
+            facilityIdCombobox.DataSource = GlobalConfig.allArtcc;
+
+            GlobalConfig.outputDirBase = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+            filePathLabel.Text = GlobalConfig.outputDirBase;
+            filePathLabel.Visible = true;
+            filePathLabel.MaximumSize = new Size(257, 82);
+            _currentVersion = currentVersion;
         }
 
         private class MyRenderer : ToolStripProfessionalRenderer
         {
             public MyRenderer() : base(new MyColors()) { }
-
-            protected override void OnRenderItemCheck(ToolStripItemImageRenderEventArgs e)
-            {
-                e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
-                var r = new Rectangle(e.ImageRectangle.Location, e.ImageRectangle.Size);
-                r.Inflate(-4, -6);
-                e.Graphics.DrawLines(new Pen(Color.Green, 2), new Point[]{
-                new Point(r.Left, r.Bottom - r.Height /2),
-                new Point(r.Left + r.Width /3,  r.Bottom),
-                new Point(r.Right, r.Top)});
-
-                // this is incharge of changing the checkbox apearance..... figure out how I want it to look and what I can do to get it there.
-                // This is base render (default) leave this until our custom apearance can be "rendered"
-                // base.OnRenderItemCheck(e);
-            }
         }
 
         private class MyColors : ProfessionalColorTable
@@ -73,44 +76,250 @@ namespace FeBuddyWinFormUI
             {
                 get { return Color.Black; }
             }
+
             public override Color MenuItemPressedGradientEnd
             {
                 get { return Color.Black; }
             }
-            public override Color CheckBackground
+        }
+
+        private void AiracDataForm_Closing(object sender, EventArgs e)
+        {
+            Logger.LogMessage("DEBUG", "MAIN FORM CLOSING");
+        }
+
+        private void CurrentAiracSelection_CheckedChanged(object sender, EventArgs e)
+        {
+            currentAiracSelection.Text = GlobalConfig.currentAiracDate;
+            nextAiracSelection.Text = GlobalConfig.nextAiracDate;
+        }
+
+        private void NextAiracSelection_CheckedChanged(object sender, EventArgs e)
+        {
+            currentAiracSelection.Text = GlobalConfig.currentAiracDate;
+            nextAiracSelection.Text = GlobalConfig.nextAiracDate;
+        }
+
+        private void ChooseDirButton_Click(object sender, EventArgs e)
+        {
+            Logger.LogMessage("DEBUG", "USER CHOOSING DIFFERENT OUTPUT DIRECTORY");
+
+            FolderBrowserDialog outputDir = new FolderBrowserDialog();
+
+            outputDir.ShowDialog();
+
+            GlobalConfig.outputDirBase = outputDir.SelectedPath;
+
+            filePathLabel.Text = GlobalConfig.outputDirBase;
+            filePathLabel.Visible = true;
+            filePathLabel.MaximumSize = new Size(257, 82);
+        }
+
+        private void AiracDataStartButton_Click(object sender, EventArgs e)
+        {
+            Logger.LogMessage("DEBUG", "USER CLICKED START BUTTON");
+
+            if (GlobalConfig.outputDirBase == null || GlobalConfig.outputDirBase == "")
             {
-                get { return Color.Black; }
+                Logger.LogMessage("WARNING", "OUTPUT DIRECTORY BASE IS NULL OR EMPTY");
+
+                DialogResult dialogResult = MessageBox.Show("Seems there may be an error.\n Please verify you have chosen an output location.", "ERROR: NO Output Location", MessageBoxButtons.OK);
+                if (dialogResult == DialogResult.OK)
+                {
+                    return;
+                }
+                else
+                {
+                    return;
+                }
             }
-            public override Color MenuItemBorder
+
+            if (GlobalConfig.facilityID == "" || GlobalConfig.facilityID.Trim() == null)
             {
-                get { return Color.Gray; }
+                Logger.LogMessage("WARNING", "FACILITY ID IS NULL OR EMPTY");
+
+                DialogResult dialogResult = MessageBox.Show("Seems there may be an error.\n Please verify you have selected a correct Facility ID.", "ERROR: NO Facility ID", MessageBoxButtons.OK);
+                if (dialogResult == DialogResult.OK)
+                {
+                    return;
+                }
+                else
+                {
+                    return;
+                }
             }
-            public override Color ToolStripBorder
+
+            if (GlobalConfig.outputDirectory == null)
             {
-                get { return Color.Black; }
+                Logger.LogMessage("DEBUG", "SETTING OUTPUT DIRECTORY FULL FILE PATH FROM NULL");
+
+                GlobalConfig.outputDirectory = $"{GlobalConfig.outputDirBase}\\FE-BUDDY_Output";
+
+                if (Directory.Exists(GlobalConfig.outputDirectory))
+                {
+                    Logger.LogMessage("DEBUG", "OUTPUT DIRECTORY FILE PATH EXISTS, ADDING DATETIME VARIABLE TO END OF DIRECTORY NAME");
+
+                    GlobalConfig.outputDirectory += $"-{DateTime.Now:MMddHHmmss}";
+                }
+
+                GlobalConfig.outputDirectory += "\\";
             }
-            public override Color ToolStripDropDownBackground
+            else
             {
-                get { return Color.Black; }
+                Logger.LogMessage("DEBUG", "SETTING OUTPUT DIRECTORY FULL FILE PATH FROM EXISTING");
+
+                GlobalConfig.outputDirectory = $"{GlobalConfig.outputDirBase}\\FE-BUDDY_Output";
+
+                if (Directory.Exists(GlobalConfig.outputDirectory))
+                {
+                    Logger.LogMessage("DEBUG", "OUTPUT DIRECTORY FILE PATH EXISTS, ADDING DATETIME VARIABLE TO END OF DIRECTORY NAME");
+                    GlobalConfig.outputDirectory += $"-{DateTime.Now:MMddHHmmss}";
+                }
+
+                GlobalConfig.outputDirectory += "\\";
+            }
+
+            DirectoryHelpers.CreateDirectories();
+
+            FileHelpers.WriteTestSctFile();
+
+            menuStrip.Visible = false;
+            chooseDirButton.Enabled = false;
+            //startButton.Enabled = false;
+
+            airacCycleGroupBox.Enabled = false;
+            airacCycleGroupBox.Visible = false;
+
+            convertGroupBox.Enabled = false;
+            convertGroupBox.Visible = false;
+
+            startGroupBox.Enabled = false;
+            startGroupBox.Visible = false;
+
+            //TODO - Create Processing box instead of already having it. 
+
+            StartParsing();
+        }
+
+        private void AiracDataExitButton_Click(object sender, EventArgs e)
+        {
+            Logger.LogMessage("INFO", "EXIT BUTTON CLICKED");
+            this.Close();
+            //this.Hide();
+            //Application.Exit();
+        }
+
+        private delegate void SetControlPropertyThreadSafeDelegate(Control control, string propertyName, object propertyValue);
+
+        public static void SetControlPropertyThreadSafe(
+            Control control,
+            string propertyName,
+            object propertyValue)
+        {
+            if (control.InvokeRequired)
+            {
+                control.Invoke(new SetControlPropertyThreadSafeDelegate
+                (SetControlPropertyThreadSafe),
+                new object[] { control, propertyName, propertyValue });
+            }
+            else
+            {
+                control.GetType().InvokeMember(
+                    propertyName,
+                    BindingFlags.SetProperty,
+                    null,
+                    control,
+                    new object[] { propertyValue });
             }
         }
 
-        private void LandingForm_Closing(object sender, EventArgs e)
+        private void StartParsing()
         {
-            Logger.LogMessage("DEBUG", "Landing FORM CLOSING");
+            Logger.LogMessage("INFO", "SETTING UP PARSING WORKER");
+
+            AdjustProcessingBox();
+
+            var worker = new BackgroundWorker();
+            worker.RunWorkerCompleted += Worker_StartParsingCompleted;
+            worker.DoWork += Worker_StartParsingDoWork;
+
+            worker.RunWorkerAsync();
         }
 
-        private void LandingForm_Shown(object sender, EventArgs e)
+        private void AdjustProcessingBox()
         {
-            Logger.LogMessage("DEBUG", "SHOWING Landing FORM");
+            Logger.LogMessage("DEBUG", "ADJUSTING PROCESSING BOX");
         }
 
-        private void LandingForm_Load(object sender, EventArgs e)
+        private void Worker_StartParsingDoWork(object sender, DoWorkEventArgs e)
         {
-            Logger.LogMessage("DEBUG", "LOADING Landing FORM");
+            Logger.LogMessage("INFO", "PROCESSING STARTED");
+        }
 
+        private void Worker_StartParsingCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            Logger.LogMessage("INFO", "PROCESSING COMPLETED");
+            File.Copy(Logger._logFilePath, $"{GlobalConfig.outputDirectory}\\FE-BUDDY_LOG.txt");
+        }
 
-            // TODO - Add fonts to buttons. 
+        private void GetAiracDate()
+        {
+            Logger.LogMessage("DEBUG", "SETTING UP AIRAC DATE WORKER");
+
+            var Worker = new BackgroundWorker();
+            Worker.RunWorkerCompleted += Worker_RunWorkerCompleted;
+            Worker.DoWork += Worker_DoWork;
+
+            Worker.RunWorkerAsync();
+        }
+
+        private void AiracDataForm_Shown(object sender, EventArgs e)
+        {
+            Logger.LogMessage("DEBUG", "SHOWING MAIN FORM");
+
+            GetAiracDate();
+            currentAiracSelection.Text = GlobalConfig.currentAiracDate;
+            nextAiracSelection.Text = GlobalConfig.nextAiracDate;
+        }
+
+        private void Worker_DoWork(object sender, DoWorkEventArgs e)
+        {
+            Logger.LogMessage("DEBUG", "GETTING AIRAC DATE");
+
+            if (GlobalConfig.nextAiracDate == null)
+            {
+                WebHelpers.GetAiracDateFromFAA();
+            }
+            nextAiracAvailable = WebHelpers.GetMetaUrlResponse();
+        }
+
+        private void Worker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            currentAiracSelection.Text = GlobalConfig.currentAiracDate;
+            nextAiracSelection.Text = GlobalConfig.nextAiracDate;
+
+            chooseDirButton.Enabled = true;
+            startButton.Enabled = true;
+
+            airacCycleGroupBox.Enabled = true;
+            airacCycleGroupBox.Visible = true;
+
+            convertGroupBox.Enabled = true;
+            convertGroupBox.Visible = true;
+
+            startGroupBox.Enabled = true;
+            startGroupBox.Visible = true;
+
+            facilityIdCombobox.SelectedIndex = Properties.Settings.Default.UserArtccSetting;
+
+            Logger.LogMessage("DEBUG", "AIRAC DATE WORKER COMPLETED");
+        }
+
+        private void AiracDataForm_Load(object sender, EventArgs e)
+        {
+            Logger.LogMessage("DEBUG", "LOADING MAIN FORM");
+
+            // TODO - Add fonts to buttons?
             InstructionsMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
             CreditsMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
             ChangeLogMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
@@ -118,11 +327,35 @@ namespace FeBuddyWinFormUI
             FAQMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
             RoadmapMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
             informationToolStripMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
-            discordToolStripMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
             settingsToolStripMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
             reportIssuesToolStripMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
-            allowBetaMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
+            discordToolStripMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
             newsToolStripMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
+            //mainMenuMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
+            //exitMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
+        }
+
+        private void NextAiracSelection_Click(object sender, EventArgs e)
+        {
+            Logger.LogMessage("DEBUG", "NEXT AIRAC SELECTED");
+            if (!nextAiracAvailable)
+            {
+                Logger.LogMessage("DEBUG", "NEXT AIRAC SELECTED, NOT AVAILABLE YET");
+                MetaNotFoundForm frm = new MetaNotFoundForm();
+                frm.ShowDialog();
+            }
+        }
+
+        private void FacilityIdCombobox_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            Logger.LogMessage("DEBUG", "FACILITY COMBOBOX CLICKED");
+            GlobalConfig.facilityID = facilityIdCombobox.SelectedItem.ToString();
+
+            if (userClicked)
+            {
+                Properties.Settings.Default.UserArtccSetting = facilityIdCombobox.SelectedIndex;
+                Properties.Settings.Default.Save();
+            }
         }
 
         private void UninstallMenuItem_Click(object sender, EventArgs e)
@@ -178,10 +411,29 @@ namespace FeBuddyWinFormUI
                         + "		DEL /Q \"FE-BUDDY.lnk\"\n"
                         + "	)\n"
                         + "\n"
+                        + "CD /d \"%appdata%\\Microsoft\\Windows\\Start Menu\\Programs\"\n"
+                        + " if NOT exist \"Kyle Sanders\" (\n"
+                        + "     SET OLD_START_SHORTCUT=NOT_FOUND\n"
+                        + ")\n"
+                        + "\n"
+                        + "	if exist \"Kyle Sanders\" (\n"
+                        + "		SET OLD_START_SHORTCUT=FOUND\n"
+                        + "		RD /Q /S \"Kyle Sanders\"\n"
+                        + "	)\n"
+                        + "\n"
+                        + "	if NOT exist FE-BUDDY.lnk (\n"
+                        + "		SET /A NOT_FOUND_COUNT=%NOT_FOUND_COUNT% + 1\n"
+                        + "		SET NEW_START_SHORTCUT=NOT_FOUND\n"
+                        + "	)\n"
+                        + "\n"
+                        + "	if exist FE-BUDDY.lnk (\n"
+                        + "		SET NEW_START_SHORTCUT=FOUND\n"
+                        + "		DEL /Q \"FE-BUDDY.lnk\"\n"
+                        + "	)\n"
+                        + "\n"
                         + "IF %NOT_FOUND_COUNT%==0 SET UNINSTALL_STATUS=COMPLETE\n"
-                        + "IF %NOT_FOUND_COUNT%==1 SET UNINSTALL_STATUS=PARTIAL\n"
-                        + "IF %NOT_FOUND_COUNT%==2 SET UNINSTALL_STATUS=PARTIAL\n"
-                        + "IF %NOT_FOUND_COUNT%==3 SET UNINSTALL_STATUS=FAIL\n"
+                        + "IF %NOT_FOUND_COUNT% GEQ 1 SET UNINSTALL_STATUS=PARTIAL\n"
+                        + "IF %NOT_FOUND_COUNT%==4 SET UNINSTALL_STATUS=FAIL\n"
                         + "\n"
                         + "IF %UNINSTALL_STATUS%==COMPLETE GOTO UNINSTALLED\n"
                         + "IF %UNINSTALL_STATUS%==PARTIAL GOTO UNINSTALLED\n"
@@ -198,6 +450,8 @@ namespace FeBuddyWinFormUI
                         + "IF %FE-BUDDY_TEMP_FOLDER%==FOUND ECHO        -temp\\FE-BUDDY\n"
                         + "IF %FE-BUDDY_APPDATA_FOLDER%==FOUND ECHO        -AppData\\Local\\FE-BUDDY\n"
                         + "IF %FE-BUDDY_SHORTCUT%==FOUND ECHO        -Desktop\\FE-BUDDY Shortcut\n"
+                        + "IF %OLD_START_SHORTCUT%==FOUND ECHO        -Start Menu\\Kyle Sanders\n"
+                        + "IF %NEW_START_SHORTCUT%==FOUND ECHO        -Start Menu\\FE-BUDDY Shortcut\n"
                         + "\n"
                         + ":FAILED\n"
                         + "\n"
@@ -215,6 +469,7 @@ namespace FeBuddyWinFormUI
                         + "		ECHO        -Desktop\\FE-BUDDY Shortcut\n"
                         + "		ECHO             --If the shortcut was renamed, delete the shortcut manually.\n"
                         + "	)\n"
+                        + " IF %NEW_START_SHORTCUT%==NOT_FOUND ECHO        -Start Menu\\FE-BUDDY Shortcut\n"
                         + ")\n"
                         + "\n"
                         + "ECHO.\n"
@@ -319,61 +574,6 @@ namespace FeBuddyWinFormUI
             }
         }
 
-        private void landingStartButton_MouseHover(object sender, EventArgs e)
-        {
-            _toolTip.SetToolTip(landingStartButton, "I'm not your Buddy, Guy...");
-        }
-
-        private void landingStartButton_Click(object sender, EventArgs e)
-        {
-            // this.show() => should be this.close()... I don't like hitting the X button and it taking us back to the main menu
-            // Need to do a button to handle that if it works PROPERLY... I had issues with that but maybe it is fixed or maybe I was doing it wrong before. 
-
-            if (getparseAiracDataSelection.Checked)
-            {
-                var airacDataForm = new AiracDataForm(_currentVersion);
-                airacDataForm.FormClosing += (s, args) => this.Show();
-                airacDataForm.Show();
-                this.Hide();
-            }
-            else if (convertSct2DxfSelection.Checked)
-            {
-                DialogResult warningMSG = MessageBox.Show(
-                    "This feature is still a work-in-progress.\nWe have been able to get this to work with CAD programs in only very limited situations and we are asking for your help to see what works and what doesn't.\n\nIf you have a CAD program and want to assist us in troubleshooting, please use this feature and load the file in your CAD program.\n\nThen please join the FE-Buddy Discord, navigate to the #dxf-conversions channel and post:\n\n1) Successful or Not-Successful\n2) CAD program name\n3) Operating system\n4) Any further details such as error messages",
-                    "CAUTION",
-                    MessageBoxButtons.OK);
-
-
-                var sctToDxfForm = new SctToDxfForm(_currentVersion);
-                sctToDxfForm.FormClosing += (s, args) => this.Show();
-                sctToDxfForm.Show();
-                this.Hide();
-            }
-            else if (convertDat2SctSelection.Checked)
-            {
-                var datToSctForm = new DatToSctForm(_currentVersion);
-                datToSctForm.FormClosing += (s, args) => this.Show();
-                datToSctForm.Show();
-                this.Hide();
-            }
-            else if (convertKml2SCTSelection.Checked)
-            {
-                DialogResult warningMSG = MessageBox.Show(
-                    "This feature is still a work-in-progress.\nWe have been able to get this to work with some SCT2 files and we are asking for your help to see what works and what doesn't.\n\nIf your sector file does not work with this, then please join the FE-Buddy Discord, navigate to the #kml-conversions channel and post:\n\n1) Successful or Not-Successful\n2) Sector File\n3) Any further details such as error messages",
-                    "CAUTION",
-                    MessageBoxButtons.OK);
-                var kmlConversionForm = new KmlConversionForm(_currentVersion);
-                kmlConversionForm.FormClosing += (s, args) => this.Show();
-                kmlConversionForm.Show();
-                this.Hide();
-            }
-            else
-            {
-                MessageBox.Show("This feature has not been implemented yet.");
-            }
-
-        }
-
         private void discordToolStripMenuItem_Click(object sender, EventArgs e)
         {
             Logger.LogMessage("DEBUG", "DISCORD MENU ITEM CLICKED");
@@ -385,6 +585,11 @@ namespace FeBuddyWinFormUI
             Logger.LogMessage("DEBUG", "REPORT ISSUES MENU ITEM CLICKED");
             Process.Start(new ProcessStartInfo("https://github.com/Nikolai558/FE-BUDDY/wiki#news") { UseShellExecute = true });
             //Process.Start("https://github.com/Nikolai558/FE-BUDDY/wiki#news");
+        }
+
+        private void facilityIdCombobox_Click(object sender, EventArgs e)
+        {
+            userClicked = true;
         }
     }
 }

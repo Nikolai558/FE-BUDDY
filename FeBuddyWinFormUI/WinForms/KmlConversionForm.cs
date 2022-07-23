@@ -4,27 +4,27 @@ using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Text;
 using System.IO;
-using System.Reflection;
 using System.Windows.Forms;
 using FeBuddyLibrary;
-using FeBuddyLibrary.DataAccess;
+using FeBuddyLibrary.Dat;
+using FeBuddyLibrary.Dxf;
 using FeBuddyLibrary.Helpers;
-using FeBuddyLibrary.Models;
-using FeBuddyLibrary.Models.MetaFileModels;
 
 namespace FeBuddyWinFormUI
 {
     public partial class KmlConversionForm : Form
     {
-        private bool nextAiracAvailable;
         private readonly string _currentVersion;
-        private bool userClicked = false;
         readonly PrivateFontCollection _pfc = new PrivateFontCollection();
-
+        private ConversionOptions _conversionOptions;
+        private ToolTip _toolTip;
 
         public KmlConversionForm(string currentVersion)
         {
             Logger.LogMessage("DEBUG", "INITIALIZING COMPONENT");
+            _conversionOptions = new ConversionOptions();
+            _toolTip = new ToolTip();
+
             _pfc.AddFontFile("Properties\\romantic.ttf");
 
             InitializeComponent();
@@ -33,24 +33,163 @@ namespace FeBuddyWinFormUI
             // It should grab from the assembily info. 
             this.Text = $"FE-BUDDY - V{currentVersion}";
 
-            chooseDirButton.Enabled = false;
-            startButton.Enabled = false;
-            airacCycleGroupBox.Enabled = false;
-            airacCycleGroupBox.Visible = false;
-
-            convertGroupBox.Enabled = false;
-            convertGroupBox.Visible = false;
-
-            startGroupBox.Enabled = false;
-            startGroupBox.Visible = false;
-
-            facilityIdCombobox.DataSource = GlobalConfig.allArtcc;
-
-            GlobalConfig.outputDirBase = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
-            filePathLabel.Text = GlobalConfig.outputDirBase;
-            filePathLabel.Visible = true;
-            filePathLabel.MaximumSize = new Size(257, 82);
             _currentVersion = currentVersion;
+        }
+
+        private void inputButton_Click(object sender, EventArgs e)
+        {
+            Logger.LogMessage("DEBUG", "USER CHOOSING DIFFERENT Input file for DAT Conversion tool");
+
+            OpenFileDialog inputFileDialog = new OpenFileDialog();
+
+            inputFileDialog.ShowDialog();
+
+            _conversionOptions.InputFilePath = inputFileDialog.FileName;
+
+            string text = _conversionOptions.InputFilePath;
+
+            if (text.Length >= 20)
+            {
+                if (text[^17..].Contains('\\'))
+                {
+                    text = "..\\" + text[^17..].Split('\\')[^1];
+                }
+                else
+                {
+                    text = "..\\.." + text[^15..];
+                }
+            }
+
+            sourceFileButton.Text = text;
+            sourceFileButton.TextAlign = ContentAlignment.MiddleCenter;
+            sourceFileButton.AutoSize = false;
+        }
+
+        private void outputDirButton_Click(object sender, EventArgs e)
+        {
+            Logger.LogMessage("DEBUG", "USER CHOOSING DIFFERENT output directory for DAT Conversion tool");
+
+            FolderBrowserDialog outputDirDialog = new FolderBrowserDialog();
+
+            outputDirDialog.ShowDialog();
+
+            _conversionOptions.outputDirectory = outputDirDialog.SelectedPath;
+
+            string text = _conversionOptions.outputDirectory;
+
+            if (text.Length >= 20)
+            {
+                if (text[^17..].Contains('\\'))
+                {
+                    text = "..\\" + text[^17..].Split('\\')[^1];
+                }
+                else
+                {
+                    text = "..\\.." + text[^15..];
+                }
+            }
+
+            outputDirButton.Text = text;
+            outputDirButton.TextAlign = ContentAlignment.MiddleCenter;
+            outputDirButton.AutoSize = false;
+        }
+
+        private void startButton_Click(object sender, EventArgs e)
+        {
+            Logger.LogMessage("DEBUG", "USER clicked start button");
+
+            string errorMessages = "";
+
+            // TODO Show Message box instead of just returning. 
+            if (string.IsNullOrWhiteSpace(_conversionOptions.InputFilePath)) errorMessages += "Input File Path is invalid.\n";
+            if (string.IsNullOrWhiteSpace(_conversionOptions.outputDirectory)) errorMessages += "Output Directory is invalid.\n";
+
+            if (_conversionOptions.InputFilePath?.Split('.')[^1] != "dat") errorMessages += "Source file is not a .dat\n";
+            
+            if (!string.IsNullOrWhiteSpace(_conversionOptions.InputFilePath) && !File.Exists(_conversionOptions.InputFilePath))
+            {
+                errorMessages += "Listen here, Buddy.... Do not change the file name after you've selected it in this program.\n";
+            }
+            if (!string.IsNullOrWhiteSpace(_conversionOptions.outputDirectory) && !Directory.Exists(_conversionOptions.outputDirectory))
+            {
+                errorMessages += "Listen here, Buddy.... Do not change the folder name after you've selected it in this program.\n";
+            }
+            if (_conversionOptions.InputFilePath.Split('\\')[^1].Split('.')[0].Length >= 26)
+            {
+                errorMessages += "C'mon Mate, that's a bloody long name...Input file name must be less than 26 characters long.";
+            }
+
+
+            if (errorMessages != "")
+            {
+                MessageBoxButtons buttons = MessageBoxButtons.OK;
+                DialogResult result;
+
+                result = MessageBox.Show(errorMessages, "An invalid operation occured.", buttons);
+                return;
+            }
+
+            StartConversion();
+        }
+
+        private bool IsValidCroppingDistance(string input)
+        {
+            double num;
+            if (double.TryParse(input, out num))
+            {
+                return num > 0;
+            }
+            else
+            {
+                return false;
+            }
+
+        }
+
+        private void ToggleComponents(bool isEnabled)
+        {
+            sourceFileButton.Enabled = isEnabled;
+            outputDirButton.Enabled = isEnabled;
+            startButton.Enabled = isEnabled;
+        }
+
+        private void StartConversion()
+        {
+            ToggleComponents(false);
+            startButton.Text = "PROCESSING";
+
+            var worker = new BackgroundWorker();
+            worker.RunWorkerCompleted += Worker_StartConversionCompleted;
+            worker.DoWork += Worker_StartConversionDoWork;
+
+            worker.RunWorkerAsync();
+        }
+
+        private void Worker_StartConversionCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            startButton.Text = "Convert";
+            ToggleComponents(true);
+        }
+
+        private void Worker_StartConversionDoWork(object sender, DoWorkEventArgs e)
+        {
+            // TODO - Call conversion Logic Here.
+
+            string outputFileName = "\\" + _conversionOptions.InputFilePath.Split('\\')[^1].Split('.')[0];
+            if (File.Exists(_conversionOptions.outputDirectory + outputFileName + ".sct2"))
+            {
+                MessageBoxButtons buttons = MessageBoxButtons.YesNo;
+                DialogResult result;
+
+                result = MessageBox.Show("This file exists in this directory, would you like to write over it?", "File Exists!", buttons);
+
+                if (result == DialogResult.No)
+                {
+                    return;
+                }
+            }
+            Logger.LogMessage("INFO", "Starting DAT to SCT2 Conversion.");
+            double cropDistance;
         }
 
         private class MyRenderer : ToolStripProfessionalRenderer
@@ -83,236 +222,9 @@ namespace FeBuddyWinFormUI
             }
         }
 
-        private void AiracDataForm_Closing(object sender, EventArgs e)
+        private void DatToSctForm_Closing(object sender, EventArgs e)
         {
-            Logger.LogMessage("DEBUG", "MAIN FORM CLOSING");
-        }
-
-        private void CurrentAiracSelection_CheckedChanged(object sender, EventArgs e)
-        {
-            currentAiracSelection.Text = GlobalConfig.currentAiracDate;
-            nextAiracSelection.Text = GlobalConfig.nextAiracDate;
-        }
-
-        private void NextAiracSelection_CheckedChanged(object sender, EventArgs e)
-        {
-            currentAiracSelection.Text = GlobalConfig.currentAiracDate;
-            nextAiracSelection.Text = GlobalConfig.nextAiracDate;
-        }
-
-        private void ChooseDirButton_Click(object sender, EventArgs e)
-        {
-            Logger.LogMessage("DEBUG", "USER CHOOSING DIFFERENT OUTPUT DIRECTORY");
-
-            FolderBrowserDialog outputDir = new FolderBrowserDialog();
-
-            outputDir.ShowDialog();
-
-            GlobalConfig.outputDirBase = outputDir.SelectedPath;
-
-            filePathLabel.Text = GlobalConfig.outputDirBase;
-            filePathLabel.Visible = true;
-            filePathLabel.MaximumSize = new Size(257, 82);
-        }
-
-        private void AiracDataStartButton_Click(object sender, EventArgs e)
-        {
-            Logger.LogMessage("DEBUG", "USER CLICKED START BUTTON");
-
-            if (GlobalConfig.outputDirBase == null || GlobalConfig.outputDirBase == "")
-            {
-                Logger.LogMessage("WARNING", "OUTPUT DIRECTORY BASE IS NULL OR EMPTY");
-
-                DialogResult dialogResult = MessageBox.Show("Seems there may be an error.\n Please verify you have chosen an output location.", "ERROR: NO Output Location", MessageBoxButtons.OK);
-                if (dialogResult == DialogResult.OK)
-                {
-                    return;
-                }
-                else
-                {
-                    return;
-                }
-            }
-
-            if (GlobalConfig.facilityID == "" || GlobalConfig.facilityID.Trim() == null)
-            {
-                Logger.LogMessage("WARNING", "FACILITY ID IS NULL OR EMPTY");
-
-                DialogResult dialogResult = MessageBox.Show("Seems there may be an error.\n Please verify you have selected a correct Facility ID.", "ERROR: NO Facility ID", MessageBoxButtons.OK);
-                if (dialogResult == DialogResult.OK)
-                {
-                    return;
-                }
-                else
-                {
-                    return;
-                }
-            }
-
-            if (GlobalConfig.outputDirectory == null)
-            {
-                Logger.LogMessage("DEBUG", "SETTING OUTPUT DIRECTORY FULL FILE PATH FROM NULL");
-
-                GlobalConfig.outputDirectory = $"{GlobalConfig.outputDirBase}\\FE-BUDDY_Output";
-
-                if (Directory.Exists(GlobalConfig.outputDirectory))
-                {
-                    Logger.LogMessage("DEBUG", "OUTPUT DIRECTORY FILE PATH EXISTS, ADDING DATETIME VARIABLE TO END OF DIRECTORY NAME");
-
-                    GlobalConfig.outputDirectory += $"-{DateTime.Now:MMddHHmmss}";
-                }
-
-                GlobalConfig.outputDirectory += "\\";
-            }
-            else
-            {
-                Logger.LogMessage("DEBUG", "SETTING OUTPUT DIRECTORY FULL FILE PATH FROM EXISTING");
-
-                GlobalConfig.outputDirectory = $"{GlobalConfig.outputDirBase}\\FE-BUDDY_Output";
-
-                if (Directory.Exists(GlobalConfig.outputDirectory))
-                {
-                    Logger.LogMessage("DEBUG", "OUTPUT DIRECTORY FILE PATH EXISTS, ADDING DATETIME VARIABLE TO END OF DIRECTORY NAME");
-                    GlobalConfig.outputDirectory += $"-{DateTime.Now:MMddHHmmss}";
-                }
-
-                GlobalConfig.outputDirectory += "\\";
-            }
-
-            DirectoryHelpers.CreateDirectories();
-
-            FileHelpers.WriteTestSctFile();
-
-            menuStrip.Visible = false;
-            chooseDirButton.Enabled = false;
-            //startButton.Enabled = false;
-
-            airacCycleGroupBox.Enabled = false;
-            airacCycleGroupBox.Visible = false;
-
-            convertGroupBox.Enabled = false;
-            convertGroupBox.Visible = false;
-
-            startGroupBox.Enabled = false;
-            startGroupBox.Visible = false;
-
-            //TODO - Create Processing box instead of already having it. 
-
-            StartParsing();
-        }
-
-        private void AiracDataExitButton_Click(object sender, EventArgs e)
-        {
-            Logger.LogMessage("INFO", "EXIT BUTTON CLICKED");
-            this.Close();
-            //this.Hide();
-            //Application.Exit();
-        }
-
-        private delegate void SetControlPropertyThreadSafeDelegate(Control control, string propertyName, object propertyValue);
-
-        public static void SetControlPropertyThreadSafe(
-            Control control,
-            string propertyName,
-            object propertyValue)
-        {
-            if (control.InvokeRequired)
-            {
-                control.Invoke(new SetControlPropertyThreadSafeDelegate
-                (SetControlPropertyThreadSafe),
-                new object[] { control, propertyName, propertyValue });
-            }
-            else
-            {
-                control.GetType().InvokeMember(
-                    propertyName,
-                    BindingFlags.SetProperty,
-                    null,
-                    control,
-                    new object[] { propertyValue });
-            }
-        }
-
-        private void StartParsing()
-        {
-            Logger.LogMessage("INFO", "SETTING UP PARSING WORKER");
-
-            AdjustProcessingBox();
-
-            var worker = new BackgroundWorker();
-            worker.RunWorkerCompleted += Worker_StartParsingCompleted;
-            worker.DoWork += Worker_StartParsingDoWork;
-
-            worker.RunWorkerAsync();
-        }
-
-        private void AdjustProcessingBox()
-        {
-            Logger.LogMessage("DEBUG", "ADJUSTING PROCESSING BOX");
-        }
-
-        private void Worker_StartParsingDoWork(object sender, DoWorkEventArgs e)
-        {
-            Logger.LogMessage("INFO", "PROCESSING STARTED");
-        }
-
-        private void Worker_StartParsingCompleted(object sender, RunWorkerCompletedEventArgs e)
-        {
-            Logger.LogMessage("INFO", "PROCESSING COMPLETED");
-            File.Copy(Logger._logFilePath, $"{GlobalConfig.outputDirectory}\\FE-BUDDY_LOG.txt");
-        }
-
-        private void GetAiracDate()
-        {
-            Logger.LogMessage("DEBUG", "SETTING UP AIRAC DATE WORKER");
-
-            var Worker = new BackgroundWorker();
-            Worker.RunWorkerCompleted += Worker_RunWorkerCompleted;
-            Worker.DoWork += Worker_DoWork;
-
-            Worker.RunWorkerAsync();
-        }
-
-        private void AiracDataForm_Shown(object sender, EventArgs e)
-        {
-            Logger.LogMessage("DEBUG", "SHOWING MAIN FORM");
-
-            GetAiracDate();
-            currentAiracSelection.Text = GlobalConfig.currentAiracDate;
-            nextAiracSelection.Text = GlobalConfig.nextAiracDate;
-        }
-
-        private void Worker_DoWork(object sender, DoWorkEventArgs e)
-        {
-            Logger.LogMessage("DEBUG", "GETTING AIRAC DATE");
-
-            if (GlobalConfig.nextAiracDate == null)
-            {
-                WebHelpers.GetAiracDateFromFAA();
-            }
-            nextAiracAvailable = WebHelpers.GetMetaUrlResponse();
-        }
-
-        private void Worker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
-        {
-            currentAiracSelection.Text = GlobalConfig.currentAiracDate;
-            nextAiracSelection.Text = GlobalConfig.nextAiracDate;
-
-            chooseDirButton.Enabled = true;
-            startButton.Enabled = true;
-
-            airacCycleGroupBox.Enabled = true;
-            airacCycleGroupBox.Visible = true;
-
-            convertGroupBox.Enabled = true;
-            convertGroupBox.Visible = true;
-
-            startGroupBox.Enabled = true;
-            startGroupBox.Visible = true;
-
-            facilityIdCombobox.SelectedIndex = Properties.Settings.Default.UserArtccSetting;
-
-            Logger.LogMessage("DEBUG", "AIRAC DATE WORKER COMPLETED");
+            Logger.LogMessage("DEBUG", "SctToDxfForm_Closing");
         }
 
         private void AiracDataForm_Load(object sender, EventArgs e)
@@ -331,31 +243,9 @@ namespace FeBuddyWinFormUI
             reportIssuesToolStripMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
             discordToolStripMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
             newsToolStripMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
+
             //mainMenuMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
             //exitMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
-        }
-
-        private void NextAiracSelection_Click(object sender, EventArgs e)
-        {
-            Logger.LogMessage("DEBUG", "NEXT AIRAC SELECTED");
-            if (!nextAiracAvailable)
-            {
-                Logger.LogMessage("DEBUG", "NEXT AIRAC SELECTED, NOT AVAILABLE YET");
-                MetaNotFoundForm frm = new MetaNotFoundForm();
-                frm.ShowDialog();
-            }
-        }
-
-        private void FacilityIdCombobox_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            Logger.LogMessage("DEBUG", "FACILITY COMBOBOX CLICKED");
-            GlobalConfig.facilityID = facilityIdCombobox.SelectedItem.ToString();
-
-            if (userClicked)
-            {
-                Properties.Settings.Default.UserArtccSetting = facilityIdCombobox.SelectedIndex;
-                Properties.Settings.Default.Save();
-            }
         }
 
         private void UninstallMenuItem_Click(object sender, EventArgs e)
@@ -580,6 +470,16 @@ namespace FeBuddyWinFormUI
             Process.Start(new ProcessStartInfo("https://discord.com/invite/GB46aeauH4") { UseShellExecute = true });
         }
 
+        private void outputDirButton_MouseHover(object sender, EventArgs e)
+        {
+            _toolTip.SetToolTip(outputDirButton, _conversionOptions.outputDirectory);
+        }
+
+        private void inputButton_MouseHover(object sender, EventArgs e)
+        {
+            _toolTip.SetToolTip(sourceFileButton, _conversionOptions.InputFilePath);
+        }
+
         private void newsToolStripMenuItem_Click(object sender, EventArgs e)
         {
             Logger.LogMessage("DEBUG", "REPORT ISSUES MENU ITEM CLICKED");
@@ -587,9 +487,8 @@ namespace FeBuddyWinFormUI
             //Process.Start("https://github.com/Nikolai558/FE-BUDDY/wiki#news");
         }
 
-        private void facilityIdCombobox_Click(object sender, EventArgs e)
+        private void cropingDistanceTextBox_MouseHover(object sender, EventArgs e)
         {
-            userClicked = true;
         }
     }
 }

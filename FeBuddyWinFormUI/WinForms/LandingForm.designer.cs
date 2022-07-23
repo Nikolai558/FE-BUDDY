@@ -330,10 +330,12 @@
             // 
             this.allowBetaMenuItem.BackColor = System.Drawing.Color.Black;
             this.allowBetaMenuItem.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
+            this.allowBetaMenuItem.Enabled = false;
             this.allowBetaMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.allowBetaMenuItem.Name = "allowBetaMenuItem";
             this.allowBetaMenuItem.Size = new System.Drawing.Size(195, 22);
             this.allowBetaMenuItem.Text = "Dev Testing Mode";
+            this.allowBetaMenuItem.Visible = false;
             this.allowBetaMenuItem.Click += new System.EventHandler(this.allowBetaMenuItem_Click);
             // 
             // UninstallMenuItem

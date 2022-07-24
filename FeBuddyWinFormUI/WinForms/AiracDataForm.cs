@@ -389,7 +389,7 @@ namespace FeBuddyWinFormUI
             if (e.Error != null)
             {
                 DialogResult warningMSG = MessageBox.Show(
-                    "Error: " + e.Error.Message + "\n\nError Source: " + e.Error.Source + "\n\nStack Trace: " + e.Error.StackTrace,
+                    "Error: " + e.Error.Message ,
                     "CAUTION",
                     MessageBoxButtons.OK);
             }
@@ -445,7 +445,7 @@ namespace FeBuddyWinFormUI
             if (e.Error != null)
             {
                 DialogResult warningMSG = MessageBox.Show(
-                    "Erorr: " + e.Error.Message + "\n\nError Source: " + e.Error.Source + "\n\nStack Trace: " + e.Error.StackTrace,
+                    "Error: " + e.Error.Message ,
                     "CAUTION",
                     MessageBoxButtons.OK);
             }

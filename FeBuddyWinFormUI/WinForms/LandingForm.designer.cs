@@ -65,10 +65,10 @@
             this.getparseAiracDataSelection.Location = new System.Drawing.Point(68, 117);
             this.getparseAiracDataSelection.Margin = new System.Windows.Forms.Padding(6, 7, 6, 7);
             this.getparseAiracDataSelection.Name = "getparseAiracDataSelection";
-            this.getparseAiracDataSelection.Size = new System.Drawing.Size(267, 25);
+            this.getparseAiracDataSelection.Size = new System.Drawing.Size(136, 25);
             this.getparseAiracDataSelection.TabIndex = 0;
             this.getparseAiracDataSelection.TabStop = true;
-            this.getparseAiracDataSelection.Text = "Get, Parse, and Format AIRAC Data";
+            this.getparseAiracDataSelection.Text = "Get AIRAC Data";
             this.getparseAiracDataSelection.UseVisualStyleBackColor = true;
             // 
             // convertDat2SctSelection
@@ -177,13 +177,12 @@
             // convertKml2SCTSelection
             // 
             this.convertKml2SCTSelection.AutoSize = true;
-            this.convertKml2SCTSelection.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.convertKml2SCTSelection.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-            this.convertKml2SCTSelection.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(46)))), ((int)(((byte)(46)))), ((int)(((byte)(46)))));
+            this.convertKml2SCTSelection.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.convertKml2SCTSelection.Location = new System.Drawing.Point(68, 234);
             this.convertKml2SCTSelection.Margin = new System.Windows.Forms.Padding(6, 7, 6, 7);
             this.convertKml2SCTSelection.Name = "convertKml2SCTSelection";
-            this.convertKml2SCTSelection.Size = new System.Drawing.Size(198, 25);
+            this.convertKml2SCTSelection.Size = new System.Drawing.Size(199, 25);
             this.convertKml2SCTSelection.TabIndex = 5;
             this.convertKml2SCTSelection.Text = "SCT2 / KML Conversions";
             this.convertKml2SCTSelection.UseVisualStyleBackColor = true;

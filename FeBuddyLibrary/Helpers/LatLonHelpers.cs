@@ -290,7 +290,7 @@ namespace FeBuddyLibrary.Helpers
 
             if (!(new List<char>{ 'N', 'E', 'S', 'W' }).Contains(splitValue[0][0]))
             {
-                throw new Exception($"{value} is not valid. Please fix this in your Sector File.");
+                throw new Exception($"{value} is not valid.");
             }
 
             // set our values

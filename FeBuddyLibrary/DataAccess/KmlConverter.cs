@@ -28,28 +28,59 @@ namespace FeBuddyLibrary.DataAccess
         private string _sctFileText;
         private string _sctFilePath;
 
+        private DataFunctions _df;
+
         public KmlConverter(string kmlFilePath, string sectorFilePath)
         {
             _kmlFilePath = kmlFilePath;
             _facilityRoot = new Folder();
             _sctFilePath = sectorFilePath;
+            _df = new DataFunctions();
         }
 
-        public void ConvertSctToKml()
+        public void ConvertSctToKml(string section)
         {
-            DataFunctions df = new DataFunctions();
-            _sctFileModel = df.ReadSctFile(_sctFilePath);
-            //AddDefineSection();
-            //AddInfoSection();
-            //AddVorAndNdb();
-            //AddAirportSection();
-            //AddRunwaySection();
-            //AddFixesSection();
-            //AddArtccModelsSection();
-            AddDiagramSections();
-            //AddLabelSection();
-            //AddRegionSection();
-            //AddGeoSection();
+            _sctFileModel = _df.ReadSctFile(_sctFilePath);
+
+            switch (section)
+            {
+                case "ALL" :
+                    {
+                        AddDefineSection();
+                        AddInfoSection();
+                        AddVorSection();
+                        AddNdbSection();
+                        AddAirportSection();
+                        AddRunwaySection();
+                        AddFixesSection();
+                        AddArtccModelsSection();
+                        AddDiagramSections();
+                        AddLabelSection();
+                        AddRegionSection();
+                        AddGeoSection();
+                        break;
+                    }
+                case "Colors": { AddDefineSection(); break; }
+                case "[INFO]": { AddInfoSection(); break; }
+                case "[VOR]": { AddVorSection(); break; }
+                case "[NDB]": { AddNdbSection(); break; }
+                case "[AIRPORT]": { AddAirportSection(); break; }
+                case "[RUNWAY]": { AddRunwaySection(); break; }
+                case "[FIXES]": { AddFixesSection(); break; }
+                case "[ARTCC]": { AddArtccModelsSection("ARTCC"); break; }
+                case "[ARTCC LOW]": { AddArtccModelsSection("ARTCC LOW"); break; }
+                case "[ARTCC HIGH]": { AddArtccModelsSection("ARTCC HIGH"); break; }
+                case "[LOW AIRWAY]": { AddArtccModelsSection("LOW AIRWAY"); break; }
+                case "[HIGH AIRWAY]": { AddArtccModelsSection("HIGH AIRWAY"); break; }
+                case "[SID]": { AddDiagramSections("SID"); break; }
+                case "[STAR]": { AddDiagramSections("STAR"); break; }
+                case "[LABELS]": { AddLabelSection(); break; }
+                case "[REGIONS]": { AddRegionSection(); break; }
+                case "[GEO]": { AddGeoSection(); break; }
+                default:
+                    break;
+            }
+
             SaveKML();
         }
 
@@ -63,8 +94,8 @@ namespace FeBuddyLibrary.DataAccess
             {
                 LineString line = new LineString();
                 line.Coordinates = new CoordinateCollection();
-                line.Coordinates.Add(new Vector(double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.StartLat, true, false), false)), double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.StartLon, false, false), false))));
-                line.Coordinates.Add(new Vector(double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.EndLat, true, false), false)), double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.EndLon, false, false), false))));
+                line.Coordinates.Add(new Vector(double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.StartLat, true, false, _df._navaidPositions), false)), double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.StartLon, false, false, _df._navaidPositions), false))));
+                line.Coordinates.Add(new Vector(double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.EndLat, true, false, _df._navaidPositions), false)), double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.EndLon, false, false, _df._navaidPositions), false))));
                 Placemark geoPlacemark = new Placemark();
                 geoPlacemark.Geometry = line;
                 geoPlacemark.Name = "GeoLine_" + count;
@@ -89,15 +120,15 @@ namespace FeBuddyLibrary.DataAccess
 
                 // Starting Point
 
-                coordinates.Add(new Vector(double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.Lat, true, false), false)), double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.Lon, false, false), false))));
+                coordinates.Add(new Vector(double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.Lat, true, false, _df._navaidPositions), false)), double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.Lon, false, false, _df._navaidPositions), false))));
 
                 foreach (var addlCoords in item.AdditionalRegionInfo)
                 {
-                    coordinates.Add(new Vector(double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(addlCoords.Lat, true, false), false)), double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(addlCoords.Lon, false, false), false))));
+                    coordinates.Add(new Vector(double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(addlCoords.Lat, true, false, _df._navaidPositions), false)), double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(addlCoords.Lon, false, false, _df._navaidPositions), false))));
                 }
 
                 // Starting point but at the end of the list to complete the region. 
-                coordinates.Add(new Vector(double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.Lat, true, false), false)), double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.Lon, false, false), false))));
+                coordinates.Add(new Vector(double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.Lat, true, false, _df._navaidPositions), false)), double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.Lon, false, false, _df._navaidPositions), false))));
 
                 OuterBoundary outerBoundary = new OuterBoundary();
                 outerBoundary.LinearRing = new LinearRing();
@@ -129,7 +160,7 @@ namespace FeBuddyLibrary.DataAccess
                 var point = new Point();
                 Placemark labelPlaceMark = new Placemark();
                 labelPlaceMark.Name = item.LabelText ;
-                point.Coordinate = new Vector(double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.Lat, true, false), false)), double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.Lon, false, false), false)));
+                point.Coordinate = new Vector(double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.Lat, true, false, _df._navaidPositions), false)), double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.Lon, false, false, _df._navaidPositions), false)));
                 labelPlaceMark.Geometry = point;
                 labelPlaceMark.Visibility = false;
                 leablesFolder.AddFeature(labelPlaceMark);
@@ -138,7 +169,7 @@ namespace FeBuddyLibrary.DataAccess
             _facilityRoot.AddFeature(leablesFolder);
         }
 
-        private void AddDiagramSections()
+        private void AddDiagramSections(string onlyThisSection = null)
         {
             Dictionary<string, List<SctSidStarModel>> collections = new Dictionary<string, List<SctSidStarModel>>
             {
@@ -147,6 +178,10 @@ namespace FeBuddyLibrary.DataAccess
             };
             foreach (var collectionName in collections.Keys)
             {
+                if (onlyThisSection != null && onlyThisSection != collectionName)
+                {
+                    continue;
+                }
                 Folder collectionFolder = new Folder();
                 collectionFolder.Name = $"[{collectionName}]";
                 
@@ -158,8 +193,8 @@ namespace FeBuddyLibrary.DataAccess
                     
                     LineString line = new LineString();
                     line.Coordinates = new CoordinateCollection();
-                    line.Coordinates.Add(new Vector(double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.StartLat, true, false), false)), double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.StartLon, false, false), false))));
-                    line.Coordinates.Add(new Vector(double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.EndLat, true, false), false)), double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.EndLon, false, false), false))));
+                    line.Coordinates.Add(new Vector(double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.StartLat, true, false, _df._navaidPositions), false)), double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.StartLon, false, false, _df._navaidPositions), false))));
+                    line.Coordinates.Add(new Vector(double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.EndLat, true, false, _df._navaidPositions), false)), double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.EndLon, false, false, _df._navaidPositions), false))));
                     Placemark itemPlacemark = new Placemark();
                     itemPlacemark.Geometry = line;
                     itemPlacemark.Name = "LineCollection_" + collectionCount;
@@ -187,8 +222,8 @@ namespace FeBuddyLibrary.DataAccess
                             additionalLinesPlacemark = new Placemark();
                         }
 
-                        additionalLines.Coordinates.Add(new Vector(double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(lineSeg.StartLat, true, false), false)), double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(lineSeg.StartLon, false, false), false))));
-                        additionalLines.Coordinates.Add(new Vector(double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(lineSeg.EndLat, true, false), false)), double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(lineSeg.EndLon, false, false), false))));
+                        additionalLines.Coordinates.Add(new Vector(double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(lineSeg.StartLat, true, false, _df._navaidPositions), false)), double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(lineSeg.StartLon, false, false, _df._navaidPositions), false))));
+                        additionalLines.Coordinates.Add(new Vector(double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(lineSeg.EndLat, true, false, _df._navaidPositions), false)), double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(lineSeg.EndLon, false, false, _df._navaidPositions), false))));
                         previousEndingCoord = lineSeg.EndLat + " " + lineSeg.EndLon;
                     }
                     collectionCount += 1;
@@ -205,7 +240,7 @@ namespace FeBuddyLibrary.DataAccess
             }
         }
 
-        private void AddArtccModelsSection()
+        private void AddArtccModelsSection(string onlyThisSection = null)
         {
             Dictionary<string, List<SctArtccModel>> collections = new Dictionary<string, List<SctArtccModel>>
             {
@@ -218,14 +253,19 @@ namespace FeBuddyLibrary.DataAccess
 
             foreach (var collectionName in collections.Keys)
             {
+                if (onlyThisSection != null && onlyThisSection != collectionName)
+                {
+                    continue;
+                }
+
                 Folder collectionFolder = new Folder();
                 collectionFolder.Name = $"[{collectionName}]";
                 foreach (var item in collections[collectionName])
                 {
                     LineString line = new LineString();
                     line.Coordinates = new CoordinateCollection();
-                    line.Coordinates.Add(new Vector(double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.StartLat, true, false), false)), double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.StartLon, false, false), false))));
-                    line.Coordinates.Add(new Vector(double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.EndLat, true, false), false)), double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.EndLon, false, false), false))));
+                    line.Coordinates.Add(new Vector(double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.StartLat, true, false, _df._navaidPositions), false)), double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.StartLon, false, false, _df._navaidPositions), false))));
+                    line.Coordinates.Add(new Vector(double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.EndLat, true, false, _df._navaidPositions), false)), double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.EndLon, false, false, _df._navaidPositions), false))));
                     Placemark itemPlacemark = new Placemark();
                     itemPlacemark.Geometry = line;
                     itemPlacemark.Name = item.Name;
@@ -248,7 +288,7 @@ namespace FeBuddyLibrary.DataAccess
                 var point = new Point();
                 Placemark fixPlaceMark = new Placemark();
                 fixPlaceMark.Name = item.FixName;
-                point.Coordinate = new Vector(double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.Lat, true, false), false)), double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.Lon, false, false), false)));
+                point.Coordinate = new Vector(double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.Lat, true, false, _df._navaidPositions), false)), double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.Lon, false, false, _df._navaidPositions), false)));
                 fixPlaceMark.Geometry = point;
                 fixPlaceMark.Visibility = false;
                 fixFolder.AddFeature(fixPlaceMark);
@@ -268,8 +308,8 @@ namespace FeBuddyLibrary.DataAccess
 
                 LineString line = new LineString();
                 line.Coordinates = new CoordinateCollection();
-                line.Coordinates.Add(new Vector(double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.StartLat, true, false), false)), double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.StartLon, false, false), false))));
-                line.Coordinates.Add(new Vector(double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.EndLat, true, false), false)), double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.EndLon, false, false), false))));
+                line.Coordinates.Add(new Vector(double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.StartLat, true, false, _df._navaidPositions), false)), double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.StartLon, false, false, _df._navaidPositions), false))));
+                line.Coordinates.Add(new Vector(double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.EndLat, true, false, _df._navaidPositions), false)), double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.EndLon, false, false, _df._navaidPositions), false))));
                 Placemark runwayPlacemark = new Placemark();
                 runwayPlacemark.Geometry = line;
                 runwayPlacemark.Name = item.RunwayNumber + "-" + item.OppositeRunwayNumber;
@@ -297,7 +337,7 @@ namespace FeBuddyLibrary.DataAccess
                 airportPlaceMark.Name = item.Id;
                 description.Text = item.AllInfo.Split(" ")[0] + " " + item.AllInfo.Split(" ")[1];
                 airportPlaceMark.Description = description;
-                point.Coordinate = new Vector(double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.Lat, true, false), false)), double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.Lon, false, false), false)));
+                point.Coordinate = new Vector(double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.Lat, true, false, _df._navaidPositions), false)), double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.Lon, false, false, _df._navaidPositions), false)));
                 airportPlaceMark.Geometry = point;
                 airportPlaceMark.Visibility = false;
                 airportFolder.AddFeature(airportPlaceMark);
@@ -306,15 +346,10 @@ namespace FeBuddyLibrary.DataAccess
             _facilityRoot.AddFeature(airportFolder);
         }
 
-        private void AddVorAndNdb()
+        private void AddVorSection()
         {
             Folder vorFolder = new Folder();
             vorFolder.Name = "[VOR]";
-
-            Folder ndbFolder = new Folder();
-            ndbFolder.Name = "[NDB]";
-
-
             foreach (VORNDBModel item in _sctFileModel.SctVORSection)
             {
                 var description = new Description();
@@ -323,13 +358,19 @@ namespace FeBuddyLibrary.DataAccess
                 vorPlaceMark.Name = item.Id + " - " + item.Frequency;
                 description.Text = item.Comments ?? "";
                 vorPlaceMark.Description = description;
-                point.Coordinate = new Vector(double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.Lat, true, false), false)), double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.Lon, false, false), false)));
+                point.Coordinate = new Vector(double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.Lat, true, false, _df._navaidPositions), false)), double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.Lon, false, false, _df._navaidPositions), false)));
                 vorPlaceMark.Geometry = point;
                 vorPlaceMark.Visibility = false;
                 vorFolder.AddFeature(vorPlaceMark);
             }
             vorFolder.Visibility = false;
             _facilityRoot.AddFeature(vorFolder);
+        }
+
+        private void AddNdbSection()
+        {
+            Folder ndbFolder = new Folder();
+            ndbFolder.Name = "[NDB]";
 
             foreach (VORNDBModel item in _sctFileModel.SctNDBSection)
             {
@@ -339,7 +380,7 @@ namespace FeBuddyLibrary.DataAccess
                 NDBPlaceMark.Name = item.Id + " - " + item.Frequency;
                 description.Text = item.Comments ?? "";
                 NDBPlaceMark.Description = description;
-                point.Coordinate = new Vector(double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.Lat, true, false), false)), double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.Lon, false, false), false)));
+                point.Coordinate = new Vector(double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.Lat, true, false, _df._navaidPositions), false)), double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.Lon, false, false, _df._navaidPositions), false)));
                 NDBPlaceMark.Geometry = point;
                 NDBPlaceMark.Visibility = false;
                 ndbFolder.AddFeature(NDBPlaceMark);

@@ -218,7 +218,7 @@ namespace FeBuddyWinFormUI
             if (e.Error != null)
             {
                 DialogResult warningMSG = MessageBox.Show(
-                    "Error: " + e.Error.Message ,
+                    $"ERROR\n\nWhile completing your selected task, FE-BUDDY came across the following issue:\n{e.Error.Message}\n\nThis could be due to a bug in the program, or a unexpected or incorrectly formatted item in the source file. (i.e. SCT2 File)\n\nPlease attempt to fix this issue and run the program again. If you continue to have an issue, please reach out the FE-BUDDY developers by reporting this issue and including a screenshot with the source file.\n\nhttps://github.com/Nikolai558/FE-BUDDY/issues",
                     "CAUTION",
                     MessageBoxButtons.OK);
             }

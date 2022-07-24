@@ -1,11 +1,12 @@
 # CHANGELOG
 
 ---
-- ## Version 2.1.2
+- ## Version 2.2.0
   - Created GUI for .SCT2 to .KML Conversions
     - Only .sct2 to .kml conversions are possible right now. This feature is still being developed.
   - Error messages will now be displayed to the user that were previously hidden from users by Windows.
   - Fixed Bugs #72 and #73 - AIRAC processing screens.
+  - FE-Buddy now runs as 64bit instead of 32bit.
 
 - ## Version 2.1.1
   - Fixed #69 - WX station website was not downloading on certain computers, this has been fixed.

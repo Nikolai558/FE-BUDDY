@@ -1,7 +1,7 @@
 # CHANGELOG
 
 ---
-- ## Version 2.1.1
+- ## Version 2.1.2
   - Created GUI for .SCT2 to .KML Conversions
     - NOTE: Only .sct2 to .kml conversions are possible right now. This feature is still being developed.
   - Error messages will now be displayed to the user that were previously hidden from users by Windows.

@@ -7,6 +7,7 @@ using System.IO;
 using System.Windows.Forms;
 using FeBuddyLibrary;
 using FeBuddyLibrary.Dat;
+using FeBuddyLibrary.DataAccess;
 using FeBuddyLibrary.Dxf;
 using FeBuddyLibrary.Helpers;
 
@@ -38,7 +39,7 @@ namespace FeBuddyWinFormUI
 
         private void inputButton_Click(object sender, EventArgs e)
         {
-            Logger.LogMessage("DEBUG", "USER CHOOSING DIFFERENT Input file for DAT Conversion tool");
+            Logger.LogMessage("DEBUG", "USER CHOOSING DIFFERENT Input file for KML Conversion tool");
 
             OpenFileDialog inputFileDialog = new OpenFileDialog();
 
@@ -67,7 +68,7 @@ namespace FeBuddyWinFormUI
 
         private void outputDirButton_Click(object sender, EventArgs e)
         {
-            Logger.LogMessage("DEBUG", "USER CHOOSING DIFFERENT output directory for DAT Conversion tool");
+            Logger.LogMessage("DEBUG", "USER CHOOSING DIFFERENT output directory for KML Conversion tool");
 
             FolderBrowserDialog outputDirDialog = new FolderBrowserDialog();
 
@@ -104,7 +105,7 @@ namespace FeBuddyWinFormUI
             if (string.IsNullOrWhiteSpace(_conversionOptions.InputFilePath)) errorMessages += "Input File Path is invalid.\n";
             if (string.IsNullOrWhiteSpace(_conversionOptions.outputDirectory)) errorMessages += "Output Directory is invalid.\n";
 
-            if (_conversionOptions.InputFilePath?.Split('.')[^1] != "dat") errorMessages += "Source file is not a .dat\n";
+            if (_conversionOptions.InputFilePath?.Split('.')[^1].ToLower() != "sct2") errorMessages += "Source file is not a .sct2\n";
             
             if (!string.IsNullOrWhiteSpace(_conversionOptions.InputFilePath) && !File.Exists(_conversionOptions.InputFilePath))
             {
@@ -114,12 +115,7 @@ namespace FeBuddyWinFormUI
             {
                 errorMessages += "Listen here, Buddy.... Do not change the folder name after you've selected it in this program.\n";
             }
-            if (_conversionOptions.InputFilePath.Split('\\')[^1].Split('.')[0].Length >= 26)
-            {
-                errorMessages += "C'mon Mate, that's a bloody long name...Input file name must be less than 26 characters long.";
-            }
-
-
+            
             if (errorMessages != "")
             {
                 MessageBoxButtons buttons = MessageBoxButtons.OK;
@@ -132,25 +128,12 @@ namespace FeBuddyWinFormUI
             StartConversion();
         }
 
-        private bool IsValidCroppingDistance(string input)
-        {
-            double num;
-            if (double.TryParse(input, out num))
-            {
-                return num > 0;
-            }
-            else
-            {
-                return false;
-            }
-
-        }
-
         private void ToggleComponents(bool isEnabled)
         {
             sourceFileButton.Enabled = isEnabled;
             outputDirButton.Enabled = isEnabled;
             startButton.Enabled = isEnabled;
+            categoryCheckBoxList.Enabled = isEnabled;
         }
 
         private void StartConversion()
@@ -176,7 +159,7 @@ namespace FeBuddyWinFormUI
             // TODO - Call conversion Logic Here.
 
             string outputFileName = "\\" + _conversionOptions.InputFilePath.Split('\\')[^1].Split('.')[0];
-            if (File.Exists(_conversionOptions.outputDirectory + outputFileName + ".sct2"))
+            if (File.Exists(_conversionOptions.outputDirectory + outputFileName + ".kml"))
             {
                 MessageBoxButtons buttons = MessageBoxButtons.YesNo;
                 DialogResult result;
@@ -188,8 +171,19 @@ namespace FeBuddyWinFormUI
                     return;
                 }
             }
-            Logger.LogMessage("INFO", "Starting DAT to SCT2 Conversion.");
-            double cropDistance;
+            Logger.LogMessage("INFO", "Starting SCT2 to KML Conversion.");
+
+            KmlConverter converter = new KmlConverter(_conversionOptions.outputDirectory + outputFileName + ".kml", _conversionOptions.InputFilePath);
+
+            foreach (string item in categoryCheckBoxList.CheckedItems)
+            {
+                converter.ConvertSctToKml(item);
+                if (item == "ALL")
+                {
+                    break;
+                }
+            }
+
         }
 
         private class MyRenderer : ToolStripProfessionalRenderer
@@ -222,12 +216,12 @@ namespace FeBuddyWinFormUI
             }
         }
 
-        private void DatToSctForm_Closing(object sender, EventArgs e)
+        private void KMLConversionForm_Closing(object sender, EventArgs e)
         {
             Logger.LogMessage("DEBUG", "SctToDxfForm_Closing");
         }
 
-        private void AiracDataForm_Load(object sender, EventArgs e)
+        private void KMLConversionForm_Load(object sender, EventArgs e)
         {
             Logger.LogMessage("DEBUG", "LOADING MAIN FORM");
 
@@ -485,10 +479,6 @@ namespace FeBuddyWinFormUI
             Logger.LogMessage("DEBUG", "REPORT ISSUES MENU ITEM CLICKED");
             Process.Start(new ProcessStartInfo("https://github.com/Nikolai558/FE-BUDDY/wiki#news") { UseShellExecute = true });
             //Process.Start("https://github.com/Nikolai558/FE-BUDDY/wiki#news");
-        }
-
-        private void cropingDistanceTextBox_MouseHover(object sender, EventArgs e)
-        {
         }
     }
 }

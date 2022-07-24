@@ -1,6 +1,6 @@
 ﻿namespace FeBuddyWinFormUI
 {
-    partial class LandingForm
+    partial class KmlConversionForm
     {
         /// <summary>
         /// Required designer variable.
@@ -28,17 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(LandingForm));
-            this.getparseAiracDataSelection = new System.Windows.Forms.RadioButton();
-            this.convertDat2SctSelection = new System.Windows.Forms.RadioButton();
-            this.airacLabel = new System.Windows.Forms.Label();
-            this.airacCycleGroupBox = new System.Windows.Forms.GroupBox();
-            this.landingStartButton = new System.Windows.Forms.Button();
-            this.manageFacDataSelector = new System.Windows.Forms.RadioButton();
-            this.convertSct2FaaGeoMap = new System.Windows.Forms.RadioButton();
-            this.convertFaaGeoMap2SCT = new System.Windows.Forms.RadioButton();
-            this.convertKml2SCTSelection = new System.Windows.Forms.RadioButton();
-            this.convertSct2DxfSelection = new System.Windows.Forms.RadioButton();
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(KmlConversionForm));
             this.menuStrip = new System.Windows.Forms.MenuStrip();
             this.informationToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.InstructionsMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -52,153 +42,22 @@
             this.settingsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.allowBetaMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.UninstallMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.airacCycleGroupBox.SuspendLayout();
+            this.startGroupBox = new System.Windows.Forms.GroupBox();
+            this.sourceFileLabel = new System.Windows.Forms.Label();
+            this.sourceFileButton = new System.Windows.Forms.Button();
+            this.startButton = new System.Windows.Forms.Button();
+            this.outputLabel = new System.Windows.Forms.Label();
+            this.outputDirButton = new System.Windows.Forms.Button();
+            this.convertGroupBox = new System.Windows.Forms.GroupBox();
+            this.FormLabel = new System.Windows.Forms.Label();
+            this.convertDescriptionLabel = new System.Windows.Forms.Label();
+            this.groupBox1 = new System.Windows.Forms.GroupBox();
+            this.categoryCheckBoxList = new System.Windows.Forms.CheckedListBox();
             this.menuStrip.SuspendLayout();
+            this.startGroupBox.SuspendLayout();
+            this.convertGroupBox.SuspendLayout();
+            this.groupBox1.SuspendLayout();
             this.SuspendLayout();
-            // 
-            // getparseAiracDataSelection
-            // 
-            this.getparseAiracDataSelection.AutoSize = true;
-            this.getparseAiracDataSelection.Checked = true;
-            this.getparseAiracDataSelection.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-            this.getparseAiracDataSelection.ForeColor = System.Drawing.SystemColors.AppWorkspace;
-            this.getparseAiracDataSelection.Location = new System.Drawing.Point(68, 117);
-            this.getparseAiracDataSelection.Margin = new System.Windows.Forms.Padding(6, 7, 6, 7);
-            this.getparseAiracDataSelection.Name = "getparseAiracDataSelection";
-            this.getparseAiracDataSelection.Size = new System.Drawing.Size(136, 25);
-            this.getparseAiracDataSelection.TabIndex = 0;
-            this.getparseAiracDataSelection.TabStop = true;
-            this.getparseAiracDataSelection.Text = "Get AIRAC Data";
-            this.getparseAiracDataSelection.UseVisualStyleBackColor = true;
-            // 
-            // convertDat2SctSelection
-            // 
-            this.convertDat2SctSelection.AutoSize = true;
-            this.convertDat2SctSelection.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-            this.convertDat2SctSelection.ForeColor = System.Drawing.SystemColors.AppWorkspace;
-            this.convertDat2SctSelection.Location = new System.Drawing.Point(69, 195);
-            this.convertDat2SctSelection.Margin = new System.Windows.Forms.Padding(6, 7, 6, 7);
-            this.convertDat2SctSelection.Name = "convertDat2SctSelection";
-            this.convertDat2SctSelection.Size = new System.Drawing.Size(198, 25);
-            this.convertDat2SctSelection.TabIndex = 1;
-            this.convertDat2SctSelection.Text = "Convert DAT file to SCT2";
-            this.convertDat2SctSelection.UseVisualStyleBackColor = true;
-            // 
-            // airacLabel
-            // 
-            this.airacLabel.Font = new System.Drawing.Font("Segoe UI", 24F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
-            this.airacLabel.ForeColor = System.Drawing.SystemColors.AppWorkspace;
-            this.airacLabel.Location = new System.Drawing.Point(60, 29);
-            this.airacLabel.Margin = new System.Windows.Forms.Padding(6, 0, 6, 0);
-            this.airacLabel.Name = "airacLabel";
-            this.airacLabel.Size = new System.Drawing.Size(610, 60);
-            this.airacLabel.TabIndex = 2;
-            this.airacLabel.Text = "Select what you would like to do, Pal.";
-            this.airacLabel.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
-            // 
-            // airacCycleGroupBox
-            // 
-            this.airacCycleGroupBox.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(10)))), ((int)(((byte)(10)))), ((int)(((byte)(10)))));
-            this.airacCycleGroupBox.Controls.Add(this.landingStartButton);
-            this.airacCycleGroupBox.Controls.Add(this.manageFacDataSelector);
-            this.airacCycleGroupBox.Controls.Add(this.convertSct2FaaGeoMap);
-            this.airacCycleGroupBox.Controls.Add(this.convertFaaGeoMap2SCT);
-            this.airacCycleGroupBox.Controls.Add(this.convertKml2SCTSelection);
-            this.airacCycleGroupBox.Controls.Add(this.convertSct2DxfSelection);
-            this.airacCycleGroupBox.Controls.Add(this.airacLabel);
-            this.airacCycleGroupBox.Controls.Add(this.getparseAiracDataSelection);
-            this.airacCycleGroupBox.Controls.Add(this.convertDat2SctSelection);
-            this.airacCycleGroupBox.Location = new System.Drawing.Point(20, 27);
-            this.airacCycleGroupBox.Name = "airacCycleGroupBox";
-            this.airacCycleGroupBox.Size = new System.Drawing.Size(746, 365);
-            this.airacCycleGroupBox.TabIndex = 12;
-            this.airacCycleGroupBox.TabStop = false;
-            // 
-            // landingStartButton
-            // 
-            this.landingStartButton.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(20)))), ((int)(((byte)(20)))), ((int)(((byte)(20)))));
-            this.landingStartButton.FlatAppearance.BorderColor = System.Drawing.Color.Gray;
-            this.landingStartButton.FlatAppearance.MouseDownBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(64)))), ((int)(((byte)(0)))));
-            this.landingStartButton.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Black;
-            this.landingStartButton.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.landingStartButton.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-            this.landingStartButton.ForeColor = System.Drawing.SystemColors.AppWorkspace;
-            this.landingStartButton.Location = new System.Drawing.Point(527, 306);
-            this.landingStartButton.Name = "landingStartButton";
-            this.landingStartButton.Size = new System.Drawing.Size(182, 34);
-            this.landingStartButton.TabIndex = 12;
-            this.landingStartButton.Text = "Let\'s Start, Buddy.";
-            this.landingStartButton.UseVisualStyleBackColor = false;
-            this.landingStartButton.Click += new System.EventHandler(this.landingStartButton_Click);
-            this.landingStartButton.MouseHover += new System.EventHandler(this.landingStartButton_MouseHover);
-            // 
-            // manageFacDataSelector
-            // 
-            this.manageFacDataSelector.AutoSize = true;
-            this.manageFacDataSelector.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.manageFacDataSelector.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-            this.manageFacDataSelector.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(46)))), ((int)(((byte)(46)))), ((int)(((byte)(46)))));
-            this.manageFacDataSelector.Location = new System.Drawing.Point(394, 117);
-            this.manageFacDataSelector.Margin = new System.Windows.Forms.Padding(6, 7, 6, 7);
-            this.manageFacDataSelector.Name = "manageFacDataSelector";
-            this.manageFacDataSelector.Size = new System.Drawing.Size(196, 25);
-            this.manageFacDataSelector.TabIndex = 9;
-            this.manageFacDataSelector.Text = "Manage My Facility Data";
-            this.manageFacDataSelector.UseVisualStyleBackColor = true;
-            // 
-            // convertSct2FaaGeoMap
-            // 
-            this.convertSct2FaaGeoMap.AutoSize = true;
-            this.convertSct2FaaGeoMap.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.convertSct2FaaGeoMap.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-            this.convertSct2FaaGeoMap.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(46)))), ((int)(((byte)(46)))), ((int)(((byte)(46)))));
-            this.convertSct2FaaGeoMap.Location = new System.Drawing.Point(394, 195);
-            this.convertSct2FaaGeoMap.Margin = new System.Windows.Forms.Padding(6, 7, 6, 7);
-            this.convertSct2FaaGeoMap.Name = "convertSct2FaaGeoMap";
-            this.convertSct2FaaGeoMap.Size = new System.Drawing.Size(269, 25);
-            this.convertSct2FaaGeoMap.TabIndex = 8;
-            this.convertSct2FaaGeoMap.Text = "Convert SCT2 to FAA GeoMap XML";
-            this.convertSct2FaaGeoMap.UseVisualStyleBackColor = true;
-            // 
-            // convertFaaGeoMap2SCT
-            // 
-            this.convertFaaGeoMap2SCT.AutoSize = true;
-            this.convertFaaGeoMap2SCT.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.convertFaaGeoMap2SCT.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-            this.convertFaaGeoMap2SCT.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(46)))), ((int)(((byte)(46)))), ((int)(((byte)(46)))));
-            this.convertFaaGeoMap2SCT.Location = new System.Drawing.Point(394, 156);
-            this.convertFaaGeoMap2SCT.Margin = new System.Windows.Forms.Padding(6, 7, 6, 7);
-            this.convertFaaGeoMap2SCT.Name = "convertFaaGeoMap2SCT";
-            this.convertFaaGeoMap2SCT.Size = new System.Drawing.Size(269, 25);
-            this.convertFaaGeoMap2SCT.TabIndex = 7;
-            this.convertFaaGeoMap2SCT.Text = "Convert FAA GeoMap XML to SCT2";
-            this.convertFaaGeoMap2SCT.UseVisualStyleBackColor = true;
-            // 
-            // convertKml2SCTSelection
-            // 
-            this.convertKml2SCTSelection.AutoSize = true;
-            this.convertKml2SCTSelection.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-            this.convertKml2SCTSelection.ForeColor = System.Drawing.SystemColors.AppWorkspace;
-            this.convertKml2SCTSelection.Location = new System.Drawing.Point(68, 234);
-            this.convertKml2SCTSelection.Margin = new System.Windows.Forms.Padding(6, 7, 6, 7);
-            this.convertKml2SCTSelection.Name = "convertKml2SCTSelection";
-            this.convertKml2SCTSelection.Size = new System.Drawing.Size(199, 25);
-            this.convertKml2SCTSelection.TabIndex = 5;
-            this.convertKml2SCTSelection.Text = "SCT2 / KML Conversions";
-            this.convertKml2SCTSelection.UseVisualStyleBackColor = true;
-            // 
-            // convertSct2DxfSelection
-            // 
-            this.convertSct2DxfSelection.AutoSize = true;
-            this.convertSct2DxfSelection.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-            this.convertSct2DxfSelection.ForeColor = System.Drawing.SystemColors.AppWorkspace;
-            this.convertSct2DxfSelection.Location = new System.Drawing.Point(68, 156);
-            this.convertSct2DxfSelection.Margin = new System.Windows.Forms.Padding(6, 7, 6, 7);
-            this.convertSct2DxfSelection.Name = "convertSct2DxfSelection";
-            this.convertSct2DxfSelection.Size = new System.Drawing.Size(196, 25);
-            this.convertSct2DxfSelection.TabIndex = 3;
-            this.convertSct2DxfSelection.Text = "SCT2 / DXF Conversions";
-            this.convertSct2DxfSelection.UseVisualStyleBackColor = true;
             // 
             // menuStrip
             // 
@@ -212,8 +71,8 @@
             this.settingsToolStripMenuItem});
             this.menuStrip.Location = new System.Drawing.Point(0, 0);
             this.menuStrip.Name = "menuStrip";
-            this.menuStrip.Size = new System.Drawing.Size(785, 26);
-            this.menuStrip.TabIndex = 15;
+            this.menuStrip.Size = new System.Drawing.Size(784, 26);
+            this.menuStrip.TabIndex = 16;
             this.menuStrip.Text = "menuStrip1";
             // 
             // informationToolStripMenuItem
@@ -347,7 +206,175 @@
             this.UninstallMenuItem.Text = "Uninstall";
             this.UninstallMenuItem.Click += new System.EventHandler(this.UninstallMenuItem_Click);
             // 
-            // LandingForm
+            // startGroupBox
+            // 
+            this.startGroupBox.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(10)))), ((int)(((byte)(10)))), ((int)(((byte)(10)))));
+            this.startGroupBox.Controls.Add(this.sourceFileLabel);
+            this.startGroupBox.Controls.Add(this.sourceFileButton);
+            this.startGroupBox.Controls.Add(this.startButton);
+            this.startGroupBox.Controls.Add(this.outputLabel);
+            this.startGroupBox.Controls.Add(this.outputDirButton);
+            this.startGroupBox.Location = new System.Drawing.Point(496, 29);
+            this.startGroupBox.Name = "startGroupBox";
+            this.startGroupBox.Size = new System.Drawing.Size(269, 354);
+            this.startGroupBox.TabIndex = 19;
+            this.startGroupBox.TabStop = false;
+            // 
+            // sourceFileLabel
+            // 
+            this.sourceFileLabel.ForeColor = System.Drawing.SystemColors.AppWorkspace;
+            this.sourceFileLabel.Location = new System.Drawing.Point(6, 21);
+            this.sourceFileLabel.Name = "sourceFileLabel";
+            this.sourceFileLabel.Size = new System.Drawing.Size(257, 36);
+            this.sourceFileLabel.TabIndex = 12;
+            this.sourceFileLabel.Text = "Select Source File";
+            this.sourceFileLabel.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            // 
+            // sourceFileButton
+            // 
+            this.sourceFileButton.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(20)))), ((int)(((byte)(20)))), ((int)(((byte)(20)))));
+            this.sourceFileButton.FlatAppearance.BorderColor = System.Drawing.Color.Gray;
+            this.sourceFileButton.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Black;
+            this.sourceFileButton.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Black;
+            this.sourceFileButton.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.sourceFileButton.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.sourceFileButton.ForeColor = System.Drawing.SystemColors.AppWorkspace;
+            this.sourceFileButton.Location = new System.Drawing.Point(43, 60);
+            this.sourceFileButton.Name = "sourceFileButton";
+            this.sourceFileButton.RightToLeft = System.Windows.Forms.RightToLeft.No;
+            this.sourceFileButton.Size = new System.Drawing.Size(182, 30);
+            this.sourceFileButton.TabIndex = 13;
+            this.sourceFileButton.Text = "No File";
+            this.sourceFileButton.UseVisualStyleBackColor = false;
+            this.sourceFileButton.Click += new System.EventHandler(this.inputButton_Click);
+            this.sourceFileButton.MouseHover += new System.EventHandler(this.inputButton_MouseHover);
+            // 
+            // startButton
+            // 
+            this.startButton.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(20)))), ((int)(((byte)(20)))), ((int)(((byte)(20)))));
+            this.startButton.FlatAppearance.BorderColor = System.Drawing.Color.Gray;
+            this.startButton.FlatAppearance.MouseDownBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(64)))), ((int)(((byte)(0)))));
+            this.startButton.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Black;
+            this.startButton.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.startButton.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.startButton.ForeColor = System.Drawing.SystemColors.AppWorkspace;
+            this.startButton.Location = new System.Drawing.Point(43, 305);
+            this.startButton.Name = "startButton";
+            this.startButton.Size = new System.Drawing.Size(182, 34);
+            this.startButton.TabIndex = 11;
+            this.startButton.Text = "Convert";
+            this.startButton.UseVisualStyleBackColor = false;
+            this.startButton.Click += new System.EventHandler(this.startButton_Click);
+            // 
+            // outputLabel
+            // 
+            this.outputLabel.ForeColor = System.Drawing.SystemColors.AppWorkspace;
+            this.outputLabel.Location = new System.Drawing.Point(6, 111);
+            this.outputLabel.Name = "outputLabel";
+            this.outputLabel.Size = new System.Drawing.Size(257, 36);
+            this.outputLabel.TabIndex = 9;
+            this.outputLabel.Text = "Select Output Location";
+            this.outputLabel.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            // 
+            // outputDirButton
+            // 
+            this.outputDirButton.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(20)))), ((int)(((byte)(20)))), ((int)(((byte)(20)))));
+            this.outputDirButton.FlatAppearance.BorderColor = System.Drawing.Color.Gray;
+            this.outputDirButton.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Black;
+            this.outputDirButton.FlatAppearance.MouseOverBackColor = System.Drawing.Color.Black;
+            this.outputDirButton.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.outputDirButton.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.outputDirButton.ForeColor = System.Drawing.SystemColors.AppWorkspace;
+            this.outputDirButton.Location = new System.Drawing.Point(43, 147);
+            this.outputDirButton.Margin = new System.Windows.Forms.Padding(0);
+            this.outputDirButton.Name = "outputDirButton";
+            this.outputDirButton.RightToLeft = System.Windows.Forms.RightToLeft.No;
+            this.outputDirButton.Size = new System.Drawing.Size(182, 30);
+            this.outputDirButton.TabIndex = 10;
+            this.outputDirButton.Text = "No Directory";
+            this.outputDirButton.UseVisualStyleBackColor = false;
+            this.outputDirButton.Click += new System.EventHandler(this.outputDirButton_Click);
+            this.outputDirButton.MouseHover += new System.EventHandler(this.outputDirButton_MouseHover);
+            // 
+            // convertGroupBox
+            // 
+            this.convertGroupBox.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(10)))), ((int)(((byte)(10)))), ((int)(((byte)(10)))));
+            this.convertGroupBox.Controls.Add(this.FormLabel);
+            this.convertGroupBox.Controls.Add(this.convertDescriptionLabel);
+            this.convertGroupBox.Location = new System.Drawing.Point(19, 29);
+            this.convertGroupBox.Name = "convertGroupBox";
+            this.convertGroupBox.Size = new System.Drawing.Size(452, 147);
+            this.convertGroupBox.TabIndex = 18;
+            this.convertGroupBox.TabStop = false;
+            // 
+            // FormLabel
+            // 
+            this.FormLabel.Font = new System.Drawing.Font("Segoe UI", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.FormLabel.ForeColor = System.Drawing.SystemColors.AppWorkspace;
+            this.FormLabel.Location = new System.Drawing.Point(0, 21);
+            this.FormLabel.Margin = new System.Windows.Forms.Padding(6, 0, 6, 0);
+            this.FormLabel.Name = "FormLabel";
+            this.FormLabel.Size = new System.Drawing.Size(452, 39);
+            this.FormLabel.TabIndex = 2;
+            this.FormLabel.Text = "KML (Google Earth) Conversions";
+            this.FormLabel.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            // 
+            // convertDescriptionLabel
+            // 
+            this.convertDescriptionLabel.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.convertDescriptionLabel.ForeColor = System.Drawing.SystemColors.AppWorkspace;
+            this.convertDescriptionLabel.Location = new System.Drawing.Point(9, 68);
+            this.convertDescriptionLabel.Margin = new System.Windows.Forms.Padding(6, 0, 6, 0);
+            this.convertDescriptionLabel.Name = "convertDescriptionLabel";
+            this.convertDescriptionLabel.Size = new System.Drawing.Size(434, 66);
+            this.convertDescriptionLabel.TabIndex = 8;
+            this.convertDescriptionLabel.Text = "This process will convert your .SCT2/.KML file into .KML/.SCT2 file.";
+            this.convertDescriptionLabel.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            // 
+            // groupBox1
+            // 
+            this.groupBox1.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(10)))), ((int)(((byte)(10)))), ((int)(((byte)(10)))));
+            this.groupBox1.Controls.Add(this.categoryCheckBoxList);
+            this.groupBox1.Location = new System.Drawing.Point(19, 176);
+            this.groupBox1.Name = "groupBox1";
+            this.groupBox1.Size = new System.Drawing.Size(452, 207);
+            this.groupBox1.TabIndex = 20;
+            this.groupBox1.TabStop = false;
+            // 
+            // categoryCheckBoxList
+            // 
+            this.categoryCheckBoxList.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(10)))), ((int)(((byte)(10)))), ((int)(((byte)(10)))));
+            this.categoryCheckBoxList.BorderStyle = System.Windows.Forms.BorderStyle.None;
+            this.categoryCheckBoxList.CheckOnClick = true;
+            this.categoryCheckBoxList.ColumnWidth = 175;
+            this.categoryCheckBoxList.ForeColor = System.Drawing.SystemColors.AppWorkspace;
+            this.categoryCheckBoxList.FormattingEnabled = true;
+            this.categoryCheckBoxList.Items.AddRange(new object[] {
+            "ALL",
+            "Colors",
+            "[INFO]",
+            "[VOR]",
+            "[NDB]",
+            "[AIRPORT]",
+            "[RUNWAY]",
+            "[FIXES]",
+            "[ARTCC]",
+            "[ARTCC HIGH]",
+            "[ARTCC LOW]",
+            "[SID]",
+            "[STAR]",
+            "[LOW AIRWAY]",
+            "[HIGH AIRWAY]",
+            "[GEO]",
+            "[REGIONS]",
+            "[LABELS]"});
+            this.categoryCheckBoxList.Location = new System.Drawing.Point(6, 26);
+            this.categoryCheckBoxList.MultiColumn = true;
+            this.categoryCheckBoxList.Name = "categoryCheckBoxList";
+            this.categoryCheckBoxList.Size = new System.Drawing.Size(440, 168);
+            this.categoryCheckBoxList.TabIndex = 1;
+            // 
+            // KmlConversionForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(11F, 25F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
@@ -355,41 +382,35 @@
             this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(10)))), ((int)(((byte)(10)))), ((int)(((byte)(10)))));
             this.BackgroundImage = global::FeBuddyWinFormUI.Properties.Resources.window_background;
             this.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
-            this.ClientSize = new System.Drawing.Size(785, 404);
-            this.Controls.Add(this.airacCycleGroupBox);
+            this.ClientSize = new System.Drawing.Size(784, 404);
+            this.Controls.Add(this.groupBox1);
+            this.Controls.Add(this.startGroupBox);
+            this.Controls.Add(this.convertGroupBox);
             this.Controls.Add(this.menuStrip);
             this.Font = new System.Drawing.Font("Segoe UI", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.ForeColor = System.Drawing.SystemColors.Control;
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.HelpButton = true;
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
-            this.MainMenuStrip = this.menuStrip;
             this.Margin = new System.Windows.Forms.Padding(6, 7, 6, 7);
             this.MaximizeBox = false;
-            this.Name = "LandingForm";
+            this.Name = "KmlConversionForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "FE-BUDDY";
-            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.LandingForm_Closing);
-            this.Load += new System.EventHandler(this.LandingForm_Load);
-            this.Shown += new System.EventHandler(this.LandingForm_Shown);
-            this.airacCycleGroupBox.ResumeLayout(false);
-            this.airacCycleGroupBox.PerformLayout();
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.KMLConversionForm_Closing);
+            this.Load += new System.EventHandler(this.KMLConversionForm_Load);
             this.menuStrip.ResumeLayout(false);
             this.menuStrip.PerformLayout();
+            this.startGroupBox.ResumeLayout(false);
+            this.convertGroupBox.ResumeLayout(false);
+            this.groupBox1.ResumeLayout(false);
             this.ResumeLayout(false);
             this.PerformLayout();
 
         }
 
         #endregion
-
-        private System.Windows.Forms.RadioButton getparseAiracDataSelection;
-        private System.Windows.Forms.RadioButton convertDat2SctSelection;
-        private System.Windows.Forms.Label airacLabel;
-        private System.Windows.Forms.GroupBox airacCycleGroupBox;
         private System.Windows.Forms.MenuStrip menuStrip;
-        private System.Windows.Forms.ToolStripMenuItem settingsToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem UninstallMenuItem;
         private System.Windows.Forms.ToolStripMenuItem informationToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem InstructionsMenuItem;
         private System.Windows.Forms.ToolStripMenuItem RoadmapMenuItem;
@@ -397,15 +418,22 @@
         private System.Windows.Forms.ToolStripMenuItem ChangeLogMenuItem;
         private System.Windows.Forms.ToolStripMenuItem CreditsMenuItem;
         private System.Windows.Forms.ToolStripMenuItem reportIssuesToolStripMenuItem;
-        private System.Windows.Forms.RadioButton convertSct2FaaGeoMap;
-        private System.Windows.Forms.RadioButton convertFaaGeoMap2SCT;
-        private System.Windows.Forms.RadioButton convertKml2SCTSelection;
-        private System.Windows.Forms.RadioButton convertSct2DxfSelection;
-        private System.Windows.Forms.Button landingStartButton;
-        private System.Windows.Forms.RadioButton manageFacDataSelector;
+        private System.Windows.Forms.ToolStripMenuItem settingsToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem allowBetaMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem UninstallMenuItem;
         private System.Windows.Forms.ToolStripMenuItem discordToolStripMenuItem;
+        private System.Windows.Forms.GroupBox startGroupBox;
+        private System.Windows.Forms.Label sourceFileLabel;
+        private System.Windows.Forms.Button sourceFileButton;
+        private System.Windows.Forms.Button startButton;
+        private System.Windows.Forms.Label outputLabel;
+        private System.Windows.Forms.Button outputDirButton;
+        private System.Windows.Forms.GroupBox convertGroupBox;
+        private System.Windows.Forms.Label convertDescriptionLabel;
+        private System.Windows.Forms.Label FormLabel;
         private System.Windows.Forms.ToolStripMenuItem newsToolStripMenuItem;
+        private System.Windows.Forms.GroupBox groupBox1;
+        private System.Windows.Forms.CheckedListBox categoryCheckBoxList;
     }
 }
 

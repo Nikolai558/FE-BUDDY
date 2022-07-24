@@ -2,11 +2,17 @@
 
 ---
 - ## Version 2.1.1
+  - Created GUI for .SCT2 to .KML Conversions
+    - NOTE: Only .sct2 to .kml conversions are possible right now. This feature is still being developed.
+  - Error messages will now be displayed to the user that were previously hidden from users by Windows.
+  - Fixed Bugs #72 and #73 - AIRAC processing screens.
+
+- ## Version 2.1.1
   - Fixed #69 - WX station website was not downloading on certain computers, this has been fixed.
   - Fixed #68 - .id commands using the 3ld will appear before the ones that use the name.
   - Fixed #67 - Checks for '&' characters in all necessary items 
   - Fixed #65 - Changed the landing page button text.
-  - Started work on the new feature for SCT2 to KML and vise versa
+  - Started work on the new feature for SCT2 to KML and vice versa
 
 - ## Version 2.1.0
   - Added Feature - Convert DAT files into SCT2 files.

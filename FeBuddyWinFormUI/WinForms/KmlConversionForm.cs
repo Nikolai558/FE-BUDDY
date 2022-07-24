@@ -150,6 +150,13 @@ namespace FeBuddyWinFormUI
 
         private void Worker_StartConversionCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
+            if (e.Error != null)
+            {
+                DialogResult warningMSG = MessageBox.Show(
+                    "Error: " + e.Error.Message + "\n\nError Source: " + e.Error.Source + "\n\nStack Trace: " + e.Error.StackTrace,
+                    "CAUTION",
+                    MessageBoxButtons.OK);
+            }
             startButton.Text = "Convert";
             ToggleComponents(true);
         }

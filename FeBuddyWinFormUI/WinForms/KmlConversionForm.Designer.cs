@@ -346,7 +346,7 @@
             this.categoryCheckBoxList.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(10)))), ((int)(((byte)(10)))), ((int)(((byte)(10)))));
             this.categoryCheckBoxList.BorderStyle = System.Windows.Forms.BorderStyle.None;
             this.categoryCheckBoxList.CheckOnClick = true;
-            this.categoryCheckBoxList.ColumnWidth = 150;
+            this.categoryCheckBoxList.ColumnWidth = 175;
             this.categoryCheckBoxList.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.categoryCheckBoxList.FormattingEnabled = true;
             this.categoryCheckBoxList.Items.AddRange(new object[] {
@@ -369,6 +369,7 @@
             "[REGIONS]",
             "[LABELS]"});
             this.categoryCheckBoxList.Location = new System.Drawing.Point(6, 26);
+            this.categoryCheckBoxList.MultiColumn = true;
             this.categoryCheckBoxList.Name = "categoryCheckBoxList";
             this.categoryCheckBoxList.Size = new System.Drawing.Size(440, 168);
             this.categoryCheckBoxList.TabIndex = 1;

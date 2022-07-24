@@ -386,6 +386,14 @@ namespace FeBuddyWinFormUI
 
         private void Worker_StartParsingCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
+            if (e.Error != null)
+            {
+                DialogResult warningMSG = MessageBox.Show(
+                    "Error: " + e.Error.Message + "\n\nError Source: " + e.Error.Source + "\n\nStack Trace: " + e.Error.StackTrace,
+                    "CAUTION",
+                    MessageBoxButtons.OK);
+            }
+
             Logger.LogMessage("INFO", "PROCESSING COMPLETED");
             File.Copy(Logger._logFilePath, $"{GlobalConfig.outputDirectory}\\FE-BUDDY_LOG.txt");
 
@@ -434,6 +442,14 @@ namespace FeBuddyWinFormUI
 
         private void Worker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
+            if (e.Error != null)
+            {
+                DialogResult warningMSG = MessageBox.Show(
+                    "Erorr: " + e.Error.Message + "\n\nError Source: " + e.Error.Source + "\n\nStack Trace: " + e.Error.StackTrace,
+                    "CAUTION",
+                    MessageBoxButtons.OK);
+            }
+
             currentAiracSelection.Text = GlobalConfig.currentAiracDate;
             nextAiracSelection.Text = GlobalConfig.nextAiracDate;
 

@@ -52,8 +52,7 @@
             this.FormLabel = new System.Windows.Forms.Label();
             this.convertDescriptionLabel = new System.Windows.Forms.Label();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
-            this.refreshButton = new System.Windows.Forms.Button();
-            this.checkedListBox1 = new System.Windows.Forms.CheckedListBox();
+            this.categoryCheckBoxList = new System.Windows.Forms.CheckedListBox();
             this.menuStrip.SuspendLayout();
             this.startGroupBox.SuspendLayout();
             this.convertGroupBox.SuspendLayout();
@@ -335,30 +334,23 @@
             // groupBox1
             // 
             this.groupBox1.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(10)))), ((int)(((byte)(10)))), ((int)(((byte)(10)))));
-            this.groupBox1.Controls.Add(this.checkedListBox1);
-            this.groupBox1.Controls.Add(this.refreshButton);
+            this.groupBox1.Controls.Add(this.categoryCheckBoxList);
             this.groupBox1.Location = new System.Drawing.Point(19, 176);
             this.groupBox1.Name = "groupBox1";
             this.groupBox1.Size = new System.Drawing.Size(452, 207);
             this.groupBox1.TabIndex = 20;
             this.groupBox1.TabStop = false;
             // 
-            // refreshButton
+            // categoryCheckBoxList
             // 
-            this.refreshButton.BackgroundImage = global::FeBuddyWinFormUI.Properties.Resources.Refresh;
-            this.refreshButton.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Zoom;
-            this.refreshButton.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.refreshButton.ForeColor = System.Drawing.SystemColors.ActiveCaptionText;
-            this.refreshButton.Location = new System.Drawing.Point(416, 19);
-            this.refreshButton.Name = "refreshButton";
-            this.refreshButton.Size = new System.Drawing.Size(30, 30);
-            this.refreshButton.TabIndex = 0;
-            this.refreshButton.UseVisualStyleBackColor = true;
-            // 
-            // checkedListBox1
-            // 
-            this.checkedListBox1.FormattingEnabled = true;
-            this.checkedListBox1.Items.AddRange(new object[] {
+            this.categoryCheckBoxList.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(10)))), ((int)(((byte)(10)))), ((int)(((byte)(10)))));
+            this.categoryCheckBoxList.BorderStyle = System.Windows.Forms.BorderStyle.None;
+            this.categoryCheckBoxList.CheckOnClick = true;
+            this.categoryCheckBoxList.ColumnWidth = 175;
+            this.categoryCheckBoxList.ForeColor = System.Drawing.SystemColors.AppWorkspace;
+            this.categoryCheckBoxList.FormattingEnabled = true;
+            this.categoryCheckBoxList.Items.AddRange(new object[] {
+            "ALL",
             "Colors",
             "[INFO]",
             "[VOR]",
@@ -376,10 +368,11 @@
             "[GEO]",
             "[REGIONS]",
             "[LABELS]"});
-            this.checkedListBox1.Location = new System.Drawing.Point(6, 19);
-            this.checkedListBox1.Name = "checkedListBox1";
-            this.checkedListBox1.Size = new System.Drawing.Size(404, 172);
-            this.checkedListBox1.TabIndex = 1;
+            this.categoryCheckBoxList.Location = new System.Drawing.Point(6, 26);
+            this.categoryCheckBoxList.MultiColumn = true;
+            this.categoryCheckBoxList.Name = "categoryCheckBoxList";
+            this.categoryCheckBoxList.Size = new System.Drawing.Size(440, 168);
+            this.categoryCheckBoxList.TabIndex = 1;
             // 
             // KmlConversionForm
             // 
@@ -404,8 +397,8 @@
             this.Name = "KmlConversionForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "FE-BUDDY";
-            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.DatToSctForm_Closing);
-            this.Load += new System.EventHandler(this.AiracDataForm_Load);
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.KMLConversionForm_Closing);
+            this.Load += new System.EventHandler(this.KMLConversionForm_Load);
             this.menuStrip.ResumeLayout(false);
             this.menuStrip.PerformLayout();
             this.startGroupBox.ResumeLayout(false);
@@ -440,8 +433,7 @@
         private System.Windows.Forms.Label FormLabel;
         private System.Windows.Forms.ToolStripMenuItem newsToolStripMenuItem;
         private System.Windows.Forms.GroupBox groupBox1;
-        private System.Windows.Forms.Button refreshButton;
-        private System.Windows.Forms.CheckedListBox checkedListBox1;
+        private System.Windows.Forms.CheckedListBox categoryCheckBoxList;
     }
 }
 

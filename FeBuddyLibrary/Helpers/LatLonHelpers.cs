@@ -288,6 +288,11 @@ namespace FeBuddyLibrary.Helpers
             // Split the value at decimal points.
             string[] splitValue = value.Split('.');
 
+            if (!(new List<char>{ 'N', 'E', 'S', 'W' }).Contains(splitValue[0][0]))
+            {
+                throw new Exception($"{value} is not valid.");
+            }
+
             // set our values
             string declination = splitValue[0].Substring(0, 1);
             string degrees = splitValue[0].Substring(1, 3);

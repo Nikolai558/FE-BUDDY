@@ -359,7 +359,7 @@ namespace FeBuddyWinFormUI
             else if (convertKml2SCTSelection.Checked)
             {
                 DialogResult warningMSG = MessageBox.Show(
-                    "This feature is still a work-in-progress.\nWe have been able to get this to work with some SCT2 files and we are asking for your help to see what works and what doesn't.\n\nIf your sector file does not work with this, then please join the FE-Buddy Discord, navigate to the #kml-conversions channel and post:\n\n1) Successful or Not-Successful\n2) Sector File\n3) Any further details such as error messages",
+                    "This feature is still a work-in-progress.\n\nAs of right now only .SCT2 -> .KML conversions are possible.\n\nWe have been able to get this to work with some SCT2 files and we are asking for your help to see what works and what doesn't.\n\nIf your sector file does not work with this, then please join the FE-Buddy Discord, navigate to the #kml-conversions channel and post:\n\n1) Successful or Not-Successful\n2) Sector File\n3) Any further details such as error messages",
                     "CAUTION",
                     MessageBoxButtons.OK);
                 var kmlConversionForm = new KmlConversionForm(_currentVersion);

@@ -12,7 +12,7 @@ foreach ($Folder in $Folders) {
 }
 
 # Publish projects and remove unnecessary WPF files
-dotnet publish -v minimal -c Release -r win-x86 --self-contained "$PSScriptRoot\FeBuddyWinFormUI\FeBuddyWinFormUI.csproj" -o "$pubdir"
+dotnet publish -v minimal -c Release -r win-x64 --self-contained "$PSScriptRoot\FeBuddyWinFormUI\FeBuddyWinFormUI.csproj" -o "$pubdir"
 Remove-Item "$pubdir\WindowsBase.dll"
 Remove-Item "$pubdir\DirectWriteForwarder.dll"
 Remove-Item "$pubdir\WindowsFormsIntegration.dll"

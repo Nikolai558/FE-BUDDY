@@ -10,6 +10,7 @@
     <ApplicationIcon>FE_BUDDY_icon.ico</ApplicationIcon>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <SatelliteResourceLanguages>en-US</SatelliteResourceLanguages>
+    <PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
 
   <ItemGroup>

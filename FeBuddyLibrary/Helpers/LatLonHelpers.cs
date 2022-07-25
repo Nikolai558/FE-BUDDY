@@ -193,7 +193,6 @@ namespace FeBuddyLibrary.Helpers
 
         public static string CreateDMS(double value, bool lat)
         {
-
             int degrees;
             decimal degreeFloat = 0;
 
@@ -250,30 +249,42 @@ namespace FeBuddyLibrary.Helpers
                 miliseconds = Math.Round(secondFloat, 3).ToString().Split('.')[1];
             }
 
+            // Declanation   Lat                     Lon
+            //       S W     -0.0050000000000000001, -0.0028863888888888889
+            //       S E     -0.0050000000000000001,  0.0028863888888888889
+            //       N W      0.0050000000000000001, -0.0028863888888888889
+            //       N E      0                    ,  0.0057736111111111113
+            //       N W      0                    ,  0
+
+            string declanation;
+
             if (lat)
             {
-                if (degrees < 0)
+                if (value < 0)
                 {
                     degrees *= -1;
-                    dms = $"S{degrees.ToString().PadLeft(3, '0')}.{minutes.ToString().PadLeft(2, '0')}.{seconds.ToString().PadLeft(2, '0')}.{miliseconds.ToString().PadLeft(3, '0')}";
+                    declanation = "S";
                 }
                 else
                 {
-                    dms = $"N{degrees.ToString().PadLeft(3, '0')}.{minutes.ToString().PadLeft(2, '0')}.{seconds.ToString().PadLeft(2, '0')}.{miliseconds.ToString().PadLeft(3, '0')}";
+                    declanation = "N";
                 }
             }
             else
             {
-                if (degrees < 0)
+                if (value <= 0)
                 {
                     degrees *= -1;
-                    dms = $"W{degrees.ToString().PadLeft(3, '0')}.{minutes.ToString().PadLeft(2, '0')}.{seconds.ToString().PadLeft(2, '0')}.{miliseconds.ToString().PadLeft(3, '0')}";
+                    declanation = "W";
                 }
                 else
                 {
-                    dms = $"E{degrees.ToString().PadLeft(3, '0')}.{minutes.ToString().PadLeft(2, '0')}.{seconds.ToString().PadLeft(2, '0')}.{miliseconds.ToString().PadLeft(3, '0')}";
+                    declanation = "E";
                 }
             }
+
+
+            dms = $"{declanation}{degrees.ToString().PadLeft(3, '0')}.{minutes.ToString().PadLeft(2, '0')}.{seconds.ToString().PadLeft(2, '0')}.{miliseconds.ToString().PadLeft(3, '0')}";
 
             return dms;
         }

@@ -2,6 +2,7 @@
 using System.Drawing;
 using System.IO;
 using System.Windows.Forms;
+using FeBuddyLibrary.DataAccess;
 using FeBuddyLibrary.Helpers;
 using Squirrel;
 
@@ -12,6 +13,9 @@ namespace FeBuddyWinFormUI
         [STAThread]
         static void Main()
         {
+            KmlConverter test = new KmlConverter(@"C:\Users\nikol\Desktop\KML\ZLC.kml", @"C:\Users\nikol\Desktop\KML\ZLC.SCT2");
+            test.ConvertKmltoSCT();
+
             // TODO - Get system info and log it into file first thing. -https://docs.microsoft.com/en-us/previous-versions/windows/embedded/ee436483(v=msdn.10)
             Logger.CreateLogFile();
             SquirrelLogger.Register(); // wire up Squirrel logging to our log file too

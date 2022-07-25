@@ -21,6 +21,7 @@ namespace FeBuddyLibrary.DataAccess
 
         private KmlFile _kml;
         private string _kmlFilePath;
+        private StringBuilder sctFileStringBuilder;
 
         private Document _kmlDocument;
 
@@ -36,13 +37,86 @@ namespace FeBuddyLibrary.DataAccess
         {
             _kmlFilePath = kmlFilePath;
             _sctFilePath = sectorFilePath;
-            _df = new DataFunctions();
             _kmlDocument = new Document();
+
+            _df = new DataFunctions();
             _currentStyleIds = new List<string>();
+        }
+
+        public void ConvertKmltoSCT()
+        {
+            using (FileStream stream = File.OpenRead(_kmlFilePath))
+            {
+                _kml = KmlFile.Load(stream);
+            }
+
+            CreateSctFile();
+        }
+
+        private void CreateSctFile()
+        {
+            _sctFileModel = new SctFileModel();
+
+            _kmlDocument = (Document)_kml.Root;
+
+            sctFileStringBuilder = new StringBuilder();
+
+            foreach (var item in _kmlDocument.Features)
+            {
+                ParseKml(item.Name);
+            }
+        }
+
+        private void ParseKml(string section)
+        {
+            switch (section)
+            {
+                case "[Colors]":  { AddColorsSct(); break; }
+                case "[INFO]": { AddInfoSct(); break; }
+                case "[VOR]": {  break; }
+                case "[NDB]": {  break; }
+                case "[AIRPORT]": {  break; }
+                case "[RUNWAY]": {  break; }
+                case "[FIXES]": {  break; }
+                case "[ARTCC]": {  break; }
+                case "[ARTCC LOW]": { break; }
+                case "[ARTCC HIGH]": {  break; }
+                case "[LOW AIRWAY]": {  break; }
+                case "[HIGH AIRWAY]": {  break; }
+                case "[SID]": {  break; }
+                case "[STAR]": { break; }
+                case "[LABELS]": {  break; }
+                case "[REGIONS]": { break; }
+                case "[GEO]": {  break; }
+                default:
+                    break;
+            }
+        }
+
+        private void AddColorsSct()
+        {
+            var colorsFolder = (Folder)_kmlDocument.Features.Where((x) => x.Name == "[Colors]").First();
+            var colorsPlacemark = (Feature)colorsFolder.Features.Where((x) => x.Name == "Colors").First();
+            sctFileStringBuilder.Append(colorsPlacemark.Description.Text);
+            SaveSctFile();
+        }
+
+        private void AddInfoSct()
+        {
+            var colorsFolder = (Folder)_kmlDocument.Features.Where((x) => x.Name == "[INFO]").First();
+            var colorsPlacemark = (Feature)colorsFolder.Features.Where((x) => x.Name == "Info").First();
+            sctFileStringBuilder.Append(colorsPlacemark.Description.Text);
+            SaveSctFile();
+        }
+
+        private void SaveSctFile()
+        {
+            File.WriteAllText(_sctFilePath.Split('.')[0] + "-converted.sct2", sctFileStringBuilder.ToString());
         }
 
         public void ConvertSctToKml(string section)
         {
+
             _sctFileModel = _df.ReadSctFile(_sctFilePath);
 
             switch (section)

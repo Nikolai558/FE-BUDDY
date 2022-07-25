@@ -22,20 +22,23 @@ namespace FeBuddyLibrary.DataAccess
         private KmlFile _kml;
         private string _kmlFilePath;
 
-        private Folder _facilityRoot;
+        private Document _kmlDocument;
 
         private SctFileModel _sctFileModel;
         private string _sctFileText;
         private string _sctFilePath;
+
+        private List<string> _currentStyleIds;
 
         private DataFunctions _df;
 
         public KmlConverter(string kmlFilePath, string sectorFilePath)
         {
             _kmlFilePath = kmlFilePath;
-            _facilityRoot = new Folder();
             _sctFilePath = sectorFilePath;
             _df = new DataFunctions();
+            _kmlDocument = new Document();
+            _currentStyleIds = new List<string>();
         }
 
         public void ConvertSctToKml(string section)
@@ -106,7 +109,7 @@ namespace FeBuddyLibrary.DataAccess
             }
 
             geoFolder.Visibility = false;
-            _facilityRoot.AddFeature(geoFolder);
+            _kmlDocument.AddFeature(geoFolder);
         }
 
         private void AddRegionSection()
@@ -116,6 +119,19 @@ namespace FeBuddyLibrary.DataAccess
 
             foreach (var item in _sctFileModel.SctRegionsSection)
             {
+
+                bool undefinedColor = false;
+                if (!_currentStyleIds.Contains(item.RegionColorName) && !_currentStyleIds.Contains("Undefined_" + item.RegionColorName))
+                {
+                    AddColorStyle("Undefined_" + item.RegionColorName, item.RegionColorName);
+                    undefinedColor = true;
+                }
+
+                if (_currentStyleIds.Contains("Undefined_" + item.RegionColorName))
+                {
+                    undefinedColor = true;
+                }
+
                 CoordinateCollection coordinates = new CoordinateCollection();
 
                 // Starting Point
@@ -143,11 +159,21 @@ namespace FeBuddyLibrary.DataAccess
                 regionPlacemark.Geometry = polygon;
                 regionPlacemark.Visibility = false;
 
+                if (undefinedColor)
+                {
+                    regionPlacemark.StyleUrl = new Uri("#Undefined_" + item.RegionColorName, UriKind.Relative);
+                }
+                else
+                {
+                    regionPlacemark.StyleUrl = new Uri("#" + item.RegionColorName, UriKind.Relative);
+                }
+                //regionPlacemark.StyleUrl = new Uri($"#{item.RegionColorName}", UriKind.Relative); 
+
                 regionsFolder.AddFeature(regionPlacemark);
             }
 
             regionsFolder.Visibility = false;
-            _facilityRoot.AddFeature(regionsFolder);
+            _kmlDocument.AddFeature(regionsFolder);
         }
 
         private void AddLabelSection()
@@ -157,16 +183,37 @@ namespace FeBuddyLibrary.DataAccess
 
             foreach (SctLabelModel item in _sctFileModel.SctLabelSection)
             {
+                bool undefinedColor = false;
+                if (!_currentStyleIds.Contains(item.Color) && !_currentStyleIds.Contains("Undefined_" + item.Color))
+                {
+                    AddColorStyle("Undefined_" + item.Color, item.Color);
+                    undefinedColor = true;
+                }
+                if (_currentStyleIds.Contains("Undefined_" + item.Color))
+                {
+                    undefinedColor = true;
+                }
+
                 var point = new Point();
                 Placemark labelPlaceMark = new Placemark();
                 labelPlaceMark.Name = item.LabelText ;
                 point.Coordinate = new Vector(double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.Lat, true, false, _df._navaidPositions), false)), double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.Lon, false, false, _df._navaidPositions), false)));
                 labelPlaceMark.Geometry = point;
                 labelPlaceMark.Visibility = false;
+
+                if (undefinedColor)
+                {
+                    labelPlaceMark.StyleUrl = new Uri("#Undefined_" + item.Color, UriKind.Relative);
+                }
+                else
+                {
+                    labelPlaceMark.StyleUrl = new Uri("#" + item.Color, UriKind.Relative);
+                }
+
                 leablesFolder.AddFeature(labelPlaceMark);
             }
             leablesFolder.Visibility = false;
-            _facilityRoot.AddFeature(leablesFolder);
+            _kmlDocument.AddFeature(leablesFolder);
         }
 
         private void AddDiagramSections(string onlyThisSection = null)
@@ -187,6 +234,17 @@ namespace FeBuddyLibrary.DataAccess
                 
                 foreach (SctSidStarModel item in collections[collectionName])
                 {
+                    bool undefinedColor = false;
+                    if (!_currentStyleIds.Contains(item.Color) && !_currentStyleIds.Contains("Undefined_" + item.Color))
+                    {
+                        AddColorStyle("Undefined_" + item.Color, item.Color);
+                        undefinedColor = true;
+                    }
+                    if (_currentStyleIds.Contains("Undefined_" + item.Color))
+                    {
+                        undefinedColor = true;
+                    }
+
                     Folder diagramFolder = new Folder();
                     diagramFolder.Name = item.DiagramName;
                     int collectionCount = 0;
@@ -199,22 +257,54 @@ namespace FeBuddyLibrary.DataAccess
                     itemPlacemark.Geometry = line;
                     itemPlacemark.Name = "LineCollection_" + collectionCount;
                     itemPlacemark.Visibility = false;
+
+                    if (undefinedColor)
+                    {
+                        itemPlacemark.StyleUrl = new Uri("#Undefined_" + item.Color, UriKind.Relative);
+                    }
+                    else
+                    {
+                        itemPlacemark.StyleUrl = new Uri("#" + item.Color, UriKind.Relative);
+                    }
+
                     diagramFolder.AddFeature(itemPlacemark);
 
                     LineString additionalLines = new LineString();
                     additionalLines.Coordinates = new CoordinateCollection();
                     Placemark additionalLinesPlacemark = new Placemark();
 
+                    string tempcolor = "";
                     string previousEndingCoord = null;
                     foreach (var lineSeg in item.AdditionalLines)
                     {
+                        undefinedColor = false;
+
                         if (previousEndingCoord != null && previousEndingCoord != $"{lineSeg.StartLat} {lineSeg.StartLon}")
                         {
+                            if (!_currentStyleIds.Contains(lineSeg.Color) && !_currentStyleIds.Contains("Undefined_" + lineSeg.Color))
+                            {
+                                AddColorStyle("Undefined_" + lineSeg.Color, lineSeg.Color);
+                                undefinedColor = true;
+                            }
+                            if (_currentStyleIds.Contains("Undefined_" + lineSeg.Color))
+                            {
+                                undefinedColor = true;
+                            }
+
                             collectionCount += 1;
                             // starting line segment does not match last ending point.
                             additionalLinesPlacemark.Geometry = additionalLines;
                             additionalLinesPlacemark.Name = "LineCollection_" + collectionCount;
                             additionalLinesPlacemark.Visibility = false;
+                            if (undefinedColor)
+                            {
+                                additionalLinesPlacemark.StyleUrl = new Uri("#Undefined_" + lineSeg.Color, UriKind.Relative);
+                            }
+                            else
+                            {
+                                additionalLinesPlacemark.StyleUrl = new Uri("#" + lineSeg.Color, UriKind.Relative);
+                            }
+
                             diagramFolder.AddFeature(additionalLinesPlacemark);
 
                             additionalLines = new LineString();
@@ -225,18 +315,29 @@ namespace FeBuddyLibrary.DataAccess
                         additionalLines.Coordinates.Add(new Vector(double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(lineSeg.StartLat, true, false, _df._navaidPositions), false)), double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(lineSeg.StartLon, false, false, _df._navaidPositions), false))));
                         additionalLines.Coordinates.Add(new Vector(double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(lineSeg.EndLat, true, false, _df._navaidPositions), false)), double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(lineSeg.EndLon, false, false, _df._navaidPositions), false))));
                         previousEndingCoord = lineSeg.EndLat + " " + lineSeg.EndLon;
+                        tempcolor = lineSeg.Color;
                     }
                     collectionCount += 1;
                     // starting line segment does not match last ending point.
                     additionalLinesPlacemark.Geometry = additionalLines;
                     additionalLinesPlacemark.Name = "LineCollection_" + collectionCount;
                     additionalLinesPlacemark.Visibility = false;
+
+                    if (undefinedColor)
+                    {
+                        additionalLinesPlacemark.StyleUrl = new Uri("#Undefined_" + tempcolor, UriKind.Relative);
+                    }
+                    else
+                    {
+                        additionalLinesPlacemark.StyleUrl = new Uri("#" + tempcolor, UriKind.Relative);
+                    }
+
                     diagramFolder.AddFeature(additionalLinesPlacemark);
 
                     collectionFolder.AddFeature(diagramFolder);
                 }
                 collectionFolder.Visibility = false;
-                _facilityRoot.AddFeature(collectionFolder);
+                _kmlDocument.AddFeature(collectionFolder);
             }
         }
 
@@ -274,7 +375,7 @@ namespace FeBuddyLibrary.DataAccess
                     collectionFolder.AddFeature(itemPlacemark);
                 }
                 collectionFolder.Visibility = false;
-                _facilityRoot.AddFeature(collectionFolder);
+                _kmlDocument.AddFeature(collectionFolder);
             }
         }
 
@@ -294,7 +395,7 @@ namespace FeBuddyLibrary.DataAccess
                 fixFolder.AddFeature(fixPlaceMark);
             }
             fixFolder.Visibility = false;
-            _facilityRoot.AddFeature(fixFolder);
+            _kmlDocument.AddFeature(fixFolder);
         }
 
         private void AddRunwaySection()
@@ -321,7 +422,7 @@ namespace FeBuddyLibrary.DataAccess
             }
 
             runwayFolder.Visibility = false;
-            _facilityRoot.AddFeature(runwayFolder);
+            _kmlDocument.AddFeature(runwayFolder);
         }
 
         private void AddAirportSection()
@@ -343,7 +444,7 @@ namespace FeBuddyLibrary.DataAccess
                 airportFolder.AddFeature(airportPlaceMark);
             }
             airportFolder.Visibility = false;
-            _facilityRoot.AddFeature(airportFolder);
+            _kmlDocument.AddFeature(airportFolder);
         }
 
         private void AddVorSection()
@@ -364,7 +465,7 @@ namespace FeBuddyLibrary.DataAccess
                 vorFolder.AddFeature(vorPlaceMark);
             }
             vorFolder.Visibility = false;
-            _facilityRoot.AddFeature(vorFolder);
+            _kmlDocument.AddFeature(vorFolder);
         }
 
         private void AddNdbSection()
@@ -386,22 +487,22 @@ namespace FeBuddyLibrary.DataAccess
                 ndbFolder.AddFeature(NDBPlaceMark);
             }
             ndbFolder.Visibility = false;
-            _facilityRoot.AddFeature(ndbFolder);
+            _kmlDocument.AddFeature(ndbFolder);
         }
 
         private void SaveKML()
         {
-            _kml = KmlFile.Create(_facilityRoot, true);
-            var kmz = KmzFile.Create(_kml);
+            _kml = KmlFile.Create(_kmlDocument, true);
             using (var stream = File.Create(_kmlFilePath))
             {
                 _kml.Save(stream);
             }
 
-            using (var stream = File.Create(_kmlFilePath.Replace(".kml", ".kmz")))
-            {
-                kmz.Save(stream);
-            }
+            //var kmz = KmzFile.Create(_kml);
+            //using (var stream = File.Create(_kmlFilePath.Replace(".kml", ".kmz")))
+            //{
+            //    kmz.Save(stream);
+            //}
 
         }
 
@@ -424,7 +525,56 @@ namespace FeBuddyLibrary.DataAccess
             infoFolder.AddFeature(infoPlacemark);
             infoFolder.Visibility = false;
 
-            _facilityRoot.AddFeature(infoFolder);
+            _kmlDocument.AddFeature(infoFolder);
+        }
+
+        private void AddColorStyle(string name, string colorInt)
+        {
+            if (_currentStyleIds.Contains(name) || _currentStyleIds.Contains("Undefined_" + name))
+            {
+                return;
+            }
+
+            PolygonStyle pstyle = new PolygonStyle();
+            pstyle.Color = ConvertColor(colorInt);
+            pstyle.Id = name;
+
+            Style style = new Style();
+            style.Id = name;
+            style.Line = new LineStyle() { Id = name, Color = ConvertColor(colorInt) };
+            style.Polygon = pstyle;
+            _kmlDocument.AddStyle(style);
+            _currentStyleIds.Add(name);
+        }
+
+        private Color32 ConvertColor(string colorInt, int alpha = 255)
+        {
+            // Color Math found by https://webtools.kusternet.ch/color; https://vrc.rosscarlson.dev/docs/doc.php?page=appendix_g
+
+            int r;
+            int g;
+            int b;
+            int a;
+
+            int color;
+            bool isColor = int.TryParse(colorInt, out color);
+
+            if (isColor)
+            {
+                r = color % 256;
+                g = (color / 256) % 256;
+                b = (color / 65536) % 256;
+                a = alpha;
+            }
+            else
+            {
+                r = 255;
+                g = 255;
+                b = 255;
+                a = alpha;
+            }
+
+            return new Color32((byte)a, (byte)b, (byte)g, (byte)r);
         }
 
         private void AddDefineSection()
@@ -436,6 +586,7 @@ namespace FeBuddyLibrary.DataAccess
             StringBuilder sb = new StringBuilder();
             foreach (var item in _sctFileModel.SctFileColors)
             {
+                AddColorStyle(item.Name, item.ColorCode);
                 sb.AppendLine(item.AllInfo);
             }
 
@@ -454,7 +605,7 @@ namespace FeBuddyLibrary.DataAccess
             colorFolder.Visibility = false;
 
 
-            _facilityRoot.AddFeature(colorFolder);
+            _kmlDocument.AddFeature(colorFolder);
         }
     }
 }

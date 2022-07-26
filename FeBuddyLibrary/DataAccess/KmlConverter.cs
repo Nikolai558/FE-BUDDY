@@ -73,24 +73,311 @@ namespace FeBuddyLibrary.DataAccess
             {
                 case "[Colors]":  { AddColorsSct(); break; }
                 case "[INFO]": { AddInfoSct(); break; }
-                case "[VOR]": {  break; }
-                case "[NDB]": {  break; }
-                case "[AIRPORT]": {  break; }
-                case "[RUNWAY]": {  break; }
-                case "[FIXES]": {  break; }
-                case "[ARTCC]": {  break; }
-                case "[ARTCC LOW]": { break; }
-                case "[ARTCC HIGH]": {  break; }
-                case "[LOW AIRWAY]": {  break; }
-                case "[HIGH AIRWAY]": {  break; }
-                case "[SID]": {  break; }
-                case "[STAR]": { break; }
-                case "[LABELS]": {  break; }
-                case "[REGIONS]": { break; }
-                case "[GEO]": {  break; }
+                case "[VOR]": { AddVorNdbSct("VOR"); break; }
+                case "[NDB]": { AddVorNdbSct("NDB"); break; }
+                case "[AIRPORT]": { AddAptSct(); break; }
+                case "[RUNWAY]": { AddRwySct(); break; }
+                case "[FIXES]": { AddFixesSct(); break; }
+                case "[ARTCC]": { AddArtccModelSct("ARTCC"); break; }
+                case "[ARTCC LOW]": { AddArtccModelSct("ARTCC LOW"); break; }
+                case "[ARTCC HIGH]": { AddArtccModelSct("ARTCC HIGH"); break; }
+                case "[LOW AIRWAY]": { AddArtccModelSct("LOW AIRWAY"); break; }
+                case "[HIGH AIRWAY]": { AddArtccModelSct("HIGH AIRWAY"); break; }
+                case "[SID]": { AddSidStarSct("SID"); break; }
+                case "[STAR]": { AddSidStarSct("STAR"); break; }
+                case "[LABELS]": { AddLabelsSct(); break; }
+                case "[REGIONS]": { AddRegionSct(); break; }
+                case "[GEO]": { AddGeoSct(); break; }
                 default:
                     break;
             }
+        }
+
+        private void AddRegionSct()
+        {
+            sctFileStringBuilder.AppendLine($"\n[REGIONS]");
+
+            var regionFolder = (Folder)_kmlDocument.Features.Where((x) => x.Name == "[REGIONS]").First(); 
+            foreach (Feature item in regionFolder.Features)
+            {
+                SctRegionModel featureModl = new SctRegionModel();
+
+                featureModl.RegionColorName = item.Name;
+                featureModl.AdditionalRegionInfo = new List<RegionPolygonPoints>();
+
+                var itemPlacemark = (Placemark)item;
+                var itemPolygon = (Polygon)itemPlacemark.Geometry;
+                LinearRing itemPoint = itemPolygon.OuterBoundary.LinearRing;
+
+                int count = 0;
+                foreach (Vector coord in itemPoint.Coordinates)
+                {
+                    if (count == 0)
+                    {
+                        featureModl.Lat = LatLonHelpers.CreateDMS(coord.Latitude, true);
+                        featureModl.Lon = LatLonHelpers.CreateDMS(coord.Longitude, false);
+                        count += 1;
+                    }
+                    else
+                    {
+                        RegionPolygonPoints addlPoint = new RegionPolygonPoints()
+                        {
+                            Lat = LatLonHelpers.CreateDMS(coord.Latitude, true),
+                            Lon = LatLonHelpers.CreateDMS(coord.Longitude,false)
+                        };
+                        featureModl.AdditionalRegionInfo.Add(addlPoint);
+                    }
+                }
+                sctFileStringBuilder.AppendLine(featureModl.AllInfo);
+            }
+            SaveSctFile();
+        }
+
+        private void AddSidStarSct(string section)
+        {
+            sctFileStringBuilder.AppendLine($"\n[{section}]");
+
+            // [SID] (folder)
+            var sectionFolder = (Folder)_kmlDocument.Features.Where((x) => x.Name == $"[{section}]").First();
+            foreach (Folder diagramFolder in sectionFolder.Features)
+            {
+                // Diagrams (Folder)
+                int count = 0;
+                SctSidStarModel featureModel = new SctSidStarModel()
+                {
+                    DiagramName = diagramFolder.Name,
+                    AdditionalLines = new List<SctAditionalDiagramLineSegments>()
+                };
+                foreach (Feature item in diagramFolder.Features)
+                {
+                    var itemPlacemark = (Placemark)item;
+                    var itemPoint = (LineString)itemPlacemark.Geometry;
+                    // Line collection (Path)
+                    if (count == 0)
+                    {
+                        var slat = LatLonHelpers.CreateDMS(itemPoint.Coordinates.First().Latitude, true);
+                        var slon = LatLonHelpers.CreateDMS(itemPoint.Coordinates.First().Longitude, false);
+
+                        var elat = LatLonHelpers.CreateDMS(itemPoint.Coordinates.Last().Latitude, true);
+                        var elon = LatLonHelpers.CreateDMS(itemPoint.Coordinates.Last().Longitude, false);
+
+                        featureModel.StartLat = slat;
+                        featureModel.StartLon = slon;
+
+                        featureModel.EndLat = elat;
+                        featureModel.EndLon = elon;
+                        count += 1;
+                    }
+                    else
+                    {
+                        bool startingCoords = true;
+                        SctAditionalDiagramLineSegments featAditionalLines = new SctAditionalDiagramLineSegments() ;
+                        foreach (Vector coords in itemPoint.Coordinates)
+                        {
+                            if (startingCoords)
+                            {
+                                featAditionalLines.StartLat = LatLonHelpers.CreateDMS(coords.Latitude, true);
+                                featAditionalLines.StartLon = LatLonHelpers.CreateDMS(coords.Longitude, false);
+                                startingCoords = false;
+                            }
+                            else
+                            {
+                                featAditionalLines.EndLat = LatLonHelpers.CreateDMS(coords.Latitude, true);
+                                featAditionalLines.EndLon = LatLonHelpers.CreateDMS(coords.Longitude, false);
+                                startingCoords = true;
+
+                                featureModel.AdditionalLines.Add(featAditionalLines);
+                                featAditionalLines = new SctAditionalDiagramLineSegments();
+                            }
+                        }
+                    }
+                }
+                
+                sctFileStringBuilder.AppendLine(featureModel.AllInfo);
+            }
+
+            SaveSctFile();
+        }
+
+        private void AddGeoSct()
+        {
+            sctFileStringBuilder.AppendLine($"\n[GEO]");
+
+            var labelsFolder = (Folder)_kmlDocument.Features.Where((x) => x.Name == $"[GEO]").First();
+            foreach (Feature item in labelsFolder.Features)
+            {
+                SctGeoModel featureModel = new SctGeoModel();
+
+                var itemPlacemark = (Placemark)item;
+                var itemPoint = (LineString)itemPlacemark.Geometry;
+
+                var slat = LatLonHelpers.CreateDMS(itemPoint.Coordinates.First().Latitude, true);
+                var slon = LatLonHelpers.CreateDMS(itemPoint.Coordinates.First().Longitude, false);
+
+                var elat = LatLonHelpers.CreateDMS(itemPoint.Coordinates.Last().Latitude, true);
+                var elon = LatLonHelpers.CreateDMS(itemPoint.Coordinates.Last().Longitude, false);
+
+                featureModel.StartLat = slat;
+                featureModel.StartLon = slon;
+
+                featureModel.EndLat = elat;
+                featureModel.EndLon = elon;
+
+                sctFileStringBuilder.AppendLine(featureModel.AllInfo);
+            }
+
+            SaveSctFile();
+        }
+
+        private void AddLabelsSct()
+        {
+            sctFileStringBuilder.AppendLine($"\n[LABELS]");
+
+            var labelsFolder = (Folder)_kmlDocument.Features.Where((x) => x.Name == $"[LABELS]").First();
+            foreach (Feature item in labelsFolder.Features)
+            {
+                SctLabelModel featureModel = new SctLabelModel() 
+                {
+                    LabelText = item.Name,
+                };
+
+                var itemPlacemark = (Placemark)item;
+                var itemPoint = (Point)itemPlacemark.Geometry;
+                var lat = LatLonHelpers.CreateDMS(itemPoint.Coordinate.Latitude, true);
+                var lon = LatLonHelpers.CreateDMS(itemPoint.Coordinate.Longitude, false);
+
+                featureModel.Lat = lat;
+                featureModel.Lon = lon;
+
+                sctFileStringBuilder.AppendLine(featureModel.AllInfo);
+            }
+
+            SaveSctFile();
+        }
+
+        private void AddArtccModelSct(string section)
+        {
+            sctFileStringBuilder.AppendLine($"\n[{section}]");
+
+            var sectionFolder = (Folder)_kmlDocument.Features.Where((x) => x.Name == $"[{section}]").First();
+            foreach (Feature item in sectionFolder.Features)
+            {
+                SctArtccModel featureModel = new SctArtccModel()
+                {
+                    Name = item.Name
+                };
+
+                var itemPlacemark = (Placemark)item;
+                var itemPoint = (LineString)itemPlacemark.Geometry;
+
+                var slat = LatLonHelpers.CreateDMS(itemPoint.Coordinates.First().Latitude, true);
+                var slon = LatLonHelpers.CreateDMS(itemPoint.Coordinates.First().Longitude, false);
+
+                var elat = LatLonHelpers.CreateDMS(itemPoint.Coordinates.Last().Latitude, true);
+                var elon = LatLonHelpers.CreateDMS(itemPoint.Coordinates.Last().Longitude, false);
+
+                featureModel.StartLat = slat;
+                featureModel.StartLon = slon;
+
+                featureModel.EndLat = elat;
+                featureModel.EndLon = elon;
+
+                sctFileStringBuilder.AppendLine(featureModel.AllInfo);
+            }
+
+            SaveSctFile();
+        }
+
+        private void AddFixesSct()
+        {
+            sctFileStringBuilder.AppendLine($"\n[FIXES]");
+
+            var fixesFolder = (Folder)_kmlDocument.Features.Where((x) => x.Name == $"[FIXES]").First();
+            foreach (Feature item in fixesFolder.Features)
+            {
+                SctFixesModel featureModel = new SctFixesModel()
+                {
+                    FixName = item.Name,
+                };
+
+                var itemPlacemark = (Placemark)item;
+                var itemPoint = (Point)itemPlacemark.Geometry;
+                var lat = LatLonHelpers.CreateDMS(itemPoint.Coordinate.Latitude, true);
+                var lon = LatLonHelpers.CreateDMS(itemPoint.Coordinate.Longitude, false);
+
+                featureModel.Lat = lat;
+                featureModel.Lon = lon;
+
+                sctFileStringBuilder.AppendLine(featureModel.AllInfo);
+            }
+
+            SaveSctFile();
+        }
+
+        private void AddRwySct()
+        {
+            sctFileStringBuilder.AppendLine($"\n[RUNWAY]");
+
+            var runwayFolder = (Folder)_kmlDocument.Features.Where((x) => x.Name == $"[RUNWAY]").First();
+            foreach (Feature item in runwayFolder.Features)
+            {
+                SctRunwayModel featureModel = new SctRunwayModel()
+                {
+                    RunwayNumber = item.Description.Text[(item.Description.Text.IndexOf($"[RWY]") + 5)..item.Description.Text.IndexOf($"[/RWY]")],
+                    OppositeRunwayNumber = item.Description.Text[(item.Description.Text.IndexOf($"[OPPRWY]") + 8)..item.Description.Text.IndexOf($"[/OPPRWY]")],
+                    MagRunwayHeading = item.Description.Text[(item.Description.Text.IndexOf($"[RWYHDG]") + 8)..item.Description.Text.IndexOf($"[/RWYHDG]")],
+                    OppositeMagRunwayHeading = item.Description.Text[(item.Description.Text.IndexOf($"[OPPRWYHDG]") + 11)..item.Description.Text.IndexOf($"[/OPPRWYHDG]")],
+                };
+
+
+                var itemPlacemark = (Placemark)item;
+                var itemPoint = (LineString)itemPlacemark.Geometry;
+
+                var slat = LatLonHelpers.CreateDMS(itemPoint.Coordinates.First().Latitude, true);
+                var slon = LatLonHelpers.CreateDMS(itemPoint.Coordinates.First().Longitude, false);
+
+                var elat = LatLonHelpers.CreateDMS(itemPoint.Coordinates.Last().Latitude, true);
+                var elon = LatLonHelpers.CreateDMS(itemPoint.Coordinates.Last().Longitude, false);
+
+                featureModel.StartLat = slat;
+                featureModel.StartLon = slon;
+
+                featureModel.EndLat = elat;
+                featureModel.EndLon = elon;
+
+                sctFileStringBuilder.AppendLine(featureModel.AllInfo);
+            }
+
+            SaveSctFile();
+        }
+
+        private void AddAptSct()
+        {
+            sctFileStringBuilder.AppendLine($"\n[AIRPORT]");
+
+            var aptFolder = (Folder)_kmlDocument.Features.Where((x) => x.Name == $"[AIRPORT]").First();
+            foreach (Feature item in aptFolder.Features)
+            {
+                SctAirportModel featureModel = new SctAirportModel()
+                {
+                    Id = item.Name,
+                    Frequency = item.Description.Text[(item.Description.Text.IndexOf($"[APTFREQ]")+ 9)..item.Description.Text.IndexOf($"[/APTFREQ]")],
+                    // TODO - Fix this to show the actual airspace from [APTSPACE]...
+                    Airspace = "",
+                };
+
+                var itemPlacemark = (Placemark)item;
+                var itemPoint = (Point)itemPlacemark.Geometry;
+                var lat = LatLonHelpers.CreateDMS(itemPoint.Coordinate.Latitude, true);
+                var lon = LatLonHelpers.CreateDMS(itemPoint.Coordinate.Longitude, false);
+
+                featureModel.Lat = lat;
+                featureModel.Lon = lon;
+
+                sctFileStringBuilder.AppendLine(featureModel.AllInfo);
+            }
+
+            SaveSctFile();
         }
 
         private void AddColorsSct()
@@ -103,9 +390,36 @@ namespace FeBuddyLibrary.DataAccess
 
         private void AddInfoSct()
         {
-            var colorsFolder = (Folder)_kmlDocument.Features.Where((x) => x.Name == "[INFO]").First();
-            var colorsPlacemark = (Feature)colorsFolder.Features.Where((x) => x.Name == "Info").First();
-            sctFileStringBuilder.Append(colorsPlacemark.Description.Text);
+            var infoFolder = (Folder)_kmlDocument.Features.Where((x) => x.Name == "[INFO]").First();
+            var infoPlacemark = (Feature)infoFolder.Features.Where((x) => x.Name == "Info").First();
+            sctFileStringBuilder.AppendLine(infoPlacemark.Description.Text);
+            SaveSctFile();
+        }
+
+        private void AddVorNdbSct(string section) 
+        {
+            sctFileStringBuilder.AppendLine($"\n[{section}]");
+
+            var sectionFolder = (Folder)_kmlDocument.Features.Where((x) => x.Name == $"[{section}]").First();
+            foreach (Feature item in sectionFolder.Features)
+            {
+                VORNDBModel featureModel = new VORNDBModel()
+                {
+                    Id = item.Name,
+                    Frequency = item.Description.Text[(item.Description.Text.IndexOf($"[{section}FREQ]") + section.Length + 6)..item.Description.Text.IndexOf($"[/{section}FREQ]")],
+                };
+
+                var itemPlacemark = (Placemark)item;
+                var itemPoint = (Point)itemPlacemark.Geometry;
+                var lat = LatLonHelpers.CreateDMS(itemPoint.Coordinate.Latitude, true);
+                var lon = LatLonHelpers.CreateDMS(itemPoint.Coordinate.Longitude, false);
+
+                featureModel.Lat = lat;
+                featureModel.Lon = lon;
+
+                sctFileStringBuilder.AppendLine(featureModel.AllInfo);
+            }
+
             SaveSctFile();
         }
 
@@ -406,7 +720,10 @@ namespace FeBuddyLibrary.DataAccess
                         additionalLinesPlacemark.StyleUrl = new Uri("#" + tempcolor, UriKind.Relative);
                     }
 
-                    diagramFolder.AddFeature(additionalLinesPlacemark);
+                    if (additionalLines.Coordinates.Count > 0)
+                    {
+                        diagramFolder.AddFeature(additionalLinesPlacemark);
+                    }
 
                     collectionFolder.AddFeature(diagramFolder);
                 }
@@ -488,7 +805,7 @@ namespace FeBuddyLibrary.DataAccess
                 Placemark runwayPlacemark = new Placemark();
                 runwayPlacemark.Geometry = line;
                 runwayPlacemark.Name = item.RunwayNumber + "-" + item.OppositeRunwayNumber;
-                description.Text = item.AllInfo.Split(" ")[0] + " " + item.AllInfo.Split(" ")[1] + " " + item.AllInfo.Split(" ")[2] + " " + item.AllInfo.Split(" ")[3] + " ";
+                description.Text = $"[FEB][RWY]{item.RunwayNumber}[/RWY][OPPRWY]{item.OppositeRunwayNumber}[/OPPRWY][RWYHDG]{item.MagRunwayHeading}[/RWYHDG][OPPRWYHDG]{item.OppositeMagRunwayHeading}[/OPPRWYHDG][/FEB]";
                 runwayPlacemark.Description = description;
                 runwayPlacemark.Visibility = false;
 
@@ -510,7 +827,7 @@ namespace FeBuddyLibrary.DataAccess
                 var point = new Point();
                 Placemark airportPlaceMark = new Placemark();
                 airportPlaceMark.Name = item.Id;
-                description.Text = item.AllInfo.Split(" ")[0] + " " + item.AllInfo.Split(" ")[1];
+                description.Text = $"[FEB][APTFREQ]{item.Frequency}[/APTFREQ][/FEB]";
                 airportPlaceMark.Description = description;
                 point.Coordinate = new Vector(double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.Lat, true, false, _df._navaidPositions), false)), double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.Lon, false, false, _df._navaidPositions), false)));
                 airportPlaceMark.Geometry = point;
@@ -530,8 +847,8 @@ namespace FeBuddyLibrary.DataAccess
                 var description = new Description();
                 var point = new Point();
                 Placemark vorPlaceMark = new Placemark();
-                vorPlaceMark.Name = item.Id + " - " + item.Frequency;
-                description.Text = item.Comments ?? "";
+                vorPlaceMark.Name = item.Id;
+                description.Text = $"[FEB][VORFREQ]{item.Frequency}[/VORFREQ][/FEB]";
                 vorPlaceMark.Description = description;
                 point.Coordinate = new Vector(double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.Lat, true, false, _df._navaidPositions), false)), double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.Lon, false, false, _df._navaidPositions), false)));
                 vorPlaceMark.Geometry = point;
@@ -552,8 +869,8 @@ namespace FeBuddyLibrary.DataAccess
                 var description = new Description();
                 var point = new Point();
                 Placemark NDBPlaceMark = new Placemark();
-                NDBPlaceMark.Name = item.Id + " - " + item.Frequency;
-                description.Text = item.Comments ?? "";
+                NDBPlaceMark.Name = item.Id;
+                description.Text = $"[FEB][NDBFREQ]{item.Frequency}[/NDBFREQ][/FEB]";
                 NDBPlaceMark.Description = description;
                 point.Coordinate = new Vector(double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.Lat, true, false, _df._navaidPositions), false)), double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.Lon, false, false, _df._navaidPositions), false)));
                 NDBPlaceMark.Geometry = point;

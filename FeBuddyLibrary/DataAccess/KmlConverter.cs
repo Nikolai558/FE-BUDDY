@@ -210,20 +210,30 @@ namespace FeBuddyLibrary.DataAccess
 
                 var itemPlacemark = (Placemark)item;
                 var itemPoint = (LineString)itemPlacemark.Geometry;
+                bool isStartingCoords = true;
 
-                var slat = LatLonHelpers.CreateDMS(itemPoint.Coordinates.First().Latitude, true);
-                var slon = LatLonHelpers.CreateDMS(itemPoint.Coordinates.First().Longitude, false);
+                foreach (Vector coords in itemPoint.Coordinates)
+                {
+                    if (isStartingCoords)
+                    {
+                        featureModel = new SctGeoModel();
+                        var slat = LatLonHelpers.CreateDMS(coords.Latitude, true);
+                        var slon = LatLonHelpers.CreateDMS(coords.Longitude, false);
+                        featureModel.StartLat = slat;
+                        featureModel.StartLon = slon;
+                        isStartingCoords = false;
+                    }
+                    else
+                    {
+                        var elat = LatLonHelpers.CreateDMS(coords.Latitude, true);
+                        var elon = LatLonHelpers.CreateDMS(coords.Longitude, false);
+                        featureModel.EndLat = elat;
+                        featureModel.EndLon = elon;
+                        sctFileStringBuilder.AppendLine(featureModel.AllInfo);
+                        isStartingCoords = true;
+                    }
 
-                var elat = LatLonHelpers.CreateDMS(itemPoint.Coordinates.Last().Latitude, true);
-                var elon = LatLonHelpers.CreateDMS(itemPoint.Coordinates.Last().Longitude, false);
-
-                featureModel.StartLat = slat;
-                featureModel.StartLon = slon;
-
-                featureModel.EndLat = elat;
-                featureModel.EndLon = elon;
-
-                sctFileStringBuilder.AppendLine(featureModel.AllInfo);
+                }
             }
 
             SaveSctFile();
@@ -248,6 +258,7 @@ namespace FeBuddyLibrary.DataAccess
 
                 featureModel.Lat = lat;
                 featureModel.Lon = lon;
+                featureModel.Comments = item.Description.Text[(item.Description.Text.IndexOf("[COMMENTS]") + 10)..item.Description.Text.IndexOf("[/COMMENTS]")];
 
                 sctFileStringBuilder.AppendLine(featureModel.AllInfo);
             }
@@ -282,7 +293,16 @@ namespace FeBuddyLibrary.DataAccess
                 featureModel.EndLat = elat;
                 featureModel.EndLon = elon;
 
-                sctFileStringBuilder.AppendLine(featureModel.AllInfo);
+                featureModel.Comments = item.Description.Text[(item.Description.Text.IndexOf("[COMMENTS]") + 10)..item.Description.Text.IndexOf("[/COMMENTS]")];
+
+                if (section == "LOW AIRWAY" || section == "HIGH AIRWAY")
+                {
+                    sctFileStringBuilder.AppendLine(featureModel.AllInfo.Split(' ')[0].Trim().PadRight(26, ' ') + featureModel.AllInfo[featureModel.AllInfo.Split(' ')[0].Length..].Trim());
+                }
+                else
+                {
+                    sctFileStringBuilder.AppendLine(featureModel.AllInfo);
+                }
             }
 
             SaveSctFile();
@@ -307,6 +327,7 @@ namespace FeBuddyLibrary.DataAccess
 
                 featureModel.Lat = lat;
                 featureModel.Lon = lon;
+                featureModel.Comments = item.Description.Text[(item.Description.Text.IndexOf("[COMMENTS]") + 10)..item.Description.Text.IndexOf("[/COMMENTS]")];
 
                 sctFileStringBuilder.AppendLine(featureModel.AllInfo);
             }
@@ -344,7 +365,7 @@ namespace FeBuddyLibrary.DataAccess
 
                 featureModel.EndLat = elat;
                 featureModel.EndLon = elon;
-
+                featureModel.Comments = item.Description.Text[(item.Description.Text.IndexOf("[COMMENTS]") + 10)..item.Description.Text.IndexOf("[/COMMENTS]")];
                 sctFileStringBuilder.AppendLine(featureModel.AllInfo);
             }
 
@@ -373,7 +394,7 @@ namespace FeBuddyLibrary.DataAccess
 
                 featureModel.Lat = lat;
                 featureModel.Lon = lon;
-
+                featureModel.Comments = item.Description.Text[(item.Description.Text.IndexOf("[COMMENTS]") + 10)..item.Description.Text.IndexOf("[/COMMENTS]")];
                 sctFileStringBuilder.AppendLine(featureModel.AllInfo);
             }
 
@@ -392,7 +413,7 @@ namespace FeBuddyLibrary.DataAccess
         {
             var infoFolder = (Folder)_kmlDocument.Features.Where((x) => x.Name == "[INFO]").First();
             var infoPlacemark = (Feature)infoFolder.Features.Where((x) => x.Name == "Info").First();
-            sctFileStringBuilder.AppendLine(infoPlacemark.Description.Text);
+            sctFileStringBuilder.Append("\n" + infoPlacemark.Description.Text);
             SaveSctFile();
         }
 
@@ -416,7 +437,7 @@ namespace FeBuddyLibrary.DataAccess
 
                 featureModel.Lat = lat;
                 featureModel.Lon = lon;
-
+                featureModel.Comments = item.Description.Text[(item.Description.Text.IndexOf("[COMMENTS]") + 10)..item.Description.Text.IndexOf("[/COMMENTS]")];
                 sctFileStringBuilder.AppendLine(featureModel.AllInfo);
             }
 
@@ -444,11 +465,18 @@ namespace FeBuddyLibrary.DataAccess
                         AddAirportSection();
                         AddRunwaySection();
                         AddFixesSection();
-                        AddArtccModelsSection();
-                        AddDiagramSections();
-                        AddLabelSection();
-                        AddRegionSection();
+                        //AddArtccModelsSection();
+                        AddArtccModelsSection("ARTCC");
+                        AddArtccModelsSection("ARTCC HIGH");
+                        AddArtccModelsSection("ARTCC LOW");
+                        //AddDiagramSections();
+                        AddDiagramSections("SID");
+                        AddDiagramSections("STAR");
+                        AddArtccModelsSection("LOW AIRWAY");
+                        AddArtccModelsSection("HIGH AIRWAY");
                         AddGeoSection();
+                        AddRegionSection();
+                        AddLabelSection();
                         break;
                     }
                 case "Colors": { AddDefineSection(); break; }
@@ -480,21 +508,39 @@ namespace FeBuddyLibrary.DataAccess
             Folder geoFolder = new Folder();
             geoFolder.Name = "[GEO]";
 
+            LineString line = new LineString();
+            line.Coordinates = new CoordinateCollection();
+            Placemark geoPlacemark = new Placemark();
+
             int count = 0;
+            string previousCoord = null;
             foreach (SctGeoModel item in _sctFileModel.SctGeoSection)
             {
-                LineString line = new LineString();
-                line.Coordinates = new CoordinateCollection();
+                if (previousCoord != null && previousCoord != $"{item.StartLat} {item.StartLon}")
+                {
+                    geoPlacemark = new Placemark();
+                    geoPlacemark.Geometry = line;
+                    geoPlacemark.Name = "LineCollection_" + count;
+                    geoPlacemark.Visibility = false;
+                    
+                    count += 1;
+                    geoFolder.AddFeature(geoPlacemark);
+
+                    line = new LineString();
+                    line.Coordinates = new CoordinateCollection();
+                }
+
                 line.Coordinates.Add(new Vector(double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.StartLat, true, false, _df._navaidPositions), false)), double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.StartLon, false, false, _df._navaidPositions), false))));
                 line.Coordinates.Add(new Vector(double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.EndLat, true, false, _df._navaidPositions), false)), double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.EndLon, false, false, _df._navaidPositions), false))));
-                Placemark geoPlacemark = new Placemark();
-                geoPlacemark.Geometry = line;
-                geoPlacemark.Name = "GeoLine_" + count;
-                geoPlacemark.Visibility = false;
-
-                geoFolder.AddFeature(geoPlacemark);
-                count += 1;
+                previousCoord = $"{item.EndLat} {item.EndLon}";
             }
+
+            geoPlacemark = new Placemark();
+            geoPlacemark.Geometry = line;
+            count += 1;
+            geoPlacemark.Name = "LineCollection_" + count;
+            geoPlacemark.Visibility = false;
+            geoFolder.AddFeature(geoPlacemark);
 
             geoFolder.Visibility = false;
             _kmlDocument.AddFeature(geoFolder);

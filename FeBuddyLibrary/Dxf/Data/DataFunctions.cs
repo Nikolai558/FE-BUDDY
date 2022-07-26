@@ -97,8 +97,9 @@ namespace FeBuddyLibrary.Dxf.Data
             if (outputString.Substring(0, 1) == ";" || outputString.Substring(0, 1) == "//") return (outputBool, outputString);
 
             // Strip comments from Line
-            int pos = outputString.IndexOf(';');
-            if (pos > -1) outputString = outputString.Substring(0, pos);
+            int pos = outputString.Trim().IndexOf(';');
+            if (pos == 0) outputString = "";
+            //if (pos > -1) outputString = outputString.Substring(0, pos);
             pos = outputString.IndexOf("//");
             if (pos > -1) outputString = outputString.Substring(0, pos);
 
@@ -120,7 +121,7 @@ namespace FeBuddyLibrary.Dxf.Data
 
             var result = new List<SctLabelModel>();
 
-            Regex sRegexStaticText = new Regex(@"^""(.+)""\s+(\S+)\s+(\S+)\s+(\S+)\s(;*.*)", RegexOptions.Compiled);
+            Regex sRegexStaticText = new Regex(@"^""(.+)""\s+(\S+)\s+(\S+)\s+(\S+)\s*(;*.*)", RegexOptions.Compiled);
 
             foreach (string line in vs)
             {
@@ -354,7 +355,7 @@ namespace FeBuddyLibrary.Dxf.Data
             Logger.LogMessage("INFO", "Getting SCT RUNWAYS");
 
             var result = new List<SctRunwayModel>();
-            Regex sRegexRunway = new Regex(@"^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(;*.*)", RegexOptions.Compiled);
+            Regex sRegexRunway = new Regex(@"^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s*(;*.*)", RegexOptions.Compiled);
 
             foreach (string line in vs)
             {
@@ -428,7 +429,7 @@ namespace FeBuddyLibrary.Dxf.Data
             Logger.LogMessage("INFO", "Getting SCT FIXES");
 
             var result = new List<SctFixesModel>();
-            Regex sRegexFix = new Regex(@"^(\S+)\s+(\S+)\s+(\S+)\s+(;*.*)", RegexOptions.Compiled);
+            Regex sRegexFix = new Regex(@"^(\S+)\s+(\S+)\s+(\S+)\s*(;*.*)", RegexOptions.Compiled);
 
             foreach (string line in vs)
             {
@@ -500,7 +501,7 @@ namespace FeBuddyLibrary.Dxf.Data
             Logger.LogMessage("INFO", "Getting VOR/NDB");
 
             List<VORNDBModel> results = new List<VORNDBModel>();
-            Regex sRegexVorNdb = new Regex(@"^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(;*.*)", RegexOptions.Compiled);
+            Regex sRegexVorNdb = new Regex(@"^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s*(;*.*)", RegexOptions.Compiled);
 
             foreach (string line in vs)
             {
@@ -577,7 +578,7 @@ namespace FeBuddyLibrary.Dxf.Data
             List<SctArtccModel> results = new List<SctArtccModel>();
 
             // Is this ALL "Boundaries"????????
-            Regex sRegexBoundarySegment = new Regex(@"^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(;*.*)", RegexOptions.Compiled);
+            Regex sRegexBoundarySegment = new Regex(@"^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s*(;*.*)", RegexOptions.Compiled);
 
             foreach (string line in vs)
             {
@@ -799,7 +800,7 @@ namespace FeBuddyLibrary.Dxf.Data
             Logger.LogMessage("INFO", "GETTING SCT AIRPORTS");
 
             List<SctAirportModel> results = new List<SctAirportModel>();
-            Regex sRegexAirport = new Regex(@"^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)(?:\s+([ABCDEG]))?\s+(;*.*)", RegexOptions.Compiled);
+            Regex sRegexAirport = new Regex(@"^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)(?:\s+([ABCDEG]))?\s*(;*.*)", RegexOptions.Compiled);
 
             foreach (string line in vs)
             {

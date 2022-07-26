@@ -146,7 +146,7 @@ namespace FeBuddyLibrary.DataAccess
                 SctSidStarModel featureModel = new SctSidStarModel()
                 {
                     DiagramName = diagramFolder.Name,
-                    AdditionalLines = new List<SctAditionalDiagramLineSegments>()
+                    AdditionalLines = new List<SctAditionalDiagramLineSegments>(),
                 };
                 foreach (Feature item in diagramFolder.Features)
                 {
@@ -166,6 +166,11 @@ namespace FeBuddyLibrary.DataAccess
 
                         featureModel.EndLat = elat;
                         featureModel.EndLon = elon;
+                        featureModel.Color = item.StyleUrl?.ToString().Substring(1) ?? "";
+                        if (featureModel.Color.Contains("Undefined_"))
+                        {
+                            featureModel.Color = featureModel.Color[10..];
+                        }
                         count += 1;
                     }
                     else
@@ -185,6 +190,12 @@ namespace FeBuddyLibrary.DataAccess
                                 featAditionalLines.EndLat = LatLonHelpers.CreateDMS(coords.Latitude, true);
                                 featAditionalLines.EndLon = LatLonHelpers.CreateDMS(coords.Longitude, false);
                                 startingCoords = true;
+
+                                featAditionalLines.Color = item.StyleUrl?.ToString().Substring(1) ?? "";
+                                if (featAditionalLines.Color.Contains("Undefined_"))
+                                {
+                                    featAditionalLines.Color = featAditionalLines.Color[10..];
+                                }
 
                                 featureModel.AdditionalLines.Add(featAditionalLines);
                                 featAditionalLines = new SctAditionalDiagramLineSegments();
@@ -212,11 +223,20 @@ namespace FeBuddyLibrary.DataAccess
                 var itemPoint = (LineString)itemPlacemark.Geometry;
                 bool isStartingCoords = true;
 
+                
+
                 foreach (Vector coords in itemPoint.Coordinates)
                 {
                     if (isStartingCoords)
                     {
                         featureModel = new SctGeoModel();
+                        
+                        featureModel.Color = item.StyleUrl?.ToString().Substring(1) ?? "";
+                        if (featureModel.Color.Contains("Undefined_"))
+                        {
+                            featureModel.Color = featureModel.Color[10..];
+                        }
+                        
                         var slat = LatLonHelpers.CreateDMS(coords.Latitude, true);
                         var slon = LatLonHelpers.CreateDMS(coords.Longitude, false);
                         featureModel.StartLat = slat;
@@ -251,6 +271,12 @@ namespace FeBuddyLibrary.DataAccess
                     LabelText = item.Name,
                 };
 
+                featureModel.Color = item.StyleUrl?.ToString().Substring(1) ?? "";
+                if (featureModel.Color.Contains("Undefined_"))
+                {
+                    featureModel.Color = featureModel.Color[10..];
+                }
+
                 var itemPlacemark = (Placemark)item;
                 var itemPoint = (Point)itemPlacemark.Geometry;
                 var lat = LatLonHelpers.CreateDMS(itemPoint.Coordinate.Latitude, true);
@@ -277,6 +303,8 @@ namespace FeBuddyLibrary.DataAccess
                 {
                     Name = item.Name
                 };
+
+                
 
                 var itemPlacemark = (Placemark)item;
                 var itemPoint = (LineString)itemPlacemark.Geometry;
@@ -366,6 +394,9 @@ namespace FeBuddyLibrary.DataAccess
                 featureModel.EndLat = elat;
                 featureModel.EndLon = elon;
                 featureModel.Comments = item.Description.Text[(item.Description.Text.IndexOf("[COMMENTS]") + 10)..item.Description.Text.IndexOf("[/COMMENTS]")];
+
+                
+
                 sctFileStringBuilder.AppendLine(featureModel.AllInfo);
             }
 

@@ -353,7 +353,7 @@ namespace FeBuddyLibrary.Dxf.Data
             Logger.LogMessage("INFO", "Getting SCT RUNWAYS");
 
             var result = new List<SctRunwayModel>();
-            Regex sRegexRunway = new Regex(@"^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)", RegexOptions.Compiled);
+            Regex sRegexRunway = new Regex(@"^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(;*.*)", RegexOptions.Compiled);
 
             foreach (string line in vs)
             {
@@ -377,6 +377,7 @@ namespace FeBuddyLibrary.Dxf.Data
                         StartLon = match.Groups[6].Value,
                         EndLat = match.Groups[7].Value,
                         EndLon = match.Groups[8].Value,
+                        Comments = match.Groups[9].Value
                     };
 
                     result.Add(model);
@@ -426,7 +427,7 @@ namespace FeBuddyLibrary.Dxf.Data
             Logger.LogMessage("INFO", "Getting SCT FIXES");
 
             var result = new List<SctFixesModel>();
-            Regex sRegexFix = new Regex(@"^(\S+)\s+(\S+)\s+(\S+)", RegexOptions.Compiled);
+            Regex sRegexFix = new Regex(@"^(\S+)\s+(\S+)\s+(\S+)\s+(;*.*)", RegexOptions.Compiled);
 
             foreach (string line in vs)
             {
@@ -453,6 +454,7 @@ namespace FeBuddyLibrary.Dxf.Data
                         FixName = match.Groups[1].Value,
                         Lat = match.Groups[2].Value,
                         Lon = match.Groups[3].Value,
+                        Comments = match.Groups[4].Value
                     };
 
                     result.Add(model);
@@ -497,7 +499,7 @@ namespace FeBuddyLibrary.Dxf.Data
             Logger.LogMessage("INFO", "Getting VOR/NDB");
 
             List<VORNDBModel> results = new List<VORNDBModel>();
-            Regex sRegexVorNdb = new Regex(@"^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)", RegexOptions.Compiled);
+            Regex sRegexVorNdb = new Regex(@"^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(;*.*)", RegexOptions.Compiled);
 
             foreach (string line in vs)
             {
@@ -525,6 +527,7 @@ namespace FeBuddyLibrary.Dxf.Data
                         Frequency = match.Groups[2].Value,
                         Lat = match.Groups[3].Value,
                         Lon = match.Groups[4].Value,
+                        Comments = match.Groups[5].Value
                     };
 
                     results.Add(model);
@@ -573,7 +576,7 @@ namespace FeBuddyLibrary.Dxf.Data
             List<SctArtccModel> results = new List<SctArtccModel>();
 
             // Is this ALL "Boundaries"????????
-            Regex sRegexBoundarySegment = new Regex(@"^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)", RegexOptions.Compiled);
+            Regex sRegexBoundarySegment = new Regex(@"^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(;*.*)", RegexOptions.Compiled);
 
             foreach (string line in vs)
             {
@@ -593,7 +596,8 @@ namespace FeBuddyLibrary.Dxf.Data
                         StartLat = match.Groups[2].Value,
                         StartLon = match.Groups[3].Value,
                         EndLat = match.Groups[4].Value,
-                        EndLon = match.Groups[5].Value
+                        EndLon = match.Groups[5].Value,
+                        Comments = match.Groups[6].Value
                     };
 
                     results.Add(model);
@@ -794,7 +798,7 @@ namespace FeBuddyLibrary.Dxf.Data
             Logger.LogMessage("INFO", "GETTING SCT AIRPORTS");
 
             List<SctAirportModel> results = new List<SctAirportModel>();
-            Regex sRegexAirport = new Regex(@"^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)(?:\s+([ABCDEG]))?", RegexOptions.Compiled);
+            Regex sRegexAirport = new Regex(@"^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)(?:\s+([ABCDEG]))?\s+(;*.*)", RegexOptions.Compiled);
 
             foreach (string line in vs)
             {
@@ -824,6 +828,7 @@ namespace FeBuddyLibrary.Dxf.Data
                         Lat = match.Groups[3].Value,
                         Lon = match.Groups[4].Value,
                         Airspace = match.Groups[5].Value,
+                        Comments = match.Groups[6].Value
                     };
 
                     results.Add(model);

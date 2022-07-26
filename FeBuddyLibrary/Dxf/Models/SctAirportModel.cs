@@ -13,7 +13,7 @@
         {
             get
             {
-                string output = $"{Id} {Frequency} {Lat} {Lon} {Airspace}";
+                string output = $"{Id.PadRight(4,' ')} {Frequency} {Lat} {Lon} {Airspace}";
 
                 if (!string.IsNullOrEmpty(Comments))
                 {

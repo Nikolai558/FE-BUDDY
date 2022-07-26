@@ -16,7 +16,7 @@
         {
             get
             {
-                string output = $"{RunwayNumber} {OppositeRunwayNumber} {MagRunwayHeading} {OppositeMagRunwayHeading} {StartLat} {StartLon} {EndLat} {EndLon}";
+                string output = $"{RunwayNumber, -3} {OppositeRunwayNumber,-3} {MagRunwayHeading,-3} {OppositeMagRunwayHeading,-3} {StartLat} {StartLon} {EndLat} {EndLon}";
 
                 if (!string.IsNullOrEmpty(Comments))
                 {

@@ -11,7 +11,7 @@
         {
             get
             {
-                string output = $"{LabelText} {Lat} {Lon} {Color}";
+                string output = $"\"{LabelText}\" {Lat} {Lon} {Color}";
                 return output;
             }
         }

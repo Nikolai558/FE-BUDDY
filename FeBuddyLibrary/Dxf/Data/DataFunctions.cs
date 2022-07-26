@@ -120,7 +120,7 @@ namespace FeBuddyLibrary.Dxf.Data
 
             var result = new List<SctLabelModel>();
 
-            Regex sRegexStaticText = new Regex(@"^""(.+)""\s+(\S+)\s+(\S+)\s+(\S+)", RegexOptions.Compiled);
+            Regex sRegexStaticText = new Regex(@"^""(.+)""\s+(\S+)\s+(\S+)\s+(\S+)\s(;*.*)", RegexOptions.Compiled);
 
             foreach (string line in vs)
             {
@@ -140,7 +140,8 @@ namespace FeBuddyLibrary.Dxf.Data
                         LabelText = match.Groups[1].Value,
                         Lat = match.Groups[2].Value,
                         Lon = match.Groups[3].Value,
-                        Color = match.Groups[4].Value
+                        Color = match.Groups[4].Value,
+                        Comments = match.Groups[5].Value
                     };
                     result.Add(model);
                     //Logger.LogMessage("DEBUG", $"Found Correct Label format: text={model.LabelText}, lat={model.Lat}, lon={model.Lon}, color={model.Color}");

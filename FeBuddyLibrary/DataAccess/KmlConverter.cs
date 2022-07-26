@@ -505,7 +505,7 @@ namespace FeBuddyLibrary.DataAccess
             Folder regionsFolder = new Folder();
             regionsFolder.Name = "[REGIONS]";
 
-            foreach (var item in _sctFileModel.SctRegionsSection)
+            foreach (SctRegionModel item in _sctFileModel.SctRegionsSection)
             {
 
                 bool undefinedColor = false;
@@ -571,6 +571,8 @@ namespace FeBuddyLibrary.DataAccess
 
             foreach (SctLabelModel item in _sctFileModel.SctLabelSection)
             {
+                Description description = new Description();
+                description.Text = $"[FEB][COMMENTS]{item.Comments}[/COMMENTS][/FEB]";
                 bool undefinedColor = false;
                 if (!_currentStyleIds.Contains(item.Color) && !_currentStyleIds.Contains("Undefined_" + item.Color))
                 {
@@ -588,6 +590,7 @@ namespace FeBuddyLibrary.DataAccess
                 point.Coordinate = new Vector(double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.Lat, true, false, _df._navaidPositions), false)), double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.Lon, false, false, _df._navaidPositions), false)));
                 labelPlaceMark.Geometry = point;
                 labelPlaceMark.Visibility = false;
+                labelPlaceMark.Description = description;
 
                 if (undefinedColor)
                 {
@@ -754,6 +757,8 @@ namespace FeBuddyLibrary.DataAccess
                 collectionFolder.Name = $"[{collectionName}]";
                 foreach (var item in collections[collectionName])
                 {
+                    Description description = new Description();
+                    description.Text = $"[FEB][COMMENTS]{item.Comments}[/COMMENTS][/FEB]";
                     LineString line = new LineString();
                     line.Coordinates = new CoordinateCollection();
                     line.Coordinates.Add(new Vector(double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.StartLat, true, false, _df._navaidPositions), false)), double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.StartLon, false, false, _df._navaidPositions), false))));
@@ -762,7 +767,7 @@ namespace FeBuddyLibrary.DataAccess
                     itemPlacemark.Geometry = line;
                     itemPlacemark.Name = item.Name;
                     itemPlacemark.Visibility = false;
-
+                    itemPlacemark.Description = description;
                     collectionFolder.AddFeature(itemPlacemark);
                 }
                 collectionFolder.Visibility = false;
@@ -777,12 +782,15 @@ namespace FeBuddyLibrary.DataAccess
 
             foreach (SctFixesModel item in _sctFileModel.SctFixesSection)
             {
+                var description = new Description();
+                description.Text = $"[FEB][COMMENTS]{item.Comments}[/COMMENTS][/FEB]";
                 var point = new Point();
                 Placemark fixPlaceMark = new Placemark();
                 fixPlaceMark.Name = item.FixName;
                 point.Coordinate = new Vector(double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.Lat, true, false, _df._navaidPositions), false)), double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.Lon, false, false, _df._navaidPositions), false)));
                 fixPlaceMark.Geometry = point;
                 fixPlaceMark.Visibility = false;
+                fixPlaceMark.Description = description;
                 fixFolder.AddFeature(fixPlaceMark);
             }
             fixFolder.Visibility = false;
@@ -805,7 +813,7 @@ namespace FeBuddyLibrary.DataAccess
                 Placemark runwayPlacemark = new Placemark();
                 runwayPlacemark.Geometry = line;
                 runwayPlacemark.Name = item.RunwayNumber + "-" + item.OppositeRunwayNumber;
-                description.Text = $"[FEB][RWY]{item.RunwayNumber}[/RWY][OPPRWY]{item.OppositeRunwayNumber}[/OPPRWY][RWYHDG]{item.MagRunwayHeading}[/RWYHDG][OPPRWYHDG]{item.OppositeMagRunwayHeading}[/OPPRWYHDG][/FEB]";
+                description.Text = $"[FEB][RWY]{item.RunwayNumber}[/RWY][OPPRWY]{item.OppositeRunwayNumber}[/OPPRWY][RWYHDG]{item.MagRunwayHeading}[/RWYHDG][OPPRWYHDG]{item.OppositeMagRunwayHeading}[/OPPRWYHDG][COMMENTS]{item.Comments}[/COMMENTS][/FEB]";
                 runwayPlacemark.Description = description;
                 runwayPlacemark.Visibility = false;
 
@@ -827,7 +835,7 @@ namespace FeBuddyLibrary.DataAccess
                 var point = new Point();
                 Placemark airportPlaceMark = new Placemark();
                 airportPlaceMark.Name = item.Id;
-                description.Text = $"[FEB][APTFREQ]{item.Frequency}[/APTFREQ][/FEB]";
+                description.Text = $"[FEB][APTFREQ]{item.Frequency}[/APTFREQ][COMMENTS]{item.Comments}[/COMMENTS][/FEB]";
                 airportPlaceMark.Description = description;
                 point.Coordinate = new Vector(double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.Lat, true, false, _df._navaidPositions), false)), double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.Lon, false, false, _df._navaidPositions), false)));
                 airportPlaceMark.Geometry = point;
@@ -848,7 +856,7 @@ namespace FeBuddyLibrary.DataAccess
                 var point = new Point();
                 Placemark vorPlaceMark = new Placemark();
                 vorPlaceMark.Name = item.Id;
-                description.Text = $"[FEB][VORFREQ]{item.Frequency}[/VORFREQ][/FEB]";
+                description.Text = $"[FEB][VORFREQ]{item.Frequency}[/VORFREQ][COMMENTS]{item.Comments}[/COMMENTS][/FEB]";
                 vorPlaceMark.Description = description;
                 point.Coordinate = new Vector(double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.Lat, true, false, _df._navaidPositions), false)), double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.Lon, false, false, _df._navaidPositions), false)));
                 vorPlaceMark.Geometry = point;
@@ -870,7 +878,7 @@ namespace FeBuddyLibrary.DataAccess
                 var point = new Point();
                 Placemark NDBPlaceMark = new Placemark();
                 NDBPlaceMark.Name = item.Id;
-                description.Text = $"[FEB][NDBFREQ]{item.Frequency}[/NDBFREQ][/FEB]";
+                description.Text = $"[FEB][NDBFREQ]{item.Frequency}[/NDBFREQ][COMMENTS]{item.Comments}[/COMMENTS][/FEB]";
                 NDBPlaceMark.Description = description;
                 point.Coordinate = new Vector(double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.Lat, true, false, _df._navaidPositions), false)), double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.Lon, false, false, _df._navaidPositions), false)));
                 NDBPlaceMark.Geometry = point;

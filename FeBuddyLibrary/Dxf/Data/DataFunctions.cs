@@ -660,10 +660,20 @@ namespace FeBuddyLibrary.Dxf.Data
             foreach (string line in vs)
             {
                 (bool goodLine, string _line) = VerifyLine(line);
+                string comment = "";
 
                 if (goodLine == false)
                 {
                     continue;
+                }
+
+                if (_line.Contains(';'))
+                {
+                    // |                           N042.41.38.800 W088.08.48.300 N042.32.57.900 W088.08.45.800 |;FANZI WENUL| ;adsasd asdasd |
+                    // |                           N042.41.38.800 W088.08.48.300 N042.32.57.900 W088.08.45.800 |;FANZI WENUL|
+                    string[] splitLine = _line.Split(';');
+                    _line = splitLine[0];
+                    comment = ";" + String.Join(" ;", splitLine.Skip(1));
                 }
 
                 if (!IsWhitespace(_line[0]))
@@ -683,6 +693,7 @@ namespace FeBuddyLibrary.Dxf.Data
                             EndLat = match.Groups[4].Value,
                             EndLon = match.Groups[5].Value,
                             Color = match.Groups[6].Value,
+                            Comment = comment,
                             AdditionalLines = new List<SctAditionalDiagramLineSegments>()
                         };
                         //Logger.LogMessage("DEBUG", $"Found BEGINING OF SID/STAR: name={diagramName}, startLat={diagramModel.StartLat}, startLon={diagramModel.StartLon}, endLat={diagramModel.EndLat}, endLon={diagramModel.EndLon}, Color={diagramModel.Color}");
@@ -704,6 +715,7 @@ namespace FeBuddyLibrary.Dxf.Data
                             EndLat = match.Groups[3].Value,
                             EndLon = match.Groups[4].Value,
                             Color = match.Groups[5].Value,
+                            Comment = comment,
                         };
                         diagramModel.AdditionalLines.Add(model);
                         //Logger.LogMessage("DEBUG", $"Found Continuation OF SID/STAR: name={diagramName}, startLat={model.StartLat}, startLon={model.StartLon}, endLat={model.EndLat}, endLon={model.EndLon}, Color={model.Color}");

@@ -114,12 +114,17 @@ namespace FeBuddyLibrary.DataAccess
                 {
                     if (count == 0)
                     {
+                        count += 1;
                         featureModl.Lat = LatLonHelpers.CreateDMS(coord.Latitude, true);
                         featureModl.Lon = LatLonHelpers.CreateDMS(coord.Longitude, false);
-                        count += 1;
                     }
                     else
                     {
+                        count += 1;
+                        if (count == itemPoint.Coordinates.Count())
+                        {
+                            break;
+                        }
                         RegionPolygonPoints addlPoint = new RegionPolygonPoints()
                         {
                             Lat = LatLonHelpers.CreateDMS(coord.Latitude, true),
@@ -150,8 +155,16 @@ namespace FeBuddyLibrary.DataAccess
                 };
                 foreach (Feature item in diagramFolder.Features)
                 {
+                    if (diagramFolder.Name.Trim() == "All_DPs")
+                    {
+                        string stop = "STOP";
+                    }
+
                     var itemPlacemark = (Placemark)item;
-                    var itemPoint = (LineString)itemPlacemark.Geometry;
+                    LineString itemPoint = (LineString)itemPlacemark.Geometry;
+                    Description description = itemPlacemark.Description;
+                    string[] descriptionLines = description?.Text.Split(new String[] {"\r\n", "\r", "\n"}, StringSplitOptions.None) ?? Array.Empty<string>();
+
                     // Line collection (Path)
                     if (count == 0)
                     {
@@ -167,6 +180,7 @@ namespace FeBuddyLibrary.DataAccess
                         featureModel.EndLat = elat;
                         featureModel.EndLon = elon;
                         featureModel.Color = item.StyleUrl?.ToString().Substring(1) ?? "";
+                        featureModel.Comment = descriptionLines[0];
                         if (featureModel.Color.Contains("Undefined_"))
                         {
                             featureModel.Color = featureModel.Color[10..];
@@ -177,12 +191,18 @@ namespace FeBuddyLibrary.DataAccess
                     {
                         bool startingCoords = true;
                         SctAditionalDiagramLineSegments featAditionalLines = new SctAditionalDiagramLineSegments() ;
+                        int addlLineCount = 0;
                         foreach (Vector coords in itemPoint.Coordinates)
                         {
                             if (startingCoords)
                             {
                                 featAditionalLines.StartLat = LatLonHelpers.CreateDMS(coords.Latitude, true);
                                 featAditionalLines.StartLon = LatLonHelpers.CreateDMS(coords.Longitude, false);
+                                if (descriptionLines.Count() -1 >= addlLineCount)
+                                {
+                                    featAditionalLines.Comment = descriptionLines[addlLineCount];
+                                }
+                                addlLineCount += 1;
                                 startingCoords = false;
                             }
                             else
@@ -582,8 +602,10 @@ namespace FeBuddyLibrary.DataAccess
             Folder regionsFolder = new Folder();
             regionsFolder.Name = "[REGIONS]";
 
+            string firstCoord = "";
             foreach (SctRegionModel item in _sctFileModel.SctRegionsSection)
             {
+                int count = 0;
 
                 bool undefinedColor = false;
                 if (!_currentStyleIds.Contains(item.RegionColorName) && !_currentStyleIds.Contains("Undefined_" + item.RegionColorName))
@@ -600,11 +622,26 @@ namespace FeBuddyLibrary.DataAccess
                 CoordinateCollection coordinates = new CoordinateCollection();
 
                 // Starting Point
-
+                firstCoord = $"{item.Lat} {item.Lon}";
+                Vector firstCoordVect = new Vector(double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(firstCoord.Split(' ')[0], true, false, _df._navaidPositions), false)), double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(firstCoord.Split(' ')[1], false, false, _df._navaidPositions), false)));
                 coordinates.Add(new Vector(double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.Lat, true, false, _df._navaidPositions), false)), double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(item.Lon, false, false, _df._navaidPositions), false))));
 
                 foreach (var addlCoords in item.AdditionalRegionInfo)
                 {
+                    count += 1;
+                    if (count == item.AdditionalRegionInfo.Count())
+                    {
+                        if ($"{addlCoords.Lat} {addlCoords.Lon}" == firstCoord)
+                        {
+                            bool condition = coordinates.Last().Latitude == firstCoordVect.Latitude && coordinates.Last().Longitude == firstCoordVect.Longitude;
+                            while (condition)
+                            {
+                                coordinates.Remove(coordinates.Last());
+                                condition = coordinates.Last().Latitude == firstCoordVect.Latitude && coordinates.Last().Longitude == firstCoordVect.Longitude;
+                            }
+                            break;
+                        }
+                    }
                     coordinates.Add(new Vector(double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(addlCoords.Lat, true, false, _df._navaidPositions), false)), double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(addlCoords.Lon, false, false, _df._navaidPositions), false))));
                 }
 
@@ -716,6 +753,7 @@ namespace FeBuddyLibrary.DataAccess
                     Folder diagramFolder = new Folder();
                     diagramFolder.Name = item.DiagramName;
                     int collectionCount = 0;
+                    Description description = new Description();
                     
                     LineString line = new LineString();
                     line.Coordinates = new CoordinateCollection();
@@ -725,6 +763,8 @@ namespace FeBuddyLibrary.DataAccess
                     itemPlacemark.Geometry = line;
                     itemPlacemark.Name = "LineCollection_" + collectionCount;
                     itemPlacemark.Visibility = false;
+                    description.Text = $"{item.Comment ?? ""}\n";
+                    itemPlacemark.Description = description;
 
                     if (undefinedColor)
                     {
@@ -740,6 +780,7 @@ namespace FeBuddyLibrary.DataAccess
                     LineString additionalLines = new LineString();
                     additionalLines.Coordinates = new CoordinateCollection();
                     Placemark additionalLinesPlacemark = new Placemark();
+                    Description addlLineDescription = new Description();
 
                     string tempcolor = "";
                     string previousEndingCoord = null;
@@ -764,6 +805,7 @@ namespace FeBuddyLibrary.DataAccess
                             additionalLinesPlacemark.Geometry = additionalLines;
                             additionalLinesPlacemark.Name = "LineCollection_" + collectionCount;
                             additionalLinesPlacemark.Visibility = false;
+                            additionalLinesPlacemark.Description = addlLineDescription;
                             if (undefinedColor)
                             {
                                 additionalLinesPlacemark.StyleUrl = new Uri("#Undefined_" + lineSeg.Color, UriKind.Relative);
@@ -778,11 +820,13 @@ namespace FeBuddyLibrary.DataAccess
                             additionalLines = new LineString();
                             additionalLines.Coordinates = new CoordinateCollection();
                             additionalLinesPlacemark = new Placemark();
+                            addlLineDescription = new Description();
                         }
 
                         additionalLines.Coordinates.Add(new Vector(double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(lineSeg.StartLat, true, false, _df._navaidPositions), false)), double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(lineSeg.StartLon, false, false, _df._navaidPositions), false))));
                         additionalLines.Coordinates.Add(new Vector(double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(lineSeg.EndLat, true, false, _df._navaidPositions), false)), double.Parse(LatLonHelpers.CreateDecFormat(LatLonHelpers.CorrectLatLon(lineSeg.EndLon, false, false, _df._navaidPositions), false))));
                         previousEndingCoord = lineSeg.EndLat + " " + lineSeg.EndLon;
+                        addlLineDescription.Text += $"{lineSeg.Comment?? ""}\n";
                         tempcolor = lineSeg.Color;
                     }
                     collectionCount += 1;
@@ -790,6 +834,7 @@ namespace FeBuddyLibrary.DataAccess
                     additionalLinesPlacemark.Geometry = additionalLines;
                     additionalLinesPlacemark.Name = "LineCollection_" + collectionCount;
                     additionalLinesPlacemark.Visibility = false;
+                    additionalLinesPlacemark.Description = description;
 
                     if (undefinedColor)
                     {
@@ -800,7 +845,7 @@ namespace FeBuddyLibrary.DataAccess
                         additionalLinesPlacemark.StyleUrl = new Uri("#" + tempcolor, UriKind.Relative);
                     }
 
-                    if (additionalLines.Coordinates.Count > 0)
+                    if (additionalLines.Coordinates.Count() > 0)
                     {
                         diagramFolder.AddFeature(additionalLinesPlacemark);
                     }

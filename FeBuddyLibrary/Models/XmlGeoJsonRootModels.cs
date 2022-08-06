@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Serialization;
@@ -82,6 +83,17 @@ namespace FeBuddyLibrary.Models
 
         [XmlAttribute(AttributeName = "Thickness")]
         public int Thickness { get; set; }
+
+    }
+
+    [XmlRoot(ElementName = "SymbolDefaults")]
+    public class SymbolDefaults
+    {
+    }
+
+    [XmlRoot(ElementName = "TextDefaults")]
+    public class TextDefaults
+    {
     }
 
     [XmlRoot(ElementName = "Element")]
@@ -104,6 +116,12 @@ namespace FeBuddyLibrary.Models
 
         [XmlAttribute(AttributeName = "EndLon")]
         public double EndLon { get; set; }
+
+        [XmlAttribute(AttributeName = "Lat")]
+        public double Lat { get; set; }
+
+        [XmlAttribute(AttributeName = "Lon")]
+        public double Lon { get; set; }
     }
 
     [XmlRoot(ElementName = "Elements")]
@@ -116,8 +134,14 @@ namespace FeBuddyLibrary.Models
     [XmlRoot(ElementName = "GeoMapObject")]
     public class GeoMapObject
     {
-        [XmlElement(ElementName = "LineDefaults")]
+        [XmlElement(ElementName = "LineDefaults", IsNullable = true)]
         public LineDefaults LineDefaults { get; set; }
+
+        [XmlElement(ElementName = "SymbolDefaults", IsNullable = true)]
+        public SymbolDefaults SymbolDefaults { get; set; }
+        
+        [XmlElement(ElementName = "TextDefaults", IsNullable = true)]
+        public TextDefaults TextDefaults { get; set; }
 
         [XmlElement(ElementName = "Elements")]
         public Elements Elements { get; set; }

@@ -3,11 +3,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Text.Json;
 using System.Threading.Tasks;
 using System.Xml.Serialization;
 using FeBuddyLibrary.Models;
-using Newtonsoft.Json.Linq;
+using Newtonsoft.Json;
 
 namespace FeBuddyLibrary.DataAccess
 {
@@ -15,6 +14,8 @@ namespace FeBuddyLibrary.DataAccess
     {
         public GeoMapSet ReadGeoMap(string filepath)
         {
+            // TODO - xsi:type will mess up the reading of XML. Need to either work around it or figure out the proper way to handle it.
+
             XmlSerializer serializer = new XmlSerializer(typeof(GeoMapSet));
             
             GeoMapSet geo;
@@ -43,20 +44,37 @@ namespace FeBuddyLibrary.DataAccess
                 foreach (GeoMapObject geoMapObject in geoMap.Objects.GeoMapObject)
                 {
                     string fileName = Path.Combine(geoMapDir, geoMapObject.Description + ".geojson");
-                    System.IO.FileInfo file = new System.IO.FileInfo(fileName);
+                    FileInfo file = new FileInfo(fileName);
                     file.Directory.Create(); // If the directory already exists, this method does nothing.
-                    System.IO.File.WriteAllText(file.FullName, "TEST");
+
+                    var geojson = new FeatureCollection();
+
+                    foreach (var element in geoMapObject.Elements.Element)
+                    {
+                        if (element.XsiType == "Symbol")
+                        {
+                            geojson.features.Add(
+                                new Feature() 
+                                { 
+                                    geometry = new Geometry() 
+                                    { 
+                                        type = element.XsiType,
+                                        corrdinates = new List<dynamic>() { element.Lat, element.Lon } 
+                                    },
+                                    properties = new Properties()
+                                    {
+                                        //style = geoMapObject.SymbolDefaults.Style,
+                                        //size = geoMapObject.SymbolDefaults.Size,
+                                    }
+                                });
+                        }
+
+                    }
+                    
+                    string jsonString = JsonConvert.SerializeObject(geojson, new JsonSerializerSettings { Formatting = Formatting.Indented, NullValueHandling = NullValueHandling.Ignore });
+                    File.WriteAllText(file.FullName, jsonString);
                 }
-
-
             }
-
-
-
-
-
-
-
         }
 
 

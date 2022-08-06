@@ -37,6 +37,9 @@ namespace FeBuddyLibrary.DataAccess
 
             //File.WriteAllText(dirPath + "test.json", jsonString);
 
+            var types = new List<string>();
+
+
             foreach (GeoMap geoMap in geo.GeoMaps.GeoMap)
             {
                 string geoMapDir = Path.Combine(dirPath, geoMap.Name);
@@ -49,32 +52,84 @@ namespace FeBuddyLibrary.DataAccess
 
                     var geojson = new FeatureCollection();
 
-                    foreach (var element in geoMapObject.Elements.Element)
+                    foreach (Element element in geoMapObject.Elements.Element)
                     {
-                        if (element.XsiType == "Symbol")
+                        switch (element.XsiType)
                         {
-                            geojson.features.Add(
-                                new Feature() 
-                                { 
-                                    geometry = new Geometry() 
-                                    { 
-                                        type = element.XsiType,
-                                        corrdinates = new List<dynamic>() { element.Lat, element.Lon } 
-                                    },
-                                    properties = new Properties()
-                                    {
-                                        //style = geoMapObject.SymbolDefaults.Style,
-                                        //size = geoMapObject.SymbolDefaults.Size,
-                                    }
-                                });
+                            case "Symbol": { geojson.features.Add(CreateSymbolFeature(element, geoMapObject.SymbolDefaults)); break; }
+                            case "Text": { geojson.features.Add(CreateTextFeature(element, geoMapObject.TextDefaults)); break; }
+                            case "Line": { break; }
+                            default: { break; }
                         }
-
                     }
                     
                     string jsonString = JsonConvert.SerializeObject(geojson, new JsonSerializerSettings { Formatting = Formatting.Indented, NullValueHandling = NullValueHandling.Ignore });
                     File.WriteAllText(file.FullName, jsonString);
                 }
             }
+        }
+
+        private Feature CreateTextFeature(Element element, TextDefaults textDefaults)
+        {
+            var output = new Feature()
+            {
+                geometry = new Geometry()
+                {
+                    type = "Point",
+                    coordinates = new List<dynamic>() { element.Lon, element.Lat }
+                },
+                properties = new Properties()
+                {
+                    text = new string[] { element.Lines },
+                    bcg = textDefaults.Bcg,
+                    size = textDefaults.Size,
+                    underline = textDefaults.Underline,
+                    opaque = textDefaults.Opaque,
+                    xOffset = textDefaults.XOffset,
+                    yOffset = textDefaults.YOffset,
+                    color = null,
+                    zIndex = null
+                }
+            };
+
+            try
+            {
+                output.properties.filters = Array.ConvertAll(textDefaults.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty).Split(','), s => int.Parse(s));
+
+            }
+            catch (Exception)
+            {
+                output.properties.filters = new int[] { 0 };
+            }
+            return output;
+        }
+
+        private Feature CreateSymbolFeature(Element element, SymbolDefaults symbolDefaults)
+        {
+            var output = new Feature() {
+                    geometry = new Geometry()
+                    {
+                        type = "Point",
+                        coordinates = new List<dynamic>() { element.Lon, element.Lat }
+                    },
+                    properties = new Properties()
+                    {
+                        style = symbolDefaults.Style,
+                        size = symbolDefaults.Size,
+                        bcg = symbolDefaults.Bcg,
+                        zIndex = null,
+                        color = null,
+                    }};
+            try
+            {
+                output.properties.filters = Array.ConvertAll(symbolDefaults.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty).Split(','), s => int.Parse(s));
+
+            }
+            catch (Exception)
+            {
+                output.properties.filters = new int[] { 0 };
+            }
+            return output;
         }
 
 

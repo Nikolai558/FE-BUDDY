@@ -23,41 +23,41 @@ namespace FeBuddyLibrary.Models
     public class Geometry
     {
         public string type { get; set; }
-        public List<dynamic> corrdinates { get; set; } = new List<dynamic>();
+        public List<dynamic> coordinates { get; set; } = new List<dynamic>();
     }
 
     public class Properties
     {
         // [ALL]
-        public string color { get; set; } // Hex color String 
+        public string color { get; set; } = null;  // Hex color String 
         // [ALL]
-        public int bcg { get; set; } // Brightnes Control Group, Int in the range of 1-20
+        public int? bcg { get; set; } = null;   // Brightnes Control Group, Int in the range of 1-20
         // [ALL]
-        public int[] filters { get; set; } // Array of int in the range of 0-20, ERAM Filter
+        public int[] filters { get; set; } = null;  // Array of int in the range of 0-20, ERAM Filter
         // [ALL]
-        public int zIndex { get; set; } // Any positive Integer, higher int get shown ontop
-        
+        public int? zIndex { get; set; } = null;  // Any positive Integer, higher int get shown ontop
+
         // [LINE, SYMBOL] 
-        public string style { get; set; } // solid, shortDashed, longDashed, or longDashShortDash, obstruction1, obstruction2, heliport, nuclear, emergencyAirport, radar, iaf, rnavOnlyWaypoint, rnav, airwayIntersections, ndb, vor, otherWaypoints, airport, satelliteAirport, or tacan
+        public string style { get; set; } = null;  // solid, shortDashed, longDashed, or longDashShortDash, obstruction1, obstruction2, heliport, nuclear, emergencyAirport, radar, iaf, rnavOnlyWaypoint, rnav, airwayIntersections, ndb, vor, otherWaypoints, airport, satelliteAirport, or tacan
 
         // [LINE]
-        public int thickness { get; set; } // any positive int 
+        public int? thickness { get; set; } = null;   // any positive int 
 
         // [Polygon]
-        public string asdex { get; set; } // runway, taxiway, apron, or structure 
+        public string asdex { get; set; } = null;   // runway, taxiway, apron, or structure 
 
         //[Symbol, Text]
-        public int size { get; set; } // int in the range of 1-4 for text it is 0-5
+        public int? size { get; set; } = null;   // int in the range of 1-4 for text it is 0-5
 
         // [Text
-        public string[] text { get; set; } // Each string represents a line of text
+        public string[] text { get; set; } = null;   // Each string represents a line of text
         // [Text]
-        public bool underline { get; set; }
+        public bool? underline { get; set; } = null;
         // [Text]
-        public bool opaque { get; set; }
+        public bool? opaque { get; set; } = null;
         // [Text]
-        public int xOffset { get; set; }
+        public int? xOffset { get; set; } = null;
         // [Text]
-        public int yOffset { get; set; }
+        public int? yOffset { get; set; } = null;
     }
 }

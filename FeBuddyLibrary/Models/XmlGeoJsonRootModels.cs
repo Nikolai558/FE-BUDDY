@@ -69,7 +69,7 @@ namespace FeBuddyLibrary.Models
         public List<FilterMenu> FilterMenu { get; set; }
     }
 
-    [XmlRoot(ElementName = "LineDefaults")]
+    [XmlRoot(ElementName = "LineDefaults", IsNullable = true)]
     public class LineDefaults
     {
         [XmlAttribute(AttributeName = "Bcg")]
@@ -86,14 +86,45 @@ namespace FeBuddyLibrary.Models
 
     }
 
-    [XmlRoot(ElementName = "SymbolDefaults")]
+    [XmlRoot(ElementName = "SymbolDefaults", IsNullable = true)]
     public class SymbolDefaults
     {
+        [XmlAttribute(AttributeName = "Bcg")]
+        public int Bcg { get; set; }
+
+        [XmlAttribute(AttributeName = "Filters")]
+        public string Filters { get; set; }
+
+        [XmlAttribute(AttributeName = "Style")]
+        public string Style { get; set; }
+
+        [XmlAttribute(AttributeName = "Size")]
+        public int Size { get; set; }
+
     }
 
-    [XmlRoot(ElementName = "TextDefaults")]
+    [XmlRoot(ElementName = "TextDefaults", IsNullable = true)]
     public class TextDefaults
     {
+        [XmlAttribute(AttributeName = "Bcg")]
+        public int Bcg { get; set; }
+
+        [XmlAttribute(AttributeName = "Filters")]
+        public string Filters { get; set; }
+
+        [XmlAttribute(AttributeName = "Size")]
+        public int Size { get; set; }
+
+        [XmlAttribute(AttributeName = "Underline")]
+        public bool Underline { get; set; }
+
+        [XmlAttribute(AttributeName = "Opaque")]
+        public bool Opaque { get; set; }
+
+        [XmlAttribute(AttributeName = "XOffset")]
+        public int XOffset { get; set; }
+        [XmlAttribute(AttributeName = "YOffset")]
+        public int YOffset { get; set; }
     }
 
     [XmlRoot(ElementName = "Element")]
@@ -122,6 +153,9 @@ namespace FeBuddyLibrary.Models
 
         [XmlAttribute(AttributeName = "Lon")]
         public double Lon { get; set; }
+
+        [XmlAttribute(AttributeName = "Lines")]
+        public string Lines { get; set; }
     }
 
     [XmlRoot(ElementName = "Elements")]

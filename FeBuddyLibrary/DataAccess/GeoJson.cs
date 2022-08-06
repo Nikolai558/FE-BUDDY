@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -10,8 +11,29 @@ using Newtonsoft.Json;
 
 namespace FeBuddyLibrary.DataAccess
 {
+    public enum VideoMapFileFormat
+    {
+        shortName,
+        longName,
+        both
+    }
+
     public class GeoJson
     {
+        public VideoMaps ReadVideoMap(string filepath)
+        {
+            XmlSerializer serializer = new XmlSerializer(typeof(VideoMaps));
+
+            VideoMaps videoMaps;
+
+            using (Stream reader = new FileStream(filepath, FileMode.Open))
+            {
+                videoMaps = (VideoMaps)serializer.Deserialize(reader);
+            }
+
+            return videoMaps;
+        }
+
         public GeoMapSet ReadGeoMap(string filepath)
         {
             // TODO - xsi:type will mess up the reading of XML. Need to either work around it or figure out the proper way to handle it.
@@ -28,45 +50,226 @@ namespace FeBuddyLibrary.DataAccess
             return geo;
         }
 
-        public void WriteGeoJson(string dirPath, GeoMapSet geo)
+        private static string MakeValidFileName(string name)
         {
-            //string jsonString = JsonSerializer.Serialize(geo, new JsonSerializerOptions()
-            //{
-            //    WriteIndented = true,
-            //});
+            string invalidChars = System.Text.RegularExpressions.Regex.Escape(new string(System.IO.Path.GetInvalidFileNameChars()));
+            string invalidRegStr = string.Format(@"([{0}]*\.+$)|([{0}]+)", invalidChars);
 
-            //File.WriteAllText(dirPath + "test.json", jsonString);
+            return System.Text.RegularExpressions.Regex.Replace(name, invalidRegStr, "-");
+        }
 
-            var types = new List<string>();
+        
+
+        public void WriteVideoMapGeoJson(string dirPath, VideoMaps videoMaps, string videoMapName, VideoMapFileFormat videoMapFileFormat)
+        {
+            string videoMapDir = Path.Combine(dirPath, videoMapName);
+            foreach (VideoMap videoMapObject in videoMaps.VideoMap)
+            {
+                string fileName = "";
+                string fullFilePath = "";
+
+                if (videoMapFileFormat == VideoMapFileFormat.both)
+                {
+                    fileName = videoMapObject.ShortName + "__" + videoMapObject.LongName + ".geojson";
+                    fileName = MakeValidFileName(fileName);
+                    fullFilePath = Path.Combine(videoMapDir, fileName);
+                }
+                if (videoMapFileFormat == VideoMapFileFormat.shortName) 
+                {
+                    fileName = videoMapObject.ShortName + ".geojson";
+                    fileName = MakeValidFileName(fileName);
+                    fullFilePath = Path.Combine(videoMapDir, fileName); 
+                }
+                if (videoMapFileFormat == VideoMapFileFormat.longName) 
+                {
+                    fileName = videoMapObject.LongName + ".geojson";
+                    fileName = MakeValidFileName(fileName);
+                    fullFilePath = Path.Combine(videoMapDir, fileName); 
+                }
+
+                FileInfo file = new FileInfo(fullFilePath);
+                file.Directory.Create();
+                var geojson = new FeatureCollection();
+
+                Dictionary<string, string> colors = new Dictionary<string, string>();
+                foreach (var item in videoMapObject.Colors.NamedColor)
+                {
+                    Color itemColor = Color.FromArgb(item.Red, item.Green, item.Blue);
+                    colors.Add(item.Name, itemColor.R.ToString("X2") + itemColor.G.ToString("X2") + itemColor.B.ToString("X2"));
+                }
+
+                List<Feature> allFeatures = new List<Feature>();
+                vmElement prevElement = null;
+                Feature currentFeature = new Feature();
+                foreach (var item in videoMapObject.Elements.Element)
+                {
+                    if (prevElement == null)
+                    {
+                        currentFeature.geometry = new Geometry()
+                        {
+                            type = "LineString",
+                            coordinates = new List<dynamic>() { new List<double>() { item.StartLon, item.StartLat }, new List<double>() { item.EndLon, item.EndLat } }
+                        };
+                        currentFeature.properties = new Properties()
+                        {
+                            color = colors[item.Color],
+                            style = item.Style,
+                            thickness = item.Thickness,
+                        };
+                        prevElement = item;
+                        continue;
+                    }
+                    else
+                    {
+                        if (item.StartLon.ToString() + " " + item.StartLat.ToString() != prevElement.EndLon + " " + prevElement.EndLat)
+                        {
+                            if (currentFeature.geometry.coordinates.Count() > 0)
+                            {
+                                allFeatures.Add(currentFeature);
+                            }
+
+                            currentFeature = new Feature()
+                            {
+                                properties = new Properties()
+                                {
+                                    style = item.Style,
+                                    thickness = item.Thickness,
+                                    color = colors[item.Color]
+                                },
+                                geometry = new Geometry()
+                                {
+                                    type = "LineString",
+                                    coordinates = new List<dynamic>() { new List<double>() { item.StartLon, item.StartLat }, new List<double>() { item.EndLon, item.EndLat } }
+                                }
+                            };
+                        }
+                        else
+                        {
+                            var coords = new List<double>() { item.EndLon, item.EndLat };
+                            currentFeature.geometry.coordinates.Add(coords);
+                        }
+                    }
+                    prevElement = item;
+                }
+                allFeatures.Add(currentFeature);
+
+                geojson.features.AddRange(allFeatures);
+
+                string jsonString = JsonConvert.SerializeObject(geojson, new JsonSerializerSettings { Formatting = Formatting.Indented, NullValueHandling = NullValueHandling.Ignore });
+                File.WriteAllText(file.FullName, jsonString);
 
 
+            }
+        }
+
+        public void WriteGeoMapGeoJson(string dirPath, GeoMapSet geo)
+        {
             foreach (GeoMap geoMap in geo.GeoMaps.GeoMap)
             {
                 string geoMapDir = Path.Combine(dirPath, geoMap.Name);
 
                 foreach (GeoMapObject geoMapObject in geoMap.Objects.GeoMapObject)
                 {
-                    string fileName = Path.Combine(geoMapDir, geoMapObject.Description + ".geojson");
-                    FileInfo file = new FileInfo(fileName);
+                    string fileName = geoMapObject.Description + ".geojson";
+                    fileName = MakeValidFileName(fileName);
+
+                    string fullFilePath = Path.Combine(geoMapDir, fileName);
+                    FileInfo file = new FileInfo(fullFilePath);
                     file.Directory.Create(); // If the directory already exists, this method does nothing.
 
                     var geojson = new FeatureCollection();
 
+                    List<Element> AllLines = new List<Element>();
                     foreach (Element element in geoMapObject.Elements.Element)
                     {
                         switch (element.XsiType)
                         {
                             case "Symbol": { geojson.features.Add(CreateSymbolFeature(element, geoMapObject.SymbolDefaults)); break; }
                             case "Text": { geojson.features.Add(CreateTextFeature(element, geoMapObject.TextDefaults)); break; }
-                            case "Line": { break; }
+                            case "Line": { AllLines.Add(element); break; }
                             default: { break; }
                         }
+                    }
+                    if (AllLines.Count() > 0)
+                    {
+                        geojson.features.AddRange(CreateLineFeature(AllLines, geoMapObject.LineDefaults));
                     }
                     
                     string jsonString = JsonConvert.SerializeObject(geojson, new JsonSerializerSettings { Formatting = Formatting.Indented, NullValueHandling = NullValueHandling.Ignore });
                     File.WriteAllText(file.FullName, jsonString);
                 }
             }
+        }
+
+        private List<Feature> CreateLineFeature(List<Element> elements, LineDefaults lineDefaults)
+        {
+            List<Feature> featuresOutput = new List<Feature>();
+            
+            Element prevElement = null;
+            Feature CurrentFeature = new Feature()
+            {
+                properties = new Properties()
+                {
+                    bcg = lineDefaults.Bcg,
+                    style = lineDefaults.Style,
+                    thickness = lineDefaults.Thickness,
+
+                    color = null,
+                    zIndex = null,
+                },
+            };
+
+
+            foreach (Element element in elements)
+            {
+                if (prevElement == null)
+                {
+                    CurrentFeature.geometry = new Geometry()
+                    {
+                        type = "LineString",
+                        coordinates = new List<dynamic>() { new List<double>() { element.StartLon, element.StartLat }, new List<double>() { element.EndLon, element.EndLat } }
+                    };
+                    prevElement = element;
+                    continue;
+                }
+                else
+                {
+                    if (element.StartLon.ToString() + " " + element.StartLat.ToString() != prevElement.EndLon.ToString() + " " + prevElement.EndLat.ToString())
+                    {
+                        if (CurrentFeature.geometry.coordinates.Count() > 0)
+                        {
+                            featuresOutput.Add(CurrentFeature);
+                        }
+
+                        // Start Lat/Lon is different from Previous Element End Lat/Lon
+                        CurrentFeature = new Feature()
+                        {
+                            properties = new Properties()
+                            {
+                                bcg = lineDefaults.Bcg,
+                                style = lineDefaults.Style,
+                                thickness = lineDefaults.Thickness,
+
+                                color = null,
+                                zIndex = null,
+                            },
+                            geometry = new Geometry()
+                            {
+                                type = "LineString",
+                                coordinates =  new List<dynamic>() { new List<double>() { element.StartLon, element.StartLat }, new List<double>() { element.EndLon, element.EndLat } }
+                            }
+                        };
+                    }
+                    else
+                    {
+                        var coords = new List<double>() { element.EndLon, element.EndLat };
+                        CurrentFeature.geometry.coordinates.Add(coords);
+                    }
+                }
+                prevElement = element;
+            }
+            featuresOutput.Add(CurrentFeature);
+            return featuresOutput;
         }
 
         private Feature CreateTextFeature(Element element, TextDefaults textDefaults)

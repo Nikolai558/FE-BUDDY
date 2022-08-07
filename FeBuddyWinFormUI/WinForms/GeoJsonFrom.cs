@@ -16,11 +16,8 @@ namespace FeBuddyWinFormUI
 {
     public partial class GeoJsonForm : Form
     {
-        private bool nextAiracAvailable;
         private readonly string _currentVersion;
-        private bool userClicked = false;
         readonly PrivateFontCollection _pfc = new PrivateFontCollection();
-
 
         public GeoJsonForm(string currentVersion)
         {
@@ -32,17 +29,6 @@ namespace FeBuddyWinFormUI
 
             // It should grab from the assembily info. 
             this.Text = $"FE-BUDDY - V{currentVersion}";
-
-            chooseDirButton.Enabled = false;
-            startButton.Enabled = false;
-            sourceTypeGroupBox.Enabled = false;
-            sourceTypeGroupBox.Visible = false;
-
-            convertGroupBox.Enabled = false;
-            convertGroupBox.Visible = false;
-
-            startGroupBox.Enabled = false;
-            startGroupBox.Visible = false;
 
             GlobalConfig.outputDirBase = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
             filePathLabel.Text = GlobalConfig.outputDirBase;
@@ -86,16 +72,6 @@ namespace FeBuddyWinFormUI
             Logger.LogMessage("DEBUG", "GeoJson Form CLOSING");
         }
 
-        private void VstarsSelection_CheckedChanged(object sender, EventArgs e)
-        {
-
-        }
-
-        private void VeramSelection_CheckedChanged(object sender, EventArgs e)
-        {
-
-        }
-
         private void ChooseDirButton_Click(object sender, EventArgs e)
         {
             Logger.LogMessage("DEBUG", "USER CHOOSING DIFFERENT OUTPUT DIRECTORY");
@@ -113,23 +89,26 @@ namespace FeBuddyWinFormUI
 
         private void StartButton_Click(object sender, EventArgs e)
         {
-            StartParsing();
+            // TODO - DO STUFF HERE 
+
+
+            StartConversion();
         }
 
-        private void StartParsing()
+        private void StartConversion()
         {
-            Logger.LogMessage("INFO", "SETTING UP PARSING WORKER");
+            Logger.LogMessage("INFO", "SETTING UP Conversion WORKER");
 
             var worker = new BackgroundWorker();
             worker.RunWorkerCompleted += Worker_StartParsingCompleted;
-            worker.DoWork += Worker_StartParsingDoWork;
+            worker.DoWork += Worker_StartConversionDoWork;
 
             worker.RunWorkerAsync();
         }
 
-        private void Worker_StartParsingDoWork(object sender, DoWorkEventArgs e)
+        private void Worker_StartConversionDoWork(object sender, DoWorkEventArgs e)
         {
-           
+           // TODO - Do the Conversion Logic Here
         }
 
         private void Worker_StartParsingCompleted(object sender, RunWorkerCompletedEventArgs e)
@@ -146,7 +125,7 @@ namespace FeBuddyWinFormUI
             File.Copy(Logger._logFilePath, $"{GlobalConfig.outputDirectory}\\FE-BUDDY_LOG.txt");
         }
 
-        private void AiracDataForm_Shown(object sender, EventArgs e)
+        private void geoJsonForm_Shown(object sender, EventArgs e)
         {
             Logger.LogMessage("DEBUG", "SHOWING MAIN FORM");
         }

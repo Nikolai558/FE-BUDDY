@@ -77,7 +77,6 @@
             this.vStarsSelection.TabStop = true;
             this.vStarsSelection.Text = "vSTARS";
             this.vStarsSelection.UseVisualStyleBackColor = true;
-            this.vStarsSelection.CheckedChanged += new System.EventHandler(this.VstarsSelection_CheckedChanged);
             // 
             // vEramSelection
             // 
@@ -91,7 +90,6 @@
             this.vEramSelection.TabIndex = 1;
             this.vEramSelection.Text = "vERAM";
             this.vEramSelection.UseVisualStyleBackColor = true;
-            this.vEramSelection.CheckedChanged += new System.EventHandler(this.VeramSelection_CheckedChanged);
             // 
             // sourceLabel
             // 
@@ -443,7 +441,7 @@
             this.Text = "FE-BUDDY";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.GeojsonForm_Closing);
             this.Load += new System.EventHandler(this.GeoJsonForm_Load);
-            this.Shown += new System.EventHandler(this.AiracDataForm_Shown);
+            this.Shown += new System.EventHandler(this.geoJsonForm_Shown);
             this.sourceTypeGroupBox.ResumeLayout(false);
             this.sourceTypeGroupBox.PerformLayout();
             this.convertGroupBox.ResumeLayout(false);

@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using System.Xml.Serialization;
 using FeBuddyLibrary.Models;
 using Newtonsoft.Json;
+using FeBuddyLibrary.Helpers;
 
 namespace FeBuddyLibrary.DataAccess
 {
@@ -136,7 +137,7 @@ namespace FeBuddyLibrary.DataAccess
                         currentFeature.geometry = new Geometry()
                         {
                             type = "LineString",
-                            coordinates = new List<dynamic>() { new List<double>() { item.StartLon, item.StartLat }, new List<double>() { item.EndLon, item.EndLat } }
+                            coordinates = new List<dynamic>() { new List<double>() { LatLonHelpers.CorrectIlleagleLon(item.StartLon), item.StartLat }, new List<double>() { LatLonHelpers.CorrectIlleagleLon(item.EndLon), item.EndLat } }
                         };
                         currentFeature.properties = new Properties()
                         {
@@ -149,7 +150,7 @@ namespace FeBuddyLibrary.DataAccess
                     }
                     else
                     {
-                        if (item.StartLon.ToString() + " " + item.StartLat.ToString() != prevElement.EndLon + " " + prevElement.EndLat)
+                        if (LatLonHelpers.CorrectIlleagleLon(item.StartLon).ToString() + " " + item.StartLat.ToString() != LatLonHelpers.CorrectIlleagleLon(prevElement.EndLon) + " " + prevElement.EndLat)
                         {
                             if (currentFeature.geometry.coordinates.Count() > 0)
                             {
@@ -167,7 +168,7 @@ namespace FeBuddyLibrary.DataAccess
                                 geometry = new Geometry()
                                 {
                                     type = "LineString",
-                                    coordinates = new List<dynamic>() { new List<double>() { item.StartLon, item.StartLat }, new List<double>() { item.EndLon, item.EndLat } }
+                                    coordinates = new List<dynamic>() { new List<double>() { LatLonHelpers.CorrectIlleagleLon(item.StartLon), item.StartLat }, new List<double>() { LatLonHelpers.CorrectIlleagleLon(item.EndLon), item.EndLat } }
                                 }
                             };
                         }
@@ -255,14 +256,14 @@ namespace FeBuddyLibrary.DataAccess
                     CurrentFeature.geometry = new Geometry()
                     {
                         type = "LineString",
-                        coordinates = new List<dynamic>() { new List<double>() { element.StartLon, element.StartLat }, new List<double>() { element.EndLon, element.EndLat } }
+                        coordinates = new List<dynamic>() { new List<double>() { LatLonHelpers.CorrectIlleagleLon(element.StartLon), element.StartLat }, new List<double>() { LatLonHelpers.CorrectIlleagleLon(element.EndLon), element.EndLat } }
                     };
                     prevElement = element;
                     continue;
                 }
                 else
                 {
-                    if (element.StartLon.ToString() + " " + element.StartLat.ToString() != prevElement.EndLon.ToString() + " " + prevElement.EndLat.ToString())
+                    if (LatLonHelpers.CorrectIlleagleLon(element.StartLon).ToString() + " " + element.StartLat.ToString() != LatLonHelpers.CorrectIlleagleLon(prevElement.EndLon).ToString() + " " + prevElement.EndLat.ToString())
                     {
                         if (CurrentFeature.geometry.coordinates.Count() > 0)
                         {
@@ -284,13 +285,13 @@ namespace FeBuddyLibrary.DataAccess
                             geometry = new Geometry()
                             {
                                 type = "LineString",
-                                coordinates =  new List<dynamic>() { new List<double>() { element.StartLon, element.StartLat }, new List<double>() { element.EndLon, element.EndLat } }
+                                coordinates =  new List<dynamic>() { new List<double>() { LatLonHelpers.CorrectIlleagleLon(element.StartLon), element.StartLat }, new List<double>() { LatLonHelpers.CorrectIlleagleLon(element.EndLon), element.EndLat } }
                             }
                         };
                     }
                     else
                     {
-                        var coords = new List<double>() { element.EndLon, element.EndLat };
+                        var coords = new List<double>() { LatLonHelpers.CorrectIlleagleLon(element.EndLon), element.EndLat };
                         CurrentFeature.geometry.coordinates.Add(coords);
                     }
                 }
@@ -307,7 +308,7 @@ namespace FeBuddyLibrary.DataAccess
                 geometry = new Geometry()
                 {
                     type = "Point",
-                    coordinates = new List<dynamic>() { element.Lon, element.Lat }
+                    coordinates = new List<dynamic>() { LatLonHelpers.CorrectIlleagleLon(element.Lon), element.Lat }
                 },
                 properties = new Properties()
                 {
@@ -341,7 +342,7 @@ namespace FeBuddyLibrary.DataAccess
                     geometry = new Geometry()
                     {
                         type = "Point",
-                        coordinates = new List<dynamic>() { element.Lon, element.Lat }
+                        coordinates = new List<dynamic>() { LatLonHelpers.CorrectIlleagleLon(element.Lon), element.Lat }
                     },
                     properties = new Properties()
                     {
@@ -362,25 +363,5 @@ namespace FeBuddyLibrary.DataAccess
             }
             return output;
         }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     }
 }

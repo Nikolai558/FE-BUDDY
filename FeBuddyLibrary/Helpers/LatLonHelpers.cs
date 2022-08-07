@@ -191,6 +191,30 @@ namespace FeBuddyLibrary.Helpers
 
         }
 
+        public static double HaversineGreatCircleBearing(Loc startLoc, Loc endLoc)
+        {
+            var deg2rad_startLat = (Math.PI / 180) * startLoc.Latitude;
+            var deg2rad_endLat = (Math.PI / 180) * endLoc.Latitude;
+
+            var x = Math.Cos(deg2rad_startLat) * Math.Sin(deg2rad_startLat) -
+                Math.Sin(deg2rad_startLat) * Math.Cos(deg2rad_endLat) * Math.Cos((Math.PI / 180) * endLoc.Longitude - startLoc.Longitude);
+            var y = Math.Sin((Math.PI / 180) * endLoc.Longitude - startLoc.Longitude) * Math.Cos(deg2rad_endLat);
+            var bearing = (Math.PI / 180) * Math.Atan2(y, x);
+            bearing = bearing + 360 % 360;
+            return bearing;
+        }
+
+        public static double CorrectIlleagleLon(double value)
+        {
+            double tempvalue = Math.Abs(value);
+            if (tempvalue > 180)
+            {
+                return (180 - (tempvalue % 180));
+            }
+
+            return value;
+        }
+
         public static string CreateDMS(double value, bool lat)
         {
 

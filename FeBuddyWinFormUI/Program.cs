@@ -13,13 +13,6 @@ namespace FeBuddyWinFormUI
         [STAThread]
         static void Main()
         {
-            GeoJson testGeo = new GeoJson();
-            //var geo = testGeo.ReadGeoMap(@"C:\Users\nikol\Downloads\ZDV_GeoMaps.xml");
-            //testGeo.WriteGeoMapGeoJson(@"C:\Users\nikol\Downloads\test\", geo);
-            var geo = testGeo.ReadVideoMap(@"C:\Users\nikol\Downloads\D01_Video_Maps.xml");
-            testGeo.WriteVideoMapGeoJson(@"C:\Users\nikol\Downloads\test\", geo, "D01_Video_Maps", VideoMapFileFormat.both);
-
-            string stop = "STOP";
             // TODO - Get system info and log it into file first thing. -https://docs.microsoft.com/en-us/previous-versions/windows/embedded/ee436483(v=msdn.10)
             Logger.CreateLogFile();
             SquirrelLogger.Register(); // wire up Squirrel logging to our log file too

@@ -367,6 +367,13 @@ namespace FeBuddyWinFormUI
                 kmlConversionForm.Show();
                 this.Hide();
             }
+            else if (convertVstarsVeramToGeoJson.Checked)
+            {
+                var geojsonForm = new GeoJsonForm(_currentVersion);
+                geojsonForm.FormClosing += (s, args) => this.Show();
+                geojsonForm.Show();
+                this.Hide();
+            }
             else
             {
                 MessageBox.Show("This feature has not been implemented yet.");

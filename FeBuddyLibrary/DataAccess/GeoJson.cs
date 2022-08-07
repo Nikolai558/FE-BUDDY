@@ -22,11 +22,14 @@ namespace FeBuddyLibrary.DataAccess
     {
         public VideoMaps ReadVideoMap(string filepath)
         {
+            var tempFile = Path.Combine(Path.GetTempPath(), "FE-BUDDY", "tempGeoMap.xml");
+            File.WriteAllText(tempFile, File.ReadAllText(filepath).Replace("xsi:type", "xsi-type"));
+            
             XmlSerializer serializer = new XmlSerializer(typeof(VideoMaps));
 
             VideoMaps videoMaps;
 
-            using (Stream reader = new FileStream(filepath, FileMode.Open))
+            using (Stream reader = new FileStream(tempFile, FileMode.Open))
             {
                 videoMaps = (VideoMaps)serializer.Deserialize(reader);
             }
@@ -37,13 +40,17 @@ namespace FeBuddyLibrary.DataAccess
         public GeoMapSet ReadGeoMap(string filepath)
         {
             // TODO - xsi:type will mess up the reading of XML. Need to either work around it or figure out the proper way to handle it.
+            var tempFile = Path.Combine(Path.GetTempPath(), "FE-BUDDY", "tempGeoMap.xml");
+            File.WriteAllText(tempFile, File.ReadAllText(filepath).Replace("xsi:type", "xsi-type"));
 
             XmlSerializer serializer = new XmlSerializer(typeof(GeoMapSet));
             
             GeoMapSet geo;
 
-            using (Stream reader = new FileStream(filepath, FileMode.Open))
+            using (Stream reader = new FileStream(tempFile, FileMode.Open))
             {
+                
+
                 geo = (GeoMapSet)serializer.Deserialize(reader);
             }
 
@@ -62,40 +69,61 @@ namespace FeBuddyLibrary.DataAccess
 
         public void WriteVideoMapGeoJson(string dirPath, VideoMaps videoMaps, string videoMapName, VideoMapFileFormat videoMapFileFormat)
         {
+            int count = 0;
             string videoMapDir = Path.Combine(dirPath, videoMapName);
             foreach (VideoMap videoMapObject in videoMaps.VideoMap)
             {
+                Dictionary<string, string> colors = null;
                 string fileName = "";
                 string fullFilePath = "";
-
+                count += 1;
                 if (videoMapFileFormat == VideoMapFileFormat.both)
                 {
                     fileName = videoMapObject.ShortName + "__" + videoMapObject.LongName + ".geojson";
                     fileName = MakeValidFileName(fileName);
+                    //fileName = count.ToString().PadLeft(3, '0') + fileName;
                     fullFilePath = Path.Combine(videoMapDir, fileName);
                 }
                 if (videoMapFileFormat == VideoMapFileFormat.shortName) 
                 {
                     fileName = videoMapObject.ShortName + ".geojson";
                     fileName = MakeValidFileName(fileName);
+                    //fileName = count.ToString().PadLeft(3, '0') + fileName;
                     fullFilePath = Path.Combine(videoMapDir, fileName); 
                 }
                 if (videoMapFileFormat == VideoMapFileFormat.longName) 
                 {
                     fileName = videoMapObject.LongName + ".geojson";
                     fileName = MakeValidFileName(fileName);
+                    //fileName = count.ToString().PadLeft(3, '0') + fileName;
                     fullFilePath = Path.Combine(videoMapDir, fileName); 
                 }
 
                 FileInfo file = new FileInfo(fullFilePath);
                 file.Directory.Create();
+                if (count == 1)
+                {
+                    foreach (FileInfo fileInfo in file.Directory.EnumerateFiles())
+                    {
+                        fileInfo.Delete();
+                    }
+                }
+
+                if (file.Exists)
+                {
+                    file = new FileInfo(Path.Combine(videoMapDir, fileName.Split('.')[0] + $"Map_{count}_Duplicate.geojson"));
+                }
                 var geojson = new FeatureCollection();
 
-                Dictionary<string, string> colors = new Dictionary<string, string>();
-                foreach (var item in videoMapObject.Colors.NamedColor)
+                if (videoMapObject.Colors?.NamedColor != null)
                 {
-                    Color itemColor = Color.FromArgb(item.Red, item.Green, item.Blue);
-                    colors.Add(item.Name, itemColor.R.ToString("X2") + itemColor.G.ToString("X2") + itemColor.B.ToString("X2"));
+                    colors = new Dictionary<string, string>();
+                    colors.Add("", null);
+                    foreach (var item in videoMapObject.Colors.NamedColor)
+                    {
+                        Color itemColor = Color.FromArgb(item.Red, item.Green, item.Blue);
+                        colors.Add(item.Name, itemColor.R.ToString("X2") + itemColor.G.ToString("X2") + itemColor.B.ToString("X2"));
+                    }
                 }
 
                 List<Feature> allFeatures = new List<Feature>();
@@ -112,7 +140,7 @@ namespace FeBuddyLibrary.DataAccess
                         };
                         currentFeature.properties = new Properties()
                         {
-                            color = colors[item.Color],
+                            color = colors?[item.Color] ?? null,
                             style = item.Style,
                             thickness = item.Thickness,
                         };
@@ -134,7 +162,7 @@ namespace FeBuddyLibrary.DataAccess
                                 {
                                     style = item.Style,
                                     thickness = item.Thickness,
-                                    color = colors[item.Color]
+                                    color = colors?[item.Color] ?? null
                                 },
                                 geometry = new Geometry()
                                 {

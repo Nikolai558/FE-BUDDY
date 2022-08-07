@@ -76,7 +76,7 @@ namespace FeBuddyLibrary.Models
         public int Bcg { get; set; }
 
         [XmlAttribute(AttributeName = "Filters")]
-        public int Filters { get; set; }
+        public string Filters { get; set; }
 
         [XmlAttribute(AttributeName = "Style")]
         public string Style { get; set; }

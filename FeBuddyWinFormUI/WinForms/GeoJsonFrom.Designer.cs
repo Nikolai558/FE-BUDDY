@@ -271,6 +271,7 @@
             this.sourceFileButton.TabIndex = 12;
             this.sourceFileButton.Text = "Select Source File";
             this.sourceFileButton.UseVisualStyleBackColor = false;
+            this.sourceFileButton.Click += new System.EventHandler(this.sourceFileButton_Click);
             // 
             // menuStrip
             // 

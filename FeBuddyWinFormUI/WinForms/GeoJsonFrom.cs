@@ -21,6 +21,7 @@ namespace FeBuddyWinFormUI
         private string fullSourceFilePath;
         private string videoMapFolderName;
         private VideoMapFileFormat videoMapFileFormat = VideoMapFileFormat.shortName;
+        
         public GeoJsonForm(string currentVersion)
         {
             Logger.LogMessage("DEBUG", "INITIALIZING COMPONENT");
@@ -74,10 +75,22 @@ namespace FeBuddyWinFormUI
             Logger.LogMessage("DEBUG", "GeoJson Form CLOSING");
         }
 
+        private void sourceFileButton_Click(object sender, EventArgs e)
+        {
+            OpenFileDialog outputDir = new OpenFileDialog();
+            outputDir.Filter = "xml files (*.xml)|*.xml";
+            outputDir.InitialDirectory = Path.GetDirectoryName("Downloads");
+            outputDir.ShowDialog();
+            fullSourceFilePath = outputDir.FileName;
+
+            sourceFileLabel.Text = fullSourceFilePath;
+            sourceFileLabel.Visible = true;
+            sourceFileLabel.MaximumSize = new Size(257, 82);
+        }
+
         private void ChooseDirButton_Click(object sender, EventArgs e)
         {
             Logger.LogMessage("DEBUG", "USER CHOOSING DIFFERENT OUTPUT DIRECTORY");
-
             FolderBrowserDialog outputDir = new FolderBrowserDialog();
 
             outputDir.ShowDialog();
@@ -107,7 +120,6 @@ namespace FeBuddyWinFormUI
         private void StartButton_Click(object sender, EventArgs e)
         {
             // TODO - DO STUFF HERE 
-
 
             StartConversion();
         }

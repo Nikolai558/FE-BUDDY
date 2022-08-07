@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Drawing;
@@ -177,11 +178,14 @@ namespace FeBuddyWinFormUI
                 string videoMapName = fullSourceFilePath.Split('\\')[^1].Replace(".xml", string.Empty);
                 var geo = geoJsonConverter.ReadVideoMap(fullSourceFilePath);
 
-                string[] unknownAsdexColors = geoJsonConverter.ValidateAsdexProperties(geo)["UNKNOWN"];
-                if (unknownAsdexColors.Length > 0)
+                List<string> unknownAsdexColors = geoJsonConverter.ValidateAsdexProperties(geo)["UNKNOWN"];
+                if (unknownAsdexColors.Count > 0)
                 {
-                    // Show new form with correcting options
-                    // apply users choices to that dictionary.
+                    AsdexColorErrorsForm asdexErrorForm = new AsdexColorErrorsForm(unknownAsdexColors, geoJsonConverter);
+                    asdexErrorForm.ShowDialog();
+                    //Show new form with correcting options
+                    //apply users choices to that dictionary.
+
                 }
 
                 geoJsonConverter.WriteVideoMapGeoJson(GlobalConfig.outputDirBase, geo, videoMapName, videoMapFileFormat);

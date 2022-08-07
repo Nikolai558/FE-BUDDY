@@ -22,13 +22,13 @@ namespace FeBuddyLibrary.DataAccess
 
     public class GeoJson
     {
-        public Dictionary<string, string[]> asdexColorDef { get; set; } = new Dictionary<string, string[]>()
+        public Dictionary<string, List<string>> asdexColorDef { get; set; } = new Dictionary<string, List<string>>()
             {
-                { "runway", new string[] { "runway", "rway", "rwy" } },
-                { "taxiway", new string[] { "taxiway", "tway", "twy", "taxi" } },
-                { "apron", new string[] { "ramp", "apron" } },
-                { "structure", new string[] { "bldg", "terminal", "building", "bldng", "struct", "structure" } },
-                { "UNKNOWN", new string[] { } }
+                { "runway", new List<string> { "runway", "rway", "rwy" } },
+                { "taxiway", new List<string> { "taxiway", "tway", "twy", "taxi" } },
+                { "apron", new List<string> { "ramp", "apron" } },
+                { "structure", new List<string> { "bldg", "terminal", "building", "bldng", "struct", "structure" } },
+                { "UNKNOWN", new List<string> { } }
             };
 
         public VideoMaps ReadVideoMap(string filepath)
@@ -171,9 +171,9 @@ namespace FeBuddyLibrary.DataAccess
             }
         }
 
-        public Dictionary<string, string[]> ValidateAsdexProperties(VideoMaps videoMaps)
+        public Dictionary<string, List<string>> ValidateAsdexProperties(VideoMaps videoMaps)
         {
-            Dictionary<string, string[]> output = asdexColorDef;
+            Dictionary<string, List<string>> output = asdexColorDef;
 
             foreach (var vm in videoMaps.VideoMap)
             {
@@ -190,13 +190,13 @@ namespace FeBuddyLibrary.DataAccess
                             }
 
 
-                            if (asdexColorDef[key].Contains(namedColor.Name))
+                            if (asdexColorDef[key].Contains(namedColor.Name.ToLower()))
                             {
                                 break;
                             }
                             else if (isInUnknownKey)
                             {
-                                asdexColorDef["UNKNOWN"].Append(namedColor.Name);
+                                asdexColorDef["UNKNOWN"].Add(namedColor.Name.ToLower());
                             }
                         }
                     }
@@ -226,7 +226,7 @@ namespace FeBuddyLibrary.DataAccess
                 {
                     properties = new Properties()
                     {
-                        color = colors?[elementItem.Color] ?? "",
+                        color = colors?[elementItem.Color.ToLower()] ?? "",
                         style = elementItem.Style,
                         thickness = elementItem.Thickness,
                     },
@@ -291,7 +291,7 @@ namespace FeBuddyLibrary.DataAccess
                     };
                     currentFeature.properties = new Properties()
                     {
-                        color = colors?[item.Color] ?? null,
+                        color = colors?[item.Color.ToLower()] ?? null,
                         style = item.Style,
                         thickness = item.Thickness,
                     };
@@ -305,7 +305,7 @@ namespace FeBuddyLibrary.DataAccess
                         {
                             properties = new Properties()
                             {
-                                color = colors?[item.Color] ?? null,
+                                color = colors?[item.Color.ToLower()] ?? null,
                                 style = item.Style,
                                 thickness = item.Thickness,
                             },
@@ -337,7 +337,7 @@ namespace FeBuddyLibrary.DataAccess
                             {
                                 style = item.Style,
                                 thickness = item.Thickness,
-                                color = colors?[item.Color] ?? null
+                                color = colors?[item.Color.ToLower()] ?? null
                             },
                             geometry = new Geometry()
                             {
@@ -354,7 +354,7 @@ namespace FeBuddyLibrary.DataAccess
                             {
                                 properties = new Properties()
                                 {
-                                    color = colors?[item.Color] ?? null,
+                                    color = colors?[item.Color.ToLower()] ?? null,
                                     style = item.Style,
                                     thickness = item.Thickness,
                                 },
@@ -381,7 +381,7 @@ namespace FeBuddyLibrary.DataAccess
                             {
                                 properties = new Properties()
                                 {
-                                    color = colors?[item.Color] ?? null,
+                                    color = colors?[item.Color.ToLower()] ?? null,
                                     style = item.Style,
                                     thickness = item.Thickness,
                                 },

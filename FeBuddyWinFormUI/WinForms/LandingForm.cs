@@ -369,6 +369,11 @@ namespace FeBuddyWinFormUI
             }
             else if (convertVstarsVeramToGeoJson.Checked)
             {
+                DialogResult warningMSG = MessageBox.Show(
+                    "Notes:\n\nOnly the “(facility ID) Video Maps.xml” or “(facility ID) GeoMaps.xml” files are legal source files. FEB does not read the main vSTARS/vERAM.gz files.\n\nIf your facility file has illegal/”Fake” longitudes, they will be converted back to legal (ex: -180.1 will be converted back to 179.9 and vice versa).\n\nLines that cross the Antimeridian line will be split at the Antimeridian line.\n\nTest the output files with a GeoJSON reader such as QGIS or https://geojson.io/ prior to uploading to vNAS Admin site.",
+                    "INFO",
+                    MessageBoxButtons.OK);
+
                 var geojsonForm = new GeoJsonForm(_currentVersion);
                 geojsonForm.FormClosing += (s, args) => this.Show();
                 geojsonForm.Show();

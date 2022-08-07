@@ -128,6 +128,7 @@
             this.longNameSelection.TabStop = true;
             this.longNameSelection.Text = "LongName";
             this.longNameSelection.UseVisualStyleBackColor = true;
+            this.longNameSelection.CheckedChanged += new System.EventHandler(this.longNameSelection_CheckedChanged);
             // 
             // shortNameSelection
             // 
@@ -143,6 +144,7 @@
             this.shortNameSelection.TabStop = true;
             this.shortNameSelection.Text = "ShortName";
             this.shortNameSelection.UseVisualStyleBackColor = true;
+            this.shortNameSelection.CheckedChanged += new System.EventHandler(this.shortNameSelection_CheckedChanged);
             // 
             // filePathLabel
             // 
@@ -227,6 +229,7 @@
             this.bothSelection.TabStop = true;
             this.bothSelection.Text = "ShortName__LongName";
             this.bothSelection.UseVisualStyleBackColor = true;
+            this.bothSelection.CheckedChanged += new System.EventHandler(this.bothSelection_CheckedChanged);
             // 
             // startGroupBox
             // 
@@ -307,7 +310,7 @@
             this.InstructionsMenuItem.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
             this.InstructionsMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.InstructionsMenuItem.Name = "InstructionsMenuItem";
-            this.InstructionsMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.InstructionsMenuItem.Size = new System.Drawing.Size(155, 22);
             this.InstructionsMenuItem.Text = "Instructions";
             this.InstructionsMenuItem.Click += new System.EventHandler(this.InstructionsMenuItem_Click);
             // 
@@ -318,7 +321,7 @@
             this.RoadmapMenuItem.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
             this.RoadmapMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.RoadmapMenuItem.Name = "RoadmapMenuItem";
-            this.RoadmapMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.RoadmapMenuItem.Size = new System.Drawing.Size(155, 22);
             this.RoadmapMenuItem.Text = "Roadmap";
             this.RoadmapMenuItem.Click += new System.EventHandler(this.RoadmapMenuItem_Click);
             // 
@@ -329,7 +332,7 @@
             this.FAQMenuItem.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
             this.FAQMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.FAQMenuItem.Name = "FAQMenuItem";
-            this.FAQMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.FAQMenuItem.Size = new System.Drawing.Size(155, 22);
             this.FAQMenuItem.Text = "FAQ";
             this.FAQMenuItem.Click += new System.EventHandler(this.FAQMenuItem_Click);
             // 
@@ -340,7 +343,7 @@
             this.ChangeLogMenuItem.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
             this.ChangeLogMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.ChangeLogMenuItem.Name = "ChangeLogMenuItem";
-            this.ChangeLogMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.ChangeLogMenuItem.Size = new System.Drawing.Size(155, 22);
             this.ChangeLogMenuItem.Text = "Change Log";
             this.ChangeLogMenuItem.Click += new System.EventHandler(this.ChangeLogMenuItem_Click);
             // 
@@ -351,7 +354,7 @@
             this.CreditsMenuItem.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
             this.CreditsMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.CreditsMenuItem.Name = "CreditsMenuItem";
-            this.CreditsMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.CreditsMenuItem.Size = new System.Drawing.Size(155, 22);
             this.CreditsMenuItem.Text = "Credits";
             this.CreditsMenuItem.Click += new System.EventHandler(this.CreditsMenuItem_Click);
             // 

@@ -18,7 +18,9 @@ namespace FeBuddyWinFormUI
     {
         private readonly string _currentVersion;
         readonly PrivateFontCollection _pfc = new PrivateFontCollection();
-
+        private string fullSourceFilePath;
+        private string videoMapFolderName;
+        private VideoMapFileFormat videoMapFileFormat = VideoMapFileFormat.shortName;
         public GeoJsonForm(string currentVersion)
         {
             Logger.LogMessage("DEBUG", "INITIALIZING COMPONENT");
@@ -85,6 +87,21 @@ namespace FeBuddyWinFormUI
             filePathLabel.Text = GlobalConfig.outputDirBase;
             filePathLabel.Visible = true;
             filePathLabel.MaximumSize = new Size(257, 82);
+        }
+
+        private void shortNameSelection_CheckedChanged(object sender, EventArgs e)
+        {
+            videoMapFileFormat = VideoMapFileFormat.shortName;
+        }
+
+        private void longNameSelection_CheckedChanged(object sender, EventArgs e)
+        {
+            videoMapFileFormat = VideoMapFileFormat.longName;
+        }
+
+        private void bothSelection_CheckedChanged(object sender, EventArgs e)
+        {
+            videoMapFileFormat = VideoMapFileFormat.both;
         }
 
         private void StartButton_Click(object sender, EventArgs e)
@@ -378,5 +395,6 @@ namespace FeBuddyWinFormUI
             //Process.Start("https://github.com/Nikolai558/FE-BUDDY/wiki#news");
         }
 
+        
     }
 }

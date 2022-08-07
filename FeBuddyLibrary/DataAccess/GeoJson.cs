@@ -9,6 +9,7 @@ using System.Xml.Serialization;
 using FeBuddyLibrary.Models;
 using Newtonsoft.Json;
 using FeBuddyLibrary.Helpers;
+using FeBuddyLibrary.Dat;
 
 namespace FeBuddyLibrary.DataAccess
 {
@@ -137,7 +138,7 @@ namespace FeBuddyLibrary.DataAccess
                         currentFeature.geometry = new Geometry()
                         {
                             type = "LineString",
-                            coordinates = new List<dynamic>() { new List<double>() { LatLonHelpers.CorrectIlleagleLon(item.StartLon), item.StartLat }, new List<double>() { LatLonHelpers.CorrectIlleagleLon(item.EndLon), item.EndLat } }
+                            coordinates = CheckAMCrossing(item.StartLat, item.StartLon, item.EndLat, item.EndLon)
                         };
                         currentFeature.properties = new Properties()
                         {
@@ -168,14 +169,25 @@ namespace FeBuddyLibrary.DataAccess
                                 geometry = new Geometry()
                                 {
                                     type = "LineString",
-                                    coordinates = new List<dynamic>() { new List<double>() { LatLonHelpers.CorrectIlleagleLon(item.StartLon), item.StartLat }, new List<double>() { LatLonHelpers.CorrectIlleagleLon(item.EndLon), item.EndLat } }
+                                    coordinates = CheckAMCrossing(item.StartLat, item.StartLon, item.EndLat, item.EndLon)
                                 }
                             };
                         }
                         else
                         {
-                            var coords = new List<double>() { item.EndLon, item.EndLat };
-                            currentFeature.geometry.coordinates.Add(coords);
+                            //var coords = new List<double>() { item.EndLon, item.EndLat };
+
+                            var coords = CheckAMCrossing(item.StartLat, item.StartLon, item.EndLat, item.EndLon);
+
+                            if (coords.Count() > 2)
+                            {
+                                currentFeature.geometry.coordinates.AddRange(coords.GetRange(1, coords.Count() - 1));
+                            }
+                            else
+                            {
+                                currentFeature.geometry.coordinates.Add(coords.GetRange(1, 1));
+                            }
+
                         }
                     }
                     prevElement = item;
@@ -190,6 +202,71 @@ namespace FeBuddyLibrary.DataAccess
 
             }
         }
+
+        private List<dynamic> CheckAMCrossing(double startLat, double startLon, double endLat, double endLon)
+        {
+            startLon = LatLonHelpers.CorrectIlleagleLon(startLon);
+            endLon = LatLonHelpers.CorrectIlleagleLon(endLon);
+
+            List<dynamic> dynamicList = new List<dynamic>();
+
+            if (!((startLon < 0 && endLon > 0) || (startLon > 0 && endLon < 0)))
+            {
+                // Lon does not cross the AM in any way. Just return our Coordinates. 
+                dynamicList.Add(new List<double>() { startLon, startLat });
+                dynamicList.Add(new List<double>() { endLon, endLat });
+                return dynamicList;
+            }
+            
+            // Lon DOES cross the AM. 
+            Loc startLoc = new Loc() { Latitude = startLat, Longitude = startLon };
+            Loc endLoc = new Loc() { Latitude = endLat, Longitude = endLon };
+            Loc midPointStartLoc = new Loc();
+            Loc midPointEndLoc = new Loc();
+            var bearing = LatLonHelpers.HaversineGreatCircleBearing(startLoc, endLoc);
+
+            if ((startLoc.Longitude < 0 && (bearing > 180 && bearing < 360)) || (startLoc.Longitude > 0 && (bearing > 0 && bearing < 180)))
+            {
+                // Dont need to split
+                dynamicList.Add(new List<double>() { startLon, startLat });
+                dynamicList.Add(new List<double>() { endLon, endLat });
+                return dynamicList;
+            }
+
+            if (startLoc.Longitude < 0)
+            {
+                startLoc.Longitude = startLoc.Longitude + 180;
+                // See if this works, If needed change to the limit -179.99999999999
+                midPointStartLoc.Longitude = -180;
+            }
+            else
+            {
+                startLoc.Longitude = startLoc.Longitude - 180;
+                midPointStartLoc.Longitude = 180;
+            }
+
+            if (endLoc.Longitude < 0)
+            {
+                endLoc.Longitude = endLoc.Longitude + 180;
+                midPointEndLoc.Longitude = -180;
+            }
+            else
+            {
+                endLoc.Longitude = endLoc.Longitude - 180;
+                midPointEndLoc.Longitude = 180;
+            }
+
+            var slope = (startLat - endLat) / (startLoc.Longitude - endLoc.Longitude);
+            var midPointLat = startLat - (slope * startLoc.Longitude);
+
+            dynamicList.Add(new List<double>() { startLon, startLat });
+            dynamicList.Add(new List<double>() { midPointStartLoc.Longitude, midPointLat });
+            dynamicList.Add(new List<double>() { midPointEndLoc.Longitude, midPointLat });
+            dynamicList.Add(new List<double>() { endLon, endLat });
+            return dynamicList;
+
+        }
+
 
         public void WriteGeoMapGeoJson(string dirPath, GeoMapSet geo)
         {
@@ -235,7 +312,7 @@ namespace FeBuddyLibrary.DataAccess
             List<Feature> featuresOutput = new List<Feature>();
             
             Element prevElement = null;
-            Feature CurrentFeature = new Feature()
+            Feature currentFeature = new Feature()
             {
                 properties = new Properties()
                 {
@@ -253,10 +330,10 @@ namespace FeBuddyLibrary.DataAccess
             {
                 if (prevElement == null)
                 {
-                    CurrentFeature.geometry = new Geometry()
+                    currentFeature.geometry = new Geometry()
                     {
                         type = "LineString",
-                        coordinates = new List<dynamic>() { new List<double>() { LatLonHelpers.CorrectIlleagleLon(element.StartLon), element.StartLat }, new List<double>() { LatLonHelpers.CorrectIlleagleLon(element.EndLon), element.EndLat } }
+                        coordinates = CheckAMCrossing(element.StartLat, element.StartLon, element.EndLat, element.EndLon)
                     };
                     prevElement = element;
                     continue;
@@ -265,13 +342,13 @@ namespace FeBuddyLibrary.DataAccess
                 {
                     if (LatLonHelpers.CorrectIlleagleLon(element.StartLon).ToString() + " " + element.StartLat.ToString() != LatLonHelpers.CorrectIlleagleLon(prevElement.EndLon).ToString() + " " + prevElement.EndLat.ToString())
                     {
-                        if (CurrentFeature.geometry.coordinates.Count() > 0)
+                        if (currentFeature.geometry.coordinates.Count() > 0)
                         {
-                            featuresOutput.Add(CurrentFeature);
+                            featuresOutput.Add(currentFeature);
                         }
 
                         // Start Lat/Lon is different from Previous Element End Lat/Lon
-                        CurrentFeature = new Feature()
+                        currentFeature = new Feature()
                         {
                             properties = new Properties()
                             {
@@ -285,19 +362,32 @@ namespace FeBuddyLibrary.DataAccess
                             geometry = new Geometry()
                             {
                                 type = "LineString",
-                                coordinates =  new List<dynamic>() { new List<double>() { LatLonHelpers.CorrectIlleagleLon(element.StartLon), element.StartLat }, new List<double>() { LatLonHelpers.CorrectIlleagleLon(element.EndLon), element.EndLat } }
+                                coordinates = CheckAMCrossing(element.StartLat, element.StartLon, element.EndLat, element.EndLon)
                             }
                         };
                     }
                     else
                     {
-                        var coords = new List<double>() { LatLonHelpers.CorrectIlleagleLon(element.EndLon), element.EndLat };
-                        CurrentFeature.geometry.coordinates.Add(coords);
+                        //var coords = new List<double>() { item.EndLon, item.EndLat };
+
+                        var coords = CheckAMCrossing(element.StartLat, element.StartLon, element.EndLat, element.EndLon);
+
+                        if (coords.Count() > 2)
+                        {
+                            currentFeature.geometry.coordinates.AddRange(coords.GetRange(1, coords.Count() - 1));
+                        }
+                        else
+                        {
+                            currentFeature.geometry.coordinates.Add(coords.GetRange(1, 1));
+                        }
+
+                        //var coords = new List<double>() { LatLonHelpers.CorrectIlleagleLon(element.EndLon), element.EndLat };
+                        //currentFeature.geometry.coordinates.Add(coords);
                     }
                 }
                 prevElement = element;
             }
-            featuresOutput.Add(CurrentFeature);
+            featuresOutput.Add(currentFeature);
             return featuresOutput;
         }
 

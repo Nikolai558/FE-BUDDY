@@ -64,7 +64,7 @@
             this.label2.AutoSize = true;
             this.label2.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.label2.ForeColor = System.Drawing.SystemColors.AppWorkspace;
-            this.label2.Location = new System.Drawing.Point(318, 48);
+            this.label2.Location = new System.Drawing.Point(308, 48);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(121, 21);
             this.label2.TabIndex = 2;

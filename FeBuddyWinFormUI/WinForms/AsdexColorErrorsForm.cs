@@ -80,6 +80,8 @@ namespace FeBuddyWinFormUI
                     _converter.asdexColorDef[dataSource[controlItem1.SelectedIndex]].Add(colorName);
                 }
             }
+
+            this.Close();
         }
     }
 }

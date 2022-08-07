@@ -145,10 +145,10 @@ namespace FeBuddyLibrary.DataAccess
                     foreach (var item in videoMapObject.Colors.NamedColor)
                     {
                         Color itemColor = Color.FromArgb(item.Red, item.Green, item.Blue);
-                        if (!colors.ContainsKey(item.Name))
+                        if (!colors.ContainsKey(item.Name.ToLower()))
                         {
                             // todo - Warn user two color names have been used...
-                            colors.Add(item.Name, "#" + itemColor.R.ToString("X2") + itemColor.G.ToString("X2") + itemColor.B.ToString("X2"));
+                            colors.Add(item.Name.ToLower(), "#" + itemColor.R.ToString("X2") + itemColor.G.ToString("X2") + itemColor.B.ToString("X2"));
                         }
                     }
                 }
@@ -239,7 +239,7 @@ namespace FeBuddyLibrary.DataAccess
 
                 foreach (var asdexColorKey in asdexColorDef.Keys)
                 {
-                    if (asdexColorDef[asdexColorKey].Contains(elementItem.Color))
+                    if (asdexColorDef[asdexColorKey].Contains(elementItem.Color.ToLower()) && asdexColorKey != "UNKNOWN")
                     {
                         currentFeature.properties.asdex = asdexColorKey;
                     }
@@ -247,8 +247,8 @@ namespace FeBuddyLibrary.DataAccess
 
                 if (currentFeature.properties.asdex == null)
                 {
-                    currentFeature.properties.asdex = "structure";
-                    //throw new Exception($"'{elementItem.Color}' Asdex color can not be assigned to an asdex geojson property...");
+                    //currentFeature.properties.asdex = "structure";
+                    throw new Exception($"'{elementItem.Color}' Asdex color can not be assigned to an asdex geojson property...");
                 }
 
                 currentFeature.geometry.coordinates.Add(new List<dynamic>());

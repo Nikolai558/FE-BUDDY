@@ -30,11 +30,22 @@ namespace FeBuddyLibrary.DataAccess
             XmlSerializer serializer = new XmlSerializer(typeof(VideoMaps));
 
             VideoMaps videoMaps;
-
-            using (Stream reader = new FileStream(tempFile, FileMode.Open))
+            try
             {
-                videoMaps = (VideoMaps)serializer.Deserialize(reader);
+                using (Stream reader = new FileStream(tempFile, FileMode.Open))
+                {
+                    videoMaps = (VideoMaps)serializer.Deserialize(reader);
+                }
             }
+            catch (Exception ex)
+            {
+                if (ex.Message.Contains("There is an error in XML document"))
+                {
+                    throw new Exception($"It appears your selected source file is not formatted properly based on your selected file type.\n\n{ex.Message}");
+                }
+                throw;
+            }
+            
 
             return videoMaps;
         }

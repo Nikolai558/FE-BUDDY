@@ -77,6 +77,7 @@
             this.vStarsSelection.TabStop = true;
             this.vStarsSelection.Text = "vSTARS";
             this.vStarsSelection.UseVisualStyleBackColor = true;
+            this.vStarsSelection.CheckedChanged += new System.EventHandler(this.vStarsSelection_CheckedChanged);
             // 
             // vEramSelection
             // 
@@ -90,6 +91,7 @@
             this.vEramSelection.TabIndex = 1;
             this.vEramSelection.Text = "vERAM";
             this.vEramSelection.UseVisualStyleBackColor = true;
+            this.vEramSelection.CheckedChanged += new System.EventHandler(this.vEramSelection_CheckedChanged);
             // 
             // sourceLabel
             // 

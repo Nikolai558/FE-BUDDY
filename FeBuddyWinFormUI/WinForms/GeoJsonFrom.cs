@@ -101,6 +101,15 @@ namespace FeBuddyWinFormUI
             filePathLabel.Visible = true;
             filePathLabel.MaximumSize = new Size(257, 82);
         }
+        private void vEramSelection_CheckedChanged(object sender, EventArgs e)
+        {
+            convertGroupBox.Enabled = false;
+        }
+
+        private void vStarsSelection_CheckedChanged(object sender, EventArgs e)
+        {
+            convertGroupBox.Enabled = true;
+        }
 
         private void shortNameSelection_CheckedChanged(object sender, EventArgs e)
         {
@@ -119,13 +128,37 @@ namespace FeBuddyWinFormUI
 
         private void StartButton_Click(object sender, EventArgs e)
         {
-            // TODO - DO STUFF HERE 
+            if (string.IsNullOrEmpty(fullSourceFilePath) || fullSourceFilePath.Split('.')[^1] != "xml")
+            {
+                // TODO - Show message box instead of just returning.
+                return;
+            }
+
+            if (string.IsNullOrEmpty(GlobalConfig.outputDirBase))
+            {
+                // TODO - Show Message Box instead of just returning. 
+                return;
+            }
 
             StartConversion();
+        }
+        
+        private void EnableButtons(bool isEnabled)
+        {
+            vStarsSelection.Enabled = isEnabled;
+            vEramSelection.Enabled = isEnabled;
+            shortNameSelection.Enabled = isEnabled;
+            longNameSelection.Enabled = isEnabled;
+            bothSelection.Enabled = isEnabled;
+            sourceFileButton.Enabled = isEnabled;
+            chooseDirButton.Enabled = isEnabled;
+            startButton.Enabled = isEnabled;
         }
 
         private void StartConversion()
         {
+            EnableButtons(false);
+
             Logger.LogMessage("INFO", "SETTING UP Conversion WORKER");
 
             var worker = new BackgroundWorker();
@@ -137,7 +170,19 @@ namespace FeBuddyWinFormUI
 
         private void Worker_StartConversionDoWork(object sender, DoWorkEventArgs e)
         {
-           // TODO - Do the Conversion Logic Here
+            GeoJson geoJsonConverter = new GeoJson();
+
+            if (vStarsSelection.Checked)
+            {
+                string videoMapName = fullSourceFilePath.Split('\\')[^1].Replace(".xml", string.Empty);
+                var geo = geoJsonConverter.ReadVideoMap(fullSourceFilePath);
+                geoJsonConverter.WriteVideoMapGeoJson(GlobalConfig.outputDirBase, geo, videoMapName, videoMapFileFormat);
+            }
+            else if (vEramSelection.Checked)
+            {
+                var geo = geoJsonConverter.ReadGeoMap(fullSourceFilePath);
+                geoJsonConverter.WriteGeoMapGeoJson(GlobalConfig.outputDirBase, geo);
+            }
         }
 
         private void Worker_StartParsingCompleted(object sender, RunWorkerCompletedEventArgs e)
@@ -145,13 +190,15 @@ namespace FeBuddyWinFormUI
             if (e.Error != null)
             {
                 DialogResult warningMSG = MessageBox.Show(
-                    $"ERROR\n\nWhile completing your selected task, FE-BUDDY came across the following issue:\n{e.Error.Message}\n\nThis could be due to a bug in the program, or a unexpected or incorrectly formatted item in the source file. (i.e. SCT2 File)\n\nPlease attempt to fix this issue and run the program again. If you continue to have an issue, please reach out the FE-BUDDY developers by reporting this issue and including a screenshot with the source file.\n\nhttps://github.com/Nikolai558/FE-BUDDY/issues",
+                    $"ERROR\n\nWhile completing your selected task, FE-BUDDY came across the following issue:\n{e.Error.Message}\n\nThis could be due to a bug in the program, or a unexpected or incorrectly formatted item in the source file.\n\nPlease attempt to fix this issue and run the program again. If you continue to have an issue, please reach out the FE-BUDDY developers by reporting this issue and including a screenshot with the source file.\n\nhttps://github.com/Nikolai558/FE-BUDDY/issues",
                     "CAUTION",
                     MessageBoxButtons.OK);
             }
 
+            EnableButtons(true);
+
             Logger.LogMessage("INFO", "PROCESSING COMPLETED");
-            File.Copy(Logger._logFilePath, $"{GlobalConfig.outputDirectory}\\FE-BUDDY_LOG.txt");
+            //File.Copy(Logger._logFilePath, $"{GlobalConfig.outputDirectory}\\FE-BUDDY_LOG.txt");
         }
 
         private void geoJsonForm_Shown(object sender, EventArgs e)

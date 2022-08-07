@@ -485,7 +485,6 @@ namespace FeBuddyWinFormUI
         {
             Logger.LogMessage("DEBUG", "LOADING MAIN FORM");
 
-            // TODO - Add fonts to buttons?
             InstructionsMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
             CreditsMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
             ChangeLogMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);

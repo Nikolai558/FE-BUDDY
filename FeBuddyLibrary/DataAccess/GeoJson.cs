@@ -41,7 +41,7 @@ namespace FeBuddyLibrary.DataAccess
 
         public GeoMapSet ReadGeoMap(string filepath)
         {
-            // TODO - xsi:type will mess up the reading of XML. Need to either work around it or figure out the proper way to handle it.
+            // xsi:type will mess up the reading of XML. Need to either work around it or figure out the proper way to handle it.
             var tempFile = Path.Combine(Path.GetTempPath(), "FE-BUDDY", "tempGeoMap.xml");
             File.WriteAllText(tempFile, File.ReadAllText(filepath).Replace("xsi:type", "xsi-type"));
 

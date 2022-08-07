@@ -423,7 +423,7 @@ namespace FeBuddyLibrary.Dxf.Data
                         models.Add(currentModel);
                     }
                     currentModel = new SctArtccModel();
-                    currentModel.Name = _currentLine[containsString.Length..]; // TODO DOUBLE CHECK THIS, MIGHT NEED TO ADD 1 TO IT.
+                    currentModel.Name = _currentLine[containsString.Length..]; 
                     isInSectionNeeded = true;
                 }
 

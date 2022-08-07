@@ -176,6 +176,14 @@ namespace FeBuddyWinFormUI
             {
                 string videoMapName = fullSourceFilePath.Split('\\')[^1].Replace(".xml", string.Empty);
                 var geo = geoJsonConverter.ReadVideoMap(fullSourceFilePath);
+
+                string[] unknownAsdexColors = geoJsonConverter.ValidateAsdexProperties(geo)["UNKNOWN"];
+                if (unknownAsdexColors.Length > 0)
+                {
+                    // Show new form with correcting options
+                    // apply users choices to that dictionary.
+                }
+
                 geoJsonConverter.WriteVideoMapGeoJson(GlobalConfig.outputDirBase, geo, videoMapName, videoMapFileFormat);
             }
             else if (vEramSelection.Checked)

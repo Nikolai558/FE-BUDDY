@@ -22,6 +22,15 @@ namespace FeBuddyLibrary.DataAccess
 
     public class GeoJson
     {
+        public Dictionary<string, string[]> asdexColorDef { get; set; } = new Dictionary<string, string[]>()
+            {
+                { "runway", new string[] { "runway", "rway", "rwy" } },
+                { "taxiway", new string[] { "taxiway", "tway", "twy", "taxi" } },
+                { "apron", new string[] { "ramp", "apron" } },
+                { "structure", new string[] { "bldg", "terminal", "building", "bldng", "struct", "structure" } },
+                { "UNKNOWN", new string[] { } }
+            };
+
         public VideoMaps ReadVideoMap(string filepath)
         {
             var tempFile = Path.Combine(Path.GetTempPath(), "FE-BUDDY", "tempGeoMap.xml");
@@ -162,6 +171,41 @@ namespace FeBuddyLibrary.DataAccess
             }
         }
 
+        public Dictionary<string, string[]> ValidateAsdexProperties(VideoMaps videoMaps)
+        {
+            Dictionary<string, string[]> output = asdexColorDef;
+
+            foreach (var vm in videoMaps.VideoMap)
+            {
+                if (vm.ShortName.Contains(" ASDEX"))
+                {
+                    foreach (var namedColor in vm.Colors.NamedColor)
+                    {
+                        bool isInUnknownKey = false;
+                        foreach (var key in asdexColorDef.Keys)
+                        {
+                            if (key == "UNKNOWN")
+                            {
+                                isInUnknownKey = true;
+                            }
+
+
+                            if (asdexColorDef[key].Contains(namedColor.Name))
+                            {
+                                break;
+                            }
+                            else if (isInUnknownKey)
+                            {
+                                asdexColorDef["UNKNOWN"].Append(namedColor.Name);
+                            }
+                        }
+                    }
+                }
+            }
+
+            return output;
+        }
+
         private List<Feature> CreateAsdexVideoMap(List<vmElement> vmElements, Dictionary<string, string> colors)
         {
             // TODO - Create GUI for unrecognized "colors"
@@ -174,13 +218,7 @@ namespace FeBuddyLibrary.DataAccess
             // apron        = [ramp]
             // structure    = [bldg, terminal]
             //currentFeature.properties.asdex 
-            Dictionary<string, string[]> asdexProperties = new Dictionary<string, string[]>()
-            {
-                { "runway", new string[] { "runway", "rway", "rwy" } },
-                { "taxiway", new string[] { "taxiway", "tway", "twy", "taxi" } },
-                { "apron", new string[] { "ramp", "apron" } },
-                { "structure", new string[] { "bldg", "terminal", "building", "bldng", "struct", "structure" } },
-            };
+            
 
             foreach (var elementItem in vmElements)
             {
@@ -198,9 +236,10 @@ namespace FeBuddyLibrary.DataAccess
                     }
                 };
 
-                foreach (var asdexColorKey in asdexProperties.Keys)
+
+                foreach (var asdexColorKey in asdexColorDef.Keys)
                 {
-                    if (asdexProperties[asdexColorKey].Contains(elementItem.Color))
+                    if (asdexColorDef[asdexColorKey].Contains(elementItem.Color))
                     {
                         currentFeature.properties.asdex = asdexColorKey;
                     }

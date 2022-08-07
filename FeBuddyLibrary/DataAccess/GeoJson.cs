@@ -75,6 +75,7 @@ namespace FeBuddyLibrary.DataAccess
             string videoMapDir = Path.Combine(dirPath, videoMapName);
             foreach (VideoMap videoMapObject in videoMaps.VideoMap)
             {
+                List<Feature> allFeatures;
                 Dictionary<string, string> colors = null;
                 string fileName = "";
                 string fullFilePath = "";
@@ -124,33 +125,174 @@ namespace FeBuddyLibrary.DataAccess
                     foreach (var item in videoMapObject.Colors.NamedColor)
                     {
                         Color itemColor = Color.FromArgb(item.Red, item.Green, item.Blue);
-                        colors.Add(item.Name, itemColor.R.ToString("X2") + itemColor.G.ToString("X2") + itemColor.B.ToString("X2"));
+                        if (!colors.ContainsKey(item.Name))
+                        {
+                            // todo - Warn user two color names have been used...
+                            colors.Add(item.Name, "#" + itemColor.R.ToString("X2") + itemColor.G.ToString("X2") + itemColor.B.ToString("X2"));
+                        }
                     }
                 }
 
-                List<Feature> allFeatures = new List<Feature>();
-                vmElement prevElement = null;
-                Feature currentFeature = new Feature();
-                foreach (var item in videoMapObject.Elements.Element)
+                if (videoMapObject.ShortName.Contains(" ASDEX"))
                 {
-                    bool crossesAM = false;
-                    var coords = CheckAMCrossing(item.StartLat, item.StartLon, item.EndLat, item.EndLon);
-                    if (coords.Count() == 4)
+                    // Create Asdex stuff.
+                    allFeatures = CreateAsdexVideoMap(videoMapObject.Elements.Element, colors);
+                }
+                else
+                {
+                    allFeatures = CreateLineStringVideoMap(videoMapObject.Elements.Element, colors);
+                }
+
+
+                geojson.features.AddRange(allFeatures);
+
+                string jsonString = JsonConvert.SerializeObject(geojson, new JsonSerializerSettings { Formatting = Formatting.Indented, NullValueHandling = NullValueHandling.Ignore });
+                File.WriteAllText(file.FullName, jsonString);
+            }
+        }
+
+        private List<Feature> CreateAsdexVideoMap(List<vmElement> vmElements, Dictionary<string, string> colors)
+        {
+            // TODO - Create GUI for unrecognized "colors"
+
+            List<Feature> allFeatures = new List<Feature>();
+
+            // use color def to figure out asdex type.
+            // runway       = [runway, rway, rwy]
+            // taxiway      = [taxiway, tway, twy]
+            // apron        = [ramp]
+            // structure    = [bldg, terminal]
+            //currentFeature.properties.asdex 
+            Dictionary<string, string[]> asdexProperties = new Dictionary<string, string[]>()
+            {
+                { "runway", new string[] { "runway", "rway", "rwy" } },
+                { "taxiway", new string[] { "taxiway", "tway", "twy", "taxi" } },
+                { "apron", new string[] { "ramp", "apron" } },
+                { "structure", new string[] { "bldg", "terminal", "building", "bldng", "struct", "structure" } },
+            };
+
+            foreach (var elementItem in vmElements)
+            {
+                Feature currentFeature = new Feature()
+                {
+                    properties = new Properties()
                     {
-                        crossesAM = true;
+                        color = colors?[elementItem.Color] ?? "",
+                        style = elementItem.Style,
+                        thickness = elementItem.Thickness,
+                    },
+                    geometry = new Geometry()
+                    {
+                        type = "Polygon"
+                    }
+                };
+
+                foreach (var asdexColorKey in asdexProperties.Keys)
+                {
+                    if (asdexProperties[asdexColorKey].Contains(elementItem.Color))
+                    {
+                        currentFeature.properties.asdex = asdexColorKey;
+                    }
+                }
+
+                if (currentFeature.properties.asdex == null)
+                {
+                    currentFeature.properties.asdex = "structure";
+                    //throw new Exception($"'{elementItem.Color}' Asdex color can not be assigned to an asdex geojson property...");
+                }
+
+                currentFeature.geometry.coordinates.Add(new List<dynamic>());
+
+                List<double> firstCoord = null;
+                foreach (var coord in elementItem.Points.WorldPoint)
+                {
+                    if (firstCoord == null)
+                    {
+                        firstCoord = new List<double>() { coord.Lon, coord.Lat };
+                    }
+                    currentFeature.geometry.coordinates[0].Add(new List<double>() { coord.Lon, coord.Lat });
+                }
+                currentFeature.geometry.coordinates[0].Add(firstCoord);
+                allFeatures.Add(currentFeature);
+            }
+
+            return allFeatures;
+        }
+
+        private List<Feature> CreateLineStringVideoMap(List<vmElement> vmElements, Dictionary<string, string> colors)
+        {
+            List<Feature> allFeatures = new List<Feature>();
+            vmElement prevElement = null;
+            Feature currentFeature = new Feature();
+            foreach (var item in vmElements)
+            {
+                bool crossesAM = false;
+                var coords = CheckAMCrossing(item.StartLat, item.StartLon, item.EndLat, item.EndLon);
+                if (coords.Count() == 4)
+                {
+                    crossesAM = true;
+                }
+
+                if (prevElement == null)
+                {
+                    currentFeature.geometry = new Geometry()
+                    {
+                        type = "LineString",
+                    };
+                    currentFeature.properties = new Properties()
+                    {
+                        color = colors?[item.Color] ?? null,
+                        style = item.Style,
+                        thickness = item.Thickness,
+                    };
+
+                    if (crossesAM)
+                    {
+                        currentFeature.geometry.coordinates.Add(coords[0]);
+                        currentFeature.geometry.coordinates.Add(coords[1]);
+                        allFeatures.Add(currentFeature);
+                        currentFeature = new Feature()
+                        {
+                            properties = new Properties()
+                            {
+                                color = colors?[item.Color] ?? null,
+                                style = item.Style,
+                                thickness = item.Thickness,
+                            },
+                            geometry = new Geometry() { type = "LineString" }
+                        };
+                        currentFeature.geometry.coordinates.Add(coords[2]);
+                        currentFeature.geometry.coordinates.Add(coords[3]);
+                    }
+                    else
+                    {
+                        currentFeature.geometry.coordinates = coords;
                     }
 
-                    if (prevElement == null)
+                    prevElement = item;
+                    continue;
+                }
+                else
+                {
+                    if (LatLonHelpers.CorrectIlleagleLon(item.StartLon).ToString() + " " + item.StartLat.ToString() != LatLonHelpers.CorrectIlleagleLon(prevElement.EndLon) + " " + prevElement.EndLat)
                     {
-                        currentFeature.geometry = new Geometry()
+                        if (currentFeature.geometry.coordinates.Count() > 0)
                         {
-                            type = "LineString",
-                        };
-                        currentFeature.properties = new Properties()
+                            allFeatures.Add(currentFeature);
+                        }
+
+                        currentFeature = new Feature()
                         {
-                            color = colors?[item.Color] ?? null,
-                            style = item.Style,
-                            thickness = item.Thickness,
+                            properties = new Properties()
+                            {
+                                style = item.Style,
+                                thickness = item.Thickness,
+                                color = colors?[item.Color] ?? null
+                            },
+                            geometry = new Geometry()
+                            {
+                                type = "LineString",
+                            }
                         };
 
                         if (crossesAM)
@@ -175,93 +317,39 @@ namespace FeBuddyLibrary.DataAccess
                         {
                             currentFeature.geometry.coordinates = coords;
                         }
-
-                        prevElement = item;
-                        continue;
                     }
                     else
                     {
-                        if (LatLonHelpers.CorrectIlleagleLon(item.StartLon).ToString() + " " + item.StartLat.ToString() != LatLonHelpers.CorrectIlleagleLon(prevElement.EndLon) + " " + prevElement.EndLat)
-                        {
-                            if (currentFeature.geometry.coordinates.Count() > 0)
-                            {
-                                allFeatures.Add(currentFeature);
-                            }
+                        //var coords = new List<double>() { item.EndLon, item.EndLat };
 
+                        if (crossesAM)
+                        {
+                            currentFeature.geometry.coordinates.Add(coords[0]);
+                            currentFeature.geometry.coordinates.Add(coords[1]);
+                            allFeatures.Add(currentFeature);
                             currentFeature = new Feature()
                             {
                                 properties = new Properties()
                                 {
+                                    color = colors?[item.Color] ?? null,
                                     style = item.Style,
                                     thickness = item.Thickness,
-                                    color = colors?[item.Color] ?? null
                                 },
-                                geometry = new Geometry()
-                                {
-                                    type = "LineString",
-                                }
+                                geometry = new Geometry() { type = "LineString" }
                             };
-
-                            if (crossesAM)
-                            {
-                                currentFeature.geometry.coordinates.Add(coords[0]);
-                                currentFeature.geometry.coordinates.Add(coords[1]);
-                                allFeatures.Add(currentFeature);
-                                currentFeature = new Feature()
-                                {
-                                    properties = new Properties()
-                                    {
-                                        color = colors?[item.Color] ?? null,
-                                        style = item.Style,
-                                        thickness = item.Thickness,
-                                    },
-                                    geometry = new Geometry() { type = "LineString" }
-                                };
-                                currentFeature.geometry.coordinates.Add(coords[2]);
-                                currentFeature.geometry.coordinates.Add(coords[3]);
-                            }
-                            else
-                            {
-                                currentFeature.geometry.coordinates = coords;
-                            }
+                            currentFeature.geometry.coordinates.Add(coords[2]);
+                            currentFeature.geometry.coordinates.Add(coords[3]);
                         }
                         else
                         {
-                            //var coords = new List<double>() { item.EndLon, item.EndLat };
-
-                            if (crossesAM)
-                            {
-                                currentFeature.geometry.coordinates.Add(coords[0]);
-                                currentFeature.geometry.coordinates.Add(coords[1]);
-                                allFeatures.Add(currentFeature);
-                                currentFeature = new Feature()
-                                {
-                                    properties = new Properties()
-                                    {
-                                        color = colors?[item.Color] ?? null,
-                                        style = item.Style,
-                                        thickness = item.Thickness,
-                                    },
-                                    geometry = new Geometry() { type = "LineString" }
-                                };
-                                currentFeature.geometry.coordinates.Add(coords[2]);
-                                currentFeature.geometry.coordinates.Add(coords[3]);
-                            }
-                            else
-                            {
-                                currentFeature.geometry.coordinates.Add(coords[1]);
-                            }
+                            currentFeature.geometry.coordinates.Add(coords[1]);
                         }
                     }
-                    prevElement = item;
                 }
-                allFeatures.Add(currentFeature);
-
-                geojson.features.AddRange(allFeatures);
-
-                string jsonString = JsonConvert.SerializeObject(geojson, new JsonSerializerSettings { Formatting = Formatting.Indented, NullValueHandling = NullValueHandling.Ignore });
-                File.WriteAllText(file.FullName, jsonString);
+                prevElement = item;
             }
+            allFeatures.Add(currentFeature);
+            return allFeatures;
         }
 
         private List<dynamic> CheckAMCrossing(double startLat, double startLon, double endLat, double endLon)

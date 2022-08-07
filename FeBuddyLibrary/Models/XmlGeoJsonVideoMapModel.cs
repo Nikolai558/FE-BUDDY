@@ -59,6 +59,32 @@ namespace FeBuddyLibrary.Models
 
         [XmlAttribute(AttributeName = "Thickness")]
         public int Thickness { get; set; }
+
+        [XmlAttribute(AttributeName = "Closed")]
+        public bool Closed { get; set; }
+
+        [XmlAttribute(AttributeName = "Filled")]
+        public bool Filled { get; set; }
+
+        [XmlElement(ElementName = "Points", IsNullable = true)]
+        public Points Points { get; set; }
+    }
+
+    [XmlRoot(ElementName = "Points", IsNullable = true)]
+    public class Points
+    {
+        [XmlElement(ElementName = "WorldPoint", IsNullable = true)]
+        public List<WorldPoint> WorldPoint { get; set; }
+    }
+
+    [XmlRoot(ElementName = "WorldPoint", IsNullable = true)]
+    public class WorldPoint
+    {
+        [XmlAttribute(AttributeName = "Lon")]
+        public double Lon { get; set; }
+
+        [XmlAttribute(AttributeName = "Lat")]
+        public double Lat { get; set; }
     }
 
     [XmlRoot(ElementName = "Elements")]

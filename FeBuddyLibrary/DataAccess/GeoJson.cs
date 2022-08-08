@@ -10,6 +10,7 @@ using FeBuddyLibrary.Models;
 using Newtonsoft.Json;
 using FeBuddyLibrary.Helpers;
 using FeBuddyLibrary.Dat;
+using System.Windows.Forms;
 
 namespace FeBuddyLibrary.DataAccess
 {
@@ -30,6 +31,8 @@ namespace FeBuddyLibrary.DataAccess
                 { "structure", new List<string> { "bldg", "terminal", "building", "bldng", "struct", "structure" } },
                 { "UNKNOWN", new List<string> { } }
             };
+
+        private StringBuilder _errorLog = new StringBuilder();
 
         public VideoMaps ReadVideoMap(string filepath)
         {
@@ -502,25 +505,60 @@ namespace FeBuddyLibrary.DataAccess
                         }
                         switch (element.XsiType)
                         {
-                            case "Symbol": { geojson.features.Add(CreateSymbolFeature(element, geoMapObject.SymbolDefaults)); break; }
-                            case "Text": { geojson.features.Add(CreateTextFeature(element, geoMapObject.TextDefaults)); break; }
-                            case "Line": { AllLines.Add(element); break; }
+                            case "Symbol": 
+                                {
+                                    var featureToBeAdded = CreateSymbolFeature(element, geoMapObject.SymbolDefaults);
+                                    if (featureToBeAdded!= null) { geojson.features.Add(featureToBeAdded); }
+                                    else { _errorLog.AppendLine($"{geoMap.Name}  {geoMapObject.Description}  SYMBOL  {element.Lat} {element.Lon}: \n\t- Was not added to geojson because <SymbolDefaults> was not found for this map.\n\n\n"); }
+                                    break; 
+                                }
+                            case "Text": 
+                                {
+                                    var featureToBeAdded = CreateTextFeature(element, geoMapObject.TextDefaults);
+                                    if (featureToBeAdded != null) { geojson.features.Add(featureToBeAdded); }
+                                    else { _errorLog.AppendLine($"{geoMap.Name}  {geoMapObject.Description}  TEXT  {element.Lat} {element.Lon}: \n\t- Was not added to geojson because <TextDefaults> was not found for this map.\n\n\n"); }
+                                    break; 
+                                }
+                            case "Line": 
+                                {
+                                    if (geoMapObject.LineDefaults == null) { _errorLog.AppendLine($"{geoMap.Name}  {geoMapObject.Description}  LINE  {element.StartLat} {element.StartLon}  {element.EndLat} {element.EndLon}: \n\t- Was not added to geojson because <LineDefaults> was not found for this map.\n\n\n"); }
+                                    AllLines.Add(element); 
+                                    break; 
+                                }
                             default: { break; }
                         }
                     }
+
                     if (AllLines.Count() > 0)
                     {
-                        geojson.features.AddRange(CreateLineFeature(AllLines, geoMapObject.LineDefaults));
+                        foreach (var item in CreateLineFeature(AllLines, geoMapObject.LineDefaults))
+                        {
+                            if (item != null)
+                            {
+                                geojson.features.Add(item);
+                            }
+                        }
                     }
                     
                     string jsonString = JsonConvert.SerializeObject(geojson, new JsonSerializerSettings { Formatting = Formatting.Indented, NullValueHandling = NullValueHandling.Ignore });
                     File.WriteAllText(file.FullName, jsonString);
                 }
             }
+            if (!string.IsNullOrWhiteSpace(_errorLog.ToString()) && !string.IsNullOrEmpty(_errorLog.ToString()))
+            {
+                FileInfo errorFile = new FileInfo(Path.Combine(dirPath, "ErrorLog.txt"));
+                //errorFile.Create();
+                File.WriteAllText(errorFile.FullName, _errorLog.ToString());
+            }
         }
 
         private List<Feature> CreateLineFeature(List<Element> elements, LineDefaults lineDefaults)
         {
+            if (lineDefaults == null)
+            {
+                return null;
+            }
+
             List<Feature> featuresOutput = new List<Feature>();
             
             Element prevElement = null;
@@ -692,6 +730,11 @@ namespace FeBuddyLibrary.DataAccess
 
         private Feature CreateTextFeature(Element element, TextDefaults textDefaults)
         {
+            if (textDefaults == null)
+            {
+                return null;
+            }
+
             var output = new Feature()
             {
                 geometry = new Geometry()
@@ -727,6 +770,11 @@ namespace FeBuddyLibrary.DataAccess
 
         private Feature CreateSymbolFeature(Element element, SymbolDefaults symbolDefaults)
         {
+            if (symbolDefaults == null)
+            {
+                return null;
+            }
+
             var output = new Feature() {
                     geometry = new Geometry()
                     {

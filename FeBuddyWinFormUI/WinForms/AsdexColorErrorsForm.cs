@@ -35,9 +35,15 @@ namespace FeBuddyWinFormUI
                     Location = new System.Drawing.Point(10, 20 + (50 * count)),
                     ForeColor = System.Drawing.SystemColors.AppWorkspace,
                     Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point),
-                    Size = new System.Drawing.Size(127, 21),
-                    TextAlign = System.Drawing.ContentAlignment.MiddleCenter
+                    Size = new System.Drawing.Size(270, 25),
+                    TextAlign = System.Drawing.ContentAlignment.MiddleLeft,
+                    AutoSize = false
                 };
+
+                if (colorName == "")
+                {
+                    label.Text = "'Empty_Color_Name'";
+                }
 
                 ComboBox dropDown = new ComboBox()
                 {
@@ -77,6 +83,10 @@ namespace FeBuddyWinFormUI
                 {
                     ComboBox controlItem1 = (ComboBox)controlItem;
                     string colorName = panel1.Controls[controlItem1.Name.Split('_')[0]].Text;
+                    if (colorName == "'Empty_Color_Name'")
+                    {
+                        colorName = "";
+                    }
                     _converter.asdexColorDef[dataSource[controlItem1.SelectedIndex]].Add(colorName);
                 }
             }

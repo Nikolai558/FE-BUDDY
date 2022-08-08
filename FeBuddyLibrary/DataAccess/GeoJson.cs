@@ -433,7 +433,8 @@ namespace FeBuddyLibrary.DataAccess
             Loc midPointEndLoc = new Loc();
             var bearing = LatLonHelpers.HaversineGreatCircleBearing(startLoc, endLoc);
 
-            if ((startLoc.Longitude < 0 && (bearing > 180 && bearing < 360)) || (startLoc.Longitude > 0 && (bearing > 0 && bearing < 180)))
+            //if ((startLoc.Longitude < 0 && (bearing > 180 && bearing < 360)) || (startLoc.Longitude > 0 && (bearing > 0 && bearing < 180)))
+            if ((startLoc.Longitude < 0 && (bearing > 0 && bearing < 180)) || (startLoc.Longitude > 0 && (bearing > 180 && bearing < 360)))
             {
                 // Dont need to split
                 dynamicList.Add(new List<double>() { startLon, startLat });
@@ -445,12 +446,12 @@ namespace FeBuddyLibrary.DataAccess
             {
                 startLoc.Longitude = startLoc.Longitude + 180;
                 // See if this works, If needed change to the limit -179.99999999999
-                midPointStartLoc.Longitude = -179.999999999;
+                midPointStartLoc.Longitude = -180;
             }
             else
             {
                 startLoc.Longitude = startLoc.Longitude - 180;
-                midPointStartLoc.Longitude = 179.9999999;
+                midPointStartLoc.Longitude = 180;
             }
 
             if (endLoc.Longitude < 0)

@@ -193,25 +193,61 @@ namespace FeBuddyLibrary.Helpers
 
         public static double HaversineGreatCircleBearing(Loc startLoc, Loc endLoc)
         {
+        //    public function haversineGreatCircleBearing(float $endLat, float $endLon)
+        //    {
+        //        $x = cos( deg2rad( startLat )) * sin( deg2rad( endLat )) - sin( deg2rad( startLat )) *
+        //                  cos( deg2rad( endLat )) * cos( deg2rad( endLon - startLon ));
+        //
+        //        $y = sin(deg2rad(endLon - startLon)) * cos(deg2rad(endLat));
+        //        $bearing = rad2deg(atan2($y,$x));
+        //        $bearing = fmod($bearing + 360, 360);
+        //        return $bearing;
+        //    }
+
+
             var deg2rad_startLat = (Math.PI / 180) * startLoc.Latitude;
             var deg2rad_endLat = (Math.PI / 180) * endLoc.Latitude;
 
-            var x = Math.Cos(deg2rad_startLat) * Math.Sin(deg2rad_startLat) -
-                Math.Sin(deg2rad_startLat) * Math.Cos(deg2rad_endLat) * Math.Cos((Math.PI / 180) * endLoc.Longitude - startLoc.Longitude);
-            var y = Math.Sin((Math.PI / 180) * endLoc.Longitude - startLoc.Longitude) * Math.Cos(deg2rad_endLat);
+            var x = Math.Cos(deg2rad_startLat) * Math.Sin(deg2rad_endLat) -
+                Math.Sin(deg2rad_startLat) * Math.Cos(deg2rad_endLat) * Math.Cos((Math.PI / 180) * (endLoc.Longitude - startLoc.Longitude));
+
+            var y = Math.Sin((Math.PI / 180) * (endLoc.Longitude - startLoc.Longitude)) * Math.Cos(deg2rad_endLat);
+
+
             var bearing = (Math.PI / 180) * Math.Atan2(y, x);
-            bearing = bearing + 360 % 360;
+            bearing = (bearing + 360) % 360;
             return bearing;
         }
 
         public static double CorrectIlleagleLon(double value)
         {
+            //double tempvalue = Math.Abs(value);
+            //if (tempvalue > 180)
+            //{
+            //    return (180 - (tempvalue % 180));
+            //}
+            //return value;
+
+            //if (value > 180)
+            //{
+            //    return ((value % 180) - 180);
+            //}
+            //else if (value <= -180)
+            //{
+            //    return (180 - (value % 180));
+            //}
+            //return value;
+
             if (value > 180)
             {
-                return ((value % 180) - 180);
-            } else if (value <= -180)
+                var modValue = value % 180;
+                var output = 180 - modValue;
+                return output;
+            } else if (value < -180)
             {
-                return (180 - (value % 180));
+                var modValue = value % 180;
+                var output = 180 + modValue;
+                return output;
             }
             return value;
         }

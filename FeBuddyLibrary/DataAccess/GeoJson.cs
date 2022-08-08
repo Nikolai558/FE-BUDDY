@@ -226,7 +226,6 @@ namespace FeBuddyLibrary.DataAccess
                 {
                     properties = new Properties()
                     {
-                        color = colors?[elementItem.Color.ToLower()] ?? "",
                         style = elementItem.Style,
                         thickness = elementItem.Thickness,
                     },
@@ -235,6 +234,16 @@ namespace FeBuddyLibrary.DataAccess
                         type = "Polygon"
                     }
                 };
+
+                try
+                {
+                    currentFeature.properties.color = colors?[elementItem.Color.ToLower()] ?? "";
+                }
+                catch (Exception ex)
+                {
+                    colors.Add(elementItem.Color.ToLower(), "#000000");
+                    asdexColorDef["structure"].Add(elementItem.Color.ToLower());
+                }
 
 
                 foreach (var asdexColorKey in asdexColorDef.Keys)
@@ -436,12 +445,12 @@ namespace FeBuddyLibrary.DataAccess
             {
                 startLoc.Longitude = startLoc.Longitude + 180;
                 // See if this works, If needed change to the limit -179.99999999999
-                midPointStartLoc.Longitude = -180;
+                midPointStartLoc.Longitude = -179.999999999;
             }
             else
             {
                 startLoc.Longitude = startLoc.Longitude - 180;
-                midPointStartLoc.Longitude = 180;
+                midPointStartLoc.Longitude = 179.9999999;
             }
 
             if (endLoc.Longitude < 0)
@@ -487,6 +496,11 @@ namespace FeBuddyLibrary.DataAccess
                     List<Element> AllLines = new List<Element>();
                     foreach (Element element in geoMapObject.Elements.Element)
                     {
+
+                        if (geoMapObject.Description == "AIRWAYS")
+                        {
+                            string stop = "STOP";
+                        }
                         switch (element.XsiType)
                         {
                             case "Symbol": { geojson.features.Add(CreateSymbolFeature(element, geoMapObject.SymbolDefaults)); break; }
@@ -533,8 +547,6 @@ namespace FeBuddyLibrary.DataAccess
                 {
                     crossesAM = true;
                 }
-
-
                 if (prevElement == null)
                 {
                     currentFeature.geometry = new Geometry()
@@ -574,28 +586,28 @@ namespace FeBuddyLibrary.DataAccess
                 {
                     if (LatLonHelpers.CorrectIlleagleLon(element.StartLon).ToString() + " " + element.StartLat.ToString() != LatLonHelpers.CorrectIlleagleLon(prevElement.EndLon).ToString() + " " + prevElement.EndLat.ToString())
                     {
-                        if (currentFeature.geometry.coordinates.Count() > 0)
-                        {
-                            featuresOutput.Add(currentFeature);
-                        }
+                        //if (currentFeature.geometry.coordinates.Count() > 0)
+                        //{
+                        //    featuresOutput.Add(currentFeature);
+                        //}
 
-                        // Start Lat/Lon is different from Previous Element End Lat/Lon
-                        currentFeature = new Feature()
-                        {
-                            properties = new Properties()
-                            {
-                                bcg = lineDefaults.Bcg,
-                                style = lineDefaults.Style,
-                                thickness = lineDefaults.Thickness,
+                        //// Start Lat/Lon is different from Previous Element End Lat/Lon
+                        //currentFeature = new Feature()
+                        //{
+                        //    properties = new Properties()
+                        //    {
+                        //        bcg = lineDefaults.Bcg,
+                        //        style = lineDefaults.Style,
+                        //        thickness = lineDefaults.Thickness,
 
-                                color = null,
-                                zIndex = null,
-                            },
-                            geometry = new Geometry()
-                            {
-                                type = "LineString",
-                            }
-                        };
+                        //        color = null,
+                        //        zIndex = null,
+                        //    },
+                        //    geometry = new Geometry()
+                        //    {
+                        //        type = "LineString",
+                        //    }
+                        //};
                         if (crossesAM)
                         {
                             currentFeature.geometry.coordinates.Add(coords[0]);
@@ -619,6 +631,28 @@ namespace FeBuddyLibrary.DataAccess
                         }
                         else
                         {
+                            if (currentFeature.geometry.coordinates.Count() > 0)
+                            {
+                                featuresOutput.Add(currentFeature);
+                            }
+
+                            // Start Lat/Lon is different from Previous Element End Lat/Lon
+                            currentFeature = new Feature()
+                            {
+                                properties = new Properties()
+                                {
+                                    bcg = lineDefaults.Bcg,
+                                    style = lineDefaults.Style,
+                                    thickness = lineDefaults.Thickness,
+
+                                    color = null,
+                                    zIndex = null,
+                                },
+                                geometry = new Geometry()
+                                {
+                                    type = "LineString",
+                                }
+                            };
                             currentFeature.geometry.coordinates = coords;
                         }
                     }

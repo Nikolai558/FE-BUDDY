@@ -206,12 +206,13 @@ namespace FeBuddyLibrary.Helpers
 
         public static double CorrectIlleagleLon(double value)
         {
-            double tempvalue = Math.Abs(value);
-            if (tempvalue > 180)
+            if (value > 180)
             {
-                return (180 - (tempvalue % 180));
+                return ((value % 180) - 180);
+            } else if (value <= -180)
+            {
+                return (180 - (value % 180));
             }
-
             return value;
         }
 

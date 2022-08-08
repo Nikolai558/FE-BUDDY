@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Drawing;
@@ -16,12 +17,12 @@ namespace FeBuddyWinFormUI
 {
     public partial class GeoJsonForm : Form
     {
-        private bool nextAiracAvailable;
         private readonly string _currentVersion;
-        private bool userClicked = false;
         readonly PrivateFontCollection _pfc = new PrivateFontCollection();
-
-
+        private string fullSourceFilePath;
+        private string videoMapFolderName;
+        private VideoMapFileFormat videoMapFileFormat = VideoMapFileFormat.shortName;
+        
         public GeoJsonForm(string currentVersion)
         {
             Logger.LogMessage("DEBUG", "INITIALIZING COMPONENT");
@@ -32,24 +33,6 @@ namespace FeBuddyWinFormUI
 
             // It should grab from the assembily info. 
             this.Text = $"FE-BUDDY - V{currentVersion}";
-
-            chooseDirButton.Enabled = false;
-            startButton.Enabled = false;
-            airacCycleGroupBox.Enabled = false;
-            airacCycleGroupBox.Visible = false;
-
-            convertGroupBox.Enabled = false;
-            convertGroupBox.Visible = false;
-
-            startGroupBox.Enabled = false;
-            startGroupBox.Visible = false;
-
-            processingGroupBox.Visible = true;
-            processingGroupBox.Enabled = true;
-            processingDataLabel.Visible = true;
-            processingDataLabel.Enabled = true;
-
-            facilityIdCombobox.DataSource = GlobalConfig.allArtcc;
 
             GlobalConfig.outputDirBase = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
             filePathLabel.Text = GlobalConfig.outputDirBase;
@@ -88,27 +71,27 @@ namespace FeBuddyWinFormUI
             }
         }
 
-        private void AiracDataForm_Closing(object sender, EventArgs e)
+        private void GeojsonForm_Closing(object sender, EventArgs e)
         {
-            Logger.LogMessage("DEBUG", "MAIN FORM CLOSING");
+            Logger.LogMessage("DEBUG", "GeoJson Form CLOSING");
         }
 
-        private void CurrentAiracSelection_CheckedChanged(object sender, EventArgs e)
+        private void sourceFileButton_Click(object sender, EventArgs e)
         {
-            vStarsSelection.Text = GlobalConfig.currentAiracDate;
-            vEramSelection.Text = GlobalConfig.nextAiracDate;
-        }
+            OpenFileDialog outputDir = new OpenFileDialog();
+            outputDir.Filter = "xml files (*.xml)|*.xml";
+            outputDir.InitialDirectory = Path.GetDirectoryName("Downloads");
+            outputDir.ShowDialog();
+            fullSourceFilePath = outputDir.FileName;
 
-        private void NextAiracSelection_CheckedChanged(object sender, EventArgs e)
-        {
-            vStarsSelection.Text = GlobalConfig.currentAiracDate;
-            vEramSelection.Text = GlobalConfig.nextAiracDate;
+            sourceFileLabel.Text = fullSourceFilePath;
+            sourceFileLabel.Visible = true;
+            sourceFileLabel.MaximumSize = new Size(257, 82);
         }
 
         private void ChooseDirButton_Click(object sender, EventArgs e)
         {
             Logger.LogMessage("DEBUG", "USER CHOOSING DIFFERENT OUTPUT DIRECTORY");
-
             FolderBrowserDialog outputDir = new FolderBrowserDialog();
 
             outputDir.ShowDialog();
@@ -119,269 +102,99 @@ namespace FeBuddyWinFormUI
             filePathLabel.Visible = true;
             filePathLabel.MaximumSize = new Size(257, 82);
         }
-
-        private void AiracDataStartButton_Click(object sender, EventArgs e)
+        private void vEramSelection_CheckedChanged(object sender, EventArgs e)
         {
-            Logger.LogMessage("DEBUG", "USER CLICKED START BUTTON");
-
-            if (GlobalConfig.outputDirBase == null || GlobalConfig.outputDirBase == "")
-            {
-                Logger.LogMessage("WARNING", "OUTPUT DIRECTORY BASE IS NULL OR EMPTY");
-
-                DialogResult dialogResult = MessageBox.Show("Seems there may be an error.\n Please verify you have chosen an output location.", "ERROR: NO Output Location", MessageBoxButtons.OK);
-                if (dialogResult == DialogResult.OK)
-                {
-                    return;
-                }
-                else
-                {
-                    return;
-                }
-            }
-
-            if (GlobalConfig.facilityID == "" || GlobalConfig.facilityID.Trim() == null)
-            {
-                Logger.LogMessage("WARNING", "FACILITY ID IS NULL OR EMPTY");
-
-                DialogResult dialogResult = MessageBox.Show("Seems there may be an error.\n Please verify you have selected a correct Facility ID.", "ERROR: NO Facility ID", MessageBoxButtons.OK);
-                if (dialogResult == DialogResult.OK)
-                {
-                    return;
-                }
-                else
-                {
-                    return;
-                }
-            }
-
-            if (GlobalConfig.outputDirectory == null)
-            {
-                Logger.LogMessage("DEBUG", "SETTING OUTPUT DIRECTORY FULL FILE PATH FROM NULL");
-
-                GlobalConfig.outputDirectory = $"{GlobalConfig.outputDirBase}\\FE-BUDDY_Output";
-
-                if (Directory.Exists(GlobalConfig.outputDirectory))
-                {
-                    Logger.LogMessage("DEBUG", "OUTPUT DIRECTORY FILE PATH EXISTS, ADDING DATETIME VARIABLE TO END OF DIRECTORY NAME");
-
-                    GlobalConfig.outputDirectory += $"-{DateTime.Now:MMddHHmmss}";
-                }
-
-                GlobalConfig.outputDirectory += "\\";
-            }
-            else
-            {
-                Logger.LogMessage("DEBUG", "SETTING OUTPUT DIRECTORY FULL FILE PATH FROM EXISTING");
-
-                GlobalConfig.outputDirectory = $"{GlobalConfig.outputDirBase}\\FE-BUDDY_Output";
-
-                if (Directory.Exists(GlobalConfig.outputDirectory))
-                {
-                    Logger.LogMessage("DEBUG", "OUTPUT DIRECTORY FILE PATH EXISTS, ADDING DATETIME VARIABLE TO END OF DIRECTORY NAME");
-                    GlobalConfig.outputDirectory += $"-{DateTime.Now:MMddHHmmss}";
-                }
-
-                GlobalConfig.outputDirectory += "\\";
-            }
-
-            DirectoryHelpers.CreateDirectories();
-
-            FileHelpers.WriteTestSctFile();
-
-            menuStrip.Visible = false;
-            chooseDirButton.Enabled = false;
-            //startButton.Enabled = false;
-
-
-            if (shortNameSelection.Checked)
-            {
-                Logger.LogMessage("DEBUG", "CONVERT COORDS 'YES' SELECTED");
-
-                GlobalConfig.Convert = true;
-            }
-            else if (longNameSelection.Checked)
-            {
-                Logger.LogMessage("DEBUG", "CONVERT COORDS 'NO' SELECTED");
-
-                GlobalConfig.Convert = false;
-            }
-
-            airacCycleGroupBox.Enabled = false;
-            airacCycleGroupBox.Visible = false;
-
             convertGroupBox.Enabled = false;
-            convertGroupBox.Visible = false;
-
-            startGroupBox.Enabled = false;
-            startGroupBox.Visible = false;
-
-            //TODO - Create Processing box instead of already having it. 
-
-            processingGroupBox.Visible = true;
-            processingGroupBox.Enabled = true;
-            processingDataLabel.Visible = true;
-            processingDataLabel.Enabled = true;
-
-            StartParsing();
         }
 
-        private void AiracDataExitButton_Click(object sender, EventArgs e)
+        private void vStarsSelection_CheckedChanged(object sender, EventArgs e)
         {
-            Logger.LogMessage("INFO", "EXIT BUTTON CLICKED");
-            this.Close();
-            //this.Hide();
-            //Application.Exit();
+            convertGroupBox.Enabled = true;
         }
 
-        private delegate void SetControlPropertyThreadSafeDelegate(Control control, string propertyName, object propertyValue);
-
-        public static void SetControlPropertyThreadSafe(
-            Control control,
-            string propertyName,
-            object propertyValue)
+        private void shortNameSelection_CheckedChanged(object sender, EventArgs e)
         {
-            if (control.InvokeRequired)
+            videoMapFileFormat = VideoMapFileFormat.shortName;
+        }
+
+        private void longNameSelection_CheckedChanged(object sender, EventArgs e)
+        {
+            videoMapFileFormat = VideoMapFileFormat.longName;
+        }
+
+        private void bothSelection_CheckedChanged(object sender, EventArgs e)
+        {
+            videoMapFileFormat = VideoMapFileFormat.both;
+        }
+
+        private void StartButton_Click(object sender, EventArgs e)
+        {
+            if (string.IsNullOrEmpty(fullSourceFilePath) || fullSourceFilePath.Split('.')[^1] != "xml")
             {
-                control.Invoke(new SetControlPropertyThreadSafeDelegate
-                (SetControlPropertyThreadSafe),
-                new object[] { control, propertyName, propertyValue });
+                // TODO - Show message box instead of just returning.
+                return;
             }
-            else
+
+            if (string.IsNullOrEmpty(GlobalConfig.outputDirBase))
             {
-                control.GetType().InvokeMember(
-                    propertyName,
-                    BindingFlags.SetProperty,
-                    null,
-                    control,
-                    new object[] { propertyValue });
+                // TODO - Show Message Box instead of just returning. 
+                return;
             }
+
+            StartConversion();
+        }
+        
+        private void EnableButtons(bool isEnabled)
+        {
+            vStarsSelection.Enabled = isEnabled;
+            vEramSelection.Enabled = isEnabled;
+            shortNameSelection.Enabled = isEnabled;
+            longNameSelection.Enabled = isEnabled;
+            bothSelection.Enabled = isEnabled;
+            sourceFileButton.Enabled = isEnabled;
+            chooseDirButton.Enabled = isEnabled;
+            startButton.Enabled = isEnabled;
         }
 
-        private void StartParsing()
+        private void StartConversion()
         {
-            Logger.LogMessage("INFO", "SETTING UP PARSING WORKER");
+            EnableButtons(false);
 
-            AdjustProcessingBox();
+            Logger.LogMessage("INFO", "SETTING UP Conversion WORKER");
 
             var worker = new BackgroundWorker();
             worker.RunWorkerCompleted += Worker_StartParsingCompleted;
-            worker.DoWork += Worker_StartParsingDoWork;
+            worker.DoWork += Worker_StartConversionDoWork;
 
             worker.RunWorkerAsync();
         }
 
-        private void AdjustProcessingBox()
+        private void Worker_StartConversionDoWork(object sender, DoWorkEventArgs e)
         {
-            Logger.LogMessage("DEBUG", "ADJUSTING PROCESSING BOX");
-
-            outputDirectoryLabel.Text = GlobalConfig.outputDirectory;
-            outputDirectoryLabel.Visible = true;
-            outputLocationLabel.Visible = true;
-
-            processingGroupBox.Location = new Point(114, 59);
-            processingGroupBox.Size = new Size(557, 213);
-
-            outputLocationLabel.Location = new Point(9, 22);
-            outputDirectoryLabel.Location = new Point(24, 47);
-            processingDataLabel.Location = new Point(6, 102);
-            exitButton.Location = new Point(187, 173);
-        }
-
-        private void Worker_StartParsingDoWork(object sender, DoWorkEventArgs e)
-        {
-            Logger.LogMessage("INFO", "PROCESSING STARTED");
-
-            DirectoryHelpers.CheckTempDir();
+            GeoJson geoJsonConverter = new GeoJson();
 
             if (vStarsSelection.Checked)
             {
-                Logger.LogMessage("DEBUG", "CURRENT AIRAC IS SELECTED");
+                string videoMapName = fullSourceFilePath.Split('\\')[^1].Replace(".xml", string.Empty);
+                var geo = geoJsonConverter.ReadVideoMap(fullSourceFilePath);
 
-                GlobalConfig.airacEffectiveDate = vStarsSelection.Text;
+                List<string> unknownAsdexColors = geoJsonConverter.ValidateAsdexProperties(geo)["UNKNOWN"];
+                if (unknownAsdexColors.Count > 0)
+                {
+                    AsdexColorErrorsForm asdexErrorForm = new AsdexColorErrorsForm(unknownAsdexColors, geoJsonConverter);
+                    asdexErrorForm.ShowDialog();
+                    //Show new form with correcting options
+                    //apply users choices to that dictionary.
+
+                }
+
+                geoJsonConverter.WriteVideoMapGeoJson(GlobalConfig.outputDirBase, geo, videoMapName, videoMapFileFormat);
             }
             else if (vEramSelection.Checked)
             {
-                Logger.LogMessage("DEBUG", "NEXT AIRAC IS SELECTED");
-
-                GlobalConfig.airacEffectiveDate = vEramSelection.Text;
+                var geo = geoJsonConverter.ReadGeoMap(fullSourceFilePath);
+                geoJsonConverter.WriteGeoMapGeoJson(GlobalConfig.outputDirBase, geo);
             }
-
-            SetControlPropertyThreadSafe(processingDataLabel, "Text", "Downloading FAA Data");
-            DownloadHelpers.DownloadAllFiles(GlobalConfig.airacEffectiveDate, AiracDateCycleModel.AllCycleDates[GlobalConfig.airacEffectiveDate]);
-
-            SetControlPropertyThreadSafe(processingDataLabel, "Text", "Unzipping Files");
-            DirectoryHelpers.UnzipAllDownloaded();
-
-            SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Telephony");
-            GetTelephony Telephony = new GetTelephony();
-            Telephony.readFAAData($"{GlobalConfig.tempPath}\\{AiracDateCycleModel.AllCycleDates[GlobalConfig.airacEffectiveDate]}_TELEPHONY.html");
-
-            SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing DPs and STARs");
-            GetStarDpData ParseStarDp = new GetStarDpData();
-            ParseStarDp.StarDpQuaterBackFunc(GlobalConfig.airacEffectiveDate);
-
-            SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Airports");
-            GetAptData ParseAPT = new GetAptData();
-            ParseAPT.AptAndWxMain(GlobalConfig.airacEffectiveDate, GlobalConfig.facilityID);
-
-            if (vStarsSelection.Checked == true)
-            {
-                Logger.LogMessage("DEBUG", "CURRENT AIRAC SELECTED");
-                SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Chart Recalls");
-                GetFaaMetaFileData ParseMeta = new GetFaaMetaFileData();
-                ParseMeta.QuarterbackFunc();
-
-                SetControlPropertyThreadSafe(processingDataLabel, "Text", "Getting Publications");
-                PublicationParser publications = new PublicationParser();
-                publications.WriteAirportInfoTxt(GlobalConfig.facilityID);
-            }
-            else if (vEramSelection.Checked == true && nextAiracAvailable == true)
-            {
-                Logger.LogMessage("DEBUG", "NEXT AIRAC IS SELECTED, and it is available");
-                SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Chart Recalls");
-                GetFaaMetaFileData ParseMeta = new GetFaaMetaFileData();
-                ParseMeta.QuarterbackFunc();
-
-                SetControlPropertyThreadSafe(processingDataLabel, "Text", "Getting Publications");
-                PublicationParser publications = new PublicationParser();
-                publications.WriteAirportInfoTxt(GlobalConfig.facilityID);
-            }
-
-            SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Fixes");
-            GetFixData ParseFixes = new GetFixData();
-            ParseFixes.FixQuarterbackFunc(GlobalConfig.airacEffectiveDate);
-
-            SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Boundaries");
-            GetArbData ParseArb = new GetArbData();
-            ParseArb.ArbMain(GlobalConfig.airacEffectiveDate);
-
-            SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Airways");
-            FileHelpers.CreateAwyGeomapHeadersAndEnding(true);
-
-            GetAwyData ParseAWY = new GetAwyData();
-            ParseAWY.AWYQuarterbackFunc(GlobalConfig.airacEffectiveDate);
-
-            SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing ATS Airways");
-            GetAtsAwyData ParseAts = new GetAtsAwyData();
-            ParseAts.AWYQuarterbackFunc(GlobalConfig.airacEffectiveDate);
-            FileHelpers.CreateAwyGeomapHeadersAndEnding(false);
-
-            SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing NDBs");
-            GetNavData ParseNDBs = new GetNavData();
-            ParseNDBs.NAVQuarterbackFunc(GlobalConfig.airacEffectiveDate, GlobalConfig.facilityID);
-
-            //SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing FAA Aircraft Data");
-            //AircraftData ACData = new AircraftData();
-            //ACData.CreateAircraftDataAlias($"{GlobalConfig.outputDirectory}\\ALIAS\\AircraftDataInfo.txt");
-
-            SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Waypoints XML");
-            FileHelpers.WriteWaypointsXML();
-            FileHelpers.AppendCommentToXML(GlobalConfig.airacEffectiveDate);
-            FileHelpers.WriteNavXmlOutput();
-
-            SetControlPropertyThreadSafe(processingDataLabel, "Text", "Checking Alias Commands");
-            AliasCheck aliasCheck = new AliasCheck();
-            aliasCheck.CheckForDuplicates($"{GlobalConfig.outputDirectory}\\ALIAS\\AliasTestFile.txt");
         }
 
         private void Worker_StartParsingCompleted(object sender, RunWorkerCompletedEventArgs e)
@@ -389,103 +202,26 @@ namespace FeBuddyWinFormUI
             if (e.Error != null)
             {
                 DialogResult warningMSG = MessageBox.Show(
-                    $"ERROR\n\nWhile completing your selected task, FE-BUDDY came across the following issue:\n{e.Error.Message}\n\nThis could be due to a bug in the program, or a unexpected or incorrectly formatted item in the source file. (i.e. SCT2 File)\n\nPlease attempt to fix this issue and run the program again. If you continue to have an issue, please reach out the FE-BUDDY developers by reporting this issue and including a screenshot with the source file.\n\nhttps://github.com/Nikolai558/FE-BUDDY/issues",
+                    $"ERROR\n\nWhile completing your selected task, FE-BUDDY came across the following issue:\n{e.Error.Message}\n\nThis could be due to a bug in the program, or a unexpected or incorrectly formatted item in the source file.\n\nPlease attempt to fix this issue and run the program again. If you continue to have an issue, please reach out the FE-BUDDY developers by reporting this issue and including a screenshot with the source file.\n\nhttps://github.com/Nikolai558/FE-BUDDY/issues",
                     "CAUTION",
                     MessageBoxButtons.OK);
             }
+
+            EnableButtons(true);
 
             Logger.LogMessage("INFO", "PROCESSING COMPLETED");
-            File.Copy(Logger._logFilePath, $"{GlobalConfig.outputDirectory}\\FE-BUDDY_LOG.txt");
-
-            processingDataLabel.Text = "Complete";
-            processingDataLabel.Refresh();
-
-            processingGroupBox.Visible = true;
-            processingGroupBox.Enabled = true;
-
-            menuStrip.Visible = true;
-
-            exitButton.Visible = true;
-            exitButton.Enabled = true;
+            //File.Copy(Logger._logFilePath, $"{GlobalConfig.outputDirectory}\\FE-BUDDY_LOG.txt");
         }
 
-        private void GetAiracDate()
-        {
-            Logger.LogMessage("DEBUG", "SETTING UP AIRAC DATE WORKER");
-
-            var Worker = new BackgroundWorker();
-            Worker.RunWorkerCompleted += Worker_RunWorkerCompleted;
-            Worker.DoWork += Worker_DoWork;
-
-            Worker.RunWorkerAsync();
-        }
-
-        private void AiracDataForm_Shown(object sender, EventArgs e)
+        private void geoJsonForm_Shown(object sender, EventArgs e)
         {
             Logger.LogMessage("DEBUG", "SHOWING MAIN FORM");
-
-            GetAiracDate();
-            vStarsSelection.Text = GlobalConfig.currentAiracDate;
-            vEramSelection.Text = GlobalConfig.nextAiracDate;
         }
 
-        private void Worker_DoWork(object sender, DoWorkEventArgs e)
-        {
-            Logger.LogMessage("DEBUG", "GETTING AIRAC DATE");
-
-            if (GlobalConfig.nextAiracDate == null)
-            {
-                WebHelpers.GetAiracDateFromFAA();
-            }
-            nextAiracAvailable = WebHelpers.GetMetaUrlResponse();
-        }
-
-        private void Worker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
-        {
-            if (e.Error != null)
-            {
-                DialogResult warningMSG = MessageBox.Show(
-                    $"ERROR\n\nWhile completing your selected task, FE-BUDDY came across the following issue:\n{e.Error.Message}\n\nThis could be due to a bug in the program, or a unexpected or incorrectly formatted item in the source file. (i.e. SCT2 File)\n\nPlease attempt to fix this issue and run the program again. If you continue to have an issue, please reach out the FE-BUDDY developers by reporting this issue and including a screenshot with the source file.\n\nhttps://github.com/Nikolai558/FE-BUDDY/issues",
-                    "CAUTION",
-                    MessageBoxButtons.OK);
-            }
-
-            vStarsSelection.Text = GlobalConfig.currentAiracDate;
-            vEramSelection.Text = GlobalConfig.nextAiracDate;
-
-            processingGroupBox.Visible = false;
-            processingGroupBox.Enabled = false;
-
-            exitButton.Visible = false;
-            exitButton.Enabled = false;
-
-            processingDataLabel.Text = "Processing Data, Please Wait.";
-
-            processingDataLabel.Visible = false;
-            processingDataLabel.Enabled = false;
-
-            chooseDirButton.Enabled = true;
-            startButton.Enabled = true;
-
-            airacCycleGroupBox.Enabled = true;
-            airacCycleGroupBox.Visible = true;
-
-            convertGroupBox.Enabled = true;
-            convertGroupBox.Visible = true;
-
-            startGroupBox.Enabled = true;
-            startGroupBox.Visible = true;
-
-            facilityIdCombobox.SelectedIndex = Properties.Settings.Default.UserArtccSetting;
-
-            Logger.LogMessage("DEBUG", "AIRAC DATE WORKER COMPLETED");
-        }
-
-        private void AiracDataForm_Load(object sender, EventArgs e)
+        private void GeoJsonForm_Load(object sender, EventArgs e)
         {
             Logger.LogMessage("DEBUG", "LOADING MAIN FORM");
-
-            // TODO - Add fonts to buttons?
+            
             InstructionsMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
             CreditsMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
             ChangeLogMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
@@ -499,29 +235,6 @@ namespace FeBuddyWinFormUI
             newsToolStripMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
             //mainMenuMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
             //exitMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
-        }
-
-        private void NextAiracSelection_Click(object sender, EventArgs e)
-        {
-            Logger.LogMessage("DEBUG", "NEXT AIRAC SELECTED");
-            if (!nextAiracAvailable)
-            {
-                Logger.LogMessage("DEBUG", "NEXT AIRAC SELECTED, NOT AVAILABLE YET");
-                MetaNotFoundForm frm = new MetaNotFoundForm();
-                frm.ShowDialog();
-            }
-        }
-
-        private void FacilityIdCombobox_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            Logger.LogMessage("DEBUG", "FACILITY COMBOBOX CLICKED");
-            GlobalConfig.facilityID = facilityIdCombobox.SelectedItem.ToString();
-
-            if (userClicked)
-            {
-                Properties.Settings.Default.UserArtccSetting = facilityIdCombobox.SelectedIndex;
-                Properties.Settings.Default.Save();
-            }
         }
 
         private void UninstallMenuItem_Click(object sender, EventArgs e)
@@ -753,29 +466,6 @@ namespace FeBuddyWinFormUI
             //Process.Start("https://github.com/Nikolai558/FE-BUDDY/wiki#news");
         }
 
-        private void facilityIdCombobox_Click(object sender, EventArgs e)
-        {
-            userClicked = true;
-        }
-
-        private void airacLabel_Click(object sender, EventArgs e)
-        {
-
-        }
-
-        private void outputFileFormatNotes_Click(object sender, EventArgs e)
-        {
-
-        }
-
-        private void button1_Click(object sender, EventArgs e)
-        {
-
-        }
-
-        private void fileOutputFormatLabel_Click(object sender, EventArgs e)
-        {
-
-        }
+        
     }
 }

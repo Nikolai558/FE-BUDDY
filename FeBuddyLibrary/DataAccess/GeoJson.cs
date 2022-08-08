@@ -22,6 +22,15 @@ namespace FeBuddyLibrary.DataAccess
 
     public class GeoJson
     {
+        public Dictionary<string, List<string>> asdexColorDef { get; set; } = new Dictionary<string, List<string>>()
+            {
+                { "runway", new List<string> { "runway", "rway", "rwy" } },
+                { "taxiway", new List<string> { "taxiway", "tway", "twy", "taxi" } },
+                { "apron", new List<string> { "ramp", "apron" } },
+                { "structure", new List<string> { "bldg", "terminal", "building", "bldng", "struct", "structure" } },
+                { "UNKNOWN", new List<string> { } }
+            };
+
         public VideoMaps ReadVideoMap(string filepath)
         {
             var tempFile = Path.Combine(Path.GetTempPath(), "FE-BUDDY", "tempGeoMap.xml");
@@ -30,11 +39,22 @@ namespace FeBuddyLibrary.DataAccess
             XmlSerializer serializer = new XmlSerializer(typeof(VideoMaps));
 
             VideoMaps videoMaps;
-
-            using (Stream reader = new FileStream(tempFile, FileMode.Open))
+            try
             {
-                videoMaps = (VideoMaps)serializer.Deserialize(reader);
+                using (Stream reader = new FileStream(tempFile, FileMode.Open))
+                {
+                    videoMaps = (VideoMaps)serializer.Deserialize(reader);
+                }
             }
+            catch (Exception ex)
+            {
+                if (ex.Message.Contains("There is an error in XML document"))
+                {
+                    throw new Exception($"It appears your selected source file is not formatted properly based on your selected file type.\n\n{ex.Message}");
+                }
+                throw;
+            }
+            
 
             return videoMaps;
         }
@@ -125,10 +145,10 @@ namespace FeBuddyLibrary.DataAccess
                     foreach (var item in videoMapObject.Colors.NamedColor)
                     {
                         Color itemColor = Color.FromArgb(item.Red, item.Green, item.Blue);
-                        if (!colors.ContainsKey(item.Name))
+                        if (!colors.ContainsKey(item.Name.ToLower()))
                         {
                             // todo - Warn user two color names have been used...
-                            colors.Add(item.Name, "#" + itemColor.R.ToString("X2") + itemColor.G.ToString("X2") + itemColor.B.ToString("X2"));
+                            colors.Add(item.Name.ToLower(), "#" + itemColor.R.ToString("X2") + itemColor.G.ToString("X2") + itemColor.B.ToString("X2"));
                         }
                     }
                 }
@@ -151,6 +171,41 @@ namespace FeBuddyLibrary.DataAccess
             }
         }
 
+        public Dictionary<string, List<string>> ValidateAsdexProperties(VideoMaps videoMaps)
+        {
+            Dictionary<string, List<string>> output = asdexColorDef;
+
+            foreach (var vm in videoMaps.VideoMap)
+            {
+                if (vm.ShortName.Contains(" ASDEX"))
+                {
+                    foreach (var namedColor in vm.Colors.NamedColor)
+                    {
+                        bool isInUnknownKey = false;
+                        foreach (var key in asdexColorDef.Keys)
+                        {
+                            if (key == "UNKNOWN")
+                            {
+                                isInUnknownKey = true;
+                            }
+
+
+                            if (asdexColorDef[key].Contains(namedColor.Name.ToLower()))
+                            {
+                                break;
+                            }
+                            else if (isInUnknownKey)
+                            {
+                                asdexColorDef["UNKNOWN"].Add(namedColor.Name.ToLower());
+                            }
+                        }
+                    }
+                }
+            }
+
+            return output;
+        }
+
         private List<Feature> CreateAsdexVideoMap(List<vmElement> vmElements, Dictionary<string, string> colors)
         {
             // TODO - Create GUI for unrecognized "colors"
@@ -163,13 +218,7 @@ namespace FeBuddyLibrary.DataAccess
             // apron        = [ramp]
             // structure    = [bldg, terminal]
             //currentFeature.properties.asdex 
-            Dictionary<string, string[]> asdexProperties = new Dictionary<string, string[]>()
-            {
-                { "runway", new string[] { "runway", "rway", "rwy" } },
-                { "taxiway", new string[] { "taxiway", "tway", "twy", "taxi" } },
-                { "apron", new string[] { "ramp", "apron" } },
-                { "structure", new string[] { "bldg", "terminal", "building", "bldng", "struct", "structure" } },
-            };
+            
 
             foreach (var elementItem in vmElements)
             {
@@ -177,7 +226,6 @@ namespace FeBuddyLibrary.DataAccess
                 {
                     properties = new Properties()
                     {
-                        color = colors?[elementItem.Color] ?? "",
                         style = elementItem.Style,
                         thickness = elementItem.Thickness,
                     },
@@ -187,9 +235,20 @@ namespace FeBuddyLibrary.DataAccess
                     }
                 };
 
-                foreach (var asdexColorKey in asdexProperties.Keys)
+                try
                 {
-                    if (asdexProperties[asdexColorKey].Contains(elementItem.Color))
+                    currentFeature.properties.color = colors?[elementItem.Color.ToLower()] ?? "";
+                }
+                catch (Exception ex)
+                {
+                    colors.Add(elementItem.Color.ToLower(), "#000000");
+                    asdexColorDef["structure"].Add(elementItem.Color.ToLower());
+                }
+
+
+                foreach (var asdexColorKey in asdexColorDef.Keys)
+                {
+                    if (asdexColorDef[asdexColorKey].Contains(elementItem.Color.ToLower()) && asdexColorKey != "UNKNOWN")
                     {
                         currentFeature.properties.asdex = asdexColorKey;
                     }
@@ -197,8 +256,8 @@ namespace FeBuddyLibrary.DataAccess
 
                 if (currentFeature.properties.asdex == null)
                 {
-                    currentFeature.properties.asdex = "structure";
-                    //throw new Exception($"'{elementItem.Color}' Asdex color can not be assigned to an asdex geojson property...");
+                    //currentFeature.properties.asdex = "structure";
+                    throw new Exception($"'{elementItem.Color}' Asdex color can not be assigned to an asdex geojson property...");
                 }
 
                 currentFeature.geometry.coordinates.Add(new List<dynamic>());
@@ -241,7 +300,7 @@ namespace FeBuddyLibrary.DataAccess
                     };
                     currentFeature.properties = new Properties()
                     {
-                        color = colors?[item.Color] ?? null,
+                        color = colors?[item.Color.ToLower()] ?? null,
                         style = item.Style,
                         thickness = item.Thickness,
                     };
@@ -255,7 +314,7 @@ namespace FeBuddyLibrary.DataAccess
                         {
                             properties = new Properties()
                             {
-                                color = colors?[item.Color] ?? null,
+                                color = colors?[item.Color.ToLower()] ?? null,
                                 style = item.Style,
                                 thickness = item.Thickness,
                             },
@@ -287,7 +346,7 @@ namespace FeBuddyLibrary.DataAccess
                             {
                                 style = item.Style,
                                 thickness = item.Thickness,
-                                color = colors?[item.Color] ?? null
+                                color = colors?[item.Color.ToLower()] ?? null
                             },
                             geometry = new Geometry()
                             {
@@ -304,7 +363,7 @@ namespace FeBuddyLibrary.DataAccess
                             {
                                 properties = new Properties()
                                 {
-                                    color = colors?[item.Color] ?? null,
+                                    color = colors?[item.Color.ToLower()] ?? null,
                                     style = item.Style,
                                     thickness = item.Thickness,
                                 },
@@ -331,7 +390,7 @@ namespace FeBuddyLibrary.DataAccess
                             {
                                 properties = new Properties()
                                 {
-                                    color = colors?[item.Color] ?? null,
+                                    color = colors?[item.Color.ToLower()] ?? null,
                                     style = item.Style,
                                     thickness = item.Thickness,
                                 },
@@ -386,12 +445,12 @@ namespace FeBuddyLibrary.DataAccess
             {
                 startLoc.Longitude = startLoc.Longitude + 180;
                 // See if this works, If needed change to the limit -179.99999999999
-                midPointStartLoc.Longitude = -180;
+                midPointStartLoc.Longitude = -179.999999999;
             }
             else
             {
                 startLoc.Longitude = startLoc.Longitude - 180;
-                midPointStartLoc.Longitude = 180;
+                midPointStartLoc.Longitude = 179.9999999;
             }
 
             if (endLoc.Longitude < 0)
@@ -437,6 +496,11 @@ namespace FeBuddyLibrary.DataAccess
                     List<Element> AllLines = new List<Element>();
                     foreach (Element element in geoMapObject.Elements.Element)
                     {
+
+                        if (geoMapObject.Description == "AIRWAYS")
+                        {
+                            string stop = "STOP";
+                        }
                         switch (element.XsiType)
                         {
                             case "Symbol": { geojson.features.Add(CreateSymbolFeature(element, geoMapObject.SymbolDefaults)); break; }
@@ -483,8 +547,6 @@ namespace FeBuddyLibrary.DataAccess
                 {
                     crossesAM = true;
                 }
-
-
                 if (prevElement == null)
                 {
                     currentFeature.geometry = new Geometry()
@@ -524,28 +586,28 @@ namespace FeBuddyLibrary.DataAccess
                 {
                     if (LatLonHelpers.CorrectIlleagleLon(element.StartLon).ToString() + " " + element.StartLat.ToString() != LatLonHelpers.CorrectIlleagleLon(prevElement.EndLon).ToString() + " " + prevElement.EndLat.ToString())
                     {
-                        if (currentFeature.geometry.coordinates.Count() > 0)
-                        {
-                            featuresOutput.Add(currentFeature);
-                        }
+                        //if (currentFeature.geometry.coordinates.Count() > 0)
+                        //{
+                        //    featuresOutput.Add(currentFeature);
+                        //}
 
-                        // Start Lat/Lon is different from Previous Element End Lat/Lon
-                        currentFeature = new Feature()
-                        {
-                            properties = new Properties()
-                            {
-                                bcg = lineDefaults.Bcg,
-                                style = lineDefaults.Style,
-                                thickness = lineDefaults.Thickness,
+                        //// Start Lat/Lon is different from Previous Element End Lat/Lon
+                        //currentFeature = new Feature()
+                        //{
+                        //    properties = new Properties()
+                        //    {
+                        //        bcg = lineDefaults.Bcg,
+                        //        style = lineDefaults.Style,
+                        //        thickness = lineDefaults.Thickness,
 
-                                color = null,
-                                zIndex = null,
-                            },
-                            geometry = new Geometry()
-                            {
-                                type = "LineString",
-                            }
-                        };
+                        //        color = null,
+                        //        zIndex = null,
+                        //    },
+                        //    geometry = new Geometry()
+                        //    {
+                        //        type = "LineString",
+                        //    }
+                        //};
                         if (crossesAM)
                         {
                             currentFeature.geometry.coordinates.Add(coords[0]);
@@ -569,6 +631,28 @@ namespace FeBuddyLibrary.DataAccess
                         }
                         else
                         {
+                            if (currentFeature.geometry.coordinates.Count() > 0)
+                            {
+                                featuresOutput.Add(currentFeature);
+                            }
+
+                            // Start Lat/Lon is different from Previous Element End Lat/Lon
+                            currentFeature = new Feature()
+                            {
+                                properties = new Properties()
+                                {
+                                    bcg = lineDefaults.Bcg,
+                                    style = lineDefaults.Style,
+                                    thickness = lineDefaults.Thickness,
+
+                                    color = null,
+                                    zIndex = null,
+                                },
+                                geometry = new Geometry()
+                                {
+                                    type = "LineString",
+                                }
+                            };
                             currentFeature.geometry.coordinates = coords;
                         }
                     }

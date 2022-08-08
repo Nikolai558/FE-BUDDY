@@ -476,7 +476,6 @@ namespace FeBuddyLibrary.DataAccess
 
         }
 
-
         public void WriteGeoMapGeoJson(string dirPath, GeoMapSet geo)
         {
             foreach (GeoMap geoMap in geo.GeoMaps.GeoMap)
@@ -537,8 +536,11 @@ namespace FeBuddyLibrary.DataAccess
                     color = null,
                     zIndex = null,
                 },
+                geometry = new Geometry()
+                {
+                    type = "LineString",
+                }
             };
-
 
             foreach (Element element in elements)
             {
@@ -548,12 +550,9 @@ namespace FeBuddyLibrary.DataAccess
                 {
                     crossesAM = true;
                 }
+
                 if (prevElement == null)
                 {
-                    currentFeature.geometry = new Geometry()
-                    {
-                        type = "LineString",
-                    };
                     if (crossesAM)
                     {
                         currentFeature.geometry.coordinates.Add(coords[0]);
@@ -587,33 +586,30 @@ namespace FeBuddyLibrary.DataAccess
                 {
                     if (LatLonHelpers.CorrectIlleagleLon(element.StartLon).ToString() + " " + element.StartLat.ToString() != LatLonHelpers.CorrectIlleagleLon(prevElement.EndLon).ToString() + " " + prevElement.EndLat.ToString())
                     {
-                        //if (currentFeature.geometry.coordinates.Count() > 0)
-                        //{
-                        //    featuresOutput.Add(currentFeature);
-                        //}
-
-                        //// Start Lat/Lon is different from Previous Element End Lat/Lon
-                        //currentFeature = new Feature()
-                        //{
-                        //    properties = new Properties()
-                        //    {
-                        //        bcg = lineDefaults.Bcg,
-                        //        style = lineDefaults.Style,
-                        //        thickness = lineDefaults.Thickness,
-
-                        //        color = null,
-                        //        zIndex = null,
-                        //    },
-                        //    geometry = new Geometry()
-                        //    {
-                        //        type = "LineString",
-                        //    }
-                        //};
                         if (crossesAM)
                         {
+                            if (currentFeature.geometry.coordinates.Count() > 0)
+                            {
+                                featuresOutput.Add(currentFeature);
+                                currentFeature = new Feature()
+                                {
+                                    properties = new Properties()
+                                    {
+                                        bcg = lineDefaults.Bcg,
+                                        style = lineDefaults.Style,
+                                        thickness = lineDefaults.Thickness,
+
+                                        color = null,
+                                        zIndex = null,
+                                    },
+                                    geometry = new Geometry() { type = "LineString" }
+                                };
+                            }
+
                             currentFeature.geometry.coordinates.Add(coords[0]);
                             currentFeature.geometry.coordinates.Add(coords[1]);
                             featuresOutput.Add(currentFeature);
+
                             currentFeature = new Feature()
                             {
                                 properties = new Properties()
@@ -627,6 +623,7 @@ namespace FeBuddyLibrary.DataAccess
                                 },
                                 geometry = new Geometry() { type = "LineString" }
                             };
+                            
                             currentFeature.geometry.coordinates.Add(coords[2]);
                             currentFeature.geometry.coordinates.Add(coords[3]);
                         }
@@ -663,7 +660,7 @@ namespace FeBuddyLibrary.DataAccess
 
                         if (crossesAM)
                         {
-                            currentFeature.geometry.coordinates.Add(coords[0]);
+                            //currentFeature.geometry.coordinates.Add(coords[0]);
                             currentFeature.geometry.coordinates.Add(coords[1]);
                             featuresOutput.Add(currentFeature);
                             currentFeature = new Feature()

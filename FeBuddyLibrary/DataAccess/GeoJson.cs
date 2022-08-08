@@ -87,8 +87,6 @@ namespace FeBuddyLibrary.DataAccess
             return System.Text.RegularExpressions.Regex.Replace(name, invalidRegStr, "-");
         }
 
-        
-
         public void WriteVideoMapGeoJson(string dirPath, VideoMaps videoMaps, string videoMapName, VideoMapFileFormat videoMapFileFormat)
         {
             int count = 0;
@@ -283,6 +281,7 @@ namespace FeBuddyLibrary.DataAccess
             List<Feature> allFeatures = new List<Feature>();
             vmElement prevElement = null;
             Feature currentFeature = new Feature();
+
             foreach (var item in vmElements)
             {
                 bool crossesAM = false;
@@ -383,7 +382,7 @@ namespace FeBuddyLibrary.DataAccess
 
                         if (crossesAM)
                         {
-                            currentFeature.geometry.coordinates.Add(coords[0]);
+                            //currentFeature.geometry.coordinates.Add(coords[0]);
                             currentFeature.geometry.coordinates.Add(coords[1]);
                             allFeatures.Add(currentFeature);
                             currentFeature = new Feature()

@@ -96,7 +96,8 @@ namespace FeBuddyWinFormUI
 
             outputDir.ShowDialog();
 
-            GlobalConfig.outputDirBase = outputDir.SelectedPath;
+            //fullSourceFilePath = Path.Combine(fullSourceFilePath, "FE-BUDDY-GeoJSONs");
+            GlobalConfig.outputDirBase = Path.Combine(outputDir.SelectedPath, "FE-BUDDY-GeoJSONs");
 
             filePathLabel.Text = GlobalConfig.outputDirBase;
             filePathLabel.Visible = true;
@@ -129,6 +130,7 @@ namespace FeBuddyWinFormUI
 
         private void StartButton_Click(object sender, EventArgs e)
         {
+
             if (string.IsNullOrEmpty(fullSourceFilePath) || fullSourceFilePath.Split('.')[^1] != "xml")
             {
                 // TODO - Show message box instead of just returning.

@@ -78,11 +78,26 @@ namespace FeBuddyWinFormUI
 
         private void sourceFileButton_Click(object sender, EventArgs e)
         {
-            OpenFileDialog outputDir = new OpenFileDialog();
-            outputDir.Filter = "xml files (*.xml)|*.xml";
-            outputDir.InitialDirectory = Path.GetDirectoryName("Downloads");
-            outputDir.ShowDialog();
-            fullSourceFilePath = outputDir.FileName;
+            OpenFileDialog sourceFilePath = new OpenFileDialog();
+            sourceFilePath.Filter = "xml files (*.xml)|*.xml";
+            //sourceFilePath.RestoreDirectory = true;
+
+            if (vStarsSelection.Checked)
+            {
+                sourceFilePath.InitialDirectory = Environment.ExpandEnvironmentVariables(@"%userprofile%\AppData\Roaming\vSTARS\Video Maps\");
+            }
+            else if (vEramSelection.Checked)
+            {
+                sourceFilePath.InitialDirectory = Environment.ExpandEnvironmentVariables(@"%userprofile%\AppData\Local\vERAM\GeoMaps\");
+            }
+            else
+            {
+                // I dont think this will ever be possible but just in case. 
+                sourceFilePath.InitialDirectory = Path.GetDirectoryName("Downloads");
+            }
+
+            sourceFilePath.ShowDialog();
+            fullSourceFilePath = sourceFilePath.FileName;
 
             sourceFileLabel.Text = fullSourceFilePath;
             sourceFileLabel.Visible = true;

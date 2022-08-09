@@ -35,9 +35,9 @@ namespace FeBuddyWinFormUI
             this.Text = $"FE-BUDDY - V{currentVersion}";
 
             GlobalConfig.outputDirBase = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
-            filePathLabel.Text = GlobalConfig.outputDirBase;
-            filePathLabel.Visible = true;
-            filePathLabel.MaximumSize = new Size(257, 82);
+            outputPathLabel.Text = GlobalConfig.outputDirBase;
+            outputPathLabel.Visible = true;
+            outputPathLabel.MaximumSize = new Size(257, 82);
             _currentVersion = currentVersion;
         }
 
@@ -93,13 +93,26 @@ namespace FeBuddyWinFormUI
             else
             {
                 // I dont think this will ever be possible but just in case. 
-                sourceFilePath.InitialDirectory = Path.GetDirectoryName("Downloads");
+                sourceFilePath.InitialDirectory = Environment.ExpandEnvironmentVariables(@"%userprofile%\Downloads");
             }
 
             sourceFilePath.ShowDialog();
             fullSourceFilePath = sourceFilePath.FileName;
 
             sourceFileLabel.Text = fullSourceFilePath;
+
+            if (fullSourceFilePath.Length >= 20)
+            {
+                if (fullSourceFilePath[^17..].Contains('\\'))
+                {
+                    sourceFileLabel.Text = "..\\" + fullSourceFilePath[^17..].Split('\\')[^1];
+                }
+                else
+                {
+                    sourceFileLabel.Text = "..\\.." + fullSourceFilePath[^15..];
+                }
+            }
+
             sourceFileLabel.Visible = true;
             sourceFileLabel.MaximumSize = new Size(257, 82);
         }
@@ -109,14 +122,29 @@ namespace FeBuddyWinFormUI
             Logger.LogMessage("DEBUG", "USER CHOOSING DIFFERENT OUTPUT DIRECTORY");
             FolderBrowserDialog outputDir = new FolderBrowserDialog();
 
+            outputDir.InitialDirectory = Environment.ExpandEnvironmentVariables(@"%userprofile%\Downloads");
+
             outputDir.ShowDialog();
 
             //fullSourceFilePath = Path.Combine(fullSourceFilePath, "FE-BUDDY-GeoJSONs");
             GlobalConfig.outputDirBase = Path.Combine(outputDir.SelectedPath, "FE-BUDDY-GeoJSONs");
 
-            filePathLabel.Text = GlobalConfig.outputDirBase;
-            filePathLabel.Visible = true;
-            filePathLabel.MaximumSize = new Size(257, 82);
+            outputPathLabel.Text = GlobalConfig.outputDirBase;
+
+            if (GlobalConfig.outputDirBase.Length >= 20)
+            {
+                if (GlobalConfig.outputDirBase[^17..].Contains('\\'))
+                {
+                    outputPathLabel.Text = "..\\" + GlobalConfig.outputDirBase[^17..].Split('\\')[^2];
+                }
+                else
+                {
+                    outputPathLabel.Text = "..\\.." + GlobalConfig.outputDirBase[^15..];
+                }
+            }
+
+            outputPathLabel.Visible = true;
+            outputPathLabel.MaximumSize = new Size(257, 82);
         }
         private void vEramSelection_CheckedChanged(object sender, EventArgs e)
         {

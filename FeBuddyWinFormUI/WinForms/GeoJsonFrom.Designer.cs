@@ -35,7 +35,7 @@
             this.fileOutputFormatLabel = new System.Windows.Forms.Label();
             this.longNameSelection = new System.Windows.Forms.RadioButton();
             this.shortNameSelection = new System.Windows.Forms.RadioButton();
-            this.filePathLabel = new System.Windows.Forms.Label();
+            this.outputPathLabel = new System.Windows.Forms.Label();
             this.chooseDirButton = new System.Windows.Forms.Button();
             this.startButton = new System.Windows.Forms.Button();
             this.sourceTypeGroupBox = new System.Windows.Forms.GroupBox();
@@ -148,16 +148,16 @@
             this.shortNameSelection.UseVisualStyleBackColor = true;
             this.shortNameSelection.CheckedChanged += new System.EventHandler(this.shortNameSelection_CheckedChanged);
             // 
-            // filePathLabel
+            // outputPathLabel
             // 
-            this.filePathLabel.ForeColor = System.Drawing.SystemColors.AppWorkspace;
-            this.filePathLabel.Location = new System.Drawing.Point(6, 100);
-            this.filePathLabel.Name = "filePathLabel";
-            this.filePathLabel.Size = new System.Drawing.Size(257, 82);
-            this.filePathLabel.TabIndex = 9;
-            this.filePathLabel.Text = "filePathLabel";
-            this.filePathLabel.TextAlign = System.Drawing.ContentAlignment.BottomCenter;
-            this.filePathLabel.Visible = false;
+            this.outputPathLabel.ForeColor = System.Drawing.SystemColors.AppWorkspace;
+            this.outputPathLabel.Location = new System.Drawing.Point(6, 100);
+            this.outputPathLabel.Name = "outputPathLabel";
+            this.outputPathLabel.Size = new System.Drawing.Size(257, 82);
+            this.outputPathLabel.TabIndex = 9;
+            this.outputPathLabel.Text = "filePathLabel";
+            this.outputPathLabel.TextAlign = System.Drawing.ContentAlignment.BottomCenter;
+            this.outputPathLabel.Visible = false;
             // 
             // chooseDirButton
             // 
@@ -239,7 +239,7 @@
             this.startGroupBox.Controls.Add(this.sourceFileLabel);
             this.startGroupBox.Controls.Add(this.sourceFileButton);
             this.startGroupBox.Controls.Add(this.startButton);
-            this.startGroupBox.Controls.Add(this.filePathLabel);
+            this.startGroupBox.Controls.Add(this.outputPathLabel);
             this.startGroupBox.Controls.Add(this.chooseDirButton);
             this.startGroupBox.Location = new System.Drawing.Point(497, 27);
             this.startGroupBox.Name = "startGroupBox";
@@ -468,7 +468,7 @@
         private System.Windows.Forms.Label fileOutputFormatLabel;
         private System.Windows.Forms.RadioButton longNameSelection;
         private System.Windows.Forms.RadioButton shortNameSelection;
-        private System.Windows.Forms.Label filePathLabel;
+        private System.Windows.Forms.Label outputPathLabel;
         private System.Windows.Forms.Button chooseDirButton;
         private System.Windows.Forms.Button startButton;
         private System.Windows.Forms.GroupBox sourceTypeGroupBox;

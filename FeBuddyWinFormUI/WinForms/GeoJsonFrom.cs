@@ -127,7 +127,13 @@ namespace FeBuddyWinFormUI
             outputDir.ShowDialog();
 
             //fullSourceFilePath = Path.Combine(fullSourceFilePath, "FE-BUDDY-GeoJSONs");
+
             GlobalConfig.outputDirBase = Path.Combine(outputDir.SelectedPath, "FE-BUDDY-GeoJSONs");
+
+            if (GlobalConfig.outputDirBase == "FE-BUDDY-GeoJSONs")
+            {
+                GlobalConfig.outputDirBase = "";
+            }
 
             outputPathLabel.Text = GlobalConfig.outputDirBase;
 
@@ -176,13 +182,28 @@ namespace FeBuddyWinFormUI
 
             if (string.IsNullOrEmpty(fullSourceFilePath) || fullSourceFilePath.Split('.')[^1] != "xml")
             {
-                // TODO - Show message box instead of just returning.
+                MessageBoxButtons buttons = MessageBoxButtons.OK;
+                DialogResult result;
+
+                result = MessageBox.Show("Source File Path is Empty", "An invalid operation occured.", buttons);
                 return;
             }
 
             if (string.IsNullOrEmpty(GlobalConfig.outputDirBase))
             {
-                // TODO - Show Message Box instead of just returning. 
+                MessageBoxButtons buttons = MessageBoxButtons.OK;
+                DialogResult result;
+
+                result = MessageBox.Show("Output Directory is Empty", "An invalid operation occured.", buttons);
+                return;
+            }
+
+            if (!File.Exists(fullSourceFilePath))
+            {
+                MessageBoxButtons buttons = MessageBoxButtons.OK;
+                DialogResult result;
+
+                result = MessageBox.Show("Source File does not exist.", "An invalid operation occured.", buttons);
                 return;
             }
 

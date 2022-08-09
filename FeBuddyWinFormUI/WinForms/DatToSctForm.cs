@@ -100,7 +100,6 @@ namespace FeBuddyWinFormUI
 
             string errorMessages = "";
 
-            // TODO Show Message box instead of just returning. 
             if (string.IsNullOrWhiteSpace(_conversionOptions.InputFilePath)) errorMessages += "Input File Path is invalid.\n";
             if (string.IsNullOrWhiteSpace(_conversionOptions.outputDirectory)) errorMessages += "Output Directory is invalid.\n";
 
@@ -188,8 +187,6 @@ namespace FeBuddyWinFormUI
 
         private void Worker_StartConversionDoWork(object sender, DoWorkEventArgs e)
         {
-            // TODO - Call conversion Logic Here.
-
             string outputFileName = "\\" + _conversionOptions.InputFilePath.Split('\\')[^1].Split('.')[0];
             if (File.Exists(_conversionOptions.outputDirectory + outputFileName + ".sct2"))
             {
@@ -255,7 +252,6 @@ namespace FeBuddyWinFormUI
         {
             Logger.LogMessage("DEBUG", "LOADING MAIN FORM");
 
-            // TODO - Add fonts to buttons?
             InstructionsMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
             CreditsMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
             ChangeLogMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);

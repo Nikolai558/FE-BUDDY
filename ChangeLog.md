@@ -1,6 +1,9 @@
 # CHANGELOG
 
 ---
+- ## Version 2.3.0
+  - New Feature: vSTARS/vERAM Maps to GeoJson (CRC) format
+
 - ## Version 2.2.0
   - Created GUI for .SCT2 to .KML Conversions
     - Only .sct2 to .kml conversions are possible right now. This feature is still being developed.

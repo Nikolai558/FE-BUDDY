@@ -52,6 +52,7 @@
             this.settingsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.allowBetaMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.UninstallMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.convertVstarsVeramToGeoJson = new System.Windows.Forms.RadioButton();
             this.airacCycleGroupBox.SuspendLayout();
             this.menuStrip.SuspendLayout();
             this.SuspendLayout();
@@ -99,6 +100,7 @@
             // airacCycleGroupBox
             // 
             this.airacCycleGroupBox.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(10)))), ((int)(((byte)(10)))), ((int)(((byte)(10)))));
+            this.airacCycleGroupBox.Controls.Add(this.convertVstarsVeramToGeoJson);
             this.airacCycleGroupBox.Controls.Add(this.landingStartButton);
             this.airacCycleGroupBox.Controls.Add(this.manageFacDataSelector);
             this.airacCycleGroupBox.Controls.Add(this.convertSct2FaaGeoMap);
@@ -138,7 +140,7 @@
             this.manageFacDataSelector.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.manageFacDataSelector.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.manageFacDataSelector.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(46)))), ((int)(((byte)(46)))), ((int)(((byte)(46)))));
-            this.manageFacDataSelector.Location = new System.Drawing.Point(394, 117);
+            this.manageFacDataSelector.Location = new System.Drawing.Point(392, 156);
             this.manageFacDataSelector.Margin = new System.Windows.Forms.Padding(6, 7, 6, 7);
             this.manageFacDataSelector.Name = "manageFacDataSelector";
             this.manageFacDataSelector.Size = new System.Drawing.Size(196, 25);
@@ -152,7 +154,7 @@
             this.convertSct2FaaGeoMap.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.convertSct2FaaGeoMap.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.convertSct2FaaGeoMap.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(46)))), ((int)(((byte)(46)))), ((int)(((byte)(46)))));
-            this.convertSct2FaaGeoMap.Location = new System.Drawing.Point(394, 195);
+            this.convertSct2FaaGeoMap.Location = new System.Drawing.Point(392, 234);
             this.convertSct2FaaGeoMap.Margin = new System.Windows.Forms.Padding(6, 7, 6, 7);
             this.convertSct2FaaGeoMap.Name = "convertSct2FaaGeoMap";
             this.convertSct2FaaGeoMap.Size = new System.Drawing.Size(269, 25);
@@ -166,7 +168,7 @@
             this.convertFaaGeoMap2SCT.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.convertFaaGeoMap2SCT.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.convertFaaGeoMap2SCT.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(46)))), ((int)(((byte)(46)))), ((int)(((byte)(46)))));
-            this.convertFaaGeoMap2SCT.Location = new System.Drawing.Point(394, 156);
+            this.convertFaaGeoMap2SCT.Location = new System.Drawing.Point(392, 195);
             this.convertFaaGeoMap2SCT.Margin = new System.Windows.Forms.Padding(6, 7, 6, 7);
             this.convertFaaGeoMap2SCT.Name = "convertFaaGeoMap2SCT";
             this.convertFaaGeoMap2SCT.Size = new System.Drawing.Size(269, 25);
@@ -347,6 +349,19 @@
             this.UninstallMenuItem.Text = "Uninstall";
             this.UninstallMenuItem.Click += new System.EventHandler(this.UninstallMenuItem_Click);
             // 
+            // convertVstarsVeramToGeoJson
+            // 
+            this.convertVstarsVeramToGeoJson.AutoSize = true;
+            this.convertVstarsVeramToGeoJson.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.convertVstarsVeramToGeoJson.ForeColor = System.Drawing.SystemColors.AppWorkspace;
+            this.convertVstarsVeramToGeoJson.Location = new System.Drawing.Point(392, 117);
+            this.convertVstarsVeramToGeoJson.Margin = new System.Windows.Forms.Padding(6, 7, 6, 7);
+            this.convertVstarsVeramToGeoJson.Name = "convertVstarsVeramToGeoJson";
+            this.convertVstarsVeramToGeoJson.Size = new System.Drawing.Size(226, 25);
+            this.convertVstarsVeramToGeoJson.TabIndex = 13;
+            this.convertVstarsVeramToGeoJson.Text = "vSTARS/vERAM to GeoJSON";
+            this.convertVstarsVeramToGeoJson.UseVisualStyleBackColor = true;
+            // 
             // LandingForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(11F, 25F);
@@ -406,6 +421,7 @@
         private System.Windows.Forms.ToolStripMenuItem allowBetaMenuItem;
         private System.Windows.Forms.ToolStripMenuItem discordToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem newsToolStripMenuItem;
+        private System.Windows.Forms.RadioButton convertVstarsVeramToGeoJson;
     }
 }
 

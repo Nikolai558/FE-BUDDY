@@ -101,7 +101,6 @@ namespace FeBuddyWinFormUI
 
             string errorMessages = "";
 
-            // TODO Show Message box instead of just returning. 
             if (string.IsNullOrWhiteSpace(_conversionOptions.InputFilePath)) errorMessages += "Input File Path is invalid.\n";
             if (string.IsNullOrWhiteSpace(_conversionOptions.outputDirectory)) errorMessages += "Output Directory is invalid.\n";
 

@@ -2,6 +2,7 @@
 using System.Drawing;
 using System.IO;
 using System.Windows.Forms;
+using FeBuddyLibrary.DataAccess;
 using FeBuddyLibrary.Helpers;
 using Squirrel;
 

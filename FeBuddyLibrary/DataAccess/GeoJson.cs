@@ -252,6 +252,8 @@ namespace FeBuddyLibrary.DataAccess
                     if (asdexColorDef[asdexColorKey].Contains(elementItem.Color.ToLower()) && asdexColorKey != "UNKNOWN")
                     {
                         currentFeature.properties.asdex = asdexColorKey;
+                        currentFeature.properties.thickness = null;
+                        currentFeature.properties.style = null;
                     }
                 }
 

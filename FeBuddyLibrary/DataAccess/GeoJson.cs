@@ -227,7 +227,7 @@ namespace FeBuddyLibrary.DataAccess
                 {
                     properties = new Properties()
                     {
-                        style = elementItem.Style,
+                        style = Char.ToLowerInvariant(elementItem.Style[0]) + elementItem.Style[1..],
                         thickness = elementItem.Thickness,
                     },
                     geometry = new Geometry()
@@ -303,7 +303,7 @@ namespace FeBuddyLibrary.DataAccess
                     currentFeature.properties = new Properties()
                     {
                         color = colors?[item.Color.ToLower()] ?? null,
-                        style = item.Style,
+                        style = Char.ToLowerInvariant(item.Style[0]) + item.Style[1..],
                         thickness = item.Thickness,
                     };
 
@@ -317,7 +317,7 @@ namespace FeBuddyLibrary.DataAccess
                             properties = new Properties()
                             {
                                 color = colors?[item.Color.ToLower()] ?? null,
-                                style = item.Style,
+                                style = Char.ToLowerInvariant(item.Style[0]) + item.Style[1..],
                                 thickness = item.Thickness,
                             },
                             geometry = new Geometry() { type = "LineString" }
@@ -346,7 +346,7 @@ namespace FeBuddyLibrary.DataAccess
                         {
                             properties = new Properties()
                             {
-                                style = item.Style,
+                                style = Char.ToLowerInvariant(item.Style[0]) + item.Style[1..],
                                 thickness = item.Thickness,
                                 color = colors?[item.Color.ToLower()] ?? null
                             },
@@ -366,7 +366,7 @@ namespace FeBuddyLibrary.DataAccess
                                 properties = new Properties()
                                 {
                                     color = colors?[item.Color.ToLower()] ?? null,
-                                    style = item.Style,
+                                    style = Char.ToLowerInvariant(item.Style[0]) + item.Style[1..],
                                     thickness = item.Thickness,
                                 },
                                 geometry = new Geometry() { type = "LineString" }
@@ -393,7 +393,7 @@ namespace FeBuddyLibrary.DataAccess
                                 properties = new Properties()
                                 {
                                     color = colors?[item.Color.ToLower()] ?? null,
-                                    style = item.Style,
+                                    style = Char.ToLowerInvariant(item.Style[0]) + item.Style[1..],
                                     thickness = item.Thickness,
                                 },
                                 geometry = new Geometry() { type = "LineString" }
@@ -567,7 +567,7 @@ namespace FeBuddyLibrary.DataAccess
                 properties = new Properties()
                 {
                     bcg = lineDefaults.Bcg,
-                    style = lineDefaults.Style,
+                    style = Char.ToLowerInvariant(lineDefaults.Style[0]) + lineDefaults.Style[1..],
                     thickness = lineDefaults.Thickness,
 
                     color = null,
@@ -600,7 +600,7 @@ namespace FeBuddyLibrary.DataAccess
                             properties = new Properties()
                             {
                                 bcg = lineDefaults.Bcg,
-                                style = lineDefaults.Style,
+                                style = Char.ToLowerInvariant(lineDefaults.Style[0]) + lineDefaults.Style[1..],
                                 thickness = lineDefaults.Thickness,
 
                                 color = null,
@@ -633,7 +633,7 @@ namespace FeBuddyLibrary.DataAccess
                                     properties = new Properties()
                                     {
                                         bcg = lineDefaults.Bcg,
-                                        style = lineDefaults.Style,
+                                        style = Char.ToLowerInvariant(lineDefaults.Style[0]) + lineDefaults.Style[1..],
                                         thickness = lineDefaults.Thickness,
 
                                         color = null,
@@ -652,7 +652,7 @@ namespace FeBuddyLibrary.DataAccess
                                 properties = new Properties()
                                 {
                                     bcg = lineDefaults.Bcg,
-                                    style = lineDefaults.Style,
+                                    style = Char.ToLowerInvariant(lineDefaults.Style[0]) + lineDefaults.Style[1..],
                                     thickness = lineDefaults.Thickness,
 
                                     color = null,
@@ -677,7 +677,7 @@ namespace FeBuddyLibrary.DataAccess
                                 properties = new Properties()
                                 {
                                     bcg = lineDefaults.Bcg,
-                                    style = lineDefaults.Style,
+                                    style = Char.ToLowerInvariant(lineDefaults.Style[0]) + lineDefaults.Style[1..],
                                     thickness = lineDefaults.Thickness,
 
                                     color = null,
@@ -705,7 +705,7 @@ namespace FeBuddyLibrary.DataAccess
                                 properties = new Properties()
                                 {
                                     bcg = lineDefaults.Bcg,
-                                    style = lineDefaults.Style,
+                                    style = Char.ToLowerInvariant(lineDefaults.Style[0]) + lineDefaults.Style[1..],
                                     thickness = lineDefaults.Thickness,
 
                                     color = null,
@@ -783,7 +783,7 @@ namespace FeBuddyLibrary.DataAccess
                     },
                     properties = new Properties()
                     {
-                        style = symbolDefaults.Style,
+                        style = Char.ToLowerInvariant(symbolDefaults.Style[0]) + symbolDefaults.Style[1..],
                         size = symbolDefaults.Size,
                         bcg = symbolDefaults.Bcg,
                         zIndex = null,

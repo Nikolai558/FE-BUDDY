@@ -34,6 +34,11 @@ namespace FeBuddyLibrary.DataAccess
 
         private StringBuilder _errorLog = new StringBuilder();
 
+        private bool isDefaultObject()
+        {
+            return false;
+        }
+
         public VideoMaps ReadVideoMap(string filepath)
         {
             var tempFile = Path.Combine(Path.GetTempPath(), "FE-BUDDY", "tempGeoMap.xml");
@@ -581,6 +586,10 @@ namespace FeBuddyLibrary.DataAccess
                 }
             };
 
+            if (currentFeature.properties.thickness == 1) { currentFeature.properties.thickness = null; }
+            if (currentFeature.properties.style == "solid") { currentFeature.properties.style = null; }
+            if (currentFeature.properties.bcg == 1) { currentFeature.properties.bcg = null; }
+
             foreach (Element element in elements)
             {
                 bool crossesAM = false;
@@ -610,6 +619,9 @@ namespace FeBuddyLibrary.DataAccess
                             },
                             geometry = new Geometry() { type = "LineString" }
                         };
+                        if (currentFeature.properties.thickness == 1) { currentFeature.properties.thickness = null; }
+                        if (currentFeature.properties.style == "solid") { currentFeature.properties.style = null; }
+                        if (currentFeature.properties.bcg == 1) { currentFeature.properties.bcg = null; }
                         currentFeature.geometry.coordinates.Add(coords[2]);
                         currentFeature.geometry.coordinates.Add(coords[3]);
                     }
@@ -643,6 +655,9 @@ namespace FeBuddyLibrary.DataAccess
                                     },
                                     geometry = new Geometry() { type = "LineString" }
                                 };
+                                if (currentFeature.properties.thickness == 1) { currentFeature.properties.thickness = null; }
+                                if (currentFeature.properties.style == "solid") { currentFeature.properties.style = null; }
+                                if (currentFeature.properties.bcg == 1) { currentFeature.properties.bcg = null; }
                             }
 
                             currentFeature.geometry.coordinates.Add(coords[0]);
@@ -662,7 +677,10 @@ namespace FeBuddyLibrary.DataAccess
                                 },
                                 geometry = new Geometry() { type = "LineString" }
                             };
-                            
+                            if (currentFeature.properties.thickness == 1) { currentFeature.properties.thickness = null; }
+                            if (currentFeature.properties.style == "solid") { currentFeature.properties.style = null; }
+                            if (currentFeature.properties.bcg == 1) { currentFeature.properties.bcg = null; }
+
                             currentFeature.geometry.coordinates.Add(coords[2]);
                             currentFeature.geometry.coordinates.Add(coords[3]);
                         }
@@ -690,6 +708,9 @@ namespace FeBuddyLibrary.DataAccess
                                     type = "LineString",
                                 }
                             };
+                            if (currentFeature.properties.thickness == 1) { currentFeature.properties.thickness = null; }
+                            if (currentFeature.properties.style == "solid") { currentFeature.properties.style = null; }
+                            if (currentFeature.properties.bcg == 1) { currentFeature.properties.bcg = null; }
                             currentFeature.geometry.coordinates = coords;
                         }
                     }
@@ -715,6 +736,9 @@ namespace FeBuddyLibrary.DataAccess
                                 },
                                 geometry = new Geometry() { type = "LineString" }
                             };
+                            if (currentFeature.properties.thickness == 1) { currentFeature.properties.thickness = null; }
+                            if (currentFeature.properties.style == "solid") { currentFeature.properties.style = null; }
+                            if (currentFeature.properties.bcg == 1) { currentFeature.properties.bcg = null; }
                             currentFeature.geometry.coordinates.Add(coords[2]);
                             currentFeature.geometry.coordinates.Add(coords[3]);
                         }
@@ -753,10 +777,16 @@ namespace FeBuddyLibrary.DataAccess
                     opaque = textDefaults.Opaque,
                     xOffset = textDefaults.XOffset,
                     yOffset = textDefaults.YOffset,
-                    color = null,
-                    zIndex = null
                 }
             };
+
+            // CRC Defaults. If any of these are true we don't need to include them in the geojson file.
+            if (output.properties.size == 0) { output.properties.size = null; }
+            if (output.properties.bcg == 1) { output.properties.bcg = null; }
+            if (output.properties.xOffset == 0) { output.properties.xOffset = null; }
+            if (output.properties.yOffset == 0) { output.properties.yOffset = null; }
+            if (output.properties.opaque == false) { output.properties.bcg = null; }
+            if (output.properties.underline == false) { output.properties.bcg = null; }
 
             try
             {
@@ -788,9 +818,13 @@ namespace FeBuddyLibrary.DataAccess
                         style = Char.ToLowerInvariant(symbolDefaults.Style[0]) + symbolDefaults.Style[1..],
                         size = symbolDefaults.Size,
                         bcg = symbolDefaults.Bcg,
-                        zIndex = null,
-                        color = null,
                     }};
+
+            // CRC Defaults. If any of these are true we don't need to include them in the geojson file.
+            if (output.properties.style == "VOR") { output.properties.style = null; }
+            if (output.properties.size == 0) { output.properties.size = null; }
+            if (output.properties.bcg == 1) { output.properties.bcg = null; }
+
             try
             {
                 output.properties.filters = Array.ConvertAll(symbolDefaults.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty).Split(','), s => int.Parse(s));

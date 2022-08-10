@@ -35,6 +35,9 @@ namespace FeBuddyWinFormUI
             this.Text = $"FE-BUDDY - V{currentVersion}";
 
             GlobalConfig.outputDirBase = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+
+            GlobalConfig.outputDirBase = Path.Combine(GlobalConfig.outputDirBase, "FE-BUDDY-GeoJSONs");
+
             outputPathLabel.Text = GlobalConfig.outputDirBase;
             outputPathLabel.Visible = true;
             outputPathLabel.MaximumSize = new Size(257, 82);

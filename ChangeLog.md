@@ -1,6 +1,10 @@
 # CHANGELOG
 
 ---
+- ## Version 2.3.1
+  - #92: Corrected ASDEX properties in the geojson output files
+  - #93: Default property settings are not included in "feature-level" properties
+
 - ## Version 2.3.0
   - New Feature: vSTARS/vERAM Maps to GeoJson (CRC) format
 

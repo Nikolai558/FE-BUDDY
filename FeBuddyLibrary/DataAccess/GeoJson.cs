@@ -34,6 +34,11 @@ namespace FeBuddyLibrary.DataAccess
 
         private StringBuilder _errorLog = new StringBuilder();
 
+        private bool isDefaultObject()
+        {
+            return false;
+        }
+
         public VideoMaps ReadVideoMap(string filepath)
         {
             var tempFile = Path.Combine(Path.GetTempPath(), "FE-BUDDY", "tempGeoMap.xml");
@@ -227,7 +232,7 @@ namespace FeBuddyLibrary.DataAccess
                 {
                     properties = new Properties()
                     {
-                        style = elementItem.Style,
+                        style = Char.ToLowerInvariant(elementItem.Style[0]) + elementItem.Style[1..],
                         thickness = elementItem.Thickness,
                     },
                     geometry = new Geometry()
@@ -252,6 +257,8 @@ namespace FeBuddyLibrary.DataAccess
                     if (asdexColorDef[asdexColorKey].Contains(elementItem.Color.ToLower()) && asdexColorKey != "UNKNOWN")
                     {
                         currentFeature.properties.asdex = asdexColorKey;
+                        currentFeature.properties.thickness = null;
+                        currentFeature.properties.style = null;
                     }
                 }
 
@@ -303,7 +310,7 @@ namespace FeBuddyLibrary.DataAccess
                     currentFeature.properties = new Properties()
                     {
                         color = colors?[item.Color.ToLower()] ?? null,
-                        style = item.Style,
+                        style = Char.ToLowerInvariant(item.Style[0]) + item.Style[1..],
                         thickness = item.Thickness,
                     };
 
@@ -317,7 +324,7 @@ namespace FeBuddyLibrary.DataAccess
                             properties = new Properties()
                             {
                                 color = colors?[item.Color.ToLower()] ?? null,
-                                style = item.Style,
+                                style = Char.ToLowerInvariant(item.Style[0]) + item.Style[1..],
                                 thickness = item.Thickness,
                             },
                             geometry = new Geometry() { type = "LineString" }
@@ -346,7 +353,7 @@ namespace FeBuddyLibrary.DataAccess
                         {
                             properties = new Properties()
                             {
-                                style = item.Style,
+                                style = Char.ToLowerInvariant(item.Style[0]) + item.Style[1..],
                                 thickness = item.Thickness,
                                 color = colors?[item.Color.ToLower()] ?? null
                             },
@@ -366,7 +373,7 @@ namespace FeBuddyLibrary.DataAccess
                                 properties = new Properties()
                                 {
                                     color = colors?[item.Color.ToLower()] ?? null,
-                                    style = item.Style,
+                                    style = Char.ToLowerInvariant(item.Style[0]) + item.Style[1..],
                                     thickness = item.Thickness,
                                 },
                                 geometry = new Geometry() { type = "LineString" }
@@ -393,7 +400,7 @@ namespace FeBuddyLibrary.DataAccess
                                 properties = new Properties()
                                 {
                                     color = colors?[item.Color.ToLower()] ?? null,
-                                    style = item.Style,
+                                    style = Char.ToLowerInvariant(item.Style[0]) + item.Style[1..],
                                     thickness = item.Thickness,
                                 },
                                 geometry = new Geometry() { type = "LineString" }
@@ -567,7 +574,7 @@ namespace FeBuddyLibrary.DataAccess
                 properties = new Properties()
                 {
                     bcg = lineDefaults.Bcg,
-                    style = lineDefaults.Style,
+                    style = Char.ToLowerInvariant(lineDefaults.Style[0]) + lineDefaults.Style[1..],
                     thickness = lineDefaults.Thickness,
 
                     color = null,
@@ -578,6 +585,10 @@ namespace FeBuddyLibrary.DataAccess
                     type = "LineString",
                 }
             };
+
+            if (currentFeature.properties.thickness == 1) { currentFeature.properties.thickness = null; }
+            if (currentFeature.properties.style == "solid") { currentFeature.properties.style = null; }
+            if (currentFeature.properties.bcg == 1) { currentFeature.properties.bcg = null; }
 
             foreach (Element element in elements)
             {
@@ -600,7 +611,7 @@ namespace FeBuddyLibrary.DataAccess
                             properties = new Properties()
                             {
                                 bcg = lineDefaults.Bcg,
-                                style = lineDefaults.Style,
+                                style = Char.ToLowerInvariant(lineDefaults.Style[0]) + lineDefaults.Style[1..],
                                 thickness = lineDefaults.Thickness,
 
                                 color = null,
@@ -608,6 +619,9 @@ namespace FeBuddyLibrary.DataAccess
                             },
                             geometry = new Geometry() { type = "LineString" }
                         };
+                        if (currentFeature.properties.thickness == 1) { currentFeature.properties.thickness = null; }
+                        if (currentFeature.properties.style == "solid") { currentFeature.properties.style = null; }
+                        if (currentFeature.properties.bcg == 1) { currentFeature.properties.bcg = null; }
                         currentFeature.geometry.coordinates.Add(coords[2]);
                         currentFeature.geometry.coordinates.Add(coords[3]);
                     }
@@ -633,7 +647,7 @@ namespace FeBuddyLibrary.DataAccess
                                     properties = new Properties()
                                     {
                                         bcg = lineDefaults.Bcg,
-                                        style = lineDefaults.Style,
+                                        style = Char.ToLowerInvariant(lineDefaults.Style[0]) + lineDefaults.Style[1..],
                                         thickness = lineDefaults.Thickness,
 
                                         color = null,
@@ -641,6 +655,9 @@ namespace FeBuddyLibrary.DataAccess
                                     },
                                     geometry = new Geometry() { type = "LineString" }
                                 };
+                                if (currentFeature.properties.thickness == 1) { currentFeature.properties.thickness = null; }
+                                if (currentFeature.properties.style == "solid") { currentFeature.properties.style = null; }
+                                if (currentFeature.properties.bcg == 1) { currentFeature.properties.bcg = null; }
                             }
 
                             currentFeature.geometry.coordinates.Add(coords[0]);
@@ -652,7 +669,7 @@ namespace FeBuddyLibrary.DataAccess
                                 properties = new Properties()
                                 {
                                     bcg = lineDefaults.Bcg,
-                                    style = lineDefaults.Style,
+                                    style = Char.ToLowerInvariant(lineDefaults.Style[0]) + lineDefaults.Style[1..],
                                     thickness = lineDefaults.Thickness,
 
                                     color = null,
@@ -660,7 +677,10 @@ namespace FeBuddyLibrary.DataAccess
                                 },
                                 geometry = new Geometry() { type = "LineString" }
                             };
-                            
+                            if (currentFeature.properties.thickness == 1) { currentFeature.properties.thickness = null; }
+                            if (currentFeature.properties.style == "solid") { currentFeature.properties.style = null; }
+                            if (currentFeature.properties.bcg == 1) { currentFeature.properties.bcg = null; }
+
                             currentFeature.geometry.coordinates.Add(coords[2]);
                             currentFeature.geometry.coordinates.Add(coords[3]);
                         }
@@ -677,7 +697,7 @@ namespace FeBuddyLibrary.DataAccess
                                 properties = new Properties()
                                 {
                                     bcg = lineDefaults.Bcg,
-                                    style = lineDefaults.Style,
+                                    style = Char.ToLowerInvariant(lineDefaults.Style[0]) + lineDefaults.Style[1..],
                                     thickness = lineDefaults.Thickness,
 
                                     color = null,
@@ -688,6 +708,9 @@ namespace FeBuddyLibrary.DataAccess
                                     type = "LineString",
                                 }
                             };
+                            if (currentFeature.properties.thickness == 1) { currentFeature.properties.thickness = null; }
+                            if (currentFeature.properties.style == "solid") { currentFeature.properties.style = null; }
+                            if (currentFeature.properties.bcg == 1) { currentFeature.properties.bcg = null; }
                             currentFeature.geometry.coordinates = coords;
                         }
                     }
@@ -705,7 +728,7 @@ namespace FeBuddyLibrary.DataAccess
                                 properties = new Properties()
                                 {
                                     bcg = lineDefaults.Bcg,
-                                    style = lineDefaults.Style,
+                                    style = Char.ToLowerInvariant(lineDefaults.Style[0]) + lineDefaults.Style[1..],
                                     thickness = lineDefaults.Thickness,
 
                                     color = null,
@@ -713,6 +736,9 @@ namespace FeBuddyLibrary.DataAccess
                                 },
                                 geometry = new Geometry() { type = "LineString" }
                             };
+                            if (currentFeature.properties.thickness == 1) { currentFeature.properties.thickness = null; }
+                            if (currentFeature.properties.style == "solid") { currentFeature.properties.style = null; }
+                            if (currentFeature.properties.bcg == 1) { currentFeature.properties.bcg = null; }
                             currentFeature.geometry.coordinates.Add(coords[2]);
                             currentFeature.geometry.coordinates.Add(coords[3]);
                         }
@@ -751,10 +777,16 @@ namespace FeBuddyLibrary.DataAccess
                     opaque = textDefaults.Opaque,
                     xOffset = textDefaults.XOffset,
                     yOffset = textDefaults.YOffset,
-                    color = null,
-                    zIndex = null
                 }
             };
+
+            // CRC Defaults. If any of these are true we don't need to include them in the geojson file.
+            if (output.properties.size == 0) { output.properties.size = null; }
+            if (output.properties.bcg == 1) { output.properties.bcg = null; }
+            if (output.properties.xOffset == 0) { output.properties.xOffset = null; }
+            if (output.properties.yOffset == 0) { output.properties.yOffset = null; }
+            if (output.properties.opaque == false) { output.properties.bcg = null; }
+            if (output.properties.underline == false) { output.properties.bcg = null; }
 
             try
             {
@@ -783,12 +815,16 @@ namespace FeBuddyLibrary.DataAccess
                     },
                     properties = new Properties()
                     {
-                        style = symbolDefaults.Style,
+                        style = Char.ToLowerInvariant(symbolDefaults.Style[0]) + symbolDefaults.Style[1..],
                         size = symbolDefaults.Size,
                         bcg = symbolDefaults.Bcg,
-                        zIndex = null,
-                        color = null,
                     }};
+
+            // CRC Defaults. If any of these are true we don't need to include them in the geojson file.
+            if (output.properties.style == "VOR") { output.properties.style = null; }
+            if (output.properties.size == 0) { output.properties.size = null; }
+            if (output.properties.bcg == 1) { output.properties.bcg = null; }
+
             try
             {
                 output.properties.filters = Array.ConvertAll(symbolDefaults.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty).Split(','), s => int.Parse(s));

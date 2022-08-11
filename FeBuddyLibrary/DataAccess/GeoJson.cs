@@ -162,7 +162,7 @@ namespace FeBuddyLibrary.DataAccess
                 if (videoMapObject.ShortName.Contains(" ASDEX"))
                 {
                     // Create Asdex stuff.
-                    allFeatures = CreateAsdexVideoMap(videoMapObject.Elements.Element, colors);
+                    allFeatures = CreateAsdexVideoMap(videoMapObject.Elements.Element, colors, file.FullName);
                 }
                 else
                 {
@@ -212,11 +212,12 @@ namespace FeBuddyLibrary.DataAccess
             return output;
         }
 
-        private List<Feature> CreateAsdexVideoMap(List<vmElement> vmElements, Dictionary<string, string> colors)
+        private List<Feature> CreateAsdexVideoMap(List<vmElement> vmElements, Dictionary<string, string> colors, string fileName)
         {
             // TODO - Create GUI for unrecognized "colors"
 
             List<Feature> allFeatures = new List<Feature>();
+            //List<vmElement> otherElementsNotPaths = new List<vmElement>();
 
             // use color def to figure out asdex type.
             // runway       = [runway, rway, rwy]
@@ -230,6 +231,8 @@ namespace FeBuddyLibrary.DataAccess
             {
                 if (elementItem.XsiType != "Path")
                 {
+                    // Per Ross, Ignore XSI:Types inside an ASDEX File that does not = Path
+                    //otherElementsNotPaths.Add(elementItem);
                     continue;
                 }
 
@@ -287,6 +290,56 @@ namespace FeBuddyLibrary.DataAccess
                 currentFeature.geometry.coordinates[0].Add(firstCoord);
                 allFeatures.Add(currentFeature);
             }
+
+
+            // ---------------------------------------------------------------------------------------------------------
+            // PER ROSS, Ignore elements that are not Path's for ASDEX VM
+            //
+            // If we decide to change our mind about this the following code would create a seperate geojson file
+            // next to the asdex in the output location. This is incomplete and would need work but it is started.
+            // 
+            // ---------------------------------------------------------------------------------------------------------
+            //if (otherElementsNotPaths.Count() > 0)
+            //{
+            //    FeatureCollection asdexOtherFeatureCollection = new FeatureCollection();
+            //    var otherFeatures = new List<Feature>();
+
+            //    foreach (vmElement vmItem in otherElementsNotPaths)
+            //    {
+            //        switch (vmItem.XsiType.ToLower())
+            //        {
+            //            case "label":
+            //                {
+            //                    Feature feature = new Feature()
+            //                    {
+            //                        properties = new Properties()
+            //                        {
+            //                            text = new List<string>() { vmItem.Text}, Would need to create XML Attribute for .Text in the XmlGeoJsonVideoMapModel.cs File
+            //                            color = colors[vmItem.Color],
+            //                        },
+            //                        geometry = new Geometry()
+            //                        {
+            //                            type = "Point",
+            //                            coordinates = new List<dynamic>() { new List<double>() { vmItem.Lon, vmItem.Lat } } Would need to create XML Attribute for .Lat and .Lon in the XmlGeoJsonVideoMapModel.cs File
+            //                        }
+            //                    };
+            //                    otherFeatures.Add(feature);
+            //                    break;
+            //                }
+            //            case "line":
+            //                {
+            //                    break;
+            //                }
+            //            default:
+            //                break;
+            //        }
+            //    }
+
+            //    asdexOtherFeatureCollection.features.AddRange(otherFeatures);
+            //    string jsonString = JsonConvert.SerializeObject(asdexOtherFeatureCollection, new JsonSerializerSettings { Formatting = Formatting.Indented, NullValueHandling = NullValueHandling.Ignore });
+            //    string fullFilePath = fileName.Split('.')[0] + "-OtherFeatures.geojson"; 
+            //    File.WriteAllText(fullFilePath, jsonString);
+            //}
 
             return allFeatures;
         }

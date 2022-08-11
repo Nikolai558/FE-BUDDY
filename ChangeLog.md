@@ -1,6 +1,11 @@
 # CHANGELOG
 
 ---
+- ## Version 2.3.2
+  - #95: Elements inside a ASDEX VideoMap that are not a xsi:type of "Path" will not be included in the geojson output
+  (CRC will not render anything other than Polygon's / Paths inside of an ASDEX file)
+
+
 - ## Version 2.3.1
   - #92: Corrected ASDEX properties in the geojson output files
   - #93: Default property settings are not included in "feature-level" properties

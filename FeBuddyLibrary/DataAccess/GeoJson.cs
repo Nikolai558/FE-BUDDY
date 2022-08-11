@@ -228,6 +228,11 @@ namespace FeBuddyLibrary.DataAccess
 
             foreach (var elementItem in vmElements)
             {
+                if (elementItem.XsiType != "Path")
+                {
+                    continue;
+                }
+
                 Feature currentFeature = new Feature()
                 {
                     properties = new Properties()

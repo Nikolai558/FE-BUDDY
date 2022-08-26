@@ -168,8 +168,8 @@ namespace FeBuddyLibrary.DataAccess
                     NameSB.AppendLine($".id{telephony.TelephonyAltered} .MSG FAA_ISR *** 3LD: {telephony.ThreeLD} ___ TELEPHONY: {telephony.Telephony}");
                 }
             }
-            File.WriteAllText(filePath, threeLD_SB.ToString());
-            File.WriteAllText(filePath, NameSB.ToString());
+            File.AppendAllText(filePath, threeLD_SB.ToString());
+            File.AppendAllText(filePath, NameSB.ToString());
             File.AppendAllText(combinedFilePath, threeLD_SB.ToString());
             File.AppendAllText(combinedFilePath, NameSB.ToString());
             Logger.LogMessage("DEBUG", $"COMPLETED TELEPHONY");

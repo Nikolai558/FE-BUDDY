@@ -352,6 +352,11 @@ namespace FeBuddyLibrary.DataAccess
 
             foreach (var item in vmElements)
             {
+                if (item.XsiType != "Line")
+                {
+                    continue;
+                }
+
                 if (!colors.ContainsKey(item.Color.ToLower()))
                 {
                     colors.Add(item.Color.ToLower(), null);

@@ -5,17 +5,14 @@ The following is a list of features that we are considering or actively working 
 
 ---
 
-- [ ] vSTARS/vERAM Geo/Video Maps to GeoJSON (CRC) Converter
-  - Priority Item. See [#81](https://github.com/Nikolai558/FE-BUDDY/issues/81) for progress/details
+- [ ] Separate "Low" and "High" airways by appropriate altitudes
+  - [Video Explanation](https://www.youtube.com/watch?v=bvjRoVK41T0)
 
 - [ ] GoogleEarthPro (KML) Converter
   - SCT2 to KML = complete/Released in v2.2
   - KML to SCT2 = Work in progress
   - GeoJSON to KML = Pending
   - KML to GeoJSON = Pending
-
-- [ ] Separate "Low" and "High" airways by appropriate altitudes
-  - [Video Explanation](https://www.youtube.com/watch?v=bvjRoVK41T0)
 
 - [ ] AIRAC GeoJSON Output
   - This should be output with AIRAC updates ...\FE-BUDDY_Output\CRC-GeoJSON

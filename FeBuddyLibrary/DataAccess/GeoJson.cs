@@ -352,6 +352,16 @@ namespace FeBuddyLibrary.DataAccess
 
             foreach (var item in vmElements)
             {
+                if (item.XsiType != "Line")
+                {
+                    continue;
+                }
+
+                if (!colors.ContainsKey(item.Color.ToLower()))
+                {
+                    colors.Add(item.Color.ToLower(), null);
+                }
+
                 bool crossesAM = false;
                 var coords = CheckAMCrossing(item.StartLat, item.StartLon, item.EndLat, item.EndLon);
                 if (coords.Count() == 4)
@@ -368,6 +378,7 @@ namespace FeBuddyLibrary.DataAccess
                     currentFeature.properties = new Properties()
                     {
                         color = colors?[item.Color.ToLower()] ?? null,
+                        //color = null,
                         style = Char.ToLowerInvariant(item.Style[0]) + item.Style[1..],
                         thickness = item.Thickness,
                     };

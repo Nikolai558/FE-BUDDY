@@ -8,12 +8,6 @@ The following is a list of features that we are considering or actively working 
 - [ ] Separate "Low" and "High" airways by appropriate altitudes
   - [Video Explanation](https://www.youtube.com/watch?v=bvjRoVK41T0)
 
-- [ ] GoogleEarthPro (KML) Converter
-  - SCT2 to KML = complete/Released in v2.2
-  - KML to SCT2 = Work in progress
-  - GeoJSON to KML = Pending
-  - KML to GeoJSON = Pending
-
 - [ ] AIRAC GeoJSON Output
   - This should be output with AIRAC updates ...\FE-BUDDY_Output\CRC-GeoJSON
     - Then use a folder structure similar to "SECTOR FILES" to organize the output files

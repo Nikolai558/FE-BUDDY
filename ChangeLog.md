@@ -1,6 +1,11 @@
 # CHANGELOG
 
 ---
+- ## Version 2.3.4
+  - #100: Temporary fix for when a color is not defined inside the vSTARS video map. (Skips "color" property)
+  - #101: Temporary fix for labels inside the vSTARS video map. (Ignore labels)
+  - Added uninstall batch file to GitHub Repository
+
 - ## Version 2.3.3
   - #97: Fixed the problem where the .id commands for the 3LD were not working.
 

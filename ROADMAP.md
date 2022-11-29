@@ -24,6 +24,7 @@ The following is a list of features that we are considering or actively working 
     - VOR [Point with text properites and the name/type in the text description]
     - DPs (individual files and then another file with all combined)
     - STARSs (individual files and then another file with all combined)
+  - Add option for user to decide if they want all the geojsons in one folder to make "vNAS Batch Upload" easier.
 
 - [ ] FAA GeoMAP (foia requests) converter.
   - [GeoMap converter](https://github.com/justinshannon/geo-map-converter)

@@ -42,13 +42,13 @@ namespace FeBuddyLibrary.Helpers
                 Logger.LogMessage("DEBUG", "CREATING AWY HI GEOMAP HEADERS");
 
                 GlobalConfig.HighAwyGeoMap.AppendLine("        <GeoMapObject Description=\"HI AIRWAYS\" TdmOnly=\"false\">");
-                GlobalConfig.HighAwyGeoMap.AppendLine("          <LineDefaults Bcg=\"4\" Filters=\"4\" Style=\"ShortDashed\" Thickness=\"1\" />");
+                GlobalConfig.HighAwyGeoMap.AppendLine("          <LineDefaults Bcg=\"5\" Filters=\"5\" Style=\"ShortDashed\" Thickness=\"1\" />");
                 GlobalConfig.HighAwyGeoMap.AppendLine("          <Elements>");
 
                 Logger.LogMessage("DEBUG", "CREATING AWY LO GEOMAP HEADERS");
 
                 GlobalConfig.LowAwyGeoMap.AppendLine("        <GeoMapObject Description=\"LO AIRWAYS\" TdmOnly=\"false\">");
-                GlobalConfig.LowAwyGeoMap.AppendLine("          <LineDefaults Bcg=\"4\" Filters=\"4\" Style=\"ShortDashed\" Thickness=\"1\" />");
+                GlobalConfig.LowAwyGeoMap.AppendLine("          <LineDefaults Bcg=\"15\" Filters=\"15\" Style=\"ShortDashed\" Thickness=\"1\" />");
                 GlobalConfig.LowAwyGeoMap.AppendLine("          <Elements>");
             }
             else

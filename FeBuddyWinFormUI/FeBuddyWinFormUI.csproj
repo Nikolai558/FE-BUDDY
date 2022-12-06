@@ -4,7 +4,7 @@
     <TargetFramework>net6.0-windows</TargetFramework>
     <OutputType>WinExe</OutputType>
     <AssemblyName>FE-BUDDY</AssemblyName>
-    <Version>2.3.4</Version>
+    <Version>2.3.5</Version>
     <Copyright>Copyright © 2022 Nikolas Boling, Kyle Sanders</Copyright>
     <UseWindowsForms>true</UseWindowsForms>
     <ApplicationIcon>FE_BUDDY_icon.ico</ApplicationIcon>

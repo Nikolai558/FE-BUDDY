@@ -5,9 +5,6 @@ The following is a list of features that we are considering or actively working 
 
 ---
 
-- [ ] Separate "Low" and "High" airways by appropriate altitudes
-  - [Video Explanation](https://www.youtube.com/watch?v=bvjRoVK41T0)
-
 - [ ] AIRAC GeoJSON Output
   - This should be output with AIRAC updates ...\FE-BUDDY_Output\CRC-GeoJSON
     - Then use a folder structure similar to "SECTOR FILES" to organize the output files

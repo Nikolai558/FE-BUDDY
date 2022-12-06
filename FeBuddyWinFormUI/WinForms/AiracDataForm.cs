@@ -358,6 +358,11 @@ namespace FeBuddyWinFormUI
             SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Airways");
             FileHelpers.CreateAwyGeomapHeadersAndEnding(true);
 
+
+            // ------------------------------------------------------------------------------------------------------
+            // DO NOT CHANGE THE ORDER OF THESE TWO ITEMS, REFACTORING THIS IS NEEDED!!!!!
+            // Warning: AwyData must be preformed before AtsAwyData, Refactoring of this code is needed! 
+
             GetAwyData ParseAWY = new GetAwyData();
             ParseAWY.AWYQuarterbackFunc(GlobalConfig.airacEffectiveDate);
 
@@ -365,6 +370,9 @@ namespace FeBuddyWinFormUI
             GetAtsAwyData ParseAts = new GetAtsAwyData();
             ParseAts.AWYQuarterbackFunc(GlobalConfig.airacEffectiveDate);
             FileHelpers.CreateAwyGeomapHeadersAndEnding(false);
+
+            // ------------------------------------------------------------------------------------------------------
+
 
             SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing NDBs");
             GetNavData ParseNDBs = new GetNavData();

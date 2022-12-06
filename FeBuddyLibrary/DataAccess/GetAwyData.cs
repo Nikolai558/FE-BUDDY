@@ -192,22 +192,29 @@ namespace FeBuddyLibrary.DataAccess
         /// </summary>
         private void WriteAwySctData()
         {
+            // Warning: AwyData must be preformed before AtsAwyData, Refactoring of this code is needed! 
             Logger.LogMessage("INFO", "STARTED AWY SCT FILE WRITER");
 
             // Set our File Path
-            string filePath = $"{GlobalConfig.outputDirectory}\\VRC\\[HIGH AIRWAY].sct2";
+            string highAirwayFilePath = $"{GlobalConfig.outputDirectory}\\VRC\\[HIGH AIRWAY].sct2";
+            string lowAirwayFilePath = $"{GlobalConfig.outputDirectory}\\VRC\\[LOW AIRWAY].sct2";
 
             // Create a new String Builder
-            StringBuilder sb = new StringBuilder();
+            StringBuilder highAirwaySB = new StringBuilder();
+            StringBuilder lowAirwaySB = new StringBuilder();
 
             // Add [HIGH AIRWAY] to the verry begining of our string builder
-            sb.AppendLine("[HIGH AIRWAY]");
+            highAirwaySB.AppendLine("[HIGH AIRWAY]");
+            lowAirwaySB.AppendLine("[LOW AIRWAY]");
 
             // Loop through all of our Airways
             foreach (AirwayModel airway in allAwy)
             {
                 // Set the Previous Point to a new AWY Point Model.
                 AwyPointModel prevPoint = new AwyPointModel();
+
+                bool isHighAirway = false;
+                bool isLowAirway = false;
 
                 // Loop through all of our Points in our Airway
                 foreach (AwyPointModel point in airway.AwyPoints)
@@ -222,8 +229,22 @@ namespace FeBuddyLibrary.DataAccess
                     // If it doesn't we need to add data to our string builder
                     else
                     {
-                        // Add a line with the Airway data.
-                        sb.AppendLine($"{airway.Id.PadRight(27)}{prevPoint.Lat} {prevPoint.Lon} {point.Lat} {point.Lon} ;{prevPoint.PointId.PadRight(5)} {point.PointId.PadRight(5)}");
+                        if (point.AirwayId.Contains('Q') || point.AirwayId.Contains('J'))
+                        {
+                            isHighAirway = true;
+                            isLowAirway = false;
+                            // Add a line with the Airway data.
+                            highAirwaySB.AppendLine($"{airway.Id.PadRight(27)}{prevPoint.Lat} {prevPoint.Lon} {point.Lat} {point.Lon} ;{prevPoint.PointId.PadRight(5)} {point.PointId.PadRight(5)}");
+
+                        }
+                        else if (point.AirwayId.Contains('V') || point.AirwayId.Contains('T'))
+                        {
+                            isHighAirway = false;
+                            isLowAirway = true;
+                            // Add a line with the Airway data.
+                            lowAirwaySB.AppendLine($"{airway.Id.PadRight(27)}{prevPoint.Lat} {prevPoint.Lon} {point.Lat} {point.Lon} ;{prevPoint.PointId.PadRight(5)} {point.PointId.PadRight(5)}");
+
+                        }
 
                         GlobalConfig.AwyGeoMap.AppendLine($"            <Element xsi:type=\"Line\" Filters=\"\" StartLat=\"{prevPoint.Dec_Lat}\" StartLon=\"{prevPoint.Dec_Lon}\" EndLat=\"{point.Dec_Lat}\" EndLon=\"{point.Dec_Lon}\" />");
 
@@ -232,9 +253,16 @@ namespace FeBuddyLibrary.DataAccess
                         {
                             // Set previous point to a new Model. (this ensures that we have a break in the AWY)
                             prevPoint = new AwyPointModel();
-
-                            // Add Gap in our string builder.
-                            sb.AppendLine("\n;GAP\n");
+                            if (point.AirwayId.Contains('Q') || point.AirwayId.Contains('J')) 
+                            {
+                                // Add Gap in our string builder.
+                                highAirwaySB.AppendLine("\n;GAP\n");
+                            }
+                            else if (point.AirwayId.Contains('V') || point.AirwayId.Contains('T')) 
+                            {
+                                // Add Gap in our string builder.
+                                lowAirwaySB.AppendLine("\n;GAP\n");
+                            }
                         }
                         else
                         {
@@ -245,19 +273,29 @@ namespace FeBuddyLibrary.DataAccess
                 }
 
                 // We have looped through our Points in our Airway, Set an Empty line. and Continue to the next AWY 
-                sb.AppendLine();
+                if (isHighAirway)
+                {
+                    highAirwaySB.AppendLine();
+                }
+                else if (isLowAirway)
+                {
+                    lowAirwaySB.AppendLine();
+                }
             }
 
             // Write the stringbuilder to our File.
-            File.WriteAllText(filePath, sb.ToString());
+            File.WriteAllText(lowAirwayFilePath, lowAirwaySB.ToString());
+            File.WriteAllText(highAirwayFilePath, highAirwaySB.ToString());
 
             // Add some blank lines at the end of the file.
-            File.AppendAllText(filePath, $"\n\n\n\n\n\n");
+            //File.AppendAllText(highAirwayFilePath, $"\n\n\n\n\n\n");
+            File.AppendAllText(lowAirwayFilePath, $"\n\n\n\n\n\n");
             Logger.LogMessage("DEBUG", "SAVED AWY SCT FILE");
 
 
             // Add the file to our Test Sector File.
-            File.AppendAllText($"{GlobalConfig.outputDirectory}\\{GlobalConfig.testSectorFileName}", File.ReadAllText(filePath));
+            File.AppendAllText($"{GlobalConfig.outputDirectory}\\{GlobalConfig.testSectorFileName}", File.ReadAllText(lowAirwayFilePath));
+            File.AppendAllText($"{GlobalConfig.outputDirectory}\\{GlobalConfig.testSectorFileName}", File.ReadAllText(highAirwayFilePath));
             Logger.LogMessage("DEBUG", "ADDED AWY TO TEST SCT FILE");
 
 

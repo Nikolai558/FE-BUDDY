@@ -33,7 +33,7 @@ The following is a list of features that we are considering or actively working 
 
 - [ ] Limit Airway Lines to only the selected ARTCC up to about 150 miles (or user defined distance) outside of the ARTCC boundary
 
-- [ ] Create more resources fo conplement the vNAS system.
+- [ ] Create more resources fo complement the vNAS system.
   - This will require more time to see what resources wohld actually be useful.
 
 - [ ] Artificial Intelligence (AI) Option that:

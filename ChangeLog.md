@@ -2,9 +2,14 @@
 
 ---
 - ## Version 2.3.5
-  - Filtered out all non "V, T, Q, J" airways from the Regulatory Airway Data.
-  - All Non-Regulatory Airways are placed in side the High Airway file.
-  - Kept all data for the find fix alias command for EVERY Airway.
+  - .SCT2 Airways File changes: 
+    - Filtered out all non "V, T, Q, J" airways from the Regulatory Airway Data.
+    - All Non-Regulatory Airways are placed inside the High Airway file.
+    - Kept all data for the find-fix alias command for EVERY Airway.
+  - Geomap Airways File changes:
+    - Hi and Lo airways for the geomap xml files behave exactly like the sct2 file airways.
+    - Two new files are created to replace the AWY_GEOPMAP.XML file.
+      - AWY_HI_GEOMAP.xml and AWY_LO_GEOMAP.xml
 
 - ## Version 2.3.4
   - #100: Temporary fix for when a color is not defined inside the vSTARS video map. (Skips "color" property)

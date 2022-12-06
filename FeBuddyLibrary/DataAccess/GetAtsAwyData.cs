@@ -179,14 +179,15 @@ namespace FeBuddyLibrary.DataAccess
         /// </summary>
         private void WriteAwySctData()
         {
+            // Warning: AwyData must be preformed before AtsAwyData, Refactoring of this code is needed! 
             Logger.LogMessage("INFO", "STARTED AWY SCT WRITER");
 
             // Set our File Path
-            string filePath = $"{GlobalConfig.outputDirectory}\\VRC\\[LOW AIRWAY].sct2";
+            string filePath = $"{GlobalConfig.outputDirectory}\\VRC\\[HIGH AIRWAY].sct2";
 
             StringBuilder sb = new StringBuilder();
 
-            sb.AppendLine("[LOW AIRWAY]");
+            //sb.AppendLine("[HIGH AIRWAY]");
 
             foreach (AtsAirwayModel airway in allAtsAwy)
             {

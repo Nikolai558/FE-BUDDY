@@ -1,6 +1,12 @@
 # CHANGELOG
 
 ---
+- ## Version 2.3.6
+  -  Fixed #105 T and J Airways not in [HIGH AIRWAY].txt file.
+  - Note for FE's:
+    - Default BCG and Filter values for high airways is 5
+    - Default BCG and Filter values for low airways is 15
+
 - ## Version 2.3.5
   - .SCT2 Airways File changes: 
     - Filtered out all non "V, T, Q, J" airways from the Regulatory Airway Data.

@@ -33,13 +33,8 @@ The following is a list of features that we are considering or actively working 
 
 - [ ] Limit Airway Lines to only the selected ARTCC up to about 150 miles (or user defined distance) outside of the ARTCC boundary
 
-- [ ] `on hold until more information about CRC comes out` Create a local facility breakdown management system for user. (REF: FE-ASSISTANT Batch File by KSanders7070)
-  - Split local Filter and RVM maps up into individual files to make easier to edit
-  - Recombine the files in the appropriate formats.
-  - Will transfer certain NASR and other commonly updated data into the appropriate individual files prior to recombining the files, allowing an AIRAC update to be seamless.
-
-- [ ] Complete ARTCC File management and editing
-  - Break each facility up into individual maps and properties and allow the user to edit their data via GUI and have the program rebuild it each time there is a release. Ref: ZLC FE ASSISTANT batch file system.
+- [ ] Create more resources fo conplement the vNAS system.
+  - This will require more time to see what resources wohld actually be useful.
 
 - [ ] Artificial Intelligence (AI) Option that:
   - Allows the program to call the users phone number (US numbers at first for testing).

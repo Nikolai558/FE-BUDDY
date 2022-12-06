@@ -235,7 +235,7 @@ namespace FeBuddyLibrary.DataAccess
                             isLowAirway = false;
                             // Add a line with the Airway data.
                             highAirwaySB.AppendLine($"{airway.Id.PadRight(27)}{prevPoint.Lat} {prevPoint.Lon} {point.Lat} {point.Lon} ;{prevPoint.PointId.PadRight(5)} {point.PointId.PadRight(5)}");
-
+                            GlobalConfig.HighAwyGeoMap.AppendLine($"            <Element xsi:type=\"Line\" Filters=\"\" StartLat=\"{prevPoint.Dec_Lat}\" StartLon=\"{prevPoint.Dec_Lon}\" EndLat=\"{point.Dec_Lat}\" EndLon=\"{point.Dec_Lon}\" />");
                         }
                         else if (point.AirwayId.Contains('V') || point.AirwayId.Contains('T'))
                         {
@@ -243,10 +243,9 @@ namespace FeBuddyLibrary.DataAccess
                             isLowAirway = true;
                             // Add a line with the Airway data.
                             lowAirwaySB.AppendLine($"{airway.Id.PadRight(27)}{prevPoint.Lat} {prevPoint.Lon} {point.Lat} {point.Lon} ;{prevPoint.PointId.PadRight(5)} {point.PointId.PadRight(5)}");
-
+                            GlobalConfig.LowAwyGeoMap.AppendLine($"            <Element xsi:type=\"Line\" Filters=\"\" StartLat=\"{prevPoint.Dec_Lat}\" StartLon=\"{prevPoint.Dec_Lon}\" EndLat=\"{point.Dec_Lat}\" EndLon=\"{point.Dec_Lon}\" />");
                         }
 
-                        GlobalConfig.AwyGeoMap.AppendLine($"            <Element xsi:type=\"Line\" Filters=\"\" StartLat=\"{prevPoint.Dec_Lat}\" StartLon=\"{prevPoint.Dec_Lon}\" EndLat=\"{point.Dec_Lat}\" EndLon=\"{point.Dec_Lon}\" />");
 
                         // If there is a gap after this current point
                         if (point.GapAfter)

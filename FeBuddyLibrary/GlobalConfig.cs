@@ -18,8 +18,11 @@ namespace FeBuddyLibrary
 
         public static string testSectorFileName { get; } = $"\\VRC\\TestSectorFile.sct2";
 
-        public static StringBuilder AwyGeoMap { get; } = new StringBuilder();
-        public static string AwyGeoMapFileName { get; } = "AWY_GEOMAP.xml";
+        public static StringBuilder HighAwyGeoMap { get; } = new StringBuilder();
+        public static StringBuilder LowAwyGeoMap { get; } = new StringBuilder();
+        public static string HighAwyGeoMapFileName { get; } = "AWY_HI_GEOMAP.xml";
+        public static string LowAwyGeoMapFileName { get; } = "AWY_LO_GEOMAP.xml";
+
 
         public static List<AptModel> allAptModelsForCheck = null;
         public static XmlSerializer WaypointSerializer { get; } = new XmlSerializer(typeof(Waypoint[]), new XmlRootAttribute("Waypoints"));

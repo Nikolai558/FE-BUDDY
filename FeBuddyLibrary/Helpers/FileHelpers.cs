@@ -39,20 +39,33 @@ namespace FeBuddyLibrary.Helpers
 
             if (CreateStart)
             {
-                Logger.LogMessage("DEBUG", "CREATING AWY GEOMAP HEADERS");
+                Logger.LogMessage("DEBUG", "CREATING AWY HI GEOMAP HEADERS");
 
-                GlobalConfig.AwyGeoMap.AppendLine("        <GeoMapObject Description=\"AIRWAYS\" TdmOnly=\"false\">");
-                GlobalConfig.AwyGeoMap.AppendLine("          <LineDefaults Bcg=\"4\" Filters=\"4\" Style=\"ShortDashed\" Thickness=\"1\" />");
-                GlobalConfig.AwyGeoMap.AppendLine("          <Elements>");
+                GlobalConfig.HighAwyGeoMap.AppendLine("        <GeoMapObject Description=\"HI AIRWAYS\" TdmOnly=\"false\">");
+                GlobalConfig.HighAwyGeoMap.AppendLine("          <LineDefaults Bcg=\"4\" Filters=\"4\" Style=\"ShortDashed\" Thickness=\"1\" />");
+                GlobalConfig.HighAwyGeoMap.AppendLine("          <Elements>");
+
+                Logger.LogMessage("DEBUG", "CREATING AWY LO GEOMAP HEADERS");
+
+                GlobalConfig.LowAwyGeoMap.AppendLine("        <GeoMapObject Description=\"LO AIRWAYS\" TdmOnly=\"false\">");
+                GlobalConfig.LowAwyGeoMap.AppendLine("          <LineDefaults Bcg=\"4\" Filters=\"4\" Style=\"ShortDashed\" Thickness=\"1\" />");
+                GlobalConfig.LowAwyGeoMap.AppendLine("          <Elements>");
             }
             else
             {
-                Logger.LogMessage("DEBUG", "CREATING AWY GEOMAP ENDINGS");
+                Logger.LogMessage("DEBUG", "CREATING AWY HI GEOMAP ENDINGS");
 
-                GlobalConfig.AwyGeoMap.AppendLine("          </Elements>");
-                GlobalConfig.AwyGeoMap.AppendLine("        </GeoMapObject>");
-                File.WriteAllText($"{GlobalConfig.outputDirectory}\\VERAM\\{GlobalConfig.AwyGeoMapFileName}", GlobalConfig.AwyGeoMap.ToString());
-                Logger.LogMessage("INFO", "SAVED AWY GEOMAP");
+                GlobalConfig.HighAwyGeoMap.AppendLine("          </Elements>");
+                GlobalConfig.HighAwyGeoMap.AppendLine("        </GeoMapObject>");
+                File.WriteAllText($"{GlobalConfig.outputDirectory}\\VERAM\\{GlobalConfig.HighAwyGeoMapFileName}", GlobalConfig.HighAwyGeoMap.ToString());
+                Logger.LogMessage("INFO", "SAVED AWY HI GEOMAP");
+
+                Logger.LogMessage("DEBUG", "CREATING AWY Low GEOMAP ENDINGS");
+
+                GlobalConfig.LowAwyGeoMap.AppendLine("          </Elements>");
+                GlobalConfig.LowAwyGeoMap.AppendLine("        </GeoMapObject>");
+                File.WriteAllText($"{GlobalConfig.outputDirectory}\\VERAM\\{GlobalConfig.LowAwyGeoMapFileName}", GlobalConfig.LowAwyGeoMap.ToString());
+                Logger.LogMessage("INFO", "SAVED AWY LOW GEOMAP");
 
             }
         }

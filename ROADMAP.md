@@ -5,18 +5,6 @@ The following is a list of features that we are considering or actively working 
 
 ---
 
-- [ ] vSTARS/vERAM Geo/Video Maps to GeoJSON (CRC) Converter
-  - Priority Item. See [#81](https://github.com/Nikolai558/FE-BUDDY/issues/81) for progress/details
-
-- [ ] GoogleEarthPro (KML) Converter
-  - SCT2 to KML = complete/Released in v2.2
-  - KML to SCT2 = Work in progress
-  - GeoJSON to KML = Pending
-  - KML to GeoJSON = Pending
-
-- [ ] Separate "Low" and "High" airways by appropriate altitudes
-  - [Video Explanation](https://www.youtube.com/watch?v=bvjRoVK41T0)
-
 - [ ] AIRAC GeoJSON Output
   - This should be output with AIRAC updates ...\FE-BUDDY_Output\CRC-GeoJSON
     - Then use a folder structure similar to "SECTOR FILES" to organize the output files
@@ -33,6 +21,7 @@ The following is a list of features that we are considering or actively working 
     - VOR [Point with text properites and the name/type in the text description]
     - DPs (individual files and then another file with all combined)
     - STARSs (individual files and then another file with all combined)
+  - Add option for user to decide if they want all the geojsons in one folder to make "vNAS Batch Upload" easier.
 
 - [ ] FAA GeoMAP (foia requests) converter.
   - [GeoMap converter](https://github.com/justinshannon/geo-map-converter)

@@ -33,11 +33,11 @@ The following is a list of features that we are considering or actively working 
 
 - [ ] Limit Airway Lines to only the selected ARTCC up to about 150 miles (or user defined distance) outside of the ARTCC boundary
 
-- [ ] Create more resources fo complement the vNAS system.
+- [ ] Create more resources to complement the vNAS system.
   - This will require more time to see what resources wohld actually be useful.
 
 - [ ] Artificial Intelligence (AI) Option that:
-  - Allows the program to call the users phone number (US numbers at first for testing).
+  - Allows the program to notify FEs concerning upcoming AIRAC changes via phone call (US numbers at first for testing).
   - Will give the user "someone" to speaking to, considering now the FE will be pretty much useless
   - Will provide emotional support and reassure the user that they are still a valued member of the community (will require extensive research into how to make a lie believable)
   - Will be programmed with specific firewalls against stealing the users significant other.

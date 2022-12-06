@@ -219,7 +219,7 @@ namespace FeBuddyLibrary.DataAccess
                 sb.AppendLine();
 
             }
-            File.WriteAllText(filePath, sb.ToString());
+            File.AppendAllText(filePath, sb.ToString());
             File.AppendAllText(filePath, $"\n\n\n\n\n\n");
             Logger.LogMessage("DEBUG", "SAVED AWY SCT FILE");
 

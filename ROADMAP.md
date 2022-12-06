@@ -10,15 +10,19 @@ The following is a list of features that we are considering or actively working 
     - Then use a folder structure similar to "SECTOR FILES" to organize the output files
   - [CRC GeoJSON Specs](https://data-admin.virtualnas.net/docs/#/video-maps?id=geojson-specification)
   - Data Points to Convert:
-    - AIRPORTS [Point with text properites and the name/type in the text description]
+    - AIRPORTS SYMBOLS
+    - AIRPORTS TEXT [name/type in the text]
     - ARTCC BOUNDARIES - High
     - ARTCC BOUDNARIES - Low
-    - FIXES [Point with text properites and the name/type in the text description]
+    - FIXES SYMBOLS
+    - FIXES TEXT
     - AIRWAYS - Low
     - AIRWAYS - High
     - WX STATIONS [Point with text properites and the name/type in the text description]
-    - NDB [Point with text properites and the name/type in the text description]
-    - VOR [Point with text properites and the name/type in the text description]
+    - NDB SYMBOL
+    - NDB TEXT
+    - VOR SYMBOLS
+    - VOR TEXT
     - DPs (individual files and then another file with all combined)
     - STARSs (individual files and then another file with all combined)
   - Add option for user to decide if they want all the geojsons in one folder to make "vNAS Batch Upload" easier.

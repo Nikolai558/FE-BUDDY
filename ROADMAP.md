@@ -42,7 +42,8 @@ The following is a list of features that we are considering or actively working 
   - [GeoMap converter](https://github.com/justinshannon/geo-map-converter)
     - Word is that the FAA may have changed their format of GeoMaps so this guy's may not work anymore.
 
-- [ ] Limit Airway Lines to only the selected ARTCC up to about 150 miles (or user defined distance) outside of the ARTCC boundary
+- [ ] Limit Airway Lines and other map features to only the selected ARTCC up to about 150 miles (or user defined distance) outside of the ARTCC boundary
+  -  If unable to use the ARTCC Boundary for a reference point, have the user define a coordinate set as the "center" and then define a distance for the cutoff point.
 
 - [ ] Create more resources to complement the vNAS system.
   - This will require more time to see what resources wohld actually be useful.

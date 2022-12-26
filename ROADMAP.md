@@ -35,6 +35,9 @@ The following is a list of features that we are considering or actively working 
   - Complete feature this only if vERAM is still in use after completing the above GeoJSON features.
   - Refer to issue: https://github.com/Nikolai558/FE-BUDDY/issues/109
 
+- [ ] AWY Fix/NAVAID Radius cutoff
+  -  Refer to issue: https://github.com/Nikolai558/FE-BUDDY/issues/110
+
 - [ ] FAA GeoMAP (foia requests) converter.
   - [GeoMap converter](https://github.com/justinshannon/geo-map-converter)
     - Word is that the FAA may have changed their format of GeoMaps so this guy's may not work anymore.

@@ -17,7 +17,11 @@ The following is a list of features that we are considering or actively working 
     - FIXES SYMBOLS
     - FIXES TEXT
     - AIRWAYS - Low
+    - AIRWAYS text - Low
+    - AIRWAYS symbols - Low
     - AIRWAYS - High
+    - AIRWAYS text - High
+    - AIRWAYS symbols - High
     - WX STATIONS [Point with text properites and the name/type in the text description]
     - NDB SYMBOL
     - NDB TEXT
@@ -26,6 +30,10 @@ The following is a list of features that we are considering or actively working 
     - DPs (individual files and then another file with all combined)
     - STARSs (individual files and then another file with all combined)
   - Add option for user to decide if they want all the geojsons in one folder to make "vNAS Batch Upload" easier.
+
+- [ ] vERAM AWY HI/LO Text and Symbol maps.
+  - Complete feature this only if vERAM is still in use after completing the above GeoJSON features.
+  - Refer to issue: https://github.com/Nikolai558/FE-BUDDY/issues/109
 
 - [ ] FAA GeoMAP (foia requests) converter.
   - [GeoMap converter](https://github.com/justinshannon/geo-map-converter)

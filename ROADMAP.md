@@ -4,6 +4,11 @@
 The following is a list of features that we are considering or actively working on in priority order.
 
 ---
+- [ ] vERAM-to-GeoJSON option to group by attributes.
+  - Refer to issue: https://github.com/Nikolai558/FE-BUDDY/issues/113
+
+- [ ] SCT2-to-GeoJSON
+  - Reference: https://fetools.bvartcc.com/
 
 - [ ] AIRAC GeoJSON Output
   - This should be output with AIRAC updates ...\FE-BUDDY_Output\CRC-GeoJSON
@@ -30,6 +35,17 @@ The following is a list of features that we are considering or actively working 
     - DPs (individual files and then another file with all combined)
     - STARSs (individual files and then another file with all combined)
   - Add option for user to decide if they want all the geojsons in one folder to make "vNAS Batch Upload" easier.
+
+---
+**The following will be completed after a code-rewrite/refactoring of FE-Buddy resulting in version 3.0**
+---
+
+- [ ] Remove VRC AIRAC output features?
+  - If after the refactor, holding on to this feature does not take up much development time, keep this feature and offer the user the option to turn off this output. It has been stated that some of the neighbors such as canada use FE-Buddy to updated US data for their files that use SCT2 format.
+
+- [ ] Remove SCT2/DXF/KML?
+  - These features are not 100% functional and at this point, may be pointless features to have considering the primary editing software will likely be QGIS that accept GeoJSON format.
+  - GeoJSON-to-DXF/KML may be considered for later development.
 
 - [ ] vERAM AWY HI/LO Text and Symbol maps.
   - Complete feature this only if vERAM is still in use after completing the above GeoJSON features.

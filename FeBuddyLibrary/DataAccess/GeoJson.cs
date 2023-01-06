@@ -238,43 +238,43 @@ namespace FeBuddyLibrary.DataAccess
 
                 Feature currentFeature = new Feature()
                 {
-                    properties = new Properties()
-                    {
-                        style = Char.ToLowerInvariant(elementItem.Style[0]) + elementItem.Style[1..],
-                        thickness = elementItem.Thickness,
-                    },
+                    //properties = new Properties()
+                    //{
+                    //    style = Char.ToLowerInvariant(elementItem.Style[0]) + elementItem.Style[1..],
+                    //    thickness = elementItem.Thickness,
+                    //},
                     geometry = new Geometry()
                     {
                         type = "Polygon"
                     }
                 };
 
-                try
-                {
-                    currentFeature.properties.color = colors?[elementItem.Color.ToLower()] ?? "";
-                }
-                catch (Exception ex)
-                {
-                    colors.Add(elementItem.Color.ToLower(), "#000000");
-                    asdexColorDef["structure"].Add(elementItem.Color.ToLower());
-                }
+                //try
+                //{
+                //    currentFeature.properties.color = colors?[elementItem.Color.ToLower()] ?? "";
+                //}
+                //catch (Exception ex)
+                //{
+                //    colors.Add(elementItem.Color.ToLower(), "#000000");
+                //    asdexColorDef["structure"].Add(elementItem.Color.ToLower());
+                //}
 
 
-                foreach (var asdexColorKey in asdexColorDef.Keys)
-                {
-                    if (asdexColorDef[asdexColorKey].Contains(elementItem.Color.ToLower()) && asdexColorKey != "UNKNOWN")
-                    {
-                        currentFeature.properties.asdex = asdexColorKey;
-                        currentFeature.properties.thickness = null;
-                        currentFeature.properties.style = null;
-                    }
-                }
+                //foreach (var asdexColorKey in asdexColorDef.Keys)
+                //{
+                //    if (asdexColorDef[asdexColorKey].Contains(elementItem.Color.ToLower()) && asdexColorKey != "UNKNOWN")
+                //    {
+                //        currentFeature.properties.asdex = asdexColorKey;
+                //        currentFeature.properties.thickness = null;
+                //        currentFeature.properties.style = null;
+                //    }
+                //}
 
-                if (currentFeature.properties.asdex == null)
-                {
-                    //currentFeature.properties.asdex = "structure";
-                    throw new Exception($"'{elementItem.Color}' Asdex color can not be assigned to an asdex geojson property...");
-                }
+                //if (currentFeature.properties.asdex == null)
+                //{
+                //    //currentFeature.properties.asdex = "structure";
+                //    throw new Exception($"'{elementItem.Color}' Asdex color can not be assigned to an asdex geojson property...");
+                //}
 
                 currentFeature.geometry.coordinates.Add(new List<dynamic>());
 
@@ -375,13 +375,13 @@ namespace FeBuddyLibrary.DataAccess
                     {
                         type = "LineString",
                     };
-                    currentFeature.properties = new Properties()
-                    {
-                        color = colors?[item.Color.ToLower()] ?? null,
-                        //color = null,
-                        style = Char.ToLowerInvariant(item.Style[0]) + item.Style[1..],
-                        thickness = item.Thickness,
-                    };
+                    //currentFeature.properties = new Properties()
+                    //{
+                    //    color = colors?[item.Color.ToLower()] ?? null,
+                    //    //color = null,
+                    //    style = Char.ToLowerInvariant(item.Style[0]) + item.Style[1..],
+                    //    thickness = item.Thickness,
+                    //};
 
                     if (crossesAM)
                     {
@@ -390,12 +390,12 @@ namespace FeBuddyLibrary.DataAccess
                         allFeatures.Add(currentFeature);
                         currentFeature = new Feature()
                         {
-                            properties = new Properties()
-                            {
-                                color = colors?[item.Color.ToLower()] ?? null,
-                                style = Char.ToLowerInvariant(item.Style[0]) + item.Style[1..],
-                                thickness = item.Thickness,
-                            },
+                            //properties = new Properties()
+                            //{
+                            //    color = colors?[item.Color.ToLower()] ?? null,
+                            //    style = Char.ToLowerInvariant(item.Style[0]) + item.Style[1..],
+                            //    thickness = item.Thickness,
+                            //},
                             geometry = new Geometry() { type = "LineString" }
                         };
                         currentFeature.geometry.coordinates.Add(coords[2]);
@@ -420,12 +420,12 @@ namespace FeBuddyLibrary.DataAccess
 
                         currentFeature = new Feature()
                         {
-                            properties = new Properties()
-                            {
-                                style = Char.ToLowerInvariant(item.Style[0]) + item.Style[1..],
-                                thickness = item.Thickness,
-                                color = colors?[item.Color.ToLower()] ?? null
-                            },
+                            //properties = new Properties()
+                            //{
+                            //    style = Char.ToLowerInvariant(item.Style[0]) + item.Style[1..],
+                            //    thickness = item.Thickness,
+                            //    color = colors?[item.Color.ToLower()] ?? null
+                            //},
                             geometry = new Geometry()
                             {
                                 type = "LineString",
@@ -439,12 +439,12 @@ namespace FeBuddyLibrary.DataAccess
                             allFeatures.Add(currentFeature);
                             currentFeature = new Feature()
                             {
-                                properties = new Properties()
-                                {
-                                    color = colors?[item.Color.ToLower()] ?? null,
-                                    style = Char.ToLowerInvariant(item.Style[0]) + item.Style[1..],
-                                    thickness = item.Thickness,
-                                },
+                                //properties = new Properties()
+                                //{
+                                //    color = colors?[item.Color.ToLower()] ?? null,
+                                //    style = Char.ToLowerInvariant(item.Style[0]) + item.Style[1..],
+                                //    thickness = item.Thickness,
+                                //},
                                 geometry = new Geometry() { type = "LineString" }
                             };
                             currentFeature.geometry.coordinates.Add(coords[2]);
@@ -466,12 +466,12 @@ namespace FeBuddyLibrary.DataAccess
                             allFeatures.Add(currentFeature);
                             currentFeature = new Feature()
                             {
-                                properties = new Properties()
-                                {
-                                    color = colors?[item.Color.ToLower()] ?? null,
-                                    style = Char.ToLowerInvariant(item.Style[0]) + item.Style[1..],
-                                    thickness = item.Thickness,
-                                },
+                                //properties = new Properties()
+                                //{
+                                //    color = colors?[item.Color.ToLower()] ?? null,
+                                //    style = Char.ToLowerInvariant(item.Style[0]) + item.Style[1..],
+                                //    thickness = item.Thickness,
+                                //},
                                 geometry = new Geometry() { type = "LineString" }
                             };
                             currentFeature.geometry.coordinates.Add(coords[2]);
@@ -640,24 +640,24 @@ namespace FeBuddyLibrary.DataAccess
             Element prevElement = null;
             Feature currentFeature = new Feature()
             {
-                properties = new Properties()
-                {
-                    bcg = lineDefaults.Bcg,
-                    style = Char.ToLowerInvariant(lineDefaults.Style[0]) + lineDefaults.Style[1..],
-                    thickness = lineDefaults.Thickness,
+                //properties = new Properties()
+                //{
+                //    bcg = lineDefaults.Bcg,
+                //    style = Char.ToLowerInvariant(lineDefaults.Style[0]) + lineDefaults.Style[1..],
+                //    thickness = lineDefaults.Thickness,
 
-                    color = null,
-                    zIndex = null,
-                },
+                //    color = null,
+                //    zIndex = null,
+                //},
                 geometry = new Geometry()
                 {
                     type = "LineString",
                 }
             };
 
-            if (currentFeature.properties.thickness == 1) { currentFeature.properties.thickness = null; }
-            if (currentFeature.properties.style == "solid") { currentFeature.properties.style = null; }
-            if (currentFeature.properties.bcg == 1) { currentFeature.properties.bcg = null; }
+            //if (currentFeature.properties.thickness == 1) { currentFeature.properties.thickness = null; }
+            //if (currentFeature.properties.style == "solid") { currentFeature.properties.style = null; }
+            //if (currentFeature.properties.bcg == 1) { currentFeature.properties.bcg = null; }
 
             foreach (Element element in elements)
             {
@@ -677,20 +677,20 @@ namespace FeBuddyLibrary.DataAccess
                         featuresOutput.Add(currentFeature);
                         currentFeature = new Feature()
                         {
-                            properties = new Properties()
-                            {
-                                bcg = lineDefaults.Bcg,
-                                style = Char.ToLowerInvariant(lineDefaults.Style[0]) + lineDefaults.Style[1..],
-                                thickness = lineDefaults.Thickness,
+                            //properties = new Properties()
+                            //{
+                            //    bcg = lineDefaults.Bcg,
+                            //    style = Char.ToLowerInvariant(lineDefaults.Style[0]) + lineDefaults.Style[1..],
+                            //    thickness = lineDefaults.Thickness,
 
-                                color = null,
-                                zIndex = null,
-                            },
+                            //    color = null,
+                            //    zIndex = null,
+                            //},
                             geometry = new Geometry() { type = "LineString" }
                         };
-                        if (currentFeature.properties.thickness == 1) { currentFeature.properties.thickness = null; }
-                        if (currentFeature.properties.style == "solid") { currentFeature.properties.style = null; }
-                        if (currentFeature.properties.bcg == 1) { currentFeature.properties.bcg = null; }
+                        //if (currentFeature.properties.thickness == 1) { currentFeature.properties.thickness = null; }
+                        //if (currentFeature.properties.style == "solid") { currentFeature.properties.style = null; }
+                        //if (currentFeature.properties.bcg == 1) { currentFeature.properties.bcg = null; }
                         currentFeature.geometry.coordinates.Add(coords[2]);
                         currentFeature.geometry.coordinates.Add(coords[3]);
                     }
@@ -713,20 +713,20 @@ namespace FeBuddyLibrary.DataAccess
                                 featuresOutput.Add(currentFeature);
                                 currentFeature = new Feature()
                                 {
-                                    properties = new Properties()
-                                    {
-                                        bcg = lineDefaults.Bcg,
-                                        style = Char.ToLowerInvariant(lineDefaults.Style[0]) + lineDefaults.Style[1..],
-                                        thickness = lineDefaults.Thickness,
+                                    //properties = new Properties()
+                                    //{
+                                    //    bcg = lineDefaults.Bcg,
+                                    //    style = Char.ToLowerInvariant(lineDefaults.Style[0]) + lineDefaults.Style[1..],
+                                    //    thickness = lineDefaults.Thickness,
 
-                                        color = null,
-                                        zIndex = null,
-                                    },
+                                    //    color = null,
+                                    //    zIndex = null,
+                                    //},
                                     geometry = new Geometry() { type = "LineString" }
                                 };
-                                if (currentFeature.properties.thickness == 1) { currentFeature.properties.thickness = null; }
-                                if (currentFeature.properties.style == "solid") { currentFeature.properties.style = null; }
-                                if (currentFeature.properties.bcg == 1) { currentFeature.properties.bcg = null; }
+                                //if (currentFeature.properties.thickness == 1) { currentFeature.properties.thickness = null; }
+                                //if (currentFeature.properties.style == "solid") { currentFeature.properties.style = null; }
+                                //if (currentFeature.properties.bcg == 1) { currentFeature.properties.bcg = null; }
                             }
 
                             currentFeature.geometry.coordinates.Add(coords[0]);
@@ -735,20 +735,20 @@ namespace FeBuddyLibrary.DataAccess
 
                             currentFeature = new Feature()
                             {
-                                properties = new Properties()
-                                {
-                                    bcg = lineDefaults.Bcg,
-                                    style = Char.ToLowerInvariant(lineDefaults.Style[0]) + lineDefaults.Style[1..],
-                                    thickness = lineDefaults.Thickness,
+                                //properties = new Properties()
+                                //{
+                                //    bcg = lineDefaults.Bcg,
+                                //    style = Char.ToLowerInvariant(lineDefaults.Style[0]) + lineDefaults.Style[1..],
+                                //    thickness = lineDefaults.Thickness,
 
-                                    color = null,
-                                    zIndex = null,
-                                },
+                                //    color = null,
+                                //    zIndex = null,
+                                //},
                                 geometry = new Geometry() { type = "LineString" }
                             };
-                            if (currentFeature.properties.thickness == 1) { currentFeature.properties.thickness = null; }
-                            if (currentFeature.properties.style == "solid") { currentFeature.properties.style = null; }
-                            if (currentFeature.properties.bcg == 1) { currentFeature.properties.bcg = null; }
+                            //if (currentFeature.properties.thickness == 1) { currentFeature.properties.thickness = null; }
+                            //if (currentFeature.properties.style == "solid") { currentFeature.properties.style = null; }
+                            //if (currentFeature.properties.bcg == 1) { currentFeature.properties.bcg = null; }
 
                             currentFeature.geometry.coordinates.Add(coords[2]);
                             currentFeature.geometry.coordinates.Add(coords[3]);
@@ -763,23 +763,23 @@ namespace FeBuddyLibrary.DataAccess
                             // Start Lat/Lon is different from Previous Element End Lat/Lon
                             currentFeature = new Feature()
                             {
-                                properties = new Properties()
-                                {
-                                    bcg = lineDefaults.Bcg,
-                                    style = Char.ToLowerInvariant(lineDefaults.Style[0]) + lineDefaults.Style[1..],
-                                    thickness = lineDefaults.Thickness,
+                                //properties = new Properties()
+                                //{
+                                //    bcg = lineDefaults.Bcg,
+                                //    style = Char.ToLowerInvariant(lineDefaults.Style[0]) + lineDefaults.Style[1..],
+                                //    thickness = lineDefaults.Thickness,
 
-                                    color = null,
-                                    zIndex = null,
-                                },
+                                //    color = null,
+                                //    zIndex = null,
+                                //},
                                 geometry = new Geometry()
                                 {
                                     type = "LineString",
                                 }
                             };
-                            if (currentFeature.properties.thickness == 1) { currentFeature.properties.thickness = null; }
-                            if (currentFeature.properties.style == "solid") { currentFeature.properties.style = null; }
-                            if (currentFeature.properties.bcg == 1) { currentFeature.properties.bcg = null; }
+                            //if (currentFeature.properties.thickness == 1) { currentFeature.properties.thickness = null; }
+                            //if (currentFeature.properties.style == "solid") { currentFeature.properties.style = null; }
+                            //if (currentFeature.properties.bcg == 1) { currentFeature.properties.bcg = null; }
                             currentFeature.geometry.coordinates = coords;
                         }
                     }
@@ -794,20 +794,20 @@ namespace FeBuddyLibrary.DataAccess
                             featuresOutput.Add(currentFeature);
                             currentFeature = new Feature()
                             {
-                                properties = new Properties()
-                                {
-                                    bcg = lineDefaults.Bcg,
-                                    style = Char.ToLowerInvariant(lineDefaults.Style[0]) + lineDefaults.Style[1..],
-                                    thickness = lineDefaults.Thickness,
+                                //properties = new Properties()
+                                //{
+                                //    bcg = lineDefaults.Bcg,
+                                //    style = Char.ToLowerInvariant(lineDefaults.Style[0]) + lineDefaults.Style[1..],
+                                //    thickness = lineDefaults.Thickness,
 
-                                    color = null,
-                                    zIndex = null,
-                                },
+                                //    color = null,
+                                //    zIndex = null,
+                                //},
                                 geometry = new Geometry() { type = "LineString" }
                             };
-                            if (currentFeature.properties.thickness == 1) { currentFeature.properties.thickness = null; }
-                            if (currentFeature.properties.style == "solid") { currentFeature.properties.style = null; }
-                            if (currentFeature.properties.bcg == 1) { currentFeature.properties.bcg = null; }
+                            //if (currentFeature.properties.thickness == 1) { currentFeature.properties.thickness = null; }
+                            //if (currentFeature.properties.style == "solid") { currentFeature.properties.style = null; }
+                            //if (currentFeature.properties.bcg == 1) { currentFeature.properties.bcg = null; }
                             currentFeature.geometry.coordinates.Add(coords[2]);
                             currentFeature.geometry.coordinates.Add(coords[3]);
                         }
@@ -837,35 +837,35 @@ namespace FeBuddyLibrary.DataAccess
                     type = "Point",
                     coordinates = new List<dynamic>() { LatLonHelpers.CorrectIlleagleLon(element.Lon), element.Lat }
                 },
-                properties = new Properties()
-                {
-                    text = new string[] { element.Lines },
-                    bcg = textDefaults.Bcg,
-                    size = textDefaults.Size,
-                    underline = textDefaults.Underline,
-                    opaque = textDefaults.Opaque,
-                    xOffset = textDefaults.XOffset,
-                    yOffset = textDefaults.YOffset,
-                }
+                //properties = new Properties()
+                //{
+                //    text = new string[] { element.Lines },
+                //    bcg = textDefaults.Bcg,
+                //    size = textDefaults.Size,
+                //    underline = textDefaults.Underline,
+                //    opaque = textDefaults.Opaque,
+                //    xOffset = textDefaults.XOffset,
+                //    yOffset = textDefaults.YOffset,
+                //}
             };
 
             // CRC Defaults. If any of these are true we don't need to include them in the geojson file.
-            if (output.properties.size == 0) { output.properties.size = null; }
-            if (output.properties.bcg == 1) { output.properties.bcg = null; }
-            if (output.properties.xOffset == 0) { output.properties.xOffset = null; }
-            if (output.properties.yOffset == 0) { output.properties.yOffset = null; }
-            if (output.properties.opaque == false) { output.properties.bcg = null; }
-            if (output.properties.underline == false) { output.properties.bcg = null; }
+            //if (output.properties.size == 0) { output.properties.size = null; }
+            //if (output.properties.bcg == 1) { output.properties.bcg = null; }
+            //if (output.properties.xOffset == 0) { output.properties.xOffset = null; }
+            //if (output.properties.yOffset == 0) { output.properties.yOffset = null; }
+            //if (output.properties.opaque == false) { output.properties.bcg = null; }
+            //if (output.properties.underline == false) { output.properties.bcg = null; }
 
-            try
-            {
-                output.properties.filters = Array.ConvertAll(textDefaults.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty).Split(','), s => int.Parse(s));
+            //try
+            //{
+            //    output.properties.filters = Array.ConvertAll(textDefaults.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty).Split(','), s => int.Parse(s));
 
-            }
-            catch (Exception)
-            {
-                output.properties.filters = new int[] { 0 };
-            }
+            //}
+            //catch (Exception)
+            //{
+            //    output.properties.filters = new int[] { 0 };
+            //}
             return output;
         }
 
@@ -882,27 +882,28 @@ namespace FeBuddyLibrary.DataAccess
                         type = "Point",
                         coordinates = new List<dynamic>() { LatLonHelpers.CorrectIlleagleLon(element.Lon), element.Lat }
                     },
-                    properties = new Properties()
-                    {
-                        style = Char.ToLowerInvariant(symbolDefaults.Style[0]) + symbolDefaults.Style[1..],
-                        size = symbolDefaults.Size,
-                        bcg = symbolDefaults.Bcg,
-                    }};
+                    //properties = new Properties()
+                    //{
+                    //    style = Char.ToLowerInvariant(symbolDefaults.Style[0]) + symbolDefaults.Style[1..],
+                    //    size = symbolDefaults.Size,
+                    //    bcg = symbolDefaults.Bcg,
+                    //}
+                    };
 
             // CRC Defaults. If any of these are true we don't need to include them in the geojson file.
-            if (output.properties.style == "VOR") { output.properties.style = null; }
-            if (output.properties.size == 0) { output.properties.size = null; }
-            if (output.properties.bcg == 1) { output.properties.bcg = null; }
+            //if (output.properties.style == "VOR") { output.properties.style = null; }
+            //if (output.properties.size == 0) { output.properties.size = null; }
+            //if (output.properties.bcg == 1) { output.properties.bcg = null; }
 
-            try
-            {
-                output.properties.filters = Array.ConvertAll(symbolDefaults.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty).Split(','), s => int.Parse(s));
+            //try
+            //{
+            //    output.properties.filters = Array.ConvertAll(symbolDefaults.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty).Split(','), s => int.Parse(s));
 
-            }
-            catch (Exception)
-            {
-                output.properties.filters = new int[] { 0 };
-            }
+            //}
+            //catch (Exception)
+            //{
+            //    output.properties.filters = new int[] { 0 };
+            //}
             return output;
         }
     }

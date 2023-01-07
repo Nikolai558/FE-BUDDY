@@ -39,10 +39,50 @@ namespace FeBuddyLibrary.DataAccess
             return false;
         }
 
+        public string AddNullValues(string text)
+        {
+            StringBuilder output = new StringBuilder();
+
+            var allLines = text.Split('\n');
+
+            foreach (string line in allLines)
+            {
+                string tmpLine = line;
+
+                if (!line.Contains("<Element xsi-type=\""))
+                {
+                    output.Append(line);
+                    continue;
+                }
+
+                bool needsBcg = !line.Contains("Bcg=\"");
+                bool needsSize = !line.Contains("Size=\"");
+                bool needsUnderline = !line.Contains("Underline=\"");
+                bool needsOpaque = !line.Contains("Opaque=\"");
+                bool needsXOffset = !line.Contains("XOffset=\"");
+                bool needsYOffset = !line.Contains("YOffset=\"");
+                bool needsStyle = !line.Contains("Style=\"");
+                bool needsFilters = !line.Contains("Filters=\"");
+
+                if (needsBcg) { tmpLine = tmpLine.Replace("/>", "Bcg=\"\"" + " />"); }
+                if (needsSize) { tmpLine = tmpLine.Replace("/>", "Size=\"\"" + " />"); }
+                if (needsUnderline) { tmpLine = tmpLine.Replace("/>", "Underline=\"\"" + " />"); }
+                if (needsOpaque) { tmpLine = tmpLine.Replace("/>", "Opaque=\"\"" + " />"); }
+                if (needsXOffset) { tmpLine = tmpLine.Replace("/>", "XOffset=\"\"" + " />"); }
+                if (needsYOffset) { tmpLine = tmpLine.Replace("/>", "YOffset=\"\"" + " />"); }
+                if (needsStyle) { tmpLine = tmpLine.Replace("/>", "Style=\"\"" + " />"); }
+                if (needsFilters) { tmpLine = tmpLine.Replace("/>", "Filters=\"\"" + " />"); }
+                output.Append(tmpLine);
+            }
+            return output.ToString();
+        }
+
         public VideoMaps ReadVideoMap(string filepath)
         {
             var tempFile = Path.Combine(Path.GetTempPath(), "FE-BUDDY", "tempGeoMap.xml");
-            File.WriteAllText(tempFile, File.ReadAllText(filepath).Replace("xsi:type", "xsi-type"));
+            var all_text = File.ReadAllText(filepath).Replace("xsi:type", "xsi-type");
+            //all_text = AddNullValues(all_text);
+            File.WriteAllText(tempFile, all_text);
             
             XmlSerializer serializer = new XmlSerializer(typeof(VideoMaps));
 
@@ -71,7 +111,10 @@ namespace FeBuddyLibrary.DataAccess
         {
             // xsi:type will mess up the reading of XML. Need to either work around it or figure out the proper way to handle it.
             var tempFile = Path.Combine(Path.GetTempPath(), "FE-BUDDY", "tempGeoMap.xml");
-            File.WriteAllText(tempFile, File.ReadAllText(filepath).Replace("xsi:type", "xsi-type"));
+            var all_text = File.ReadAllText(filepath).Replace("xsi:type", "xsi-type");
+            //all_text = AddNullValues(all_text);
+            File.WriteAllText(tempFile, all_text);
+
 
             XmlSerializer serializer = new XmlSerializer(typeof(GeoMapSet));
             
@@ -79,8 +122,6 @@ namespace FeBuddyLibrary.DataAccess
 
             using (Stream reader = new FileStream(tempFile, FileMode.Open))
             {
-                
-
                 geo = (GeoMapSet)serializer.Deserialize(reader);
             }
 
@@ -296,7 +337,7 @@ namespace FeBuddyLibrary.DataAccess
             // PER ROSS, Ignore elements that are not Path's for ASDEX VM
             //
             // If we decide to change our mind about this the following code would create a seperate geojson file
-            // next to the asdex in the output location. This is incomplete and would need work but it is started.
+            // next to the asdex in the allLines location. This is incomplete and would need work but it is started.
             // 
             // ---------------------------------------------------------------------------------------------------------
             //if (otherElementsNotPaths.Count() > 0)
@@ -574,11 +615,6 @@ namespace FeBuddyLibrary.DataAccess
                     List<Element> AllLines = new List<Element>();
                     foreach (Element element in geoMapObject.Elements.Element)
                     {
-
-                        if (geoMapObject.Description == "AIRWAYS")
-                        {
-                            string stop = "STOP";
-                        }
                         switch (element.XsiType)
                         {
                             case "Symbol": 
@@ -597,6 +633,7 @@ namespace FeBuddyLibrary.DataAccess
                                 }
                             case "Line": 
                                 {
+                                    // TODO - Double check why we do this code below......
                                     if (geoMapObject.LineDefaults == null) { _errorLog.AppendLine($"{geoMap.Name}  {geoMapObject.Description}  LINE  {element.StartLat} {element.StartLon}  {element.EndLat} {element.EndLon}: \n\t- Was not added to geojson because <LineDefaults> was not found for this map.\n\n\n"); }
                                     AllLines.Add(element); 
                                     break; 
@@ -830,6 +867,18 @@ namespace FeBuddyLibrary.DataAccess
                 return null;
             }
 
+            Properties elem_properties = new Properties();
+
+            if (element.Filters != null && !string.IsNullOrWhiteSpace(element.Filters)) { elem_properties.filters = Array.ConvertAll(element.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty).Split(','), s => int.Parse(s)); }
+            if (element.Style != null) { elem_properties.style = element.Style; }
+            if (element.Bcg != null) { elem_properties.bcg = element.Bcg; }
+            if (element.Size != null) { elem_properties.size = element.Size; }
+            if (element.Underline != null) { elem_properties.underline= element.Underline; }
+            if (element.Opaque != null) { elem_properties.opaque = element.Opaque; }
+            if (element.XOffset != null) { elem_properties.xOffset = element.XOffset; }
+            if (element.YOffset != null) { elem_properties.yOffset = element.YOffset; }
+            elem_properties.text = new string[] { element.Lines };
+
             var output = new Feature()
             {
                 geometry = new Geometry()
@@ -837,34 +886,25 @@ namespace FeBuddyLibrary.DataAccess
                     type = "Point",
                     coordinates = new List<dynamic>() { LatLonHelpers.CorrectIlleagleLon(element.Lon), element.Lat }
                 },
-                //properties = new Properties()
-                //{
-                //    text = new string[] { element.Lines },
-                //    bcg = textDefaults.Bcg,
-                //    size = textDefaults.Size,
-                //    underline = textDefaults.Underline,
-                //    opaque = textDefaults.Opaque,
-                //    xOffset = textDefaults.XOffset,
-                //    yOffset = textDefaults.YOffset,
-                //}
+                properties = elem_properties
             };
 
             // CRC Defaults. If any of these are true we don't need to include them in the geojson file.
-            //if (output.properties.size == 0) { output.properties.size = null; }
-            //if (output.properties.bcg == 1) { output.properties.bcg = null; }
-            //if (output.properties.xOffset == 0) { output.properties.xOffset = null; }
-            //if (output.properties.yOffset == 0) { output.properties.yOffset = null; }
-            //if (output.properties.opaque == false) { output.properties.bcg = null; }
-            //if (output.properties.underline == false) { output.properties.bcg = null; }
+            //if (allLines.properties.size == 0) { allLines.properties.size = null; }
+            //if (allLines.properties.bcg == 1) { allLines.properties.bcg = null; }
+            //if (allLines.properties.xOffset == 0) { allLines.properties.xOffset = null; }
+            //if (allLines.properties.yOffset == 0) { allLines.properties.yOffset = null; }
+            //if (allLines.properties.opaque == false) { allLines.properties.bcg = null; }
+            //if (allLines.properties.underline == false) { allLines.properties.bcg = null; }
 
             //try
             //{
-            //    output.properties.filters = Array.ConvertAll(textDefaults.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty).Split(','), s => int.Parse(s));
+            //    allLines.properties.filters = Array.ConvertAll(textDefaults.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty).Split(','), s => int.Parse(s));
 
             //}
             //catch (Exception)
             //{
-            //    output.properties.filters = new int[] { 0 };
+            //    allLines.properties.filters = new int[] { 0 };
             //}
             return output;
         }
@@ -876,33 +916,38 @@ namespace FeBuddyLibrary.DataAccess
                 return null;
             }
 
+            Properties elem_properties = new Properties();
+
+            if (element.Bcg != null) { elem_properties.bcg = element.Bcg; }
+
+            // Array.ConvertAll(symbolDefaults.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty).Split(','), s => int.Parse(s));
+
+            if (element.Filters != null && !string.IsNullOrWhiteSpace(element.Filters)) { elem_properties.filters = Array.ConvertAll(element.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty).Split(','), s => int.Parse(s)); }
+            if (element.Style != null && !string.IsNullOrWhiteSpace(element.Style)) { elem_properties.style = element.Style; }
+            if (element.Size != null) { elem_properties.size = element.Size; }
+
             var output = new Feature() {
                     geometry = new Geometry()
                     {
                         type = "Point",
                         coordinates = new List<dynamic>() { LatLonHelpers.CorrectIlleagleLon(element.Lon), element.Lat }
                     },
-                    //properties = new Properties()
-                    //{
-                    //    style = Char.ToLowerInvariant(symbolDefaults.Style[0]) + symbolDefaults.Style[1..],
-                    //    size = symbolDefaults.Size,
-                    //    bcg = symbolDefaults.Bcg,
-                    //}
+                    properties = elem_properties
                     };
 
             // CRC Defaults. If any of these are true we don't need to include them in the geojson file.
-            //if (output.properties.style == "VOR") { output.properties.style = null; }
-            //if (output.properties.size == 0) { output.properties.size = null; }
-            //if (output.properties.bcg == 1) { output.properties.bcg = null; }
+            //if (allLines.properties.style == "VOR") { allLines.properties.style = null; }
+            //if (allLines.properties.size == 0) { allLines.properties.size = null; }
+            //if (allLines.properties.bcg == 1) { allLines.properties.bcg = null; }
 
             //try
             //{
-            //    output.properties.filters = Array.ConvertAll(symbolDefaults.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty).Split(','), s => int.Parse(s));
+            //    allLines.properties.filters = Array.ConvertAll(symbolDefaults.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty).Split(','), s => int.Parse(s));
 
             //}
             //catch (Exception)
             //{
-            //    output.properties.filters = new int[] { 0 };
+            //    allLines.properties.filters = new int[] { 0 };
             //}
             return output;
         }

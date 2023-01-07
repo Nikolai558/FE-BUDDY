@@ -149,6 +149,7 @@ namespace FeBuddyLibrary.Models
         public int? XOffset { get; private set; } = null;
         public int? YOffset { get; private set; } = null;
         public string Style { get; private set; } = null;
+        public int? Thickness { get; private set; } = null;
 
 
         public void ReadXml(XmlReader reader)
@@ -162,13 +163,14 @@ namespace FeBuddyLibrary.Models
             string attr7 = reader.GetAttribute("Lat");
             string attr8 = reader.GetAttribute("Lon");
             string attr9 = reader.GetAttribute("Lines");
-            string attr10 = reader.GetAttribute("Bcg");
+            string attr10 = reader.GetAttribute("Bcg"); 
             string attr11 = reader.GetAttribute("Size");
             string attr12 = reader.GetAttribute("Underline");
             string attr13 = reader.GetAttribute("Opaque");
             string attr14 = reader.GetAttribute("XOffset");
             string attr15 = reader.GetAttribute("YOffset");
             string attr16 = reader.GetAttribute("Style");
+            string attr17 = reader.GetAttribute("Thickness");
             reader.Read();
 
             XsiType = attr1;
@@ -187,21 +189,28 @@ namespace FeBuddyLibrary.Models
             XOffset = ConvertToNullable<int>(attr14);
             YOffset = ConvertToNullable<int>(attr15);
             Style = attr16;
+            Thickness = ConvertToNullable<int>(attr17);
+
         }
 
+
+        // Here be dragons....
         private static T? ConvertToNullable<T>(string inputValue) where T: struct
         {
             if (string.IsNullOrEmpty(inputValue) || inputValue.Trim().Length == 0)
             {
+                // Magic Here 
                 return null;
             }
             try
             {
+                // Magic There.....
                 TypeConverter conv = TypeDescriptor.GetConverter(typeof(T));
                 return (T)conv.ConvertFrom(inputValue);
             }
             catch (NotSupportedException)
             {
+                // MAGIC EVERYWHERE! 
                 return null;
             }
         }

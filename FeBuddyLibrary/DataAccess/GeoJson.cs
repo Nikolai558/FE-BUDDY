@@ -667,37 +667,41 @@ namespace FeBuddyLibrary.DataAccess
 
         private List<Feature> CreateLineFeature(List<Element> elements, LineDefaults lineDefaults)
         {
+            // TODO - Need to address this in some way!! 
+            // Properties in geojson not behaving correctly... If a line feature "Polygon" has more than two coords,
+            // and the xml file has different properties for each start end coords,
+            // the geojson file only keeps the property for the last (or first) set of start end coords...
+            // If we come accross a "polygon" ie start lat matches end lat of previous BUT the 
+            // property values are different we need to split it up into seperate features.....
+            // Meaning we need to remember the "End lat/lon" and make it the "Start lat lon" for where we split the feature.
+
+
             if (lineDefaults == null)
             {
                 return null;
             }
 
             List<Feature> featuresOutput = new List<Feature>();
-            
             Element prevElement = null;
+            Properties elem_properties = new Properties();
+
             Feature currentFeature = new Feature()
             {
-                //properties = new Properties()
-                //{
-                //    bcg = lineDefaults.Bcg,
-                //    style = Char.ToLowerInvariant(lineDefaults.Style[0]) + lineDefaults.Style[1..],
-                //    thickness = lineDefaults.Thickness,
-
-                //    color = null,
-                //    zIndex = null,
-                //},
                 geometry = new Geometry()
                 {
                     type = "LineString",
                 }
             };
 
-            //if (currentFeature.properties.thickness == 1) { currentFeature.properties.thickness = null; }
-            //if (currentFeature.properties.style == "solid") { currentFeature.properties.style = null; }
-            //if (currentFeature.properties.bcg == 1) { currentFeature.properties.bcg = null; }
-
             foreach (Element element in elements)
             {
+                elem_properties = new Properties();
+
+                if (element.Filters != null && !string.IsNullOrWhiteSpace(element.Filters)) { elem_properties.filters = Array.ConvertAll(element.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty).Split(','), s => int.Parse(s)); }
+                if (element.Style != null) { elem_properties.style = element.Style; }
+                if (element.Bcg != null) { elem_properties.bcg = element.Bcg; }
+                if (element.Thickness != null) { elem_properties.thickness = element.Thickness; }
+
                 bool crossesAM = false;
                 var coords = CheckAMCrossing(element.StartLat, element.StartLon, element.EndLat, element.EndLon);
                 if (coords.Count() == 4)
@@ -711,28 +715,28 @@ namespace FeBuddyLibrary.DataAccess
                     {
                         currentFeature.geometry.coordinates.Add(coords[0]);
                         currentFeature.geometry.coordinates.Add(coords[1]);
+                        currentFeature.properties = elem_properties;
+
                         featuresOutput.Add(currentFeature);
+
+                        elem_properties = new Properties();
+
+                        if (element.Filters != null && !string.IsNullOrWhiteSpace(element.Filters)) { elem_properties.filters = Array.ConvertAll(element.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty).Split(','), s => int.Parse(s)); }
+                        if (element.Style != null) { elem_properties.style = element.Style; }
+                        if (element.Bcg != null) { elem_properties.bcg = element.Bcg; }
+                        if (element.Thickness != null) { elem_properties.thickness = element.Thickness; }
+
                         currentFeature = new Feature()
                         {
-                            //properties = new Properties()
-                            //{
-                            //    bcg = lineDefaults.Bcg,
-                            //    style = Char.ToLowerInvariant(lineDefaults.Style[0]) + lineDefaults.Style[1..],
-                            //    thickness = lineDefaults.Thickness,
-
-                            //    color = null,
-                            //    zIndex = null,
-                            //},
+                            properties = elem_properties,
                             geometry = new Geometry() { type = "LineString" }
                         };
-                        //if (currentFeature.properties.thickness == 1) { currentFeature.properties.thickness = null; }
-                        //if (currentFeature.properties.style == "solid") { currentFeature.properties.style = null; }
-                        //if (currentFeature.properties.bcg == 1) { currentFeature.properties.bcg = null; }
                         currentFeature.geometry.coordinates.Add(coords[2]);
                         currentFeature.geometry.coordinates.Add(coords[3]);
                     }
                     else
                     {
+                        currentFeature.properties = elem_properties;
                         currentFeature.geometry.coordinates = coords;
                     }
 
@@ -748,44 +752,38 @@ namespace FeBuddyLibrary.DataAccess
                             if (currentFeature.geometry.coordinates.Count() > 0)
                             {
                                 featuresOutput.Add(currentFeature);
+
+                                elem_properties = new Properties();
+
+                                if (element.Filters != null && !string.IsNullOrWhiteSpace(element.Filters)) { elem_properties.filters = Array.ConvertAll(element.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty).Split(','), s => int.Parse(s)); }
+                                if (element.Style != null) { elem_properties.style = element.Style; }
+                                if (element.Bcg != null) { elem_properties.bcg = element.Bcg; }
+                                if (element.Thickness != null) { elem_properties.thickness = element.Thickness; }
+
                                 currentFeature = new Feature()
                                 {
-                                    //properties = new Properties()
-                                    //{
-                                    //    bcg = lineDefaults.Bcg,
-                                    //    style = Char.ToLowerInvariant(lineDefaults.Style[0]) + lineDefaults.Style[1..],
-                                    //    thickness = lineDefaults.Thickness,
-
-                                    //    color = null,
-                                    //    zIndex = null,
-                                    //},
+                                    properties = elem_properties,
                                     geometry = new Geometry() { type = "LineString" }
                                 };
-                                //if (currentFeature.properties.thickness == 1) { currentFeature.properties.thickness = null; }
-                                //if (currentFeature.properties.style == "solid") { currentFeature.properties.style = null; }
-                                //if (currentFeature.properties.bcg == 1) { currentFeature.properties.bcg = null; }
                             }
 
                             currentFeature.geometry.coordinates.Add(coords[0]);
                             currentFeature.geometry.coordinates.Add(coords[1]);
                             featuresOutput.Add(currentFeature);
 
+                            elem_properties = new Properties();
+
+                            if (element.Filters != null && !string.IsNullOrWhiteSpace(element.Filters)) { elem_properties.filters = Array.ConvertAll(element.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty).Split(','), s => int.Parse(s)); }
+                            if (element.Style != null) { elem_properties.style = element.Style; }
+                            if (element.Bcg != null) { elem_properties.bcg = element.Bcg; }
+                            if (element.Thickness != null) { elem_properties.thickness = element.Thickness; }
+
+
                             currentFeature = new Feature()
                             {
-                                //properties = new Properties()
-                                //{
-                                //    bcg = lineDefaults.Bcg,
-                                //    style = Char.ToLowerInvariant(lineDefaults.Style[0]) + lineDefaults.Style[1..],
-                                //    thickness = lineDefaults.Thickness,
-
-                                //    color = null,
-                                //    zIndex = null,
-                                //},
+                                properties = elem_properties,
                                 geometry = new Geometry() { type = "LineString" }
                             };
-                            //if (currentFeature.properties.thickness == 1) { currentFeature.properties.thickness = null; }
-                            //if (currentFeature.properties.style == "solid") { currentFeature.properties.style = null; }
-                            //if (currentFeature.properties.bcg == 1) { currentFeature.properties.bcg = null; }
 
                             currentFeature.geometry.coordinates.Add(coords[2]);
                             currentFeature.geometry.coordinates.Add(coords[3]);
@@ -797,26 +795,21 @@ namespace FeBuddyLibrary.DataAccess
                                 featuresOutput.Add(currentFeature);
                             }
 
-                            // Start Lat/Lon is different from Previous Element End Lat/Lon
+                            elem_properties = new Properties();
+
+                            if (element.Filters != null && !string.IsNullOrWhiteSpace(element.Filters)) { elem_properties.filters = Array.ConvertAll(element.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty).Split(','), s => int.Parse(s)); }
+                            if (element.Style != null) { elem_properties.style = element.Style; }
+                            if (element.Bcg != null) { elem_properties.bcg = element.Bcg; }
+                            if (element.Thickness != null) { elem_properties.thickness = element.Thickness; }
+
                             currentFeature = new Feature()
                             {
-                                //properties = new Properties()
-                                //{
-                                //    bcg = lineDefaults.Bcg,
-                                //    style = Char.ToLowerInvariant(lineDefaults.Style[0]) + lineDefaults.Style[1..],
-                                //    thickness = lineDefaults.Thickness,
-
-                                //    color = null,
-                                //    zIndex = null,
-                                //},
+                                properties = elem_properties,
                                 geometry = new Geometry()
                                 {
                                     type = "LineString",
                                 }
                             };
-                            //if (currentFeature.properties.thickness == 1) { currentFeature.properties.thickness = null; }
-                            //if (currentFeature.properties.style == "solid") { currentFeature.properties.style = null; }
-                            //if (currentFeature.properties.bcg == 1) { currentFeature.properties.bcg = null; }
                             currentFeature.geometry.coordinates = coords;
                         }
                     }
@@ -829,22 +822,19 @@ namespace FeBuddyLibrary.DataAccess
                             //currentFeature.geometry.coordinates.Add(coords[0]);
                             currentFeature.geometry.coordinates.Add(coords[1]);
                             featuresOutput.Add(currentFeature);
+
+                            elem_properties = new Properties();
+
+                            if (element.Filters != null && !string.IsNullOrWhiteSpace(element.Filters)) { elem_properties.filters = Array.ConvertAll(element.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty).Split(','), s => int.Parse(s)); }
+                            if (element.Style != null) { elem_properties.style = element.Style; }
+                            if (element.Bcg != null) { elem_properties.bcg = element.Bcg; }
+                            if (element.Thickness != null) { elem_properties.thickness = element.Thickness; }
+
                             currentFeature = new Feature()
                             {
-                                //properties = new Properties()
-                                //{
-                                //    bcg = lineDefaults.Bcg,
-                                //    style = Char.ToLowerInvariant(lineDefaults.Style[0]) + lineDefaults.Style[1..],
-                                //    thickness = lineDefaults.Thickness,
-
-                                //    color = null,
-                                //    zIndex = null,
-                                //},
+                                properties = elem_properties,
                                 geometry = new Geometry() { type = "LineString" }
                             };
-                            //if (currentFeature.properties.thickness == 1) { currentFeature.properties.thickness = null; }
-                            //if (currentFeature.properties.style == "solid") { currentFeature.properties.style = null; }
-                            //if (currentFeature.properties.bcg == 1) { currentFeature.properties.bcg = null; }
                             currentFeature.geometry.coordinates.Add(coords[2]);
                             currentFeature.geometry.coordinates.Add(coords[3]);
                         }

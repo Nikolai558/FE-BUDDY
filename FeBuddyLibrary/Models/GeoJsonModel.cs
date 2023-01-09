@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -65,14 +66,28 @@ namespace FeBuddyLibrary.Models
             var other = obj as Properties;
             if (other == null) return false;
 
+            if (filters != null && other.filters != null)
+            {
+                if (!filters.SequenceEqual(other.filters)) { return false; }
+            }
+            else if (filters != null && other.filters == null)
+            {
+                return false;
+            }
+            else if (filters == null && other.filters != null)
+            {
+                return false;
+            }
+
             if (color != other.color || bcg != other.bcg ||
-                filters != other.filters || zIndex != other.zIndex ||
+                zIndex != other.zIndex ||
                 style != other.style || thickness != other.thickness ||
                 asdex != other.asdex || size != other.size ||
                 text != other.text || underline != other.underline ||
                 opaque != other.opaque || xOffset != other.xOffset ||
                 yOffset != other.yOffset)
             {
+                
                 return false;
             }
 

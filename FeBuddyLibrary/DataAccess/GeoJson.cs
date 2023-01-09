@@ -598,12 +598,24 @@ namespace FeBuddyLibrary.DataAccess
 
         public void WriteGeoMapGeoJson(string dirPath, GeoMapSet geo)
         {
+            StringBuilder geoMapObjectLog = new StringBuilder();
             foreach (GeoMap geoMap in geo.GeoMaps.GeoMap)
             {
+
+                geoMapObjectLog.AppendLine($"\n\n-------------------------------------------------------------------------------------------------------------------------------------------------\n\n");
+                geoMapObjectLog.AppendLine($"{geoMap.Name}");
+
                 string geoMapDir = Path.Combine(dirPath, geoMap.Name);
 
                 foreach (GeoMapObject geoMapObject in geoMap.Objects.GeoMapObject)
                 {
+                    geoMapObjectLog.AppendLine($"\n\n\tDescription: {geoMapObject.Description}");
+                    geoMapObjectLog.AppendLine($"\t\tTDM: {geoMapObject.TdmOnly}");
+
+                    if (geoMapObject.LineDefaults?.ToString() != null) { geoMapObjectLog.AppendLine("\t\t" + geoMapObject.LineDefaults?.ToString());}
+                    if (geoMapObject.TextDefaults?.ToString() != null) { geoMapObjectLog.AppendLine("\t\t" + geoMapObject.TextDefaults?.ToString());}
+                    if (geoMapObject.SymbolDefaults?.ToString() != null) { geoMapObjectLog.AppendLine("\t\t" + geoMapObject.SymbolDefaults?.ToString());}
+
                     string fileName = geoMapObject.Description + ".geojson";
                     fileName = MakeValidFileName(fileName);
 
@@ -653,7 +665,7 @@ namespace FeBuddyLibrary.DataAccess
                             }
                         }
                     }
-                    
+
                     string jsonString = JsonConvert.SerializeObject(geojson, new JsonSerializerSettings { Formatting = Formatting.Indented, NullValueHandling = NullValueHandling.Ignore });
                     File.WriteAllText(file.FullName, jsonString);
                 }
@@ -664,6 +676,7 @@ namespace FeBuddyLibrary.DataAccess
                 //errorFile.Create();
                 File.WriteAllText(errorFile.FullName, _errorLog.ToString());
             }
+            File.WriteAllText(Path.Combine(dirPath, "GeoMapObject Properties.txt"), geoMapObjectLog.ToString());
         }
 
         private Properties CheckProperties(Element element)

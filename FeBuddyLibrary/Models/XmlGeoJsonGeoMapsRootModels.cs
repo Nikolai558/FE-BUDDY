@@ -7,6 +7,7 @@ using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
+using System.Xml.Linq;
 using System.Xml.Schema;
 using System.Xml.Serialization;
 
@@ -88,6 +89,10 @@ namespace FeBuddyLibrary.Models
         [XmlAttribute(AttributeName = "Thickness")]
         public int Thickness { get; set; }
 
+        public override string ToString()
+        {
+            return $"Line Defaults: BCG {Bcg} _ Filters {Filters} _ Style {Style} _ Thickness {Thickness}";
+        }
     }
 
     [XmlRoot(ElementName = "SymbolDefaults", IsNullable = true)]
@@ -104,6 +109,11 @@ namespace FeBuddyLibrary.Models
 
         [XmlAttribute(AttributeName = "Size")]
         public int Size { get; set; }
+
+        public override string ToString()
+        {
+            return $"Symbol Defaults: BCG {Bcg} _ Filters {Filters} _ Style {Style} _ Size {Size}";
+        }
 
     }
 
@@ -129,6 +139,10 @@ namespace FeBuddyLibrary.Models
         public int XOffset { get; set; }
         [XmlAttribute(AttributeName = "YOffset")]
         public int YOffset { get; set; }
+        public override string ToString()
+        {
+            return $"Text Defaults: BCG {Bcg} _ Filters {Filters} _ Size {Size} _ Underline {Underline} _ Opaque {Opaque} _ XOffset {XOffset} _ YOffset {YOffset}";
+        }
     }
 
     public class Element : IXmlSerializable

@@ -225,24 +225,28 @@
             // combineLikeGeoMapObjButton
             // 
             this.combineLikeGeoMapObjButton.AutoSize = true;
+            this.combineLikeGeoMapObjButton.Enabled = false;
             this.combineLikeGeoMapObjButton.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.combineLikeGeoMapObjButton.ForeColor = System.Drawing.SystemColors.AppWorkspace;
-            this.combineLikeGeoMapObjButton.Location = new System.Drawing.Point(75, 111);
+            this.combineLikeGeoMapObjButton.Location = new System.Drawing.Point(97, 111);
             this.combineLikeGeoMapObjButton.Margin = new System.Windows.Forms.Padding(6, 7, 6, 7);
             this.combineLikeGeoMapObjButton.Name = "combineLikeGeoMapObjButton";
-            this.combineLikeGeoMapObjButton.Size = new System.Drawing.Size(303, 25);
+            this.combineLikeGeoMapObjButton.Size = new System.Drawing.Size(259, 25);
             this.combineLikeGeoMapObjButton.TabIndex = 11;
             this.combineLikeGeoMapObjButton.TabStop = true;
-            this.combineLikeGeoMapObjButton.Text = "Filter Index and Other Similar Attributes";
+            this.combineLikeGeoMapObjButton.Text = "Filter Index and Similar Attributes";
             this.combineLikeGeoMapObjButton.UseVisualStyleBackColor = true;
+            this.combineLikeGeoMapObjButton.Visible = false;
+            this.combineLikeGeoMapObjButton.MouseHover += new System.EventHandler(this.combineLikeGeoMapObjButton_MouseHover);
             // 
             // seperateGeoJsonOutputButton
             // 
             this.seperateGeoJsonOutputButton.AutoSize = true;
             this.seperateGeoJsonOutputButton.Checked = true;
+            this.seperateGeoJsonOutputButton.Enabled = false;
             this.seperateGeoJsonOutputButton.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.seperateGeoJsonOutputButton.ForeColor = System.Drawing.SystemColors.AppWorkspace;
-            this.seperateGeoJsonOutputButton.Location = new System.Drawing.Point(75, 85);
+            this.seperateGeoJsonOutputButton.Location = new System.Drawing.Point(97, 85);
             this.seperateGeoJsonOutputButton.Margin = new System.Windows.Forms.Padding(6, 7, 6, 7);
             this.seperateGeoJsonOutputButton.Name = "seperateGeoJsonOutputButton";
             this.seperateGeoJsonOutputButton.Size = new System.Drawing.Size(215, 25);
@@ -250,6 +254,8 @@
             this.seperateGeoJsonOutputButton.TabStop = true;
             this.seperateGeoJsonOutputButton.Text = "GeoMapObject Description";
             this.seperateGeoJsonOutputButton.UseVisualStyleBackColor = true;
+            this.seperateGeoJsonOutputButton.Visible = false;
+            this.seperateGeoJsonOutputButton.MouseHover += new System.EventHandler(this.seperateGeoJsonOutputButton_MouseHover);
             // 
             // bothSelection
             // 

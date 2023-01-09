@@ -7,10 +7,6 @@ The following is a list of features that we are considering or actively working 
 - [ ] vERAM-to-GeoJSON option to group by attributes.
   - Refer to issue: https://github.com/Nikolai558/FE-BUDDY/issues/113
 
-- [ ] Add a log to normal vSTARS/vERAM attributes output
-  - Refer to https://github.com/Nikolai558/FE-BUDDY/issues/114 comments.
-  - This feature should be developed only if it doesn't needlessly delay release of higher priority features.
-
 - [ ] SCT2-to-GeoJSON
   - Reference: https://fetools.bvartcc.com/
 

@@ -12,6 +12,7 @@ using FeBuddyLibrary.Helpers;
 using FeBuddyLibrary.Dat;
 using System.Windows.Forms;
 using System.Reflection;
+using System.Text.RegularExpressions;
 
 namespace FeBuddyLibrary.DataAccess
 {
@@ -596,6 +597,26 @@ namespace FeBuddyLibrary.DataAccess
 
         }
 
+        private int[] getFilters(GeoMapObject geoMapObject)
+        {
+            List<int> filters = new List<int>();
+            string filtersString = "";
+
+            if (geoMapObject.LineDefaults != null) filtersString += "," + geoMapObject.LineDefaults.Filters;
+            if (geoMapObject.SymbolDefaults != null) filtersString += "," + geoMapObject.SymbolDefaults.Filters;
+            if (geoMapObject.TextDefaults != null) filtersString += "," + geoMapObject.TextDefaults.Filters;
+
+            foreach (string filter in filtersString.Replace(" ", string.Empty).Replace("\t", string.Empty).Split(','))
+            {
+                if (!string.IsNullOrWhiteSpace(filter) && !filters.Contains(int.Parse(filter)))
+                {
+                    filters.Add(int.Parse(filter));
+                }
+            }
+
+            return filters.ToArray();
+        }
+
         private void createDefaultFileNames(GeoMapObject geoMapObject, string dirPath, ref List<string> fileNames)
         {
             string filterDir;
@@ -635,9 +656,73 @@ namespace FeBuddyLibrary.DataAccess
             }
         }
 
+        private string CombineProperties(string defaultProperties, string overridenProperties) 
+        {
+            string output = defaultProperties;
+
+            if (overridenProperties.Contains("__"))
+            {
+                List<string> ovPropertiesList = overridenProperties.Split("__").ToList();
+                foreach (var prop in ovPropertiesList)
+                {
+                    Regex regex= new Regex($"_({prop}[\\s\\S]*?.)[_|.]");
+                    var matches = regex.Match(output).Groups[0].ToString();
+                    regex.Replace(output, matches);
+                }
+            }
+
+            return output;
+        }
+
+        private void CreateElementFileNames(GeoMapObject geoMapObject, string dirPath, Element element, ref List<string> fileNames)
+        {
+            string overrideProperties = CreateProperties(element).ToString();
+            string defaultProperties = "";
+
+            if (!overrideProperties.Contains("__"))
+            {
+                return;
+            }
+
+            string filterDir;
+            string fileName;
+            string fullFilePath;
+
+            switch (element.XsiType)
+            {
+                case "Line": { defaultProperties = geoMapObject.LineDefaults.ToString().Replace("Line Defaults: ", "__"); break; }
+                case "Symbol": { defaultProperties = geoMapObject.SymbolDefaults.ToString().Replace("Symbol Defaults: ", "__"); break; }
+                case "Text": { defaultProperties = geoMapObject.TextDefaults.ToString().Replace("Text Defaults: ", "__"); break; }
+            }
+
+            string combinedProperties = CombineProperties(defaultProperties, overrideProperties);
+
+
+            if (string.IsNullOrEmpty(element.Filters) || string.IsNullOrWhiteSpace(element.Filters))
+            {
+                foreach (var defaultFilters in getFilters(geoMapObject))
+                {
+                    filterDir = "FILTER " + defaultFilters.ToString().PadLeft(2, '0');
+                    fileName = $"FILTER {defaultFilters.ToString().PadLeft(2, '0')}__TDM {geoMapObject.TdmOnly.ToString()[0]}__{element.XsiType}{combinedProperties}";
+                    fullFilePath = Path.Combine(dirPath, filterDir, fileName + ".geojson");
+                    if (!fileNames.Contains(fullFilePath)) { fileNames.Add(fullFilePath); }
+                }
+            }
+            else
+            {
+                foreach (var customFilters in Array.ConvertAll(element.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty).Split(','), s => int.Parse(s)))
+                {
+                    filterDir = "FILTER " + customFilters.ToString().PadLeft(2, '0');
+                    fileName = $"FILTER {customFilters.ToString().PadLeft(2, '0')}__TDM {geoMapObject.TdmOnly.ToString()[0]}__{element.XsiType}{combinedProperties}";
+                    fullFilePath = Path.Combine(dirPath, filterDir, fileName + ".geojson");
+                    if (!fileNames.Contains(fullFilePath)) { fileNames.Add(fullFilePath); }
+                }
+            }
+        }
+
         public void WriteCombinedGeoMapGeoJson(string dirPath, GeoMapSet geo)
         {
-            //throw new NotImplementedException();
+            throw new NotImplementedException();
 
             // Store FullFilePath for all defaults we find in the xml. (Line, Text, Symbol Defaults)
             // Eventually this should be a dictionary or another class that stores the file path name and the features.
@@ -651,13 +736,14 @@ namespace FeBuddyLibrary.DataAccess
 
                 foreach (GeoMapObject geoMapObject in geoMap.Objects.GeoMapObject)
                 {
-                    createDefaultFileNames(geoMapObject, dirPath, ref fileNames);
+                    createDefaultFileNames(geoMapObject, geoMapDir, ref fileNames);
 
                     foreach (Element element in geoMapObject.Elements.Element)
                     {
                         // figure out how to get new Full file path added to list above
                         // if individual elements have different properties.
-                        CreateProperties(element).ToString();
+
+                        CreateElementFileNames(geoMapObject, geoMapDir, element, ref fileNames);
                     }
                 }
             }

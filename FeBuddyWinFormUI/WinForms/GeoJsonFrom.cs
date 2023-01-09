@@ -157,12 +157,25 @@ namespace FeBuddyWinFormUI
         }
         private void vEramSelection_CheckedChanged(object sender, EventArgs e)
         {
-            convertGroupBox.Enabled = false;
+            //convertGroupBox.Enabled = false;
+            shortNameSelection.Enabled = false;
+            longNameSelection.Enabled = false;
+            bothSelection.Enabled = false;
+            shortNameSelection.Visible = false;
+            longNameSelection.Visible = false;
+            bothSelection.Visible = false;
         }
 
         private void vStarsSelection_CheckedChanged(object sender, EventArgs e)
         {
-            convertGroupBox.Enabled = true;
+            //convertGroupBox.Enabled = true;
+            shortNameSelection.Enabled = true;
+            longNameSelection.Enabled = true;
+            bothSelection.Enabled = true;
+            shortNameSelection.Visible = true;
+            longNameSelection.Visible = true;
+            bothSelection.Visible = true;
+
         }
 
         private void shortNameSelection_CheckedChanged(object sender, EventArgs e)

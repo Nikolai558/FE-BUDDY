@@ -665,7 +665,40 @@ namespace FeBuddyLibrary.DataAccess
             }
         }
 
-        private List<Feature> CreateLineFeature(List<Element> elements, LineDefaults lineDefaults)
+        private Properties CheckProperties(Element element)
+        {
+            Properties elem_properties = new Properties();
+
+            if (element.Filters != null && !string.IsNullOrWhiteSpace(element.Filters)) { elem_properties.filters = Array.ConvertAll(element.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty).Split(','), s => int.Parse(s)); }
+            if (element.Style != null) { elem_properties.style = element.Style; }
+            if (element.Bcg != null) { elem_properties.bcg = element.Bcg; }
+            if (element.Thickness != null) { elem_properties.thickness = element.Thickness; }
+
+            return elem_properties;
+        }
+
+        private void CrossesAM(Element element, Feature currentFeature, List<Feature> featuresOutput, List<dynamic> coords, bool continutionOfFeature) 
+        {
+            if (!continutionOfFeature)
+            {
+                // Curent Feature Start coords Match Previous End Coords. Do not add Start coords.
+                currentFeature.geometry.coordinates.Add(coords[0]);
+            }
+            currentFeature.geometry.coordinates.Add(coords[1]);
+            currentFeature.properties = CheckProperties(element);
+
+            featuresOutput.Add(currentFeature);
+
+            currentFeature = new Feature()
+            {
+                properties = CheckProperties(element),
+                geometry = new Geometry() { type = "LineString" }
+            };
+            currentFeature.geometry.coordinates.Add(coords[2]);
+            currentFeature.geometry.coordinates.Add(coords[3]);
+        }
+
+        private List<Feature> CreateLineFeature(List<Element> elements)
         {
             // TODO - Need to address this in some way!! 
             // Properties in geojson not behaving correctly... If a line feature "Polygon" has more than two coords,
@@ -675,76 +708,33 @@ namespace FeBuddyLibrary.DataAccess
             // property values are different we need to split it up into seperate features.....
             // Meaning we need to remember the "End lat/lon" and make it the "Start lat lon" for where we split the feature.
 
-
-            if (lineDefaults == null)
-            {
-                return null;
-            }
-
             List<Feature> featuresOutput = new List<Feature>();
             Element prevElement = null;
-            Properties elem_properties = new Properties();
-
-            Feature currentFeature = new Feature()
-            {
-                geometry = new Geometry()
-                {
-                    type = "LineString",
-                }
-            };
+            Feature currentFeature = new Feature() { geometry = new Geometry() { type = "LineString" }};
 
             foreach (Element element in elements)
             {
-                elem_properties = new Properties();
-
-                if (element.Filters != null && !string.IsNullOrWhiteSpace(element.Filters)) { elem_properties.filters = Array.ConvertAll(element.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty).Split(','), s => int.Parse(s)); }
-                if (element.Style != null) { elem_properties.style = element.Style; }
-                if (element.Bcg != null) { elem_properties.bcg = element.Bcg; }
-                if (element.Thickness != null) { elem_properties.thickness = element.Thickness; }
-
                 bool crossesAM = false;
                 var coords = CheckAMCrossing(element.StartLat, element.StartLon, element.EndLat, element.EndLon);
-                if (coords.Count() == 4)
-                {
-                    crossesAM = true;
-                }
+                if (coords.Count() == 4) { crossesAM = true; }
 
                 if (prevElement == null)
                 {
                     if (crossesAM)
                     {
-                        currentFeature.geometry.coordinates.Add(coords[0]);
-                        currentFeature.geometry.coordinates.Add(coords[1]);
-                        currentFeature.properties = elem_properties;
-
-                        featuresOutput.Add(currentFeature);
-
-                        elem_properties = new Properties();
-
-                        if (element.Filters != null && !string.IsNullOrWhiteSpace(element.Filters)) { elem_properties.filters = Array.ConvertAll(element.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty).Split(','), s => int.Parse(s)); }
-                        if (element.Style != null) { elem_properties.style = element.Style; }
-                        if (element.Bcg != null) { elem_properties.bcg = element.Bcg; }
-                        if (element.Thickness != null) { elem_properties.thickness = element.Thickness; }
-
-                        currentFeature = new Feature()
-                        {
-                            properties = elem_properties,
-                            geometry = new Geometry() { type = "LineString" }
-                        };
-                        currentFeature.geometry.coordinates.Add(coords[2]);
-                        currentFeature.geometry.coordinates.Add(coords[3]);
+                        CrossesAM(element, currentFeature, featuresOutput, coords, false);
                     }
                     else
                     {
-                        currentFeature.properties = elem_properties;
+                        currentFeature.properties = CheckProperties(element);
                         currentFeature.geometry.coordinates = coords;
                     }
-
                     prevElement = element;
                     continue;
                 }
                 else
                 {
+                    // If start coords do NOT match end coords of previous element
                     if (LatLonHelpers.CorrectIlleagleLon(element.StartLon).ToString() + " " + element.StartLat.ToString() != LatLonHelpers.CorrectIlleagleLon(prevElement.EndLon).ToString() + " " + prevElement.EndLat.ToString())
                     {
                         if (crossesAM)
@@ -752,41 +742,14 @@ namespace FeBuddyLibrary.DataAccess
                             if (currentFeature.geometry.coordinates.Count() > 0)
                             {
                                 featuresOutput.Add(currentFeature);
-
-                                elem_properties = new Properties();
-
-                                if (element.Filters != null && !string.IsNullOrWhiteSpace(element.Filters)) { elem_properties.filters = Array.ConvertAll(element.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty).Split(','), s => int.Parse(s)); }
-                                if (element.Style != null) { elem_properties.style = element.Style; }
-                                if (element.Bcg != null) { elem_properties.bcg = element.Bcg; }
-                                if (element.Thickness != null) { elem_properties.thickness = element.Thickness; }
-
                                 currentFeature = new Feature()
                                 {
-                                    properties = elem_properties,
+                                    properties = CheckProperties(element),
                                     geometry = new Geometry() { type = "LineString" }
                                 };
                             }
 
-                            currentFeature.geometry.coordinates.Add(coords[0]);
-                            currentFeature.geometry.coordinates.Add(coords[1]);
-                            featuresOutput.Add(currentFeature);
-
-                            elem_properties = new Properties();
-
-                            if (element.Filters != null && !string.IsNullOrWhiteSpace(element.Filters)) { elem_properties.filters = Array.ConvertAll(element.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty).Split(','), s => int.Parse(s)); }
-                            if (element.Style != null) { elem_properties.style = element.Style; }
-                            if (element.Bcg != null) { elem_properties.bcg = element.Bcg; }
-                            if (element.Thickness != null) { elem_properties.thickness = element.Thickness; }
-
-
-                            currentFeature = new Feature()
-                            {
-                                properties = elem_properties,
-                                geometry = new Geometry() { type = "LineString" }
-                            };
-
-                            currentFeature.geometry.coordinates.Add(coords[2]);
-                            currentFeature.geometry.coordinates.Add(coords[3]);
+                            CrossesAM(element, currentFeature, featuresOutput, coords, false);
                         }
                         else
                         {
@@ -795,16 +758,9 @@ namespace FeBuddyLibrary.DataAccess
                                 featuresOutput.Add(currentFeature);
                             }
 
-                            elem_properties = new Properties();
-
-                            if (element.Filters != null && !string.IsNullOrWhiteSpace(element.Filters)) { elem_properties.filters = Array.ConvertAll(element.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty).Split(','), s => int.Parse(s)); }
-                            if (element.Style != null) { elem_properties.style = element.Style; }
-                            if (element.Bcg != null) { elem_properties.bcg = element.Bcg; }
-                            if (element.Thickness != null) { elem_properties.thickness = element.Thickness; }
-
                             currentFeature = new Feature()
                             {
-                                properties = elem_properties,
+                                properties = CheckProperties(element),
                                 geometry = new Geometry()
                                 {
                                     type = "LineString",
@@ -815,28 +771,9 @@ namespace FeBuddyLibrary.DataAccess
                     }
                     else
                     {
-                        //var coords = new List<double>() { item.EndLon, item.EndLat };
-
                         if (crossesAM)
                         {
-                            //currentFeature.geometry.coordinates.Add(coords[0]);
-                            currentFeature.geometry.coordinates.Add(coords[1]);
-                            featuresOutput.Add(currentFeature);
-
-                            elem_properties = new Properties();
-
-                            if (element.Filters != null && !string.IsNullOrWhiteSpace(element.Filters)) { elem_properties.filters = Array.ConvertAll(element.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty).Split(','), s => int.Parse(s)); }
-                            if (element.Style != null) { elem_properties.style = element.Style; }
-                            if (element.Bcg != null) { elem_properties.bcg = element.Bcg; }
-                            if (element.Thickness != null) { elem_properties.thickness = element.Thickness; }
-
-                            currentFeature = new Feature()
-                            {
-                                properties = elem_properties,
-                                geometry = new Geometry() { type = "LineString" }
-                            };
-                            currentFeature.geometry.coordinates.Add(coords[2]);
-                            currentFeature.geometry.coordinates.Add(coords[3]);
+                            CrossesAM(element, currentFeature, featuresOutput, coords, true);
                         }
                         else
                         {

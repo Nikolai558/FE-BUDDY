@@ -678,7 +678,7 @@ namespace FeBuddyLibrary.DataAccess
             return elem_properties;
         }
 
-        private void CrossesAM(Element element, Feature currentFeature, List<Feature> featuresOutput, List<dynamic> coords, bool continutionOfFeature) 
+        private void CrossesAM(Element element, ref Feature currentFeature, ref List<Feature> featuresOutput, List<dynamic> coords, bool continutionOfFeature) 
         {
             if (!continutionOfFeature)
             {
@@ -742,7 +742,7 @@ namespace FeBuddyLibrary.DataAccess
                 {
                     if (crossesAM)
                     {
-                        CrossesAM(element, currentFeature, featuresOutput, coords, false);
+                        CrossesAM(element, ref currentFeature, ref featuresOutput, coords, false);
                     }
                     else
                     {
@@ -769,7 +769,7 @@ namespace FeBuddyLibrary.DataAccess
                                 };
                             }
 
-                            CrossesAM(element, currentFeature, featuresOutput, coords, false);
+                            CrossesAM(element, ref currentFeature, ref featuresOutput, coords, false);
                         }
                         else
                         {
@@ -793,7 +793,7 @@ namespace FeBuddyLibrary.DataAccess
                     {
                         if (crossesAM)
                         {
-                            CrossesAM(element, currentFeature, featuresOutput, coords, true);
+                            CrossesAM(element, ref currentFeature, ref featuresOutput, coords, true);
                         }
                         else
                         {

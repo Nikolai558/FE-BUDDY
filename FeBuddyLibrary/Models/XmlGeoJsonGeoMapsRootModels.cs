@@ -1,9 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data.SqlTypes;
 using System.Linq;
 using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml;
+using System.Xml.Linq;
+using System.Xml.Schema;
 using System.Xml.Serialization;
 
 namespace FeBuddyLibrary.Models
@@ -84,6 +89,10 @@ namespace FeBuddyLibrary.Models
         [XmlAttribute(AttributeName = "Thickness")]
         public int Thickness { get; set; }
 
+        public override string ToString()
+        {
+            return $"Line Defaults: BCG {Bcg} _ Filters {Filters} _ Style {Style} _ Thickness {Thickness}";
+        }
     }
 
     [XmlRoot(ElementName = "SymbolDefaults", IsNullable = true)]
@@ -100,6 +109,11 @@ namespace FeBuddyLibrary.Models
 
         [XmlAttribute(AttributeName = "Size")]
         public int Size { get; set; }
+
+        public override string ToString()
+        {
+            return $"Symbol Defaults: BCG {Bcg} _ Filters {Filters} _ Style {Style} _ Size {Size}";
+        }
 
     }
 
@@ -125,38 +139,151 @@ namespace FeBuddyLibrary.Models
         public int XOffset { get; set; }
         [XmlAttribute(AttributeName = "YOffset")]
         public int YOffset { get; set; }
+        public override string ToString()
+        {
+            return $"Text Defaults: BCG {Bcg} _ Filters {Filters} _ Size {Size} _ Underline {Underline} _ Opaque {Opaque} _ XOffset {XOffset} _ YOffset {YOffset}";
+        }
     }
 
-    [XmlRoot(ElementName = "Element")]
-    public class Element
+    public class Element : IXmlSerializable
     {
-        [XmlAttribute(AttributeName = "xsi-type")]
-        public string XsiType { get; set; }
+        public string XsiType { get; private set; }
+        public string Filters { get; private set; } = null;
+        public double StartLat { get; private set; }
+        public double StartLon { get; private set; }
+        public double EndLat { get; private set; }
+        public double EndLon { get; private set; }
+        public double Lat { get; private set; }
+        public double Lon { get; private set; }
+        public string Lines { get; private set; }
+        public int? Bcg { get; private set; } = null;
+        public int? Size { get; private set; } = null;
+        public bool? Underline { get; private set; } = null;
+        public bool? Opaque { get; private set; } = null;
+        public int? XOffset { get; private set; } = null;
+        public int? YOffset { get; private set; } = null;
+        public string Style { get; private set; } = null;
+        public int? Thickness { get; private set; } = null;
 
-        [XmlElement(ElementName = "Filters")]
-        public object Filters { get; set; }
 
-        [XmlAttribute(AttributeName = "StartLat")]
-        public double StartLat { get; set; }
+        public void ReadXml(XmlReader reader)
+        {
+            string attr1 = reader.GetAttribute("xsi-type");
+            string attr2 = reader.GetAttribute("Filters");
+            string attr3 = reader.GetAttribute("StartLat");
+            string attr4 = reader.GetAttribute("StartLon");
+            string attr5 = reader.GetAttribute("EndLat");
+            string attr6 = reader.GetAttribute("EndLon");
+            string attr7 = reader.GetAttribute("Lat");
+            string attr8 = reader.GetAttribute("Lon");
+            string attr9 = reader.GetAttribute("Lines");
+            string attr10 = reader.GetAttribute("Bcg"); 
+            string attr11 = reader.GetAttribute("Size");
+            string attr12 = reader.GetAttribute("Underline");
+            string attr13 = reader.GetAttribute("Opaque");
+            string attr14 = reader.GetAttribute("XOffset");
+            string attr15 = reader.GetAttribute("YOffset");
+            string attr16 = reader.GetAttribute("Style");
+            string attr17 = reader.GetAttribute("Thickness");
+            reader.Read();
 
-        [XmlAttribute(AttributeName = "StartLon")]
-        public double StartLon { get; set; }
+            XsiType = attr1;
+            Filters = attr2;
+            if (attr3 != null) { StartLat = double.Parse(attr3); }
+            if (attr4 != null) { StartLon = double.Parse(attr4); }
+            if (attr5 != null) { EndLat = double.Parse(attr5); }
+            if (attr6 != null) { EndLon = double.Parse(attr6); }
+            if (attr7 != null) { Lat = double.Parse(attr7); }
+            if (attr8 != null) { Lon = double.Parse(attr8); }
+            Lines = attr9;
+            Bcg = ConvertToNullable<int>(attr10);
+            Size = ConvertToNullable<int>(attr11);
+            Underline = ConvertToNullable<bool>(attr12);
+            Opaque = ConvertToNullable<bool>(attr13);
+            XOffset = ConvertToNullable<int>(attr14);
+            YOffset = ConvertToNullable<int>(attr15);
+            Style = attr16;
+            Thickness = ConvertToNullable<int>(attr17);
 
-        [XmlAttribute(AttributeName = "EndLat")]
-        public double EndLat { get; set; }
+        }
 
-        [XmlAttribute(AttributeName = "EndLon")]
-        public double EndLon { get; set; }
 
-        [XmlAttribute(AttributeName = "Lat")]
-        public double Lat { get; set; }
-
-        [XmlAttribute(AttributeName = "Lon")]
-        public double Lon { get; set; }
-
-        [XmlAttribute(AttributeName = "Lines")]
-        public string Lines { get; set; }
+        // Here be dragons....
+        private static T? ConvertToNullable<T>(string inputValue) where T: struct
+        {
+            if (string.IsNullOrEmpty(inputValue) || inputValue.Trim().Length == 0)
+            {
+                // Magic Here 
+                return null;
+            }
+            try
+            {
+                // Magic There.....
+                TypeConverter conv = TypeDescriptor.GetConverter(typeof(T));
+                return (T)conv.ConvertFrom(inputValue);
+            }
+            catch (NotSupportedException)
+            {
+                // MAGIC EVERYWHERE! 
+                return null;
+            }
+        }
+        public XmlSchema GetSchema() { return null;  }
+        public void WriteXml(XmlWriter writer) { throw new NotImplementedException(); }
     }
+
+
+    //[XmlRoot(ElementName = "Element")]
+    //public class Element
+    //{
+    //    [XmlAttribute(AttributeName = "xsi-type")]
+    //    public string XsiType { get; set; }
+
+    //    [XmlAttribute(AttributeName = "Filters")]
+    //    public string Filters { get; set; } = null;
+
+    //    [XmlAttribute(AttributeName = "StartLat")]
+    //    public double StartLat { get; set; }
+
+    //    [XmlAttribute(AttributeName = "StartLon")]
+    //    public double StartLon { get; set; }
+
+    //    [XmlAttribute(AttributeName = "EndLat")]
+    //    public double EndLat { get; set; }
+
+    //    [XmlAttribute(AttributeName = "EndLon")]
+    //    public double EndLon { get; set; }
+
+    //    [XmlAttribute(AttributeName = "Lat")]
+    //    public double Lat { get; set; }
+
+    //    [XmlAttribute(AttributeName = "Lon")]
+    //    public double Lon { get; set; }
+
+    //    [XmlAttribute(AttributeName = "Lines")]
+    //    public string Lines { get; set; }
+
+
+    //    [XmlAttribute(AttributeName = "Bcg")]
+    //    public int? Bcg { get; set; } = null;
+
+    //    [XmlAttribute(AttributeName = "Size")]
+    //    public int? Size { get; set; } = null;
+
+    //    [XmlAttribute(AttributeName = "Underline")]
+    //    public bool? Underline { get; set; } = null;
+
+    //    [XmlAttribute(AttributeName = "Opaque")]
+    //    public bool? Opaque { get; set; } = null;
+
+    //    [XmlAttribute(AttributeName = "XOffset")]
+    //    public int? XOffset { get; set; } = null;
+    //    [XmlAttribute(AttributeName = "YOffset")]
+    //    public int? YOffset { get; set; } = null;
+
+    //    [XmlAttribute(AttributeName = "Style")]
+    //    public string Style { get; set; } = null;
+    //}
 
     [XmlRoot(ElementName = "Elements")]
     public class Elements

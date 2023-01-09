@@ -11,6 +11,7 @@ using Newtonsoft.Json;
 using FeBuddyLibrary.Helpers;
 using FeBuddyLibrary.Dat;
 using System.Windows.Forms;
+using System.Reflection;
 
 namespace FeBuddyLibrary.DataAccess
 {
@@ -39,10 +40,50 @@ namespace FeBuddyLibrary.DataAccess
             return false;
         }
 
+        public string AddNullValues(string text)
+        {
+            StringBuilder output = new StringBuilder();
+
+            var allLines = text.Split('\n');
+
+            foreach (string line in allLines)
+            {
+                string tmpLine = line;
+
+                if (!line.Contains("<Element xsi-type=\""))
+                {
+                    output.Append(line);
+                    continue;
+                }
+
+                bool needsBcg = !line.Contains("Bcg=\"");
+                bool needsSize = !line.Contains("Size=\"");
+                bool needsUnderline = !line.Contains("Underline=\"");
+                bool needsOpaque = !line.Contains("Opaque=\"");
+                bool needsXOffset = !line.Contains("XOffset=\"");
+                bool needsYOffset = !line.Contains("YOffset=\"");
+                bool needsStyle = !line.Contains("Style=\"");
+                bool needsFilters = !line.Contains("Filters=\"");
+
+                if (needsBcg) { tmpLine = tmpLine.Replace("/>", "Bcg=\"\"" + " />"); }
+                if (needsSize) { tmpLine = tmpLine.Replace("/>", "Size=\"\"" + " />"); }
+                if (needsUnderline) { tmpLine = tmpLine.Replace("/>", "Underline=\"\"" + " />"); }
+                if (needsOpaque) { tmpLine = tmpLine.Replace("/>", "Opaque=\"\"" + " />"); }
+                if (needsXOffset) { tmpLine = tmpLine.Replace("/>", "XOffset=\"\"" + " />"); }
+                if (needsYOffset) { tmpLine = tmpLine.Replace("/>", "YOffset=\"\"" + " />"); }
+                if (needsStyle) { tmpLine = tmpLine.Replace("/>", "Style=\"\"" + " />"); }
+                if (needsFilters) { tmpLine = tmpLine.Replace("/>", "Filters=\"\"" + " />"); }
+                output.Append(tmpLine);
+            }
+            return output.ToString();
+        }
+
         public VideoMaps ReadVideoMap(string filepath)
         {
             var tempFile = Path.Combine(Path.GetTempPath(), "FE-BUDDY", "tempGeoMap.xml");
-            File.WriteAllText(tempFile, File.ReadAllText(filepath).Replace("xsi:type", "xsi-type"));
+            var all_text = File.ReadAllText(filepath).Replace("xsi:type", "xsi-type");
+            //all_text = AddNullValues(all_text);
+            File.WriteAllText(tempFile, all_text);
             
             XmlSerializer serializer = new XmlSerializer(typeof(VideoMaps));
 
@@ -71,7 +112,10 @@ namespace FeBuddyLibrary.DataAccess
         {
             // xsi:type will mess up the reading of XML. Need to either work around it or figure out the proper way to handle it.
             var tempFile = Path.Combine(Path.GetTempPath(), "FE-BUDDY", "tempGeoMap.xml");
-            File.WriteAllText(tempFile, File.ReadAllText(filepath).Replace("xsi:type", "xsi-type"));
+            var all_text = File.ReadAllText(filepath).Replace("xsi:type", "xsi-type");
+            //all_text = AddNullValues(all_text);
+            File.WriteAllText(tempFile, all_text);
+
 
             XmlSerializer serializer = new XmlSerializer(typeof(GeoMapSet));
             
@@ -79,8 +123,6 @@ namespace FeBuddyLibrary.DataAccess
 
             using (Stream reader = new FileStream(tempFile, FileMode.Open))
             {
-                
-
                 geo = (GeoMapSet)serializer.Deserialize(reader);
             }
 
@@ -238,43 +280,43 @@ namespace FeBuddyLibrary.DataAccess
 
                 Feature currentFeature = new Feature()
                 {
-                    properties = new Properties()
-                    {
-                        style = Char.ToLowerInvariant(elementItem.Style[0]) + elementItem.Style[1..],
-                        thickness = elementItem.Thickness,
-                    },
+                    //properties = new Properties()
+                    //{
+                    //    style = Char.ToLowerInvariant(elementItem.Style[0]) + elementItem.Style[1..],
+                    //    thickness = elementItem.Thickness,
+                    //},
                     geometry = new Geometry()
                     {
                         type = "Polygon"
                     }
                 };
 
-                try
-                {
-                    currentFeature.properties.color = colors?[elementItem.Color.ToLower()] ?? "";
-                }
-                catch (Exception ex)
-                {
-                    colors.Add(elementItem.Color.ToLower(), "#000000");
-                    asdexColorDef["structure"].Add(elementItem.Color.ToLower());
-                }
+                //try
+                //{
+                //    currentFeature.properties.color = colors?[elementItem.Color.ToLower()] ?? "";
+                //}
+                //catch (Exception ex)
+                //{
+                //    colors.Add(elementItem.Color.ToLower(), "#000000");
+                //    asdexColorDef["structure"].Add(elementItem.Color.ToLower());
+                //}
 
 
-                foreach (var asdexColorKey in asdexColorDef.Keys)
-                {
-                    if (asdexColorDef[asdexColorKey].Contains(elementItem.Color.ToLower()) && asdexColorKey != "UNKNOWN")
-                    {
-                        currentFeature.properties.asdex = asdexColorKey;
-                        currentFeature.properties.thickness = null;
-                        currentFeature.properties.style = null;
-                    }
-                }
+                //foreach (var asdexColorKey in asdexColorDef.Keys)
+                //{
+                //    if (asdexColorDef[asdexColorKey].Contains(elementItem.Color.ToLower()) && asdexColorKey != "UNKNOWN")
+                //    {
+                //        currentFeature.properties.asdex = asdexColorKey;
+                //        currentFeature.properties.thickness = null;
+                //        currentFeature.properties.style = null;
+                //    }
+                //}
 
-                if (currentFeature.properties.asdex == null)
-                {
-                    //currentFeature.properties.asdex = "structure";
-                    throw new Exception($"'{elementItem.Color}' Asdex color can not be assigned to an asdex geojson property...");
-                }
+                //if (currentFeature.properties.asdex == null)
+                //{
+                //    //currentFeature.properties.asdex = "structure";
+                //    throw new Exception($"'{elementItem.Color}' Asdex color can not be assigned to an asdex geojson property...");
+                //}
 
                 currentFeature.geometry.coordinates.Add(new List<dynamic>());
 
@@ -296,7 +338,7 @@ namespace FeBuddyLibrary.DataAccess
             // PER ROSS, Ignore elements that are not Path's for ASDEX VM
             //
             // If we decide to change our mind about this the following code would create a seperate geojson file
-            // next to the asdex in the output location. This is incomplete and would need work but it is started.
+            // next to the asdex in the allLines location. This is incomplete and would need work but it is started.
             // 
             // ---------------------------------------------------------------------------------------------------------
             //if (otherElementsNotPaths.Count() > 0)
@@ -375,13 +417,13 @@ namespace FeBuddyLibrary.DataAccess
                     {
                         type = "LineString",
                     };
-                    currentFeature.properties = new Properties()
-                    {
-                        color = colors?[item.Color.ToLower()] ?? null,
-                        //color = null,
-                        style = Char.ToLowerInvariant(item.Style[0]) + item.Style[1..],
-                        thickness = item.Thickness,
-                    };
+                    //currentFeature.properties = new Properties()
+                    //{
+                    //    color = colors?[item.Color.ToLower()] ?? null,
+                    //    //color = null,
+                    //    style = Char.ToLowerInvariant(item.Style[0]) + item.Style[1..],
+                    //    thickness = item.Thickness,
+                    //};
 
                     if (crossesAM)
                     {
@@ -390,12 +432,12 @@ namespace FeBuddyLibrary.DataAccess
                         allFeatures.Add(currentFeature);
                         currentFeature = new Feature()
                         {
-                            properties = new Properties()
-                            {
-                                color = colors?[item.Color.ToLower()] ?? null,
-                                style = Char.ToLowerInvariant(item.Style[0]) + item.Style[1..],
-                                thickness = item.Thickness,
-                            },
+                            //properties = new Properties()
+                            //{
+                            //    color = colors?[item.Color.ToLower()] ?? null,
+                            //    style = Char.ToLowerInvariant(item.Style[0]) + item.Style[1..],
+                            //    thickness = item.Thickness,
+                            //},
                             geometry = new Geometry() { type = "LineString" }
                         };
                         currentFeature.geometry.coordinates.Add(coords[2]);
@@ -420,12 +462,12 @@ namespace FeBuddyLibrary.DataAccess
 
                         currentFeature = new Feature()
                         {
-                            properties = new Properties()
-                            {
-                                style = Char.ToLowerInvariant(item.Style[0]) + item.Style[1..],
-                                thickness = item.Thickness,
-                                color = colors?[item.Color.ToLower()] ?? null
-                            },
+                            //properties = new Properties()
+                            //{
+                            //    style = Char.ToLowerInvariant(item.Style[0]) + item.Style[1..],
+                            //    thickness = item.Thickness,
+                            //    color = colors?[item.Color.ToLower()] ?? null
+                            //},
                             geometry = new Geometry()
                             {
                                 type = "LineString",
@@ -439,12 +481,12 @@ namespace FeBuddyLibrary.DataAccess
                             allFeatures.Add(currentFeature);
                             currentFeature = new Feature()
                             {
-                                properties = new Properties()
-                                {
-                                    color = colors?[item.Color.ToLower()] ?? null,
-                                    style = Char.ToLowerInvariant(item.Style[0]) + item.Style[1..],
-                                    thickness = item.Thickness,
-                                },
+                                //properties = new Properties()
+                                //{
+                                //    color = colors?[item.Color.ToLower()] ?? null,
+                                //    style = Char.ToLowerInvariant(item.Style[0]) + item.Style[1..],
+                                //    thickness = item.Thickness,
+                                //},
                                 geometry = new Geometry() { type = "LineString" }
                             };
                             currentFeature.geometry.coordinates.Add(coords[2]);
@@ -466,12 +508,12 @@ namespace FeBuddyLibrary.DataAccess
                             allFeatures.Add(currentFeature);
                             currentFeature = new Feature()
                             {
-                                properties = new Properties()
-                                {
-                                    color = colors?[item.Color.ToLower()] ?? null,
-                                    style = Char.ToLowerInvariant(item.Style[0]) + item.Style[1..],
-                                    thickness = item.Thickness,
-                                },
+                                //properties = new Properties()
+                                //{
+                                //    color = colors?[item.Color.ToLower()] ?? null,
+                                //    style = Char.ToLowerInvariant(item.Style[0]) + item.Style[1..],
+                                //    thickness = item.Thickness,
+                                //},
                                 geometry = new Geometry() { type = "LineString" }
                             };
                             currentFeature.geometry.coordinates.Add(coords[2]);
@@ -556,12 +598,24 @@ namespace FeBuddyLibrary.DataAccess
 
         public void WriteGeoMapGeoJson(string dirPath, GeoMapSet geo)
         {
+            StringBuilder geoMapObjectLog = new StringBuilder();
             foreach (GeoMap geoMap in geo.GeoMaps.GeoMap)
             {
+
+                geoMapObjectLog.AppendLine($"\n\n-------------------------------------------------------------------------------------------------------------------------------------------------\n\n");
+                geoMapObjectLog.AppendLine($"{geoMap.Name}");
+
                 string geoMapDir = Path.Combine(dirPath, geoMap.Name);
 
                 foreach (GeoMapObject geoMapObject in geoMap.Objects.GeoMapObject)
                 {
+                    geoMapObjectLog.AppendLine($"\n\n\tDescription: {geoMapObject.Description}");
+                    geoMapObjectLog.AppendLine($"\t\tTDM: {geoMapObject.TdmOnly}");
+
+                    if (geoMapObject.LineDefaults?.ToString() != null) { geoMapObjectLog.AppendLine("\t\t" + geoMapObject.LineDefaults?.ToString());}
+                    if (geoMapObject.TextDefaults?.ToString() != null) { geoMapObjectLog.AppendLine("\t\t" + geoMapObject.TextDefaults?.ToString());}
+                    if (geoMapObject.SymbolDefaults?.ToString() != null) { geoMapObjectLog.AppendLine("\t\t" + geoMapObject.SymbolDefaults?.ToString());}
+
                     string fileName = geoMapObject.Description + ".geojson";
                     fileName = MakeValidFileName(fileName);
 
@@ -574,11 +628,6 @@ namespace FeBuddyLibrary.DataAccess
                     List<Element> AllLines = new List<Element>();
                     foreach (Element element in geoMapObject.Elements.Element)
                     {
-
-                        if (geoMapObject.Description == "AIRWAYS")
-                        {
-                            string stop = "STOP";
-                        }
                         switch (element.XsiType)
                         {
                             case "Symbol": 
@@ -597,6 +646,7 @@ namespace FeBuddyLibrary.DataAccess
                                 }
                             case "Line": 
                                 {
+                                    // TODO - Double check why we do this code below......
                                     if (geoMapObject.LineDefaults == null) { _errorLog.AppendLine($"{geoMap.Name}  {geoMapObject.Description}  LINE  {element.StartLat} {element.StartLon}  {element.EndLat} {element.EndLon}: \n\t- Was not added to geojson because <LineDefaults> was not found for this map.\n\n\n"); }
                                     AllLines.Add(element); 
                                     break; 
@@ -607,7 +657,7 @@ namespace FeBuddyLibrary.DataAccess
 
                     if (AllLines.Count() > 0)
                     {
-                        foreach (var item in CreateLineFeature(AllLines, geoMapObject.LineDefaults))
+                        foreach (var item in CreateLineFeature(AllLines))
                         {
                             if (item != null)
                             {
@@ -615,7 +665,7 @@ namespace FeBuddyLibrary.DataAccess
                             }
                         }
                     }
-                    
+
                     string jsonString = JsonConvert.SerializeObject(geojson, new JsonSerializerSettings { Formatting = Formatting.Indented, NullValueHandling = NullValueHandling.Ignore });
                     File.WriteAllText(file.FullName, jsonString);
                 }
@@ -626,84 +676,98 @@ namespace FeBuddyLibrary.DataAccess
                 //errorFile.Create();
                 File.WriteAllText(errorFile.FullName, _errorLog.ToString());
             }
+            File.WriteAllText(Path.Combine(dirPath, "GeoMapObject Properties.txt"), geoMapObjectLog.ToString());
         }
 
-        private List<Feature> CreateLineFeature(List<Element> elements, LineDefaults lineDefaults)
+        private Properties CheckProperties(Element element)
         {
-            if (lineDefaults == null)
+            Properties elem_properties = new Properties();
+
+            if (element.Filters != null && !string.IsNullOrWhiteSpace(element.Filters)) { elem_properties.filters = Array.ConvertAll(element.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty).Split(','), s => int.Parse(s)); }
+            if (element.Style != null) { elem_properties.style = element.Style; }
+            if (element.Bcg != null) { elem_properties.bcg = element.Bcg; }
+            if (element.Thickness != null) { elem_properties.thickness = element.Thickness; }
+
+            return elem_properties;
+        }
+
+        private void CrossesAM(Element element, ref Feature currentFeature, ref List<Feature> featuresOutput, List<dynamic> coords, bool continutionOfFeature) 
+        {
+            if (!continutionOfFeature)
             {
-                return null;
+                // Curent Feature Start coords Match Previous End Coords. Do not add Start coords.
+                currentFeature.geometry.coordinates.Add(coords[0]);
+            }
+            currentFeature.geometry.coordinates.Add(coords[1]);
+            currentFeature.properties = CheckProperties(element);
+
+            featuresOutput.Add(currentFeature);
+
+            currentFeature = new Feature()
+            {
+                properties = CheckProperties(element),
+                geometry = new Geometry() { type = "LineString" }
+            };
+            currentFeature.geometry.coordinates.Add(coords[2]);
+            currentFeature.geometry.coordinates.Add(coords[3]);
+        }
+
+        private void CheckFeatureProperties(Element element, List<Feature> featuresOutput, Element prevElement, List<dynamic> coords, ref Feature currentFeature)
+        {
+            // This function takes in the current feature and the previous feature.
+            // if the Start Coords match the End Coords of the previous feature BUT
+            // the properties are DIFFERENT we need to Split the features instead of
+            // combining them into one feature group...
+
+            // Properties for Previous and Current DO match (i.e. They are the same!)
+            if (CheckProperties(prevElement).Equals(CheckProperties(element)))
+            {
+                currentFeature.geometry.coordinates.Add(coords[1]);
+                return;
             }
 
-            List<Feature> featuresOutput = new List<Feature>();
-            
-            Element prevElement = null;
-            Feature currentFeature = new Feature()
+            // Properties are different - Filters, Bcg, Size, and/or Thickness, etc.
+            featuresOutput.Add(currentFeature);
+
+            Feature newCurrentFeature = new Feature()
             {
-                properties = new Properties()
-                {
-                    bcg = lineDefaults.Bcg,
-                    style = Char.ToLowerInvariant(lineDefaults.Style[0]) + lineDefaults.Style[1..],
-                    thickness = lineDefaults.Thickness,
-
-                    color = null,
-                    zIndex = null,
-                },
-                geometry = new Geometry()
-                {
-                    type = "LineString",
-                }
+                properties = CheckProperties(element),
+                geometry = new Geometry() { type = "LineString" }
             };
+            newCurrentFeature.geometry.coordinates.Add(coords[0]);
+            newCurrentFeature.geometry.coordinates.Add(coords[1]);
+            currentFeature = newCurrentFeature;
+        }
 
-            if (currentFeature.properties.thickness == 1) { currentFeature.properties.thickness = null; }
-            if (currentFeature.properties.style == "solid") { currentFeature.properties.style = null; }
-            if (currentFeature.properties.bcg == 1) { currentFeature.properties.bcg = null; }
+        private List<Feature> CreateLineFeature(List<Element> elements)
+        {
+            List<Feature> featuresOutput = new List<Feature>();
+            Element prevElement = null;
+            Feature currentFeature = new Feature() { geometry = new Geometry() { type = "LineString" }};
 
             foreach (Element element in elements)
             {
                 bool crossesAM = false;
                 var coords = CheckAMCrossing(element.StartLat, element.StartLon, element.EndLat, element.EndLon);
-                if (coords.Count() == 4)
-                {
-                    crossesAM = true;
-                }
+                if (coords.Count() == 4) { crossesAM = true; }
 
                 if (prevElement == null)
                 {
                     if (crossesAM)
                     {
-                        currentFeature.geometry.coordinates.Add(coords[0]);
-                        currentFeature.geometry.coordinates.Add(coords[1]);
-                        featuresOutput.Add(currentFeature);
-                        currentFeature = new Feature()
-                        {
-                            properties = new Properties()
-                            {
-                                bcg = lineDefaults.Bcg,
-                                style = Char.ToLowerInvariant(lineDefaults.Style[0]) + lineDefaults.Style[1..],
-                                thickness = lineDefaults.Thickness,
-
-                                color = null,
-                                zIndex = null,
-                            },
-                            geometry = new Geometry() { type = "LineString" }
-                        };
-                        if (currentFeature.properties.thickness == 1) { currentFeature.properties.thickness = null; }
-                        if (currentFeature.properties.style == "solid") { currentFeature.properties.style = null; }
-                        if (currentFeature.properties.bcg == 1) { currentFeature.properties.bcg = null; }
-                        currentFeature.geometry.coordinates.Add(coords[2]);
-                        currentFeature.geometry.coordinates.Add(coords[3]);
+                        CrossesAM(element, ref currentFeature, ref featuresOutput, coords, false);
                     }
                     else
                     {
+                        currentFeature.properties = CheckProperties(element);
                         currentFeature.geometry.coordinates = coords;
                     }
-
                     prevElement = element;
                     continue;
                 }
                 else
                 {
+                    // If start coords do NOT match end coords of previous element
                     if (LatLonHelpers.CorrectIlleagleLon(element.StartLon).ToString() + " " + element.StartLat.ToString() != LatLonHelpers.CorrectIlleagleLon(prevElement.EndLon).ToString() + " " + prevElement.EndLat.ToString())
                     {
                         if (crossesAM)
@@ -713,45 +777,12 @@ namespace FeBuddyLibrary.DataAccess
                                 featuresOutput.Add(currentFeature);
                                 currentFeature = new Feature()
                                 {
-                                    properties = new Properties()
-                                    {
-                                        bcg = lineDefaults.Bcg,
-                                        style = Char.ToLowerInvariant(lineDefaults.Style[0]) + lineDefaults.Style[1..],
-                                        thickness = lineDefaults.Thickness,
-
-                                        color = null,
-                                        zIndex = null,
-                                    },
+                                    properties = CheckProperties(element),
                                     geometry = new Geometry() { type = "LineString" }
                                 };
-                                if (currentFeature.properties.thickness == 1) { currentFeature.properties.thickness = null; }
-                                if (currentFeature.properties.style == "solid") { currentFeature.properties.style = null; }
-                                if (currentFeature.properties.bcg == 1) { currentFeature.properties.bcg = null; }
                             }
 
-                            currentFeature.geometry.coordinates.Add(coords[0]);
-                            currentFeature.geometry.coordinates.Add(coords[1]);
-                            featuresOutput.Add(currentFeature);
-
-                            currentFeature = new Feature()
-                            {
-                                properties = new Properties()
-                                {
-                                    bcg = lineDefaults.Bcg,
-                                    style = Char.ToLowerInvariant(lineDefaults.Style[0]) + lineDefaults.Style[1..],
-                                    thickness = lineDefaults.Thickness,
-
-                                    color = null,
-                                    zIndex = null,
-                                },
-                                geometry = new Geometry() { type = "LineString" }
-                            };
-                            if (currentFeature.properties.thickness == 1) { currentFeature.properties.thickness = null; }
-                            if (currentFeature.properties.style == "solid") { currentFeature.properties.style = null; }
-                            if (currentFeature.properties.bcg == 1) { currentFeature.properties.bcg = null; }
-
-                            currentFeature.geometry.coordinates.Add(coords[2]);
-                            currentFeature.geometry.coordinates.Add(coords[3]);
+                            CrossesAM(element, ref currentFeature, ref featuresOutput, coords, false);
                         }
                         else
                         {
@@ -760,60 +791,27 @@ namespace FeBuddyLibrary.DataAccess
                                 featuresOutput.Add(currentFeature);
                             }
 
-                            // Start Lat/Lon is different from Previous Element End Lat/Lon
                             currentFeature = new Feature()
                             {
-                                properties = new Properties()
-                                {
-                                    bcg = lineDefaults.Bcg,
-                                    style = Char.ToLowerInvariant(lineDefaults.Style[0]) + lineDefaults.Style[1..],
-                                    thickness = lineDefaults.Thickness,
-
-                                    color = null,
-                                    zIndex = null,
-                                },
+                                properties = CheckProperties(element),
                                 geometry = new Geometry()
                                 {
                                     type = "LineString",
                                 }
                             };
-                            if (currentFeature.properties.thickness == 1) { currentFeature.properties.thickness = null; }
-                            if (currentFeature.properties.style == "solid") { currentFeature.properties.style = null; }
-                            if (currentFeature.properties.bcg == 1) { currentFeature.properties.bcg = null; }
                             currentFeature.geometry.coordinates = coords;
                         }
                     }
                     else
                     {
-                        //var coords = new List<double>() { item.EndLon, item.EndLat };
-
                         if (crossesAM)
                         {
-                            //currentFeature.geometry.coordinates.Add(coords[0]);
-                            currentFeature.geometry.coordinates.Add(coords[1]);
-                            featuresOutput.Add(currentFeature);
-                            currentFeature = new Feature()
-                            {
-                                properties = new Properties()
-                                {
-                                    bcg = lineDefaults.Bcg,
-                                    style = Char.ToLowerInvariant(lineDefaults.Style[0]) + lineDefaults.Style[1..],
-                                    thickness = lineDefaults.Thickness,
-
-                                    color = null,
-                                    zIndex = null,
-                                },
-                                geometry = new Geometry() { type = "LineString" }
-                            };
-                            if (currentFeature.properties.thickness == 1) { currentFeature.properties.thickness = null; }
-                            if (currentFeature.properties.style == "solid") { currentFeature.properties.style = null; }
-                            if (currentFeature.properties.bcg == 1) { currentFeature.properties.bcg = null; }
-                            currentFeature.geometry.coordinates.Add(coords[2]);
-                            currentFeature.geometry.coordinates.Add(coords[3]);
+                            CrossesAM(element, ref currentFeature, ref featuresOutput, coords, true);
                         }
                         else
                         {
-                            currentFeature.geometry.coordinates.Add(coords[1]);
+                            CheckFeatureProperties(element, featuresOutput, prevElement, coords, ref currentFeature);
+                            //currentFeature.geometry.coordinates.Add(coords[1]);
                         }
                     }
                 }
@@ -830,6 +828,18 @@ namespace FeBuddyLibrary.DataAccess
                 return null;
             }
 
+            Properties elem_properties = new Properties();
+
+            if (element.Filters != null && !string.IsNullOrWhiteSpace(element.Filters)) { elem_properties.filters = Array.ConvertAll(element.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty).Split(','), s => int.Parse(s)); }
+            if (element.Style != null) { elem_properties.style = element.Style; }
+            if (element.Bcg != null) { elem_properties.bcg = element.Bcg; }
+            if (element.Size != null) { elem_properties.size = element.Size; }
+            if (element.Underline != null) { elem_properties.underline= element.Underline; }
+            if (element.Opaque != null) { elem_properties.opaque = element.Opaque; }
+            if (element.XOffset != null) { elem_properties.xOffset = element.XOffset; }
+            if (element.YOffset != null) { elem_properties.yOffset = element.YOffset; }
+            elem_properties.text = new string[] { element.Lines };
+
             var output = new Feature()
             {
                 geometry = new Geometry()
@@ -837,35 +847,26 @@ namespace FeBuddyLibrary.DataAccess
                     type = "Point",
                     coordinates = new List<dynamic>() { LatLonHelpers.CorrectIlleagleLon(element.Lon), element.Lat }
                 },
-                properties = new Properties()
-                {
-                    text = new string[] { element.Lines },
-                    bcg = textDefaults.Bcg,
-                    size = textDefaults.Size,
-                    underline = textDefaults.Underline,
-                    opaque = textDefaults.Opaque,
-                    xOffset = textDefaults.XOffset,
-                    yOffset = textDefaults.YOffset,
-                }
+                properties = elem_properties
             };
 
             // CRC Defaults. If any of these are true we don't need to include them in the geojson file.
-            if (output.properties.size == 0) { output.properties.size = null; }
-            if (output.properties.bcg == 1) { output.properties.bcg = null; }
-            if (output.properties.xOffset == 0) { output.properties.xOffset = null; }
-            if (output.properties.yOffset == 0) { output.properties.yOffset = null; }
-            if (output.properties.opaque == false) { output.properties.bcg = null; }
-            if (output.properties.underline == false) { output.properties.bcg = null; }
+            //if (allLines.properties.size == 0) { allLines.properties.size = null; }
+            //if (allLines.properties.bcg == 1) { allLines.properties.bcg = null; }
+            //if (allLines.properties.xOffset == 0) { allLines.properties.xOffset = null; }
+            //if (allLines.properties.yOffset == 0) { allLines.properties.yOffset = null; }
+            //if (allLines.properties.opaque == false) { allLines.properties.bcg = null; }
+            //if (allLines.properties.underline == false) { allLines.properties.bcg = null; }
 
-            try
-            {
-                output.properties.filters = Array.ConvertAll(textDefaults.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty).Split(','), s => int.Parse(s));
+            //try
+            //{
+            //    allLines.properties.filters = Array.ConvertAll(textDefaults.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty).Split(','), s => int.Parse(s));
 
-            }
-            catch (Exception)
-            {
-                output.properties.filters = new int[] { 0 };
-            }
+            //}
+            //catch (Exception)
+            //{
+            //    allLines.properties.filters = new int[] { 0 };
+            //}
             return output;
         }
 
@@ -876,33 +877,39 @@ namespace FeBuddyLibrary.DataAccess
                 return null;
             }
 
+            Properties elem_properties = new Properties();
+
+            if (element.Bcg != null) { elem_properties.bcg = element.Bcg; }
+
+            // Array.ConvertAll(symbolDefaults.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty).Split(','), s => int.Parse(s));
+
+            if (element.Filters != null && !string.IsNullOrWhiteSpace(element.Filters)) { elem_properties.filters = Array.ConvertAll(element.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty).Split(','), s => int.Parse(s)); }
+            if (element.Style != null && !string.IsNullOrWhiteSpace(element.Style)) { elem_properties.style = element.Style; }
+            if (element.Size != null) { elem_properties.size = element.Size; }
+
             var output = new Feature() {
                     geometry = new Geometry()
                     {
                         type = "Point",
                         coordinates = new List<dynamic>() { LatLonHelpers.CorrectIlleagleLon(element.Lon), element.Lat }
                     },
-                    properties = new Properties()
-                    {
-                        style = Char.ToLowerInvariant(symbolDefaults.Style[0]) + symbolDefaults.Style[1..],
-                        size = symbolDefaults.Size,
-                        bcg = symbolDefaults.Bcg,
-                    }};
+                    properties = elem_properties
+                    };
 
             // CRC Defaults. If any of these are true we don't need to include them in the geojson file.
-            if (output.properties.style == "VOR") { output.properties.style = null; }
-            if (output.properties.size == 0) { output.properties.size = null; }
-            if (output.properties.bcg == 1) { output.properties.bcg = null; }
+            //if (allLines.properties.style == "VOR") { allLines.properties.style = null; }
+            //if (allLines.properties.size == 0) { allLines.properties.size = null; }
+            //if (allLines.properties.bcg == 1) { allLines.properties.bcg = null; }
 
-            try
-            {
-                output.properties.filters = Array.ConvertAll(symbolDefaults.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty).Split(','), s => int.Parse(s));
+            //try
+            //{
+            //    allLines.properties.filters = Array.ConvertAll(symbolDefaults.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty).Split(','), s => int.Parse(s));
 
-            }
-            catch (Exception)
-            {
-                output.properties.filters = new int[] { 0 };
-            }
+            //}
+            //catch (Exception)
+            //{
+            //    allLines.properties.filters = new int[] { 0 };
+            //}
             return output;
         }
     }

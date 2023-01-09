@@ -36,5 +36,5 @@ See for more information on future features. [ROADMAP](https://github.com/Nikola
 
 ### REQUIREMENTS
 - Windows OS (8.1 or newer)
-- CUrl (recomended)
+- CUrl (recommended)
 

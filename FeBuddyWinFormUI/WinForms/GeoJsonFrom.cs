@@ -157,6 +157,8 @@ namespace FeBuddyWinFormUI
         }
         private void vEramSelection_CheckedChanged(object sender, EventArgs e)
         {
+            fileOutputFormatLabel.Text = "vERAM Output File Name Format:";
+
             //convertGroupBox.Enabled = false;
             shortNameSelection.Enabled = false;
             longNameSelection.Enabled = false;
@@ -164,11 +166,21 @@ namespace FeBuddyWinFormUI
             shortNameSelection.Visible = false;
             longNameSelection.Visible = false;
             bothSelection.Visible = false;
+
+            seperateGeoJsonOutputButton.Select();
+            seperateGeoJsonOutputButton.Enabled = true;
+            seperateGeoJsonOutputButton.Visible = true;
+            // TODO - Once functionality has been done Be sure to uncomment the line below.
+            //combineLikeGeoMapObjButton.Enabled = true;
+            combineLikeGeoMapObjButton.Visible = true;
         }
 
         private void vStarsSelection_CheckedChanged(object sender, EventArgs e)
         {
             //convertGroupBox.Enabled = true;
+            fileOutputFormatLabel.Text = "vSTARS Output File Name Format";
+
+            shortNameSelection.Select();
             shortNameSelection.Enabled = true;
             longNameSelection.Enabled = true;
             bothSelection.Enabled = true;
@@ -176,6 +188,10 @@ namespace FeBuddyWinFormUI
             longNameSelection.Visible = true;
             bothSelection.Visible = true;
 
+            seperateGeoJsonOutputButton.Enabled = false;
+            seperateGeoJsonOutputButton.Visible = false;
+            combineLikeGeoMapObjButton.Enabled = false;
+            combineLikeGeoMapObjButton.Visible = false;
         }
 
         private void shortNameSelection_CheckedChanged(object sender, EventArgs e)

@@ -13,32 +13,35 @@ The following is a list of features that we are considering or actively working 
 - [ ] AIRAC GeoJSON Output
   - This should be output with AIRAC updates ...\FE-BUDDY_Output\CRC-GeoJSON
     - Then use a folder structure similar to "SECTOR FILES" to organize the output files
-  - [CRC GeoJSON Specs](https://data-admin.virtualnas.net/docs/#/video-maps?id=geojson-specification)
-  - Data Points to Convert:
-    - AIRPORTS SYMBOLS
-    - AIRPORTS TEXT [name/type in the text]
-    - ARTCC BOUNDARIES - High
-    - ARTCC BOUDNARIES - Low
-    - FIXES SYMBOLS
-    - FIXES TEXT
-    - AIRWAYS - Low
-    - AIRWAYS text - Low
-    - AIRWAYS symbols - Low
-    - AIRWAYS - High
-    - AIRWAYS text - High
-    - AIRWAYS symbols - High
-    - WX STATIONS [Point with text properites and the name/type in the text description]
-    - NDB SYMBOL
-    - NDB TEXT
-    - VOR SYMBOLS
-    - VOR TEXT
-    - DPs (individual files and then another file with all combined)
-    - STARSs (individual files and then another file with all combined)
+  - Output files names:
+    - AIRPORTS_symbols
+    - AIRPORTS_text
+    - AIRWAYS-HIGH_lines
+    - AIRWAYS-HIGH_symbols
+    - AIRWAYS-HIGH_text
+    - AIRWAYS-LOW_lines
+    - AIRWAYS-LOW_symbols
+    - AIRWAYS-LOW_text
+    - ARTCC BOUDNARIES-Low_lines
+    - ARTCC BOUNDARIES-High_lines
+    - DPs_lines `individual files and then another file with all combined`
+    - FIXES_symbols
+    - FIXES_text
+    - NDB_symbols
+    - NDB_text
+    - STARSs_lines `individual files and then another file with all combined`
+    - VOR_symbols
+    - VOR_text
+    - WX STATIONS_symbols
+    - WX STATIONS_text
   - Add option for user to decide if they want all the geojsons in one folder to make "vNAS Batch Upload" easier.
 
 ---
 **The following will be completed after a code-rewrite/refactoring of FE-Buddy resulting in version 3.0**
 ---
+
+- [ ] New UI
+  - Utilize WPF
 
 - [ ] Remove VRC AIRAC output features?
   - If after the refactor, holding on to this feature does not take up much development time, keep this feature and offer the user the option to turn off this output. It has been stated that some of the neighbors such as canada use FE-Buddy to updated US data for their files that use SCT2 format.
@@ -54,12 +57,12 @@ The following is a list of features that we are considering or actively working 
 - [ ] AWY Fix/NAVAID Radius cutoff
   -  Refer to issue: https://github.com/Nikolai558/FE-BUDDY/issues/110
 
+- [ ] Limit Airway Lines and other map features to only the selected ARTCC up to about 150 miles (or user defined distance) outside of the ARTCC boundary
+  -  If unable to use the ARTCC Boundary for a reference point, have the user define a coordinate set as the "center" and then define a distance for the cutoff point.
+
 - [ ] FAA GeoMAP (foia requests) converter.
   - [GeoMap converter](https://github.com/justinshannon/geo-map-converter)
     - Word is that the FAA may have changed their format of GeoMaps so this guy's may not work anymore.
-
-- [ ] Limit Airway Lines and other map features to only the selected ARTCC up to about 150 miles (or user defined distance) outside of the ARTCC boundary
-  -  If unable to use the ARTCC Boundary for a reference point, have the user define a coordinate set as the "center" and then define a distance for the cutoff point.
 
 - [ ] Create more resources to complement the vNAS system.
   - This will require more time to see what resources wohld actually be useful.

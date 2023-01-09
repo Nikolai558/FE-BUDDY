@@ -637,7 +637,7 @@ namespace FeBuddyLibrary.DataAccess
 
         public void WriteCombinedGeoMapGeoJson(string dirPath, GeoMapSet geo)
         {
-            throw new NotImplementedException("");
+            //throw new NotImplementedException();
 
             // Store FullFilePath for all defaults we find in the xml. (Line, Text, Symbol Defaults)
             // Eventually this should be a dictionary or another class that stores the file path name and the features.
@@ -657,6 +657,7 @@ namespace FeBuddyLibrary.DataAccess
                     {
                         // figure out how to get new Full file path added to list above
                         // if individual elements have different properties.
+                        CreateProperties(element).ToString();
                     }
                 }
             }
@@ -755,7 +756,7 @@ namespace FeBuddyLibrary.DataAccess
             File.WriteAllText(Path.Combine(dirPath, "GeoMapObject Properties.txt"), geoMapObjectLog.ToString());
         }
 
-        private Properties CheckProperties(Element element)
+        private Properties CreateProperties(Element element)
         {
             Properties elem_properties = new Properties();
 
@@ -763,6 +764,12 @@ namespace FeBuddyLibrary.DataAccess
             if (element.Style != null) { elem_properties.style = element.Style; }
             if (element.Bcg != null) { elem_properties.bcg = element.Bcg; }
             if (element.Thickness != null) { elem_properties.thickness = element.Thickness; }
+            if (element.Size != null) { elem_properties.size = element.Size; }
+            if (element.Underline != null) { elem_properties.underline = element.Underline; }
+            if (element.Opaque != null) { elem_properties.opaque = element.Opaque; }
+            if (element.XOffset != null) { elem_properties.xOffset = element.XOffset; }
+            if (element.YOffset != null) { elem_properties.yOffset = element.YOffset; }
+            if (element.ZIndex != null) { elem_properties.zIndex = element.ZIndex; }
 
             return elem_properties;
         }
@@ -775,13 +782,13 @@ namespace FeBuddyLibrary.DataAccess
                 currentFeature.geometry.coordinates.Add(coords[0]);
             }
             currentFeature.geometry.coordinates.Add(coords[1]);
-            currentFeature.properties = CheckProperties(element);
+            currentFeature.properties = CreateProperties(element);
 
             featuresOutput.Add(currentFeature);
 
             currentFeature = new Feature()
             {
-                properties = CheckProperties(element),
+                properties = CreateProperties(element),
                 geometry = new Geometry() { type = "LineString" }
             };
             currentFeature.geometry.coordinates.Add(coords[2]);
@@ -796,7 +803,7 @@ namespace FeBuddyLibrary.DataAccess
             // combining them into one feature group...
 
             // Properties for Previous and Current DO match (i.e. They are the same!)
-            if (CheckProperties(prevElement).Equals(CheckProperties(element)))
+            if (CreateProperties(prevElement).Equals(CreateProperties(element)))
             {
                 currentFeature.geometry.coordinates.Add(coords[1]);
                 return;
@@ -807,7 +814,7 @@ namespace FeBuddyLibrary.DataAccess
 
             Feature newCurrentFeature = new Feature()
             {
-                properties = CheckProperties(element),
+                properties = CreateProperties(element),
                 geometry = new Geometry() { type = "LineString" }
             };
             newCurrentFeature.geometry.coordinates.Add(coords[0]);
@@ -835,7 +842,7 @@ namespace FeBuddyLibrary.DataAccess
                     }
                     else
                     {
-                        currentFeature.properties = CheckProperties(element);
+                        currentFeature.properties = CreateProperties(element);
                         currentFeature.geometry.coordinates = coords;
                     }
                     prevElement = element;
@@ -853,7 +860,7 @@ namespace FeBuddyLibrary.DataAccess
                                 featuresOutput.Add(currentFeature);
                                 currentFeature = new Feature()
                                 {
-                                    properties = CheckProperties(element),
+                                    properties = CreateProperties(element),
                                     geometry = new Geometry() { type = "LineString" }
                                 };
                             }
@@ -869,7 +876,7 @@ namespace FeBuddyLibrary.DataAccess
 
                             currentFeature = new Feature()
                             {
-                                properties = CheckProperties(element),
+                                properties = CreateProperties(element),
                                 geometry = new Geometry()
                                 {
                                     type = "LineString",

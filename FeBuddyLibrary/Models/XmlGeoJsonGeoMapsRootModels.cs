@@ -164,6 +164,7 @@ namespace FeBuddyLibrary.Models
         public int? YOffset { get; private set; } = null;
         public string Style { get; private set; } = null;
         public int? Thickness { get; private set; } = null;
+        public int? ZIndex { get; private set; } = null;
 
 
         public void ReadXml(XmlReader reader)
@@ -185,6 +186,7 @@ namespace FeBuddyLibrary.Models
             string attr15 = reader.GetAttribute("YOffset");
             string attr16 = reader.GetAttribute("Style");
             string attr17 = reader.GetAttribute("Thickness");
+            string attr18 = reader.GetAttribute("zIndex");
             reader.Read();
 
             XsiType = attr1;
@@ -204,6 +206,7 @@ namespace FeBuddyLibrary.Models
             YOffset = ConvertToNullable<int>(attr15);
             Style = attr16;
             Thickness = ConvertToNullable<int>(attr17);
+            ZIndex = ConvertToNullable<int>(attr18);
 
         }
 

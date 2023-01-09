@@ -295,14 +295,15 @@ namespace FeBuddyWinFormUI
             }
             else if (vEramSelection.Checked)
             {
+                var geo = geoJsonConverter.ReadGeoMap(fullSourceFilePath);
+
                 if (seperateGeoJsonOutputButton.Checked)
                 {
-                    var geo = geoJsonConverter.ReadGeoMap(fullSourceFilePath);
                     geoJsonConverter.WriteGeoMapGeoJson(GlobalConfig.outputDirBase, geo);
                 }
                 else if (combineLikeGeoMapObjButton.Checked)
                 {
-                    throw new NotImplementedException();
+                    geoJsonConverter.WriteCombinedGeoMapGeoJson(GlobalConfig.outputDirBase, geo);
                 }
             }
         }

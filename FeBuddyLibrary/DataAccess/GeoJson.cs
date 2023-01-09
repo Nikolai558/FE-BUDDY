@@ -596,6 +596,75 @@ namespace FeBuddyLibrary.DataAccess
 
         }
 
+        private void createDefaultFileNames(GeoMapObject geoMapObject, string dirPath, ref List<string> fileNames)
+        {
+            string filterDir;
+            string fileName;
+            string fullFilePath;
+
+            if (geoMapObject.LineDefaults != null)
+            {
+                foreach (var filter in Array.ConvertAll(geoMapObject.LineDefaults.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty).Split(','), s => int.Parse(s)))
+                {
+                    filterDir = "FILTER " + filter.ToString().PadLeft(2, '0');
+                    fileName = $"{filterDir}__TDM {geoMapObject.TdmOnly.ToString()[0]}__{geoMapObject.LineDefaults.ToString().Replace(" Defaults: ", "__")}";
+                    fullFilePath = Path.Combine(dirPath, filterDir, fileName + ".geojson");
+
+                    if (!fileNames.Contains(fullFilePath)) { fileNames.Add(fullFilePath); }
+                }
+            }
+            if (geoMapObject.SymbolDefaults != null)
+            {
+                foreach (var filter in Array.ConvertAll(geoMapObject.SymbolDefaults.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty).Split(','), s => int.Parse(s)))
+                {
+                    filterDir = "FILTER " + filter.ToString().PadLeft(2, '0');
+                    fileName = $"{filterDir}__TDM {geoMapObject.TdmOnly.ToString()[0]}__{geoMapObject.SymbolDefaults.ToString().Replace(" Defaults: ", "__")}";
+                    fullFilePath = Path.Combine(dirPath, filterDir, fileName + ".geojson");
+                    if (!fileNames.Contains(fullFilePath)) { fileNames.Add(fullFilePath); }
+                }
+            }
+            if (geoMapObject.TextDefaults != null)
+            {
+                foreach (var filter in Array.ConvertAll(geoMapObject.TextDefaults.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty).Split(','), s => int.Parse(s)))
+                {
+                    filterDir = "FILTER " + filter.ToString().PadLeft(2, '0');
+                    fileName = $"{filterDir}__TDM {geoMapObject.TdmOnly.ToString()[0]}__{geoMapObject.TextDefaults.ToString().Replace(" Defaults: ", "__")}";
+                    fullFilePath = Path.Combine(dirPath, filterDir, fileName + ".geojson");
+                    if (!fileNames.Contains(fullFilePath)) { fileNames.Add(fullFilePath); }
+                }
+            }
+        }
+
+        public void WriteCombinedGeoMapGeoJson(string dirPath, GeoMapSet geo)
+        {
+            List<string> fileNames = new List<string>();
+
+            foreach (GeoMap geoMap in geo.GeoMaps.GeoMap)
+            {
+                string geoMapDir = Path.Combine(dirPath, MakeValidFileName(geoMap.Name));
+
+                foreach (GeoMapObject geoMapObject in geoMap.Objects.GeoMapObject)
+                {
+                    createDefaultFileNames(geoMapObject, dirPath, ref fileNames);
+
+                    foreach (Element element in geoMapObject.Elements.Element)
+                    {
+
+                    }
+                }
+            }
+
+
+            foreach (string fullFilePath in fileNames)
+            {
+                FileInfo file = new FileInfo(fullFilePath);
+                file.Directory.Create(); // If the directory already exists, this method does nothing.
+                File.WriteAllText(fullFilePath, "TEST");
+            }
+
+            //throw new NotImplementedException("");
+        }
+
         public void WriteGeoMapGeoJson(string dirPath, GeoMapSet geo)
         {
             StringBuilder geoMapObjectLog = new StringBuilder();

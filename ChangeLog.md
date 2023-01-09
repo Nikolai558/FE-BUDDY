@@ -1,6 +1,28 @@
 # CHANGELOG
 
 ---
+- ## Version 2.3.7
+  - High and Low AWY Geomap default line style changed to Solid.
+  - Roadmap and Credit buttons link changed to GitHub Development Branch.
+  - GeoMapObject-GeoJSON feature now includes a log “GeoMapObjects Properties.txt”
+  that lists all of the default values for the user to more easily manage the update
+  to the vNAS website.
+  - Fixed an issue where FE-Buddy GeoJSON outputs from vERAM 
+  conversions included certain properties from the element 
+  “defaults” such as Line Thickess, Filter assignments, etc... 
+  This resulted in the GeoJSON properties overriding what the 
+  user input as the defaults in the vNAS Admin site. Now, the 
+  only time the converter will include the default properties 
+  in the GeoJSON is when the individual element has overriding 
+  properties within the element line from the .xml.
+    - Note: If you have already done the work to convert your 
+    files, upload, and set the vNAS default properties, you can 
+    use FE-Buddy to do the conversions again and you only need 
+    to ensure the file names match what is already on the vNAS 
+    site and use the “Batch Upload” feature of the vNAS site. 
+    This will ensure you don't have to set the default properties 
+    again in the vNAS site.
+
 - ## Version 2.3.6
   -  Fixed #105 T and J Airways not in [HIGH AIRWAY].txt file.
   - Note for FE's:

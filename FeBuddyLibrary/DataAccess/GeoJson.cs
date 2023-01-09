@@ -637,7 +637,13 @@ namespace FeBuddyLibrary.DataAccess
 
         public void WriteCombinedGeoMapGeoJson(string dirPath, GeoMapSet geo)
         {
+            throw new NotImplementedException("");
+
+            // Store FullFilePath for all defaults we find in the xml. (Line, Text, Symbol Defaults)
+            // Eventually this should be a dictionary or another class that stores the file path name and the features.
+            // the collection "name" will be the file path.
             List<string> fileNames = new List<string>();
+
 
             foreach (GeoMap geoMap in geo.GeoMaps.GeoMap)
             {
@@ -649,20 +655,21 @@ namespace FeBuddyLibrary.DataAccess
 
                     foreach (Element element in geoMapObject.Elements.Element)
                     {
-
+                        // figure out how to get new Full file path added to list above
+                        // if individual elements have different properties.
                     }
                 }
             }
 
-
+            // ---------------------------------------------- TESTING CODE -----------------------------
             foreach (string fullFilePath in fileNames)
             {
                 FileInfo file = new FileInfo(fullFilePath);
                 file.Directory.Create(); // If the directory already exists, this method does nothing.
                 File.WriteAllText(fullFilePath, "TEST");
             }
+            // ---------------------------------------------- END TESTING CODE --------------------------
 
-            //throw new NotImplementedException("");
         }
 
         public void WriteGeoMapGeoJson(string dirPath, GeoMapSet geo)

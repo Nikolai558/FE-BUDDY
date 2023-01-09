@@ -13,27 +13,27 @@ The following is a list of features that we are considering or actively working 
 - [ ] AIRAC GeoJSON Output
   - This should be output with AIRAC updates ...\FE-BUDDY_Output\CRC-GeoJSON
     - Then use a folder structure similar to "SECTOR FILES" to organize the output files
-  - Output files:
-    - AIRPORTS_symbols.geojson
-    - AIRPORTS_text.geojson [id/name/type in the text]
-    - ARTCC BOUNDARIES - High_lines.geojson
-    - ARTCC BOUDNARIES - Low_lines.geojson
-    - FIXES_symbols.geojson
-    - FIXES_text.geojson
-    - AIRWAYS - Low_lines.geojson
-    - AIRWAYS - Low_text.geojson
-    - AIRWAYS - Low_symbols.geojson
-    - AIRWAYS - High_lines.geojson
-    - AIRWAYS - High_text.geojson
-    - AIRWAYS - High_symbols.geojson
-    - WX STATIONS_symbols.geojson
-    - WX STATIONS_text.geojson [id/name in the text description]
-    - NDB_symbols.geojson
-    - NDB_text.geojson
-    - VOR_symbols.geojson
-    - VOR_text.geojson
-    - DPs_lines.geojson (individual files and then another file with all combined)
-    - STARSs_lines.geojson (individual files and then another file with all combined)
+  - Output files names:
+    - AIRPORTS_symbols
+    - AIRPORTS_text
+    - ARTCC BOUNDARIES-High_lines
+    - ARTCC BOUDNARIES-Low_lines
+    - FIXES_symbols
+    - FIXES_text
+    - AIRWAYS-LOW_lines
+    - AIRWAYS-LOW_text
+    - AIRWAYS-LOW_symbols
+    - AIRWAYS-HIGH_lines
+    - AIRWAYS-HIGH_text
+    - AIRWAYS-HIGH_symbols
+    - WX STATIONS_symbols
+    - WX STATIONS_text
+    - NDB_symbols
+    - NDB_text
+    - VOR_symbols
+    - VOR_text
+    - DPs_lines `individual files and then another file with all combined`
+    - STARSs_lines `individual files and then another file with all combined`
   - Add option for user to decide if they want all the geojsons in one folder to make "vNAS Batch Upload" easier.
 
 ---

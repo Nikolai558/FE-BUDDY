@@ -11,6 +11,7 @@ using Newtonsoft.Json;
 using FeBuddyLibrary.Helpers;
 using FeBuddyLibrary.Dat;
 using System.Windows.Forms;
+using System.Reflection;
 
 namespace FeBuddyLibrary.DataAccess
 {
@@ -644,7 +645,7 @@ namespace FeBuddyLibrary.DataAccess
 
                     if (AllLines.Count() > 0)
                     {
-                        foreach (var item in CreateLineFeature(AllLines, geoMapObject.LineDefaults))
+                        foreach (var item in CreateLineFeature(AllLines))
                         {
                             if (item != null)
                             {
@@ -698,16 +699,35 @@ namespace FeBuddyLibrary.DataAccess
             currentFeature.geometry.coordinates.Add(coords[3]);
         }
 
+        private void CheckFeatureProperties(Element element, List<Feature> featuresOutput, Element prevElement, List<dynamic> coords, ref Feature currentFeature)
+        {
+            // This function takes in the current feature and the previous feature.
+            // if the Start Coords match the End Coords of the previous feature BUT
+            // the properties are DIFFERENT we need to Split the features instead of
+            // combining them into one feature group...
+
+            // Properties for Previous and Current DO match (i.e. They are the same!)
+            if (CheckProperties(prevElement).Equals(CheckProperties(element)))
+            {
+                currentFeature.geometry.coordinates.Add(coords[1]);
+                return;
+            }
+
+            // Properties are different - Filters, Bcg, Size, and/or Thickness, etc.
+            featuresOutput.Add(currentFeature);
+
+            Feature newCurrentFeature = new Feature()
+            {
+                properties = CheckProperties(element),
+                geometry = new Geometry() { type = "LineString" }
+            };
+            newCurrentFeature.geometry.coordinates.Add(coords[0]);
+            newCurrentFeature.geometry.coordinates.Add(coords[1]);
+            currentFeature = newCurrentFeature;
+        }
+
         private List<Feature> CreateLineFeature(List<Element> elements)
         {
-            // TODO - Need to address this in some way!! 
-            // Properties in geojson not behaving correctly... If a line feature "Polygon" has more than two coords,
-            // and the xml file has different properties for each start end coords,
-            // the geojson file only keeps the property for the last (or first) set of start end coords...
-            // If we come accross a "polygon" ie start lat matches end lat of previous BUT the 
-            // property values are different we need to split it up into seperate features.....
-            // Meaning we need to remember the "End lat/lon" and make it the "Start lat lon" for where we split the feature.
-
             List<Feature> featuresOutput = new List<Feature>();
             Element prevElement = null;
             Feature currentFeature = new Feature() { geometry = new Geometry() { type = "LineString" }};
@@ -777,7 +797,8 @@ namespace FeBuddyLibrary.DataAccess
                         }
                         else
                         {
-                            currentFeature.geometry.coordinates.Add(coords[1]);
+                            CheckFeatureProperties(element, featuresOutput, prevElement, coords, ref currentFeature);
+                            //currentFeature.geometry.coordinates.Add(coords[1]);
                         }
                     }
                 }

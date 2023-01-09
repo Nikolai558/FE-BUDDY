@@ -59,5 +59,24 @@ namespace FeBuddyLibrary.Models
         public int? xOffset { get; set; } = null;
         // [Text]
         public int? yOffset { get; set; } = null;
+
+        public override bool Equals(object obj)
+        {
+            var other = obj as Properties;
+            if (other == null) return false;
+
+            if (color != other.color || bcg != other.bcg ||
+                filters != other.filters || zIndex != other.zIndex ||
+                style != other.style || thickness != other.thickness ||
+                asdex != other.asdex || size != other.size ||
+                text != other.text || underline != other.underline ||
+                opaque != other.opaque || xOffset != other.xOffset ||
+                yOffset != other.yOffset)
+            {
+                return false;
+            }
+
+            return true;
+        }
     }
 }

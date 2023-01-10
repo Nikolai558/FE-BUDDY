@@ -104,12 +104,12 @@
             // 
             this.airacLabel.Font = new System.Drawing.Font("Segoe UI", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.airacLabel.ForeColor = System.Drawing.SystemColors.AppWorkspace;
-            this.airacLabel.Location = new System.Drawing.Point(1, 29);
+            this.airacLabel.Location = new System.Drawing.Point(49, 29);
             this.airacLabel.Margin = new System.Windows.Forms.Padding(6, 0, 6, 0);
             this.airacLabel.Name = "airacLabel";
-            this.airacLabel.Size = new System.Drawing.Size(450, 25);
+            this.airacLabel.Size = new System.Drawing.Size(354, 25);
             this.airacLabel.TabIndex = 2;
-            this.airacLabel.Text = "Select an AIRAC Cycle by Effective Date";
+            this.airacLabel.Text = "Select an AIRAC Cycle";
             this.airacLabel.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
             // facilityIDLabel

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
@@ -60,6 +61,23 @@ namespace FeBuddyLibrary.Models
         public int? xOffset { get; set; } = null;
         // [Text]
         public int? yOffset { get; set; } = null;
+
+        public override string ToString()
+        {
+            StringBuilder sb = new StringBuilder();
+            if (bcg!=null) sb.Append("__BCG " + bcg.ToString());
+            if (filters!=null) sb.Append("__Filters " + string.Join(",", filters));
+            if (size!=null) sb.Append("__Size " + size.ToString());
+            if (underline!=null) sb.Append("__Underline " + underline.ToString());
+            if (opaque!=null) sb.Append("__Opaque " + opaque.ToString());
+            if (xOffset!=null) sb.Append("__XOffset " + xOffset.ToString());
+            if (yOffset!=null) sb.Append("__YOffset " + yOffset.ToString());
+            if (zIndex != null) sb.Append("__ZIndex " + zIndex.ToString());
+            if (style != null && !string.IsNullOrEmpty(style) && !string.IsNullOrWhiteSpace(style)) sb.Append("__Style " + style);
+            if (thickness != null) sb.Append("__Thickness " + thickness.ToString());
+
+            return sb.ToString();
+    }
 
         public override bool Equals(object obj)
         {

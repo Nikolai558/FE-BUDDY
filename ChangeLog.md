@@ -1,6 +1,12 @@
 # CHANGELOG
 
 ---
+- ## Version 2.4.0
+  - AIRAC Date selection now displays the AIRAC Cycle number
+  - vERAM-to-GeoJSON now allows the user to select an option
+  to have all elements with identical attributes to be grouped
+  together into the same GeoJSON file.
+
 - ## Version 2.3.7
   - High and Low AWY Geomap default line style changed to Solid.
   - Roadmap and Credit buttons link changed to GitHub Development Branch.

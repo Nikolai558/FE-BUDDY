@@ -22,7 +22,9 @@ namespace FeBuddyWinFormUI
         private string fullSourceFilePath;
         private string videoMapFolderName;
         private VideoMapFileFormat videoMapFileFormat = VideoMapFileFormat.shortName;
-        
+        private ToolTip _toolTip;
+
+
         public GeoJsonForm(string currentVersion)
         {
             Logger.LogMessage("DEBUG", "INITIALIZING COMPONENT");
@@ -30,6 +32,8 @@ namespace FeBuddyWinFormUI
 
             InitializeComponent();
             menuStrip.Renderer = new MyRenderer();
+            
+            _toolTip = new ToolTip();
 
             // It should grab from the assembily info. 
             this.Text = $"FE-BUDDY - V{currentVersion}";
@@ -157,12 +161,42 @@ namespace FeBuddyWinFormUI
         }
         private void vEramSelection_CheckedChanged(object sender, EventArgs e)
         {
-            convertGroupBox.Enabled = false;
+
+            fileOutputFormatLabel.Text = "vERAM Output File Name Format:";
+
+            //convertGroupBox.Enabled = false;
+            shortNameSelection.Enabled = false;
+            longNameSelection.Enabled = false;
+            bothSelection.Enabled = false;
+            shortNameSelection.Visible = false;
+            longNameSelection.Visible = false;
+            bothSelection.Visible = false;
+
+            seperateGeoJsonOutputButton.Select();
+            seperateGeoJsonOutputButton.Enabled = true;
+            seperateGeoJsonOutputButton.Visible = true;
+            // TODO - Once functionality has been done Be sure to uncomment the line below.
+            combineLikeGeoMapObjButton.Enabled = true;
+            combineLikeGeoMapObjButton.Visible = true;
         }
 
         private void vStarsSelection_CheckedChanged(object sender, EventArgs e)
         {
-            convertGroupBox.Enabled = true;
+            //convertGroupBox.Enabled = true;
+            fileOutputFormatLabel.Text = "vSTARS Output File Name Format";
+
+            shortNameSelection.Select();
+            shortNameSelection.Enabled = true;
+            longNameSelection.Enabled = true;
+            bothSelection.Enabled = true;
+            shortNameSelection.Visible = true;
+            longNameSelection.Visible = true;
+            bothSelection.Visible = true;
+
+            seperateGeoJsonOutputButton.Enabled = false;
+            seperateGeoJsonOutputButton.Visible = false;
+            combineLikeGeoMapObjButton.Enabled = false;
+            combineLikeGeoMapObjButton.Visible = false;
         }
 
         private void shortNameSelection_CheckedChanged(object sender, EventArgs e)
@@ -262,7 +296,15 @@ namespace FeBuddyWinFormUI
             else if (vEramSelection.Checked)
             {
                 var geo = geoJsonConverter.ReadGeoMap(fullSourceFilePath);
-                geoJsonConverter.WriteGeoMapGeoJson(GlobalConfig.outputDirBase, geo);
+
+                if (seperateGeoJsonOutputButton.Checked)
+                {
+                    geoJsonConverter.WriteGeoMapGeoJson(GlobalConfig.outputDirBase, geo);
+                }
+                else if (combineLikeGeoMapObjButton.Checked)
+                {
+                    geoJsonConverter.WriteCombinedGeoMapGeoJson(GlobalConfig.outputDirBase, geo);
+                }
             }
         }
 
@@ -535,6 +577,15 @@ namespace FeBuddyWinFormUI
             //Process.Start("https://github.com/Nikolai558/FE-BUDDY/wiki#news");
         }
 
-        
+        private void seperateGeoJsonOutputButton_MouseHover(object sender, EventArgs e)
+        {
+            _toolTip.SetToolTip(seperateGeoJsonOutputButton, "Example:\n\n3nm RINGS.geojson\r\nAIRPORT TEXT.geojson\r\nALL ZLC SECTORS.geojson\r\nAPPROACH CONTROL.geojson");
+
+        }
+
+        private void combineLikeGeoMapObjButton_MouseHover(object sender, EventArgs e)
+        {
+            _toolTip.SetToolTip(combineLikeGeoMapObjButton, "Example:\n\nFILTER 13___LINES___TDM F___BCG 11___Style Solid___Thickness 1.geojson\r\nFILTER 08___TEXT___TDM F___BCG 8___Size 1___Underline false___Opaque true___XOffset 0___YOffset 0.geojson");
+        }
     }
 }

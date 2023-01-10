@@ -95,14 +95,14 @@ namespace FeBuddyWinFormUI
 
         private void CurrentAiracSelection_CheckedChanged(object sender, EventArgs e)
         {
-            currentAiracSelection.Text = GlobalConfig.currentAiracDate;
-            nextAiracSelection.Text = GlobalConfig.nextAiracDate;
+            currentAiracSelection.Text = AiracDateCycleModel.AllCycleDates[GlobalConfig.currentAiracDate] + " (" + GlobalConfig.currentAiracDate + ")";
+            nextAiracSelection.Text = AiracDateCycleModel.AllCycleDates[GlobalConfig.nextAiracDate] + " (" + GlobalConfig.nextAiracDate + ")";
         }
 
         private void NextAiracSelection_CheckedChanged(object sender, EventArgs e)
         {
-            currentAiracSelection.Text = GlobalConfig.currentAiracDate;
-            nextAiracSelection.Text = GlobalConfig.nextAiracDate;
+            currentAiracSelection.Text = AiracDateCycleModel.AllCycleDates[GlobalConfig.currentAiracDate] + " (" + GlobalConfig.currentAiracDate + ")";
+            nextAiracSelection.Text = AiracDateCycleModel.AllCycleDates[GlobalConfig.nextAiracDate] + " (" + GlobalConfig.nextAiracDate + ")";
         }
 
         private void ChooseDirButton_Click(object sender, EventArgs e)
@@ -297,13 +297,13 @@ namespace FeBuddyWinFormUI
             {
                 Logger.LogMessage("DEBUG", "CURRENT AIRAC IS SELECTED");
 
-                GlobalConfig.airacEffectiveDate = currentAiracSelection.Text;
+                GlobalConfig.airacEffectiveDate = currentAiracSelection.Text.Split('\n')[1];
             }
             else if (nextAiracSelection.Checked)
             {
                 Logger.LogMessage("DEBUG", "NEXT AIRAC IS SELECTED");
 
-                GlobalConfig.airacEffectiveDate = nextAiracSelection.Text;
+                GlobalConfig.airacEffectiveDate = nextAiracSelection.Text.Split('\n')[1];
             }
 
             SetControlPropertyThreadSafe(processingDataLabel, "Text", "Downloading FAA Data");
@@ -456,8 +456,8 @@ namespace FeBuddyWinFormUI
                     MessageBoxButtons.OK);
             }
 
-            currentAiracSelection.Text = GlobalConfig.currentAiracDate;
-            nextAiracSelection.Text = GlobalConfig.nextAiracDate;
+            currentAiracSelection.Text = AiracDateCycleModel.AllCycleDates[GlobalConfig.currentAiracDate] + " (" + GlobalConfig.currentAiracDate + ")";
+            nextAiracSelection.Text = AiracDateCycleModel.AllCycleDates[GlobalConfig.nextAiracDate] + " (" + GlobalConfig.nextAiracDate + ")";
 
             processingGroupBox.Visible = false;
             processingGroupBox.Enabled = false;

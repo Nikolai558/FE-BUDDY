@@ -13,6 +13,7 @@ using FeBuddyLibrary.Dat;
 using System.Windows.Forms;
 using System.Reflection;
 using System.Text.RegularExpressions;
+using System.Security.Cryptography;
 
 namespace FeBuddyLibrary.DataAccess
 {
@@ -597,14 +598,19 @@ namespace FeBuddyLibrary.DataAccess
 
         }
 
-        private int[] getFilters(GeoMapObject geoMapObject)
+        private int[] getFilters(GeoMapObject geoMapObject, string xsiType)
         {
             List<int> filters = new List<int>();
             string filtersString = "";
 
-            if (geoMapObject.LineDefaults != null) filtersString += "," + geoMapObject.LineDefaults.Filters;
-            if (geoMapObject.SymbolDefaults != null) filtersString += "," + geoMapObject.SymbolDefaults.Filters;
-            if (geoMapObject.TextDefaults != null) filtersString += "," + geoMapObject.TextDefaults.Filters;
+            switch (xsiType)
+            {
+                case "Line": { if (geoMapObject.LineDefaults != null) filtersString += "," + geoMapObject.LineDefaults.Filters; break; }
+                case "Symbol": { if (geoMapObject.SymbolDefaults != null) filtersString += "," + geoMapObject.SymbolDefaults.Filters; break;}
+                case "Text": { if (geoMapObject.TextDefaults != null) filtersString += "," + geoMapObject.TextDefaults.Filters; break;}
+                default:
+                    break;
+            }
 
             foreach (string filter in filtersString.Replace(" ", string.Empty).Replace("\t", string.Empty).Split(','))
             {
@@ -663,6 +669,8 @@ namespace FeBuddyLibrary.DataAccess
 
         private string CombineProperties(string defaultProperties, string overridenProperties) 
         {
+            defaultProperties += "__";
+
             string output = defaultProperties;
 
             if (overridenProperties.Contains("__"))
@@ -670,10 +678,16 @@ namespace FeBuddyLibrary.DataAccess
                 List<string> ovPropertiesList = overridenProperties.Split("__").ToList();
                 foreach (var prop in ovPropertiesList)
                 {
-                    Regex regex= new Regex($"_({prop}[\\s\\S]*?.)[_|.]");
+                    if (prop == "") continue;
+                    Regex regex= new Regex($"_({prop.Split(' ')[0]}[\\s\\S]*?.)[_|.]");
                     var matches = regex.Match(output).Groups[0].ToString();
-                    regex.Replace(output, matches);
+                    output = regex.Replace(output, "_" + prop + "_");
                 }
+            }
+
+            if (output == "__")
+            {
+                output += "MISSING DEFAULTS";
             }
 
             return output;
@@ -690,7 +704,6 @@ namespace FeBuddyLibrary.DataAccess
             string fullFilePath;
 
 
-            // if these are null it will skip over the features all together....
             switch (element.XsiType)
             {
                 case "Line": { defaultProperties = geoMapObject.LineDefaults?.ToString().Replace("Line Defaults: ", "__"); break; }
@@ -698,18 +711,24 @@ namespace FeBuddyLibrary.DataAccess
                 case "Text": { defaultProperties = geoMapObject.TextDefaults?.ToString().Replace("Text Defaults: ", "__"); break; }
             }
 
-            if (geoMapObject.TextDefaults == null && element.XsiType == "Text")
-            {
-                string stop = "STOP";
-            }
-
             string combinedProperties = CombineProperties(defaultProperties, overrideProperties);
 
 
             if (string.IsNullOrEmpty(element.Filters) || string.IsNullOrWhiteSpace(element.Filters))
             {
-                foreach (var defaultFilters in getFilters(geoMapObject))
+                var defaultFiltersList = getFilters(geoMapObject, element.XsiType);
+                if (defaultFiltersList.Length == 0) { defaultFiltersList = defaultFiltersList.Append(-1).ToArray(); }
+                foreach (var defaultFilters in defaultFiltersList)
                 {
+                    if (defaultFilters == -1)
+                    {
+                        filterDir = "MISSING DEFAULTS";
+                        fileName = $"FILTER MM__TDM {geoMapObject.TdmOnly.ToString()[0]}__{element.XsiType}{combinedProperties}";
+                        fullFilePath = Path.Combine(dirPath, filterDir, fileName + ".geojson");
+                        if (!output.Contains(fullFilePath)) { output.Add(fullFilePath); }
+                        continue;
+                    }
+
                     filterDir = "FILTER " + defaultFilters.ToString().PadLeft(2, '0');
                     fileName = $"FILTER {defaultFilters.ToString().PadLeft(2, '0')}__TDM {geoMapObject.TdmOnly.ToString()[0]}__{element.XsiType}{combinedProperties}";
                     fullFilePath = Path.Combine(dirPath, filterDir, fileName + ".geojson");

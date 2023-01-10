@@ -75,7 +75,7 @@
             this.currentAiracSelection.Checked = true;
             this.currentAiracSelection.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.currentAiracSelection.ForeColor = System.Drawing.SystemColors.AppWorkspace;
-            this.currentAiracSelection.Location = new System.Drawing.Point(91, 68);
+            this.currentAiracSelection.Location = new System.Drawing.Point(53, 68);
             this.currentAiracSelection.Margin = new System.Windows.Forms.Padding(6, 7, 6, 7);
             this.currentAiracSelection.Name = "currentAiracSelection";
             this.currentAiracSelection.Size = new System.Drawing.Size(129, 25);
@@ -90,7 +90,7 @@
             this.nextAiracSelection.AutoSize = true;
             this.nextAiracSelection.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.nextAiracSelection.ForeColor = System.Drawing.SystemColors.AppWorkspace;
-            this.nextAiracSelection.Location = new System.Drawing.Point(232, 68);
+            this.nextAiracSelection.Location = new System.Drawing.Point(238, 68);
             this.nextAiracSelection.Margin = new System.Windows.Forms.Padding(6, 7, 6, 7);
             this.nextAiracSelection.Name = "nextAiracSelection";
             this.nextAiracSelection.Size = new System.Drawing.Size(108, 25);
@@ -358,7 +358,7 @@
             this.settingsToolStripMenuItem});
             this.menuStrip.Location = new System.Drawing.Point(0, 0);
             this.menuStrip.Name = "menuStrip";
-            this.menuStrip.Size = new System.Drawing.Size(784, 26);
+            this.menuStrip.Size = new System.Drawing.Size(784, 28);
             this.menuStrip.TabIndex = 16;
             this.menuStrip.Text = "menuStrip1";
             // 
@@ -371,10 +371,10 @@
             this.FAQMenuItem,
             this.ChangeLogMenuItem,
             this.CreditsMenuItem});
-            this.informationToolStripMenuItem.Font = new System.Drawing.Font("Romantic", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.informationToolStripMenuItem.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.informationToolStripMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.informationToolStripMenuItem.Name = "informationToolStripMenuItem";
-            this.informationToolStripMenuItem.Size = new System.Drawing.Size(94, 22);
+            this.informationToolStripMenuItem.Size = new System.Drawing.Size(102, 24);
             this.informationToolStripMenuItem.Text = "Information";
             // 
             // InstructionsMenuItem
@@ -384,7 +384,7 @@
             this.InstructionsMenuItem.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
             this.InstructionsMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.InstructionsMenuItem.Name = "InstructionsMenuItem";
-            this.InstructionsMenuItem.Size = new System.Drawing.Size(155, 22);
+            this.InstructionsMenuItem.Size = new System.Drawing.Size(165, 24);
             this.InstructionsMenuItem.Text = "Instructions";
             this.InstructionsMenuItem.Click += new System.EventHandler(this.InstructionsMenuItem_Click);
             // 
@@ -395,7 +395,7 @@
             this.RoadmapMenuItem.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
             this.RoadmapMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.RoadmapMenuItem.Name = "RoadmapMenuItem";
-            this.RoadmapMenuItem.Size = new System.Drawing.Size(155, 22);
+            this.RoadmapMenuItem.Size = new System.Drawing.Size(165, 24);
             this.RoadmapMenuItem.Text = "Roadmap";
             this.RoadmapMenuItem.Click += new System.EventHandler(this.RoadmapMenuItem_Click);
             // 
@@ -406,7 +406,7 @@
             this.FAQMenuItem.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
             this.FAQMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.FAQMenuItem.Name = "FAQMenuItem";
-            this.FAQMenuItem.Size = new System.Drawing.Size(155, 22);
+            this.FAQMenuItem.Size = new System.Drawing.Size(165, 24);
             this.FAQMenuItem.Text = "FAQ";
             this.FAQMenuItem.Click += new System.EventHandler(this.FAQMenuItem_Click);
             // 
@@ -417,7 +417,7 @@
             this.ChangeLogMenuItem.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
             this.ChangeLogMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.ChangeLogMenuItem.Name = "ChangeLogMenuItem";
-            this.ChangeLogMenuItem.Size = new System.Drawing.Size(155, 22);
+            this.ChangeLogMenuItem.Size = new System.Drawing.Size(165, 24);
             this.ChangeLogMenuItem.Text = "Change Log";
             this.ChangeLogMenuItem.Click += new System.EventHandler(this.ChangeLogMenuItem_Click);
             // 
@@ -428,34 +428,34 @@
             this.CreditsMenuItem.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
             this.CreditsMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.CreditsMenuItem.Name = "CreditsMenuItem";
-            this.CreditsMenuItem.Size = new System.Drawing.Size(155, 22);
+            this.CreditsMenuItem.Size = new System.Drawing.Size(165, 24);
             this.CreditsMenuItem.Text = "Credits";
             this.CreditsMenuItem.Click += new System.EventHandler(this.CreditsMenuItem_Click);
             // 
             // discordToolStripMenuItem
             // 
-            this.discordToolStripMenuItem.Font = new System.Drawing.Font("Romantic", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.discordToolStripMenuItem.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.discordToolStripMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.discordToolStripMenuItem.Name = "discordToolStripMenuItem";
-            this.discordToolStripMenuItem.Size = new System.Drawing.Size(70, 22);
+            this.discordToolStripMenuItem.Size = new System.Drawing.Size(75, 24);
             this.discordToolStripMenuItem.Text = "Discord";
             this.discordToolStripMenuItem.Click += new System.EventHandler(this.discordToolStripMenuItem_Click);
             // 
             // reportIssuesToolStripMenuItem
             // 
-            this.reportIssuesToolStripMenuItem.Font = new System.Drawing.Font("Romantic", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.reportIssuesToolStripMenuItem.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.reportIssuesToolStripMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.reportIssuesToolStripMenuItem.Name = "reportIssuesToolStripMenuItem";
-            this.reportIssuesToolStripMenuItem.Size = new System.Drawing.Size(105, 22);
+            this.reportIssuesToolStripMenuItem.Size = new System.Drawing.Size(121, 24);
             this.reportIssuesToolStripMenuItem.Text = "Report Issues";
             this.reportIssuesToolStripMenuItem.Click += new System.EventHandler(this.reportIssuesToolStripMenuItem_Click);
             // 
             // newsToolStripMenuItem
             // 
-            this.newsToolStripMenuItem.Font = new System.Drawing.Font("Romantic", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.newsToolStripMenuItem.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.newsToolStripMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.newsToolStripMenuItem.Name = "newsToolStripMenuItem";
-            this.newsToolStripMenuItem.Size = new System.Drawing.Size(57, 22);
+            this.newsToolStripMenuItem.Size = new System.Drawing.Size(60, 24);
             this.newsToolStripMenuItem.Text = "News";
             this.newsToolStripMenuItem.Click += new System.EventHandler(this.newsToolStripMenuItem_Click);
             // 
@@ -465,10 +465,10 @@
             this.settingsToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.allowBetaMenuItem,
             this.UninstallMenuItem});
-            this.settingsToolStripMenuItem.Font = new System.Drawing.Font("Romantic", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.settingsToolStripMenuItem.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.settingsToolStripMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.settingsToolStripMenuItem.Name = "settingsToolStripMenuItem";
-            this.settingsToolStripMenuItem.Size = new System.Drawing.Size(70, 22);
+            this.settingsToolStripMenuItem.Size = new System.Drawing.Size(80, 24);
             this.settingsToolStripMenuItem.Text = "Settings";
             // 
             // allowBetaMenuItem
@@ -478,7 +478,7 @@
             this.allowBetaMenuItem.Enabled = false;
             this.allowBetaMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.allowBetaMenuItem.Name = "allowBetaMenuItem";
-            this.allowBetaMenuItem.Size = new System.Drawing.Size(195, 22);
+            this.allowBetaMenuItem.Size = new System.Drawing.Size(206, 24);
             this.allowBetaMenuItem.Text = "Dev Testing Mode";
             this.allowBetaMenuItem.Visible = false;
             this.allowBetaMenuItem.Click += new System.EventHandler(this.allowBetaMenuItem_Click);
@@ -489,7 +489,7 @@
             this.UninstallMenuItem.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
             this.UninstallMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
             this.UninstallMenuItem.Name = "UninstallMenuItem";
-            this.UninstallMenuItem.Size = new System.Drawing.Size(195, 22);
+            this.UninstallMenuItem.Size = new System.Drawing.Size(206, 24);
             this.UninstallMenuItem.Text = "Uninstall";
             this.UninstallMenuItem.Click += new System.EventHandler(this.UninstallMenuItem_Click);
             // 

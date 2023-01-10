@@ -753,27 +753,20 @@ namespace FeBuddyLibrary.DataAccess
         {
             //throw new NotImplementedException();
 
-            // Store FullFilePath for all defaults we find in the xml. (Line, Text, Symbol Defaults)
-            // Eventually this should be a dictionary or another class that stores the file path name and the features.
-            // the collection "name" will be the file path.
-            List<string> fileNames = new List<string>();
+            StringBuilder geoMapObjectLog = new StringBuilder();
 
             Dictionary<string, FeatureCollection> FileFeatures = new Dictionary<string, FeatureCollection>();
 
-            //StringBuilder geoMapObjectLog = new StringBuilder();
-
+            Dictionary<string, Dictionary<string, List<string>>> LogDictionary = new Dictionary<string, Dictionary<string, List<string>>>(); 
 
             foreach (GeoMap geoMap in geo.GeoMaps.GeoMap)
             {
-                //geoMapObjectLog.AppendLine($"\n\n-------------------------------------------------------------------------------------------------------------------------------------------------\n\n");
-                //geoMapObjectLog.AppendLine($"{geoMap.Name}");
+                LogDictionary.TryAdd(geoMap.Name, new Dictionary<string, List<string>>());
 
                 string geoMapDir = Path.Combine(dirPath, MakeValidFileName(geoMap.Name));
 
                 foreach (GeoMapObject geoMapObject in geoMap.Objects.GeoMapObject)
                 {
-                    var defaultFilePaths = createDefaultFileNames(geoMapObject, geoMapDir);
-
                     Dictionary<string, List<Element>> AllLines = new Dictionary<string, List<Element>>();
                     foreach (Element element in geoMapObject.Elements.Element)
                     {
@@ -782,6 +775,12 @@ namespace FeBuddyLibrary.DataAccess
                         var elementFilePaths = CreateElementFileNames(geoMapObject, geoMapDir, element);
                         foreach (var elementFilePath in elementFilePaths)
                         {
+                            LogDictionary[geoMap.Name].TryAdd(elementFilePath, new List<string>());
+                            if (!LogDictionary[geoMap.Name][elementFilePath].Contains(geoMapObject.Description))
+                            {
+                                LogDictionary[geoMap.Name][elementFilePath].Add(geoMapObject.Description);
+                            }
+
                             FileFeatures.TryAdd(elementFilePath, new FeatureCollection());
                             switch (element.XsiType)
                             {
@@ -828,7 +827,6 @@ namespace FeBuddyLibrary.DataAccess
                 }
             }
 
-            // ---------------------------------------------- TESTING CODE -----------------------------
             foreach (string fullFilePath in FileFeatures.Keys)
             {
                 FileInfo file = new FileInfo(fullFilePath);
@@ -838,8 +836,24 @@ namespace FeBuddyLibrary.DataAccess
 
                 File.WriteAllText(fullFilePath, jsonString);
             }
-            // ---------------------------------------------- END TESTING CODE --------------------------
 
+            foreach (var Map in LogDictionary.Keys)
+            {
+                geoMapObjectLog.AppendLine("\n\n-------------------------------------------------------------------------------------------------------------------------------------------------\n\n");
+                geoMapObjectLog.AppendLine(Map);
+
+                foreach (var filePath in LogDictionary[Map].Keys)
+                {
+                    geoMapObjectLog.AppendLine("\n\t" + filePath.Replace(dirPath, string.Empty));
+                    foreach (var mapObject in LogDictionary[Map][filePath])
+                    {
+                        geoMapObjectLog.AppendLine("\t\t" + mapObject);
+                    }
+                }
+            }
+
+
+            File.WriteAllText(Path.Combine(dirPath, "GeoMapObject Per File Log.txt"), geoMapObjectLog.ToString());
         }
 
         public void WriteGeoMapGeoJson(string dirPath, GeoMapSet geo)

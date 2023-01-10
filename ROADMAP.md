@@ -4,8 +4,6 @@
 The following is a list of features that we are considering or actively working on in priority order.
 
 ---
-- [ ] vERAM-to-GeoJSON option to group by attributes.
-  - Refer to issue: https://github.com/Nikolai558/FE-BUDDY/issues/113
 
 - [ ] SCT2-to-GeoJSON
   - Reference: https://fetools.bvartcc.com/

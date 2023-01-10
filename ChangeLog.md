@@ -3,7 +3,7 @@
 ---
 - ## Version 2.4.0
   - AIRAC Date selection now displays the AIRAC Cycle number
-  - vERAM to GeoJSON now allows the user to select an option
+  - vERAM-to-GeoJSON now allows the user to select an option
   to have all elements with identical attributes to be grouped
   together into the same GeoJSON file.
 

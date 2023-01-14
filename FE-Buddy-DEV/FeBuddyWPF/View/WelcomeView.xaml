@@ -61,6 +61,19 @@
 
                     </Button>
 
+                    <Button x:Name="btnClose"
+                            Background="HotPink"
+                            BorderThickness="0"
+                            Content="X"
+                            Foreground="White"
+                            FontSize="12"
+                            FontFamily="Montserrat"
+                            Cursor="Hand"
+                            Grid.Column="2"
+                            Click="btnClose_Click">
+
+                    </Button>
+
                 </Grid>
             </Grid>
         </Border>

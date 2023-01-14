@@ -10,6 +10,7 @@
   <ItemGroup>
     <None Remove="Images\background.jpg" />
     <None Remove="Images\FE_BUDDY_icon.ico" />
+    <None Remove="Images\logo.PNG" />
   </ItemGroup>
 
   <ItemGroup>
@@ -22,6 +23,9 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Resource>
     <Resource Include="Images\FE_BUDDY_icon.ico">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Images\logo.PNG">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Resource>
   </ItemGroup>

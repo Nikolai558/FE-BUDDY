@@ -19,13 +19,36 @@
             <ImageBrush ImageSource="/Images/background.jpg"
                         Stretch="None"/>
         </Border.Background>
-        
+
         <Border CornerRadius="10"
                 Background="#0f0f0f"
                 BorderBrush="Black"
                 BorderThickness="1"
-                Opacity=".25">
-        
+                Opacity=".75">
+
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="30"/>
+                    <RowDefinition/>
+                </Grid.RowDefinitions>
+
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition/>
+                        <ColumnDefinition Width="25"/>
+                        <ColumnDefinition Width="25"/>
+                        <ColumnDefinition Width="5"/>
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock Text="FE-BUDDY - vDEV"
+                               Foreground="White"
+                               FontSize="10"
+                               FontFamily="Montserrat"
+                               Grid.Column="0"
+                               VerticalAlignment="Center"
+                               Margin="10,0,0,0"/>
+                </Grid>
+            </Grid>
         </Border>
     </Border>
 </Window>

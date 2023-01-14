@@ -10,8 +10,22 @@
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize"
         WindowStyle="None"
+        Background="Transparent"
+        AllowsTransparency="True"
         MouseDown="Window_MouseDown">
-    <Grid>
+
+    <Border CornerRadius="12">
+        <Border.Background>
+            <ImageBrush ImageSource="/Images/background.jpg"
+                        Stretch="None"/>
+        </Border.Background>
         
-    </Grid>
+        <Border CornerRadius="10"
+                Background="#0f0f0f"
+                BorderBrush="Black"
+                BorderThickness="1"
+                Opacity=".25">
+        
+        </Border>
+    </Border>
 </Window>

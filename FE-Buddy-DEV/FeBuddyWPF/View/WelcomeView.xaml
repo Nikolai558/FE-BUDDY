@@ -109,8 +109,35 @@
                             </ControlTemplate>
                         </Button.Template>
                     </Button>
-
                 </Grid>
+
+                <StackPanel Width="250"
+                            Grid.Row="1"
+                            Orientation="Vertical"
+                            Margin="0,35,0,0">
+                    
+                    <Image Source="/Images/logo.png"
+                        Width="100" Height="100"/>
+
+                    <TextBlock Text="FE Buddy"
+                               Foreground="White"
+                               FontSize="25"
+                               FontWeight="Medium"
+                               FontFamily="Montserrat"
+                               HorizontalAlignment="Center"
+                               Margin="0,5,0,0"/>
+
+                    <TextBlock Text="Assists Virtual ARTCC Facility Engineers with their daily tasks."
+                               Foreground="LightGray"
+                               FontSize="12"
+                               FontWeight="Medium"
+                               FontFamily="Montserrat"
+                               TextWrapping="Wrap"
+                               TextAlignment="Center"
+                               Margin="0,5,0,0"/>
+
+                </StackPanel>
+                
             </Grid>
         </Border>
     </Border>

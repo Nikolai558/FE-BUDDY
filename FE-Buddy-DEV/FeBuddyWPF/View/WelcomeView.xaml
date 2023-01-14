@@ -47,6 +47,20 @@
                                Grid.Column="0"
                                VerticalAlignment="Center"
                                Margin="10,0,0,0"/>
+
+                    <Button x:Name="btnMinimize"
+                            Background="HotPink"
+                            BorderThickness="0"
+                            Content="-"
+                            Foreground="White"
+                            FontSize="16"
+                            FontFamily="Montserrat"
+                            Cursor="Hand"
+                            Grid.Column="1"
+                            Click="btnMinimize_Click">
+
+                    </Button>
+
                 </Grid>
             </Grid>
         </Border>

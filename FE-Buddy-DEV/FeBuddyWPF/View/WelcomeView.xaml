@@ -5,7 +5,12 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:FeBuddyWPF.View"
         mc:Ignorable="d"
-        Title="WelcomeView" Height="450" Width="800">
+        Title="WelcomeView" 
+        Height="550" Width="800"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize"
+        WindowStyle="None"
+        MouseDown="Window_MouseDown">
     <Grid>
         
     </Grid>

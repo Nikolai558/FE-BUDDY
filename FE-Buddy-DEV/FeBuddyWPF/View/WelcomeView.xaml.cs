@@ -23,5 +23,10 @@ namespace FeBuddyWPF.View
         {
             InitializeComponent();
         }
+
+        private void Window_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+
+        }
     }
 }

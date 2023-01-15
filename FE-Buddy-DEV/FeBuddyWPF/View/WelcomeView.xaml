@@ -115,9 +115,9 @@
                             Grid.Row="1"
                             Orientation="Vertical"
                             Margin="0,35,0,0">
-                    
+
                     <Image Source="/Images/logo.png"
-                        Width="100" Height="100"/>
+                           Width="100" Height="100"/>
 
                     <TextBlock Text="FE Buddy"
                                Foreground="White"

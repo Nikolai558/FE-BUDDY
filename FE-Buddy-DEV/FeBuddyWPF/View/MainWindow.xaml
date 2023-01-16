@@ -5,6 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:FeBuddyWPF.View"
         xmlns:fa="http://schemas.awesome.incremented/wpf/xaml/fontawesome.sharp"
+        xmlns:viewModel="clr-namespace:FeBuddyWPF.ViewModel"
         mc:Ignorable="d"
         Title="MainWindow" 
         Height="550" Width="850"
@@ -13,6 +14,16 @@
         WindowStyle="None"
         WindowStartupLocation="CenterScreen"
         MouseDown="Window_MouseDown">
+
+    <Window.DataContext>
+        <viewModel:MainViewModel/>
+    </Window.DataContext>
+
+    <Window.Resources>
+        <DataTemplate DataType="{x:Type viewModel:FaaDatToGeojsonViewModel}">
+            <local:FaaDatToGeojsonView/>
+        </DataTemplate>
+    </Window.Resources>
 
 
     <Border Background="Black"
@@ -117,7 +128,7 @@
                                 Grid.Column="6"
                                 Click="btnMaximize_Click"
                                 Tag="Green">
-                            <fa:IconImage Icon="Maximize" Cursor="Hand" Style="{StaticResource btnWindowOptIcon}"/>
+                            <fa:IconImage Icon="Square" Cursor="Hand" Style="{StaticResource btnWindowOptIcon}"/>
                         </Button>
 
                         <Button x:Name="btnClose"
@@ -159,6 +170,7 @@
                             <RadioButton x:Name="btnDatGeoJson"
                                          Style="{StaticResource menuSubButton}"
                                          Tag="{StaticResource btnBackground1}"
+                                         Command="{Binding ShowFaaDatToGeojsonViewCommand}"
                                          GroupName="subMenuGroup"
                                          Visibility="{Binding IsChecked,ElementName=btnConversions,Converter={StaticResource BoolToVis}}">
                                 <StackPanel Orientation="Horizontal">
@@ -255,9 +267,14 @@
 
                         </StackPanel>
 
-                        <Viewbox Grid.Column="1"
+                        <!--Show Child Views HERE-->
+                        <ContentControl Content="{Binding CurrentChildView}"
+                                        Grid.Column="1"
+                                        Margin="25"/>
+
+                        <!--<Viewbox Grid.Column="1"
                                  x:Name="viewboxContent">
-                        </Viewbox>
+                        </Viewbox>-->
                     </Grid>
                 </Grid>
             </Border>

@@ -4,554 +4,264 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:FeBuddyWPF.View"
+        xmlns:fa="http://schemas.awesome.incremented/wpf/xaml/fontawesome.sharp"
         mc:Ignorable="d"
         Title="MainWindow" 
-        Height="550" Width="800"
+        Height="550" Width="850"
         AllowsTransparency="True"
         Background="Transparent"
         WindowStyle="None"
         WindowStartupLocation="CenterScreen"
         MouseDown="Window_MouseDown">
 
-    <Border CornerRadius="15">
-        <Border.Background>
-            <ImageBrush ImageSource="/Images/background.jpg"
-                        Stretch="None"/>
-        </Border.Background>
+
+    <Border Background="Black"
+            Opacity="1"
+            CornerRadius="15">
         
-        <Border CornerRadius="15"
-                BorderThickness="2"
-                BorderBrush="Black">
+        <Border CornerRadius="15">
             <Border.Background>
-                <SolidColorBrush Color="{StaticResource windowBackground1}"
-                                 Opacity=".2"/>
+                    <ImageBrush ImageSource="/Images/FEB_EARTH_SS2_BW.jpg"
+                            Stretch="UniformToFill"
+                            Opacity=".3"/>
             </Border.Background>
+        
+            <Border CornerRadius="15"
+                    BorderThickness="2"
+                    BorderBrush="Black">
+                <Border.Background>
+                    <SolidColorBrush Color="{StaticResource windowBackground1}"
+                                     Opacity=".2"/>
+                </Border.Background>
             
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="45"/>
-                    <RowDefinition />
-                </Grid.RowDefinitions>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="45"/>
+                        <RowDefinition />
+                    </Grid.RowDefinitions>
 
-                <!--Title Bar-->
-                <Grid x:Name="titleBar"
-                      Grid.Row="0">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="200"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="20"/>
-                        <ColumnDefinition Width="20"/>
-                        <ColumnDefinition Width="20"/>
-                        <ColumnDefinition Width="15"/>
-                    </Grid.ColumnDefinitions>
+                    <!--Title Bar-->
+                    <Grid x:Name="titleBar"
+                          Grid.Row="0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="200"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="20"/>
+                            <ColumnDefinition Width="5"/>
+                            <ColumnDefinition Width="20"/>
+                            <ColumnDefinition Width="5"/>
+                            <ColumnDefinition Width="20"/>
+                            <ColumnDefinition Width="5"/>
+                            <ColumnDefinition Width="20"/>
+                            <ColumnDefinition Width="15"/>
+                        </Grid.ColumnDefinitions>
                     
-                    <TextBlock Text="FE-BUDDY - vDEV"
-                               Foreground="White"
-                               FontSize="16"
-                               FontFamily="Montserrat"
-                               Grid.Column="0"
-                               TextAlignment="Center"
-                               HorizontalAlignment="Center"
-                               VerticalAlignment="Center"
-                               Margin="0,0,0,0"/>
+                        <TextBlock Text="FE-BUDDY - vDEV"
+                                   Foreground="White"
+                                   FontSize="16"
+                                   FontFamily="Montserrat"
+                                   Grid.Column="0"
+                                   TextAlignment="Center"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"
+                                   Margin="0,0,0,0"/>
 
-                    <StackPanel Orientation="Horizontal"
-                                HorizontalAlignment="Center"
-                                Grid.Column="1">
+                        <StackPanel Orientation="Horizontal"
+                                    HorizontalAlignment="Center"
+                                    Grid.Column="1">
 
-                        <Button x:Name="btnNews" 
-                                Width="100"
-                                Content="News"
-                                Foreground="White"
-                                FontSize="12"
-                                FontFamily="Montserrat"
-                                Cursor="Hand"
-                                BorderThickness="0">
-                            <Button.Style>
-                                <Style TargetType="Button">
-                                    <Setter Property="Background" Value="{StaticResource btnBackground1}"/>
-                                    <Style.Triggers>
-                                        <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter Property="Background" Value="{StaticResource btnBackground2}"/>
-                                        </Trigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Button.Style>
-                            <Button.Template>
-                                <ControlTemplate TargetType="Button">
-                                    <Border
-                                        Opacity=".75"
-                                        CornerRadius="15, 0, 0, 15"
-                                        Background="{TemplateBinding Background}">
-                                        <ContentPresenter VerticalAlignment="Center"
-                                                      HorizontalAlignment="Center"/>
-                                    </Border>
-                                </ControlTemplate>
-                            </Button.Template>
-                        </Button>
+                            <Button x:Name="btnNews"
+                                    Style="{StaticResource topMenuButton}"
+                                    Content="News"
+                                    Tag="15, 0, 0, 15">
+                            </Button>
 
-                        <Button x:Name="btnInformation"
-                                Width="100"
-                                Content="Information"
-                                Foreground="White"
-                                FontSize="12"
-                                FontFamily="Montserrat"
-                                Cursor="Hand"
-                                BorderThickness="0">
-                            <Button.Style>
-                                <Style TargetType="Button">
-                                    <Setter Property="Background" Value="{StaticResource btnBackground1}"/>
-                                    <Style.Triggers>
-                                        <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter Property="Background" Value="{StaticResource btnBackground2}"/>
-                                        </Trigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Button.Style>
-                            <Button.Template>
-                                <ControlTemplate TargetType="Button">
-                                    <Border
-                                        Opacity=".75"
-                                        CornerRadius="0, 0, 0, 0"
-                                        Background="{TemplateBinding Background}">
-                                        <ContentPresenter VerticalAlignment="Center"
-                                                      HorizontalAlignment="Center"/>
-                                    </Border>
-                                </ControlTemplate>
-                            </Button.Template>
-                        </Button>
+                            <Button x:Name="btnInformation"
+                                    Content="Information"
+                                    Style="{StaticResource topMenuButton}"
+                                    Tag="0">
+                            </Button>
 
-                        <Button x:Name="btnDiscord" 
-                                Width="100"
-                                Content="Discord"
-                                Foreground="White"
-                                FontSize="12"
-                                FontFamily="Montserrat"
-                                Cursor="Hand"
-                                BorderThickness="0">
-                            <Button.Style>
-                                <Style TargetType="Button">
-                                    <Setter Property="Background" Value="{StaticResource btnBackground1}"/>
-                                    <Style.Triggers>
-                                        <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter Property="Background" Value="{StaticResource btnBackground2}"/>
-                                        </Trigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Button.Style>
-                            <Button.Template>
-                                <ControlTemplate TargetType="Button">
-                                    <Border
-                                        Opacity=".75"
-                                        CornerRadius="0, 0, 0, 0"
-                                        Background="{TemplateBinding Background}">
-                                        <ContentPresenter VerticalAlignment="Center"
-                                                      HorizontalAlignment="Center"/>
-                                    </Border>
-                                </ControlTemplate>
-                            </Button.Template>
-                        </Button>
+                            <Button x:Name="btnDiscord" 
+                                    Content="Discord"
+                                    Style="{StaticResource topMenuButton}"
+                                    Tag="0">
+                            </Button>
 
-                        <Button x:Name="btnReportIssues"
-                                Width="100"
-                                Content="Report Issues"
-                                Foreground="White"
-                                FontSize="12"
-                                FontFamily="Montserrat"
-                                Cursor="Hand"
-                                BorderThickness="0">
-                            <Button.Style>
-                                <Style TargetType="Button">
-                                    <Setter Property="Background" Value="{StaticResource btnBackground1}"/>
-                                    <Style.Triggers>
-                                        <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter Property="Background" Value="{StaticResource btnBackground2}"/>
-                                        </Trigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Button.Style>
-                            <Button.Template>
-                                <ControlTemplate TargetType="Button">
-                                    <Border
-                                        Opacity=".75"
-                                        CornerRadius="0, 15, 15, 0"
-                                        Background="{TemplateBinding Background}">
-                                        <ContentPresenter VerticalAlignment="Center"
-                                                      HorizontalAlignment="Center"/>
-                                    </Border>
-                                </ControlTemplate>
-                            </Button.Template>
-                        </Button>
+                            <Button x:Name="btnReportIssues"
+                                    Content="Issues / Requests"
+                                    Style="{StaticResource topMenuButton}"
+                                    Tag="0, 15, 15, 0">
+                            </Button>
 
-                    </StackPanel>
+                        </StackPanel>
                     
-                    <Button x:Name="btnSettings"
-                            BorderThickness="0"
-                            Content="S"
-                            Foreground="White"
-                            FontSize="12"
-                            FontFamily="Montserrat"
-                            Cursor="Hand"
-                            Grid.Column="2"
-                            Click="btnSettings_Click">
-                        <Button.Style>
-                            <Style TargetType="Button">
-                                <Setter Property="Background" Value="{StaticResource btnBackground1}"/>
-                                <Style.Triggers>
-                                    <Trigger Property="IsMouseOver" Value="True">
-                                        <Setter Property="Background" Value="{StaticResource btnBackground2}"/>
-                                    </Trigger>
-                                </Style.Triggers>
-                            </Style>
-                        </Button.Style>
-                        <Button.Template>
-                            <ControlTemplate TargetType="Button">
-                                <Border Width="18" Height="18"
-                                        CornerRadius="9"
-                                        Background="{TemplateBinding Background}">
-                                    <ContentPresenter VerticalAlignment="Center"
-                                                      HorizontalAlignment="Center"/>
-                                </Border>
-                            </ControlTemplate>
-                        </Button.Template>
-                    </Button>
+                        <Button x:Name="btnSettings"
+                                Style="{StaticResource btnWindowOptions}"
+                                Grid.Column="2"
+                                Click="btnSettings_Click"
+                                Tag="White">
+                            <fa:IconImage Icon="Gear" Cursor="Hand" Style="{StaticResource btnWindowOptIcon}"/>
+                        </Button>
 
-                    <Button x:Name="btnMinimize"
-                            BorderThickness="0"
-                            Content="-"
-                            Foreground="White"
-                            FontSize="16"
-                            FontFamily="Montserrat"
-                            Cursor="Hand"
-                            Grid.Column="3"
-                            Click="btnMinimize_Click">
-                        <Button.Style>
-                            <Style TargetType="Button">
-                                <Setter Property="Background" Value="{StaticResource btnBackground1}"/>
-                                <Style.Triggers>
-                                    <Trigger Property="IsMouseOver" Value="True">
-                                        <Setter Property="Background" Value="Green"/>
-                                    </Trigger>
-                                </Style.Triggers>
-                            </Style>
-                        </Button.Style>
-                        <Button.Template>
-                            <ControlTemplate TargetType="Button">
-                                <Border Width="18" Height="18"
-                                        CornerRadius="9"
-                                        Background="{TemplateBinding Background}">
-                                    <ContentPresenter VerticalAlignment="Center"
-                                                      HorizontalAlignment="Center"/>
-                                </Border>
-                            </ControlTemplate>
-                        </Button.Template>
-                    </Button>
+                        <Button x:Name="btnMinimize"
+                                Style="{StaticResource btnWindowOptions}"
+                                Grid.Column="4"
+                                Click="btnMinimize_Click"
+                                Tag="White">
+                            <fa:IconImage Icon="WindowMinimize" Cursor="Hand" Style="{StaticResource btnWindowOptIcon}"/>
+                        </Button>
 
-                    <Button x:Name="btnClose"
-                            BorderThickness="0"
-                            Content="X"
-                            Foreground="White"
-                            FontSize="12"
-                            FontFamily="Montserrat"
-                            Cursor="Hand"
-                            Grid.Column="4"
-                            Click="btnClose_Click">
-                        <Button.Style>
-                            <Style TargetType="Button">
-                                <Setter Property="Background" Value="{StaticResource btnBackground1}"/>
-                                <Style.Triggers>
-                                    <Trigger Property="IsMouseOver" Value="True">
-                                        <Setter Property="Background" Value="DarkRed"/>
-                                    </Trigger>
-                                </Style.Triggers>
-                            </Style>
-                        </Button.Style>
-                        <Button.Template>
-                            <ControlTemplate TargetType="Button">
-                                <Border Width="18" Height="18"
-                                        CornerRadius="9"
-                                        Background="{TemplateBinding Background}">
-                                    <ContentPresenter VerticalAlignment="Center"
-                                                      HorizontalAlignment="Center"/>
-                                </Border>
-                            </ControlTemplate>
-                        </Button.Template>
-                    </Button>
+                        <Button x:Name="btnMaximize"
+                                Style="{StaticResource btnWindowOptions}"
+                                Grid.Column="6"
+                                Click="btnMaximize_Click"
+                                Tag="Green">
+                            <fa:IconImage Icon="Maximize" Cursor="Hand" Style="{StaticResource btnWindowOptIcon}"/>
+                        </Button>
 
+                        <Button x:Name="btnClose"
+                                Style="{StaticResource btnWindowOptions}"
+                                Grid.Column="8"
+                                Click="btnClose_Click"
+                                Tag="Red">
+                            <fa:IconImage Icon="Close" Cursor="Hand" Style="{StaticResource btnWindowOptIcon}"/>
+                        </Button>
+
+                    </Grid>
+
+                    <Grid x:Name="menuOptions" 
+                          Grid.Row="1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="200"/>
+                            <ColumnDefinition />
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel Margin="0,20,0,0">
+                            <RadioButton x:Name="btnAiracData"
+                                         Style="{StaticResource menuButton}"
+                                         Tag="{StaticResource btnBackground1}">
+                                <StackPanel Orientation="Horizontal">
+                                    <fa:IconImage Icon="ArrowsSpin" Style="{StaticResource menuButtonIcon}"/>
+                                    <TextBlock Text="AIRAC Data" Style="{StaticResource menuButtonText}"/>
+                                </StackPanel>
+                            </RadioButton>
+
+                            <RadioButton x:Name="btnConversions"
+                                         Style="{StaticResource menuButton}"
+                                         Tag="{StaticResource btnBackground1}">
+                                <StackPanel Orientation="Horizontal">
+                                    <fa:IconImage Icon="RightLeft" Style="{StaticResource menuButtonIcon}"/>
+                                    <TextBlock Text="Conversions" Style="{StaticResource menuButtonText}"/>
+                                </StackPanel>
+                            </RadioButton>
+
+                            <RadioButton x:Name="btnDatGeoJson"
+                                         Style="{StaticResource menuSubButton}"
+                                         Tag="{StaticResource btnBackground1}"
+                                         GroupName="subMenuGroup"
+                                         Visibility="{Binding IsChecked,ElementName=btnConversions,Converter={StaticResource BoolToVis}}">
+                                <StackPanel Orientation="Horizontal">
+                                    <!--<fa:IconImage Icon="RightLeft" Style="{StaticResource menuButtonIcon}"/>-->
+                                    <TextBlock Text="FAA DAT-to-GeoJSON" Style="{StaticResource menuSubButtonText}"/>
+                                </StackPanel>
+                            </RadioButton>
+
+                            <RadioButton x:Name="btnFaaGeoJson"
+                                         Style="{StaticResource menuSubButton}"
+                                         Tag="{StaticResource btnBackground1}"
+                                         GroupName="subMenuGroup"
+                                         Visibility="{Binding IsChecked,ElementName=btnConversions,Converter={StaticResource BoolToVis}}">
+                                <StackPanel Orientation="Horizontal">
+                                    <!--<fa:IconImage Icon="RightLeft" Style="{StaticResource menuButtonIcon}"/>-->
+                                    <TextBlock Text="FAA GeoMap-to-GeoJSON" Style="{StaticResource menuSubButtonText}"/>
+                                </StackPanel>
+                            </RadioButton>
+
+                            <RadioButton x:Name="btnVstarsVeramGeojson"
+                                         Style="{StaticResource menuSubButton}"
+                                         Tag="{StaticResource btnBackground1}"
+                                         GroupName="subMenuGroup"
+                                         Visibility="{Binding IsChecked,ElementName=btnConversions,Converter={StaticResource BoolToVis}}">
+                                <StackPanel Orientation="Horizontal">
+                                    <!--<fa:IconImage Icon="RightLeft" Style="{StaticResource menuButtonIcon}"/>-->
+                                    <TextBlock Text="vSTARS/vERAM-to-GeoJSON" Style="{StaticResource menuSubButtonText}"/>
+                                </StackPanel>
+                            </RadioButton>
+
+                            <RadioButton x:Name="btnSctGeojson"
+                                         Style="{StaticResource menuSubButton}"
+                                         Tag="{StaticResource btnBackground1}"
+                                         GroupName="subMenuGroup"
+                                         Visibility="{Binding IsChecked,ElementName=btnConversions,Converter={StaticResource BoolToVis}}">
+                                <StackPanel Orientation="Horizontal">
+                                    <!--<fa:IconImage Icon="RightLeft" Style="{StaticResource menuButtonIcon}"/>-->
+                                    <TextBlock Text="SCT2-to-GeoJSON" Style="{StaticResource menuSubButtonText}"/>
+                                </StackPanel>
+                            </RadioButton>
+
+
+                            <RadioButton x:Name="btnFacilityFiles"
+                                         Style="{StaticResource menuButton}"
+                                         Tag="{StaticResource btnBackground1}">
+                                <StackPanel Orientation="Horizontal">
+                                    <fa:IconImage Icon="FolderTree" Style="{StaticResource menuButtonIcon}"/>
+                                    <TextBlock Text="Facility Files" Style="{StaticResource menuButtonText}"/>
+                                </StackPanel>
+                            </RadioButton>
+
+                            <RadioButton x:Name="btnAliasMaintenance"
+                                         Style="{StaticResource menuSubButton}"
+                                         Tag="{StaticResource btnBackground1}"
+                                         GroupName="subMenuGroup"
+                                         Visibility="{Binding IsChecked,ElementName=btnFacilityFiles,Converter={StaticResource BoolToVis}}">
+                                <StackPanel Orientation="Horizontal">
+                                    <!--<fa:IconImage Icon="RightLeft" Style="{StaticResource menuButtonIcon}"/>-->
+                                        <TextBlock Text="Alias Maintenance" Style="{StaticResource menuSubButtonText}"/>
+                                </StackPanel>
+                            </RadioButton>
+
+                            <RadioButton x:Name="btnFacilityAdminTools"
+                                         Style="{StaticResource menuButton}"
+                                         Tag="{StaticResource btnBackground1}">
+                                <StackPanel Orientation="Horizontal">
+                                    <fa:IconImage Icon="BuildingFlag" Style="{StaticResource menuButtonIcon}"/>
+                                    <TextBlock Text="Facility Admin Tools" Style="{StaticResource menuButtonText}"/>
+                                </StackPanel>
+                            </RadioButton>
+
+                            <RadioButton x:Name="btnMemberActivityTracking"
+                                         Style="{StaticResource menuSubButton}"
+                                         Tag="{StaticResource btnBackground1}"
+                                         GroupName="subMenuGroup"
+                                         Visibility="{Binding IsChecked,ElementName=btnFacilityAdminTools,Converter={StaticResource BoolToVis}}">
+                                <StackPanel Orientation="Horizontal">
+                                    <!--<fa:IconImage Icon="RightLeft" Style="{StaticResource menuButtonIcon}"/>-->
+                                    <TextBlock Text="Member Activity Tracking" Style="{StaticResource menuSubButtonText}"/>
+                                </StackPanel>
+                            </RadioButton>
+
+                            <RadioButton x:Name="btnAirportTrafficLevels"
+                                         Style="{StaticResource menuSubButton}"
+                                         Tag="{StaticResource btnBackground1}"
+                                         GroupName="subMenuGroup"
+                                         Visibility="{Binding IsChecked,ElementName=btnFacilityAdminTools,Converter={StaticResource BoolToVis}}">
+                                <StackPanel Orientation="Horizontal">
+                                    <!--<fa:IconImage Icon="RightLeft" Style="{StaticResource menuButtonIcon}"/>-->
+                                    <TextBlock Text="Airport Traffic Levels" Style="{StaticResource menuSubButtonText}"/>
+                                </StackPanel>
+                            </RadioButton>
+
+
+                        </StackPanel>
+
+                        <Viewbox Grid.Column="1"
+                                 x:Name="viewboxContent">
+                        </Viewbox>
+                    </Grid>
                 </Grid>
-
-                <Grid x:Name="menuOptions" 
-                      Grid.Row="1">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="200"/>
-                        <ColumnDefinition />
-                    </Grid.ColumnDefinitions>
-
-                    <StackPanel>
-                        <Button x:Name="btnManageFacilityFiles" 
-                                Width="200"
-                                Height="40"
-                                Content="Manage Facility Files"
-                                Foreground="White"
-                                FontSize="14"
-                                FontFamily="Montserrat"
-                                Cursor="Hand"
-                                BorderThickness="0">
-                            <Button.Style>
-                                <Style TargetType="Button">
-                                    <Setter Property="Background" Value="{StaticResource btnBackground1}"/>
-                                    <Style.Triggers>
-                                        <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter Property="Background" Value="{StaticResource btnBackground2}"/>
-                                        </Trigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Button.Style>
-                            <Button.Template>
-                                <ControlTemplate TargetType="Button">
-                                    <Border
-                                        Opacity=".75"
-                                        CornerRadius="15, 15, 0, 0"
-                                        Background="{TemplateBinding Background}">
-                                        <ContentPresenter VerticalAlignment="Center"
-                                                      HorizontalAlignment="Center"/>
-                                    </Border>
-                                </ControlTemplate>
-                            </Button.Template>
-                        </Button>
-
-                        <Button x:Name="btnGetAiracData" 
-                                Width="200"
-                                Height="40"
-                                Content="Get AIRAC Data"
-                                Foreground="White"
-                                FontSize="14"
-                                FontFamily="Montserrat"
-                                Cursor="Hand"
-                                BorderThickness="0">
-                            <Button.Style>
-                                <Style TargetType="Button">
-                                    <Setter Property="Background" Value="{StaticResource btnBackground1}"/>
-                                    <Style.Triggers>
-                                        <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter Property="Background" Value="{StaticResource btnBackground2}"/>
-                                        </Trigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Button.Style>
-                            <Button.Template>
-                                <ControlTemplate TargetType="Button">
-                                    <Border
-                                        Opacity=".75"
-                                        CornerRadius="0, 0, 0, 0"
-                                        Background="{TemplateBinding Background}">
-                                        <ContentPresenter VerticalAlignment="Center"
-                                                      HorizontalAlignment="Center"/>
-                                    </Border>
-                                </ControlTemplate>
-                            </Button.Template>
-                        </Button>
-
-                        <Button x:Name="btnSctDxfConversions" 
-                                Width="200"
-                                Height="40"
-                                Content="SCT2 / DXF Conversions"
-                                Foreground="White"
-                                FontSize="14"
-                                FontFamily="Montserrat"
-                                Cursor="Hand"
-                                BorderThickness="0">
-                            <Button.Style>
-                                <Style TargetType="Button">
-                                    <Setter Property="Background" Value="{StaticResource btnBackground1}"/>
-                                    <Style.Triggers>
-                                        <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter Property="Background" Value="{StaticResource btnBackground2}"/>
-                                        </Trigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Button.Style>
-                            <Button.Template>
-                                <ControlTemplate TargetType="Button">
-                                    <Border
-                                        Opacity=".75"
-                                        CornerRadius="0, 0, 0, 0"
-                                        Background="{TemplateBinding Background}">
-                                        <ContentPresenter VerticalAlignment="Center"
-                                                      HorizontalAlignment="Center"/>
-                                    </Border>
-                                </ControlTemplate>
-                            </Button.Template>
-                        </Button>
-
-                        <Button x:Name="btnConvertDatFileSCT2" 
-                                Width="200"
-                                Height="40"
-                                Content="Convert DAT file to SCT2"
-                                Foreground="White"
-                                FontSize="14"
-                                FontFamily="Montserrat"
-                                Cursor="Hand"
-                                BorderThickness="0">
-                            <Button.Style>
-                                <Style TargetType="Button">
-                                    <Setter Property="Background" Value="{StaticResource btnBackground1}"/>
-                                    <Style.Triggers>
-                                        <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter Property="Background" Value="{StaticResource btnBackground2}"/>
-                                        </Trigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Button.Style>
-                            <Button.Template>
-                                <ControlTemplate TargetType="Button">
-                                    <Border
-                                        Opacity=".75"
-                                        CornerRadius="0, 0, 0, 0"
-                                        Background="{TemplateBinding Background}">
-                                        <ContentPresenter VerticalAlignment="Center"
-                                                      HorizontalAlignment="Center"/>
-                                    </Border>
-                                </ControlTemplate>
-                            </Button.Template>
-                        </Button>
-
-                        <Button x:Name="btnSctKmlConversions" 
-                                Width="200"
-                                Height="40"
-                                Content="SCT2 / KML Conversions"
-                                Foreground="White"
-                                FontSize="14"
-                                FontFamily="Montserrat"
-                                Cursor="Hand"
-                                BorderThickness="0">
-                            <Button.Style>
-                                <Style TargetType="Button">
-                                    <Setter Property="Background" Value="{StaticResource btnBackground1}"/>
-                                    <Style.Triggers>
-                                        <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter Property="Background" Value="{StaticResource btnBackground2}"/>
-                                        </Trigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Button.Style>
-                            <Button.Template>
-                                <ControlTemplate TargetType="Button">
-                                    <Border
-                                        Opacity=".75"
-                                        CornerRadius="0, 0, 0, 0"
-                                        Background="{TemplateBinding Background}">
-                                        <ContentPresenter VerticalAlignment="Center"
-                                                      HorizontalAlignment="Center"/>
-                                    </Border>
-                                </ControlTemplate>
-                            </Button.Template>
-                        </Button>
-
-                        <Button x:Name="btnVstarsVeramToGeoJson" 
-                                Width="200"
-                                Height="40"
-                                Content="vSTARS/vERAM to GeoJson"
-                                Foreground="White"
-                                FontSize="14"
-                                FontFamily="Montserrat"
-                                Cursor="Hand"
-                                BorderThickness="0">
-                            <Button.Style>
-                                <Style TargetType="Button">
-                                    <Setter Property="Background" Value="{StaticResource btnBackground1}"/>
-                                    <Style.Triggers>
-                                        <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter Property="Background" Value="{StaticResource btnBackground2}"/>
-                                        </Trigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Button.Style>
-                            <Button.Template>
-                                <ControlTemplate TargetType="Button">
-                                    <Border
-                                        Opacity=".75"
-                                        CornerRadius="0, 0, 0, 0"
-                                        Background="{TemplateBinding Background}">
-                                        <ContentPresenter VerticalAlignment="Center"
-                                                      HorizontalAlignment="Center"/>
-                                    </Border>
-                                </ControlTemplate>
-                            </Button.Template>
-                        </Button>
-
-                        <Button x:Name="btnFaaGeoMapXmlToSCT2" 
-                                Width="200"
-                                Height="40"
-                                Content="FAA GeoMap XML to SCT2"
-                                Foreground="White"
-                                FontSize="14"
-                                FontFamily="Montserrat"
-                                Cursor="Hand"
-                                BorderThickness="0">
-                            <Button.Style>
-                                <Style TargetType="Button">
-                                    <Setter Property="Background" Value="{StaticResource btnBackground1}"/>
-                                    <Style.Triggers>
-                                        <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter Property="Background" Value="{StaticResource btnBackground2}"/>
-                                        </Trigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Button.Style>
-                            <Button.Template>
-                                <ControlTemplate TargetType="Button">
-                                    <Border
-                                        Opacity=".75"
-                                        CornerRadius="0, 0, 0, 0"
-                                        Background="{TemplateBinding Background}">
-                                        <ContentPresenter VerticalAlignment="Center"
-                                                      HorizontalAlignment="Center"/>
-                                    </Border>
-                                </ControlTemplate>
-                            </Button.Template>
-                        </Button>
-
-                        <Button x:Name="btnSctToFaaGeoMap" 
-                                Width="200"
-                                Height="40"
-                                Content="SCT2 / DXF Conversions"
-                                Foreground="White"
-                                FontSize="14"
-                                FontFamily="Montserrat"
-                                Cursor="Hand"
-                                BorderThickness="0">
-                            <Button.Style>
-                                <Style TargetType="Button">
-                                    <Setter Property="Background" Value="{StaticResource btnBackground1}"/>
-                                    <Style.Triggers>
-                                        <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter Property="Background" Value="{StaticResource btnBackground2}"/>
-                                        </Trigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Button.Style>
-                            <Button.Template>
-                                <ControlTemplate TargetType="Button">
-                                    <Border
-                                        Opacity=".75"
-                                        CornerRadius="0, 0, 15, 15"
-                                        Background="{TemplateBinding Background}">
-                                        <ContentPresenter VerticalAlignment="Center"
-                                                      HorizontalAlignment="Center"/>
-                                    </Border>
-                                </ControlTemplate>
-                            </Button.Template>
-                        </Button>
-
-
-
-
-
-
-                    </StackPanel>
-                </Grid>
-            </Grid>
+            </Border>
         </Border>
     </Border>
+
 </Window>

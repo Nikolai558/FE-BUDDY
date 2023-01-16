@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <None Remove="Images\background.jpg" />
+    <None Remove="Images\FEB_EARTH_SS2_BW.jpg" />
     <None Remove="Images\FE_BUDDY_icon.ico" />
     <None Remove="Images\logo.PNG" />
   </ItemGroup>
@@ -19,7 +20,15 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="FontAwesome.Sharp" Version="6.2.1" />
+    <PackageReference Include="FontAwesome.WPF" Version="4.7.0.9" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Resource Include="Images\background.jpg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Images\FEB_EARTH_SS2_BW.jpg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Resource>
     <Resource Include="Images\FE_BUDDY_icon.ico">

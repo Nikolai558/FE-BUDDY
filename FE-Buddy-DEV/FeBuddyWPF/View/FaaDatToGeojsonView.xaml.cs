@@ -24,5 +24,10 @@ namespace FeBuddyWPF.View
         {
             InitializeComponent();
         }
+
+        private void Border_Scroll(object sender, System.Windows.Controls.Primitives.ScrollEventArgs e)
+        {
+            
+        }
     }
 }

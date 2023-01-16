@@ -280,7 +280,7 @@
                         <!--Show Child Views HERE-->
                         <ContentControl Content="{Binding CurrentChildView}"
                                         Grid.Column="1"
-                                        Margin="25"/>
+                                        Margin="10"/>
 
                         <!--<Viewbox Grid.Column="1"
                                  x:Name="viewboxContent">

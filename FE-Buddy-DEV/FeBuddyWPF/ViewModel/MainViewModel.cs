@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Input;
 
 namespace FeBuddyWPF.ViewModel
@@ -26,36 +27,44 @@ namespace FeBuddyWPF.ViewModel
 
         private void ExecuteShowAirportTrafficLevelsViewCommand(object obj)
         {
-            throw new NotImplementedException();
+            MessageBox.Show("This Menu has not been implemented yet.");
+            //throw new NotImplementedException();
         }
 
         private void ExecuteShowMemberActivityTrackingViewCommand(object obj)
         {
-            throw new NotImplementedException();
+            MessageBox.Show("This Menu has not been implemented yet.");
+            //throw new NotImplementedException();
         }
 
         private void ExecuteShowAliasMaintenanceViewCommand(object obj)
         {
-            throw new NotImplementedException();
+            MessageBox.Show("This Menu has not been implemented yet.");
+            //throw new NotImplementedException();
         }
 
         private void ExecuteShowSctGeojsonViewCommand(object obj)
         {
-            throw new NotImplementedException();
+            MessageBox.Show("This Menu has not been implemented yet.");
+            //throw new NotImplementedException();
         }
 
         private void ExecuteShowVstarsVeramGeojsonViewCommand(object obj)
         {
-            throw new NotImplementedException();
+            MessageBox.Show("This Menu has not been implemented yet.");
+            //throw new NotImplementedException();
         }
 
         private void ExecuteShowFaaGeojsonViewCommand(object obj)
         {
-            throw new NotImplementedException();
+            MessageBox.Show("This Menu has not been implemented yet.");
+            //throw new NotImplementedException();
         }
 
         private void ExecuteShowAiracDataViewCommand(object obj)
         {
+            MessageBox.Show("This Menu has not been implemented yet.");
+            //throw new NotImplementedException();
             CurrentChildView = new AiracDataViewModel();
         }
 

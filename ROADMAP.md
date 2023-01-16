@@ -62,6 +62,15 @@ The following is a list of features that we are considering or actively working 
   - [GeoMap converter](https://github.com/justinshannon/geo-map-converter)
     - Word is that the FAA may have changed their format of GeoMaps so this guy's may not work anymore.
 
+- [ ] Alias management
+  - Refer to issue: https://github.com/Nikolai558/FE-BUDDY/issues/121
+
+- [ ] vNAS API
+  - Refer to issue: https://github.com/Nikolai558/FE-BUDDY/issues/122
+
+- [ ] Facility Admin Tools
+  - Refer to issue: https://github.com/Nikolai558/FE-BUDDY/issues/123
+
 - [ ] Create more resources to complement the vNAS system.
   - This will require more time to see what resources wohld actually be useful.
 

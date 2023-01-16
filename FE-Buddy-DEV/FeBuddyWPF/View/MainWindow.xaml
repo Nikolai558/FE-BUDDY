@@ -151,7 +151,8 @@
                         <StackPanel Margin="0,20,0,0">
                             <RadioButton x:Name="btnAiracData"
                                          Style="{StaticResource menuButton}"
-                                         Tag="{StaticResource btnBackground1}">
+                                         Tag="{StaticResource btnBackground1}"
+                                         Command="{Binding ShowAiracDataViewCommand}">
                                 <StackPanel Orientation="Horizontal">
                                     <fa:IconImage Icon="ArrowsSpin" Style="{StaticResource menuButtonIcon}"/>
                                     <TextBlock Text="AIRAC Data" Style="{StaticResource menuButtonText}"/>
@@ -182,6 +183,7 @@
                             <RadioButton x:Name="btnFaaGeoJson"
                                          Style="{StaticResource menuSubButton}"
                                          Tag="{StaticResource btnBackground1}"
+                                         Command="{Binding ShowFaaGeojsonViewCommand}"
                                          GroupName="subMenuGroup"
                                          Visibility="{Binding IsChecked,ElementName=btnConversions,Converter={StaticResource BoolToVis}}">
                                 <StackPanel Orientation="Horizontal">
@@ -194,6 +196,7 @@
                                          Style="{StaticResource menuSubButton}"
                                          Tag="{StaticResource btnBackground1}"
                                          GroupName="subMenuGroup"
+                                         Command="{Binding ShowVstarsVeramGeojsonViewCommand}"
                                          Visibility="{Binding IsChecked,ElementName=btnConversions,Converter={StaticResource BoolToVis}}">
                                 <StackPanel Orientation="Horizontal">
                                     <!--<fa:IconImage Icon="RightLeft" Style="{StaticResource menuButtonIcon}"/>-->
@@ -205,6 +208,7 @@
                                          Style="{StaticResource menuSubButton}"
                                          Tag="{StaticResource btnBackground1}"
                                          GroupName="subMenuGroup"
+                                         Command="{Binding ShowSctGeojsonViewCommand}"
                                          Visibility="{Binding IsChecked,ElementName=btnConversions,Converter={StaticResource BoolToVis}}">
                                 <StackPanel Orientation="Horizontal">
                                     <!--<fa:IconImage Icon="RightLeft" Style="{StaticResource menuButtonIcon}"/>-->
@@ -226,6 +230,7 @@
                                          Style="{StaticResource menuSubButton}"
                                          Tag="{StaticResource btnBackground1}"
                                          GroupName="subMenuGroup"
+                                         Command="{Binding ShowAliasMaintenanceViewCommand}"
                                          Visibility="{Binding IsChecked,ElementName=btnFacilityFiles,Converter={StaticResource BoolToVis}}">
                                 <StackPanel Orientation="Horizontal">
                                     <!--<fa:IconImage Icon="RightLeft" Style="{StaticResource menuButtonIcon}"/>-->
@@ -246,6 +251,7 @@
                                          Style="{StaticResource menuSubButton}"
                                          Tag="{StaticResource btnBackground1}"
                                          GroupName="subMenuGroup"
+                                         Command="{Binding ShowMemberActivityTrackingViewCommand}"
                                          Visibility="{Binding IsChecked,ElementName=btnFacilityAdminTools,Converter={StaticResource BoolToVis}}">
                                 <StackPanel Orientation="Horizontal">
                                     <!--<fa:IconImage Icon="RightLeft" Style="{StaticResource menuButtonIcon}"/>-->
@@ -256,6 +262,7 @@
                             <RadioButton x:Name="btnAirportTrafficLevels"
                                          Style="{StaticResource menuSubButton}"
                                          Tag="{StaticResource btnBackground1}"
+                                         Command="{Binding ShowAirportTrafficLevelsViewCommand}"
                                          GroupName="subMenuGroup"
                                          Visibility="{Binding IsChecked,ElementName=btnFacilityAdminTools,Converter={StaticResource BoolToVis}}">
                                 <StackPanel Orientation="Horizontal">

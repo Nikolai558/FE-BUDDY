@@ -14,9 +14,49 @@ namespace FeBuddyWPF.ViewModel
         public MainViewModel()
         {
             ShowFaaDatToGeojsonViewCommand = new ViewModelCommand(ExecuteShowFaaDatToGeojsonViewCommand);
-
-
+            ShowAiracDataViewCommand = new ViewModelCommand(ExecuteShowAiracDataViewCommand);
+            ShowFaaGeojsonViewCommand = new ViewModelCommand(ExecuteShowFaaGeojsonViewCommand);
+            ShowVstarsVeramGeojsonViewCommand = new ViewModelCommand(ExecuteShowVstarsVeramGeojsonViewCommand);
+            ShowSctGeojsonViewCommand = new ViewModelCommand(ExecuteShowSctGeojsonViewCommand);
+            ShowAliasMaintenanceViewCommand = new ViewModelCommand(ExecuteShowAliasMaintenanceViewCommand);
+            ShowMemberActivityTrackingViewCommand = new ViewModelCommand(ExecuteShowMemberActivityTrackingViewCommand);
+            ShowAirportTrafficLevelsViewCommand = new ViewModelCommand(ExecuteShowAirportTrafficLevelsViewCommand);
             //ExecuteShowFaaDatToGeojsonViewCommand(null);
+        }
+
+        private void ExecuteShowAirportTrafficLevelsViewCommand(object obj)
+        {
+            throw new NotImplementedException();
+        }
+
+        private void ExecuteShowMemberActivityTrackingViewCommand(object obj)
+        {
+            throw new NotImplementedException();
+        }
+
+        private void ExecuteShowAliasMaintenanceViewCommand(object obj)
+        {
+            throw new NotImplementedException();
+        }
+
+        private void ExecuteShowSctGeojsonViewCommand(object obj)
+        {
+            throw new NotImplementedException();
+        }
+
+        private void ExecuteShowVstarsVeramGeojsonViewCommand(object obj)
+        {
+            throw new NotImplementedException();
+        }
+
+        private void ExecuteShowFaaGeojsonViewCommand(object obj)
+        {
+            throw new NotImplementedException();
+        }
+
+        private void ExecuteShowAiracDataViewCommand(object obj)
+        {
+            throw new NotImplementedException();
         }
 
         private void ExecuteShowFaaDatToGeojsonViewCommand(object obj)
@@ -31,6 +71,13 @@ namespace FeBuddyWPF.ViewModel
         }
 
         public ICommand ShowFaaDatToGeojsonViewCommand { get; }
+        public ICommand ShowAiracDataViewCommand { get; }
+        public ICommand ShowFaaGeojsonViewCommand { get; }
+        public ICommand ShowVstarsVeramGeojsonViewCommand { get; }
+        public ICommand ShowSctGeojsonViewCommand { get; }
+        public ICommand ShowAliasMaintenanceViewCommand { get; }
+        public ICommand ShowMemberActivityTrackingViewCommand { get; }
+        public ICommand ShowAirportTrafficLevelsViewCommand { get; }
 
     }
 }

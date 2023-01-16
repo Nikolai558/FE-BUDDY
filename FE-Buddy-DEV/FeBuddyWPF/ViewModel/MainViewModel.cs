@@ -56,7 +56,7 @@ namespace FeBuddyWPF.ViewModel
 
         private void ExecuteShowAiracDataViewCommand(object obj)
         {
-            throw new NotImplementedException();
+            CurrentChildView = new AiracDataViewModel();
         }
 
         private void ExecuteShowFaaDatToGeojsonViewCommand(object obj)

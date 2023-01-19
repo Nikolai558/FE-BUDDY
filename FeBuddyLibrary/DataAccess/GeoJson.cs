@@ -1168,5 +1168,10 @@ namespace FeBuddyLibrary.DataAccess
             //}
             return output;
         }
+
+        public void PostProcess(string dirPath)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

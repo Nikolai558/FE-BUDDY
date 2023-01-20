@@ -1,6 +1,10 @@
 # CHANGELOG
 
 ---
+- ## Version 2.4.2
+  - BUG FIX #127: Missing Lines when vERAM to Geojson
+  conversions using the filter and properties option.
+
 - ## Version 2.4.1
   - BUG FIX #125: Index out of bounds for AIRAC Data error.
   - vERAM conversion to Geojson file now checks for 

@@ -307,7 +307,6 @@ namespace FeBuddyWinFormUI
                 }
             }
 
-            // geoJsonConverter.PostProcess(GlobalConfig.outputDirBase);
             // Do Post processing of geojson here (combine features in feature collection if the features have lat/lon that should be combined.
             // this is to handle for reversed start lat/lon and end lat/lon elements inside the veram xml.
         }

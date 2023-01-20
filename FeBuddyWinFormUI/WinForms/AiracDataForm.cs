@@ -297,13 +297,13 @@ namespace FeBuddyWinFormUI
             {
                 Logger.LogMessage("DEBUG", "CURRENT AIRAC IS SELECTED");
 
-                GlobalConfig.airacEffectiveDate = currentAiracSelection.Text.Split('\n')[1];
+                GlobalConfig.airacEffectiveDate = currentAiracSelection.Text.Split('(')[1].Replace(")", string.Empty);
             }
             else if (nextAiracSelection.Checked)
             {
                 Logger.LogMessage("DEBUG", "NEXT AIRAC IS SELECTED");
 
-                GlobalConfig.airacEffectiveDate = nextAiracSelection.Text.Split('\n')[1];
+                GlobalConfig.airacEffectiveDate = nextAiracSelection.Text.Split('(')[1].Replace(")", string.Empty) ;
             }
 
             SetControlPropertyThreadSafe(processingDataLabel, "Text", "Downloading FAA Data");

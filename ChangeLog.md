@@ -1,6 +1,12 @@
 # CHANGELOG
 
 ---
+- ## Version 2.4.1
+  - BUG FIX #125: Index out of bounds for AIRAC Data error.
+  - vERAM conversion to Geojson file now checks for 
+  reversed coordinates. Example: IF the start lat/lon
+  is the same as the ending of the next coordinate lat/lon.
+
 - ## Version 2.4.0
   - AIRAC Date selection now displays the AIRAC Cycle number
   - vERAM-to-GeoJSON now allows the user to select an option

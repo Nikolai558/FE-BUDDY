@@ -14,6 +14,7 @@ using System.Windows.Forms;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Security.Cryptography;
+using Newtonsoft.Json.Linq;
 
 namespace FeBuddyLibrary.DataAccess
 {
@@ -927,6 +928,9 @@ namespace FeBuddyLibrary.DataAccess
                     }
 
                     string jsonString = JsonConvert.SerializeObject(geojson, new JsonSerializerSettings { Formatting = Formatting.Indented, NullValueHandling = NullValueHandling.Ignore });
+
+                    //jsonString = PostProcess(jsonString);
+
                     File.WriteAllText(file.FullName, jsonString);
                 }
             }
@@ -1034,7 +1038,8 @@ namespace FeBuddyLibrary.DataAccess
                 else
                 {
                     // If start coords do NOT match end coords of previous element
-                    if (LatLonHelpers.CorrectIlleagleLon(element.StartLon).ToString() + " " + element.StartLat.ToString() != LatLonHelpers.CorrectIlleagleLon(prevElement.EndLon).ToString() + " " + prevElement.EndLat.ToString())
+                    if ((LatLonHelpers.CorrectIlleagleLon(element.StartLon).ToString() + " " + element.StartLat.ToString() != LatLonHelpers.CorrectIlleagleLon(prevElement.EndLon).ToString() + " " + prevElement.EndLat.ToString())
+                        && (LatLonHelpers.CorrectIlleagleLon(element.EndLon).ToString() + " " + element.EndLat.ToString() != LatLonHelpers.CorrectIlleagleLon(prevElement.StartLon).ToString() + " " + prevElement.StartLat.ToString()))
                     {
                         if (crossesAM)
                         {
@@ -1168,5 +1173,6 @@ namespace FeBuddyLibrary.DataAccess
             //}
             return output;
         }
+
     }
 }

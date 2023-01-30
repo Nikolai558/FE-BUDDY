@@ -1,58 +1,52 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Drawing;
-using System.Drawing.Drawing2D;
 using System.Drawing.Text;
 using System.IO;
+using System.Reflection;
 using System.Windows.Forms;
+using FeBuddyLibrary;
+using FeBuddyLibrary.DataAccess;
+using FeBuddyLibrary.Dxf.Data;
+using FeBuddyLibrary.Dxf.Models;
 using FeBuddyLibrary.Helpers;
+using FeBuddyLibrary.Models;
+using FeBuddyLibrary.Models.MetaFileModels;
 
 namespace FeBuddyWinFormUI
 {
-    public partial class LandingForm : Form
+    public partial class SctToGeojsonForm : Form
     {
         private readonly string _currentVersion;
         readonly PrivateFontCollection _pfc = new PrivateFontCollection();
-        private ToolTip _toolTip;
+        private string fullSourceFilePath;
 
-        public LandingForm(string currentVersion)
+        public SctToGeojsonForm(string currentVersion)
         {
             Logger.LogMessage("DEBUG", "INITIALIZING COMPONENT");
-
-            _toolTip = new ToolTip();
             _pfc.AddFontFile("Properties\\romantic.ttf");
-
-            this.FormClosed += (s, args) => Application.Exit();
-
-            _currentVersion = currentVersion;
 
             InitializeComponent();
             menuStrip.Renderer = new MyRenderer();
 
-
             // It should grab from the assembily info. 
-            this.Text = $"FE-BUDDY - V{_currentVersion}";
-            this.allowBetaMenuItem.Checked = Properties.Settings.Default.AllowPreRelease;
+            this.Text = $"FE-BUDDY - V{currentVersion}";
+
+            GlobalConfig.outputDirBase = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+
+            GlobalConfig.outputDirBase = Path.Combine(GlobalConfig.outputDirBase, "FE-BUDDY-GeoJSONs");
+
+            outputPathLabel.Text = GlobalConfig.outputDirBase;
+            outputPathLabel.Visible = true;
+            outputPathLabel.MaximumSize = new Size(257, 82);
+            _currentVersion = currentVersion;
         }
 
         private class MyRenderer : ToolStripProfessionalRenderer
         {
             public MyRenderer() : base(new MyColors()) { }
-
-            protected override void OnRenderItemCheck(ToolStripItemImageRenderEventArgs e)
-            {
-                e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
-                var r = new Rectangle(e.ImageRectangle.Location, e.ImageRectangle.Size);
-                r.Inflate(-4, -6);
-                e.Graphics.DrawLines(new Pen(Color.Green, 2), new Point[]{
-                new Point(r.Left, r.Bottom - r.Height /2),
-                new Point(r.Left + r.Width /3,  r.Bottom),
-                new Point(r.Right, r.Top)});
-
-                // this is incharge of changing the checkbox apearance..... figure out how I want it to look and what I can do to get it there.
-                // This is base render (default) leave this until our custom apearance can be "rendered"
-                // base.OnRenderItemCheck(e);
-            }
         }
 
         private class MyColors : ProfessionalColorTable
@@ -73,44 +67,169 @@ namespace FeBuddyWinFormUI
             {
                 get { return Color.Black; }
             }
+
             public override Color MenuItemPressedGradientEnd
             {
                 get { return Color.Black; }
             }
-            public override Color CheckBackground
-            {
-                get { return Color.Black; }
-            }
-            public override Color MenuItemBorder
-            {
-                get { return Color.Gray; }
-            }
-            public override Color ToolStripBorder
-            {
-                get { return Color.Black; }
-            }
-            public override Color ToolStripDropDownBackground
-            {
-                get { return Color.Black; }
-            }
         }
 
-        private void LandingForm_Closing(object sender, EventArgs e)
+        private void GeojsonForm_Closing(object sender, EventArgs e)
         {
-            Logger.LogMessage("DEBUG", "Landing FORM CLOSING");
+            Logger.LogMessage("DEBUG", "GeoJson Form CLOSING");
         }
 
-        private void LandingForm_Shown(object sender, EventArgs e)
+        private void sourceFileButton_Click(object sender, EventArgs e)
         {
-            Logger.LogMessage("DEBUG", "SHOWING Landing FORM");
+            OpenFileDialog sourceFilePath = new OpenFileDialog();
+            sourceFilePath.Filter = "SCT2 files (*.sct2)|*.sct2|SCT files (*.sct)|*.sct|All files (*.*)|*.*";
+            //sourceFilePath.RestoreDirectory = true;
+
+            sourceFilePath.InitialDirectory = Environment.ExpandEnvironmentVariables(@"%userprofile%\Downloads");
+
+            sourceFilePath.ShowDialog();
+            fullSourceFilePath = sourceFilePath.FileName;
+
+            sourceFileLabel.Text = fullSourceFilePath;
+
+            if (fullSourceFilePath.Length >= 20)
+            {
+                if (fullSourceFilePath[^17..].Contains('\\'))
+                {
+                    sourceFileLabel.Text = "..\\" + fullSourceFilePath[^17..].Split('\\')[^1];
+                }
+                else
+                {
+                    sourceFileLabel.Text = "..\\.." + fullSourceFilePath[^15..];
+                }
+            }
+
+            sourceFileLabel.Visible = true;
+            sourceFileLabel.MaximumSize = new Size(257, 82);
         }
 
-        private void LandingForm_Load(object sender, EventArgs e)
+        private void ChooseDirButton_Click(object sender, EventArgs e)
         {
-            Logger.LogMessage("DEBUG", "LOADING Landing FORM");
+            Logger.LogMessage("DEBUG", "USER CHOOSING DIFFERENT OUTPUT DIRECTORY");
+            FolderBrowserDialog outputDir = new FolderBrowserDialog();
 
+            outputDir.InitialDirectory = Environment.ExpandEnvironmentVariables(@"%userprofile%\Downloads");
 
-            // TODO - Add fonts to buttons. 
+            outputDir.ShowDialog();
+
+            //fullSourceFilePath = Path.Combine(fullSourceFilePath, "FE-BUDDY-GeoJSONs");
+
+            GlobalConfig.outputDirBase = Path.Combine(outputDir.SelectedPath, "FE-BUDDY-GeoJSONs");
+
+            if (GlobalConfig.outputDirBase == "FE-BUDDY-GeoJSONs")
+            {
+                GlobalConfig.outputDirBase = "";
+            }
+
+            outputPathLabel.Text = GlobalConfig.outputDirBase;
+
+            if (GlobalConfig.outputDirBase.Length >= 20)
+            {
+                if (GlobalConfig.outputDirBase[^17..].Contains('\\'))
+                {
+                    outputPathLabel.Text = "..\\" + GlobalConfig.outputDirBase[^17..].Split('\\')[^2];
+                }
+                else
+                {
+                    outputPathLabel.Text = "..\\.." + GlobalConfig.outputDirBase[^15..];
+                }
+            }
+
+            outputPathLabel.Visible = true;
+            outputPathLabel.MaximumSize = new Size(257, 82);
+        }
+
+        private void StartButton_Click(object sender, EventArgs e)
+        {
+
+            if (string.IsNullOrEmpty(fullSourceFilePath) || (fullSourceFilePath.Split('.')[^1].ToLower() != "sct2" && fullSourceFilePath.Split('.')[^1].ToLower() != "sct"))
+            {
+                MessageBoxButtons buttons = MessageBoxButtons.OK;
+                DialogResult result;
+
+                result = MessageBox.Show("Source File Path is Empty", "An invalid operation occured.", buttons);
+                return;
+            }
+
+            if (string.IsNullOrEmpty(GlobalConfig.outputDirBase))
+            {
+                MessageBoxButtons buttons = MessageBoxButtons.OK;
+                DialogResult result;
+
+                result = MessageBox.Show("Output Directory is Empty", "An invalid operation occured.", buttons);
+                return;
+            }
+
+            if (!File.Exists(fullSourceFilePath))
+            {
+                MessageBoxButtons buttons = MessageBoxButtons.OK;
+                DialogResult result;
+
+                result = MessageBox.Show("Source File does not exist.", "An invalid operation occured.", buttons);
+                return;
+            }
+
+            StartConversion();
+        }
+        private void EnableButtons(bool isEnabled)
+        {
+            sourceFileButton.Enabled = isEnabled;
+            chooseDirButton.Enabled = isEnabled;
+            startButton.Enabled = isEnabled;
+        }
+
+        private void StartConversion()
+        {
+            EnableButtons(false);
+
+            Logger.LogMessage("INFO", "SETTING UP Conversion WORKER");
+
+            var worker = new BackgroundWorker();
+            worker.RunWorkerCompleted += Worker_StartParsingCompleted;
+            worker.DoWork += Worker_StartConversionDoWork;
+
+            worker.RunWorkerAsync();
+        }
+
+        private void Worker_StartConversionDoWork(object sender, DoWorkEventArgs e)
+        {
+            GeoJson geoJsonConverter = new GeoJson();
+
+            SctFileModel sctModel = geoJsonConverter.ReadSctFile(fullSourceFilePath);
+
+            geoJsonConverter.WriteSctGeoJson(GlobalConfig.outputDirBase, sctModel);
+        }
+
+        private void Worker_StartParsingCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            if (e.Error != null)
+            {
+                DialogResult warningMSG = MessageBox.Show(
+                    $"ERROR\n\nWhile completing your selected task, FE-BUDDY came across the following issue:\n{e.Error.Message}\n\nThis could be due to a bug in the program, or a unexpected or incorrectly formatted item in the source file.\n\nPlease attempt to fix this issue and run the program again. If you continue to have an issue, please reach out the FE-BUDDY developers by reporting this issue and including a screenshot with the source file.\n\nhttps://github.com/Nikolai558/FE-BUDDY/issues",
+                    "CAUTION",
+                    MessageBoxButtons.OK);
+            }
+
+            EnableButtons(true);
+
+            Logger.LogMessage("INFO", "PROCESSING COMPLETED");
+            //File.Copy(Logger._logFilePath, $"{GlobalConfig.outputDirectory}\\FE-BUDDY_LOG.txt");
+        }
+
+        private void geoJsonForm_Shown(object sender, EventArgs e)
+        {
+            Logger.LogMessage("DEBUG", "SHOWING MAIN FORM");
+        }
+
+        private void GeoJsonForm_Load(object sender, EventArgs e)
+        {
+            Logger.LogMessage("DEBUG", "LOADING MAIN FORM");
+            
             InstructionsMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
             CreditsMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
             ChangeLogMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
@@ -118,11 +237,12 @@ namespace FeBuddyWinFormUI
             FAQMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
             RoadmapMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
             informationToolStripMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
-            discordToolStripMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
             settingsToolStripMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
             reportIssuesToolStripMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
-            allowBetaMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
+            discordToolStripMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
             newsToolStripMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
+            //mainMenuMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
+            //exitMenuItem.Font = new Font(pfc.Families[0], 12, FontStyle.Regular);
         }
 
         private void UninstallMenuItem_Click(object sender, EventArgs e)
@@ -178,10 +298,29 @@ namespace FeBuddyWinFormUI
                         + "		DEL /Q \"FE-BUDDY.lnk\"\n"
                         + "	)\n"
                         + "\n"
+                        + "CD /d \"%appdata%\\Microsoft\\Windows\\Start Menu\\Programs\"\n"
+                        + " if NOT exist \"Kyle Sanders\" (\n"
+                        + "     SET OLD_START_SHORTCUT=NOT_FOUND\n"
+                        + ")\n"
+                        + "\n"
+                        + "	if exist \"Kyle Sanders\" (\n"
+                        + "		SET OLD_START_SHORTCUT=FOUND\n"
+                        + "		RD /Q /S \"Kyle Sanders\"\n"
+                        + "	)\n"
+                        + "\n"
+                        + "	if NOT exist FE-BUDDY.lnk (\n"
+                        + "		SET /A NOT_FOUND_COUNT=%NOT_FOUND_COUNT% + 1\n"
+                        + "		SET NEW_START_SHORTCUT=NOT_FOUND\n"
+                        + "	)\n"
+                        + "\n"
+                        + "	if exist FE-BUDDY.lnk (\n"
+                        + "		SET NEW_START_SHORTCUT=FOUND\n"
+                        + "		DEL /Q \"FE-BUDDY.lnk\"\n"
+                        + "	)\n"
+                        + "\n"
                         + "IF %NOT_FOUND_COUNT%==0 SET UNINSTALL_STATUS=COMPLETE\n"
-                        + "IF %NOT_FOUND_COUNT%==1 SET UNINSTALL_STATUS=PARTIAL\n"
-                        + "IF %NOT_FOUND_COUNT%==2 SET UNINSTALL_STATUS=PARTIAL\n"
-                        + "IF %NOT_FOUND_COUNT%==3 SET UNINSTALL_STATUS=FAIL\n"
+                        + "IF %NOT_FOUND_COUNT% GEQ 1 SET UNINSTALL_STATUS=PARTIAL\n"
+                        + "IF %NOT_FOUND_COUNT%==4 SET UNINSTALL_STATUS=FAIL\n"
                         + "\n"
                         + "IF %UNINSTALL_STATUS%==COMPLETE GOTO UNINSTALLED\n"
                         + "IF %UNINSTALL_STATUS%==PARTIAL GOTO UNINSTALLED\n"
@@ -198,6 +337,8 @@ namespace FeBuddyWinFormUI
                         + "IF %FE-BUDDY_TEMP_FOLDER%==FOUND ECHO        -temp\\FE-BUDDY\n"
                         + "IF %FE-BUDDY_APPDATA_FOLDER%==FOUND ECHO        -AppData\\Local\\FE-BUDDY\n"
                         + "IF %FE-BUDDY_SHORTCUT%==FOUND ECHO        -Desktop\\FE-BUDDY Shortcut\n"
+                        + "IF %OLD_START_SHORTCUT%==FOUND ECHO        -Start Menu\\Kyle Sanders\n"
+                        + "IF %NEW_START_SHORTCUT%==FOUND ECHO        -Start Menu\\FE-BUDDY Shortcut\n"
                         + "\n"
                         + ":FAILED\n"
                         + "\n"
@@ -215,6 +356,7 @@ namespace FeBuddyWinFormUI
                         + "		ECHO        -Desktop\\FE-BUDDY Shortcut\n"
                         + "		ECHO             --If the shortcut was renamed, delete the shortcut manually.\n"
                         + "	)\n"
+                        + " IF %NEW_START_SHORTCUT%==NOT_FOUND ECHO        -Start Menu\\FE-BUDDY Shortcut\n"
                         + ")\n"
                         + "\n"
                         + "ECHO.\n"
@@ -319,80 +461,6 @@ namespace FeBuddyWinFormUI
             }
         }
 
-        private void landingStartButton_MouseHover(object sender, EventArgs e)
-        {
-            _toolTip.SetToolTip(landingStartButton, "I'm not your Buddy, Guy...");
-        }
-
-        private void landingStartButton_Click(object sender, EventArgs e)
-        {
-            // this.show() => should be this.close()... I don't like hitting the X button and it taking us back to the main menu
-            // Need to do a button to handle that if it works PROPERLY... I had issues with that but maybe it is fixed or maybe I was doing it wrong before. 
-
-            if (getparseAiracDataSelection.Checked)
-            {
-                var airacDataForm = new AiracDataForm(_currentVersion);
-                airacDataForm.FormClosing += (s, args) => this.Show();
-                airacDataForm.Show();
-                this.Hide();
-            }
-            else if (convertSct2DxfSelection.Checked)
-            {
-                DialogResult warningMSG = MessageBox.Show(
-                    "This feature is still a work-in-progress.\nWe have been able to get this to work with CAD programs in only very limited situations and we are asking for your help to see what works and what doesn't.\n\nIf you have a CAD program and want to assist us in troubleshooting, please use this feature and load the file in your CAD program.\n\nThen please join the FE-Buddy Discord, navigate to the #dxf-conversions channel and post:\n\n1) Successful or Not-Successful\n2) CAD program name\n3) Operating system\n4) Any further details such as error messages",
-                    "CAUTION",
-                    MessageBoxButtons.OK);
-
-
-                var sctToDxfForm = new SctToDxfForm(_currentVersion);
-                sctToDxfForm.FormClosing += (s, args) => this.Show();
-                sctToDxfForm.Show();
-                this.Hide();
-            }
-            else if (convertDat2SctSelection.Checked)
-            {
-                var datToSctForm = new DatToSctForm(_currentVersion);
-                datToSctForm.FormClosing += (s, args) => this.Show();
-                datToSctForm.Show();
-                this.Hide();
-            }
-            else if (convertKml2SCTSelection.Checked)
-            {
-                DialogResult warningMSG = MessageBox.Show(
-                    "This feature is still a work-in-progress.\n\nAs of right now only .SCT2 -> .KML conversions are possible.\n\nWe have been able to get this to work with some SCT2 files and we are asking for your help to see what works and what doesn't.\n\nIf your sector file does not work with this, then please join the FE-Buddy Discord, navigate to the #kml-conversions channel and post:\n\n1) Successful or Not-Successful\n2) Sector File\n3) Any further details such as error messages",
-                    "CAUTION",
-                    MessageBoxButtons.OK);
-                var kmlConversionForm = new KmlConversionForm(_currentVersion);
-                kmlConversionForm.FormClosing += (s, args) => this.Show();
-                kmlConversionForm.Show();
-                this.Hide();
-            }
-            else if (convertVstarsVeramToGeoJson.Checked)
-            {
-                DialogResult warningMSG = MessageBox.Show(
-                    "Notes:\n\nOnly the “(facility ID) Video Maps.xml” or “(facility ID) GeoMaps.xml” files are legal source files. FEB does not read the main vSTARS/vERAM.gz files.\n\nIf your facility file has illegal/”Fake” longitudes, they will be converted back to legal (ex: -180.1 will be converted back to 179.9 and vice versa).\n\nLines that cross the Antimeridian line will be split at the Antimeridian line.\n\nvERAM:\nIf you have an item that uses an XSI: TYPE that is not defined by Defaults above the Elements array, that item will NOT be included in the GeoJSON output.\n\nTest the output files with a GeoJSON reader such as QGIS or https://geojson.io/ prior to uploading to vNAS Admin site.",
-                    "INFO",
-                    MessageBoxButtons.OK);
-
-                var geojsonForm = new GeoJsonForm(_currentVersion);
-                geojsonForm.FormClosing += (s, args) => this.Show();
-                geojsonForm.Show();
-                this.Hide();
-            }
-            else if (SctToGeoRadioButton.Checked)
-            {
-                var sctToGeoForm = new SctToGeojsonForm(_currentVersion);
-                sctToGeoForm.FormClosing += (s, args) => this.Show();
-                sctToGeoForm.Show();
-                this.Hide();
-            }
-            else
-            {
-                MessageBox.Show("This feature has not been implemented yet.");
-            }
-
-        }
-
         private void discordToolStripMenuItem_Click(object sender, EventArgs e)
         {
             Logger.LogMessage("DEBUG", "DISCORD MENU ITEM CLICKED");
@@ -405,5 +473,6 @@ namespace FeBuddyWinFormUI
             Process.Start(new ProcessStartInfo("https://github.com/Nikolai558/FE-BUDDY/wiki#news") { UseShellExecute = true });
             //Process.Start("https://github.com/Nikolai558/FE-BUDDY/wiki#news");
         }
+
     }
 }

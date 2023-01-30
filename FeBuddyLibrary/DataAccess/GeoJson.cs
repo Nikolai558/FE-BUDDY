@@ -15,6 +15,8 @@ using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Security.Cryptography;
 using Newtonsoft.Json.Linq;
+using FeBuddyLibrary.Dxf.Data;
+using FeBuddyLibrary.Dxf.Models;
 
 namespace FeBuddyLibrary.DataAccess
 {
@@ -130,6 +132,18 @@ namespace FeBuddyLibrary.DataAccess
             }
 
             return geo;
+        }
+
+        public SctFileModel ReadSctFile(string fullSourceFilePath)
+        {
+            DataFunctions _df = new DataFunctions();
+            SctFileModel _sctFileModel = _df.ReadSctFile(fullSourceFilePath);
+            return _sctFileModel;
+        }
+
+        public void WriteSctGeoJson(string dirPath, SctFileModel sctFileModel)
+        {
+            throw new NotImplementedException();
         }
 
         private static string MakeValidFileName(string name)

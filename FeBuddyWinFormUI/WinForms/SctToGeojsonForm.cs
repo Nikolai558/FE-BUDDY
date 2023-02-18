@@ -202,7 +202,7 @@ namespace FeBuddyWinFormUI
 
             SctFileModel sctModel = geoJsonConverter.ReadSctFile(fullSourceFilePath);
 
-            geoJsonConverter.WriteSctGeoJson(GlobalConfig.outputDirBase, sctModel);
+            geoJsonConverter.WriteSctGeoJson(GlobalConfig.outputDirBase, sctModel, Path.GetFileNameWithoutExtension(fullSourceFilePath));
         }
 
         private void Worker_StartParsingCompleted(object sender, RunWorkerCompletedEventArgs e)

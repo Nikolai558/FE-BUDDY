@@ -17,6 +17,7 @@ using System.Security.Cryptography;
 using Newtonsoft.Json.Linq;
 using FeBuddyLibrary.Dxf.Data;
 using FeBuddyLibrary.Dxf.Models;
+using System.Drawing.Design;
 
 namespace FeBuddyLibrary.DataAccess
 {
@@ -141,17 +142,140 @@ namespace FeBuddyLibrary.DataAccess
             return _sctFileModel;
         }
 
-        public void WriteSctGeoJson(string dirPath, SctFileModel sctFileModel)
+        public void WriteSctGeoJson(string dirPath, SctFileModel sctFileModel, string sctFileName)
         {
-            throw new NotImplementedException();
+
+            //      SID (Folder)
+            //      STAR (Folder)
+            //      GEO.geojson
+            //      LABELS.geojson
+            //      REGIONS.geojson
+
+            var sctInfoSectionName = sctFileModel.SctInfoSection.SctFileName?.ToUpper();
+
+            if (sctInfoSectionName != null)
+            {
+                dirPath = Path.Combine(dirPath, MakeValidFileName(sctInfoSectionName));
+            }
+            else
+            {
+                dirPath = Path.Combine(dirPath, MakeValidFileName(sctFileName));
+            }
+
+            // FE-Buddy GeoJson (Folder)
+            //  SCT File Name (Folder)
+
+            //      ARTCC.geojson
+            WriteArtccGeo(dirPath, sctFileModel.SctArtccSection, "ARTCC.geojson");
+            //      ARTCC-HIGH.geojson
+            WriteArtccGeo(dirPath, sctFileModel.SctArtccHighSection, "ARTCC-HIGH.geojson");
+            //      ARTCC-LOW.geojson
+            WriteArtccGeo(dirPath, sctFileModel.SctArtccLowSection, "ARTCC-LOW.geojson");
+
         }
+
+        private void WriteArtccGeo(string dirPath, List<SctArtccModel> artccModel, string fileName)
+        {
+            var outputFile = Path.Combine(dirPath, MakeValidFileName(fileName));
+            //outputFile = MakeValidFileName(outputFile);
+
+            FileInfo fileInfo = new FileInfo(outputFile);
+            Directory.CreateDirectory(fileInfo.DirectoryName);
+
+            var geojson = new FeatureCollection();
+            List<Feature> allFeatures = new List<Feature>();
+
+            double prevEndLat = 0;
+            double prevEndLon = 0;
+            Feature currentFeature = null;
+            foreach (var model in artccModel)
+            {
+                
+
+                double startLat = LatLonHelpers.CorrectIlleagleLon(double.Parse(LatLonHelpers.CreateDecFormat(model.StartLat, false)));
+                double startLon = LatLonHelpers.CorrectIlleagleLon(double.Parse(LatLonHelpers.CreateDecFormat(model.StartLon, false)));
+                double EndLat = LatLonHelpers.CorrectIlleagleLon(double.Parse(LatLonHelpers.CreateDecFormat(model.EndLat, false)));
+                double EndLon = LatLonHelpers.CorrectIlleagleLon(double.Parse(LatLonHelpers.CreateDecFormat(model.EndLon, false)));
+
+                bool crossesAM = false;
+                var coords = CheckAMCrossing(startLat, startLon, EndLat, EndLon);
+                if (coords.Count() == 4)
+                {
+                    crossesAM = true;
+                }
+
+
+                if (startLat != prevEndLat || startLon != prevEndLon)
+                {
+                    if (currentFeature != null && currentFeature.geometry.coordinates.Count() >= 1)
+                    {
+                        allFeatures.Add(currentFeature);
+                    }
+
+                    if (crossesAM)
+                    {
+                        currentFeature.geometry.coordinates.Add(coords[0]);
+                        currentFeature.geometry.coordinates.Add(coords[1]);
+                        allFeatures.Add(currentFeature);
+                        currentFeature = new Feature() { type = "Feature", geometry = new Geometry() { type = "LineString", coordinates = new List<dynamic>() }, properties = { } };
+                        currentFeature.geometry.coordinates.Add(coords[2]);
+                        currentFeature.geometry.coordinates.Add(coords[3]);
+                    }
+                    else
+                    {
+                        currentFeature = new Feature() { type = "Feature", geometry = new Geometry() { type = "LineString", coordinates = new List<dynamic>() }, properties = { } };
+                        currentFeature.geometry.coordinates.Add(new List<double>() { startLon, startLat });
+                        currentFeature.geometry.coordinates.Add(new List<double>() { EndLon, EndLat });
+                    }
+                }
+                else
+                {
+                    if (crossesAM)
+                    {
+                        currentFeature.geometry.coordinates.Add(coords[1]);
+                        allFeatures.Add(currentFeature);
+                        currentFeature = new Feature() { type = "Feature", geometry = new Geometry() { type = "LineString", coordinates = new List<dynamic>() }, properties = { } };
+                        currentFeature.geometry.coordinates.Add(coords[2]);
+                        currentFeature.geometry.coordinates.Add(coords[3]);
+                    }
+                    else
+                    {
+                        currentFeature.geometry.coordinates.Add(new List<double> { EndLon, EndLat });
+                    }
+                }
+
+                prevEndLat = EndLat;
+                prevEndLon = EndLon;
+            }
+
+            if (currentFeature != null && currentFeature.geometry.coordinates.Count() >= 1)
+            {
+                allFeatures.Add(currentFeature);
+            }
+
+            geojson.features = allFeatures;
+
+            if (geojson.features.Count() >= 1)
+            {
+                string json = JsonConvert.SerializeObject(geojson, new JsonSerializerSettings { Formatting = Formatting.Indented, NullValueHandling = NullValueHandling.Ignore });
+                File.WriteAllText(outputFile, json);
+            }
+        }
+
+        //private static string MakeValidFileName(string name)
+        //{
+        //    string invalidChars = System.Text.RegularExpressions.Regex.Escape(new string(System.IO.Path.GetInvalidFileNameChars()));
+        //    string invalidRegStr = string.Format(@"([{0}]*\.+$)|([{0}]+)", invalidChars);
+
+        //    return System.Text.RegularExpressions.Regex.Replace(name, invalidRegStr, "-");
+        //}
+
+
+        private static Regex _invalidFileNameCharsRegex = new Regex(string.Concat("[", Regex.Escape(new string(Path.GetInvalidFileNameChars())), "]+"), RegexOptions.Compiled);
 
         private static string MakeValidFileName(string name)
         {
-            string invalidChars = System.Text.RegularExpressions.Regex.Escape(new string(System.IO.Path.GetInvalidFileNameChars()));
-            string invalidRegStr = string.Format(@"([{0}]*\.+$)|([{0}]+)", invalidChars);
-
-            return System.Text.RegularExpressions.Regex.Replace(name, invalidRegStr, "-");
+            return _invalidFileNameCharsRegex.Replace(name, "-");
         }
 
         public void WriteVideoMapGeoJson(string dirPath, VideoMaps videoMaps, string videoMapName, VideoMapFileFormat videoMapFileFormat)

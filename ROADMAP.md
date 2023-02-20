@@ -9,23 +9,23 @@ The following is a list of features that we are considering or actively working 
   - This should be output with AIRAC updates ...\FE-BUDDY_Output\CRC
     - Then use a folder structure similar to "SECTOR FILES" to organize the output files
   - Output files names:
-    - AIRPORTS_symbols
-    - AIRPORTS_text
-    - AIRWAYS-HIGH_lines
-    - AIRWAYS-HIGH_symbols
-    - AIRWAYS-HIGH_text
-    - AIRWAYS-LOW_lines
-    - AIRWAYS-LOW_symbols
-    - AIRWAYS-LOW_text
+    - APT_symbols
+    - APT_text
     - ARTCC BOUDNARIES-Low_lines
     - ARTCC BOUNDARIES-High_lines
-    - DPs_lines `individual files and then another file with all combined`
-    - FIXES_symbols
-    - FIXES_text
+    - AWY-HIGH_lines
+    - AWY-HIGH_symbols
+    - AWY-HIGH_text
+    - AWY-LOW_lines
+    - AWY-LOW_symbols
+    - AWY-LOW_text
+    - DP_lines
+    - FIX_symbols
+    - FIX_text
     - NDB_symbols
     - NDB_text
     - RWY_lines
-    - STARS_lines `individual files and then another file with all combined`
+    - STARS_lines
     - VOR_symbols
     - VOR_text
     - WX STATIONS_symbols

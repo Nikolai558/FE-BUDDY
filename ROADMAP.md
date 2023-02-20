@@ -6,7 +6,7 @@ The following is a list of features that we are considering or actively working 
 ---
 
 - [ ] AIRAC GeoJSON Output
-  - This should be output with AIRAC updates ...\FE-BUDDY_Output\CRC-GeoJSON
+  - This should be output with AIRAC updates ...\FE-BUDDY_Output\CRC
     - Then use a folder structure similar to "SECTOR FILES" to organize the output files
   - Output files names:
     - AIRPORTS_symbols

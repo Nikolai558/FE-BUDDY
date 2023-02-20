@@ -30,22 +30,19 @@ namespace FeBuddyLibrary.DataAccess
 
             WriteGeoJson(effectiveDate);
 
+            WriteAptISR(artcc);
+            WriteAptSctData();
 
-            // GEOJSONTODO - UNCOMENT THE FOLLOWING CODE: 
+            WriteEramAirportsXML(effectiveDate);
+            StoreWaypointsXMLData();
+            WriteRunwayData();
 
-            //WriteAptISR(artcc);
-            //WriteAptSctData();
+            WriteAptGeoMap();
+            WriteAptTextGeoMap();
 
-            //WriteEramAirportsXML(effectiveDate);
-            //StoreWaypointsXMLData();
-            //WriteRunwayData();
-
-            //WriteAptGeoMap();
-            //WriteAptTextGeoMap();
-
-            //ParseAndWriteWxStation(effectiveDate);
-            //WriteWxXmlOutput();
-            //Logger.LogMessage("INFO", $"COMPLETED APT AND WEATHER");
+            ParseAndWriteWxStation(effectiveDate);
+            WriteWxXmlOutput();
+            Logger.LogMessage("INFO", $"COMPLETED APT AND WEATHER");
 
         }
 

@@ -331,6 +331,10 @@ namespace FeBuddyWinFormUI
             GetAptData ParseAPT = new GetAptData();
             ParseAPT.AptAndWxMain(GlobalConfig.airacEffectiveDate, GlobalConfig.facilityID);
 
+            SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Boundaries");
+            GetArbData ParseArb = new GetArbData();
+            ParseArb.ArbMain(GlobalConfig.airacEffectiveDate);
+
             bool DEVMODE = true;
             if (DEVMODE == false)
             {
@@ -342,8 +346,6 @@ namespace FeBuddyWinFormUI
                 SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing DPs and STARs");
                 GetStarDpData ParseStarDp = new GetStarDpData();
                 ParseStarDp.StarDpQuaterBackFunc(GlobalConfig.airacEffectiveDate);
-
-                
 
                 if (currentAiracSelection.Checked == true)
                 {
@@ -372,9 +374,7 @@ namespace FeBuddyWinFormUI
                 GetFixData ParseFixes = new GetFixData();
                 ParseFixes.FixQuarterbackFunc(GlobalConfig.airacEffectiveDate);
 
-                SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Boundaries");
-                GetArbData ParseArb = new GetArbData();
-                ParseArb.ArbMain(GlobalConfig.airacEffectiveDate);
+                
 
                 // ------------------------------------------------------------------------------------------------------
                 // DO NOT CHANGE THE ORDER OF THESE TWO ITEMS, REFACTORING THIS IS NEEDED!!!!!

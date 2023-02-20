@@ -18,6 +18,72 @@ namespace FeBuddyLibrary.Helpers
             return 6376500.0 * (2.0 * Math.Atan2(Math.Sqrt(d3), Math.Sqrt(1.0 - d3)));
         }
 
+        public static List<dynamic> CheckAMCrossing(double startLat, double startLon, double endLat, double endLon)
+        {
+            startLon = LatLonHelpers.CorrectIlleagleLon(startLon);
+            endLon = LatLonHelpers.CorrectIlleagleLon(endLon);
+
+            List<dynamic> dynamicList = new List<dynamic>();
+
+            if (!((startLon < 0 && endLon > 0) || (startLon > 0 && endLon < 0)))
+            {
+                // Lon does not cross the AM in any way. Just return our Coordinates. 
+                dynamicList.Add(new List<double>() { startLon, startLat });
+                dynamicList.Add(new List<double>() { endLon, endLat });
+                return dynamicList;
+            }
+
+            // Lon DOES cross the AM. 
+            Loc startLoc = new Loc() { Latitude = startLat, Longitude = startLon };
+            Loc endLoc = new Loc() { Latitude = endLat, Longitude = endLon };
+            Loc midPointStartLoc = new Loc();
+            Loc midPointEndLoc = new Loc();
+            var bearing = LatLonHelpers.HaversineGreatCircleBearing(startLoc, endLoc);
+
+            //if ((startLoc.Longitude < 0 && (bearing > 180 && bearing < 360)) || (startLoc.Longitude > 0 && (bearing > 0 && bearing < 180)))
+            if ((startLoc.Longitude < 0 && (bearing > 0 && bearing < 180)) || (startLoc.Longitude > 0 && (bearing > 180 && bearing < 360)))
+            {
+                // Dont need to split
+                dynamicList.Add(new List<double>() { startLon, startLat });
+                dynamicList.Add(new List<double>() { endLon, endLat });
+                return dynamicList;
+            }
+
+            if (startLoc.Longitude < 0)
+            {
+                startLoc.Longitude = startLoc.Longitude + 180;
+                // See if this works, If needed change to the limit -179.99999999999
+                midPointStartLoc.Longitude = -180;
+            }
+            else
+            {
+                startLoc.Longitude = startLoc.Longitude - 180;
+                midPointStartLoc.Longitude = 180;
+            }
+
+            if (endLoc.Longitude < 0)
+            {
+                endLoc.Longitude = endLoc.Longitude + 180;
+                midPointEndLoc.Longitude = -180;
+            }
+            else
+            {
+                endLoc.Longitude = endLoc.Longitude - 180;
+                midPointEndLoc.Longitude = 180;
+            }
+
+            var slope = (startLat - endLat) / (startLoc.Longitude - endLoc.Longitude);
+            var midPointLat = startLat - (slope * startLoc.Longitude);
+
+            dynamicList.Add(new List<double>() { startLon, startLat });
+            dynamicList.Add(new List<double>() { midPointStartLoc.Longitude, midPointLat });
+            dynamicList.Add(new List<double>() { midPointEndLoc.Longitude, midPointLat });
+            dynamicList.Add(new List<double>() { endLon, endLat });
+            return dynamicList;
+
+        }
+
+
         /// <summary>
         /// Convert the Lat AND Lon from the FAA Data into a standard [N-S-E-W]000.00.00.000 format.
         /// </summary>

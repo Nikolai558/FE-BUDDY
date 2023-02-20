@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using FeBuddyLibrary.Helpers;
 using FeBuddyLibrary.Models;
+using Newtonsoft.Json;
 
 namespace FeBuddyLibrary.DataAccess
 {
@@ -22,9 +23,126 @@ namespace FeBuddyLibrary.DataAccess
             Logger.LogMessage("INFO", "STARTED ARB");
 
             ParseArb(effectiveDate);
+
+            WriteArbGeo();
+
+
             WriteArbSct();
             Logger.LogMessage("INFO", "COMPLETED ARB");
 
+        }
+
+        private void WriteArbGeo()
+        {
+
+            //if (boundry.Type == "HIGH" || boundry.Type == "FIR ONLY" || boundry.Type == "UTA")
+            //else if (boundry.Type == "LOW" || boundry.Type == "CTA" || boundry.Type == "BDRY")
+            //else
+            //{
+            //    // If we get here the FAA created a new Boundary Type. Need to handle that when it comes. 
+            //    throw new NotImplementedException();
+            //}
+
+            string boundaryHighFile = $"{GlobalConfig.outputDirectory}\\CRC\\ARTCC BOUNDARIES-HIGH_lines.geojson";
+            string boundaryLowFile = $"{GlobalConfig.outputDirectory}\\CRC\\ARTCC BOUNDARIES-LOW_lines.geojson";
+
+
+            FeatureCollection highGeo = new FeatureCollection();
+            List<Feature> highFeatures = new List<Feature>();
+
+
+            FeatureCollection lowGeo = new FeatureCollection();
+            List<Feature> lowFeatures = new List<Feature>();
+
+            bool isHigh = false;
+            foreach (BoundryModel boundryModel in allBoundaries)
+            {
+                if (boundryModel.Type == "HIGH" || boundryModel.Type == "FIR ONLY" || boundryModel.Type == "UTA") 
+                {
+                    isHigh = true;
+                }
+                else if (boundryModel.Type == "LOW" || boundryModel.Type == "CTA" || boundryModel.Type == "BDRY") 
+                {
+                    isHigh = false;
+                }
+                else
+                {
+                    // If we get here the FAA created a new Boundary Type. Need to handle that when it comes. 
+                    throw new NotImplementedException("BOUNDARY TYPE NOT FOUND: " + boundryModel.Type);
+                }
+
+                double prevLat = -999;
+                double prevLon = -999;
+                double currentLat = -999;
+                double currentLon = -999;
+                Feature feature = null;
+                foreach (ArbModel arb in boundryModel.AllPoints)
+                {
+                    if (prevLat == -999 || prevLon == -999)
+                    {
+                        feature = new Feature() { type = "Feature", geometry = new Geometry() { type = "LineString", coordinates = new List<dynamic>() } };
+
+                        prevLat = double.Parse(LatLonHelpers.CreateDecFormat(arb.Lat, false));
+                        prevLon = LatLonHelpers.CorrectIlleagleLon(double.Parse(LatLonHelpers.CreateDecFormat(arb.Lon, false)));
+
+                        feature.geometry.coordinates.Add(new List<double> { prevLon, prevLat });
+                        continue;
+                    }
+                    currentLat = double.Parse(LatLonHelpers.CreateDecFormat(arb.Lat, false));
+                    currentLon = LatLonHelpers.CorrectIlleagleLon(double.Parse(LatLonHelpers.CreateDecFormat(arb.Lon, false)));
+
+                    bool crossesAM = false;
+                    var coords = LatLonHelpers.CheckAMCrossing(prevLat, prevLon, currentLat, currentLon);
+                    if (coords.Count() == 4) { crossesAM = true; }
+
+                    if (crossesAM)
+                    {
+                        feature.geometry.coordinates.Add(coords[1]);
+
+                        if (isHigh)
+                        {
+                            highFeatures.Add(feature);
+                        }
+                        else
+                        {
+                            lowFeatures.Add(feature);
+                        }
+
+                        feature = new Feature() { type = "Feature", geometry = new Geometry() { type = "LineString", coordinates = new List<dynamic>() } };
+                        feature.geometry.coordinates.Add(coords[2]);
+                        feature.geometry.coordinates.Add(coords[3]);
+                    }
+                    else
+                    {
+                        feature.geometry.coordinates.Add(new List<double> { currentLon, currentLat });
+                    }
+
+                    prevLat = currentLat;
+                    prevLon = currentLon;
+                }
+                if (isHigh)
+                {
+                    highFeatures.Add(feature);
+                }
+                else
+                {
+                    lowFeatures.Add(feature);
+                }
+            }
+
+            if (lowFeatures.Count() >= 1)
+            {
+                lowGeo.features = lowFeatures;
+                string json = JsonConvert.SerializeObject(lowGeo, new JsonSerializerSettings { Formatting = Formatting.Indented, NullValueHandling = NullValueHandling.Ignore });
+                File.WriteAllText(boundaryLowFile, json);
+            }
+
+            if (highFeatures.Count() >=1 )
+            {
+                highGeo.features = highFeatures;
+                string json = JsonConvert.SerializeObject(highGeo, new JsonSerializerSettings { Formatting = Formatting.Indented, NullValueHandling = NullValueHandling.Ignore });
+                File.WriteAllText(boundaryHighFile, json);
+            }
         }
 
         /// <summary>

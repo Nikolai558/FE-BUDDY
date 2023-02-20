@@ -61,6 +61,9 @@ namespace FeBuddyLibrary.Helpers
             Logger.LogMessage("DEBUG", "CREATING OUTPUT DIRECTORIES");
             Directory.CreateDirectory(GlobalConfig.outputDirectory);
             Directory.CreateDirectory($"{GlobalConfig.outputDirectory}\\ALIAS");
+            Directory.CreateDirectory($"{GlobalConfig.outputDirectory}\\CRC");
+            Directory.CreateDirectory($"{GlobalConfig.outputDirectory}\\CRC\\STARs");
+            Directory.CreateDirectory($"{GlobalConfig.outputDirectory}\\CRC\\DPs");
             Directory.CreateDirectory($"{GlobalConfig.outputDirectory}\\VRC");
             Directory.CreateDirectory($"{GlobalConfig.outputDirectory}\\VSTARS");
             Directory.CreateDirectory($"{GlobalConfig.outputDirectory}\\VERAM");

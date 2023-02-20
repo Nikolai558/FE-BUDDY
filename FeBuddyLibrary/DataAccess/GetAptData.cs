@@ -8,6 +8,8 @@ using System.Xml.Linq;
 using System.Xml.Serialization;
 using FeBuddyLibrary.Helpers;
 using FeBuddyLibrary.Models;
+using Newtonsoft.Json;
+using Formatting = Newtonsoft.Json.Formatting;
 
 namespace FeBuddyLibrary.DataAccess
 {
@@ -25,20 +27,87 @@ namespace FeBuddyLibrary.DataAccess
             Logger.LogMessage("INFO", $"STARTING APT AND WEATHER");
 
             ParseAptData(effectiveDate);
-            WriteAptISR(artcc);
-            WriteAptSctData();
 
-            WriteEramAirportsXML(effectiveDate);
-            StoreWaypointsXMLData();
-            WriteRunwayData();
+            WriteGeoJson(effectiveDate);
 
-            WriteAptGeoMap();
-            WriteAptTextGeoMap();
 
-            ParseAndWriteWxStation(effectiveDate);
-            WriteWxXmlOutput();
-            Logger.LogMessage("INFO", $"COMPLETED APT AND WEATHER");
+            // GEOJSONTODO - UNCOMENT THE FOLLOWING CODE: 
 
+            //WriteAptISR(artcc);
+            //WriteAptSctData();
+
+            //WriteEramAirportsXML(effectiveDate);
+            //StoreWaypointsXMLData();
+            //WriteRunwayData();
+
+            //WriteAptGeoMap();
+            //WriteAptTextGeoMap();
+
+            //ParseAndWriteWxStation(effectiveDate);
+            //WriteWxXmlOutput();
+            //Logger.LogMessage("INFO", $"COMPLETED APT AND WEATHER");
+
+        }
+
+        private void WriteGeoJson(string effectiveDate)
+        {
+            string aptSymbolsFile = $"{GlobalConfig.outputDirectory}\\CRC\\APT_symbols.geojson";
+            string aptTextFile = $"{GlobalConfig.outputDirectory}\\CRC\\APT_text.geojson";
+
+
+            FeatureCollection textGeo = new FeatureCollection();
+            List<Feature> textAllFeatures = new List<Feature>();
+
+            var textFeature = new Feature()
+            {
+                type = "Feature",
+                geometry = new Geometry() { type = "Point" },
+                properties = new Properties()
+            };
+
+            FeatureCollection symbolGeo = new FeatureCollection();
+            List<Feature> symbolAllFeatures = new List<Feature>();
+
+            var symbolFeature = new Feature()
+            {
+                type = "Feature",
+                geometry = new Geometry() { type = "Point" }
+            };
+
+            foreach (AptModel aptModel in allAptModels)
+            {
+                symbolFeature.geometry.coordinates = new List<dynamic>() { double.Parse(aptModel.Lon_Dec), double.Parse(aptModel.Lat_Dec) };
+                textFeature.geometry.coordinates = new List<dynamic>() { double.Parse(aptModel.Lon_Dec), double.Parse(aptModel.Lat_Dec) };
+                textFeature.properties.text = new string[] { !string.IsNullOrEmpty(aptModel.Icao) ? aptModel.Icao : aptModel.Id };
+
+                symbolAllFeatures.Add(symbolFeature);
+                textAllFeatures.Add(textFeature);
+
+                textFeature = new Feature()
+                {
+                    type = "Feature",
+                    geometry = new Geometry() { type = "Point"},
+                    properties = new Properties()
+                };
+                symbolFeature = new Feature()
+                {
+                    type = "Feature",
+                    geometry = new Geometry() { type = "Point"}
+                };
+            }
+            textGeo.features = textAllFeatures;
+            symbolGeo.features = symbolAllFeatures;
+
+            if (textGeo.features.Count() >= 1)
+            {
+                string json = JsonConvert.SerializeObject(textGeo, new JsonSerializerSettings { Formatting = Formatting.None, NullValueHandling = NullValueHandling.Ignore });
+                File.WriteAllText(aptTextFile, json);
+            }
+            if (symbolGeo.features.Count() >= 1)
+            {
+                string json = JsonConvert.SerializeObject(symbolGeo, new JsonSerializerSettings { Formatting = Formatting.None, NullValueHandling = NullValueHandling.Ignore });
+                File.WriteAllText(aptSymbolsFile, json);
+            }
         }
 
         /// <summary>

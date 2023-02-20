@@ -327,6 +327,10 @@ namespace FeBuddyWinFormUI
             SetControlPropertyThreadSafe(processingDataLabel, "Text", "Unzipping Files");
             DirectoryHelpers.UnzipAllDownloaded();
 
+            SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Airports");
+            GetAptData ParseAPT = new GetAptData();
+            ParseAPT.AptAndWxMain(GlobalConfig.airacEffectiveDate, GlobalConfig.facilityID);
+
             bool DEVMODE = true;
             if (DEVMODE == false)
             {
@@ -339,9 +343,7 @@ namespace FeBuddyWinFormUI
                 GetStarDpData ParseStarDp = new GetStarDpData();
                 ParseStarDp.StarDpQuaterBackFunc(GlobalConfig.airacEffectiveDate);
 
-                SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Airports");
-                GetAptData ParseAPT = new GetAptData();
-                ParseAPT.AptAndWxMain(GlobalConfig.airacEffectiveDate, GlobalConfig.facilityID);
+                
 
                 if (currentAiracSelection.Checked == true)
                 {

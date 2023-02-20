@@ -1,6 +1,8 @@
-﻿namespace FeBuddyLibrary.Dxf.Models
+﻿using FeBuddyLibrary.DataAccess;
+
+namespace FeBuddyLibrary.Dxf.Models
 {
-    public class SctGeoModel
+    public class SctGeoModel: IStartEndLat
     {
         public string StartLat { get; set; }
         public string StartLon { get; set; }

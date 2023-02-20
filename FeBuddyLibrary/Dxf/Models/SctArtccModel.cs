@@ -1,6 +1,8 @@
-﻿namespace FeBuddyLibrary.Dxf.Models
+﻿using FeBuddyLibrary.DataAccess;
+
+namespace FeBuddyLibrary.Dxf.Models
 {
-    public class SctArtccModel
+    public class SctArtccModel : IStartEndLat
     {
         public string Name { get; set; }
         public string StartLat { get; set; }

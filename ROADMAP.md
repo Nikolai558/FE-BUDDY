@@ -27,7 +27,8 @@ The following is a list of features that we are considering or actively working 
     - FIXES_text
     - NDB_symbols
     - NDB_text
-    - STARSs_lines `individual files and then another file with all combined`
+    - RWY_lines
+    - STARS_lines `individual files and then another file with all combined`
     - VOR_symbols
     - VOR_text
     - WX STATIONS_symbols

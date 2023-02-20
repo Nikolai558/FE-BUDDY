@@ -870,9 +870,14 @@ namespace FeBuddyLibrary.Dxf.Data
             return results;
         }
 
-        private SctInfoModel GetSctInfo(string[] vs)
+        private SctInfoModel? GetSctInfo(string[] vs)
         {
             Logger.LogMessage("INFO", "GETTING SCT INFO in SCT FILE");
+
+            if (vs.Count() == 0)
+            {
+                return new SctInfoModel();
+            }
 
             SctInfoModel result = new SctInfoModel()
             {
@@ -894,7 +899,7 @@ namespace FeBuddyLibrary.Dxf.Data
             return result;
         }
 
-        private List<SctColorModel> GetSctColors(string[] SctColorSection)
+        private List<SctColorModel>? GetSctColors(string[] SctColorSection)
         {
             Logger.LogMessage("INFO", "GETTING COLORS IN SCT FILE");
 

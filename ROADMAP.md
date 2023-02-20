@@ -11,8 +11,8 @@ The following is a list of features that we are considering or actively working 
   - Output files names:
     - APT_symbols
     - APT_text
-    - ARTCC BOUDNARIES-Low_lines
-    - ARTCC BOUNDARIES-High_lines
+    - ARTCC BOUDNARIES-LOW_lines
+    - ARTCC BOUNDARIES-HIGH_lines
     - AWY-HIGH_lines
     - AWY-HIGH_symbols
     - AWY-HIGH_text

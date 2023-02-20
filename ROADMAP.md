@@ -7,29 +7,28 @@ The following is a list of features that we are considering or actively working 
 
 - [ ] AIRAC GeoJSON Output
   - This should be output with AIRAC updates ...\FE-BUDDY_Output\CRC
-    - Then use a folder structure similar to "SECTOR FILES" to organize the output files
   - Output files names:
-    - APT_symbols
-    - APT_text
-    - ARTCC BOUNDARIES-LOW_lines
-    - ARTCC BOUNDARIES-HIGH_lines
-    - AWY-HIGH_lines
-    - AWY-HIGH_symbols
-    - AWY-HIGH_text
-    - AWY-LOW_lines
-    - AWY-LOW_symbols
-    - AWY-LOW_text
-    - DP_lines
-    - FIX_symbols
-    - FIX_text
-    - NDB_symbols
-    - NDB_text
-    - RWY_lines
-    - STARS_lines
-    - VOR_symbols
-    - VOR_text
-    - WX STATIONS_symbols
-    - WX STATIONS_text
+    - [X] APT_symbols
+    - [X] APT_text
+    - [X] ARTCC BOUNDARIES-LOW_lines
+    - [X] ARTCC BOUNDARIES-HIGH_lines
+    - [ ] AWY-HIGH_lines
+    - [ ] AWY-HIGH_symbols
+    - [ ] AWY-HIGH_text
+    - [ ] AWY-LOW_lines
+    - [ ] AWY-LOW_symbols
+    - [ ] AWY-LOW_text
+    - [ ] DP_lines
+    - [ ] FIX_symbols
+    - [ ] FIX_text
+    - [ ] NDB_symbols
+    - [ ] NDB_text
+    - [ ] RWY_lines
+    - [ ] STARS_lines
+    - [ ] VOR_symbols
+    - [ ] VOR_text
+    - [ ] WX STATIONS_symbols
+    - [ ] WX STATIONS_text
   - Add option for user to decide if they want all the geojsons in one folder to make "vNAS Batch Upload" easier.
 
 ---

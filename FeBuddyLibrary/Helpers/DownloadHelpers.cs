@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Net;
 
 namespace FeBuddyLibrary.Helpers
@@ -57,6 +58,13 @@ namespace FeBuddyLibrary.Helpers
             {
                 foreach (string fileName in allURLs.Keys)
                 {
+                    // GEOJSONTODO - Remove this code (MAYBE?) Once testing for CRC Airac Data Creation is done. 
+                    if (File.Exists($"{GlobalConfig.tempPath}\\{fileName}"))
+                    {
+                        GlobalConfig.DownloadedFilePaths.Add($"{GlobalConfig.tempPath}\\{fileName}");
+                        continue;
+                    }
+
                     try
                     {
                         Logger.LogMessage("INFO", $"ATTEMPTING TO DOWNLOAD: {fileName}");

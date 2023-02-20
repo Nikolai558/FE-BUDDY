@@ -11,6 +11,9 @@ namespace FeBuddyLibrary.Helpers
 
             if (Directory.Exists(GlobalConfig.tempPath))
             {
+                // GEOJSONTODO Remove this from code once done Testing CRC Airac Data Creation Stuff.
+                return;
+
                 DirectoryInfo di = new DirectoryInfo(GlobalConfig.tempPath);
 
                 foreach (FileInfo file in di.EnumerateFiles())
@@ -36,6 +39,12 @@ namespace FeBuddyLibrary.Helpers
         {
             foreach (string filePath in GlobalConfig.DownloadedFilePaths)
             {
+                if (Directory.Exists(filePath.Replace(".zip", string.Empty)))
+                {
+                    // GEOJSONTODO - Remove this code once dev for crc airac stuff is done. 
+                    continue;
+                }
+
                 if (filePath.Contains(".zip"))
                 {
                     Logger.LogMessage("INFO", $"UNZIPING: {filePath}");

@@ -1,6 +1,22 @@
 # CHANGELOG
 
 ---
+- ## Version 2.5.0
+  - Added feature: SCT2 to GeoJson
+    - Data from the following headers will be included 
+    with the conversion:
+      - ARTCC
+      - ARTCC HIGH
+      - ARTCC LOW
+      - SID
+      - STAR
+      - LOW AIRWAY
+      - HIGH AIRWAY
+      - GEO
+      - REGIONS
+      - LABELS
+    - Each individual SID and STAR diagram will be output to a GeoJson file.
+
 - ## Version 2.4.2
   - BUG FIX #127: Missing Lines when vERAM to Geojson
   conversions using the filter and properties option.

@@ -5,9 +5,6 @@ The following is a list of features that we are considering or actively working 
 
 ---
 
-- [ ] SCT2-to-GeoJSON
-  - Reference: https://fetools.bvartcc.com/
-
 - [ ] AIRAC GeoJSON Output
   - This should be output with AIRAC updates ...\FE-BUDDY_Output\CRC-GeoJSON
     - Then use a folder structure similar to "SECTOR FILES" to organize the output files

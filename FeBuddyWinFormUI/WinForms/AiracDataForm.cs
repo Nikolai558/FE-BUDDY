@@ -160,6 +160,12 @@ namespace FeBuddyWinFormUI
             {
                 string filePath = $"{GlobalConfig.tempPath}\\DEL_FEB_FLDRS.bat";
 
+                if (!File.Exists(filePath))
+                {
+                    string batchFileText = "@echo off\ncd /d \"%userprofile%/Desktop\"\nECHO DELETED:\nFOR /D %%X IN (*FE-BUDDY_Output*) DO RMDIR /S /Q \"%%~fX\" && ECHO     -  \"%%~fX\"";
+                    File.WriteAllText(filePath, batchFileText);
+                }
+
                 Process process = new Process();
                 process.StartInfo.FileName = filePath;
                 process.StartInfo.CreateNoWindow = true;

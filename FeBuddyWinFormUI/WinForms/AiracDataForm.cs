@@ -155,8 +155,7 @@ namespace FeBuddyWinFormUI
                 }
             }
 
-            // GEOJSONTODO - Remove if statment below with the code in it once dev for crc airac is complet. 
-            if (Directory.Exists($"{GlobalConfig.outputDirBase}\\FE-BUDDY_Output"))
+            if (Directory.Exists($"{GlobalConfig.outputDirBase}\\FE-BUDDY_Output") && GlobalConfig.DEVMODE)
             {
                 string filePath = $"{GlobalConfig.tempPath}\\DEL_FEB_FLDRS.bat";
 

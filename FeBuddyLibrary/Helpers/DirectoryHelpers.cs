@@ -11,8 +11,10 @@ namespace FeBuddyLibrary.Helpers
 
             if (Directory.Exists(GlobalConfig.tempPath))
             {
-                // GEOJSONTODO Remove this from code once done Testing CRC Airac Data Creation Stuff.
-                return;
+                if (GlobalConfig.DEVMODE)
+                {
+                    return;
+                }
 
                 DirectoryInfo di = new DirectoryInfo(GlobalConfig.tempPath);
 
@@ -39,9 +41,8 @@ namespace FeBuddyLibrary.Helpers
         {
             foreach (string filePath in GlobalConfig.DownloadedFilePaths)
             {
-                if (Directory.Exists(filePath.Replace(".zip", string.Empty)))
+                if (Directory.Exists(filePath.Replace(".zip", string.Empty)) && GlobalConfig.DEVMODE)
                 {
-                    // GEOJSONTODO - Remove this code once dev for crc airac stuff is done. 
                     continue;
                 }
 

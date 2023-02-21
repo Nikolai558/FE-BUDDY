@@ -58,8 +58,7 @@ namespace FeBuddyLibrary.Helpers
             {
                 foreach (string fileName in allURLs.Keys)
                 {
-                    // GEOJSONTODO - Remove this code (MAYBE?) Once testing for CRC Airac Data Creation is done. 
-                    if (File.Exists($"{GlobalConfig.tempPath}\\{fileName}"))
+                    if (File.Exists($"{GlobalConfig.tempPath}\\{fileName}") && GlobalConfig.DEVMODE)
                     {
                         GlobalConfig.DownloadedFilePaths.Add($"{GlobalConfig.tempPath}\\{fileName}");
                         continue;

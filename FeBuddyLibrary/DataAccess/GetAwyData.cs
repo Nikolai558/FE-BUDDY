@@ -77,29 +77,22 @@ namespace FeBuddyLibrary.DataAccess
 
         private void AddLineFeatures(AirwayModel airway, List<Feature> features)
         {
-
-            double prevLat = -999;
-            double prevLon = -999;
-            double currentLat = -999;
-            double currentLon = -999;
             Feature currentLineFeature = null;
 
             foreach (AwyPointModel awyPoint in airway.AwyPoints)
             {
-                if (prevLat == -999 || prevLon == -999)
+                if (currentLineFeature == null)
                 {
                     currentLineFeature = new Feature() { type = "Feature", geometry = new Geometry() { type = "LineString", coordinates = new List<dynamic>() } };
-                    prevLat = double.Parse(awyPoint.Dec_Lat);
-                    prevLon = LatLonHelpers.CorrectIlleagleLon(double.Parse(awyPoint.Dec_Lon));
-                    currentLineFeature.geometry.coordinates.Add(new List<double>() { prevLon, prevLat });
+                    currentLineFeature.geometry.coordinates.Add(new List<double>() { LatLonHelpers.CorrectIlleagleLon(double.Parse(awyPoint.Dec_Lon)), double.Parse(awyPoint.Dec_Lat)});
                     continue;
                 }
 
-                currentLat = double.Parse(awyPoint.Dec_Lat);
-                currentLon = LatLonHelpers.CorrectIlleagleLon(double.Parse(awyPoint.Dec_Lon));
+                double currentLat = double.Parse(awyPoint.Dec_Lat);
+                double currentLon = LatLonHelpers.CorrectIlleagleLon(double.Parse(awyPoint.Dec_Lon));
 
                 bool crossesAM = false;
-                var coords = LatLonHelpers.CheckAMCrossing(prevLat, prevLon, currentLat, currentLon);
+                var coords = LatLonHelpers.CheckAMCrossing((double)currentLineFeature.geometry.coordinates.Last()[1], (double)currentLineFeature.geometry.coordinates.Last()[0], currentLat, currentLon);
                 if (coords.Count() == 4) { crossesAM = true; }
 
                 if (crossesAM)
@@ -115,23 +108,19 @@ namespace FeBuddyLibrary.DataAccess
                     currentLineFeature.geometry.coordinates.Add(new List<double>() { currentLon, currentLat });
                 }
 
-                prevLat = currentLat;
-                prevLon = currentLon;
-
                 if (awyPoint.GapAfter || awyPoint.BorderAfter)
                 {
                     features.Add(currentLineFeature);
-                    prevLat = -999;
-                    prevLon = -999;
+                    currentLineFeature = null;
                 }
             }
-            if (currentLineFeature.geometry.coordinates.Count >= 1)
+
+            if (currentLineFeature != null && currentLineFeature.geometry.coordinates.Count >= 1)
             {
                 features.Add(currentLineFeature);
             }
-
-
         }
+
 
         private static void AddFeatures(AwyPointModel awyPoint,  List<Feature> textFeatures,  List<Feature> symbolFeatures)
         {

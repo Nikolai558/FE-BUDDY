@@ -1,7 +1,8 @@
 # FE-BUDDY ROADMAP
 
 
-The following is a list of features that we are considering or actively working on in priority order.
+The following is a list of features that we are considering or actively working on in priority order.  
+For previous Roadmap items, refer to the [FEB Change Log](https://github.com/Nikolai558/FE-BUDDY/blob/development/ChangeLog.md).
 
 ---
 

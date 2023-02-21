@@ -7,6 +7,17 @@ namespace FeBuddyLibrary.Helpers
 {
     public class LatLonHelpers
     {
+        public static double CalculateDistance(double lat1, double lon1, double lat2, double lon2)
+        {
+            const double R = 6371; // Earth's radius in km
+            var dLat = DegreesToRadians(lat2 - lat1);
+            var dLon = DegreesToRadians(lon2 - lon1);
+            var a = Math.Sin(dLat / 2) * Math.Sin(dLat / 2) + Math.Cos(DegreesToRadians(lat1)) * Math.Cos(DegreesToRadians(lat2)) * Math.Sin(dLon / 2) * Math.Sin(dLon / 2);
+            var c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
+            var d = R * c; // Distance in km
+            return d * 0.539957; // Convert km to nautical miles
+        }
+
         public static double CalculateBearing(double lat1, double lon1, double lat2, double lon2)
         {
             double dLon = DegreesToRadians(lon2 - lon1);
@@ -18,7 +29,7 @@ namespace FeBuddyLibrary.Helpers
             return (brng + 360) % 360;
         }
 
-        public static (double lat, double lon) CalculateDestination(double lat, double lon, double brng, double dist)
+        public static List<double> CalculateDestination(double lat, double lon, double brng, double dist)
         {
             const double R = 3440.06479; // radius of the Earth in nautical miles
             double d = dist / R; // convert nautical miles to radians
@@ -29,8 +40,7 @@ namespace FeBuddyLibrary.Helpers
             double destLat = Math.Asin(Math.Sin(lat) * Math.Cos(d) + Math.Cos(lat) * Math.Sin(d) * Math.Cos(brng));
             double destLon = lon + Math.Atan2(Math.Sin(brng) * Math.Sin(d) * Math.Cos(lat), Math.Cos(d) - Math.Sin(lat) * Math.Sin(destLat));
             destLon = (destLon + 3 * Math.PI) % (2 * Math.PI) - Math.PI;  // normalize to -180..+180
-
-            return (RadiansToDegrees(destLat), RadiansToDegrees(destLon));
+            return new List<double>() { RadiansToDegrees(destLat), RadiansToDegrees(destLon) };
         }
 
         private static double DegreesToRadians(double deg)

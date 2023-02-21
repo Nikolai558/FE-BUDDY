@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using FeBuddyLibrary.Helpers;
 
 namespace FeBuddyLibrary.Models
 {
@@ -26,6 +27,8 @@ namespace FeBuddyLibrary.Models
 
         public string Lat { get { return $"{Lat_N_S}{Lat_Deg}.{Lat_Min}.{Lat_Sec}.{Lat_MS}"; } }
 
+        public double Dec_Lat { get { return double.Parse(LatLonHelpers.CreateDecFormat(Lat, false)); } }
+
         public string Lon_E_W { get; set; }
 
         public string Lon_Deg { get; set; }
@@ -37,6 +40,9 @@ namespace FeBuddyLibrary.Models
         public string Lon_MS { get; set; }
 
         public string Lon { get { return $"{Lon_E_W}{Lon_Deg}.{Lon_Min}.{Lon_Sec}.{Lon_MS}"; } }
+
+        public double Dec_Lon { get { return LatLonHelpers.CorrectIlleagleLon(double.Parse(LatLonHelpers.CreateDecFormat(Lon, false))); } }
+
 
         public List<string> AirpotsThisPointServes { get; set; } = new List<string>();
     }

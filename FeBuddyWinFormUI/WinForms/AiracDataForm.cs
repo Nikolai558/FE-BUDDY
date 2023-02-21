@@ -333,6 +333,8 @@ namespace FeBuddyWinFormUI
             SetControlPropertyThreadSafe(processingDataLabel, "Text", "Unzipping Files");
             DirectoryHelpers.UnzipAllDownloaded();
 
+            // GEOJSONTODO - UNCOMMENT THE FOLLOWING ------------------------------------------------------------------
+
             //SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Airports");
             //GetAptData ParseAPT = new GetAptData();
             //ParseAPT.AptAndWxMain(GlobalConfig.airacEffectiveDate, GlobalConfig.facilityID);
@@ -349,21 +351,28 @@ namespace FeBuddyWinFormUI
             //GetFixData ParseFixes = new GetFixData();
             //ParseFixes.FixQuarterbackFunc(GlobalConfig.airacEffectiveDate);
 
-            // ------------------------------------------------------------------------------------------------------
-            // DO NOT CHANGE THE ORDER OF THESE TWO ITEMS, REFACTORING THIS IS NEEDED!!!!!
-            // Warning: AwyData must be preformed before AtsAwyData, Refactoring of this code is needed! 
-            SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Airways");
-            FileHelpers.CreateAwyGeomapHeadersAndEnding(true);
+            //// ------------------------------------------------------------------------------------------------------
+            //// DO NOT CHANGE THE ORDER OF THESE TWO ITEMS, REFACTORING THIS IS NEEDED!!!!!
+            //// Warning: AwyData must be preformed before AtsAwyData, Refactoring of this code is needed! 
+            //SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Airways");
+            //FileHelpers.CreateAwyGeomapHeadersAndEnding(true);
 
-            GetAwyData ParseAWY = new GetAwyData();
-            ParseAWY.AWYQuarterbackFunc(GlobalConfig.airacEffectiveDate);
+            //GetAwyData ParseAWY = new GetAwyData();
+            //ParseAWY.AWYQuarterbackFunc(GlobalConfig.airacEffectiveDate);
 
-            SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing ATS Airways");
-            GetAtsAwyData ParseAts = new GetAtsAwyData();
-            ParseAts.AWYQuarterbackFunc(GlobalConfig.airacEffectiveDate);
-            FileHelpers.CreateAwyGeomapHeadersAndEnding(false);
+            //SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing ATS Airways");
+            //GetAtsAwyData ParseAts = new GetAtsAwyData();
+            //ParseAts.AWYQuarterbackFunc(GlobalConfig.airacEffectiveDate);
+            //FileHelpers.CreateAwyGeomapHeadersAndEnding(false);
 
-            // ------------------------------------------------------------------------------------------------------
+            //// ------------------------------------------------------------------------------------------------------
+
+            // GEOJSONTODO - END UNCOMMENT ----------------------------------------------------------------------------
+
+
+            SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing DPs and STARs");
+            GetStarDpData ParseStarDp = new GetStarDpData();
+            ParseStarDp.StarDpQuaterBackFunc(GlobalConfig.airacEffectiveDate);
 
             bool DEVMODE = true;
             if (DEVMODE == false)
@@ -372,10 +381,6 @@ namespace FeBuddyWinFormUI
                 SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Telephony");
                 GetTelephony Telephony = new GetTelephony();
                 Telephony.readFAAData($"{GlobalConfig.tempPath}\\{AiracDateCycleModel.AllCycleDates[GlobalConfig.airacEffectiveDate]}_TELEPHONY.html");
-
-                SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing DPs and STARs");
-                GetStarDpData ParseStarDp = new GetStarDpData();
-                ParseStarDp.StarDpQuaterBackFunc(GlobalConfig.airacEffectiveDate);
 
                 if (currentAiracSelection.Checked == true)
                 {

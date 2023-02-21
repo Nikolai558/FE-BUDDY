@@ -539,6 +539,7 @@ namespace FeBuddyLibrary.DataAccess
 
             foreach (AptModel aptModel in allAptModels)
             {
+                // This variable will exclude runways that have null data. EX Heloports.
                 bool doNotUseThisRwy = false;
                 string aptIdTempVar;
                 List<Runway> rwysTempVar = new List<Runway>();
@@ -550,11 +551,6 @@ namespace FeBuddyLibrary.DataAccess
                 else
                 {
                     aptIdTempVar = aptModel.Id;
-                }
-
-                if (aptModel.Runways.Count >= 8)
-                {
-                    string stop = "STOP";
                 }
 
                 foreach (RunwayModel runwayModel in aptModel.Runways)
@@ -651,6 +647,7 @@ namespace FeBuddyLibrary.DataAccess
 
                 if (rwysTempVar.Count >= 1 && aptXMLFormat.MagVar != "")
                 {
+                    // We need the count because RwysTempVar contains the Base Runway and the Same recipical runway.
                     int count = 0;
                     foreach (Runway item in rwysTempVar)
                     {

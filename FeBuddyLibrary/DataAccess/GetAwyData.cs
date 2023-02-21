@@ -1,8 +1,11 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using FeBuddyLibrary.Helpers;
 using FeBuddyLibrary.Models;
+using Newtonsoft.Json;
 
 namespace FeBuddyLibrary.DataAccess
 {
@@ -15,6 +18,10 @@ namespace FeBuddyLibrary.DataAccess
         // Create empty list to hold all of the Airways.
         List<AirwayModel> allAwy = new List<AirwayModel>();
 
+        List<AirwayModel> lowAwy = new List<AirwayModel>();
+        List<AirwayModel> highAwy = new List<AirwayModel>();
+
+
         /// <summary>
         /// Calls All the needed functions.
         /// </summary>
@@ -24,8 +31,80 @@ namespace FeBuddyLibrary.DataAccess
             Logger.LogMessage("INFO", "STARTED AWY");
 
             ParseAwyData(effectiveDate);
+
+            WriteGeojson();
+
             WriteAwySctData();
             WriteAwyAlias();
+        }
+
+        private void WriteGeojson()
+        {
+            string awyHighLinesFile = $"{GlobalConfig.outputDirectory}\\CRC\\AWY-HIGH_lines.geojson";
+            string awyHighSymbolsFile = $"{GlobalConfig.outputDirectory}\\CRC\\AWY-HIGH_symbols.geojson";
+            string awyHighTextFile = $"{GlobalConfig.outputDirectory}\\CRC\\AWY-HIGH_text.geojson";
+            string awyLowLinesFile = $"{GlobalConfig.outputDirectory}\\CRC\\AWY-LOW_lines.geojson";
+            string awyLowSymbolsFile = $"{GlobalConfig.outputDirectory}\\CRC\\AWY-LOW_symbols.geojson";
+            string awyLowTextFile = $"{GlobalConfig.outputDirectory}\\CRC\\AWY-LOW_text.geojson";
+
+            FeatureCollection awyHighLines = new FeatureCollection() { features = new List<Feature>()};
+            FeatureCollection awyHighSymbols = new FeatureCollection() { features = new List<Feature>() };
+            FeatureCollection awyHighText = new FeatureCollection() { features = new List<Feature>()};
+            FeatureCollection awyLowLines = new FeatureCollection() { features = new List<Feature>()};
+            FeatureCollection awyLowSymbols = new FeatureCollection() { features = new List<Feature>()};
+            FeatureCollection awyLowText = new FeatureCollection() { features = new List<Feature>()};
+
+            foreach (AirwayModel airway in allAwy)
+            {
+                bool isHigh = airway.Id.Contains("Q") || airway.Id.Contains("J");
+
+                foreach (AwyPointModel awyPoint in airway.AwyPoints)
+                {
+                    AddFeatures(awyPoint, isHigh ? awyHighText.features : awyLowText.features, isHigh ? awyHighSymbols.features : awyLowSymbols.features);
+                }
+
+                //AddLineFeatures(airway, isHigh ? awyHighLines.features : awyLowLines.features);
+            }
+
+
+            SerializeToFile(awyHighSymbols, awyHighSymbolsFile);
+            SerializeToFile(awyHighText, awyHighTextFile);
+            SerializeToFile(awyLowSymbols, awyLowSymbolsFile);
+            SerializeToFile(awyLowText, awyLowTextFile);
+        }
+
+        private void AddLineFeatures(AirwayModel airway, List<Feature> features)
+        {
+            Feature currentLineFeature = new Feature() { type = "Feature", geometry = new Geometry() { type = "LineString", coordinates = new List<dynamic>() } };
+            throw new NotImplementedException();
+        }
+
+        private static void AddFeatures(AwyPointModel awyPoint,  List<Feature> textFeatures,  List<Feature> symbolFeatures)
+        {
+            var coordinates = new List<dynamic> { LatLonHelpers.CorrectIlleagleLon(double.Parse(awyPoint.Dec_Lon)), double.Parse(awyPoint.Dec_Lat) };
+            var textProperties = new Properties { text = new[] { awyPoint.PointId } };
+            var textFeature = new Feature { type = "Feature", geometry = new Geometry { type = "Point", coordinates = coordinates }, properties = textProperties };
+            textFeatures.Add(textFeature);
+
+            var symbolProperties = new Properties();
+            symbolProperties.style = awyPoint.Type switch
+            {
+                "NDB" or "NDB/DME" => "ndb",
+                "VOR" or "VOR/DME" or "VORTAC" or "DME" or "TACAN" => "vor",
+                _ => "airwayIntersections",
+            };
+            var symbolFeature = new Feature { type = "Feature", geometry = new Geometry { type = "Point", coordinates = coordinates }, properties = symbolProperties };
+            symbolFeatures.Add(symbolFeature);
+        }
+
+
+        private static void SerializeToFile(FeatureCollection feature, string path)
+        {
+            if (feature.features.Count >= 1)
+            {
+                string json = JsonConvert.SerializeObject(feature, new JsonSerializerSettings { Formatting = Formatting.Indented, NullValueHandling = NullValueHandling.Ignore });
+                File.WriteAllText(path, json);
+            }
         }
 
         /// <summary>

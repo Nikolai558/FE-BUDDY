@@ -7,6 +7,43 @@ namespace FeBuddyLibrary.Helpers
 {
     public class LatLonHelpers
     {
+        public static double CalculateBearing(double lat1, double lon1, double lat2, double lon2)
+        {
+            double dLon = DegreesToRadians(lon2 - lon1);
+            lat1 = DegreesToRadians(lat1);
+            lat2 = DegreesToRadians(lat2);
+            double y = Math.Sin(dLon) * Math.Cos(lat2);
+            double x = Math.Cos(lat1) * Math.Sin(lat2) - Math.Sin(lat1) * Math.Cos(lat2) * Math.Cos(dLon);
+            double brng = RadiansToDegrees(Math.Atan2(y, x));
+            return (brng + 360) % 360;
+        }
+
+        public static (double lat, double lon) CalculateDestination(double lat, double lon, double brng, double dist)
+        {
+            const double R = 3440.06479; // radius of the Earth in nautical miles
+            double d = dist / R; // convert nautical miles to radians
+            lat = DegreesToRadians(lat);
+            lon = DegreesToRadians(lon);
+            brng = DegreesToRadians(brng);
+
+            double destLat = Math.Asin(Math.Sin(lat) * Math.Cos(d) + Math.Cos(lat) * Math.Sin(d) * Math.Cos(brng));
+            double destLon = lon + Math.Atan2(Math.Sin(brng) * Math.Sin(d) * Math.Cos(lat), Math.Cos(d) - Math.Sin(lat) * Math.Sin(destLat));
+            destLon = (destLon + 3 * Math.PI) % (2 * Math.PI) - Math.PI;  // normalize to -180..+180
+
+            return (RadiansToDegrees(destLat), RadiansToDegrees(destLon));
+        }
+
+        private static double DegreesToRadians(double deg)
+        {
+            return deg * Math.PI / 180.0;
+        }
+
+        private static double RadiansToDegrees(double rad)
+        {
+            return rad * 180.0 / Math.PI;
+        }
+
+
         public static double CalculateDistance(Loc point1, Loc point2)
         {
             var d1 = point1.Latitude * (Math.PI / 180.0);

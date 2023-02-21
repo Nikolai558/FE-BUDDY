@@ -522,6 +522,10 @@ namespace FeBuddyLibrary.DataAccess
         {
             Logger.LogMessage("INFO", $"STARTED ERAM APT XML");
 
+            string rwyGeoFilePath = $"{GlobalConfig.outputDirectory}\\CRC\\RWY_lines.geojson";
+            FeatureCollection rwyGeojson = new FeatureCollection() { features = new List<Feature>() };
+            Feature currentFeature = new Feature() { type = "Feature", geometry = new Geometry() { type = "LineString", coordinates = new List<dynamic>() } };
+
             string filePath = $"{GlobalConfig.outputDirectory}\\VERAM\\Airports.xml";
             List<Airport> allAptForXML = new List<Airport>();
 
@@ -546,6 +550,11 @@ namespace FeBuddyLibrary.DataAccess
                 else
                 {
                     aptIdTempVar = aptModel.Id;
+                }
+
+                if (aptModel.Runways.Count >= 8)
+                {
+                    string stop = "STOP";
                 }
 
                 foreach (RunwayModel runwayModel in aptModel.Runways)
@@ -642,6 +651,20 @@ namespace FeBuddyLibrary.DataAccess
 
                 if (rwysTempVar.Count >= 1 && aptXMLFormat.MagVar != "")
                 {
+                    int count = 0;
+                    foreach (Runway item in rwysTempVar)
+                    {
+                        if (count % 2 == 0)
+                        {
+                            // TODO - Might need to put Crosses AM check here....
+                            currentFeature.geometry.coordinates.Add(new List<dynamic>() { LatLonHelpers.CorrectIlleagleLon(double.Parse(rwysTempVar[count].StartLoc.Lon)), double.Parse(rwysTempVar[count].StartLoc.Lat) });
+                            currentFeature.geometry.coordinates.Add(new List<dynamic>() { LatLonHelpers.CorrectIlleagleLon(double.Parse(rwysTempVar[count].EndLoc.Lon)), double.Parse(rwysTempVar[count].EndLoc.Lat) });
+                            rwyGeojson.features.Add(currentFeature);
+                            currentFeature = new Feature() { type = "Feature", geometry = new Geometry() { type = "LineString", coordinates = new List<dynamic>() } };
+                        }
+
+                        count += 1;
+                    }
                     allAptForXML.Add(aptXMLFormat);
                 }
             }
@@ -655,6 +678,12 @@ namespace FeBuddyLibrary.DataAccess
             //TextWriter writer = new StreamWriter(filePath);
             //serializer.Serialize(writer, aptArrayForXML);
             //writer.Close();
+
+            if (rwyGeojson.features.Count() >= 1)
+            {
+                string json = JsonConvert.SerializeObject(rwyGeojson, new JsonSerializerSettings { Formatting = Formatting.None, NullValueHandling = NullValueHandling.Ignore });
+                File.WriteAllText(rwyGeoFilePath, json);
+            }
 
             File.AppendAllText(filePath, $"\n<!--AIRAC_EFFECTIVE_DATE {effectiveDate}-->");
             File.Copy($"{GlobalConfig.outputDirectory}\\VERAM\\Airports.xml", $"{GlobalConfig.outputDirectory}\\VSTARS\\Airports.xml");

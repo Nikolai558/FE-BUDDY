@@ -339,6 +339,10 @@ namespace FeBuddyWinFormUI
             GetNavData ParseNDBs = new GetNavData();
             ParseNDBs.NAVQuarterbackFunc(GlobalConfig.airacEffectiveDate, GlobalConfig.facilityID);
 
+            SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Fixes");
+            GetFixData ParseFixes = new GetFixData();
+            ParseFixes.FixQuarterbackFunc(GlobalConfig.airacEffectiveDate);
+
             bool DEVMODE = true;
             if (DEVMODE == false)
             {
@@ -373,10 +377,6 @@ namespace FeBuddyWinFormUI
                     PublicationParser publications = new PublicationParser();
                     publications.WriteAirportInfoTxt(GlobalConfig.facilityID);
                 }
-
-                SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Fixes");
-                GetFixData ParseFixes = new GetFixData();
-                ParseFixes.FixQuarterbackFunc(GlobalConfig.airacEffectiveDate);
 
                 // ------------------------------------------------------------------------------------------------------
                 // DO NOT CHANGE THE ORDER OF THESE TWO ITEMS, REFACTORING THIS IS NEEDED!!!!!

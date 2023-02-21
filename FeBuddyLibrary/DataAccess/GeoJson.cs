@@ -278,7 +278,7 @@ namespace FeBuddyLibrary.DataAccess
                 }
                 if (geojson.features.Count() >= 1)
                 {
-                    string json = JsonConvert.SerializeObject(geojson, new JsonSerializerSettings { Formatting = Formatting.Indented, NullValueHandling = NullValueHandling.Ignore });
+                    string json = JsonConvert.SerializeObject(geojson, new JsonSerializerSettings { Formatting = Formatting.None, NullValueHandling = NullValueHandling.Ignore });
                     File.WriteAllText(outputFile, json);
                 }
 
@@ -340,7 +340,7 @@ namespace FeBuddyLibrary.DataAccess
 
             if (geojson.features.Count() >= 1)
             {
-                string json = JsonConvert.SerializeObject(geojson, new JsonSerializerSettings { Formatting = Formatting.Indented, NullValueHandling = NullValueHandling.Ignore });
+                string json = JsonConvert.SerializeObject(geojson, new JsonSerializerSettings { Formatting = Formatting.None, NullValueHandling = NullValueHandling.Ignore });
                 File.WriteAllText(outputFile, json);
             }
         }
@@ -374,7 +374,7 @@ namespace FeBuddyLibrary.DataAccess
 
             if (geojson.features.Count() >= 1)
             {
-                string json = JsonConvert.SerializeObject(geojson, new JsonSerializerSettings { Formatting = Formatting.Indented, NullValueHandling = NullValueHandling.Ignore });
+                string json = JsonConvert.SerializeObject(geojson, new JsonSerializerSettings { Formatting = Formatting.None, NullValueHandling = NullValueHandling.Ignore });
                 File.WriteAllText(outputFile, json);
             }
         }
@@ -461,7 +461,7 @@ namespace FeBuddyLibrary.DataAccess
 
             if (geojson.features.Count() >= 1)
             {
-                string json = JsonConvert.SerializeObject(geojson, new JsonSerializerSettings { Formatting = Formatting.Indented, NullValueHandling = NullValueHandling.Ignore });
+                string json = JsonConvert.SerializeObject(geojson, new JsonSerializerSettings { Formatting = Formatting.None, NullValueHandling = NullValueHandling.Ignore });
                 File.WriteAllText(outputFile, json);
             }
         }
@@ -559,7 +559,7 @@ namespace FeBuddyLibrary.DataAccess
 
                 geojson.features.AddRange(allFeatures);
 
-                string jsonString = JsonConvert.SerializeObject(geojson, new JsonSerializerSettings { Formatting = Formatting.Indented, NullValueHandling = NullValueHandling.Ignore });
+                string jsonString = JsonConvert.SerializeObject(geojson, new JsonSerializerSettings { Formatting = Formatting.None, NullValueHandling = NullValueHandling.Ignore });
                 File.WriteAllText(file.FullName, jsonString);
             }
         }
@@ -723,7 +723,7 @@ namespace FeBuddyLibrary.DataAccess
             //    }
 
             //    asdexOtherFeatureCollection.features.AddRange(otherFeatures);
-            //    string jsonString = JsonConvert.SerializeObject(asdexOtherFeatureCollection, new JsonSerializerSettings { Formatting = Formatting.Indented, NullValueHandling = NullValueHandling.Ignore });
+            //    string jsonString = JsonConvert.SerializeObject(asdexOtherFeatureCollection, new JsonSerializerSettings { Formatting = Formatting.None, NullValueHandling = NullValueHandling.Ignore });
             //    string fullFilePath = fileName.Split('.')[0] + "-OtherFeatures.geojson"; 
             //    File.WriteAllText(fullFilePath, jsonString);
             //}
@@ -1112,7 +1112,7 @@ namespace FeBuddyLibrary.DataAccess
                 FileInfo file = new FileInfo(fullFilePath);
                 file.Directory.Create(); // If the directory already exists, this method does nothing.
 
-                string jsonString = JsonConvert.SerializeObject(FileFeatures[fullFilePath], new JsonSerializerSettings { Formatting = Formatting.Indented, NullValueHandling = NullValueHandling.Ignore });
+                string jsonString = JsonConvert.SerializeObject(FileFeatures[fullFilePath], new JsonSerializerSettings { Formatting = Formatting.None, NullValueHandling = NullValueHandling.Ignore });
 
                 File.WriteAllText(fullFilePath, jsonString);
             }
@@ -1206,7 +1206,7 @@ namespace FeBuddyLibrary.DataAccess
                         }
                     }
 
-                    string jsonString = JsonConvert.SerializeObject(geojson, new JsonSerializerSettings { Formatting = Formatting.Indented, NullValueHandling = NullValueHandling.Ignore });
+                    string jsonString = JsonConvert.SerializeObject(geojson, new JsonSerializerSettings { Formatting = Formatting.None, NullValueHandling = NullValueHandling.Ignore });
 
                     //jsonString = PostProcess(jsonString);
 

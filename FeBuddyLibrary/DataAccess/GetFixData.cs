@@ -67,13 +67,13 @@ namespace FeBuddyLibrary.DataAccess
 
             if (symbolFeatures.Count >= 1)
             {
-                var json = JsonConvert.SerializeObject(symbolGeojson, new JsonSerializerSettings { Formatting = Formatting.Indented, NullValueHandling = NullValueHandling.Ignore });
+                var json = JsonConvert.SerializeObject(symbolGeojson, new JsonSerializerSettings { Formatting = Formatting.None, NullValueHandling = NullValueHandling.Ignore });
                 File.WriteAllText(symbolsFile, json);
             }
 
             if (textFeatures.Count >= 1)
             {
-                var json = JsonConvert.SerializeObject(textGeojson, new JsonSerializerSettings { Formatting = Formatting.Indented, NullValueHandling = NullValueHandling.Ignore });
+                var json = JsonConvert.SerializeObject(textGeojson, new JsonSerializerSettings { Formatting = Formatting.None, NullValueHandling = NullValueHandling.Ignore });
                 File.WriteAllText(textFile, json);
             }
         }

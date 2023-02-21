@@ -145,7 +145,7 @@ namespace FeBuddyLibrary.DataAccess
         {
             if (feature.features.Count >= 1)
             {
-                string json = JsonConvert.SerializeObject(feature, new JsonSerializerSettings { Formatting = Formatting.Indented, NullValueHandling = NullValueHandling.Ignore });
+                string json = JsonConvert.SerializeObject(feature, new JsonSerializerSettings { Formatting = Formatting.None, NullValueHandling = NullValueHandling.Ignore });
                 File.WriteAllText(path, json);
             }
         }

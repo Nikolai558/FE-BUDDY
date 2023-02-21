@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using FeBuddyLibrary.Helpers;
 using FeBuddyLibrary.Models;
+using Newtonsoft.Json;
 
 namespace FeBuddyLibrary.DataAccess
 {
@@ -25,10 +26,123 @@ namespace FeBuddyLibrary.DataAccess
             Logger.LogMessage("INFO", "STARTED AWY");
 
             ParseAtsData(effectiveDate);
+
+            WriteGeojson();
+
             WriteAwySctData();
             WriteAwyAlias();
             Logger.LogMessage("INFO", "COMPLETED AWY");
 
+        }
+
+        private void WriteGeojson()
+        {
+            string awyHighLinesFile = $"{GlobalConfig.outputDirectory}\\CRC\\AWY-HIGH_lines.geojson";
+            string awyHighSymbolsFile = $"{GlobalConfig.outputDirectory}\\CRC\\AWY-HIGH_symbols.geojson";
+            string awyHighTextFile = $"{GlobalConfig.outputDirectory}\\CRC\\AWY-HIGH_text.geojson";
+
+            FeatureCollection awyHighLines = ReadJson(awyHighLinesFile);
+            FeatureCollection awyHighSymbols = ReadJson(awyHighSymbolsFile);
+            FeatureCollection awyHighText = ReadJson(awyHighTextFile);
+
+            foreach (AtsAirwayModel airway in allAtsAwy)
+            {
+                foreach (atsAwyPointModel awyPoint in airway.atsAwyPoints)
+                {
+                    AddFeatures(awyPoint, awyHighText.features, awyHighSymbols.features);
+                }
+
+                AddLineFeatures(airway, awyHighLines.features);
+            }
+
+
+            SerializeToFile(awyHighSymbols, awyHighSymbolsFile);
+            SerializeToFile(awyHighText, awyHighTextFile);
+            SerializeToFile(awyHighLines, awyHighLinesFile);
+        }
+
+        private static void SerializeToFile(FeatureCollection feature, string path)
+        {
+            if (feature.features.Count >= 1)
+            {
+                string json = JsonConvert.SerializeObject(feature, new JsonSerializerSettings { Formatting = Formatting.None, NullValueHandling = NullValueHandling.Ignore });
+                File.WriteAllText(path, json);
+            }
+        }
+
+        private void AddLineFeatures(AtsAirwayModel airway, List<Feature> features)
+        {
+            Feature currentLineFeature = null;
+
+            foreach (atsAwyPointModel awyPoint in airway.atsAwyPoints)
+            {
+                if (currentLineFeature == null)
+                {
+                    currentLineFeature = new Feature() { type = "Feature", geometry = new Geometry() { type = "LineString", coordinates = new List<dynamic>() } };
+                    currentLineFeature.geometry.coordinates.Add(new List<double>() { LatLonHelpers.CorrectIlleagleLon(double.Parse(awyPoint.Dec_Lon)), double.Parse(awyPoint.Dec_Lat) });
+                    continue;
+                }
+
+                double currentLat = double.Parse(awyPoint.Dec_Lat);
+                double currentLon = LatLonHelpers.CorrectIlleagleLon(double.Parse(awyPoint.Dec_Lon));
+
+                bool crossesAM = false;
+                var coords = LatLonHelpers.CheckAMCrossing((double)currentLineFeature.geometry.coordinates.Last()[1], (double)currentLineFeature.geometry.coordinates.Last()[0], currentLat, currentLon);
+                if (coords.Count() == 4) { crossesAM = true; }
+
+                if (crossesAM)
+                {
+                    currentLineFeature.geometry.coordinates.Add(coords[1]);
+                    features.Add(currentLineFeature);
+                    currentLineFeature = new Feature() { type = "Feature", geometry = new Geometry() { type = "LineString", coordinates = new List<dynamic>() } };
+                    currentLineFeature.geometry.coordinates.Add(coords[2]);
+                    currentLineFeature.geometry.coordinates.Add(coords[3]);
+                }
+                else
+                {
+                    currentLineFeature.geometry.coordinates.Add(new List<double>() { currentLon, currentLat });
+                }
+
+                if (awyPoint.GapAfter || awyPoint.BorderAfter)
+                {
+                    features.Add(currentLineFeature);
+                    currentLineFeature = null;
+                }
+            }
+
+            if (currentLineFeature != null && currentLineFeature.geometry.coordinates.Count >= 1)
+            {
+                features.Add(currentLineFeature);
+            }
+        }
+
+        private static void AddFeatures(atsAwyPointModel awyPoint, List<Feature> textFeatures, List<Feature> symbolFeatures)
+        {
+            var coordinates = new List<dynamic> { LatLonHelpers.CorrectIlleagleLon(double.Parse(awyPoint.Dec_Lon)), double.Parse(awyPoint.Dec_Lat) };
+            var textProperties = new Properties { text = new[] { awyPoint.PointId } };
+            var textFeature = new Feature { type = "Feature", geometry = new Geometry { type = "Point", coordinates = coordinates }, properties = textProperties };
+            textFeatures.Add(textFeature);
+
+            var symbolProperties = new Properties();
+            symbolProperties.style = awyPoint.Type switch
+            {
+                "NDB" or "NDB/DME" => "ndb",
+                "VOR" or "VOR/DME" or "VORTAC" or "DME" or "TACAN" => "vor",
+                _ => "airwayIntersections",
+            };
+            var symbolFeature = new Feature { type = "Feature", geometry = new Geometry { type = "Point", coordinates = coordinates }, properties = symbolProperties };
+            symbolFeatures.Add(symbolFeature);
+        }
+
+        public static FeatureCollection ReadJson(string path)
+        {
+            if (File.Exists(path))
+            {
+                var text = File.ReadAllText(path, Encoding.UTF8);
+                var json = JsonConvert.DeserializeObject<FeatureCollection>(text);
+                return json;
+            }
+            return new FeatureCollection() { features = new List<Feature>()};
         }
 
         /// <summary>

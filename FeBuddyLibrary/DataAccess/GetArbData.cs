@@ -133,14 +133,14 @@ namespace FeBuddyLibrary.DataAccess
             if (lowFeatures.Count() >= 1)
             {
                 lowGeo.features = lowFeatures;
-                string json = JsonConvert.SerializeObject(lowGeo, new JsonSerializerSettings { Formatting = Formatting.Indented, NullValueHandling = NullValueHandling.Ignore });
+                string json = JsonConvert.SerializeObject(lowGeo, new JsonSerializerSettings { Formatting = Formatting.None, NullValueHandling = NullValueHandling.Ignore });
                 File.WriteAllText(boundaryLowFile, json);
             }
 
             if (highFeatures.Count() >=1 )
             {
                 highGeo.features = highFeatures;
-                string json = JsonConvert.SerializeObject(highGeo, new JsonSerializerSettings { Formatting = Formatting.Indented, NullValueHandling = NullValueHandling.Ignore });
+                string json = JsonConvert.SerializeObject(highGeo, new JsonSerializerSettings { Formatting = Formatting.None, NullValueHandling = NullValueHandling.Ignore });
                 File.WriteAllText(boundaryHighFile, json);
             }
         }

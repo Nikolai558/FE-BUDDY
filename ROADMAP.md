@@ -13,10 +13,10 @@ For previous Roadmap items, refer to the [FEB Change Log](https://github.com/Nik
     - [X] APT_text
     - [X] ARTCC BOUNDARIES-LOW_lines
     - [X] ARTCC BOUNDARIES-HIGH_lines
-    - [ ] AWY-HIGH_lines
+    - [X] AWY-HIGH_lines
     - [X] AWY-HIGH_symbols
     - [X] AWY-HIGH_text
-    - [ ] AWY-LOW_lines
+    - [X] AWY-LOW_lines
     - [X] AWY-LOW_symbols
     - [X] AWY-LOW_text
     - [ ] DP_lines

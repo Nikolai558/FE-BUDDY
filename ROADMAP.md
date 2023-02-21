@@ -19,13 +19,13 @@ For previous Roadmap items, refer to the [FEB Change Log](https://github.com/Nik
     - [X] AWY-LOW_lines
     - [X] AWY-LOW_symbols
     - [X] AWY-LOW_text
-    - [ ] DP_lines
+    - [X] DP_lines
     - [X] FIX_symbols
     - [X] FIX_text
     - [X] NDB_symbols
     - [X] NDB_text
     - [X] RWY_lines
-    - [ ] STARS_lines
+    - [X] STARS_lines
     - [X] VOR_symbols
     - [X] VOR_text
     - [X] WX STATIONS_symbols

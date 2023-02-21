@@ -23,7 +23,7 @@ The following is a list of features that we are considering or actively working 
     - [X] FIX_text
     - [X] NDB_symbols
     - [X] NDB_text
-    - [ ] RWY_lines
+    - [X] RWY_lines
     - [ ] STARS_lines
     - [X] VOR_symbols
     - [X] VOR_text

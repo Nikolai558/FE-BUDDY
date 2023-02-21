@@ -19,14 +19,14 @@ The following is a list of features that we are considering or actively working 
     - [ ] AWY-LOW_symbols
     - [ ] AWY-LOW_text
     - [ ] DP_lines
-    - [ ] FIX_symbols
-    - [ ] FIX_text
-    - [ ] NDB_symbols
-    - [ ] NDB_text
+    - [X] FIX_symbols
+    - [X] FIX_text
+    - [X] NDB_symbols
+    - [X] NDB_text
     - [ ] RWY_lines
     - [ ] STARS_lines
-    - [ ] VOR_symbols
-    - [ ] VOR_text
+    - [X] VOR_symbols
+    - [X] VOR_text
     - [X] WX STATIONS_symbols
     - [X] WX STATIONS_text
   - Add option for user to decide if they want all the geojsons in one folder to make "vNAS Batch Upload" easier.

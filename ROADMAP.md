@@ -27,8 +27,8 @@ The following is a list of features that we are considering or actively working 
     - [ ] STARS_lines
     - [ ] VOR_symbols
     - [ ] VOR_text
-    - [ ] WX STATIONS_symbols
-    - [ ] WX STATIONS_text
+    - [X] WX STATIONS_symbols
+    - [X] WX STATIONS_text
   - Add option for user to decide if they want all the geojsons in one folder to make "vNAS Batch Upload" easier.
 
 ---

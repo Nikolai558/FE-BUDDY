@@ -404,6 +404,11 @@ namespace FeBuddyLibrary.DataAccess
         {
             Feature starFeature = new Feature() { type = "Feature", geometry = new Geometry() { type = "LineString", coordinates = new List<dynamic>() } };
 
+            if ((startCoords[0] == 0 && startCoords[1] == 0) && (endCoords[0] == 0 && endCoords[1] == 0))
+            {
+                return starFeature;
+            }
+
             bool crossesAM = false;
             var coords = LatLonHelpers.CheckAMCrossing(startCoords[0], startCoords[1], endCoords[0], endCoords[1]);
             if (coords.Count == 4) crossesAM = true;
@@ -452,7 +457,11 @@ namespace FeBuddyLibrary.DataAccess
                 {
                     (startCoords, endCoords) = GetCoordsFromString(starDiagram);
 
-                    if (starFeature.geometry.coordinates.Last()[0] != startCoords[1] || starFeature.geometry.coordinates.Last()[1] != startCoords[0])
+                    if (starFeature.geometry.coordinates.Count == 0)
+                    {
+                        starFeature = CheckAMCrossing(startCoords, endCoords, allStarsFeatures, individualStarFeatures);
+                    }
+                    else if (starFeature.geometry.coordinates.Last()[0] != startCoords[1] || starFeature.geometry.coordinates.Last()[1] != startCoords[0])
                     {
                         allStarsFeatures.features.Add(starFeature);
                         individualStarFeatures.features.Add(starFeature);
@@ -489,7 +498,11 @@ namespace FeBuddyLibrary.DataAccess
                 {
                     (startCoords, endCoords) = GetCoordsFromString(dpDiagram);
 
-                    if (dpFeature.geometry.coordinates.Last()[0] != startCoords[1] || dpFeature.geometry.coordinates.Last()[1] != startCoords[0])
+                    if (dpFeature.geometry.coordinates.Count == 0)
+                    {
+                        dpFeature = CheckAMCrossing(startCoords, endCoords, allSidsFeatures, individualDpFeatures);
+                    }
+                    else if (dpFeature.geometry.coordinates.Last()[0] != startCoords[1] || dpFeature.geometry.coordinates.Last()[1] != startCoords[0])
                     {
                         allSidsFeatures.features.Add(dpFeature);
                         individualDpFeatures.features.Add(dpFeature);
@@ -652,6 +665,9 @@ namespace FeBuddyLibrary.DataAccess
                 {
                     dpDiagramSb.AppendLine(starDiagram);
                 }
+
+                
+
 
                 if (dpDiagramSb.ToString().Length > 91)
                 {

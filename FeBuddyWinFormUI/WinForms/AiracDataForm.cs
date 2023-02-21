@@ -335,6 +335,10 @@ namespace FeBuddyWinFormUI
             GetArbData ParseArb = new GetArbData();
             ParseArb.ArbMain(GlobalConfig.airacEffectiveDate);
 
+            SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing NDBs & VORs");
+            GetNavData ParseNDBs = new GetNavData();
+            ParseNDBs.NAVQuarterbackFunc(GlobalConfig.airacEffectiveDate, GlobalConfig.facilityID);
+
             bool DEVMODE = true;
             if (DEVMODE == false)
             {
@@ -374,8 +378,6 @@ namespace FeBuddyWinFormUI
                 GetFixData ParseFixes = new GetFixData();
                 ParseFixes.FixQuarterbackFunc(GlobalConfig.airacEffectiveDate);
 
-                
-
                 // ------------------------------------------------------------------------------------------------------
                 // DO NOT CHANGE THE ORDER OF THESE TWO ITEMS, REFACTORING THIS IS NEEDED!!!!!
                 // Warning: AwyData must be preformed before AtsAwyData, Refactoring of this code is needed! 
@@ -391,11 +393,6 @@ namespace FeBuddyWinFormUI
                 FileHelpers.CreateAwyGeomapHeadersAndEnding(false);
 
                 // ------------------------------------------------------------------------------------------------------
-
-
-                SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing NDBs");
-                GetNavData ParseNDBs = new GetNavData();
-                ParseNDBs.NAVQuarterbackFunc(GlobalConfig.airacEffectiveDate, GlobalConfig.facilityID);
 
                 //SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing FAA Aircraft Data");
                 //AircraftData ACData = new AircraftData();

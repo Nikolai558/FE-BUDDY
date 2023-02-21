@@ -1,8 +1,10 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using FeBuddyLibrary.Helpers;
 using FeBuddyLibrary.Models;
+using Newtonsoft.Json;
 
 namespace FeBuddyLibrary.DataAccess
 {
@@ -20,11 +22,63 @@ namespace FeBuddyLibrary.DataAccess
             Logger.LogMessage("INFO", "STARTED NAV");
 
             ParseNAVData(effectiveDate);
+
+            WriteGeo();
+
             StoreXMLData();
             WriteNAVSctData();
             WriteNavISR(Artcc);
             Logger.LogMessage("INFO", "COMPLETED NAV");
 
+        }
+
+        private void WriteGeo()
+        {
+            WriteDataToFiles<NDBModel>($"{GlobalConfig.outputDirectory}\\CRC\\NDB", allNDBData, ndb => ndb.Name);
+            WriteDataToFiles<VORModel>($"{GlobalConfig.outputDirectory}\\CRC\\VOR", allVORData, vor => vor.Name);
+        }
+
+        private void WriteDataToFiles<T>(string outputDirectory, IEnumerable<T> data, Func<T, string> nameSelector) where T: class, IDecLatLon
+        {
+            var symbolsFile = $"{outputDirectory}_symbols.geojson";
+            var textFile = $"{outputDirectory}_text.geojson";
+
+            var symbolFeatures = new List<Feature>();
+            var textFeatures = new List<Feature>();
+
+            foreach (var item in data)
+            {
+                var feature = new Feature()
+                {
+                    type = "Feature",
+                    geometry = new Geometry()
+                    {
+                        type = "Point",
+                        coordinates = new List<dynamic>() { double.Parse(item.Dec_Lon), double.Parse(item.Dec_Lat) }
+                    },
+                };
+
+                var textFeature = new Feature() { type = "Feature", geometry = feature.geometry };
+                textFeature.properties = new Properties() { text = new string[] { nameSelector(item) } };
+
+                symbolFeatures.Add(feature);
+                textFeatures.Add(textFeature);
+            }
+
+            var symbolGeojson = new FeatureCollection() { features = symbolFeatures };
+            var textGeojson = new FeatureCollection() { features = textFeatures };
+
+            if (symbolFeatures.Count >= 1)
+            {
+                var json = JsonConvert.SerializeObject(symbolGeojson, new JsonSerializerSettings { Formatting = Formatting.Indented, NullValueHandling = NullValueHandling.Ignore });
+                File.WriteAllText(symbolsFile, json);
+            }
+
+            if (textFeatures.Count >= 1)
+            {
+                var json = JsonConvert.SerializeObject(textGeojson, new JsonSerializerSettings { Formatting = Formatting.Indented, NullValueHandling = NullValueHandling.Ignore });
+                File.WriteAllText(textFile, json);
+            }
         }
 
         /// <summary>
@@ -120,7 +174,7 @@ namespace FeBuddyLibrary.DataAccess
 
         /// <summary>
         /// Store the XML data in our Global XML data storage for Waypoints.xml. WE can not just write it or append the data
-        /// because the waypoints.xml file has airport, fix, vor, ndb data types included in it. 
+        /// because the waypoints.xml file has airport, fix, ndb, ndb data types included in it. 
         /// so we just store it in a global variable so we can create the .xml file when it has all the data we need.
         /// </summary>
         private void StoreXMLData()

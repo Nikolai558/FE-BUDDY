@@ -63,7 +63,7 @@ namespace FeBuddyLibrary.DataAccess
                     AddFeatures(awyPoint, isHigh ? awyHighText.features : awyLowText.features, isHigh ? awyHighSymbols.features : awyLowSymbols.features);
                 }
 
-                //AddLineFeatures(airway, isHigh ? awyHighLines.features : awyLowLines.features);
+                AddLineFeatures(airway, isHigh ? awyHighLines.features : awyLowLines.features);
             }
 
 
@@ -71,12 +71,66 @@ namespace FeBuddyLibrary.DataAccess
             SerializeToFile(awyHighText, awyHighTextFile);
             SerializeToFile(awyLowSymbols, awyLowSymbolsFile);
             SerializeToFile(awyLowText, awyLowTextFile);
+            SerializeToFile(awyLowLines, awyLowLinesFile);
+            SerializeToFile(awyHighLines, awyHighLinesFile);
         }
 
         private void AddLineFeatures(AirwayModel airway, List<Feature> features)
         {
-            Feature currentLineFeature = new Feature() { type = "Feature", geometry = new Geometry() { type = "LineString", coordinates = new List<dynamic>() } };
-            throw new NotImplementedException();
+
+            double prevLat = -999;
+            double prevLon = -999;
+            double currentLat = -999;
+            double currentLon = -999;
+            Feature currentLineFeature = null;
+
+            foreach (AwyPointModel awyPoint in airway.AwyPoints)
+            {
+                if (prevLat == -999 || prevLon == -999)
+                {
+                    currentLineFeature = new Feature() { type = "Feature", geometry = new Geometry() { type = "LineString", coordinates = new List<dynamic>() } };
+                    prevLat = double.Parse(awyPoint.Dec_Lat);
+                    prevLon = LatLonHelpers.CorrectIlleagleLon(double.Parse(awyPoint.Dec_Lon));
+                    currentLineFeature.geometry.coordinates.Add(new List<double>() { prevLon, prevLat });
+                    continue;
+                }
+
+                currentLat = double.Parse(awyPoint.Dec_Lat);
+                currentLon = LatLonHelpers.CorrectIlleagleLon(double.Parse(awyPoint.Dec_Lon));
+
+                bool crossesAM = false;
+                var coords = LatLonHelpers.CheckAMCrossing(prevLat, prevLon, currentLat, currentLon);
+                if (coords.Count() == 4) { crossesAM = true; }
+
+                if (crossesAM)
+                {
+                    currentLineFeature.geometry.coordinates.Add(coords[1]);
+                    features.Add(currentLineFeature);
+                    currentLineFeature = new Feature() { type = "Feature", geometry = new Geometry() { type = "LineString", coordinates = new List<dynamic>() } };
+                    currentLineFeature.geometry.coordinates.Add(coords[2]);
+                    currentLineFeature.geometry.coordinates.Add(coords[3]);
+                }
+                else
+                {
+                    currentLineFeature.geometry.coordinates.Add(new List<double>() { currentLon, currentLat });
+                }
+
+                prevLat = currentLat;
+                prevLon = currentLon;
+
+                if (awyPoint.GapAfter || awyPoint.BorderAfter)
+                {
+                    features.Add(currentLineFeature);
+                    prevLat = -999;
+                    prevLon = -999;
+                }
+            }
+            if (currentLineFeature.geometry.coordinates.Count >= 1)
+            {
+                features.Add(currentLineFeature);
+            }
+
+
         }
 
         private static void AddFeatures(AwyPointModel awyPoint,  List<Feature> textFeatures,  List<Feature> symbolFeatures)

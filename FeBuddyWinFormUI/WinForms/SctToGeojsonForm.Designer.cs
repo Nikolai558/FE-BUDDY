@@ -35,6 +35,7 @@
             this.startButton = new System.Windows.Forms.Button();
             this.sourceTypeGroupBox = new System.Windows.Forms.GroupBox();
             this.convertGroupBox = new System.Windows.Forms.GroupBox();
+            this.convertDescriptionLabel = new System.Windows.Forms.Label();
             this.startGroupBox = new System.Windows.Forms.GroupBox();
             this.sourceFileLabel = new System.Windows.Forms.Label();
             this.sourceFileButton = new System.Windows.Forms.Button();
@@ -51,7 +52,6 @@
             this.settingsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.allowBetaMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.UninstallMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.convertDescriptionLabel = new System.Windows.Forms.Label();
             this.sourceTypeGroupBox.SuspendLayout();
             this.convertGroupBox.SuspendLayout();
             this.startGroupBox.SuspendLayout();
@@ -134,6 +134,18 @@
             this.convertGroupBox.Size = new System.Drawing.Size(452, 237);
             this.convertGroupBox.TabIndex = 13;
             this.convertGroupBox.TabStop = false;
+            // 
+            // convertDescriptionLabel
+            // 
+            this.convertDescriptionLabel.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.convertDescriptionLabel.ForeColor = System.Drawing.SystemColors.AppWorkspace;
+            this.convertDescriptionLabel.Location = new System.Drawing.Point(9, 22);
+            this.convertDescriptionLabel.Margin = new System.Windows.Forms.Padding(6, 0, 6, 0);
+            this.convertDescriptionLabel.Name = "convertDescriptionLabel";
+            this.convertDescriptionLabel.Size = new System.Drawing.Size(434, 212);
+            this.convertDescriptionLabel.TabIndex = 9;
+            this.convertDescriptionLabel.Text = resources.GetString("convertDescriptionLabel.Text");
+            this.convertDescriptionLabel.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
             // startGroupBox
             // 
@@ -323,18 +335,6 @@
             this.UninstallMenuItem.Size = new System.Drawing.Size(206, 24);
             this.UninstallMenuItem.Text = "Uninstall";
             this.UninstallMenuItem.Click += new System.EventHandler(this.UninstallMenuItem_Click);
-            // 
-            // convertDescriptionLabel
-            // 
-            this.convertDescriptionLabel.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-            this.convertDescriptionLabel.ForeColor = System.Drawing.SystemColors.AppWorkspace;
-            this.convertDescriptionLabel.Location = new System.Drawing.Point(9, 22);
-            this.convertDescriptionLabel.Margin = new System.Windows.Forms.Padding(6, 0, 6, 0);
-            this.convertDescriptionLabel.Name = "convertDescriptionLabel";
-            this.convertDescriptionLabel.Size = new System.Drawing.Size(434, 212);
-            this.convertDescriptionLabel.TabIndex = 9;
-            this.convertDescriptionLabel.Text = resources.GetString("convertDescriptionLabel.Text");
-            this.convertDescriptionLabel.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
             // SctToGeojsonForm
             // 

@@ -1,38 +1,35 @@
 # FE-BUDDY ROADMAP
 
 
-The following is a list of features that we are considering or actively working on in priority order.
+The following is a list of features that we are considering or actively working on in priority order.  
+For previous Roadmap items, refer to the [FEB Change Log](https://github.com/Nikolai558/FE-BUDDY/blob/development/ChangeLog.md).
 
 ---
 
-- [ ] SCT2-to-GeoJSON
-  - Reference: https://fetools.bvartcc.com/
-
 - [ ] AIRAC GeoJSON Output
-  - This should be output with AIRAC updates ...\FE-BUDDY_Output\CRC-GeoJSON
-    - Then use a folder structure similar to "SECTOR FILES" to organize the output files
+  - This should be output with AIRAC updates ...\FE-BUDDY_Output\CRC
   - Output files names:
-    - AIRPORTS_symbols
-    - AIRPORTS_text
-    - AIRWAYS-HIGH_lines
-    - AIRWAYS-HIGH_symbols
-    - AIRWAYS-HIGH_text
-    - AIRWAYS-LOW_lines
-    - AIRWAYS-LOW_symbols
-    - AIRWAYS-LOW_text
-    - ARTCC BOUDNARIES-Low_lines
-    - ARTCC BOUNDARIES-High_lines
-    - DPs_lines `individual files and then another file with all combined`
-    - FIXES_symbols
-    - FIXES_text
-    - NDB_symbols
-    - NDB_text
-    - RWY_lines
-    - STARS_lines `individual files and then another file with all combined`
-    - VOR_symbols
-    - VOR_text
-    - WX STATIONS_symbols
-    - WX STATIONS_text
+    - [X] APT_symbols
+    - [X] APT_text
+    - [X] ARTCC BOUNDARIES-LOW_lines
+    - [X] ARTCC BOUNDARIES-HIGH_lines
+    - [X] AWY-HIGH_lines
+    - [X] AWY-HIGH_symbols
+    - [X] AWY-HIGH_text
+    - [X] AWY-LOW_lines
+    - [X] AWY-LOW_symbols
+    - [X] AWY-LOW_text
+    - [X] DP_lines
+    - [X] FIX_symbols
+    - [X] FIX_text
+    - [X] NDB_symbols
+    - [X] NDB_text
+    - [X] RWY_lines
+    - [X] STARS_lines
+    - [X] VOR_symbols
+    - [X] VOR_text
+    - [X] WX STATIONS_symbols
+    - [X] WX STATIONS_text
   - Add option for user to decide if they want all the geojsons in one folder to make "vNAS Batch Upload" easier.
 
 ---

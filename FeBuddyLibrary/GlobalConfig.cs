@@ -10,7 +10,7 @@ namespace FeBuddyLibrary
 {
     public class GlobalConfig
     {
-        public static bool DEVMODE = true;
+        public static bool DEVMODE = false;
 
         public static string airacEffectiveDate = "";
 

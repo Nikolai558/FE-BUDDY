@@ -8,6 +8,8 @@ using System.Xml.Linq;
 using System.Xml.Serialization;
 using FeBuddyLibrary.Helpers;
 using FeBuddyLibrary.Models;
+using Newtonsoft.Json;
+using Formatting = Newtonsoft.Json.Formatting;
 
 namespace FeBuddyLibrary.DataAccess
 {
@@ -25,6 +27,9 @@ namespace FeBuddyLibrary.DataAccess
             Logger.LogMessage("INFO", $"STARTING APT AND WEATHER");
 
             ParseAptData(effectiveDate);
+
+            WriteAptGeoJson();
+
             WriteAptISR(artcc);
             WriteAptSctData();
 
@@ -39,6 +44,68 @@ namespace FeBuddyLibrary.DataAccess
             WriteWxXmlOutput();
             Logger.LogMessage("INFO", $"COMPLETED APT AND WEATHER");
 
+        }
+
+
+        private void WriteAptGeoJson()
+        {
+            string aptSymbolsFile = $"{GlobalConfig.outputDirectory}\\CRC\\APT_symbols.geojson";
+            string aptTextFile = $"{GlobalConfig.outputDirectory}\\CRC\\APT_text.geojson";
+
+
+            FeatureCollection textGeo = new FeatureCollection();
+            List<Feature> textAllFeatures = new List<Feature>();
+
+            var textFeature = new Feature()
+            {
+                type = "Feature",
+                geometry = new Geometry() { type = "Point" },
+                properties = new Properties()
+            };
+
+            FeatureCollection symbolGeo = new FeatureCollection();
+            List<Feature> symbolAllFeatures = new List<Feature>();
+
+            var symbolFeature = new Feature()
+            {
+                type = "Feature",
+                geometry = new Geometry() { type = "Point" }
+            };
+
+            foreach (AptModel aptModel in allAptModels)
+            {
+                symbolFeature.geometry.coordinates = new List<dynamic>() { double.Parse(aptModel.Lon_Dec), double.Parse(aptModel.Lat_Dec) };
+                textFeature.geometry.coordinates = new List<dynamic>() { double.Parse(aptModel.Lon_Dec), double.Parse(aptModel.Lat_Dec) };
+                textFeature.properties.text = new string[] { !string.IsNullOrEmpty(aptModel.Icao) ? aptModel.Icao : aptModel.Id };
+
+                symbolAllFeatures.Add(symbolFeature);
+                textAllFeatures.Add(textFeature);
+
+                textFeature = new Feature()
+                {
+                    type = "Feature",
+                    geometry = new Geometry() { type = "Point"},
+                    properties = new Properties()
+                };
+                symbolFeature = new Feature()
+                {
+                    type = "Feature",
+                    geometry = new Geometry() { type = "Point"}
+                };
+            }
+            textGeo.features = textAllFeatures;
+            symbolGeo.features = symbolAllFeatures;
+
+            if (textGeo.features.Count() >= 1)
+            {
+                string json = JsonConvert.SerializeObject(textGeo, new JsonSerializerSettings { Formatting = Formatting.None, NullValueHandling = NullValueHandling.Ignore });
+                File.WriteAllText(aptTextFile, json);
+            }
+            if (symbolGeo.features.Count() >= 1)
+            {
+                string json = JsonConvert.SerializeObject(symbolGeo, new JsonSerializerSettings { Formatting = Formatting.None, NullValueHandling = NullValueHandling.Ignore });
+                File.WriteAllText(aptSymbolsFile, json);
+            }
         }
 
         /// <summary>
@@ -135,6 +202,20 @@ namespace FeBuddyLibrary.DataAccess
         {
             Logger.LogMessage("INFO", $"STARTED WX STATION PARSER");
 
+            string wxSymbolsFile = $"{GlobalConfig.outputDirectory}\\CRC\\WX STATIONS_symbols.geojson";
+            string wxTextFile = $"{GlobalConfig.outputDirectory}\\CRC\\WX STATIONS_text.geojson";
+
+
+            FeatureCollection textGeo = new FeatureCollection();
+            List<Feature> textAllFeatures = new List<Feature>();
+
+            var textFeature = new Feature() { type = "Feature", geometry = new Geometry() { type = "Point" }, properties = new Properties() };
+
+            FeatureCollection symbolGeo = new FeatureCollection();
+            List<Feature> symbolAllFeatures = new List<Feature>();
+
+            var symbolFeature = new Feature() { type = "Feature", geometry = new Geometry() { type = "Point" } };
+
             string metarDataFilepath = $"{GlobalConfig.tempPath}\\{effectiveDate}_NWS-WX-STATIONS.xml";
             string outputFilepath = $"{GlobalConfig.outputDirectory}\\VRC\\[LABELS].sct2";
             Dictionary<string, List<double>> stationInfo = new Dictionary<string, List<double>>();
@@ -176,6 +257,17 @@ namespace FeBuddyLibrary.DataAccess
                 {
                     labelLineToBeAdded = $"\"{metar_id} {aptInfo[metar_id][0].Replace('"', '-')}\" {LatLonHelpers.CreateDMS(stationInfo[metar_id][0], true)} {LatLonHelpers.CreateDMS(stationInfo[metar_id][1], false)} 11579568";
                     sb.AppendLine(labelLineToBeAdded);
+                    symbolFeature.geometry.coordinates = new List<dynamic>() { stationInfo[metar_id][1], stationInfo[metar_id][0] };
+                    textFeature.geometry.coordinates = new List<dynamic>() { stationInfo[metar_id][1], stationInfo[metar_id][0] };
+                    textFeature.properties.text = new string[] { metar_id };
+
+                    symbolAllFeatures.Add(symbolFeature);
+                    textAllFeatures.Add(textFeature);
+
+                    textFeature = new Feature() { type = "Feature", geometry = new Geometry() { type = "Point" }, properties = new Properties() };
+                    symbolFeature = new Feature() { type = "Feature", geometry = new Geometry() { type = "Point" } };
+
+
 
                 }
                 // Metar Id (Without Prefixing character) and Airport Code (FAA or ICAO) matches.
@@ -201,6 +293,17 @@ namespace FeBuddyLibrary.DataAccess
                             if (station_lat == airport_lat && station_lon == airport_lon)
                             {
                                 labelLineToBeAdded = $"\"{metar_id} {aptInfo[metar_id.Substring(1)][0].Replace('"', '-')}\" {LatLonHelpers.CreateDMS(stationInfo[metar_id][0], true)} {LatLonHelpers.CreateDMS(stationInfo[metar_id][1], false)} 11579568";
+                                
+                                symbolFeature.geometry.coordinates = new List<dynamic>() { stationInfo[metar_id][1], stationInfo[metar_id][0] };
+                                textFeature.geometry.coordinates = new List<dynamic>() { stationInfo[metar_id][1], stationInfo[metar_id][0] };
+                                textFeature.properties.text = new string[] { metar_id };
+
+                                symbolAllFeatures.Add(symbolFeature);
+                                textAllFeatures.Add(textFeature);
+
+                                textFeature = new Feature() { type = "Feature", geometry = new Geometry() { type = "Point" }, properties = new Properties() };
+                                symbolFeature = new Feature() { type = "Feature", geometry = new Geometry() { type = "Point" } };
+
                                 sb.AppendLine(labelLineToBeAdded);
                                 break;
                             }
@@ -216,6 +319,20 @@ namespace FeBuddyLibrary.DataAccess
 
             // Bottom of VRC [LABELS].sct2 file.
             sb.AppendLine("\n\n\n\n\n\n");
+
+            textGeo.features = textAllFeatures;
+            symbolGeo.features = symbolAllFeatures;
+
+            if (textGeo.features.Count() >= 1)
+            {
+                string json = JsonConvert.SerializeObject(textGeo, new JsonSerializerSettings { Formatting = Formatting.None, NullValueHandling = NullValueHandling.Ignore });
+                File.WriteAllText(wxTextFile, json);
+            }
+            if (symbolGeo.features.Count() >= 1)
+            {
+                string json = JsonConvert.SerializeObject(symbolGeo, new JsonSerializerSettings { Formatting = Formatting.None, NullValueHandling = NullValueHandling.Ignore });
+                File.WriteAllText(wxSymbolsFile, json);
+            }
 
             File.WriteAllText(outputFilepath, sb.ToString());
             File.AppendAllText($"{GlobalConfig.outputDirectory}\\{GlobalConfig.testSectorFileName}", File.ReadAllText(outputFilepath));
@@ -405,6 +522,10 @@ namespace FeBuddyLibrary.DataAccess
         {
             Logger.LogMessage("INFO", $"STARTED ERAM APT XML");
 
+            string rwyGeoFilePath = $"{GlobalConfig.outputDirectory}\\CRC\\RWY_lines.geojson";
+            FeatureCollection rwyGeojson = new FeatureCollection() { features = new List<Feature>() };
+            Feature currentFeature = new Feature() { type = "Feature", geometry = new Geometry() { type = "LineString", coordinates = new List<dynamic>() } };
+
             string filePath = $"{GlobalConfig.outputDirectory}\\VERAM\\Airports.xml";
             List<Airport> allAptForXML = new List<Airport>();
 
@@ -418,6 +539,7 @@ namespace FeBuddyLibrary.DataAccess
 
             foreach (AptModel aptModel in allAptModels)
             {
+                // This variable will exclude runways that have null data. EX Heloports.
                 bool doNotUseThisRwy = false;
                 string aptIdTempVar;
                 List<Runway> rwysTempVar = new List<Runway>();
@@ -525,6 +647,21 @@ namespace FeBuddyLibrary.DataAccess
 
                 if (rwysTempVar.Count >= 1 && aptXMLFormat.MagVar != "")
                 {
+                    // We need the count because RwysTempVar contains the Base Runway and the Same recipical runway.
+                    int count = 0;
+                    foreach (Runway item in rwysTempVar)
+                    {
+                        if (count % 2 == 0)
+                        {
+                            // TODO - Might need to put Crosses AM check here....
+                            currentFeature.geometry.coordinates.Add(new List<dynamic>() { LatLonHelpers.CorrectIlleagleLon(double.Parse(rwysTempVar[count].StartLoc.Lon)), double.Parse(rwysTempVar[count].StartLoc.Lat) });
+                            currentFeature.geometry.coordinates.Add(new List<dynamic>() { LatLonHelpers.CorrectIlleagleLon(double.Parse(rwysTempVar[count].EndLoc.Lon)), double.Parse(rwysTempVar[count].EndLoc.Lat) });
+                            rwyGeojson.features.Add(currentFeature);
+                            currentFeature = new Feature() { type = "Feature", geometry = new Geometry() { type = "LineString", coordinates = new List<dynamic>() } };
+                        }
+
+                        count += 1;
+                    }
                     allAptForXML.Add(aptXMLFormat);
                 }
             }
@@ -538,6 +675,12 @@ namespace FeBuddyLibrary.DataAccess
             //TextWriter writer = new StreamWriter(filePath);
             //serializer.Serialize(writer, aptArrayForXML);
             //writer.Close();
+
+            if (rwyGeojson.features.Count() >= 1)
+            {
+                string json = JsonConvert.SerializeObject(rwyGeojson, new JsonSerializerSettings { Formatting = Formatting.None, NullValueHandling = NullValueHandling.Ignore });
+                File.WriteAllText(rwyGeoFilePath, json);
+            }
 
             File.AppendAllText(filePath, $"\n<!--AIRAC_EFFECTIVE_DATE {effectiveDate}-->");
             File.Copy($"{GlobalConfig.outputDirectory}\\VERAM\\Airports.xml", $"{GlobalConfig.outputDirectory}\\VSTARS\\Airports.xml");

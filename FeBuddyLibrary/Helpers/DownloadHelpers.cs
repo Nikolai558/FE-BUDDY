@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Net;
 
 namespace FeBuddyLibrary.Helpers
@@ -57,6 +58,12 @@ namespace FeBuddyLibrary.Helpers
             {
                 foreach (string fileName in allURLs.Keys)
                 {
+                    if (File.Exists($"{GlobalConfig.tempPath}\\{fileName}") && GlobalConfig.DEVMODE)
+                    {
+                        GlobalConfig.DownloadedFilePaths.Add($"{GlobalConfig.tempPath}\\{fileName}");
+                        continue;
+                    }
+
                     try
                     {
                         Logger.LogMessage("INFO", $"ATTEMPTING TO DOWNLOAD: {fileName}");

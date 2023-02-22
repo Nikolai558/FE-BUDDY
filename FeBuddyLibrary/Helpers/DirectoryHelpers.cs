@@ -11,6 +11,11 @@ namespace FeBuddyLibrary.Helpers
 
             if (Directory.Exists(GlobalConfig.tempPath))
             {
+                if (GlobalConfig.DEVMODE)
+                {
+                    return;
+                }
+
                 DirectoryInfo di = new DirectoryInfo(GlobalConfig.tempPath);
 
                 foreach (FileInfo file in di.EnumerateFiles())
@@ -36,6 +41,11 @@ namespace FeBuddyLibrary.Helpers
         {
             foreach (string filePath in GlobalConfig.DownloadedFilePaths)
             {
+                if (Directory.Exists(filePath.Replace(".zip", string.Empty)) && GlobalConfig.DEVMODE)
+                {
+                    continue;
+                }
+
                 if (filePath.Contains(".zip"))
                 {
                     Logger.LogMessage("INFO", $"UNZIPING: {filePath}");
@@ -52,6 +62,9 @@ namespace FeBuddyLibrary.Helpers
             Logger.LogMessage("DEBUG", "CREATING OUTPUT DIRECTORIES");
             Directory.CreateDirectory(GlobalConfig.outputDirectory);
             Directory.CreateDirectory($"{GlobalConfig.outputDirectory}\\ALIAS");
+            Directory.CreateDirectory($"{GlobalConfig.outputDirectory}\\CRC");
+            Directory.CreateDirectory($"{GlobalConfig.outputDirectory}\\CRC\\STARs");
+            Directory.CreateDirectory($"{GlobalConfig.outputDirectory}\\CRC\\DPs");
             Directory.CreateDirectory($"{GlobalConfig.outputDirectory}\\VRC");
             Directory.CreateDirectory($"{GlobalConfig.outputDirectory}\\VSTARS");
             Directory.CreateDirectory($"{GlobalConfig.outputDirectory}\\VERAM");

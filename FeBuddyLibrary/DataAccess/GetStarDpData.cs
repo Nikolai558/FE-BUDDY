@@ -1,9 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using FeBuddyLibrary.Helpers;
 using FeBuddyLibrary.Models;
+using Newtonsoft.Json;
 
 namespace FeBuddyLibrary.DataAccess
 {
@@ -369,6 +372,159 @@ namespace FeBuddyLibrary.DataAccess
 
         }
 
+        private static void SerializeToFile(FeatureCollection feature, string path)
+        {
+            if (feature.features.Count >= 1)
+            {
+                string json = JsonConvert.SerializeObject(feature, new JsonSerializerSettings { Formatting = Formatting.Indented, NullValueHandling = NullValueHandling.Ignore });
+                File.WriteAllText(path, json);
+            }
+        }
+
+        static private Regex coordsRegex = new Regex(@"\s([A-Z][0-9]{3}\.[0-9]{2}\.[0-9]{2}\.[0-9]{3,4})");
+
+        private (List<double>, List<double>) GetCoordsFromString(string line)
+        {
+            var matches = coordsRegex.Matches(line);
+            if (matches.Count == 4)
+            {
+                return (
+                    new List<double>() { 
+                        double.Parse(LatLonHelpers.CreateDecFormat(matches[0].Value.Trim(), false)), 
+                        LatLonHelpers.CorrectIlleagleLon(double.Parse(LatLonHelpers.CreateDecFormat(matches[1].Value.Trim(), false)))},
+                    new List<double>() {
+                        double.Parse(LatLonHelpers.CreateDecFormat(matches[2].Value.Trim(), false)),
+                        LatLonHelpers.CorrectIlleagleLon(double.Parse(LatLonHelpers.CreateDecFormat(matches[3].Value.Trim(), false))) }
+                    );
+            }
+            throw new ArgumentException("Could not find 4 Matches for Coords in the line: " + line);
+        }
+
+        public Feature CheckAMCrossing(List<double> startCoords, List<double> endCoords, FeatureCollection allStarsFeatures, FeatureCollection individualFeatures)
+        {
+            Feature starFeature = new Feature() { type = "Feature", geometry = new Geometry() { type = "LineString", coordinates = new List<dynamic>() } };
+
+            if ((startCoords[0] == 0 && startCoords[1] == 0) && (endCoords[0] == 0 && endCoords[1] == 0))
+            {
+                return starFeature;
+            }
+
+            bool crossesAM = false;
+            var coords = LatLonHelpers.CheckAMCrossing(startCoords[0], startCoords[1], endCoords[0], endCoords[1]);
+            if (coords.Count == 4) crossesAM = true;
+
+            if (crossesAM)
+            {
+                starFeature.geometry.coordinates.Add(coords[0]);
+                starFeature.geometry.coordinates.Add(coords[1]);
+                allStarsFeatures.features.Add(starFeature);
+                individualFeatures.features.Add(starFeature);
+                starFeature = new Feature() { type = "Feature", geometry = new Geometry() { type = "LineString", coordinates = new List<dynamic>() } };
+                starFeature.geometry.coordinates.Add(coords[2]);
+                starFeature.geometry.coordinates.Add(coords[3]);
+            }
+            else
+            {
+                starFeature.geometry.coordinates.Add(new List<double>() { startCoords[1], startCoords[0] });
+                starFeature.geometry.coordinates.Add(new List<double>() { endCoords[1], endCoords[0] });
+            }
+
+            return starFeature;
+        }
+
+
+        private void WriteGeo(Dictionary<string, Dictionary<string, List<string>>> allDiagrams)
+        {
+            string SidsAllLinesFile = $"{GlobalConfig.outputDirectory}\\CRC\\DPs\\000_All_DP_Combined.geojson";
+            string StarsAllLinesFile = $"{GlobalConfig.outputDirectory}\\CRC\\STARs\\000_All_STAR_Combined.geojson";
+
+            FeatureCollection allSidsFeatures = new FeatureCollection() { features = new List<Feature>() };
+            FeatureCollection allStarsFeatures = new FeatureCollection() { features = new List<Feature>() };
+
+            foreach (string star in allDiagrams["S"].Keys)
+            {
+                string individualStarFile = $"{GlobalConfig.outputDirectory}\\CRC\\STARs\\{star.Split(' ')[0]}.geojson";
+                FeatureCollection individualStarFeatures = new FeatureCollection() { features = new List<Feature>() };
+
+                // dp[key]       = $"{apt}_{currentComputerCode}   N000.00.00.000  E000.00.00.000  N000.00.00.000  E000.00.00.000"
+                // dp[key].value = $"                             {prevPoint.Lat} {prevPoint.Lon} {point.Lat}     {point.Lon}; {prevPoint.PointId} {point.PointId}"
+
+                var (startCoords, endCoords) = GetCoordsFromString(star);
+
+                Feature starFeature = CheckAMCrossing(startCoords, endCoords, allStarsFeatures, individualStarFeatures) ;
+
+                foreach (string starDiagram in allDiagrams["S"][star])
+                {
+                    (startCoords, endCoords) = GetCoordsFromString(starDiagram);
+
+                    if (starFeature.geometry.coordinates.Count == 0)
+                    {
+                        starFeature = CheckAMCrossing(startCoords, endCoords, allStarsFeatures, individualStarFeatures);
+                    }
+                    else if (starFeature.geometry.coordinates.Last()[0] != startCoords[1] || starFeature.geometry.coordinates.Last()[1] != startCoords[0])
+                    {
+                        allStarsFeatures.features.Add(starFeature);
+                        individualStarFeatures.features.Add(starFeature);
+                        starFeature = CheckAMCrossing(startCoords, endCoords, allStarsFeatures, individualStarFeatures);
+                    }
+                    else
+                    {
+                        starFeature.geometry.coordinates.Add(new List<double>() { endCoords[1], endCoords[0] });
+                    }
+                }
+                if (starFeature.geometry.coordinates.Count >= 1)
+                {
+                    allStarsFeatures.features.Add(starFeature);
+                    individualStarFeatures.features.Add(starFeature);
+                }
+                SerializeToFile(individualStarFeatures, individualStarFile);
+            }
+
+            SerializeToFile(allStarsFeatures, StarsAllLinesFile);
+
+            foreach (string dp in allDiagrams["D"].Keys)
+            {
+                string individualDpFile = $"{GlobalConfig.outputDirectory}\\CRC\\DPs\\{dp.Split(' ')[0]}.geojson";
+                FeatureCollection individualDpFeatures = new FeatureCollection() { features = new List<Feature>() };
+
+                // dp[key]       = $"{apt}_{currentComputerCode}   N000.00.00.000  E000.00.00.000  N000.00.00.000  E000.00.00.000"
+                // dp[key].value = $"                             {prevPoint.Lat} {prevPoint.Lon} {point.Lat}     {point.Lon}; {prevPoint.PointId} {point.PointId}"
+
+                var (startCoords, endCoords) = GetCoordsFromString(dp);
+
+                Feature dpFeature = CheckAMCrossing(startCoords, endCoords, allSidsFeatures, individualDpFeatures);
+
+                foreach (string dpDiagram in allDiagrams["D"][dp])
+                {
+                    (startCoords, endCoords) = GetCoordsFromString(dpDiagram);
+
+                    if (dpFeature.geometry.coordinates.Count == 0)
+                    {
+                        dpFeature = CheckAMCrossing(startCoords, endCoords, allSidsFeatures, individualDpFeatures);
+                    }
+                    else if (dpFeature.geometry.coordinates.Last()[0] != startCoords[1] || dpFeature.geometry.coordinates.Last()[1] != startCoords[0])
+                    {
+                        allSidsFeatures.features.Add(dpFeature);
+                        individualDpFeatures.features.Add(dpFeature);
+                        dpFeature = CheckAMCrossing(startCoords, endCoords, allSidsFeatures, individualDpFeatures);
+                    }
+                    else
+                    {
+                        dpFeature.geometry.coordinates.Add(new List<double>() { endCoords[1], endCoords[0] });
+                    }
+                }
+                if (dpFeature.geometry.coordinates.Count >= 1)
+                {
+                    allSidsFeatures.features.Add(dpFeature);
+                    individualDpFeatures.features.Add(dpFeature);
+                }
+                SerializeToFile(individualDpFeatures, individualDpFile);
+            }
+
+            SerializeToFile(allSidsFeatures, SidsAllLinesFile);
+        }
+
+
         private void WriteSctDiagrams()
         {
             Logger.LogMessage("DEBUG", $"CREATING STAR AND DP SCT DIAGRAMS");
@@ -510,11 +666,16 @@ namespace FeBuddyLibrary.DataAccess
                     dpDiagramSb.AppendLine(starDiagram);
                 }
 
+                
+
+
                 if (dpDiagramSb.ToString().Length > 91)
                 {
                     File.WriteAllText($"{GlobalConfig.outputDirectory}\\VRC\\[SID]\\{dp.Split(' ')[0]}.sct2", dpDiagramSb.ToString());
                 }
             }
+
+            WriteGeo(allDiagrams);
 
             File.WriteAllText($"{GlobalConfig.outputDirectory}\\VRC\\[STAR]\\000_All_STAR_Combined.sct2", combinedDataStar.ToString());
             Logger.LogMessage("INFO", $"SAVED ALL STAR SCT2 FILE");

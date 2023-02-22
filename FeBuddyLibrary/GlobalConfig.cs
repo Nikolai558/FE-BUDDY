@@ -10,6 +10,8 @@ namespace FeBuddyLibrary
 {
     public class GlobalConfig
     {
+        public static bool DEVMODE = false;
+
         public static string airacEffectiveDate = "";
 
         public static string FaaHtmlFileVariable { get; protected set; } = DateTime.Now.ToString("MMddHHmmss");

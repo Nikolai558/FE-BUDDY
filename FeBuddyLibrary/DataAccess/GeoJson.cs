@@ -216,7 +216,7 @@ namespace FeBuddyLibrary.DataAccess
                     endLon = LatLonHelpers.CorrectIlleagleLon(double.Parse(LatLonHelpers.CreateDecFormat(lineSeg.EndLon, false)));
 
                     bool crossesAM = false;
-                    var coords = CheckAMCrossing(startLat, startLon, endLat, endLon);
+                    var coords = LatLonHelpers.CheckAMCrossing(startLat, startLon, endLat, endLon);
                     if (coords.Count() == 4)
                     {
                         crossesAM = true;
@@ -278,7 +278,7 @@ namespace FeBuddyLibrary.DataAccess
                 }
                 if (geojson.features.Count() >= 1)
                 {
-                    string json = JsonConvert.SerializeObject(geojson, new JsonSerializerSettings { Formatting = Formatting.Indented, NullValueHandling = NullValueHandling.Ignore });
+                    string json = JsonConvert.SerializeObject(geojson, new JsonSerializerSettings { Formatting = Formatting.None, NullValueHandling = NullValueHandling.Ignore });
                     File.WriteAllText(outputFile, json);
                 }
 
@@ -340,7 +340,7 @@ namespace FeBuddyLibrary.DataAccess
 
             if (geojson.features.Count() >= 1)
             {
-                string json = JsonConvert.SerializeObject(geojson, new JsonSerializerSettings { Formatting = Formatting.Indented, NullValueHandling = NullValueHandling.Ignore });
+                string json = JsonConvert.SerializeObject(geojson, new JsonSerializerSettings { Formatting = Formatting.None, NullValueHandling = NullValueHandling.Ignore });
                 File.WriteAllText(outputFile, json);
             }
         }
@@ -374,7 +374,7 @@ namespace FeBuddyLibrary.DataAccess
 
             if (geojson.features.Count() >= 1)
             {
-                string json = JsonConvert.SerializeObject(geojson, new JsonSerializerSettings { Formatting = Formatting.Indented, NullValueHandling = NullValueHandling.Ignore });
+                string json = JsonConvert.SerializeObject(geojson, new JsonSerializerSettings { Formatting = Formatting.None, NullValueHandling = NullValueHandling.Ignore });
                 File.WriteAllText(outputFile, json);
             }
         }
@@ -401,7 +401,7 @@ namespace FeBuddyLibrary.DataAccess
                 double EndLon = LatLonHelpers.CorrectIlleagleLon(double.Parse(LatLonHelpers.CreateDecFormat(model.EndLon, false)));
 
                 bool crossesAM = false;
-                var coords = CheckAMCrossing(startLat, startLon, EndLat, EndLon);
+                var coords = LatLonHelpers.CheckAMCrossing(startLat, startLon, EndLat, EndLon);
                 if (coords.Count() == 4)
                 {
                     crossesAM = true;
@@ -461,7 +461,7 @@ namespace FeBuddyLibrary.DataAccess
 
             if (geojson.features.Count() >= 1)
             {
-                string json = JsonConvert.SerializeObject(geojson, new JsonSerializerSettings { Formatting = Formatting.Indented, NullValueHandling = NullValueHandling.Ignore });
+                string json = JsonConvert.SerializeObject(geojson, new JsonSerializerSettings { Formatting = Formatting.None, NullValueHandling = NullValueHandling.Ignore });
                 File.WriteAllText(outputFile, json);
             }
         }
@@ -559,7 +559,7 @@ namespace FeBuddyLibrary.DataAccess
 
                 geojson.features.AddRange(allFeatures);
 
-                string jsonString = JsonConvert.SerializeObject(geojson, new JsonSerializerSettings { Formatting = Formatting.Indented, NullValueHandling = NullValueHandling.Ignore });
+                string jsonString = JsonConvert.SerializeObject(geojson, new JsonSerializerSettings { Formatting = Formatting.None, NullValueHandling = NullValueHandling.Ignore });
                 File.WriteAllText(file.FullName, jsonString);
             }
         }
@@ -723,7 +723,7 @@ namespace FeBuddyLibrary.DataAccess
             //    }
 
             //    asdexOtherFeatureCollection.features.AddRange(otherFeatures);
-            //    string jsonString = JsonConvert.SerializeObject(asdexOtherFeatureCollection, new JsonSerializerSettings { Formatting = Formatting.Indented, NullValueHandling = NullValueHandling.Ignore });
+            //    string jsonString = JsonConvert.SerializeObject(asdexOtherFeatureCollection, new JsonSerializerSettings { Formatting = Formatting.None, NullValueHandling = NullValueHandling.Ignore });
             //    string fullFilePath = fileName.Split('.')[0] + "-OtherFeatures.geojson"; 
             //    File.WriteAllText(fullFilePath, jsonString);
             //}
@@ -750,7 +750,7 @@ namespace FeBuddyLibrary.DataAccess
                 }
 
                 bool crossesAM = false;
-                var coords = CheckAMCrossing(item.StartLat, item.StartLon, item.EndLat, item.EndLon);
+                var coords = LatLonHelpers.CheckAMCrossing(item.StartLat, item.StartLon, item.EndLat, item.EndLon);
                 if (coords.Count() == 4)
                 {
                     crossesAM = true;
@@ -876,70 +876,7 @@ namespace FeBuddyLibrary.DataAccess
             return allFeatures;
         }
 
-        private List<dynamic> CheckAMCrossing(double startLat, double startLon, double endLat, double endLon)
-        {
-            startLon = LatLonHelpers.CorrectIlleagleLon(startLon);
-            endLon = LatLonHelpers.CorrectIlleagleLon(endLon);
-
-            List<dynamic> dynamicList = new List<dynamic>();
-
-            if (!((startLon < 0 && endLon > 0) || (startLon > 0 && endLon < 0)))
-            {
-                // Lon does not cross the AM in any way. Just return our Coordinates. 
-                dynamicList.Add(new List<double>() { startLon, startLat });
-                dynamicList.Add(new List<double>() { endLon, endLat });
-                return dynamicList;
-            }
-            
-            // Lon DOES cross the AM. 
-            Loc startLoc = new Loc() { Latitude = startLat, Longitude = startLon };
-            Loc endLoc = new Loc() { Latitude = endLat, Longitude = endLon };
-            Loc midPointStartLoc = new Loc();
-            Loc midPointEndLoc = new Loc();
-            var bearing = LatLonHelpers.HaversineGreatCircleBearing(startLoc, endLoc);
-
-            //if ((startLoc.Longitude < 0 && (bearing > 180 && bearing < 360)) || (startLoc.Longitude > 0 && (bearing > 0 && bearing < 180)))
-            if ((startLoc.Longitude < 0 && (bearing > 0 && bearing < 180)) || (startLoc.Longitude > 0 && (bearing > 180 && bearing < 360)))
-            {
-                // Dont need to split
-                dynamicList.Add(new List<double>() { startLon, startLat });
-                dynamicList.Add(new List<double>() { endLon, endLat });
-                return dynamicList;
-            }
-
-            if (startLoc.Longitude < 0)
-            {
-                startLoc.Longitude = startLoc.Longitude + 180;
-                // See if this works, If needed change to the limit -179.99999999999
-                midPointStartLoc.Longitude = -180;
-            }
-            else
-            {
-                startLoc.Longitude = startLoc.Longitude - 180;
-                midPointStartLoc.Longitude = 180;
-            }
-
-            if (endLoc.Longitude < 0)
-            {
-                endLoc.Longitude = endLoc.Longitude + 180;
-                midPointEndLoc.Longitude = -180;
-            }
-            else
-            {
-                endLoc.Longitude = endLoc.Longitude - 180;
-                midPointEndLoc.Longitude = 180;
-            }
-
-            var slope = (startLat - endLat) / (startLoc.Longitude - endLoc.Longitude);
-            var midPointLat = startLat - (slope * startLoc.Longitude);
-
-            dynamicList.Add(new List<double>() { startLon, startLat });
-            dynamicList.Add(new List<double>() { midPointStartLoc.Longitude, midPointLat });
-            dynamicList.Add(new List<double>() { midPointEndLoc.Longitude, midPointLat });
-            dynamicList.Add(new List<double>() { endLon, endLat });
-            return dynamicList;
-
-        }
+        
 
         private int[] getFilters(GeoMapObject geoMapObject, string xsiType)
         {
@@ -1175,7 +1112,7 @@ namespace FeBuddyLibrary.DataAccess
                 FileInfo file = new FileInfo(fullFilePath);
                 file.Directory.Create(); // If the directory already exists, this method does nothing.
 
-                string jsonString = JsonConvert.SerializeObject(FileFeatures[fullFilePath], new JsonSerializerSettings { Formatting = Formatting.Indented, NullValueHandling = NullValueHandling.Ignore });
+                string jsonString = JsonConvert.SerializeObject(FileFeatures[fullFilePath], new JsonSerializerSettings { Formatting = Formatting.None, NullValueHandling = NullValueHandling.Ignore });
 
                 File.WriteAllText(fullFilePath, jsonString);
             }
@@ -1269,7 +1206,7 @@ namespace FeBuddyLibrary.DataAccess
                         }
                     }
 
-                    string jsonString = JsonConvert.SerializeObject(geojson, new JsonSerializerSettings { Formatting = Formatting.Indented, NullValueHandling = NullValueHandling.Ignore });
+                    string jsonString = JsonConvert.SerializeObject(geojson, new JsonSerializerSettings { Formatting = Formatting.None, NullValueHandling = NullValueHandling.Ignore });
 
                     //jsonString = PostProcess(jsonString);
 
@@ -1360,7 +1297,7 @@ namespace FeBuddyLibrary.DataAccess
             foreach (Element element in elements)
             {
                 bool crossesAM = false;
-                var coords = CheckAMCrossing(element.StartLat, element.StartLon, element.EndLat, element.EndLon);
+                var coords = LatLonHelpers.CheckAMCrossing(element.StartLat, element.StartLon, element.EndLat, element.EndLon);
                 if (coords.Count() == 4) { crossesAM = true; }
 
                 if (prevElement == null)

@@ -58,7 +58,7 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="convertDescriptionLabel.Text" xml:space="preserve">
-    <value>The following headers be included with the conversion:
+    <value>The following headers will be included with the conversion:
 ARTCC, ARTCC HIGH, ARTCC LOW, LOW AIRWAY, HIGH AIRWAY, SID, STAR, GEO, REGIONS, LABELS
 
 Note: Each individual SID and STAR diagram will be output to a GeoJson file.

@@ -1,6 +1,6 @@
 ﻿namespace FeBuddyLibrary.Models
 {
-    public class FixModel
+    public class FixModel: IDecLatLon
     {
         public string Id { get; set; }
 
@@ -16,8 +16,8 @@
 
         public string LoArtcc { get; set; }
 
-        public string Lat_Dec { get; set; }
+        public string Dec_Lat { get; set; }
 
-        public string Lon_Dec { get; set; }
+        public string Dec_Lon { get; set; }
     }
 }

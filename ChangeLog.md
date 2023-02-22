@@ -1,6 +1,24 @@
 # CHANGELOG
 
 ---
+- ## Version 2.6.0
+  - Added feature: CRC AIRAC Data Geojsons
+    - The output for this feature will be located in
+    FE-BUDDY_Output -> CRC with the following data:
+      - APT Symbols and Text 
+      - ARTCC Boundaries (High and Low) Lines
+      - AWY High Lines, Symbols, and Text
+      - AWY Low Lines, Symbols, and Text
+      - FIX Symbols and Text
+      - NDB Symbols and Text
+      - VOR Symbols and Text
+      - RUNWAY Lines
+      - WX STATIONS Symbols and Text
+      - DPs Lines
+      - STARs Lines
+    - NOTE: AWY Symbols are the only files that have Overriding 
+    Properties in the geojson.
+
 - ## Version 2.5.0
   - Added feature: SCT2 to GeoJson
     - Data from the following headers will be included 

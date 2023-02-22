@@ -1,6 +1,7 @@
 ﻿using System;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Diagnostics.SymbolStore;
 using System.Drawing;
 using System.Drawing.Text;
 using System.IO;
@@ -152,6 +153,25 @@ namespace FeBuddyWinFormUI
                 {
                     return;
                 }
+            }
+
+            if (Directory.Exists($"{GlobalConfig.outputDirBase}\\FE-BUDDY_Output") && GlobalConfig.DEVMODE)
+            {
+                string filePath = $"{GlobalConfig.tempPath}\\DEL_FEB_FLDRS.bat";
+
+                if (!File.Exists(filePath))
+                {
+                    string batchFileText = "@echo off\ncd /d \"%userprofile%/Desktop\"\nECHO DELETED:\nFOR /D %%X IN (*FE-BUDDY_Output*) DO RMDIR /S /Q \"%%~fX\" && ECHO     -  \"%%~fX\"";
+                    File.WriteAllText(filePath, batchFileText);
+                }
+
+                Process process = new Process();
+                process.StartInfo.FileName = filePath;
+                process.StartInfo.CreateNoWindow = true;
+                process.StartInfo.UseShellExecute = false;
+                process.Start();
+
+                process.WaitForExit();
             }
 
             if (GlobalConfig.outputDirectory == null)
@@ -312,17 +332,46 @@ namespace FeBuddyWinFormUI
             SetControlPropertyThreadSafe(processingDataLabel, "Text", "Unzipping Files");
             DirectoryHelpers.UnzipAllDownloaded();
 
-            SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Telephony");
-            GetTelephony Telephony = new GetTelephony();
-            Telephony.readFAAData($"{GlobalConfig.tempPath}\\{AiracDateCycleModel.AllCycleDates[GlobalConfig.airacEffectiveDate]}_TELEPHONY.html");
+            SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Airports");
+            GetAptData ParseAPT = new GetAptData();
+            ParseAPT.AptAndWxMain(GlobalConfig.airacEffectiveDate, GlobalConfig.facilityID);
+
+            SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Boundaries");
+            GetArbData ParseArb = new GetArbData();
+            ParseArb.ArbMain(GlobalConfig.airacEffectiveDate);
+
+            SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing NDBs and VORs");
+            GetNavData ParseNDBs = new GetNavData();
+            ParseNDBs.NAVQuarterbackFunc(GlobalConfig.airacEffectiveDate, GlobalConfig.facilityID);
+
+            SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Fixes");
+            GetFixData ParseFixes = new GetFixData();
+            ParseFixes.FixQuarterbackFunc(GlobalConfig.airacEffectiveDate);
+
+            // ------------------------------------------------------------------------------------------------------
+            // DO NOT CHANGE THE ORDER OF THESE TWO ITEMS, REFACTORING THIS IS NEEDED!!!!!
+            // Warning: AwyData must be preformed before AtsAwyData, Refactoring of this code is needed! 
+            SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Airways");
+            FileHelpers.CreateAwyGeomapHeadersAndEnding(true);
+
+            GetAwyData ParseAWY = new GetAwyData();
+            ParseAWY.AWYQuarterbackFunc(GlobalConfig.airacEffectiveDate);
+
+            SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing ATS Airways");
+            GetAtsAwyData ParseAts = new GetAtsAwyData();
+            ParseAts.AWYQuarterbackFunc(GlobalConfig.airacEffectiveDate);
+            FileHelpers.CreateAwyGeomapHeadersAndEnding(false);
+
+            // ------------------------------------------------------------------------------------------------------
 
             SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing DPs and STARs");
             GetStarDpData ParseStarDp = new GetStarDpData();
             ParseStarDp.StarDpQuaterBackFunc(GlobalConfig.airacEffectiveDate);
 
-            SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Airports");
-            GetAptData ParseAPT = new GetAptData();
-            ParseAPT.AptAndWxMain(GlobalConfig.airacEffectiveDate, GlobalConfig.facilityID);
+            
+            SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Telephony");
+            GetTelephony Telephony = new GetTelephony();
+            Telephony.readFAAData($"{GlobalConfig.tempPath}\\{AiracDateCycleModel.AllCycleDates[GlobalConfig.airacEffectiveDate]}_TELEPHONY.html");
 
             if (currentAiracSelection.Checked == true)
             {
@@ -347,35 +396,6 @@ namespace FeBuddyWinFormUI
                 publications.WriteAirportInfoTxt(GlobalConfig.facilityID);
             }
 
-            SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Fixes");
-            GetFixData ParseFixes = new GetFixData();
-            ParseFixes.FixQuarterbackFunc(GlobalConfig.airacEffectiveDate);
-
-            SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Boundaries");
-            GetArbData ParseArb = new GetArbData();
-            ParseArb.ArbMain(GlobalConfig.airacEffectiveDate);
-
-            // ------------------------------------------------------------------------------------------------------
-            // DO NOT CHANGE THE ORDER OF THESE TWO ITEMS, REFACTORING THIS IS NEEDED!!!!!
-            // Warning: AwyData must be preformed before AtsAwyData, Refactoring of this code is needed! 
-            SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Airways");
-            FileHelpers.CreateAwyGeomapHeadersAndEnding(true);
-
-            GetAwyData ParseAWY = new GetAwyData();
-            ParseAWY.AWYQuarterbackFunc(GlobalConfig.airacEffectiveDate);
-
-            SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing ATS Airways");
-            GetAtsAwyData ParseAts = new GetAtsAwyData();
-            ParseAts.AWYQuarterbackFunc(GlobalConfig.airacEffectiveDate);
-            FileHelpers.CreateAwyGeomapHeadersAndEnding(false);
-
-            // ------------------------------------------------------------------------------------------------------
-
-
-            SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing NDBs");
-            GetNavData ParseNDBs = new GetNavData();
-            ParseNDBs.NAVQuarterbackFunc(GlobalConfig.airacEffectiveDate, GlobalConfig.facilityID);
-
             //SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing FAA Aircraft Data");
             //AircraftData ACData = new AircraftData();
             //ACData.CreateAircraftDataAlias($"{GlobalConfig.outputDirectory}\\ALIAS\\AircraftDataInfo.txt");
@@ -388,6 +408,7 @@ namespace FeBuddyWinFormUI
             SetControlPropertyThreadSafe(processingDataLabel, "Text", "Checking Alias Commands");
             AliasCheck aliasCheck = new AliasCheck();
             aliasCheck.CheckForDuplicates($"{GlobalConfig.outputDirectory}\\ALIAS\\AliasTestFile.txt");
+            
         }
 
         private void Worker_StartParsingCompleted(object sender, RunWorkerCompletedEventArgs e)

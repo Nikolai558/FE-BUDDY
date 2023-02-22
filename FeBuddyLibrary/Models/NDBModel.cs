@@ -1,6 +1,6 @@
 ﻿namespace FeBuddyLibrary.Models
 {
-    public class NDBModel
+    public class NDBModel: IDecLatLon
     {
         public string Id { get; set; }
 

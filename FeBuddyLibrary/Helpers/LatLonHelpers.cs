@@ -7,6 +7,53 @@ namespace FeBuddyLibrary.Helpers
 {
     public class LatLonHelpers
     {
+        public static double CalculateDistance(double lat1, double lon1, double lat2, double lon2)
+        {
+            const double R = 6371; // Earth's radius in km
+            var dLat = DegreesToRadians(lat2 - lat1);
+            var dLon = DegreesToRadians(lon2 - lon1);
+            var a = Math.Sin(dLat / 2) * Math.Sin(dLat / 2) + Math.Cos(DegreesToRadians(lat1)) * Math.Cos(DegreesToRadians(lat2)) * Math.Sin(dLon / 2) * Math.Sin(dLon / 2);
+            var c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
+            var d = R * c; // Distance in km
+            return d * 0.539957; // Convert km to nautical miles
+        }
+
+        public static double CalculateBearing(double lat1, double lon1, double lat2, double lon2)
+        {
+            double dLon = DegreesToRadians(lon2 - lon1);
+            lat1 = DegreesToRadians(lat1);
+            lat2 = DegreesToRadians(lat2);
+            double y = Math.Sin(dLon) * Math.Cos(lat2);
+            double x = Math.Cos(lat1) * Math.Sin(lat2) - Math.Sin(lat1) * Math.Cos(lat2) * Math.Cos(dLon);
+            double brng = RadiansToDegrees(Math.Atan2(y, x));
+            return (brng + 360) % 360;
+        }
+
+        public static List<double> CalculateDestination(double lat, double lon, double brng, double dist)
+        {
+            const double R = 3440.06479; // radius of the Earth in nautical miles
+            double d = dist / R; // convert nautical miles to radians
+            lat = DegreesToRadians(lat);
+            lon = DegreesToRadians(lon);
+            brng = DegreesToRadians(brng);
+
+            double destLat = Math.Asin(Math.Sin(lat) * Math.Cos(d) + Math.Cos(lat) * Math.Sin(d) * Math.Cos(brng));
+            double destLon = lon + Math.Atan2(Math.Sin(brng) * Math.Sin(d) * Math.Cos(lat), Math.Cos(d) - Math.Sin(lat) * Math.Sin(destLat));
+            destLon = (destLon + 3 * Math.PI) % (2 * Math.PI) - Math.PI;  // normalize to -180..+180
+            return new List<double>() { RadiansToDegrees(destLat), RadiansToDegrees(destLon) };
+        }
+
+        private static double DegreesToRadians(double deg)
+        {
+            return deg * Math.PI / 180.0;
+        }
+
+        private static double RadiansToDegrees(double rad)
+        {
+            return rad * 180.0 / Math.PI;
+        }
+
+
         public static double CalculateDistance(Loc point1, Loc point2)
         {
             var d1 = point1.Latitude * (Math.PI / 180.0);
@@ -17,6 +64,72 @@ namespace FeBuddyLibrary.Helpers
                      Math.Cos(d1) * Math.Cos(d2) * Math.Pow(Math.Sin(num2 / 2.0), 2.0);
             return 6376500.0 * (2.0 * Math.Atan2(Math.Sqrt(d3), Math.Sqrt(1.0 - d3)));
         }
+
+        public static List<dynamic> CheckAMCrossing(double startLat, double startLon, double endLat, double endLon)
+        {
+            startLon = LatLonHelpers.CorrectIlleagleLon(startLon);
+            endLon = LatLonHelpers.CorrectIlleagleLon(endLon);
+
+            List<dynamic> dynamicList = new List<dynamic>();
+
+            if (!((startLon < 0 && endLon > 0) || (startLon > 0 && endLon < 0)))
+            {
+                // Lon does not cross the AM in any way. Just return our Coordinates. 
+                dynamicList.Add(new List<double>() { startLon, startLat });
+                dynamicList.Add(new List<double>() { endLon, endLat });
+                return dynamicList;
+            }
+
+            // Lon DOES cross the AM. 
+            Loc startLoc = new Loc() { Latitude = startLat, Longitude = startLon };
+            Loc endLoc = new Loc() { Latitude = endLat, Longitude = endLon };
+            Loc midPointStartLoc = new Loc();
+            Loc midPointEndLoc = new Loc();
+            var bearing = LatLonHelpers.HaversineGreatCircleBearing(startLoc, endLoc);
+
+            //if ((startLoc.Longitude < 0 && (bearing > 180 && bearing < 360)) || (startLoc.Longitude > 0 && (bearing > 0 && bearing < 180)))
+            if ((startLoc.Longitude < 0 && (bearing > 0 && bearing < 180)) || (startLoc.Longitude > 0 && (bearing > 180 && bearing < 360)))
+            {
+                // Dont need to split
+                dynamicList.Add(new List<double>() { startLon, startLat });
+                dynamicList.Add(new List<double>() { endLon, endLat });
+                return dynamicList;
+            }
+
+            if (startLoc.Longitude < 0)
+            {
+                startLoc.Longitude = startLoc.Longitude + 180;
+                // See if this works, If needed change to the limit -179.99999999999
+                midPointStartLoc.Longitude = -180;
+            }
+            else
+            {
+                startLoc.Longitude = startLoc.Longitude - 180;
+                midPointStartLoc.Longitude = 180;
+            }
+
+            if (endLoc.Longitude < 0)
+            {
+                endLoc.Longitude = endLoc.Longitude + 180;
+                midPointEndLoc.Longitude = -180;
+            }
+            else
+            {
+                endLoc.Longitude = endLoc.Longitude - 180;
+                midPointEndLoc.Longitude = 180;
+            }
+
+            var slope = (startLat - endLat) / (startLoc.Longitude - endLoc.Longitude);
+            var midPointLat = startLat - (slope * startLoc.Longitude);
+
+            dynamicList.Add(new List<double>() { startLon, startLat });
+            dynamicList.Add(new List<double>() { midPointStartLoc.Longitude, midPointLat });
+            dynamicList.Add(new List<double>() { midPointEndLoc.Longitude, midPointLat });
+            dynamicList.Add(new List<double>() { endLon, endLat });
+            return dynamicList;
+
+        }
+
 
         /// <summary>
         /// Convert the Lat AND Lon from the FAA Data into a standard [N-S-E-W]000.00.00.000 format.

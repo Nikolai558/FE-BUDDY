@@ -1,8 +1,10 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using FeBuddyLibrary.Helpers;
 using FeBuddyLibrary.Models;
+using Newtonsoft.Json;
 
 namespace FeBuddyLibrary.DataAccess
 {
@@ -19,10 +21,61 @@ namespace FeBuddyLibrary.DataAccess
             Logger.LogMessage("INFO", "STARTED FIXES");
 
             ParseFixData(effectiveDate);
+
+            WriteGeo();
+
             WriteFixSctData();
             StoreXMLData();
             Logger.LogMessage("INFO", "COMPLETED FIXES");
 
+        }
+
+        private void WriteGeo()
+        {
+            WriteDataToFiles<FixModel>($"{GlobalConfig.outputDirectory}\\CRC\\FIX", allFixesInData, fix => fix.Id);
+        }
+
+        private void WriteDataToFiles<T>(string outputDirectory, IEnumerable<T> data, Func<T, string> nameSelector) where T : class, IDecLatLon
+        {
+            var symbolsFile = $"{outputDirectory}_symbols.geojson";
+            var textFile = $"{outputDirectory}_text.geojson";
+
+            var symbolFeatures = new List<Feature>();
+            var textFeatures = new List<Feature>();
+
+            foreach (var item in data)
+            {
+                var feature = new Feature()
+                {
+                    type = "Feature",
+                    geometry = new Geometry()
+                    {
+                        type = "Point",
+                        coordinates = new List<dynamic>() { double.Parse(item.Dec_Lon), double.Parse(item.Dec_Lat) }
+                    },
+                };
+
+                var textFeature = new Feature() { type = "Feature", geometry = feature.geometry };
+                textFeature.properties = new Properties() { text = new string[] { nameSelector(item) } };
+
+                symbolFeatures.Add(feature);
+                textFeatures.Add(textFeature);
+            }
+
+            var symbolGeojson = new FeatureCollection() { features = symbolFeatures };
+            var textGeojson = new FeatureCollection() { features = textFeatures };
+
+            if (symbolFeatures.Count >= 1)
+            {
+                var json = JsonConvert.SerializeObject(symbolGeojson, new JsonSerializerSettings { Formatting = Formatting.None, NullValueHandling = NullValueHandling.Ignore });
+                File.WriteAllText(symbolsFile, json);
+            }
+
+            if (textFeatures.Count >= 1)
+            {
+                var json = JsonConvert.SerializeObject(textGeojson, new JsonSerializerSettings { Formatting = Formatting.None, NullValueHandling = NullValueHandling.Ignore });
+                File.WriteAllText(textFile, json);
+            }
         }
 
         /// <summary>
@@ -54,8 +107,8 @@ namespace FeBuddyLibrary.DataAccess
                     };
 
                     // Set the Decimal Format for the Lat and Lon
-                    individualFixData.Lat_Dec = LatLonHelpers.CreateDecFormat(individualFixData.Lat, true);
-                    individualFixData.Lon_Dec = LatLonHelpers.CreateDecFormat(individualFixData.Lon, true);
+                    individualFixData.Dec_Lat = LatLonHelpers.CreateDecFormat(individualFixData.Lat, true);
+                    individualFixData.Dec_Lon = LatLonHelpers.CreateDecFormat(individualFixData.Lon, true);
 
                     // Add this FIX MODEL to the list of all Fixes.
                     allFixesInData.Add(individualFixData);
@@ -81,7 +134,7 @@ namespace FeBuddyLibrary.DataAccess
             foreach (FixModel fix in allFixesInData)
             {
                 // set our location model
-                Location loc = new Location { Lat = fix.Lat_Dec, Lon = fix.Lon_Dec };
+                Location loc = new Location { Lat = fix.Dec_Lat, Lon = fix.Dec_Lon };
 
                 // Create our Waypoint Model.
                 Waypoint wpt = new Waypoint

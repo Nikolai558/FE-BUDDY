@@ -76,7 +76,7 @@ namespace FeBuddyLibrary.DataAccess
             {
                 symbolFeature.geometry.coordinates = new List<dynamic>() { double.Parse(aptModel.Lon_Dec), double.Parse(aptModel.Lat_Dec) };
                 textFeature.geometry.coordinates = new List<dynamic>() { double.Parse(aptModel.Lon_Dec), double.Parse(aptModel.Lat_Dec) };
-                textFeature.properties.text = new string[] { !string.IsNullOrEmpty(aptModel.Icao) ? aptModel.Icao : aptModel.Id };
+                textFeature.properties.text = new string[] { !string.IsNullOrEmpty(aptModel.Icao) ? aptModel.Icao : aptModel.Id, aptModel.Name };
 
                 symbolAllFeatures.Add(symbolFeature);
                 textAllFeatures.Add(textFeature);

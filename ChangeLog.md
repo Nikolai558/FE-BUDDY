@@ -1,6 +1,14 @@
 # CHANGELOG
 
 ---
+- ## Version 2.6.1
+  - New AWY Line Files (High and Low) that feature the following:
+    - Airways will start and end 5nm from NAVAIDS and 2nm from FIXES.
+  - CRC WX Station Names #136
+    - WX station IDs will appear on line 1 and names on line 2.
+  - CRC NDB/VOR Types #135
+    - NAVAID IDs will appear on line 1 and the names and types on line 2
+
 - ## Version 2.6.0
   - Added feature: CRC AIRAC Data Geojsons
     - The output for this feature will be located in

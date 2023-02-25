@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -37,11 +38,13 @@ namespace FeBuddyLibrary.DataAccess
 
         private void WriteGeojson()
         {
+            string awyHighLinesSplitFile = $"{GlobalConfig.outputDirectory}\\CRC\\AWY-HIGH_lines(DME Cutoff).geojson";
             string awyHighLinesFile = $"{GlobalConfig.outputDirectory}\\CRC\\AWY-HIGH_lines.geojson";
             string awyHighSymbolsFile = $"{GlobalConfig.outputDirectory}\\CRC\\AWY-HIGH_symbols.geojson";
             string awyHighTextFile = $"{GlobalConfig.outputDirectory}\\CRC\\AWY-HIGH_text.geojson";
 
             FeatureCollection awyHighLines = ReadJson(awyHighLinesFile);
+            FeatureCollection awyHighSplitLines = ReadJson(awyHighLinesSplitFile);
             FeatureCollection awyHighSymbols = ReadJson(awyHighSymbolsFile);
             FeatureCollection awyHighText = ReadJson(awyHighTextFile);
 
@@ -53,12 +56,87 @@ namespace FeBuddyLibrary.DataAccess
                 }
 
                 AddLineFeatures(airway, awyHighLines.features);
+                AddSplitAwyFeatures(airway, awyHighSplitLines.features);
             }
 
 
             SerializeToFile(awyHighSymbols, awyHighSymbolsFile);
             SerializeToFile(awyHighText, awyHighTextFile);
             SerializeToFile(awyHighLines, awyHighLinesFile);
+            SerializeToFile(awyHighSplitLines, awyHighLinesSplitFile);
+        }
+
+        private void AddSplitAwyFeatures(AtsAirwayModel airway, List<Feature> features)
+        {
+            for (int i = 0; i < airway.atsAwyPoints.Count - 1; i++)
+            {
+                Tuple<double, double> start = Tuple.Create(double.Parse(airway.atsAwyPoints[i].Dec_Lat), LatLonHelpers.CorrectIlleagleLon(double.Parse(airway.atsAwyPoints[i].Dec_Lon)));
+                Tuple<double, double> end = Tuple.Create(double.Parse(airway.atsAwyPoints[i + 1].Dec_Lat), LatLonHelpers.CorrectIlleagleLon(double.Parse(airway.atsAwyPoints[i + 1].Dec_Lon)));
+                double startDistance = airway.atsAwyPoints[i].Type switch
+                {
+                    "NDB" or "NDB/DME" or "VOR" or "VOR/DME" or "VORTAC" or "DME" or "TACAN" => 10,
+                    _ => 4,
+                };
+                double endDistance = airway.atsAwyPoints[i + 1].Type switch
+                {
+                    "NDB" or "NDB/DME" or "VOR" or "VOR/DME" or "VORTAC" or "DME" or "TACAN" => 10,
+                    _ => 4,
+                };
+
+                var newStart = LatLonHelpers.GetNewPoint(start, end, startDistance);
+                var newEnd = LatLonHelpers.GetNewPoint(end, start, endDistance);
+                List<dynamic> coords;
+                if (newStart != null && newEnd != null)
+                {
+                    coords = LatLonHelpers.CheckAMCrossing(newStart.Item1, newStart.Item2, newEnd.Item1, newEnd.Item2);
+                }
+                else if (newStart == null && newEnd != null)
+                {
+                    coords = LatLonHelpers.CheckAMCrossing(start.Item1, start.Item2, newEnd.Item1, newEnd.Item2);
+                }
+                else
+                {
+                    coords = LatLonHelpers.CheckAMCrossing(start.Item1, start.Item2, end.Item1, end.Item2);
+                }
+
+                bool crossesAM = (coords.Count == 4) ? true : false;
+                Feature featureToAdd = new Feature
+                {
+                    type = "Feature",
+                    geometry = new Geometry
+                    {
+                        type = "LineString",
+                        coordinates = new List<dynamic>
+                            {
+                                coords[0],
+                                coords[1]
+                            }
+                    }
+                };
+                if (crossesAM)
+                {
+                    features.Add(featureToAdd);
+                    featureToAdd = new Feature
+                    {
+                        type = "Feature",
+                        geometry = new Geometry
+                        {
+                            type = "LineString",
+                            coordinates = new List<dynamic>
+                            {
+                                coords[2],
+                                coords[3]
+                            }
+                        }
+                    };
+                    features.Add(featureToAdd);
+                }
+                else
+                {
+                    features.Add(featureToAdd);
+                }
+
+            }
         }
 
         private static void SerializeToFile(FeatureCollection feature, string path)

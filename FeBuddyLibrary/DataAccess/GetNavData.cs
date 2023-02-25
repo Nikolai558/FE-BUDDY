@@ -34,11 +34,11 @@ namespace FeBuddyLibrary.DataAccess
 
         private void WriteGeo()
         {
-            WriteDataToFiles<NDBModel>($"{GlobalConfig.outputDirectory}\\CRC\\NDB", allNDBData, ndb => ndb.Name);
-            WriteDataToFiles<VORModel>($"{GlobalConfig.outputDirectory}\\CRC\\VOR", allVORData, vor => vor.Name);
+            WriteDataToFiles<NDBModel>($"{GlobalConfig.outputDirectory}\\CRC\\NDB", allNDBData, ndb => ndb.Name, ndb => ndb.Id, ndb => ndb.Type);
+            WriteDataToFiles<VORModel>($"{GlobalConfig.outputDirectory}\\CRC\\VOR", allVORData, vor => vor.Name, vor => vor.Id, vor => vor.Type);
         }
 
-        private void WriteDataToFiles<T>(string outputDirectory, IEnumerable<T> data, Func<T, string> nameSelector) where T: class, IDecLatLon
+        private void WriteDataToFiles<T>(string outputDirectory, IEnumerable<T> data, Func<T, string> nameSelector, Func<T, string> idSelector, Func<T, string> typeSelector) where T: class, IDecLatLon
         {
             var symbolsFile = $"{outputDirectory}_symbols.geojson";
             var textFile = $"{outputDirectory}_text.geojson";
@@ -59,7 +59,7 @@ namespace FeBuddyLibrary.DataAccess
                 };
 
                 var textFeature = new Feature() { type = "Feature", geometry = feature.geometry };
-                textFeature.properties = new Properties() { text = new string[] { nameSelector(item) } };
+                textFeature.properties = new Properties() { text = new string[] {  idSelector(item), nameSelector(item) + " " + typeSelector(item)} };
 
                 symbolFeatures.Add(feature);
                 textFeatures.Add(textFeature);

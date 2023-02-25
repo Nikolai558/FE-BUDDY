@@ -89,11 +89,11 @@ namespace FeBuddyLibrary.DataAccess
                 Tuple<double, double> end = Tuple.Create(double.Parse(airway.AwyPoints[i + 1].Dec_Lat), LatLonHelpers.CorrectIlleagleLon(double.Parse(airway.AwyPoints[i + 1].Dec_Lon)));
                 double startDistance = airway.AwyPoints[i].Type switch
                 {
-                    "NDB" or "NDB/DME" or "VOR" or "VOR/DME" or "VORTAC" or "DME" or "TACAN" => 5, _ => 2,
+                    "NDB" or "NDB/DME" or "VOR" or "VOR/DME" or "VORTAC" or "DME" or "TACAN" => 10, _ => 4,
                 };
                 double endDistance = airway.AwyPoints[i+1].Type switch
                 {
-                    "NDB" or "NDB/DME" or "VOR" or "VOR/DME" or "VORTAC" or "DME" or "TACAN" => 5, _ => 2,
+                    "NDB" or "NDB/DME" or "VOR" or "VOR/DME" or "VORTAC" or "DME" or "TACAN" => 10, _ => 4,
                 };
 
                 var newStart = LatLonHelpers.GetNewPoint(start, end, startDistance);

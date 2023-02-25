@@ -40,7 +40,7 @@ namespace FeBuddyLibrary.Helpers
             double lat1 = ToRadians(start.Item1);
             double lon1 = ToRadians(start.Item2);
             bearing = ToRadians(bearing);
-            distance = distance / R;
+            distance = (distance * 1.852 ) / R;
 
             double lat2 = Math.Asin(Math.Sin(lat1) * Math.Cos(distance) + Math.Cos(lat1) * Math.Sin(distance) * Math.Cos(bearing));
             double lon2 = lon1 + Math.Atan2(Math.Sin(bearing) * Math.Sin(distance) * Math.Cos(lat1), Math.Cos(distance) - Math.Sin(lat1) * Math.Sin(lat2));

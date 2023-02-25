@@ -40,8 +40,8 @@ namespace FeBuddyLibrary.DataAccess
 
         private void WriteGeojson()
         {
-            string awyHighSplitLinesFile = $"{GlobalConfig.outputDirectory}\\CRC\\AWY-HIGH_lines(Split).geojson";
-            string awyLowSplitLinesFile = $"{GlobalConfig.outputDirectory}\\CRC\\AWY-LOW_lines(Split).geojson";
+            string awyHighSplitLinesFile = $"{GlobalConfig.outputDirectory}\\CRC\\AWY-HIGH_lines(DME Cutoff).geojson";
+            string awyLowSplitLinesFile = $"{GlobalConfig.outputDirectory}\\CRC\\AWY-LOW_lines(DME Cutoff).geojson";
             string awyHighLinesFile = $"{GlobalConfig.outputDirectory}\\CRC\\AWY-HIGH_lines.geojson";
             string awyHighSymbolsFile = $"{GlobalConfig.outputDirectory}\\CRC\\AWY-HIGH_symbols.geojson";
             string awyHighTextFile = $"{GlobalConfig.outputDirectory}\\CRC\\AWY-HIGH_text.geojson";

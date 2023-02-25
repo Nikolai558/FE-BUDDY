@@ -1,7 +1,7 @@
 # CHANGELOG
 
 ---
-- ## Version 2.6.1 (NOT RELEASED)
+- ## Version 2.6.1
   - New AWY Line Files (High and Low) that feature the following:
     - Airways will start and end 5nm from NAVAIDS and 2nm from FIXES.
   - CRC WX Station Names #136

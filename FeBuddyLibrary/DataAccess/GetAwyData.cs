@@ -40,6 +40,8 @@ namespace FeBuddyLibrary.DataAccess
 
         private void WriteGeojson()
         {
+            string awyHighSplitLinesFile = $"{GlobalConfig.outputDirectory}\\CRC\\AWY-HIGH_lines(Split).geojson";
+            string awyLowSplitLinesFile = $"{GlobalConfig.outputDirectory}\\CRC\\AWY-LOW_lines(Split).geojson";
             string awyHighLinesFile = $"{GlobalConfig.outputDirectory}\\CRC\\AWY-HIGH_lines.geojson";
             string awyHighSymbolsFile = $"{GlobalConfig.outputDirectory}\\CRC\\AWY-HIGH_symbols.geojson";
             string awyHighTextFile = $"{GlobalConfig.outputDirectory}\\CRC\\AWY-HIGH_text.geojson";
@@ -47,6 +49,8 @@ namespace FeBuddyLibrary.DataAccess
             string awyLowSymbolsFile = $"{GlobalConfig.outputDirectory}\\CRC\\AWY-LOW_symbols.geojson";
             string awyLowTextFile = $"{GlobalConfig.outputDirectory}\\CRC\\AWY-LOW_text.geojson";
 
+            FeatureCollection awySplitHighLines = new FeatureCollection() { features = new List<Feature>()};
+            FeatureCollection awySplitLowLines = new FeatureCollection() { features = new List<Feature>()};
             FeatureCollection awyHighLines = new FeatureCollection() { features = new List<Feature>()};
             FeatureCollection awyHighSymbols = new FeatureCollection() { features = new List<Feature>() };
             FeatureCollection awyHighText = new FeatureCollection() { features = new List<Feature>()};
@@ -64,15 +68,88 @@ namespace FeBuddyLibrary.DataAccess
                 }
 
                 AddLineFeatures(airway, isHigh ? awyHighLines.features : awyLowLines.features);
+                AddSplitAwyFeatures(airway, isHigh ? awySplitHighLines.features : awySplitLowLines.features);
             }
 
-
+            SerializeToFile(awySplitHighLines, awyHighSplitLinesFile);
+            SerializeToFile(awySplitLowLines, awyLowSplitLinesFile);
             SerializeToFile(awyHighSymbols, awyHighSymbolsFile);
             SerializeToFile(awyHighText, awyHighTextFile);
             SerializeToFile(awyLowSymbols, awyLowSymbolsFile);
             SerializeToFile(awyLowText, awyLowTextFile);
             SerializeToFile(awyLowLines, awyLowLinesFile);
             SerializeToFile(awyHighLines, awyHighLinesFile);
+        }
+
+        private void AddSplitAwyFeatures(AirwayModel airway, List<Feature> features)
+        {
+            for (int i = 0; i < airway.AwyPoints.Count - 1; i++)
+            {
+                Tuple<double, double> start = Tuple.Create(double.Parse(airway.AwyPoints[i].Dec_Lat), LatLonHelpers.CorrectIlleagleLon(double.Parse(airway.AwyPoints[i].Dec_Lon)));
+                Tuple<double, double> end = Tuple.Create(double.Parse(airway.AwyPoints[i + 1].Dec_Lat), LatLonHelpers.CorrectIlleagleLon(double.Parse(airway.AwyPoints[i + 1].Dec_Lon)));
+                double startDistance = airway.AwyPoints[i].Type switch
+                {
+                    "NDB" or "NDB/DME" or "VOR" or "VOR/DME" or "VORTAC" or "DME" or "TACAN" => 5, _ => 2,
+                };
+                double endDistance = airway.AwyPoints[i+1].Type switch
+                {
+                    "NDB" or "NDB/DME" or "VOR" or "VOR/DME" or "VORTAC" or "DME" or "TACAN" => 5, _ => 2,
+                };
+
+                var newStart = LatLonHelpers.GetNewPoint(start, end, startDistance);
+                var newEnd = LatLonHelpers.GetNewPoint(end, start, endDistance);
+                List<dynamic> coords; 
+                if (newStart != null && newEnd != null)
+                {
+                    coords = LatLonHelpers.CheckAMCrossing(newStart.Item1, newStart.Item2, newEnd.Item1, newEnd.Item2);
+                }
+                else if (newStart == null && newEnd != null)
+                {
+                    coords = LatLonHelpers.CheckAMCrossing(start.Item1, start.Item2, newEnd.Item1, newEnd.Item2);
+                }
+                else
+                {
+                    coords = LatLonHelpers.CheckAMCrossing(start.Item1, start.Item2, end.Item1, end.Item2);
+                }
+
+                bool crossesAM = (coords.Count == 4) ? true : false;
+                Feature featureToAdd = new Feature
+                {
+                    type = "Feature",
+                    geometry = new Geometry
+                    {
+                        type = "LineString",
+                        coordinates = new List<dynamic>
+                            {
+                                coords[0],
+                                coords[1]
+                            }
+                    }
+                };
+                if (crossesAM)
+                {
+                    features.Add(featureToAdd);
+                    featureToAdd = new Feature
+                    {
+                        type = "Feature",
+                        geometry = new Geometry
+                        {
+                            type = "LineString",
+                            coordinates = new List<dynamic>
+                            {
+                                coords[2],
+                                coords[3]
+                            }
+                        }
+                    };
+                    features.Add(featureToAdd);
+                }
+                else
+                {
+                    features.Add(featureToAdd);
+                }
+
+            }
         }
 
         private void AddLineFeatures(AirwayModel airway, List<Feature> features)

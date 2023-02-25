@@ -7,51 +7,62 @@ namespace FeBuddyLibrary.Helpers
 {
     public class LatLonHelpers
     {
-        public static double CalculateDistance(double lat1, double lon1, double lat2, double lon2)
+        public static Tuple<double, double> GetNewPoint(Tuple<double, double> start, Tuple<double, double> end, double distance)
         {
-            const double R = 6371; // Earth's radius in km
-            var dLat = DegreesToRadians(lat2 - lat1);
-            var dLon = DegreesToRadians(lon2 - lon1);
-            var a = Math.Sin(dLat / 2) * Math.Sin(dLat / 2) + Math.Cos(DegreesToRadians(lat1)) * Math.Cos(DegreesToRadians(lat2)) * Math.Sin(dLon / 2) * Math.Sin(dLon / 2);
-            var c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
-            var d = R * c; // Distance in km
-            return d * 0.539957; // Convert km to nautical miles
+            double bearing = GetBearing(start, end);
+            Tuple<double, double> newPoint = GetDestinationPoint(start, bearing, distance);
+            return newPoint;
         }
 
-        public static double CalculateBearing(double lat1, double lon1, double lat2, double lon2)
+        private static double GetBearing(Tuple<double, double> start, Tuple<double, double> end)
         {
-            double dLon = DegreesToRadians(lon2 - lon1);
-            lat1 = DegreesToRadians(lat1);
-            lat2 = DegreesToRadians(lat2);
+            double lat1 = ToRadians(start.Item1);
+            double lon1 = ToRadians(start.Item2);
+            double lat2 = ToRadians(end.Item1);
+            double lon2 = ToRadians(end.Item2);
+
+            double dLon = lon2 - lon1;
+
             double y = Math.Sin(dLon) * Math.Cos(lat2);
             double x = Math.Cos(lat1) * Math.Sin(lat2) - Math.Sin(lat1) * Math.Cos(lat2) * Math.Cos(dLon);
-            double brng = RadiansToDegrees(Math.Atan2(y, x));
-            return (brng + 360) % 360;
+
+            double bearing = Math.Atan2(y, x);
+            bearing = ToDegrees(bearing);
+            bearing = (bearing + 360) % 360;
+
+            return bearing;
         }
 
-        public static List<double> CalculateDestination(double lat, double lon, double brng, double dist)
+        private static Tuple<double, double> GetDestinationPoint(Tuple<double, double> start, double bearing, double distance)
         {
-            const double R = 3440.06479; // radius of the Earth in nautical miles
-            double d = dist / R; // convert nautical miles to radians
-            lat = DegreesToRadians(lat);
-            lon = DegreesToRadians(lon);
-            brng = DegreesToRadians(brng);
+            double R = 6371; // Earth's radius in km
 
-            double destLat = Math.Asin(Math.Sin(lat) * Math.Cos(d) + Math.Cos(lat) * Math.Sin(d) * Math.Cos(brng));
-            double destLon = lon + Math.Atan2(Math.Sin(brng) * Math.Sin(d) * Math.Cos(lat), Math.Cos(d) - Math.Sin(lat) * Math.Sin(destLat));
-            destLon = (destLon + 3 * Math.PI) % (2 * Math.PI) - Math.PI;  // normalize to -180..+180
-            return new List<double>() { RadiansToDegrees(destLat), RadiansToDegrees(destLon) };
+            double lat1 = ToRadians(start.Item1);
+            double lon1 = ToRadians(start.Item2);
+            bearing = ToRadians(bearing);
+            distance = distance / R;
+
+            double lat2 = Math.Asin(Math.Sin(lat1) * Math.Cos(distance) + Math.Cos(lat1) * Math.Sin(distance) * Math.Cos(bearing));
+            double lon2 = lon1 + Math.Atan2(Math.Sin(bearing) * Math.Sin(distance) * Math.Cos(lat1), Math.Cos(distance) - Math.Sin(lat1) * Math.Sin(lat2));
+
+            lat2 = ToDegrees(lat2);
+            lon2 = ToDegrees(lon2);
+
+            return Tuple.Create(lat2, lon2);
         }
 
-        private static double DegreesToRadians(double deg)
+        private static double ToRadians(double degrees)
         {
-            return deg * Math.PI / 180.0;
+            return degrees * (Math.PI / 180);
         }
 
-        private static double RadiansToDegrees(double rad)
+        private static double ToDegrees(double radians)
         {
-            return rad * 180.0 / Math.PI;
+            return radians * (180 / Math.PI);
         }
+
+
+
 
 
         public static double CalculateDistance(Loc point1, Loc point2)

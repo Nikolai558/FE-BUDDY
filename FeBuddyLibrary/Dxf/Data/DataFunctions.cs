@@ -889,10 +889,19 @@ namespace FeBuddyLibrary.Dxf.Data
                 CenterLon = vs[5],
                 NMPerLat = vs[6],
                 NMPerLon = vs[7],
-                MagneticVariation = vs[8],
-                SctScale = vs[9],
-                AdditionalLines = vs[10..]
+                MagneticVariation = vs[8]
             };
+
+            if (vs.Count() == 10)
+            {
+                result.SctScale = vs[9];
+            }
+            if (vs.Count() >= 11)
+            {
+                result.AdditionalLines = vs[10..];
+            }
+
+
 
             Logger.LogMessage("INFO", "FOUND INFO in SCT FILE");
 

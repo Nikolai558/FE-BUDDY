@@ -89,28 +89,17 @@ namespace FeBuddyLibrary.DataAccess
                 Tuple<double, double> end = Tuple.Create(double.Parse(airway.AwyPoints[i + 1].Dec_Lat), LatLonHelpers.CorrectIlleagleLon(double.Parse(airway.AwyPoints[i + 1].Dec_Lon)));
                 double startDistance = airway.AwyPoints[i].Type switch
                 {
-                    "NDB" or "NDB/DME" or "VOR" or "VOR/DME" or "VORTAC" or "DME" or "TACAN" => 10, _ => 4,
+                    "NDB" or "NDB/DME" or "VOR" or "VOR/DME" or "VORTAC" or "DME" or "TACAN" => 5, _ => 2,
                 };
                 double endDistance = airway.AwyPoints[i+1].Type switch
                 {
-                    "NDB" or "NDB/DME" or "VOR" or "VOR/DME" or "VORTAC" or "DME" or "TACAN" => 10, _ => 4,
+                    "NDB" or "NDB/DME" or "VOR" or "VOR/DME" or "VORTAC" or "DME" or "TACAN" => 5, _ => 2,
                 };
 
                 var newStart = LatLonHelpers.GetNewPoint(start, end, startDistance);
                 var newEnd = LatLonHelpers.GetNewPoint(end, start, endDistance);
-                List<dynamic> coords; 
-                if (newStart != null && newEnd != null)
-                {
-                    coords = LatLonHelpers.CheckAMCrossing(newStart.Item1, newStart.Item2, newEnd.Item1, newEnd.Item2);
-                }
-                else if (newStart == null && newEnd != null)
-                {
-                    coords = LatLonHelpers.CheckAMCrossing(start.Item1, start.Item2, newEnd.Item1, newEnd.Item2);
-                }
-                else
-                {
-                    coords = LatLonHelpers.CheckAMCrossing(start.Item1, start.Item2, end.Item1, end.Item2);
-                }
+                List<dynamic> coords;
+                coords = LatLonHelpers.CheckAMCrossing(newStart.Item1, newStart.Item2, newEnd.Item1, newEnd.Item2);
 
                 bool crossesAM = (coords.Count == 4) ? true : false;
                 Feature featureToAdd = new Feature

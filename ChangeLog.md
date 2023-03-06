@@ -1,6 +1,12 @@
 # CHANGELOG
 
 ---
+- ## Version 2.6.2
+  - Fixed an error in SCT2-GeoJSON where it was looking for 
+  specific data in the INFO section. #140
+  - Adjusted the AWY DME cutoff distances from 10/4 to 5/2. #141
+  - Got rid of the annoying "Dash" in the GeoJSON output folder name.
+
 - ## Version 2.6.1
   - New AWY Line Files (High and Low) that feature the following:
     - Airways will start and end 5nm from NAVAIDS and 2nm from FIXES.

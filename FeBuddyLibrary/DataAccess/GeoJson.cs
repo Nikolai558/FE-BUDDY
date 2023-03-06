@@ -145,7 +145,7 @@ namespace FeBuddyLibrary.DataAccess
 
         public void WriteSctGeoJson(string dirPath, SctFileModel sctFileModel, string sctFileName)
         {
-            var sctInfoSectionName = sctFileModel.SctInfoSection.SctFileName?.ToUpper();
+            var sctInfoSectionName = sctFileModel.SctInfoSection.SctFileName?.ToUpper().Trim();
 
             if (sctInfoSectionName != null)
             {

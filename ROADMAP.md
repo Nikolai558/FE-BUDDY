@@ -5,34 +5,6 @@ The following is a list of features that we are considering or actively working 
 For previous Roadmap items, refer to the [FEB Change Log](https://github.com/Nikolai558/FE-BUDDY/blob/development/ChangeLog.md).
 
 ---
-
-- [ ] AIRAC GeoJSON Output
-  - This should be output with AIRAC updates ...\FE-BUDDY_Output\CRC
-  - Output files names:
-    - [X] APT_symbols
-    - [X] APT_text
-    - [X] ARTCC BOUNDARIES-LOW_lines
-    - [X] ARTCC BOUNDARIES-HIGH_lines
-    - [X] AWY-HIGH_lines
-    - [X] AWY-HIGH_symbols
-    - [X] AWY-HIGH_text
-    - [X] AWY-LOW_lines
-    - [X] AWY-LOW_symbols
-    - [X] AWY-LOW_text
-    - [X] DP_lines
-    - [X] FIX_symbols
-    - [X] FIX_text
-    - [X] NDB_symbols
-    - [X] NDB_text
-    - [X] RWY_lines
-    - [X] STARS_lines
-    - [X] VOR_symbols
-    - [X] VOR_text
-    - [X] WX STATIONS_symbols
-    - [X] WX STATIONS_text
-  - Add option for user to decide if they want all the geojsons in one folder to make "vNAS Batch Upload" easier.
-
----
 **The following will be completed after a code-rewrite/refactoring of FE-Buddy resulting in version 3.0**
 ---
 

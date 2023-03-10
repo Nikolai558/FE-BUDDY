@@ -405,6 +405,10 @@ namespace FeBuddyWinFormUI
             FileHelpers.AppendCommentToXML(GlobalConfig.airacEffectiveDate);
             FileHelpers.WriteNavXmlOutput();
 
+            SetControlPropertyThreadSafe(processingDataLabel, "Text", "Processing Airways DME Cuttoff XML");
+            AwyDmeCutoffXml dmeCutoff = new AwyDmeCutoffXml(Path.Combine(GlobalConfig.outputDirectory, "CRC", "AWY-HIGH_lines(DME Cutoff).geojson"), Path.Combine(GlobalConfig.outputDirectory, "CRC", "AWY-LOW_lines(DME Cutoff).geojson"));
+            dmeCutoff.writeXML();
+
             SetControlPropertyThreadSafe(processingDataLabel, "Text", "Checking Alias Commands");
             AliasCheck aliasCheck = new AliasCheck();
             aliasCheck.CheckForDuplicates($"{GlobalConfig.outputDirectory}\\ALIAS\\AliasTestFile.txt");

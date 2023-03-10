@@ -1,6 +1,10 @@
 # CHANGELOG
 
 ---
+- ## Version 2.6.3
+  - New VERAM AWY (High and Low) xml files that feature the
+  DME Cutoff distance.
+
 - ## Version 2.6.2
   - Fixed an error in SCT2-GeoJSON where it was looking for 
   specific data in the INFO section. #140

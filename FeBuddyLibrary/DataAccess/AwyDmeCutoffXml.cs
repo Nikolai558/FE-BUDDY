@@ -29,7 +29,7 @@ namespace FeBuddyLibrary.DataAccess
             AwyHighSB.AppendLine("          <Elements>");
 
             AwyLowSB.AppendLine("        <GeoMapObject Description=\"LO AIRWAYS DME\" TdmOnly=\"false\">");
-            AwyLowSB.AppendLine("          <LineDefaults Bcg=\"5\" Filters=\"5\" Style=\"Solid\" Thickness=\"1\" />");
+            AwyLowSB.AppendLine("          <LineDefaults Bcg=\"15\" Filters=\"15\" Style=\"Solid\" Thickness=\"1\" />");
             AwyLowSB.AppendLine("          <Elements>");
             _highAwyFile = highAwyFile;
             _lowAwyFile = lowAwyFile;

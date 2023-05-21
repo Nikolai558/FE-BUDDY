@@ -1,9 +1,12 @@
 ﻿using System;
+using System.Configuration;
 using System.Drawing;
 using System.IO;
+using System.Reflection;
 using System.Windows.Forms;
 using FeBuddyLibrary.DataAccess;
 using FeBuddyLibrary.Helpers;
+using FeBuddyWinFormUI.Properties;
 using Squirrel;
 
 namespace FeBuddyWinFormUI
@@ -90,6 +93,47 @@ namespace FeBuddyWinFormUI
             // TODO this should delete all the temporary directories.. everything created by this app.
         }
 
+        public static void BackupSettings()
+        {
+            string settingsFile = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.PerUserRoamingAndLocal).FilePath;
+            string destination = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + "\\..\\last.config";
+            File.Copy(settingsFile, destination, true);
+        }
+
+        public static void RestoreSettings()
+        {
+            string destFile = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.PerUserRoamingAndLocal).FilePath;
+            string sourceFile = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + "\\..\\last.config";
+            if (!File.Exists(sourceFile))
+            {
+                return;
+            }
+            try
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(destFile));
+            }
+            catch (Exception)
+            {
+            }
+
+            try
+            {
+                File.Copy(sourceFile, destFile, true);
+            }
+            catch (Exception)
+            {
+            }
+
+            try
+            {
+                File.Delete(sourceFile);
+            }
+            catch (Exception)
+            {
+            }
+
+        }
+
         /// <summary>
         /// Checks for updates, asks the user if they want to update now, and then
         /// returns the current version.
@@ -141,11 +185,13 @@ namespace FeBuddyWinFormUI
                         MessageBox.Show(updateInformationMessage);
 
                         // TODO: we should show some progress UI while doing this.
+                        BackupSettings();
                         var installedUpdate = ghu.UpdateApp().Result;
                         if (installedUpdate != null)
                         {
                             Logger.LogMessage("INFO", "RESTARTING...");
                             UpdateManager.RestartApp();
+                            RestoreSettings();
                         }
                         else
                         {

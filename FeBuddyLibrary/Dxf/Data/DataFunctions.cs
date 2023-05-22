@@ -987,5 +987,33 @@ namespace FeBuddyLibrary.Dxf.Data
                 _ => throw new NotImplementedException(),
             };
         }
+
+        internal SctFileModel ReadString(string toConvertString)
+        {
+            _sectorFileText = toConvertString + "\n[END]";
+
+
+            _sctFileModel = new SctFileModel()
+            {
+                SctFileColors = GetSctColors(GetSctFileSection("Colors")),
+                SctInfoSection = GetSctInfo(GetSctFileSection("[INFO]")),
+                SctVORSection = GetSctNnbsAndVORS(GetSctFileSection("[VOR]")),
+                SctNDBSection = GetSctNnbsAndVORS(GetSctFileSection("[NDB]")),
+                SctAirportSection = GetSctAirports(GetSctFileSection("[AIRPORT]")),
+                SctRunwaySection = GetSctRunways(GetSctFileSection("[RUNWAY]")),
+                SctFixesSection = GetSctFixes(GetSctFileSection("[FIXES]")),
+                SctArtccSection = ParseArtccModels(GetSctFileSection("[ARTCC]")),
+                SctArtccHighSection = ParseArtccModels(GetSctFileSection("[ARTCC HIGH]")),
+                SctArtccLowSection = ParseArtccModels(GetSctFileSection("[ARTCC LOW]")),
+                SctSidSection = GetSctSidsAndStars(GetSctFileSection("[SID]")),
+                SctStarSection = GetSctSidsAndStars(GetSctFileSection("[STAR]")),
+                SctLowAirwaySection = ParseArtccModels(GetSctFileSection("[LOW AIRWAY]")),
+                SctHighAirwaySection = ParseArtccModels(GetSctFileSection("[HIGH AIRWAY]")),
+                SctGeoSection = GetSctGeo(GetSctFileSection("[GEO]")),
+                SctRegionsSection = GetSctRegions(GetSctFileSection("[REGIONS]")),
+                SctLabelSection = GetSctLabels(GetSctFileSection("[LABELS]")),
+            };
+            return _sctFileModel;
+        }
     }
 }

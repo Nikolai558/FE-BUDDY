@@ -12,14 +12,14 @@ using FeBuddyLibrary.Helpers;
 
 namespace FeBuddyWinFormUI
 {
-    public partial class DatToSctForm : Form
+    public partial class DatConversions : Form
     {
         private readonly string _currentVersion;
         readonly PrivateFontCollection _pfc = new PrivateFontCollection();
         private ConversionOptions _conversionOptions;
         private ToolTip _toolTip;
 
-        public DatToSctForm(string currentVersion)
+        public DatConversions(string currentVersion)
         {
             Logger.LogMessage("DEBUG", "INITIALIZING COMPONENT");
             _conversionOptions = new ConversionOptions();
@@ -157,6 +157,8 @@ namespace FeBuddyWinFormUI
             sourceFileButton.Enabled = isEnabled;
             outputDirButton.Enabled = isEnabled;
             startButton.Enabled = isEnabled;
+            geojsonRadioButton.Enabled = isEnabled;
+            sct2RadioButton.Enabled = isEnabled;
         }
 
         private void StartConversion()
@@ -187,6 +189,7 @@ namespace FeBuddyWinFormUI
 
         private void Worker_StartConversionDoWork(object sender, DoWorkEventArgs e)
         {
+            double cropDistance;
             string outputFileName = "\\" + _conversionOptions.InputFilePath.Split('\\')[^1].Split('.')[0];
             if (File.Exists(_conversionOptions.outputDirectory + outputFileName + ".sct2"))
             {
@@ -200,8 +203,6 @@ namespace FeBuddyWinFormUI
                     return;
                 }
             }
-            Logger.LogMessage("INFO", "Starting DAT to SCT2 Conversion.");
-            double cropDistance;
             if (cropingDistanceTextBox.Text.Trim() == "")
             {
                 cropDistance = -1;
@@ -210,7 +211,17 @@ namespace FeBuddyWinFormUI
             {
                 cropDistance = double.Parse(cropingDistanceTextBox.Text);
             }
-            DatConversion.ReadDAT(_conversionOptions.InputFilePath, _conversionOptions.outputDirectory + outputFileName, cropDistance);
+
+            if (sct2RadioButton.Checked)
+            {
+                Logger.LogMessage("INFO", "Starting DAT to SCT2 Conversion.");
+                DatConversion.ReadDAT(_conversionOptions.InputFilePath, _conversionOptions.outputDirectory + outputFileName, cropDistance, false);
+            }
+            else if (geojsonRadioButton.Checked)
+            {
+                Logger.LogMessage("INFO", "Starting DAT to SCT2 Conversion.");
+                DatConversion.ReadDAT(_conversionOptions.InputFilePath, _conversionOptions.outputDirectory + outputFileName, cropDistance, true);
+            }
         }
 
         private class MyRenderer : ToolStripProfessionalRenderer
@@ -510,9 +521,6 @@ namespace FeBuddyWinFormUI
         private void cropingDistanceTextBox_MouseHover(object sender, EventArgs e)
         {
             _toolTip.SetToolTip(cropingDistanceTextBox, "Type a numeric value here representing a distance from the \n.DAT file defined Point of Tangency that you want all lines drawn.\nLeave blank if you want the entire file drawn.\n\nExamples:\n106 = All lines within 106nm of the Point of Tangency will be drawn\nNothing = All lines will be drawn, regardless of distance");
-
-
-
         }
     }
 }

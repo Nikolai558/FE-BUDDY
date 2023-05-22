@@ -47,7 +47,7 @@
     <Compile Update="WinForms\KmlConversionForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Update="WinForms\DatToSctForm.cs">
+    <Compile Update="WinForms\DatConversions.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Update="WinForms\AsdexColorErrorsForm.cs">

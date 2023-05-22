@@ -136,6 +136,13 @@ namespace FeBuddyLibrary.DataAccess
             return geo;
         }
 
+        public SctFileModel ConvertString(string toConvertString)
+        {
+            DataFunctions _df = new DataFunctions();
+            SctFileModel _sctFileModel = _df.ReadString(toConvertString);
+            return _sctFileModel;
+        }
+
         public SctFileModel ReadSctFile(string fullSourceFilePath)
         {
             DataFunctions _df = new DataFunctions();

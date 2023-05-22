@@ -3,7 +3,7 @@
 ---
 - ## Version 2.6.4
   - #144 AWY LO DME Cuttoff now has a BCG and Filter value of 15 instead of 5
-  - #139 Potential fix for persistant user settings between updates.
+  - #139 Potential fix for persistent user settings between updates.
   - FAA DAT file conversions straight to geojson now available. 
 
 - ## Version 2.6.3

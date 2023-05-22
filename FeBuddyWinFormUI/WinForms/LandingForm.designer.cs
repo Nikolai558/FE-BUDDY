@@ -33,6 +33,7 @@
             this.convertDat2SctSelection = new System.Windows.Forms.RadioButton();
             this.airacLabel = new System.Windows.Forms.Label();
             this.airacCycleGroupBox = new System.Windows.Forms.GroupBox();
+            this.SctToGeoRadioButton = new System.Windows.Forms.RadioButton();
             this.convertVstarsVeramToGeoJson = new System.Windows.Forms.RadioButton();
             this.landingStartButton = new System.Windows.Forms.Button();
             this.manageFacDataSelector = new System.Windows.Forms.RadioButton();
@@ -53,7 +54,6 @@
             this.settingsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.allowBetaMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.UninstallMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.SctToGeoRadioButton = new System.Windows.Forms.RadioButton();
             this.airacCycleGroupBox.SuspendLayout();
             this.menuStrip.SuspendLayout();
             this.SuspendLayout();
@@ -81,9 +81,9 @@
             this.convertDat2SctSelection.Location = new System.Drawing.Point(69, 195);
             this.convertDat2SctSelection.Margin = new System.Windows.Forms.Padding(6, 7, 6, 7);
             this.convertDat2SctSelection.Name = "convertDat2SctSelection";
-            this.convertDat2SctSelection.Size = new System.Drawing.Size(198, 25);
+            this.convertDat2SctSelection.Size = new System.Drawing.Size(146, 25);
             this.convertDat2SctSelection.TabIndex = 1;
-            this.convertDat2SctSelection.Text = "Convert DAT file to SCT2";
+            this.convertDat2SctSelection.Text = "DAT Conversions\r\n";
             this.convertDat2SctSelection.UseVisualStyleBackColor = true;
             // 
             // airacLabel
@@ -117,6 +117,19 @@
             this.airacCycleGroupBox.Size = new System.Drawing.Size(746, 365);
             this.airacCycleGroupBox.TabIndex = 12;
             this.airacCycleGroupBox.TabStop = false;
+            // 
+            // SctToGeoRadioButton
+            // 
+            this.SctToGeoRadioButton.AutoSize = true;
+            this.SctToGeoRadioButton.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.SctToGeoRadioButton.ForeColor = System.Drawing.SystemColors.AppWorkspace;
+            this.SctToGeoRadioButton.Location = new System.Drawing.Point(69, 273);
+            this.SctToGeoRadioButton.Margin = new System.Windows.Forms.Padding(6, 7, 6, 7);
+            this.SctToGeoRadioButton.Name = "SctToGeoRadioButton";
+            this.SctToGeoRadioButton.Size = new System.Drawing.Size(153, 25);
+            this.SctToGeoRadioButton.TabIndex = 14;
+            this.SctToGeoRadioButton.Text = "SCT2 to GeoJSON";
+            this.SctToGeoRadioButton.UseVisualStyleBackColor = true;
             // 
             // convertVstarsVeramToGeoJson
             // 
@@ -363,19 +376,6 @@
             this.UninstallMenuItem.Size = new System.Drawing.Size(206, 24);
             this.UninstallMenuItem.Text = "Uninstall";
             this.UninstallMenuItem.Click += new System.EventHandler(this.UninstallMenuItem_Click);
-            // 
-            // SctToGeoRadioButton
-            // 
-            this.SctToGeoRadioButton.AutoSize = true;
-            this.SctToGeoRadioButton.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-            this.SctToGeoRadioButton.ForeColor = System.Drawing.SystemColors.AppWorkspace;
-            this.SctToGeoRadioButton.Location = new System.Drawing.Point(69, 273);
-            this.SctToGeoRadioButton.Margin = new System.Windows.Forms.Padding(6, 7, 6, 7);
-            this.SctToGeoRadioButton.Name = "SctToGeoRadioButton";
-            this.SctToGeoRadioButton.Size = new System.Drawing.Size(153, 25);
-            this.SctToGeoRadioButton.TabIndex = 14;
-            this.SctToGeoRadioButton.Text = "SCT2 to GeoJSON";
-            this.SctToGeoRadioButton.UseVisualStyleBackColor = true;
             // 
             // LandingForm
             // 

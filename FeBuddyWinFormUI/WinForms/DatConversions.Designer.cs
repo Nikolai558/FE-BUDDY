@@ -1,6 +1,6 @@
 ﻿namespace FeBuddyWinFormUI
 {
-    partial class DatToSctForm
+    partial class DatConversions
     {
         /// <summary>
         /// Required designer variable.
@@ -28,7 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(DatToSctForm));
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(DatConversions));
             this.menuStrip = new System.Windows.Forms.MenuStrip();
             this.informationToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.InstructionsMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -51,8 +51,11 @@
             this.outputLabel = new System.Windows.Forms.Label();
             this.outputDirButton = new System.Windows.Forms.Button();
             this.convertGroupBox = new System.Windows.Forms.GroupBox();
+            this.label1 = new System.Windows.Forms.Label();
             this.FormLabel = new System.Windows.Forms.Label();
             this.convertDescriptionLabel = new System.Windows.Forms.Label();
+            this.sct2RadioButton = new System.Windows.Forms.RadioButton();
+            this.geojsonRadioButton = new System.Windows.Forms.RadioButton();
             this.menuStrip.SuspendLayout();
             this.startGroupBox.SuspendLayout();
             this.convertGroupBox.SuspendLayout();
@@ -323,6 +326,9 @@
             // convertGroupBox
             // 
             this.convertGroupBox.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(10)))), ((int)(((byte)(10)))), ((int)(((byte)(10)))));
+            this.convertGroupBox.Controls.Add(this.geojsonRadioButton);
+            this.convertGroupBox.Controls.Add(this.sct2RadioButton);
+            this.convertGroupBox.Controls.Add(this.label1);
             this.convertGroupBox.Controls.Add(this.FormLabel);
             this.convertGroupBox.Controls.Add(this.convertDescriptionLabel);
             this.convertGroupBox.Location = new System.Drawing.Point(19, 29);
@@ -330,6 +336,20 @@
             this.convertGroupBox.Size = new System.Drawing.Size(452, 357);
             this.convertGroupBox.TabIndex = 18;
             this.convertGroupBox.TabStop = false;
+            // 
+            // label1
+            // 
+            this.label1.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.label1.ForeColor = System.Drawing.SystemColors.AppWorkspace;
+            this.label1.Location = new System.Drawing.Point(9, 240);
+            this.label1.Margin = new System.Windows.Forms.Padding(6, 0, 6, 0);
+            this.label1.Name = "label1";
+            this.label1.Size = new System.Drawing.Size(434, 99);
+            this.label1.TabIndex = 9;
+            this.label1.Text = "Limitations: \r\nAll coordinates in the DAT file are assumed to be North Latitudes " +
+    "and West Longitudes. This will not work for facilities like Guam that are at/nea" +
+    "r the antimeridian. ";
+            this.label1.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
             // FormLabel
             // 
@@ -340,7 +360,7 @@
             this.FormLabel.Name = "FormLabel";
             this.FormLabel.Size = new System.Drawing.Size(452, 39);
             this.FormLabel.TabIndex = 2;
-            this.FormLabel.Text = "DAT To SCT2";
+            this.FormLabel.Text = "DAT Conversions";
             this.FormLabel.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
             // convertDescriptionLabel
@@ -352,9 +372,36 @@
             this.convertDescriptionLabel.Name = "convertDescriptionLabel";
             this.convertDescriptionLabel.Size = new System.Drawing.Size(434, 66);
             this.convertDescriptionLabel.TabIndex = 8;
-            this.convertDescriptionLabel.Text = "This process will convert your FAA .DAT RADAR Video Map (RVM)  into a .SCT2 file." +
-    "";
+            this.convertDescriptionLabel.Text = "This process will convert your FAA .DAT RADAR Video Map (RVM)  into either a  .SC" +
+    "T2 or .GEOJSON File.";
             this.convertDescriptionLabel.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            // 
+            // sct2RadioButton
+            // 
+            this.sct2RadioButton.AutoSize = true;
+            this.sct2RadioButton.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.sct2RadioButton.ForeColor = System.Drawing.SystemColors.AppWorkspace;
+            this.sct2RadioButton.Location = new System.Drawing.Point(179, 152);
+            this.sct2RadioButton.Margin = new System.Windows.Forms.Padding(6, 7, 6, 7);
+            this.sct2RadioButton.Name = "sct2RadioButton";
+            this.sct2RadioButton.Size = new System.Drawing.Size(95, 25);
+            this.sct2RadioButton.TabIndex = 10;
+            this.sct2RadioButton.Text = ".SCT2 File";
+            this.sct2RadioButton.UseVisualStyleBackColor = true;
+            // 
+            // geojsonRadioButton
+            // 
+            this.geojsonRadioButton.AutoSize = true;
+            this.geojsonRadioButton.Checked = true;
+            this.geojsonRadioButton.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.geojsonRadioButton.ForeColor = System.Drawing.SystemColors.AppWorkspace;
+            this.geojsonRadioButton.Location = new System.Drawing.Point(163, 191);
+            this.geojsonRadioButton.Margin = new System.Windows.Forms.Padding(6, 7, 6, 7);
+            this.geojsonRadioButton.Name = "geojsonRadioButton";
+            this.geojsonRadioButton.Size = new System.Drawing.Size(126, 25);
+            this.geojsonRadioButton.TabIndex = 11;
+            this.geojsonRadioButton.Text = "GEOJSON File";
+            this.geojsonRadioButton.UseVisualStyleBackColor = true;
             // 
             // DatToSctForm
             // 
@@ -385,6 +432,7 @@
             this.startGroupBox.ResumeLayout(false);
             this.startGroupBox.PerformLayout();
             this.convertGroupBox.ResumeLayout(false);
+            this.convertGroupBox.PerformLayout();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -415,6 +463,9 @@
         private System.Windows.Forms.ToolStripMenuItem newsToolStripMenuItem;
         private System.Windows.Forms.TextBox cropingDistanceTextBox;
         private System.Windows.Forms.Label cropingDistanceLabel;
+        private System.Windows.Forms.Label label1;
+        private System.Windows.Forms.RadioButton geojsonRadioButton;
+        private System.Windows.Forms.RadioButton sct2RadioButton;
     }
 }
 

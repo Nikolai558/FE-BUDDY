@@ -351,7 +351,7 @@ namespace FeBuddyWinFormUI
             }
             else if (convertDat2SctSelection.Checked)
             {
-                var datToSctForm = new DatToSctForm(_currentVersion);
+                var datToSctForm = new DatConversions(_currentVersion);
                 datToSctForm.FormClosing += (s, args) => this.Show();
                 datToSctForm.Show();
                 this.Hide();

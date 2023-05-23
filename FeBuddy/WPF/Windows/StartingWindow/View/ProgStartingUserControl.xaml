@@ -11,7 +11,8 @@
         <viewModel:ProgStartingViewModel/>
     </UserControl.DataContext>
     
-    <Grid>
-
+    <Grid Background="AliceBlue">
+        <TextBlock Text="Program Starting Screen"
+                   FontSize="25"/>
     </Grid>
 </UserControl>

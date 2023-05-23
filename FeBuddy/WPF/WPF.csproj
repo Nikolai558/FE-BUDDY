@@ -13,18 +13,10 @@
     <Folder Include="Images\" />
     <Folder Include="Styles\" />
     <Folder Include="Windows\MainMenu\Model\" />
-    <Folder Include="Windows\MainMenu\ViewModel\" />
-    <Folder Include="Windows\MainMenu\View\" />
     <Folder Include="Windows\MainWindow\Model\" />
     <Folder Include="Windows\ProgramMessages\Model\" />
-    <Folder Include="Windows\ProgramMessages\ViewModel\" />
-    <Folder Include="Windows\ProgramMessages\View\" />
     <Folder Include="Windows\SettingsMenu\Model\" />
-    <Folder Include="Windows\SettingsMenu\ViewModel\" />
-    <Folder Include="Windows\SettingsMenu\View\" />
     <Folder Include="Windows\StartingWindow\Model\" />
-    <Folder Include="Windows\StartingWindow\ViewModel\" />
-    <Folder Include="Windows\StartingWindow\View\" />
   </ItemGroup>
 
 </Project>

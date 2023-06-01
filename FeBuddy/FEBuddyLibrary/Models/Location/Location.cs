@@ -23,9 +23,11 @@ public class Location
   /// <exception cref="ArgumentException">Throws an ArgumentException if either params are not in the correct format.</exception>
   public Location(string Lat, string Lon)
   {
+
     bool isValid = IsValidDMS(Lat, Lon);
     if (isValid)
     {
+      // Possible Optimization - Do we really need BOTH DMS and DEC at Location Creation Time?
       DmsLat = Lat;
       DmsLon = Lon;
       DecLat = (double)ToDecimal(Lat);
@@ -46,6 +48,7 @@ public class Location
     bool isValid = IsValidDecimal(Lat, Lon);
     if (isValid)
     {
+      // Possible Optimization - Do we really need BOTH DMS and DEC at Location Creation Time?
       DecLat = Lat;
       DecLon = Lon;
       DmsLat = ToDMS(Lat, true);

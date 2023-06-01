@@ -94,9 +94,6 @@ public class Location
   /// <returns>string: DMS format of the value passed in. Format: ['N', 'S', 'E', 'W']DDD.MM.SS.SSS</returns>
   internal static string ToDMS(double Dec, bool IsLat)
   {
-    // returns a string in the form DDD.MM.SS.SSS
-    // where D = degrees, M = minutes, S = seconds
-    // example: 43.518948 becomes N043.31.08.418
     // get the hemisphere (N, S, E, or W)
     string hemisphere = "";
     if (IsLat && Dec < 0) hemisphere = "S";

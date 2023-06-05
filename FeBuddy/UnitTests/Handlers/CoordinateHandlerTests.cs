@@ -1,10 +1,4 @@
 ﻿using FEBuddyLibrary.Handlers;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace UnitTests.Handlers;
 public class CoordinateHandlerTests
@@ -237,7 +231,7 @@ public class CoordinateHandlerTests
   /// <param name="EndLon">double: Ending Longitude</param>
   /// <param name="ExpectedResult">bool: Expected Result, True, if it does cross the antimeridian, otherwise false.</param>
   [Theory]
-  [InlineData(35, 179, 35, -179, true)] 
+  [InlineData(35, 179, 35, -179, true)]
   [InlineData(38, -162, 25, -119, false)]
   public void crosses_the_am_should_be_correct(double StartLat, double StartLon, double EndLat, double EndLon, bool ExpectedResult)
   {
@@ -267,7 +261,7 @@ public class CoordinateHandlerTests
   public void get_bearing_between_two_decimal_coords_should_be_correct(double PointALat, double PointALon, double PointBLat, double PointBLon, double ExpectedResult)
   {
     // Arrange
-    Location _pointA = new Location(PointALat, PointALon); 
+    Location _pointA = new Location(PointALat, PointALon);
     Location _pointB = new Location(PointBLat, PointBLon);
     // Act
     double actualResult = CoordinateHandler.Bearing(_pointA, _pointB);

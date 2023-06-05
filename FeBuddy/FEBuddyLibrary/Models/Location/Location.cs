@@ -1,5 +1,4 @@
 ﻿using FEBuddyLibrary.Handlers;
-using System.Runtime.CompilerServices;
 
 namespace FEBuddyLibrary.Models.Location;
 
@@ -58,5 +57,5 @@ public class Location
     throw new ArgumentException("Invalid decimal input when creating a Location class.");
   }
 
-  
+
 }

@@ -1213,6 +1213,7 @@ namespace FeBuddyLibrary.DataAccess
                         }
                     }
 
+                    // This fixes the duplicate description issue #148
                     if (File.Exists(file.FullName))
                     {
                         FeatureCollection inFile = JsonConvert.DeserializeObject<FeatureCollection>(File.ReadAllText(file.FullName));

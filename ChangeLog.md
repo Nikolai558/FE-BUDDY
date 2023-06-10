@@ -1,6 +1,10 @@
 # CHANGELOG
 
 ---
+- ## Version 2.6.5
+  - #148 Fixed an issue where if the GeoMap Object had multiple objects with 
+    the same description, the converter would only output the last object.
+
 - ## Version 2.6.4
   - #144 AWY LO DME Cuttoff now has a BCG and Filter value of 15 instead of 5
   - #139 Potential fix for persistent user settings between updates.

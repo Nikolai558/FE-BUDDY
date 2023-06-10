@@ -1213,6 +1213,12 @@ namespace FeBuddyLibrary.DataAccess
                         }
                     }
 
+                    if (File.Exists(file.FullName))
+                    {
+                        FeatureCollection inFile = JsonConvert.DeserializeObject<FeatureCollection>(File.ReadAllText(file.FullName));
+                        geojson.features.AddRange(inFile.features);
+                    }
+
                     string jsonString = JsonConvert.SerializeObject(geojson, new JsonSerializerSettings { Formatting = Formatting.None, NullValueHandling = NullValueHandling.Ignore });
 
                     //jsonString = PostProcess(jsonString);

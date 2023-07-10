@@ -1,4 +1,5 @@
 ﻿using FEBuddyLibrary.Handlers;
+using System.Text.Json;
 
 namespace FEBuddyLibrary.Models.Location;
 
@@ -8,10 +9,10 @@ namespace FEBuddyLibrary.Models.Location;
 public class Location
 {
   // ---------- Properties ---------- 
-  public string DmsLat { get; private set; }
-  public string DmsLon { get; private set; }
-  public double DecLat { get; private set; }
-  public double DecLon { get; private set; }
+  public string DmsLat { get { return DmsLat; } set { SetDmsLat(value); }}
+  public string DmsLon { get { return DmsLon; } set { SetDmsLon(value); } }
+  public double DecLat { get { return DecLat; } set { SetDecLat(value); } }
+  public double DecLon { get { return DecLon; } set { SetDecLon(value); } }
 
   // ---------- Constructors ---------- 
   /// <summary>
@@ -29,8 +30,6 @@ public class Location
       // Possible Optimization - Do we really need BOTH DMS and DEC at Location Creation Time?
       DmsLat = Lat;
       DmsLon = Lon;
-      DecLat = (double)CoordinateHandler.ToDecimal(Lat);
-      DecLon = (double)CoordinateHandler.ToDecimal(Lon);
       return;
     }
     throw new ArgumentException("Invalid DMS input when creating a Location class.");
@@ -50,11 +49,51 @@ public class Location
       // Possible Optimization - Do we really need BOTH DMS and DEC at Location Creation Time?
       DecLat = Lat;
       DecLon = Lon;
-      DmsLat = CoordinateHandler.ToDMS(Lat, true);
-      DmsLon = CoordinateHandler.ToDMS(Lon, false);
       return;
     }
     throw new ArgumentException("Invalid decimal input when creating a Location class.");
+  }
+
+  // ---------- Setter Functions ---------- 
+
+  /// <summary>
+  /// Set the DMS Lattitude property of the this Location Class. Will update the Decimal Version to reflect new DMS passed in.
+  /// </summary>
+  /// <param name="value">string: Latitude DMS - Format: ['N', 'S']DDD.MM.SS.SSS</param>
+  private void SetDmsLat(string value)
+  {
+    DmsLat = value;
+    DecLat = (double)CoordinateHandler.ToDecimal(value);
+  }
+
+  /// <summary>
+  /// Set the DMS Longitidue property of the this Location Class. Will update the Decimal Version to reflect new DMS passed in.
+  /// </summary>
+  /// <param name="value">string: Longitude DMS - Format: ['E', 'W']DDD.MM.SS.SSS</param>
+  private void SetDmsLon(string value)
+  {
+    DmsLon = value;
+    DecLon = (double)CoordinateHandler.ToDecimal(value);
+  }
+
+  /// <summary>
+  /// Set the Decimal Lattitude property of the this Location Class. Will update the DMS Version to reflect new Decimal passed in.
+  /// </summary>
+  /// <param name="value">double: Latitude Decimal format.</param>
+  private void SetDecLat(double value)
+  {
+    DecLat = value;
+    DmsLat = CoordinateHandler.ToDMS(value, true);
+  }
+
+  /// <summary>
+  /// Set the Decimal Longitude property of the this Location Class. Will update the DMS Version to reflect new Decimal passed in.
+  /// </summary>
+  /// <param name="value">double: Longitude Decimal format.</param>
+  private void SetDecLon(double value)
+  {
+    DecLon = value;
+    DmsLon = CoordinateHandler.ToDMS(value, false);
   }
 
 

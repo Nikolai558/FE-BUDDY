@@ -268,4 +268,11 @@ public class CoordinateHandlerTests
     // Assert
     Assert.Equal(ExpectedResult, actualResult);
   }
+
+  [Theory]
+  [InlineData()]
+  public void get_coordinate_at_antimeridian_from_two_points_that_cross_it()
+  {
+
+  }
 }

@@ -171,26 +171,38 @@ public class CoordinateHandler
   public static List<Location> SplitLineSegmentAtAntimeridian(Location pointA, Location pointB)
   {
     // Variables needed to split the Line at the AM. 
-    Location startLocation = new Location(pointA.DecLat, pointA.DecLon);
-    Location endLocation = new Location(pointB.DecLat, pointB.DecLon);
-    double midPointStartLon;
-    double midPointEndLon;
-    double midPointLat;
-    
-    // Calculate the AM Longitiude ( Always -180 or 180 )
-    midPointStartLon = pointA.DecLon < 0 ? -180 : 180;
-    midPointEndLon = pointB.DecLon < 0 ? -180 : 180;
+    Location startPoint = new Location(pointA.DecLat, pointA.DecLon);
+    Location endPoint = new Location(pointB.DecLat, pointB.DecLon);
+    double antimeridianStartLongitude;
+    double antimeridianEndLongitude;
+    double antimeridianIntersectionLatitude;
 
-    startLocation.DecLon = startLocation.DecLon < 0 ? startLocation.DecLon + 180 : startLocation.DecLon - 180;
-    endLocation.DecLon = endLocation.DecLon < 0 ? endLocation.DecLon + 180 : endLocation.DecLon - 180;
+    // Calculate the AM Longitiude ( Always -180 or 180 )
+    // The variables antimeridianStartLongitude and antimeridianEndLongitude are assigned the value -180 or 180 based on whether
+    // the longitude of pointA and pointB is less than 0 or not.
+    // This determines the longitude of the antimeridian points.
+    antimeridianStartLongitude = pointA.DecLon < 0 ? -180 : 180;
+    antimeridianEndLongitude = pointB.DecLon < 0 ? -180 : 180;
+
+    // The longitudes of startPoint and endPoint are adjusted to be relative to the antimeridian
+    // by adding or subtracting 180 degrees if they are less than 0.
+    // If startPoint.DecLon is less than 0, it means that startPoint is located in the Western Hemisphere (west of the prime meridian).
+    //   In this case, 180 degrees is added to startPoint.DecLon to make it relative to the antimeridian.
+    //   For example, if startPoint.DecLon is -120, adding 180 degrees gives 60, which represents the same position but relative to the antimeridian.
+    // If endPoint.DecLon is less than 0, it means that endPoint is located in the Western Hemisphere.
+    //   Similarly, 180 degrees is added to endPoint.DecLon to make it relative to the antimeridian.
+    // By adjusting the longitudes in this way, the line segment represented by startPoint and endPoint is
+    // correctly positioned relative to the antimeridian, ensuring that it can be accurately split at that boundary.
+    startPoint.DecLon = startPoint.DecLon < 0 ? startPoint.DecLon + 180 : startPoint.DecLon - 180;
+    endPoint.DecLon = endPoint.DecLon < 0 ? endPoint.DecLon + 180 : endPoint.DecLon - 180;
 
     // Calculate the AM Lattitude
-    var slope = (pointA.DecLat - pointB.DecLat) / (startLocation.DecLon - endLocation.DecLon);
-    midPointLat = pointA.DecLat - (slope * startLocation.DecLon);
+    var slope = (pointA.DecLat - pointB.DecLat) / (startPoint.DecLon - endPoint.DecLon);
+    antimeridianIntersectionLatitude = pointA.DecLat - (slope * startPoint.DecLon);
 
     // Create Location Classes for the AM Points.
-    var midPointStart = new Location(midPointLat, midPointStartLon);
-    var midPointEnd = new Location(midPointLat, midPointEndLon);
+    var midPointStart = new Location(antimeridianIntersectionLatitude, antimeridianStartLongitude);
+    var midPointEnd = new Location(antimeridianIntersectionLatitude, antimeridianEndLongitude);
 
     // Return a List of Locations Starting Point, AM Point 1, AM Point 2, Ending Point
     return new List<Location>() { pointA, midPointStart, midPointEnd, pointB};

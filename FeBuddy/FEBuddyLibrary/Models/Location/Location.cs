@@ -102,5 +102,26 @@ public class Location
     dmsLon = CoordinateHandler.ToDMS(value, false);
   }
 
+  // ---------- Overrided Functions ---------- 
+  /// <summary>
+  /// Overide function to compare two Location classes. Will return true if both DMS and Decimal values are the same.
+  /// </summary>
+  /// <param name="obj">Location: Other Location Class to compare too</param>
+  /// <returns>bool: Returns True if both Location Classes are the same.</returns>
+  public override bool Equals(object? obj)
+  {
+    if (obj == null || GetType() != obj.GetType()) return false;
 
+    Location other = (Location)obj;
+    return dmsLat == other.dmsLat && dmsLon == other.dmsLon && decLat == other.decLat && decLon == other.decLon;
+  }
+
+  /// <summary>
+  /// Overide function to return a HashCode for this Location class.
+  /// </summary>
+  /// <returns>int: Returns Location Class Hash Code. </returns>
+  public override int GetHashCode()
+  {
+    return HashCode.Combine(dmsLat, dmsLon, decLat, decLon);
+  }
 }

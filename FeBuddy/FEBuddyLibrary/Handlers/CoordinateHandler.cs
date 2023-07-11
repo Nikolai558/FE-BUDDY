@@ -16,14 +16,15 @@ public class CoordinateHandler
   /// <summary>
   /// Check a Decimal Latitude and Longitude to see if they are valid.
   /// </summary>
-  /// <param name="Lat">double: Latitude</param>
-  /// <param name="Lon">double: Longitude</param>
+  /// <param name="latitude">double: Latitude</param>
+  /// <param name="longitude">double: Longitude</param>
   /// <returns>bool: Returns true if the Latitude AND Longitude are valid Decimals, otherwise returns False.</returns>
-  public static bool IsValidDecimal(double Lat, double Lon)
+  public static bool IsValidDecimal(double latitude, double longitude)
   {
-    if (Lat > 90 || Lat < -90) return false;
-    if (Lon > 180 || Lon < -180) return false;
-    return true;
+    bool isValidLatitude = latitude > -90 && latitude < 90;
+    bool isValidLongitude = longitude > -180 && longitude < 180;
+
+    return isValidLatitude && isValidLongitude;
   }
 
   /// <summary>
@@ -34,14 +35,45 @@ public class CoordinateHandler
   /// <returns>bool: Returns True if the Latitude AND Longitude are valid DMS formats, otherwise returns False.</returns>
   public static bool IsValidDMS(string Lat, string Lon)
   {
-    if (Lat == null || Lon == null) return false;
-    if (Lat == "" || Lon == "") return false;
-    if (Lat.Split('.').Count() != 4 || Lon.Split('.').Count() != 4) return false;
-    if (Lat[0] != 'N' && Lat[0] != 'S') return false;
-    if (Lon[0] != 'E' && Lon[0] != 'W') return false;
+    if (string.IsNullOrEmpty(Lat) || string.IsNullOrEmpty(Lon) ||
+        Lat.Length < 2 || Lon.Length < 2)
+      return false;
+
+    char latDirection = Char.ToUpper(Lat[0]);
+    string latCoordinates = Lat.Substring(1);
+
+    char lonDirection = Char.ToUpper(Lon[0]);
+    string lonCoordinates = Lon.Substring(1);
+
+    if (latDirection != 'N' && latDirection != 'S')
+      return false;
+
+    if (lonDirection != 'E' && lonDirection != 'W')
+      return false;
+
+    string[] latParts = latCoordinates.Split('.');
+    string[] lonParts = lonCoordinates.Split('.');
+
+    if (latParts.Length != 4 || lonParts.Length != 4)
+      return false;
+
+    if (!int.TryParse(latParts[0], out int latDegrees) ||
+        !int.TryParse(latParts[1], out int latMinutes) ||
+        !int.TryParse(latParts[2], out int latSeconds) ||
+        !int.TryParse(latParts[3], out int latMilliseconds) ||
+        !int.TryParse(lonParts[0], out int lonDegrees) ||
+        !int.TryParse(lonParts[1], out int lonMinutes) ||
+        !int.TryParse(lonParts[2], out int lonSeconds) ||
+        !int.TryParse(lonParts[3], out int lonMilliseconds))
+      return false;
+
+    if (latDegrees < 0 || latDegrees > 90 || latMinutes < 0 || latMinutes >= 60 || latSeconds < 0 || latSeconds >= 60 || latMilliseconds >= 1000 ||
+        lonDegrees < 0 || lonDegrees > 180 || lonMinutes < 0 || lonMinutes >= 60 || lonSeconds < 0 || lonSeconds >= 60 || lonMilliseconds >= 1000)
+      return false;
 
     return true;
   }
+
 
   /// <summary>
   /// Converts Decimal format to DMS format.
@@ -51,37 +83,58 @@ public class CoordinateHandler
   /// <returns>string: DMS format of the value passed in. Format: ['N', 'S', 'E', 'W']DDD.MM.SS.SSS</returns>
   public static string ToDMS(double Dec, bool IsLat)
   {
-    // get the hemisphere (N, S, E, or W)
-    string hemisphere = "";
-    if (IsLat && Dec < 0) hemisphere = "S";
-    if (IsLat && Dec >= 0) hemisphere = "N";
-    if (!IsLat && Dec < 0) hemisphere = "W";
-    if (!IsLat && Dec >= 0) hemisphere = "E";
+    // Determine the hemisphere (North, South, East, or West) based on the value of Dec and the IsLat flag.
+    string hemisphere = (IsLat && Dec < 0) ? "S" : (IsLat && Dec >= 0) ? "N" : (!IsLat && Dec < 0) ? "W" : "E";
+
     // get the degrees, minutes, and seconds
+    // Ensure that the latitude or longitude value is positive.
     double absLat = Math.Abs(Dec);
+    // degrees is calculated by taking the integer part of absLat
     double degrees = Math.Floor(absLat);
+    // minutes is obtained by subtracting the integer part of degrees from absLat, multiplying the result by 60, and taking the integer part
     double minutes = Math.Floor((absLat - degrees) * 60);
+    // seconds is calculated by subtracting the degree and minute components from absLat, dividing the result by 60, multiplying by 3600, and rounding the result to three decimal places
     double seconds = Math.Round((absLat - degrees - minutes / 60) * 3600, 3);
+    // milliseconds is obtained by subtracting the integer part of seconds from seconds, multiplying the result by 1000,
     double miliseconds = (seconds - Math.Floor(seconds)) * 1000;
-    // put it all together
+
+    // Concatenate the hemisphere, degrees, minutes, seconds, and milliseconds into a string representation of the DMS format.
+    // The ToString method is used with custom format strings to ensure that each component has a specific format
+    // (e.g., degrees are represented with three digits, minutes and seconds with two digits, and milliseconds with three digits).
     string dms = hemisphere + degrees.ToString("000") + "." + minutes.ToString("00") + "." + seconds.ToString("00") + "." + miliseconds.ToString("000");
     return dms;
   }
 
   /// <summary>
-  /// Converts DMS format to Decimal format.
+  /// This method is intended to convert a string representing a coordinate in degrees, minutes, and seconds (DMS) format to its decimal representation.
   /// </summary>
   /// <param name="DMS">string: Latitude or Longitude - Format: ['N', 'S', 'E', 'W']DDD.MM.SS.SSS</param>
   /// <returns>double: Returns the decimal version of the Latitude or Longitude passed in.</returns>
   public static double ToDecimal(string DMS)
   {
+    // splits the input string DMS into an array of strings using the period ('.') as the delimiter.
+    // The resulting array will contain four elements: degrees, minutes, seconds, and milliseconds.
     string[] parts = DMS.Split('.');
+
+    // This line extracts the degrees portion from the first element of the parts array.
+    // The [1..] notation is used to extract a substring starting from the second character (index 1) until the end.
+    // The extracted substring is then parsed into a double value and assigned to the degrees variable.
     double degrees = double.Parse(parts[0][1..]);
+
+    // The remaining three lines extract the minutes, seconds, and milliseconds portions from the parts array.
     double minutes = double.Parse(parts[1]);
     double seconds = double.Parse(parts[2]);
     double milliseconds = double.Parse(parts[3]);
+
+    // This line calculates the decimal representation of the coordinate by summing up the degrees, converted minutes,
+    // converted seconds, and converted milliseconds. The minutes are divided by 60 to convert them to degrees,
+    // the seconds are divided by 3600, and the milliseconds are divided by 3600000.
     double result = degrees + (minutes / 60) + (seconds / 3600) + (milliseconds / 3600000);
+
+    // If the first character is 'S' or 'W', it multiplies the result by -1 to make it negative.
     if (DMS[0] == 'S' || DMS[0] == 'W') result *= (double)-1;
+
+    // The rounding helps maintain the desired precision for the decimal representation.
     return Math.Round(result, 7);
   }
 

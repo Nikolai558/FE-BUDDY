@@ -115,9 +115,24 @@ public class CoordinateHandler
   /// <returns>bool: Returns True if the two points that form the line crosses the Antimeridian, False if it does Not cross.</returns>
   public static bool CrossesAntimeridian(Location StartPoint, Location EndPoint)
   {
-    if (StartPoint.DecLon < 0 && EndPoint.DecLon > 0) return true;
-    else if (StartPoint.DecLon > 0 && EndPoint.DecLon < 0) return true;
-    else return false;
+    const double Antimeridian = 180;
+
+    if ((StartPoint.DecLon < Antimeridian && EndPoint.DecLon > -Antimeridian) || (StartPoint.DecLon > -Antimeridian && EndPoint.DecLon < Antimeridian))
+    {
+      var bearing = Bearing(StartPoint, EndPoint);
+
+      if ((StartPoint.DecLon < 0 && (bearing > 0 && bearing < 180)) || (StartPoint.DecLon > 0 && (bearing > 180 && bearing < 360)))
+      {
+        // We Cross the Meridian Line but not the antimeridian.
+        return false;
+      }
+
+      return true;
+    }
+    else
+    {
+      return false;
+    }
   }
 
   /// <summary>

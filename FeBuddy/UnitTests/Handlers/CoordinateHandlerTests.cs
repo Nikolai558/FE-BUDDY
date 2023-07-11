@@ -233,6 +233,9 @@ public class CoordinateHandlerTests
   [Theory]
   [InlineData(35, 179, 35, -179, true)]
   [InlineData(38, -162, 25, -119, false)]
+  [InlineData(40, -170, 40, 170, true)]
+  [InlineData(40, 170, 40, -170, true)]
+  [InlineData(40, -10, 40, 10, false)]
   public void crosses_the_am_should_be_correct(double StartLat, double StartLon, double EndLat, double EndLon, bool ExpectedResult)
   {
     // Arrange
@@ -270,9 +273,26 @@ public class CoordinateHandlerTests
   }
 
   [Theory]
-  [InlineData()]
-  public void get_coordinate_at_antimeridian_from_two_points_that_cross_it()
+  [InlineData(40, -170, 40, 170, 40, -180, 40, 180)]
+  [InlineData(20, -170, 40, 170, 30, -180, 30, 180)]
+  [InlineData(30, -170, -30, 170, 0, -180, 0, 180)]
+  public void SplitLineSegmentAtAntimeridian_ShouldReturnFourCoordinates(
+    double StartLat, double StartLon, double EndLat, double EndLon,
+    double ExpectedLat1, double ExpectedLon1, double ExpectedLat2, double ExpectedLon2)
   {
+    // Arrange
+    var pointA = new Location(StartLat, StartLon);
+    var pointB = new Location(EndLat, EndLon);
 
+    // Act
+    var result = CoordinateHandler.SplitLineSegmentAtAntimeridian(pointA, pointB);
+
+    // Assert
+    Assert.NotNull(result);
+    Assert.Equal(4, result.Count);
+    Assert.Equal(pointA, result[0]);
+    Assert.Equal(new Location(ExpectedLat1, ExpectedLon1), result[1] as Location);
+    Assert.Equal(new Location(ExpectedLat2, ExpectedLon2), result[2] as Location);
+    Assert.Equal(pointB, result[3]);
   }
 }

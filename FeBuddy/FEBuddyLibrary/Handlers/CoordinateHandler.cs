@@ -1,5 +1,8 @@
 ﻿using FEBuddyLibrary.Models.Location;
 using Microsoft.VisualBasic;
+using System.Diagnostics.Metrics;
+using System.Drawing;
+using System;
 using System.Runtime.CompilerServices;
 
 [assembly: InternalsVisibleTo("UnitTests")]
@@ -118,48 +121,98 @@ public class CoordinateHandler
   /// <returns>bool: Returns True if the two points that form the line crosses the Antimeridian, False if it does Not cross.</returns>
   public static bool CrossesAntimeridian(Location StartPoint, Location EndPoint)
   {
+    // -- LIMITATIONS --
+    // Line Segments are calculated with the assumption of the shortest distance drawn between the two points.
+    // For Example:
+    //  If StartPoint is (40, -170) and
+    //     EndPoint   is (40, 170)  and
+    //     the users intention is to go "EAST" from StartPoint to EndPoint (Technically not crossing the AM),
+    //     this function will assume the shortest distance was traveled (WEST in this case) and therefore will not provide the appropriate respones of "False".
+    
     const double Antimeridian = 180;
-
+    
+    // The code then checks if either of the following conditions is true:
+    //   a.If StartPoint.DecLon(the decimal longitude of the start point) is less than Antimeridian and
+    //     EndPoint.DecLon(the decimal longitude of the end point) is greater than - Antimeridian.
+    //     This condition checks if the line segment spans from a longitude before the antimeridian to a longitude after it.
+    //   b.If StartPoint.DecLon is greater than - Antimeridian and EndPoint.DecLon is less than Antimeridian.
+    //     This condition checks if the line segment spans from a longitude after the antimeridian to a longitude before it.
+    // If either of these conditions is true, it means the line segment crosses the antimeridian.
     if ((StartPoint.DecLon < Antimeridian && EndPoint.DecLon > -Antimeridian) || (StartPoint.DecLon > -Antimeridian && EndPoint.DecLon < Antimeridian))
     {
+      // The bearing represents the angle between the north direction and the direction from the start point to the end point.
       var bearing = Bearing(StartPoint, EndPoint);
 
+      // Then, the code checks if either of the following conditions is true:
+      //   a.If StartPoint.DecLon is less than 0(meaning the start point is west of the prime meridian) and
+      //     the bearing is greater than 0 and less than 180.This condition checks if the line segment crosses
+      //     the meridian line(the prime meridian at 0 degrees longitude) but not the antimeridian.
+      //   b.If StartPoint.DecLon is greater than 0(meaning the start point is east of the prime meridian) and
+      //     the bearing is greater than 180 and less than 360.This condition checks if the line segment crosses
+      //     the meridian line but not the antimeridian.
+      // If either of these conditions is true, it means the line segment crosses the meridian line but not the antimeridian.
       if ((StartPoint.DecLon < 0 && (bearing > 0 && bearing < 180)) || (StartPoint.DecLon > 0 && (bearing > 180 && bearing < 360)))
       {
-        // We Cross the Meridian Line but not the antimeridian.
+        // If the line segment crosses the meridian line but not the antimeridian, the method returns false.
         return false;
       }
 
+      // If none of the above conditions are true, the method returns true to indicate that the line segment crosses the antimeridian.
       return true;
     }
     else
     {
+      // If the initial condition above is false, meaning the line segment does not span across the antimeridian, the method returns false as well.
       return false;
     }
   }
 
   /// <summary>
-  /// Get the bearing between two points.
+  /// Calculate the bearing (angle) between two locations on the Earth's surface using the spherical law of cosines formula and trigonometric functions provided by the Math class. The bearing is returned in degrees.
   /// </summary>
   /// <param name="pointA">Location: Starting point</param>
   /// <param name="pointB">Location: Ending point</param>
   /// <returns>double: Returns the bearing from the starting point to the ending point.</returns>
   public static double Bearing(Location pointA, Location pointB)
   {
-    // convert the points to radians
+    // The method begins by converting the latitude and longitude coordinates of the two points (pointA and pointB) from decimal degrees to radians.
+    // Radians are a unit of measurement for angles used in many mathematical functions.
+    //  the conversion from decimal degrees to radians is necessary because the trigonometric functions (Math.Sin, Math.Cos, Math.Atan2) used in the
+    //  calculations expect angles to be expressed in radians. These functions are designed to work with angles measured in radians because they provide
+    //  more accurate and efficient results when dealing with complex mathematical operations
     double lat1 = pointA.DecLat * Math.PI / 180;
     double lon1 = pointA.DecLon * Math.PI / 180;
     double lat2 = pointB.DecLat * Math.PI / 180;
     double lon2 = pointB.DecLon * Math.PI / 180;
-    // get the differences between the two points
+
+    // The code calculates the difference in longitude between the two points and stores it in the variable dLon.
+    // Subtracting lon1 from lon2 gives the difference in longitude between the two points. The result is assigned to the variable dLon.
+    // The difference in longitude, dLon, represents the angular distance between the two points along the east - west direction.
+    //   A positive value indicates that pointB is located east of pointA,
+    //   while a negative value indicates that pointB is located west of pointA.
+    //  it is used to determine the angular difference between the longitudes of two points and subsequently calculate the bearing
+    //  between them using trigonometric functions.
     double dLon = lon2 - lon1;
-    // do some math
+
+    // Next, the code performs some mathematical calculations to determine the bearing between the two points. The bearing represents
+    // the angle between the direction from pointA to pointB and a reference direction, typically North.
+    // Multiplying the sine of dLon with the cosine of lat2 gives the value of the component y in a two-dimensional coordinate system.
+    // This component represents the north-south direction component of the bearing calculation.
     double y = Math.Sin(dLon) * Math.Cos(lat2);
+    // This (x) component represents the east-west direction component of the bearing calculation.
     double x = Math.Cos(lat1) * Math.Sin(lat2) - Math.Sin(lat1) * Math.Cos(lat2) * Math.Cos(dLon);
-    // get the bearing
+
+    // In the context of the bearing calculation, y represents the north-south component, and x represents the east-west component. By passing these two components to Math.Atan2,
+    // the code calculates the angle between the north direction and the line connecting the two points.
     double bearing = Math.Atan2(y, x);
+
+    // convert the angle from radians to degrees.
     bearing = bearing * 180 / Math.PI;
+
+    // The bearing is adjusted to ensure it falls within the range of 0 to 360 degrees by adding 360 and taking the modulo (%) 360 of the result.
+    // This step is necessary because the Math.Atan2 function returns values between -180 and 180 degrees.
     bearing = (bearing + 360) % 360;
+
     return bearing;
   }
 

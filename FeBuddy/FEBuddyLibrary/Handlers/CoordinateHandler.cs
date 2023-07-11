@@ -1,4 +1,5 @@
 ﻿using FEBuddyLibrary.Models.Location;
+using Microsoft.VisualBasic;
 using System.Runtime.CompilerServices;
 
 [assembly: InternalsVisibleTo("UnitTests")]
@@ -170,12 +171,17 @@ public class CoordinateHandler
   /// <returns>List<Location>: Returns a list that has four locations in it. Starting Point, AM Point 1, AM Point 2, Ending Point</returns>
   public static List<Location> SplitLineSegmentAtAntimeridian(Location pointA, Location pointB)
   {
-    // Variables needed to split the Line at the AM. 
-    Location startPoint = new Location(pointA.DecLat, pointA.DecLon);
-    Location endPoint = new Location(pointB.DecLat, pointB.DecLon);
+    // Variables needed to split the Line at the AM.
     double antimeridianStartLongitude;
     double antimeridianEndLongitude;
     double antimeridianIntersectionLatitude;
+
+    //The reason for creating these new Location objects is to have separate variables to work with,
+    //which allows the code to perform operations on them without modifying the original pointA and pointB objects directly.
+    //This approach is often used to keep the original data intact while performing operations or calculations on temporary copies or derived values.
+    //It helps maintain the integrity of the original data and makes it easier to reason about the transformations being applied.
+    Location startPoint = new Location(pointA.DecLat, pointA.DecLon);
+    Location endPoint = new Location(pointB.DecLat, pointB.DecLon);
 
     // Calculate the AM Longitiude ( Always -180 or 180 )
     // The variables antimeridianStartLongitude and antimeridianEndLongitude are assigned the value -180 or 180 based on whether
@@ -197,7 +203,16 @@ public class CoordinateHandler
     endPoint.DecLon = endPoint.DecLon < 0 ? endPoint.DecLon + 180 : endPoint.DecLon - 180;
 
     // Calculate the AM Lattitude
+    // the slope helps us determine how the latitude changes as we move along the line segment.
+    // Multiplying the slope by the distance from the starting point to the antimeridian allows us to calculate the corresponding change in latitude.
+    // This information is then used to determine the latitude at which the line segment intersects the antimeridian.
+    // Slope Calculation:
+    //  The numerator (pointA.DecLat - pointB.DecLat) represents the difference in latitude between pointA and pointB.
+    //  The denominator(startPoint.DecLon -endPoint.DecLon) represents the difference in longitude between startPoint and endPoint.
     var slope = (pointA.DecLat - pointB.DecLat) / (startPoint.DecLon - endPoint.DecLon);
+
+    // (slope * startPoint.DecLon) represents the change in latitude based on the slope and the longitude.
+    // Subtracting this value from pointA.DecLat gives the latitude at the intersection point.
     antimeridianIntersectionLatitude = pointA.DecLat - (slope * startPoint.DecLon);
 
     // Create Location Classes for the AM Points.

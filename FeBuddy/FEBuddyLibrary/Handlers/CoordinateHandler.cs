@@ -1,5 +1,7 @@
 ﻿using FEBuddyLibrary.Models.Location;
+using System.Runtime.CompilerServices;
 
+[assembly: InternalsVisibleTo("UnitTests")]
 namespace FEBuddyLibrary.Handlers;
 /// <summary>
 /// A static class that handles all logic for coordinate math and conversions.
@@ -174,13 +176,17 @@ public class CoordinateHandler
     double midPointStartLon;
     double midPointEndLon;
     double midPointLat;
+    
+    // Calculate the AM Longitiude ( Always -180 or 180 )
+    midPointStartLon = pointA.DecLon < 0 ? -180 : 180;
+    midPointEndLon = pointB.DecLon < 0 ? -180 : 180;
 
-    // Calculate the AM Longitiude
-    midPointStartLon = CalculateAntimeridianLongitude(startLocation.DecLon < 0 ? startLocation.DecLon + 180 : startLocation.DecLon - 180);
-    midPointEndLon = CalculateAntimeridianLongitude(endLocation.DecLat < 0 ? endLocation.DecLat + 180 : endLocation.DecLat - 180);
+    startLocation.DecLon = startLocation.DecLon < 0 ? startLocation.DecLon + 180 : startLocation.DecLon - 180;
+    endLocation.DecLon = endLocation.DecLon < 0 ? endLocation.DecLon + 180 : endLocation.DecLon - 180;
 
     // Calculate the AM Lattitude
-    midPointLat = CalculateAntimeridianLatitude(pointA, pointB);
+    var slope = (pointA.DecLat - pointB.DecLat) / (startLocation.DecLon - endLocation.DecLon);
+    midPointLat = pointA.DecLat - (slope * startLocation.DecLon);
 
     // Create Location Classes for the AM Points.
     var midPointStart = new Location(midPointLat, midPointStartLon);
@@ -188,31 +194,5 @@ public class CoordinateHandler
 
     // Return a List of Locations Starting Point, AM Point 1, AM Point 2, Ending Point
     return new List<Location>() { pointA, midPointStart, midPointEnd, pointB};
-  }
-
-  // ---------- Private Methods ---------- 
-
-  /// <summary>
-  /// Calculate the Latitude for the antimeridian
-  /// </summary>
-  /// <param name="pointA">Location: Starting point</param>
-  /// <param name="pointB">Location: Ending point</param>
-  /// <returns>double: Returns the calculated Antimeridian Latitude</returns>
-  private static double CalculateAntimeridianLatitude(Location pointA, Location pointB)
-  {
-    // Get the slope so that we can determine what the latitude needs to be. 
-    var slope = (pointA.DecLat - pointB.DecLat) / (pointA.DecLon - pointB.DecLon);
-    return pointA.DecLat - (slope * pointA.DecLon);
-  }
-
-  /// <summary>
-  /// Calculate the antimeridian Longitude.
-  /// </summary>
-  /// <param name="longitude">double: Longitude from either Starting Location or Ending Location</param>
-  /// <returns>double: Returns the antimeridian Longitude, Always 180 or -180.</returns>
-  private static double CalculateAntimeridianLongitude(double longitude)
-  {
-    // Returns positive 180 if the longitude passed in is greater than zero, else return negative 180
-    return longitude < 0 ? longitude + 180 : longitude - 180;
   }
 }

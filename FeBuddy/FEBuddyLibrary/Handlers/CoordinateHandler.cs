@@ -21,8 +21,8 @@ public class CoordinateHandler
   /// <returns>bool: Returns true if the Latitude AND Longitude are valid Decimals, otherwise returns False.</returns>
   public static bool IsValidDecimal(double latitude, double longitude)
   {
-    bool isValidLatitude = latitude > -90 && latitude < 90;
-    bool isValidLongitude = longitude > -180 && longitude < 180;
+    bool isValidLatitude = latitude >= -90 && latitude <= 90;
+    bool isValidLongitude = longitude >= -180 && longitude <= 180;
 
     return isValidLatitude && isValidLongitude;
   }

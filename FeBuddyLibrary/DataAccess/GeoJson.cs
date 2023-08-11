@@ -1003,34 +1003,76 @@ namespace FeBuddyLibrary.DataAccess
 
             if (string.IsNullOrEmpty(element.Filters) || string.IsNullOrWhiteSpace(element.Filters))
             {
-                var defaultFiltersList = getFilters(geoMapObject, element.XsiType);
-                if (defaultFiltersList.Length == 0) { defaultFiltersList = defaultFiltersList.Append(-1).ToArray(); }
-                foreach (var defaultFilters in defaultFiltersList)
-                {
-                    if (defaultFilters == -1)
-                    {
-                        filterDir = "MISSING DEFAULTS";
-                        fileName = $"FILTER MM__TDM {geoMapObject.TdmOnly.ToString()[0]}__{element.XsiType}{combinedProperties}";
-                        fullFilePath = Path.Combine(dirPath, filterDir, fileName + ".geojson");
-                        if (!output.Contains(fullFilePath)) { output.Add(fullFilePath); }
-                        continue;
-                    }
+                int[] defaultFiltersList = getFilters(geoMapObject, element.XsiType);
 
-                    filterDir = "FILTER " + defaultFilters.ToString().PadLeft(2, '0');
-                    fileName = $"FILTER {defaultFilters.ToString().PadLeft(2, '0')}__TDM {geoMapObject.TdmOnly.ToString()[0]}__{element.XsiType}{combinedProperties}";
+                if (defaultFiltersList.Length == 0) // Filter Defaults are missing, No custom overide filters either. 
+                {
+                    filterDir = "MISSING DEFAULTS";
+                    fileName = $"FILTER MM__TDM {geoMapObject.TdmOnly.ToString()[0]}__{element.XsiType}{combinedProperties}";
+                    fullFilePath = Path.Combine(dirPath, filterDir, fileName + ".geojson");
+                    if (!output.Contains(fullFilePath)) { output.Add(fullFilePath); }
+                }
+                else if (defaultFiltersList.Length > 1) // Filter Defaults have more than one Filter
+                {
+                    string multiFilterFolder = "MULTI FILTERS";
+                    filterDir = "FILTER";
+                    fileName = "FILTER";
+
+                    foreach (var filter in defaultFiltersList)
+                    {
+                        filterDir += " " + filter.ToString().PadLeft(2, '0');
+                        fileName += " " + $"{filter.ToString().PadLeft(2, '0')}";
+                    }
+                    fileName += $"__TDM {geoMapObject.TdmOnly.ToString()[0]}__{element.XsiType}{combinedProperties}";
+                    fullFilePath = Path.Combine(dirPath, multiFilterFolder, filterDir, fileName + ".geojson");
+                    if (!output.Contains(fullFilePath)) { output.Add(fullFilePath); }
+                }
+                else // Filter defaults has exactly one filter
+                {
+                    filterDir = "FILTER " + defaultFiltersList[0].ToString().PadLeft(2, '0');
+                    fileName = $"FILTER {defaultFiltersList[0].ToString().PadLeft(2, '0')}__TDM {geoMapObject.TdmOnly.ToString()[0]}__{element.XsiType}{combinedProperties}";
                     fullFilePath = Path.Combine(dirPath, filterDir, fileName + ".geojson");
                     if (!output.Contains(fullFilePath)) { output.Add(fullFilePath); }
                 }
             }
             else
             {
-                foreach (var customFilters in Array.ConvertAll(element.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty).Split(','), s => int.Parse(s)))
+                // Custom Override filters
+                int[] AllFilterGroups = Array.ConvertAll(element.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty).Split(','), s => int.Parse(s));
+
+                if (AllFilterGroups.Length > 1) // Custom Override filters have more than one Filter
                 {
-                    filterDir = "FILTER " + customFilters.ToString().PadLeft(2, '0');
-                    fileName = $"FILTER {customFilters.ToString().PadLeft(2, '0')}__TDM {geoMapObject.TdmOnly.ToString()[0]}__{element.XsiType}{combinedProperties}";
+                    string multiFilterFolder = "MULTI FILTERS";
+                    filterDir = "FILTER";
+                    fileName = "FILTER";
+
+                    foreach (var filter in AllFilterGroups)
+                    {
+                        filterDir += " " + filter.ToString().PadLeft(2, '0');
+                        fileName += " " + $"{filter.ToString().PadLeft(2, '0')}";
+                    }
+                    fileName += $"__TDM {geoMapObject.TdmOnly.ToString()[0]}__{element.XsiType}{combinedProperties}";
+                    fullFilePath = Path.Combine(dirPath, multiFilterFolder, filterDir, fileName + ".geojson");
+                    if (!output.Contains(fullFilePath)) { output.Add(fullFilePath); }
+                }
+                else // Custom Override filters has exactly one filter
+                {
+                    filterDir = "FILTER " + AllFilterGroups[0].ToString().PadLeft(2, '0');
+                    fileName = $"FILTER {AllFilterGroups[0].ToString().PadLeft(2, '0')}__TDM {geoMapObject.TdmOnly.ToString()[0]}__{element.XsiType}{combinedProperties}";
                     fullFilePath = Path.Combine(dirPath, filterDir, fileName + ".geojson");
                     if (!output.Contains(fullFilePath)) { output.Add(fullFilePath); }
                 }
+                
+
+
+                // THIS FUNCTION WILL CREATED DUPLICATE FILES FOR EACH FILTER IN THE LIST (ex. FILTER=1,2,3 will create 3 files each containing the same data)
+                //foreach (var customFilters in Array.ConvertAll(element.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty).Split(','), s => int.Parse(s)))
+                //{
+                //    filterDir = "FILTER " + customFilters.ToString().PadLeft(2, '0');
+                //    fileName = $"FILTER {customFilters.ToString().PadLeft(2, '0')}__TDM {geoMapObject.TdmOnly.ToString()[0]}__{element.XsiType}{combinedProperties}";
+                //    fullFilePath = Path.Combine(dirPath, filterDir, fileName + ".geojson");
+                //    if (!output.Contains(fullFilePath)) { output.Add(fullFilePath); }
+                //}
             }
 
             return output;

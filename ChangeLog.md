@@ -1,6 +1,10 @@
 # CHANGELOG
 
 ---
+- ## Version 2.6.6
+  - Geojson Output format by Filters no longer duplicate files that were
+    assined multiple filter indexes. 
+
 - ## Version 2.6.5
   - #148 Fixed an issue where if the GeoMap Object had multiple objects with 
     the same description, the converter would only output the last object.

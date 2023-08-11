@@ -966,6 +966,10 @@ namespace FeBuddyLibrary.DataAccess
                 foreach (var prop in ovPropertiesList)
                 {
                     if (prop == "") continue;
+                    if (prop.Contains("Filters")) 
+                    { 
+                        continue; 
+                    }
                     Regex regex= new Regex($"_({prop.Split(' ')[0]}[\\s\\S]*?.)[_|.]");
                     var matches = regex.Match(output).Groups[0].ToString();
                     output = regex.Replace(output, "_" + prop + "_");

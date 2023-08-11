@@ -1198,7 +1198,6 @@ namespace FeBuddyLibrary.DataAccess
             StringBuilder geoMapObjectLog = new StringBuilder();
             foreach (GeoMap geoMap in geo.GeoMaps.GeoMap)
             {
-
                 geoMapObjectLog.AppendLine($"\n\n-------------------------------------------------------------------------------------------------------------------------------------------------\n\n");
                 geoMapObjectLog.AppendLine($"{geoMap.Name}");
 
@@ -1206,6 +1205,8 @@ namespace FeBuddyLibrary.DataAccess
 
                 foreach (GeoMapObject geoMapObject in geoMap.Objects.GeoMapObject)
                 {
+
+                    // TODO: The log file is duplicating lines inside if they have duplicate description names/info.
                     geoMapObjectLog.AppendLine($"\n\n\tDescription: {geoMapObject.Description}");
                     geoMapObjectLog.AppendLine($"\t\tTDM: {geoMapObject.TdmOnly}");
 

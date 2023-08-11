@@ -1120,6 +1120,8 @@ namespace FeBuddyLibrary.DataAccess
                                 case "Symbol":
                                     {
                                         var featureToBeAdded = CreateSymbolFeature(element);
+                                        // Add defaults to feature if they exist
+
                                         if (featureToBeAdded != null) { FileFeatures[elementFilePath].features.Add(featureToBeAdded); }
                                         else { _errorLog.AppendLine($"{geoMap.Name}  {geoMapObject.Description}  SYMBOL  {element.Lat} {element.Lon}: \n\t- Was not added to geojson because <SymbolDefaults> was not found for this map.\n\n\n"); }
                                         break;
@@ -1127,6 +1129,8 @@ namespace FeBuddyLibrary.DataAccess
                                 case "Text":
                                     {
                                         var featureToBeAdded = CreateTextFeature(element);
+                                        // Add defaults to feature if they exist
+
                                         if (featureToBeAdded != null) { FileFeatures[elementFilePath].features.Add(featureToBeAdded); }
                                         else { _errorLog.AppendLine($"{geoMap.Name}  {geoMapObject.Description}  TEXT  {element.Lat} {element.Lon}: \n\t- Was not added to geojson because <TextDefaults> was not found for this map.\n\n\n"); }
                                         break;
@@ -1376,6 +1380,9 @@ namespace FeBuddyLibrary.DataAccess
                 }
                 else
                 {
+                    // BUG #151: Possible fix for this issue, check the reverse. ex. End coords do not match Start coords of previous element.
+
+
                     // If start coords do NOT match end coords of previous element
                     if ((LatLonHelpers.CorrectIlleagleLon(element.StartLon).ToString() + " " + element.StartLat.ToString() != LatLonHelpers.CorrectIlleagleLon(prevElement.EndLon).ToString() + " " + prevElement.EndLat.ToString())
                         || (LatLonHelpers.CorrectIlleagleLon(element.EndLon).ToString() + " " + element.EndLat.ToString() != LatLonHelpers.CorrectIlleagleLon(prevElement.StartLon).ToString() + " " + prevElement.StartLat.ToString()))

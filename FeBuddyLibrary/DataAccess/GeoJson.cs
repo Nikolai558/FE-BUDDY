@@ -966,10 +966,6 @@ namespace FeBuddyLibrary.DataAccess
                 foreach (var prop in ovPropertiesList)
                 {
                     if (prop == "") continue;
-                    if (prop.Contains("Filters")) 
-                    { 
-                        continue; 
-                    }
                     Regex regex= new Regex($"_({prop.Split(' ')[0]}[\\s\\S]*?.)[_|.]");
                     var matches = regex.Match(output).Groups[0].ToString();
                     output = regex.Replace(output, "_" + prop + "_");
@@ -1101,6 +1097,7 @@ namespace FeBuddyLibrary.DataAccess
                 foreach (GeoMapObject geoMapObject in geoMap.Objects.GeoMapObject)
                 {
                     Dictionary<string, List<Element>> AllLines = new Dictionary<string, List<Element>>();
+                    Dictionary<string, Feature> AllLinesDefaults = new Dictionary<string, Feature>();
                     foreach (Element element in geoMapObject.Elements.Element)
                     {
                         // figure out how to get new Full file path added to list above
@@ -1120,7 +1117,29 @@ namespace FeBuddyLibrary.DataAccess
                                 case "Symbol":
                                     {
                                         var featureToBeAdded = CreateSymbolFeature(element);
-                                        // Add defaults to feature if they exist
+
+                                        if (geoMapObject.SymbolDefaults != null && (FileFeatures[elementFilePath].features.Count() == 0 || (!FileFeatures[elementFilePath].features[0].properties.isSymbolDefaults ?? true)))
+                                        {
+                                            // Add defaults to feature if they exist
+                                            Feature defaultFeature = new Feature()
+                                            {
+                                                type = "Feature",
+                                                geometry = new Geometry()
+                                                {
+                                                    type = "Point",
+                                                    coordinates = new List<dynamic>() { 90.0, 180.0 }
+                                                },
+                                                properties = new Properties()
+                                                {
+                                                    isSymbolDefaults = true,
+                                                    bcg = geoMapObject.SymbolDefaults?.Bcg ?? null,
+                                                    filters = Array.ConvertAll(geoMapObject.SymbolDefaults?.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty).Split(',') ?? new string[] { }, s => int.Parse(s)),
+                                                    style = geoMapObject.SymbolDefaults?.Style ?? null,
+                                                    size = geoMapObject.SymbolDefaults?.Size ?? null,
+                                                }
+                                            };
+                                            FileFeatures[elementFilePath].features.Add(defaultFeature);
+                                        }
 
                                         if (featureToBeAdded != null) { FileFeatures[elementFilePath].features.Add(featureToBeAdded); }
                                         else { _errorLog.AppendLine($"{geoMap.Name}  {geoMapObject.Description}  SYMBOL  {element.Lat} {element.Lon}: \n\t- Was not added to geojson because <SymbolDefaults> was not found for this map.\n\n\n"); }
@@ -1129,7 +1148,32 @@ namespace FeBuddyLibrary.DataAccess
                                 case "Text":
                                     {
                                         var featureToBeAdded = CreateTextFeature(element);
-                                        // Add defaults to feature if they exist
+
+                                        if (geoMapObject.TextDefaults != null && (FileFeatures[elementFilePath].features.Count() == 0 || (!FileFeatures[elementFilePath].features[0].properties.isTextDefaults ?? true)))
+                                        {
+                                            // Add defaults to feature if they exist
+                                            Feature defaultFeature = new Feature()
+                                            {
+                                                type = "Feature",
+                                                geometry = new Geometry()
+                                                {
+                                                    type = "Point",
+                                                    coordinates = new List<dynamic>() { 90.0, 180.0 }
+                                                },
+                                                properties = new Properties()
+                                                {
+                                                    isTextDefaults = true,
+                                                    bcg = geoMapObject.TextDefaults?.Bcg ?? null,
+                                                    filters = Array.ConvertAll(geoMapObject.TextDefaults?.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty).Split(',') ?? new string[] { }, s => int.Parse(s)),
+                                                    size = geoMapObject.TextDefaults?.Size ?? null,
+                                                    underline = geoMapObject.TextDefaults?.Underline ?? null,
+                                                    opaque = geoMapObject.TextDefaults?.Opaque ?? null,
+                                                    xOffset = geoMapObject.TextDefaults?.XOffset ?? null,
+                                                    yOffset = geoMapObject.TextDefaults?.YOffset ?? null,
+                                                }
+                                            };
+                                            FileFeatures[elementFilePath].features.Add(defaultFeature);
+                                        }
 
                                         if (featureToBeAdded != null) { FileFeatures[elementFilePath].features.Add(featureToBeAdded); }
                                         else { _errorLog.AppendLine($"{geoMap.Name}  {geoMapObject.Description}  TEXT  {element.Lat} {element.Lon}: \n\t- Was not added to geojson because <TextDefaults> was not found for this map.\n\n\n"); }
@@ -1140,6 +1184,23 @@ namespace FeBuddyLibrary.DataAccess
                                         // TODO - Double check why we do this code below......
                                         if (geoMapObject.LineDefaults == null) { _errorLog.AppendLine($"{geoMap.Name}  {geoMapObject.Description}  LINE  {element.StartLat} {element.StartLon}  {element.EndLat} {element.EndLon}: \n\t- Was not added to geojson because <LineDefaults> was not found for this map.\n\n\n"); }
                                         AllLines.TryAdd(elementFilePath, new List<Element>());
+                                        AllLinesDefaults.TryAdd(elementFilePath, new Feature()
+                                        {
+                                            type = "Feature",
+                                            geometry = new Geometry()
+                                            {
+                                                type = "Point",
+                                                coordinates = new List<dynamic>() { 90.0, 180.0 }
+                                            },
+                                            properties = new Properties()
+                                            {
+                                                isLineDefaults = true,
+                                                bcg = geoMapObject.LineDefaults?.Bcg ?? null,
+                                                filters = Array.ConvertAll(geoMapObject.LineDefaults?.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty).Split(',') ?? new string[] { }, s => int.Parse(s)),
+                                                style = geoMapObject.LineDefaults?.Style ?? null,
+                                                thickness = geoMapObject.LineDefaults?.Thickness ?? null,
+                                            }
+                                        });
                                         AllLines[elementFilePath].Add(element);
                                         break;
                                     }
@@ -1156,6 +1217,11 @@ namespace FeBuddyLibrary.DataAccess
                             {
                                 if (item != null)
                                 {
+                                    if (FileFeatures[filePathKey].features.Count() == 0 || (!FileFeatures[filePathKey].features[0].properties.isLineDefaults ?? true))
+                                    {
+                                        FileFeatures[filePathKey].features.Add(AllLinesDefaults[filePathKey]);
+                                    }
+
                                     FileFeatures[filePathKey].features.Add(item);
                                 }
                             }

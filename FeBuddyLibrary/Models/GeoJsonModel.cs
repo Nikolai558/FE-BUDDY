@@ -30,6 +30,9 @@ namespace FeBuddyLibrary.Models
 
     public class Properties
     {
+        public bool? isSymbolDefaults { get; set; } = null;
+        public bool? isLineDefaults { get; set; } = null;
+        public bool? isTextDefaults { get; set; } = null;
         // [ALL]
         public string color { get; set; } = null;  // Hex color String 
         // [ALL]

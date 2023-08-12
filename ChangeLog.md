@@ -3,7 +3,10 @@
 ---
 - ## Version 2.6.6
   - Geojson Output format by Filters no longer duplicate files that were
-    assined multiple filter indexes. 
+    assined multiple filter indexes.
+    - Tooltip examples updated to reflect new format
+  - Geojson by Attribute file name no longer duplicates filter index values.
+  - vSTARS/vERAM to Geojson output files now include line, text, and symbol defaults.
 
 - ## Version 2.6.5
   - #148 Fixed an issue where if the GeoMap Object had multiple objects with 

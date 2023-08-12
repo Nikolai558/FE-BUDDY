@@ -588,7 +588,7 @@ namespace FeBuddyWinFormUI
 
         private void combineLikeGeoMapObjButton_MouseHover(object sender, EventArgs e)
         {
-            _toolTip.SetToolTip(combineLikeGeoMapObjButton, "Example:\n\nFILTER 13___LINES___TDM F___BCG 11___Style Solid___Thickness 1.geojson\r\nFILTER 08___TEXT___TDM F___BCG 8___Size 1___Underline false___Opaque true___XOffset 0___YOffset 0.geojson");
+            _toolTip.SetToolTip(combineLikeGeoMapObjButton, "Example:\n\nFILTER 13___LINES___TDM F___BCG 11___Style Solid___Thickness 1.geojson\r\nFILTER 08___TEXT___TDM F___BCG 8___Size 1___Underline false___Opaque true___XOffset 0___YOffset 0.geojson\r\nFILTER 04 13 18___LINES___TDM F___BCG 5___Style Solid___Thickness 2.geojson");
         }
     }
 }

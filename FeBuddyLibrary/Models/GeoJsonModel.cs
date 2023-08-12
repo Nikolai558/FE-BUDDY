@@ -20,6 +20,25 @@ namespace FeBuddyLibrary.Models
         public string type { get; set; } = "Feature";
         public Geometry geometry { get; set; } = new Geometry();
         public Properties properties { get; set; } = new Properties();
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(this, obj)) return true;
+            if (obj == null || GetType() != obj.GetType()) return false;
+            
+            var other = (Feature)obj;
+
+            if (geometry == null && other.geometry == null) return true;
+            if (geometry == null || other.geometry == null) return false;
+
+            if (!geometry.coordinates.SequenceEqual(other.geometry.coordinates)) { return false; }
+
+            if (properties == null && other.properties == null) return true;
+            if (properties == null || other.properties == null) return false;
+
+            if (!properties.Equals(other.properties)) { return false; }
+
+            return true;
+        }
     }
 
     public class Geometry
@@ -106,7 +125,8 @@ namespace FeBuddyLibrary.Models
                 asdex != other.asdex || size != other.size ||
                 text != other.text || underline != other.underline ||
                 opaque != other.opaque || xOffset != other.xOffset ||
-                yOffset != other.yOffset)
+                yOffset != other.yOffset ||
+                isTextDefaults != other.isTextDefaults || isLineDefaults != other.isLineDefaults || isSymbolDefaults != other.isSymbolDefaults)
             {
                 
                 return false;

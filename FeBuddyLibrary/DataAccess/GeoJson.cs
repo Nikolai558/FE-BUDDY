@@ -19,6 +19,7 @@ using FeBuddyLibrary.Dxf.Data;
 using FeBuddyLibrary.Dxf.Models;
 using System.Drawing.Design;
 using System.Runtime.ExceptionServices;
+using System.Runtime.CompilerServices;
 
 namespace FeBuddyLibrary.DataAccess
 {
@@ -563,6 +564,21 @@ namespace FeBuddyLibrary.DataAccess
                     allFeatures = CreateLineStringVideoMap(videoMapObject.Elements.Element, colors);
                 }
 
+                geojson.features.Add(new Feature()
+                {
+                    type = "Feature",
+                    geometry = new Geometry()
+                    {
+                        type = "Point",
+                        coordinates = new List<dynamic>() { 90.0, 180.0 }
+                    },
+                    properties = new Properties()
+                    {
+                        isLineDefaults = true,
+                        style = "solid",
+                        thickness = 1,
+                    }
+                });
 
                 geojson.features.AddRange(allFeatures);
 
@@ -1003,34 +1019,76 @@ namespace FeBuddyLibrary.DataAccess
 
             if (string.IsNullOrEmpty(element.Filters) || string.IsNullOrWhiteSpace(element.Filters))
             {
-                var defaultFiltersList = getFilters(geoMapObject, element.XsiType);
-                if (defaultFiltersList.Length == 0) { defaultFiltersList = defaultFiltersList.Append(-1).ToArray(); }
-                foreach (var defaultFilters in defaultFiltersList)
-                {
-                    if (defaultFilters == -1)
-                    {
-                        filterDir = "MISSING DEFAULTS";
-                        fileName = $"FILTER MM__TDM {geoMapObject.TdmOnly.ToString()[0]}__{element.XsiType}{combinedProperties}";
-                        fullFilePath = Path.Combine(dirPath, filterDir, fileName + ".geojson");
-                        if (!output.Contains(fullFilePath)) { output.Add(fullFilePath); }
-                        continue;
-                    }
+                int[] defaultFiltersList = getFilters(geoMapObject, element.XsiType);
 
-                    filterDir = "FILTER " + defaultFilters.ToString().PadLeft(2, '0');
-                    fileName = $"FILTER {defaultFilters.ToString().PadLeft(2, '0')}__TDM {geoMapObject.TdmOnly.ToString()[0]}__{element.XsiType}{combinedProperties}";
+                if (defaultFiltersList.Length == 0) // Filter Defaults are missing, No custom overide filters either. 
+                {
+                    filterDir = "MISSING DEFAULTS";
+                    fileName = $"FILTER MM__TDM {geoMapObject.TdmOnly.ToString()[0]}__{element.XsiType}{combinedProperties}";
+                    fullFilePath = Path.Combine(dirPath, filterDir, fileName + ".geojson");
+                    if (!output.Contains(fullFilePath)) { output.Add(fullFilePath); }
+                }
+                else if (defaultFiltersList.Length > 1) // Filter Defaults have more than one Filter
+                {
+                    string multiFilterFolder = "MULTI FILTERS";
+                    filterDir = "FILTER";
+                    fileName = "FILTER";
+
+                    foreach (var filter in defaultFiltersList)
+                    {
+                        filterDir += " " + filter.ToString().PadLeft(2, '0');
+                        fileName += " " + $"{filter.ToString().PadLeft(2, '0')}";
+                    }
+                    fileName += $"__TDM {geoMapObject.TdmOnly.ToString()[0]}__{element.XsiType}{combinedProperties}";
+                    fullFilePath = Path.Combine(dirPath, multiFilterFolder, filterDir, fileName + ".geojson");
+                    if (!output.Contains(fullFilePath)) { output.Add(fullFilePath); }
+                }
+                else // Filter defaults has exactly one filter
+                {
+                    filterDir = "FILTER " + defaultFiltersList[0].ToString().PadLeft(2, '0');
+                    fileName = $"FILTER {defaultFiltersList[0].ToString().PadLeft(2, '0')}__TDM {geoMapObject.TdmOnly.ToString()[0]}__{element.XsiType}{combinedProperties}";
                     fullFilePath = Path.Combine(dirPath, filterDir, fileName + ".geojson");
                     if (!output.Contains(fullFilePath)) { output.Add(fullFilePath); }
                 }
             }
             else
             {
-                foreach (var customFilters in Array.ConvertAll(element.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty).Split(','), s => int.Parse(s)))
+                // Custom Override filters
+                int[] AllFilterGroups = Array.ConvertAll(element.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty).Split(','), s => int.Parse(s));
+
+                if (AllFilterGroups.Length > 1) // Custom Override filters have more than one Filter
                 {
-                    filterDir = "FILTER " + customFilters.ToString().PadLeft(2, '0');
-                    fileName = $"FILTER {customFilters.ToString().PadLeft(2, '0')}__TDM {geoMapObject.TdmOnly.ToString()[0]}__{element.XsiType}{combinedProperties}";
+                    string multiFilterFolder = "MULTI FILTERS";
+                    filterDir = "FILTER";
+                    fileName = "FILTER";
+
+                    foreach (var filter in AllFilterGroups)
+                    {
+                        filterDir += " " + filter.ToString().PadLeft(2, '0');
+                        fileName += " " + $"{filter.ToString().PadLeft(2, '0')}";
+                    }
+                    fileName += $"__TDM {geoMapObject.TdmOnly.ToString()[0]}__{element.XsiType}{combinedProperties}";
+                    fullFilePath = Path.Combine(dirPath, multiFilterFolder, filterDir, fileName + ".geojson");
+                    if (!output.Contains(fullFilePath)) { output.Add(fullFilePath); }
+                }
+                else // Custom Override filters has exactly one filter
+                {
+                    filterDir = "FILTER " + AllFilterGroups[0].ToString().PadLeft(2, '0');
+                    fileName = $"FILTER {AllFilterGroups[0].ToString().PadLeft(2, '0')}__TDM {geoMapObject.TdmOnly.ToString()[0]}__{element.XsiType}{combinedProperties}";
                     fullFilePath = Path.Combine(dirPath, filterDir, fileName + ".geojson");
                     if (!output.Contains(fullFilePath)) { output.Add(fullFilePath); }
                 }
+                
+
+
+                // THIS FUNCTION WILL CREATED DUPLICATE FILES FOR EACH FILTER IN THE LIST (ex. FILTER=1,2,3 will create 3 files each containing the same data)
+                //foreach (var customFilters in Array.ConvertAll(element.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty).Split(','), s => int.Parse(s)))
+                //{
+                //    filterDir = "FILTER " + customFilters.ToString().PadLeft(2, '0');
+                //    fileName = $"FILTER {customFilters.ToString().PadLeft(2, '0')}__TDM {geoMapObject.TdmOnly.ToString()[0]}__{element.XsiType}{combinedProperties}";
+                //    fullFilePath = Path.Combine(dirPath, filterDir, fileName + ".geojson");
+                //    if (!output.Contains(fullFilePath)) { output.Add(fullFilePath); }
+                //}
             }
 
             return output;
@@ -1055,6 +1113,7 @@ namespace FeBuddyLibrary.DataAccess
                 foreach (GeoMapObject geoMapObject in geoMap.Objects.GeoMapObject)
                 {
                     Dictionary<string, List<Element>> AllLines = new Dictionary<string, List<Element>>();
+                    Dictionary<string, Feature> AllLinesDefaults = new Dictionary<string, Feature>();
                     foreach (Element element in geoMapObject.Elements.Element)
                     {
                         // figure out how to get new Full file path added to list above
@@ -1074,6 +1133,30 @@ namespace FeBuddyLibrary.DataAccess
                                 case "Symbol":
                                     {
                                         var featureToBeAdded = CreateSymbolFeature(element);
+
+                                        if (geoMapObject.SymbolDefaults != null && (FileFeatures[elementFilePath].features.Count() == 0 || (!FileFeatures[elementFilePath].features[0].properties.isSymbolDefaults ?? true)))
+                                        {
+                                            // Add defaults to feature if they exist
+                                            Feature defaultFeature = new Feature()
+                                            {
+                                                type = "Feature",
+                                                geometry = new Geometry()
+                                                {
+                                                    type = "Point",
+                                                    coordinates = new List<dynamic>() { 90.0, 180.0 }
+                                                },
+                                                properties = new Properties()
+                                                {
+                                                    isSymbolDefaults = true,
+                                                    bcg = geoMapObject.SymbolDefaults?.Bcg ?? null,
+                                                    filters = geoMapObject.SymbolDefaults?.Filters?.Replace(" ", string.Empty)?.Replace("\t", string.Empty)?.Split(',')?.Where(s => !string.IsNullOrEmpty(s)).Select(s => int.Parse(s)).ToArray() ?? Array.Empty<int>(),
+                                                    style = geoMapObject.SymbolDefaults?.Style ?? null,
+                                                    size = geoMapObject.SymbolDefaults?.Size ?? null,
+                                                }
+                                            };
+                                            FileFeatures[elementFilePath].features.Add(defaultFeature);
+                                        }
+
                                         if (featureToBeAdded != null) { FileFeatures[elementFilePath].features.Add(featureToBeAdded); }
                                         else { _errorLog.AppendLine($"{geoMap.Name}  {geoMapObject.Description}  SYMBOL  {element.Lat} {element.Lon}: \n\t- Was not added to geojson because <SymbolDefaults> was not found for this map.\n\n\n"); }
                                         break;
@@ -1081,6 +1164,33 @@ namespace FeBuddyLibrary.DataAccess
                                 case "Text":
                                     {
                                         var featureToBeAdded = CreateTextFeature(element);
+
+                                        if (geoMapObject.TextDefaults != null && (FileFeatures[elementFilePath].features.Count() == 0 || (!FileFeatures[elementFilePath].features[0].properties.isTextDefaults ?? true)))
+                                        {
+                                            // Add defaults to feature if they exist
+                                            Feature defaultFeature = new Feature()
+                                            {
+                                                type = "Feature",
+                                                geometry = new Geometry()
+                                                {
+                                                    type = "Point",
+                                                    coordinates = new List<dynamic>() { 90.0, 180.0 }
+                                                },
+                                                properties = new Properties()
+                                                {
+                                                    isTextDefaults = true,
+                                                    bcg = geoMapObject.TextDefaults?.Bcg ?? null,
+                                                    filters = geoMapObject.TextDefaults?.Filters?.Replace(" ", string.Empty)?.Replace("\t", string.Empty)?.Split(',')?.Where(s => !string.IsNullOrEmpty(s)).Select(s => int.Parse(s)).ToArray() ?? Array.Empty<int>(),
+                                                    size = geoMapObject.TextDefaults?.Size ?? null,
+                                                    underline = geoMapObject.TextDefaults?.Underline ?? null,
+                                                    opaque = geoMapObject.TextDefaults?.Opaque ?? null,
+                                                    xOffset = geoMapObject.TextDefaults?.XOffset ?? null,
+                                                    yOffset = geoMapObject.TextDefaults?.YOffset ?? null,
+                                                }
+                                            };
+                                            FileFeatures[elementFilePath].features.Add(defaultFeature);
+                                        }
+
                                         if (featureToBeAdded != null) { FileFeatures[elementFilePath].features.Add(featureToBeAdded); }
                                         else { _errorLog.AppendLine($"{geoMap.Name}  {geoMapObject.Description}  TEXT  {element.Lat} {element.Lon}: \n\t- Was not added to geojson because <TextDefaults> was not found for this map.\n\n\n"); }
                                         break;
@@ -1090,6 +1200,23 @@ namespace FeBuddyLibrary.DataAccess
                                         // TODO - Double check why we do this code below......
                                         if (geoMapObject.LineDefaults == null) { _errorLog.AppendLine($"{geoMap.Name}  {geoMapObject.Description}  LINE  {element.StartLat} {element.StartLon}  {element.EndLat} {element.EndLon}: \n\t- Was not added to geojson because <LineDefaults> was not found for this map.\n\n\n"); }
                                         AllLines.TryAdd(elementFilePath, new List<Element>());
+                                        AllLinesDefaults.TryAdd(elementFilePath, new Feature()
+                                        {
+                                            type = "Feature",
+                                            geometry = new Geometry()
+                                            {
+                                                type = "Point",
+                                                coordinates = new List<dynamic>() { 90.0, 180.0 }
+                                            },
+                                            properties = new Properties()
+                                            {
+                                                isLineDefaults = true,
+                                                bcg = geoMapObject.LineDefaults?.Bcg ?? null,
+                                                filters = geoMapObject.LineDefaults?.Filters?.Replace(" ", string.Empty)?.Replace("\t", string.Empty)?.Split(',')?.Where(s => !string.IsNullOrEmpty(s)).Select(s => int.Parse(s)).ToArray() ?? Array.Empty<int>(),
+                                                style = geoMapObject.LineDefaults?.Style ?? null,
+                                                thickness = geoMapObject.LineDefaults?.Thickness ?? null,
+                                            }
+                                        });
                                         AllLines[elementFilePath].Add(element);
                                         break;
                                     }
@@ -1106,6 +1233,11 @@ namespace FeBuddyLibrary.DataAccess
                             {
                                 if (item != null)
                                 {
+                                    if (FileFeatures[filePathKey].features.Count() == 0 || (!FileFeatures[filePathKey].features[0].properties.isLineDefaults ?? true))
+                                    {
+                                        FileFeatures[filePathKey].features.Add(AllLinesDefaults[filePathKey]);
+                                    }
+
                                     FileFeatures[filePathKey].features.Add(item);
                                 }
                             }
@@ -1148,14 +1280,18 @@ namespace FeBuddyLibrary.DataAccess
             StringBuilder geoMapObjectLog = new StringBuilder();
             foreach (GeoMap geoMap in geo.GeoMaps.GeoMap)
             {
-
                 geoMapObjectLog.AppendLine($"\n\n-------------------------------------------------------------------------------------------------------------------------------------------------\n\n");
                 geoMapObjectLog.AppendLine($"{geoMap.Name}");
 
                 string geoMapDir = Path.Combine(dirPath, geoMap.Name);
 
+                int textdefaults = 0;
+                int symboldefaults = 0;
+                int linedefaults = 0;
                 foreach (GeoMapObject geoMapObject in geoMap.Objects.GeoMapObject)
                 {
+
+                    // TODO: The log file is duplicating lines inside if they have duplicate description names/info.
                     geoMapObjectLog.AppendLine($"\n\n\tDescription: {geoMapObject.Description}");
                     geoMapObjectLog.AppendLine($"\t\tTDM: {geoMapObject.TdmOnly}");
 
@@ -1173,6 +1309,24 @@ namespace FeBuddyLibrary.DataAccess
                     var geojson = new FeatureCollection();
 
                     List<Element> AllLines = new List<Element>();
+                    Feature AllLinesDefaults = new Feature()
+                    {
+                        type = "Feature",
+                        geometry = new Geometry()
+                        {
+                            type = "Point",
+                            coordinates = new List<dynamic>() { 90.0, 180.0 }
+                        },
+                        properties = new Properties()
+                        {
+                            isLineDefaults = true,
+                            bcg = geoMapObject.LineDefaults?.Bcg ?? null,
+                            filters = Array.ConvertAll(geoMapObject.LineDefaults?.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty).Split(',') ?? new string[] { }, s => int.Parse(s)),
+                            style = geoMapObject.LineDefaults?.Style ?? null,
+                            thickness = geoMapObject.LineDefaults?.Thickness ?? null,
+                        }
+                    };
+
                     foreach (Element element in geoMapObject.Elements.Element)
                     {
                         switch (element.XsiType)
@@ -1180,6 +1334,30 @@ namespace FeBuddyLibrary.DataAccess
                             case "Symbol": 
                                 {
                                     var featureToBeAdded = CreateSymbolFeature(element);
+
+                                    if (geoMapObject.SymbolDefaults != null && (geojson.features.Count() == 0 || (!geojson.features[0].properties.isSymbolDefaults ?? true)))
+                                    {
+                                        // Add defaults to feature if they exist
+                                        Feature defaultFeature = new Feature()
+                                        {
+                                            type = "Feature",
+                                            geometry = new Geometry()
+                                            {
+                                                type = "Point",
+                                                coordinates = new List<dynamic>() { 90.0, 180.0 }
+                                            },
+                                            properties = new Properties()
+                                            {
+                                                isSymbolDefaults = true,
+                                                bcg = geoMapObject.SymbolDefaults?.Bcg ?? null,
+                                                filters = Array.ConvertAll(geoMapObject.SymbolDefaults?.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty).Split(',') ?? new string[] { }, s => int.Parse(s)),
+                                                style = geoMapObject.SymbolDefaults?.Style ?? null,
+                                                size = geoMapObject.SymbolDefaults?.Size ?? null,
+                                            }
+                                        };
+                                        geojson.features.Add(defaultFeature);
+                                    }
+
                                     if (featureToBeAdded!= null) { geojson.features.Add(featureToBeAdded); }
                                     else { _errorLog.AppendLine($"{geoMap.Name}  {geoMapObject.Description}  SYMBOL  {element.Lat} {element.Lon}: \n\t- Was not added to geojson because <SymbolDefaults> was not found for this map.\n\n\n"); }
                                     break; 
@@ -1187,6 +1365,33 @@ namespace FeBuddyLibrary.DataAccess
                             case "Text": 
                                 {
                                     var featureToBeAdded = CreateTextFeature(element);
+
+                                    if (geoMapObject.TextDefaults != null && (geojson.features.Count() == 0 || (!geojson.features[0].properties.isTextDefaults ?? true)))
+                                    {
+                                        // Add defaults to feature if they exist
+                                        Feature defaultFeature = new Feature()
+                                        {
+                                            type = "Feature",
+                                            geometry = new Geometry()
+                                            {
+                                                type = "Point",
+                                                coordinates = new List<dynamic>() { 90.0, 180.0 }
+                                            },
+                                            properties = new Properties()
+                                            {
+                                                isTextDefaults = true,
+                                                bcg = geoMapObject.TextDefaults?.Bcg ?? null,
+                                                filters = Array.ConvertAll(geoMapObject.TextDefaults?.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty).Split(',') ?? new string[] { }, s => int.Parse(s)),
+                                                size = geoMapObject.TextDefaults?.Size ?? null,
+                                                underline = geoMapObject.TextDefaults?.Underline ?? null,
+                                                opaque = geoMapObject.TextDefaults?.Opaque ?? null,
+                                                xOffset = geoMapObject.TextDefaults?.XOffset ?? null,
+                                                yOffset = geoMapObject.TextDefaults?.YOffset ?? null,
+                                            }
+                                        };
+                                        geojson.features.Add(defaultFeature);
+                                    }
+
                                     if (featureToBeAdded != null) { geojson.features.Add(featureToBeAdded); }
                                     else { _errorLog.AppendLine($"{geoMap.Name}  {geoMapObject.Description}  TEXT  {element.Lat} {element.Lon}: \n\t- Was not added to geojson because <TextDefaults> was not found for this map.\n\n\n"); }
                                     break; 
@@ -1208,6 +1413,25 @@ namespace FeBuddyLibrary.DataAccess
                         {
                             if (item != null)
                             {
+                                int totalFeatureCount = geojson.features.Count();
+                                bool shouldAddDefaults = true;
+
+                                if (totalFeatureCount <= 3)
+                                {
+                                    for (int i = 0; i < totalFeatureCount; i++)
+                                    {
+                                        if (!(geojson.features[i].properties.isLineDefaults ?? true))
+                                        {
+                                            shouldAddDefaults = false;
+                                            break;
+                                        }
+                                    }
+                                    if (shouldAddDefaults)
+                                    {
+                                        geojson.features.Add(AllLinesDefaults);
+                                    }
+                                }
+
                                 geojson.features.Add(item);
                             }
                         }
@@ -1217,7 +1441,22 @@ namespace FeBuddyLibrary.DataAccess
                     if (File.Exists(file.FullName))
                     {
                         FeatureCollection inFile = JsonConvert.DeserializeObject<FeatureCollection>(File.ReadAllText(file.FullName));
-                        geojson.features.AddRange(inFile.features);
+
+                        if (HasSameDefaultValues(geojson, inFile))
+                        {
+                            // Combine the features with only ONE set of defaults
+                            // TODO - This will place the defaults whereever in the file.... Not right at the top.  
+                            geojson = CombineFeatureCollections(geojson, inFile);
+                        }
+                        else
+                        {
+                            // write the file with a '(#)' at the end of the name
+                            string newFileName = GetUniqueFileName(file.FullName);
+                            file = new FileInfo(newFileName);
+                        }
+
+
+                        //geojson.features.AddRange(inFile.features);
                     }
 
                     string jsonString = JsonConvert.SerializeObject(geojson, new JsonSerializerSettings { Formatting = Formatting.None, NullValueHandling = NullValueHandling.Ignore });
@@ -1234,6 +1473,102 @@ namespace FeBuddyLibrary.DataAccess
                 File.WriteAllText(errorFile.FullName, _errorLog.ToString());
             }
             File.WriteAllText(Path.Combine(dirPath, "GeoMapObject Properties.txt"), geoMapObjectLog.ToString());
+        }
+
+        private string GetUniqueFileName(string originalPath)
+        {
+            string directory = Path.GetDirectoryName(originalPath);
+            string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(originalPath);
+            string extension = Path.GetExtension(originalPath);
+            int count = 1;
+            string newPath = originalPath;
+            while (File.Exists(newPath))
+            {
+                string tempFileName = string.Format("{0} ({1})", fileNameWithoutExtension, count++);
+                newPath = Path.Combine(directory, tempFileName + extension);
+            }
+            return newPath;
+        }
+
+        private FeatureCollection CombineFeatureCollections(FeatureCollection obj1, FeatureCollection obj2)
+        {
+            FeatureCollection combined = new FeatureCollection();
+            FeatureCollection output = new FeatureCollection();
+            Dictionary<string, bool> addedDefaults = new Dictionary<string, bool>() { { "LineDefaults", false }, { "TextDefaults", false }, { "SymbolDefaults", false } };
+
+            foreach (var featureCollection in new[] {obj1, obj2})
+            {
+                foreach (var feature in featureCollection.features)
+                {
+                    bool addFeature = true;
+                    bool isDefaults = false;
+                    if (feature.properties.isLineDefaults ?? false)
+                    {
+                        addFeature = !addedDefaults["LineDefaults"];
+                        addedDefaults["LineDefaults"] = true;
+                        isDefaults = true;
+                    }
+
+                    if (feature.properties.isTextDefaults ?? false)
+                    {
+                        addFeature = !addedDefaults["TextDefaults"];
+                        addedDefaults["TextDefaults"] = true;
+                        isDefaults = true;
+                    }
+                    
+                    if (feature.properties.isSymbolDefaults ?? false)
+                    {
+                        addFeature = !addedDefaults["SymbolDefaults"];
+                        addedDefaults["SymbolDefaults"] = true;
+                        isDefaults = true;
+                    }
+
+                    if (addFeature && !isDefaults)
+                    {
+                        combined.features.Add(feature);
+                    }
+
+                    if (addFeature && isDefaults)
+                    {
+                        output.features.Add(feature);
+                    }
+                }
+            }
+
+            output.features.AddRange(combined.features);
+
+            return output;
+
+        }
+
+        private bool HasSameDefaultValues(FeatureCollection obj1, FeatureCollection obj2)
+        {
+            Dictionary<string, Feature> objOneDefaults = new Dictionary<string, Feature>() { { "LineDefaults", null }, {"SymbolDefaults", null }, {"TextDefaults" , null }};
+            Dictionary<string, Feature> objTwoDefaults = new Dictionary<string, Feature>() { { "LineDefaults", null }, {"SymbolDefaults", null }, {"TextDefaults" , null }};
+
+            foreach (var item in obj1.features)
+            {
+                if (item.properties.isLineDefaults ?? false) { objOneDefaults["LineDefaults"] = item; }
+                if (item.properties.isSymbolDefaults ?? false) { objOneDefaults["SymbolDefaults"] = item; }
+                if (item.properties.isTextDefaults ?? false) { objOneDefaults["TextDefaults"] = item; }
+            }
+
+            foreach (var item in obj2.features)
+            {
+                if (item.properties.isLineDefaults ?? false) { objTwoDefaults["LineDefaults"] = item; }
+                if (item.properties.isSymbolDefaults ?? false) { objTwoDefaults["SymbolDefaults"] = item; }
+                if (item.properties.isTextDefaults ?? false) { objTwoDefaults["TextDefaults"] = item; }
+            }
+
+            foreach (var key in objOneDefaults.Keys)
+            {
+                if (objOneDefaults[key] != null && objTwoDefaults[key] != null)
+                {
+                    if (!objOneDefaults[key].Equals(objTwoDefaults[key])) return false;
+                }
+            }
+            
+            return true;
         }
 
         private Properties CreateProperties(Element element)
@@ -1330,9 +1665,19 @@ namespace FeBuddyLibrary.DataAccess
                 }
                 else
                 {
+                    //if ((LatLonHelpers.CorrectIlleagleLon(element.StartLon).ToString() + " " + element.StartLat.ToString() != LatLonHelpers.CorrectIlleagleLon(prevElement.EndLon).ToString() + " " + prevElement.EndLat.ToString())
+                    //    || (LatLonHelpers.CorrectIlleagleLon(element.EndLon).ToString() + " " + element.EndLat.ToString() != LatLonHelpers.CorrectIlleagleLon(prevElement.StartLon).ToString() + " " + prevElement.StartLat.ToString()))
+
+                    var correctedStartLon = LatLonHelpers.CorrectIlleagleLon(element.StartLon).ToString();
+                    var correctedEndLon = LatLonHelpers.CorrectIlleagleLon(element.EndLon).ToString();
+                    var prevCorrectedEndLon = LatLonHelpers.CorrectIlleagleLon(prevElement.EndLon).ToString();
+                    var prevCorrectedStartLon = LatLonHelpers.CorrectIlleagleLon(prevElement.StartLon).ToString();
+
+                    var startEndMismatch = $"{correctedStartLon} {element.StartLat}" != $"{prevCorrectedEndLon} {prevElement.EndLat}";
+                    var endStartMismatch = $"{correctedEndLon} {element.EndLat}" != $"{prevCorrectedStartLon} {prevElement.StartLat}";
+
                     // If start coords do NOT match end coords of previous element
-                    if ((LatLonHelpers.CorrectIlleagleLon(element.StartLon).ToString() + " " + element.StartLat.ToString() != LatLonHelpers.CorrectIlleagleLon(prevElement.EndLon).ToString() + " " + prevElement.EndLat.ToString())
-                        || (LatLonHelpers.CorrectIlleagleLon(element.EndLon).ToString() + " " + element.EndLat.ToString() != LatLonHelpers.CorrectIlleagleLon(prevElement.StartLon).ToString() + " " + prevElement.StartLat.ToString()))
+                    if (startEndMismatch || endStartMismatch)
                     {
                         if (crossesAM)
                         {

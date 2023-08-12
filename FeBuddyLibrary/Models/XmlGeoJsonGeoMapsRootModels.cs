@@ -91,7 +91,7 @@ namespace FeBuddyLibrary.Models
 
         public override string ToString()
         {
-            return $"Line Defaults: BCG {Bcg}__Filters {Filters}__Style {Style}__Thickness {Thickness}";
+            return $"Line Defaults: BCG {Bcg}__Style {Style}__Thickness {Thickness}";
         }
     }
 
@@ -112,7 +112,7 @@ namespace FeBuddyLibrary.Models
 
         public override string ToString()
         {
-            return $"Symbol Defaults: BCG {Bcg}__Filters {Filters}__Style {Style}__Size {Size}";
+            return $"Symbol Defaults: BCG {Bcg}__Style {Style}__Size {Size}";
         }
 
     }
@@ -141,7 +141,7 @@ namespace FeBuddyLibrary.Models
         public int YOffset { get; set; }
         public override string ToString()
         {
-            return $"Text Defaults: BCG {Bcg}__Filters {Filters}__Size {Size}__Underline {Underline}__Opaque {Opaque}__XOffset {XOffset}__YOffset {YOffset}";
+            return $"Text Defaults: BCG {Bcg}__Size {Size}__Underline {Underline}__Opaque {Opaque}__XOffset {XOffset}__YOffset {YOffset}";
         }
     }
 

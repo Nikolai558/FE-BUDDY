@@ -564,6 +564,21 @@ namespace FeBuddyLibrary.DataAccess
                     allFeatures = CreateLineStringVideoMap(videoMapObject.Elements.Element, colors);
                 }
 
+                geojson.features.Add(new Feature()
+                {
+                    type = "Feature",
+                    geometry = new Geometry()
+                    {
+                        type = "Point",
+                        coordinates = new List<dynamic>() { 90.0, 180.0 }
+                    },
+                    properties = new Properties()
+                    {
+                        isLineDefaults = true,
+                        style = "solid",
+                        thickness = 1,
+                    }
+                });
 
                 geojson.features.AddRange(allFeatures);
 

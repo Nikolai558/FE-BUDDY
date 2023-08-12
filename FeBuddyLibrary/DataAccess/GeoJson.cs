@@ -1134,7 +1134,7 @@ namespace FeBuddyLibrary.DataAccess
                                                 {
                                                     isSymbolDefaults = true,
                                                     bcg = geoMapObject.SymbolDefaults?.Bcg ?? null,
-                                                    filters = Array.ConvertAll(geoMapObject.SymbolDefaults?.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty).Split(',') ?? new string[] { }, s => int.Parse(s)),
+                                                    filters = geoMapObject.SymbolDefaults?.Filters?.Replace(" ", string.Empty)?.Replace("\t", string.Empty)?.Split(',')?.Where(s => !string.IsNullOrEmpty(s)).Select(s => int.Parse(s)).ToArray() ?? Array.Empty<int>(),
                                                     style = geoMapObject.SymbolDefaults?.Style ?? null,
                                                     size = geoMapObject.SymbolDefaults?.Size ?? null,
                                                 }
@@ -1165,7 +1165,7 @@ namespace FeBuddyLibrary.DataAccess
                                                 {
                                                     isTextDefaults = true,
                                                     bcg = geoMapObject.TextDefaults?.Bcg ?? null,
-                                                    filters = Array.ConvertAll(geoMapObject.TextDefaults?.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty).Split(',') ?? new string[] { }, s => int.Parse(s)),
+                                                    filters = geoMapObject.TextDefaults?.Filters?.Replace(" ", string.Empty)?.Replace("\t", string.Empty)?.Split(',')?.Where(s => !string.IsNullOrEmpty(s)).Select(s => int.Parse(s)).ToArray() ?? Array.Empty<int>(),
                                                     size = geoMapObject.TextDefaults?.Size ?? null,
                                                     underline = geoMapObject.TextDefaults?.Underline ?? null,
                                                     opaque = geoMapObject.TextDefaults?.Opaque ?? null,
@@ -1197,7 +1197,7 @@ namespace FeBuddyLibrary.DataAccess
                                             {
                                                 isLineDefaults = true,
                                                 bcg = geoMapObject.LineDefaults?.Bcg ?? null,
-                                                filters = Array.ConvertAll(geoMapObject.LineDefaults?.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty).Split(',') ?? new string[] { }, s => int.Parse(s)),
+                                                filters = geoMapObject.LineDefaults?.Filters?.Replace(" ", string.Empty)?.Replace("\t", string.Empty)?.Split(',')?.Where(s => !string.IsNullOrEmpty(s)).Select(s => int.Parse(s)).ToArray() ?? Array.Empty<int>(),
                                                 style = geoMapObject.LineDefaults?.Style ?? null,
                                                 thickness = geoMapObject.LineDefaults?.Thickness ?? null,
                                             }
@@ -1650,12 +1650,19 @@ namespace FeBuddyLibrary.DataAccess
                 }
                 else
                 {
-                    // BUG #151: Possible fix for this issue, check the reverse. ex. End coords do not match Start coords of previous element.
+                    //if ((LatLonHelpers.CorrectIlleagleLon(element.StartLon).ToString() + " " + element.StartLat.ToString() != LatLonHelpers.CorrectIlleagleLon(prevElement.EndLon).ToString() + " " + prevElement.EndLat.ToString())
+                    //    || (LatLonHelpers.CorrectIlleagleLon(element.EndLon).ToString() + " " + element.EndLat.ToString() != LatLonHelpers.CorrectIlleagleLon(prevElement.StartLon).ToString() + " " + prevElement.StartLat.ToString()))
 
+                    var correctedStartLon = LatLonHelpers.CorrectIlleagleLon(element.StartLon).ToString();
+                    var correctedEndLon = LatLonHelpers.CorrectIlleagleLon(element.EndLon).ToString();
+                    var prevCorrectedEndLon = LatLonHelpers.CorrectIlleagleLon(prevElement.EndLon).ToString();
+                    var prevCorrectedStartLon = LatLonHelpers.CorrectIlleagleLon(prevElement.StartLon).ToString();
+
+                    var startEndMismatch = $"{correctedStartLon} {element.StartLat}" != $"{prevCorrectedEndLon} {prevElement.EndLat}";
+                    var endStartMismatch = $"{correctedEndLon} {element.EndLat}" != $"{prevCorrectedStartLon} {prevElement.StartLat}";
 
                     // If start coords do NOT match end coords of previous element
-                    if ((LatLonHelpers.CorrectIlleagleLon(element.StartLon).ToString() + " " + element.StartLat.ToString() != LatLonHelpers.CorrectIlleagleLon(prevElement.EndLon).ToString() + " " + prevElement.EndLat.ToString())
-                        || (LatLonHelpers.CorrectIlleagleLon(element.EndLon).ToString() + " " + element.EndLat.ToString() != LatLonHelpers.CorrectIlleagleLon(prevElement.StartLon).ToString() + " " + prevElement.StartLat.ToString()))
+                    if (startEndMismatch || endStartMismatch)
                     {
                         if (crossesAM)
                         {

@@ -7,16 +7,4 @@
     <UseWPF>true</UseWPF>
   </PropertyGroup>
 
-  <ItemGroup>
-    <Folder Include="CustomControls\Buttons\" />
-    <Folder Include="CustomControls\TextBoxes\" />
-    <Folder Include="Images\" />
-    <Folder Include="Styles\" />
-    <Folder Include="Windows\MainMenu\Model\" />
-    <Folder Include="Windows\MainWindow\Model\" />
-    <Folder Include="Windows\ProgramMessages\Model\" />
-    <Folder Include="Windows\SettingsMenu\Model\" />
-    <Folder Include="Windows\StartingWindow\Model\" />
-  </ItemGroup>
-
 </Project>

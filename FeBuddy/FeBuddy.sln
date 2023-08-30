@@ -7,7 +7,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UnitTests", "UnitTests\Unit
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FEBuddyLibrary", "FEBuddyLibrary\FEBuddyLibrary.csproj", "{297C8ADB-9A7D-4D8B-A06C-84F0B6F85ACC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WPF", "WPF\WPF.csproj", "{FB8C9D3D-B220-4F91-9341-A18BE62E6416}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WPF", "WPF\WPF.csproj", "{FB8C9D3D-B220-4F91-9341-A18BE62E6416}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -18,7 +18,6 @@ Global
 		{12EE2760-36FD-497C-9D5D-35DE0881580F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{12EE2760-36FD-497C-9D5D-35DE0881580F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{12EE2760-36FD-497C-9D5D-35DE0881580F}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{12EE2760-36FD-497C-9D5D-35DE0881580F}.Release|Any CPU.Build.0 = Release|Any CPU
 		{297C8ADB-9A7D-4D8B-A06C-84F0B6F85ACC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{297C8ADB-9A7D-4D8B-A06C-84F0B6F85ACC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{297C8ADB-9A7D-4D8B-A06C-84F0B6F85ACC}.Release|Any CPU.ActiveCfg = Release|Any CPU

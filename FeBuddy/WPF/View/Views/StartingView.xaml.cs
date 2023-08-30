@@ -12,16 +12,17 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
-using static WPF.Constants.FeBuddyColors;
 
-namespace WPF;
-/// <summary>
-/// Interaction logic for MainWindow.xaml
-/// </summary>
-public partial class MainWindow : Window
+namespace WPF.View.Views
 {
-    public MainWindow()
+    /// <summary>
+    /// Interaction logic for StartingView.xaml
+    /// </summary>
+    public partial class StartingView : UserControl
     {
-        InitializeComponent();
+        public StartingView()
+        {
+            InitializeComponent();
+        }
     }
 }

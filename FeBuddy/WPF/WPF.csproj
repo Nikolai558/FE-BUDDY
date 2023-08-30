@@ -10,7 +10,18 @@
   <ItemGroup>
     <Folder Include="Model\" />
     <Folder Include="View\Controls\" />
-    <Folder Include="View\Views\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EditorConfigFiles Remove="D:\Github-Repos\FE-Buddy-DEV\FeBuddy\WPF\.editorconfig" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="D:\Github-Repos\FE-Buddy-DEV\FeBuddy\WPF\.editorconfig" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\FEBuddyLibrary\FEBuddyLibrary.csproj" />
   </ItemGroup>
 
 </Project>

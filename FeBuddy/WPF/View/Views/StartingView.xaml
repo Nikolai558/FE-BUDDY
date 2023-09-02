@@ -10,7 +10,7 @@
     <UserControl.DataContext>
         <viewModel:StartingViewModel/>
     </UserControl.DataContext>
-    <Grid Background="Pink">
-            
+    <Grid>
+        <TextBlock Text="UPDATING SCREEN" Foreground="White"/>
     </Grid>
 </UserControl>

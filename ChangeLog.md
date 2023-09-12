@@ -1,6 +1,13 @@
 # CHANGELOG
 
 ---
+- ## Version 2.6.8
+  - Bug #159 - vERAM to Geojson conversion input string error.
+    - Some facilities were getting an error when converting vERAM files to Geojson.
+    - The error was caused by defaults in their vERAM files having filter values 
+      that were blank. ex. 'filters=""'. If this is the case, FE-Buddy will look
+      at the BCG and make the filter value the same as the BCG in the geojson.
+
 - ## Version 2.6.7
   - Bug #156 - vERAM to Geojson conversion defaults fixed.
     - Geojson files had multiple instances of default values inside one file. 

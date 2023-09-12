@@ -219,6 +219,7 @@ namespace FeBuddyLibrary.DataAccess
             string metarDataFilepath = $"{GlobalConfig.tempPath}\\{effectiveDate}_NWS-WX-STATIONS.xml";
             string outputFilepath = $"{GlobalConfig.outputDirectory}\\VRC\\[LABELS].sct2";
             Dictionary<string, List<double>> stationInfo = new Dictionary<string, List<double>>();
+            Dictionary<string, string> stationNames = new Dictionary<string, string>();
             Dictionary<string, List<string>> aptInfo = new Dictionary<string, List<string>>();
             StringBuilder sb = new StringBuilder();
 
@@ -230,9 +231,10 @@ namespace FeBuddyLibrary.DataAccess
             foreach (XElement xElement in metarXML.Descendants("station"))
             {
                 string id = xElement.Element("station_id").Value;
+                string name = xElement.Element("station_name").Value;
                 double lat = Convert.ToDouble(xElement.Element("latitude").Value);
                 double lon = Convert.ToDouble(xElement.Element("longitude").Value);
-
+                stationNames.Add(id, name);
                 stationInfo.Add(id, new List<double> { lat, lon });
             }
 
@@ -259,7 +261,7 @@ namespace FeBuddyLibrary.DataAccess
                     sb.AppendLine(labelLineToBeAdded);
                     symbolFeature.geometry.coordinates = new List<dynamic>() { stationInfo[metar_id][1], stationInfo[metar_id][0] };
                     textFeature.geometry.coordinates = new List<dynamic>() { stationInfo[metar_id][1], stationInfo[metar_id][0] };
-                    textFeature.properties.text = new string[] { metar_id };
+                    textFeature.properties.text = new string[] { metar_id + " " + aptInfo[metar_id][0].Replace('"', '-') };
 
                     symbolAllFeatures.Add(symbolFeature);
                     textAllFeatures.Add(textFeature);
@@ -296,7 +298,7 @@ namespace FeBuddyLibrary.DataAccess
                                 
                                 symbolFeature.geometry.coordinates = new List<dynamic>() { stationInfo[metar_id][1], stationInfo[metar_id][0] };
                                 textFeature.geometry.coordinates = new List<dynamic>() { stationInfo[metar_id][1], stationInfo[metar_id][0] };
-                                textFeature.properties.text = new string[] { metar_id };
+                                textFeature.properties.text = new string[] { metar_id + " " + aptInfo[metar_id.Substring(1)][0].Replace('"', '-') };
 
                                 symbolAllFeatures.Add(symbolFeature);
                                 textAllFeatures.Add(textFeature);

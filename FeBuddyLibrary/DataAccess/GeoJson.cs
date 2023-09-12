@@ -1295,9 +1295,9 @@ namespace FeBuddyLibrary.DataAccess
                     geoMapObjectLog.AppendLine($"\n\n\tDescription: {geoMapObject.Description}");
                     geoMapObjectLog.AppendLine($"\t\tTDM: {geoMapObject.TdmOnly}");
 
-                    if (geoMapObject.LineDefaults?.ToString() != null) { geoMapObjectLog.AppendLine("\t\t" + geoMapObject.LineDefaults?.ToString());}
-                    if (geoMapObject.TextDefaults?.ToString() != null) { geoMapObjectLog.AppendLine("\t\t" + geoMapObject.TextDefaults?.ToString());}
-                    if (geoMapObject.SymbolDefaults?.ToString() != null) { geoMapObjectLog.AppendLine("\t\t" + geoMapObject.SymbolDefaults?.ToString());}
+                    if (geoMapObject.LineDefaults?.ToString() != null) { geoMapObjectLog.AppendLine("\t\t" + geoMapObject.LineDefaults?.ToString() + $"__Filters {geoMapObject.LineDefaults?.Filters.ToString() ?? "None"}");}
+                    if (geoMapObject.TextDefaults?.ToString() != null) { geoMapObjectLog.AppendLine("\t\t" + geoMapObject.TextDefaults?.ToString() + $"__Filters {geoMapObject.TextDefaults?.Filters.ToString() ?? "None"}");}
+                    if (geoMapObject.SymbolDefaults?.ToString() != null) { geoMapObjectLog.AppendLine("\t\t" + geoMapObject.SymbolDefaults?.ToString() + $"__Filters {geoMapObject.SymbolDefaults?.Filters.ToString() ?? "None"}");}
 
                     string fileName = geoMapObject.Description + ".geojson";
                     fileName = MakeValidFileName(fileName);
@@ -1416,20 +1416,17 @@ namespace FeBuddyLibrary.DataAccess
                                 int totalFeatureCount = geojson.features.Count();
                                 bool shouldAddDefaults = true;
 
-                                if (totalFeatureCount <= 3)
+                                for (int i = 0; i < totalFeatureCount; i++)
                                 {
-                                    for (int i = 0; i < totalFeatureCount; i++)
+                                    if ((geojson.features[i].properties.isLineDefaults ?? false))
                                     {
-                                        if (!(geojson.features[i].properties.isLineDefaults ?? true))
-                                        {
-                                            shouldAddDefaults = false;
-                                            break;
-                                        }
+                                        shouldAddDefaults = false;
+                                        break;
                                     }
-                                    if (shouldAddDefaults)
-                                    {
-                                        geojson.features.Add(AllLinesDefaults);
-                                    }
+                                }
+                                if (shouldAddDefaults)
+                                {
+                                    geojson.features.Add(AllLinesDefaults);
                                 }
 
                                 geojson.features.Add(item);
@@ -1459,6 +1456,8 @@ namespace FeBuddyLibrary.DataAccess
                         //geojson.features.AddRange(inFile.features);
                     }
 
+                    geojson = CleanGeoJson(geojson);
+
                     string jsonString = JsonConvert.SerializeObject(geojson, new JsonSerializerSettings { Formatting = Formatting.None, NullValueHandling = NullValueHandling.Ignore });
 
                     //jsonString = PostProcess(jsonString);
@@ -1473,6 +1472,53 @@ namespace FeBuddyLibrary.DataAccess
                 File.WriteAllText(errorFile.FullName, _errorLog.ToString());
             }
             File.WriteAllText(Path.Combine(dirPath, "GeoMapObject Properties.txt"), geoMapObjectLog.ToString());
+        }
+
+        private FeatureCollection CleanGeoJson(FeatureCollection geojson)
+        {
+            FeatureCollection cleaned = new FeatureCollection();
+            FeatureCollection output = new FeatureCollection();
+            Dictionary<string, bool> addedDefaults = new Dictionary<string, bool>() { { "LineDefaults", false }, { "TextDefaults", false }, { "SymbolDefaults", false } };
+
+            foreach (var feature in geojson.features)
+            {
+                bool addFeature = true;
+                bool isDefaults = false;
+                if (feature.properties.isLineDefaults ?? false)
+                {
+                    addFeature = !addedDefaults["LineDefaults"];
+                    addedDefaults["LineDefaults"] = true;
+                    isDefaults = true;
+                }
+
+                if (feature.properties.isTextDefaults ?? false)
+                {
+                    addFeature = !addedDefaults["TextDefaults"];
+                    addedDefaults["TextDefaults"] = true;
+                    isDefaults = true;
+                }
+
+                if (feature.properties.isSymbolDefaults ?? false)
+                {
+                    addFeature = !addedDefaults["SymbolDefaults"];
+                    addedDefaults["SymbolDefaults"] = true;
+                    isDefaults = true;
+                }
+
+                if (addFeature && !isDefaults)
+                {
+                    cleaned.features.Add(feature);
+                }
+
+                if (addFeature && isDefaults)
+                {
+                    output.features.Add(feature);
+                }
+            }
+
+            output.features.AddRange(cleaned.features);
+
+            return output;
         }
 
         private string GetUniqueFileName(string originalPath)

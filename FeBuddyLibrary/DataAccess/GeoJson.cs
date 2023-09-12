@@ -1082,7 +1082,7 @@ namespace FeBuddyLibrary.DataAccess
 
 
                 // THIS FUNCTION WILL CREATED DUPLICATE FILES FOR EACH FILTER IN THE LIST (ex. FILTER=1,2,3 will create 3 files each containing the same data)
-                //foreach (var customFilters in Array.ConvertAll(element.Filters.Replace("\t", string.Empty).Split(',', StringSplitOptions.RemoveEmptyEntries), s => int.Parse(s)))
+                //foreach (var customFilters in Array.ConvertAll(element.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty).Split(','), s => int.Parse(s)))
                 //{
                 //    filterDir = "FILTER " + customFilters.ToString().PadLeft(2, '0');
                 //    fileName = $"FILTER {customFilters.ToString().PadLeft(2, '0')}__TDM {geoMapObject.TdmOnly.ToString()[0]}__{element.XsiType}{combinedProperties}";
@@ -1810,7 +1810,7 @@ namespace FeBuddyLibrary.DataAccess
 
             //try
             //{
-            //    allLines.properties.filters = Array.ConvertAll(textDefaults.Filters.Replace("\t", string.Empty).Split(',', StringSplitOptions.RemoveEmptyEntries), s => int.Parse(s));
+            //    allLines.properties.filters = Array.ConvertAll(textDefaults.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty).Split(','), s => int.Parse(s));
 
             //}
             //catch (Exception)
@@ -1826,7 +1826,7 @@ namespace FeBuddyLibrary.DataAccess
 
             if (element.Bcg != null) { elem_properties.bcg = element.Bcg; }
 
-            // Array.ConvertAll(symbolDefaults.Filters.Replace("\t", string.Empty).Split(',', StringSplitOptions.RemoveEmptyEntries), s => int.Parse(s));
+            // Array.ConvertAll(symbolDefaults.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty).Split(','), s => int.Parse(s));
 
             if (element.Filters != null && !string.IsNullOrWhiteSpace(element.Filters)) { elem_properties.filters = Array.ConvertAll(element.Filters.Replace("\t", string.Empty).Split(',', StringSplitOptions.RemoveEmptyEntries), s => int.Parse(s)); }
             if (element.Style != null && !string.IsNullOrWhiteSpace(element.Style)) { elem_properties.style = element.Style; }
@@ -1848,7 +1848,7 @@ namespace FeBuddyLibrary.DataAccess
 
             //try
             //{
-            //    allLines.properties.filters = Array.ConvertAll(symbolDefaults.Filters.Replace("\t", string.Empty).Split(',', StringSplitOptions.RemoveEmptyEntries), s => int.Parse(s));
+            //    allLines.properties.filters = Array.ConvertAll(symbolDefaults.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty).Split(','), s => int.Parse(s));
 
             //}
             //catch (Exception)

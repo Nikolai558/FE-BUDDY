@@ -3,7 +3,11 @@
 ---
 - ## Version 2.6.7
   - Bug #156 - vERAM to Geojson conversion defaults fixed.
+    - Geojson files had multiple instances of default values inside one file. 
+    - Some Geojson files did not have all the appropriate default value features.
+      - ex: missing text defaults when the geo map had text defaults.
   - CRC AIRAC Weather Station File now inlcudes the full name of the station.
+  - Log file for when converting by geomap objects now contains the filter vaules
 
 - ## Version 2.6.6
   - Geojson Output format by Filters no longer duplicate files that were

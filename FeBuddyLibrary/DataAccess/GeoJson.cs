@@ -1329,7 +1329,7 @@ namespace FeBuddyLibrary.DataAccess
 
                     if (AllLinesDefaults.properties.filters.Count() == 0 && AllLinesDefaults.properties.bcg != null)
                     {
-                        AllLinesDefaults.properties.filters = new int[] { (int)AllLinesDefaults.properties.bcg };
+                        geoMapObjectLog.AppendLine($"\t\t\t WARNING: Line Defaults are missing fillters. If the features in this file do NOT have overriding filter properties, the object will NOT be displayed in CRC.");
                     }
 
                     foreach (Element element in geoMapObject.Elements.Element)
@@ -1363,7 +1363,7 @@ namespace FeBuddyLibrary.DataAccess
 
                                         if (defaultFeature.properties.filters.Count() == 0 && defaultFeature.properties.bcg != null)
                                         {
-                                            defaultFeature.properties.filters = new int[] { (int)defaultFeature.properties.bcg };
+                                            geoMapObjectLog.AppendLine($"\t\t\t WARNING: Symbol Defaults are missing fillters. If the features in this file do NOT have overriding filter properties, the object will NOT be displayed in CRC.");
                                         }
 
                                         geojson.features.Add(defaultFeature);
@@ -1403,7 +1403,7 @@ namespace FeBuddyLibrary.DataAccess
 
                                         if (defaultFeature.properties.filters.Count() == 0 && defaultFeature.properties.bcg != null)
                                         {
-                                            defaultFeature.properties.filters = new int[] { (int)defaultFeature.properties.bcg };
+                                            geoMapObjectLog.AppendLine($"\t\t\t WARNING: Text Defaults are missing fillters. If the features in this file do NOT have overriding filter properties, the object will NOT be displayed in CRC.");
                                         }
 
                                         geojson.features.Add(defaultFeature);

@@ -915,7 +915,7 @@ namespace FeBuddyLibrary.DataAccess
                     break;
             }
 
-            foreach (string filter in filtersString.Replace(" ", string.Empty).Replace("\t", string.Empty).Split(','))
+            foreach (string filter in filtersString.Replace("\t", string.Empty).Split(',', StringSplitOptions.RemoveEmptyEntries))
             {
                 if (!string.IsNullOrWhiteSpace(filter) && !filters.Contains(int.Parse(filter)))
                 {
@@ -936,7 +936,7 @@ namespace FeBuddyLibrary.DataAccess
             if (geoMapObject.LineDefaults != null)
             {
                 if (geoMapObject.LineDefaults.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty) == "") return output;
-                foreach (var filter in Array.ConvertAll(geoMapObject.LineDefaults.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty).Split(','), s => int.Parse(s)))
+                foreach (var filter in Array.ConvertAll(geoMapObject.LineDefaults.Filters.Replace("\t", string.Empty).Split(',', StringSplitOptions.RemoveEmptyEntries), s => int.Parse(s)))
                 {
                     filterDir = "FILTER " + filter.ToString().PadLeft(2, '0');
                     fileName = $"{filterDir}__TDM {geoMapObject.TdmOnly.ToString()[0]}__{geoMapObject.LineDefaults.ToString().Replace(" Defaults: ", "__")}";
@@ -948,7 +948,7 @@ namespace FeBuddyLibrary.DataAccess
             if (geoMapObject.SymbolDefaults != null)
             {
                 if (geoMapObject.SymbolDefaults.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty) == "") return output;
-                foreach (var filter in Array.ConvertAll(geoMapObject.SymbolDefaults.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty).Split(','), s => int.Parse(s)))
+                foreach (var filter in Array.ConvertAll(geoMapObject.SymbolDefaults.Filters.Replace("\t", string.Empty).Split(',', StringSplitOptions.RemoveEmptyEntries), s => int.Parse(s)))
                 {
                     filterDir = "FILTER " + filter.ToString().PadLeft(2, '0');
                     fileName = $"{filterDir}__TDM {geoMapObject.TdmOnly.ToString()[0]}__{geoMapObject.SymbolDefaults.ToString().Replace(" Defaults: ", "__")}";
@@ -959,7 +959,7 @@ namespace FeBuddyLibrary.DataAccess
             if (geoMapObject.TextDefaults != null)
             {
                 if (geoMapObject.TextDefaults.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty) == "") return output;
-                foreach (var filter in Array.ConvertAll(geoMapObject.TextDefaults.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty).Split(','), s => int.Parse(s)))
+                foreach (var filter in Array.ConvertAll(geoMapObject.TextDefaults.Filters.Replace("\t", string.Empty).Split(',', StringSplitOptions.RemoveEmptyEntries), s => int.Parse(s)))
                 {
                     filterDir = "FILTER " + filter.ToString().PadLeft(2, '0');
                     fileName = $"{filterDir}__TDM {geoMapObject.TdmOnly.ToString()[0]}__{geoMapObject.TextDefaults.ToString().Replace(" Defaults: ", "__")}";
@@ -1054,7 +1054,7 @@ namespace FeBuddyLibrary.DataAccess
             else
             {
                 // Custom Override filters
-                int[] AllFilterGroups = Array.ConvertAll(element.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty).Split(','), s => int.Parse(s));
+                int[] AllFilterGroups = Array.ConvertAll(element.Filters.Replace("\t", string.Empty).Split(',', StringSplitOptions.RemoveEmptyEntries), s => int.Parse(s));
 
                 if (AllFilterGroups.Length > 1) // Custom Override filters have more than one Filter
                 {
@@ -1082,7 +1082,7 @@ namespace FeBuddyLibrary.DataAccess
 
 
                 // THIS FUNCTION WILL CREATED DUPLICATE FILES FOR EACH FILTER IN THE LIST (ex. FILTER=1,2,3 will create 3 files each containing the same data)
-                //foreach (var customFilters in Array.ConvertAll(element.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty).Split(','), s => int.Parse(s)))
+                //foreach (var customFilters in Array.ConvertAll(element.Filters.Replace("\t", string.Empty).Split(',', StringSplitOptions.RemoveEmptyEntries), s => int.Parse(s)))
                 //{
                 //    filterDir = "FILTER " + customFilters.ToString().PadLeft(2, '0');
                 //    fileName = $"FILTER {customFilters.ToString().PadLeft(2, '0')}__TDM {geoMapObject.TdmOnly.ToString()[0]}__{element.XsiType}{combinedProperties}";
@@ -1321,7 +1321,7 @@ namespace FeBuddyLibrary.DataAccess
                         {
                             isLineDefaults = true,
                             bcg = geoMapObject.LineDefaults?.Bcg ?? null,
-                            filters = Array.ConvertAll(geoMapObject.LineDefaults?.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty).Split(',') ?? new string[] { }, s => int.Parse(s)),
+                            filters = Array.ConvertAll(geoMapObject.LineDefaults?.Filters.Replace("\t", string.Empty).Split(',', StringSplitOptions.RemoveEmptyEntries) ?? new string[] { }, s => int.Parse(s)),
                             style = geoMapObject.LineDefaults?.Style ?? null,
                             thickness = geoMapObject.LineDefaults?.Thickness ?? null,
                         }
@@ -1350,7 +1350,7 @@ namespace FeBuddyLibrary.DataAccess
                                             {
                                                 isSymbolDefaults = true,
                                                 bcg = geoMapObject.SymbolDefaults?.Bcg ?? null,
-                                                filters = Array.ConvertAll(geoMapObject.SymbolDefaults?.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty).Split(',') ?? new string[] { }, s => int.Parse(s)),
+                                                filters = Array.ConvertAll(geoMapObject.SymbolDefaults?.Filters.Replace("\t", string.Empty).Split(',', StringSplitOptions.RemoveEmptyEntries) ?? new string[] { }, s => int.Parse(s)),
                                                 style = geoMapObject.SymbolDefaults?.Style ?? null,
                                                 size = geoMapObject.SymbolDefaults?.Size ?? null,
                                             }
@@ -1381,7 +1381,7 @@ namespace FeBuddyLibrary.DataAccess
                                             {
                                                 isTextDefaults = true,
                                                 bcg = geoMapObject.TextDefaults?.Bcg ?? null,
-                                                filters = Array.ConvertAll(geoMapObject.TextDefaults?.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty).Split(',') ?? new string[] { }, s => int.Parse(s)),
+                                                filters = Array.ConvertAll(geoMapObject.TextDefaults?.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty).Split(',', StringSplitOptions.RemoveEmptyEntries) ?? new string[] { }, s => int.Parse(s)),
                                                 size = geoMapObject.TextDefaults?.Size ?? null,
                                                 underline = geoMapObject.TextDefaults?.Underline ?? null,
                                                 opaque = geoMapObject.TextDefaults?.Opaque ?? null,
@@ -1621,7 +1621,7 @@ namespace FeBuddyLibrary.DataAccess
         {
             Properties elem_properties = new Properties();
 
-            if (element.Filters != null && !string.IsNullOrWhiteSpace(element.Filters)) { elem_properties.filters = Array.ConvertAll(element.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty).Split(','), s => int.Parse(s)); }
+            if (element.Filters != null && !string.IsNullOrWhiteSpace(element.Filters)) { elem_properties.filters = Array.ConvertAll(element.Filters.Replace("\t", string.Empty).Split(',', StringSplitOptions.RemoveEmptyEntries), s => int.Parse(s)); }
             if (element.Style != null) { elem_properties.style = element.Style; }
             if (element.Bcg != null) { elem_properties.bcg = element.Bcg; }
             if (element.Thickness != null) { elem_properties.thickness = element.Thickness; }
@@ -1780,7 +1780,7 @@ namespace FeBuddyLibrary.DataAccess
         {
             Properties elem_properties = new Properties();
 
-            if (element.Filters != null && !string.IsNullOrWhiteSpace(element.Filters)) { elem_properties.filters = Array.ConvertAll(element.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty).Split(','), s => int.Parse(s)); }
+            if (element.Filters != null && !string.IsNullOrWhiteSpace(element.Filters)) { elem_properties.filters = Array.ConvertAll(element.Filters.Replace("\t", string.Empty).Split(',', StringSplitOptions.RemoveEmptyEntries), s => int.Parse(s)); }
             if (element.Style != null) { elem_properties.style = element.Style; }
             if (element.Bcg != null) { elem_properties.bcg = element.Bcg; }
             if (element.Size != null) { elem_properties.size = element.Size; }
@@ -1810,7 +1810,7 @@ namespace FeBuddyLibrary.DataAccess
 
             //try
             //{
-            //    allLines.properties.filters = Array.ConvertAll(textDefaults.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty).Split(','), s => int.Parse(s));
+            //    allLines.properties.filters = Array.ConvertAll(textDefaults.Filters.Replace("\t", string.Empty).Split(',', StringSplitOptions.RemoveEmptyEntries), s => int.Parse(s));
 
             //}
             //catch (Exception)
@@ -1826,9 +1826,9 @@ namespace FeBuddyLibrary.DataAccess
 
             if (element.Bcg != null) { elem_properties.bcg = element.Bcg; }
 
-            // Array.ConvertAll(symbolDefaults.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty).Split(','), s => int.Parse(s));
+            // Array.ConvertAll(symbolDefaults.Filters.Replace("\t", string.Empty).Split(',', StringSplitOptions.RemoveEmptyEntries), s => int.Parse(s));
 
-            if (element.Filters != null && !string.IsNullOrWhiteSpace(element.Filters)) { elem_properties.filters = Array.ConvertAll(element.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty).Split(','), s => int.Parse(s)); }
+            if (element.Filters != null && !string.IsNullOrWhiteSpace(element.Filters)) { elem_properties.filters = Array.ConvertAll(element.Filters.Replace("\t", string.Empty).Split(',', StringSplitOptions.RemoveEmptyEntries), s => int.Parse(s)); }
             if (element.Style != null && !string.IsNullOrWhiteSpace(element.Style)) { elem_properties.style = element.Style; }
             if (element.Size != null) { elem_properties.size = element.Size; }
 
@@ -1848,7 +1848,7 @@ namespace FeBuddyLibrary.DataAccess
 
             //try
             //{
-            //    allLines.properties.filters = Array.ConvertAll(symbolDefaults.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty).Split(','), s => int.Parse(s));
+            //    allLines.properties.filters = Array.ConvertAll(symbolDefaults.Filters.Replace("\t", string.Empty).Split(',', StringSplitOptions.RemoveEmptyEntries), s => int.Parse(s));
 
             //}
             //catch (Exception)

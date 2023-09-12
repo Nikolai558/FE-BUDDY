@@ -1327,6 +1327,11 @@ namespace FeBuddyLibrary.DataAccess
                         }
                     };
 
+                    if (AllLinesDefaults.properties.filters.Count() == 0 && AllLinesDefaults.properties.bcg != null)
+                    {
+                        AllLinesDefaults.properties.filters = new int[] { (int)AllLinesDefaults.properties.bcg };
+                    }
+
                     foreach (Element element in geoMapObject.Elements.Element)
                     {
                         switch (element.XsiType)
@@ -1355,6 +1360,12 @@ namespace FeBuddyLibrary.DataAccess
                                                 size = geoMapObject.SymbolDefaults?.Size ?? null,
                                             }
                                         };
+
+                                        if (defaultFeature.properties.filters.Count() == 0 && defaultFeature.properties.bcg != null)
+                                        {
+                                            defaultFeature.properties.filters = new int[] { (int)defaultFeature.properties.bcg };
+                                        }
+
                                         geojson.features.Add(defaultFeature);
                                     }
 
@@ -1389,6 +1400,12 @@ namespace FeBuddyLibrary.DataAccess
                                                 yOffset = geoMapObject.TextDefaults?.YOffset ?? null,
                                             }
                                         };
+
+                                        if (defaultFeature.properties.filters.Count() == 0 && defaultFeature.properties.bcg != null)
+                                        {
+                                            defaultFeature.properties.filters = new int[] { (int)defaultFeature.properties.bcg };
+                                        }
+
                                         geojson.features.Add(defaultFeature);
                                     }
 

@@ -1,6 +1,10 @@
 # CHANGELOG
 
 ---
+- ## Version 2.6.7
+  - Bug #156 - vERAM to Geojson conversion defaults fixed.
+  - CRC AIRAC Weather Station File now inlcudes the full name of the station.
+
 - ## Version 2.6.6
   - Geojson Output format by Filters no longer duplicate files that were
     assined multiple filter indexes.

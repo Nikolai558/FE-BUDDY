@@ -915,7 +915,7 @@ namespace FeBuddyLibrary.DataAccess
                     break;
             }
 
-            foreach (string filter in filtersString.Replace(" ", string.Empty).Replace("\t", string.Empty).Split(','))
+            foreach (string filter in filtersString.Replace("\t", string.Empty).Split(',', StringSplitOptions.RemoveEmptyEntries))
             {
                 if (!string.IsNullOrWhiteSpace(filter) && !filters.Contains(int.Parse(filter)))
                 {
@@ -936,7 +936,7 @@ namespace FeBuddyLibrary.DataAccess
             if (geoMapObject.LineDefaults != null)
             {
                 if (geoMapObject.LineDefaults.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty) == "") return output;
-                foreach (var filter in Array.ConvertAll(geoMapObject.LineDefaults.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty).Split(','), s => int.Parse(s)))
+                foreach (var filter in Array.ConvertAll(geoMapObject.LineDefaults.Filters.Replace("\t", string.Empty).Split(',', StringSplitOptions.RemoveEmptyEntries), s => int.Parse(s)))
                 {
                     filterDir = "FILTER " + filter.ToString().PadLeft(2, '0');
                     fileName = $"{filterDir}__TDM {geoMapObject.TdmOnly.ToString()[0]}__{geoMapObject.LineDefaults.ToString().Replace(" Defaults: ", "__")}";
@@ -948,7 +948,7 @@ namespace FeBuddyLibrary.DataAccess
             if (geoMapObject.SymbolDefaults != null)
             {
                 if (geoMapObject.SymbolDefaults.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty) == "") return output;
-                foreach (var filter in Array.ConvertAll(geoMapObject.SymbolDefaults.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty).Split(','), s => int.Parse(s)))
+                foreach (var filter in Array.ConvertAll(geoMapObject.SymbolDefaults.Filters.Replace("\t", string.Empty).Split(',', StringSplitOptions.RemoveEmptyEntries), s => int.Parse(s)))
                 {
                     filterDir = "FILTER " + filter.ToString().PadLeft(2, '0');
                     fileName = $"{filterDir}__TDM {geoMapObject.TdmOnly.ToString()[0]}__{geoMapObject.SymbolDefaults.ToString().Replace(" Defaults: ", "__")}";
@@ -959,7 +959,7 @@ namespace FeBuddyLibrary.DataAccess
             if (geoMapObject.TextDefaults != null)
             {
                 if (geoMapObject.TextDefaults.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty) == "") return output;
-                foreach (var filter in Array.ConvertAll(geoMapObject.TextDefaults.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty).Split(','), s => int.Parse(s)))
+                foreach (var filter in Array.ConvertAll(geoMapObject.TextDefaults.Filters.Replace("\t", string.Empty).Split(',', StringSplitOptions.RemoveEmptyEntries), s => int.Parse(s)))
                 {
                     filterDir = "FILTER " + filter.ToString().PadLeft(2, '0');
                     fileName = $"{filterDir}__TDM {geoMapObject.TdmOnly.ToString()[0]}__{geoMapObject.TextDefaults.ToString().Replace(" Defaults: ", "__")}";
@@ -1054,7 +1054,7 @@ namespace FeBuddyLibrary.DataAccess
             else
             {
                 // Custom Override filters
-                int[] AllFilterGroups = Array.ConvertAll(element.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty).Split(','), s => int.Parse(s));
+                int[] AllFilterGroups = Array.ConvertAll(element.Filters.Replace("\t", string.Empty).Split(',', StringSplitOptions.RemoveEmptyEntries), s => int.Parse(s));
 
                 if (AllFilterGroups.Length > 1) // Custom Override filters have more than one Filter
                 {
@@ -1321,11 +1321,16 @@ namespace FeBuddyLibrary.DataAccess
                         {
                             isLineDefaults = true,
                             bcg = geoMapObject.LineDefaults?.Bcg ?? null,
-                            filters = Array.ConvertAll(geoMapObject.LineDefaults?.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty).Split(',') ?? new string[] { }, s => int.Parse(s)),
+                            filters = Array.ConvertAll(geoMapObject.LineDefaults?.Filters.Replace("\t", string.Empty).Split(',', StringSplitOptions.RemoveEmptyEntries) ?? new string[] { }, s => int.Parse(s)),
                             style = geoMapObject.LineDefaults?.Style ?? null,
                             thickness = geoMapObject.LineDefaults?.Thickness ?? null,
                         }
                     };
+
+                    if (AllLinesDefaults.properties.filters.Count() == 0 && AllLinesDefaults.properties.bcg != null)
+                    {
+                        geoMapObjectLog.AppendLine($"\t\t\t WARNING: Line Defaults are missing fillters. If the features in this file do NOT have overriding filter properties, the object will NOT be displayed in CRC.");
+                    }
 
                     foreach (Element element in geoMapObject.Elements.Element)
                     {
@@ -1350,11 +1355,17 @@ namespace FeBuddyLibrary.DataAccess
                                             {
                                                 isSymbolDefaults = true,
                                                 bcg = geoMapObject.SymbolDefaults?.Bcg ?? null,
-                                                filters = Array.ConvertAll(geoMapObject.SymbolDefaults?.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty).Split(',') ?? new string[] { }, s => int.Parse(s)),
+                                                filters = Array.ConvertAll(geoMapObject.SymbolDefaults?.Filters.Replace("\t", string.Empty).Split(',', StringSplitOptions.RemoveEmptyEntries) ?? new string[] { }, s => int.Parse(s)),
                                                 style = geoMapObject.SymbolDefaults?.Style ?? null,
                                                 size = geoMapObject.SymbolDefaults?.Size ?? null,
                                             }
                                         };
+
+                                        if (defaultFeature.properties.filters.Count() == 0 && defaultFeature.properties.bcg != null)
+                                        {
+                                            geoMapObjectLog.AppendLine($"\t\t\t WARNING: Symbol Defaults are missing fillters. If the features in this file do NOT have overriding filter properties, the object will NOT be displayed in CRC.");
+                                        }
+
                                         geojson.features.Add(defaultFeature);
                                     }
 
@@ -1381,7 +1392,7 @@ namespace FeBuddyLibrary.DataAccess
                                             {
                                                 isTextDefaults = true,
                                                 bcg = geoMapObject.TextDefaults?.Bcg ?? null,
-                                                filters = Array.ConvertAll(geoMapObject.TextDefaults?.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty).Split(',') ?? new string[] { }, s => int.Parse(s)),
+                                                filters = Array.ConvertAll(geoMapObject.TextDefaults?.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty).Split(',', StringSplitOptions.RemoveEmptyEntries) ?? new string[] { }, s => int.Parse(s)),
                                                 size = geoMapObject.TextDefaults?.Size ?? null,
                                                 underline = geoMapObject.TextDefaults?.Underline ?? null,
                                                 opaque = geoMapObject.TextDefaults?.Opaque ?? null,
@@ -1389,6 +1400,12 @@ namespace FeBuddyLibrary.DataAccess
                                                 yOffset = geoMapObject.TextDefaults?.YOffset ?? null,
                                             }
                                         };
+
+                                        if (defaultFeature.properties.filters.Count() == 0 && defaultFeature.properties.bcg != null)
+                                        {
+                                            geoMapObjectLog.AppendLine($"\t\t\t WARNING: Text Defaults are missing fillters. If the features in this file do NOT have overriding filter properties, the object will NOT be displayed in CRC.");
+                                        }
+
                                         geojson.features.Add(defaultFeature);
                                     }
 
@@ -1621,7 +1638,7 @@ namespace FeBuddyLibrary.DataAccess
         {
             Properties elem_properties = new Properties();
 
-            if (element.Filters != null && !string.IsNullOrWhiteSpace(element.Filters)) { elem_properties.filters = Array.ConvertAll(element.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty).Split(','), s => int.Parse(s)); }
+            if (element.Filters != null && !string.IsNullOrWhiteSpace(element.Filters)) { elem_properties.filters = Array.ConvertAll(element.Filters.Replace("\t", string.Empty).Split(',', StringSplitOptions.RemoveEmptyEntries), s => int.Parse(s)); }
             if (element.Style != null) { elem_properties.style = element.Style; }
             if (element.Bcg != null) { elem_properties.bcg = element.Bcg; }
             if (element.Thickness != null) { elem_properties.thickness = element.Thickness; }
@@ -1780,7 +1797,7 @@ namespace FeBuddyLibrary.DataAccess
         {
             Properties elem_properties = new Properties();
 
-            if (element.Filters != null && !string.IsNullOrWhiteSpace(element.Filters)) { elem_properties.filters = Array.ConvertAll(element.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty).Split(','), s => int.Parse(s)); }
+            if (element.Filters != null && !string.IsNullOrWhiteSpace(element.Filters)) { elem_properties.filters = Array.ConvertAll(element.Filters.Replace("\t", string.Empty).Split(',', StringSplitOptions.RemoveEmptyEntries), s => int.Parse(s)); }
             if (element.Style != null) { elem_properties.style = element.Style; }
             if (element.Bcg != null) { elem_properties.bcg = element.Bcg; }
             if (element.Size != null) { elem_properties.size = element.Size; }
@@ -1828,7 +1845,7 @@ namespace FeBuddyLibrary.DataAccess
 
             // Array.ConvertAll(symbolDefaults.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty).Split(','), s => int.Parse(s));
 
-            if (element.Filters != null && !string.IsNullOrWhiteSpace(element.Filters)) { elem_properties.filters = Array.ConvertAll(element.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty).Split(','), s => int.Parse(s)); }
+            if (element.Filters != null && !string.IsNullOrWhiteSpace(element.Filters)) { elem_properties.filters = Array.ConvertAll(element.Filters.Replace("\t", string.Empty).Split(',', StringSplitOptions.RemoveEmptyEntries), s => int.Parse(s)); }
             if (element.Style != null && !string.IsNullOrWhiteSpace(element.Style)) { elem_properties.style = element.Style; }
             if (element.Size != null) { elem_properties.size = element.Size; }
 

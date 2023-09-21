@@ -14,4 +14,8 @@
     <None Include="C:\Users\Nikolas\GitHubRepos\FE-Buddy-DEV\FeBuddy\FEBuddyLibrary\.editorconfig" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Clowd.Squirrel" Version="2.9.42" />
+  </ItemGroup>
+
 </Project>

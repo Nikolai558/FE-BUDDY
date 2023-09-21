@@ -1,0 +1,42 @@
+﻿<Window x:Class="WPF.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:WPF"
+        
+        xmlns:constants="clr-namespace:WPF.Constants"
+        
+        xmlns:viewModel="clr-namespace:WPF.ViewModel"
+        xmlns:view="clr-namespace:WPF.View.Views"
+        
+        xmlns:startingVM="clr-namespace:WPF.ViewModel.StartingView"
+        
+        mc:Ignorable="d"
+        Title="MainWindow" 
+        Height="550" Width="850"
+        AllowsTransparency="True"
+        Background="Transparent"
+        WindowStyle="None"
+        WindowStartupLocation="CenterScreen">
+
+    <Window.DataContext>
+        <viewModel:MainWindow/>
+    </Window.DataContext>
+
+    <Window.Resources>
+        <DataTemplate DataType="{x:Type startingVM:StartingViewModel}">
+            <view:StartingView/>
+        </DataTemplate>
+    </Window.Resources>
+    
+    <Border Background="{x:Static constants:FeBuddyColors.BorderBackgroundBrush}"
+            Opacity="1"
+            CornerRadius="15">
+        <UserControl x:Name="MainWindowUserControl"
+                     Content="{Binding CurrentView, UpdateSourceTrigger=PropertyChanged}"
+                     Margin="10">
+            
+        </UserControl>
+    </Border>
+</Window>

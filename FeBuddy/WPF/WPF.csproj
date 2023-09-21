@@ -8,15 +8,21 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="CustomControls\Buttons\" />
-    <Folder Include="CustomControls\TextBoxes\" />
-    <Folder Include="Images\" />
-    <Folder Include="Styles\" />
-    <Folder Include="Windows\MainMenu\Model\" />
-    <Folder Include="Windows\MainWindow\Model\" />
-    <Folder Include="Windows\ProgramMessages\Model\" />
-    <Folder Include="Windows\SettingsMenu\Model\" />
-    <Folder Include="Windows\StartingWindow\Model\" />
+    <Folder Include="Model\" />
+    <Folder Include="ViewModel\Controls\" />
+    <Folder Include="View\Controls\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EditorConfigFiles Remove="D:\Github-Repos\FE-Buddy-DEV\FeBuddy\WPF\.editorconfig" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="D:\Github-Repos\FE-Buddy-DEV\FeBuddy\WPF\.editorconfig" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\FEBuddyLibrary\FEBuddyLibrary.csproj" />
   </ItemGroup>
 
 </Project>

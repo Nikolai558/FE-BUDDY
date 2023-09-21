@@ -147,23 +147,49 @@ public class CoordinateHandler
   /// <returns>double: Returns the distance between two points in Nautical Miles.</returns>
   public static double Distance(Location PointA, Location PointB, bool Round = true)
   {
-    // convert the points to radians
+    // Convert latitude and longitude values from degrees to radians.
     double lat1 = PointA.DecLat * Math.PI / 180;
     double lon1 = PointA.DecLon * Math.PI / 180;
     double lat2 = PointB.DecLat * Math.PI / 180;
     double lon2 = PointB.DecLon * Math.PI / 180;
-    // get the differences between the two points
+
+    // Calculate the differences in latitude and longitude.
     double dLat = lat2 - lat1;
     double dLon = lon2 - lon1;
-    // do some math
+
+    // Apply the haversine formula to calculate the distance between the points.
+    // The haversine formula is based on the concept of the haversine of an angle. [ Defined as (1 - cos(angle)) / 2 ]
+    //    dLat and dLon are the differences in latitude and longitude between the two points.
+    //    lat1 and lat2 are the latitudinal coordinates of the two points, converted to radians.
+    //    Math.Sin(dLat / 2) and Math.Sin(dLon / 2) calculate the haversine values for latitudinal and longitudinal differences, respectively.
+    //    Math.Cos(lat1) * Math.Cos(lat2) represents the cosine of the average latitude between the two points.
+    // The sum of these terms represents the haversine of half the central angle between the points.
     double a = Math.Pow(Math.Sin(dLat / 2), 2) + Math.Cos(lat1) * Math.Cos(lat2) * Math.Pow(Math.Sin(dLon / 2), 2);
+
+    //    Math.Atan2(y, x) calculates the arctangent of the ratio y / x
+    // In this case, Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a)) calculates half the central angle between the points.
     double c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
-    double d = 6371e3 * c;
+
+    //    d represents the distance between the two points on the sphere's surface in meters.
+    //    6371e3 is the approximate radius of the Earth in meters (6371 kilometers),
+    //    used to convert the central angle to a distance along the sphere's surface.
+    double d = 6371e3 * c; // The distance is calculated in meters.
+
     // convert the distance to nautical miles
     double nm = d / 1852;
-    // return the result
-    if (Round) return Math.Round(nm, 0);
-    else return Math.Round(nm, 6);
+
+    // NOTE: Why are we using the Haversine formula?
+    //    The haversine formula calculates the great-circle distance between two points on the Earth's surface
+    //    by computing the central angle between them and then converting that angle to a linear distance using
+    //    the Earth's radius. The haversine formula is particularly useful for calculating distances on a
+    //    spherical surface, such as the Earth, where the straight-line distance (Euclidean distance) would
+    //    not be accurate due to the curvature of the surface.
+
+    // Return the calculated distance, rounded based on the 'Round' parameter.
+    if (Round)
+      return Math.Round(nm, 0);
+    else
+      return Math.Round(nm, 6);
   }
 
   /// <summary>

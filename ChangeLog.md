@@ -1,6 +1,10 @@
 # CHANGELOG
 
 ---
+- ## Version 2.6.9
+  - Bug #161 - FAA changed their website to a different link structure for AIRAC
+    - Fixed the issue to account for their change. 
+
 - ## Version 2.6.8
   - Bug #159 - vERAM to Geojson conversion input string error.
     - Some facilities were getting an error when converting vERAM files to Geojson.

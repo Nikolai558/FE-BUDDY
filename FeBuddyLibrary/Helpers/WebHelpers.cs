@@ -81,8 +81,8 @@ namespace FeBuddyLibrary.Helpers
             response.Trim();
 
             // Find the two strings that contain the effective date and set our Global Variables.
-            GlobalConfig.nextAiracDate = response.Substring(response.IndexOf("NASR_Subscription_") + 18, 10);
-            GlobalConfig.currentAiracDate = response.Substring(response.LastIndexOf("NASR_Subscription_") + 18, 10);
+            GlobalConfig.nextAiracDate = response.Substring(response.IndexOf("./../NASR_Subscription") + 23, 10);
+            GlobalConfig.currentAiracDate = response.Substring(response.LastIndexOf("./../NASR_Subscription") + 23, 10);
             Logger.LogMessage("INFO", $"CURRENT AIRAC DATE: {GlobalConfig.currentAiracDate} / NEXT AIRAC DATE: {GlobalConfig.nextAiracDate}");
 
         }

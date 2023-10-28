@@ -34,6 +34,11 @@ See for more information on future features. [ROADMAP](https://github.com/Nikola
 
 ---
 
+### REDUCING FE-Buddy CRC OUTPUT DATA PRIOR TO vNAS UPLOAD
+[Google Slides](https://docs.google.com/presentation/d/e/2PACX-1vQ2y4m6S31lMc6DuJ9HxzW3k76w6fWrVDxomRQSwGiCS176g5kMrdRpTJi_pSwgEndRbvOXG9w5aoyM/embed)
+
+---
+
 ### REQUIREMENTS
 - Windows OS (8.1 or newer)
 - CUrl (recommended)

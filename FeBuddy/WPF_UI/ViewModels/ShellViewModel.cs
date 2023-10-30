@@ -37,9 +37,6 @@ public class ShellViewModel : ObservableObject
     // TODO: Change the icons and titles for all HamburgerMenuItems here.
     public ObservableCollection<HamburgerMenuItem> MenuItems { get; } = new ObservableCollection<HamburgerMenuItem>()
     {
-        new HamburgerMenuGlyphItem() { Label = Resources.ShellMainPage, Glyph = "\uE8A5", TargetPageType = typeof(MainViewModel) },
-        new HamburgerMenuGlyphItem() { Label = Resources.ShellInformationPage, Glyph = "\uE8A5", TargetPageType = typeof(InformationViewModel) },
-        new HamburgerMenuGlyphItem() { Label = Resources.ShellHelpPage, Glyph = "\uE8A5", TargetPageType = typeof(HelpViewModel) },
         new HamburgerMenuGlyphItem() { Label = Resources.ShellAiracUpdatePage, Glyph = "\uE8A5", TargetPageType = typeof(AiracUpdateViewModel) },
         new HamburgerMenuGlyphItem() { Label = Resources.ShellRWRadarVideoMapConversionPage, Glyph = "\uE8A5", TargetPageType = typeof(RWRadarVideoMapConversionViewModel) },
         new HamburgerMenuGlyphItem() { Label = Resources.ShellSct2FileConversionPage, Glyph = "\uE8A5", TargetPageType = typeof(Sct2FileConversionViewModel) },

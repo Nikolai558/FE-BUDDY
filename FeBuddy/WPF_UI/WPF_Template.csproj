@@ -20,7 +20,7 @@
   </ItemGroup>
   
   <ItemGroup>
-    <ProjectReference Include="..\WPF_UI.Core\WPF_UI.Core.csproj" />
+    <ProjectReference Include="..\WPF_UI.Core\WPF_Template.Core.csproj" />
   </ItemGroup>
 
   <ItemGroup>

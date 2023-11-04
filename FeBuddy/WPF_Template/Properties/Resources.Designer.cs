@@ -70,7 +70,7 @@ namespace WPF_Template.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to WPF_Template.
+        ///   Looks up a localized string similar to WPF_UI.
         /// </summary>
         public static string AppDisplayName {
             get {

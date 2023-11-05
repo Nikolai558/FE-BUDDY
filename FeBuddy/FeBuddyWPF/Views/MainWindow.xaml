@@ -218,7 +218,7 @@
                                     <TextBlock Text="SCT2-to-GeoJSON" Style="{StaticResource menuSubButtonText}"/>
                                 </StackPanel>
                             </RadioButton>
-
+                            
 
                             <RadioButton x:Name="btnFacilityFiles"
                                          Style="{StaticResource menuButton}"

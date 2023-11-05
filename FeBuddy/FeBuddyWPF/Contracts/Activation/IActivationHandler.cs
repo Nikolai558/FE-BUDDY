@@ -1,13 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 
-namespace FeBuddyWPF.Contracts.Activation;
-public interface IActivationHandler
+// This namespace groups the classes related to activation in the FeBuddyWPF application.
+namespace FeBuddyWPF.Contracts.Activation
 {
-    bool CanHandle();
+    // This interface defines the contract for an activation handler.
+    public interface IActivationHandler
+    {
+        // Determines whether the handler can handle the activation.
+        bool CanHandle();
 
-    Task HandleAsync();
+        // Handles the activation asynchronously.
+        Task HandleAsync();
+    }
 }

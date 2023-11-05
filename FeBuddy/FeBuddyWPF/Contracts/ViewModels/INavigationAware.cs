@@ -1,8 +1,13 @@
-﻿namespace FeBuddyWPF.Contracts.ViewModels;
-
-public interface INavigationAware
+﻿// This namespace contains the view model contracts related to the FeBuddyWPF application.
+namespace FeBuddyWPF.Contracts.ViewModels
 {
-    void OnNavigatedTo(object parameter);
+    // This interface defines the contract for view models that need to be aware of navigation events.
+    public interface INavigationAware
+    {
+        // Called when the view model is navigated to with a parameter.
+        void OnNavigatedTo(object parameter);
 
-    void OnNavigatedFrom();
+        // Called when the view model is navigated away from.
+        void OnNavigatedFrom();
+    }
 }

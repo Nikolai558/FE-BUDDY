@@ -1,14 +1,20 @@
 ﻿//using FeBuddyWPF.Models
 
-namespace FeBuddyWPF.Contracts.Services;
-
-public interface IThemeSelectorService
+// This namespace contains the service contracts related to the FeBuddyWPF application.
+namespace FeBuddyWPF.Contracts.Services
 {
-    // CODE NOT IMPLEMENTED
+    // This interface defines the contract for a theme selector service.
+    public interface IThemeSelectorService
+    {
+        // CODE NOT IMPLEMENTED
 
-    //void InitializeTheme();
+        // Initializes the theme.
+        //void InitializeTheme();
 
-    //void SetTheme(AppTheme theme);
+        // Sets the specified theme.
+        //void SetTheme(AppTheme theme);
 
-    //AppTheme GetCurrentTheme();
+        // Retrieves the currently set theme.
+        //AppTheme GetCurrentTheme();
+    }
 }

@@ -1,12 +1,18 @@
 ﻿using System.Windows.Controls;
 
-namespace FeBuddyWPF.Contracts.Views;
-
-public interface IShellWindow
+// This namespace contains the view contracts related to the FeBuddyWPF application.
+namespace FeBuddyWPF.Contracts.Views
 {
-    Frame GetNavigationFrame();
+    // This interface defines the contract for the shell window.
+    public interface IShellWindow
+    {
+        // Retrieves the navigation frame of the shell window.
+        Frame GetNavigationFrame();
 
-    void ShowWindow();
+        // Shows the shell window.
+        void ShowWindow();
 
-    void CloseWindow();
+        // Closes the shell window.
+        void CloseWindow();
+    }
 }

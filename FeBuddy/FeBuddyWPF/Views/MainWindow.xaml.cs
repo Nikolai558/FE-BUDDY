@@ -15,7 +15,7 @@ using System.Runtime.InteropServices;
 using System.Runtime;
 using System.Windows.Interop;
 
-namespace FeBuddyWPF.View
+namespace FeBuddyWPF.Views
 {
     /// <summary>
     /// Interaction logic for MainWindow.xaml

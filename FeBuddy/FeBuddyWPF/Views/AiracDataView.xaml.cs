@@ -13,7 +13,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace FeBuddyWPF.View
+namespace FeBuddyWPF.Views
 {
     /// <summary>
     /// Interaction logic for AiracDataView.xaml

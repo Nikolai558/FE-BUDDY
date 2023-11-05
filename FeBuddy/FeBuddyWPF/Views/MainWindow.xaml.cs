@@ -14,29 +14,31 @@ using System.Windows.Shapes;
 using System.Runtime.InteropServices;
 using System.Runtime;
 using System.Windows.Interop;
+using FeBuddyWPF.Contracts.Views;
 
-namespace FeBuddyWPF.View
+namespace FeBuddyWPF.Views
 {
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
-    public partial class MainWindow : Window
+    public partial class MainWindow : Window, IShellWindow
     {
         public MainWindow()
         {
             InitializeComponent();
         }
 
-        private void btnClose_Click(object sender, RoutedEventArgs e)
-        {
-            Application.Current.Shutdown();
-        }
+        public Frame GetNavigationFrame() => throw new NotImplementedException();
+
+        public void ShowWindow() => Show();
+
+        public void CloseWindow() => Close();
+
+        private void btnClose_Click(object sender, RoutedEventArgs e) => Application.Current.Shutdown();
 
         private void btnMinimize_Click(object sender, RoutedEventArgs e)
         {
-            
             WindowState = WindowState.Minimized;
-
         }
 
         private void Window_MouseDown(object sender, MouseButtonEventArgs e)

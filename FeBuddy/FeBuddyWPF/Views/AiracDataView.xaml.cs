@@ -13,21 +13,16 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace FeBuddyWPF.View
+namespace FeBuddyWPF.Views
 {
     /// <summary>
-    /// Interaction logic for FaaDatToGeojsonView.xaml
+    /// Interaction logic for AiracDataView.xaml
     /// </summary>
-    public partial class FaaDatToGeojsonView : UserControl
+    public partial class AiracDataView : UserControl
     {
-        public FaaDatToGeojsonView()
+        public AiracDataView()
         {
             InitializeComponent();
-        }
-
-        private void Border_Scroll(object sender, System.Windows.Controls.Primitives.ScrollEventArgs e)
-        {
-            
         }
     }
 }

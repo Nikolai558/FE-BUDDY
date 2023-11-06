@@ -10,28 +10,19 @@ using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Windows.Navigation;
 using System.Windows.Shapes;
-using System.Runtime.InteropServices;
-using System.Runtime;
-using System.Windows.Interop;
-using FeBuddyWPF.Contracts.Views;
-using FeBuddyWPF.ViewModels;
 
-namespace FeBuddyWPF.Views
+namespace FeBuddyWPF.CustomControls
 {
     /// <summary>
-    /// Interaction logic for MainWindow.xaml
+    /// Interaction logic for MenuOptions.xaml
     /// </summary>
-    public partial class MainWindow : Page
+    public partial class MenuOptions : UserControl
     {
-        public MainWindow(MainViewModel viewModel)
+        public MenuOptions()
         {
             InitializeComponent();
-            DataContext = viewModel;
-        }
-
-        private void Window_MouseDown(object sender, MouseButtonEventArgs e)
-        {
         }
     }
 }

@@ -94,7 +94,7 @@
         <controls:HamburgerMenu
             x:Name="hamburgerMenu"
             HamburgerButtonName="{x:Static properties:Resources.ShellHamburgerButtonName}"
-            IsPaneOpen="False"
+            IsPaneOpen="True"
             DisplayMode="CompactInline"
             ItemsSource="{Binding MenuItems}"
             SelectedItem="{Binding SelectedMenuItem}"

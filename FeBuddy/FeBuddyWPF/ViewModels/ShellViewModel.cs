@@ -21,5 +21,22 @@ namespace FeBuddyWPF.ViewModels
         {
             _navigationService = navigationService;
         }
+        public ICommand LoadedCommand => _loadedCommand ?? (_loadedCommand = new RelayCommand(OnLoaded));
+
+        public ICommand UnloadedCommand => _unloadedCommand ?? (_unloadedCommand = new RelayCommand(OnUnloaded));
+
+        private void OnLoaded()
+        {
+            _navigationService.Navigated += OnNavigated;
+        }
+
+        private void OnUnloaded()
+        {
+            _navigationService.Navigated -= OnNavigated;
+        }
+
+        private void OnNavigated(object sender, string viewModelName)
+        {
+        }
     }
 }

@@ -4,11 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FE-Buddy Manual</title>
-	
-	<link rel="icon" href="https://raw.githubusercontent.com/KSanders7070/FE-ASSISTANT/main/FEB_ICON.ico" type="image/x-icon">
+    
+    <link rel="icon" href="https://raw.githubusercontent.com/KSanders7070/FE-ASSISTANT/main/FEB_ICON.ico" type="image/x-icon">
 
     <style>
-        body {
+    body {
             font-family: Arial, sans-serif;
             background-color: #333;
             color: #fff;
@@ -40,10 +40,18 @@
         }
 
         /* Center images */
-        .tooltip img, /* Apply to the current image */
-        .centered-img { /* Apply to all future images */
+        .tooltip img,
+        .centered-img {
             display: block;
             margin: 0 auto;
+        }
+        
+        li strong + p {
+        padding-left: 20px;
+        }
+
+        #content a {
+            color: blue; /* Change link color to blue in the main content area */
         }
     </style>
 </head>
@@ -58,37 +66,104 @@
         </ul>
     </div>
     <div id="content">
-        <h1 id="overview">Overview</h1>
-        <p>FE-Buddy is a valuable tool designed for VATSIM/VATUSA ARTCC Facility Engineers. It simplifies the creation, editing, and maintenance of facility files like GeoMaps, RADAR video maps (RVMs), and alias command files. Additionally, FE-Buddy offers the ability to convert FAA GeoMaps, RVMs, and NASR data into GeoJSON files, which can be seamlessly used in the CRC program. The program boasts several essential features:</p>
-        <ul>
-          <li><strong>AIRAC Update:</strong> Keep your software current with the latest FAA NASR data, with options for comprehensive or custom updates, saved user preferences, and GeoJSON file customization.</li>
-          <li><strong>RW RADAR Video Maps Conversion:</strong> Streamline the conversion of real-world RADAR video maps from .DAT and .KMLZ files, allowing users to choose their point of tangency (POT) options and retain distance settings for batch processing.</li>
-          <li><strong>RW GeoMap Conversions:</strong> Transform RE ERAM GEOMAP data into versatile GeoJSON files with export options by GeoMap Object Description, Filter Assignment, or Identical Attributes. Log files provide detailed insights.</li>
-          <li><strong>.SCT2 File Conversion:</strong> Convert .SCT2 files into usable GeoJSON files, exporting section titles and including exceptions for SID and STAR sections.</li>
-          <li><strong>Create GeoJSON:</strong> Empower users to craft custom GeoJSON files with a user-friendly interface supporting features like line string breaks.</li>
-          <li><strong>Convert vSTARS/vERAM Files:</strong> Transition legacy clients' Video Maps and GeoMaps (vSTARS and vERAM) into GeoJSON files, with a warning message indicating the feature's status.</li>
-          <li><strong>GeoJSON Cleanup:</strong> Optimize GeoJSON files for CRC use by setting default values, cascading code, and combining features for cleaner code.</li>
-          <li><strong>Procedure ISR:</strong> Access a quick-reference guide for controllers, referencing procedures from the d-TPP MetaFile. Pre-fill available information and customize fields as needed.</li>
-          <li><strong>Settings Menu:</strong> Customize your program experience with general settings, managing notifications and preferences for optimal control.</li>
-        </ul>
+    <h1 id="overview">Overview</h1>
+            <div class="tooltip">
+                <img src="https://raw.githubusercontent.com/KSanders7070/FE-ASSISTANT/main/test_image1.png"
+                alt="Test Image 1"
+                width="600"
+                height="200"
+                title="Alt Text: Test Image 1&#10;Image Source: https://github.com/KSanders7070/FE-ASSISTANT/blob/main/test_image1.png"
+                class="centered-img">
+            </div>
+    <p>FE-Buddy is a valuable tool designed for VATSIM/VATUSA ARTCC Facility Engineers. It simplifies the creation, editing, and maintenance of facility files like GeoMaps, RADAR video maps (RVMs), and alias command files. Additionally, FE-Buddy offers the ability to convert FAA GeoMaps, RVMs, and NASR data into GeoJSON files, which can be seamlessly used in the CRC program. The program boasts several essential features:</p>
+    <ul>
+      <li>
+        <strong>AIRAC Update:</strong>
+        <p>Keep your software current with the latest FAA NASR data. Options include comprehensive or custom updates, saved user preferences, and GeoJSON file customization.</p>
+      </li>
+      <li>
+        <strong>RW RADAR Video Maps Conversion:</strong>
+        <p>Streamline the conversion of real-world RADAR video maps from .DAT and .KMLZ files. Customize your point of tangency (POT) options and retain distance settings for batch processing.</p>
+      </li>
+      <li>
+        <strong>RW GeoMap Conversions:</strong>
+        <p>Transform RW ERAM GEOMAP data into versatile GeoJSON files. Export options include GeoMap Object Description, Filter Assignment, or Identical Attributes. Log files provide detailed insights.</p>
+      </li>
+      <li>
+        <strong>.SCT2 File Conversion:</strong>
+        <p>Convert .SCT2 files into usable GeoJSON files. Export section titles and include exceptions for SID and STAR sections.</p>
+      </li>
+      <li>
+        <strong>Create GeoJSON:</strong>
+        <p>Empower users to craft custom GeoJSON files with a user-friendly interface. Supports features like line string breaks.</p>
+      </li>
+      <li>
+        <strong>GeoJSON Cleanup:</strong>
+        <p>Optimize GeoJSON files for CRC use by setting default values, cascading code, and combining features for cleaner code.</p>
+      </li>
+      <li>
+        <strong>Procedure ISR:</strong>
+        <p>Access a quick-reference guide for controllers, referencing procedures from the d-TPP MetaFile. Pre-fill available information and customize fields as needed.</p>
+      </li>
+      <li>
+        <strong>Settings Menu:</strong>
+        <p>Customize your program experience with general settings. Manage notifications and preferences for optimal control.</p>
+      </li>
+    </ul>
+    
+            <h1 id="historyCreds">History and Credits</h1>
+            <p>FE-Buddy has an interesting history of development, stemming from the desire to automate the Facility Files updating process:</p>
+            <ul>
+              <li>In 2020, Nikolas and Kyle initiated their journey to automate the Facility Files updating process, focusing on providing monthly AIRAC cycle updates for the vZLC ARTCC.</li>
+              <li>Recognizing the potential for broader utility, they expanded the project's scope, aiming to create a tool accessible to all ARTCCs.</li>
+              <li>The early stages of FE-Buddy, specifically pre-version 3.0, were characterized by the rapid development of foundational functionality. The program's growth was a learning experience, with an emphasis on acquiring C# skills and adhering to coding best practices.</li>
+              <li>In 2023, a comprehensive rebuild of FE-Buddy was initiated. This ongoing effort aims to enhance the program's functionality, user experience, and maintainability.</li>
+            </ul>
+            <p>Special thanks to the following contributors for their roles in the development and success of FE-Buddy:</p>
+            <ul>
+              <li>Nikolas Boling - Primary Developer and Programmer</li>
+              <li>Kyle Sanders - Concept Design and Original Author</li>
+              <li>Kyle Rodgers - Developer and Antimeridian Split Logic</li>
+              <li>John Lewis - Icon and Logo Design</li>
+              <li>Chris James - Program Name</li>
+              <li>Cian Ormond - dotNET 6 Conversion Assistance</li>
+              <li>Caelan Sayler - dotNET 6 Conversion Assistance and Clowd.Squirrel Development</li>
+              <li>Ian Drake - FAA FOIA RVM Conversion source code reference</li>
+            </ul>
+            </p>
+    
+            <h1 id="systemRequirements">System Requirements</h1>
+            <p>FE-Buddy operates on Windows OS (8.1 or newer).</p>
 
-		
-        <h1 id="historyCreds">History and Credits</h1>
-        <p>This tells you a little about the history of FE-Buddy and lists contributors to this project.</p>
-        <div class="tooltip">
-            <img src="https://raw.githubusercontent.com/KSanders7070/FE-ASSISTANT/main/test_image1.png"
-            alt="Test Image 1"
-            width="600"
-            height="200"
-            title="Alt Text: Test Image 1&#10;Image Source: https://github.com/KSanders7070/FE-ASSISTANT/blob/main/test_image1.png"
-            class="centered-img">
+			<h1 id="reportIssuesFeatReq">Report Issues or Make Feature Requests</h1>
+			
+			<p>Before reporting a new issue or making a feature request, please check if someone else has already submitted a similar request. This helps avoid duplicates and streamlines the process. You can browse the existing issues by visiting the <a href="https://github.com/Nikolai558/FE-BUDDY/issues" target="_blank">FE-Buddy GitHub Issues page</a>. This page displays all the open issues, making it easy to see if your concern has already been addressed.</p>
+			
+			<h2>Step 1: Check Existing Issues</h2>
+			<p>Before reporting a new issue or making a feature request, it's a good practice to check if someone else has already submitted a similar request. This helps avoid duplicates and streamlines the process.</p>
+			
+			<ul>
+			  <li>Visit the <a href="https://github.com/Nikolai558/FE-BUDDY/issues" target="_blank">FE-Buddy GitHub Issues page</a>.</li>
+			  <li>Click the "New Issue" button.</li>
+			  <li>You will be presented with issue templates. Choose the relevant template based on your concern:
+			    <ul>
+			      <li>If you are experiencing a problem or bug, select "Bug report."</li>
+			      <li>If you have a new feature or enhancement in mind, choose "Feature request."</li>
+			    </ul>
+			  </li>
+			  <li>Fill out the provided form with as much detail as possible:
+			    <ul>
+			      <li>Describe the issue or feature request clearly and concisely.</li>
+			      <li>Include information about your operating system, FE-Buddy version, and any relevant context that might help the developers understand your request.</li>
+			    </ul>
+			  </li>
+			  <li>Once you've filled out the form, click the "Submit new issue" button.</li>
+			</ul>
+			
+			<h2>Step 2: Interact with Developers</h2>
+			<p>After submitting your issue or feature request, the FE-Buddy development team will review your submission. You may receive follow-up questions or updates on the progress of your request directly on GitHub.</p>
+			
+			<p>Please provide any additional information or feedback requested by the developers to help expedite the resolution of your concern.</p>
         </div>
-
-        <h1 id="systemRequirements">System Requirements</h1>
-        <p>In this section will tell you about the system requirments.</p>
-        
-        <h1 id="reportIssuesFeatReq">Report Issues</h1>
-        <p>In this section will instruct you on how to report issues with FE-Buddy or make a feature request.</p>
-    </div>
 </body>
 </html>

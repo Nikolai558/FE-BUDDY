@@ -8,6 +8,8 @@
                 <ResourceDictionary>
                     <local:Bootstrapper x:Key="Bootstrapper" />
                 </ResourceDictionary>
+                <ResourceDictionary Source="/Styles/ControlStyles/UIColors.xaml"/>
+                <ResourceDictionary Source="/Styles/ControlStyles/ButtonStyles.xaml"/>
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary> 
     </Application.Resources>

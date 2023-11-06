@@ -15,38 +15,29 @@ using System.Runtime.InteropServices;
 using System.Runtime;
 using System.Windows.Interop;
 using FeBuddyWPF.Contracts.Views;
+using FeBuddyWPF.ViewModels;
 
 namespace FeBuddyWPF.Views
 {
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
-    public partial class MainWindow : Window, IShellWindow
+    public partial class MainWindow : Page
     {
-        public MainWindow()
+        public MainWindow(MainViewModel viewModel)
         {
             InitializeComponent();
+            DataContext = viewModel;
         }
-
-        public Frame GetNavigationFrame() => throw new NotImplementedException();
-
-        public void ShowWindow() => Show();
-
-        public void CloseWindow() => Close();
 
         private void btnClose_Click(object sender, RoutedEventArgs e) => Application.Current.Shutdown();
 
         private void btnMinimize_Click(object sender, RoutedEventArgs e)
         {
-            WindowState = WindowState.Minimized;
         }
 
         private void Window_MouseDown(object sender, MouseButtonEventArgs e)
         {
-            if (e.LeftButton == MouseButtonState.Pressed)
-            {
-                DragMove();
-            }
         }
 
         private void btnSettings_Click(object sender, RoutedEventArgs e)
@@ -56,14 +47,6 @@ namespace FeBuddyWPF.Views
 
         private void btnMaximize_Click(object sender, RoutedEventArgs e)
         {
-            if (WindowState == WindowState.Maximized)
-            {
-                WindowState = WindowState.Normal;
-            }
-            else
-            {
-                WindowState = WindowState.Maximized;
-            }
         }
     }
 }

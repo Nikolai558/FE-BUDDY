@@ -4,11 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FE-Buddy Manual</title>
-    
+
     <link rel="icon" href="https://raw.githubusercontent.com/KSanders7070/FE-ASSISTANT/main/FEB_ICON.ico" type="image/x-icon">
 
     <style>
-    body {
+        body {
             font-family: Arial, sans-serif;
             background-color: #333;
             color: #fff;
@@ -45,13 +45,22 @@
             display: block;
             margin: 0 auto;
         }
-        
+
         li strong + p {
-        padding-left: 20px;
+            padding-left: 20px;
         }
 
         #content a {
             color: blue; /* Change link color to blue in the main content area */
+        }
+
+        /* Add CSS for collapsible sections */
+        .section {
+            display: none;
+        }
+
+        .section.active {
+            display: block;
         }
     </style>
 </head>
@@ -66,7 +75,8 @@
         </ul>
     </div>
     <div id="content">
-    <h1 id="overview">Overview</h1>
+        <div class="section active" id="overview">
+            <h1>Overview</h1>
             <div class="tooltip">
                 <img src="https://raw.githubusercontent.com/KSanders7070/FE-ASSISTANT/main/test_image1.png"
                 alt="Test Image 1"
@@ -75,43 +85,45 @@
                 title="Alt Text: Test Image 1&#10;Image Source: https://github.com/KSanders7070/FE-ASSISTANT/blob/main/test_image1.png"
                 class="centered-img">
             </div>
-    <p>FE-Buddy is a valuable tool designed for VATSIM/VATUSA ARTCC Facility Engineers. It simplifies the creation, editing, and maintenance of facility files like GeoMaps, RADAR video maps (RVMs), and alias command files. Additionally, FE-Buddy offers the ability to convert FAA GeoMaps, RVMs, and NASR data into GeoJSON files, which can be seamlessly used in the CRC program. The program boasts several essential features:</p>
-    <ul>
-      <li>
-        <strong>AIRAC Update:</strong>
-        <p>Keep your software current with the latest FAA NASR data. Options include comprehensive or custom updates, saved user preferences, and GeoJSON file customization.</p>
-      </li>
-      <li>
-        <strong>RW RADAR Video Maps Conversion:</strong>
-        <p>Streamline the conversion of real-world RADAR video maps from .DAT and .KMLZ files. Customize your point of tangency (POT) options and retain distance settings for batch processing.</p>
-      </li>
-      <li>
-        <strong>RW GeoMap Conversions:</strong>
-        <p>Transform RW ERAM GEOMAP data into versatile GeoJSON files. Export options include GeoMap Object Description, Filter Assignment, or Identical Attributes. Log files provide detailed insights.</p>
-      </li>
-      <li>
-        <strong>.SCT2 File Conversion:</strong>
-        <p>Convert .SCT2 files into usable GeoJSON files. Export section titles and include exceptions for SID and STAR sections.</p>
-      </li>
-      <li>
-        <strong>Create GeoJSON:</strong>
-        <p>Empower users to craft custom GeoJSON files with a user-friendly interface. Supports features like line string breaks.</p>
-      </li>
-      <li>
-        <strong>GeoJSON Cleanup:</strong>
-        <p>Optimize GeoJSON files for CRC use by setting default values, cascading code, and combining features for cleaner code.</p>
-      </li>
-      <li>
-        <strong>Procedure ISR:</strong>
-        <p>Access a quick-reference guide for controllers, referencing procedures from the d-TPP MetaFile. Pre-fill available information and customize fields as needed.</p>
-      </li>
-      <li>
-        <strong>Settings Menu:</strong>
-        <p>Customize your program experience with general settings. Manage notifications and preferences for optimal control.</p>
-      </li>
-    </ul>
-    
-            <h1 id="historyCreds">History and Credits</h1>
+            <p>FE-Buddy is a valuable tool designed for VATSIM/VATUSA ARTCC Facility Engineers. It simplifies the creation, editing, and maintenance of facility files like GeoMaps, RADAR video maps (RVMs), and alias command files. Additionally, FE-Buddy offers the ability to convert FAA GeoMaps, RVMs, and NASR data into GeoJSON files, which can be seamlessly used in the CRC program. The program boasts several essential features:</p>
+            <ul>
+              <li>
+                <strong>AIRAC Update:</strong>
+                <p>Keep your software current with the latest FAA NASR data. Options include comprehensive or custom updates, saved user preferences, and GeoJSON file customization.</p>
+              </li>
+              <li>
+                <strong>RW RADAR Video Maps Conversion:</strong>
+                <p>Streamline the conversion of real-world RADAR video maps from .DAT and .KMLZ files. Customize your point of tangency (POT) options and retain distance settings for batch processing.</p>
+              </li>
+              <li>
+                <strong>RW GeoMap Conversions:</strong>
+                <p>Transform RW ERAM GEOMAP data into versatile GeoJSON files. Export options include GeoMap Object Description, Filter Assignment, or Identical Attributes. Log files provide detailed insights.</p>
+              </li>
+              <li>
+                <strong>.SCT2 File Conversion:</strong>
+                <p>Convert .SCT2 files into usable GeoJSON files. Export section titles and include exceptions for SID and STAR sections.</p>
+              </li>
+              <li>
+                <strong>Create GeoJSON:</strong>
+                <p>Empower users to craft custom GeoJSON files with a user-friendly interface. Supports features like line string breaks.</p>
+              </li>
+              <li>
+                <strong>GeoJSON Cleanup:</strong>
+                <p>Optimize GeoJSON files for CRC use by setting default values, cascading code, and combining features for cleaner code.</p>
+              </li>
+              <li>
+                <strong>Procedure ISR:</strong>
+                <p>Access a quick-reference guide for controllers, referencing procedures from the d-TPP MetaFile. Pre-fill available information and customize fields as needed.</p>
+              </li>
+              <li>
+                <strong>Settings Menu:</strong>
+                <p>Customize your program experience with general settings. Manage notifications and preferences for optimal control.</p>
+              </li>
+            </ul>
+        </div>
+
+        <div class="section" id="historyCreds">
+            <h1>History and Credits</h1>
             <p>FE-Buddy has an interesting history of development, stemming from the desire to automate the Facility Files updating process:</p>
             <ul>
               <li>In 2020, Nikolas and Kyle initiated their journey to automate the Facility Files updating process, focusing on providing monthly AIRAC cycle updates for the vZLC ARTCC.</li>
@@ -131,13 +143,16 @@
               <li>Ian Drake - FAA FOIA RVM Conversion source code reference</li>
             </ul>
             </p>
-    
-            <h1 id="systemRequirements">System Requirements</h1>
-            <p>FE-Buddy operates on Windows OS (8.1 or newer).</p>
+        </div>
 
-			<h1 id="reportIssuesFeatReq">Report Issues or Make Feature Requests</h1>
-			
-			<p>Before reporting a new issue or making a feature request, please check if someone else has already submitted a similar request. This helps avoid duplicates and streamlines the process. You can browse the existing issues by visiting the <a href="https://github.com/Nikolai558/FE-BUDDY/issues" target="_blank">FE-Buddy GitHub Issues page</a>. This page displays all the open issues, making it easy to see if your concern has already been addressed.</p>
+        <div class="section" id="systemRequirements">
+            <h1>System Requirements</h1>
+            <p>FE-Buddy operates on Windows OS (8.1 or newer).</p>
+        </div>
+
+        <div class="section" id="reportIssuesFeatReq">
+            <h1>Report Issues or Make Feature Requests</h1>
+            <p>Before reporting a new issue or making a feature request, please check if someone else has already submitted a similar request. This helps avoid duplicates and streamlines the process. You can browse the existing issues by visiting the <a href="https://github.com/Nikolai558/FE-BUDDY/issues" target="_blank">FE-Buddy GitHub Issues page</a>. This page displays all the open issues, making it easy to see if your concern has already been addressed.</p>
 			
 			<h2>Step 1: Check Existing Issues</h2>
 			<p>Before reporting a new issue or making a feature request, it's a good practice to check if someone else has already submitted a similar request. This helps avoid duplicates and streamlines the process.</p>
@@ -165,5 +180,19 @@
 			
 			<p>Please provide any additional information or feedback requested by the developers to help expedite the resolution of your concern.</p>
         </div>
+    </div>
+
+    <script>
+        // JavaScript to handle section toggling
+        const sections = document.querySelectorAll('.section');
+        sections[0].classList.add('active'); // Initially, the first section is active
+
+        document.querySelectorAll('#sidebar a').forEach((link, index) => {
+            link.addEventListener('click', () => {
+                sections.forEach((section) => section.classList.remove('active'));
+                sections[index].classList.add('active');
+            });
+        });
+    </script>
 </body>
 </html>

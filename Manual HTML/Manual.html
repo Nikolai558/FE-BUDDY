@@ -7,62 +7,66 @@
 
     <link rel="icon" href="https://raw.githubusercontent.com/KSanders7070/FE-ASSISTANT/main/FEB_ICON.ico" type="image/x-icon">
 
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #333;
-            color: #fff;
-            margin: 0;
-            padding: 0;
-            display: flex;
-        }
+<style>
+    /* Reset some default styles and set the base font family and colors */
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #333; /* Background color of the entire page */
+        color: #fff; /* Text color */
+        margin: 0; /* Remove default margin */
+        padding: 0; /* Remove default padding */
+        display: flex; /* Use flex layout to position sidebar and content */
+    }
 
-        #sidebar {
-            width: 250px;
-            background-color: #222;
-            padding: 20px;
-        }
+    /* Style for the sidebar */
+    #sidebar {
+        width: 250px; /* Set the width of the sidebar */
+        background-color: #222; /* Background color of the sidebar */
+        padding: 20px; /* Add padding to the sidebar content */
+    }
 
-        #content {
-            flex: 1;
-            padding: 20px;
-        }
+    /* Style for the main content area */
+    #content {
+        flex: 1; /* Allow the content area to grow and fill the remaining space */
+        padding: 20px; /* Add padding to the content area */
+    }
 
-        #sidebar a {
-            display: block;
-            color: #fff;
-            text-decoration: none;
-            margin-bottom: 10px;
-        }
+    /* Style for links in the sidebar */
+    #sidebar a {
+        display: block; /* Display links as blocks for spacing */
+        color: #fff; /* Text color for links */
+        text-decoration: none; /* Remove underlines from links */
+        margin-bottom: 10px; /* Add spacing between links */
+    }
 
-        #sidebar a:hover {
-            text-decoration: underline;
-        }
+    /* Style for links in the sidebar on hover */
+    #sidebar a:hover {
+        text-decoration: underline; /* Underline links when hovered */
+    }
 
-        /* Center images */
-        .tooltip img,
-        .centered-img {
-            display: block;
-            margin: 0 auto;
-        }
+    /* Center images within tooltips and centered-img div */
+    .tooltip img,
+    .centered-img {
+        display: block;
+        margin: 0 auto; /* Center the images horizontally */
+    }
 
-        li strong + p {
-            padding-left: 20px;
-        }
+    /* Style for links in the main content area */
+    #content a {
+        color: blue; /* Change link color to blue in the main content area */
+    }
 
-        #content a {
-            color: blue; /* Change link color to blue in the main content area */
-        }
+    /* CSS for collapsible sections - initially hidden */
+    .section {
+        display: none;
+    }
 
-        /* Add CSS for collapsible sections */
-        .section {
-            display: none;
-        }
+    /* CSS for active (visible) collapsible sections */
+    .section.active {
+        display: block;
+    }
+</style>
 
-        .section.active {
-            display: block;
-        }
-    </style>
 </head>
 <body>
     <div id="sidebar">
@@ -72,7 +76,20 @@
             <li><a href="#historyCreds">History and Credits</a></li>
             <li><a href="#systemRequirements">System Requirements</a></li>
             <li><a href="#reportIssuesFeatReq">Report Issues or Feature Requests</a></li>
+            <li><a href="#airacUpdate">AIRAC Update</a></li>
+            <li><a href="#createGeojson">Create GeoJSON</a></li>
+            <li><a href="#geojsonCleanup">GeoJSON Clean-up</a></li>
+            <li><a href="#procedureIsrs">Procedure ISRs</a></li>
         </ul>
+        <details>
+            <summary>Conversions</summary>
+            <ul>
+                <li><a href="#generalInfo">General Info</a></li>
+                <li><a href="#sct2ToGeoJSON">SCT2 to GeoJSON</a></li>
+                <li><a href="#rwRVMToGeoJSON">RW RVM to GeoJSON</a></li>
+                <li><a href="#rwGeoMapToGeoJSON">RW GeoMap to GeoJSON</a></li>
+            </ul>
+        </details>
     </div>
     <div id="content">
         <div class="section active" id="overview">
@@ -147,7 +164,7 @@
 
         <div class="section" id="systemRequirements">
             <h1>System Requirements</h1>
-            <p>FE-Buddy operates on Windows OS (8.1 or newer).</p>
+            <p>FE-Buddy operates on Windows OS (8.1 or newer).<p>
         </div>
 
         <div class="section" id="reportIssuesFeatReq">
@@ -179,6 +196,46 @@
 			<p>After submitting your issue or feature request, the FE-Buddy development team will review your submission. You may receive follow-up questions or updates on the progress of your request directly on GitHub.</p>
 			
 			<p>Please provide any additional information or feedback requested by the developers to help expedite the resolution of your concern.</p>
+        </div>
+
+        <div class="section" id="airacUpdate">
+            <h1>AIRAC Update</h1>
+            <p>Info concerning the airacUpdate here.<p>
+        </div>
+
+        <div class="section" id="createGeojson">
+            <h1>Create GeoJSON</h1>
+            <p>Info concerning the createGeojson here.<p>
+        </div>
+
+        <div class="section" id="geojsonCleanup">
+            <h1>GeoJSON Clean-up</h1>
+            <p>Info concerning the geojsonCleanup here.<p>
+        </div>
+
+        <div class="section" id="procedureIsrs">
+            <h1>Procedure ISRs</h1>
+            <p>Info concerning the procedureIsrs here.<p>
+        </div>
+		
+        <div class="section" id="generalInfo">
+            <h1>General Info Conversion</h1>
+            <p>Add content that applies to all conversion features here.<p>
+        </div>
+
+        <div class="section" id="sct2ToGeoJSON">
+            <h1>SCT2 to GeoJSON Conversion</h1>
+            <p>Add content specific to SCT2 to GeoJSON Conversion here<p>
+        </div>
+
+        <div class="section" id="rwRVMToGeoJSON">
+            <h1>RW RVM to GeoJSON Conversion</h1>
+            <p>Add content specific to RW RVM to GeoJSON Conversion here<p>
+        </div>
+
+        <div class="section" id="rwGeoMapToGeoJSON">
+            <h1>RW GeoMap to GeoJSON Conversion</h1>
+            <p>Add content specific to RW GeoMap to GeoJSON Conversion here<p>
         </div>
     </div>
 

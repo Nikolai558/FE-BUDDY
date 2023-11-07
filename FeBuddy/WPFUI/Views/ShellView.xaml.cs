@@ -11,27 +11,17 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
-using System.Runtime.InteropServices;
-using System.Runtime;
-using System.Windows.Interop;
-using FeBuddyWPF.Contracts.Views;
-using FeBuddyWPF.ViewModels;
 
-namespace FeBuddyWPF.Views
+namespace WPFUI.Views
 {
     /// <summary>
-    /// Interaction logic for MainWindow.xaml
+    /// Interaction logic for ShellView.xaml
     /// </summary>
-    public partial class MainWindow : Page
+    public partial class ShellView : Window
     {
-        public MainWindow(MainViewModel viewModel)
+        public ShellView()
         {
             InitializeComponent();
-            DataContext = viewModel;
-        }
-
-        private void Window_MouseDown(object sender, MouseButtonEventArgs e)
-        {
         }
     }
 }

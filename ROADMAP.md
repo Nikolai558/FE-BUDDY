@@ -1,55 +1,74 @@
 # FE-BUDDY ROADMAP
 
 
-The following is a list of features that we are considering or actively working on in priority order.  
-For previous Roadmap items, refer to the [FEB Change Log](https://github.com/Nikolai558/FE-BUDDY/blob/development/ChangeLog.md).
-
----
-**The following will be completed after a code-rewrite/refactoring of FE-Buddy resulting in version 3.0**
----
+**WILL BE INCLUDED IN v3.0:**
 
 - [ ] New UI
-  - Utilize WPF
+  - Utilizing a more robust system (WPF).
+  - Will include a larger library of saved user-preferences.
+  
+- [ ] AIRAC Update
+  - Generally the same as v2.x with these improvements:
+     - Provides the user more control over which files are output & what each file will be named.
+     - Only includes the data within a user-defined bounding-box.
+     - Includes DP/STAR Fix Symbols and Text as an optional output file.
+  
+- [ ] FAA RADAR Video Maps to GeoJSON Conversion (.dat)
+  - Generally the same as v2.x with these improvements:
+     - Allows the user to select more than one file to be converted at a time.
+	 - Option for user to define their own Point of Tangency (POT) rather than taking from the file.
+	 - Persistent Distance Setting: UI retains the last entered distance setting throughout the session.
+  
+- [ ] SCT2 to GeoJSON Converstion
+  - Same as v2.x.
+  
+- [ ] FAA RADAR Video Maps Conversion (.kml/kmz)
+  - Generally the same as v2.x except will now allow the user to select more than one file to be converted at a time.
 
-- [ ] Remove VRC AIRAC output features?
-  - If after the refactor, holding on to this feature does not take up much development time, keep this feature and offer the user the option to turn off this output. It has been stated that some of the neighbors such as canada use FE-Buddy to updated US data for their files that use SCT2 format.
+---
 
-- [ ] Remove SCT2/DXF/KML?
-  - These features are not 100% functional and at this point, may be pointless features to have considering the primary editing software will likely be QGIS that accept GeoJSON format.
-  - GeoJSON-to-DXF/KML may be considered for later development.
+**UNDER CONSIDERATION FOR POST-v3.0:**
+  
+- [ ] FAA RADAR Video Maps to GeoJSON Conversion (.kml/kmz)
+  - Ability to convert Google Earth Pro files from FAA.
+  
+- [ ] FAA GeoMap to GeoJSON Conversions
+  - Ability to convert GeoMap files from FAA.
+  - Multiple Export Options: Users have the flexibility to choose from various export options, depending on their specific needs:
+     - GeoMap Object Description: Users can export data based on GeoMap object descriptions. The output file names reflect these descriptions, with any illegal characters replaced by underscores for clarity.
+     - Filter Assignment: Alternatively, users can choose to export data based on filter assignments. The output file names include the filter name and the assigned filter number in a 2-digit format, ensuring an organized data structure.
+     - Identical Attributes: The feature offers the option to export data based on identical attributes. The output file names include a string of assigned attributes, separated by double underscores, providing a comprehensive and detailed dataset.
+  - Log Files: To keep users informed, the feature generates log files in .txt format for each conversion. These log files provide users with valuable insights into the exported data, ensuring transparency and data integrity.
+  
+- [ ] Create GeoJSON
+  - This feature allows users to build GeoJSON files from scratch, providing full control over the data they want to include in their simulations. Users can define and customize various elements to meet their specific requirements.
+  
+- [ ] GeoJSON Cleanup
+  - GeoJSON Selection: Users can start by selecting a GeoJSON file that they intend to use with CRC. This file serves as the basis for customization and cleanup.
+  - UI-Based Default Values: The feature provides a user-friendly interface that allows users to input default values for CRC. These default values can be adjusted to match the specific settings and preferences required for CRC compatibility.
+  - Code Cleanup: GeoJSON Cleanup goes beyond the basic setup. It analyzes the GeoJSON code and performs several cleanup tasks to ensure optimal compatibility with CRC:
+     - Code Cascading: The feature condenses the GeoJSON code into a single line, simplifying the data structure for CRC.
+     - Feature Combination: GeoJSON Cleanup identifies instances where multiple features could be effectively combined. For example, it recognizes line strings that consist of individual segments but could be combined into a single line string collection, enhancing the efficiency of CRC data representation.
+  
+- [ ] Procedure ISR (In-Scope Reference):
+  - The Procedure ISR, short for "In-Scope Reference," is a feature designed to serve as a quick-reference tool for air traffic controllers, providing guidance on the specific actions and instructions to be issued during each phase of flight and procedure. It simplifies the management of procedures, making them easily accessible and customizable.
+  - Key Features:
+     - Data Collection from d-TPP MetaFile: FEB collects procedure data from the d-TPP (Digital Terminal Procedures Publication) MetaFile, specifically for every airport listed as the responsibility of the selected ARTCC (Air Route Traffic Control Center). This data retrieval process aims to provide comprehensive information for controllers.
+     - Pre-Filled Information: The feature leverages automation to pre-fill available information related to each procedure, ensuring accuracy and consistency. This reduces manual data entry and speeds up the reference creation process.
+     - Interactive Spreadsheet Display: Users are presented with a spreadsheet-like interface, allowing them to review and select the fields and information they wish to include in the in-scope reference.
+     - Customization: FEB enables users to customize their reference by deselecting fields they do not want to include. This ensures that the reference is tailored to the specific needs and preferences of each controller.
+     - Guided Interactive Setup: For any fields that couldn't be pre-filled, FEB guides the user through an interactive setup process. This approach ensures that all necessary information is included in the reference, even for elements that require manual input.
+     - Progress Tracking: To provide situational awareness, the feature includes a progress tracker. This tracker informs the user of their current status, displaying how much work has been completed and how much remains, ensuring efficient and goal-oriented data entry.
+     - Data Saving: Procedure ISR supports saving progress, either to a temporary file or a configuration file. This feature allows users to work on the reference over an extended period, make updates per AIRAC cycles, or revisit and review their data. Saving to a configuration file also facilitates change notifications and automated data management.
 
-- [ ] vERAM AWY HI/LO Text and Symbol maps.
-  - Complete feature this only if vERAM is still in use after completing the above GeoJSON features.
-  - Refer to issue: https://github.com/Nikolai558/FE-BUDDY/issues/109
+---
 
-- [ ] AWY Fix/NAVAID Radius cutoff
-  -  Refer to issue: https://github.com/Nikolai558/FE-BUDDY/issues/110
+**v2.x FEATURES THAT WILL NOT BE INCLUDED IN v3.0+:**
 
-- [ ] Limit Airway Lines and other map features to only the selected ARTCC up to about 150 miles (or user defined distance) outside of the ARTCC boundary
-  -  If unable to use the ARTCC Boundary for a reference point, have the user define a coordinate set as the "center" and then define a distance for the cutoff point.
+- [ ] SCT2 Conversions
+  - Other than to GeoJSON.
+  - Limited support will be provided for this feature, as we are only keeping it so that neighboring non-US facilities can send FE's their data and it be converted as needed.
 
-- [ ] FAA RVM (foia requests) converter.
-  - .DAT & .KMZ
-
-- [ ] FAA GeoMAP (foia requests) converter.
-  - [GeoMap converter](https://github.com/justinshannon/geo-map-converter)
-    - Word is that the FAA may have changed their format of GeoMaps so this guy's may not work anymore.
-
-- [ ] Alias management
-  - Refer to issue: https://github.com/Nikolai558/FE-BUDDY/issues/121
-
-- [ ] vNAS API
-  - Refer to issue: https://github.com/Nikolai558/FE-BUDDY/issues/122
-
-- [ ] Facility Admin Tools
-  - Refer to issue: https://github.com/Nikolai558/FE-BUDDY/issues/123
-
-- [ ] Create more resources to complement the vNAS system.
-  - This will require more time to see what resources wohld actually be useful.
-
-- [ ] Artificial Intelligence (AI) Option that:
-  - Allows the program to notify FEs concerning upcoming AIRAC changes via phone call (US numbers at first for testing).
-  - Will give the user "someone" to speak to, considering now the FE will be pretty much useless
-  - Will provide emotional support and reassure the user that they are still a valued member of the community (will require extensive research into how to make a lie believable)
-  - Will be programmed with specific firewalls against stealing the users significant other.
-  - In the case of a Terminator situation, we will need to establish, via hard-coding, an artificial sense of “LOVE” built between the AI and those that have contributed to this project. (a running list of contributors will be maintained as a source file with limited access permissions)
+- [ ] vSTARS/vERAM and AutoCAD Conversions
+  - The current state of the code in v2.x for this is a bit of a mess and we have decided that it is not worth it to convert it over for something that should not be needed anymore.
+  - Users will still be able to download the last update to v2.x and utilize that feature if absolutely needed.

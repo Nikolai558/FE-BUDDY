@@ -23,63 +23,69 @@
 
 <! -- CSS stuff -->
 <style>
-    /* Reset some default styles and set the base font family and colors */
-    body {
-        font-family: Arial, sans-serif;
-        background-color: #333; /* Background color of the entire page */
-        color: #fff; /* Text color */
-        margin: 0; /* Remove default margin */
-        padding: 0; /* Remove default padding */
-        display: flex; /* Use flex layout to position sidebar and content */
-    }
+    
+    /* GENERAL */
 
-    /* Style for the sidebar */
-    #sidebar {
-        width: 250px; /* Set the width of the sidebar */
-        background-color: #222; /* Background color of the sidebar */
-        padding: 20px; /* Add padding to the sidebar content */
-    }
+            /* Reset some default styles and set the base font family and colors */
+            body {
+                font-family: Arial, sans-serif;
+                background-color: #333; /* Background color of the entire page */
+                color: #C6C6C6; /* Text color */
+                margin: 0; /* Remove default margin */
+                padding: 0; /* Remove default padding */
+                display: flex; /* Use flex layout to position sidebar and content */
+            }
 
-    /* Style for the main content area */
-    #content {
-        flex: 1; /* Allow the content area to grow and fill the remaining space */
-        padding: 20px; /* Add padding to the content area */
-    }
+            /* Center images within tooltips and centered-img div */
+            .tooltip img,
+            .centered-img {
+                display: block;
+                margin: 0 auto; /* Center the images horizontally */
+            }
 
-    /* Style for links in the sidebar */
-    #sidebar a {
-        display: block; /* Display links as blocks for spacing */
-        color: #fff; /* Text color for links */
-        text-decoration: none; /* Remove underlines from links */
-        margin-bottom: 10px; /* Add spacing between links */
-    }
+            /* CSS for collapsible sections - initially hidden */
+            .section {
+                display: none;
+            }
+	        
+            /* CSS for active (visible) collapsible sections */
+            .section.active {
+                display: block;
+            }
 
-    /* Style for links in the sidebar on hover */
-    #sidebar a:hover {
-        text-decoration: underline; /* Underline links when hovered */
-    }
+    /* SIDE BAR AREA */
 
-    /* Center images within tooltips and centered-img div */
-    .tooltip img,
-    .centered-img {
-        display: block;
-        margin: 0 auto; /* Center the images horizontally */
-    }
+            /* Style for the sidebar */
+            #sidebar {
+                width: 250px; /* Set the width of the sidebar */
+                background-color: #222; /* Background color of the sidebar */
+                padding: 20px; /* Add padding to the sidebar content */
+            }
+            /* Style for links in the sidebar */
+            #sidebar a {
+                display: block; /* Display links as blocks for spacing */
+                color: #C6C6C6; /* Text color for links */
+                text-decoration: none; /* Remove underlines from links */
+                margin-bottom: 10px; /* Add spacing between links */
+            }
 
-    /* Style for links in the main content area */
-    #content a {
-        color: blue; /* Change link color to blue in the main content area */
-    }
+            /* Style for links in the sidebar on hover */
+            #sidebar a:hover {
+                text-decoration: underline; /* Underline links when hovered */
+            }
 
-    /* CSS for collapsible sections - initially hidden */
-    .section {
-        display: none;
-    }
+    /* CONTENT AREA */
 
-    /* CSS for active (visible) collapsible sections */
-    .section.active {
-        display: block;
-    }
+            /* Style for the main content area */
+            #content {
+                flex: 1; /* Allow the content area to grow and fill the remaining space */
+                padding: 20px; /* Add padding to the content area */
+            }
+
+            /* Style for links in the main content area */
+            #content a {
+                color: #0076E7; /* Change link color to blue in the main content area */
+            }
 </style>
 </head>
 
@@ -98,7 +104,9 @@
 
 
 <body>
+
     <! -- table of contents stuff -->
+
     <div id="sidebar">
         <h2>FE-Buddy Manual</h2>
         <ul>
@@ -130,9 +138,12 @@
 
 
 
-    <! -- Content Pages -->
+        <! -- Content Pages -->
+
         <div id="content">
+
         <! -- Overview page content -->
+
         <div class="section active" id="overview">
             <h1>Overview</h1>
             <div class="tooltip">
@@ -196,6 +207,7 @@
 
 
         <! -- history and credits page content -->
+
         <div class="section" id="historyCreds">
             <h1>History and Credits</h1>
             <p>FE-Buddy has an interesting history of development, stemming from the desire to automate the Facility Files updating process:</p>
@@ -234,6 +246,7 @@
 
 
         <! -- system requirements page content -->
+
         <div class="section" id="systemRequirements">
             <h1>System Requirements</h1>
             <p>FE-Buddy operates on Windows OS (8.1 or newer).<p>
@@ -254,6 +267,7 @@
 
 
         <! -- report issues/feature requests page content -->
+
         <div class="section" id="reportIssuesFeatReq">
             <h1>Issues or Feature Requests</h1>
             <p>Before reporting a new issue or making a feature request, please check if someone else has already submitted a similar request. This helps avoid duplicates and streamlines the process. You can browse the existing issues by visiting the <a href="https://github.com/Nikolai558/FE-BUDDY/issues" target="_blank">FE-Buddy GitHub Issues page</a>. This page displays all the open issues, making it easy to see if your concern has already been addressed.</p>
@@ -300,6 +314,7 @@
 
 
         <! -- airac updates page content -->
+
         <div class="section" id="airacUpdate">
             <h1>AIRAC Updates</h1>
             <p>Info concerning the airacUpdate here.<p>
@@ -320,6 +335,7 @@
 
 
         <! -- create geojson page content -->
+
         <div class="section" id="createGeojson">
             <h1>Create GeoJSON</h1>
             <p>Info concerning the createGeojson here.<p>
@@ -340,6 +356,7 @@
 
 
         <! -- cleanup geojson page content -->
+
         <div class="section" id="geojsonCleanup">
             <h1>GeoJSON Clean-up</h1>
             <p>Info concerning the geojsonCleanup here.<p>
@@ -360,6 +377,7 @@
 
 
         <! -- procedure ISR page content -->
+
         <div class="section" id="procedureIsrs">
             <h1>Procedure ISRs</h1>
             <p>Info concerning the procedureIsrs here.<p>
@@ -380,6 +398,7 @@
 
 
         <! -- SCT2 to GeoJSON page content -->
+
         <div class="section" id="sct2ToGeoJSON">
             <h1>SCT2 to GeoJSON</h1>
             <p>Add content specific to SCT2 to GeoJSON Conversion here<p>
@@ -400,6 +419,7 @@
 
 
         <! -- FAA RVM to GeoJSON page content -->
+
         <div class="section" id="faaRVMToGeoJSON">
             <h1>FAA RVM to GeoJSON</h1>
             <p>Add content specific to FAA RVM to GeoJSON Conversion here<p>
@@ -420,6 +440,7 @@
 
 
         <! -- FAA GeoMap to GeoJSON page content -->
+
         <div class="section" id="faaGeoMapToGeoJSON">
             <h1>FAA GeoMap to GeoJSON</h1>
             <p>Add content specific to FAA GeoMap to GeoJSON Conversion here<p>
@@ -441,6 +462,7 @@
 
 
     <! -- scripts go here -->
+
         <script>
         // JavaScript to handle section toggling
         const sections = document.querySelectorAll('.section');

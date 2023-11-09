@@ -5,8 +5,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FE-Buddy Manual</title>
 
-    <link rel="icon" href="https://raw.githubusercontent.com/KSanders7070/FE-ASSISTANT/main/FEB_ICON.ico" type="image/x-icon">
+    <link rel="icon" href="Media/FEB_ICON.ico" type="image/x-icon">
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<! -- CSS stuff -->
 <style>
     /* Reset some default styles and set the base font family and colors */
     body {
@@ -66,9 +81,24 @@
         display: block;
     }
 </style>
-
 </head>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 <body>
+    <! -- table of contents stuff -->
     <div id="sidebar">
         <h2>FE-Buddy Manual</h2>
         <ul>
@@ -76,26 +106,44 @@
             <li><a href="#historyCreds">History and Credits</a></li>
             <li><a href="#systemRequirements">System Requirements</a></li>
             <li><a href="#reportIssuesFeatReq">Issues or Feature Requests</a></li>
-            <li><a href="#airacUpdate">AIRAC Update</a></li>
+            <li><a href="#airacUpdate">AIRAC Updates</a></li>
             <li><a href="#createGeojson">Create GeoJSON</a></li>
             <li><a href="#geojsonCleanup">GeoJSON Clean-up</a></li>
             <li><a href="#procedureIsrs">Procedure ISRs</a></li>
             <li><a href="#sct2ToGeoJSON">SCT2 > GeoJSON</a></li>
-            <li><a href="#rwRVMToGeoJSON">FAA RVM > GeoJSON</a></li>
-            <li><a href="#rwGeoMapToGeoJSON">FAA GeoMap > GeoJSON</a></li>
+            <li><a href="#faaRVMToGeoJSON">FAA RVM > GeoJSON</a></li>
+            <li><a href="#faaGeoMapToGeoJSON">FAA GeoMap > GeoJSON</a></li>
         </ul>
     </div>
-    <div id="content">
-        <div class="section active" id="overview">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <! -- Content Pages -->
+		<div id="content">
+        <! -- Overview page content -->
+		<div class="section active" id="overview">
             <h1>Overview</h1>
             <div class="tooltip">
-                <img src="https://raw.githubusercontent.com/KSanders7070/FE-ASSISTANT/main/test_image1.png"
-                alt="Test Image 1"
-                width="600"
-                height="200"
-                title="Alt Text: Test Image 1&#10;Image Source: https://github.com/KSanders7070/FE-ASSISTANT/blob/main/test_image1.png"
-                class="centered-img">
-            </div>
+              <img src="Media/Overview_Header_Image.png"
+			  alt="Test Image 1"
+			  width="424"
+			  height="264"
+			  title="Alt Text: Overview_Header_Image&#10;Image Source: Media/Overview_Header_Image.png"
+			  class="centered-img">
+        </div>
+
             <p>FE-Buddy is a valuable tool designed for VATSIM/VATUSA ARTCC Facility Engineers. It simplifies the creation, editing, and maintenance of facility files like GeoMaps, RADAR video maps (RVMs), and alias command files. Additionally, FE-Buddy offers the ability to convert FAA GeoMaps, RVMs, and NASR data into GeoJSON files, which can be seamlessly used in the CRC program. The program boasts several essential features:</p>
             <ul>
               <li>
@@ -133,7 +181,22 @@
             </ul>
         </div>
 
-        <div class="section" id="historyCreds">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        <! -- history and credits page content -->
+		<div class="section" id="historyCreds">
             <h1>History and Credits</h1>
             <p>FE-Buddy has an interesting history of development, stemming from the desire to automate the Facility Files updating process:</p>
             <ul>
@@ -156,12 +219,42 @@
             </p>
         </div>
 
-        <div class="section" id="systemRequirements">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        <! -- system requirements page content -->
+		<div class="section" id="systemRequirements">
             <h1>System Requirements</h1>
             <p>FE-Buddy operates on Windows OS (8.1 or newer).<p>
         </div>
 
-        <div class="section" id="reportIssuesFeatReq">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        <! -- report issues/feature requests page content -->
+		<div class="section" id="reportIssuesFeatReq">
             <h1>Issues or Feature Requests</h1>
             <p>Before reporting a new issue or making a feature request, please check if someone else has already submitted a similar request. This helps avoid duplicates and streamlines the process. You can browse the existing issues by visiting the <a href="https://github.com/Nikolai558/FE-BUDDY/issues" target="_blank">FE-Buddy GitHub Issues page</a>. This page displays all the open issues, making it easy to see if your concern has already been addressed.</p>
 			
@@ -192,43 +285,163 @@
 			<p>Please provide any additional information or feedback requested by the developers to help expedite the resolution of your concern.</p>
         </div>
 
-        <div class="section" id="airacUpdate">
-            <h1>AIRAC Update</h1>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        <! -- airac updates page content -->
+		<div class="section" id="airacUpdate">
+            <h1>AIRAC Updates</h1>
             <p>Info concerning the airacUpdate here.<p>
         </div>
 
-        <div class="section" id="createGeojson">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        <! -- create geojson page content -->
+		<div class="section" id="createGeojson">
             <h1>Create GeoJSON</h1>
             <p>Info concerning the createGeojson here.<p>
         </div>
 
-        <div class="section" id="geojsonCleanup">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        <! -- cleanup geojson page content -->
+		<div class="section" id="geojsonCleanup">
             <h1>GeoJSON Clean-up</h1>
             <p>Info concerning the geojsonCleanup here.<p>
         </div>
 
-        <div class="section" id="procedureIsrs">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        <! -- procedure ISR page content -->
+		<div class="section" id="procedureIsrs">
             <h1>Procedure ISRs</h1>
             <p>Info concerning the procedureIsrs here.<p>
         </div>
 
-        <div class="section" id="sct2ToGeoJSON">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        <! -- SCT2 to GeoJSON page content -->
+		<div class="section" id="sct2ToGeoJSON">
             <h1>SCT2 to GeoJSON</h1>
             <p>Add content specific to SCT2 to GeoJSON Conversion here<p>
         </div>
 
-        <div class="section" id="rwRVMToGeoJSON">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        <! -- FAA RVM to GeoJSON page content -->
+		<div class="section" id="faaRVMToGeoJSON">
             <h1>FAA RVM to GeoJSON</h1>
             <p>Add content specific to FAA RVM to GeoJSON Conversion here<p>
         </div>
 
-        <div class="section" id="rwGeoMapToGeoJSON">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        <! -- FAA GeoMap to GeoJSON page content -->
+		<div class="section" id="faaGeoMapToGeoJSON">
             <h1>FAA GeoMap to GeoJSON</h1>
             <p>Add content specific to FAA GeoMap to GeoJSON Conversion here<p>
         </div>
     </div>
 
-    <script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <! -- scripts go here -->
+		<script>
         // JavaScript to handle section toggling
         const sections = document.querySelectorAll('.section');
         sections[0].classList.add('active'); // Initially, the first section is active

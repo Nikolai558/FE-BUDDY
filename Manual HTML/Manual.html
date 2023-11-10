@@ -84,7 +84,7 @@
 
             /* Style for links in the main content area */
             #content a {
-                color: #0076E7; /* Change link color to blue in the main content area */
+                color: #c800e7; /* Change link color to blue in the main content area */
             }
 </style>
 </head>
@@ -105,7 +105,7 @@
 
 <body>
 
-    <! -- table of contents stuff -->
+    <! -- side bar table of contents stuff -->
 
     <div id="sidebar">
         <h2>FE-Buddy Manual</h2>
@@ -146,6 +146,9 @@
 
         <div class="section active" id="overview">
             <h1>Overview</h1>
+            <!-- Separator -->
+            <hr>
+			
             <div class="tooltip">
               <img src="Media/Overview_Header_Image.png"
               alt="Test Image 1"
@@ -210,6 +213,9 @@
 
         <div class="section" id="historyCreds">
             <h1>History and Credits</h1>
+            <!-- Separator -->
+            <hr>
+			
             <p>FE-Buddy has an interesting history of development, stemming from the desire to automate the Facility Files updating process:</p>
             <ul>
               <li>In 2020, Nikolas and Kyle initiated their journey to automate the Facility Files updating process, focusing on providing monthly AIRAC cycle updates for the vZLC ARTCC.</li>
@@ -249,6 +255,9 @@
 
         <div class="section" id="systemRequirements">
             <h1>System Requirements</h1>
+            <!-- Separator -->
+            <hr>
+			
             <p>FE-Buddy operates on Windows OS (8.1 or newer).<p>
         </div>
 
@@ -270,6 +279,9 @@
 
         <div class="section" id="reportIssuesFeatReq">
             <h1>Issues or Feature Requests</h1>
+            <!-- Separator -->
+            <hr>
+			
             <p>Before reporting a new issue or making a feature request, please check if someone else has already submitted a similar request. This helps avoid duplicates and streamlines the process. You can browse the existing issues by visiting the <a href="https://github.com/Nikolai558/FE-BUDDY/issues" target="_blank">FE-Buddy GitHub Issues page</a>. This page displays all the open issues, making it easy to see if your concern has already been addressed.</p>
             
             <h2>Step 1: Check Existing Issues</h2>
@@ -317,7 +329,119 @@
 
         <div class="section" id="airacUpdate">
             <h1>AIRAC Updates</h1>
-            <p>Info concerning the airacUpdate here.<p>
+			    
+            <!-- Separator -->
+            <hr>
+
+                <center><h2>ALIAS FILES</h2></center>
+                <center>Content Display</center>
+
+                    <h3>AWY_ALIAS.txt</h3>
+                    <ul>
+                      <li><strong>DESCRIPTION:</strong> The user inputs a command containing the airway ID, and it results in the display of all the fixes for that airway.</li>
+                      <li><strong>SYNTAX:</strong> .<span style="color: #0076E7;">&lt;AIRWAY ID&gt;</span>F</li>
+                      <li><strong>EXAMPLE:</strong> .<span style="color: #0076E7;">J16</span>F</li>
+                    </ul>
+                    <p>???Add image of J16 fixes drawn here???</p>
+			        
+                    <h3>STAR_DP_FIXES_ALIAS.txt</h3>
+                    <ul>
+                      <li><strong>DESCRIPTION:</strong> The user inputs a command containing the STAR/DP without the version number, and it results in the display of all the fixes for that airway.</li>
+                      <li><strong>SYNTAX:</strong> .<span style="color: #009EE7;">&lt;APT ID&gt;</span><span style="color: #0076E7;">&lt;STAR or DP ID&gt;</span>F</li>
+                      <li><strong>EXAMPLE:</strong> .<span style="color: #009EE7;">DTW</span><span style="color: #0076E7;">TPGUN</span>F</li>
+                    </ul>
+                    <p>???Add image of DTW TPGUN fixes drawn here???</p>
+
+                <center>In-Scope Reference (ISR)</center>
+
+                    <h3>ISR_APT_ALIAS.txt</h3>
+                    <ul>
+                      <li><strong>DESCRIPTION:</strong> The user inputs a command containing the airport ID, and it results in a message returning to the user in the CRC text communications window with details concerning that airport.</li>
+                      <li><strong>SYNTAX:</strong> .APT<span style="color: #0076E7;">&lt;APT FAA or ICAO ID&gt;</span></li>
+                      <li><strong>EXAMPLE:</strong> .APT<span style="color: #0076E7;">JFK</span></li>
+                    </ul>
+                    <p>???Add image of the JFK APT ISR displayed in the messages window???</p>
+			        
+                    <h3>ISR_NAVAID_ALIAS.txt</h3>
+                    <ul>
+                      <li><strong>DESCRIPTION:</strong> The user inputs a command containing the NAVAID ID or name (without spaces or special characters), and it results in a message returning to the user in the CRC text communications window with details concerning that NAVAID.</li>
+                      <li><strong>SYNTAX:</strong> .NAV<span style="color: #0076E7;">&lt;NAVAID ID or Name without spaces and special characters&gt;</span></li>
+                      <li><strong>EXAMPLE:</strong> .NAV<span style="color: #0076E7;">JHW</span></li>
+                    </ul>
+                    <p>???Add image of the JHW ISR displayed in the messages window???</p>
+			        
+                    <h3>ISR_NAVAID_ALIAS.txt</h3>
+                    <ul>
+                      <li><strong>DESCRIPTION:</strong> The user inputs a command containing the NAVAID ID or name (without spaces or special characters), and it results in a message returning to the user in the CRC text communications window with details concerning that NAVAID.</li>
+                      <li><strong>SYNTAX:</strong> .NAV<span style="color: #0076E7;">&lt;NAVAID ID or Name without spaces and special characters&gt;</span></li>
+                      <li><strong>EXAMPLE:</strong> .NAV<span style="color: #0076E7;">JHW</span></li>
+                    </ul>
+
+                <center>FAA Chart Recall</center>
+
+                    <h3>Overview</h3>
+                    <ul>
+                      <li><strong>FILE:</strong> FAA_CHART_RECALL.txt</li>
+                      <li><strong>DESCRIPTION:</strong> The user inputs a command with a syntax that contains the procedure ID or name, and it results in the users default webbrowser opening the FAA chart for that procedure.</li>
+                      <li><strong>SYNTAX:</strong> Variable; Explained below.</span></li>
+                      <li><strong>INCLUDED:</strong></li>
+                        <ul>
+                          <li>Takeoff Minimums/Obstacle Departure Procedure Page</li>
+                          <li>Diverse Vector Area Page</li>
+                          <li>Hot Spots Page</li>
+                          <li>Land and Hold Short Operations Page</li>
+                          <li>Airport Diagrams</li>
+                          <li>DP/STAR Plates</li>
+                          <li>IAP Plates</li>
+                        </ul>
+                      <li><strong>NOTE:</strong> For the purpose of these commands, "APT" is meant as the FAA ID for the airport.</li>
+                    </ul>
+			        
+                    <h3>Takeoff Minimums/Obstacle Departure Procedure Page</h3>
+                    <ul>
+                      <li><strong>SYNTAX:</strong> .<span style="color: #0076E7;">&lt;APT&gt;</span>TMC</li>
+                      <li><strong>EXAMPLE:</strong> .<span style="color: #0076E7;">SLC</span>TMC</li>
+                    </ul>
+                    <p>???Add image of the SLCTMC chart???</p>
+			        
+                    <h3>Diverse Vector Area Page</h3>
+                    <ul>
+                      <li><strong>SYNTAX:</strong> .<span style="color: #0076E7;">&lt;APT&gt;</span>DVAC</li>
+                      <li><strong>EXAMPLE:</strong> .<span style="color: #0076E7;">SDL</span>DVAC</li>
+                    </ul>
+                    <p>???Add image of the SDLDVAC chart???</p>
+			        
+                    <h3>Hot Spots Page</h3>
+                    <ul>
+                      <li><strong>SYNTAX:</strong> .<span style="color: #0076E7;">&lt;APT&gt;</span>HSC</li>
+                      <li><strong>EXAMPLE:</strong> .<span style="color: #0076E7;">EDF</span>HSC</li>
+                    </ul>
+                    <p>???Add image of the EDFHSC chart???</p>
+			        
+                    <h3>Land and Hold Short Operations Page</h3>
+                    <ul>
+                      <li><strong>SYNTAX:</strong> .<span style="color: #0076E7;">&lt;APT&gt;</span>LHASOC</li>
+                      <li><strong>EXAMPLE:</strong> .<span style="color: #0076E7;">BZN</span>LAHSOC</li>
+                    </ul>
+                    <p>???Add image of the BZNLAHSO chart???</p>
+			        
+                    <h3>Airport Diagrams</h3>
+                    <ul>
+                      <li><strong>SYNTAX:</strong> .<span style="color: #0076E7;">&lt;APT&gt;</span>APDC</li>
+                      <li><strong>EXAMPLE:</strong> .<span style="color: #0076E7;">SLC</span>APDC</li>
+                    </ul>
+                    <p>???Add image of the SLCAPDC chart???</p>
+			        
+                    <h3>DP/STAR Plates</h3>
+                    <ul>
+                      <li><strong>SYNTAX:</strong> .<span style="color: #009EE7;">&lt;APT&gt;</span><span style="color: #0076E7;">&lt;PROCEDURE ID without version number&gt;</span>C<span style="color: #bd0202;">&lt;number of page if not 1&gt;</span></li>
+                      <li><strong>EXAMPLES:</strong>
+                        <ul>
+                          <li>.<span style="color: #009EE7;">DEN</span><span style="color: #0076E7;">AALLE</span>C</li>
+                          <li>.<span style="color: #009EE7;">DEN</span><span style="color: #0076E7;">AALLE</span>C<span style="color: #bd0202;">2</span></li>
+                          <li>.<span style="color: #009EE7;">DEN</span><span style="color: #0076E7;">AALLE</span>C<span style="color: #bd0202;">3</span></li>
+                    </ul>
+                    <p>???Add images of the DENALLEC charts???</p>
         </div>
 
 
@@ -338,7 +462,10 @@
 
         <div class="section" id="createGeojson">
             <h1>Create GeoJSON</h1>
-            <p>Info concerning the createGeojson here.<p>
+            <!-- Separator -->
+            <hr>
+			
+            <p>???Info concerning the createGeojson here.???<p>
         </div>
 
 
@@ -359,7 +486,10 @@
 
         <div class="section" id="geojsonCleanup">
             <h1>GeoJSON Clean-up</h1>
-            <p>Info concerning the geojsonCleanup here.<p>
+            <!-- Separator -->
+            <hr>
+			
+            <p>???Info concerning the geojsonCleanup here.???<p>
         </div>
 
 
@@ -380,7 +510,10 @@
 
         <div class="section" id="procedureIsrs">
             <h1>Procedure ISRs</h1>
-            <p>Info concerning the procedureIsrs here.<p>
+            <!-- Separator -->
+            <hr>
+			
+            <p>???Info concerning the procedureIsrs here.???<p>
         </div>
 
 
@@ -401,7 +534,10 @@
 
         <div class="section" id="sct2ToGeoJSON">
             <h1>SCT2 to GeoJSON</h1>
-            <p>Add content specific to SCT2 to GeoJSON Conversion here<p>
+            <!-- Separator -->
+            <hr>
+			
+            <p>???Add content specific to SCT2 to GeoJSON Conversion here???<p>
         </div>
 
 
@@ -422,7 +558,10 @@
 
         <div class="section" id="faaRVMToGeoJSON">
             <h1>FAA RVM to GeoJSON</h1>
-            <p>Add content specific to FAA RVM to GeoJSON Conversion here<p>
+            <!-- Separator -->
+            <hr>
+			
+            <p>???Add content specific to FAA RVM to GeoJSON Conversion here???<p>
         </div>
 
 
@@ -443,7 +582,10 @@
 
         <div class="section" id="faaGeoMapToGeoJSON">
             <h1>FAA GeoMap to GeoJSON</h1>
-            <p>Add content specific to FAA GeoMap to GeoJSON Conversion here<p>
+            <!-- Separator -->
+            <hr>
+			
+            <p>???Add content specific to FAA GeoMap to GeoJSON Conversion here???<p>
         </div>
     </div>
 

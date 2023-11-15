@@ -86,6 +86,22 @@
             #content a {
                 color: #c800e7; /* Change link color to blue in the main content area */
             }
+
+            /* Centering the tables */
+            .center-table {
+                margin: 0 auto; /* Set left and right margin to auto for centering */
+            }
+
+            /* Add this style for centering text in table cells */
+            .center-table td {
+                text-align: center;
+            }
+
+            /* Add this style for adjusting column widths */
+            .center-table th, .center-table td {
+                width: 130px; /* Set your desired width here */
+            }
+
 </style>
 </head>
 
@@ -342,7 +358,7 @@
                       <li><strong>SYNTAX:</strong> .<span style="color: #0076E7;">&lt;AIRWAY ID&gt;</span>F</li>
                       <li><strong>EXAMPLE:</strong> .<span style="color: #0076E7;">J16</span>F</li>
                     </ul>
-                    <p>???Add image of J16 fixes drawn here???</p>
+                    <!-- TODO: Add image of J16 fixes drawn here -->
 			        
                     <h3>STAR_DP_FIXES_ALIAS.txt</h3>
                     <ul>
@@ -350,7 +366,7 @@
                       <li><strong>SYNTAX:</strong> .<span style="color: #009EE7;">&lt;APT ID&gt;</span><span style="color: #0076E7;">&lt;STAR or DP ID&gt;</span>F</li>
                       <li><strong>EXAMPLE:</strong> .<span style="color: #009EE7;">DTW</span><span style="color: #0076E7;">TPGUN</span>F</li>
                     </ul>
-                    <p>???Add image of DTW TPGUN fixes drawn here???</p>
+                    <!-- TODO: Add image of DTW TPGUN fixes drawn here -->
 
                 <center>In-Scope Reference (ISR)</center>
 
@@ -360,7 +376,7 @@
                       <li><strong>SYNTAX:</strong> .APT<span style="color: #0076E7;">&lt;APT FAA or ICAO ID&gt;</span></li>
                       <li><strong>EXAMPLE:</strong> .APT<span style="color: #0076E7;">JFK</span></li>
                     </ul>
-                    <p>???Add image of the JFK APT ISR displayed in the messages window???</p>
+                    <!-- TODO: Add image of the JFK APT ISR displayed in the messages window -->
 			        
                     <h3>ISR_NAVAID_ALIAS.txt</h3>
                     <ul>
@@ -368,7 +384,7 @@
                       <li><strong>SYNTAX:</strong> .NAV<span style="color: #0076E7;">&lt;NAVAID ID or Name without spaces and special characters&gt;</span></li>
                       <li><strong>EXAMPLE:</strong> .NAV<span style="color: #0076E7;">JHW</span></li>
                     </ul>
-                    <p>???Add image of the JHW ISR displayed in the messages window???</p>
+                    <!-- TODO: Add image of the JHW ISR displayed in the messages window -->
 			        
                     <h3>ISR_NAVAID_ALIAS.txt</h3>
                     <ul>
@@ -396,42 +412,42 @@
                         </ul>
                       <li><strong>NOTE:</strong> For the purpose of these commands, "APT" is meant as the FAA ID for the airport.</li>
                     </ul>
-			        
+
                     <h3>Takeoff Minimums/Obstacle Departure Procedure Page</h3>
                     <ul>
                       <li><strong>SYNTAX:</strong> .<span style="color: #0076E7;">&lt;APT&gt;</span>TMC</li>
                       <li><strong>EXAMPLE:</strong> .<span style="color: #0076E7;">SLC</span>TMC</li>
                     </ul>
-                    <p>???Add image of the SLCTMC chart???</p>
-			        
+                    <!-- TODO: Add image of the SLCTMC chart -->
+
                     <h3>Diverse Vector Area Page</h3>
                     <ul>
                       <li><strong>SYNTAX:</strong> .<span style="color: #0076E7;">&lt;APT&gt;</span>DVAC</li>
                       <li><strong>EXAMPLE:</strong> .<span style="color: #0076E7;">SDL</span>DVAC</li>
                     </ul>
-                    <p>???Add image of the SDLDVAC chart???</p>
-			        
+                    <!-- TODO: Add image of the SDLDVAC chart -->
+
                     <h3>Hot Spots Page</h3>
                     <ul>
                       <li><strong>SYNTAX:</strong> .<span style="color: #0076E7;">&lt;APT&gt;</span>HSC</li>
                       <li><strong>EXAMPLE:</strong> .<span style="color: #0076E7;">EDF</span>HSC</li>
                     </ul>
-                    <p>???Add image of the EDFHSC chart???</p>
-			        
+                    <!-- TODO: Add image of the EDFHSC chart -->
+
                     <h3>Land and Hold Short Operations Page</h3>
                     <ul>
                       <li><strong>SYNTAX:</strong> .<span style="color: #0076E7;">&lt;APT&gt;</span>LHASOC</li>
                       <li><strong>EXAMPLE:</strong> .<span style="color: #0076E7;">BZN</span>LAHSOC</li>
                     </ul>
-                    <p>???Add image of the BZNLAHSO chart???</p>
-			        
+                    <!-- TODO: Add image of the BZNLAHSO chart -->
+
                     <h3>Airport Diagrams</h3>
                     <ul>
                       <li><strong>SYNTAX:</strong> .<span style="color: #0076E7;">&lt;APT&gt;</span>APDC</li>
                       <li><strong>EXAMPLE:</strong> .<span style="color: #0076E7;">SLC</span>APDC</li>
                     </ul>
-                    <p>???Add image of the SLCAPDC chart???</p>
-			        
+                    <!-- TODO: Add image of the SLCAPDC chart -->
+
                     <h3>DP/STAR Plates</h3>
                     <ul>
                       <li><strong>SYNTAX:</strong> .<span style="color: #009EE7;">&lt;APT&gt;</span><span style="color: #0076E7;">&lt;PROCEDURE ID without version number&gt;</span>C<span style="color: #bd0202;">&lt;number of page if not 1&gt;</span></li>
@@ -439,9 +455,252 @@
                         <ul>
                           <li>.<span style="color: #009EE7;">DEN</span><span style="color: #0076E7;">AALLE</span>C</li>
                           <li>.<span style="color: #009EE7;">DEN</span><span style="color: #0076E7;">AALLE</span>C<span style="color: #bd0202;">2</span></li>
-                          <li>.<span style="color: #009EE7;">DEN</span><span style="color: #0076E7;">AALLE</span>C<span style="color: #bd0202;">3</span></li>
+                          <li>.<span style="color: #009EE7;">DEN</span><span style="color: #0076E7;">AALLE</span>C<span style="color: #bd0202;">3</span></ul>
+                      </ul>
+                    <!-- TODO: Add images of the DENALLEC charts -->
+
+                    <h3>DP/STAR Plates - Without FAA Assigned Computer Code</h3>
+                    <ul>
+                      <li><strong>SYNTAX:</strong> .<span style="color: #009EE7;">&lt;APT&gt;</span><span style="color: #0076E7;">&lt;first 5 characters of procedure name (no spaces)&gt;</span>C<span style="color: #bd0202;">&lt;number of page if not 1&gt;</span></li>
+                      <li><strong>EXAMPLES:</strong>
+                        <ul>
+                          <li>TNX-TUMBE ONE
+						      <ul><li>.<span style="color: #009EE7;">TNX</span><span style="color: #0076E7;">TUMBE</span>C</li></ul>
+                          </li>
+                          <li>TTD-BLUE LAKE THREE
+						      <ul><li>.<span style="color: #009EE7;">TTD</span><span style="color: #0076E7;">BLUEL</span>C</li></ul>
+                          </li>
+                          <li>GEG-SPOKANE SIX
+						      <ul><li>.<span style="color: #009EE7;">GEG</span><span style="color: #0076E7;">SPOKA</span>C</li></ul>
+                          </li>
+                          <li>GEG-SPOKANE, CONT. SIX
+						      <ul><li>.<span style="color: #009EE7;">GEG</span><span style="color: #0076E7;">SPOKA</span>C<span style="color: #bd0202;">2</span></ul></ul>
+                          </li>
+                      </ul>
+                    <!-- TODO: Add images of the GEGSPOKA charts -->
+
+                    <h3>Instrument Approach Plates</h3>
+                    <ul><li><strong>SCRATCHPAD (SPad) CODE INFO:</strong>
+					    <ul><li>This collection of codes is intended to be utilized FAA-wide and formatted in an intuitive manner.</li></ul>
+					    <ul><li>The idea is to attempt to keep every code limited to 3 characters, while allowing an increase to 4 characters when the situation requires. Never will you see a 5 character SPad Code.</li></ul>
+					    <ul><li>When creating a general syntax for such a dynamic library of approaches, there will be limitations; Some approaches were not included in this colletion such as PRM, SA CAT (i,ii,iii), HI-, BACK COURSE, LOC/NDB/COPTER, CONVERGING ILS, and GLS.</li></ul>
+					    <ul><li>When a Runway number must be shortened, the last digit in the runway number is used along wiht the parallel/type runway (L/C/R/G/W) designator, if there is one.</li></ul>
+                        <ul><li>The only time you will see a 4 character SPad code is when there is a Variant, 2-digit runway number, and a L/C/R designator.</li></ul>
+					  </li>
+                    <li><strong>SYNTAX:</strong> .<span style="color: #009EE7;">&lt;APT&gt;</span><span style="color: #0076E7;">&lt;IAP SPad Code&gt;</span>C</li>
                     </ul>
-                    <p>???Add images of the DENALLEC charts???</p>
+    <!-- Table for APP TYPE and ABBREVIATION -->
+    <table border="1" class="center-table">
+        <thead>
+            <tr>
+                <th>APP TYPE</th>
+                <th>ABBREVIATION</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Visual</td>
+                <td>V</td>
+            </tr>
+            <tr>
+                <td>Contact</td>
+                <td>C</td>
+            </tr>
+            <tr>
+                <td>ILS</td>
+                <td>I</td>
+            </tr>
+            <tr>
+                <td>LOC</td>
+                <td>L</td>
+            </tr>
+            <tr>
+                <td>RNAV</td>
+                <td>R</td>
+            </tr>
+            <tr>
+                <td>GPS</td>
+                <td>G</td>
+            </tr>
+            <tr>
+                <td>VOR</td>
+                <td>O</td>
+            </tr>
+            <tr>
+                <td>NDB</td>
+                <td>N</td>
+            </tr>
+            <tr>
+                <td>SDF</td>
+                <td>S</td>
+            </tr>
+            <tr>
+                <td>LDA</td>
+                <td>D</td>
+            </tr>
+            <tr>
+                <td>TACAN</td>
+                <td>T</td>
+            </tr>
+            <tr>
+                <td>VOR/DME</td>
+                <td>F</td>
+            </tr>
+            <tr>
+                <td>LOC/DME</td>
+                <td>K</td>
+            </tr>
+            <tr>
+                <td>ILS/DME</td>
+                <td>J</td>
+            </tr>
+            <tr>
+                <td>NDB/DME</td>
+                <td>D</td>
+            </tr>
+            <tr>
+                <td>LDA/DME</td>
+                <td>A</td>
+            </tr>
+        </tbody>
+    </table>
+
+<!-- blank line -->
+<br>
+
+    <table border="1" class="center-table">
+        <thead>
+            <tr>
+                <th><span style="color: #0076E7;">TYPE</span></th>
+                <th><span style="color: #00a305;">VARIANT</span></th>
+                <th><span style="color: #bd0202;">RWY</span></th>
+                <th>SPAD CODE</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>ILS</td>
+                <td></td>
+                <td>10</td>
+                <td><span style="color: #0076E7;">I</span><span style="color: #bd0202;">10</span></td>
+            </tr>
+            <tr>
+                <td>ILS</td>
+                <td>Y</td>
+                <td>10</td>
+                <td><span style="color: #0076E7;">I</span><span style="color: #00a305;">Y</span><span style="color: #bd0202;">0</span></td>
+            </tr>
+                <td>ILS</td>
+                <td></td>
+                <td>28R</td>
+                <td><span style="color: #0076E7;">I</span><span style="color: #bd0202;">8R</span></td>
+            </tr>
+            <tr>
+                <td>ILS</td>
+                <td>Y</td>
+                <td>28R</td>
+                <td><span style="color: #0076E7;">I</span><span style="color: #00a305;">Y</span><span style="color: #bd0202;">8R</span></td>
+            </tr>
+            <tr>
+                <td>VOR</td>
+                <td></td>
+                <td>12</td>
+                <td><span style="color: #0076E7;">O</span><span style="color: #bd0202;">12</span></td>
+            </tr>
+            <tr>
+                <td>VOR</td>
+                <td>B</td>
+                <td></td>
+                <td><span style="color: #0076E7;">O</span><span style="color: #00a305;">B</span></td>
+            </tr>
+            <tr>
+                <td>RNAV</td>
+                <td></td>
+                <td>04</td>
+                <td><span style="color: #0076E7;">R</span><span style="color: #bd0202;">04</span></td>
+            </tr>
+            <tr>
+                <td>RNAV</td>
+                <td>X</td>
+                <td>04C</td>
+                <td><span style="color: #0076E7">R</span><span style="color: #00a305;">X</span><span style="color: #bd0202;">4C</span></td>
+            </tr>
+            <tr>
+                <td>LOC/DME</td>
+                <td>Z</td>
+                <td>18L</td>
+                <td><span style="color: #0076E7;">K</span><span style="color: #00a305;">Z</span><span style="color: #bd0202;">8L</span></td>
+            </tr>
+        </tbody>
+    </table>
+
+<!-- blank line -->
+<br>
+
+    <table border="1" class="center-table" style="width: 630px;">
+        <thead>
+            <tr>
+                <th><span style="color: #0076E7;">AIRPORT</span></th>
+                <th>APPROACH</th>
+                <th>COMMAND<br><span style="color: #bd0202;">(SPad = RED)</span></th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>SLC</td>
+                <td>ILS RWY 16L</td>
+                <td>.<span style="color: #0076E7;">SLC</span><span style="color: #bd0202;">I6L</span>C</td>
+            </tr>
+            <tr>
+            <tr>
+                <td>SLC</td>
+                <td>LOC RWY 16L</td>
+                <td>.<span style="color: #0076E7;">SLC</span><span style="color: #bd0202;">L6L</span>C</td>
+            </tr>
+            <tr>
+                <td>ENV</td>
+                <td>RNAV-A</td>
+                <td>.<span style="color: #0076E7;">ENV</span><span style="color: #bd0202;">RA</span>C</td>
+            </tr>
+            <tr>
+                <td>XSA</td>
+                <td>RNAV (GPS) RWY 10</td>
+                <td>.<span style="color: #0076E7;">XSA</span><span style="color: #bd0202;">R10</span>C</td>
+            </tr>
+            <tr>
+                <td>EKN</td>
+                <td>LDA-C</td>
+                <td>.<span style="color: #0076E7;">EKN</span><span style="color: #bd0202;">DC</span>C</td>
+            </tr>
+            <tr>
+                <td>SFO</td>
+                <td>RNAV (RNP) Y RWY 28R</td>
+                <td>.<span style="color: #0076E7;">SFO</span><span style="color: #bd0202;">RY8R</span>C</td>
+            </tr>
+            <tr>
+                <td>SFO</td>
+                <td>RNAV (RNP) X RWY 28R</td>
+                <td>.<span style="color: #0076E7;">SFO</span><span style="color: #bd0202;">RX8R</span>C</td>
+            </tr>
+        </tbody>
+    </table>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         </div>
 
 
@@ -465,7 +724,7 @@
             <!-- Separator -->
             <hr>
 			
-            <p>???Info concerning the createGeojson here.???<p>
+            <!-- TODO: Info concerning the createGeojson here.???<p>
         </div>
 
 
@@ -489,7 +748,7 @@
             <!-- Separator -->
             <hr>
 			
-            <p>???Info concerning the geojsonCleanup here.???<p>
+            <!-- TODO: Info concerning the geojsonCleanup here.???<p>
         </div>
 
 
@@ -513,7 +772,7 @@
             <!-- Separator -->
             <hr>
 			
-            <p>???Info concerning the procedureIsrs here.???<p>
+            <!-- TODO: Info concerning the procedureIsrs here.???<p>
         </div>
 
 
@@ -537,7 +796,7 @@
             <!-- Separator -->
             <hr>
 			
-            <p>???Add content specific to SCT2 to GeoJSON Conversion here???<p>
+            <!-- TODO: Add content specific to SCT2 to GeoJSON Conversion here???<p>
         </div>
 
 
@@ -561,7 +820,7 @@
             <!-- Separator -->
             <hr>
 			
-            <p>???Add content specific to FAA RVM to GeoJSON Conversion here???<p>
+            <!-- TODO: Add content specific to FAA RVM to GeoJSON Conversion here???<p>
         </div>
 
 
@@ -585,7 +844,7 @@
             <!-- Separator -->
             <hr>
 			
-            <p>???Add content specific to FAA GeoMap to GeoJSON Conversion here???<p>
+            <!-- TODO: Add content specific to FAA GeoMap to GeoJSON Conversion here???<p>
         </div>
     </div>
 

@@ -350,54 +350,12 @@
             <hr>
 
                 <center><h2>ALIAS FILES</h2></center>
-                <center>Content Display</center>
 
-                    <h3>AWY_ALIAS.txt</h3>
-                    <ul>
-                      <li><strong>DESCRIPTION:</strong> The user inputs a command containing the airway ID, and it results in the display of all the fixes for that airway.</li>
-                      <li><strong>SYNTAX:</strong> .<span style="color: #0076E7;">&lt;AIRWAY ID&gt;</span>F</li>
-                      <li><strong>EXAMPLE:</strong> .<span style="color: #0076E7;">J16</span>F</li>
-                    </ul>
-                    <!-- TODO: Add image of J16 fixes drawn here -->
-			        
-                    <h3>STAR_DP_FIXES_ALIAS.txt</h3>
-                    <ul>
-                      <li><strong>DESCRIPTION:</strong> The user inputs a command containing the STAR/DP without the version number, and it results in the display of all the fixes for that airway.</li>
-                      <li><strong>SYNTAX:</strong> .<span style="color: #009EE7;">&lt;APT ID&gt;</span><span style="color: #0076E7;">&lt;STAR or DP ID&gt;</span>F</li>
-                      <li><strong>EXAMPLE:</strong> .<span style="color: #009EE7;">DTW</span><span style="color: #0076E7;">TPGUN</span>F</li>
-                    </ul>
-                    <!-- TODO: Add image of DTW TPGUN fixes drawn here -->
-
-                <center>In-Scope Reference (ISR)</center>
-
-                    <h3>ISR_APT_ALIAS.txt</h3>
-                    <ul>
-                      <li><strong>DESCRIPTION:</strong> The user inputs a command containing the airport ID, and it results in a message returning to the user in the CRC text communications window with details concerning that airport.</li>
-                      <li><strong>SYNTAX:</strong> .APT<span style="color: #0076E7;">&lt;APT FAA or ICAO ID&gt;</span></li>
-                      <li><strong>EXAMPLE:</strong> .APT<span style="color: #0076E7;">JFK</span></li>
-                    </ul>
-                    <!-- TODO: Add image of the JFK APT ISR displayed in the messages window -->
-			        
-                    <h3>ISR_NAVAID_ALIAS.txt</h3>
-                    <ul>
-                      <li><strong>DESCRIPTION:</strong> The user inputs a command containing the NAVAID ID or name (without spaces or special characters), and it results in a message returning to the user in the CRC text communications window with details concerning that NAVAID.</li>
-                      <li><strong>SYNTAX:</strong> .NAV<span style="color: #0076E7;">&lt;NAVAID ID or Name without spaces and special characters&gt;</span></li>
-                      <li><strong>EXAMPLE:</strong> .NAV<span style="color: #0076E7;">JHW</span></li>
-                    </ul>
-                    <!-- TODO: Add image of the JHW ISR displayed in the messages window -->
-			        
-                    <h3>ISR_NAVAID_ALIAS.txt</h3>
-                    <ul>
-                      <li><strong>DESCRIPTION:</strong> The user inputs a command containing the NAVAID ID or name (without spaces or special characters), and it results in a message returning to the user in the CRC text communications window with details concerning that NAVAID.</li>
-                      <li><strong>SYNTAX:</strong> .NAV<span style="color: #0076E7;">&lt;NAVAID ID or Name without spaces and special characters&gt;</span></li>
-                      <li><strong>EXAMPLE:</strong> .NAV<span style="color: #0076E7;">JHW</span></li>
-                    </ul>
-
-                <center>FAA Chart Recall</center>
+				<center>FAA Chart Recall</center>
 
                     <h3>Overview</h3>
                     <ul>
-                      <li><strong>FILE:</strong> FAA_CHART_RECALL.txt</li>
+                      <li><strong>FILE:</strong> FAA_CHART_RECALL_ALIAS.txt</li>
                       <li><strong>DESCRIPTION:</strong> The user inputs a command with a syntax that contains the procedure ID or name, and it results in the users default webbrowser opening the FAA chart for that procedure.</li>
                       <li><strong>SYNTAX:</strong> Variable; Explained below.</span></li>
                       <li><strong>INCLUDED:</strong></li>
@@ -450,7 +408,7 @@
 
                     <h3>DP/STAR Plates</h3>
                     <ul>
-                      <li><strong>SYNTAX:</strong> .<span style="color: #009EE7;">&lt;APT&gt;</span><span style="color: #0076E7;">&lt;PROCEDURE ID without version number&gt;</span>C<span style="color: #bd0202;">&lt;number of page if not 1&gt;</span></li>
+                      <li><strong>SYNTAX:</strong> .<span style="color: #009EE7;">&lt;APT&gt;</span><span style="color: #0076E7;">&lt;PROCEDURE ID without version number&gt;</span>C<span style="color: #bd0202;">&lt;page number, if not 1&gt;</span></li>
                       <li><strong>EXAMPLES:</strong>
                         <ul>
                           <li>.<span style="color: #009EE7;">DEN</span><span style="color: #0076E7;">AALLE</span>C</li>
@@ -461,7 +419,7 @@
 
                     <h3>DP/STAR Plates - Without FAA Assigned Computer Code</h3>
                     <ul>
-                      <li><strong>SYNTAX:</strong> .<span style="color: #009EE7;">&lt;APT&gt;</span><span style="color: #0076E7;">&lt;first 5 characters of procedure name (no spaces)&gt;</span>C<span style="color: #bd0202;">&lt;number of page if not 1&gt;</span></li>
+                      <li><strong>SYNTAX:</strong> .<span style="color: #009EE7;">&lt;APT&gt;</span><span style="color: #0076E7;">&lt;first 5 characters of procedure name (no spaces)&gt;</span>C<span style="color: #bd0202;">&lt;page number, if not 1&gt;</span></li>
                       <li><strong>EXAMPLES:</strong>
                         <ul>
                           <li>TNX-TUMBE ONE
@@ -689,7 +647,7 @@
                     <br>
 
                     <h3>Charted Visual Instrument Approach Plates</h3>
-                    <li><strong>SYNTAX:</strong> .<span style="color: #009EE7;">&lt;APT&gt;</span><span style="color: #0076E7;">&lt;1st character of each word prior to "Visual"&gt;</span>C</li>
+                    <li><strong>SYNTAX:</strong> .<span style="color: #009EE7;">&lt;APT&gt;</span>V<span style="color: #0076E7;">&lt;1st character of each word prior to "Visual"&gt;</span>C</li>
                     
                     <!-- blank line -->
                     <br>
@@ -725,6 +683,80 @@
                                 </tr>
                             </tbody>
                         </table>
+                    
+                    <!-- blank line -->
+                    <br>
+
+                    <h3>Multi-Page Instrument Approach Plates</h3>
+                    <li><strong>SYNTAX:</strong> .<span style="color: #009EE7;">&lt;APT&gt;</span><span style="color: #0076E7;">&lt;SPad Code&gt;</span>C<span style="color: #bd0202;">&lt;page number, if not 1&gt;</span></li>
+                    <li><strong>EXAMPLES:</strong>
+                      <ul>
+                        <li>.<span style="color: #009EE7;">SEA</span><span style="color: #0076E7;">RZ6C</span>C</li>
+                        <li>.<span style="color: #009EE7;">SEA</span><span style="color: #0076E7;">RZ6C</span>C<span style="color: #bd0202;">2</span></li>
+                      </ul>
+					</li>
+
+                <center>Content Display</center>
+
+                    <h3>AWY_FIXES_ALIAS.txt</h3>
+                    <ul>
+                      <li><strong>DESCRIPTION:</strong> The user inputs a command containing the airway ID, and it results in the display of all the fixes for that airway.</li>
+                      <li><strong>SYNTAX:</strong> .<span style="color: #0076E7;">&lt;AIRWAY ID&gt;</span>F</li>
+                      <li><strong>EXAMPLE:</strong> .<span style="color: #0076E7;">J16</span>F</li>
+                    </ul>
+                    <!-- TODO: Add image of J16 fixes drawn here -->
+			        
+                    <h3>STAR_DP_FIXES_ALIAS.txt</h3>
+                    <ul>
+                      <li><strong>DESCRIPTION:</strong> The user inputs a command containing the STAR/DP without the version number, and it results in the display of all the fixes for that airway.</li>
+                      <li><strong>SYNTAX:</strong> .<span style="color: #009EE7;">&lt;APT ID&gt;</span><span style="color: #0076E7;">&lt;STAR or DP ID&gt;</span>F</li>
+                      <li><strong>EXAMPLE:</strong> .<span style="color: #009EE7;">DTW</span><span style="color: #0076E7;">TPGUN</span>F</li>
+                    </ul>
+                    <!-- TODO: Add image of DTW TPGUN fixes drawn here -->
+
+                <center>In-Scope Reference (ISR)</center>
+
+                    <h3>ISR_APT_ALIAS.txt</h3>
+                    <ul>
+                      <li><strong>DESCRIPTION:</strong> The user inputs a command containing the airport ID, and it results in a message returning to the user in the CRC text communications window with details concerning that airport.</li>
+                      <li><strong>SYNTAX:</strong> .APT<span style="color: #0076E7;">&lt;APT FAA or ICAO ID&gt;</span></li>
+                      <li><strong>EXAMPLE:</strong> .APT<span style="color: #0076E7;">JFK</span></li>
+                    </ul>
+                    <!-- TODO: Add image of the JFK APT ISR displayed in the messages window -->
+			        
+                    <h3>ISR_NAVAID_ALIAS.txt</h3>
+                    <ul>
+                      <li><strong>DESCRIPTION:</strong> The user inputs a command containing the NAVAID ID or name (without spaces or special characters), and it results in a message returning to the user in the CRC text communications window with details concerning that NAVAID.</li>
+                      <li><strong>SYNTAX:</strong> .NAV<span style="color: #0076E7;">&lt;NAVAID ID or Name without spaces and special characters&gt;</span></li>
+                      <li><strong>EXAMPLE:</strong> .NAV<span style="color: #0076E7;">JHW</span></li>
+                    </ul>
+                    <!-- TODO: Add image of the JHW ISR displayed in the messages window -->
+			        
+                    <h3>ISR_TELEPHONY.txt</h3>
+                    <ul>
+                      <li><strong>DESCRIPTION:</strong> The user inputs a command containing the 3LD or name (without spaces or special characters), and it results in a message returning to the user in the CRC text communications window with details concerning that telephony.</li>
+                      <li><strong>SYNTAX:</strong> .ID<span style="color: #0076E7;">&lt;3LD or Name without spaces and special characters&gt;</span></li>
+                      <li><strong>EXAMPLES:</strong>
+					    <ul>
+						  <li>.ID<span style="color: #0076E7;">NKP</span></li>
+						  <li>.ID<span style="color: #0076E7;">ABAKANAIR</span></li>
+						</ul>
+                    </ul>
+
+                <center>Combined Test Alias File</center>
+
+                    <h3>ALIAS_TEST_FILE.txt</h3>
+                    <ul>
+                      <li><strong>DESCRIPTION:</strong>All alias output data will be combined into this file for easier testing or simple copy/paste into your facility file.</li>
+                    </ul>
+
+                <center>Duplicate Commands</center>
+
+                    <h3>DUPLICATE_COMMANDS.txt</h3>
+                    <ul>
+                      <li><strong>DESCRIPTION:</strong>The alias syntax is unable to account for every situation that would create a duplicate command for two different charts and therefore, the local Facility Engineer will need to create a cusom command for these situations and that is placed prior to these commands in the alias file. This file will assist in this process.</li>
+                    </ul>
+
 
 
 

@@ -1268,7 +1268,7 @@
             <!-- Separator -->
             <hr>
             
-            <!-- TODO: Info concerning the createGeojson here.??? -->
+            <p>This feature will allow you to create a GeoJSON for use by CRC from scratch.</p>
         </div>
 
 
@@ -1292,7 +1292,7 @@
             <!-- Separator -->
             <hr>
             
-            <!-- TODO: Info concerning the geojsonCleanup here.??? -->
+            <p>This feature will allow you to select your GeoJSON file and FE-Buddy will ensure it is cascaded to a single line, look for common errors such as duplicate defaults, and remove common 0.0,0.0 coordinates from legacy SCT2 file conversions.</p>
         </div>
 
 
@@ -1316,7 +1316,7 @@
             <!-- Separator -->
             <hr>
             
-            <!-- TODO: Info concerning the procedureIsrs here.??? -->
+            <p>This feature will guide you through creating helpful in-scope references for your facility's procedures per phase of flight.</p>
         </div>
 
 
@@ -1340,7 +1340,7 @@
             <!-- Separator -->
             <hr>
             
-            <!-- TODO: Add content specific to SCT2 to GeoJSON Conversion here??? -->
+            <p>Will convert a .SCT2 file to .GeoJSON(s) for use by CRC.</p>
         </div>
 
 
@@ -1364,8 +1364,7 @@
             <!-- Separator -->
             <hr>
             
-            <!-- TODO: Add content specific to FAA RVM to GeoJSON Conversion here??? -->
-        </div>
+            <p>Will convert a FAA RVM .dat file to .GeoJSON for use by CRC. Later development will likely result in conversions of the FAA .KML(z) files as well.</div>
 
 
 
@@ -1388,7 +1387,7 @@
             <!-- Separator -->
             <hr>
             
-            <!-- TODO: Add content specific to FAA GeoMap to GeoJSON Conversion here??? -->
+            <p>Will convert a FAA GeoMap (ERAM) to .GeoJSON.</p>
         </div>
     </div>
 
@@ -1408,17 +1407,26 @@
 
     <! -- scripts go here -->
 
-        <script>
-        // JavaScript to handle section toggling
+    <script>
+        // JavaScript to handle section toggling and scroll to top
         const sections = document.querySelectorAll('.section');
         sections[0].classList.add('active'); // Initially, the first section is active
-
+        
         document.querySelectorAll('#sidebar a').forEach((link, index) => {
             link.addEventListener('click', () => {
+                // Remove 'active' class from all sections
                 sections.forEach((section) => section.classList.remove('active'));
+                // Add 'active' class to the clicked section
                 sections[index].classList.add('active');
+        
+                // Scroll to the top of the page
+                window.scrollTo({
+                    top: 0,
+                    behavior: 'smooth' // You can use 'auto' instead of 'smooth' for an instant jump
+                });
             });
         });
     </script>
+
 </body>
 </html>

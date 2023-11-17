@@ -47,7 +47,7 @@
             .section {
                 display: none;
             }
-	        
+            
             /* CSS for active (visible) collapsible sections */
             .section.active {
                 display: block;
@@ -131,21 +131,22 @@
             <li><a href="#systemRequirements">System Requirements</a></li>
             <li><a href="#reportIssuesFeatReq">Issues or Feature Requests</a></li>
             <li><a href="#airacUpdate">AIRAC Updates</a></li>
-			   <ul>
-			   <a href="#faaChartRecall">Alias - Chart Recall</a></li>
-			   <a href="#contentDisplay">Alias - Content Display</a></li>
-			   <a href="#inScopeReference">Alias - ISR</a></li>
-			   <a href="#aliasTestFile">Alias - Test File</a></li>
-			   <a href="#duplicateCommands">Alias - Duplicates</a></li>
-			   <a href="#publications">Publications</a></li>
-			   <a href="#vmApt">VM - Airports</a></li>
-			   <a href="#vmArtccBoundaries">VM - ARTCC Boundaries</a></li>
-			   <a href="#vmAwy">VM - Airways</a></li>
-			   <a href="#vmFixes">VM - Fixes</a></li>
-			   <a href="#vmNavaids">VM - NAVAIDs</a></li>
-			   <a href="#vmRwy">VM - Runways</a></li>
-			   <a href="#vmWx">VM - Wx Stations</a></li>
-			   </ul>
+               <ul>
+               <a href="#faaChartRecall">Alias - Chart Recall</a></li>
+               <a href="#contentDisplay">Alias - Content Display</a></li>
+               <a href="#inScopeReference">Alias - ISR</a></li>
+               <a href="#aliasTestFile">Alias - Test File</a></li>
+               <a href="#duplicateCommands">Alias - Duplicates</a></li>
+               <a href="#publications">Publications</a></li>
+               <a href="#vmApt">VM - Airports</a></li>
+               <a href="#vmArtccBoundaries">VM - ARTCC Boundaries</a></li>
+               <a href="#vmAwy">VM - Airways</a></li>
+               <a href="#vmFixes">VM - Fixes</a></li>
+               <a href="#vmNavaids">VM - NAVAIDs</a></li>
+               <a href="#vmRwy">VM - Runways</a></li>
+               <a href="#vmWx">VM - Wx Stations</a></li>
+               <a href="#vmStarDp">VM - STAR/DP</a></li>
+               </ul>
             <li><a href="#createGeojson">Create GeoJSON</a></li>
             <li><a href="#geojsonCleanup">GeoJSON Clean-up</a></li>
             <li><a href="#procedureIsrs">Procedure ISRs</a></li>
@@ -179,7 +180,7 @@
             <h1>Overview</h1>
             <!-- Separator -->
             <hr>
-			
+            
             <div class="tooltip">
               <img src="Media/Overview_Header_Image.png"
               alt="Test Image 1"
@@ -246,7 +247,7 @@
             <h1>History and Credits</h1>
             <!-- Separator -->
             <hr>
-			
+            
             <p>FE-Buddy has an interesting history of development, stemming from the desire to automate the Facility Files updating process:</p>
             <ul>
               <li>In 2020, Nikolas and Kyle initiated their journey to automate the Facility Files updating process, focusing on providing monthly AIRAC cycle updates for the vZLC ARTCC.</li>
@@ -288,7 +289,7 @@
             <h1>System Requirements</h1>
             <!-- Separator -->
             <hr>
-			
+            
             <p>FE-Buddy operates on Windows OS (8.1 or newer).<p>
         </div>
 
@@ -312,7 +313,7 @@
             <h1>Issues or Feature Requests</h1>
             <!-- Separator -->
             <hr>
-			
+            
             <p>Before reporting a new issue or making a feature request, please check if someone else has already submitted a similar request. This helps avoid duplicates and streamlines the process. You can browse the existing issues by visiting the <a href="https://github.com/Nikolai558/FE-BUDDY/issues" target="_blank">FE-Buddy GitHub Issues page</a>. This page displays all the open issues, making it easy to see if your concern has already been addressed.</p>
             
             <h2>Step 1: Check Existing Issues</h2>
@@ -360,11 +361,11 @@
 
         <div class="section" id="airacUpdate">
             <h1>AIRAC Updates</h1>
-			    
+                
             <!-- Separator -->
             <hr>
-			
-			<p>FE-Buddy will assist Facility Engineers in the updating of their facility files and procedures by gathering upcoming AIRAC data and compiling it into required formats such as Alias, geoJSON, and Procedure Change files.</p>
+            
+            <p>FE-Buddy will assist Facility Engineers in the updating of their facility files and procedures by gathering upcoming AIRAC data and compiling it into required formats such as Alias, geoJSON, and Procedure Change files.</p>
             <!-- Maybe place some example screenshots of the files here? -->
         </div>
 
@@ -389,11 +390,11 @@
 
         <div class="section" id="faaChartRecall">
             <h1>FAA Chart Recall Aliases</h1>
-			    
+                
             <!-- Separator -->
             <hr>
-			
-			<h3>Overview</h3>
+            
+            <h3>Overview</h3>
                 <ul>
                   <li><strong>FILE:</strong> FAA_CHART_RECALL_ALIAS.txt</li>
                   <li><strong>DESCRIPTION:</strong> The user inputs a command with a syntax that contains the procedure ID or name, and it results in the users default webbrowser opening the FAA chart for that procedure.</li>
@@ -463,16 +464,16 @@
                   <li><strong>EXAMPLES:</strong>
                     <ul>
                       <li>TNX-TUMBE ONE
-                	      <ul><li>.<span style="color: #009EE7;">TNX</span><span style="color: #0076E7;">TUMBE</span>C</li></ul>
+                          <ul><li>.<span style="color: #009EE7;">TNX</span><span style="color: #0076E7;">TUMBE</span>C</li></ul>
                       </li>
                       <li>TTD-BLUE LAKE THREE
-                	      <ul><li>.<span style="color: #009EE7;">TTD</span><span style="color: #0076E7;">BLUEL</span>C</li></ul>
+                          <ul><li>.<span style="color: #009EE7;">TTD</span><span style="color: #0076E7;">BLUEL</span>C</li></ul>
                       </li>
                       <li>GEG-SPOKANE SIX
-                	      <ul><li>.<span style="color: #009EE7;">GEG</span><span style="color: #0076E7;">SPOKA</span>C</li></ul>
+                          <ul><li>.<span style="color: #009EE7;">GEG</span><span style="color: #0076E7;">SPOKA</span>C</li></ul>
                       </li>
                       <li>GEG-SPOKANE, CONT. SIX
-                	      <ul><li>.<span style="color: #009EE7;">GEG</span><span style="color: #0076E7;">SPOKA</span>C<span style="color: #bd0202;">2</span></ul></ul>
+                          <ul><li>.<span style="color: #009EE7;">GEG</span><span style="color: #0076E7;">SPOKA</span>C<span style="color: #bd0202;">2</span></ul></ul>
                       </li>
                   </ul>
                 <!-- TODO: Add images of the GEGSPOKA charts -->
@@ -824,9 +825,9 @@
               <li><strong>SYNTAX:</strong> .ID<span style="color: #0076E7;">&lt;3LD or Name without spaces and special characters&gt;</span></li>
               <li><strong>EXAMPLES:</strong>
                 <ul>
-            	  <li>.ID<span style="color: #0076E7;">NKP</span></li>
-            	  <li>.ID<span style="color: #0076E7;">ABAKANAIR</span></li>
-            	</ul>
+                  <li>.ID<span style="color: #0076E7;">NKP</span></li>
+                  <li>.ID<span style="color: #0076E7;">ABAKANAIR</span></li>
+                </ul>
             </ul>
         </div>
 
@@ -922,8 +923,8 @@
                   <li>C - Procedure has changed.</li>
                   <li>A - New procedure (added).</li>
                   <li>D - Removed procedure (deleted).</li>
-				</ul>
-		      <li>NOTE: In some cases, the link will return a 404 error. This is because the FAA does not have a comparative document, as common with DOD facilities.</li>
+                </ul>
+              <li>NOTE: In some cases, the link will return a 404 error. This is because the FAA does not have a comparative document, as common with DOD facilities.</li>
             </ul>
 
             <h3>PROCEDURES.txt</h3>
@@ -961,9 +962,14 @@
             <!-- Separator -->
             <hr>
 
-            <h3>?.txt</h3>
+            <h3>APT_SYMBOLS.geojson</h3>
             <ul>
-              <li><strong>DESCRIPTION:</strong>?</li>
+              <li><strong>DESCRIPTION:</strong> Displays symbols for airports.</li>
+            </ul>
+
+            <h3>APT_TEXT.geojson</h3>
+            <ul>
+              <li><strong>DESCRIPTION:</strong> Displays the airport ID and Name next to the symbol.</li>
             </ul>
         </div>
 
@@ -991,9 +997,14 @@
             <!-- Separator -->
             <hr>
 
-            <h3>?.txt</h3>
+            <h3>ARTCC_BOUNDARY_HIGH_LINES.geojson</h3>
             <ul>
-              <li><strong>DESCRIPTION:</strong>?</li>
+              <li><strong>DESCRIPTION:</strong> Displays the High ARTCC Boundaries from NASR data as lines.</li>
+            </ul>
+
+            <h3>ARTCC_BOUNDARY_LOW_LINES.geojson</h3>
+            <ul>
+              <li><strong>DESCRIPTION:</strong> Displays the Low ARTCC Boundaries from NASR data as lines.</li>
             </ul>
         </div>
 
@@ -1021,9 +1032,34 @@
             <!-- Separator -->
             <hr>
 
-            <h3>?.txt</h3>
+            <h3>AWY_HIGH_LINES.geojson</h3>
             <ul>
-              <li><strong>DESCRIPTION:</strong>?</li>
+              <li><strong>DESCRIPTION:</strong> Displays the High Airways as lines.</li>
+            </ul>
+
+            <h3>AWY_HIGH_SYMBOLS.geojson</h3>
+            <ul>
+              <li><strong>DESCRIPTION:</strong> Displays the High Airways fixes and NAVAIDs as their respective symbols.</li>
+            </ul>
+
+            <h3>AWY_HIGH_TEXT.geojson</h3>
+            <ul>
+              <li><strong>DESCRIPTION:</strong> Displays the High Airways fixes and NAVAIDs ID/Name next to their respective symbols.</li>
+            </ul>
+
+            <h3>AWY_LOW_LINES.geojson</h3>
+            <ul>
+              <li><strong>DESCRIPTION:</strong> Displays the Low Airways as lines.</li>
+            </ul>
+
+            <h3>AWY_LOW_SYMBOLS.geojson</h3>
+            <ul>
+              <li><strong>DESCRIPTION:</strong> Displays the Low Airways fixes and NAVAIDs as their respective symbols.</li>
+            </ul>
+
+            <h3>AWY_LOW_TEXT.geojson</h3>
+            <ul>
+              <li><strong>DESCRIPTION:</strong> Displays the Low Airways fixes and NAVAIDs ID/Name next to their respective symbols.</li>
             </ul>
         </div>
 
@@ -1051,9 +1087,14 @@
             <!-- Separator -->
             <hr>
 
-            <h3>?.txt</h3>
+            <h3>FIX_SYMBOLS.geojson</h3>
             <ul>
-              <li><strong>DESCRIPTION:</strong>?</li>
+              <li><strong>DESCRIPTION:</strong> Displays all fixes from NASR data as symbols.</li>
+            </ul>
+
+            <h3>FIX_TEXT.geojson</h3>
+            <ul>
+              <li><strong>DESCRIPTION:</strong> Displays all fix names from NASR data next to their symbols.</li>
             </ul>
         </div>
 
@@ -1081,9 +1122,14 @@
             <!-- Separator -->
             <hr>
 
-            <h3>?.txt</h3>
+            <h3>NAV_VOR_SYMBOLS.geojson</h3>
             <ul>
-              <li><strong>DESCRIPTION:</strong>?</li>
+              <li><strong>DESCRIPTION:</strong> Displays all VOR, VOR/DME, and TACAN NAVAIDs from NASR data as a VOR symbol.</li>
+            </ul>
+
+            <h3>NAV_NDB_SYMBOLS.geojson</h3>
+            <ul>
+              <li><strong>DESCRIPTION:</strong> Displays all NDB and DME station NAVAIDs from NASR data as a NDB symbol.</li>
             </ul>
         </div>
 
@@ -1111,9 +1157,9 @@
             <!-- Separator -->
             <hr>
 
-            <h3>?.txt</h3>
+            <h3>RWY_LINES.geojson</h3>
             <ul>
-              <li><strong>DESCRIPTION:</strong>?</li>
+              <li><strong>DESCRIPTION:</strong> Displays all runways from NASR data as a single line drawn from threshold to threshold.</li>
             </ul>
         </div>
 
@@ -1141,9 +1187,58 @@
             <!-- Separator -->
             <hr>
 
-            <h3>?.txt</h3>
+            <h3>WX_SYMBOLS.geojson</h3>
             <ul>
-              <li><strong>DESCRIPTION:</strong>?</li>
+              <li><strong>DESCRIPTION:</strong> Displays all symbols from weather stations found in the weather.gov data and then cross matched with the NASR AWOS data as symbols.</li>
+            </ul>
+
+            <h3>WX_TEXT.geojson</h3>
+            <ul>
+              <li><strong>DESCRIPTION:</strong> Displays all weather station airport names next to the their symbols.</li>
+            </ul>
+        </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        <div class="section" id="#vmStarDp">
+            <h1>STAR and DP Video Maps</h1>
+            <!-- Separator -->
+            <hr>
+            
+			<p>The STAR and DP video maps will be found in the subdirectory folders "STAR" and "DP".</p>
+			
+			<br>
+
+            <h3><span style="color: #009EE7;">&lt;STAR/DP ID&gt;</span>_LINES.geojson</h3>
+            <ul>
+              <li><strong>DESCRIPTION:</strong> Displays all lines the respective STAR or DP.</li>
+            </ul>
+
+            <h3><span style="color: #009EE7;">&lt;STAR/DP ID&gt;</span>_SYMBOLS.geojson</h3>
+            <ul>
+              <li><strong>DESCRIPTION:</strong> Displays all NAVAIDs/Fixes associated with the respective STAR or DP as their respective symbols.</li>
+            </ul>
+
+            <h3><span style="color: #009EE7;">&lt;STAR/DP ID&gt;</span>_TEXT.geojson</h3>
+            <ul>
+              <li><strong>DESCRIPTION:</strong> Displays the IDs/Names of the NAVAIDs/Fixes for the associated STAR or DP next to their symbols.</li>
             </ul>
         </div>
 
@@ -1172,7 +1267,7 @@
             <h1>Create GeoJSON</h1>
             <!-- Separator -->
             <hr>
-			
+            
             <!-- TODO: Info concerning the createGeojson here.??? -->
         </div>
 
@@ -1196,7 +1291,7 @@
             <h1>GeoJSON Clean-up</h1>
             <!-- Separator -->
             <hr>
-			
+            
             <!-- TODO: Info concerning the geojsonCleanup here.??? -->
         </div>
 
@@ -1220,7 +1315,7 @@
             <h1>Procedure ISRs</h1>
             <!-- Separator -->
             <hr>
-			
+            
             <!-- TODO: Info concerning the procedureIsrs here.??? -->
         </div>
 
@@ -1244,7 +1339,7 @@
             <h1>SCT2 to GeoJSON</h1>
             <!-- Separator -->
             <hr>
-			
+            
             <!-- TODO: Add content specific to SCT2 to GeoJSON Conversion here??? -->
         </div>
 
@@ -1268,7 +1363,7 @@
             <h1>FAA RVM to GeoJSON</h1>
             <!-- Separator -->
             <hr>
-			
+            
             <!-- TODO: Add content specific to FAA RVM to GeoJSON Conversion here??? -->
         </div>
 
@@ -1292,7 +1387,7 @@
             <h1>FAA GeoMap to GeoJSON</h1>
             <!-- Separator -->
             <hr>
-			
+            
             <!-- TODO: Add content specific to FAA GeoMap to GeoJSON Conversion here??? -->
         </div>
     </div>

@@ -21,6 +21,11 @@
 
 
 
+
+
+
+
+
 <! -- CSS stuff -->
 <style>
     
@@ -119,9 +124,14 @@
 
 
 
+
+
+
+
+
 <body>
 
-    <! -- side bar table of contents stuff -->
+    <! -- Sidebar content -->
 
     <div id="sidebar">
         <h2>FE-Buddy Manual</h2>
@@ -132,20 +142,20 @@
             <li><a href="#reportIssuesFeatReq">Issues or Feature Requests</a></li>
             <li><a href="#airacUpdate">AIRAC Updates</a></li>
                <ul>
-               <a href="#faaChartRecall">Alias - Chart Recall</a></li>
-               <a href="#contentDisplay">Alias - Content Display</a></li>
-               <a href="#inScopeReference">Alias - ISR</a></li>
-               <a href="#aliasTestFile">Alias - Test File</a></li>
-               <a href="#duplicateCommands">Alias - Duplicates</a></li>
-               <a href="#publications">Publications</a></li>
-               <a href="#vmApt">VM - Airports</a></li>
-               <a href="#vmArtccBoundaries">VM - ARTCC Boundaries</a></li>
-               <a href="#vmAwy">VM - Airways</a></li>
-               <a href="#vmFixes">VM - Fixes</a></li>
-               <a href="#vmNavaids">VM - NAVAIDs</a></li>
-               <a href="#vmRwy">VM - Runways</a></li>
-               <a href="#vmWx">VM - Wx Stations</a></li>
-               <a href="#vmStarDp">VM - STAR/DP</a></li>
+               <li><a href="#faaChartRecall">Alias-Chart Recall</a></li>
+               <li><a href="#contentDisplay">Alias-Content Display</a></li>
+               <li><a href="#inScopeReference">Alias-ISR</a></li>
+               <li><a href="#aliasTestFile">Alias-Test File</a></li>
+               <li><a href="#duplicateCommands">Alias-Duplicates</a></li>
+               <li><a href="#publications">Publications</a></li>
+               <li><a href="#vmApt">VM-Airports</a></li>
+               <li><a href="#vmArtccBoundaries">VM-ARTCC Boundaries</a></li>
+               <li><a href="#vmAwy">VM-Airways</a></li>
+               <li><a href="#vmFixes">VM-Fixes</a></li>
+               <li><a href="#vmNavaids">VM-NAVAIDs</a></li>
+               <li><a href="#vmRwy">VM-Runways</a></li>
+               <li><a href="#vmWx">VM-Wx Stations</a></li>
+               <li><a href="#vmStarDp">VM-STAR/DP</a></li>
                </ul>
             <li><a href="#createGeojson">Create GeoJSON</a></li>
             <li><a href="#geojsonCleanup">GeoJSON Clean-up</a></li>
@@ -174,7 +184,26 @@
 
         <div id="content">
 
-        <! -- Overview page content -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        <! -- General Overview content -->
 
         <div class="section active" id="overview">
             <h1>Overview</h1>
@@ -192,34 +221,58 @@
 
             <p>FE-Buddy is a valuable tool designed for VATSIM/VATUSA ARTCC Facility Engineers. It simplifies the creation, editing, and maintenance of facility files like GeoMaps, RADAR video maps (RVMs), and alias command files. Additionally, FE-Buddy offers the ability to convert FAA GeoMaps, RVMs, and NASR data into GeoJSON files, which can be seamlessly used in the CRC program. The program boasts several essential features:</p>
             <ul>
+			
+			<br>
+			
               <li>
                 <strong>AIRAC Update:</strong>
                 <p>Keep your software current with the latest FAA NASR data. Options include comprehensive or custom updates, saved user preferences, and GeoJSON file customization.</p>
               </li>
+			  
+			  <br>
+			  
               <li>
                 <strong>FAA RADAR Video Maps Conversion:</strong>
                 <p>Streamline the conversion of real-world RADAR video maps from .DAT and .KMLZ files. Customize your point of tangency (POT) options and retain distance settings for batch processing.</p>
               </li>
+			  
+			  <br>
+			  
               <li>
                 <strong>FAA GeoMap Conversions:</strong>
                 <p>Transform FAA ERAM GEOMAP data into versatile GeoJSON files. Export options include GeoMap Object Description, Filter Assignment, or Identical Attributes. Log files provide detailed insights.</p>
               </li>
+			  
+			  <br>
+			  
               <li>
                 <strong>.SCT2 File Conversion:</strong>
                 <p>Convert .SCT2 files into usable GeoJSON files. Export section titles and include exceptions for SID and STAR sections.</p>
               </li>
+			  
+			  <br>
+			  
               <li>
                 <strong>Create GeoJSON:</strong>
                 <p>Empower users to craft custom GeoJSON files with a user-friendly interface. Supports features like line string breaks.</p>
               </li>
+			  
+			  <br>
+			  
               <li>
                 <strong>GeoJSON Cleanup:</strong>
                 <p>Optimize GeoJSON files for CRC use by setting default values, cascading code, and combining features for cleaner code.</p>
               </li>
+			  
+			  <br>
+			  
               <li>
                 <strong>Procedure ISR:</strong>
                 <p>Access a quick-reference guide for controllers, referencing procedures from the d-TPP MetaFile. Pre-fill available information and customize fields as needed.</p>
               </li>
+			  
+			  <br>
+			  
               <li>
                 <strong>Settings Menu:</strong>
                 <p>Customize your program experience with general settings. Manage notifications and preferences for optimal control.</p>
@@ -241,7 +294,7 @@
 
 
 
-        <! -- history and credits page content -->
+        <! -- Credit and History content -->
 
         <div class="section" id="historyCreds">
             <h1>History and Credits</h1>
@@ -255,6 +308,9 @@
               <li>The early stages of FE-Buddy, specifically pre-version 3.0, were characterized by the rapid development of foundational functionality. The program's growth was a learning experience, with an emphasis on acquiring C# skills and adhering to coding best practices.</li>
               <li>In 2023, a comprehensive rebuild of FE-Buddy was initiated. This ongoing effort aims to enhance the program's functionality, user experience, and maintainability.</li>
             </ul>
+			
+			<br>
+
             <p>Special thanks to the following contributors for their roles in the development and success of FE-Buddy:</p>
             <ul>
               <li>Nikolas Boling - Primary Developer and Programmer</li>
@@ -283,7 +339,7 @@
 
 
 
-        <! -- system requirements page content -->
+        <! -- System Requirements content -->
 
         <div class="section" id="systemRequirements">
             <h1>System Requirements</h1>
@@ -307,7 +363,7 @@
 
 
 
-        <! -- report issues/feature requests page content -->
+        <! -- Issues/Feature requests content -->
 
         <div class="section" id="reportIssuesFeatReq">
             <h1>Issues or Feature Requests</h1>
@@ -357,7 +413,7 @@
 
 
 
-        <! -- airac updates page content -->
+        <! -- AIRAC Update Overview content -->
 
         <div class="section" id="airacUpdate">
             <h1>AIRAC Updates</h1>
@@ -388,6 +444,8 @@
 
 
 
+        <! -- FAA Chart Recall aliases content -->
+
         <div class="section" id="faaChartRecall">
             <h1>FAA Chart Recall Aliases</h1>
                 
@@ -411,6 +469,9 @@
                     </ul>
                   <li><strong>NOTE:</strong> For the purpose of these commands, "APT" is meant as the FAA ID for the airport.</li>
                 </ul>
+				
+				<br>
+				<br>
                 
                 <h3>Takeoff Minimums/Obstacle Departure Procedure Page</h3>
                 <ul>
@@ -418,6 +479,9 @@
                   <li><strong>EXAMPLE:</strong> .<span style="color: #0076E7;">SLC</span>TMC</li>
                 </ul>
                 <!-- TODO: Add image of the SLCTMC chart -->
+				
+				<br>
+				<br>
                 
                 <h3>Diverse Vector Area Page</h3>
                 <ul>
@@ -425,6 +489,9 @@
                   <li><strong>EXAMPLE:</strong> .<span style="color: #0076E7;">SDL</span>DVAC</li>
                 </ul>
                 <!-- TODO: Add image of the SDLDVAC chart -->
+				
+				<br>
+				<br>
                 
                 <h3>Hot Spots Page</h3>
                 <ul>
@@ -432,6 +499,9 @@
                   <li><strong>EXAMPLE:</strong> .<span style="color: #0076E7;">EDF</span>HSC</li>
                 </ul>
                 <!-- TODO: Add image of the EDFHSC chart -->
+				
+				<br>
+				<br>
                 
                 <h3>Land and Hold Short Operations Page</h3>
                 <ul>
@@ -439,6 +509,9 @@
                   <li><strong>EXAMPLE:</strong> .<span style="color: #0076E7;">BZN</span>LAHSOC</li>
                 </ul>
                 <!-- TODO: Add image of the BZNLAHSO chart -->
+				
+				<br>
+				<br>
                 
                 <h3>Airport Diagrams</h3>
                 <ul>
@@ -446,6 +519,9 @@
                   <li><strong>EXAMPLE:</strong> .<span style="color: #0076E7;">SLC</span>APDC</li>
                 </ul>
                 <!-- TODO: Add image of the SLCAPDC chart -->
+				
+				<br>
+				<br>
                 
                 <h3>DP/STAR Plates</h3>
                 <ul>
@@ -457,6 +533,9 @@
                       <li>.<span style="color: #009EE7;">DEN</span><span style="color: #0076E7;">AALLE</span>C<span style="color: #bd0202;">3</span></ul>
                   </ul>
                 <!-- TODO: Add images of the DENALLEC charts -->
+				
+				<br>
+				<br>
                 
                 <h3>DP/STAR Plates - Without FAA Assigned Computer Code</h3>
                 <ul>
@@ -477,6 +556,9 @@
                       </li>
                   </ul>
                 <!-- TODO: Add images of the GEGSPOKA charts -->
+				
+				<br>
+				<br>
                 
                 <h3>Instrument Approach Plates</h3>
                 <ul><li><strong>SCRATCHPAD (SPad) CODE INFO:</strong>
@@ -686,6 +768,7 @@
                 
                 <!-- blank line -->
                 <br>
+				<br>
                 
                 <h3>Charted Visual Instrument Approach Plates</h3>
                 <li><strong>SYNTAX:</strong> .<span style="color: #009EE7;">&lt;APT&gt;</span>V<span style="color: #0076E7;">&lt;1st character of each word prior to "Visual"&gt;</span>C</li>
@@ -727,6 +810,7 @@
                 
                 <!-- blank line -->
                 <br>
+				<br>
                 
                 <h3>Multi-Page Instrument Approach Plates</h3>
                 <li><strong>SYNTAX:</strong> .<span style="color: #009EE7;">&lt;APT&gt;</span><span style="color: #0076E7;">&lt;SPad Code&gt;</span>C<span style="color: #bd0202;">&lt;page number, if not 1&gt;</span></li>
@@ -757,6 +841,8 @@
 
 
 
+        <! -- Alias Content Display content -->
+
         <div class="section" id="contentDisplay">
             <h1>Content Display</h1>
             <!-- Separator -->
@@ -769,6 +855,9 @@
               <li><strong>EXAMPLE:</strong> .<span style="color: #0076E7;">J16</span>F</li>
             </ul>
             <!-- TODO: Add image of J16 fixes drawn here -->
+			
+			<br>
+			<br>
             
             <h3>STAR_DP_FIXES_ALIAS.txt</h3>
             <ul>
@@ -798,6 +887,8 @@
 
 
 
+        <! -- AIRAC data In-Scope Reference content -->
+
         <div class="section" id="inScopeReference">
             <h1>In-Scope Reference (ISR) Aliases</h1>
             <!-- Separator -->
@@ -810,6 +901,9 @@
               <li><strong>EXAMPLE:</strong> .APT<span style="color: #0076E7;">JFK</span></li>
             </ul>
             <!-- TODO: Add image of the JFK APT ISR displayed in the messages window -->
+			
+			<br>
+			<br>
             
             <h3>ISR_NAVAID_ALIAS.txt</h3>
             <ul>
@@ -818,6 +912,9 @@
               <li><strong>EXAMPLE:</strong> .NAV<span style="color: #0076E7;">JHW</span></li>
             </ul>
             <!-- TODO: Add image of the JHW ISR displayed in the messages window -->
+			
+			<br>
+			<br>
             
             <h3>ISR_TELEPHONY.txt</h3>
             <ul>
@@ -850,6 +947,8 @@
 
 
 
+        <! -- Test Alias File content -->
+
         <div class="section" id="aliasTestFile">
             <h1>Alias Test File</h1>
             <!-- Separator -->
@@ -879,6 +978,8 @@
 
 
 
+
+        <! -- Duplicate Commands content -->
 
         <div class="section" id="duplicateCommands">
             <h1>Duplicate Commands File</h1>
@@ -910,6 +1011,8 @@
 
 
 
+        <! -- Publications content -->
+
         <div class="section" id="publications">
             <h1>Publications</h1>
             <!-- Separator -->
@@ -926,11 +1029,17 @@
                 </ul>
               <li>NOTE: In some cases, the link will return a 404 error. This is because the FAA does not have a comparative document, as common with DOD facilities.</li>
             </ul>
+			
+			<br>
+			<br>
 
             <h3>PROCEDURES.txt</h3>
             <ul>
               <li><strong>DESCRIPTION:</strong>A list of all airports and a link to their procedures for the selected ARTCC.</li>
             </ul>
+			
+			<br>
+			<br>
 
             <h3>&lt;ARTCC ID&gt;_AIRPORTS.csv</h3>
             <ul>
@@ -957,6 +1066,8 @@
 
 
 
+        <! -- Airport content -->
+
         <div class="section" id="vmApt">
             <h1>Airports Video Maps</h1>
             <!-- Separator -->
@@ -966,6 +1077,9 @@
             <ul>
               <li><strong>DESCRIPTION:</strong> Displays symbols for airports.</li>
             </ul>
+			
+			<br>
+			<br>
 
             <h3>APT_TEXT.geojson</h3>
             <ul>
@@ -992,6 +1106,8 @@
 
 
 
+        <! -- ARTCC Boundaries content -->
+
         <div class="section" id="#vmArtccBoundaries">
             <h1>ARTCC Boundaries Video Maps</h1>
             <!-- Separator -->
@@ -1001,6 +1117,9 @@
             <ul>
               <li><strong>DESCRIPTION:</strong> Displays the High ARTCC Boundaries from NASR data as lines.</li>
             </ul>
+			
+			<br>
+			<br>
 
             <h3>ARTCC_BOUNDARY_LOW_LINES.geojson</h3>
             <ul>
@@ -1027,6 +1146,8 @@
 
 
 
+        <! -- Airway content -->
+
         <div class="section" id="#vmAwy">
             <h1>Airways Video Maps</h1>
             <!-- Separator -->
@@ -1036,26 +1157,41 @@
             <ul>
               <li><strong>DESCRIPTION:</strong> Displays the High Airways as lines.</li>
             </ul>
+			
+			<br>
+			<br>
 
             <h3>AWY_HIGH_SYMBOLS.geojson</h3>
             <ul>
               <li><strong>DESCRIPTION:</strong> Displays the High Airways fixes and NAVAIDs as their respective symbols.</li>
             </ul>
+			
+			<br>
+			<br>
 
             <h3>AWY_HIGH_TEXT.geojson</h3>
             <ul>
               <li><strong>DESCRIPTION:</strong> Displays the High Airways fixes and NAVAIDs ID/Name next to their respective symbols.</li>
             </ul>
+			
+			<br>
+			<br>
 
             <h3>AWY_LOW_LINES.geojson</h3>
             <ul>
               <li><strong>DESCRIPTION:</strong> Displays the Low Airways as lines.</li>
             </ul>
+			
+			<br>
+			<br>
 
             <h3>AWY_LOW_SYMBOLS.geojson</h3>
             <ul>
               <li><strong>DESCRIPTION:</strong> Displays the Low Airways fixes and NAVAIDs as their respective symbols.</li>
             </ul>
+			
+			<br>
+			<br>
 
             <h3>AWY_LOW_TEXT.geojson</h3>
             <ul>
@@ -1082,6 +1218,8 @@
 
 
 
+        <! -- Fixes content -->
+
         <div class="section" id="#vmFixes">
             <h1>Fixes Video Maps</h1>
             <!-- Separator -->
@@ -1091,6 +1229,9 @@
             <ul>
               <li><strong>DESCRIPTION:</strong> Displays all fixes from NASR data as symbols.</li>
             </ul>
+			
+			<br>
+			<br>
 
             <h3>FIX_TEXT.geojson</h3>
             <ul>
@@ -1117,6 +1258,8 @@
 
 
 
+        <! -- NAVAIDs content -->
+
         <div class="section" id="#vmNavaids">
             <h1>NAVAIDs Video Maps</h1>
             <!-- Separator -->
@@ -1126,6 +1269,9 @@
             <ul>
               <li><strong>DESCRIPTION:</strong> Displays all VOR, VOR/DME, and TACAN NAVAIDs from NASR data as a VOR symbol.</li>
             </ul>
+			
+			<br>
+			<br>
 
             <h3>NAV_NDB_SYMBOLS.geojson</h3>
             <ul>
@@ -1151,6 +1297,8 @@
 
 
 
+
+        <! -- Runway content -->
 
         <div class="section" id="#vmRwy">
             <h1>Runways Video Maps</h1>
@@ -1182,6 +1330,8 @@
 
 
 
+        <! -- Wx Station content -->
+
         <div class="section" id="#vmWx">
             <h1>Weather Stations Video Maps</h1>
             <!-- Separator -->
@@ -1191,6 +1341,9 @@
             <ul>
               <li><strong>DESCRIPTION:</strong> Displays all symbols from weather stations found in the weather.gov data and then cross matched with the NASR AWOS data as symbols.</li>
             </ul>
+			
+			<br>
+			<br>
 
             <h3>WX_TEXT.geojson</h3>
             <ul>
@@ -1217,6 +1370,8 @@
 
 
 
+        <! -- STAR and DP content -->
+
         <div class="section" id="#vmStarDp">
             <h1>STAR and DP Video Maps</h1>
             <!-- Separator -->
@@ -1230,11 +1385,17 @@
             <ul>
               <li><strong>DESCRIPTION:</strong> Displays all lines the respective STAR or DP.</li>
             </ul>
+			
+			<br>
+			<br>
 
             <h3><span style="color: #009EE7;">&lt;STAR/DP ID&gt;</span>_SYMBOLS.geojson</h3>
             <ul>
-              <li><strong>DESCRIPTION:</strong> Displays all NAVAIDs/Fixes associated with the respective STAR or DP as their respective symbols.</li>
+              <li><strong>DESCRIPTION:</strong> Displays all NAVAIDs/Fixes associated with the associated STAR or DP as their respective symbols.</li>
             </ul>
+			
+			<br>
+			<br>
 
             <h3><span style="color: #009EE7;">&lt;STAR/DP ID&gt;</span>_TEXT.geojson</h3>
             <ul>

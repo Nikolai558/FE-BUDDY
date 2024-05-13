@@ -139,38 +139,40 @@
 
     <! -- Sidebar content -->
 
-    <div id="sidebar">
-        <h2>FE-Buddy Manual</h2>
-        <ul>
-            <li><a href="#overview">Overview</a></li>
-            <li><a href="#historyCreds">History and Credits</a></li>
-            <li><a href="#systemRequirements">System Requirements</a></li>
-            <li><a href="#reportIssuesFeatReq">Issues or Feature Requests</a></li>
-            <li><a href="#airacUpdate">AIRAC Updates</a></li>
-               <ul>
-               <li><a href="#faaChartRecall">Alias-Chart Recall</a></li>
-               <li><a href="#contentDisplay">Alias-Content Display</a></li>
-               <li><a href="#inScopeReference">Alias-ISR</a></li>
-               <li><a href="#aliasTestFile">Alias-Test File</a></li>
-               <li><a href="#duplicateCommands">Alias-Duplicates</a></li>
-               <li><a href="#publications">Publications</a></li>
-               <li><a href="#vmApt">VM-Airports</a></li>
-               <li><a href="#vmArtccBoundaries">VM-ARTCC Boundaries</a></li>
-               <li><a href="#vmAwy">VM-Airways</a></li>
-               <li><a href="#vmFixes">VM-Fixes</a></li>
-               <li><a href="#vmNavaids">VM-NAVAIDs</a></li>
-               <li><a href="#vmRwy">VM-Runways</a></li>
-               <li><a href="#vmWx">VM-Wx Stations</a></li>
-               <li><a href="#vmStarDp">VM-STAR/DP</a></li>
-               </ul>
-            <li><a href="#createGeojson">Create GeoJSON</a></li>
-            <li><a href="#geojsonCleanup">GeoJSON Clean-up</a></li>
-            <li><a href="#procedureIsrs">Procedure ISRs</a></li>
-            <li><a href="#sct2ToGeoJSON">SCT2 > GeoJSON</a></li>
-            <li><a href="#faaRVMToGeoJSON">FAA RVM > GeoJSON</a></li>
-            <li><a href="#faaGeoMapToGeoJSON">FAA GeoMap > GeoJSON</a></li>
-        </ul>
-    </div>
+<div id="sidebar">
+    <h2>FE-Buddy Manual</h2>
+    <ul>
+        <li><a href="#overview">Overview</a></li>
+        <li><a href="#historyCreds">History and Credits</a></li>
+        <li><a href="#systemRequirements">System Requirements</a></li>
+        <li><a href="#reportIssuesFeatReq">Issues or Feature Requests</a></li>
+        <li>
+            <a href="#" id="toggleAiracUpdates">AIRAC Updates</a>
+            <ul id="airacUpdatesList" style="display: none;">
+                <li><a href="#faaChartRecall">Alias-Chart Recall</a></li>
+                <li><a href="#contentDisplay">Alias-Content Display</a></li>
+                <li><a href="#inScopeReference">Alias-ISR</a></li>
+                <li><a href="#aliasTestFile">Alias-Test File</a></li>
+                <li><a href="#duplicateCommands">Alias-Duplicates</a></li>
+                <li><a href="#publications">Publications</a></li>
+                <li><a href="#mapApt">Maps-Airports</a></li>
+                <li><a href="#mapArtcc">Maps-ARTCC Boundaries</a></li>
+                <li><a href="#mapAwy">Maps-Airways</a></li>
+                <li><a href="#mapFixes">Maps-Fixes</a></li>
+                <li><a href="#mapNavaids">Maps-NAVAIDs</a></li>
+                <li><a href="#mapRwy">Maps-Runways</a></li>
+                <li><a href="#mapWx">Maps-Wx Stations</a></li>
+                <li><a href="#mapStarDp">Maps-STAR/DP</a></li>
+            </ul>
+        </li>
+        <li><a href="#createGeojson">Create GeoJSON</a></li>
+        <li><a href="#geojsonCleanup">GeoJSON Clean-up</a></li>
+        <li><a href="#procedureIsrs">Procedure ISRs</a></li>
+        <li><a href="#sct2ToGeoJSON">SCT2 > GeoJSON</a></li>
+        <li><a href="#faaRVMToGeoJSON">FAA RVM > GeoJSON</a></li>
+        <li><a href="#faaGeoMapToGeoJSON">FAA GeoMap > GeoJSON</a></li>
+    </ul>
+</div>
 
 
 
@@ -307,13 +309,12 @@
             <!-- Separator -->
             <hr>
             
-            <p>FE-Buddy has an interesting history of development, stemming from the desire to automate the Facility Files updating process:</p>
-            <ul>
-              <li>In 2020, Nikolas and Kyle initiated their journey to automate the Facility Files updating process, focusing on providing monthly AIRAC cycle updates for the vZLC ARTCC.</li>
-              <li>Recognizing the potential for broader utility, they expanded the project's scope, aiming to create a tool accessible to all ARTCCs.</li>
-              <li>The early stages of FE-Buddy, specifically pre-version 3.0, were characterized by the rapid development of foundational functionality. The program's growth was a learning experience, with an emphasis on acquiring C# skills and adhering to coding best practices.</li>
-              <li>In 2023, a comprehensive rebuild of FE-Buddy was initiated. This ongoing effort aims to enhance the program's functionality, user experience, and maintainability.</li>
-            </ul>
+           <p>FE-Buddy has an interesting history of development, stemming from the desire to automate the Facility Files updating process.</p>
+           <p>In 2020, Nikolas and Kyle initiated their journey to automate the Facility Files updating process, focusing on providing monthly AIRAC cycle updates for the vZLC ARTCC.</p>
+           <p>Recognizing the potential for broader utility, they expanded the project's scope, aiming to create a tool accessible to all ARTCCs.</p>
+           <p>The early stages of FE-Buddy, specifically pre-version 3.0, were characterized by the rapid development of foundational functionality. The program's growth was a learning experience, with an emphasis on acquiring C# skills and adhering to coding best practices.</p>
+           <p>In 2023, a comprehensive rebuild of FE-Buddy was initiated. This ongoing effort aims to enhance the program's functionality, user experience, and maintainability.</p>
+
 			
 			<br>
 
@@ -376,11 +377,11 @@
             <!-- Separator -->
             <hr>
             
+
+            <h2>Check If Your Issue Already Exists</h2>
             <p>Before reporting a new issue or making a feature request, please check if someone else has already submitted a similar request. This helps avoid duplicates and streamlines the process. You can browse the existing issues by visiting the <a href="https://github.com/Nikolai558/FE-BUDDY/issues" target="_blank">FE-Buddy GitHub Issues page</a>. This page displays all the open issues, making it easy to see if your concern has already been addressed.</p>
             
-            <h2>Step 1: Check Existing Issues</h2>
-            <p>Before reporting a new issue or making a feature request, it's a good practice to check if someone else has already submitted a similar request. This helps avoid duplicates and streamlines the process.</p>
-            
+            <h2>Submit Report</h2>
             <ul>
               <li>Visit the <a href="https://github.com/Nikolai558/FE-BUDDY/issues" target="_blank">FE-Buddy GitHub Issues page</a>.</li>
               <li>Click the "New Issue" button.</li>
@@ -398,12 +399,7 @@
               </li>
               <li>Once you've filled out the form, click the "Submit new issue" button.</li>
             </ul>
-            
-            <h2>Step 2: Interact with Developers</h2>
-            <p>After submitting your issue or feature request, the FE-Buddy development team will review your submission. You may receive follow-up questions or updates on the progress of your request directly on GitHub.</p>
-            
-            <p>Please provide any additional information or feedback requested by the developers to help expedite the resolution of your concern.</p>
-        </div>
+          </div>
 
 
 
@@ -1114,7 +1110,7 @@
 
         <! -- ARTCC Boundaries content -->
 
-        <div class="section" id="#vmArtccBoundaries">
+        <div class="section" id="#mapArtcc">
             <h1>ARTCC Boundaries Video Maps</h1>
             <!-- Separator -->
             <hr>
@@ -1154,7 +1150,7 @@
 
         <! -- Airway content -->
 
-        <div class="section" id="#vmAwy">
+        <div class="section" id="#mapAwy">
             <h1>Airways Video Maps</h1>
             <!-- Separator -->
             <hr>
@@ -1226,7 +1222,7 @@
 
         <! -- Fixes content -->
 
-        <div class="section" id="#vmFixes">
+        <div class="section" id="#mapFixes">
             <h1>Fixes Video Maps</h1>
             <!-- Separator -->
             <hr>
@@ -1266,7 +1262,7 @@
 
         <! -- NAVAIDs content -->
 
-        <div class="section" id="#vmNavaids">
+        <div class="section" id="#mapNavaids">
             <h1>NAVAIDs Video Maps</h1>
             <!-- Separator -->
             <hr>
@@ -1306,7 +1302,7 @@
 
         <! -- Runway content -->
 
-        <div class="section" id="#vmRwy">
+        <div class="section" id="#mapRwy">
             <h1>Runways Video Maps</h1>
             <!-- Separator -->
             <hr>
@@ -1338,7 +1334,7 @@
 
         <! -- Wx Station content -->
 
-        <div class="section" id="#vmWx">
+        <div class="section" id="#mapWx">
             <h1>Weather Stations Video Maps</h1>
             <!-- Separator -->
             <hr>
@@ -1378,7 +1374,7 @@
 
         <! -- STAR and DP content -->
 
-        <div class="section" id="#vmStarDp">
+        <div class="section" id="#mapStarDp">
             <h1>STAR and DP Video Maps</h1>
             <!-- Separator -->
             <hr>
@@ -1591,6 +1587,22 @@
                     top: 0,
                     behavior: 'smooth' // You can use 'auto' instead of 'smooth' for an instant jump
                 });
+            });
+        });
+    </script>
+
+    <script>
+        // JavaScript to toggle visibility of the AIRAC Updates list
+        document.addEventListener('DOMContentLoaded', function () {
+            var toggleButton = document.getElementById('toggleAiracUpdates');
+            var airacList = document.getElementById('airacUpdatesList');
+            
+            toggleButton.addEventListener('click', function () {
+                if (airacList.style.display === 'none') {
+                    airacList.style.display = 'block';
+                } else {
+                    airacList.style.display = 'none';
+                }
             });
         });
     </script>

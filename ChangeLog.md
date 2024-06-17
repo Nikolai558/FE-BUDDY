@@ -1,6 +1,13 @@
 # CHANGELOG
 
 ---
+- ## Version 2.7.0
+  - Bug #163 - Missing Root Element Error (NWS Weather Stations)
+    - The National Weather Service (NWS) website is undergoing a revamp, and in the process, 
+      they changed a download link that FE-Buddy uses to gather complete airport data and 
+      their respective weather station codes. 
+    - FE-Buddy is now using an API from the NWS website to gather the necessary data.
+
 - ## Version 2.6.9
   - Bug #161 - FAA changed their website to a different link structure for AIRAC
     - Fixed the issue to account for their change. 

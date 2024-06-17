@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
 using System.IO;
 
 namespace FeBuddyLibrary.Helpers
@@ -30,7 +31,13 @@ namespace FeBuddyLibrary.Helpers
 
             Process = Process.Start(ProcessInfo);
             Process.WaitForExit();
-            _ = Process.ExitCode;
+            int exit_code = Process.ExitCode;
+
+            if (exit_code != 0)
+            {
+                Logger.LogMessage("ERROR", $"Batch File {batchFileName} did not execute correctly. Exit Code: {exit_code}");
+            }
+            
 
             Process.Close();
         }

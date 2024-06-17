@@ -216,7 +216,13 @@ namespace FeBuddyLibrary.DataAccess
 
             var symbolFeature = new Feature() { type = "Feature", geometry = new Geometry() { type = "Point" } };
 
-            string metarDataFilepath = $"{GlobalConfig.tempPath}\\{effectiveDate}_NWS-WX-STATIONS.xml";
+            string metarDataFilepath = $"{GlobalConfig.tempPath}\\{effectiveDate}_NWS-WX-STATIONS.xml.gz";
+            string metarDataDestFilepath = $"{GlobalConfig.tempPath}\\{effectiveDate}_NWS-WX-STATIONS.xml";
+
+            WebHelpers.DecompressGZipFile(metarDataFilepath, metarDataDestFilepath);
+
+            metarDataFilepath = $"{GlobalConfig.tempPath}\\{effectiveDate}_NWS-WX-STATIONS.xml";
+
             string outputFilepath = $"{GlobalConfig.outputDirectory}\\VRC\\[LABELS].sct2";
             Dictionary<string, List<double>> stationInfo = new Dictionary<string, List<double>>();
             Dictionary<string, string> stationNames = new Dictionary<string, string>();
@@ -227,10 +233,15 @@ namespace FeBuddyLibrary.DataAccess
             sb.AppendLine("[LABELS]");
 
             // Load Metar XML File and populate our stationInfo Dictionary
+            
+            
             XDocument metarXML = XDocument.Load(metarDataFilepath);
+
+
             foreach (XElement xElement in metarXML.Descendants("station"))
             {
-                string id = xElement.Element("station_id").Value;
+                //string id = xElement.Element("station_id").Value;
+                string id = xElement.Element("site").Value;
                 string name = xElement.Element("station_name").Value;
                 double lat = Convert.ToDouble(xElement.Element("latitude").Value);
                 double lon = Convert.ToDouble(xElement.Element("longitude").Value);

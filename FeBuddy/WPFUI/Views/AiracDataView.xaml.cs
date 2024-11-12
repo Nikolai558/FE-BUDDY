@@ -13,14 +13,14 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace WPFUI.CustomControls
+namespace WPFUI.Views
 {
     /// <summary>
-    /// Interaction logic for Navigation.xaml
+    /// Interaction logic for AiracDataView.xaml
     /// </summary>
-    public partial class Navigation : UserControl
+    public partial class AiracDataView : UserControl
     {
-        public Navigation()
+        public AiracDataView()
         {
             InitializeComponent();
         }

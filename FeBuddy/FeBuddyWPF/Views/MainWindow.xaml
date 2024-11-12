@@ -52,7 +52,6 @@
 
                     <controls:MenuOptions 
                         Grid.Row="1"/>
-
                 </Grid>
             </Border>
         </Border>

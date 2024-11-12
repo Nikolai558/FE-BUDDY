@@ -1,6 +1,6 @@
 # FE-Buddy
 
-![FE-Buddy Logo](https://raw.githubusercontent.com/KSanders7070/FE-ASSISTANT/main/FEB_ICON.ico)
+![FE-Buddy Logo](https://github.com/user-attachments/assets/69c021c7-6f0b-4e48-90c9-07fcfecb9dd5)
 
 FE-Buddy is a powerful tool designed for VATSIM/VATUSA ARTCC Facility Engineers. It simplifies the creation, editing, and maintenance of facility files like GeoMaps, RADAR video maps (RVMs), and alias command files. Additionally, FE-Buddy offers the ability to convert FAA GeoMaps, RVMs, and NASR data into GeoJSON files, which can be seamlessly used in the CRC program. The program boasts several essential features:
 

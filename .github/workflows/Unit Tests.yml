@@ -12,5 +12,6 @@ jobs:
     name: Unit Testing
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v2.1.0
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
       - run: dotnet test ./FeBuddy

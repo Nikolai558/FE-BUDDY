@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace FEBuddyLibrary.Models.Navaids;
+﻿namespace FEBuddyLibrary.Models.Navaids;
 
 /// <summary>
 /// Represents a Non-Directional Beacon (NDB) radio navigation aid.
@@ -12,21 +6,21 @@ namespace FEBuddyLibrary.Models.Navaids;
 /// </summary>
 public class NDB : NavaidBase
 {
-  /// <summary>
-  /// Initializes a new instance of the <see cref="NDB"/> class with the specified parameters.
-  /// </summary>
-  /// <param name="id">The identifier of the NDB.</param>
-  /// <param name="frequency">The frequency of the NDB.</param>
-  /// <param name="name">The name of the NDB.</param>
-  /// <param name="type">The type of the NDB.</param>
-  /// <param name="lat">The latitude of the NDB's location.</param>
-  /// <param name="lon">The longitude of the NDB's location.</param>
-  public NDB(string id, string frequency, string name, string type, double lat, double lon)
-  {
-    Id = id;
-    Frequency = frequency;
-    Name = name;
-    Type = type;
-    Location = new Location.Location(lat, lon);
-  }
+    /// <summary>
+    /// Initializes a new instance of the <see cref="NDB"/> class with the specified parameters.
+    /// </summary>
+    /// <param name="id">The identifier of the NDB.</param>
+    /// <param name="frequency">The frequency of the NDB.</param>
+    /// <param name="name">The name of the NDB.</param>
+    /// <param name="type">The type of the NDB.</param>
+    /// <param name="lat">The latitude of the NDB's location.</param>
+    /// <param name="lon">The longitude of the NDB's location.</param>
+    public NDB(string id, string frequency, string name, string type, double lat, double lon)
+    {
+        Id = id;
+        Frequency = frequency;
+        Name = name;
+        Type = type;
+        Location = new Location.Location(lat, lon);
+    }
 }

@@ -1,7 +1,6 @@
-﻿using System.Windows;
+﻿using MahApps.Metro.Controls;
+using System.Windows;
 using System.Windows.Controls;
-
-using MahApps.Metro.Controls;
 
 namespace WPF_Template.TemplateSelectors;
 

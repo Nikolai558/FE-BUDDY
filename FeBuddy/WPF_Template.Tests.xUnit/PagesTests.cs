@@ -1,10 +1,7 @@
-﻿using System.IO;
-using System.Reflection;
-
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-
+using System.Reflection;
 using WPF_Template.Contracts.Services;
 using WPF_Template.Core.Contracts.Services;
 using WPF_Template.Core.Services;
@@ -12,7 +9,6 @@ using WPF_Template.Models;
 using WPF_Template.Services;
 using WPF_Template.ViewModels;
 using WPF_Template.Views;
-
 using Xunit;
 
 namespace WPF_Template.Tests.XUnit;

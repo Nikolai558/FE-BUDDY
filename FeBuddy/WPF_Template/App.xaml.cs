@@ -1,12 +1,10 @@
-﻿using System.IO;
+﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using System.IO;
 using System.Reflection;
 using System.Windows;
 using System.Windows.Threading;
-
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-
 using WPF_Template.Contracts.Services;
 using WPF_Template.Contracts.Views;
 using WPF_Template.Core.Contracts.Services;

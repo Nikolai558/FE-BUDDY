@@ -1,10 +1,9 @@
-﻿using System;
-using System.Windows.Controls;
-using System.Windows.Navigation;
-
-using FeBuddyWPF.Contracts.Services;
+﻿using FeBuddyWPF.Contracts.Services;
 using FeBuddyWPF.Contracts.ViewModels;
 using FeBuddyWPF.Helpers;
+using System;
+using System.Windows.Controls;
+using System.Windows.Navigation;
 
 namespace FeBuddyWPF.Services;
 

@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Input;
 
 namespace FeBuddyWPF.ViewModels
@@ -34,7 +30,7 @@ namespace FeBuddyWPF.ViewModels
 
         public bool CanExecute(object parameter)
         {
-            return _canExecuteAction == null ? true: _canExecuteAction(parameter);
+            return _canExecuteAction == null ? true : _canExecuteAction(parameter);
         }
 
         public void Execute(object parameter)

@@ -1,8 +1,6 @@
-﻿using System.Collections;
+﻿using Microsoft.Extensions.Options;
+using System.Collections;
 using System.IO;
-
-using Microsoft.Extensions.Options;
-
 using WPF_Template.Contracts.Services;
 using WPF_Template.Core.Contracts.Services;
 using WPF_Template.Models;

@@ -1,11 +1,8 @@
-﻿using System.Collections.ObjectModel;
-using System.Windows.Input;
-
-using CommunityToolkit.Mvvm.ComponentModel;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-
 using MahApps.Metro.Controls;
-
+using System.Collections.ObjectModel;
+using System.Windows.Input;
 using WPF_Template.Contracts.Services;
 using WPF_Template.Properties;
 

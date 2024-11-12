@@ -1,6 +1,5 @@
-﻿using System.Diagnostics;
-
-using FeBuddyWPF.Contracts.Services;
+﻿using FeBuddyWPF.Contracts.Services;
+using System.Diagnostics;
 
 namespace FeBuddyWPF.Services;
 

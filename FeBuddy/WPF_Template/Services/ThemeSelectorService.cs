@@ -1,9 +1,6 @@
-﻿using System.Windows;
-
-using ControlzEx.Theming;
-
+﻿using ControlzEx.Theming;
 using MahApps.Metro.Theming;
-
+using System.Windows;
 using WPF_Template.Contracts.Services;
 using WPF_Template.Models;
 

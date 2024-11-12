@@ -1,14 +1,13 @@
-﻿using Microsoft.Extensions.Hosting;
-using FeBuddyWPF.Contracts.Activation;
+﻿using FeBuddyWPF.Contracts.Activation;
 using FeBuddyWPF.Contracts.Services;
 using FeBuddyWPF.Contracts.Views;
 using FeBuddyWPF.ViewModels;
+using Microsoft.Extensions.Hosting;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Linq;
-using FeBuddyWPF;
 
 namespace FeBuddyWPF.Services;
 

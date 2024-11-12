@@ -1,7 +1,5 @@
-﻿using System.Windows.Controls;
-
-using CommunityToolkit.Mvvm.ComponentModel;
-
+﻿using CommunityToolkit.Mvvm.ComponentModel;
+using System.Windows.Controls;
 using WPF_Template.Contracts.Services;
 using WPF_Template.ViewModels;
 using WPF_Template.Views;

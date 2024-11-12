@@ -1,10 +1,7 @@
-﻿using System.Windows.Input;
-
-using CommunityToolkit.Mvvm.ComponentModel;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-
 using Microsoft.Extensions.Options;
-
+using System.Windows.Input;
 using WPF_Template.Contracts.Services;
 using WPF_Template.Contracts.ViewModels;
 using WPF_Template.Models;

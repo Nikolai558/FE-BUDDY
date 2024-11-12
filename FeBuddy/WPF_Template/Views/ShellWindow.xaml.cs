@@ -1,7 +1,5 @@
-﻿using System.Windows.Controls;
-
-using MahApps.Metro.Controls;
-
+﻿using MahApps.Metro.Controls;
+using System.Windows.Controls;
 using WPF_Template.Contracts.Views;
 using WPF_Template.ViewModels;
 

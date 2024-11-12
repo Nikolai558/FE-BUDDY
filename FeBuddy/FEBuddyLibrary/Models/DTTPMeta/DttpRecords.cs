@@ -55,281 +55,15 @@ public class DttpRecords
   {
     if (ChartCode == "MIN")
     {
-      if (ChartName == "TAKEOFF MINIMUMS")
-      {
-        AliasCommand += "/TM";
-      }
-      else if (ChartName == "ALTERNATE MINIMUMS")
-      {
-        AliasCommand += "/";
-        //AliasCommand +=  "/AM";
-      }
-      else if (ChartName == "DIVERSE VECTOR AREA")
-      {
-        AliasCommand += "/DVA";
-      }
-      else if (ChartName == "RADAR MINIMUMS")
-      {
-        AliasCommand += "/RM";
-      }
-      else
-      {
-        // Only get here if the FAA added another "Type" to the MIN category.
-        AliasCommand += "/NEWMINTYPEERROR";
-      }
+      HandleMinimumsChart();
     }
     else if (ChartCode == "IAP")
     {
-      if (ChartName.IndexOf(@" OR ") != -1)
-      {
-        string runwayTempVar;
-        List<DttpRecords> tempRecordList = new List<DttpRecords>();
-
-        if (ChartName.IndexOf("RWY") == -1)
-        {
-          runwayTempVar = "";
-        }
-        else
-        {
-          runwayTempVar = ChartName.Substring(ChartName.IndexOf("RWY"));
-        }
-
-        foreach (string individualChartName in ChartName.Split(new string[] { @" OR " }, StringSplitOptions.None))
-        {
-          DttpRecords tempRecordModel = new DttpRecords();
-          tempRecordModel.ChartCode = ChartCode;
-          tempRecordModel.PdfName = PdfName;
-          tempRecordModel.FAAChartName = FAAChartName;
-
-
-          tempRecordModel.ChartName = individualChartName;
-
-          if (tempRecordModel.ChartName.IndexOf("RWY") == -1)
-          {
-            tempRecordModel.ChartName += " " + runwayTempVar;
-          }
-
-          tempRecordModel.CreateAliasComand(AptIata);
-
-          tempRecordList.Add(tempRecordModel);
-          //AliasCommand += tempRecordModel.AliasCommand;
-        }
-
-        List<int> indexesMissingVariant = new List<int>();
-        int count = 0;
-        string tempVariant = "";
-        foreach (DttpRecords tempRcord in tempRecordList)
-        {
-          if (string.IsNullOrEmpty(tempRcord.Variant))
-          {
-            indexesMissingVariant.Add(count);
-          }
-          else
-          {
-            tempVariant = tempRcord.Variant;
-          }
-          count += 1;
-        }
-
-        if (indexesMissingVariant.Count >= 1 && indexesMissingVariant.Count != tempRecordList.Count)
-        {
-          foreach (int missingIndex in indexesMissingVariant)
-          {
-            if (char.IsDigit(tempRecordList[missingIndex].AliasCommand[tempRecordList[missingIndex].AliasCommand.Length - 1]) &&
-                char.IsDigit(tempRecordList[missingIndex].AliasCommand[tempRecordList[missingIndex].AliasCommand.Length - 2]))
-            {
-              string firstCommandPart = tempRecordList[missingIndex].AliasCommand.Substring(0, 2);
-              string middleCommandPart = tempVariant;
-              string endCommandPart = tempRecordList[missingIndex].AliasCommand.Substring(tempRecordList[missingIndex].AliasCommand.Length - 1);
-
-              tempRecordList[missingIndex].AliasCommand = firstCommandPart + middleCommandPart + endCommandPart;
-            }
-            else
-            {
-              tempRecordList[missingIndex].AliasCommand = tempRecordList[missingIndex].AliasCommand.Insert(2, tempVariant);
-            }
-
-            // Might want to remove this - This is to see MisMatchingVaarents inside the Temp File.
-            // File.AppendAllText($"{NASR2SCTDATA.GlobalConfig.tempPath}\\MisMatchingVariants.txt", $"APT IATA: {AptIata} - {tempRecordList[missingIndex].FAAChartName}\n");
-          }
-        }
-
-        foreach (DttpRecords tempRecord in tempRecordList)
-        {
-          AliasCommand += tempRecord.AliasCommand;
-        }
-      }
-      else if (PdfName.IndexOf("_VIS") != -1)
-      {
-        string output = "/V";
-
-        foreach (string str in ChartName.Substring(0, ChartName.IndexOf("VISUAL")).Split(' '))
-        {
-          if (!string.IsNullOrEmpty(str))
-          {
-            output += str[0];
-          }
-        }
-
-        AliasCommand += output;
-      }
-      else if (ChartName.IndexOf("ILS ") != -1 || ChartName.IndexOf("ILS-") != -1)
-      {
-        string output = CreateAliasCommandHelper("/I");
-        if (output.IndexOf("!DONT-INCLUDE!") == -1)
-        {
-          AliasCommand += output;
-        }
-      }
-      else if (ChartName.IndexOf("LOC ") != -1 || ChartName.IndexOf("LOC-") != -1)
-      {
-        string output = CreateAliasCommandHelper("/L");
-        if (output.IndexOf("!DONT-INCLUDE!") == -1)
-        {
-          AliasCommand += output;
-        }
-      }
-      else if (ChartName.IndexOf("LDA ") != -1 || ChartName.IndexOf("LDA-") != -1)
-      {
-        string output = CreateAliasCommandHelper("/D");
-        if (output.IndexOf("!DONT-INCLUDE!") == -1)
-        {
-          AliasCommand += output;
-        }
-      }
-      else if (ChartName.IndexOf("LDA/DME") != -1)
-      {
-        string output = CreateAliasCommandHelper("/A");
-        if (output.IndexOf("!DONT-INCLUDE!") == -1)
-        {
-          AliasCommand += output;
-        }
-      }
-      else if (ChartName.IndexOf("GPS ") != -1 || ChartName.IndexOf("GPS-") != -1)
-      {
-        string output = CreateAliasCommandHelper("/G");
-        if (output.IndexOf("!DONT-INCLUDE!") == -1)
-        {
-          AliasCommand += output;
-        }
-      }
-      else if (ChartName.IndexOf("LOC/DME ") != -1 || ChartName.IndexOf("LOC/DME-") != -1)
-      {
-        string output = CreateAliasCommandHelper("/K");
-        if (output.IndexOf("!DONT-INCLUDE!") == -1)
-        {
-          AliasCommand += output;
-        }
-      }
-      else if (ChartName.IndexOf("LOC/NDB ") != -1)
-      {
-        // Do not account for LOC/NDB (Only 2 in entire USA)
-        AliasCommand += "/";
-      }
-      else if (ChartName.IndexOf("NDB ") != -1 || ChartName.IndexOf("NDB-") != -1)
-      {
-        string output = CreateAliasCommandHelper("/N");
-        if (output.IndexOf("!DONT-INCLUDE!") == -1)
-        {
-          AliasCommand += output;
-        }
-      }
-      else if (ChartName.IndexOf("RNAV (GPS) ") != -1 || ChartName.IndexOf("RNAV (GPS)-") != -1 || ChartName.IndexOf("RNAV (RNP) ") != -1)
-      {
-        string oldChartName = ChartName;
-
-        if (ChartName.IndexOf("(GPS)") != -1)
-        {
-          ChartName = ChartName.Replace(" (GPS)", string.Empty);
-        }
-
-        if (ChartName.IndexOf("(RNP)") != -1)
-        {
-          ChartName = ChartName.Replace(" (RNP)", string.Empty);
-        }
-
-        string output = CreateAliasCommandHelper("/R");
-
-        if (output.IndexOf("!DONT-INCLUDE!") == -1)
-        {
-          AliasCommand += output;
-        }
-
-        //ChartName = oldChartName;
-      }
-      else if (ChartName.IndexOf("SDF ") != -1)
-      {
-        string output = CreateAliasCommandHelper("/S");
-        if (output.IndexOf("!DONT-INCLUDE!") == -1)
-        {
-          AliasCommand += output;
-        }
-      }
-      else if (ChartName.IndexOf("TACAN ") != -1 || ChartName.IndexOf("TACAN-") != -1)
-      {
-        string output = CreateAliasCommandHelper("/T");
-        if (output.IndexOf("!DONT-INCLUDE!") == -1)
-        {
-          AliasCommand += output;
-        }
-      }
-      else if (ChartName.IndexOf("VOR ") != -1 || ChartName.IndexOf("VOR-") != -1)
-      {
-        string output = CreateAliasCommandHelper("/O");
-        if (output.IndexOf("!DONT-INCLUDE!") == -1)
-        {
-          AliasCommand += output;
-        }
-      }
-      else if (ChartName.IndexOf("VOR/DME ") != -1 || ChartName.IndexOf("VOR/DME-") != -1)
-      {
-        string output = CreateAliasCommandHelper("/F");
-        if (output.IndexOf("!DONT-INCLUDE!") == -1)
-        {
-          AliasCommand += output;
-        }
-      }
-      else if (ChartName.IndexOf("NDB/DME ") != -1 || ChartName.IndexOf("NDB/DME-") != -1)
-      {
-        string output = CreateAliasCommandHelper("/B");
-        if (output.IndexOf("!DONT-INCLUDE!") == -1)
-        {
-          AliasCommand += output;
-        }
-      }
-      else if (ChartName.IndexOf("GLS ") != -1)
-      {
-        // Do not account for GLS
-        AliasCommand += "/";
-      }
-      else
-      {
-        AliasCommand += "/ERROR";
-      }
+      HandleInstrumentApproachProcedure(AptIata);
     }
-    else if (ChartCode == "DP")
+    else if (ChartCode == "DP" || ChartCode == "ODP")
     {
-      if (!string.IsNullOrEmpty(Faanfd18))
-      {
-        AliasCommand += $"/{AptIata}{Faanfd18.Split('.')[0].Substring(0, Faanfd18.Split('.')[0].Length - 1)}";
-      }
-      else
-      {
-        // The DP Does not have a Computer Code.
-        AliasCommand += "/";
-      }
-    }
-    else if (ChartCode == "ODP")
-    {
-      if (!string.IsNullOrEmpty(Faanfd18))
-      {
-        AliasCommand += $"/{AptIata}{Faanfd18.Split('.')[0].Substring(0, Faanfd18.Split('.')[0].Length - 1)}";
-      }
-      else
-      {
-        // The ODP does not have a Computer Code.
-        AliasCommand += "/";
-      }
+      HandleDepartureProcedure(AptIata);
     }
     else if (ChartCode == "HOT")
     {
@@ -337,15 +71,7 @@ public class DttpRecords
     }
     else if (ChartCode == "STAR")
     {
-      if (!string.IsNullOrEmpty(Faanfd18))
-      {
-        AliasCommand += $"/{AptIata}{Faanfd18.Split('.')[1].Substring(0, Faanfd18.Split('.')[1].Length - 1)}";
-      }
-      else
-      {
-        // The Star does not have a Computer Code.
-        AliasCommand += "/";
-      }
+      HandleStarProcedure(AptIata);
     }
     else if (ChartCode == "APD")
     {
@@ -357,7 +83,6 @@ public class DttpRecords
     }
     else if (ChartCode == "DAU")
     {
-      //AliasCommand += "/DAU";
       AliasCommand += "/";
     }
     else
@@ -366,104 +91,338 @@ public class DttpRecords
     }
   }
 
-  private string CreateAliasCommandHelper(string aproachTypeCode)
+  // Handle "MIN" Chart Type
+  private void HandleMinimumsChart()
   {
-    string output;
-    bool getTwoDigitRwy;
-
-    if (ChartName.IndexOf("COPTER") != -1 || ChartName.IndexOf("HI-") != -1)
+    switch (ChartName)
     {
-      output = aproachTypeCode;
+      case "TAKEOFF MINIMUMS":
+        AliasCommand += "/TM";
+        break;
+      case "ALTERNATE MINIMUMS":
+        AliasCommand += "/";
+        break;
+      case "DIVERSE VECTOR AREA":
+        AliasCommand += "/DVA";
+        break;
+      case "RADAR MINIMUMS":
+        AliasCommand += "/RM";
+        break;
+      default:
+        AliasCommand += "/NEWMINTYPEERROR";
+        break;
+    }
+  }
 
-      // Chart name has COPTER or HI- included in it. WE DO NOT WANT THIS CHART.
-      output += "!DONT-INCLUDE!";
-      return output;
+  // Handle Instrument Approach Procedures (IAP)
+  private void HandleInstrumentApproachProcedure(string AptIata)
+  {
+    if (ChartName.IndexOf(@" OR ") != -1)
+    {
+      HandleOrCharts(AptIata);
+    }
+    else if (PdfName.Contains("_VIS"))
+    {
+      HandleVisualApproachChart();
+    }
+    else
+    {
+      HandleSpecificIapType();
+    }
+  }
+
+  private void HandleOrCharts(string AptIata)
+  {
+    string runwayTempVar = ChartName.IndexOf("RWY") == -1 ? "" : ChartName.Substring(ChartName.IndexOf("RWY"));
+    List<DttpRecords> tempRecordList = new List<DttpRecords>();
+
+    foreach (string individualChartName in ChartName.Split(new string[] { @" OR " }, StringSplitOptions.None))
+    {
+      var tempRecord = CreateTempRecord(individualChartName, runwayTempVar, AptIata);
+      tempRecordList.Add(tempRecord);
+    }
+
+    ResolveVariants(tempRecordList, AptIata);
+    AppendAliasCommands(tempRecordList);
+  }
+
+  private DttpRecords CreateTempRecord(string individualChartName, string runwayTempVar, string AptIata)
+  {
+    DttpRecords tempRecord = new()
+    {
+      ChartCode = ChartCode,
+      PdfName = PdfName,
+      FAAChartName = FAAChartName,
+      ChartName = individualChartName
+    };
+
+    if (tempRecord.ChartName.IndexOf("RWY") == -1)
+    {
+      tempRecord.ChartName += " " + runwayTempVar;
+    }
+
+    tempRecord.CreateAliasComand(AptIata);
+    return tempRecord;
+  }
+
+  private void ResolveVariants(List<DttpRecords> tempRecordList, string AptIata)
+  {
+    List<int> indexesMissingVariant = new();
+    string tempVariant = "";
+    for (int i = 0; i < tempRecordList.Count; i++)
+    {
+      if (string.IsNullOrEmpty(tempRecordList[i].Variant))
+      {
+        indexesMissingVariant.Add(i);
+      }
+      else
+      {
+        tempVariant = tempRecordList[i].Variant;
+      }
+    }
+
+    if (indexesMissingVariant.Count > 0 && indexesMissingVariant.Count != tempRecordList.Count)
+    {
+      foreach (int missingIndex in indexesMissingVariant)
+      {
+        if (IsVariantResolvable(tempRecordList[missingIndex]))
+        {
+          ResolveMissingVariant(tempRecordList[missingIndex], tempVariant);
+        }
+      }
+    }
+  }
+
+  private bool IsVariantResolvable(DttpRecords record)
+  {
+    return char.IsDigit(record.AliasCommand[^1]) &&
+           char.IsDigit(record.AliasCommand[^2]);
+  }
+
+  private void ResolveMissingVariant(DttpRecords record, string tempVariant)
+  {
+    if (IsVariantResolvable(record))
+    {
+      string firstCommandPart = record.AliasCommand[..2];
+      string endCommandPart = record.AliasCommand[^1..];
+      record.AliasCommand = firstCommandPart + tempVariant + endCommandPart;
+    }
+    else
+    {
+      record.AliasCommand = record.AliasCommand.Insert(2, tempVariant);
+    }
+  }
+
+  private void AppendAliasCommands(List<DttpRecords> tempRecordList)
+  {
+    foreach (var tempRecord in tempRecordList)
+    {
+      AliasCommand += tempRecord.AliasCommand;
+    }
+  }
+
+  private void HandleVisualApproachChart()
+  {
+    string output = "/V";
+    foreach (string str in ChartName[..ChartName.IndexOf("VISUAL")].Split(' '))
+    {
+      if (!string.IsNullOrEmpty(str))
+      {
+        output += str[0];
+      }
+    }
+    AliasCommand += output;
+  }
+
+  private void HandleSpecificIapType()
+  {
+    var chartTypeCommands = new Dictionary<string, string>
+      {
+          {"ILS ", "/I"}, {"LOC ", "/L"}, {"LDA ", "/D"},
+          {"LDA/DME", "/A"}, {"GPS ", "/G"}, {"LOC/DME ", "/K"},
+          {"NDB ", "/N"}, {"RNAV (GPS) ", "/R"}, {"SDF ", "/S"},
+          {"TACAN ", "/T"}, {"VOR ", "/O"}, {"VOR/DME ", "/F"},
+          {"NDB/DME ", "/B"}
+      };
+
+    foreach (var chartTypeCommand in chartTypeCommands)
+    {
+      if (ChartName.Contains(chartTypeCommand.Key) || ChartName.Contains(chartTypeCommand.Key.Replace(" ", "-")))
+      {
+        var output = CreateAliasCommandHelper(chartTypeCommand.Value);
+        if (!output.Contains("!DONT-INCLUDE!"))
+        {
+          AliasCommand += output;
+        }
+        return;
+      }
+    }
+
+    if (ChartName.Contains("GLS "))
+    {
+      AliasCommand += "/";
+    }
+    else
+    {
+      AliasCommand += "/ERROR";
+    }
+  }
+
+  // Handle Departure Procedure (DP/ODP)
+  private void HandleDepartureProcedure(string AptIata)
+  {
+    if (!string.IsNullOrEmpty(Faanfd18))
+    {
+      AliasCommand += $"/{AptIata}{Faanfd18.Split('.')[0][..^1]}";
+    }
+    else
+    {
+      AliasCommand += "/";
+    }
+  }
+
+  // Handle STAR Procedure
+  private void HandleStarProcedure(string AptIata)
+  {
+    if (!string.IsNullOrEmpty(Faanfd18))
+    {
+      AliasCommand += $"/{AptIata}{Faanfd18.Split('.')[1][..^1]}";
+    }
+    else
+    {
+      AliasCommand += "/";
+    }
+  }
+
+  private string CreateAliasCommandHelper(string approachTypeCode)
+  {
+    if (IsCopterOrHighChart())
+    {
+      return approachTypeCode + "!DONT-INCLUDE!";
     }
 
     if (ChartName.Contains("CONT."))
     {
-      HasMultiplePages = true;
-      PageCount += 1;
-
-      ChartName = ChartName.Replace($"{ChartName.Substring(ChartName.IndexOf(", C"))}", string.Empty);
+      HandleContinuationChart();
     }
 
-    if (ChartName.IndexOf("RWY") == -1)
+    return ChartName.Contains("RWY") ? HandleRunwayChart(approachTypeCode) : HandleNonRunwayChart(approachTypeCode);
+  }
+
+  // Check if the chart is a copter or HI- type
+  private bool IsCopterOrHighChart()
+  {
+    return ChartName.Contains("COPTER") || ChartName.Contains("HI-");
+  }
+
+  // Handle continuation charts that span multiple pages
+  private void HandleContinuationChart()
+  {
+    HasMultiplePages = true;
+    PageCount++;
+    ChartName = ChartName.Replace($"{ChartName.Substring(ChartName.IndexOf(", C"))}", string.Empty);
+  }
+
+  // Handle charts that do not have runway information
+  private string HandleNonRunwayChart(string approachTypeCode)
+  {
+    string output = approachTypeCode;
+
+    if (ChartName.Contains("-"))
     {
-      output = aproachTypeCode;
-      // Chartname does NOT have any runways. So Just return the VARIANT (if it has one)
-      if (ChartName.IndexOf("-") != -1)
-      {
-        // Chartname has a -VARIANT
-        Variant = ChartName.Split('-')[1];
-        output += ChartName.Split('-')[1];
-
-        if (HasMultiplePages)
-        {
-          output += $"{PageCount}";
-        }
-
-        return output;
-      }
-      else if (ChartName.Split(' ').Count() >= 2)
-      {
-        // Chartname has a ' VARIANT'
-        Variant = ChartName.Split(' ')[1];
-        output += ChartName.Split(' ')[1];
-
-        if (HasMultiplePages)
-        {
-          output += $"{PageCount}";
-        }
-
-        return output;
-      }
-      else
-      {
-        // Chartname has no VARIANT
-
-        if (HasMultiplePages)
-        {
-          output += $"{PageCount}";
-        }
-
-        return output;
-      }
+      return AppendVariant(output, ChartName.Split('-')[1]);
     }
-
-    output = aproachTypeCode;
-
-    if (ChartName.IndexOf("-") != -1)
+    else if (ChartName.Split(' ').Length >= 2)
     {
-      getTwoDigitRwy = false;
-      // Chartname has '-' so it HAS a variant, ALWAYS.
-      // add the varrient to output.
-      Variant = ChartName.Split('-')[1][0].ToString();
-      output += ChartName.Split('-')[1][0];
-    }
-    else if (ChartName.Substring(0, ChartName.IndexOf("RWY")).Split(' ').Count() > 2)
-    {
-      getTwoDigitRwy = false;
-      // Chartname HAS variant
-      Variant = ChartName.Substring(0, ChartName.IndexOf("RWY")).Split(' ')[1];
-      output += ChartName.Substring(0, ChartName.IndexOf("RWY")).Split(' ')[1];
+      return AppendVariant(output, ChartName.Split(' ')[1]);
     }
     else
     {
-      // Chartname does NOT have a variant
-      getTwoDigitRwy = true;
+      return AppendPageCountIfNeeded(output);
     }
+  }
 
-    if (char.IsDigit(ChartName.Substring(ChartName.IndexOf("RWY"))[ChartName.Substring(ChartName.IndexOf("RWY")).Length - 1]))
+  // Append the variant to the output string
+  private string AppendVariant(string output, string variant)
+  {
+    Variant = variant;
+    output += variant;
+    return AppendPageCountIfNeeded(output);
+  }
+
+  // Append the page count if needed
+  private string AppendPageCountIfNeeded(string output)
+  {
+    if (HasMultiplePages)
     {
-      // Chart Runway does not have a designator.
-      if (getTwoDigitRwy)
+      output += $"{PageCount}";
+    }
+    return output;
+  }
+
+  // Handle charts that contain runway information
+  private string HandleRunwayChart(string approachTypeCode)
+  {
+    string output = approachTypeCode;
+    bool getTwoDigitRwy = DetermineRunwayVariant(ref output);
+
+    if (IsSingleDesignatorRunway())
+    {
+      return AppendRunwayDesignator(output, getTwoDigitRwy);
+    }
+    else
+    {
+      return HandleMultipleRunwayDesignators(output);
+    }
+  }
+
+  // Determine if the chart has a runway variant
+  private bool DetermineRunwayVariant(ref string output)
+  {
+    if (ChartName.Contains("-"))
+    {
+      Variant = ChartName.Split('-')[1][0].ToString();
+      output += Variant;
+      return false;
+    }
+    else if (ChartName.Substring(0, ChartName.IndexOf("RWY")).Split(' ').Length > 2)
+    {
+      Variant = ChartName.Substring(0, ChartName.IndexOf("RWY")).Split(' ')[1];
+      output += Variant;
+      return false;
+    }
+    return true;
+  }
+
+  // Check if the runway has a single designator
+  private bool IsSingleDesignatorRunway()
+  {
+    return ChartName.Substring(ChartName.IndexOf("RWY")).IndexOf("/") == -1;
+  }
+
+  // Append the runway designator to the output string
+  private string AppendRunwayDesignator(string output, bool getTwoDigitRwy)
+  {
+    output += getTwoDigitRwy ? ChartName[^2..] : ChartName[^1..];
+    return AppendPageCountIfNeeded(output);
+  }
+
+  // Handle charts with multiple runway designators
+  private string HandleMultipleRunwayDesignators(string output)
+  {
+    string tempRwyNumber = ChartName.Substring(ChartName.IndexOf("RWY")).Trim().Split('/')[0].Substring(4, 2);
+    int tempCount = 0;
+    string tempOutput = output;
+
+    foreach (string designator in ChartName.Substring(ChartName.IndexOf("RWY")).Split('/'))
+    {
+      if (tempCount > 0)
       {
-        output += ChartName.Substring(ChartName.Length - 2);
+        output += tempOutput + tempRwyNumber[1] + designator;
       }
       else
       {
-        output += ChartName.Substring(ChartName.Length - 1);
+        output += designator[^2..];
       }
 
       if (HasMultiplePages)
@@ -471,62 +430,9 @@ public class DttpRecords
         output += $"{PageCount}";
       }
 
-      return output;
+      tempCount++;
     }
-    else
-    {
-      // Chart Runway DOES have designator, need to check to see if it has multiple.
-      if (ChartName.Substring(ChartName.IndexOf("RWY")).IndexOf("/") == -1)
-      {
-        // Chart RWY does NOT have multiple designators.
-        output += ChartName.Substring(ChartName.Length - 2);
 
-        if (HasMultiplePages)
-        {
-          output += $"{PageCount}";
-        }
-
-        return output;
-      }
-      else
-      {
-        // Chart Runway has MULTIPLE designators
-
-        // RWY 30L/R/C
-
-        string tempRwyNumber = ChartName.Substring(ChartName.IndexOf("RWY")).Trim().Split('/')[0].Substring(4, 2);
-        int tempCount = 0;
-        string tempOutput = output;
-
-        foreach (string designator in ChartName.Substring(ChartName.IndexOf("RWY")).Split('/'))
-        {
-          if (tempCount > 0)
-          {
-            // this is 2nd and up index add entire alias command, last digit of the runway, and the designator
-            output += tempOutput;
-            output += tempRwyNumber[1];
-            output += designator;
-          }
-          else
-          {
-            // this is the first index of the rwy, grab last two characters (i.e. 6R)
-            output += designator.Substring(designator.Length - 2);
-          }
-
-          if (HasMultiplePages)
-          {
-            output += $"{PageCount}";
-          }
-
-          tempCount += 1;
-        }
-
-        return output;
-      }
-    }
+    return output;
   }
-
-
-
-
 }

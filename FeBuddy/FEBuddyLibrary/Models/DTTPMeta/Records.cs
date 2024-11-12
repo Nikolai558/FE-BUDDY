@@ -1,5 +1,5 @@
 ﻿namespace FEBuddyLibrary.Models.DTTPMeta;
-public class DttpRecords
+public class Records
 {
     public string FAAChartName { get; set; }
 
@@ -131,7 +131,7 @@ public class DttpRecords
 	private void HandleOrCharts(string AptIata)
 	{
 		string runwayTempVar = ChartName.IndexOf("RWY") == -1 ? "" : ChartName.Substring(ChartName.IndexOf("RWY"));
-		List<DttpRecords> tempRecordList = new List<DttpRecords>();
+		List<Records> tempRecordList = new List<Records>();
 
 		// Create temporary records for each individual chart name split by " OR "
 		foreach (string individualChartName in ChartName.Split(new string[] { @" OR " }, StringSplitOptions.None))
@@ -153,9 +153,9 @@ public class DttpRecords
 	/// <param name="runwayTempVar">The runway information to append if not already present.</param>
 	/// <param name="AptIata">The IATA code of the airport.</param>
 	/// <returns>A DttpRecords object representing the temporary chart record.</returns>
-	private DttpRecords CreateTempRecord(string individualChartName, string runwayTempVar, string AptIata)
+	private Records CreateTempRecord(string individualChartName, string runwayTempVar, string AptIata)
 	{
-		DttpRecords tempRecord = new()
+		Records tempRecord = new()
 		{
 			ChartCode = ChartCode,
 			PdfName = PdfName,
@@ -179,7 +179,7 @@ public class DttpRecords
 	/// </summary>
 	/// <param name="tempRecordList">The list of temporary chart records.</param>
 	/// <param name="AptIata">The IATA code of the airport.</param>
-	private void ResolveVariants(List<DttpRecords> tempRecordList, string AptIata)
+	private void ResolveVariants(List<Records> tempRecordList, string AptIata)
 	{
 		List<int> indexesMissingVariant = new();
 		string tempVariant = "";
@@ -214,7 +214,7 @@ public class DttpRecords
 	/// </summary>
 	/// <param name="record">The chart record to check.</param>
 	/// <returns>True if the variant can be resolved; otherwise, false.</returns>
-	private bool IsVariantResolvable(DttpRecords record)
+	private bool IsVariantResolvable(Records record)
 	{
 		return char.IsDigit(record.AliasCommand[^1]) &&
 			   char.IsDigit(record.AliasCommand[^2]);
@@ -226,7 +226,7 @@ public class DttpRecords
 	/// </summary>
 	/// <param name="record">The chart record to update.</param>
 	/// <param name="tempVariant">The temporary variant to use for resolution.</param>
-	private void ResolveMissingVariant(DttpRecords record, string tempVariant)
+	private void ResolveMissingVariant(Records record, string tempVariant)
 	{
 		if (IsVariantResolvable(record))
 		{
@@ -245,7 +245,7 @@ public class DttpRecords
 	/// Appends alias commands from a list of chart records to the final alias command.
 	/// </summary>
 	/// <param name="tempRecordList">The list of temporary chart records.</param>
-	private void AppendAliasCommands(List<DttpRecords> tempRecordList)
+	private void AppendAliasCommands(List<Records> tempRecordList)
 	{
 		foreach (var tempRecord in tempRecordList)
 		{

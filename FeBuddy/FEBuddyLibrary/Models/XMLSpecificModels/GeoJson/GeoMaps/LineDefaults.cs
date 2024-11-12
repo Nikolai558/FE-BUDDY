@@ -7,9 +7,8 @@ using System.Xml.Serialization;
 
 namespace FEBuddyLibrary.Models.XMLSpecificModels.GeoJson.GeoMaps;
 
-
-[XmlRoot(ElementName = "SymbolDefaults", IsNullable = true)]
-public class Symbol_Defaults
+[XmlRoot(ElementName = "LineDefaults", IsNullable = true)]
+public class LineDefaults
 {
 	[XmlAttribute(AttributeName = "Bcg")]
 	public int Bcg { get; set; }
@@ -20,11 +19,11 @@ public class Symbol_Defaults
 	[XmlAttribute(AttributeName = "Style")]
 	public string Style { get; set; }
 
-	[XmlAttribute(AttributeName = "Size")]
-	public int Size { get; set; }
+	[XmlAttribute(AttributeName = "Thickness")]
+	public int Thickness { get; set; }
 
 	public override string ToString()
 	{
-		return $"Symbol Defaults: BCG {Bcg}__Style {Style}__Size {Size}";
+		return $"Line Defaults: BCG {Bcg}__Style {Style}__Thickness {Thickness}";
 	}
 }

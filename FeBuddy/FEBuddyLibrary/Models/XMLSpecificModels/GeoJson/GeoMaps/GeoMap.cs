@@ -11,7 +11,7 @@ namespace FEBuddyLibrary.Models.XMLSpecificModels.GeoJson.GeoMaps;
 public class GeoMap
 {
 	[XmlElement(ElementName = "Objects")]
-	public Objects Objects { get; set; }
+	public GeoMapObjects Objects { get; set; }
 
 	[XmlAttribute(AttributeName = "Name")]
 	public string Name { get; set; }

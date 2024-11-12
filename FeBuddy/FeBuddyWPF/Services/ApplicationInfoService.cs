@@ -1,7 +1,8 @@
-﻿using FeBuddyWPF.Contracts.Services;
-using System;
+﻿using System;
 using System.Diagnostics;
 using System.Reflection;
+
+using FeBuddyWPF.Contracts.Services;
 
 namespace FeBuddyWPF.Services;
 

@@ -1,9 +1,11 @@
-﻿using FeBuddyWPF.Contracts.Services;
-using FeBuddyWPF.Models;
-using Microsoft.Extensions.Options;
-using System;
-using System.Collections;
+﻿using System.Collections;
 using System.IO;
+
+using Microsoft.Extensions.Options;
+
+using FeBuddyWPF.Contracts.Services;
+using FeBuddyWPF.Models;
+using System;
 
 namespace FeBuddyWPF.Services;
 

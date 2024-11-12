@@ -1,5 +1,5 @@
-﻿using System.Windows;
-using System.Windows.Controls;
+﻿using System.Windows.Controls;
+using System.Windows;
 
 // This namespace contains the helper classes related to the FeBuddyWPF application.
 namespace FeBuddyWPF.Helpers

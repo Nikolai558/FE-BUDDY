@@ -1,7 +1,9 @@
-﻿using FeBuddyWPF.Contracts.Services;
-using Newtonsoft.Json;
-using System.IO;
+﻿using System.IO;
 using System.Text;
+
+using Newtonsoft.Json;
+
+using FeBuddyWPF.Contracts.Services;
 
 namespace FeBuddyWPF.Services;
 

@@ -1,11 +1,11 @@
-﻿using FeBuddyWPF.Contracts.Services;
-using FeBuddyWPF.MVVMTools.ComponentModel;
-using FeBuddyWPF.ViewModels;
-using FeBuddyWPF.Views;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Controls;
+using FeBuddyWPF.Contracts.Services;
+using FeBuddyWPF.MVVMTools.ComponentModel;
+using FeBuddyWPF.ViewModels;
+using FeBuddyWPF.Views;
 
 namespace FeBuddyWPF.Services;
 

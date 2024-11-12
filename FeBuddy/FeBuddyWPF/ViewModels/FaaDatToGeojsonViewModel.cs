@@ -1,6 +1,12 @@
-﻿namespace FeBuddyWPF.ViewModels
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace FeBuddyWPF.ViewModels
 {
-    public class FaaDatToGeojsonViewModel : ViewModelBase
+    public class FaaDatToGeojsonViewModel: ViewModelBase
     {
 
     }

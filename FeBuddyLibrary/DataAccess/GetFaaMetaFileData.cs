@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Xml.Linq;
@@ -66,7 +66,7 @@ namespace FeBuddyLibrary.DataAccess
                         AmdtDate = recordData.Element("amdtdate").Value
                     };
 
-                    if ((string.IsNullOrEmpty(record.Faanfd18) && record.ChartCode == "DP") || (string.IsNullOrEmpty(record.Faanfd18) && record.ChartCode == "STAR"))
+                    if ((string.IsNullOrEmpty(record.Faanfd18) && record.ChartCode == "DP") || (string.IsNullOrEmpty(record.Faanfd18) && record.ChartCode == "STR"))
                     {
                         string newFaanfd18 = "";
 
@@ -135,7 +135,7 @@ namespace FeBuddyLibrary.DataAccess
                                     {
                                         aliasCommandSB.AppendLine($".{apt.AptIdent}{strtrimed}C .OPENURL {baseURL}{record.PdfName}#nameddest=({apt.AptIdent})  ; {apt.AirportName}-{record.FAAChartName}");
                                     }
-                                    else if (record.ChartCode == "STAR" || record.ChartCode == "DP" || record.ChartCode == "ODP" && !string.IsNullOrEmpty(strtrimed))
+                                    else if (record.ChartCode == "STR" || record.ChartCode == "DP" || record.ChartCode == "ODP" && !string.IsNullOrEmpty(strtrimed))
                                     {
                                         aliasCommandSB.AppendLine($".{strtrimed}{count}C .OPENURL {baseURL}{record.PdfName}  ; {apt.AirportName}-{record.FAAChartName}");
                                     }
@@ -171,7 +171,7 @@ namespace FeBuddyLibrary.DataAccess
                                     {
                                         aliasCommandSB.AppendLine($".{apt.AptIdent}{strTrimmed}C .OPENURL {baseURL}{record.PdfName}#nameddest=({apt.AptIdent})  ; {apt.AirportName}-{record.FAAChartName}");
                                     }
-                                    else if (record.ChartCode == "STAR" || record.ChartCode == "DP" || record.ChartCode == "ODP" && !string.IsNullOrEmpty(strTrimmed))
+                                    else if (record.ChartCode == "STR" || record.ChartCode == "DP" || record.ChartCode == "ODP" && !string.IsNullOrEmpty(strTrimmed))
                                     {
                                         aliasCommandSB.AppendLine($".{strTrimmed}C .OPENURL {baseURL}{record.PdfName}  ; {apt.AirportName}-{record.FAAChartName}");
                                     }

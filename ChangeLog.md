@@ -1,6 +1,9 @@
 # CHANGELOG
 
 ---
+- ## Version 2.8.0
+  - Starting with AIRAC 2604, the FAA changed the "STAR" ChartCode value to "STR".
+
 - ## Version 2.7.0
   - Bug #163 - Missing Root Element Error (NWS Weather Stations)
     - The National Weather Service (NWS) website is undergoing a revamp, and in the process, 

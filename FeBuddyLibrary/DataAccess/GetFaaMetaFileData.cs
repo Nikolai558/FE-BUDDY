@@ -66,7 +66,10 @@ namespace FeBuddyLibrary.DataAccess
                         AmdtDate = recordData.Element("amdtdate").Value
                     };
 
-                    if ((string.IsNullOrEmpty(record.Faanfd18) && record.ChartCode == "DP") || (string.IsNullOrEmpty(record.Faanfd18) && record.ChartCode == "STAR"))
+                    // Starting with AIRAC 2604, the FAA changed the "STAR" ChartCode value to "STR".
+                    //     We decided to retain "STAR" along with "STR" in order to allow a FEB release prior to 2604.
+                    //     Note: Consider keeping for v3.0 so that it can download archived data and still process it.
+                    if (string.IsNullOrEmpty(record.Faanfd18) && (record.ChartCode == "DP" || record.ChartCode == "STR" || record.ChartCode == "STAR"))
                     {
                         string newFaanfd18 = "";
 
@@ -135,7 +138,7 @@ namespace FeBuddyLibrary.DataAccess
                                     {
                                         aliasCommandSB.AppendLine($".{apt.AptIdent}{strtrimed}C .OPENURL {baseURL}{record.PdfName}#nameddest=({apt.AptIdent})  ; {apt.AirportName}-{record.FAAChartName}");
                                     }
-                                    else if (record.ChartCode == "STAR" || record.ChartCode == "DP" || record.ChartCode == "ODP" && !string.IsNullOrEmpty(strtrimed))
+                                    else if (record.ChartCode == "STR" || record.ChartCode == "STAR" || record.ChartCode == "DP" || record.ChartCode == "ODP" && !string.IsNullOrEmpty(strtrimed))
                                     {
                                         aliasCommandSB.AppendLine($".{strtrimed}{count}C .OPENURL {baseURL}{record.PdfName}  ; {apt.AirportName}-{record.FAAChartName}");
                                     }
@@ -171,7 +174,7 @@ namespace FeBuddyLibrary.DataAccess
                                     {
                                         aliasCommandSB.AppendLine($".{apt.AptIdent}{strTrimmed}C .OPENURL {baseURL}{record.PdfName}#nameddest=({apt.AptIdent})  ; {apt.AirportName}-{record.FAAChartName}");
                                     }
-                                    else if (record.ChartCode == "STAR" || record.ChartCode == "DP" || record.ChartCode == "ODP" && !string.IsNullOrEmpty(strTrimmed))
+                                    else if (record.ChartCode == "STR" || record.ChartCode == "STAR" || record.ChartCode == "DP" || record.ChartCode == "ODP" && !string.IsNullOrEmpty(strTrimmed))
                                     {
                                         aliasCommandSB.AppendLine($".{strTrimmed}C .OPENURL {baseURL}{record.PdfName}  ; {apt.AirportName}-{record.FAAChartName}");
                                     }

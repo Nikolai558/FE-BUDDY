@@ -161,11 +161,11 @@ namespace FeBuddyLibrary.DataAccess
 
             foreach (TelephonyModel telephony in allTelephony)
             {
-                threeLD_SB.AppendLine($".id{telephony.ThreeLD} .MSG FAA_ISR *** 3LD: {telephony.ThreeLD} ___ TELEPHONY: {telephony.Telephony}");
+                threeLD_SB.AppendLine($".id{telephony.ThreeLD} .echo FAA_ISR *** 3LD: {telephony.ThreeLD} ___ TELEPHONY: {telephony.Telephony}");
                 
                 if (telephony.TelephonyAltered != telephony.ThreeLD)
                 {
-                    NameSB.AppendLine($".id{telephony.TelephonyAltered} .MSG FAA_ISR *** 3LD: {telephony.ThreeLD} ___ TELEPHONY: {telephony.Telephony}");
+                    NameSB.AppendLine($".id{telephony.TelephonyAltered} .echo FAA_ISR *** 3LD: {telephony.ThreeLD} ___ TELEPHONY: {telephony.Telephony}");
                 }
             }
             File.AppendAllText(filePath, threeLD_SB.ToString());

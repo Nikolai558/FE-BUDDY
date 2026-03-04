@@ -275,8 +275,8 @@ namespace FeBuddyLibrary.DataAccess
                 }
 
                 // Add both the .NAV{ID} and .NAV{Name} to the String builder.
-                sb.AppendLine($".NAV{ndb.Id} .MSG {Artcc}_ISR *** {ndb.Id} {ndb.Freq} {ndb.Name} {ndb.Type}");
-                sb.AppendLine($".NAV{shortName} .MSG {Artcc}_ISR *** {ndb.Id} {ndb.Freq} {ndb.Name} {ndb.Type}");
+                sb.AppendLine($".NAV{ndb.Id} .echo {Artcc}_ISR *** {ndb.Id} {ndb.Freq} {ndb.Name} {ndb.Type}");
+                sb.AppendLine($".NAV{shortName} .echo {Artcc}_ISR *** {ndb.Id} {ndb.Freq} {ndb.Name} {ndb.Type}");
 
                 string tempAptName = ndb.Name;
                 List<char> badChar = new List<char>() { '&', '"' };
@@ -306,8 +306,8 @@ namespace FeBuddyLibrary.DataAccess
                 }
 
                 // Add both the .NAV{ID} and .NAV{Name} to the String builder.
-                sb.AppendLine($".NAV{vor.Id} .MSG {Artcc}_ISR *** {vor.Id} {vor.Freq} {vor.Name} {vor.Type}");
-                sb.AppendLine($".NAV{shortName} .MSG {Artcc}_ISR *** {vor.Id} {vor.Freq} {vor.Name} {vor.Type}");
+                sb.AppendLine($".NAV{vor.Id} .echo {Artcc}_ISR *** {vor.Id} {vor.Freq} {vor.Name} {vor.Type}");
+                sb.AppendLine($".NAV{shortName} .echo {Artcc}_ISR *** {vor.Id} {vor.Freq} {vor.Name} {vor.Type}");
 
                 string tempAptName = vor.Name;
                 List<char> badChar = new List<char>() { '&', '"' };

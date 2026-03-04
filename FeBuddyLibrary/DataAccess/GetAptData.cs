@@ -770,11 +770,11 @@ namespace FeBuddyLibrary.DataAccess
                     aptWxString = $" ___ {apt.AptWx.SensorType}-{apt.AptWx.StationFreq}";
                 }
 
-                sb.AppendLine($".APT{apt.Id} .MSG {Artcc}_ISR *** FAA-{apt.Id} : ICAO-{icao} ___ {apt.Name} {apt.Type} ___ {elvation}'MSL ___ {tower} ___ {apt.ResArtcc}{aptWxString}");
+                sb.AppendLine($".APT{apt.Id} .echo {Artcc}_ISR *** FAA-{apt.Id} : ICAO-{icao} ___ {apt.Name} {apt.Type} ___ {elvation}'MSL ___ {tower} ___ {apt.ResArtcc}{aptWxString}");
 
                 if (apt.Icao != "")
                 {
-                    sb.AppendLine($".APT{apt.Icao} .MSG {Artcc}_ISR *** FAA-{apt.Id} : ICAO-{icao} ___ {apt.Name} {apt.Type} ___ {elvation}'MSL ___ {tower} ___ {apt.ResArtcc}{aptWxString}");
+                    sb.AppendLine($".APT{apt.Icao} .echo {Artcc}_ISR *** FAA-{apt.Id} : ICAO-{icao} ___ {apt.Name} {apt.Type} ___ {elvation}'MSL ___ {tower} ___ {apt.ResArtcc}{aptWxString}");
                 }
             }
 

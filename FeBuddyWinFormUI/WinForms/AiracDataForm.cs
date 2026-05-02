@@ -6,6 +6,7 @@ using System.Drawing;
 using System.Drawing.Text;
 using System.IO;
 using System.Reflection;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 using FeBuddyLibrary;
 using FeBuddyLibrary.DataAccess;
@@ -464,11 +465,18 @@ namespace FeBuddyWinFormUI
         {
             Logger.LogMessage("DEBUG", "GETTING AIRAC DATE");
 
+            var publishedTask = AiracHelper.IsPublishedAsync(AiracHelper.Next());
+
             if (GlobalConfig.nextAiracDate == null)
             {
-                WebHelpers.GetAiracDateFromFAA();
+                var currentTask = AiracHelper.ResolveCurrentAsync();
+                var nextTask    = AiracHelper.ResolveNextAsync();
+                Task.WhenAll(currentTask, nextTask, publishedTask).GetAwaiter().GetResult();
+                GlobalConfig.currentAiracDate = currentTask.Result.Effective.ToString("yyyy-MM-dd");
+                GlobalConfig.nextAiracDate    = nextTask.Result.Effective.ToString("yyyy-MM-dd");
+                Logger.LogMessage("INFO", $"CURRENT AIRAC DATE: {GlobalConfig.currentAiracDate} / NEXT AIRAC DATE: {GlobalConfig.nextAiracDate}");
             }
-            nextAiracAvailable = WebHelpers.GetMetaUrlResponse();
+            nextAiracAvailable = publishedTask.GetAwaiter().GetResult();
         }
 
         private void Worker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)

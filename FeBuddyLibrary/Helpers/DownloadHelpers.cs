@@ -1,12 +1,22 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Net;
+using System.Net.Http;
 
 namespace FeBuddyLibrary.Helpers
 {
     public class DownloadHelpers
     {
+        private static void DownloadFile(string url, string destPath)
+        {
+            using var response = SharedHttp.Client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead)
+                                                  .GetAwaiter().GetResult();
+            response.EnsureSuccessStatusCode();
+            using var src = response.Content.ReadAsStreamAsync().GetAwaiter().GetResult();
+            using var dst = new FileStream(destPath, FileMode.Create, FileAccess.Write, FileShare.None);
+            src.CopyTo(dst);
+        }
+
         public static void DownloadAllFiles(string effectiveDate, string airacCycle, bool getMetaFile = true)
         {
             Logger.LogMessage("DEBUG", "DOWNLOADING ALL FILES REQUIRED");
@@ -53,61 +63,30 @@ namespace FeBuddyLibrary.Helpers
                 };
             }
 
-            // Web Client used to connect to the FAA website.
-            using (var client = new WebClient())
+            foreach (string fileName in allURLs.Keys)
             {
-                foreach (string fileName in allURLs.Keys)
+                if (File.Exists($"{GlobalConfig.tempPath}\\{fileName}") && GlobalConfig.DEVMODE)
                 {
-                    if (File.Exists($"{GlobalConfig.tempPath}\\{fileName}") && GlobalConfig.DEVMODE)
-                    {
-                        GlobalConfig.DownloadedFilePaths.Add($"{GlobalConfig.tempPath}\\{fileName}");
-                        continue;
-                    }
-
-                    try
-                    {
-                        Logger.LogMessage("INFO", $"ATTEMPTING TO DOWNLOAD: {fileName}");
-
-                        if (GlobalConfig.hasCurl)
-                        {
-                            if (fileName == $"{effectiveDate}_NWS-WX-STATIONS.xml")
-                            {
-                                BatchFileHelpers.CreateCurlBatchFile("NWS-WX-STATIONS.bat", "https://w1.weather.gov/xml/current_obs/index.xml", fileName);
-                                BatchFileHelpers.ExecuteCurlBatchFile("NWS-WX-STATIONS.bat");
-                            }
-                            else if (fileName == $"{airacCycle}_TELEPHONY.html")
-                            {
-                                BatchFileHelpers.CreateCurlBatchFile("TELEPHONY.bat", "https://www.faa.gov/air_traffic/publications/atpubs/cnt_html/chap3_section_2.html", fileName);
-                                BatchFileHelpers.ExecuteCurlBatchFile("TELEPHONY.bat");
-                            }
-                            else if (fileName == $"{airacCycle}_FAA_Meta.xml")
-                            {
-                                BatchFileHelpers.CreateCurlBatchFile("FAA_Meta.bat", $"https://aeronav.faa.gov/d-tpp/{airacCycle}/xml_data/d-tpp_Metafile.xml", fileName);
-                                BatchFileHelpers.ExecuteCurlBatchFile("FAA_Meta.bat");
-                            }
-                            else
-                            {
-                                client.DownloadFile(allURLs[fileName], $"{GlobalConfig.tempPath}\\{fileName}");
-                            }
-                        }
-                        else
-                        {
-                            client.DownloadFile(allURLs[fileName], $"{GlobalConfig.tempPath}\\{fileName}");
-                        }
-                        Logger.LogMessage("INFO", $"DOWNLOAD SUCCESSFUL: {fileName}");
-
-                    }
-                    catch (Exception)
-                    {
-                        Logger.LogMessage("ERROR", $"DOWNLOAD FAILED: {fileName}");
-
-                        MessageBoxHelpers.FileDownloadErrorMB(fileName, allURLs);
-                        Logger.LogMessage("ERROR", $"PROGRAM CLOSING: {fileName}");
-
-                        Environment.Exit(-1);
-                    }
                     GlobalConfig.DownloadedFilePaths.Add($"{GlobalConfig.tempPath}\\{fileName}");
+                    continue;
                 }
+
+                try
+                {
+                    Logger.LogMessage("INFO", $"ATTEMPTING TO DOWNLOAD: {fileName}");
+                    DownloadFile(allURLs[fileName], $"{GlobalConfig.tempPath}\\{fileName}");
+                    Logger.LogMessage("INFO", $"DOWNLOAD SUCCESSFUL: {fileName}");
+                }
+                catch (Exception)
+                {
+                    Logger.LogMessage("ERROR", $"DOWNLOAD FAILED: {fileName}");
+
+                    MessageBoxHelpers.FileDownloadErrorMB(fileName, allURLs);
+                    Logger.LogMessage("ERROR", $"PROGRAM CLOSING: {fileName}");
+
+                    Environment.Exit(-1);
+                }
+                GlobalConfig.DownloadedFilePaths.Add($"{GlobalConfig.tempPath}\\{fileName}");
             }
         }
     }

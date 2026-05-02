@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Drawing;
-using System.IO;
-using System.Net;
 using System.Windows.Forms;
 using FeBuddyLibrary.Helpers;
 
@@ -87,16 +85,9 @@ namespace FeBuddyWinFormUI
         private string ReadChangeLog()
         {
             string output = "";
-            string content = "";
 
             string url = "https://raw.githubusercontent.com/Nikolai558/FE-BUDDY/releases/ChangeLog.md";
-            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
-            HttpWebResponse response = (HttpWebResponse)request.GetResponse();
-
-            using (var reader = new StreamReader(response.GetResponseStream()))
-            {
-                content = reader.ReadToEnd();
-            }
+            string content = SharedHttp.Client.GetStringAsync(url).GetAwaiter().GetResult();
 
             foreach (string line in content.Split('\n'))
             {

@@ -50,7 +50,5 @@ namespace FeBuddyLibrary
             "ZHU","ZID","ZJX","ZKC","ZLA","ZLC","ZMA","ZME","ZMP","ZNY","ZOA","ZOB","ZSE","ZSU",
             "ZTL","ZUA","ZUL","ZVR","ZWG","ZYZ"
         };
-
-        public static bool hasCurl;
     }
 }

@@ -24,8 +24,6 @@ namespace FeBuddyLibrary.DataAccess
 
         private async Task<AircraftDataRootObject> GetACDataAsync()
         {
-            HttpClient client = new HttpClient();
-
             var url = "https://www4.icao.int/doc8643/External/AircraftTypes";
             var values = new Dictionary<string, string>
             {
@@ -37,7 +35,7 @@ namespace FeBuddyLibrary.DataAccess
             };
 
             var content = new FormUrlEncodedContent(values);
-            var response = await client.PostAsync(url, content);
+            var response = await SharedHttp.Client.PostAsync(url, content);
 
             string responseStringJson = await response.Content.ReadAsStringAsync();
 

@@ -767,7 +767,7 @@ namespace FeBuddyLibrary.DataAccess
                 string aptWxString = "";
                 if (apt.AptWx is not null)
                 {
-                    aptWxString = $"\n {apt.AptWx.SensorType}-{apt.AptWx.StationFreq}";
+                    aptWxString = $"\\n {apt.AptWx.SensorType}-{apt.AptWx.StationFreq}";
                 }
 
                 sb.AppendLine($".APT{apt.Id} .ECHO APT ISR\\n FAA-{apt.Id}\\n ICAO-{icao}\\n {apt.Name} {apt.Type}\\n {elvation}'MSL\\n {tower}\\n {apt.ResArtcc}{aptWxString}");

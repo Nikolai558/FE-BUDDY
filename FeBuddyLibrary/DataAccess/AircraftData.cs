@@ -70,12 +70,12 @@ namespace FeBuddyLibrary.DataAccess
                 // TODO - Figure out SRS and C/D
                 try
                 {
-                    command = $".ACINFO{acDesignator} .ECHO ACINFO\n [CODE] {acDesignator}\n [MAKE] {currentAircraftData.ManufacturerCode}\n [MODEL] {currentAircraftData.ModelFullName}\n [ENGINE] {currentAircraftData.EngineCount}/{currentAircraftData.EngineType}\n [WEIGHT] {weights[currentAircraftData.WTC]}\n [C/D] ???/???\n [SRS] ???";
+                    command = $".ACINFO{acDesignator} .ECHO ACINFO\\n [CODE] {acDesignator}\\n [MAKE] {currentAircraftData.ManufacturerCode}\\n [MODEL] {currentAircraftData.ModelFullName}\\n [ENGINE] {currentAircraftData.EngineCount}/{currentAircraftData.EngineType}\\n [WEIGHT] {weights[currentAircraftData.WTC]}\\n [C/D] ???/???\\n [SRS] ???";
                 }
                 catch (KeyNotFoundException e)
                 {
                     Logger.LogMessage("WARNING", e.Message);
-                    command = $".ACINFO{acDesignator} .ECHO ACINFO\n [CODE] {acDesignator}\n [MAKE] {currentAircraftData.ManufacturerCode}\n [MODEL] {currentAircraftData.ModelFullName}\n [ENGINE] {currentAircraftData.EngineCount}/{currentAircraftData.EngineType}\n [WEIGHT] {currentAircraftData.WTC}\n [C/D] ???/???\n [SRS] ???";
+                    command = $".ACINFO{acDesignator} .ECHO ACINFO\\n [CODE] {acDesignator}\\n [MAKE] {currentAircraftData.ManufacturerCode}\\n [MODEL] {currentAircraftData.ModelFullName}\\n [ENGINE] {currentAircraftData.EngineCount}/{currentAircraftData.EngineType}\\n [WEIGHT] {currentAircraftData.WTC}\\n [C/D] ???/???\\n [SRS] ???";
                 }
 
 

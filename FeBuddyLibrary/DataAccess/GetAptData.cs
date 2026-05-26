@@ -683,8 +683,7 @@ namespace FeBuddyLibrary.DataAccess
             using (XmlWriter xmlWriter = XmlWriter.Create(filePath, xmlWriterSettings))
             {
                 serializer.Serialize(xmlWriter, aptArrayForXML);
-            }
-            ;
+            };
 
             //TextWriter writer = new StreamWriter(filePath);
             //serializer.Serialize(writer, aptArrayForXML);
@@ -791,7 +790,7 @@ namespace FeBuddyLibrary.DataAccess
         private void WriteRunwayData()
         {
             Logger.LogMessage("INFO", $"STARTED RUNWAY DATA");
-\n
+
             string filePath = $"{GlobalConfig.outputDirectory}\\VRC\\[RUNWAY].sct2";
             string aptId;
             StringBuilder sb = new StringBuilder();

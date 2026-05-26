@@ -334,7 +334,7 @@ namespace FeBuddyLibrary.Models.MetaFileModels
             {
                 AliasCommand += "/HS";
             }
-            else if (ChartCode == "STAR")
+            else if (ChartCode == "STAR" || ChartCode == "STR")
             {
                 if (!string.IsNullOrEmpty(Faanfd18))
                 {

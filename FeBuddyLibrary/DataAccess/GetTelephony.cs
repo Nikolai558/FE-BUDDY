@@ -15,7 +15,7 @@ namespace FeBuddyLibrary.DataAccess
         {
             Logger.LogMessage("DEBUG", $"STARTING TELEPHONY");
 
-            
+
             string[] allLines = File.ReadAllLines(websiteFilePath);
 
             bool inTableRow = false;
@@ -161,11 +161,11 @@ namespace FeBuddyLibrary.DataAccess
 
             foreach (TelephonyModel telephony in allTelephony)
             {
-                threeLD_SB.AppendLine($".id{telephony.ThreeLD} .MSG FAA_ISR *** 3LD: {telephony.ThreeLD} ___ TELEPHONY: {telephony.Telephony}");
-                
+                threeLD_SB.AppendLine($".id{telephony.ThreeLD} .ECHO 3LD ISR\n 3LD: {telephony.ThreeLD} ___ TELEPHONY: {telephony.Telephony}");
+
                 if (telephony.TelephonyAltered != telephony.ThreeLD)
                 {
-                    NameSB.AppendLine($".id{telephony.TelephonyAltered} .MSG FAA_ISR *** 3LD: {telephony.ThreeLD} ___ TELEPHONY: {telephony.Telephony}");
+                    NameSB.AppendLine($".id{telephony.TelephonyAltered} .ECHO 3LD ISR\n 3LD: {telephony.ThreeLD} ___ TELEPHONY: {telephony.Telephony}");
                 }
             }
             File.AppendAllText(filePath, threeLD_SB.ToString());

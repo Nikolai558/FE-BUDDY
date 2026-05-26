@@ -55,11 +55,6 @@ namespace FeBuddyLibrary.DataAccess
 
             Dictionary<string, AircraftDataInformation> uniqueACData = getUniqueACData(AllAircraftData);
 
-            // .acinfoc172 ->
-            //      *** [CODE] C172 ::: [MAKE] CESSNA AIRCRAFT COMPANY ::: [MODEL] 172, P172, R172, Skyhawk, Hawk XP, Cutlass (T-41, Mescalero) ::: [ENGINE] 1/PistonProp ::: [WEIGHT] Small ::: [C/D] 600/1000 ::: [SRS] 1
-            //
-            // .ACINFOC172 .MSG FAA_ISR *** [CODE] C172 ::: [MAKE] CESSNA AIRCRAFT COMPANY ::: [MODEL] 172, P172, R172, Skyhawk, Hawk XP, Cutlass (T-41, Mescalero) ::: [ENGINE] 1/PistonProp ::: [WEIGHT] Small ::: [C/D] 600/1000 ::: [SRS] 1
-
             Dictionary<string, string> weights = new Dictionary<string, string>()
             {
                 {"L", "Light" },
@@ -75,12 +70,12 @@ namespace FeBuddyLibrary.DataAccess
                 // TODO - Figure out SRS and C/D
                 try
                 {
-                    command = $".ACINFO{acDesignator} .MSG FAA_ISR *** [CODE] {acDesignator} ::: [MAKE] {currentAircraftData.ManufacturerCode} ::: [MODEL] {currentAircraftData.ModelFullName} ::: [ENGINE] {currentAircraftData.EngineCount}/{currentAircraftData.EngineType} ::: [WEIGHT] {weights[currentAircraftData.WTC]} ::: [C/D] ???/??? ::: [SRS] ???";
+                    command = $".ACINFO{acDesignator} .ECHO ACINFO\n [CODE] {acDesignator}\n [MAKE] {currentAircraftData.ManufacturerCode}\n [MODEL] {currentAircraftData.ModelFullName}\n [ENGINE] {currentAircraftData.EngineCount}/{currentAircraftData.EngineType}\n [WEIGHT] {weights[currentAircraftData.WTC]}\n [C/D] ???/???\n [SRS] ???";
                 }
                 catch (KeyNotFoundException e)
                 {
                     Logger.LogMessage("WARNING", e.Message);
-                    command = $".ACINFO{acDesignator} .MSG FAA_ISR *** [CODE] {acDesignator} ::: [MAKE] {currentAircraftData.ManufacturerCode} ::: [MODEL] {currentAircraftData.ModelFullName} ::: [ENGINE] {currentAircraftData.EngineCount}/{currentAircraftData.EngineType} ::: [WEIGHT] {currentAircraftData.WTC} ::: [C/D] ???/??? ::: [SRS] ???";
+                    command = $".ACINFO{acDesignator} .ECHO ACINFO\n [CODE] {acDesignator}\n [MAKE] {currentAircraftData.ManufacturerCode}\n [MODEL] {currentAircraftData.ModelFullName}\n [ENGINE] {currentAircraftData.EngineCount}/{currentAircraftData.EngineType}\n [WEIGHT] {currentAircraftData.WTC}\n [C/D] ???/???\n [SRS] ???";
                 }
 
 

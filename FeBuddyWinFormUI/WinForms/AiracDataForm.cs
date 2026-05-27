@@ -466,9 +466,13 @@ namespace FeBuddyWinFormUI
 
             if (GlobalConfig.nextAiracDate == null)
             {
-                WebHelpers.GetAiracDateFromFAA();
+                var current = AiracHelper.ResolveCurrentAsync().GetAwaiter().GetResult();
+                var next    = AiracHelper.ResolveNextAsync().GetAwaiter().GetResult();
+                GlobalConfig.currentAiracDate = current.Effective.ToString("yyyy-MM-dd");
+                GlobalConfig.nextAiracDate    = next.Effective.ToString("yyyy-MM-dd");
+                Logger.LogMessage("INFO", $"CURRENT AIRAC DATE: {GlobalConfig.currentAiracDate} / NEXT AIRAC DATE: {GlobalConfig.nextAiracDate}");
             }
-            nextAiracAvailable = WebHelpers.GetMetaUrlResponse();
+            nextAiracAvailable = AiracHelper.IsPublishedAsync(AiracHelper.Next()).GetAwaiter().GetResult();
         }
 
         private void Worker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)

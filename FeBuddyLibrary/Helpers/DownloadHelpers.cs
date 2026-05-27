@@ -1,12 +1,22 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Net;
+using System.Net.Http;
 
 namespace FeBuddyLibrary.Helpers
 {
     public class DownloadHelpers
     {
+        private static void DownloadFile(string url, string destPath)
+        {
+            using var response = SharedHttp.Client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead)
+                                                  .GetAwaiter().GetResult();
+            response.EnsureSuccessStatusCode();
+            using var src = response.Content.ReadAsStreamAsync().GetAwaiter().GetResult();
+            using var dst = new FileStream(destPath, FileMode.Create, FileAccess.Write, FileShare.None);
+            src.CopyTo(dst);
+        }
+
         public static void DownloadAllFiles(string effectiveDate, string airacCycle, bool getMetaFile = true)
         {
             Logger.LogMessage("DEBUG", "DOWNLOADING ALL FILES REQUIRED");
@@ -53,10 +63,7 @@ namespace FeBuddyLibrary.Helpers
                 };
             }
 
-            // Web Client used to connect to the FAA website.
-            using (var client = new WebClient())
-            {
-                foreach (string fileName in allURLs.Keys)
+            foreach (string fileName in allURLs.Keys)
                 {
                     if (File.Exists($"{GlobalConfig.tempPath}\\{fileName}") && GlobalConfig.DEVMODE)
                     {
@@ -87,12 +94,12 @@ namespace FeBuddyLibrary.Helpers
                             }
                             else
                             {
-                                client.DownloadFile(allURLs[fileName], $"{GlobalConfig.tempPath}\\{fileName}");
+                                DownloadFile(allURLs[fileName], $"{GlobalConfig.tempPath}\\{fileName}");
                             }
                         }
                         else
                         {
-                            client.DownloadFile(allURLs[fileName], $"{GlobalConfig.tempPath}\\{fileName}");
+                            DownloadFile(allURLs[fileName], $"{GlobalConfig.tempPath}\\{fileName}");
                         }
                         Logger.LogMessage("INFO", $"DOWNLOAD SUCCESSFUL: {fileName}");
 
@@ -108,7 +115,6 @@ namespace FeBuddyLibrary.Helpers
                     }
                     GlobalConfig.DownloadedFilePaths.Add($"{GlobalConfig.tempPath}\\{fileName}");
                 }
-            }
         }
     }
 }

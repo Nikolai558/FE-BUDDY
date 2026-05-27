@@ -10,3 +10,4 @@
 ## Ian Drake - FAA FOIA RVM Conversion source code reference
 ## Matthew Kramer - Numerous testing and source data consulting
 ## Mike Simon - Replaced cURL usage with SharedHttp and revamped Get-AIRAC Cycle ID
+## Matthew Armstrong - Provided code to allow selection of multiple DAT source files for conversion

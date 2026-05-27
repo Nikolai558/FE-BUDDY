@@ -38,7 +38,7 @@ namespace FeBuddyLibrary.DataAccess
             WriteDataToFiles<VORModel>($"{GlobalConfig.outputDirectory}\\CRC\\VOR", allVORData, vor => vor.Name, vor => vor.Id, vor => vor.Type);
         }
 
-        private void WriteDataToFiles<T>(string outputDirectory, IEnumerable<T> data, Func<T, string> nameSelector, Func<T, string> idSelector, Func<T, string> typeSelector) where T: class, IDecLatLon
+        private void WriteDataToFiles<T>(string outputDirectory, IEnumerable<T> data, Func<T, string> nameSelector, Func<T, string> idSelector, Func<T, string> typeSelector) where T : class, IDecLatLon
         {
             var symbolsFile = $"{outputDirectory}_symbols.geojson";
             var textFile = $"{outputDirectory}_text.geojson";
@@ -59,7 +59,7 @@ namespace FeBuddyLibrary.DataAccess
                 };
 
                 var textFeature = new Feature() { type = "Feature", geometry = feature.geometry };
-                textFeature.properties = new Properties() { text = new string[] {  idSelector(item), nameSelector(item) + " " + typeSelector(item)} };
+                textFeature.properties = new Properties() { text = new string[] { idSelector(item), nameSelector(item) + " " + typeSelector(item) } };
 
                 symbolFeatures.Add(feature);
                 textFeatures.Add(textFeature);
@@ -275,8 +275,8 @@ namespace FeBuddyLibrary.DataAccess
                 }
 
                 // Add both the .NAV{ID} and .NAV{Name} to the String builder.
-                sb.AppendLine($".NAV{ndb.Id} .MSG {Artcc}_ISR *** {ndb.Id} {ndb.Freq} {ndb.Name} {ndb.Type}");
-                sb.AppendLine($".NAV{shortName} .MSG {Artcc}_ISR *** {ndb.Id} {ndb.Freq} {ndb.Name} {ndb.Type}");
+                sb.AppendLine($".NAV{ndb.Id} .ECHO NAVAID_ISR\\n {ndb.Id} {ndb.Freq} {ndb.Name} {ndb.Type}");
+                sb.AppendLine($".NAV{shortName} .ECHO NAVAID_ISR\\n {ndb.Id} {ndb.Freq} {ndb.Name} {ndb.Type}");
 
                 string tempAptName = ndb.Name;
                 List<char> badChar = new List<char>() { '&', '"' };
@@ -306,8 +306,8 @@ namespace FeBuddyLibrary.DataAccess
                 }
 
                 // Add both the .NAV{ID} and .NAV{Name} to the String builder.
-                sb.AppendLine($".NAV{vor.Id} .MSG {Artcc}_ISR *** {vor.Id} {vor.Freq} {vor.Name} {vor.Type}");
-                sb.AppendLine($".NAV{shortName} .MSG {Artcc}_ISR *** {vor.Id} {vor.Freq} {vor.Name} {vor.Type}");
+                sb.AppendLine($".NAV{vor.Id} .ECHO NAVAID_ISR\\n {vor.Id} {vor.Freq} {vor.Name} {vor.Type}");
+                sb.AppendLine($".NAV{shortName} .ECHO NAVAID_ISR\\n {vor.Id} {vor.Freq} {vor.Name} {vor.Type}");
 
                 string tempAptName = vor.Name;
                 List<char> badChar = new List<char>() { '&', '"' };

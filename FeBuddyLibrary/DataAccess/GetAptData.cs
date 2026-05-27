@@ -84,13 +84,13 @@ namespace FeBuddyLibrary.DataAccess
                 textFeature = new Feature()
                 {
                     type = "Feature",
-                    geometry = new Geometry() { type = "Point"},
+                    geometry = new Geometry() { type = "Point" },
                     properties = new Properties()
                 };
                 symbolFeature = new Feature()
                 {
                     type = "Feature",
-                    geometry = new Geometry() { type = "Point"}
+                    geometry = new Geometry() { type = "Point" }
                 };
             }
             textGeo.features = textAllFeatures;
@@ -128,7 +128,7 @@ namespace FeBuddyLibrary.DataAccess
                 // Airport status "O" means it is in operation. 
                 if (apt.Status == "O")
                 {
-                    sb.AppendLine($"            <Element xsi:type=\"Symbol\" Filters=\"\" Size=\"2\" Lat=\"{ apt.Lat_Dec }\" Lon=\"{ apt.Lon_Dec }\" />");
+                    sb.AppendLine($"            <Element xsi:type=\"Symbol\" Filters=\"\" Size=\"2\" Lat=\"{apt.Lat_Dec}\" Lon=\"{apt.Lon_Dec}\" />");
                 }
             }
 
@@ -233,8 +233,8 @@ namespace FeBuddyLibrary.DataAccess
             sb.AppendLine("[LABELS]");
 
             // Load Metar XML File and populate our stationInfo Dictionary
-            
-            
+
+
             XDocument metarXML = XDocument.Load(metarDataFilepath);
 
 
@@ -306,7 +306,7 @@ namespace FeBuddyLibrary.DataAccess
                             if (station_lat == airport_lat && station_lon == airport_lon)
                             {
                                 labelLineToBeAdded = $"\"{metar_id} {aptInfo[metar_id.Substring(1)][0].Replace('"', '-')}\" {LatLonHelpers.CreateDMS(stationInfo[metar_id][0], true)} {LatLonHelpers.CreateDMS(stationInfo[metar_id][1], false)} 11579568";
-                                
+
                                 symbolFeature.geometry.coordinates = new List<dynamic>() { stationInfo[metar_id][1], stationInfo[metar_id][0] };
                                 textFeature.geometry.coordinates = new List<dynamic>() { stationInfo[metar_id][1], stationInfo[metar_id][0] };
                                 textFeature.properties.text = new string[] { metar_id + " " + aptInfo[metar_id.Substring(1)][0].Replace('"', '-') };
@@ -767,14 +767,14 @@ namespace FeBuddyLibrary.DataAccess
                 string aptWxString = "";
                 if (apt.AptWx is not null)
                 {
-                    aptWxString = $" ___ {apt.AptWx.SensorType}-{apt.AptWx.StationFreq}";
+                    aptWxString = $"\\n {apt.AptWx.SensorType}-{apt.AptWx.StationFreq}";
                 }
 
-                sb.AppendLine($".APT{apt.Id} .MSG {Artcc}_ISR *** FAA-{apt.Id} : ICAO-{icao} ___ {apt.Name} {apt.Type} ___ {elvation}'MSL ___ {tower} ___ {apt.ResArtcc}{aptWxString}");
+                sb.AppendLine($".APT{apt.Id} .ECHO APT ISR\\n FAA-{apt.Id}\\n ICAO-{icao}\\n {apt.Name} {apt.Type}\\n {elvation}'MSL\\n {tower}\\n {apt.ResArtcc}{aptWxString}");
 
                 if (apt.Icao != "")
                 {
-                    sb.AppendLine($".APT{apt.Icao} .MSG {Artcc}_ISR *** FAA-{apt.Id} : ICAO-{icao} ___ {apt.Name} {apt.Type} ___ {elvation}'MSL ___ {tower} ___ {apt.ResArtcc}{aptWxString}");
+                    sb.AppendLine($".APT{apt.Icao} .ECHO APT ISR\\n FAA-{apt.Id}\\n ICAO-{icao}\\n {apt.Name} {apt.Type}\\n {elvation}'MSL\\n {tower}\\n {apt.ResArtcc}{aptWxString}");
                 }
             }
 

@@ -1,6 +1,18 @@
 # CHANGELOG
 
 ---
+- ## Version 2.8.1
+  - ISR commands changed from `.MSG` to `.ECHO`
+    - Now supports `\n` expressions for multi-line output
+  - Added `SharedHttp` client fallback
+    - Used automatically if the user does not have cURL installed
+  - AIRAC Cycle ID and effective dates now:
+    - Calculated dynamically
+    - Verified against the FAA APRA API
+    - No longer dependent on a predefined dictionary
+  - .DAT conversion
+    - User may now select multiple source files
+
 - ## Version 2.8.0
   - Starting with AIRAC 2604, the FAA changed the "STAR" ChartCode value to "STR".
 

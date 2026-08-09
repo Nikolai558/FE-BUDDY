@@ -4,6 +4,7 @@ using System.IO;
 using System.Text;
 using FeBuddyLibrary.Helpers;
 using FeBuddyLibrary.Models;
+using HtmlAgilityPack;
 
 namespace FeBuddyLibrary.DataAccess
 {
@@ -13,139 +14,70 @@ namespace FeBuddyLibrary.DataAccess
 
         public void readFAAData(string websiteFilePath)
         {
-            Logger.LogMessage("DEBUG", $"STARTING TELEPHONY");
+            Logger.LogMessage("DEBUG", "STARTING TELEPHONY");
 
+            HtmlDocument document = new HtmlDocument();
+            document.Load(websiteFilePath);
 
-            string[] allLines = File.ReadAllLines(websiteFilePath);
+            string[] badCharacters =
+            {" ", ",", ".", "/", "!", "@", "#", "$", "%", "^", "&", "*", "\'", ";", "_", "(", ")", ":", "|", "[", "]", "-", "~", "`", "+", "\""};
 
-            bool inTableRow = false;
-            bool inTableData = false;
-            bool inParagraph = false;
+            // Only select rows inside <tbody>.
+            // This automatically excludes the table headers inside <thead>.
+            HtmlNodeCollection? rows = document.DocumentNode.SelectNodes("//tbody/tr");
 
-            TelephonyModel currentTelephony = new TelephonyModel();
-
-            int count = 0;
-            string completedLine = "";
-
-            foreach (string line in allLines)
+            if (rows == null)
             {
-                if (inParagraph == false)
-                {
-                    completedLine = "";
-                }
-
-                if (line.Contains("<tr>"))
-                {
-                    inTableRow = true;
-                    currentTelephony = new TelephonyModel();
-                    continue;
-                }
-                if (line.Contains("<td>"))
-                {
-                    inTableData = true;
-                    count += 1;
-                    continue;
-                }
-
-                if (line.Contains("</td>"))
-                {
-                    inTableData = false;
-                    continue;
-                }
-                if (line.Contains("</tr>"))
-                {
-                    inTableRow = false;
-                    count = 0;
-                    continue;
-                }
-
-                if (inTableRow && inTableData)
-                {
-                    string[] badCharacters = new string[] { " ", ",", ".", "/", "!", "@", "#", "$", "%", "^", "&", "*", "\'", ";", "_", "(", ")", ":", "|", "[", "]", "-", "~", "`", "+", "\"" };
-
-                    if (line.Contains("<p") && line.Contains("</p>"))
-                    {
-                        completedLine = line.Trim();
-                        inParagraph = false;
-                    }
-                    else if (line.Contains("<p"))
-                    {
-                        inParagraph = true;
-                        completedLine += " " + line.Trim();
-                        continue;
-                    }
-                    else if (line.Contains("</p>"))
-                    {
-                        inParagraph = false;
-                        completedLine += " " + line.Trim();
-                    }
-                    else if (inParagraph)
-                    {
-                        completedLine += " " + line.Trim();
-                        continue;
-                    }
-                    else
-                    {
-                        continue;
-                    }
-
-
-                    if (completedLine == "")
-                    {
-                        throw new Exception("Error creating full paragraph tag.");
-                    }
-                    if (count == 1)
-                    {
-                        string telephonyData = completedLine.Split('>')[1];
-
-                        if (telephonyData.Contains('<'))
-                        {
-                            telephonyData = telephonyData.Split('<')[0];
-                        }
-                        telephonyData = telephonyData.Trim();
-
-                        string telephonyDataAltered = telephonyData;
-                        foreach (string badCharacter in badCharacters)
-                        {
-                            telephonyDataAltered = telephonyDataAltered.Replace(badCharacter, string.Empty);
-                        }
-
-                        currentTelephony.Telephony = telephonyData;
-                        currentTelephony.TelephonyAltered = telephonyDataAltered;
-                        continue;
-                    }
-                    else if (count == 4)
-                    {
-                        string threeLDData = completedLine.Split('>')[1];
-
-                        if (threeLDData.Contains('<'))
-                        {
-                            threeLDData = threeLDData.Split('<')[0];
-                        }
-
-                        threeLDData = threeLDData.Trim();
-                        foreach (string badCharacter in badCharacters)
-                        {
-                            threeLDData = threeLDData.Replace(badCharacter, string.Empty);
-                        }
-
-                        currentTelephony.ThreeLD = threeLDData;
-
-                        if (currentTelephony.ThreeLD.Length < 2)
-                        {
-                            continue;
-                        }
-
-                        allTelephony.Add(currentTelephony);
-                        continue;
-                    }
-                    else
-                    {
-                        continue;
-                    }
-                }
+                throw new Exception("No telephony table rows were found in the HTML file.");
             }
-            Logger.LogMessage("DEBUG", $"COMPLETED TELEPHONY MODEL");
+
+            foreach (HtmlNode row in rows)
+            {
+                HtmlNodeCollection? cells = row.SelectNodes("./td");
+
+                // Expected columns:
+                // 0 = Telephony
+                // 1 = Company
+                // 2 = Country
+                // 3 = 3-Ltr
+                if (cells == null || cells.Count < 4)
+                {
+                    continue;
+                }
+
+                string telephonyData = HtmlEntity.DeEntitize(cells[0].InnerText).Trim();
+                string threeLDData = HtmlEntity.DeEntitize(cells[3].InnerText).Trim();
+
+                string telephonyDataAltered = telephonyData;
+
+                foreach (string badCharacter in badCharacters)
+                {
+                    telephonyDataAltered =
+                        telephonyDataAltered.Replace(badCharacter, string.Empty);
+                }
+
+                foreach (string badCharacter in badCharacters)
+                {
+                    threeLDData =
+                        threeLDData.Replace(badCharacter, string.Empty);
+                }
+
+                if (threeLDData.Length < 2)
+                {
+                    continue;
+                }
+
+                TelephonyModel currentTelephony = new TelephonyModel
+                {
+                    Telephony = telephonyData,
+                    TelephonyAltered = telephonyDataAltered,
+                    ThreeLD = threeLDData
+                };
+
+                allTelephony.Add(currentTelephony);
+            }
+
+            Logger.LogMessage("DEBUG", "COMPLETED TELEPHONY MODEL");
 
             WriteTelephony();
         }

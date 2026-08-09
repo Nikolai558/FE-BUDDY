@@ -37,6 +37,21 @@ namespace FeBuddyLibrary.Helpers
             }
         }
 
+        public static void DecompressGz(string sourceGzFile, string destinationFile)
+        {
+            // Open the compressed .gz file for reading
+            using FileStream compressedStream = new FileStream(sourceGzFile, FileMode.Open, FileAccess.Read);
+
+            // Create the destination file where uncompressed data will be saved
+            using FileStream targetStream = File.Create(destinationFile);
+
+            // Wrap the compressed stream in a GZipStream configured to Decompress
+            using GZipStream decompressor = new GZipStream(compressedStream, CompressionMode.Decompress);
+
+            // Copy the decompressed data directly to the target file
+            decompressor.CopyTo(targetStream);
+        }
+
         public static void UnzipAllDownloaded()
         {
             foreach (string filePath in GlobalConfig.DownloadedFilePaths)
@@ -51,6 +66,13 @@ namespace FeBuddyLibrary.Helpers
                     Logger.LogMessage("INFO", $"UNZIPING: {filePath}");
                     ZipFile.ExtractToDirectory(filePath, filePath.Replace(".zip", string.Empty));
                 }
+
+                /// We already decompress the GZ file of the weather stations inside of the GetAptData.cs Line 222. Uncommenting this would do every .GZ file we download right up front. 
+                ///else if (filePath.Contains(".gz"))
+                ///{
+                ///    DecompressGz(filePath, filePath.Replace(".gz", string.Empty));
+                ///}
+
             }
         }
 

@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.IO.Compression;
 
 namespace FeBuddyLibrary.Helpers
@@ -37,42 +38,78 @@ namespace FeBuddyLibrary.Helpers
             }
         }
 
-        public static void DecompressGz(string sourceGzFile, string destinationFile)
-        {
-            // Open the compressed .gz file for reading
-            using FileStream compressedStream = new FileStream(sourceGzFile, FileMode.Open, FileAccess.Read);
-
-            // Create the destination file where uncompressed data will be saved
-            using FileStream targetStream = File.Create(destinationFile);
-
-            // Wrap the compressed stream in a GZipStream configured to Decompress
-            using GZipStream decompressor = new GZipStream(compressedStream, CompressionMode.Decompress);
-
-            // Copy the decompressed data directly to the target file
-            decompressor.CopyTo(targetStream);
-        }
-
         public static void UnzipAllDownloaded()
         {
             foreach (string filePath in GlobalConfig.DownloadedFilePaths)
             {
-                if (Directory.Exists(filePath.Replace(".zip", string.Empty)) && GlobalConfig.DEVMODE)
+                // Get the file extension from the current file path.
+                // Example:
+                //          "C:\Downloads\data.zip"     ->  ".zip"
+                //          "C:\Downloads\data.csv.gz"  ->  ".gz"
+                string extension = Path.GetExtension(filePath);
+
+                // Check whether the current file is a ZIP archive.
+                if (string.Equals(extension, ".zip", StringComparison.OrdinalIgnoreCase))
                 {
-                    continue;
+                    // Build the destination folder path for the ZIP contents.
+                    //      "*\data.zip"  ->  "*\data"
+                    string destinationPath = Path.Combine(
+                        Path.GetDirectoryName(filePath)!,
+                        Path.GetFileNameWithoutExtension(filePath));
+
+                    // In development mode, skip extraction if the destination
+                    // directory already exists.
+                    if (Directory.Exists(destinationPath) && GlobalConfig.DEVMODE)
+                    {
+                        continue;
+                    }
+
+                    Logger.LogMessage("INFO", $"UNZIPPING: {filePath}");
+
+                    // Extract all files and folders from the ZIP archive
+                    // into the destination directory created.
+                    ZipFile.ExtractToDirectory(filePath, destinationPath);
                 }
 
-                if (filePath.Contains(".zip"))
+                // If the file is not a ZIP file, check whether it is a GZIP file.
+                else if (string.Equals(extension, ".gz", StringComparison.OrdinalIgnoreCase))
                 {
-                    Logger.LogMessage("INFO", $"UNZIPING: {filePath}");
-                    ZipFile.ExtractToDirectory(filePath, filePath.Replace(".zip", string.Empty));
+                    // Build the output filename for the decompressed GZIP file.
+                    //      "*\data.csv.gz"  ->  "*\data.csv"
+                    string destinationFilePath = Path.Combine(
+                        Path.GetDirectoryName(filePath)!,
+                        Path.GetFileNameWithoutExtension(filePath));
+
+                    // In development mode, skip decompression if the
+                    // destination file already exists.
+                    if (File.Exists(destinationFilePath) && GlobalConfig.DEVMODE)
+                    {
+                        continue;
+                    }
+
+                    Logger.LogMessage("INFO", $"DECOMPRESSING GZ: {filePath}");
+
+                    // Open the .gz file for reading.
+                    using FileStream compressedFileStream = File.OpenRead(filePath);
+
+                    // Create a GZipStream that reads from the compressed file
+                    // and decompresses its contents.
+                    using GZipStream decompressionStream =
+                        new GZipStream(
+                            compressedFileStream,
+                            CompressionMode.Decompress);
+
+                    // Create the destination file that will receive the
+                    // decompressed contents.
+                    using FileStream outputFileStream =
+                        File.Create(destinationFilePath);
+
+                    // Read the decompressed bytes from the GZipStream
+                    // and write them into the destination file.
+                    decompressionStream.CopyTo(outputFileStream);
                 }
 
-                /// We already decompress the GZ file of the weather stations inside of the GetAptData.cs Line 222. Uncommenting this would do every .GZ file we download right up front. 
-                ///else if (filePath.Contains(".gz"))
-                ///{
-                ///    DecompressGz(filePath, filePath.Replace(".gz", string.Empty));
-                ///}
-
+                // TODO: Handle other file types if necessary, and/or log a message for unsupported formats.
             }
         }
 

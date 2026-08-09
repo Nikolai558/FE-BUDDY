@@ -38,6 +38,7 @@ namespace FeBuddyLibrary.Helpers
             }
         }
 
+
         public static void UnzipAllDownloaded()
         {
             foreach (string filePath in GlobalConfig.DownloadedFilePaths)

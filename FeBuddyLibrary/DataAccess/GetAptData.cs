@@ -611,6 +611,7 @@ namespace FeBuddyLibrary.DataAccess
                     aptIdTempVar = aptModel.Id;
                 }
 
+
                 foreach (RunwayModel runwayModel in aptModel.Runways)
                 {
                     doNotUseThisRwy = false;

@@ -2,6 +2,9 @@
 
 ---
 - ## Version 2.8.1
+  - GetTelephony Issue fixed
+
+- ## Version 2.8.1
   - ISR commands changed from `.MSG` to `.ECHO`
     - Now supports `\n` expressions for multi-line output
   - Added `SharedHttp` client fallback

@@ -457,8 +457,8 @@ namespace FeBuddyLibrary.DataAccess
                         RwyGroup = line.Substring(16, 7).Trim(),
                         RwyLength = line.Substring(23, 5).Trim(),
                         RwyWidth = line.Substring(28, 4).Trim(),
-                        BaseRwyHdg = line.Substring(68, 3).Trim(),
-                        RecRwyHdg = line.Substring(290, 3).Trim()
+                        BaseRwyHdg = line.Substring(73, 3).Trim(),
+                        RecRwyHdg = line.Substring(295, 3).Trim()
                     };
 
                     if (rwy.BaseRwyHdg != string.Empty && airport.magVariation != string.Empty)
@@ -489,16 +489,16 @@ namespace FeBuddyLibrary.DataAccess
                         }
                     }
 
-                    if (line.Substring(88, 15).Trim() != string.Empty && line.Substring(115, 15).Trim() != string.Empty)
+                    if (line.Substring(93, 15).Trim() != string.Empty && line.Substring(120, 15).Trim() != string.Empty)
                     {
-                        rwy.BaseStartLat = LatLonHelpers.CorrectLatLon(line.Substring(88, 15).Trim(), true, GlobalConfig.Convert);
-                        rwy.BaseStartLon = LatLonHelpers.CorrectLatLon(line.Substring(115, 15).Trim(), false, GlobalConfig.Convert);
+                        rwy.BaseStartLat = LatLonHelpers.CorrectLatLon(line.Substring(93, 15).Trim(), true, GlobalConfig.Convert);
+                        rwy.BaseStartLon = LatLonHelpers.CorrectLatLon(line.Substring(120, 15).Trim(), false, GlobalConfig.Convert);
                     }
 
-                    if (line.Substring(310, 15).Trim() != string.Empty && line.Substring(337, 15).Trim() != string.Empty)
+                    if (line.Substring(315, 15).Trim() != string.Empty && line.Substring(342, 15).Trim() != string.Empty)
                     {
-                        rwy.BaseEndLat = LatLonHelpers.CorrectLatLon(line.Substring(310, 15).Trim(), true, GlobalConfig.Convert);
-                        rwy.BaseEndLon = LatLonHelpers.CorrectLatLon(line.Substring(337, 15).Trim(), false, GlobalConfig.Convert);
+                        rwy.BaseEndLat = LatLonHelpers.CorrectLatLon(line.Substring(315, 15).Trim(), true, GlobalConfig.Convert);
+                        rwy.BaseEndLon = LatLonHelpers.CorrectLatLon(line.Substring(342, 15).Trim(), false, GlobalConfig.Convert);
                     }
 
                     airport.Runways.Add(rwy);

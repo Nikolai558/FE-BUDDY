@@ -1,6 +1,12 @@
 # CHANGELOG
 
 ---
+- ## Version 2.8.3
+  - GET-AIRAC (Cycle 2609) issue resolved.
+  - WX Geojson creation now works more efficiently but removes Wx data output for VRC, vSTARS, and vERAM
+  - Geojson Wx Station files are now output at the cost of VRC and vERAM Wx Station files.
+  - (Dev notes) Unzipper now handles .gz files in the same method.
+
 - ## Version 2.8.2
   - GetTelephony Issue fixed
 

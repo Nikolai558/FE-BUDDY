@@ -41,7 +41,6 @@ namespace FeBuddyLibrary.DataAccess
             WriteAptTextGeoMap();
 
             ParseAndWriteWxStation(effectiveDate);
-            WriteWxXmlOutput();
             Logger.LogMessage("INFO", $"COMPLETED APT AND WEATHER");
 
         }
@@ -200,158 +199,204 @@ namespace FeBuddyLibrary.DataAccess
         /// <param name="effectiveDate">Airacc Effective Date (e.x. "2021-10-07")</param>
         private void ParseAndWriteWxStation(string effectiveDate)
         {
-            Logger.LogMessage("INFO", $"STARTED WX STATION PARSER");
+            Logger.LogMessage("INFO", "STARTED WX STATION PARSER");
 
             string wxSymbolsFile = $"{GlobalConfig.outputDirectory}\\CRC\\WX STATIONS_symbols.geojson";
             string wxTextFile = $"{GlobalConfig.outputDirectory}\\CRC\\WX STATIONS_text.geojson";
 
-
             FeatureCollection textGeo = new FeatureCollection();
             List<Feature> textAllFeatures = new List<Feature>();
 
-            var textFeature = new Feature() { type = "Feature", geometry = new Geometry() { type = "Point" }, properties = new Properties() };
+            string metarDataDestFilepath =
+                $"{GlobalConfig.tempPath}\\{effectiveDate}_NWS-WX-STATIONS.xml";
 
             FeatureCollection symbolGeo = new FeatureCollection();
             List<Feature> symbolAllFeatures = new List<Feature>();
 
-            var symbolFeature = new Feature() { type = "Feature", geometry = new Geometry() { type = "Point" } };
-
-            string metarDataFilepath = $"{GlobalConfig.tempPath}\\{effectiveDate}_NWS-WX-STATIONS.xml.gz";
-            string metarDataDestFilepath = $"{GlobalConfig.tempPath}\\{effectiveDate}_NWS-WX-STATIONS.xml";
-
-            WebHelpers.DecompressGZipFile(metarDataFilepath, metarDataDestFilepath);
-
-            metarDataFilepath = $"{GlobalConfig.tempPath}\\{effectiveDate}_NWS-WX-STATIONS.xml";
-
-            string outputFilepath = $"{GlobalConfig.outputDirectory}\\VRC\\[LABELS].sct2";
-            Dictionary<string, List<double>> stationInfo = new Dictionary<string, List<double>>();
-            Dictionary<string, string> stationNames = new Dictionary<string, string>();
-            Dictionary<string, List<string>> aptInfo = new Dictionary<string, List<string>>();
-            StringBuilder sb = new StringBuilder();
-
-            // VRC Labels Header
-            sb.AppendLine("[LABELS]");
-
-            // Load Metar XML File and populate our stationInfo Dictionary
+            XDocument metarXML = XDocument.Load(metarDataDestFilepath);
 
 
-            XDocument metarXML = XDocument.Load(metarDataFilepath);
-
-
-            foreach (XElement xElement in metarXML.Descendants("station"))
+            foreach (XElement station in metarXML.Descendants("Station"))
             {
-                //string id = xElement.Element("station_id").Value;
-                string id = xElement.Element("site").Value;
-                string name = xElement.Element("station_name").Value;
-                double lat = Convert.ToDouble(xElement.Element("latitude").Value);
-                double lon = Convert.ToDouble(xElement.Element("longitude").Value);
-                stationNames.Add(id, name);
-                stationInfo.Add(id, new List<double> { lat, lon });
-            }
+                // Get station values.
+                string? icaoId = station.Element("icao_id")?.Value;
+                string? iataId = station.Element("iata_id")?.Value;
+                string? faaId = station.Element("faa_id")?.Value;
+                string? latitudeValue = station.Element("latitude")?.Value;
+                string? longitudeValue = station.Element("longitude")?.Value;
+                string? site = station.Element("site")?.Value;
+                string? country = station.Element("country")?.Value;
 
-            // Load all of our Airports and Populate our aptInfo Dictionary
-            foreach (AptModel apt in allAptModels)
-            {
-                if (string.IsNullOrEmpty(apt.Icao))
-                {
-                    aptInfo.Add(apt.Id, new List<string> { apt.Name, apt.Lat_Dec, apt.Lon_Dec });
-                }
-                else
-                {
-                    aptInfo.Add(apt.Icao, new List<string> { apt.Name, apt.Lat_Dec, apt.Lon_Dec });
-                }
-            }
-
-            string labelLineToBeAdded;
-            foreach (string metar_id in stationInfo.Keys)
-            {
-                // Metar Id and Airport Code (FAA or ICAO) matches Exactly.
-                if (aptInfo.Keys.Contains(metar_id))
-                {
-                    labelLineToBeAdded = $"\"{metar_id} {aptInfo[metar_id][0].Replace('"', '-')}\" {LatLonHelpers.CreateDMS(stationInfo[metar_id][0], true)} {LatLonHelpers.CreateDMS(stationInfo[metar_id][1], false)} 11579568";
-                    sb.AppendLine(labelLineToBeAdded);
-                    symbolFeature.geometry.coordinates = new List<dynamic>() { stationInfo[metar_id][1], stationInfo[metar_id][0] };
-                    textFeature.geometry.coordinates = new List<dynamic>() { stationInfo[metar_id][1], stationInfo[metar_id][0] };
-                    textFeature.properties.text = new string[] { metar_id + " " + aptInfo[metar_id][0].Replace('"', '-') };
-
-                    symbolAllFeatures.Add(symbolFeature);
-                    textAllFeatures.Add(textFeature);
-
-                    textFeature = new Feature() { type = "Feature", geometry = new Geometry() { type = "Point" }, properties = new Properties() };
-                    symbolFeature = new Feature() { type = "Feature", geometry = new Geometry() { type = "Point" } };
+                // Get the <site_type> element, which may be missing in the XML. If it is missing, the station will be skipped.
+                // We are only interested in METAR stations, which are identified by the "<METAR/>" element within <site_type>.
+                XElement? siteType = station.Element("site_type");
 
 
-
-                }
-                // Metar Id (Without Prefixing character) and Airport Code (FAA or ICAO) matches.
-                else if (aptInfo.Keys.Contains(metar_id.Substring(1)))
-                {
-                    foreach (var apt in aptInfo.Keys)
-                    {
-                        // Find what airport matches the Metar ID (Without Prefixing character).
-                        if (metar_id.Substring(1) == apt)
-                        {
-                            /* 
-                             * In some cases there will be an airport that matches the Metar ID (Without Prefixing character) that does not actually belong to that airport.
-                             * We have to verify the Degrees of both the airport and the WX station to make sure that station actually belongs to the airport.
-                             * e.x. CWVI and WVI are two valid airports, however, they are in very different locations.
-                             * The reason we do not check the entire Degrees, minutes, seconds, is because the full Lat and Lon can be different slightly.
-                             */
-
-                            string station_lat = stationInfo[metar_id][0].ToString().Split('.')[0];
-                            string airport_lat = aptInfo[apt][1].Split('.')[0];
-                            string station_lon = stationInfo[metar_id][1].ToString().Split('.')[0];
-                            string airport_lon = aptInfo[apt][2].Split('.')[0];
-
-                            if (station_lat == airport_lat && station_lon == airport_lon)
-                            {
-                                labelLineToBeAdded = $"\"{metar_id} {aptInfo[metar_id.Substring(1)][0].Replace('"', '-')}\" {LatLonHelpers.CreateDMS(stationInfo[metar_id][0], true)} {LatLonHelpers.CreateDMS(stationInfo[metar_id][1], false)} 11579568";
-
-                                symbolFeature.geometry.coordinates = new List<dynamic>() { stationInfo[metar_id][1], stationInfo[metar_id][0] };
-                                textFeature.geometry.coordinates = new List<dynamic>() { stationInfo[metar_id][1], stationInfo[metar_id][0] };
-                                textFeature.properties.text = new string[] { metar_id + " " + aptInfo[metar_id.Substring(1)][0].Replace('"', '-') };
-
-                                symbolAllFeatures.Add(symbolFeature);
-                                textAllFeatures.Add(textFeature);
-
-                                textFeature = new Feature() { type = "Feature", geometry = new Geometry() { type = "Point" }, properties = new Properties() };
-                                symbolFeature = new Feature() { type = "Feature", geometry = new Geometry() { type = "Point" } };
-
-                                sb.AppendLine(labelLineToBeAdded);
-                                break;
-                            }
-                        }
-                    }
-                }
-                // Metar ID does not match, in any way, the airport code. If they do not match we do not want the WX station. 
-                else
+                /*
+                 * Only include stations that:
+                 *
+                 * 1. Are located in the United States.
+                 * 2. Have an ICAO identifier.
+                 * 3. Have a <site_type> element containing <METAR/>.
+                 */
+                if (country != "US")
                 {
                     continue;
                 }
+
+                if (string.IsNullOrWhiteSpace(icaoId))
+                {
+                    continue;
+                }
+
+                if (siteType?.Element("METAR") == null)
+                {
+                    continue;
+                }
+
+                if (string.IsNullOrWhiteSpace(latitudeValue) ||
+                    string.IsNullOrWhiteSpace(longitudeValue))
+                {
+                    continue;
+                }
+
+
+                // Convert station coordinates.
+                if (!double.TryParse(
+                        latitudeValue,
+                        System.Globalization.NumberStyles.Float,
+                        System.Globalization.CultureInfo.InvariantCulture,
+                        out double latitude))
+                {
+                    continue;
+                }
+
+                if (!double.TryParse(
+                        longitudeValue,
+                        System.Globalization.NumberStyles.Float,
+                        System.Globalization.CultureInfo.InvariantCulture,
+                        out double longitude))
+                {
+                    continue;
+                }
+
+
+                // Site may be missing in the XML.
+                site ??= string.Empty;
+
+
+                /*
+                 * Text GeoJSON format:
+                 *
+                 * If IATA exists:
+                 *
+                 * "text": [
+                 *     "KDTW",
+                 *     "DTW_Detroit/Metro Wayne Cnty"
+                 * ]
+                 *
+                 * If IATA does not exist:
+                 *
+                 * "text": [
+                 *     "KDTW",
+                 *     "Detroit/Metro Wayne Cnty"
+                 * ]
+                 */
+                string secondTextLine;
+
+                if (!string.IsNullOrWhiteSpace(iataId))
+                {
+                    secondTextLine = $"{iataId}_{site}";
+                }
+                else
+                {
+                    secondTextLine = site;
+                }
+
+
+                // Create Text GeoJSON Feature.
+                Feature textFeature = new Feature()
+                {
+                    type = "Feature",
+
+                    geometry = new Geometry()
+                    {
+                        type = "Point",
+                        coordinates = new List<dynamic>()
+                {
+                    longitude,
+                    latitude
+                }
+                    },
+
+                    properties = new Properties()
+                };
+
+                textFeature.properties.text = new string[]
+                {
+            icaoId,
+            secondTextLine
+                };
+
+
+                // Create matching Symbol GeoJSON Feature.
+                Feature symbolFeature = new Feature()
+                {
+                    type = "Feature",
+
+                    geometry = new Geometry()
+                    {
+                        type = "Point",
+                        coordinates = new List<dynamic>()
+                {
+                    longitude,
+                    latitude
+                }
+                    }
+                };
+
+
+                textAllFeatures.Add(textFeature);
+                symbolAllFeatures.Add(symbolFeature);
+
             }
 
-            // Bottom of VRC [LABELS].sct2 file.
-            sb.AppendLine("\n\n\n\n\n\n");
 
+            // Populate GeoJSON FeatureCollections.
             textGeo.features = textAllFeatures;
             symbolGeo.features = symbolAllFeatures;
 
-            if (textGeo.features.Count() >= 1)
+
+            // Write Text GeoJSON.
+            if (textGeo.features.Count >= 1)
             {
-                string json = JsonConvert.SerializeObject(textGeo, new JsonSerializerSettings { Formatting = Formatting.None, NullValueHandling = NullValueHandling.Ignore });
+                string json = JsonConvert.SerializeObject(
+                    textGeo,
+                    new JsonSerializerSettings
+                    {
+                        Formatting = Formatting.None,
+                        NullValueHandling = NullValueHandling.Ignore
+                    });
+
                 File.WriteAllText(wxTextFile, json);
             }
-            if (symbolGeo.features.Count() >= 1)
+
+
+            // Write Symbol GeoJSON.
+            if (symbolGeo.features.Count >= 1)
             {
-                string json = JsonConvert.SerializeObject(symbolGeo, new JsonSerializerSettings { Formatting = Formatting.None, NullValueHandling = NullValueHandling.Ignore });
+                string json = JsonConvert.SerializeObject(
+                    symbolGeo,
+                    new JsonSerializerSettings
+                    {
+                        Formatting = Formatting.None,
+                        NullValueHandling = NullValueHandling.Ignore
+                    });
+
                 File.WriteAllText(wxSymbolsFile, json);
             }
 
-            File.WriteAllText(outputFilepath, sb.ToString());
-            File.AppendAllText($"{GlobalConfig.outputDirectory}\\{GlobalConfig.testSectorFileName}", File.ReadAllText(outputFilepath));
-
-            Logger.LogMessage("INFO", $"COMPLETED WX STATION PARSER");
-
+            Logger.LogMessage("INFO", "COMPLETED WX STATION PARSER");
         }
 
         /// <summary>
@@ -409,6 +454,20 @@ namespace FeBuddyLibrary.DataAccess
             char[] removeChars = { ' ', '.' };
             AptModel airport = null;
 
+            // FAA changed the APT runway record layout beginning with the 09/03/2026 AIRAC cycle,
+            // shifting the runway fields used below by 5 characters. The current indexes reflect
+            // the new format; older AIRAC cycles require an offset of -5 to use the previous layout.
+            //
+            // See Version 2.8.3 release notes / PR #189:
+            // https://github.com/Nikolai558/FE-BUDDY/pull/189
+            //
+            // This compatibility offset may be removed once support for pre-09/03/2026 AIRAC data
+            // is no longer needed. It is safe to leave in place, as current/future cycles use an
+            // offset of 0.
+            DateTime effDate = DateTime.Parse(effectiveDate);
+            DateTime runwayFormatChangeDate = new DateTime(2026, 9, 2);
+            int runwayFieldOffset = effDate >= runwayFormatChangeDate ? 0 : -5;
+
             foreach (string line in File.ReadAllLines($"{GlobalConfig.tempPath}\\{effectiveDate}_APT\\APT.txt"))
             {
                 if (line.Substring(0, 3) == "APT")
@@ -457,8 +516,8 @@ namespace FeBuddyLibrary.DataAccess
                         RwyGroup = line.Substring(16, 7).Trim(),
                         RwyLength = line.Substring(23, 5).Trim(),
                         RwyWidth = line.Substring(28, 4).Trim(),
-                        BaseRwyHdg = line.Substring(68, 3).Trim(),
-                        RecRwyHdg = line.Substring(290, 3).Trim()
+                        BaseRwyHdg = line.Substring(73 + runwayFieldOffset, 3).Trim(),
+                        RecRwyHdg = line.Substring(295 + runwayFieldOffset, 3).Trim()
                     };
 
                     if (rwy.BaseRwyHdg != string.Empty && airport.magVariation != string.Empty)
@@ -489,16 +548,16 @@ namespace FeBuddyLibrary.DataAccess
                         }
                     }
 
-                    if (line.Substring(88, 15).Trim() != string.Empty && line.Substring(115, 15).Trim() != string.Empty)
+                    if (line.Substring(93 + runwayFieldOffset, 15).Trim() != string.Empty && line.Substring(120 + runwayFieldOffset, 15).Trim() != string.Empty)
                     {
-                        rwy.BaseStartLat = LatLonHelpers.CorrectLatLon(line.Substring(88, 15).Trim(), true, GlobalConfig.Convert);
-                        rwy.BaseStartLon = LatLonHelpers.CorrectLatLon(line.Substring(115, 15).Trim(), false, GlobalConfig.Convert);
+                        rwy.BaseStartLat = LatLonHelpers.CorrectLatLon(line.Substring(93 + runwayFieldOffset, 15).Trim(), true, GlobalConfig.Convert);
+                        rwy.BaseStartLon = LatLonHelpers.CorrectLatLon(line.Substring(120 + runwayFieldOffset, 15).Trim(), false, GlobalConfig.Convert);
                     }
 
-                    if (line.Substring(310, 15).Trim() != string.Empty && line.Substring(337, 15).Trim() != string.Empty)
+                    if (line.Substring(315 + runwayFieldOffset, 15).Trim() != string.Empty && line.Substring(342 + runwayFieldOffset, 15).Trim() != string.Empty)
                     {
-                        rwy.BaseEndLat = LatLonHelpers.CorrectLatLon(line.Substring(310, 15).Trim(), true, GlobalConfig.Convert);
-                        rwy.BaseEndLon = LatLonHelpers.CorrectLatLon(line.Substring(337, 15).Trim(), false, GlobalConfig.Convert);
+                        rwy.BaseEndLat = LatLonHelpers.CorrectLatLon(line.Substring(315 + runwayFieldOffset, 15).Trim(), true, GlobalConfig.Convert);
+                        rwy.BaseEndLon = LatLonHelpers.CorrectLatLon(line.Substring(342 + runwayFieldOffset, 15).Trim(), false, GlobalConfig.Convert);
                     }
 
                     airport.Runways.Add(rwy);
@@ -565,6 +624,7 @@ namespace FeBuddyLibrary.DataAccess
                 {
                     aptIdTempVar = aptModel.Id;
                 }
+
 
                 foreach (RunwayModel runwayModel in aptModel.Runways)
                 {

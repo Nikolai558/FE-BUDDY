@@ -1,5 +1,5 @@
 ﻿<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
-  <Package Id="TODO_Manufacturer.FE_BUDDY.Installer" Name="FE-BUDDY.Installer" Manufacturer="TODO Manufacturer" Version="1.0.0">
+  <Package Id="com.febuddy.FE_BUDDY" Name="FE-BUDDY" Manufacturer="FE-BUDDY" Version="1.0.0">
     <MajorUpgrade DowngradeErrorMessage="!(loc.DowngradeError)" />
 
     <Feature Id="Main">

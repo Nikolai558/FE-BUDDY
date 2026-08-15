@@ -11,6 +11,8 @@
 
     <Property Id="CREATE_DESKTOP_SHORTCUT" Value="1"/>
     <Property Id="CREATE_STARTMENU_SHORTCUT" Value="1"/>
+    <WixVariable Id="WixUILicenseRtf"
+             Value="LICENSE.rtf" />
 
     <ui:WixUI
       Id="FE_BUDDY_InstallDir"

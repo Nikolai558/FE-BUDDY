@@ -1,5 +1,6 @@
 ﻿<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
   <Package Id="com.febuddy.FE_BUDDY" Name="FE-BUDDY" Manufacturer="FE-BUDDY" Version="1.0.0">
+    <MediaTemplate EmbedCab="yes"/>
     <MajorUpgrade DowngradeErrorMessage="!(loc.DowngradeError)" />
 
     <Feature Id="Main">

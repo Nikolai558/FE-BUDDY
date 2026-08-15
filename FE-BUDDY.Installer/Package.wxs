@@ -1,10 +1,26 @@
-﻿<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
-  <Package Id="com.febuddy.FE_BUDDY" Name="FE-BUDDY" Manufacturer="FE-BUDDY" Version="1.0.0">
+﻿<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
+
+  <Package Id="com.febuddy.FE_BUDDY"
+           Name="FE-BUDDY"
+           Manufacturer="FE-BUDDY"
+           Version="1.0.0">
+
     <MediaTemplate EmbedCab="yes"/>
     <MajorUpgrade DowngradeErrorMessage="!(loc.DowngradeError)" />
 
+    <Property Id="CREATE_DESKTOP_SHORTCUT" Value="1"/>
+    <Property Id="CREATE_STARTMENU_SHORTCUT" Value="1"/>
+
+    <ui:WixUI
+      Id="FE_BUDDY_InstallDir"
+      InstallDirectory="INSTALLFOLDER" />
+
     <Feature Id="Main">
       <ComponentGroupRef Id="ExampleComponents" />
+      <ComponentRef Id="StartMenuShortcutComponent" />
+      <ComponentRef Id="DesktopShortcutComponent" />
     </Feature>
+
   </Package>
 </Wix>

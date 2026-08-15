@@ -1,6 +1,6 @@
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
   <Fragment>
-    <ComponentGroup Id="ExampleComponents" Directory="INSTALLFOLDER">
+    <ComponentGroup Id="ApplicationFiles" Directory="INSTALLFOLDER">
       <Files Include="!(bindpath.PublishDir)\**"/>
     </ComponentGroup>
   </Fragment>

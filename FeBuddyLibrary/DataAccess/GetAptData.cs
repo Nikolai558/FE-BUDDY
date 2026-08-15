@@ -454,6 +454,20 @@ namespace FeBuddyLibrary.DataAccess
             char[] removeChars = { ' ', '.' };
             AptModel airport = null;
 
+            // FAA changed the APT runway record layout beginning with the 09/03/2026 AIRAC cycle,
+            // shifting the runway fields used below by 5 characters. The current indexes reflect
+            // the new format; older AIRAC cycles require an offset of -5 to use the previous layout.
+            //
+            // See Version 2.8.3 release notes / PR #189:
+            // https://github.com/Nikolai558/FE-BUDDY/pull/189
+            //
+            // This compatibility offset may be removed once support for pre-09/03/2026 AIRAC data
+            // is no longer needed. It is safe to leave in place, as current/future cycles use an
+            // offset of 0.
+            DateTime effDate = DateTime.Parse(effectiveDate);
+            DateTime runwayFormatChangeDate = new DateTime(2026, 9, 2);
+            int runwayFieldOffset = effDate >= runwayFormatChangeDate ? 0 : -5;
+
             foreach (string line in File.ReadAllLines($"{GlobalConfig.tempPath}\\{effectiveDate}_APT\\APT.txt"))
             {
                 if (line.Substring(0, 3) == "APT")
@@ -502,8 +516,8 @@ namespace FeBuddyLibrary.DataAccess
                         RwyGroup = line.Substring(16, 7).Trim(),
                         RwyLength = line.Substring(23, 5).Trim(),
                         RwyWidth = line.Substring(28, 4).Trim(),
-                        BaseRwyHdg = line.Substring(68, 3).Trim(),
-                        RecRwyHdg = line.Substring(290, 3).Trim()
+                        BaseRwyHdg = line.Substring(73 + runwayFieldOffset, 3).Trim(),
+                        RecRwyHdg = line.Substring(295 + runwayFieldOffset, 3).Trim()
                     };
 
                     if (rwy.BaseRwyHdg != string.Empty && airport.magVariation != string.Empty)
@@ -534,16 +548,16 @@ namespace FeBuddyLibrary.DataAccess
                         }
                     }
 
-                    if (line.Substring(88, 15).Trim() != string.Empty && line.Substring(115, 15).Trim() != string.Empty)
+                    if (line.Substring(93 + runwayFieldOffset, 15).Trim() != string.Empty && line.Substring(120 + runwayFieldOffset, 15).Trim() != string.Empty)
                     {
-                        rwy.BaseStartLat = LatLonHelpers.CorrectLatLon(line.Substring(88, 15).Trim(), true, GlobalConfig.Convert);
-                        rwy.BaseStartLon = LatLonHelpers.CorrectLatLon(line.Substring(115, 15).Trim(), false, GlobalConfig.Convert);
+                        rwy.BaseStartLat = LatLonHelpers.CorrectLatLon(line.Substring(93 + runwayFieldOffset, 15).Trim(), true, GlobalConfig.Convert);
+                        rwy.BaseStartLon = LatLonHelpers.CorrectLatLon(line.Substring(120 + runwayFieldOffset, 15).Trim(), false, GlobalConfig.Convert);
                     }
 
-                    if (line.Substring(310, 15).Trim() != string.Empty && line.Substring(337, 15).Trim() != string.Empty)
+                    if (line.Substring(315 + runwayFieldOffset, 15).Trim() != string.Empty && line.Substring(342 + runwayFieldOffset, 15).Trim() != string.Empty)
                     {
-                        rwy.BaseEndLat = LatLonHelpers.CorrectLatLon(line.Substring(310, 15).Trim(), true, GlobalConfig.Convert);
-                        rwy.BaseEndLon = LatLonHelpers.CorrectLatLon(line.Substring(337, 15).Trim(), false, GlobalConfig.Convert);
+                        rwy.BaseEndLat = LatLonHelpers.CorrectLatLon(line.Substring(315 + runwayFieldOffset, 15).Trim(), true, GlobalConfig.Convert);
+                        rwy.BaseEndLon = LatLonHelpers.CorrectLatLon(line.Substring(342 + runwayFieldOffset, 15).Trim(), false, GlobalConfig.Convert);
                     }
 
                     airport.Runways.Add(rwy);

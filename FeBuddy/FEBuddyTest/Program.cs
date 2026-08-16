@@ -1,4 +1,5 @@
-﻿using FEBuddyLibrary.Parsers.NASR.CSV;
+﻿using FEBuddyLibrary.Models.NASR.CSV;
+using FEBuddyLibrary.Parsers.NASR.CSV;
 using System;
 using System.IO;
 
@@ -11,6 +12,7 @@ internal static class Program
         string userSelectedSourceDirectory = @"C:\Users\ksand\Downloads\03_Sep_2026_CSV";
         string userSelectedOutputDirectory = @"C:\Users\ksand\Downloads";
 
+        // Flags to determine which NASR CSV files to parse
         bool parseAptNasrCsv = true;
         bool parseAtcNasrCsv = true;
         bool parseAwyNasrCsv = true;
@@ -36,8 +38,7 @@ internal static class Program
         bool parseStarNasrCsv = true;
         bool parseWxlNasrCsv = true;
 
-
-        // Parsed data is declared here so it remains available after each conditional block.
+        // Initialize data collections for each NASR CSV type
         AptCsvDataCollection? allParsedAptData = null;
         AtcCsvDataCollection? allParsedAtcData = null;
         AwyCsvDataCollection? allParsedAwyData = null;
@@ -63,6 +64,7 @@ internal static class Program
         StarCsvDataCollection? allParsedStarData = null;
         WxlCsvDataCollection? allParsedWxlData = null;
 
+        // Parse the selected NASR CSV files
         if (parseAptNasrCsv)
         {
             Console.WriteLine("Parsing APT csv files");
@@ -293,6 +295,35 @@ internal static class Program
             allParsedWxlData.WxlBase = wxlCsvParser.ParseWxlBase(Path.Combine(userSelectedSourceDirectory, "WXL_BASE.csv")).WxlBase;
             allParsedWxlData.WxlSvc = wxlCsvParser.ParseWxlSvc(Path.Combine(userSelectedSourceDirectory, "WXL_SVC.csv")).WxlSvc;
         }
+
+        // Combine all parsed NASR CSV data into a single collection "allNasrCsvData"
+        NasrCsvDataCollection allNasrCsvData = new()
+        {
+            Apt = allParsedAptData,
+            Atc = allParsedAtcData,
+            Awy = allParsedAwyData,
+            Arb = allParsedArbData,
+            Awos = allParsedAwosData,
+            ClsArsp = allParsedClsArspData,
+            Cdr = allParsedCdrData,
+            Com = allParsedComData,
+            Dp = allParsedDpData,
+            Fix = allParsedFixData,
+            Fss = allParsedFssData,
+            Frq = allParsedFrqData,
+            Hpf = allParsedHpfData,
+            Ils = allParsedIlsData,
+            Lid = allParsedLidData,
+            MilOps = allParsedMilData,
+            Mtr = allParsedMtrData,
+            Maa = allParsedMaaData,
+            Nav = allParsedNavData,
+            Pja = allParsedPjaData,
+            Pfr = allParsedPfrData,
+            Rdr = allParsedRdrData,
+            Star = allParsedStarData,
+            Wxl = allParsedWxlData
+        };
 
         Console.WriteLine("NASR CSV parsing complete.");
 

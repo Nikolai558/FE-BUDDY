@@ -45,6 +45,10 @@ dotnet build "$PSScriptRoot\FE-BUDDY.Installer\FE-BUDDY.Installer.wixproj" `
     -c Release `
     -p:InstallerVersion="$ver"
 
+if ($LASTEXITCODE -ne 0) {
+    throw "FE-BUDDY MSI build failed with exit code $LASTEXITCODE."
+}
+
 $msiSource = "$PSScriptRoot\FE-BUDDY.Installer\bin\Release\en-US\FE-BUDDY.Installer.msi"
 $msiDestination = "$releasedir\FE-BUDDY-$ver.msi"
 

@@ -67,7 +67,31 @@
          Height="17"
          Default="yes"
          Text="!(loc.WixUINext)">
-          <Publish Event="NewDialog" Value="VerifyReadyDlg" />
+
+          <Publish Property="SAVED_STARTMENU_SHORTCUT"
+                   Value="1"
+                   Condition="CREATE_STARTMENU_SHORTCUT"
+                   Order="1" />
+
+          <Publish Property="SAVED_STARTMENU_SHORTCUT"
+                   Value="0"
+                   Condition="NOT CREATE_STARTMENU_SHORTCUT"
+                   Order="2" />
+
+          <Publish Property="SAVED_DESKTOP_SHORTCUT"
+                   Value="1"
+                   Condition="CREATE_DESKTOP_SHORTCUT"
+                   Order="3" />
+
+          <Publish Property="SAVED_DESKTOP_SHORTCUT"
+                   Value="0"
+                   Condition="NOT CREATE_DESKTOP_SHORTCUT"
+                   Order="4" />
+
+          <Publish Event="NewDialog"
+                   Value="VerifyReadyDlg"
+                   Order="5" />
+
         </Control>
 
         <Control Id="Cancel"

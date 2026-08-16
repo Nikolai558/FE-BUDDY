@@ -79,7 +79,42 @@
                Control="Next"
                Event="NewDialog"
                Value="LicenseInformationDlg"
-               Condition="NOT Installed" />
+               Condition="NOT Installed AND NOT WIX_UPGRADE_DETECTED" />
+
+      <Publish Dialog="WelcomeDlg"
+         Control="Next"
+         Property="CREATE_STARTMENU_SHORTCUT"
+         Value="1"
+         Condition="WIX_UPGRADE_DETECTED AND SAVED_STARTMENU_SHORTCUT = &quot;1&quot;"
+         Order="1" />
+
+      <Publish Dialog="WelcomeDlg"
+               Control="Next"
+               Property="CREATE_STARTMENU_SHORTCUT"
+               Value="{}"
+               Condition="WIX_UPGRADE_DETECTED AND SAVED_STARTMENU_SHORTCUT = &quot;0&quot;"
+               Order="2" />
+
+      <Publish Dialog="WelcomeDlg"
+               Control="Next"
+               Property="CREATE_DESKTOP_SHORTCUT"
+               Value="1"
+               Condition="WIX_UPGRADE_DETECTED AND SAVED_DESKTOP_SHORTCUT = &quot;1&quot;"
+               Order="3" />
+
+      <Publish Dialog="WelcomeDlg"
+               Control="Next"
+               Property="CREATE_DESKTOP_SHORTCUT"
+               Value="{}"
+               Condition="WIX_UPGRADE_DETECTED AND SAVED_DESKTOP_SHORTCUT = &quot;0&quot;"
+               Order="4" />
+
+      <Publish Dialog="WelcomeDlg"
+               Control="Next"
+               Event="NewDialog"
+               Value="VerifyReadyDlg"
+               Condition="WIX_UPGRADE_DETECTED"
+               Order="5" />
 
       <Publish Dialog="WelcomeDlg"
                Control="Next"

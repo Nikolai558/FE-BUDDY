@@ -16,8 +16,6 @@
                   Return="asyncNoWait" />
     
 
-    <Property Id="CREATE_DESKTOP_SHORTCUT" Value="1"/>
-    <Property Id="CREATE_STARTMENU_SHORTCUT" Value="1"/>
     <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT"
               Value="Launch FE-BUDDY" />
     <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOX"
@@ -34,6 +32,7 @@
       <ComponentGroupRef Id="ApplicationFiles" />
       <ComponentRef Id="StartMenuShortcutComponent" />
       <ComponentRef Id="DesktopShortcutComponent" />
+      <ComponentRef Id="InstallerStateComponent" />
     </Feature>
 
   </Package>

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:util="http://wixtoolset.org/schemas/v4/wxs/util">
+
+  <Fragment>
+
+    <Property Id="FEBUDDY_LOCALAPPDATA_PATH">
+      <RegistrySearch Id="FindFEBUDDYLocalAppDataPath"
+                      Root="HKCU"
+                      Key="Software\FE-BUDDY"
+                      Name="LocalAppDataCleanup"
+                      Type="raw" />
+    </Property>
+    
+    <StandardDirectory Id="LocalAppDataFolder">
+      <Directory Id="FEBUDDYLocalAppDataFolder"
+                 Name="FE-BUDDY">
+
+        <Component Id="LocalAppDataCleanupComponent">
+
+          <RegistryValue Root="HKCU"
+               Key="Software\FE-BUDDY"
+               Name="LocalAppDataCleanup"
+               Type="string"
+               Value="[FEBUDDYLocalAppDataFolder]"
+               KeyPath="yes" />
+
+          <util:RemoveFolderEx Id="RemoveFEBUDDYLocalAppData"
+                     On="uninstall"
+                     Property="FEBUDDY_LOCALAPPDATA_PATH"
+                     Condition="REMOVE=&quot;ALL&quot; AND NOT UPGRADINGPRODUCTCODE" />
+
+          <RemoveFolder Id="RemoveFEBUDDYLocalAppDataFolder"
+                        Directory="FEBUDDYLocalAppDataFolder"
+                        On="uninstall" />
+
+        </Component>
+
+      </Directory>
+    </StandardDirectory>
+
+  </Fragment>
+
+</Wix>

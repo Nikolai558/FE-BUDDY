@@ -33,6 +33,7 @@
       <ComponentRef Id="StartMenuShortcutComponent" />
       <ComponentRef Id="DesktopShortcutComponent" />
       <ComponentRef Id="InstallerStateComponent" />
+      <ComponentRef Id="LocalAppDataCleanupComponent" />
     </Feature>
 
   </Package>

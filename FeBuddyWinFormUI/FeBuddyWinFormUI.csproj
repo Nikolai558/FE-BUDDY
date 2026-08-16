@@ -20,6 +20,7 @@
 
   <ItemGroup>
     <PackageReference Include="Clowd.Squirrel" Version="2.9.42" />
+    <PackageReference Include="SharpCompress" Version="0.50.4" />
   </ItemGroup>
 
   <ItemGroup>

@@ -5,6 +5,7 @@
     <!-- Default version for local/Visual Studio builds.
        Release builds can override this with /p:InstallerVersion=x.x.x -->
     <InstallerVersion Condition="'$(InstallerVersion)' == ''">1.0.0</InstallerVersion>
+    <InstallerPlatform>x64</InstallerPlatform>
 
     <DefineConstants>InstallerVersion=$(InstallerVersion)</DefineConstants>
   </PropertyGroup>

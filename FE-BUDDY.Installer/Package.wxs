@@ -8,9 +8,21 @@
 
     <MediaTemplate EmbedCab="yes"/>
     <MajorUpgrade DowngradeErrorMessage="!(loc.DowngradeError)" />
+    <CustomAction Id="LaunchFEBUDDY"
+                  Directory="INSTALLFOLDER"
+                  ExeCommand="&quot;[INSTALLFOLDER]FE-BUDDY.exe&quot;"
+                  Execute="immediate"
+                  Impersonate="yes"
+                  Return="asyncNoWait" />
+    
 
     <Property Id="CREATE_DESKTOP_SHORTCUT" Value="1"/>
     <Property Id="CREATE_STARTMENU_SHORTCUT" Value="1"/>
+    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT"
+              Value="Launch FE-BUDDY" />
+    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOX"
+              Value="1" />
+
     <WixVariable Id="WixUILicenseRtf"
              Value="LICENSE.rtf" />
 

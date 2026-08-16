@@ -64,6 +64,13 @@
 
       <Publish Dialog="ExitDialog"
                Control="Finish"
+               Event="DoAction"
+               Value="LaunchFEBUDDY"
+               Condition="WIXUI_EXITDIALOGOPTIONALCHECKBOX = &quot;1&quot; AND NOT Installed"
+               Order="1" />
+
+      <Publish Dialog="ExitDialog"
+               Control="Finish"
                Event="EndDialog"
                Value="Return"
                Order="999" />

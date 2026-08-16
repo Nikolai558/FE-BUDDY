@@ -5,6 +5,7 @@ The goal is to keep business logic, external integrations, and the user interfac
 
 ## Repository Structure
 
+```text
 FE-BUDDY/
 │
 ├── src/
@@ -71,6 +72,7 @@ FE-BUDDY/
 ├── .gitignore
 ├── README.md
 └── LICENSE
+```
 
 
 ## Project Responsibilities

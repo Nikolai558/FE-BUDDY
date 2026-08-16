@@ -34,6 +34,12 @@
                Value="[FEBUDDYLocalAppDataFolder]"
                KeyPath="yes" />
 
+          <RegistryValue Root="HKCU"
+               Key="Software\FE-BUDDY"
+               Name="MsiInstalled"
+               Type="integer"
+               Value="1" />
+
           <util:RemoveFolderEx Id="RemoveFEBUDDYLocalAppData"
                      On="uninstall"
                      Property="FEBUDDY_LOCALAPPDATA_PATH"

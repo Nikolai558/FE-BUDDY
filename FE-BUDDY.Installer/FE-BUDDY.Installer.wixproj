@@ -1,0 +1,24 @@
+﻿<Project Sdk="WixToolset.Sdk/7.0.0">
+  <PropertyGroup>
+    <AcceptEula>wix7</AcceptEula>
+
+    <!-- Default version for local/Visual Studio builds.
+       Release builds can override this with /p:InstallerVersion=x.x.x -->
+    <InstallerVersion Condition="'$(InstallerVersion)' == ''">1.0.0</InstallerVersion>
+    <InstallerPlatform>x64</InstallerPlatform>
+
+    <DefineConstants>InstallerVersion=$(InstallerVersion)</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup>
+    <BindPath Include="$(MSBuildProjectDirectory)\..\publish">
+      <BindName>PublishDir</BindName>
+    </BindPath>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="LICENSE.rtf" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="WixToolset.UI.wixext" Version="7.0.0" />
+    <PackageReference Include="WixToolset.Util.wixext" Version="7.0.0" />
+  </ItemGroup>
+</Project>

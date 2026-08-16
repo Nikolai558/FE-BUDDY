@@ -134,12 +134,45 @@ namespace FeBuddyWinFormUI
 
         }
 
+        private static string GetApplicationVersion()
+        {
+            return Assembly.GetExecutingAssembly()
+                           .GetName()
+                           .Version?
+                           .ToString(3) ?? "dev";
+        }
+
+        private static bool IsRunningFromMsiInstall()
+        {
+            using var key = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(@"Software\FE-BUDDY");
+
+            var installLocation = key?.GetValue("InstallLocation") as string;
+
+            if (string.IsNullOrWhiteSpace(installLocation))
+            {
+                return false;
+            }
+
+            var currentLocation = AppContext.BaseDirectory;
+
+            return string.Equals(
+                Path.GetFullPath(currentLocation).TrimEnd(Path.DirectorySeparatorChar),
+                Path.GetFullPath(installLocation).TrimEnd(Path.DirectorySeparatorChar),
+                StringComparison.OrdinalIgnoreCase);
+        }
+
         /// <summary>
         /// Checks for updates, asks the user if they want to update now, and then
         /// returns the current version.
         /// </summary>
         private static string CheckForUpdates()
         {
+            var applicationVersion = GetApplicationVersion();
+            if (IsRunningFromMsiInstall())
+            {
+                return applicationVersion;
+            }
+
             // By default (on install) AllowPreRelease is false. This setting will only change if the user
             // "checks" the "Opt-In PreRelease" button under the settings menu
             using var ghu = new GithubUpdateManager("https://github.com/Nikolai558/FE-BUDDY", Properties.Settings.Default.AllowPreRelease);
@@ -149,7 +182,7 @@ namespace FeBuddyWinFormUI
             if (currentVersion == null || !ghu.IsInstalledApp)
             {
                 // we can't update if we're not a published app!
-                return "dev";
+                return $"{applicationVersion} - DEV";
             }
 
             try

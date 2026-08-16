@@ -13,6 +13,11 @@ foreach ($Folder in $Folders) {
 
 # Publish projects and remove unnecessary WPF files
 dotnet publish -v minimal -c Release -r win-x64 --self-contained "$PSScriptRoot\FeBuddyWinFormUI\FeBuddyWinFormUI.csproj" -o "$pubdir"
+
+if ($LASTEXITCODE -ne 0) {
+    throw "FE-BUDDY publish failed with exit code $LASTEXITCODE."
+}
+
 Remove-Item "$pubdir\WindowsBase.dll"
 Remove-Item "$pubdir\DirectWriteForwarder.dll"
 Remove-Item "$pubdir\WindowsFormsIntegration.dll"
@@ -36,6 +41,25 @@ Set-Alias Squirrel ($env:USERPROFILE + "\.nuget\packages\clowd.squirrel\2.9.42\t
 New-Item -Path "$PSScriptRoot" -Name "releases" -ItemType "directory"
 Squirrel github-down --repoUrl "https://github.com/Nikolai558/FE-BUDDY" -r "$releasedir"
 Squirrel pack -u "FE-BUDDY" -v "$ver" -p "$pubdir" -r "$releasedir"
+
+# MSI release
+Write-Output ""
+Write-Output "Building FE-BUDDY MSI..."
+
+dotnet build "$PSScriptRoot\FE-BUDDY.Installer\FE-BUDDY.Installer.wixproj" `
+    -c Release `
+    -p:InstallerVersion="$ver"
+
+if ($LASTEXITCODE -ne 0) {
+    throw "FE-BUDDY MSI build failed with exit code $LASTEXITCODE."
+}
+
+$msiSource = "$PSScriptRoot\FE-BUDDY.Installer\bin\Release\en-US\FE-BUDDY.Installer.msi"
+$msiDestination = "$releasedir\FE-BUDDY-$ver.msi"
+
+Copy-Item -Path $msiSource -Destination $msiDestination -Force
+
+Write-Output "MSI created: $msiDestination"
 
 Write-Output ""
 Write-Output "Build Complete"

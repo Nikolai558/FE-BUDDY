@@ -1,0 +1,41 @@
+﻿<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
+
+  <Package Id="com.febuddy.FE_BUDDY"
+           Name="FE-BUDDY"
+           Manufacturer="FE-BUDDY"
+           Version="$(InstallerVersion)">
+
+    <MediaTemplate EmbedCab="yes"/>
+    <MajorUpgrade DowngradeErrorMessage="!(loc.DowngradeError)" />
+    <CustomAction Id="LaunchFEBUDDY"
+                  Directory="INSTALLFOLDER"
+                  ExeCommand="&quot;[INSTALLFOLDER]FE-BUDDY.exe&quot;"
+                  Execute="immediate"
+                  Impersonate="yes"
+                  Return="asyncNoWait" />
+    
+
+    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT"
+              Value="Launch FE-BUDDY" />
+    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOX"
+              Value="1" />
+
+    <WixVariable Id="WixUILicenseRtf"
+             Value="LICENSE.rtf" />
+
+    <ui:WixUI
+      Id="FE_BUDDY_InstallDir"
+      InstallDirectory="INSTALLFOLDER" />
+
+    <Feature Id="Main">
+      <ComponentGroupRef Id="ApplicationFiles" />
+      <ComponentRef Id="StartMenuShortcutComponent" />
+      <ComponentRef Id="DesktopShortcutComponent" />
+      <ComponentRef Id="InstallerStateComponent" />
+      <ComponentRef Id="LocalAppDataCleanupComponent" />
+      <ComponentRef Id="TempCleanupComponent" />
+    </Feature>
+
+  </Package>
+</Wix>

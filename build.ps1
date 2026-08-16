@@ -37,5 +37,20 @@ New-Item -Path "$PSScriptRoot" -Name "releases" -ItemType "directory"
 Squirrel github-down --repoUrl "https://github.com/Nikolai558/FE-BUDDY" -r "$releasedir"
 Squirrel pack -u "FE-BUDDY" -v "$ver" -p "$pubdir" -r "$releasedir"
 
+# MSI release
+Write-Output ""
+Write-Output "Building FE-BUDDY MSI..."
+
+dotnet build "$PSScriptRoot\FE-BUDDY.Installer\FE-BUDDY.Installer.wixproj" `
+    -c Release `
+    -p:InstallerVersion="$ver"
+
+$msiSource = "$PSScriptRoot\FE-BUDDY.Installer\bin\Release\en-US\FE-BUDDY.Installer.msi"
+$msiDestination = "$releasedir\FE-BUDDY-$ver.msi"
+
+Copy-Item -Path $msiSource -Destination $msiDestination -Force
+
+Write-Output "MSI created: $msiDestination"
+
 Write-Output ""
 Write-Output "Build Complete"

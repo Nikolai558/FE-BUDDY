@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FEBuddyLibrary.PARSERS.NASR.CSV;
+namespace FEBuddyLibrary.Parsers.NASR.CSV;
 
 /// <summary>
 /// Primary call-point to parse all NASR CSV files and combine them into a single collection of data.

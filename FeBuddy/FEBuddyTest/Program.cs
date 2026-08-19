@@ -1,6 +1,6 @@
 ﻿using FEBuddyLibrary.Models.NASR.CSV;
 using FEBuddyLibrary.Parsers.NASR.CSV;
-using FEBuddyLibrary.PARSERS.NASR.CSV;
+using FEBuddyLibrary.Generators.NASR;
 using System;
 using System.IO;
 

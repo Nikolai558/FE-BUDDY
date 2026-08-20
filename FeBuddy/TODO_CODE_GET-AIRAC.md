@@ -1,7 +1,7 @@
 # GET-AIRAC TODO's
 
 ## GENERAL
-- When everything is done, remove the `Test-EntryPoint.cs` file.
+- ???
 
 ---
 

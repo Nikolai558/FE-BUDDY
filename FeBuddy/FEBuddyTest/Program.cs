@@ -29,6 +29,12 @@ internal static class Program
 
         Console.Write("complete.");
 
-        // todo: work on building a geojson by getting the coords from the relevant dictionaries for the points on the airways.
+        Console.WriteLine("Generating AWY GeoJSON...");
+
+        string awyGeojsonPath = AwyGeojsonGenerator.Generate(
+            allNasrCsvData,
+            outputDirectory);
+
+        Console.WriteLine($"AWY GeoJSON created: {awyGeojsonPath}");
     }
 }

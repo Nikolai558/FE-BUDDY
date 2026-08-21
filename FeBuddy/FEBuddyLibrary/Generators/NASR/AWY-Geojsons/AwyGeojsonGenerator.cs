@@ -11,7 +11,7 @@ namespace FEBuddyLibrary.Generators.NASR;
 /// <summary>
 /// Generates GeoJSON airway geometry from parsed NASR AWY CSV data.
 /// </summary>
-public static class AwyGeojsonGenerator
+public static partial class AwyGeojsonGenerator
 {
 	private static readonly GeometryFactory GeometryFactory =
 		NtsGeometryServices.Instance.CreateGeometryFactory(srid: 4326);
@@ -55,20 +55,20 @@ public static class AwyGeojsonGenerator
 		FeatureCollection featureCollection = new();
 
 		/*
-         * Build a dictionary of all airway IDs from AWY_BASE.
-         *
-         * Key:
-         *      AwyId
-         *
-         * Value:
-         *      AwyDesignation
-         *
-         * AwyDesignation is retained for future generator updates,
-         * but is not currently written to the GeoJSON properties.
-         *
-         * GroupBy is used so duplicate AWY_BASE records with the same
-         * AwyId do not cause ToDictionary() to throw an exception.
-         */
+		 * Build a dictionary of all airway IDs from AWY_BASE.
+		 *
+		 * Key:
+		 *      AwyId
+		 *
+		 * Value:
+		 *      AwyDesignation
+		 *
+		 * AwyDesignation is retained for future generator updates,
+		 * but is not currently written to the GeoJSON properties.
+		 *
+		 * GroupBy is used so duplicate AWY_BASE records with the same
+		 * AwyId do not cause ToDictionary() to throw an exception.
+		 */
 		Dictionary<string, string> airways =
 			allNasrCsvData.Awy.AwyBase
 				.Where(x => !string.IsNullOrWhiteSpace(x.AwyId))
@@ -81,8 +81,8 @@ public static class AwyGeojsonGenerator
 					StringComparer.OrdinalIgnoreCase);
 
 		/*
-         * Group AWY_SEG_ALT records by airway ID once.
-         */
+		 * Group AWY_SEG_ALT records by airway ID once.
+		 */
 		ILookup<string, AwyCsvDataModel.AwySegAlt> airwaySegments =
 			allNasrCsvData.Awy.AwySegAlt
 				.Where(x => !string.IsNullOrWhiteSpace(x.AwyId))
@@ -98,20 +98,20 @@ public static class AwyGeojsonGenerator
 			string awyType = airway.Value;
 
 			/*
-             * POINT_SEQ defines the order of the airway segment records.
-             */
+			 * POINT_SEQ defines the order of the airway segment records.
+			 */
 			List<AwyCsvDataModel.AwySegAlt> rawSegments =
 				airwaySegments[awyId]
 					.OrderBy(x => x.PointSeq)
 					.ToList();
 
 			/*
-             * Normalize the raw AWY_SEG_ALT records before attempting
-             * coordinate lookups.
-             *
-             * Records whose FromPtType is null/empty are treated as
-             * reference-only points and are collapsed out.
-             */
+			 * Normalize the raw AWY_SEG_ALT records before attempting
+			 * coordinate lookups.
+			 *
+			 * Records whose FromPtType is null/empty are treated as
+			 * reference-only points and are collapsed out.
+			 */
 			List<AirwaySegment> normalizedSegments =
 				NormalizeAirwaySegments(rawSegments);
 
@@ -122,9 +122,9 @@ public static class AwyGeojsonGenerator
 					normalizedSegments);
 
 			/*
-             * No usable segment geometry means there is nothing to
-             * write for this airway.
-             */
+			 * No usable segment geometry means there is nothing to
+			 * write for this airway.
+			 */
 			if (lineStrings.Count == 0)
 			{
 				continue;
@@ -133,10 +133,14 @@ public static class AwyGeojsonGenerator
 			Geometry geometry =
 				lineStrings.Count == 1
 					? lineStrings[0]
-					: GeometryFactory.CreateMultiLineString(lineStrings.ToArray());
+					: GeometryFactory.CreateMultiLineString(
+						lineStrings.ToArray());
 
 			AttributesTable properties = new();
-			properties.Add("feb_AWY-ID", awyId);
+
+			properties.Add(
+				"feb_AWY-ID",
+				awyId);
 
 			Feature feature = new(
 				geometry,
@@ -167,367 +171,4 @@ public static class AwyGeojsonGenerator
 
 		return outputPath;
 	}
-
-	/// <summary>
-	/// Removes reference-only airway points whose FromPtType is null or empty
-	/// and collapses the surrounding records into a direct segment.
-	/// </summary>
-	/// <param name="rawSegments">Raw AWY_SEG_ALT records for one airway.</param>
-	/// <returns>A normalized list of airway segments.</returns>
-	private static List<AirwaySegment> NormalizeAirwaySegments(
-		IReadOnlyList<AwyCsvDataModel.AwySegAlt> rawSegments)
-	{
-		List<AirwaySegment> normalizedSegments = new();
-
-		for (int i = 0; i < rawSegments.Count; i++)
-		{
-			AwyCsvDataModel.AwySegAlt currentSegment = rawSegments[i];
-
-			/*
-             * If this record starts at a point with no FromPtType,
-             * the FromPoint is not treated as a real NASR waypoint.
-             *
-             * Do not create a separate segment beginning at that point.
-             * A preceding valid segment can consume this record while
-             * looking ahead.
-             */
-			if (string.IsNullOrWhiteSpace(currentSegment.FromPtType))
-			{
-				continue;
-			}
-
-			if (string.IsNullOrWhiteSpace(currentSegment.FromPoint) ||
-				string.IsNullOrWhiteSpace(currentSegment.ToPoint))
-			{
-				continue;
-			}
-
-			string startWptId = currentSegment.FromPoint.Trim();
-			string endWptId = currentSegment.ToPoint.Trim();
-
-			bool isGap = IsGap(currentSegment.AwySegGapFlag);
-
-			/*
-             * Look ahead for one or more reference-only points.
-             *
-             * Example:
-             *
-             *      TIJ -> U.S. MEXICAN BORDER-2
-             *      U.S. MEXICAN BORDER-2 -> TEYON
-             *
-             * where the second record has an empty FromPtType.
-             *
-             * This becomes:
-             *
-             *      TIJ -> TEYON
-             *
-             * The reference-only waypoint is never sent to
-             * FindWaypointCoordinates.
-             */
-			int nextIndex = i + 1;
-
-			while (nextIndex < rawSegments.Count)
-			{
-				AwyCsvDataModel.AwySegAlt nextSegment =
-					rawSegments[nextIndex];
-
-				bool nextStartMatchesCurrentEnd =
-					string.Equals(
-						endWptId,
-						nextSegment.FromPoint?.Trim(),
-						StringComparison.OrdinalIgnoreCase);
-
-				bool nextStartIsReferenceOnly =
-					string.IsNullOrWhiteSpace(nextSegment.FromPtType);
-
-				if (!nextStartMatchesCurrentEnd ||
-					!nextStartIsReferenceOnly)
-				{
-					break;
-				}
-
-				/*
-                 * If any record being collapsed is marked as an airway
-                 * gap, preserve that gap on the resulting normalized segment.
-                 */
-				if (IsGap(nextSegment.AwySegGapFlag))
-				{
-					isGap = true;
-				}
-
-				if (string.IsNullOrWhiteSpace(nextSegment.ToPoint))
-				{
-					break;
-				}
-
-				endWptId = nextSegment.ToPoint.Trim();
-				nextIndex++;
-			}
-
-			normalizedSegments.Add(
-				new AirwaySegment(
-					startWptId,
-					endWptId,
-					isGap));
-		}
-
-		return normalizedSegments;
-	}
-
-	/// <summary>
-	/// Builds all continuous LineStrings belonging to a single airway.
-	/// </summary>
-	/// <param name="allNasrCsvData">All parsed NASR CSV data.</param>
-	/// <param name="awyId">The airway identifier being processed.</param>
-	/// <param name="segments">Normalized segments belonging to the airway.</param>
-	/// <returns>One or more LineStrings representing the airway.</returns>
-	/// <summary>
-	/// Builds all continuous LineStrings belonging to a single airway.
-	/// </summary>
-	/// <param name="allNasrCsvData">All parsed NASR CSV data.</param>
-	/// <param name="awyId">The airway identifier being processed.</param>
-	/// <param name="segments">Normalized segments belonging to the airway.</param>
-	/// <returns>One or more LineStrings representing the airway.</returns>
-	private static List<LineString> BuildAirwayLineStrings(
-		NasrCsvDataCollection allNasrCsvData,
-		string awyId,
-		IEnumerable<AirwaySegment> segments)
-	{
-		List<LineString> lineStrings = new();
-		List<Coordinate> currentCoordinates = new();
-
-		List<AirwaySegment> segmentList = segments.ToList();
-
-		string? previousSegEndWptId = null;
-
-		for (int i = 0; i < segmentList.Count; i++)
-		{
-			AirwaySegment segment = segmentList[i];
-
-			string segStartWptId = segment.StartWptId;
-			string segEndWptId = segment.EndWptId;
-
-			var segStartCoordinates =
-				FindWaypointCoordinates.GetCoordinates(
-					allNasrCsvData,
-					segStartWptId);
-
-			/*
-			 * If the starting waypoint cannot be resolved, determine
-			 * whether usable airway geometry exists later.
-			 *
-			 * If nothing resolvable exists after this point, this segment
-			 * belongs to an unresolved trailing portion of the airway.
-			 * Stop processing and keep the geometry already built.
-			 *
-			 * If valid geometry exists later, then the unresolved waypoint
-			 * occurs inside the airway and should be treated as an error.
-			 */
-			if (!segStartCoordinates.HasValue)
-			{
-				bool hasResolvableSegmentAhead =
-					HasResolvableSegmentAhead(
-						allNasrCsvData,
-						segmentList,
-						i + 1);
-
-				if (!hasResolvableSegmentAhead)
-				{
-					break;
-				}
-
-				throw new InvalidOperationException(
-					$"Unable to locate coordinates for airway '{awyId}' " +
-					$"segment start waypoint '{segStartWptId}'.");
-			}
-
-			var segEndCoordinates =
-				FindWaypointCoordinates.GetCoordinates(
-					allNasrCsvData,
-					segEndWptId);
-
-			/*
-			 * Apply the same rule to an unresolved ending waypoint.
-			 *
-			 * If no usable geometry exists later, stop the airway at
-			 * the last valid point.
-			 *
-			 * Example:
-			 *
-			 *      CFQLS -> CFGFX
-			 *      CFGFX -> U.S. CANADIAN BORDER-4
-			 *
-			 * becomes:
-			 *
-			 *      CFQLS -> CFGFX
-			 */
-			if (!segEndCoordinates.HasValue)
-			{
-				bool hasResolvableSegmentAhead =
-					HasResolvableSegmentAhead(
-						allNasrCsvData,
-						segmentList,
-						i + 1);
-
-				if (!hasResolvableSegmentAhead)
-				{
-					break;
-				}
-
-				throw new InvalidOperationException(
-					$"Unable to locate coordinates for airway '{awyId}' " +
-					$"segment end waypoint '{segEndWptId}'.");
-			}
-
-			/*
-			 * RFC 7946 GeoJSON coordinate order:
-			 *
-			 *      [longitude, latitude]
-			 *
-			 * NetTopologySuite:
-			 *
-			 *      X = longitude
-			 *      Y = latitude
-			 */
-			Coordinate segStartCoordinate = new(
-				segStartCoordinates.Value.waypointLon,
-				segStartCoordinates.Value.waypointLat);
-
-			Coordinate segEndCoordinate = new(
-				segEndCoordinates.Value.waypointLon,
-				segEndCoordinates.Value.waypointLat);
-
-			/*
-			 * Continue the current LineString only when:
-			 *
-			 * 1. The previous segment ends at this segment's start point.
-			 *
-			 * 2. This segment is not marked as an airway gap.
-			 */
-			bool isContinuous =
-				previousSegEndWptId is not null
-				&&
-				string.Equals(
-					previousSegEndWptId,
-					segStartWptId,
-					StringComparison.OrdinalIgnoreCase)
-				&&
-				!segment.IsGap;
-
-			/*
-			 * First valid segment of the current LineString.
-			 */
-			if (currentCoordinates.Count == 0)
-			{
-				currentCoordinates.Add(segStartCoordinate);
-				currentCoordinates.Add(segEndCoordinate);
-			}
-
-			/*
-			 * Continue the existing LineString.
-			 *
-			 * The segment's starting coordinate is already the final
-			 * coordinate of the previous segment, so only add the endpoint.
-			 */
-			else if (isContinuous)
-			{
-				currentCoordinates.Add(segEndCoordinate);
-			}
-
-			/*
-			 * Discontinuity or explicit airway gap.
-			 *
-			 * Finish the existing LineString and begin a new one.
-			 */
-			else
-			{
-				lineStrings.Add(
-					GeometryFactory.CreateLineString(
-						currentCoordinates.ToArray()));
-
-				currentCoordinates = new List<Coordinate>
-			{
-				segStartCoordinate,
-				segEndCoordinate
-			};
-			}
-
-			previousSegEndWptId = segEndWptId;
-		}
-
-		/*
-		 * If processing stopped because of an unresolved trailing portion,
-		 * the valid coordinates accumulated before it still need to be
-		 * added to the output.
-		 */
-		if (currentCoordinates.Count >= 2)
-		{
-			lineStrings.Add(
-				GeometryFactory.CreateLineString(
-					currentCoordinates.ToArray()));
-		}
-
-		return lineStrings;
-	}
-
-
-	/// <summary>
-	/// Determines whether any later airway segment has both a resolvable
-	/// starting waypoint and ending waypoint.
-	/// </summary>
-	/// <param name="allNasrCsvData">All parsed NASR CSV data.</param>
-	/// <param name="segments">The normalized airway segments.</param>
-	/// <param name="startIndex">The first segment index to examine.</param>
-	/// <returns>
-	/// True if a later segment has resolvable coordinates for both endpoints;
-	/// otherwise false.
-	/// </returns>
-	private static bool HasResolvableSegmentAhead(
-		NasrCsvDataCollection allNasrCsvData,
-		IReadOnlyList<AirwaySegment> segments,
-		int startIndex)
-	{
-		for (int i = startIndex; i < segments.Count; i++)
-		{
-			AirwaySegment segment = segments[i];
-
-			var startCoordinates =
-				FindWaypointCoordinates.GetCoordinates(
-					allNasrCsvData,
-					segment.StartWptId);
-
-			var endCoordinates =
-				FindWaypointCoordinates.GetCoordinates(
-					allNasrCsvData,
-					segment.EndWptId);
-
-			if (startCoordinates.HasValue &&
-				endCoordinates.HasValue)
-			{
-				return true;
-			}
-		}
-
-		return false;
-	}
-
-	/// <summary>
-	/// Determines whether an AWY_SEG_ALT record is marked as an airway gap.
-	/// </summary>
-	private static bool IsGap(string? awySegGapFlag)
-	{
-		return string.Equals(
-			awySegGapFlag?.Trim(),
-			"Y",
-			StringComparison.OrdinalIgnoreCase);
-	}
-
-	/// <summary>
-	/// Represents a normalized airway segment whose start and end IDs
-	/// are expected to resolve to actual NASR waypoint coordinates.
-	/// </summary>
-	private sealed record AirwaySegment(
-		string StartWptId,
-		string EndWptId,
-		bool IsGap);
 }

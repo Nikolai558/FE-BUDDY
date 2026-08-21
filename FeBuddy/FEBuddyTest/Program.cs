@@ -2,30 +2,32 @@
 using FEBuddyLibrary.Parsers.NASR.CSV;
 using FEBuddyLibrary.Generators.NASR;
 using System;
+using System.Collections.Generic;
 using System.IO;
 
 namespace FEBuddyTest;
 
-/// <summary>
-/// A console application used to test different functions of the FEBuddyLibrary without the need for a GUI.
-/// </summary>
 internal static class Program
 {
     public static void Main()
     {
-        // Input/output directories
         string sourceDirectory = @"C:\Users\ksand\Downloads\03_Sep_2026_CSV";
-        string outputDirectory = @"C:\Users\ksand\Downloads";
 
+        // AWY GeoJSON generation settings
+        Dictionary<string, string> airwaySettings = new()
+        {
+            { "OutputDirectory", @"C:\Users\ksand\Downloads" },
+            { "OutputBy", "HighLow" },
+            { "SplitAtAntimeridian", "Y" },
+            { "WaypointBuffer", "Y" }
+        };
 
-        Console.WriteLine("NASR CSV parsing... ");
+        Console.Write("NASR CSV parsing... ");
 
-        // Parse the NASR CSV files and store the data in a NasrCsvDataCollection object
         var allNasrCsvData = NasrCsvParserController.Main(new string[]
         {
             sourceDirectory
         });
-
 
         Console.Write("complete.");
 
@@ -33,7 +35,7 @@ internal static class Program
 
         string awyGeojsonPath = AwyGeojsonGenerator.Generate(
             allNasrCsvData,
-            outputDirectory);
+            airwaySettings);
 
         Console.WriteLine($"AWY GeoJSON created: {awyGeojsonPath}");
     }

@@ -5,6 +5,7 @@ using NetTopologySuite.Features;
 using NetTopologySuite.Geometries;
 using NetTopologySuite.IO.Converters;
 using System.Text.Json;
+using System.Collections.Generic;
 
 namespace FEBuddyLibrary.Generators.NASR;
 
@@ -17,25 +18,21 @@ public static partial class AwyGeojsonGenerator
 		NtsGeometryServices.Instance.CreateGeometryFactory(srid: 4326);
 
 	/// <summary>
-	/// Generates an RFC 7946 GeoJSON FeatureCollection containing NASR airways.
+	/// Generates RFC 7946 GeoJSON airway geometry from parsed NASR airway data.
 	/// </summary>
 	/// <param name="allNasrCsvData">All parsed NASR CSV data.</param>
-	/// <param name="outputDirectory">Directory where the GeoJSON file will be written.</param>
+	/// <param name="airwaySettings">Settings controlling airway GeoJSON generation.</param>
 	/// <param name="fileName">Name of the generated GeoJSON file.</param>
 	/// <returns>The full path to the generated GeoJSON file.</returns>
 	public static string Generate(
 		NasrCsvDataCollection allNasrCsvData,
-		string outputDirectory,
+		Dictionary<string, string> airwaySettings,
 		string fileName = "AWY.geojson")
 	{
 		ArgumentNullException.ThrowIfNull(allNasrCsvData);
 
-		if (string.IsNullOrWhiteSpace(outputDirectory))
-		{
-			throw new ArgumentException(
-				"Output directory cannot be null, empty, or whitespace.",
-				nameof(outputDirectory));
-		}
+		AirwayGeneratorSettings settings =
+			ParseSettings(airwaySettings);
 
 		if (string.IsNullOrWhiteSpace(fileName))
 		{
@@ -50,7 +47,9 @@ public static partial class AwyGeojsonGenerator
 				"AWY NASR CSV data has not been parsed.");
 		}
 
-		Directory.CreateDirectory(outputDirectory);
+		Directory.CreateDirectory(
+			settings.OutputDirectory);
+
 
 		FeatureCollection featureCollection = new();
 
@@ -162,7 +161,7 @@ public static partial class AwyGeojsonGenerator
 			jsonOptions);
 
 		string outputPath = Path.Combine(
-			outputDirectory,
+			settings.OutputDirectory,
 			fileName);
 
 		File.WriteAllText(

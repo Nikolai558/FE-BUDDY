@@ -18,15 +18,26 @@ if ($LASTEXITCODE -ne 0) {
     throw "FE-BUDDY publish failed with exit code $LASTEXITCODE."
 }
 
-Remove-Item "$pubdir\WindowsBase.dll"
-Remove-Item "$pubdir\DirectWriteForwarder.dll"
-Remove-Item "$pubdir\WindowsFormsIntegration.dll"
-Remove-Item "$pubdir\System.Xaml.dll"
-Remove-Item "$pubdir\System.Windows.dll"
-Remove-Item "$pubdir\System.Windows.Controls.Ribbon.dll"
-Remove-Item "$pubdir\System.Windows.Extensions.dll"
-Remove-Item "$pubdir\System.Windows.Presentation.dll"
-Remove-Item "$pubdir\System.Windows.Input.Manipulations.dll"
+# Remove unnecessary WPF assemblies if they were included in the publish output
+$WpfAssemblies = @(
+    "WindowsBase.dll",
+    "DirectWriteForwarder.dll",
+    "WindowsFormsIntegration.dll",
+    "System.Xaml.dll",
+    "System.Windows.dll",
+    "System.Windows.Controls.Ribbon.dll",
+    "System.Windows.Extensions.dll",
+    "System.Windows.Presentation.dll",
+    "System.Windows.Input.Manipulations.dll"
+)
+
+foreach ($Assembly in $WpfAssemblies) {
+    $AssemblyPath = Join-Path $pubdir $Assembly
+
+    if (Test-Path $AssemblyPath) {
+        Remove-Item -Path $AssemblyPath -Force
+    }
+}
 Get-ChildItem -Path "$pubdir" -Filter "*cor3*" | Remove-Item -Force -Recurse
 Get-ChildItem -Path "$pubdir" -Filter "*Presentation*" | Remove-Item -Force -Recurse
 Get-ChildItem -Path "$pubdir" -Filter "*UIAutomation*" | Remove-Item -Force -Recurse

@@ -281,6 +281,13 @@ public static class AwyGeojsonGenerator
 	/// <param name="awyId">The airway identifier being processed.</param>
 	/// <param name="segments">Normalized segments belonging to the airway.</param>
 	/// <returns>One or more LineStrings representing the airway.</returns>
+	/// <summary>
+	/// Builds all continuous LineStrings belonging to a single airway.
+	/// </summary>
+	/// <param name="allNasrCsvData">All parsed NASR CSV data.</param>
+	/// <param name="awyId">The airway identifier being processed.</param>
+	/// <param name="segments">Normalized segments belonging to the airway.</param>
+	/// <returns>One or more LineStrings representing the airway.</returns>
 	private static List<LineString> BuildAirwayLineStrings(
 		NasrCsvDataCollection allNasrCsvData,
 		string awyId,
@@ -289,10 +296,14 @@ public static class AwyGeojsonGenerator
 		List<LineString> lineStrings = new();
 		List<Coordinate> currentCoordinates = new();
 
+		List<AirwaySegment> segmentList = segments.ToList();
+
 		string? previousSegEndWptId = null;
 
-		foreach (AirwaySegment segment in segments)
+		for (int i = 0; i < segmentList.Count; i++)
 		{
+			AirwaySegment segment = segmentList[i];
+
 			string segStartWptId = segment.StartWptId;
 			string segEndWptId = segment.EndWptId;
 
@@ -301,8 +312,30 @@ public static class AwyGeojsonGenerator
 					allNasrCsvData,
 					segStartWptId);
 
+			/*
+			 * If the starting waypoint cannot be resolved, determine
+			 * whether usable airway geometry exists later.
+			 *
+			 * If nothing resolvable exists after this point, this segment
+			 * belongs to an unresolved trailing portion of the airway.
+			 * Stop processing and keep the geometry already built.
+			 *
+			 * If valid geometry exists later, then the unresolved waypoint
+			 * occurs inside the airway and should be treated as an error.
+			 */
 			if (!segStartCoordinates.HasValue)
 			{
+				bool hasResolvableSegmentAhead =
+					HasResolvableSegmentAhead(
+						allNasrCsvData,
+						segmentList,
+						i + 1);
+
+				if (!hasResolvableSegmentAhead)
+				{
+					break;
+				}
+
 				throw new InvalidOperationException(
 					$"Unable to locate coordinates for airway '{awyId}' " +
 					$"segment start waypoint '{segStartWptId}'.");
@@ -313,23 +346,49 @@ public static class AwyGeojsonGenerator
 					allNasrCsvData,
 					segEndWptId);
 
+			/*
+			 * Apply the same rule to an unresolved ending waypoint.
+			 *
+			 * If no usable geometry exists later, stop the airway at
+			 * the last valid point.
+			 *
+			 * Example:
+			 *
+			 *      CFQLS -> CFGFX
+			 *      CFGFX -> U.S. CANADIAN BORDER-4
+			 *
+			 * becomes:
+			 *
+			 *      CFQLS -> CFGFX
+			 */
 			if (!segEndCoordinates.HasValue)
 			{
+				bool hasResolvableSegmentAhead =
+					HasResolvableSegmentAhead(
+						allNasrCsvData,
+						segmentList,
+						i + 1);
+
+				if (!hasResolvableSegmentAhead)
+				{
+					break;
+				}
+
 				throw new InvalidOperationException(
 					$"Unable to locate coordinates for airway '{awyId}' " +
 					$"segment end waypoint '{segEndWptId}'.");
 			}
 
 			/*
-             * RFC 7946 / GeoJSON position order:
-             *
-             *      [longitude, latitude]
-             *
-             * NetTopologySuite Coordinate:
-             *
-             *      X = longitude
-             *      Y = latitude
-             */
+			 * RFC 7946 GeoJSON coordinate order:
+			 *
+			 *      [longitude, latitude]
+			 *
+			 * NetTopologySuite:
+			 *
+			 *      X = longitude
+			 *      Y = latitude
+			 */
 			Coordinate segStartCoordinate = new(
 				segStartCoordinates.Value.waypointLon,
 				segStartCoordinates.Value.waypointLat);
@@ -339,13 +398,12 @@ public static class AwyGeojsonGenerator
 				segEndCoordinates.Value.waypointLat);
 
 			/*
-             * Continue the current LineString only when:
-             *
-             * 1. The previous segment's end waypoint equals this
-             *    segment's start waypoint.
-             *
-             * 2. The new segment is not marked as a gap.
-             */
+			 * Continue the current LineString only when:
+			 *
+			 * 1. The previous segment ends at this segment's start point.
+			 *
+			 * 2. This segment is not marked as an airway gap.
+			 */
 			bool isContinuous =
 				previousSegEndWptId is not null
 				&&
@@ -357,8 +415,8 @@ public static class AwyGeojsonGenerator
 				!segment.IsGap;
 
 			/*
-             * First segment of the current LineString.
-             */
+			 * First valid segment of the current LineString.
+			 */
 			if (currentCoordinates.Count == 0)
 			{
 				currentCoordinates.Add(segStartCoordinate);
@@ -366,20 +424,21 @@ public static class AwyGeojsonGenerator
 			}
 
 			/*
-             * The start point is already the final point of the
-             * current LineString, so only append the new endpoint.
-             */
+			 * Continue the existing LineString.
+			 *
+			 * The segment's starting coordinate is already the final
+			 * coordinate of the previous segment, so only add the endpoint.
+			 */
 			else if (isContinuous)
 			{
 				currentCoordinates.Add(segEndCoordinate);
 			}
 
 			/*
-             * The airway is discontinuous here or the new segment is
-             * explicitly marked as a gap.
-             *
-             * Finish the current LineString and start another one.
-             */
+			 * Discontinuity or explicit airway gap.
+			 *
+			 * Finish the existing LineString and begin a new one.
+			 */
 			else
 			{
 				lineStrings.Add(
@@ -387,18 +446,20 @@ public static class AwyGeojsonGenerator
 						currentCoordinates.ToArray()));
 
 				currentCoordinates = new List<Coordinate>
-				{
-					segStartCoordinate,
-					segEndCoordinate
-				};
+			{
+				segStartCoordinate,
+				segEndCoordinate
+			};
 			}
 
 			previousSegEndWptId = segEndWptId;
 		}
 
 		/*
-         * Add the final LineString after processing all segments.
-         */
+		 * If processing stopped because of an unresolved trailing portion,
+		 * the valid coordinates accumulated before it still need to be
+		 * added to the output.
+		 */
 		if (currentCoordinates.Count >= 2)
 		{
 			lineStrings.Add(
@@ -407,6 +468,47 @@ public static class AwyGeojsonGenerator
 		}
 
 		return lineStrings;
+	}
+
+
+	/// <summary>
+	/// Determines whether any later airway segment has both a resolvable
+	/// starting waypoint and ending waypoint.
+	/// </summary>
+	/// <param name="allNasrCsvData">All parsed NASR CSV data.</param>
+	/// <param name="segments">The normalized airway segments.</param>
+	/// <param name="startIndex">The first segment index to examine.</param>
+	/// <returns>
+	/// True if a later segment has resolvable coordinates for both endpoints;
+	/// otherwise false.
+	/// </returns>
+	private static bool HasResolvableSegmentAhead(
+		NasrCsvDataCollection allNasrCsvData,
+		IReadOnlyList<AirwaySegment> segments,
+		int startIndex)
+	{
+		for (int i = startIndex; i < segments.Count; i++)
+		{
+			AirwaySegment segment = segments[i];
+
+			var startCoordinates =
+				FindWaypointCoordinates.GetCoordinates(
+					allNasrCsvData,
+					segment.StartWptId);
+
+			var endCoordinates =
+				FindWaypointCoordinates.GetCoordinates(
+					allNasrCsvData,
+					segment.EndWptId);
+
+			if (startCoordinates.HasValue &&
+				endCoordinates.HasValue)
+			{
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	/// <summary>

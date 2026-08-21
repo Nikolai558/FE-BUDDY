@@ -29,7 +29,7 @@ internal static class Program
 
         Console.Write("complete.");
 
-        Console.WriteLine("Generating AWY GeoJSON...");
+        Console.WriteLine("\n\nGenerating AWY GeoJSON...");
 
         string awyGeojsonPath = AwyGeojsonGenerator.Generate(
             allNasrCsvData,

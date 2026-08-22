@@ -49,9 +49,10 @@ internal static class FindWaypointCoordinates
 	/// If the waypoint type is known, it will search only that data source.
 	/// </summary>
 	/// <returns>
-	/// A tuple containing waypointLat and waypointLon when found; otherwise null.
+	/// A tuple containing waypointLat and waypointLon when found; otherwise null. Will also return a string
+	/// indicating which data source the waypoint was found in ("fix", "navaid", or "airport").
 	/// </returns>
-	internal static (double waypointLat, double waypointLon)? GetCoordinates(
+	internal static (double waypointLat, double waypointLon, string foundIn)? GetCoordinates(
 		NasrCsvDataCollection allNasrCsvData,
 		string waypointId,
 		WaypointType? waypointType = null)
@@ -105,7 +106,7 @@ internal static class FindWaypointCoordinates
 	/// <summary>
 	/// Searches FIX_BASE for a matching 5-character fix.
 	/// </summary>
-	private static (double waypointLat, double waypointLon)? FindFix(
+	private static (double waypointLat, double waypointLon, string foundIn)? FindFix(
 		NasrCsvDataCollection allNasrCsvData,
 		string waypointId)
 	{
@@ -118,14 +119,14 @@ internal static class FindWaypointCoordinates
 		if (fix is null)
 			return null;
 
-		return (fix.LatDecimal, fix.LongDecimal);
+		return (fix.LatDecimal, fix.LongDecimal, "fix");
 	}
 
 
 	/// <summary>
 	/// Searches NAV_BASE for a matching NAVAID.
 	/// </summary>
-	private static (double waypointLat, double waypointLon)? FindNavaid(
+	private static (double waypointLat, double waypointLon, string foundIn)? FindNavaid(
 		NasrCsvDataCollection allNasrCsvData,
 		string waypointId)
 	{
@@ -138,14 +139,14 @@ internal static class FindWaypointCoordinates
 		if (navaid is null)
 			return null;
 
-		return (navaid.LatDecimal, navaid.LongDecimal);
+		return (navaid.LatDecimal, navaid.LongDecimal, "navaid");
 	}
 
 
 	/// <summary>
 	/// Searches APT_BASE for a matching airport using either ICAO ID or airport ID.
 	/// </summary>
-	private static (double waypointLat, double waypointLon)? FindAirport(
+	private static (double waypointLat, double waypointLon, string foundIn)? FindAirport(
 		NasrCsvDataCollection allNasrCsvData,
 		string waypointId)
 	{
@@ -164,6 +165,9 @@ internal static class FindWaypointCoordinates
 		if (airport is null)
 			return null;
 
-		return (airport.BaseLatDecimal, airport.BaseLongDecimal);
+		return (
+			airport.BaseLatDecimal,
+			airport.BaseLongDecimal,
+			"airport");
 	}
 }

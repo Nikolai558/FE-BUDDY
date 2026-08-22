@@ -5,4 +5,6 @@ This file contains the declaration of all the localizable strings.
 
   <String Id="DowngradeError" Value="A newer version of [ProductName] is already installed." />
 
+  <String Id="VersionPolicyBlockedError" Value="This [ProductName] version cannot replace what's installed. A stable release cannot be downgraded to an older stable release. If you're on a pre-release build, opt out to the latest stable release instead." />
+
 </WixLocalization>

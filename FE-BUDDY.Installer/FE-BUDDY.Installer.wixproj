@@ -7,11 +7,19 @@
     <InstallerVersion Condition="'$(InstallerVersion)' == ''">1.0.0</InstallerVersion>
     <InstallerPlatform>x64</InstallerPlatform>
 
-    <DefineConstants>InstallerVersion=$(InstallerVersion)</DefineConstants>
+    <!-- The real FE-BUDDY semantic version (may include a -alpha/-beta/-rc tag). Defaults to
+         InstallerVersion for local/Visual Studio builds; release builds override this with
+         /p:ProductSemVer=x.x.x[-prerelease.n]. See MSI-VERSION-NUMBERING.md. -->
+    <ProductSemVer Condition="'$(ProductSemVer)' == ''">$(InstallerVersion)</ProductSemVer>
+
+    <DefineConstants>InstallerVersion=$(InstallerVersion);ProductSemVer=$(ProductSemVer)</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
     <BindPath Include="$(MSBuildProjectDirectory)\..\publish">
       <BindName>PublishDir</BindName>
+    </BindPath>
+    <BindPath Include="$(MSBuildProjectDirectory)\..\FE-BUDDY.Installer.CustomActions\bin\$(Configuration)\net472">
+      <BindName>CustomActionsDir</BindName>
     </BindPath>
   </ItemGroup>
   <ItemGroup>
@@ -20,5 +28,8 @@
   <ItemGroup>
     <PackageReference Include="WixToolset.UI.wixext" Version="7.0.0" />
     <PackageReference Include="WixToolset.Util.wixext" Version="7.0.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\FE-BUDDY.Installer.CustomActions\FE-BUDDY.Installer.CustomActions.csproj" />
   </ItemGroup>
 </Project>

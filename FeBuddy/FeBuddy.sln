@@ -16,12 +16,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "TempResources", "TempResour
 		Developer_Notes.md = Developer_Notes.md
 	EndProjectSection
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "TODOs", "TODOs", "{BC9B5AA1-7915-48E8-9558-83B3B52C5078}"
-	ProjectSection(SolutionItems) = preProject
-		TODO_CODE_GET-AIRAC.md = TODO_CODE_GET-AIRAC.md
-		TODO_GUI.MD = TODO_GUI.MD
-	EndProjectSection
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FEBuddyTest", "FEBuddyTest\FEBuddyTest.csproj", "{7639C9A6-31B3-438A-A4D8-1F2229AD0CA4}"
 EndProject
 Global
@@ -96,9 +90,6 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
-	EndGlobalSection
-	GlobalSection(NestedProjects) = preSolution
-		{BC9B5AA1-7915-48E8-9558-83B3B52C5078} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {4E5D2FD7-8EA5-407C-9277-BB884463438C}

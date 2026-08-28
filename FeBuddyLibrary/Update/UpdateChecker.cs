@@ -77,6 +77,21 @@ namespace FeBuddyLibrary.Update
         }
 
         /// <summary>
+        /// Convenience wrapper for the Squirrel -> MSI migration trigger: returns the
+        /// newest release at or above <paramref name="minimumChannel"/> that has a .msi
+        /// asset, with NO comparison against any installed version. A Squirrel install
+        /// migrating to the MSI is often on the exact same version number as the latest
+        /// release (e.g. both 2.8.4), so "is it newer" - the rule CheckForUpdateAsync
+        /// applies - would wrongly return nothing. Here the question is only "what is the
+        /// current MSI release for this channel."
+        /// </summary>
+        public static async Task<UpdateCandidate> GetLatestForChannelAsync(ReleaseChannel minimumChannel)
+        {
+            var releases = await FetchReleasesAsync().ConfigureAwait(false);
+            return SelectLatestForChannel(releases, minimumChannel);
+        }
+
+        /// <summary>
         /// Pure selection logic for CheckForUpdateAsync, exposed separately so it
         /// can be tested against a hand-built release list.
         /// </summary>
@@ -156,6 +171,54 @@ namespace FeBuddyLibrary.Update
                 }
 
                 if (candidateVersion.Channel != ReleaseChannel.Stable)
+                {
+                    continue;
+                }
+
+                if (bestVersion != null && candidateVersion.ComparePrecedenceTo(bestVersion) <= 0)
+                {
+                    continue;
+                }
+
+                var msiAsset = FindMsiAsset(release);
+                if (msiAsset == null)
+                {
+                    continue;
+                }
+
+                bestVersion = candidateVersion;
+                best = ToCandidate(candidateVersion, release, msiAsset);
+            }
+
+            return best;
+        }
+
+        /// <summary>
+        /// Pure selection logic for GetLatestForChannelAsync, exposed separately so it
+        /// can be tested against a hand-built release list. Same shape as
+        /// SelectLatestStable, but keeps any release whose channel is >= minimumChannel
+        /// (not just exactly Stable) and never looks at an installed version.
+        /// </summary>
+        public static UpdateCandidate SelectLatestForChannel(
+            IEnumerable<GitHubRelease> releases,
+            ReleaseChannel minimumChannel)
+        {
+            UpdateCandidate best = null;
+            ProductVersion bestVersion = null;
+
+            foreach (var release in releases ?? Enumerable.Empty<GitHubRelease>())
+            {
+                if (release.Draft)
+                {
+                    continue;
+                }
+
+                if (!ProductVersion.TryParse(NormalizeTag(release.TagName), out var candidateVersion) || candidateVersion is null)
+                {
+                    continue;
+                }
+
+                if (candidateVersion.Channel < minimumChannel)
                 {
                     continue;
                 }

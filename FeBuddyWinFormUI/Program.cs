@@ -186,6 +186,43 @@ namespace FeBuddyWinFormUI
         }
 
         /// <summary>
+        /// Squirrel -> MSI migration, app side (see docs/SQUIRREL-TO-MSI-MIGRATION.md).
+        /// When this is the Squirrel-installed copy, offer to download and run the MSI.
+        /// Prompted on every launch until the user goes through with it. UpdateAvailableForm
+        /// does the download + elevated launch + process exit on Yes, so this only returns
+        /// when the user declined - the caller then falls through to the legacy Squirrel
+        /// update path unchanged.
+        /// </summary>
+        private static void OfferSquirrelToMsiMigration(string applicationVersion)
+        {
+            try
+            {
+                var channel = ReadUpdateChannelSetting();
+                var candidate = UpdateChecker.GetLatestForChannelAsync(channel).GetAwaiter().GetResult();
+
+                if (candidate == null)
+                {
+                    Logger.LogMessage("INFO", $"Squirrel->MSI: no MSI release available on the {channel} channel yet - skipping migration offer.");
+                    return;
+                }
+
+                Logger.LogMessage("INFO", $"Squirrel->MSI: offering migration from Squirrel {applicationVersion} to MSI {candidate.Version}.");
+
+                using var migrateForm = new UpdateAvailableForm(
+                    applicationVersion,
+                    candidate,
+                    headerText: "*** FE-BUDDY HAS A NEW INSTALLER ***",
+                    questionText: "FE-BUDDY now uses a standard Windows installer. Download and install it now?");
+                migrateForm.ShowDialog();
+            }
+            catch (Exception e)
+            {
+                // Non-fatal: log and fall through to the legacy Squirrel updater.
+                Logger.LogMessage("WARNING", "Squirrel->MSI: migration check failed - " + e.Message);
+            }
+        }
+
+        /// <summary>
         /// Checks for updates, asks the user if they want to update now, and then
         /// returns the current version.
         /// </summary>
@@ -198,8 +235,29 @@ namespace FeBuddyWinFormUI
                 // registry, written by the installer - GetApplicationVersion() only has the
                 // assembly's numeric-only version, which can't represent a prerelease tag.
                 var installedVersion = InstalledProduct.GetProductSemVer() ?? applicationVersion;
+
+                // If the old Squirrel install is still on this machine, now is the safe
+                // time to remove it: we're running the MSI copy from Program Files, not the
+                // Squirrel copy Update.exe is about to delete. Retried every launch until
+                // the Squirrel Update.exe is actually gone.
+                if (SquirrelInstall.LeftoverInstallExists())
+                {
+                    Logger.LogMessage("INFO", "Leftover Squirrel install detected - invoking its uninstaller.");
+                    if (!SquirrelInstall.TryUninstall(TimeSpan.FromSeconds(60)))
+                    {
+                        Logger.LogMessage("WARNING", "Squirrel uninstall did not complete - will retry on next launch.");
+                    }
+                }
+
                 CheckForMsiUpdate(installedVersion);
                 return installedVersion;
+            }
+
+            // Still running from a Squirrel install: offer to switch to the MSI before
+            // doing anything else. If the user accepts, the process exits inside this call.
+            if (SquirrelInstall.IsCurrentProcessSquirrelInstalled())
+            {
+                OfferSquirrelToMsiMigration(applicationVersion);
             }
 
             // By default (on install) AllowPreRelease is false. This setting will only change if the user

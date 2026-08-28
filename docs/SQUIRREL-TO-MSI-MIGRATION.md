@@ -86,37 +86,64 @@ already-deployed clients; whatever we do has to work within that exact
 
 ---
 
-## Making the manual fallback painless: MSI-side Squirrel cleanup
+## Making the manual fallback painless: Squirrel cleanup (app-side, not MSI-side)
 
 Once a user is past the grace window, the plan is that they just download
-and run the current MSI - **no manual uninstall step first**. For that to
-work cleanly, the MSI needs to detect a leftover Squirrel install and
-clean it up itself, likely as an early custom action (similar in shape to
-`EnforceVersionPolicy`, see [FE-BUDDY.Installer.CustomActions](../FE-BUDDY.Installer.CustomActions)).
+and run the current MSI - **no manual uninstall step first**. The leftover
+Squirrel install still needs removing, but that is done **by the app, not
+by an MSI custom action**. Rationale: this cleanup is a one-time,
+transitional concern; baking it into the MSI would leave dead migration
+code shipping in every installer indefinitely (and 3.0 drops all Squirrel
+awareness anyway). Keeping it in the 2.x app means it disappears naturally
+when 2.x is retired.
 
-Important constraint discovered while thinking this through: **don't
-hand-delete Squirrel's files.** A Squirrel install isn't just files under
-`%LocalAppData%\FE-BUDDY\` - it also registers itself in the per-user
-`Uninstall` registry key (so it shows up in Add/Remove Programs) and its
-shortcuts route through `Update.exe`, not the app directly. Deleting the
-folder by hand would leave a broken, orphaned "FE-BUDDY" entry in Add/
-Remove Programs and dangling shortcuts. The correct approach is to invoke
-Squirrel's own uninstaller - `%LocalAppData%\FE-BUDDY\Update.exe
---uninstall` - which already knows how to remove everything it created
-(the same mechanism the existing `OnAppUninstalled` handler in
-[Program.cs](../FeBuddyWinFormUI/Program.cs) relies on today) - and only then
-let the MSI proceed with its own install.
+The end-to-end flow (all in [Program.cs](../FeBuddyWinFormUI/Program.cs)
+`CheckForUpdates()`, using
+[`SquirrelInstall`](../FeBuddyLibrary/Update/SquirrelInstall.cs)):
 
-**Known limitation, not yet resolved:** Squirrel installs per-user; the
-MSI's cleanup custom action likely runs elevated (per-machine install).
-It needs to detect and clean up the Squirrel install belonging to
-whichever user is actually running the installer - fine in the normal
-single-user-on-their-own-machine case, but worth being aware this isn't
-automatically correct in a shared/multi-user-machine scenario.
+1. **2.8.3 -> 2.8.4** - Squirrel updates normally. No change.
+2. **2.8.4 running as the Squirrel copy** - `IsCurrentProcessSquirrelInstalled()`
+   is true (running from a subfolder of `%LocalAppData%\FE-BUDDY\` with
+   `Update.exe` alongside). The app offers, **on every launch until the
+   user goes through with it**, to download and run the latest MSI for
+   their update channel (`UpdateChecker.GetLatestForChannelAsync` ->
+   `UpdateAvailableForm`, which does the download + elevated launch +
+   process exit). Decline just falls through to the legacy Squirrel
+   updater, unchanged.
+3. **MSI installs** FE-BUDDY per-machine into Program Files.
+4. **The MSI copy runs** - `InstalledProduct.IsMsiInstalled()` is true.
+   If `SquirrelInstall.LeftoverInstallExists()` (i.e. `%LocalAppData%\FE-BUDDY\Update.exe`
+   still present), the app invokes `SquirrelInstall.TryUninstall()` ->
+   `Update.exe --uninstall`. **Safe now**, because the running process is
+   the Program Files copy, not the Squirrel copy `Update.exe` is about to
+   delete. Retried on every launch until `Update.exe` is actually gone; a
+   failed/timed-out attempt is logged, never fatal.
+
+**Why invoke `Update.exe --uninstall` rather than hand-delete:** a Squirrel
+install isn't just files under `%LocalAppData%\FE-BUDDY\` - it also
+registers a per-user `Uninstall` registry key (Add/Remove Programs entry)
+and its shortcuts route through `Update.exe`. Hand-deleting the folder
+leaves an orphaned Add/Remove Programs entry and dangling shortcuts.
+`Update.exe --uninstall` removes everything it created (the same mechanism
+the `OnAppUninstalled` handler already relies on).
+
+**Known limitations / things to verify in testing:**
+
+- **Multi-user machines:** `SquirrelInstall` only sees the *current*
+  user's `%LocalAppData%`. A Squirrel install belonging to a different
+  user on the same machine won't be detected or cleaned up by this. Fine
+  for the normal single-user case.
+- **Shortcut name collisions:** `Update.exe --uninstall` triggers
+  Squirrel's `OnAppUninstalled`, which calls
+  `RemoveShortcutForThisExe(StartMenuRoot | Desktop)`. If the MSI's own
+  shortcuts share the same name/location, the cleanup could remove the
+  freshly-created MSI shortcut. Worth confirming during testing whether
+  MSI shortcuts survive the cleanup pass (re-running the MSI, or an MSI
+  repair, would recreate them if not).
 
 ---
 
-## Open questions (need a decision before implementation)
+## Open questions (still need a decision)
 
 - **Grace window length** - how many releases (or how much time) after
   2.8.4 keep carrying the legacy Squirrel assets? Balance: longer window
@@ -130,10 +157,14 @@ automatically correct in a shared/multi-user-machine scenario.
   starts failing for real? This is a small, low-risk change to
   already-shipped-adjacent behavior (i.e. something that could ship in
   2.8.4 itself) worth deciding alongside the rest.
-- **The Squirrel-detection-and-cleanup custom action itself** isn't built
-  yet - needs its own design pass (exactly what marks "this is a Squirrel
-  install," exact `Update.exe --uninstall` invocation and error handling,
-  what happens if that uninstall fails partway).
-- **The 2.8.4 "detect I'm still Squirrel-installed, launch MSI" trigger**
-  on the app side isn't built yet either - needs to decide exactly when/
-  how it fires (on startup? one-time? does it ask the user first?).
+
+### Resolved
+
+- ~~Squirrel-detection-and-cleanup as an MSI custom action~~ - **rejected**
+  in favour of app-side cleanup (see the section above). Detection marker
+  is `Update.exe` under `%LocalAppData%\FE-BUDDY\`; invocation is
+  `Update.exe --uninstall` with a 60s wait, logged and non-fatal on
+  failure, retried next launch.
+- ~~The 2.8.4 "detect I'm still Squirrel-installed, launch MSI" trigger~~ -
+  **built.** Fires on startup, prompts every launch until done, asks the
+  user first (reuses `UpdateAvailableForm`).

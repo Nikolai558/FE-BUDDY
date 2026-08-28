@@ -123,6 +123,13 @@ namespace FeBuddyWinFormUI
             reportIssuesToolStripMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
             allowBetaMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
             newsToolStripMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
+            updateChannelMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
+        }
+
+        private void updateChannelMenuItem_Click(object sender, EventArgs e)
+        {
+            using var updateSettingsForm = new UpdateSettingsForm();
+            updateSettingsForm.ShowDialog(this);
         }
 
         private void UninstallMenuItem_Click(object sender, EventArgs e)

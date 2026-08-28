@@ -28,7 +28,13 @@ namespace FeBuddyLibrary.Update
     /// </summary>
     public static class UpdateChecker
     {
-        private const string ReleasesApiUrl = "https://api.github.com/repos/Nikolai558/FE-BUDDY/releases";
+        // Exposed (not private) because UpdateInstaller needs the same owner/repo to build
+        // the authenticated releases-assets API URL for its own unauthenticated-then-token
+        // fallback.
+        public const string RepoOwner = "Nikolai558";
+        public const string RepoName = "FE-BUDDY";
+
+        private const string ReleasesApiUrl = $"https://api.github.com/repos/{RepoOwner}/{RepoName}/releases";
 
         /// <summary>
         /// Checks for an update. Returns null if none is available (including if
@@ -183,16 +189,40 @@ namespace FeBuddyLibrary.Update
                 ReleaseName = release.Name,
                 ReleaseNotes = release.Body,
                 MsiDownloadUrl = msiAsset.BrowserDownloadUrl,
+                MsiAssetId = msiAsset.Id,
                 MsiFileName = msiAsset.Name,
                 MsiSizeBytes = msiAsset.Size,
             };
 
+        /// <summary>
+        /// Tries the releases list unauthenticated first (the normal, expected path for
+        /// FE-BUDDY's real public repo). Only if that fails, and only if
+        /// FEBUDDY_GITHUB_TOKEN is set, retries once with it attached - see GitHubAuth for
+        /// why this is a fallback rather than always-sent.
+        /// </summary>
         private static async Task<List<GitHubRelease>> FetchReleasesAsync()
+        {
+            try
+            {
+                return await FetchReleasesAsync(authToken: null).ConfigureAwait(false);
+            }
+            catch (HttpRequestException) when (GitHubAuth.GetOptionalToken() is { } token)
+            {
+                Logger.LogMessage("INFO", $"UpdateChecker: unauthenticated release check failed, retrying with {GitHubAuth.EnvironmentVariableName}.");
+                return await FetchReleasesAsync(authToken: token).ConfigureAwait(false);
+            }
+        }
+
+        private static async Task<List<GitHubRelease>> FetchReleasesAsync(string authToken)
         {
             using var request = new HttpRequestMessage(HttpMethod.Get, ReleasesApiUrl);
             // GitHub's API rejects requests with no User-Agent; Accept pins the response shape.
             request.Headers.UserAgent.Add(new ProductInfoHeaderValue("FE-BUDDY-Updater", "1.0"));
             request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github+json"));
+            if (authToken != null)
+            {
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", authToken);
+            }
 
             using var response = await SharedHttp.Client.SendAsync(request).ConfigureAwait(false);
             response.EnsureSuccessStatusCode();

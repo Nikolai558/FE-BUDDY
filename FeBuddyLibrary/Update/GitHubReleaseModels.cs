@@ -35,6 +35,9 @@ namespace FeBuddyLibrary.Update
 
     public class GitHubReleaseAsset
     {
+        [JsonProperty("id")]
+        public long Id { get; set; }
+
         [JsonProperty("name")]
         public string Name { get; set; }
 

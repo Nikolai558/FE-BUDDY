@@ -15,8 +15,16 @@ namespace FeBuddyLibrary.Update
         /// <summary>The GitHub release's body/notes (Markdown), for display to the user.</summary>
         public string ReleaseNotes { get; set; }
 
-        /// <summary>Direct download URL for the release's .msi asset.</summary>
+        /// <summary>Direct (unauthenticated-friendly) download URL for the release's .msi asset.</summary>
         public string MsiDownloadUrl { get; set; }
+
+        /// <summary>
+        /// The asset's numeric GitHub id. Only used as a fallback: if MsiDownloadUrl fails
+        /// (e.g. a private repo) and a token is available, UpdateInstaller re-requests the
+        /// asset via the authenticated releases-assets API endpoint, which is addressed by
+        /// id rather than by the plain download URL.
+        /// </summary>
+        public long MsiAssetId { get; set; }
 
         /// <summary>File name of the .msi asset, e.g. "FE-BUDDY-2.9.0-beta.1.msi".</summary>
         public string MsiFileName { get; set; }

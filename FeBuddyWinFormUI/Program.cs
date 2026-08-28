@@ -4,8 +4,10 @@ using System.Drawing;
 using System.IO;
 using System.Reflection;
 using System.Windows.Forms;
+using FeBuddy.Versioning;
 using FeBuddyLibrary.DataAccess;
 using FeBuddyLibrary.Helpers;
+using FeBuddyLibrary.Update;
 using FeBuddyWinFormUI.Properties;
 using Squirrel;
 
@@ -161,6 +163,48 @@ namespace FeBuddyWinFormUI
                 StringComparison.OrdinalIgnoreCase);
         }
 
+        private static string GetInstalledProductSemVer()
+        {
+            using var key = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(@"Software\FE-BUDDY");
+            return key?.GetValue("ProductSemVer") as string;
+        }
+
+        private static ReleaseChannel ReadUpdateChannelSetting()
+        {
+            var saved = Properties.Settings.Default.UpdateChannel;
+            return Enum.TryParse<ReleaseChannel>(saved, out var channel) ? channel : ReleaseChannel.Stable;
+        }
+
+        /// <summary>
+        /// MSI-path update check: uses UpdateChecker (real GitHub Releases + FeBuddy.Versioning)
+        /// rather than Squirrel's GithubUpdateManager - see the Squirrel-to-MSI migration plan
+        /// for why these are two separate paths. Failure is reported the same way the existing
+        /// Squirrel-path check below already does, for consistency.
+        /// </summary>
+        private static void CheckForMsiUpdate(string installedVersion)
+        {
+            try
+            {
+                var channel = ReadUpdateChannelSetting();
+                var candidate = UpdateChecker.CheckForUpdateAsync(installedVersion, channel).GetAwaiter().GetResult();
+
+                if (candidate == null)
+                {
+                    return;
+                }
+
+                Logger.LogMessage("INFO", $"Update available: CURRENT VERSION {installedVersion} / GITHUB VERSION {candidate.Version}");
+
+                using var updateForm = new UpdateAvailableForm(installedVersion, candidate);
+                updateForm.ShowDialog();
+            }
+            catch (Exception e)
+            {
+                Logger.LogMessage("WARNING", "Unable to check for updates: " + e.Message);
+                MessageBox.Show($"FE-BUDDY could not perform an update check due to either your internet connection or GitHub Server issues.\n\n" + e.ToString());
+            }
+        }
+
         /// <summary>
         /// Checks for updates, asks the user if they want to update now, and then
         /// returns the current version.
@@ -170,7 +214,12 @@ namespace FeBuddyWinFormUI
             var applicationVersion = GetApplicationVersion();
             if (IsRunningFromMsiInstall())
             {
-                return applicationVersion;
+                // The real installed semver (with any -alpha/-beta/-rc tag) lives in the
+                // registry, written by the installer - GetApplicationVersion() only has the
+                // assembly's numeric-only version, which can't represent a prerelease tag.
+                var installedVersion = GetInstalledProductSemVer() ?? applicationVersion;
+                CheckForMsiUpdate(installedVersion);
+                return installedVersion;
             }
 
             // By default (on install) AllowPreRelease is false. This setting will only change if the user

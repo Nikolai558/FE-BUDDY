@@ -4,7 +4,7 @@
 3. Update Changelog (in development branch)
 4. Make sure All code is pushed to GitHub to the development branch
 5. Create a Pull request Dev -> Releases
-6. Run the build.cmd and wait for it to finish
+6. Run `build.cmd` (in the repo root) and wait for it to finish
 7. Once Finished Edit the "RELEASES" FILE in the releases folder.
     * Remove everything except the current version Delta and Full
     * Save the file.

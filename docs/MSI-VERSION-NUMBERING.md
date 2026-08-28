@@ -45,17 +45,17 @@ path, which Windows Installer's own numeric-only version field simply cannot rep
 ## Where this lives in the repo
 
 - The internal counter is computed by
-  [`FE-BUDDY.Installer/Get-InstallerVersion.ps1`](FE-BUDDY.Installer/Get-InstallerVersion.ps1),
-  called from [`build.ps1`](build.ps1). **Nobody should hand-edit
+  [`FE-BUDDY.Installer/Get-InstallerVersion.ps1`](../FE-BUDDY.Installer/Get-InstallerVersion.ps1),
+  called from [`build.ps1`](../build.ps1). **Nobody should hand-edit
   `FE-BUDDY.Installer/installer-version-counter.json`** - the build script owns it
   entirely and advances it automatically on every build.
 - The real version is what's set in
-  [`FeBuddyWinFormUI/FeBuddyWinFormUI.csproj`](FeBuddyWinFormUI/FeBuddyWinFormUI.csproj)'s
+  [`FeBuddyWinFormUI/FeBuddyWinFormUI.csproj`](../FeBuddyWinFormUI/FeBuddyWinFormUI.csproj)'s
   `<Version>` - the single place anyone bumps a version number. Everything else (the
   internal MSI counter, the registry-stored install record, the version-policy check
   described below) is derived from that one value automatically.
 - The actual upgrade/downgrade rule enforced at install time (block stable → older
   stable; allow rolling back off a pre-release to the last stable) is implemented against
   the *real* version, not the internal counter - see
-  [`FeBuddy.Versioning/UpdatePolicy.cs`](FeBuddy.Versioning/UpdatePolicy.cs) and
-  [`FE-BUDDY.Installer.CustomActions/VersionPolicyActions.cs`](FE-BUDDY.Installer.CustomActions/VersionPolicyActions.cs).
+  [`FeBuddy.Versioning/UpdatePolicy.cs`](../FeBuddy.Versioning/UpdatePolicy.cs) and
+  [`FE-BUDDY.Installer.CustomActions/VersionPolicyActions.cs`](../FE-BUDDY.Installer.CustomActions/VersionPolicyActions.cs).

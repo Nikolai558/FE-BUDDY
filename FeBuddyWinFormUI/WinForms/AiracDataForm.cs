@@ -710,8 +710,8 @@ namespace FeBuddyWinFormUI
         private void RoadmapMenuItem_Click(object sender, EventArgs e)
         {
             Logger.LogMessage("DEBUG", "ROADMAP MENU ITEM CLICKED");
-            Process.Start(new ProcessStartInfo("https://github.com/Nikolai558/FE-BUDDY/blob/development/ROADMAP.md") { UseShellExecute = true });
-            //Process.Start("https://github.com/Nikolai558/FE-BUDDY/blob/development/ROADMAP.md");
+            Process.Start(new ProcessStartInfo("https://github.com/Nikolai558/FE-BUDDY/blob/development/docs/ROADMAP.md") { UseShellExecute = true });
+            //Process.Start("https://github.com/Nikolai558/FE-BUDDY/blob/development/docs/ROADMAP.md");
         }
 
         private void FAQMenuItem_Click(object sender, EventArgs e)
@@ -731,8 +731,8 @@ namespace FeBuddyWinFormUI
         private void CreditsMenuItem_Click(object sender, EventArgs e)
         {
             Logger.LogMessage("DEBUG", "CREDITS MENU ITEM CLICKED");
-            Process.Start(new ProcessStartInfo("https://github.com/Nikolai558/FE-BUDDY/blob/development/Credits.md") { UseShellExecute = true });
-            //Process.Start("https://github.com/Nikolai558/FE-BUDDY/blob/development/Credits.md");
+            Process.Start(new ProcessStartInfo("https://github.com/Nikolai558/FE-BUDDY/blob/development/docs/Credits.md") { UseShellExecute = true });
+            //Process.Start("https://github.com/Nikolai558/FE-BUDDY/blob/development/docs/Credits.md");
             // CreditsForm frm = new CreditsForm();
             // frm.ShowDialog();
         }

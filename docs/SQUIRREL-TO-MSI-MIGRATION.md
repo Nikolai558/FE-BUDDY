@@ -92,7 +92,7 @@ Once a user is past the grace window, the plan is that they just download
 and run the current MSI - **no manual uninstall step first**. For that to
 work cleanly, the MSI needs to detect a leftover Squirrel install and
 clean it up itself, likely as an early custom action (similar in shape to
-`EnforceVersionPolicy`, see [FE-BUDDY.Installer.CustomActions](FE-BUDDY.Installer.CustomActions)).
+`EnforceVersionPolicy`, see [FE-BUDDY.Installer.CustomActions](../FE-BUDDY.Installer.CustomActions)).
 
 Important constraint discovered while thinking this through: **don't
 hand-delete Squirrel's files.** A Squirrel install isn't just files under
@@ -104,7 +104,7 @@ Remove Programs and dangling shortcuts. The correct approach is to invoke
 Squirrel's own uninstaller - `%LocalAppData%\FE-BUDDY\Update.exe
 --uninstall` - which already knows how to remove everything it created
 (the same mechanism the existing `OnAppUninstalled` handler in
-[Program.cs](FeBuddyWinFormUI/Program.cs) relies on today) - and only then
+[Program.cs](../FeBuddyWinFormUI/Program.cs) relies on today) - and only then
 let the MSI proceed with its own install.
 
 **Known limitation, not yet resolved:** Squirrel installs per-user; the

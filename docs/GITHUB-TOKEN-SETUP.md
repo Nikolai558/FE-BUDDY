@@ -47,9 +47,9 @@ succeeding. That's also why the variable is named `FEBUDDY_GITHUB_TOKEN` specifi
 rather than a generic name like `GITHUB_TOKEN` that other tools commonly use - it avoids
 ever picking up a token that has nothing to do with FE-BUDDY.
 
-See [`FeBuddyLibrary/Update/GitHubAuth.cs`](FeBuddyLibrary/Update/GitHubAuth.cs),
-[`UpdateChecker.cs`](FeBuddyLibrary/Update/UpdateChecker.cs), and
-[`UpdateInstaller.cs`](FeBuddyLibrary/Update/UpdateInstaller.cs) for the actual
+See [`FeBuddyLibrary/Update/GitHubAuth.cs`](../FeBuddyLibrary/Update/GitHubAuth.cs),
+[`UpdateChecker.cs`](../FeBuddyLibrary/Update/UpdateChecker.cs), and
+[`UpdateInstaller.cs`](../FeBuddyLibrary/Update/UpdateInstaller.cs) for the actual
 implementation.
 
 ## Setting it up

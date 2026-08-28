@@ -9,7 +9,7 @@
 
     <!-- The real FE-BUDDY semantic version (may include a -alpha/-beta/-rc tag). Defaults to
          InstallerVersion for local/Visual Studio builds; release builds override this with
-         /p:ProductSemVer=x.x.x[-prerelease.n]. See MSI-VERSION-NUMBERING.md. -->
+         /p:ProductSemVer=x.x.x[-prerelease.n]. See docs/MSI-VERSION-NUMBERING.md. -->
     <ProductSemVer Condition="'$(ProductSemVer)' == ''">$(InstallerVersion)</ProductSemVer>
 
     <DefineConstants>InstallerVersion=$(InstallerVersion);ProductSemVer=$(ProductSemVer)</DefineConstants>

@@ -25,7 +25,7 @@
 ### FUNCTION
 Assists Virtual ARTCC Facility Engineers with their daily tasks.
 
-See for more information on future features. [ROADMAP](https://github.com/Nikolai558/FE-BUDDY/blob/development/ROADMAP.md)
+See for more information on future features. [ROADMAP](docs/ROADMAP.md)
 
 ---
 
@@ -43,3 +43,34 @@ See for more information on future features. [ROADMAP](https://github.com/Nikola
 - Windows OS (8.1 or newer)
 - CUrl (recommended)
 
+---
+
+## Documentation
+
+Project docs now live in the [`docs/`](docs) folder:
+
+| Document | What it covers |
+| --- | --- |
+| [ROADMAP](docs/ROADMAP.md) | Planned and in-progress features |
+| [Credits](docs/Credits.md) | Contributors and what they built |
+| [Security Policy](docs/SECURITY.md) | How to report a vulnerability |
+| [Versioning Policy](docs/VERSIONING.md) | Semantic-versioning rules the project follows |
+| [MSI Version Numbering](docs/MSI-VERSION-NUMBERING.md) | Why Windows Settings shows a different version number |
+| [Squirrel → MSI Migration](docs/SQUIRREL-TO-MSI-MIGRATION.md) | Plan for moving off the Squirrel auto-updater |
+| [Optional GitHub Token](docs/GITHUB-TOKEN-SETUP.md) | Setting `FEBUDDY_GITHUB_TOKEN` for the update checker (not required) |
+| [Publish / Release Steps](docs/PublishReleaseInstructions.md) | Maintainer checklist for cutting a release |
+
+The [CHANGELOG](ChangeLog.md) stays in the repo root.
+
+---
+
+## Scripts
+
+Standalone helper scripts live in the [`scripts/`](scripts) folder:
+
+| Script | Purpose |
+| --- | --- |
+| [uninstall.bat](scripts/uninstall.bat) | Manually remove a FE-BUDDY install (folders, shortcuts) |
+| [DEL_FEB_FLDRS.bat](scripts/DEL_FEB_FLDRS.bat) | Dev helper: delete `*FE-BUDDY_Output*` folders from the Desktop |
+
+The build entry points (`build.cmd` / `build.ps1`) stay in the repo root, since the build resolves every path relative to that location.

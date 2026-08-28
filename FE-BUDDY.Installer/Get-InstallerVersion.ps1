@@ -4,7 +4,7 @@
     advances the persisted release counter. Owned entirely by build.ps1 - nobody should
     hand-edit installer-version-counter.json or need to track this by hand.
 
-    See ..\MSI-VERSION-NUMBERING.md for the full explanation of why this exists.
+    See ..\docs\MSI-VERSION-NUMBERING.md for the full explanation of why this exists.
 
 .DESCRIPTION
     Windows Installer's ProductVersion is strictly numeric (major.minor.build, no
@@ -71,7 +71,7 @@ else {
     if ($nextMinor -gt 255) {
         throw ("Get-InstallerVersion: counter exhausted for major version $realMajor " +
                "(minor.build ran past 255.65535 - this should never realistically happen; " +
-               "see MSI-VERSION-NUMBERING.md).")
+               "see docs/MSI-VERSION-NUMBERING.md).")
     }
 
     $counter.counterMinor = $nextMinor

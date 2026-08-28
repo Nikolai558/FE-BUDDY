@@ -11,7 +11,7 @@
 
     <!--
       AllowDowngrades="yes": Package/@Version is a monotonic counter, not the real product
-      version (see MSI-VERSION-NUMBERING.md) - it carries no upgrade/downgrade meaning of its
+      version (see docs/MSI-VERSION-NUMBERING.md) - it carries no upgrade/downgrade meaning of its
       own, so WiX's stock "never downgrade" behavior can't be used here. The real rule (block
       stable -> older-stable; allow rolling back off a prerelease) is enforced below by
       EnforceVersionPolicy + the VersionPolicyBlocked LaunchCondition, using the real semantic

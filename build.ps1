@@ -66,7 +66,7 @@ Write-Output ""
 Write-Output "Building FE-BUDDY MSI..."
 
 # MSI's own ProductVersion can't hold a real semver string (e.g. "2.8.4-alpha.1") - see
-# MSI-VERSION-NUMBERING.md. Get-InstallerVersion.ps1 derives the disposable internal
+# docs/MSI-VERSION-NUMBERING.md. Get-InstallerVersion.ps1 derives the disposable internal
 # counter version; the real version ($ver) is passed through separately as ProductSemVer.
 $installerVersionCounterFile = "$PSScriptRoot\FE-BUDDY.Installer\installer-version-counter.json"
 $installerVersion = & "$PSScriptRoot\FE-BUDDY.Installer\Get-InstallerVersion.ps1" `

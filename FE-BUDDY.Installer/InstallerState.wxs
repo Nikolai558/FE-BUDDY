@@ -36,7 +36,7 @@
     <!--
       The real, full FE-BUDDY semantic version (e.g. "2.8.4-alpha.1") of whatever is
       currently installed - as opposed to Package/@Version, which is a monotonic counter
-      with no semantic meaning (see MSI-VERSION-NUMBERING.md). Read here before install so
+      with no semantic meaning (see docs/MSI-VERSION-NUMBERING.md). Read here before install so
       the version-policy custom action can decide whether this upgrade/downgrade is allowed;
       written below so the *next* install can read it back in turn.
     -->

@@ -55,7 +55,6 @@ namespace FeBuddyWinFormUI
             // stableRadioButton
             //
             this.stableRadioButton.AutoSize = true;
-            this.stableRadioButton.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.stableRadioButton.Font = new System.Drawing.Font("Segoe UI", 11F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.stableRadioButton.Location = new System.Drawing.Point(20, 105);
             this.stableRadioButton.Name = "stableRadioButton";
@@ -77,7 +76,6 @@ namespace FeBuddyWinFormUI
             // rcRadioButton
             //
             this.rcRadioButton.AutoSize = true;
-            this.rcRadioButton.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.rcRadioButton.Font = new System.Drawing.Font("Segoe UI", 11F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.rcRadioButton.Location = new System.Drawing.Point(20, 160);
             this.rcRadioButton.Name = "rcRadioButton";
@@ -99,7 +97,6 @@ namespace FeBuddyWinFormUI
             // betaRadioButton
             //
             this.betaRadioButton.AutoSize = true;
-            this.betaRadioButton.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.betaRadioButton.Font = new System.Drawing.Font("Segoe UI", 11F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.betaRadioButton.Location = new System.Drawing.Point(20, 215);
             this.betaRadioButton.Name = "betaRadioButton";
@@ -121,7 +118,6 @@ namespace FeBuddyWinFormUI
             // alphaRadioButton
             //
             this.alphaRadioButton.AutoSize = true;
-            this.alphaRadioButton.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.alphaRadioButton.Font = new System.Drawing.Font("Segoe UI", 11F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.alphaRadioButton.Location = new System.Drawing.Point(20, 270);
             this.alphaRadioButton.Name = "alphaRadioButton";

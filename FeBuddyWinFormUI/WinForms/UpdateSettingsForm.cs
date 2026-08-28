@@ -1,4 +1,5 @@
 using System;
+using System.Drawing;
 using System.Windows.Forms;
 using FeBuddy.Versioning;
 using FeBuddyLibrary.Helpers;
@@ -13,6 +14,12 @@ namespace FeBuddyWinFormUI
     /// </summary>
     public partial class UpdateSettingsForm : Form
     {
+        // The native radio glyph reads poorly against this form's near-black background,
+        // so the selected option is also highlighted by color - redundant, more reliable
+        // signal than the dot alone.
+        private static readonly Color SelectedColor = Color.FromArgb(255, 205, 110);
+        private static readonly Color UnselectedColor = Color.Gainsboro;
+
         /// <summary>The channel selected when the dialog was closed with Save.</summary>
         public ReleaseChannel SelectedChannel { get; private set; }
 
@@ -20,8 +27,25 @@ namespace FeBuddyWinFormUI
         {
             InitializeComponent();
 
+            foreach (var radio in AllChannelRadioButtons())
+            {
+                radio.CheckedChanged += (s, e) => UpdateSelectionHighlight();
+            }
+
             SelectedChannel = ReadSavedChannel();
             SelectRadioFor(SelectedChannel);
+            UpdateSelectionHighlight();
+        }
+
+        private RadioButton[] AllChannelRadioButtons() =>
+            new[] { stableRadioButton, rcRadioButton, betaRadioButton, alphaRadioButton };
+
+        private void UpdateSelectionHighlight()
+        {
+            foreach (var radio in AllChannelRadioButtons())
+            {
+                radio.ForeColor = radio.Checked ? SelectedColor : UnselectedColor;
+            }
         }
 
         private static ReleaseChannel ReadSavedChannel()

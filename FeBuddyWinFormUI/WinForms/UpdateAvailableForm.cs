@@ -18,12 +18,23 @@ namespace FeBuddyWinFormUI
     {
         private readonly UpdateCandidate _candidate;
 
-        public UpdateAvailableForm(string currentVersion, UpdateCandidate candidate)
+        /// <param name="headerText">
+        /// Defaults to the normal "update available" wording. The revert-to-stable action
+        /// passes its own wording instead - seeing "UPDATE AVAILABLE" while reverting to a
+        /// numerically older version reads as confusing/wrong even though it's correct.
+        /// </param>
+        public UpdateAvailableForm(
+            string currentVersion,
+            UpdateCandidate candidate,
+            string headerText = "*** UPDATE AVAILABLE ***",
+            string questionText = "Download and install this update now?")
         {
             InitializeComponent();
 
             _candidate = candidate;
 
+            headerLabel.Text = headerText;
+            questionLabel.Text = questionText;
             currentVersionLabel.Text = $"Your program version: {currentVersion}";
             newVersionLabel.Text = $"New version available: {candidate.Version}";
             releaseNotesLabel.Text = string.IsNullOrWhiteSpace(candidate.ReleaseNotes)

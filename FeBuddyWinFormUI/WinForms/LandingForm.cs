@@ -5,7 +5,9 @@ using System.Drawing.Drawing2D;
 using System.Drawing.Text;
 using System.IO;
 using System.Windows.Forms;
+using FeBuddy.Versioning;
 using FeBuddyLibrary.Helpers;
+using FeBuddyLibrary.Update;
 
 namespace FeBuddyWinFormUI
 {
@@ -124,12 +126,73 @@ namespace FeBuddyWinFormUI
             allowBetaMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
             newsToolStripMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
             updateChannelMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
+            revertToStableMenuItem.Font = new Font(_pfc.Families[0], 12, FontStyle.Regular);
         }
 
         private void updateChannelMenuItem_Click(object sender, EventArgs e)
         {
             using var updateSettingsForm = new UpdateSettingsForm();
             updateSettingsForm.ShowDialog(this);
+        }
+
+        private async void revertToStableMenuItem_Click(object sender, EventArgs e)
+        {
+            if (!InstalledProduct.IsMsiInstalled())
+            {
+                MessageBox.Show(
+                    "Reverting is only available when FE-BUDDY was installed via the MSI installer.",
+                    "Not Available",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+                return;
+            }
+
+            var installedVersion = InstalledProduct.GetProductSemVer() ?? _currentVersion;
+
+            try
+            {
+                var candidate = await UpdateChecker.GetLatestStableAsync(installedVersion);
+
+                if (candidate == null)
+                {
+                    MessageBox.Show(
+                        "No stable release could be found to revert to.",
+                        "Revert to Latest Stable",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Information);
+                    return;
+                }
+
+                if (FeBuddy.Versioning.ProductVersion.TryParse(installedVersion, out var installed)
+                    && FeBuddy.Versioning.ProductVersion.TryParse(candidate.Version, out var candidateVersion)
+                    && installed.ComparePrecedenceTo(candidateVersion) == 0)
+                {
+                    MessageBox.Show(
+                        "You're already on the latest stable version.",
+                        "Revert to Latest Stable",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Information);
+                    return;
+                }
+
+                Logger.LogMessage("INFO", $"Reverting to latest stable: CURRENT VERSION {installedVersion} / TARGET VERSION {candidate.Version}");
+
+                using var revertForm = new UpdateAvailableForm(
+                    installedVersion,
+                    candidate,
+                    headerText: "*** REVERT TO LATEST STABLE ***",
+                    questionText: "Download and install the latest stable release now?");
+                revertForm.ShowDialog(this);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogMessage("WARNING", "Unable to check for latest stable release: " + ex.Message);
+                MessageBox.Show(
+                    "FE-BUDDY could not check for the latest stable release due to either your internet connection or GitHub Server issues.\n\n" + ex,
+                    "Revert Failed",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+            }
         }
 
         private void UninstallMenuItem_Click(object sender, EventArgs e)

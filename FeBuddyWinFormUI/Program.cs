@@ -144,30 +144,10 @@ namespace FeBuddyWinFormUI
                            .ToString(3) ?? "dev";
         }
 
-        private static bool IsRunningFromMsiInstall()
-        {
-            using var key = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(@"Software\FE-BUDDY");
-
-            var installLocation = key?.GetValue("InstallLocation") as string;
-
-            if (string.IsNullOrWhiteSpace(installLocation))
-            {
-                return false;
-            }
-
-            var currentLocation = AppContext.BaseDirectory;
-
-            return string.Equals(
-                Path.GetFullPath(currentLocation).TrimEnd(Path.DirectorySeparatorChar),
-                Path.GetFullPath(installLocation).TrimEnd(Path.DirectorySeparatorChar),
-                StringComparison.OrdinalIgnoreCase);
-        }
-
-        private static string GetInstalledProductSemVer()
-        {
-            using var key = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(@"Software\FE-BUDDY");
-            return key?.GetValue("ProductSemVer") as string;
-        }
+        // IsRunningFromMsiInstall/GetInstalledProductSemVer moved to
+        // FeBuddyLibrary.Update.InstalledProduct - LandingForm's "Revert to Latest Stable"
+        // action needs the same facts, so they're no longer private to Program.cs.
+        private static bool IsRunningFromMsiInstall() => InstalledProduct.IsMsiInstalled();
 
         private static ReleaseChannel ReadUpdateChannelSetting()
         {
@@ -217,7 +197,7 @@ namespace FeBuddyWinFormUI
                 // The real installed semver (with any -alpha/-beta/-rc tag) lives in the
                 // registry, written by the installer - GetApplicationVersion() only has the
                 // assembly's numeric-only version, which can't represent a prerelease tag.
-                var installedVersion = GetInstalledProductSemVer() ?? applicationVersion;
+                var installedVersion = InstalledProduct.GetProductSemVer() ?? applicationVersion;
                 CheckForMsiUpdate(installedVersion);
                 return installedVersion;
             }

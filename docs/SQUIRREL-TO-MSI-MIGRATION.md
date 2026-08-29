@@ -62,8 +62,18 @@ already-deployed clients; whatever we do has to work within that exact
    installs that missed 2.8.4 can still find and apply it. Exact number of
    releases in the window is still TBD - see Open Questions.
 
+   **How the copy-forward happens:** the release workflow
+   (`.github/workflows/release.yml`, currently `.disabled` - see
+   [PublishReleaseInstructions.md](PublishReleaseInstructions.md)) reads a
+   repository variable `SQUIRREL_BRIDGE_TAG`, `gh release download`s the
+   `*.nupkg` / `RELEASES` / `FE-BUDDYSetup.exe` assets from the release it
+   names, and re-attaches them to each new draft. Set the variable to
+   `2.8.4` once that release exists.
+
 4. **After the grace window ends** - releases stop carrying any Squirrel
-   assets. Release notes for that first "clean" release state clearly:
+   assets. In practice this is just **unsetting the `SQUIRREL_BRIDGE_TAG`
+   variable** (the workflow then skips the download/re-attach step
+   entirely). Release notes for that first "clean" release state clearly:
    if you're running a version older than the last grace-window release,
    your app can no longer auto-update - download and run the latest MSI
    installer manually, once.

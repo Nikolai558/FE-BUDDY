@@ -137,6 +137,12 @@ backward-then-forward-then-backward in a way that should be blocked. Only
 stable-to-older-stable (`2.8.4 → 2.8.3`) is a true downgrade we want to
 prevent.
 
+The precedence and channel rules on this page are encoded in
+`FeBuddy.Versioning` (`ProductVersion`, `ReleaseChannel`) and the
+downgrade rule in `UpdatePolicy`, with unit tests in
+[`FeBuddy.Versioning.Tests`](../FeBuddy.Versioning.Tests). If you change a
+rule here, update those tests too.
+
 ---
 
 ## Quick reference

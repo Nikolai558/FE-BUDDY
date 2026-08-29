@@ -8,9 +8,11 @@
 ---
 
 ![GitHub release (latest by date)](https://img.shields.io/github/v/release/Nikolai558/FE-BUDDY?style=for-the-badge)
-![GitHub repo size](https://img.shields.io/github/repo-size/Nikolai558/FE-BUDDY?style=for-the-badge)
+![GitHub all releases](https://img.shields.io/github/downloads/Nikolai558/FE-BUDDY/total?style=for-the-badge&label=downloads)
 ![GitHub](https://img.shields.io/github/license/Nikolai558/FE-BUDDY?style=for-the-badge)
-![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/Nikolai558/FE-BUDDY/.github/workflows/codeql-analysis.yml?branch=development&style=for-the-badge)
+![CI](https://img.shields.io/github/actions/workflow/status/Nikolai558/FE-BUDDY/ci.yml?branch=development&style=for-the-badge&label=CI)
+![CodeQL](https://img.shields.io/github/actions/workflow/status/Nikolai558/FE-BUDDY/codeql-analysis.yml?branch=development&style=for-the-badge&label=CodeQL)
+![GitHub last commit](https://img.shields.io/github/last-commit/Nikolai558/FE-BUDDY/development?style=for-the-badge)
 
 ---
 

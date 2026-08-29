@@ -59,3 +59,6 @@ path, which Windows Installer's own numeric-only version field simply cannot rep
   the *real* version, not the internal counter - see
   [`FeBuddy.Versioning/UpdatePolicy.cs`](../FeBuddy.Versioning/UpdatePolicy.cs) and
   [`FE-BUDDY.Installer.CustomActions/VersionPolicyActions.cs`](../FE-BUDDY.Installer.CustomActions/VersionPolicyActions.cs).
+  Both the parsing/precedence in `ProductVersion` and the transition rule in
+  `UpdatePolicy` are covered by unit tests in
+  [`FeBuddy.Versioning.Tests`](../FeBuddy.Versioning.Tests) (run by the CI workflow).

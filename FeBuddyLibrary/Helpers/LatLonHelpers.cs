@@ -145,6 +145,22 @@ namespace FeBuddyLibrary.Helpers
         }
 
 
+        public static void AppendCoordinate(List<dynamic> coordinates, dynamic point)
+        {
+            if (coordinates.Count > 0 && SamePosition(coordinates[coordinates.Count - 1], point))
+            {
+                return;
+            }
+
+            coordinates.Add(point);
+        }
+
+        private static bool SamePosition(dynamic a, dynamic b)
+        {
+            return (double)a[0] == (double)b[0] && (double)a[1] == (double)b[1];
+        }
+
+
         /// <summary>
         /// Convert the Lat AND Lon from the FAA Data into a standard [N-S-E-W]000.00.00.000 format.
         /// </summary>

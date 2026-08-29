@@ -118,6 +118,15 @@ The end-to-end flow (all in [Program.cs](../FeBuddyWinFormUI/Program.cs)
    the Program Files copy, not the Squirrel copy `Update.exe` is about to
    delete. Retried on every launch until `Update.exe` is actually gone; a
    failed/timed-out attempt is logged, never fatal.
+5. **Shortcuts are put back** - `Update.exe --uninstall` removes shortcuts
+   by path, not by target, so it also deletes the "FE-BUDDY.lnk" the MSI
+   just created. Immediately after the uninstall,
+   [`MsiShortcutRepair.RecreateMissing()`](../FeBuddyLibrary/Update/MsiShortcutRepair.cs)
+   recreates a shortcut to the MSI executable in the per-user Start Menu /
+   Desktop location, but only where the install's saved preference flags
+   (`HKCU\Software\FE-BUDDY\StartMenuShortcut` / `DesktopShortcut`, from
+   `Shortcuts.wxs`) say there should be one and none currently exists in
+   either the per-user or all-users location.
 
 **Why invoke `Update.exe --uninstall` rather than hand-delete:** a Squirrel
 install isn't just files under `%LocalAppData%\FE-BUDDY\` - it also
@@ -133,13 +142,17 @@ the `OnAppUninstalled` handler already relies on).
   user's `%LocalAppData%`. A Squirrel install belonging to a different
   user on the same machine won't be detected or cleaned up by this. Fine
   for the normal single-user case.
-- **Shortcut name collisions:** `Update.exe --uninstall` triggers
-  Squirrel's `OnAppUninstalled`, which calls
-  `RemoveShortcutForThisExe(StartMenuRoot | Desktop)`. If the MSI's own
-  shortcuts share the same name/location, the cleanup could remove the
-  freshly-created MSI shortcut. Worth confirming during testing whether
-  MSI shortcuts survive the cleanup pass (re-running the MSI, or an MSI
-  repair, would recreate them if not).
+- **Shortcut recreation location:** step 5 always recreates in the
+  *per-user* Start Menu / Desktop folder (no elevation needed). If the MSI
+  originally placed its shortcut in the all-users location and Squirrel
+  deleted it from there, the replacement lands per-user instead - working,
+  but in a slightly different place than a fresh MSI install would put it.
+- **Log directory:** the log lives under `%LocalAppData%\FE-BUDDY\Logs`,
+  which `Update.exe --uninstall` deletes along with the rest of the tree.
+  `Logger.LogMessage` now tolerates the directory vanishing mid-session
+  (recreates + retries); it previously threw `DirectoryNotFoundException`
+  straight out of `Main`, which is what made the first migration test
+  uninstall Squirrel but never open the app.
 
 ---
 

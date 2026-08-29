@@ -53,7 +53,8 @@ namespace FeBuddyWinFormUI
             //
             this.questionLabel.AutoSize = true;
             this.questionLabel.Font = new System.Drawing.Font("Segoe UI", 13F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.questionLabel.Location = new System.Drawing.Point(60, 405);
+            this.questionLabel.Location = new System.Drawing.Point(60, 365);
+            this.questionLabel.MaximumSize = new System.Drawing.Size(500, 0);
             this.questionLabel.Name = "questionLabel";
             this.questionLabel.Size = new System.Drawing.Size(400, 25);
             this.questionLabel.TabIndex = 5;
@@ -67,7 +68,7 @@ namespace FeBuddyWinFormUI
             this.releaseNotesPanel.Controls.Add(this.releaseNotesLabel);
             this.releaseNotesPanel.Location = new System.Drawing.Point(20, 120);
             this.releaseNotesPanel.Name = "releaseNotesPanel";
-            this.releaseNotesPanel.Size = new System.Drawing.Size(560, 270);
+            this.releaseNotesPanel.Size = new System.Drawing.Size(560, 230);
             this.releaseNotesPanel.TabIndex = 4;
             //
             // releaseNotesLabel

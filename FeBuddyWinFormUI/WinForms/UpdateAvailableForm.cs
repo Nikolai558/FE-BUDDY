@@ -23,11 +23,19 @@ namespace FeBuddyWinFormUI
         /// passes its own wording instead - seeing "UPDATE AVAILABLE" while reverting to a
         /// numerically older version reads as confusing/wrong even though it's correct.
         /// </param>
+        /// <param name="currentVersionText">
+        /// Overrides the "Your program version: X" line. The Squirrel->MSI migration passes
+        /// its own wording here - a raw version number would be misleading when what's
+        /// actually changing is the install mechanism, not (necessarily) the version.
+        /// </param>
+        /// <param name="newVersionText">Overrides the "New version available: X" line, for the same reason.</param>
         public UpdateAvailableForm(
             string currentVersion,
             UpdateCandidate candidate,
             string headerText = "*** UPDATE AVAILABLE ***",
-            string questionText = "Download and install this update now?")
+            string questionText = "Download and install this update now?",
+            string currentVersionText = null,
+            string newVersionText = null)
         {
             InitializeComponent();
 
@@ -35,8 +43,8 @@ namespace FeBuddyWinFormUI
 
             headerLabel.Text = headerText;
             questionLabel.Text = questionText;
-            currentVersionLabel.Text = $"Your program version: {currentVersion}";
-            newVersionLabel.Text = $"New version available: {candidate.Version}";
+            currentVersionLabel.Text = currentVersionText ?? $"Your program version: {currentVersion}";
+            newVersionLabel.Text = newVersionText ?? $"New version available: {candidate.Version}";
             releaseNotesLabel.Text = string.IsNullOrWhiteSpace(candidate.ReleaseNotes)
                 ? "(No release notes provided.)"
                 : candidate.ReleaseNotes;

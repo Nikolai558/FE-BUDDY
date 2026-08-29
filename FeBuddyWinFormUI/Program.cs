@@ -46,7 +46,19 @@ namespace FeBuddyWinFormUI
             // CS: Note, this GitHub limit is based on IP, so is shared with every process at a
             // household or organisation. A read-only github token should be generated to remove
             // this limit.
-            var version = CheckForUpdates();
+            string version;
+            try
+            {
+                version = CheckForUpdates();
+            }
+            catch (Exception ex)
+            {
+                // The update/migration path must never be able to stop the app from
+                // starting. Anything unhandled here gets logged and swallowed so we still
+                // fall through to launching the UI with a best-effort version string.
+                Logger.LogMessage("ERROR", "CheckForUpdates threw and was suppressed: " + ex);
+                version = GetApplicationVersion();
+            }
 
             //LandingForm landingForm = new LandingForm(version);
             //landingForm.Show();
@@ -156,6 +168,29 @@ namespace FeBuddyWinFormUI
         }
 
         /// <summary>
+        /// Builds a user-facing explanation for a failed GitHub release/update check.
+        /// When FEBUDDY_GITHUB_TOKEN is set, the check will already have retried with it
+        /// (see GitHubAuth / UpdateChecker) - so a failure at that point usually points at
+        /// the token itself (missing scope, no access to a private release repo, expired)
+        /// rather than a plain network blip, and the message says so. Without a token, it
+        /// steers a private-repo tester toward setting one.
+        /// </summary>
+        private static string DescribeUpdateCheckFailure(Exception e)
+        {
+            var lead = GitHubAuth.GetOptionalToken() != null
+                ? "FE-BUDDY tried to reach GitHub - including a retry using your "
+                  + $"{GitHubAuth.EnvironmentVariableName} environment variable - and it still failed.\n\n"
+                  + "If FE-BUDDY is pointed at a private repo, check that the token is valid and has "
+                  + "access to it. Otherwise this is most likely a temporary internet or GitHub outage."
+                : "FE-BUDDY could not reach GitHub to check for updates - most likely a temporary "
+                  + "internet or GitHub outage.\n\n"
+                  + $"If FE-BUDDY is being tested against a private repo, set the {GitHubAuth.EnvironmentVariableName} "
+                  + "environment variable to a token that can access it.";
+
+            return lead + "\n\n" + e.Message;
+        }
+
+        /// <summary>
         /// MSI-path update check: uses UpdateChecker (real GitHub Releases + FeBuddy.Versioning)
         /// rather than Squirrel's GithubUpdateManager - see the Squirrel-to-MSI migration plan
         /// for why these are two separate paths. Failure is reported the same way the existing
@@ -181,7 +216,11 @@ namespace FeBuddyWinFormUI
             catch (Exception e)
             {
                 Logger.LogMessage("WARNING", "Unable to check for updates: " + e.Message);
-                MessageBox.Show($"FE-BUDDY could not perform an update check due to either your internet connection or GitHub Server issues.\n\n" + e.ToString());
+                MessageBox.Show(
+                    DescribeUpdateCheckFailure(e),
+                    "Update Check Failed",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
             }
         }
 
@@ -212,13 +251,22 @@ namespace FeBuddyWinFormUI
                     applicationVersion,
                     candidate,
                     headerText: "*** FE-BUDDY HAS A NEW INSTALLER ***",
-                    questionText: "FE-BUDDY now uses a standard Windows installer. Download and install it now?");
+                    questionText: "Download and install it now?",
+                    currentVersionText: "Installed via the old per-user auto-updater",
+                    newVersionText: $"Windows Installer package  •  v{candidate.Version}");
                 migrateForm.ShowDialog();
             }
             catch (Exception e)
             {
-                // Non-fatal: log and fall through to the legacy Squirrel updater.
+                // Non-fatal for the app - but not silent: the user asked to be told when a
+                // token was tried and still didn't work. After this we still fall through
+                // to the legacy Squirrel updater.
                 Logger.LogMessage("WARNING", "Squirrel->MSI: migration check failed - " + e.Message);
+                MessageBox.Show(
+                    "FE-BUDDY couldn't check for its new installer.\n\n" + DescribeUpdateCheckFailure(e),
+                    "Installer Check Failed",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
             }
         }
 
@@ -247,6 +295,13 @@ namespace FeBuddyWinFormUI
                     {
                         Logger.LogMessage("WARNING", "Squirrel uninstall did not complete - will retry on next launch.");
                     }
+
+                    // Squirrel's uninstaller deletes shortcuts by path, so it takes the
+                    // MSI's own Start Menu / Desktop shortcuts with it. Put back any that
+                    // the install's saved preferences say should exist and are now gone.
+                    // Run this even on a partial uninstall - it can still have removed the
+                    // shortcuts without removing the files.
+                    MsiShortcutRepair.RecreateMissing();
                 }
 
                 CheckForMsiUpdate(installedVersion);

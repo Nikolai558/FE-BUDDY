@@ -12,9 +12,33 @@ namespace FeBuddyLibrary.Helpers
 
         public static void LogMessage(string level, string message)
         {
-            string output = $"{DateTime.UtcNow:HH:mm:ss.fff} - {level} - {message}";
+            string output = $"{DateTime.UtcNow:HH:mm:ss.fff} - {level} - {message}\n";
 
-            File.AppendAllText(_logFilePath, output += "\n");
+            try
+            {
+                File.AppendAllText(_logFilePath, output);
+            }
+            catch (DirectoryNotFoundException)
+            {
+                // The log directory can disappear mid-session: it lives under
+                // %LocalAppData%\FE-BUDDY\, and Squirrel's uninstaller wipes that whole
+                // tree during the Squirrel->MSI migration (see FeBuddyLibrary.Update.
+                // SquirrelInstall). Recreate it and retry once - a failed log write must
+                // never take the app down.
+                try
+                {
+                    Directory.CreateDirectory(_logDirectory);
+                    File.AppendAllText(_logFilePath, output);
+                }
+                catch
+                {
+                    // Give up on this one line rather than throwing into the caller.
+                }
+            }
+            catch
+            {
+                // Logging is best-effort; never let it propagate.
+            }
         }
 
         public static void CreateLogFile()

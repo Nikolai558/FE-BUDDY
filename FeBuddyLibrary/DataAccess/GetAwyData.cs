@@ -163,11 +163,11 @@ namespace FeBuddyLibrary.DataAccess
 
                 if (crossesAM)
                 {
-                    currentLineFeature.geometry.coordinates.Add(coords[1]);
+                    LatLonHelpers.AppendCoordinate(currentLineFeature.geometry.coordinates, coords[1]);
                     features.Add(currentLineFeature);
                     currentLineFeature = new Feature() { type = "Feature", geometry = new Geometry() { type = "LineString", coordinates = new List<dynamic>() } };
-                    currentLineFeature.geometry.coordinates.Add(coords[2]);
-                    currentLineFeature.geometry.coordinates.Add(coords[3]);
+                    LatLonHelpers.AppendCoordinate(currentLineFeature.geometry.coordinates, coords[2]);
+                    LatLonHelpers.AppendCoordinate(currentLineFeature.geometry.coordinates, coords[3]);
                 }
                 else
                 {

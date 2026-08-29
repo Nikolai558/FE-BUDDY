@@ -97,7 +97,7 @@ namespace FeBuddyLibrary.DataAccess
 
                     if (crossesAM)
                     {
-                        feature.geometry.coordinates.Add(coords[1]);
+                        LatLonHelpers.AppendCoordinate(feature.geometry.coordinates, coords[1]);
 
                         if (isHigh)
                         {
@@ -109,8 +109,8 @@ namespace FeBuddyLibrary.DataAccess
                         }
 
                         feature = new Feature() { type = "Feature", geometry = new Geometry() { type = "LineString", coordinates = new List<dynamic>() } };
-                        feature.geometry.coordinates.Add(coords[2]);
-                        feature.geometry.coordinates.Add(coords[3]);
+                        LatLonHelpers.AppendCoordinate(feature.geometry.coordinates, coords[2]);
+                        LatLonHelpers.AppendCoordinate(feature.geometry.coordinates, coords[3]);
                     }
                     else
                     {

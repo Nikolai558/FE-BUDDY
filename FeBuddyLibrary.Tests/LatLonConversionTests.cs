@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using FeBuddyLibrary.Helpers;
 using Xunit;
 
@@ -96,6 +98,70 @@ namespace FeBuddyLibrary.Tests
             var result = LatLonHelpers.CorrectLatLon("E075.30.00.000", Lat: false, ConvertEast: true);
 
             Assert.StartsWith("W", result);
+        }
+
+        private static List<double> Position(double lon, double lat) => new() { lon, lat };
+
+        [Fact]
+        public void CheckAMCrossing_EndpointExactlyOnAntimeridian_ProducesADuplicateSeamPoint()
+        {
+            // start point is exactly on the antimeridian, end point is on the other side.
+            var coords = LatLonHelpers.CheckAMCrossing(11.708889, -180.0, 11.5, 178.0);
+
+            Assert.Equal(4, coords.Count); // treated as an AM crossing -> 4-point split
+            var start = (List<double>)coords[0];
+            var seam = (List<double>)coords[1];
+            Assert.Equal(start[0], seam[0]);
+            Assert.Equal(start[1], seam[1]); // the seam landed right on top of the start -> duplicate
+        }
+
+        [Fact]
+        public void AppendCoordinate_SkipsPointEqualToLast()
+        {
+            var line = new List<dynamic> { Position(-180.0, 11.708889) };
+
+            LatLonHelpers.AppendCoordinate(line, Position(-180.0, 11.708889));
+
+            Assert.Single(line);
+        }
+
+        [Fact]
+        public void AppendCoordinate_AddsDistinctPoint()
+        {
+            var line = new List<dynamic> { Position(-180.0, 11.708889) };
+
+            LatLonHelpers.AppendCoordinate(line, Position(-179.5, 11.7));
+
+            Assert.Equal(2, line.Count);
+        }
+
+        [Fact]
+        public void AppendCoordinate_AddsToEmptyList()
+        {
+            var line = new List<dynamic>();
+
+            LatLonHelpers.AppendCoordinate(line, Position(-180.0, 11.708889));
+
+            Assert.Single(line);
+        }
+
+        [Fact]
+        public void AmCrossingAtExactAntimeridian_DoesNotEmitConsecutiveDuplicateVertices()
+        {
+            // Mirrors GetAwyData.AddLineFeatures: a running LineString whose last point is
+            // exactly on the antimeridian, then the next segment "crosses" it.
+            var line = new List<dynamic> { Position(-180.0, 11.708889) };
+            var coords = LatLonHelpers.CheckAMCrossing(
+                (double)line.Last()[1], (double)line.Last()[0], 11.5, 178.0);
+
+            LatLonHelpers.AppendCoordinate(line, coords[1]);
+
+            for (int i = 1; i < line.Count; i++)
+            {
+                bool sameAsPrev = (double)line[i][0] == (double)line[i - 1][0]
+                               && (double)line[i][1] == (double)line[i - 1][1];
+                Assert.False(sameAsPrev, $"consecutive duplicate vertex at index {i}");
+            }
         }
     }
 }

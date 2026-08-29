@@ -18,7 +18,7 @@ namespace FeBuddyLibrary.Models
 
         public long BytesReceived { get; set; }
 
-        /// <summary>Null when the server didn't send Content-Length (or the file is fetched via curl).</summary>
+        /// <summary>Null when the server didn't send Content-Length.</summary>
         public long? TotalBytes { get; set; }
 
         /// <summary>Percent of the current file, or null when its size isn't known.</summary>

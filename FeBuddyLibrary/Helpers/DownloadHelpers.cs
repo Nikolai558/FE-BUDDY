@@ -43,8 +43,7 @@ namespace FeBuddyLibrary.Helpers
 
         /// <param name="progress">
         /// Optional per-file download progress for the AIRAC "Downloading FAA Data" step.
-        /// Files fetched via curl (telephony/meta/NWS when curl is present) and cached files
-        /// in DEV mode report as a single step rather than byte-by-byte.
+        /// Cached files in DEV mode report as a single step rather than byte-by-byte.
         /// </param>
         public static void DownloadAllFiles(string effectiveDate, string airacCycle, bool getMetaFile = true, IProgress<AiracDownloadProgress> progress = null)
         {
@@ -145,32 +144,7 @@ namespace FeBuddyLibrary.Helpers
                         Logger.LogMessage("INFO", $"ATTEMPTING TO DOWNLOAD: {fileName}");
                         ReportBytes(0, null);
 
-                        if (GlobalConfig.hasCurl)
-                        {
-                            if (fileName == $"{effectiveDate}_NWS-WX-STATIONS.xml")
-                            {
-                                BatchFileHelpers.CreateCurlBatchFile("NWS-WX-STATIONS.bat", "https://w1.weather.gov/xml/current_obs/index.xml", fileName);
-                                BatchFileHelpers.ExecuteCurlBatchFile("NWS-WX-STATIONS.bat");
-                            }
-                            else if (fileName == $"{airacCycle}_TELEPHONY.html")
-                            {
-                                BatchFileHelpers.CreateCurlBatchFile("TELEPHONY.bat", "https://www.faa.gov/air_traffic/publications/atpubs/cnt_html/chap3_section_2.html", fileName);
-                                BatchFileHelpers.ExecuteCurlBatchFile("TELEPHONY.bat");
-                            }
-                            else if (fileName == $"{airacCycle}_FAA_Meta.xml")
-                            {
-                                BatchFileHelpers.CreateCurlBatchFile("FAA_Meta.bat", $"https://aeronav.faa.gov/d-tpp/{airacCycle}/xml_data/d-tpp_Metafile.xml", fileName);
-                                BatchFileHelpers.ExecuteCurlBatchFile("FAA_Meta.bat");
-                            }
-                            else
-                            {
-                                DownloadFile(allURLs[fileName], $"{GlobalConfig.tempPath}\\{fileName}", ReportBytes);
-                            }
-                        }
-                        else
-                        {
-                            DownloadFile(allURLs[fileName], $"{GlobalConfig.tempPath}\\{fileName}", ReportBytes);
-                        }
+                        DownloadFile(allURLs[fileName], $"{GlobalConfig.tempPath}\\{fileName}", ReportBytes);
                         Logger.LogMessage("INFO", $"DOWNLOAD SUCCESSFUL: {fileName}");
                         ReportBytes(1, 1);
 

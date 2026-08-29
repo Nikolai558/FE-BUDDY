@@ -1,0 +1,39 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Unit tests for the parts of FeBuddyLibrary that carry real correctness risk and are
+    pure enough to test without the network, the registry, or a running MSI:
+      * FeBuddyLibrary.Update.UpdateChecker - the release-selection logic that decides
+        whether a user is offered an update / downgrade / channel switch.
+      * FeBuddyLibrary.Helpers.LatLonHelpers - the coordinate conversion math that
+        produces FE-BUDDY's actual SCT / GeoJSON / DXF output.
+
+    Separate from FeBuddy.Versioning.Tests because FeBuddyLibrary targets
+    net10.0-windows / WinForms, which that clean netstandard-consuming project does not.
+  -->
+
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" Version="6.0.4" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\FeBuddyLibrary\FeBuddyLibrary.csproj" />
+    <ProjectReference Include="..\FeBuddy.Versioning\FeBuddy.Versioning.csproj" />
+  </ItemGroup>
+
+</Project>

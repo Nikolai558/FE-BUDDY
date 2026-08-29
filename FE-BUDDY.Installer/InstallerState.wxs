@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+  <Fragment>
+
+    <Property Id="INSTALLFOLDER">
+      <RegistrySearch Id="FindExistingInstallLocation"
+                      Root="HKLM"
+                      Key="Software\FE-BUDDY"
+                      Name="InstallLocation"
+                      Type="raw" />
+    </Property>
+
+    <Property Id="CREATE_STARTMENU_SHORTCUT"
+          Value="1" />
+
+    <Property Id="CREATE_DESKTOP_SHORTCUT"
+              Value="1" />
+
+    <Property Id="SAVED_STARTMENU_SHORTCUT">
+      <RegistrySearch Id="FindSavedStartMenuShortcutPreference"
+                      Root="HKLM"
+                      Key="Software\FE-BUDDY"
+                      Name="StartMenuShortcut"
+                      Type="raw" />
+    </Property>
+
+    <Property Id="SAVED_DESKTOP_SHORTCUT">
+      <RegistrySearch Id="FindSavedDesktopShortcutPreference"
+                      Root="HKLM"
+                      Key="Software\FE-BUDDY"
+                      Name="DesktopShortcut"
+                      Type="raw" />
+    </Property>
+
+    <!--
+      The real, full FE-BUDDY semantic version (e.g. "2.8.4-alpha.1") of whatever is
+      currently installed - as opposed to Package/@Version, which is a monotonic counter
+      with no semantic meaning (see docs/MSI-VERSION-NUMBERING.md). Read here before install so
+      the version-policy custom action can decide whether this upgrade/downgrade is allowed;
+      written below so the *next* install can read it back in turn.
+    -->
+    <Property Id="INSTALLEDPRODUCTSEMVER">
+      <RegistrySearch Id="FindInstalledProductSemVer"
+                      Root="HKLM"
+                      Key="Software\FE-BUDDY"
+                      Name="ProductSemVer"
+                      Type="raw" />
+    </Property>
+
+    <StandardDirectory Id="ProgramFiles6432Folder">
+      <Component Id="InstallerStateComponent"
+                 Directory="INSTALLFOLDER">
+
+        <RegistryValue Root="HKLM"
+                       Key="Software\FE-BUDDY"
+                       Name="InstallLocation"
+                       Type="string"
+                       Value="[INSTALLFOLDER]"
+                       KeyPath="yes" />
+
+        <RegistryValue Root="HKLM"
+               Key="Software\FE-BUDDY"
+               Name="StartMenuShortcut"
+               Type="string"
+               Value="[SAVED_STARTMENU_SHORTCUT]" />
+
+        <RegistryValue Root="HKLM"
+                       Key="Software\FE-BUDDY"
+                       Name="DesktopShortcut"
+                       Type="string"
+                       Value="[SAVED_DESKTOP_SHORTCUT]" />
+
+        <RegistryValue Root="HKLM"
+                       Key="Software\FE-BUDDY"
+                       Name="ProductSemVer"
+                       Type="string"
+                       Value="[PRODUCTSEMVER]" />
+
+        <!--
+          This install's own ProductCode, so the in-app "Uninstall" menu item can hand it
+          to "msiexec /x" (see FeBuddyLibrary\Update\AppUninstaller.cs). Removed with the
+          component on uninstall, and rewritten by each install/major upgrade.
+        -->
+        <RegistryValue Root="HKLM"
+                       Key="Software\FE-BUDDY"
+                       Name="ProductCode"
+                       Type="string"
+                       Value="[ProductCode]" />
+
+      </Component>
+    </StandardDirectory>
+
+  </Fragment>
+</Wix>

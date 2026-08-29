@@ -1,0 +1,81 @@
+﻿<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
+
+  <Package Id="com.febuddy.FE_BUDDY"
+           Name="FE-BUDDY"
+           Manufacturer="FE-BUDDY"
+           UpgradeCode="48F80EB0-2BA6-45F3-A0B5-96E9A05CF2B0"
+           Version="$(InstallerVersion)">
+
+    <MediaTemplate EmbedCab="yes"/>
+
+    <!--
+      AllowDowngrades="yes": Package/@Version is a monotonic counter, not the real product
+      version (see docs/MSI-VERSION-NUMBERING.md) - it carries no upgrade/downgrade meaning of its
+      own, so WiX's stock "never downgrade" behavior can't be used here. The real rule (block
+      stable -> older-stable; allow rolling back off a prerelease) is enforced below by
+      EnforceVersionPolicy + the VersionPolicyBlocked LaunchCondition, using the real semantic
+      version - not this counter.
+    -->
+    <MajorUpgrade AllowDowngrades="yes" />
+
+    <!--
+      The real, full FE-BUDDY semantic version this specific MSI installs (e.g.
+      "2.8.4-alpha.1"), supplied by build.ps1 at build time. Kept separate from
+      Package/@Version because MSI's ProductVersion cannot hold a pre-release tag.
+    -->
+    <Property Id="PRODUCTSEMVER" Value="$(ProductSemVer)" />
+    <Property Id="VERSIONPOLICY_BLOCKED" Value="0" />
+
+
+    <Icon Id="FE_BUDDY.ico" SourceFile="..\FE_BUDDY_icon.ico" />
+    <Property Id="ARPPRODUCTICON" Value="FE_BUDDY.ico" />
+
+    <Binary Id="VersionPolicyCA" SourceFile="!(bindpath.CustomActionsDir)\FE-BUDDY.Installer.CustomActions.CA.dll" />
+    <CustomAction Id="EnforceVersionPolicy"
+                  BinaryRef="VersionPolicyCA"
+                  DllEntry="EnforceVersionPolicy"
+                  Execute="immediate"
+                  Return="check" />
+
+    <InstallUISequence>
+      <Custom Action="EnforceVersionPolicy" After="AppSearch" />
+    </InstallUISequence>
+    <InstallExecuteSequence>
+      <Custom Action="EnforceVersionPolicy" After="AppSearch" />
+    </InstallExecuteSequence>
+
+    <Launch Condition="VERSIONPOLICY_BLOCKED = &quot;0&quot;"
+            Message="!(loc.VersionPolicyBlockedError)" />
+
+    <CustomAction Id="LaunchFEBUDDY"
+                  Directory="INSTALLFOLDER"
+                  ExeCommand="&quot;[INSTALLFOLDER]FE-BUDDY.exe&quot;"
+                  Execute="immediate"
+                  Impersonate="yes"
+                  Return="asyncNoWait" />
+
+
+    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT"
+              Value="Launch FE-BUDDY" />
+    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOX"
+              Value="1" />
+
+    <WixVariable Id="WixUILicenseRtf"
+             Value="LICENSE.rtf" />
+
+    <ui:WixUI
+      Id="FE_BUDDY_InstallDir"
+      InstallDirectory="INSTALLFOLDER" />
+
+    <Feature Id="Main">
+      <ComponentGroupRef Id="ApplicationFiles" />
+      <ComponentRef Id="StartMenuShortcutComponent" />
+      <ComponentRef Id="DesktopShortcutComponent" />
+      <ComponentRef Id="InstallerStateComponent" />
+      <ComponentRef Id="LocalAppDataCleanupComponent" />
+      <ComponentRef Id="TempCleanupComponent" />
+    </Feature>
+
+  </Package>
+</Wix>

@@ -1,6 +1,37 @@
 # CHANGELOG
 
 ---
+- ## Version 2.9.0
+  - FE-BUDDY now installs with a standard Windows Installer (MSI) instead of Squirrel.
+    - New install screens, GPLv3 license page, and FE-BUDDY now launches automatically after installing.
+    - Your settings and preferences carry over when you install or update.
+    - Uninstalling now fully removes FE-BUDDY, including leftover data in AppData and Temp folders.
+  - Reworked the in-app update experience.
+    - New "Update Available" screen shows download progress while it updates.
+    - New "Update Settings" screen.
+    - You can now choose an update channel: Stable (default) or Pre-release.
+    - Pre-release users can use "Revert to Latest Stable" to move back to a stable version.
+  - AIRAC "Get Data" now shows a progress bar while downloading FAA data.
+  - The version number is always shown in the title bar. Running a non-installed build now shows "- DEV".
+  - Bug #166 - Wrong coordinates / broken GeoJSON on non-US Windows region settings.
+    - On PCs that use a comma as the decimal separator, coordinate conversions produced
+      incorrect values and invalid GeoJSON. FE-BUDDY now always uses "." internally, so
+      output is correct regardless of your Windows region.
+  - Bug #182 - cURL is no longer required. All downloads now use FE-BUDDY's built-in downloader.
+  - Bug #152 - The GeoJSON conversion log now lists combined objects and their differences.
+  - Bug #155 - CRC style values are corrected to their proper spelling, and unknown values
+    are now flagged with a WARNING in the log instead of passing through silently.
+  - Bug #134 - Cleaned up the log file; removed messages that were being written from unused code.
+  - Bug #191 - Clearer message if a settings backup fails during an update.
+  - Bug #137 - Fix duplicate Coordinate at antimeridian-crossing
+  - (Dev notes)
+    - Migrated from .NET 6 to .NET 10.
+    - Installer built with WiX; MSI build added to the CI pipeline; build can take an external version number.
+    - Repository reorganized - documentation moved to /docs, batch scripts moved to /scripts.
+    - Security: patched SharpCompress vulnerability, resolved CodeQL warnings, updated Security Policy and CodeQL workflow.
+    - Added versioning unit tests and a versioning CI action.
+    - New docs: VERSIONING, MSI-VERSION-NUMBERING, SQUIRREL-TO-MSI-MIGRATION, GITHUB-TOKEN-SETUP.
+
 - ## Version 2.8.3
   - GET-AIRAC (Cycle 2609) issue resolved.
   - WX Geojson creation now works more efficiently but removes Wx data output for VRC, vSTARS, and vERAM

@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+  <Fragment>
+
+    <StandardDirectory Id="ProgramMenuFolder">
+      <Component Id="StartMenuShortcutComponent"
+           Condition="CREATE_STARTMENU_SHORTCUT">
+        <Shortcut Id="StartMenuShortcut"
+                  Name="FE-BUDDY"
+                  Description="FE-BUDDY"
+                  Target="[INSTALLFOLDER]FE-BUDDY.exe"
+                  WorkingDirectory="INSTALLFOLDER" />
+
+        <RegistryValue Root="HKCU"
+                       Key="Software\FE-BUDDY"
+                       Name="StartMenuShortcut"
+                       Type="integer"
+                       Value="1"
+                       KeyPath="yes" />
+
+      </Component>
+    </StandardDirectory>
+
+    <StandardDirectory Id="DesktopFolder">
+      <Component Id="DesktopShortcutComponent"
+                 Condition="CREATE_DESKTOP_SHORTCUT">
+
+        <Shortcut Id="DesktopShortcut"
+                  Name="FE-BUDDY"
+                  Description="FE-BUDDY"
+                  Target="[INSTALLFOLDER]FE-BUDDY.exe"
+                  WorkingDirectory="INSTALLFOLDER" />
+
+        <RegistryValue Root="HKCU"
+                       Key="Software\FE-BUDDY"
+                       Name="DesktopShortcut"
+                       Type="integer"
+                       Value="1"
+                       KeyPath="yes" />
+
+      </Component>
+    </StandardDirectory>
+
+  </Fragment>
+</Wix>

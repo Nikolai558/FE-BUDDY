@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using FeBuddyLibrary.Dat;
 
@@ -7,6 +8,8 @@ namespace FeBuddyLibrary.Helpers
 {
     public class LatLonHelpers
     {
+        private static readonly CultureInfo Inv = CultureInfo.InvariantCulture;
+
         public static Tuple<double, double> GetNewPoint(Tuple<double, double> start, Tuple<double, double> end, double distance)
         {
             double bearing = GetBearing(start, end);
@@ -139,6 +142,22 @@ namespace FeBuddyLibrary.Helpers
             dynamicList.Add(new List<double>() { endLon, endLat });
             return dynamicList;
 
+        }
+
+
+        public static void AppendCoordinate(List<dynamic> coordinates, dynamic point)
+        {
+            if (coordinates.Count > 0 && SamePosition(coordinates[coordinates.Count - 1], point))
+            {
+                return;
+            }
+
+            coordinates.Add(point);
+        }
+
+        private static bool SamePosition(dynamic a, dynamic b)
+        {
+            return (double)a[0] == (double)b[0] && (double)a[1] == (double)b[1];
         }
 
 
@@ -294,7 +313,7 @@ namespace FeBuddyLibrary.Helpers
             // Check to see if Convert E is True and Check our Value's Declination to make sure it is an E Coord.
             if (ConvertEast && declination == "E")
             {
-                double oldDecForm = double.Parse(CreateDecFormat(correctedValue, false));
+                double oldDecForm = double.Parse(CreateDecFormat(correctedValue, false), Inv);
 
                 double newDecForm = 180 - oldDecForm;
 
@@ -392,25 +411,25 @@ namespace FeBuddyLibrary.Helpers
 
             string dms;
 
-            degrees = int.Parse(value.ToString("0." + new string('#', 339)).Split('.')[0]);
+            degrees = int.Parse(value.ToString("0." + new string('#', 339), Inv).Split('.')[0], Inv);
 
-            if (value.ToString().Split('.').Count() > 1)
+            if (value.ToString(Inv).Split('.').Count() > 1)
             {
-                degreeFloat = decimal.Parse("0." + value.ToString("0." + new string('#', 339)).Split('.')[1]);
+                degreeFloat = decimal.Parse("0." + value.ToString("0." + new string('#', 339), Inv).Split('.')[1], Inv);
             }
 
-            minutes = int.Parse((degreeFloat * 60).ToString().Split('.')[0]);
+            minutes = int.Parse((degreeFloat * 60).ToString(Inv).Split('.')[0], Inv);
 
-            if ((degreeFloat * 60).ToString().Split('.').Count() > 1)
+            if ((degreeFloat * 60).ToString(Inv).Split('.').Count() > 1)
             {
-                minuteFloat = decimal.Parse("0." + (degreeFloat * 60).ToString().Split('.')[1]);
+                minuteFloat = decimal.Parse("0." + (degreeFloat * 60).ToString(Inv).Split('.')[1], Inv);
             }
 
-            seconds = int.Parse((minuteFloat * 60).ToString().Split('.')[0]);
+            seconds = int.Parse((minuteFloat * 60).ToString(Inv).Split('.')[0], Inv);
 
-            if ((minuteFloat * 60).ToString().Split('.').Count() > 1)
+            if ((minuteFloat * 60).ToString(Inv).Split('.').Count() > 1)
             {
-                secondFloat = decimal.Parse("0." + (minuteFloat * 60).ToString().Split('.')[1]);
+                secondFloat = decimal.Parse("0." + (minuteFloat * 60).ToString(Inv).Split('.')[1], Inv);
             }
 
             secondFloat = Math.Round(secondFloat, 4);
@@ -430,9 +449,9 @@ namespace FeBuddyLibrary.Helpers
                 minutes -= 60;
             }
 
-            if (secondFloat.ToString().Split('.').Count() > 1)
+            if (secondFloat.ToString(Inv).Split('.').Count() > 1)
             {
-                miliseconds = Math.Round(secondFloat, 3).ToString().Split('.')[1];
+                miliseconds = Math.Round(secondFloat, 3).ToString(Inv).Split('.')[1];
             }
 
             if (lat)
@@ -487,7 +506,7 @@ namespace FeBuddyLibrary.Helpers
             string decFormatSeconds = $"{seconds}.{miliSeconds}";
 
             // Do some math with all of our variables.
-            string decFormat = (double.Parse(degrees) + (double.Parse(minutes) / 60) + (double.Parse(decFormatSeconds) / 3600)).ToString();
+            string decFormat = (double.Parse(degrees, Inv) + (double.Parse(minutes, Inv) / 60) + (double.Parse(decFormatSeconds, Inv) / 3600)).ToString(Inv);
 
             // Check the Declination
             if (declination == "S" || declination == "W")
@@ -499,7 +518,7 @@ namespace FeBuddyLibrary.Helpers
             if (roundSixPlaces)
             {
                 // Round the Decimal format to 6 places after the decimal.
-                decFormat = Math.Round(double.Parse(decFormat), 6).ToString();
+                decFormat = Math.Round(double.Parse(decFormat, Inv), 6).ToString(Inv);
             }
 
             // Return the Decimal Format.

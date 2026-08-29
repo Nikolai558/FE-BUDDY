@@ -10,6 +10,7 @@ using System.Windows.Forms;
 using FeBuddyLibrary;
 using FeBuddyLibrary.DataAccess;
 using FeBuddyLibrary.Helpers;
+using FeBuddyLibrary.Update;
 using FeBuddyLibrary.Models;
 using FeBuddyLibrary.Models.MetaFileModels;
 
@@ -21,6 +22,12 @@ namespace FeBuddyWinFormUI
         private readonly string _currentVersion;
         private bool userClicked = false;
         readonly PrivateFontCollection _pfc = new PrivateFontCollection();
+
+        /// <summary>
+        /// Created on the UI thread in <see cref="StartParsing"/> so its callback marshals
+        /// back automatically while the BackgroundWorker drives the FAA download.
+        /// </summary>
+        private IProgress<AiracDownloadProgress> _downloadProgress;
 
 
         public AiracDataForm(string currentVersion)
@@ -283,6 +290,8 @@ namespace FeBuddyWinFormUI
 
             AdjustProcessingBox();
 
+            _downloadProgress = new Progress<AiracDownloadProgress>(OnDownloadProgress);
+
             var worker = new BackgroundWorker();
             worker.RunWorkerCompleted += Worker_StartParsingCompleted;
             worker.DoWork += Worker_StartParsingDoWork;
@@ -299,11 +308,15 @@ namespace FeBuddyWinFormUI
             outputLocationLabel.Visible = true;
 
             processingGroupBox.Location = new Point(114, 59);
-            processingGroupBox.Size = new Size(557, 213);
+            processingGroupBox.Size = new Size(557, 235);
 
             outputLocationLabel.Location = new Point(9, 22);
             outputDirectoryLabel.Location = new Point(24, 47);
-            processingDataLabel.Location = new Point(6, 102);
+            processingDataLabel.Location = new Point(6, 92);
+            downloadProgressBar.Location = new Point(40, 168);
+            downloadProgressBar.Size = new Size(477, 20);
+            downloadStatusLabel.Location = new Point(40, 192);
+            downloadStatusLabel.Size = new Size(477, 22);
             exitButton.Location = new Point(187, 173);
         }
 
@@ -327,7 +340,11 @@ namespace FeBuddyWinFormUI
             }
 
             SetControlPropertyThreadSafe(processingDataLabel, "Text", "Downloading FAA Data");
-            DownloadHelpers.DownloadAllFiles(GlobalConfig.airacEffectiveDate, AiracDateCycleModel.AllCycleDates[GlobalConfig.airacEffectiveDate]);
+            SetControlPropertyThreadSafe(downloadProgressBar, "Visible", true);
+            SetControlPropertyThreadSafe(downloadStatusLabel, "Visible", true);
+            DownloadHelpers.DownloadAllFiles(GlobalConfig.airacEffectiveDate, AiracDateCycleModel.AllCycleDates[GlobalConfig.airacEffectiveDate], progress: _downloadProgress);
+            SetControlPropertyThreadSafe(downloadProgressBar, "Visible", false);
+            SetControlPropertyThreadSafe(downloadStatusLabel, "Visible", false);
 
             SetControlPropertyThreadSafe(processingDataLabel, "Text", "Unzipping Files");
             DirectoryHelpers.UnzipAllDownloaded();
@@ -415,6 +432,33 @@ namespace FeBuddyWinFormUI
             
         }
 
+        /// <summary>
+        /// Runs on the UI thread (the Progress&lt;T&gt; was built there) as the FAA files
+        /// stream in during the "Downloading FAA Data" step.
+        /// </summary>
+        private void OnDownloadProgress(AiracDownloadProgress p)
+        {
+            downloadProgressBar.Value = Math.Clamp(p.OverallPercent, downloadProgressBar.Minimum, downloadProgressBar.Maximum);
+
+            if (p.CurrentFilePercent is int filePercent && p.TotalBytes is long totalBytes)
+            {
+                downloadStatusLabel.Text =
+                    $"{p.FileName}  ({p.FileIndex} of {p.FileCount})     {filePercent}%     {FormatBytes(p.BytesReceived)} / {FormatBytes(totalBytes)}";
+            }
+            else
+            {
+                downloadStatusLabel.Text = $"{p.FileName}  ({p.FileIndex} of {p.FileCount})";
+            }
+        }
+
+        private static string FormatBytes(long bytes)
+        {
+            const double mb = 1024 * 1024;
+            return bytes >= mb
+                ? $"{bytes / mb:0.0} MB"
+                : $"{bytes / 1024.0:0} KB";
+        }
+
         private void Worker_StartParsingCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
             if (e.Error != null)
@@ -427,6 +471,9 @@ namespace FeBuddyWinFormUI
 
             Logger.LogMessage("INFO", "PROCESSING COMPLETED");
             File.Copy(Logger._logFilePath, $"{GlobalConfig.outputDirectory}\\FE-BUDDY_LOG.txt");
+
+            downloadProgressBar.Visible = false;
+            downloadStatusLabel.Visible = false;
 
             processingDataLabel.Text = "Complete";
             processingDataLabel.Refresh();
@@ -563,141 +610,13 @@ namespace FeBuddyWinFormUI
             Logger.LogMessage("WARNING", "UNINSTALL MENU ITEM CLICKED");
 
             DialogResult dialogResult = MessageBox.Show("Would you like to UNINSTALL FE-BUDDY?", "Uninstall FE-BUDDY", MessageBoxButtons.YesNo);
-            if (dialogResult == DialogResult.Yes)
+            if (dialogResult != DialogResult.Yes)
             {
-                Logger.LogMessage("WARNING", "CONFIRMATION USER WANTS TO UNINSTALL");
-
-                string uninstall_start_string = $"start \"\" \"{Path.GetTempPath()}UNINSTALL_FE-BUDDY.bat\"";
-
-                string uninstallBatchFileString = "@echo off\n"
-                        + "PING 127.0.0.1 - n 5 > nul\n"
-                        + "tasklist /FI \"IMAGENAME eq FE-BUDDY.exe\" 2>NUL | find /I /N \"FE-BUDDY.exe\">NUL\n"
-                        + "if \"%ERRORLEVEL%\"==\"0\" taskkill /F /im FE-BUDDY.exe\n"
-                        + "\n"
-                        + "TITLE FE-BUDDY UNINSTALL\n"
-                        + "\n"
-                        + "SET /A NOT_FOUND_COUNT=0\n"
-                        + "\n"
-                        + "CD /d \"%temp%\"\n"
-                        + "	if NOT exist FE-BUDDY (\n"
-                        + "		SET /A NOT_FOUND_COUNT=%NOT_FOUND_COUNT% + 1\n"
-                        + "		SET FE-BUDDY_TEMP_FOLDER=NOT_FOUND\n"
-                        + "	)\n"
-                        + "	\n"
-                        + "	if exist FE-BUDDY (\n"
-                        + "		SET FE-BUDDY_TEMP_FOLDER=FOUND\n"
-                        + "		RD /Q /S \"FE-BUDDY\"\n"
-                        + "	)\n"
-                        + "\n"
-                        + "CD /d \"%userprofile%\\AppData\\Local\"\n"
-                        + "	if NOT exist FE-BUDDY (\n"
-                        + "		SET /A NOT_FOUND_COUNT=%NOT_FOUND_COUNT% + 1\n"
-                        + "		SET FE-BUDDY_APPDATA_FOLDER=NOT_FOUND\n"
-                        + "	)\n"
-                        + "	\n"
-                        + "	if exist FE-BUDDY (\n"
-                        + "		SET FE-BUDDY_APPDATA_FOLDER=FOUND\n"
-                        + "		RD /Q /S \"FE-BUDDY\"\n"
-                        + "	)\n"
-                        + "\n"
-                        + "CD /d \"%userprofile%\\Desktop\"\n"
-                        + "	if NOT exist FE-BUDDY.lnk (\n"
-                        + "		SET /A NOT_FOUND_COUNT=%NOT_FOUND_COUNT% + 1\n"
-                        + "		SET FE-BUDDY_SHORTCUT=NOT_FOUND\n"
-                        + "	)\n"
-                        + "\n"
-                        + "	if exist FE-BUDDY.lnk (\n"
-                        + "		SET FE-BUDDY_SHORTCUT=FOUND\n"
-                        + "		DEL /Q \"FE-BUDDY.lnk\"\n"
-                        + "	)\n"
-                        + "\n"
-                        + "CD /d \"%appdata%\\Microsoft\\Windows\\Start Menu\\Programs\"\n"
-                        + " if NOT exist \"Kyle Sanders\" (\n"
-                        + "     SET OLD_START_SHORTCUT=NOT_FOUND\n"
-                        + ")\n"
-                        + "\n"
-                        + "	if exist \"Kyle Sanders\" (\n"
-                        + "		SET OLD_START_SHORTCUT=FOUND\n"
-                        + "		RD /Q /S \"Kyle Sanders\"\n"
-                        + "	)\n"
-                        + "\n"
-                        + "	if NOT exist FE-BUDDY.lnk (\n"
-                        + "		SET /A NOT_FOUND_COUNT=%NOT_FOUND_COUNT% + 1\n"
-                        + "		SET NEW_START_SHORTCUT=NOT_FOUND\n"
-                        + "	)\n"
-                        + "\n"
-                        + "	if exist FE-BUDDY.lnk (\n"
-                        + "		SET NEW_START_SHORTCUT=FOUND\n"
-                        + "		DEL /Q \"FE-BUDDY.lnk\"\n"
-                        + "	)\n"
-                        + "\n"
-                        + "IF %NOT_FOUND_COUNT%==0 SET UNINSTALL_STATUS=COMPLETE\n"
-                        + "IF %NOT_FOUND_COUNT% GEQ 1 SET UNINSTALL_STATUS=PARTIAL\n"
-                        + "IF %NOT_FOUND_COUNT%==4 SET UNINSTALL_STATUS=FAIL\n"
-                        + "\n"
-                        + "IF %UNINSTALL_STATUS%==COMPLETE GOTO UNINSTALLED\n"
-                        + "IF %UNINSTALL_STATUS%==PARTIAL GOTO UNINSTALLED\n"
-                        + "IF %UNINSTALL_STATUS%==FAIL GOTO FAILED\n"
-                        + "\n"
-                        + "CLS\n"
-                        + "\n"
-                        + ":UNINSTALLED\n"
-                        + "\n"
-                        + "ECHO.\n"
-                        + "ECHO.\n"
-                        + "ECHO SUCCESSFULLY UNINSTALLED THE FOLLOWING:\n"
-                        + "ECHO.\n"
-                        + "IF %FE-BUDDY_TEMP_FOLDER%==FOUND ECHO        -temp\\FE-BUDDY\n"
-                        + "IF %FE-BUDDY_APPDATA_FOLDER%==FOUND ECHO        -AppData\\Local\\FE-BUDDY\n"
-                        + "IF %FE-BUDDY_SHORTCUT%==FOUND ECHO        -Desktop\\FE-BUDDY Shortcut\n"
-                        + "IF %OLD_START_SHORTCUT%==FOUND ECHO        -Start Menu\\Kyle Sanders\n"
-                        + "IF %NEW_START_SHORTCUT%==FOUND ECHO        -Start Menu\\FE-BUDDY Shortcut\n"
-                        + "\n"
-                        + ":FAILED\n"
-                        + "\n"
-                        + "IF NOT %NOT_FOUND_COUNT%==0 (\n"
-                        + "	ECHO.\n"
-                        + "	ECHO.\n"
-                        + "	ECHO.\n"
-                        + "	ECHO.\n"
-                        + "	IF %UNINSTALL_STATUS%==PARTIAL ECHO NOT ABLE TO COMPLETELY UNINSTALL BECAUSE THE FOLLOWING COULD NOT BE FOUND:\n"
-                        + "	IF %UNINSTALL_STATUS%==FAIL ECHO UNINSTALL FAILED COMPLETELY BECAUSE THE FOLLOWING COULD NOT BE FOUND:\n"
-                        + "	ECHO.\n"
-                        + "	IF %FE-BUDDY_TEMP_FOLDER%==NOT_FOUND ECHO        -temp\\FE-BUDDY\n"
-                        + "	IF %FE-BUDDY_APPDATA_FOLDER%==NOT_FOUND ECHO        -AppData\\Local\\FE-BUDDY\n"
-                        + "	IF %FE-BUDDY_SHORTCUT%==NOT_FOUND (\n"
-                        + "		ECHO        -Desktop\\FE-BUDDY Shortcut\n"
-                        + "		ECHO             --If the shortcut was renamed, delete the shortcut manually.\n"
-                        + "	)\n"
-                        + " IF %NEW_START_SHORTCUT%==NOT_FOUND ECHO        -Start Menu\\FE-BUDDY Shortcut\n"
-                        + ")\n"
-                        + "\n"
-                        + "ECHO.\n"
-                        + "ECHO.\n"
-                        + "ECHO.\n"
-                        + "ECHO.\n"
-                        + "ECHO.\n"
-                        + "ECHO ...Close this prompt when ready.\n"
-                        + "\n"
-                        + "PAUSE>NUL\n";
-
-                File.WriteAllText($"{Path.GetTempPath()}UNINSTALL_FE-BUDDY.bat", uninstallBatchFileString);
-                File.WriteAllText($"{Path.GetTempPath()}UNINSTALL_START_FE-BUDDY.bat", uninstall_start_string);
-
-                ProcessStartInfo ProcessInfo;
-                Process Process;
-
-                ProcessInfo = new ProcessStartInfo("cmd.exe", "/c " + $"\"{Path.GetTempPath()}UNINSTALL_START_FE-BUDDY.bat\"")
-                {
-                    CreateNoWindow = false,
-                    UseShellExecute = false
-                };
-
-                Process = Process.Start(ProcessInfo);
-
-                Process.Close();
-                Environment.Exit(1);
+                return;
             }
+
+            Logger.LogMessage("WARNING", "CONFIRMATION USER WANTS TO UNINSTALL");
+            AppUninstaller.Uninstall();
         }
 
         private void InstructionsMenuItem_Click(object sender, EventArgs e)
@@ -710,8 +629,8 @@ namespace FeBuddyWinFormUI
         private void RoadmapMenuItem_Click(object sender, EventArgs e)
         {
             Logger.LogMessage("DEBUG", "ROADMAP MENU ITEM CLICKED");
-            Process.Start(new ProcessStartInfo("https://github.com/Nikolai558/FE-BUDDY/blob/development/ROADMAP.md") { UseShellExecute = true });
-            //Process.Start("https://github.com/Nikolai558/FE-BUDDY/blob/development/ROADMAP.md");
+            Process.Start(new ProcessStartInfo("https://github.com/Nikolai558/FE-BUDDY/blob/development/docs/ROADMAP.md") { UseShellExecute = true });
+            //Process.Start("https://github.com/Nikolai558/FE-BUDDY/blob/development/docs/ROADMAP.md");
         }
 
         private void FAQMenuItem_Click(object sender, EventArgs e)
@@ -731,8 +650,8 @@ namespace FeBuddyWinFormUI
         private void CreditsMenuItem_Click(object sender, EventArgs e)
         {
             Logger.LogMessage("DEBUG", "CREDITS MENU ITEM CLICKED");
-            Process.Start(new ProcessStartInfo("https://github.com/Nikolai558/FE-BUDDY/blob/development/Credits.md") { UseShellExecute = true });
-            //Process.Start("https://github.com/Nikolai558/FE-BUDDY/blob/development/Credits.md");
+            Process.Start(new ProcessStartInfo("https://github.com/Nikolai558/FE-BUDDY/blob/development/docs/Credits.md") { UseShellExecute = true });
+            //Process.Start("https://github.com/Nikolai558/FE-BUDDY/blob/development/docs/Credits.md");
             // CreditsForm frm = new CreditsForm();
             // frm.ShowDialog();
         }

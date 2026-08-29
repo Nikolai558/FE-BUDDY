@@ -1,0 +1,52 @@
+# CI for FE-BUDDY.
+#
+# Verifies that it compiles and the unit tests pass on every push and pull
+# request to the development and release branches. It does NOT produce a release i.e. no MSI or squirrel packages).
+
+name: "CI"
+
+on:
+  workflow_dispatch:
+
+  push:
+    branches: [ development, releases ]
+
+  pull_request:
+    branches: [ development, releases ]
+
+jobs:
+  build:
+    name: Build
+    runs-on: windows-2025
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '10.x'
+      - name: Build app
+        run: dotnet build FeBuddyWinFormUI/FeBuddyWinFormUI.csproj -c Release
+      - name: Build installer custom actions
+        run: dotnet build FE-BUDDY.Installer.CustomActions/FE-BUDDY.Installer.CustomActions.csproj -c Release -p:Platform=x64
+
+  test:
+    name: Test
+    runs-on: windows-2025
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '10.x'
+
+      - name: Test versioning
+        run: dotnet test FeBuddy.Versioning.Tests/FeBuddy.Versioning.Tests.csproj -c Release --logger "console;verbosity=normal"
+
+      - name: Test library
+        run: dotnet test FeBuddyLibrary.Tests/FeBuddyLibrary.Tests.csproj -c Release --logger "console;verbosity=normal"

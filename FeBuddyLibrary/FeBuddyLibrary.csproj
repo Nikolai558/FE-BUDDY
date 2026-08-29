@@ -1,9 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   
   <PropertyGroup>
-    <TargetFramework>net6.0-windows</TargetFramework>
+    <TargetFramework>net10.0-windows</TargetFramework>
     <OutputType>Library</OutputType>
     <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>annotations</Nullable>
   </PropertyGroup>
   
   <ItemGroup>
@@ -12,5 +13,12 @@
     <PackageReference Include="System.Data.DataSetExtensions" Version="4.5.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
   </ItemGroup>
-  
+
+  <ItemGroup>
+    <!-- Real version parsing/comparison for update-checking (see FeBuddyLibrary\Update).
+         Shared with the installer's version-policy custom action - see
+         FeBuddy.Versioning\UpdatePolicy.cs for why this is the single implementation. -->
+    <ProjectReference Include="..\FeBuddy.Versioning\FeBuddy.Versioning.csproj" />
+  </ItemGroup>
+
 </Project>

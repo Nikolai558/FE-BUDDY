@@ -4,6 +4,7 @@
     <TargetFramework>net10.0-windows</TargetFramework>
     <OutputType>Library</OutputType>
     <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>annotations</Nullable>
   </PropertyGroup>
   
   <ItemGroup>

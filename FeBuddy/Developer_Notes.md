@@ -32,7 +32,12 @@ Used to keep track of overall functionality and development notes for FE-Buddy v
 
 - Info section:
   - `Region of Interest (ROI): An lat/lon axis-aligned rectangular region defined by southwest (bottom-left corner) and northeast (top-right corner) coordinates (i.e. a box defining the data you are interested in). Depending on the data type and operation, geometries may be clipped to the ROI or included in full when associated with an entity located within the ROI. Create a box that encompasses an acceptable amount of area outside your ARTCC boundaries so that data within that region may still be displayed in your GeoJSON files and, under certain circumstances, in additional resource files. Note: Depending on the operation, you may be given the option to override this ROI with a custom ROI for specific files later.`
-- User input boxes:
+- User selects:
+  - `Do not set up a ROI; Get all data.`
+    - `IncludeRoi`=false to `userConfig` file.
+  - `Setup ROI`
+    - `IncludeRoi`=true to `userConfig` file.
+- If `IncludeRoi`=true, user input boxes:
   - `Southwest (bottom-left corner) Latitude:` — `user-input box showing greyed-out example of lat`
   - `Southwest (bottom-left corner) Longitude:` — `user-input box showing greyed-out example of lon`
   - `Northeast (top-right corner) Latitude:` — `user-input box showing greyed-out example of lat`
@@ -42,7 +47,10 @@ Used to keep track of overall functionality and development notes for FE-Buddy v
   - Upon action, send the following to FEBuddyLibrary to validate data:
     - Coordinates are valid decimal values.
     - SW coordinates are actually southwest of the NE coordinates.
-  - After validation, saves the values to the `userconfig` file.
+  - After validation, saves the `DefaultRoi` values to the `userconfig` file.
+  - Trigger GUI to read `userConfig` file again (to allow things like services to be selected that were previously unavailable due to a setting form not being filled out yet)
+- Note: `IncludeRoi` and `DefaultRoi` values set to `null` in `userConfig` file upon initial install
+  - Use this `null` value to determine if required setup has been accomplished by user.
 
 ## INFO
 
@@ -68,12 +76,67 @@ Used to keep track of overall functionality and development notes for FE-Buddy v
 
 #### AIRAC CYCLE
 
+- If `IncludeRoi`=null in `userConfig` file, grey-out this service and have a tooltip pop up advising them to navigate to SETTINGS > DEFAULT ROI and complete that form.
+  - Once they complete the form, a trigger will result in GUI reading the config file again and this service should be available again.
 - User selects Current or Next AIRAC Cycle with the effective date displayed next to it.
 - User types their ARTCC ID (consider drop menu)
+- User selects output directory
+- Create AiracSettings dictionary to be passed to Library later.
+  - Add GeneralSettings after user saves on this general page.
+```cs
+var AiracSettings = new Dictionary<string, object>
+{
+    ["General"] = new Dictionary<string, string>
+    {
+        ["AiracCycleId"] = "2608",
+        ["UserArtccId"] = "ZOB",
+        ["OutputDirectory"] = @"C:\Users\BuddyGuyFriend\Desktop"
+    },
+
+    ["Geojson"] = new Dictionary<string, object>
+    {
+        ["General"] = new Dictionary<string, string>
+        {
+            // placeholder
+        },
+
+        ["Airways"] = new Dictionary<string, string>
+        {
+            ["OutputBy"] = "",
+            ["BufferAirwayWaypoints"] = "",
+            ["IncludeFebCustomProperties"] = ""
+        },
+
+        ["OtherTbd"] = new Dictionary<string, string>
+        {
+            // placeholder
+        }
+    },
+
+    ["Alias"] = new Dictionary<string, object>
+    {
+        ["General"] = new Dictionary<string, string>
+        {
+            // placeholder
+        },
+
+        ["Airways"] = new Dictionary<string, string>
+        {
+            // placeholder
+        },
+
+        ["OtherTbd"] = new Dictionary<string, string>
+        {
+            // placeholder
+        }
+    }
+};
+```
 
 ##### AIRWAYS
 
 ###### GEOJSON FILES
+
 - Description area:
   - `Airway data from the FAA NASR .csv files may be used to generate Gojson files for ERAM maps along with alias file commands (example: .<airwayId>F).`
   - `One airway per Geojson Feature.`
@@ -82,7 +145,7 @@ Used to keep track of overall functionality and development notes for FE-Buddy v
   - `None`
     - Tool tip or description:
 	  - `Geojson files will not be generated from Airway data.`
-  - `High/Low`
+  - `High/Low` (default)
     - Tool tip or description:
 	  - `Airways_High.geojson = Airways that have a Maximum Authorized altitude of 18,000' or greater`
 	  - `Airways_Low.geojson = Airways that have a Maximum Authorized altitude greater than 0' but less than 18,000'`
@@ -95,19 +158,52 @@ Used to keep track of overall functionality and development notes for FE-Buddy v
 		  - `Airways_V.geojson`
 		  - `Airways_AT.geojson`
 - User selects:
+  - `Create a radius around airway waypoints? (2.5nm around 5 character fixes, 5nm around others such as NAVAIDS)`
+	- `Y` or `N` (default `N`)
+- User selects:
   - `Include the Airway IDs in the FE-Buddy Custom Properties?`
-    - yes no option
+	- `Y` or `N` (default `N`)
+- Collect, convert and add to `AiracSettings` > `AirwaysSettings`
+  - `AirwayGeojsonOutputBy`
+    - `None`
+    - `HighLow`
+    - `Designation`
+  - `BufferAirwayWaypoints`
+    - `Y` or `N` converted to `true` or `false`
+  - `IncludeFebCustomProperties`
+    - `Y` or `N` converted to `true` or `false`
+- ROI Override
+  - ???
+- CRC Properties
+  - ERAM
+    - ???
+  - STARS
+    - ???
+- Upon SAVE
+  - `ValidateCrcGeojsonProperties` values against [THESE](https://github.com/KCSanders7070/CRC_GeoJson_Concepts/blob/main/CRC_Geojsons.md) values.
+  - Show error message/color for values outside of range or validity.
+  - Once validated, add `AirwaysSettings` to `AirwaysSettings`
+```cs
+["AirwaysSettings"] = new Dictionary<string, object>
+{
+	["AirwayGeojsonOutputBy"] = HighLow,
+	["BufferAirwayWaypoints"] = true,
+	["IncludeFebCustomProperties"] = true
+},
+```
 
 ###### ALIAS FILES
+
 - Description area:
   - `Airway data from the FAA NASR .csv files may be used to generate Alias commands (example: .<airwayId>F .ff <all airway waypoint IDs>).`
-
 
 ---
 
 
 # CODE LIBRARY
 
+- Initial install
+  - `IncludeRoi` and `DefaultRoi` values set to `null` in `userConfig` file.
 - Geojsons
   - Output without indenting (single line output to save space)
   - Custom properties, if included in the output, Field Names will be prefixed with "feb." to reduce conflicts with other programs.
@@ -148,8 +244,6 @@ Used to keep track of overall functionality and development notes for FE-Buddy v
 - GUI needs result after process completion.
 
 ## GUI PROCESS HANDLERS
-
-### ???
 
 - ??? For Nik to fill out
 

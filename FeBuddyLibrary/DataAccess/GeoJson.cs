@@ -1150,7 +1150,7 @@ namespace FeBuddyLibrary.DataAccess
                                                     isSymbolDefaults = true,
                                                     bcg = geoMapObject.SymbolDefaults?.Bcg ?? null,
                                                     filters = geoMapObject.SymbolDefaults?.Filters?.Replace(" ", string.Empty)?.Replace("\t", string.Empty)?.Split(',')?.Where(s => !string.IsNullOrEmpty(s)).Select(s => int.Parse(s)).ToArray() ?? Array.Empty<int>(),
-                                                    style = geoMapObject.SymbolDefaults?.Style ?? null,
+                                                    style = NormalizeStyle(geoMapObject.SymbolDefaults?.Style),
                                                     size = geoMapObject.SymbolDefaults?.Size ?? null,
                                                 }
                                             };
@@ -1213,7 +1213,7 @@ namespace FeBuddyLibrary.DataAccess
                                                 isLineDefaults = true,
                                                 bcg = geoMapObject.LineDefaults?.Bcg ?? null,
                                                 filters = geoMapObject.LineDefaults?.Filters?.Replace(" ", string.Empty)?.Replace("\t", string.Empty)?.Split(',')?.Where(s => !string.IsNullOrEmpty(s)).Select(s => int.Parse(s)).ToArray() ?? Array.Empty<int>(),
-                                                style = geoMapObject.LineDefaults?.Style ?? null,
+                                                style = NormalizeStyle(geoMapObject.LineDefaults?.Style),
                                                 thickness = geoMapObject.LineDefaults?.Thickness ?? null,
                                             }
                                         });
@@ -1322,7 +1322,7 @@ namespace FeBuddyLibrary.DataAccess
                             isLineDefaults = true,
                             bcg = geoMapObject.LineDefaults?.Bcg ?? null,
                             filters = Array.ConvertAll(geoMapObject.LineDefaults?.Filters.Replace("\t", string.Empty).Split(',', StringSplitOptions.RemoveEmptyEntries) ?? new string[] { }, s => int.Parse(s)),
-                            style = geoMapObject.LineDefaults?.Style ?? null,
+                            style = NormalizeStyle(geoMapObject.LineDefaults?.Style),
                             thickness = geoMapObject.LineDefaults?.Thickness ?? null,
                         }
                     };
@@ -1356,7 +1356,7 @@ namespace FeBuddyLibrary.DataAccess
                                                 isSymbolDefaults = true,
                                                 bcg = geoMapObject.SymbolDefaults?.Bcg ?? null,
                                                 filters = Array.ConvertAll(geoMapObject.SymbolDefaults?.Filters.Replace("\t", string.Empty).Split(',', StringSplitOptions.RemoveEmptyEntries) ?? new string[] { }, s => int.Parse(s)),
-                                                style = geoMapObject.SymbolDefaults?.Style ?? null,
+                                                style = NormalizeStyle(geoMapObject.SymbolDefaults?.Style),
                                                 size = geoMapObject.SymbolDefaults?.Size ?? null,
                                             }
                                         };
@@ -1634,12 +1634,46 @@ namespace FeBuddyLibrary.DataAccess
             return true;
         }
 
+        // CRC parses GeoJSON "style" values case-sensitively, but the source GeoMap XML
+        // serialises its Style attribute in PascalCase (e.g. "Solid", "Vor", "LongDashShortDash").
+        // Passing those through verbatim leaves CRC unable to match the token.
+        // See https://github.com/Nikolai558/FE-BUDDY/issues/155
+        private static readonly Dictionary<string, string> _crcStyleValues = new[]
+        {
+            // Line styles
+            "solid", "shortDashed", "longDashed", "longDashShortDash",
+            // Symbol styles
+            "obstruction1", "obstruction2", "heliport", "nuclear", "emergencyAirport", "radar", "iaf",
+            "rnavOnlyWaypoint", "rnav", "airwayIntersections", "ndb", "vor", "otherWaypoints",
+            "airport", "satelliteAirport", "tacan",
+        }.ToDictionary(value => value.ToLowerInvariant(), value => value);
+
+        /// <summary>
+        /// Normalise a GeoMap "Style" attribute value to the exact token CRC expects in GeoJSON.
+        /// See issue #155.
+        /// </summary>
+        private static string NormalizeStyle(string style)
+        {
+            if (string.IsNullOrWhiteSpace(style)) { return style; }
+
+            string trimmed = style.Trim();
+
+            if (_crcStyleValues.TryGetValue(trimmed.ToLowerInvariant(), out string canonical))
+            {
+                return canonical;
+            }
+
+            string fallback = char.ToLowerInvariant(trimmed[0]) + trimmed.Substring(1);
+            Logger.LogMessage("WARNING", $"Unrecognized GeoJSON style value '{style}'; wrote '{fallback}'. Verify it matches a CRC style token.");
+            return fallback;
+        }
+
         private Properties CreateProperties(Element element)
         {
             Properties elem_properties = new Properties();
 
             if (element.Filters != null && !string.IsNullOrWhiteSpace(element.Filters)) { elem_properties.filters = Array.ConvertAll(element.Filters.Replace("\t", string.Empty).Split(',', StringSplitOptions.RemoveEmptyEntries), s => int.Parse(s)); }
-            if (element.Style != null) { elem_properties.style = element.Style; }
+            if (element.Style != null) { elem_properties.style = NormalizeStyle(element.Style); }
             if (element.Bcg != null) { elem_properties.bcg = element.Bcg; }
             if (element.Thickness != null) { elem_properties.thickness = element.Thickness; }
             if (element.Size != null) { elem_properties.size = element.Size; }
@@ -1798,7 +1832,7 @@ namespace FeBuddyLibrary.DataAccess
             Properties elem_properties = new Properties();
 
             if (element.Filters != null && !string.IsNullOrWhiteSpace(element.Filters)) { elem_properties.filters = Array.ConvertAll(element.Filters.Replace("\t", string.Empty).Split(',', StringSplitOptions.RemoveEmptyEntries), s => int.Parse(s)); }
-            if (element.Style != null) { elem_properties.style = element.Style; }
+            if (element.Style != null) { elem_properties.style = NormalizeStyle(element.Style); }
             if (element.Bcg != null) { elem_properties.bcg = element.Bcg; }
             if (element.Size != null) { elem_properties.size = element.Size; }
             if (element.Underline != null) { elem_properties.underline= element.Underline; }
@@ -1846,7 +1880,7 @@ namespace FeBuddyLibrary.DataAccess
             // Array.ConvertAll(symbolDefaults.Filters.Replace(" ", string.Empty).Replace("\t", string.Empty).Split(','), s => int.Parse(s));
 
             if (element.Filters != null && !string.IsNullOrWhiteSpace(element.Filters)) { elem_properties.filters = Array.ConvertAll(element.Filters.Replace("\t", string.Empty).Split(',', StringSplitOptions.RemoveEmptyEntries), s => int.Parse(s)); }
-            if (element.Style != null && !string.IsNullOrWhiteSpace(element.Style)) { elem_properties.style = element.Style; }
+            if (element.Style != null && !string.IsNullOrWhiteSpace(element.Style)) { elem_properties.style = NormalizeStyle(element.Style); }
             if (element.Size != null) { elem_properties.size = element.Size; }
 
             var output = new Feature() {

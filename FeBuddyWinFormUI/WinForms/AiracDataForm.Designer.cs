@@ -46,6 +46,8 @@
             this.facilityIdCombobox = new System.Windows.Forms.ComboBox();
             this.processingDataLabel = new System.Windows.Forms.Label();
             this.processingGroupBox = new System.Windows.Forms.GroupBox();
+            this.downloadProgressBar = new System.Windows.Forms.ProgressBar();
+            this.downloadStatusLabel = new System.Windows.Forms.Label();
             this.outputDirectoryLabel = new System.Windows.Forms.Label();
             this.outputLocationLabel = new System.Windows.Forms.Label();
             this.exitButton = new System.Windows.Forms.Button();
@@ -290,13 +292,34 @@
             this.processingDataLabel.Text = "Getting AIRAC date.";
             this.processingDataLabel.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             this.processingDataLabel.Visible = false;
-            // 
+            //
+            // downloadProgressBar
+            //
+            this.downloadProgressBar.Location = new System.Drawing.Point(60, 176);
+            this.downloadProgressBar.Name = "downloadProgressBar";
+            this.downloadProgressBar.Size = new System.Drawing.Size(437, 20);
+            this.downloadProgressBar.TabIndex = 20;
+            this.downloadProgressBar.Visible = false;
+            //
+            // downloadStatusLabel
+            //
+            this.downloadStatusLabel.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.downloadStatusLabel.ForeColor = System.Drawing.SystemColors.AppWorkspace;
+            this.downloadStatusLabel.Location = new System.Drawing.Point(60, 200);
+            this.downloadStatusLabel.Name = "downloadStatusLabel";
+            this.downloadStatusLabel.Size = new System.Drawing.Size(437, 22);
+            this.downloadStatusLabel.TabIndex = 21;
+            this.downloadStatusLabel.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            this.downloadStatusLabel.Visible = false;
+            //
             // processingGroupBox
-            // 
+            //
             this.processingGroupBox.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(10)))), ((int)(((byte)(10)))), ((int)(((byte)(10)))));
             this.processingGroupBox.Controls.Add(this.outputDirectoryLabel);
             this.processingGroupBox.Controls.Add(this.outputLocationLabel);
             this.processingGroupBox.Controls.Add(this.exitButton);
+            this.processingGroupBox.Controls.Add(this.downloadStatusLabel);
+            this.processingGroupBox.Controls.Add(this.downloadProgressBar);
             this.processingGroupBox.Controls.Add(this.processingDataLabel);
             this.processingGroupBox.Enabled = false;
             this.processingGroupBox.Location = new System.Drawing.Point(114, 127);
@@ -552,6 +575,8 @@
         private System.Windows.Forms.GroupBox convertGroupBox;
         private System.Windows.Forms.GroupBox startGroupBox;
         private System.Windows.Forms.Label processingDataLabel;
+        private System.Windows.Forms.ProgressBar downloadProgressBar;
+        private System.Windows.Forms.Label downloadStatusLabel;
         private System.Windows.Forms.GroupBox processingGroupBox;
         private System.Windows.Forms.Button exitButton;
         private System.Windows.Forms.Label outputDirectoryLabel;

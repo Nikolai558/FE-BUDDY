@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Configuration;
 using System.Drawing;
+using System.Globalization;
 using System.IO;
 using System.Reflection;
+using System.Threading;
 using System.Windows.Forms;
 using FeBuddy.Versioning;
 using FeBuddyLibrary.DataAccess;
@@ -18,6 +20,14 @@ namespace FeBuddyWinFormUI
         [STAThread]
         static void Main()
         {
+            // See issue #166 for why this code is here. 
+            var invariantCulture = CultureInfo.InvariantCulture;
+            CultureInfo.DefaultThreadCurrentCulture = invariantCulture;
+            CultureInfo.DefaultThreadCurrentUICulture = invariantCulture;
+            Thread.CurrentThread.CurrentCulture = invariantCulture;
+            Thread.CurrentThread.CurrentUICulture = invariantCulture;
+            // End of issue #166 workaround
+
             // TODO - Get system info and log it into file first thing. -https://docs.microsoft.com/en-us/previous-versions/windows/embedded/ee436483(v=msdn.10)
             Logger.CreateLogFile();
             SquirrelLogger.Register(); // wire up Squirrel logging to our log file too
@@ -110,6 +120,13 @@ namespace FeBuddyWinFormUI
         public static void BackupSettings()
         {
             string settingsFile = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.PerUserRoamingAndLocal).FilePath;
+
+            if (!File.Exists(settingsFile))
+            {
+                Logger.LogMessage("DEBUG", "No user.config to back up before update - skipping.");
+                return;
+            }
+
             string destination = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + "\\..\\last.config";
             File.Copy(settingsFile, destination, true);
         }
@@ -379,7 +396,11 @@ namespace FeBuddyWinFormUI
             catch (Exception e)
             {
                 Logger.LogMessage("WARNING", "Unable to check for updates: " + e.Message);
-                MessageBox.Show($"FE-BUDDY could not perform an update check due to either your internet connection or GitHub Server issues.\n\n" + e.ToString());
+                MessageBox.Show(
+                    DescribeUpdateCheckFailure(e),
+                    "Update Check Failed",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
             }
 
             // we have decided not to update, lets return current version

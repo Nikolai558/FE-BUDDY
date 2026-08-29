@@ -27,6 +27,10 @@
     <Property Id="PRODUCTSEMVER" Value="$(ProductSemVer)" />
     <Property Id="VERSIONPOLICY_BLOCKED" Value="0" />
 
+
+    <Icon Id="FE_BUDDY.ico" SourceFile="..\FE_BUDDY_icon.ico" />
+    <Property Id="ARPPRODUCTICON" Value="FE_BUDDY.ico" />
+
     <Binary Id="VersionPolicyCA" SourceFile="!(bindpath.CustomActionsDir)\FE-BUDDY.Installer.CustomActions.CA.dll" />
     <CustomAction Id="EnforceVersionPolicy"
                   BinaryRef="VersionPolicyCA"

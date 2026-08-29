@@ -12,6 +12,7 @@ using FeBuddyLibrary.DataAccess;
 using FeBuddyLibrary.Dxf.Data;
 using FeBuddyLibrary.Dxf.Models;
 using FeBuddyLibrary.Helpers;
+using FeBuddyLibrary.Update;
 using FeBuddyLibrary.Models;
 using FeBuddyLibrary.Models.MetaFileModels;
 
@@ -250,141 +251,13 @@ namespace FeBuddyWinFormUI
             Logger.LogMessage("WARNING", "UNINSTALL MENU ITEM CLICKED");
 
             DialogResult dialogResult = MessageBox.Show("Would you like to UNINSTALL FE-BUDDY?", "Uninstall FE-BUDDY", MessageBoxButtons.YesNo);
-            if (dialogResult == DialogResult.Yes)
+            if (dialogResult != DialogResult.Yes)
             {
-                Logger.LogMessage("WARNING", "CONFIRMATION USER WANTS TO UNINSTALL");
-
-                string uninstall_start_string = $"start \"\" \"{Path.GetTempPath()}UNINSTALL_FE-BUDDY.bat\"";
-
-                string uninstallBatchFileString = "@echo off\n"
-                        + "PING 127.0.0.1 - n 5 > nul\n"
-                        + "tasklist /FI \"IMAGENAME eq FE-BUDDY.exe\" 2>NUL | find /I /N \"FE-BUDDY.exe\">NUL\n"
-                        + "if \"%ERRORLEVEL%\"==\"0\" taskkill /F /im FE-BUDDY.exe\n"
-                        + "\n"
-                        + "TITLE FE-BUDDY UNINSTALL\n"
-                        + "\n"
-                        + "SET /A NOT_FOUND_COUNT=0\n"
-                        + "\n"
-                        + "CD /d \"%temp%\"\n"
-                        + "	if NOT exist FE-BUDDY (\n"
-                        + "		SET /A NOT_FOUND_COUNT=%NOT_FOUND_COUNT% + 1\n"
-                        + "		SET FE-BUDDY_TEMP_FOLDER=NOT_FOUND\n"
-                        + "	)\n"
-                        + "	\n"
-                        + "	if exist FE-BUDDY (\n"
-                        + "		SET FE-BUDDY_TEMP_FOLDER=FOUND\n"
-                        + "		RD /Q /S \"FE-BUDDY\"\n"
-                        + "	)\n"
-                        + "\n"
-                        + "CD /d \"%userprofile%\\AppData\\Local\"\n"
-                        + "	if NOT exist FE-BUDDY (\n"
-                        + "		SET /A NOT_FOUND_COUNT=%NOT_FOUND_COUNT% + 1\n"
-                        + "		SET FE-BUDDY_APPDATA_FOLDER=NOT_FOUND\n"
-                        + "	)\n"
-                        + "	\n"
-                        + "	if exist FE-BUDDY (\n"
-                        + "		SET FE-BUDDY_APPDATA_FOLDER=FOUND\n"
-                        + "		RD /Q /S \"FE-BUDDY\"\n"
-                        + "	)\n"
-                        + "\n"
-                        + "CD /d \"%userprofile%\\Desktop\"\n"
-                        + "	if NOT exist FE-BUDDY.lnk (\n"
-                        + "		SET /A NOT_FOUND_COUNT=%NOT_FOUND_COUNT% + 1\n"
-                        + "		SET FE-BUDDY_SHORTCUT=NOT_FOUND\n"
-                        + "	)\n"
-                        + "\n"
-                        + "	if exist FE-BUDDY.lnk (\n"
-                        + "		SET FE-BUDDY_SHORTCUT=FOUND\n"
-                        + "		DEL /Q \"FE-BUDDY.lnk\"\n"
-                        + "	)\n"
-                        + "\n"
-                        + "CD /d \"%appdata%\\Microsoft\\Windows\\Start Menu\\Programs\"\n"
-                        + " if NOT exist \"Kyle Sanders\" (\n"
-                        + "     SET OLD_START_SHORTCUT=NOT_FOUND\n"
-                        + ")\n"
-                        + "\n"
-                        + "	if exist \"Kyle Sanders\" (\n"
-                        + "		SET OLD_START_SHORTCUT=FOUND\n"
-                        + "		RD /Q /S \"Kyle Sanders\"\n"
-                        + "	)\n"
-                        + "\n"
-                        + "	if NOT exist FE-BUDDY.lnk (\n"
-                        + "		SET /A NOT_FOUND_COUNT=%NOT_FOUND_COUNT% + 1\n"
-                        + "		SET NEW_START_SHORTCUT=NOT_FOUND\n"
-                        + "	)\n"
-                        + "\n"
-                        + "	if exist FE-BUDDY.lnk (\n"
-                        + "		SET NEW_START_SHORTCUT=FOUND\n"
-                        + "		DEL /Q \"FE-BUDDY.lnk\"\n"
-                        + "	)\n"
-                        + "\n"
-                        + "IF %NOT_FOUND_COUNT%==0 SET UNINSTALL_STATUS=COMPLETE\n"
-                        + "IF %NOT_FOUND_COUNT% GEQ 1 SET UNINSTALL_STATUS=PARTIAL\n"
-                        + "IF %NOT_FOUND_COUNT%==4 SET UNINSTALL_STATUS=FAIL\n"
-                        + "\n"
-                        + "IF %UNINSTALL_STATUS%==COMPLETE GOTO UNINSTALLED\n"
-                        + "IF %UNINSTALL_STATUS%==PARTIAL GOTO UNINSTALLED\n"
-                        + "IF %UNINSTALL_STATUS%==FAIL GOTO FAILED\n"
-                        + "\n"
-                        + "CLS\n"
-                        + "\n"
-                        + ":UNINSTALLED\n"
-                        + "\n"
-                        + "ECHO.\n"
-                        + "ECHO.\n"
-                        + "ECHO SUCCESSFULLY UNINSTALLED THE FOLLOWING:\n"
-                        + "ECHO.\n"
-                        + "IF %FE-BUDDY_TEMP_FOLDER%==FOUND ECHO        -temp\\FE-BUDDY\n"
-                        + "IF %FE-BUDDY_APPDATA_FOLDER%==FOUND ECHO        -AppData\\Local\\FE-BUDDY\n"
-                        + "IF %FE-BUDDY_SHORTCUT%==FOUND ECHO        -Desktop\\FE-BUDDY Shortcut\n"
-                        + "IF %OLD_START_SHORTCUT%==FOUND ECHO        -Start Menu\\Kyle Sanders\n"
-                        + "IF %NEW_START_SHORTCUT%==FOUND ECHO        -Start Menu\\FE-BUDDY Shortcut\n"
-                        + "\n"
-                        + ":FAILED\n"
-                        + "\n"
-                        + "IF NOT %NOT_FOUND_COUNT%==0 (\n"
-                        + "	ECHO.\n"
-                        + "	ECHO.\n"
-                        + "	ECHO.\n"
-                        + "	ECHO.\n"
-                        + "	IF %UNINSTALL_STATUS%==PARTIAL ECHO NOT ABLE TO COMPLETELY UNINSTALL BECAUSE THE FOLLOWING COULD NOT BE FOUND:\n"
-                        + "	IF %UNINSTALL_STATUS%==FAIL ECHO UNINSTALL FAILED COMPLETELY BECAUSE THE FOLLOWING COULD NOT BE FOUND:\n"
-                        + "	ECHO.\n"
-                        + "	IF %FE-BUDDY_TEMP_FOLDER%==NOT_FOUND ECHO        -temp\\FE-BUDDY\n"
-                        + "	IF %FE-BUDDY_APPDATA_FOLDER%==NOT_FOUND ECHO        -AppData\\Local\\FE-BUDDY\n"
-                        + "	IF %FE-BUDDY_SHORTCUT%==NOT_FOUND (\n"
-                        + "		ECHO        -Desktop\\FE-BUDDY Shortcut\n"
-                        + "		ECHO             --If the shortcut was renamed, delete the shortcut manually.\n"
-                        + "	)\n"
-                        + " IF %NEW_START_SHORTCUT%==NOT_FOUND ECHO        -Start Menu\\FE-BUDDY Shortcut\n"
-                        + ")\n"
-                        + "\n"
-                        + "ECHO.\n"
-                        + "ECHO.\n"
-                        + "ECHO.\n"
-                        + "ECHO.\n"
-                        + "ECHO.\n"
-                        + "ECHO ...Close this prompt when ready.\n"
-                        + "\n"
-                        + "PAUSE>NUL\n";
-
-                File.WriteAllText($"{Path.GetTempPath()}UNINSTALL_FE-BUDDY.bat", uninstallBatchFileString);
-                File.WriteAllText($"{Path.GetTempPath()}UNINSTALL_START_FE-BUDDY.bat", uninstall_start_string);
-
-                ProcessStartInfo ProcessInfo;
-                Process Process;
-
-                ProcessInfo = new ProcessStartInfo("cmd.exe", "/c " + $"\"{Path.GetTempPath()}UNINSTALL_START_FE-BUDDY.bat\"")
-                {
-                    CreateNoWindow = false,
-                    UseShellExecute = false
-                };
-
-                Process = Process.Start(ProcessInfo);
-
-                Process.Close();
-                Environment.Exit(1);
+                return;
             }
+
+            Logger.LogMessage("WARNING", "CONFIRMATION USER WANTS TO UNINSTALL");
+            AppUninstaller.Uninstall();
         }
 
         private void InstructionsMenuItem_Click(object sender, EventArgs e)

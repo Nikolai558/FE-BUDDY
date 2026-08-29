@@ -77,6 +77,17 @@
                        Type="string"
                        Value="[PRODUCTSEMVER]" />
 
+        <!--
+          This install's own ProductCode, so the in-app "Uninstall" menu item can hand it
+          to "msiexec /x" (see FeBuddyLibrary\Update\AppUninstaller.cs). Removed with the
+          component on uninstall, and rewritten by each install/major upgrade.
+        -->
+        <RegistryValue Root="HKLM"
+                       Key="Software\FE-BUDDY"
+                       Name="ProductCode"
+                       Type="string"
+                       Value="[ProductCode]" />
+
       </Component>
     </StandardDirectory>
 

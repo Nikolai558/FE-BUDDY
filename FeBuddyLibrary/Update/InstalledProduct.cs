@@ -38,6 +38,13 @@ namespace FeBuddyLibrary.Update
         /// <summary>The real installed semantic version (e.g. "2.8.4-alpha.1"), or null if not written (not MSI-installed, or an older install predating this feature).</summary>
         public static string GetProductSemVer() => ReadRegistryValue("ProductSemVer");
 
+        /// <summary>
+        /// The MSI ProductCode GUID (e.g. "{XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX}") the
+        /// installer wrote, for passing to "msiexec /x" - or null if not MSI-installed or
+        /// the install predates this value being written (see FE-BUDDY.Installer\InstallerState.wxs).
+        /// </summary>
+        public static string GetProductCode() => ReadRegistryValue("ProductCode");
+
         private static string ReadRegistryValue(string name)
         {
             using var key = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(RegistryKeyPath);

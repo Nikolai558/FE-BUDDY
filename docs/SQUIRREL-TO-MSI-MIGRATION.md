@@ -166,6 +166,37 @@ the `OnAppUninstalled` handler already relies on).
 
 ---
 
+## The in-app "Uninstall" menu item
+
+Separate from the automatic leftover-Squirrel cleanup above: every form has an
+**Uninstall** item under the Settings menu that removes *the copy that's
+running*. It used to write and run a batch file that blind-deleted
+`%LocalAppData%\FE-BUDDY\` and the shortcuts by path - which orphaned the
+Add/Remove Programs entry for both install types and did nothing for a Program
+Files MSI install.
+
+It now routes through
+[`AppUninstaller.Uninstall()`](../FeBuddyLibrary/Update/AppUninstaller.cs), which
+picks the mechanism by install type and then exits the process:
+
+- **MSI install** (`InstalledProduct.IsMsiInstalled()`) - launches
+  `msiexec /x {ProductCode}` (standard interactive Windows uninstall UI,
+  self-elevating). The `ProductCode` is read from
+  `HKLM\Software\FE-BUDDY\ProductCode`, written by
+  [`InstallerState.wxs`](../FE-BUDDY.Installer/InstallerState.wxs).
+- **Squirrel install** (`SquirrelInstall.IsCurrentProcessSquirrelInstalled()`) -
+  runs `Update.exe --uninstall`, same as `SquirrelInstall.TryUninstall` but
+  without the "refuse if it's the running copy" guard, since exiting is the
+  intent here.
+- **Neither** (dev build, xcopy) - no destructive action; a message box points
+  the user at Windows "Installed apps".
+
+The standalone [`scripts/uninstall.bat`](../scripts/uninstall.bat) is unchanged
+and still carries the old blind-delete approach - it's a manual last resort, not
+wired to anything in the app.
+
+---
+
 ## Open questions (still need a decision)
 
 - **Grace window length** - how many releases (or how much time) after

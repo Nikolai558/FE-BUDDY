@@ -120,6 +120,13 @@ namespace FeBuddyWinFormUI
         public static void BackupSettings()
         {
             string settingsFile = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.PerUserRoamingAndLocal).FilePath;
+
+            if (!File.Exists(settingsFile))
+            {
+                Logger.LogMessage("DEBUG", "No user.config to back up before update - skipping.");
+                return;
+            }
+
             string destination = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + "\\..\\last.config";
             File.Copy(settingsFile, destination, true);
         }
@@ -389,7 +396,11 @@ namespace FeBuddyWinFormUI
             catch (Exception e)
             {
                 Logger.LogMessage("WARNING", "Unable to check for updates: " + e.Message);
-                MessageBox.Show($"FE-BUDDY could not perform an update check due to either your internet connection or GitHub Server issues.\n\n" + e.ToString());
+                MessageBox.Show(
+                    DescribeUpdateCheckFailure(e),
+                    "Update Check Failed",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
             }
 
             // we have decided not to update, lets return current version

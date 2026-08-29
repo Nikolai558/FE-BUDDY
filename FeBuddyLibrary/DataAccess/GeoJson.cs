@@ -1288,16 +1288,21 @@ namespace FeBuddyLibrary.DataAccess
                 int textdefaults = 0;
                 int symboldefaults = 0;
                 int linedefaults = 0;
+
+                Dictionary<string, DuplicateDescriptionInfo> duplicateDescriptionLog = new Dictionary<string, DuplicateDescriptionInfo>();
+
                 foreach (GeoMapObject geoMapObject in geoMap.Objects.GeoMapObject)
                 {
+                    StringBuilder objLog = new StringBuilder();
+                    objLog.AppendLine($"\t\tTDM: {geoMapObject.TdmOnly}");
 
-                    // TODO: The log file is duplicating lines inside if they have duplicate description names/info.
-                    geoMapObjectLog.AppendLine($"\n\n\tDescription: {geoMapObject.Description}");
-                    geoMapObjectLog.AppendLine($"\t\tTDM: {geoMapObject.TdmOnly}");
+                    string lineDefaultsLog = geoMapObject.LineDefaults != null ? geoMapObject.LineDefaults.ToString() + $"__Filters {geoMapObject.LineDefaults?.Filters?.ToString() ?? "None"}" : null;
+                    string textDefaultsLog = geoMapObject.TextDefaults != null ? geoMapObject.TextDefaults.ToString() + $"__Filters {geoMapObject.TextDefaults?.Filters?.ToString() ?? "None"}" : null;
+                    string symbolDefaultsLog = geoMapObject.SymbolDefaults != null ? geoMapObject.SymbolDefaults.ToString() + $"__Filters {geoMapObject.SymbolDefaults?.Filters?.ToString() ?? "None"}" : null;
 
-                    if (geoMapObject.LineDefaults?.ToString() != null) { geoMapObjectLog.AppendLine("\t\t" + geoMapObject.LineDefaults?.ToString() + $"__Filters {geoMapObject.LineDefaults?.Filters.ToString() ?? "None"}");}
-                    if (geoMapObject.TextDefaults?.ToString() != null) { geoMapObjectLog.AppendLine("\t\t" + geoMapObject.TextDefaults?.ToString() + $"__Filters {geoMapObject.TextDefaults?.Filters.ToString() ?? "None"}");}
-                    if (geoMapObject.SymbolDefaults?.ToString() != null) { geoMapObjectLog.AppendLine("\t\t" + geoMapObject.SymbolDefaults?.ToString() + $"__Filters {geoMapObject.SymbolDefaults?.Filters.ToString() ?? "None"}");}
+                    if (lineDefaultsLog != null) { objLog.AppendLine("\t\t" + lineDefaultsLog); }
+                    if (textDefaultsLog != null) { objLog.AppendLine("\t\t" + textDefaultsLog); }
+                    if (symbolDefaultsLog != null) { objLog.AppendLine("\t\t" + symbolDefaultsLog); }
 
                     string fileName = geoMapObject.Description + ".geojson";
                     fileName = MakeValidFileName(fileName);
@@ -1329,7 +1334,7 @@ namespace FeBuddyLibrary.DataAccess
 
                     if (AllLinesDefaults.properties.filters.Count() == 0 && AllLinesDefaults.properties.bcg != null)
                     {
-                        geoMapObjectLog.AppendLine($"\t\t\t WARNING: Line Defaults are missing fillters. If the features in this file do NOT have overriding filter properties, the object will NOT be displayed in CRC.");
+                        objLog.AppendLine($"\t\t\t WARNING: Line Defaults are missing fillters. If the features in this file do NOT have overriding filter properties, the object will NOT be displayed in CRC.");
                     }
 
                     foreach (Element element in geoMapObject.Elements.Element)
@@ -1363,7 +1368,7 @@ namespace FeBuddyLibrary.DataAccess
 
                                         if (defaultFeature.properties.filters.Count() == 0 && defaultFeature.properties.bcg != null)
                                         {
-                                            geoMapObjectLog.AppendLine($"\t\t\t WARNING: Symbol Defaults are missing fillters. If the features in this file do NOT have overriding filter properties, the object will NOT be displayed in CRC.");
+                                            objLog.AppendLine($"\t\t\t WARNING: Symbol Defaults are missing fillters. If the features in this file do NOT have overriding filter properties, the object will NOT be displayed in CRC.");
                                         }
 
                                         geojson.features.Add(defaultFeature);
@@ -1403,7 +1408,7 @@ namespace FeBuddyLibrary.DataAccess
 
                                         if (defaultFeature.properties.filters.Count() == 0 && defaultFeature.properties.bcg != null)
                                         {
-                                            geoMapObjectLog.AppendLine($"\t\t\t WARNING: Text Defaults are missing fillters. If the features in this file do NOT have overriding filter properties, the object will NOT be displayed in CRC.");
+                                            objLog.AppendLine($"\t\t\t WARNING: Text Defaults are missing fillters. If the features in this file do NOT have overriding filter properties, the object will NOT be displayed in CRC.");
                                         }
 
                                         geojson.features.Add(defaultFeature);
@@ -1452,15 +1457,18 @@ namespace FeBuddyLibrary.DataAccess
                     }
 
                     // This fixes the duplicate description issue #148
-                    if (File.Exists(file.FullName))
+                    bool isDuplicateDescription = File.Exists(file.FullName);
+                    bool combinedWithExisting = false;
+                    if (isDuplicateDescription)
                     {
                         FeatureCollection inFile = JsonConvert.DeserializeObject<FeatureCollection>(File.ReadAllText(file.FullName));
 
                         if (HasSameDefaultValues(geojson, inFile))
                         {
                             // Combine the features with only ONE set of defaults
-                            // TODO - This will place the defaults whereever in the file.... Not right at the top.  
+                            // TODO - This will place the defaults whereever in the file.... Not right at the top.
                             geojson = CombineFeatureCollections(geojson, inFile);
+                            combinedWithExisting = true;
                         }
                         else
                         {
@@ -1473,6 +1481,42 @@ namespace FeBuddyLibrary.DataAccess
                         //geojson.features.AddRange(inFile.features);
                     }
 
+                    // Issue #152 - record the duplicate/combine outcome in the log 
+                    if (!duplicateDescriptionLog.TryGetValue(fileName, out DuplicateDescriptionInfo dupInfo))
+                    {
+                        dupInfo = new DuplicateDescriptionInfo
+                        {
+                            OriginalDescription = geoMapObject.Description,
+                            Count = 1,
+                            Tdm = geoMapObject.TdmOnly,
+                            LineDefaults = lineDefaultsLog,
+                            TextDefaults = textDefaultsLog,
+                            SymbolDefaults = symbolDefaultsLog,
+                            BaseFileName = file.Name,
+                        };
+                        duplicateDescriptionLog[fileName] = dupInfo;
+                        geoMapObjectLog.AppendLine($"\n\n\tDescription: {geoMapObject.Description}");
+                    }
+                    else
+                    {
+                        dupInfo.Count += 1;
+                        if (combinedWithExisting)
+                        {
+                            geoMapObjectLog.AppendLine($"\n\n\tDescription: {geoMapObject.Description}   [DUPLICATE #{dupInfo.Count} -> combined into {file.Name}; attributes identical to first occurrence]");
+                        }
+                        else
+                        {
+                            dupInfo.SeparateFiles.Add(file.Name);
+                            geoMapObjectLog.AppendLine($"\n\n\tDescription: {geoMapObject.Description}   [DUPLICATE #{dupInfo.Count} -> attributes DIFFER from first occurrence; written to separate file \"{file.Name}\"]");
+
+                            List<string> defaultDiffs = BuildDefaultsDiff(dupInfo, geoMapObject.TdmOnly, lineDefaultsLog, textDefaultsLog, symbolDefaultsLog);
+                            objLog.AppendLine("\t\t  >>> DIFFERENCE vs first occurrence:");
+                            foreach (string diff in defaultDiffs) { objLog.AppendLine("\t\t        " + diff); }
+                        }
+                    }
+
+                    geoMapObjectLog.Append(objLog.ToString());
+
                     geojson = CleanGeoJson(geojson);
 
                     string jsonString = JsonConvert.SerializeObject(geojson, new JsonSerializerSettings { Formatting = Formatting.None, NullValueHandling = NullValueHandling.Ignore });
@@ -1480,6 +1524,25 @@ namespace FeBuddyLibrary.DataAccess
                     //jsonString = PostProcess(jsonString);
 
                     File.WriteAllText(file.FullName, jsonString);
+                }
+
+                // Issue #152 - per-GeoMap roll-up of any description that appeared more than once.
+                List<DuplicateDescriptionInfo> repeatedDescriptions = duplicateDescriptionLog.Values.Where(d => d.Count > 1).ToList();
+                if (repeatedDescriptions.Count > 0)
+                {
+                    geoMapObjectLog.AppendLine($"\n\n\t*** DUPLICATE DESCRIPTION SUMMARY - {geoMap.Name} ***");
+                    foreach (DuplicateDescriptionInfo d in repeatedDescriptions)
+                    {
+                        if (d.SeparateFiles.Count == 0)
+                        {
+                            geoMapObjectLog.AppendLine($"\t\t{d.OriginalDescription} : {d.Count} occurrences -> 1 file (attributes identical)");
+                        }
+                        else
+                        {
+                            string separateFilesText = $"{d.SeparateFiles.Count} separate file{(d.SeparateFiles.Count == 1 ? string.Empty : "s")} w/ differing attributes ({string.Join(", ", d.SeparateFiles)})";
+                            geoMapObjectLog.AppendLine($"\t\t{d.OriginalDescription} : {d.Count} occurrences -> {d.BaseFileName} + {separateFilesText}");
+                        }
+                    }
                 }
             }
             if (!string.IsNullOrWhiteSpace(_errorLog.ToString()) && !string.IsNullOrEmpty(_errorLog.ToString()))
@@ -1630,8 +1693,74 @@ namespace FeBuddyLibrary.DataAccess
                     if (!objOneDefaults[key].Equals(objTwoDefaults[key])) return false;
                 }
             }
-            
+
             return true;
+        }
+
+        private class DuplicateDescriptionInfo
+        {
+            public string OriginalDescription;
+            public int Count;
+            public bool Tdm;
+            public string LineDefaults;
+            public string TextDefaults;
+            public string SymbolDefaults;
+            public string BaseFileName;
+            public List<string> SeparateFiles = new List<string>();
+        }
+
+        /// <summary>
+        /// Issue #152 - describe how a duplicate GeoMapObject's attributes differ from the first
+        /// occurrence of the same description, one human readable line per differing field.
+        /// </summary>
+        private static List<string> BuildDefaultsDiff(DuplicateDescriptionInfo first, bool currentTdm, string currentLine, string currentText, string currentSymbol)
+        {
+            List<string> diffs = new List<string>();
+
+            if (first.Tdm != currentTdm) { diffs.Add($"TDM: {first.Tdm} -> {currentTdm}"); }
+
+            AppendDefaultDiff(diffs, "Line Defaults", first.LineDefaults, currentLine);
+            AppendDefaultDiff(diffs, "Text Defaults", first.TextDefaults, currentText);
+            AppendDefaultDiff(diffs, "Symbol Defaults", first.SymbolDefaults, currentSymbol);
+
+            if (diffs.Count == 0)
+            {
+                // HasSameDefaultValues compares normalized GeoJSON, so it can flag a difference that
+                // only shows up after style/filter normalization even when the raw strings match.
+                diffs.Add("defaults differ only after style/filter normalization");
+            }
+
+            return diffs;
+        }
+
+        private static void AppendDefaultDiff(List<string> diffs, string label, string first, string current)
+        {
+            if (first == current) { return; }
+            if (first == null) { diffs.Add($"{label}: absent in first occurrence, present here"); return; }
+            if (current == null) { diffs.Add($"{label}: present in first occurrence, absent here"); return; }
+
+            // Both are "<label>: A__B__C" strings from the same ToString() layout, so segments align.
+            string[] firstSegments = first.Split(new[] { "__" }, StringSplitOptions.None);
+            string[] currentSegments = current.Split(new[] { "__" }, StringSplitOptions.None);
+            string prefix = label + ": ";
+            List<string> changed = new List<string>();
+
+            for (int i = 0; i < Math.Max(firstSegments.Length, currentSegments.Length); i++)
+            {
+                string f = i < firstSegments.Length ? firstSegments[i].Trim() : null;
+                string c = i < currentSegments.Length ? currentSegments[i].Trim() : null;
+
+                if (i == 0)
+                {
+                    if (f != null && f.StartsWith(prefix)) { f = f.Substring(prefix.Length); }
+                    if (c != null && c.StartsWith(prefix)) { c = c.Substring(prefix.Length); }
+                }
+
+                if (f == c) { continue; }
+                changed.Add($"{f ?? "(none)"} -> {c ?? "(none)"}");
+            }
+
+            diffs.Add(changed.Count > 0 ? $"{label}: {string.Join("; ", changed)}" : $"{label}: {first} -> {current}");
         }
 
         // CRC parses GeoJSON "style" values case-sensitively, but the source GeoMap XML

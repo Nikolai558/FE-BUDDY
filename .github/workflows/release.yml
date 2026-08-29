@@ -1,16 +1,3 @@
-# ============================================================================
-# DISABLED - this file is named `release.yml.disabled` on purpose.
-# GitHub Actions only loads `*.yml` / `*.yaml` files that sit DIRECTLY in
-# .github/workflows/, so with the `.disabled` suffix this workflow is invisible
-# to Actions: it never triggers on events, never appears in the Actions tab,
-# and cannot be run manually.
-#
-# TO ACTIVATE (once 2.9.0 is released and the SQUIRREL_BRIDGE_TAG variable is
-# set - see docs), rename it back:
-#     git mv .github/workflows/release.yml.disabled .github/workflows/release.yml
-# No changes to the contents below are needed.
-# ============================================================================
-
 # Creates a draft GitHub Release for FE-BUDDY.
 #
 # Runs when a pull request into the `releases` branch is MERGED (not simply 

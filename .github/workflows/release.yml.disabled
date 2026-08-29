@@ -1,0 +1,218 @@
+# ============================================================================
+# DISABLED - this file is named `release.yml.disabled` on purpose.
+# GitHub Actions only loads `*.yml` / `*.yaml` files that sit DIRECTLY in
+# .github/workflows/, so with the `.disabled` suffix this workflow is invisible
+# to Actions: it never triggers on events, never appears in the Actions tab,
+# and cannot be run manually.
+#
+# TO ACTIVATE (once 2.9.0 is released and the SQUIRREL_BRIDGE_TAG variable is
+# set - see docs), rename it back:
+#     git mv .github/workflows/release.yml.disabled .github/workflows/release.yml
+# No changes to the contents below are needed.
+# ============================================================================
+
+# Creates a draft GitHub Release for FE-BUDDY.
+#
+# Runs when a pull request into the `releases` branch is MERGED (not simply 
+# closed). It can also be manually triggered from the Actions tab. The workflow 
+# builds FE-BUDDY and the MSI using build.ps1, then creates a DRAFT GitHub 
+# release. It will never automatically publish the release. 
+# A repository maintainer must review the draft and publish it manually. 
+# 
+# For the full release process and how values are determined, see 
+# docs/PublishReleaseInstructions.md and the conversation notes. 
+# 
+# Key points: 
+# * The version is read from the built FE-BUDDY.dll ProductVersion, which is 
+#   the same version source used by build.ps1. The Git tag uses the version 
+#   directly (e.g. 2.8.4 / 2.8.4-beta.5), while the release name adds a "v" 
+#   prefix. 
+#
+# * Release notes are pulled directly from the matching 
+#   "-Version <ver>" section in ChangeLog.md. If no matching section is 
+#   found, the workflow fails. 
+#
+# * GlobalConfig.DEVMODE must be false. If it is true, the workflow aborts. 
+#
+# * Squirrel bridge assets (.nupkg / RELEASES / FE-BUDDYSetup.exe) are copied 
+#   forward from the release specified by the SQUIRREL_BRIDGE_TAG repository 
+#   variable. Remove/unset this variable once Squirrel support is fully retired.
+
+name: "Release"
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [releases]
+  workflow_dispatch:
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  draft-release:
+    name: Draft release
+    runs-on: windows-2025
+    if: github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch'
+
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    steps:
+      - name: Checkout releases branch
+        uses: actions/checkout@v6
+        with:
+          ref: releases
+          fetch-depth: 0
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '10.x'
+
+      - name: Pre-flight checks
+        id: preflight
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+
+          # --- DEVMODE must be off ------------------------------------------------
+          $globalConfig = Get-Content -Path 'FeBuddyLibrary/GlobalConfig.cs' -Raw
+          if ($globalConfig -notmatch 'public\s+static\s+bool\s+DEVMODE\s*=\s*false\s*;') {
+              Write-Host "::error::GlobalConfig.DEVMODE is not set to false. Set it to false before releasing."
+              exit 1
+          }
+
+          # --- Version (from the csproj, for fast pre-build guards) --------------
+          [xml]$proj = Get-Content -Path 'FeBuddyWinFormUI/FeBuddyWinFormUI.csproj'
+          $ver = (($proj.Project.PropertyGroup.Version) | Where-Object { $_ }) -as [string]
+          if ([string]::IsNullOrWhiteSpace($ver)) {
+              Write-Host "::error::Could not read <Version> from FeBuddyWinFormUI.csproj."
+              exit 1
+          }
+          $ver = $ver.Trim()
+          Write-Host "Version: $ver"
+
+          # --- ChangeLog.md must have a literal section for this exact version --
+          $header = "- ## Version $ver"
+          $changelog = Get-Content -Path 'ChangeLog.md'
+          if (-not ($changelog | Where-Object { $_.Trim() -eq $header })) {
+              Write-Host "::error::ChangeLog.md has no '$header' section. Add the changelog entry before releasing."
+              exit 1
+          }
+
+          # --- The tag / release must not already exist -------------------------
+          git rev-parse -q --verify "refs/tags/$ver" *> $null
+          if ($LASTEXITCODE -eq 0) {
+              Write-Host "::error::Git tag '$ver' already exists."
+              exit 1
+          }
+          gh release view "$ver" *> $null
+          if ($LASTEXITCODE -eq 0) {
+              Write-Host "::error::A release named '$ver' already exists."
+              exit 1
+          }
+
+          $sha = (git rev-parse HEAD).Trim()
+
+          Add-Content -Path $env:GITHUB_OUTPUT -Value "version=$ver"
+          Add-Content -Path $env:GITHUB_OUTPUT -Value "sha=$sha"
+
+      - name: Build (build.ps1)
+        shell: pwsh
+        run: ./build.ps1
+
+      - name: Extract release notes and verify build
+        id: notes
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $expected = '${{ steps.preflight.outputs.version }}'
+
+          # --- Authoritative version: the ProductVersion of the built DLL -------
+          $verInfo = Get-ChildItem -Path 'publish/FE-BUDDY.dll' -Recurse |
+                     Select-Object -First 1 -ExpandProperty VersionInfo
+          if (-not $verInfo) {
+              Write-Host "::error::build.ps1 did not produce publish/FE-BUDDY.dll."
+              exit 1
+          }
+          $dllVer = $verInfo.ProductVersion.Trim()
+          if ($dllVer -ne $expected) {
+              Write-Host "::error::Version mismatch - csproj says '$expected', built DLL says '$dllVer'."
+              exit 1
+          }
+
+          # --- MSI must exist -------------------------------------------------
+          $msi = Get-ChildItem -Path 'releases/FE-BUDDY-*.msi' | Select-Object -First 1
+          if (-not $msi) {
+              Write-Host "::error::build.ps1 did not produce releases/FE-BUDDY-*.msi."
+              exit 1
+          }
+
+          # --- Slice the matching ChangeLog.md section --------------------------
+          $header = "- ## Version $expected"
+          $lines  = Get-Content -Path 'ChangeLog.md'
+          $start  = -1
+          for ($i = 0; $i -lt $lines.Count; $i++) {
+              if ($lines[$i].Trim() -eq $header) { $start = $i; break }
+          }
+          if ($start -lt 0) {
+              Write-Host "::error::ChangeLog.md section '$header' vanished between pre-flight and now."
+              exit 1
+          }
+          $body = [System.Collections.Generic.List[string]]::new()
+          for ($i = $start + 1; $i -lt $lines.Count; $i++) {
+              if ($lines[$i] -match '^- ## Version ') { break }
+              $body.Add($lines[$i])
+          }
+          # Drop one indent level so the bullets render at top level on GitHub.
+          $text = (($body -join "`n") -replace '(?m)^  ', '').Trim()
+          if ([string]::IsNullOrWhiteSpace($text)) {
+              Write-Host "::error::ChangeLog.md section '$header' is empty."
+              exit 1
+          }
+          Set-Content -Path 'release-notes.md' -Value $text -Encoding utf8
+
+          $prerelease = if ($expected -match '-') { 'true' } else { 'false' }
+
+          Add-Content -Path $env:GITHUB_OUTPUT -Value "msi=releases/$($msi.Name)"
+          Add-Content -Path $env:GITHUB_OUTPUT -Value "prerelease=$prerelease"
+          Write-Host "Notes: $($body.Count) lines | prerelease=$prerelease | msi=$($msi.Name)"
+
+      - name: Fetch Squirrel bridge assets
+        if: vars.SQUIRREL_BRIDGE_TAG != ''
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          New-Item -ItemType Directory -Force -Path 'bridge' | Out-Null
+          gh release download '${{ vars.SQUIRREL_BRIDGE_TAG }}' `
+            --dir bridge `
+            --pattern '*.nupkg' `
+            --pattern 'RELEASES' `
+            --pattern 'FE-BUDDYSetup.exe'
+          if ($LASTEXITCODE -ne 0) {
+              Write-Host "::error::Could not download Squirrel bridge assets from release '${{ vars.SQUIRREL_BRIDGE_TAG }}'."
+              exit 1
+          }
+          Get-ChildItem bridge | Format-Table Name, Length
+
+      - name: Create draft release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.preflight.outputs.version }}
+          name: v${{ steps.preflight.outputs.version }}
+          target_commitish: ${{ steps.preflight.outputs.sha }}
+          draft: true
+          prerelease: ${{ steps.notes.outputs.prerelease }}
+          body_path: release-notes.md
+          fail_on_unmatched_files: false
+          files: |
+            ${{ steps.notes.outputs.msi }}
+            bridge/FE-BUDDYSetup.exe
+            bridge/RELEASES
+            bridge/FE-BUDDY-*-full.nupkg
+            bridge/FE-BUDDY-*-delta.nupkg

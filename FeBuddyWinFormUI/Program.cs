@@ -4,8 +4,10 @@ using System.Drawing;
 using System.IO;
 using System.Reflection;
 using System.Windows.Forms;
+using FeBuddy.Versioning;
 using FeBuddyLibrary.DataAccess;
 using FeBuddyLibrary.Helpers;
+using FeBuddyLibrary.Update;
 using FeBuddyWinFormUI.Properties;
 using Squirrel;
 
@@ -44,7 +46,19 @@ namespace FeBuddyWinFormUI
             // CS: Note, this GitHub limit is based on IP, so is shared with every process at a
             // household or organisation. A read-only github token should be generated to remove
             // this limit.
-            var version = CheckForUpdates();
+            string version;
+            try
+            {
+                version = CheckForUpdates();
+            }
+            catch (Exception ex)
+            {
+                // The update/migration path must never be able to stop the app from
+                // starting. Anything unhandled here gets logged and swallowed so we still
+                // fall through to launching the UI with a best-effort version string.
+                Logger.LogMessage("ERROR", "CheckForUpdates threw and was suppressed: " + ex);
+                version = GetApplicationVersion();
+            }
 
             //LandingForm landingForm = new LandingForm(version);
             //landingForm.Show();
@@ -142,23 +156,118 @@ namespace FeBuddyWinFormUI
                            .ToString(3) ?? "dev";
         }
 
-        private static bool IsRunningFromMsiInstall()
+        // IsRunningFromMsiInstall/GetInstalledProductSemVer moved to
+        // FeBuddyLibrary.Update.InstalledProduct - LandingForm's "Revert to Latest Stable"
+        // action needs the same facts, so they're no longer private to Program.cs.
+        private static bool IsRunningFromMsiInstall() => InstalledProduct.IsMsiInstalled();
+
+        private static ReleaseChannel ReadUpdateChannelSetting()
         {
-            using var key = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(@"Software\FE-BUDDY");
+            var saved = Properties.Settings.Default.UpdateChannel;
+            return Enum.TryParse<ReleaseChannel>(saved, out var channel) ? channel : ReleaseChannel.Stable;
+        }
 
-            var installLocation = key?.GetValue("InstallLocation") as string;
+        /// <summary>
+        /// Builds a user-facing explanation for a failed GitHub release/update check.
+        /// When FEBUDDY_GITHUB_TOKEN is set, the check will already have retried with it
+        /// (see GitHubAuth / UpdateChecker) - so a failure at that point usually points at
+        /// the token itself (missing scope, no access to a private release repo, expired)
+        /// rather than a plain network blip, and the message says so. Without a token, it
+        /// steers a private-repo tester toward setting one.
+        /// </summary>
+        private static string DescribeUpdateCheckFailure(Exception e)
+        {
+            var lead = GitHubAuth.GetOptionalToken() != null
+                ? "FE-BUDDY tried to reach GitHub - including a retry using your "
+                  + $"{GitHubAuth.EnvironmentVariableName} environment variable - and it still failed.\n\n"
+                  + "If FE-BUDDY is pointed at a private repo, check that the token is valid and has "
+                  + "access to it. Otherwise this is most likely a temporary internet or GitHub outage."
+                : "FE-BUDDY could not reach GitHub to check for updates - most likely a temporary "
+                  + "internet or GitHub outage.\n\n"
+                  + $"If FE-BUDDY is being tested against a private repo, set the {GitHubAuth.EnvironmentVariableName} "
+                  + "environment variable to a token that can access it.";
 
-            if (string.IsNullOrWhiteSpace(installLocation))
+            return lead + "\n\n" + e.Message;
+        }
+
+        /// <summary>
+        /// MSI-path update check: uses UpdateChecker (real GitHub Releases + FeBuddy.Versioning)
+        /// rather than Squirrel's GithubUpdateManager - see the Squirrel-to-MSI migration plan
+        /// for why these are two separate paths. Failure is reported the same way the existing
+        /// Squirrel-path check below already does, for consistency.
+        /// </summary>
+        private static void CheckForMsiUpdate(string installedVersion)
+        {
+            try
             {
-                return false;
+                var channel = ReadUpdateChannelSetting();
+                var candidate = UpdateChecker.CheckForUpdateAsync(installedVersion, channel).GetAwaiter().GetResult();
+
+                if (candidate == null)
+                {
+                    return;
+                }
+
+                Logger.LogMessage("INFO", $"Update available: CURRENT VERSION {installedVersion} / GITHUB VERSION {candidate.Version}");
+
+                using var updateForm = new UpdateAvailableForm(installedVersion, candidate);
+                updateForm.ShowDialog();
             }
+            catch (Exception e)
+            {
+                Logger.LogMessage("WARNING", "Unable to check for updates: " + e.Message);
+                MessageBox.Show(
+                    DescribeUpdateCheckFailure(e),
+                    "Update Check Failed",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+            }
+        }
 
-            var currentLocation = AppContext.BaseDirectory;
+        /// <summary>
+        /// Squirrel -> MSI migration, app side (see docs/SQUIRREL-TO-MSI-MIGRATION.md).
+        /// When this is the Squirrel-installed copy, offer to download and run the MSI.
+        /// Prompted on every launch until the user goes through with it. UpdateAvailableForm
+        /// does the download + elevated launch + process exit on Yes, so this only returns
+        /// when the user declined - the caller then falls through to the legacy Squirrel
+        /// update path unchanged.
+        /// </summary>
+        private static void OfferSquirrelToMsiMigration(string applicationVersion)
+        {
+            try
+            {
+                var channel = ReadUpdateChannelSetting();
+                var candidate = UpdateChecker.GetLatestForChannelAsync(channel).GetAwaiter().GetResult();
 
-            return string.Equals(
-                Path.GetFullPath(currentLocation).TrimEnd(Path.DirectorySeparatorChar),
-                Path.GetFullPath(installLocation).TrimEnd(Path.DirectorySeparatorChar),
-                StringComparison.OrdinalIgnoreCase);
+                if (candidate == null)
+                {
+                    Logger.LogMessage("INFO", $"Squirrel->MSI: no MSI release available on the {channel} channel yet - skipping migration offer.");
+                    return;
+                }
+
+                Logger.LogMessage("INFO", $"Squirrel->MSI: offering migration from Squirrel {applicationVersion} to MSI {candidate.Version}.");
+
+                using var migrateForm = new UpdateAvailableForm(
+                    applicationVersion,
+                    candidate,
+                    headerText: "*** FE-BUDDY HAS A NEW INSTALLER ***",
+                    questionText: "Download and install it now?",
+                    currentVersionText: "Installed via the old per-user auto-updater",
+                    newVersionText: $"Windows Installer package  •  v{candidate.Version}");
+                migrateForm.ShowDialog();
+            }
+            catch (Exception e)
+            {
+                // Non-fatal for the app - but not silent: the user asked to be told when a
+                // token was tried and still didn't work. After this we still fall through
+                // to the legacy Squirrel updater.
+                Logger.LogMessage("WARNING", "Squirrel->MSI: migration check failed - " + e.Message);
+                MessageBox.Show(
+                    "FE-BUDDY couldn't check for its new installer.\n\n" + DescribeUpdateCheckFailure(e),
+                    "Installer Check Failed",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+            }
         }
 
         /// <summary>
@@ -170,7 +279,40 @@ namespace FeBuddyWinFormUI
             var applicationVersion = GetApplicationVersion();
             if (IsRunningFromMsiInstall())
             {
-                return applicationVersion;
+                // The real installed semver (with any -alpha/-beta/-rc tag) lives in the
+                // registry, written by the installer - GetApplicationVersion() only has the
+                // assembly's numeric-only version, which can't represent a prerelease tag.
+                var installedVersion = InstalledProduct.GetProductSemVer() ?? applicationVersion;
+
+                // If the old Squirrel install is still on this machine, now is the safe
+                // time to remove it: we're running the MSI copy from Program Files, not the
+                // Squirrel copy Update.exe is about to delete. Retried every launch until
+                // the Squirrel Update.exe is actually gone.
+                if (SquirrelInstall.LeftoverInstallExists())
+                {
+                    Logger.LogMessage("INFO", "Leftover Squirrel install detected - invoking its uninstaller.");
+                    if (!SquirrelInstall.TryUninstall(TimeSpan.FromSeconds(60)))
+                    {
+                        Logger.LogMessage("WARNING", "Squirrel uninstall did not complete - will retry on next launch.");
+                    }
+
+                    // Squirrel's uninstaller deletes shortcuts by path, so it takes the
+                    // MSI's own Start Menu / Desktop shortcuts with it. Put back any that
+                    // the install's saved preferences say should exist and are now gone.
+                    // Run this even on a partial uninstall - it can still have removed the
+                    // shortcuts without removing the files.
+                    MsiShortcutRepair.RecreateMissing();
+                }
+
+                CheckForMsiUpdate(installedVersion);
+                return installedVersion;
+            }
+
+            // Still running from a Squirrel install: offer to switch to the MSI before
+            // doing anything else. If the user accepts, the process exits inside this call.
+            if (SquirrelInstall.IsCurrentProcessSquirrelInstalled())
+            {
+                OfferSquirrelToMsiMigration(applicationVersion);
             }
 
             // By default (on install) AllowPreRelease is false. This setting will only change if the user

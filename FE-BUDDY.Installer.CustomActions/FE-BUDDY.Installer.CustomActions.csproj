@@ -1,0 +1,58 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <AcceptEula>wix7</AcceptEula>
+    <!--
+      WiX's managed-custom-action host (Deployment Tools Foundation) only loads .NET
+      Framework assemblies - msiexec.exe hosts the CLR via the classic unmanaged shim,
+      which cannot load modern .NET (Core-based) assemblies. net472 is a hard requirement
+      here, not a stylistic choice; see:
+      https://github.com/orgs/wixtoolset/discussions/7136
+    -->
+    <TargetFramework>net472</TargetFramework>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <Platforms>x64</Platforms>
+    <PlatformTarget>x64</PlatformTarget>
+
+    <!--
+      WixToolset.Dtf.CustomAction's own build target (PackCustomAction, in
+      WixToolset.Dtf.CustomAction.targets) picks the 32-bit vs 64-bit native CA host stub
+      by checking the MSBuild $(Platform) property specifically - not $(PlatformTarget) or
+      $(Platforms). $(Platform) only has a value if something external passes it in (e.g.
+      Visual Studio does, via the .sln's Debug|x64/Release|x64 mapping; plain `dotnet build`
+      as used by build.ps1 does not). Without it, PackCustomAction silently falls back to
+      the x86 stub, producing a 32-bit CA wrapper embedded in a 64-bit MSI - which a 64-bit
+      msiexec cannot load, causing an near-instant, almost silent install failure. Pinning
+      it directly here makes this project produce a correct x64 CA package regardless of
+      how it's invoked.
+    -->
+    <Platform>x64</Platform>
+
+    <!--
+      Pin the output path explicitly. MSBuild inserts a "$(Platform)\" segment into the
+      default output path (bin\x64\Debug\net472\ instead of bin\Debug\net472\) whenever a
+      non-AnyCPU Platform is passed in - which Visual Studio always does here, since the
+      .sln maps this project to Debug|x64/Release|x64. Plain `dotnet build` without an
+      explicit Platform doesn't hit this, so the two build paths would otherwise produce
+      the DLL in two different places. FE-BUDDY.Installer's BindPath (see
+      FE-BUDDY.Installer.wixproj) expects it at bin\$(Configuration)\net472\ regardless of
+      which build path was used, so that ambiguity is removed here instead.
+    -->
+    <BaseOutputPath>bin\</BaseOutputPath>
+    <OutputPath>bin\$(Configuration)\</OutputPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="WixToolset.Dtf.CustomAction" Version="7.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="CustomAction.config" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\FeBuddy.Versioning\FeBuddy.Versioning.csproj" />
+  </ItemGroup>
+
+</Project>

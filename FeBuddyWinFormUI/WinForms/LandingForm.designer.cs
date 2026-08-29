@@ -52,6 +52,8 @@
             this.reportIssuesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.newsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.settingsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.updateChannelMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.revertToStableMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.allowBetaMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.UninstallMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.airacCycleGroupBox.SuspendLayout();
@@ -347,6 +349,8 @@
             // 
             this.settingsToolStripMenuItem.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))));
             this.settingsToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.updateChannelMenuItem,
+            this.revertToStableMenuItem,
             this.allowBetaMenuItem,
             this.UninstallMenuItem});
             this.settingsToolStripMenuItem.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
@@ -354,9 +358,29 @@
             this.settingsToolStripMenuItem.Name = "settingsToolStripMenuItem";
             this.settingsToolStripMenuItem.Size = new System.Drawing.Size(80, 24);
             this.settingsToolStripMenuItem.Text = "Settings";
-            // 
+            //
+            // updateChannelMenuItem
+            //
+            this.updateChannelMenuItem.BackColor = System.Drawing.Color.Black;
+            this.updateChannelMenuItem.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
+            this.updateChannelMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
+            this.updateChannelMenuItem.Name = "updateChannelMenuItem";
+            this.updateChannelMenuItem.Size = new System.Drawing.Size(206, 24);
+            this.updateChannelMenuItem.Text = "Update Channel...";
+            this.updateChannelMenuItem.Click += new System.EventHandler(this.updateChannelMenuItem_Click);
+            //
+            // revertToStableMenuItem
+            //
+            this.revertToStableMenuItem.BackColor = System.Drawing.Color.Black;
+            this.revertToStableMenuItem.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
+            this.revertToStableMenuItem.ForeColor = System.Drawing.SystemColors.AppWorkspace;
+            this.revertToStableMenuItem.Name = "revertToStableMenuItem";
+            this.revertToStableMenuItem.Size = new System.Drawing.Size(206, 24);
+            this.revertToStableMenuItem.Text = "Revert to Latest Stable...";
+            this.revertToStableMenuItem.Click += new System.EventHandler(this.revertToStableMenuItem_Click);
+            //
             // allowBetaMenuItem
-            // 
+            //
             this.allowBetaMenuItem.BackColor = System.Drawing.Color.Black;
             this.allowBetaMenuItem.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
             this.allowBetaMenuItem.Enabled = false;
@@ -434,6 +458,8 @@
         private System.Windows.Forms.Button landingStartButton;
         private System.Windows.Forms.RadioButton manageFacDataSelector;
         private System.Windows.Forms.ToolStripMenuItem allowBetaMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem updateChannelMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem revertToStableMenuItem;
         private System.Windows.Forms.ToolStripMenuItem discordToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem newsToolStripMenuItem;
         private System.Windows.Forms.RadioButton convertVstarsVeramToGeoJson;

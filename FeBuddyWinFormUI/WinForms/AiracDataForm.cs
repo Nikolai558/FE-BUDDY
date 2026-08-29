@@ -22,6 +22,12 @@ namespace FeBuddyWinFormUI
         private bool userClicked = false;
         readonly PrivateFontCollection _pfc = new PrivateFontCollection();
 
+        /// <summary>
+        /// Created on the UI thread in <see cref="StartParsing"/> so its callback marshals
+        /// back automatically while the BackgroundWorker drives the FAA download.
+        /// </summary>
+        private IProgress<AiracDownloadProgress> _downloadProgress;
+
 
         public AiracDataForm(string currentVersion)
         {
@@ -283,6 +289,8 @@ namespace FeBuddyWinFormUI
 
             AdjustProcessingBox();
 
+            _downloadProgress = new Progress<AiracDownloadProgress>(OnDownloadProgress);
+
             var worker = new BackgroundWorker();
             worker.RunWorkerCompleted += Worker_StartParsingCompleted;
             worker.DoWork += Worker_StartParsingDoWork;
@@ -299,11 +307,15 @@ namespace FeBuddyWinFormUI
             outputLocationLabel.Visible = true;
 
             processingGroupBox.Location = new Point(114, 59);
-            processingGroupBox.Size = new Size(557, 213);
+            processingGroupBox.Size = new Size(557, 235);
 
             outputLocationLabel.Location = new Point(9, 22);
             outputDirectoryLabel.Location = new Point(24, 47);
-            processingDataLabel.Location = new Point(6, 102);
+            processingDataLabel.Location = new Point(6, 92);
+            downloadProgressBar.Location = new Point(40, 168);
+            downloadProgressBar.Size = new Size(477, 20);
+            downloadStatusLabel.Location = new Point(40, 192);
+            downloadStatusLabel.Size = new Size(477, 22);
             exitButton.Location = new Point(187, 173);
         }
 
@@ -327,7 +339,11 @@ namespace FeBuddyWinFormUI
             }
 
             SetControlPropertyThreadSafe(processingDataLabel, "Text", "Downloading FAA Data");
-            DownloadHelpers.DownloadAllFiles(GlobalConfig.airacEffectiveDate, AiracDateCycleModel.AllCycleDates[GlobalConfig.airacEffectiveDate]);
+            SetControlPropertyThreadSafe(downloadProgressBar, "Visible", true);
+            SetControlPropertyThreadSafe(downloadStatusLabel, "Visible", true);
+            DownloadHelpers.DownloadAllFiles(GlobalConfig.airacEffectiveDate, AiracDateCycleModel.AllCycleDates[GlobalConfig.airacEffectiveDate], progress: _downloadProgress);
+            SetControlPropertyThreadSafe(downloadProgressBar, "Visible", false);
+            SetControlPropertyThreadSafe(downloadStatusLabel, "Visible", false);
 
             SetControlPropertyThreadSafe(processingDataLabel, "Text", "Unzipping Files");
             DirectoryHelpers.UnzipAllDownloaded();
@@ -415,6 +431,33 @@ namespace FeBuddyWinFormUI
             
         }
 
+        /// <summary>
+        /// Runs on the UI thread (the Progress&lt;T&gt; was built there) as the FAA files
+        /// stream in during the "Downloading FAA Data" step.
+        /// </summary>
+        private void OnDownloadProgress(AiracDownloadProgress p)
+        {
+            downloadProgressBar.Value = Math.Clamp(p.OverallPercent, downloadProgressBar.Minimum, downloadProgressBar.Maximum);
+
+            if (p.CurrentFilePercent is int filePercent && p.TotalBytes is long totalBytes)
+            {
+                downloadStatusLabel.Text =
+                    $"{p.FileName}  ({p.FileIndex} of {p.FileCount})     {filePercent}%     {FormatBytes(p.BytesReceived)} / {FormatBytes(totalBytes)}";
+            }
+            else
+            {
+                downloadStatusLabel.Text = $"{p.FileName}  ({p.FileIndex} of {p.FileCount})";
+            }
+        }
+
+        private static string FormatBytes(long bytes)
+        {
+            const double mb = 1024 * 1024;
+            return bytes >= mb
+                ? $"{bytes / mb:0.0} MB"
+                : $"{bytes / 1024.0:0} KB";
+        }
+
         private void Worker_StartParsingCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
             if (e.Error != null)
@@ -427,6 +470,9 @@ namespace FeBuddyWinFormUI
 
             Logger.LogMessage("INFO", "PROCESSING COMPLETED");
             File.Copy(Logger._logFilePath, $"{GlobalConfig.outputDirectory}\\FE-BUDDY_LOG.txt");
+
+            downloadProgressBar.Visible = false;
+            downloadStatusLabel.Visible = false;
 
             processingDataLabel.Text = "Complete";
             processingDataLabel.Refresh();
@@ -710,8 +756,8 @@ namespace FeBuddyWinFormUI
         private void RoadmapMenuItem_Click(object sender, EventArgs e)
         {
             Logger.LogMessage("DEBUG", "ROADMAP MENU ITEM CLICKED");
-            Process.Start(new ProcessStartInfo("https://github.com/Nikolai558/FE-BUDDY/blob/development/ROADMAP.md") { UseShellExecute = true });
-            //Process.Start("https://github.com/Nikolai558/FE-BUDDY/blob/development/ROADMAP.md");
+            Process.Start(new ProcessStartInfo("https://github.com/Nikolai558/FE-BUDDY/blob/development/docs/ROADMAP.md") { UseShellExecute = true });
+            //Process.Start("https://github.com/Nikolai558/FE-BUDDY/blob/development/docs/ROADMAP.md");
         }
 
         private void FAQMenuItem_Click(object sender, EventArgs e)
@@ -731,8 +777,8 @@ namespace FeBuddyWinFormUI
         private void CreditsMenuItem_Click(object sender, EventArgs e)
         {
             Logger.LogMessage("DEBUG", "CREDITS MENU ITEM CLICKED");
-            Process.Start(new ProcessStartInfo("https://github.com/Nikolai558/FE-BUDDY/blob/development/Credits.md") { UseShellExecute = true });
-            //Process.Start("https://github.com/Nikolai558/FE-BUDDY/blob/development/Credits.md");
+            Process.Start(new ProcessStartInfo("https://github.com/Nikolai558/FE-BUDDY/blob/development/docs/Credits.md") { UseShellExecute = true });
+            //Process.Start("https://github.com/Nikolai558/FE-BUDDY/blob/development/docs/Credits.md");
             // CreditsForm frm = new CreditsForm();
             // frm.ShowDialog();
         }

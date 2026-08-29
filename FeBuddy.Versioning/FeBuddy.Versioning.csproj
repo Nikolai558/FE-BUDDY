@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <!--
+    netstandard2.0 is deliberate: this assembly is referenced both by modern .NET code
+    (FeBuddyWinFormUI / FeBuddyLibrary, net10.0-windows) and by the WiX managed custom
+    action (FE-BUDDY.Installer.CustomActions, net472 - .NET Framework only, per WiX's
+    Deployment Tools Foundation). netstandard2.0 is the one target both sides can consume,
+    so the version-comparison rule is written exactly once and shared by both.
+  -->
+
+  <ItemGroup>
+    <PackageReference Include="Semver" Version="3.0.0" />
+  </ItemGroup>
+
+</Project>

@@ -1,7 +1,7 @@
 # CHANGELOG
 
 ---
-- ## Version 2.x.x (WORK IN PROGRESS WILL UPDATE WHEN READY TO RELEASE)
+- ## Version 2.9.0
   - FE-BUDDY now installs with a standard Windows Installer (MSI) instead of Squirrel.
     - New install screens, GPLv3 license page, and FE-BUDDY now launches automatically after installing.
     - Your settings and preferences carry over when you install or update.
@@ -23,6 +23,7 @@
     are now flagged with a WARNING in the log instead of passing through silently.
   - Bug #134 - Cleaned up the log file; removed messages that were being written from unused code.
   - Bug #191 - Clearer message if a settings backup fails during an update.
+  - Bug #137 - Fix duplicate Coordinate at antimeridian-crossing
   - (Dev notes)
     - Migrated from .NET 6 to .NET 10.
     - Installer built with WiX; MSI build added to the CI pipeline; build can take an external version number.

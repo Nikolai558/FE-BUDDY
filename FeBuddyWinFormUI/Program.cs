@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Configuration;
 using System.Drawing;
+using System.Globalization;
 using System.IO;
 using System.Reflection;
+using System.Threading;
 using System.Windows.Forms;
 using FeBuddy.Versioning;
 using FeBuddyLibrary.DataAccess;
@@ -18,6 +20,14 @@ namespace FeBuddyWinFormUI
         [STAThread]
         static void Main()
         {
+            // See issue #166 for why this code is here. 
+            var invariantCulture = CultureInfo.InvariantCulture;
+            CultureInfo.DefaultThreadCurrentCulture = invariantCulture;
+            CultureInfo.DefaultThreadCurrentUICulture = invariantCulture;
+            Thread.CurrentThread.CurrentCulture = invariantCulture;
+            Thread.CurrentThread.CurrentUICulture = invariantCulture;
+            // End of issue #166 workaround
+
             // TODO - Get system info and log it into file first thing. -https://docs.microsoft.com/en-us/previous-versions/windows/embedded/ee436483(v=msdn.10)
             Logger.CreateLogFile();
             SquirrelLogger.Register(); // wire up Squirrel logging to our log file too

@@ -220,19 +220,9 @@ namespace FeBuddyLibrary.DataAccess
         {
             Logger.LogMessage("DEBUG", $"TRYING TO CREATE {fullFilePath}");
 
-            if (!Directory.Exists(fullFilePath.Substring(0, fullFilePath.LastIndexOf('\\'))))
-            {
-                Logger.LogMessage("DEBUG", $"DIRECTORY DOES NOT EXIST, CREATING DIRECTORY FOR {fullFilePath}");
-
-                Directory.CreateDirectory(fullFilePath.Substring(0, fullFilePath.LastIndexOf('\\')));
-            }
-
-            if (!File.Exists(fullFilePath))
-            {
-                Logger.LogMessage("WARNING", $"FILE ALREADY EXITS FOR {fullFilePath}");
-
-                //File.Create(fullFilePath);
-            }
+            // Ensure the parent directory exists. CreateDirectory is a no-op if it
+            // already does. The file itself is written by the caller via File.WriteAllText.
+            Directory.CreateDirectory(Path.GetDirectoryName(fullFilePath));
         }
     }
 }

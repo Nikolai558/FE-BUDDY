@@ -37,18 +37,25 @@ Used to keep track of overall functionality and development notes for FE-Buddy v
     - `IncludeRoi`=false to `userConfig` file.
   - `Setup ROI`
     - `IncludeRoi`=true to `userConfig` file.
-- If `IncludeRoi`=true, user input boxes:
-  - `Southwest (bottom-left corner) Latitude:` — `user-input box showing greyed-out example of lat`
-  - `Southwest (bottom-left corner) Longitude:` — `user-input box showing greyed-out example of lon`
-  - `Northeast (top-right corner) Latitude:` — `user-input box showing greyed-out example of lat`
-  - `Northeast (top-right corner) Longitude:` — `user-input box showing greyed-out example of lon`
+- If `IncludeRoi`=true, ROI Coordinates Input boxes:
+  - `Southwest (bottom-left corner) Latitude`
+  - `Southwest (bottom-left corner) Longitude`
+  - `Northeast (top-right corner) Latitude`
+  - `Northeast (top-right corner) Longitude`
+  - If `IncludeRoi`=true
+    - If `DefaultRoiAirwaysOverride`=null
+	  - Automatically fill input boxes with `DefaultRoiSwLat` `DefaultRoiSwLon` `DefaultRoiNeLat` `DefaultRoiNeLon` data.
+	- If `DefaultRoiAirwaysOverride` is not null
+	  - Automatically fill input boxes with `AirwaysOverrideRoiSwLat` `AirwaysOverrideRoiSwLon` `AirwaysOverrideRoiNeLat` `AirwaysOverrideRoiNeLon`
 - Consider including a graphic of a box with the input areas positioned near the bottom-left and top-right corners of the generic box.
 - Save button:
-  - Upon action, send the following to FEBuddyLibrary to validate data:
+  - `IncludeRoi`=true, upon action, send the following to FEBuddyLibrary to validate data:
     - Coordinates are valid decimal values.
     - SW coordinates are actually southwest of the NE coordinates.
+	- If `DefaultRoiAirwaysOverride` is not null
+	  - If user ???
   - After validation, saves the `DefaultRoi` values to the `userconfig` file.
-  - Trigger GUI to read `userConfig` file again (to allow things like services to be selected that were previously unavailable due to a setting form not being filled out yet)
+  - Trigger Library to read `userConfig` file again (to allow things like services to be selected that were previously unavailable due to a setting form not being filled out yet)
 - Note: `IncludeRoi` and `DefaultRoi` values set to `null` in `userConfig` file upon initial install
   - Use this `null` value to determine if required setup has been accomplished by user.
 

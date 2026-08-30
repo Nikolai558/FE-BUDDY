@@ -10,7 +10,6 @@
 - Read/Write handled by: `FEBuddyLibrary`.HELPERS.`UserConfig`
   - Method: .`ReadAll`
   - Method: .`Write`
-  - Method: .`GetValue`
 - On initial install, installer will create a UserConfig.json with blank values.
   - On update, the current data will be saved and then rewritten to the new config file appropriatelly.
 - Structure:
@@ -21,8 +20,8 @@
   - AiracData
     - `AiracCycleId`=""
     - `UserArtccId`=""
-    - Roi
-      - `UseRoi`=""
+    - DefaultRoi
+      - `FilterByRoi`=""
       - DefaultCoordindates
         - `SwLat`=""
         - `SwLon`=""
@@ -34,7 +33,7 @@
         - `BufferAirwayWaypoints`=""
         - `IncludeFebCustomProperties`=""
         - Roi
-          - `UseRoi`=""
+          - `FilterByRoi`=""
           - `OverrideDefaultRoi`=""
           - OverrideCoordindates
             - `SwLat`=""
@@ -42,22 +41,109 @@
             - `NeLat`=""
             - `NeLon`=""
         - CrcEramPropertyDefaults
+          - `IncludeCrcEramPropertyDefaults`=""
           - Lines
-            - OutputByHighLow
-              - Airway_High_Lines
-                - `style`=""
-                - `thickness`=""
-              - Airway_Low_Lines
-                - `style`=""
-                - `thickness`=""
-              - Airway_Other_Lines
-                - `style`=""
-                - `thickness`=""
+            - Airway_High_Lines
+              - `bcg`=""
+              - `filters`=""
+              - `style`=""
+              - `thickness`=""
+            - Airway_Low_Lines
+              - `bcg`=""
+              - `filters`=""
+              - `style`=""
+              - `thickness`=""
+            - Airway_Other_Lines
+              - `bcg`=""
+              - `filters`=""
+              - `style`=""
+              - `thickness`=""
+          - Symbols
+            - Airway_High_Symbols
+              - `bcg`=""
+              - `filters`=""
+              - `style`=""
+              - `size`=""
+            - Airway_Low_Symbols
+              - `bcg`=""
+              - `filters`=""
+              - `style`=""
+              - `size`=""
+            - Airway_Other_Symbols
+              - `bcg`=""
+              - `filters`=""
+              - `style`=""
+              - `size`=""
+          - Text
+            - Airway_High_Text
+              - `bcg`=""
+              - `filters`=""
+              - `text`=""
+              - `size`=""
+              - `underline`=""
+              - `xOffset`=""
+              - `yOffset`=""
+            - Airway_Low_Text
+              - `bcg`=""
+              - `filters`=""
+              - `text`=""
+              - `size`=""
+              - `underline`=""
+              - `xOffset`=""
+              - `yOffset`=""
+            - Airway_Other_Text
+              - `bcg`=""
+              - `filters`=""
+              - `text`=""
+              - `size`=""
+              - `underline`=""
+              - `xOffset`=""
+              - `yOffset`=""
+      - DepartureProcedures
+        - `OutputBy`=""
+        - `IncludeFebCustomProperties`=""
+        - `IncludeOverridingStylePropertyByAptType`=""
+        - Roi
+          - `FilterByRoi`=""
+          - `OverrideDefaultRoi`=""
+          - OverrideCoordindates
+            - `SwLat`=""
+            - `SwLon`=""
+            - `NeLat`=""
+            - `NeLon`=""
+        - CrcEramPropertyDefaults
+          - `IncludeCrcEramPropertyDefaults`=""
+          - Lines
+            - `bcg`=""
+            - `filters`=""
+            - `style`=""
+            - `thickness`=""
+          - Symbols
+            - `bcg`=""
+            - `filters`=""
+            - `style`=""
+          - Text
+            - `bcg`=""
+            - `filters`=""
+            - `text`=""
+            - `size`=""
+            - `underline`=""
+            - `xOffset`=""
+            - `yOffset`=""
+            - `size`=""
     - AliasFile
       - Airways
         - Roi
-          - `UseRoi`=""
-          - `UseSameRoiAsGeojson`=""
+          - `FilterByRoi`=""
+          - `OverrideDefaultRoi`=""
+          - OverrideCoordindates
+            - `SwLat`=""
+            - `SwLon`=""
+            - `NeLat`=""
+            - `NeLon`=""
+      - DepartureProcedures
+        - Roi
+          - `FilterByRoi`=""
           - `OverrideDefaultRoi`=""
           - OverrideCoordindates
             - `SwLat`=""
@@ -234,12 +320,13 @@
 
 ### READ UserConfig.json
 
-- Read/Write handled by: `FEBuddyLibrary`.HELPERS.`UserConfig`
+- Read/Write handled by: `FEBuddyLibrary`.HELPERS.`UserConfigFile`
   - Method: .`ReadAll`
+    - Reads file and writes to a `UserConfig` dictionary
   - Method: .`Write`
+    - Reads `UserConfig` dictionary, writes `UserConfig.json`, runs the `ReadAll` to get latest info into the `UserConfig` dictionary
   - Method: .`GetValue`
-
-- Read and load `UserConfig.json` data into appropriate dictionary.
+    - Method recieves address of the desired value, runs the `ReadAll` to get latest info from `UserConfig` dictionary, and then returns value or throws error.
 
 ### DATE/TIME + INTERNET CHECK
  

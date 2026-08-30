@@ -1,6 +1,69 @@
 **FE-Buddy 3.0 Development Notes**
 
-Used to keep track of overall functionality and development notes for FE-Buddy v3.0.
+# GENERAL
+
+-Used to keep track of overall functionality and development notes for FE-Buddy v3.0.
+
+## USER CONFIGURATION FILE
+- Description: A JSON file containing saved data concerning preferences and settings.
+- File Name: `UserConfig.json`
+- Read/Write handled by: `FEBuddyLibrary`.HELPERS.`UserConfig`
+  - Method: .`ReadAll`
+  - Method: .`Write`
+  - Method: .`GetValue`
+- On initial install, installer will create a UserConfig.json with blank values.
+  - On update, the current data will be saved and then rewritten to the new config file appropriatelly.
+- Structure:
+  - General
+    - `DefaultOutputDirectory`=""
+    - `LastWindowState`=""
+    - `NewsLastOpen`=""
+  - AiracData
+    - `AiracCycleId`=""
+    - `UserArtccId`=""
+    - Roi
+      - `UseRoi`=""
+      - DefaultCoordindates
+        - `SwLat`=""
+        - `SwLon`=""
+        - `NeLat`=""
+        - `NeLon`=""
+    - Geojson
+      - Airways
+        - `OutputBy`=""
+        - `BufferAirwayWaypoints`=""
+        - `IncludeFebCustomProperties`=""
+        - Roi
+          - `UseRoi`=""
+          - `OverrideDefaultRoi`=""
+          - OverrideCoordindates
+            - `SwLat`=""
+            - `SwLon`=""
+            - `NeLat`=""
+            - `NeLon`=""
+        - CrcEramPropertyDefaults
+          - Lines
+            - OutputByHighLow
+              - Airway_High_Lines
+                - `style`=""
+                - `thickness`=""
+              - Airway_Low_Lines
+                - `style`=""
+                - `thickness`=""
+              - Airway_Other_Lines
+                - `style`=""
+                - `thickness`=""
+    - AliasFile
+      - Airways
+        - Roi
+          - `UseRoi`=""
+          - `UseSameRoiAsGeojson`=""
+          - `OverrideDefaultRoi`=""
+          - OverrideCoordindates
+            - `SwLat`=""
+            - `SwLon`=""
+            - `NeLat`=""
+            - `NeLon`=""
 
 # GUI
 
@@ -25,39 +88,39 @@ Used to keep track of overall functionality and development notes for FE-Buddy v
     - `stable only` is selected by default.
   - Rollback from an alpha or beta version to the latest stable version.
   - Check for updates now (`hasInternetConnection` dependent).
-  - Save button:
-    - Writes settings to the `userconfig` file.
+- Save button:
+  - Writes settings to the `UserConfig.json`.
 
 ### DEFAULT ROI
 
 - Info section:
   - `Region of Interest (ROI): An lat/lon axis-aligned rectangular region defined by southwest (bottom-left corner) and northeast (top-right corner) coordinates (i.e. a box defining the data you are interested in). Depending on the data type and operation, geometries may be clipped to the ROI or included in full when associated with an entity located within the ROI. Create a box that encompasses an acceptable amount of area outside your ARTCC boundaries so that data within that region may still be displayed in your GeoJSON files and, under certain circumstances, in additional resource files. Note: Depending on the operation, you may be given the option to override this ROI with a custom ROI for specific files later.`
 - User selects:
-  - `Do not set up a ROI; Get all data.`
-    - `IncludeRoi`=false to `userConfig` file.
-  - `Setup ROI`
-    - `IncludeRoi`=true to `userConfig` file.
-- If `IncludeRoi`=true, ROI Coordinates Input boxes:
-  - `Southwest (bottom-left corner) Latitude`
-  - `Southwest (bottom-left corner) Longitude`
+  - `Setup and use ROI` (Defeault)
+  - `Do not set up ROI; Get all NASR data.`
+- If user selects to setup ROI or loads as default or from previous UserConfig preferences, ROI Coordinates Input boxes:
   - `Northeast (top-right corner) Latitude`
   - `Northeast (top-right corner) Longitude`
+  - `Southwest (bottom-left corner) Latitude`
+  - `Southwest (bottom-left corner) Longitude`
   - If `IncludeRoi`=true
-    - If `DefaultRoiAirwaysOverride`=null
-	  - Automatically fill input boxes with `DefaultRoiSwLat` `DefaultRoiSwLon` `DefaultRoiNeLat` `DefaultRoiNeLon` data.
-	- If `DefaultRoiAirwaysOverride` is not null
-	  - Automatically fill input boxes with `AirwaysOverrideRoiSwLat` `AirwaysOverrideRoiSwLon` `AirwaysOverrideRoiNeLat` `AirwaysOverrideRoiNeLon`
-- Consider including a graphic of a box with the input areas positioned near the bottom-left and top-right corners of the generic box.
+    - If `UserConfig.json`.`General`.`Settings`.`Roi`.`DefaultCoordindates` has values
+	  - Load the values into the input boxes.
+	  - If values do not exist, provide greyed examples of lat/lon coordinates in the boxes ready for the user to input theirs.
 - Save button:
-  - `IncludeRoi`=true, upon action, send the following to FEBuddyLibrary to validate data:
-    - Coordinates are valid decimal values.
-    - SW coordinates are actually southwest of the NE coordinates.
-	- If `DefaultRoiAirwaysOverride` is not null
-	  - If user ???
-  - After validation, saves the `DefaultRoi` values to the `userconfig` file.
-  - Trigger Library to read `userConfig` file again (to allow things like services to be selected that were previously unavailable due to a setting form not being filled out yet)
-- Note: `IncludeRoi` and `DefaultRoi` values set to `null` in `userConfig` file upon initial install
-  - Use this `null` value to determine if required setup has been accomplished by user.
+  - Set `UserConfig.json`.`General`.`Settings`.`Roi`.`IncludeRoi`=`true/false`
+  - If `IncludeRoi`=true
+    - Ensure all `DefaultCoordindates` have values.
+    - Send the `DefaultCoordindates` to `FEBuddyLibrary`.`GuiProcessHandler`.`ValideateRoiCoordinates` to validate:
+      - Valid decimal values (`IsCoordinateValidFormat`)
+      - SW `DefaultCoordindates` are actually southwest of the NE `DefaultCoordindates`. (`IsCoordinatesRelativePositionValid`)
+    - Await for validation process to complete with success and then if `IncludeRoi`= `true`
+      - Set `UserConfig.json`.`General`.`Settings`.`Roi`.`DefaultCoordindates`
+        - .`SwLat`
+        - .`SwLon`
+        - .`NeLat`
+        - .`NeLon`
+  - Await for above to complete and then trigger re-read `UserConfig.json` to allow things like services to be selected that were previously unavailable due to a setting form not being filled out yet.
 
 ## INFO
 
@@ -75,70 +138,21 @@ Used to keep track of overall functionality and development notes for FE-Buddy v
 ## NEWS
 
 - Opens the FE-Buddy News page in a web browser (likely a GitHub Markdown page or website).
-- If `hasInternetConnection`=true, save the latest news post ID (or current date/time, maybe?) to the `userconfig` file when opened.
+- If `hasInternetConnection`=true, save the latest news post ID (or current date/time, maybe?) to the `UserConfig.json` when opened.
 - Upon opening FE-Buddy, check the latest news post ID. This logic should be in the library, not the GUI (`hasInternetConnection` dependent).
-  - If the latest news post is newer than the saved `lastNewsOpen` ID/date/time, the News icon should indicate that a new News post is available via text and/or by changing the icon color to grab the user's attention.
+  - If the latest news post is newer than the saved `NewsLastOpen` ID/date/time, the News icon should indicate that a new News post is available via text and/or by changing the icon color to grab the user's attention.
 
 ### SERVICES SECTION/MENUS
 
 #### AIRAC CYCLE
 
-- If `IncludeRoi`=null in `userConfig` file, grey-out this service and have a tooltip pop up advising them to navigate to SETTINGS > DEFAULT ROI and complete that form.
+- If `IncludeRoi`=empty in `UserConfig.json`, grey-out this service and have a tooltip pop up advising them to navigate to SETTINGS > DEFAULT ROI and complete that form.
   - Once they complete the form, a trigger will result in GUI reading the config file again and this service should be available again.
 - User selects Current or Next AIRAC Cycle with the effective date displayed next to it.
 - User types their ARTCC ID (consider drop menu)
 - User selects output directory
 - Create AiracSettings dictionary to be passed to Library later.
   - Add GeneralSettings after user saves on this general page.
-```cs
-var AiracSettings = new Dictionary<string, object>
-{
-    ["General"] = new Dictionary<string, string>
-    {
-        ["AiracCycleId"] = "2608",
-        ["UserArtccId"] = "ZOB",
-        ["OutputDirectory"] = @"C:\Users\BuddyGuyFriend\Desktop"
-    },
-
-    ["Geojson"] = new Dictionary<string, object>
-    {
-        ["General"] = new Dictionary<string, string>
-        {
-            // placeholder
-        },
-
-        ["Airways"] = new Dictionary<string, string>
-        {
-            ["OutputBy"] = "",
-            ["BufferAirwayWaypoints"] = "",
-            ["IncludeFebCustomProperties"] = ""
-        },
-
-        ["OtherTbd"] = new Dictionary<string, string>
-        {
-            // placeholder
-        }
-    },
-
-    ["Alias"] = new Dictionary<string, object>
-    {
-        ["General"] = new Dictionary<string, string>
-        {
-            // placeholder
-        },
-
-        ["Airways"] = new Dictionary<string, string>
-        {
-            // placeholder
-        },
-
-        ["OtherTbd"] = new Dictionary<string, string>
-        {
-            // placeholder
-        }
-    }
-};
-```
 
 ##### AIRWAYS
 
@@ -209,8 +223,6 @@ var AiracSettings = new Dictionary<string, object>
 
 # CODE LIBRARY
 
-- Initial install
-  - `IncludeRoi` and `DefaultRoi` values set to `null` in `userConfig` file.
 - Geojsons
   - Output without indenting (single line output to save space)
   - Custom properties, if included in the output, Field Names will be prefixed with "feb." to reduce conflicts with other programs.
@@ -220,9 +232,14 @@ var AiracSettings = new Dictionary<string, object>
 
 ## LAUNCH PROCESSES
 
-### READ userConfig FILE
+### READ UserConfig.json
 
-- Read and load `userConfig` file data into appropriate dictionary.
+- Read/Write handled by: `FEBuddyLibrary`.HELPERS.`UserConfig`
+  - Method: .`ReadAll`
+  - Method: .`Write`
+  - Method: .`GetValue`
+
+- Read and load `UserConfig.json` data into appropriate dictionary.
 
 ### DATE/TIME + INTERNET CHECK
  
@@ -246,15 +263,143 @@ var AiracSettings = new Dictionary<string, object>
 
 ### LATEST NEWS POST
 
-- Check for latest post date/time ID and compare against `userconfig` file
-  - If the latest news post is newer than the saved `lastNewsOpen` date/time, the News icon should indicate that a new News post is available via text and/or by changing the icon color to grab the user's attention.
+- Check for latest post PostId and compare against `UserConfig.json`.`General`.`Settings`.`News`.`NewsLastOpen`
+  - If the latest news post is newer than the saved `NewsLastOpen`, the News icon should indicate that a new News post is available via text and/or by changing the icon color to grab the user's attention.
 - GUI needs result after process completion.
+```cs
+using System.Text.RegularExpressions;
+
+public static class NewsChecker
+{
+    public static int CheckForNews(string newsPath)
+    {
+        try
+        {
+            string? NewsLastOpen =
+                UserConfig.GetValue("General.Settings.News.NewsLastOpen");
+
+            List<NewsPostId> posts = GetNewsPosts(newsPath);
+
+            // Empty NewsLastOpen means the user has never checked News.
+            if (string.IsNullOrWhiteSpace(NewsLastOpen))
+            {
+                return posts.Count;
+            }
+
+            // Invalid stored PostId.
+            if (!TryParsePostId(NewsLastOpen, out NewsPostId lastSeen))
+            {
+                return -1;
+            }
+
+            return posts.Count(post => post.CompareTo(lastSeen) > 0);
+        }
+        catch
+        {
+            // Error reading/parsing News.md, etc.
+            return -1;
+        }
+    }
+
+    private static List<NewsPostId> GetNewsPosts(string newsPath)
+    {
+        string markdown = File.ReadAllText(newsPath);
+
+        // PostId Format: yyyy-mm-dd.#
+		// 		# = Indicates the sequence number for the post that day.
+		// 		For example, the thrid post on 30AUG2026 would be: 2026-08-30.3
+		Regex postIdRegex = new(
+            @"PostId:\s*(\d{4}-\d{2}-\d{2})\.(\d+)",
+            RegexOptions.IgnoreCase);
+
+        List<NewsPostId> posts = new();
+
+        foreach (Match match in postIdRegex.Matches(markdown))
+        {
+            string postIdText =
+                $"{match.Groups[1].Value}.{match.Groups[2].Value}";
+
+            if (!TryParsePostId(postIdText, out NewsPostId postId))
+            {
+                return new List<NewsPostId>();
+            }
+
+            posts.Add(postId);
+        }
+
+        return posts;
+    }
+
+    private static bool TryParsePostId(
+        string value,
+        out NewsPostId postId)
+    {
+        postId = default;
+
+        Match match = Regex.Match(
+            value.Trim(),
+            @"^(\d{4}-\d{2}-\d{2})\.(\d+)$");
+
+        if (!match.Success)
+            return false;
+
+        if (!DateOnly.TryParseExact(
+                match.Groups[1].Value,
+                "yyyy-MM-dd",
+                CultureInfo.InvariantCulture,
+                DateTimeStyles.None,
+                out DateOnly date))
+        {
+            return false;
+        }
+
+        if (!int.TryParse(
+                match.Groups[2].Value,
+                out int sequence))
+        {
+            return false;
+        }
+
+        if (sequence < 1)
+            return false;
+
+        postId = new NewsPostId(date, sequence);
+        return true;
+    }
+
+    private readonly record struct NewsPostId(
+        DateOnly Date,
+        int Sequence) : IComparable<NewsPostId>
+    {
+        public int CompareTo(NewsPostId other)
+        {
+            int dateComparison = Date.CompareTo(other.Date);
+
+            if (dateComparison != 0)
+                return dateComparison;
+
+            return Sequence.CompareTo(other.Sequence);
+        }
+    }
+}
+```
 
 ## GUI PROCESS HANDLERS
 
-- ??? For Nik to fill out
+### VALIDATE ROI COORDINATES
+
+- `ValideateRoiCoordinates`
+  - `IsCoordinateValidFormat`
+  - `IsCoordinatesRelativePositionValid`
 
 ## SERVICES
+
+- Helpers
+  - Will need a `CrcEramPropertyHandler` class 
+    - Method: `CreateDefault`
+      - Values are passed in and a Geojson Point Feature is created as a CRC ERAM `is*Default` and returned for the FeatureCollection.
+    - Method: `CreateFeatureProperty`
+      - Values are passed in and a Geojson properties section is created and returned for the feature, also known as a CRC ERAM `Overriding Property`.
 
 ### AIRAC DATA
 

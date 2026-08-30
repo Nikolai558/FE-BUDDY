@@ -1,42 +1,4 @@
 # Creates a draft GitHub Release for FE-BUDDY.
-#
-# Runs when a pull request into the `releases` branch is MERGED (not simply 
-# closed). It can also be manually triggered from the Actions tab. The workflow 
-# builds FE-BUDDY and the MSI using build.ps1, then creates a DRAFT GitHub 
-# release. It will never automatically publish the release. 
-# A repository maintainer must review the draft and publish it manually. 
-# 
-# For the full release process and how values are determined, see 
-# docs/PublishReleaseInstructions.md and the conversation notes. 
-# 
-# Key points: 
-# * The version is read from the built FE-BUDDY.dll ProductVersion, which is 
-#   the same version source used by build.ps1. The Git tag uses the version 
-#   directly (e.g. 2.8.4 / 2.8.4-beta.5), while the release name adds a "v" 
-#   prefix. 
-#
-# * Release notes are pulled directly from the matching 
-#   "-Version <ver>" section in ChangeLog.md. If no matching section is 
-#   found, the workflow fails. 
-#
-# * GlobalConfig.DEVMODE must be false. If it is true, the workflow aborts.
-#
-# * The MSI's internal ProductVersion counter (FE-BUDDY.Installer/
-#   installer-version-counter.json) is advanced by build.ps1 during the build,
-#   then committed straight back to the `development` branch by the "Persist
-#   installer version counter to development" step so the next release starts
-#   from the new value. That push authenticates with the RELEASE_COUNTER_PAT
-#   secret - a token whose identity is allowed to bypass branch protection on
-#   `development`. Without this step the bumped counter is discarded when the
-#   runner is torn down, so every release would reuse the same counter and two
-#   builds could ship with an identical MSI ProductVersion. The commit message
-#   carries [skip ci] so it does not trigger a pointless CI run. See
-#   docs/MSI-VERSION-NUMBERING.md.
-#
-# * Squirrel bridge assets (.nupkg / RELEASES / FE-BUDDYSetup.exe) are copied
-#   forward from the release specified by the SQUIRREL_BRIDGE_TAG repository
-#   variable. Remove/unset this variable once Squirrel support is fully retired.
-
 name: "Release"
 
 on:
@@ -199,7 +161,7 @@ jobs:
           }
           Get-ChildItem bridge | Format-Table Name, Length
 
-      - name: Persist installer version counter to development
+      - name: Persist installer version counter
         if: ${{ github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch' }}
         shell: pwsh
         env:
@@ -207,33 +169,55 @@ jobs:
         run: |
           $ErrorActionPreference = 'Stop'
 
-          # build.ps1 already bumped this on the runner; push it back so the next
-          # release starts from the new value (see docs/MSI-VERSION-NUMBERING.md).
+          # build.ps1 already bumped this in the runner's working copy. Commit it
+          # back so it is not lost - see docs/MSI-VERSION-NUMBERING.md.
           $bumped = Get-Content -Path 'FE-BUDDY.Installer/installer-version-counter.json' -Raw
           $c = $bumped | ConvertFrom-Json
           $counterVersion = "$($c.major).$($c.counterMinor).$($c.counterBuild)"
+          $rel   = '${{ steps.preflight.outputs.version }}'
 
-          # Isolated clone so we never touch the `releases` working tree.
-          $repoUrl = "https://x-access-token:$env:GH_PAT@github.com/${{ github.repository }}.git"
-          git clone --depth 1 --branch development $repoUrl dev
-          Set-Content -Path 'dev/FE-BUDDY.Installer/installer-version-counter.json' `
-                      -Value $bumped -NoNewline -Encoding utf8
+          $repoUrl  = "https://x-access-token:$env:GH_PAT@github.com/${{ github.repository }}.git"
+          $counterPath = 'FE-BUDDY.Installer/installer-version-counter.json'
 
-          Push-Location dev
-          git config user.name  'fe-buddy-release-bot'
-          git config user.email '${{ github.repository_owner }}@users.noreply.github.com'
-          git add FE-BUDDY.Installer/installer-version-counter.json
+          function Push-Counter([string]$branch) {
+              # Isolated clone per branch so we never touch this job's own checkout.
+              $dir = "sync-$branch"
+              git clone --depth 1 --branch $branch $repoUrl $dir
+              if ($LASTEXITCODE -ne 0) { throw "Could not clone branch '$branch'." }
 
-          # `git diff --cached --quiet` exits non-zero when there IS a staged change.
-          # Under pwsh a native non-zero exit does not throw, so check $LASTEXITCODE.
-          git diff --cached --quiet
-          if ($LASTEXITCODE -eq 0) {
-              Write-Host 'Installer version counter already current on development; nothing to commit.'
-              exit 0
+              Set-Content -Path "$dir/$counterPath" -Value $bumped -NoNewline -Encoding utf8
+
+              Push-Location $dir
+              try {
+                  git config user.name  'fe-buddy-release-bot'
+                  git config user.email '${{ github.repository_owner }}@users.noreply.github.com'
+                  git add $counterPath
+
+                  # `git diff --cached --quiet` exits non-zero when there IS a staged
+                  # change. Under pwsh a native non-zero exit does not throw, so we
+                  # branch on $LASTEXITCODE rather than relying on ErrorAction.
+                  git diff --cached --quiet
+                  if ($LASTEXITCODE -eq 0) {
+                      Write-Host "Counter already current on '$branch'; nothing to commit."
+                      return
+                  }
+
+                  git commit -m "chore: bump installer version counter to $counterVersion (release $rel) [skip ci]"
+                  if ($LASTEXITCODE -ne 0) { throw "Commit failed on '$branch'." }
+                  git push origin "HEAD:$branch"
+                  if ($LASTEXITCODE -ne 0) { throw "Push to '$branch' failed." }
+                  Write-Host "Pushed counter $counterVersion to '$branch'."
+              }
+              finally {
+                  Pop-Location
+              }
           }
 
-          git commit -m "chore: bump installer version counter to $counterVersion (release ${{ steps.preflight.outputs.version }}) [skip ci]"
-          git push origin HEAD:development
+          # `releases` first: it is the branch this job checks out and reads the
+          # counter from, so the next release must see the new value there.
+          Push-Counter 'releases'
+          # `development` too, so the source branch does not drift behind.
+          Push-Counter 'development'
 
       - name: Create draft release
         uses: softprops/action-gh-release@v2

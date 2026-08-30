@@ -1,8 +1,12 @@
 # CHANGELOG
 
 ---
+- ## Version 2.9.1-beta.1
+  - Testing Beta Releases No changes.
+
 - ## Version 2.9.1-alpha.1
   - Testing Alpha Releases No changes. 
+
 - ## Version 2.9.0
   - FE-BUDDY now installs with a standard Windows Installer (MSI) instead of Squirrel.
     - New install screens, GPLv3 license page, and FE-BUDDY now launches automatically after installing.

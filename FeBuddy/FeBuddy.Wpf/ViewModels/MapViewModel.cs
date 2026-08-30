@@ -10,20 +10,30 @@ using Microsoft.Win32;
 namespace FeBuddy.Wpf.ViewModels;
 
 /// <summary>
-/// Drives the map screen: owns the base + overlay layers, the sample toggle, the
-/// "open a file" command, and the ROI the user drags on the map.
+/// Drives the map screen: the base + overlay layers, the sample toggle, an
+/// open-files command (multi-select), a per-file visibility list, and the ROI
+/// the user drags on the map.
 /// </summary>
 public sealed class MapViewModel : ObservableObject
 {
+    // Distinct from the slate base outline and the amber sample layer.
+    private static readonly Color[] FileColors =
+    [
+        Color.FromRgb(0x7C, 0xC7, 0xF2), // cyan
+        Color.FromRgb(0x5A, 0xD1, 0xA0), // green
+        Color.FromRgb(0xB4, 0x8C, 0xF0), // violet
+        Color.FromRgb(0xF2, 0x87, 0x9B), // rose
+        Color.FromRgb(0xF0, 0xA3, 0x5A), // orange
+    ];
+
     private readonly MapLayer? _sampleLayer;
-    private MapLayer? _fileLayer;
+    private int _colorCursor;
 
     private bool _showSample = true;
     private bool _pickRoiOnMap;
     private GeoPoint? _roiSouthWest;
     private GeoPoint? _roiNorthEast;
     private string? _statusMessage;
-    private string _fileLayerName = "No file loaded";
 
     public MapViewModel()
     {
@@ -34,14 +44,21 @@ public sealed class MapViewModel : ObservableObject
             ThemeBrush("Brush.Accent", Color.FromRgb(0xF4, 0xB7, 0x40)), thickness: 1.7, pointRadius: 3.5);
 
         Layers = [];
+        LoadedFiles = [];
+        LoadedFiles.CollectionChanged += (_, _) =>
+        {
+            OnPropertyChanged(nameof(HasLoadedFiles));
+            OnPropertyChanged(nameof(FilesButtonLabel));
+        };
         SyncLayers();
 
-        LoadFileCommand = new RelayCommand(LoadFile);
+        LoadFilesCommand = new RelayCommand(LoadFiles);
+        ClearFilesCommand = new RelayCommand(() => { LoadedFiles.Clear(); SyncLayers(); });
         ClearRoiCommand = new RelayCommand(() => { RoiSouthWest = null; RoiNorthEast = null; });
         ResetViewCommand = new RelayCommand(() => ResetRequested?.Invoke(this, EventArgs.Empty));
     }
 
-    /// <summary>Raised when the view should zoom to a set of bounds (after a file load).</summary>
+    /// <summary>Raised when the view should zoom to a set of bounds (after a load).</summary>
     public event EventHandler<GeoBounds>? FrameRequested;
 
     /// <summary>Raised when the view should reset the map to the default extent.</summary>
@@ -49,7 +66,20 @@ public sealed class MapViewModel : ObservableObject
 
     public MapLayer? BaseLayer { get; }
 
+    /// <summary>The draw list the map binds to (rebuilt by <see cref="SyncLayers"/>).</summary>
     public ObservableCollection<MapLayer> Layers { get; }
+
+    /// <summary>Every opened file, visible or not.</summary>
+    public ObservableCollection<LoadedFile> LoadedFiles { get; }
+
+    public bool HasLoadedFiles => LoadedFiles.Count > 0;
+
+    public string FilesButtonLabel => LoadedFiles.Count switch
+    {
+        0 => "No files",
+        1 => "1 file",
+        var n => $"{n} files",
+    };
 
     public bool ShowSample
     {
@@ -64,7 +94,6 @@ public sealed class MapViewModel : ObservableObject
         set => SetProperty(ref _pickRoiOnMap, value);
     }
 
-    // Bound two-way to the map. Setters refresh the read-outs.
     public GeoPoint? RoiSouthWest
     {
         get => _roiSouthWest;
@@ -88,19 +117,15 @@ public sealed class MapViewModel : ObservableObject
     public string RoiSwLat => Fmt(RoiSouthWest?.Lat);
     public string RoiSwLon => Fmt(RoiSouthWest?.Lon);
 
-    public string FileLayerName
-    {
-        get => _fileLayerName;
-        private set => SetProperty(ref _fileLayerName, value);
-    }
-
     public string? StatusMessage
     {
         get => _statusMessage;
         private set => SetProperty(ref _statusMessage, value);
     }
 
-    public ICommand LoadFileCommand { get; }
+    public ICommand LoadFilesCommand { get; }
+
+    public ICommand ClearFilesCommand { get; }
 
     public ICommand ClearRoiCommand { get; }
 
@@ -108,12 +133,13 @@ public sealed class MapViewModel : ObservableObject
 
     // ----------------------------------------------------------------------
 
-    private void LoadFile()
+    private void LoadFiles()
     {
         var dialog = new OpenFileDialog
         {
             Title = "Open GeoJSON",
             Filter = "GeoJSON (*.geojson;*.json)|*.geojson;*.json|All files (*.*)|*.*",
+            Multiselect = true,
         };
 
         if (dialog.ShowDialog() != true)
@@ -121,35 +147,64 @@ public sealed class MapViewModel : ObservableObject
             return;
         }
 
-        try
+        var added = 0;
+        var failed = new List<string>();
+        GeoBounds? combined = null;
+
+        foreach (var path in dialog.FileNames)
         {
-            var geometries = GeoJsonReader.Read(File.ReadAllText(dialog.FileName));
-            _fileLayer = new MapLayer(
-                Path.GetFileName(dialog.FileName), geometries,
-                ThemeBrush("Brush.Info", Color.FromRgb(0x7C, 0xC7, 0xF2)), thickness: 1.9, pointRadius: 4.0);
-
-            FileLayerName = _fileLayer.Name;
-            StatusMessage = $"Loaded {geometries.Count} geometr{(geometries.Count == 1 ? "y" : "ies")}.";
-            SyncLayers();
-
-            if (_fileLayer.Extent is { } extent)
+            try
             {
-                FrameRequested?.Invoke(this, extent);
+                var geometries = GeoJsonReader.Read(File.ReadAllText(path));
+                var brush = new SolidColorBrush(FileColors[_colorCursor++ % FileColors.Length]);
+                brush.Freeze();
+
+                var layer = new MapLayer(Path.GetFileName(path), geometries, brush,
+                    thickness: 1.9, pointRadius: 4.0);
+
+                // Self-referential: the item's own remove command needs the item.
+                LoadedFile file = null!;
+                file = new LoadedFile(layer, SyncLayers, new RelayCommand(() => RemoveFile(file)));
+                LoadedFiles.Add(file);
+                added++;
+
+                if (layer.Extent is { } extent)
+                {
+                    combined = combined is { } c ? Union(c, extent) : extent;
+                }
+            }
+            catch (Exception ex) when (ex is FormatException or IOException or UnauthorizedAccessException)
+            {
+                failed.Add($"{Path.GetFileName(path)} ({ex.Message})");
             }
         }
-        catch (Exception ex) when (ex is FormatException or IOException or UnauthorizedAccessException)
+
+        SyncLayers();
+        StatusMessage = BuildStatus(added, failed);
+
+        if (combined is { } bounds)
         {
-            StatusMessage = "Couldn't read that file: " + ex.Message;
+            FrameRequested?.Invoke(this, bounds);
         }
     }
 
-    /// <summary>Rebuilds <see cref="Layers"/> from the current toggles.</summary>
+    private void RemoveFile(LoadedFile file)
+    {
+        LoadedFiles.Remove(file);
+        SyncLayers();
+    }
+
+    /// <summary>Rebuilds <see cref="Layers"/>: visible files (in load order) then the sample.</summary>
     private void SyncLayers()
     {
         Layers.Clear();
-        if (_fileLayer is not null)
+
+        foreach (var file in LoadedFiles)
         {
-            Layers.Add(_fileLayer);
+            if (file.IsVisible)
+            {
+                Layers.Add(file.Layer);
+            }
         }
 
         if (_showSample && _sampleLayer is not null)
@@ -167,6 +222,21 @@ public sealed class MapViewModel : ObservableObject
         OnPropertyChanged(nameof(RoiSwLat));
         OnPropertyChanged(nameof(RoiSwLon));
     }
+
+    private static string BuildStatus(int added, IReadOnlyList<string> failed)
+    {
+        if (failed.Count == 0)
+        {
+            return added switch { 0 => string.Empty, 1 => "Loaded 1 file.", _ => $"Loaded {added} files." };
+        }
+
+        var head = added > 0 ? $"Loaded {added}; " : string.Empty;
+        return head + "couldn't read " + string.Join(", ", failed);
+    }
+
+    private static GeoBounds Union(GeoBounds a, GeoBounds b) => new(
+        new GeoPoint(Math.Min(a.South, b.South), Math.Min(a.West, b.West)),
+        new GeoPoint(Math.Max(a.North, b.North), Math.Max(a.East, b.East)));
 
     private static string Fmt(double? v) => v is { } d ? d.ToString("0.####") : "—";
 

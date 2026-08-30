@@ -22,6 +22,8 @@ Theme/                design system - the only place colours, type and control
   Controls.Buttons.xaml
   Controls.Inputs.xaml  Pill.Radio, Switch, Field
   Controls.Surfaces.xaml Card, Divider, Chip, nav row
+  Controls.Chrome.xaml  implicit ScrollBar (thin, theme-coloured) + ToolTip
+                        (dark rounded popover, soft shadow, fade-in)
   Theme.xaml            merges the above; App.xaml merges only this
 
 Controls/             SectionHeader, StatTile (reusable UserControls with DPs)

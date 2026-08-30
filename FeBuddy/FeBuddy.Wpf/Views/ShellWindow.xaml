@@ -95,24 +95,67 @@
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
-                <!-- brand mark: a tiny radar scope -->
-                <StackPanel Grid.Column="0" Orientation="Horizontal" Margin="16,0,0,0" VerticalAlignment="Center">
+                <!-- brand mark: a tiny radar scope.
+                     IsHitTestVisibleInChrome lets this strip receive hover so the
+                     tooltips fire (the rest of the caption stays a drag handle). -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Margin="16,0,0,0"
+                            VerticalAlignment="Center"
+                            shell:WindowChrome.IsHitTestVisibleInChrome="True">
                     <Grid Width="18" Height="18">
                         <Ellipse Stroke="{StaticResource Brush.Accent}" StrokeThickness="1.4" />
                         <Ellipse Width="8" Height="8" Stroke="{StaticResource Brush.Accent}" StrokeThickness="1.2" Opacity="0.7" />
                         <Path Data="M9,9 L17,4" Stroke="{StaticResource Brush.Accent}" StrokeThickness="1.4" />
                     </Grid>
+
                     <TextBlock Text="FE-BUDDY"
                                Margin="10,0,0,0"
                                FontFamily="{StaticResource Font.Display}"
                                FontSize="13"
                                FontWeight="Bold"
                                Foreground="{StaticResource Brush.Text.Primary}"
-                               VerticalAlignment="Center" />
-                    <Border Style="{StaticResource Chip}" Margin="10,0,0,0">
+                               VerticalAlignment="Center"
+                               Cursor="Help"
+                               ToolTipService.InitialShowDelay="300">
+                        <TextBlock.ToolTip>
+                            <StackPanel MaxWidth="260">
+                                <StackPanel Orientation="Horizontal">
+                                    <Ellipse Width="7" Height="7" VerticalAlignment="Center"
+                                             Fill="{DynamicResource Brush.Accent}" />
+                                    <TextBlock Text="FE-Buddy 3.0" Margin="8,0,0,0"
+                                               Style="{StaticResource Text.Body.Strong}" />
+                                </StackPanel>
+                                <TextBlock Style="{StaticResource Text.Caption}" Margin="0,6,0,0"
+                                           Text="Sector-file toolkit for VATSIM / VATUSA facility engineers — NASR pulls, video-map conversions, and ERAM-ready GeoJSON." />
+                                <Border Style="{StaticResource Divider}" Margin="0,10" />
+                                <TextBlock Style="{StaticResource Text.Caption}"
+                                           Foreground="{DynamicResource Brush.Text.Tertiary}"
+                                           Text="Build 3.0.0-dev  ·  30 Aug 2025  ·  .NET 10" />
+                            </StackPanel>
+                        </TextBlock.ToolTip>
+                    </TextBlock>
+
+                    <Border Style="{StaticResource Chip}" Margin="10,0,0,0"
+                            Cursor="Help"
+                            ToolTipService.InitialShowDelay="300">
                         <TextBlock Style="{StaticResource Chip.Text}"
                                    Foreground="{StaticResource Brush.Accent.Text}"
                                    Text="{Binding VersionLabel}" />
+                        <Border.ToolTip>
+                            <StackPanel MaxWidth="260">
+                                <StackPanel Orientation="Horizontal">
+                                    <Ellipse Width="7" Height="7" VerticalAlignment="Center"
+                                             Fill="{DynamicResource Brush.Warn}" />
+                                    <TextBlock Text="Update available" Margin="8,0,0,0"
+                                               Style="{StaticResource Text.Body.Strong}" />
+                                </StackPanel>
+                                <TextBlock Style="{StaticResource Text.Caption}" Margin="0,6,0,0"
+                                           Text="You're on v3.0.0-dev. v3.0.1 is ready on the dev channel." />
+                                <Border Style="{StaticResource Divider}" Margin="0,10" />
+                                <TextBlock Style="{StaticResource Text.Caption}"
+                                           Foreground="{DynamicResource Brush.Text.Tertiary}"
+                                           Text="Settings &#8250; Updates to switch channel or roll back." />
+                            </StackPanel>
+                        </Border.ToolTip>
                     </Border>
                 </StackPanel>
 

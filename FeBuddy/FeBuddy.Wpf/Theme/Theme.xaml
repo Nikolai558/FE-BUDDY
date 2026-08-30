@@ -17,6 +17,7 @@
         <ResourceDictionary Source="Controls.Buttons.xaml" />
         <ResourceDictionary Source="Controls.Inputs.xaml" />
         <ResourceDictionary Source="Controls.Surfaces.xaml" />
+        <ResourceDictionary Source="Controls.Chrome.xaml" />
     </ResourceDictionary.MergedDictionaries>
 
     <!-- Shared value converters, instantiated once here. -->

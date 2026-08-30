@@ -8,6 +8,7 @@
         Button.Ghost     hairline outline             - secondary actions
         Button.Subtle    text only                    - tertiary / inline
         Ghost.Toggle     ToggleButton, ghost look, amber when checked
+        Card.Toggle      ToggleButton, full-width card row (systems widget)
         Caption.Button   borderless icon, 46x32       - min / max
         Caption.Close    as above, red hover          - close
 -->
@@ -130,6 +131,42 @@
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="Root" Property="Opacity" Value="0.38" />
                             <Setter Property="Cursor" Value="Arrow" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- ========================== CARD TOGGLE ======================== -->
+    <!-- Full-width card-styled ToggleButton; content is left-aligned. Used for
+         the nav's systems-health widget (opens a popover). -->
+    <Style x:Key="Card.Toggle" TargetType="ToggleButton">
+        <Setter Property="Background" Value="{DynamicResource Brush.Card}" />
+        <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Primary}" />
+        <Setter Property="FontFamily" Value="{DynamicResource Font.Body}" />
+        <Setter Property="Padding" Value="12,10" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ToggleButton">
+                    <Border x:Name="Root"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{DynamicResource Brush.Stroke}"
+                            BorderThickness="1"
+                            CornerRadius="{DynamicResource Radius.Card}"
+                            Padding="{TemplateBinding Padding}"
+                            SnapsToDevicePixels="True">
+                        <ContentPresenter HorizontalAlignment="Stretch" VerticalAlignment="Center" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Root" Property="Background" Value="{DynamicResource Brush.Card.Hover}" />
+                        </Trigger>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="Root" Property="BorderBrush" Value="{DynamicResource Brush.Stroke.Strong}" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>

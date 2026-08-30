@@ -7,10 +7,10 @@ single amber accent, hairline cards, big display headings over airy body text.
 It is deliberately **not wired to anything**:
 
 - no reference to `FEBuddyLibrary` (or any project)
-- no NuGet packages - the tiny MVVM helpers (`ObservableObject`, `RelayCommand`)
-  and value converters live in `Infrastructure/`
-- every screen shows **sample data**; buttons like *Generate GeoJSON* only set a
-  status string
+- no NuGet packages - the MVVM helpers (`ObservableObject`, `RelayCommand`), the
+  toast store and the value converters live in `Infrastructure/`
+- every screen shows **sample data**; e.g. *Generate GeoJSON* runs a scripted
+  progress panel and raises a toast, but writes nothing
 
 ## Layout
 
@@ -20,11 +20,12 @@ Theme/                design system - the only place colours, type and control
   Typography.xaml
   Icons.xaml            Segoe Fluent Icons glyph code-points
   Controls.Buttons.xaml
-  Controls.Inputs.xaml  Pill.Radio, Switch, Field
+  Controls.Buttons.xaml  Primary/Ghost/Subtle, Ghost.Toggle, Card.Toggle, caption
+  Controls.Inputs.xaml   Pill.Radio, Switch, Field, Progress
   Controls.Surfaces.xaml Card, Divider, Chip, nav row
-  Controls.Chrome.xaml  implicit ScrollBar (thin, theme-coloured) + ToolTip
-                        (dark rounded popover, soft shadow, fade-in)
-  Theme.xaml            merges the above; App.xaml merges only this
+  Controls.Chrome.xaml   implicit ScrollBar (thin, theme-coloured) + ToolTip
+                         (dark rounded popover, soft shadow, fade-in)
+  Theme.xaml             merges the above; App.xaml merges only this
 
 Controls/             SectionHeader, StatTile, MapCanvas (all dependency-free)
 Infrastructure/       ObservableObject, RelayCommand, converters
@@ -35,16 +36,31 @@ Views/                ShellWindow (custom chrome) + Dashboard / Airac / Map /
                       Settings / Info / Placeholder
 ```
 
+### Shell extras (all sample data / view-only)
+
+- **Toasts** - `Infrastructure/Toast.cs` is a static store; the shell hosts an
+  `ItemsControl` bound to `Toast.Items` bottom-right. Cards slide in and
+  auto-dismiss.
+- **Zulu clock** in the status bar (`DispatcherTimer`, UTC).
+- **Systems-health popover** - the nav's bottom widget opens a list of endpoints
+  with green/amber/red dots.
+- **Collapsible nav rail** - width animates 232 ⇄ 60; labels hide, tooltips carry
+  the names.
+- **Scripted generation run** - the AIRAC screen's *Generate* builds a step list
+  from the toggles and advances it on a timer, with a progress bar and elapsed
+  timer, then toasts.
+
 ### The map
 
 `Controls/MapCanvas` is a from-scratch vector map: Web-Mercator projection, a
 pan (drag) / zoom (wheel) viewport, and `StreamGeometry` drawn into a couple of
 `DrawingVisual`s. **No tiles, no network, no map SDK.** It takes a base
 `MapLayer` (US state outlines, bundled) plus overlay layers, renders any standard
-GeoJSON (`Map/GeoJsonReader`), and can rubber-band a region of interest whose
-corners come back through two-way `RoiSouthWest` / `RoiNorthEast` properties.
-It does **not** give you satellite imagery or street labels - for that you'd need
-a real map library and a tile service.
+GeoJSON (`Map/GeoJsonReader`), can rubber-band a region of interest whose corners
+come back through two-way `RoiSouthWest` / `RoiNorthEast`, and has a **ruler**
+mode (click two points for great-circle distance + bearing) plus a live cursor
+lat/lon read-out. It does **not** give you satellite imagery or street labels -
+for that you'd need a real map library and a tile service.
 
 ### Conventions
 

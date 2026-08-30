@@ -1,7 +1,8 @@
 <!--
     AiracView  -  option form for the Airways -> GeoJSON generator.
     Radio pills bind to one enum via EnumToBool; switches bind to bool props.
-    "Generate" is a no-op that just sets a status chip.
+    "Generate" runs a scripted progress panel (steps built from the toggles);
+    completion raises a toast. No real work happens.
 -->
 <UserControl x:Class="FeBuddy.Wpf.Views.AiracView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -143,28 +144,80 @@
                     </StackPanel>
                 </Border>
 
-                <!-- footer -->
-                <StackPanel Orientation="Horizontal" Margin="0,20,0,0">
-                    <Button Style="{StaticResource Button.Primary}" Content="Generate GeoJSON"
-                            Command="{Binding GenerateCommand}" />
-                    <Button Style="{StaticResource Button.Ghost}" Content="Reset" Margin="10,0,0,0"
-                            Command="{Binding ResetCommand}" />
-                    <Border Margin="12,0,0,0" VerticalAlignment="Center">
-                        <Border.Style>
-                            <Style TargetType="Border" BasedOn="{StaticResource Chip.Accent}">
-                                <Setter Property="Visibility" Value="Visible" />
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding StatusMessage}" Value="{x:Null}">
-                                        <Setter Property="Visibility" Value="Collapsed" />
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </Border.Style>
-                        <TextBlock Style="{StaticResource Chip.Text}"
-                                   Foreground="{StaticResource Brush.Accent.Text}"
-                                   Text="{Binding StatusMessage}" />
+                <!-- footer: option buttons, or the scripted run panel -->
+                <Grid Margin="0,20,0,0">
+                    <StackPanel Orientation="Horizontal"
+                                Visibility="{Binding ShowRunPanel, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}">
+                        <Button Style="{StaticResource Button.Primary}" Content="Generate GeoJSON"
+                                Command="{Binding GenerateCommand}" />
+                        <Button Style="{StaticResource Button.Ghost}" Content="Reset" Margin="10,0,0,0"
+                                Command="{Binding ResetCommand}" />
+                    </StackPanel>
+
+                    <Border Style="{StaticResource Card}"
+                            Visibility="{Binding ShowRunPanel, Converter={StaticResource BoolToVis}}">
+                        <StackPanel>
+                            <ctl:SectionHeader Label="{Binding RunTitle}">
+                                <ctl:SectionHeader.Aside>
+                                    <TextBlock Text="{Binding ElapsedText}" Style="{StaticResource Text.Mono}"
+                                               Foreground="{StaticResource Brush.Text.Tertiary}" />
+                                </ctl:SectionHeader.Aside>
+                            </ctl:SectionHeader>
+
+                            <ProgressBar Style="{StaticResource Progress}" Value="{Binding Progress, Mode=OneWay}"
+                                         Margin="0,2,0,14" />
+
+                            <ItemsControl ItemsSource="{Binding Steps}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid Margin="0,4">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="18" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <Grid Grid.Column="0" Width="16" Height="16" VerticalAlignment="Center">
+                                                <Ellipse x:Name="Dot" Width="7" Height="7"
+                                                         Fill="{StaticResource Brush.Text.Tertiary}" />
+                                                <TextBlock x:Name="Check" Text="&#xE73E;"
+                                                           FontFamily="{StaticResource Font.Icon}" FontSize="12"
+                                                           Foreground="{StaticResource Brush.Positive}"
+                                                           Visibility="Collapsed"
+                                                           HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                            </Grid>
+                                            <TextBlock x:Name="Label" Grid.Column="1" Text="{Binding Label}"
+                                                       Style="{StaticResource Text.Body}" VerticalAlignment="Center" />
+                                        </Grid>
+                                        <DataTemplate.Triggers>
+                                            <DataTrigger Binding="{Binding State}" Value="Pending">
+                                                <Setter TargetName="Dot" Property="Fill" Value="{StaticResource Brush.Accent}" />
+                                                <Setter TargetName="Label" Property="Foreground" Value="{StaticResource Brush.Text.Primary}" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding State}" Value="Ok">
+                                                <Setter TargetName="Dot" Property="Visibility" Value="Collapsed" />
+                                                <Setter TargetName="Check" Property="Visibility" Value="Visible" />
+                                                <Setter TargetName="Label" Property="Foreground" Value="{StaticResource Brush.Text.Secondary}" />
+                                            </DataTrigger>
+                                        </DataTemplate.Triggers>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                            <Border Style="{StaticResource Divider}" Margin="0,12" />
+
+                            <StackPanel Orientation="Horizontal">
+                                <Button Style="{StaticResource Button.Ghost}" Content="Cancel"
+                                        Command="{Binding CancelRunCommand}"
+                                        Visibility="{Binding IsRunning, Converter={StaticResource BoolToVis}}" />
+                                <Button Style="{StaticResource Button.Primary}" Content="Done"
+                                        Command="{Binding DismissRunCommand}"
+                                        Visibility="{Binding IsRunning, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
+                                <Button Style="{StaticResource Button.Ghost}" Content="Open output folder"
+                                        Margin="10,0,0,0" Command="{Binding OpenOutputCommand}"
+                                        Visibility="{Binding IsRunning, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
+                            </StackPanel>
+                        </StackPanel>
                     </Border>
-                </StackPanel>
+                </Grid>
             </StackPanel>
         </ScrollViewer>
     </Grid>

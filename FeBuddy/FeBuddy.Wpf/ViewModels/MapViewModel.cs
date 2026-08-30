@@ -31,6 +31,7 @@ public sealed class MapViewModel : ObservableObject
 
     private bool _showSample = true;
     private bool _pickRoiOnMap;
+    private bool _measureOnMap;
     private GeoPoint? _roiSouthWest;
     private GeoPoint? _roiNorthEast;
     private string? _statusMessage;
@@ -87,11 +88,30 @@ public sealed class MapViewModel : ObservableObject
         set { if (SetProperty(ref _showSample, value)) SyncLayers(); }
     }
 
-    /// <summary>Bound to <c>MapCanvas.RoiEnabled</c>.</summary>
+    /// <summary>Bound to <c>MapCanvas.RoiEnabled</c>. Mutually exclusive with <see cref="MeasureOnMap"/>.</summary>
     public bool PickRoiOnMap
     {
         get => _pickRoiOnMap;
-        set => SetProperty(ref _pickRoiOnMap, value);
+        set
+        {
+            if (SetProperty(ref _pickRoiOnMap, value) && value)
+            {
+                MeasureOnMap = false;
+            }
+        }
+    }
+
+    /// <summary>Bound to <c>MapCanvas.MeasureEnabled</c>. Mutually exclusive with <see cref="PickRoiOnMap"/>.</summary>
+    public bool MeasureOnMap
+    {
+        get => _measureOnMap;
+        set
+        {
+            if (SetProperty(ref _measureOnMap, value) && value)
+            {
+                PickRoiOnMap = false;
+            }
+        }
     }
 
     public GeoPoint? RoiSouthWest

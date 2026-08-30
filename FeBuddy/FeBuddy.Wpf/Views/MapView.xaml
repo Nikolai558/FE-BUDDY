@@ -104,6 +104,11 @@
                 <ToggleButton Style="{StaticResource Switch}" VerticalAlignment="Center"
                               IsChecked="{Binding PickRoiOnMap}" />
                 <TextBlock Text="Pick ROI on map" Style="{StaticResource Text.Body}"
+                           VerticalAlignment="Center" Margin="9,0,18,0" />
+
+                <ToggleButton Style="{StaticResource Switch}" VerticalAlignment="Center"
+                              IsChecked="{Binding MeasureOnMap}" />
+                <TextBlock Text="Measure" Style="{StaticResource Text.Body}"
                            VerticalAlignment="Center" Margin="9,0,0,0" />
             </StackPanel>
 
@@ -115,8 +120,42 @@
                                    BaseLayer="{Binding BaseLayer}"
                                    Layers="{Binding Layers}"
                                    RoiEnabled="{Binding PickRoiOnMap}"
+                                   MeasureEnabled="{Binding MeasureOnMap}"
                                    RoiSouthWest="{Binding RoiSouthWest, Mode=TwoWay}"
                                    RoiNorthEast="{Binding RoiNorthEast, Mode=TwoWay}" />
+
+                    <!-- cursor lat/lon + ruler read-out (top-left) -->
+                    <StackPanel HorizontalAlignment="Left" VerticalAlignment="Top" Margin="14">
+                        <Border HorizontalAlignment="Left">
+                            <Border.Style>
+                                <Style TargetType="Border" BasedOn="{StaticResource Chip}">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding CursorText, ElementName=Map}" Value="">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                            <TextBlock Style="{StaticResource Chip.Text}" FontFamily="{StaticResource Font.Mono}"
+                                       Text="{Binding CursorText, ElementName=Map}" />
+                        </Border>
+                        <Border HorizontalAlignment="Left" Margin="0,6,0,0">
+                            <Border.Style>
+                                <Style TargetType="Border" BasedOn="{StaticResource Chip.Accent}">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding MeasureText, ElementName=Map}" Value="">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                            <TextBlock Style="{StaticResource Chip.Text}" FontFamily="{StaticResource Font.Mono}"
+                                       Foreground="{StaticResource Brush.Accent.Text}"
+                                       Text="{Binding MeasureText, ElementName=Map}" />
+                        </Border>
+                    </StackPanel>
 
                     <!-- status chip -->
                     <Border HorizontalAlignment="Right" VerticalAlignment="Top" Margin="14">

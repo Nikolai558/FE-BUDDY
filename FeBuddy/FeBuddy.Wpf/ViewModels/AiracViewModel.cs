@@ -1,15 +1,20 @@
+using System.Collections.ObjectModel;
 using System.Windows.Input;
+using System.Windows.Threading;
 using FeBuddy.Wpf.Infrastructure;
+using FeBuddy.Wpf.ViewModels.Models;
 
 namespace FeBuddy.Wpf.ViewModels;
 
 /// <summary>
-/// Options screen for the Airways -> GeoJSON generator (the feature currently
-/// under development). No generation happens here - the "Generate" button just
-/// reports that the real work lives in the library.
+/// Options screen for the Airways -> GeoJSON generator. "Generate" runs a
+/// <b>scripted</b> progress sequence (no real work) so the run UI can be seen -
+/// the step list is built from the toggles above it, and completion raises a toast.
 /// </summary>
 public sealed class AiracViewModel : ObservableObject
 {
+    private const double StepInterval = 0.55; // seconds per step
+
     private AirwayOutputMode _outputMode = AirwayOutputMode.HighLow;
     private bool _bufferWaypoints;
     private bool _includeFebProperties;
@@ -18,12 +23,23 @@ public sealed class AiracViewModel : ObservableObject
     private string _neLon = string.Empty;
     private string _swLat = string.Empty;
     private string _swLon = string.Empty;
-    private string? _statusMessage;
+
+    private readonly DispatcherTimer _runTimer;
+    private GenPhase _phase = GenPhase.Idle;
+    private double _progress;
+    private double _elapsed;
+    private int _stepIndex;
+    private int _fileCount;
 
     public AiracViewModel()
     {
-        GenerateCommand = new RelayCommand(
-            () => StatusMessage = "Preview only - generation runs in FEBuddyLibrary.");
+        _runTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(StepInterval) };
+        _runTimer.Tick += OnRunTick;
+
+        GenerateCommand = new RelayCommand(StartRun, () => Phase != GenPhase.Running);
+        CancelRunCommand = new RelayCommand(CancelRun, () => Phase == GenPhase.Running);
+        DismissRunCommand = new RelayCommand(() => Phase = GenPhase.Idle);
+        OpenOutputCommand = new RelayCommand(() => Toast.Info("Preview only", "No output folder is wired up."));
         ResetCommand = new RelayCommand(Reset);
     }
 
@@ -40,7 +56,6 @@ public sealed class AiracViewModel : ObservableObject
         }
     }
 
-    /// <summary>One-line explanation that follows the selected <see cref="OutputMode"/>.</summary>
     public string OutputModeHint => OutputMode switch
     {
         AirwayOutputMode.None => "Airway data will not be written to GeoJSON.",
@@ -51,21 +66,18 @@ public sealed class AiracViewModel : ObservableObject
         _ => string.Empty,
     };
 
-    /// <summary>2.5 nm radius around 5-character fixes, 5 nm around NAVAIDs and others.</summary>
     public bool BufferWaypoints
     {
         get => _bufferWaypoints;
         set => SetProperty(ref _bufferWaypoints, value);
     }
 
-    /// <summary>Emit "feb.AwyId" (and friends) as feature properties.</summary>
     public bool IncludeFebProperties
     {
         get => _includeFebProperties;
         set => SetProperty(ref _includeFebProperties, value);
     }
 
-    /// <summary>Replace the default region of interest for this run only.</summary>
     public bool OverrideRoi
     {
         get => _overrideRoi;
@@ -80,24 +92,162 @@ public sealed class AiracViewModel : ObservableObject
 
     public string SwLon { get => _swLon; set => SetProperty(ref _swLon, value); }
 
-    /// <summary>Set after a (mock) generate; shown as a chip in the footer.</summary>
-    public string? StatusMessage
+    // ---- run panel ------------------------------------------------------
+
+    public ObservableCollection<RunStep> Steps { get; } = [];
+
+    public GenPhase Phase
     {
-        get => _statusMessage;
-        private set => SetProperty(ref _statusMessage, value);
+        get => _phase;
+        private set
+        {
+            if (SetProperty(ref _phase, value))
+            {
+                OnPropertyChanged(nameof(IsRunning));
+                OnPropertyChanged(nameof(ShowRunPanel));
+                OnPropertyChanged(nameof(RunTitle));
+            }
+        }
     }
+
+    public bool IsRunning => Phase == GenPhase.Running;
+
+    public bool ShowRunPanel => Phase != GenPhase.Idle;
+
+    public string RunTitle => Phase switch
+    {
+        GenPhase.Running => "GENERATING",
+        GenPhase.Complete => "RUN COMPLETE",
+        GenPhase.Cancelled => "RUN CANCELLED",
+        _ => string.Empty,
+    };
+
+    public double Progress
+    {
+        get => _progress;
+        private set => SetProperty(ref _progress, value);
+    }
+
+    public string ElapsedText => $"{_elapsed:0.0}s";
 
     public ICommand GenerateCommand { get; }
 
+    public ICommand CancelRunCommand { get; }
+
+    public ICommand DismissRunCommand { get; }
+
+    public ICommand OpenOutputCommand { get; }
+
     public ICommand ResetCommand { get; }
+
+    // ------------------------------------------------------------------
+
+    private void StartRun()
+    {
+        BuildSteps();
+        _stepIndex = 0;
+        _elapsed = 0;
+        Progress = 0;
+        Phase = GenPhase.Running;
+        OnPropertyChanged(nameof(ElapsedText));
+
+        if (Steps.Count > 0)
+        {
+            Steps[0].State = StatusKind.Pending;
+        }
+
+        _runTimer.Start();
+    }
+
+    private void OnRunTick(object? sender, EventArgs e)
+    {
+        _elapsed += StepInterval;
+        OnPropertyChanged(nameof(ElapsedText));
+
+        if (_stepIndex < Steps.Count)
+        {
+            Steps[_stepIndex].State = StatusKind.Ok;
+            _stepIndex++;
+        }
+
+        Progress = Steps.Count == 0 ? 100 : Math.Min(100, _stepIndex * 100.0 / Steps.Count);
+
+        if (_stepIndex >= Steps.Count)
+        {
+            _runTimer.Stop();
+            Progress = 100;
+            Phase = GenPhase.Complete;
+            Toast.Success("GeoJSON generated",
+                $"{_fileCount} file{(_fileCount == 1 ? "" : "s")} written to …\\FE-Buddy\\Output.");
+            return;
+        }
+
+        Steps[_stepIndex].State = StatusKind.Pending;
+    }
+
+    private void CancelRun()
+    {
+        _runTimer.Stop();
+        foreach (var step in Steps)
+        {
+            if (step.State == StatusKind.Pending)
+            {
+                step.State = StatusKind.Idle;
+            }
+        }
+
+        Phase = GenPhase.Cancelled;
+        Toast.Warn("Run cancelled", "No files were written.");
+    }
+
+    private void BuildSteps()
+    {
+        Steps.Clear();
+        Steps.Add(new RunStep("Reading NASR airway records"));
+        Steps.Add(new RunStep("Building LineStrings (efficient handling)"));
+
+        if (BufferWaypoints)
+        {
+            Steps.Add(new RunStep("Buffering waypoints (2.5 / 5 nm)"));
+        }
+
+        if (IncludeFebProperties)
+        {
+            Steps.Add(new RunStep("Applying feb.* properties"));
+        }
+
+        switch (OutputMode)
+        {
+            case AirwayOutputMode.HighLow:
+                Steps.Add(new RunStep("Writing Airways_High.geojson"));
+                Steps.Add(new RunStep("Writing Airways_Low.geojson"));
+                Steps.Add(new RunStep("Writing Airways_Other.geojson"));
+                _fileCount = 3;
+                break;
+            case AirwayOutputMode.Designation:
+                Steps.Add(new RunStep("Writing Airways_J / V / Q / AT …"));
+                _fileCount = 9;
+                break;
+            default:
+                Steps.Add(new RunStep("Skipping GeoJSON output"));
+                _fileCount = 0;
+                break;
+        }
+
+        Steps.Add(new RunStep("Writing alias commands (.<id>F)"));
+        _fileCount += 1;
+    }
 
     private void Reset()
     {
+        _runTimer.Stop();
+        Steps.Clear();
+        Phase = GenPhase.Idle;
+        Progress = 0;
         OutputMode = AirwayOutputMode.HighLow;
         BufferWaypoints = false;
         IncludeFebProperties = false;
         OverrideRoi = false;
         NeLat = NeLon = SwLat = SwLon = string.Empty;
-        StatusMessage = null;
     }
 }

@@ -31,10 +31,21 @@ public enum RoiMode
     AllData,
 }
 
-/// <summary>Visual state for a <see cref="Models.StatusRow"/>.</summary>
+/// <summary>Phase of the scripted "generate GeoJSON" run on the AIRAC screen.</summary>
+public enum GenPhase
+{
+    Idle,
+    Running,
+    Complete,
+    Cancelled,
+}
+
+/// <summary>Visual state for a <see cref="Models.StatusRow"/> or a systems-health row.</summary>
 public enum StatusKind
 {
     Ok,
     Pending,
     Idle,
+    Warn,
+    Down,
 }

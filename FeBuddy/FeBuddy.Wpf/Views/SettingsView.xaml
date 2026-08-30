@@ -107,22 +107,9 @@
                     </StackPanel>
                 </Border>
 
-                <!-- save -->
+                <!-- save (confirmation shows as a toast) -->
                 <StackPanel Orientation="Horizontal" Margin="0,20,0,0">
                     <Button Style="{StaticResource Button.Primary}" Content="Save" Command="{Binding SaveCommand}" />
-                    <Border Margin="12,0,0,0" VerticalAlignment="Center">
-                        <Border.Style>
-                            <Style TargetType="Border" BasedOn="{StaticResource Chip}">
-                                <Setter Property="Visibility" Value="Visible" />
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding SavedMessage}" Value="{x:Null}">
-                                        <Setter Property="Visibility" Value="Collapsed" />
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </Border.Style>
-                        <TextBlock Style="{StaticResource Chip.Text}" Text="{Binding SavedMessage}" />
-                    </Border>
                 </StackPanel>
             </StackPanel>
         </ScrollViewer>

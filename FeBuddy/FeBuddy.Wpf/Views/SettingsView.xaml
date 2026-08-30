@@ -1,0 +1,130 @@
+<!--
+    SettingsView  -  updates channel + default ROI. Nothing is persisted.
+-->
+<UserControl x:Class="FeBuddy.Wpf.Views.SettingsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:FeBuddy.Wpf.ViewModels"
+             xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance vm:SettingsViewModel, IsDesignTimeCreatable=True}"
+             d:DesignWidth="900" d:DesignHeight="720">
+
+    <Grid Background="{StaticResource Brush.Bg.Base}">
+        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <StackPanel Margin="28" MaxWidth="780" HorizontalAlignment="Left">
+
+                <TextBlock Style="{StaticResource Text.H1}" Text="Settings" />
+                <TextBlock Style="{StaticResource Text.Body}" Margin="0,6,0,0"
+                           Text="Preferences for updates and the default region of interest. Nothing on this screen is saved in the preview." />
+
+                <!-- updates -->
+                <Border Style="{StaticResource Card}" Margin="0,18,0,0">
+                    <StackPanel>
+                        <ctl:SectionHeader Label="UPDATES" />
+
+                        <TextBlock Style="{StaticResource Text.Label}" Text="RELEASE CHANNEL" Margin="0,0,0,6" />
+                        <StackPanel Orientation="Horizontal">
+                            <RadioButton Style="{StaticResource Pill.Radio}" GroupName="Channel" Content="Stable"
+                                         IsChecked="{Binding Channel, Converter={StaticResource EnumToBool}, ConverterParameter=Stable}" />
+                            <RadioButton Style="{StaticResource Pill.Radio}" GroupName="Channel" Content="Beta"
+                                         IsChecked="{Binding Channel, Converter={StaticResource EnumToBool}, ConverterParameter=Beta}" />
+                            <RadioButton Style="{StaticResource Pill.Radio}" GroupName="Channel" Content="Alpha"
+                                         IsChecked="{Binding Channel, Converter={StaticResource EnumToBool}, ConverterParameter=Alpha}" />
+                        </StackPanel>
+
+                        <Border Style="{StaticResource Divider}" Margin="0,16" />
+
+                        <DockPanel>
+                            <ToggleButton DockPanel.Dock="Left" Style="{StaticResource Switch}"
+                                          Margin="0,2,14,0" VerticalAlignment="Top"
+                                          IsChecked="{Binding CheckOnLaunch}" />
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource Text.Body.Strong}" Text="Check for updates on launch" />
+                                <TextBlock Style="{StaticResource Text.Caption}" Margin="0,2,0,0"
+                                           Text="Otherwise you can check manually from here at any time." />
+                            </StackPanel>
+                        </DockPanel>
+
+                        <Button Style="{StaticResource Button.Ghost}" Content="Check now"
+                                HorizontalAlignment="Left" Margin="0,16,0,0"
+                                Command="{Binding CheckNowCommand}" />
+                    </StackPanel>
+                </Border>
+
+                <!-- default ROI -->
+                <Border Style="{StaticResource Card}" Margin="0,16,0,0">
+                    <StackPanel>
+                        <ctl:SectionHeader Label="DEFAULT REGION OF INTEREST" />
+
+                        <StackPanel Orientation="Horizontal">
+                            <RadioButton Style="{StaticResource Pill.Radio}" GroupName="Roi" Content="Set up a bounding box"
+                                         IsChecked="{Binding RoiMode, Converter={StaticResource EnumToBool}, ConverterParameter=Custom}" />
+                            <RadioButton Style="{StaticResource Pill.Radio}" GroupName="Roi" Content="Get all NASR data"
+                                         IsChecked="{Binding RoiMode, Converter={StaticResource EnumToBool}, ConverterParameter=AllData}" />
+                        </StackPanel>
+
+                        <StackPanel Margin="0,16,0,0"
+                                    Visibility="{Binding UseCustomRoi, Converter={StaticResource BoolToVis}}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="14" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="14" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+
+                                <StackPanel Grid.Row="0" Grid.Column="0">
+                                    <TextBlock Style="{StaticResource Text.Label}" Text="NE LATITUDE" Margin="0,0,0,5" />
+                                    <TextBox Style="{StaticResource Field}" Tag="e.g. 44.512"
+                                             Text="{Binding NeLat, UpdateSourceTrigger=PropertyChanged}" />
+                                </StackPanel>
+                                <StackPanel Grid.Row="0" Grid.Column="2">
+                                    <TextBlock Style="{StaticResource Text.Label}" Text="NE LONGITUDE" Margin="0,0,0,5" />
+                                    <TextBox Style="{StaticResource Field}" Tag="e.g. -80.104"
+                                             Text="{Binding NeLon, UpdateSourceTrigger=PropertyChanged}" />
+                                </StackPanel>
+                                <StackPanel Grid.Row="2" Grid.Column="0">
+                                    <TextBlock Style="{StaticResource Text.Label}" Text="SW LATITUDE" Margin="0,0,0,5" />
+                                    <TextBox Style="{StaticResource Field}" Tag="e.g. 38.940"
+                                             Text="{Binding SwLat, UpdateSourceTrigger=PropertyChanged}" />
+                                </StackPanel>
+                                <StackPanel Grid.Row="2" Grid.Column="2">
+                                    <TextBlock Style="{StaticResource Text.Label}" Text="SW LONGITUDE" Margin="0,0,0,5" />
+                                    <TextBox Style="{StaticResource Field}" Tag="e.g. -87.900"
+                                             Text="{Binding SwLon, UpdateSourceTrigger=PropertyChanged}" />
+                                </StackPanel>
+                            </Grid>
+                            <TextBlock Style="{StaticResource Text.Caption}" Margin="0,10,0,0"
+                                       Text="Make the box a little larger than your ARTCC so nearby data still lands in your files." />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- save -->
+                <StackPanel Orientation="Horizontal" Margin="0,20,0,0">
+                    <Button Style="{StaticResource Button.Primary}" Content="Save" Command="{Binding SaveCommand}" />
+                    <Border Margin="12,0,0,0" VerticalAlignment="Center">
+                        <Border.Style>
+                            <Style TargetType="Border" BasedOn="{StaticResource Chip}">
+                                <Setter Property="Visibility" Value="Visible" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding SavedMessage}" Value="{x:Null}">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                        <TextBlock Style="{StaticResource Chip.Text}" Text="{Binding SavedMessage}" />
+                    </Border>
+                </StackPanel>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

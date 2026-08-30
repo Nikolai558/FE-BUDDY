@@ -1,0 +1,98 @@
+<!--
+    Typography.xaml  -  type ramp.
+    ===========================================================================
+    Two families, matching the reference site:
+      * Display / headings : Montserrat (heavy, condensed feel)
+      * Body / UI          : Jost (geometric humanist sans)
+    Neither ships with Windows. Drop the .ttf files into /Assets/Fonts and change
+    the two FontFamily values below to e.g.
+        pack://application:,,,/Assets/Fonts/#Montserrat
+    Until then the comma-separated fallbacks (Segoe UI / Arial) keep everything
+    legible, so the app runs on a clean machine with no extra install.
+
+    WPF's TextBlock has no letter-spacing; the reference's tight display tracking
+    is approximated purely with weight + size. If it ever matters, switch the
+    display TextBlocks to <Glyphs> or a custom run.
+
+    Every style is x:Key'd (no implicit TextBlock style) so intent is explicit at
+    each call site: {StaticResource Text.Body} etc.
+-->
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <FontFamily x:Key="Font.Display">Montserrat, Segoe UI, Arial</FontFamily>
+    <FontFamily x:Key="Font.Body">Jost, Segoe UI, Arial</FontFamily>
+    <FontFamily x:Key="Font.Icon">Segoe Fluent Icons, Segoe MDL2 Assets</FontFamily>
+    <FontFamily x:Key="Font.Mono">Cascadia Mono, Consolas, Courier New</FontFamily>
+
+    <!-- ======================= DISPLAY / HEADINGS ===================== -->
+
+    <!-- Hero number/plates on the dashboard. -->
+    <Style x:Key="Text.Display" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{DynamicResource Font.Display}" />
+        <Setter Property="FontSize" Value="42" />
+        <Setter Property="FontWeight" Value="Bold" />
+        <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Primary}" />
+        <Setter Property="LineHeight" Value="44" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+
+    <Style x:Key="Text.H1" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{DynamicResource Font.Display}" />
+        <Setter Property="FontSize" Value="23" />
+        <Setter Property="FontWeight" Value="Bold" />
+        <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Primary}" />
+    </Style>
+
+    <Style x:Key="Text.H2" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{DynamicResource Font.Display}" />
+        <Setter Property="FontSize" Value="16" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Primary}" />
+    </Style>
+
+    <!-- Big metric value inside a StatTile. -->
+    <Style x:Key="Text.Metric" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{DynamicResource Font.Display}" />
+        <Setter Property="FontSize" Value="27" />
+        <Setter Property="FontWeight" Value="Bold" />
+        <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Primary}" />
+    </Style>
+
+    <!-- ============================= BODY ============================= -->
+
+    <Style x:Key="Text.Body" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{DynamicResource Font.Body}" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Secondary}" />
+        <Setter Property="LineHeight" Value="20" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+
+    <Style x:Key="Text.Body.Strong" TargetType="TextBlock" BasedOn="{StaticResource Text.Body}">
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Primary}" />
+    </Style>
+
+    <!-- Tiny uppercase section label ("ONLINE ATC", "OUTPUT MODE"). -->
+    <Style x:Key="Text.Label" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{DynamicResource Font.Body}" />
+        <Setter Property="FontSize" Value="10.5" />
+        <Setter Property="FontWeight" Value="Bold" />
+        <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Tertiary}" />
+        <Setter Property="TextOptions.TextFormattingMode" Value="Ideal" />
+    </Style>
+
+    <!-- Caption / helper text under a control. -->
+    <Style x:Key="Text.Caption" TargetType="TextBlock" BasedOn="{StaticResource Text.Body}">
+        <Setter Property="FontSize" Value="11.5" />
+        <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Tertiary}" />
+        <Setter Property="LineHeight" Value="16" />
+    </Style>
+
+    <Style x:Key="Text.Mono" TargetType="TextBlock" BasedOn="{StaticResource Text.Body}">
+        <Setter Property="FontFamily" Value="{DynamicResource Font.Mono}" />
+        <Setter Property="FontSize" Value="12" />
+    </Style>
+
+</ResourceDictionary>

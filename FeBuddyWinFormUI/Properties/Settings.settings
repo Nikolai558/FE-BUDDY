@@ -11,5 +11,8 @@
     <Setting Name="UpdateChannel" Type="System.String" Scope="User">
       <Value Profile="(Default)">Stable</Value>
     </Setting>
+    <Setting Name="SettingsVersion" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
   </Settings>
 </SettingsFile>

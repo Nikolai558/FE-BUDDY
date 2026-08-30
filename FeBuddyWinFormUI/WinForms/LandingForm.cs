@@ -177,11 +177,19 @@ namespace FeBuddyWinFormUI
 
                 Logger.LogMessage("INFO", $"Reverting to latest stable: CURRENT VERSION {installedVersion} / TARGET VERSION {candidate.Version}");
 
+                if (!string.Equals(Properties.Settings.Default.UpdateChannel, ReleaseChannel.Stable.ToString(), StringComparison.Ordinal))
+                {
+                    Properties.Settings.Default.UpdateChannel = ReleaseChannel.Stable.ToString();
+                    Properties.Settings.Default.Save();
+                    Logger.LogMessage("INFO", "Update channel set to Stable as part of Revert to Latest Stable.");
+                }
+
                 using var revertForm = new UpdateAvailableForm(
                     installedVersion,
                     candidate,
                     headerText: "*** REVERT TO LATEST STABLE ***",
-                    questionText: "Download and install the latest stable release now?");
+                    questionText: "Download and install the latest stable release now?",
+                    reinstallProductCode: InstalledProduct.GetProductCode());
                 revertForm.ShowDialog(this);
             }
             catch (Exception ex)

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
@@ -110,6 +110,44 @@ namespace FeBuddyLibrary.Update
                 Arguments = $"/i \"{msiPath}\"",
                 UseShellExecute = true,
                 Verb = "runas",
+            };
+
+            Process.Start(psi);
+        }
+        public static void LaunchReinstall(string installedProductCode, string msiPath)
+        {
+            if (string.IsNullOrWhiteSpace(installedProductCode))
+            {
+                Logger.LogMessage("WARNING", "UpdateInstaller: LaunchReinstall called with no ProductCode - falling back to a plain install.");
+                LaunchInstaller(msiPath);
+                return;
+            }
+
+            var stageDir = Path.Combine(Path.GetTempPath(), "febuddy-revert-" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(stageDir);
+
+            var stagedMsi = Path.Combine(stageDir, Path.GetFileName(msiPath));
+            File.Copy(msiPath, stagedMsi, overwrite: true);
+
+            var scriptPath = Path.Combine(stageDir, "revert.cmd");
+
+            var script =
+                "@echo off\r\n" +
+                "start \"\" /wait msiexec /x " + installedProductCode + " /passive /norestart\r\n" +
+                "start \"\" /wait msiexec /i \"" + stagedMsi + "\" /passive /norestart\r\n" +
+                "del /f /q \"" + stagedMsi + "\"\r\n";
+
+            File.WriteAllText(scriptPath, script);
+
+            Logger.LogMessage("INFO", $"UpdateInstaller: reverting - removing {installedProductCode} then installing {stagedMsi} via {scriptPath}");
+
+            var psi = new ProcessStartInfo
+            {
+                FileName = "cmd.exe",
+                Arguments = $"/c \"{scriptPath}\"",
+                UseShellExecute = true,
+                Verb = "runas",
+                WindowStyle = ProcessWindowStyle.Hidden,
             };
 
             Process.Start(psi);

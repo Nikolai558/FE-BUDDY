@@ -34,6 +34,8 @@ namespace FeBuddyWinFormUI
 
             Logger.LogMessage("DEBUG", "PROGRAM STARTED");
 
+            MigrateUserSettingsIfNeeded();
+
             // Squirrel starts our app during updates, sometimes we need to handle these events.
             // Our program may exit after and exit after handling one of these events.
             SquirrelAwareApp.HandleEvents(OnAppInstalled, OnAppUpdated, null, OnAppUninstalled);
@@ -163,6 +165,30 @@ namespace FeBuddyWinFormUI
             {
             }
 
+        }
+
+        private static void MigrateUserSettingsIfNeeded()
+        {
+            try
+            {
+                var currentVersion = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "";
+
+                if (string.Equals(Settings.Default.SettingsVersion, currentVersion, StringComparison.Ordinal))
+                {
+                    return;
+                }
+
+                Settings.Default.Upgrade();
+                Settings.Default.SettingsVersion = currentVersion;
+                Settings.Default.Save();
+
+                Logger.LogMessage("INFO",
+                    $"User settings migrated to version {currentVersion}. UpdateChannel='{Settings.Default.UpdateChannel}'.");
+            }
+            catch (Exception ex)
+            {
+                Logger.LogMessage("WARNING", "MigrateUserSettingsIfNeeded failed and was suppressed: " + ex);
+            }
         }
 
         private static string GetApplicationVersion()

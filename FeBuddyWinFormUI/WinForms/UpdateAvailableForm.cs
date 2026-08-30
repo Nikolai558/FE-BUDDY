@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.ComponentModel;
 using System.Windows.Forms;
 using FeBuddyLibrary.Helpers;
@@ -18,6 +18,8 @@ namespace FeBuddyWinFormUI
     {
         private readonly UpdateCandidate _candidate;
 
+        private readonly string _reinstallProductCode;
+
         /// <param name="headerText">
         /// Defaults to the normal "update available" wording. The revert-to-stable action
         /// passes its own wording instead - seeing "UPDATE AVAILABLE" while reverting to a
@@ -29,17 +31,24 @@ namespace FeBuddyWinFormUI
         /// actually changing is the install mechanism, not (necessarily) the version.
         /// </param>
         /// <param name="newVersionText">Overrides the "New version available: X" line, for the same reason.</param>
+        /// <param name="reinstallProductCode">
+        /// When non-null, "Yes" removes this installed ProductCode and then does a clean
+        /// install of the downloaded MSI (used by "Revert to Latest Stable", where the
+        /// target is an older build that can't be applied as an in-place downgrade).
+        /// </param>
         public UpdateAvailableForm(
             string currentVersion,
             UpdateCandidate candidate,
             string headerText = "*** UPDATE AVAILABLE ***",
             string questionText = "Download and install this update now?",
             string currentVersionText = null,
-            string newVersionText = null)
+            string newVersionText = null,
+            string reinstallProductCode = null)
         {
             InitializeComponent();
 
             _candidate = candidate;
+            _reinstallProductCode = reinstallProductCode;
 
             headerLabel.Text = headerText;
             questionLabel.Text = questionText;
@@ -65,7 +74,14 @@ namespace FeBuddyWinFormUI
 
                 downloadingLabel.Text = "Starting installer...";
 
-                UpdateInstaller.LaunchInstaller(destinationPath);
+                if (_reinstallProductCode != null)
+                {
+                    UpdateInstaller.LaunchReinstall(_reinstallProductCode, destinationPath);
+                }
+                else
+                {
+                    UpdateInstaller.LaunchInstaller(destinationPath);
+                }
 
                 // The MSI can't safely replace this process's own files while it's still
                 // running - exit immediately rather than lingering. Nothing after this

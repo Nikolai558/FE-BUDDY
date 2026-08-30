@@ -26,12 +26,25 @@ Theme/                design system - the only place colours, type and control
                         (dark rounded popover, soft shadow, fade-in)
   Theme.xaml            merges the above; App.xaml merges only this
 
-Controls/             SectionHeader, StatTile (reusable UserControls with DPs)
+Controls/             SectionHeader, StatTile, MapCanvas (all dependency-free)
 Infrastructure/       ObservableObject, RelayCommand, converters
+Map/                  GeoJSON reader (System.Text.Json), Web-Mercator, layer model
+Assets/               bundled sample GeoJSON (us-states, sample-airways)
 ViewModels/           ShellViewModel + one per screen, all with sample data
-Views/                ShellWindow (custom chrome) + Dashboard / Airac / Settings
-                      / Info / Placeholder
+Views/                ShellWindow (custom chrome) + Dashboard / Airac / Map /
+                      Settings / Info / Placeholder
 ```
+
+### The map
+
+`Controls/MapCanvas` is a from-scratch vector map: Web-Mercator projection, a
+pan (drag) / zoom (wheel) viewport, and `StreamGeometry` drawn into a couple of
+`DrawingVisual`s. **No tiles, no network, no map SDK.** It takes a base
+`MapLayer` (US state outlines, bundled) plus overlay layers, renders any standard
+GeoJSON (`Map/GeoJsonReader`), and can rubber-band a region of interest whose
+corners come back through two-way `RoiSouthWest` / `RoiNorthEast` properties.
+It does **not** give you satellite imagery or street labels - for that you'd need
+a real map library and a tile service.
 
 ### Conventions
 

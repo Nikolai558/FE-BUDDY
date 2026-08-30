@@ -45,6 +45,9 @@
         <DataTemplate DataType="{x:Type vm:AiracViewModel}">
             <views:AiracView />
         </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:MapViewModel}">
+            <views:MapView />
+        </DataTemplate>
         <DataTemplate DataType="{x:Type vm:SettingsViewModel}">
             <views:SettingsView />
         </DataTemplate>

@@ -26,4 +26,10 @@
     <EnableNETAnalyzers>true</EnableNETAnalyzers>
   </PropertyGroup>
 
+  <ItemGroup>
+    <!-- Bundled sample data for the map (plain GeoJSON, not code). -->
+    <Resource Include="Assets\us-states.json" />
+    <Resource Include="Assets\sample-airways.json" />
+  </ItemGroup>
+
 </Project>

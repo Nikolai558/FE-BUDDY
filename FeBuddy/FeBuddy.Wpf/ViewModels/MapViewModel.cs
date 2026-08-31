@@ -75,6 +75,7 @@ public sealed class MapViewModel : ObservableObject
         LoadFilesCommand = new RelayCommand(LoadFiles);
         ClearFilesCommand = new RelayCommand(() => { LoadedFiles.Clear(); SyncLayers(); });
         ClearRoiCommand = new RelayCommand(() => { RoiSouthWest = null; RoiNorthEast = null; });
+        SaveRoiToSettingsCommand = new RelayCommand(SaveRoiToSettings, () => HasRoi);
         ResetViewCommand = new RelayCommand(() => ResetRequested?.Invoke(this, EventArgs.Empty));
         ShowAllDisplayCommand = new RelayCommand(() => SetAllDisplay(true));
         HideAllDisplayCommand = new RelayCommand(() => SetAllDisplay(false));
@@ -191,6 +192,8 @@ public sealed class MapViewModel : ObservableObject
 
     public ICommand ClearRoiCommand { get; }
 
+    public ICommand SaveRoiToSettingsCommand { get; }
+
     public ICommand ResetViewCommand { get; }
 
     // ----------------------------------------------------------------------
@@ -301,6 +304,18 @@ public sealed class MapViewModel : ObservableObject
         new GeoPoint(Math.Max(a.North, b.North), Math.Max(a.East, b.East)));
 
     private static string Fmt(double? v) => v is { } d ? d.ToString("0.####") : "—";
+
+    private void SaveRoiToSettings()
+    {
+        if (RoiSouthWest is not { } sw || RoiNorthEast is not { } ne)
+        {
+            return;
+        }
+
+        DefaultRoiStore.Set(sw, ne);
+        Toast.Success("Saved to default ROI",
+            "Settings › Default ROI now uses this box (bounding-box mode selected).");
+    }
 
     private static MapLayer? TryLoadLayer(string relativeUri, string name, Brush stroke,
         double thickness = 1.4, double pointRadius = 3.5)

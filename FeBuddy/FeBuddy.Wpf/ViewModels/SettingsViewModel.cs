@@ -63,6 +63,27 @@ public sealed class SettingsViewModel : ObservableObject
         TestSourceCommand = new RelayCommand(() =>
             Toast.Success("Source reachable", $"{DataSourceLabel} responded 200 OK (sample)."));
         BrowseNasrCommand = new RelayCommand(BrowseNasr);
+
+        // The Map screen can push a drawn box in here via DefaultRoiStore.
+        DefaultRoiStore.Changed += (_, _) => ApplyStoredRoi();
+        if (DefaultRoiStore.IsSet)
+        {
+            ApplyStoredRoi();
+        }
+    }
+
+    private void ApplyStoredRoi()
+    {
+        if (DefaultRoiStore.SouthWest is not { } sw || DefaultRoiStore.NorthEast is not { } ne)
+        {
+            return;
+        }
+
+        RoiMode = RoiMode.Custom; // flips "Get all NASR data" -> "Set up a bounding box"
+        NeLat = ne.Lat.ToString("0.######");
+        NeLon = ne.Lon.ToString("0.######");
+        SwLat = sw.Lat.ToString("0.######");
+        SwLon = sw.Lon.ToString("0.######");
     }
 
     // ---- facility profiles (replace v2.x's hard-coded ARTCC list + Desktop output) ----

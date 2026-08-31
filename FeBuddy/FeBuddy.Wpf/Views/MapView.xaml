@@ -197,12 +197,8 @@
                                     </Style.Triggers>
                                 </Style>
                             </Border.Style>
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Style="{StaticResource Chip.Text}" FontFamily="{StaticResource Font.Mono}"
-                                           VerticalAlignment="Center" Text="{Binding CursorText, ElementName=Map}" />
-                                <ctl:CopyButton Style="{StaticResource Copy.Button}" Margin="6,0,0,0"
-                                                Value="{Binding CursorText, ElementName=Map}" />
-                            </StackPanel>
+                            <TextBlock Style="{StaticResource Chip.Text}" FontFamily="{StaticResource Font.Mono}"
+                                       Text="{Binding CursorText, ElementName=Map}" />
                         </Border>
                         <Border HorizontalAlignment="Left" Margin="0,6,0,0">
                             <Border.Style>
@@ -215,13 +211,9 @@
                                     </Style.Triggers>
                                 </Style>
                             </Border.Style>
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Style="{StaticResource Chip.Text}" FontFamily="{StaticResource Font.Mono}"
-                                           Foreground="{StaticResource Brush.Accent.Text}" VerticalAlignment="Center"
-                                           Text="{Binding MeasureText, ElementName=Map}" />
-                                <ctl:CopyButton Style="{StaticResource Copy.Button}" Margin="6,0,0,0"
-                                                Value="{Binding MeasureText, ElementName=Map}" />
-                            </StackPanel>
+                            <TextBlock Style="{StaticResource Chip.Text}" FontFamily="{StaticResource Font.Mono}"
+                                       Foreground="{StaticResource Brush.Accent.Text}"
+                                       Text="{Binding MeasureText, ElementName=Map}" />
                         </Border>
                     </StackPanel>
 
@@ -282,35 +274,39 @@
 
                             <Border Style="{StaticResource Divider}" Margin="0,10" />
 
-                            <DockPanel Margin="0,0,0,6">
-                                <ctl:CopyButton DockPanel.Dock="Right" Style="{StaticResource Copy.Button}"
-                                                Value="{Binding RoiClipboardText}"
-                                                Visibility="{Binding HasRoi, Converter={StaticResource BoolToVis}}" />
-                                <TextBlock Style="{StaticResource Text.Label}" Text="REGION OF INTEREST" VerticalAlignment="Center" />
-                            </DockPanel>
+                            <TextBlock Style="{StaticResource Text.Label}" Text="REGION OF INTEREST" Margin="0,0,0,6" />
                             <TextBlock Text="{Binding RoiSummary}" Style="{StaticResource Text.Caption}" />
 
-                            <Grid Margin="0,8,0,0"
-                                  Visibility="{Binding HasRoi, Converter={StaticResource BoolToVis}}">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-                                <StackPanel Grid.Column="0">
-                                    <TextBlock Style="{StaticResource Text.Label}" Text="NE" />
+                            <StackPanel Margin="0,8,0,0"
+                                        Visibility="{Binding HasRoi, Converter={StaticResource BoolToVis}}">
+                                <TextBlock Style="{StaticResource Text.Label}" Text="NE" />
+                                <DockPanel>
+                                    <ctl:CopyButton DockPanel.Dock="Right" Style="{StaticResource Copy.Button}"
+                                                    VerticalAlignment="Center" Value="{Binding RoiNeLat}" />
                                     <TextBlock Style="{StaticResource Text.Mono}" Foreground="{StaticResource Brush.Text.Primary}"
-                                               Text="{Binding RoiNeLat}" />
+                                               Text="{Binding RoiNeLat, StringFormat='lat  {0}'}" />
+                                </DockPanel>
+                                <DockPanel>
+                                    <ctl:CopyButton DockPanel.Dock="Right" Style="{StaticResource Copy.Button}"
+                                                    VerticalAlignment="Center" Value="{Binding RoiNeLon}" />
                                     <TextBlock Style="{StaticResource Text.Mono}" Foreground="{StaticResource Brush.Text.Primary}"
-                                               Text="{Binding RoiNeLon}" />
-                                </StackPanel>
-                                <StackPanel Grid.Column="1">
-                                    <TextBlock Style="{StaticResource Text.Label}" Text="SW" />
+                                               Text="{Binding RoiNeLon, StringFormat='lon  {0}'}" />
+                                </DockPanel>
+
+                                <TextBlock Style="{StaticResource Text.Label}" Text="SW" Margin="0,6,0,0" />
+                                <DockPanel>
+                                    <ctl:CopyButton DockPanel.Dock="Right" Style="{StaticResource Copy.Button}"
+                                                    VerticalAlignment="Center" Value="{Binding RoiSwLat}" />
                                     <TextBlock Style="{StaticResource Text.Mono}" Foreground="{StaticResource Brush.Text.Primary}"
-                                               Text="{Binding RoiSwLat}" />
+                                               Text="{Binding RoiSwLat, StringFormat='lat  {0}'}" />
+                                </DockPanel>
+                                <DockPanel>
+                                    <ctl:CopyButton DockPanel.Dock="Right" Style="{StaticResource Copy.Button}"
+                                                    VerticalAlignment="Center" Value="{Binding RoiSwLon}" />
                                     <TextBlock Style="{StaticResource Text.Mono}" Foreground="{StaticResource Brush.Text.Primary}"
-                                               Text="{Binding RoiSwLon}" />
-                                </StackPanel>
-                            </Grid>
+                                               Text="{Binding RoiSwLon, StringFormat='lon  {0}'}" />
+                                </DockPanel>
+                            </StackPanel>
 
                             <Button Style="{StaticResource Button.Subtle}" Content="Clear ROI"
                                     HorizontalAlignment="Left" Margin="-10,4,0,0"

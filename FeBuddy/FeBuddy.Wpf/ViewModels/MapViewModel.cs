@@ -179,9 +179,6 @@ public sealed class MapViewModel : ObservableObject
     public string RoiSwLat => Fmt(RoiSouthWest?.Lat);
     public string RoiSwLon => Fmt(RoiSouthWest?.Lon);
 
-    /// <summary>All four corners, one per line - what the copy button puts on the clipboard.</summary>
-    public string RoiClipboardText => $"NE {RoiNeLat}, {RoiNeLon}\nSW {RoiSwLat}, {RoiSwLon}";
-
     public string? StatusMessage
     {
         get => _statusMessage;
@@ -282,7 +279,6 @@ public sealed class MapViewModel : ObservableObject
     {
         OnPropertyChanged(nameof(HasRoi));
         OnPropertyChanged(nameof(RoiSummary));
-        OnPropertyChanged(nameof(RoiClipboardText));
         OnPropertyChanged(nameof(RoiNeLat));
         OnPropertyChanged(nameof(RoiNeLon));
         OnPropertyChanged(nameof(RoiSwLat));

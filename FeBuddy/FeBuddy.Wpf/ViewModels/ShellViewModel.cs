@@ -18,7 +18,8 @@ public sealed class ShellViewModel : ObservableObject
     private const string GlyphAirac     = ""; // Refresh
     private const string GlyphMap       = ""; // MapPin
     private const string GlyphConvert   = ""; // Switch
-    private const string GlyphFiles     = ""; // Folder
+    private const string GlyphGeoJson   = ""; // DeveloperTools
+    private const string GlyphAlias     = ""; // Tag
     private const string GlyphSettings  = ""; // Setting
     private const string GlyphInfo      = ""; // Info
 
@@ -30,13 +31,12 @@ public sealed class ShellViewModel : ObservableObject
     {
         PrimaryNav =
         [
-            Nav("Dashboard",      GlyphDashboard, () => new DashboardViewModel()),
-            Nav("AIRAC Data",     GlyphAirac,     () => new AiracViewModel()),
-            Nav("Map",            GlyphMap,       () => new MapViewModel()),
-            Nav("Conversions",    GlyphConvert,   () => new PlaceholderViewModel(
-                "Conversions", "DAT / KML / SCT2 / vSTARS-vERAM to GeoJSON.")),
-            Nav("Facility Files", GlyphFiles,     () => new PlaceholderViewModel(
-                "Facility Files", "Alias maintenance and facility admin tools.")),
+            Nav("Dashboard",         GlyphDashboard, () => new DashboardViewModel()),
+            Nav("AIRAC",             GlyphAirac,     () => new AiracViewModel()),
+            Nav("Map",               GlyphMap,       () => new MapViewModel()),
+            Nav("Conversions",       GlyphConvert,   () => new ConversionsViewModel()),
+            Nav("GeoJSON Tools",     GlyphGeoJson,   () => new GeoJsonToolsViewModel()),
+            Nav("Alias & Reference", GlyphAlias,     () => new AliasReferenceViewModel()),
         ];
 
         SystemNav =
@@ -50,7 +50,7 @@ public sealed class ShellViewModel : ObservableObject
             new HealthRow("NASR data source", "nfdc.faa.gov · reachable", StatusKind.Ok),
             new HealthRow("Time service", "timeapi.io · 41 ms", StatusKind.Ok),
             new HealthRow("Updates (GitHub)", "v3.0.1 available on dev", StatusKind.Warn),
-            new HealthRow("Output folder", @"…\FE-Buddy\Output · writable", StatusKind.Ok),
+            new HealthRow("Output folder", @"...\FE-Buddy\Output · writable", StatusKind.Ok),
         ];
 
         RecheckCommand = new RelayCommand(() =>
@@ -95,14 +95,14 @@ public sealed class ShellViewModel : ObservableObject
 
     public string VersionLabel => "v3.0.0-dev";
 
-    /// <summary>e.g. <c>1543Z · Tue 30 Aug</c>.</summary>
+    /// <summary>e.g. <c>1543Z / Tue 30 Aug</c>.</summary>
     public string ZuluClock
     {
         get => _zuluClock;
         private set => SetProperty(ref _zuluClock, value);
     }
 
-    /// <summary>Worst state across <see cref="SystemHealth"/> — drives the nav dot colour.</summary>
+    /// <summary>Worst state across <see cref="SystemHealth"/> - drives the nav dot colour.</summary>
     public StatusKind HealthWorst =>
         SystemHealth.Any(h => h.Kind == StatusKind.Down) ? StatusKind.Down :
         SystemHealth.Any(h => h.Kind == StatusKind.Warn) ? StatusKind.Warn :

@@ -18,7 +18,40 @@
 
                 <TextBlock Style="{StaticResource Text.H1}" Text="Settings" />
                 <TextBlock Style="{StaticResource Text.Body}" Margin="0,6,0,0"
-                           Text="Preferences for updates and the default region of interest. Nothing on this screen is saved in the preview." />
+                           Text="Facility profile, region of interest, output preferences and updates. Nothing on this screen is saved in the preview." />
+
+                <!-- facility profile -->
+                <Border Style="{StaticResource Card}" Margin="0,18,0,0">
+                    <StackPanel>
+                        <ctl:SectionHeader Label="FACILITY PROFILE" />
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="14" />
+                                <ColumnDefinition Width="160" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Style="{StaticResource Text.Label}" Text="FACILITY NAME" Margin="0,0,0,5" />
+                                <TextBox Style="{StaticResource Field}" Tag="e.g. Cleveland ARTCC"
+                                         Text="{Binding FacilityName, UpdateSourceTrigger=PropertyChanged}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Style="{StaticResource Text.Label}" Text="ARTCC ID" Margin="0,0,0,5" />
+                                <TextBox Style="{StaticResource Field}" Tag="ZOB"
+                                         Text="{Binding ArtccId, UpdateSourceTrigger=PropertyChanged}" />
+                            </StackPanel>
+                        </Grid>
+
+                        <TextBlock Style="{StaticResource Text.Label}" Text="OUTPUT DIRECTORY" Margin="0,14,0,5" />
+                        <DockPanel>
+                            <Button DockPanel.Dock="Right" Style="{StaticResource Button.Ghost}" Content="Browse…" Margin="10,0,0,0" />
+                            <TextBox Style="{StaticResource Field}" Tag="pick a folder"
+                                     Text="{Binding OutputDir, UpdateSourceTrigger=PropertyChanged}" />
+                        </DockPanel>
+                        <TextBlock Style="{StaticResource Text.Caption}" Margin="0,8,0,0"
+                                   Text="Replaces v2.x's fixed ARTCC list and Desktop-only output. Save a profile per facility." />
+                    </StackPanel>
+                </Border>
 
                 <!-- updates -->
                 <Border Style="{StaticResource Card}" Margin="0,18,0,0">
@@ -104,6 +137,46 @@
                             <TextBlock Style="{StaticResource Text.Caption}" Margin="0,10,0,0"
                                        Text="Make the box a little larger than your ARTCC so nearby data still lands in your files." />
                         </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- output preferences -->
+                <Border Style="{StaticResource Card}" Margin="0,16,0,0">
+                    <StackPanel>
+                        <ctl:SectionHeader Label="OUTPUT" />
+                        <DockPanel>
+                            <ToggleButton DockPanel.Dock="Left" Style="{StaticResource Switch}"
+                                          Margin="0,2,14,0" VerticalAlignment="Top" IsChecked="{Binding SingleLineGeoJson}" />
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource Text.Body.Strong}" Text="Single-line GeoJSON" />
+                                <TextBlock Style="{StaticResource Text.Caption}" Margin="0,2,0,0"
+                                           Text="Write each file on one line to keep CRC uploads small." />
+                            </StackPanel>
+                        </DockPanel>
+
+                        <Border Style="{StaticResource Divider}" Margin="0,14" />
+                        <DockPanel>
+                            <ToggleButton DockPanel.Dock="Left" Style="{StaticResource Switch}"
+                                          Margin="0,2,14,0" VerticalAlignment="Top" IsChecked="{Binding FebPropsByDefault}" />
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource Text.Body.Strong}" Text="Include feb.* properties by default" />
+                                <TextBlock Style="{StaticResource Text.Caption}" Margin="0,2,0,0"
+                                           Text="Per-run toggles on each generator still override this." />
+                            </StackPanel>
+                        </DockPanel>
+
+                        <Border Style="{StaticResource Divider}" Margin="0,14" />
+                        <TextBlock Style="{StaticResource Text.Label}" Text="COORDINATE PRECISION" Margin="0,0,0,6" />
+                        <StackPanel Orientation="Horizontal">
+                            <RadioButton Style="{StaticResource Pill.Radio}" GroupName="Prec" Content="5 dp"
+                                         IsChecked="{Binding Precision, Converter={StaticResource EnumToBool}, ConverterParameter=Five}" />
+                            <RadioButton Style="{StaticResource Pill.Radio}" GroupName="Prec" Content="6 dp"
+                                         IsChecked="{Binding Precision, Converter={StaticResource EnumToBool}, ConverterParameter=Six}" />
+                            <RadioButton Style="{StaticResource Pill.Radio}" GroupName="Prec" Content="7 dp"
+                                         IsChecked="{Binding Precision, Converter={StaticResource EnumToBool}, ConverterParameter=Seven}" />
+                        </StackPanel>
+                        <TextBlock Style="{StaticResource Text.Caption}" Margin="0,8,0,0"
+                                   Text="6 dp ≈ 0.1 m. Always emitted with a &quot;.&quot; decimal separator regardless of Windows region (v2.x #166)." />
                     </StackPanel>
                 </Border>
 

@@ -1,8 +1,8 @@
 <!--
-    AiracView  -  option form for the Airways -> GeoJSON generator.
-    Radio pills bind to one enum via EnumToBool; switches bind to bool props.
-    "Generate" runs a scripted progress panel (steps built from the toggles);
-    completion raises a toast. No real work happens.
+    AiracView  -  the AIRAC cycle build screen.
+    Pick a cycle, toggle output families (each = one v2.x generator, now ROI-clipped),
+    tune the airway sub-options, run. "Generate" runs a scripted step panel built
+    from the enabled families and raises a toast. Nothing is written.
 -->
 <UserControl x:Class="FeBuddy.Wpf.Views.AiracView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -13,10 +13,9 @@
              xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance vm:AiracViewModel, IsDesignTimeCreatable=True}"
-             d:DesignWidth="900" d:DesignHeight="760">
+             d:DesignWidth="900" d:DesignHeight="900">
 
     <UserControl.Resources>
-        <!-- label + switch + caption, used for each on/off option -->
         <Style x:Key="OptionCaption" TargetType="TextBlock" BasedOn="{StaticResource Text.Caption}">
             <Setter Property="Margin" Value="0,2,0,0" />
         </Style>
@@ -24,25 +23,74 @@
 
     <Grid Background="{StaticResource Brush.Bg.Base}">
         <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-            <StackPanel Margin="28" MaxWidth="780" HorizontalAlignment="Left">
+            <StackPanel Margin="28" MaxWidth="820" HorizontalAlignment="Left">
 
-                <!-- page header -->
-                <TextBlock Style="{StaticResource Text.H1}" Text="AIRAC Data" />
+                <TextBlock Style="{StaticResource Text.H1}" Text="AIRAC" />
                 <TextBlock Style="{StaticResource Text.Body}" Margin="0,6,0,0"
-                           Text="Pull the current FAA NASR cycle and build ERAM-ready GeoJSON from airway data." />
-                <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
-                    <Border Style="{StaticResource Chip}">
-                        <TextBlock Style="{StaticResource Chip.Text}" Text="AIRWAYS" />
-                    </Border>
-                    <Border Style="{StaticResource Chip}" Margin="8,0,0,0">
-                        <TextBlock Style="{StaticResource Chip.Text}" Text="GEOJSON" />
-                    </Border>
-                </StackPanel>
+                           Text="Pull the current FAA NASR cycle and build the CRC facility package, clipped to your region of interest." />
 
-                <!-- output mode -->
+                <!-- cycle -->
                 <Border Style="{StaticResource Card}" Margin="0,18,0,0">
                     <StackPanel>
-                        <ctl:SectionHeader Label="OUTPUT MODE" />
+                        <ctl:SectionHeader Label="CYCLE" />
+                        <StackPanel Orientation="Horizontal">
+                            <RadioButton Style="{StaticResource Pill.Radio}" GroupName="Cycle" Content="Current"
+                                         IsChecked="{Binding CurrentCycle}" />
+                            <RadioButton Style="{StaticResource Pill.Radio}" GroupName="Cycle" Content="Next" />
+                        </StackPanel>
+                        <TextBlock Style="{StaticResource Text.Body.Strong}" Margin="0,12,0,0"
+                                   Text="{Binding CycleId, StringFormat='Cycle {0}'}" />
+                        <TextBlock Style="{StaticResource Text.Caption}" Margin="0,2,0,0" Text="{Binding EffectiveLabel}" />
+                        <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                            <Border Style="{StaticResource Chip.Positive}">
+                                <TextBlock Style="{StaticResource Chip.Text}" Foreground="{StaticResource Brush.Positive}"
+                                           Text="APRA VERIFIED" />
+                            </Border>
+                            <TextBlock Style="{StaticResource Text.Caption}" Margin="9,0,0,0" VerticalAlignment="Center"
+                                       Text="{Binding ApraNote}" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- output families -->
+                <Border Style="{StaticResource Card}" Margin="0,16,0,0">
+                    <StackPanel>
+                        <ctl:SectionHeader Label="OUTPUT FAMILIES" />
+                        <ItemsControl ItemsSource="{Binding Families}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Margin="0,6">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <ToggleButton Grid.Column="0" Style="{StaticResource Switch}"
+                                                      VerticalAlignment="Center" IsChecked="{Binding Enabled}" />
+                                        <TextBlock Grid.Column="1" Text="{Binding Glyph}"
+                                                   FontFamily="{StaticResource Font.Icon}" FontSize="15"
+                                                   Foreground="{StaticResource Brush.Text.Secondary}"
+                                                   VerticalAlignment="Center" Margin="14,0,0,0" Width="20" />
+                                        <StackPanel Grid.Column="2" Margin="10,0,10,0" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding Name}" Style="{StaticResource Text.Body.Strong}" />
+                                            <TextBlock Text="{Binding Description}" Style="{StaticResource Text.Caption}" />
+                                        </StackPanel>
+                                        <Border Grid.Column="3" Style="{StaticResource Chip}" VerticalAlignment="Center">
+                                            <TextBlock Style="{StaticResource Chip.Text}" Text="{Binding FilesLabel}" />
+                                        </Border>
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+
+                <!-- airway options (only when the Airways family is on) -->
+                <Border Style="{StaticResource Card}" Margin="0,16,0,0"
+                        Visibility="{Binding ShowAirwayOptions, Converter={StaticResource BoolToVis}}">
+                    <StackPanel>
+                        <ctl:SectionHeader Label="AIRWAY OPTIONS" />
                         <StackPanel Orientation="Horizontal">
                             <RadioButton Style="{StaticResource Pill.Radio}" GroupName="OutputMode" Content="None"
                                          IsChecked="{Binding OutputMode, Converter={StaticResource EnumToBool}, ConverterParameter=None}" />
@@ -51,20 +99,12 @@
                             <RadioButton Style="{StaticResource Pill.Radio}" GroupName="OutputMode" Content="By designation"
                                          IsChecked="{Binding OutputMode, Converter={StaticResource EnumToBool}, ConverterParameter=Designation}" />
                         </StackPanel>
-                        <TextBlock Style="{StaticResource Text.Caption}" Margin="0,12,0,0"
-                                   Text="{Binding OutputModeHint}" />
-                    </StackPanel>
-                </Border>
+                        <TextBlock Style="{StaticResource Text.Caption}" Margin="0,12,0,0" Text="{Binding OutputModeHint}" />
 
-                <!-- options -->
-                <Border Style="{StaticResource Card}" Margin="0,16,0,0">
-                    <StackPanel>
-                        <ctl:SectionHeader Label="OPTIONS" />
-
+                        <Border Style="{StaticResource Divider}" Margin="0,14" />
                         <DockPanel>
                             <ToggleButton DockPanel.Dock="Left" Style="{StaticResource Switch}"
-                                          Margin="0,2,14,0" VerticalAlignment="Top"
-                                          IsChecked="{Binding BufferWaypoints}" />
+                                          Margin="0,2,14,0" VerticalAlignment="Top" IsChecked="{Binding BufferWaypoints}" />
                             <StackPanel>
                                 <TextBlock Style="{StaticResource Text.Body.Strong}" Text="Buffer airway waypoints" />
                                 <TextBlock Style="{StaticResource OptionCaption}"
@@ -73,15 +113,24 @@
                         </DockPanel>
 
                         <Border Style="{StaticResource Divider}" Margin="0,14" />
-
                         <DockPanel>
                             <ToggleButton DockPanel.Dock="Left" Style="{StaticResource Switch}"
-                                          Margin="0,2,14,0" VerticalAlignment="Top"
-                                          IsChecked="{Binding IncludeFebProperties}" />
+                                          Margin="0,2,14,0" VerticalAlignment="Top" IsChecked="{Binding IncludeFebProperties}" />
                             <StackPanel>
                                 <TextBlock Style="{StaticResource Text.Body.Strong}" Text="Include feb.* custom properties" />
                                 <TextBlock Style="{StaticResource OptionCaption}"
-                                           Text="Adds &quot;feb.AwyId&quot; (and friends) to every feature; namespaced to avoid collisions." />
+                                           Text="Adds &quot;feb.AwyId&quot; to every feature; namespaced to avoid collisions." />
+                            </StackPanel>
+                        </DockPanel>
+
+                        <Border Style="{StaticResource Divider}" Margin="0,14" />
+                        <DockPanel>
+                            <ToggleButton DockPanel.Dock="Left" Style="{StaticResource Switch}"
+                                          Margin="0,2,14,0" VerticalAlignment="Top" IsChecked="{Binding DmeCutoff}" />
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource Text.Body.Strong}" Text="DME-cutoff line variant" />
+                                <TextBlock Style="{StaticResource OptionCaption}"
+                                           Text="Extra Airways_High/Low files trimmed 5 nm from NAVAIDs and 2 nm from fixes (v2.x behaviour)." />
                             </StackPanel>
                         </DockPanel>
                     </StackPanel>
@@ -91,11 +140,9 @@
                 <Border Style="{StaticResource Card}" Margin="0,16,0,0">
                     <StackPanel>
                         <ctl:SectionHeader Label="REGION OF INTEREST" />
-
                         <DockPanel>
                             <ToggleButton DockPanel.Dock="Left" Style="{StaticResource Switch}"
-                                          Margin="0,2,14,0" VerticalAlignment="Top"
-                                          IsChecked="{Binding OverrideRoi}" />
+                                          Margin="0,2,14,0" VerticalAlignment="Top" IsChecked="{Binding OverrideRoi}" />
                             <StackPanel>
                                 <TextBlock Style="{StaticResource Text.Body.Strong}" Text="Override the default ROI for this run" />
                                 <TextBlock Style="{StaticResource OptionCaption}"
@@ -116,7 +163,6 @@
                                     <RowDefinition Height="14" />
                                     <RowDefinition Height="Auto" />
                                 </Grid.RowDefinitions>
-
                                 <StackPanel Grid.Row="0" Grid.Column="0">
                                     <TextBlock Style="{StaticResource Text.Label}" Text="NE LATITUDE" Margin="0,0,0,5" />
                                     <TextBox Style="{StaticResource Field}" Tag="e.g. 44.512"
@@ -144,11 +190,11 @@
                     </StackPanel>
                 </Border>
 
-                <!-- footer: option buttons, or the scripted run panel -->
+                <!-- footer: buttons, or the scripted run panel -->
                 <Grid Margin="0,20,0,0">
                     <StackPanel Orientation="Horizontal"
                                 Visibility="{Binding ShowRunPanel, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}">
-                        <Button Style="{StaticResource Button.Primary}" Content="Generate GeoJSON"
+                        <Button Style="{StaticResource Button.Primary}" Content="Build cycle"
                                 Command="{Binding GenerateCommand}" />
                         <Button Style="{StaticResource Button.Ghost}" Content="Reset" Margin="10,0,0,0"
                                 Command="{Binding ResetCommand}" />
@@ -203,7 +249,6 @@
                             </ItemsControl>
 
                             <Border Style="{StaticResource Divider}" Margin="0,12" />
-
                             <StackPanel Orientation="Horizontal">
                                 <Button Style="{StaticResource Button.Ghost}" Content="Cancel"
                                         Command="{Binding CancelRunCommand}"

@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Windows.Input;
 using System.Windows.Threading;
 using FeBuddy.Wpf.Infrastructure;
@@ -7,17 +8,20 @@ using FeBuddy.Wpf.ViewModels.Models;
 namespace FeBuddy.Wpf.ViewModels;
 
 /// <summary>
-/// Options screen for the Airways -> GeoJSON generator. "Generate" runs a
-/// <b>scripted</b> progress sequence (no real work) so the run UI can be seen -
-/// the step list is built from the toggles above it, and completion raises a toast.
+/// The AIRAC cycle build screen. Pick a cycle, choose which output families to
+/// generate (each maps to a v2.x generator, now clipped to the ROI), tune the
+/// airway sub-options, then run. The run is <b>scripted</b> - steps are built
+/// from the enabled families; nothing is written.
 /// </summary>
 public sealed class AiracViewModel : ObservableObject
 {
-    private const double StepInterval = 0.55; // seconds per step
+    private const double StepInterval = 0.5; // seconds per step
 
+    private bool _currentCycle = true;
     private AirwayOutputMode _outputMode = AirwayOutputMode.HighLow;
     private bool _bufferWaypoints;
     private bool _includeFebProperties;
+    private bool _dmeCutoff = true;
     private bool _overrideRoi;
     private string _neLat = string.Empty;
     private string _neLon = string.Empty;
@@ -33,6 +37,22 @@ public sealed class AiracViewModel : ObservableObject
 
     public AiracViewModel()
     {
+        Families =
+        [
+            // Glyphs are Segoe Fluent code-points.
+            new OutputFamily("", "Airports", "APT symbols + text, runway lines", "3 GeoJSON"),
+            new OutputFamily("", "NAVAIDs", "VOR / NDB symbols + text", "2 GeoJSON"),
+            new OutputFamily("", "Fixes", "RNAV fix symbols + text", "2 GeoJSON"),
+            new OutputFamily("", "ARTCC boundaries", "High / low boundary lines", "2 GeoJSON"),
+            new OutputFamily("", "Airways", "V / J + RNAV routes, DME-cutoff variant", "6 GeoJSON"),
+            new OutputFamily("", "DP / STAR procedures", "Per-procedure + combined", "42 GeoJSON"),
+            new OutputFamily("", "Weather stations", "AWOS / ASOS symbols + text", "2 GeoJSON"),
+            new OutputFamily("", "Alias & reference", "AWY alias, ISR, chart recall, telephony", "6 alias", enabled: true),
+            new OutputFamily("", "Publications", "Airport info text", "1 text", enabled: false),
+        ];
+
+        Airways.PropertyChanged += OnAirwaysChanged;
+
         _runTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(StepInterval) };
         _runTimer.Tick += OnRunTick;
 
@@ -43,7 +63,32 @@ public sealed class AiracViewModel : ObservableObject
         ResetCommand = new RelayCommand(Reset);
     }
 
-    /// <summary>Which split the generator applies to its output files.</summary>
+    // ---- cycle (sample data) -----------------------------------------
+
+    public bool CurrentCycle
+    {
+        get => _currentCycle;
+        set => SetProperty(ref _currentCycle, value);
+    }
+
+    public string CycleId => CurrentCycle ? "2509" : "2510";
+
+    public string EffectiveLabel => CurrentCycle
+        ? "Effective 04 SEP 2025  ·  current"
+        : "Effective 02 OCT 2025  ·  18 days out";
+
+    public string ApraNote => "Cross-checked against FAA APRA · d-TPP metafile published";
+
+    // ---- output families -------------------------------------------
+
+    public ObservableCollection<OutputFamily> Families { get; }
+
+    private OutputFamily Airways => Families[4];
+
+    public bool ShowAirwayOptions => Airways.Enabled;
+
+    // ---- airway sub-options ---------------------------------------
+
     public AirwayOutputMode OutputMode
     {
         get => _outputMode;
@@ -78,6 +123,15 @@ public sealed class AiracViewModel : ObservableObject
         set => SetProperty(ref _includeFebProperties, value);
     }
 
+    /// <summary>Emit the "DME cutoff" line variant (airways trimmed 5 nm / 2 nm from fixes). v2.x #144.</summary>
+    public bool DmeCutoff
+    {
+        get => _dmeCutoff;
+        set => SetProperty(ref _dmeCutoff, value);
+    }
+
+    // ---- region of interest -------------------------------------
+
     public bool OverrideRoi
     {
         get => _overrideRoi;
@@ -92,7 +146,7 @@ public sealed class AiracViewModel : ObservableObject
 
     public string SwLon { get => _swLon; set => SetProperty(ref _swLon, value); }
 
-    // ---- run panel ------------------------------------------------------
+    // ---- run panel -----------------------------------------------
 
     public ObservableCollection<RunStep> Steps { get; } = [];
 
@@ -142,6 +196,14 @@ public sealed class AiracViewModel : ObservableObject
 
     // ------------------------------------------------------------------
 
+    private void OnAirwaysChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(OutputFamily.Enabled))
+        {
+            OnPropertyChanged(nameof(ShowAirwayOptions));
+        }
+    }
+
     private void StartRun()
     {
         BuildSteps();
@@ -177,8 +239,8 @@ public sealed class AiracViewModel : ObservableObject
             _runTimer.Stop();
             Progress = 100;
             Phase = GenPhase.Complete;
-            Toast.Success("GeoJSON generated",
-                $"{_fileCount} file{(_fileCount == 1 ? "" : "s")} written to …\\FE-Buddy\\Output.");
+            Toast.Success("Cycle build complete",
+                $"{_fileCount} files written to …\\FE-Buddy\\Output ({CycleId}).");
             return;
         }
 
@@ -203,40 +265,61 @@ public sealed class AiracViewModel : ObservableObject
     private void BuildSteps()
     {
         Steps.Clear();
-        Steps.Add(new RunStep("Reading NASR airway records"));
-        Steps.Add(new RunStep("Building LineStrings (efficient handling)"));
+        _fileCount = 0;
+        Steps.Add(new RunStep("Downloading FAA NASR subscription"));
+        Steps.Add(new RunStep($"Clipping to region of interest{(OverrideRoi ? " (override)" : "")}"));
 
-        if (BufferWaypoints)
+        foreach (var family in Families.Where(f => f.Enabled))
         {
-            Steps.Add(new RunStep("Buffering waypoints (2.5 / 5 nm)"));
+            if (family.Name == "Airways")
+            {
+                Steps.Add(new RunStep("Building airway LineStrings (efficient handling)"));
+                if (BufferWaypoints)
+                {
+                    Steps.Add(new RunStep("Buffering airway waypoints (2.5 / 5 nm)"));
+                }
+
+                if (IncludeFebProperties)
+                {
+                    Steps.Add(new RunStep("Applying feb.* properties"));
+                }
+
+                Steps.Add(new RunStep(OutputMode switch
+                {
+                    AirwayOutputMode.HighLow => "Writing Airways_High / _Low / _Other.geojson",
+                    AirwayOutputMode.Designation => "Writing Airways_J / V / Q / AT …",
+                    _ => "Skipping airway GeoJSON",
+                }));
+
+                if (DmeCutoff && OutputMode != AirwayOutputMode.None)
+                {
+                    Steps.Add(new RunStep("Writing DME-cutoff line variant"));
+                }
+            }
+            else
+            {
+                Steps.Add(new RunStep($"Generating {family.Name}"));
+            }
+
+            _fileCount += CountFor(family);
         }
 
-        if (IncludeFebProperties)
-        {
-            Steps.Add(new RunStep("Applying feb.* properties"));
-        }
-
-        switch (OutputMode)
-        {
-            case AirwayOutputMode.HighLow:
-                Steps.Add(new RunStep("Writing Airways_High.geojson"));
-                Steps.Add(new RunStep("Writing Airways_Low.geojson"));
-                Steps.Add(new RunStep("Writing Airways_Other.geojson"));
-                _fileCount = 3;
-                break;
-            case AirwayOutputMode.Designation:
-                Steps.Add(new RunStep("Writing Airways_J / V / Q / AT …"));
-                _fileCount = 9;
-                break;
-            default:
-                Steps.Add(new RunStep("Skipping GeoJSON output"));
-                _fileCount = 0;
-                break;
-        }
-
-        Steps.Add(new RunStep("Writing alias commands (.<id>F)"));
-        _fileCount += 1;
+        Steps.Add(new RunStep("Running alias duplicate check"));
     }
+
+    private int CountFor(OutputFamily family) => family.Name switch
+    {
+        "Airports" => 3,
+        "NAVAIDs" => 2,
+        "Fixes" => 2,
+        "ARTCC boundaries" => 2,
+        "Airways" => OutputMode == AirwayOutputMode.None ? 0 : (DmeCutoff ? 8 : 6),
+        "DP / STAR procedures" => 42,
+        "Weather stations" => 2,
+        "Alias & reference" => 6,
+        "Publications" => 1,
+        _ => 1,
+    };
 
     private void Reset()
     {
@@ -244,10 +327,16 @@ public sealed class AiracViewModel : ObservableObject
         Steps.Clear();
         Phase = GenPhase.Idle;
         Progress = 0;
+        CurrentCycle = true;
         OutputMode = AirwayOutputMode.HighLow;
         BufferWaypoints = false;
         IncludeFebProperties = false;
+        DmeCutoff = true;
         OverrideRoi = false;
         NeLat = NeLon = SwLat = SwLon = string.Empty;
+        foreach (var family in Families)
+        {
+            family.Enabled = family.Name != "Publications";
+        }
     }
 }

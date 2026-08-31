@@ -49,6 +49,15 @@
         <DataTemplate DataType="{x:Type vm:MapViewModel}">
             <views:MapView />
         </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:ConversionsViewModel}">
+            <views:ConversionsView />
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:GeoJsonToolsViewModel}">
+            <views:GeoJsonToolsView />
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:AliasReferenceViewModel}">
+            <views:AliasReferenceView />
+        </DataTemplate>
         <DataTemplate DataType="{x:Type vm:SettingsViewModel}">
             <views:SettingsView />
         </DataTemplate>

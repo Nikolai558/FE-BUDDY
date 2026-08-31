@@ -32,9 +32,28 @@ Infrastructure/       ObservableObject, RelayCommand, converters
 Map/                  GeoJSON reader (System.Text.Json), Web-Mercator, layer model
 Assets/               bundled sample GeoJSON (us-states, sample-airways)
 ViewModels/           ShellViewModel + one per screen, all with sample data
-Views/                ShellWindow (custom chrome) + Dashboard / Airac / Map /
-                      Settings / Info / Placeholder
+Views/                ShellWindow (custom chrome) + Dashboard, AIRAC, Map,
+                      Conversions, GeoJSON Tools, Alias & Reference, Settings, Info
 ```
+
+### Screens (all sample data / view-only)
+
+Shaped by the v2.x → 3.0 carry-forward map:
+
+- **AIRAC** - pick a cycle (APRA-verified), toggle the output families (each = one
+  v2.x generator: airports, NAVAIDs, fixes, boundaries, airways, DP/STAR, weather,
+  alias, publications), tune the airway sub-options (output mode, buffer, feb.*,
+  DME-cutoff variant), set an ROI override, run the scripted build.
+- **Conversions** - `.DAT` / `.KML` / `.SCT2` import to CRC GeoJSON, multi-file,
+  per-format options. vSTARS/vERAM and DXF are called out as retired.
+- **GeoJSON Tools** - validate a file against the ERAM/STARS schema (BCG/filter
+  warnings, precision, self-intersection, mergeable features), or run a clean-up
+  pass. Logic salvaged from v2.x's `GeoJson.cs`.
+- **Alias & Reference** - the `ALIAS/` text outputs (AWY alias, ISR, chart recall,
+  telephony) with samples, plus a cross-file duplicate-command check.
+- **Settings** - facility profile (name / ARTCC ID / output dir - replaces the
+  hard-coded list), default ROI, output preferences (single-line, feb.*,
+  coordinate precision + the non-US-region "." invariant), updates.
 
 ### Shell extras (all sample data / view-only)
 

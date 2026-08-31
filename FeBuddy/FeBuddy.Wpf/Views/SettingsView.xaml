@@ -23,7 +23,25 @@
                 <!-- facility profile -->
                 <Border Style="{StaticResource Card}" Margin="0,18,0,0">
                     <StackPanel>
-                        <ctl:SectionHeader Label="FACILITY PROFILE" />
+                        <ctl:SectionHeader Label="FACILITY PROFILE">
+                            <ctl:SectionHeader.Aside>
+                                <StackPanel Orientation="Horizontal">
+                                    <Button Style="{StaticResource Button.Subtle}" Content="New"
+                                            Command="{Binding NewProfileCommand}" />
+                                    <Button Style="{StaticResource Button.Subtle}" Content="Import"
+                                            Command="{Binding ImportProfileCommand}" />
+                                    <Button Style="{StaticResource Button.Subtle}" Content="Export"
+                                            Command="{Binding ExportProfileCommand}" />
+                                </StackPanel>
+                            </ctl:SectionHeader.Aside>
+                        </ctl:SectionHeader>
+
+                        <ListBox Style="{StaticResource Segmented}" Margin="0,0,0,4"
+                                 ItemsSource="{Binding Profiles}"
+                                 SelectedItem="{Binding SelectedProfile, Mode=TwoWay}" />
+
+                        <Border Style="{StaticResource Divider}" Margin="0,10,0,14" />
+
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
@@ -45,11 +63,126 @@
                         <TextBlock Style="{StaticResource Text.Label}" Text="OUTPUT DIRECTORY" Margin="0,14,0,5" />
                         <DockPanel>
                             <Button DockPanel.Dock="Right" Style="{StaticResource Button.Ghost}" Content="Browse…" Margin="10,0,0,0" />
+                            <ctl:CopyButton DockPanel.Dock="Right" Style="{StaticResource Copy.Button}" Margin="8,0,0,0"
+                                            VerticalAlignment="Center" Value="{Binding OutputDir}" />
                             <TextBox Style="{StaticResource Field}" Tag="pick a folder"
                                      Text="{Binding OutputDir, UpdateSourceTrigger=PropertyChanged}" />
                         </DockPanel>
                         <TextBlock Style="{StaticResource Text.Caption}" Margin="0,8,0,0"
-                                   Text="Replaces v2.x's fixed ARTCC list and Desktop-only output. Save a profile per facility." />
+                                   Text="Replaces v2.x's fixed ARTCC list and Desktop-only output. One profile per facility, exportable to share." />
+                    </StackPanel>
+                </Border>
+
+                <!-- data source -->
+                <Border Style="{StaticResource Card}" Margin="0,16,0,0">
+                    <StackPanel>
+                        <ctl:SectionHeader Label="NASR DATA SOURCE" />
+                        <StackPanel Orientation="Horizontal">
+                            <RadioButton Style="{StaticResource Pill.Radio}" GroupName="Src" Content="Download from FAA"
+                                         IsChecked="{Binding DataSource, Converter={StaticResource EnumToBool}, ConverterParameter=Faa}" />
+                            <RadioButton Style="{StaticResource Pill.Radio}" GroupName="Src" Content="Custom URL"
+                                         IsChecked="{Binding DataSource, Converter={StaticResource EnumToBool}, ConverterParameter=CustomUrl}" />
+                            <RadioButton Style="{StaticResource Pill.Radio}" GroupName="Src" Content="Local file (offline)"
+                                         IsChecked="{Binding DataSource, Converter={StaticResource EnumToBool}, ConverterParameter=LocalFile}" />
+                        </StackPanel>
+
+                        <DockPanel Margin="0,14,0,0"
+                                   Visibility="{Binding IsCustomUrl, Converter={StaticResource BoolToVis}}">
+                            <ctl:CopyButton DockPanel.Dock="Right" Style="{StaticResource Copy.Button}" Margin="8,0,0,0"
+                                            VerticalAlignment="Center" Value="{Binding CustomUrl}" />
+                            <TextBox Style="{StaticResource Field}" Tag="https://…/28DaySubscription…zip"
+                                     Text="{Binding CustomUrl, UpdateSourceTrigger=PropertyChanged}" />
+                        </DockPanel>
+                        <DockPanel Margin="0,14,0,0"
+                                   Visibility="{Binding IsLocalFile, Converter={StaticResource BoolToVis}}">
+                            <Button DockPanel.Dock="Right" Style="{StaticResource Button.Ghost}" Content="Browse…" Margin="10,0,0,0"
+                                    Command="{Binding BrowseNasrCommand}" />
+                            <TextBox Style="{StaticResource Field}" Tag="path to a NASR .zip"
+                                     Text="{Binding LocalNasrPath, UpdateSourceTrigger=PropertyChanged}" />
+                        </DockPanel>
+
+                        <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
+                            <Button Style="{StaticResource Button.Ghost}" Content="Test source"
+                                    Command="{Binding TestSourceCommand}" />
+                            <TextBlock Style="{StaticResource Text.Caption}" VerticalAlignment="Center" Margin="12,0,0,0"
+                                       Text="Use this when the FAA changes their download URL, or to build a cycle with no internet." />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- display scheme -->
+                <Border Style="{StaticResource Card}" Margin="0,16,0,0">
+                    <StackPanel>
+                        <ctl:SectionHeader Label="DISPLAY SCHEME">
+                            <ctl:SectionHeader.Aside>
+                                <Button Style="{StaticResource Button.Subtle}" Content="Export legend"
+                                        Command="{Binding ExportLegendCommand}" />
+                            </ctl:SectionHeader.Aside>
+                        </ctl:SectionHeader>
+                        <TextBlock Style="{StaticResource Text.Caption}" Margin="0,0,0,10"
+                                   Text="Name your BCG groups and filters once; every generator uses these, and the legend is exported for the controller ISR." />
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="24" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Grid.Column="0">
+                                <DockPanel Margin="0,0,0,6">
+                                    <Button DockPanel.Dock="Right" Style="{StaticResource Button.Subtle}" Content="+ Add"
+                                            Command="{Binding AddBcgCommand}" />
+                                    <TextBlock Style="{StaticResource Text.Label}" Text="BCG GROUPS" VerticalAlignment="Center" />
+                                </DockPanel>
+                                <ItemsControl ItemsSource="{Binding SchemeBcg}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <DockPanel Margin="0,3">
+                                                <Button DockPanel.Dock="Right" Style="{StaticResource Button.Subtle}"
+                                                        Content="&#xE711;" FontFamily="{StaticResource Font.Icon}" FontSize="9" Padding="6,4"
+                                                        Command="{Binding DataContext.RemoveSchemeItemCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                        CommandParameter="{Binding}" ToolTip="Remove" />
+                                                <ctl:CopyButton DockPanel.Dock="Right" Style="{StaticResource Copy.Button}"
+                                                                Value="{Binding Name}" />
+                                                <TextBlock DockPanel.Dock="Left" Text="{Binding Number}" Style="{StaticResource Text.Mono}"
+                                                           Foreground="{StaticResource Brush.Text.Tertiary}" Width="18"
+                                                           VerticalAlignment="Center" />
+                                                <TextBox Style="{StaticResource Field}" Padding="8,5" Margin="6,0"
+                                                         Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" />
+                                            </DockPanel>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="2">
+                                <DockPanel Margin="0,0,0,6">
+                                    <Button DockPanel.Dock="Right" Style="{StaticResource Button.Subtle}" Content="+ Add"
+                                            Command="{Binding AddFilterCommand}" />
+                                    <TextBlock Style="{StaticResource Text.Label}" Text="FILTERS" VerticalAlignment="Center" />
+                                </DockPanel>
+                                <ItemsControl ItemsSource="{Binding SchemeFilters}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <DockPanel Margin="0,3">
+                                                <Button DockPanel.Dock="Right" Style="{StaticResource Button.Subtle}"
+                                                        Content="&#xE711;" FontFamily="{StaticResource Font.Icon}" FontSize="9" Padding="6,4"
+                                                        Command="{Binding DataContext.RemoveSchemeItemCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                        CommandParameter="{Binding}" ToolTip="Remove" />
+                                                <ctl:CopyButton DockPanel.Dock="Right" Style="{StaticResource Copy.Button}"
+                                                                Value="{Binding Name}" />
+                                                <TextBlock DockPanel.Dock="Left" Text="{Binding Number}" Style="{StaticResource Text.Mono}"
+                                                           Foreground="{StaticResource Brush.Text.Tertiary}" Width="18"
+                                                           VerticalAlignment="Center" />
+                                                <TextBox Style="{StaticResource Field}" Padding="8,5" Margin="6,0"
+                                                         Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" />
+                                            </DockPanel>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </Grid>
                     </StackPanel>
                 </Border>
 

@@ -54,6 +54,22 @@ public enum CoordPrecision
     Seven,
 }
 
+/// <summary>Which CRC ERAM default set the AIRAC screen's editor is showing.</summary>
+public enum EramTab
+{
+    Lines,
+    Symbols,
+    Text,
+}
+
+/// <summary>Where the NASR subscription data comes from.</summary>
+public enum NasrSource
+{
+    Faa,
+    CustomUrl,
+    LocalFile,
+}
+
 /// <summary>Phase of the scripted "generate GeoJSON" run on the AIRAC screen.</summary>
 public enum GenPhase
 {

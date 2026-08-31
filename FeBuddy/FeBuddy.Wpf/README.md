@@ -41,19 +41,27 @@ Views/                ShellWindow (custom chrome) + Dashboard, AIRAC, Map,
 Shaped by the v2.x → 3.0 carry-forward map:
 
 - **AIRAC** - pick a cycle (APRA-verified), toggle the output families (each = one
-  v2.x generator: airports, NAVAIDs, fixes, boundaries, airways, DP/STAR, weather,
-  alias, publications), tune the airway sub-options (output mode, buffer, feb.*,
-  DME-cutoff variant), set an ROI override, run the scripted build.
+  v2.x generator), tune the airway sub-options: output mode, buffer, feb.*,
+  DME-cutoff variant, **designation include/exclude chips**, **break-at-fixes with
+  a DME range per fix type**, and a **CRC ERAM defaults editor** (Lines/Symbols/Text
+  → BCG / filters / style / thickness / size / underline / offsets). Set an ROI
+  override, opt into a **cycle-diff report** (sample preview), run the scripted build.
 - **Conversions** - `.DAT` / `.KML` / `.SCT2` import to CRC GeoJSON, multi-file,
   per-format options. vSTARS/vERAM and DXF are called out as retired.
 - **GeoJSON Tools** - validate a file against the ERAM/STARS schema (BCG/filter
   warnings, precision, self-intersection, mergeable features), or run a clean-up
   pass. Logic salvaged from v2.x's `GeoJson.cs`.
-- **Alias & Reference** - the `ALIAS/` text outputs (AWY alias, ISR, chart recall,
-  telephony) with samples, plus a cross-file duplicate-command check.
-- **Settings** - facility profile (name / ARTCC ID / output dir - replaces the
-  hard-coded list), default ROI, output preferences (single-line, feb.*,
-  coordinate precision + the non-US-region "." invariant), updates.
+- **Alias & Reference** - the `ALIAS/` text outputs with samples (each line has a
+  copy button), plus a cross-file duplicate-command check.
+- **Map** - adds a **Display** drop-down that toggles which BCG groups / filters
+  are "on" (the CRC display visualiser), and copy buttons on the cursor / ruler /
+  ROI read-outs.
+- **Settings** - **multiple named facility profiles** (switch / new / import /
+  export), default ROI, output preferences, a **display-scheme editor** (name the
+  BCG groups + filters once, export an ISR legend), a **NASR data-source** override
+  (FAA / custom URL / local file for offline builds), updates.
+- `Controls/CopyButton` - a shared tiny copy-to-clipboard icon (flips to a check
+  for ~1 s); `Copy.Button` style.
 
 ### Shell extras (all sample data / view-only)
 

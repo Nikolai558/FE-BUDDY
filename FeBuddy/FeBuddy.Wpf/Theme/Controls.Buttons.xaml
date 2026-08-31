@@ -9,11 +9,13 @@
         Button.Subtle    text only                    - tertiary / inline
         Ghost.Toggle     ToggleButton, ghost look, amber when checked
         Card.Toggle      ToggleButton, full-width card row (systems widget)
+        Copy.Button      ctl:CopyButton, tiny copy-to-clipboard icon
         Caption.Button   borderless icon, 46x32       - min / max
         Caption.Close    as above, red hover          - close
 -->
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls">
 
     <!-- ============================ PRIMARY ============================ -->
     <Style x:Key="Button.Primary" TargetType="Button">
@@ -201,6 +203,37 @@
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="Root" Property="Opacity" Value="0.38" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- =========================== COPY BUTTON ======================= -->
+    <Style x:Key="Copy.Button" TargetType="{x:Type ctl:CopyButton}">
+        <Setter Property="Width" Value="24" />
+        <Setter Property="Height" Value="20" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Focusable" Value="False" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type ctl:CopyButton}">
+                    <Border x:Name="Root" Background="{TemplateBinding Background}" CornerRadius="5">
+                        <TextBlock x:Name="Glyph" Text="&#xE8C8;"
+                                   FontFamily="{DynamicResource Font.Icon}" FontSize="11"
+                                   Foreground="{DynamicResource Brush.Text.Tertiary}"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Root" Property="Background" Value="{DynamicResource Brush.Overlay}" />
+                            <Setter TargetName="Glyph" Property="Foreground" Value="{DynamicResource Brush.Text.Primary}" />
+                        </Trigger>
+                        <Trigger Property="Copied" Value="True">
+                            <Setter TargetName="Glyph" Property="Text" Value="&#xE73E;" />
+                            <Setter TargetName="Glyph" Property="Foreground" Value="{DynamicResource Brush.Positive}" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>

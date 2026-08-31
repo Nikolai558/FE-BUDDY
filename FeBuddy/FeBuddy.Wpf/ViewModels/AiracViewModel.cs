@@ -22,6 +22,13 @@ public sealed class AiracViewModel : ObservableObject
     private bool _bufferWaypoints;
     private bool _includeFebProperties;
     private bool _dmeCutoff = true;
+    private bool _breakAtFixes;
+    private string _breakVor = "10";
+    private string _breakDme = "10";
+    private string _breakFix = "4";
+    private string _breakApt = "4";
+    private EramTab _eramTab = EramTab.Lines;
+    private bool _produceCycleDiff = true;
     private bool _overrideRoi;
     private string _neLat = string.Empty;
     private string _neLon = string.Empty;
@@ -49,6 +56,23 @@ public sealed class AiracViewModel : ObservableObject
             new OutputFamily("", "Weather stations", "AWOS / ASOS symbols + text", "2 GeoJSON"),
             new OutputFamily("", "Alias & reference", "AWY alias, ISR, chart recall, telephony", "6 alias", enabled: true),
             new OutputFamily("", "Publications", "Airport info text", "1 text", enabled: false),
+        ];
+
+        Designations =
+        [
+            new DesignationChip("J"), new DesignationChip("V"), new DesignationChip("Q"),
+            new DesignationChip("T"), new DesignationChip("AT", enabled: false),
+            new DesignationChip("AB", enabled: false), new DesignationChip("R", enabled: false),
+        ];
+
+        CycleDiff =
+        [
+            new DiffRow("Fixes", "+14 added, −3 removed vs 2508", StatusKind.Ok),
+            new DiffRow("Airways", "2 re-routed (J146, V23)", StatusKind.Warn),
+            new DiffRow("Procedures", "+6 SIDs, +4 STARs; 11 amended", StatusKind.Ok),
+            new DiffRow("Boundaries", "ZOB/ZID line moved near DJB", StatusKind.Warn),
+            new DiffRow("NAVAIDs", "DJB VORTAC frequency 113.9 → 115.0", StatusKind.Warn),
+            new DiffRow("Frequencies", "1 sector frequency retired", StatusKind.Down),
         ];
 
         Airways.PropertyChanged += OnAirwaysChanged;
@@ -129,6 +153,67 @@ public sealed class AiracViewModel : ObservableObject
         get => _dmeCutoff;
         set => SetProperty(ref _dmeCutoff, value);
     }
+
+    /// <summary>Include / exclude specific airway designations (TODO_GUI.MD).</summary>
+    public ObservableCollection<DesignationChip> Designations { get; }
+
+    /// <summary>Break each airway at every fix along the route; range per fix type (TODO_GUI.MD).</summary>
+    public bool BreakAtFixes
+    {
+        get => _breakAtFixes;
+        set => SetProperty(ref _breakAtFixes, value);
+    }
+
+    public string BreakVor { get => _breakVor; set => SetProperty(ref _breakVor, value); }
+
+    public string BreakDme { get => _breakDme; set => SetProperty(ref _breakDme, value); }
+
+    public string BreakFix { get => _breakFix; set => SetProperty(ref _breakFix, value); }
+
+    public string BreakApt { get => _breakApt; set => SetProperty(ref _breakApt, value); }
+
+    // ---- CRC ERAM default blocks (Developer_Notes) ------------------
+
+    public EramTab EramTab
+    {
+        get => _eramTab;
+        set
+        {
+            if (SetProperty(ref _eramTab, value))
+            {
+                OnPropertyChanged(nameof(CurrentEramDefault));
+                OnPropertyChanged(nameof(EramShowThickness));
+                OnPropertyChanged(nameof(EramShowText));
+            }
+        }
+    }
+
+    public EramDefault LineDefault { get; } = new();
+
+    public EramDefault SymbolDefault { get; } = new() { Style = "VOR", Size = "1" };
+
+    public EramDefault TextDefault { get; } = new() { Size = "1" };
+
+    public EramDefault CurrentEramDefault => EramTab switch
+    {
+        EramTab.Symbols => SymbolDefault,
+        EramTab.Text => TextDefault,
+        _ => LineDefault,
+    };
+
+    public bool EramShowThickness => EramTab == EramTab.Lines;
+
+    public bool EramShowText => EramTab == EramTab.Text;
+
+    // ---- cycle diff ----------------------------------------------
+
+    public bool ProduceCycleDiff
+    {
+        get => _produceCycleDiff;
+        set => SetProperty(ref _produceCycleDiff, value);
+    }
+
+    public ObservableCollection<DiffRow> CycleDiff { get; }
 
     // ---- region of interest -------------------------------------
 
@@ -295,6 +380,11 @@ public sealed class AiracViewModel : ObservableObject
                 {
                     Steps.Add(new RunStep("Writing DME-cutoff line variant"));
                 }
+
+                if (BreakAtFixes)
+                {
+                    Steps.Add(new RunStep("Breaking airways at fixes along the route"));
+                }
             }
             else
             {
@@ -305,6 +395,11 @@ public sealed class AiracViewModel : ObservableObject
         }
 
         Steps.Add(new RunStep("Running alias duplicate check"));
+
+        if (ProduceCycleDiff)
+        {
+            Steps.Add(new RunStep($"Diffing against cycle {(CurrentCycle ? "2508" : "2509")}"));
+        }
     }
 
     private int CountFor(OutputFamily family) => family.Name switch
@@ -332,8 +427,17 @@ public sealed class AiracViewModel : ObservableObject
         BufferWaypoints = false;
         IncludeFebProperties = false;
         DmeCutoff = true;
+        BreakAtFixes = false;
+        BreakVor = BreakDme = "10";
+        BreakFix = BreakApt = "4";
+        ProduceCycleDiff = true;
         OverrideRoi = false;
         NeLat = NeLon = SwLat = SwLon = string.Empty;
+        foreach (var chip in Designations)
+        {
+            chip.Enabled = chip.Code is "J" or "V" or "Q" or "T";
+        }
+
         foreach (var family in Families)
         {
             family.Enabled = family.Name != "Publications";

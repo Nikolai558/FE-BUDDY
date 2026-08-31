@@ -5,6 +5,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using FeBuddy.Wpf.Infrastructure;
 using FeBuddy.Wpf.Map;
+using FeBuddy.Wpf.ViewModels.Models;
 using Microsoft.Win32;
 
 namespace FeBuddy.Wpf.ViewModels;
@@ -53,10 +54,30 @@ public sealed class MapViewModel : ObservableObject
         };
         SyncLayers();
 
+        BcgGroups =
+        [
+            new DisplayItem(1, "Boundaries"), new DisplayItem(2, "Airways hi"),
+            new DisplayItem(3, "Airways lo"), new DisplayItem(4, "Fixes"),
+            new DisplayItem(5, "NAVAIDs"), new DisplayItem(6, "Airports"),
+            new DisplayItem(7, "Procedures"), new DisplayItem(8, "Text", visible: false),
+        ];
+        Filters =
+        [
+            new DisplayItem(1, "Always on"), new DisplayItem(2, "Hi sectors"),
+            new DisplayItem(3, "Lo sectors"), new DisplayItem(4, "Approach"),
+            new DisplayItem(5, "Ground", visible: false), new DisplayItem(6, "Emergency", visible: false),
+        ];
+        foreach (var i in BcgGroups.Concat(Filters))
+        {
+            i.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(DisplayItem.Visible)) OnPropertyChanged(nameof(DisplaySummary)); };
+        }
+
         LoadFilesCommand = new RelayCommand(LoadFiles);
         ClearFilesCommand = new RelayCommand(() => { LoadedFiles.Clear(); SyncLayers(); });
         ClearRoiCommand = new RelayCommand(() => { RoiSouthWest = null; RoiNorthEast = null; });
         ResetViewCommand = new RelayCommand(() => ResetRequested?.Invoke(this, EventArgs.Empty));
+        ShowAllDisplayCommand = new RelayCommand(() => SetAllDisplay(true));
+        HideAllDisplayCommand = new RelayCommand(() => SetAllDisplay(false));
     }
 
     /// <summary>Raised when the view should zoom to a set of bounds (after a load).</summary>
@@ -66,6 +87,27 @@ public sealed class MapViewModel : ObservableObject
     public event EventHandler? ResetRequested;
 
     public MapLayer? BaseLayer { get; }
+
+    // ---- CRC display visualiser (BCG groups + filters) ----
+
+    public ObservableCollection<DisplayItem> BcgGroups { get; }
+
+    public ObservableCollection<DisplayItem> Filters { get; }
+
+    public string DisplaySummary =>
+        $"{BcgGroups.Count(g => g.Visible)}/{BcgGroups.Count} BCG · {Filters.Count(f => f.Visible)}/{Filters.Count} filters";
+
+    public ICommand ShowAllDisplayCommand { get; }
+
+    public ICommand HideAllDisplayCommand { get; }
+
+    private void SetAllDisplay(bool on)
+    {
+        foreach (var i in BcgGroups.Concat(Filters))
+        {
+            i.Visible = on;
+        }
+    }
 
     /// <summary>The draw list the map binds to (rebuilt by <see cref="SyncLayers"/>).</summary>
     public ObservableCollection<MapLayer> Layers { get; }
@@ -136,6 +178,9 @@ public sealed class MapViewModel : ObservableObject
     public string RoiNeLon => Fmt(RoiNorthEast?.Lon);
     public string RoiSwLat => Fmt(RoiSouthWest?.Lat);
     public string RoiSwLon => Fmt(RoiSouthWest?.Lon);
+
+    /// <summary>All four corners, one per line - what the copy button puts on the clipboard.</summary>
+    public string RoiClipboardText => $"NE {RoiNeLat}, {RoiNeLon}\nSW {RoiSwLat}, {RoiSwLon}";
 
     public string? StatusMessage
     {
@@ -237,6 +282,7 @@ public sealed class MapViewModel : ObservableObject
     {
         OnPropertyChanged(nameof(HasRoi));
         OnPropertyChanged(nameof(RoiSummary));
+        OnPropertyChanged(nameof(RoiClipboardText));
         OnPropertyChanged(nameof(RoiNeLat));
         OnPropertyChanged(nameof(RoiNeLon));
         OnPropertyChanged(nameof(RoiSwLat));

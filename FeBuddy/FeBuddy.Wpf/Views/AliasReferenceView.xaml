@@ -38,10 +38,14 @@
                                         </DockPanel>
                                         <TextBlock Text="{Binding Description}" Style="{StaticResource Text.Caption}" Margin="0,3,0,0" />
                                         <Border Background="{StaticResource Brush.Bg.Sunken}" CornerRadius="7"
-                                                Padding="10,7" Margin="0,6,0,0">
-                                            <TextBlock Text="{Binding Sample}" Style="{StaticResource Text.Mono}"
-                                                       FontSize="11" Foreground="{StaticResource Brush.Text.Tertiary}"
-                                                       TextTrimming="CharacterEllipsis" />
+                                                Padding="10,6" Margin="0,6,0,0">
+                                            <DockPanel>
+                                                <ctl:CopyButton DockPanel.Dock="Right" Style="{StaticResource Copy.Button}"
+                                                                VerticalAlignment="Center" Value="{Binding Sample}" />
+                                                <TextBlock Text="{Binding Sample}" Style="{StaticResource Text.Mono}"
+                                                           FontSize="11" Foreground="{StaticResource Brush.Text.Tertiary}"
+                                                           VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                                            </DockPanel>
                                         </Border>
                                     </StackPanel>
                                 </DataTemplate>
@@ -66,12 +70,15 @@
                                 <DataTemplate>
                                     <Grid Margin="0,4">
                                         <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="120" />
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="110" />
                                             <ColumnDefinition Width="*" />
                                         </Grid.ColumnDefinitions>
-                                        <TextBlock Grid.Column="0" Text="{Binding Command}" Style="{StaticResource Text.Mono}"
-                                                   Foreground="{StaticResource Brush.Danger}" VerticalAlignment="Center" />
-                                        <TextBlock Grid.Column="1" Text="{Binding Files}" Style="{StaticResource Text.Caption}"
+                                        <ctl:CopyButton Grid.Column="0" Style="{StaticResource Copy.Button}"
+                                                        VerticalAlignment="Center" Value="{Binding Command}" />
+                                        <TextBlock Grid.Column="1" Text="{Binding Command}" Style="{StaticResource Text.Mono}"
+                                                   Foreground="{StaticResource Brush.Danger}" VerticalAlignment="Center" Margin="6,0,0,0" />
+                                        <TextBlock Grid.Column="2" Text="{Binding Files}" Style="{StaticResource Text.Caption}"
                                                    VerticalAlignment="Center" />
                                     </Grid>
                                 </DataTemplate>

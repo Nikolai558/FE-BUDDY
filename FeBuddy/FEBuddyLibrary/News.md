@@ -1,4 +1,9 @@
 # FE-Buddy News
+<!--
+PostId format =  yyyy-mm-dd.#
+  - Date/Time is always Zulu (GMT) time.
+  - # = sequential number for the number of posts this day. The First post of the day is 1, while the third post is 3.
+-->
 
 News concerning all things FE-Buddy will be posted here with the most recent post at the top.
 

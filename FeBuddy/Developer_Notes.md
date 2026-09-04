@@ -10,13 +10,17 @@
 - Read/Write handled by: `FEBuddyLibrary`.HELPERS.`UserConfig`
   - Method: .`ReadAll`
   - Method: .`Write`
-- On initial install, installer will create a UserConfig.json with blank values.
-  - On update, the current data will be saved and then rewritten to the new config file appropriatelly.
+- On initial install, installer will create a UserConfig.json with blank values except:
+  - `General`.`LastWindowState`=`Normal`
+- On update, the current data will be saved and then rewritten to the new config file appropriatelly.
+- New data saved to file when user selects "save" on a settings field.
+- Read on initial launch by `FEBuddyLibrary`.HELPERS.`UserConfigFile` to `UserConfig` dictionary.
 - Structure:
   - General
     - `DefaultOutputDirectory`=""
     - `LastWindowState`=""
     - `NewsLastOpen`=""
+    - `UpdateChannel`=""
   - AiracData
     - `AiracCycleId`=""
     - `UserArtccId`=""
@@ -155,7 +159,10 @@
 
 - Internet Connection
   - Assume `bool hasInternetConnection` from FEBuddyLibrary is `true` until a return of `false` proves otherwise.
-  - Grey-out or display/hide data that requires internet connection accordingly, for example: version numbers and AIRAC Cycle services.
+  - Grey-out or display/hide data that requires internet connection accordingly, for example: program version number (for update checking) and AIRAC Cycle services.
+- Saving Settings
+  - Settings-dependent operations will be greyed-out until all required settings are entered with the appropriate data or "saved" to the UserConfig.json
+  - If the only thing missing is the user not selecting the "save" button for the newly entered data, an execute button push will launch a window warning the user that the newly input data will be saved before execution and allowing the user to select "Cancel" or "Save & Continue".
 
 ## TITLE BAR
 
@@ -167,46 +174,27 @@
 
 ## SETTINGS
 
-### UDPATES
+### UPDATES
 
 - Allow users to select:
   - Participate in `alpha`, `beta`, or `stable only` version updates.
     - `stable only` is selected by default.
+	- Saved as `General`.`UpdateChannel` in config file.
   - Rollback from an alpha or beta version to the latest stable version.
   - Check for updates now (`hasInternetConnection` dependent).
 - Save button:
-  - Writes settings to the `UserConfig.json`.
+  - Writes settings to the `UserConfig` file.
 
-### DEFAULT ROI
+### UNINSTALL
 
-- Info section:
-  - `Region of Interest (ROI): An lat/lon axis-aligned rectangular region defined by southwest (bottom-left corner) and northeast (top-right corner) coordinates (i.e. a box defining the data you are interested in). Depending on the data type and operation, geometries may be clipped to the ROI or included in full when associated with an entity located within the ROI. Create a box that encompasses an acceptable amount of area outside your ARTCC boundaries so that data within that region may still be displayed in your GeoJSON files and, under certain circumstances, in additional resource files. Note: Depending on the operation, you may be given the option to override this ROI with a custom ROI for specific files later.`
-- User selects:
-  - `Setup and use ROI` (Defeault)
-  - `Do not set up ROI; Get all NASR data.`
-- If user selects to setup ROI or loads as default or from previous UserConfig preferences, ROI Coordinates Input boxes:
-  - `Northeast (top-right corner) Latitude`
-  - `Northeast (top-right corner) Longitude`
-  - `Southwest (bottom-left corner) Latitude`
-  - `Southwest (bottom-left corner) Longitude`
-  - If `IncludeRoi`=true
-    - If `UserConfig.json`.`General`.`Settings`.`Roi`.`DefaultCoordindates` has values
-	  - Load the values into the input boxes.
-	  - If values do not exist, provide greyed examples of lat/lon coordinates in the boxes ready for the user to input theirs.
-- Save button:
-  - Set `UserConfig.json`.`General`.`Settings`.`Roi`.`IncludeRoi`=`true/false`
-  - If `IncludeRoi`=true
-    - Ensure all `DefaultCoordindates` have values.
-    - Send the `DefaultCoordindates` to `FEBuddyLibrary`.`GuiProcessHandler`.`ValideateRoiCoordinates` to validate:
-      - Valid decimal values (`IsCoordinateValidFormat`)
-      - SW `DefaultCoordindates` are actually southwest of the NE `DefaultCoordindates`. (`IsCoordinatesRelativePositionValid`)
-    - Await for validation process to complete with success and then if `IncludeRoi`= `true`
-      - Set `UserConfig.json`.`General`.`Settings`.`Roi`.`DefaultCoordindates`
-        - .`SwLat`
-        - .`SwLon`
-        - .`NeLat`
-        - .`NeLon`
-  - Await for above to complete and then trigger re-read `UserConfig.json` to allow things like services to be selected that were previously unavailable due to a setting form not being filled out yet.
+- User selects to start the uninstall process.
+- Warning window should appear informing the user that their user settings will be lost and a "Cancel" or "I understand, please uninstall" options should be provided.
+
+### WINDOW STATE
+
+- User selects how they want the application to always launch.
+  - `Normal`, `Minimized`, and `Maximized`
+  - `Normal` should be default and written to userconfig on initial install.
 
 ## INFO
 
@@ -239,6 +227,38 @@
 - User selects output directory
 - Create AiracSettings dictionary to be passed to Library later.
   - Add GeneralSettings after user saves on this general page.
+
+#### DEFAULT ROI
+
+- Info section:
+  - `Region of Interest (ROI): An lat/lon axis-aligned rectangular region defined by southwest (bottom-left corner) and northeast (top-right corner) coordinates (i.e. a box defining the data you are interested in). Depending on the data type and operation, geometries may be clipped to the ROI or included in full when associated with an entity located within the ROI. Create a box that encompasses an acceptable amount of area outside your ARTCC boundaries so that data within that region may still be displayed in your GeoJSON files and, under certain circumstances, in additional resource files. Note: Depending on the operation, you may be given the option to override this ROI with a custom ROI for specific files later.`
+- User selects:
+  - `Setup and use ROI` (Selected by Default if `UserConfig`.`AiracData`.`DefaultRoi`.`FilterByRoi` has no value)
+    - If appropriate data is already detected for `UserConfig`.`AiracData`.`DefaultRoi`.`DefaultCoordindates`, label should just be "Use ROI"
+  - `Do not set up ROI; Get all NASR data.`
+- If user selects to setup ROI or loads as default or from previous UserConfig preferences, ROI Coordinates Input boxes:
+  - `Northeast (top-right corner) Latitude`
+  - `Northeast (top-right corner) Longitude`
+  - `Southwest (bottom-left corner) Latitude`
+  - `Southwest (bottom-left corner) Longitude`
+  - If `IncludeRoi`=true
+    - If `UserConfig.json`.`General`.`Settings`.`Roi`.`DefaultCoordindates` has values
+	  - Load the values into the input boxes.
+	  - If values do not exist, provide greyed examples of lat/lon coordinates in the boxes ready for the user to input theirs.
+- Save button:
+  - Set `UserConfig.json`.`General`.`Settings`.`Roi`.`IncludeRoi`=`true/false`
+  - If `IncludeRoi`=true
+    - Ensure all `DefaultCoordindates` have values.
+    - Send the `DefaultCoordindates` to `FEBuddyLibrary`.`GuiProcessHandler`.`ValideateRoiCoordinates` to validate:
+      - Valid decimal values (`IsCoordinateValidFormat`)
+      - SW `DefaultCoordindates` are actually southwest of the NE `DefaultCoordindates`. (`IsCoordinatesRelativePositionValid`)
+    - Await for validation process to complete with success and then if `IncludeRoi`= `true`
+      - Set `UserConfig.json`.`General`.`Settings`.`Roi`.`DefaultCoordindates`
+        - .`SwLat`
+        - .`SwLon`
+        - .`NeLat`
+        - .`NeLon`
+  - Await for above to complete and then trigger re-read `UserConfig.json` to allow things like services to be selected that were previously unavailable due to a setting form not being filled out yet.
 
 ##### AIRWAYS
 

@@ -1,16 +1,22 @@
-﻿using FEBuddyLibrary.Models.NASR.CSV;
+﻿using FEBuddyLibrary.Generators.NASR;
+using FEBuddyLibrary.Models.NASR.CSV;
 using FEBuddyLibrary.Parsers.NASR.CSV;
-using FEBuddyLibrary.Generators.NASR;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
+using System.Threading.Tasks;
 
 namespace FEBuddyTest;
 
 internal static class Program
 {
-    public static void Main()
+    public static async Task Main()
     {
+
+
+
+
         string sourceDirectory = @"C:\Users\ksand\Downloads\03_Sep_2026_CSV";
 
         // AWY GeoJSON generation settings
@@ -22,14 +28,31 @@ internal static class Program
             { "WaypointBuffer", "Y" }
         };
 
+
+
+
+
+
         Console.Write("NASR CSV parsing... ");
 
-        var allNasrCsvData = NasrCsvParserController.Main(new string[]
+        var stopwatch = Stopwatch.StartNew();
+
+        var allNasrCsvData = await NasrCsvParserController.MainAsync(new string[]
         {
             sourceDirectory
         });
 
-        Console.Write("complete.");
+        stopwatch.Stop();
+
+        Console.WriteLine($"complete. ({stopwatch.ElapsedMilliseconds:N0} ms)");
+
+
+
+
+
+
+
+
 
         Console.WriteLine("\n\nGenerating AWY GeoJSON...");
 

@@ -1,0 +1,27 @@
+<!--
+    Theme.xaml  -  the one dictionary the app merges.
+    ===========================================================================
+    Order matters: tokens (Palette, Typography, Icons) must load before the
+    control styles that reference them. App.xaml merges only this file.
+-->
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:conv="clr-namespace:FeBuddy.Wpf.Infrastructure">
+
+    <ResourceDictionary.MergedDictionaries>
+        <!-- tokens -->
+        <ResourceDictionary Source="Palette.xaml" />
+        <ResourceDictionary Source="Typography.xaml" />
+        <ResourceDictionary Source="Icons.xaml" />
+        <!-- control styles -->
+        <ResourceDictionary Source="Controls.Buttons.xaml" />
+        <ResourceDictionary Source="Controls.Inputs.xaml" />
+        <ResourceDictionary Source="Controls.Surfaces.xaml" />
+        <ResourceDictionary Source="Controls.Chrome.xaml" />
+    </ResourceDictionary.MergedDictionaries>
+
+    <!-- Shared value converters, instantiated once here. -->
+    <conv:BoolToVisibilityConverter x:Key="BoolToVis" />
+    <conv:EnumToBooleanConverter x:Key="EnumToBool" />
+
+</ResourceDictionary>

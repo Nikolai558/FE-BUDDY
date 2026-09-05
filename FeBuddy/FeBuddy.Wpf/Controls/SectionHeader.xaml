@@ -1,0 +1,29 @@
+<!--
+    SectionHeader  -  the tiny uppercase label that titles every block, matching
+    the reference site's "ONLINE ATC" / "TOP 3 CONTROLLERS" pattern.
+
+    Usage:
+        <ctl:SectionHeader Label="OUTPUT MODE" />
+
+        <ctl:SectionHeader Label="RECENT OUTPUT">
+            <ctl:SectionHeader.Aside>
+                <Button Style="{StaticResource Button.Subtle}" Content="Open folder" />
+            </ctl:SectionHeader.Aside>
+        </ctl:SectionHeader>
+
+    Aside (if set) is right-aligned on the same row as the label.
+-->
+<UserControl x:Class="FeBuddy.Wpf.Controls.SectionHeader"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Name="Self">
+    <DockPanel LastChildFill="False" Margin="0,0,0,10">
+        <TextBlock DockPanel.Dock="Left"
+                   VerticalAlignment="Center"
+                   Style="{StaticResource Text.Label}"
+                   Text="{Binding Label, ElementName=Self}" />
+        <ContentPresenter DockPanel.Dock="Right"
+                          VerticalAlignment="Center"
+                          Content="{Binding Aside, ElementName=Self}" />
+    </DockPanel>
+</UserControl>

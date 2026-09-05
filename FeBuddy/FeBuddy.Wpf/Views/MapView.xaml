@@ -1,0 +1,328 @@
+<!--
+    MapView  -  interactive vector map. Pan = drag, zoom = wheel. Flip
+    "Pick ROI on map" and drag a box to set a region of interest (right-click
+    clears). "Load GeoJSON" renders any standard GeoJSON file on top.
+-->
+<UserControl x:Class="FeBuddy.Wpf.Views.MapView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:FeBuddy.Wpf.ViewModels"
+             xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance vm:MapViewModel, IsDesignTimeCreatable=True}"
+             d:DesignWidth="960" d:DesignHeight="720">
+
+    <Grid Background="{StaticResource Brush.Bg.Base}">
+        <Grid Margin="28">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <!-- header -->
+            <StackPanel Grid.Row="0">
+                <TextBlock Style="{StaticResource Text.H1}" Text="Map" />
+                <TextBlock Style="{StaticResource Text.Body}" Margin="0,6,0,0"
+                           Text="Preview GeoJSON on a US outline. Drag to pan, wheel to zoom." />
+            </StackPanel>
+
+            <!-- toolbar -->
+            <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,16,0,0">
+                <Button Style="{StaticResource Button.Primary}" Content="Load GeoJSON…"
+                        Command="{Binding LoadFilesCommand}" />
+
+                <!-- files drop-down: toggle button opens a popup listing every
+                     loaded file with its own visibility switch + remove -->
+                <ToggleButton x:Name="FilesButton" Style="{StaticResource Ghost.Toggle}"
+                              Margin="10,0,0,0" IsEnabled="{Binding HasLoadedFiles}">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="{Binding FilesButtonLabel}" VerticalAlignment="Center" />
+                        <TextBlock Text="&#xE70D;" FontFamily="{StaticResource Font.Icon}" FontSize="9"
+                                   Margin="7,1,0,0" VerticalAlignment="Center" />
+                    </StackPanel>
+                </ToggleButton>
+                <Popup PlacementTarget="{Binding ElementName=FilesButton}" Placement="Bottom"
+                       VerticalOffset="6" HorizontalOffset="0"
+                       IsOpen="{Binding IsChecked, ElementName=FilesButton, Mode=TwoWay}"
+                       StaysOpen="False" AllowsTransparency="True" PopupAnimation="Fade">
+                    <Border Style="{StaticResource Card}" Background="{StaticResource Brush.Panel}"
+                            Padding="12,12" MinWidth="280" MaxWidth="360" Margin="0,0,10,10">
+                        <Border.Effect>
+                            <DropShadowEffect BlurRadius="22" ShadowDepth="5" Direction="270"
+                                              Opacity="0.5" Color="#000000" />
+                        </Border.Effect>
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource Text.Label}" Text="LOADED FILES" Margin="0,0,0,8" />
+                            <ItemsControl ItemsSource="{Binding LoadedFiles}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid Margin="0,4">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <Rectangle Grid.Column="0" Width="16" Height="3" VerticalAlignment="Center"
+                                                       Fill="{Binding Swatch}" />
+                                            <TextBlock Grid.Column="1" Text="{Binding Name}" Margin="10,0,10,0"
+                                                       Style="{StaticResource Text.Body}" VerticalAlignment="Center"
+                                                       TextTrimming="CharacterEllipsis"
+                                                       ToolTip="{Binding GeometryCount, StringFormat='{}{0} geometries'}" />
+                                            <ToggleButton Grid.Column="2" Style="{StaticResource Switch}"
+                                                          VerticalAlignment="Center"
+                                                          IsChecked="{Binding IsVisible, Mode=TwoWay}" />
+                                            <Button Grid.Column="3" Style="{StaticResource Button.Subtle}"
+                                                    Content="&#xE711;" FontFamily="{StaticResource Font.Icon}"
+                                                    FontSize="10" Padding="8,4" Margin="4,0,0,0"
+                                                    Command="{Binding RemoveCommand}" ToolTip="Remove" />
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <Border Style="{StaticResource Divider}" Margin="0,8" />
+                            <Button Style="{StaticResource Button.Subtle}" Content="Remove all"
+                                    HorizontalAlignment="Left" Margin="-8,0,0,0"
+                                    Command="{Binding ClearFilesCommand}" />
+                        </StackPanel>
+                    </Border>
+                </Popup>
+
+                <Button Style="{StaticResource Button.Ghost}" Content="Reset view" Margin="10,0,0,0"
+                        Command="{Binding ResetViewCommand}" />
+
+                <!-- CRC display visualiser: which BCG groups / filters are "on" -->
+                <ToggleButton x:Name="DisplayButton" Style="{StaticResource Ghost.Toggle}" Margin="10,0,0,0">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="Display" VerticalAlignment="Center" />
+                        <TextBlock Text="&#xE70D;" FontFamily="{StaticResource Font.Icon}" FontSize="9"
+                                   Margin="7,1,0,0" VerticalAlignment="Center" />
+                    </StackPanel>
+                </ToggleButton>
+                <Popup PlacementTarget="{Binding ElementName=DisplayButton}" Placement="Bottom"
+                       VerticalOffset="6" IsOpen="{Binding IsChecked, ElementName=DisplayButton, Mode=TwoWay}"
+                       StaysOpen="False" AllowsTransparency="True" PopupAnimation="Fade">
+                    <Border Style="{StaticResource Card}" Background="{StaticResource Brush.Panel}"
+                            Padding="12" MinWidth="240" Margin="0,0,10,10">
+                        <Border.Effect>
+                            <DropShadowEffect BlurRadius="22" ShadowDepth="5" Direction="270" Opacity="0.5" Color="#000000" />
+                        </Border.Effect>
+                        <StackPanel>
+                            <ctl:SectionHeader Label="{Binding DisplaySummary}">
+                                <ctl:SectionHeader.Aside>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Button Style="{StaticResource Button.Subtle}" Content="All"
+                                                Command="{Binding ShowAllDisplayCommand}" />
+                                        <Button Style="{StaticResource Button.Subtle}" Content="None"
+                                                Command="{Binding HideAllDisplayCommand}" />
+                                    </StackPanel>
+                                </ctl:SectionHeader.Aside>
+                            </ctl:SectionHeader>
+                            <TextBlock Style="{StaticResource Text.Label}" Text="BCG GROUPS" Margin="0,0,0,4" />
+                            <ItemsControl ItemsSource="{Binding BcgGroups}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <DockPanel Margin="0,3">
+                                            <ToggleButton DockPanel.Dock="Left" Style="{StaticResource Switch}"
+                                                          VerticalAlignment="Center" IsChecked="{Binding Visible}" />
+                                            <TextBlock Text="{Binding Number, StringFormat='  {0}  '}" Style="{StaticResource Text.Mono}"
+                                                       Foreground="{StaticResource Brush.Text.Tertiary}" VerticalAlignment="Center" />
+                                            <TextBlock Text="{Binding Name}" Style="{StaticResource Text.Body}" VerticalAlignment="Center" />
+                                        </DockPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <Border Style="{StaticResource Divider}" Margin="0,8" />
+                            <TextBlock Style="{StaticResource Text.Label}" Text="FILTERS" Margin="0,0,0,4" />
+                            <ItemsControl ItemsSource="{Binding Filters}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <DockPanel Margin="0,3">
+                                            <ToggleButton DockPanel.Dock="Left" Style="{StaticResource Switch}"
+                                                          VerticalAlignment="Center" IsChecked="{Binding Visible}" />
+                                            <TextBlock Text="{Binding Number, StringFormat='  {0}  '}" Style="{StaticResource Text.Mono}"
+                                                       Foreground="{StaticResource Brush.Text.Tertiary}" VerticalAlignment="Center" />
+                                            <TextBlock Text="{Binding Name}" Style="{StaticResource Text.Body}" VerticalAlignment="Center" />
+                                        </DockPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </Border>
+                </Popup>
+
+                <Border Width="1" Background="{StaticResource Brush.Stroke}" Margin="16,4" />
+
+                <ToggleButton Style="{StaticResource Switch}" VerticalAlignment="Center"
+                              IsChecked="{Binding ShowSample}" />
+                <TextBlock Text="Sample airways" Style="{StaticResource Text.Body}"
+                           VerticalAlignment="Center" Margin="9,0,18,0" />
+
+                <ToggleButton Style="{StaticResource Switch}" VerticalAlignment="Center"
+                              IsChecked="{Binding PickRoiOnMap}" />
+                <TextBlock Text="Pick ROI on map" Style="{StaticResource Text.Body}"
+                           VerticalAlignment="Center" Margin="9,0,18,0" />
+
+                <ToggleButton Style="{StaticResource Switch}" VerticalAlignment="Center"
+                              IsChecked="{Binding MeasureOnMap}" />
+                <TextBlock Text="Measure" Style="{StaticResource Text.Body}"
+                           VerticalAlignment="Center" Margin="9,0,0,0" />
+            </StackPanel>
+
+            <!-- map + overlays -->
+            <Border Grid.Row="2" Margin="0,16,0,0"
+                    BorderBrush="{StaticResource Brush.Stroke.Strong}" BorderThickness="1">
+                <Grid>
+                    <ctl:MapCanvas x:Name="Map"
+                                   BaseLayer="{Binding BaseLayer}"
+                                   Layers="{Binding Layers}"
+                                   RoiEnabled="{Binding PickRoiOnMap}"
+                                   MeasureEnabled="{Binding MeasureOnMap}"
+                                   RoiSouthWest="{Binding RoiSouthWest, Mode=TwoWay}"
+                                   RoiNorthEast="{Binding RoiNorthEast, Mode=TwoWay}" />
+
+                    <!-- cursor lat/lon + ruler read-out (top-left) -->
+                    <StackPanel HorizontalAlignment="Left" VerticalAlignment="Top" Margin="14">
+                        <Border HorizontalAlignment="Left">
+                            <Border.Style>
+                                <Style TargetType="Border" BasedOn="{StaticResource Chip}">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding CursorText, ElementName=Map}" Value="">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                            <TextBlock Style="{StaticResource Chip.Text}" FontFamily="{StaticResource Font.Mono}"
+                                       Text="{Binding CursorText, ElementName=Map}" />
+                        </Border>
+                        <Border HorizontalAlignment="Left" Margin="0,6,0,0">
+                            <Border.Style>
+                                <Style TargetType="Border" BasedOn="{StaticResource Chip.Accent}">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding MeasureText, ElementName=Map}" Value="">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                            <TextBlock Style="{StaticResource Chip.Text}" FontFamily="{StaticResource Font.Mono}"
+                                       Foreground="{StaticResource Brush.Accent.Text}"
+                                       Text="{Binding MeasureText, ElementName=Map}" />
+                        </Border>
+                    </StackPanel>
+
+                    <!-- status chip -->
+                    <Border HorizontalAlignment="Right" VerticalAlignment="Top" Margin="14">
+                        <Border.Style>
+                            <Style TargetType="Border" BasedOn="{StaticResource Chip}">
+                                <Setter Property="Visibility" Value="Visible" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding StatusMessage}" Value="{x:Null}">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                        <TextBlock Style="{StaticResource Chip.Text}" Text="{Binding StatusMessage}" />
+                    </Border>
+
+                    <!-- legend / ROI read-out -->
+                    <Border Style="{StaticResource Card}" Padding="14,12"
+                            HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="14"
+                            MaxWidth="280" Background="{StaticResource Brush.Panel}">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource Text.Label}" Text="LAYERS" Margin="0,0,0,8" />
+
+                            <StackPanel Orientation="Horizontal" Margin="0,2">
+                                <Rectangle Width="16" Height="3" VerticalAlignment="Center"
+                                           Fill="{StaticResource Brush.Stroke.Strong}" />
+                                <TextBlock Text="US states" Style="{StaticResource Text.Caption}" Margin="9,0,0,0" />
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,2"
+                                        Visibility="{Binding ShowSample, Converter={StaticResource BoolToVis}}">
+                                <Rectangle Width="16" Height="3" VerticalAlignment="Center"
+                                           Fill="{StaticResource Brush.Accent}" />
+                                <TextBlock Text="Sample airways" Style="{StaticResource Text.Caption}" Margin="9,0,0,0" />
+                            </StackPanel>
+                            <ItemsControl ItemsSource="{Binding LoadedFiles}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal" Margin="0,2">
+                                            <StackPanel.Style>
+                                                <Style TargetType="StackPanel">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsVisible}" Value="False">
+                                                            <Setter Property="Opacity" Value="0.35" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </StackPanel.Style>
+                                            <Rectangle Width="16" Height="3" VerticalAlignment="Center"
+                                                       Fill="{Binding Swatch}" />
+                                            <TextBlock Text="{Binding Name}" Style="{StaticResource Text.Caption}"
+                                                       Margin="9,0,0,0" TextTrimming="CharacterEllipsis" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                            <Border Style="{StaticResource Divider}" Margin="0,10" />
+
+                            <DockPanel Margin="0,0,0,6">
+                                <Button DockPanel.Dock="Right" Style="{StaticResource Button.Subtle}"
+                                        Content="&#xE74E;" FontFamily="{StaticResource Font.Icon}" FontSize="12" Padding="6,3"
+                                        Command="{Binding SaveRoiToSettingsCommand}"
+                                        ToolTip="Save as the default ROI (Settings &#8250; Default ROI)"
+                                        Visibility="{Binding HasRoi, Converter={StaticResource BoolToVis}}" />
+                                <TextBlock Style="{StaticResource Text.Label}" Text="REGION OF INTEREST" VerticalAlignment="Center" />
+                            </DockPanel>
+                            <TextBlock Text="{Binding RoiSummary}" Style="{StaticResource Text.Caption}" />
+
+                            <StackPanel Margin="0,8,0,0"
+                                        Visibility="{Binding HasRoi, Converter={StaticResource BoolToVis}}">
+                                <TextBlock Style="{StaticResource Text.Label}" Text="NE" />
+                                <DockPanel>
+                                    <ctl:CopyButton DockPanel.Dock="Right" Style="{StaticResource Copy.Button}"
+                                                    VerticalAlignment="Center" Value="{Binding RoiNeLat}" />
+                                    <TextBlock Style="{StaticResource Text.Mono}" Foreground="{StaticResource Brush.Text.Primary}"
+                                               Text="{Binding RoiNeLat, StringFormat='lat  {0}'}" />
+                                </DockPanel>
+                                <DockPanel>
+                                    <ctl:CopyButton DockPanel.Dock="Right" Style="{StaticResource Copy.Button}"
+                                                    VerticalAlignment="Center" Value="{Binding RoiNeLon}" />
+                                    <TextBlock Style="{StaticResource Text.Mono}" Foreground="{StaticResource Brush.Text.Primary}"
+                                               Text="{Binding RoiNeLon, StringFormat='lon  {0}'}" />
+                                </DockPanel>
+
+                                <TextBlock Style="{StaticResource Text.Label}" Text="SW" Margin="0,6,0,0" />
+                                <DockPanel>
+                                    <ctl:CopyButton DockPanel.Dock="Right" Style="{StaticResource Copy.Button}"
+                                                    VerticalAlignment="Center" Value="{Binding RoiSwLat}" />
+                                    <TextBlock Style="{StaticResource Text.Mono}" Foreground="{StaticResource Brush.Text.Primary}"
+                                               Text="{Binding RoiSwLat, StringFormat='lat  {0}'}" />
+                                </DockPanel>
+                                <DockPanel>
+                                    <ctl:CopyButton DockPanel.Dock="Right" Style="{StaticResource Copy.Button}"
+                                                    VerticalAlignment="Center" Value="{Binding RoiSwLon}" />
+                                    <TextBlock Style="{StaticResource Text.Mono}" Foreground="{StaticResource Brush.Text.Primary}"
+                                               Text="{Binding RoiSwLon, StringFormat='lon  {0}'}" />
+                                </DockPanel>
+                            </StackPanel>
+
+                            <Button Style="{StaticResource Button.Subtle}" Content="Clear ROI"
+                                    HorizontalAlignment="Left" Margin="-10,4,0,0"
+                                    Command="{Binding ClearRoiCommand}"
+                                    Visibility="{Binding HasRoi, Converter={StaticResource BoolToVis}}" />
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </Border>
+        </Grid>
+    </Grid>
+</UserControl>

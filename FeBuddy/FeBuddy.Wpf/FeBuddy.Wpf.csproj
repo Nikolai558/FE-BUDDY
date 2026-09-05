@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    FeBuddy.Wpf  -  UI prototype / design system
+    ===========================================================================
+    Pure presentation layer. On purpose this project references NOTHING:
+      * no FEBuddyLibrary
+      * no NuGet packages (MVVM helpers and converters are hand-rolled and live
+        under /Infrastructure so the project stays a self-contained shell)
+    The goal is a modern, DRY, well-commented WPF skin that the real app can be
+    grown into or that can be pointed at the library later.
+  -->
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <RootNamespace>FeBuddy.Wpf</RootNamespace>
+    <AssemblyName>FeBuddy.Wpf</AssemblyName>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <UseWPF>true</UseWPF>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <!-- Treat XAML/code warnings seriously in a greenfield project. -->
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Bundled sample data for the map (plain GeoJSON, not code). -->
+    <Resource Include="Assets\us-states.json" />
+    <Resource Include="Assets\sample-airways.json" />
+  </ItemGroup>
+
+</Project>

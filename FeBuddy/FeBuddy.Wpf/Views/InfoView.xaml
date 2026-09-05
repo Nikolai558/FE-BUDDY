@@ -1,0 +1,71 @@
+<!--
+    InfoView  -  about blurb + a grid of resource cards.
+-->
+<UserControl x:Class="FeBuddy.Wpf.Views.InfoView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:FeBuddy.Wpf.ViewModels"
+             xmlns:m="clr-namespace:FeBuddy.Wpf.ViewModels.Models"
+             xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance vm:InfoViewModel, IsDesignTimeCreatable=True}"
+             d:DesignWidth="900" d:DesignHeight="700">
+
+    <UserControl.Resources>
+        <DataTemplate x:Key="InfoLinkTemplate" DataType="{x:Type m:InfoLink}">
+            <Border Style="{StaticResource Card}" Margin="6">
+                <StackPanel>
+                    <Border Width="30" Height="30" CornerRadius="9"
+                            Background="{StaticResource Brush.Accent.Soft}" HorizontalAlignment="Left">
+                        <TextBlock Text="{Binding Glyph}" FontFamily="{StaticResource Font.Icon}"
+                                   FontSize="14" Foreground="{StaticResource Brush.Accent}"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <TextBlock Style="{StaticResource Text.H2}" Margin="0,12,0,0" Text="{Binding Title}" />
+                    <TextBlock Style="{StaticResource Text.Body}" Margin="0,4,0,0" Text="{Binding Blurb}" />
+                    <Button Style="{StaticResource Button.Ghost}" HorizontalAlignment="Left"
+                            Margin="0,14,0,0" Content="{Binding Action}" />
+                </StackPanel>
+            </Border>
+        </DataTemplate>
+    </UserControl.Resources>
+
+    <Grid Background="{StaticResource Brush.Bg.Base}">
+        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <StackPanel Margin="28" MaxWidth="920" HorizontalAlignment="Left">
+
+                <TextBlock Style="{StaticResource Text.H1}" Text="Info" />
+                <TextBlock Style="{StaticResource Text.Body}" Margin="0,6,0,0"
+                           Text="About FE-Buddy and where to get help." />
+
+                <Border Style="{StaticResource Card}" Margin="0,18,0,0">
+                    <StackPanel>
+                        <ctl:SectionHeader Label="ABOUT" />
+                        <TextBlock Style="{StaticResource Text.H2}" Text="FE-Buddy 3.0" />
+                        <TextBlock Style="{StaticResource Text.Body}" Margin="0,8,0,0" Text="{Binding AboutBody}" />
+                        <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
+                            <Border Style="{StaticResource Chip}">
+                                <TextBlock Style="{StaticResource Chip.Text}" Text="EFFICIENT LINESTRINGS" />
+                            </Border>
+                            <Border Style="{StaticResource Chip}" Margin="8,0,0,0">
+                                <TextBlock Style="{StaticResource Chip.Text}" Text="FEB.* PROPERTIES" />
+                            </Border>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <ctl:SectionHeader Label="RESOURCES" Margin="2,22,0,0" />
+                <ItemsControl ItemsSource="{Binding Links}" ItemTemplate="{StaticResource InfoLinkTemplate}"
+                              Margin="-6,0,-6,0">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <UniformGrid Columns="2" />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                </ItemsControl>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

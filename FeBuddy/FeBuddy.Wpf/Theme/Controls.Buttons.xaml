@@ -1,0 +1,292 @@
+<!--
+    Controls.Buttons.xaml
+    ===========================================================================
+    Button vocabulary. Three intents plus the window-caption buttons. All share
+    the same geometry tokens (Radius.Control, Font.Body) so they line up.
+
+        Button.Primary   amber fill, dark text        - the one main action
+        Button.Ghost     hairline outline             - secondary actions
+        Button.Subtle    text only                    - tertiary / inline
+        Ghost.Toggle     ToggleButton, ghost look, amber when checked
+        Card.Toggle      ToggleButton, full-width card row (systems widget)
+        Copy.Button      ctl:CopyButton, tiny copy-to-clipboard icon
+        Caption.Button   borderless icon, 46x32       - min / max
+        Caption.Close    as above, red hover          - close
+-->
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls">
+
+    <!-- ============================ PRIMARY ============================ -->
+    <Style x:Key="Button.Primary" TargetType="Button">
+        <Setter Property="Background" Value="{DynamicResource Brush.Accent}" />
+        <Setter Property="Foreground" Value="{DynamicResource Brush.Text.OnAccent}" />
+        <Setter Property="FontFamily" Value="{DynamicResource Font.Body}" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Padding" Value="16,9" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Root"
+                            Background="{TemplateBinding Background}"
+                            CornerRadius="{DynamicResource Radius.Control}"
+                            Padding="{TemplateBinding Padding}"
+                            SnapsToDevicePixels="True">
+                        <ContentPresenter HorizontalAlignment="Center"
+                                          VerticalAlignment="Center"
+                                          />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Root" Property="Background" Value="{DynamicResource Brush.Accent.Bright}" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="Root" Property="Opacity" Value="0.82" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="Root" Property="Opacity" Value="0.38" />
+                            <Setter Property="Cursor" Value="Arrow" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- ============================= GHOST ============================= -->
+    <Style x:Key="Button.Ghost" TargetType="Button">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Primary}" />
+        <Setter Property="FontFamily" Value="{DynamicResource Font.Body}" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="FontWeight" Value="Medium" />
+        <Setter Property="Padding" Value="15,8" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Root"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{DynamicResource Brush.Stroke.Strong}"
+                            BorderThickness="1"
+                            CornerRadius="{DynamicResource Radius.Control}"
+                            Padding="{TemplateBinding Padding}"
+                            SnapsToDevicePixels="True">
+                        <ContentPresenter HorizontalAlignment="Center"
+                                          VerticalAlignment="Center"
+                                          />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Root" Property="Background" Value="{DynamicResource Brush.Overlay}" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="Root" Property="Opacity" Value="0.8" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="Root" Property="Opacity" Value="0.38" />
+                            <Setter Property="Cursor" Value="Arrow" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- ========================= GHOST TOGGLE ======================== -->
+    <!-- Same outline look as Button.Ghost; reads as "active" (amber wash) when
+         checked. Used for the map's "N files" drop-down button. -->
+    <Style x:Key="Ghost.Toggle" TargetType="ToggleButton">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Primary}" />
+        <Setter Property="FontFamily" Value="{DynamicResource Font.Body}" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="FontWeight" Value="Medium" />
+        <Setter Property="Padding" Value="15,8" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ToggleButton">
+                    <Border x:Name="Root"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{DynamicResource Brush.Stroke.Strong}"
+                            BorderThickness="1"
+                            CornerRadius="{DynamicResource Radius.Control}"
+                            Padding="{TemplateBinding Padding}"
+                            SnapsToDevicePixels="True">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Root" Property="Background" Value="{DynamicResource Brush.Overlay}" />
+                        </Trigger>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="Root" Property="Background" Value="{DynamicResource Brush.Accent.Soft}" />
+                            <Setter TargetName="Root" Property="BorderBrush" Value="{DynamicResource Brush.Accent.Line}" />
+                            <Setter Property="Foreground" Value="{DynamicResource Brush.Accent.Text}" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="Root" Property="Opacity" Value="0.38" />
+                            <Setter Property="Cursor" Value="Arrow" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- ========================== CARD TOGGLE ======================== -->
+    <!-- Full-width card-styled ToggleButton; content is left-aligned. Used for
+         the nav's systems-health widget (opens a popover). -->
+    <Style x:Key="Card.Toggle" TargetType="ToggleButton">
+        <Setter Property="Background" Value="{DynamicResource Brush.Card}" />
+        <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Primary}" />
+        <Setter Property="FontFamily" Value="{DynamicResource Font.Body}" />
+        <Setter Property="Padding" Value="12,10" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ToggleButton">
+                    <Border x:Name="Root"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{DynamicResource Brush.Stroke}"
+                            BorderThickness="1"
+                            CornerRadius="{DynamicResource Radius.Card}"
+                            Padding="{TemplateBinding Padding}"
+                            SnapsToDevicePixels="True">
+                        <ContentPresenter HorizontalAlignment="Stretch" VerticalAlignment="Center" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Root" Property="Background" Value="{DynamicResource Brush.Card.Hover}" />
+                        </Trigger>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="Root" Property="BorderBrush" Value="{DynamicResource Brush.Stroke.Strong}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- ============================ SUBTLE ============================ -->
+    <Style x:Key="Button.Subtle" TargetType="Button">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Secondary}" />
+        <Setter Property="FontFamily" Value="{DynamicResource Font.Body}" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="FontWeight" Value="Medium" />
+        <Setter Property="Padding" Value="10,6" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Root"
+                            Background="{TemplateBinding Background}"
+                            CornerRadius="{DynamicResource Radius.Small}"
+                            Padding="{TemplateBinding Padding}">
+                        <ContentPresenter HorizontalAlignment="Center"
+                                          VerticalAlignment="Center"
+                                          />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Root" Property="Background" Value="{DynamicResource Brush.Overlay}" />
+                            <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Primary}" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="Root" Property="Opacity" Value="0.38" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- =========================== COPY BUTTON ======================= -->
+    <Style x:Key="Copy.Button" TargetType="{x:Type ctl:CopyButton}">
+        <Setter Property="Width" Value="24" />
+        <Setter Property="Height" Value="20" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Focusable" Value="False" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type ctl:CopyButton}">
+                    <Border x:Name="Root" Background="{TemplateBinding Background}" CornerRadius="5">
+                        <TextBlock x:Name="Glyph" Text="&#xE8C8;"
+                                   FontFamily="{DynamicResource Font.Icon}" FontSize="11"
+                                   Foreground="{DynamicResource Brush.Text.Tertiary}"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Root" Property="Background" Value="{DynamicResource Brush.Overlay}" />
+                            <Setter TargetName="Glyph" Property="Foreground" Value="{DynamicResource Brush.Text.Primary}" />
+                        </Trigger>
+                        <Trigger Property="Copied" Value="True">
+                            <Setter TargetName="Glyph" Property="Text" Value="&#xE73E;" />
+                            <Setter TargetName="Glyph" Property="Foreground" Value="{DynamicResource Brush.Positive}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- ======================= WINDOW CAPTION ======================== -->
+    <!-- IsHitTestVisibleInChrome is set on the instances in ShellWindow.xaml so
+         these remain clickable inside the WindowChrome caption area. -->
+    <Style x:Key="Caption.Button" TargetType="Button">
+        <Setter Property="Width" Value="46" />
+        <Setter Property="Height" Value="32" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Tertiary}" />
+        <Setter Property="FontFamily" Value="{DynamicResource Font.Icon}" />
+        <Setter Property="FontSize" Value="10" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Root" Background="{TemplateBinding Background}" CornerRadius="7">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
+                                          />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Root" Property="Background" Value="{DynamicResource Brush.Overlay}" />
+                            <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Primary}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="Caption.Close" TargetType="Button" BasedOn="{StaticResource Caption.Button}">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Root" Background="{TemplateBinding Background}" CornerRadius="7">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
+                                          />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Root" Property="Background" Value="{DynamicResource Brush.Danger}" />
+                            <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Primary}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+</ResourceDictionary>

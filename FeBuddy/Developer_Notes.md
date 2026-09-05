@@ -41,7 +41,7 @@
     - `NewsLastOpen`=""
     - `UpdateChannel`=""
   - Services
-    - CrcAiracResources
+    - AiracResources
       - `AiracCycleId`=""
       - `UserArtccId`=""
       - DefaultRoi
@@ -218,7 +218,8 @@
 ### UNINSTALL
 
 - User selects to start the uninstall process.
-- Warning window should appear informing the user that their user settings will be lost and a "Cancel" or "I understand, please uninstall" options should be provided.
+- Warning window should appear informing the user that their user settings will be lost, including ROI coordinates, geojson CRC ERAM default settings, etc.. and a "Cancel" or "I understand, please uninstall" options should be provided.
+  - Consider providing an option for the user to save the current userconfig.json for safe-keeping.
 
 ### WINDOW STATE
 
@@ -232,6 +233,7 @@
   - `About`
     - Opens a small window summarizing FE-Buddy.
 	- Aspects such as "Efficient Linestring Handling" and "FE-Buddy custom Geojson Properties" will be discussed here.
+      - Note Efficient Linestring Handling is a term referencing merging of consecutive points into a single LineString or MultiLineString feature if the points are related, defined by the service. Ref the ERAM_2_GEOJSON repo.
   - `Change Log`
     - Opens the latest change log from a GitHub link.
   - `Manual`
@@ -283,13 +285,15 @@ Second post for the same day.
 
 ### SERVICES SECTION
 
-#### CRC AIRAC RESROUCES
+#### AIRAC RESROUCES
 
 - If `UserConfig.DefaultRoi.FilterByRoi`=empty, grey-out this service and have a tooltip pop up advising them to navigate to SETTINGS > DEFAULT ROI and complete that form.
-  - Once user completes the form, a trigger will result in GUI reading the config file again and this service should be available again.
+- If all AIRAC Cycles (previous, current, next) are not yet downloaded/unzipped/parsed, show a indication `Waiting for AIRAC data to finish downloading and parsing. This service will be available in a moment` and maybe even a status bar.
+- GUI should get a refresh indicator from the FEBuddyLibrary telling it to refresh the service availability check to ungrey and make available this service.
 - User selects Previous, Current, or Next AIRAC Cycle with the effective date displayed next to it.
   - Note: FE-Buddy will save the unzipped airac downloaded data for up to 3 airac cycles in the appdata, the previous cycle, current, and next/preview cycle. On launch, that appdata folder is checked and the cycles that are older than one cycle back is deleted while the previous, current, and next cycle are downloaded if not already exists.
-- User types their ARTCC ID (consider drop menu)
+- User types their ARTCC ID from drop menu
+  - From `allNasrCsvData.Apt.AptBase`, create a list of all unique `RespArtccId` values. Then, display values in alphabetical order.
 - User selects output directory
 - Create AiracSettings dictionary to be passed to Library later.
   - Add GeneralSettings after user saves on this general page.
@@ -299,32 +303,32 @@ Second post for the same day.
 - Info section:
   - `Region of Interest (ROI): An lat/lon axis-aligned rectangular region defined by southwest (bottom-left corner) and northeast (top-right corner) coordinates (i.e. a box defining the data you are interested in). Depending on the data type and operation, geometries may be clipped to the ROI or included in full when associated with an entity located within the ROI. Create a box that encompasses an acceptable amount of area outside your ARTCC boundaries so that data within that region may still be displayed in your GeoJSON files and, under certain circumstances, in additional resource files. Note: Depending on the operation, you may be given the option to override this ROI with a custom ROI for specific files later.`
 - User selects:
-  - `Setup and use ROI` (Selected by Default if `UserConfig`.`AiracData`.`DefaultRoi`.`FilterByRoi` has no value)
-    - If appropriate data is already detected for `UserConfig`.`AiracData`.`DefaultRoi`.`DefaultCoordindates`, label should just be "Use ROI"
+  - `Setup and use ROI` (Selected by Default if `UserConfig.Services.AiracResources.DefaultRoi.FilterByRoi` has no value)
+    - If appropriate, if data is already detected for `...DefaultRoi.DefaultCoordindates`, label should just be "Use ROI".
   - `Do not set up ROI; Get all NASR data.`
 - If user selects to setup ROI or loads as default or from previous UserConfig preferences, ROI Coordinates Input boxes:
   - `Northeast (top-right corner) Latitude`
   - `Northeast (top-right corner) Longitude`
   - `Southwest (bottom-left corner) Latitude`
   - `Southwest (bottom-left corner) Longitude`
-  - If `IncludeRoi`=true
-    - If `UserConfig.json`.`General`.`Settings`.`Roi`.`DefaultCoordindates` has values
+  - If `...DefaultRoi.FilterByRoi`=true
+    - If `...DefaultRoi.DefaultCoordindates` has values
 	  - Load the values into the input boxes.
 	  - If values do not exist, provide greyed examples of lat/lon coordinates in the boxes ready for the user to input theirs.
 - Save button:
-  - Set `UserConfig.json`.`General`.`Settings`.`Roi`.`IncludeRoi`=`true/false`
-  - If `IncludeRoi`=true
+  - Set `...DefaultRoi.FilterByRoi`=`true/false`
+  - If `FilterByRoi`=true
     - Ensure all `DefaultCoordindates` have values.
-    - Send the `DefaultCoordindates` to `FEBuddyLibrary`.`GuiProcessHandler`.`ValideateRoiCoordinates` to validate:
+    - Send the `DefaultCoordindates` to `FEBuddyLibrary.GuiProcessHandler.ValideateRoiCoordinates` to validate:
       - Valid decimal values (`IsCoordinateValidFormat`)
       - SW `DefaultCoordindates` are actually southwest of the NE `DefaultCoordindates`. (`IsCoordinatesRelativePositionValid`)
-    - Await for validation process to complete with success and then if `IncludeRoi`= `true`
-      - Set `UserConfig.json`.`General`.`Settings`.`Roi`.`DefaultCoordindates`
+    - Await for validation process to complete with success and then if `...DefaultRoi.FilterByRoi`= `true`
+      - Set `...DefaultRoi.DefaultCoordindates`
         - .`SwLat`
         - .`SwLon`
         - .`NeLat`
         - .`NeLon`
-  - Await for above to complete and then trigger re-read `UserConfig.json` to allow things like services to be selected that were previously unavailable due to a setting form not being filled out yet.
+  - Await for above to complete and then trigger write/read `UserConfig` to allow things like services to be selected that were previously unavailable due to a setting form not being filled out yet.
 
 ##### AIRWAYS
 
@@ -340,22 +344,27 @@ Second post for the same day.
 	  - `Geojson files will not be generated from Airway data.`
   - `High/Low` (default)
     - Tool tip or description:
-	  - `Airways_High.geojson = Airways that have a Maximum Authorized altitude of 18,000' or greater`
-	  - `Airways_Low.geojson = Airways that have a Maximum Authorized altitude greater than 0' but less than 18,000'`
+	  - `Airways_High_Lines.geojson = Airways that have a Maximum Authorized altitude of 18,000' or greater`
+	  - `Airways_Low_Lines.geojson = Airways that have a Maximum Authorized altitude greater than 0' but less than 18,000'`
 	  - `Airways_Other.geojson = Airways that do not meet the criteria of High/Low.`
   - `Designation`
     - Tool tip or description:
 	  - `Airways that share the same designation will be placed in the same file.`
 	    - `Examples:`
-		  - `Airways_J.geojson`
-		  - `Airways_V.geojson`
-		  - `Airways_AT.geojson`
+		  - `Airways_J_Lines.geojson`
+		  - `Airways_V_Lines.geojson`
+		  - `Airways_AT_Lines.geojson`
+  - Note: Each `_Lines.geojson` should be accompanied by a `_Symbols.geojson` and `_Text.geojson` just like the old FE-Buddy application does.
 - User selects:
-  - `Create a radius around airway waypoints? (2.5nm around 5 character fixes, 5nm around others such as NAVAIDS)`
+  - `Buffer Airway Waypoints`
+    - Description: `Creates a radius around airway waypoints where the airway line stops so many miles before and after each waypoint (2.5nm around 5 character fixes, 5nm around others such as NAVAIDS)`
 	- `Y` or `N` (default `N`)
 - User selects:
   - `Include the Airway IDs in the FE-Buddy Custom Properties?`
 	- `Y` or `N` (default `N`)
+  - `Include the Airway Waypoint IDs in the FE-Buddy Custom Properties?`
+	- `Y` or `N` (default `N`)
+    - If `Y`, a list of every unique `AwySegAlt.FromPoint` and `AwySegAlt.ToPoint` for the airway will be created and should be listed in an array for the feature property field: `feb.AwyWaypoints`
 - Collect, convert and add to `AiracSettings` > `AirwaysSettings`
   - `AirwayGeojsonOutputBy`
     - `None`
@@ -366,32 +375,26 @@ Second post for the same day.
   - `IncludeFebCustomProperties`
     - `Y` or `N` converted to `true` or `false`
 - ROI Override
-  - ???
-- CRC Properties
-  - ERAM
-    - ???
-  - STARS
-    - ???
+  - User selects if they wish to use a custom ROI for this airways service that will override the `DefaultRoi` data.
+- CRC ERAM Defaults (Properties)
+  - Refer to [THIS](https://github.com/KCSanders7070/CRC_GeoJson_Concepts/blob/main/CRC_Geojsons.md) to understand ERAM Default Property values and rules.
+  - User inputs values.
+  - Consider a tooltip for each value input that explains in plain english what is allowed and in what format to enter it.
 - Upon SAVE
-  - `ValidateCrcGeojsonProperties` values against [THESE](https://github.com/KCSanders7070/CRC_GeoJson_Concepts/blob/main/CRC_Geojsons.md) values.
+  - `ValidateCrcGeojsonProperties` values against CRC_Geojsons.md rules.
   - Show error message/color for values outside of range or validity.
-  - Once validated, add `AirwaysSettings` to `AirwaysSettings`
-```cs
-["AirwaysSettings"] = new Dictionary<string, object>
-{
-	["AirwayGeojsonOutputBy"] = HighLow,
-	["BufferAirwayWaypoints"] = true,
-	["IncludeFebCustomProperties"] = true
-},
-```
+  - Once validated, write to `UserConfig` as appropriate.
 
 ###### ALIAS FILES
 
 - Description area:
-  - `Airway data from the FAA NASR .csv files may be used to generate Alias commands (example: .<airwayId>F .ff <all airway waypoint IDs>).`
-
+  - `Airway data from the FAA NASR .csv files may be used to generate Alias commands that will draw all the airway waypoints on the CRC STARS or ERAM window utilizing the .ff command.`
+  - `Example Alias file line: .J3F .FF OAK RBL LKV IMB GEG`
+  - `User Syntax: .<awyId>F`
+  - `User Example: .J3F`
+- User selects if they want the Draw_Airway_Points.txt alias file.
+  - `Y` or `N` (default `Y`)
 ---
-
 
 # CODE LIBRARY
 
@@ -434,9 +437,21 @@ Second post for the same day.
 - Any checks against versioning number policy and Wix compliance
 - GUI needs results after process completion.
 
+### AIRAC DATA DOWNLOAD MANAGEMENT
+
+- On launch, FE-Buddy will ensure we always have 3 cycles of AIRAC data in the FE-Buddy AppData>AiracCycles folder.
+- AIRAC Data NASR CSV Download URL effective date format: `DD_Mmm_YYYY`
+- AIRAC Data NASR CSV Download URL format: `https://nfdc.faa.gov/webContent/28DaySub/extra/<EffectiveDate>_CSV.zip`
+  - Example:  `https://nfdc.faa.gov/webContent/28DaySub/extra/03_Sep_2026_CSV.zip`
+- Get the airac cycle ID and effective dates from `FEBuddyLibrary.Models.General.AiracCycleIdEffectiveDates`
+- Download to the %temp$\FE-Buddy folder but unzip to the %appdata% FE-Buddy AiracCycles directory and store in a folder named after the AiracCycleId, ex `2602`, `2603`, `2604` etc...
+- On launch, that appdata folder is checked and the cycles that are not the previous cycle, current cycle, or next/preview cycle are deleted and then the download manager ensures the previous cycle, current cycle, or next/preview cycle are all available.
+- Failed to download and unzip any required cycle data should create a warning to the user.
+
+
 ### LATEST NEWS POST
 
-- Check for latest post PostId and compare against `UserConfig.json`.`General`.`Settings`.`News`.`NewsLastOpen`
+- Check for latest post PostId and compare against `UserConfig.General.NewsLastOpen`
   - If the latest news post is newer than the saved `NewsLastOpen`, the News icon should indicate that a new News post is available via text and/or by changing the icon color to grab the user's attention.
 - GUI needs result after process completion.
 ```cs
@@ -598,6 +613,7 @@ public static class NewsChecker
         - `Airways_J.geojson`
         - `Airways_V.geojson`
         - `Airways_AT.geojson`
+  - Note: Each `_Lines.geojson` should be accompanied by a `_Symbols.geojson` and `_Text.geojson` just like the old FE-Buddy application does.
 - FEB Custom Properties
   - If `includeCustomProperties`==True
     - Each feature will including the `AwyId` (one AwyId per feature)

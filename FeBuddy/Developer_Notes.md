@@ -2,84 +2,151 @@
 
 # GENERAL
 
--Used to keep track of overall functionality and development notes for FE-Buddy v3.0.
+- Used to keep track of overall functionality and development notes for FE-Buddy v3.0.
+
+- DevMode bool will need to be created somewhere. When set to true, certain things will happen in the code to make it easier to troubleshoot problems.
+
+- FE-Buddy will use MVVM to keep GUI and functionality separate as much as possible.
+
+- `NetTopologySuite` and `NetTopologySuite.IO.GeoJSON4STJ` NuGet packages will be used for geojson handling unless a significantly more advanced option is discovered.
+
+- Code comments should be used as much as practical to help new coders understand the code and expand this project.
+
+- Visual Studio Summary XML data is favored by this development team.
+
+- Repetative methods/functions should be isolated as helpers or some other class type whenever practical.
+
+- A user-facing function of FE-Buddy such as "AIRAC Data" or "CONVERSIONS>RVM-GeoJson" or "Geojson Health-Check" will be called "Services" and if/when appropriate, will be referred to and organized into Services in the code.
+  - In a SERVICES folder, each Service will have its' own service-named folder and a General folder will house code that applies to multiple services such as certain Helpers.
+  - Non-Service code will be organized outside of the SERVICES folder.
+  - A MODELS folder can be created outside of the SERVICES folder, housing the SERVICES data, if it makes sense to do so. Otherwise, a MODELS folder can be created within the SERVICES folder.
+
+- Geojson files will be output on single-line format in order to cut down on disk space. `DevMode`=true results in pretty-print output of geojsons.
 
 ## USER CONFIGURATION FILE
-- Description: A JSON file containing saved data concerning preferences and settings.
+- Description: A JSON file containing saved data concerning preferences and settings, required for effective App-Functionality.
 - File Name: `UserConfig.json`
-- Read/Write handled by: `FEBuddyLibrary`.HELPERS.`UserConfig`
-  - Method: .`ReadAll`
-  - Method: .`Write`
+- Read/Write handled by a `FEBuddyLibrary` `UserConfig` Helper.
+  - Method: `ReadAll`
+  - Method: `Write`
 - On initial install, installer will create a UserConfig.json with blank values except:
   - `General`.`LastWindowState`=`Normal`
 - On update, the current data will be saved and then rewritten to the new config file appropriatelly.
 - New data saved to file when user selects "save" on a settings field.
-- Read on initial launch by `FEBuddyLibrary`.HELPERS.`UserConfigFile` to `UserConfig` dictionary.
+- Read on initial launch by `UserConfigFile` class and saved to a `UserConfig` global dictionary.
 - Structure:
   - General
     - `DefaultOutputDirectory`=""
     - `LastWindowState`=""
     - `NewsLastOpen`=""
     - `UpdateChannel`=""
-  - AiracData
-    - `AiracCycleId`=""
-    - `UserArtccId`=""
-    - DefaultRoi
-      - `FilterByRoi`=""
-      - DefaultCoordindates
-        - `SwLat`=""
-        - `SwLon`=""
-        - `NeLat`=""
-        - `NeLon`=""
-    - Geojson
-      - Airways
-        - `OutputBy`=""
-        - `BufferAirwayWaypoints`=""
-        - `IncludeFebCustomProperties`=""
-        - Roi
-          - `FilterByRoi`=""
-          - `OverrideDefaultRoi`=""
-          - OverrideCoordindates
-            - `SwLat`=""
-            - `SwLon`=""
-            - `NeLat`=""
-            - `NeLon`=""
-        - CrcEramPropertyDefaults
-          - `IncludeCrcEramPropertyDefaults`=""
-          - Lines
-            - Airway_High_Lines
+  - Services
+    - CrcAiracResources
+      - `AiracCycleId`=""
+      - `UserArtccId`=""
+      - DefaultRoi
+        - `FilterByRoi`=""
+        - DefaultCoordindates
+          - `SwLat`=""
+          - `SwLon`=""
+          - `NeLat`=""
+          - `NeLon`=""
+      - Geojson
+        - Airways
+          - `OutputBy`=""
+          - `BufferAirwayWaypoints`=""
+          - `IncludeFebCustomProperties`=""
+          - Roi
+            - `FilterByRoi`=""
+            - `OverrideDefaultRoi`=""
+            - OverrideCoordindates
+              - `SwLat`=""
+              - `SwLon`=""
+              - `NeLat`=""
+              - `NeLon`=""
+          - CrcEramPropertyDefaults
+            - `IncludeCrcEramPropertyDefaults`=""
+            - Lines
+              - Airway_High_Lines
+                - `bcg`=""
+                - `filters`=""
+                - `style`=""
+                - `thickness`=""
+              - Airway_Low_Lines
+                - `bcg`=""
+                - `filters`=""
+                - `style`=""
+                - `thickness`=""
+              - Airway_Other_Lines
+                - `bcg`=""
+                - `filters`=""
+                - `style`=""
+                - `thickness`=""
+            - Symbols
+              - Airway_High_Symbols
+                - `bcg`=""
+                - `filters`=""
+                - `style`=""
+                - `size`=""
+              - Airway_Low_Symbols
+                - `bcg`=""
+                - `filters`=""
+                - `style`=""
+                - `size`=""
+              - Airway_Other_Symbols
+                - `bcg`=""
+                - `filters`=""
+                - `style`=""
+                - `size`=""
+            - Text
+              - Airway_High_Text
+                - `bcg`=""
+                - `filters`=""
+                - `text`=""
+                - `size`=""
+                - `underline`=""
+                - `xOffset`=""
+                - `yOffset`=""
+              - Airway_Low_Text
+                - `bcg`=""
+                - `filters`=""
+                - `text`=""
+                - `size`=""
+                - `underline`=""
+                - `xOffset`=""
+                - `yOffset`=""
+              - Airway_Other_Text
+                - `bcg`=""
+                - `filters`=""
+                - `text`=""
+                - `size`=""
+                - `underline`=""
+                - `xOffset`=""
+                - `yOffset`=""
+        - DepartureProcedures
+          - `OutputBy`=""
+          - `IncludeFebCustomProperties`=""
+          - `IncludeOverridingStylePropertyByAptType`=""
+          - Roi
+            - `FilterByRoi`=""
+            - `OverrideDefaultRoi`=""
+            - OverrideCoordindates
+              - `SwLat`=""
+              - `SwLon`=""
+              - `NeLat`=""
+              - `NeLon`=""
+          - CrcEramPropertyDefaults
+            - `IncludeCrcEramPropertyDefaults`=""
+            - Lines
               - `bcg`=""
               - `filters`=""
               - `style`=""
               - `thickness`=""
-            - Airway_Low_Lines
+            - Symbols
               - `bcg`=""
               - `filters`=""
               - `style`=""
-              - `thickness`=""
-            - Airway_Other_Lines
-              - `bcg`=""
-              - `filters`=""
-              - `style`=""
-              - `thickness`=""
-          - Symbols
-            - Airway_High_Symbols
-              - `bcg`=""
-              - `filters`=""
-              - `style`=""
-              - `size`=""
-            - Airway_Low_Symbols
-              - `bcg`=""
-              - `filters`=""
-              - `style`=""
-              - `size`=""
-            - Airway_Other_Symbols
-              - `bcg`=""
-              - `filters`=""
-              - `style`=""
-              - `size`=""
-          - Text
-            - Airway_High_Text
+            - Text
               - `bcg`=""
               - `filters`=""
               - `text`=""
@@ -87,73 +154,36 @@
               - `underline`=""
               - `xOffset`=""
               - `yOffset`=""
-            - Airway_Low_Text
-              - `bcg`=""
-              - `filters`=""
-              - `text`=""
               - `size`=""
-              - `underline`=""
-              - `xOffset`=""
-              - `yOffset`=""
-            - Airway_Other_Text
-              - `bcg`=""
-              - `filters`=""
-              - `text`=""
-              - `size`=""
-              - `underline`=""
-              - `xOffset`=""
-              - `yOffset`=""
-      - DepartureProcedures
-        - `OutputBy`=""
-        - `IncludeFebCustomProperties`=""
-        - `IncludeOverridingStylePropertyByAptType`=""
-        - Roi
-          - `FilterByRoi`=""
-          - `OverrideDefaultRoi`=""
-          - OverrideCoordindates
-            - `SwLat`=""
-            - `SwLon`=""
-            - `NeLat`=""
-            - `NeLon`=""
-        - CrcEramPropertyDefaults
-          - `IncludeCrcEramPropertyDefaults`=""
-          - Lines
-            - `bcg`=""
-            - `filters`=""
-            - `style`=""
-            - `thickness`=""
-          - Symbols
-            - `bcg`=""
-            - `filters`=""
-            - `style`=""
-          - Text
-            - `bcg`=""
-            - `filters`=""
-            - `text`=""
-            - `size`=""
-            - `underline`=""
-            - `xOffset`=""
-            - `yOffset`=""
-            - `size`=""
-    - AliasFile
-      - Airways
-        - Roi
-          - `FilterByRoi`=""
-          - `OverrideDefaultRoi`=""
-          - OverrideCoordindates
-            - `SwLat`=""
-            - `SwLon`=""
-            - `NeLat`=""
-            - `NeLon`=""
-      - DepartureProcedures
-        - Roi
-          - `FilterByRoi`=""
-          - `OverrideDefaultRoi`=""
-          - OverrideCoordindates
-            - `SwLat`=""
-            - `SwLon`=""
-            - `NeLat`=""
-            - `NeLon`=""
+      - AliasFile
+        - Airways
+          - Roi
+            - `FilterByRoi`=""
+            - `OverrideDefaultRoi`=""
+            - OverrideCoordindates
+              - `SwLat`=""
+              - `SwLon`=""
+              - `NeLat`=""
+              - `NeLon`=""
+        - DepartureProcedures
+          - Roi
+            - `FilterByRoi`=""
+            - `OverrideDefaultRoi`=""
+            - OverrideCoordindates
+              - `SwLat`=""
+              - `SwLon`=""
+              - `NeLat`=""
+              - `NeLon`=""
+    - Conversions
+      - RvmToGeojson
+        - `FileSourceType`=""
+        - `SourceDirectory`=""
+        - `OutputDirectory`=""
+        - `CroppingDistance`=""
+      - FaaEramToCrcResources
+        - `SourceFilesDirectory`=""
+        - `OutputDirectory`=""
+        - `OutputFormat`=""
 
 # GUI
 
@@ -211,18 +241,54 @@
 
 ## NEWS
 
-- Opens the FE-Buddy News page in a web browser (likely a GitHub Markdown page or website).
-- If `hasInternetConnection`=true, save the latest news post ID (or current date/time, maybe?) to the `UserConfig.json` when opened.
-- Upon opening FE-Buddy, check the latest news post ID. This logic should be in the library, not the GUI (`hasInternetConnection` dependent).
-  - If the latest news post is newer than the saved `NewsLastOpen` ID/date/time, the News icon should indicate that a new News post is available via text and/or by changing the icon color to grab the user's attention.
+- Upon opening FE-Buddy, check the latest news PostID. This logic should be in the library, not the GUI (`hasInternetConnection` dependent).
+  - If the latest PostID is newer than the saved `NewsLastOpen` ID/date/time, the News icon should indicate that a new News post is available via text and/or by changing the icon color to grab the user's attention.
+- News button opens the FE-Buddy News page in a web browser (likely a GitHub Markdown page or website).
+  - If `hasInternetConnection`=true, parse the New.md and save the latest news PostID to the `UserConfig.json` when opened.
+- If failed to parse News.md, leave last `NewsLastOpen` as is and provide a warning that News.md could not be parsed.
+- Example News.md code:
+```md
+# FE-Buddy News
+<!--
+PostId format =  yyyy-mm-dd.#
+  - Date/Time is always Zulu (GMT) time.
+  - # = sequential number for the number of posts this day. The First post of the day is 1, while the third post is 3.
+-->
 
-### SERVICES SECTION/MENUS
+News concerning all things FE-Buddy will be posted here with the most recent post at the top.
 
-#### AIRAC CYCLE
+---
 
-- If `IncludeRoi`=empty in `UserConfig.json`, grey-out this service and have a tooltip pop up advising them to navigate to SETTINGS > DEFAULT ROI and complete that form.
-  - Once they complete the form, a trigger will result in GUI reading the config file again and this service should be available again.
-- User selects Current or Next AIRAC Cycle with the effective date displayed next to it.
+## 2026-08-30
+<!--
+PostId: 2026-08-30.3
+-->
+
+**Version 1.4.2 Released**
+
+Third post for the same day.
+
+---
+
+## 2026-08-30
+<!--
+PostId: 2026-08-30.2
+-->
+
+**Version 1.4.1 Released**
+
+Second post for the same day.
+
+```
+
+### SERVICES SECTION
+
+#### CRC AIRAC RESROUCES
+
+- If `UserConfig.DefaultRoi.FilterByRoi`=empty, grey-out this service and have a tooltip pop up advising them to navigate to SETTINGS > DEFAULT ROI and complete that form.
+  - Once user completes the form, a trigger will result in GUI reading the config file again and this service should be available again.
+- User selects Previous, Current, or Next AIRAC Cycle with the effective date displayed next to it.
+  - Note: FE-Buddy will save the unzipped airac downloaded data for up to 3 airac cycles in the appdata, the previous cycle, current, and next/preview cycle. On launch, that appdata folder is checked and the cycles that are older than one cycle back is deleted while the previous, current, and next cycle are downloaded if not already exists.
 - User types their ARTCC ID (consider drop menu)
 - User selects output directory
 - Create AiracSettings dictionary to be passed to Library later.

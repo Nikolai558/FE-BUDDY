@@ -11,7 +11,7 @@ namespace FEBuddyLibrary.Models.General;
 /// <remarks>
 /// [General] <c>yyyy-MM-dd</c> ___ [CSV] <c>dd_MMM_yyyy</c>
 /// </remarks>
-internal class AiracCycleIdEffectiveDates
+public class AiracCycleIdEffectiveDates
 {
 	/// <summary>
 	/// Represents a single AIRAC cycle and its associated NASR effective date formats.

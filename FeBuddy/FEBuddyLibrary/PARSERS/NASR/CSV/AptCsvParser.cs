@@ -234,12 +234,15 @@ namespace FEBuddyLibrary.Parsers.NASR.CSV
                     SurfaceTypeCode = fields["SURFACE_TYPE_CODE"],
                     Cond = fields["COND"],
                     TreatmentCode = fields["TREATMENT_CODE"],
-					PavementClassification = fields["PAVEMENT_CLASSIFICATION"],
-					PcnPcrNumber = FebCsvHelper.ParseNullableInt(fields["PCN_PCR_NUMBER"]),
-					PavementTypeCode = fields["PAVEMENT_TYPE_CODE"],
-					SubgradeStrengthCode = fields["SUBGRADE_STRENGTH_CODE"],
-                    TirePresCode = fields["TIRE_PRES_CODE"],
-                    DtrmMethodCode = fields["DTRM_METHOD_CODE"],
+					// ACN-PCN pavement classification fields: not present on every NASR
+					// cycle's APT_RWY.csv, so read defensively rather than with the
+					// dictionary indexer (see FebCsvHelper.GetField).
+					PavementClassification = FebCsvHelper.GetField(fields, "PAVEMENT_CLASSIFICATION"),
+					PcnPcrNumber = FebCsvHelper.ParseNullableInt(FebCsvHelper.GetField(fields, "PCN_PCR_NUMBER")),
+					PavementTypeCode = FebCsvHelper.GetField(fields, "PAVEMENT_TYPE_CODE"),
+					SubgradeStrengthCode = FebCsvHelper.GetField(fields, "SUBGRADE_STRENGTH_CODE"),
+                    TirePresCode = FebCsvHelper.GetField(fields, "TIRE_PRES_CODE"),
+                    DtrmMethodCode = FebCsvHelper.GetField(fields, "DTRM_METHOD_CODE"),
                     RwyLgtCode = fields["RWY_LGT_CODE"],
                     RwyLenSource = fields["RWY_LEN_SOURCE"],
                     LengthSourceDate = fields["LENGTH_SOURCE_DATE"],

@@ -38,6 +38,23 @@ public static class FebCsvHelper
         return results;
     }
 
+    /// <summary>
+    /// Reads a field from a parsed CSV row, returning an empty string instead of throwing
+    /// when the column is absent from this particular file.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="ProcessLines{T}"/> builds each row's dictionary only from the columns that
+    /// actually appear in that file's header record, so a column present in one NASR CSV
+    /// cycle can be silently absent in another (the FAA has added and removed optional
+    /// columns - e.g. the ACN-PCN pavement classification fields on APT_RWY.csv - between
+    /// cycles without notice). Use this instead of the dictionary indexer for any field that
+    /// isn't guaranteed to exist in every cycle's file.
+    /// </remarks>
+    public static string GetField(Dictionary<string, string> fields, string key)
+    {
+        return fields.TryGetValue(key, out string? value) ? value : string.Empty;
+    }
+
     // Safely parse a non-nullable int.
     public static int ParseInt(string value)
     {

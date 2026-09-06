@@ -11,8 +11,10 @@ using FeBuddy.Wpf.ViewModels.Models;
 using FEBuddyLibrary.Configuration;
 using FEBuddyLibrary.Models.NASR.CSV;
 using FEBuddyLibrary.Models.Services.Airways;
+using FEBuddyLibrary.Models.Services.General;
 using FEBuddyLibrary.Parsers.NASR.CSV;
 using FEBuddyLibrary.Services.Airways;
+using FEBuddyLibrary.Services.General;
 
 namespace FeBuddy.Wpf.ViewModels;
 
@@ -39,6 +41,12 @@ public sealed class AirwaysViewModel : ObservableObject
 
 	private string _nasrSourceDirectory = string.Empty;
 	private string _outputDirectory = string.Empty;
+
+	// ---- AIRAC cycle download -----------------------------------------
+
+	private AiracCyclePosition _selectedCyclePosition = AiracCyclePosition.Current;
+	private bool _isDownloadingCycle;
+	private string? _downloadStatusText;
 
 	// ---- output settings ---------------------------------------------
 
@@ -84,9 +92,11 @@ public sealed class AirwaysViewModel : ObservableObject
 			      !string.IsNullOrWhiteSpace(OutputDirectory));
 
 		ResetCommand = new RelayCommand(Reset);
+		ToggleWarningsCommand = new RelayCommand(() => IsWarningsExpanded = !IsWarningsExpanded);
 		BrowseNasrCommand = new RelayCommand(BrowseNasrSourceDirectory);
 		BrowseOutputCommand = new RelayCommand(BrowseOutputDirectory);
 		OpenOutputCommand = new RelayCommand(OpenOutputFolder);
+		DownloadCycleCommand = new RelayCommand(async () => await DownloadCycleAsync(), () => !IsDownloadingCycle);
 
 		_elapsedTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(100) };
 		_elapsedTimer.Tick += (_, _) =>
@@ -119,6 +129,69 @@ public sealed class AirwaysViewModel : ObservableObject
 	public ICommand BrowseOutputCommand { get; }
 
 	public ICommand OpenOutputCommand { get; }
+
+	// ---- AIRAC cycle download -----------------------------------------
+
+	/// <summary>Which cycle (relative to today, UTC) the Download button fetches.</summary>
+	public AiracCyclePosition SelectedCyclePosition
+	{
+		get => _selectedCyclePosition;
+		set
+		{
+			if (SetProperty(ref _selectedCyclePosition, value))
+			{
+				OnPropertyChanged(nameof(SelectedCycleLabel));
+			}
+		}
+	}
+
+	/// <summary>e.g. "Cycle 2610 - effective 01 Oct 2026", recomputed whenever the selected position changes.</summary>
+	public string SelectedCycleLabel
+	{
+		get
+		{
+			try
+			{
+				AiracCycleInfo info = AiracCycleResolver.GetCycle(SelectedCyclePosition);
+				return $"Cycle {info.AiracCycleId} - effective {info.EffectiveDateUtc:dd MMM yyyy}";
+			}
+			catch (Exception ex)
+			{
+				return $"Unavailable: {ex.Message}";
+			}
+		}
+	}
+
+	public bool IsDownloadingCycle
+	{
+		get => _isDownloadingCycle;
+		private set
+		{
+			if (SetProperty(ref _isDownloadingCycle, value))
+			{
+				OnPropertyChanged(nameof(CanDownloadCycle));
+			}
+		}
+	}
+
+	/// <summary>Bound directly to the Download button's IsEnabled (no converter needed).</summary>
+	public bool CanDownloadCycle => !IsDownloadingCycle;
+
+	public string? DownloadStatusText
+	{
+		get => _downloadStatusText;
+		private set
+		{
+			if (SetProperty(ref _downloadStatusText, value))
+			{
+				OnPropertyChanged(nameof(HasDownloadStatus));
+			}
+		}
+	}
+
+	public bool HasDownloadStatus => !string.IsNullOrEmpty(DownloadStatusText);
+
+	public ICommand DownloadCycleCommand { get; }
 
 	// ---- output settings -------------------------------------------
 
@@ -325,6 +398,30 @@ public sealed class AirwaysViewModel : ObservableObject
 
 	public bool HasWarnings => WarningGroups.Count > 0;
 
+	private bool _isWarningsExpanded;
+
+	/// <summary>
+	/// Whether the warnings list is expanded. Starts collapsed on every run so a run with
+	/// many warnings (e.g. buffering many short legs) doesn't bury the Run again / Open
+	/// output folder / Reset buttons at the bottom of the panel - the warning count is still
+	/// visible on the collapsed header.
+	/// </summary>
+	public bool IsWarningsExpanded
+	{
+		get => _isWarningsExpanded;
+		set
+		{
+			if (SetProperty(ref _isWarningsExpanded, value))
+			{
+				OnPropertyChanged(nameof(WarningsToggleLabel));
+			}
+		}
+	}
+
+	public string WarningsToggleLabel => IsWarningsExpanded ? "Hide" : "Show";
+
+	public ICommand ToggleWarningsCommand { get; }
+
 	public ICommand RunCommand { get; }
 
 	public ICommand ResetCommand { get; }
@@ -337,6 +434,7 @@ public sealed class AirwaysViewModel : ObservableObject
 		Phase = GenPhase.Running;
 		Files.Clear();
 		WarningGroups.Clear();
+		IsWarningsExpanded = false;
 		OnPropertyChanged(nameof(HasFiles));
 		OnPropertyChanged(nameof(HasWarnings));
 		AirwayCount = 0;
@@ -498,6 +596,70 @@ public sealed class AirwaysViewModel : ObservableObject
 		[(AirwayAltitudeClass.Other, EramTab.Text)] = new EramDefault { Bcg = "1", Filters = "1", Size = "1" },
 	};
 
+	/// <summary>
+	/// Resolves the selected AIRAC cycle, downloads and extracts it if it isn't already
+	/// cached (see <c>NasrCycleDownloadService</c>), points <see cref="NasrSourceDirectory"/>
+	/// at the result, and prunes any cached cycle that is no longer the previous, current, or
+	/// next cycle - matching the dev notes' "keep 3 cycles" rule.
+	/// </summary>
+	private async Task DownloadCycleAsync()
+	{
+		IsDownloadingCycle = true;
+		DownloadStatusText = "Resolving cycle...";
+
+		try
+		{
+			AiracCycleInfo cycle = AiracCycleResolver.GetCycle(SelectedCyclePosition);
+
+			Progress<AiracDownloadProgress> progress = new(p =>
+			{
+				DownloadStatusText = p.Phase switch
+				{
+					AiracDownloadPhase.AlreadyAvailable => $"Cycle {cycle.AiracCycleId} already downloaded.",
+					AiracDownloadPhase.Downloading => p.PercentComplete.HasValue
+						? $"Downloading cycle {cycle.AiracCycleId}... {p.PercentComplete:0}%"
+						: $"Downloading cycle {cycle.AiracCycleId}...",
+					AiracDownloadPhase.Extracting => $"Extracting cycle {cycle.AiracCycleId}...",
+					AiracDownloadPhase.Complete => $"Cycle {cycle.AiracCycleId} ready.",
+					_ => DownloadStatusText
+				};
+			});
+
+			string folder = await NasrCycleDownloadService.EnsureCycleAvailableAsync(cycle, progress: progress);
+
+			NasrSourceDirectory = folder;
+
+			// Keep at most 3 cycles cached: previous, current, next. Pruning is a
+			// nice-to-have - never let a pruning failure hide a successful download.
+			try
+			{
+				string[] cycleIdsToKeep =
+				{
+					AiracCycleResolver.GetCycle(AiracCyclePosition.Previous).AiracCycleId,
+					AiracCycleResolver.GetCycle(AiracCyclePosition.Current).AiracCycleId,
+					AiracCycleResolver.GetCycle(AiracCyclePosition.Next).AiracCycleId,
+				};
+
+				NasrCycleDownloadService.PruneStaleCycles(cycleIdsToKeep);
+			}
+			catch
+			{
+				// Ignored - see remarks above.
+			}
+
+			Toast.Success("Cycle downloaded", $"Cycle {cycle.AiracCycleId} is ready at {folder}.");
+		}
+		catch (Exception ex)
+		{
+			DownloadStatusText = null;
+			Toast.Error("Download failed", ex.Message);
+		}
+		finally
+		{
+			IsDownloadingCycle = false;
+		}
+	}
+
 	private void BrowseNasrSourceDirectory()
 	{
 		Microsoft.Win32.OpenFolderDialog dialog = new()
@@ -548,6 +710,7 @@ public sealed class AirwaysViewModel : ObservableObject
 		ElapsedSeconds = 0;
 		Files.Clear();
 		WarningGroups.Clear();
+		IsWarningsExpanded = false;
 		OnPropertyChanged(nameof(HasFiles));
 		OnPropertyChanged(nameof(HasWarnings));
 		AirwayCount = 0;
@@ -566,5 +729,7 @@ public sealed class AirwaysViewModel : ObservableObject
 		SwLat = SwLon = NeLat = NeLon = string.Empty;
 		EramClass = AirwayAltitudeClass.High;
 		EramTab = EramTab.Lines;
+		SelectedCyclePosition = AiracCyclePosition.Current;
+		DownloadStatusText = null;
 	}
 }

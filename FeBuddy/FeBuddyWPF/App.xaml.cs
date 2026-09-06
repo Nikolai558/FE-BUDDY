@@ -64,6 +64,7 @@ namespace FeBuddyWPF
             services.AddSingleton<IThemeSelectorService, ThemeSelectorService>();
             services.AddSingleton<IPageService, PageService>();
             services.AddSingleton<INavigationService, NavigationService>();
+            services.AddSingleton<IDialogService, DialogService>();
 
             // Views and ViewModels
             services.AddTransient<IShellWindow, ShellWindow>();

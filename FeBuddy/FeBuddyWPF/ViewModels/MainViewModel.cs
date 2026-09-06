@@ -1,4 +1,5 @@
-﻿using FeBuddyWPF.MVVMTools.ComponentModel;
+﻿using FeBuddyWPF.Contracts.Services;
+using FeBuddyWPF.MVVMTools.ComponentModel;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,9 +13,12 @@ namespace FeBuddyWPF.ViewModels
     public class MainViewModel: ObservableObject
     {
         private ViewModelBase _currentChildView;
+        private readonly IDialogService _dialogService;
 
-        public MainViewModel()
+        public MainViewModel(IDialogService dialogService)
         {
+            _dialogService = dialogService;
+
             ShowFaaDatToGeojsonViewCommand = new ViewModelCommand(ExecuteShowFaaDatToGeojsonViewCommand);
             ShowAiracDataViewCommand = new ViewModelCommand(ExecuteShowAiracDataViewCommand);
             ShowFaaGeojsonViewCommand = new ViewModelCommand(ExecuteShowFaaGeojsonViewCommand);
@@ -28,37 +32,37 @@ namespace FeBuddyWPF.ViewModels
 
         private void ExecuteShowAirportTrafficLevelsViewCommand(object obj)
         {
-            MessageBox.Show("This Menu has not been implemented yet.");
+            _dialogService.ShowMessage("This Menu has not been implemented yet.");
             //throw new NotImplementedException();
         }
 
         private void ExecuteShowMemberActivityTrackingViewCommand(object obj)
         {
-            MessageBox.Show("This Menu has not been implemented yet.");
+            _dialogService.ShowMessage("This Menu has not been implemented yet.");
             //throw new NotImplementedException();
         }
 
         private void ExecuteShowAliasMaintenanceViewCommand(object obj)
         {
-            MessageBox.Show("This Menu has not been implemented yet.");
+            _dialogService.ShowMessage("This Menu has not been implemented yet.");
             //throw new NotImplementedException();
         }
 
         private void ExecuteShowSctGeojsonViewCommand(object obj)
         {
-            MessageBox.Show("This Menu has not been implemented yet.");
+            _dialogService.ShowMessage("This Menu has not been implemented yet.");
             //throw new NotImplementedException();
         }
 
         private void ExecuteShowVstarsVeramGeojsonViewCommand(object obj)
         {
-            MessageBox.Show("This Menu has not been implemented yet.");
+            _dialogService.ShowMessage("This Menu has not been implemented yet.");
             //throw new NotImplementedException();
         }
 
         private void ExecuteShowFaaGeojsonViewCommand(object obj)
         {
-            MessageBox.Show("This Menu has not been implemented yet.");
+            _dialogService.ShowMessage("This Menu has not been implemented yet.");
             //throw new NotImplementedException();
         }
 

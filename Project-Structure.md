@@ -1,5 +1,12 @@
 # FE-BUDDY 3.0 Project Structure
 
+> **Aspirational — not the current build target.** This Clean Architecture layout is a
+> post-GUI migration target. The active build (Airways services and everything that leads
+> up to the GUI) uses the `SERVICES` layout described in
+> [`FE-Buddy_3.0_Structure_And_Build_Plan.md`](FE-Buddy_3.0_Structure_And_Build_Plan.md).
+> Do not relocate existing `FEBuddyLibrary` code into `Domain`/`Application`/`Infrastructure`/
+> `Desktop` projects until that document says the migration phase has started.
+
 FE-BUDDY 3.0 follows a layered architecture inspired by common .NET Clean Architecture practices.  
 The goal is to keep business logic, external integrations, and the user interface separated so the application remains maintainable, testable, and easier to expand.
 

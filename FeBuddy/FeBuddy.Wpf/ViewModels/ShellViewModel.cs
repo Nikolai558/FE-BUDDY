@@ -16,6 +16,7 @@ public sealed class ShellViewModel : ObservableObject
     // Segoe Fluent Icons code-points (see Theme/Icons.xaml for the same set in XAML).
     private const string GlyphDashboard = ""; // Home
     private const string GlyphAirac     = ""; // Refresh
+    private const string GlyphAirways   = ""; // MapLayers
     private const string GlyphMap       = ""; // MapPin
     private const string GlyphConvert   = ""; // Switch
     private const string GlyphGeoJson   = ""; // DeveloperTools
@@ -33,6 +34,7 @@ public sealed class ShellViewModel : ObservableObject
         [
             Nav("Dashboard",         GlyphDashboard, () => new DashboardViewModel()),
             Nav("AIRAC",             GlyphAirac,     () => new AiracViewModel()),
+            Nav("Airways",           GlyphAirways,   () => new AirwaysViewModel()),
             Nav("Map",               GlyphMap,       () => new MapViewModel()),
             Nav("Conversions",       GlyphConvert,   () => new ConversionsViewModel()),
             Nav("GeoJSON Tools",     GlyphGeoJson,   () => new GeoJsonToolsViewModel()),

@@ -7,14 +7,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <EditorConfigFiles Remove="C:\Users\Nikolas\GitHubRepos\FE-Buddy-DEV\FeBuddy\FEBuddyLibrary\.editorconfig" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Include="C:\Users\Nikolas\GitHubRepos\FE-Buddy-DEV\FeBuddy\FEBuddyLibrary\.editorconfig" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="Clowd.Squirrel" Version="2.11.1" />
     <PackageReference Include="CsvHelper" Version="33.1.0" />
     <PackageReference Include="NetTopologySuite" Version="2.6.0" />

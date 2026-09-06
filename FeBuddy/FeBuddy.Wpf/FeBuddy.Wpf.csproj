@@ -1,14 +1,15 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!--
-    FeBuddy.Wpf  -  UI prototype / design system
+    FeBuddy.Wpf  -  UI shell, now being grown into the real app.
     ===========================================================================
-    Pure presentation layer. On purpose this project references NOTHING:
-      * no FEBuddyLibrary
-      * no NuGet packages (MVVM helpers and converters are hand-rolled and live
-        under /Infrastructure so the project stays a self-contained shell)
-    The goal is a modern, DRY, well-commented WPF skin that the real app can be
-    grown into or that can be pointed at the library later.
+    Started as a pure presentation layer (no FEBuddyLibrary, no NuGet packages -
+    MVVM helpers and converters are hand-rolled and live under /Infrastructure).
+    Most screens are still sample-data-only prototypes.
+
+    The Airways screen is the first real, wired screen: it references
+    FEBuddyLibrary directly and calls FEBuddyLibrary.Services.Airways.AirwayService.Run.
+    Everything else stays sample data until it is grown the same way.
   -->
 
   <PropertyGroup>
@@ -30,6 +31,12 @@
     <!-- Bundled sample data for the map (plain GeoJSON, not code). -->
     <Resource Include="Assets\us-states.json" />
     <Resource Include="Assets\sample-airways.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The Airways screen is real and calls into the library; every other
+         screen is still sample data and does not need this. -->
+    <ProjectReference Include="..\FEBuddyLibrary\FEBuddyLibrary.csproj" />
   </ItemGroup>
 
 </Project>

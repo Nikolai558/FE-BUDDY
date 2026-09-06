@@ -236,6 +236,11 @@ public class CoordinateHandlerTests
   [InlineData(40, -170, 40, 170, true)]
   [InlineData(40, 170, 40, -170, true)]
   [InlineData(40, -10, 40, 10, false)]
+  // Regression case: a real AWY_SEG_ALT segment entirely within +140..+142 longitude (near
+  // Guam), nowhere close to the antimeridian. The previous bearing-based implementation of
+  // CrossesAntimeridian incorrectly returned true for this pair, which crashed
+  // AntimeridianHandler when building a real NASR dataset's airways.
+  [InlineData(21, 140.6, 16.75, 142.16666666, false)]
   public void crosses_the_am_should_be_correct(double StartLat, double StartLon, double EndLat, double EndLon, bool ExpectedResult)
   {
     // Arrange
@@ -294,5 +299,52 @@ public class CoordinateHandlerTests
     Assert.Equal(new Location(ExpectedLat1, ExpectedLon1), result[1] as Location);
     Assert.Equal(new Location(ExpectedLat2, ExpectedLon2), result[2] as Location);
     Assert.Equal(pointB, result[3]);
+  }
+
+  /// <summary>
+  /// Verifies PointAtDistanceAndBearing by round-tripping through the class's own Distance
+  /// and Bearing methods: traveling a known distance at a known bearing from an origin must
+  /// land at a point that is that same distance and bearing away from the origin.
+  /// </summary>
+  [Theory]
+  [InlineData(45.0, -90.0, 0.0, 100.0)]
+  [InlineData(45.0, -90.0, 90.0, 250.0)]
+  [InlineData(0.0, 0.0, 225.0, 500.0)]
+  [InlineData(-30.0, 160.0, 315.0, 75.0)]
+  [InlineData(80.0, 170.0, 45.0, 300.0)]
+  public void PointAtDistanceAndBearing_lands_the_expected_distance_and_bearing_from_origin(
+    double lat, double lon, double bearingDegrees, double distanceNm)
+  {
+    // Arrange
+    Location origin = new(lat, lon);
+
+    // Act
+    Location destination = CoordinateHandler.PointAtDistanceAndBearing(origin, bearingDegrees, distanceNm);
+
+    // Assert
+    double actualDistance = CoordinateHandler.Distance(origin, destination, Round: false);
+    Assert.Equal(distanceNm, actualDistance, precision: 1);
+
+    double actualBearing = CoordinateHandler.Bearing(origin, destination);
+    double bearingDifference = Math.Abs(actualBearing - bearingDegrees);
+    bearingDifference = Math.Min(bearingDifference, 360 - bearingDifference);
+    Assert.True(bearingDifference < 0.5, $"Expected bearing {bearingDegrees}, got {actualBearing}.");
+  }
+
+  /// <summary>
+  /// A destination whose raw longitude would fall outside [-180, 180] (crossing the
+  /// antimeridian) must be normalized back into range rather than throwing.
+  /// </summary>
+  [Fact]
+  public void PointAtDistanceAndBearing_normalizes_longitude_across_the_antimeridian()
+  {
+    // Arrange
+    Location origin = new(0.0, 179.9);
+
+    // Act
+    Location destination = CoordinateHandler.PointAtDistanceAndBearing(origin, bearingDegrees: 90.0, distanceNm: 50.0);
+
+    // Assert
+    Assert.InRange(destination.DecLon, -180.0, 180.0);
   }
 }

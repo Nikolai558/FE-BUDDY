@@ -1,16 +1,19 @@
 # FeBuddy.Wpf
 
-A **UI-only** WPF shell for FE-Buddy 3.0 - a modern re-skin in the style of
+A WPF shell for FE-Buddy 3.0 - a modern re-skin in the style of
 [clevelandcenter.org](https://clevelandcenter.org): dark blue-black surfaces, a
 single amber accent, hairline cards, big display headings over airy body text.
 
-It is deliberately **not wired to anything**:
+It started **not wired to anything** and is being grown into the real app one
+screen at a time:
 
-- no reference to `FEBuddyLibrary` (or any project)
 - no NuGet packages - the MVVM helpers (`ObservableObject`, `RelayCommand`), the
   toast store and the value converters live in `Infrastructure/`
-- every screen shows **sample data**; e.g. *Generate GeoJSON* runs a scripted
-  progress panel and raises a toast, but writes nothing
+- **Airways is the first real screen**: it references `FEBuddyLibrary` and
+  calls `AirwayService.Run` for real - pick an actual NASR CSV folder and
+  output folder, and it writes actual GeoJSON and alias files.
+- every other screen still shows **sample data**; e.g. AIRAC's *Generate*
+  runs a scripted progress panel and raises a toast, but writes nothing
 
 ## Layout
 
@@ -31,32 +34,39 @@ Controls/             SectionHeader, StatTile, MapCanvas (all dependency-free)
 Infrastructure/       ObservableObject, RelayCommand, converters
 Map/                  GeoJSON reader (System.Text.Json), Web-Mercator, layer model
 Assets/               bundled sample GeoJSON (us-states, sample-airways)
-ViewModels/           ShellViewModel + one per screen, all with sample data
-Views/                ShellWindow (custom chrome) + Dashboard, AIRAC, Map,
+ViewModels/           ShellViewModel + one per screen (Airways is real; the rest are sample data)
+Views/                ShellWindow (custom chrome) + Dashboard, AIRAC, Airways, Map,
                       Conversions, GeoJSON Tools, Alias & Reference, Settings, Info
 ```
 
-### Screens (all sample data / view-only)
+### Screens
 
 Shaped by the v2.x → 3.0 carry-forward map:
 
-- **AIRAC** - pick a cycle (APRA-verified), toggle the output families (each = one
+- **Airways** (real, wired to `FEBuddyLibrary`) - pick a NASR CSV folder and an
+  output folder, configure the same settings `AirwayService.Run` accepts
+  (output mode, buffer, feb.* properties, alias file, antimeridian split, CRC
+  ERAM defaults per altitude class, ROI clipping), click Run, and see the
+  actual result: airways built, GeoJSON files with real feature counts, the
+  alias file path, and any warnings (e.g. an unresolvable NASR waypoint),
+  grouped by airway.
+- **AIRAC** *(sample data)* - pick a cycle (APRA-verified), toggle the output families (each = one
   v2.x generator), tune the airway sub-options: output mode, buffer, feb.*,
   DME-cutoff variant, **designation include/exclude chips**, **break-at-fixes with
   a DME range per fix type**, and a **CRC ERAM defaults editor** (Lines/Symbols/Text
   → BCG / filters / style / thickness / size / underline / offsets). Set an ROI
   override, opt into a **cycle-diff report** (sample preview), run the scripted build.
-- **Conversions** - `.DAT` / `.KML` / `.SCT2` import to CRC GeoJSON, multi-file,
+- **Conversions** *(sample data)* - `.DAT` / `.KML` / `.SCT2` import to CRC GeoJSON, multi-file,
   per-format options. vSTARS/vERAM and DXF are called out as retired.
-- **GeoJSON Tools** - validate a file against the ERAM/STARS schema (BCG/filter
+- **GeoJSON Tools** *(sample data)* - validate a file against the ERAM/STARS schema (BCG/filter
   warnings, precision, self-intersection, mergeable features), or run a clean-up
   pass. Logic salvaged from v2.x's `GeoJson.cs`.
-- **Alias & Reference** - the `ALIAS/` text outputs with samples (each line has a
+- **Alias & Reference** *(sample data)* - the `ALIAS/` text outputs with samples (each line has a
   copy button), plus a cross-file duplicate-command check.
-- **Map** - adds a **Display** drop-down that toggles which BCG groups / filters
+- **Map** *(sample data)* - adds a **Display** drop-down that toggles which BCG groups / filters
   are "on" (the CRC display visualiser), and copy buttons on the cursor / ruler /
   ROI read-outs.
-- **Settings** - **multiple named facility profiles** (switch / new / import /
+- **Settings** *(sample data)* - **multiple named facility profiles** (switch / new / import /
   export), default ROI, output preferences, a **display-scheme editor** (name the
   BCG groups + filters once, export an ISR legend), a **NASR data-source** override
   (FAA / custom URL / local file for offline builds), updates.

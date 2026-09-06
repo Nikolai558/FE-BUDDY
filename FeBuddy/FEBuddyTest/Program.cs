@@ -1,65 +1,54 @@
-﻿using FEBuddyLibrary.Generators.NASR;
+﻿using System.Diagnostics;
+
+using FEBuddyLibrary.Configuration;
 using FEBuddyLibrary.Models.NASR.CSV;
 using FEBuddyLibrary.Parsers.NASR.CSV;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.Threading.Tasks;
 
 namespace FEBuddyTest;
 
+/// <summary>
+/// GUI stand-in entry point. Orchestrates the harness only - all airway logic lives in
+/// FEBuddyLibrary, and all console formatting lives in <see cref="ConsoleReport"/>. See
+/// <see cref="HarnessSettings"/> for the paths and toggles to edit.
+/// </summary>
 internal static class Program
 {
-    public static async Task Main()
-    {
+	public static async Task Main()
+	{
+		DevMode.IsEnabled = HarnessSettings.DevMode;
 
+		Console.WriteLine("FE-Buddy Test Harness");
+		Console.WriteLine($"NASR source: {HarnessSettings.NasrSourceDirectory}");
+		Console.WriteLine($"Output:      {HarnessSettings.OutputDirectory}");
+		Console.WriteLine($"DevMode:     {DevMode.IsEnabled}");
+		Console.WriteLine();
 
+		try
+		{
+			Console.Write("Parsing NASR CSV data... ");
 
+			Stopwatch parseStopwatch = Stopwatch.StartNew();
 
-        string sourceDirectory = @"C:\Users\ksand\Downloads\03_Sep_2026_CSV";
+			NasrCsvDataCollection allNasrCsvData =
+				await NasrCsvParserController.MainAsync(new[] { HarnessSettings.NasrSourceDirectory });
 
-        // AWY GeoJSON generation settings
-        Dictionary<string, string> airwaySettings = new()
-        {
-            { "OutputDirectory", @"C:\Users\ksand\Downloads" },
-            { "OutputBy", "HighLow" },
-            { "SplitAtAntimeridian", "Y" },
-            { "WaypointBuffer", "Y" }
-        };
+			parseStopwatch.Stop();
 
+			Console.WriteLine("done.");
+			ConsoleReport.PrintNasrParseSummary(parseStopwatch.Elapsed);
 
+			var geojsonResult = AirwayGeojsonRunner.Run(allNasrCsvData);
+			ConsoleReport.PrintAirwayServiceResult("Airways: HighLow GeoJSON + Alias", geojsonResult);
 
-
-
-
-        Console.Write("NASR CSV parsing... ");
-
-        var stopwatch = Stopwatch.StartNew();
-
-        var allNasrCsvData = await NasrCsvParserController.MainAsync(new string[]
-        {
-            sourceDirectory
-        });
-
-        stopwatch.Stop();
-
-        Console.WriteLine($"complete. ({stopwatch.ElapsedMilliseconds:N0} ms)");
-
-
-
-
-
-
-
-
-
-        Console.WriteLine("\n\nGenerating AWY GeoJSON...");
-
-        string awyGeojsonPath = AwyGeojsonGenerator.Generate(
-            allNasrCsvData,
-            airwaySettings);
-
-        Console.WriteLine($"AWY GeoJSON created: {awyGeojsonPath}");
-    }
+			var aliasOnlyResult = AirwayAliasRunner.Run(allNasrCsvData);
+			ConsoleReport.PrintAirwayServiceResult("Airways: Alias-only (OutputBy = None)", aliasOnlyResult);
+		}
+		catch (Exception ex)
+		{
+			Console.Error.WriteLine();
+			Console.Error.WriteLine($"FATAL: {ex.GetType().Name}: {ex.Message}");
+			Console.Error.WriteLine(ex.StackTrace);
+			Environment.ExitCode = 1;
+		}
+	}
 }

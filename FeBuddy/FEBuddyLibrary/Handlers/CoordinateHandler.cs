@@ -203,43 +203,19 @@ public class CoordinateHandler
         //     EndPoint   is (40, 170)  and
         //     the users intention is to go "EAST" from StartPoint to EndPoint (Technically not crossing the AM),
         //     this function will assume the shortest distance was traveled (WEST in this case) and therefore will not provide the appropriate respones of "False".
+        //
+        // Two points cross the antimeridian via the shortest path between them exactly when
+        // the raw difference in longitude exceeds 180 degrees in magnitude: going "the short
+        // way" around passes through +/-180 rather than through the 0 degree meridian.
+        //
+        // A previous implementation of this method used a bearing-based check instead, which
+        // produced false positives for ordinary segments nowhere near the antimeridian (e.g.
+        // a route entirely within +140..+142 longitude, near Guam). This formula was verified
+        // against every case in CoordinateHandlerTests.crosses_the_am_should_be_correct before
+        // replacing that implementation.
+        double longitudeDifference = Math.Abs(StartPoint.DecLon - EndPoint.DecLon);
 
-        const double Antimeridian = 180;
-
-        // The code then checks if either of the following conditions is true:
-        //   a.If StartPoint.DecLon(the decimal longitude of the start point) is less than Antimeridian and
-        //     EndPoint.DecLon(the decimal longitude of the end point) is greater than - Antimeridian.
-        //     This condition checks if the line segment spans from a longitude before the antimeridian to a longitude after it.
-        //   b.If StartPoint.DecLon is greater than - Antimeridian and EndPoint.DecLon is less than Antimeridian.
-        //     This condition checks if the line segment spans from a longitude after the antimeridian to a longitude before it.
-        // If either of these conditions is true, it means the line segment crosses the antimeridian.
-        if ((StartPoint.DecLon < Antimeridian && EndPoint.DecLon > -Antimeridian) || (StartPoint.DecLon > -Antimeridian && EndPoint.DecLon < Antimeridian))
-        {
-            // The bearing represents the angle between the north direction and the direction from the start point to the end point.
-            var bearing = Bearing(StartPoint, EndPoint);
-
-            // Then, the code checks if either of the following conditions is true:
-            //   a.If StartPoint.DecLon is less than 0(meaning the start point is west of the prime meridian) and
-            //     the bearing is greater than 0 and less than 180.This condition checks if the line segment crosses
-            //     the meridian line(the prime meridian at 0 degrees longitude) but not the antimeridian.
-            //   b.If StartPoint.DecLon is greater than 0(meaning the start point is east of the prime meridian) and
-            //     the bearing is greater than 180 and less than 360.This condition checks if the line segment crosses
-            //     the meridian line but not the antimeridian.
-            // If either of these conditions is true, it means the line segment crosses the meridian line but not the antimeridian.
-            if ((StartPoint.DecLon < 0 && (bearing > 0 && bearing < 180)) || (StartPoint.DecLon > 0 && (bearing > 180 && bearing < 360)))
-            {
-                // If the line segment crosses the meridian line but not the antimeridian, the method returns false.
-                return false;
-            }
-
-            // If none of the above conditions are true, the method returns true to indicate that the line segment crosses the antimeridian.
-            return true;
-        }
-        else
-        {
-            // If the initial condition above is false, meaning the line segment does not span across the antimeridian, the method returns false as well.
-            return false;
-        }
+        return longitudeDifference > 180;
     }
 
     /// <summary>
@@ -349,5 +325,56 @@ public class CoordinateHandler
 
         // Return a List of Locations Starting Point, AM Point 1, AM Point 2, Ending Point
         return new List<Location>() { pointA, midPointStart, midPointEnd, pointB };
+    }
+
+    /// <summary>
+    /// Calculate the destination point reached by traveling a given distance along a given
+    /// initial bearing from an origin point, using the great-circle (spherical) formula.
+    /// </summary>
+    /// <param name="origin">Location: Starting point.</param>
+    /// <param name="bearingDegrees">double: Initial bearing in degrees, measured clockwise from true north (0-360).</param>
+    /// <param name="distanceNm">double: Distance to travel from <paramref name="origin"/>, in Nautical Miles.</param>
+    /// <returns>Location: The destination point.</returns>
+    /// <remarks>
+    /// Used by <c>AirwayWaypointBuffer</c> to shorten an airway leg by a fixed radius around
+    /// each endpoint waypoint (2.5 NM for fixes, 5 NM for NAVAIDs/airports) so the rendered
+    /// line stops short of the waypoint's symbol/text. Ported from old FE-Buddy's
+    /// <c>LatLonHelpers.GetNewPoint</c>.
+    ///
+    /// Uses the same Earth radius as <see cref="Distance"/> (6371 km) so the two methods stay
+    /// consistent with one another.
+    /// </remarks>
+    public static Location PointAtDistanceAndBearing(Location origin, double bearingDegrees, double distanceNm)
+    {
+        // Same Earth radius (in meters, converted to Nautical Miles) used by Distance().
+        const double earthRadiusNm = 6371e3 / 1852;
+
+        double lat1 = origin.DecLat * Math.PI / 180;
+        double lon1 = origin.DecLon * Math.PI / 180;
+        double bearingRad = bearingDegrees * Math.PI / 180;
+
+        // Angular distance traveled, expressed as a fraction of the Earth's radius.
+        double angularDistance = distanceNm / earthRadiusNm;
+
+        // Standard great-circle "destination point given distance and bearing" formula.
+        double lat2 = Math.Asin(
+            Math.Sin(lat1) * Math.Cos(angularDistance) +
+            Math.Cos(lat1) * Math.Sin(angularDistance) * Math.Cos(bearingRad));
+
+        double lon2 = lon1 + Math.Atan2(
+            Math.Sin(bearingRad) * Math.Sin(angularDistance) * Math.Cos(lat1),
+            Math.Cos(angularDistance) - Math.Sin(lat1) * Math.Sin(lat2));
+
+        double latDegrees = lat2 * 180 / Math.PI;
+        double lonDegrees = lon2 * 180 / Math.PI;
+
+        // Normalize longitude back into [-180, 180) so it satisfies Location's validation
+        // even when the destination point wraps across the antimeridian.
+        lonDegrees = ((lonDegrees + 540) % 360) - 180;
+
+        // Defensive clamp against floating-point drift when operating extremely close to a pole.
+        latDegrees = Math.Clamp(latDegrees, -90, 90);
+
+        return new Location(latDegrees, lonDegrees);
     }
 }

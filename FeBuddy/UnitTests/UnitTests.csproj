@@ -26,14 +26,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <EditorConfigFiles Remove="C:\Users\Nikolas\GitHubRepos\FE-Buddy-DEV\FeBuddy\UnitTests\.editorconfig" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Include="C:\Users\Nikolas\GitHubRepos\FE-Buddy-DEV\FeBuddy\UnitTests\.editorconfig" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\FEBuddyLibrary\FEBuddyLibrary.csproj" />
   </ItemGroup>
 

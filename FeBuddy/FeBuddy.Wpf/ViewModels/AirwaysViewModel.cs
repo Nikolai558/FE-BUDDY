@@ -1,737 +1,583 @@
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Text.RegularExpressions;
 using System.Windows.Input;
-using System.Windows.Threading;
 
 using FeBuddy.Wpf.Infrastructure;
 using FeBuddy.Wpf.ViewModels.Models;
 
-using FEBuddyLibrary.Configuration;
+using FEBuddyLibrary.Helpers;
+
 using FEBuddyLibrary.Models.NASR.CSV;
+using FEBuddyLibrary.Models.Services.Airac;
 using FEBuddyLibrary.Models.Services.Airac.Airways;
 using FEBuddyLibrary.Models.Services.General;
-using FEBuddyLibrary.Parsers.NASR.CSV;
 using FEBuddyLibrary.Services.Airac.Airways;
 using FEBuddyLibrary.Services.General;
-using FEBuddyLibrary.Services.Airac;
-using FEBuddyLibrary.Models.Services.Airac;
 
 namespace FeBuddy.Wpf.ViewModels;
 
 /// <summary>
-/// The Airways screen: the first screen in this shell that is genuinely wired to
-/// <c>FEBuddyLibrary</c> rather than showing sample data. Pick a NASR source
-/// folder and an output folder, configure the same settings
-/// <c>AirwayService.Run</c> accepts, click Run, and see the real result.
+/// The <b>Airways</b> sub-service page, hosted inside the AIRAC Service screen (rule 1.1).
+/// Its own settings menu (with the shared Save / Undo contract) plus the run result panel;
+/// the run itself is launched by the parent's <b>Run AIRAC Service</b> button
+/// (remediation plan Phase 7).
 /// </summary>
-public sealed class AirwaysViewModel : ObservableObject
+public sealed class AirwaysViewModel : SubServiceSettingsViewModel
 {
-	private static readonly Regex AirwayIdPattern = new(@"^Airway '([^']+)':", RegexOptions.Compiled);
-
-	private static readonly AirwayAltitudeClass[] AllClasses =
-	{
-		AirwayAltitudeClass.High, AirwayAltitudeClass.Low, AirwayAltitudeClass.Other
-	};
-
-	private readonly Dictionary<(AirwayAltitudeClass Class, EramTab Kind), EramDefault> _eramDefaults;
-	private readonly DispatcherTimer _elapsedTimer;
-	private Stopwatch? _stopwatch;
-
-	// ---- paths ------------------------------------------------------
-
-	private string _nasrSourceDirectory = string.Empty;
-	private string _outputDirectory = string.Empty;
-
-	// ---- AIRAC cycle download -----------------------------------------
-
-	private AiracCyclePosition _selectedCyclePosition = AiracCyclePosition.Current;
-	private bool _isDownloadingCycle;
-	private string? _downloadStatusText;
-
-	// ---- output settings ---------------------------------------------
-
-	private AirwayGeojsonOutputBy _outputBy = AirwayGeojsonOutputBy.HighLow;
-	private bool _bufferAirwayWaypoints;
-	private bool _includeFebCustomProperties = true;
-	private bool _includeAirwayWaypointIds = true;
-	private bool _generateAliasFile = true;
-	private bool _splitAtAntimeridian = true;
-	private bool _includeCrcEramPropertyDefaults = true;
-	private bool _prettyPrintOutput;
-
-	// ---- region of interest -------------------------------------------
-
-	private bool _filterByRoi;
-	private string _swLat = string.Empty;
-	private string _swLon = string.Empty;
-	private string _neLat = string.Empty;
-	private string _neLon = string.Empty;
-
-	// ---- CRC ERAM defaults editor -------------------------------------
-
-	private AirwayAltitudeClass _eramClass = AirwayAltitudeClass.High;
-	private EramTab _eramTab = EramTab.Lines;
-
-	// ---- run state -----------------------------------------------------
-
-	private GenPhase _phase = GenPhase.Idle;
-	private string? _runError;
-	private double _elapsedSeconds;
-	private int _airwayCount;
-	private string? _aliasFilePath;
-	private int _aliasLineCount;
-
-	public AirwaysViewModel()
-	{
-		_eramDefaults = BuildDefaultEramBlocks();
-
-		RunCommand = new RelayCommand(
-			async () => await RunAsync(),
-			() => Phase != GenPhase.Running &&
-			      !string.IsNullOrWhiteSpace(NasrSourceDirectory) &&
-			      !string.IsNullOrWhiteSpace(OutputDirectory));
-
-		ResetCommand = new RelayCommand(Reset);
-		ToggleWarningsCommand = new RelayCommand(() => IsWarningsExpanded = !IsWarningsExpanded);
-		BrowseNasrCommand = new RelayCommand(BrowseNasrSourceDirectory);
-		BrowseOutputCommand = new RelayCommand(BrowseOutputDirectory);
-		OpenOutputCommand = new RelayCommand(OpenOutputFolder);
-		DownloadCycleCommand = new RelayCommand(async () => await DownloadCycleAsync(), () => !IsDownloadingCycle);
-
-		_elapsedTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(100) };
-		_elapsedTimer.Tick += (_, _) =>
-		{
-			if (_stopwatch is not null)
-			{
-				ElapsedSeconds = _stopwatch.Elapsed.TotalSeconds;
-			}
-		};
-	}
-
-	// ---- paths ---------------------------------------------------------
-
-	/// <summary>Directory containing an unzipped NASR 28-day subscription CSV set.</summary>
-	public string NasrSourceDirectory
-	{
-		get => _nasrSourceDirectory;
-		set => SetProperty(ref _nasrSourceDirectory, value);
-	}
-
-	/// <summary>Directory the Airways services write output under (a <c>FE-Buddy_Output\Airways</c> subtree is created inside it).</summary>
-	public string OutputDirectory
-	{
-		get => _outputDirectory;
-		set => SetProperty(ref _outputDirectory, value);
-	}
-
-	public ICommand BrowseNasrCommand { get; }
-
-	public ICommand BrowseOutputCommand { get; }
-
-	public ICommand OpenOutputCommand { get; }
-
-	// ---- AIRAC cycle download -----------------------------------------
-
-	/// <summary>Which cycle (relative to today, UTC) the Download button fetches.</summary>
-	public AiracCyclePosition SelectedCyclePosition
-	{
-		get => _selectedCyclePosition;
-		set
-		{
-			if (SetProperty(ref _selectedCyclePosition, value))
-			{
-				OnPropertyChanged(nameof(SelectedCycleLabel));
-			}
-		}
-	}
-
-	/// <summary>e.g. "Cycle 2610 - effective 01 Oct 2026", recomputed whenever the selected position changes.</summary>
-	public string SelectedCycleLabel
-	{
-		get
-		{
-			try
-			{
-				AiracCycleInfo info = AiracCycleResolver.GetCycle(SelectedCyclePosition);
-				return $"Cycle {info.AiracCycleId} - effective {info.EffectiveDateUtc:dd MMM yyyy}";
-			}
-			catch (Exception ex)
-			{
-				return $"Unavailable: {ex.Message}";
-			}
-		}
-	}
-
-	public bool IsDownloadingCycle
-	{
-		get => _isDownloadingCycle;
-		private set
-		{
-			if (SetProperty(ref _isDownloadingCycle, value))
-			{
-				OnPropertyChanged(nameof(CanDownloadCycle));
-			}
-		}
-	}
-
-	/// <summary>Bound directly to the Download button's IsEnabled (no converter needed).</summary>
-	public bool CanDownloadCycle => !IsDownloadingCycle;
-
-	public string? DownloadStatusText
-	{
-		get => _downloadStatusText;
-		private set
-		{
-			if (SetProperty(ref _downloadStatusText, value))
-			{
-				OnPropertyChanged(nameof(HasDownloadStatus));
-			}
-		}
-	}
-
-	public bool HasDownloadStatus => !string.IsNullOrEmpty(DownloadStatusText);
-
-	public ICommand DownloadCycleCommand { get; }
-
-	// ---- output settings -------------------------------------------
-
-	public AirwayGeojsonOutputBy OutputBy
-	{
-		get => _outputBy;
-		set
-		{
-			if (SetProperty(ref _outputBy, value))
-			{
-				OnPropertyChanged(nameof(OutputModeHint));
-			}
-		}
-	}
-
-	public string OutputModeHint => OutputBy switch
-	{
-		AirwayGeojsonOutputBy.None => "Airway data will not be written to GeoJSON. The alias file, if enabled, is unaffected.",
-		AirwayGeojsonOutputBy.HighLow =>
-			"Airways_High (highest MAA >= 18,000 ft), Airways_Low (0 < MAA < 18,000 ft), Airways_Other (neither).",
-		AirwayGeojsonOutputBy.Designation =>
-			"One file per designation - Airways_J.geojson, Airways_V.geojson, Airways_RN.geojson, ...",
-		_ => string.Empty,
-	};
-
-	public bool BufferAirwayWaypoints
-	{
-		get => _bufferAirwayWaypoints;
-		set => SetProperty(ref _bufferAirwayWaypoints, value);
-	}
-
-	public bool IncludeFebCustomProperties
-	{
-		get => _includeFebCustomProperties;
-		set => SetProperty(ref _includeFebCustomProperties, value);
-	}
-
-	public bool IncludeAirwayWaypointIds
-	{
-		get => _includeAirwayWaypointIds;
-		set => SetProperty(ref _includeAirwayWaypointIds, value);
-	}
-
-	public bool GenerateAliasFile
-	{
-		get => _generateAliasFile;
-		set => SetProperty(ref _generateAliasFile, value);
-	}
-
-	public bool SplitAtAntimeridian
-	{
-		get => _splitAtAntimeridian;
-		set => SetProperty(ref _splitAtAntimeridian, value);
-	}
-
-	public bool IncludeCrcEramPropertyDefaults
-	{
-		get => _includeCrcEramPropertyDefaults;
-		set => SetProperty(ref _includeCrcEramPropertyDefaults, value);
-	}
-
-	/// <summary>Mirrors <c>FEBuddyLibrary.Configuration.DevMode.IsEnabled</c> for this run: pretty-printed GeoJSON instead of single-line.</summary>
-	public bool PrettyPrintOutput
-	{
-		get => _prettyPrintOutput;
-		set => SetProperty(ref _prettyPrintOutput, value);
-	}
-
-	// ---- region of interest -----------------------------------------
-
-	public bool FilterByRoi
-	{
-		get => _filterByRoi;
-		set => SetProperty(ref _filterByRoi, value);
-	}
-
-	public string SwLat { get => _swLat; set => SetProperty(ref _swLat, value); }
-
-	public string SwLon { get => _swLon; set => SetProperty(ref _swLon, value); }
-
-	public string NeLat { get => _neLat; set => SetProperty(ref _neLat, value); }
-
-	public string NeLon { get => _neLon; set => SetProperty(ref _neLon, value); }
-
-	// ---- CRC ERAM defaults editor -------------------------------------
-
-	public AirwayAltitudeClass EramClass
-	{
-		get => _eramClass;
-		set
-		{
-			if (SetProperty(ref _eramClass, value))
-			{
-				OnPropertyChanged(nameof(CurrentEramDefault));
-			}
-		}
-	}
-
-	public EramTab EramTab
-	{
-		get => _eramTab;
-		set
-		{
-			if (SetProperty(ref _eramTab, value))
-			{
-				OnPropertyChanged(nameof(CurrentEramDefault));
-				OnPropertyChanged(nameof(EramShowThickness));
-				OnPropertyChanged(nameof(EramShowText));
-			}
-		}
-	}
-
-	public EramDefault CurrentEramDefault => _eramDefaults[(EramClass, EramTab)];
-
-	public bool EramShowThickness => EramTab == EramTab.Lines;
-
-	public bool EramShowText => EramTab == EramTab.Text;
-
-	// ---- run state -----------------------------------------------------
-
-	public GenPhase Phase
-	{
-		get => _phase;
-		private set
-		{
-			if (SetProperty(ref _phase, value))
-			{
-				OnPropertyChanged(nameof(IsRunning));
-				OnPropertyChanged(nameof(ShowRunPanel));
-				OnPropertyChanged(nameof(RunSucceeded));
-				OnPropertyChanged(nameof(RunFailed));
-			}
-		}
-	}
-
-	public bool IsRunning => Phase == GenPhase.Running;
-
-	public bool ShowRunPanel => Phase != GenPhase.Idle;
-
-	public string? RunError
-	{
-		get => _runError;
-		private set
-		{
-			if (SetProperty(ref _runError, value))
-			{
-				OnPropertyChanged(nameof(RunSucceeded));
-				OnPropertyChanged(nameof(RunFailed));
-			}
-		}
-	}
-
-	/// <summary>True once a run has finished with no exception. Used to decide between the results panel and the error panel.</summary>
-	public bool RunSucceeded => Phase == GenPhase.Complete && RunError is null;
-
-	/// <summary>True once a run has finished with an exception.</summary>
-	public bool RunFailed => Phase == GenPhase.Complete && RunError is not null;
-
-	public double ElapsedSeconds
-	{
-		get => _elapsedSeconds;
-		private set
-		{
-			if (SetProperty(ref _elapsedSeconds, value))
-			{
-				OnPropertyChanged(nameof(ElapsedText));
-			}
-		}
-	}
-
-	public string ElapsedText => $"{ElapsedSeconds:0.0}s";
-
-	public int AirwayCount
-	{
-		get => _airwayCount;
-		private set => SetProperty(ref _airwayCount, value);
-	}
-
-	public ObservableCollection<AirwaysOutputFileRow> Files { get; } = [];
-
-	public bool HasFiles => Files.Count > 0;
-
-	public string? AliasFilePath
-	{
-		get => _aliasFilePath;
-		private set
-		{
-			if (SetProperty(ref _aliasFilePath, value))
-			{
-				OnPropertyChanged(nameof(HasAliasFile));
-			}
-		}
-	}
-
-	public bool HasAliasFile => !string.IsNullOrEmpty(AliasFilePath);
-
-	public int AliasLineCount
-	{
-		get => _aliasLineCount;
-		private set => SetProperty(ref _aliasLineCount, value);
-	}
-
-	public ObservableCollection<AirwaysWarningGroup> WarningGroups { get; } = [];
-
-	public bool HasWarnings => WarningGroups.Count > 0;
-
-	private bool _isWarningsExpanded;
-
-	/// <summary>
-	/// Whether the warnings list is expanded. Starts collapsed on every run so a run with
-	/// many warnings (e.g. buffering many short legs) doesn't bury the Run again / Open
-	/// output folder / Reset buttons at the bottom of the panel - the warning count is still
-	/// visible on the collapsed header.
-	/// </summary>
-	public bool IsWarningsExpanded
-	{
-		get => _isWarningsExpanded;
-		set
-		{
-			if (SetProperty(ref _isWarningsExpanded, value))
-			{
-				OnPropertyChanged(nameof(WarningsToggleLabel));
-			}
-		}
-	}
-
-	public string WarningsToggleLabel => IsWarningsExpanded ? "Hide" : "Show";
-
-	public ICommand ToggleWarningsCommand { get; }
-
-	public ICommand RunCommand { get; }
-
-	public ICommand ResetCommand { get; }
-
-	// ---------------------------------------------------------------------
-
-	private async Task RunAsync()
-	{
-		RunError = null;
-		Phase = GenPhase.Running;
-		Files.Clear();
-		WarningGroups.Clear();
-		IsWarningsExpanded = false;
-		OnPropertyChanged(nameof(HasFiles));
-		OnPropertyChanged(nameof(HasWarnings));
-		AirwayCount = 0;
-		AliasFilePath = null;
-		AliasLineCount = 0;
-
-		_stopwatch = Stopwatch.StartNew();
-		ElapsedSeconds = 0;
-		_elapsedTimer.Start();
-
-		try
-		{
-			// This screen's own switch, not the AirwayService pipeline - it only
-			// affects how GeoJsonFileWriter formats output.
-			DevMode.IsEnabled = PrettyPrintOutput;
-
-			NasrCsvDataCollection allNasrCsvData =
-				await NasrCsvParserController.MainAsync(new[] { NasrSourceDirectory });
-
-			Dictionary<string, string> settings = BuildAirwaySettingsDictionary();
-
-			AirwayServiceResult result = await Task.Run(() => AirwayService.Run(allNasrCsvData, settings));
-
-			ApplyResult(result);
-
-			Phase = GenPhase.Complete;
-
-			Toast.Success(
-				"Airways run complete",
-				$"{result.AirwayCount:N0} airways" +
-				(result.GeojsonFilesWritten.Count > 0 ? $" · {result.GeojsonFilesWritten.Count} GeoJSON file(s)" : string.Empty) +
-				(result.AliasFilePath is not null ? " · alias file written" : string.Empty) +
-				(result.Warnings.Count > 0 ? $" · {result.Warnings.Count} warning(s)" : string.Empty) + ".");
-		}
-		catch (Exception ex)
-		{
-			RunError = ex.Message;
-			Phase = GenPhase.Complete;
-			Toast.Error("Airways run failed", ex.Message);
-		}
-		finally
-		{
-			_stopwatch?.Stop();
-			ElapsedSeconds = _stopwatch?.Elapsed.TotalSeconds ?? ElapsedSeconds;
-			_elapsedTimer.Stop();
-		}
-	}
-
-	private void ApplyResult(AirwayServiceResult result)
-	{
-		AirwayCount = result.AirwayCount;
-
-		foreach (string path in result.GeojsonFilesWritten)
-		{
-			int count = result.GeojsonFeatureCountsByFile.TryGetValue(path, out int c) ? c : 0;
-			Files.Add(new AirwaysOutputFileRow(Path.GetFileName(path), path, count));
-		}
-
-		OnPropertyChanged(nameof(HasFiles));
-
-		AliasFilePath = result.AliasFilePath;
-		AliasLineCount = result.AliasAirwayLineCount;
-
-		foreach (var group in GroupWarnings(result.Warnings))
-		{
-			WarningGroups.Add(group);
-		}
-
-		OnPropertyChanged(nameof(HasWarnings));
-	}
-
-	/// <summary>
-	/// Groups warnings by the airway ID named at the start of the message ("Airway
-	/// 'J3': ..."), falling back to a "General" bucket for warnings not tied to a
-	/// specific airway (e.g. an unrecognized settings key).
-	/// </summary>
-	private static IEnumerable<AirwaysWarningGroup> GroupWarnings(IReadOnlyList<string> warnings)
-	{
-		return warnings
-			.GroupBy(w =>
-			{
-				Match match = AirwayIdPattern.Match(w);
-				return match.Success ? match.Groups[1].Value : "General";
-			})
-			.OrderBy(g => g.Key, StringComparer.OrdinalIgnoreCase)
-			.Select(g => new AirwaysWarningGroup(g.Key, g.ToList()));
-	}
-
-	/// <summary>
-	/// Converts the current screen state into the raw settings dictionary
-	/// <c>AirwayService.Run</c> accepts. Mirrors <c>FEBuddyTest.HarnessSettings</c>.
-	/// </summary>
-	private Dictionary<string, string> BuildAirwaySettingsDictionary()
-	{
-		Dictionary<string, string> settings = new()
-		{
-			["OutputDirectory"] = OutputDirectory,
-			["OutputBy"] = OutputBy.ToString(),
-			["BufferAirwayWaypoints"] = YesNo(BufferAirwayWaypoints),
-			["IncludeFebCustomProperties"] = YesNo(IncludeFebCustomProperties),
-			["IncludeAirwayWaypointIds"] = YesNo(IncludeAirwayWaypointIds),
-			["GenerateAliasFile"] = YesNo(GenerateAliasFile),
-			["SplitAtAntimeridian"] = YesNo(SplitAtAntimeridian),
-			["IncludeCrcEramPropertyDefaults"] = YesNo(IncludeCrcEramPropertyDefaults),
-			["FilterByRoi"] = YesNo(FilterByRoi),
-		};
-
-		if (FilterByRoi)
-		{
-			settings["RoiSwLat"] = SwLat;
-			settings["RoiSwLon"] = SwLon;
-			settings["RoiNeLat"] = NeLat;
-			settings["RoiNeLon"] = NeLon;
-		}
-
-		if (IncludeCrcEramPropertyDefaults)
-		{
-			foreach (AirwayAltitudeClass cls in AllClasses)
-			{
-				EramDefault line = _eramDefaults[(cls, EramTab.Lines)];
-				settings[$"Crc.{cls}.Line.bcg"] = line.Bcg;
-				settings[$"Crc.{cls}.Line.filters"] = line.Filters;
-				settings[$"Crc.{cls}.Line.style"] = line.Style;
-				settings[$"Crc.{cls}.Line.thickness"] = line.Thickness;
-
-				EramDefault symbol = _eramDefaults[(cls, EramTab.Symbols)];
-				settings[$"Crc.{cls}.Symbol.bcg"] = symbol.Bcg;
-				settings[$"Crc.{cls}.Symbol.filters"] = symbol.Filters;
-				settings[$"Crc.{cls}.Symbol.style"] = symbol.Style;
-				settings[$"Crc.{cls}.Symbol.size"] = symbol.Size;
-
-				EramDefault text = _eramDefaults[(cls, EramTab.Text)];
-				settings[$"Crc.{cls}.Text.bcg"] = text.Bcg;
-				settings[$"Crc.{cls}.Text.filters"] = text.Filters;
-				settings[$"Crc.{cls}.Text.size"] = text.Size;
-				settings[$"Crc.{cls}.Text.underline"] = YesNo(text.Underline);
-				settings[$"Crc.{cls}.Text.xOffset"] = text.XOffset;
-				settings[$"Crc.{cls}.Text.yOffset"] = text.YOffset;
-			}
-		}
-
-		return settings;
-	}
-
-	private static string YesNo(bool value) => value ? "Y" : "N";
-
-	private static Dictionary<(AirwayAltitudeClass, EramTab), EramDefault> BuildDefaultEramBlocks() => new()
-	{
-		[(AirwayAltitudeClass.High, EramTab.Lines)] = new EramDefault { Bcg = "3", Filters = "3", Style = "solid", Thickness = "1" },
-		[(AirwayAltitudeClass.High, EramTab.Symbols)] = new EramDefault { Bcg = "3", Filters = "3", Style = "vor", Size = "1" },
-		[(AirwayAltitudeClass.High, EramTab.Text)] = new EramDefault { Bcg = "3", Filters = "3", Size = "1" },
-
-		[(AirwayAltitudeClass.Low, EramTab.Lines)] = new EramDefault { Bcg = "2", Filters = "2", Style = "shortDashed", Thickness = "1" },
-		[(AirwayAltitudeClass.Low, EramTab.Symbols)] = new EramDefault { Bcg = "2", Filters = "2", Style = "vor", Size = "1" },
-		[(AirwayAltitudeClass.Low, EramTab.Text)] = new EramDefault { Bcg = "2", Filters = "2", Size = "1" },
-
-		[(AirwayAltitudeClass.Other, EramTab.Lines)] = new EramDefault { Bcg = "1", Filters = "1", Style = "longDashed", Thickness = "1" },
-		[(AirwayAltitudeClass.Other, EramTab.Symbols)] = new EramDefault { Bcg = "1", Filters = "1", Style = "otherWaypoints", Size = "1" },
-		[(AirwayAltitudeClass.Other, EramTab.Text)] = new EramDefault { Bcg = "1", Filters = "1", Size = "1" },
-	};
-
-	/// <summary>
-	/// Resolves the selected AIRAC cycle, downloads and extracts it if it isn't already
-	/// cached (see <c>NasrCycleDownloadService</c>), points <see cref="NasrSourceDirectory"/>
-	/// at the result, and prunes any cached cycle that is no longer the previous, current, or
-	/// next cycle - matching the dev notes' "keep 3 cycles" rule.
-	/// </summary>
-	private async Task DownloadCycleAsync()
-	{
-		IsDownloadingCycle = true;
-		DownloadStatusText = "Resolving cycle...";
-
-		try
-		{
-			AiracCycleInfo cycle = AiracCycleResolver.GetCycle(SelectedCyclePosition);
-
-			Progress<AiracDownloadProgress> progress = new(p =>
-			{
-				DownloadStatusText = p.Phase switch
-				{
-					AiracDownloadPhase.AlreadyAvailable => $"Cycle {cycle.AiracCycleId} already downloaded.",
-					AiracDownloadPhase.Downloading => p.PercentComplete.HasValue
-						? $"Downloading cycle {cycle.AiracCycleId}... {p.PercentComplete:0}%"
-						: $"Downloading cycle {cycle.AiracCycleId}...",
-					AiracDownloadPhase.Extracting => $"Extracting cycle {cycle.AiracCycleId}...",
-					AiracDownloadPhase.Complete => $"Cycle {cycle.AiracCycleId} ready.",
-					_ => DownloadStatusText
-				};
-			});
-
-			string folder = await NasrCycleDownloadService.EnsureCycleAvailableAsync(cycle, progress: progress);
-
-			NasrSourceDirectory = folder;
-
-			// Keep at most 3 cycles cached: previous, current, next. Pruning is a
-			// nice-to-have - never let a pruning failure hide a successful download.
-			try
-			{
-				string[] cycleIdsToKeep =
-				{
-					AiracCycleResolver.GetCycle(AiracCyclePosition.Previous).AiracCycleId,
-					AiracCycleResolver.GetCycle(AiracCyclePosition.Current).AiracCycleId,
-					AiracCycleResolver.GetCycle(AiracCyclePosition.Next).AiracCycleId,
-				};
-
-				NasrCycleDownloadService.PruneStaleCycles(cycleIdsToKeep);
-			}
-			catch
-			{
-				// Ignored - see remarks above.
-			}
-
-			Toast.Success("Cycle downloaded", $"Cycle {cycle.AiracCycleId} is ready at {folder}.");
-		}
-		catch (Exception ex)
-		{
-			DownloadStatusText = null;
-			Toast.Error("Download failed", ex.Message);
-		}
-		finally
-		{
-			IsDownloadingCycle = false;
-		}
-	}
-
-	private void BrowseNasrSourceDirectory()
-	{
-		Microsoft.Win32.OpenFolderDialog dialog = new()
-		{
-			Title = "Select the unzipped NASR CSV folder",
-			InitialDirectory = Directory.Exists(NasrSourceDirectory) ? NasrSourceDirectory : null,
-		};
-
-		if (dialog.ShowDialog() == true)
-		{
-			NasrSourceDirectory = dialog.FolderName;
-		}
-	}
-
-	private void BrowseOutputDirectory()
-	{
-		Microsoft.Win32.OpenFolderDialog dialog = new()
-		{
-			Title = "Select the Airways output folder",
-			InitialDirectory = Directory.Exists(OutputDirectory) ? OutputDirectory : null,
-		};
-
-		if (dialog.ShowDialog() == true)
-		{
-			OutputDirectory = dialog.FolderName;
-		}
-	}
-
-	private void OpenOutputFolder()
-	{
-		string airwaysOutput = Path.Combine(OutputDirectory, "FE-Buddy_Output", "Airways");
-		string target = Directory.Exists(airwaysOutput) ? airwaysOutput : OutputDirectory;
-
-		if (!Directory.Exists(target))
-		{
-			Toast.Warn("Nothing to open", "That output folder doesn't exist yet - run Airways first.");
-			return;
-		}
-
-		Process.Start(new ProcessStartInfo(target) { UseShellExecute = true });
-	}
-
-	private void Reset()
-	{
-		_elapsedTimer.Stop();
-		Phase = GenPhase.Idle;
-		RunError = null;
-		ElapsedSeconds = 0;
-		Files.Clear();
-		WarningGroups.Clear();
-		IsWarningsExpanded = false;
-		OnPropertyChanged(nameof(HasFiles));
-		OnPropertyChanged(nameof(HasWarnings));
-		AirwayCount = 0;
-		AliasFilePath = null;
-		AliasLineCount = 0;
-
-		OutputBy = AirwayGeojsonOutputBy.HighLow;
-		BufferAirwayWaypoints = false;
-		IncludeFebCustomProperties = true;
-		IncludeAirwayWaypointIds = true;
-		GenerateAliasFile = true;
-		SplitAtAntimeridian = true;
-		IncludeCrcEramPropertyDefaults = true;
-		PrettyPrintOutput = false;
-		FilterByRoi = false;
-		SwLat = SwLon = NeLat = NeLon = string.Empty;
-		EramClass = AirwayAltitudeClass.High;
-		EramTab = EramTab.Lines;
-		SelectedCyclePosition = AiracCyclePosition.Current;
-		DownloadStatusText = null;
-	}
+    private const string Node = "Services.AiracService.Geojson.Airways";
+
+    private static readonly Regex AirwayIdPattern = new(@"^Airway '([^']+)':", RegexOptions.Compiled);
+    private static readonly AirwayAltitudeClass[] AllClasses = { AirwayAltitudeClass.High, AirwayAltitudeClass.Low, AirwayAltitudeClass.Other };
+
+    // ---- settings backing fields ----
+    private AirwayGeojsonOutputBy _outputBy = AirwayGeojsonOutputBy.HighLow;
+    private bool _emitLines = true;
+    private bool _emitSymbols = true;
+    private bool _emitText = true;
+    private bool _bufferAirwayWaypoints;
+    private bool _includeFebCustomProperties;
+    private bool _includeAirwayWaypointIds;
+    private bool _includeCrcEramPropertyDefaults = true;
+    private bool _generateAliasFile = true;
+    private bool _aliasRoiAirwaysOnly;
+    private bool _splitAtAntimeridian = true;
+    private bool _overrideRoi;
+    private string _swLat = string.Empty;
+    private string _swLon = string.Empty;
+    private string _neLat = string.Empty;
+    private string _neLon = string.Empty;
+
+    private bool _isCycleReady;
+
+    // ---- run state ----
+    private bool _isRunning;
+    private bool _hasRun;
+    private string? _runError;
+    private double _elapsedSeconds;
+    private int _airwayCount;
+    private int _excludedCount;
+    private string? _aliasFilePath;
+    private int _aliasLineCount;
+    private string? _progressText;
+    private bool _isInfoExpanded;
+    private Stopwatch? _stopwatch;
+
+    public AirwaysViewModel()
+    {
+        LineDefaults = BuildClassDefaults(EramFieldKind.Line);
+        SymbolDefaults = BuildClassDefaults(EramFieldKind.Symbol);
+        TextDefaults = BuildClassDefaults(EramFieldKind.Text);
+
+        ToggleInfoCommand = new RelayCommand(() => IsInfoExpanded = !IsInfoExpanded);
+        OpenOutputCommand = new RelayCommand(OpenOutputFolder, () => !string.IsNullOrEmpty(LastOutputDirectory));
+        PickRoiOnMapCommand = new RelayCommand(() =>
+            Toast.Info("ROI map picker", "The shared ROI map picker arrives in Phase 11. Enter coordinates manually for now."));
+
+        LoadFromConfig();
+    }
+
+    // ================= settings menu =================
+
+    /// <inheritdoc />
+    public override string NodePath => Node;
+
+    /// <inheritdoc />
+    public override string BreadcrumbTitle => "Airways";
+
+    public IReadOnlyList<AirwayGeojsonOutputBy> OutputByValues { get; } =
+        new[] { AirwayGeojsonOutputBy.HighLow, AirwayGeojsonOutputBy.Designation, AirwayGeojsonOutputBy.None };
+
+    public AirwayGeojsonOutputBy OutputBy
+    {
+        get => _outputBy;
+        set { if (SetProperty(ref _outputBy, value)) { MarkDirty(); OnPropertyChanged(nameof(OutputModeHint)); } }
+    }
+
+    /// <summary>Multi-line description; both HIGH/LOW and DESIGNATION also emit <c>_Symbols</c> and <c>_Text</c> alongside <c>_Lines</c> (7.4).</summary>
+    public string OutputModeHint => OutputBy switch
+    {
+        AirwayGeojsonOutputBy.None =>
+            "Airway data will not be written to GeoJSON.\nThe alias file, if enabled, is unaffected.",
+        AirwayGeojsonOutputBy.HighLow =>
+            "One file set by altitude:\n" +
+            "  • Airways_High  — highest MAA ≥ 18,000 ft\n" +
+            "  • Airways_Low   — 0 < MAA < 18,000 ft\n" +
+            "  • Airways_Other — neither\n" +
+            "Each set is _Lines + _Symbols + _Text.",
+        AirwayGeojsonOutputBy.Designation =>
+            "One file set per designation (derived from the AWY_ID, e.g. J / V / Q / T / AT):\n" +
+            "  Airways_J, Airways_V, Airways_Q, …\n" +
+            "Each set is _Lines + _Symbols + _Text.",
+        _ => string.Empty,
+    };
+
+    public bool EmitLines { get => _emitLines; set { if (SetProperty(ref _emitLines, value)) MarkDirty(); } }
+    public bool EmitSymbols { get => _emitSymbols; set { if (SetProperty(ref _emitSymbols, value)) MarkDirty(); } }
+    public bool EmitText { get => _emitText; set { if (SetProperty(ref _emitText, value)) MarkDirty(); } }
+
+    public bool BufferAirwayWaypoints { get => _bufferAirwayWaypoints; set { if (SetProperty(ref _bufferAirwayWaypoints, value)) MarkDirty(); } }
+
+    public bool IncludeFebCustomProperties
+    {
+        get => _includeFebCustomProperties;
+        set { if (SetProperty(ref _includeFebCustomProperties, value)) MarkDirty(); }
+    }
+
+    /// <summary>Verbatim FE-Buddy Properties description (remediation plan 7.4).</summary>
+    public string FebPropertiesDescription =>
+        "Include FE-Buddy Properties, when available.\n\n" +
+        "Custom Geojson Property fields that increases file size but can be helpful for debugging or " +
+        "viewing data in a geojson viewer in order to identify object. Every FE-Buddy property will be " +
+        "prefixed with feb.";
+
+    public bool IncludeAirwayWaypointIds { get => _includeAirwayWaypointIds; set { if (SetProperty(ref _includeAirwayWaypointIds, value)) MarkDirty(); } }
+
+    public bool IncludeCrcEramPropertyDefaults { get => _includeCrcEramPropertyDefaults; set { if (SetProperty(ref _includeCrcEramPropertyDefaults, value)) MarkDirty(); } }
+
+    public bool GenerateAliasFile { get => _generateAliasFile; set { if (SetProperty(ref _generateAliasFile, value)) MarkDirty(); } }
+
+    /// <summary><see langword="true"/> = ROI airways only; <see langword="false"/> = all FAA airways (remediation plan 3.5 / 7.5).</summary>
+    public bool AliasRoiAirwaysOnly { get => _aliasRoiAirwaysOnly; set { if (SetProperty(ref _aliasRoiAirwaysOnly, value)) MarkDirty(); } }
+
+    public bool SplitAtAntimeridian { get => _splitAtAntimeridian; set { if (SetProperty(ref _splitAtAntimeridian, value)) MarkDirty(); } }
+
+    public bool OverrideRoi { get => _overrideRoi; set { if (SetProperty(ref _overrideRoi, value)) MarkDirty(); } }
+    public string SwLat { get => _swLat; set { if (SetProperty(ref _swLat, value)) MarkDirty(); } }
+    public string SwLon { get => _swLon; set { if (SetProperty(ref _swLon, value)) MarkDirty(); } }
+    public string NeLat { get => _neLat; set { if (SetProperty(ref _neLat, value)) MarkDirty(); } }
+    public string NeLon { get => _neLon; set { if (SetProperty(ref _neLon, value)) MarkDirty(); } }
+
+    /// <summary>Designation include/exclude toggles, built from the selected cycle's parsed airways (7.4). Disabled until readiness.</summary>
+    public ObservableCollection<DesignationToggle> Designations { get; } = new();
+
+    public bool IsCycleReady
+    {
+        get => _isCycleReady;
+        private set => SetProperty(ref _isCycleReady, value);
+    }
+
+    /// <summary>CRC ERAM Line defaults, one row per altitude class (7.4 - three stacked blocks, no selector).</summary>
+    public ObservableCollection<EramClassDefault> LineDefaults { get; }
+    public ObservableCollection<EramClassDefault> SymbolDefaults { get; }
+    public ObservableCollection<EramClassDefault> TextDefaults { get; }
+
+    public ICommand ToggleInfoCommand { get; }
+    public ICommand OpenOutputCommand { get; }
+    public ICommand PickRoiOnMapCommand { get; }
+
+    // ================= run result panel =================
+
+    public bool IsRunning { get => _isRunning; private set { if (SetProperty(ref _isRunning, value)) OnPropertyChanged(nameof(ShowPanel)); } }
+    public bool HasRun { get => _hasRun; private set { if (SetProperty(ref _hasRun, value)) { OnPropertyChanged(nameof(ShowPanel)); OnPropertyChanged(nameof(RunSucceeded)); OnPropertyChanged(nameof(RunFailed)); } } }
+    public bool ShowPanel => IsRunning || HasRun;
+
+    public string? RunError
+    {
+        get => _runError;
+        private set { if (SetProperty(ref _runError, value)) { OnPropertyChanged(nameof(RunSucceeded)); OnPropertyChanged(nameof(RunFailed)); } }
+    }
+
+    public bool RunSucceeded => HasRun && RunError is null;
+    public bool RunFailed => HasRun && RunError is not null;
+
+    public string? ProgressText { get => _progressText; private set => SetProperty(ref _progressText, value); }
+
+    public double ElapsedSeconds { get => _elapsedSeconds; private set { if (SetProperty(ref _elapsedSeconds, value)) OnPropertyChanged(nameof(ElapsedText)); } }
+    public string ElapsedText => $"{ElapsedSeconds:0.0}s";
+
+    public int AirwayCount { get => _airwayCount; private set => SetProperty(ref _airwayCount, value); }
+    public int ExcludedCount { get => _excludedCount; private set { if (SetProperty(ref _excludedCount, value)) OnPropertyChanged(nameof(HasExcluded)); } }
+    public bool HasExcluded => ExcludedCount > 0;
+
+    public ObservableCollection<AirwaysOutputFileRow> Files { get; } = new();
+    public bool HasFiles => Files.Count > 0;
+
+    public string? AliasFilePath { get => _aliasFilePath; private set { if (SetProperty(ref _aliasFilePath, value)) OnPropertyChanged(nameof(HasAliasFile)); } }
+    public bool HasAliasFile => !string.IsNullOrEmpty(AliasFilePath);
+    public int AliasLineCount { get => _aliasLineCount; private set => SetProperty(ref _aliasLineCount, value); }
+
+    /// <summary>Run messages grouped by airway, each carrying its highest level (remediation plan 3.8).</summary>
+    public ObservableCollection<AirwaysMessageGroup> MessageGroups { get; } = new();
+    public bool HasWarnings => MessageGroups.Any(g => g.Level >= LogLevel.Warning);
+    public bool HasInfoOnly => MessageGroups.Count > 0 && MessageGroups.All(g => g.Level < LogLevel.Warning);
+    public int WarningGroupCount => MessageGroups.Count(g => g.Level >= LogLevel.Warning);
+    public int InfoGroupCount => MessageGroups.Count(g => g.Level < LogLevel.Warning);
+
+    public bool IsInfoExpanded { get => _isInfoExpanded; set { if (SetProperty(ref _isInfoExpanded, value)) OnPropertyChanged(nameof(InfoToggleLabel)); } }
+    public string InfoToggleLabel => IsInfoExpanded ? "Hide info messages" : $"Show {InfoGroupCount} info group(s)";
+
+    private string? LastOutputDirectory { get; set; }
+
+    // ================= parent hooks =================
+
+    /// <summary>Called by the parent whenever AIRAC readiness changes.</summary>
+    /// <param name="ready">Whether the AIRAC data is ready.</param>
+    public void SetReadiness(bool ready) => IsCycleReady = ready;
+
+    /// <summary>Builds the designation toggle list from the selected cycle's parsed airways (7.4).</summary>
+    /// <param name="data">The parsed NASR data for the selected cycle.</param>
+    public void LoadCycleDependentLists(NasrCsvDataCollection data)
+    {
+        HashSet<string> excluded = ParseExcludedFromConfig();
+
+        string[] designations = (data.Awy?.AwyBase ?? new())
+            .Select(a => AirwayClassifier.DeriveDesignation(a.AwyId))
+            .Where(d => !string.IsNullOrWhiteSpace(d))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(d => d, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+        Designations.Clear();
+        foreach (string d in designations)
+        {
+            Designations.Add(new DesignationToggle(d, included: !excluded.Contains(d), MarkDirty));
+        }
+    }
+
+    /// <summary>Resets the result panel for a new run.</summary>
+    public void BeginRun()
+    {
+        RunError = null;
+        HasRun = false;
+        IsRunning = true;
+        ProgressText = "Starting…";
+        Files.Clear();
+        MessageGroups.Clear();
+        AirwayCount = 0;
+        ExcludedCount = 0;
+        AliasFilePath = null;
+        AliasLineCount = 0;
+        IsInfoExpanded = false;
+        RaisePanelCounts();
+
+        _stopwatch = Stopwatch.StartNew();
+        ElapsedSeconds = 0;
+    }
+
+    /// <summary>Updates the in-panel progress line.</summary>
+    /// <param name="message">The progress message.</param>
+    public void ReportProgress(string message) => ProgressText = message;
+
+    /// <summary>Renders a finished <see cref="AiracServiceResult"/> into the panel.</summary>
+    /// <param name="result">The aggregated AIRAC Service result.</param>
+    public void ApplyAiracResult(AiracServiceResult result)
+    {
+        _stopwatch?.Stop();
+        ElapsedSeconds = _stopwatch?.Elapsed.TotalSeconds ?? 0;
+        IsRunning = false;
+        HasRun = true;
+        ProgressText = null;
+
+        ExcludedCount = result.ExcludedAirwayIds.Count;
+
+        AirwayServiceResult? airways = result.Airways;
+        if (airways is not null)
+        {
+            AirwayCount = airways.AirwayCount;
+
+            foreach (string path in airways.GeojsonFilesWritten)
+            {
+                int count = airways.GeojsonFeatureCountsByFile.TryGetValue(path, out int c) ? c : 0;
+                Files.Add(new AirwaysOutputFileRow(Path.GetFileName(path), path, count));
+                LastOutputDirectory = Path.GetDirectoryName(path);
+            }
+
+            AliasFilePath = airways.AliasFilePath;
+            AliasLineCount = airways.AliasAirwayLineCount;
+            if (airways.AliasFilePath is not null)
+            {
+                LastOutputDirectory ??= Path.GetDirectoryName(airways.AliasFilePath);
+            }
+        }
+
+        foreach (AirwaysMessageGroup group in GroupMessages(result.Messages))
+        {
+            MessageGroups.Add(group);
+        }
+
+        RaisePanelCounts();
+    }
+
+    /// <summary>Marks the run failed with an error message.</summary>
+    /// <param name="error">The failure message.</param>
+    public void FailRun(string error)
+    {
+        _stopwatch?.Stop();
+        ElapsedSeconds = _stopwatch?.Elapsed.TotalSeconds ?? 0;
+        IsRunning = false;
+        HasRun = true;
+        RunError = error;
+        ProgressText = null;
+    }
+
+    /// <summary>Builds the raw Airways settings block for <see cref="AiracServiceSettings.Airways"/>.</summary>
+    /// <param name="outputDirectory">The resolved output directory.</param>
+    /// <param name="addFeBuddyOutputFolder">Whether to wrap output in a <c>FE-Buddy_Output</c> folder.</param>
+    /// <returns>The settings dictionary.</returns>
+    public IReadOnlyDictionary<string, string> BuildSettingsBlock(string outputDirectory, bool addFeBuddyOutputFolder)
+    {
+        Dictionary<string, string> s = new(StringComparer.OrdinalIgnoreCase)
+        {
+            ["OutputDirectory"] = outputDirectory,
+            ["OutputBy"] = OutputBy.ToString(),
+            ["EmitLines"] = YesNo(EmitLines),
+            ["EmitSymbols"] = YesNo(EmitSymbols),
+            ["EmitText"] = YesNo(EmitText),
+            ["BufferAirwayWaypoints"] = YesNo(BufferAirwayWaypoints),
+            ["IncludeFebCustomProperties"] = YesNo(IncludeFebCustomProperties),
+            ["IncludeAirwayWaypointIds"] = YesNo(IncludeAirwayWaypointIds),
+            ["IncludeCrcEramPropertyDefaults"] = YesNo(IncludeCrcEramPropertyDefaults),
+            ["GenerateAliasFile"] = YesNo(GenerateAliasFile),
+            ["AliasRoiScope"] = AliasRoiAirwaysOnly ? "RoiAirways" : "All",
+            ["SplitAtAntimeridian"] = YesNo(SplitAtAntimeridian),
+            ["AddFeBuddyOutputFolder"] = YesNo(addFeBuddyOutputFolder),
+            ["FilterByRoi"] = YesNo(OverrideRoi),
+            ["ExcludedDesignations"] = string.Join(',', Designations.Where(d => !d.Included).Select(d => d.Designation)),
+        };
+
+        if (OverrideRoi)
+        {
+            s["RoiSwLat"] = SwLat;
+            s["RoiSwLon"] = SwLon;
+            s["RoiNeLat"] = NeLat;
+            s["RoiNeLon"] = NeLon;
+        }
+
+        if (IncludeCrcEramPropertyDefaults)
+        {
+            WriteCrcBlock(s, "Line", LineDefaults);
+            WriteCrcBlock(s, "Symbol", SymbolDefaults);
+            WriteCrcBlock(s, "Text", TextDefaults);
+        }
+
+        return s;
+    }
+
+    // ================= save contract =================
+
+    /// <inheritdoc />
+    protected override void LoadFromConfig()
+    {
+        _outputBy = Enum.TryParse(Get("OutputBy"), true, out AirwayGeojsonOutputBy by) ? by : AirwayGeojsonOutputBy.HighLow;
+        _emitLines = GetBool("EmitLines", true);
+        _emitSymbols = GetBool("EmitSymbols", true);
+        _emitText = GetBool("EmitText", true);
+        _bufferAirwayWaypoints = GetBool("BufferAirwayWaypoints", false);
+        _includeFebCustomProperties = GetBool("IncludeFebCustomProperties", false);
+        _includeAirwayWaypointIds = GetBool("IncludeAirwayWaypointIds", false);
+        _includeCrcEramPropertyDefaults = GetBool("IncludeCrcEramPropertyDefaults", true);
+        _generateAliasFile = GetBool("GenerateAliasFile", true);
+        _aliasRoiAirwaysOnly = string.Equals(Get("AliasRoiScope"), "RoiAirways", StringComparison.OrdinalIgnoreCase);
+        _splitAtAntimeridian = GetBool("SplitAtAntimeridian", true);
+        _overrideRoi = GetBool("Roi.OverrideDefaultRoi", false);
+        _swLat = Get("Roi.OverrideCoordindates.SwLat") ?? string.Empty;
+        _swLon = Get("Roi.OverrideCoordindates.SwLon") ?? string.Empty;
+        _neLat = Get("Roi.OverrideCoordindates.NeLat") ?? string.Empty;
+        _neLon = Get("Roi.OverrideCoordindates.NeLon") ?? string.Empty;
+
+        LoadCrcBlock("Line", LineDefaults);
+        LoadCrcBlock("Symbol", SymbolDefaults);
+        LoadCrcBlock("Text", TextDefaults);
+
+        // Re-apply the excluded set to any already-built designation toggles.
+        HashSet<string> excluded = ParseExcludedFromConfig();
+        foreach (DesignationToggle toggle in Designations)
+        {
+            toggle.Included = !excluded.Contains(toggle.Designation);
+        }
+
+        RaiseAllSettingProperties();
+        IsDirty = false;
+    }
+
+    /// <inheritdoc />
+    protected override void WriteToConfig()
+    {
+        Set("OutputBy", OutputBy.ToString());
+        Set("EmitLines", YesNo(EmitLines));
+        Set("EmitSymbols", YesNo(EmitSymbols));
+        Set("EmitText", YesNo(EmitText));
+        Set("BufferAirwayWaypoints", YesNo(BufferAirwayWaypoints));
+        Set("IncludeFebCustomProperties", YesNo(IncludeFebCustomProperties));
+        Set("IncludeAirwayWaypointIds", YesNo(IncludeAirwayWaypointIds));
+        Set("IncludeCrcEramPropertyDefaults", YesNo(IncludeCrcEramPropertyDefaults));
+        Set("GenerateAliasFile", YesNo(GenerateAliasFile));
+        Set("AliasRoiScope", AliasRoiAirwaysOnly ? "RoiAirways" : "All");
+        Set("SplitAtAntimeridian", YesNo(SplitAtAntimeridian));
+        Set("ExcludedDesignations", string.Join(',', Designations.Where(d => !d.Included).Select(d => d.Designation)));
+        Set("Roi.OverrideDefaultRoi", YesNo(OverrideRoi));
+        Set("Roi.OverrideCoordindates.SwLat", SwLat);
+        Set("Roi.OverrideCoordindates.SwLon", SwLon);
+        Set("Roi.OverrideCoordindates.NeLat", NeLat);
+        Set("Roi.OverrideCoordindates.NeLon", NeLon);
+
+        SaveCrcBlock("Line", LineDefaults);
+        SaveCrcBlock("Symbol", SymbolDefaults);
+        SaveCrcBlock("Text", TextDefaults);
+    }
+
+    /// <inheritdoc />
+    protected override string? Validate()
+    {
+        if (OutputBy != AirwayGeojsonOutputBy.None && !EmitLines && !EmitSymbols && !EmitText)
+        {
+            return "Lines, Symbols and Text are all off, but Output is not \"None\". Turn at least one back on, or set Output to \"None\".";
+        }
+
+        if (OverrideRoi)
+        {
+            if (!RoiFilter.IsCoordinateValidFormat(SwLat, SwLon, NeLat, NeLon, out string? formatError))
+            {
+                return $"ROI override: {formatError}";
+            }
+
+            if (double.TryParse(SwLat, NumberStyles.Float, CultureInfo.InvariantCulture, out double swLat)
+                && double.TryParse(SwLon, NumberStyles.Float, CultureInfo.InvariantCulture, out double swLon)
+                && double.TryParse(NeLat, NumberStyles.Float, CultureInfo.InvariantCulture, out double neLat)
+                && double.TryParse(NeLon, NumberStyles.Float, CultureInfo.InvariantCulture, out double neLon)
+                && !RoiFilter.IsCoordinatesRelativePositionValid(swLat, swLon, neLat, neLon, out string? positionError))
+            {
+                return $"ROI override: {positionError}";
+            }
+        }
+
+        return null;
+    }
+
+    // ================= helpers =================
+
+    private void OpenOutputFolder()
+    {
+        if (string.IsNullOrEmpty(LastOutputDirectory) || !Directory.Exists(LastOutputDirectory))
+        {
+            Toast.Warn("Nothing to open", "Run the AIRAC Service first.");
+            return;
+        }
+
+        Process.Start(new ProcessStartInfo(LastOutputDirectory) { UseShellExecute = true });
+    }
+
+    private static string YesNo(bool value) => value ? "Y" : "N";
+
+    private string? Get(string key) => UserConfigFile.GetValue($"{Node}.{key}");
+
+    private bool GetBool(string key, bool fallback)
+    {
+        string? v = Get(key);
+        return v switch
+        {
+            null or "" => fallback,
+            _ => v.Equals("Y", StringComparison.OrdinalIgnoreCase) || v.Equals("true", StringComparison.OrdinalIgnoreCase),
+        };
+    }
+
+    private void Set(string key, string value) => UserConfigFile.TrySetValue($"{Node}.{key}", value);
+
+    private HashSet<string> ParseExcludedFromConfig() =>
+        (Get("ExcludedDesignations") ?? string.Empty)
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(d => d.ToUpperInvariant())
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+    private ObservableCollection<EramClassDefault> BuildClassDefaults(EramFieldKind kind)
+    {
+        (string bcg, string filters, string style)[] seed = kind switch
+        {
+            EramFieldKind.Line => new[] { ("3", "3", "solid"), ("2", "2", "shortDashed"), ("1", "1", "longDashed") },
+            EramFieldKind.Symbol => new[] { ("3", "3", "vor"), ("2", "2", "vor"), ("1", "1", "otherWaypoints") },
+            _ => new[] { ("3", "3", ""), ("2", "2", ""), ("1", "1", "") },
+        };
+
+        ObservableCollection<EramClassDefault> rows = new();
+        for (int i = 0; i < AllClasses.Length; i++)
+        {
+            rows.Add(new EramClassDefault(AllClasses[i].ToString(), kind, seed[i].bcg, seed[i].filters, seed[i].style, MarkDirty));
+        }
+
+        return rows;
+    }
+
+    private void LoadCrcBlock(string kind, ObservableCollection<EramClassDefault> rows)
+    {
+        foreach (EramClassDefault row in rows)
+        {
+            string p = $"CrcEramPropertyDefaults.{kind}s.Airway_{row.ClassName}_{kind}s";
+            row.Bcg = Get($"{p}.bcg") ?? row.Bcg;
+            row.Filters = Get($"{p}.filters") ?? row.Filters;
+            row.Style = Get($"{p}.style") ?? row.Style;
+            row.Thickness = Get($"{p}.thickness") ?? row.Thickness;
+            row.Size = Get($"{p}.size") ?? row.Size;
+        }
+    }
+
+    private void SaveCrcBlock(string kind, ObservableCollection<EramClassDefault> rows)
+    {
+        foreach (EramClassDefault row in rows)
+        {
+            string p = $"CrcEramPropertyDefaults.{kind}s.Airway_{row.ClassName}_{kind}s";
+            Set($"{p}.bcg", row.Bcg);
+            Set($"{p}.filters", row.Filters);
+            if (kind is "Line") Set($"{p}.style", row.Style);
+            if (kind is "Symbol") { Set($"{p}.style", row.Style); Set($"{p}.size", row.Size); }
+            if (kind is "Line") Set($"{p}.thickness", row.Thickness);
+            if (kind is "Text") { Set($"{p}.size", row.Size); }
+        }
+    }
+
+    private static void WriteCrcBlock(Dictionary<string, string> s, string kind, ObservableCollection<EramClassDefault> rows)
+    {
+        foreach (EramClassDefault row in rows)
+        {
+            string p = $"Crc.{row.ClassName}.{kind}";
+            s[$"{p}.bcg"] = row.Bcg;
+            s[$"{p}.filters"] = row.Filters;
+            if (kind is "Line") { s[$"{p}.style"] = row.Style; s[$"{p}.thickness"] = row.Thickness; }
+            if (kind is "Symbol") { s[$"{p}.style"] = row.Style; s[$"{p}.size"] = row.Size; }
+            if (kind is "Text") { s[$"{p}.size"] = row.Size; }
+        }
+    }
+
+    private void RaiseAllSettingProperties()
+    {
+        foreach (string name in new[]
+        {
+            nameof(OutputBy), nameof(OutputModeHint), nameof(EmitLines), nameof(EmitSymbols), nameof(EmitText),
+            nameof(BufferAirwayWaypoints), nameof(IncludeFebCustomProperties), nameof(IncludeAirwayWaypointIds),
+            nameof(IncludeCrcEramPropertyDefaults), nameof(GenerateAliasFile), nameof(AliasRoiAirwaysOnly),
+            nameof(SplitAtAntimeridian), nameof(OverrideRoi), nameof(SwLat), nameof(SwLon), nameof(NeLat), nameof(NeLon),
+        })
+        {
+            OnPropertyChanged(name);
+        }
+    }
+
+    private void RaisePanelCounts()
+    {
+        foreach (string name in new[]
+        {
+            nameof(HasFiles), nameof(HasWarnings), nameof(HasInfoOnly), nameof(WarningGroupCount),
+            nameof(InfoGroupCount), nameof(InfoToggleLabel), nameof(HasAliasFile), nameof(HasExcluded),
+        })
+        {
+            OnPropertyChanged(name);
+        }
+    }
+
+    private static IEnumerable<AirwaysMessageGroup> GroupMessages(IReadOnlyList<ServiceMessage> messages) =>
+        messages
+            .GroupBy(m =>
+            {
+                Match match = AirwayIdPattern.Match(m.Text);
+                return match.Success ? match.Groups[1].Value : "General";
+            })
+            .Select(g => new AirwaysMessageGroup(
+                g.Key,
+                g.Max(m => m.Level),
+                g.Select(m => m.Text).ToList()))
+            .OrderByDescending(g => g.Level)
+            .ThenBy(g => g.AirwayId, StringComparer.OrdinalIgnoreCase);
+
 }

@@ -1,0 +1,100 @@
+<!--
+    AiracServiceView  -  the AIRAC Services screen (remediation plan Phase 7).
+    Cycle menu + facility at the top, the sub-service list (Airways only), the
+    hosted sub-service page with a breadcrumb, and Run AIRAC Service at the end.
+-->
+<UserControl x:Class="FeBuddy.Wpf.Views.AiracServiceView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:FeBuddy.Wpf.ViewModels"
+             xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance vm:AiracServiceViewModel}"
+             d:DesignWidth="1000" d:DesignHeight="760">
+
+    <Grid Background="{StaticResource Brush.Bg.Base}">
+        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <StackPanel Margin="28" MaxWidth="1080" HorizontalAlignment="Left">
+
+                <!-- header (7.1) -->
+                <TextBlock Text="AIRAC Services" Style="{StaticResource Text.Display}" />
+
+                <!-- waiting message (2.5) -->
+                <Border Style="{StaticResource Card}" Margin="0,16,0,0" Padding="16"
+                        Background="{StaticResource Brush.Warn.Soft}"
+                        Visibility="{Binding IsReady, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}">
+                    <TextBlock Text="{Binding WaitingMessage}" Style="{StaticResource Text.Body}" TextWrapping="Wrap" />
+                </Border>
+
+                <!-- cycle + facility (7.2) -->
+                <Border Style="{StaticResource Card}" Margin="0,16,0,0">
+                    <StackPanel>
+                        <ctl:SectionHeader Label="CYCLE" />
+                        <ItemsControl ItemsSource="{Binding CycleOptions}" Margin="0,4,0,0">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <DockPanel Margin="0,3">
+                                        <TextBlock DockPanel.Dock="Right" Text="{Binding State}"
+                                                   Style="{StaticResource Text.Caption}" VerticalAlignment="Center" />
+                                        <RadioButton GroupName="AiracCycle" Content="{Binding Label}"
+                                                     Foreground="{StaticResource Brush.Text.Primary}"
+                                                     IsChecked="{Binding IsSelected, Mode=TwoWay}" />
+                                    </DockPanel>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <TextBlock Text="{Binding SelectedCycleLabel}" Style="{StaticResource Text.Caption}"
+                                   FontFamily="{StaticResource Font.Mono}" Margin="0,8,0,0" />
+
+                        <Border Style="{StaticResource Divider}" Margin="0,14" />
+
+                        <ctl:SectionHeader Label="FACILITY" />
+                        <TextBlock Style="{StaticResource Text.Caption}" Margin="0,4,0,6"
+                                   Text="Your ARTCC / facility, from the selected cycle's parsed airports." />
+                        <ComboBox ItemsSource="{Binding FacilityOptions}"
+                                  SelectedItem="{Binding SelectedArtccId}"
+                                  IsEnabled="{Binding IsReady}"
+                                  Width="220" HorizontalAlignment="Left" />
+                    </StackPanel>
+                </Border>
+
+                <!-- sub-service list (7.3) -->
+                <Border Style="{StaticResource Card}" Margin="0,16,0,0">
+                    <StackPanel>
+                        <ctl:SectionHeader Label="SUB-SERVICES" />
+                        <ItemsControl ItemsSource="{Binding SubServices}" Margin="0,4,0,0">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Button HorizontalAlignment="Left" Margin="0,3"
+                                            Style="{StaticResource Button.Ghost}"
+                                            Content="{Binding BreadcrumbTitle}"
+                                            Command="{Binding DataContext.OpenSubServiceCommand,
+                                                      RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                            CommandParameter="{Binding}" />
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+
+                <!-- hosted sub-service page -->
+                <TextBlock Text="{Binding Breadcrumb}" Style="{StaticResource Text.Label}" Margin="2,20,0,8" />
+                <ContentControl Content="{Binding SelectedSubService}" />
+
+                <!-- Build Cycle (7.9) -->
+                <Border Style="{StaticResource Card}" Margin="0,18,0,24" Padding="20">
+                    <DockPanel>
+                        <Button DockPanel.Dock="Right" Style="{StaticResource Button.Primary}"
+                                Content="Run AIRAC Service" MinWidth="180"
+                                Command="{Binding RunCommand}" />
+                        <TextBlock VerticalAlignment="Center" Style="{StaticResource Text.Caption}"
+                                   Text="Unsaved sub-service settings are saved before the run." />
+                    </DockPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

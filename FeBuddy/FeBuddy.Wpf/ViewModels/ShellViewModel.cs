@@ -52,7 +52,7 @@ public sealed class ShellViewModel : ObservableObject
         PrimaryNav =
         [
             Nav("Dashboard",      GlyphDashboard,     () => new DashboardViewModel()),
-            Nav("AIRAC Service",  GlyphAiracService,  () => new AiracViewModel()),
+            Nav("AIRAC Service",  GlyphAiracService,  () => new AiracServiceViewModel()),
             Nav("Map",            GlyphMap,           () => new MapViewModel()),
         ];
 

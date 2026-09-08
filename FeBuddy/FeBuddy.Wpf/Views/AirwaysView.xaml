@@ -1,9 +1,7 @@
 <!--
-    AirwaysView  -  the Airways screen.
-    Unlike every other screen in this shell, this one is REAL: it picks a NASR
-    source folder and an output folder, builds the same settings dictionary
-    AirwayService.Run accepts, and calls it for real. Results (airway count,
-    files written, alias file, warnings) come straight back from the library.
+    AirwaysView  -  the Airways sub-service page, hosted inside the AIRAC Service
+    screen (remediation plan Phase 7). Its own settings menu (Save / Undo) plus
+    the run result panel. The run is launched by the parent's Run AIRAC Service.
 -->
 <UserControl x:Class="FeBuddy.Wpf.Views.AirwaysView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -12,465 +10,279 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:FeBuddy.Wpf.ViewModels"
              xmlns:m="clr-namespace:FeBuddy.Wpf.ViewModels.Models"
+             xmlns:awy="clr-namespace:FEBuddyLibrary.Models.Services.Airac.Airways;assembly=FEBuddyLibrary"
              xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance vm:AirwaysViewModel, IsDesignTimeCreatable=True}"
-             d:DesignWidth="900" d:DesignHeight="1100">
+             d:DesignWidth="900" d:DesignHeight="1200">
 
     <UserControl.Resources>
-        <Style x:Key="OptionCaption" TargetType="TextBlock" BasedOn="{StaticResource Text.Caption}">
-            <Setter Property="Margin" Value="0,2,0,0" />
-        </Style>
+        <ObjectDataProvider x:Key="OutputByValues" MethodName="GetValues" ObjectType="{x:Type awy:AirwayGeojsonOutputBy}">
+            <ObjectDataProvider.MethodParameters>
+                <x:Type TypeName="awy:AirwayGeojsonOutputBy" />
+            </ObjectDataProvider.MethodParameters>
+        </ObjectDataProvider>
+
+        <!-- one CRC ERAM class row -->
+        <DataTemplate x:Key="EramRow" DataType="{x:Type m:EramClassDefault}">
+            <Grid Margin="0,3">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="70" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="{Binding ClassName}" Style="{StaticResource Text.Body.Strong}" VerticalAlignment="Center" />
+                <TextBox Grid.Column="1" Margin="4,0" Text="{Binding Bcg, UpdateSourceTrigger=PropertyChanged}"
+                         ToolTip="BCG group: an integer 1–40." />
+                <TextBox Grid.Column="2" Margin="4,0" Text="{Binding Filters, UpdateSourceTrigger=PropertyChanged}"
+                         ToolTip="Filters: comma-separated integers, each 0–40, at least one entry." />
+                <TextBox Grid.Column="3" Margin="4,0" Text="{Binding Style, UpdateSourceTrigger=PropertyChanged}"
+                         Visibility="{Binding ShowStyle, Converter={StaticResource BoolToVis}}"
+                         ToolTip="Style: see the CRC GeoJSON concepts for the allowed values per kind." />
+                <TextBox Grid.Column="4" Margin="4,0" Text="{Binding Thickness, UpdateSourceTrigger=PropertyChanged}"
+                         Visibility="{Binding ShowThickness, Converter={StaticResource BoolToVis}}"
+                         ToolTip="Thickness: an integer 1–3." />
+                <TextBox Grid.Column="4" Margin="4,0" Text="{Binding Size, UpdateSourceTrigger=PropertyChanged}"
+                         Visibility="{Binding ShowSize, Converter={StaticResource BoolToVis}}"
+                         ToolTip="Size: an integer 1–4." />
+            </Grid>
+        </DataTemplate>
+
+        <!-- one output file row -->
+        <DataTemplate x:Key="FileRow" DataType="{x:Type m:AirwaysOutputFileRow}">
+            <DockPanel Margin="0,3">
+                <TextBlock DockPanel.Dock="Right" Text="{Binding FeatureCount, StringFormat={}{0} feat.}"
+                           Style="{StaticResource Text.Caption}" VerticalAlignment="Center" />
+                <TextBlock Text="{Binding Name}" FontFamily="{StaticResource Font.Mono}" FontSize="11"
+                           Foreground="{StaticResource Brush.Text.Primary}"
+                           TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+            </DockPanel>
+        </DataTemplate>
+
+        <!-- one message group -->
+        <DataTemplate x:Key="MessageGroup" DataType="{x:Type m:AirwaysMessageGroup}">
+            <Border Margin="0,4" Padding="10" CornerRadius="{StaticResource Radius.Chip}"
+                    Background="{StaticResource Brush.Bg.Sunken}">
+                <StackPanel>
+                    <DockPanel>
+                        <TextBlock DockPanel.Dock="Right" Text="{Binding Count, StringFormat={}{0} msg}"
+                                   Style="{StaticResource Text.Caption}" />
+                        <TextBlock Text="{Binding AirwayId}" Style="{StaticResource Text.Body.Strong}" />
+                    </DockPanel>
+                    <ItemsControl ItemsSource="{Binding Messages}" Margin="0,4,0,0">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding}" Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,1" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+        </DataTemplate>
     </UserControl.Resources>
 
-    <Grid Background="{StaticResource Brush.Bg.Base}">
-        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-            <StackPanel Margin="28" MaxWidth="820" HorizontalAlignment="Left">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <StackPanel MaxWidth="820" HorizontalAlignment="Left">
 
-                <TextBlock Style="{StaticResource Text.H1}" Text="Airways" />
-                <TextBlock Style="{StaticResource Text.Body}" Margin="0,6,0,0"
-                           Text="Build airway GeoJSON and the .FF alias file straight from a NASR CSV subscription. This screen calls the real AirwayService - nothing here is scripted." />
+            <!-- ============ save / undo bar ============ -->
+            <DockPanel Margin="0,0,0,10">
+                <Button DockPanel.Dock="Right" Style="{StaticResource Button.Subtle}" Content="Undo last save"
+                        Command="{Binding UndoLastSaveCommand}" Margin="8,0,0,0" />
+                <Button DockPanel.Dock="Right" Style="{StaticResource Button.Primary}" Content="Save"
+                        Command="{Binding SaveCommand}" MinWidth="90" />
+                <TextBlock VerticalAlignment="Center" Style="{StaticResource Text.Caption}"
+                           Text="Unsaved changes" Foreground="{StaticResource Brush.Warn}"
+                           Visibility="{Binding IsDirty, Converter={StaticResource BoolToVis}}" />
+            </DockPanel>
+            <TextBlock Text="{Binding ValidationError}" Style="{StaticResource Text.Caption}"
+                       Foreground="{StaticResource Brush.Danger}" TextWrapping="Wrap" Margin="0,0,0,8"
+                       Visibility="{Binding ValidationError, Converter={StaticResource StringToVis}}" />
 
-                <!-- paths -->
-                <Border Style="{StaticResource Card}" Margin="0,18,0,0">
-                    <StackPanel>
-                        <ctl:SectionHeader Label="SOURCE &amp; OUTPUT" />
+            <!-- ============ GeoJSON output ============ -->
+            <Border Style="{StaticResource Card}">
+                <StackPanel>
+                    <ctl:SectionHeader Label="GEOJSON OUTPUT" />
+                    <ComboBox ItemsSource="{Binding Source={StaticResource OutputByValues}}"
+                              SelectedItem="{Binding OutputBy}" Width="180" HorizontalAlignment="Left" Margin="0,4,0,0" />
+                    <TextBlock Text="{Binding OutputModeHint}" Style="{StaticResource Text.Caption}"
+                               TextWrapping="Wrap" Margin="0,8,0,0" />
 
-                        <TextBlock Style="{StaticResource Text.Label}" Text="NASR CSV FOLDER" Margin="0,0,0,5" />
-                        <DockPanel>
-                            <Button DockPanel.Dock="Right" Style="{StaticResource Button.Subtle}" Content="Browse..."
-                                    Margin="8,0,0,0" Command="{Binding BrowseNasrCommand}" />
-                            <TextBox Style="{StaticResource Field}" Tag="e.g. D:\NASR\01_Oct_2026_CSV"
-                                     Text="{Binding NasrSourceDirectory, UpdateSourceTrigger=PropertyChanged}" />
-                        </DockPanel>
-                        <TextBlock Style="{StaticResource OptionCaption}" Text="The unzipped folder containing AWY_BASE.csv, AWY_SEG_ALT.csv, FIX_BASE.csv, NAV_BASE.csv, and APT_BASE.csv." />
-
-                        <Border Style="{StaticResource Divider}" Margin="0,14" />
-
-                        <TextBlock Style="{StaticResource Text.Label}" Text="OR DOWNLOAD A CYCLE FROM THE FAA" Margin="0,0,0,7" />
-                        <StackPanel Orientation="Horizontal">
-                            <RadioButton Style="{StaticResource Pill.Radio}" GroupName="CyclePosition" Content="Previous"
-                                         IsChecked="{Binding SelectedCyclePosition, Converter={StaticResource EnumToBool}, ConverterParameter=Previous}" />
-                            <RadioButton Style="{StaticResource Pill.Radio}" GroupName="CyclePosition" Content="Current"
-                                         IsChecked="{Binding SelectedCyclePosition, Converter={StaticResource EnumToBool}, ConverterParameter=Current}" />
-                            <RadioButton Style="{StaticResource Pill.Radio}" GroupName="CyclePosition" Content="Next" Margin="0"
-                                         IsChecked="{Binding SelectedCyclePosition, Converter={StaticResource EnumToBool}, ConverterParameter=Next}" />
-                        </StackPanel>
-                        <DockPanel Margin="0,10,0,0">
-                            <Button DockPanel.Dock="Right" Style="{StaticResource Button.Subtle}" Content="Download"
-                                    Margin="8,0,0,0" Command="{Binding DownloadCycleCommand}" IsEnabled="{Binding CanDownloadCycle}" />
-                            <TextBlock Style="{StaticResource Text.Caption}" VerticalAlignment="Center"
-                                       Text="{Binding SelectedCycleLabel}" />
-                        </DockPanel>
-                        <TextBlock Style="{StaticResource OptionCaption}"
-                                   Foreground="{StaticResource Brush.Accent.Text}"
-                                   Visibility="{Binding HasDownloadStatus, Converter={StaticResource BoolToVis}}"
-                                   Text="{Binding DownloadStatusText}" />
-                        <TextBlock Style="{StaticResource OptionCaption}"
-                                   Text="Downloads to %APPDATA%\FE-Buddy\AiracCycles and reuses it next time; keeps at most the previous, current, and next cycle cached." />
-
-                        <Border Style="{StaticResource Divider}" Margin="0,14" />
-
-                        <TextBlock Style="{StaticResource Text.Label}" Text="OUTPUT FOLDER" Margin="0,0,0,5" />
-                        <DockPanel>
-                            <Button DockPanel.Dock="Right" Style="{StaticResource Button.Subtle}" Content="Browse..."
-                                    Margin="8,0,0,0" Command="{Binding BrowseOutputCommand}" />
-                            <TextBox Style="{StaticResource Field}" Tag="e.g. D:\FE-Buddy-Output"
-                                     Text="{Binding OutputDirectory, UpdateSourceTrigger=PropertyChanged}" />
-                        </DockPanel>
-                        <TextBlock Style="{StaticResource OptionCaption}"
-                                   Text="Files are written under FE-Buddy_Output\Airways\Geojson and \Alias inside this folder." />
-                    </StackPanel>
-                </Border>
-
-                <!-- output settings -->
-                <Border Style="{StaticResource Card}" Margin="0,16,0,0">
-                    <StackPanel>
-                        <ctl:SectionHeader Label="OUTPUT SETTINGS" />
-                        <StackPanel Orientation="Horizontal">
-                            <RadioButton Style="{StaticResource Pill.Radio}" GroupName="OutputMode" Content="None"
-                                         IsChecked="{Binding OutputBy, Converter={StaticResource EnumToBool}, ConverterParameter=None}" />
-                            <RadioButton Style="{StaticResource Pill.Radio}" GroupName="OutputMode" Content="High &amp; Low"
-                                         IsChecked="{Binding OutputBy, Converter={StaticResource EnumToBool}, ConverterParameter=HighLow}" />
-                            <RadioButton Style="{StaticResource Pill.Radio}" GroupName="OutputMode" Content="By designation"
-                                         IsChecked="{Binding OutputBy, Converter={StaticResource EnumToBool}, ConverterParameter=Designation}" />
-                        </StackPanel>
-                        <TextBlock Style="{StaticResource Text.Caption}" Margin="0,12,0,0" Text="{Binding OutputModeHint}" />
-
-                        <Border Style="{StaticResource Divider}" Margin="0,14" />
-                        <DockPanel>
-                            <ToggleButton DockPanel.Dock="Left" Style="{StaticResource Switch}"
-                                          Margin="0,2,14,0" VerticalAlignment="Top" IsChecked="{Binding BufferAirwayWaypoints}" />
-                            <StackPanel>
-                                <TextBlock Style="{StaticResource Text.Body.Strong}" Text="Buffer airway waypoints" />
-                                <TextBlock Style="{StaticResource OptionCaption}"
-                                           Text="Stops each leg 2.5 nm short of 5-character fixes and 5 nm short of NAVAIDs/airports." />
-                            </StackPanel>
-                        </DockPanel>
-
-                        <Border Style="{StaticResource Divider}" Margin="0,14" />
-                        <DockPanel>
-                            <ToggleButton DockPanel.Dock="Left" Style="{StaticResource Switch}"
-                                          Margin="0,2,14,0" VerticalAlignment="Top" IsChecked="{Binding IncludeFebCustomProperties}" />
-                            <StackPanel>
-                                <TextBlock Style="{StaticResource Text.Body.Strong}" Text="Include feb.* custom properties" />
-                                <TextBlock Style="{StaticResource OptionCaption}"
-                                           Text="Adds &quot;feb.AwyId&quot; to every Lines feature." />
-                            </StackPanel>
-                        </DockPanel>
-
-                        <Border Style="{StaticResource Divider}" Margin="0,14" />
-                        <DockPanel>
-                            <ToggleButton DockPanel.Dock="Left" Style="{StaticResource Switch}"
-                                          Margin="0,2,14,0" VerticalAlignment="Top" IsChecked="{Binding IncludeAirwayWaypointIds}" />
-                            <StackPanel>
-                                <TextBlock Style="{StaticResource Text.Body.Strong}" Text="Include airway waypoint IDs" />
-                                <TextBlock Style="{StaticResource OptionCaption}"
-                                           Text="Adds &quot;feb.AwyWaypoints&quot; too. Only takes effect when feb.* properties are on." />
-                            </StackPanel>
-                        </DockPanel>
-
-                        <Border Style="{StaticResource Divider}" Margin="0,14" />
-                        <DockPanel>
-                            <ToggleButton DockPanel.Dock="Left" Style="{StaticResource Switch}"
-                                          Margin="0,2,14,0" VerticalAlignment="Top" IsChecked="{Binding GenerateAliasFile}" />
-                            <StackPanel>
-                                <TextBlock Style="{StaticResource Text.Body.Strong}" Text="Generate the .FF alias file" />
-                                <TextBlock Style="{StaticResource OptionCaption}"
-                                           Text="Draw_Airway_Points.txt - written independently of the GeoJSON output mode above." />
-                            </StackPanel>
-                        </DockPanel>
-
-                        <Border Style="{StaticResource Divider}" Margin="0,14" />
-                        <DockPanel>
-                            <ToggleButton DockPanel.Dock="Left" Style="{StaticResource Switch}"
-                                          Margin="0,2,14,0" VerticalAlignment="Top" IsChecked="{Binding SplitAtAntimeridian}" />
-                            <StackPanel>
-                                <TextBlock Style="{StaticResource Text.Body.Strong}" Text="Split geometry at the antimeridian" />
-                                <TextBlock Style="{StaticResource OptionCaption}"
-                                           Text="Keeps Pacific-crossing airways from wrapping across the whole map." />
-                            </StackPanel>
-                        </DockPanel>
-
-                        <Border Style="{StaticResource Divider}" Margin="0,14" />
-                        <DockPanel>
-                            <ToggleButton DockPanel.Dock="Left" Style="{StaticResource Switch}"
-                                          Margin="0,2,14,0" VerticalAlignment="Top" IsChecked="{Binding PrettyPrintOutput}" />
-                            <StackPanel>
-                                <TextBlock Style="{StaticResource Text.Body.Strong}" Text="Pretty-print GeoJSON (DevMode)" />
-                                <TextBlock Style="{StaticResource OptionCaption}"
-                                           Text="Off writes compact single-line GeoJSON to save disk space; on indents it for troubleshooting." />
-                            </StackPanel>
-                        </DockPanel>
-                    </StackPanel>
-                </Border>
-
-                <!-- CRC ERAM defaults -->
-                <Border Style="{StaticResource Card}" Margin="0,16,0,0">
-                    <StackPanel>
-                        <DockPanel>
-                            <ctl:SectionHeader DockPanel.Dock="Top" Label="CRC ERAM DEFAULTS" />
-                        </DockPanel>
-                        <DockPanel>
-                            <ToggleButton DockPanel.Dock="Left" Style="{StaticResource Switch}"
-                                          Margin="0,2,14,0" VerticalAlignment="Top" IsChecked="{Binding IncludeCrcEramPropertyDefaults}" />
-                            <StackPanel>
-                                <TextBlock Style="{StaticResource Text.Body.Strong}" Text="Write isDefaults features" />
-                                <TextBlock Style="{StaticResource OptionCaption}"
-                                           Text="Without this, generated features carry no CRC properties and won't display on an ERAM window." />
-                            </StackPanel>
-                        </DockPanel>
-
-                        <StackPanel Margin="0,14,0,0"
-                                    Visibility="{Binding IncludeCrcEramPropertyDefaults, Converter={StaticResource BoolToVis}}">
-
-                            <StackPanel Orientation="Horizontal">
-                                <RadioButton Style="{StaticResource Pill.Radio}" GroupName="EramClass" Content="High"
-                                             IsChecked="{Binding EramClass, Converter={StaticResource EnumToBool}, ConverterParameter=High}" />
-                                <RadioButton Style="{StaticResource Pill.Radio}" GroupName="EramClass" Content="Low"
-                                             IsChecked="{Binding EramClass, Converter={StaticResource EnumToBool}, ConverterParameter=Low}" />
-                                <RadioButton Style="{StaticResource Pill.Radio}" GroupName="EramClass" Content="Other" Margin="0"
-                                             IsChecked="{Binding EramClass, Converter={StaticResource EnumToBool}, ConverterParameter=Other}" />
-                            </StackPanel>
-
-                            <DockPanel Margin="0,12,0,0">
-                                <TextBlock DockPanel.Dock="Left" Style="{StaticResource Text.Label}" Text="PROPERTY"
-                                           VerticalAlignment="Center" />
-                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                                    <RadioButton Style="{StaticResource Pill.Radio}" GroupName="Eram" Content="Lines"
-                                                 IsChecked="{Binding EramTab, Converter={StaticResource EnumToBool}, ConverterParameter=Lines}" />
-                                    <RadioButton Style="{StaticResource Pill.Radio}" GroupName="Eram" Content="Symbols"
-                                                 IsChecked="{Binding EramTab, Converter={StaticResource EnumToBool}, ConverterParameter=Symbols}" />
-                                    <RadioButton Style="{StaticResource Pill.Radio}" GroupName="Eram" Content="Text" Margin="0"
-                                                 IsChecked="{Binding EramTab, Converter={StaticResource EnumToBool}, ConverterParameter=Text}" />
-                                </StackPanel>
-                            </DockPanel>
-
-                            <Grid Margin="0,12,0,0" DataContext="{Binding CurrentEramDefault}">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" /><ColumnDefinition Width="10" />
-                                    <ColumnDefinition Width="*" /><ColumnDefinition Width="10" />
-                                    <ColumnDefinition Width="*" /><ColumnDefinition Width="10" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-                                <StackPanel Grid.Column="0">
-                                    <TextBlock Style="{StaticResource Text.Label}" Text="BCG" Margin="0,0,0,5" />
-                                    <TextBox Style="{StaticResource Field}" Text="{Binding Bcg, UpdateSourceTrigger=PropertyChanged}" />
-                                </StackPanel>
-                                <StackPanel Grid.Column="2">
-                                    <TextBlock Style="{StaticResource Text.Label}" Text="FILTERS" Margin="0,0,0,5" />
-                                    <TextBox Style="{StaticResource Field}" Text="{Binding Filters, UpdateSourceTrigger=PropertyChanged}" />
-                                </StackPanel>
-                                <StackPanel Grid.Column="4">
-                                    <TextBlock Style="{StaticResource Text.Label}" Text="STYLE" Margin="0,0,0,5" />
-                                    <TextBox Style="{StaticResource Field}" Text="{Binding Style, UpdateSourceTrigger=PropertyChanged}" />
-                                </StackPanel>
-                                <StackPanel Grid.Column="6">
-                                    <TextBlock Style="{StaticResource Text.Label}" Text="THICKNESS"
-                                               Visibility="{Binding DataContext.EramShowThickness, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVis}}"
-                                               Margin="0,0,0,5" />
-                                    <TextBox Style="{StaticResource Field}"
-                                             Visibility="{Binding DataContext.EramShowThickness, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVis}}"
-                                             Text="{Binding Thickness, UpdateSourceTrigger=PropertyChanged}" />
-                                    <TextBlock Style="{StaticResource Text.Label}" Text="SIZE"
-                                               Visibility="{Binding DataContext.EramShowThickness, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}"
-                                               Margin="0,0,0,5" />
-                                    <TextBox Style="{StaticResource Field}"
-                                             Visibility="{Binding DataContext.EramShowThickness, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}"
-                                             Text="{Binding Size, UpdateSourceTrigger=PropertyChanged}" />
-                                </StackPanel>
-                            </Grid>
-                            <Grid Margin="0,10,0,0" DataContext="{Binding CurrentEramDefault}"
-                                  Visibility="{Binding DataContext.EramShowText, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVis}}">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto" /><ColumnDefinition Width="20" />
-                                    <ColumnDefinition Width="*" /><ColumnDefinition Width="10" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-                                <StackPanel Grid.Column="0">
-                                    <TextBlock Style="{StaticResource Text.Label}" Text="UNDERLINE" Margin="0,0,0,5" />
-                                    <ToggleButton Style="{StaticResource Switch}" IsChecked="{Binding Underline}" />
-                                </StackPanel>
-                                <StackPanel Grid.Column="2">
-                                    <TextBlock Style="{StaticResource Text.Label}" Text="X OFFSET" Margin="0,0,0,5" />
-                                    <TextBox Style="{StaticResource Field}" Text="{Binding XOffset, UpdateSourceTrigger=PropertyChanged}" />
-                                </StackPanel>
-                                <StackPanel Grid.Column="4">
-                                    <TextBlock Style="{StaticResource Text.Label}" Text="Y OFFSET" Margin="0,0,0,5" />
-                                    <TextBox Style="{StaticResource Field}" Text="{Binding YOffset, UpdateSourceTrigger=PropertyChanged}" />
-                                </StackPanel>
-                            </Grid>
-                            <TextBlock Style="{StaticResource Text.Caption}" Margin="0,10,0,0"
-                                       Text="Text's own &quot;text&quot; is never configured here - every waypoint's label is generated from its own ID." />
-                        </StackPanel>
-                    </StackPanel>
-                </Border>
-
-                <!-- region of interest -->
-                <Border Style="{StaticResource Card}" Margin="0,16,0,0">
-                    <StackPanel>
-                        <ctl:SectionHeader Label="REGION OF INTEREST" />
-                        <DockPanel>
-                            <ToggleButton DockPanel.Dock="Left" Style="{StaticResource Switch}"
-                                          Margin="0,2,14,0" VerticalAlignment="Top" IsChecked="{Binding FilterByRoi}" />
-                            <StackPanel>
-                                <TextBlock Style="{StaticResource Text.Body.Strong}" Text="Clip output to a region" />
-                                <TextBlock Style="{StaticResource OptionCaption}"
-                                           Text="Off pulls every airway in the NASR dataset, worldwide." />
-                            </StackPanel>
-                        </DockPanel>
-
-                        <StackPanel Margin="0,16,0,0"
-                                    Visibility="{Binding FilterByRoi, Converter={StaticResource BoolToVis}}">
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="14" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="14" />
-                                    <RowDefinition Height="Auto" />
-                                </Grid.RowDefinitions>
-                                <StackPanel Grid.Row="0" Grid.Column="0">
-                                    <TextBlock Style="{StaticResource Text.Label}" Text="NE LATITUDE" Margin="0,0,0,5" />
-                                    <TextBox Style="{StaticResource Field}" Tag="e.g. 43.0"
-                                             Text="{Binding NeLat, UpdateSourceTrigger=PropertyChanged}" />
-                                </StackPanel>
-                                <StackPanel Grid.Row="0" Grid.Column="2">
-                                    <TextBlock Style="{StaticResource Text.Label}" Text="NE LONGITUDE" Margin="0,0,0,5" />
-                                    <TextBox Style="{StaticResource Field}" Tag="e.g. -78.0"
-                                             Text="{Binding NeLon, UpdateSourceTrigger=PropertyChanged}" />
-                                </StackPanel>
-                                <StackPanel Grid.Row="2" Grid.Column="0">
-                                    <TextBlock Style="{StaticResource Text.Label}" Text="SW LATITUDE" Margin="0,0,0,5" />
-                                    <TextBox Style="{StaticResource Field}" Tag="e.g. 38.0"
-                                             Text="{Binding SwLat, UpdateSourceTrigger=PropertyChanged}" />
-                                </StackPanel>
-                                <StackPanel Grid.Row="2" Grid.Column="2">
-                                    <TextBlock Style="{StaticResource Text.Label}" Text="SW LONGITUDE" Margin="0,0,0,5" />
-                                    <TextBox Style="{StaticResource Field}" Tag="e.g. -85.0"
-                                             Text="{Binding SwLon, UpdateSourceTrigger=PropertyChanged}" />
-                                </StackPanel>
-                            </Grid>
-                            <TextBlock Style="{StaticResource Text.Caption}" Margin="0,10,0,0"
-                                       Text="Decimal degrees. The southwest corner must sit south and west of the northeast corner - checked when you run." />
-                        </StackPanel>
-                    </StackPanel>
-                </Border>
-
-                <!-- footer: buttons, or the real run panel -->
-                <Grid Margin="0,20,0,0">
-                    <StackPanel Orientation="Horizontal"
-                                Visibility="{Binding ShowRunPanel, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}">
-                        <Button Style="{StaticResource Button.Primary}" Content="Run Airways"
-                                Command="{Binding RunCommand}" />
-                        <Button Style="{StaticResource Button.Ghost}" Content="Reset" Margin="10,0,0,0"
-                                Command="{Binding ResetCommand}" />
+                    <Border Style="{StaticResource Divider}" Margin="0,12" />
+                    <TextBlock Text="Emit which files" Style="{StaticResource Text.Label}" />
+                    <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                        <CheckBox Content="_Lines"   IsChecked="{Binding EmitLines}"   Margin="0,0,16,0" />
+                        <CheckBox Content="_Symbols" IsChecked="{Binding EmitSymbols}" Margin="0,0,16,0" />
+                        <CheckBox Content="_Text"    IsChecked="{Binding EmitText}" />
                     </StackPanel>
 
-                    <Border Style="{StaticResource Card}"
-                            Visibility="{Binding ShowRunPanel, Converter={StaticResource BoolToVis}}">
-                        <StackPanel>
-                            <!-- running -->
-                            <StackPanel Visibility="{Binding IsRunning, Converter={StaticResource BoolToVis}}">
-                                <TextBlock Style="{StaticResource Text.H2}" Text="RUNNING" />
-                                <TextBlock Style="{StaticResource Text.Body}" Margin="0,6,0,0"
-                                           Text="Parsing NASR data and building airways..." />
-                                <TextBlock Style="{StaticResource Text.Mono}" Margin="0,10,0,0"
-                                           Foreground="{StaticResource Brush.Text.Tertiary}" Text="{Binding ElapsedText}" />
-                            </StackPanel>
+                    <Border Style="{StaticResource Divider}" Margin="0,12" />
+                    <CheckBox Content="Buffer airway waypoints (lines stop short of the waypoint symbols)"
+                              IsChecked="{Binding BufferAirwayWaypoints}" />
+                    <CheckBox Content="Include FE-Buddy custom properties" IsChecked="{Binding IncludeFebCustomProperties}" Margin="0,8,0,0" />
+                    <TextBlock Text="{Binding FebPropertiesDescription}" Style="{StaticResource Text.Caption}"
+                               TextWrapping="Wrap" Margin="20,4,0,0" />
+                    <CheckBox Content="Also include the airway waypoint ID list (feb.AwyWaypoints)"
+                              IsChecked="{Binding IncludeAirwayWaypointIds}" IsEnabled="{Binding IncludeFebCustomProperties}"
+                              Margin="20,6,0,0" />
+                </StackPanel>
+            </Border>
 
-                            <!-- succeeded -->
-                            <StackPanel Visibility="{Binding RunSucceeded, Converter={StaticResource BoolToVis}}">
-                                <DockPanel>
-                                    <TextBlock DockPanel.Dock="Left" Style="{StaticResource Text.H2}" Text="RUN COMPLETE" />
-                                    <TextBlock DockPanel.Dock="Right" HorizontalAlignment="Right" Style="{StaticResource Text.Mono}"
-                                               Foreground="{StaticResource Brush.Text.Tertiary}" Text="{Binding ElapsedText}" />
-                                </DockPanel>
+            <!-- ============ designations (7.4) ============ -->
+            <Border Style="{StaticResource Card}" Margin="0,16,0,0">
+                <StackPanel>
+                    <ctl:SectionHeader Label="DESIGNATIONS TO INCLUDE" />
+                    <TextBlock Style="{StaticResource Text.Caption}" Margin="0,4,0,8"
+                               Text="Derived from the selected cycle's AWY_IDs. All on by default; the deselected set is saved as ExcludedDesignations." />
+                    <TextBlock Style="{StaticResource Text.Caption}" Foreground="{StaticResource Brush.Text.Tertiary}"
+                               Text="Waiting for AIRAC data…"
+                               Visibility="{Binding IsCycleReady, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
+                    <ItemsControl ItemsSource="{Binding Designations}" IsEnabled="{Binding IsCycleReady}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="{x:Type m:DesignationToggle}">
+                                <CheckBox Content="{Binding Designation}" IsChecked="{Binding Included}" Margin="0,0,14,6" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
 
-                                <Grid Margin="0,14,0,0">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" /><ColumnDefinition Width="12" />
-                                        <ColumnDefinition Width="*" /><ColumnDefinition Width="12" />
-                                        <ColumnDefinition Width="*" />
-                                    </Grid.ColumnDefinitions>
-                                    <ctl:StatTile Grid.Column="0" Glyph="{StaticResource Icon.Layers}"
-                                                  Value="{Binding AirwayCount, StringFormat=N0}" Caption="Airways built" />
-                                    <ctl:StatTile Grid.Column="2" Glyph="{StaticResource Icon.Files}"
-                                                  Value="{Binding Files.Count, StringFormat=N0}" Caption="GeoJSON files written" />
-                                    <ctl:StatTile Grid.Column="4" Glyph="{StaticResource Icon.Tag}"
-                                                  Value="{Binding AliasLineCount, StringFormat=N0}" Caption="Alias lines written" />
-                                </Grid>
+            <!-- ============ CRC ERAM defaults (7.4) ============ -->
+            <Border Style="{StaticResource Card}" Margin="0,16,0,0">
+                <StackPanel>
+                    <DockPanel>
+                        <CheckBox DockPanel.Dock="Right" Content="Include" IsChecked="{Binding IncludeCrcEramPropertyDefaults}" />
+                        <ctl:SectionHeader Label="CRC ERAM DEFAULTS" />
+                    </DockPanel>
+                    <StackPanel IsEnabled="{Binding IncludeCrcEramPropertyDefaults}" Margin="0,6,0,0">
+                        <DockPanel>
+                            <CheckBox DockPanel.Dock="Right" Content="Emit" IsChecked="{Binding EmitLines}" />
+                            <TextBlock Text="Lines" Style="{StaticResource Text.Label}" />
+                        </DockPanel>
+                        <ItemsControl ItemsSource="{Binding LineDefaults}" ItemTemplate="{StaticResource EramRow}" Margin="0,2,0,10" />
 
-                                <StackPanel Margin="0,16,0,0" Visibility="{Binding HasFiles, Converter={StaticResource BoolToVis}}">
-                                    <TextBlock Style="{StaticResource Text.Label}" Text="GEOJSON FILES" Margin="0,0,0,7" />
-                                    <ItemsControl ItemsSource="{Binding Files}">
-                                        <ItemsControl.ItemTemplate>
-                                            <DataTemplate DataType="{x:Type m:AirwaysOutputFileRow}">
-                                                <DockPanel Margin="0,4">
-                                                    <TextBlock DockPanel.Dock="Right" Style="{StaticResource Text.Caption}"
-                                                               VerticalAlignment="Center"
-                                                               Text="{Binding FeatureCount, StringFormat='{}{0:N0} features'}" />
-                                                    <TextBlock Text="{Binding Name}" Style="{StaticResource Text.Mono}" FontSize="11"
-                                                               Foreground="{StaticResource Brush.Text.Primary}" VerticalAlignment="Center"
-                                                               TextTrimming="CharacterEllipsis" />
-                                                </DockPanel>
-                                            </DataTemplate>
-                                        </ItemsControl.ItemTemplate>
-                                    </ItemsControl>
-                                </StackPanel>
+                        <DockPanel>
+                            <CheckBox DockPanel.Dock="Right" Content="Emit" IsChecked="{Binding EmitSymbols}" />
+                            <TextBlock Text="Symbols" Style="{StaticResource Text.Label}" />
+                        </DockPanel>
+                        <ItemsControl ItemsSource="{Binding SymbolDefaults}" ItemTemplate="{StaticResource EramRow}" Margin="0,2,0,10" />
 
-                                <StackPanel Margin="0,14,0,0" Visibility="{Binding HasAliasFile, Converter={StaticResource BoolToVis}}">
-                                    <TextBlock Style="{StaticResource Text.Label}" Text="ALIAS FILE" Margin="0,0,0,7" />
-                                    <TextBlock Text="{Binding AliasFilePath}" Style="{StaticResource Text.Mono}" FontSize="11"
-                                               Foreground="{StaticResource Brush.Text.Primary}" TextWrapping="Wrap" />
-                                </StackPanel>
+                        <DockPanel>
+                            <CheckBox DockPanel.Dock="Right" Content="Emit" IsChecked="{Binding EmitText}" />
+                            <TextBlock Text="Text" Style="{StaticResource Text.Label}" />
+                        </DockPanel>
+                        <ItemsControl ItemsSource="{Binding TextDefaults}" ItemTemplate="{StaticResource EramRow}" Margin="0,2,0,0" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
 
-                                <StackPanel Margin="0,14,0,0" Visibility="{Binding HasWarnings, Converter={StaticResource BoolToVis}}">
-                                    <Button Command="{Binding ToggleWarningsCommand}"
-                                            Background="Transparent" BorderThickness="0" Padding="0"
-                                            HorizontalContentAlignment="Stretch" Cursor="Hand">
-                                        <Button.Template>
-                                            <ControlTemplate TargetType="Button">
-                                                <!-- The Border's Background (Transparent, not null) is what
-                                                     makes the whole row hit-testable, not just the text
-                                                     glyphs inside it. -->
-                                                <Border Background="{TemplateBinding Background}">
-                                                    <ContentPresenter />
-                                                </Border>
-                                            </ControlTemplate>
-                                        </Button.Template>
-                                        <DockPanel>
-                                            <TextBlock DockPanel.Dock="Right" Style="{StaticResource Text.Caption}"
-                                                       VerticalAlignment="Center" Margin="0,0,2,0"
-                                                       Text="{Binding WarningsToggleLabel}" />
-                                            <Border Style="{StaticResource Chip.Warn}">
-                                                <TextBlock Style="{StaticResource Chip.Text}"
-                                                           Foreground="{StaticResource Brush.Warn}"
-                                                           Text="{Binding WarningGroups.Count}" />
-                                            </Border>
-                                            <TextBlock Style="{StaticResource Text.Label}" Text="WARNINGS" Margin="8,0,0,0"
-                                                       VerticalAlignment="Center" />
-                                        </DockPanel>
-                                    </Button>
+            <!-- ============ aliases (7.5) ============ -->
+            <Border Style="{StaticResource Card}" Margin="0,16,0,0">
+                <StackPanel>
+                    <ctl:SectionHeader Label="ALIASES" />
+                    <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,4,0,8"
+                               Text="Provides a command to draw all airway waypoints on an ERAM or STARS window. Syntax: .&lt;awyId&gt;F  —  e.g. .J3F .FF OAK RBL LKV IMB GEG" />
+                    <CheckBox Content="Include the Airways.txt alias file" IsChecked="{Binding GenerateAliasFile}" />
+                    <StackPanel Margin="20,6,0,0" IsEnabled="{Binding GenerateAliasFile}">
+                        <RadioButton GroupName="AliasScope" Content="All FAA airways"
+                                     IsChecked="{Binding AliasRoiAirwaysOnly, Converter={StaticResource BoolToVis}, ConverterParameter=Invert, Mode=OneWay}" />
+                        <RadioButton GroupName="AliasScope" Content="ROI airways only" Margin="0,3,0,0"
+                                     IsChecked="{Binding AliasRoiAirwaysOnly, Mode=TwoWay}" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
 
-                                    <ScrollViewer Margin="0,10,0,0" MaxHeight="320" VerticalScrollBarVisibility="Auto"
-                                                  Visibility="{Binding IsWarningsExpanded, Converter={StaticResource BoolToVis}}">
-                                        <ItemsControl ItemsSource="{Binding WarningGroups}">
-                                            <ItemsControl.ItemTemplate>
-                                                <DataTemplate DataType="{x:Type m:AirwaysWarningGroup}">
-                                                    <StackPanel Margin="0,0,10,10">
-                                                        <DockPanel>
-                                                            <Border DockPanel.Dock="Right" Style="{StaticResource Chip.Warn}">
-                                                                <TextBlock Style="{StaticResource Chip.Text}"
-                                                                           Foreground="{StaticResource Brush.Warn}"
-                                                                           Text="{Binding Count}" />
-                                                            </Border>
-                                                            <TextBlock Text="{Binding AirwayId}" Style="{StaticResource Text.Body.Strong}" />
-                                                        </DockPanel>
-                                                        <ItemsControl ItemsSource="{Binding Messages}" Margin="0,4,0,0">
-                                                            <ItemsControl.ItemTemplate>
-                                                                <DataTemplate>
-                                                                    <TextBlock Text="{Binding}" Style="{StaticResource Text.Caption}"
-                                                                               TextWrapping="Wrap" Margin="0,2,0,0" />
-                                                                </DataTemplate>
-                                                            </ItemsControl.ItemTemplate>
-                                                        </ItemsControl>
-                                                    </StackPanel>
-                                                </DataTemplate>
-                                            </ItemsControl.ItemTemplate>
-                                        </ItemsControl>
-                                    </ScrollViewer>
-                                </StackPanel>
+            <!-- ============ region of interest (7.7) ============ -->
+            <Border Style="{StaticResource Card}" Margin="0,16,0,0">
+                <StackPanel>
+                    <ctl:SectionHeader Label="REGION OF INTEREST" />
+                    <CheckBox Content="Override the default ROI for Airways" IsChecked="{Binding OverrideRoi}" Margin="0,4,0,0" />
+                    <StackPanel Margin="20,8,0,0" IsEnabled="{Binding OverrideRoi}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions><RowDefinition /><RowDefinition /></Grid.RowDefinitions>
+                            <TextBlock Text="NE lat" Style="{StaticResource Text.Caption}" VerticalAlignment="Center" Margin="0,0,8,4" />
+                            <TextBox Grid.Column="1" Margin="0,0,12,4" Text="{Binding NeLat, UpdateSourceTrigger=PropertyChanged}" />
+                            <TextBlock Grid.Column="2" Text="NE lon" Style="{StaticResource Text.Caption}" VerticalAlignment="Center" Margin="0,0,8,4" />
+                            <TextBox Grid.Column="3" Margin="0,0,0,4" Text="{Binding NeLon, UpdateSourceTrigger=PropertyChanged}" />
+                            <TextBlock Grid.Row="1" Text="SW lat" Style="{StaticResource Text.Caption}" VerticalAlignment="Center" Margin="0,0,8,0" />
+                            <TextBox Grid.Row="1" Grid.Column="1" Margin="0,0,12,0" Text="{Binding SwLat, UpdateSourceTrigger=PropertyChanged}" />
+                            <TextBlock Grid.Row="1" Grid.Column="2" Text="SW lon" Style="{StaticResource Text.Caption}" VerticalAlignment="Center" Margin="0,0,8,0" />
+                            <TextBox Grid.Row="1" Grid.Column="3" Text="{Binding SwLon, UpdateSourceTrigger=PropertyChanged}" />
+                        </Grid>
+                        <Button Content="Pick on map…" Style="{StaticResource Button.Subtle}" HorizontalAlignment="Left"
+                                Margin="0,8,0,0" Command="{Binding PickRoiOnMapCommand}" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
 
-                                <Border Style="{StaticResource Divider}" Margin="0,16,0,14" />
-                                <StackPanel Orientation="Horizontal">
-                                    <Button Style="{StaticResource Button.Primary}" Content="Run again" Command="{Binding RunCommand}" />
-                                    <Button Style="{StaticResource Button.Ghost}" Content="Open output folder"
-                                            Margin="10,0,0,0" Command="{Binding OpenOutputCommand}" />
-                                    <Button Style="{StaticResource Button.Ghost}" Content="Reset" Margin="10,0,0,0"
-                                            Command="{Binding ResetCommand}" />
-                                </StackPanel>
-                            </StackPanel>
+            <!-- ============ antimeridian (7.8) ============ -->
+            <Border Style="{StaticResource Card}" Margin="0,16,0,0">
+                <StackPanel>
+                    <ctl:SectionHeader Label="SPLIT GEOJSON AT THE ANTIMERIDIAN" />
+                    <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,4,0,8"
+                               Text="A line that crosses ±180° longitude is split into two LineStrings so it does not visually wrap across the whole map. Leave this on unless a downstream tool needs the un-split geometry." />
+                    <CheckBox Content="Split airway geometry at the antimeridian" IsChecked="{Binding SplitAtAntimeridian}" />
+                </StackPanel>
+            </Border>
 
-                            <!-- failed -->
-                            <StackPanel Visibility="{Binding RunFailed, Converter={StaticResource BoolToVis}}">
-                                <TextBlock Style="{StaticResource Text.H2}" Text="RUN FAILED" Foreground="{StaticResource Brush.Danger}" />
-                                <Border Style="{StaticResource Card}" Background="{StaticResource Brush.Danger.Soft}" Margin="0,10,0,0">
-                                    <TextBlock Text="{Binding RunError}" Style="{StaticResource Text.Body}" TextWrapping="Wrap" />
-                                </Border>
-                                <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
-                                    <Button Style="{StaticResource Button.Primary}" Content="Try again" Command="{Binding RunCommand}" />
-                                    <Button Style="{StaticResource Button.Ghost}" Content="Reset" Margin="10,0,0,0"
-                                            Command="{Binding ResetCommand}" />
-                                </StackPanel>
-                            </StackPanel>
+            <!-- ============ run result panel (7.9) ============ -->
+            <Border Style="{StaticResource Card}" Margin="0,16,0,0"
+                    Visibility="{Binding ShowPanel, Converter={StaticResource BoolToVis}}">
+                <StackPanel>
+                    <ctl:SectionHeader Label="LAST RUN" />
+
+                    <TextBlock Text="{Binding ProgressText}" Style="{StaticResource Text.Body}" Margin="0,4,0,0"
+                               Visibility="{Binding IsRunning, Converter={StaticResource BoolToVis}}" />
+
+                    <StackPanel Visibility="{Binding RunFailed, Converter={StaticResource BoolToVis}}">
+                        <TextBlock Text="Run failed" Style="{StaticResource Text.Body.Strong}" Foreground="{StaticResource Brush.Danger}" />
+                        <TextBlock Text="{Binding RunError}" Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,4,0,0" />
+                    </StackPanel>
+
+                    <StackPanel Visibility="{Binding RunSucceeded, Converter={StaticResource BoolToVis}}">
+                        <WrapPanel Margin="0,4,0,0">
+                            <TextBlock Style="{StaticResource Text.Caption}" Margin="0,0,18,0"
+                                       Text="{Binding AirwayCount, StringFormat={}{0} airways}" />
+                            <TextBlock Style="{StaticResource Text.Caption}" Margin="0,0,18,0"
+                                       Foreground="{StaticResource Brush.Warn}"
+                                       Text="{Binding ExcludedCount, StringFormat={}{0} excluded}"
+                                       Visibility="{Binding HasExcluded, Converter={StaticResource BoolToVis}}" />
+                            <TextBlock Style="{StaticResource Text.Caption}" Text="{Binding ElapsedText}" />
+                        </WrapPanel>
+
+                        <ItemsControl ItemsSource="{Binding Files}" ItemTemplate="{StaticResource FileRow}" Margin="0,8,0,0"
+                                      Visibility="{Binding HasFiles, Converter={StaticResource BoolToVis}}" />
+
+                        <TextBlock Style="{StaticResource Text.Caption}" Margin="0,6,0,0"
+                                   Visibility="{Binding HasAliasFile, Converter={StaticResource BoolToVis}}"
+                                   Text="{Binding AliasLineCount, StringFormat=Airways.txt · {0} alias line(s)}" />
+
+                        <!-- warnings/errors expanded; info collapsed behind a count (3.8) -->
+                        <ItemsControl ItemsSource="{Binding MessageGroups}" ItemTemplate="{StaticResource MessageGroup}" Margin="0,8,0,0"
+                                      Visibility="{Binding HasWarnings, Converter={StaticResource BoolToVis}}" />
+
+                        <StackPanel Visibility="{Binding HasInfoOnly, Converter={StaticResource BoolToVis}}" Margin="0,8,0,0">
+                            <Button Style="{StaticResource Button.Subtle}" HorizontalAlignment="Left"
+                                    Content="{Binding InfoToggleLabel}" Command="{Binding ToggleInfoCommand}" />
+                            <ItemsControl ItemsSource="{Binding MessageGroups}" ItemTemplate="{StaticResource MessageGroup}"
+                                          Visibility="{Binding IsInfoExpanded, Converter={StaticResource BoolToVis}}" />
                         </StackPanel>
-                    </Border>
-                </Grid>
-            </StackPanel>
-        </ScrollViewer>
-    </Grid>
+
+                        <Button Style="{StaticResource Button.Ghost}" HorizontalAlignment="Left" Margin="0,10,0,0"
+                                Content="Open output folder" Command="{Binding OpenOutputCommand}" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <Rectangle Height="8" Fill="Transparent" />
+        </StackPanel>
+    </ScrollViewer>
 </UserControl>

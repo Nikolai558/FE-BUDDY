@@ -1,18 +1,5 @@
 namespace FeBuddy.Wpf.ViewModels;
 
-/// <summary>How the airway GeoJSON generator should split its output files.</summary>
-public enum AirwayOutputMode
-{
-    /// <summary>Do not generate GeoJSON from airway data.</summary>
-    None,
-
-    /// <summary>Airways_High / Airways_Low / Airways_Other by max authorised altitude.</summary>
-    HighLow,
-
-    /// <summary>One file per airway designation (Airways_J, Airways_V, ...).</summary>
-    Designation,
-}
-
 /// <summary>Release channel the user opts into for updates.</summary>
 public enum UpdateChannel
 {
@@ -39,29 +26,12 @@ public enum CoordPrecision
     Seven,
 }
 
-/// <summary>Which CRC ERAM default set the AIRAC screen's editor is showing.</summary>
-public enum EramTab
-{
-    Lines,
-    Symbols,
-    Text,
-}
-
 /// <summary>Where the NASR subscription data comes from.</summary>
 public enum NasrSource
 {
     Faa,
     CustomUrl,
     LocalFile,
-}
-
-/// <summary>Phase of the scripted "generate GeoJSON" run on the AIRAC screen.</summary>
-public enum GenPhase
-{
-    Idle,
-    Running,
-    Complete,
-    Cancelled,
 }
 
 /// <summary>Visual state for a systems-health / status row.</summary>

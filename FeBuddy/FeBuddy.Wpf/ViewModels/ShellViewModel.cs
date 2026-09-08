@@ -18,9 +18,6 @@ public sealed class ShellViewModel : ObservableObject
     private const string GlyphAirac     = ""; // Refresh
     private const string GlyphAirways   = ""; // MapLayers
     private const string GlyphMap       = ""; // MapPin
-    private const string GlyphConvert   = ""; // Switch
-    private const string GlyphGeoJson   = ""; // DeveloperTools
-    private const string GlyphAlias     = ""; // Tag
     private const string GlyphSettings  = ""; // Setting
     private const string GlyphInfo      = ""; // Info
 
@@ -36,9 +33,6 @@ public sealed class ShellViewModel : ObservableObject
             Nav("AIRAC",             GlyphAirac,     () => new AiracViewModel()),
             Nav("Airways",           GlyphAirways,   () => new AirwaysViewModel()),
             Nav("Map",               GlyphMap,       () => new MapViewModel()),
-            Nav("Conversions",       GlyphConvert,   () => new ConversionsViewModel()),
-            Nav("GeoJSON Tools",     GlyphGeoJson,   () => new GeoJsonToolsViewModel()),
-            Nav("Alias & Reference", GlyphAlias,     () => new AliasReferenceViewModel()),
         ];
 
         SystemNav =

@@ -31,21 +31,6 @@ public enum RoiMode
     AllData,
 }
 
-/// <summary>External source format on the Conversions screen. vSTARS/vERAM/DXF retired in 3.0.</summary>
-public enum ConvKind
-{
-    Dat,
-    Kml,
-    Sct2,
-}
-
-/// <summary>GeoJSON Tools screen mode.</summary>
-public enum GjMode
-{
-    Validate,
-    Cleanup,
-}
-
 /// <summary>Coordinate decimal places written to GeoJSON.</summary>
 public enum CoordPrecision
 {

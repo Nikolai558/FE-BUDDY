@@ -47,37 +47,6 @@ public sealed class OutputFamily(string glyph, string name, string description, 
     }
 }
 
-/// <summary>A file queued for conversion. Sample data.</summary>
-public sealed record ConvFile(string Name, string Size);
-
-/// <summary>Severity of a GeoJSON validator finding.</summary>
-public enum FindingSeverity { Error, Warn, Info }
-
-/// <summary>One line in the GeoJSON validator report. Sample data.</summary>
-public sealed record Finding(FindingSeverity Severity, string Message, string Where);
-
-/// <summary>One toggleable clean-up operation. Sample data.</summary>
-public sealed class CleanupOp(string label, string detail, bool enabled = true)
-    : Infrastructure.ObservableObject
-{
-    private bool _enabled = enabled;
-
-    public string Label { get; } = label;
-    public string Detail { get; } = detail;
-
-    public bool Enabled
-    {
-        get => _enabled;
-        set => SetProperty(ref _enabled, value);
-    }
-}
-
-/// <summary>An alias / reference text file the cycle produces. Sample data.</summary>
-public sealed record AliasArtifact(string FileName, string Description, string CountLabel, string Sample);
-
-/// <summary>A duplicate alias command found across files. Sample data.</summary>
-public sealed record DupCommand(string Command, string Files);
-
 /// <summary>One airway designation the user can include / exclude (J, Q, V, T, ...).</summary>
 public sealed class DesignationChip(string code, bool enabled = true) : Infrastructure.ObservableObject
 {

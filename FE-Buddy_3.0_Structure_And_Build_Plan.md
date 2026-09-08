@@ -80,7 +80,7 @@ Inventory as of this document. Paths are relative to `FeBuddy/`.
 | `Handlers/CSV/FindWaypointCoordinates.cs` | `GetCoordinates(allNasrCsvData, waypointId, WaypointType?)` → `(lat, lon, foundIn)?`. 5-char IDs search FIX, others search NAVAID then Airport. | Keep, but **must be optimized** — see Phase 1.4. |
 | `Handlers/CoordinateHandler.cs` | `IsValidDecimal`, `IsValidDMS`, `ToDMS`, `ToDecimal`, `Distance`, `CrossesAntimeridian`, `Bearing`, `SplitLineSegmentAtAntimeridian`. | Keep, **add one method** — see Phase 1.5. |
 | `Handlers/FileHandler.cs` | `_tempDirectory`, `UnzipAllDownloads`, `CreateTempDirectory`, `CleanTempDirectory`. | Keep. |
-| `Handlers/UdateHandler.cs` | Squirrel update handling. | Keep, out of scope. |
+| `Handlers/UdateHandler.cs` | Legacy in-app updater. | **Deleted** — 3.0 ships as an MSI installer; there is no in-app self-update. |
 | `Models/Location/Location.cs` | Dual DMS/decimal point model with validation. | Keep. |
 | `Models/General/AiracCycleIdEffectiveDates.cs` | AIRAC cycle ID ↔ effective date lookup (`yyyy-MM-dd` and `dd_MMM_yyyy`). | Keep. Note: currently `internal` — will need to become `public` when the download manager is built `[LATER]`. |
 | `Generators/NASR/AWY-Geojsons/AwyGeojsonGenerator*.cs` (5 partials) | Working airway geometry builder: settings parsing, segment normalization (collapses reference-only border points), LineString/MultiLineString assembly with gap handling, unresolved-trailing-waypoint tolerance. | **Move and refactor** into the Services layout — see Phase 2. The *logic* is good; the *organization and outputs* are incomplete. |
@@ -120,7 +120,7 @@ FE-Buddy-DEV/
     │   ├── Handlers/                                   (existing, cross-cutting)
     │   │   ├── CoordinateHandler.cs                    (+ PointAtDistanceAndBearing)
     │   │   ├── FileHandler.cs
-    │   │   ├── UdateHandler.cs
+    │   │   ├── UdateHandler.cs                          DELETED (3.0 is MSI-only, no in-app updater)
     │   │   └── CSV/
     │   │       ├── FebCsvHelper.cs
     │   │       └── FindWaypointCoordinates.cs          (+ index-backed lookup)

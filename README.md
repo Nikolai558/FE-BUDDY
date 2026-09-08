@@ -51,7 +51,7 @@ This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md
 - [John Lewis](#) - Icon and Logo Design
 - [Chris James](#) - Program Name
 - [Cian Ormond](#) - dotNET 6 Conversion Assistance
-- [Caelan Sayler](#) - dotNET 6 Conversion Assistance and Clowd.Squirrel Development
+- [Caelan Sayler](#) - .NET 6 Conversion Assistance
 - [Ian Drake](#) - FAA FOIA RVM Conversion source code reference
 
 ---

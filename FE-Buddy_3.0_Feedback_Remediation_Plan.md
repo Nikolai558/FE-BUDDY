@@ -749,10 +749,12 @@ Developer_Notes → TITLE BAR: up to date → `You are running the latest versio
 → `vX.Y.Z available!`; offline → hidden/greyed with "update state unknown offline".
 
 **4.2 Version chip becomes a button.** Click opens a modal **Update window**: current version,
-latest on the user's channel, release notes from the GitHub release, **Update** / **Cancel**.
-Update delegates to the existing Squirrel plumbing in `FEBuddyLibrary/Handlers/UdateHandler.cs`.
-With no update available the chip is not clickable and says so on hover. If the user declines an
-available update, colour the version text `Brush.Warn` for the session (Developer_Notes).
+latest on the user's channel, release notes from the GitHub release, **Download update** /
+**Later**. FE-Buddy 3.0 ships as an **MSI installer** (no in-app self-update) —
+**Download update** opens the GitHub release page where the new MSI lives; the user runs it to
+update, keeping their settings. With no update available the chip is not clickable and says so
+on hover. If the user dismisses an available update, colour the version text `Brush.Warn` for
+the session (Developer_Notes).
 
 **4.3 AIRAC status indicator → top-centre of the border.** Move the `AiracLabel` readout (now in
 the bottom status bar, ~line 460) to the top-centre. It shows the current cycle ID + effective

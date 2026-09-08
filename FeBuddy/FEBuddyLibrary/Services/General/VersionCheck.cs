@@ -9,7 +9,7 @@ namespace FEBuddyLibrary.Services.General;
 /// <summary>
 /// Asks GitHub whether a newer FE-Buddy release exists on the user's chosen channel. The
 /// launch sequence runs this only to populate the title-bar tooltip and version chip; the
-/// actual update is performed by the Squirrel plumbing in <c>Handlers/UdateHandler.cs</c>.
+/// actual update is a new MSI installer the user downloads and runs.
 /// </summary>
 /// <remarks>
 /// GitHub's release API exposes a single <c>prerelease</c> flag, so <see cref="UpdateChannel.Beta"/>

@@ -1,238 +1,323 @@
 using System.Collections.ObjectModel;
+using System.Globalization;
+using System.IO;
+using System.Windows;
 using System.Windows.Input;
+using System.Windows.Threading;
+
 using FeBuddy.Wpf.Infrastructure;
-using FeBuddy.Wpf.ViewModels.Models;
+using FeBuddy.Wpf.Views;
+
+using FEBuddyLibrary.Helpers;
+using FEBuddyLibrary.Models.Services.Airac;
+using FEBuddyLibrary.Models.Services.General;
+using FEBuddyLibrary.Services.Airac;
+using FEBuddyLibrary.Services.General;
+
 using Microsoft.Win32;
+
+using LibUpdateChannel = FEBuddyLibrary.Models.Services.General.UpdateChannel;
 
 namespace FeBuddy.Wpf.ViewModels;
 
 /// <summary>
-/// Facility profiles, region of interest, output preferences, display scheme,
-/// data source and updates. Nothing is persisted - this is the UI only.
+/// SYSTEM ▸ Settings (remediation plan Phase 9). Section order: Updates, Facility Profile,
+/// Default Region of Interest, GeoJSON Files. Every value persists to <c>UserConfig.json</c>.
+/// Multi-profile support, the display-scheme editor and the NASR data-source override are
+/// gone.
 /// </summary>
 public sealed class SettingsViewModel : ObservableObject
 {
-    private string _selectedProfile = "Cleveland ARTCC (ZOB)";
-    private string _facilityName = "Cleveland ARTCC";
-    private string _artccId = "ZOB";
-    private string _outputDir = @"C:\Users\you\Documents\FE-Buddy\ZOB\CRC";
-    private bool _singleLineGeoJson = true;
-    private bool _febPropsByDefault;
-    private CoordPrecision _precision = CoordPrecision.Six;
-    private NasrSource _dataSource = NasrSource.Faa;
-    private string _customUrl = "https://nfdc.faa.gov/webContent/28DaySub/28DaySubscription_Effective_2025-09-04.zip";
-    private string _localNasrPath = string.Empty;
-    private UpdateChannel _channel = UpdateChannel.Stable;
-    private bool _checkOnLaunch = true;
-    private RoiMode _roiMode = RoiMode.Custom;
-    private string _neLat = string.Empty;
-    private string _neLon = string.Empty;
-    private string _swLat = string.Empty;
-    private string _swLon = string.Empty;
+    private const string ChannelKey = "General.UpdateChannel";
+    private const string OutputDirKey = "General.DefaultOutputDirectory";
+    private const string AddFolderKey = "General.AddFeBuddyOutputFolder";
+    private const string ArtccKey = "Services.AiracService.UserArtccId";
+    private const string PrecisionKey = "Services.AiracService.CoordinatePrecision";
+    private const string RoiNode = "Services.AiracService.DefaultRoi";
+
+    private readonly Dispatcher _dispatcher;
+
+    private LibUpdateChannel _channel;
+    private string? _selectedFacility;
+    private string _outputDir = string.Empty;
+    private bool _addFeBuddyFolder = true;
+    private int _coordinatePrecision = 6;
+    private RegionOfInterest? _defaultRoi;
 
     public SettingsViewModel()
     {
-        Profiles = ["Cleveland ARTCC (ZOB)", "Indianapolis ARTCC (ZID)", "Training (sandbox)"];
+        _dispatcher = Application.Current?.Dispatcher ?? Dispatcher.CurrentDispatcher;
 
-        SchemeBcg =
-        [
-            new DisplayItem(1, "Boundaries"), new DisplayItem(2, "Airways hi"),
-            new DisplayItem(3, "Airways lo"), new DisplayItem(4, "Fixes"),
-            new DisplayItem(5, "NAVAIDs"), new DisplayItem(6, "Airports"),
-            new DisplayItem(7, "Procedures"), new DisplayItem(8, "Text"),
-        ];
-        SchemeFilters =
-        [
-            new DisplayItem(1, "Always on"), new DisplayItem(2, "Hi sectors"),
-            new DisplayItem(3, "Lo sectors"), new DisplayItem(4, "Approach"),
-            new DisplayItem(5, "Ground"),
-        ];
+        _channel = VersionCheckResult.ParseChannel(UserConfigFile.GetValue(ChannelKey));
+        _selectedFacility = Blank(UserConfigFile.GetValue(ArtccKey));
+        _outputDir = Blank(UserConfigFile.GetValue(OutputDirKey)) ?? DefaultOutputDirectory;
+        _addFeBuddyFolder = !string.Equals(UserConfigFile.GetValue(AddFolderKey), "N", StringComparison.OrdinalIgnoreCase);
+        _coordinatePrecision = int.TryParse(UserConfigFile.GetValue(PrecisionKey), out int p) && p is >= 0 and <= 15 ? p : 6;
 
-        SaveCommand = new RelayCommand(() =>
-            Toast.Success("Settings saved", "UI only - nothing was written to UserConfig.json."));
-        CheckNowCommand = new RelayCommand(() =>
-            Toast.Warn("Update available", "v3.0.1 is ready on the dev channel."));
-        NewProfileCommand = new RelayCommand(() => Toast.Info("New profile", "A blank profile would be created here."));
-        ExportProfileCommand = new RelayCommand(() => Toast.Info("Exported", $"{SelectedProfile}.febprofile.json (sample)."));
-        ImportProfileCommand = new RelayCommand(() => Toast.Info("Import profile", "Pick a .febprofile.json to load."));
-        AddBcgCommand = new RelayCommand(() => SchemeBcg.Add(new DisplayItem(SchemeBcg.Count + 1, "New group")));
-        AddFilterCommand = new RelayCommand(() => SchemeFilters.Add(new DisplayItem(SchemeFilters.Count + 1, "New filter")));
-        RemoveSchemeItemCommand = new RelayCommand<DisplayItem>(RemoveSchemeItem);
-        ExportLegendCommand = new RelayCommand(() =>
-            Toast.Success("Legend exported", "ISR_DISPLAY_LEGEND.txt (sample)."));
-        TestSourceCommand = new RelayCommand(() =>
-            Toast.Success("Source reachable", $"{DataSourceLabel} responded 200 OK (sample)."));
-        BrowseNasrCommand = new RelayCommand(BrowseNasr);
+        LoadDefaultRoi();
 
-        // The Map screen can push a drawn box in here via DefaultRoiStore.
-        DefaultRoiStore.Changed += (_, _) => ApplyStoredRoi();
-        if (DefaultRoiStore.IsSet)
-        {
-            ApplyStoredRoi();
-        }
+        SaveCommand = new RelayCommand(Save);
+        CheckNowCommand = new RelayCommand(() => { Toast.Info("Checking…", "Contacting the version service."); _ = AppEnvironment.RecheckAsync(); },
+            () => AppEnvironment.HasInternetConnection);
+        RollbackCommand = new RelayCommand(() =>
+            Toast.Info("Roll back to stable", "Set the channel to Stable and use Update on the version chip; a full rollback needs an installed build."));
+        BrowseOutputCommand = new RelayCommand(BrowseOutput);
+        SetPrecisionCommand = new RelayCommand<string>(p => { if (int.TryParse(p, out int n)) CoordinatePrecision = n; });
+        EditRoiCommand = new RelayCommand(EditRoi);
+        ClearRoiCommand = new RelayCommand(ClearRoi, () => DefaultRoi is not null);
+
+        AiracCycleDataCache.Instance.StateChanged += (_, _) => _dispatcher.BeginInvoke(RefreshFacilities);
+        RefreshFacilities();
     }
 
-    private void ApplyStoredRoi()
-    {
-        if (DefaultRoiStore.SouthWest is not { } sw || DefaultRoiStore.NorthEast is not { } ne)
-        {
-            return;
-        }
+    // ================= 1. UPDATES =================
 
-        RoiMode = RoiMode.Custom; // flips "Get all NASR data" -> "Set up a bounding box"
-        NeLat = ne.Lat.ToString("0.######");
-        NeLon = ne.Lon.ToString("0.######");
-        SwLat = sw.Lat.ToString("0.######");
-        SwLon = sw.Lon.ToString("0.######");
+    public IReadOnlyList<LibUpdateChannel> Channels { get; } =
+        new[] { LibUpdateChannel.Stable, LibUpdateChannel.Beta, LibUpdateChannel.Alpha };
+
+    /// <summary>The update channel. <see cref="LibUpdateChannel.Stable"/> unless the developers tell you otherwise.</summary>
+    public LibUpdateChannel Channel
+    {
+        get => _channel;
+        set => SetProperty(ref _channel, value);
     }
 
-    // ---- facility profiles (replace v2.x's hard-coded ARTCC list + Desktop output) ----
-
-    public ObservableCollection<string> Profiles { get; }
-
-    public string SelectedProfile
-    {
-        get => _selectedProfile;
-        set
-        {
-            if (!SetProperty(ref _selectedProfile, value))
-            {
-                return;
-            }
-
-            // Sample: switching a profile loads its fields.
-            (FacilityName, ArtccId, OutputDir) = value switch
-            {
-                "Indianapolis ARTCC (ZID)" =>
-                    ("Indianapolis ARTCC", "ZID", @"C:\Users\you\Documents\FE-Buddy\ZID\CRC"),
-                "Training (sandbox)" =>
-                    ("Training", "ZZZ", @"C:\Users\you\Documents\FE-Buddy\Training\CRC"),
-                _ => ("Cleveland ARTCC", "ZOB", @"C:\Users\you\Documents\FE-Buddy\ZOB\CRC"),
-            };
-        }
-    }
-
-    public string FacilityName { get => _facilityName; set => SetProperty(ref _facilityName, value); }
-
-    public string ArtccId { get => _artccId; set => SetProperty(ref _artccId, value); }
-
-    public string OutputDir { get => _outputDir; set => SetProperty(ref _outputDir, value); }
-
-    // ---- output preferences ----
-
-    public bool SingleLineGeoJson { get => _singleLineGeoJson; set => SetProperty(ref _singleLineGeoJson, value); }
-
-    public bool FebPropsByDefault { get => _febPropsByDefault; set => SetProperty(ref _febPropsByDefault, value); }
-
-    public CoordPrecision Precision { get => _precision; set => SetProperty(ref _precision, value); }
-
-    // ---- display scheme (BCG groups + filters, exported as an ISR legend) ----
-
-    public ObservableCollection<DisplayItem> SchemeBcg { get; }
-
-    public ObservableCollection<DisplayItem> SchemeFilters { get; }
-
-    // ---- data source (v2.x has broken repeatedly on FAA URL changes) ----
-
-    public NasrSource DataSource
-    {
-        get => _dataSource;
-        set
-        {
-            if (SetProperty(ref _dataSource, value))
-            {
-                OnPropertyChanged(nameof(IsCustomUrl));
-                OnPropertyChanged(nameof(IsLocalFile));
-                OnPropertyChanged(nameof(DataSourceLabel));
-            }
-        }
-    }
-
-    public bool IsCustomUrl => DataSource == NasrSource.CustomUrl;
-
-    public bool IsLocalFile => DataSource == NasrSource.LocalFile;
-
-    public string DataSourceLabel => DataSource switch
-    {
-        NasrSource.CustomUrl => "custom URL",
-        NasrSource.LocalFile => "local file",
-        _ => "nfdc.faa.gov",
-    };
-
-    public string CustomUrl { get => _customUrl; set => SetProperty(ref _customUrl, value); }
-
-    public string LocalNasrPath { get => _localNasrPath; set => SetProperty(ref _localNasrPath, value); }
-
-    // ---- updates ----
-
-    public UpdateChannel Channel { get => _channel; set => SetProperty(ref _channel, value); }
-
-    public bool CheckOnLaunch { get => _checkOnLaunch; set => SetProperty(ref _checkOnLaunch, value); }
-
-    public RoiMode RoiMode
-    {
-        get => _roiMode;
-        set { if (SetProperty(ref _roiMode, value)) OnPropertyChanged(nameof(UseCustomRoi)); }
-    }
-
-    public bool UseCustomRoi => RoiMode == RoiMode.Custom;
-
-    public string NeLat { get => _neLat; set => SetProperty(ref _neLat, value); }
-
-    public string NeLon { get => _neLon; set => SetProperty(ref _neLon, value); }
-
-    public string SwLat { get => _swLat; set => SetProperty(ref _swLat, value); }
-
-    public string SwLon { get => _swLon; set => SetProperty(ref _swLon, value); }
-
-    // ---- commands ----
-
-    public ICommand SaveCommand { get; }
+    public bool IsOnline => AppEnvironment.HasInternetConnection;
 
     public ICommand CheckNowCommand { get; }
 
-    public ICommand NewProfileCommand { get; }
+    public ICommand RollbackCommand { get; }
 
-    public ICommand ExportProfileCommand { get; }
+    // ================= 2. FACILITY PROFILE =================
 
-    public ICommand ImportProfileCommand { get; }
+    /// <summary>Facilities from the current cycle's parsed airports, as <c>ArtccName (RespArtccId)</c>.</summary>
+    public ObservableCollection<FacilityOption> Facilities { get; } = new();
 
-    public ICommand AddBcgCommand { get; }
-
-    public ICommand AddFilterCommand { get; }
-
-    public ICommand RemoveSchemeItemCommand { get; }
-
-    public ICommand ExportLegendCommand { get; }
-
-    public ICommand TestSourceCommand { get; }
-
-    public ICommand BrowseNasrCommand { get; }
-
-    private void RemoveSchemeItem(DisplayItem? item)
+    /// <summary>The selected facility's <c>RespArtccId</c>. Persists to <c>Services.AiracService.UserArtccId</c>.</summary>
+    public string? SelectedFacility
     {
-        if (item is null)
+        get => _selectedFacility;
+        set => SetProperty(ref _selectedFacility, value);
+    }
+
+    public bool FacilitiesReady { get; private set; }
+
+    public string FacilityWaitingMessage =>
+        "Waiting for AIRAC data to finish downloading and parsing. The facility list will be available in a moment.";
+
+    /// <summary>The default output directory: <c>%USERPROFILE%\Desktop\FE-Buddy_Output</c>.</summary>
+    public static string DefaultOutputDirectory =>
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), "FE-Buddy_Output");
+
+    public string OutputDirectory
+    {
+        get => _outputDir;
+        set => SetProperty(ref _outputDir, value);
+    }
+
+    /// <summary>When on (default), output is written under a <c>FE-Buddy_Output</c> folder; off means straight to the chosen directory.</summary>
+    public bool AddFeBuddyOutputFolder
+    {
+        get => _addFeBuddyFolder;
+        set => SetProperty(ref _addFeBuddyFolder, value);
+    }
+
+    public ICommand BrowseOutputCommand { get; }
+
+    // ================= 3. DEFAULT REGION OF INTEREST =================
+
+    public const string RoiExplainer =
+        "Region of Interest (ROI): a lat/lon axis-aligned rectangular region defined by southwest " +
+        "(bottom-left) and northeast (top-right) corners - a box defining the data you are interested in. " +
+        "Depending on the data type and operation, geometries may be clipped to the ROI or included in " +
+        "full when associated with an entity inside it. Make the box a little larger than your ARTCC " +
+        "boundary so nearby data still appears. Some operations let you override this ROI for specific " +
+        "files later.";
+
+    public RegionOfInterest? DefaultRoi
+    {
+        get => _defaultRoi;
+        private set
+        {
+            if (SetProperty(ref _defaultRoi, value))
+            {
+                OnPropertyChanged(nameof(DefaultRoiSummary));
+                OnPropertyChanged(nameof(HasDefaultRoi));
+                CommandManager.InvalidateRequerySuggested();
+            }
+        }
+    }
+
+    public bool HasDefaultRoi => DefaultRoi is not null;
+
+    public string DefaultRoiSummary => DefaultRoi is { } r
+        ? $"SW {r.SwLat:0.####}, {r.SwLon:0.####}    ·    NE {r.NeLat:0.####}, {r.NeLon:0.####}"
+        : "No default ROI is set.";
+
+    public ICommand EditRoiCommand { get; }
+
+    public ICommand ClearRoiCommand { get; }
+
+    // ================= 4. GEOJSON FILES =================
+
+    public const string FebPropertiesDescription =
+        "Include FE-Buddy Properties, when available. Custom GeoJSON property fields that increase file " +
+        "size but can be helpful for debugging or viewing data in a GeoJSON viewer in order to identify " +
+        "an object. Every FE-Buddy property is prefixed with feb.";
+
+    public const string CoordinatePrecisionDescription =
+        "Will round all coordinates in GeoJSON files to a maximum number of decimal points in order to " +
+        "save space but retain your desired level of accuracy.";
+
+    public int CoordinatePrecision
+    {
+        get => _coordinatePrecision;
+        private set
+        {
+            if (SetProperty(ref _coordinatePrecision, value))
+            {
+                OnPropertyChanged(nameof(IsPrecision5));
+                OnPropertyChanged(nameof(IsPrecision6));
+                OnPropertyChanged(nameof(IsPrecision7));
+            }
+        }
+    }
+
+    public bool IsPrecision5 => CoordinatePrecision == 5;
+    public bool IsPrecision6 => CoordinatePrecision == 6;
+    public bool IsPrecision7 => CoordinatePrecision == 7;
+
+    /// <summary>Parameter is <c>"5"</c>, <c>"6"</c> or <c>"7"</c>.</summary>
+    public ICommand SetPrecisionCommand { get; }
+
+    // ================= save =================
+
+    public ICommand SaveCommand { get; }
+
+    private void Save()
+    {
+        UserConfigFile.TrySetValue(ChannelKey, Channel.ToString());
+        UserConfigFile.TrySetValue(OutputDirKey, OutputDirectory);
+        UserConfigFile.TrySetValue(AddFolderKey, AddFeBuddyOutputFolder ? "Y" : "N");
+        UserConfigFile.TrySetValue(PrecisionKey, CoordinatePrecision.ToString(CultureInfo.InvariantCulture));
+        if (!string.IsNullOrWhiteSpace(SelectedFacility))
+        {
+            UserConfigFile.TrySetValue(ArtccKey, SelectedFacility!);
+        }
+
+        UserConfigFile.Write();
+        Toast.Success("Settings saved", "Written to UserConfig.json.");
+    }
+
+    private void RefreshFacilities()
+    {
+        AiracCycleReadiness readiness = AiracCycleDataCache.Instance.Entries.Count == 0
+            ? AiracCycleReadiness.Waiting
+            : AiracCycleDataCache.Instance.ComputeReadiness();
+
+        FacilitiesReady = readiness is AiracCycleReadiness.Ready or AiracCycleReadiness.Degraded;
+        OnPropertyChanged(nameof(FacilitiesReady));
+        OnPropertyChanged(nameof(IsOnline));
+        CommandManager.InvalidateRequerySuggested();
+
+        if (!FacilitiesReady || Facilities.Count > 0)
         {
             return;
         }
 
-        if (!SchemeBcg.Remove(item))
+        _ = LoadFacilitiesAsync();
+    }
+
+    private async Task LoadFacilitiesAsync()
+    {
+        try
         {
-            SchemeFilters.Remove(item);
+            AiracCycleInfo current = AiracCycleResolver.GetCycle(AiracCyclePosition.Current);
+            var data = await AiracCycleDataCache.Instance.GetAsync(current.AiracCycleId).ConfigureAwait(false);
+
+            var options = (data.Apt?.AptBase ?? new())
+                .Where(a => !string.IsNullOrWhiteSpace(a.RespArtccId))
+                .Select(a => new FacilityOption(a.RespArtccId.Trim(), string.IsNullOrWhiteSpace(a.ArtccName) ? a.RespArtccId.Trim() : a.ArtccName.Trim()))
+                .DistinctBy(o => o.ArtccId, StringComparer.OrdinalIgnoreCase)
+                .OrderBy(o => o.Display, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            await _dispatcher.BeginInvoke(() =>
+            {
+                Facilities.Clear();
+                foreach (FacilityOption o in options)
+                {
+                    Facilities.Add(o);
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            AppLog.Warning("Settings", $"Could not load the facility list: {ex.Message}");
         }
     }
 
-    private void BrowseNasr()
+    private void BrowseOutput()
     {
-        var dialog = new OpenFileDialog
+        OpenFolderDialog dialog = new()
         {
-            Title = "Select a local NASR subscription zip",
-            Filter = "NASR subscription (*.zip)|*.zip|All files (*.*)|*.*",
+            Title = "Select the default output directory",
+            InitialDirectory = Directory.Exists(OutputDirectory) ? OutputDirectory : null,
         };
 
         if (dialog.ShowDialog() == true)
         {
-            LocalNasrPath = dialog.FileName;
+            OutputDirectory = dialog.FolderName;
         }
+    }
+
+    private void EditRoi()
+    {
+        RegionOfInterest? picked = RoiPickerWindow.Pick(Application.Current?.MainWindow, DefaultRoi, baseLayer: null);
+        if (picked is not null)
+        {
+            PersistRoi(picked);
+            DefaultRoi = picked;
+            Toast.Success("Default ROI saved", "Written to UserConfig.json.");
+        }
+    }
+
+    private void ClearRoi()
+    {
+        UserConfigFile.TrySetValue($"{RoiNode}.FilterByRoi", "false");
+        UserConfigFile.Save(RoiNode);
+        DefaultRoi = null;
+    }
+
+    private void PersistRoi(RegionOfInterest roi)
+    {
+        UserConfigFile.TrySetValue($"{RoiNode}.FilterByRoi", "true");
+        UserConfigFile.TrySetValue($"{RoiNode}.DefaultCoordindates.SwLat", roi.SwLat.ToString(CultureInfo.InvariantCulture));
+        UserConfigFile.TrySetValue($"{RoiNode}.DefaultCoordindates.SwLon", roi.SwLon.ToString(CultureInfo.InvariantCulture));
+        UserConfigFile.TrySetValue($"{RoiNode}.DefaultCoordindates.NeLat", roi.NeLat.ToString(CultureInfo.InvariantCulture));
+        UserConfigFile.TrySetValue($"{RoiNode}.DefaultCoordindates.NeLon", roi.NeLon.ToString(CultureInfo.InvariantCulture));
+        UserConfigFile.Save(RoiNode);
+    }
+
+    private void LoadDefaultRoi()
+    {
+        if (double.TryParse(UserConfigFile.GetValue($"{RoiNode}.DefaultCoordindates.SwLat"), NumberStyles.Float, CultureInfo.InvariantCulture, out double swLat)
+            && double.TryParse(UserConfigFile.GetValue($"{RoiNode}.DefaultCoordindates.SwLon"), NumberStyles.Float, CultureInfo.InvariantCulture, out double swLon)
+            && double.TryParse(UserConfigFile.GetValue($"{RoiNode}.DefaultCoordindates.NeLat"), NumberStyles.Float, CultureInfo.InvariantCulture, out double neLat)
+            && double.TryParse(UserConfigFile.GetValue($"{RoiNode}.DefaultCoordindates.NeLon"), NumberStyles.Float, CultureInfo.InvariantCulture, out double neLon))
+        {
+            _defaultRoi = new RegionOfInterest(swLat, swLon, neLat, neLon);
+        }
+    }
+
+    private static string? Blank(string? v) => string.IsNullOrWhiteSpace(v) ? null : v;
+
+    /// <summary>One facility choice: its <c>RespArtccId</c> and a display label.</summary>
+    /// <param name="ArtccId">The facility's ARTCC id.</param>
+    /// <param name="Name">The facility's name.</param>
+    public sealed record FacilityOption(string ArtccId, string Name)
+    {
+        /// <summary>e.g. <c>Cleveland ARTCC (ZOB)</c>.</summary>
+        public string Display => $"{Name} ({ArtccId})";
     }
 }

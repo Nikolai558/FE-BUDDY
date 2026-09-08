@@ -1,84 +1,66 @@
 using System.Collections.ObjectModel;
+using System.Globalization;
 using System.IO;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
+
 using FeBuddy.Wpf.Infrastructure;
 using FeBuddy.Wpf.Map;
-using FeBuddy.Wpf.ViewModels.Models;
+
+using FEBuddyLibrary.Helpers;
+using FEBuddyLibrary.Models.Services.General;
+using FEBuddyLibrary.Services.General;
+
 using Microsoft.Win32;
 
 namespace FeBuddy.Wpf.ViewModels;
 
 /// <summary>
-/// Drives the map screen: the base + overlay layers, the sample toggle, an
-/// open-files command (multi-select), a per-file visibility list, and the ROI
-/// the user drags on the map.
+/// The Map Service (remediation plan Phase 8): view the user's own GeoJSON files and manage
+/// the single default ROI. Everything else in the prototype (the ruler, the CRC display
+/// visualiser, the bundled sample layers) is gone.
 /// </summary>
 public sealed class MapViewModel : ObservableObject
 {
-    // Distinct from the slate base outline and the amber sample layer.
+    private const string RoiFilterKey = "Services.AiracService.DefaultRoi.FilterByRoi";
+    private const string RoiSwLatKey = "Services.AiracService.DefaultRoi.DefaultCoordindates.SwLat";
+    private const string RoiSwLonKey = "Services.AiracService.DefaultRoi.DefaultCoordindates.SwLon";
+    private const string RoiNeLatKey = "Services.AiracService.DefaultRoi.DefaultCoordindates.NeLat";
+    private const string RoiNeLonKey = "Services.AiracService.DefaultRoi.DefaultCoordindates.NeLon";
+
     private static readonly Color[] FileColors =
     [
-        Color.FromRgb(0x7C, 0xC7, 0xF2), // cyan
-        Color.FromRgb(0x5A, 0xD1, 0xA0), // green
-        Color.FromRgb(0xB4, 0x8C, 0xF0), // violet
-        Color.FromRgb(0xF2, 0x87, 0x9B), // rose
-        Color.FromRgb(0xF0, 0xA3, 0x5A), // orange
+        Color.FromRgb(0x7C, 0xC7, 0xF2), Color.FromRgb(0x5A, 0xD1, 0xA0),
+        Color.FromRgb(0xB4, 0x8C, 0xF0), Color.FromRgb(0xF2, 0x87, 0x9B),
+        Color.FromRgb(0xF0, 0xA3, 0x5A),
     ];
 
-    private readonly MapLayer? _sampleLayer;
     private int _colorCursor;
-
-    private bool _showSample = true;
-    private bool _pickRoiOnMap;
-    private bool _measureOnMap;
-    private GeoPoint? _roiSouthWest;
-    private GeoPoint? _roiNorthEast;
     private string? _statusMessage;
+    private bool _showDefaultRoi = true;
+    private RegionOfInterest? _defaultRoi;
 
     public MapViewModel()
     {
+        // Reference geography, not sample data - a future cleanup should not mistake it for a
+        // prototype leftover.
         BaseLayer = TryLoadLayer("Assets/us-states.json", "US states",
             ThemeBrush("Brush.Stroke.Strong", Color.FromRgb(0x2A, 0x3D, 0x52)), thickness: 1.0);
 
-        _sampleLayer = TryLoadLayer("Assets/sample-airways.json", "Sample airways",
-            ThemeBrush("Brush.Accent", Color.FromRgb(0xF4, 0xB7, 0x40)), thickness: 1.7, pointRadius: 3.5);
-
-        Layers = [];
-        LoadedFiles = [];
+        Layers = new ObservableCollection<MapLayer>();
+        LoadedFiles = new ObservableCollection<LoadedFile>();
         LoadedFiles.CollectionChanged += (_, _) =>
         {
             OnPropertyChanged(nameof(HasLoadedFiles));
             OnPropertyChanged(nameof(FilesButtonLabel));
         };
-        SyncLayers();
-
-        BcgGroups =
-        [
-            new DisplayItem(1, "Boundaries"), new DisplayItem(2, "Airways hi"),
-            new DisplayItem(3, "Airways lo"), new DisplayItem(4, "Fixes"),
-            new DisplayItem(5, "NAVAIDs"), new DisplayItem(6, "Airports"),
-            new DisplayItem(7, "Procedures"), new DisplayItem(8, "Text", visible: false),
-        ];
-        Filters =
-        [
-            new DisplayItem(1, "Always on"), new DisplayItem(2, "Hi sectors"),
-            new DisplayItem(3, "Lo sectors"), new DisplayItem(4, "Approach"),
-            new DisplayItem(5, "Ground", visible: false), new DisplayItem(6, "Emergency", visible: false),
-        ];
-        foreach (var i in BcgGroups.Concat(Filters))
-        {
-            i.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(DisplayItem.Visible)) OnPropertyChanged(nameof(DisplaySummary)); };
-        }
 
         LoadFilesCommand = new RelayCommand(LoadFiles);
-        ClearFilesCommand = new RelayCommand(() => { LoadedFiles.Clear(); SyncLayers(); });
-        ClearRoiCommand = new RelayCommand(() => { RoiSouthWest = null; RoiNorthEast = null; });
-        SaveRoiToSettingsCommand = new RelayCommand(SaveRoiToSettings, () => HasRoi);
+        ClearFilesCommand = new RelayCommand(() => { LoadedFiles.Clear(); SyncLayers(); }, () => HasLoadedFiles);
         ResetViewCommand = new RelayCommand(() => ResetRequested?.Invoke(this, EventArgs.Empty));
-        ShowAllDisplayCommand = new RelayCommand(() => SetAllDisplay(true));
-        HideAllDisplayCommand = new RelayCommand(() => SetAllDisplay(false));
+
+        LoadDefaultRoi();
     }
 
     /// <summary>Raised when the view should zoom to a set of bounds (after a load).</summary>
@@ -87,28 +69,8 @@ public sealed class MapViewModel : ObservableObject
     /// <summary>Raised when the view should reset the map to the default extent.</summary>
     public event EventHandler? ResetRequested;
 
+    /// <summary>The reference base outline (US states).</summary>
     public MapLayer? BaseLayer { get; }
-
-    // ---- CRC display visualiser (BCG groups + filters) ----
-
-    public ObservableCollection<DisplayItem> BcgGroups { get; }
-
-    public ObservableCollection<DisplayItem> Filters { get; }
-
-    public string DisplaySummary =>
-        $"{BcgGroups.Count(g => g.Visible)}/{BcgGroups.Count} BCG · {Filters.Count(f => f.Visible)}/{Filters.Count} filters";
-
-    public ICommand ShowAllDisplayCommand { get; }
-
-    public ICommand HideAllDisplayCommand { get; }
-
-    private void SetAllDisplay(bool on)
-    {
-        foreach (var i in BcgGroups.Concat(Filters))
-        {
-            i.Visible = on;
-        }
-    }
 
     /// <summary>The draw list the map binds to (rebuilt by <see cref="SyncLayers"/>).</summary>
     public ObservableCollection<MapLayer> Layers { get; }
@@ -120,65 +82,10 @@ public sealed class MapViewModel : ObservableObject
 
     public string FilesButtonLabel => LoadedFiles.Count switch
     {
-        0 => "No files",
+        0 => "No files loaded",
         1 => "1 file",
         var n => $"{n} files",
     };
-
-    public bool ShowSample
-    {
-        get => _showSample;
-        set { if (SetProperty(ref _showSample, value)) SyncLayers(); }
-    }
-
-    /// <summary>Bound to <c>MapCanvas.RoiEnabled</c>. Mutually exclusive with <see cref="MeasureOnMap"/>.</summary>
-    public bool PickRoiOnMap
-    {
-        get => _pickRoiOnMap;
-        set
-        {
-            if (SetProperty(ref _pickRoiOnMap, value) && value)
-            {
-                MeasureOnMap = false;
-            }
-        }
-    }
-
-    /// <summary>Bound to <c>MapCanvas.MeasureEnabled</c>. Mutually exclusive with <see cref="PickRoiOnMap"/>.</summary>
-    public bool MeasureOnMap
-    {
-        get => _measureOnMap;
-        set
-        {
-            if (SetProperty(ref _measureOnMap, value) && value)
-            {
-                PickRoiOnMap = false;
-            }
-        }
-    }
-
-    public GeoPoint? RoiSouthWest
-    {
-        get => _roiSouthWest;
-        set { if (SetProperty(ref _roiSouthWest, value)) RaiseRoiText(); }
-    }
-
-    public GeoPoint? RoiNorthEast
-    {
-        get => _roiNorthEast;
-        set { if (SetProperty(ref _roiNorthEast, value)) RaiseRoiText(); }
-    }
-
-    public bool HasRoi => RoiSouthWest is not null && RoiNorthEast is not null;
-
-    public string RoiSummary => HasRoi
-        ? "Region of interest selected — corners below."
-        : "Turn on “Pick ROI on map”, then drag a box. Right-click clears it.";
-
-    public string RoiNeLat => Fmt(RoiNorthEast?.Lat);
-    public string RoiNeLon => Fmt(RoiNorthEast?.Lon);
-    public string RoiSwLat => Fmt(RoiSouthWest?.Lat);
-    public string RoiSwLon => Fmt(RoiSouthWest?.Lon);
 
     public string? StatusMessage
     {
@@ -186,21 +93,88 @@ public sealed class MapViewModel : ObservableObject
         private set => SetProperty(ref _statusMessage, value);
     }
 
+    // ---- default ROI ----
+
+    /// <summary>The saved default ROI, or <see langword="null"/> when none is set.</summary>
+    public RegionOfInterest? DefaultRoi
+    {
+        get => _defaultRoi;
+        private set
+        {
+            if (SetProperty(ref _defaultRoi, value))
+            {
+                OnPropertyChanged(nameof(HasDefaultRoi));
+                OnPropertyChanged(nameof(DefaultRoiSummary));
+                OnPropertyChanged(nameof(RoiOnMapSouthWest));
+                OnPropertyChanged(nameof(RoiOnMapNorthEast));
+            }
+        }
+    }
+
+    public bool HasDefaultRoi => DefaultRoi is not null;
+
+    public string DefaultRoiSummary => DefaultRoi is { } r
+        ? $"SW {r.SwLat:0.####}, {r.SwLon:0.####}   ·   NE {r.NeLat:0.####}, {r.NeLon:0.####}"
+        : "No default ROI is set. Draw one below and press Set ROI.";
+
+    /// <summary>When on, the saved default ROI box is drawn on the main map.</summary>
+    public bool ShowDefaultRoi
+    {
+        get => _showDefaultRoi;
+        set
+        {
+            if (SetProperty(ref _showDefaultRoi, value))
+            {
+                OnPropertyChanged(nameof(RoiOnMapSouthWest));
+                OnPropertyChanged(nameof(RoiOnMapNorthEast));
+            }
+        }
+    }
+
+    /// <summary>SW corner shown on the main map (null hides the box).</summary>
+    public GeoPoint? RoiOnMapSouthWest => ShowDefaultRoi && DefaultRoi is { } r ? new GeoPoint(r.SwLat, r.SwLon) : null;
+
+    /// <summary>NE corner shown on the main map (null hides the box).</summary>
+    public GeoPoint? RoiOnMapNorthEast => ShowDefaultRoi && DefaultRoi is { } r ? new GeoPoint(r.NeLat, r.NeLon) : null;
+
     public ICommand LoadFilesCommand { get; }
 
     public ICommand ClearFilesCommand { get; }
 
-    public ICommand ClearRoiCommand { get; }
-
-    public ICommand SaveRoiToSettingsCommand { get; }
-
     public ICommand ResetViewCommand { get; }
 
-    // ----------------------------------------------------------------------
+    /// <summary>
+    /// Called by the view when the embedded <c>RoiEditor</c> confirms a box. Writes the one
+    /// default ROI node (the same node Settings writes) with a one-step undo.
+    /// </summary>
+    /// <param name="roi">The confirmed region.</param>
+    public void SetDefaultRoi(RegionOfInterest roi)
+    {
+        UserConfigFile.TrySetValue(RoiFilterKey, "true");
+        UserConfigFile.TrySetValue(RoiSwLatKey, roi.SwLat.ToString(CultureInfo.InvariantCulture));
+        UserConfigFile.TrySetValue(RoiSwLonKey, roi.SwLon.ToString(CultureInfo.InvariantCulture));
+        UserConfigFile.TrySetValue(RoiNeLatKey, roi.NeLat.ToString(CultureInfo.InvariantCulture));
+        UserConfigFile.TrySetValue(RoiNeLonKey, roi.NeLon.ToString(CultureInfo.InvariantCulture));
+        UserConfigFile.Save("Services.AiracService.DefaultRoi");
+
+        DefaultRoi = roi;
+        Toast.Success("Default ROI saved", "Settings ▸ Default Region of Interest now uses this box.");
+    }
+
+    private void LoadDefaultRoi()
+    {
+        if (double.TryParse(UserConfigFile.GetValue(RoiSwLatKey), NumberStyles.Float, CultureInfo.InvariantCulture, out double swLat)
+            && double.TryParse(UserConfigFile.GetValue(RoiSwLonKey), NumberStyles.Float, CultureInfo.InvariantCulture, out double swLon)
+            && double.TryParse(UserConfigFile.GetValue(RoiNeLatKey), NumberStyles.Float, CultureInfo.InvariantCulture, out double neLat)
+            && double.TryParse(UserConfigFile.GetValue(RoiNeLonKey), NumberStyles.Float, CultureInfo.InvariantCulture, out double neLon))
+        {
+            DefaultRoi = new RegionOfInterest(swLat, swLon, neLat, neLon);
+        }
+    }
 
     private void LoadFiles()
     {
-        var dialog = new OpenFileDialog
+        OpenFileDialog dialog = new()
         {
             Title = "Open GeoJSON",
             Filter = "GeoJSON (*.geojson;*.json)|*.geojson;*.json|All files (*.*)|*.*",
@@ -212,22 +186,28 @@ public sealed class MapViewModel : ObservableObject
             return;
         }
 
-        var added = 0;
-        var failed = new List<string>();
+        int added = 0;
+        List<string> failed = new();
         GeoBounds? combined = null;
 
-        foreach (var path in dialog.FileNames)
+        foreach (string path in dialog.FileNames)
         {
             try
             {
-                var geometries = GeoJsonReader.Read(File.ReadAllText(path));
-                var brush = new SolidColorBrush(FileColors[_colorCursor++ % FileColors.Length]);
+                IReadOnlyList<MapGeometry> geometries = GeoJsonReader.Read(File.ReadAllText(path));
+
+                if (geometries.Count == 0)
+                {
+                    failed.Add($"{Path.GetFileName(path)} (no supported features)");
+                    AppLog.Warning("Map", $"'{Path.GetFileName(path)}' had no supported GeoJSON features.");
+                    continue;
+                }
+
+                SolidColorBrush brush = new(FileColors[_colorCursor++ % FileColors.Length]);
                 brush.Freeze();
 
-                var layer = new MapLayer(Path.GetFileName(path), geometries, brush,
-                    thickness: 1.9, pointRadius: 4.0);
+                MapLayer layer = new(Path.GetFileName(path), geometries, brush, thickness: 1.9, pointRadius: 4.0);
 
-                // Self-referential: the item's own remove command needs the item.
                 LoadedFile file = null!;
                 file = new LoadedFile(layer, SyncLayers, new RelayCommand(() => RemoveFile(file)));
                 LoadedFiles.Add(file);
@@ -241,11 +221,17 @@ public sealed class MapViewModel : ObservableObject
             catch (Exception ex) when (ex is FormatException or IOException or UnauthorizedAccessException)
             {
                 failed.Add($"{Path.GetFileName(path)} ({ex.Message})");
+                AppLog.Warning("Map", $"Could not read '{Path.GetFileName(path)}': {ex.Message}");
             }
         }
 
         SyncLayers();
         StatusMessage = BuildStatus(added, failed);
+
+        if (failed.Count > 0)
+        {
+            Toast.Warn("Some files could not be loaded", string.Join("; ", failed));
+        }
 
         if (combined is { } bounds)
         {
@@ -259,12 +245,11 @@ public sealed class MapViewModel : ObservableObject
         SyncLayers();
     }
 
-    /// <summary>Rebuilds <see cref="Layers"/>: visible files (in load order) then the sample.</summary>
+    /// <summary>Rebuilds <see cref="Layers"/> from the visible loaded files, in load order.</summary>
     private void SyncLayers()
     {
         Layers.Clear();
-
-        foreach (var file in LoadedFiles)
+        foreach (LoadedFile file in LoadedFiles)
         {
             if (file.IsVisible)
             {
@@ -272,20 +257,9 @@ public sealed class MapViewModel : ObservableObject
             }
         }
 
-        if (_showSample && _sampleLayer is not null)
-        {
-            Layers.Add(_sampleLayer);
-        }
-    }
-
-    private void RaiseRoiText()
-    {
-        OnPropertyChanged(nameof(HasRoi));
-        OnPropertyChanged(nameof(RoiSummary));
-        OnPropertyChanged(nameof(RoiNeLat));
-        OnPropertyChanged(nameof(RoiNeLon));
-        OnPropertyChanged(nameof(RoiSwLat));
-        OnPropertyChanged(nameof(RoiSwLon));
+        OnPropertyChanged(nameof(HasLoadedFiles));
+        OnPropertyChanged(nameof(FilesButtonLabel));
+        CommandManager.InvalidateRequerySuggested();
     }
 
     private static string BuildStatus(int added, IReadOnlyList<string> failed)
@@ -295,7 +269,7 @@ public sealed class MapViewModel : ObservableObject
             return added switch { 0 => string.Empty, 1 => "Loaded 1 file.", _ => $"Loaded {added} files." };
         }
 
-        var head = added > 0 ? $"Loaded {added}; " : string.Empty;
+        string head = added > 0 ? $"Loaded {added}; " : string.Empty;
         return head + "couldn't read " + string.Join(", ", failed);
     }
 
@@ -303,38 +277,22 @@ public sealed class MapViewModel : ObservableObject
         new GeoPoint(Math.Min(a.South, b.South), Math.Min(a.West, b.West)),
         new GeoPoint(Math.Max(a.North, b.North), Math.Max(a.East, b.East)));
 
-    private static string Fmt(double? v) => v is { } d ? d.ToString("0.####") : "—";
-
-    private void SaveRoiToSettings()
-    {
-        if (RoiSouthWest is not { } sw || RoiNorthEast is not { } ne)
-        {
-            return;
-        }
-
-        DefaultRoiStore.Set(sw, ne);
-        Toast.Success("Saved to default ROI",
-            "Settings › Default ROI now uses this box (bounding-box mode selected).");
-    }
-
-    private static MapLayer? TryLoadLayer(string relativeUri, string name, Brush stroke,
-        double thickness = 1.4, double pointRadius = 3.5)
+    private static MapLayer? TryLoadLayer(string relativeUri, string name, Brush stroke, double thickness = 1.4, double pointRadius = 3.5)
     {
         try
         {
-            var info = Application.GetResourceStream(new Uri(relativeUri, UriKind.Relative));
+            System.Windows.Resources.StreamResourceInfo? info = Application.GetResourceStream(new Uri(relativeUri, UriKind.Relative));
             if (info is null)
             {
                 return null;
             }
 
-            using var reader = new StreamReader(info.Stream);
-            var geometries = GeoJsonReader.Read(reader.ReadToEnd());
+            using StreamReader reader = new(info.Stream);
+            IReadOnlyList<MapGeometry> geometries = GeoJsonReader.Read(reader.ReadToEnd());
             return new MapLayer(name, geometries, stroke, thickness, pointRadius);
         }
         catch
         {
-            // Best-effort asset load (also keeps the XAML designer happy).
             return null;
         }
     }
@@ -346,7 +304,7 @@ public sealed class MapViewModel : ObservableObject
             return brush;
         }
 
-        var solid = new SolidColorBrush(fallback);
+        SolidColorBrush solid = new(fallback);
         solid.Freeze();
         return solid;
     }

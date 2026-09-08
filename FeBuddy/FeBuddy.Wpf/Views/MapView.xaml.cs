@@ -15,6 +15,7 @@ public partial class MapView : UserControl
     {
         InitializeComponent();
         DataContextChanged += OnDataContextChanged;
+        RoiEditorControl.RoiSet += (_, roi) => (DataContext as MapViewModel)?.SetDefaultRoi(roi);
     }
 
     private void OnDataContextChanged(object sender, DependencyPropertyChangedEventArgs e)

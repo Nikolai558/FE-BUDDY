@@ -1,0 +1,16 @@
+<Window x:Class="FeBuddy.Wpf.Views.RoiPickerWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
+        Title="Region of Interest"
+        Width="620" Height="560"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="CanResize" MinWidth="480" MinHeight="440"
+        ShowInTaskbar="False"
+        FontFamily="{StaticResource Font.Body}"
+        Background="{StaticResource Brush.Bg.Base}">
+
+    <Border Padding="20">
+        <ctl:RoiEditor x:Name="Editor" />
+    </Border>
+</Window>

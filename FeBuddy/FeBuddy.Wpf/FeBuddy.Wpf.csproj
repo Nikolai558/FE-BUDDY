@@ -28,9 +28,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- Bundled sample data for the map (plain GeoJSON, not code). -->
+    <!-- Reference geography for the Map screen (plain GeoJSON, not code). -->
     <Resource Include="Assets\us-states.json" />
-    <Resource Include="Assets\sample-airways.json" />
   </ItemGroup>
 
   <ItemGroup>

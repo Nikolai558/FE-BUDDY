@@ -1,0 +1,63 @@
+<UserControl x:Class="FeBuddy.Wpf.Controls.RoiEditor"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
+             mc:Ignorable="d"
+             d:DesignWidth="560" d:DesignHeight="460">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" MinHeight="220" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- map with rubber-band ROI -->
+        <Border Grid.Row="0" BorderBrush="{StaticResource Brush.Stroke.Strong}" BorderThickness="1"
+                CornerRadius="{StaticResource Radius.Control}" ClipToBounds="True">
+            <Grid>
+                <ctl:MapCanvas x:Name="Map" RoiEnabled="True"
+                               BaseLayer="{Binding BaseLayer, RelativeSource={RelativeSource AncestorType=UserControl}}" />
+                <Border VerticalAlignment="Top" HorizontalAlignment="Left" Margin="8"
+                        Background="{StaticResource Brush.Panel}" CornerRadius="{StaticResource Radius.Chip}"
+                        Padding="8,4">
+                    <TextBlock Text="{Binding CursorText, ElementName=Map}" Style="{StaticResource Text.Caption}"
+                               FontFamily="{StaticResource Font.Mono}" />
+                </Border>
+            </Grid>
+        </Border>
+
+        <!-- coordinates + confirm -->
+        <StackPanel Grid.Row="1" Margin="0,12,0,0">
+            <TextBlock Style="{StaticResource Text.Caption}" Margin="0,0,0,6"
+                       Text="Drag a box on the map, then adjust the corners below. Nothing is applied until you press Set ROI." />
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="18" />
+                    <ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions><RowDefinition /><RowDefinition /></Grid.RowDefinitions>
+
+                <TextBlock Text="NE lat" Style="{StaticResource Text.Caption}" VerticalAlignment="Center" Margin="0,0,8,4" />
+                <TextBox x:Name="NeLatBox" Grid.Column="1" Margin="0,0,0,4" TextChanged="OnCoordTextChanged" />
+                <TextBlock Grid.Column="3" Text="NE lon" Style="{StaticResource Text.Caption}" VerticalAlignment="Center" Margin="0,0,8,4" />
+                <TextBox x:Name="NeLonBox" Grid.Column="4" Margin="0,0,0,4" TextChanged="OnCoordTextChanged" />
+
+                <TextBlock Grid.Row="1" Text="SW lat" Style="{StaticResource Text.Caption}" VerticalAlignment="Center" Margin="0,0,8,0" />
+                <TextBox x:Name="SwLatBox" Grid.Row="1" Grid.Column="1" TextChanged="OnCoordTextChanged" />
+                <TextBlock Grid.Row="1" Grid.Column="3" Text="SW lon" Style="{StaticResource Text.Caption}" VerticalAlignment="Center" Margin="0,0,8,0" />
+                <TextBox x:Name="SwLonBox" Grid.Row="1" Grid.Column="4" TextChanged="OnCoordTextChanged" />
+            </Grid>
+
+            <TextBlock x:Name="ErrorText" Style="{StaticResource Text.Caption}" Foreground="{StaticResource Brush.Danger}"
+                       TextWrapping="Wrap" Margin="0,8,0,0" Visibility="Collapsed" />
+
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
+                <Button Content="Cancel" Style="{StaticResource Button.Subtle}" Click="OnCancel" MinWidth="90" Margin="0,0,10,0" />
+                <Button Content="Set ROI" Style="{StaticResource Button.Primary}" Click="OnSetRoi" MinWidth="120" />
+            </StackPanel>
+        </StackPanel>
+    </Grid>
+</UserControl>

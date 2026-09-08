@@ -32,7 +32,17 @@ internal static class HarnessSettings
 			{ "GenerateAliasFile", "Y" },
 			{ "SplitAtAntimeridian", "Y" },
 			{ "IncludeCrcEramPropertyDefaults", "Y" },
-			{ "FilterByRoi", "N" }
+			{ "FilterByRoi", "N" },
+
+			// Phase 3.3-3.7 settings. Defaults shown; omit any of these and the parser uses
+			// the same default.
+			{ "ExcludedDesignations", "" },   // e.g. "RN,SL" to drop those designations entirely (3.3)
+			{ "EmitLines", "Y" },             // per-kind output opt-out (3.4)
+			{ "EmitSymbols", "Y" },
+			{ "EmitText", "Y" },
+			{ "AliasRoiScope", "All" },       // "All" or "RoiAirways" (3.5)
+			{ "CoordinatePrecision", "6" },   // max decimal places in GeoJSON coords (3.6)
+			{ "AddFeBuddyOutputFolder", "Y" } // N -> write straight into OutputDirectory\Airways (3.7)
 
 			// To exercise Designation grouping, waypoint buffering, or ROI clipping
 			// (all verified working against real NASR data during development), try e.g.:

@@ -87,6 +87,21 @@ public class AirwayBuilderTests
 	}
 
 	[Fact]
+	public void an_excluded_designation_is_dropped_before_any_geometry_work()
+	{
+		var data = AirwayTestDataBuilder.Build(
+			fixes: new[] { ("AAAAA", 40.0, -80.0), ("BBBBB", 41.0, -81.0) },
+			awyId: "V16",
+			segments: new[] { AirwayTestDataBuilder.Segment("V16", 10, "AAAAA", "WP", "BBBBB") });
+
+		AirwaySettings settings = MinimalSettings() with { ExcludedDesignations = new[] { "V" } };
+
+		AirwayBuildAllResult result = AirwayBuilder.BuildAll(data, settings);
+
+		Assert.Empty(result.Airways);
+	}
+
+	[Fact]
 	public void an_airway_with_a_genuine_mid_route_unresolvable_waypoint_is_excluded_entirely()
 	{
 		// AAAAA and CCCCC resolve; the middle waypoint MISNG does not, and a resolvable

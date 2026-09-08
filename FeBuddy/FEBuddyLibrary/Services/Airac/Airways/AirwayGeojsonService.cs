@@ -59,7 +59,7 @@ public static class AirwayGeojsonService
 			return new AirwayGeojsonGenerateResult(filesWritten, renderedCounts, warnings);
 		}
 
-		string geojsonDirectory = Path.Combine(settings.OutputDirectory, "FE-Buddy_Output", "Airways", "Geojson");
+		string geojsonDirectory = AirwayOutputPaths.Resolve(settings, "Geojson");
 
 		foreach (var group in GroupAirways(airways, settings.OutputBy))
 		{
@@ -70,7 +70,11 @@ public static class AirwayGeojsonService
 			List<Airway> orderedAirways =
 				group.Value.OrderBy(a => a.AwyId, StringComparer.OrdinalIgnoreCase).ToList();
 
-			GenerateLines(orderedAirways, referenceClass, settings, geojsonDirectory, filePrefix, filesWritten, renderedCounts);
+			if (settings.EmitLines)
+			{
+				GenerateLines(orderedAirways, referenceClass, settings, geojsonDirectory, filePrefix, filesWritten, renderedCounts);
+			}
+
 			GenerateSymbolsAndText(orderedAirways, referenceClass, settings, geojsonDirectory, filePrefix, filesWritten, renderedCounts);
 		}
 
@@ -167,7 +171,7 @@ public static class AirwayGeojsonService
 			renderedCount++;
 		}
 
-		string? path = GeojsonFileWriter.Write(collection, renderedCount, directory, $"{filePrefix}_Lines.geojson");
+		string? path = GeojsonFileWriter.Write(collection, renderedCount, directory, $"{filePrefix}_Lines.geojson", settings.CoordinatePrecision);
 
 		if (path is not null)
 		{
@@ -206,8 +210,15 @@ public static class AirwayGeojsonService
 		List<AirwayPoint> orderedPoints =
 			pointsToRender.OrderBy(p => p.PointId, StringComparer.OrdinalIgnoreCase).ToList();
 
-		GenerateSymbols(orderedPoints, referenceClass, settings, directory, filePrefix, filesWritten, renderedCounts);
-		GenerateText(orderedPoints, referenceClass, settings, directory, filePrefix, filesWritten, renderedCounts);
+		if (settings.EmitSymbols)
+		{
+			GenerateSymbols(orderedPoints, referenceClass, settings, directory, filePrefix, filesWritten, renderedCounts);
+		}
+
+		if (settings.EmitText)
+		{
+			GenerateText(orderedPoints, referenceClass, settings, directory, filePrefix, filesWritten, renderedCounts);
+		}
 	}
 
 	private static void GenerateSymbols(
@@ -238,7 +249,7 @@ public static class AirwayGeojsonService
 			collection.Add(feature);
 		}
 
-		string? path = GeojsonFileWriter.Write(collection, points.Count, directory, $"{filePrefix}_Symbols.geojson");
+		string? path = GeojsonFileWriter.Write(collection, points.Count, directory, $"{filePrefix}_Symbols.geojson", settings.CoordinatePrecision);
 
 		if (path is not null)
 		{
@@ -275,7 +286,7 @@ public static class AirwayGeojsonService
 			collection.Add(feature);
 		}
 
-		string? path = GeojsonFileWriter.Write(collection, points.Count, directory, $"{filePrefix}_Text.geojson");
+		string? path = GeojsonFileWriter.Write(collection, points.Count, directory, $"{filePrefix}_Text.geojson", settings.CoordinatePrecision);
 
 		if (path is not null)
 		{

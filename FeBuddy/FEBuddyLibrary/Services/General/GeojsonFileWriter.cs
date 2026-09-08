@@ -3,6 +3,7 @@ using System.Text.Json;
 using FEBuddyLibrary.Configuration;
 
 using NetTopologySuite.Features;
+using NetTopologySuite.Geometries;
 using NetTopologySuite.IO.Converters;
 
 namespace FEBuddyLibrary.Services.General;
@@ -29,6 +30,10 @@ public static class GeojsonFileWriter
 	/// </param>
 	/// <param name="directory">The directory to write into. Created if it does not exist.</param>
 	/// <param name="fileName">The file name to write, including extension.</param>
+	/// <param name="maxDecimalPlaces">
+	/// Maximum decimal places to keep for every coordinate, applied just before serialization
+	/// (remediation plan 3.6). A value of 0 or less means "do not round".
+	/// </param>
 	/// <returns>
 	/// The full path written, or <see langword="null"/> when
 	/// <paramref name="renderedFeatureCount"/> is zero or less (nothing was written).
@@ -37,7 +42,8 @@ public static class GeojsonFileWriter
 		FeatureCollection collection,
 		int renderedFeatureCount,
 		string directory,
-		string fileName)
+		string fileName,
+		int maxDecimalPlaces = 0)
 	{
 		ArgumentNullException.ThrowIfNull(collection);
 
@@ -65,6 +71,11 @@ public static class GeojsonFileWriter
 
 		Directory.CreateDirectory(directory);
 
+		if (maxDecimalPlaces > 0)
+		{
+			RoundCoordinates(collection, maxDecimalPlaces);
+		}
+
 		JsonSerializerOptions jsonOptions = new()
 		{
 			// Single-line output saves disk space; DevMode trades that for readability.
@@ -80,5 +91,41 @@ public static class GeojsonFileWriter
 		File.WriteAllText(outputPath, geoJson);
 
 		return outputPath;
+	}
+
+	/// <summary>
+	/// Rounds every coordinate in every feature's geometry to <paramref name="decimals"/>
+	/// decimal places, in place.
+	/// </summary>
+	private static void RoundCoordinates(FeatureCollection collection, int decimals)
+	{
+		RoundingFilter filter = new(decimals);
+
+		foreach (IFeature feature in collection)
+		{
+			if (feature.Geometry is { } geometry)
+			{
+				geometry.Apply(filter);
+				geometry.GeometryChanged();
+			}
+		}
+	}
+
+	/// <summary>An NTS coordinate filter that rounds X and Y to a fixed number of decimal places.</summary>
+	private sealed class RoundingFilter : ICoordinateSequenceFilter
+	{
+		private readonly int _decimals;
+
+		public RoundingFilter(int decimals) => _decimals = decimals;
+
+		public bool Done => false;
+
+		public bool GeometryChanged => true;
+
+		public void Filter(CoordinateSequence seq, int i)
+		{
+			seq.SetOrdinate(i, Ordinate.X, Math.Round(seq.GetX(i), _decimals, MidpointRounding.AwayFromZero));
+			seq.SetOrdinate(i, Ordinate.Y, Math.Round(seq.GetY(i), _decimals, MidpointRounding.AwayFromZero));
+		}
 	}
 }

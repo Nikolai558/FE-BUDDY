@@ -1,16 +1,17 @@
 using System.Text;
 
 using FEBuddyLibrary.Models.Services.Airac.Airways;
+using FEBuddyLibrary.Services.General;
 
 namespace FEBuddyLibrary.Services.Airac.Airways;
 
 /// <summary>
-/// Generates the <c>Draw_Airway_Points.txt</c> alias file: one <c>.FF</c> alias command per
-/// airway that draws every waypoint on it (e.g. <c>.J3F .FF OAK RBL LKV IMB GEG</c>).
+/// Generates the <c>Airways.txt</c> alias file: one <c>.FF</c> alias command per airway that
+/// draws every waypoint on it (e.g. <c>.J3F .FF OAK RBL LKV IMB GEG</c>).
 /// </summary>
 public static class AirwayAliasService
 {
-	private const string FileName = "Draw_Airway_Points.txt";
+	private const string FileName = "Airways.txt";
 
 	/// <summary>
 	/// Writes the alias file for every airway that has at least one resolved waypoint.
@@ -32,8 +33,18 @@ public static class AirwayAliasService
 		ArgumentNullException.ThrowIfNull(airways);
 		ArgumentNullException.ThrowIfNull(settings);
 
-		List<Airway> airwaysWithPoints = airways
-			.Where(a => a.Points.Count > 0)
+		IEnumerable<Airway> candidates = airways.Where(a => a.Points.Count > 0);
+
+		// RoiAirways scope: keep an airway if ANY of its waypoints falls inside the ROI, then
+		// write ALL of that airway's waypoints - the alias is meant to draw the whole airway,
+		// so the ROI-clipped geometry is deliberately not consulted (remediation plan 3.5).
+		if (settings.AliasRoiScope == AliasRoiScope.RoiAirways && settings.Roi is { } roi)
+		{
+			candidates = candidates.Where(a =>
+				a.Points.Any(p => RoiFilter.Contains(roi, p.Latitude, p.Longitude)));
+		}
+
+		List<Airway> airwaysWithPoints = candidates
 			.OrderBy(a => a.AwyId, StringComparer.OrdinalIgnoreCase)
 			.ToList();
 
@@ -50,7 +61,7 @@ public static class AirwayAliasService
 			builder.AppendLine($".{airway.AwyId}F .FF {pointIds}");
 		}
 
-		string directory = Path.Combine(settings.OutputDirectory, "FE-Buddy_Output", "Airways", "Alias");
+		string directory = AirwayOutputPaths.Resolve(settings, "Alias");
 		Directory.CreateDirectory(directory);
 
 		string path = Path.Combine(directory, FileName);

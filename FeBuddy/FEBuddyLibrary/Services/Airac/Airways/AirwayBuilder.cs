@@ -67,6 +67,22 @@ public static class AirwayBuilder
 			string awyId = entry.Key;
 			AwyCsvDataModel.AwyBase baseRecord = entry.Value;
 
+			string designation = AirwayClassifier.DeriveDesignation(awyId);
+
+			if (designation == AirwayClassifier.UnknownDesignation && !warnedUnknownDesignation)
+			{
+				warnedUnknownDesignation = true;
+				warnings.Add($"Airway '{awyId}': its ID has no leading letters; grouped under '{AirwayClassifier.UnknownDesignation}'.");
+			}
+
+			// Drop excluded designations before any geometry work, so GeoJSON and the alias
+			// file agree and no time is wasted building geometry that is thrown away
+			// (remediation plan 3.3).
+			if (settings.ExcludedDesignations.Contains(designation))
+			{
+				continue;
+			}
+
 			List<AwyCsvDataModel.AwySegAlt> rawSegments =
 				airwaySegmentLookup[awyId].OrderBy(x => x.PointSeq).ToList();
 
@@ -147,14 +163,6 @@ public static class AirwayBuilder
 
 			(AirwayAltitudeClass altitudeClass, int? maxAuthAlt) =
 				AirwayClassifier.Classify(normalizedSegments);
-
-			string designation = AirwayClassifier.DeriveDesignation(awyId);
-
-			if (designation == AirwayClassifier.UnknownDesignation && !warnedUnknownDesignation)
-			{
-				warnedUnknownDesignation = true;
-				warnings.Add($"Airway '{awyId}': its ID has no leading letters; grouped under '{AirwayClassifier.UnknownDesignation}'.");
-			}
 
 			Airway airway = new()
 			{

@@ -27,6 +27,40 @@ public class GeojsonFileWriterTests : IDisposable
 	private static Feature MakePointFeature() =>
 		new(AirwayGeometryBuilder.GeometryFactory.CreatePoint(new Coordinate(-80.0, 40.0)), new AttributesTable());
 
+	[Theory]
+	[InlineData(5, "-80.12346")]
+	[InlineData(6, "-80.123457")]
+	[InlineData(7, "-80.1234568")]
+	public void write_rounds_coordinates_to_the_requested_precision(int decimals, string expectedLon)
+	{
+		FeatureCollection collection = new()
+		{
+			new Feature(
+				AirwayGeometryBuilder.GeometryFactory.CreatePoint(new Coordinate(-80.12345678, 40.0)),
+				new AttributesTable()),
+		};
+
+		string path = GeojsonFileWriter.Write(collection, renderedFeatureCount: 1, _directory, "Prec.geojson", maxDecimalPlaces: decimals)!;
+
+		string json = File.ReadAllText(path);
+		Assert.Contains(expectedLon, json);
+	}
+
+	[Fact]
+	public void write_does_not_round_when_precision_is_zero_or_less()
+	{
+		FeatureCollection collection = new()
+		{
+			new Feature(
+				AirwayGeometryBuilder.GeometryFactory.CreatePoint(new Coordinate(-80.12345678, 40.0)),
+				new AttributesTable()),
+		};
+
+		string path = GeojsonFileWriter.Write(collection, renderedFeatureCount: 1, _directory, "NoPrec.geojson", maxDecimalPlaces: 0)!;
+
+		Assert.Contains("-80.12345678", File.ReadAllText(path));
+	}
+
 	[Fact]
 	public void write_returns_null_and_writes_nothing_when_rendered_count_is_zero()
 	{

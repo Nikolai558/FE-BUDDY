@@ -269,11 +269,26 @@ public sealed record AirwaySettings
 | `IncludeCrcEramPropertyDefaults` | `Y` \| `N` | no | `N` |
 | `FilterByRoi` | `Y` \| `N` | no | `N` |
 | `RoiSwLat`, `RoiSwLon`, `RoiNeLat`, `RoiNeLon` | decimal degrees | required when `FilterByRoi=Y` | — |
+| `ExcludedDesignations` | comma-separated designations (from `AWY_ID`), case-insensitive, trimmed | no | *(none)* |
+| `EmitLines` \| `EmitSymbols` \| `EmitText` | `Y` \| `N` | no | `Y` |
+| `AliasRoiScope` | `All` \| `RoiAirways` (case-insensitive) | no | `All` |
+| `CoordinatePrecision` | int `0`–`15` | no | `6` |
+| `AddFeBuddyOutputFolder` | `Y` \| `N` | no | `Y` |
 | `Crc.<Class>.Line.<prop>` | see §6 | required when `IncludeCrcEramPropertyDefaults=Y` | — |
 | `Crc.<Class>.Symbol.<prop>` | see §6 | " | — |
 | `Crc.<Class>.Text.<prop>` | see §6 | " | — |
 
 `<Class>` is `High`, `Low`, or `Other`. Example key: `Crc.High.Line.thickness`.
+
+> **Phase 3.3–3.7 (remediation plan):**
+> - `ExcludedDesignations` — airways whose derived designation is listed are dropped **before**
+>   geometry work, so GeoJSON and the alias file agree.
+> - `EmitLines`/`EmitSymbols`/`EmitText` — all three `N` throws unless `OutputBy=None`.
+> - `AliasRoiScope=RoiAirways` — an airway is kept if **any** waypoint is inside the ROI, then
+>   **all** its waypoints are written (point-in-ROI test, never the clipped geometry).
+> - `CoordinatePrecision` — rounds every coordinate in the GeoJSON at write time.
+> - `AddFeBuddyOutputFolder=N` — output goes straight into `<OutputDirectory>\Airways\…`
+>   (the `FE-Buddy_Output` wrapper is dropped; the `Airways` sub-folder stays).
 
 Parsing rules:
 - Every `Y`/`N` parse is case-insensitive and trimmed. Anything else throws `ArgumentException` naming the setting.

@@ -30,7 +30,9 @@ public static class AirwaySettingsParser
 		"OutputDirectory", "OutputBy", "BufferAirwayWaypoints", "IncludeFebCustomProperties",
 		"IncludeAirwayWaypointIds", "GenerateAliasFile", "SplitAtAntimeridian",
 		"IncludeCrcEramPropertyDefaults", "FilterByRoi",
-		"RoiSwLat", "RoiSwLon", "RoiNeLat", "RoiNeLon"
+		"RoiSwLat", "RoiSwLon", "RoiNeLat", "RoiNeLon",
+		"ExcludedDesignations", "EmitLines", "EmitSymbols", "EmitText",
+		"AliasRoiScope", "CoordinatePrecision", "AddFeBuddyOutputFolder"
 	};
 
 	private static readonly HashSet<string> LinePropertyNames =
@@ -74,6 +76,24 @@ public static class AirwaySettingsParser
 
 		RegionOfInterest? roi = filterByRoi ? ParseRoi(airwaySettings) : null;
 
+		IReadOnlyCollection<string> excludedDesignations = ParseExcludedDesignations(airwaySettings);
+
+		bool emitLines = ParseYesNo(airwaySettings, "EmitLines", defaultValue: true);
+		bool emitSymbols = ParseYesNo(airwaySettings, "EmitSymbols", defaultValue: true);
+		bool emitText = ParseYesNo(airwaySettings, "EmitText", defaultValue: true);
+
+		// All three kinds off is only meaningful when nothing is being written anyway.
+		if (!emitLines && !emitSymbols && !emitText && outputBy != AirwayGeojsonOutputBy.None)
+		{
+			throw new ArgumentException(
+				"EmitLines, EmitSymbols and EmitText are all \"N\", but OutputBy is not \"None\". " +
+				"Turn at least one kind back on, or set OutputBy to \"None\".");
+		}
+
+		AliasRoiScope aliasRoiScope = ParseAliasRoiScope(airwaySettings);
+		int coordinatePrecision = ParseCoordinatePrecision(airwaySettings);
+		bool addFeBuddyOutputFolder = ParseYesNo(airwaySettings, "AddFeBuddyOutputFolder", defaultValue: true);
+
 		Dictionary<AirwayAltitudeClass, CrcLineProperties> lineDefaults = new();
 		Dictionary<AirwayAltitudeClass, CrcSymbolProperties> symbolDefaults = new();
 		Dictionary<AirwayAltitudeClass, CrcTextProperties> textDefaults = new();
@@ -110,6 +130,13 @@ public static class AirwaySettingsParser
 			SplitAtAntimeridian = splitAtAntimeridian,
 			IncludeCrcEramPropertyDefaults = includeCrcDefaults,
 			Roi = roi,
+			ExcludedDesignations = excludedDesignations,
+			EmitLines = emitLines,
+			EmitSymbols = emitSymbols,
+			EmitText = emitText,
+			AliasRoiScope = aliasRoiScope,
+			CoordinatePrecision = coordinatePrecision,
+			AddFeBuddyOutputFolder = addFeBuddyOutputFolder,
 			LineDefaults = lineDefaults,
 			SymbolDefaults = symbolDefaults,
 			TextDefaults = textDefaults
@@ -131,6 +158,53 @@ public static class AirwaySettingsParser
 
 		throw new ArgumentException(
 			$"OutputBy value '{value}' is invalid. Must be \"None\", \"HighLow\", or \"Designation\".");
+	}
+
+	private static IReadOnlyCollection<string> ParseExcludedDesignations(Dictionary<string, string> settings)
+	{
+		if (!settings.TryGetValue("ExcludedDesignations", out string? value) || string.IsNullOrWhiteSpace(value))
+		{
+			return Array.Empty<string>();
+		}
+
+		return value
+			.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+			.Select(designation => designation.ToUpperInvariant())
+			.ToHashSet(StringComparer.OrdinalIgnoreCase);
+	}
+
+	private static AliasRoiScope ParseAliasRoiScope(Dictionary<string, string> settings)
+	{
+		if (!settings.TryGetValue("AliasRoiScope", out string? value) || string.IsNullOrWhiteSpace(value))
+		{
+			return AliasRoiScope.All;
+		}
+
+		value = value.Trim();
+
+		if (value.Equals("All", StringComparison.OrdinalIgnoreCase))
+			return AliasRoiScope.All;
+
+		if (value.Equals("RoiAirways", StringComparison.OrdinalIgnoreCase))
+			return AliasRoiScope.RoiAirways;
+
+		throw new ArgumentException($"AliasRoiScope value '{value}' is invalid. Must be \"All\" or \"RoiAirways\".");
+	}
+
+	private static int ParseCoordinatePrecision(Dictionary<string, string> settings)
+	{
+		if (!settings.TryGetValue("CoordinatePrecision", out string? value) || string.IsNullOrWhiteSpace(value))
+		{
+			return 6;
+		}
+
+		if (!int.TryParse(value.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out int parsed)
+			|| parsed < 0 || parsed > 15)
+		{
+			throw new ArgumentException($"CoordinatePrecision value '{value}' is invalid. Must be an integer from 0 to 15.");
+		}
+
+		return parsed;
 	}
 
 	private static RegionOfInterest ParseRoi(Dictionary<string, string> settings)

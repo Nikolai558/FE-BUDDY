@@ -201,4 +201,105 @@ public class AirwaySettingsParserTests
 
 		Assert.Contains(result.Warnings, w => w.Contains("Crc.High.Text.text"));
 	}
+
+	// ---- Phase 3.3-3.7 settings ---------------------------------------
+
+	[Fact]
+	public void excluded_designations_parse_as_a_trimmed_upper_cased_set()
+	{
+		Dictionary<string, string> settings = MinimalValidSettings();
+		settings["ExcludedDesignations"] = " rn , sl ,V";
+
+		AirwaySettings parsed = AirwaySettingsParser.Parse(settings).Settings;
+
+		Assert.Equal(new[] { "RN", "SL", "V" }, parsed.ExcludedDesignations.OrderBy(x => x));
+		Assert.Contains("rn", parsed.ExcludedDesignations); // case-insensitive membership
+	}
+
+	[Fact]
+	public void excluded_designations_default_to_empty()
+	{
+		Assert.Empty(AirwaySettingsParser.Parse(MinimalValidSettings()).Settings.ExcludedDesignations);
+	}
+
+	[Fact]
+	public void emit_flags_default_to_true()
+	{
+		AirwaySettings parsed = AirwaySettingsParser.Parse(MinimalValidSettings()).Settings;
+
+		Assert.True(parsed.EmitLines);
+		Assert.True(parsed.EmitSymbols);
+		Assert.True(parsed.EmitText);
+	}
+
+	[Fact]
+	public void all_three_emit_flags_off_throws_unless_output_by_is_none()
+	{
+		Dictionary<string, string> settings = MinimalValidSettings();
+		settings["EmitLines"] = "N";
+		settings["EmitSymbols"] = "N";
+		settings["EmitText"] = "N";
+
+		Assert.Throws<ArgumentException>(() => AirwaySettingsParser.Parse(settings));
+
+		settings["OutputBy"] = "None";
+		AirwaySettings parsed = AirwaySettingsParser.Parse(settings).Settings;
+		Assert.False(parsed.EmitLines);
+	}
+
+	[Theory]
+	[InlineData("All", AliasRoiScope.All)]
+	[InlineData("RoiAirways", AliasRoiScope.RoiAirways)]
+	[InlineData("roiairways", AliasRoiScope.RoiAirways)]
+	public void alias_roi_scope_parses_case_insensitively(string value, AliasRoiScope expected)
+	{
+		Dictionary<string, string> settings = MinimalValidSettings();
+		settings["AliasRoiScope"] = value;
+
+		Assert.Equal(expected, AirwaySettingsParser.Parse(settings).Settings.AliasRoiScope);
+	}
+
+	[Fact]
+	public void alias_roi_scope_defaults_to_all_and_rejects_junk()
+	{
+		Assert.Equal(AliasRoiScope.All, AirwaySettingsParser.Parse(MinimalValidSettings()).Settings.AliasRoiScope);
+
+		Dictionary<string, string> settings = MinimalValidSettings();
+		settings["AliasRoiScope"] = "Nonsense";
+		Assert.Throws<ArgumentException>(() => AirwaySettingsParser.Parse(settings));
+	}
+
+	[Theory]
+	[InlineData("5", 5)]
+	[InlineData("7", 7)]
+	public void coordinate_precision_parses_and_defaults_to_6(string value, int expected)
+	{
+		Dictionary<string, string> settings = MinimalValidSettings();
+		settings["CoordinatePrecision"] = value;
+
+		Assert.Equal(expected, AirwaySettingsParser.Parse(settings).Settings.CoordinatePrecision);
+		Assert.Equal(6, AirwaySettingsParser.Parse(MinimalValidSettings()).Settings.CoordinatePrecision);
+	}
+
+	[Theory]
+	[InlineData("-1")]
+	[InlineData("16")]
+	[InlineData("abc")]
+	public void coordinate_precision_rejects_out_of_range_or_non_numeric(string value)
+	{
+		Dictionary<string, string> settings = MinimalValidSettings();
+		settings["CoordinatePrecision"] = value;
+
+		Assert.Throws<ArgumentException>(() => AirwaySettingsParser.Parse(settings));
+	}
+
+	[Fact]
+	public void add_febuddy_output_folder_defaults_to_true()
+	{
+		Assert.True(AirwaySettingsParser.Parse(MinimalValidSettings()).Settings.AddFeBuddyOutputFolder);
+
+		Dictionary<string, string> settings = MinimalValidSettings();
+		settings["AddFeBuddyOutputFolder"] = "N";
+		Assert.False(AirwaySettingsParser.Parse(settings).Settings.AddFeBuddyOutputFolder);
+	}
 }

@@ -22,6 +22,7 @@
 
     <!-- Shared value converters, instantiated once here. -->
     <conv:BoolToVisibilityConverter x:Key="BoolToVis" />
+    <conv:StringToVisibilityConverter x:Key="StringToVis" />
     <conv:EnumToBooleanConverter x:Key="EnumToBool" />
 
 </ResourceDictionary>

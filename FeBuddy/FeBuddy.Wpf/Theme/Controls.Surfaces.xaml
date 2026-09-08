@@ -29,9 +29,10 @@
     </Style>
 
     <!-- ============================= CHIP =========================== -->
+    <!-- Soft-cornered rectangle, not an oval (remediation plan 4.4). -->
     <Style x:Key="Chip" TargetType="Border">
         <Setter Property="Background" Value="{DynamicResource Brush.Overlay}" />
-        <Setter Property="CornerRadius" Value="{DynamicResource Radius.Pill}" />
+        <Setter Property="CornerRadius" Value="{DynamicResource Radius.Chip}" />
         <Setter Property="Padding" Value="9,3" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
         <Setter Property="VerticalAlignment" Value="Center" />

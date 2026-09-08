@@ -81,6 +81,10 @@
     <CornerRadius x:Key="Radius.Card">16</CornerRadius>
     <CornerRadius x:Key="Radius.Control">10</CornerRadius>
     <CornerRadius x:Key="Radius.Small">7</CornerRadius>
+    <!-- Chips / badges / status highlights: a soft-cornered rectangle, never an oval
+         (remediation plan 4.4). Radius.Pill stays only for genuine pill controls
+         (segmented selectors, toggle pills). -->
+    <CornerRadius x:Key="Radius.Chip">6</CornerRadius>
     <CornerRadius x:Key="Radius.Pill">999</CornerRadius>
 
 </ResourceDictionary>

@@ -32,13 +32,17 @@ public enum UpdateChannel
 /// GUI shows update state as "unknown" rather than "up to date".
 /// </param>
 /// <param name="Message">A short human-readable note about the result or the failure.</param>
+/// <param name="LatestReleaseNotes">The GitHub release body for <paramref name="LatestVersion"/>, when available.</param>
+/// <param name="LatestReleaseUrl">The GitHub release page URL for <paramref name="LatestVersion"/>, when available.</param>
 public record VersionCheckResult(
 	string CurrentVersion,
 	string? LatestVersion,
 	bool UpdateAvailable,
 	UpdateChannel Channel,
 	bool CheckSucceeded,
-	string? Message)
+	string? Message,
+	string? LatestReleaseNotes = null,
+	string? LatestReleaseUrl = null)
 {
 	/// <summary>
 	/// Parses an <see cref="UpdateChannel"/> from its stored name, falling back to

@@ -76,6 +76,8 @@ public static class VersionCheck
 			Version? currentParsed = TryParseVersion(current);
 			Version? best = null;
 			string? bestTag = null;
+			string? bestNotes = null;
+			string? bestUrl = null;
 
 			foreach (JsonElement release in document.RootElement.EnumerateArray())
 			{
@@ -98,6 +100,8 @@ public static class VersionCheck
 				{
 					best = parsed;
 					bestTag = tag;
+					bestNotes = release.TryGetProperty("body", out JsonElement body) ? body.GetString() : null;
+					bestUrl = release.TryGetProperty("html_url", out JsonElement url) ? url.GetString() : null;
 				}
 			}
 
@@ -113,7 +117,9 @@ public static class VersionCheck
 				: "You are running the latest version.";
 
 			AppLog.Info(LogSource, message);
-			return new VersionCheckResult(current, bestTag?.TrimStart('v', 'V'), updateAvailable, channel, CheckSucceeded: true, message);
+			return new VersionCheckResult(
+				current, bestTag?.TrimStart('v', 'V'), updateAvailable, channel, CheckSucceeded: true, message,
+				LatestReleaseNotes: bestNotes, LatestReleaseUrl: bestUrl);
 		}
 		catch (Exception ex)
 		{

@@ -43,6 +43,41 @@ public static class AppEnvironment
 	/// </summary>
 	public static event EventHandler? Changed;
 
+	/// <summary>
+	/// Re-runs the online-state checks (UTC time / internet, then the version check) and
+	/// publishes the results, raising <see cref="Changed"/>. For the shell's "re-check" action
+	/// and Settings' "check for updates now". Never throws.
+	/// </summary>
+	/// <param name="cancellationToken">Cancels the network calls.</param>
+	public static async Task RecheckAsync(CancellationToken cancellationToken = default)
+	{
+		try
+		{
+			UtcTimeCheckResult time = await UtcTimeCheck.RunAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
+			HasInternetConnection = time.HasInternetConnection;
+			LaunchUtcNow = time.UtcNow;
+			LaunchUtcSource = time.Source;
+			RaiseChanged();
+
+			UpdateChannel channel = VersionCheckResult.ParseChannel(
+				FEBuddyLibrary.Helpers.UserConfigFile.GetValue("General.UpdateChannel"));
+
+			string currentVersion = Version?.CurrentVersion
+				?? System.Reflection.Assembly.GetEntryAssembly()?.GetName().Version?.ToString()
+				?? "dev";
+
+			Version = await VersionCheck
+				.RunAsync(currentVersion, channel, time.HasInternetConnection, cancellationToken: cancellationToken)
+				.ConfigureAwait(false);
+
+			RaiseChanged();
+		}
+		catch
+		{
+			// Best-effort; the individual checks log their own failures.
+		}
+	}
+
 	/// <summary>Raises <see cref="Changed"/>. Called by <c>LaunchSequence</c> after each update.</summary>
 	internal static void RaiseChanged()
 	{

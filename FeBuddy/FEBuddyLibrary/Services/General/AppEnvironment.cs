@@ -34,6 +34,9 @@ public static class AppEnvironment
 	/// <summary>The result of the launch-time version check, or <see langword="null"/> until it runs.</summary>
 	public static VersionCheckResult? Version { get; internal set; }
 
+	/// <summary>The result of the launch-time News check, or <see langword="null"/> until it runs.</summary>
+	public static NewsCheckResult? News { get; internal set; }
+
 	/// <summary><see langword="true"/> once the launch sequence has finished (successfully or with degraded steps).</summary>
 	public static bool LaunchCompleted { get; internal set; }
 
@@ -98,6 +101,7 @@ public static class AppEnvironment
 		LaunchUtcNow = null;
 		LaunchUtcSource = null;
 		Version = null;
+		News = null;
 		LaunchCompleted = false;
 		Changed = null;
 	}

@@ -94,10 +94,19 @@ public static class LaunchSequence
 			defaultValue: () => AiracCycleReadiness.Waiting)
 			.ConfigureAwait(false);
 
-		// Step 6 - News. Wired up in Phase 6.1 (NewsService).
-		progress?.Report(new LaunchProgress(LaunchStep.CheckNews, LaunchStepStatus.Started, "Checking for news"));
-		AppLog.Info(LogSource, "News check: not yet wired up (Phase 6.1). Skipping.");
-		progress?.Report(new LaunchProgress(LaunchStep.CheckNews, LaunchStepStatus.Skipped, "News check not yet implemented"));
+		// Step 6 - News: fetch (GitHub raw when online, bundled copy otherwise), parse, and
+		// count posts newer than General.NewsLastOpen.
+		NewsCheckResult news = await RunStepAsync(
+			progress, LaunchStep.CheckNews, "Checking for news",
+			() => NewsService.CheckAsync(
+				UserConfigFile.GetValue("General.NewsLastOpen"),
+				time.HasInternetConnection,
+				cancellationToken: cancellationToken),
+			defaultValue: () => new NewsCheckResult(Array.Empty<NewsPost>(), null, 0, ParseSucceeded: false, FromNetwork: false))
+			.ConfigureAwait(false);
+
+		AppEnvironment.News = news;
+		AppEnvironment.RaiseChanged();
 
 		AppEnvironment.LaunchCompleted = true;
 		AppEnvironment.RaiseChanged();

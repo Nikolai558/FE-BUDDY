@@ -1,12 +1,6 @@
 namespace FeBuddy.Wpf.ViewModels.Models;
 
-/// <summary>A generated output file, shown in "recent output" lists. Display-only.</summary>
-public sealed record OutputFile(string Name, string Size, string When);
-
-/// <summary>A single line in a status checklist (e.g. generator readiness).</summary>
-public sealed record StatusRow(string Label, string Detail, StatusKind Kind);
-
-/// <summary>One endpoint in the nav's systems-health popover. Sample data.</summary>
+/// <summary>One row in the shell's systems-health popover (Internet / AIRAC data / Updates).</summary>
 public sealed record HealthRow(string Name, string Detail, StatusKind Kind);
 
 /// <summary>One step in the scripted generation run (AIRAC screen).</summary>

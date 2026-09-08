@@ -7,6 +7,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- Bundled News fallback used offline / when the GitHub fetch fails (remediation plan 6.1). -->
+    <EmbeddedResource Include="News.md" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Clowd.Squirrel" Version="2.11.1" />
     <PackageReference Include="CsvHelper" Version="33.1.0" />
     <PackageReference Include="NetTopologySuite" Version="2.6.0" />

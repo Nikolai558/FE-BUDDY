@@ -64,7 +64,7 @@ public enum GenPhase
     Cancelled,
 }
 
-/// <summary>Visual state for a <see cref="Models.StatusRow"/> or a systems-health row.</summary>
+/// <summary>Visual state for a systems-health / status row.</summary>
 public enum StatusKind
 {
     Ok,

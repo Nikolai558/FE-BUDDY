@@ -32,10 +32,12 @@ public static class AirwayWaypointBuffer
 	/// </summary>
 	/// <param name="lineStrings">The airway's current LineStrings (after antimeridian split / ROI clip, if any).</param>
 	/// <param name="airwayPoints">
-	/// The airway's resolved waypoints, used to look up each leg endpoint's identifier (and
-	/// therefore its buffer radius) by coordinate. A leg endpoint that does not match any
-	/// known waypoint (e.g. a synthetic antimeridian-split or ROI-clip boundary point) falls
-	/// back to <see cref="OtherRadiusNm"/>.
+	/// The airway's real resolved waypoints - and only those. A leg endpoint that matches one
+	/// of them is buffered (2.5 NM for a 5-character fix, 5 NM otherwise, including a real fix
+	/// sitting exactly on +/-180). A leg endpoint that matches none of them is by definition
+	/// synthetic - a vertex the antimeridian split or ROI clip invented - and is <b>not</b>
+	/// buffered (radius 0), so an ROI-clipped airway reaches the ROI boundary instead of
+	/// stopping 5 NM inside it (remediation plan 3.10).
 	/// </param>
 	/// <param name="geometryFactory">The geometry factory used to build the resulting LineStrings.</param>
 	/// <param name="awyId">The airway identifier being processed (used only in warning text).</param>
@@ -103,26 +105,33 @@ public static class AirwayWaypointBuffer
 	}
 
 	/// <summary>
-	/// Determines the buffer radius for a coordinate based on the matching waypoint's
-	/// identifier length (5 characters -&gt; a fix), falling back to
-	/// <see cref="OtherRadiusNm"/> when the coordinate does not match any known waypoint.
+	/// Determines the buffer radius for a leg endpoint: <see cref="FixRadiusNm"/> for a
+	/// matched 5-character fix, <see cref="OtherRadiusNm"/> for any other matched waypoint,
+	/// and <b>0</b> (no buffering) for an endpoint that matches no real waypoint - which is
+	/// exactly the definition of a synthetic antimeridian-split or ROI-clip vertex
+	/// (remediation plan 3.10).
 	/// </summary>
 	private static double RadiusFor(
 		Coordinate coordinate,
 		Dictionary<(double Lon, double Lat), AirwayPoint> pointsByCoordinate)
 	{
-		var key = (Math.Round(coordinate.X, CoordinateMatchPrecision), Math.Round(coordinate.Y, CoordinateMatchPrecision));
+		var key = (
+			Math.Round(NormalizeLongitude(coordinate.X), CoordinateMatchPrecision),
+			Math.Round(coordinate.Y, CoordinateMatchPrecision));
 
-		if (pointsByCoordinate.TryGetValue(key, out AirwayPoint? point) && point.PointId.Length == 5)
+		if (!pointsByCoordinate.TryGetValue(key, out AirwayPoint? point))
 		{
-			return FixRadiusNm;
+			// Not a real waypoint -> a vertex the AM split or ROI clip invented. Do not buffer.
+			return 0.0;
 		}
 
-		return OtherRadiusNm;
+		return point.PointId.Length == 5 ? FixRadiusNm : OtherRadiusNm;
 	}
 
 	/// <summary>
-	/// Builds a coordinate -&gt; AirwayPoint index for radius lookups. When multiple waypoints
+	/// Builds a coordinate -&gt; AirwayPoint index for radius lookups. Longitude is normalized
+	/// so a real waypoint stored at <c>-180</c> still matches a fragment endpoint the
+	/// antimeridian split expressed as <c>+180</c> (and vice versa). When multiple waypoints
 	/// round to the same coordinate, the first one encountered wins.
 	/// </summary>
 	private static Dictionary<(double Lon, double Lat), AirwayPoint> BuildCoordinateIndex(
@@ -132,10 +141,16 @@ public static class AirwayWaypointBuffer
 
 		foreach (AirwayPoint point in airwayPoints)
 		{
-			var key = (Math.Round(point.Longitude, CoordinateMatchPrecision), Math.Round(point.Latitude, CoordinateMatchPrecision));
+			var key = (
+				Math.Round(NormalizeLongitude(point.Longitude), CoordinateMatchPrecision),
+				Math.Round(point.Latitude, CoordinateMatchPrecision));
 			index.TryAdd(key, point);
 		}
 
 		return index;
 	}
+
+	/// <summary>Treats <c>+180</c> and <c>-180</c> as the same meridian by mapping <c>+180</c> to <c>-180</c>.</summary>
+	private static double NormalizeLongitude(double longitude) =>
+		longitude == 180.0 ? -180.0 : longitude;
 }

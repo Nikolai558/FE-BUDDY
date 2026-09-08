@@ -43,6 +43,7 @@ public static class AntimeridianHandler
 
 		List<LineString> result = new();
 		List<Coordinate> current = new() { coordinates[0] };
+		bool crossedAtLeastOnce = false;
 
 		for (int i = 0; i < coordinates.Length - 1; i++)
 		{
@@ -55,37 +56,85 @@ public static class AntimeridianHandler
 
 			if (!CoordinateHandler.CrossesAntimeridian(startLocation, endLocation))
 			{
-				current.Add(end);
+				AppendIfDistinct(current, end);
 				continue;
 			}
+
+			crossedAtLeastOnce = true;
 
 			// [pointA(start), midPointStart, midPointEnd, pointB(end)] - midPointStart shares
 			// the starting side of the antimeridian, midPointEnd shares the ending side.
 			List<Location> split =
 				CoordinateHandler.SplitLineSegmentAtAntimeridian(startLocation, endLocation);
 
-			Location antimeridianStart = split[1];
-			Location antimeridianEnd = split[2];
+			Coordinate antimeridianStart = new(split[1].DecLon, split[1].DecLat);
+			Coordinate antimeridianEnd = new(split[2].DecLon, split[2].DecLat);
 
-			// Finish the current LineString at the antimeridian on the starting side.
-			current.Add(new Coordinate(antimeridianStart.DecLon, antimeridianStart.DecLat));
-			result.Add(geometryFactory.CreateLineString(current.ToArray()));
+			// Finish the current fragment at the antimeridian on the starting side. When the
+			// crossing point is identical to the segment's own endpoint (a real waypoint that
+			// sits exactly on +/-180), this adds nothing rather than a duplicate coordinate.
+			AppendIfDistinct(current, antimeridianStart);
+			EmitFragment(result, current, geometryFactory);
 
-			// Begin a new LineString at the antimeridian on the ending side.
-			current = new List<Coordinate>
-			{
-				new Coordinate(antimeridianEnd.DecLon, antimeridianEnd.DecLat),
-				end
-			};
+			// Begin the next fragment on the ending side. If the ending-side crossing point is
+			// the segment's endpoint itself, carry the endpoint alone (no degenerate two-point
+			// fragment made of the same coordinate twice).
+			current = CoordinatesEqual(antimeridianEnd, end)
+				? new List<Coordinate> { end }
+				: new List<Coordinate> { antimeridianEnd, end };
 		}
 
-		if (current.Count >= 2)
+		// Never crossed: return the input untouched (as a single-element list).
+		if (!crossedAtLeastOnce)
 		{
-			result.Add(geometryFactory.CreateLineString(current.ToArray()));
+			return new[] { lineString };
 		}
+
+		EmitFragment(result, current, geometryFactory);
 
 		return result;
 	}
+
+	/// <summary>Appends <paramref name="coordinate"/> unless it is identical to the last coordinate already in the list.</summary>
+	private static void AppendIfDistinct(List<Coordinate> coordinates, Coordinate coordinate)
+	{
+		if (coordinates.Count == 0 || !CoordinatesEqual(coordinates[^1], coordinate))
+		{
+			coordinates.Add(coordinate);
+		}
+	}
+
+	/// <summary>Emits <paramref name="coordinates"/> as a LineString only if it has at least two <b>distinct</b> coordinates.</summary>
+	private static void EmitFragment(List<LineString> result, List<Coordinate> coordinates, GeometryFactory geometryFactory)
+	{
+		if (HasAtLeastTwoDistinctCoordinates(coordinates))
+		{
+			result.Add(geometryFactory.CreateLineString(coordinates.ToArray()));
+		}
+	}
+
+	/// <summary>Whether a coordinate list contains at least two positions that are not all the same point.</summary>
+	private static bool HasAtLeastTwoDistinctCoordinates(IReadOnlyList<Coordinate> coordinates)
+	{
+		if (coordinates.Count < 2)
+		{
+			return false;
+		}
+
+		Coordinate first = coordinates[0];
+		for (int i = 1; i < coordinates.Count; i++)
+		{
+			if (!CoordinatesEqual(first, coordinates[i]))
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	private static bool CoordinatesEqual(Coordinate a, Coordinate b) =>
+		a.X == b.X && a.Y == b.Y;
 
 	/// <summary>
 	/// Splits every LineString in <paramref name="lineStrings"/> at the antimeridian and

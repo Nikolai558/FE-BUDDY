@@ -175,14 +175,33 @@ public static class AirwayGeometryBuilder
 	}
 
 	/// <summary>
-	/// Appends the accumulated coordinates as a LineString, when there are enough of them to
-	/// form one.
+	/// Appends the accumulated coordinates as a LineString, after collapsing consecutive
+	/// duplicate coordinates and only when at least two <b>distinct</b> positions remain. This
+	/// stops a degenerate zero-length LineString (e.g. from a repeated NASR waypoint, or a
+	/// waypoint sitting exactly on the antimeridian) from ever being emitted (remediation
+	/// plan 3.9).
 	/// </summary>
 	private static void FinishCurrentLineString(List<LineString> lineStrings, List<Coordinate> currentCoordinates)
 	{
-		if (currentCoordinates.Count >= 2)
+		if (currentCoordinates.Count < 2)
 		{
-			lineStrings.Add(GeometryFactory.CreateLineString(currentCoordinates.ToArray()));
+			return;
+		}
+
+		List<Coordinate> deduped = new(currentCoordinates.Count) { currentCoordinates[0] };
+
+		for (int i = 1; i < currentCoordinates.Count; i++)
+		{
+			Coordinate coordinate = currentCoordinates[i];
+			if (coordinate.X != deduped[^1].X || coordinate.Y != deduped[^1].Y)
+			{
+				deduped.Add(coordinate);
+			}
+		}
+
+		if (deduped.Count >= 2)
+		{
+			lineStrings.Add(GeometryFactory.CreateLineString(deduped.ToArray()));
 		}
 	}
 

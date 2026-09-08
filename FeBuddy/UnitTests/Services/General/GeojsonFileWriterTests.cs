@@ -1,5 +1,5 @@
 using FEBuddyLibrary.Configuration;
-using FEBuddyLibrary.Services.Airways;
+using FEBuddyLibrary.Services.Airac.Airways;
 using FEBuddyLibrary.Services.General;
 
 using NetTopologySuite.Features;

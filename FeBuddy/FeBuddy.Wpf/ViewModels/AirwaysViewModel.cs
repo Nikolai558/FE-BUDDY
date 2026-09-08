@@ -10,11 +10,13 @@ using FeBuddy.Wpf.ViewModels.Models;
 
 using FEBuddyLibrary.Configuration;
 using FEBuddyLibrary.Models.NASR.CSV;
-using FEBuddyLibrary.Models.Services.Airways;
+using FEBuddyLibrary.Models.Services.Airac.Airways;
 using FEBuddyLibrary.Models.Services.General;
 using FEBuddyLibrary.Parsers.NASR.CSV;
-using FEBuddyLibrary.Services.Airways;
+using FEBuddyLibrary.Services.Airac.Airways;
 using FEBuddyLibrary.Services.General;
+using FEBuddyLibrary.Services.Airac;
+using FEBuddyLibrary.Models.Services.Airac;
 
 namespace FeBuddy.Wpf.ViewModels;
 

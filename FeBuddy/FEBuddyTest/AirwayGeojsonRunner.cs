@@ -1,8 +1,8 @@
 using System.Diagnostics;
 
 using FEBuddyLibrary.Models.NASR.CSV;
-using FEBuddyLibrary.Models.Services.Airways;
-using FEBuddyLibrary.Services.Airways;
+using FEBuddyLibrary.Models.Services.Airac.Airways;
+using FEBuddyLibrary.Services.Airac.Airways;
 
 namespace FEBuddyTest;
 

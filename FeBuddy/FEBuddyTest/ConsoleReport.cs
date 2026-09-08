@@ -1,7 +1,7 @@
 using System.Text.RegularExpressions;
 
 using FEBuddyLibrary.Configuration;
-using FEBuddyLibrary.Models.Services.Airways;
+using FEBuddyLibrary.Models.Services.Airac.Airways;
 
 namespace FEBuddyTest;
 

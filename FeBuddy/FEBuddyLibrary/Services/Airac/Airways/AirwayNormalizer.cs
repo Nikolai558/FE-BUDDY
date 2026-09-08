@@ -41,6 +41,12 @@ public static class AirwayNormalizer
 
 		List<AirwaySegment> normalizedSegments = new();
 
+		// Border crossings (blank FROM_PT_TYPE) are reference-only, not waypoints. NASR closes
+		// a border-terminating airway with a terminator row that has a blank TO_POINT, and the
+		// look-ahead below can leave the marker as a segment's EndWptId; those segments are
+		// dropped after the loop so they never reach coordinate resolution (remediation 3.2b).
+		HashSet<string> referenceOnlyPoints = AirwayReferenceOnlyPoints.BuildSet(rawSegments);
+
 		for (int i = 0; i < rawSegments.Count; i++)
 		{
 			AwyCsvDataModel.AwySegAlt currentSegment = rawSegments[i];
@@ -51,7 +57,7 @@ public static class AirwayNormalizer
 			 * at that point. A preceding valid segment can consume this record while
 			 * looking ahead.
 			 */
-			if (string.IsNullOrWhiteSpace(currentSegment.FromPtType))
+			if (AirwayReferenceOnlyPoints.IsReferenceOnlyRow(currentSegment))
 			{
 				continue;
 			}
@@ -82,7 +88,7 @@ public static class AirwayNormalizer
 						StringComparison.OrdinalIgnoreCase);
 
 				bool nextStartIsReferenceOnly =
-					string.IsNullOrWhiteSpace(nextSegment.FromPtType);
+					AirwayReferenceOnlyPoints.IsReferenceOnlyRow(nextSegment);
 
 				if (!nextStartMatchesCurrentEnd || !nextStartIsReferenceOnly)
 				{
@@ -106,6 +112,14 @@ public static class AirwayNormalizer
 			}
 
 			normalizedSegments.Add(new AirwaySegment(startWptId, endWptId, isGap, maxAuthAlt));
+		}
+
+		// Drop any segment left ending at a border marker (the terminator-row case). J5 ending
+		// at CFDCT is the correct answer, and there is deliberately no warning - this is normal,
+		// expected NASR structure, not a resolution failure (remediation 3.2b).
+		if (referenceOnlyPoints.Count > 0)
+		{
+			normalizedSegments.RemoveAll(segment => referenceOnlyPoints.Contains(segment.EndWptId));
 		}
 
 		return normalizedSegments;

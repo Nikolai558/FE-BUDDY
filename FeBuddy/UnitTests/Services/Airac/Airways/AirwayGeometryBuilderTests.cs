@@ -79,12 +79,13 @@ public class AirwayGeometryBuilderTests
 	}
 
 	/// <summary>
-	/// A trailing unresolved waypoint (nothing usable exists after it - e.g. an airway that
-	/// continues past "U.S. CANADIAN BORDER-4") is the normal, expected case: the airway
-	/// simply stops at the last resolvable point, with no warning.
+	/// Post-3.2b, border crossings are normalized away before geometry building, so a
+	/// remaining trailing unresolvable waypoint is a genuine data fault: it is recorded in
+	/// <see cref="AirwayGeometryBuildResult.UnresolvedWaypointIds"/> so <c>AirwayBuilder</c>
+	/// excludes the whole airway (remediation plan 3.2a).
 	/// </summary>
 	[Fact]
-	public void trailing_unresolved_waypoint_stops_the_airway_without_a_warning()
+	public void trailing_unresolved_waypoint_marks_the_airway_for_exclusion()
 	{
 		var data = AirwayTestDataBuilder.Build(fixes: new[] { ("AAAAA", 40.0, -80.0), ("BBBBB", 41.0, -81.0) });
 		List<AirwaySegment> segments = new()
@@ -95,17 +96,16 @@ public class AirwayGeometryBuilderTests
 
 		AirwayGeometryBuildResult result = AirwayGeometryBuilder.Build(data, "TEST1", segments);
 
-		LineString lineString = Assert.Single(result.LineStrings);
-		Assert.Equal(2, lineString.NumPoints);
-		Assert.Empty(result.Warnings);
+		Assert.Contains("NOWHERE", result.UnresolvedWaypointIds);
+		Assert.Contains(result.Warnings, w => w.Contains("NOWHERE") && w.Contains("excluded from all output"));
 	}
 
 	/// <summary>
-	/// An unresolvable waypoint that occurs mid-airway (usable geometry exists later) is a
-	/// warning, not a thrown exception - the segment is skipped and processing continues.
+	/// A mid-airway unresolvable waypoint is recorded for exclusion too, and collecting every
+	/// bad ID (not aborting on the first) lets <c>AirwayBuilder</c> report them all.
 	/// </summary>
 	[Fact]
-	public void mid_airway_unresolved_waypoint_produces_a_warning_and_continues()
+	public void mid_airway_unresolved_waypoint_is_recorded_for_exclusion_and_processing_continues()
 	{
 		var data = AirwayTestDataBuilder.Build(fixes: new[]
 		{
@@ -123,12 +123,11 @@ public class AirwayGeometryBuilderTests
 
 		AirwayGeometryBuildResult result = AirwayGeometryBuilder.Build(data, "TEST1", segments);
 
-		Assert.NotEmpty(result.Warnings);
+		Assert.Contains("NOWHERE", result.UnresolvedWaypointIds);
 		Assert.Contains(result.Warnings, w => w.Contains("NOWHERE") && w.Contains("TEST1"));
 
-		// The good pieces on either side of the bad record are still produced as two
-		// separate LineStrings, rather than the whole airway being aborted.
-		Assert.Equal(2, result.LineStrings.Count);
-		Assert.All(result.LineStrings, ls => Assert.Equal(2, ls.NumPoints));
+		// Processing kept going past the bad record (the CCCCC->DDDDD leg was still built),
+		// so every unresolved ID on the airway is available for the exclusion summary.
+		Assert.NotEmpty(result.LineStrings);
 	}
 }

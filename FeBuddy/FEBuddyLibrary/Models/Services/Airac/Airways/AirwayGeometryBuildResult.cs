@@ -12,8 +12,15 @@ namespace FEBuddyLibrary.Models.Services.Airac.Airways;
 /// </param>
 /// <param name="Warnings">
 /// Non-fatal problems encountered while building this airway's geometry (e.g. an
-/// unresolvable mid-airway waypoint that forced a gap).
+/// unresolvable waypoint).
+/// </param>
+/// <param name="UnresolvedWaypointIds">
+/// Waypoint IDs on this airway that could not be resolved to coordinates and are a genuine
+/// data fault (border crossings are normalized away upstream and are never listed here). When
+/// this is non-empty, <c>AirwayBuilder</c> excludes the whole airway from all output
+/// (remediation plan 3.2a).
 /// </param>
 public sealed record AirwayGeometryBuildResult(
 	IReadOnlyList<LineString> LineStrings,
-	IReadOnlyList<string> Warnings);
+	IReadOnlyList<string> Warnings,
+	IReadOnlyList<string> UnresolvedWaypointIds);

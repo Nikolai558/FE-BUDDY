@@ -79,6 +79,30 @@ public class AirwayNormalizerTests
 		Assert.Equal(18000, Assert.Single(result).MaxAuthAlt);
 	}
 
+	/// <summary>
+	/// The J5 terminator-row case from the plan: NASR closes a border-terminating airway with
+	/// a row that has a blank TO_POINT. The segment left ending at the border marker
+	/// (CFDCT -&gt; U.S. CANADIAN BORDER-4) is dropped, so the airway ends at CFDCT with no
+	/// warning (remediation plan 3.2b).
+	/// </summary>
+	[Fact]
+	public void a_border_terminator_row_does_not_leave_a_segment_ending_at_the_border_marker()
+	{
+		List<AwyCsvDataModel.AwySegAlt> raw = new()
+		{
+			Seg(200, "CFJCC", "CN", "CFDCT"),
+			Seg(210, "CFDCT", "CN", "U.S. CANADIAN BORDER-4"),
+			Seg(220, "U.S. CANADIAN BORDER-4", null, ""), // terminator: blank ToPoint, blank type
+		};
+
+		var result = AirwayNormalizer.Normalize(raw);
+
+		var segment = Assert.Single(result);
+		Assert.Equal("CFJCC", segment.StartWptId);
+		Assert.Equal("CFDCT", segment.EndWptId);
+		Assert.DoesNotContain(result, s => s.EndWptId.Contains("BORDER"));
+	}
+
 	[Fact]
 	public void unrelated_segments_are_kept_separate_not_merged()
 	{

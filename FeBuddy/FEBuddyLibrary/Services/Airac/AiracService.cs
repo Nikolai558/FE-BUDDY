@@ -112,7 +112,7 @@ public static class AiracService
 			Warnings = warnings,
 			Elapsed = stopwatch.Elapsed,
 			Airways = airwaysResult,
-			ExcludedAirwayIds = Array.Empty<string>(),
+			ExcludedAirwayIds = airwaysResult?.ExcludedAirwayIds ?? Array.Empty<string>(),
 		};
 	}
 }

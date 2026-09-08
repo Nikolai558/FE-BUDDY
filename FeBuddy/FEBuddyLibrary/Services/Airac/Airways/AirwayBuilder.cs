@@ -40,6 +40,7 @@ public static class AirwayBuilder
 
 		List<string> warnings = new();
 		List<Airway> airways = new();
+		List<string> excludedAirwayIds = new();
 		bool warnedUnknownDesignation = false;
 
 		/*
@@ -77,6 +78,22 @@ public static class AirwayBuilder
 				AirwayGeometryBuilder.Build(allNasrCsvData, awyId, normalizedSegments);
 
 			warnings.AddRange(geometryResult.Warnings);
+
+			// An airway with any genuinely unresolvable waypoint is excluded entirely, so a
+			// half-built airway never misleads the user (remediation plan 3.2a). Border
+			// crossings are normalized away upstream and never land here.
+			if (geometryResult.UnresolvedWaypointIds.Count > 0)
+			{
+				string[] distinctIds = geometryResult.UnresolvedWaypointIds
+					.Distinct(StringComparer.OrdinalIgnoreCase)
+					.ToArray();
+
+				warnings.Add(
+					$"Airway '{awyId}': excluded from all output - {distinctIds.Length} waypoint(s) " +
+					$"could not be resolved ({string.Join(", ", distinctIds)}).");
+				excludedAirwayIds.Add(awyId);
+				continue;
+			}
 
 			// No usable segment geometry means there is nothing to write for this airway.
 			IReadOnlyList<LineString> lineStrings = geometryResult.LineStrings;
@@ -155,7 +172,7 @@ public static class AirwayBuilder
 			airways.Add(airway);
 		}
 
-		return new AirwayBuildAllResult(airways, warnings);
+		return new AirwayBuildAllResult(airways, warnings, excludedAirwayIds);
 	}
 
 	/// <summary>
@@ -180,7 +197,7 @@ public static class AirwayBuilder
 		foreach (AwyCsvDataModel.AwySegAlt segment in rawSegments)
 		{
 			// Reference-only points (e.g. border-crossing markers) are never real waypoints.
-			if (string.IsNullOrWhiteSpace(segment.FromPtType))
+			if (AirwayReferenceOnlyPoints.IsReferenceOnlyRow(segment))
 			{
 				continue;
 			}

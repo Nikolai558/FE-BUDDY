@@ -52,6 +52,7 @@ public static class AirwayGeometryBuilder
 
 		List<LineString> lineStrings = new();
 		List<string> warnings = new();
+		List<string> unresolvedWaypointIds = new();
 		List<Coordinate> currentCoordinates = new();
 
 		List<AirwaySegment> segmentList = segments.ToList();
@@ -70,21 +71,24 @@ public static class AirwayGeometryBuilder
 
 			if (!segStartCoordinates.HasValue)
 			{
+				unresolvedWaypointIds.Add(segStartWptId);
+				warnings.Add(
+					$"Airway '{awyId}': unable to locate coordinates for segment start " +
+					$"waypoint '{segStartWptId}'. This airway was excluded from all output.");
+
 				bool hasResolvableSegmentAhead =
 					HasResolvableSegmentAhead(allNasrCsvData, segmentList, i + 1);
 
 				if (!hasResolvableSegmentAhead)
 				{
-					// Normal trailing-tail truncation: stop here, keep what was already built.
+					// Post-3.2b a border crossing here has already been normalized away, so
+					// reaching this point is a real data fault - stop and let AirwayBuilder
+					// exclude the airway.
 					break;
 				}
 
-				// A genuinely unresolvable point occurs mid-airway. Warn, skip this segment
-				// as if it were a gap, and keep processing the rest of the airway.
-				warnings.Add(
-					$"Airway '{awyId}': unable to locate coordinates for segment start " +
-					$"waypoint '{segStartWptId}'. This segment was skipped.");
-
+				// Mid-airway fault: skip this segment as if it were a gap and keep going, so
+				// every unresolved ID is collected for the exclusion summary.
 				FinishCurrentLineString(lineStrings, currentCoordinates);
 				currentCoordinates = new List<Coordinate>();
 				previousSegEndWptId = null;
@@ -96,21 +100,24 @@ public static class AirwayGeometryBuilder
 
 			if (!segEndCoordinates.HasValue)
 			{
+				unresolvedWaypointIds.Add(segEndWptId);
+				warnings.Add(
+					$"Airway '{awyId}': unable to locate coordinates for segment end " +
+					$"waypoint '{segEndWptId}'. This airway was excluded from all output.");
+
 				bool hasResolvableSegmentAhead =
 					HasResolvableSegmentAhead(allNasrCsvData, segmentList, i + 1);
 
 				if (!hasResolvableSegmentAhead)
 				{
-					// Normal trailing-tail truncation: stop here, keep what was already built.
+					// Post-3.2b a border crossing here has already been normalized away, so
+					// reaching this point is a real data fault - stop and let AirwayBuilder
+					// exclude the airway.
 					break;
 				}
 
-				// A genuinely unresolvable point occurs mid-airway. Warn, skip this segment
-				// as if it were a gap, and keep processing the rest of the airway.
-				warnings.Add(
-					$"Airway '{awyId}': unable to locate coordinates for segment end " +
-					$"waypoint '{segEndWptId}'. This segment was skipped.");
-
+				// Mid-airway fault: skip this segment as if it were a gap and keep going, so
+				// every unresolved ID is collected for the exclusion summary.
 				FinishCurrentLineString(lineStrings, currentCoordinates);
 				currentCoordinates = new List<Coordinate>();
 				previousSegEndWptId = null;
@@ -164,7 +171,7 @@ public static class AirwayGeometryBuilder
 		// coordinates accumulated before it still need to be added to the output.
 		FinishCurrentLineString(lineStrings, currentCoordinates);
 
-		return new AirwayGeometryBuildResult(lineStrings, warnings);
+		return new AirwayGeometryBuildResult(lineStrings, warnings, unresolvedWaypointIds);
 	}
 
 	/// <summary>

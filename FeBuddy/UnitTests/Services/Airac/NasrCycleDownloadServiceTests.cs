@@ -31,6 +31,25 @@ public class NasrCycleDownloadServiceTests : IDisposable
 		TempWorkspace.ConfigureForTesting(Path.Combine(_testRoot, "temp"));
 	}
 
+	/// <summary>
+	/// A synchronous <see cref="IProgress{T}"/> - unlike <see cref="Progress{T}"/>, the
+	/// callback runs inline on <see cref="IProgress{T}.Report"/> rather than being posted to a
+	/// synchronization context / the thread pool, so a test can assert on the collected
+	/// reports immediately after the awaited call returns.
+	/// </summary>
+	private sealed class SyncProgress<T> : IProgress<T>
+	{
+		public List<T> Reports { get; } = new();
+
+		public void Report(T value)
+		{
+			lock (Reports)
+			{
+				Reports.Add(value);
+			}
+		}
+	}
+
 	public void Dispose()
 	{
 		TempWorkspace.ConfigureForTesting(null);
@@ -177,8 +196,7 @@ public class NasrCycleDownloadServiceTests : IDisposable
 		try
 		{
 			AiracCycleInfo cycle = new("9991", "01_Jan_2099", new DateOnly(2099, 1, 1));
-			List<AiracDownloadProgress> updates = new();
-			Progress<AiracDownloadProgress> progress = new(updates.Add);
+			SyncProgress<AiracDownloadProgress> progress = new();
 
 			string resultDirectory = await NasrCycleDownloadService.EnsureCycleAvailableFromUrlAsync(
 				cycle, url, _cacheRoot, progress, CancellationToken.None);
@@ -190,9 +208,9 @@ public class NasrCycleDownloadServiceTests : IDisposable
 			Assert.True(File.Exists(Path.Combine(resultDirectory, "NAV_BASE.csv")));
 			Assert.True(File.Exists(Path.Combine(resultDirectory, "APT_BASE.csv")));
 
-			Assert.Contains(updates, u => u.Phase == AiracDownloadPhase.Downloading);
-			Assert.Contains(updates, u => u.Phase == AiracDownloadPhase.Extracting);
-			Assert.Contains(updates, u => u.Phase == AiracDownloadPhase.Complete);
+			Assert.Contains(progress.Reports, u => u.Phase == AiracDownloadPhase.Downloading);
+			Assert.Contains(progress.Reports, u => u.Phase == AiracDownloadPhase.Extracting);
+			Assert.Contains(progress.Reports, u => u.Phase == AiracDownloadPhase.Complete);
 		}
 		finally
 		{
@@ -216,8 +234,7 @@ public class NasrCycleDownloadServiceTests : IDisposable
 
 			Assert.Equal(1, requestCount());
 
-			List<AiracDownloadProgress> secondCallUpdates = new();
-			Progress<AiracDownloadProgress> progress = new(secondCallUpdates.Add);
+			SyncProgress<AiracDownloadProgress> progress = new();
 
 			string resultDirectory = await NasrCycleDownloadService.EnsureCycleAvailableFromUrlAsync(
 				cycle, url, _cacheRoot, progress, CancellationToken.None);
@@ -225,7 +242,7 @@ public class NasrCycleDownloadServiceTests : IDisposable
 			// No second HTTP request - the cached folder already had every required file.
 			Assert.Equal(1, requestCount());
 			Assert.Equal(Path.Combine(_cacheRoot, "9992"), resultDirectory);
-			Assert.Contains(secondCallUpdates, u => u.Phase == AiracDownloadPhase.AlreadyAvailable);
+			Assert.Contains(progress.Reports, u => u.Phase == AiracDownloadPhase.AlreadyAvailable);
 		}
 		finally
 		{

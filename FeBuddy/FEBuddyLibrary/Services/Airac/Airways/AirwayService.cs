@@ -57,7 +57,8 @@ public static class AirwayService
 			GeojsonFilesWritten = geojsonResult.FilesWritten,
 			GeojsonFeatureCountsByFile = geojsonResult.RenderedFeatureCountsByFile,
 			AliasFilePath = aliasResult?.FilePath,
-			AliasAirwayLineCount = aliasResult?.AirwayLineCount ?? 0
+			AliasAirwayLineCount = aliasResult?.AirwayLineCount ?? 0,
+			ExcludedAirwayIds = buildResult.ExcludedAirwayIds
 		};
 	}
 }

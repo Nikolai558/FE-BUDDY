@@ -87,6 +87,51 @@ public class AirwayBuilderTests
 	}
 
 	[Fact]
+	public void an_airway_with_a_genuine_mid_route_unresolvable_waypoint_is_excluded_entirely()
+	{
+		// AAAAA and CCCCC resolve; the middle waypoint MISNG does not, and a resolvable
+		// segment lies after it, so this is a real data fault, not a border crossing.
+		var data = AirwayTestDataBuilder.Build(
+			fixes: new[] { ("AAAAA", 40.0, -80.0), ("CCCCC", 42.0, -82.0), ("DDDDD", 43.0, -83.0) },
+			awyId: "J146",
+			segments: new[]
+			{
+				AirwayTestDataBuilder.Segment("J146", 10, "AAAAA", "WP", "MISNG"),
+				AirwayTestDataBuilder.Segment("J146", 20, "CCCCC", "WP", "DDDDD"),
+			});
+
+		AirwayBuildAllResult result = AirwayBuilder.BuildAll(data, MinimalSettings());
+
+		Assert.Empty(result.Airways);
+		Assert.Contains("J146", result.ExcludedAirwayIds);
+		Assert.Contains(result.Warnings, w => w.Contains("J146") && w.Contains("excluded from all output"));
+	}
+
+	[Fact]
+	public void a_border_terminating_airway_is_built_cleanly_ending_at_its_last_real_waypoint()
+	{
+		// J5 pattern: ... -> CFDCT -> U.S. CANADIAN BORDER-4, closed by a blank-ToPoint
+		// terminator row. The airway must build, ending at CFDCT, with no warning.
+		var data = AirwayTestDataBuilder.Build(
+			fixes: new[] { ("CFJCC", 44.0, -83.0), ("CFDCT", 44.5, -82.5) },
+			awyId: "J5",
+			segments: new[]
+			{
+				AirwayTestDataBuilder.Segment("J5", 200, "CFJCC", "CN", "CFDCT"),
+				AirwayTestDataBuilder.Segment("J5", 210, "CFDCT", "CN", "U.S. CANADIAN BORDER-4"),
+				AirwayTestDataBuilder.Segment("J5", 220, "U.S. CANADIAN BORDER-4", null, ""),
+			});
+
+		AirwayBuildAllResult result = AirwayBuilder.BuildAll(data, MinimalSettings());
+
+		Airway airway = Assert.Single(result.Airways);
+		Assert.Equal("J5", airway.AwyId);
+		Assert.Empty(result.ExcludedAirwayIds);
+		Assert.Empty(result.Warnings);
+		Assert.Equal(new[] { "CFJCC", "CFDCT" }, airway.Points.Select(p => p.PointId));
+	}
+
+	[Fact]
 	public void duplicate_awy_base_records_for_the_same_id_do_not_throw()
 	{
 		var data = AirwayTestDataBuilder.Build(

@@ -22,4 +22,10 @@ public sealed record AirwayServiceResult : ServiceResult
 
 	/// <summary>How many airway lines were written to the alias file.</summary>
 	public int AliasAirwayLineCount { get; init; }
+
+	/// <summary>
+	/// IDs of airways excluded from every output (GeoJSON, alias, counts) because at least one
+	/// of their waypoints could not be resolved (remediation plan 3.2a).
+	/// </summary>
+	public IReadOnlyList<string> ExcludedAirwayIds { get; init; } = Array.Empty<string>();
 }

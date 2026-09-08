@@ -9,6 +9,12 @@ namespace FEBuddyLibrary.Models.Services.Airac.Airways;
 /// clipping to it).
 /// </param>
 /// <param name="Warnings">Non-fatal problems noticed while building airways.</param>
+/// <param name="ExcludedAirwayIds">
+/// IDs of airways excluded from all output because at least one of their waypoints could not
+/// be resolved (remediation plan 3.2a). Border crossings do not count - they are normalized
+/// away before geometry building.
+/// </param>
 public sealed record AirwayBuildAllResult(
 	IReadOnlyList<Airway> Airways,
-	IReadOnlyList<string> Warnings);
+	IReadOnlyList<string> Warnings,
+	IReadOnlyList<string> ExcludedAirwayIds);

@@ -5,15 +5,24 @@ A WPF shell for FE-Buddy 3.0 - a modern re-skin in the style of
 single amber accent, hairline cards, big display headings over airy body text.
 
 It started **not wired to anything** and is being grown into the real app one
-screen at a time:
+screen at a time. **`FE-Buddy_3.0_Feedback_Remediation_Plan.md` (repo root) is the
+authoritative plan for this work** - where this README and that plan disagree, the
+plan wins.
 
-- no NuGet packages - the MVVM helpers (`ObservableObject`, `RelayCommand`), the
-  toast store and the value converters live in `Infrastructure/`
-- **Airways is the first real screen**: it references `FEBuddyLibrary` and
-  calls `AirwayService.Run` for real - pick an actual NASR CSV folder and
-  output folder, and it writes actual GeoJSON and alias files.
-- every other screen still shows **sample data**; e.g. AIRAC's *Generate*
-  runs a scripted progress panel and raises a toast, but writes nothing
+- references `FEBuddyLibrary`; no other NuGet packages - the MVVM helpers
+  (`ObservableObject`, `RelayCommand`), the toast store and the value converters
+  live in `Infrastructure/`
+- **Airways is now a sub-service of AIRAC Service**, not a top-level screen
+  (remediation plan rule 1.1). The library code moved to
+  `FEBuddyLibrary.Services.Airac.Airways`; the GUI reaches it only through the
+  AIRAC Service screen.
+- **Foundations landed (Phase 0):** `AppLog` (activity log sink), `UserConfigFile`
+  (`%APPDATA%\FE-Buddy\UserConfig.json` read/write + one-step undo), and an
+  off-UI-thread launch sequence (`App.xaml.cs` -> `LaunchSequence`: temp clear,
+  config read, UTC/internet check, version check; AIRAC pipeline and News are
+  stubbed pending Phases 2 and 6.1).
+- the Dashboard, AIRAC, Map and Settings screens still show **sample data**
+  pending their rebuild phases (6, 7, 8, 12).
 
 ## Layout
 
@@ -34,58 +43,46 @@ Controls/             SectionHeader, StatTile, MapCanvas (all dependency-free)
 Infrastructure/       ObservableObject, RelayCommand, converters
 Map/                  GeoJSON reader (System.Text.Json), Web-Mercator, layer model
 Assets/               bundled sample GeoJSON (us-states, sample-airways)
-ViewModels/           ShellViewModel + one per screen (Airways is real; the rest are sample data)
+ViewModels/           ShellViewModel + one per screen
 Views/                ShellWindow (custom chrome) + Dashboard, AIRAC, Airways, Map,
-                      Conversions, GeoJSON Tools, Alias & Reference, Settings, Info
+                      Settings, Info
 ```
 
 ### Screens
 
-Shaped by the v2.x → 3.0 carry-forward map:
+Primary nav is **Services only**: Dashboard, AIRAC Service, Map. `Settings` and
+`Info` are system nav. The prototype-only Conversions, GeoJSON Tools, Alias &
+Reference and Placeholder screens were deleted in Phase 0.5.
 
-- **Airways** (real, wired to `FEBuddyLibrary`) - pick a NASR CSV folder and an
-  output folder, configure the same settings `AirwayService.Run` accepts
-  (output mode, buffer, feb.* properties, alias file, antimeridian split, CRC
-  ERAM defaults per altitude class, ROI clipping), click Run, and see the
-  actual result: airways built, GeoJSON files with real feature counts, the
-  alias file path, and any warnings (e.g. an unresolvable NASR waypoint),
-  grouped by airway.
-- **AIRAC** *(sample data)* - pick a cycle (APRA-verified), toggle the output families (each = one
-  v2.x generator), tune the airway sub-options: output mode, buffer, feb.*,
-  DME-cutoff variant, **designation include/exclude chips**, **break-at-fixes with
-  a DME range per fix type**, and a **CRC ERAM defaults editor** (Lines/Symbols/Text
-  → BCG / filters / style / thickness / size / underline / offsets). Set an ROI
-  override, opt into a **cycle-diff report** (sample preview), run the scripted build.
-- **Conversions** *(sample data)* - `.DAT` / `.KML` / `.SCT2` import to CRC GeoJSON, multi-file,
-  per-format options. vSTARS/vERAM and DXF are called out as retired.
-- **GeoJSON Tools** *(sample data)* - validate a file against the ERAM/STARS schema (BCG/filter
-  warnings, precision, self-intersection, mergeable features), or run a clean-up
-  pass. Logic salvaged from v2.x's `GeoJson.cs`.
-- **Alias & Reference** *(sample data)* - the `ALIAS/` text outputs with samples (each line has a
-  copy button), plus a cross-file duplicate-command check.
-- **Map** *(sample data)* - adds a **Display** drop-down that toggles which BCG groups / filters
-  are "on" (the CRC display visualiser), and copy buttons on the cursor / ruler /
-  ROI read-outs.
-- **Settings** *(sample data)* - **multiple named facility profiles** (switch / new / import /
-  export), default ROI, output preferences, a **display-scheme editor** (name the
-  BCG groups + filters once, export an ISR legend), a **NASR data-source** override
-  (FAA / custom URL / local file for offline builds), updates.
-- `Controls/CopyButton` - a shared tiny copy-to-clipboard icon (flips to a check
-  for ~1 s); `Copy.Button` style.
+- **AIRAC Service** *(being rebuilt — Phase 7)* - cycle + facility settings, then
+  the sub-service list (**Airways only**, rule 1.3), then **Run AIRAC Service**.
+  Selecting Airways opens its settings page inside this screen
+  (`AIRAC Service › Airways`), never as a top-level screen.
+  - **Airways sub-service** *(the AirwaysView/AirwaysViewModel prototype, being
+    re-parented — Phase 7)* - configure the settings the Airways pipeline accepts
+    (output mode, buffer, `feb.*` properties, alias file, antimeridian split, CRC
+    ERAM defaults per altitude class, ROI), run, and see the real result: airways
+    built, GeoJSON files with feature counts, the alias file path, and warnings
+    grouped by airway. The library entry point is
+    `FEBuddyLibrary.Services.Airac.AiracService.RunAsync`.
+- **Dashboard** *(sample data — Phase 6)* - becomes News + a live activity-log
+  viewer over `AppLog`.
+- **Map** *(sample data — Phase 8)* - view user GeoJSON and manage the default ROI;
+  everything else in the prototype is removed.
+- **Settings** *(sample data — Phase 12)* - Updates, one facility profile, default
+  ROI, GeoJSON output preferences.
+- **Info** *(Phase 13)* - Manual, Change log, Issues & requests.
 
-### Shell extras (all sample data / view-only)
+### Shell extras
 
 - **Toasts** - `Infrastructure/Toast.cs` is a static store; the shell hosts an
   `ItemsControl` bound to `Toast.Items` bottom-right. Cards slide in and
   auto-dismiss.
 - **Zulu clock** in the status bar (`DispatcherTimer`, UTC).
-- **Systems-health popover** - the nav's bottom widget opens a list of endpoints
-  with green/amber/red dots.
 - **Collapsible nav rail** - width animates 232 ⇄ 60; labels hide, tooltips carry
   the names.
-- **Scripted generation run** - the AIRAC screen's *Generate* builds a step list
-  from the toggles and advances it on a timer, with a progress bar and elapsed
-  timer, then toasts.
+- The border chrome (version chip / update window, top-centre AIRAC status) and
+  the systems-health widget are reworked in Phase 4.
 
 ### The map
 

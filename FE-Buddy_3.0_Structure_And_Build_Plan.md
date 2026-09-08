@@ -140,14 +140,28 @@ FE-Buddy-DEV/
     │   │   └── Services/                               NEW
     │   │       ├── General/
     │   │       │   ├── RegionOfInterest.cs             NEW
-    │   │       │   └── ServiceResult.cs                NEW
-    │   │       └── Airways/
-    │   │           ├── AirwaySettings.cs               NEW
-    │   │           ├── AirwayGeojsonOutputBy.cs        NEW  (enum)
-    │   │           ├── AirwayAltitudeClass.cs          NEW  (enum: High, Low, Other)
-    │   │           ├── Airway.cs                       NEW
-    │   │           ├── AirwayPoint.cs                  NEW
-    │   │           └── AirwaySegment.cs                NEW
+    │   │       │   ├── ServiceResult.cs                NEW
+    │   │       │   ├── UtcTimeCheckResult.cs           NEW  (Phase 0.4)
+    │   │       │   ├── VersionCheckResult.cs           NEW  (Phase 0.4, + UpdateChannel enum)
+    │   │       │   └── LaunchProgress.cs               NEW  (Phase 0.4)
+    │   │       └── Airac/                              (Phase 1.1 — Airways now lives here)
+    │   │           ├── AiracCycleInfo.cs               (moved from General/)
+    │   │           ├── AiracCyclePosition.cs           (moved from General/)
+    │   │           ├── AiracDownloadProgress.cs        (moved from General/)
+    │   │           ├── AiracServiceSettings.cs         NEW  (Phase 1.2)
+    │   │           ├── AiracServiceResult.cs           NEW  (Phase 1.2)
+    │   │           ├── AiracServiceProgress.cs         NEW  (Phase 1.2)
+    │   │           └── Airways/
+    │   │               ├── AirwaySettings.cs
+    │   │               ├── AirwayGeojsonOutputBy.cs    (enum)
+    │   │               ├── AirwayAltitudeClass.cs      (enum: High, Low, Other)
+    │   │               ├── Airway.cs
+    │   │               ├── AirwayPoint.cs
+    │   │               └── AirwaySegment.cs
+    │   │
+    │   ├── Helpers/                                    NEW
+    │   │   ├── UserConfigFile.cs                       NEW  (Phase 0.2)
+    │   │   └── TempWorkspace.cs                        NEW  (Phase 0.4)
     │   │
     │   ├── PARSERS/NASR/CSV/                           (existing, untouched)
     │   │
@@ -157,18 +171,27 @@ FE-Buddy-DEV/
     │       │   ├── CrcEramPropertyHandler.cs           NEW
     │       │   ├── CrcGeojsonPropertyValidator.cs      NEW
     │       │   ├── RoiFilter.cs                        NEW
-    │       │   └── AntimeridianHandler.cs              NEW
+    │       │   ├── AntimeridianHandler.cs              NEW
+    │       │   ├── AppLog.cs                           NEW  (Phase 0.3)
+    │       │   ├── AppEnvironment.cs                   NEW  (Phase 0.4)
+    │       │   ├── UtcTimeCheck.cs                     NEW  (Phase 0.4)
+    │       │   ├── VersionCheck.cs                     NEW  (Phase 0.4)
+    │       │   └── LaunchSequence.cs                   NEW  (Phase 0.4)
     │       │
-    │       └── Airways/
-    │           ├── AirwayService.cs                    NEW  (public entry point)
-    │           ├── AirwayBuilder.cs                    NEW  (CSV -> Airway objects)
-    │           ├── AirwayNormalizer.cs                 NEW  (from existing .Normalization)
-    │           ├── AirwayGeometryBuilder.cs            NEW  (from existing .Geometry)
-    │           ├── AirwayClassifier.cs                 NEW  (High/Low/Other + designation)
-    │           ├── AirwayWaypointBuffer.cs             NEW
-    │           ├── AirwaySettingsParser.cs             NEW  (from existing .Settings)
-    │           ├── AirwayGeojsonService.cs             NEW
-    │           └── AirwayAliasService.cs               NEW
+    │       └── Airac/                                 (Phase 1.1)
+    │           ├── AiracService.cs                     NEW  (Phase 1.2 — AIRAC Service orchestrator)
+    │           ├── AiracCycleResolver.cs               (moved from General/)
+    │           ├── NasrCycleDownloadService.cs         (moved from General/)
+    │           └── Airways/
+    │               ├── AirwayService.cs                (public entry point; called by AiracService, tests, harness)
+    │               ├── AirwayBuilder.cs                (CSV -> Airway objects)
+    │               ├── AirwayNormalizer.cs
+    │               ├── AirwayGeometryBuilder.cs
+    │               ├── AirwayClassifier.cs             (High/Low/Other + designation)
+    │               ├── AirwayWaypointBuffer.cs
+    │               ├── AirwaySettingsParser.cs
+    │               ├── AirwayGeojsonService.cs
+    │               └── AirwayAliasService.cs
     │
     ├── FEBuddyTest/                                    (rebuilt in Phase 5)
     │   ├── Program.cs                                  REWRITTEN
@@ -180,7 +203,7 @@ FE-Buddy-DEV/
     └── UnitTests/                                      (extended in Phase 5)
         ├── Handlers/
         ├── Library/Models/
-        └── Services/Airways/                           NEW
+        └── Services/Airac/                             (Phase 1.1 — Airways, launch + AiracService tests live under here)
 ```
 
 ### 3.1 Namespaces
@@ -188,11 +211,21 @@ FE-Buddy-DEV/
 | Folder | Namespace |
 |---|---|
 | `Configuration/` | `FEBuddyLibrary.Configuration` |
+| `Helpers/` | `FEBuddyLibrary.Helpers` |
 | `Models/Geojson/` | `FEBuddyLibrary.Models.Geojson` |
 | `Models/Services/General/` | `FEBuddyLibrary.Models.Services.General` |
-| `Models/Services/Airways/` | `FEBuddyLibrary.Models.Services.Airways` |
+| `Models/Services/Airac/` | `FEBuddyLibrary.Models.Services.Airac` |
+| `Models/Services/Airac/Airways/` | `FEBuddyLibrary.Models.Services.Airac.Airways` |
 | `Services/General/` | `FEBuddyLibrary.Services.General` |
-| `Services/Airways/` | `FEBuddyLibrary.Services.Airways` |
+| `Services/Airac/` | `FEBuddyLibrary.Services.Airac` |
+| `Services/Airac/Airways/` | `FEBuddyLibrary.Services.Airac.Airways` |
+
+> **Phase 1.1 (remediation plan):** Airways moved *inside* AIRAC Service. The old
+> `FEBuddyLibrary.Services.Airways` / `FEBuddyLibrary.Models.Services.Airways`
+> namespaces and folders no longer exist; nothing outside `Services/Airac/` may
+> reference an Airways type. `AiracCycleResolver`, `NasrCycleDownloadService`, and
+> the `AiracCycle*` / `AiracDownloadProgress` models moved from `…/General/` to
+> `…/Airac/` in the same change.
 
 Existing namespaces (`FEBuddyLibrary.Handlers`, `FEBuddyLibrary.Parsers.NASR.CSV`, `FEBuddyLibrary.Models.NASR.CSV`, …) are unchanged.
 

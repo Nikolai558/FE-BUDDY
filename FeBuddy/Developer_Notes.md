@@ -41,7 +41,7 @@
     - `NewsLastOpen`=""
     - `UpdateChannel`=""
   - Services
-    - AiracResources
+    - AiracService
       - `AiracCycleId`=""
       - `UserArtccId`=""
       - DefaultRoi
@@ -123,7 +123,7 @@
                 - `underline`=""
                 - `xOffset`=""
                 - `yOffset`=""
-        - DepartureProcedures
+        - DepartureProcedures   # FUTURE SPEC ONLY - not implemented (remediation plan rule 1.3). Airways is the only sub-service that exists.
           - `OutputBy`=""
           - `IncludeFebCustomProperties`=""
           - `IncludeOverridingStylePropertyByAptType`=""

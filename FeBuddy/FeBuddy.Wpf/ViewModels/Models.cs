@@ -3,8 +3,6 @@ namespace FeBuddy.Wpf.ViewModels.Models;
 /// <summary>One row in the shell's systems-health popover (Internet / AIRAC data / Updates).</summary>
 public sealed record HealthRow(string Name, string Detail, StatusKind Kind);
 
-/// <summary>A resource card on the Info screen.</summary>
-public sealed record InfoLink(string Glyph, string Title, string Blurb, string Action);
 
 /// <summary>
 /// A numbered display item - a BCG group or a filter. Used both by the map's

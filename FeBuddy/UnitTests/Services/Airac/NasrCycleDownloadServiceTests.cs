@@ -1,6 +1,7 @@
 using System.IO.Compression;
 using System.Net;
 
+using FEBuddyLibrary.Helpers;
 using FEBuddyLibrary.Models.Services.General;
 using FEBuddyLibrary.Services.General;
 using FEBuddyLibrary.Services.Airac;
@@ -15,16 +16,36 @@ namespace UnitTests.Services.Airac;
 /// <see cref="NasrCycleDownloadService.EnsureCycleAvailableFromUrlAsync"/> is the same code
 /// path the real <c>EnsureCycleAvailableAsync</c> uses, with only the URL swapped out.
 /// </summary>
+[Collection("AppLog")]
 public class NasrCycleDownloadServiceTests : IDisposable
 {
-	private readonly string _cacheRoot =
-		Path.Combine(Path.GetTempPath(), "FEBuddyTests_AiracCache_" + Guid.NewGuid().ToString("N"));
+	private readonly string _testRoot =
+		Path.Combine(Path.GetTempPath(), "FEBuddyTests_AiracDl_" + Guid.NewGuid().ToString("N"));
+
+	private readonly string _cacheRoot;
+
+	public NasrCycleDownloadServiceTests()
+	{
+		_cacheRoot = Path.Combine(_testRoot, "cache");
+		AppLog.ConfigureForTesting(Path.Combine(_testRoot, "logs"));
+		TempWorkspace.ConfigureForTesting(Path.Combine(_testRoot, "temp"));
+	}
 
 	public void Dispose()
 	{
-		if (Directory.Exists(_cacheRoot))
+		TempWorkspace.ConfigureForTesting(null);
+		AppLog.ConfigureForTesting(null);
+
+		if (Directory.Exists(_testRoot))
 		{
-			Directory.Delete(_cacheRoot, recursive: true);
+			try
+			{
+				Directory.Delete(_testRoot, recursive: true);
+			}
+			catch
+			{
+				// Best-effort.
+			}
 		}
 	}
 
@@ -45,6 +66,38 @@ public class NasrCycleDownloadServiceTests : IDisposable
 				using StreamWriter writer = new(entry.Open());
 				writer.Write("EFF_DATE\n2026-10-01\n");
 			}
+		}
+
+		return memoryStream.ToArray();
+	}
+
+	/// <summary>
+	/// Builds a zip that looks like the real FAA archive: every required CSV plus a PDF, a
+	/// README .txt, and a CSV nested inside a folder - so a test can assert only the CSVs
+	/// land, flattened.
+	/// </summary>
+	private static byte[] BuildMixedContentCycleZip()
+	{
+		using MemoryStream memoryStream = new();
+
+		using (ZipArchive archive = new(memoryStream, ZipArchiveMode.Create, leaveOpen: true))
+		{
+			void Add(string path, string content)
+			{
+				ZipArchiveEntry entry = archive.CreateEntry(path);
+				using StreamWriter writer = new(entry.Open());
+				writer.Write(content);
+			}
+
+			foreach (string fileName in new[] { "AWY_BASE.csv", "AWY_SEG_ALT.csv", "FIX_BASE.csv", "NAV_BASE.csv", "APT_BASE.csv" })
+			{
+				Add(fileName, "EFF_DATE\n2026-10-01\n");
+			}
+
+			Add("CSV_Data/AWY_SEG.csv", "X\n1\n");     // nested CSV -> must be flattened in
+			Add("Read_Me.txt", "not a csv");            // must be skipped
+			Add("changes/28DaySub_Changes.pdf", "%PDF"); // must be skipped
+			Add("28DaySub_Changes.zip", "PK");          // nested zip -> must be skipped
 		}
 
 		return memoryStream.ToArray();
@@ -179,6 +232,79 @@ public class NasrCycleDownloadServiceTests : IDisposable
 			listener.Stop();
 			listener.Close();
 		}
+	}
+
+	[Fact]
+	public async Task extract_keeps_only_csv_entries_flattened_and_removes_the_zip()
+	{
+		byte[] zip = BuildMixedContentCycleZip();
+		var (listener, url, _, _) = StartZipServer(zip);
+
+		try
+		{
+			AiracCycleInfo cycle = new("9995", "01_Jan_2099", new DateOnly(2099, 1, 1));
+
+			string resultDirectory = await NasrCycleDownloadService.EnsureCycleAvailableFromUrlAsync(
+				cycle, url, _cacheRoot, null, CancellationToken.None);
+
+			string[] extracted = Directory.GetFiles(resultDirectory, "*", SearchOption.AllDirectories)
+				.Select(Path.GetFileName)!
+				.OrderBy(name => name, StringComparer.Ordinal)
+				.ToArray()!;
+
+			// Only CSVs, and the nested CSV_Data/AWY_SEG.csv landed flattened at the root.
+			Assert.Equal(
+				new[] { "APT_BASE.csv", "AWY_BASE.csv", "AWY_SEG.csv", "AWY_SEG_ALT.csv", "FIX_BASE.csv", "NAV_BASE.csv" },
+				extracted);
+			Assert.All(extracted, name => Assert.EndsWith(".csv", name, StringComparison.OrdinalIgnoreCase));
+
+			// The zip was downloaded into %TEMP%\FE-Buddy\Downloads and removed after a clean extract.
+			string zipPath = Path.Combine(TempWorkspace.DownloadsDirectory, "9995_CSV.zip");
+			Assert.True(Directory.Exists(TempWorkspace.DownloadsDirectory));
+			Assert.False(File.Exists(zipPath));
+		}
+		finally
+		{
+			listener.Stop();
+			listener.Close();
+		}
+	}
+
+	[Fact]
+	public async Task a_failed_extract_leaves_the_zip_in_downloads_for_diagnosis()
+	{
+		// Serve bytes that are not a valid zip so ZipFile.OpenRead throws during extract.
+		var (listener, url, _, _) = StartZipServer(new byte[] { 1, 2, 3, 4, 5 });
+
+		try
+		{
+			AiracCycleInfo cycle = new("9996", "01_Jan_2099", new DateOnly(2099, 1, 1));
+
+			await Assert.ThrowsAnyAsync<Exception>(() => NasrCycleDownloadService.EnsureCycleAvailableFromUrlAsync(
+				cycle, url, _cacheRoot, null, CancellationToken.None));
+
+			string zipPath = Path.Combine(TempWorkspace.DownloadsDirectory, "9996_CSV.zip");
+			Assert.True(File.Exists(zipPath), "the zip should be kept on failure for diagnosis");
+		}
+		finally
+		{
+			listener.Stop();
+			listener.Close();
+		}
+	}
+
+	[Fact]
+	public void clear_on_launch_empties_the_temp_tree_including_downloads()
+	{
+		string downloads = TempWorkspace.EnsureDownloadsDirectory();
+		File.WriteAllText(Path.Combine(downloads, "2610_CSV.zip"), "stale");
+		Directory.CreateDirectory(Path.Combine(TempWorkspace.RootDirectory, "v2-legacy"));
+
+		int failures = TempWorkspace.ClearOnLaunch();
+
+		Assert.Equal(0, failures);
+		Assert.True(Directory.Exists(TempWorkspace.RootDirectory));
+		Assert.Empty(Directory.EnumerateFileSystemEntries(TempWorkspace.RootDirectory));
 	}
 
 	[Fact]

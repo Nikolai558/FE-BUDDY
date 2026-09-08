@@ -1,8 +1,10 @@
 using System.IO.Compression;
 using System.Net.Http;
 
+using FEBuddyLibrary.Helpers;
 using FEBuddyLibrary.Models.Services.General;
 using FEBuddyLibrary.Models.Services.Airac;
+using FEBuddyLibrary.Services.General;
 
 namespace FEBuddyLibrary.Services.Airac;
 
@@ -24,6 +26,8 @@ public static class NasrCycleDownloadService
 	/// <see cref="AiracCycleInfo.NasrCsvEffectiveDate"/> (e.g. <c>01_Oct_2026</c>).
 	/// </summary>
 	private const string DownloadUrlTemplate = "https://nfdc.faa.gov/webContent/28DaySub/extra/{0}_CSV.zip";
+
+	private const string LogSource = "NasrCycleDownload";
 
 	/// <summary>
 	/// A couple of files every Airways run needs, used as a cheap sanity check that a cached
@@ -89,9 +93,8 @@ public static class NasrCycleDownloadService
 
 		Directory.CreateDirectory(cacheRoot);
 
-		string tempDirectory = Path.Combine(Path.GetTempPath(), "FE-Buddy");
-		Directory.CreateDirectory(tempDirectory);
-		string zipPath = Path.Combine(tempDirectory, $"{cycle.AiracCycleId}_CSV.zip");
+		string downloadsDirectory = TempWorkspace.EnsureDownloadsDirectory();
+		string zipPath = Path.Combine(downloadsDirectory, $"{cycle.AiracCycleId}_CSV.zip");
 
 		using (HttpClient client = new() { Timeout = TimeSpan.FromMinutes(15) })
 		{
@@ -125,6 +128,8 @@ public static class NasrCycleDownloadService
 
 		progress?.Report(new AiracDownloadProgress(AiracDownloadPhase.Extracting, null));
 
+		bool extractSucceeded = false;
+
 		try
 		{
 			if (Directory.Exists(targetDirectory))
@@ -134,11 +139,23 @@ public static class NasrCycleDownloadService
 			}
 
 			Directory.CreateDirectory(targetDirectory);
-			ZipFile.ExtractToDirectory(zipPath, targetDirectory);
+			ExtractCsvEntriesFlattened(zipPath, targetDirectory, cycle.AiracCycleId);
+			extractSucceeded = true;
 		}
 		finally
 		{
-			File.Delete(zipPath);
+			// Keep the zip on failure so a developer can inspect it; delete it on success.
+			if (extractSucceeded)
+			{
+				try
+				{
+					File.Delete(zipPath);
+				}
+				catch
+				{
+					// A leftover zip in %TEMP% is cleared on the next launch anyway.
+				}
+			}
 		}
 
 		if (!IsCycleDataComplete(targetDirectory))
@@ -190,6 +207,53 @@ public static class NasrCycleDownloadService
 		}
 
 		return deleted;
+	}
+
+	/// <summary>
+	/// Extracts only the <c>*.csv</c> entries from <paramref name="zipPath"/> into
+	/// <paramref name="targetDirectory"/>, flattened (named by <see cref="ZipArchiveEntry.Name"/>,
+	/// ignoring any folder structure inside the archive). Everything else in the archive - the
+	/// FAA's ~25 PDFs, the README, and the nested change-report zip - is skipped, saving ~5 MB
+	/// per cycle and removing the old extract-then-clean step.
+	/// </summary>
+	/// <param name="zipPath">The downloaded cycle archive.</param>
+	/// <param name="targetDirectory">The (already-created, empty) cycle cache folder to extract into.</param>
+	/// <param name="cycleId">The cycle ID, for log messages.</param>
+	private static void ExtractCsvEntriesFlattened(string zipPath, string targetDirectory, string cycleId)
+	{
+		using ZipArchive archive = ZipFile.OpenRead(zipPath);
+
+		HashSet<string> written = new(StringComparer.OrdinalIgnoreCase);
+		int csvCount = 0;
+
+		foreach (ZipArchiveEntry entry in archive.Entries)
+		{
+			// Directory entries have an empty Name; skip anything that is not a .csv file.
+			if (string.IsNullOrEmpty(entry.Name)
+				|| !entry.Name.EndsWith(".csv", StringComparison.OrdinalIgnoreCase))
+			{
+				continue;
+			}
+
+			// Defence in depth against a maliciously crafted archive (Zip Slip).
+			if (entry.FullName.Contains("..", StringComparison.Ordinal))
+			{
+				AppLog.Warning(LogSource, $"Cycle {cycleId}: skipped archive entry '{entry.FullName}' - path contains '..'.");
+				continue;
+			}
+
+			if (!written.Add(entry.Name))
+			{
+				AppLog.Warning(LogSource, $"Cycle {cycleId}: archive has more than one '{entry.Name}'; keeping the first and skipping the rest.");
+				continue;
+			}
+
+			string destinationPath = Path.Combine(targetDirectory, entry.Name);
+			entry.ExtractToFile(destinationPath, overwrite: true);
+			csvCount++;
+		}
+
+		AppLog.Info(LogSource, $"Cycle {cycleId}: extracted {csvCount} CSV file(s) (non-CSV archive content skipped).");
 	}
 
 	/// <summary>

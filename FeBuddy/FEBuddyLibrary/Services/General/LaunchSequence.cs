@@ -1,5 +1,7 @@
 using FEBuddyLibrary.Helpers;
+using FEBuddyLibrary.Models.Services.Airac;
 using FEBuddyLibrary.Models.Services.General;
+using FEBuddyLibrary.Services.Airac;
 
 namespace FEBuddyLibrary.Services.General;
 
@@ -73,11 +75,24 @@ public static class LaunchSequence
 		AppEnvironment.Version = version;
 		AppEnvironment.RaiseChanged();
 
-		// Step 5 - AIRAC data pipeline. Wired up in Phase 2 (AiracCycleDataCache); logged here
-		// so the launch narration is complete from the start.
-		progress?.Report(new LaunchProgress(LaunchStep.PrepareAiracData, LaunchStepStatus.Started, "Preparing AIRAC data"));
-		AppLog.Info(LogSource, "AIRAC data pipeline: not yet wired up (Phase 2). Skipping.");
-		progress?.Report(new LaunchProgress(LaunchStep.PrepareAiracData, LaunchStepStatus.Skipped, "AIRAC data pipeline not yet implemented"));
+		// Step 5 - AIRAC data pipeline: probe, download and parse previous/current/next.
+		await RunStepAsync(
+			progress, LaunchStep.PrepareAiracData, "Preparing AIRAC data (download + parse)",
+			async () =>
+			{
+				DateOnly asOfUtc = DateOnly.FromDateTime(time.UtcNow);
+				AiracCycleInfo previous = AiracCycleResolver.GetCycle(AiracCyclePosition.Previous, asOfUtc);
+				AiracCycleInfo current = AiracCycleResolver.GetCycle(AiracCyclePosition.Current, asOfUtc);
+				AiracCycleInfo next = AiracCycleResolver.GetCycle(AiracCyclePosition.Next, asOfUtc);
+
+				await AiracCycleDataCache.Instance
+					.PrepareCyclesAsync(previous, current, next, cancellationToken)
+					.ConfigureAwait(false);
+
+				return AiracCycleDataCache.Instance.ComputeReadiness();
+			},
+			defaultValue: () => AiracCycleReadiness.Waiting)
+			.ConfigureAwait(false);
 
 		// Step 6 - News. Wired up in Phase 6.1 (NewsService).
 		progress?.Report(new LaunchProgress(LaunchStep.CheckNews, LaunchStepStatus.Started, "Checking for news"));

@@ -31,6 +31,30 @@ public static class AiracService
 	private const string LogSource = "AiracService";
 
 	/// <summary>
+	/// Runs every selected sub-service, resolving the parsed cycle data for
+	/// <see cref="AiracServiceSettings.SelectedCycle"/> from <see cref="AiracCycleDataCache.Instance"/>
+	/// (awaiting an in-flight parse rather than starting a second one).
+	/// </summary>
+	/// <param name="settings">The run's cross-cutting choices and per-sub-service settings blocks.</param>
+	/// <param name="progress">Optional per-sub-service progress for the run panel.</param>
+	/// <param name="cancellationToken">Cancels the run.</param>
+	/// <returns>The aggregated result.</returns>
+	public static async Task<AiracServiceResult> RunAsync(
+		AiracServiceSettings settings,
+		IProgress<AiracServiceProgress>? progress = null,
+		CancellationToken cancellationToken = default)
+	{
+		ArgumentNullException.ThrowIfNull(settings);
+
+		progress?.Report(new AiracServiceProgress("AIRAC", $"Loading parsed data for cycle {settings.SelectedCycle.AiracCycleId}"));
+		NasrCsvDataCollection nasrData = await AiracCycleDataCache.Instance
+			.GetAsync(settings.SelectedCycle.AiracCycleId, cancellationToken)
+			.ConfigureAwait(false);
+
+		return await RunAsync(settings, nasrData, progress, cancellationToken).ConfigureAwait(false);
+	}
+
+	/// <summary>
 	/// Runs every selected sub-service against the supplied parsed cycle data.
 	/// </summary>
 	/// <param name="settings">The run's cross-cutting choices and per-sub-service settings blocks.</param>

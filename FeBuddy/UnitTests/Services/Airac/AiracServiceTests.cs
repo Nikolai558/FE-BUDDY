@@ -79,7 +79,7 @@ public sealed class AiracServiceTests
 			OutputDirectory = Path.GetTempPath(),
 		};
 
-		await Assert.ThrowsAsync<ArgumentNullException>(() => AiracService.RunAsync(null!, new NasrCsvDataCollection()));
-		await Assert.ThrowsAsync<ArgumentNullException>(() => AiracService.RunAsync(settings, null!));
+		await Assert.ThrowsAsync<ArgumentNullException>(() => AiracService.RunAsync((AiracServiceSettings)null!, new NasrCsvDataCollection()));
+		await Assert.ThrowsAsync<ArgumentNullException>(() => AiracService.RunAsync(settings, (NasrCsvDataCollection)null!));
 	}
 }

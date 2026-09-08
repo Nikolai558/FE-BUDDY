@@ -43,6 +43,18 @@ public static class NasrCycleDownloadService
 		Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "FE-Buddy", "AiracCycles");
 
 	/// <summary>
+	/// The FAA NASR CSV download URL for a cycle, e.g.
+	/// <c>https://nfdc.faa.gov/webContent/28DaySub/extra/01_Oct_2026_CSV.zip</c>.
+	/// </summary>
+	/// <param name="cycle">The cycle whose download URL is wanted.</param>
+	/// <returns>The absolute download URL.</returns>
+	public static string BuildCsvDownloadUrl(AiracCycleInfo cycle)
+	{
+		ArgumentNullException.ThrowIfNull(cycle);
+		return string.Format(DownloadUrlTemplate, cycle.NasrCsvEffectiveDate);
+	}
+
+	/// <summary>
 	/// Ensures a cycle's NASR CSV data is downloaded and extracted locally, downloading it
 	/// only if it is not already cached.
 	/// </summary>

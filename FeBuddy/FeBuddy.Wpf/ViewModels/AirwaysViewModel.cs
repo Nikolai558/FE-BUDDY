@@ -73,8 +73,7 @@ public sealed class AirwaysViewModel : SubServiceSettingsViewModel
 
         ToggleInfoCommand = new RelayCommand(() => IsInfoExpanded = !IsInfoExpanded);
         OpenOutputCommand = new RelayCommand(OpenOutputFolder, () => !string.IsNullOrEmpty(LastOutputDirectory));
-        PickRoiOnMapCommand = new RelayCommand(() =>
-            Toast.Info("ROI map picker", "The shared ROI map picker arrives in Phase 11. Enter coordinates manually for now."));
+        PickRoiOnMapCommand = new RelayCommand(PickRoiOnMap);
 
         LoadFromConfig();
     }
@@ -448,6 +447,30 @@ public sealed class AirwaysViewModel : SubServiceSettingsViewModel
     }
 
     // ================= helpers =================
+
+    private void PickRoiOnMap()
+    {
+        RegionOfInterest? initial = null;
+        if (double.TryParse(SwLat, NumberStyles.Float, CultureInfo.InvariantCulture, out double swLat)
+            && double.TryParse(SwLon, NumberStyles.Float, CultureInfo.InvariantCulture, out double swLon)
+            && double.TryParse(NeLat, NumberStyles.Float, CultureInfo.InvariantCulture, out double neLat)
+            && double.TryParse(NeLon, NumberStyles.Float, CultureInfo.InvariantCulture, out double neLon))
+        {
+            initial = new RegionOfInterest(swLat, swLon, neLat, neLon);
+        }
+
+        RegionOfInterest? picked = Views.RoiPickerWindow.Pick(
+            System.Windows.Application.Current?.MainWindow, initial, baseLayer: null);
+
+        if (picked is { } roi)
+        {
+            SwLat = roi.SwLat.ToString("0.######", CultureInfo.InvariantCulture);
+            SwLon = roi.SwLon.ToString("0.######", CultureInfo.InvariantCulture);
+            NeLat = roi.NeLat.ToString("0.######", CultureInfo.InvariantCulture);
+            NeLon = roi.NeLon.ToString("0.######", CultureInfo.InvariantCulture);
+            OverrideRoi = true;
+        }
+    }
 
     private void OpenOutputFolder()
     {

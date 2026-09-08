@@ -2,6 +2,7 @@ using System.Diagnostics;
 
 using FEBuddyLibrary.Models.NASR.CSV;
 using FEBuddyLibrary.Models.Services.Airac;
+using FEBuddyLibrary.Models.Services.General;
 using FEBuddyLibrary.Models.Services.Airac.Airways;
 using FEBuddyLibrary.Services.Airac.Airways;
 using FEBuddyLibrary.Services.General;
@@ -75,7 +76,7 @@ public static class AiracService
 		ArgumentNullException.ThrowIfNull(nasrData);
 
 		Stopwatch stopwatch = Stopwatch.StartNew();
-		List<string> warnings = new();
+		List<ServiceMessage> messages = new();
 		AirwayServiceResult? airwaysResult = null;
 
 		if (settings.Airways is { } airwayBlock)
@@ -91,7 +92,7 @@ public static class AiracService
 
 			airwaysResult = await Task.Run(() => AirwayService.Run(nasrData, block), cancellationToken).ConfigureAwait(false);
 
-			warnings.AddRange(airwaysResult.Warnings);
+			messages.AddRange(airwaysResult.Messages);
 			progress?.Report(new AiracServiceProgress(
 				"Airways",
 				$"Airways complete: {airwaysResult.AirwayCount} airway(s), {airwaysResult.GeojsonFilesWritten.Count} GeoJSON file(s).",
@@ -101,7 +102,7 @@ public static class AiracService
 		else
 		{
 			const string message = "AIRAC Service run requested with no sub-service selected; nothing to do.";
-			warnings.Add(message);
+			messages.Add(new ServiceMessage(LogLevel.Warning, LogSource, message));
 			AppLog.Warning(LogSource, message);
 		}
 
@@ -109,7 +110,7 @@ public static class AiracService
 
 		return new AiracServiceResult
 		{
-			Warnings = warnings,
+			Messages = messages,
 			Elapsed = stopwatch.Elapsed,
 			Airways = airwaysResult,
 			ExcludedAirwayIds = airwaysResult?.ExcludedAirwayIds ?? Array.Empty<string>(),

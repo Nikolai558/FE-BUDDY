@@ -1,6 +1,8 @@
 using FEBuddyLibrary.Handlers.CSV;
 using FEBuddyLibrary.Models.NASR.CSV;
 using FEBuddyLibrary.Models.Services.Airac.Airways;
+using FEBuddyLibrary.Models.Services.General;
+using FEBuddyLibrary.Services.General;
 
 using NetTopologySuite;
 using NetTopologySuite.Geometries;
@@ -51,7 +53,7 @@ public static class AirwayGeometryBuilder
 		ArgumentNullException.ThrowIfNull(segments);
 
 		List<LineString> lineStrings = new();
-		List<string> warnings = new();
+		List<ServiceMessage> messages = new();
 		List<string> unresolvedWaypointIds = new();
 		List<Coordinate> currentCoordinates = new();
 
@@ -72,9 +74,8 @@ public static class AirwayGeometryBuilder
 			if (!segStartCoordinates.HasValue)
 			{
 				unresolvedWaypointIds.Add(segStartWptId);
-				warnings.Add(
-					$"Airway '{awyId}': unable to locate coordinates for segment start " +
-					$"waypoint '{segStartWptId}'. This airway was excluded from all output.");
+				messages.Add(new ServiceMessage(LogLevel.Warning, "AirwayGeometryBuilder",
+					$"Airway '{awyId}': unable to locate coordinates for segment start waypoint '{segStartWptId}'. This airway was excluded from all output."));
 
 				bool hasResolvableSegmentAhead =
 					HasResolvableSegmentAhead(allNasrCsvData, segmentList, i + 1);
@@ -101,9 +102,8 @@ public static class AirwayGeometryBuilder
 			if (!segEndCoordinates.HasValue)
 			{
 				unresolvedWaypointIds.Add(segEndWptId);
-				warnings.Add(
-					$"Airway '{awyId}': unable to locate coordinates for segment end " +
-					$"waypoint '{segEndWptId}'. This airway was excluded from all output.");
+				messages.Add(new ServiceMessage(LogLevel.Warning, "AirwayGeometryBuilder",
+					$"Airway '{awyId}': unable to locate coordinates for segment end waypoint '{segEndWptId}'. This airway was excluded from all output."));
 
 				bool hasResolvableSegmentAhead =
 					HasResolvableSegmentAhead(allNasrCsvData, segmentList, i + 1);
@@ -171,7 +171,7 @@ public static class AirwayGeometryBuilder
 		// coordinates accumulated before it still need to be added to the output.
 		FinishCurrentLineString(lineStrings, currentCoordinates);
 
-		return new AirwayGeometryBuildResult(lineStrings, warnings, unresolvedWaypointIds);
+		return new AirwayGeometryBuildResult(lineStrings, messages, unresolvedWaypointIds);
 	}
 
 	/// <summary>

@@ -1,5 +1,6 @@
 using FEBuddyLibrary.Models.Geojson;
 using FEBuddyLibrary.Models.Services.Airac.Airways;
+using FEBuddyLibrary.Models.Services.General;
 using FEBuddyLibrary.Services.General;
 
 using NetTopologySuite.Features;
@@ -52,11 +53,11 @@ public static class AirwayGeojsonService
 
 		List<string> filesWritten = new();
 		Dictionary<string, int> renderedCounts = new();
-		List<string> warnings = new();
+		List<ServiceMessage> messages = new();
 
 		if (settings.OutputBy == AirwayGeojsonOutputBy.None || airways.Count == 0)
 		{
-			return new AirwayGeojsonGenerateResult(filesWritten, renderedCounts, warnings);
+			return new AirwayGeojsonGenerateResult(filesWritten, renderedCounts, messages);
 		}
 
 		string geojsonDirectory = AirwayOutputPaths.Resolve(settings, "Geojson");
@@ -78,7 +79,7 @@ public static class AirwayGeojsonService
 			GenerateSymbolsAndText(orderedAirways, referenceClass, settings, geojsonDirectory, filePrefix, filesWritten, renderedCounts);
 		}
 
-		return new AirwayGeojsonGenerateResult(filesWritten, renderedCounts, warnings);
+		return new AirwayGeojsonGenerateResult(filesWritten, renderedCounts, messages);
 	}
 
 	/// <summary>

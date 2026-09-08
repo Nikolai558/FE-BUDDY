@@ -1,3 +1,5 @@
+using FEBuddyLibrary.Services.General;
+
 namespace FEBuddyLibrary.Models.Services.General;
 
 /// <summary>
@@ -21,11 +23,22 @@ namespace FEBuddyLibrary.Models.Services.General;
 public abstract record ServiceResult
 {
 	/// <summary>
-	/// Non-fatal problems encountered while the service ran (e.g. an airway with an
-	/// unresolvable waypoint that was skipped rather than aborting the whole run). The
-	/// service still completed; these are things the caller should surface to the user.
+	/// Every levelled message the service emitted while running (remediation plan 3.8). The
+	/// service still completed; the caller presents these grouped by level. Also mirrored to
+	/// <see cref="Services.General.AppLog"/> by the service's top-level entry point.
 	/// </summary>
-	public required IReadOnlyList<string> Warnings { get; init; }
+	public required IReadOnlyList<ServiceMessage> Messages { get; init; }
+
+	/// <summary>
+	/// Backwards-compatible view of <see cref="Messages"/>: just the text of the
+	/// <see cref="Services.General.LogLevel.Warning"/> and <see cref="Services.General.LogLevel.Error"/>
+	/// entries. Prefer <see cref="Messages"/> for anything level-aware.
+	/// </summary>
+	public IReadOnlyList<string> Warnings =>
+		Messages
+			.Where(m => m.Level is LogLevel.Warning or LogLevel.Error)
+			.Select(m => m.Text)
+			.ToArray();
 
 	/// <summary>Total wall-clock time the service took to run.</summary>
 	public required TimeSpan Elapsed { get; init; }

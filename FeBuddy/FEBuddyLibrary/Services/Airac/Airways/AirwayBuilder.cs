@@ -1,6 +1,7 @@
 using FEBuddyLibrary.Handlers.CSV;
 using FEBuddyLibrary.Models.NASR.CSV;
 using FEBuddyLibrary.Models.Services.Airac.Airways;
+using FEBuddyLibrary.Models.Services.General;
 using FEBuddyLibrary.Services.General;
 
 using NetTopologySuite.Geometries;
@@ -38,7 +39,7 @@ public static class AirwayBuilder
 			throw new InvalidOperationException("AWY NASR CSV data has not been parsed.");
 		}
 
-		List<string> warnings = new();
+		List<ServiceMessage> messages = new();
 		List<Airway> airways = new();
 		List<string> excludedAirwayIds = new();
 		bool warnedUnknownDesignation = false;
@@ -72,7 +73,7 @@ public static class AirwayBuilder
 			if (designation == AirwayClassifier.UnknownDesignation && !warnedUnknownDesignation)
 			{
 				warnedUnknownDesignation = true;
-				warnings.Add($"Airway '{awyId}': its ID has no leading letters; grouped under '{AirwayClassifier.UnknownDesignation}'.");
+				messages.Add(new ServiceMessage(LogLevel.Warning, "AirwayBuilder", $"Airway '{awyId}': its ID has no leading letters; grouped under '{AirwayClassifier.UnknownDesignation}'."));
 			}
 
 			// Drop excluded designations before any geometry work, so GeoJSON and the alias
@@ -93,7 +94,7 @@ public static class AirwayBuilder
 			AirwayGeometryBuildResult geometryResult =
 				AirwayGeometryBuilder.Build(allNasrCsvData, awyId, normalizedSegments);
 
-			warnings.AddRange(geometryResult.Warnings);
+			messages.AddRange(geometryResult.Messages);
 
 			// An airway with any genuinely unresolvable waypoint is excluded entirely, so a
 			// half-built airway never misleads the user (remediation plan 3.2a). Border
@@ -104,9 +105,9 @@ public static class AirwayBuilder
 					.Distinct(StringComparer.OrdinalIgnoreCase)
 					.ToArray();
 
-				warnings.Add(
+				messages.Add(new ServiceMessage(LogLevel.Warning, "AirwayBuilder",
 					$"Airway '{awyId}': excluded from all output - {distinctIds.Length} waypoint(s) " +
-					$"could not be resolved ({string.Join(", ", distinctIds)}).");
+					$"could not be resolved ({string.Join(", ", distinctIds)})."));
 				excludedAirwayIds.Add(awyId);
 				continue;
 			}
@@ -150,7 +151,7 @@ public static class AirwayBuilder
 				AirwayBufferResult bufferResult =
 					AirwayWaypointBuffer.Buffer(lineStrings, points, AirwayGeometryBuilder.GeometryFactory, awyId);
 
-				warnings.AddRange(bufferResult.Warnings);
+				messages.AddRange(bufferResult.Messages);
 
 				lineStrings = bufferResult.LineStrings;
 
@@ -180,7 +181,7 @@ public static class AirwayBuilder
 			airways.Add(airway);
 		}
 
-		return new AirwayBuildAllResult(airways, warnings, excludedAirwayIds);
+		return new AirwayBuildAllResult(airways, messages, excludedAirwayIds);
 	}
 
 	/// <summary>

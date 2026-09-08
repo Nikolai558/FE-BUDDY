@@ -1,11 +1,19 @@
+using FEBuddyLibrary.Models.Services.General;
+using FEBuddyLibrary.Services.General;
+
 namespace FEBuddyLibrary.Models.Services.Airac.Airways;
 
 /// <summary>
 /// The result of parsing a raw Airways settings dictionary: the typed settings object plus
-/// any non-fatal warnings noticed along the way (currently, unrecognized dictionary keys).
+/// any levelled messages noticed along the way (currently, unrecognized dictionary keys).
 /// </summary>
 /// <param name="Settings">The fully-parsed, typed settings.</param>
-/// <param name="Warnings">Non-fatal problems noticed while parsing (e.g. an unrecognized key).</param>
+/// <param name="Messages">Levelled messages noticed while parsing, e.g. an unrecognized key at <see cref="LogLevel.Warning"/> (remediation plan 3.8).</param>
 public sealed record AirwaySettingsParseResult(
 	AirwaySettings Settings,
-	IReadOnlyList<string> Warnings);
+	IReadOnlyList<ServiceMessage> Messages)
+{
+	/// <summary>Backwards-compatible text-only view of the Warning/Error entries in <see cref="Messages"/>.</summary>
+	public IReadOnlyList<string> Warnings =>
+		Messages.Where(m => m.Level is LogLevel.Warning or LogLevel.Error).Select(m => m.Text).ToArray();
+}

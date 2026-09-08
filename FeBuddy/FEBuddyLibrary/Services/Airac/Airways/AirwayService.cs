@@ -2,6 +2,8 @@ using System.Diagnostics;
 
 using FEBuddyLibrary.Models.NASR.CSV;
 using FEBuddyLibrary.Models.Services.Airac.Airways;
+using FEBuddyLibrary.Models.Services.General;
+using FEBuddyLibrary.Services.General;
 
 namespace FEBuddyLibrary.Services.Airac.Airways;
 
@@ -31,17 +33,17 @@ public static class AirwayService
 		ArgumentNullException.ThrowIfNull(airwaySettings);
 
 		Stopwatch stopwatch = Stopwatch.StartNew();
-		List<string> warnings = new();
+		List<ServiceMessage> messages = new();
 
 		AirwaySettingsParseResult parseResult = AirwaySettingsParser.Parse(airwaySettings);
-		warnings.AddRange(parseResult.Warnings);
+		messages.AddRange(parseResult.Messages);
 
 		AirwayBuildAllResult buildResult = AirwayBuilder.BuildAll(allNasrCsvData, parseResult.Settings);
-		warnings.AddRange(buildResult.Warnings);
+		messages.AddRange(buildResult.Messages);
 
 		AirwayGeojsonGenerateResult geojsonResult =
 			AirwayGeojsonService.Generate(buildResult.Airways, parseResult.Settings);
-		warnings.AddRange(geojsonResult.Warnings);
+		messages.AddRange(geojsonResult.Messages);
 
 		AirwayAliasGenerateResult? aliasResult = parseResult.Settings.GenerateAliasFile
 			? AirwayAliasService.Generate(buildResult.Airways, parseResult.Settings)
@@ -49,9 +51,16 @@ public static class AirwayService
 
 		stopwatch.Stop();
 
+		// Every message the run produced also flows to the shared application log, so the
+		// Dashboard activity log narrates the run (remediation plan 0.3 / 3.8).
+		foreach (ServiceMessage message in messages)
+		{
+			AppLog.Write(message.Level, message.Source, message.Text);
+		}
+
 		return new AirwayServiceResult
 		{
-			Warnings = warnings,
+			Messages = messages,
 			Elapsed = stopwatch.Elapsed,
 			AirwayCount = buildResult.Airways.Count,
 			GeojsonFilesWritten = geojsonResult.FilesWritten,

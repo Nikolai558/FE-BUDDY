@@ -1,5 +1,7 @@
 using FEBuddyLibrary.Handlers;
 using FEBuddyLibrary.Models.Services.Airac.Airways;
+using FEBuddyLibrary.Models.Services.General;
+using FEBuddyLibrary.Services.General;
 
 using NetTopologySuite.Geometries;
 
@@ -55,7 +57,7 @@ public static class AirwayWaypointBuffer
 		Dictionary<(double Lon, double Lat), AirwayPoint> pointsByCoordinate = BuildCoordinateIndex(airwayPoints);
 
 		List<LineString> legs = new();
-		List<string> warnings = new();
+		List<ServiceMessage> messages = new();
 
 		foreach (LineString lineString in lineStrings)
 		{
@@ -76,11 +78,13 @@ public static class AirwayWaypointBuffer
 
 				if (legDistanceNm <= startRadius + endRadius)
 				{
-					warnings.Add(
+					// Info, not Warning: this is the buffer doing exactly what it was asked to
+					// do (remediation plan 3.8).
+					messages.Add(new ServiceMessage(LogLevel.Info, "AirwayWaypointBuffer",
 						$"Airway '{awyId}': a leg between ({start.Y:F5}, {start.X:F5}) and " +
 						$"({end.Y:F5}, {end.X:F5}) is {legDistanceNm:F2} NM long, shorter than " +
 						$"its combined waypoint buffer radius of {startRadius + endRadius:F1} NM. " +
-						"This leg was dropped.");
+						"This leg was dropped."));
 					continue;
 				}
 
@@ -101,7 +105,7 @@ public static class AirwayWaypointBuffer
 			}
 		}
 
-		return new AirwayBufferResult(legs, warnings);
+		return new AirwayBufferResult(legs, messages);
 	}
 
 	/// <summary>

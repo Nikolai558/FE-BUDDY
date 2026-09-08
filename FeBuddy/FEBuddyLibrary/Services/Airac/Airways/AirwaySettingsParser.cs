@@ -116,8 +116,8 @@ public static class AirwaySettingsParser
 			}
 		}
 
-		List<string> warnings = new();
-		CollectUnknownKeyWarnings(airwaySettings, warnings);
+		List<ServiceMessage> messages = new();
+		CollectUnknownKeyWarnings(airwaySettings, messages);
 
 		AirwaySettings settings = new()
 		{
@@ -142,7 +142,7 @@ public static class AirwaySettingsParser
 			TextDefaults = textDefaults
 		};
 
-		return new AirwaySettingsParseResult(settings, warnings);
+		return new AirwaySettingsParseResult(settings, messages);
 	}
 
 	private static AirwayGeojsonOutputBy ParseOutputBy(string value)
@@ -394,7 +394,7 @@ public static class AirwaySettingsParser
 		}
 	}
 
-	private static void CollectUnknownKeyWarnings(Dictionary<string, string> settings, List<string> warnings)
+	private static void CollectUnknownKeyWarnings(Dictionary<string, string> settings, List<ServiceMessage> messages)
 	{
 		foreach (string key in settings.Keys)
 		{
@@ -407,7 +407,7 @@ public static class AirwaySettingsParser
 
 			if (!match.Success)
 			{
-				warnings.Add($"Unrecognized airwaySettings key '{key}' was ignored.");
+				messages.Add(new ServiceMessage(LogLevel.Warning, "AirwaySettingsParser", $"Unrecognized airwaySettings key '{key}' was ignored."));
 				continue;
 			}
 
@@ -428,13 +428,11 @@ public static class AirwaySettingsParser
 			if (kind.Equals("Text", StringComparison.OrdinalIgnoreCase) &&
 				property.Equals("text", StringComparison.OrdinalIgnoreCase))
 			{
-				warnings.Add(
-					$"'{key}' was ignored: per-waypoint text cannot be configured as a " +
-					"class-wide default and is always generated from each waypoint's own ID.");
+				messages.Add(new ServiceMessage(LogLevel.Warning, "AirwaySettingsParser", $"'{key}' was ignored: per-waypoint text cannot be configured as a class-wide default and is always generated from each waypoint's own ID."));
 				continue;
 			}
 
-			warnings.Add($"Unrecognized airwaySettings key '{key}' was ignored.");
+			messages.Add(new ServiceMessage(LogLevel.Warning, "AirwaySettingsParser", $"Unrecognized airwaySettings key '{key}' was ignored."));
 		}
 	}
 }

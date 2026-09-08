@@ -1,3 +1,5 @@
+using System.Text.RegularExpressions;
+
 using FEBuddyLibrary.Models.Services.Airac.Airways;
 
 namespace FEBuddyLibrary.Services.Airac.Airways;
@@ -15,6 +17,39 @@ public static class AirwayClassifier
 {
 	/// <summary>Feet AGL/MSL at or above which an airway is classified as <see cref="AirwayAltitudeClass.High"/>.</summary>
 	public const int HighAltitudeThresholdFeet = 18000;
+
+	/// <summary>The value used for <see cref="Airway.Designation"/> when an <c>AWY_ID</c> has no leading letters.</summary>
+	public const string UnknownDesignation = "Unknown";
+
+	private static readonly Regex LeadingLettersPattern = new("^[A-Za-z]+", RegexOptions.Compiled);
+
+	/// <summary>
+	/// Derives an airway's designation from its <c>AWY_ID</c>: the leading letters before the
+	/// first digit, upper-cased. <c>J3</c> -&gt; <c>J</c>, <c>V23</c> -&gt; <c>V</c>,
+	/// <c>AT1</c> -&gt; <c>AT</c>, <c>Q100</c> -&gt; <c>Q</c>, <c>T295</c> -&gt; <c>T</c>.
+	/// </summary>
+	/// <remarks>
+	/// The designation is <b>never</b> taken from <c>AWY_BASE.AWY_DESIGNATION</c> (the owner's
+	/// decision, remediation plan 3.1): that field is not an airway designation in the sense
+	/// FE-Buddy means, and using it filed RNAV airways under <c>RN</c> even though their IDs
+	/// start with <c>Q</c>/<c>T</c>. This one derived value feeds file naming, the designation
+	/// include/exclude filter, and the GUI toggle list.
+	/// </remarks>
+	/// <param name="awyId">The airway ID (<c>AWY_BASE.AWY_ID</c>).</param>
+	/// <returns>
+	/// The upper-cased leading-letter designation, or <see cref="UnknownDesignation"/> when the
+	/// ID has no leading letters (which should not occur in real NASR data).
+	/// </returns>
+	public static string DeriveDesignation(string? awyId)
+	{
+		if (string.IsNullOrWhiteSpace(awyId))
+		{
+			return UnknownDesignation;
+		}
+
+		Match match = LeadingLettersPattern.Match(awyId.Trim());
+		return match.Success ? match.Value.ToUpperInvariant() : UnknownDesignation;
+	}
 
 	/// <summary>
 	/// Determines an airway's altitude classification from its normalized segments.

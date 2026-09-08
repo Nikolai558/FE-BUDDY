@@ -40,6 +40,7 @@ public static class AirwayBuilder
 
 		List<string> warnings = new();
 		List<Airway> airways = new();
+		bool warnedUnknownDesignation = false;
 
 		/*
 		 * Build a dictionary of all airway IDs from AWY_BASE.
@@ -130,10 +131,18 @@ public static class AirwayBuilder
 			(AirwayAltitudeClass altitudeClass, int? maxAuthAlt) =
 				AirwayClassifier.Classify(normalizedSegments);
 
+			string designation = AirwayClassifier.DeriveDesignation(awyId);
+
+			if (designation == AirwayClassifier.UnknownDesignation && !warnedUnknownDesignation)
+			{
+				warnedUnknownDesignation = true;
+				warnings.Add($"Airway '{awyId}': its ID has no leading letters; grouped under '{AirwayClassifier.UnknownDesignation}'.");
+			}
+
 			Airway airway = new()
 			{
 				AwyId = awyId,
-				AwyDesignation = (baseRecord.AwyDesignation ?? string.Empty).Trim(),
+				Designation = designation,
 				AwyLocation = (baseRecord.AwyLocation ?? string.Empty).Trim(),
 				MaxAuthAlt = maxAuthAlt,
 				AltitudeClass = altitudeClass,

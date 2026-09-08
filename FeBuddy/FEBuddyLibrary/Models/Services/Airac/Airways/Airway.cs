@@ -13,8 +13,14 @@ public sealed class Airway
 	/// <summary>The airway identifier (<c>AWY_BASE.AWY_ID</c>), e.g. "J3".</summary>
 	public required string AwyId { get; init; }
 
-	/// <summary>The airway designation (<c>AWY_BASE.AWY_DESIGNATION</c>), e.g. "J".</summary>
-	public required string AwyDesignation { get; init; }
+	/// <summary>
+	/// The airway designation, derived from the leading letters of <see cref="AwyId"/> before
+	/// the first digit, upper-cased (<c>J3</c> -&gt; <c>J</c>, <c>AT1</c> -&gt; <c>AT</c>). See
+	/// <c>AirwayClassifier.DeriveDesignation</c>. Never taken from
+	/// <c>AWY_BASE.AWY_DESIGNATION</c>. Feeds file naming, the exclusion filter, and the GUI
+	/// toggle list.
+	/// </summary>
+	public required string Designation { get; init; }
 
 	/// <summary>The airway location code: A (Alaska), H (Hawaii), or C (U.S. Contiguous).</summary>
 	public required string AwyLocation { get; init; }

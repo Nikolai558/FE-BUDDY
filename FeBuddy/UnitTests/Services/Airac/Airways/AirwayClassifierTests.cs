@@ -48,4 +48,26 @@ public class AirwayClassifierTests
 
 		Assert.Equal(AirwayAltitudeClass.High, altitudeClass);
 	}
+
+	[Theory]
+	[InlineData("J3", "J")]
+	[InlineData("V23", "V")]
+	[InlineData("AT1", "AT")]
+	[InlineData("Q100", "Q")]
+	[InlineData("T295", "T")]
+	[InlineData("j146", "J")]     // lower-case ID -> upper-cased designation
+	[InlineData(" V16 ", "V")]    // surrounding whitespace is trimmed
+	public void designation_is_the_leading_letters_of_the_awy_id_upper_cased(string awyId, string expected)
+	{
+		Assert.Equal(expected, AirwayClassifier.DeriveDesignation(awyId));
+	}
+
+	[Theory]
+	[InlineData("123")]
+	[InlineData("")]
+	[InlineData(null)]
+	public void an_awy_id_with_no_leading_letters_is_grouped_under_unknown(string? awyId)
+	{
+		Assert.Equal(AirwayClassifier.UnknownDesignation, AirwayClassifier.DeriveDesignation(awyId));
+	}
 }

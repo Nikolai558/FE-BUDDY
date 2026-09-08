@@ -47,7 +47,7 @@ public class AirwayBuilderTests
 
 		Airway airway = Assert.Single(result.Airways);
 		Assert.Equal("A216", airway.AwyId);
-		Assert.Equal("A", airway.AwyDesignation);
+		Assert.Equal("A", airway.Designation);
 		Assert.Equal("C", airway.AwyLocation);
 		Assert.Equal(AirwayAltitudeClass.High, airway.AltitudeClass);
 		Assert.Equal(45000, airway.MaxAuthAlt);

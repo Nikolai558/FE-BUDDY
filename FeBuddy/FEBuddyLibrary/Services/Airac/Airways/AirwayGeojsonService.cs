@@ -91,9 +91,7 @@ public static class AirwayGeojsonService
 		{
 			string key = outputBy == AirwayGeojsonOutputBy.HighLow
 				? airway.AltitudeClass.ToString()
-				: string.IsNullOrWhiteSpace(airway.AwyDesignation)
-					? "Unknown"
-					: airway.AwyDesignation.Trim().ToUpperInvariant();
+				: airway.Designation;
 
 			if (!groups.TryGetValue(key, out List<Airway>? list))
 			{

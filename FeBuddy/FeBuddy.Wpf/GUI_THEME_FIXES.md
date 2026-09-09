@@ -359,9 +359,12 @@ assumes the main window's context.
 - [x] Open ComboBox popup is dark (no white list, no blue selection bar)
 - [x] Dashboard activity-log message text is comfortably readable
 - [x] `Text.Tertiary` no longer used for any full-sentence copy
-- [ ] AIRAC Services page scrolls smoothly from top to the last section; no dead zone
-- [ ] Dashboard wheel scroll behaves the same wherever the pointer is
-- [ ] Page titles + primary actions stay pinned while the body scrolls
+- [x] AIRAC Services page scrolls smoothly from top to the last section; no dead zone
+- [x] Dashboard wheel scroll behaves the same wherever the pointer is (News / log
+      inner scrollers hand the wheel back to any outer scroller at their edge)
+- [x] Page titles + primary actions stay pinned while the body scrolls
+      (AIRAC + Settings; the Airways sub-service save bar still scrolls — pinning
+       it needs a bigger AiracServiceView restructure, tracked separately)
 - [ ] Disabled primary/ghost buttons look intentional, not broken
 - [ ] ROI picker / Confirm / Update windows wear the app's custom title bar
 - [ ] ROI picker map draws the states outline

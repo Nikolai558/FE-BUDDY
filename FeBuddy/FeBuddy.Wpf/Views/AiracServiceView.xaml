@@ -10,16 +10,26 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:FeBuddy.Wpf.ViewModels"
              xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
+             xmlns:infra="clr-namespace:FeBuddy.Wpf.Infrastructure"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance vm:AiracServiceViewModel}"
              d:DesignWidth="1000" d:DesignHeight="760">
 
     <Grid Background="{StaticResource Brush.Bg.Base}">
-        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-            <StackPanel Margin="28" MaxWidth="1080" HorizontalAlignment="Left">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
 
-                <!-- header (7.1) -->
-                <TextBlock Text="AIRAC Services" Style="{StaticResource Text.Display}" />
+        <!-- pinned page header (theme fixes P4): title stays put while the body scrolls -->
+        <Grid Grid.Row="0" Background="{StaticResource Brush.Bg.Base}">
+            <TextBlock Text="AIRAC Services" Style="{StaticResource Text.Display}" Margin="28,24,28,14" />
+            <Border Style="{StaticResource Divider}" VerticalAlignment="Bottom" />
+        </Grid>
+
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
+                      infra:WheelScroll.Amplify="3">
+            <StackPanel Margin="28,16,28,0" MaxWidth="1080" HorizontalAlignment="Left">
 
                 <!-- waiting message (2.5) -->
                 <Border Style="{StaticResource Card}" Margin="0,16,0,0" Padding="16"

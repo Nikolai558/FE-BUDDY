@@ -83,10 +83,12 @@
         </DataTemplate>
     </UserControl.Resources>
 
-    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-        <StackPanel MaxWidth="820" HorizontalAlignment="Left">
+    <!-- No ScrollViewer here: this sub-service page is hosted inside
+         AiracServiceView's single page-level ScrollViewer (theme fixes P3a).
+         A second scroller stole the wheel and hid the lower sections. -->
+    <StackPanel MaxWidth="820" HorizontalAlignment="Left">
 
-            <!-- ============ save / undo bar ============ -->
+        <!-- ============ save / undo bar ============ -->
             <DockPanel Margin="0,0,0,10">
                 <Button DockPanel.Dock="Right" Style="{StaticResource Button.Subtle}" Content="Undo last save"
                         Command="{Binding UndoLastSaveCommand}" Margin="8,0,0,0" />
@@ -282,7 +284,6 @@
                 </StackPanel>
             </Border>
 
-            <Rectangle Height="8" Fill="Transparent" />
-        </StackPanel>
-    </ScrollViewer>
+        <Rectangle Height="8" Fill="Transparent" />
+    </StackPanel>
 </UserControl>

@@ -9,18 +9,29 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:FeBuddy.Wpf.ViewModels"
              xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
+             xmlns:infra="clr-namespace:FeBuddy.Wpf.Infrastructure"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance vm:SettingsViewModel, IsDesignTimeCreatable=True}"
              d:DesignWidth="900" d:DesignHeight="820">
 
     <Grid Background="{StaticResource Brush.Bg.Base}">
-        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-            <StackPanel Margin="28" MaxWidth="780" HorizontalAlignment="Left">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
 
-                <DockPanel>
-                    <Button DockPanel.Dock="Right" Style="{StaticResource Button.Primary}" Content="Save" Command="{Binding SaveCommand}" MinWidth="90" />
-                    <TextBlock Style="{StaticResource Text.H1}" Text="Settings" />
-                </DockPanel>
+        <!-- pinned page header (theme fixes P4): title + Save stay put while the body scrolls -->
+        <Grid Grid.Row="0" Background="{StaticResource Brush.Bg.Base}">
+            <DockPanel Margin="28,24,28,14" MaxWidth="780" HorizontalAlignment="Left">
+                <Button DockPanel.Dock="Right" Style="{StaticResource Button.Primary}" Content="Save" Command="{Binding SaveCommand}" MinWidth="90" />
+                <TextBlock Style="{StaticResource Text.H1}" Text="Settings" VerticalAlignment="Center" />
+            </DockPanel>
+            <Border Style="{StaticResource Divider}" VerticalAlignment="Bottom" />
+        </Grid>
+
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
+                      infra:WheelScroll.Amplify="3">
+            <StackPanel Margin="28,16,28,0" MaxWidth="780" HorizontalAlignment="Left">
 
                 <!-- ================= 1. UPDATES ================= -->
                 <Border Style="{StaticResource Card}" Margin="0,18,0,0">

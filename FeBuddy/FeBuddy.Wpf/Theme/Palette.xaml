@@ -39,13 +39,16 @@
 
     <!-- ============================= TEXT ============================= -->
     <Color x:Key="Color.Text.Primary">#F2F5F7</Color>
-    <Color x:Key="Color.Text.Secondary">#9FB1C0</Color>
-    <Color x:Key="Color.Text.Tertiary">#68798A</Color>
+    <Color x:Key="Color.Text.Secondary">#B7C6D3</Color>   <!-- body copy: clears AA on Card -->
+    <Color x:Key="Color.Text.Tertiary">#8B9DAD</Color>    <!-- quiet metadata: ~4.5:1 on Card -->
+    <!-- de-emphasised metadata only; the darker pre-bump value if ever needed -->
+    <Color x:Key="Color.Text.Faint">#68798A</Color>
     <Color x:Key="Color.Text.OnAccent">#10161C</Color>   <!-- dark text on the amber button -->
 
     <SolidColorBrush x:Key="Brush.Text.Primary"   Color="{StaticResource Color.Text.Primary}" />
     <SolidColorBrush x:Key="Brush.Text.Secondary" Color="{StaticResource Color.Text.Secondary}" />
     <SolidColorBrush x:Key="Brush.Text.Tertiary"  Color="{StaticResource Color.Text.Tertiary}" />
+    <SolidColorBrush x:Key="Brush.Text.Faint"     Color="{StaticResource Color.Text.Faint}" />
     <SolidColorBrush x:Key="Brush.Text.OnAccent"  Color="{StaticResource Color.Text.OnAccent}" />
 
     <!-- ============================ ACCENT ============================ -->

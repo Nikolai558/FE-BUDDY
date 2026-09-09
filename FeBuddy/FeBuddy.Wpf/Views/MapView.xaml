@@ -55,7 +55,7 @@
                 </Grid>
             </Border>
 
-            <TextBlock Grid.Row="2" Text="{Binding StatusMessage}" Style="{StaticResource Text.Caption}" Margin="2,8,0,0" />
+            <TextBlock Grid.Row="2" Text="{Binding StatusMessage}" Style="{StaticResource Text.Body}" Margin="2,8,0,0" />
         </Grid>
 
         <!-- ===================== side panel ===================== -->
@@ -65,7 +65,7 @@
                 <StackPanel Margin="16">
 
                     <ctl:SectionHeader Label="LAYERS" />
-                    <TextBlock Style="{StaticResource Text.Caption}" Margin="0,4,0,8"
+                    <TextBlock Style="{StaticResource Text.Body}" Margin="0,4,0,8"
                                Text="Load one or more GeoJSON files. A malformed or empty file is skipped and reported; the others still load."
                                Visibility="{Binding HasLoadedFiles, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
                     <ItemsControl ItemsSource="{Binding LoadedFiles}">

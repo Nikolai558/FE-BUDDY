@@ -106,7 +106,7 @@
                     <ctl:SectionHeader Label="GEOJSON OUTPUT" />
                     <ComboBox ItemsSource="{Binding Source={StaticResource OutputByValues}}"
                               SelectedItem="{Binding OutputBy}" Width="180" HorizontalAlignment="Left" Margin="0,4,0,0" />
-                    <TextBlock Text="{Binding OutputModeHint}" Style="{StaticResource Text.Caption}"
+                    <TextBlock Text="{Binding OutputModeHint}" Style="{StaticResource Text.Body}"
                                TextWrapping="Wrap" Margin="0,8,0,0" />
 
                     <Border Style="{StaticResource Divider}" Margin="0,12" />
@@ -121,7 +121,7 @@
                     <CheckBox Content="Buffer airway waypoints (lines stop short of the waypoint symbols)"
                               IsChecked="{Binding BufferAirwayWaypoints}" />
                     <CheckBox Content="Include FE-Buddy custom properties" IsChecked="{Binding IncludeFebCustomProperties}" Margin="0,8,0,0" />
-                    <TextBlock Text="{Binding FebPropertiesDescription}" Style="{StaticResource Text.Caption}"
+                    <TextBlock Text="{Binding FebPropertiesDescription}" Style="{StaticResource Text.Body}"
                                TextWrapping="Wrap" Margin="20,4,0,0" />
                     <CheckBox Content="Also include the airway waypoint ID list (feb.AwyWaypoints)"
                               IsChecked="{Binding IncludeAirwayWaypointIds}" IsEnabled="{Binding IncludeFebCustomProperties}"
@@ -133,9 +133,9 @@
             <Border Style="{StaticResource Card}" Margin="0,16,0,0">
                 <StackPanel>
                     <ctl:SectionHeader Label="DESIGNATIONS TO INCLUDE" />
-                    <TextBlock Style="{StaticResource Text.Caption}" Margin="0,4,0,8"
+                    <TextBlock Style="{StaticResource Text.Body}" Margin="0,4,0,8"
                                Text="Derived from the selected cycle's AWY_IDs. All on by default; the deselected set is saved as ExcludedDesignations." />
-                    <TextBlock Style="{StaticResource Text.Caption}" Foreground="{StaticResource Brush.Text.Tertiary}"
+                    <TextBlock Style="{StaticResource Text.Caption}"
                                Text="Waiting for AIRAC data…"
                                Visibility="{Binding IsCycleReady, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
                     <ItemsControl ItemsSource="{Binding Designations}" IsEnabled="{Binding IsCycleReady}">
@@ -184,7 +184,7 @@
             <Border Style="{StaticResource Card}" Margin="0,16,0,0">
                 <StackPanel>
                     <ctl:SectionHeader Label="ALIASES" />
-                    <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,4,0,8"
+                    <TextBlock Style="{StaticResource Text.Body}" TextWrapping="Wrap" Margin="0,4,0,8"
                                Text="Provides a command to draw all airway waypoints on an ERAM or STARS window. Syntax: .&lt;awyId&gt;F  —  e.g. .J3F .FF OAK RBL LKV IMB GEG" />
                     <CheckBox Content="Include the Airways.txt alias file" IsChecked="{Binding GenerateAliasFile}" />
                     <StackPanel Margin="20,6,0,0" IsEnabled="{Binding GenerateAliasFile}">
@@ -227,7 +227,7 @@
             <Border Style="{StaticResource Card}" Margin="0,16,0,0">
                 <StackPanel>
                     <ctl:SectionHeader Label="SPLIT GEOJSON AT THE ANTIMERIDIAN" />
-                    <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,4,0,8"
+                    <TextBlock Style="{StaticResource Text.Body}" TextWrapping="Wrap" Margin="0,4,0,8"
                                Text="A line that crosses ±180° longitude is split into two LineStrings so it does not visually wrap across the whole map. Leave this on unless a downstream tool needs the un-split geometry." />
                     <CheckBox Content="Split airway geometry at the antimeridian" IsChecked="{Binding SplitAtAntimeridian}" />
                 </StackPanel>

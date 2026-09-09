@@ -52,7 +52,7 @@
                         <Border Style="{StaticResource Divider}" Margin="0,14" />
 
                         <ctl:SectionHeader Label="FACILITY" />
-                        <TextBlock Style="{StaticResource Text.Caption}" Margin="0,4,0,6"
+                        <TextBlock Style="{StaticResource Text.Body}" Margin="0,4,0,6"
                                    Text="Your ARTCC / facility, from the selected cycle's parsed airports." />
                         <ComboBox ItemsSource="{Binding FacilityOptions}"
                                   SelectedItem="{Binding SelectedArtccId}"
@@ -90,7 +90,7 @@
                         <Button DockPanel.Dock="Right" Style="{StaticResource Button.Primary}"
                                 Content="Run AIRAC Service" MinWidth="180"
                                 Command="{Binding RunCommand}" />
-                        <TextBlock VerticalAlignment="Center" Style="{StaticResource Text.Caption}"
+                        <TextBlock VerticalAlignment="Center" Style="{StaticResource Text.Body}"
                                    Text="Unsaved sub-service settings are saved before the run." />
                     </DockPanel>
                 </Border>

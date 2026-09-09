@@ -26,7 +26,7 @@
                 <Border Style="{StaticResource Card}" Margin="0,18,0,0">
                     <StackPanel>
                         <ctl:SectionHeader Label="UPDATES" />
-                        <TextBlock Style="{StaticResource Text.Caption}" Margin="0,4,0,8" TextWrapping="Wrap"
+                        <TextBlock Style="{StaticResource Text.Body}" Margin="0,4,0,8" TextWrapping="Wrap"
                                    Foreground="{StaticResource Brush.Warn}"
                                    Text="Do not select anything but Stable unless a developer instructs you to, or you are one." />
                         <StackPanel>
@@ -54,7 +54,7 @@
                     <StackPanel>
                         <ctl:SectionHeader Label="FACILITY PROFILE" />
 
-                        <TextBlock Style="{StaticResource Text.Caption}" Foreground="{StaticResource Brush.Text.Tertiary}"
+                        <TextBlock Style="{StaticResource Text.Body}"
                                    Text="{Binding FacilityWaitingMessage}" TextWrapping="Wrap" Margin="0,4,0,0"
                                    Visibility="{Binding FacilitiesReady, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
 
@@ -83,7 +83,7 @@
                     <StackPanel>
                         <ctl:SectionHeader Label="DEFAULT REGION OF INTEREST" />
                         <TextBlock Text="{Binding Source={x:Static vm:SettingsViewModel.RoiExplainer}}"
-                                   Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,4,0,10" />
+                                   Style="{StaticResource Text.Body}" TextWrapping="Wrap" Margin="0,4,0,10" />
                         <DockPanel>
                             <Button DockPanel.Dock="Right" Style="{StaticResource Button.Subtle}" Content="Clear"
                                     Command="{Binding ClearRoiCommand}" Margin="8,0,0,0" />
@@ -102,13 +102,13 @@
 
                         <TextBlock Text="FE-Buddy properties" Style="{StaticResource Text.Label}" Margin="0,4,0,0" />
                         <TextBlock Text="{Binding Source={x:Static vm:SettingsViewModel.FebPropertiesDescription}}"
-                                   Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,4,0,0" />
+                                   Style="{StaticResource Text.Body}" TextWrapping="Wrap" Margin="0,4,0,0" />
 
                         <Border Style="{StaticResource Divider}" Margin="0,14" />
 
                         <TextBlock Text="Maximum Coordinate Precision" Style="{StaticResource Text.Label}" />
                         <TextBlock Text="{Binding Source={x:Static vm:SettingsViewModel.CoordinatePrecisionDescription}}"
-                                   Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,4,0,8" />
+                                   Style="{StaticResource Text.Body}" TextWrapping="Wrap" Margin="0,4,0,8" />
                         <StackPanel Orientation="Horizontal">
                             <RadioButton GroupName="Precision" Content="5 dp" Margin="0,0,16,0" ToolTip="General object references."
                                          IsChecked="{Binding IsPrecision5, Mode=OneWay}"

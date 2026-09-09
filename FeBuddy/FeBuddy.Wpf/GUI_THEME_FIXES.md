@@ -357,8 +357,8 @@ assumes the main window's context.
 - [x] No `ComboBox`, `CheckBox`, `RadioButton`, or `TextBox` anywhere renders in
       the OS default look — open every dropdown, in every screen and the ROI window
 - [x] Open ComboBox popup is dark (no white list, no blue selection bar)
-- [ ] Dashboard activity-log message text is comfortably readable
-- [ ] `Text.Tertiary` no longer used for any full-sentence copy
+- [x] Dashboard activity-log message text is comfortably readable
+- [x] `Text.Tertiary` no longer used for any full-sentence copy
 - [ ] AIRAC Services page scrolls smoothly from top to the last section; no dead zone
 - [ ] Dashboard wheel scroll behaves the same wherever the pointer is
 - [ ] Page titles + primary actions stay pinned while the body scrolls

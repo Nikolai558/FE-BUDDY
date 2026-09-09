@@ -58,7 +58,7 @@
                            Foreground="{StaticResource Brush.Text.Secondary}" VerticalAlignment="Center"
                            Margin="16,0,12,0" MinWidth="120" />
 
-                <TextBlock Grid.Column="3" Text="{Binding Message}" Style="{StaticResource Text.Caption}"
+                <TextBlock Grid.Column="3" Text="{Binding Message}" Style="{StaticResource Text.Body}"
                            TextWrapping="Wrap" VerticalAlignment="Center" />
             </Grid>
             <DataTemplate.Triggers>
@@ -150,7 +150,7 @@
                     <ctl:SectionHeader Label="NEWS" VerticalAlignment="Center" />
                 </DockPanel>
 
-                <TextBlock DockPanel.Dock="Top" Style="{StaticResource Text.Caption}"
+                <TextBlock DockPanel.Dock="Top" Style="{StaticResource Text.Body}"
                            Margin="2,0,0,10"
                            Text="News could not be loaded right now. Open it on GitHub for the latest posts."
                            Visibility="{Binding NewsUnavailable, Converter={StaticResource BoolToVis}}" />

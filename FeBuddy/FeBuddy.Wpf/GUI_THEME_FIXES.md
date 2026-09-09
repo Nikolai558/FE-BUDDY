@@ -354,9 +354,9 @@ assumes the main window's context.
 
 ## Acceptance checklist
 
-- [ ] No `ComboBox`, `CheckBox`, `RadioButton`, or `TextBox` anywhere renders in
+- [x] No `ComboBox`, `CheckBox`, `RadioButton`, or `TextBox` anywhere renders in
       the OS default look — open every dropdown, in every screen and the ROI window
-- [ ] Open ComboBox popup is dark (no white list, no blue selection bar)
+- [x] Open ComboBox popup is dark (no white list, no blue selection bar)
 - [ ] Dashboard activity-log message text is comfortably readable
 - [ ] `Text.Tertiary` no longer used for any full-sentence copy
 - [ ] AIRAC Services page scrolls smoothly from top to the last section; no dead zone

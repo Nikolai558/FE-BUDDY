@@ -6,6 +6,14 @@
         Field        TextBox with rounded sunken fill + amber focus + placeholder
                      (set the placeholder via the control's Tag)
         Progress     thin rounded determinate ProgressBar (amber fill)
+
+    Implicit styles (no x:Key) so a bare control never falls back to the OS look:
+        TextBox      -> Field
+        CheckBox     -> 16px sunken box, amber when checked
+        RadioButton  -> 16px sunken disc, amber dot when checked
+        ComboBox     -> dark sunken box + dark popup (kills the system blue bar)
+    A control that sets its own Style="{StaticResource ...}" (Pill.Radio,
+    Nav.Item, LogChip, Segmented) opts out of these automatically.
 -->
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
@@ -233,6 +241,240 @@
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
+    </Style>
+
+    <!-- ===================== TEXTBOX (implicit) ====================== -->
+    <!-- Every bare TextBox is Field; explicit Style="{StaticResource Field}"
+         still works for the few call sites that want to be obvious about it. -->
+    <Style TargetType="TextBox" BasedOn="{StaticResource Field}" />
+
+    <!-- ===================== CHECKBOX (implicit) ===================== -->
+    <Style TargetType="CheckBox">
+        <Setter Property="FontFamily" Value="{DynamicResource Font.Body}" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Primary}" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="CheckBox">
+                    <StackPanel Orientation="Horizontal" Background="Transparent">
+                        <Border x:Name="Box" Width="16" Height="16" VerticalAlignment="Center"
+                                CornerRadius="{DynamicResource Radius.Small}"
+                                Background="{DynamicResource Brush.Bg.Sunken}"
+                                BorderBrush="{DynamicResource Brush.Stroke.Strong}"
+                                BorderThickness="1" SnapsToDevicePixels="True">
+                            <TextBlock x:Name="Glyph" Text="&#xE73E;"
+                                       FontFamily="{DynamicResource Font.Icon}" FontSize="10"
+                                       Foreground="{DynamicResource Brush.Text.OnAccent}"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"
+                                       Opacity="0" />
+                        </Border>
+                        <ContentPresenter Margin="8,0,0,0" VerticalAlignment="Center"
+                                          RecognizesAccessKey="True"
+                                          TextElement.Foreground="{TemplateBinding Foreground}"
+                                          TextElement.FontFamily="{TemplateBinding FontFamily}"
+                                          TextElement.FontSize="{TemplateBinding FontSize}" />
+                    </StackPanel>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="Box" Property="Background" Value="{DynamicResource Brush.Accent}" />
+                            <Setter TargetName="Box" Property="BorderBrush" Value="{DynamicResource Brush.Accent}" />
+                            <Setter TargetName="Glyph" Property="Opacity" Value="1" />
+                        </Trigger>
+                        <Trigger Property="IsChecked" Value="{x:Null}">
+                            <Setter TargetName="Glyph" Property="Text" Value="&#xE738;" />
+                            <Setter TargetName="Glyph" Property="Opacity" Value="1" />
+                            <Setter TargetName="Box" Property="Background" Value="{DynamicResource Brush.Accent.Soft}" />
+                            <Setter TargetName="Box" Property="BorderBrush" Value="{DynamicResource Brush.Accent.Line}" />
+                        </Trigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Box" Property="BorderBrush" Value="{DynamicResource Brush.Accent.Line}" />
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocused" Value="True">
+                            <Setter TargetName="Box" Property="BorderBrush" Value="{DynamicResource Brush.FocusRing}" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.4" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- =================== RADIOBUTTON (implicit) =================== -->
+    <!-- Classic disc. Pill.Radio / Nav.Item / LogChip set Style explicitly and
+         are unaffected. -->
+    <Style TargetType="RadioButton">
+        <Setter Property="FontFamily" Value="{DynamicResource Font.Body}" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Primary}" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="RadioButton">
+                    <StackPanel Orientation="Horizontal" Background="Transparent">
+                        <Grid Width="16" Height="16" VerticalAlignment="Center">
+                            <Ellipse x:Name="Disc"
+                                     Fill="{DynamicResource Brush.Bg.Sunken}"
+                                     Stroke="{DynamicResource Brush.Stroke.Strong}"
+                                     StrokeThickness="1" />
+                            <Ellipse x:Name="Dot" Width="6" Height="6"
+                                     Fill="{DynamicResource Brush.Accent}" Opacity="0" />
+                        </Grid>
+                        <ContentPresenter Margin="8,0,0,0" VerticalAlignment="Center"
+                                          RecognizesAccessKey="True"
+                                          TextElement.Foreground="{TemplateBinding Foreground}"
+                                          TextElement.FontFamily="{TemplateBinding FontFamily}"
+                                          TextElement.FontSize="{TemplateBinding FontSize}" />
+                    </StackPanel>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="Disc" Property="Stroke" Value="{DynamicResource Brush.Accent}" />
+                            <Setter TargetName="Dot" Property="Opacity" Value="1" />
+                        </Trigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Disc" Property="Stroke" Value="{DynamicResource Brush.Accent.Line}" />
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocused" Value="True">
+                            <Setter TargetName="Disc" Property="Stroke" Value="{DynamicResource Brush.FocusRing}" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.4" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- ===================== COMBOBOX (implicit) ==================== -->
+    <!-- Non-editable, read-only template that mirrors Field: sunken box, amber
+         focus, dark popup, amber-soft selected row. No system blue anywhere. -->
+    <Style x:Key="Themed.ComboBoxItem" TargetType="ComboBoxItem">
+        <Setter Property="FontFamily" Value="{DynamicResource Font.Body}" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Primary}" />
+        <Setter Property="Padding" Value="10,7" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ComboBoxItem">
+                    <Border x:Name="Root" Background="Transparent"
+                            CornerRadius="{DynamicResource Radius.Small}"
+                            Padding="{TemplateBinding Padding}" SnapsToDevicePixels="True">
+                        <ContentPresenter />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsHighlighted" Value="True">
+                            <Setter TargetName="Root" Property="Background" Value="{DynamicResource Brush.Overlay}" />
+                        </Trigger>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter TargetName="Root" Property="Background" Value="{DynamicResource Brush.Accent.Soft}" />
+                            <Setter Property="Foreground" Value="{DynamicResource Brush.Accent.Text}" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.45" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    <Style TargetType="ComboBoxItem" BasedOn="{StaticResource Themed.ComboBoxItem}" />
+
+    <Style TargetType="ComboBox">
+        <Setter Property="FontFamily" Value="{DynamicResource Font.Body}" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Primary}" />
+        <Setter Property="Background" Value="{DynamicResource Brush.Bg.Sunken}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource Brush.Stroke.Strong}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Padding" Value="11,7" />
+        <Setter Property="MinHeight" Value="34" />
+        <Setter Property="HorizontalContentAlignment" Value="Left" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="ItemContainerStyle" Value="{StaticResource Themed.ComboBoxItem}" />
+        <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled" />
+        <Setter Property="TextElement.Foreground" Value="{DynamicResource Brush.Text.Primary}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ComboBox">
+                    <Grid>
+                        <ToggleButton x:Name="Toggle" Focusable="False" ClickMode="Press"
+                                      IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}">
+                            <ToggleButton.Template>
+                                <ControlTemplate TargetType="ToggleButton">
+                                    <Border x:Name="Box"
+                                            Background="{TemplateBinding Background}"
+                                            BorderBrush="{TemplateBinding BorderBrush}"
+                                            BorderThickness="{TemplateBinding BorderThickness}"
+                                            CornerRadius="{DynamicResource Radius.Control}"
+                                            SnapsToDevicePixels="True" />
+                                </ControlTemplate>
+                            </ToggleButton.Template>
+                        </ToggleButton>
+
+                        <ContentPresenter x:Name="ContentSite" IsHitTestVisible="False"
+                                          Content="{TemplateBinding SelectionBoxItem}"
+                                          ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                          ContentStringFormat="{TemplateBinding SelectionBoxItemStringFormat}"
+                                          Margin="{TemplateBinding Padding}"
+                                          HorizontalAlignment="Left" VerticalAlignment="Center"
+                                          TextElement.Foreground="{DynamicResource Brush.Text.Primary}" />
+
+                        <TextBlock x:Name="Chevron" Text="&#xE70D;" IsHitTestVisible="False"
+                                   FontFamily="{DynamicResource Font.Icon}" FontSize="10"
+                                   Foreground="{DynamicResource Brush.Text.Tertiary}"
+                                   HorizontalAlignment="Right" VerticalAlignment="Center"
+                                   Margin="0,0,11,0" />
+
+                        <Popup x:Name="PART_Popup" Placement="Bottom" AllowsTransparency="True"
+                               Focusable="False" PopupAnimation="Fade"
+                               IsOpen="{TemplateBinding IsDropDownOpen}">
+                            <Border x:Name="DropDown" Margin="0,4,0,4"
+                                    MinWidth="{Binding ActualWidth, RelativeSource={RelativeSource TemplatedParent}}"
+                                    MaxHeight="{TemplateBinding MaxDropDownHeight}"
+                                    Background="{DynamicResource Brush.Panel}"
+                                    BorderBrush="{DynamicResource Brush.Stroke.Strong}"
+                                    BorderThickness="1"
+                                    CornerRadius="{DynamicResource Radius.Control}"
+                                    SnapsToDevicePixels="True">
+                                <Border.Effect>
+                                    <DropShadowEffect BlurRadius="22" ShadowDepth="5" Direction="270"
+                                                      Opacity="0.5" Color="#000000" />
+                                </Border.Effect>
+                                <ScrollViewer Margin="4" SnapsToDevicePixels="True">
+                                    <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Contained" />
+                                </ScrollViewer>
+                            </Border>
+                        </Popup>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                            <Setter TargetName="Toggle" Property="BorderBrush" Value="{DynamicResource Brush.Accent}" />
+                        </Trigger>
+                        <Trigger Property="IsDropDownOpen" Value="True">
+                            <Setter TargetName="Toggle" Property="BorderBrush" Value="{DynamicResource Brush.Accent}" />
+                        </Trigger>
+                        <Trigger Property="HasItems" Value="False">
+                            <Setter TargetName="DropDown" Property="MinHeight" Value="34" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.45" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+        <Style.Resources>
+            <!-- last-resort: any stray system-drawn part stays on-theme -->
+            <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="#24FDC518" />
+            <SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}" Color="#FFE7A0" />
+            <SolidColorBrush x:Key="{x:Static SystemColors.WindowBrushKey}" Color="#0F1A26" />
+        </Style.Resources>
     </Style>
 
     <!-- ============================ PROGRESS =========================== -->

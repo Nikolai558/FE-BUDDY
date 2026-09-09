@@ -48,7 +48,8 @@
                                    RoiNorthEast="{Binding RoiOnMapNorthEast, Mode=OneWay}" />
 
                     <Border VerticalAlignment="Top" HorizontalAlignment="Left" Margin="10"
-                            Background="{StaticResource Brush.Panel}" CornerRadius="{StaticResource Radius.Chip}" Padding="8,4">
+                            Background="{StaticResource Brush.Panel}" CornerRadius="{StaticResource Radius.Chip}" Padding="8,4"
+                            Visibility="{Binding CursorText, ElementName=Map, Converter={StaticResource StringToVis}}">
                         <TextBlock Text="{Binding CursorText, ElementName=Map}" Style="{StaticResource Text.Caption}"
                                    FontFamily="{StaticResource Font.Mono}" />
                     </Border>

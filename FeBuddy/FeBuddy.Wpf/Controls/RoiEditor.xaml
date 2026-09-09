@@ -21,7 +21,8 @@
                                BaseLayer="{Binding BaseLayer, RelativeSource={RelativeSource AncestorType=UserControl}}" />
                 <Border VerticalAlignment="Top" HorizontalAlignment="Left" Margin="8"
                         Background="{StaticResource Brush.Panel}" CornerRadius="{StaticResource Radius.Chip}"
-                        Padding="8,4">
+                        Padding="8,4"
+                        Visibility="{Binding CursorText, ElementName=Map, Converter={StaticResource StringToVis}}">
                     <TextBlock Text="{Binding CursorText, ElementName=Map}" Style="{StaticResource Text.Caption}"
                                FontFamily="{StaticResource Font.Mono}" />
                 </Border>

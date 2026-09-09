@@ -128,6 +128,12 @@ isn't resolving. See `Controls/MapCanvas.cs` / `Controls/RoiEditor.xaml`. Give
 them `Button.Subtle` or `Caption.Button` styling and a real `Font.Icon` glyph
 (`&#xE8A3;` zoom-in, `&#xE71E;` / `&#xE72C;` etc.), or remove them if dead.
 
+> **Done (partial):** `MapCanvas` draws no button chrome — there are no
+> zoom/reset controls in the tree. The "tiny empty square top-left" is the
+> cursor-readout chip (`Brush.Panel` rounded rect) rendering with empty text
+> when the pointer is off-map. It now collapses when `CursorText` is empty
+> (MapView + RoiEditor). No bottom-right box found in the current code.
+
 ---
 
 ## Priority 2 — Text contrast ("too dark to read")

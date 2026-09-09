@@ -52,9 +52,9 @@
                                          IsChecked="{Binding Channel, Converter={StaticResource EnumToBool}, ConverterParameter=Alpha}" />
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
-                            <Button Style="{StaticResource Button.Subtle}" Content="Check for updates now"
+                            <Button Style="{StaticResource Button.Ghost}" Content="Check for updates now"
                                     Command="{Binding CheckNowCommand}" />
-                            <Button Style="{StaticResource Button.Subtle}" Content="Get the latest stable installer"
+                            <Button Style="{StaticResource Button.Ghost}" Content="Get the latest stable installer"
                                     Command="{Binding RollbackCommand}" Margin="8,0,0,0" />
                         </StackPanel>
                     </StackPanel>
@@ -80,7 +80,7 @@
 
                         <TextBlock Text="Default output directory" Style="{StaticResource Text.Label}" />
                         <DockPanel Margin="0,4,0,0">
-                            <Button DockPanel.Dock="Right" Style="{StaticResource Button.Subtle}" Content="Browse…"
+                            <Button DockPanel.Dock="Right" Style="{StaticResource Button.Ghost}" Content="Browse…"
                                     Command="{Binding BrowseOutputCommand}" Margin="8,0,0,0" />
                             <TextBox Text="{Binding OutputDirectory, UpdateSourceTrigger=PropertyChanged}" />
                         </DockPanel>
@@ -96,7 +96,7 @@
                         <TextBlock Text="{Binding Source={x:Static vm:SettingsViewModel.RoiExplainer}}"
                                    Style="{StaticResource Text.Body}" TextWrapping="Wrap" Margin="0,4,0,10" />
                         <DockPanel>
-                            <Button DockPanel.Dock="Right" Style="{StaticResource Button.Subtle}" Content="Clear"
+                            <Button DockPanel.Dock="Right" Style="{StaticResource Button.Ghost}" Content="Clear"
                                     Command="{Binding ClearRoiCommand}" Margin="8,0,0,0" />
                             <Button DockPanel.Dock="Right" Style="{StaticResource Button.Primary}" Content="Set ROI…"
                                     Command="{Binding EditRoiCommand}" MinWidth="110" />

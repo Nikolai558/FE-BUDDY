@@ -406,8 +406,8 @@
                                             </ItemsControl.ItemTemplate>
                                         </ItemsControl>
                                         <Border Style="{StaticResource Divider}" Margin="0,8" />
-                                        <Button Style="{StaticResource Button.Subtle}" Content="Re-check"
-                                                HorizontalAlignment="Left" Margin="-8,0,0,0"
+                                        <Button Style="{StaticResource Button.Ghost}" Content="Re-check"
+                                                HorizontalAlignment="Left"
                                                 Command="{Binding RecheckCommand}" />
                                     </StackPanel>
                                 </Border>

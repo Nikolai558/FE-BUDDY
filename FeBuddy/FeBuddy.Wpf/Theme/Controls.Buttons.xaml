@@ -46,8 +46,13 @@
                         <Trigger Property="IsPressed" Value="True">
                             <Setter TargetName="Root" Property="Opacity" Value="0.82" />
                         </Trigger>
+                        <!-- disabled reads as intentional, on-theme (P5a): flat sunken
+                             fill + hairline border + quiet text, not a dead amber-brown -->
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter TargetName="Root" Property="Opacity" Value="0.38" />
+                            <Setter TargetName="Root" Property="Background" Value="{DynamicResource Brush.Bg.Sunken}" />
+                            <Setter TargetName="Root" Property="BorderBrush" Value="{DynamicResource Brush.Stroke.Strong}" />
+                            <Setter TargetName="Root" Property="BorderThickness" Value="1" />
+                            <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Tertiary}" />
                             <Setter Property="Cursor" Value="Arrow" />
                         </Trigger>
                     </ControlTemplate.Triggers>
@@ -88,7 +93,8 @@
                             <Setter TargetName="Root" Property="Opacity" Value="0.8" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter TargetName="Root" Property="Opacity" Value="0.38" />
+                            <Setter TargetName="Root" Property="Background" Value="{DynamicResource Brush.Bg.Sunken}" />
+                            <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Tertiary}" />
                             <Setter Property="Cursor" Value="Arrow" />
                         </Trigger>
                     </ControlTemplate.Triggers>
@@ -131,7 +137,8 @@
                             <Setter Property="Foreground" Value="{DynamicResource Brush.Accent.Text}" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter TargetName="Root" Property="Opacity" Value="0.38" />
+                            <Setter TargetName="Root" Property="Background" Value="{DynamicResource Brush.Bg.Sunken}" />
+                            <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Tertiary}" />
                             <Setter Property="Cursor" Value="Arrow" />
                         </Trigger>
                     </ControlTemplate.Triggers>

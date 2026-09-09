@@ -90,7 +90,7 @@
 
         <!-- ============ save / undo bar ============ -->
             <DockPanel Margin="0,0,0,10">
-                <Button DockPanel.Dock="Right" Style="{StaticResource Button.Subtle}" Content="Undo last save"
+                <Button DockPanel.Dock="Right" Style="{StaticResource Button.Ghost}" Content="Undo last save"
                         Command="{Binding UndoLastSaveCommand}" Margin="8,0,0,0" />
                 <Button DockPanel.Dock="Right" Style="{StaticResource Button.Primary}" Content="Save"
                         Command="{Binding SaveCommand}" MinWidth="90" />
@@ -219,7 +219,7 @@
                             <TextBlock Grid.Row="1" Grid.Column="2" Text="SW lon" Style="{StaticResource Text.Caption}" VerticalAlignment="Center" Margin="0,0,8,0" />
                             <TextBox Grid.Row="1" Grid.Column="3" Text="{Binding SwLon, UpdateSourceTrigger=PropertyChanged}" />
                         </Grid>
-                        <Button Content="Pick on map…" Style="{StaticResource Button.Subtle}" HorizontalAlignment="Left"
+                        <Button Content="Pick on map…" Style="{StaticResource Button.Ghost}" HorizontalAlignment="Left"
                                 Margin="0,8,0,0" Command="{Binding PickRoiOnMapCommand}" />
                     </StackPanel>
                 </StackPanel>
@@ -272,7 +272,7 @@
                                       Visibility="{Binding HasWarnings, Converter={StaticResource BoolToVis}}" />
 
                         <StackPanel Visibility="{Binding HasInfoOnly, Converter={StaticResource BoolToVis}}" Margin="0,8,0,0">
-                            <Button Style="{StaticResource Button.Subtle}" HorizontalAlignment="Left"
+                            <Button Style="{StaticResource Button.Ghost}" HorizontalAlignment="Left"
                                     Content="{Binding InfoToggleLabel}" Command="{Binding ToggleInfoCommand}" />
                             <ItemsControl ItemsSource="{Binding MessageGroups}" ItemTemplate="{StaticResource MessageGroup}"
                                           Visibility="{Binding IsInfoExpanded, Converter={StaticResource BoolToVis}}" />

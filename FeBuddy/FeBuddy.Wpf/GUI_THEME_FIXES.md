@@ -365,7 +365,7 @@ assumes the main window's context.
 - [x] Page titles + primary actions stay pinned while the body scrolls
       (AIRAC + Settings; the Airways sub-service save bar still scrolls — pinning
        it needs a bigger AiracServiceView restructure, tracked separately)
-- [ ] Disabled primary/ghost buttons look intentional, not broken
+- [x] Disabled primary/ghost buttons look intentional, not broken
 - [ ] ROI picker / Confirm / Update windows wear the app's custom title bar
 - [ ] ROI picker map draws the states outline
 - [ ] Nav "AIRAC Service" icon is a real glyph, expanded and collapsed

@@ -1,5 +1,6 @@
 using System.Windows;
 
+using FeBuddy.Wpf.Infrastructure;
 using FeBuddy.Wpf.Map;
 
 using FEBuddyLibrary.Models.Services.General;
@@ -10,7 +11,7 @@ namespace FeBuddy.Wpf.Views;
 /// Modal host for the shared <see cref="Controls.RoiEditor"/> (remediation plan Phase 11),
 /// used by Settings ▸ Default ROI and the AIRAC Service ROI override.
 /// </summary>
-public partial class RoiPickerWindow : Window
+public partial class RoiPickerWindow : ChromeWindow
 {
     private RegionOfInterest? _result;
 

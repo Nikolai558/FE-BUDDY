@@ -273,7 +273,8 @@ public sealed class SettingsViewModel : ObservableObject
 
     private void EditRoi()
     {
-        RegionOfInterest? picked = RoiPickerWindow.Pick(Application.Current?.MainWindow, DefaultRoi, baseLayer: null);
+        RegionOfInterest? picked = RoiPickerWindow.Pick(
+            Application.Current?.MainWindow, DefaultRoi, Map.BaseMap.UsStates);
         if (picked is not null)
         {
             PersistRoi(picked);

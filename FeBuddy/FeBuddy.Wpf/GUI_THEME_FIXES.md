@@ -366,8 +366,11 @@ assumes the main window's context.
       (AIRAC + Settings; the Airways sub-service save bar still scrolls — pinning
        it needs a bigger AiracServiceView restructure, tracked separately)
 - [x] Disabled primary/ghost buttons look intentional, not broken
-- [ ] ROI picker / Confirm / Update windows wear the app's custom title bar
-- [ ] ROI picker map draws the states outline
+- [x] ROI picker / Confirm / Update windows wear the app's custom title bar
+      (infra:ChromeWindow base + implicit style; needs a click-through to confirm
+       min/max/close + drag behave)
+- [x] ROI picker map draws the states outline (the Settings + Airways callers
+      passed baseLayer:null; now share Map.BaseMap.UsStates)
 - [ ] Nav "AIRAC Service" icon is a real glyph, expanded and collapsed
 - [ ] News feed shows no literal `**`
 - [ ] Light/dark: N/A (app is dark-only) — but verify no new hard-coded colours;

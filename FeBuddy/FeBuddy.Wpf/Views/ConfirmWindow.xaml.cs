@@ -9,7 +9,7 @@ namespace FeBuddy.Wpf.Views;
 /// Reused for the "unsaved settings" prompt before a run (remediation plan 5.3 / 7.9) and
 /// any other yes/no decision.
 /// </summary>
-public partial class ConfirmWindow : Window
+public partial class ConfirmWindow : ChromeWindow
 {
     private ConfirmWindow(ConfirmViewModel viewModel)
     {

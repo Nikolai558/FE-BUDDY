@@ -1,0 +1,82 @@
+<!--
+    Controls.Window.xaml
+    ===========================================================================
+    Implicit style for infra:ChromeWindow — the app-styled frame for the child
+    dialogs (ROI picker, Confirm, Update). Matches the shell: Brush.Panel
+    titlebar, Caption.Button / Caption.Close, Brush.Bg.Base body, a 1px
+    Brush.Stroke.Strong window border. The buttons are named PART_* and wired
+    in ChromeWindow.OnApplyTemplate.
+
+    Per the project's sibling-dictionary gotcha, token and style refs here use
+    DynamicResource (Caption.Button / Divider live in other merged dictionaries).
+-->
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
+                    xmlns:infra="clr-namespace:FeBuddy.Wpf.Infrastructure">
+
+    <Style TargetType="{x:Type infra:ChromeWindow}">
+        <Setter Property="Background" Value="{DynamicResource Brush.Bg.Base}" />
+        <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Primary}" />
+        <Setter Property="FontFamily" Value="{DynamicResource Font.Body}" />
+        <Setter Property="UseLayoutRounding" Value="True" />
+        <Setter Property="TextOptions.TextFormattingMode" Value="Ideal" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type infra:ChromeWindow}">
+                    <Border x:Name="ChromeRoot"
+                            Background="{DynamicResource Brush.Bg.Base}"
+                            BorderBrush="{DynamicResource Brush.Stroke.Strong}"
+                            BorderThickness="1"
+                            SnapsToDevicePixels="True">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="40" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+
+                            <!-- titlebar -->
+                            <Grid Grid.Row="0" Background="{DynamicResource Brush.Panel}">
+                                <TextBlock Text="{TemplateBinding Title}"
+                                           Margin="16,0,0,0" VerticalAlignment="Center"
+                                           FontFamily="{DynamicResource Font.Display}"
+                                           FontSize="12" FontWeight="Bold"
+                                           Foreground="{DynamicResource Brush.Text.Primary}" />
+
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right"
+                                            VerticalAlignment="Center" Margin="0,0,4,0"
+                                            shell:WindowChrome.IsHitTestVisibleInChrome="True">
+                                    <Button x:Name="PART_Minimize" Style="{DynamicResource Caption.Button}"
+                                            Content="&#xE921;" />
+                                    <Button x:Name="PART_MaxRestore" Style="{DynamicResource Caption.Button}"
+                                            Content="&#xE922;" />
+                                    <Button x:Name="PART_Close" Style="{DynamicResource Caption.Close}"
+                                            Content="&#xE8BB;" />
+                                </StackPanel>
+
+                                <Border Style="{DynamicResource Divider}" VerticalAlignment="Bottom" />
+                            </Grid>
+
+                            <!-- body -->
+                            <ContentPresenter Grid.Row="1" />
+                        </Grid>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="WindowState" Value="Maximized">
+                            <Setter TargetName="ChromeRoot" Property="Margin" Value="7" />
+                            <Setter TargetName="PART_MaxRestore" Property="Content" Value="&#xE923;" />
+                        </Trigger>
+                        <Trigger Property="ResizeMode" Value="NoResize">
+                            <Setter TargetName="PART_Minimize" Property="Visibility" Value="Collapsed" />
+                            <Setter TargetName="PART_MaxRestore" Property="Visibility" Value="Collapsed" />
+                        </Trigger>
+                        <Trigger Property="ResizeMode" Value="CanMinimize">
+                            <Setter TargetName="PART_MaxRestore" Property="Visibility" Value="Collapsed" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+</ResourceDictionary>

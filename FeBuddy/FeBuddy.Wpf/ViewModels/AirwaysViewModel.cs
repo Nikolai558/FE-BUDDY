@@ -460,7 +460,7 @@ public sealed class AirwaysViewModel : SubServiceSettingsViewModel
         }
 
         RegionOfInterest? picked = Views.RoiPickerWindow.Pick(
-            System.Windows.Application.Current?.MainWindow, initial, baseLayer: null);
+            System.Windows.Application.Current?.MainWindow, initial, Map.BaseMap.UsStates);
 
         if (picked is { } roi)
         {

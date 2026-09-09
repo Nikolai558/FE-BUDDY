@@ -19,7 +19,7 @@
 
     <!-- Navigation -->
     <sys:String x:Key="Icon.Dashboard">&#xE80F;</sys:String>   <!-- Home        -->
-    <sys:String x:Key="Icon.Airac">&#xE72C;</sys:String>       <!-- Refresh     -->
+    <sys:String x:Key="Icon.Airac">&#xE787;</sys:String>       <!-- Calendar (AIRAC cycle); E72C Refresh had no nav glyph -->
     <sys:String x:Key="Icon.Convert">&#xE8AB;</sys:String>     <!-- Switch      -->
     <sys:String x:Key="Icon.Files">&#xE8B7;</sys:String>       <!-- Folder      -->
     <sys:String x:Key="Icon.Settings">&#xE713;</sys:String>    <!-- Setting     -->

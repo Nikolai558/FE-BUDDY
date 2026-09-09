@@ -327,6 +327,31 @@
                             </Button>
                         </Grid>
 
+                        <!-- collapsed rail: keep a health signal (P8) - just the coloured dot,
+                             tooltip carries the summary -->
+                        <Grid DockPanel.Dock="Bottom" Margin="0,0,0,16" Height="24"
+                              Visibility="{Binding NavCollapsed, Converter={StaticResource BoolToVis}}">
+                            <Ellipse Width="9" Height="9" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                     ToolTip="{Binding HealthSummary}" ToolTipService.InitialShowDelay="300">
+                                <Ellipse.Style>
+                                    <Style TargetType="Ellipse">
+                                        <Setter Property="Fill" Value="{StaticResource Brush.Text.Tertiary}" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding HealthWorst}" Value="Ok">
+                                                <Setter Property="Fill" Value="{StaticResource Brush.Positive}" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding HealthWorst}" Value="Warn">
+                                                <Setter Property="Fill" Value="{StaticResource Brush.Warn}" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding HealthWorst}" Value="Down">
+                                                <Setter Property="Fill" Value="{StaticResource Brush.Danger}" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Ellipse.Style>
+                            </Ellipse>
+                        </Grid>
+
                         <!-- systems-health widget pinned to the bottom (hidden when collapsed) -->
                         <Grid DockPanel.Dock="Bottom" Margin="14"
                               Visibility="{Binding NavCollapsed, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}">
@@ -365,7 +390,7 @@
                             </ToggleButton>
 
                             <Popup PlacementTarget="{Binding ElementName=HealthButton}" Placement="Top"
-                                   VerticalOffset="-8" HorizontalOffset="0"
+                                   VerticalOffset="-14" HorizontalOffset="0"
                                    IsOpen="{Binding IsChecked, ElementName=HealthButton, Mode=TwoWay}"
                                    StaysOpen="False" AllowsTransparency="True" PopupAnimation="Fade">
                                 <Border Style="{StaticResource Card}" Background="{StaticResource Brush.Panel}"

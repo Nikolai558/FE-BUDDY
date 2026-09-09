@@ -28,7 +28,7 @@
                         <TextBlock Text="{Binding Title}" Style="{StaticResource Text.H2}"
                                    TextTrimming="CharacterEllipsis" />
                     </DockPanel>
-                    <TextBlock Text="{Binding Body}" Style="{StaticResource Text.Body}"
+                    <TextBlock Text="{Binding Body, Converter={StaticResource MdToText}}" Style="{StaticResource Text.Body}"
                                Margin="0,8,0,0" TextWrapping="Wrap" />
                 </StackPanel>
             </Border>

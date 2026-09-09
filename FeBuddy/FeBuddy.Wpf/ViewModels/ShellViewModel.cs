@@ -25,7 +25,7 @@ public sealed class ShellViewModel : ObservableObject
 {
     // Segoe Fluent Icons code-points (see Theme/Icons.xaml for the same set in XAML).
     private const string GlyphDashboard = ""; // Home
-    private const string GlyphAiracService = "◷"; // U+25F7 - not a Segoe Fluent glyph; see 5.1
+    private const string GlyphAiracService = ""; // Calendar (MDL2) - AIRAC cycle; U+25F7 was not a font glyph
     private const string GlyphMap = ""; // MapPin
     private const string GlyphSettings = ""; // Setting
     private const string GlyphInfo = ""; // Info

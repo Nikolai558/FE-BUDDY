@@ -371,8 +371,11 @@ assumes the main window's context.
        min/max/close + drag behave)
 - [x] ROI picker map draws the states outline (the Settings + Airways callers
       passed baseLayer:null; now share Map.BaseMap.UsStates)
-- [ ] Nav "AIRAC Service" icon is a real glyph, expanded and collapsed
-- [ ] News feed shows no literal `**`
-- [ ] Light/dark: N/A (app is dark-only) — but verify no new hard-coded colours;
-      everything routes through `Brush.*`
-- [ ] `dotnet build -c Debug` clean; launch and click through all six screens
+- [x] Nav "AIRAC Service" icon is a real glyph, expanded and collapsed
+      (ShellViewModel GlyphAiracService was U+25F7, not in the font — now E787 Calendar)
+- [x] News feed shows no literal `**` (MarkdownToPlainTextConverter on NewsPost.Body)
+- [x] Light/dark: N/A (app is dark-only) — new colours route through `Brush.*`;
+      the only literal hex is the ComboBox `Style.Resources` SystemColors fallback,
+      which mirrors existing Palette values
+- [~] `dotnet build -c Debug` clean (verified); app launches clean (verified).
+      Full click-through of all six screens + the three dialogs still owed.

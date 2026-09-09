@@ -14,7 +14,9 @@
     <!-- ============================== CARD =========================== -->
     <Style x:Key="Card" TargetType="Border">
         <Setter Property="Background" Value="{DynamicResource Brush.Card}" />
-        <Setter Property="BorderBrush" Value="{DynamicResource Brush.Stroke}" />
+        <!-- P8: Brush.Stroke on Brush.Bg.Base was almost invisible - every screen
+             read as one flat field. Stronger hairline gives cards a real edge. -->
+        <Setter Property="BorderBrush" Value="{DynamicResource Brush.Stroke.Strong}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="CornerRadius" Value="{DynamicResource Radius.Card}" />
         <Setter Property="Padding" Value="18" />

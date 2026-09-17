@@ -37,6 +37,8 @@ public sealed class MapCanvas : FrameworkElement
     private bool _roiDragging;
     private Point _roiStartScreen;
     private Point _roiCurrentScreen;
+    private bool _rightPanning;
+    private bool _rightPanMoved;
     private GeoPoint? _measureA;
     private GeoPoint? _measureB;
     private Point _measureCursorScreen;
@@ -262,10 +264,15 @@ public sealed class MapCanvas : FrameworkElement
 
         CursorText = Format(ToGeo(pos));
 
-        if (_panning)
+        if (_panning || _rightPanning)
         {
             var dx = (pos.X - _panLastScreen.X) / _scale;
             var dy = (pos.Y - _panLastScreen.Y) / _scale;
+            if (_rightPanning && (Math.Abs(pos.X - _panLastScreen.X) > 2 || Math.Abs(pos.Y - _panLastScreen.Y) > 2))
+            {
+                _rightPanMoved = true;
+            }
+
             _center = new Point(_center.X - dx, _center.Y - dy);
             _panLastScreen = pos;
             Redraw();
@@ -307,6 +314,22 @@ public sealed class MapCanvas : FrameworkElement
         _panning = false;
     }
 
+    protected override void OnMouseRightButtonDown(MouseButtonEventArgs e)
+    {
+        base.OnMouseRightButtonDown(e);
+
+        // RoiEnabled claims the left button for rubber-banding, which otherwise leaves no way
+        // to pan while placing a box. Right-drag pans instead; a right-click with no drag still
+        // clears the ROI (below), so the existing shortcut keeps working.
+        if (RoiEnabled)
+        {
+            CaptureMouse();
+            _rightPanning = true;
+            _rightPanMoved = false;
+            _panLastScreen = e.GetPosition(this);
+        }
+    }
+
     protected override void OnMouseRightButtonUp(MouseButtonEventArgs e)
     {
         base.OnMouseRightButtonUp(e);
@@ -318,7 +341,17 @@ public sealed class MapCanvas : FrameworkElement
             return;
         }
 
-        // Right-click clears the ROI box.
+        if (_rightPanning)
+        {
+            ReleaseMouseCapture();
+            _rightPanning = false;
+            if (_rightPanMoved)
+            {
+                return; // was a pan, not a clear-ROI click
+            }
+        }
+
+        // Right-click (no drag) clears the ROI box.
         SetCurrentValue(RoiSouthWestProperty, null);
         SetCurrentValue(RoiNorthEastProperty, null);
     }

@@ -97,7 +97,10 @@
                     <ctl:SectionHeader Label="DEFAULT REGION OF INTEREST" />
                     <TextBlock Text="{Binding DefaultRoiSummary}" Style="{StaticResource Text.Caption}"
                                FontFamily="{StaticResource Font.Mono}" TextWrapping="Wrap" Margin="0,4,0,10" />
-                    <ctl:RoiEditor x:Name="RoiEditorControl" Height="360"
+                    <!-- No fixed Height: the sidebar's own ScrollViewer handles overflow, and a
+                         hard height here just clipped the coordinate fields and buttons off the
+                         bottom once the editor's minimum content grew past it. -->
+                    <ctl:RoiEditor x:Name="RoiEditorControl" MinHeight="480"
                                    BaseLayer="{Binding BaseLayer}"
                                    InitialRoi="{Binding DefaultRoi, Mode=OneWay}" />
                 </StackPanel>

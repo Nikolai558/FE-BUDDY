@@ -42,7 +42,6 @@ public sealed class AiracServiceViewModel : ObservableObject
 
         Airways = new AirwaysViewModel();
         SubServices = new ObservableCollection<object> { Airways };
-        _selectedSubService = Airways;
 
         CycleOptions = new ObservableCollection<CycleOption>
         {
@@ -133,7 +132,10 @@ public sealed class AiracServiceViewModel : ObservableObject
         }
     }
 
-    /// <summary>The sub-service page currently on screen (its settings menu).</summary>
+    /// <summary>
+    /// The sub-service page currently on screen (its settings menu), or <see langword="null"/>
+    /// for the landing state before the user picks one from <see cref="SubServices"/>.
+    /// </summary>
     public object? SelectedSubService
     {
         get => _selectedSubService;
@@ -142,9 +144,13 @@ public sealed class AiracServiceViewModel : ObservableObject
             if (SetProperty(ref _selectedSubService, value))
             {
                 OnPropertyChanged(nameof(Breadcrumb));
+                OnPropertyChanged(nameof(HasSelectedSubService));
             }
         }
     }
+
+    /// <summary>Whether a sub-service is open - gates the landing placeholder vs. its page.</summary>
+    public bool HasSelectedSubService => SelectedSubService is not null;
 
     /// <summary>e.g. <c>AIRAC Service › Airways</c>.</summary>
     public string Breadcrumb => SelectedSubService switch

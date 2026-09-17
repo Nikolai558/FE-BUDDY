@@ -23,7 +23,8 @@
             </ObjectDataProvider.MethodParameters>
         </ObjectDataProvider>
 
-        <!-- one CRC ERAM class row -->
+        <!-- one CRC ERAM class row. Column widths are echoed by the "EramHeader" template
+             below so the header labels line up exactly with the fields they describe. -->
         <DataTemplate x:Key="EramRow" DataType="{x:Type m:EramClassDefault}">
             <Grid Margin="0,3">
                 <Grid.ColumnDefinitions>
@@ -49,6 +50,11 @@
                          ToolTip="Size: an integer 1–4." />
             </Grid>
         </DataTemplate>
+
+        <!-- column-header style for the row above each EramRow ItemsControl -->
+        <Style x:Key="EramHeaderCell" TargetType="TextBlock" BasedOn="{StaticResource Text.Label}">
+            <Setter Property="Margin" Value="4,0" />
+        </Style>
 
         <!-- one output file row -->
         <DataTemplate x:Key="FileRow" DataType="{x:Type m:AirwaysOutputFileRow}">
@@ -106,7 +112,8 @@
             <Border Style="{StaticResource Card}">
                 <StackPanel>
                     <ctl:SectionHeader Label="GEOJSON OUTPUT" />
-                    <ComboBox ItemsSource="{Binding Source={StaticResource OutputByValues}}"
+                    <ComboBox Style="{StaticResource Themed.ComboBox}"
+                              ItemsSource="{Binding Source={StaticResource OutputByValues}}"
                               SelectedItem="{Binding OutputBy}" Width="180" HorizontalAlignment="Left" Margin="0,4,0,0" />
                     <TextBlock Text="{Binding OutputModeHint}" Style="{StaticResource Text.Body}"
                                TextWrapping="Wrap" Margin="0,8,0,0" />
@@ -163,21 +170,52 @@
                     <StackPanel IsEnabled="{Binding IncludeCrcEramPropertyDefaults}" Margin="0,6,0,0">
                         <DockPanel>
                             <CheckBox DockPanel.Dock="Right" Content="Emit" IsChecked="{Binding EmitLines}" />
-                            <TextBlock Text="Lines" Style="{StaticResource Text.Label}" />
+                            <TextBlock Text="Lines" Style="{StaticResource Text.Body.Strong}" />
                         </DockPanel>
-                        <ItemsControl ItemsSource="{Binding LineDefaults}" ItemTemplate="{StaticResource EramRow}" Margin="0,2,0,10" />
+                        <Grid Margin="0,8,0,2">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="70" /><ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" /><ColumnDefinition Width="*" /><ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="1" Text="BCG" Style="{StaticResource EramHeaderCell}" />
+                            <TextBlock Grid.Column="2" Text="Filters" Style="{StaticResource EramHeaderCell}" />
+                            <TextBlock Grid.Column="3" Text="Style" Style="{StaticResource EramHeaderCell}" />
+                            <TextBlock Grid.Column="4" Text="Thickness" Style="{StaticResource EramHeaderCell}" />
+                        </Grid>
+                        <ItemsControl ItemsSource="{Binding LineDefaults}" ItemTemplate="{StaticResource EramRow}" Margin="0,0,0,14" />
 
+                        <Border Style="{StaticResource Divider}" Margin="0,0,0,12" />
                         <DockPanel>
                             <CheckBox DockPanel.Dock="Right" Content="Emit" IsChecked="{Binding EmitSymbols}" />
-                            <TextBlock Text="Symbols" Style="{StaticResource Text.Label}" />
+                            <TextBlock Text="Symbols" Style="{StaticResource Text.Body.Strong}" />
                         </DockPanel>
-                        <ItemsControl ItemsSource="{Binding SymbolDefaults}" ItemTemplate="{StaticResource EramRow}" Margin="0,2,0,10" />
+                        <Grid Margin="0,8,0,2">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="70" /><ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" /><ColumnDefinition Width="*" /><ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="1" Text="BCG" Style="{StaticResource EramHeaderCell}" />
+                            <TextBlock Grid.Column="2" Text="Filters" Style="{StaticResource EramHeaderCell}" />
+                            <TextBlock Grid.Column="3" Text="Style" Style="{StaticResource EramHeaderCell}" />
+                            <TextBlock Grid.Column="4" Text="Size" Style="{StaticResource EramHeaderCell}" />
+                        </Grid>
+                        <ItemsControl ItemsSource="{Binding SymbolDefaults}" ItemTemplate="{StaticResource EramRow}" Margin="0,0,0,14" />
 
+                        <Border Style="{StaticResource Divider}" Margin="0,0,0,12" />
                         <DockPanel>
                             <CheckBox DockPanel.Dock="Right" Content="Emit" IsChecked="{Binding EmitText}" />
-                            <TextBlock Text="Text" Style="{StaticResource Text.Label}" />
+                            <TextBlock Text="Text" Style="{StaticResource Text.Body.Strong}" />
                         </DockPanel>
-                        <ItemsControl ItemsSource="{Binding TextDefaults}" ItemTemplate="{StaticResource EramRow}" Margin="0,2,0,0" />
+                        <Grid Margin="0,8,0,2">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="70" /><ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" /><ColumnDefinition Width="*" /><ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="1" Text="BCG" Style="{StaticResource EramHeaderCell}" />
+                            <TextBlock Grid.Column="2" Text="Filters" Style="{StaticResource EramHeaderCell}" />
+                            <TextBlock Grid.Column="4" Text="Size" Style="{StaticResource EramHeaderCell}" />
+                        </Grid>
+                        <ItemsControl ItemsSource="{Binding TextDefaults}" ItemTemplate="{StaticResource EramRow}" Margin="0,0,0,0" />
                     </StackPanel>
                 </StackPanel>
             </Border>
@@ -203,6 +241,9 @@
                 <StackPanel>
                     <ctl:SectionHeader Label="REGION OF INTEREST" />
                     <CheckBox Content="Override the default ROI for Airways" IsChecked="{Binding OverrideRoi}" Margin="0,4,0,0" />
+                    <TextBlock Text="{Binding RoiFallbackHint}" Style="{StaticResource Text.Caption}" TextWrapping="Wrap"
+                               Margin="20,4,0,0"
+                               Visibility="{Binding OverrideRoi, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
                     <StackPanel Margin="20,8,0,0" IsEnabled="{Binding OverrideRoi}">
                         <Grid>
                             <Grid.ColumnDefinitions>

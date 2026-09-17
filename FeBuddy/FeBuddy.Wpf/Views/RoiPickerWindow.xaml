@@ -4,7 +4,7 @@
         xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
         xmlns:infra="clr-namespace:FeBuddy.Wpf.Infrastructure"
         Title="Region of Interest"
-        Width="620" Height="560"
+        Width="620" Height="640"
         WindowStartupLocation="CenterOwner"
         ResizeMode="CanResize" MinWidth="480" MinHeight="440"
         ShowInTaskbar="False"

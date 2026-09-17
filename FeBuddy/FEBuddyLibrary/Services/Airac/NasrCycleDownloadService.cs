@@ -55,6 +55,22 @@ public static class NasrCycleDownloadService
 	}
 
 	/// <summary>
+	/// Whether a cycle's CSVs are already fully cached locally - the same check
+	/// <see cref="EnsureCycleAvailableAsync"/> uses to decide whether it needs to touch the
+	/// network at all. Lets a caller (the launch pipeline's status narration) know in advance
+	/// that a call to <see cref="EnsureCycleAvailableAsync"/> will resolve instantly from disk,
+	/// rather than describing it as "downloading" when nothing is actually being fetched.
+	/// </summary>
+	/// <param name="cycle">The cycle to check.</param>
+	/// <param name="cacheRootDirectory">Where cycle folders are cached. Defaults to <see cref="GetDefaultCacheRoot"/>.</param>
+	public static bool IsCycleAvailableLocally(AiracCycleInfo cycle, string? cacheRootDirectory = null)
+	{
+		ArgumentNullException.ThrowIfNull(cycle);
+		string cacheRoot = cacheRootDirectory ?? GetDefaultCacheRoot();
+		return IsCycleDataComplete(Path.Combine(cacheRoot, cycle.AiracCycleId));
+	}
+
+	/// <summary>
 	/// Ensures a cycle's NASR CSV data is downloaded and extracted locally, downloading it
 	/// only if it is not already cached.
 	/// </summary>

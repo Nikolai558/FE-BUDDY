@@ -11,23 +11,28 @@ namespace FeBuddy.Wpf.Infrastructure;
 /// Update) derive from this so they stop looking foreign against the shell.
 ///
 /// <para>
-/// The look lives in the implicit style in <c>Theme/Controls.Window.xaml</c>;
-/// this class just installs the <see cref="WindowChrome"/> and hooks the three
-/// named caption buttons (<c>PART_Minimize</c>, <c>PART_MaxRestore</c>,
+/// The look lives in <c>Theme/Controls.Window.xaml</c>'s <c>ChromeWindowStyle</c>;
+/// this class just installs the <see cref="WindowChrome"/>, applies that style, and
+/// hooks the three named caption buttons (<c>PART_Minimize</c>, <c>PART_MaxRestore</c>,
 /// <c>PART_Close</c>) from the template.
+/// </para>
+/// <para>
+/// The style is wired up explicitly via <see cref="FrameworkElement.SetResourceReference"/>
+/// rather than through <c>DefaultStyleKeyProperty</c>'s implicit theme-style lookup: a plain
+/// <c>Window</c> subclass's default style is resolved through WPF's theme/generic dictionary
+/// path, not through the ordinary <c>Application.Resources</c> lookup that every other implicit
+/// style in this app relies on - on this app's target framework that lookup silently comes back
+/// empty (<c>Style</c> stays <see langword="null"/>, so nothing ever paints and the window
+/// renders solid black). Applying the style by key sidesteps that path entirely.
 /// </para>
 /// </summary>
 public class ChromeWindow : Window
 {
-    static ChromeWindow()
-    {
-        DefaultStyleKeyProperty.OverrideMetadata(
-            typeof(ChromeWindow), new FrameworkPropertyMetadata(typeof(ChromeWindow)));
-    }
-
     /// <summary>Initializes the window and installs the custom chrome.</summary>
     public ChromeWindow()
     {
+        SetResourceReference(StyleProperty, "ChromeWindowStyle");
+
         WindowStyle = WindowStyle.None;
         WindowChrome.SetWindowChrome(this, new WindowChrome
         {

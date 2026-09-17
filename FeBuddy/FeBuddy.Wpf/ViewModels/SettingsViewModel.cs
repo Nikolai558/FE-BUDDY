@@ -33,7 +33,6 @@ public sealed class SettingsViewModel : ObservableObject
     private const string AddFolderKey = "General.AddFeBuddyOutputFolder";
     private const string ArtccKey = "Services.AiracService.UserArtccId";
     private const string PrecisionKey = "Services.AiracService.CoordinatePrecision";
-    private const string RoiNode = "Services.AiracService.DefaultRoi";
 
     private readonly Dispatcher _dispatcher;
 
@@ -54,7 +53,8 @@ public sealed class SettingsViewModel : ObservableObject
         _addFeBuddyFolder = !string.Equals(UserConfigFile.GetValue(AddFolderKey), "N", StringComparison.OrdinalIgnoreCase);
         _coordinatePrecision = int.TryParse(UserConfigFile.GetValue(PrecisionKey), out int p) && p is >= 0 and <= 15 ? p : 6;
 
-        LoadDefaultRoi();
+        _defaultRoi = DefaultRoiStore.Load();
+        DefaultRoiStore.Changed += OnDefaultRoiChanged;
 
         SaveCommand = new RelayCommand(Save);
         CheckNowCommand = new RelayCommand(() => { Toast.Info("Checking…", "Contacting the version service."); _ = AppEnvironment.RecheckAsync(); },
@@ -277,7 +277,7 @@ public sealed class SettingsViewModel : ObservableObject
             Application.Current?.MainWindow, DefaultRoi, Map.BaseMap.UsStates);
         if (picked is not null)
         {
-            PersistRoi(picked);
+            DefaultRoiStore.Set(picked);
             DefaultRoi = picked;
             Toast.Success("Default ROI saved", "Written to UserConfig.json.");
         }
@@ -285,31 +285,15 @@ public sealed class SettingsViewModel : ObservableObject
 
     private void ClearRoi()
     {
-        UserConfigFile.TrySetValue($"{RoiNode}.FilterByRoi", "false");
-        UserConfigFile.Save(RoiNode);
+        DefaultRoiStore.Clear();
         DefaultRoi = null;
     }
 
-    private void PersistRoi(RegionOfInterest roi)
-    {
-        UserConfigFile.TrySetValue($"{RoiNode}.FilterByRoi", "true");
-        UserConfigFile.TrySetValue($"{RoiNode}.DefaultCoordindates.SwLat", roi.SwLat.ToString(CultureInfo.InvariantCulture));
-        UserConfigFile.TrySetValue($"{RoiNode}.DefaultCoordindates.SwLon", roi.SwLon.ToString(CultureInfo.InvariantCulture));
-        UserConfigFile.TrySetValue($"{RoiNode}.DefaultCoordindates.NeLat", roi.NeLat.ToString(CultureInfo.InvariantCulture));
-        UserConfigFile.TrySetValue($"{RoiNode}.DefaultCoordindates.NeLon", roi.NeLon.ToString(CultureInfo.InvariantCulture));
-        UserConfigFile.Save(RoiNode);
-    }
-
-    private void LoadDefaultRoi()
-    {
-        if (double.TryParse(UserConfigFile.GetValue($"{RoiNode}.DefaultCoordindates.SwLat"), NumberStyles.Float, CultureInfo.InvariantCulture, out double swLat)
-            && double.TryParse(UserConfigFile.GetValue($"{RoiNode}.DefaultCoordindates.SwLon"), NumberStyles.Float, CultureInfo.InvariantCulture, out double swLon)
-            && double.TryParse(UserConfigFile.GetValue($"{RoiNode}.DefaultCoordindates.NeLat"), NumberStyles.Float, CultureInfo.InvariantCulture, out double neLat)
-            && double.TryParse(UserConfigFile.GetValue($"{RoiNode}.DefaultCoordindates.NeLon"), NumberStyles.Float, CultureInfo.InvariantCulture, out double neLon))
-        {
-            _defaultRoi = new RegionOfInterest(swLat, swLon, neLat, neLon);
-        }
-    }
+    // View-models live for the whole session (NavItem caches them), so without this the
+    // Settings page would keep showing whatever ROI was current when it was first opened, even
+    // after the Map page's inline editor changes or clears it.
+    private void OnDefaultRoiChanged(object? sender, EventArgs e) =>
+        _dispatcher.BeginInvoke(() => DefaultRoi = DefaultRoiStore.Load());
 
     private static string? Blank(string? v) => string.IsNullOrWhiteSpace(v) ? null : v;
 

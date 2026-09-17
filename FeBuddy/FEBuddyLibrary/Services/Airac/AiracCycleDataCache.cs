@@ -62,6 +62,7 @@ public sealed class AiracCycleDataCache
 	private readonly Func<AiracCycleInfo, CancellationToken, Task<AiracCyclePublicationState>> _probe;
 	private readonly Func<AiracCycleInfo, CancellationToken, Task<string>> _download;
 	private readonly Func<string, CancellationToken, Task<NasrCsvDataCollection>> _parse;
+	private readonly Func<AiracCycleInfo, bool> _isLocallyAvailable;
 
 	private readonly object _gate = new();
 	private readonly List<AiracCycleDataCacheEntry> _entries = new();
@@ -77,7 +78,8 @@ public sealed class AiracCycleDataCache
 			// TODO (perf): MainAsync parses all 24 NASR groups. A NasrDataSet flags overload
 			// would cut this to the ~24 MB Airways actually needs (APT/AWY/FIX/NAV). Refactor
 			// later - see remediation plan 2.2.
-			parse: (dir, ct) => NasrCsvParserController.MainAsync(new[] { dir }))
+			parse: (dir, ct) => NasrCsvParserController.MainAsync(new[] { dir }),
+			isLocallyAvailable: cycle => NasrCycleDownloadService.IsCycleAvailableLocally(cycle, cacheRootDirectory: null))
 	{
 	}
 
@@ -87,14 +89,23 @@ public sealed class AiracCycleDataCache
 	/// <param name="probe">Publication probe for a cycle.</param>
 	/// <param name="download">Downloads a cycle's CSVs and returns the local folder.</param>
 	/// <param name="parse">Parses a cycle folder into a <see cref="NasrCsvDataCollection"/>.</param>
+	/// <param name="isLocallyAvailable">
+	/// Whether a cycle's CSVs are already cached, so the pipeline can skip announcing
+	/// <see cref="CycleDataState.Downloading"/> when <paramref name="download"/> is about to
+	/// resolve instantly from disk rather than actually fetch anything. Defaults to "never
+	/// cached" (always show Downloading), matching every test's expectations before this
+	/// existed.
+	/// </param>
 	public AiracCycleDataCache(
 		Func<AiracCycleInfo, CancellationToken, Task<AiracCyclePublicationState>> probe,
 		Func<AiracCycleInfo, CancellationToken, Task<string>> download,
-		Func<string, CancellationToken, Task<NasrCsvDataCollection>> parse)
+		Func<string, CancellationToken, Task<NasrCsvDataCollection>> parse,
+		Func<AiracCycleInfo, bool>? isLocallyAvailable = null)
 	{
 		_probe = probe ?? throw new ArgumentNullException(nameof(probe));
 		_download = download ?? throw new ArgumentNullException(nameof(download));
 		_parse = parse ?? throw new ArgumentNullException(nameof(parse));
+		_isLocallyAvailable = isLocallyAvailable ?? (_ => false);
 	}
 
 	/// <summary>The process-wide cache the GUI binds to.</summary>
@@ -346,7 +357,14 @@ public sealed class AiracCycleDataCache
 		for (int attempt = 1; attempt <= 2; attempt++)
 		{
 			cancellationToken.ThrowIfCancellationRequested();
-			SetState(entry, CycleDataState.Downloading);
+
+			// The CSVs are already on disk - EnsureCycleAvailableAsync (the real _download) is
+			// about to resolve instantly without touching the network. Saying "Downloading" here
+			// would be a flat-out lie the user has no way to tell apart from a real fetch.
+			if (!_isLocallyAvailable(entry.Cycle))
+			{
+				SetState(entry, CycleDataState.Downloading);
+			}
 
 			try
 			{

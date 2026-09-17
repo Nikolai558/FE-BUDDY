@@ -75,6 +75,8 @@ public sealed class AirwaysViewModel : SubServiceSettingsViewModel
         OpenOutputCommand = new RelayCommand(OpenOutputFolder, () => !string.IsNullOrEmpty(LastOutputDirectory));
         PickRoiOnMapCommand = new RelayCommand(PickRoiOnMap);
 
+        DefaultRoiStore.Changed += (_, _) => OnPropertyChanged(nameof(RoiFallbackHint));
+
         LoadFromConfig();
     }
 
@@ -143,11 +145,26 @@ public sealed class AirwaysViewModel : SubServiceSettingsViewModel
 
     public bool SplitAtAntimeridian { get => _splitAtAntimeridian; set { if (SetProperty(ref _splitAtAntimeridian, value)) MarkDirty(); } }
 
-    public bool OverrideRoi { get => _overrideRoi; set { if (SetProperty(ref _overrideRoi, value)) MarkDirty(); } }
+    public bool OverrideRoi
+    {
+        get => _overrideRoi;
+        set { if (SetProperty(ref _overrideRoi, value)) { MarkDirty(); OnPropertyChanged(nameof(RoiFallbackHint)); } }
+    }
+
     public string SwLat { get => _swLat; set { if (SetProperty(ref _swLat, value)) MarkDirty(); } }
     public string SwLon { get => _swLon; set { if (SetProperty(ref _swLon, value)) MarkDirty(); } }
     public string NeLat { get => _neLat; set { if (SetProperty(ref _neLat, value)) MarkDirty(); } }
     public string NeLon { get => _neLon; set { if (SetProperty(ref _neLon, value)) MarkDirty(); } }
+
+    /// <summary>
+    /// What the run will actually use when this sub-service isn't overriding the ROI: the
+    /// shared Settings ▸ Default Region of Interest if one is set, otherwise a note that the
+    /// run will include every airway. Shown under the override checkbox so the fallback isn't a
+    /// silent surprise.
+    /// </summary>
+    public string RoiFallbackHint => DefaultRoiStore.Load() is { } r
+        ? $"Not overridden — uses the Settings ▸ Default Region of Interest (SW {r.SwLat:0.####}, {r.SwLon:0.####}  ·  NE {r.NeLat:0.####}, {r.NeLon:0.####})."
+        : "Not overridden and no Settings ▸ Default Region of Interest is set — the run will include every airway.";
 
     /// <summary>Designation include/exclude toggles, built from the selected cycle's parsed airways (7.4). Disabled until readiness.</summary>
     public ObservableCollection<DesignationToggle> Designations { get; } = new();
@@ -318,6 +335,13 @@ public sealed class AirwaysViewModel : SubServiceSettingsViewModel
     /// <returns>The settings dictionary.</returns>
     public IReadOnlyDictionary<string, string> BuildSettingsBlock(string outputDirectory, bool addFeBuddyOutputFolder)
     {
+        // Precedence: an explicit override wins; otherwise fall back to Settings' shared
+        // Default ROI; otherwise no ROI filtering at all. Previously a run only ever looked at
+        // OverrideRoi, so the Default ROI silently did nothing unless the user re-entered the
+        // same box under "Override the default ROI for Airways".
+        RegionOfInterest? fallbackRoi = OverrideRoi ? null : DefaultRoiStore.Load();
+        bool filterByRoi = OverrideRoi || fallbackRoi is not null;
+
         Dictionary<string, string> s = new(StringComparer.OrdinalIgnoreCase)
         {
             ["OutputDirectory"] = outputDirectory,
@@ -333,7 +357,7 @@ public sealed class AirwaysViewModel : SubServiceSettingsViewModel
             ["AliasRoiScope"] = AliasRoiAirwaysOnly ? "RoiAirways" : "All",
             ["SplitAtAntimeridian"] = YesNo(SplitAtAntimeridian),
             ["AddFeBuddyOutputFolder"] = YesNo(addFeBuddyOutputFolder),
-            ["FilterByRoi"] = YesNo(OverrideRoi),
+            ["FilterByRoi"] = YesNo(filterByRoi),
             ["ExcludedDesignations"] = string.Join(',', Designations.Where(d => !d.Included).Select(d => d.Designation)),
         };
 
@@ -343,6 +367,13 @@ public sealed class AirwaysViewModel : SubServiceSettingsViewModel
             s["RoiSwLon"] = SwLon;
             s["RoiNeLat"] = NeLat;
             s["RoiNeLon"] = NeLon;
+        }
+        else if (fallbackRoi is { } defaultRoi)
+        {
+            s["RoiSwLat"] = defaultRoi.SwLat.ToString(CultureInfo.InvariantCulture);
+            s["RoiSwLon"] = defaultRoi.SwLon.ToString(CultureInfo.InvariantCulture);
+            s["RoiNeLat"] = defaultRoi.NeLat.ToString(CultureInfo.InvariantCulture);
+            s["RoiNeLon"] = defaultRoi.NeLon.ToString(CultureInfo.InvariantCulture);
         }
 
         if (IncludeCrcEramPropertyDefaults)

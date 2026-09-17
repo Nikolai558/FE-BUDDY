@@ -64,7 +64,8 @@
                         <ctl:SectionHeader Label="FACILITY" />
                         <TextBlock Style="{StaticResource Text.Body}" Margin="0,4,0,6"
                                    Text="Your ARTCC / facility, from the selected cycle's parsed airports." />
-                        <ComboBox ItemsSource="{Binding FacilityOptions}"
+                        <ComboBox Style="{StaticResource Themed.ComboBox}"
+                                  ItemsSource="{Binding FacilityOptions}"
                                   SelectedItem="{Binding SelectedArtccId}"
                                   IsEnabled="{Binding IsReady}"
                                   Width="220" HorizontalAlignment="Left" />
@@ -92,7 +93,13 @@
 
                 <!-- hosted sub-service page -->
                 <TextBlock Text="{Binding Breadcrumb}" Style="{StaticResource Text.Label}" Margin="2,20,0,8" />
-                <ContentControl Content="{Binding SelectedSubService}" />
+                <Border Style="{StaticResource Card}" Padding="24"
+                        Visibility="{Binding HasSelectedSubService, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}">
+                    <TextBlock Style="{StaticResource Text.Body}" TextWrapping="Wrap"
+                               Text="Choose a sub-service above to configure it." />
+                </Border>
+                <ContentControl Content="{Binding SelectedSubService}"
+                                Visibility="{Binding HasSelectedSubService, Converter={StaticResource BoolToVis}}" />
 
                 <!-- Build Cycle (7.9) -->
                 <Border Style="{StaticResource Card}" Margin="0,18,0,24" Padding="20">

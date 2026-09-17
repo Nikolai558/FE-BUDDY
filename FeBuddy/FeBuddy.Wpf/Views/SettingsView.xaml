@@ -71,9 +71,16 @@
 
                         <StackPanel Visibility="{Binding FacilitiesReady, Converter={StaticResource BoolToVis}}">
                             <TextBlock Text="Facility" Style="{StaticResource Text.Label}" Margin="0,4,0,4" />
-                            <ComboBox ItemsSource="{Binding Facilities}" DisplayMemberPath="Display"
+                            <ComboBox Style="{StaticResource Themed.ComboBox}"
+                                      ItemsSource="{Binding Facilities}"
                                       SelectedValuePath="ArtccId" SelectedValue="{Binding SelectedFacility}"
-                                      Width="300" HorizontalAlignment="Left" />
+                                      Width="300" HorizontalAlignment="Left">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Display}" />
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
                         </StackPanel>
 
                         <Border Style="{StaticResource Divider}" Margin="0,14" />

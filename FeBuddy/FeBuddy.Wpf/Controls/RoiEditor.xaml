@@ -9,7 +9,8 @@
 
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="*" MinHeight="220" />
+            <RowDefinition Height="*" MinHeight="160" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
@@ -29,36 +30,49 @@
             </Grid>
         </Border>
 
-        <!-- coordinates + confirm -->
-        <StackPanel Grid.Row="1" Margin="0,12,0,0">
-            <TextBlock Style="{StaticResource Text.Caption}" Margin="0,0,0,6"
-                       Text="Drag a box on the map, then adjust the corners below. Nothing is applied until you press Set ROI." />
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="18" />
-                    <ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" />
-                </Grid.ColumnDefinitions>
-                <Grid.RowDefinitions><RowDefinition /><RowDefinition /></Grid.RowDefinitions>
+        <!-- coordinates: scrolls if the host doesn't have room, rather than pushing the
+             Cancel / Set ROI bar below (P4's "pinned header" pattern, applied to a footer). -->
+        <!-- MaxHeight caps this row's own Auto-sizing so the Grid never lets it demand more
+             than this - without a cap, an Auto row always sizes to its content's full desired
+             height, so the ScrollViewer inside would never be given less room than it wants and
+             would have nothing to scroll. -->
+        <ScrollViewer Grid.Row="1" MaxHeight="210" Margin="0,12,0,0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <StackPanel>
+                <TextBlock Style="{StaticResource Text.Caption}" Margin="0,0,0,6"
+                           Text="Left-drag to draw a box, right-drag to pan, scroll to zoom. Right-click clears the box. Nothing is applied until you press Set ROI." />
+                <!-- One field per row rather than two side-by-side pairs: the wide ROI picker
+                     dialog has room for pairs, but this control is also embedded in the Map
+                     page's 320px sidebar, where a two-pair-per-row layout ran the boxes off the
+                     edge. A single column works at any width the control is hosted at. -->
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition />
+                    </Grid.RowDefinitions>
 
-                <TextBlock Text="NE lat" Style="{StaticResource Text.Caption}" VerticalAlignment="Center" Margin="0,0,8,4" />
-                <TextBox x:Name="NeLatBox" Grid.Column="1" Margin="0,0,0,4" TextChanged="OnCoordTextChanged" />
-                <TextBlock Grid.Column="3" Text="NE lon" Style="{StaticResource Text.Caption}" VerticalAlignment="Center" Margin="0,0,8,4" />
-                <TextBox x:Name="NeLonBox" Grid.Column="4" Margin="0,0,0,4" TextChanged="OnCoordTextChanged" />
+                    <TextBlock Text="NE lat" Style="{StaticResource Text.Caption}" VerticalAlignment="Center" Margin="0,0,8,4" />
+                    <TextBox x:Name="NeLatBox" Grid.Column="1" Margin="0,0,0,4" TextChanged="OnCoordTextChanged" />
+                    <TextBlock Grid.Row="1" Text="NE lon" Style="{StaticResource Text.Caption}" VerticalAlignment="Center" Margin="0,0,8,4" />
+                    <TextBox x:Name="NeLonBox" Grid.Row="1" Grid.Column="1" Margin="0,0,0,4" TextChanged="OnCoordTextChanged" />
 
-                <TextBlock Grid.Row="1" Text="SW lat" Style="{StaticResource Text.Caption}" VerticalAlignment="Center" Margin="0,0,8,0" />
-                <TextBox x:Name="SwLatBox" Grid.Row="1" Grid.Column="1" TextChanged="OnCoordTextChanged" />
-                <TextBlock Grid.Row="1" Grid.Column="3" Text="SW lon" Style="{StaticResource Text.Caption}" VerticalAlignment="Center" Margin="0,0,8,0" />
-                <TextBox x:Name="SwLonBox" Grid.Row="1" Grid.Column="4" TextChanged="OnCoordTextChanged" />
-            </Grid>
+                    <TextBlock Grid.Row="2" Text="SW lat" Style="{StaticResource Text.Caption}" VerticalAlignment="Center" Margin="0,0,8,4" />
+                    <TextBox x:Name="SwLatBox" Grid.Row="2" Grid.Column="1" Margin="0,0,0,4" TextChanged="OnCoordTextChanged" />
+                    <TextBlock Grid.Row="3" Text="SW lon" Style="{StaticResource Text.Caption}" VerticalAlignment="Center" />
+                    <TextBox x:Name="SwLonBox" Grid.Row="3" Grid.Column="1" TextChanged="OnCoordTextChanged" />
+                </Grid>
 
-            <TextBlock x:Name="ErrorText" Style="{StaticResource Text.Caption}" Foreground="{StaticResource Brush.Danger}"
-                       TextWrapping="Wrap" Margin="0,8,0,0" Visibility="Collapsed" />
-
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
-                <Button Content="Cancel" Style="{StaticResource Button.Ghost}" Click="OnCancel" MinWidth="90" Margin="0,0,10,0" />
-                <Button Content="Set ROI" Style="{StaticResource Button.Primary}" Click="OnSetRoi" MinWidth="120" />
+                <TextBlock x:Name="ErrorText" Style="{StaticResource Text.Caption}" Foreground="{StaticResource Brush.Danger}"
+                           TextWrapping="Wrap" Margin="0,8,0,4" Visibility="Collapsed" />
             </StackPanel>
+        </ScrollViewer>
+
+        <!-- pinned footer: always visible regardless of how little room the host gives this
+             control, so Cancel / Set ROI can never end up scrolled or clipped out of reach. -->
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
+            <Button Content="Cancel" Style="{StaticResource Button.Ghost}" Click="OnCancel" MinWidth="90" Margin="0,0,10,0" />
+            <Button Content="Set ROI" Style="{StaticResource Button.Primary}" Click="OnSetRoi" MinWidth="120" />
         </StackPanel>
     </Grid>
 </UserControl>

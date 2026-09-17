@@ -1,5 +1,4 @@
 using System.Collections.ObjectModel;
-using System.Globalization;
 using System.IO;
 using System.Windows;
 using System.Windows.Input;
@@ -8,7 +7,6 @@ using System.Windows.Media;
 using FeBuddy.Wpf.Infrastructure;
 using FeBuddy.Wpf.Map;
 
-using FEBuddyLibrary.Helpers;
 using FEBuddyLibrary.Models.Services.General;
 using FEBuddyLibrary.Services.General;
 
@@ -23,12 +21,6 @@ namespace FeBuddy.Wpf.ViewModels;
 /// </summary>
 public sealed class MapViewModel : ObservableObject
 {
-    private const string RoiFilterKey = "Services.AiracService.DefaultRoi.FilterByRoi";
-    private const string RoiSwLatKey = "Services.AiracService.DefaultRoi.DefaultCoordindates.SwLat";
-    private const string RoiSwLonKey = "Services.AiracService.DefaultRoi.DefaultCoordindates.SwLon";
-    private const string RoiNeLatKey = "Services.AiracService.DefaultRoi.DefaultCoordindates.NeLat";
-    private const string RoiNeLonKey = "Services.AiracService.DefaultRoi.DefaultCoordindates.NeLon";
-
     private static readonly Color[] FileColors =
     [
         Color.FromRgb(0x7C, 0xC7, 0xF2), Color.FromRgb(0x5A, 0xD1, 0xA0),
@@ -60,8 +52,14 @@ public sealed class MapViewModel : ObservableObject
         ClearFilesCommand = new RelayCommand(() => { LoadedFiles.Clear(); SyncLayers(); }, () => HasLoadedFiles);
         ResetViewCommand = new RelayCommand(() => ResetRequested?.Invoke(this, EventArgs.Empty));
 
-        LoadDefaultRoi();
+        DefaultRoi = DefaultRoiStore.Load();
+        DefaultRoiStore.Changed += OnDefaultRoiChanged;
     }
+
+    // View-models live for the whole session (NavItem caches them), so without this the Map
+    // page would keep showing whatever ROI was current when it was first opened, even after
+    // Settings changes or clears it.
+    private void OnDefaultRoiChanged(object? sender, EventArgs e) => DefaultRoi = DefaultRoiStore.Load();
 
     /// <summary>Raised when the view should zoom to a set of bounds (after a load).</summary>
     public event EventHandler<GeoBounds>? FrameRequested;
@@ -150,26 +148,8 @@ public sealed class MapViewModel : ObservableObject
     /// <param name="roi">The confirmed region.</param>
     public void SetDefaultRoi(RegionOfInterest roi)
     {
-        UserConfigFile.TrySetValue(RoiFilterKey, "true");
-        UserConfigFile.TrySetValue(RoiSwLatKey, roi.SwLat.ToString(CultureInfo.InvariantCulture));
-        UserConfigFile.TrySetValue(RoiSwLonKey, roi.SwLon.ToString(CultureInfo.InvariantCulture));
-        UserConfigFile.TrySetValue(RoiNeLatKey, roi.NeLat.ToString(CultureInfo.InvariantCulture));
-        UserConfigFile.TrySetValue(RoiNeLonKey, roi.NeLon.ToString(CultureInfo.InvariantCulture));
-        UserConfigFile.Save("Services.AiracService.DefaultRoi");
-
-        DefaultRoi = roi;
+        DefaultRoiStore.Set(roi);
         Toast.Success("Default ROI saved", "Settings ▸ Default Region of Interest now uses this box.");
-    }
-
-    private void LoadDefaultRoi()
-    {
-        if (double.TryParse(UserConfigFile.GetValue(RoiSwLatKey), NumberStyles.Float, CultureInfo.InvariantCulture, out double swLat)
-            && double.TryParse(UserConfigFile.GetValue(RoiSwLonKey), NumberStyles.Float, CultureInfo.InvariantCulture, out double swLon)
-            && double.TryParse(UserConfigFile.GetValue(RoiNeLatKey), NumberStyles.Float, CultureInfo.InvariantCulture, out double neLat)
-            && double.TryParse(UserConfigFile.GetValue(RoiNeLonKey), NumberStyles.Float, CultureInfo.InvariantCulture, out double neLon))
-        {
-            DefaultRoi = new RegionOfInterest(swLat, swLon, neLat, neLon);
-        }
     }
 
     private void LoadFiles()

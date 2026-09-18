@@ -42,18 +42,22 @@ Find out how to report issues or make feature requests to help improve FE-Buddy.
 For detailed installation and usage instructions, please refer to the [Documentation](#link-to-documentation).
 
 ## License
-This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details.
+This project is licensed under the GNU General Public License v3.0 - see the [LICENSE.md](../LICENSE.md) file for details.
 
 ## Acknowledgments
-- [Nikolas Boling](#) - Primary Developer and Programmer
-- [Kyle Sanders](#) - Concept Design and Original Author
-- [Kyle Rodgers](#) - Developer and Antimeridian Split Logic
-- [John Lewis](#) - Icon and Logo Design
-- [Chris James](#) - Program Name
-- [Cian Ormond](#) - dotNET 6 Conversion Assistance
-- [Caelan Sayler](#) - .NET 6 Conversion Assistance
-- [Ian Drake](#) - FAA FOIA RVM Conversion source code reference
+- [Nikolas Boling](https://github.com/Nikolai558) - Primary Developer and Programmer
+- [Kyle Sanders](https://github.com/KCSanders7070) - Concept Design and Original Author
+- [Kyle Rodgers](https://github.com/misterrodg) - Developer and Antimeridian Split Logic
+- John Lewis - Icon and Logo Design
+- Chris James - Program Name
+- [Cian Ormond](https://github.com/wiggleforlife) - dotNET 6 Conversion Assistance
+- [Caelan Sayler](https://github.com/caesay) - .NET 6 Conversion Assistance
+- Ian Drake - FAA FOIA RVM Conversion source code reference
+
+If your name is listed above and you'd like a different link attached to it, or if your name should
+be listed here but isn't, please let us know via a pull request or on our Discord. We want to make
+sure everyone gets the credit they're due.
 
 ---
 
-For more information, visit the [FE-Buddy GitHub Repository](https://github.com/yourusername/FE-Buddy).
+For more information, visit the [FE-Buddy GitHub Repository](https://github.com/Nikolai558/FE-Buddy-DEV).

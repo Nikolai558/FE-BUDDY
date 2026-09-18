@@ -11,7 +11,7 @@ public static class Links
     public const string Discord = "https://discord.gg/febuddy";
 
     /// <summary>The FE-Buddy manual.</summary>
-    public const string Manual = "https://github.com/Nikolai558/FE-Buddy-DEV/tree/main/Manual%20HTML";
+    public const string Manual = "https://github.com/Nikolai558/FE-Buddy-DEV/tree/main/docs/Users/Manual%20HTML";
 
     /// <summary>The release / change log.</summary>
     public const string ChangeLog = "https://github.com/Nikolai558/FE-Buddy-DEV/releases";

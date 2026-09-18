@@ -23,6 +23,7 @@
 
     <!-- Shared value converters, instantiated once here. -->
     <conv:BoolToVisibilityConverter x:Key="BoolToVis" />
+    <conv:InverseBooleanConverter x:Key="InverseBool" />
     <conv:StringToVisibilityConverter x:Key="StringToVis" />
     <conv:EnumToBooleanConverter x:Key="EnumToBool" />
     <conv:MarkdownToPlainTextConverter x:Key="MdToText" />

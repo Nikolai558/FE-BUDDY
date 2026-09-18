@@ -220,7 +220,7 @@
                     <CheckBox Content="Include the Airways.txt alias file" IsChecked="{Binding GenerateAliasFile}" />
                     <StackPanel Margin="20,6,0,0" IsEnabled="{Binding GenerateAliasFile}">
                         <RadioButton GroupName="AliasScope" Content="All FAA airways"
-                                     IsChecked="{Binding AliasRoiAirwaysOnly, Converter={StaticResource BoolToVis}, ConverterParameter=Invert, Mode=OneWay}" />
+                                     IsChecked="{Binding AliasRoiAirwaysOnly, Converter={StaticResource InverseBool}, Mode=TwoWay}" />
                         <RadioButton GroupName="AliasScope" Content="ROI airways only" Margin="0,3,0,0"
                                      IsChecked="{Binding AliasRoiAirwaysOnly, Mode=TwoWay}" />
                     </StackPanel>

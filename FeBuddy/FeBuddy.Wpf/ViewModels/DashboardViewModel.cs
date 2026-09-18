@@ -7,11 +7,11 @@ using System.Windows.Threading;
 
 using FeBuddy.Wpf.Infrastructure;
 
-using FEBuddyLibrary.Helpers;
-using FEBuddyLibrary.Models.Services.Airac;
-using FEBuddyLibrary.Models.Services.General;
-using FEBuddyLibrary.Services.Airac;
-using FEBuddyLibrary.Services.General;
+using FeBuddy.Core.Helpers;
+using FeBuddy.Core.Models.Services.Airac;
+using FeBuddy.Core.Models.Services.General;
+using FeBuddy.Core.Services.Airac;
+using FeBuddy.Core.Services.General;
 
 namespace FeBuddy.Wpf.ViewModels;
 

@@ -3,10 +3,10 @@ using System.Linq;
 
 using FeBuddy.Wpf.Infrastructure;
 
-using FEBuddyLibrary.Helpers;
-using FEBuddyLibrary.Models.NASR.CSV;
-using FEBuddyLibrary.Models.Services.Airac;
-using FEBuddyLibrary.Services.Airac;
+using FeBuddy.Core.Helpers;
+using FeBuddy.Core.Models.NASR.CSV;
+using FeBuddy.Core.Models.Services.Airac;
+using FeBuddy.Core.Services.Airac;
 
 namespace FeBuddy.Wpf.ViewModels;
 

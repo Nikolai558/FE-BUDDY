@@ -8,14 +8,14 @@ using System.Windows.Input;
 using FeBuddy.Wpf.Infrastructure;
 using FeBuddy.Wpf.ViewModels.Models;
 
-using FEBuddyLibrary.Helpers;
+using FeBuddy.Core.Helpers;
 
-using FEBuddyLibrary.Models.NASR.CSV;
-using FEBuddyLibrary.Models.Services.Airac;
-using FEBuddyLibrary.Models.Services.Airac.Airways;
-using FEBuddyLibrary.Models.Services.General;
-using FEBuddyLibrary.Services.Airac.Airways;
-using FEBuddyLibrary.Services.General;
+using FeBuddy.Core.Models.NASR.CSV;
+using FeBuddy.Core.Models.Services.Airac;
+using FeBuddy.Core.Models.Services.Airac.Airways;
+using FeBuddy.Core.Models.Services.General;
+using FeBuddy.Core.Services.Airac.Airways;
+using FeBuddy.Core.Services.General;
 
 namespace FeBuddy.Wpf.ViewModels;
 

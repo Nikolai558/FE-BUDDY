@@ -10,7 +10,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:FeBuddy.Wpf.ViewModels"
              xmlns:m="clr-namespace:FeBuddy.Wpf.ViewModels.Models"
-             xmlns:awy="clr-namespace:FEBuddyLibrary.Models.Services.Airac.Airways;assembly=FEBuddyLibrary"
+             xmlns:awy="clr-namespace:FeBuddy.Core.Models.Services.Airac.Airways;assembly=FeBuddy.Core"
              xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
              xmlns:infra="clr-namespace:FeBuddy.Wpf.Infrastructure"
              mc:Ignorable="d"

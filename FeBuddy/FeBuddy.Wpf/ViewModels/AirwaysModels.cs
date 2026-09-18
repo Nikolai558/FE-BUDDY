@@ -1,6 +1,6 @@
 using FeBuddy.Wpf.Infrastructure;
 
-using FEBuddyLibrary.Services.General;
+using FeBuddy.Core.Services.General;
 
 namespace FeBuddy.Wpf.ViewModels.Models;
 

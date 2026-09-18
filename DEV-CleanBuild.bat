@@ -3,10 +3,10 @@
 setlocal enabledelayedexpansion
 
 for %%d in (
-    ".\FeBuddy\FEBuddyLibrary\bin"
+    ".\FeBuddy\FeBuddy.Core\bin"
     ".\FeBuddy\FeBuddy.Wpf\bin"
-    ".\FeBuddy\FEBuddyTest\bin"
-    ".\FeBuddy\UnitTests\bin"
+    ".\FeBuddy\FeBuddy.Harness\bin"
+    ".\FeBuddy\FeBuddy.UnitTests\bin"
 ) do (
     if exist "%%d" (
         echo Deleting all files and folders in %%d

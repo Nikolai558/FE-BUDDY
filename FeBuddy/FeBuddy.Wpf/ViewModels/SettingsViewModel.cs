@@ -8,15 +8,15 @@ using System.Windows.Threading;
 using FeBuddy.Wpf.Infrastructure;
 using FeBuddy.Wpf.Views;
 
-using FEBuddyLibrary.Helpers;
-using FEBuddyLibrary.Models.Services.Airac;
-using FEBuddyLibrary.Models.Services.General;
-using FEBuddyLibrary.Services.Airac;
-using FEBuddyLibrary.Services.General;
+using FeBuddy.Core.Helpers;
+using FeBuddy.Core.Models.Services.Airac;
+using FeBuddy.Core.Models.Services.General;
+using FeBuddy.Core.Services.Airac;
+using FeBuddy.Core.Services.General;
 
 using Microsoft.Win32;
 
-using LibUpdateChannel = FEBuddyLibrary.Models.Services.General.UpdateChannel;
+using LibUpdateChannel = FeBuddy.Core.Models.Services.General.UpdateChannel;
 
 namespace FeBuddy.Wpf.ViewModels;
 

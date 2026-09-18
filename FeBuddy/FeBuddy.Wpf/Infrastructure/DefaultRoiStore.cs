@@ -1,7 +1,7 @@
 using System.Globalization;
 
-using FEBuddyLibrary.Helpers;
-using FEBuddyLibrary.Models.Services.General;
+using FeBuddy.Core.Helpers;
+using FeBuddy.Core.Models.Services.General;
 
 namespace FeBuddy.Wpf.Infrastructure;
 

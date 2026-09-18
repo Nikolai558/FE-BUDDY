@@ -8,10 +8,10 @@ using FeBuddy.Wpf.Infrastructure;
 using FeBuddy.Wpf.ViewModels.Models;
 using FeBuddy.Wpf.Views;
 
-using FEBuddyLibrary.Models.Services.Airac;
-using FEBuddyLibrary.Models.Services.General;
-using FEBuddyLibrary.Services.Airac;
-using FEBuddyLibrary.Services.General;
+using FeBuddy.Core.Models.Services.Airac;
+using FeBuddy.Core.Models.Services.General;
+using FeBuddy.Core.Services.Airac;
+using FeBuddy.Core.Services.General;
 
 namespace FeBuddy.Wpf.ViewModels;
 

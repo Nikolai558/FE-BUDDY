@@ -3,7 +3,7 @@ using System.Reflection;
 using System.Windows;
 using System.Windows.Threading;
 
-using FEBuddyLibrary.Services.General;
+using FeBuddy.Core.Services.General;
 
 namespace FeBuddy.Wpf;
 

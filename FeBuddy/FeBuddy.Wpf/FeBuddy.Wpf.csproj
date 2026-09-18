@@ -3,12 +3,12 @@
   <!--
     FeBuddy.Wpf  -  UI shell, now being grown into the real app.
     ===========================================================================
-    Started as a pure presentation layer (no FEBuddyLibrary, no NuGet packages -
+    Started as a pure presentation layer (no FeBuddy.Core, no NuGet packages -
     MVVM helpers and converters are hand-rolled and live under /Infrastructure).
     Most screens are still sample-data-only prototypes.
 
     The Airways screen is the first real, wired screen: it references
-    FEBuddyLibrary directly and calls FEBuddyLibrary.Services.Airways.AirwayService.Run.
+    FeBuddy.Core directly and calls FeBuddy.Core.Services.Airways.AirwayService.Run.
     Everything else stays sample data until it is grown the same way.
   -->
 
@@ -35,7 +35,7 @@
   <ItemGroup>
     <!-- The Airways screen is real and calls into the library; every other
          screen is still sample data and does not need this. -->
-    <ProjectReference Include="..\FEBuddyLibrary\FEBuddyLibrary.csproj" />
+    <ProjectReference Include="..\FeBuddy.Core\FeBuddy.Core.csproj" />
   </ItemGroup>
 
 </Project>

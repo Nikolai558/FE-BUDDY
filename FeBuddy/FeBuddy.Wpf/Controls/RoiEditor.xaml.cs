@@ -4,8 +4,8 @@ using System.Windows.Controls;
 
 using FeBuddy.Wpf.Map;
 
-using FEBuddyLibrary.Models.Services.General;
-using FEBuddyLibrary.Services.General;
+using FeBuddy.Core.Models.Services.General;
+using FeBuddy.Core.Services.General;
 
 namespace FeBuddy.Wpf.Controls;
 

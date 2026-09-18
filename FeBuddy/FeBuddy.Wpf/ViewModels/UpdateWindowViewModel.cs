@@ -2,7 +2,7 @@ using System.Windows.Input;
 
 using FeBuddy.Wpf.Infrastructure;
 
-using FEBuddyLibrary.Models.Services.General;
+using FeBuddy.Core.Models.Services.General;
 
 namespace FeBuddy.Wpf.ViewModels;
 

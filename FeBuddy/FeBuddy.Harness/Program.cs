@@ -1,0 +1,54 @@
+using System.Diagnostics;
+
+using FeBuddy.Core.Configuration;
+using FeBuddy.Core.Models.NASR.CSV;
+using FeBuddy.Core.Parsers.NASR.CSV;
+
+namespace FeBuddy.Harness;
+
+/// <summary>
+/// GUI stand-in entry point. Orchestrates the harness only - all airway logic lives in
+/// FeBuddy.Core, and all console formatting lives in <see cref="ConsoleReport"/>. See
+/// <see cref="HarnessSettings"/> for the paths and toggles to edit.
+/// </summary>
+internal static class Program
+{
+	public static async Task Main()
+	{
+		DevMode.IsEnabled = HarnessSettings.DevMode;
+
+		Console.WriteLine("FE-Buddy Test Harness");
+		Console.WriteLine($"NASR source: {HarnessSettings.NasrSourceDirectory}");
+		Console.WriteLine($"Output:      {HarnessSettings.OutputDirectory}");
+		Console.WriteLine($"DevMode:     {DevMode.IsEnabled}");
+		Console.WriteLine();
+
+		try
+		{
+			Console.Write("Parsing NASR CSV data... ");
+
+			Stopwatch parseStopwatch = Stopwatch.StartNew();
+
+			NasrCsvDataCollection allNasrCsvData =
+				await NasrCsvParserController.MainAsync(new[] { HarnessSettings.NasrSourceDirectory });
+
+			parseStopwatch.Stop();
+
+			Console.WriteLine("done.");
+			ConsoleReport.PrintNasrParseSummary(parseStopwatch.Elapsed);
+
+			var geojsonResult = AirwayGeojsonRunner.Run(allNasrCsvData);
+			ConsoleReport.PrintAirwayServiceResult("Airways: HighLow GeoJSON + Alias", geojsonResult);
+
+			var aliasOnlyResult = AirwayAliasRunner.Run(allNasrCsvData);
+			ConsoleReport.PrintAirwayServiceResult("Airways: Alias-only (OutputBy = None)", aliasOnlyResult);
+		}
+		catch (Exception ex)
+		{
+			Console.Error.WriteLine();
+			Console.Error.WriteLine($"FATAL: {ex.GetType().Name}: {ex.Message}");
+			Console.Error.WriteLine(ex.StackTrace);
+			Environment.ExitCode = 1;
+		}
+	}
+}

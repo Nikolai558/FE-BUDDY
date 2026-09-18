@@ -8,11 +8,11 @@ using System.Windows.Threading;
 using FeBuddy.Wpf.Infrastructure;
 using FeBuddy.Wpf.Views;
 
-using FEBuddyLibrary.Helpers;
-using FEBuddyLibrary.Models.NASR.CSV;
-using FEBuddyLibrary.Models.Services.Airac;
-using FEBuddyLibrary.Services.Airac;
-using FEBuddyLibrary.Services.General;
+using FeBuddy.Core.Helpers;
+using FeBuddy.Core.Models.NASR.CSV;
+using FeBuddy.Core.Models.Services.Airac;
+using FeBuddy.Core.Services.Airac;
+using FeBuddy.Core.Services.General;
 
 namespace FeBuddy.Wpf.ViewModels;
 

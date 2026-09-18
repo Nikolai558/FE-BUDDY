@@ -42,6 +42,7 @@ public sealed class SettingsViewModel : ObservableObject
     private bool _addFeBuddyFolder = true;
     private int _coordinatePrecision = 6;
     private RegionOfInterest? _defaultRoi;
+    private bool _isDirty;
 
     public SettingsViewModel()
     {
@@ -70,6 +71,16 @@ public sealed class SettingsViewModel : ObservableObject
         RefreshFacilities();
     }
 
+    /// <summary><see langword="true"/> when a saved setting has been edited since the last Save.</summary>
+    public bool IsDirty
+    {
+        get => _isDirty;
+        private set => SetProperty(ref _isDirty, value);
+    }
+
+    /// <summary>Marks the page dirty. Call from every setter whose value Save() persists.</summary>
+    private void MarkDirty() => IsDirty = true;
+
     // ================= 1. UPDATES =================
 
     public IReadOnlyList<LibUpdateChannel> Channels { get; } =
@@ -79,7 +90,7 @@ public sealed class SettingsViewModel : ObservableObject
     public LibUpdateChannel Channel
     {
         get => _channel;
-        set => SetProperty(ref _channel, value);
+        set { if (SetProperty(ref _channel, value)) MarkDirty(); }
     }
 
     public bool IsOnline => AppEnvironment.HasInternetConnection;
@@ -97,7 +108,7 @@ public sealed class SettingsViewModel : ObservableObject
     public string? SelectedFacility
     {
         get => _selectedFacility;
-        set => SetProperty(ref _selectedFacility, value);
+        set { if (SetProperty(ref _selectedFacility, value)) MarkDirty(); }
     }
 
     public bool FacilitiesReady { get; private set; }
@@ -112,14 +123,14 @@ public sealed class SettingsViewModel : ObservableObject
     public string OutputDirectory
     {
         get => _outputDir;
-        set => SetProperty(ref _outputDir, value);
+        set { if (SetProperty(ref _outputDir, value)) MarkDirty(); }
     }
 
     /// <summary>When on (default), output is written under a <c>FE-Buddy_Output</c> folder; off means straight to the chosen directory.</summary>
     public bool AddFeBuddyOutputFolder
     {
         get => _addFeBuddyFolder;
-        set => SetProperty(ref _addFeBuddyFolder, value);
+        set { if (SetProperty(ref _addFeBuddyFolder, value)) MarkDirty(); }
     }
 
     public ICommand BrowseOutputCommand { get; }
@@ -179,6 +190,7 @@ public sealed class SettingsViewModel : ObservableObject
                 OnPropertyChanged(nameof(IsPrecision5));
                 OnPropertyChanged(nameof(IsPrecision6));
                 OnPropertyChanged(nameof(IsPrecision7));
+                MarkDirty();
             }
         }
     }
@@ -206,6 +218,7 @@ public sealed class SettingsViewModel : ObservableObject
         }
 
         UserConfigFile.Write();
+        IsDirty = false;
         Toast.Success("Settings saved", "Written to UserConfig.json.");
     }
 

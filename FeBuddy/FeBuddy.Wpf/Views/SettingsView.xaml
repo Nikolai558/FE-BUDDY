@@ -17,19 +17,33 @@
     <Grid Background="{StaticResource Brush.Bg.Base}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <!-- pinned page header (theme fixes P4): title + Save stay put while the body scrolls -->
+        <!-- pinned page header (theme fixes P4): title stays put while the body scrolls -->
         <Grid Grid.Row="0" Background="{StaticResource Brush.Bg.Base}">
-            <DockPanel Margin="28,24,28,14" MaxWidth="780" HorizontalAlignment="Left">
-                <Button DockPanel.Dock="Right" Style="{StaticResource Button.Primary}" Content="Save" Command="{Binding SaveCommand}" MinWidth="90" />
-                <TextBlock Style="{StaticResource Text.H1}" Text="Settings" VerticalAlignment="Center" />
+            <TextBlock Text="Settings" Style="{StaticResource Text.Display}" Margin="28,24,28,14" />
+            <Border Style="{StaticResource Divider}" VerticalAlignment="Bottom" />
+        </Grid>
+
+        <!-- pinned action bar: subtitle on the left, dirty indicator + Save grouped on the right -->
+        <Grid Grid.Row="1" Background="{StaticResource Brush.Bg.Base}">
+            <DockPanel Margin="28,14">
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                    <TextBlock VerticalAlignment="Center" Style="{StaticResource Text.Caption}"
+                               Foreground="{StaticResource Brush.Warn}" Text="Unsaved changes" Margin="0,0,12,0"
+                               Visibility="{Binding IsDirty, Converter={StaticResource BoolToVis}}" />
+                    <Button Style="{StaticResource Button.Primary}" Content="Save"
+                            Command="{Binding SaveCommand}" MinWidth="90" />
+                </StackPanel>
+                <TextBlock Text="Preferences for this installation, saved to UserConfig.json."
+                           Style="{StaticResource Text.Body}" VerticalAlignment="Center" />
             </DockPanel>
             <Border Style="{StaticResource Divider}" VerticalAlignment="Bottom" />
         </Grid>
 
-        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
+        <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
                       infra:WheelScroll.Amplify="3">
             <StackPanel Margin="28,16,28,0" MaxWidth="780" HorizontalAlignment="Left">
 

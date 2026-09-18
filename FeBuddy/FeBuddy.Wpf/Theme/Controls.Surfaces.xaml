@@ -7,6 +7,8 @@
         Chip.Text       TextBlock - the label inside a chip
         Nav.List        ListBox - the side navigation
         Nav.Item        ListBoxItem - one nav row (icon + label + active bar)
+        Tab.Rail        ListBox - the vertical tab rail inside a tabbed service
+        Tab.Rail.Item   ListBoxItem - one tab (status dot + title + active bar)
 -->
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
@@ -93,6 +95,76 @@
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
+    </Style>
+
+    <!-- ========================== TAB RAIL ========================== -->
+    <!-- The vertical tab strip inside a first-tier service screen (AIRAC Service
+         today; File Conversion / Data Viewers / Health Services later). It runs
+         down the left of the page rather than across the top because a service is
+         expected to reach roughly twenty sub-service tabs: a column keeps every
+         tab visible and readable at full width, where a horizontal strip would
+         start hiding them behind an overflow menu exactly when there are enough
+         to need scanning.
+         Each row carries a status dot: amber for unsaved edits, red for a missing
+         or invalid value, nothing at all when the tab is settled. -->
+    <Style x:Key="Tab.Rail.Item" TargetType="ListBoxItem">
+        <Setter Property="Margin" Value="0,1" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Secondary}" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ListBoxItem">
+                    <Border x:Name="Root" Background="Transparent" MinHeight="36"
+                            CornerRadius="{DynamicResource Radius.Control}">
+                        <Grid>
+                            <Border x:Name="Bar" Width="3" HorizontalAlignment="Left"
+                                    Margin="0,8" CornerRadius="2"
+                                    Background="{DynamicResource Brush.Accent}" Opacity="0" />
+                            <DockPanel Margin="15,0,12,0" VerticalAlignment="Center">
+                                <Ellipse x:Name="Dot" DockPanel.Dock="Right" Width="8" Height="8"
+                                         VerticalAlignment="Center" Margin="8,0,0,0"
+                                         Visibility="Collapsed" />
+                                <TextBlock Text="{Binding Title}"
+                                           FontFamily="{DynamicResource Font.Body}" FontSize="13"
+                                           TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                            </DockPanel>
+                        </Grid>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Root" Property="Background" Value="{DynamicResource Brush.Overlay}" />
+                        </Trigger>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter TargetName="Root" Property="Background" Value="{DynamicResource Brush.Accent.Soft}" />
+                            <Setter TargetName="Bar" Property="Opacity" Value="1" />
+                            <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Primary}" />
+                        </Trigger>
+                        <DataTrigger Binding="{Binding Status}" Value="Unsaved">
+                            <Setter TargetName="Dot" Property="Visibility" Value="Visible" />
+                            <Setter TargetName="Dot" Property="Fill" Value="{DynamicResource Brush.Warn}" />
+                            <Setter TargetName="Dot" Property="ToolTip" Value="Unsaved changes" />
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding Status}" Value="Invalid">
+                            <Setter TargetName="Dot" Property="Visibility" Value="Visible" />
+                            <Setter TargetName="Dot" Property="Fill" Value="{DynamicResource Brush.Danger}" />
+                            <Setter TargetName="Dot" Property="ToolTip" Value="Something here needs fixing" />
+                        </DataTrigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="Tab.Rail" TargetType="ListBox">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="ItemContainerStyle" Value="{StaticResource Tab.Rail.Item}" />
+        <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled" />
+        <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto" />
+        <Setter Property="KeyboardNavigation.DirectionalNavigation" Value="Cycle" />
     </Style>
 
 </ResourceDictionary>

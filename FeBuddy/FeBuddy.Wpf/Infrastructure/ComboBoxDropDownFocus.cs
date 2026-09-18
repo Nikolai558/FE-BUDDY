@@ -1,4 +1,4 @@
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 
@@ -26,6 +26,9 @@ namespace FeBuddy.Wpf.Infrastructure;
 /// </remarks>
 public static class ComboBoxDropDownFocus
 {
+    /// <summary>Wheel step for a pixel-scrolling drop-down (<c>CanContentScroll="False"</c>).</summary>
+    private const double PixelsPerNotch = 48.0;
+
     private static ComboBox? _openCombo;
 
     static ComboBoxDropDownFocus()
@@ -93,7 +96,19 @@ public static class ComboBoxDropDownFocus
             return;
         }
 
+        // VerticalOffset's UNIT depends on the ScrollViewer: with CanContentScroll on it counts
+        // items; with it off it counts device-independent pixels. ComboBox's theme style turns
+        // CanContentScroll on (the drop-down list virtualizes), so the pixel-sized step this used
+        // to apply - 48 per notch - actually moved the list 48 *items*. On any list shorter than
+        // that, which is every list in the app, one notch jumped straight from the top to the
+        // bottom and the middle of the list could never be seen. Scroll in the unit the
+        // ScrollViewer is really using.
+        double notches = e.Delta / 120.0;
+        double step = scroller.CanContentScroll
+            ? notches * Math.Max(1, SystemParameters.WheelScrollLines)   // items per notch
+            : notches * PixelsPerNotch;                                  // pixels per notch
+
         e.Handled = true;
-        scroller.ScrollToVerticalOffset(scroller.VerticalOffset - (e.Delta / 120.0 * 48.0));
+        scroller.ScrollToVerticalOffset(scroller.VerticalOffset - step);
     }
 }

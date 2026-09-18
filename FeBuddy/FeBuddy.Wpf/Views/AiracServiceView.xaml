@@ -1,7 +1,14 @@
 <!--
-    AiracServiceView  -  the AIRAC Services screen (remediation plan Phase 7).
-    Cycle menu + facility at the top, the sub-service list (Airways only), the
-    hosted sub-service page with a breadcrumb, and Run AIRAC Service at the end.
+    AiracServiceView  -  the AIRAC Services screen.
+
+    Built as tabs: a permanent General tab (cycle, facility, which sub-services to
+    produce), one tab per selected sub-service, and a Review tab at the end that
+    summarises everything and runs the service. The rail runs down the left because
+    this service is expected to reach roughly twenty sub-services.
+
+    The screen owns the single page-level scroller and the shared action bar
+    (Save / Undo / Previous / Next / Review), which is why the tab views themselves
+    contain neither.
 -->
 <UserControl x:Class="FeBuddy.Wpf.Views.AiracServiceView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -9,11 +16,51 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:FeBuddy.Wpf.ViewModels"
-             xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
+             xmlns:local="clr-namespace:FeBuddy.Wpf.Views"
              xmlns:infra="clr-namespace:FeBuddy.Wpf.Infrastructure"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance vm:AiracServiceViewModel}"
-             d:DesignWidth="1000" d:DesignHeight="760">
+             d:DesignWidth="1100" d:DesignHeight="760">
+
+    <UserControl.Resources>
+        <!-- one tab view-model -> its page -->
+        <DataTemplate DataType="{x:Type vm:AiracGeneralTabViewModel}">
+            <local:AiracGeneralTabView />
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:AirwaysViewModel}">
+            <local:AirwaysView />
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type infra:PlaceholderSubServiceViewModel}">
+            <local:PlaceholderSubServiceView />
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type infra:ServiceReviewTabViewModel}">
+            <local:ServiceReviewTabView />
+        </DataTemplate>
+
+        <!-- The action bar, rendered twice: pinned above the tab's content and again at
+             the end of it, so neither the top nor the bottom of a long settings page is
+             ever far from Save / Next. -->
+        <DataTemplate x:Key="TabActionBar" DataType="{x:Type vm:AiracServiceViewModel}">
+            <DockPanel>
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                    <Button Style="{StaticResource Button.Ghost}" Content="Previous"
+                            Command="{Binding PreviousCommand}" Margin="0,0,8,0" />
+                    <Button Style="{StaticResource Button.Ghost}" Content="Next"
+                            Command="{Binding NextCommand}" Margin="0,0,8,0" />
+                    <Button Style="{StaticResource Button.Ghost}" Content="Review AIRAC Service settings"
+                            Command="{Binding GoToReviewCommand}" Margin="0,0,8,0" />
+                    <Button Style="{StaticResource Button.Ghost}" Content="Undo last save"
+                            Command="{Binding UndoLastSaveCommand}" Margin="0,0,8,0" />
+                    <Button Style="{StaticResource Button.Primary}" Content="Save" MinWidth="90"
+                            Command="{Binding SaveCommand}" />
+                </StackPanel>
+
+                <TextBlock VerticalAlignment="Center" Style="{StaticResource Text.Caption}"
+                           Foreground="{StaticResource Brush.Warn}" Text="Unsaved changes"
+                           Visibility="{Binding SelectedTab.IsDirty, Converter={StaticResource BoolToVis}}" />
+            </DockPanel>
+        </DataTemplate>
+    </UserControl.Resources>
 
     <Grid Background="{StaticResource Brush.Bg.Base}">
         <Grid.RowDefinitions>
@@ -27,91 +74,49 @@
             <Border Style="{StaticResource Divider}" VerticalAlignment="Bottom" />
         </Grid>
 
-        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
-                      infra:WheelScroll.Amplify="3">
-            <StackPanel Margin="28,16,28,0" MaxWidth="1080" HorizontalAlignment="Left">
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="236" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
 
-                <!-- waiting message (2.5) -->
-                <Border Style="{StaticResource Card}" Margin="0,16,0,0" Padding="16"
-                        Background="{StaticResource Brush.Warn.Soft}"
-                        Visibility="{Binding IsReady, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}">
-                    <TextBlock Text="{Binding WaitingMessage}" Style="{StaticResource Text.Body}" TextWrapping="Wrap" />
-                </Border>
+            <!-- ============ tab rail ============ -->
+            <Grid Grid.Column="0" Background="{StaticResource Brush.Panel}">
+                <ListBox Style="{StaticResource Tab.Rail}" Margin="12,16,12,16"
+                         ItemsSource="{Binding Tabs}"
+                         SelectedItem="{Binding SelectedTab, Mode=TwoWay}" />
+                <Border Width="1" HorizontalAlignment="Right"
+                        Background="{StaticResource Brush.Stroke}" />
+            </Grid>
 
-                <!-- cycle + facility (7.2) -->
-                <Border Style="{StaticResource Card}" Margin="0,16,0,0">
-                    <StackPanel>
-                        <ctl:SectionHeader Label="CYCLE" />
-                        <ItemsControl ItemsSource="{Binding CycleOptions}" Margin="0,4,0,0">
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <DockPanel Margin="0,3">
-                                        <TextBlock DockPanel.Dock="Right" Text="{Binding State}"
-                                                   Style="{StaticResource Text.Caption}" VerticalAlignment="Center" />
-                                        <RadioButton GroupName="AiracCycle" Content="{Binding Label}"
-                                                     Foreground="{StaticResource Brush.Text.Primary}"
-                                                     IsChecked="{Binding IsSelected, Mode=TwoWay}" />
-                                    </DockPanel>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
+            <!-- ============ tab content ============ -->
+            <Grid Grid.Column="1">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
 
-                        <TextBlock Text="{Binding SelectedCycleLabel}" Style="{StaticResource Text.Caption}"
-                                   FontFamily="{StaticResource Font.Mono}" Margin="0,8,0,0" />
+                <!-- pinned action bar -->
+                <Grid Grid.Row="0" Background="{StaticResource Brush.Bg.Base}">
+                    <ContentPresenter Content="{Binding}" ContentTemplate="{StaticResource TabActionBar}"
+                                      Margin="28,16,28,14" />
+                    <Border Style="{StaticResource Divider}" VerticalAlignment="Bottom" />
+                </Grid>
 
-                        <Border Style="{StaticResource Divider}" Margin="0,14" />
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
+                              infra:WheelScroll.Amplify="3">
+                    <StackPanel Margin="28,18,28,0">
+                        <TextBlock Text="{Binding SelectedTabTitle}" Style="{StaticResource Text.H2}"
+                                   Margin="0,0,0,14" />
 
-                        <ctl:SectionHeader Label="FACILITY" />
-                        <TextBlock Style="{StaticResource Text.Body}" Margin="0,4,0,6"
-                                   Text="Your ARTCC / facility, from the selected cycle's parsed airports." />
-                        <ComboBox Style="{StaticResource Themed.ComboBox}"
-                                  ItemsSource="{Binding FacilityOptions}"
-                                  SelectedItem="{Binding SelectedArtccId}"
-                                  IsEnabled="{Binding IsReady}"
-                                  Width="220" HorizontalAlignment="Left" />
+                        <ContentControl Content="{Binding SelectedTab}" />
+
+                        <!-- the same bar again at the end of the page -->
+                        <ContentPresenter Content="{Binding}" ContentTemplate="{StaticResource TabActionBar}"
+                                          Margin="0,0,0,28" />
                     </StackPanel>
-                </Border>
-
-                <!-- sub-service list (7.3) -->
-                <Border Style="{StaticResource Card}" Margin="0,16,0,0">
-                    <StackPanel>
-                        <ctl:SectionHeader Label="SUB-SERVICES" />
-                        <ItemsControl ItemsSource="{Binding SubServices}" Margin="0,4,0,0">
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <Button HorizontalAlignment="Left" Margin="0,3"
-                                            Style="{StaticResource Button.Ghost}"
-                                            Content="{Binding BreadcrumbTitle}"
-                                            Command="{Binding DataContext.OpenSubServiceCommand,
-                                                      RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                            CommandParameter="{Binding}" />
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                    </StackPanel>
-                </Border>
-
-                <!-- hosted sub-service page -->
-                <TextBlock Text="{Binding Breadcrumb}" Style="{StaticResource Text.Label}" Margin="2,20,0,8" />
-                <Border Style="{StaticResource Card}" Padding="24"
-                        Visibility="{Binding HasSelectedSubService, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}">
-                    <TextBlock Style="{StaticResource Text.Body}" TextWrapping="Wrap"
-                               Text="Choose a sub-service above to configure it." />
-                </Border>
-                <ContentControl Content="{Binding SelectedSubService}"
-                                Visibility="{Binding HasSelectedSubService, Converter={StaticResource BoolToVis}}" />
-
-                <!-- Build Cycle (7.9) -->
-                <Border Style="{StaticResource Card}" Margin="0,18,0,24" Padding="20">
-                    <DockPanel>
-                        <Button DockPanel.Dock="Right" Style="{StaticResource Button.Primary}"
-                                Content="Run AIRAC Service" MinWidth="180"
-                                Command="{Binding RunCommand}" />
-                        <TextBlock VerticalAlignment="Center" Style="{StaticResource Text.Body}"
-                                   Text="Unsaved sub-service settings are saved before the run." />
-                    </DockPanel>
-                </Border>
-            </StackPanel>
-        </ScrollViewer>
+                </ScrollViewer>
+            </Grid>
+        </Grid>
     </Grid>
 </UserControl>

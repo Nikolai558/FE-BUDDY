@@ -55,13 +55,32 @@ demoed. Every screen that ships is wired to `FEBuddyLibrary` or it is deleted. A
 cannot be made real this round is removed from navigation, not left showing samples. See 0.5 for
 the specific list.
 
-### 1.3 Airways is the only sub-service that exists
+### 1.3 Airways is the only sub-service with a backend
 
-**[OWNER]** Departure Procedures, Arrival Procedures, Airports, Fixes, NAVAIDs and Publications
-wait for later development. **Remove every reference, script, sample row, glyph and step for
-them from the code and GUI now.** `AiracServiceSettings` stays shaped so they can be added
-later, but no placeholder, no greyed-out entry, no "coming soon". (`Developer_Notes.md` keeps its
-forward-looking spec for them — that is a design doc, not code.)
+> **Amended 17 Sep 2026.** The original rule — *"Airways is the only sub-service that exists"*,
+> strip every other reference, no placeholder, no greyed-out entry — is superseded. The owner
+> replaced the sub-service *list* model with the tab model (5.2) after the list approach did not
+> work out, and a tab model that only ever holds one tab proves nothing.
+
+**[OWNER]** Airways is the only sub-service with a **backend**: the only one that produces
+output, and the only one `AiracService.RunAsync` dispatches to.
+
+The catalogue (`FeBuddy.Wpf/ViewModels/AiracSubServices.cs`) nevertheless holds three entries —
+**Airports**, **Airways**, **Departures** — so the tab model is genuinely exercised and expansion
+stays cheap: one catalogue entry plus a tab view-model, nothing else.
+
+- Selecting an unimplemented sub-service opens its tab. That tab states plainly that its settings
+  do not exist yet. It carries no controls, is never dirty, never invalid, never blocks a run and
+  contributes nothing to one (`IsRunnable` is false; the Review tab lists it as producing
+  nothing).
+- Arrival Procedures, Fixes, NAVAIDs and Publications are not in the catalogue at all. They are
+  added as entries when someone is ready to build them.
+- What survives from the original rule, unchanged: **no fake data, no fake controls, nothing that
+  pretends to work.** An unimplemented tab reports its own state; it does not mimic a settings
+  menu and it never writes to `UserConfig`.
+
+`AiracServiceSettings` stays shaped so a sub-service can be added later. (`Developer_Notes.md`
+keeps its forward-looking spec for them — that is a design doc, not code.)
 
 ---
 
@@ -786,21 +805,55 @@ Primary nav is **Services only**:
 Removed: `Airways` (rule 1.1), `Conversions`, `GeoJSON Tools`, `Alias & Reference` (0.5).
 System nav keeps `Settings` and `Info`.
 
-### 5.2 Sub-service navigation model
-- `NavItem` gains `IReadOnlyList<NavItem> SubServices` (empty for leaf services like Map).
-- Selecting **AIRAC Service** shows: cycle + facility settings at the top, then the sub-service
-  list (**Airways only** — no placeholders, rule 1.3), then the **Build Cycle** section.
-- Selecting a sub-service opens its settings page inside the AIRAC Service screen's content
-  region with a breadcrumb `AIRAC Service › Airways` — never as a new top-level screen.
+### 5.2 Sub-service navigation model — tabs
 
-### 5.3 The settings-save contract (every sub-service menu)
+> **Amended 17 Sep 2026.** Replaces the hosted-page + `AIRAC Service › Airways` breadcrumb model
+> described here before: the owner moved the screen to tabs after the list-and-page approach did
+> not work out. **There is no breadcrumb.** `NavItem.SubServices` is left unpopulated — no nav
+> item has sub-services; the tab rail does that job.
+
+- A first-tier service screen is a **vertical tab rail down the left** plus one content pane.
+  Tabs are data, not hand-placed XAML: `TabbedServiceViewModel` owns
+  `ObservableCollection<ServiceTabViewModel> Tabs` and rebuilds it as the selection changes.
+  AIRAC Service alone is expected to reach roughly twenty sub-services, which is why the rail is
+  generated rather than authored.
+- **General** is the permanent first tab: the cycle menu (7.2), the facility picker, and the
+  sub-service picker (7.3). Ticking a sub-service means *produce data for this* **and** opens its
+  tab. Unticking closes the tab and leaves that sub-service's saved `UserConfig` subtree
+  untouched, so re-ticking restores its settings. The selection persists to
+  `Services.AiracService.SelectedSubServices` (comma-separated keys).
+- One tab per selected sub-service, in catalogue order. An unimplemented sub-service opens a tab
+  that says its settings are not built yet and contributes nothing to a run (rule 1.3).
+- **Review** is the last tab, present once at least one sub-service is selected. It summarises
+  every other tab's settings as label / value rows, names any tab that is invalid (blocking) or
+  unsaved (saved before the run), and hosts the single **Run AIRAC Service** button (7.9). The
+  space under that button is where the live per-process run feed goes — **planned, not built this
+  round.**
+- A shared action bar sits above the tab's content and again at the end of it, so neither end of
+  a long settings page is far from it: **Previous**, **Next**, **Review AIRAC Service settings**,
+  **Undo last save**, **Save** (5.3). Previous / Next / Review offer to save a dirty tab before
+  leaving it; **Cancel** keeps the user on that tab with their edits intact.
+- Tab status shows in the rail as a dot: **amber** while the tab has unsaved edits, **red** when a
+  value is missing or invalid. An invalid field highlights red in place with the validator's
+  message as its tool-tip (e.g. an empty ROI override coordinate box).
+- The machinery is generic — `TabbedServiceViewModel`, `ServiceTabViewModel`,
+  `SubServiceDescriptor`, `ServiceReviewTabViewModel`, `PlaceholderSubServiceViewModel` — and is
+  the model for the other first-tier services (file conversions, data viewers, file health) when
+  they are built. No placeholders for those exist, and none are to be added.
+
+### 5.3 The settings-save contract (every settings tab)
+
+Unchanged in substance; it is now enforced **per tab**, and its buttons live in the shared action
+bar (5.2). The General tab is a settings tab like any other.
+
 - **Save** — validates, then writes only its own `UserConfig` subtree via
   `UserConfigFile.Save(nodePath)`.
 - **Undo last save** — enabled while a one-step snapshot exists (0.2); disabled once a newer save
   overrides it.
-- A dirty flag. Clicking **Build Cycle / Run AIRAC Service** with any sub-service dirty shows the
-  Developer_Notes dialog — *"the newly input data will be saved before execution"* — with
-  **Cancel** / **Save & Continue**.
+- A dirty flag. Clicking **Run AIRAC Service** with any tab dirty shows the Developer_Notes
+  dialog — *"the newly input data will be saved before execution"* — with **Cancel** /
+  **Save & Continue**, naming the tabs. Leaving a dirty tab via Previous / Next / Review shows the
+  same dialog for that tab.
 
 ---
 
@@ -857,8 +910,9 @@ correctly — lift them up here rather than rewriting). The effective date follo
 Remove the APRA row and `ApraNote`. Each option shows its cache state from 2.4 (`ready` /
 `parsing…` / `failed`). Selection persists to `Services.AiracService.AiracCycleId`.
 
-**7.3 Sub-service list.** Airways only. No "Alias & Reference" family — alias output is chosen
-inside the Airways menu (7.5).
+**7.3 Sub-service picker.** On the **General** tab (5.2): one tick per catalogue entry —
+Airports, Airways, Departures (rule 1.3). Ticking one opens its tab; only Airways has a backend.
+No "Alias & Reference" family — alias output is chosen inside the Airways tab (7.5).
 
 **7.4 Airway options — corrections.**
 - **HIGH/LOW and DESIGNATION descriptions**: multi-line for readability, and state that both
@@ -905,7 +959,8 @@ nothing. Manual lat/lon entry stays, validated by `RoiFilter.IsCoordinateValidFo
 the antimeridian means and why it matters, plus a toggle, **default on**, persisted to
 `UserConfig`. (`SplitAtAntimeridian` already exists in `AirwaySettings`.)
 
-**7.9 Build Cycle.** The single **Run AIRAC Service** button, at the end of the screen.
+**7.9 Build Cycle.** The single **Run AIRAC Service** button, on the **Review** tab (5.2) under
+the settings rundown.
 Pre-flight: dirty-settings dialog (5.3) → validation → `AiracService.RunAsync` against the cached
 parse. Progress and results report through `AppLog` *and* the in-screen result panel — keep
 `AirwaysViewModel`'s existing panel (files written, feature counts, messages grouped by airway,
@@ -1067,6 +1122,7 @@ Rules that apply to all three:
 | AIRAC: previous cycle selectable; effective date follows | 7.2 |
 | AIRAC: remove APRA verification | 7.2 |
 | **[OWNER]** Airways is the only sub-service; strip the rest | 1.3, 0.5, 7.3 |
+| **[OWNER]** AIRAC Service screen rebuilt as tabs; catalogue keeps unimplemented sub-services (17 Sep 2026) | 1.3 (amended), 5.2, 7.3, 7.9 |
 | AIRAC: no "Alias & Reference" output family | 7.3, 7.5 |
 | AIRAC: multiline HIGH/LOW + DESIGNATION descriptions | 7.4 |
 | AIRAC: feb.* properties description (verbatim) | 7.4 |
@@ -1113,7 +1169,7 @@ Every decision below is settled. Where one contradicts an earlier draft, this ta
 | Map screen | **Stays a Service**: view GeoJSON + manage the default ROI; everything else deleted (Phase 8) |
 | Alias file name | **`Airways.txt`** (3.5) |
 | FeBuddyWPF / WPF / WPFUI | **Delete** (0.1) |
-| Other sub-services | **Airways only**; strip all references (1.3) |
+| Other sub-services | **Airways is the only backend**; the catalogue also lists Airports and Departures as tabs that produce nothing (1.3, amended 17 Sep 2026) |
 | Parser-dependent controls | **Wait for the parse** (2.5) |
 | Cycle readiness | **Wait for all *available* cycles**, not per-cycle unlock (2.5) |
 | Border crossings | **Blank `FROM_PT_TYPE` = border crossing, not an unresolved point** (3.2b) |
@@ -1130,7 +1186,7 @@ Every decision below is settled. Where one contradicts an earlier draft, this ta
 **None.** Every question raised during planning has been answered. If something in this plan
 turns out to be ambiguous during implementation, raise it rather than guessing — particularly anything
 touching rule 1.1 (Airways stays inside AIRAC Service) or rule 1.3 (Airways is the only
-sub-service), since both are easy to erode accidentally.
+sub-service with a backend), since both are easy to erode accidentally.
 
 ---
 
@@ -1142,7 +1198,9 @@ sub-service), since both are easy to erode accidentally.
    normalization, degenerate antimeridian geometry, message levels, designation filtering,
    alias ROI scope, and coordinate precision.
 2. No `FeBuddy.Wpf` type outside the AIRAC Service screen references an Airways library type, and
-   no nav item named "Airways" exists.
+   no nav item named "Airways" exists. The AIRAC Service screen is tabbed (5.2): General, one tab
+   per selected sub-service, Review. Unimplemented sub-services are visible as tabs that state
+   they are not built and contribute nothing to a run (1.3).
 3. Launch on a clean machine probes, downloads and parses every **published** cycle among
    previous/current/next, narrates each step in the Dashboard activity log, and unlocks the
    service once all available cycles are ready. A next cycle that is not yet published is shown

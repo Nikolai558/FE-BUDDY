@@ -9,13 +9,15 @@ have landed - where this README and that plan disagree, the plan wins. No screen
 shows sample data.
 
 - references `FEBuddyLibrary`; no other NuGet packages - the MVVM helpers
-  (`ObservableObject`, `RelayCommand`, `SubServiceSettingsViewModel`), the toast
-  store, `Links`, `BrowserLauncher` and the value converters live in
-  `Infrastructure/`
+  (`ObservableObject`, `RelayCommand`, `SubServiceSettingsViewModel`), the tab
+  model for a first-tier service screen, the toast store, `Links`,
+  `BrowserLauncher` and the value converters live in `Infrastructure/`
 - **Airways is a sub-service of AIRAC Service**, not a top-level screen
   (remediation plan rule 1.1). The library code is
-  `FEBuddyLibrary.Services.Airac.Airways`; the GUI reaches it only through the
-  AIRAC Services screen.
+  `FEBuddyLibrary.Services.Airac.Airways`; the GUI reaches it only as a tab on the
+  AIRAC Services screen. It is the only sub-service with a backend (rule 1.3) -
+  the catalogue also lists Airports and Departures, which open a tab and produce
+  nothing.
 - On launch, `App.xaml.cs` starts `AppLog`'s file sink then runs
   `LaunchSequence` off the UI thread: clear `%TEMP%\FE-Buddy`, read
   `UserConfig.json`, UTC/internet check, version check, the AIRAC data pipeline
@@ -32,7 +34,9 @@ Theme/                design system - the only place colours, type and control
   Icons.xaml            Segoe Fluent Icons glyph code-points
   Controls.Buttons.xaml
   Controls.Buttons.xaml  Primary/Ghost/Subtle, Ghost.Toggle, Card.Toggle, caption
-  Controls.Inputs.xaml   Pill.Radio, Switch, Field, Progress
+  Controls.Inputs.xaml   Pill.Radio, Switch, Field, Progress; the themed ComboBox
+                         is implicit, so every dropdown gets the dark popup and the
+                         drop-down wheel scrolling without asking for a style
   Controls.Surfaces.xaml Card, Divider, Chip, nav row
   Controls.Chrome.xaml   implicit ScrollBar (thin, theme-coloured) + ToolTip
                          (dark rounded popover, soft shadow, fade-in)
@@ -40,13 +44,18 @@ Theme/                design system - the only place colours, type and control
 
 Controls/             SectionHeader, StatTile, MapCanvas, RoiEditor
 Infrastructure/       ObservableObject, RelayCommand, SubServiceSettingsViewModel,
+                      the tab model (TabbedServiceViewModel, ServiceTabViewModel,
+                      SubServiceDescriptor, SubServiceSelection,
+                      ServiceReviewTabViewModel, PlaceholderSubServiceViewModel),
                       Toast, Links, BrowserLauncher, converters
 Map/                  GeoJSON reader (System.Text.Json), Web-Mercator, layer model
 Assets/               us-states.json (reference geography, not sample data)
-ViewModels/           ShellViewModel + one per screen
-Views/                ShellWindow (custom chrome) + Dashboard, AiracService,
-                      Airways, Map, Settings, Info; UpdateWindow, ConfirmWindow,
-                      RoiPickerWindow
+ViewModels/           ShellViewModel + one per screen; AiracSubServices is the
+                      AIRAC sub-service catalogue
+Views/                ShellWindow (custom chrome) + Dashboard, AiracService and
+                      its tab views (AiracGeneralTabView, AirwaysView,
+                      PlaceholderSubServiceView, ServiceReviewTabView), Map,
+                      Settings, Info; UpdateWindow, ConfirmWindow, RoiPickerWindow
 ```
 
 ### Screens
@@ -56,20 +65,40 @@ Primary nav is **Services only**: Dashboard, AIRAC Service (◷ U+25F7), Map.
 Reference / Placeholder were deleted in Phase 0.5; the top-level Airways nav item
 was removed in Phase 1.1.
 
-- **AIRAC Services** - the cycle menu (Previous / Current / Next, each showing its
-  live `AiracCycleDataCache` state), the facility ARTCC dropdown (from the cycle's
-  parsed `Apt.AptBase`), the sub-service list (**Airways only**, rule 1.3), and the
-  single **Run AIRAC Service** button. It gates on AIRAC-data readiness (2.5).
-  - **Airways sub-service** - a `SubServiceSettingsViewModel` (Save /
-    Undo-last-save / dirty) hosted inside the screen with an
-    `AIRAC Service › Airways` breadcrumb. Output mode + per-kind emit toggles,
-    designation include/exclude (from the cycle's `AWY_ID`s), buffer, verbatim
-    `feb.*` properties, three stacked CRC ERAM blocks, the aliases section
-    (`Airways.txt` + ROI scope), the ROI override (shared `RoiEditor`), and the
-    antimeridian toggle. Run goes through `AiracService.RunAsync`; the result
-    panel shows files + feature counts, the alias line count, the excluded-airway
-    count, and messages grouped by airway and presented by level (info collapsed
-    behind a count).
+- **AIRAC Services** - a tabbed screen: a vertical tab rail down the left, a
+  permanent **General** tab, one tab per selected sub-service, and a **Review** tab
+  at the end. Tabs are data (`TabbedServiceViewModel`), not hand-placed XAML - this
+  service is expected to reach ~20 sub-services. There is no breadcrumb. The screen
+  gates on AIRAC-data readiness (2.5).
+  - **General tab** - the cycle menu (Previous / Current / Next, each showing its
+    live `AiracCycleDataCache` state), the facility ARTCC dropdown (from the
+    cycle's parsed `Apt.AptBase`), and the sub-service picker. Ticking a
+    sub-service means "produce data for this" *and* opens its tab; unticking closes
+    the tab and leaves its saved `UserConfig` subtree untouched, so re-ticking
+    restores it. The selection persists to
+    `Services.AiracService.SelectedSubServices`.
+  - **Sub-service catalogue** - `ViewModels/AiracSubServices.cs`: Airports,
+    Airways, Departures. Only Airways has a backend; the other two open a
+    `PlaceholderSubServiceView` stating their settings are not built yet, and they
+    contribute nothing to a run. Adding one later is a catalogue entry plus a tab
+    view-model.
+  - **Airways tab** - a `SubServiceSettingsViewModel` (Save / Undo-last-save /
+    dirty). Output mode + per-kind emit toggles, designation include/exclude (from
+    the cycle's `AWY_ID`s), buffer, verbatim `feb.*` properties, three stacked CRC
+    ERAM blocks, the aliases section (`Airways.txt` + ROI scope), the ROI override
+    (shared `RoiEditor`), and the antimeridian toggle. Its result panel shows files
+    + feature counts, the alias line count, the excluded-airway count, and messages
+    grouped by airway and presented by level (info collapsed behind a count).
+  - **Review tab** - present once at least one sub-service is selected: every tab's
+    settings as label/value rows, notices naming any unsaved or invalid tab, and the
+    single **Run AIRAC Service** button, which goes through `AiracService.RunAsync`.
+    The live per-process run feed under that button is planned, not built.
+  - **Action bar** - above the tab content and again at the end of it: Previous,
+    Next, Review AIRAC Service settings, Undo last save, Save. Previous / Next /
+    Review offer to save a dirty tab first; cancelling keeps you where you are. The
+    rail dot is amber for unsaved edits and red for a missing or invalid value, and
+    an invalid field highlights in place with the validator's message as its
+    tool-tip.
 - **Dashboard** - the verbatim description box + Discord link + next-cycle line,
   the News feed (from `NewsService`), and a live activity-log viewer over `AppLog`
   (filter chips with counts, minimizable).

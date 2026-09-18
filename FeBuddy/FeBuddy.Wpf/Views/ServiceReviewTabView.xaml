@@ -1,0 +1,78 @@
+<!--
+    ServiceReviewTabView  -  the last tab of a tabbed service: a plain rundown of every
+    other tab's settings, and the button that runs the service. The area under the run
+    button is where the live "what is happening now" feed will go.
+-->
+<UserControl x:Class="FeBuddy.Wpf.Views.ServiceReviewTabView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:infra="clr-namespace:FeBuddy.Wpf.Infrastructure"
+             xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance infra:ServiceReviewTabViewModel}"
+             d:DesignWidth="820" d:DesignHeight="700">
+
+    <UserControl.Resources>
+        <!-- one label / value line -->
+        <DataTemplate x:Key="ReviewRow" DataType="{x:Type infra:ServiceReviewRow}">
+            <Grid Margin="0,3">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="210" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="{Binding Label}" Style="{StaticResource Text.Body}" VerticalAlignment="Top" />
+                <TextBlock Grid.Column="1" Text="{Binding Value}" Style="{StaticResource Text.Body.Strong}"
+                           TextWrapping="Wrap" />
+            </Grid>
+        </DataTemplate>
+
+        <!-- one tab's section -->
+        <DataTemplate x:Key="ReviewSection" DataType="{x:Type infra:ServiceReviewSection}">
+            <Border Style="{StaticResource Card}" Margin="0,0,0,16">
+                <StackPanel>
+                    <ctl:SectionHeader Label="{Binding Title}" />
+                    <TextBlock Text="{Binding Note}" Style="{StaticResource Text.Body}" TextWrapping="Wrap"
+                               Margin="0,0,0,6"
+                               Visibility="{Binding Note, Converter={StaticResource StringToVis}}" />
+                    <ItemsControl ItemsSource="{Binding Rows}" ItemTemplate="{StaticResource ReviewRow}" />
+                </StackPanel>
+            </Border>
+        </DataTemplate>
+    </UserControl.Resources>
+
+    <!-- No ScrollViewer here: the tab host owns the one page-level scroller. -->
+    <StackPanel MaxWidth="820" HorizontalAlignment="Left">
+
+        <TextBlock Style="{StaticResource Text.Body}" TextWrapping="Wrap" Margin="0,0,0,14"
+                   Text="Everything this run will do, at a glance. Change anything by going back to its tab." />
+
+        <!-- something is invalid: the run is blocked until it is fixed -->
+        <Border Style="{StaticResource Card}" Padding="16" Margin="0,0,0,16"
+                Background="{StaticResource Brush.Danger.Soft}"
+                Visibility="{Binding HasBlockingIssue, Converter={StaticResource BoolToVis}}">
+            <TextBlock Text="{Binding BlockingIssue}" Style="{StaticResource Text.Body}" TextWrapping="Wrap" />
+        </Border>
+
+        <!-- something is unsaved: the run saves it first (settings-save contract) -->
+        <Border Style="{StaticResource Card}" Padding="16" Margin="0,0,0,16"
+                Background="{StaticResource Brush.Warn.Soft}"
+                Visibility="{Binding HasUnsavedNotice, Converter={StaticResource BoolToVis}}">
+            <TextBlock Text="{Binding UnsavedNotice}" Style="{StaticResource Text.Body}" TextWrapping="Wrap" />
+        </Border>
+
+        <ItemsControl ItemsSource="{Binding Sections}" ItemTemplate="{StaticResource ReviewSection}" />
+
+        <!-- run -->
+        <Border Style="{StaticResource Card}" Margin="0,4,0,24" Padding="20">
+            <DockPanel>
+                <Button DockPanel.Dock="Right" Style="{StaticResource Button.Primary}"
+                        Content="{Binding RunLabel}" MinWidth="180"
+                        Command="{Binding RunCommand}" />
+                <TextBlock VerticalAlignment="Center" Style="{StaticResource Text.Body}" TextWrapping="Wrap"
+                           Text="Unsaved settings are saved before the run starts." />
+            </DockPanel>
+        </Border>
+    </StackPanel>
+</UserControl>

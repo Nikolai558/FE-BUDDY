@@ -86,7 +86,7 @@ public sealed class AirwaysViewModel : SubServiceSettingsViewModel
     public override string NodePath => Node;
 
     /// <inheritdoc />
-    public override string BreadcrumbTitle => "Airways";
+    public override string Title => "Airways";
 
     public IReadOnlyList<AirwayGeojsonOutputBy> OutputByValues { get; } =
         new[] { AirwayGeojsonOutputBy.HighLow, AirwayGeojsonOutputBy.Designation, AirwayGeojsonOutputBy.None };
@@ -420,7 +420,7 @@ public sealed class AirwaysViewModel : SubServiceSettingsViewModel
         }
 
         RaiseAllSettingProperties();
-        IsDirty = false;
+        ClearDirty();
     }
 
     /// <inheritdoc />
@@ -450,31 +450,94 @@ public sealed class AirwaysViewModel : SubServiceSettingsViewModel
     }
 
     /// <inheritdoc />
-    protected override string? Validate()
+    protected override void Validate(ServiceValidation validation)
     {
         if (OutputBy != AirwayGeojsonOutputBy.None && !EmitLines && !EmitSymbols && !EmitText)
         {
-            return "Lines, Symbols and Text are all off, but Output is not \"None\". Turn at least one back on, or set Output to \"None\".";
+            validation.Add("Lines, Symbols and Text are all off, but Output is not \"None\". Turn at least one back on, or set Output to \"None\".");
         }
 
-        if (OverrideRoi)
+        if (!OverrideRoi)
         {
-            if (!RoiFilter.IsCoordinateValidFormat(SwLat, SwLon, NeLat, NeLon, out string? formatError))
-            {
-                return $"ROI override: {formatError}";
-            }
-
-            if (double.TryParse(SwLat, NumberStyles.Float, CultureInfo.InvariantCulture, out double swLat)
-                && double.TryParse(SwLon, NumberStyles.Float, CultureInfo.InvariantCulture, out double swLon)
-                && double.TryParse(NeLat, NumberStyles.Float, CultureInfo.InvariantCulture, out double neLat)
-                && double.TryParse(NeLon, NumberStyles.Float, CultureInfo.InvariantCulture, out double neLon)
-                && !RoiFilter.IsCoordinatesRelativePositionValid(swLat, swLon, neLat, neLon, out string? positionError))
-            {
-                return $"ROI override: {positionError}";
-            }
+            return;
         }
 
-        return null;
+        // Each corner is reported against its own box so the empty one highlights. The two
+        // library checks below look at the set as a whole, so they stay tab-level messages -
+        // and they only make sense once all four boxes actually have something in them.
+        bool hasAllCorners = validation.RequireValue("SwLat", SwLat, "Southwest latitude is required when overriding the ROI.");
+        hasAllCorners &= validation.RequireValue("SwLon", SwLon, "Southwest longitude is required when overriding the ROI.");
+        hasAllCorners &= validation.RequireValue("NeLat", NeLat, "Northeast latitude is required when overriding the ROI.");
+        hasAllCorners &= validation.RequireValue("NeLon", NeLon, "Northeast longitude is required when overriding the ROI.");
+
+        if (!hasAllCorners)
+        {
+            return;
+        }
+
+        if (!RoiFilter.IsCoordinateValidFormat(SwLat, SwLon, NeLat, NeLon, out string? formatError))
+        {
+            validation.Add($"ROI override: {formatError}");
+            return;
+        }
+
+        if (double.TryParse(SwLat, NumberStyles.Float, CultureInfo.InvariantCulture, out double swLat)
+            && double.TryParse(SwLon, NumberStyles.Float, CultureInfo.InvariantCulture, out double swLon)
+            && double.TryParse(NeLat, NumberStyles.Float, CultureInfo.InvariantCulture, out double neLat)
+            && double.TryParse(NeLon, NumberStyles.Float, CultureInfo.InvariantCulture, out double neLon)
+            && !RoiFilter.IsCoordinatesRelativePositionValid(swLat, swLon, neLat, neLon, out string? positionError))
+        {
+            validation.Add($"ROI override: {positionError}");
+        }
+    }
+
+    // ================= review =================
+
+    /// <summary>
+    /// This tab's contribution to the Review tab: one section spelling out, in plain words, what
+    /// the current settings will actually produce, so the user can check the run without walking
+    /// back through every control.
+    /// </summary>
+    /// <returns>A single <b>Airways</b> section, its rows in display order.</returns>
+    public override IReadOnlyList<ServiceReviewSection> BuildReviewSummary()
+    {
+        List<string> fileKinds = new();
+        if (EmitLines) fileKinds.Add("Lines");
+        if (EmitSymbols) fileKinds.Add("Symbols");
+        if (EmitText) fileKinds.Add("Text");
+
+        string febProperties = IncludeFebCustomProperties
+            ? IncludeAirwayWaypointIds ? "Yes, with waypoint IDs" : "Yes"
+            : "No";
+
+        string aliasFile = GenerateAliasFile
+            ? AliasRoiAirwaysOnly ? "Airways.txt, ROI airways only" : "Airways.txt, all FAA airways"
+            : "No";
+
+        // Before a cycle is parsed the toggle list is empty, which would make the review claim
+        // "none excluded" when the user has exclusions saved. Fall back to what is on disk.
+        string excluded = Designations.Count > 0
+            ? string.Join(", ", Designations.Where(d => !d.Included).Select(d => d.Designation))
+            : string.Join(", ", ParseExcludedFromConfig().OrderBy(d => d, StringComparer.OrdinalIgnoreCase));
+
+        string regionOfInterest = OverrideRoi
+            ? $"Override: SW {SwLat}, {SwLon} / NE {NeLat}, {NeLon}"
+            : RoiFallbackHint;
+
+        ServiceReviewRow[] rows =
+        {
+            new ServiceReviewRow("GeoJSON output", OutputBy.ToString()),
+            new ServiceReviewRow("File kinds", fileKinds.Count > 0 ? string.Join(", ", fileKinds) : "none"),
+            new ServiceReviewRow("Buffer waypoints", BufferAirwayWaypoints ? "Yes" : "No"),
+            new ServiceReviewRow("FE-Buddy properties", febProperties),
+            new ServiceReviewRow("CRC ERAM defaults", IncludeCrcEramPropertyDefaults ? "Yes" : "No"),
+            new ServiceReviewRow("Alias file", aliasFile),
+            new ServiceReviewRow("Excluded designations", string.IsNullOrEmpty(excluded) ? "none" : excluded),
+            new ServiceReviewRow("Region of interest", regionOfInterest),
+            new ServiceReviewRow("Split at antimeridian", SplitAtAntimeridian ? "Yes" : "No"),
+        };
+
+        return new[] { new ServiceReviewSection("Airways", rows) };
     }
 
     // ================= helpers =================

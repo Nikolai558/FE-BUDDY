@@ -1,7 +1,7 @@
 <!--
-    AirwaysView  -  the Airways sub-service page, hosted inside the AIRAC Service
-    screen (remediation plan Phase 7). Its own settings menu (Save / Undo) plus
-    the run result panel. The run is launched by the parent's Run AIRAC Service.
+    AirwaysView  -  the Airways sub-service tab inside the AIRAC Service screen.
+    Save / Undo / Previous / Next / Review come from the tab host's shared action
+    bar, and the tab host owns the page's single scroller.
 -->
 <UserControl x:Class="FeBuddy.Wpf.Views.AirwaysView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -12,6 +12,7 @@
              xmlns:m="clr-namespace:FeBuddy.Wpf.ViewModels.Models"
              xmlns:awy="clr-namespace:FEBuddyLibrary.Models.Services.Airac.Airways;assembly=FEBuddyLibrary"
              xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
+             xmlns:infra="clr-namespace:FeBuddy.Wpf.Infrastructure"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance vm:AirwaysViewModel, IsDesignTimeCreatable=True}"
              d:DesignWidth="900" d:DesignHeight="1200">
@@ -89,23 +90,13 @@
         </DataTemplate>
     </UserControl.Resources>
 
-    <!-- No ScrollViewer here: this sub-service page is hosted inside
-         AiracServiceView's single page-level ScrollViewer (theme fixes P3a).
+    <!-- No ScrollViewer here: the tab host owns the one page-level scroller
+         that every sub-service tab is laid out inside (theme fixes P3a).
          A second scroller stole the wheel and hid the lower sections. -->
     <StackPanel MaxWidth="820" HorizontalAlignment="Left">
 
-        <!-- ============ save / undo bar ============ -->
-            <DockPanel Margin="0,0,0,10">
-                <Button DockPanel.Dock="Right" Style="{StaticResource Button.Ghost}" Content="Undo last save"
-                        Command="{Binding UndoLastSaveCommand}" Margin="8,0,0,0" />
-                <Button DockPanel.Dock="Right" Style="{StaticResource Button.Primary}" Content="Save"
-                        Command="{Binding SaveCommand}" MinWidth="90" />
-                <TextBlock VerticalAlignment="Center" Style="{StaticResource Text.Caption}"
-                           Text="Unsaved changes" Foreground="{StaticResource Brush.Warn}"
-                           Visibility="{Binding IsDirty, Converter={StaticResource BoolToVis}}" />
-            </DockPanel>
             <TextBlock Text="{Binding ValidationError}" Style="{StaticResource Text.Caption}"
-                       Foreground="{StaticResource Brush.Danger}" TextWrapping="Wrap" Margin="0,0,0,8"
+                       Foreground="{StaticResource Brush.Danger}" TextWrapping="Wrap" Margin="0,0,0,12"
                        Visibility="{Binding ValidationError, Converter={StaticResource StringToVis}}" />
 
             <!-- ============ GeoJSON output ============ -->
@@ -252,13 +243,17 @@
                             </Grid.ColumnDefinitions>
                             <Grid.RowDefinitions><RowDefinition /><RowDefinition /></Grid.RowDefinitions>
                             <TextBlock Text="NE lat" Style="{StaticResource Text.Caption}" VerticalAlignment="Center" Margin="0,0,8,4" />
-                            <TextBox Grid.Column="1" Margin="0,0,12,4" Text="{Binding NeLat, UpdateSourceTrigger=PropertyChanged}" />
+                            <TextBox Grid.Column="1" Margin="0,0,12,4" Text="{Binding NeLat, UpdateSourceTrigger=PropertyChanged}"
+                                     infra:FieldState.Error="{Binding FieldErrors[NeLat]}" />
                             <TextBlock Grid.Column="2" Text="NE lon" Style="{StaticResource Text.Caption}" VerticalAlignment="Center" Margin="0,0,8,4" />
-                            <TextBox Grid.Column="3" Margin="0,0,0,4" Text="{Binding NeLon, UpdateSourceTrigger=PropertyChanged}" />
+                            <TextBox Grid.Column="3" Margin="0,0,0,4" Text="{Binding NeLon, UpdateSourceTrigger=PropertyChanged}"
+                                     infra:FieldState.Error="{Binding FieldErrors[NeLon]}" />
                             <TextBlock Grid.Row="1" Text="SW lat" Style="{StaticResource Text.Caption}" VerticalAlignment="Center" Margin="0,0,8,0" />
-                            <TextBox Grid.Row="1" Grid.Column="1" Margin="0,0,12,0" Text="{Binding SwLat, UpdateSourceTrigger=PropertyChanged}" />
+                            <TextBox Grid.Row="1" Grid.Column="1" Margin="0,0,12,0" Text="{Binding SwLat, UpdateSourceTrigger=PropertyChanged}"
+                                     infra:FieldState.Error="{Binding FieldErrors[SwLat]}" />
                             <TextBlock Grid.Row="1" Grid.Column="2" Text="SW lon" Style="{StaticResource Text.Caption}" VerticalAlignment="Center" Margin="0,0,8,0" />
-                            <TextBox Grid.Row="1" Grid.Column="3" Text="{Binding SwLon, UpdateSourceTrigger=PropertyChanged}" />
+                            <TextBox Grid.Row="1" Grid.Column="3" Text="{Binding SwLon, UpdateSourceTrigger=PropertyChanged}"
+                                     infra:FieldState.Error="{Binding FieldErrors[SwLon]}" />
                         </Grid>
                         <Button Content="Pick on map…" Style="{StaticResource Button.Ghost}" HorizontalAlignment="Left"
                                 Margin="0,8,0,0" Command="{Binding PickRoiOnMapCommand}" />

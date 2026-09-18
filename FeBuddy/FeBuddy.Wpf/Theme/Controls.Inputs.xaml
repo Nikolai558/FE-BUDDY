@@ -14,9 +14,10 @@
     A control that sets its own Style="{StaticResource ...}" (Pill.Radio,
     Nav.Item, LogChip, Segmented) opts out of these automatically.
 
-    ComboBox is the one exception: it needs Style="{StaticResource Themed.ComboBox}"
-    explicitly on every call site (dark sunken box + dark popup, kills the system blue
-    bar) - see the remark on that style below for why it isn't implicit.
+        ComboBox     -> Themed.ComboBox (dark sunken box + dark popup, kills the
+                        system blue bar, and carries the drop-down wheel-scroll
+                        behaviour). The keyed name still works for an explicit
+                        reference; a bare ComboBox now picks it up on its own.
 -->
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -250,7 +251,19 @@
     <!-- ===================== TEXTBOX (implicit) ====================== -->
     <!-- Every bare TextBox is Field; explicit Style="{StaticResource Field}"
          still works for the few call sites that want to be obvious about it. -->
-    <Style TargetType="TextBox" BasedOn="{StaticResource Field}" />
+    <!-- The implicit TextBox style. It also carries the validation-failure look: a box whose
+         infra:FieldState.Error is bound to its tab's FieldErrors[<key>] gets a red edge, a faint
+         red wash and the validator's own message as its tool-tip, so the box that needs fixing is
+         obvious without reading the error list above the form. -->
+    <Style TargetType="TextBox" BasedOn="{StaticResource Field}">
+        <Style.Triggers>
+            <Trigger Property="infra:FieldState.HasError" Value="True">
+                <Setter Property="BorderBrush" Value="{DynamicResource Brush.Danger}" />
+                <Setter Property="Background" Value="{DynamicResource Brush.Danger.Soft}" />
+                <Setter Property="ToolTip" Value="{Binding (infra:FieldState.Error), RelativeSource={RelativeSource Self}}" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
 
     <!-- ===================== CHECKBOX (implicit) ===================== -->
     <Style TargetType="CheckBox">
@@ -389,10 +402,14 @@
     </Style>
     <Style TargetType="ComboBoxItem" BasedOn="{StaticResource Themed.ComboBoxItem}" />
 
-    <!-- Applied explicitly (Style="{StaticResource Themed.ComboBox}") on every call site,
-         unlike the implicit TextBox/CheckBox/RadioButton styles above - kept explicit mostly
-         so it reads the same way the fix for it had to be found: by comparing a working
-         explicit reference against a not-yet-fixed implicit one. -->
+    <!-- Keyed AND implicit (see the BasedOn style right after it): every ComboBox in the app
+         gets this template, its dark popup and the drop-down wheel-scroll behaviour without
+         having to remember the Style= reference. A new drop-down added later therefore cannot
+         silently fall back to the OS look, and cannot miss the drop-down scrolling fix.
+         ScrollViewer.CanContentScroll is set here rather than inherited from the OS theme style
+         because ComboBoxDropDownFocus reads it to decide whether the list's VerticalOffset is
+         measured in items or in pixels - leaving it implicit is what made a single wheel notch
+         jump the whole list. -->
     <Style x:Key="Themed.ComboBox" TargetType="ComboBox">
         <Setter Property="FontFamily" Value="{DynamicResource Font.Body}" />
         <Setter Property="FontSize" Value="13" />
@@ -407,6 +424,7 @@
         <Setter Property="ItemContainerStyle" Value="{StaticResource Themed.ComboBoxItem}" />
         <Setter Property="infra:ComboBoxDropDownFocus.Enable" Value="True" />
         <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled" />
+        <Setter Property="ScrollViewer.CanContentScroll" Value="True" />
         <Setter Property="TextElement.Foreground" Value="{DynamicResource Brush.Text.Primary}" />
         <Setter Property="Template">
             <Setter.Value>
@@ -481,6 +499,15 @@
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
+        <Style.Triggers>
+            <!-- Same validation-failure look as a TextBox: the facility picker is a required
+                 field, so it has to be able to say so the same way every other box does. -->
+            <Trigger Property="infra:FieldState.HasError" Value="True">
+                <Setter Property="BorderBrush" Value="{DynamicResource Brush.Danger}" />
+                <Setter Property="Background" Value="{DynamicResource Brush.Danger.Soft}" />
+                <Setter Property="ToolTip" Value="{Binding (infra:FieldState.Error), RelativeSource={RelativeSource Self}}" />
+            </Trigger>
+        </Style.Triggers>
         <Style.Resources>
             <!-- last-resort: any stray system-drawn part stays on-theme -->
             <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="#24FDC518" />
@@ -488,6 +515,8 @@
             <SolidColorBrush x:Key="{x:Static SystemColors.WindowBrushKey}" Color="#0F1A26" />
         </Style.Resources>
     </Style>
+
+    <Style TargetType="ComboBox" BasedOn="{StaticResource Themed.ComboBox}" />
 
     <!-- ============================ PROGRESS =========================== -->
     <Style x:Key="Progress" TargetType="ProgressBar">

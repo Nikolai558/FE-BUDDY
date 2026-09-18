@@ -161,6 +161,87 @@ public sealed class LaunchServicesTests : IDisposable
 		Assert.Equal("3.2.0", result.LatestVersion);
 	}
 
+	/// <summary>
+	/// A development build newer than every public release (e.g. this branch's 3.0.0 against the
+	/// real repo's current 2.9.x releases) reports <see cref="VersionCheckResult.IsAheadOfLatestRelease"/>,
+	/// not <see cref="VersionCheckResult.UpdateAvailable"/> - it must never suggest "downgrading" to
+	/// the latest public release.
+	/// </summary>
+	[Fact]
+	public async Task VersionCheck_CurrentAheadOfLatestRelease_ReportsAhead()
+	{
+		const string releasesJson = """
+		[
+		  { "tag_name": "v2.9.1-alpha.1", "prerelease": true,  "draft": false },
+		  { "tag_name": "v2.9.0", "prerelease": false, "draft": false }
+		]
+		""";
+
+		using HttpClient client = new(new StubHttpHandler(_ => new HttpResponseMessage(HttpStatusCode.OK)
+		{
+			Content = new StringContent(releasesJson),
+		}));
+
+		VersionCheckResult result = await VersionCheck.RunAsync("3.0.0", UpdateChannel.Stable, hasInternetConnection: true, client);
+
+		Assert.True(result.CheckSucceeded);
+		Assert.False(result.UpdateAvailable);
+		Assert.True(result.IsAheadOfLatestRelease);
+		Assert.Equal("2.9.0", result.LatestVersion);
+	}
+
+	/// <summary>
+	/// An unauthenticated failure (e.g. the repo requires auth to be visible) retries once with
+	/// <see cref="GitHubAuth.EnvironmentVariableName"/> when it's set, and succeeds off that retry.
+	/// </summary>
+	[Fact]
+	public async Task VersionCheck_UnauthenticatedFails_RetriesWithToken()
+	{
+		const string releasesJson = """
+		[
+		  { "tag_name": "v3.1.0", "prerelease": false, "draft": false }
+		]
+		""";
+
+		Environment.SetEnvironmentVariable(GitHubAuth.EnvironmentVariableName, "test-token");
+		try
+		{
+			using HttpClient client = new(new StubHttpHandler(request =>
+				request.Headers.Authorization is not null
+					? new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(releasesJson) }
+					: new HttpResponseMessage(HttpStatusCode.NotFound)));
+
+			VersionCheckResult result = await VersionCheck.RunAsync("3.0.0", UpdateChannel.Stable, hasInternetConnection: true, client);
+
+			Assert.True(result.CheckSucceeded);
+			Assert.True(result.UpdateAvailable);
+			Assert.Equal("3.1.0", result.LatestVersion);
+		}
+		finally
+		{
+			Environment.SetEnvironmentVariable(GitHubAuth.EnvironmentVariableName, null);
+		}
+	}
+
+	/// <summary>With no token set, an unauthenticated failure is reported as-is - no retry is attempted.</summary>
+	[Fact]
+	public async Task VersionCheck_UnauthenticatedFails_NoTokenSet_ReportsFailureWithoutRetrying()
+	{
+		Environment.SetEnvironmentVariable(GitHubAuth.EnvironmentVariableName, null);
+
+		int callCount = 0;
+		using HttpClient client = new(new StubHttpHandler(_ =>
+		{
+			callCount++;
+			return new HttpResponseMessage(HttpStatusCode.NotFound);
+		}));
+
+		VersionCheckResult result = await VersionCheck.RunAsync("3.0.0", UpdateChannel.Stable, hasInternetConnection: true, client);
+
+		Assert.False(result.CheckSucceeded);
+		Assert.Equal(1, callCount);
+	}
+
 	/// <summary><see cref="VersionCheckResult.ParseChannel"/> is case-insensitive and defaults to Stable.</summary>
 	[Theory]
 	[InlineData("Stable", UpdateChannel.Stable)]

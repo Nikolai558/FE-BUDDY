@@ -257,6 +257,14 @@ public sealed class ShellViewModel : ObservableObject
             UpdateTooltipBody = $"You are on v{version.CurrentVersion.TrimStart('v', 'V')}. Click the version to review and update.";
             VersionBrushKey = _updateDeclinedThisSession ? "Brush.Warn" : "Brush.Accent.Text";
         }
+        else if (version.IsAheadOfLatestRelease)
+        {
+            UpdateTooltipTitle = "Running a development build";
+            UpdateTooltipBody = version.LatestVersion is not null
+                ? $"Ahead of the latest published v{version.LatestVersion}."
+                : string.Empty;
+            VersionBrushKey = "Brush.Accent.Text";
+        }
         else
         {
             UpdateTooltipTitle = "You are running the latest version.";
@@ -329,6 +337,7 @@ public sealed class ShellViewModel : ObservableObject
             null => new HealthRow("Updates", "checking…", StatusKind.Warn),
             { CheckSucceeded: false } => new HealthRow("Updates", "state unknown (offline)", StatusKind.Warn),
             { UpdateAvailable: true } v => new HealthRow("Updates", $"v{v.LatestVersion} available", StatusKind.Warn),
+            { IsAheadOfLatestRelease: true } => new HealthRow("Updates", "dev build — ahead of release", StatusKind.Ok),
             _ => new HealthRow("Updates", "latest version", StatusKind.Ok),
         });
 

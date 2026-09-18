@@ -61,7 +61,7 @@ public sealed class SettingsViewModel : ObservableObject
         CheckNowCommand = new RelayCommand(() => { Toast.Info("Checking…", "Contacting the version service."); _ = AppEnvironment.RecheckAsync(); },
             () => AppEnvironment.HasInternetConnection);
         RollbackCommand = new RelayCommand(() =>
-            BrowserLauncher.Open("https://github.com/Nikolai558/FE-Buddy-DEV/releases"));
+            BrowserLauncher.Open("https://github.com/Nikolai558/FE-BUDDY/releases"));
         BrowseOutputCommand = new RelayCommand(BrowseOutput);
         SetPrecisionCommand = new RelayCommand<string>(p => { if (int.TryParse(p, out int n)) CoordinatePrecision = n; });
         EditRoiCommand = new RelayCommand(EditRoi);

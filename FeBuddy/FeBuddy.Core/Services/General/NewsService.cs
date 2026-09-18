@@ -1,4 +1,5 @@
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Reflection;
 using System.Text.RegularExpressions;
 
@@ -12,12 +13,33 @@ namespace FeBuddy.Core.Services.General;
 /// for display on the Dashboard and reports how many are newer than the user last saw
 /// (remediation plan 6.1).
 /// </summary>
+/// <remarks>
+/// News.md lives in this repo (<c>FE-Buddy-DEV</c>), which is private - unlike
+/// <see cref="VersionCheck"/> (which checks the public FE-BUDDY repo's releases), this fetch is
+/// expected to need authentication. It still tries the plain unauthenticated raw URL first (so
+/// it starts working for free the moment this repo ever goes public), and only on failure - and
+/// only if <see cref="GitHubAuth.EnvironmentVariableName"/> is set - retries once via GitHub's
+/// Contents API with that token attached. A private repo's raw content isn't reliably reachable
+/// through raw.githubusercontent.com even with a token, so the authenticated retry uses the
+/// documented API endpoint instead (same reasoning as <c>UpdateInstaller</c>'s asset-download
+/// fallback in the FE-BUDDY repo).
+/// </remarks>
 public static class NewsService
 {
 	private const string LogSource = "News";
 
-	/// <summary>The raw News markdown URL on GitHub (used when online).</summary>
+	// Points at main, which is where News.md is expected to live once Kickstart merges (imminent
+	// as of this writing). If this ever 404s the way it briefly did mid-Kickstart, check whether
+	// the branch holding the current FeBuddy.Core/News.md path has actually landed on main yet.
+
+	/// <summary>The raw News markdown URL on GitHub (used when online, unauthenticated).</summary>
 	public const string RawUrl = "https://raw.githubusercontent.com/Nikolai558/FE-Buddy-DEV/main/FeBuddy/FeBuddy.Core/News.md";
+
+	/// <summary>
+	/// The authenticated fallback: GitHub's Contents API, which honors a bearer token for a
+	/// private repo's file content when asked for the raw representation.
+	/// </summary>
+	private const string ContentsApiUrl = "https://api.github.com/repos/Nikolai558/FE-Buddy-DEV/contents/FeBuddy/FeBuddy.Core/News.md?ref=main";
 
 	/// <summary>The human-facing News page the News button opens in a browser.</summary>
 	public const string PageUrl = "https://github.com/Nikolai558/FE-Buddy-DEV/blob/main/FeBuddy/FeBuddy.Core/News.md";
@@ -73,9 +95,10 @@ public static class NewsService
 			newCount = posts.Count(p => p.Id.CompareTo(lastSeen) > 0);
 		}
 
+		string source = fromNetwork ? "GitHub" : "the bundled copy (GitHub unreachable)";
 		AppLog.Info(LogSource, newCount > 0
-			? $"{newCount} unread News post(s); newest is {latest}."
-			: $"News is up to date (newest {latest}).");
+			? $"{newCount} unread News post(s) from {source}; newest is {latest}."
+			: $"News is up to date (newest {latest}) - from {source}.");
 
 		return new NewsCheckResult(posts, latest, newCount, ParseSucceeded: true, fromNetwork);
 	}
@@ -172,12 +195,24 @@ public static class NewsService
 				client.DefaultRequestHeaders.UserAgent.ParseAdd("FE-Buddy");
 			}
 
-			string text = await client.GetStringAsync(RawUrl, cancellationToken).ConfigureAwait(false);
+			(string? text, string? failureReason) = await TryFetchAsync(client, RawUrl, token: null, cancellationToken).ConfigureAwait(false);
+
+			if (text is null)
+			{
+				string? token = GitHubAuth.GetOptionalToken();
+				if (token is not null)
+				{
+					AppLog.Info(LogSource, $"Unauthenticated News fetch failed ({failureReason}); News.md lives in the private FE-Buddy-DEV repo, retrying with {GitHubAuth.EnvironmentVariableName}.");
+					(text, failureReason) = await TryFetchAsync(client, ContentsApiUrl, token, cancellationToken).ConfigureAwait(false);
+				}
+			}
 
 			if (!string.IsNullOrWhiteSpace(text))
 			{
 				return (text, true);
 			}
+
+			AppLog.Info(LogSource, $"Could not fetch News from GitHub ({failureReason}); using the bundled copy.");
 		}
 		catch (Exception ex)
 		{
@@ -192,5 +227,32 @@ public static class NewsService
 		}
 
 		return (GetBundledMarkdown(), false);
+	}
+
+	/// <summary>
+	/// Sends one News fetch attempt. Never throws on a non-success status - returns
+	/// <see langword="null"/> markdown and a short reason instead, so the caller can decide
+	/// whether to retry.
+	/// </summary>
+	private static async Task<(string? Markdown, string? FailureReason)> TryFetchAsync(
+		HttpClient client, string url, string? token, CancellationToken cancellationToken)
+	{
+		using HttpRequestMessage request = new(HttpMethod.Get, url);
+		if (token is not null)
+		{
+			request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+			// Contents API returns JSON metadata (base64 content) unless explicitly asked for
+			// the raw file body this way.
+			request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github.raw+json"));
+		}
+
+		using HttpResponseMessage response = await client.SendAsync(request, cancellationToken).ConfigureAwait(false);
+		if (!response.IsSuccessStatusCode)
+		{
+			return (null, $"{(int)response.StatusCode} {response.ReasonPhrase}");
+		}
+
+		string text = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+		return string.IsNullOrWhiteSpace(text) ? (null, "empty response") : (text, null);
 	}
 }

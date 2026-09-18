@@ -1,3 +1,6 @@
+using System.Net;
+using System.Net.Http;
+
 using FeBuddy.Core.Models.Services.General;
 using FeBuddy.Core.Services.General;
 
@@ -126,6 +129,63 @@ public sealed class NewsServiceTests : IDisposable
         NewsCheckResult second = await NewsService.CheckAsync(newest, hasInternetConnection: false);
 
         Assert.Equal(0, second.NewPostCount);
+    }
+
+    /// <summary>A reachable GitHub raw fetch is used as-is - no bundled fallback and no retry needed.</summary>
+    [Fact]
+    public async Task CheckAsync_FetchesFromGitHubWhenReachable()
+    {
+        using HttpClient client = new(new StubHttpHandler(_ => new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent(SampleMarkdown),
+        }));
+
+        NewsCheckResult result = await NewsService.CheckAsync(lastOpenPostId: null, hasInternetConnection: true, client);
+
+        Assert.True(result.FromNetwork);
+        Assert.True(result.ParseSucceeded);
+        Assert.Equal("2026-09-02.1", result.LatestPostId!.Value.ToString());
+    }
+
+    /// <summary>
+    /// News.md lives in the private FE-Buddy-DEV repo, so the plain raw URL is expected to fail;
+    /// with FEBUDDY_GITHUB_TOKEN set, the retry via the Contents API succeeds and is used.
+    /// </summary>
+    [Fact]
+    public async Task CheckAsync_UnauthenticatedFails_RetriesWithTokenViaContentsApi()
+    {
+        Environment.SetEnvironmentVariable(GitHubAuth.EnvironmentVariableName, "test-token");
+        try
+        {
+            using HttpClient client = new(new StubHttpHandler(request =>
+                request.Headers.Authorization is not null
+                    ? new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(SampleMarkdown) }
+                    : new HttpResponseMessage(HttpStatusCode.NotFound)));
+
+            NewsCheckResult result = await NewsService.CheckAsync(null, hasInternetConnection: true, client);
+
+            Assert.True(result.FromNetwork);
+            Assert.True(result.ParseSucceeded);
+            Assert.Equal("2026-09-02.1", result.LatestPostId!.Value.ToString());
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(GitHubAuth.EnvironmentVariableName, null);
+        }
+    }
+
+    /// <summary>With no token set, a failed fetch falls back to the bundled copy rather than retrying.</summary>
+    [Fact]
+    public async Task CheckAsync_UnauthenticatedFailsNoToken_FallsBackToBundledCopy()
+    {
+        Environment.SetEnvironmentVariable(GitHubAuth.EnvironmentVariableName, null);
+
+        using HttpClient client = new(new StubHttpHandler(_ => new HttpResponseMessage(HttpStatusCode.NotFound)));
+
+        NewsCheckResult result = await NewsService.CheckAsync(null, hasInternetConnection: true, client);
+
+        Assert.False(result.FromNetwork);
+        Assert.True(result.ParseSucceeded);
     }
 
     [Fact]

@@ -34,6 +34,12 @@ public enum UpdateChannel
 /// <param name="Message">A short human-readable note about the result or the failure.</param>
 /// <param name="LatestReleaseNotes">The GitHub release body for <paramref name="LatestVersion"/>, when available.</param>
 /// <param name="LatestReleaseUrl">The GitHub release page URL for <paramref name="LatestVersion"/>, when available.</param>
+/// <param name="IsAheadOfLatestRelease">
+/// <see langword="true"/> when <paramref name="CurrentVersion"/> is newer than every comparable
+/// release found (e.g. an in-development build ahead of the latest public release). Distinct
+/// from the ordinary "up to date" case (<paramref name="CurrentVersion"/> exactly matches
+/// <paramref name="LatestVersion"/>) so the GUI can say so rather than implying the two match.
+/// </param>
 public record VersionCheckResult(
 	string CurrentVersion,
 	string? LatestVersion,
@@ -42,7 +48,8 @@ public record VersionCheckResult(
 	bool CheckSucceeded,
 	string? Message,
 	string? LatestReleaseNotes = null,
-	string? LatestReleaseUrl = null)
+	string? LatestReleaseUrl = null,
+	bool IsAheadOfLatestRelease = false)
 {
 	/// <summary>
 	/// Parses an <see cref="UpdateChannel"/> from its stored name, falling back to

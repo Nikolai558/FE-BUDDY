@@ -17,6 +17,12 @@
     <TargetFramework>net10.0-windows</TargetFramework>
     <RootNamespace>FeBuddy.Wpf</RootNamespace>
     <AssemblyName>FeBuddy.Wpf</AssemblyName>
+    <!-- 3.0.0 is this branch's target (see docs/Developers/FE-Buddy_3.0_*.md). The -dev suffix
+         shows up in the file's Product version (Explorer > Properties > Details) but is stripped
+         from AssemblyVersion/FileVersion by the SDK, so VersionCheck's numeric comparison against
+         the public FE-BUDDY repo's releases (currently in the 2.9.x range) correctly resolves to
+         "ahead of the latest release" rather than "update available" or "outdated". -->
+    <Version>3.0.0-dev</Version>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <LangVersion>latest</LangVersion>

@@ -1,0 +1,49 @@
+# CI for FE-Buddy-DEV.
+#
+# Verifies that it compiles and the unit tests pass on every push and pull
+# request to main. This is the development repo - unlike FE-BUDDY (the
+# release repo), there is no releases branch and no installer to build here.
+
+name: "CI"
+
+on:
+  workflow_dispatch:
+
+  push:
+    branches: [ main ]
+
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    name: Build
+    runs-on: windows-2025
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '10.x'
+
+      - name: Build solution
+        run: dotnet build FeBuddy/FeBuddy.sln -c Release
+
+  test:
+    name: Test
+    runs-on: windows-2025
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '10.x'
+
+      - name: Test library
+        run: dotnet test FeBuddy/FeBuddy.UnitTests/FeBuddy.UnitTests.csproj -c Release --logger "console;verbosity=normal"

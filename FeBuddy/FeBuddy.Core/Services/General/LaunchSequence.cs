@@ -14,15 +14,15 @@ namespace FeBuddy.Core.Services.General;
 public record LaunchResult(UtcTimeCheckResult Time, VersionCheckResult Version, int TempClearFailures);
 
 /// <summary>
-/// Runs FE-Buddy's launch sequence off the UI thread, in the order set out in
-/// <c>Developer_Notes.md</c> -&gt; LAUNCH PROCESSES. Every step logs its start and outcome
-/// through <see cref="AppLog"/>; a step that fails degrades the feature that depends on it and
-/// is never allowed to block launch.
+/// Runs FE-Buddy's launch sequence off the UI thread (see <c>Developer_Notes.md</c> -&gt;
+/// LAUNCH PROCESSES). Every step logs its start and outcome through <see cref="AppLog"/>; a
+/// step that fails degrades the feature that depends on it and is never allowed to block launch.
 /// </summary>
 /// <remarks>
-/// This is the skeleton. Step 5 (AIRAC data pipeline) and step 6 (News) are wired up in
-/// Phase 2 and Phase 6.1 respectively - here they are logged placeholders so the sequence and
-/// its logging exist end to end first.
+/// Steps run in dependency order, not list order: temp clear and config read first (the
+/// version check and News need the config; the AIRAC download uses the temp folder), then the
+/// UTC time / internet check (AIRAC needs the time, and all three network steps use the
+/// internet flag), then version, AIRAC and News concurrently since none depends on another.
 /// </remarks>
 public static class LaunchSequence
 {
@@ -64,6 +64,34 @@ public static class LaunchSequence
 		AppEnvironment.LaunchUtcSource = time.Source;
 		AppEnvironment.RaiseChanged();
 
+		// Everything below needs the time / internet result above, but none of it needs each
+		// other, so it all starts together. Each task publishes its own result to
+		// AppEnvironment the moment it finishes - a fast check is never held up behind the slow
+		// AIRAC pipeline. RunStepAsync catches every exception, so WhenAll cannot fault.
+		Task<VersionCheckResult> versionTask = CheckVersionAsync(currentVersion, time, progress, cancellationToken);
+		Task airacTask = PrepareAiracAsync(time, progress, cancellationToken);
+		Task<NewsCheckResult> newsTask = CheckNewsAsync(time, progress, cancellationToken);
+
+		await Task.WhenAll(versionTask, airacTask, newsTask).ConfigureAwait(false);
+
+		VersionCheckResult version = versionTask.Result;
+
+		AppEnvironment.LaunchCompleted = true;
+		AppEnvironment.RaiseChanged();
+
+		progress?.Report(new LaunchProgress(LaunchStep.Complete, LaunchStepStatus.Succeeded, "Launch complete"));
+		AppLog.Success(LogSource, "Launch sequence complete.");
+
+		return new LaunchResult(time, version, tempClearFailures);
+	}
+
+	// Step 3 - version: ask GitHub whether a newer release exists on the user's channel.
+	private static async Task<VersionCheckResult> CheckVersionAsync(
+		string currentVersion,
+		UtcTimeCheckResult time,
+		IProgress<LaunchProgress>? progress,
+		CancellationToken cancellationToken)
+	{
 		UpdateChannel channel = VersionCheckResult.ParseChannel(UserConfigFile.GetValue("General.UpdateChannel"));
 
 		VersionCheckResult version = await RunStepAsync(
@@ -74,9 +102,15 @@ public static class LaunchSequence
 
 		AppEnvironment.Version = version;
 		AppEnvironment.RaiseChanged();
+		return version;
+	}
 
-		// Step 5 - AIRAC data pipeline: probe, download and parse previous/current/next.
-		await RunStepAsync(
+	// Step 5 - AIRAC data pipeline: probe, download and parse previous/current/next.
+	private static Task PrepareAiracAsync(
+		UtcTimeCheckResult time,
+		IProgress<LaunchProgress>? progress,
+		CancellationToken cancellationToken) =>
+		RunStepAsync(
 			progress, LaunchStep.PrepareAiracData, "Preparing AIRAC data (download + parse)",
 			async () =>
 			{
@@ -91,11 +125,15 @@ public static class LaunchSequence
 
 				return AiracCycleDataCache.Instance.ComputeReadiness();
 			},
-			defaultValue: () => AiracCycleReadiness.Waiting)
-			.ConfigureAwait(false);
+			defaultValue: () => AiracCycleReadiness.Waiting);
 
-		// Step 6 - News: fetch (GitHub raw when online, bundled copy otherwise), parse, and
-		// count posts newer than General.NewsLastOpen.
+	// Step 6 - News: fetch (GitHub raw when online, bundled copy otherwise), parse, and count
+	// posts newer than General.NewsLastOpen.
+	private static async Task<NewsCheckResult> CheckNewsAsync(
+		UtcTimeCheckResult time,
+		IProgress<LaunchProgress>? progress,
+		CancellationToken cancellationToken)
+	{
 		NewsCheckResult news = await RunStepAsync(
 			progress, LaunchStep.CheckNews, "Checking for news",
 			() => NewsService.CheckAsync(
@@ -107,14 +145,7 @@ public static class LaunchSequence
 
 		AppEnvironment.News = news;
 		AppEnvironment.RaiseChanged();
-
-		AppEnvironment.LaunchCompleted = true;
-		AppEnvironment.RaiseChanged();
-
-		progress?.Report(new LaunchProgress(LaunchStep.Complete, LaunchStepStatus.Succeeded, "Launch complete"));
-		AppLog.Success(LogSource, "Launch sequence complete.");
-
-		return new LaunchResult(time, version, tempClearFailures);
+		return news;
 	}
 
 	private static T RunStep<T>(

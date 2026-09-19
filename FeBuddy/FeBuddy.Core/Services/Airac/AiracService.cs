@@ -11,8 +11,8 @@ namespace FeBuddy.Core.Services.Airac;
 
 /// <summary>
 /// The AIRAC Service orchestrator. The GUI calls this once per "Run AIRAC Service"; it
-/// dispatches to each selected sub-service (today only Airways, rule 1.3) and aggregates the
-/// results.
+/// dispatches to each selected sub-service (Airways is the only one with a backend today) and
+/// aggregates the results.
 /// </summary>
 /// <remarks>
 /// <para>

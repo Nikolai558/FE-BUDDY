@@ -20,9 +20,9 @@ public record LaunchResult(UtcTimeCheckResult Time, VersionCheckResult Version, 
 /// is never allowed to block launch.
 /// </summary>
 /// <remarks>
-/// This is the skeleton. Step 5 (AIRAC data pipeline) and step 6 (News) are wired up in
-/// Phase 2 and Phase 6.1 respectively - here they are logged placeholders so the sequence and
-/// its logging exist end to end first.
+/// Every step is wired to its real service: the temp clear, the saved-settings read, the UTC
+/// clock / internet check, the version check, the AIRAC download-and-parse pipeline
+/// (<see cref="AiracCycleDataCache"/>), and the News check (<see cref="NewsService"/>).
 /// </remarks>
 public static class LaunchSequence
 {

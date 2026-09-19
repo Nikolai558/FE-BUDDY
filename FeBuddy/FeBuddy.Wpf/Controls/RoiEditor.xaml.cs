@@ -95,6 +95,34 @@ public partial class RoiEditor : UserControl
             Map.RoiNorthEast = new GeoPoint(roi.NeLat, roi.NeLon);
             Map.FrameBounds(new GeoBounds(new GeoPoint(roi.SwLat, roi.SwLon), new GeoPoint(roi.NeLat, roi.NeLon)));
         }
+
+        RefreshCopyValue();
+    }
+
+    /// <summary>
+    /// Puts the current corners on the copy button as one line, and disables it while any of
+    /// the four boxes is empty or unparseable - copying half an ROI is never what the user
+    /// wanted.
+    /// </summary>
+    private void RefreshCopyValue()
+    {
+        if (CopyCornersButton is null)
+        {
+            return;   // called from a TextChanged that fired during InitializeComponent
+        }
+
+        if (TryReadCoords(out double swLat, out double swLon, out double neLat, out double neLon))
+        {
+            CopyCornersButton.Value = string.Create(
+                CultureInfo.InvariantCulture,
+                $"SW {swLat:0.######}, {swLon:0.######} / NE {neLat:0.######}, {neLon:0.######}");
+            CopyCornersButton.IsEnabled = true;
+        }
+        else
+        {
+            CopyCornersButton.Value = string.Empty;
+            CopyCornersButton.IsEnabled = false;
+        }
     }
 
     private void OnMapRoiChanged()
@@ -122,6 +150,11 @@ public partial class RoiEditor : UserControl
 
     private void OnCoordTextChanged(object sender, TextChangedEventArgs e)
     {
+        // Before the early-outs below: every path that changes a corner - typing, the map
+        // rubber-band, and seeding from InitialRoi - writes to these boxes, so refreshing here
+        // keeps the copy button in step with all three without a hook in each.
+        RefreshCopyValue();
+
         if (_syncingFromMap || !IsLoaded)
         {
             return;

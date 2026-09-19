@@ -20,10 +20,10 @@ using FeBuddy.Core.Services.General;
 namespace FeBuddy.Wpf.ViewModels;
 
 /// <summary>
-/// The <b>Airways</b> sub-service page, hosted inside the AIRAC Service screen (rule 1.1).
-/// Its own settings menu (with the shared Save / Undo contract) plus the run result panel;
-/// the run itself is launched by the parent's <b>Run AIRAC Service</b> button
-/// (remediation plan Phase 7).
+/// The <b>Airways</b> sub-service tab inside the AIRAC Service screen. Its settings menu (with
+/// the shared Save / Undo contract) plus the run result panel; Save, Undo and navigation come
+/// from the tab host's action bar, and the run is launched by <b>Run AIRAC Service</b> on the
+/// Review tab.
 /// </summary>
 public sealed class AirwaysViewModel : SubServiceSettingsViewModel
 {

@@ -41,14 +41,8 @@
         <Setter Property="SnapsToDevicePixels" Value="True" />
         <Setter Property="VerticalAlignment" Value="Center" />
     </Style>
-    <Style x:Key="Chip.Positive" TargetType="Border" BasedOn="{StaticResource Chip}">
-        <Setter Property="Background" Value="{DynamicResource Brush.Positive.Soft}" />
-    </Style>
     <Style x:Key="Chip.Warn" TargetType="Border" BasedOn="{StaticResource Chip}">
         <Setter Property="Background" Value="{DynamicResource Brush.Warn.Soft}" />
-    </Style>
-    <Style x:Key="Chip.Accent" TargetType="Border" BasedOn="{StaticResource Chip}">
-        <Setter Property="Background" Value="{DynamicResource Brush.Accent.Soft}" />
     </Style>
 
     <!-- Label inside a chip. Set Foreground at the call site to match the chip

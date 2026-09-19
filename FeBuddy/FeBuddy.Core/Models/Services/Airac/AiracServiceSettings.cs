@@ -15,9 +15,10 @@ namespace FeBuddy.Core.Models.Services.Airac;
 /// block means that sub-service was not selected for this run.
 /// </para>
 /// <para>
-/// Only <see cref="Airways"/> exists today (rule 1.3). This record stays shaped so Departure
-/// Procedures, Arrival Procedures, and the rest can be added later as sibling blocks without
-/// changing the orchestrator's contract.
+/// <see cref="Airways"/> is the only sub-service with a backend today; the GUI also lists
+/// sub-services that have none yet, and those never produce a block here. This record stays
+/// shaped so the rest can be added later as sibling blocks without changing the orchestrator's
+/// contract.
 /// </para>
 /// </remarks>
 public sealed record AiracServiceSettings

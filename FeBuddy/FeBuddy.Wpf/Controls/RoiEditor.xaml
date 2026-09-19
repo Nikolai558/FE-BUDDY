@@ -44,6 +44,17 @@
                      dialog has room for pairs, but this control is also embedded in the Map
                      page's 320px sidebar, where a two-pair-per-row layout ran the boxes off the
                      edge. A single column works at any width the control is hosted at. -->
+                <!-- Corner read-out header. The copy button hands the user the four corners as
+                     one line of text - the one copy affordance the Map / ROI screens keep
+                     (remediation plan Phase 8). It disables itself until all four boxes parse. -->
+                <DockPanel Margin="0,0,0,5">
+                    <ctl:CopyButton x:Name="CopyCornersButton" DockPanel.Dock="Right"
+                                    Style="{StaticResource Copy.Button}"
+                                    ToolTip="Copy the four corner coordinates"
+                                    IsEnabled="False" />
+                    <TextBlock Text="CORNERS" Style="{StaticResource Text.Label}" VerticalAlignment="Center" />
+                </DockPanel>
+
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" />

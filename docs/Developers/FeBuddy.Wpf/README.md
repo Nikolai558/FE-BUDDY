@@ -4,17 +4,20 @@ A WPF shell for FE-Buddy 3.0 - a modern re-skin in the style of
 [clevelandcenter.org](https://clevelandcenter.org): dark blue-black surfaces, a
 single amber accent, hairline cards, big display headings over airy body text.
 
-All twelve phases of **`FE-Buddy_3.0_Feedback_Remediation_Plan.md` (repo root)**
+All twelve phases of **`docs/Developers/FE-Buddy_3.0_Feedback_Remediation_Plan.md`**
 have landed - where this README and that plan disagree, the plan wins. No screen
 shows sample data.
 
-- references `FEBuddyLibrary`; no other NuGet packages - the MVVM helpers
+This README lives at `docs/Developers/FeBuddy.Wpf/README.md`; every code path
+below is relative to `FeBuddy/FeBuddy.Wpf/` in the repo unless stated otherwise.
+
+- references `FeBuddy.Core`; no other NuGet packages - the MVVM helpers
   (`ObservableObject`, `RelayCommand`, `SubServiceSettingsViewModel`), the tab
   model for a first-tier service screen, the toast store, `Links`,
   `BrowserLauncher` and the value converters live in `Infrastructure/`
 - **Airways is a sub-service of AIRAC Service**, not a top-level screen
   (remediation plan rule 1.1). The library code is
-  `FEBuddyLibrary.Services.Airac.Airways`; the GUI reaches it only as a tab on the
+  `FeBuddy.Core.Services.Airac.Airways`; the GUI reaches it only as a tab on the
   AIRAC Services screen. It is the only sub-service with a backend (rule 1.3) -
   the catalogue also lists Airports and Departures, which open a tab and produce
   nothing.
@@ -148,12 +151,13 @@ The ruler / measure mode is no longer surfaced.
 
 The design uses **Montserrat** (headings) and **Jost** (body); neither ships with
 Windows, so the app currently falls back to Segoe UI. To use the real faces, drop
-the `.ttf` files in `Assets/Fonts/` and change the two `FontFamily` values at the
-top of `Theme/Typography.xaml` to e.g.
+the `.ttf` files in `FeBuddy/FeBuddy.Wpf/Assets/Fonts/` and change the two
+`FontFamily` values at the top of `FeBuddy/FeBuddy.Wpf/Theme/Typography.xaml` to e.g.
 `pack://application:,,,/Assets/Fonts/#Montserrat`.
 
 ## Run
 
 ```bash
-dotnet run --project FeBuddy.Wpf
+# from the repo root
+dotnet run --project FeBuddy/FeBuddy.Wpf
 ```

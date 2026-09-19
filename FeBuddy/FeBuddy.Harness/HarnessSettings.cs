@@ -8,10 +8,10 @@ namespace FeBuddy.Harness;
 internal static class HarnessSettings
 {
 	/// <summary>Directory containing an unzipped NASR 28-day subscription CSV set.</summary>
-	public const string NasrSourceDirectory = @"D:\Downloads\01_Oct_2026_CSV";
+	public const string NasrSourceDirectory = @"C:\Users\ksand\Downloads\03_Sep_2026_CSV";
 
 	/// <summary>Directory the Airways services write output under (see FE-Buddy_Output/Airways/...).</summary>
-	public const string OutputDirectory = @"D:\Downloads\FE-Buddy-Output";
+	public const string OutputDirectory = @"C:\Users\ksand\Downloads\FE-Buddy-Output";
 
 	/// <summary>Mirrors <c>FeBuddy.Core.Configuration.DevMode.IsEnabled</c> for this run.</summary>
 	public const bool DevMode = true;

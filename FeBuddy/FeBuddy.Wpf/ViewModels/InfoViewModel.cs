@@ -1,24 +1,34 @@
 using System.Collections.ObjectModel;
+using System.Windows.Input;
+
 using FeBuddy.Wpf.Infrastructure;
-using FeBuddy.Wpf.ViewModels.Models;
 
 namespace FeBuddy.Wpf.ViewModels;
 
-/// <summary>Static "about / resources" screen.</summary>
+/// <summary>
+/// SYSTEM ▸ Info: real resource links only (remediation plan Phase 10). The About menu is
+/// gone (redundant with the Dashboard description box); Discord moved to the Dashboard.
+/// </summary>
 public sealed class InfoViewModel : ObservableObject
 {
-    public string AboutBody =>
-        "FE-Buddy helps VATSIM / VATUSA facility engineers keep sector files current: " +
-        "pull the latest FAA NASR cycle, convert legacy video maps, and produce " +
-        "ERAM-ready GeoJSON with efficient LineString handling and namespaced " +
-        "feb.* properties that won't collide with other tools.";
+    /// <summary>One Info resource row.</summary>
+    /// <param name="Title">The link title.</param>
+    /// <param name="Blurb">A one-line description.</param>
+    /// <param name="Url">The link target.</param>
+    public sealed record Resource(string Title, string Blurb, string Url);
 
-    public ObservableCollection<InfoLink> Links { get; } =
+    public InfoViewModel()
+    {
+        OpenCommand = new RelayCommand<string>(BrowserLauncher.Open);
+    }
+
+    /// <summary>Parameter is the URL to open.</summary>
+    public ICommand OpenCommand { get; }
+
+    public ObservableCollection<Resource> Resources { get; } =
     [
-        // Glyphs are Segoe Fluent code-points (see Theme/Icons.xaml).
-        new("", "Manual", "How each tool works, field by field.", "Open manual"),
-        new("", "Change log", "What shipped in every release.", "View releases"),
-        new("", "Discord", "Ask questions and report problems.", "Join server"),
-        new("", "Issues & requests", "Track bugs and feature ideas.", "Open tracker"),
+        new("Manual", "How each tool works, field by field.", Links.Manual),
+        new("Change log", "What shipped in every release.", Links.ChangeLog),
+        new("Issues & requests", "Track bugs and feature ideas.", Links.Issues),
     ];
 }

@@ -1,0 +1,71 @@
+# CodeQL security analysis for FE-Buddy-DEV.
+#
+# Scans C# code on pushes and pull requests to main, as well as on a
+# weekly schedule.
+#
+# Does NOT upload to GitHub's Code Scanning UI - as of GitHub's 2025 security
+# product split, that requires the paid "GitHub Code Security" add-on for
+# private repos (it's still free for public ones). FE-Buddy-DEV is private
+# and temporary - this work eventually merges into the public FE-BUDDY repo -
+# so paying per-committer for a soon-to-be-retired private repo isn't worth
+# it. The scan itself still runs for real; results are published as a
+# downloadable workflow artifact instead of GitHub's Security tab.
+
+name: "CodeQL"
+
+on:
+  workflow_dispatch:
+
+  push:
+    branches: [ main ]
+
+  pull_request:
+    branches: [ main ]
+
+  schedule:
+    - cron: '0 8 * * 1'
+
+jobs:
+  analyze:
+    name: Analyze
+    runs-on: windows-2025
+
+    permissions:
+      actions: read
+      contents: read
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [ 'csharp' ]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '10.x'
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v4
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: autobuild
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v4
+        with:
+          # Code scanning isn't enabled for this private repo (see header
+          # comment) - uploading would just fail the same way it just did.
+          # Produce the SARIF locally instead; the next step publishes it.
+          upload: never
+          output: results
+
+      - name: Publish CodeQL results
+        uses: actions/upload-artifact@v4
+        with:
+          name: codeql-results-${{ matrix.language }}
+          path: results
+          retention-days: 30

@@ -18,10 +18,14 @@
         <ResourceDictionary Source="Controls.Inputs.xaml" />
         <ResourceDictionary Source="Controls.Surfaces.xaml" />
         <ResourceDictionary Source="Controls.Chrome.xaml" />
+        <ResourceDictionary Source="Controls.Window.xaml" />
     </ResourceDictionary.MergedDictionaries>
 
     <!-- Shared value converters, instantiated once here. -->
     <conv:BoolToVisibilityConverter x:Key="BoolToVis" />
+    <conv:InverseBooleanConverter x:Key="InverseBool" />
+    <conv:StringToVisibilityConverter x:Key="StringToVis" />
     <conv:EnumToBooleanConverter x:Key="EnumToBool" />
+    <conv:MarkdownToPlainTextConverter x:Key="MdToText" />
 
 </ResourceDictionary>

@@ -1,0 +1,25 @@
+<!--
+    PlaceholderSubServiceView  -  the tab for a sub-service the user has selected but
+    whose backend does not exist yet. It says so plainly rather than showing controls
+    that would do nothing.
+-->
+<UserControl x:Class="FeBuddy.Wpf.Views.PlaceholderSubServiceView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:infra="clr-namespace:FeBuddy.Wpf.Infrastructure"
+             xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance infra:PlaceholderSubServiceViewModel}"
+             d:DesignWidth="820" d:DesignHeight="200">
+
+    <StackPanel MaxWidth="820" HorizontalAlignment="Left">
+        <Border Style="{StaticResource Card}" Margin="0,0,0,24">
+            <StackPanel>
+                <ctl:SectionHeader Label="NOT BUILT YET" />
+                <TextBlock Text="{Binding Message}" Style="{StaticResource Text.Body}" TextWrapping="Wrap" Margin="0,4,0,0" />
+            </StackPanel>
+        </Border>
+    </StackPanel>
+</UserControl>

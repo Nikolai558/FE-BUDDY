@@ -43,29 +43,20 @@
         <DataTemplate DataType="{x:Type vm:DashboardViewModel}">
             <views:DashboardView />
         </DataTemplate>
-        <DataTemplate DataType="{x:Type vm:AiracViewModel}">
-            <views:AiracView />
+        <DataTemplate DataType="{x:Type vm:AiracServiceViewModel}">
+            <views:AiracServiceView />
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:AirwaysViewModel}">
+            <views:AirwaysView />
         </DataTemplate>
         <DataTemplate DataType="{x:Type vm:MapViewModel}">
             <views:MapView />
-        </DataTemplate>
-        <DataTemplate DataType="{x:Type vm:ConversionsViewModel}">
-            <views:ConversionsView />
-        </DataTemplate>
-        <DataTemplate DataType="{x:Type vm:GeoJsonToolsViewModel}">
-            <views:GeoJsonToolsView />
-        </DataTemplate>
-        <DataTemplate DataType="{x:Type vm:AliasReferenceViewModel}">
-            <views:AliasReferenceView />
         </DataTemplate>
         <DataTemplate DataType="{x:Type vm:SettingsViewModel}">
             <views:SettingsView />
         </DataTemplate>
         <DataTemplate DataType="{x:Type vm:InfoViewModel}">
             <views:InfoView />
-        </DataTemplate>
-        <DataTemplate DataType="{x:Type vm:PlaceholderViewModel}">
-            <views:PlaceholderView />
         </DataTemplate>
 
         <!-- one transient notification (Infrastructure/Toast.cs). Colour + glyph
@@ -196,6 +187,7 @@
                         <Path Data="M9,9 L17,4" Stroke="{StaticResource Brush.Accent}" StrokeThickness="1.4" />
                     </Grid>
 
+                    <!-- Tooltip content is update state only (remediation plan 4.1). -->
                     <TextBlock Text="FE-BUDDY"
                                Margin="10,0,0,0"
                                FontFamily="{StaticResource Font.Display}"
@@ -206,47 +198,52 @@
                                Cursor="Help"
                                ToolTipService.InitialShowDelay="300">
                         <TextBlock.ToolTip>
-                            <StackPanel MaxWidth="260">
-                                <StackPanel Orientation="Horizontal">
-                                    <Ellipse Width="7" Height="7" VerticalAlignment="Center"
-                                             Fill="{DynamicResource Brush.Accent}" />
-                                    <TextBlock Text="FE-Buddy 3.0" Margin="8,0,0,0"
-                                               Style="{StaticResource Text.Body.Strong}" />
-                                </StackPanel>
+                            <StackPanel MaxWidth="280">
+                                <TextBlock Text="{Binding UpdateTooltipTitle}"
+                                           Style="{StaticResource Text.Body.Strong}" />
                                 <TextBlock Style="{StaticResource Text.Caption}" Margin="0,6,0,0"
-                                           Text="Sector-file toolkit for VATSIM / VATUSA facility engineers — NASR pulls, video-map conversions, and ERAM-ready GeoJSON." />
-                                <Border Style="{StaticResource Divider}" Margin="0,10" />
-                                <TextBlock Style="{StaticResource Text.Caption}"
-                                           Foreground="{DynamicResource Brush.Text.Tertiary}"
-                                           Text="Build 3.0.0-dev  ·  30 Aug 2025  ·  .NET 10" />
+                                           TextWrapping="Wrap"
+                                           Text="{Binding UpdateTooltipBody}"
+                                           Visibility="{Binding UpdateTooltipBody, Converter={StaticResource StringToVis}}" />
                             </StackPanel>
                         </TextBlock.ToolTip>
                     </TextBlock>
 
-                    <Border Style="{StaticResource Chip}" Margin="10,0,0,0"
-                            Cursor="Help"
-                            ToolTipService.InitialShowDelay="300">
-                        <TextBlock Style="{StaticResource Chip.Text}"
-                                   Foreground="{StaticResource Brush.Accent.Text}"
-                                   Text="{Binding VersionLabel}" />
-                        <Border.ToolTip>
-                            <StackPanel MaxWidth="260">
-                                <StackPanel Orientation="Horizontal">
-                                    <Ellipse Width="7" Height="7" VerticalAlignment="Center"
-                                             Fill="{DynamicResource Brush.Warn}" />
-                                    <TextBlock Text="Update available" Margin="8,0,0,0"
-                                               Style="{StaticResource Text.Body.Strong}" />
-                                </StackPanel>
-                                <TextBlock Style="{StaticResource Text.Caption}" Margin="0,6,0,0"
-                                           Text="You're on v3.0.0-dev. v3.0.1 is ready on the dev channel." />
-                                <Border Style="{StaticResource Divider}" Margin="0,10" />
-                                <TextBlock Style="{StaticResource Text.Caption}"
-                                           Foreground="{DynamicResource Brush.Text.Tertiary}"
-                                           Text="Settings &#8250; Updates to switch channel or roll back." />
-                            </StackPanel>
-                        </Border.ToolTip>
-                    </Border>
+                    <!-- Version chip is a button: click opens the modal Update window when an
+                         update is available; otherwise it is disabled (remediation plan 4.2). -->
+                    <Button Margin="10,0,0,0"
+                            Command="{Binding OpenUpdateWindowCommand}"
+                            ToolTip="{Binding UpdateTooltipTitle}"
+                            ToolTipService.InitialShowDelay="300"
+                            ToolTipService.ShowOnDisabled="True">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border x:Name="ChipRoot" Style="{StaticResource Chip}">
+                                    <TextBlock x:Name="ChipLabel" Style="{StaticResource Chip.Text}"
+                                               Foreground="{StaticResource Brush.Accent.Text}"
+                                               Text="{Binding VersionText}" />
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsEnabled" Value="True">
+                                        <Setter TargetName="ChipRoot" Property="Cursor" Value="Hand" />
+                                        <Setter TargetName="ChipRoot" Property="Background" Value="{DynamicResource Brush.Warn.Soft}" />
+                                    </Trigger>
+                                    <DataTrigger Binding="{Binding VersionIsWarning}" Value="True">
+                                        <Setter TargetName="ChipLabel" Property="Foreground" Value="{DynamicResource Brush.Warn}" />
+                                    </DataTrigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
                 </StackPanel>
+
+                <!-- AIRAC status indicator, top-centre (remediation plan 4.3). Narrates the
+                     launch pipeline, then settles on the current cycle. -->
+                <TextBlock Grid.Column="1"
+                           Text="{Binding AiracStatus}"
+                           HorizontalAlignment="Center" VerticalAlignment="Center"
+                           FontFamily="{StaticResource Font.Body}" FontSize="12" FontWeight="Medium"
+                           Foreground="{StaticResource Brush.Text.Secondary}" />
 
                 <!-- caption buttons -->
                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,6,0">
@@ -330,6 +327,31 @@
                             </Button>
                         </Grid>
 
+                        <!-- collapsed rail: keep a health signal (P8) - just the coloured dot,
+                             tooltip carries the summary -->
+                        <Grid DockPanel.Dock="Bottom" Margin="0,0,0,16" Height="24"
+                              Visibility="{Binding NavCollapsed, Converter={StaticResource BoolToVis}}">
+                            <Ellipse Width="9" Height="9" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                     ToolTip="{Binding HealthSummary}" ToolTipService.InitialShowDelay="300">
+                                <Ellipse.Style>
+                                    <Style TargetType="Ellipse">
+                                        <Setter Property="Fill" Value="{StaticResource Brush.Text.Tertiary}" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding HealthWorst}" Value="Ok">
+                                                <Setter Property="Fill" Value="{StaticResource Brush.Positive}" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding HealthWorst}" Value="Warn">
+                                                <Setter Property="Fill" Value="{StaticResource Brush.Warn}" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding HealthWorst}" Value="Down">
+                                                <Setter Property="Fill" Value="{StaticResource Brush.Danger}" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Ellipse.Style>
+                            </Ellipse>
+                        </Grid>
+
                         <!-- systems-health widget pinned to the bottom (hidden when collapsed) -->
                         <Grid DockPanel.Dock="Bottom" Margin="14"
                               Visibility="{Binding NavCollapsed, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}">
@@ -368,7 +390,7 @@
                             </ToggleButton>
 
                             <Popup PlacementTarget="{Binding ElementName=HealthButton}" Placement="Top"
-                                   VerticalOffset="-8" HorizontalOffset="0"
+                                   VerticalOffset="-14" HorizontalOffset="0"
                                    IsOpen="{Binding IsChecked, ElementName=HealthButton, Mode=TwoWay}"
                                    StaysOpen="False" AllowsTransparency="True" PopupAnimation="Fade">
                                 <Border Style="{StaticResource Card}" Background="{StaticResource Brush.Panel}"
@@ -409,8 +431,8 @@
                                             </ItemsControl.ItemTemplate>
                                         </ItemsControl>
                                         <Border Style="{StaticResource Divider}" Margin="0,8" />
-                                        <Button Style="{StaticResource Button.Subtle}" Content="Re-check"
-                                                HorizontalAlignment="Left" Margin="-8,0,0,0"
+                                        <Button Style="{StaticResource Button.Ghost}" Content="Re-check"
+                                                HorizontalAlignment="Left"
                                                 Command="{Binding RecheckCommand}" />
                                     </StackPanel>
                                 </Border>
@@ -454,8 +476,7 @@
                                Style="{StaticResource Text.Caption}"
                                VerticalAlignment="Center" />
                     <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
-                        <TextBlock Text="{Binding AiracLabel}" Style="{StaticResource Text.Caption}" />
-                        <TextBlock Text="  ·  " Style="{StaticResource Text.Caption}" />
+                        <!-- The AIRAC readout moved to the top-centre of the border (4.3). -->
                         <TextBlock Text="{Binding ZuluClock}" Style="{StaticResource Text.Caption}"
                                    FontFamily="{StaticResource Font.Mono}"
                                    Foreground="{StaticResource Brush.Text.Secondary}" />

@@ -1,14 +1,15 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!--
-    FeBuddy.Wpf  -  UI prototype / design system
+    FeBuddy.Wpf  -  UI shell, now being grown into the real app.
     ===========================================================================
-    Pure presentation layer. On purpose this project references NOTHING:
-      * no FEBuddyLibrary
-      * no NuGet packages (MVVM helpers and converters are hand-rolled and live
-        under /Infrastructure so the project stays a self-contained shell)
-    The goal is a modern, DRY, well-commented WPF skin that the real app can be
-    grown into or that can be pointed at the library later.
+    Started as a pure presentation layer (no FeBuddy.Core, no NuGet packages -
+    MVVM helpers and converters are hand-rolled and live under /Infrastructure).
+    Most screens are still sample-data-only prototypes.
+
+    The Airways screen is the first real, wired screen: it references
+    FeBuddy.Core directly and calls FeBuddy.Core.Services.Airways.AirwayService.Run.
+    Everything else stays sample data until it is grown the same way.
   -->
 
   <PropertyGroup>
@@ -16,6 +17,12 @@
     <TargetFramework>net10.0-windows</TargetFramework>
     <RootNamespace>FeBuddy.Wpf</RootNamespace>
     <AssemblyName>FeBuddy.Wpf</AssemblyName>
+    <!-- 3.0.0 is this branch's target (see docs/Developers/FE-Buddy_3.0_*.md). The -dev suffix
+         shows up in the file's Product version (Explorer > Properties > Details) but is stripped
+         from AssemblyVersion/FileVersion by the SDK, so VersionCheck's numeric comparison against
+         the public FE-BUDDY repo's releases (currently in the 2.9.x range) correctly resolves to
+         "ahead of the latest release" rather than "update available" or "outdated". -->
+    <Version>3.0.0-dev</Version>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <LangVersion>latest</LangVersion>
@@ -27,9 +34,14 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- Bundled sample data for the map (plain GeoJSON, not code). -->
+    <!-- Reference geography for the Map screen (plain GeoJSON, not code). -->
     <Resource Include="Assets\us-states.json" />
-    <Resource Include="Assets\sample-airways.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The Airways screen is real and calls into the library; every other
+         screen is still sample data and does not need this. -->
+    <ProjectReference Include="..\FeBuddy.Core\FeBuddy.Core.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,0 +1,67 @@
+<infra:ChromeWindow x:Class="FeBuddy.Wpf.Views.UpdateWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:FeBuddy.Wpf.ViewModels"
+        xmlns:infra="clr-namespace:FeBuddy.Wpf.Infrastructure"
+        mc:Ignorable="d"
+        d:DataContext="{d:DesignInstance vm:UpdateWindowViewModel}"
+        Title="Update FE-Buddy"
+        Width="520" SizeToContent="Height"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False"
+        FontFamily="{StaticResource Font.Body}"
+        Background="{StaticResource Brush.Bg.Base}">
+
+    <Border Padding="24">
+        <StackPanel>
+            <TextBlock Text="Update available"
+                       FontFamily="{StaticResource Font.Display}" FontSize="18" FontWeight="Bold"
+                       Foreground="{StaticResource Brush.Text.Primary}" />
+
+            <Grid Margin="0,14,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <TextBlock Grid.Row="0" Grid.Column="0" Text="Installed" Style="{StaticResource Text.Caption}" Margin="0,0,16,4" />
+                <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding CurrentVersion, StringFormat=v{0}}" Style="{StaticResource Text.Body}" Margin="0,0,0,4" />
+
+                <TextBlock Grid.Row="1" Grid.Column="0" Text="Latest" Style="{StaticResource Text.Caption}" Margin="0,0,16,4" />
+                <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding LatestVersion, StringFormat=v{0}}" Style="{StaticResource Text.Body.Strong}" Margin="0,0,0,4" />
+
+                <TextBlock Grid.Row="2" Grid.Column="0" Text="Channel" Style="{StaticResource Text.Caption}" Margin="0,0,16,0" />
+                <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Channel}" Style="{StaticResource Text.Body}" />
+            </Grid>
+
+            <Border Style="{StaticResource Divider}" Margin="0,16" />
+
+            <TextBlock Text="Release notes" Style="{StaticResource Text.Label}" Margin="0,0,0,6" />
+            <ScrollViewer MaxHeight="220" VerticalScrollBarVisibility="Auto"
+                          Background="{StaticResource Brush.Bg.Sunken}"
+                          Padding="12">
+                <TextBlock Text="{Binding ReleaseNotes}" TextWrapping="Wrap"
+                           FontFamily="{StaticResource Font.Mono}" FontSize="12"
+                           Foreground="{StaticResource Brush.Text.Secondary}" />
+            </ScrollViewer>
+
+            <TextBlock Style="{StaticResource Text.Body}" Margin="0,10,0,0" TextWrapping="Wrap"
+                       Text="FE-Buddy installs from an MSI. Download the new installer and run it to update; your settings are kept." />
+
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
+                <Button Content="Later" Style="{StaticResource Button.Ghost}"
+                        Command="{Binding LaterCommand}" MinWidth="88" Margin="0,0,10,0" />
+                <Button Content="Download update" Style="{StaticResource Button.Primary}"
+                        Command="{Binding DownloadCommand}" MinWidth="150" />
+            </StackPanel>
+        </StackPanel>
+    </Border>
+</infra:ChromeWindow>

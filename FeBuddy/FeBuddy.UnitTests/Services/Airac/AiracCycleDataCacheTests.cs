@@ -46,6 +46,147 @@ public sealed class AiracCycleDataCacheTests : IDisposable
 	}
 
 	[Fact]
+	public async Task NextDownload_StartsWhileEarlierCycleIsStillParsing()
+	{
+		TaskCompletionSource releaseCurrentParse = new(TaskCreationOptions.RunContinuationsAsynchronously);
+		TaskCompletionSource previousDownloadStarted = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+		AiracCycleDataCache cache = new(
+			probe: AlwaysPublished,
+			download: (cycle, _) =>
+			{
+				if (cycle.AiracCycleId == Previous.AiracCycleId)
+				{
+					previousDownloadStarted.TrySetResult();
+				}
+
+				return Task.FromResult($@"C:\cache\{cycle.AiracCycleId}");
+			},
+			parse: async (dir, _) =>
+			{
+				if (dir.EndsWith("2610", StringComparison.Ordinal))
+				{
+					await releaseCurrentParse.Task;
+				}
+
+				return new NasrCsvDataCollection();
+			});
+
+		Task prepare = cache.PrepareCyclesAsync(Previous, Current, Next);
+
+		// Current's parse is held open, yet the previous cycle's download must still get going.
+		await previousDownloadStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+		Assert.Equal(CycleDataState.Parsing, cache.GetEntry("2610")!.State);
+		Assert.False(prepare.IsCompleted);
+
+		releaseCurrentParse.SetResult();
+		await prepare.WaitAsync(TimeSpan.FromSeconds(5));
+
+		Assert.Equal(AiracCycleReadiness.Ready, cache.ComputeReadiness());
+	}
+
+	[Fact]
+	public async Task Parses_NeverOverlap_AndRunInPriorityOrder()
+	{
+		int running = 0;
+		int maxRunning = 0;
+		List<string> parseOrder = new();
+
+		AiracCycleDataCache cache = new(
+			probe: AlwaysPublished,
+			download: (cycle, _) => Task.FromResult($@"C:\cache\{cycle.AiracCycleId}"),
+			parse: async (dir, _) =>
+			{
+				int now = Interlocked.Increment(ref running);
+				InterlockedMax(ref maxRunning, now);
+				lock (parseOrder) { parseOrder.Add(Path.GetFileName(dir)); }
+
+				await Task.Delay(30);
+
+				Interlocked.Decrement(ref running);
+				return new NasrCsvDataCollection();
+			});
+
+		await cache.PrepareCyclesAsync(Previous, Current, Next);
+
+		Assert.Equal(1, maxRunning); // memory safeguard: one dataset being built at a time
+		Assert.Equal(new[] { "2610", "2609", "2611" }, parseOrder);
+	}
+
+	[Fact]
+	public async Task GetAsync_ForCycleWaitingForItsParseTurn_DoesNotParseItTwice()
+	{
+		TaskCompletionSource releaseCurrentParse = new(TaskCreationOptions.RunContinuationsAsynchronously);
+		TaskCompletionSource previousDownloaded = new(TaskCreationOptions.RunContinuationsAsynchronously);
+		int previousParseCount = 0;
+
+		AiracCycleDataCache cache = new(
+			probe: AlwaysPublished,
+			download: (cycle, _) =>
+			{
+				if (cycle.AiracCycleId == Previous.AiracCycleId)
+				{
+					previousDownloaded.TrySetResult();
+				}
+
+				return Task.FromResult($@"C:\cache\{cycle.AiracCycleId}");
+			},
+			parse: async (dir, _) =>
+			{
+				if (dir.EndsWith("2610", StringComparison.Ordinal))
+				{
+					await releaseCurrentParse.Task;
+				}
+				else if (dir.EndsWith("2609", StringComparison.Ordinal))
+				{
+					Interlocked.Increment(ref previousParseCount);
+				}
+
+				return new NasrCsvDataCollection();
+			});
+
+		Task prepare = cache.PrepareCyclesAsync(Previous, Current, Next);
+		await previousDownloaded.Task.WaitAsync(TimeSpan.FromSeconds(5));
+
+		// Previous is on disk but its parse is queued behind current's. Asking for it now must
+		// wait on that queued parse rather than start a second one.
+		Task<NasrCsvDataCollection> requested = cache.GetAsync("2609");
+
+		releaseCurrentParse.SetResult();
+		await Task.WhenAll(prepare, requested).WaitAsync(TimeSpan.FromSeconds(5));
+
+		Assert.Equal(1, previousParseCount);
+	}
+
+	[Fact]
+	public async Task FailedParse_DoesNotStallTheParsesQueuedBehindIt()
+	{
+		AiracCycleDataCache cache = new(
+			probe: AlwaysPublished,
+			download: (cycle, _) => Task.FromResult($@"C:\cache\{cycle.AiracCycleId}"),
+			parse: (dir, _) => dir.EndsWith("2609", StringComparison.Ordinal)
+				? Task.FromException<NasrCsvDataCollection>(new InvalidDataException("bad csv"))
+				: Task.FromResult(new NasrCsvDataCollection()));
+
+		await cache.PrepareCyclesAsync(Previous, Current, Next).WaitAsync(TimeSpan.FromSeconds(5));
+
+		Assert.Equal(CycleDataState.Ready, cache.GetEntry("2610")!.State);
+		Assert.Equal(CycleDataState.Failed, cache.GetEntry("2609")!.State);
+		Assert.Equal(CycleDataState.Ready, cache.GetEntry("2611")!.State);
+		Assert.Equal(AiracCycleReadiness.Degraded, cache.ComputeReadiness());
+	}
+
+	private static void InterlockedMax(ref int location, int value)
+	{
+		int seen;
+		do
+		{
+			seen = Volatile.Read(ref location);
+		}
+		while (value > seen && Interlocked.CompareExchange(ref location, value, seen) != seen);
+	}
+
+	[Fact]
 	public async Task ConcurrentGetAsync_DoesNotParseTwice()
 	{
 		int parseCount = 0;

@@ -518,6 +518,46 @@
 
     <Style TargetType="ComboBox" BasedOn="{StaticResource Themed.ComboBox}" />
 
+    <!-- ========================= NUMBER TOGGLE ======================== -->
+    <!-- A small square toggle for picking numbers out of a fixed range (the CRC
+         filters picker). Deliberately tighter than Pill.Toggle: forty-one of these
+         have to sit in a popup without it becoming a wall. -->
+    <Style x:Key="Toggle.Number" TargetType="ToggleButton">
+        <Setter Property="Width" Value="36" />
+        <Setter Property="Height" Value="28" />
+        <Setter Property="Margin" Value="0,0,4,4" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="FontFamily" Value="{DynamicResource Font.Mono}" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Secondary}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ToggleButton">
+                    <Border x:Name="Root"
+                            Background="{DynamicResource Brush.Bg.Sunken}"
+                            BorderBrush="{DynamicResource Brush.Stroke.Strong}"
+                            BorderThickness="1"
+                            CornerRadius="{DynamicResource Radius.Small}"
+                            SnapsToDevicePixels="True">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Root" Property="Background" Value="{DynamicResource Brush.Overlay}" />
+                            <Setter TargetName="Root" Property="BorderBrush" Value="{DynamicResource Brush.Accent.Line}" />
+                        </Trigger>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="Root" Property="Background" Value="{DynamicResource Brush.Accent.Soft}" />
+                            <Setter TargetName="Root" Property="BorderBrush" Value="{DynamicResource Brush.Accent.Line}" />
+                            <Setter Property="Foreground" Value="{DynamicResource Brush.Accent.Text}" />
+                            <Setter Property="FontWeight" Value="Bold" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <!-- ============================ PROGRESS =========================== -->
     <Style x:Key="Progress" TargetType="ProgressBar">
         <Setter Property="Height" Value="6" />

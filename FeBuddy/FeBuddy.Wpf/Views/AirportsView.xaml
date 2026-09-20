@@ -32,8 +32,7 @@
                 <TextBlock Text="{Binding ClassName}" Style="{StaticResource Text.Body.Strong}" VerticalAlignment="Center" />
                 <ComboBox Grid.Column="1" Margin="4,0" ItemsSource="{Binding BcgOptions}" SelectedItem="{Binding Bcg}"
                           ToolTip="BCG group: an integer 1–40." />
-                <TextBox Grid.Column="2" Margin="4,0" Text="{Binding Filters, UpdateSourceTrigger=PropertyChanged}"
-                         ToolTip="Filters: comma-separated integers, each 0–40, at least one entry." />
+                <ctl:FilterPicker Grid.Column="2" Margin="4,0" Value="{Binding Filters, Mode=TwoWay}" />
                 <ComboBox Grid.Column="3" Margin="4,0" ItemsSource="{Binding StyleOptions}" SelectedItem="{Binding Style}"
                           Visibility="{Binding ShowStyle, Converter={StaticResource BoolToVis}}"
                           ToolTip="Style: see the CRC GeoJSON concepts for the allowed values per kind." />

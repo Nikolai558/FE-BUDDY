@@ -2,6 +2,7 @@ using System.Diagnostics;
 
 using FeBuddy.Core.Configuration;
 using FeBuddy.Core.Models.NASR.CSV;
+using FeBuddy.Core.Models.Services.Airac.Airports;
 using FeBuddy.Core.Parsers.NASR.CSV;
 
 namespace FeBuddy.Harness;
@@ -42,6 +43,9 @@ internal static class Program
 
 			var aliasOnlyResult = AirwayAliasRunner.Run(allNasrCsvData);
 			ConsoleReport.PrintAirwayServiceResult("Airways: Alias-only (OutputBy = None)", aliasOnlyResult);
+
+			AirportServiceResult airportResult = AirportRunner.Run(allNasrCsvData);
+			ConsoleReport.PrintAirportServiceResult("Airports: GeoJSON + Alias", airportResult);
 		}
 		catch (Exception ex)
 		{

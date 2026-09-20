@@ -51,4 +51,10 @@ public sealed record AiracServiceSettings
 	/// selected for this run.
 	/// </summary>
 	public IReadOnlyDictionary<string, string>? Airways { get; init; }
+
+	/// <summary>
+	/// The Airports sub-service settings block, or <see langword="null"/> when Airports was not
+	/// selected for this run.
+	/// </summary>
+	public IReadOnlyDictionary<string, string>? Airports { get; init; }
 }

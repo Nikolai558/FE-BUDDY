@@ -1,7 +1,10 @@
 using System.Text.RegularExpressions;
 
 using FeBuddy.Core.Configuration;
+using FeBuddy.Core.Models.Services.Airac.Airports;
 using FeBuddy.Core.Models.Services.Airac.Airways;
+using FeBuddy.Core.Models.Services.General;
+using FeBuddy.Core.Services.General;
 
 namespace FeBuddy.Harness;
 
@@ -51,6 +54,101 @@ internal static class ConsoleReport
 		}
 
 		PrintWarnings(result.Warnings);
+	}
+
+	/// <summary>
+	/// Prints one Airports run: timing, how many airports were built and how many survived ROI
+	/// filtering, every GeoJSON file with its Feature count, the alias file with its command
+	/// count, and the run's messages grouped by level.
+	/// </summary>
+	/// <param name="label">Heading for this run, e.g. "Airports: GeoJSON + Alias".</param>
+	/// <param name="result">What <c>AirportService.Run</c> returned.</param>
+	public static void PrintAirportServiceResult(string label, AirportServiceResult result)
+	{
+		Console.WriteLine();
+		Console.WriteLine($"=== {label} ===");
+		Console.WriteLine($"Elapsed:      {result.Elapsed.TotalMilliseconds:N0} ms");
+		Console.WriteLine($"Airports built: {result.AirportCount:N0}");
+		Console.WriteLine($"Airports in ROI: {result.AirportsInRoiCount:N0}");
+
+		if (result.GeojsonFilesWritten.Count == 0)
+		{
+			Console.WriteLine("GeoJSON files written: (none)");
+		}
+		else
+		{
+			Console.WriteLine($"GeoJSON files written: {result.GeojsonFilesWritten.Count}");
+
+			foreach (string file in result.GeojsonFilesWritten)
+			{
+				int count = result.GeojsonFeatureCountsByFile.TryGetValue(file, out int c) ? c : 0;
+				Console.WriteLine($"  {Path.GetFileName(file)} - {count:N0} feature(s)");
+				Console.WriteLine($"    {file}");
+			}
+		}
+
+		if (result.AliasFilePath is not null)
+		{
+			Console.WriteLine($"Alias file:   {result.AliasFilePath} ({result.AliasCommandCount:N0} command(s))");
+		}
+		else
+		{
+			Console.WriteLine("Alias file:   (not generated)");
+		}
+
+		PrintMessagesByLevel(result.Messages);
+	}
+
+	/// <summary>
+	/// Prints a service's levelled messages grouped by <see cref="LogLevel"/>, most severe
+	/// first. Warnings and errors are listed; the routine levels below them are collapsed to a
+	/// count so a clean run stays readable. As with the airway warnings above, only the first
+	/// few of any group print unless <see cref="DevMode.IsEnabled"/> is set.
+	/// </summary>
+	/// <param name="messages">Every message the service emitted, in the order it emitted them.</param>
+	private static void PrintMessagesByLevel(IReadOnlyList<ServiceMessage> messages)
+	{
+		if (messages.Count == 0)
+		{
+			Console.WriteLine("Messages:     none");
+			return;
+		}
+
+		Console.WriteLine($"Messages:     {messages.Count}");
+
+		bool verbose = DevMode.IsEnabled;
+		const int maxWhenNotVerbose = 3;
+
+		var grouped = messages
+			.GroupBy(m => m.Level)
+			.OrderByDescending(g => g.Key);
+
+		foreach (var group in grouped)
+		{
+			Console.WriteLine($"  [{group.Key}] ({group.Count()})");
+
+			// Warnings and errors are the point of the list, so they always print. Info,
+			// Success and Debug are routine narration and stay behind their count unless
+			// developer mode asks for everything.
+			if (group.Key is not (LogLevel.Warning or LogLevel.Error) && !verbose)
+			{
+				continue;
+			}
+
+			int shown = 0;
+
+			foreach (ServiceMessage message in group)
+			{
+				if (!verbose && shown >= maxWhenNotVerbose)
+				{
+					Console.WriteLine($"    ... and {group.Count() - shown} more (enable DevMode for full detail)");
+					break;
+				}
+
+				Console.WriteLine($"    - [{message.Source}] {message.Text}");
+				shown++;
+			}
+		}
 	}
 
 	private static void PrintWarnings(IReadOnlyList<string> warnings)

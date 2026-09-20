@@ -3,7 +3,9 @@ using System.Diagnostics;
 using FeBuddy.Core.Models.NASR.CSV;
 using FeBuddy.Core.Models.Services.Airac;
 using FeBuddy.Core.Models.Services.General;
+using FeBuddy.Core.Models.Services.Airac.Airports;
 using FeBuddy.Core.Models.Services.Airac.Airways;
+using FeBuddy.Core.Services.Airac.Airports;
 using FeBuddy.Core.Services.Airac.Airways;
 using FeBuddy.Core.Services.General;
 
@@ -78,6 +80,7 @@ public static class AiracService
 		Stopwatch stopwatch = Stopwatch.StartNew();
 		List<ServiceMessage> messages = new();
 		AirwayServiceResult? airwaysResult = null;
+		AirportServiceResult? airportsResult = null;
 
 		if (settings.Airways is { } airwayBlock)
 		{
@@ -99,7 +102,27 @@ public static class AiracService
 				100));
 			AppLog.Success(LogSource, $"Airways complete: {airwaysResult.AirwayCount} airway(s), {airwaysResult.GeojsonFilesWritten.Count} file(s).");
 		}
-		else
+
+		if (settings.Airports is { } airportBlock)
+		{
+			cancellationToken.ThrowIfCancellationRequested();
+
+			AppLog.Info(LogSource, $"AIRAC Service: running Airports for cycle {settings.SelectedCycle.AiracCycleId}, facility {settings.ArtccId}.");
+			progress?.Report(new AiracServiceProgress("Airports", "Building airport GeoJSON and alias output"));
+
+			Dictionary<string, string> block = new(airportBlock, StringComparer.OrdinalIgnoreCase);
+
+			airportsResult = await Task.Run(() => AirportService.Run(nasrData, block), cancellationToken).ConfigureAwait(false);
+
+			messages.AddRange(airportsResult.Messages);
+			progress?.Report(new AiracServiceProgress(
+				"Airports",
+				$"Airports complete: {airportsResult.AirportCount} airport(s), {airportsResult.GeojsonFilesWritten.Count} GeoJSON file(s).",
+				100));
+			AppLog.Success(LogSource, $"Airports complete: {airportsResult.AirportCount} airport(s), {airportsResult.GeojsonFilesWritten.Count} file(s).");
+		}
+
+		if (airwaysResult is null && airportsResult is null)
 		{
 			const string message = "AIRAC Service run requested with no sub-service selected; nothing to do.";
 			messages.Add(new ServiceMessage(LogLevel.Warning, LogSource, message));
@@ -113,6 +136,7 @@ public static class AiracService
 			Messages = messages,
 			Elapsed = stopwatch.Elapsed,
 			Airways = airwaysResult,
+			Airports = airportsResult,
 			ExcludedAirwayIds = airwaysResult?.ExcludedAirwayIds ?? Array.Empty<string>(),
 		};
 	}

@@ -10,7 +10,7 @@ internal static class HarnessSettings
 	/// <summary>Directory containing an unzipped NASR 28-day subscription CSV set.</summary>
 	public const string NasrSourceDirectory = @"C:\Users\ksand\Downloads\03_Sep_2026_CSV";
 
-	/// <summary>Directory the Airways services write output under (see FE-Buddy_Output/Airways/...).</summary>
+	/// <summary>Directory the services write output under (see FE-Buddy_Output/Airways/..., FE-Buddy_Output/Airports/...).</summary>
 	public const string OutputDirectory = @"C:\Users\ksand\Downloads\FE-Buddy-Output";
 
 	/// <summary>Mirrors <c>FeBuddy.Core.Configuration.DevMode.IsEnabled</c> for this run.</summary>
@@ -66,6 +66,57 @@ internal static class HarnessSettings
 	}
 
 	/// <summary>
+	/// Builds the raw settings dictionary for <c>AirportService.Run</c>. Every key the Airports
+	/// settings parser recognizes is listed below with its default value, so any of them can be
+	/// flipped here without hunting through <c>AirportSettingsParser</c>.
+	/// </summary>
+	public static Dictionary<string, string> AirportSettings()
+	{
+		Dictionary<string, string> settings = new()
+		{
+			{ "OutputDirectory", OutputDirectory },
+
+			// Which of the two outputs run. Turning both off is rejected by the parser, as is
+			// GenerateGeojson = "Y" with all three Emit* keys off.
+			{ "GenerateGeojson", "Y" },
+			{ "GenerateAliasFile", "Y" },
+
+			// One file per kind; each can be turned off independently.
+			{ "EmitAirportSymbols", "Y" },   // Airports Symbol GeoJSON
+			{ "EmitAirportText", "Y" },      // Airports Text GeoJSON
+			{ "EmitRunwayLines", "Y" },      // Runways Line GeoJSON
+
+			// FE-Buddy's own (non-CRC) properties. FebProperties is required when this is "Y";
+			// the full list below exercises every property the parser knows.
+			{ "IncludeFebCustomProperties", "Y" },
+			{ "FebProperties", "faaId,icaoId,name,lat,lon,elev,respArtcc,tfcPtrnAlt,fssId,twrType" },
+
+			// Writes the CRC ERAM defaults Feature at the head of each GeoJSON file, using the
+			// Crc.* values added by AddAirportCrcDefaults below.
+			{ "IncludeCrcEramPropertyDefaults", "Y" },
+
+			// ROI filtering applies to the GeoJSON output only; the alias file always covers
+			// every airport. The four corner keys are read only when FilterByRoi is "Y" - set
+			// all four before flipping it, or the parser rejects the run naming the blank key.
+			{ "FilterByRoi", "N" },
+			{ "RoiSwLat", "" },              // e.g. "38.0"
+			{ "RoiSwLon", "" },              // e.g. "-85.0"
+			{ "RoiNeLat", "" },              // e.g. "43.0"
+			{ "RoiNeLon", "" },              // e.g. "-78.0"
+
+			{ "CoordinatePrecision", "6" },  // max decimal places in GeoJSON coords (0-15)
+			{ "AddFeBuddyOutputFolder", "Y" } // N -> write straight into OutputDirectory\Airports
+		};
+
+		AddAirportCrcDefaults(settings,
+			symbolBcg: 5, symbolFilters: "5", symbolStyle: "airport", symbolSize: 1,
+			textBcg: 5, textFilters: "5", textSize: 1,
+			lineBcg: 6, lineFilters: "6", lineStyle: "solid", lineThickness: 1);
+
+		return settings;
+	}
+
+	/// <summary>
 	/// Settings for exercising the alias-only path (<c>OutputBy = None</c>, alias file still
 	/// generated), matching the "written even when OutputBy = None" contract.
 	/// </summary>
@@ -75,6 +126,59 @@ internal static class HarnessSettings
 		settings["OutputBy"] = "None";
 		settings["GenerateAliasFile"] = "Y";
 		return settings;
+	}
+
+	/// <summary>
+	/// Adds the <c>Crc.Airports.*</c> and <c>Crc.Runways.*</c> property defaults. Kept separate
+	/// from <see cref="AddCrcDefaults"/> because the Airports sub-service splits its blocks
+	/// across two classes - Symbol and Text belong to <c>Airports</c>, Line to <c>Runways</c> -
+	/// rather than writing all three kinds for one class.
+	/// </summary>
+	/// <param name="settings">The dictionary being built.</param>
+	/// <param name="symbolBcg">Airport symbol BCG group, 1-40.</param>
+	/// <param name="symbolFilters">Airport symbol filters, comma-separated, each 0-40, at least one.</param>
+	/// <param name="symbolStyle">Airport symbol style, one of <c>CrcGeojsonPropertyValidator.ValidSymbolStyles</c>.</param>
+	/// <param name="symbolSize">Airport symbol size, 1-4.</param>
+	/// <param name="textBcg">Airport text BCG group, 1-40.</param>
+	/// <param name="textFilters">Airport text filters, comma-separated, each 0-40, at least one.</param>
+	/// <param name="textSize">Airport text size, 0-5.</param>
+	/// <param name="lineBcg">Runway line BCG group, 1-40.</param>
+	/// <param name="lineFilters">Runway line filters, comma-separated, each 0-40, at least one.</param>
+	/// <param name="lineStyle">Runway line style, one of <c>CrcGeojsonPropertyValidator.ValidLineStyles</c>.</param>
+	/// <param name="lineThickness">Runway line thickness, 1-3.</param>
+	private static void AddAirportCrcDefaults(
+		Dictionary<string, string> settings,
+		int symbolBcg,
+		string symbolFilters,
+		string symbolStyle,
+		int symbolSize,
+		int textBcg,
+		string textFilters,
+		int textSize,
+		int lineBcg,
+		string lineFilters,
+		string lineStyle,
+		int lineThickness)
+	{
+		settings["Crc.Airports.Symbol.bcg"] = symbolBcg.ToString();
+		settings["Crc.Airports.Symbol.filters"] = symbolFilters;
+		settings["Crc.Airports.Symbol.style"] = symbolStyle;
+		settings["Crc.Airports.Symbol.size"] = symbolSize.ToString();
+
+		// No "Crc.Airports.Text.text": every airport supplies its own label from its identifier
+		// and name, and the parser warns if one is supplied here.
+		settings["Crc.Airports.Text.bcg"] = textBcg.ToString();
+		settings["Crc.Airports.Text.filters"] = textFilters;
+		settings["Crc.Airports.Text.size"] = textSize.ToString();
+		settings["Crc.Airports.Text.underline"] = "N";
+		settings["Crc.Airports.Text.xOffset"] = "0";
+		settings["Crc.Airports.Text.yOffset"] = "0";
+		settings["Crc.Airports.Text.opaque"] = "N";
+
+		settings["Crc.Runways.Line.bcg"] = lineBcg.ToString();
+		settings["Crc.Runways.Line.filters"] = lineFilters;
+		settings["Crc.Runways.Line.style"] = lineStyle;
+		settings["Crc.Runways.Line.thickness"] = lineThickness.ToString();
 	}
 
 	private static void AddCrcDefaults(

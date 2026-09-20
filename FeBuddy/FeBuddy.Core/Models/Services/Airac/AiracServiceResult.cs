@@ -1,3 +1,4 @@
+using FeBuddy.Core.Models.Services.Airac.Airports;
 using FeBuddy.Core.Models.Services.Airac.Airways;
 using FeBuddy.Core.Models.Services.General;
 
@@ -14,6 +15,12 @@ public sealed record AiracServiceResult : ServiceResult
 	/// this run.
 	/// </summary>
 	public AirwayServiceResult? Airways { get; init; }
+
+	/// <summary>
+	/// The Airports sub-service result, or <see langword="null"/> when Airports was not part of
+	/// this run.
+	/// </summary>
+	public AirportServiceResult? Airports { get; init; }
 
 	/// <summary>
 	/// IDs of airways excluded from all output because they had an unresolvable waypoint

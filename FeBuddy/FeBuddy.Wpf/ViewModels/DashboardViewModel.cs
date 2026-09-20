@@ -102,6 +102,12 @@ public sealed class DashboardViewModel : ObservableObject
     /// <summary>True when News failed to parse - the Dashboard shows a short notice instead of the feed.</summary>
     public bool NewsUnavailable => AppEnvironment.News is { ParseSucceeded: false };
 
+    /// <summary>
+    /// True until the launch-time News check has published a result - the feed shows an advisory
+    /// saying it is fetching, rather than an empty panel that reads as "no news".
+    /// </summary>
+    public bool NewsFetching => AppEnvironment.News is null;
+
     /// <summary>Collapsed activity log shows only the filter chips with their counts.</summary>
     /// <remarks>
     /// Starts collapsed on every launch and is deliberately not persisted: the log is a
@@ -176,6 +182,7 @@ public sealed class DashboardViewModel : ObservableObject
 
         NewsButtonHighlighted = news is { ParseSucceeded: true, NewPostCount: > 0 };
         OnPropertyChanged(nameof(NewsUnavailable));
+        OnPropertyChanged(nameof(NewsFetching));
     }
 
     private void RefreshNextCycleLine()

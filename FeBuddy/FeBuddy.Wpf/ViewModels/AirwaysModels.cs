@@ -1,3 +1,5 @@
+using System.Globalization;
+
 using FeBuddy.Wpf.Infrastructure;
 
 using FeBuddy.Core.Services.General;
@@ -60,6 +62,17 @@ public sealed class EramClassDefault : ObservableObject
 		ShowStyle = kind is EramFieldKind.Line or EramFieldKind.Symbol;
 		ShowThickness = kind is EramFieldKind.Line;
 		ShowSize = kind is EramFieldKind.Symbol or EramFieldKind.Text;
+
+		StyleOptions = kind switch
+		{
+			EramFieldKind.Line => CrcGeojsonPropertyValidator.ValidLineStyles,
+			EramFieldKind.Symbol => CrcGeojsonPropertyValidator.ValidSymbolStyles,
+			_ => Array.Empty<string>(),
+		};
+
+		SizeOptions = kind is EramFieldKind.Text
+			? Range(CrcGeojsonPropertyValidator.MinTextSize, CrcGeojsonPropertyValidator.MaxTextSize)
+			: Range(CrcGeojsonPropertyValidator.MinSymbolSize, CrcGeojsonPropertyValidator.MaxSymbolSize);
 	}
 
 	/// <summary>The altitude class this row is for (<c>High</c> / <c>Low</c> / <c>Other</c>).</summary>
@@ -74,11 +87,64 @@ public sealed class EramClassDefault : ObservableObject
 	/// <summary>Whether the <c>size</c> field applies to this kind.</summary>
 	public bool ShowSize { get; }
 
-	public string Bcg { get => _bcg; set { if (SetProperty(ref _bcg, value)) _onChanged(); } }
+	/// <summary>
+	/// The <c>style</c> values CRC accepts for this kind, for the drop-down. Empty for Text,
+	/// which has no style.
+	/// </summary>
+	public IReadOnlyList<string> StyleOptions { get; }
+
+	/// <summary>The <c>bcg</c> values CRC accepts, for the drop-down.</summary>
+	public IReadOnlyList<string> BcgOptions { get; } = Range(
+		CrcGeojsonPropertyValidator.MinBcg, CrcGeojsonPropertyValidator.MaxBcg);
+
+	/// <summary>The <c>thickness</c> values CRC accepts, for the drop-down. Line only.</summary>
+	public IReadOnlyList<string> ThicknessOptions { get; } = Range(
+		CrcGeojsonPropertyValidator.MinThickness, CrcGeojsonPropertyValidator.MaxThickness);
+
+	/// <summary>
+	/// The <c>size</c> values CRC accepts for this kind, for the drop-down. Symbols and text
+	/// have different ranges.
+	/// </summary>
+	public IReadOnlyList<string> SizeOptions { get; }
+
+	private static IReadOnlyList<string> Range(int minimum, int maximum)
+	{
+		string[] values = new string[maximum - minimum + 1];
+
+		for (int i = 0; i < values.Length; i++)
+		{
+			values[i] = (minimum + i).ToString(CultureInfo.InvariantCulture);
+		}
+
+		return values;
+	}
+
+	public string Bcg { get => _bcg; set { if (SetProperty(ref _bcg, Canonical(value, BcgOptions))) _onChanged(); } }
 	public string Filters { get => _filters; set { if (SetProperty(ref _filters, value)) _onChanged(); } }
-	public string Style { get => _style; set { if (SetProperty(ref _style, value)) _onChanged(); } }
-	public string Thickness { get => _thickness; set { if (SetProperty(ref _thickness, value)) _onChanged(); } }
-	public string Size { get => _size; set { if (SetProperty(ref _size, value)) _onChanged(); } }
+	public string Style { get => _style; set { if (SetProperty(ref _style, Canonical(value, StyleOptions))) _onChanged(); } }
+	public string Thickness { get => _thickness; set { if (SetProperty(ref _thickness, Canonical(value, ThicknessOptions))) _onChanged(); } }
+	public string Size { get => _size; set { if (SetProperty(ref _size, Canonical(value, SizeOptions))) _onChanged(); } }
+
+	/// <summary>
+	/// Returns the option matching <paramref name="value"/> in its canonical spelling, so a
+	/// value restored from config in another case still selects in the drop-down. A value that
+	/// matches nothing is kept as it is, for the validator to report.
+	/// </summary>
+	/// <param name="value">The incoming value.</param>
+	/// <param name="options">The allowed values for this field.</param>
+	/// <returns>The canonical value.</returns>
+	private static string Canonical(string value, IReadOnlyList<string> options)
+	{
+		foreach (string option in options)
+		{
+			if (string.Equals(option, value, StringComparison.OrdinalIgnoreCase))
+			{
+				return option;
+			}
+		}
+
+		return value;
+	}
 }
 
 /// <summary>

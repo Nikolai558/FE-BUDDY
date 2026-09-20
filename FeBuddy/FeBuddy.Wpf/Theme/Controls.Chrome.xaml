@@ -123,7 +123,16 @@
                             <DropShadowEffect BlurRadius="22" ShadowDepth="5" Direction="270"
                                               Opacity="0.5" Color="#000000" />
                         </Border.Effect>
-                        <ContentPresenter />
+                        <!-- A string tool-tip renders as a plain TextBlock, which does not wrap
+                             on its own: without this, anything past MaxWidth was silently cut
+                             off mid-word rather than flowing onto a second line. -->
+                        <ContentPresenter>
+                            <ContentPresenter.Resources>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="TextWrapping" Value="Wrap" />
+                                </Style>
+                            </ContentPresenter.Resources>
+                        </ContentPresenter>
                     </Border>
                 </ControlTemplate>
             </Setter.Value>

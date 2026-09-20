@@ -1,0 +1,134 @@
+<!--
+    ServiceRunReviewTabView  -  the Review tab: what actually happened when the service was
+    run. It appears at the very end of the rail once a run has started, and shows only three
+    things - how far each sub-service has got, anything that went wrong, and the way out to
+    the files. Information and warnings stay on each sub-service's own tab, so an empty
+    Review tab means a clean run.
+-->
+<UserControl x:Class="FeBuddy.Wpf.Views.ServiceRunReviewTabView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:infra="clr-namespace:FeBuddy.Wpf.Infrastructure"
+             xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance infra:ServiceRunReviewTabViewModel}"
+             d:DesignWidth="820" d:DesignHeight="700">
+
+    <UserControl.Resources>
+        <!-- the status word, coloured by where the step has got to; Waiting keeps the default -->
+        <Style x:Key="RunStepStatusText" TargetType="TextBlock" BasedOn="{StaticResource Text.Caption}">
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding Status}" Value="Working">
+                    <Setter Property="Foreground" Value="{StaticResource Brush.Accent}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Status}" Value="Finished">
+                    <Setter Property="Foreground" Value="{StaticResource Brush.Positive}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Status}" Value="Failed">
+                    <Setter Property="Foreground" Value="{StaticResource Brush.Danger}" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- one sub-service's line in the feed -->
+        <DataTemplate x:Key="RunStepRow" DataType="{x:Type infra:RunStep}">
+            <StackPanel Margin="0,4">
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Right" Text="{Binding StatusText}"
+                               Style="{StaticResource RunStepStatusText}"
+                               VerticalAlignment="Center" Margin="12,0,0,0" />
+                    <TextBlock Text="{Binding Name}" Style="{StaticResource Text.Body.Strong}"
+                               VerticalAlignment="Center" />
+                </DockPanel>
+                <TextBlock Text="{Binding Detail}" Style="{StaticResource Text.Caption}" TextWrapping="Wrap"
+                           Margin="0,2,0,0"
+                           Visibility="{Binding Detail, Converter={StaticResource StringToVis}}" />
+            </StackPanel>
+        </DataTemplate>
+
+        <!-- one error line -->
+        <DataTemplate x:Key="ErrorRow">
+            <TextBlock Text="{Binding}" Style="{StaticResource Text.Body}" TextWrapping="Wrap" Margin="0,3" />
+        </DataTemplate>
+
+        <!-- one written file -->
+        <DataTemplate x:Key="OutputFileRow">
+            <TextBlock Text="{Binding}" FontFamily="{StaticResource Font.Mono}" FontSize="11"
+                       Foreground="{StaticResource Brush.Text.Primary}"
+                       TextTrimming="CharacterEllipsis" Margin="0,3" />
+        </DataTemplate>
+    </UserControl.Resources>
+
+    <!-- No ScrollViewer here: the tab host owns the one page-level scroller. -->
+    <StackPanel MaxWidth="820" HorizontalAlignment="Left">
+
+        <!-- how far each sub-service has got -->
+        <Border Style="{StaticResource Card}" Margin="0,0,0,16">
+            <StackPanel>
+                <ctl:SectionHeader Label="PROGRESS" />
+
+                <TextBlock Text="{Binding Summary}" Style="{StaticResource Text.Body}" TextWrapping="Wrap"
+                           Margin="0,0,0,6"
+                           Visibility="{Binding Summary, Converter={StaticResource StringToVis}}" />
+
+                <TextBlock Text="In progress…" Style="{StaticResource Text.Caption}" Margin="0,0,0,6"
+                           Visibility="{Binding IsRunning, Converter={StaticResource BoolToVis}}" />
+
+                <ItemsControl ItemsSource="{Binding Steps}" ItemTemplate="{StaticResource RunStepRow}" />
+            </StackPanel>
+        </Border>
+
+        <!-- something failed: the only messages that surface on this tab -->
+        <Border Style="{StaticResource Card}" Margin="0,0,0,16"
+                Background="{StaticResource Brush.Danger.Soft}"
+                Visibility="{Binding HasErrors, Converter={StaticResource BoolToVis}}">
+            <StackPanel>
+                <ctl:SectionHeader Label="ERRORS" />
+                <ItemsControl ItemsSource="{Binding Errors}" ItemTemplate="{StaticResource ErrorRow}" />
+            </StackPanel>
+        </Border>
+
+        <!-- the run finished and reported nothing: say so rather than showing an empty tab -->
+        <Border Margin="0,0,0,16">
+            <Border.Style>
+                <Style TargetType="Border" BasedOn="{StaticResource Card}">
+                    <Setter Property="Visibility" Value="Collapsed" />
+                    <Style.Triggers>
+                        <MultiDataTrigger>
+                            <MultiDataTrigger.Conditions>
+                                <Condition Binding="{Binding HasRun}" Value="True" />
+                                <Condition Binding="{Binding HasErrors}" Value="False" />
+                            </MultiDataTrigger.Conditions>
+                            <Setter Property="Visibility" Value="Visible" />
+                        </MultiDataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Border.Style>
+            <TextBlock Style="{StaticResource Text.Body}" TextWrapping="Wrap"
+                       Text="The run finished with no errors." />
+        </Border>
+
+        <!-- what the run wrote -->
+        <Border Style="{StaticResource Card}" Margin="0,0,0,24"
+                Visibility="{Binding HasFiles, Converter={StaticResource BoolToVis}}">
+            <StackPanel>
+                <ctl:SectionHeader Label="OUTPUT" />
+
+                <WrapPanel>
+                    <TextBlock Style="{StaticResource Text.Caption}" Margin="0,0,18,0"
+                               Text="{Binding ElapsedText}" />
+                    <TextBlock Style="{StaticResource Text.Caption}"
+                               Text="{Binding FilesWritten.Count, StringFormat={}{0} file(s)}" />
+                </WrapPanel>
+
+                <ItemsControl ItemsSource="{Binding FilesWritten}" ItemTemplate="{StaticResource OutputFileRow}"
+                              Margin="0,8,0,0" />
+
+                <Button Style="{StaticResource Button.Ghost}" HorizontalAlignment="Left" Margin="0,10,0,0"
+                        Content="Open output folder" Command="{Binding OpenOutputFolderCommand}" />
+            </StackPanel>
+        </Border>
+    </StackPanel>
+</UserControl>

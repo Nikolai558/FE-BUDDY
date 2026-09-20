@@ -10,8 +10,8 @@ namespace FeBuddy.Wpf.Infrastructure;
 
 /// <summary>
 /// Base for a first-tier service screen built as tabs: a permanent <b>General</b> tab, one tab
-/// per sub-service the user selected there, and a <b>Review</b> tab at the end once at least one
-/// sub-service is selected.
+/// per sub-service the user selected there, a <b>Preview Settings</b> tab once at least one
+/// sub-service is selected, and - after a run - a <b>Review</b> tab at the very end.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -22,7 +22,7 @@ namespace FeBuddy.Wpf.Infrastructure;
 /// </para>
 /// <para>
 /// Navigation goes through <see cref="NextCommand"/> / <see cref="PreviousCommand"/> /
-/// <see cref="GoToReviewCommand"/>, each of which offers to save a dirty tab before leaving it.
+/// <see cref="GoToPreviewCommand"/>, each of which offers to save a dirty tab before leaving it.
 /// Cancelling that prompt keeps the user where they are rather than silently discarding edits.
 /// </para>
 /// </remarks>
@@ -44,9 +44,9 @@ public abstract class TabbedServiceViewModel : ObservableObject
         NextCommand = new RelayCommand(() => Step(1), () => CanStep(1));
         PreviousCommand = new RelayCommand(() => Step(-1), () => CanStep(-1));
 
-        GoToReviewCommand = new RelayCommand(
-            GoToReview,
-            () => Tabs.Contains(ReviewTab) && !ReferenceEquals(SelectedTab, ReviewTab));
+        GoToPreviewCommand = new RelayCommand(
+            GoToPreview,
+            () => Tabs.Contains(PreviewTab) && !ReferenceEquals(SelectedTab, PreviewTab));
     }
 
     /// <summary>The open tabs, in rail order: General, the selected sub-services, then Review.</summary>
@@ -64,8 +64,8 @@ public abstract class TabbedServiceViewModel : ObservableObject
     /// <summary>Offers to save, then moves to the previous tab.</summary>
     public ICommand PreviousCommand { get; }
 
-    /// <summary>Offers to save, then jumps to the Review tab.</summary>
-    public ICommand GoToReviewCommand { get; }
+    /// <summary>Offers to save, then jumps to the settings-preview tab.</summary>
+    public ICommand GoToPreviewCommand { get; }
 
     /// <summary>The tab on screen.</summary>
     public ServiceTabViewModel? SelectedTab
@@ -75,9 +75,9 @@ public abstract class TabbedServiceViewModel : ObservableObject
         {
             if (SetProperty(ref _selectedTab, value))
             {
-                if (value is not null && ReferenceEquals(value, ReviewTab))
+                if (value is not null && ReferenceEquals(value, PreviewTab))
                 {
-                    ReviewTab.Refresh();
+                    PreviewTab.Refresh();
                 }
 
                 OnPropertyChanged(nameof(SelectedTabTitle));
@@ -92,8 +92,14 @@ public abstract class TabbedServiceViewModel : ObservableObject
     /// <summary>The permanent first tab: the service's own cycle-wide settings and the sub-service picker.</summary>
     protected abstract ServiceTabViewModel GeneralTab { get; }
 
-    /// <summary>The permanent last tab, present once at least one sub-service is selected.</summary>
-    protected abstract ServiceReviewTabViewModel ReviewTab { get; }
+    /// <summary>The settings-preview tab, present once at least one sub-service is selected.</summary>
+    protected abstract ServiceReviewTabViewModel PreviewTab { get; }
+
+    /// <summary>
+    /// A tab that belongs at the very end and only exists after something has happened - the
+    /// run review. <see langword="null"/> until then, and never shown before it has content.
+    /// </summary>
+    protected virtual ServiceTabViewModel? PostRunTab => null;
 
     /// <summary>
     /// Reconciles <see cref="Tabs"/> with the sub-service tabs that should currently be open.
@@ -109,7 +115,12 @@ public abstract class TabbedServiceViewModel : ObservableObject
 
         if (desired.Count > 1)
         {
-            desired.Add(ReviewTab);
+            desired.Add(PreviewTab);
+        }
+
+        if (PostRunTab is { } postRun)
+        {
+            desired.Add(postRun);
         }
 
         // Remove first, then insert, so index maths below is never done against a stale list.
@@ -178,13 +189,29 @@ public abstract class TabbedServiceViewModel : ObservableObject
         SelectedTab = Tabs[Tabs.IndexOf(SelectedTab!) + direction];
     }
 
-    private void GoToReview()
+    private void GoToPreview()
     {
-        if (!Tabs.Contains(ReviewTab) || !ConfirmLeave(SelectedTab))
+        if (!Tabs.Contains(PreviewTab) || !ConfirmLeave(SelectedTab))
         {
             return;
         }
 
-        SelectedTab = ReviewTab;
+        SelectedTab = PreviewTab;
+    }
+
+    /// <summary>Brings the run-review tab into the rail and selects it.</summary>
+    protected void ShowPostRunTab()
+    {
+        if (PostRunTab is not { } postRun)
+        {
+            return;
+        }
+
+        if (!Tabs.Contains(postRun))
+        {
+            Tabs.Add(postRun);
+        }
+
+        SelectedTab = postRun;
     }
 }

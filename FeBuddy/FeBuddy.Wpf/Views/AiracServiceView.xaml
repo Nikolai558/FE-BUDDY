@@ -2,12 +2,13 @@
     AiracServiceView  -  the AIRAC Services screen.
 
     Built as tabs: a permanent General tab (cycle, facility, which sub-services to
-    produce), one tab per selected sub-service, and a Review tab at the end that
-    summarises everything and runs the service. The rail runs down the left because
-    this service is expected to reach roughly twenty sub-services.
+    produce), one tab per selected sub-service, a Preview Settings tab that
+    summarises everything and runs the service, and - once a run has started - a
+    Review tab showing how it went. The rail runs down the left because this service
+    is expected to reach roughly twenty sub-services.
 
     The screen owns the single page-level scroller and the shared action bar
-    (Save / Undo / Previous / Next / Review), which is why the tab views themselves
+    (Save / Undo / Previous / Next / Preview), which is why the tab views themselves
     contain neither.
 -->
 <UserControl x:Class="FeBuddy.Wpf.Views.AiracServiceView"
@@ -39,6 +40,9 @@
         <DataTemplate DataType="{x:Type infra:ServiceReviewTabViewModel}">
             <local:ServiceReviewTabView />
         </DataTemplate>
+        <DataTemplate DataType="{x:Type infra:ServiceRunReviewTabViewModel}">
+            <local:ServiceRunReviewTabView />
+        </DataTemplate>
 
         <!-- The action bar, rendered twice: pinned above the tab's content and again at
              the end of it, so neither the top nor the bottom of a long settings page is
@@ -50,8 +54,8 @@
                             Command="{Binding PreviousCommand}" Margin="0,0,8,0" />
                     <Button Style="{StaticResource Button.Ghost}" Content="Next"
                             Command="{Binding NextCommand}" Margin="0,0,8,0" />
-                    <Button Style="{StaticResource Button.Ghost}" Content="Review AIRAC Service settings"
-                            Command="{Binding GoToReviewCommand}" Margin="0,0,8,0" />
+                    <Button Style="{StaticResource Button.Ghost}" Content="Preview settings"
+                            Command="{Binding GoToPreviewCommand}" Margin="0,0,8,0" />
                     <Button Style="{StaticResource Button.Ghost}" Content="Undo last save"
                             Command="{Binding UndoLastSaveCommand}" Margin="0,0,8,0" />
                     <Button Style="{StaticResource Button.Primary}" Content="Save" MinWidth="90"

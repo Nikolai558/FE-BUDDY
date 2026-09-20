@@ -15,16 +15,35 @@ namespace FeBuddy.Core.Services.General;
 /// </remarks>
 public static class CrcGeojsonPropertyValidator
 {
-	private const int MinBcg = 1;
-	private const int MaxBcg = 40;
-	private const int MinFilter = 0;
-	private const int MaxFilter = 40;
-	private const int MinThickness = 1;
-	private const int MaxThickness = 3;
-	private const int MinSymbolSize = 1;
-	private const int MaxSymbolSize = 4;
-	private const int MinTextSize = 0;
-	private const int MaxTextSize = 5;
+	/// <summary>Lowest valid <c>bcg</c> group.</summary>
+	public const int MinBcg = 1;
+
+	/// <summary>Highest valid <c>bcg</c> group.</summary>
+	public const int MaxBcg = 40;
+
+	/// <summary>Lowest valid <c>filters</c> entry.</summary>
+	public const int MinFilter = 0;
+
+	/// <summary>Highest valid <c>filters</c> entry.</summary>
+	public const int MaxFilter = 40;
+
+	/// <summary>Lowest valid line <c>thickness</c>.</summary>
+	public const int MinThickness = 1;
+
+	/// <summary>Highest valid line <c>thickness</c>.</summary>
+	public const int MaxThickness = 3;
+
+	/// <summary>Lowest valid symbol <c>size</c>.</summary>
+	public const int MinSymbolSize = 1;
+
+	/// <summary>Highest valid symbol <c>size</c>.</summary>
+	public const int MaxSymbolSize = 4;
+
+	/// <summary>Lowest valid text <c>size</c>.</summary>
+	public const int MinTextSize = 0;
+
+	/// <summary>Highest valid text <c>size</c>.</summary>
+	public const int MaxTextSize = 5;
 
 	/// <summary>
 	/// The exact, case-sensitive line style values CRC accepts.

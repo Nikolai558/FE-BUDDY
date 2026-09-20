@@ -38,10 +38,12 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 {
     private readonly Dispatcher _dispatcher;
     private readonly AiracGeneralTabViewModel _general;
-    private readonly ServiceReviewTabViewModel _review;
+    private readonly ServiceReviewTabViewModel _preview;
+    private readonly ServiceRunReviewTabViewModel _runReview = new();
     private readonly Dictionary<string, ServiceTabViewModel> _tabsByKey = new(StringComparer.OrdinalIgnoreCase);
 
     private bool _isRunning;
+    private bool _runReviewShown;
     private NasrCsvDataCollection? _parsedForSelectedCycle;
     private string? _parsedCycleId;
 
@@ -56,7 +58,7 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
         _general.SubServiceSelectionChanged += (_, _) => SyncSubServiceTabs();
         _general.CycleChanged += (_, _) => _ = LoadCycleDataAsync();
 
-        _review = new ServiceReviewTabViewModel("Review", "Run AIRAC Service", RunCommand, () => Tabs);
+        _preview = new ServiceReviewTabViewModel("Preview Settings", "Run AIRAC Service", RunCommand, () => Tabs);
 
         AiracCycleDataCache.Instance.StateChanged += (_, _) => _dispatcher.BeginInvoke(RefreshReadiness);
         AppEnvironment.Changed += (_, _) => _dispatcher.BeginInvoke(RefreshReadiness);
@@ -97,7 +99,13 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
     protected override ServiceTabViewModel GeneralTab => _general;
 
     /// <inheritdoc />
-    protected override ServiceReviewTabViewModel ReviewTab => _review;
+    protected override ServiceReviewTabViewModel PreviewTab => _preview;
+
+    /// <summary>
+    /// The run-review tab, once a run has started. Held back until then so the rail does not
+    /// carry an empty tab about a run that has not happened.
+    /// </summary>
+    protected override ServiceTabViewModel? PostRunTab => _runReviewShown ? _runReview : null;
 
     /// <summary>The Airways tab while it is open, otherwise <see langword="null"/>.</summary>
     private AirwaysViewModel? AirwaysTab => TabFor<AirwaysViewModel>(AiracSubServices.AirwaysKey);
@@ -231,7 +239,7 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
         }
 
         ServiceTabViewModel[] runnable = Tabs
-            .Where(t => t.IsRunnable && !ReferenceEquals(t, GeneralTab) && !ReferenceEquals(t, ReviewTab))
+            .Where(t => t.IsRunnable && !ReferenceEquals(t, GeneralTab) && !ReferenceEquals(t, PreviewTab))
             .ToArray();
 
         if (runnable.Length == 0)
@@ -252,6 +260,10 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
         }
 
         IReadOnlyList<ISubServiceRunTarget> targets = RunTargets;
+        string[] runningTabTitles = Tabs
+            .Where(t => t is ISubServiceRunTarget)
+            .Select(t => t.Title)
+            .ToArray();
 
         IsRunning = true;
 
@@ -259,6 +271,10 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
         {
             target.BeginRun();
         }
+
+        _runReview.BeginRun(runningTabTitles);
+        _runReviewShown = true;
+        ShowPostRunTab();
 
         try
         {
@@ -284,6 +300,9 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
                     {
                         target.ReportProgress(p.Message);
                     }
+
+                    // The library reports 100 when a sub-service is done with its work.
+                    _runReview.ReportStep(p.SubService, p.Message, p.PercentComplete >= 100);
                 }));
 
             AiracServiceResult result = await AiracService.RunAsync(settings, progress);
@@ -293,7 +312,12 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
                 target.ApplyAiracResult(result);
             }
 
-            Toast.Success("AIRAC Service complete", SummarizeRun(cycle.AiracCycleId, result));
+            string summary = SummarizeRun(cycle.AiracCycleId, result);
+            string[] files = CollectFilesWritten(result);
+
+            _runReview.CompleteRun(result, summary, files, ResolveRunOutputDirectory(files, outputDir, addFeBuddyFolder));
+
+            Toast.Success("AIRAC Service complete", summary);
         }
         catch (Exception ex)
         {
@@ -302,12 +326,69 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
                 target.FailRun(ex.Message);
             }
 
+            _runReview.FailRun(ex.Message, outputDirectory: ResolveRunOutputDirectory(
+                Array.Empty<string>(), ResolveOutputDirectory(), ResolveAddFeBuddyFolder()));
             Toast.Error("AIRAC Service failed", ex.Message);
         }
         finally
         {
             IsRunning = false;
         }
+    }
+
+    /// <summary>Every file the run wrote, across sub-services.</summary>
+    /// <param name="result">The aggregated result.</param>
+    /// <returns>The paths, in sub-service order.</returns>
+    private static string[] CollectFilesWritten(AiracServiceResult result)
+    {
+        List<string> files = new();
+
+        if (result.Airways is { } airways)
+        {
+            files.AddRange(airways.GeojsonFilesWritten);
+
+            if (airways.AliasFilePath is { } airwayAlias)
+            {
+                files.Add(airwayAlias);
+            }
+        }
+
+        if (result.Airports is { } airports)
+        {
+            files.AddRange(airports.GeojsonFilesWritten);
+
+            if (airports.AliasFilePath is { } airportAlias)
+            {
+                files.Add(airportAlias);
+            }
+        }
+
+        return files.ToArray();
+    }
+
+    /// <summary>
+    /// The folder the Review tab's "open output folder" button points at.
+    /// </summary>
+    /// <param name="files">What the run wrote.</param>
+    /// <param name="outputDirectory">The directory the user configured.</param>
+    /// <param name="addFeBuddyOutputFolder">Whether output is wrapped in a FE-Buddy_Output folder.</param>
+    /// <returns>
+    /// The common root of what was written, so a run covering several sub-services opens the
+    /// folder holding all of them rather than just the last one's.
+    /// </returns>
+    private static string? ResolveRunOutputDirectory(string[] files, string outputDirectory, bool addFeBuddyOutputFolder)
+    {
+        string root = addFeBuddyOutputFolder
+            ? Path.Combine(outputDirectory, "FE-Buddy_Output")
+            : outputDirectory;
+
+        if (Directory.Exists(root))
+        {
+            return root;
+        }
+
+        // A run that failed before writing anything has no folder to offer.
+        return files.Length > 0 ? Path.GetDirectoryName(files[0]) : null;
     }
 
     /// <summary>Builds the one-line "what the run produced" summary for the completion toast.</summary>

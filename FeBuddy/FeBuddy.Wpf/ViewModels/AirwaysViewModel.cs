@@ -25,7 +25,7 @@ namespace FeBuddy.Wpf.ViewModels;
 /// from the tab host's action bar, and the run is launched by <b>Run AIRAC Service</b> on the
 /// Review tab.
 /// </summary>
-public sealed class AirwaysViewModel : SubServiceSettingsViewModel
+public sealed class AirwaysViewModel : SubServiceSettingsViewModel, ISubServiceRunTarget
 {
     private const string Node = "Services.AiracService.Geojson.Airways";
 
@@ -94,7 +94,22 @@ public sealed class AirwaysViewModel : SubServiceSettingsViewModel
     public AirwayGeojsonOutputBy OutputBy
     {
         get => _outputBy;
-        set { if (SetProperty(ref _outputBy, value)) { MarkDirty(); OnPropertyChanged(nameof(OutputModeHint)); } }
+        set
+        {
+            // Choosing "None" switches the GeoJSON output off, so it is guarded like any other
+            // output: it cannot be the one that leaves this sub-service producing nothing.
+            if (value == AirwayGeojsonOutputBy.None && !GenerateAliasFile && !CanTurnOffOutput())
+            {
+                RestoreRejectedToggle(nameof(OutputBy));
+                return;
+            }
+
+            if (SetProperty(ref _outputBy, value))
+            {
+                MarkDirty();
+                OnPropertyChanged(nameof(OutputModeHint));
+            }
+        }
     }
 
     /// <summary>Multi-line description; both HIGH/LOW and DESIGNATION also emit <c>_Symbols</c> and <c>_Text</c> alongside <c>_Lines</c> (7.4).</summary>
@@ -138,7 +153,28 @@ public sealed class AirwaysViewModel : SubServiceSettingsViewModel
 
     public bool IncludeCrcEramPropertyDefaults { get => _includeCrcEramPropertyDefaults; set { if (SetProperty(ref _includeCrcEramPropertyDefaults, value)) MarkDirty(); } }
 
-    public bool GenerateAliasFile { get => _generateAliasFile; set { if (SetProperty(ref _generateAliasFile, value)) MarkDirty(); } }
+    public bool GenerateAliasFile
+    {
+        get => _generateAliasFile;
+        set
+        {
+            if (!value && !CanTurnOffOutput())
+            {
+                // The value never changed, but the control already did - put it back.
+                RestoreRejectedToggle(nameof(GenerateAliasFile));
+                return;
+            }
+
+            if (SetProperty(ref _generateAliasFile, value))
+            {
+                MarkDirty();
+            }
+        }
+    }
+
+    /// <inheritdoc />
+    protected override int EnabledOutputCount =>
+        (OutputBy == AirwayGeojsonOutputBy.None ? 0 : 1) + (GenerateAliasFile ? 1 : 0);
 
     /// <summary><see langword="true"/> = ROI airways only; <see langword="false"/> = all FAA airways (remediation plan 3.5 / 7.5).</summary>
     public bool AliasRoiAirwaysOnly { get => _aliasRoiAirwaysOnly; set { if (SetProperty(ref _aliasRoiAirwaysOnly, value)) MarkDirty(); } }

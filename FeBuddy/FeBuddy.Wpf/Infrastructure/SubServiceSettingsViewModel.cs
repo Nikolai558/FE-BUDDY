@@ -91,6 +91,63 @@ public abstract class SubServiceSettingsViewModel : ServiceTabViewModel
         Toast.Info("Reverted", $"{Title} settings reverted to the previous save.");
     }
 
+    /// <summary>
+    /// How many of this menu's outputs are currently switched on (GeoJSON, the alias file, and
+    /// so on). Overridden by a menu that has more than one output to offer.
+    /// </summary>
+    protected virtual int EnabledOutputCount => 1;
+
+    /// <summary>
+    /// Guards the last remaining output against being switched off.
+    /// </summary>
+    /// <returns>
+    /// <see langword="true"/> when the output may be switched off; <see langword="false"/> when
+    /// it is the last one, in which case the user is told why.
+    /// </returns>
+    /// <remarks>
+    /// A sub-service with every output off would be selected but produce nothing, which reads as
+    /// a bug rather than as a choice. Deselecting the sub-service on the General tab is the way
+    /// to produce nothing for it, and the message says so.
+    /// </remarks>
+    protected bool CanTurnOffOutput()
+    {
+        if (EnabledOutputCount > 1)
+        {
+            return true;
+        }
+
+        Toast.Warn(
+            "Keep one output",
+            $"{Title} needs at least one output switched on. To produce nothing for {Title}, "
+            + "deselect it on the General tab.");
+
+        return false;
+    }
+
+    /// <summary>
+    /// Puts a rejected toggle back where it was, after <see cref="CanTurnOffOutput"/> has
+    /// refused the change.
+    /// </summary>
+    /// <param name="propertyName">The property the control is bound to.</param>
+    /// <remarks>
+    /// The notification is posted rather than raised inline: raising it while WPF is still
+    /// pushing the new value into the source can leave the control showing the value the
+    /// view-model just refused. Posting lets that transfer finish first, so the checkbox
+    /// visibly snaps back.
+    /// </remarks>
+    protected void RestoreRejectedToggle(string propertyName)
+    {
+        System.Windows.Threading.Dispatcher? dispatcher = System.Windows.Application.Current?.Dispatcher;
+
+        if (dispatcher is null)
+        {
+            OnPropertyChanged(propertyName);
+            return;
+        }
+
+        dispatcher.BeginInvoke(() => OnPropertyChanged(propertyName));
+    }
+
     /// <summary>Loads this menu's fields from the in-memory <c>UserConfig</c> dictionary.</summary>
     protected abstract void LoadFromConfig();
 

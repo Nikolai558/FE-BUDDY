@@ -100,9 +100,22 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
     protected override ServiceReviewTabViewModel ReviewTab => _review;
 
     /// <summary>The Airways tab while it is open, otherwise <see langword="null"/>.</summary>
-    private AirwaysViewModel? AirwaysTab =>
-        IsSelected(AiracSubServices.AirwaysKey) && _tabsByKey.TryGetValue(AiracSubServices.AirwaysKey, out ServiceTabViewModel? tab)
-            ? tab as AirwaysViewModel
+    private AirwaysViewModel? AirwaysTab => TabFor<AirwaysViewModel>(AiracSubServices.AirwaysKey);
+
+    /// <summary>The Airports tab while it is open, otherwise <see langword="null"/>.</summary>
+    private AirportsViewModel? AirportsTab => TabFor<AirportsViewModel>(AiracSubServices.AirportsKey);
+
+    /// <summary>The open tabs that take part in a run.</summary>
+    private IReadOnlyList<ISubServiceRunTarget> RunTargets =>
+        Tabs.OfType<ISubServiceRunTarget>().ToArray();
+
+    /// <summary>Returns an open sub-service tab of the expected type, or <see langword="null"/>.</summary>
+    /// <typeparam name="T">The tab's view-model type.</typeparam>
+    /// <param name="key">The sub-service key from <see cref="AiracSubServices"/>.</param>
+    /// <returns>The tab, when it is both selected and built.</returns>
+    private T? TabFor<T>(string key) where T : class =>
+        IsSelected(key) && _tabsByKey.TryGetValue(key, out ServiceTabViewModel? tab)
+            ? tab as T
             : null;
 
     private string WaitingMessage => Readiness switch
@@ -128,13 +141,13 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
                 tab = selection.Descriptor.CreateTab();
                 _tabsByKey[selection.Key] = tab;
 
-                if (tab is AirwaysViewModel airways)
+                if (tab is ISubServiceRunTarget target)
                 {
-                    airways.SetReadiness(IsReady);
+                    target.SetReadiness(IsReady);
 
                     if (_parsedForSelectedCycle is { } data)
                     {
-                        airways.LoadCycleDependentLists(data);
+                        target.LoadCycleDependentLists(data);
                     }
                 }
             }
@@ -151,7 +164,11 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
         OnPropertyChanged(nameof(IsReady));
 
         _general.SetReadiness(IsReady, WaitingMessage);
-        AirwaysTab?.SetReadiness(IsReady);
+
+        foreach (ISubServiceRunTarget target in RunTargets)
+        {
+            target.SetReadiness(IsReady);
+        }
 
         CommandManager.InvalidateRequerySuggested();
 
@@ -189,7 +206,11 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
             await _dispatcher.BeginInvoke(() =>
             {
                 _general.PopulateFacilityOptions(data);
-                AirwaysTab?.LoadCycleDependentLists(data);
+
+                foreach (ISubServiceRunTarget target in RunTargets)
+                {
+                    target.LoadCycleDependentLists(data);
+                }
             });
         }
         catch (Exception ex)
@@ -230,44 +251,87 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
             return;
         }
 
-        AirwaysViewModel? airways = AirwaysTab;
+        IReadOnlyList<ISubServiceRunTarget> targets = RunTargets;
 
         IsRunning = true;
-        airways?.BeginRun();
+
+        foreach (ISubServiceRunTarget target in targets)
+        {
+            target.BeginRun();
+        }
 
         try
         {
             string outputDir = ResolveOutputDirectory();
             bool addFeBuddyFolder = ResolveAddFeBuddyFolder();
 
+            // The only sub-service-specific lines in the run: which block each tab's settings
+            // belong to. Everything else goes through ISubServiceRunTarget.
             AiracServiceSettings settings = new()
             {
                 SelectedCycle = cycle,
                 ArtccId = _general.SelectedArtccId ?? string.Empty,
                 OutputDirectory = outputDir,
                 AddFeBuddyOutputFolder = addFeBuddyFolder,
-                Airways = airways?.BuildSettingsBlock(outputDir, addFeBuddyFolder),
+                Airways = AirwaysTab?.BuildSettingsBlock(outputDir, addFeBuddyFolder),
+                Airports = AirportsTab?.BuildSettingsBlock(outputDir, addFeBuddyFolder),
             };
 
             var progress = new Progress<AiracServiceProgress>(p =>
-                _dispatcher.BeginInvoke(() => airways?.ReportProgress(p.Message)));
+                _dispatcher.BeginInvoke(() =>
+                {
+                    foreach (ISubServiceRunTarget target in targets)
+                    {
+                        target.ReportProgress(p.Message);
+                    }
+                }));
 
             AiracServiceResult result = await AiracService.RunAsync(settings, progress);
 
-            airways?.ApplyAiracResult(result);
-            Toast.Success("AIRAC Service complete",
-                $"Cycle {cycle.AiracCycleId}: {result.Airways?.AirwayCount ?? 0:N0} airway(s)"
-                + (result.ExcludedAirwayIds.Count > 0 ? $", {result.ExcludedAirwayIds.Count} excluded" : string.Empty) + ".");
+            foreach (ISubServiceRunTarget target in targets)
+            {
+                target.ApplyAiracResult(result);
+            }
+
+            Toast.Success("AIRAC Service complete", SummarizeRun(cycle.AiracCycleId, result));
         }
         catch (Exception ex)
         {
-            airways?.FailRun(ex.Message);
+            foreach (ISubServiceRunTarget target in targets)
+            {
+                target.FailRun(ex.Message);
+            }
+
             Toast.Error("AIRAC Service failed", ex.Message);
         }
         finally
         {
             IsRunning = false;
         }
+    }
+
+    /// <summary>Builds the one-line "what the run produced" summary for the completion toast.</summary>
+    /// <param name="cycleId">The cycle that was run.</param>
+    /// <param name="result">The aggregated result.</param>
+    /// <returns>The toast message.</returns>
+    private static string SummarizeRun(string cycleId, AiracServiceResult result)
+    {
+        List<string> parts = new();
+
+        if (result.Airways is { } airways)
+        {
+            parts.Add($"{airways.AirwayCount:N0} airway(s)"
+                + (result.ExcludedAirwayIds.Count > 0 ? $", {result.ExcludedAirwayIds.Count} excluded" : string.Empty));
+        }
+
+        if (result.Airports is { } airports)
+        {
+            parts.Add($"{airports.AirportCount:N0} airport(s)");
+        }
+
+        return parts.Count == 0
+            ? $"Cycle {cycleId}: nothing to produce."
+            : $"Cycle {cycleId}: {string.Join(", ", parts)}.";
     }
 
     /// <summary>Offers to save every dirty tab in one prompt, as the settings-save contract requires.</summary>

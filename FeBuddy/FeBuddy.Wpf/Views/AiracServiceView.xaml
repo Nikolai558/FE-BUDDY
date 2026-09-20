@@ -27,6 +27,9 @@
         <DataTemplate DataType="{x:Type vm:AiracGeneralTabViewModel}">
             <local:AiracGeneralTabView />
         </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:AirportsViewModel}">
+            <local:AirportsView />
+        </DataTemplate>
         <DataTemplate DataType="{x:Type vm:AirwaysViewModel}">
             <local:AirwaysView />
         </DataTemplate>

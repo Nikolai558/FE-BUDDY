@@ -23,13 +23,16 @@ namespace FeBuddy.Wpf.ViewModels;
 /// </remarks>
 public static class AiracSubServices
 {
-    /// <summary>The Airways sub-service key, the one sub-service with a working backend today.</summary>
+    /// <summary>The Airports sub-service key.</summary>
+    public const string AirportsKey = "Airports";
+
+    /// <summary>The Airways sub-service key.</summary>
     public const string AirwaysKey = "Airways";
 
     /// <summary>Every sub-service, in the order the picker and the tab rail show them.</summary>
     public static IReadOnlyList<SubServiceDescriptor> All { get; } = new[]
     {
-        new SubServiceDescriptor("Airports", "Airports", 10, false, () => new PlaceholderSubServiceViewModel("Airports")),
+        new SubServiceDescriptor(AirportsKey, "Airports", 10, true, () => new AirportsViewModel()),
         new SubServiceDescriptor(AirwaysKey, "Airways", 20, true, () => new AirwaysViewModel()),
         new SubServiceDescriptor("Departures", "Departures", 30, false, () => new PlaceholderSubServiceViewModel("Departures")),
     };

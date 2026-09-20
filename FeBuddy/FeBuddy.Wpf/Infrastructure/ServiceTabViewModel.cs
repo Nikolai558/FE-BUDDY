@@ -136,15 +136,23 @@ public abstract class ServiceTabViewModel : ObservableObject
     {
     }
 
-    /// <summary>Marks the tab dirty and re-validates. Call from every bound setting's setter.</summary>
-    protected void MarkDirty()
+    /// <summary>
+    /// Re-evaluates the tab after a setting changed, and re-validates. Call from every bound
+    /// setting's setter.
+    /// </summary>
+    /// <remarks>
+    /// The base takes the pessimistic view - anything that reports a change leaves the tab
+    /// dirty. A tab that can compare itself against what it last saved overrides this and
+    /// answers honestly, so putting a value back the way it was clears the flag again.
+    /// </remarks>
+    protected virtual void MarkDirty()
     {
         IsDirty = true;
         Revalidate();
     }
 
     /// <summary>Clears the dirty flag (after a successful save or a reload) and re-validates.</summary>
-    protected void ClearDirty()
+    protected virtual void ClearDirty()
     {
         IsDirty = false;
         Revalidate();

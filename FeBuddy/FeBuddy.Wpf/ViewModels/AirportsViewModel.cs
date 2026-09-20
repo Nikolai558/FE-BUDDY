@@ -781,7 +781,7 @@ public sealed class AirportsViewModel : SubServiceSettingsViewModel, ISubService
 
     private static string YesNo(bool value) => value ? "Y" : "N";
 
-    private string? Get(string key) => UserConfigFile.GetValue($"{Node}.{key}");
+
 
     private bool GetBool(string key, bool defaultValue)
     {
@@ -792,5 +792,5 @@ public sealed class AirportsViewModel : SubServiceSettingsViewModel, ISubService
             : value.Trim().Equals("Y", StringComparison.OrdinalIgnoreCase);
     }
 
-    private void Set(string key, string value) => UserConfigFile.TrySetValue($"{Node}.{key}", value);
+
 }

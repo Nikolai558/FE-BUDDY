@@ -28,11 +28,15 @@ namespace FeBuddy.Wpf.Infrastructure;
 /// </remarks>
 public abstract class SubServiceSettingsViewModel : ServiceTabViewModel
 {
+    private Dictionary<string, string>? _captureBuffer;
+    private IReadOnlyDictionary<string, string>? _savedState;
+
     /// <summary>Wires the Save / Undo commands. Derived constructors should call <see cref="LoadFromConfig"/> after their fields exist.</summary>
     protected SubServiceSettingsViewModel()
     {
         SaveCommand = new RelayCommand(() => Save(), () => IsDirty);
         UndoLastSaveCommand = new RelayCommand(UndoLastSave, () => CanUndo);
+        RevertChangesCommand = new RelayCommand(RevertChanges, () => IsDirty);
     }
 
     /// <summary>Raised after a successful <see cref="Save"/>.</summary>
@@ -49,6 +53,13 @@ public abstract class SubServiceSettingsViewModel : ServiceTabViewModel
 
     /// <summary>Restores the one snapshotted previous save of this node (disabled once superseded).</summary>
     public ICommand UndoLastSaveCommand { get; }
+
+    /// <summary>
+    /// Throws away every unsaved edit on this tab, putting it back to the state it was last
+    /// saved (or loaded) at. Distinct from <see cref="UndoLastSaveCommand"/>, which steps the
+    /// saved settings themselves back one save.
+    /// </summary>
+    public ICommand RevertChangesCommand { get; }
 
     /// <summary>
     /// Validates and persists this menu's subtree. Returns <see langword="false"/> (and toasts
@@ -74,6 +85,59 @@ public abstract class SubServiceSettingsViewModel : ServiceTabViewModel
         Saved?.Invoke(this, EventArgs.Empty);
         Toast.Success("Saved", $"{Title} settings saved.");
         return true;
+    }
+
+    /// <inheritdoc />
+    /// <remarks>
+    /// Compares the tab's current values against the snapshot taken when it was last saved or
+    /// loaded, so changing a setting and changing it straight back leaves the tab clean rather
+    /// than permanently marked as edited.
+    /// </remarks>
+    protected override void MarkDirty()
+    {
+        IsDirty = _savedState is null || !MatchesSavedState();
+        Revalidate();
+    }
+
+    /// <inheritdoc />
+    protected override void ClearDirty()
+    {
+        _savedState = CaptureCurrentValues();
+        IsDirty = false;
+        Revalidate();
+    }
+
+    /// <summary>
+    /// Re-takes the clean-state snapshot after a list this tab's settings depend on has been
+    /// populated. Cycle-dependent lists (airway designations, and so on) arrive well after the
+    /// tab is built, so the snapshot taken at construction describes a tab whose lists were
+    /// still empty; without this, toggling such a row and toggling it straight back would leave
+    /// the tab marked as edited.
+    /// </summary>
+    /// <remarks>
+    /// Deliberately does nothing while the tab has unsaved edits - re-snapshotting then would
+    /// adopt those edits as the saved state and lose the warning.
+    /// </remarks>
+    protected void ResyncSavedState()
+    {
+        if (!IsDirty)
+        {
+            ClearDirty();
+        }
+    }
+
+    /// <summary>Discards every unsaved edit, reloading the tab from what was last saved.</summary>
+    public void RevertChanges()
+    {
+        if (!IsDirty)
+        {
+            return;
+        }
+
+        LoadFromConfig();
+        ClearDirty();
+        CommandManager.InvalidateRequerySuggested();
+        Toast.Info("Changes discarded", $"{Title} is back to its last saved settings.");
     }
 
     /// <summary>Restores this node's previous save, if a snapshot exists.</summary>
@@ -148,9 +212,86 @@ public abstract class SubServiceSettingsViewModel : ServiceTabViewModel
         dispatcher.BeginInvoke(() => OnPropertyChanged(propertyName));
     }
 
+    /// <summary>
+    /// Writes one of this menu's values, relative to <see cref="NodePath"/>.
+    /// </summary>
+    /// <param name="key">The key under this menu's node, e.g. <c>GenerateAliasFile</c>.</param>
+    /// <param name="value">The value to store.</param>
+    /// <remarks>
+    /// Every <see cref="WriteToConfig"/> implementation goes through this rather than touching
+    /// <see cref="UserConfigFile"/> directly, which is what lets the same method serve twice:
+    /// normally it persists, and while a snapshot is being taken it writes into a buffer
+    /// instead. That is how the tab can tell whether it currently differs from what it saved
+    /// without a second, hand-maintained list of its own fields to drift out of step.
+    /// </remarks>
+    protected void Set(string key, string value)
+    {
+        if (_captureBuffer is not null)
+        {
+            _captureBuffer[key] = value;
+            return;
+        }
+
+        UserConfigFile.TrySetValue($"{NodePath}.{key}", value);
+    }
+
+    /// <summary>Reads one of this menu's saved values, relative to <see cref="NodePath"/>.</summary>
+    /// <param name="key">The key under this menu's node.</param>
+    /// <returns>The saved value, or <see langword="null"/> when it has none.</returns>
+    protected string? Get(string key) => UserConfigFile.GetValue($"{NodePath}.{key}");
+
     /// <summary>Loads this menu's fields from the in-memory <c>UserConfig</c> dictionary.</summary>
     protected abstract void LoadFromConfig();
 
-    /// <summary>Pushes this menu's fields into the in-memory <c>UserConfig</c> dictionary (via <see cref="UserConfigFile.TrySetValue"/>).</summary>
+    /// <summary>Pushes this menu's fields into the in-memory <c>UserConfig</c> dictionary (via <see cref="Set"/>).</summary>
     protected abstract void WriteToConfig();
+
+    /// <summary>
+    /// Runs <see cref="WriteToConfig"/> against a buffer instead of the config file, giving the
+    /// tab's current values as a plain dictionary.
+    /// </summary>
+    /// <returns>Every value this tab would save right now.</returns>
+    private IReadOnlyDictionary<string, string> CaptureCurrentValues()
+    {
+        Dictionary<string, string> buffer = new(StringComparer.Ordinal);
+        _captureBuffer = buffer;
+
+        try
+        {
+            WriteToConfig();
+        }
+        finally
+        {
+            _captureBuffer = null;
+        }
+
+        return buffer;
+    }
+
+    /// <summary>Whether the tab's current values are identical to the last saved snapshot.</summary>
+    /// <returns><see langword="true"/> when nothing differs.</returns>
+    private bool MatchesSavedState()
+    {
+        if (_savedState is not { } saved)
+        {
+            return false;
+        }
+
+        IReadOnlyDictionary<string, string> current = CaptureCurrentValues();
+
+        if (current.Count != saved.Count)
+        {
+            return false;
+        }
+
+        foreach ((string key, string value) in current)
+        {
+            if (!saved.TryGetValue(key, out string? savedValue) || !string.Equals(savedValue, value, StringComparison.Ordinal))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
 }

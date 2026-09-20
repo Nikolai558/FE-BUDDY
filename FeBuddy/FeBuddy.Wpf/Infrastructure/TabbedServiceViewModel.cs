@@ -41,6 +41,10 @@ public abstract class TabbedServiceViewModel : ObservableObject
             () => (SelectedTab as SubServiceSettingsViewModel)?.UndoLastSave(),
             () => (SelectedTab as SubServiceSettingsViewModel)?.CanUndo == true);
 
+        RevertChangesCommand = new RelayCommand(
+            () => (SelectedTab as SubServiceSettingsViewModel)?.RevertChanges(),
+            () => SelectedTab is SubServiceSettingsViewModel { IsDirty: true });
+
         NextCommand = new RelayCommand(() => Step(1), () => CanStep(1));
         PreviousCommand = new RelayCommand(() => Step(-1), () => CanStep(-1));
 
@@ -57,6 +61,9 @@ public abstract class TabbedServiceViewModel : ObservableObject
 
     /// <summary>Reverts the selected tab to its previous save, while a snapshot exists.</summary>
     public ICommand UndoLastSaveCommand { get; }
+
+    /// <summary>Discards the selected tab's unsaved edits, returning it to its last saved state.</summary>
+    public ICommand RevertChangesCommand { get; }
 
     /// <summary>Offers to save, then moves to the next tab.</summary>
     public ICommand NextCommand { get; }

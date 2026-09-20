@@ -287,6 +287,11 @@ public sealed class AirwaysViewModel : SubServiceSettingsViewModel, ISubServiceR
         {
             Designations.Add(new DesignationToggle(d, included: !excluded.Contains(d), MarkDirty));
         }
+
+        // The list was empty when this tab snapshotted itself at construction, so the snapshot
+        // says "nothing excluded" while the config may well exclude several. Re-take it now the
+        // toggles reflect what is actually saved.
+        ResyncSavedState();
     }
 
     /// <summary>Resets the result panel for a new run.</summary>
@@ -615,7 +620,7 @@ public sealed class AirwaysViewModel : SubServiceSettingsViewModel, ISubServiceR
 
     private static string YesNo(bool value) => value ? "Y" : "N";
 
-    private string? Get(string key) => UserConfigFile.GetValue($"{Node}.{key}");
+
 
     private bool GetBool(string key, bool fallback)
     {
@@ -627,7 +632,7 @@ public sealed class AirwaysViewModel : SubServiceSettingsViewModel, ISubServiceR
         };
     }
 
-    private void Set(string key, string value) => UserConfigFile.TrySetValue($"{Node}.{key}", value);
+
 
     private HashSet<string> ParseExcludedFromConfig() =>
         (Get("ExcludedDesignations") ?? string.Empty)

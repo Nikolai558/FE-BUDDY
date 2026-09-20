@@ -264,17 +264,15 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
     {
         try
         {
-            UserConfigFile.TrySetValue($"{Node}.AiracCycleId", AiracCycleResolver.GetCycle(SelectedCyclePosition).AiracCycleId);
+            Set("AiracCycleId", AiracCycleResolver.GetCycle(SelectedCyclePosition).AiracCycleId);
         }
         catch
         {
             // The cycle lookup table may not cover this date yet; leave the saved id alone.
         }
 
-        UserConfigFile.TrySetValue($"{Node}.UserArtccId", SelectedArtccId ?? string.Empty);
-        UserConfigFile.TrySetValue(
-            $"{Node}.{SelectedSubServicesKey}",
-            string.Join(',', SelectedSubServices.Select(s => s.Key)));
+        Set("UserArtccId", SelectedArtccId ?? string.Empty);
+        Set(SelectedSubServicesKey, string.Join(',', SelectedSubServices.Select(s => s.Key)));
     }
 
     private void OnSubServiceToggled()

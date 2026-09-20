@@ -56,8 +56,12 @@
                             Command="{Binding NextCommand}" Margin="0,0,8,0" />
                     <Button Style="{StaticResource Button.Ghost}" Content="Preview settings"
                             Command="{Binding GoToPreviewCommand}" Margin="0,0,8,0" />
+                    <Button Style="{StaticResource Button.Ghost}" Content="Undo all changes"
+                            Command="{Binding RevertChangesCommand}" Margin="0,0,8,0"
+                            ToolTip="Discard the unsaved edits on this tab and go back to its last saved settings." />
                     <Button Style="{StaticResource Button.Ghost}" Content="Undo last save"
-                            Command="{Binding UndoLastSaveCommand}" Margin="0,0,8,0" />
+                            Command="{Binding UndoLastSaveCommand}" Margin="0,0,8,0"
+                            ToolTip="Step this tab's saved settings back to the previous save." />
                     <Button Style="{StaticResource Button.Primary}" Content="Save" MinWidth="90"
                             Command="{Binding SaveCommand}" />
                 </StackPanel>

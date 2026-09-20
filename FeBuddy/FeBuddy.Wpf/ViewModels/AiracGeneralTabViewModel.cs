@@ -29,6 +29,7 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
     private bool _isReady;
     private string _waitingMessage = string.Empty;
     private AiracCyclePosition _selectedCyclePosition = AiracCyclePosition.Current;
+    private AiracCyclePosition _cyclePositionBeforeReload = AiracCyclePosition.Current;
     private string? _selectedArtccId;
 
     /// <summary>Builds the tab and restores the saved cycle, facility and sub-service selection.</summary>
@@ -235,6 +236,7 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
     /// <inheritdoc />
     protected override void LoadFromConfig()
     {
+        _cyclePositionBeforeReload = _selectedCyclePosition;
         _loading = true;
 
         try
@@ -257,6 +259,23 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
         }
 
         ClearDirty();
+    }
+
+    /// <inheritdoc />
+    /// <remarks>
+    /// This tab's settings drive the rest of the screen: the ticked sub-services decide which
+    /// tabs are open, and the cycle decides which data is loaded. Both are restored with their
+    /// events suppressed, so discarding changes here has to re-announce them or the rail keeps
+    /// showing tabs the user just took back.
+    /// </remarks>
+    protected override void OnReloadedFromConfig()
+    {
+        SubServiceSelectionChanged?.Invoke(this, EventArgs.Empty);
+
+        if (_selectedCyclePosition != _cyclePositionBeforeReload)
+        {
+            CycleChanged?.Invoke(this, EventArgs.Empty);
+        }
     }
 
     /// <inheritdoc />

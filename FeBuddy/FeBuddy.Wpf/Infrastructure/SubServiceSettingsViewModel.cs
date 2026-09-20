@@ -135,6 +135,7 @@ public abstract class SubServiceSettingsViewModel : ServiceTabViewModel
         }
 
         LoadFromConfig();
+        OnReloadedFromConfig();
         ClearDirty();
         CommandManager.InvalidateRequerySuggested();
         Toast.Info("Changes discarded", $"{Title} is back to its last saved settings.");
@@ -149,6 +150,7 @@ public abstract class SubServiceSettingsViewModel : ServiceTabViewModel
         }
 
         LoadFromConfig();
+        OnReloadedFromConfig();
         ClearDirty();
         OnPropertyChanged(nameof(CanUndo));
         CommandManager.InvalidateRequerySuggested();
@@ -239,6 +241,20 @@ public abstract class SubServiceSettingsViewModel : ServiceTabViewModel
     /// <param name="key">The key under this menu's node.</param>
     /// <returns>The saved value, or <see langword="null"/> when it has none.</returns>
     protected string? Get(string key) => UserConfigFile.GetValue($"{NodePath}.{key}");
+
+    /// <summary>
+    /// Called after <see cref="RevertChanges"/> or <see cref="UndoLastSave"/> has reloaded this
+    /// tab from the config. The base does nothing.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="LoadFromConfig"/> restores values with its change events suppressed, which is
+    /// right while a tab is being built but leaves anything driven by those values - the open
+    /// tab rail, the loaded cycle - still showing the discarded state. A tab whose settings
+    /// reach outside itself re-announces them here.
+    /// </remarks>
+    protected virtual void OnReloadedFromConfig()
+    {
+    }
 
     /// <summary>Loads this menu's fields from the in-memory <c>UserConfig</c> dictionary.</summary>
     protected abstract void LoadFromConfig();

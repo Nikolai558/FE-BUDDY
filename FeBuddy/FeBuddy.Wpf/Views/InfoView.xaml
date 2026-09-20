@@ -27,7 +27,7 @@
         </Grid>
 
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-            <StackPanel Margin="28,16,28,28" MaxWidth="1180" HorizontalAlignment="Left">
+            <StackPanel Margin="28,16,28,28">
 
                 <ctl:SectionHeader Label="RESOURCES" />
 
@@ -50,8 +50,8 @@
                                             CommandParameter="{Binding Url}" />
                                     <StackPanel>
                                         <TextBlock Text="{Binding Title}" Style="{StaticResource Text.H2}" />
-                                        <TextBlock Text="{Binding Blurb}" Style="{StaticResource Text.Body}"
-                                                   Margin="0,8,0,0" TextWrapping="Wrap" />
+                                        <TextBlock Text="{Binding Blurb}" Style="{StaticResource Text.Prose}"
+                                                   Margin="0,8,0,0" />
                                     </StackPanel>
                                 </DockPanel>
                             </Border>

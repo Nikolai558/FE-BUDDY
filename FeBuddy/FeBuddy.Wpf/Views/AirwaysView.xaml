@@ -24,16 +24,19 @@
             </ObjectDataProvider.MethodParameters>
         </ObjectDataProvider>
 
-        <!-- one CRC ERAM class row. Column widths are echoed by the "EramHeader" template
-             below so the header labels line up exactly with the fields they describe. -->
+        <!-- one CRC ERAM class row. The column widths are fixed rather than starred:
+             the page now fills the window, and star columns in a left-aligned block
+             size to their own content, which left every box a different width. Any
+             change here must be echoed by the three header Grids below, which repeat
+             the same widths so the labels line up with the fields they describe. -->
         <DataTemplate x:Key="EramRow" DataType="{x:Type m:EramClassDefault}">
             <Grid Margin="0,3">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="70" />
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="100" />
+                    <ColumnDefinition Width="120" />
+                    <ColumnDefinition Width="170" />
+                    <ColumnDefinition Width="100" />
                 </Grid.ColumnDefinitions>
                 <TextBlock Text="{Binding ClassName}" Style="{StaticResource Text.Body.Strong}" VerticalAlignment="Center" />
                 <ComboBox Grid.Column="1" Margin="4,0" ItemsSource="{Binding BcgOptions}" SelectedItem="{Binding Bcg}"
@@ -92,10 +95,11 @@
     <!-- No ScrollViewer here: the tab host owns the one page-level scroller
          that every sub-service tab is laid out inside (theme fixes P3a).
          A second scroller stole the wheel and hid the lower sections. -->
-    <StackPanel MaxWidth="820" HorizontalAlignment="Left">
+    <StackPanel>
 
             <TextBlock Text="{Binding ValidationError}" Style="{StaticResource Text.Caption}"
                        Foreground="{StaticResource Brush.Danger}" TextWrapping="Wrap" Margin="0,0,0,12"
+                       MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
                        Visibility="{Binding ValidationError, Converter={StaticResource StringToVis}}" />
 
             <!-- ============ GeoJSON output ============ -->
@@ -105,8 +109,8 @@
                     <ComboBox Style="{StaticResource Themed.ComboBox}"
                               ItemsSource="{Binding Source={StaticResource OutputByValues}}"
                               SelectedItem="{Binding OutputBy}" Width="180" HorizontalAlignment="Left" Margin="0,4,0,0" />
-                    <TextBlock Text="{Binding OutputModeHint}" Style="{StaticResource Text.Body}"
-                               TextWrapping="Wrap" Margin="0,8,0,0" />
+                    <TextBlock Text="{Binding OutputModeHint}" Style="{StaticResource Text.Prose}"
+                               Margin="0,8,0,0" />
 
                     <Border Style="{StaticResource Divider}" Margin="0,12" />
                     <TextBlock Text="Emit which files" Style="{StaticResource Text.Label}" />
@@ -120,8 +124,8 @@
                     <CheckBox Content="Buffer airway waypoints (lines stop short of the waypoint symbols)"
                               IsChecked="{Binding BufferAirwayWaypoints}" />
                     <CheckBox Content="Include FE-Buddy custom properties" IsChecked="{Binding IncludeFebCustomProperties}" Margin="0,8,0,0" />
-                    <TextBlock Text="{Binding FebPropertiesDescription}" Style="{StaticResource Text.Body}"
-                               TextWrapping="Wrap" Margin="20,4,0,0" />
+                    <TextBlock Text="{Binding FebPropertiesDescription}" Style="{StaticResource Text.Prose}"
+                               Margin="20,4,0,0" />
                     <CheckBox Content="Also include the airway waypoint ID list (feb.AwyWaypoints)"
                               IsChecked="{Binding IncludeAirwayWaypointIds}" IsEnabled="{Binding IncludeFebCustomProperties}"
                               Margin="20,6,0,0" />
@@ -132,7 +136,7 @@
             <Border Style="{StaticResource Card}" Margin="0,16,0,0">
                 <StackPanel>
                     <ctl:SectionHeader Label="DESIGNATIONS TO INCLUDE" />
-                    <TextBlock Style="{StaticResource Text.Body}" Margin="0,4,0,8"
+                    <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
                                Text="Derived from the selected cycle's AWY_IDs. All on by default; the deselected set is saved as ExcludedDesignations." />
                     <TextBlock Style="{StaticResource Text.Caption}"
                                Text="Waiting for AIRAC data…"
@@ -164,8 +168,8 @@
                         </DockPanel>
                         <Grid Margin="0,8,0,2">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="70" /><ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="*" /><ColumnDefinition Width="*" /><ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="70" /><ColumnDefinition Width="100" />
+                                <ColumnDefinition Width="120" /><ColumnDefinition Width="170" /><ColumnDefinition Width="100" />
                             </Grid.ColumnDefinitions>
                             <TextBlock Grid.Column="1" Text="BCG" Style="{StaticResource EramHeaderCell}" />
                             <TextBlock Grid.Column="2" Text="Filters" Style="{StaticResource EramHeaderCell}" />
@@ -181,8 +185,8 @@
                         </DockPanel>
                         <Grid Margin="0,8,0,2">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="70" /><ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="*" /><ColumnDefinition Width="*" /><ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="70" /><ColumnDefinition Width="100" />
+                                <ColumnDefinition Width="120" /><ColumnDefinition Width="170" /><ColumnDefinition Width="100" />
                             </Grid.ColumnDefinitions>
                             <TextBlock Grid.Column="1" Text="BCG" Style="{StaticResource EramHeaderCell}" />
                             <TextBlock Grid.Column="2" Text="Filters" Style="{StaticResource EramHeaderCell}" />
@@ -198,8 +202,8 @@
                         </DockPanel>
                         <Grid Margin="0,8,0,2">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="70" /><ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="*" /><ColumnDefinition Width="*" /><ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="70" /><ColumnDefinition Width="100" />
+                                <ColumnDefinition Width="120" /><ColumnDefinition Width="170" /><ColumnDefinition Width="100" />
                             </Grid.ColumnDefinitions>
                             <TextBlock Grid.Column="1" Text="BCG" Style="{StaticResource EramHeaderCell}" />
                             <TextBlock Grid.Column="2" Text="Filters" Style="{StaticResource EramHeaderCell}" />
@@ -214,7 +218,7 @@
             <Border Style="{StaticResource Card}" Margin="0,16,0,0">
                 <StackPanel>
                     <ctl:SectionHeader Label="ALIASES" />
-                    <TextBlock Style="{StaticResource Text.Body}" TextWrapping="Wrap" Margin="0,4,0,8"
+                    <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
                                Text="Provides a command to draw all airway waypoints on an ERAM or STARS window. Syntax: .&lt;awyId&gt;F  —  e.g. .J3F .FF OAK RBL LKV IMB GEG" />
                     <CheckBox Content="Include the Airways.txt alias file" IsChecked="{Binding GenerateAliasFile}" />
                     <StackPanel Margin="20,6,0,0" IsEnabled="{Binding GenerateAliasFile}">
@@ -233,12 +237,13 @@
                     <CheckBox Content="Override the default ROI for Airways" IsChecked="{Binding OverrideRoi}" Margin="0,4,0,0" />
                     <TextBlock Text="{Binding RoiFallbackHint}" Style="{StaticResource Text.Caption}" TextWrapping="Wrap"
                                Margin="20,4,0,0"
+                               MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
                                Visibility="{Binding OverrideRoi, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
                     <StackPanel Margin="20,8,0,0" IsEnabled="{Binding OverrideRoi}">
                         <Grid>
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" /><ColumnDefinition Width="160" />
+                                <ColumnDefinition Width="Auto" /><ColumnDefinition Width="160" />
                             </Grid.ColumnDefinitions>
                             <Grid.RowDefinitions><RowDefinition /><RowDefinition /></Grid.RowDefinitions>
                             <TextBlock Text="NE lat" Style="{StaticResource Text.Caption}" VerticalAlignment="Center" Margin="0,0,8,4" />
@@ -264,7 +269,7 @@
             <Border Style="{StaticResource Card}" Margin="0,16,0,0">
                 <StackPanel>
                     <ctl:SectionHeader Label="SPLIT GEOJSON AT THE ANTIMERIDIAN" />
-                    <TextBlock Style="{StaticResource Text.Body}" TextWrapping="Wrap" Margin="0,4,0,8"
+                    <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
                                Text="A line that crosses ±180° longitude is split into two LineStrings so it does not visually wrap across the whole map. Leave this on unless a downstream tool needs the un-split geometry." />
                     <CheckBox Content="Split airway geometry at the antimeridian" IsChecked="{Binding SplitAtAntimeridian}" />
                 </StackPanel>
@@ -281,7 +286,8 @@
 
                     <StackPanel Visibility="{Binding RunFailed, Converter={StaticResource BoolToVis}}">
                         <TextBlock Text="Run failed" Style="{StaticResource Text.Body.Strong}" Foreground="{StaticResource Brush.Danger}" />
-                        <TextBlock Text="{Binding RunError}" Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,4,0,0" />
+                        <TextBlock Text="{Binding RunError}" Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,4,0,0"
+                                   MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left" />
                     </StackPanel>
 
                     <StackPanel Visibility="{Binding RunSucceeded, Converter={StaticResource BoolToVis}}">

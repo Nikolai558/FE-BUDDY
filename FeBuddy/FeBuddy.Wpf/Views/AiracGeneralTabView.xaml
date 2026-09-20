@@ -16,13 +16,13 @@
              d:DesignWidth="820" d:DesignHeight="700">
 
     <!-- No ScrollViewer here: the tab host owns the one page-level scroller. -->
-    <StackPanel MaxWidth="820" HorizontalAlignment="Left">
+    <StackPanel>
 
         <!-- waiting / unavailable banner (remediation plan 2.5) -->
         <Border Style="{StaticResource Card}" Margin="0,0,0,16" Padding="16"
                 Background="{StaticResource Brush.Warn.Soft}"
                 Visibility="{Binding IsReady, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}">
-            <TextBlock Text="{Binding WaitingMessage}" Style="{StaticResource Text.Body}" TextWrapping="Wrap" />
+            <TextBlock Text="{Binding WaitingMessage}" Style="{StaticResource Text.Prose}" />
         </Border>
 
         <!-- ============ cycle ============ -->
@@ -52,7 +52,7 @@
         <Border Style="{StaticResource Card}" Margin="0,16,0,0">
             <StackPanel>
                 <ctl:SectionHeader Label="FACILITY" />
-                <TextBlock Style="{StaticResource Text.Body}" Margin="0,4,0,6"
+                <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,6"
                            Text="Your ARTCC / facility, from the selected cycle's parsed airports." />
                 <ComboBox ItemsSource="{Binding FacilityOptions}"
                           SelectedItem="{Binding SelectedArtccId}"
@@ -66,7 +66,7 @@
         <Border Style="{StaticResource Card}" Margin="0,16,0,24">
             <StackPanel>
                 <ctl:SectionHeader Label="SUB-SERVICES" />
-                <TextBlock Style="{StaticResource Text.Body}" TextWrapping="Wrap" Margin="0,4,0,10"
+                <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,10"
                            Text="Tick the data you want this cycle to produce. Each one opens its own tab where you choose its settings and output files." />
                 <ItemsControl ItemsSource="{Binding SubServices}">
                     <ItemsControl.ItemTemplate>

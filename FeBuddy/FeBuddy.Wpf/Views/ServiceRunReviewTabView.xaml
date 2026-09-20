@@ -43,6 +43,7 @@
                                VerticalAlignment="Center" />
                 </DockPanel>
                 <TextBlock Text="{Binding Detail}" Style="{StaticResource Text.Caption}" TextWrapping="Wrap"
+                           MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
                            Margin="0,2,0,0"
                            Visibility="{Binding Detail, Converter={StaticResource StringToVis}}" />
             </StackPanel>
@@ -50,7 +51,7 @@
 
         <!-- one error line -->
         <DataTemplate x:Key="ErrorRow">
-            <TextBlock Text="{Binding}" Style="{StaticResource Text.Body}" TextWrapping="Wrap" Margin="0,3" />
+            <TextBlock Text="{Binding}" Style="{StaticResource Text.Prose}" Margin="0,3" />
         </DataTemplate>
 
         <!-- one written file -->
@@ -62,7 +63,7 @@
     </UserControl.Resources>
 
     <!-- No ScrollViewer here: the tab host owns the one page-level scroller. -->
-    <StackPanel MaxWidth="820" HorizontalAlignment="Left">
+    <StackPanel>
 
         <!-- how far each sub-service has got -->
         <Border Style="{StaticResource Card}" Margin="0,0,0,16">

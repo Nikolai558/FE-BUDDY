@@ -17,17 +17,20 @@
              d:DesignWidth="900" d:DesignHeight="1400">
 
     <UserControl.Resources>
-        <!-- one CRC ERAM class row. Column widths are echoed by the "EramHeader" template
-             below so the header labels line up exactly with the fields they describe.
+        <!-- one CRC ERAM class row. The column widths are fixed rather than starred:
+             the page now fills the window, and star columns in a left-aligned block
+             size to their own content, which left every box a different width. Any
+             change here must be echoed by the three header Grids below, which repeat
+             the same widths so the labels line up with the fields they describe.
              The per-field ToolTips are worded from the settings validator - keep them verbatim. -->
         <DataTemplate x:Key="EramRow" DataType="{x:Type m:EramClassDefault}">
             <Grid Margin="0,3">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="70" />
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="100" />
+                    <ColumnDefinition Width="120" />
+                    <ColumnDefinition Width="170" />
+                    <ColumnDefinition Width="100" />
                 </Grid.ColumnDefinitions>
                 <TextBlock Text="{Binding ClassName}" Style="{StaticResource Text.Body.Strong}" VerticalAlignment="Center" />
                 <ComboBox Grid.Column="1" Margin="4,0" ItemsSource="{Binding BcgOptions}" SelectedItem="{Binding Bcg}"
@@ -83,10 +86,11 @@
     <!-- No ScrollViewer here: the tab host owns the one page-level scroller
          that every sub-service tab is laid out inside (theme fixes P3a).
          A second scroller stole the wheel and hid the lower sections. -->
-    <StackPanel MaxWidth="820" HorizontalAlignment="Left">
+    <StackPanel>
 
             <TextBlock Text="{Binding ValidationError}" Style="{StaticResource Text.Caption}"
                        Foreground="{StaticResource Brush.Danger}" TextWrapping="Wrap" Margin="0,0,0,12"
+                       MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
                        Visibility="{Binding ValidationError, Converter={StaticResource StringToVis}}" />
 
             <!-- ============ outputs ============ -->
@@ -94,12 +98,13 @@
                 <StackPanel>
                     <ctl:SectionHeader Label="OUTPUTS" />
                     <CheckBox Content="GeoJSON files" IsChecked="{Binding GenerateGeojson}" Margin="0,4,0,0" />
-                    <TextBlock Style="{StaticResource Text.Body}" TextWrapping="Wrap" Margin="20,4,0,0"
+                    <TextBlock Style="{StaticResource Text.Prose}" Margin="20,4,0,0"
                                Text="Writes the airport and runway GeoJSON files selected below." />
                     <CheckBox Content="Alias file (Airports.txt)" IsChecked="{Binding GenerateAliasFile}" Margin="0,10,0,0" />
-                    <TextBlock Style="{StaticResource Text.Body}" TextWrapping="Wrap" Margin="20,4,0,0"
+                    <TextBlock Style="{StaticResource Text.Prose}" Margin="20,4,0,0"
                                Text="Writes one alias command per airport FAA ID, and one for airports with an ICAO ID." />
                     <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,10,0,0"
+                               MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
                                Text="At least one output must stay on. To produce nothing for Airports, deselect Airports on the General tab." />
                 </StackPanel>
             </Border>
@@ -109,13 +114,13 @@
                 <StackPanel>
                     <ctl:SectionHeader Label="GEOJSON FILES" />
                     <CheckBox Content="Airports — Symbols" IsChecked="{Binding EmitAirportSymbols}" Margin="0,4,0,0" />
-                    <TextBlock Style="{StaticResource Text.Body}" TextWrapping="Wrap" Margin="20,4,0,0"
+                    <TextBlock Style="{StaticResource Text.Prose}" Margin="20,4,0,0"
                                Text="One symbol per airport, placed at its reference point." />
                     <CheckBox Content="Airports — Text" IsChecked="{Binding EmitAirportText}" Margin="0,10,0,0" />
-                    <TextBlock Style="{StaticResource Text.Body}" TextWrapping="Wrap" Margin="20,4,0,0"
+                    <TextBlock Style="{StaticResource Text.Prose}" Margin="20,4,0,0"
                                Text="A label per airport showing the FAA ID and the airport name." />
                     <CheckBox Content="Runways — Lines" IsChecked="{Binding EmitRunwayLines}" Margin="0,10,0,0" />
-                    <TextBlock Style="{StaticResource Text.Body}" TextWrapping="Wrap" Margin="20,4,0,0"
+                    <TextBlock Style="{StaticResource Text.Prose}" Margin="20,4,0,0"
                                Text="One MultiLineString per airport holding that airport's runway centrelines." />
                 </StackPanel>
             </Border>
@@ -126,8 +131,8 @@
                     <ctl:SectionHeader Label="FE-BUDDY PROPERTIES" />
                     <CheckBox Content="Include FE-Buddy Properties, when available."
                               IsChecked="{Binding IncludeFebCustomProperties}" Margin="0,4,0,0" />
-                    <TextBlock Text="{Binding FebPropertiesDescription}" Style="{StaticResource Text.Body}"
-                               TextWrapping="Wrap" Margin="20,4,0,0" />
+                    <TextBlock Text="{Binding FebPropertiesDescription}" Style="{StaticResource Text.Prose}"
+                               Margin="20,4,0,0" />
                     <StackPanel Margin="20,8,0,0" IsEnabled="{Binding IncludeFebCustomProperties}">
                         <ItemsControl ItemsSource="{Binding FebProperties}">
                             <ItemsControl.ItemsPanel>
@@ -158,8 +163,8 @@
                             <TextBlock Text="AIRPORTS — SYMBOL" Style="{StaticResource Text.Label}" />
                             <Grid Margin="0,8,0,2">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="70" /><ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="*" /><ColumnDefinition Width="*" /><ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="70" /><ColumnDefinition Width="100" />
+                                    <ColumnDefinition Width="120" /><ColumnDefinition Width="170" /><ColumnDefinition Width="100" />
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Grid.Column="1" Text="BCG" Style="{StaticResource EramHeaderCell}" />
                                 <TextBlock Grid.Column="2" Text="Filters" Style="{StaticResource EramHeaderCell}" />
@@ -174,8 +179,8 @@
                             <TextBlock Text="AIRPORTS — TEXT" Style="{StaticResource Text.Label}" />
                             <Grid Margin="0,8,0,2">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="70" /><ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="*" /><ColumnDefinition Width="*" /><ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="70" /><ColumnDefinition Width="100" />
+                                    <ColumnDefinition Width="120" /><ColumnDefinition Width="170" /><ColumnDefinition Width="100" />
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Grid.Column="1" Text="BCG" Style="{StaticResource EramHeaderCell}" />
                                 <TextBlock Grid.Column="2" Text="Filters" Style="{StaticResource EramHeaderCell}" />
@@ -189,8 +194,8 @@
                             <TextBlock Text="RUNWAYS — LINE" Style="{StaticResource Text.Label}" />
                             <Grid Margin="0,8,0,2">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="70" /><ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="*" /><ColumnDefinition Width="*" /><ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="70" /><ColumnDefinition Width="100" />
+                                    <ColumnDefinition Width="120" /><ColumnDefinition Width="170" /><ColumnDefinition Width="100" />
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Grid.Column="1" Text="BCG" Style="{StaticResource EramHeaderCell}" />
                                 <TextBlock Grid.Column="2" Text="Filters" Style="{StaticResource EramHeaderCell}" />
@@ -210,12 +215,13 @@
                     <CheckBox Content="Override the default ROI for Airports" IsChecked="{Binding OverrideRoi}" Margin="0,4,0,0" />
                     <TextBlock Text="{Binding RoiFallbackHint}" Style="{StaticResource Text.Caption}" TextWrapping="Wrap"
                                Margin="20,4,0,0"
+                               MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
                                Visibility="{Binding OverrideRoi, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
                     <StackPanel Margin="20,8,0,0" IsEnabled="{Binding OverrideRoi}">
                         <Grid>
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" /><ColumnDefinition Width="160" />
+                                <ColumnDefinition Width="Auto" /><ColumnDefinition Width="160" />
                             </Grid.ColumnDefinitions>
                             <Grid.RowDefinitions><RowDefinition /><RowDefinition /></Grid.RowDefinitions>
                             <TextBlock Text="NE lat" Style="{StaticResource Text.Caption}" VerticalAlignment="Center" Margin="0,0,8,4" />
@@ -248,7 +254,8 @@
 
                     <StackPanel Visibility="{Binding RunFailed, Converter={StaticResource BoolToVis}}">
                         <TextBlock Text="Run failed" Style="{StaticResource Text.Body.Strong}" Foreground="{StaticResource Brush.Danger}" />
-                        <TextBlock Text="{Binding RunError}" Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,4,0,0" />
+                        <TextBlock Text="{Binding RunError}" Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,4,0,0"
+                                   MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left" />
                     </StackPanel>
 
                     <StackPanel Visibility="{Binding RunSucceeded, Converter={StaticResource BoolToVis}}">

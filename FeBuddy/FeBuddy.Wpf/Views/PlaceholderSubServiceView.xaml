@@ -14,11 +14,11 @@
              d:DataContext="{d:DesignInstance infra:PlaceholderSubServiceViewModel}"
              d:DesignWidth="820" d:DesignHeight="200">
 
-    <StackPanel MaxWidth="820" HorizontalAlignment="Left">
+    <StackPanel>
         <Border Style="{StaticResource Card}" Margin="0,0,0,24">
             <StackPanel>
                 <ctl:SectionHeader Label="NOT BUILT YET" />
-                <TextBlock Text="{Binding Message}" Style="{StaticResource Text.Body}" TextWrapping="Wrap" Margin="0,4,0,0" />
+                <TextBlock Text="{Binding Message}" Style="{StaticResource Text.Prose}" Margin="0,4,0,0" />
             </StackPanel>
         </Border>
     </StackPanel>

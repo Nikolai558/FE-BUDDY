@@ -162,6 +162,27 @@ public class AirwaySettingsParserTests
 	}
 
 	[Fact]
+	public void crc_defaults_are_only_required_for_the_kinds_being_emitted()
+	{
+		Dictionary<string, string> settings = MinimalValidSettings();
+		settings["IncludeCrcEramPropertyDefaults"] = "Y";
+		settings["EmitSymbols"] = "N";
+		settings["EmitText"] = "N";
+
+		foreach (string cls in new[] { "High", "Low", "Other" })
+		{
+			settings[$"Crc.{cls}.Line.filters"] = "3";
+		}
+
+		// No Symbol or Text keys at all: those files are not written, so they are not needed.
+		AirwaySettings parsed = AirwaySettingsParser.Parse(settings).Settings;
+
+		Assert.Equal(3, parsed.LineDefaults.Count);
+		Assert.Empty(parsed.SymbolDefaults);
+		Assert.Empty(parsed.TextDefaults);
+	}
+
+	[Fact]
 	public void crc_defaults_reject_an_out_of_range_value_with_a_clear_message()
 	{
 		Dictionary<string, string> settings = MinimalValidSettings();

@@ -40,15 +40,20 @@
                 </Grid.ColumnDefinitions>
                 <TextBlock Text="{Binding ClassName}" Style="{StaticResource Text.Body.Strong}" VerticalAlignment="Center" />
                 <ComboBox Grid.Column="1" Margin="4,0" ItemsSource="{Binding BcgOptions}" SelectedItem="{Binding Bcg}"
+                          infra:FieldState.Error="{Binding BcgError}"
                           ToolTip="BCG group: an integer 1–40." />
-                <ctl:FilterPicker Grid.Column="2" Margin="4,0" Value="{Binding Filters, Mode=TwoWay}" />
+                <ctl:FilterPicker Grid.Column="2" Margin="4,0" Value="{Binding Filters, Mode=TwoWay}"
+                                  infra:FieldState.Error="{Binding FiltersError}" />
                 <ComboBox Grid.Column="3" Margin="4,0" ItemsSource="{Binding StyleOptions}" SelectedItem="{Binding Style}"
+                          infra:FieldState.Error="{Binding StyleError}"
                           Visibility="{Binding ShowStyle, Converter={StaticResource BoolToVis}}"
                           ToolTip="Style: see the CRC GeoJSON concepts for the allowed values per kind." />
                 <ComboBox Grid.Column="4" Margin="4,0" ItemsSource="{Binding ThicknessOptions}" SelectedItem="{Binding Thickness}"
+                          infra:FieldState.Error="{Binding ThicknessError}"
                           Visibility="{Binding ShowThickness, Converter={StaticResource BoolToVis}}"
                           ToolTip="Thickness: an integer 1–3." />
                 <ComboBox Grid.Column="4" Margin="4,0" ItemsSource="{Binding SizeOptions}" SelectedItem="{Binding Size}"
+                          infra:FieldState.Error="{Binding SizeError}"
                           Visibility="{Binding ShowSize, Converter={StaticResource BoolToVis}}"
                           ToolTip="Size: an integer 1–4." />
             </Grid>

@@ -417,11 +417,12 @@ public sealed class AirwaysViewModel : SubServiceSettingsViewModel, ISubServiceR
             s["RoiNeLon"] = defaultRoi.NeLon.ToString(CultureInfo.InvariantCulture);
         }
 
+        // Same rule as the parser: only the kinds being written carry defaults.
         if (IncludeCrcEramPropertyDefaults)
         {
-            WriteCrcBlock(s, "Line", LineDefaults);
-            WriteCrcBlock(s, "Symbol", SymbolDefaults);
-            WriteCrcBlock(s, "Text", TextDefaults);
+            if (EmitLines) WriteCrcBlock(s, "Line", LineDefaults);
+            if (EmitSymbols) WriteCrcBlock(s, "Symbol", SymbolDefaults);
+            if (EmitText) WriteCrcBlock(s, "Text", TextDefaults);
         }
 
         return s;
@@ -496,6 +497,18 @@ public sealed class AirwaysViewModel : SubServiceSettingsViewModel, ISubServiceR
         if (OutputBy != AirwayGeojsonOutputBy.None && !EmitLines && !EmitSymbols && !EmitText)
         {
             validation.Add("Lines, Symbols and Text are all off, but Output is not \"None\". Turn at least one back on, or set Output to \"None\".");
+        }
+
+        // Only the blocks whose file is actually written are needed; a block for a file that
+        // is switched off is never read, so it is not held against the user.
+        bool crcActive = IncludeCrcEramPropertyDefaults && OutputBy != AirwayGeojsonOutputBy.None;
+        MarkRequired(LineDefaults, crcActive && EmitLines);
+        MarkRequired(SymbolDefaults, crcActive && EmitSymbols);
+        MarkRequired(TextDefaults, crcActive && EmitText);
+
+        if (LineDefaults.Concat(SymbolDefaults).Concat(TextDefaults).Any(row => row.IsRequired && row.HasMissingValues))
+        {
+            validation.Add("CRC ERAM defaults are on but some values are empty. Fill in the marked boxes, or switch CRC ERAM defaults off.");
         }
 
         if (!OverrideRoi)
@@ -642,20 +655,21 @@ public sealed class AirwaysViewModel : SubServiceSettingsViewModel, ISubServiceR
 
     private ObservableCollection<EramClassDefault> BuildClassDefaults(EramFieldKind kind)
     {
-        (string bcg, string filters, string style)[] seed = kind switch
-        {
-            EramFieldKind.Line => new[] { ("3", "3", "solid"), ("2", "2", "shortDashed"), ("1", "1", "longDashed") },
-            EramFieldKind.Symbol => new[] { ("3", "3", "vor"), ("2", "2", "vor"), ("1", "1", "otherWaypoints") },
-            _ => new[] { ("3", "3", ""), ("2", "2", ""), ("1", "1", "") },
-        };
-
         ObservableCollection<EramClassDefault> rows = new();
-        for (int i = 0; i < AllClasses.Length; i++)
+        foreach (AirwayAltitudeClass altitudeClass in AllClasses)
         {
-            rows.Add(new EramClassDefault(AllClasses[i].ToString(), kind, seed[i].bcg, seed[i].filters, seed[i].style, MarkDirty));
+            rows.Add(new EramClassDefault(altitudeClass.ToString(), kind, MarkDirty));
         }
 
         return rows;
+    }
+
+    private static void MarkRequired(IEnumerable<EramClassDefault> rows, bool required)
+    {
+        foreach (EramClassDefault row in rows)
+        {
+            row.IsRequired = required;
+        }
     }
 
     private void LoadCrcBlock(string kind, ObservableCollection<EramClassDefault> rows)

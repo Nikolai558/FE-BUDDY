@@ -98,21 +98,33 @@ public static class AirwaySettingsParser
 		Dictionary<AirwayAltitudeClass, CrcSymbolProperties> symbolDefaults = new();
 		Dictionary<AirwayAltitudeClass, CrcTextProperties> textDefaults = new();
 
+		// Only the kinds actually being written need defaults. Each writer reads its own
+		// dictionary only when its Emit* flag is on, so requiring the others would make the
+		// user fill in values for a file that is never produced.
 		if (includeCrcDefaults)
 		{
 			foreach (AirwayAltitudeClass cls in AllClasses)
 			{
-				CrcLineProperties line = ParseLineProperties(airwaySettings, cls);
-				CrcSymbolProperties symbol = ParseSymbolProperties(airwaySettings, cls);
-				CrcTextProperties text = ParseTextProperties(airwaySettings, cls);
+				if (emitLines)
+				{
+					CrcLineProperties line = ParseLineProperties(airwaySettings, cls);
+					ThrowIfInvalid(CrcGeojsonPropertyValidator.ValidateLine(line), cls, "Line");
+					lineDefaults[cls] = line;
+				}
 
-				ThrowIfInvalid(CrcGeojsonPropertyValidator.ValidateLine(line), cls, "Line");
-				ThrowIfInvalid(CrcGeojsonPropertyValidator.ValidateSymbol(symbol), cls, "Symbol");
-				ThrowIfInvalid(CrcGeojsonPropertyValidator.ValidateText(text), cls, "Text");
+				if (emitSymbols)
+				{
+					CrcSymbolProperties symbol = ParseSymbolProperties(airwaySettings, cls);
+					ThrowIfInvalid(CrcGeojsonPropertyValidator.ValidateSymbol(symbol), cls, "Symbol");
+					symbolDefaults[cls] = symbol;
+				}
 
-				lineDefaults[cls] = line;
-				symbolDefaults[cls] = symbol;
-				textDefaults[cls] = text;
+				if (emitText)
+				{
+					CrcTextProperties text = ParseTextProperties(airwaySettings, cls);
+					ThrowIfInvalid(CrcGeojsonPropertyValidator.ValidateText(text), cls, "Text");
+					textDefaults[cls] = text;
+				}
 			}
 		}
 

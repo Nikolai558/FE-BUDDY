@@ -9,6 +9,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:infra="clr-namespace:FeBuddy.Wpf.Infrastructure"
              mc:Ignorable="d"
              x:Name="Self"
              d:DesignWidth="160" d:DesignHeight="34">
@@ -39,6 +40,13 @@
                         </DockPanel>
                     </Border>
                     <ControlTemplate.Triggers>
+                        <!-- Same validation-failure look as the TextBox and ComboBox styles, read
+                             from infra:FieldState.Error set on the FilterPicker itself. Declared
+                             first so the open / focused accent still wins while it is in use. -->
+                        <DataTrigger Binding="{Binding (infra:FieldState.HasError), ElementName=Self}" Value="True">
+                            <Setter TargetName="Box" Property="BorderBrush" Value="{DynamicResource Brush.Danger}" />
+                            <Setter TargetName="Box" Property="Background" Value="{DynamicResource Brush.Danger.Soft}" />
+                        </DataTrigger>
                         <Trigger Property="IsChecked" Value="True">
                             <Setter TargetName="Box" Property="BorderBrush" Value="{DynamicResource Brush.Accent}" />
                         </Trigger>

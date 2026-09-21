@@ -42,22 +42,30 @@ public enum EramFieldKind
 /// (remediation plan 7.4 - three stacked blocks, no LINE/SYMBOL/TEXT selector). Only the
 /// fields that apply to the kind are shown.
 /// </summary>
+/// <remarks>
+/// A row starts empty. FE-Buddy does not pick CRC values on the user's behalf: until they
+/// have been chosen (or restored from <c>UserConfig</c>), the owning tab reports them as
+/// missing while CRC defaults are switched on, and the empty boxes are marked.
+/// </remarks>
 public sealed class EramClassDefault : ObservableObject
 {
-	private readonly Action _onChanged;
-	private string _bcg;
-	private string _filters;
-	private string _style;
-	private string _thickness = "1";
-	private string _size = "1";
+	private const string RequiredMessage = "Required while CRC ERAM defaults are on.";
 
-	/// <summary>Creates a row for <paramref name="className"/> in the <paramref name="kind"/> block.</summary>
-	public EramClassDefault(string className, EramFieldKind kind, string bcg, string filters, string style, Action onChanged)
+	private readonly Action _onChanged;
+	private string _bcg = string.Empty;
+	private string _filters = string.Empty;
+	private string _style = string.Empty;
+	private string _thickness = string.Empty;
+	private string _size = string.Empty;
+	private bool _isRequired;
+
+	/// <summary>Creates an empty row for <paramref name="className"/> in the <paramref name="kind"/> block.</summary>
+	/// <param name="className">The class this row configures, e.g. <c>High</c> or <c>Airports</c>.</param>
+	/// <param name="kind">Which block the row belongs to; decides the fields it shows.</param>
+	/// <param name="onChanged">Called whenever one of the row's values changes.</param>
+	public EramClassDefault(string className, EramFieldKind kind, Action onChanged)
 	{
 		ClassName = className;
-		_bcg = bcg;
-		_filters = filters;
-		_style = style;
 		_onChanged = onChanged;
 		ShowStyle = kind is EramFieldKind.Line or EramFieldKind.Symbol;
 		ShowThickness = kind is EramFieldKind.Line;
@@ -119,11 +127,104 @@ public sealed class EramClassDefault : ObservableObject
 		return values;
 	}
 
-	public string Bcg { get => _bcg; set { if (SetProperty(ref _bcg, Canonical(value, BcgOptions))) _onChanged(); } }
-	public string Filters { get => _filters; set { if (SetProperty(ref _filters, value)) _onChanged(); } }
-	public string Style { get => _style; set { if (SetProperty(ref _style, Canonical(value, StyleOptions))) _onChanged(); } }
-	public string Thickness { get => _thickness; set { if (SetProperty(ref _thickness, Canonical(value, ThicknessOptions))) _onChanged(); } }
-	public string Size { get => _size; set { if (SetProperty(ref _size, Canonical(value, SizeOptions))) _onChanged(); } }
+	/// <summary>The CRC <c>bcg</c> value, or empty until chosen.</summary>
+	public string Bcg
+	{
+		get => _bcg;
+		set => SetField(ref _bcg, Canonical(value, BcgOptions), nameof(BcgError));
+	}
+
+	/// <summary>The CRC <c>filters</c> value (comma-separated), or empty until chosen.</summary>
+	public string Filters
+	{
+		get => _filters;
+		set => SetField(ref _filters, value, nameof(FiltersError));
+	}
+
+	/// <summary>The CRC <c>style</c> value, or empty until chosen. Line and Symbol only.</summary>
+	public string Style
+	{
+		get => _style;
+		set => SetField(ref _style, Canonical(value, StyleOptions), nameof(StyleError));
+	}
+
+	/// <summary>The CRC <c>thickness</c> value, or empty until chosen. Line only.</summary>
+	public string Thickness
+	{
+		get => _thickness;
+		set => SetField(ref _thickness, Canonical(value, ThicknessOptions), nameof(ThicknessError));
+	}
+
+	/// <summary>The CRC <c>size</c> value, or empty until chosen. Symbol and Text only.</summary>
+	public string Size
+	{
+		get => _size;
+		set => SetField(ref _size, Canonical(value, SizeOptions), nameof(SizeError));
+	}
+
+	/// <summary>
+	/// Whether this row's values are needed right now - CRC defaults are on and the file this
+	/// row configures is being written. Set by the owning tab; drives the per-field errors.
+	/// </summary>
+	public bool IsRequired
+	{
+		get => _isRequired;
+		set
+		{
+			if (SetProperty(ref _isRequired, value))
+			{
+				RaiseFieldErrors();
+			}
+		}
+	}
+
+	/// <summary>Whether any field this row shows is still empty.</summary>
+	public bool HasMissingValues =>
+		IsBlank(Bcg)
+		|| IsBlank(Filters)
+		|| (ShowStyle && IsBlank(Style))
+		|| (ShowThickness && IsBlank(Thickness))
+		|| (ShowSize && IsBlank(Size));
+
+	/// <summary>The <c>bcg</c> box's error, for <c>infra:FieldState.Error</c>.</summary>
+	public string? BcgError => MissingError(true, Bcg);
+
+	/// <summary>The <c>filters</c> box's error, for <c>infra:FieldState.Error</c>.</summary>
+	public string? FiltersError => MissingError(true, Filters);
+
+	/// <summary>The <c>style</c> box's error, for <c>infra:FieldState.Error</c>.</summary>
+	public string? StyleError => MissingError(ShowStyle, Style);
+
+	/// <summary>The <c>thickness</c> box's error, for <c>infra:FieldState.Error</c>.</summary>
+	public string? ThicknessError => MissingError(ShowThickness, Thickness);
+
+	/// <summary>The <c>size</c> box's error, for <c>infra:FieldState.Error</c>.</summary>
+	public string? SizeError => MissingError(ShowSize, Size);
+
+	private void SetField(ref string field, string value, string errorPropertyName)
+	{
+		if (!SetProperty(ref field, value ?? string.Empty))
+		{
+			return;
+		}
+
+		OnPropertyChanged(errorPropertyName);
+		_onChanged();
+	}
+
+	private string? MissingError(bool applies, string value) =>
+		IsRequired && applies && IsBlank(value) ? RequiredMessage : null;
+
+	private void RaiseFieldErrors()
+	{
+		OnPropertyChanged(nameof(BcgError));
+		OnPropertyChanged(nameof(FiltersError));
+		OnPropertyChanged(nameof(StyleError));
+		OnPropertyChanged(nameof(ThicknessError));
+		OnPropertyChanged(nameof(SizeError));
+	}
+
+	private static bool IsBlank(string value) => string.IsNullOrWhiteSpace(value);
 
 	/// <summary>
 	/// Returns the option matching <paramref name="value"/> in its canonical spelling, so a
@@ -133,8 +234,13 @@ public sealed class EramClassDefault : ObservableObject
 	/// <param name="value">The incoming value.</param>
 	/// <param name="options">The allowed values for this field.</param>
 	/// <returns>The canonical value.</returns>
-	private static string Canonical(string value, IReadOnlyList<string> options)
+	private static string Canonical(string? value, IReadOnlyList<string> options)
 	{
+		if (value is null)
+		{
+			return string.Empty;
+		}
+
 		foreach (string option in options)
 		{
 			if (string.Equals(option, value, StringComparison.OrdinalIgnoreCase))

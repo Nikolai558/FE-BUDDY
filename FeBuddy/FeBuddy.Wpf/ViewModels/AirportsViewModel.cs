@@ -31,6 +31,9 @@ public sealed class AirportsViewModel : SubServiceSettingsViewModel, ISubService
     private const string Node = "Services.AiracService.Airports";
     private const string PrecisionKey = "Services.AiracService.CoordinatePrecision";
 
+    private const string CrcDefaultsIncompleteMessage =
+        "CRC ERAM defaults are on but some values are empty. Fill in the marked boxes, or switch CRC ERAM defaults off.";
+
     private bool _generateGeojson = true;
     private bool _generateAliasFile = true;
     private bool _emitAirportSymbols = true;
@@ -66,17 +69,17 @@ public sealed class AirportsViewModel : SubServiceSettingsViewModel, ISubService
 
         AirportSymbolDefaults = new ObservableCollection<EramClassDefault>
         {
-            new("Airports", EramFieldKind.Symbol, "5", "5", "airport", MarkDirty)
+            new("Airports", EramFieldKind.Symbol, MarkDirty)
         };
 
         AirportTextDefaults = new ObservableCollection<EramClassDefault>
         {
-            new("Airports", EramFieldKind.Text, "5", "5", string.Empty, MarkDirty)
+            new("Airports", EramFieldKind.Text, MarkDirty)
         };
 
         RunwayLineDefaults = new ObservableCollection<EramClassDefault>
         {
-            new("Runways", EramFieldKind.Line, "6", "6", "solid", MarkDirty)
+            new("Runways", EramFieldKind.Line, MarkDirty)
         };
 
         OpenOutputCommand = new RelayCommand(OpenOutputFolder, () => LastOutputDirectory is not null);
@@ -595,6 +598,19 @@ public sealed class AirportsViewModel : SubServiceSettingsViewModel, ISubService
         if (IncludeFebCustomProperties && FebProperties.All(p => !p.IsSelected))
         {
             validation.Add("FE-Buddy properties are on but none are selected. Pick at least one, or switch them off.");
+        }
+
+        // Only the rows whose file is actually written are needed; a row for a file that is
+        // switched off is never read, so it is not held against the user.
+        bool crcActive = IncludeCrcEramPropertyDefaults && GenerateGeojson;
+        AirportSymbolDefaults[0].IsRequired = crcActive && EmitAirportSymbols;
+        AirportTextDefaults[0].IsRequired = crcActive && EmitAirportText;
+        RunwayLineDefaults[0].IsRequired = crcActive && EmitRunwayLines;
+
+        if (AirportSymbolDefaults.Concat(AirportTextDefaults).Concat(RunwayLineDefaults)
+            .Any(row => row.IsRequired && row.HasMissingValues))
+        {
+            validation.Add(CrcDefaultsIncompleteMessage);
         }
 
         if (!OverrideRoi)

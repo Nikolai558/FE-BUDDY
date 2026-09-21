@@ -41,6 +41,7 @@ namespace FeBuddy.Core.Parsers.NASR.CSV
                     DpName = fields["DP_NAME"],
                     AmendmentNo = fields["AMENDMENT_NO"],
                     Artcc = fields["ARTCC"],
+                    DpComputerCode = fields["DP_COMPUTER_CODE"],
                     DpAmendEffDate = fields["DP_AMEND_EFF_DATE"],
                     RnavFlag = fields["RNAV_FLAG"],
                     GraphicalDpType = fields["GRAPHICAL_DP_TYPE"],

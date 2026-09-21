@@ -1,10 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
-
 using FeBuddy.Core.Models.NASR.CSV;
 
-namespace FeBuddy.Core.Handlers.CSV;
+namespace FeBuddy.Core.Handlers.General;
 
 /// <summary>
 /// Provides methods for locating waypoint coordinates from parsed NASR CSV data.

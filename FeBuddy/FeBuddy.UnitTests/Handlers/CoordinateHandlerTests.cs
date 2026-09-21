@@ -1,4 +1,4 @@
-using FeBuddy.Core.Handlers;
+using FeBuddy.Core.Handlers.General;
 
 namespace FeBuddy.UnitTests.Handlers;
 public class CoordinateHandlerTests

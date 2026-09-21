@@ -2,7 +2,7 @@ using FeBuddy.Core.Models.Location;
 using System.Runtime.CompilerServices;
 
 [assembly: InternalsVisibleTo("FeBuddy.UnitTests")]
-namespace FeBuddy.Core.Handlers;
+namespace FeBuddy.Core.Handlers.General;
 /// <summary>
 /// A static class that handles all logic for coordinate math and conversions.
 /// </summary>

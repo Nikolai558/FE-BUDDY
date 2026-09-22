@@ -138,9 +138,9 @@ public static class AirwayGeojsonService
 	{
 		FeatureCollection collection = new();
 
-		if (settings.IncludeCrcEramPropertyDefaults)
+		if (settings.IncludeCrcLineDefaults)
 		{
-			collection.Add(CrcEramPropertyHandler.CreateDefault(CrcFeatureKind.Line, settings.LineDefaults[referenceClass]));
+			collection.Add(CrcEramPropertyHandler.CreateDefault(settings.LineDefaults[referenceClass]));
 		}
 
 		int renderedCount = 0;
@@ -150,12 +150,12 @@ public static class AirwayGeojsonService
 			AttributesTable attributes;
 
 			bool needsOverride =
-				settings.IncludeCrcEramPropertyDefaults &&
+				settings.IncludeCrcLineDefaults &&
 				settings.OutputBy == AirwayGeojsonOutputBy.Designation &&
 				airway.AltitudeClass != referenceClass;
 
 			attributes = needsOverride
-				? CrcEramPropertyHandler.CreateFeatureProperty(CrcFeatureKind.Line, settings.LineDefaults[airway.AltitudeClass])
+				? CrcEramPropertyHandler.CreateFeatureProperty(CrcFeatureKind.Line, settings.LineDefaults[airway.AltitudeClass].ToFeatureProperties())
 				: new AttributesTable();
 
 			if (settings.IncludeFebCustomProperties)
@@ -233,9 +233,9 @@ public static class AirwayGeojsonService
 	{
 		FeatureCollection collection = new();
 
-		if (settings.IncludeCrcEramPropertyDefaults)
+		if (settings.IncludeCrcSymbolDefaults)
 		{
-			collection.Add(CrcEramPropertyHandler.CreateDefault(CrcFeatureKind.Symbol, settings.SymbolDefaults[referenceClass]));
+			collection.Add(CrcEramPropertyHandler.CreateDefault(settings.SymbolDefaults[referenceClass]));
 		}
 
 		foreach (AirwayPoint point in points)
@@ -270,9 +270,9 @@ public static class AirwayGeojsonService
 	{
 		FeatureCollection collection = new();
 
-		if (settings.IncludeCrcEramPropertyDefaults)
+		if (settings.IncludeCrcTextDefaults)
 		{
-			collection.Add(CrcEramPropertyHandler.CreateDefault(CrcFeatureKind.Text, settings.TextDefaults[referenceClass]));
+			collection.Add(CrcEramPropertyHandler.CreateDefault(settings.TextDefaults[referenceClass]));
 		}
 
 		foreach (AirwayPoint point in points)

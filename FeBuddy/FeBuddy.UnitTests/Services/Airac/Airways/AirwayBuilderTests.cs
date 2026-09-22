@@ -18,7 +18,9 @@ public class AirwayBuilderTests
 		IncludeAirwayWaypointIds = false,
 		GenerateAliasFile = true,
 		SplitAtAntimeridian = true,
-		IncludeCrcEramPropertyDefaults = false,
+		IncludeCrcLineDefaults = false,
+		IncludeCrcSymbolDefaults = false,
+		IncludeCrcTextDefaults = false,
 		Roi = roi
 	};
 

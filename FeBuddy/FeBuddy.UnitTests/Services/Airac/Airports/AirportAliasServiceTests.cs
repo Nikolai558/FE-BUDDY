@@ -52,7 +52,9 @@ public sealed class AirportAliasServiceTests : IDisposable
 		GenerateGeojson = false,
 		GenerateAliasFile = true,
 		IncludeFebCustomProperties = false,
-		IncludeCrcEramPropertyDefaults = false,
+		IncludeCrcLineDefaults = false,
+		IncludeCrcSymbolDefaults = false,
+		IncludeCrcTextDefaults = false,
 	};
 
 	[Fact]

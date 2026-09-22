@@ -32,7 +32,7 @@ public sealed class AirportsViewModel : SubServiceSettingsViewModel, ISubService
     private const string PrecisionKey = "Services.AiracService.CoordinatePrecision";
 
     private const string CrcDefaultsIncompleteMessage =
-        "CRC ERAM defaults are on but some values are empty. Fill in the marked boxes, or switch CRC ERAM defaults off.";
+        "Some CRC ERAM default values are empty or invalid. Fix the marked boxes, or untick Include on that panel.";
 
     private bool _generateGeojson = true;
     private bool _generateAliasFile = true;
@@ -40,7 +40,9 @@ public sealed class AirportsViewModel : SubServiceSettingsViewModel, ISubService
     private bool _emitAirportText = true;
     private bool _emitRunwayLines = true;
     private bool _includeFebCustomProperties;
-    private bool _includeCrcEramPropertyDefaults = true;
+    private bool _includeCrcLineDefaults = true;
+    private bool _includeCrcSymbolDefaults = true;
+    private bool _includeCrcTextDefaults = true;
     private bool _overrideRoi;
     private string _swLat = string.Empty;
     private string _swLon = string.Empty;
@@ -183,11 +185,25 @@ public sealed class AirportsViewModel : SubServiceSettingsViewModel, ISubService
 
     // ================= CRC ERAM defaults =================
 
-    /// <summary>Whether the CRC ERAM isDefaults Feature is written into each GeoJSON file.</summary>
-    public bool IncludeCrcEramPropertyDefaults
+    /// <summary>Whether the CRC ERAM isDefaults Feature is written into <c>Runways_Lines.geojson</c>.</summary>
+    public bool IncludeCrcLineDefaults
     {
-        get => _includeCrcEramPropertyDefaults;
-        set { if (SetProperty(ref _includeCrcEramPropertyDefaults, value)) MarkDirty(); }
+        get => _includeCrcLineDefaults;
+        set { if (SetProperty(ref _includeCrcLineDefaults, value)) MarkDirty(); }
+    }
+
+    /// <summary>Whether the CRC ERAM isDefaults Feature is written into <c>Airports_Symbols.geojson</c>.</summary>
+    public bool IncludeCrcSymbolDefaults
+    {
+        get => _includeCrcSymbolDefaults;
+        set { if (SetProperty(ref _includeCrcSymbolDefaults, value)) MarkDirty(); }
+    }
+
+    /// <summary>Whether the CRC ERAM isDefaults Feature is written into <c>Airports_Text.geojson</c>.</summary>
+    public bool IncludeCrcTextDefaults
+    {
+        get => _includeCrcTextDefaults;
+        set { if (SetProperty(ref _includeCrcTextDefaults, value)) MarkDirty(); }
     }
 
     /// <summary>CRC symbol defaults for the airport points.</summary>
@@ -455,7 +471,9 @@ public sealed class AirportsViewModel : SubServiceSettingsViewModel, ISubService
             ["EmitRunwayLines"] = YesNo(EmitRunwayLines),
             ["IncludeFebCustomProperties"] = YesNo(IncludeFebCustomProperties),
             ["FebProperties"] = string.Join(',', FebProperties.Where(p => p.IsSelected).Select(p => p.Name)),
-            ["IncludeCrcEramPropertyDefaults"] = YesNo(IncludeCrcEramPropertyDefaults),
+            ["IncludeCrcLineDefaults"] = YesNo(IncludeCrcLineDefaults),
+            ["IncludeCrcSymbolDefaults"] = YesNo(IncludeCrcSymbolDefaults),
+            ["IncludeCrcTextDefaults"] = YesNo(IncludeCrcTextDefaults),
             ["AddFeBuddyOutputFolder"] = YesNo(addFeBuddyOutputFolder),
             ["FilterByRoi"] = YesNo(filterByRoi),
             ["CoordinatePrecision"] = ResolveCoordinatePrecision().ToString(CultureInfo.InvariantCulture),
@@ -476,13 +494,13 @@ public sealed class AirportsViewModel : SubServiceSettingsViewModel, ISubService
             s["RoiNeLon"] = defaultRoi.NeLon.ToString(CultureInfo.InvariantCulture);
         }
 
-        if (IncludeCrcEramPropertyDefaults && GenerateGeojson)
+        if (GenerateGeojson)
         {
-            // Only the blocks whose file is actually being written; the parser requires exactly
-            // those and warns about any others.
-            if (EmitAirportSymbols) WriteCrcRow(s, "Symbol", AirportSymbolDefaults[0]);
-            if (EmitAirportText) WriteCrcRow(s, "Text", AirportTextDefaults[0]);
-            if (EmitRunwayLines) WriteCrcRow(s, "Line", RunwayLineDefaults[0]);
+            // Only the blocks whose file is actually being written and whose Include box is
+            // ticked; the parser requires exactly those and warns about any others.
+            if (IncludeCrcSymbolDefaults && EmitAirportSymbols) WriteCrcRow(s, "Symbol", AirportSymbolDefaults[0]);
+            if (IncludeCrcTextDefaults && EmitAirportText) WriteCrcRow(s, "Text", AirportTextDefaults[0]);
+            if (IncludeCrcLineDefaults && EmitRunwayLines) WriteCrcRow(s, "Line", RunwayLineDefaults[0]);
         }
 
         return s;
@@ -496,6 +514,15 @@ public sealed class AirportsViewModel : SubServiceSettingsViewModel, ISubService
         if (EmitAirportText) geojsonFiles.Add("Text");
         if (EmitRunwayLines) geojsonFiles.Add("Runway lines");
 
+        // Same order and names as the GeoJSON row above.
+        List<string> crcDefaults = new();
+        if (GenerateGeojson)
+        {
+            if (IncludeCrcSymbolDefaults && EmitAirportSymbols) crcDefaults.Add("Symbols");
+            if (IncludeCrcTextDefaults && EmitAirportText) crcDefaults.Add("Text");
+            if (IncludeCrcLineDefaults && EmitRunwayLines) crcDefaults.Add("Runway lines");
+        }
+
         string[] selectedProperties = FebProperties.Where(p => p.IsSelected).Select(p => p.Name).ToArray();
 
         ServiceReviewRow[] rows =
@@ -508,7 +535,7 @@ public sealed class AirportsViewModel : SubServiceSettingsViewModel, ISubService
                 IncludeFebCustomProperties && selectedProperties.Length > 0
                     ? string.Join(", ", selectedProperties)
                     : "No"),
-            new ServiceReviewRow("CRC ERAM defaults", IncludeCrcEramPropertyDefaults ? "Yes" : "No"),
+            new ServiceReviewRow("CRC ERAM defaults", crcDefaults.Count > 0 ? string.Join(", ", crcDefaults) : "None"),
             new ServiceReviewRow("Region of interest", DescribeRoi()),
         };
 
@@ -550,7 +577,9 @@ public sealed class AirportsViewModel : SubServiceSettingsViewModel, ISubService
         _emitAirportText = GetBool("EmitAirportText", true);
         _emitRunwayLines = GetBool("EmitRunwayLines", true);
         _includeFebCustomProperties = GetBool("IncludeFebCustomProperties", false);
-        _includeCrcEramPropertyDefaults = GetBool("IncludeCrcEramPropertyDefaults", true);
+        _includeCrcLineDefaults = GetBool("IncludeCrcLineDefaults", true);
+        _includeCrcSymbolDefaults = GetBool("IncludeCrcSymbolDefaults", true);
+        _includeCrcTextDefaults = GetBool("IncludeCrcTextDefaults", true);
 
         // Both outputs off would leave the tab in a state its own guard forbids; a hand-edited
         // config is the only way to get here, so fall back to the default rather than honour it.
@@ -596,7 +625,9 @@ public sealed class AirportsViewModel : SubServiceSettingsViewModel, ISubService
         Set("EmitRunwayLines", YesNo(EmitRunwayLines));
         Set("IncludeFebCustomProperties", YesNo(IncludeFebCustomProperties));
         Set("FebProperties", string.Join(',', FebProperties.Where(p => p.IsSelected).Select(p => p.Name)));
-        Set("IncludeCrcEramPropertyDefaults", YesNo(IncludeCrcEramPropertyDefaults));
+        Set("IncludeCrcLineDefaults", YesNo(IncludeCrcLineDefaults));
+        Set("IncludeCrcSymbolDefaults", YesNo(IncludeCrcSymbolDefaults));
+        Set("IncludeCrcTextDefaults", YesNo(IncludeCrcTextDefaults));
         Set("Roi.OverrideDefaultRoi", YesNo(OverrideRoi));
         Set("Roi.OverrideCoordindates.SwLat", SwLat);
         Set("Roi.OverrideCoordindates.SwLon", SwLon);
@@ -623,12 +654,11 @@ public sealed class AirportsViewModel : SubServiceSettingsViewModel, ISubService
             validation.Add("FE-Buddy properties are on but none are selected. Pick at least one, or switch them off.");
         }
 
-        // Only the rows whose file is actually written are needed; a row for a file that is
-        // switched off is never read, so it is not held against the user.
-        bool crcActive = IncludeCrcEramPropertyDefaults && GenerateGeojson;
-        AirportSymbolDefaults[0].IsRequired = crcActive && EmitAirportSymbols;
-        AirportTextDefaults[0].IsRequired = crcActive && EmitAirportText;
-        RunwayLineDefaults[0].IsRequired = crcActive && EmitRunwayLines;
+        // Only the rows whose file is actually written and whose Include box is ticked are
+        // needed; any other row is never read, so it is not held against the user.
+        AirportSymbolDefaults[0].IsRequired = GenerateGeojson && EmitAirportSymbols && IncludeCrcSymbolDefaults;
+        AirportTextDefaults[0].IsRequired = GenerateGeojson && EmitAirportText && IncludeCrcTextDefaults;
+        RunwayLineDefaults[0].IsRequired = GenerateGeojson && EmitRunwayLines && IncludeCrcLineDefaults;
 
         if (AirportSymbolDefaults.Concat(AirportTextDefaults).Concat(RunwayLineDefaults)
             .Any(row => row.IsRequired && row.HasMissingValues))
@@ -743,6 +773,10 @@ public sealed class AirportsViewModel : SubServiceSettingsViewModel, ISubService
         if (kind is "Text")
         {
             settings[$"{prefix}.size"] = row.Size;
+            settings[$"{prefix}.underline"] = row.Underline;
+            settings[$"{prefix}.opaque"] = row.Opaque;
+            settings[$"{prefix}.xOffset"] = row.XOffset.Trim();
+            settings[$"{prefix}.yOffset"] = row.YOffset.Trim();
         }
     }
 
@@ -767,6 +801,14 @@ public sealed class AirportsViewModel : SubServiceSettingsViewModel, ISubService
         {
             row.Size = Get($"{prefix}.size") ?? row.Size;
         }
+
+        if (kind is "Text")
+        {
+            row.Underline = Get($"{prefix}.underline") ?? row.Underline;
+            row.Opaque = Get($"{prefix}.opaque") ?? row.Opaque;
+            row.XOffset = Get($"{prefix}.xOffset") ?? row.XOffset;
+            row.YOffset = Get($"{prefix}.yOffset") ?? row.YOffset;
+        }
     }
 
     private void SaveCrcRow(string kind, EramClassDefault row)
@@ -790,6 +832,14 @@ public sealed class AirportsViewModel : SubServiceSettingsViewModel, ISubService
         {
             Set($"{prefix}.size", row.Size);
         }
+
+        if (kind is "Text")
+        {
+            Set($"{prefix}.underline", row.Underline);
+            Set($"{prefix}.opaque", row.Opaque);
+            Set($"{prefix}.xOffset", row.XOffset);
+            Set($"{prefix}.yOffset", row.YOffset);
+        }
     }
 
     private void RaisePanelCounts()
@@ -809,7 +859,9 @@ public sealed class AirportsViewModel : SubServiceSettingsViewModel, ISubService
         OnPropertyChanged(nameof(EmitAirportText));
         OnPropertyChanged(nameof(EmitRunwayLines));
         OnPropertyChanged(nameof(IncludeFebCustomProperties));
-        OnPropertyChanged(nameof(IncludeCrcEramPropertyDefaults));
+        OnPropertyChanged(nameof(IncludeCrcLineDefaults));
+        OnPropertyChanged(nameof(IncludeCrcSymbolDefaults));
+        OnPropertyChanged(nameof(IncludeCrcTextDefaults));
         OnPropertyChanged(nameof(OverrideRoi));
         OnPropertyChanged(nameof(SwLat));
         OnPropertyChanged(nameof(SwLon));

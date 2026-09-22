@@ -44,11 +44,25 @@ public sealed record AirportSettings
 	public IReadOnlyCollection<AirportFebProperty> FebProperties { get; init; } = Array.Empty<AirportFebProperty>();
 
 	/// <summary>
-	/// Whether CRC ERAM property defaults (<see cref="LineDefaults"/>,
-	/// <see cref="SymbolDefaults"/>, <see cref="TextDefaults"/>) are written as isDefaults
-	/// Features in the generated GeoJSON files.
+	/// Whether the Line defaults (<see cref="LineDefaults"/>) are written as an isLineDefaults
+	/// Feature. <see langword="true"/> only when the user asked for them and the file they belong
+	/// to is being produced.
 	/// </summary>
-	public required bool IncludeCrcEramPropertyDefaults { get; init; }
+	public required bool IncludeCrcLineDefaults { get; init; }
+
+	/// <summary>
+	/// Whether the Symbol defaults (<see cref="SymbolDefaults"/>) are written as an isSymbolDefaults
+	/// Feature. <see langword="true"/> only when the user asked for them and the file they belong
+	/// to is being produced.
+	/// </summary>
+	public required bool IncludeCrcSymbolDefaults { get; init; }
+
+	/// <summary>
+	/// Whether the Text defaults (<see cref="TextDefaults"/>) are written as an isTextDefaults
+	/// Feature. <see langword="true"/> only when the user asked for them and the file they belong
+	/// to is being produced.
+	/// </summary>
+	public required bool IncludeCrcTextDefaults { get; init; }
 
 	/// <summary>
 	/// The Region of Interest the GeoJSON output is filtered to, or <see langword="null"/> for
@@ -67,23 +81,17 @@ public sealed record AirportSettings
 	/// </summary>
 	public bool AddFeBuddyOutputFolder { get; init; } = true;
 
-	/// <summary>CRC line property defaults, keyed by class. Populated when <see cref="IncludeCrcEramPropertyDefaults"/> is <see langword="true"/>.</summary>
-	public IReadOnlyDictionary<AirportCrcClass, CrcLineProperties> LineDefaults { get; init; } =
-		new Dictionary<AirportCrcClass, CrcLineProperties>();
+	/// <summary>CRC line property defaults, keyed by class. Populated when <see cref="IncludeCrcLineDefaults"/> is <see langword="true"/>.</summary>
+	public IReadOnlyDictionary<AirportCrcClass, CrcLineDefaults> LineDefaults { get; init; } =
+		new Dictionary<AirportCrcClass, CrcLineDefaults>();
 
-	/// <summary>CRC symbol property defaults, keyed by class. Populated when <see cref="IncludeCrcEramPropertyDefaults"/> is <see langword="true"/>.</summary>
-	public IReadOnlyDictionary<AirportCrcClass, CrcSymbolProperties> SymbolDefaults { get; init; } =
-		new Dictionary<AirportCrcClass, CrcSymbolProperties>();
+	/// <summary>CRC symbol property defaults, keyed by class. Populated when <see cref="IncludeCrcSymbolDefaults"/> is <see langword="true"/>.</summary>
+	public IReadOnlyDictionary<AirportCrcClass, CrcSymbolDefaults> SymbolDefaults { get; init; } =
+		new Dictionary<AirportCrcClass, CrcSymbolDefaults>();
 
 	/// <summary>
-	/// CRC text property defaults, keyed by class. Populated when
-	/// <see cref="IncludeCrcEramPropertyDefaults"/> is <see langword="true"/>.
+	/// CRC text property defaults, keyed by class. Populated when <see cref="IncludeCrcTextDefaults"/> is <see langword="true"/>.
 	/// </summary>
-	/// <remarks>
-	/// As with Airways, the <see cref="CrcTextProperties.Text"/> value here is a non-rendered
-	/// placeholder: the isDefaults Text Feature is never drawn, and every real airport supplies
-	/// its own <c>text</c> (its FAA ID and name) as a per-feature override.
-	/// </remarks>
-	public IReadOnlyDictionary<AirportCrcClass, CrcTextProperties> TextDefaults { get; init; } =
-		new Dictionary<AirportCrcClass, CrcTextProperties>();
+	public IReadOnlyDictionary<AirportCrcClass, CrcTextDefaults> TextDefaults { get; init; } =
+		new Dictionary<AirportCrcClass, CrcTextDefaults>();
 }

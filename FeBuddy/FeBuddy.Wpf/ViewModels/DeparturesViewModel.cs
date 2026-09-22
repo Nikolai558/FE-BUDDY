@@ -34,7 +34,7 @@ public sealed class DeparturesViewModel : SubServiceSettingsViewModel, ISubServi
     private const string OutputRootFolderName = "Departure Procedures";
 
     private const string CrcDefaultsIncompleteMessage =
-        "CRC ERAM defaults are on but some values are empty. Fill in the marked boxes, or switch CRC ERAM defaults off.";
+        "Some CRC ERAM default values are empty or invalid. Fix the marked boxes, or untick Include on that panel.";
 
     private bool _generateGeojson = true;
     private bool _generateAliasFile = true;
@@ -43,7 +43,9 @@ public sealed class DeparturesViewModel : SubServiceSettingsViewModel, ISubServi
     private bool _emitText = true;
     private bool _includeObstacleDepartures = true;
     private bool _includeFebCustomProperties;
-    private bool _includeCrcEramPropertyDefaults = true;
+    private bool _includeCrcLineDefaults = true;
+    private bool _includeCrcSymbolDefaults = true;
+    private bool _includeCrcTextDefaults = true;
     private bool _useRoi;
     private DepartureRoiMode _roiMode = DepartureRoiMode.Airport;
     private bool _overrideRoi;
@@ -274,11 +276,25 @@ public sealed class DeparturesViewModel : SubServiceSettingsViewModel, ISubServi
 
     // ================= CRC ERAM defaults =================
 
-    /// <summary>Whether the CRC ERAM isDefaults Feature is written into each GeoJSON file.</summary>
-    public bool IncludeCrcEramPropertyDefaults
+    /// <summary>Whether the CRC ERAM isDefaults Feature is written into each <c>_Lines</c> file.</summary>
+    public bool IncludeCrcLineDefaults
     {
-        get => _includeCrcEramPropertyDefaults;
-        set { if (SetProperty(ref _includeCrcEramPropertyDefaults, value)) MarkDirty(); }
+        get => _includeCrcLineDefaults;
+        set { if (SetProperty(ref _includeCrcLineDefaults, value)) MarkDirty(); }
+    }
+
+    /// <summary>Whether the CRC ERAM isDefaults Feature is written into each <c>_Symbols</c> file.</summary>
+    public bool IncludeCrcSymbolDefaults
+    {
+        get => _includeCrcSymbolDefaults;
+        set { if (SetProperty(ref _includeCrcSymbolDefaults, value)) MarkDirty(); }
+    }
+
+    /// <summary>Whether the CRC ERAM isDefaults Feature is written into each <c>_Text</c> file.</summary>
+    public bool IncludeCrcTextDefaults
+    {
+        get => _includeCrcTextDefaults;
+        set { if (SetProperty(ref _includeCrcTextDefaults, value)) MarkDirty(); }
     }
 
     /// <summary>CRC line defaults for the procedure lines.</summary>
@@ -549,7 +565,9 @@ public sealed class DeparturesViewModel : SubServiceSettingsViewModel, ISubServi
             ["AmendedWithinCycles"] = "0",
             ["IncludeFebCustomProperties"] = YesNo(IncludeFebCustomProperties),
             ["FebProperties"] = string.Join(',', FebProperties.Where(p => p.IsSelected).Select(p => p.Name)),
-            ["IncludeCrcEramPropertyDefaults"] = YesNo(IncludeCrcEramPropertyDefaults),
+            ["IncludeCrcLineDefaults"] = YesNo(IncludeCrcLineDefaults),
+            ["IncludeCrcSymbolDefaults"] = YesNo(IncludeCrcSymbolDefaults),
+            ["IncludeCrcTextDefaults"] = YesNo(IncludeCrcTextDefaults),
             ["FilterByRoi"] = YesNo(UseRoi),
             ["RoiMode"] = _roiMode.ToString(),
             ["CoordinatePrecision"] = ResolveCoordinatePrecision().ToString(CultureInfo.InvariantCulture),
@@ -571,13 +589,13 @@ public sealed class DeparturesViewModel : SubServiceSettingsViewModel, ISubServi
             s["RoiNeLon"] = defaultRoi.NeLon.ToString(CultureInfo.InvariantCulture);
         }
 
-        if (IncludeCrcEramPropertyDefaults && GenerateGeojson)
+        if (GenerateGeojson)
         {
-            // Only the blocks whose file is actually being written; the parser requires exactly
-            // those and warns about any others.
-            if (EmitLines) WriteCrcRow(s, "Line", LineDefaults[0]);
-            if (EmitSymbols) WriteCrcRow(s, "Symbol", SymbolDefaults[0]);
-            if (EmitText) WriteCrcRow(s, "Text", TextDefaults[0]);
+            // Only the blocks whose file is actually being written and whose Include box is
+            // ticked; the parser requires exactly those and warns about any others.
+            if (IncludeCrcLineDefaults && EmitLines) WriteCrcRow(s, "Line", LineDefaults[0]);
+            if (IncludeCrcSymbolDefaults && EmitSymbols) WriteCrcRow(s, "Symbol", SymbolDefaults[0]);
+            if (IncludeCrcTextDefaults && EmitText) WriteCrcRow(s, "Text", TextDefaults[0]);
         }
 
         return s;
@@ -595,6 +613,14 @@ public sealed class DeparturesViewModel : SubServiceSettingsViewModel, ISubServi
         if (EmitSymbols) geojsonFiles.Add("Symbols");
         if (EmitText) geojsonFiles.Add("Text");
 
+        List<string> crcDefaults = new();
+        if (GenerateGeojson)
+        {
+            if (IncludeCrcLineDefaults && EmitLines) crcDefaults.Add("Lines");
+            if (IncludeCrcSymbolDefaults && EmitSymbols) crcDefaults.Add("Symbols");
+            if (IncludeCrcTextDefaults && EmitText) crcDefaults.Add("Text");
+        }
+
         // Before a cycle is parsed the toggle list is empty; SelectedArtccs falls back to what
         // is saved, so the review does not claim "All" when a filter is on disk.
         string[] selectedArtccs = SelectedArtccs().ToArray();
@@ -610,7 +636,7 @@ public sealed class DeparturesViewModel : SubServiceSettingsViewModel, ISubServi
                 IncludeFebCustomProperties && selectedProperties.Length > 0
                     ? string.Join(", ", selectedProperties)
                     : "No"),
-            new ServiceReviewRow("CRC ERAM defaults", IncludeCrcEramPropertyDefaults ? "Yes" : "No"),
+            new ServiceReviewRow("CRC ERAM defaults", crcDefaults.Count > 0 ? string.Join(", ", crcDefaults) : "None"),
         };
 
         return new[] { new ServiceReviewSection("Departures", rows) };
@@ -628,7 +654,9 @@ public sealed class DeparturesViewModel : SubServiceSettingsViewModel, ISubServi
         _emitText = GetBool("EmitText", true);
         _includeObstacleDepartures = GetBool("IncludeObstacleDepartures", true);
         _includeFebCustomProperties = GetBool("IncludeFebCustomProperties", false);
-        _includeCrcEramPropertyDefaults = GetBool("IncludeCrcEramPropertyDefaults", true);
+        _includeCrcLineDefaults = GetBool("IncludeCrcLineDefaults", true);
+        _includeCrcSymbolDefaults = GetBool("IncludeCrcSymbolDefaults", true);
+        _includeCrcTextDefaults = GetBool("IncludeCrcTextDefaults", true);
 
         // Both outputs off would leave the tab in a state its own guard forbids; a hand-edited
         // config is the only way to get here, so fall back to the default rather than honour it.
@@ -690,7 +718,9 @@ public sealed class DeparturesViewModel : SubServiceSettingsViewModel, ISubServi
         Set("ArtccFilter", string.Join(',', SelectedArtccs()));
         Set("IncludeFebCustomProperties", YesNo(IncludeFebCustomProperties));
         Set("FebProperties", string.Join(',', FebProperties.Where(p => p.IsSelected).Select(p => p.Name)));
-        Set("IncludeCrcEramPropertyDefaults", YesNo(IncludeCrcEramPropertyDefaults));
+        Set("IncludeCrcLineDefaults", YesNo(IncludeCrcLineDefaults));
+        Set("IncludeCrcSymbolDefaults", YesNo(IncludeCrcSymbolDefaults));
+        Set("IncludeCrcTextDefaults", YesNo(IncludeCrcTextDefaults));
         Set("Roi.UseRoi", YesNo(UseRoi));
         Set("Roi.Mode", _roiMode.ToString());
         Set("Roi.OverrideDefaultRoi", YesNo(OverrideRoi));
@@ -719,12 +749,11 @@ public sealed class DeparturesViewModel : SubServiceSettingsViewModel, ISubServi
             validation.Add("FE-Buddy properties are on but none are selected. Pick at least one, or switch them off.");
         }
 
-        // Only the rows whose file is actually written are needed; a row for a file that is
-        // switched off is never read, so it is not held against the user.
-        bool crcActive = IncludeCrcEramPropertyDefaults && GenerateGeojson;
-        LineDefaults[0].IsRequired = crcActive && EmitLines;
-        SymbolDefaults[0].IsRequired = crcActive && EmitSymbols;
-        TextDefaults[0].IsRequired = crcActive && EmitText;
+        // Only the rows whose file is actually written and whose Include box is ticked are
+        // needed; any other row is never read, so it is not held against the user.
+        LineDefaults[0].IsRequired = GenerateGeojson && EmitLines && IncludeCrcLineDefaults;
+        SymbolDefaults[0].IsRequired = GenerateGeojson && EmitSymbols && IncludeCrcSymbolDefaults;
+        TextDefaults[0].IsRequired = GenerateGeojson && EmitText && IncludeCrcTextDefaults;
 
         if (LineDefaults.Concat(SymbolDefaults).Concat(TextDefaults)
             .Any(row => row.IsRequired && row.HasMissingValues))
@@ -994,6 +1023,10 @@ public sealed class DeparturesViewModel : SubServiceSettingsViewModel, ISubServi
         if (kind is "Text")
         {
             settings[$"{prefix}.size"] = row.Size;
+            settings[$"{prefix}.underline"] = row.Underline;
+            settings[$"{prefix}.opaque"] = row.Opaque;
+            settings[$"{prefix}.xOffset"] = row.XOffset.Trim();
+            settings[$"{prefix}.yOffset"] = row.YOffset.Trim();
         }
     }
 
@@ -1018,6 +1051,14 @@ public sealed class DeparturesViewModel : SubServiceSettingsViewModel, ISubServi
         {
             row.Size = Get($"{prefix}.size") ?? row.Size;
         }
+
+        if (kind is "Text")
+        {
+            row.Underline = Get($"{prefix}.underline") ?? row.Underline;
+            row.Opaque = Get($"{prefix}.opaque") ?? row.Opaque;
+            row.XOffset = Get($"{prefix}.xOffset") ?? row.XOffset;
+            row.YOffset = Get($"{prefix}.yOffset") ?? row.YOffset;
+        }
     }
 
     private void SaveCrcRow(string kind, EramClassDefault row)
@@ -1041,6 +1082,14 @@ public sealed class DeparturesViewModel : SubServiceSettingsViewModel, ISubServi
         {
             Set($"{prefix}.size", row.Size);
         }
+
+        if (kind is "Text")
+        {
+            Set($"{prefix}.underline", row.Underline);
+            Set($"{prefix}.opaque", row.Opaque);
+            Set($"{prefix}.xOffset", row.XOffset);
+            Set($"{prefix}.yOffset", row.YOffset);
+        }
     }
 
     private void RaisePanelCounts()
@@ -1062,7 +1111,9 @@ public sealed class DeparturesViewModel : SubServiceSettingsViewModel, ISubServi
         OnPropertyChanged(nameof(EmitText));
         OnPropertyChanged(nameof(IncludeObstacleDepartures));
         OnPropertyChanged(nameof(IncludeFebCustomProperties));
-        OnPropertyChanged(nameof(IncludeCrcEramPropertyDefaults));
+        OnPropertyChanged(nameof(IncludeCrcLineDefaults));
+        OnPropertyChanged(nameof(IncludeCrcSymbolDefaults));
+        OnPropertyChanged(nameof(IncludeCrcTextDefaults));
         OnPropertyChanged(nameof(UseRoi));
         OnPropertyChanged(nameof(RoiModeAirport));
         OnPropertyChanged(nameof(RoiModeWaypoint));

@@ -11,6 +11,38 @@ public class DepartureSettingsParserTests
 		{ "OutputDirectory", @"C:\Output" }
 	};
 
+	/// <summary>Adds a complete, valid set of CRC defaults for one class and kind.</summary>
+	private static void AddCrcDefaults(Dictionary<string, string> settings, string crcClass, string kind)
+	{
+		string prefix = $"Crc.{crcClass}.{kind}";
+		settings[$"{prefix}.bcg"] = "3";
+		settings[$"{prefix}.filters"] = "3";
+
+		switch (kind)
+		{
+			case "Line":
+				settings[$"{prefix}.style"] = "solid";
+				settings[$"{prefix}.thickness"] = "1";
+				break;
+
+			case "Symbol":
+				settings[$"{prefix}.style"] = "vor";
+				settings[$"{prefix}.size"] = "1";
+				break;
+
+			case "Text":
+				settings[$"{prefix}.size"] = "1";
+				settings[$"{prefix}.underline"] = "N";
+				settings[$"{prefix}.opaque"] = "N";
+				settings[$"{prefix}.xOffset"] = "0";
+				settings[$"{prefix}.yOffset"] = "0";
+				break;
+
+			default:
+				throw new ArgumentOutOfRangeException(nameof(kind), kind, "Unknown CRC feature kind.");
+		}
+	}
+
 	private static Dictionary<string, string> WithRoi(string swLat, string swLon, string neLat, string neLon)
 	{
 		Dictionary<string, string> settings = MinimalValidSettings();
@@ -49,7 +81,9 @@ public class DepartureSettingsParserTests
 		Assert.Empty(settings.ArtccFilter);
 		Assert.False(settings.IncludeFebCustomProperties);
 		Assert.Empty(settings.FebProperties);
-		Assert.False(settings.IncludeCrcEramPropertyDefaults);
+		Assert.False(settings.IncludeCrcLineDefaults);
+		Assert.False(settings.IncludeCrcSymbolDefaults);
+		Assert.False(settings.IncludeCrcTextDefaults);
 		Assert.Equal(6, settings.CoordinatePrecision);
 		Assert.True(settings.AddFeBuddyOutputFolder);
 		Assert.Empty(result.Messages);
@@ -158,10 +192,12 @@ public class DepartureSettingsParserTests
 	public void crc_defaults_are_only_required_for_the_kinds_being_emitted()
 	{
 		Dictionary<string, string> settings = MinimalValidSettings();
-		settings["IncludeCrcEramPropertyDefaults"] = "Y";
+		settings["IncludeCrcLineDefaults"] = "Y";
+		settings["IncludeCrcSymbolDefaults"] = "Y";
+		settings["IncludeCrcTextDefaults"] = "Y";
 		settings["EmitSymbols"] = "N";
 		settings["EmitText"] = "N";
-		settings["Crc.Departures.Line.filters"] = "3";
+		AddCrcDefaults(settings, "Departures", "Line");
 
 		// No Symbol or Text keys at all: those files are not written, so they are not needed.
 		DepartureSettings parsed = DepartureSettingsParser.Parse(settings).Settings;
@@ -175,10 +211,35 @@ public class DepartureSettingsParserTests
 	public void crc_defaults_for_every_emitted_kind_are_required()
 	{
 		Dictionary<string, string> settings = MinimalValidSettings();
-		settings["IncludeCrcEramPropertyDefaults"] = "Y";
+		settings["IncludeCrcLineDefaults"] = "Y";
+		settings["IncludeCrcSymbolDefaults"] = "Y";
+		settings["IncludeCrcTextDefaults"] = "Y";
 		// No Crc.* keys supplied at all.
 
 		Assert.Throws<ArgumentException>(() => DepartureSettingsParser.Parse(settings));
+	}
+
+	[Fact]
+	public void a_text_default_missing_x_offset_throws_naming_the_key_only_when_text_is_emitted()
+	{
+		Dictionary<string, string> settings = MinimalValidSettings();
+		settings["IncludeCrcLineDefaults"] = "Y";
+		settings["IncludeCrcSymbolDefaults"] = "Y";
+		settings["IncludeCrcTextDefaults"] = "Y";
+		AddCrcDefaults(settings, "Departures", "Line");
+		AddCrcDefaults(settings, "Departures", "Symbol");
+		AddCrcDefaults(settings, "Departures", "Text");
+		settings.Remove("Crc.Departures.Text.xOffset");
+
+		ArgumentException ex = Assert.Throws<ArgumentException>(() => DepartureSettingsParser.Parse(settings));
+		Assert.Contains("Crc.Departures.Text.xOffset", ex.Message);
+
+		settings["EmitText"] = "N";
+		DepartureSettings parsed = DepartureSettingsParser.Parse(settings).Settings;
+
+		Assert.Empty(parsed.TextDefaults);
+		Assert.Single(parsed.LineDefaults);
+		Assert.Single(parsed.SymbolDefaults);
 	}
 
 	[Fact]
@@ -202,5 +263,74 @@ public class DepartureSettingsParserTests
 		DepartureSettingsParseResult result = DepartureSettingsParser.Parse(settings);
 
 		Assert.Contains(result.Messages, m => m.Level == LogLevel.Warning && m.Text.Contains("Crc.Airports.Line.bcg"));
+	}
+
+	[Fact]
+	public void only_the_crc_kinds_asked_for_have_their_defaults_read()
+	{
+		Dictionary<string, string> settings = MinimalValidSettings();
+		settings["IncludeCrcLineDefaults"] = "N";
+		settings["IncludeCrcSymbolDefaults"] = "Y";
+		settings["IncludeCrcTextDefaults"] = "N";
+		AddCrcDefaults(settings, "Departures", "Symbol");
+		// No Line or Text keys at all: those defaults were not asked for.
+
+		DepartureSettingsParseResult result = DepartureSettingsParser.Parse(settings);
+
+		Assert.False(result.Settings.IncludeCrcLineDefaults);
+		Assert.True(result.Settings.IncludeCrcSymbolDefaults);
+		Assert.False(result.Settings.IncludeCrcTextDefaults);
+		Assert.Equal("vor", Assert.Single(result.Settings.SymbolDefaults).Value.Style);
+		Assert.Empty(result.Settings.LineDefaults);
+		Assert.Empty(result.Settings.TextDefaults);
+		Assert.Empty(result.Messages);
+	}
+
+	[Fact]
+	public void asking_for_crc_defaults_on_a_file_that_is_not_emitted_has_no_effect()
+	{
+		Dictionary<string, string> settings = MinimalValidSettings();
+		settings["IncludeCrcLineDefaults"] = "Y";
+		settings["EmitLines"] = "N";
+		// No Crc.Departures.Line.* keys: the lines file is not written, so its defaults are not needed.
+
+		DepartureSettings parsed = DepartureSettingsParser.Parse(settings).Settings;
+
+		Assert.False(parsed.IncludeCrcLineDefaults);
+		Assert.Empty(parsed.LineDefaults);
+	}
+
+	[Fact]
+	public void crc_defaults_are_not_required_when_geojson_is_off()
+	{
+		Dictionary<string, string> settings = MinimalValidSettings();
+		settings["GenerateGeojson"] = "N";
+		settings["IncludeCrcLineDefaults"] = "Y";
+		settings["IncludeCrcSymbolDefaults"] = "Y";
+		settings["IncludeCrcTextDefaults"] = "Y";
+		// No Crc.* keys at all: no GeoJSON is written, so no defaults are needed.
+
+		DepartureSettings parsed = DepartureSettingsParser.Parse(settings).Settings;
+
+		Assert.False(parsed.IncludeCrcLineDefaults);
+		Assert.False(parsed.IncludeCrcSymbolDefaults);
+		Assert.False(parsed.IncludeCrcTextDefaults);
+		Assert.Empty(parsed.LineDefaults);
+		Assert.Empty(parsed.SymbolDefaults);
+		Assert.Empty(parsed.TextDefaults);
+	}
+
+	[Fact]
+	public void the_retired_combined_crc_include_key_produces_a_warning_and_includes_nothing()
+	{
+		Dictionary<string, string> settings = MinimalValidSettings();
+		settings["IncludeCrcEramPropertyDefaults"] = "Y";
+
+		DepartureSettingsParseResult result = DepartureSettingsParser.Parse(settings);
+
+		Assert.Contains(result.Messages, m => m.Level == LogLevel.Warning && m.Text.Contains("IncludeCrcEramPropertyDefaults"));
+		Assert.False(result.Settings.IncludeCrcLineDefaults);
+		Assert.False(result.Settings.IncludeCrcSymbolDefaults);
+		Assert.False(result.Settings.IncludeCrcTextDefaults);
 	}
 }

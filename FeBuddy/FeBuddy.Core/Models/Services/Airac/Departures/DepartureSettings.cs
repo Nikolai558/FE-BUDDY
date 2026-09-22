@@ -68,11 +68,25 @@ public sealed record DepartureSettings
 	public IReadOnlyCollection<DepartureFebProperty> FebProperties { get; init; } = Array.Empty<DepartureFebProperty>();
 
 	/// <summary>
-	/// Whether CRC ERAM property defaults (<see cref="LineDefaults"/>,
-	/// <see cref="SymbolDefaults"/>, <see cref="TextDefaults"/>) are written as isDefaults
-	/// Features at the head of each GeoJSON file.
+	/// Whether the Line defaults (<see cref="LineDefaults"/>) are written as an isLineDefaults
+	/// Feature. <see langword="true"/> only when the user asked for them and the file they belong
+	/// to is being produced.
 	/// </summary>
-	public required bool IncludeCrcEramPropertyDefaults { get; init; }
+	public required bool IncludeCrcLineDefaults { get; init; }
+
+	/// <summary>
+	/// Whether the Symbol defaults (<see cref="SymbolDefaults"/>) are written as an isSymbolDefaults
+	/// Feature. <see langword="true"/> only when the user asked for them and the file they belong
+	/// to is being produced.
+	/// </summary>
+	public required bool IncludeCrcSymbolDefaults { get; init; }
+
+	/// <summary>
+	/// Whether the Text defaults (<see cref="TextDefaults"/>) are written as an isTextDefaults
+	/// Feature. <see langword="true"/> only when the user asked for them and the file they belong
+	/// to is being produced.
+	/// </summary>
+	public required bool IncludeCrcTextDefaults { get; init; }
 
 	/// <summary>Maximum decimal places for coordinates written to GeoJSON. Default 6.</summary>
 	public int CoordinatePrecision { get; init; } = 6;
@@ -84,19 +98,15 @@ public sealed record DepartureSettings
 	/// </summary>
 	public bool AddFeBuddyOutputFolder { get; init; } = true;
 
-	/// <summary>CRC line property defaults. Populated when CRC defaults are on and Lines are emitted.</summary>
-	public IReadOnlyDictionary<DepartureCrcClass, CrcLineProperties> LineDefaults { get; init; } =
-		new Dictionary<DepartureCrcClass, CrcLineProperties>();
+	/// <summary>CRC line property defaults. Populated when <see cref="IncludeCrcLineDefaults"/> is <see langword="true"/>.</summary>
+	public IReadOnlyDictionary<DepartureCrcClass, CrcLineDefaults> LineDefaults { get; init; } =
+		new Dictionary<DepartureCrcClass, CrcLineDefaults>();
 
-	/// <summary>CRC symbol property defaults. Populated when CRC defaults are on and Symbols are emitted.</summary>
-	public IReadOnlyDictionary<DepartureCrcClass, CrcSymbolProperties> SymbolDefaults { get; init; } =
-		new Dictionary<DepartureCrcClass, CrcSymbolProperties>();
+	/// <summary>CRC symbol property defaults. Populated when <see cref="IncludeCrcSymbolDefaults"/> is <see langword="true"/>.</summary>
+	public IReadOnlyDictionary<DepartureCrcClass, CrcSymbolDefaults> SymbolDefaults { get; init; } =
+		new Dictionary<DepartureCrcClass, CrcSymbolDefaults>();
 
-	/// <summary>CRC text property defaults. Populated when CRC defaults are on and Text is emitted.</summary>
-	/// <remarks>
-	/// The <see cref="CrcTextProperties.Text"/> value here is a non-rendered placeholder: every
-	/// point supplies its own identifier as a per-feature <c>text</c>.
-	/// </remarks>
-	public IReadOnlyDictionary<DepartureCrcClass, CrcTextProperties> TextDefaults { get; init; } =
-		new Dictionary<DepartureCrcClass, CrcTextProperties>();
+	/// <summary>CRC text property defaults. Populated when <see cref="IncludeCrcTextDefaults"/> is <see langword="true"/>.</summary>
+	public IReadOnlyDictionary<DepartureCrcClass, CrcTextDefaults> TextDefaults { get; init; } =
+		new Dictionary<DepartureCrcClass, CrcTextDefaults>();
 }

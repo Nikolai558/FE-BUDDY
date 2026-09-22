@@ -93,6 +93,24 @@ public static class SettingsValueReader
 		return parsed;
 	}
 
+	/// <summary>Reads an integer that must be present.</summary>
+	/// <param name="settings">The raw settings block.</param>
+	/// <param name="key">The key to read.</param>
+	/// <returns>The parsed integer.</returns>
+	/// <exception cref="ArgumentException">Thrown when the key is missing, blank, or not an integer.</exception>
+	public static int RequiredInt(IReadOnlyDictionary<string, string> settings, string key) =>
+		OptionalInt(settings, key)
+			?? throw new ArgumentException($"Settings must contain a non-empty '{key}' value.");
+
+	/// <summary>Reads a <c>Y</c>/<c>N</c> flag that must be present.</summary>
+	/// <param name="settings">The raw settings block.</param>
+	/// <param name="key">The key to read.</param>
+	/// <returns>The parsed flag.</returns>
+	/// <exception cref="ArgumentException">Thrown when the key is missing, blank, or neither <c>Y</c> nor <c>N</c>.</exception>
+	public static bool RequiredYesNo(IReadOnlyDictionary<string, string> settings, string key) =>
+		OptionalYesNo(settings, key)
+			?? throw new ArgumentException($"Settings must contain a non-empty '{key}' value (Y or N).");
+
 	/// <summary>Reads an integer constrained to a range, falling back to a default.</summary>
 	/// <param name="settings">The raw settings block.</param>
 	/// <param name="key">The key to read.</param>

@@ -54,7 +54,9 @@ public sealed class AirwayGeojsonServiceDesignationTests : IDisposable
 			IncludeAirwayWaypointIds = false,
 			GenerateAliasFile = false,
 			SplitAtAntimeridian = true,
-			IncludeCrcEramPropertyDefaults = false,
+			IncludeCrcLineDefaults = false,
+			IncludeCrcSymbolDefaults = false,
+			IncludeCrcTextDefaults = false,
 			Roi = null,
 		};
 

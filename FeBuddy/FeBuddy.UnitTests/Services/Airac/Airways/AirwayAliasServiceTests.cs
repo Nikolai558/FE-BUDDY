@@ -39,7 +39,9 @@ public sealed class AirwayAliasServiceTests : IDisposable
 		IncludeAirwayWaypointIds = false,
 		GenerateAliasFile = true,
 		SplitAtAntimeridian = true,
-		IncludeCrcEramPropertyDefaults = false,
+		IncludeCrcLineDefaults = false,
+		IncludeCrcSymbolDefaults = false,
+		IncludeCrcTextDefaults = false,
 		AddFeBuddyOutputFolder = addWrapper,
 		AliasRoiScope = scope,
 		Roi = roi,
@@ -75,7 +77,9 @@ public sealed class AirwayAliasServiceTests : IDisposable
 			IncludeAirwayWaypointIds = false,
 			GenerateAliasFile = false,
 			SplitAtAntimeridian = true,
-			IncludeCrcEramPropertyDefaults = false,
+			IncludeCrcLineDefaults = false,
+			IncludeCrcSymbolDefaults = false,
+			IncludeCrcTextDefaults = false,
 			Roi = roi,
 		};
 

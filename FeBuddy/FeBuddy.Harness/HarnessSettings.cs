@@ -37,7 +37,9 @@ internal static class HarnessSettings
 			{ "IncludeAirwayWaypointIds", "Y" },
 			{ "GenerateAliasFile", "Y" },
 			{ "SplitAtAntimeridian", "Y" },
-			{ "IncludeCrcEramPropertyDefaults", "Y" },
+			{ "IncludeCrcLineDefaults", "Y" },
+			{ "IncludeCrcSymbolDefaults", "Y" },
+			{ "IncludeCrcTextDefaults", "Y" },
 			{ "FilterByRoi", "N" },
 
 			// Phase 3.3-3.7 settings. Defaults shown; omit any of these and the parser uses
@@ -99,7 +101,9 @@ internal static class HarnessSettings
 
 			// Writes the CRC ERAM defaults Feature at the head of each GeoJSON file, using the
 			// Crc.* values added by AddAirportCrcDefaults below.
-			{ "IncludeCrcEramPropertyDefaults", "Y" },
+			{ "IncludeCrcLineDefaults", "Y" },
+			{ "IncludeCrcSymbolDefaults", "Y" },
+			{ "IncludeCrcTextDefaults", "Y" },
 
 			// ROI filtering applies to the GeoJSON output only; the alias file always covers
 			// every airport. The four corner keys are read only when FilterByRoi is "Y" - set
@@ -165,7 +169,9 @@ internal static class HarnessSettings
 
 			// Writes the CRC ERAM defaults Feature at the head of each GeoJSON file, using the
 			// Crc.Departures.* values added by AddDepartureCrcDefaults below.
-			{ "IncludeCrcEramPropertyDefaults", "Y" },
+			{ "IncludeCrcLineDefaults", "Y" },
+			{ "IncludeCrcSymbolDefaults", "Y" },
+			{ "IncludeCrcTextDefaults", "Y" },
 
 			{ "CoordinatePrecision", "6" },       // max decimal places in GeoJSON coords (0-15)
 			{ "AddFeBuddyOutputFolder", "Y" }     // N -> write straight into OutputDirectory\Departure Procedures

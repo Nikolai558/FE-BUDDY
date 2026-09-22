@@ -33,23 +33,41 @@ public enum EramFieldKind
 	/// <summary>Symbol block: bcg, filters, style, size.</summary>
 	Symbol,
 
-	/// <summary>Text block: bcg, filters, size.</summary>
+	/// <summary>Text block: bcg, filters, size, underline, opaque, xOffset, yOffset.</summary>
 	Text,
 }
 
 /// <summary>
-/// One CRC ERAM default row for a single altitude class within a kind block
-/// (remediation plan 7.4 - three stacked blocks, no LINE/SYMBOL/TEXT selector). Only the
-/// fields that apply to the kind are shown.
+/// One CRC ERAM default row for a single class (e.g. <c>High</c>, <c>Airports</c>) within a
+/// kind block (Line / Symbol / Text). Only the fields that apply to the kind are shown:
+/// Line has bcg, filters, style and thickness; Symbol has bcg, filters, style and size; Text
+/// has bcg, filters, size, underline, opaque, xOffset and yOffset.
 /// </summary>
 /// <remarks>
+/// <para>
 /// A row starts empty. FE-Buddy does not pick CRC values on the user's behalf: until they
 /// have been chosen (or restored from <c>UserConfig</c>), the owning tab reports them as
 /// missing while CRC defaults are switched on, and the empty boxes are marked.
+/// </para>
+/// <para>
+/// <see cref="Underline"/> and <see cref="Opaque"/> hold <c>Y</c> or <c>N</c> - the same
+/// spelling that is persisted to <c>UserConfig</c> and sent in the run settings - and are
+/// shown as Yes / No through <see cref="YesNoOptions"/>. <see cref="XOffset"/> and
+/// <see cref="YOffset"/> hold the text as typed; any whole number (negative included) is
+/// valid, and anything else is marked on the box and counts as not filled in.
+/// </para>
 /// </remarks>
 public sealed class EramClassDefault : ObservableObject
 {
 	private const string RequiredMessage = "Required while CRC ERAM defaults are on.";
+	private const string WholeNumberMessage = "Must be a whole number, e.g. 0, 12 or -4.";
+	private const string YesNoMessage = "Choose Yes or No.";
+
+	/// <summary>The stored value for "Yes" in <see cref="Underline"/> and <see cref="Opaque"/>.</summary>
+	public const string Yes = "Y";
+
+	/// <summary>The stored value for "No" in <see cref="Underline"/> and <see cref="Opaque"/>.</summary>
+	public const string No = "N";
 
 	private readonly Action _onChanged;
 	private string _bcg = string.Empty;
@@ -57,6 +75,10 @@ public sealed class EramClassDefault : ObservableObject
 	private string _style = string.Empty;
 	private string _thickness = string.Empty;
 	private string _size = string.Empty;
+	private string _underline = string.Empty;
+	private string _opaque = string.Empty;
+	private string _xOffset = string.Empty;
+	private string _yOffset = string.Empty;
 	private bool _isRequired;
 
 	/// <summary>Creates an empty row for <paramref name="className"/> in the <paramref name="kind"/> block.</summary>
@@ -70,6 +92,7 @@ public sealed class EramClassDefault : ObservableObject
 		ShowStyle = kind is EramFieldKind.Line or EramFieldKind.Symbol;
 		ShowThickness = kind is EramFieldKind.Line;
 		ShowSize = kind is EramFieldKind.Symbol or EramFieldKind.Text;
+		ShowTextOptions = kind is EramFieldKind.Text;
 
 		StyleOptions = kind switch
 		{
@@ -96,6 +119,12 @@ public sealed class EramClassDefault : ObservableObject
 	public bool ShowSize { get; }
 
 	/// <summary>
+	/// Whether the Text-only fields (<c>underline</c>, <c>opaque</c>, <c>xOffset</c>,
+	/// <c>yOffset</c>) apply to this kind.
+	/// </summary>
+	public bool ShowTextOptions { get; }
+
+	/// <summary>
 	/// The <c>style</c> values CRC accepts for this kind, for the drop-down. Empty for Text,
 	/// which has no style.
 	/// </summary>
@@ -114,6 +143,16 @@ public sealed class EramClassDefault : ObservableObject
 	/// have different ranges.
 	/// </summary>
 	public IReadOnlyList<string> SizeOptions { get; }
+
+	/// <summary>
+	/// The choices for the <c>underline</c> and <c>opaque</c> drop-downs. Bind the ComboBox's
+	/// <c>SelectedValue</c> with <c>SelectedValuePath="Value"</c>; each option shows as its label.
+	/// </summary>
+	public IReadOnlyList<YesNoOption> YesNoOptions { get; } = new[]
+	{
+		new YesNoOption(Yes, "Yes"),
+		new YesNoOption(No, "No"),
+	};
 
 	private static IReadOnlyList<string> Range(int minimum, int maximum)
 	{
@@ -162,6 +201,34 @@ public sealed class EramClassDefault : ObservableObject
 		set => SetField(ref _size, Canonical(value, SizeOptions), nameof(SizeError));
 	}
 
+	/// <summary>The CRC <c>underline</c> value, <c>Y</c> or <c>N</c>, or empty until chosen. Text only.</summary>
+	public string Underline
+	{
+		get => _underline;
+		set => SetField(ref _underline, CanonicalYesNo(value), nameof(UnderlineError));
+	}
+
+	/// <summary>The CRC <c>opaque</c> value, <c>Y</c> or <c>N</c>, or empty until chosen. Text only.</summary>
+	public string Opaque
+	{
+		get => _opaque;
+		set => SetField(ref _opaque, CanonicalYesNo(value), nameof(OpaqueError));
+	}
+
+	/// <summary>The CRC <c>xOffset</c> value as typed (any whole number), or empty until entered. Text only.</summary>
+	public string XOffset
+	{
+		get => _xOffset;
+		set => SetField(ref _xOffset, value, nameof(XOffsetError));
+	}
+
+	/// <summary>The CRC <c>yOffset</c> value as typed (any whole number), or empty until entered. Text only.</summary>
+	public string YOffset
+	{
+		get => _yOffset;
+		set => SetField(ref _yOffset, value, nameof(YOffsetError));
+	}
+
 	/// <summary>
 	/// Whether this row's values are needed right now - CRC defaults are on and the file this
 	/// row configures is being written. Set by the owning tab; drives the per-field errors.
@@ -178,13 +245,18 @@ public sealed class EramClassDefault : ObservableObject
 		}
 	}
 
-	/// <summary>Whether any field this row shows is still empty.</summary>
+	/// <summary>
+	/// Whether any field this row shows is still empty - or, for the Text-only fields, holds a
+	/// value that is not usable (an offset that is not a whole number, or an underline / opaque
+	/// value other than <c>Y</c> / <c>N</c>).
+	/// </summary>
 	public bool HasMissingValues =>
 		IsBlank(Bcg)
 		|| IsBlank(Filters)
 		|| (ShowStyle && IsBlank(Style))
 		|| (ShowThickness && IsBlank(Thickness))
-		|| (ShowSize && IsBlank(Size));
+		|| (ShowSize && IsBlank(Size))
+		|| (ShowTextOptions && (!IsYesNo(Underline) || !IsYesNo(Opaque) || !IsInteger(XOffset) || !IsInteger(YOffset)));
 
 	/// <summary>The <c>bcg</c> box's error, for <c>infra:FieldState.Error</c>.</summary>
 	public string? BcgError => MissingError(true, Bcg);
@@ -201,6 +273,18 @@ public sealed class EramClassDefault : ObservableObject
 	/// <summary>The <c>size</c> box's error, for <c>infra:FieldState.Error</c>.</summary>
 	public string? SizeError => MissingError(ShowSize, Size);
 
+	/// <summary>The <c>underline</c> box's error, for <c>infra:FieldState.Error</c>.</summary>
+	public string? UnderlineError => YesNoError(Underline);
+
+	/// <summary>The <c>opaque</c> box's error, for <c>infra:FieldState.Error</c>.</summary>
+	public string? OpaqueError => YesNoError(Opaque);
+
+	/// <summary>The <c>xOffset</c> box's error, for <c>infra:FieldState.Error</c>.</summary>
+	public string? XOffsetError => OffsetError(XOffset);
+
+	/// <summary>The <c>yOffset</c> box's error, for <c>infra:FieldState.Error</c>.</summary>
+	public string? YOffsetError => OffsetError(YOffset);
+
 	private void SetField(ref string field, string value, string errorPropertyName)
 	{
 		if (!SetProperty(ref field, value ?? string.Empty))
@@ -215,6 +299,44 @@ public sealed class EramClassDefault : ObservableObject
 	private string? MissingError(bool applies, string value) =>
 		IsRequired && applies && IsBlank(value) ? RequiredMessage : null;
 
+	/// <summary>
+	/// Error for an offset box: required-and-blank reads as missing; a non-blank value that is
+	/// not a whole number is always reported, so a typo is marked as soon as it is typed.
+	/// </summary>
+	private string? OffsetError(string value)
+	{
+		if (!ShowTextOptions)
+		{
+			return null;
+		}
+
+		if (IsBlank(value))
+		{
+			return IsRequired ? RequiredMessage : null;
+		}
+
+		return IsInteger(value) ? null : WholeNumberMessage;
+	}
+
+	/// <summary>
+	/// Error for an underline / opaque box: required-and-blank reads as missing; a value other
+	/// than <c>Y</c> / <c>N</c> (only possible from a hand-edited config) is always reported.
+	/// </summary>
+	private string? YesNoError(string value)
+	{
+		if (!ShowTextOptions)
+		{
+			return null;
+		}
+
+		if (IsBlank(value))
+		{
+			return IsRequired ? RequiredMessage : null;
+		}
+
+		return IsYesNo(value) ? null : YesNoMessage;
+	}
+
 	private void RaiseFieldErrors()
 	{
 		OnPropertyChanged(nameof(BcgError));
@@ -222,9 +344,51 @@ public sealed class EramClassDefault : ObservableObject
 		OnPropertyChanged(nameof(StyleError));
 		OnPropertyChanged(nameof(ThicknessError));
 		OnPropertyChanged(nameof(SizeError));
+		OnPropertyChanged(nameof(UnderlineError));
+		OnPropertyChanged(nameof(OpaqueError));
+		OnPropertyChanged(nameof(XOffsetError));
+		OnPropertyChanged(nameof(YOffsetError));
 	}
 
 	private static bool IsBlank(string value) => string.IsNullOrWhiteSpace(value);
+
+	private static bool IsInteger(string value) =>
+		int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out _);
+
+	private static bool IsYesNo(string value) => value is Yes or No;
+
+	/// <summary>
+	/// Returns <c>Y</c> or <c>N</c> for any spelling of yes / no (<c>y</c>, <c>Yes</c>,
+	/// <c>true</c>, ...), so a value restored from config still selects in the drop-down. A
+	/// value that matches neither is kept as it is, for the row to report.
+	/// </summary>
+	/// <param name="value">The incoming value.</param>
+	/// <returns>The canonical value.</returns>
+	private static string CanonicalYesNo(string? value)
+	{
+		if (value is null)
+		{
+			return string.Empty;
+		}
+
+		string trimmed = value.Trim();
+
+		if (trimmed.Equals("Y", StringComparison.OrdinalIgnoreCase)
+			|| trimmed.Equals("Yes", StringComparison.OrdinalIgnoreCase)
+			|| trimmed.Equals("true", StringComparison.OrdinalIgnoreCase))
+		{
+			return Yes;
+		}
+
+		if (trimmed.Equals("N", StringComparison.OrdinalIgnoreCase)
+			|| trimmed.Equals("No", StringComparison.OrdinalIgnoreCase)
+			|| trimmed.Equals("false", StringComparison.OrdinalIgnoreCase))
+		{
+			return No;
+		}
+
+		return value;
+	}
 
 	/// <summary>
 	/// Returns the option matching <paramref name="value"/> in its canonical spelling, so a
@@ -251,6 +415,19 @@ public sealed class EramClassDefault : ObservableObject
 
 		return value;
 	}
+}
+
+/// <summary>
+/// One entry in a Yes / No drop-down: the stored <paramref name="Value"/> (<c>Y</c> / <c>N</c>)
+/// and the <paramref name="Label"/> the user sees.
+/// </summary>
+/// <param name="Value">The stored value, <c>Y</c> or <c>N</c>.</param>
+/// <param name="Label">The text shown in the drop-down, <c>Yes</c> or <c>No</c>.</param>
+public sealed record YesNoOption(string Value, string Label)
+{
+	/// <summary>Returns <see cref="Label"/>, which is what the ComboBox displays.</summary>
+	/// <returns>The label.</returns>
+	public override string ToString() => Label;
 }
 
 /// <summary>

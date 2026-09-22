@@ -25,7 +25,7 @@ public static class DepartureSettingsParser
 	{
 		"OutputDirectory", "GenerateGeojson", "EmitLines", "EmitSymbols", "EmitText",
 		"GenerateAliasFile", "IncludeObstacleDepartures", "ArtccFilter", "AmendedWithinCycles",
-		"IncludeFebCustomProperties", "FebProperties", "IncludeCrcEramPropertyDefaults",
+		"IncludeFebCustomProperties", "FebProperties", CrcDefaultsReader.IncludeLineKey, CrcDefaultsReader.IncludeSymbolKey, CrcDefaultsReader.IncludeTextKey,
 		"FilterByRoi", "RoiMode", "RoiSwLat", "RoiSwLon", "RoiNeLat", "RoiNeLon",
 		"CoordinatePrecision", "AddFeBuddyOutputFolder"
 	};
@@ -113,43 +113,32 @@ public static class DepartureSettingsParser
 		bool includeFebProperties = SettingsValueReader.YesNo(departureSettings, "IncludeFebCustomProperties", defaultValue: false);
 		IReadOnlyCollection<DepartureFebProperty> febProperties = ParseFebProperties(departureSettings, includeFebProperties);
 
-		bool includeCrcDefaults = SettingsValueReader.YesNo(departureSettings, "IncludeCrcEramPropertyDefaults", defaultValue: false);
 
 		int coordinatePrecision = SettingsValueReader.IntInRange(
 			departureSettings, "CoordinatePrecision", defaultValue: 6, minimum: 0, maximum: 15);
 
 		bool addFeBuddyOutputFolder = SettingsValueReader.YesNo(departureSettings, "AddFeBuddyOutputFolder", defaultValue: true);
 
-		Dictionary<DepartureCrcClass, CrcLineProperties> lineDefaults = new();
-		Dictionary<DepartureCrcClass, CrcSymbolProperties> symbolDefaults = new();
-		Dictionary<DepartureCrcClass, CrcTextProperties> textDefaults = new();
+		// Each kind's defaults are written only when the user asked for them AND that file is
+		// produced; only then are its values required.
+		bool includeLineDefaults = CrcDefaultsReader.ReadInclude(departureSettings, CrcFeatureKind.Line) && generateGeojson && emitLines;
+		bool includeSymbolDefaults = CrcDefaultsReader.ReadInclude(departureSettings, CrcFeatureKind.Symbol) && generateGeojson && emitSymbols;
+		bool includeTextDefaults = CrcDefaultsReader.ReadInclude(departureSettings, CrcFeatureKind.Text) && generateGeojson && emitText;
 
-		if (includeCrcDefaults && generateGeojson)
-		{
-			// Only the kinds whose file is actually being written are required.
-			const DepartureCrcClass cls = DepartureCrcClass.Departures;
+		Dictionary<DepartureCrcClass, CrcLineDefaults> lineDefaults = new();
+		Dictionary<DepartureCrcClass, CrcSymbolDefaults> symbolDefaults = new();
+		Dictionary<DepartureCrcClass, CrcTextDefaults> textDefaults = new();
 
-			if (emitLines)
-			{
-				CrcLineProperties line = ParseLineProperties(departureSettings, cls);
-				ThrowIfInvalid(CrcGeojsonPropertyValidator.ValidateLine(line), cls, "Line");
-				lineDefaults[cls] = line;
-			}
+		const DepartureCrcClass cls = DepartureCrcClass.Departures;
 
-			if (emitSymbols)
-			{
-				CrcSymbolProperties symbol = ParseSymbolProperties(departureSettings, cls);
-				ThrowIfInvalid(CrcGeojsonPropertyValidator.ValidateSymbol(symbol), cls, "Symbol");
-				symbolDefaults[cls] = symbol;
-			}
+		if (includeLineDefaults)
+			lineDefaults[cls] = CrcDefaultsReader.ReadLine(departureSettings, $"Crc.{cls}.Line");
 
-			if (emitText)
-			{
-				CrcTextProperties text = ParseTextProperties(departureSettings, cls);
-				ThrowIfInvalid(CrcGeojsonPropertyValidator.ValidateText(text), cls, "Text");
-				textDefaults[cls] = text;
-			}
-		}
+		if (includeSymbolDefaults)
+			symbolDefaults[cls] = CrcDefaultsReader.ReadSymbol(departureSettings, $"Crc.{cls}.Symbol");
+
+		if (includeTextDefaults)
+			textDefaults[cls] = CrcDefaultsReader.ReadText(departureSettings, $"Crc.{cls}.Text");
 
 		List<ServiceMessage> messages = new();
 		CollectUnknownKeyWarnings(departureSettings, messages);
@@ -169,7 +158,9 @@ public static class DepartureSettingsParser
 			RoiMode = roiMode,
 			IncludeFebCustomProperties = includeFebProperties,
 			FebProperties = febProperties,
-			IncludeCrcEramPropertyDefaults = includeCrcDefaults,
+			IncludeCrcLineDefaults = includeLineDefaults,
+			IncludeCrcSymbolDefaults = includeSymbolDefaults,
+			IncludeCrcTextDefaults = includeTextDefaults,
 			CoordinatePrecision = coordinatePrecision,
 			AddFeBuddyOutputFolder = addFeBuddyOutputFolder,
 			LineDefaults = lineDefaults,
@@ -264,56 +255,6 @@ public static class DepartureSettingsParser
 		}
 
 		return new RegionOfInterest(swLat, swLon, neLat, neLon);
-	}
-
-	private static CrcLineProperties ParseLineProperties(Dictionary<string, string> settings, DepartureCrcClass cls) =>
-		new()
-		{
-			Bcg = SettingsValueReader.OptionalInt(settings, CrcKey(cls, "Line", "bcg")),
-			Filters = SettingsValueReader.RequiredIntList(settings, CrcKey(cls, "Line", "filters")),
-			Style = SettingsValueReader.NormalizeStyle(
-				SettingsValueReader.OptionalString(settings, CrcKey(cls, "Line", "style")),
-				CrcGeojsonPropertyValidator.ValidLineStyles),
-			Thickness = SettingsValueReader.OptionalInt(settings, CrcKey(cls, "Line", "thickness"))
-		};
-
-	private static CrcSymbolProperties ParseSymbolProperties(Dictionary<string, string> settings, DepartureCrcClass cls) =>
-		new()
-		{
-			Bcg = SettingsValueReader.OptionalInt(settings, CrcKey(cls, "Symbol", "bcg")),
-			Filters = SettingsValueReader.RequiredIntList(settings, CrcKey(cls, "Symbol", "filters")),
-			Style = SettingsValueReader.NormalizeStyle(
-				SettingsValueReader.OptionalString(settings, CrcKey(cls, "Symbol", "style")),
-				CrcGeojsonPropertyValidator.ValidSymbolStyles),
-			Size = SettingsValueReader.OptionalInt(settings, CrcKey(cls, "Symbol", "size"))
-		};
-
-	private static CrcTextProperties ParseTextProperties(Dictionary<string, string> settings, DepartureCrcClass cls) =>
-		new()
-		{
-			Bcg = SettingsValueReader.OptionalInt(settings, CrcKey(cls, "Text", "bcg")),
-			Filters = SettingsValueReader.RequiredIntList(settings, CrcKey(cls, "Text", "filters")),
-			// Placeholder only - never rendered. Each point's Text Feature supplies its own
-			// "text" override: the point's identifier.
-			Text = new[] { $"{cls}_DEFAULT" },
-			Size = SettingsValueReader.OptionalInt(settings, CrcKey(cls, "Text", "size")),
-			Underline = SettingsValueReader.OptionalYesNo(settings, CrcKey(cls, "Text", "underline")),
-			XOffset = SettingsValueReader.OptionalInt(settings, CrcKey(cls, "Text", "xOffset")),
-			YOffset = SettingsValueReader.OptionalInt(settings, CrcKey(cls, "Text", "yOffset")),
-			Opaque = SettingsValueReader.OptionalYesNo(settings, CrcKey(cls, "Text", "opaque"))
-		};
-
-	private static string CrcKey(DepartureCrcClass cls, string kind, string property) =>
-		$"Crc.{cls}.{kind}.{property}";
-
-	private static void ThrowIfInvalid(CrcPropertyValidationResult result, DepartureCrcClass cls, string kind)
-	{
-		if (!result.IsValid)
-		{
-			throw new ArgumentException(
-				$"Invalid CRC {kind} property defaults for '{cls}':{Environment.NewLine}" +
-				string.Join(Environment.NewLine, result.Errors));
-		}
 	}
 
 	private static void CollectUnknownKeyWarnings(Dictionary<string, string> settings, List<ServiceMessage> messages)

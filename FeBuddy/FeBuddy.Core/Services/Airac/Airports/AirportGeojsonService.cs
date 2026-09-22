@@ -91,10 +91,9 @@ public static class AirportGeojsonService
 	{
 		FeatureCollection collection = new();
 
-		if (settings.IncludeCrcEramPropertyDefaults)
+		if (settings.IncludeCrcSymbolDefaults)
 		{
-			collection.Add(CrcEramPropertyHandler.CreateDefault(
-				CrcFeatureKind.Symbol, settings.SymbolDefaults[AirportCrcClass.Airports]));
+			collection.Add(CrcEramPropertyHandler.CreateDefault(settings.SymbolDefaults[AirportCrcClass.Airports]));
 		}
 
 		foreach (Airport airport in airports)
@@ -117,10 +116,9 @@ public static class AirportGeojsonService
 	{
 		FeatureCollection collection = new();
 
-		if (settings.IncludeCrcEramPropertyDefaults)
+		if (settings.IncludeCrcTextDefaults)
 		{
-			collection.Add(CrcEramPropertyHandler.CreateDefault(
-				CrcFeatureKind.Text, settings.TextDefaults[AirportCrcClass.Airports]));
+			collection.Add(CrcEramPropertyHandler.CreateDefault(settings.TextDefaults[AirportCrcClass.Airports]));
 		}
 
 		foreach (Airport airport in airports)
@@ -147,10 +145,9 @@ public static class AirportGeojsonService
 	{
 		FeatureCollection collection = new();
 
-		if (settings.IncludeCrcEramPropertyDefaults)
+		if (settings.IncludeCrcLineDefaults)
 		{
-			collection.Add(CrcEramPropertyHandler.CreateDefault(
-				CrcFeatureKind.Line, settings.LineDefaults[AirportCrcClass.Runways]));
+			collection.Add(CrcEramPropertyHandler.CreateDefault(settings.LineDefaults[AirportCrcClass.Runways]));
 		}
 
 		int rendered = 0;

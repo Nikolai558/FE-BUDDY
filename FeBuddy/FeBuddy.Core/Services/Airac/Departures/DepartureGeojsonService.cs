@@ -85,10 +85,9 @@ public static class DepartureGeojsonService
 
 		FeatureCollection collection = new();
 
-		if (settings.IncludeCrcEramPropertyDefaults)
+		if (settings.IncludeCrcLineDefaults)
 		{
-			collection.Add(CrcEramPropertyHandler.CreateDefault(
-				CrcFeatureKind.Line, settings.LineDefaults[DepartureCrcClass.Departures]));
+			collection.Add(CrcEramPropertyHandler.CreateDefault(settings.LineDefaults[DepartureCrcClass.Departures]));
 		}
 
 		// One Feature for the whole procedure at this airport, so a controller sees it as a
@@ -109,10 +108,9 @@ public static class DepartureGeojsonService
 	{
 		FeatureCollection collection = new();
 
-		if (settings.IncludeCrcEramPropertyDefaults)
+		if (settings.IncludeCrcSymbolDefaults)
 		{
-			collection.Add(CrcEramPropertyHandler.CreateDefault(
-				CrcFeatureKind.Symbol, settings.SymbolDefaults[DepartureCrcClass.Departures]));
+			collection.Add(CrcEramPropertyHandler.CreateDefault(settings.SymbolDefaults[DepartureCrcClass.Departures]));
 		}
 
 		foreach (DeparturePoint point in airportProcedure.Points)
@@ -135,10 +133,9 @@ public static class DepartureGeojsonService
 	{
 		FeatureCollection collection = new();
 
-		if (settings.IncludeCrcEramPropertyDefaults)
+		if (settings.IncludeCrcTextDefaults)
 		{
-			collection.Add(CrcEramPropertyHandler.CreateDefault(
-				CrcFeatureKind.Text, settings.TextDefaults[DepartureCrcClass.Departures]));
+			collection.Add(CrcEramPropertyHandler.CreateDefault(settings.TextDefaults[DepartureCrcClass.Departures]));
 		}
 
 		foreach (DeparturePoint point in airportProcedure.Points)

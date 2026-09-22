@@ -180,14 +180,55 @@ public static class CrcGeojsonPropertyValidator
 				$"Valid range: {MinTextSize}-{MaxTextSize}.");
 		}
 
-		if (properties.XOffset is int xOffset && xOffset < 0)
-		{
-			errors.Add($"Text 'xOffset' value {xOffset} is invalid; it must be >= 0.");
-		}
+		// xOffset / yOffset accept any integer (CRC spec), so there is nothing to range-check.
 
-		if (properties.YOffset is int yOffset && yOffset < 0)
+		return errors.Count == 0
+			? CrcPropertyValidationResult.Success
+			: CrcPropertyValidationResult.Failure(errors);
+	}
+
+	/// <summary>Validates the values of an <c>isLineDefaults</c> Feature.</summary>
+	/// <param name="defaults">The defaults.</param>
+	/// <returns>The validation result.</returns>
+	public static CrcPropertyValidationResult ValidateLineDefaults(CrcLineDefaults defaults)
+	{
+		ArgumentNullException.ThrowIfNull(defaults);
+		return ValidateLine(defaults.ToFeatureProperties());
+	}
+
+	/// <summary>Validates the values of an <c>isSymbolDefaults</c> Feature.</summary>
+	/// <param name="defaults">The defaults.</param>
+	/// <returns>The validation result.</returns>
+	public static CrcPropertyValidationResult ValidateSymbolDefaults(CrcSymbolDefaults defaults)
+	{
+		ArgumentNullException.ThrowIfNull(defaults);
+		return ValidateSymbol(new CrcSymbolProperties
 		{
-			errors.Add($"Text 'yOffset' value {yOffset} is invalid; it must be >= 0.");
+			Bcg = defaults.Bcg,
+			Filters = defaults.Filters,
+			Style = defaults.Style,
+			Size = defaults.Size,
+		});
+	}
+
+	/// <summary>Validates the values of an <c>isTextDefaults</c> Feature.</summary>
+	/// <param name="defaults">The defaults.</param>
+	/// <returns>The validation result.</returns>
+	/// <remarks>Checked directly rather than through <see cref="ValidateText"/>, which requires the <c>text</c> a defaults Feature never has.</remarks>
+	public static CrcPropertyValidationResult ValidateTextDefaults(CrcTextDefaults defaults)
+	{
+		ArgumentNullException.ThrowIfNull(defaults);
+
+		List<string> errors = new();
+
+		ValidateBcg(defaults.Bcg, errors);
+		ValidateFilters(defaults.Filters, errors);
+
+		if (defaults.Size < MinTextSize || defaults.Size > MaxTextSize)
+		{
+			errors.Add(
+				$"Text 'size' value {defaults.Size} is out of range. " +
+				$"Valid range: {MinTextSize}-{MaxTextSize}.");
 		}
 
 		return errors.Count == 0

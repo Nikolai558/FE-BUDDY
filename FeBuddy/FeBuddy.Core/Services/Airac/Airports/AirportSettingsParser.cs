@@ -26,7 +26,7 @@ public static class AirportSettingsParser
 	{
 		"OutputDirectory", "GenerateGeojson", "EmitAirportSymbols", "EmitAirportText",
 		"EmitRunwayLines", "GenerateAliasFile", "IncludeFebCustomProperties", "FebProperties",
-		"IncludeCrcEramPropertyDefaults", "FilterByRoi",
+		CrcDefaultsReader.IncludeLineKey, CrcDefaultsReader.IncludeSymbolKey, CrcDefaultsReader.IncludeTextKey, "FilterByRoi",
 		"RoiSwLat", "RoiSwLon", "RoiNeLat", "RoiNeLon",
 		"CoordinatePrecision", "AddFeBuddyOutputFolder"
 	};
@@ -102,7 +102,6 @@ public static class AirportSettingsParser
 		bool includeFebProperties = SettingsValueReader.YesNo(airportSettings, "IncludeFebCustomProperties", defaultValue: false);
 		IReadOnlyCollection<AirportFebProperty> febProperties = ParseFebProperties(airportSettings, includeFebProperties);
 
-		bool includeCrcDefaults = SettingsValueReader.YesNo(airportSettings, "IncludeCrcEramPropertyDefaults", defaultValue: false);
 		bool filterByRoi = SettingsValueReader.YesNo(airportSettings, "FilterByRoi", defaultValue: false);
 
 		RegionOfInterest? roi = filterByRoi ? ParseRoi(airportSettings) : null;
@@ -112,34 +111,32 @@ public static class AirportSettingsParser
 
 		bool addFeBuddyOutputFolder = SettingsValueReader.YesNo(airportSettings, "AddFeBuddyOutputFolder", defaultValue: true);
 
-		Dictionary<AirportCrcClass, CrcLineProperties> lineDefaults = new();
-		Dictionary<AirportCrcClass, CrcSymbolProperties> symbolDefaults = new();
-		Dictionary<AirportCrcClass, CrcTextProperties> textDefaults = new();
+		// Each kind's defaults are written only when the user asked for them AND that file is
+		// produced; only then are its values required.
+		bool includeLineDefaults = CrcDefaultsReader.ReadInclude(airportSettings, CrcFeatureKind.Line) && generateGeojson && emitRunways;
+		bool includeSymbolDefaults = CrcDefaultsReader.ReadInclude(airportSettings, CrcFeatureKind.Symbol) && generateGeojson && emitSymbols;
+		bool includeTextDefaults = CrcDefaultsReader.ReadInclude(airportSettings, CrcFeatureKind.Text) && generateGeojson && emitText;
 
-		if (includeCrcDefaults && generateGeojson)
+		Dictionary<AirportCrcClass, CrcLineDefaults> lineDefaults = new();
+		Dictionary<AirportCrcClass, CrcSymbolDefaults> symbolDefaults = new();
+		Dictionary<AirportCrcClass, CrcTextDefaults> textDefaults = new();
+
+		if (includeSymbolDefaults)
 		{
-			// Only the blocks whose file is actually being written are required, so a user who
-			// wants symbols only is never asked to fill in runway line properties.
-			if (emitSymbols)
-			{
-				CrcSymbolProperties symbol = ParseSymbolProperties(airportSettings, AirportCrcClass.Airports);
-				ThrowIfInvalid(CrcGeojsonPropertyValidator.ValidateSymbol(symbol), AirportCrcClass.Airports, "Symbol");
-				symbolDefaults[AirportCrcClass.Airports] = symbol;
-			}
+			symbolDefaults[AirportCrcClass.Airports] =
+				CrcDefaultsReader.ReadSymbol(airportSettings, $"Crc.{AirportCrcClass.Airports}.Symbol");
+		}
 
-			if (emitText)
-			{
-				CrcTextProperties text = ParseTextProperties(airportSettings, AirportCrcClass.Airports);
-				ThrowIfInvalid(CrcGeojsonPropertyValidator.ValidateText(text), AirportCrcClass.Airports, "Text");
-				textDefaults[AirportCrcClass.Airports] = text;
-			}
+		if (includeTextDefaults)
+		{
+			textDefaults[AirportCrcClass.Airports] =
+				CrcDefaultsReader.ReadText(airportSettings, $"Crc.{AirportCrcClass.Airports}.Text");
+		}
 
-			if (emitRunways)
-			{
-				CrcLineProperties line = ParseLineProperties(airportSettings, AirportCrcClass.Runways);
-				ThrowIfInvalid(CrcGeojsonPropertyValidator.ValidateLine(line), AirportCrcClass.Runways, "Line");
-				lineDefaults[AirportCrcClass.Runways] = line;
-			}
+		if (includeLineDefaults)
+		{
+			lineDefaults[AirportCrcClass.Runways] =
+				CrcDefaultsReader.ReadLine(airportSettings, $"Crc.{AirportCrcClass.Runways}.Line");
 		}
 
 		List<ServiceMessage> messages = new();
@@ -155,7 +152,9 @@ public static class AirportSettingsParser
 			GenerateAliasFile = generateAliasFile,
 			IncludeFebCustomProperties = includeFebProperties,
 			FebProperties = febProperties,
-			IncludeCrcEramPropertyDefaults = includeCrcDefaults,
+			IncludeCrcLineDefaults = includeLineDefaults,
+			IncludeCrcSymbolDefaults = includeSymbolDefaults,
+			IncludeCrcTextDefaults = includeTextDefaults,
 			Roi = roi,
 			CoordinatePrecision = coordinatePrecision,
 			AddFeBuddyOutputFolder = addFeBuddyOutputFolder,
@@ -235,56 +234,6 @@ public static class AirportSettingsParser
 		}
 
 		return new RegionOfInterest(swLat, swLon, neLat, neLon);
-	}
-
-	private static CrcLineProperties ParseLineProperties(Dictionary<string, string> settings, AirportCrcClass cls) =>
-		new()
-		{
-			Bcg = SettingsValueReader.OptionalInt(settings, CrcKey(cls, "Line", "bcg")),
-			Filters = SettingsValueReader.RequiredIntList(settings, CrcKey(cls, "Line", "filters")),
-			Style = SettingsValueReader.NormalizeStyle(
-				SettingsValueReader.OptionalString(settings, CrcKey(cls, "Line", "style")),
-				CrcGeojsonPropertyValidator.ValidLineStyles),
-			Thickness = SettingsValueReader.OptionalInt(settings, CrcKey(cls, "Line", "thickness"))
-		};
-
-	private static CrcSymbolProperties ParseSymbolProperties(Dictionary<string, string> settings, AirportCrcClass cls) =>
-		new()
-		{
-			Bcg = SettingsValueReader.OptionalInt(settings, CrcKey(cls, "Symbol", "bcg")),
-			Filters = SettingsValueReader.RequiredIntList(settings, CrcKey(cls, "Symbol", "filters")),
-			Style = SettingsValueReader.NormalizeStyle(
-				SettingsValueReader.OptionalString(settings, CrcKey(cls, "Symbol", "style")),
-				CrcGeojsonPropertyValidator.ValidSymbolStyles),
-			Size = SettingsValueReader.OptionalInt(settings, CrcKey(cls, "Symbol", "size"))
-		};
-
-	private static CrcTextProperties ParseTextProperties(Dictionary<string, string> settings, AirportCrcClass cls) =>
-		new()
-		{
-			Bcg = SettingsValueReader.OptionalInt(settings, CrcKey(cls, "Text", "bcg")),
-			Filters = SettingsValueReader.RequiredIntList(settings, CrcKey(cls, "Text", "filters")),
-			// Placeholder only - never rendered. Each airport's Text Feature supplies its own
-			// "text" override built from its identifier and name.
-			Text = new[] { $"{cls}_DEFAULT" },
-			Size = SettingsValueReader.OptionalInt(settings, CrcKey(cls, "Text", "size")),
-			Underline = SettingsValueReader.OptionalYesNo(settings, CrcKey(cls, "Text", "underline")),
-			XOffset = SettingsValueReader.OptionalInt(settings, CrcKey(cls, "Text", "xOffset")),
-			YOffset = SettingsValueReader.OptionalInt(settings, CrcKey(cls, "Text", "yOffset")),
-			Opaque = SettingsValueReader.OptionalYesNo(settings, CrcKey(cls, "Text", "opaque"))
-		};
-
-	private static string CrcKey(AirportCrcClass cls, string kind, string property) =>
-		$"Crc.{cls}.{kind}.{property}";
-
-	private static void ThrowIfInvalid(CrcPropertyValidationResult result, AirportCrcClass cls, string kind)
-	{
-		if (!result.IsValid)
-		{
-			throw new ArgumentException(
-				$"Invalid CRC {kind} property defaults for '{cls}':{Environment.NewLine}" +
-				string.Join(Environment.NewLine, result.Errors));
-		}
 	}
 
 	private static void CollectUnknownKeyWarnings(Dictionary<string, string> settings, List<ServiceMessage> messages)

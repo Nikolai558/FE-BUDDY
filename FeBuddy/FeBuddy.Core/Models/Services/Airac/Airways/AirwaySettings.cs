@@ -76,35 +76,40 @@ public sealed record AirwaySettings
 	public bool AddFeBuddyOutputFolder { get; init; } = true;
 
 	/// <summary>
-	/// Whether CRC ERAM property defaults (<see cref="LineDefaults"/>,
-	/// <see cref="SymbolDefaults"/>, <see cref="TextDefaults"/>) should be written as
-	/// isDefaults Features in the generated GeoJSON files.
+	/// Whether the Line defaults (<see cref="LineDefaults"/>) are written as an isLineDefaults
+	/// Feature. <see langword="true"/> only when the user asked for them and the file they belong
+	/// to is being produced.
 	/// </summary>
-	public required bool IncludeCrcEramPropertyDefaults { get; init; }
+	public required bool IncludeCrcLineDefaults { get; init; }
+
+	/// <summary>
+	/// Whether the Symbol defaults (<see cref="SymbolDefaults"/>) are written as an isSymbolDefaults
+	/// Feature. <see langword="true"/> only when the user asked for them and the file they belong
+	/// to is being produced.
+	/// </summary>
+	public required bool IncludeCrcSymbolDefaults { get; init; }
+
+	/// <summary>
+	/// Whether the Text defaults (<see cref="TextDefaults"/>) are written as an isTextDefaults
+	/// Feature. <see langword="true"/> only when the user asked for them and the file they belong
+	/// to is being produced.
+	/// </summary>
+	public required bool IncludeCrcTextDefaults { get; init; }
 
 	/// <summary>The Region of Interest to filter and clip output to, or <see langword="null"/> for no ROI filtering.</summary>
 	public RegionOfInterest? Roi { get; init; }
 
-	/// <summary>CRC line property defaults, keyed by altitude class. Populated when <see cref="IncludeCrcEramPropertyDefaults"/> is <see langword="true"/>.</summary>
-	public IReadOnlyDictionary<AirwayAltitudeClass, CrcLineProperties> LineDefaults { get; init; } =
-		new Dictionary<AirwayAltitudeClass, CrcLineProperties>();
+	/// <summary>CRC line property defaults, keyed by altitude class. Populated when <see cref="IncludeCrcLineDefaults"/> is <see langword="true"/>.</summary>
+	public IReadOnlyDictionary<AirwayAltitudeClass, CrcLineDefaults> LineDefaults { get; init; } =
+		new Dictionary<AirwayAltitudeClass, CrcLineDefaults>();
 
-	/// <summary>CRC symbol property defaults, keyed by altitude class. Populated when <see cref="IncludeCrcEramPropertyDefaults"/> is <see langword="true"/>.</summary>
-	public IReadOnlyDictionary<AirwayAltitudeClass, CrcSymbolProperties> SymbolDefaults { get; init; } =
-		new Dictionary<AirwayAltitudeClass, CrcSymbolProperties>();
+	/// <summary>CRC symbol property defaults, keyed by altitude class. Populated when <see cref="IncludeCrcSymbolDefaults"/> is <see langword="true"/>.</summary>
+	public IReadOnlyDictionary<AirwayAltitudeClass, CrcSymbolDefaults> SymbolDefaults { get; init; } =
+		new Dictionary<AirwayAltitudeClass, CrcSymbolDefaults>();
 
 	/// <summary>
-	/// CRC text property defaults, keyed by altitude class. Populated when
-	/// <see cref="IncludeCrcEramPropertyDefaults"/> is <see langword="true"/>.
+	/// CRC text property defaults, keyed by altitude class. Populated when <see cref="IncludeCrcTextDefaults"/> is <see langword="true"/>.
 	/// </summary>
-	/// <remarks>
-	/// The <see cref="CrcTextProperties.Text"/> value on each of these entries is a harmless,
-	/// non-rendered placeholder (the isDefaults Text Feature is never drawn by CRC). A real
-	/// airway waypoint's Text Feature always supplies its own <c>text</c> (the waypoint's
-	/// PointId) as a per-feature override built by <c>AirwayGeojsonService</c>; the settings
-	/// dictionary has no mechanism to configure per-waypoint text, since it necessarily
-	/// differs for every waypoint.
-	/// </remarks>
-	public IReadOnlyDictionary<AirwayAltitudeClass, CrcTextProperties> TextDefaults { get; init; } =
-		new Dictionary<AirwayAltitudeClass, CrcTextProperties>();
+	public IReadOnlyDictionary<AirwayAltitudeClass, CrcTextDefaults> TextDefaults { get; init; } =
+		new Dictionary<AirwayAltitudeClass, CrcTextDefaults>();
 }

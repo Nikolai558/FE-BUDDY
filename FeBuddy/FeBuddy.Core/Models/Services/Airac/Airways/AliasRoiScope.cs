@@ -5,13 +5,14 @@ namespace FeBuddy.Core.Models.Services.Airac.Airways;
 /// </summary>
 public enum AliasRoiScope
 {
-	/// <summary>Every airway (the historical behaviour).</summary>
+	/// <summary>Every airway, whatever the ROI (the historical behaviour).</summary>
 	All = 0,
 
 	/// <summary>
-	/// Only airways with at least one waypoint inside the ROI - but then the whole airway's
-	/// waypoint list, since the alias is meant to draw the entire airway. Uses a point-in-ROI
-	/// test, never the ROI-clipped geometry.
+	/// Exactly the airways the GeoJSON draws: those whose line crosses the ROI, even when none
+	/// of their waypoints is inside it (<c>Airway.CrossesRoi</c>). Each gets its whole waypoint
+	/// list, since the alias is meant to draw the entire airway - the clipping only ever shapes
+	/// the GeoJSON line.
 	/// </summary>
 	RoiAirways = 1,
 }

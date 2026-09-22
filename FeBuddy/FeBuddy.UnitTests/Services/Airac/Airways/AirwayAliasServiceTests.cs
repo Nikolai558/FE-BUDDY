@@ -45,7 +45,11 @@ public sealed class AirwayAliasServiceTests : IDisposable
 		Roi = roi,
 	};
 
-	private static IReadOnlyList<Airway> BuildTwoAirways()
+	/// <summary>
+	/// Builds J1 (near 40, -80) and Q1 (far away near 10, 10). Pass the same ROI the alias
+	/// settings use: the builder is what decides whether an airway crosses it.
+	/// </summary>
+	private static IReadOnlyList<Airway> BuildTwoAirways(RegionOfInterest? roi = null)
 	{
 		// J1 sits near (40, -80); Q1 sits far away near (10, 10).
 		var data = AirwayTestDataBuilder.Build(
@@ -72,6 +76,7 @@ public sealed class AirwayAliasServiceTests : IDisposable
 			GenerateAliasFile = false,
 			SplitAtAntimeridian = true,
 			IncludeCrcEramPropertyDefaults = false,
+			Roi = roi,
 		};
 
 		return AirwayBuilder.BuildAll(data, minimal).Airways;
@@ -97,12 +102,12 @@ public sealed class AirwayAliasServiceTests : IDisposable
 	}
 
 	[Fact]
-	public void roi_airways_scope_keeps_only_airways_with_a_waypoint_inside_the_roi()
+	public void roi_airways_scope_keeps_only_airways_crossing_the_roi()
 	{
 		RegionOfInterest roi = new(38.0, -85.0, 43.0, -78.0); // contains J1, not Q1
 
 		AirwayAliasGenerateResult result = AirwayAliasService.Generate(
-			BuildTwoAirways(), Settings(scope: AliasRoiScope.RoiAirways, roi: roi));
+			BuildTwoAirways(roi), Settings(scope: AliasRoiScope.RoiAirways, roi: roi));
 
 		string contents = File.ReadAllText(result.FilePath!);
 		Assert.Contains(".J1F", contents);
@@ -116,10 +121,33 @@ public sealed class AirwayAliasServiceTests : IDisposable
 		RegionOfInterest roi = new(38.0, -85.0, 43.0, -78.0);
 
 		AirwayAliasGenerateResult result = AirwayAliasService.Generate(
-			BuildTwoAirways(), Settings(scope: AliasRoiScope.All, roi: roi));
+			BuildTwoAirways(roi), Settings(scope: AliasRoiScope.All, roi: roi));
 
 		string contents = File.ReadAllText(result.FilePath!);
 		Assert.Contains(".J1F", contents);
 		Assert.Contains(".Q1F", contents);
+	}
+
+	[Fact]
+	public void roi_airways_scope_keeps_an_airway_whose_line_crosses_the_roi_with_no_waypoint_inside()
+	{
+		// V9 runs from well west of the ROI to well east of it: neither waypoint is inside,
+		// but the line passes straight through - so the GeoJSON draws it, and the alias must
+		// include it too, with both of its waypoints.
+		var data = AirwayTestDataBuilder.Build(
+			fixes: new[] { ("WESTT", 40.0, -95.0), ("EASTT", 40.0, -70.0) },
+			awyId: "V9",
+			segments: new[] { AirwayTestDataBuilder.Segment("V9", 10, "WESTT", "WP", "EASTT") });
+
+		RegionOfInterest roi = new(38.0, -85.0, 43.0, -78.0);
+
+		AirwaySettings buildSettings = Settings(scope: AliasRoiScope.RoiAirways, roi: roi);
+		IReadOnlyList<Airway> airways = AirwayBuilder.BuildAll(data, buildSettings).Airways;
+
+		AirwayAliasGenerateResult result = AirwayAliasService.Generate(airways, buildSettings);
+
+		string contents = File.ReadAllText(result.FilePath!);
+		Assert.Contains(".V9F .FF WESTT EASTT", contents);
+		Assert.Equal(1, result.AirwayLineCount);
 	}
 }

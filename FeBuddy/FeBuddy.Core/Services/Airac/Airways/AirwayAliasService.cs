@@ -35,13 +35,14 @@ public static class AirwayAliasService
 
 		IEnumerable<Airway> candidates = airways.Where(a => a.Points.Count > 0);
 
-		// RoiAirways scope: keep an airway if ANY of its waypoints falls inside the ROI, then
-		// write ALL of that airway's waypoints - the alias is meant to draw the whole airway,
-		// so the ROI-clipped geometry is deliberately not consulted (remediation plan 3.5).
-		if (settings.AliasRoiScope == AliasRoiScope.RoiAirways && settings.Roi is { } roi)
+		// RoiAirways scope: keep exactly the airways the GeoJSON draws - those whose LINE crosses
+		// the ROI, even with no waypoint inside it - then write ALL of that airway's waypoints,
+		// because the alias is meant to draw the whole airway. The crossing test is the one the
+		// builder runs for every airway whether or not GeoJSON is being written, so an
+		// alias-only run gets the same answer.
+		if (settings.AliasRoiScope == AliasRoiScope.RoiAirways && settings.Roi is not null)
 		{
-			candidates = candidates.Where(a =>
-				a.Points.Any(p => RoiFilter.Contains(roi, p.Latitude, p.Longitude)));
+			candidates = candidates.Where(a => a.CrossesRoi);
 		}
 
 		List<Airway> airwaysWithPoints = candidates

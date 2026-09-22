@@ -230,7 +230,8 @@
                         <RadioButton GroupName="AliasScope" Content="All FAA airways"
                                      IsChecked="{Binding AliasRoiAirwaysOnly, Converter={StaticResource InverseBool}, Mode=TwoWay}" />
                         <RadioButton GroupName="AliasScope" Content="ROI airways only" Margin="0,3,0,0"
-                                     IsChecked="{Binding AliasRoiAirwaysOnly, Mode=TwoWay}" />
+                                     IsChecked="{Binding AliasRoiAirwaysOnly, Mode=TwoWay}"
+                                     ToolTip="Every airway whose line crosses the region - the same airways the GeoJSON draws - each with all of its waypoints." />
                     </StackPanel>
                 </StackPanel>
             </Border>

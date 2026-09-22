@@ -3,6 +3,7 @@ using System.Text.RegularExpressions;
 using FeBuddy.Core.Configuration;
 using FeBuddy.Core.Models.Services.Airac.Airports;
 using FeBuddy.Core.Models.Services.Airac.Airways;
+using FeBuddy.Core.Models.Services.Airac.Departures;
 using FeBuddy.Core.Models.Services.General;
 using FeBuddy.Core.Services.General;
 
@@ -84,6 +85,61 @@ internal static class ConsoleReport
 				int count = result.GeojsonFeatureCountsByFile.TryGetValue(file, out int c) ? c : 0;
 				Console.WriteLine($"  {Path.GetFileName(file)} - {count:N0} feature(s)");
 				Console.WriteLine($"    {file}");
+			}
+		}
+
+		if (result.AliasFilePath is not null)
+		{
+			Console.WriteLine($"Alias file:   {result.AliasFilePath} ({result.AliasCommandCount:N0} command(s))");
+		}
+		else
+		{
+			Console.WriteLine("Alias file:   (not generated)");
+		}
+
+		PrintMessagesByLevel(result.Messages);
+	}
+
+	/// <summary>
+	/// Prints one Departures run: timing, how many procedures were read and survived each filter
+	/// stage, how many GeoJSON files were written (a handful listed; every path with DevMode on -
+	/// a full run writes thousands), the alias file with its command count, and the run's
+	/// messages grouped by level.
+	/// </summary>
+	/// <param name="label">Heading for this run, e.g. "Departures: GeoJSON + Alias".</param>
+	/// <param name="result">What <c>DepartureService.Run</c> returned.</param>
+	public static void PrintDepartureServiceResult(string label, DepartureServiceResult result)
+	{
+		Console.WriteLine();
+		Console.WriteLine($"=== {label} ===");
+		Console.WriteLine($"Elapsed:      {result.Elapsed.TotalMilliseconds:N0} ms");
+		Console.WriteLine($"Procedures in DP_BASE:          {result.ProcedureCount:N0}");
+		Console.WriteLine($"Procedures after type/ARTCC/amendment filters: {result.ProceduresInScopeCount:N0}");
+		Console.WriteLine($"Airport + procedure pairs output: {result.AirportProcedureCount:N0}");
+		Console.WriteLine($"Pairs skipped (point not found):  {result.SkippedForMissingPointsCount:N0}");
+
+		if (result.GeojsonFilesWritten.Count == 0)
+		{
+			Console.WriteLine("GeoJSON files written: (none)");
+		}
+		else
+		{
+			Console.WriteLine($"GeoJSON files written: {result.GeojsonFilesWritten.Count:N0}");
+
+			const int maxWhenNotVerbose = 6;
+			int shown = 0;
+
+			foreach (string file in result.GeojsonFilesWritten)
+			{
+				if (!DevMode.IsEnabled && shown >= maxWhenNotVerbose)
+				{
+					Console.WriteLine($"  ... and {result.GeojsonFilesWritten.Count - shown:N0} more (enable DevMode to list every file)");
+					break;
+				}
+
+				int count = result.GeojsonFeatureCountsByFile.TryGetValue(file, out int c) ? c : 0;
+				Console.WriteLine($"  {Path.GetFileName(file)} - {count:N0} feature(s)");
+				shown++;
 			}
 		}
 

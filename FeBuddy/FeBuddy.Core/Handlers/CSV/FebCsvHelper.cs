@@ -22,14 +22,21 @@ public static class FebCsvHelper
 
         csv.Read();
         csv.ReadHeader();
-        var headers = csv.HeaderRecord;
+
+        // ReadHeader either fills HeaderRecord or throws, so this only fires if CsvHelper's
+        // behaviour changes - and then it names the file rather than failing on a null below.
+        string[] headers = csv.HeaderRecord
+            ?? throw new InvalidDataException($"CSV file '{filePath}' has no header row.");
 
         while (csv.Read())
         {
             var record = new Dictionary<string, string>();
             foreach (var header in headers)
             {
-                record[header] = csv.GetField(header);
+                // CsvHelper returns null for a column this row is too short to reach (with
+                // MissingFieldFound off). Stored as empty, the same as GetField below does for a
+                // column the whole file lacks, so every row value is a non-null string.
+                record[header] = csv.GetField(header) ?? string.Empty;
             }
 
             results.Add(lineProcessor(record));

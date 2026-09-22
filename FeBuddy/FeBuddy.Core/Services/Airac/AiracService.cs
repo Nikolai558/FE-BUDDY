@@ -5,8 +5,10 @@ using FeBuddy.Core.Models.Services.Airac;
 using FeBuddy.Core.Models.Services.General;
 using FeBuddy.Core.Models.Services.Airac.Airports;
 using FeBuddy.Core.Models.Services.Airac.Airways;
+using FeBuddy.Core.Models.Services.Airac.Departures;
 using FeBuddy.Core.Services.Airac.Airports;
 using FeBuddy.Core.Services.Airac.Airways;
+using FeBuddy.Core.Services.Airac.Departures;
 using FeBuddy.Core.Services.General;
 
 namespace FeBuddy.Core.Services.Airac;
@@ -81,6 +83,7 @@ public static class AiracService
 		List<ServiceMessage> messages = new();
 		AirwayServiceResult? airwaysResult = null;
 		AirportServiceResult? airportsResult = null;
+		DepartureServiceResult? departuresResult = null;
 
 		if (settings.Airways is { } airwayBlock)
 		{
@@ -122,7 +125,26 @@ public static class AiracService
 			AppLog.Success(LogSource, $"Airports complete: {airportsResult.AirportCount} airport(s), {airportsResult.GeojsonFilesWritten.Count} file(s).");
 		}
 
-		if (airwaysResult is null && airportsResult is null)
+		if (settings.Departures is { } departureBlock)
+		{
+			cancellationToken.ThrowIfCancellationRequested();
+
+			AppLog.Info(LogSource, $"AIRAC Service: running Departures for cycle {settings.SelectedCycle.AiracCycleId}, facility {settings.ArtccId}.");
+			progress?.Report(new AiracServiceProgress("Departures", "Building departure procedure GeoJSON and alias output"));
+
+			Dictionary<string, string> block = new(departureBlock, StringComparer.OrdinalIgnoreCase);
+
+			departuresResult = await Task.Run(() => DepartureService.Run(nasrData, block), cancellationToken).ConfigureAwait(false);
+
+			messages.AddRange(departuresResult.Messages);
+			progress?.Report(new AiracServiceProgress(
+				"Departures",
+				$"Departures complete: {departuresResult.AirportProcedureCount} airport procedure(s), {departuresResult.GeojsonFilesWritten.Count} GeoJSON file(s).",
+				100));
+			AppLog.Success(LogSource, $"Departures complete: {departuresResult.AirportProcedureCount} airport procedure(s), {departuresResult.GeojsonFilesWritten.Count} file(s).");
+		}
+
+		if (airwaysResult is null && airportsResult is null && departuresResult is null)
 		{
 			const string message = "AIRAC Service run requested with no sub-service selected; nothing to do.";
 			messages.Add(new ServiceMessage(LogLevel.Warning, LogSource, message));
@@ -137,6 +159,7 @@ public static class AiracService
 			Elapsed = stopwatch.Elapsed,
 			Airways = airwaysResult,
 			Airports = airportsResult,
+			Departures = departuresResult,
 			ExcludedAirwayIds = airwaysResult?.ExcludedAirwayIds ?? Array.Empty<string>(),
 		};
 	}

@@ -3,6 +3,7 @@ using System.Diagnostics;
 using FeBuddy.Core.Configuration;
 using FeBuddy.Core.Models.NASR.CSV;
 using FeBuddy.Core.Models.Services.Airac.Airports;
+using FeBuddy.Core.Models.Services.Airac.Departures;
 using FeBuddy.Core.Parsers.NASR.CSV;
 
 namespace FeBuddy.Harness;
@@ -38,14 +39,17 @@ internal static class Program
 			Console.WriteLine("done.");
 			ConsoleReport.PrintNasrParseSummary(parseStopwatch.Elapsed);
 
-			var geojsonResult = AirwayGeojsonRunner.Run(allNasrCsvData);
-			ConsoleReport.PrintAirwayServiceResult("Airways: HighLow GeoJSON + Alias", geojsonResult);
+			// var geojsonResult = AirwayGeojsonRunner.Run(allNasrCsvData);
+			// ConsoleReport.PrintAirwayServiceResult("Airways: HighLow GeoJSON + Alias", geojsonResult);
 
-			var aliasOnlyResult = AirwayAliasRunner.Run(allNasrCsvData);
-			ConsoleReport.PrintAirwayServiceResult("Airways: Alias-only (OutputBy = None)", aliasOnlyResult);
+			// var aliasOnlyResult = AirwayAliasRunner.Run(allNasrCsvData);
+			// ConsoleReport.PrintAirwayServiceResult("Airways: Alias-only (OutputBy = None)", aliasOnlyResult);
 
 			// AirportServiceResult airportResult = AirportRunner.Run(allNasrCsvData);
 			// ConsoleReport.PrintAirportServiceResult("Airports: GeoJSON + Alias", airportResult);
+
+			DepartureServiceResult departureResult = DepartureRunner.Run(allNasrCsvData);
+			ConsoleReport.PrintDepartureServiceResult("Departures: GeoJSON + Alias", departureResult);
 		}
 		catch (Exception ex)
 		{

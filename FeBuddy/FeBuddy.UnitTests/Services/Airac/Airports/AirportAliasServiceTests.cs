@@ -22,6 +22,12 @@ public sealed class AirportAliasServiceTests : IDisposable
 	/// <summary>The prime symbol used as the feet marker (U+2032).</summary>
 	private const string FeetMark = "\u2032";
 
+	/// <summary>
+	/// The literal two-character escape CRC expands into a space. Every space that has to hold a
+	/// column is written this way, because CRC collapses runs of real spaces.
+	/// </summary>
+	private const string Space = @"\s";
+
 	private readonly string _outputDirectory =
 		Path.Combine(Path.GetTempPath(), "FeBuddyTests_AptAlias_" + Guid.NewGuid().ToString("N"));
 
@@ -119,7 +125,7 @@ public sealed class AirportAliasServiceTests : IDisposable
 		string body = AirportAliasService.BuildCommandBody(
 			AirportTestDataBuilder.BuiltAirport(weatherFrequency: null, weatherFrequencyUse: null));
 
-		Assert.EndsWith("WX:" + Tab + Tab + Tab + " ", body);
+		Assert.EndsWith("WX:" + Tab + Tab + Tab + Space, body);
 	}
 
 	[Fact]
@@ -128,7 +134,7 @@ public sealed class AirportAliasServiceTests : IDisposable
 		string body = AirportAliasService.BuildCommandBody(
 			AirportTestDataBuilder.BuiltAirport(weatherFrequency: "135.075", weatherFrequencyUse: "ASOS"));
 
-		Assert.EndsWith("WX:" + Tab + Tab + Tab + " 135.075 (ASOS)", body);
+		Assert.EndsWith("WX:" + Tab + Tab + Tab + Space + "135.075 (ASOS)", body);
 	}
 
 	[Fact]
@@ -157,8 +163,8 @@ public sealed class AirportAliasServiceTests : IDisposable
 		string body = AirportAliasService.BuildCommandBody(
 			AirportTestDataBuilder.BuiltAirport(trafficPatternAltitude: null));
 
-		Assert.Contains("PTRN ALT:" + Tab + "   " + NewLine, body);
-		Assert.DoesNotContain("PTRN ALT:" + Tab + "   " + FeetMark, body);
+		Assert.Contains("PTRN" + Space + "ALT:" + Tab + Space + Space + Space + NewLine, body);
+		Assert.DoesNotContain("PTRN" + Space + "ALT:" + Tab + Space + Space + Space + FeetMark, body);
 	}
 
 	[Fact]
@@ -167,7 +173,7 @@ public sealed class AirportAliasServiceTests : IDisposable
 		string body = AirportAliasService.BuildCommandBody(
 			AirportTestDataBuilder.BuiltAirport(trafficPatternAltitude: 1500));
 
-		Assert.Contains("PTRN ALT:" + Tab + "   1500" + FeetMark + NewLine, body);
+		Assert.Contains("PTRN" + Space + "ALT:" + Tab + Space + Space + Space + "1500" + FeetMark + NewLine, body);
 	}
 
 	[Fact]
@@ -176,7 +182,7 @@ public sealed class AirportAliasServiceTests : IDisposable
 		string body = AirportAliasService.BuildCommandBody(
 			AirportTestDataBuilder.BuiltAirport(runways: Array.Empty<AirportRunway>()));
 
-		Assert.Contains("LONGEST RWY:" + Tab + NewLine, body);
+		Assert.Contains("LONGEST" + Space + "RWY:" + Tab + NewLine, body);
 		Assert.DoesNotContain("()", body);
 	}
 
@@ -188,8 +194,8 @@ public sealed class AirportAliasServiceTests : IDisposable
 			trafficPatternAltitude: 1500,
 			runways: new[] { AirportTestDataBuilder.BuiltRunway("16L/34R", 11901, "ASPH-G") }));
 
-		Assert.Contains("LONGEST RWY:" + Tab + "16L/34R (11901" + FeetMark + ")" + NewLine, body);
-		Assert.Contains("ELEV:" + Tab + Tab + "   433" + FeetMark + NewLine, body);
+		Assert.Contains("LONGEST" + Space + "RWY:" + Tab + "16L/34R (11901" + FeetMark + ")" + NewLine, body);
+		Assert.Contains("ELEV:" + Tab + Tab + Space + Space + Space + "433" + FeetMark + NewLine, body);
 
 		Assert.Equal('\u2032', FeetMark[0]);
 		Assert.DoesNotContain("433'", body);

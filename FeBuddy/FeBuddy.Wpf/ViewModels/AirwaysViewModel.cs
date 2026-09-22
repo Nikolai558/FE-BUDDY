@@ -215,8 +215,8 @@ public sealed class AirwaysViewModel : SubServiceSettingsViewModel, ISubServiceR
     /// silent surprise.
     /// </summary>
     public string RoiFallbackHint => DefaultRoiStore.Load() is { } r
-        ? $"Not overridden — uses the Settings ▸ Default Region of Interest (SW {r.SwLat:0.####}, {r.SwLon:0.####}  ·  NE {r.NeLat:0.####}, {r.NeLon:0.####})."
-        : "Not overridden and no Settings ▸ Default Region of Interest is set — no geographic limit is applied.";
+        ? $"Using the default ROI: SW {r.SwLat:0.####}, {r.SwLon:0.####} / NE {r.NeLat:0.####}, {r.NeLon:0.####}"
+        : "No default ROI is set, so every airway is included. Set one in Settings, or override it here.";
 
     /// <summary>Designation include/exclude toggles, built from the selected cycle's parsed airways (7.4). Disabled until readiness.</summary>
     public ObservableCollection<DesignationToggle> Designations { get; } = new();

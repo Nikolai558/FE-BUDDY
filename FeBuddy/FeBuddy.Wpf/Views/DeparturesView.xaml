@@ -309,43 +309,43 @@
             <Border Style="{StaticResource Card}" Margin="0,16,0,0">
                 <StackPanel>
                     <ctl:SectionHeader Label="REGION OF INTEREST" />
-                    <CheckBox Content="Use a region of interest" IsChecked="{Binding UseRoi}" Margin="0,4,0,0" />
-                    <TextBlock Style="{StaticResource Text.Prose}" Margin="20,4,0,0"
-                               Text="Off: every departure procedure in NASR. On: only the departures the region selects, for both the GeoJSON and the alias file." />
-                    <StackPanel Margin="20,10,0,0" IsEnabled="{Binding UseRoi}">
-                        <RadioButton GroupName="DepartureRoiMode" Content="Every departure for an airport inside the region"
+                    <CheckBox Content="Override the default ROI for Departures" IsChecked="{Binding OverrideRoi}" Margin="0,4,0,0" />
+                    <TextBlock Text="{Binding RoiFallbackHint}" Style="{StaticResource Text.Caption}" TextWrapping="Wrap"
+                               Margin="20,4,0,0"
+                               MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
+                               Visibility="{Binding OverrideRoi, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
+                    <StackPanel Margin="20,8,0,0" IsEnabled="{Binding OverrideRoi}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" /><ColumnDefinition Width="160" />
+                                <ColumnDefinition Width="Auto" /><ColumnDefinition Width="160" />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions><RowDefinition /><RowDefinition /></Grid.RowDefinitions>
+                            <TextBlock Text="NE lat" Style="{StaticResource Text.Caption}" VerticalAlignment="Center" Margin="0,0,8,4" />
+                            <TextBox Grid.Column="1" Margin="0,0,12,4" Text="{Binding NeLat, UpdateSourceTrigger=PropertyChanged}"
+                                     infra:FieldState.Error="{Binding FieldErrors[NeLat]}" />
+                            <TextBlock Grid.Column="2" Text="NE lon" Style="{StaticResource Text.Caption}" VerticalAlignment="Center" Margin="0,0,8,4" />
+                            <TextBox Grid.Column="3" Margin="0,0,0,4" Text="{Binding NeLon, UpdateSourceTrigger=PropertyChanged}"
+                                     infra:FieldState.Error="{Binding FieldErrors[NeLon]}" />
+                            <TextBlock Grid.Row="1" Text="SW lat" Style="{StaticResource Text.Caption}" VerticalAlignment="Center" Margin="0,0,8,0" />
+                            <TextBox Grid.Row="1" Grid.Column="1" Margin="0,0,12,0" Text="{Binding SwLat, UpdateSourceTrigger=PropertyChanged}"
+                                     infra:FieldState.Error="{Binding FieldErrors[SwLat]}" />
+                            <TextBlock Grid.Row="1" Grid.Column="2" Text="SW lon" Style="{StaticResource Text.Caption}" VerticalAlignment="Center" Margin="0,0,8,0" />
+                            <TextBox Grid.Row="1" Grid.Column="3" Text="{Binding SwLon, UpdateSourceTrigger=PropertyChanged}"
+                                     infra:FieldState.Error="{Binding FieldErrors[SwLon]}" />
+                        </Grid>
+                        <Button Content="Pick on map…" Style="{StaticResource Button.Ghost}" HorizontalAlignment="Left"
+                                Margin="0,8,0,0" Command="{Binding PickRoiOnMapCommand}" />
+                    </StackPanel>
+
+                    <StackPanel Margin="0,14,0,0" IsEnabled="{Binding HasRoi}">
+                        <TextBlock Text="HOW THE REGION SELECTS DEPARTURES" Style="{StaticResource Text.Label}" />
+                        <RadioButton GroupName="DepartureRoiMode" Content="Every departure for an airport inside the region" Margin="0,6,0,0"
                                      IsChecked="{Binding RoiModeAirport, Mode=TwoWay}" />
                         <RadioButton GroupName="DepartureRoiMode" Content="Any departure with a point inside the region" Margin="0,3,0,0"
                                      IsChecked="{Binding RoiModeWaypoint, Mode=TwoWay}" />
-
-                        <CheckBox Content="Override the default ROI for Departures" IsChecked="{Binding OverrideRoi}" Margin="0,12,0,0" />
-                        <TextBlock Text="{Binding RoiFallbackHint}" Style="{StaticResource Text.Caption}" TextWrapping="Wrap"
-                                   Margin="20,4,0,0"
-                                   MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
-                                   Visibility="{Binding OverrideRoi, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
-                        <StackPanel Margin="20,8,0,0" IsEnabled="{Binding OverrideRoi}">
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto" /><ColumnDefinition Width="160" />
-                                    <ColumnDefinition Width="Auto" /><ColumnDefinition Width="160" />
-                                </Grid.ColumnDefinitions>
-                                <Grid.RowDefinitions><RowDefinition /><RowDefinition /></Grid.RowDefinitions>
-                                <TextBlock Text="NE lat" Style="{StaticResource Text.Caption}" VerticalAlignment="Center" Margin="0,0,8,4" />
-                                <TextBox Grid.Column="1" Margin="0,0,12,4" Text="{Binding NeLat, UpdateSourceTrigger=PropertyChanged}"
-                                         infra:FieldState.Error="{Binding FieldErrors[NeLat]}" />
-                                <TextBlock Grid.Column="2" Text="NE lon" Style="{StaticResource Text.Caption}" VerticalAlignment="Center" Margin="0,0,8,4" />
-                                <TextBox Grid.Column="3" Margin="0,0,0,4" Text="{Binding NeLon, UpdateSourceTrigger=PropertyChanged}"
-                                         infra:FieldState.Error="{Binding FieldErrors[NeLon]}" />
-                                <TextBlock Grid.Row="1" Text="SW lat" Style="{StaticResource Text.Caption}" VerticalAlignment="Center" Margin="0,0,8,0" />
-                                <TextBox Grid.Row="1" Grid.Column="1" Margin="0,0,12,0" Text="{Binding SwLat, UpdateSourceTrigger=PropertyChanged}"
-                                         infra:FieldState.Error="{Binding FieldErrors[SwLat]}" />
-                                <TextBlock Grid.Row="1" Grid.Column="2" Text="SW lon" Style="{StaticResource Text.Caption}" VerticalAlignment="Center" Margin="0,0,8,0" />
-                                <TextBox Grid.Row="1" Grid.Column="3" Text="{Binding SwLon, UpdateSourceTrigger=PropertyChanged}"
-                                         infra:FieldState.Error="{Binding FieldErrors[SwLon]}" />
-                            </Grid>
-                            <Button Content="Pick on map…" Style="{StaticResource Button.Ghost}" HorizontalAlignment="Left"
-                                    Margin="0,8,0,0" Command="{Binding PickRoiOnMapCommand}" />
-                        </StackPanel>
+                        <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,0"
+                                   Text="The region filters both the GeoJSON files and the alias file." />
                     </StackPanel>
                 </StackPanel>
             </Border>

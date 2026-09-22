@@ -46,7 +46,6 @@ public sealed class DeparturesViewModel : SubServiceSettingsViewModel, ISubServi
     private bool _includeCrcLineDefaults = true;
     private bool _includeCrcSymbolDefaults = true;
     private bool _includeCrcTextDefaults = true;
-    private bool _useRoi;
     private DepartureRoiMode _roiMode = DepartureRoiMode.Airport;
     private bool _overrideRoi;
     private string _swLat = string.Empty;
@@ -104,6 +103,7 @@ public sealed class DeparturesViewModel : SubServiceSettingsViewModel, ISubServi
         DefaultRoiStore.Changed += (_, _) =>
         {
             OnPropertyChanged(nameof(RoiFallbackHint));
+            OnPropertyChanged(nameof(HasRoi));
             Revalidate();
         };
 
@@ -206,14 +206,10 @@ public sealed class DeparturesViewModel : SubServiceSettingsViewModel, ISubServi
     // ================= region of interest =================
 
     /// <summary>
-    /// Whether a region of interest limits the output at all. Off means every departure in NASR -
-    /// unlike Airports, Departures does not fall back to the default ROI on its own.
+    /// Whether a region limits the output: this tab's override, or else the shared default ROI.
+    /// With neither, every departure in NASR is included.
     /// </summary>
-    public bool UseRoi
-    {
-        get => _useRoi;
-        set { if (SetProperty(ref _useRoi, value)) MarkDirty(); }
-    }
+    public bool HasRoi => OverrideRoi || DefaultRoiStore.Load() is not null;
 
     /// <summary>Whether the ROI selects every departure of an airport inside it.</summary>
     public bool RoiModeAirport
@@ -233,7 +229,7 @@ public sealed class DeparturesViewModel : SubServiceSettingsViewModel, ISubServi
     public bool OverrideRoi
     {
         get => _overrideRoi;
-        set { if (SetProperty(ref _overrideRoi, value)) { MarkDirty(); OnPropertyChanged(nameof(RoiFallbackHint)); } }
+        set { if (SetProperty(ref _overrideRoi, value)) { MarkDirty(); OnPropertyChanged(nameof(RoiFallbackHint)); OnPropertyChanged(nameof(HasRoi)); } }
     }
 
     /// <summary>Southwest corner latitude of the override ROI.</summary>
@@ -251,7 +247,7 @@ public sealed class DeparturesViewModel : SubServiceSettingsViewModel, ISubServi
     /// <summary>What the ROI is when the override is off.</summary>
     public string RoiFallbackHint => DefaultRoiStore.Load() is { } roi
         ? $"Using the default ROI: SW {roi.SwLat:0.####}, {roi.SwLon:0.####} / NE {roi.NeLat:0.####}, {roi.NeLon:0.####}"
-        : "No default ROI is set. Set one in Settings, or override it here.";
+        : "No default ROI is set, so every departure procedure is included. Set one in Settings, or override it here.";
 
     /// <summary>Opens the shared ROI picker and copies what the user confirms into the four boxes.</summary>
     public ICommand PickRoiOnMapCommand { get; }
@@ -546,9 +542,9 @@ public sealed class DeparturesViewModel : SubServiceSettingsViewModel, ISubServi
     /// <inheritdoc />
     public IReadOnlyDictionary<string, string> BuildSettingsBlock(string outputDirectory, bool addFeBuddyOutputFolder)
     {
-        // Departures is opt-in: with the ROI off nothing is filtered, even when a default ROI is
-        // set. With it on, an explicit override wins, otherwise the shared default ROI.
-        RegionOfInterest? fallbackRoi = UseRoi && !OverrideRoi ? DefaultRoiStore.Load() : null;
+        // Same as every sub-service: an explicit override wins, otherwise the shared default ROI,
+        // otherwise no geographic limit.
+        RegionOfInterest? fallbackRoi = OverrideRoi ? null : DefaultRoiStore.Load();
 
         Dictionary<string, string> s = new(StringComparer.OrdinalIgnoreCase)
         {
@@ -568,13 +564,13 @@ public sealed class DeparturesViewModel : SubServiceSettingsViewModel, ISubServi
             ["IncludeCrcLineDefaults"] = YesNo(IncludeCrcLineDefaults),
             ["IncludeCrcSymbolDefaults"] = YesNo(IncludeCrcSymbolDefaults),
             ["IncludeCrcTextDefaults"] = YesNo(IncludeCrcTextDefaults),
-            ["FilterByRoi"] = YesNo(UseRoi),
+            ["FilterByRoi"] = YesNo(OverrideRoi || fallbackRoi is not null),
             ["RoiMode"] = _roiMode.ToString(),
             ["CoordinatePrecision"] = ResolveCoordinatePrecision().ToString(CultureInfo.InvariantCulture),
             ["AddFeBuddyOutputFolder"] = YesNo(addFeBuddyOutputFolder),
         };
 
-        if (UseRoi && OverrideRoi)
+        if (OverrideRoi)
         {
             s["RoiSwLat"] = SwLat;
             s["RoiSwLon"] = SwLon;
@@ -688,7 +684,6 @@ public sealed class DeparturesViewModel : SubServiceSettingsViewModel, ISubServi
             _suppressArtccChanges = false;
         }
 
-        _useRoi = GetBool("Roi.UseRoi", false);
         _roiMode = string.Equals(Get("Roi.Mode")?.Trim(), nameof(DepartureRoiMode.Waypoint), StringComparison.OrdinalIgnoreCase)
             ? DepartureRoiMode.Waypoint
             : DepartureRoiMode.Airport;
@@ -721,7 +716,6 @@ public sealed class DeparturesViewModel : SubServiceSettingsViewModel, ISubServi
         Set("IncludeCrcLineDefaults", YesNo(IncludeCrcLineDefaults));
         Set("IncludeCrcSymbolDefaults", YesNo(IncludeCrcSymbolDefaults));
         Set("IncludeCrcTextDefaults", YesNo(IncludeCrcTextDefaults));
-        Set("Roi.UseRoi", YesNo(UseRoi));
         Set("Roi.Mode", _roiMode.ToString());
         Set("Roi.OverrideDefaultRoi", YesNo(OverrideRoi));
         Set("Roi.OverrideCoordindates.SwLat", SwLat);
@@ -761,18 +755,8 @@ public sealed class DeparturesViewModel : SubServiceSettingsViewModel, ISubServi
             validation.Add(CrcDefaultsIncompleteMessage);
         }
 
-        if (!UseRoi)
-        {
-            return;
-        }
-
         if (!OverrideRoi)
         {
-            if (DefaultRoiStore.Load() is null)
-            {
-                validation.Add("Region of interest is on, but no default ROI is set. Set one in Settings, or override it here.");
-            }
-
             return;
         }
 
@@ -895,7 +879,7 @@ public sealed class DeparturesViewModel : SubServiceSettingsViewModel, ISubServi
             _ => $"for {string.Join(", ", selectedArtccs[..^1])} and {selectedArtccs[^1]}",
         };
 
-        string region = !UseRoi
+        string region = !HasRoi
             ? string.Empty
             : _roiMode == DepartureRoiMode.Waypoint
                 ? ", with at least one point inside the region"
@@ -916,9 +900,9 @@ public sealed class DeparturesViewModel : SubServiceSettingsViewModel, ISubServi
     {
         // Only the geographic limit. What the run covers overall - which is also narrowed by the
         // ARTCC and procedure-type choices - is the "Includes" row's job (DescribeScope).
-        if (!UseRoi)
+        if (!HasRoi)
         {
-            return "Off - no geographic limit";
+            return "None set - no geographic limit";
         }
 
         string region;
@@ -933,7 +917,7 @@ public sealed class DeparturesViewModel : SubServiceSettingsViewModel, ISubServi
         }
         else
         {
-            region = "Default ROI: none set";
+            return "None set - no geographic limit";
         }
 
         string mode = _roiMode == DepartureRoiMode.Waypoint ? "any point inside" : "airports inside";
@@ -1114,7 +1098,7 @@ public sealed class DeparturesViewModel : SubServiceSettingsViewModel, ISubServi
         OnPropertyChanged(nameof(IncludeCrcLineDefaults));
         OnPropertyChanged(nameof(IncludeCrcSymbolDefaults));
         OnPropertyChanged(nameof(IncludeCrcTextDefaults));
-        OnPropertyChanged(nameof(UseRoi));
+        OnPropertyChanged(nameof(HasRoi));
         OnPropertyChanged(nameof(RoiModeAirport));
         OnPropertyChanged(nameof(RoiModeWaypoint));
         OnPropertyChanged(nameof(OverrideRoi));

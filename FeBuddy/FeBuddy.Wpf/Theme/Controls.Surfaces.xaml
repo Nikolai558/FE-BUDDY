@@ -23,6 +23,14 @@
         <Setter Property="CornerRadius" Value="{DynamicResource Radius.Card}" />
         <Setter Property="Padding" Value="18" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
+        <!-- A card whose options don't apply right now sinks into the background, so it
+             reads as unavailable at a glance; its text and controls dim with it. -->
+        <Style.Triggers>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Background" Value="{DynamicResource Brush.Bg.Sunken}" />
+                <Setter Property="BorderBrush" Value="{DynamicResource Brush.Stroke}" />
+            </Trigger>
+        </Style.Triggers>
     </Style>
 
     <!-- ============================ DIVIDER ========================== -->

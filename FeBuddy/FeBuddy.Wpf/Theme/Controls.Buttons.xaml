@@ -209,7 +209,7 @@
                             <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Primary}" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter TargetName="Root" Property="Opacity" Value="0.38" />
+                            <Setter TargetName="Root" Property="Opacity" Value="0.29" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>

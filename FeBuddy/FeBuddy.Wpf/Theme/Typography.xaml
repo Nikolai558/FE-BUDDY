@@ -51,6 +51,12 @@
         <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Primary}" />
         <Setter Property="LineHeight" Value="44" />
         <Setter Property="TextWrapping" Value="Wrap" />
+        <!-- Inside a disabled card or panel, text dims to match its disabled controls. -->
+        <Style.Triggers>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Opacity" Value="0.31" />
+            </Trigger>
+        </Style.Triggers>
     </Style>
 
     <Style x:Key="Text.H2" TargetType="TextBlock">
@@ -58,6 +64,12 @@
         <Setter Property="FontSize" Value="16" />
         <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Primary}" />
+        <!-- Inside a disabled card or panel, text dims to match its disabled controls. -->
+        <Style.Triggers>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Opacity" Value="0.31" />
+            </Trigger>
+        </Style.Triggers>
     </Style>
 
     <!-- ============================= BODY ============================= -->
@@ -68,6 +80,12 @@
         <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Secondary}" />
         <Setter Property="LineHeight" Value="20" />
         <Setter Property="TextWrapping" Value="Wrap" />
+        <!-- Inside a disabled card or panel, text dims to match its disabled controls. -->
+        <Style.Triggers>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Opacity" Value="0.31" />
+            </Trigger>
+        </Style.Triggers>
     </Style>
 
     <Style x:Key="Text.Body.Strong" TargetType="TextBlock" BasedOn="{StaticResource Text.Body}">
@@ -92,6 +110,12 @@
         <Setter Property="FontWeight" Value="Bold" />
         <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Tertiary}" />
         <Setter Property="TextOptions.TextFormattingMode" Value="Ideal" />
+        <!-- Inside a disabled card or panel, text dims to match its disabled controls. -->
+        <Style.Triggers>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Opacity" Value="0.31" />
+            </Trigger>
+        </Style.Triggers>
     </Style>
 
     <!-- Caption / helper text under a control. -->

@@ -152,6 +152,24 @@
                                          IsChecked="{Binding IsPrecision7, Mode=OneWay}"
                                          Command="{Binding SetPrecisionCommand}" CommandParameter="7" />
                         </StackPanel>
+
+                        <Border Style="{StaticResource Divider}" Margin="0,14" />
+
+                        <TextBlock Text="File layout" Style="{StaticResource Text.Label}" />
+                        <TextBlock Text="{Binding Source={x:Static vm:SettingsViewModel.FileLayoutDescription}}"
+                                   Style="{StaticResource Text.Prose}" Margin="0,4,0,8" />
+                        <StackPanel Orientation="Horizontal">
+                            <RadioButton GroupName="FileLayout" Content="Single line" Margin="0,0,16,0"
+                                         ToolTip="Smallest files. The default."
+                                         IsChecked="{Binding PrettyPrintGeojson, Converter={StaticResource InverseBool}, Mode=TwoWay}" />
+                            <RadioButton GroupName="FileLayout" Content="Pretty print"
+                                         ToolTip="Larger files, easy to read in a text editor."
+                                         IsChecked="{Binding PrettyPrintGeojson, Mode=TwoWay}" />
+                        </StackPanel>
+                        <TextBlock Style="{StaticResource Text.Caption}" Margin="0,8,0,0"
+                                   Foreground="{StaticResource Brush.Warn}"
+                                   Text="Developer mode is on, so GeoJSON is pretty printed whatever is chosen here."
+                                   Visibility="{Binding IsDevModeForcingPrettyPrint, Converter={StaticResource BoolToVis}}" />
                     </StackPanel>
                 </Border>
             </StackPanel>

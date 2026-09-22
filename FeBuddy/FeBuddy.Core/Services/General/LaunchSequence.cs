@@ -1,3 +1,4 @@
+using FeBuddy.Core.Configuration;
 using FeBuddy.Core.Helpers;
 using FeBuddy.Core.Models.Services.Airac;
 using FeBuddy.Core.Models.Services.General;
@@ -50,7 +51,15 @@ public static class LaunchSequence
 
 		RunStep(
 			progress, LaunchStep.ReadUserConfig, "Reading saved settings",
-			() => { UserConfigFile.ReadAll(); return true; },
+			() =>
+			{
+				UserConfigFile.ReadAll();
+
+				// App-wide output preferences are applied as soon as they are readable, so any
+				// file written this session follows them.
+				OutputFormatting.LoadFromUserConfig();
+				return true;
+			},
 			defaultValue: false);
 
 		UtcTimeCheckResult time = await RunStepAsync(

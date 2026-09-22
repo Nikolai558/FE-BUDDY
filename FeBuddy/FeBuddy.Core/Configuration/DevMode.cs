@@ -10,7 +10,8 @@ namespace FeBuddy.Core.Configuration;
 ///
 /// Effects of <see cref="IsEnabled"/> being <see langword="true"/>:
 /// <list type="bullet">
-///   <item>GeoJSON files are written pretty-printed instead of single-line.</item>
+///   <item>GeoJSON files are written pretty-printed instead of single-line, overriding the
+///   user's Settings preference (<see cref="OutputFormatting.WriteIndentedGeojson"/>).</item>
 ///   <item>Service result objects (e.g. <c>AirwayServiceResult</c>) include the full
 ///   per-item warning list rather than a trimmed summary.</item>
 /// </list>

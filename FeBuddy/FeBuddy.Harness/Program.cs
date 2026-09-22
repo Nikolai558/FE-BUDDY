@@ -18,6 +18,7 @@ internal static class Program
 	public static async Task Main()
 	{
 		DevMode.IsEnabled = HarnessSettings.DevMode;
+		OutputFormatting.PrettyPrintGeojson = HarnessSettings.PrettyPrintGeojson;
 
 		Console.WriteLine("FE-Buddy Test Harness");
 		Console.WriteLine($"NASR source: {HarnessSettings.NasrSourceDirectory}");

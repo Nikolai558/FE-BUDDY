@@ -7,16 +7,21 @@ using NetTopologySuite.Geometries;
 
 namespace FeBuddy.UnitTests.Services.General;
 
+// In the non-parallel "AppLog" collection because these tests set the process-wide DevMode and
+// OutputFormatting statics, which AppLogTests and others also read and set.
+[Collection("AppLog")]
 public class GeojsonFileWriterTests : IDisposable
 {
 	private readonly string _directory =
 		Path.Combine(Path.GetTempPath(), "FeBuddyTests_" + Guid.NewGuid().ToString("N"));
 
 	private readonly bool _originalDevMode = DevMode.IsEnabled;
+	private readonly bool _originalPrettyPrint = OutputFormatting.PrettyPrintGeojson;
 
 	public void Dispose()
 	{
 		DevMode.IsEnabled = _originalDevMode;
+		OutputFormatting.PrettyPrintGeojson = _originalPrettyPrint;
 
 		if (Directory.Exists(_directory))
 		{
@@ -88,6 +93,7 @@ public class GeojsonFileWriterTests : IDisposable
 	public void write_produces_single_line_output_when_dev_mode_is_disabled()
 	{
 		DevMode.IsEnabled = false;
+		OutputFormatting.PrettyPrintGeojson = false;
 		FeatureCollection collection = new() { MakePointFeature() };
 
 		string? path = GeojsonFileWriter.Write(collection, renderedFeatureCount: 1, _directory, "Test.geojson");
@@ -100,11 +106,39 @@ public class GeojsonFileWriterTests : IDisposable
 	public void write_produces_indented_output_when_dev_mode_is_enabled()
 	{
 		DevMode.IsEnabled = true;
+		OutputFormatting.PrettyPrintGeojson = false; // dev mode wins over the saved single-line choice
 		FeatureCollection collection = new() { MakePointFeature() };
 
 		string? path = GeojsonFileWriter.Write(collection, renderedFeatureCount: 1, _directory, "Test.geojson");
 
 		string content = File.ReadAllText(path!);
 		Assert.Contains('\n', content);
+	}
+
+	[Fact]
+	public void write_produces_indented_output_when_the_user_chose_pretty_print()
+	{
+		DevMode.IsEnabled = false;
+		OutputFormatting.PrettyPrintGeojson = true;
+		FeatureCollection collection = new() { MakePointFeature() };
+
+		string? path = GeojsonFileWriter.Write(collection, renderedFeatureCount: 1, _directory, "Pretty.geojson");
+
+		string content = File.ReadAllText(path!);
+		Assert.Contains('\n', content);
+	}
+
+	[Theory]
+	[InlineData(false, false, false)]
+	[InlineData(false, true, true)]
+	[InlineData(true, false, true)]
+	[InlineData(true, true, true)]
+	public void geojson_is_indented_when_either_dev_mode_or_the_preference_asks_for_it(
+		bool devMode, bool prettyPrint, bool expected)
+	{
+		DevMode.IsEnabled = devMode;
+		OutputFormatting.PrettyPrintGeojson = prettyPrint;
+
+		Assert.Equal(expected, OutputFormatting.WriteIndentedGeojson);
 	}
 }

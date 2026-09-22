@@ -17,6 +17,12 @@ internal static class HarnessSettings
 	public const bool DevMode = true;
 
 	/// <summary>
+	/// Mirrors the Settings "File layout" choice (<c>OutputFormatting.PrettyPrintGeojson</c>).
+	/// Only visible with <see cref="DevMode"/> off - developer mode always pretty prints.
+	/// </summary>
+	public const bool PrettyPrintGeojson = false;
+
+	/// <summary>
 	/// Builds the raw settings dictionary for <c>AirwayService.Run</c>. Edit the values below
 	/// to exercise different output modes, ROI filtering, buffering, etc.
 	/// </summary>

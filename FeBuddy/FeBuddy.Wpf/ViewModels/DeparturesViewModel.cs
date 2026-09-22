@@ -604,8 +604,7 @@ public sealed class DeparturesViewModel : SubServiceSettingsViewModel, ISubServi
         {
             new ServiceReviewRow("Outputs", string.Join(", ", outputs)),
             new ServiceReviewRow("GeoJSON files", GenerateGeojson ? string.Join(", ", geojsonFiles) : "No"),
-            new ServiceReviewRow("Procedures", IncludeObstacleDepartures ? "SIDs and obstacle departures" : "SIDs only"),
-            new ServiceReviewRow("ARTCCs", selectedArtccs.Length > 0 ? string.Join(", ", selectedArtccs) : "All"),
+            new ServiceReviewRow("Includes", DescribeScope(selectedArtccs)),
             new ServiceReviewRow("Region of interest", DescribeRoi()),
             new ServiceReviewRow("FE-Buddy properties",
                 IncludeFebCustomProperties && selectedProperties.Length > 0
@@ -850,11 +849,47 @@ public sealed class DeparturesViewModel : SubServiceSettingsViewModel, ISubServi
         MarkDirty();
     }
 
+    /// <summary>
+    /// One sentence saying what the run will actually cover once every filter is applied -
+    /// procedure type, ARTCCs and the region together - and which outputs that applies to.
+    /// </summary>
+    /// <param name="selectedArtccs">The ARTCCs ticked (or saved, before the cycle loads); empty for all.</param>
+    /// <returns>e.g. "SIDs only, for ZOB and ZNY, at airports inside the region. Applies to the GeoJSON files and the alias file."</returns>
+    private string DescribeScope(string[] selectedArtccs)
+    {
+        string kinds = IncludeObstacleDepartures ? "SIDs and obstacle departures" : "SIDs only (no obstacle departures)";
+
+        string where = selectedArtccs.Length switch
+        {
+            0 => "for every ARTCC",
+            1 => $"for {selectedArtccs[0]}",
+            _ => $"for {string.Join(", ", selectedArtccs[..^1])} and {selectedArtccs[^1]}",
+        };
+
+        string region = !UseRoi
+            ? string.Empty
+            : _roiMode == DepartureRoiMode.Waypoint
+                ? ", with at least one point inside the region"
+                : ", at airports inside the region";
+
+        string outputs = (GenerateGeojson, GenerateAliasFile) switch
+        {
+            (true, true) => " Applies to the GeoJSON files and the alias file.",
+            (true, false) => " Applies to the GeoJSON files.",
+            (false, true) => " Applies to the alias file.",
+            _ => string.Empty,
+        };
+
+        return $"{kinds}, {where}{region}.{outputs}";
+    }
+
     private string DescribeRoi()
     {
+        // Only the geographic limit. What the run covers overall - which is also narrowed by the
+        // ARTCC and procedure-type choices - is the "Includes" row's job (DescribeScope).
         if (!UseRoi)
         {
-            return "Off - every departure in NASR";
+            return "Off - no geographic limit";
         }
 
         string region;

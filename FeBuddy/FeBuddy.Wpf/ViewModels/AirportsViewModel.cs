@@ -501,19 +501,42 @@ public sealed class AirportsViewModel : SubServiceSettingsViewModel, ISubService
         ServiceReviewRow[] rows =
         {
             new ServiceReviewRow("GeoJSON", GenerateGeojson ? string.Join(", ", geojsonFiles) : "No"),
-            new ServiceReviewRow("Alias file", GenerateAliasFile ? "Airports.txt, every airport" : "No"),
+            new ServiceReviewRow("GeoJSON covers", GenerateGeojson ? DescribeGeojsonScope() : "No GeoJSON"),
+            new ServiceReviewRow("Alias file",
+                GenerateAliasFile ? "Airports.txt, every open airport in NASR - the region never limits the alias file" : "No"),
             new ServiceReviewRow("FE-Buddy properties",
                 IncludeFebCustomProperties && selectedProperties.Length > 0
                     ? string.Join(", ", selectedProperties)
                     : "No"),
             new ServiceReviewRow("CRC ERAM defaults", IncludeCrcEramPropertyDefaults ? "Yes" : "No"),
-            new ServiceReviewRow("Region of interest",
-                OverrideRoi
-                    ? $"Override: SW {SwLat}, {SwLon} / NE {NeLat}, {NeLon}"
-                    : RoiFallbackHint),
+            new ServiceReviewRow("Region of interest", DescribeRoi()),
         };
 
         return new[] { new ServiceReviewSection("Airports", rows) };
+    }
+
+    /// <summary>What the GeoJSON files cover once the region (override or default) is applied.</summary>
+    /// <returns>e.g. "Open airports whose reference point is inside the region".</returns>
+    private string DescribeGeojsonScope() =>
+        OverrideRoi || DefaultRoiStore.Load() is not null
+            ? "Open airports whose reference point is inside the region"
+            : "Every open airport in NASR";
+
+    /// <summary>
+    /// Only the geographic limit, stated plainly for the review. The tab's own hint
+    /// (<see cref="RoiFallbackHint"/>) carries the "set one in Settings" advice instead.
+    /// </summary>
+    /// <returns>The region in use, or that there is none.</returns>
+    private string DescribeRoi()
+    {
+        if (OverrideRoi)
+        {
+            return $"Override: SW {SwLat}, {SwLon} / NE {NeLat}, {NeLon}";
+        }
+
+        return DefaultRoiStore.Load() is { } roi
+            ? $"Default ROI: SW {roi.SwLat:0.####}, {roi.SwLon:0.####} / NE {roi.NeLat:0.####}, {roi.NeLon:0.####}"
+            : "None set - no geographic limit";
     }
 
     // ================= save contract =================

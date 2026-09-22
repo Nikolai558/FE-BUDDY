@@ -200,7 +200,7 @@ public sealed class AirwaysViewModel : SubServiceSettingsViewModel, ISubServiceR
     /// </summary>
     public string RoiFallbackHint => DefaultRoiStore.Load() is { } r
         ? $"Not overridden — uses the Settings ▸ Default Region of Interest (SW {r.SwLat:0.####}, {r.SwLon:0.####}  ·  NE {r.NeLat:0.####}, {r.NeLon:0.####})."
-        : "Not overridden and no Settings ▸ Default Region of Interest is set — the run will include every airway.";
+        : "Not overridden and no Settings ▸ Default Region of Interest is set — no geographic limit is applied.";
 
     /// <summary>Designation include/exclude toggles, built from the selected cycle's parsed airways (7.4). Disabled until readiness.</summary>
     public ObservableCollection<DesignationToggle> Designations { get; } = new();
@@ -574,12 +574,23 @@ public sealed class AirwaysViewModel : SubServiceSettingsViewModel, ISubServiceR
             ? string.Join(", ", Designations.Where(d => !d.Included).Select(d => d.Designation))
             : string.Join(", ", ParseExcludedFromConfig().OrderBy(d => d, StringComparer.OrdinalIgnoreCase));
 
+        // Only the geographic limit; the "Includes" row states what is covered once the
+        // designation exclusions are applied as well.
+        RegionOfInterest? defaultRoi = DefaultRoiStore.Load();
+        bool roiActive = OverrideRoi || defaultRoi is not null;
+
         string regionOfInterest = OverrideRoi
             ? $"Override: SW {SwLat}, {SwLon} / NE {NeLat}, {NeLon}"
-            : RoiFallbackHint;
+            : defaultRoi is { } roi
+                ? $"Default ROI: SW {roi.SwLat:0.####}, {roi.SwLon:0.####} / NE {roi.NeLat:0.####}, {roi.NeLon:0.####}"
+                : "None set - no geographic limit";
+
+        string includes = (string.IsNullOrEmpty(excluded) ? "Every FAA airway" : $"Every FAA airway except {excluded}")
+            + (roiActive ? " that crosses the region; GeoJSON is clipped to it." : ".");
 
         ServiceReviewRow[] rows =
         {
+            new ServiceReviewRow("Includes", includes),
             new ServiceReviewRow("GeoJSON output", OutputBy.ToString()),
             new ServiceReviewRow("File kinds", fileKinds.Count > 0 ? string.Join(", ", fileKinds) : "none"),
             new ServiceReviewRow("Buffer waypoints", BufferAirwayWaypoints ? "Yes" : "No"),

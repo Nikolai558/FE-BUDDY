@@ -133,7 +133,7 @@ public static class DepartureBuilder
 			if (!procedure.HasRoutes)
 			{
 				messages.Add(new ServiceMessage(LogLevel.Info, LogSource,
-					$"{Label(procedure)} has no DP_RTE rows, so nothing is produced for it."));
+					$"{LabelWithAirports(procedure)} has no DP_RTE rows, so nothing is produced for it."));
 				continue;
 			}
 
@@ -193,6 +193,18 @@ public static class DepartureBuilder
 	/// <returns>The label.</returns>
 	internal static string Label(DepartureProcedure procedure) =>
 		$"{procedure.DpName} ({procedure.ComputerCode}, {procedure.Artcc})";
+
+	/// <summary>
+	/// A procedure as it reads in a message that is about the whole procedure rather than one
+	/// airport's copy of it, e.g. <c>XEROX (XEROX8.XEROX, ZOB-ROC)</c>. Several served airports
+	/// are joined with <c>/</c>; with none, it is the same as <see cref="Label"/>.
+	/// </summary>
+	/// <param name="procedure">The procedure.</param>
+	/// <returns>The label.</returns>
+	internal static string LabelWithAirports(DepartureProcedure procedure) =>
+		procedure.ServedAirports.Count == 0
+			? Label(procedure)
+			: $"{procedure.DpName} ({procedure.ComputerCode}, {procedure.Artcc}-{string.Join('/', procedure.ServedAirports)})";
 
 	/// <summary>
 	/// The routes one airport gets: the bodies <c>DP_APT</c> assigns it (every body when it has

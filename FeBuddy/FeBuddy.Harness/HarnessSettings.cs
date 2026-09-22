@@ -140,7 +140,7 @@ internal static class HarnessSettings
 
 			// Filters - every one applies to GeoJSON AND the alias file.
 			{ "IncludeObstacleDepartures", "Y" }, // N -> SIDs only
-			{ "ArtccFilter", "" },                // e.g. "ZLA,ZOA"; empty = every ARTCC
+			{ "ArtccFilter", "ZOB" },                // e.g. "ZLA,ZOA"; empty = every ARTCC
 			{ "AmendedWithinCycles", "0" },       // 0 = no filter; 1 = amended this cycle; 4 = this cycle or the 3 before
 
 			// ROI. The four corner keys are read only when FilterByRoi is "Y". RoiMode "Airport"

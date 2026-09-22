@@ -117,15 +117,53 @@
             <StackPanel>
                 <ctl:SectionHeader Label="OUTPUT" />
 
-                <WrapPanel>
-                    <TextBlock Style="{StaticResource Text.Caption}" Margin="0,0,18,0"
-                               Text="{Binding ElapsedText}" />
-                    <TextBlock Style="{StaticResource Text.Caption}"
-                               Text="{Binding FilesWritten.Count, StringFormat={}{0} file(s)}" />
-                </WrapPanel>
+                <!-- Minimized by default, like the Dashboard activity log: the count is what most
+                     runs need, and a Departures run alone writes thousands of files. -->
+                <DockPanel>
+                    <Button DockPanel.Dock="Right" Style="{StaticResource Button.Ghost}"
+                            Command="{Binding ToggleFileListCommand}">
+                        <TextBlock>
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Text" Value="Minimize" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsFileListCollapsed}" Value="True">
+                                            <Setter Property="Text" Value="Show files" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </Button>
 
-                <ItemsControl ItemsSource="{Binding FilesWritten}" ItemTemplate="{StaticResource OutputFileRow}"
-                              Margin="0,8,0,0" />
+                    <WrapPanel VerticalAlignment="Center">
+                        <TextBlock Style="{StaticResource Text.Caption}" Margin="0,0,18,0"
+                                   Text="{Binding ElapsedText}" />
+                        <TextBlock Style="{StaticResource Text.Caption}"
+                                   Text="{Binding FilesWritten.Count, StringFormat={}{0:N0} file(s)}" />
+                    </WrapPanel>
+                </DockPanel>
+
+                <!-- Bounded and virtualised so thousands of rows cost only what is on screen; the
+                     wheel passes to the page once the list reaches either end. -->
+                <ListBox ItemsSource="{Binding FilesWritten}" ItemTemplate="{StaticResource OutputFileRow}"
+                         Margin="0,8,0,0" MaxHeight="320"
+                         Background="Transparent" BorderThickness="0"
+                         infra:WheelScroll.BubbleUp="True"
+                         ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                         VirtualizingStackPanel.IsVirtualizing="True"
+                         VirtualizingStackPanel.VirtualizationMode="Recycling"
+                         Visibility="{Binding IsFileListCollapsed, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}">
+                    <ListBox.ItemContainerStyle>
+                        <Style TargetType="ListBoxItem">
+                            <Setter Property="Focusable" Value="False" />
+                            <Setter Property="Padding" Value="0" />
+                            <Setter Property="Background" Value="Transparent" />
+                            <Setter Property="BorderThickness" Value="0" />
+                            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                        </Style>
+                    </ListBox.ItemContainerStyle>
+                </ListBox>
 
                 <Button Style="{StaticResource Button.Ghost}" HorizontalAlignment="Left" Margin="0,10,0,0"
                         Content="Open output folder" Command="{Binding OpenOutputFolderCommand}" />

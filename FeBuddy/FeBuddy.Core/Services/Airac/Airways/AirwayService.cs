@@ -53,6 +53,27 @@ public static class AirwayService
 			? AirwayAliasService.Generate(buildResult.Airways, parseResult.Settings)
 			: null;
 
+		// Filters that leave nothing to write would otherwise end in a clean-looking run, so say
+		// which requested output came out empty and why.
+		bool noGeojson = parseResult.Settings.OutputBy != AirwayGeojsonOutputBy.None && airwaysInRoi.Count == 0;
+		bool noAlias = parseResult.Settings.GenerateAliasFile && aliasResult?.FilePath is null;
+
+		if (noGeojson || noAlias)
+		{
+			string what = (noGeojson, noAlias) switch
+			{
+				(true, true) => "no Airways GeoJSON or alias files were written",
+				(true, false) => "no Airways GeoJSON files were written",
+				_ => "no Airways alias file was written",
+			};
+
+			messages.Add(new ServiceMessage(LogLevel.Warning, "AirwayService",
+				$"No airways matched your designation and region filters, so {what}.")
+			{
+				IsAdvisory = true
+			});
+		}
+
 		stopwatch.Stop();
 
 		// Every message the run produced also flows to the shared application log, so the

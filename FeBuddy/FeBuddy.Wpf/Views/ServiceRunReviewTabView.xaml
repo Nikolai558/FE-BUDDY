@@ -91,6 +91,16 @@
             </StackPanel>
         </Border>
 
+        <!-- advisories: output the user would expect but won't find, and why -->
+        <Border Style="{StaticResource Card}" Margin="0,0,0,16"
+                Background="{StaticResource Brush.Warn.Soft}"
+                Visibility="{Binding HasAdvisories, Converter={StaticResource BoolToVis}}">
+            <StackPanel>
+                <ctl:SectionHeader Label="ADVISORIES" />
+                <ItemsControl ItemsSource="{Binding Advisories}" ItemTemplate="{StaticResource ErrorRow}" />
+            </StackPanel>
+        </Border>
+
         <!-- the run finished and reported nothing: say so rather than showing an empty tab -->
         <Border Margin="0,0,0,16">
             <Border.Style>
@@ -101,6 +111,7 @@
                             <MultiDataTrigger.Conditions>
                                 <Condition Binding="{Binding HasRun}" Value="True" />
                                 <Condition Binding="{Binding HasErrors}" Value="False" />
+                                <Condition Binding="{Binding HasAdvisories}" Value="False" />
                             </MultiDataTrigger.Conditions>
                             <Setter Property="Visibility" Value="Visible" />
                         </MultiDataTrigger>

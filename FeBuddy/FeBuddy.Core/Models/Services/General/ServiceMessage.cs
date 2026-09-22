@@ -11,4 +11,12 @@ namespace FeBuddy.Core.Models.Services.General;
 /// <param name="Level">The message's severity.</param>
 /// <param name="Source">A short component tag, e.g. <c>"AirwayWaypointBuffer"</c>.</param>
 /// <param name="Text">The message text.</param>
-public sealed record ServiceMessage(LogLevel Level, string Source, string Text);
+public sealed record ServiceMessage(LogLevel Level, string Source, string Text)
+{
+	/// <summary>
+	/// Whether the GUI should also show this message on the run's Review tab. Kept for the few
+	/// messages that change what the user expects to find on disk - e.g. "nothing matched your
+	/// filters, so no files were written" - rather than the routine per-feature notices.
+	/// </summary>
+	public bool IsAdvisory { get; init; }
+}

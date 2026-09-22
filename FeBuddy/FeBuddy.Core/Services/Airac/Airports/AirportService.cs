@@ -59,6 +59,22 @@ public static class AirportService
 			messages.AddRange(aliasResult.Messages);
 		}
 
+		// The ROI limits the GeoJSON only; a region with no airports in it would otherwise end in
+		// a clean-looking run with no GeoJSON at all, so say why.
+		if (parseResult.Settings.GenerateGeojson && airportsInRoi.Count == 0)
+		{
+			string text = parseResult.Settings.Roi is null
+				? "No airports were found, so no Airports GeoJSON files were written."
+				: "No airports are inside the region of interest, so no Airports GeoJSON files were written.";
+
+			if (aliasResult?.FilePath is not null)
+			{
+				text += " The alias file still covers every airport.";
+			}
+
+			messages.Add(new ServiceMessage(LogLevel.Warning, "AirportService", text) { IsAdvisory = true });
+		}
+
 		stopwatch.Stop();
 
 		// Every message also flows to the shared application log, so the Dashboard activity log

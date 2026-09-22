@@ -78,8 +78,9 @@ public sealed class RunStep : ObservableObject
 /// It appears only once a run has started, at the very end of the rail, and is deliberately
 /// narrow in what it shows: the live step feed, anything that went wrong at
 /// <see cref="LogLevel.Error"/> level, and the ways out - opening the output folder being the
-/// main one. Information and warnings stay on each sub-service's own tab, so this tab means
-/// "something needs your attention" whenever it has anything in it.
+/// main one. Information and warnings stay on each sub-service's own tab, except the few
+/// advisories (<see cref="ServiceMessage.IsAdvisory"/>) that explain missing output, such as
+/// "nothing matched your filters".
 /// </remarks>
 public sealed class ServiceRunReviewTabViewModel : ServiceTabViewModel
 {
@@ -100,6 +101,7 @@ public sealed class ServiceRunReviewTabViewModel : ServiceTabViewModel
 
         // Keeps HasErrors / HasFiles honest however the collections are filled.
         Errors.CollectionChanged += (_, _) => OnPropertyChanged(nameof(HasErrors));
+        Advisories.CollectionChanged += (_, _) => OnPropertyChanged(nameof(HasAdvisories));
         FilesWritten.CollectionChanged += (_, _) => OnPropertyChanged(nameof(HasFiles));
     }
 
@@ -117,6 +119,12 @@ public sealed class ServiceRunReviewTabViewModel : ServiceTabViewModel
 
     /// <summary>Whether anything failed.</summary>
     public bool HasErrors => Errors.Count > 0;
+
+    /// <summary>Messages the run flagged for this tab, e.g. that nothing matched the filters.</summary>
+    public ObservableCollection<string> Advisories { get; } = new();
+
+    /// <summary>Whether the run left any advisory.</summary>
+    public bool HasAdvisories => Advisories.Count > 0;
 
     /// <summary>Every file the run wrote, across sub-services.</summary>
     public ObservableCollection<string> FilesWritten { get; } = new();
@@ -203,6 +211,7 @@ public sealed class ServiceRunReviewTabViewModel : ServiceTabViewModel
     {
         Steps.Clear();
         Errors.Clear();
+        Advisories.Clear();
         FilesWritten.Clear();
 
         foreach (string name in subServiceNames)
@@ -262,6 +271,11 @@ public sealed class ServiceRunReviewTabViewModel : ServiceTabViewModel
         foreach (ServiceMessage message in result.Messages.Where(m => m.Level == LogLevel.Error))
         {
             Errors.Add($"[{message.Source}] {message.Text}");
+        }
+
+        foreach (ServiceMessage message in result.Messages.Where(m => m.IsAdvisory && m.Level != LogLevel.Error))
+        {
+            Advisories.Add(message.Text);
         }
 
         foreach (string file in filesWritten)

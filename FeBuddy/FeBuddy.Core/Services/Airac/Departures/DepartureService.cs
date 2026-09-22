@@ -65,6 +65,17 @@ public static class DepartureService
 			messages.AddRange(aliasResult.Messages);
 		}
 
+		// Filters that leave nothing to write would otherwise end in a clean-looking run with no
+		// output folder at all, so say why.
+		if (output.Count == 0 && (settings.GenerateGeojson || settings.GenerateAliasFile))
+		{
+			messages.Add(new ServiceMessage(LogLevel.Warning, "DepartureService",
+				"No departure procedures matched your filters, so no Departures files were written.")
+			{
+				IsAdvisory = true
+			});
+		}
+
 		stopwatch.Stop();
 
 		// Every message also flows to the shared application log, so the Dashboard activity log

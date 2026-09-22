@@ -150,10 +150,9 @@ public sealed class AirwaysViewModel : SubServiceSettingsViewModel, ISubServiceR
 
     /// <summary>Verbatim FE-Buddy Properties description (remediation plan 7.4).</summary>
     public string FebPropertiesDescription =>
-        "Include FE-Buddy Properties, when available.\n\n" +
         "Custom Geojson Property fields that increases file size but can be helpful for debugging or " +
         "viewing data in a geojson viewer in order to identify object. Every FE-Buddy property will be " +
-        "prefixed with feb.";
+        "prefixed with \"feb.\"";
 
     public bool IncludeAirwayWaypointIds { get => _includeAirwayWaypointIds; set { if (SetProperty(ref _includeAirwayWaypointIds, value)) MarkDirty(); } }
 

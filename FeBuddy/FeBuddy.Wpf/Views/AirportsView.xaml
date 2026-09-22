@@ -119,7 +119,7 @@
             </Border>
 
             <!-- ============ FE-Buddy properties ============ -->
-            <Border Style="{StaticResource Card}" Margin="0,16,0,0">
+            <Border Style="{StaticResource Card}" Margin="0,16,0,0" IsEnabled="{Binding GenerateGeojson}">
                 <StackPanel>
                     <ctl:SectionHeader Label="FE-BUDDY PROPERTIES" />
                     <CheckBox Content="Include FE-Buddy Properties, when available."
@@ -143,7 +143,7 @@
             </Border>
 
             <!-- ============ CRC ERAM defaults ============ -->
-            <Border Style="{StaticResource Card}" Margin="0,16,0,0">
+            <Border Style="{StaticResource Card}" Margin="0,16,0,0" IsEnabled="{Binding GenerateGeojson}">
                 <StackPanel>
                     <ctl:SectionHeader Label="CRC ERAM DEFAULTS" />
                     <!-- Lines | Symbols | Text side by side; the WrapPanel stacks them when the
@@ -285,7 +285,7 @@
             </Border>
 
             <!-- ============ region of interest ============ -->
-            <Border Style="{StaticResource Card}" Margin="0,16,0,0">
+            <Border Style="{StaticResource Card}" Margin="0,16,0,0" IsEnabled="{Binding GenerateGeojson}">
                 <StackPanel>
                     <ctl:SectionHeader Label="REGION OF INTEREST" />
                     <CheckBox Content="Override the default ROI for Airports" IsChecked="{Binding OverrideRoi}" Margin="0,4,0,0" />

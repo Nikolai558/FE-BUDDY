@@ -140,7 +140,7 @@
             </Border>
 
             <!-- ============ FE-Buddy properties ============ -->
-            <Border Style="{StaticResource Card}" Margin="0,16,0,0">
+            <Border Style="{StaticResource Card}" Margin="0,16,0,0" IsEnabled="{Binding GenerateGeojson}">
                 <StackPanel>
                     <ctl:SectionHeader Label="FE-BUDDY PROPERTIES" />
                     <CheckBox Content="Include FE-Buddy Properties, when available."
@@ -164,7 +164,7 @@
             </Border>
 
             <!-- ============ CRC ERAM defaults ============ -->
-            <Border Style="{StaticResource Card}" Margin="0,16,0,0">
+            <Border Style="{StaticResource Card}" Margin="0,16,0,0" IsEnabled="{Binding GenerateGeojson}">
                 <StackPanel>
                     <ctl:SectionHeader Label="CRC ERAM DEFAULTS" />
                     <!-- Lines | Symbols | Text side by side; the WrapPanel stacks them when the

@@ -111,15 +111,6 @@
                     <TextBlock Text="{Binding OutputModeHint}" Style="{StaticResource Text.Prose}"
                                Margin="0,8,0,0" />
 
-                    <Border Style="{StaticResource Divider}" Margin="0,12" />
-                    <CheckBox Content="Buffer airway waypoints (lines stop short of the waypoint symbols)"
-                              IsChecked="{Binding BufferAirwayWaypoints}" />
-                    <CheckBox Content="Include FE-Buddy custom properties" IsChecked="{Binding IncludeFebCustomProperties}" Margin="0,8,0,0" />
-                    <TextBlock Text="{Binding FebPropertiesDescription}" Style="{StaticResource Text.Prose}"
-                               Margin="20,4,0,0" />
-                    <CheckBox Content="Also include the airway waypoint ID list (feb.AwyWaypoints)"
-                              IsChecked="{Binding IncludeAirwayWaypointIds}" IsEnabled="{Binding IncludeFebCustomProperties}"
-                              Margin="20,6,0,0" />
                 </StackPanel>
             </Border>
 
@@ -157,8 +148,33 @@
                 </StackPanel>
             </Border>
 
+            <!-- ============ FE-Buddy properties ============ -->
+            <Border Style="{StaticResource Card}" Margin="0,16,0,0" IsEnabled="{Binding IsGeojsonOutputOn}">
+                <StackPanel>
+                    <ctl:SectionHeader Label="FE-BUDDY PROPERTIES" />
+                    <CheckBox Content="Include FE-Buddy Properties, when available."
+                              IsChecked="{Binding IncludeFebCustomProperties}" Margin="0,4,0,0" />
+                    <TextBlock Text="{Binding FebPropertiesDescription}" Style="{StaticResource Text.Prose}"
+                               Margin="20,4,0,0" />
+                    <StackPanel Margin="20,8,0,0" IsEnabled="{Binding IncludeFebCustomProperties}">
+                        <CheckBox Content="Also include the airway waypoint ID list (feb.AwyWaypoints)"
+                                  IsChecked="{Binding IncludeAirwayWaypointIds}" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- ============ buffer airway waypoints ============ -->
+            <Border Style="{StaticResource Card}" Margin="0,16,0,0" IsEnabled="{Binding IsGeojsonOutputOn}">
+                <StackPanel>
+                    <ctl:SectionHeader Label="BUFFER AIRWAY WAYPOINTS" />
+                    <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
+                               Text="Lines stop short of each waypoint so they don't run through the waypoint symbols." />
+                    <CheckBox Content="Buffer airway waypoints" IsChecked="{Binding BufferAirwayWaypoints}" />
+                </StackPanel>
+            </Border>
+
             <!-- ============ CRC ERAM defaults (7.4) ============ -->
-            <Border Style="{StaticResource Card}" Margin="0,16,0,0">
+            <Border Style="{StaticResource Card}" Margin="0,16,0,0" IsEnabled="{Binding IsGeojsonOutputOn}">
                 <StackPanel>
                     <ctl:SectionHeader Label="CRC ERAM DEFAULTS" />
                     <!-- Lines | Symbols | Text side by side; the WrapPanel stacks them when the
@@ -454,7 +470,7 @@
             </Border>
 
             <!-- ============ antimeridian (7.8) ============ -->
-            <Border Style="{StaticResource Card}" Margin="0,16,0,0">
+            <Border Style="{StaticResource Card}" Margin="0,16,0,0" IsEnabled="{Binding IsGeojsonOutputOn}">
                 <StackPanel>
                     <ctl:SectionHeader Label="SPLIT GEOJSON AT THE ANTIMERIDIAN" />
                     <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"

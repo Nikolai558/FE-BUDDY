@@ -29,7 +29,7 @@ namespace FeBuddy.Wpf.Infrastructure;
 public abstract class SubServiceSettingsViewModel : ServiceTabViewModel
 {
     private Dictionary<string, string>? _captureBuffer;
-    private IReadOnlyDictionary<string, string>? _savedState;
+    private SavedStateSnapshot? _savedState;
 
     /// <summary>Wires the Save / Undo commands. Derived constructors should call <see cref="LoadFromConfig"/> after their fields exist.</summary>
     protected SubServiceSettingsViewModel()
@@ -102,7 +102,7 @@ public abstract class SubServiceSettingsViewModel : ServiceTabViewModel
     /// <inheritdoc />
     protected override void ClearDirty()
     {
-        _savedState = CaptureCurrentValues();
+        _savedState = SavedStateSnapshot.Of(CaptureCurrentValues());
         IsDirty = false;
         Revalidate();
     }
@@ -286,28 +286,6 @@ public abstract class SubServiceSettingsViewModel : ServiceTabViewModel
 
     /// <summary>Whether the tab's current values are identical to the last saved snapshot.</summary>
     /// <returns><see langword="true"/> when nothing differs.</returns>
-    private bool MatchesSavedState()
-    {
-        if (_savedState is not { } saved)
-        {
-            return false;
-        }
-
-        IReadOnlyDictionary<string, string> current = CaptureCurrentValues();
-
-        if (current.Count != saved.Count)
-        {
-            return false;
-        }
-
-        foreach ((string key, string value) in current)
-        {
-            if (!saved.TryGetValue(key, out string? savedValue) || !string.Equals(savedValue, value, StringComparison.Ordinal))
-            {
-                return false;
-            }
-        }
-
-        return true;
-    }
+    private bool MatchesSavedState() =>
+        _savedState is { } saved && saved.Matches(CaptureCurrentValues());
 }

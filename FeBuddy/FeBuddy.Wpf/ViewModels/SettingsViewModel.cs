@@ -45,6 +45,7 @@ public sealed class SettingsViewModel : ObservableObject
     private bool _prettyPrintGeojson;
     private RegionOfInterest? _defaultRoi;
     private bool _isDirty;
+    private SavedStateSnapshot _savedState = SavedStateSnapshot.Of(new Dictionary<string, string>());
 
     public SettingsViewModel()
     {
@@ -73,6 +74,9 @@ public sealed class SettingsViewModel : ObservableObject
 
         AiracCycleDataCache.Instance.StateChanged += (_, _) => _dispatcher.BeginInvoke(RefreshFacilities);
         RefreshFacilities();
+
+        // Everything above is the loaded state; the page is clean until it differs from this.
+        _savedState = SavedStateSnapshot.Of(CurrentValues());
     }
 
     /// <summary><see langword="true"/> when a saved setting has been edited since the last Save.</summary>
@@ -82,8 +86,27 @@ public sealed class SettingsViewModel : ObservableObject
         private set => SetProperty(ref _isDirty, value);
     }
 
-    /// <summary>Marks the page dirty. Call from every setter whose value Save() persists.</summary>
-    private void MarkDirty() => IsDirty = true;
+    /// <summary>
+    /// Re-evaluates the page after a setting changed. Call from every setter whose value Save()
+    /// persists. Dirty means "differs from what was last saved", so putting a value back the
+    /// way it was clears the warning again.
+    /// </summary>
+    private void MarkDirty() => IsDirty = !_savedState.Matches(CurrentValues());
+
+    /// <summary>
+    /// Every value Save() persists, as the strings it would write. Keep in step with Save():
+    /// a value missing here would never raise "unsaved changes".
+    /// </summary>
+    /// <returns>The values by UserConfig key.</returns>
+    private Dictionary<string, string> CurrentValues() => new(StringComparer.Ordinal)
+    {
+        [ChannelKey] = Channel.ToString(),
+        [OutputDirKey] = OutputDirectory,
+        [AddFolderKey] = AddFeBuddyOutputFolder ? "Y" : "N",
+        [PrecisionKey] = CoordinatePrecision.ToString(CultureInfo.InvariantCulture),
+        [OutputFormatting.PrettyPrintGeojsonKey] = PrettyPrintGeojson ? "Y" : "N",
+        [ArtccKey] = SelectedFacility ?? string.Empty,
+    };
 
     // ================= 1. UPDATES =================
 
@@ -249,6 +272,7 @@ public sealed class SettingsViewModel : ObservableObject
         // Applied as soon as it is saved, so the next file written follows it without a restart.
         OutputFormatting.PrettyPrintGeojson = PrettyPrintGeojson;
 
+        _savedState = SavedStateSnapshot.Of(CurrentValues());
         IsDirty = false;
         Toast.Success("Settings saved", "Written to UserConfig.json.");
     }

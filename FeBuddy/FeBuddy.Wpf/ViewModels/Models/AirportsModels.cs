@@ -68,8 +68,6 @@ public static class AirportFebPropertyNames
         (AirportFebProperty.FaaId, "faaId", "FAA identifier, e.g. SEA. Not written to the Text file, which already labels it."),
         (AirportFebProperty.IcaoId, "icaoId", "ICAO identifier, e.g. KSEA. Blank for airports that have none."),
         (AirportFebProperty.Name, "name", "Airport name. Not written to the Text file, which already labels it."),
-        (AirportFebProperty.Lat, "lat", "Airport reference point latitude, decimal degrees."),
-        (AirportFebProperty.Lon, "lon", "Airport reference point longitude, decimal degrees."),
         (AirportFebProperty.Elev, "elev", "Field elevation in feet. Blank when NASR publishes none."),
         (AirportFebProperty.RespArtcc, "respArtcc", "Responsible ARTCC identifier."),
         (AirportFebProperty.TfcPtrnAlt, "tfcPtrnAlt", "Traffic pattern altitude in feet."),

@@ -52,8 +52,6 @@ public static class AirportSettingsParser
 			["faaId"] = AirportFebProperty.FaaId,
 			["icaoId"] = AirportFebProperty.IcaoId,
 			["name"] = AirportFebProperty.Name,
-			["lat"] = AirportFebProperty.Lat,
-			["lon"] = AirportFebProperty.Lon,
 			["elev"] = AirportFebProperty.Elev,
 			["respArtcc"] = AirportFebProperty.RespArtcc,
 			["tfcPtrnAlt"] = AirportFebProperty.TfcPtrnAlt,
@@ -191,6 +189,13 @@ public static class AirportSettingsParser
 
 		foreach (string name in names)
 		{
+			if (name.Equals("lat", StringComparison.OrdinalIgnoreCase) || name.Equals("lon", StringComparison.OrdinalIgnoreCase))
+			{
+				throw new ArgumentException(
+					$"'FebProperties' entry '{name}' is no longer offered: every Feature's geometry already carries " +
+					"its coordinates. Remove it from the list.");
+			}
+
 			if (!FebPropertiesByName.TryGetValue(name, out AirportFebProperty property))
 			{
 				throw new ArgumentException(

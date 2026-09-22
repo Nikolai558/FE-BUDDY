@@ -5,6 +5,11 @@ namespace FeBuddy.Core.Models.Services.Airac.Airports;
 /// want; each selected value is written as <c>"feb.&lt;name&gt;"</c>.
 /// </summary>
 /// <remarks>
+/// <para>
+/// There is deliberately no latitude or longitude property: every Feature's geometry already
+/// carries its coordinates, so repeating them as properties would only inflate the file. The
+/// same rule applies to every sub-service's <c>feb.*</c> list.
+/// </para>
 /// <see cref="FaaId"/> and <see cref="Name"/> are never written to the Text file: its
 /// <c>text</c> array already carries both, so repeating them would only inflate the file.
 /// </remarks>
@@ -18,12 +23,6 @@ public enum AirportFebProperty
 
 	/// <summary><c>feb.name</c></summary>
 	Name = 2,
-
-	/// <summary><c>feb.lat</c></summary>
-	Lat = 3,
-
-	/// <summary><c>feb.lon</c></summary>
-	Lon = 4,
 
 	/// <summary><c>feb.elev</c></summary>
 	Elev = 5,

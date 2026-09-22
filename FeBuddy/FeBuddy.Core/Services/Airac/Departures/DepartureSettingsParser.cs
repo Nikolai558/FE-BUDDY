@@ -49,6 +49,7 @@ public static class DepartureSettingsParser
 		new(StringComparer.OrdinalIgnoreCase)
 		{
 			["dpName"] = DepartureFebProperty.DpName,
+			["pointId"] = DepartureFebProperty.PointId,
 			["arptId"] = DepartureFebProperty.ArptId,
 			["artcc"] = DepartureFebProperty.Artcc,
 			["amendmentNo"] = DepartureFebProperty.AmendmentNo,
@@ -217,7 +218,7 @@ public static class DepartureSettingsParser
 		{
 			throw new ArgumentException(
 				"IncludeFebCustomProperties is \"Y\" but 'FebProperties' names none. " +
-				"List the properties to write, e.g. \"dpName,arptId,waypoints\".");
+				"List the properties to write, e.g. \"dpName,pointId,arptId\".");
 		}
 
 		List<DepartureFebProperty> properties = new();

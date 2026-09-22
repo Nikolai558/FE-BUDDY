@@ -70,11 +70,12 @@ public static class DepartureFebPropertyNames
     public static IReadOnlyList<(DepartureFebProperty Property, string Name, string Description)> All { get; } = new[]
     {
         (DepartureFebProperty.DpName, "dpName", "Departure procedure name as NASR publishes it."),
+        (DepartureFebProperty.PointId, "pointId", "Identifier of the point. Symbols and Text files only."),
         (DepartureFebProperty.ArptId, "arptId", "FAA identifier of the airport this file is for."),
         (DepartureFebProperty.Artcc, "artcc", "Responsible ARTCC identifier."),
         (DepartureFebProperty.AmendmentNo, "amendmentNo", "Amendment number of the procedure currently in effect."),
         (DepartureFebProperty.AmendEffDate, "amendEffDate", "Date the current amendment first became effective."),
-        (DepartureFebProperty.Waypoints, "waypoints", "The procedure's point identifiers, in order."),
+        (DepartureFebProperty.Waypoints, "waypoints", "Every point in the procedure, once each. Lines file only."),
     };
 }
 

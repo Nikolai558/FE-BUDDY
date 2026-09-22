@@ -146,12 +146,12 @@ public class DepartureSettingsParserTests
 	{
 		Dictionary<string, string> settings = MinimalValidSettings();
 		settings["IncludeFebCustomProperties"] = "Y";
-		settings["FebProperties"] = "dpName,waypoints";
+		settings["FebProperties"] = "dpName,pointId";
 
 		DepartureSettings parsed = DepartureSettingsParser.Parse(settings).Settings;
 
 		Assert.True(parsed.IncludeFebCustomProperties);
-		Assert.Equal(new[] { DepartureFebProperty.DpName, DepartureFebProperty.Waypoints }, parsed.FebProperties);
+		Assert.Equal(new[] { DepartureFebProperty.DpName, DepartureFebProperty.PointId }, parsed.FebProperties);
 	}
 
 	[Fact]

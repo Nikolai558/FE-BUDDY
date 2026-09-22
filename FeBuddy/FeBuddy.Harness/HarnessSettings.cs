@@ -161,7 +161,7 @@ internal static class HarnessSettings
 
 			// FE-Buddy's own (non-CRC) properties. FebProperties is required when this is "Y".
 			{ "IncludeFebCustomProperties", "Y" },
-			{ "FebProperties", "dpName,arptId,artcc,amendmentNo,amendEffDate,waypoints" },
+			{ "FebProperties", "dpName,pointId,arptId,artcc,amendmentNo,amendEffDate,waypoints" },
 
 			// Writes the CRC ERAM defaults Feature at the head of each GeoJSON file, using the
 			// Crc.Departures.* values added by AddDepartureCrcDefaults below.

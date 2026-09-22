@@ -94,7 +94,7 @@ public static class DepartureGeojsonService
 		// One Feature for the whole procedure at this airport, so a controller sees it as a
 		// single object however many bodies and transitions it has.
 		AttributesTable attributes = new();
-		AddFebProperties(attributes, airportProcedure, settings);
+		AddFebProperties(attributes, airportProcedure, settings, point: null);
 		collection.Add(new Feature(geometry, attributes));
 
 		Write(collection, 1, directory, DepartureOutputPaths.GeojsonFileName(airportProcedure, "Lines"), settings, filesWritten, renderedCounts);
@@ -118,7 +118,7 @@ public static class DepartureGeojsonService
 		foreach (DeparturePoint point in airportProcedure.Points)
 		{
 			AttributesTable attributes = new();
-			AddFebProperties(attributes, airportProcedure, settings);
+			AddFebProperties(attributes, airportProcedure, settings, point);
 			collection.Add(new Feature(CreatePoint(point), attributes));
 		}
 
@@ -145,7 +145,7 @@ public static class DepartureGeojsonService
 		{
 			AttributesTable attributes = new();
 			attributes.Add("text", new[] { point.Id });
-			AddFebProperties(attributes, airportProcedure, settings);
+			AddFebProperties(attributes, airportProcedure, settings, point);
 			collection.Add(new Feature(CreatePoint(point), attributes));
 		}
 
@@ -160,10 +160,16 @@ public static class DepartureGeojsonService
 	/// <param name="attributes">The Feature's attribute table.</param>
 	/// <param name="airportProcedure">The airport + procedure being written.</param>
 	/// <param name="settings">The parsed settings.</param>
+	/// <param name="point">
+	/// The point a Symbols or Text Feature is for, which supplies <c>feb.pointId</c>; or
+	/// <see langword="null"/> for the Lines Feature, which is the whole procedure and gets
+	/// <c>feb.waypoints</c> instead.
+	/// </param>
 	internal static void AddFebProperties(
 		AttributesTable attributes,
 		DepartureAirportProcedure airportProcedure,
-		DepartureSettings settings)
+		DepartureSettings settings,
+		DeparturePoint? point)
 	{
 		if (!settings.IncludeFebCustomProperties)
 		{
@@ -172,7 +178,7 @@ public static class DepartureGeojsonService
 
 		foreach (DepartureFebProperty property in settings.FebProperties)
 		{
-			object? value = ValueFor(airportProcedure, property);
+			object? value = ValueFor(airportProcedure, property, point);
 
 			if (value is not null)
 			{
@@ -181,14 +187,18 @@ public static class DepartureGeojsonService
 		}
 	}
 
-	private static object? ValueFor(DepartureAirportProcedure airportProcedure, DepartureFebProperty property) => property switch
+	private static object? ValueFor(
+		DepartureAirportProcedure airportProcedure,
+		DepartureFebProperty property,
+		DeparturePoint? point) => property switch
 	{
 		DepartureFebProperty.DpName => airportProcedure.Procedure.DpName,
+		DepartureFebProperty.PointId => point?.Id,
 		DepartureFebProperty.ArptId => airportProcedure.AirportId,
 		DepartureFebProperty.Artcc => airportProcedure.Procedure.Artcc,
 		DepartureFebProperty.AmendmentNo => NullIfEmpty(airportProcedure.Procedure.AmendmentNo),
 		DepartureFebProperty.AmendEffDate => NullIfEmpty(airportProcedure.Procedure.AmendmentEffectiveDateText),
-		DepartureFebProperty.Waypoints => airportProcedure.Points.Select(point => point.Id).ToArray(),
+		DepartureFebProperty.Waypoints => point is null ? airportProcedure.Points.Select(p => p.Id).ToArray() : null,
 		_ => null,
 	};
 
@@ -201,6 +211,7 @@ public static class DepartureGeojsonService
 	internal static string Name(DepartureFebProperty property) => property switch
 	{
 		DepartureFebProperty.DpName => "dpName",
+		DepartureFebProperty.PointId => "pointId",
 		DepartureFebProperty.ArptId => "arptId",
 		DepartureFebProperty.Artcc => "artcc",
 		DepartureFebProperty.AmendmentNo => "amendmentNo",

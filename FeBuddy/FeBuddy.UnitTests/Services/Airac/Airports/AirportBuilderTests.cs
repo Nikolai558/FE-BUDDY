@@ -207,7 +207,7 @@ public class AirportBuilderTests
 				AirportTestDataBuilder.Frequency("SEA", "118.000", "AWOS-3"),
 			});
 
-		Airport sea = Assert.Single(AirportBuilder.BuildAll(data).Airports.Where(a => a.FaaId == "SEA"));
+		Airport sea = Assert.Single(AirportBuilder.BuildAll(data).Airports, a => a.FaaId == "SEA");
 
 		Assert.Equal("135.075", sea.WeatherFrequency);
 		Assert.Equal("ASOS", sea.WeatherFrequencyUse);

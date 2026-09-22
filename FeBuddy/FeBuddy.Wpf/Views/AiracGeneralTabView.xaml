@@ -1,6 +1,6 @@
 <!--
-    AiracGeneralTabView  -  the General tab of the AIRAC Service screen: which cycle,
-    which facility, and which sub-services to produce output for. Ticking a sub-service
+    AiracGeneralTabView  -  the General tab of the AIRAC Service screen: which cycle
+    and which sub-services to produce output for. Ticking a sub-service
     opens its own tab in the rail; Save / navigation come from the tab host's action bar.
 -->
 <UserControl x:Class="FeBuddy.Wpf.Views.AiracGeneralTabView"
@@ -10,7 +10,6 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:FeBuddy.Wpf.ViewModels"
              xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
-             xmlns:infra="clr-namespace:FeBuddy.Wpf.Infrastructure"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance vm:AiracGeneralTabViewModel}"
              d:DesignWidth="820" d:DesignHeight="700">
@@ -45,20 +44,6 @@
 
                 <TextBlock Text="{Binding SelectedCycleLabel}" Style="{StaticResource Text.Caption}"
                            FontFamily="{StaticResource Font.Mono}" Margin="0,8,0,0" />
-            </StackPanel>
-        </Border>
-
-        <!-- ============ facility ============ -->
-        <Border Style="{StaticResource Card}" Margin="0,16,0,0">
-            <StackPanel>
-                <ctl:SectionHeader Label="FACILITY" />
-                <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,6"
-                           Text="Your ARTCC / facility, from the selected cycle's parsed airports." />
-                <ComboBox ItemsSource="{Binding FacilityOptions}"
-                          SelectedItem="{Binding SelectedArtccId}"
-                          IsEnabled="{Binding IsReady}"
-                          infra:FieldState.Error="{Binding FieldErrors[ArtccId]}"
-                          Width="220" HorizontalAlignment="Left" />
             </StackPanel>
         </Border>
 

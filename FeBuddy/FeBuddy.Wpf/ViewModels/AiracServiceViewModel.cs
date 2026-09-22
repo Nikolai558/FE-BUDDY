@@ -216,8 +216,6 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 
             await _dispatcher.BeginInvoke(() =>
             {
-                _general.PopulateFacilityOptions(data);
-
                 foreach (ISubServiceRunTarget target in RunTargets)
                 {
                     target.LoadCycleDependentLists(data);
@@ -289,7 +287,6 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
             AiracServiceSettings settings = new()
             {
                 SelectedCycle = cycle,
-                ArtccId = _general.SelectedArtccId ?? string.Empty,
                 OutputDirectory = outputDir,
                 AddFeBuddyOutputFolder = addFeBuddyFolder,
                 Airways = AirwaysTab?.BuildSettingsBlock(outputDir, addFeBuddyFolder),

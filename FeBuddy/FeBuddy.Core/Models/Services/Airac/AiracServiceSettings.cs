@@ -26,9 +26,6 @@ public sealed record AiracServiceSettings
 	/// <summary>The AIRAC cycle to run against (its parsed NASR data is supplied separately).</summary>
 	public required AiracCycleInfo SelectedCycle { get; init; }
 
-	/// <summary>The user's ARTCC / facility ID, e.g. <c>ZOA</c>.</summary>
-	public required string ArtccId { get; init; }
-
 	/// <summary>The directory the user pointed output at.</summary>
 	public required string OutputDirectory { get; init; }
 

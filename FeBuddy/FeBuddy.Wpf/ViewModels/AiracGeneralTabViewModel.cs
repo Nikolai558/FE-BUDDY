@@ -4,14 +4,13 @@ using System.Linq;
 using FeBuddy.Wpf.Infrastructure;
 
 using FeBuddy.Core.Helpers;
-using FeBuddy.Core.Models.NASR.CSV;
 using FeBuddy.Core.Models.Services.Airac;
 using FeBuddy.Core.Services.Airac;
 
 namespace FeBuddy.Wpf.ViewModels;
 
 /// <summary>
-/// The AIRAC Service <b>General</b> tab: the cycle menu, the facility picker, and the sub-service
+/// The AIRAC Service <b>General</b> tab: the cycle menu and the sub-service
 /// picker that decides which other tabs exist.
 /// </summary>
 /// <remarks>
@@ -30,9 +29,8 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
     private string _waitingMessage = string.Empty;
     private AiracCyclePosition _selectedCyclePosition = AiracCyclePosition.Current;
     private AiracCyclePosition _cyclePositionBeforeReload = AiracCyclePosition.Current;
-    private string? _selectedArtccId;
 
-    /// <summary>Builds the tab and restores the saved cycle, facility and sub-service selection.</summary>
+    /// <summary>Builds the tab and restores the saved cycle and sub-service selection.</summary>
     public AiracGeneralTabViewModel()
     {
         CycleOptions = new ObservableCollection<CycleOption>
@@ -67,9 +65,6 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 
     /// <summary>The three selectable cycles with their live cache state.</summary>
     public ObservableCollection<CycleOption> CycleOptions { get; }
-
-    /// <summary>Facility ids (<c>RespArtccId</c>) from the selected cycle's parsed airports, sorted.</summary>
-    public ObservableCollection<string> FacilityOptions { get; } = new();
 
     /// <summary>Every sub-service the AIRAC Service knows about, ticked or not.</summary>
     public ObservableCollection<SubServiceSelection> SubServices { get; }
@@ -123,19 +118,6 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
         }
     }
 
-    /// <summary>The chosen facility ARTCC id.</summary>
-    public string? SelectedArtccId
-    {
-        get => _selectedArtccId;
-        set
-        {
-            if (SetProperty(ref _selectedArtccId, value) && !_loading)
-            {
-                MarkDirty();
-            }
-        }
-    }
-
     /// <summary>Whether the AIRAC data is ready enough to use the service (remediation plan 2.5).</summary>
     public bool IsReady
     {
@@ -166,36 +148,6 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
         RefreshCycleOptions();
     }
 
-    /// <summary>Fills the facility list from the selected cycle's parsed airports, keeping the saved choice.</summary>
-    /// <param name="data">The parsed NASR data for the selected cycle.</param>
-    public void PopulateFacilityOptions(NasrCsvDataCollection data)
-    {
-        string? previous = SelectedArtccId;
-        FacilityOptions.Clear();
-
-        IEnumerable<string> ids = (data.Apt?.AptBase ?? new())
-            .Select(a => a.RespArtccId)
-            .Where(id => !string.IsNullOrWhiteSpace(id))
-            .Select(id => id.Trim())
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .OrderBy(id => id, StringComparer.OrdinalIgnoreCase);
-
-        foreach (string id in ids)
-        {
-            FacilityOptions.Add(id);
-        }
-
-        if (previous is not null && FacilityOptions.Contains(previous))
-        {
-            // Re-assert it without dirtying the tab: this is a restore, not an edit.
-            _loading = true;
-            SelectedArtccId = previous;
-            _loading = false;
-        }
-
-        Revalidate();
-    }
-
     /// <summary>Re-reads each cycle row's label and cache state.</summary>
     public void RefreshCycleOptions()
     {
@@ -215,22 +167,10 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
         ServiceReviewRow[] rows =
         {
             new ServiceReviewRow("Cycle", SelectedCycleLabel),
-            new ServiceReviewRow("Facility", string.IsNullOrWhiteSpace(SelectedArtccId) ? "not selected" : SelectedArtccId!),
             new ServiceReviewRow("Sub-services", selected.Length == 0 ? "none" : string.Join(", ", selected)),
         };
 
         return new[] { new ServiceReviewSection("General", rows) };
-    }
-
-    /// <inheritdoc />
-    protected override void Validate(ServiceValidation validation)
-    {
-        // Only once the data is in: before that the facility list is empty and an empty box is
-        // "still loading", not "the user forgot".
-        if (IsReady && FacilityOptions.Count > 0)
-        {
-            validation.RequireValue("ArtccId", SelectedArtccId, "Select your ARTCC / facility.");
-        }
     }
 
     /// <inheritdoc />
@@ -241,7 +181,6 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 
         try
         {
-            _selectedArtccId = Normalize(UserConfigFile.GetValue($"{Node}.UserArtccId"));
             SelectedCyclePosition = ResolveSavedCyclePosition();
 
             HashSet<string> keys = ParseSelectedKeysFromConfig();
@@ -250,7 +189,6 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
                 selection.IsSelected = keys.Contains(selection.Key);
             }
 
-            OnPropertyChanged(nameof(SelectedArtccId));
             OnPropertyChanged(nameof(SelectedSubServices));
         }
         finally
@@ -290,7 +228,6 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
             // The cycle lookup table may not cover this date yet; leave the saved id alone.
         }
 
-        Set("UserArtccId", SelectedArtccId ?? string.Empty);
         Set(SelectedSubServicesKey, string.Join(',', SelectedSubServices.Select(s => s.Key)));
     }
 

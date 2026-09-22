@@ -89,7 +89,7 @@ public static class AiracService
 		{
 			cancellationToken.ThrowIfCancellationRequested();
 
-			AppLog.Info(LogSource, $"AIRAC Service: running Airways for cycle {settings.SelectedCycle.AiracCycleId}, facility {settings.ArtccId}.");
+			AppLog.Info(LogSource, $"AIRAC Service: running Airways for cycle {settings.SelectedCycle.AiracCycleId}.");
 			progress?.Report(new AiracServiceProgress("Airways", "Building airway GeoJSON and alias output"));
 
 			// The dictionary contract is preserved end to end (Phase 1.3): AirwayService.Run
@@ -110,7 +110,7 @@ public static class AiracService
 		{
 			cancellationToken.ThrowIfCancellationRequested();
 
-			AppLog.Info(LogSource, $"AIRAC Service: running Airports for cycle {settings.SelectedCycle.AiracCycleId}, facility {settings.ArtccId}.");
+			AppLog.Info(LogSource, $"AIRAC Service: running Airports for cycle {settings.SelectedCycle.AiracCycleId}.");
 			progress?.Report(new AiracServiceProgress("Airports", "Building airport GeoJSON and alias output"));
 
 			Dictionary<string, string> block = new(airportBlock, StringComparer.OrdinalIgnoreCase);
@@ -129,7 +129,7 @@ public static class AiracService
 		{
 			cancellationToken.ThrowIfCancellationRequested();
 
-			AppLog.Info(LogSource, $"AIRAC Service: running Departures for cycle {settings.SelectedCycle.AiracCycleId}, facility {settings.ArtccId}.");
+			AppLog.Info(LogSource, $"AIRAC Service: running Departures for cycle {settings.SelectedCycle.AiracCycleId}.");
 			progress?.Report(new AiracServiceProgress("Departures", "Building departure procedure GeoJSON and alias output"));
 
 			Dictionary<string, string> block = new(departureBlock, StringComparer.OrdinalIgnoreCase);

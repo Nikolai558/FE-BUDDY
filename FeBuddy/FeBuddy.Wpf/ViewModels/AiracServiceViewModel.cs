@@ -113,6 +113,9 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
     /// <summary>The Airports tab while it is open, otherwise <see langword="null"/>.</summary>
     private AirportsViewModel? AirportsTab => TabFor<AirportsViewModel>(AiracSubServices.AirportsKey);
 
+    /// <summary>The Departures tab while it is open, otherwise <see langword="null"/>.</summary>
+    private DeparturesViewModel? DeparturesTab => TabFor<DeparturesViewModel>(AiracSubServices.DeparturesKey);
+
     /// <summary>The open tabs that take part in a run.</summary>
     private IReadOnlyList<ISubServiceRunTarget> RunTargets =>
         Tabs.OfType<ISubServiceRunTarget>().ToArray();
@@ -291,6 +294,7 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
                 AddFeBuddyOutputFolder = addFeBuddyFolder,
                 Airways = AirwaysTab?.BuildSettingsBlock(outputDir, addFeBuddyFolder),
                 Airports = AirportsTab?.BuildSettingsBlock(outputDir, addFeBuddyFolder),
+                Departures = DeparturesTab?.BuildSettingsBlock(outputDir, addFeBuddyFolder),
             };
 
             var progress = new Progress<AiracServiceProgress>(p =>
@@ -363,6 +367,16 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
             }
         }
 
+        if (result.Departures is { } departures)
+        {
+            files.AddRange(departures.GeojsonFilesWritten);
+
+            if (departures.AliasFilePath is { } departureAlias)
+            {
+                files.Add(departureAlias);
+            }
+        }
+
         return files.ToArray();
     }
 
@@ -408,6 +422,12 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
         if (result.Airports is { } airports)
         {
             parts.Add($"{airports.AirportCount:N0} airport(s)");
+        }
+
+        if (result.Departures is { } departures)
+        {
+            parts.Add($"{departures.AirportProcedureCount:N0} airport departure(s)"
+                + (departures.SkippedForMissingPointsCount > 0 ? $", {departures.SkippedForMissingPointsCount} skipped" : string.Empty));
         }
 
         return parts.Count == 0

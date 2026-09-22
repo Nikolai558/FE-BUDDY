@@ -28,7 +28,7 @@ public static class AirwaySettingsParser
 	private static readonly HashSet<string> KnownScalarKeys = new(StringComparer.OrdinalIgnoreCase)
 	{
 		"OutputDirectory", "OutputBy", "BufferAirwayWaypoints", "IncludeFebCustomProperties",
-		"IncludeAirwayWaypointIds", "GenerateAliasFile", "SplitAtAntimeridian",
+		"FebProperties", "GenerateAliasFile", "SplitAtAntimeridian",
 		CrcDefaultsReader.IncludeLineKey, CrcDefaultsReader.IncludeSymbolKey, CrcDefaultsReader.IncludeTextKey, "FilterByRoi",
 		"RoiSwLat", "RoiSwLon", "RoiNeLat", "RoiNeLon",
 		"ExcludedDesignations", "EmitLines", "EmitSymbols", "EmitText",
@@ -50,6 +50,14 @@ public static class AirwaySettingsParser
 		@"^Crc\.(High|Low|Other)\.(Line|Symbol|Text)\.(\w+)$",
 		RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
+	private static readonly Dictionary<string, AirwayFebProperty> FebPropertiesByName =
+		new(StringComparer.OrdinalIgnoreCase)
+		{
+			["awyId"] = AirwayFebProperty.AwyId,
+			["pointId"] = AirwayFebProperty.PointId,
+			["waypoints"] = AirwayFebProperty.Waypoints,
+		};
+
 	/// <summary>
 	/// Parses and validates <paramref name="airwaySettings"/> into a typed
 	/// <see cref="AirwaySettings"/>.
@@ -68,7 +76,7 @@ public static class AirwaySettingsParser
 
 		bool bufferAirwayWaypoints = ParseYesNo(airwaySettings, "BufferAirwayWaypoints", defaultValue: false);
 		bool includeFebCustomProperties = ParseYesNo(airwaySettings, "IncludeFebCustomProperties", defaultValue: false);
-		bool includeAirwayWaypointIds = ParseYesNo(airwaySettings, "IncludeAirwayWaypointIds", defaultValue: false);
+		IReadOnlyCollection<AirwayFebProperty> febProperties = ParseFebProperties(airwaySettings, includeFebCustomProperties);
 		bool generateAliasFile = ParseYesNo(airwaySettings, "GenerateAliasFile", defaultValue: true);
 		bool splitAtAntimeridian = ParseYesNo(airwaySettings, "SplitAtAntimeridian", defaultValue: true);
 		bool filterByRoi = ParseYesNo(airwaySettings, "FilterByRoi", defaultValue: false);
@@ -125,7 +133,7 @@ public static class AirwaySettingsParser
 			OutputBy = outputBy,
 			BufferAirwayWaypoints = bufferAirwayWaypoints,
 			IncludeFebCustomProperties = includeFebCustomProperties,
-			IncludeAirwayWaypointIds = includeAirwayWaypointIds,
+			FebProperties = febProperties,
 			GenerateAliasFile = generateAliasFile,
 			SplitAtAntimeridian = splitAtAntimeridian,
 			IncludeCrcLineDefaults = includeLineDefaults,
@@ -173,6 +181,44 @@ public static class AirwaySettingsParser
 			.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
 			.Select(designation => designation.ToUpperInvariant())
 			.ToHashSet(StringComparer.OrdinalIgnoreCase);
+	}
+
+	private static IReadOnlyCollection<AirwayFebProperty> ParseFebProperties(
+		Dictionary<string, string> settings,
+		bool includeFebProperties)
+	{
+		if (!includeFebProperties)
+		{
+			return Array.Empty<AirwayFebProperty>();
+		}
+
+		IReadOnlyList<string> names = SettingsValueReader.StringList(settings, "FebProperties");
+
+		if (names.Count == 0)
+		{
+			throw new ArgumentException(
+				"IncludeFebCustomProperties is \"Y\" but 'FebProperties' names none. " +
+				"List the properties to write, e.g. \"awyId,pointId,waypoints\".");
+		}
+
+		List<AirwayFebProperty> properties = new();
+
+		foreach (string name in names)
+		{
+			if (!FebPropertiesByName.TryGetValue(name, out AirwayFebProperty property))
+			{
+				throw new ArgumentException(
+					$"'FebProperties' entry '{name}' is not a known property. Valid values: " +
+					string.Join(", ", FebPropertiesByName.Keys) + ".");
+			}
+
+			if (!properties.Contains(property))
+			{
+				properties.Add(property);
+			}
+		}
+
+		return properties;
 	}
 
 	private static AliasRoiScope ParseAliasRoiScope(Dictionary<string, string> settings)

@@ -90,7 +90,7 @@ public class AirwaySettingsParserTests
 
 		Assert.False(result.Settings.BufferAirwayWaypoints);
 		Assert.False(result.Settings.IncludeFebCustomProperties);
-		Assert.False(result.Settings.IncludeAirwayWaypointIds);
+		Assert.Empty(result.Settings.FebProperties);
 		Assert.True(result.Settings.GenerateAliasFile);
 		Assert.True(result.Settings.SplitAtAntimeridian);
 		Assert.False(result.Settings.IncludeCrcLineDefaults);
@@ -466,5 +466,67 @@ public class AirwaySettingsParserTests
 		Assert.False(result.Settings.IncludeCrcLineDefaults);
 		Assert.False(result.Settings.IncludeCrcSymbolDefaults);
 		Assert.False(result.Settings.IncludeCrcTextDefaults);
+	}
+
+	// ---- FE-Buddy (feb.*) properties ------------------------------------
+
+	[Fact]
+	public void feb_properties_parse_case_insensitively_without_duplicates()
+	{
+		Dictionary<string, string> settings = MinimalValidSettings();
+		settings["IncludeFebCustomProperties"] = "Y";
+		settings["FebProperties"] = "AWYID, pointid,Waypoints,awyId";
+
+		AirwaySettings parsed = AirwaySettingsParser.Parse(settings).Settings;
+
+		Assert.Equal(
+			new[] { AirwayFebProperty.AwyId, AirwayFebProperty.PointId, AirwayFebProperty.Waypoints },
+			parsed.FebProperties);
+	}
+
+	[Fact]
+	public void an_unknown_feb_property_throws_naming_the_value()
+	{
+		Dictionary<string, string> settings = MinimalValidSettings();
+		settings["IncludeFebCustomProperties"] = "Y";
+		settings["FebProperties"] = "awyId,bogusProp";
+
+		ArgumentException ex = Assert.Throws<ArgumentException>(() => AirwaySettingsParser.Parse(settings));
+
+		Assert.Contains("bogusProp", ex.Message);
+	}
+
+	[Fact]
+	public void feb_properties_on_with_none_named_throws()
+	{
+		Dictionary<string, string> settings = MinimalValidSettings();
+		settings["IncludeFebCustomProperties"] = "Y";
+
+		Assert.Throws<ArgumentException>(() => AirwaySettingsParser.Parse(settings));
+	}
+
+	[Fact]
+	public void feb_properties_are_ignored_when_feb_properties_are_off()
+	{
+		Dictionary<string, string> settings = MinimalValidSettings();
+		settings["IncludeFebCustomProperties"] = "N";
+		settings["FebProperties"] = "awyId,bogusProp";
+
+		AirwaySettingsParseResult result = AirwaySettingsParser.Parse(settings);
+
+		Assert.Empty(result.Settings.FebProperties);
+		Assert.DoesNotContain(result.Warnings, w => w.Contains("FebProperties"));
+	}
+
+	[Fact]
+	public void the_retired_waypoint_ids_key_produces_an_unknown_key_warning()
+	{
+		Dictionary<string, string> settings = MinimalValidSettings();
+		settings["IncludeAirwayWaypointIds"] = "Y";
+
+		AirwaySettingsParseResult result = AirwaySettingsParser.Parse(settings);
+
+		Assert.Contains(result.Warnings, w => w.Contains("IncludeAirwayWaypointIds"));
+		Assert.Empty(result.Settings.FebProperties);
 	}
 }

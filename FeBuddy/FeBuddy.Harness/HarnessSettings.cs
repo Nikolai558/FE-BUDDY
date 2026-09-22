@@ -33,8 +33,11 @@ internal static class HarnessSettings
 			{ "OutputDirectory", OutputDirectory },
 			{ "OutputBy", "HighLow" },
 			{ "BufferAirwayWaypoints", "N" },
+
+			// FE-Buddy's own (non-CRC) properties. FebProperties is required when this is "Y".
 			{ "IncludeFebCustomProperties", "Y" },
-			{ "IncludeAirwayWaypointIds", "Y" },
+			{ "FebProperties", "awyId,pointId,waypoints" },
+
 			{ "GenerateAliasFile", "Y" },
 			{ "SplitAtAntimeridian", "Y" },
 			{ "IncludeCrcLineDefaults", "Y" },

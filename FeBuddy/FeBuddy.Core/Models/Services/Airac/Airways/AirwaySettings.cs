@@ -24,17 +24,11 @@ public sealed record AirwaySettings
 	/// </summary>
 	public required bool BufferAirwayWaypoints { get; init; }
 
-	/// <summary>
-	/// When <see langword="true"/>, Lines features carry <c>"feb.AwyId"</c>.
-	/// </summary>
+	/// <summary>When <see langword="true"/>, Features carry the <c>feb.*</c> properties listed in <see cref="FebProperties"/>.</summary>
 	public required bool IncludeFebCustomProperties { get; init; }
 
-	/// <summary>
-	/// When <see langword="true"/> (and <see cref="IncludeFebCustomProperties"/> is also
-	/// <see langword="true"/>), Lines features also carry <c>"feb.AwyWaypoints"</c>: the
-	/// airway's unique ordered waypoint ID list.
-	/// </summary>
-	public required bool IncludeAirwayWaypointIds { get; init; }
+	/// <summary>Which <c>feb.*</c> properties to write when <see cref="IncludeFebCustomProperties"/> is <see langword="true"/>.</summary>
+	public IReadOnlyCollection<AirwayFebProperty> FebProperties { get; init; } = Array.Empty<AirwayFebProperty>();
 
 	/// <summary>Whether to write the <c>Airways.txt</c> alias file.</summary>
 	public required bool GenerateAliasFile { get; init; }

@@ -15,7 +15,7 @@ public class AirwayBuilderTests
 		OutputBy = AirwayGeojsonOutputBy.HighLow,
 		BufferAirwayWaypoints = false,
 		IncludeFebCustomProperties = false,
-		IncludeAirwayWaypointIds = false,
+		FebProperties = Array.Empty<AirwayFebProperty>(),
 		GenerateAliasFile = true,
 		SplitAtAntimeridian = true,
 		IncludeCrcLineDefaults = false,

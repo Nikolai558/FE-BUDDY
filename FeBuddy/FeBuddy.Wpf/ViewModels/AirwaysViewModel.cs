@@ -39,7 +39,6 @@ public sealed class AirwaysViewModel : SubServiceSettingsViewModel, ISubServiceR
     private bool _emitText = true;
     private bool _bufferAirwayWaypoints;
     private bool _includeFebCustomProperties;
-    private bool _includeAirwayWaypointIds;
     private bool _includeCrcLineDefaults = true;
     private bool _includeCrcSymbolDefaults = true;
     private bool _includeCrcTextDefaults = true;
@@ -69,6 +68,10 @@ public sealed class AirwaysViewModel : SubServiceSettingsViewModel, ISubServiceR
 
     public AirwaysViewModel()
     {
+        FebProperties = new ObservableCollection<AirwayFebPropertyToggle>(
+            AirwayFebPropertyNames.All.Select(entry =>
+                new AirwayFebPropertyToggle(entry.Property, entry.Name, entry.Description, MarkDirty)));
+
         LineDefaults = BuildClassDefaults(EramFieldKind.Line);
         SymbolDefaults = BuildClassDefaults(EramFieldKind.Symbol);
         TextDefaults = BuildClassDefaults(EramFieldKind.Text);
@@ -154,7 +157,8 @@ public sealed class AirwaysViewModel : SubServiceSettingsViewModel, ISubServiceR
         "viewing data in a geojson viewer in order to identify object. Every FE-Buddy property will be " +
         "prefixed with \"feb.\"";
 
-    public bool IncludeAirwayWaypointIds { get => _includeAirwayWaypointIds; set { if (SetProperty(ref _includeAirwayWaypointIds, value)) MarkDirty(); } }
+    /// <summary>One toggle per available <c>feb.*</c> property.</summary>
+    public ObservableCollection<AirwayFebPropertyToggle> FebProperties { get; }
 
     /// <summary>Whether the CRC ERAM isDefaults Feature is written into each <c>_Lines</c> file.</summary>
     public bool IncludeCrcLineDefaults { get => _includeCrcLineDefaults; set { if (SetProperty(ref _includeCrcLineDefaults, value)) MarkDirty(); } }
@@ -404,7 +408,7 @@ public sealed class AirwaysViewModel : SubServiceSettingsViewModel, ISubServiceR
             ["EmitText"] = YesNo(EmitText),
             ["BufferAirwayWaypoints"] = YesNo(BufferAirwayWaypoints),
             ["IncludeFebCustomProperties"] = YesNo(IncludeFebCustomProperties),
-            ["IncludeAirwayWaypointIds"] = YesNo(IncludeAirwayWaypointIds),
+            ["FebProperties"] = string.Join(',', FebProperties.Where(p => p.IsSelected).Select(p => p.Name)),
             ["IncludeCrcLineDefaults"] = YesNo(IncludeCrcLineDefaults),
             ["IncludeCrcSymbolDefaults"] = YesNo(IncludeCrcSymbolDefaults),
             ["IncludeCrcTextDefaults"] = YesNo(IncludeCrcTextDefaults),
@@ -454,7 +458,6 @@ public sealed class AirwaysViewModel : SubServiceSettingsViewModel, ISubServiceR
         _emitText = GetBool("EmitText", true);
         _bufferAirwayWaypoints = GetBool("BufferAirwayWaypoints", false);
         _includeFebCustomProperties = GetBool("IncludeFebCustomProperties", false);
-        _includeAirwayWaypointIds = GetBool("IncludeAirwayWaypointIds", false);
         _includeCrcLineDefaults = GetBool("IncludeCrcLineDefaults", true);
         _includeCrcSymbolDefaults = GetBool("IncludeCrcSymbolDefaults", true);
         _includeCrcTextDefaults = GetBool("IncludeCrcTextDefaults", true);
@@ -466,6 +469,14 @@ public sealed class AirwaysViewModel : SubServiceSettingsViewModel, ISubServiceR
         _swLon = Get("Roi.OverrideCoordindates.SwLon") ?? string.Empty;
         _neLat = Get("Roi.OverrideCoordindates.NeLat") ?? string.Empty;
         _neLon = Get("Roi.OverrideCoordindates.NeLon") ?? string.Empty;
+
+        HashSet<string> selectedFebProperties = (Get("FebProperties") ?? string.Empty)
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        foreach (AirwayFebPropertyToggle toggle in FebProperties)
+        {
+            toggle.IsSelected = selectedFebProperties.Contains(toggle.Name);
+        }
 
         LoadCrcBlock("Line", LineDefaults);
         LoadCrcBlock("Symbol", SymbolDefaults);
@@ -491,7 +502,7 @@ public sealed class AirwaysViewModel : SubServiceSettingsViewModel, ISubServiceR
         Set("EmitText", YesNo(EmitText));
         Set("BufferAirwayWaypoints", YesNo(BufferAirwayWaypoints));
         Set("IncludeFebCustomProperties", YesNo(IncludeFebCustomProperties));
-        Set("IncludeAirwayWaypointIds", YesNo(IncludeAirwayWaypointIds));
+        Set("FebProperties", string.Join(',', FebProperties.Where(p => p.IsSelected).Select(p => p.Name)));
         Set("IncludeCrcLineDefaults", YesNo(IncludeCrcLineDefaults));
         Set("IncludeCrcSymbolDefaults", YesNo(IncludeCrcSymbolDefaults));
         Set("IncludeCrcTextDefaults", YesNo(IncludeCrcTextDefaults));
@@ -516,6 +527,11 @@ public sealed class AirwaysViewModel : SubServiceSettingsViewModel, ISubServiceR
         if (OutputBy != AirwayGeojsonOutputBy.None && !EmitLines && !EmitSymbols && !EmitText)
         {
             validation.Add("Lines, Symbols and Text are all off, but Output is not \"None\". Turn at least one back on, or set Output to \"None\".");
+        }
+
+        if (IncludeFebCustomProperties && FebProperties.All(p => !p.IsSelected))
+        {
+            validation.Add("FE-Buddy properties are on but none are selected. Pick at least one, or switch them off.");
         }
 
         // Only the blocks whose file is actually written and whose Include box is ticked are
@@ -586,8 +602,9 @@ public sealed class AirwaysViewModel : SubServiceSettingsViewModel, ISubServiceR
             if (IncludeCrcTextDefaults && EmitText) crcDefaults.Add("Text");
         }
 
-        string febProperties = IncludeFebCustomProperties
-            ? IncludeAirwayWaypointIds ? "Yes, with waypoint IDs" : "Yes"
+        string[] selectedFebProperties = FebProperties.Where(p => p.IsSelected).Select(p => p.Name).ToArray();
+        string febProperties = IncludeFebCustomProperties && selectedFebProperties.Length > 0
+            ? string.Join(", ", selectedFebProperties)
             : "No";
 
         string aliasFile = GenerateAliasFile
@@ -775,7 +792,7 @@ public sealed class AirwaysViewModel : SubServiceSettingsViewModel, ISubServiceR
         foreach (string name in new[]
         {
             nameof(OutputBy), nameof(OutputModeHint), nameof(IsGeojsonOutputOn), nameof(EmitLines), nameof(EmitSymbols), nameof(EmitText),
-            nameof(BufferAirwayWaypoints), nameof(IncludeFebCustomProperties), nameof(IncludeAirwayWaypointIds),
+            nameof(BufferAirwayWaypoints), nameof(IncludeFebCustomProperties),
             nameof(IncludeCrcLineDefaults), nameof(IncludeCrcSymbolDefaults), nameof(IncludeCrcTextDefaults),
             nameof(GenerateAliasFile), nameof(AliasRoiAirwaysOnly),
             nameof(SplitAtAntimeridian), nameof(OverrideRoi), nameof(SwLat), nameof(SwLon), nameof(NeLat), nameof(NeLon),

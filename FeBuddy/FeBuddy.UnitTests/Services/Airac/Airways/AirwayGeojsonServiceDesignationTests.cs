@@ -51,7 +51,7 @@ public sealed class AirwayGeojsonServiceDesignationTests : IDisposable
 			OutputBy = AirwayGeojsonOutputBy.Designation,
 			BufferAirwayWaypoints = false,
 			IncludeFebCustomProperties = false,
-			IncludeAirwayWaypointIds = false,
+			FebProperties = Array.Empty<AirwayFebProperty>(),
 			GenerateAliasFile = false,
 			SplitAtAntimeridian = true,
 			IncludeCrcLineDefaults = false,

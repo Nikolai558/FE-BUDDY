@@ -125,6 +125,11 @@ public static class AirwayBuilder
 				lineStrings = AntimeridianHandler.Split(lineStrings, AirwayGeometryBuilder.GeometryFactory);
 			}
 
+			// An airway that misses the ROI is kept, marked, rather than dropped: the ROI limits
+			// what is drawn, but the alias file's "All" scope still owes the user every airway.
+			// Dropping it here made "All" and "ROI airways only" produce the same file.
+			bool crossesRoi = true;
+
 			if (settings.Roi is not null)
 			{
 				Geometry combined = Combine(lineStrings);
@@ -132,21 +137,20 @@ public static class AirwayBuilder
 				Geometry? clipped =
 					RoiFilter.ClipLineGeometry(combined, settings.Roi, AirwayGeometryBuilder.GeometryFactory);
 
-				if (clipped is null)
+				List<LineString> clippedLines = clipped is null ? new List<LineString>() : ExtractLineStrings(clipped);
+
+				if (clippedLines.Count == 0)
 				{
-					// Airway does not intersect the ROI at all - excluded entirely.
-					continue;
+					crossesRoi = false;
 				}
-
-				lineStrings = ExtractLineStrings(clipped);
-
-				if (lineStrings.Count == 0)
+				else
 				{
-					continue;
+					lineStrings = clippedLines;
 				}
 			}
 
-			if (settings.BufferAirwayWaypoints)
+			// Buffering only shapes what is drawn, so an airway outside the ROI skips it.
+			if (crossesRoi && settings.BufferAirwayWaypoints)
 			{
 				AirwayBufferResult bufferResult =
 					AirwayWaypointBuffer.Buffer(lineStrings, points, AirwayGeometryBuilder.GeometryFactory, awyId);
@@ -175,6 +179,7 @@ public static class AirwayBuilder
 				Segments = normalizedSegments,
 				Points = points,
 				Geometry = Combine(lineStrings),
+				CrossesRoi = crossesRoi,
 				Warnings = geometryResult.Warnings
 			};
 

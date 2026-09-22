@@ -41,8 +41,12 @@ public static class AirwayService
 		AirwayBuildAllResult buildResult = AirwayBuilder.BuildAll(allNasrCsvData, parseResult.Settings);
 		messages.AddRange(buildResult.Messages);
 
+		// The ROI limits the GeoJSON only. The alias file gets every built airway and applies its
+		// own AliasRoiScope - "All" really is all, "ROI airways only" narrows it.
+		IReadOnlyList<Airway> airwaysInRoi = buildResult.Airways.Where(a => a.CrossesRoi).ToList();
+
 		AirwayGeojsonGenerateResult geojsonResult =
-			AirwayGeojsonService.Generate(buildResult.Airways, parseResult.Settings);
+			AirwayGeojsonService.Generate(airwaysInRoi, parseResult.Settings);
 		messages.AddRange(geojsonResult.Messages);
 
 		AirwayAliasGenerateResult? aliasResult = parseResult.Settings.GenerateAliasFile
@@ -62,7 +66,7 @@ public static class AirwayService
 		{
 			Messages = messages,
 			Elapsed = stopwatch.Elapsed,
-			AirwayCount = buildResult.Airways.Count,
+			AirwayCount = airwaysInRoi.Count,
 			GeojsonFilesWritten = geojsonResult.FilesWritten,
 			GeojsonFeatureCountsByFile = geojsonResult.RenderedFeatureCountsByFile,
 			AliasFilePath = aliasResult?.FilePath,

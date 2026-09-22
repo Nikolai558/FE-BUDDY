@@ -48,6 +48,19 @@ public sealed class Airway
 	public required Geometry Geometry { get; init; }
 
 	/// <summary>
+	/// Whether this airway's geometry crosses the Region of Interest. Always
+	/// <see langword="true"/> when no ROI is set.
+	/// </summary>
+	/// <remarks>
+	/// An airway outside the ROI is still built, because the alias file's <c>All</c> scope
+	/// promises every FAA airway whatever the region. It is never drawn: <c>AirwayService</c>
+	/// hands only the airways with this flag set to the GeoJSON output, and for those
+	/// <see cref="Geometry"/> is already clipped to the ROI. For an airway outside the ROI,
+	/// <see cref="Geometry"/> is the unclipped, unbuffered line and is not used.
+	/// </remarks>
+	public bool CrossesRoi { get; init; } = true;
+
+	/// <summary>
 	/// Non-fatal problems encountered while building this specific airway (e.g. an
 	/// unresolvable mid-airway waypoint that forced the airway to stop early). Empty when
 	/// nothing went wrong.

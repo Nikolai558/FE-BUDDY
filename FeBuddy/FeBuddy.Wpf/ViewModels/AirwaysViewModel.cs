@@ -586,7 +586,7 @@ public sealed class AirwaysViewModel : SubServiceSettingsViewModel, ISubServiceR
                 : "None set - no geographic limit";
 
         string includes = (string.IsNullOrEmpty(excluded) ? "Every FAA airway" : $"Every FAA airway except {excluded}")
-            + (roiActive ? " that crosses the region; GeoJSON is clipped to it." : ".");
+            + (roiActive ? ". GeoJSON: only the airways crossing the region, clipped to it." : ".");
 
         ServiceReviewRow[] rows =
         {

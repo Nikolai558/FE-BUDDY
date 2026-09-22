@@ -72,7 +72,7 @@ public class AirwayBuilderTests
 	}
 
 	[Fact]
-	public void an_airway_entirely_outside_the_roi_is_excluded()
+	public void an_airway_entirely_outside_the_roi_is_kept_but_marked_as_outside_it()
 	{
 		var data = AirwayTestDataBuilder.Build(
 			fixes: new[] { ("AAAAA", 10.0, 10.0), ("BBBBB", 11.0, 11.0) }, // nowhere near the ROI below
@@ -83,7 +83,25 @@ public class AirwayBuilderTests
 
 		AirwayBuildAllResult result = AirwayBuilder.BuildAll(data, MinimalSettings(roi));
 
-		Assert.Empty(result.Airways);
+		// Kept for the alias file's "All" scope; the service keeps it out of the GeoJSON.
+		Airway airway = Assert.Single(result.Airways);
+		Assert.False(airway.CrossesRoi);
+	}
+
+	[Fact]
+	public void an_airway_crossing_the_roi_is_marked_as_crossing_it()
+	{
+		var data = AirwayTestDataBuilder.Build(
+			fixes: new[] { ("AAAAA", 40.0, -84.0), ("BBBBB", 41.0, -80.0) }, // both inside the ROI below
+			awyId: "J1",
+			segments: new[] { AirwayTestDataBuilder.Segment("J1", 10, "AAAAA", "WP", "BBBBB") });
+
+		RegionOfInterest roi = new(38.0, -85.0, 43.0, -78.0);
+
+		AirwayBuildAllResult result = AirwayBuilder.BuildAll(data, MinimalSettings(roi));
+
+		Airway airway = Assert.Single(result.Airways);
+		Assert.True(airway.CrossesRoi);
 	}
 
 	[Fact]

@@ -628,14 +628,12 @@ public sealed class AirwaysViewModel : SubServiceSettingsViewModel, ISubServiceR
                 ? $"Default ROI: SW {roi.SwLat:0.####}, {roi.SwLon:0.####} / NE {roi.NeLat:0.####}, {roi.NeLon:0.####}"
                 : "None set - no geographic limit";
 
-        // Name what is covered. Before a cycle is parsed the designation list is unknown, so the
-        // saved exclusions are all there is to go on.
+        // Name what is covered - never "all except"; the exclusions have their own row. The
+        // designations come from the parsed cycle, so until it is loaded there is nothing to name.
         string[] included = Designations.Where(d => d.Included).Select(d => d.Designation).ToArray();
-        string covered = Designations.Count > 0
-            ? included.Length > 0 ? $"{string.Join(", ", included)} airways" : "No airways"
-            : string.IsNullOrEmpty(excluded)
-                ? "Every FAA airway"
-                : $"Every FAA airway except {excluded} (the cycle's designations are not loaded yet)";
+        string covered = Designations.Count == 0
+            ? "Waiting for the cycle's airway list"
+            : included.Length > 0 ? $"{string.Join(", ", included)} airways" : "No airways";
 
         string includes = covered
             + (roiActive ? ". GeoJSON: only the airways crossing the region, clipped to it." : ".");

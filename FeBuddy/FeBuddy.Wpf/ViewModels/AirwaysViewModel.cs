@@ -628,19 +628,28 @@ public sealed class AirwaysViewModel : SubServiceSettingsViewModel, ISubServiceR
                 ? $"Default ROI: SW {roi.SwLat:0.####}, {roi.SwLon:0.####} / NE {roi.NeLat:0.####}, {roi.NeLon:0.####}"
                 : "None set - no geographic limit";
 
-        string includes = (string.IsNullOrEmpty(excluded) ? "Every FAA airway" : $"Every FAA airway except {excluded}")
+        // Name what is covered. Before a cycle is parsed the designation list is unknown, so the
+        // saved exclusions are all there is to go on.
+        string[] included = Designations.Where(d => d.Included).Select(d => d.Designation).ToArray();
+        string covered = Designations.Count > 0
+            ? included.Length > 0 ? $"{string.Join(", ", included)} airways" : "No airways"
+            : string.IsNullOrEmpty(excluded)
+                ? "Every FAA airway"
+                : $"Every FAA airway except {excluded} (the cycle's designations are not loaded yet)";
+
+        string includes = covered
             + (roiActive ? ". GeoJSON: only the airways crossing the region, clipped to it." : ".");
 
         ServiceReviewRow[] rows =
         {
             new ServiceReviewRow("Includes", includes),
+            new ServiceReviewRow("Excluded designations", string.IsNullOrEmpty(excluded) ? "none" : excluded),
             new ServiceReviewRow("GeoJSON output", OutputBy.ToString()),
             new ServiceReviewRow("File kinds", fileKinds.Count > 0 ? string.Join(", ", fileKinds) : "none"),
             new ServiceReviewRow("Buffer waypoints", BufferAirwayWaypoints ? "Yes" : "No"),
             new ServiceReviewRow("FE-Buddy properties", febProperties),
             new ServiceReviewRow("CRC ERAM defaults", crcDefaults.Count > 0 ? string.Join(", ", crcDefaults) : "None"),
             new ServiceReviewRow("Alias file", aliasFile),
-            new ServiceReviewRow("Excluded designations", string.IsNullOrEmpty(excluded) ? "none" : excluded),
             new ServiceReviewRow("Region of interest", regionOfInterest),
             new ServiceReviewRow("Split at antimeridian", SplitAtAntimeridian ? "Yes" : "No"),
         };

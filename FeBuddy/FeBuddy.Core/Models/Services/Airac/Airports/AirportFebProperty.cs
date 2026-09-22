@@ -10,8 +10,12 @@ namespace FeBuddy.Core.Models.Services.Airac.Airports;
 /// carries its coordinates, so repeating them as properties would only inflate the file. The
 /// same rule applies to every sub-service's <c>feb.*</c> list.
 /// </para>
+/// <para>
 /// <see cref="FaaId"/> and <see cref="Name"/> are never written to the Text file: its
 /// <c>text</c> array already carries both, so repeating them would only inflate the file.
+/// </para>
+/// <see cref="RwyId"/> describes runways, so it is written to the Runways Lines file only, and
+/// is the only property written there.
 /// </remarks>
 public enum AirportFebProperty
 {
@@ -38,4 +42,11 @@ public enum AirportFebProperty
 
 	/// <summary><c>feb.twrType</c></summary>
 	TwrType = 9,
+
+	/// <summary>
+	/// <c>feb.rwyId</c> - Runways Lines only. Each airport's runways are one MultiLineString, so
+	/// this is an array of runway identifiers (e.g. <c>16L/34R</c>) in the same order as the
+	/// LineStrings in it.
+	/// </summary>
+	RwyId = 10,
 }

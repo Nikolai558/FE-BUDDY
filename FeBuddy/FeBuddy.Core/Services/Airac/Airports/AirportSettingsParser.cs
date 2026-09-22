@@ -57,6 +57,7 @@ public static class AirportSettingsParser
 			["tfcPtrnAlt"] = AirportFebProperty.TfcPtrnAlt,
 			["fssId"] = AirportFebProperty.FssId,
 			["twrType"] = AirportFebProperty.TwrType,
+			["rwyId"] = AirportFebProperty.RwyId,
 		};
 
 	/// <summary>

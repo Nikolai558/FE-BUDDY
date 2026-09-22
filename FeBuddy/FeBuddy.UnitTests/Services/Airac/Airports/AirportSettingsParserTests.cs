@@ -141,6 +141,20 @@ public class AirportSettingsParserTests
 			parsed.FebProperties);
 	}
 
+	[Theory]
+	[InlineData("rwyId")]
+	[InlineData("RWYID")]
+	public void the_runway_id_feb_property_name_parses_case_insensitively(string name)
+	{
+		Dictionary<string, string> settings = MinimalValidSettings();
+		settings["IncludeFebCustomProperties"] = "Y";
+		settings["FebProperties"] = name;
+
+		AirportSettings parsed = AirportSettingsParser.Parse(settings).Settings;
+
+		Assert.Equal(AirportFebProperty.RwyId, Assert.Single(parsed.FebProperties));
+	}
+
 	[Fact]
 	public void an_unrecognized_key_produces_a_warning_and_does_not_throw()
 	{

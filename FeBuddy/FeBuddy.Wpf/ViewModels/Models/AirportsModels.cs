@@ -73,5 +73,6 @@ public static class AirportFebPropertyNames
         (AirportFebProperty.TfcPtrnAlt, "tfcPtrnAlt", "Traffic pattern altitude in feet."),
         (AirportFebProperty.FssId, "fssId", "Tie-in Flight Service Station identifier."),
         (AirportFebProperty.TwrType, "twrType", "Tower type, e.g. TWR or No-TWR."),
+        (AirportFebProperty.RwyId, "rwyId", "Runway IDs, e.g. 16L/34R, in the same order as the runway lines. Runways Lines only."),
     };
 }

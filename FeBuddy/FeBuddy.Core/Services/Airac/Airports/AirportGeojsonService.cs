@@ -156,17 +156,24 @@ public static class AirportGeojsonService
 		{
 			// One Feature per airport, one LineString per runway - so an airport is a single
 			// object to a controller regardless of how many runways it has.
-			LineString[] runwayLines = airport.Runways
-				.Where(r => r.HasGeometry)
-				.Select(ToLineString)
-				.ToArray();
+			AirportRunway[] drawable = airport.Runways.Where(r => r.HasGeometry).ToArray();
 
-			if (runwayLines.Length == 0)
+			if (drawable.Length == 0)
 			{
 				continue;
 			}
 
-			collection.Add(new Feature(GeometryFactory.CreateMultiLineString(runwayLines), new AttributesTable()));
+			LineString[] runwayLines = drawable.Select(ToLineString).ToArray();
+			AttributesTable attributes = new();
+
+			// feb.rwyId is the only property that describes a runway; it lines up one-for-one with
+			// the LineStrings above.
+			if (settings.IncludeFebCustomProperties && settings.FebProperties.Contains(AirportFebProperty.RwyId))
+			{
+				attributes.Add($"feb.{Name(AirportFebProperty.RwyId)}", drawable.Select(r => r.RunwayId).ToArray());
+			}
+
+			collection.Add(new Feature(GeometryFactory.CreateMultiLineString(runwayLines), attributes));
 			rendered++;
 		}
 
@@ -230,6 +237,8 @@ public static class AirportGeojsonService
 		AirportFebProperty.TfcPtrnAlt => airport.TrafficPatternAltitude,
 		AirportFebProperty.FssId => airport.FssId,
 		AirportFebProperty.TwrType => airport.TowerType,
+		// Runways Lines only; see GenerateRunways.
+		AirportFebProperty.RwyId => null,
 		_ => null,
 	};
 
@@ -250,6 +259,7 @@ public static class AirportGeojsonService
 		AirportFebProperty.TfcPtrnAlt => "tfcPtrnAlt",
 		AirportFebProperty.FssId => "fssId",
 		AirportFebProperty.TwrType => "twrType",
+		AirportFebProperty.RwyId => "rwyId",
 		_ => property.ToString(),
 	};
 

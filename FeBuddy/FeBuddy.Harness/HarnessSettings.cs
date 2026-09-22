@@ -100,7 +100,7 @@ internal static class HarnessSettings
 			// FE-Buddy's own (non-CRC) properties. FebProperties is required when this is "Y";
 			// the full list below exercises every property the parser knows.
 			{ "IncludeFebCustomProperties", "Y" },
-			{ "FebProperties", "faaId,icaoId,name,elev,respArtcc,tfcPtrnAlt,fssId,twrType" },
+			{ "FebProperties", "faaId,icaoId,name,elev,respArtcc,tfcPtrnAlt,fssId,twrType,rwyId" },
 
 			// Writes the CRC ERAM defaults Feature at the head of each GeoJSON file, using the
 			// Crc.* values added by AddAirportCrcDefaults below.

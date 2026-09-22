@@ -5,7 +5,7 @@ namespace FeBuddy.Wpf.Infrastructure;
 
 /// <summary>
 /// Implemented by a sub-service tab that takes part in a run: it contributes its settings block
-/// beforehand and receives progress and results afterwards.
+/// beforehand and describes its results afterwards.
 /// </summary>
 /// <remarks>
 /// The AIRAC Service screen drives the run through this interface rather than through each
@@ -34,18 +34,11 @@ public interface ISubServiceRunTarget
     /// <param name="data">The parsed NASR data for the selected cycle.</param>
     void LoadCycleDependentLists(NasrCsvDataCollection data);
 
-    /// <summary>Resets this tab's result panel for a new run.</summary>
-    void BeginRun();
-
-    /// <summary>Updates this tab's in-panel progress line.</summary>
-    /// <param name="message">The progress message.</param>
-    void ReportProgress(string message);
-
-    /// <summary>Renders a finished run into this tab's result panel.</summary>
+    /// <summary>
+    /// Describes this sub-service's part of a finished run for the Review tab: what it produced,
+    /// and its warnings and routine notices.
+    /// </summary>
     /// <param name="result">The aggregated AIRAC Service result.</param>
-    void ApplyAiracResult(AiracServiceResult result);
-
-    /// <summary>Marks this tab's run failed.</summary>
-    /// <param name="error">The failure message.</param>
-    void FailRun(string error);
+    /// <returns>The block, or <see langword="null"/> when this sub-service was not part of the run.</returns>
+    SubServiceRunResult? DescribeRunResult(AiracServiceResult result);
 }

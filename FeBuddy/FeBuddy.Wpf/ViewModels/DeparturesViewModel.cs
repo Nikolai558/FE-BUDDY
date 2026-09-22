@@ -1,7 +1,5 @@
 using System.Collections.ObjectModel;
-using System.Diagnostics;
 using System.Globalization;
-using System.IO;
 using System.Windows.Input;
 
 using FeBuddy.Wpf.Infrastructure;
@@ -19,19 +17,18 @@ namespace FeBuddy.Wpf.ViewModels;
 /// <summary>
 /// The <b>Departures</b> sub-service tab inside the AIRAC Service screen: which outputs to write,
 /// which GeoJSON files, which procedures and ARTCCs, the optional region of interest, which
-/// FE-Buddy properties and the CRC ERAM defaults - plus the run result panel.
+/// FE-Buddy properties and the CRC ERAM defaults.
 /// </summary>
 /// <remarks>
 /// Save, Undo and navigation come from the tab host's action bar; the run is launched by
-/// <b>Run AIRAC Service</b> on the Review tab and arrives back here through
-/// <see cref="ISubServiceRunTarget"/>.
+/// <b>Run AIRAC Service</b> on the Review tab, and its results are shown there, described by
+/// this tab through <see cref="ISubServiceRunTarget"/>.
 /// </remarks>
 public sealed class DeparturesViewModel : SubServiceSettingsViewModel, ISubServiceRunTarget
 {
     private const string Node = "Services.AiracService.Departures";
     private const string PrecisionKey = "Services.AiracService.CoordinatePrecision";
     private const string CrcClassName = "Departures";
-    private const string OutputRootFolderName = "Departure Procedures";
     private const string AmendmentDateFormat = "yyyy-MM-dd";
     private const int MaxAmendedWithinCycles = 1000;
     private const int MaxAmendedWithinDays = 36500;
@@ -63,18 +60,6 @@ public sealed class DeparturesViewModel : SubServiceSettingsViewModel, ISubServi
     private bool _suppressArtccChanges;
 
     private bool _isCycleReady;
-    private bool _isRunning;
-    private bool _hasRun;
-    private string? _runError;
-    private string? _progressText;
-    private double _elapsedSeconds;
-    private int _airportProcedureCount;
-    private int _skippedForMissingPointsCount;
-    private int _geojsonFileCount;
-    private string? _aliasFilePath;
-    private int _aliasCommandCount;
-    private bool _isInfoExpanded;
-    private Stopwatch? _stopwatch;
 
     /// <summary>Builds the tab and restores its saved settings.</summary>
     public DeparturesViewModel()
@@ -100,9 +85,7 @@ public sealed class DeparturesViewModel : SubServiceSettingsViewModel, ISubServi
 
         Artccs.CollectionChanged += (_, _) => OnPropertyChanged(nameof(HasArtccs));
 
-        OpenOutputCommand = new RelayCommand(OpenOutputFolder, () => LastOutputDirectory is not null);
         PickRoiOnMapCommand = new RelayCommand(PickRoiOnMap);
-        ToggleInfoCommand = new RelayCommand(() => IsInfoExpanded = !IsInfoExpanded);
         ClearArtccsCommand = new RelayCommand(ClearArtccs, () => Artccs.Any(a => a.IsSelected));
 
         // The default ROI is part of this tab's validation (ROI on, no override, nothing to fall
@@ -350,7 +333,7 @@ public sealed class DeparturesViewModel : SubServiceSettingsViewModel, ISubServi
     /// <summary>CRC text defaults for the point labels.</summary>
     public ObservableCollection<EramClassDefault> TextDefaults { get; }
 
-    // ================= run panel =================
+    // ================= readiness =================
 
     /// <summary>Whether the AIRAC data is ready; the run and the cycle-dependent lists gate on it.</summary>
     public bool IsCycleReady
@@ -358,132 +341,6 @@ public sealed class DeparturesViewModel : SubServiceSettingsViewModel, ISubServi
         get => _isCycleReady;
         private set => SetProperty(ref _isCycleReady, value);
     }
-
-    /// <summary>Whether a run is in progress.</summary>
-    public bool IsRunning
-    {
-        get => _isRunning;
-        private set { if (SetProperty(ref _isRunning, value)) OnPropertyChanged(nameof(ShowPanel)); }
-    }
-
-    /// <summary>Whether a run has finished in this session.</summary>
-    public bool HasRun
-    {
-        get => _hasRun;
-        private set
-        {
-            if (SetProperty(ref _hasRun, value))
-            {
-                OnPropertyChanged(nameof(ShowPanel));
-                OnPropertyChanged(nameof(RunSucceeded));
-                OnPropertyChanged(nameof(RunFailed));
-            }
-        }
-    }
-
-    /// <summary>Whether the result panel is shown at all.</summary>
-    public bool ShowPanel => IsRunning || HasRun;
-
-    /// <summary>The failure message from the last run, or <see langword="null"/>.</summary>
-    public string? RunError
-    {
-        get => _runError;
-        private set
-        {
-            if (SetProperty(ref _runError, value))
-            {
-                OnPropertyChanged(nameof(RunSucceeded));
-                OnPropertyChanged(nameof(RunFailed));
-            }
-        }
-    }
-
-    /// <summary>Whether the last run completed.</summary>
-    public bool RunSucceeded => HasRun && RunError is null;
-
-    /// <summary>Whether the last run failed.</summary>
-    public bool RunFailed => HasRun && RunError is not null;
-
-    /// <summary>The in-panel progress line while a run is going.</summary>
-    public string? ProgressText { get => _progressText; private set => SetProperty(ref _progressText, value); }
-
-    /// <summary>How long the last run took.</summary>
-    public double ElapsedSeconds
-    {
-        get => _elapsedSeconds;
-        private set { if (SetProperty(ref _elapsedSeconds, value)) OnPropertyChanged(nameof(ElapsedText)); }
-    }
-
-    /// <summary>The elapsed time, formatted.</summary>
-    public string ElapsedText => $"{ElapsedSeconds:0.0}s";
-
-    /// <summary>How many airport + procedure pairs were output.</summary>
-    public int AirportProcedureCount { get => _airportProcedureCount; private set => SetProperty(ref _airportProcedureCount, value); }
-
-    /// <summary>How many airport + procedure pairs were left out because a point could not be found.</summary>
-    public int SkippedForMissingPointsCount
-    {
-        get => _skippedForMissingPointsCount;
-        private set { if (SetProperty(ref _skippedForMissingPointsCount, value)) OnPropertyChanged(nameof(HasSkipped)); }
-    }
-
-    /// <summary>Whether any airport + procedure pair was left out.</summary>
-    public bool HasSkipped => SkippedForMissingPointsCount > 0;
-
-    /// <summary>
-    /// How many GeoJSON files the last run wrote. Only the count is shown: a full run writes
-    /// thousands of files, far too many to list.
-    /// </summary>
-    public int GeojsonFileCount
-    {
-        get => _geojsonFileCount;
-        private set { if (SetProperty(ref _geojsonFileCount, value)) OnPropertyChanged(nameof(HasFiles)); }
-    }
-
-    /// <summary>Whether the last run wrote any GeoJSON.</summary>
-    public bool HasFiles => GeojsonFileCount > 0;
-
-    /// <summary>The alias file the last run wrote, or <see langword="null"/>.</summary>
-    public string? AliasFilePath
-    {
-        get => _aliasFilePath;
-        private set { if (SetProperty(ref _aliasFilePath, value)) OnPropertyChanged(nameof(HasAliasFile)); }
-    }
-
-    /// <summary>Whether the last run wrote an alias file.</summary>
-    public bool HasAliasFile => AliasFilePath is not null;
-
-    /// <summary>How many alias commands were written.</summary>
-    public int AliasCommandCount { get => _aliasCommandCount; private set => SetProperty(ref _aliasCommandCount, value); }
-
-    /// <summary>The last run's messages, grouped by severity.</summary>
-    public ObservableCollection<SubServiceMessageGroup> MessageGroups { get; } = new();
-
-    /// <summary>Whether any group needs the user's attention.</summary>
-    public bool HasAttentionMessages => MessageGroups.Any(g => g.IsAttentionLevel);
-
-    /// <summary>Whether the run produced only routine messages.</summary>
-    public bool HasInfoOnly => MessageGroups.Count > 0 && !HasAttentionMessages;
-
-    /// <summary>Whether the routine messages are expanded.</summary>
-    public bool IsInfoExpanded
-    {
-        get => _isInfoExpanded;
-        set { if (SetProperty(ref _isInfoExpanded, value)) OnPropertyChanged(nameof(InfoToggleLabel)); }
-    }
-
-    /// <summary>The label on the routine-messages toggle.</summary>
-    public string InfoToggleLabel => IsInfoExpanded
-        ? "Hide routine messages"
-        : $"Show {MessageGroups.Where(g => !g.IsAttentionLevel).Sum(g => g.Count)} routine message(s)";
-
-    /// <summary>Expands or collapses the routine messages.</summary>
-    public ICommand ToggleInfoCommand { get; }
-
-    /// <summary>Opens the <c>Departure Procedures</c> folder the last run wrote to.</summary>
-    public ICommand OpenOutputCommand { get; }
-
-    private string? LastOutputDirectory { get; set; }
 
     // ================= parent hooks =================
 
@@ -516,75 +373,27 @@ public sealed class DeparturesViewModel : SubServiceSettingsViewModel, ISubServi
     }
 
     /// <inheritdoc />
-    public void BeginRun()
+    public SubServiceRunResult? DescribeRunResult(AiracServiceResult result)
     {
-        RunError = null;
-        HasRun = false;
-        IsRunning = true;
-        ProgressText = "Starting…";
-        MessageGroups.Clear();
-        AirportProcedureCount = 0;
-        SkippedForMissingPointsCount = 0;
-        GeojsonFileCount = 0;
-        AliasFilePath = null;
-        AliasCommandCount = 0;
-        LastOutputDirectory = null;
-        IsInfoExpanded = false;
-        RaisePanelCounts();
-
-        _stopwatch = Stopwatch.StartNew();
-        ElapsedSeconds = 0;
-    }
-
-    /// <inheritdoc />
-    public void ReportProgress(string message) => ProgressText = message;
-
-    /// <inheritdoc />
-    public void ApplyAiracResult(AiracServiceResult result)
-    {
-        _stopwatch?.Stop();
-        ElapsedSeconds = _stopwatch?.Elapsed.TotalSeconds ?? 0;
-        IsRunning = false;
-        HasRun = true;
-        ProgressText = null;
-
-        if (result.Departures is { } departures)
+        if (result.Departures is not { } departures)
         {
-            AirportProcedureCount = departures.AirportProcedureCount;
-            SkippedForMissingPointsCount = departures.SkippedForMissingPointsCount;
-            GeojsonFileCount = departures.GeojsonFilesWritten.Count;
-            AliasFilePath = departures.AliasFilePath;
-            AliasCommandCount = departures.AliasCommandCount;
-
-            // Every file sits somewhere under "Departure Procedures" (GeoJSON in <ARTCC>\<airport>,
-            // the alias file in Alias), so that folder is the one worth opening.
-            string? anyWrittenFile = departures.GeojsonFilesWritten.Count > 0
-                ? departures.GeojsonFilesWritten[0]
-                : departures.AliasFilePath;
-
-            if (anyWrittenFile is not null)
-            {
-                LastOutputDirectory = FindOutputRoot(anyWrittenFile);
-            }
-
-            foreach (SubServiceMessageGroup group in GroupByLevel(departures.Messages))
-            {
-                MessageGroups.Add(group);
-            }
+            return null;
         }
 
-        RaisePanelCounts();
-    }
+        string summary = $"{departures.AirportProcedureCount:N0} airport procedure(s), "
+            + $"{departures.GeojsonFilesWritten.Count:N0} GeoJSON file(s)";
 
-    /// <inheritdoc />
-    public void FailRun(string error)
-    {
-        _stopwatch?.Stop();
-        ElapsedSeconds = _stopwatch?.Elapsed.TotalSeconds ?? 0;
-        IsRunning = false;
-        HasRun = true;
-        RunError = error;
-        ProgressText = null;
+        if (departures.SkippedForMissingPointsCount > 0)
+        {
+            summary += $", {departures.SkippedForMissingPointsCount:N0} skipped for missing points";
+        }
+
+        if (departures.AliasFilePath is not null)
+        {
+            summary += $", Departures.txt: {departures.AliasCommandCount:N0} alias command(s)";
+        }
+
+        return new SubServiceRunResult(Title, summary, departures.Messages);
     }
 
     /// <inheritdoc />
@@ -947,12 +756,6 @@ public sealed class DeparturesViewModel : SubServiceSettingsViewModel, ISubServi
         MarkDirty();
     }
 
-    private static IEnumerable<SubServiceMessageGroup> GroupByLevel(IReadOnlyList<ServiceMessage> messages) =>
-        messages
-            .GroupBy(m => m.Level)
-            .OrderByDescending(g => g.Key)
-            .Select(g => new SubServiceMessageGroup(g.Key, g.Select(m => m.Text).ToArray()));
-
     private static int ResolveCoordinatePrecision()
     {
         string? saved = UserConfigFile.GetValue(PrecisionKey);
@@ -1109,41 +912,6 @@ public sealed class DeparturesViewModel : SubServiceSettingsViewModel, ISubServi
         }
     }
 
-    private void OpenOutputFolder()
-    {
-        if (string.IsNullOrEmpty(LastOutputDirectory) || !Directory.Exists(LastOutputDirectory))
-        {
-            Toast.Warn("Nothing to open", "Run the AIRAC Service first.");
-            return;
-        }
-
-        Process.Start(new ProcessStartInfo(LastOutputDirectory) { UseShellExecute = true });
-    }
-
-    /// <summary>
-    /// Walks up from a written file to the <c>Departure Procedures</c> folder. Walking up by name
-    /// rather than a fixed number of levels keeps it right for both the GeoJSON files
-    /// (<c>&lt;ARTCC&gt;\&lt;airport&gt;</c>) and the alias file (<c>Alias</c>).
-    /// </summary>
-    /// <param name="filePath">Any file the run wrote.</param>
-    /// <returns>The <c>Departure Procedures</c> folder, or the file's own folder if none is found.</returns>
-    private static string? FindOutputRoot(string filePath)
-    {
-        DirectoryInfo? directory = new FileInfo(filePath).Directory;
-
-        while (directory is not null)
-        {
-            if (directory.Name.Equals(OutputRootFolderName, StringComparison.OrdinalIgnoreCase))
-            {
-                return directory.FullName;
-            }
-
-            directory = directory.Parent;
-        }
-
-        return Path.GetDirectoryName(filePath);
-    }
-
     private static void WriteCrcRow(Dictionary<string, string> settings, string kind, EramClassDefault row)
     {
         string prefix = $"Crc.{row.ClassName}.{kind}";
@@ -1233,16 +1001,6 @@ public sealed class DeparturesViewModel : SubServiceSettingsViewModel, ISubServi
             Set($"{prefix}.xOffset", row.XOffset);
             Set($"{prefix}.yOffset", row.YOffset);
         }
-    }
-
-    private void RaisePanelCounts()
-    {
-        OnPropertyChanged(nameof(HasFiles));
-        OnPropertyChanged(nameof(HasAliasFile));
-        OnPropertyChanged(nameof(HasSkipped));
-        OnPropertyChanged(nameof(HasAttentionMessages));
-        OnPropertyChanged(nameof(HasInfoOnly));
-        OnPropertyChanged(nameof(InfoToggleLabel));
     }
 
     private void RaiseAllSettingProperties()

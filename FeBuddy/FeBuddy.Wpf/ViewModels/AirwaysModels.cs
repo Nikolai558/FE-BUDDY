@@ -7,24 +7,6 @@ using FeBuddy.Core.Services.General;
 
 namespace FeBuddy.Wpf.ViewModels.Models;
 
-/// <summary>
-/// One GeoJSON file written by a real Airways run, shown in the results list.
-/// </summary>
-public sealed record AirwaysOutputFileRow(string Name, string FullPath, int FeatureCount);
-
-/// <summary>
-/// Every message from a real Airways run that names the same airway (e.g. "Airway
-/// 'T312': ..."), grouped so the results panel doesn't show one flat wall of text.
-/// Messages that don't name a specific airway (e.g. an unrecognized setting) are
-/// grouped under "General". Each group also carries the highest level it contains so the
-/// panel can present it by severity (remediation plan 3.8).
-/// </summary>
-public sealed record AirwaysMessageGroup(string AirwayId, LogLevel Level, IReadOnlyList<string> Messages)
-{
-	/// <summary>How many messages are in this group.</summary>
-	public int Count => Messages.Count;
-}
-
 /// <summary>Which CRC ERAM field block a row belongs to.</summary>
 public enum EramFieldKind
 {

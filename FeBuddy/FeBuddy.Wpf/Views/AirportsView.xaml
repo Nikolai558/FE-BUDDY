@@ -45,35 +45,6 @@
         <Style x:Key="EramOffsetBox" TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
             <Setter Property="ToolTip" Value="Any whole number of pixels. 0 for none." />
         </Style>
-
-        <!-- one output file row -->
-        <DataTemplate x:Key="FileRow" DataType="{x:Type m:SubServiceOutputFileRow}">
-            <DockPanel Margin="0,3">
-                <TextBlock DockPanel.Dock="Right" Text="{Binding FeatureCount, StringFormat={}{0} feat.}"
-                           Style="{StaticResource Text.Caption}" VerticalAlignment="Center" />
-                <TextBlock Text="{Binding Name}" FontFamily="{StaticResource Font.Mono}" FontSize="11"
-                           Foreground="{StaticResource Brush.Text.Primary}"
-                           TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
-            </DockPanel>
-        </DataTemplate>
-
-        <!-- one message group. Heading already carries the count ("Warning (3)"), so unlike
-             the Airways template there is no separate count on the right. -->
-        <DataTemplate x:Key="MessageGroup" DataType="{x:Type m:SubServiceMessageGroup}">
-            <Border Margin="0,4" Padding="10" CornerRadius="{StaticResource Radius.Chip}"
-                    Background="{StaticResource Brush.Bg.Sunken}">
-                <StackPanel>
-                    <TextBlock Text="{Binding Heading}" Style="{StaticResource Text.Body.Strong}" />
-                    <ItemsControl ItemsSource="{Binding Messages}" Margin="0,4,0,0">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <TextBlock Text="{Binding}" Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,1" />
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                </StackPanel>
-            </Border>
-        </DataTemplate>
     </UserControl.Resources>
 
     <!-- No ScrollViewer here: the tab host owns the one page-level scroller
@@ -315,54 +286,6 @@
                         </Grid>
                         <Button Content="Pick on map…" Style="{StaticResource Button.Ghost}" HorizontalAlignment="Left"
                                 Margin="0,8,0,0" Command="{Binding PickRoiOnMapCommand}" />
-                    </StackPanel>
-                </StackPanel>
-            </Border>
-
-            <!-- ============ run result panel ============ -->
-            <Border Style="{StaticResource Card}" Margin="0,16,0,0"
-                    Visibility="{Binding ShowPanel, Converter={StaticResource BoolToVis}}">
-                <StackPanel>
-                    <ctl:SectionHeader Label="LAST RUN" />
-
-                    <TextBlock Text="{Binding ProgressText}" Style="{StaticResource Text.Body}" Margin="0,4,0,0"
-                               Visibility="{Binding IsRunning, Converter={StaticResource BoolToVis}}" />
-
-                    <StackPanel Visibility="{Binding RunFailed, Converter={StaticResource BoolToVis}}">
-                        <TextBlock Text="Run failed" Style="{StaticResource Text.Body.Strong}" Foreground="{StaticResource Brush.Danger}" />
-                        <TextBlock Text="{Binding RunError}" Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,4,0,0"
-                                   MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left" />
-                    </StackPanel>
-
-                    <StackPanel Visibility="{Binding RunSucceeded, Converter={StaticResource BoolToVis}}">
-                        <WrapPanel Margin="0,4,0,0">
-                            <TextBlock Style="{StaticResource Text.Caption}" Margin="0,0,18,0"
-                                       Text="{Binding AirportCount, StringFormat={}{0} airports}" />
-                            <TextBlock Style="{StaticResource Text.Caption}" Margin="0,0,18,0"
-                                       Text="{Binding AirportsInRoiCount, StringFormat={}{0} in ROI}" />
-                            <TextBlock Style="{StaticResource Text.Caption}" Text="{Binding ElapsedText}" />
-                        </WrapPanel>
-
-                        <ItemsControl ItemsSource="{Binding Files}" ItemTemplate="{StaticResource FileRow}" Margin="0,8,0,0"
-                                      Visibility="{Binding HasFiles, Converter={StaticResource BoolToVis}}" />
-
-                        <TextBlock Style="{StaticResource Text.Caption}" Margin="0,6,0,0"
-                                   Visibility="{Binding HasAliasFile, Converter={StaticResource BoolToVis}}"
-                                   Text="{Binding AliasCommandCount, StringFormat=Airports.txt · {0} alias command(s)}" />
-
-                        <!-- warnings/errors expanded; info collapsed behind a count (3.8) -->
-                        <ItemsControl ItemsSource="{Binding MessageGroups}" ItemTemplate="{StaticResource MessageGroup}" Margin="0,8,0,0"
-                                      Visibility="{Binding HasAttentionMessages, Converter={StaticResource BoolToVis}}" />
-
-                        <StackPanel Visibility="{Binding HasInfoOnly, Converter={StaticResource BoolToVis}}" Margin="0,8,0,0">
-                            <Button Style="{StaticResource Button.Ghost}" HorizontalAlignment="Left"
-                                    Content="{Binding InfoToggleLabel}" Command="{Binding ToggleInfoCommand}" />
-                            <ItemsControl ItemsSource="{Binding MessageGroups}" ItemTemplate="{StaticResource MessageGroup}"
-                                          Visibility="{Binding IsInfoExpanded, Converter={StaticResource BoolToVis}}" />
-                        </StackPanel>
-
-                        <Button Style="{StaticResource Button.Ghost}" HorizontalAlignment="Left" Margin="0,10,0,0"
-                                Content="Open output folder" Command="{Binding OpenOutputCommand}" />
                     </StackPanel>
                 </StackPanel>
             </Border>

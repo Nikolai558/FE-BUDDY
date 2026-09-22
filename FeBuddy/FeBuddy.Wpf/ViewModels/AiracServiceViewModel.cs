@@ -268,11 +268,6 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 
         IsRunning = true;
 
-        foreach (ISubServiceRunTarget target in targets)
-        {
-            target.BeginRun();
-        }
-
         _runReview.BeginRun(runningTabTitles);
         _runReviewShown = true;
         ShowPostRunTab();
@@ -297,36 +292,30 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
             var progress = new Progress<AiracServiceProgress>(p =>
                 _dispatcher.BeginInvoke(() =>
                 {
-                    foreach (ISubServiceRunTarget target in targets)
-                    {
-                        target.ReportProgress(p.Message);
-                    }
-
                     // The library reports 100 when a sub-service is done with its work.
                     _runReview.ReportStep(p.SubService, p.Message, p.PercentComplete >= 100);
                 }));
 
             AiracServiceResult result = await AiracService.RunAsync(settings, progress);
 
-            foreach (ISubServiceRunTarget target in targets)
-            {
-                target.ApplyAiracResult(result);
-            }
-
             string summary = SummarizeRun(cycle.AiracCycleId, result);
             string[] files = CollectFilesWritten(result);
+            SubServiceRunResult[] subServiceResults = targets
+                .Select(t => t.DescribeRunResult(result))
+                .OfType<SubServiceRunResult>()
+                .ToArray();
 
-            _runReview.CompleteRun(result, summary, files, ResolveRunOutputDirectory(files, outputDir, addFeBuddyFolder));
+            _runReview.CompleteRun(
+                result,
+                summary,
+                subServiceResults,
+                files,
+                ResolveRunOutputDirectory(files, outputDir, addFeBuddyFolder));
 
             Toast.Success("AIRAC Service complete", summary);
         }
         catch (Exception ex)
         {
-            foreach (ISubServiceRunTarget target in targets)
-            {
-                target.FailRun(ex.Message);
-            }
-
             _runReview.FailRun(ex.Message, outputDirectory: ResolveRunOutputDirectory(
                 Array.Empty<string>(), ResolveOutputDirectory(), ResolveAddFeBuddyFolder()));
             Toast.Error("AIRAC Service failed", ex.Message);

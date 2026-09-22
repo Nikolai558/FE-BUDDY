@@ -72,15 +72,15 @@ public sealed class RunStep : ObservableObject
 }
 
 /// <summary>
-/// The <b>Review</b> tab: what happened when the service was actually run.
+/// The <b>Review</b> tab: everything about a run, in one place.
 /// </summary>
 /// <remarks>
-/// It appears only once a run has started, at the very end of the rail, and is deliberately
-/// narrow in what it shows: the live step feed, anything that went wrong at
-/// <see cref="LogLevel.Error"/> level, and the ways out - opening the output folder being the
-/// main one. Information and warnings stay on each sub-service's own tab, except the few
-/// advisories (<see cref="ServiceMessage.IsAdvisory"/>) that explain missing output, such as
-/// "nothing matched your filters".
+/// It appears only once a run has started, at the very end of the rail. The sub-service tabs
+/// hold settings only; what happened when the service ran lives here - the live step feed,
+/// anything that went wrong at <see cref="LogLevel.Error"/> level, the advisories
+/// (<see cref="ServiceMessage.IsAdvisory"/>) that explain missing output such as "nothing
+/// matched your filters", each sub-service's results with its warnings and its routine notices
+/// collapsed behind a toggle, and the files written with the way out to the output folder.
 /// </remarks>
 public sealed class ServiceRunReviewTabViewModel : ServiceTabViewModel
 {
@@ -99,10 +99,11 @@ public sealed class ServiceRunReviewTabViewModel : ServiceTabViewModel
         OpenOutputFolderCommand = new RelayCommand(OpenOutputFolder, () => OutputDirectory is not null);
         ToggleFileListCommand = new RelayCommand(() => IsFileListCollapsed = !IsFileListCollapsed);
 
-        // Keeps HasErrors / HasFiles honest however the collections are filled.
+        // Keeps the Has* flags honest however the collections are filled.
         Errors.CollectionChanged += (_, _) => OnPropertyChanged(nameof(HasErrors));
         Advisories.CollectionChanged += (_, _) => OnPropertyChanged(nameof(HasAdvisories));
         FilesWritten.CollectionChanged += (_, _) => OnPropertyChanged(nameof(HasFiles));
+        Results.CollectionChanged += (_, _) => OnPropertyChanged(nameof(HasResults));
     }
 
     /// <inheritdoc />
@@ -114,7 +115,7 @@ public sealed class ServiceRunReviewTabViewModel : ServiceTabViewModel
     /// <summary>One row per sub-service in the run, in the order they run.</summary>
     public ObservableCollection<RunStep> Steps { get; } = new();
 
-    /// <summary>Every error the run reported. Warnings and information stay on their own tabs.</summary>
+    /// <summary>Every error the run reported, across sub-services.</summary>
     public ObservableCollection<string> Errors { get; } = new();
 
     /// <summary>Whether anything failed.</summary>
@@ -125,6 +126,15 @@ public sealed class ServiceRunReviewTabViewModel : ServiceTabViewModel
 
     /// <summary>Whether the run left any advisory.</summary>
     public bool HasAdvisories => Advisories.Count > 0;
+
+    /// <summary>
+    /// One block per sub-service that finished: what it produced, its warnings, and its routine
+    /// notices. Empty while running and after a run that failed.
+    /// </summary>
+    public ObservableCollection<SubServiceRunResult> Results { get; } = new();
+
+    /// <summary>Whether any sub-service reported results.</summary>
+    public bool HasResults => Results.Count > 0;
 
     /// <summary>Every file the run wrote, across sub-services.</summary>
     public ObservableCollection<string> FilesWritten { get; } = new();
@@ -212,6 +222,7 @@ public sealed class ServiceRunReviewTabViewModel : ServiceTabViewModel
         Steps.Clear();
         Errors.Clear();
         Advisories.Clear();
+        Results.Clear();
         FilesWritten.Clear();
 
         foreach (string name in subServiceNames)
@@ -249,14 +260,19 @@ public sealed class ServiceRunReviewTabViewModel : ServiceTabViewModel
         step.Status = isComplete ? RunStepStatus.Finished : RunStepStatus.Working;
     }
 
-    /// <summary>Records a finished run: its errors, its files, and how long it took.</summary>
+    /// <summary>
+    /// Records a finished run: its errors and advisories, each sub-service's results, its files,
+    /// and how long it took.
+    /// </summary>
     /// <param name="result">The aggregated result.</param>
     /// <param name="summary">The one-line summary of what was produced.</param>
+    /// <param name="subServiceResults">Each sub-service's block, in run order.</param>
     /// <param name="filesWritten">Every file written, across sub-services.</param>
     /// <param name="outputDirectory">The folder to offer to open.</param>
     public void CompleteRun(
         AiracServiceResult result,
         string summary,
+        IEnumerable<SubServiceRunResult> subServiceResults,
         IEnumerable<string> filesWritten,
         string? outputDirectory)
     {
@@ -276,6 +292,11 @@ public sealed class ServiceRunReviewTabViewModel : ServiceTabViewModel
         foreach (ServiceMessage message in result.Messages.Where(m => m.IsAdvisory && m.Level != LogLevel.Error))
         {
             Advisories.Add(message.Text);
+        }
+
+        foreach (SubServiceRunResult subServiceResult in subServiceResults)
+        {
+            Results.Add(subServiceResult);
         }
 
         foreach (string file in filesWritten)

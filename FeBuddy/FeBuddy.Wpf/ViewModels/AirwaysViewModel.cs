@@ -1,7 +1,5 @@
 using System.Collections.ObjectModel;
-using System.Diagnostics;
 using System.Globalization;
-using System.IO;
 using System.Text.RegularExpressions;
 using System.Windows.Input;
 
@@ -20,10 +18,10 @@ using FeBuddy.Core.Services.General;
 namespace FeBuddy.Wpf.ViewModels;
 
 /// <summary>
-/// The <b>Airways</b> sub-service tab inside the AIRAC Service screen. Its settings menu (with
-/// the shared Save / Undo contract) plus the run result panel; Save, Undo and navigation come
-/// from the tab host's action bar, and the run is launched by <b>Run AIRAC Service</b> on the
-/// Review tab.
+/// The <b>Airways</b> sub-service tab inside the AIRAC Service screen: its settings menu, with
+/// the shared Save / Undo contract. Save, Undo and navigation come from the tab host's action
+/// bar; the run is launched by <b>Run AIRAC Service</b> on the Review tab, and its results are
+/// shown there, described by this tab through <see cref="ISubServiceRunTarget"/>.
 /// </summary>
 public sealed class AirwaysViewModel : SubServiceSettingsViewModel, ISubServiceRunTarget
 {
@@ -53,19 +51,6 @@ public sealed class AirwaysViewModel : SubServiceSettingsViewModel, ISubServiceR
 
     private bool _isCycleReady;
 
-    // ---- run state ----
-    private bool _isRunning;
-    private bool _hasRun;
-    private string? _runError;
-    private double _elapsedSeconds;
-    private int _airwayCount;
-    private int _excludedCount;
-    private string? _aliasFilePath;
-    private int _aliasLineCount;
-    private string? _progressText;
-    private bool _isInfoExpanded;
-    private Stopwatch? _stopwatch;
-
     public AirwaysViewModel()
     {
         FebProperties = new ObservableCollection<AirwayFebPropertyToggle>(
@@ -76,8 +61,6 @@ public sealed class AirwaysViewModel : SubServiceSettingsViewModel, ISubServiceR
         SymbolDefaults = BuildClassDefaults(EramFieldKind.Symbol);
         TextDefaults = BuildClassDefaults(EramFieldKind.Text);
 
-        ToggleInfoCommand = new RelayCommand(() => IsInfoExpanded = !IsInfoExpanded);
-        OpenOutputCommand = new RelayCommand(OpenOutputFolder, () => !string.IsNullOrEmpty(LastOutputDirectory));
         PickRoiOnMapCommand = new RelayCommand(PickRoiOnMap);
 
         DefaultRoiStore.Changed += (_, _) => OnPropertyChanged(nameof(RoiFallbackHint));
@@ -232,52 +215,7 @@ public sealed class AirwaysViewModel : SubServiceSettingsViewModel, ISubServiceR
     public ObservableCollection<EramClassDefault> SymbolDefaults { get; }
     public ObservableCollection<EramClassDefault> TextDefaults { get; }
 
-    public ICommand ToggleInfoCommand { get; }
-    public ICommand OpenOutputCommand { get; }
     public ICommand PickRoiOnMapCommand { get; }
-
-    // ================= run result panel =================
-
-    public bool IsRunning { get => _isRunning; private set { if (SetProperty(ref _isRunning, value)) OnPropertyChanged(nameof(ShowPanel)); } }
-    public bool HasRun { get => _hasRun; private set { if (SetProperty(ref _hasRun, value)) { OnPropertyChanged(nameof(ShowPanel)); OnPropertyChanged(nameof(RunSucceeded)); OnPropertyChanged(nameof(RunFailed)); } } }
-    public bool ShowPanel => IsRunning || HasRun;
-
-    public string? RunError
-    {
-        get => _runError;
-        private set { if (SetProperty(ref _runError, value)) { OnPropertyChanged(nameof(RunSucceeded)); OnPropertyChanged(nameof(RunFailed)); } }
-    }
-
-    public bool RunSucceeded => HasRun && RunError is null;
-    public bool RunFailed => HasRun && RunError is not null;
-
-    public string? ProgressText { get => _progressText; private set => SetProperty(ref _progressText, value); }
-
-    public double ElapsedSeconds { get => _elapsedSeconds; private set { if (SetProperty(ref _elapsedSeconds, value)) OnPropertyChanged(nameof(ElapsedText)); } }
-    public string ElapsedText => $"{ElapsedSeconds:0.0}s";
-
-    public int AirwayCount { get => _airwayCount; private set => SetProperty(ref _airwayCount, value); }
-    public int ExcludedCount { get => _excludedCount; private set { if (SetProperty(ref _excludedCount, value)) OnPropertyChanged(nameof(HasExcluded)); } }
-    public bool HasExcluded => ExcludedCount > 0;
-
-    public ObservableCollection<AirwaysOutputFileRow> Files { get; } = new();
-    public bool HasFiles => Files.Count > 0;
-
-    public string? AliasFilePath { get => _aliasFilePath; private set { if (SetProperty(ref _aliasFilePath, value)) OnPropertyChanged(nameof(HasAliasFile)); } }
-    public bool HasAliasFile => !string.IsNullOrEmpty(AliasFilePath);
-    public int AliasLineCount { get => _aliasLineCount; private set => SetProperty(ref _aliasLineCount, value); }
-
-    /// <summary>Run messages grouped by airway, each carrying its highest level (remediation plan 3.8).</summary>
-    public ObservableCollection<AirwaysMessageGroup> MessageGroups { get; } = new();
-    public bool HasWarnings => MessageGroups.Any(g => g.Level >= LogLevel.Warning);
-    public bool HasInfoOnly => MessageGroups.Count > 0 && MessageGroups.All(g => g.Level < LogLevel.Warning);
-    public int WarningGroupCount => MessageGroups.Count(g => g.Level >= LogLevel.Warning);
-    public int InfoGroupCount => MessageGroups.Count(g => g.Level < LogLevel.Warning);
-
-    public bool IsInfoExpanded { get => _isInfoExpanded; set { if (SetProperty(ref _isInfoExpanded, value)) OnPropertyChanged(nameof(InfoToggleLabel)); } }
-    public string InfoToggleLabel => IsInfoExpanded ? "Hide info messages" : $"Show {InfoGroupCount} info group(s)";
-
-    private string? LastOutputDirectory { get; set; }
 
     // ================= parent hooks =================
 
@@ -310,80 +248,38 @@ public sealed class AirwaysViewModel : SubServiceSettingsViewModel, ISubServiceR
         ResyncSavedState();
     }
 
-    /// <summary>Resets the result panel for a new run.</summary>
-    public void BeginRun()
+    /// <inheritdoc />
+    public SubServiceRunResult? DescribeRunResult(AiracServiceResult result)
     {
-        RunError = null;
-        HasRun = false;
-        IsRunning = true;
-        ProgressText = "Starting…";
-        Files.Clear();
-        MessageGroups.Clear();
-        AirwayCount = 0;
-        ExcludedCount = 0;
-        AliasFilePath = null;
-        AliasLineCount = 0;
-        IsInfoExpanded = false;
-        RaisePanelCounts();
-
-        _stopwatch = Stopwatch.StartNew();
-        ElapsedSeconds = 0;
-    }
-
-    /// <summary>Updates the in-panel progress line.</summary>
-    /// <param name="message">The progress message.</param>
-    public void ReportProgress(string message) => ProgressText = message;
-
-    /// <summary>Renders a finished <see cref="AiracServiceResult"/> into the panel.</summary>
-    /// <param name="result">The aggregated AIRAC Service result.</param>
-    public void ApplyAiracResult(AiracServiceResult result)
-    {
-        _stopwatch?.Stop();
-        ElapsedSeconds = _stopwatch?.Elapsed.TotalSeconds ?? 0;
-        IsRunning = false;
-        HasRun = true;
-        ProgressText = null;
-
-        ExcludedCount = result.ExcludedAirwayIds.Count;
-
-        AirwayServiceResult? airways = result.Airways;
-        if (airways is not null)
+        if (result.Airways is not { } airways)
         {
-            AirwayCount = airways.AirwayCount;
-
-            foreach (string path in airways.GeojsonFilesWritten)
-            {
-                int count = airways.GeojsonFeatureCountsByFile.TryGetValue(path, out int c) ? c : 0;
-                Files.Add(new AirwaysOutputFileRow(Path.GetFileName(path), path, count));
-                LastOutputDirectory = Path.GetDirectoryName(path);
-            }
-
-            AliasFilePath = airways.AliasFilePath;
-            AliasLineCount = airways.AliasAirwayLineCount;
-            if (airways.AliasFilePath is not null)
-            {
-                LastOutputDirectory ??= Path.GetDirectoryName(airways.AliasFilePath);
-            }
+            return null;
         }
 
-        foreach (AirwaysMessageGroup group in GroupMessages(result.Messages))
+        string summary = $"{airways.AirwayCount:N0} airways";
+
+        if (result.ExcludedAirwayIds.Count > 0)
         {
-            MessageGroups.Add(group);
+            summary += $", {result.ExcludedAirwayIds.Count:N0} excluded";
         }
 
-        RaisePanelCounts();
-    }
+        if (airways.AliasFilePath is not null)
+        {
+            summary += $", Airways.txt: {airways.AliasAirwayLineCount:N0} alias line(s)";
+        }
 
-    /// <summary>Marks the run failed with an error message.</summary>
-    /// <param name="error">The failure message.</param>
-    public void FailRun(string error)
-    {
-        _stopwatch?.Stop();
-        ElapsedSeconds = _stopwatch?.Elapsed.TotalSeconds ?? 0;
-        IsRunning = false;
-        HasRun = true;
-        RunError = error;
-        ProgressText = null;
+        if (airways.GeojsonFilesWritten.Count > 0)
+        {
+            summary += $", {airways.GeojsonFilesWritten.Count:N0} GeoJSON file(s)";
+        }
+
+        // Grouped by the airway each message names ("Airway 'T312': ..."), so a run does not
+        // read as one flat wall of text; anything that names no airway goes under "General".
+        return new SubServiceRunResult(Title, summary, airways.Messages, m =>
+        {
+            Match match = AirwayIdPattern.Match(m.Text);
+            return match.Success ? match.Groups[1].Value : "General";
+        });
     }
 
     /// <summary>Builds the raw Airways settings block for <see cref="AiracServiceSettings.Airways"/>.</summary>
@@ -681,17 +577,6 @@ public sealed class AirwaysViewModel : SubServiceSettingsViewModel, ISubServiceR
         }
     }
 
-    private void OpenOutputFolder()
-    {
-        if (string.IsNullOrEmpty(LastOutputDirectory) || !Directory.Exists(LastOutputDirectory))
-        {
-            Toast.Warn("Nothing to open", "Run the AIRAC Service first.");
-            return;
-        }
-
-        Process.Start(new ProcessStartInfo(LastOutputDirectory) { UseShellExecute = true });
-    }
-
     private static string YesNo(bool value) => value ? "Y" : "N";
 
 
@@ -808,31 +693,5 @@ public sealed class AirwaysViewModel : SubServiceSettingsViewModel, ISubServiceR
             OnPropertyChanged(name);
         }
     }
-
-    private void RaisePanelCounts()
-    {
-        foreach (string name in new[]
-        {
-            nameof(HasFiles), nameof(HasWarnings), nameof(HasInfoOnly), nameof(WarningGroupCount),
-            nameof(InfoGroupCount), nameof(InfoToggleLabel), nameof(HasAliasFile), nameof(HasExcluded),
-        })
-        {
-            OnPropertyChanged(name);
-        }
-    }
-
-    private static IEnumerable<AirwaysMessageGroup> GroupMessages(IReadOnlyList<ServiceMessage> messages) =>
-        messages
-            .GroupBy(m =>
-            {
-                Match match = AirwayIdPattern.Match(m.Text);
-                return match.Success ? match.Groups[1].Value : "General";
-            })
-            .Select(g => new AirwaysMessageGroup(
-                g.Key,
-                g.Max(m => m.Level),
-                g.Select(m => m.Text).ToList()))
-            .OrderByDescending(g => g.Level)
-            .ThenBy(g => g.AirwayId, StringComparer.OrdinalIgnoreCase);
 
 }

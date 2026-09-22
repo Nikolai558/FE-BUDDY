@@ -1,9 +1,9 @@
 <!--
-    ServiceRunReviewTabView  -  the Review tab: what actually happened when the service was
-    run. It appears at the very end of the rail once a run has started, and shows only three
-    things - how far each sub-service has got, anything that went wrong, and the way out to
-    the files. Information and warnings stay on each sub-service's own tab, so an empty
-    Review tab means a clean run.
+    ServiceRunReviewTabView  -  the Review tab: everything about what happened when the
+    service was run. It appears at the very end of the rail once a run has started, and shows
+    how far each sub-service has got, anything that went wrong, the advisories, each
+    sub-service's results with its warnings (routine notices collapsed behind a toggle), and
+    the way out to the files. The sub-service tabs hold settings only.
 -->
 <UserControl x:Class="FeBuddy.Wpf.Views.ServiceRunReviewTabView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -54,6 +54,48 @@
             <TextBlock Text="{Binding}" Style="{StaticResource Text.Prose}" Margin="0,3" />
         </DataTemplate>
 
+        <!-- one group of a sub-service's messages: its heading (a severity, or e.g. an airway ID)
+             with the count on the right, then the messages -->
+        <DataTemplate x:Key="MessageGroup" DataType="{x:Type infra:SubServiceMessageGroup}">
+            <Border Margin="0,4" Padding="10" CornerRadius="{StaticResource Radius.Chip}"
+                    Background="{StaticResource Brush.Bg.Sunken}">
+                <StackPanel>
+                    <DockPanel>
+                        <TextBlock DockPanel.Dock="Right" Text="{Binding Count, StringFormat={}{0} msg}"
+                                   Style="{StaticResource Text.Caption}" />
+                        <TextBlock Text="{Binding Title}" Style="{StaticResource Text.Body.Strong}" />
+                    </DockPanel>
+                    <ItemsControl ItemsSource="{Binding Messages}" Margin="0,4,0,0">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding}" Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,1" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+        </DataTemplate>
+
+        <!-- one sub-service's results: what it produced, its warnings expanded, and its routine
+             notices behind a toggle, collapsed on every run -->
+        <DataTemplate x:Key="SubServiceResultBlock" DataType="{x:Type infra:SubServiceRunResult}">
+            <StackPanel Margin="0,4,0,8">
+                <TextBlock Text="{Binding Name}" Style="{StaticResource Text.Body.Strong}" />
+                <TextBlock Text="{Binding Summary}" Style="{StaticResource Text.Body}" TextWrapping="Wrap"
+                           Margin="0,2,0,0" />
+
+                <ItemsControl ItemsSource="{Binding Attention}" ItemTemplate="{StaticResource MessageGroup}" Margin="0,6,0,0"
+                              Visibility="{Binding HasAttention, Converter={StaticResource BoolToVis}}" />
+
+                <StackPanel Margin="0,6,0,0" Visibility="{Binding HasInfo, Converter={StaticResource BoolToVis}}">
+                    <Button Style="{StaticResource Button.Ghost}" HorizontalAlignment="Left"
+                            Content="{Binding InfoToggleLabel}" Command="{Binding ToggleInfoCommand}" />
+                    <ItemsControl ItemsSource="{Binding Info}" ItemTemplate="{StaticResource MessageGroup}"
+                                  Visibility="{Binding IsInfoExpanded, Converter={StaticResource BoolToVis}}" />
+                </StackPanel>
+            </StackPanel>
+        </DataTemplate>
+
         <!-- one written file -->
         <DataTemplate x:Key="OutputFileRow">
             <TextBlock Text="{Binding}" FontFamily="{StaticResource Font.Mono}" FontSize="11"
@@ -81,7 +123,7 @@
             </StackPanel>
         </Border>
 
-        <!-- something failed: the only messages that surface on this tab -->
+        <!-- something failed, in any sub-service -->
         <Border Style="{StaticResource Card}" Margin="0,0,0,16"
                 Background="{StaticResource Brush.Danger.Soft}"
                 Visibility="{Binding HasErrors, Converter={StaticResource BoolToVis}}">
@@ -120,6 +162,15 @@
             </Border.Style>
             <TextBlock Style="{StaticResource Text.Body}" TextWrapping="Wrap"
                        Text="The run finished with no errors." />
+        </Border>
+
+        <!-- what each sub-service produced, with its warnings and routine notices -->
+        <Border Style="{StaticResource Card}" Margin="0,0,0,16"
+                Visibility="{Binding HasResults, Converter={StaticResource BoolToVis}}">
+            <StackPanel>
+                <ctl:SectionHeader Label="RESULTS" />
+                <ItemsControl ItemsSource="{Binding Results}" ItemTemplate="{StaticResource SubServiceResultBlock}" />
+            </StackPanel>
         </Border>
 
         <!-- what the run wrote -->

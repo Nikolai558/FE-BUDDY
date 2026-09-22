@@ -1,7 +1,5 @@
 using System.Collections.ObjectModel;
-using System.Diagnostics;
 using System.Globalization;
-using System.IO;
 using System.Windows.Input;
 
 using FeBuddy.Wpf.Infrastructure;
@@ -18,13 +16,12 @@ namespace FeBuddy.Wpf.ViewModels;
 
 /// <summary>
 /// The <b>Airports</b> sub-service tab inside the AIRAC Service screen: which outputs to write,
-/// which GeoJSON files, which FE-Buddy properties, the CRC ERAM defaults, and the ROI override -
-/// plus the run result panel.
+/// which GeoJSON files, which FE-Buddy properties, the CRC ERAM defaults, and the ROI override.
 /// </summary>
 /// <remarks>
 /// Save, Undo and navigation come from the tab host's action bar; the run is launched by
-/// <b>Run AIRAC Service</b> on the Review tab and arrives back here through
-/// <see cref="ISubServiceRunTarget"/>.
+/// <b>Run AIRAC Service</b> on the Review tab, and its results are shown there, described by
+/// this tab through <see cref="ISubServiceRunTarget"/>.
 /// </remarks>
 public sealed class AirportsViewModel : SubServiceSettingsViewModel, ISubServiceRunTarget
 {
@@ -50,17 +47,6 @@ public sealed class AirportsViewModel : SubServiceSettingsViewModel, ISubService
     private string _neLon = string.Empty;
 
     private bool _isCycleReady;
-    private bool _isRunning;
-    private bool _hasRun;
-    private string? _runError;
-    private string? _progressText;
-    private double _elapsedSeconds;
-    private int _airportCount;
-    private int _airportsInRoiCount;
-    private string? _aliasFilePath;
-    private int _aliasCommandCount;
-    private bool _isInfoExpanded;
-    private Stopwatch? _stopwatch;
 
     /// <summary>Builds the tab and restores its saved settings.</summary>
     public AirportsViewModel()
@@ -84,9 +70,7 @@ public sealed class AirportsViewModel : SubServiceSettingsViewModel, ISubService
             new("Runways", EramFieldKind.Line, MarkDirty)
         };
 
-        OpenOutputCommand = new RelayCommand(OpenOutputFolder, () => LastOutputDirectory is not null);
         PickRoiOnMapCommand = new RelayCommand(PickRoiOnMap);
-        ToggleInfoCommand = new RelayCommand(() => IsInfoExpanded = !IsInfoExpanded);
 
         DefaultRoiStore.Changed += (_, _) => OnPropertyChanged(nameof(RoiFallbackHint));
 
@@ -244,7 +228,7 @@ public sealed class AirportsViewModel : SubServiceSettingsViewModel, ISubService
     /// <summary>Opens the shared ROI picker and copies what the user confirms into the four boxes.</summary>
     public ICommand PickRoiOnMapCommand { get; }
 
-    // ================= run panel =================
+    // ================= readiness =================
 
     /// <summary>Whether the AIRAC data is ready; the run and the cycle-dependent lists gate on it.</summary>
     public bool IsCycleReady
@@ -252,118 +236,6 @@ public sealed class AirportsViewModel : SubServiceSettingsViewModel, ISubService
         get => _isCycleReady;
         private set => SetProperty(ref _isCycleReady, value);
     }
-
-    /// <summary>Whether a run is in progress.</summary>
-    public bool IsRunning
-    {
-        get => _isRunning;
-        private set { if (SetProperty(ref _isRunning, value)) OnPropertyChanged(nameof(ShowPanel)); }
-    }
-
-    /// <summary>Whether a run has finished in this session.</summary>
-    public bool HasRun
-    {
-        get => _hasRun;
-        private set
-        {
-            if (SetProperty(ref _hasRun, value))
-            {
-                OnPropertyChanged(nameof(ShowPanel));
-                OnPropertyChanged(nameof(RunSucceeded));
-                OnPropertyChanged(nameof(RunFailed));
-            }
-        }
-    }
-
-    /// <summary>Whether the result panel is shown at all.</summary>
-    public bool ShowPanel => IsRunning || HasRun;
-
-    /// <summary>The failure message from the last run, or <see langword="null"/>.</summary>
-    public string? RunError
-    {
-        get => _runError;
-        private set
-        {
-            if (SetProperty(ref _runError, value))
-            {
-                OnPropertyChanged(nameof(RunSucceeded));
-                OnPropertyChanged(nameof(RunFailed));
-            }
-        }
-    }
-
-    /// <summary>Whether the last run completed.</summary>
-    public bool RunSucceeded => HasRun && RunError is null;
-
-    /// <summary>Whether the last run failed.</summary>
-    public bool RunFailed => HasRun && RunError is not null;
-
-    /// <summary>The in-panel progress line while a run is going.</summary>
-    public string? ProgressText { get => _progressText; private set => SetProperty(ref _progressText, value); }
-
-    /// <summary>How long the last run took.</summary>
-    public double ElapsedSeconds
-    {
-        get => _elapsedSeconds;
-        private set { if (SetProperty(ref _elapsedSeconds, value)) OnPropertyChanged(nameof(ElapsedText)); }
-    }
-
-    /// <summary>The elapsed time, formatted.</summary>
-    public string ElapsedText => $"{ElapsedSeconds:0.0}s";
-
-    /// <summary>How many airports were built.</summary>
-    public int AirportCount { get => _airportCount; private set => SetProperty(ref _airportCount, value); }
-
-    /// <summary>How many airports fell inside the ROI, and so reached the GeoJSON output.</summary>
-    public int AirportsInRoiCount { get => _airportsInRoiCount; private set => SetProperty(ref _airportsInRoiCount, value); }
-
-    /// <summary>The GeoJSON files the last run wrote.</summary>
-    public ObservableCollection<SubServiceOutputFileRow> Files { get; } = new();
-
-    /// <summary>Whether the last run wrote any GeoJSON.</summary>
-    public bool HasFiles => Files.Count > 0;
-
-    /// <summary>The alias file the last run wrote, or <see langword="null"/>.</summary>
-    public string? AliasFilePath
-    {
-        get => _aliasFilePath;
-        private set { if (SetProperty(ref _aliasFilePath, value)) OnPropertyChanged(nameof(HasAliasFile)); }
-    }
-
-    /// <summary>Whether the last run wrote an alias file.</summary>
-    public bool HasAliasFile => AliasFilePath is not null;
-
-    /// <summary>How many alias commands were written.</summary>
-    public int AliasCommandCount { get => _aliasCommandCount; private set => SetProperty(ref _aliasCommandCount, value); }
-
-    /// <summary>The last run's messages, grouped by severity.</summary>
-    public ObservableCollection<SubServiceMessageGroup> MessageGroups { get; } = new();
-
-    /// <summary>Whether any group needs the user's attention.</summary>
-    public bool HasAttentionMessages => MessageGroups.Any(g => g.IsAttentionLevel);
-
-    /// <summary>Whether the run produced only routine messages.</summary>
-    public bool HasInfoOnly => MessageGroups.Count > 0 && !HasAttentionMessages;
-
-    /// <summary>Whether the routine messages are expanded.</summary>
-    public bool IsInfoExpanded
-    {
-        get => _isInfoExpanded;
-        set { if (SetProperty(ref _isInfoExpanded, value)) OnPropertyChanged(nameof(InfoToggleLabel)); }
-    }
-
-    /// <summary>The label on the routine-messages toggle.</summary>
-    public string InfoToggleLabel => IsInfoExpanded
-        ? "Hide routine messages"
-        : $"Show {MessageGroups.Where(g => !g.IsAttentionLevel).Sum(g => g.Count)} routine message(s)";
-
-    /// <summary>Expands or collapses the routine messages.</summary>
-    public ICommand ToggleInfoCommand { get; }
-
-    /// <summary>Opens the folder the last run wrote to.</summary>
-    public ICommand OpenOutputCommand { get; }
-
-    private string? LastOutputDirectory { get; set; }
 
     // ================= parent hooks =================
 
@@ -382,75 +254,26 @@ public sealed class AirportsViewModel : SubServiceSettingsViewModel, ISubService
     }
 
     /// <inheritdoc />
-    public void BeginRun()
+    public SubServiceRunResult? DescribeRunResult(AiracServiceResult result)
     {
-        RunError = null;
-        HasRun = false;
-        IsRunning = true;
-        ProgressText = "Starting…";
-        Files.Clear();
-        MessageGroups.Clear();
-        AirportCount = 0;
-        AirportsInRoiCount = 0;
-        AliasFilePath = null;
-        AliasCommandCount = 0;
-        IsInfoExpanded = false;
-        RaisePanelCounts();
-
-        _stopwatch = Stopwatch.StartNew();
-        ElapsedSeconds = 0;
-    }
-
-    /// <inheritdoc />
-    public void ReportProgress(string message) => ProgressText = message;
-
-    /// <inheritdoc />
-    public void ApplyAiracResult(AiracServiceResult result)
-    {
-        _stopwatch?.Stop();
-        ElapsedSeconds = _stopwatch?.Elapsed.TotalSeconds ?? 0;
-        IsRunning = false;
-        HasRun = true;
-        ProgressText = null;
-
-        if (result.Airports is { } airports)
+        if (result.Airports is not { } airports)
         {
-            AirportCount = airports.AirportCount;
-            AirportsInRoiCount = airports.AirportsInRoiCount;
-
-            foreach (string path in airports.GeojsonFilesWritten)
-            {
-                int count = airports.GeojsonFeatureCountsByFile.TryGetValue(path, out int c) ? c : 0;
-                Files.Add(new SubServiceOutputFileRow(Path.GetFileName(path), path, count));
-                LastOutputDirectory = Path.GetDirectoryName(path);
-            }
-
-            AliasFilePath = airports.AliasFilePath;
-            AliasCommandCount = airports.AliasCommandCount;
-
-            if (airports.AliasFilePath is not null)
-            {
-                LastOutputDirectory ??= Path.GetDirectoryName(airports.AliasFilePath);
-            }
-
-            foreach (SubServiceMessageGroup group in GroupByLevel(airports.Messages))
-            {
-                MessageGroups.Add(group);
-            }
+            return null;
         }
 
-        RaisePanelCounts();
-    }
+        string summary = $"{airports.AirportCount:N0} airports, {airports.AirportsInRoiCount:N0} in the ROI";
 
-    /// <inheritdoc />
-    public void FailRun(string error)
-    {
-        _stopwatch?.Stop();
-        ElapsedSeconds = _stopwatch?.Elapsed.TotalSeconds ?? 0;
-        IsRunning = false;
-        HasRun = true;
-        RunError = error;
-        ProgressText = null;
+        if (airports.AliasFilePath is not null)
+        {
+            summary += $", Airports.txt: {airports.AliasCommandCount:N0} alias command(s)";
+        }
+
+        if (airports.GeojsonFilesWritten.Count > 0)
+        {
+            summary += $", {airports.GeojsonFilesWritten.Count:N0} GeoJSON file(s)";
+        }
+
+        return new SubServiceRunResult(Title, summary, airports.Messages);
     }
 
     /// <inheritdoc />
@@ -699,12 +522,6 @@ public sealed class AirportsViewModel : SubServiceSettingsViewModel, ISubService
 
     // ================= helpers =================
 
-    private static IEnumerable<SubServiceMessageGroup> GroupByLevel(IReadOnlyList<ServiceMessage> messages) =>
-        messages
-            .GroupBy(m => m.Level)
-            .OrderByDescending(g => g.Key)
-            .Select(g => new SubServiceMessageGroup(g.Key, g.Select(m => m.Text).ToArray()));
-
     private static int ResolveCoordinatePrecision()
     {
         string? saved = UserConfigFile.GetValue(PrecisionKey);
@@ -738,17 +555,6 @@ public sealed class AirportsViewModel : SubServiceSettingsViewModel, ISubService
             NeLon = roi.NeLon.ToString("0.######", CultureInfo.InvariantCulture);
             OverrideRoi = true;
         }
-    }
-
-    private void OpenOutputFolder()
-    {
-        if (string.IsNullOrEmpty(LastOutputDirectory) || !Directory.Exists(LastOutputDirectory))
-        {
-            Toast.Warn("Nothing to open", "Run the AIRAC Service first.");
-            return;
-        }
-
-        Process.Start(new ProcessStartInfo(LastOutputDirectory) { UseShellExecute = true });
     }
 
     private static void WriteCrcRow(Dictionary<string, string> settings, string kind, EramClassDefault row)
@@ -840,15 +646,6 @@ public sealed class AirportsViewModel : SubServiceSettingsViewModel, ISubService
             Set($"{prefix}.xOffset", row.XOffset);
             Set($"{prefix}.yOffset", row.YOffset);
         }
-    }
-
-    private void RaisePanelCounts()
-    {
-        OnPropertyChanged(nameof(HasFiles));
-        OnPropertyChanged(nameof(HasAliasFile));
-        OnPropertyChanged(nameof(HasAttentionMessages));
-        OnPropertyChanged(nameof(HasInfoOnly));
-        OnPropertyChanged(nameof(InfoToggleLabel));
     }
 
     private void RaiseAllSettingProperties()

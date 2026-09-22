@@ -4,9 +4,10 @@ namespace FeBuddy.Core.Configuration;
 /// Global developer-mode switch used to make troubleshooting easier during development.
 /// </summary>
 /// <remarks>
-/// This is intentionally a simple static flag rather than a configuration object. The
-/// caller (currently <c>FeBuddy.Harness.Program</c>, later the GUI) is responsible for setting
-/// <see cref="IsEnabled"/> before invoking any library service.
+/// This is intentionally a simple static flag rather than a configuration object, and never a
+/// user setting. The caller sets <see cref="IsEnabled"/> from a code constant before invoking
+/// any library service: <c>App.DevModeEnabled</c> in the GUI, <c>HarnessSettings.DevMode</c> in
+/// <c>FeBuddy.Harness</c>.
 ///
 /// Effects of <see cref="IsEnabled"/> being <see langword="true"/>:
 /// <list type="bullet">

@@ -50,29 +50,39 @@
         <!-- The action bar, rendered twice: pinned above the tab's content and again at
              the end of it, so neither the top nor the bottom of a long settings page is
              ever far from Save / Next. -->
+        <!-- The label takes the width it needs first (Auto column, no wrapping), and the
+             buttons flow onto a second row when the window is too narrow for one - so neither
+             the label nor the buttons ever get squeezed into a sliver. -->
         <DataTemplate x:Key="TabActionBar" DataType="{x:Type vm:AiracServiceViewModel}">
-            <DockPanel>
-                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
-                    <Button Style="{StaticResource Button.Ghost}" Content="Previous"
-                            Command="{Binding PreviousCommand}" Margin="0,0,8,0" />
-                    <Button Style="{StaticResource Button.Ghost}" Content="Next"
-                            Command="{Binding NextCommand}" Margin="0,0,8,0" />
-                    <Button Style="{StaticResource Button.Ghost}" Content="Preview settings"
-                            Command="{Binding GoToPreviewCommand}" Margin="0,0,8,0" />
-                    <Button Style="{StaticResource Button.Ghost}" Content="Undo all changes"
-                            Command="{Binding RevertChangesCommand}" Margin="0,0,8,0"
-                            ToolTip="Discard the unsaved edits on this tab and go back to its last saved settings." />
-                    <Button Style="{StaticResource Button.Ghost}" Content="Undo last save"
-                            Command="{Binding UndoLastSaveCommand}" Margin="0,0,8,0"
-                            ToolTip="Step this tab's saved settings back to the previous save." />
-                    <Button Style="{StaticResource Button.Primary}" Content="Save" MinWidth="90"
-                            Command="{Binding SaveCommand}" />
-                </StackPanel>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
 
-                <TextBlock VerticalAlignment="Center" Style="{StaticResource Text.Caption}"
+                <TextBlock Grid.Column="0" VerticalAlignment="Center" Margin="0,0,16,0"
+                           Style="{StaticResource Text.Caption}" TextWrapping="NoWrap"
                            Foreground="{StaticResource Brush.Warn}" Text="Unsaved changes"
                            Visibility="{Binding SelectedTab.IsDirty, Converter={StaticResource BoolToVis}}" />
-            </DockPanel>
+
+                <WrapPanel Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center"
+                           Orientation="Horizontal" Margin="0,-4,0,-4">
+                    <Button Style="{StaticResource Button.Ghost}" Content="Previous"
+                            Command="{Binding PreviousCommand}" Margin="8,4,0,4" />
+                    <Button Style="{StaticResource Button.Ghost}" Content="Next"
+                            Command="{Binding NextCommand}" Margin="8,4,0,4" />
+                    <Button Style="{StaticResource Button.Ghost}" Content="Preview settings"
+                            Command="{Binding GoToPreviewCommand}" Margin="8,4,0,4" />
+                    <Button Style="{StaticResource Button.Ghost}" Content="Undo all changes"
+                            Command="{Binding RevertChangesCommand}" Margin="8,4,0,4"
+                            ToolTip="Discard the unsaved edits on this tab and go back to its last saved settings." />
+                    <Button Style="{StaticResource Button.Ghost}" Content="Undo last save"
+                            Command="{Binding UndoLastSaveCommand}" Margin="8,4,0,4"
+                            ToolTip="Step this tab's saved settings back to the previous save." />
+                    <Button Style="{StaticResource Button.Primary}" Content="Save" MinWidth="90"
+                            Command="{Binding SaveCommand}" Margin="8,4,0,4" />
+                </WrapPanel>
+            </Grid>
         </DataTemplate>
     </UserControl.Resources>
 

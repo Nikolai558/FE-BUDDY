@@ -24,7 +24,8 @@ public static class DepartureSettingsParser
 	private static readonly HashSet<string> KnownScalarKeys = new(StringComparer.OrdinalIgnoreCase)
 	{
 		"OutputDirectory", "GenerateGeojson", "EmitLines", "EmitSymbols", "EmitText",
-		"GenerateAliasFile", "IncludeObstacleDepartures", "ArtccFilter", "AmendedWithinCycles",
+		"GenerateAliasFile", "IncludeObstacleDepartures", "ArtccFilter",
+		"AmendmentFilter", "AmendedWithinCycles", "AmendedWithinDays", "AmendedOnOrAfter",
 		"IncludeFebCustomProperties", "FebProperties", CrcDefaultsReader.IncludeLineKey, CrcDefaultsReader.IncludeSymbolKey, CrcDefaultsReader.IncludeTextKey,
 		"FilterByRoi", "RoiMode", "RoiSwLat", "RoiSwLon", "RoiNeLat", "RoiNeLon",
 		"CoordinatePrecision", "AddFeBuddyOutputFolder"
@@ -103,8 +104,20 @@ public static class DepartureSettingsParser
 			.Distinct(StringComparer.OrdinalIgnoreCase)
 			.ToList();
 
-		int amendedWithinCycles = SettingsValueReader.IntInRange(
-			departureSettings, "AmendedWithinCycles", defaultValue: 0, minimum: 0, maximum: 1000);
+		// Only the value the chosen mode uses is read (and required); the others are ignored.
+		DepartureAmendmentFilter amendmentFilter = ParseAmendmentFilter(departureSettings);
+
+		int amendedWithinCycles = amendmentFilter == DepartureAmendmentFilter.Cycles
+			? SettingsValueReader.RequiredIntInRange(departureSettings, "AmendedWithinCycles", minimum: 1, maximum: 1000)
+			: 0;
+
+		int amendedWithinDays = amendmentFilter == DepartureAmendmentFilter.Days
+			? SettingsValueReader.RequiredIntInRange(departureSettings, "AmendedWithinDays", minimum: 1, maximum: 36500)
+			: 0;
+
+		DateOnly? amendedOnOrAfter = amendmentFilter == DepartureAmendmentFilter.Date
+			? ParseAmendedOnOrAfter(departureSettings)
+			: null;
 
 		bool filterByRoi = SettingsValueReader.YesNo(departureSettings, "FilterByRoi", defaultValue: false);
 		RegionOfInterest? roi = filterByRoi ? ParseRoi(departureSettings) : null;
@@ -153,7 +166,10 @@ public static class DepartureSettingsParser
 			GenerateAliasFile = generateAliasFile,
 			IncludeObstacleDepartures = includeObstacleDepartures,
 			ArtccFilter = artccFilter,
+			AmendmentFilter = amendmentFilter,
 			AmendedWithinCycles = amendedWithinCycles,
+			AmendedWithinDays = amendedWithinDays,
+			AmendedOnOrAfter = amendedOnOrAfter,
 			Roi = roi,
 			RoiMode = roiMode,
 			IncludeFebCustomProperties = includeFebProperties,
@@ -192,6 +208,43 @@ public static class DepartureSettingsParser
 		throw new ArgumentException(
 			$"'RoiMode' value '{raw}' is not valid. Use \"Airport\" (every departure of an airport inside the ROI) " +
 			"or \"Waypoint\" (any departure with a point inside the ROI).");
+	}
+
+	private static DepartureAmendmentFilter ParseAmendmentFilter(Dictionary<string, string> settings)
+	{
+		string? raw = SettingsValueReader.OptionalString(settings, "AmendmentFilter");
+
+		if (string.IsNullOrWhiteSpace(raw))
+		{
+			return DepartureAmendmentFilter.None;
+		}
+
+		// Matched by name only: Enum.TryParse would also accept "1" or "Cycles,Days".
+		foreach (DepartureAmendmentFilter mode in Enum.GetValues<DepartureAmendmentFilter>())
+		{
+			if (raw.Trim().Equals(mode.ToString(), StringComparison.OrdinalIgnoreCase))
+			{
+				return mode;
+			}
+		}
+
+		throw new ArgumentException(
+			$"'AmendmentFilter' value '{raw}' is not valid. Use \"None\" (keep every procedure), " +
+			"\"Cycles\" (with AmendedWithinCycles), \"Days\" (with AmendedWithinDays) " +
+			"or \"Date\" (with AmendedOnOrAfter).");
+	}
+
+	private static DateOnly ParseAmendedOnOrAfter(Dictionary<string, string> settings)
+	{
+		string raw = SettingsValueReader.RequireNonEmpty(settings, "AmendedOnOrAfter");
+
+		if (!DateOnly.TryParseExact(raw, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateOnly date))
+		{
+			throw new ArgumentException(
+				$"'AmendedOnOrAfter' value '{raw}' is not a valid date. Use the format yyyy-MM-dd, e.g. \"2026-01-01\".");
+		}
+
+		return date;
 	}
 
 	private static IReadOnlyCollection<DepartureFebProperty> ParseFebProperties(

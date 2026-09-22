@@ -133,14 +133,22 @@ public static class SettingsValueReader
 			return defaultValue;
 		}
 
-		if (parsed < minimum || parsed > maximum)
-		{
-			throw new ArgumentException(
-				$"'{key}' value '{parsed}' is out of range. Must be an integer from {minimum} to {maximum}.");
-		}
-
-		return parsed.Value;
+		return RequireInRange(key, parsed.Value, minimum, maximum);
 	}
+
+	/// <summary>Reads an integer constrained to a range that must be present.</summary>
+	/// <param name="settings">The raw settings block.</param>
+	/// <param name="key">The key to read.</param>
+	/// <param name="minimum">Lowest accepted value, inclusive.</param>
+	/// <param name="maximum">Highest accepted value, inclusive.</param>
+	/// <returns>The parsed integer.</returns>
+	/// <exception cref="ArgumentException">Thrown when the key is missing, blank, or not an integer in range.</exception>
+	public static int RequiredIntInRange(
+		IReadOnlyDictionary<string, string> settings,
+		string key,
+		int minimum,
+		int maximum) =>
+		RequireInRange(key, RequiredInt(settings, key), minimum, maximum);
 
 	/// <summary>Reads a comma-separated list that must contain at least one integer.</summary>
 	/// <param name="settings">The raw settings block.</param>
@@ -210,6 +218,17 @@ public static class SettingsValueReader
 		}
 
 		return raw;
+	}
+
+	private static int RequireInRange(string key, int value, int minimum, int maximum)
+	{
+		if (value < minimum || value > maximum)
+		{
+			throw new ArgumentException(
+				$"'{key}' value '{value}' is out of range. Must be an integer from {minimum} to {maximum}.");
+		}
+
+		return value;
 	}
 
 	private static bool YesNoValue(string key, string value)

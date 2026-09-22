@@ -136,6 +136,41 @@
                     <Button Content="Clear" Style="{StaticResource Button.Ghost}" HorizontalAlignment="Left"
                             Margin="0,6,0,0" Command="{Binding ClearArtccsCommand}"
                             Visibility="{Binding HasArtccs, Converter={StaticResource BoolToVis}}" />
+
+                    <!-- Amendment-date filter. One radio per mode; each mode's input is live only
+                         while its radio is checked, and keeps its value when another is picked. -->
+                    <TextBlock Text="AMENDMENT DATE" Style="{StaticResource Text.Label}" Margin="0,14,0,0" />
+                    <RadioButton GroupName="DepartureAmendment" Content="Any amendment date" Margin="0,6,0,0"
+                                 IsChecked="{Binding AmendmentAny, Mode=TwoWay}" />
+                    <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                        <RadioButton GroupName="DepartureAmendment" Content="Amended within the last" VerticalAlignment="Center"
+                                     IsChecked="{Binding AmendmentByCycles, Mode=TwoWay}" />
+                        <TextBox Width="70" Margin="8,0" VerticalAlignment="Center"
+                                 IsEnabled="{Binding AmendmentByCycles}"
+                                 Text="{Binding AmendedWithinCycles, UpdateSourceTrigger=PropertyChanged}"
+                                 infra:FieldState.Error="{Binding FieldErrors[AmendedWithinCycles]}" />
+                        <TextBlock Text="cycles" Style="{StaticResource Text.Body}" VerticalAlignment="Center" />
+                        <TextBlock Text="(1 = this cycle)" Style="{StaticResource Text.Caption}" VerticalAlignment="Center" Margin="6,0,0,0" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                        <RadioButton GroupName="DepartureAmendment" Content="Amended within the last" VerticalAlignment="Center"
+                                     IsChecked="{Binding AmendmentByDays, Mode=TwoWay}" />
+                        <TextBox Width="70" Margin="8,0" VerticalAlignment="Center"
+                                 IsEnabled="{Binding AmendmentByDays}"
+                                 Text="{Binding AmendedWithinDays, UpdateSourceTrigger=PropertyChanged}"
+                                 infra:FieldState.Error="{Binding FieldErrors[AmendedWithinDays]}" />
+                        <TextBlock Text="days" Style="{StaticResource Text.Body}" VerticalAlignment="Center" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                        <RadioButton GroupName="DepartureAmendment" Content="Amended on or after" VerticalAlignment="Center"
+                                     IsChecked="{Binding AmendmentByDate, Mode=TwoWay}" />
+                        <DatePicker Width="160" Margin="8,0,0,0" VerticalAlignment="Center"
+                                    IsEnabled="{Binding AmendmentByDate}"
+                                    SelectedDate="{Binding AmendedOnOrAfter, Mode=TwoWay}" SelectedDateFormat="Short"
+                                    infra:FieldState.Error="{Binding FieldErrors[AmendedOnOrAfter]}" />
+                    </StackPanel>
+                    <TextBlock Style="{StaticResource Text.Prose}" Margin="0,8,0,0"
+                               Text="Filters on the date the procedure's current amendment became effective. Days count back from today." />
                 </StackPanel>
             </Border>
 

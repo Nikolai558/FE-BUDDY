@@ -75,7 +75,10 @@ public class DepartureSettingsParserTests
 		Assert.True(settings.EmitSymbols);
 		Assert.True(settings.EmitText);
 		Assert.True(settings.IncludeObstacleDepartures);
+		Assert.Equal(DepartureAmendmentFilter.None, settings.AmendmentFilter);
 		Assert.Equal(0, settings.AmendedWithinCycles);
+		Assert.Equal(0, settings.AmendedWithinDays);
+		Assert.Null(settings.AmendedOnOrAfter);
 		Assert.Equal(DepartureRoiMode.Airport, settings.RoiMode);
 		Assert.Null(settings.Roi);
 		Assert.Empty(settings.ArtccFilter);
@@ -143,6 +146,154 @@ public class DepartureSettingsParserTests
 		settings["RoiMode"] = "Sideways";
 
 		Assert.Throws<ArgumentException>(() => DepartureSettingsParser.Parse(settings));
+	}
+
+	[Theory]
+	[InlineData("")]
+	[InlineData(" ")]
+	[InlineData("none")]
+	[InlineData("None")]
+	public void a_blank_or_none_amendment_filter_keeps_every_procedure(string value)
+	{
+		Dictionary<string, string> settings = MinimalValidSettings();
+		settings["AmendmentFilter"] = value;
+
+		DepartureSettings parsed = DepartureSettingsParser.Parse(settings).Settings;
+
+		Assert.Equal(DepartureAmendmentFilter.None, parsed.AmendmentFilter);
+	}
+
+	[Theory]
+	[InlineData("cycles")]
+	[InlineData("CYCLES")]
+	[InlineData("Cycles")]
+	public void cycles_mode_parses_case_insensitively_with_its_value(string value)
+	{
+		Dictionary<string, string> settings = MinimalValidSettings();
+		settings["AmendmentFilter"] = value;
+		settings["AmendedWithinCycles"] = "4";
+
+		DepartureSettings parsed = DepartureSettingsParser.Parse(settings).Settings;
+
+		Assert.Equal(DepartureAmendmentFilter.Cycles, parsed.AmendmentFilter);
+		Assert.Equal(4, parsed.AmendedWithinCycles);
+	}
+
+	[Fact]
+	public void days_mode_parses_its_value()
+	{
+		Dictionary<string, string> settings = MinimalValidSettings();
+		settings["AmendmentFilter"] = "Days";
+		settings["AmendedWithinDays"] = "90";
+
+		DepartureSettings parsed = DepartureSettingsParser.Parse(settings).Settings;
+
+		Assert.Equal(DepartureAmendmentFilter.Days, parsed.AmendmentFilter);
+		Assert.Equal(90, parsed.AmendedWithinDays);
+	}
+
+	[Fact]
+	public void date_mode_parses_its_value()
+	{
+		Dictionary<string, string> settings = MinimalValidSettings();
+		settings["AmendmentFilter"] = "Date";
+		settings["AmendedOnOrAfter"] = "2026-01-01";
+
+		DepartureSettings parsed = DepartureSettingsParser.Parse(settings).Settings;
+
+		Assert.Equal(DepartureAmendmentFilter.Date, parsed.AmendmentFilter);
+		Assert.Equal(new DateOnly(2026, 1, 1), parsed.AmendedOnOrAfter);
+	}
+
+	[Theory]
+	[InlineData("1")]
+	[InlineData("cycle")]
+	[InlineData("Cycles,Days")]
+	[InlineData("Weeks")]
+	public void an_invalid_amendment_filter_throws_naming_the_key(string value)
+	{
+		Dictionary<string, string> settings = MinimalValidSettings();
+		settings["AmendmentFilter"] = value;
+		settings["AmendedWithinCycles"] = "1";
+
+		ArgumentException ex = Assert.Throws<ArgumentException>(() => DepartureSettingsParser.Parse(settings));
+		Assert.Contains("AmendmentFilter", ex.Message);
+	}
+
+	[Theory]
+	[InlineData("Cycles", "AmendedWithinCycles")]
+	[InlineData("Days", "AmendedWithinDays")]
+	[InlineData("Date", "AmendedOnOrAfter")]
+	public void the_active_modes_value_is_required(string mode, string key)
+	{
+		Dictionary<string, string> settings = MinimalValidSettings();
+		settings["AmendmentFilter"] = mode;
+
+		ArgumentException ex = Assert.Throws<ArgumentException>(() => DepartureSettingsParser.Parse(settings));
+		Assert.Contains(key, ex.Message);
+	}
+
+	[Theory]
+	[InlineData("Cycles", "AmendedWithinCycles", "0")]
+	[InlineData("Cycles", "AmendedWithinCycles", "1001")]
+	[InlineData("Cycles", "AmendedWithinCycles", "four")]
+	[InlineData("Days", "AmendedWithinDays", "0")]
+	[InlineData("Days", "AmendedWithinDays", "36501")]
+	[InlineData("Days", "AmendedWithinDays", "-5")]
+	public void an_out_of_range_or_non_integer_amendment_value_throws_naming_the_key(string mode, string key, string value)
+	{
+		Dictionary<string, string> settings = MinimalValidSettings();
+		settings["AmendmentFilter"] = mode;
+		settings[key] = value;
+
+		ArgumentException ex = Assert.Throws<ArgumentException>(() => DepartureSettingsParser.Parse(settings));
+		Assert.Contains(key, ex.Message);
+	}
+
+	[Theory]
+	[InlineData("2026/01/01")]
+	[InlineData("01-01-2026")]
+	[InlineData("2026-02-30")]
+	[InlineData("yesterday")]
+	public void a_badly_formatted_amended_on_or_after_throws_naming_the_key(string value)
+	{
+		Dictionary<string, string> settings = MinimalValidSettings();
+		settings["AmendmentFilter"] = "Date";
+		settings["AmendedOnOrAfter"] = value;
+
+		ArgumentException ex = Assert.Throws<ArgumentException>(() => DepartureSettingsParser.Parse(settings));
+		Assert.Contains("AmendedOnOrAfter", ex.Message);
+	}
+
+	[Fact]
+	public void keys_for_inactive_amendment_modes_are_ignored_without_a_warning()
+	{
+		Dictionary<string, string> settings = MinimalValidSettings();
+		settings["AmendmentFilter"] = "Days";
+		settings["AmendedWithinDays"] = "30";
+		// Invalid values for the other modes: never read, so they cannot fail the parse.
+		settings["AmendedWithinCycles"] = "not a number";
+		settings["AmendedOnOrAfter"] = "not a date";
+
+		DepartureSettingsParseResult result = DepartureSettingsParser.Parse(settings);
+
+		Assert.Equal(DepartureAmendmentFilter.Days, result.Settings.AmendmentFilter);
+		Assert.Equal(0, result.Settings.AmendedWithinCycles);
+		Assert.Null(result.Settings.AmendedOnOrAfter);
+		Assert.Empty(result.Messages);
+	}
+
+	[Fact]
+	public void amendment_values_are_ignored_when_the_filter_is_absent()
+	{
+		Dictionary<string, string> settings = MinimalValidSettings();
+		settings["AmendedWithinCycles"] = "0";
+
+		DepartureSettingsParseResult result = DepartureSettingsParser.Parse(settings);
+
+		Assert.Equal(DepartureAmendmentFilter.None, result.Settings.AmendmentFilter);
+		Assert.Equal(0, result.Settings.AmendedWithinCycles);
+		Assert.Empty(result.Messages);
 	}
 
 	[Fact]

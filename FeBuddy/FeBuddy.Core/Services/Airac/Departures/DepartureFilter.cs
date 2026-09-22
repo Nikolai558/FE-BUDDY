@@ -28,15 +28,32 @@ public static class DepartureFilter
 	/// <param name="procedures">Every procedure read from the DP tables.</param>
 	/// <param name="settings">The parsed settings.</param>
 	/// <param name="messages">Receives a warning for any procedure the amendment filter cannot judge.</param>
+	/// <param name="today">
+	/// The date <see cref="DepartureAmendmentFilter.Days"/> mode counts back from. Defaults to the
+	/// local date of the run (<c>DateOnly.FromDateTime(DateTime.Now)</c>); tests pass a fixed date.
+	/// </param>
 	/// <returns>The procedures in scope, in the same order.</returns>
+	/// <exception cref="ArgumentException">
+	/// Thrown when <see cref="DepartureSettings.AmendmentFilter"/> is
+	/// <see cref="DepartureAmendmentFilter.Date"/> but <see cref="DepartureSettings.AmendedOnOrAfter"/> is not set.
+	/// </exception>
 	public static IReadOnlyList<DepartureProcedure> ByProcedure(
 		IReadOnlyList<DepartureProcedure> procedures,
 		DepartureSettings settings,
-		List<ServiceMessage> messages)
+		List<ServiceMessage> messages,
+		DateOnly? today = null)
 	{
 		ArgumentNullException.ThrowIfNull(procedures);
 		ArgumentNullException.ThrowIfNull(settings);
 		ArgumentNullException.ThrowIfNull(messages);
+
+		if (settings.AmendmentFilter == DepartureAmendmentFilter.Date && settings.AmendedOnOrAfter is null)
+		{
+			throw new ArgumentException(
+				"AmendmentFilter is \"Date\" but AmendedOnOrAfter is not set.", nameof(settings));
+		}
+
+		DateOnly runDate = today ?? DateOnly.FromDateTime(DateTime.Now);
 
 		HashSet<string> artccs = new(settings.ArtccFilter, StringComparer.OrdinalIgnoreCase);
 		List<DepartureProcedure> kept = new();
@@ -53,7 +70,8 @@ public static class DepartureFilter
 				continue;
 			}
 
-			if (settings.AmendedWithinCycles > 0 && !IsRecentlyAmended(procedure, settings.AmendedWithinCycles, messages))
+			if (settings.AmendmentFilter != DepartureAmendmentFilter.None
+				&& !IsRecentlyAmended(procedure, settings, runDate, messages))
 			{
 				continue;
 			}
@@ -132,19 +150,49 @@ public static class DepartureFilter
 	}
 
 	/// <summary>
-	/// Whether the procedure's current amendment became effective within the last
-	/// <paramref name="cycles"/> cycles, counting the cycle its data came from as the first.
+	/// Whether the procedure's current amendment became effective on or after the cutoff that
+	/// <see cref="DepartureSettings.AmendmentFilter"/> sets. A procedure whose dates cannot be
+	/// read is left out with a warning.
 	/// </summary>
-	private static bool IsRecentlyAmended(DepartureProcedure procedure, int cycles, List<ServiceMessage> messages)
+	private static bool IsRecentlyAmended(
+		DepartureProcedure procedure,
+		DepartureSettings settings,
+		DateOnly today,
+		List<ServiceMessage> messages)
 	{
-		if (procedure.AmendmentEffectiveDate is not { } amended || procedure.CycleEffectiveDate is not { } cycleDate)
+		if (procedure.AmendmentEffectiveDate is not { } amended)
 		{
 			messages.Add(new ServiceMessage(LogLevel.Warning, LogSource,
 				$"{DepartureBuilder.Label(procedure)}: amendment date '{procedure.AmendmentEffectiveDateText}' could not be read, so the amendment-date filter left it out."));
 			return false;
 		}
 
-		DateOnly cutoff = cycleDate.AddDays(-DaysPerCycle * (cycles - 1));
+		if (AmendmentCutoff(procedure, settings, today) is not { } cutoff)
+		{
+			// Cycles mode only: the cutoff counts back from the procedure's own cycle date.
+			messages.Add(new ServiceMessage(LogLevel.Warning, LogSource,
+				$"{DepartureBuilder.Label(procedure)}: its cycle date could not be read, so the amendment-date filter left it out."));
+			return false;
+		}
+
+		// A lower bound only: an amendment dated after the cutoff - even in the future - is kept.
 		return amended >= cutoff;
 	}
+
+	/// <summary>
+	/// The earliest amendment date <see cref="DepartureSettings.AmendmentFilter"/> keeps, or
+	/// <see langword="null"/> in <see cref="DepartureAmendmentFilter.Cycles"/> mode when the
+	/// procedure has no readable cycle date to count back from.
+	/// </summary>
+	private static DateOnly? AmendmentCutoff(DepartureProcedure procedure, DepartureSettings settings, DateOnly today) =>
+		settings.AmendmentFilter switch
+		{
+			// The cycle the data came from counts as the first, so N cycles reach back N - 1 steps.
+			DepartureAmendmentFilter.Cycles =>
+				procedure.CycleEffectiveDate?.AddDays(-DaysPerCycle * (settings.AmendedWithinCycles - 1)),
+			DepartureAmendmentFilter.Days => today.AddDays(-settings.AmendedWithinDays),
+			DepartureAmendmentFilter.Date => settings.AmendedOnOrAfter,
+			_ => throw new ArgumentOutOfRangeException(
+				nameof(settings), settings.AmendmentFilter, "Unknown amendment filter mode.")
+		};
 }

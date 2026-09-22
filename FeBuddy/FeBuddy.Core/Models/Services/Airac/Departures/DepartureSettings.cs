@@ -42,8 +42,17 @@ public sealed record DepartureSettings
 	public IReadOnlyCollection<string> ArtccFilter { get; init; } = Array.Empty<string>();
 
 	/// <summary>
-	/// Keep only procedures whose current amendment became effective within this many cycles,
-	/// counting the selected cycle as the first. <c>0</c> (the default) keeps every procedure.
+	/// Which amendment-date filter applies. <see cref="DepartureAmendmentFilter.None"/> (the
+	/// default) keeps every procedure. Each other mode reads exactly one of
+	/// <see cref="AmendedWithinCycles"/>, <see cref="AmendedWithinDays"/> or
+	/// <see cref="AmendedOnOrAfter"/>; the other two are ignored.
+	/// </summary>
+	public DepartureAmendmentFilter AmendmentFilter { get; init; } = DepartureAmendmentFilter.None;
+
+	/// <summary>
+	/// Read only when <see cref="AmendmentFilter"/> is <see cref="DepartureAmendmentFilter.Cycles"/>:
+	/// keep only procedures whose current amendment became effective within this many cycles,
+	/// counting the selected cycle as the first.
 	/// </summary>
 	/// <remarks>
 	/// <c>1</c> means "amended this cycle"; <c>4</c> means "amended in this cycle or any of the
@@ -51,6 +60,19 @@ public sealed record DepartureSettings
 	/// 28-day steps.
 	/// </remarks>
 	public int AmendedWithinCycles { get; init; }
+
+	/// <summary>
+	/// Read only when <see cref="AmendmentFilter"/> is <see cref="DepartureAmendmentFilter.Days"/>:
+	/// keep only procedures whose current amendment became effective on or after the run's local
+	/// date minus this many days.
+	/// </summary>
+	public int AmendedWithinDays { get; init; }
+
+	/// <summary>
+	/// Read only when <see cref="AmendmentFilter"/> is <see cref="DepartureAmendmentFilter.Date"/>:
+	/// keep only procedures whose current amendment became effective on or after this date.
+	/// </summary>
+	public DateOnly? AmendedOnOrAfter { get; init; }
 
 	/// <summary>
 	/// The Region of Interest, or <see langword="null"/> for the whole NASR database of

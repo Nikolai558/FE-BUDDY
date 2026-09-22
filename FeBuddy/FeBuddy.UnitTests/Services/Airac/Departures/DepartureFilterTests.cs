@@ -12,6 +12,9 @@ public class DepartureFilterTests
 {
 	private static readonly DateOnly CycleDate = new(2026, 9, 3);
 
+	/// <summary>A fixed "today" for the Days mode, well after <see cref="CycleDate"/>.</summary>
+	private static readonly DateOnly Today = new(2026, 9, 22);
+
 	private static readonly RegionOfInterest SoCal = new(33.0, -119.0, 35.0, -117.0);
 
 	private static DepartureSettings Settings() => new()
@@ -88,7 +91,7 @@ public class DepartureFilterTests
 		List<ServiceMessage> messages = new();
 
 		IReadOnlyList<DepartureProcedure> kept = DepartureFilter.ByProcedure(
-			new[] { thisCycle, dayBefore }, Settings() with { AmendedWithinCycles = 1 }, messages);
+			new[] { thisCycle, dayBefore }, Settings() with { AmendmentFilter = DepartureAmendmentFilter.Cycles, AmendedWithinCycles = 1 }, messages);
 
 		Assert.Equal(new[] { "NEW" }, kept.Select(p => p.CodeId));
 		Assert.Empty(messages);
@@ -106,7 +109,7 @@ public class DepartureFilterTests
 		List<ServiceMessage> messages = new();
 
 		IReadOnlyList<DepartureProcedure> kept = DepartureFilter.ByProcedure(
-			new[] { onCutoff, beforeCutoff }, Settings() with { AmendedWithinCycles = 4 }, messages);
+			new[] { onCutoff, beforeCutoff }, Settings() with { AmendmentFilter = DepartureAmendmentFilter.Cycles, AmendedWithinCycles = 4 }, messages);
 
 		Assert.Equal(new[] { "KEEP" }, kept.Select(p => p.CodeId));
 	}
@@ -119,7 +122,7 @@ public class DepartureFilterTests
 		List<ServiceMessage> messages = new();
 
 		IReadOnlyList<DepartureProcedure> kept = DepartureFilter.ByProcedure(
-			new[] { unreadable }, Settings() with { AmendedWithinCycles = 1 }, messages);
+			new[] { unreadable }, Settings() with { AmendmentFilter = DepartureAmendmentFilter.Cycles, AmendedWithinCycles = 1 }, messages);
 
 		Assert.Empty(kept);
 		ServiceMessage message = Assert.Single(messages);
@@ -137,6 +140,150 @@ public class DepartureFilterTests
 		IReadOnlyList<DepartureProcedure> kept = DepartureFilter.ByProcedure(new[] { unreadable }, Settings(), messages);
 
 		Assert.Single(kept);
+		Assert.Empty(messages);
+	}
+
+	[Fact]
+	public void amended_within_days_keeps_the_cutoff_day_and_drops_the_day_before()
+	{
+		// 2026-09-22 minus 90 days is 2026-06-24.
+		DateOnly cutoff = new(2026, 6, 24);
+		Assert.Equal(cutoff, Today.AddDays(-90));
+
+		DepartureProcedure onCutoff = Amended("KEEP", cutoff);
+		DepartureProcedure beforeCutoff = Amended("DROP", cutoff.AddDays(-1));
+		List<ServiceMessage> messages = new();
+
+		IReadOnlyList<DepartureProcedure> kept = DepartureFilter.ByProcedure(
+			new[] { onCutoff, beforeCutoff },
+			Settings() with { AmendmentFilter = DepartureAmendmentFilter.Days, AmendedWithinDays = 90 },
+			messages,
+			Today);
+
+		Assert.Equal(new[] { "KEEP" }, kept.Select(p => p.CodeId));
+		Assert.Empty(messages);
+	}
+
+	[Fact]
+	public void amended_within_days_counts_back_from_today_not_the_cycle_date()
+	{
+		// Amended on the cycle date, which is 19 days before Today: outside a 10-day window.
+		DepartureProcedure onCycleDate = Amended("OLD", CycleDate);
+		List<ServiceMessage> messages = new();
+
+		IReadOnlyList<DepartureProcedure> kept = DepartureFilter.ByProcedure(
+			new[] { onCycleDate },
+			Settings() with { AmendmentFilter = DepartureAmendmentFilter.Days, AmendedWithinDays = 10 },
+			messages,
+			Today);
+
+		Assert.Empty(kept);
+	}
+
+	[Fact]
+	public void amended_on_or_after_keeps_the_date_itself_and_drops_the_day_before()
+	{
+		DateOnly since = new(2026, 1, 1);
+		DepartureProcedure onDate = Amended("KEEP", since);
+		DepartureProcedure dayBefore = Amended("DROP", since.AddDays(-1));
+		List<ServiceMessage> messages = new();
+
+		IReadOnlyList<DepartureProcedure> kept = DepartureFilter.ByProcedure(
+			new[] { onDate, dayBefore },
+			Settings() with { AmendmentFilter = DepartureAmendmentFilter.Date, AmendedOnOrAfter = since },
+			messages,
+			Today);
+
+		Assert.Equal(new[] { "KEEP" }, kept.Select(p => p.CodeId));
+		Assert.Empty(messages);
+	}
+
+	[Fact]
+	public void date_mode_without_a_date_throws()
+	{
+		List<ServiceMessage> messages = new();
+
+		Assert.Throws<ArgumentException>(() => DepartureFilter.ByProcedure(
+			new[] { Amended("ANY", CycleDate) },
+			Settings() with { AmendmentFilter = DepartureAmendmentFilter.Date },
+			messages,
+			Today));
+	}
+
+	public static TheoryData<DepartureAmendmentFilter> ActiveAmendmentFilters => new()
+	{
+		DepartureAmendmentFilter.Cycles,
+		DepartureAmendmentFilter.Days,
+		DepartureAmendmentFilter.Date,
+	};
+
+	private static DepartureSettings WithAmendmentFilter(DepartureAmendmentFilter mode) => Settings() with
+	{
+		AmendmentFilter = mode,
+		AmendedWithinCycles = 1,
+		AmendedWithinDays = 1,
+		AmendedOnOrAfter = Today
+	};
+
+	[Theory]
+	[MemberData(nameof(ActiveAmendmentFilters))]
+	public void future_amendments_are_kept_in_every_mode(DepartureAmendmentFilter mode)
+	{
+		DepartureProcedure future = Amended("FUT", Today.AddDays(30));
+		List<ServiceMessage> messages = new();
+
+		IReadOnlyList<DepartureProcedure> kept = DepartureFilter.ByProcedure(
+			new[] { future }, WithAmendmentFilter(mode), messages, Today);
+
+		Assert.Equal(new[] { "FUT" }, kept.Select(p => p.CodeId));
+		Assert.Empty(messages);
+	}
+
+	[Theory]
+	[MemberData(nameof(ActiveAmendmentFilters))]
+	public void an_unparseable_amendment_date_is_dropped_with_a_warning_in_every_mode(DepartureAmendmentFilter mode)
+	{
+		DepartureProcedure unreadable = DepartureTestData.Procedure(
+			codeId: "BAD", amendmentEffectiveDate: null, amendmentEffectiveDateText: "NOT A DATE", cycleEffectiveDate: CycleDate);
+		List<ServiceMessage> messages = new();
+
+		IReadOnlyList<DepartureProcedure> kept = DepartureFilter.ByProcedure(
+			new[] { unreadable }, WithAmendmentFilter(mode), messages, Today);
+
+		Assert.Empty(kept);
+		ServiceMessage message = Assert.Single(messages);
+		Assert.Equal(LogLevel.Warning, message.Level);
+		Assert.Contains("NOT A DATE", message.Text);
+	}
+
+	[Fact]
+	public void a_missing_cycle_date_is_dropped_with_a_warning_in_cycles_mode()
+	{
+		DepartureProcedure noCycle = DepartureTestData.Procedure(
+			codeId: "NOCYC", amendmentEffectiveDate: CycleDate, cycleEffectiveDate: null);
+		List<ServiceMessage> messages = new();
+
+		IReadOnlyList<DepartureProcedure> kept = DepartureFilter.ByProcedure(
+			new[] { noCycle }, WithAmendmentFilter(DepartureAmendmentFilter.Cycles), messages, Today);
+
+		Assert.Empty(kept);
+		Assert.Equal(LogLevel.Warning, Assert.Single(messages).Level);
+	}
+
+	[Fact]
+	public void none_mode_keeps_every_procedure_whatever_its_amendment_values()
+	{
+		DepartureProcedure ancient = Amended("OLD", new DateOnly(1990, 1, 1));
+		DepartureProcedure recent = Amended("NEW", CycleDate);
+
+		// The per-mode values are set but must be ignored while the mode is None.
+		DepartureSettings settings = WithAmendmentFilter(DepartureAmendmentFilter.None);
+		List<ServiceMessage> messages = new();
+
+		IReadOnlyList<DepartureProcedure> kept = DepartureFilter.ByProcedure(
+			new[] { ancient, recent }, settings, messages, Today);
+
+		Assert.Equal(new[] { "OLD", "NEW" }, kept.Select(p => p.CodeId));
 		Assert.Empty(messages);
 	}
 

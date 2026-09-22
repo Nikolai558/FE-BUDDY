@@ -154,7 +154,11 @@ internal static class HarnessSettings
 			// Filters - every one applies to GeoJSON AND the alias file.
 			{ "IncludeObstacleDepartures", "Y" }, // N -> SIDs only
 			{ "ArtccFilter", "ZOB" },                // e.g. "ZLA,ZOA"; empty = every ARTCC
-			{ "AmendedWithinCycles", "0" },       // 0 = no filter; 1 = amended this cycle; 4 = this cycle or the 3 before
+			// AmendmentFilter "None" keeps every procedure. Each other mode reads only its own key:
+			// "Cycles" + AmendedWithinCycles (1 = amended this cycle; 4 = this cycle or the 3 before),
+			// "Days" + AmendedWithinDays (e.g. "90", counted back from today),
+			// "Date" + AmendedOnOrAfter (yyyy-MM-dd, e.g. "2026-01-01").
+			{ "AmendmentFilter", "None" },
 
 			// ROI. The four corner keys are read only when FilterByRoi is "Y". RoiMode "Airport"
 			// keeps every departure of an airport inside the box; "Waypoint" keeps any departure

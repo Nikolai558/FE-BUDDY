@@ -32,6 +32,9 @@ public sealed class DeparturesViewModel : SubServiceSettingsViewModel, ISubServi
     private const string PrecisionKey = "Services.AiracService.CoordinatePrecision";
     private const string CrcClassName = "Departures";
     private const string OutputRootFolderName = "Departure Procedures";
+    private const string AmendmentDateFormat = "yyyy-MM-dd";
+    private const int MaxAmendedWithinCycles = 1000;
+    private const int MaxAmendedWithinDays = 36500;
 
     private const string CrcDefaultsIncompleteMessage =
         "Some CRC ERAM default values are empty or invalid. Fix the marked boxes, or untick Include on that panel.";
@@ -52,6 +55,10 @@ public sealed class DeparturesViewModel : SubServiceSettingsViewModel, ISubServi
     private string _swLon = string.Empty;
     private string _neLat = string.Empty;
     private string _neLon = string.Empty;
+    private DepartureAmendmentFilter _amendmentFilter = DepartureAmendmentFilter.None;
+    private string _amendedWithinCycles = "1";
+    private string _amendedWithinDays = "30";
+    private DateTime? _amendedOnOrAfter;
     private HashSet<string> _savedArtccFilter = new(StringComparer.OrdinalIgnoreCase);
     private bool _suppressArtccChanges;
 
@@ -202,6 +209,47 @@ public sealed class DeparturesViewModel : SubServiceSettingsViewModel, ISubServi
 
     /// <summary>Deselects every ARTCC, which means every ARTCC is included.</summary>
     public ICommand ClearArtccsCommand { get; }
+
+    /// <summary>Whether procedures are kept whatever their amendment date.</summary>
+    public bool AmendmentAny
+    {
+        get => _amendmentFilter == DepartureAmendmentFilter.None;
+        set { if (value) SetAmendmentFilter(DepartureAmendmentFilter.None); }
+    }
+
+    /// <summary>Whether only procedures amended within the last <see cref="AmendedWithinCycles"/> cycles are kept.</summary>
+    public bool AmendmentByCycles
+    {
+        get => _amendmentFilter == DepartureAmendmentFilter.Cycles;
+        set { if (value) SetAmendmentFilter(DepartureAmendmentFilter.Cycles); }
+    }
+
+    /// <summary>Whether only procedures amended within the last <see cref="AmendedWithinDays"/> days are kept.</summary>
+    public bool AmendmentByDays
+    {
+        get => _amendmentFilter == DepartureAmendmentFilter.Days;
+        set { if (value) SetAmendmentFilter(DepartureAmendmentFilter.Days); }
+    }
+
+    /// <summary>Whether only procedures amended on or after <see cref="AmendedOnOrAfter"/> are kept.</summary>
+    public bool AmendmentByDate
+    {
+        get => _amendmentFilter == DepartureAmendmentFilter.Date;
+        set { if (value) SetAmendmentFilter(DepartureAmendmentFilter.Date); }
+    }
+
+    /// <summary>How many cycles back the amendment may be; 1 means amended in the selected cycle.</summary>
+    public string AmendedWithinCycles { get => _amendedWithinCycles; set { if (SetProperty(ref _amendedWithinCycles, value)) MarkDirty(); } }
+
+    /// <summary>How many days back from today the amendment may be.</summary>
+    public string AmendedWithinDays { get => _amendedWithinDays; set { if (SetProperty(ref _amendedWithinDays, value)) MarkDirty(); } }
+
+    /// <summary>The earliest effective date a procedure's current amendment may have.</summary>
+    public DateTime? AmendedOnOrAfter
+    {
+        get => _amendedOnOrAfter;
+        set { if (SetProperty(ref _amendedOnOrAfter, value?.Date)) MarkDirty(); }
+    }
 
     // ================= region of interest =================
 
@@ -556,9 +604,7 @@ public sealed class DeparturesViewModel : SubServiceSettingsViewModel, ISubServi
             ["GenerateAliasFile"] = YesNo(GenerateAliasFile),
             ["IncludeObstacleDepartures"] = YesNo(IncludeObstacleDepartures),
             ["ArtccFilter"] = string.Join(',', SelectedArtccs()),
-            // The amendment-date filter is built in Core; the UI for it is deliberately deferred,
-            // so the run always asks for every amendment.
-            ["AmendedWithinCycles"] = "0",
+            ["AmendmentFilter"] = _amendmentFilter.ToString(),
             ["IncludeFebCustomProperties"] = YesNo(IncludeFebCustomProperties),
             ["FebProperties"] = string.Join(',', FebProperties.Where(p => p.IsSelected).Select(p => p.Name)),
             ["IncludeCrcLineDefaults"] = YesNo(IncludeCrcLineDefaults),
@@ -569,6 +615,20 @@ public sealed class DeparturesViewModel : SubServiceSettingsViewModel, ISubServi
             ["CoordinatePrecision"] = ResolveCoordinatePrecision().ToString(CultureInfo.InvariantCulture),
             ["AddFeBuddyOutputFolder"] = YesNo(addFeBuddyOutputFolder),
         };
+
+        // Only the active mode's value; the parser reads that key alone and warns about any other.
+        switch (_amendmentFilter)
+        {
+            case DepartureAmendmentFilter.Cycles:
+                s["AmendedWithinCycles"] = AmendedWithinCycles.Trim();
+                break;
+            case DepartureAmendmentFilter.Days:
+                s["AmendedWithinDays"] = AmendedWithinDays.Trim();
+                break;
+            case DepartureAmendmentFilter.Date when AmendedOnOrAfter is { } onOrAfter:
+                s["AmendedOnOrAfter"] = onOrAfter.ToString(AmendmentDateFormat, CultureInfo.InvariantCulture);
+                break;
+        }
 
         if (OverrideRoi)
         {
@@ -693,6 +753,18 @@ public sealed class DeparturesViewModel : SubServiceSettingsViewModel, ISubServi
         _neLat = Get("Roi.OverrideCoordindates.NeLat") ?? string.Empty;
         _neLon = Get("Roi.OverrideCoordindates.NeLon") ?? string.Empty;
 
+        // Filter by name only; anything else (a number, a typo) falls back to no filter.
+        string? savedFilter = Get("Amendment.Filter")?.Trim();
+        _amendmentFilter = Enum.GetValues<DepartureAmendmentFilter>()
+            .FirstOrDefault(f => f.ToString().Equals(savedFilter, StringComparison.OrdinalIgnoreCase));
+        _amendedWithinCycles = Get("Amendment.WithinCycles") ?? "1";
+        _amendedWithinDays = Get("Amendment.WithinDays") ?? "30";
+        _amendedOnOrAfter = DateTime.TryParseExact(
+            Get("Amendment.OnOrAfter")?.Trim(), AmendmentDateFormat, CultureInfo.InvariantCulture,
+            DateTimeStyles.None, out DateTime onOrAfter)
+            ? onOrAfter
+            : null;
+
         LoadCrcRow("Line", LineDefaults[0]);
         LoadCrcRow("Symbol", SymbolDefaults[0]);
         LoadCrcRow("Text", TextDefaults[0]);
@@ -722,6 +794,10 @@ public sealed class DeparturesViewModel : SubServiceSettingsViewModel, ISubServi
         Set("Roi.OverrideCoordindates.SwLon", SwLon);
         Set("Roi.OverrideCoordindates.NeLat", NeLat);
         Set("Roi.OverrideCoordindates.NeLon", NeLon);
+        Set("Amendment.Filter", _amendmentFilter.ToString());
+        Set("Amendment.WithinCycles", AmendedWithinCycles);
+        Set("Amendment.WithinDays", AmendedWithinDays);
+        Set("Amendment.OnOrAfter", AmendedOnOrAfter?.ToString(AmendmentDateFormat, CultureInfo.InvariantCulture) ?? string.Empty);
 
         SaveCrcRow("Line", LineDefaults[0]);
         SaveCrcRow("Symbol", SymbolDefaults[0]);
@@ -755,6 +831,8 @@ public sealed class DeparturesViewModel : SubServiceSettingsViewModel, ISubServi
             validation.Add(CrcDefaultsIncompleteMessage);
         }
 
+        ValidateAmendmentFilter(validation);
+
         if (!OverrideRoi)
         {
             return;
@@ -787,6 +865,87 @@ public sealed class DeparturesViewModel : SubServiceSettingsViewModel, ISubServi
     }
 
     // ================= helpers =================
+
+    /// <summary>Checks only the active amendment mode's input; the others are kept but never read.</summary>
+    /// <param name="validation">The validation being built.</param>
+    private void ValidateAmendmentFilter(ServiceValidation validation)
+    {
+        switch (_amendmentFilter)
+        {
+            case DepartureAmendmentFilter.Cycles:
+                if (!TryParseWholeNumber(AmendedWithinCycles, 1, MaxAmendedWithinCycles, out _))
+                {
+                    validation.AddField(nameof(AmendedWithinCycles),
+                        $"Enter a whole number of cycles from 1 to {MaxAmendedWithinCycles}.");
+                }
+
+                break;
+
+            case DepartureAmendmentFilter.Days:
+                if (!TryParseWholeNumber(AmendedWithinDays, 1, MaxAmendedWithinDays, out _))
+                {
+                    validation.AddField(nameof(AmendedWithinDays),
+                        $"Enter a whole number of days from 1 to {MaxAmendedWithinDays}.");
+                }
+
+                break;
+
+            case DepartureAmendmentFilter.Date:
+                if (AmendedOnOrAfter is null)
+                {
+                    validation.AddField(nameof(AmendedOnOrAfter),
+                        "Pick the date the amendment must be on or after.");
+                }
+
+                break;
+        }
+    }
+
+    private static bool TryParseWholeNumber(string? text, int min, int max, out int value) =>
+        int.TryParse(text?.Trim(), NumberStyles.None, CultureInfo.InvariantCulture, out value)
+        && value >= min
+        && value <= max;
+
+    /// <summary>The amendment part of the "Includes" sentence; empty when there is no amendment filter.</summary>
+    /// <returns>e.g. ", amended in the last 4 cycles".</returns>
+    private string DescribeAmendmentFilter()
+    {
+        switch (_amendmentFilter)
+        {
+            case DepartureAmendmentFilter.Cycles:
+                return TryParseWholeNumber(AmendedWithinCycles, 1, MaxAmendedWithinCycles, out int cycles) && cycles == 1
+                    ? ", amended this cycle"
+                    : $", amended in the last {AmendedWithinCycles.Trim()} cycles";
+
+            case DepartureAmendmentFilter.Days:
+                return TryParseWholeNumber(AmendedWithinDays, 1, MaxAmendedWithinDays, out int days) && days == 1
+                    ? ", amended in the last day"
+                    : $", amended in the last {AmendedWithinDays.Trim()} days";
+
+            case DepartureAmendmentFilter.Date:
+                return AmendedOnOrAfter is { } onOrAfter
+                    ? $", amended on or after {onOrAfter.ToString(AmendmentDateFormat, CultureInfo.InvariantCulture)}"
+                    : ", amended on or after a date not yet picked";
+
+            default:
+                return string.Empty;
+        }
+    }
+
+    private void SetAmendmentFilter(DepartureAmendmentFilter filter)
+    {
+        if (_amendmentFilter == filter)
+        {
+            return;
+        }
+
+        _amendmentFilter = filter;
+        OnPropertyChanged(nameof(AmendmentAny));
+        OnPropertyChanged(nameof(AmendmentByCycles));
+        OnPropertyChanged(nameof(AmendmentByDays));
+        OnPropertyChanged(nameof(AmendmentByDate));
+        MarkDirty();
+    }
 
     private static IEnumerable<SubServiceMessageGroup> GroupByLevel(IReadOnlyList<ServiceMessage> messages) =>
         messages
@@ -893,7 +1052,7 @@ public sealed class DeparturesViewModel : SubServiceSettingsViewModel, ISubServi
             _ => string.Empty,
         };
 
-        return $"{kinds}, {where}{region}.{outputs}";
+        return $"{kinds}, {where}{region}{DescribeAmendmentFilter()}.{outputs}";
     }
 
     private string DescribeRoi()
@@ -1107,6 +1266,13 @@ public sealed class DeparturesViewModel : SubServiceSettingsViewModel, ISubServi
         OnPropertyChanged(nameof(NeLat));
         OnPropertyChanged(nameof(NeLon));
         OnPropertyChanged(nameof(RoiFallbackHint));
+        OnPropertyChanged(nameof(AmendmentAny));
+        OnPropertyChanged(nameof(AmendmentByCycles));
+        OnPropertyChanged(nameof(AmendmentByDays));
+        OnPropertyChanged(nameof(AmendmentByDate));
+        OnPropertyChanged(nameof(AmendedWithinCycles));
+        OnPropertyChanged(nameof(AmendedWithinDays));
+        OnPropertyChanged(nameof(AmendedOnOrAfter));
     }
 
     private static HashSet<string> ParseList(string? saved) =>

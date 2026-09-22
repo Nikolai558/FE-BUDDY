@@ -118,6 +118,13 @@
         </Style.Triggers>
     </Style>
 
+    <!-- Card titles ("CRC ERAM DEFAULTS", the Preview page's "General"). The one place their
+         look is set: every card title is a ctl:SectionHeader, which uses this style. ~10% larger
+         than Text.Label so a card's title sits above the panel and field labels inside it. -->
+    <Style x:Key="Text.SectionHeader" TargetType="TextBlock" BasedOn="{StaticResource Text.Label}">
+        <Setter Property="FontSize" Value="11.5" />
+    </Style>
+
     <!-- Caption / helper text under a control. -->
     <Style x:Key="Text.Caption" TargetType="TextBlock" BasedOn="{StaticResource Text.Body}">
         <Setter Property="FontSize" Value="11.5" />

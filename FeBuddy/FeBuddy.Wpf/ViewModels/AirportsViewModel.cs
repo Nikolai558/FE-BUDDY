@@ -328,17 +328,17 @@ public sealed class AirportsViewModel : SubServiceSettingsViewModel, ISubService
     public override IReadOnlyList<ServiceReviewSection> BuildReviewSummary()
     {
         List<string> geojsonFiles = new();
+        if (EmitLines) geojsonFiles.Add("Runway lines");
         if (EmitSymbols) geojsonFiles.Add("Symbols");
         if (EmitText) geojsonFiles.Add("Text");
-        if (EmitLines) geojsonFiles.Add("Runway lines");
 
         // Same order and names as the GeoJSON row above.
         List<string> crcDefaults = new();
         if (GenerateGeojson)
         {
+            if (IncludeCrcLineDefaults && EmitLines) crcDefaults.Add("Runway lines");
             if (IncludeCrcSymbolDefaults && EmitSymbols) crcDefaults.Add("Symbols");
             if (IncludeCrcTextDefaults && EmitText) crcDefaults.Add("Text");
-            if (IncludeCrcLineDefaults && EmitLines) crcDefaults.Add("Runway lines");
         }
 
         string[] selectedProperties = FebProperties.Where(p => p.IsSelected).Select(p => p.Name).ToArray();

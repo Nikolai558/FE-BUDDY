@@ -49,6 +49,13 @@
                                     TextDescription="A label per point showing its identifier."
                                     Footnote="Files are written to Departure Procedures\&lt;ARTCC&gt;\&lt;airport&gt;\ as &lt;airport&gt;_&lt;procedure&gt;_Lines/Symbols/Text.geojson." />
 
+            <!-- ============ FE-Buddy properties ============ -->
+            <cards:FebPropertiesCard IsEnabled="{Binding GenerateGeojson}" />
+
+            <!-- ============ CRC ERAM defaults ============ -->
+            <cards:CrcDefaultsCard IsEnabled="{Binding GenerateGeojson}"
+                                   LinesTitle="Departures — Lines" SymbolsTitle="Departures — Symbols" TextTitle="Departures — Text" />
+
             <!-- ============ procedures ============ -->
             <ctl:Card Header="Procedures">
                 <StackPanel>
@@ -111,13 +118,6 @@
                                Text="Filters on the date the procedure's current amendment became effective. Days count back from today." />
                 </StackPanel>
             </ctl:Card>
-
-            <!-- ============ FE-Buddy properties ============ -->
-            <cards:FebPropertiesCard IsEnabled="{Binding GenerateGeojson}" />
-
-            <!-- ============ CRC ERAM defaults ============ -->
-            <cards:CrcDefaultsCard IsEnabled="{Binding GenerateGeojson}"
-                                   LinesTitle="Departures — Lines" SymbolsTitle="Departures — Symbols" TextTitle="Departures — Text" />
 
             <!-- ============ region of interest ============ -->
             <cards:RoiOverrideCard>

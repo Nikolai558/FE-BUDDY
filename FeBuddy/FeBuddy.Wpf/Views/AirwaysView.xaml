@@ -50,6 +50,12 @@
             <!-- ============ which GeoJSON files ============ -->
             <cards:GeojsonFilesCard IsEnabled="{Binding IsGeojsonOutputOn}" />
 
+            <!-- ============ FE-Buddy properties ============ -->
+            <cards:FebPropertiesCard IsEnabled="{Binding IsGeojsonOutputOn}" />
+
+            <!-- ============ CRC ERAM defaults (7.4) ============ -->
+            <cards:CrcDefaultsCard IsEnabled="{Binding IsGeojsonOutputOn}" />
+
             <!-- ============ designations (7.4) ============ -->
             <ctl:Card Header="Designations to Include">
                 <StackPanel>
@@ -71,9 +77,6 @@
                 </StackPanel>
             </ctl:Card>
 
-            <!-- ============ FE-Buddy properties ============ -->
-            <cards:FebPropertiesCard IsEnabled="{Binding IsGeojsonOutputOn}" />
-
             <!-- ============ buffer airway waypoints ============ -->
             <ctl:Card Header="Buffer Airway Waypoints" IsEnabled="{Binding IsGeojsonOutputOn}">
                 <StackPanel>
@@ -82,9 +85,6 @@
                     <CheckBox Content="Buffer airway waypoints" IsChecked="{Binding BufferAirwayWaypoints}" />
                 </StackPanel>
             </ctl:Card>
-
-            <!-- ============ CRC ERAM defaults (7.4) ============ -->
-            <cards:CrcDefaultsCard IsEnabled="{Binding IsGeojsonOutputOn}" />
 
             <!-- ============ aliases (7.5) ============ -->
             <ctl:Card Header="Aliases">
@@ -102,9 +102,6 @@
                 </StackPanel>
             </ctl:Card>
 
-            <!-- ============ region of interest (7.7) ============ -->
-            <cards:RoiOverrideCard />
-
             <!-- ============ antimeridian (7.8) ============ -->
             <ctl:Card Header="Split GeoJSON at the Antimeridian" IsEnabled="{Binding IsGeojsonOutputOn}">
                 <StackPanel>
@@ -114,5 +111,7 @@
                 </StackPanel>
             </ctl:Card>
 
+            <!-- ============ region of interest (7.7) ============ -->
+            <cards:RoiOverrideCard />
     </StackPanel>
 </UserControl>

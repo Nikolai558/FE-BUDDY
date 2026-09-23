@@ -490,13 +490,13 @@ public sealed class DeparturesViewModel : SubServiceSettingsViewModel, ISubServi
         {
             new ServiceReviewRow("Outputs", string.Join(", ", outputs)),
             new ServiceReviewRow("GeoJSON files", GenerateGeojson ? string.Join(", ", geojsonFiles) : "No"),
-            new ServiceReviewRow("Includes", DescribeScope(selectedArtccs)),
-            new ServiceReviewRow("Region of interest", DescribeRoi()),
             new ServiceReviewRow("FE-Buddy properties",
                 IncludeFebCustomProperties && selectedProperties.Length > 0
                     ? string.Join(", ", selectedProperties)
                     : "No"),
             new ServiceReviewRow("CRC ERAM defaults", crcDefaults.Count > 0 ? string.Join(", ", crcDefaults) : "None"),
+            new ServiceReviewRow("Includes", DescribeScope(selectedArtccs)),
+            new ServiceReviewRow("Region of interest", DescribeRoi()),
         };
 
         return new[] { new ServiceReviewSection("Departures", rows) };

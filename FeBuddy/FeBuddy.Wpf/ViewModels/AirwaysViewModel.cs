@@ -531,16 +531,16 @@ public sealed class AirwaysViewModel : SubServiceSettingsViewModel, ISubServiceR
 
         ServiceReviewRow[] rows =
         {
-            new ServiceReviewRow("Includes", includes),
-            new ServiceReviewRow("Excluded designations", string.IsNullOrEmpty(excluded) ? "none" : excluded),
             new ServiceReviewRow("GeoJSON output", OutputBy.ToString()),
             new ServiceReviewRow("File kinds", fileKinds.Count > 0 ? string.Join(", ", fileKinds) : "none"),
-            new ServiceReviewRow("Buffer waypoints", BufferAirwayWaypoints ? "Yes" : "No"),
             new ServiceReviewRow("FE-Buddy properties", febProperties),
             new ServiceReviewRow("CRC ERAM defaults", crcDefaults.Count > 0 ? string.Join(", ", crcDefaults) : "None"),
+            new ServiceReviewRow("Includes", includes),
+            new ServiceReviewRow("Excluded designations", string.IsNullOrEmpty(excluded) ? "none" : excluded),
+            new ServiceReviewRow("Buffer waypoints", BufferAirwayWaypoints ? "Yes" : "No"),
             new ServiceReviewRow("Alias file", aliasFile),
-            new ServiceReviewRow("Region of interest", regionOfInterest),
             new ServiceReviewRow("Split at antimeridian", SplitAtAntimeridian ? "Yes" : "No"),
+            new ServiceReviewRow("Region of interest", regionOfInterest),
         };
 
         return new[] { new ServiceReviewSection("Airways", rows) };

@@ -45,12 +45,11 @@
 
         <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
                       infra:WheelScroll.Amplify="3">
-            <StackPanel Margin="28,16,28,0">
+            <StackPanel Margin="28,34,28,8">
 
                 <!-- ================= 1. UPDATES ================= -->
-                <Border Style="{StaticResource Card}" Margin="0,18,0,0">
+                <ctl:Card Header="Updates">
                     <StackPanel>
-                        <ctl:SectionHeader Label="UPDATES" />
                         <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
                                    Foreground="{StaticResource Brush.Warn}"
                                    Text="Do not select anything but Stable unless a developer instructs you to, or you are one." />
@@ -72,12 +71,11 @@
                                     Command="{Binding RollbackCommand}" Margin="8,0,0,0" />
                         </StackPanel>
                     </StackPanel>
-                </Border>
+                </ctl:Card>
 
                 <!-- ================= 2. FACILITY PROFILE ================= -->
-                <Border Style="{StaticResource Card}" Margin="0,16,0,0">
+                <ctl:Card Header="Facility Profile">
                     <StackPanel>
-                        <ctl:SectionHeader Label="FACILITY PROFILE" />
 
                         <TextBlock Style="{StaticResource Text.Prose}"
                                    Text="{Binding FacilityWaitingMessage}" Margin="0,4,0,0"
@@ -108,12 +106,11 @@
                         <CheckBox Content="Add a FE-Buddy_Output folder inside that directory"
                                   IsChecked="{Binding AddFeBuddyOutputFolder}" Margin="0,8,0,0" />
                     </StackPanel>
-                </Border>
+                </ctl:Card>
 
                 <!-- ================= 3. DEFAULT REGION OF INTEREST ================= -->
-                <Border Style="{StaticResource Card}" Margin="0,16,0,0">
+                <ctl:Card Header="Default Region of Interest">
                     <StackPanel>
-                        <ctl:SectionHeader Label="DEFAULT REGION OF INTEREST" />
                         <TextBlock Text="{Binding Source={x:Static vm:SettingsViewModel.RoiExplainer}}"
                                    Style="{StaticResource Text.Prose}" Margin="0,4,0,10" />
                         <DockPanel>
@@ -125,12 +122,11 @@
                                        FontFamily="{StaticResource Font.Mono}" VerticalAlignment="Center" />
                         </DockPanel>
                     </StackPanel>
-                </Border>
+                </ctl:Card>
 
                 <!-- ================= 4. GEOJSON FILES ================= -->
-                <Border Style="{StaticResource Card}" Margin="0,16,0,24">
+                <ctl:Card Header="GeoJSON Files">
                     <StackPanel>
-                        <ctl:SectionHeader Label="GEOJSON FILES" />
 
                         <TextBlock Text="FE-Buddy properties" Style="{StaticResource Text.Label}" Margin="0,4,0,0" />
                         <TextBlock Text="{Binding Source={x:Static vm:SettingsViewModel.FebPropertiesDescription}}"
@@ -171,7 +167,7 @@
                                    Text="Developer mode is on, so GeoJSON is pretty printed whatever is chosen here."
                                    Visibility="{Binding IsDevModeForcingPrettyPrint, Converter={StaticResource BoolToVis}}" />
                     </StackPanel>
-                </Border>
+                </ctl:Card>
             </StackPanel>
         </ScrollViewer>
     </Grid>

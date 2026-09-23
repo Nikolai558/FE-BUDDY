@@ -58,9 +58,8 @@
                        Visibility="{Binding ValidationError, Converter={StaticResource StringToVis}}" />
 
             <!-- ============ outputs ============ -->
-            <Border Style="{StaticResource Card}">
+            <ctl:Card Header="Outputs">
                 <StackPanel>
-                    <ctl:SectionHeader Label="OUTPUTS" />
                     <CheckBox Content="GeoJSON files" IsChecked="{Binding GenerateGeojson}" Margin="0,4,0,0" />
                     <TextBlock Style="{StaticResource Text.Prose}" Margin="20,4,0,0"
                                Text="Writes the airport and runway GeoJSON files selected below." />
@@ -71,12 +70,11 @@
                                MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
                                Text="At least one output must stay on. To produce nothing for Airports, deselect Airports on the General tab." />
                 </StackPanel>
-            </Border>
+            </ctl:Card>
 
             <!-- ============ which GeoJSON files ============ -->
-            <Border Style="{StaticResource Card}" Margin="0,16,0,0" IsEnabled="{Binding GenerateGeojson}">
+            <ctl:Card Header="What Files Do You Want?" IsEnabled="{Binding GenerateGeojson}">
                 <StackPanel>
-                    <ctl:SectionHeader Label="WHAT FILES DO YOU WANT?" />
                     <CheckBox Content="Airports — Symbols" IsChecked="{Binding EmitAirportSymbols}" Margin="0,4,0,0" />
                     <TextBlock Style="{StaticResource Text.Prose}" Margin="20,4,0,0"
                                Text="One symbol per airport, placed at its reference point." />
@@ -87,12 +85,11 @@
                     <TextBlock Style="{StaticResource Text.Prose}" Margin="20,4,0,0"
                                Text="One MultiLineString per airport holding that airport's runway centrelines." />
                 </StackPanel>
-            </Border>
+            </ctl:Card>
 
             <!-- ============ FE-Buddy properties ============ -->
-            <Border Style="{StaticResource Card}" Margin="0,16,0,0" IsEnabled="{Binding GenerateGeojson}">
+            <ctl:Card Header="FE-Buddy Properties" IsEnabled="{Binding GenerateGeojson}">
                 <StackPanel>
-                    <ctl:SectionHeader Label="FE-BUDDY PROPERTIES" />
                     <CheckBox Content="Include FE-Buddy Properties, when available."
                               IsChecked="{Binding IncludeFebCustomProperties}" Margin="0,4,0,0" />
                     <TextBlock Text="{Binding FebPropertiesDescription}" Style="{StaticResource Text.Prose}"
@@ -111,12 +108,11 @@
                         </ItemsControl>
                     </StackPanel>
                 </StackPanel>
-            </Border>
+            </ctl:Card>
 
             <!-- ============ CRC ERAM defaults ============ -->
-            <Border Style="{StaticResource Card}" Margin="0,16,0,0" IsEnabled="{Binding GenerateGeojson}">
+            <ctl:Card Header="CRC ERAM Defaults" IsEnabled="{Binding GenerateGeojson}">
                 <StackPanel>
-                    <ctl:SectionHeader Label="CRC ERAM DEFAULTS" />
                     <!-- Lines | Symbols | Text side by side; the WrapPanel stacks them when the
                          window is too narrow for all three, so no panel is ever clipped. A panel
                          shows only while its file is being produced (picked above). Its Include box
@@ -253,12 +249,11 @@
                         </Border>
                     </WrapPanel>
                 </StackPanel>
-            </Border>
+            </ctl:Card>
 
             <!-- ============ region of interest ============ -->
-            <Border Style="{StaticResource Card}" Margin="0,16,0,0" IsEnabled="{Binding GenerateGeojson}">
+            <ctl:Card Header="Region of Interest" IsEnabled="{Binding GenerateGeojson}">
                 <StackPanel>
-                    <ctl:SectionHeader Label="REGION OF INTEREST" />
                     <CheckBox Content="Override the default ROI for Airports" IsChecked="{Binding OverrideRoi}" Margin="0,4,0,0" />
                     <TextBlock Text="{Binding RoiFallbackHint}" Style="{StaticResource Text.Caption}" TextWrapping="Wrap"
                                Margin="20,4,0,0"
@@ -288,7 +283,7 @@
                                 Margin="0,8,0,0" Command="{Binding PickRoiOnMapCommand}" />
                     </StackPanel>
                 </StackPanel>
-            </Border>
+            </ctl:Card>
 
         <Rectangle Height="8" Fill="Transparent" />
     </StackPanel>

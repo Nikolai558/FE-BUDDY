@@ -65,7 +65,7 @@
             <ScrollViewer VerticalScrollBarVisibility="Auto">
                 <StackPanel Margin="16">
 
-                    <ctl:SectionHeader Label="LAYERS" />
+                    <ctl:SectionHeader Label="Layers" />
                     <TextBlock Style="{StaticResource Text.Body}" Margin="0,4,0,8"
                                Text="Load one or more GeoJSON files. A malformed or empty file is skipped and reported; the others still load."
                                Visibility="{Binding HasLoadedFiles, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
@@ -94,7 +94,7 @@
 
                     <Border Style="{StaticResource Divider}" Margin="0,16" />
 
-                    <ctl:SectionHeader Label="DEFAULT REGION OF INTEREST" />
+                    <ctl:SectionHeader Label="Default Region of Interest" />
                     <TextBlock Text="{Binding DefaultRoiSummary}" Style="{StaticResource Text.Caption}"
                                FontFamily="{StaticResource Font.Mono}" TextWrapping="Wrap" Margin="0,4,0,10" />
                     <!-- No fixed Height: the sidebar's own ScrollViewer handles overflow, and a

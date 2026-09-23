@@ -58,9 +58,8 @@
                        Visibility="{Binding ValidationError, Converter={StaticResource StringToVis}}" />
 
             <!-- ============ outputs ============ -->
-            <Border Style="{StaticResource Card}">
+            <ctl:Card Header="Outputs">
                 <StackPanel>
-                    <ctl:SectionHeader Label="OUTPUTS" />
                     <CheckBox Content="GeoJSON files" IsChecked="{Binding GenerateGeojson}" Margin="0,4,0,0" />
                     <TextBlock Style="{StaticResource Text.Prose}" Margin="20,4,0,0"
                                Text="Writes the departure procedure GeoJSON files selected below." />
@@ -71,12 +70,11 @@
                                MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
                                Text="At least one output must stay on. To produce nothing for Departures, deselect Departures on the General tab." />
                 </StackPanel>
-            </Border>
+            </ctl:Card>
 
             <!-- ============ which GeoJSON files ============ -->
-            <Border Style="{StaticResource Card}" Margin="0,16,0,0" IsEnabled="{Binding GenerateGeojson}">
+            <ctl:Card Header="What Files Do You Want?" IsEnabled="{Binding GenerateGeojson}">
                 <StackPanel>
-                    <ctl:SectionHeader Label="WHAT FILES DO YOU WANT?" />
                     <CheckBox Content="Lines" IsChecked="{Binding EmitLines}" Margin="0,4,0,0" />
                     <TextBlock Style="{StaticResource Text.Prose}" Margin="20,4,0,0"
                                Text="One line feature per airport and procedure, shared segments drawn once." />
@@ -90,12 +88,11 @@
                                MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
                                Text="Files are written to Departure Procedures\&lt;ARTCC&gt;\&lt;airport&gt;\ as &lt;airport&gt;_&lt;procedure&gt;_Lines/Symbols/Text.geojson." />
                 </StackPanel>
-            </Border>
+            </ctl:Card>
 
             <!-- ============ procedures ============ -->
-            <Border Style="{StaticResource Card}" Margin="0,16,0,0">
+            <ctl:Card Header="Procedures">
                 <StackPanel>
-                    <ctl:SectionHeader Label="PROCEDURES" />
                     <CheckBox Content="Include obstacle departures (ODPs)" IsChecked="{Binding IncludeObstacleDepartures}" Margin="0,4,0,0" />
 
                     <TextBlock Text="ARTCCs" Style="{StaticResource Text.Label}" Margin="0,14,0,0" />
@@ -154,12 +151,11 @@
                     <TextBlock Style="{StaticResource Text.Prose}" Margin="0,8,0,0"
                                Text="Filters on the date the procedure's current amendment became effective. Days count back from today." />
                 </StackPanel>
-            </Border>
+            </ctl:Card>
 
             <!-- ============ FE-Buddy properties ============ -->
-            <Border Style="{StaticResource Card}" Margin="0,16,0,0" IsEnabled="{Binding GenerateGeojson}">
+            <ctl:Card Header="FE-Buddy Properties" IsEnabled="{Binding GenerateGeojson}">
                 <StackPanel>
-                    <ctl:SectionHeader Label="FE-BUDDY PROPERTIES" />
                     <CheckBox Content="Include FE-Buddy Properties, when available."
                               IsChecked="{Binding IncludeFebCustomProperties}" Margin="0,4,0,0" />
                     <TextBlock Text="{Binding FebPropertiesDescription}" Style="{StaticResource Text.Prose}"
@@ -178,12 +174,11 @@
                         </ItemsControl>
                     </StackPanel>
                 </StackPanel>
-            </Border>
+            </ctl:Card>
 
             <!-- ============ CRC ERAM defaults ============ -->
-            <Border Style="{StaticResource Card}" Margin="0,16,0,0" IsEnabled="{Binding GenerateGeojson}">
+            <ctl:Card Header="CRC ERAM Defaults" IsEnabled="{Binding GenerateGeojson}">
                 <StackPanel>
-                    <ctl:SectionHeader Label="CRC ERAM DEFAULTS" />
                     <!-- Lines | Symbols | Text side by side; the WrapPanel stacks them when the
                          window is too narrow for all three, so no panel is ever clipped. A panel
                          shows only while its file is being produced (picked above). Its Include box
@@ -320,12 +315,11 @@
                         </Border>
                     </WrapPanel>
                 </StackPanel>
-            </Border>
+            </ctl:Card>
 
             <!-- ============ region of interest ============ -->
-            <Border Style="{StaticResource Card}" Margin="0,16,0,0">
+            <ctl:Card Header="Region of Interest">
                 <StackPanel>
-                    <ctl:SectionHeader Label="REGION OF INTEREST" />
                     <CheckBox Content="Override the default ROI for Departures" IsChecked="{Binding OverrideRoi}" Margin="0,4,0,0" />
                     <TextBlock Text="{Binding RoiFallbackHint}" Style="{StaticResource Text.Caption}" TextWrapping="Wrap"
                                Margin="20,4,0,0"
@@ -365,7 +359,7 @@
                                    Text="The region filters both the GeoJSON files and the alias file." />
                     </StackPanel>
                 </StackPanel>
-            </Border>
+            </ctl:Card>
 
         <Rectangle Height="8" Fill="Transparent" />
     </StackPanel>

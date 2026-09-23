@@ -1,11 +1,13 @@
 <!--
     SectionHeader  -  the tiny uppercase label that titles every block, matching
-    the reference site's "ONLINE ATC" / "TOP 3 CONTROLLERS" pattern.
+    the reference site's "ONLINE ATC" / "TOP 3 CONTROLLERS" pattern. Every card title is
+    one (ctl:Card draws its Header with it); use it directly only for a title that is not
+    on a card, such as a sidebar or nav group.
 
     Usage:
-        <ctl:SectionHeader Label="OUTPUT MODE" />
+        <ctl:SectionHeader Label="Output Mode" />
 
-        <ctl:SectionHeader Label="RECENT OUTPUT">
+        <ctl:SectionHeader Label="Recent Output">
             <ctl:SectionHeader.Aside>
                 <Button Style="{StaticResource Button.Subtle}" Content="Open folder" />
             </ctl:SectionHeader.Aside>
@@ -13,8 +15,9 @@
 
     Aside (if set) is right-aligned on the same row as the label.
 
-    The label's look comes from the Text.SectionHeader style (Theme/Typography.xaml), the single
-    place to change every card title in the app.
+    Write the label in normal case: it is upper-cased here, so this binding is the one place
+    title casing is decided. The label's font comes from the Text.SectionHeader style
+    (Theme/Typography.xaml), the single place to size every title in the app.
 -->
 <UserControl x:Class="FeBuddy.Wpf.Controls.SectionHeader"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -24,7 +27,7 @@
         <TextBlock DockPanel.Dock="Left"
                    VerticalAlignment="Center"
                    Style="{StaticResource Text.SectionHeader}"
-                   Text="{Binding Label, ElementName=Self}" />
+                   Text="{Binding Label, ElementName=Self, Converter={StaticResource ToUpper}}" />
         <ContentPresenter DockPanel.Dock="Right"
                           VerticalAlignment="Center"
                           Content="{Binding Aside, ElementName=Self}" />

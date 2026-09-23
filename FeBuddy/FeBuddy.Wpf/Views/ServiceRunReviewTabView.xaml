@@ -108,9 +108,8 @@
     <StackPanel>
 
         <!-- how far each sub-service has got -->
-        <Border Style="{StaticResource Card}" Margin="0,0,0,16">
+        <ctl:Card Header="Progress">
             <StackPanel>
-                <ctl:SectionHeader Label="PROGRESS" />
 
                 <TextBlock Text="{Binding Summary}" Style="{StaticResource Text.Body}" TextWrapping="Wrap"
                            Margin="0,0,0,6"
@@ -121,32 +120,30 @@
 
                 <ItemsControl ItemsSource="{Binding Steps}" ItemTemplate="{StaticResource RunStepRow}" />
             </StackPanel>
-        </Border>
+        </ctl:Card>
 
         <!-- something failed, in any sub-service -->
-        <Border Style="{StaticResource Card}" Margin="0,0,0,16"
-                Background="{StaticResource Brush.Danger.Soft}"
-                Visibility="{Binding HasErrors, Converter={StaticResource BoolToVis}}">
+        <ctl:Card Header="Errors"
+                  Style="{StaticResource Card.Danger}"
+                  Visibility="{Binding HasErrors, Converter={StaticResource BoolToVis}}">
             <StackPanel>
-                <ctl:SectionHeader Label="ERRORS" />
                 <ItemsControl ItemsSource="{Binding Errors}" ItemTemplate="{StaticResource ErrorRow}" />
             </StackPanel>
-        </Border>
+        </ctl:Card>
 
         <!-- advisories: output the user would expect but won't find, and why -->
-        <Border Style="{StaticResource Card}" Margin="0,0,0,16"
-                Background="{StaticResource Brush.Warn.Soft}"
-                Visibility="{Binding HasAdvisories, Converter={StaticResource BoolToVis}}">
+        <ctl:Card Header="Advisories"
+                  Style="{StaticResource Card.Warn}"
+                  Visibility="{Binding HasAdvisories, Converter={StaticResource BoolToVis}}">
             <StackPanel>
-                <ctl:SectionHeader Label="ADVISORIES" />
                 <ItemsControl ItemsSource="{Binding Advisories}" ItemTemplate="{StaticResource ErrorRow}" />
             </StackPanel>
-        </Border>
+        </ctl:Card>
 
         <!-- the run finished and reported nothing: say so rather than showing an empty tab -->
-        <Border Margin="0,0,0,16">
-            <Border.Style>
-                <Style TargetType="Border" BasedOn="{StaticResource Card}">
+        <ctl:Card>
+            <ctl:Card.Style>
+                <Style TargetType="ctl:Card" BasedOn="{StaticResource {x:Type ctl:Card}}">
                     <Setter Property="Visibility" Value="Collapsed" />
                     <Style.Triggers>
                         <MultiDataTrigger>
@@ -159,25 +156,21 @@
                         </MultiDataTrigger>
                     </Style.Triggers>
                 </Style>
-            </Border.Style>
+            </ctl:Card.Style>
             <TextBlock Style="{StaticResource Text.Body}" TextWrapping="Wrap"
                        Text="The run finished with no errors." />
-        </Border>
+        </ctl:Card>
 
         <!-- what each sub-service produced, with its warnings and routine notices -->
-        <Border Style="{StaticResource Card}" Margin="0,0,0,16"
-                Visibility="{Binding HasResults, Converter={StaticResource BoolToVis}}">
+        <ctl:Card Header="Results" Visibility="{Binding HasResults, Converter={StaticResource BoolToVis}}">
             <StackPanel>
-                <ctl:SectionHeader Label="RESULTS" />
                 <ItemsControl ItemsSource="{Binding Results}" ItemTemplate="{StaticResource SubServiceResultBlock}" />
             </StackPanel>
-        </Border>
+        </ctl:Card>
 
         <!-- what the run wrote -->
-        <Border Style="{StaticResource Card}" Margin="0,0,0,24"
-                Visibility="{Binding HasFiles, Converter={StaticResource BoolToVis}}">
+        <ctl:Card Header="Output" Visibility="{Binding HasFiles, Converter={StaticResource BoolToVis}}">
             <StackPanel>
-                <ctl:SectionHeader Label="OUTPUT" />
 
                 <!-- Minimized by default, like the Dashboard activity log: the count is what most
                      runs need, and a Departures run alone writes thousands of files. -->
@@ -230,6 +223,6 @@
                 <Button Style="{StaticResource Button.Ghost}" HorizontalAlignment="Left" Margin="0,10,0,0"
                         Content="Open output folder" Command="{Binding OpenOutputFolderCommand}" />
             </StackPanel>
-        </Border>
+        </ctl:Card>
     </StackPanel>
 </UserControl>

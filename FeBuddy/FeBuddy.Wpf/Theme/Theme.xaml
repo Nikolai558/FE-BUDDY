@@ -27,5 +27,6 @@
     <conv:StringToVisibilityConverter x:Key="StringToVis" />
     <conv:EnumToBooleanConverter x:Key="EnumToBool" />
     <conv:MarkdownToPlainTextConverter x:Key="MdToText" />
+    <conv:UpperCaseConverter x:Key="ToUpper" />
 
 </ResourceDictionary>

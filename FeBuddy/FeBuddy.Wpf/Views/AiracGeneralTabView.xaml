@@ -18,16 +18,14 @@
     <StackPanel>
 
         <!-- waiting / unavailable banner (remediation plan 2.5) -->
-        <Border Style="{StaticResource Card}" Margin="0,0,0,16" Padding="16"
-                Background="{StaticResource Brush.Warn.Soft}"
-                Visibility="{Binding IsReady, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}">
+        <ctl:Card Style="{StaticResource Card.Warn}"
+                  Visibility="{Binding IsReady, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}">
             <TextBlock Text="{Binding WaitingMessage}" Style="{StaticResource Text.Prose}" />
-        </Border>
+        </ctl:Card>
 
         <!-- ============ cycle ============ -->
-        <Border Style="{StaticResource Card}">
+        <ctl:Card Header="Cycle">
             <StackPanel>
-                <ctl:SectionHeader Label="CYCLE" />
                 <ItemsControl ItemsSource="{Binding CycleOptions}" Margin="0,4,0,0">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
@@ -45,12 +43,11 @@
                 <TextBlock Text="{Binding SelectedCycleLabel}" Style="{StaticResource Text.Caption}"
                            FontFamily="{StaticResource Font.Mono}" Margin="0,8,0,0" />
             </StackPanel>
-        </Border>
+        </ctl:Card>
 
         <!-- ============ sub-services ============ -->
-        <Border Style="{StaticResource Card}" Margin="0,16,0,24">
+        <ctl:Card Header="Sub-Services">
             <StackPanel>
-                <ctl:SectionHeader Label="SUB-SERVICES" />
                 <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,10"
                            Text="Tick the data you want this cycle to produce. Each one opens its own tab where you choose its settings and output files." />
                 <ItemsControl ItemsSource="{Binding SubServices}">
@@ -66,6 +63,6 @@
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
             </StackPanel>
-        </Border>
+        </ctl:Card>
     </StackPanel>
 </UserControl>

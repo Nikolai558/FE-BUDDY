@@ -14,7 +14,7 @@ public partial class SectionHeader : UserControl
 
     public SectionHeader() => InitializeComponent();
 
-    /// <summary>The (already upper-cased) heading text.</summary>
+    /// <summary>The heading text, in normal case; it is shown upper-cased.</summary>
     public string Label
     {
         get => (string)GetValue(LabelProperty);

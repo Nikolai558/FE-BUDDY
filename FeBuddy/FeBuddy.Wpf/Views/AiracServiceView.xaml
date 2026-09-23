@@ -137,7 +137,7 @@
 
                         <!-- the same bar again at the end of the page -->
                         <ContentPresenter Content="{Binding}" ContentTemplate="{StaticResource TabActionBar}"
-                                          Margin="0,0,0,28" />
+                                          Margin="0,8,0,28" />
                     </StackPanel>
                 </ScrollViewer>
             </Grid>

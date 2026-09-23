@@ -1,7 +1,10 @@
 <!--
     Controls.Surfaces.xaml
     ===========================================================================
-        Card            Border  - the standard rounded panel
+        ctl:Card        (implicit) the standard rounded panel, with an optional title
+        Card.Warn       ctl:Card - amber: something the user should know before going on
+        Card.Danger     ctl:Card - red: something failed or blocks the run
+        Card.Popup      ctl:Card - a floating panel (flyout) with a drop shadow
         Divider         Border  - 1px hairline rule
         Chip / Chip.*   Border  - small status badge (pair with Chip.Text)
         Chip.Text       TextBlock - the label inside a chip
@@ -11,18 +14,51 @@
         Tab.Rail.Item   ListBoxItem - one tab (status dot + title + active bar)
 -->
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls">
 
     <!-- ============================== CARD =========================== -->
-    <Style x:Key="Card" TargetType="Border">
+    <!-- Every card in the app is a ctl:Card, so this style is the one place its look is set.
+         Cards stack with Margin's 16px gap below each one; a card placed by a Grid or WrapPanel
+         sets its own Margin, which is layout and not look. The title is a SectionHeader, which
+         owns the title's font and casing; a card with no Header shows no title row. -->
+    <Style TargetType="ctl:Card">
         <Setter Property="Background" Value="{DynamicResource Brush.Card}" />
         <!-- P8: Brush.Stroke on Brush.Bg.Base was almost invisible - every screen
              read as one flat field. Stronger hairline gives cards a real edge. -->
         <Setter Property="BorderBrush" Value="{DynamicResource Brush.Stroke.Strong}" />
         <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="CornerRadius" Value="{DynamicResource Radius.Card}" />
         <Setter Property="Padding" Value="18" />
+        <Setter Property="Margin" Value="0,0,0,16" />
+        <Setter Property="Focusable" Value="False" />
+        <Setter Property="IsTabStop" Value="False" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ctl:Card">
+                    <Border Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="{DynamicResource Radius.Card}"
+                            Padding="{TemplateBinding Padding}"
+                            SnapsToDevicePixels="True">
+                        <DockPanel>
+                            <ctl:SectionHeader x:Name="Title" DockPanel.Dock="Top"
+                                               Label="{TemplateBinding Header}" />
+                            <ContentPresenter />
+                        </DockPanel>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="Header" Value="{x:Null}">
+                            <Setter TargetName="Title" Property="Visibility" Value="Collapsed" />
+                        </Trigger>
+                        <Trigger Property="Header" Value="">
+                            <Setter TargetName="Title" Property="Visibility" Value="Collapsed" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
         <!-- A card whose options don't apply right now sinks into the background, so it
              reads as unavailable at a glance; its text and controls dim with it. -->
         <Style.Triggers>
@@ -31,6 +67,28 @@
                 <Setter Property="BorderBrush" Value="{DynamicResource Brush.Stroke}" />
             </Trigger>
         </Style.Triggers>
+    </Style>
+
+    <Style x:Key="Card.Warn" TargetType="ctl:Card" BasedOn="{StaticResource {x:Type ctl:Card}}">
+        <Setter Property="Background" Value="{DynamicResource Brush.Warn.Soft}" />
+    </Style>
+
+    <Style x:Key="Card.Danger" TargetType="ctl:Card" BasedOn="{StaticResource {x:Type ctl:Card}}">
+        <Setter Property="Background" Value="{DynamicResource Brush.Danger.Soft}" />
+    </Style>
+
+    <!-- Floats above the page (the Systems flyout). The margin leaves the shadow room to
+         draw inside its Popup. -->
+    <Style x:Key="Card.Popup" TargetType="ctl:Card" BasedOn="{StaticResource {x:Type ctl:Card}}">
+        <Setter Property="Background" Value="{DynamicResource Brush.Panel}" />
+        <Setter Property="Padding" Value="12" />
+        <Setter Property="Margin" Value="10" />
+        <Setter Property="Effect">
+            <Setter.Value>
+                <DropShadowEffect BlurRadius="24" ShadowDepth="6" Direction="90"
+                                  Opacity="0.5" Color="#000000" />
+            </Setter.Value>
+        </Setter>
     </Style>
 
     <!-- ============================ DIVIDER ========================== -->

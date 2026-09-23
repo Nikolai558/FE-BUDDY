@@ -70,9 +70,8 @@
                        Visibility="{Binding ValidationError, Converter={StaticResource StringToVis}}" />
 
             <!-- ============ GeoJSON output ============ -->
-            <Border Style="{StaticResource Card}">
+            <ctl:Card Header="GeoJSON Output">
                 <StackPanel>
-                    <ctl:SectionHeader Label="GEOJSON OUTPUT" />
                     <ComboBox Style="{StaticResource Themed.ComboBox}"
                               ItemsSource="{Binding Source={StaticResource OutputByValues}}"
                               SelectedItem="{Binding OutputBy}" Width="180" HorizontalAlignment="Left" Margin="0,4,0,0" />
@@ -80,24 +79,22 @@
                                Margin="0,8,0,0" />
 
                 </StackPanel>
-            </Border>
+            </ctl:Card>
 
             <!-- ============ which GeoJSON files ============ -->
-            <Border Style="{StaticResource Card}" Margin="0,16,0,0" IsEnabled="{Binding IsGeojsonOutputOn}">
+            <ctl:Card Header="What Files Do You Want?" IsEnabled="{Binding IsGeojsonOutputOn}">
                 <StackPanel>
-                    <ctl:SectionHeader Label="WHAT FILES DO YOU WANT?" />
                     <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
                         <CheckBox Content="_Lines"   IsChecked="{Binding EmitLines}"   Margin="0,0,16,0" />
                         <CheckBox Content="_Symbols" IsChecked="{Binding EmitSymbols}" Margin="0,0,16,0" />
                         <CheckBox Content="_Text"    IsChecked="{Binding EmitText}" />
                     </StackPanel>
                 </StackPanel>
-            </Border>
+            </ctl:Card>
 
             <!-- ============ designations (7.4) ============ -->
-            <Border Style="{StaticResource Card}" Margin="0,16,0,0">
+            <ctl:Card Header="Designations to Include">
                 <StackPanel>
-                    <ctl:SectionHeader Label="DESIGNATIONS TO INCLUDE" />
                     <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
                                Text="Derived from the selected cycle's AWY_IDs. All on by default; the deselected set is saved as ExcludedDesignations." />
                     <TextBlock Style="{StaticResource Text.Caption}"
@@ -114,12 +111,11 @@
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
                 </StackPanel>
-            </Border>
+            </ctl:Card>
 
             <!-- ============ FE-Buddy properties ============ -->
-            <Border Style="{StaticResource Card}" Margin="0,16,0,0" IsEnabled="{Binding IsGeojsonOutputOn}">
+            <ctl:Card Header="FE-Buddy Properties" IsEnabled="{Binding IsGeojsonOutputOn}">
                 <StackPanel>
-                    <ctl:SectionHeader Label="FE-BUDDY PROPERTIES" />
                     <CheckBox Content="Include FE-Buddy Properties, when available."
                               IsChecked="{Binding IncludeFebCustomProperties}" Margin="0,4,0,0" />
                     <TextBlock Text="{Binding FebPropertiesDescription}" Style="{StaticResource Text.Prose}"
@@ -138,22 +134,20 @@
                         </ItemsControl>
                     </StackPanel>
                 </StackPanel>
-            </Border>
+            </ctl:Card>
 
             <!-- ============ buffer airway waypoints ============ -->
-            <Border Style="{StaticResource Card}" Margin="0,16,0,0" IsEnabled="{Binding IsGeojsonOutputOn}">
+            <ctl:Card Header="Buffer Airway Waypoints" IsEnabled="{Binding IsGeojsonOutputOn}">
                 <StackPanel>
-                    <ctl:SectionHeader Label="BUFFER AIRWAY WAYPOINTS" />
                     <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
                                Text="Lines stop short of each waypoint so they don't run through the waypoint symbols." />
                     <CheckBox Content="Buffer airway waypoints" IsChecked="{Binding BufferAirwayWaypoints}" />
                 </StackPanel>
-            </Border>
+            </ctl:Card>
 
             <!-- ============ CRC ERAM defaults (7.4) ============ -->
-            <Border Style="{StaticResource Card}" Margin="0,16,0,0" IsEnabled="{Binding IsGeojsonOutputOn}">
+            <ctl:Card Header="CRC ERAM Defaults" IsEnabled="{Binding IsGeojsonOutputOn}">
                 <StackPanel>
-                    <ctl:SectionHeader Label="CRC ERAM DEFAULTS" />
                     <!-- Lines | Symbols | Text side by side; the WrapPanel stacks them when the
                          window is too narrow for all three, so no panel is ever clipped. A panel
                          shows only while its file is being produced (picked above). Its Include box
@@ -392,12 +386,11 @@
                         </Border>
                     </WrapPanel>
                 </StackPanel>
-            </Border>
+            </ctl:Card>
 
             <!-- ============ aliases (7.5) ============ -->
-            <Border Style="{StaticResource Card}" Margin="0,16,0,0">
+            <ctl:Card Header="Aliases">
                 <StackPanel>
-                    <ctl:SectionHeader Label="ALIASES" />
                     <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
                                Text="Provides a command to draw all airway waypoints on an ERAM or STARS window. Syntax: .&lt;awyId&gt;F  —  e.g. .J3F .FF OAK RBL LKV IMB GEG" />
                     <CheckBox Content="Include the Airways.txt alias file" IsChecked="{Binding GenerateAliasFile}" />
@@ -409,12 +402,11 @@
                                      ToolTip="Every airway whose line crosses the region - the same airways the GeoJSON draws - each with all of its waypoints." />
                     </StackPanel>
                 </StackPanel>
-            </Border>
+            </ctl:Card>
 
             <!-- ============ region of interest (7.7) ============ -->
-            <Border Style="{StaticResource Card}" Margin="0,16,0,0">
+            <ctl:Card Header="Region of Interest">
                 <StackPanel>
-                    <ctl:SectionHeader Label="REGION OF INTEREST" />
                     <CheckBox Content="Override the default ROI for Airways" IsChecked="{Binding OverrideRoi}" Margin="0,4,0,0" />
                     <TextBlock Text="{Binding RoiFallbackHint}" Style="{StaticResource Text.Caption}" TextWrapping="Wrap"
                                Margin="20,4,0,0"
@@ -444,17 +436,16 @@
                                 Margin="0,8,0,0" Command="{Binding PickRoiOnMapCommand}" />
                     </StackPanel>
                 </StackPanel>
-            </Border>
+            </ctl:Card>
 
             <!-- ============ antimeridian (7.8) ============ -->
-            <Border Style="{StaticResource Card}" Margin="0,16,0,0" IsEnabled="{Binding IsGeojsonOutputOn}">
+            <ctl:Card Header="Split GeoJSON at the Antimeridian" IsEnabled="{Binding IsGeojsonOutputOn}">
                 <StackPanel>
-                    <ctl:SectionHeader Label="SPLIT GEOJSON AT THE ANTIMERIDIAN" />
                     <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
                                Text="A line that crosses ±180° longitude is split into two LineStrings so it does not visually wrap across the whole map. Leave this on unless a downstream tool needs the un-split geometry." />
                     <CheckBox Content="Split airway geometry at the antimeridian" IsChecked="{Binding SplitAtAntimeridian}" />
                 </StackPanel>
-            </Border>
+            </ctl:Card>
 
         <Rectangle Height="8" Fill="Transparent" />
     </StackPanel>

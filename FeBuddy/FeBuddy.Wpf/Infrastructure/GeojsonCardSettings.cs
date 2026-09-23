@@ -10,6 +10,20 @@ namespace FeBuddy.Wpf.Infrastructure;
 // matching interface here and dropping the card into its view - no per-tab card markup.
 
 /// <summary>
+/// What a sub-service produces, for the Outputs card (<c>Views/Cards/OutputsCard</c>). Its
+/// default GeoJSON row also binds <c>GenerateGeojson</c>; a tab whose GeoJSON choice is more
+/// than on / off (Airways) gives the card its own GeoJSON row instead.
+/// </summary>
+public interface IOutputSettings
+{
+    /// <summary>The sub-service's name, used in the "at least one output" reminder.</summary>
+    string Title { get; }
+
+    /// <summary>Write the sub-service's alias file.</summary>
+    bool GenerateAliasFile { get; set; }
+}
+
+/// <summary>
 /// The three GeoJSON files a sub-service can write, for the What Files Do You Want? card
 /// (<c>Views/Cards/GeojsonFilesCard</c>).
 /// </summary>

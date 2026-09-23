@@ -35,20 +35,41 @@
                        MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
                        Visibility="{Binding ValidationError, Converter={StaticResource StringToVis}}" />
 
-            <!-- ============ GeoJSON output ============ -->
-            <ctl:Card Header="GeoJSON Output">
-                <StackPanel>
-                    <ComboBox Style="{StaticResource Themed.ComboBox}"
-                              ItemsSource="{Binding Source={StaticResource OutputByValues}}"
-                              SelectedItem="{Binding OutputBy}" Width="180" HorizontalAlignment="Left" Margin="0,4,0,0" />
-                    <TextBlock Text="{Binding OutputModeHint}" Style="{StaticResource Text.Prose}"
-                               Margin="0,8,0,0" />
-
-                </StackPanel>
-            </ctl:Card>
+            <!-- ============ outputs ============ -->
+            <!-- GeoJSON is more than on / off here - the drop-down picks how the files are split,
+                 None writes none - and the alias file can cover every airway or just the ROI's. -->
+            <cards:OutputsCard AliasFileName="Airways.txt"
+                               AliasDescription="Provides a command to draw all airway waypoints on an ERAM or STARS window. Syntax: .&lt;awyId&gt;F  —  e.g. .J3F .FF OAK RBL LKV IMB GEG">
+                <cards:OutputsCard.GeojsonTemplate>
+                    <DataTemplate>
+                        <ctl:Option Description="{Binding OutputModeHint}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="GeoJSON files" Style="{StaticResource Text.Body}"
+                                           Foreground="{StaticResource Brush.Text.Primary}"
+                                           VerticalAlignment="Center" Margin="0,0,12,0" />
+                                <ComboBox Style="{StaticResource Themed.ComboBox}"
+                                          ItemsSource="{Binding Source={StaticResource OutputByValues}}"
+                                          SelectedItem="{Binding OutputBy}" Width="180" />
+                            </StackPanel>
+                        </ctl:Option>
+                    </DataTemplate>
+                </cards:OutputsCard.GeojsonTemplate>
+                <cards:OutputsCard.AliasOptions>
+                    <StackPanel>
+                        <RadioButton GroupName="AliasScope" Content="All FAA airways"
+                                     IsChecked="{Binding AliasRoiAirwaysOnly, Converter={StaticResource InverseBool}, Mode=TwoWay}" />
+                        <RadioButton GroupName="AliasScope" Content="ROI airways only" Margin="0,3,0,0"
+                                     IsChecked="{Binding AliasRoiAirwaysOnly, Mode=TwoWay}"
+                                     ToolTip="Every airway whose line crosses the region - the same airways the GeoJSON draws - each with all of its waypoints." />
+                    </StackPanel>
+                </cards:OutputsCard.AliasOptions>
+            </cards:OutputsCard>
 
             <!-- ============ which GeoJSON files ============ -->
-            <cards:GeojsonFilesCard IsEnabled="{Binding IsGeojsonOutputOn}" />
+            <cards:GeojsonFilesCard IsEnabled="{Binding IsGeojsonOutputOn}"
+                                    LinesDescription="One line feature per airway, running through its waypoints in order."
+                                    SymbolsDescription="One symbol per waypoint, styled as a VOR, NDB or intersection. A waypoint shared by several airways is drawn once."
+                                    TextDescription="A label per waypoint showing its identifier." />
 
             <!-- ============ FE-Buddy properties ============ -->
             <cards:FebPropertiesCard IsEnabled="{Binding IsGeojsonOutputOn}" />
@@ -83,22 +104,6 @@
                     <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
                                Text="Lines stop short of each waypoint so they don't run through the waypoint symbols." />
                     <CheckBox Content="Buffer airway waypoints" IsChecked="{Binding BufferAirwayWaypoints}" />
-                </StackPanel>
-            </ctl:Card>
-
-            <!-- ============ aliases (7.5) ============ -->
-            <ctl:Card Header="Aliases">
-                <StackPanel>
-                    <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
-                               Text="Provides a command to draw all airway waypoints on an ERAM or STARS window. Syntax: .&lt;awyId&gt;F  —  e.g. .J3F .FF OAK RBL LKV IMB GEG" />
-                    <CheckBox Content="Include the Airways.txt alias file" IsChecked="{Binding GenerateAliasFile}" />
-                    <StackPanel Margin="20,6,0,0" IsEnabled="{Binding GenerateAliasFile}">
-                        <RadioButton GroupName="AliasScope" Content="All FAA airways"
-                                     IsChecked="{Binding AliasRoiAirwaysOnly, Converter={StaticResource InverseBool}, Mode=TwoWay}" />
-                        <RadioButton GroupName="AliasScope" Content="ROI airways only" Margin="0,3,0,0"
-                                     IsChecked="{Binding AliasRoiAirwaysOnly, Mode=TwoWay}"
-                                     ToolTip="Every airway whose line crosses the region - the same airways the GeoJSON draws - each with all of its waypoints." />
-                    </StackPanel>
                 </StackPanel>
             </ctl:Card>
 

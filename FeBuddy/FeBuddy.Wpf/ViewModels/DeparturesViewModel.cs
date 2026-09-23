@@ -25,7 +25,7 @@ namespace FeBuddy.Wpf.ViewModels;
 /// this tab through <see cref="ISubServiceRunTarget"/>.
 /// </remarks>
 public sealed class DeparturesViewModel : SubServiceSettingsViewModel, ISubServiceRunTarget,
-    IFebPropertySettings, ICrcDefaultsSettings, IRoiOverrideSettings
+    IOutputSettings, IFebPropertySettings, ICrcDefaultsSettings, IRoiOverrideSettings
 {
     private const string Node = "Services.AiracService.Departures";
     private const string PrecisionKey = "Services.AiracService.CoordinatePrecision";

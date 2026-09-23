@@ -26,19 +26,9 @@
                        Visibility="{Binding ValidationError, Converter={StaticResource StringToVis}}" />
 
             <!-- ============ outputs ============ -->
-            <ctl:Card Header="Outputs">
-                <StackPanel>
-                    <ctl:Option Margin="0,4,0,0" Description="Writes the airport and runway GeoJSON files selected below.">
-                        <CheckBox Content="GeoJSON files" IsChecked="{Binding GenerateGeojson}" />
-                    </ctl:Option>
-                    <ctl:Option Margin="0,10,0,0" Description="Writes one alias command per airport FAA ID, and one for airports with an ICAO ID.">
-                        <CheckBox Content="Alias file (Airports.txt)" IsChecked="{Binding GenerateAliasFile}" />
-                    </ctl:Option>
-                    <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,10,0,0"
-                               MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
-                               Text="At least one output must stay on. To produce nothing for Airports, deselect Airports on the General tab." />
-                </StackPanel>
-            </ctl:Card>
+            <cards:OutputsCard GeojsonDescription="Writes the airport and runway GeoJSON files selected below."
+                               AliasFileName="Airports.txt"
+                               AliasDescription="Writes one alias command per airport FAA ID, and one for airports with an ICAO ID." />
 
             <!-- ============ which GeoJSON files ============ -->
             <cards:GeojsonFilesCard IsEnabled="{Binding GenerateGeojson}"

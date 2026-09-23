@@ -24,7 +24,7 @@ namespace FeBuddy.Wpf.ViewModels;
 /// shown there, described by this tab through <see cref="ISubServiceRunTarget"/>.
 /// </summary>
 public sealed class AirwaysViewModel : SubServiceSettingsViewModel, ISubServiceRunTarget,
-    IFebPropertySettings, ICrcDefaultsSettings, IRoiOverrideSettings
+    IOutputSettings, IFebPropertySettings, ICrcDefaultsSettings, IRoiOverrideSettings
 {
     private const string Node = "Services.AiracService.Geojson.Airways";
 
@@ -532,13 +532,13 @@ public sealed class AirwaysViewModel : SubServiceSettingsViewModel, ISubServiceR
         ServiceReviewRow[] rows =
         {
             new ServiceReviewRow("GeoJSON output", OutputBy.ToString()),
+            new ServiceReviewRow("Alias file", aliasFile),
             new ServiceReviewRow("File kinds", fileKinds.Count > 0 ? string.Join(", ", fileKinds) : "none"),
             new ServiceReviewRow("FE-Buddy properties", febProperties),
             new ServiceReviewRow("CRC ERAM defaults", crcDefaults.Count > 0 ? string.Join(", ", crcDefaults) : "None"),
             new ServiceReviewRow("Includes", includes),
             new ServiceReviewRow("Excluded designations", string.IsNullOrEmpty(excluded) ? "none" : excluded),
             new ServiceReviewRow("Buffer waypoints", BufferAirwayWaypoints ? "Yes" : "No"),
-            new ServiceReviewRow("Alias file", aliasFile),
             new ServiceReviewRow("Split at antimeridian", SplitAtAntimeridian ? "Yes" : "No"),
             new ServiceReviewRow("Region of interest", regionOfInterest),
         };

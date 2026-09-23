@@ -28,19 +28,9 @@
                        Visibility="{Binding ValidationError, Converter={StaticResource StringToVis}}" />
 
             <!-- ============ outputs ============ -->
-            <ctl:Card Header="Outputs">
-                <StackPanel>
-                    <ctl:Option Margin="0,4,0,0" Description="Writes the departure procedure GeoJSON files selected below.">
-                        <CheckBox Content="GeoJSON files" IsChecked="{Binding GenerateGeojson}" />
-                    </ctl:Option>
-                    <ctl:Option Margin="0,10,0,0" Description="Writes one alias command per airport and procedure that draws the procedure's points.">
-                        <CheckBox Content="Alias file (Departures.txt)" IsChecked="{Binding GenerateAliasFile}" />
-                    </ctl:Option>
-                    <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,10,0,0"
-                               MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
-                               Text="At least one output must stay on. To produce nothing for Departures, deselect Departures on the General tab." />
-                </StackPanel>
-            </ctl:Card>
+            <cards:OutputsCard GeojsonDescription="Writes the departure procedure GeoJSON files selected below."
+                               AliasFileName="Departures.txt"
+                               AliasDescription="Writes one alias command per airport and procedure that draws the procedure's points." />
 
             <!-- ============ which GeoJSON files ============ -->
             <cards:GeojsonFilesCard IsEnabled="{Binding GenerateGeojson}"

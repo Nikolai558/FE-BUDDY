@@ -440,64 +440,14 @@ public sealed class DesignationToggle(string designation, bool included, Action 
 }
 
 /// <summary>
-/// One selectable FE-Buddy custom property on the Airways tab.
-/// </summary>
-/// <remarks>
-/// The Airways counterpart of <see cref="DepartureFebPropertyToggle"/>, which is tied to the
-/// Departures property enum.
-/// </remarks>
-public sealed class AirwayFebPropertyToggle : ObservableObject
-{
-	private readonly Action _onChanged;
-	private bool _isSelected;
-
-	/// <summary>Creates a toggle.</summary>
-	/// <param name="property">The property this row controls.</param>
-	/// <param name="name">Its name as written to the settings block and the GeoJSON key.</param>
-	/// <param name="description">A short plain-English description for the tooltip.</param>
-	/// <param name="onChanged">Called when the user ticks or unticks the row.</param>
-	public AirwayFebPropertyToggle(AirwayFebProperty property, string name, string description, Action onChanged)
-	{
-		Property = property;
-		Name = name;
-		Description = description;
-		_onChanged = onChanged;
-	}
-
-	/// <summary>The property this row controls.</summary>
-	public AirwayFebProperty Property { get; }
-
-	/// <summary>The settings / JSON name, e.g. <c>awyId</c> - written as <c>feb.awyId</c>.</summary>
-	public string Name { get; }
-
-	/// <summary>What the property holds, for the tooltip.</summary>
-	public string Description { get; }
-
-	/// <summary>The key as it appears in the file, e.g. <c>feb.awyId</c>.</summary>
-	public string JsonKey => $"feb.{Name}";
-
-	/// <summary>Whether the user wants this property written.</summary>
-	public bool IsSelected
-	{
-		get => _isSelected;
-		set
-		{
-			if (SetProperty(ref _isSelected, value))
-			{
-				_onChanged();
-			}
-		}
-	}
-}
-
-/// <summary>
 /// The FE-Buddy custom properties an airway Feature can carry, with the names the settings
 /// block and the GeoJSON keys use.
 /// </summary>
 /// <remarks>
 /// The names here must match <c>AirwaySettingsParser</c>'s own list exactly - it rejects a
 /// name it does not recognize - so this is the GUI-side half of one contract, kept in one place
-/// rather than spelled out in XAML.
+/// rather than spelled out in XAML. The enum value beside each name is the Core property
+/// the parser maps it to.
 /// </remarks>
 public static class AirwayFebPropertyNames
 {

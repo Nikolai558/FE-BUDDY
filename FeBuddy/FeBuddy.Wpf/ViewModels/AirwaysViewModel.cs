@@ -23,7 +23,8 @@ namespace FeBuddy.Wpf.ViewModels;
 /// bar; the run is launched by <b>Run AIRAC Service</b> on the Review tab, and its results are
 /// shown there, described by this tab through <see cref="ISubServiceRunTarget"/>.
 /// </summary>
-public sealed class AirwaysViewModel : SubServiceSettingsViewModel, ISubServiceRunTarget
+public sealed class AirwaysViewModel : SubServiceSettingsViewModel, ISubServiceRunTarget,
+    IFebPropertySettings, ICrcDefaultsSettings, IRoiOverrideSettings
 {
     private const string Node = "Services.AiracService.Geojson.Airways";
 
@@ -53,9 +54,9 @@ public sealed class AirwaysViewModel : SubServiceSettingsViewModel, ISubServiceR
 
     public AirwaysViewModel()
     {
-        FebProperties = new ObservableCollection<AirwayFebPropertyToggle>(
+        FebProperties = new ObservableCollection<FebPropertyToggle>(
             AirwayFebPropertyNames.All.Select(entry =>
-                new AirwayFebPropertyToggle(entry.Property, entry.Name, entry.Description, MarkDirty)));
+                new FebPropertyToggle(entry.Name, entry.Description, MarkDirty)));
 
         LineDefaults = BuildClassDefaults(EramFieldKind.Line);
         SymbolDefaults = BuildClassDefaults(EramFieldKind.Symbol);
@@ -134,14 +135,8 @@ public sealed class AirwaysViewModel : SubServiceSettingsViewModel, ISubServiceR
         set { if (SetProperty(ref _includeFebCustomProperties, value)) MarkDirty(); }
     }
 
-    /// <summary>Verbatim FE-Buddy Properties description (remediation plan 7.4).</summary>
-    public string FebPropertiesDescription =>
-        "Custom Geojson Property fields that increases file size but can be helpful for debugging or " +
-        "viewing data in a geojson viewer in order to identify object. Every FE-Buddy property will be " +
-        "prefixed with \"feb.\"";
-
     /// <summary>One toggle per available <c>feb.*</c> property.</summary>
-    public ObservableCollection<AirwayFebPropertyToggle> FebProperties { get; }
+    public ObservableCollection<FebPropertyToggle> FebProperties { get; }
 
     /// <summary>Whether the CRC ERAM isDefaults Feature is written into each <c>_Lines</c> file.</summary>
     public bool IncludeCrcLineDefaults { get => _includeCrcLineDefaults; set { if (SetProperty(ref _includeCrcLineDefaults, value)) MarkDirty(); } }
@@ -369,7 +364,7 @@ public sealed class AirwaysViewModel : SubServiceSettingsViewModel, ISubServiceR
         HashSet<string> selectedFebProperties = (Get("FebProperties") ?? string.Empty)
             .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
-        foreach (AirwayFebPropertyToggle toggle in FebProperties)
+        foreach (FebPropertyToggle toggle in FebProperties)
         {
             toggle.IsSelected = selectedFebProperties.Contains(toggle.Name);
         }

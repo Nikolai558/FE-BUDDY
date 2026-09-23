@@ -11,25 +11,11 @@
              xmlns:vm="clr-namespace:FeBuddy.Wpf.ViewModels"
              xmlns:m="clr-namespace:FeBuddy.Wpf.ViewModels.Models"
              xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
+             xmlns:cards="clr-namespace:FeBuddy.Wpf.Views.Cards"
              xmlns:infra="clr-namespace:FeBuddy.Wpf.Infrastructure"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance vm:DeparturesViewModel}"
              d:DesignWidth="900" d:DesignHeight="1600">
-
-    <UserControl.Resources>
-        <!-- CRC ERAM DEFAULTS panels. Each kind (Lines / Symbols / Text) is its own Panel.Inset
-             listing its properties top to bottom, label on the left and control on the
-             right. The control column is a fixed width rather than Auto or star: the page fills
-             the window, and an Auto column sizes to whatever is selected, so the boxes of the
-             three panels would all end up different widths. The per-field ToolTips are worded
-             from the settings validator - keep them verbatim. -->
-        <!-- xOffset / yOffset box. The hint is a Style setter, not a local ToolTip, so the
-             implicit TextBox style's error trigger can still swap in the validation message
-             ("Must be a whole number, ...") - a local value would always win over it. -->
-        <Style x:Key="EramOffsetBox" TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
-            <Setter Property="ToolTip" Value="Any whole number of pixels. 0 for none." />
-        </Style>
-    </UserControl.Resources>
 
     <!-- No ScrollViewer here: the tab host owns the one page-level scroller
          that every sub-service tab is laid out inside (theme fixes P3a).
@@ -57,22 +43,11 @@
             </ctl:Card>
 
             <!-- ============ which GeoJSON files ============ -->
-            <ctl:Card Header="What Files Do You Want?" IsEnabled="{Binding GenerateGeojson}">
-                <StackPanel>
-                    <ctl:Option Margin="0,4,0,0" Description="One line feature per airport and procedure, shared segments drawn once.">
-                        <CheckBox Content="Lines" IsChecked="{Binding EmitLines}" />
-                    </ctl:Option>
-                    <ctl:Option Margin="0,10,0,0" Description="One symbol per point on the procedure.">
-                        <CheckBox Content="Symbols" IsChecked="{Binding EmitSymbols}" />
-                    </ctl:Option>
-                    <ctl:Option Margin="0,10,0,0" Description="A label per point showing its identifier.">
-                        <CheckBox Content="Text" IsChecked="{Binding EmitText}" />
-                    </ctl:Option>
-                    <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,10,0,0"
-                               MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
-                               Text="Files are written to Departure Procedures\&lt;ARTCC&gt;\&lt;airport&gt;\ as &lt;airport&gt;_&lt;procedure&gt;_Lines/Symbols/Text.geojson." />
-                </StackPanel>
-            </ctl:Card>
+            <cards:GeojsonFilesCard IsEnabled="{Binding GenerateGeojson}"
+                                    LinesDescription="One line feature per airport and procedure, shared segments drawn once."
+                                    SymbolsDescription="One symbol per point on the procedure."
+                                    TextDescription="A label per point showing its identifier."
+                                    Footnote="Files are written to Departure Procedures\&lt;ARTCC&gt;\&lt;airport&gt;\ as &lt;airport&gt;_&lt;procedure&gt;_Lines/Symbols/Text.geojson." />
 
             <!-- ============ procedures ============ -->
             <ctl:Card Header="Procedures">
@@ -138,203 +113,15 @@
             </ctl:Card>
 
             <!-- ============ FE-Buddy properties ============ -->
-            <ctl:Card Header="FE-Buddy Properties" IsEnabled="{Binding GenerateGeojson}">
-                <StackPanel>
-                    <ctl:Option Margin="0,4,0,0" Description="{Binding FebPropertiesDescription}">
-                        <CheckBox Content="Include FE-Buddy Properties, when available." IsChecked="{Binding IncludeFebCustomProperties}" />
-                    </ctl:Option>
-                    <StackPanel Margin="20,8,0,0" IsEnabled="{Binding IncludeFebCustomProperties}">
-                        <ItemsControl ItemsSource="{Binding FebProperties}">
-                            <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate DataType="{x:Type m:DepartureFebPropertyToggle}">
-                                    <CheckBox Content="{Binding JsonKey}" IsChecked="{Binding IsSelected, Mode=TwoWay}"
-                                              ToolTip="{Binding Description}" Margin="0,0,14,6" />
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                    </StackPanel>
-                </StackPanel>
-            </ctl:Card>
+            <cards:FebPropertiesCard IsEnabled="{Binding GenerateGeojson}" />
 
             <!-- ============ CRC ERAM defaults ============ -->
-            <ctl:Card Header="CRC ERAM Defaults" IsEnabled="{Binding GenerateGeojson}">
-                <StackPanel>
-                    <!-- Lines | Symbols | Text side by side; the WrapPanel stacks them when the
-                         window is too narrow for all three, so no panel is ever clipped. A panel
-                         shows only while its file is being produced (picked above). Its Include box
-                         decides whether that file gets the CRC ERAM defaults; unticked, the fields
-                         grey out but keep their values. Each Grid's DataContext is its defaults
-                         row, so its IsEnabled reaches back to the view model through the UserControl. -->
-                    <WrapPanel Orientation="Horizontal" Margin="0,10,0,0">
-                        <Border Style="{StaticResource Panel.Inset}" Visibility="{Binding EmitLines, Converter={StaticResource BoolToVis}}">
-                            <StackPanel>
-                                <ctl:SectionHeader Style="{StaticResource SectionHeader.Group}" Label="Departures — Lines" Margin="0,0,0,8">
-                                    <ctl:SectionHeader.Aside>
-                                        <CheckBox Content="Include" IsChecked="{Binding IncludeCrcLineDefaults}" Margin="16,0,0,0" />
-                                    </ctl:SectionHeader.Aside>
-                                </ctl:SectionHeader>
-                                <Grid DataContext="{Binding LineDefaults[0]}"
-                                      IsEnabled="{Binding DataContext.IncludeCrcLineDefaults, RelativeSource={RelativeSource AncestorType=UserControl}}">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="160" />
-                                    </Grid.ColumnDefinitions>
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="Auto" />
-                                        <RowDefinition Height="Auto" />
-                                        <RowDefinition Height="Auto" />
-                                        <RowDefinition Height="Auto" />
-                                    </Grid.RowDefinitions>
-                                    <TextBlock Grid.Row="0" Text="Filters" Style="{StaticResource Text.FieldLabel}" />
-                                    <ctl:FilterPicker Grid.Row="0" Grid.Column="1" Margin="0,3" Value="{Binding Filters, Mode=TwoWay}"
-                                                      infra:FieldState.Error="{Binding FiltersError}" />
-                                    <TextBlock Grid.Row="1" Text="BCG" Style="{StaticResource Text.FieldLabel}" />
-                                    <ComboBox Grid.Row="1" Grid.Column="1" Margin="0,3" ItemsSource="{Binding BcgOptions}" SelectedItem="{Binding Bcg}"
-                                              infra:FieldState.Error="{Binding BcgError}"
-                                              ToolTip="BCG group: an integer 1–40." />
-                                    <TextBlock Grid.Row="2" Text="Style" Style="{StaticResource Text.FieldLabel}" />
-                                    <ComboBox Grid.Row="2" Grid.Column="1" Margin="0,3" ItemsSource="{Binding StyleOptions}" SelectedItem="{Binding Style}"
-                                              infra:FieldState.Error="{Binding StyleError}"
-                                              ToolTip="Style: see the CRC GeoJSON concepts for the allowed values per kind." />
-                                    <TextBlock Grid.Row="3" Text="Thickness" Style="{StaticResource Text.FieldLabel}" />
-                                    <ComboBox Grid.Row="3" Grid.Column="1" Margin="0,3" ItemsSource="{Binding ThicknessOptions}" SelectedItem="{Binding Thickness}"
-                                              infra:FieldState.Error="{Binding ThicknessError}"
-                                              ToolTip="Thickness: an integer 1–3." />
-                                </Grid>
-                            </StackPanel>
-                        </Border>
-
-                        <Border Style="{StaticResource Panel.Inset}" Visibility="{Binding EmitSymbols, Converter={StaticResource BoolToVis}}">
-                            <StackPanel>
-                                <ctl:SectionHeader Style="{StaticResource SectionHeader.Group}" Label="Departures — Symbols" Margin="0,0,0,8">
-                                    <ctl:SectionHeader.Aside>
-                                        <CheckBox Content="Include" IsChecked="{Binding IncludeCrcSymbolDefaults}" Margin="16,0,0,0" />
-                                    </ctl:SectionHeader.Aside>
-                                </ctl:SectionHeader>
-                                <Grid DataContext="{Binding SymbolDefaults[0]}"
-                                      IsEnabled="{Binding DataContext.IncludeCrcSymbolDefaults, RelativeSource={RelativeSource AncestorType=UserControl}}">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="160" />
-                                    </Grid.ColumnDefinitions>
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="Auto" />
-                                        <RowDefinition Height="Auto" />
-                                        <RowDefinition Height="Auto" />
-                                        <RowDefinition Height="Auto" />
-                                    </Grid.RowDefinitions>
-                                    <TextBlock Grid.Row="0" Text="Filters" Style="{StaticResource Text.FieldLabel}" />
-                                    <ctl:FilterPicker Grid.Row="0" Grid.Column="1" Margin="0,3" Value="{Binding Filters, Mode=TwoWay}"
-                                                      infra:FieldState.Error="{Binding FiltersError}" />
-                                    <TextBlock Grid.Row="1" Text="BCG" Style="{StaticResource Text.FieldLabel}" />
-                                    <ComboBox Grid.Row="1" Grid.Column="1" Margin="0,3" ItemsSource="{Binding BcgOptions}" SelectedItem="{Binding Bcg}"
-                                              infra:FieldState.Error="{Binding BcgError}"
-                                              ToolTip="BCG group: an integer 1–40." />
-                                    <TextBlock Grid.Row="2" Text="Style" Style="{StaticResource Text.FieldLabel}" />
-                                    <ComboBox Grid.Row="2" Grid.Column="1" Margin="0,3" ItemsSource="{Binding StyleOptions}" SelectedItem="{Binding Style}"
-                                              infra:FieldState.Error="{Binding StyleError}"
-                                              ToolTip="Style: see the CRC GeoJSON concepts for the allowed values per kind." />
-                                    <TextBlock Grid.Row="3" Text="Size" Style="{StaticResource Text.FieldLabel}" />
-                                    <ComboBox Grid.Row="3" Grid.Column="1" Margin="0,3" ItemsSource="{Binding SizeOptions}" SelectedItem="{Binding Size}"
-                                              infra:FieldState.Error="{Binding SizeError}"
-                                              ToolTip="Size: an integer 1–4." />
-                                </Grid>
-                            </StackPanel>
-                        </Border>
-
-                        <Border Style="{StaticResource Panel.Inset}" Visibility="{Binding EmitText, Converter={StaticResource BoolToVis}}">
-                            <StackPanel>
-                                <ctl:SectionHeader Style="{StaticResource SectionHeader.Group}" Label="Departures — Text" Margin="0,0,0,8">
-                                    <ctl:SectionHeader.Aside>
-                                        <CheckBox Content="Include" IsChecked="{Binding IncludeCrcTextDefaults}" Margin="16,0,0,0" />
-                                    </ctl:SectionHeader.Aside>
-                                </ctl:SectionHeader>
-                                <Grid DataContext="{Binding TextDefaults[0]}"
-                                      IsEnabled="{Binding DataContext.IncludeCrcTextDefaults, RelativeSource={RelativeSource AncestorType=UserControl}}">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="160" />
-                                    </Grid.ColumnDefinitions>
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="Auto" />
-                                        <RowDefinition Height="Auto" />
-                                        <RowDefinition Height="Auto" />
-                                        <RowDefinition Height="Auto" />
-                                        <RowDefinition Height="Auto" />
-                                        <RowDefinition Height="Auto" />
-                                        <RowDefinition Height="Auto" />
-                                    </Grid.RowDefinitions>
-                                    <TextBlock Grid.Row="0" Text="Filters" Style="{StaticResource Text.FieldLabel}" />
-                                    <ctl:FilterPicker Grid.Row="0" Grid.Column="1" Margin="0,3" Value="{Binding Filters, Mode=TwoWay}"
-                                                      infra:FieldState.Error="{Binding FiltersError}" />
-                                    <TextBlock Grid.Row="1" Text="BCG" Style="{StaticResource Text.FieldLabel}" />
-                                    <ComboBox Grid.Row="1" Grid.Column="1" Margin="0,3" ItemsSource="{Binding BcgOptions}" SelectedItem="{Binding Bcg}"
-                                              infra:FieldState.Error="{Binding BcgError}"
-                                              ToolTip="BCG group: an integer 1–40." />
-                                    <TextBlock Grid.Row="2" Text="Size" Style="{StaticResource Text.FieldLabel}" />
-                                    <ComboBox Grid.Row="2" Grid.Column="1" Margin="0,3" ItemsSource="{Binding SizeOptions}" SelectedItem="{Binding Size}"
-                                              infra:FieldState.Error="{Binding SizeError}"
-                                              ToolTip="Size: an integer 1–4." />
-                                    <TextBlock Grid.Row="3" Text="Opaque" Style="{StaticResource Text.FieldLabel}" />
-                                    <ComboBox Grid.Row="3" Grid.Column="1" Margin="0,3" ItemsSource="{Binding YesNoOptions}"
-                                              SelectedValuePath="Value" SelectedValue="{Binding Opaque}"
-                                              infra:FieldState.Error="{Binding OpaqueError}"
-                                              ToolTip="Opaque: Yes or No." />
-                                    <TextBlock Grid.Row="4" Text="Underline" Style="{StaticResource Text.FieldLabel}" />
-                                    <ComboBox Grid.Row="4" Grid.Column="1" Margin="0,3" ItemsSource="{Binding YesNoOptions}"
-                                              SelectedValuePath="Value" SelectedValue="{Binding Underline}"
-                                              infra:FieldState.Error="{Binding UnderlineError}"
-                                              ToolTip="Underline: Yes or No." />
-                                    <TextBlock Grid.Row="5" Text="X offset" Style="{StaticResource Text.FieldLabel}" />
-                                    <TextBox Grid.Row="5" Grid.Column="1" Margin="0,3" Style="{StaticResource EramOffsetBox}"
-                                             Text="{Binding XOffset, UpdateSourceTrigger=PropertyChanged}"
-                                             infra:FieldState.Error="{Binding XOffsetError}" />
-                                    <TextBlock Grid.Row="6" Text="Y offset" Style="{StaticResource Text.FieldLabel}" />
-                                    <TextBox Grid.Row="6" Grid.Column="1" Margin="0,3" Style="{StaticResource EramOffsetBox}"
-                                             Text="{Binding YOffset, UpdateSourceTrigger=PropertyChanged}"
-                                             infra:FieldState.Error="{Binding YOffsetError}" />
-                                </Grid>
-                            </StackPanel>
-                        </Border>
-                    </WrapPanel>
-                </StackPanel>
-            </ctl:Card>
+            <cards:CrcDefaultsCard IsEnabled="{Binding GenerateGeojson}"
+                                   LinesTitle="Departures — Lines" SymbolsTitle="Departures — Symbols" TextTitle="Departures — Text" />
 
             <!-- ============ region of interest ============ -->
-            <ctl:Card Header="Region of Interest">
-                <StackPanel>
-                    <CheckBox Content="Override the default ROI for Departures" IsChecked="{Binding OverrideRoi}" Margin="0,4,0,0" />
-                    <TextBlock Text="{Binding RoiFallbackHint}" Style="{StaticResource Text.Caption}" TextWrapping="Wrap"
-                               Margin="20,4,0,0"
-                               MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
-                               Visibility="{Binding OverrideRoi, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
-                    <StackPanel Margin="20,8,0,0" IsEnabled="{Binding OverrideRoi}">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" /><ColumnDefinition Width="160" />
-                                <ColumnDefinition Width="Auto" /><ColumnDefinition Width="160" />
-                            </Grid.ColumnDefinitions>
-                            <Grid.RowDefinitions><RowDefinition /><RowDefinition /></Grid.RowDefinitions>
-                            <TextBlock Text="NE lat" Style="{StaticResource Text.Caption}" VerticalAlignment="Center" Margin="0,0,8,4" />
-                            <TextBox Grid.Column="1" Margin="0,0,12,4" Text="{Binding NeLat, UpdateSourceTrigger=PropertyChanged}"
-                                     infra:FieldState.Error="{Binding FieldErrors[NeLat]}" />
-                            <TextBlock Grid.Column="2" Text="NE lon" Style="{StaticResource Text.Caption}" VerticalAlignment="Center" Margin="0,0,8,4" />
-                            <TextBox Grid.Column="3" Margin="0,0,0,4" Text="{Binding NeLon, UpdateSourceTrigger=PropertyChanged}"
-                                     infra:FieldState.Error="{Binding FieldErrors[NeLon]}" />
-                            <TextBlock Grid.Row="1" Text="SW lat" Style="{StaticResource Text.Caption}" VerticalAlignment="Center" Margin="0,0,8,0" />
-                            <TextBox Grid.Row="1" Grid.Column="1" Margin="0,0,12,0" Text="{Binding SwLat, UpdateSourceTrigger=PropertyChanged}"
-                                     infra:FieldState.Error="{Binding FieldErrors[SwLat]}" />
-                            <TextBlock Grid.Row="1" Grid.Column="2" Text="SW lon" Style="{StaticResource Text.Caption}" VerticalAlignment="Center" Margin="0,0,8,0" />
-                            <TextBox Grid.Row="1" Grid.Column="3" Text="{Binding SwLon, UpdateSourceTrigger=PropertyChanged}"
-                                     infra:FieldState.Error="{Binding FieldErrors[SwLon]}" />
-                        </Grid>
-                        <Button Content="Pick on map…" Style="{StaticResource Button.Ghost}" HorizontalAlignment="Left"
-                                Margin="0,8,0,0" Command="{Binding PickRoiOnMapCommand}" />
-                    </StackPanel>
-
+            <cards:RoiOverrideCard>
+                <cards:RoiOverrideCard.AdditionalContent>
                     <StackPanel Margin="0,14,0,0" IsEnabled="{Binding HasRoi}">
                         <ctl:SectionHeader Style="{StaticResource SectionHeader.Group}" Label="How the Region Selects Departures" />
                         <RadioButton GroupName="DepartureRoiMode" Content="Every departure for an airport inside the region" Margin="0,6,0,0"
@@ -344,8 +131,7 @@
                         <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,0"
                                    Text="The region filters both the GeoJSON files and the alias file." />
                     </StackPanel>
-                </StackPanel>
-            </ctl:Card>
-
+                </cards:RoiOverrideCard.AdditionalContent>
+            </cards:RoiOverrideCard>
     </StackPanel>
 </UserControl>

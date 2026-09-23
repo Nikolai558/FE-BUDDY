@@ -24,7 +24,8 @@ namespace FeBuddy.Wpf.ViewModels;
 /// <b>Run AIRAC Service</b> on the Review tab, and its results are shown there, described by
 /// this tab through <see cref="ISubServiceRunTarget"/>.
 /// </remarks>
-public sealed class DeparturesViewModel : SubServiceSettingsViewModel, ISubServiceRunTarget
+public sealed class DeparturesViewModel : SubServiceSettingsViewModel, ISubServiceRunTarget,
+    IFebPropertySettings, ICrcDefaultsSettings, IRoiOverrideSettings
 {
     private const string Node = "Services.AiracService.Departures";
     private const string PrecisionKey = "Services.AiracService.CoordinatePrecision";
@@ -64,9 +65,9 @@ public sealed class DeparturesViewModel : SubServiceSettingsViewModel, ISubServi
     /// <summary>Builds the tab and restores its saved settings.</summary>
     public DeparturesViewModel()
     {
-        FebProperties = new ObservableCollection<DepartureFebPropertyToggle>(
+        FebProperties = new ObservableCollection<FebPropertyToggle>(
             DepartureFebPropertyNames.All.Select(entry =>
-                new DepartureFebPropertyToggle(entry.Property, entry.Name, entry.Description, MarkDirty)));
+                new FebPropertyToggle(entry.Name, entry.Description, MarkDirty)));
 
         LineDefaults = new ObservableCollection<EramClassDefault>
         {
@@ -292,14 +293,8 @@ public sealed class DeparturesViewModel : SubServiceSettingsViewModel, ISubServi
         set { if (SetProperty(ref _includeFebCustomProperties, value)) MarkDirty(); }
     }
 
-    /// <summary>The verbatim explanation of what the FE-Buddy properties are (remediation plan 7.4).</summary>
-    public string FebPropertiesDescription =>
-        "Custom Geojson Property fields that increases file size but can be helpful for debugging or "
-        + "viewing data in a geojson viewer in order to identify object. Every FE-Buddy property will be "
-        + "prefixed with \"feb.\"";
-
     /// <summary>One toggle per available <c>feb.*</c> property.</summary>
-    public ObservableCollection<DepartureFebPropertyToggle> FebProperties { get; }
+    public ObservableCollection<FebPropertyToggle> FebProperties { get; }
 
     // ================= CRC ERAM defaults =================
 
@@ -532,7 +527,7 @@ public sealed class DeparturesViewModel : SubServiceSettingsViewModel, ISubServi
         }
 
         HashSet<string> selected = ParseList(Get("FebProperties"));
-        foreach (DepartureFebPropertyToggle toggle in FebProperties)
+        foreach (FebPropertyToggle toggle in FebProperties)
         {
             toggle.IsSelected = selected.Contains(toggle.Name);
         }

@@ -1,0 +1,151 @@
+<!--
+    CrcDefaultsPanel  -  one file's CRC ERAM defaults (Lines, Symbols or Text) inside the CRC ERAM
+    Defaults card: its title with an Include box, then one row per property - name on the left,
+    one control per class to the right. Airports and Departures have one class, so one column;
+    Airways has High / Low / Other, so three columns under a class-name row.
+
+    Which rows show comes from the classes themselves (EramClassDefault.ShowStyle / ShowThickness
+    / ShowSize / ShowTextOptions), so the same panel draws every kind. The Include box decides
+    whether the file gets the defaults; unticked, the rows grey out but keep their values.
+
+    The cells are a fixed width rather than Auto or star: the page fills the window, and an Auto
+    column sizes to whatever is selected, so the boxes of the three panels would all end up
+    different widths. The label column is shared across the rows (SharedSizeGroup) so every
+    row's cells line up. The conditional rows start Collapsed (FallbackValue) until Classes
+    arrives: a row measured even once while visible keeps widening that shared column. The per-field ToolTips are worded from the settings validator - keep
+    them verbatim.
+-->
+<UserControl x:Class="FeBuddy.Wpf.Views.Cards.CrcDefaultsPanel"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:m="clr-namespace:FeBuddy.Wpf.ViewModels.Models"
+             xmlns:infra="clr-namespace:FeBuddy.Wpf.Infrastructure"
+             xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
+             xmlns:cards="clr-namespace:FeBuddy.Wpf.Views.Cards"
+             mc:Ignorable="d"
+             x:Name="Self">
+    <UserControl.Resources>
+        <!-- xOffset / yOffset box. The hint is a Style setter, not a local ToolTip, so the
+             implicit TextBox style's error trigger can still swap in the validation message
+             ("Must be a whole number, ...") - a local value would always win over it. -->
+        <Style x:Key="OffsetBox" TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+            <Setter Property="ToolTip" Value="Any whole number of pixels. 0 for none." />
+        </Style>
+
+        <!-- One property row: its name (Header), then one cell per class. -->
+        <Style x:Key="FieldRow" TargetType="HeaderedItemsControl">
+            <Setter Property="ItemsSource" Value="{Binding Classes, RelativeSource={RelativeSource AncestorType=cards:CrcDefaultsPanel}}" />
+            <Setter Property="Focusable" Value="False" />
+            <Setter Property="IsTabStop" Value="False" />
+            <Setter Property="ItemsPanel">
+                <Setter.Value>
+                    <ItemsPanelTemplate><StackPanel Orientation="Horizontal" /></ItemsPanelTemplate>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="ItemContainerStyle">
+                <Setter.Value>
+                    <Style TargetType="ContentPresenter">
+                        <Setter Property="Width" Value="{Binding CellWidth, RelativeSource={RelativeSource AncestorType=cards:CrcDefaultsPanel}}" />
+                        <Setter Property="Margin" Value="{Binding CellMargin, RelativeSource={RelativeSource AncestorType=cards:CrcDefaultsPanel}}" />
+                    </Style>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="HeaderedItemsControl">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" SharedSizeGroup="CrcFieldLabel" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Style="{StaticResource Text.FieldLabel}"
+                                       Text="{Binding Header, RelativeSource={RelativeSource TemplatedParent}}" />
+                            <ItemsPresenter Grid.Column="1" />
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- one cell per property, for one class -->
+        <DataTemplate x:Key="ClassNameCell" DataType="{x:Type m:EramClassDefault}">
+            <ctl:SectionHeader Style="{StaticResource SectionHeader.Group}" Label="{Binding ClassName}" />
+        </DataTemplate>
+        <DataTemplate x:Key="FiltersCell" DataType="{x:Type m:EramClassDefault}">
+            <ctl:FilterPicker Value="{Binding Filters, Mode=TwoWay}" infra:FieldState.Error="{Binding FiltersError}" />
+        </DataTemplate>
+        <DataTemplate x:Key="BcgCell" DataType="{x:Type m:EramClassDefault}">
+            <ComboBox ItemsSource="{Binding BcgOptions}" SelectedItem="{Binding Bcg}"
+                      infra:FieldState.Error="{Binding BcgError}"
+                      ToolTip="BCG group: an integer 1–40." />
+        </DataTemplate>
+        <DataTemplate x:Key="StyleCell" DataType="{x:Type m:EramClassDefault}">
+            <ComboBox ItemsSource="{Binding StyleOptions}" SelectedItem="{Binding Style}"
+                      infra:FieldState.Error="{Binding StyleError}"
+                      ToolTip="Style: see the CRC GeoJSON concepts for the allowed values per kind." />
+        </DataTemplate>
+        <DataTemplate x:Key="ThicknessCell" DataType="{x:Type m:EramClassDefault}">
+            <ComboBox ItemsSource="{Binding ThicknessOptions}" SelectedItem="{Binding Thickness}"
+                      infra:FieldState.Error="{Binding ThicknessError}"
+                      ToolTip="Thickness: an integer 1–3." />
+        </DataTemplate>
+        <DataTemplate x:Key="SizeCell" DataType="{x:Type m:EramClassDefault}">
+            <ComboBox ItemsSource="{Binding SizeOptions}" SelectedItem="{Binding Size}"
+                      infra:FieldState.Error="{Binding SizeError}"
+                      ToolTip="Size: an integer 1–4." />
+        </DataTemplate>
+        <DataTemplate x:Key="OpaqueCell" DataType="{x:Type m:EramClassDefault}">
+            <ComboBox ItemsSource="{Binding YesNoOptions}" SelectedValuePath="Value" SelectedValue="{Binding Opaque}"
+                      infra:FieldState.Error="{Binding OpaqueError}"
+                      ToolTip="Opaque: Yes or No." />
+        </DataTemplate>
+        <DataTemplate x:Key="UnderlineCell" DataType="{x:Type m:EramClassDefault}">
+            <ComboBox ItemsSource="{Binding YesNoOptions}" SelectedValuePath="Value" SelectedValue="{Binding Underline}"
+                      infra:FieldState.Error="{Binding UnderlineError}"
+                      ToolTip="Underline: Yes or No." />
+        </DataTemplate>
+        <DataTemplate x:Key="XOffsetCell" DataType="{x:Type m:EramClassDefault}">
+            <TextBox Style="{StaticResource OffsetBox}"
+                     Text="{Binding XOffset, UpdateSourceTrigger=PropertyChanged}"
+                     infra:FieldState.Error="{Binding XOffsetError}" />
+        </DataTemplate>
+        <DataTemplate x:Key="YOffsetCell" DataType="{x:Type m:EramClassDefault}">
+            <TextBox Style="{StaticResource OffsetBox}"
+                     Text="{Binding YOffset, UpdateSourceTrigger=PropertyChanged}"
+                     infra:FieldState.Error="{Binding YOffsetError}" />
+        </DataTemplate>
+    </UserControl.Resources>
+
+    <Border Style="{StaticResource Panel.Inset}">
+        <StackPanel Grid.IsSharedSizeScope="True">
+            <ctl:SectionHeader Style="{StaticResource SectionHeader.Group}" Label="{Binding Title, ElementName=Self}" Margin="0,0,0,8">
+                <ctl:SectionHeader.Aside>
+                    <CheckBox Content="Include" IsChecked="{Binding IsIncluded, ElementName=Self}" Margin="16,0,0,0" />
+                </ctl:SectionHeader.Aside>
+            </ctl:SectionHeader>
+
+            <StackPanel IsEnabled="{Binding IsIncluded, ElementName=Self}">
+                <HeaderedItemsControl Style="{StaticResource FieldRow}" ItemTemplate="{StaticResource ClassNameCell}"
+                                      Visibility="{Binding ShowClassNames, ElementName=Self, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}" />
+                <HeaderedItemsControl Style="{StaticResource FieldRow}" Header="Filters" ItemTemplate="{StaticResource FiltersCell}" />
+                <HeaderedItemsControl Style="{StaticResource FieldRow}" Header="BCG" ItemTemplate="{StaticResource BcgCell}" />
+                <HeaderedItemsControl Style="{StaticResource FieldRow}" Header="Style" ItemTemplate="{StaticResource StyleCell}"
+                                      Visibility="{Binding Classes[0].ShowStyle, ElementName=Self, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}" />
+                <HeaderedItemsControl Style="{StaticResource FieldRow}" Header="Thickness" ItemTemplate="{StaticResource ThicknessCell}"
+                                      Visibility="{Binding Classes[0].ShowThickness, ElementName=Self, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}" />
+                <HeaderedItemsControl Style="{StaticResource FieldRow}" Header="Size" ItemTemplate="{StaticResource SizeCell}"
+                                      Visibility="{Binding Classes[0].ShowSize, ElementName=Self, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}" />
+                <HeaderedItemsControl Style="{StaticResource FieldRow}" Header="Opaque" ItemTemplate="{StaticResource OpaqueCell}"
+                                      Visibility="{Binding Classes[0].ShowTextOptions, ElementName=Self, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}" />
+                <HeaderedItemsControl Style="{StaticResource FieldRow}" Header="Underline" ItemTemplate="{StaticResource UnderlineCell}"
+                                      Visibility="{Binding Classes[0].ShowTextOptions, ElementName=Self, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}" />
+                <HeaderedItemsControl Style="{StaticResource FieldRow}" Header="X offset" ItemTemplate="{StaticResource XOffsetCell}"
+                                      Visibility="{Binding Classes[0].ShowTextOptions, ElementName=Self, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}" />
+                <HeaderedItemsControl Style="{StaticResource FieldRow}" Header="Y offset" ItemTemplate="{StaticResource YOffsetCell}"
+                                      Visibility="{Binding Classes[0].ShowTextOptions, ElementName=Self, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}" />
+            </StackPanel>
+        </StackPanel>
+    </Border>
+</UserControl>

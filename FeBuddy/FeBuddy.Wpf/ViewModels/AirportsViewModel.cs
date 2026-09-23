@@ -23,7 +23,8 @@ namespace FeBuddy.Wpf.ViewModels;
 /// <b>Run AIRAC Service</b> on the Review tab, and its results are shown there, described by
 /// this tab through <see cref="ISubServiceRunTarget"/>.
 /// </remarks>
-public sealed class AirportsViewModel : SubServiceSettingsViewModel, ISubServiceRunTarget
+public sealed class AirportsViewModel : SubServiceSettingsViewModel, ISubServiceRunTarget,
+    IFebPropertySettings, ICrcDefaultsSettings, IRoiOverrideSettings
 {
     private const string Node = "Services.AiracService.Airports";
     private const string PrecisionKey = "Services.AiracService.CoordinatePrecision";
@@ -33,9 +34,9 @@ public sealed class AirportsViewModel : SubServiceSettingsViewModel, ISubService
 
     private bool _generateGeojson = true;
     private bool _generateAliasFile = true;
-    private bool _emitAirportSymbols = true;
-    private bool _emitAirportText = true;
-    private bool _emitRunwayLines = true;
+    private bool _emitSymbols = true;
+    private bool _emitText = true;
+    private bool _emitLines = true;
     private bool _includeFebCustomProperties;
     private bool _includeCrcLineDefaults = true;
     private bool _includeCrcSymbolDefaults = true;
@@ -53,19 +54,19 @@ public sealed class AirportsViewModel : SubServiceSettingsViewModel, ISubService
     {
         FebProperties = new ObservableCollection<FebPropertyToggle>(
             AirportFebPropertyNames.All.Select(entry =>
-                new FebPropertyToggle(entry.Property, entry.Name, entry.Description, MarkDirty)));
+                new FebPropertyToggle(entry.Name, entry.Description, MarkDirty)));
 
-        AirportSymbolDefaults = new ObservableCollection<EramClassDefault>
+        SymbolDefaults = new ObservableCollection<EramClassDefault>
         {
             new("Airports", EramFieldKind.Symbol, MarkDirty)
         };
 
-        AirportTextDefaults = new ObservableCollection<EramClassDefault>
+        TextDefaults = new ObservableCollection<EramClassDefault>
         {
             new("Airports", EramFieldKind.Text, MarkDirty)
         };
 
-        RunwayLineDefaults = new ObservableCollection<EramClassDefault>
+        LineDefaults = new ObservableCollection<EramClassDefault>
         {
             new("Runways", EramFieldKind.Line, MarkDirty)
         };
@@ -125,24 +126,24 @@ public sealed class AirportsViewModel : SubServiceSettingsViewModel, ISubService
     }
 
     /// <summary>Emit <c>Airports_Symbols.geojson</c>.</summary>
-    public bool EmitAirportSymbols
+    public bool EmitSymbols
     {
-        get => _emitAirportSymbols;
-        set { if (SetProperty(ref _emitAirportSymbols, value)) MarkDirty(); }
+        get => _emitSymbols;
+        set { if (SetProperty(ref _emitSymbols, value)) MarkDirty(); }
     }
 
     /// <summary>Emit <c>Airports_Text.geojson</c>.</summary>
-    public bool EmitAirportText
+    public bool EmitText
     {
-        get => _emitAirportText;
-        set { if (SetProperty(ref _emitAirportText, value)) MarkDirty(); }
+        get => _emitText;
+        set { if (SetProperty(ref _emitText, value)) MarkDirty(); }
     }
 
     /// <summary>Emit <c>Runways_Lines.geojson</c>.</summary>
-    public bool EmitRunwayLines
+    public bool EmitLines
     {
-        get => _emitRunwayLines;
-        set { if (SetProperty(ref _emitRunwayLines, value)) MarkDirty(); }
+        get => _emitLines;
+        set { if (SetProperty(ref _emitLines, value)) MarkDirty(); }
     }
 
     /// <inheritdoc />
@@ -157,12 +158,6 @@ public sealed class AirportsViewModel : SubServiceSettingsViewModel, ISubService
         get => _includeFebCustomProperties;
         set { if (SetProperty(ref _includeFebCustomProperties, value)) MarkDirty(); }
     }
-
-    /// <summary>The verbatim explanation of what the FE-Buddy properties are (remediation plan 7.4).</summary>
-    public string FebPropertiesDescription =>
-        "Custom Geojson Property fields that increases file size but can be helpful for debugging or "
-        + "viewing data in a geojson viewer in order to identify object. Every FE-Buddy property will be "
-        + "prefixed with \"feb.\"";
 
     /// <summary>One toggle per available <c>feb.*</c> property.</summary>
     public ObservableCollection<FebPropertyToggle> FebProperties { get; }
@@ -191,13 +186,13 @@ public sealed class AirportsViewModel : SubServiceSettingsViewModel, ISubService
     }
 
     /// <summary>CRC symbol defaults for the airport points.</summary>
-    public ObservableCollection<EramClassDefault> AirportSymbolDefaults { get; }
+    public ObservableCollection<EramClassDefault> SymbolDefaults { get; }
 
     /// <summary>CRC text defaults for the airport labels.</summary>
-    public ObservableCollection<EramClassDefault> AirportTextDefaults { get; }
+    public ObservableCollection<EramClassDefault> TextDefaults { get; }
 
     /// <summary>CRC line defaults for the runway centrelines.</summary>
-    public ObservableCollection<EramClassDefault> RunwayLineDefaults { get; }
+    public ObservableCollection<EramClassDefault> LineDefaults { get; }
 
     // ================= region of interest =================
 
@@ -289,9 +284,9 @@ public sealed class AirportsViewModel : SubServiceSettingsViewModel, ISubService
             ["OutputDirectory"] = outputDirectory,
             ["GenerateGeojson"] = YesNo(GenerateGeojson),
             ["GenerateAliasFile"] = YesNo(GenerateAliasFile),
-            ["EmitAirportSymbols"] = YesNo(EmitAirportSymbols),
-            ["EmitAirportText"] = YesNo(EmitAirportText),
-            ["EmitRunwayLines"] = YesNo(EmitRunwayLines),
+            ["EmitAirportSymbols"] = YesNo(EmitSymbols),
+            ["EmitAirportText"] = YesNo(EmitText),
+            ["EmitRunwayLines"] = YesNo(EmitLines),
             ["IncludeFebCustomProperties"] = YesNo(IncludeFebCustomProperties),
             ["FebProperties"] = string.Join(',', FebProperties.Where(p => p.IsSelected).Select(p => p.Name)),
             ["IncludeCrcLineDefaults"] = YesNo(IncludeCrcLineDefaults),
@@ -321,9 +316,9 @@ public sealed class AirportsViewModel : SubServiceSettingsViewModel, ISubService
         {
             // Only the blocks whose file is actually being written and whose Include box is
             // ticked; the parser requires exactly those and warns about any others.
-            if (IncludeCrcSymbolDefaults && EmitAirportSymbols) WriteCrcRow(s, "Symbol", AirportSymbolDefaults[0]);
-            if (IncludeCrcTextDefaults && EmitAirportText) WriteCrcRow(s, "Text", AirportTextDefaults[0]);
-            if (IncludeCrcLineDefaults && EmitRunwayLines) WriteCrcRow(s, "Line", RunwayLineDefaults[0]);
+            if (IncludeCrcSymbolDefaults && EmitSymbols) WriteCrcRow(s, "Symbol", SymbolDefaults[0]);
+            if (IncludeCrcTextDefaults && EmitText) WriteCrcRow(s, "Text", TextDefaults[0]);
+            if (IncludeCrcLineDefaults && EmitLines) WriteCrcRow(s, "Line", LineDefaults[0]);
         }
 
         return s;
@@ -333,17 +328,17 @@ public sealed class AirportsViewModel : SubServiceSettingsViewModel, ISubService
     public override IReadOnlyList<ServiceReviewSection> BuildReviewSummary()
     {
         List<string> geojsonFiles = new();
-        if (EmitAirportSymbols) geojsonFiles.Add("Symbols");
-        if (EmitAirportText) geojsonFiles.Add("Text");
-        if (EmitRunwayLines) geojsonFiles.Add("Runway lines");
+        if (EmitSymbols) geojsonFiles.Add("Symbols");
+        if (EmitText) geojsonFiles.Add("Text");
+        if (EmitLines) geojsonFiles.Add("Runway lines");
 
         // Same order and names as the GeoJSON row above.
         List<string> crcDefaults = new();
         if (GenerateGeojson)
         {
-            if (IncludeCrcSymbolDefaults && EmitAirportSymbols) crcDefaults.Add("Symbols");
-            if (IncludeCrcTextDefaults && EmitAirportText) crcDefaults.Add("Text");
-            if (IncludeCrcLineDefaults && EmitRunwayLines) crcDefaults.Add("Runway lines");
+            if (IncludeCrcSymbolDefaults && EmitSymbols) crcDefaults.Add("Symbols");
+            if (IncludeCrcTextDefaults && EmitText) crcDefaults.Add("Text");
+            if (IncludeCrcLineDefaults && EmitLines) crcDefaults.Add("Runway lines");
         }
 
         string[] selectedProperties = FebProperties.Where(p => p.IsSelected).Select(p => p.Name).ToArray();
@@ -396,9 +391,9 @@ public sealed class AirportsViewModel : SubServiceSettingsViewModel, ISubService
     {
         _generateGeojson = GetBool("GenerateGeojson", true);
         _generateAliasFile = GetBool("GenerateAliasFile", true);
-        _emitAirportSymbols = GetBool("EmitAirportSymbols", true);
-        _emitAirportText = GetBool("EmitAirportText", true);
-        _emitRunwayLines = GetBool("EmitRunwayLines", true);
+        _emitSymbols = GetBool("EmitAirportSymbols", true);
+        _emitText = GetBool("EmitAirportText", true);
+        _emitLines = GetBool("EmitRunwayLines", true);
         _includeFebCustomProperties = GetBool("IncludeFebCustomProperties", false);
         _includeCrcLineDefaults = GetBool("IncludeCrcLineDefaults", true);
         _includeCrcSymbolDefaults = GetBool("IncludeCrcSymbolDefaults", true);
@@ -430,9 +425,9 @@ public sealed class AirportsViewModel : SubServiceSettingsViewModel, ISubService
         _neLat = Get("Roi.OverrideCoordindates.NeLat") ?? string.Empty;
         _neLon = Get("Roi.OverrideCoordindates.NeLon") ?? string.Empty;
 
-        LoadCrcRow("Symbol", AirportSymbolDefaults[0]);
-        LoadCrcRow("Text", AirportTextDefaults[0]);
-        LoadCrcRow("Line", RunwayLineDefaults[0]);
+        LoadCrcRow("Symbol", SymbolDefaults[0]);
+        LoadCrcRow("Text", TextDefaults[0]);
+        LoadCrcRow("Line", LineDefaults[0]);
 
         RaiseAllSettingProperties();
         ClearDirty();
@@ -443,9 +438,9 @@ public sealed class AirportsViewModel : SubServiceSettingsViewModel, ISubService
     {
         Set("GenerateGeojson", YesNo(GenerateGeojson));
         Set("GenerateAliasFile", YesNo(GenerateAliasFile));
-        Set("EmitAirportSymbols", YesNo(EmitAirportSymbols));
-        Set("EmitAirportText", YesNo(EmitAirportText));
-        Set("EmitRunwayLines", YesNo(EmitRunwayLines));
+        Set("EmitAirportSymbols", YesNo(EmitSymbols));
+        Set("EmitAirportText", YesNo(EmitText));
+        Set("EmitRunwayLines", YesNo(EmitLines));
         Set("IncludeFebCustomProperties", YesNo(IncludeFebCustomProperties));
         Set("FebProperties", string.Join(',', FebProperties.Where(p => p.IsSelected).Select(p => p.Name)));
         Set("IncludeCrcLineDefaults", YesNo(IncludeCrcLineDefaults));
@@ -457,15 +452,15 @@ public sealed class AirportsViewModel : SubServiceSettingsViewModel, ISubService
         Set("Roi.OverrideCoordindates.NeLat", NeLat);
         Set("Roi.OverrideCoordindates.NeLon", NeLon);
 
-        SaveCrcRow("Symbol", AirportSymbolDefaults[0]);
-        SaveCrcRow("Text", AirportTextDefaults[0]);
-        SaveCrcRow("Line", RunwayLineDefaults[0]);
+        SaveCrcRow("Symbol", SymbolDefaults[0]);
+        SaveCrcRow("Text", TextDefaults[0]);
+        SaveCrcRow("Line", LineDefaults[0]);
     }
 
     /// <inheritdoc />
     protected override void Validate(ServiceValidation validation)
     {
-        if (GenerateGeojson && !EmitAirportSymbols && !EmitAirportText && !EmitRunwayLines)
+        if (GenerateGeojson && !EmitSymbols && !EmitText && !EmitLines)
         {
             validation.Add(
                 "GeoJSON is on but none of its files are selected. Turn on Symbols, Text or Runway lines, "
@@ -479,11 +474,11 @@ public sealed class AirportsViewModel : SubServiceSettingsViewModel, ISubService
 
         // Only the rows whose file is actually written and whose Include box is ticked are
         // needed; any other row is never read, so it is not held against the user.
-        AirportSymbolDefaults[0].IsRequired = GenerateGeojson && EmitAirportSymbols && IncludeCrcSymbolDefaults;
-        AirportTextDefaults[0].IsRequired = GenerateGeojson && EmitAirportText && IncludeCrcTextDefaults;
-        RunwayLineDefaults[0].IsRequired = GenerateGeojson && EmitRunwayLines && IncludeCrcLineDefaults;
+        SymbolDefaults[0].IsRequired = GenerateGeojson && EmitSymbols && IncludeCrcSymbolDefaults;
+        TextDefaults[0].IsRequired = GenerateGeojson && EmitText && IncludeCrcTextDefaults;
+        LineDefaults[0].IsRequired = GenerateGeojson && EmitLines && IncludeCrcLineDefaults;
 
-        if (AirportSymbolDefaults.Concat(AirportTextDefaults).Concat(RunwayLineDefaults)
+        if (SymbolDefaults.Concat(TextDefaults).Concat(LineDefaults)
             .Any(row => row.IsRequired && row.HasMissingValues))
         {
             validation.Add(CrcDefaultsIncompleteMessage);
@@ -652,9 +647,9 @@ public sealed class AirportsViewModel : SubServiceSettingsViewModel, ISubService
     {
         OnPropertyChanged(nameof(GenerateGeojson));
         OnPropertyChanged(nameof(GenerateAliasFile));
-        OnPropertyChanged(nameof(EmitAirportSymbols));
-        OnPropertyChanged(nameof(EmitAirportText));
-        OnPropertyChanged(nameof(EmitRunwayLines));
+        OnPropertyChanged(nameof(EmitSymbols));
+        OnPropertyChanged(nameof(EmitText));
+        OnPropertyChanged(nameof(EmitLines));
         OnPropertyChanged(nameof(IncludeFebCustomProperties));
         OnPropertyChanged(nameof(IncludeCrcLineDefaults));
         OnPropertyChanged(nameof(IncludeCrcSymbolDefaults));

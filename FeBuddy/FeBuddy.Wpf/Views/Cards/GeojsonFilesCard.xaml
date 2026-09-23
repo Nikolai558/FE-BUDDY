@@ -1,0 +1,39 @@
+<!--
+    GeojsonFilesCard  -  the "What files do you want?" card every GeoJSON sub-service tab shows:
+    one option per file, always in the order Lines, Symbols, Text. Binds to the tab's view model
+    through IGeojsonFileChoices; the tab supplies only the wording.
+
+    Usage:
+        <cards:GeojsonFilesCard IsEnabled="{Binding GenerateGeojson}"
+                                LinesLabel="Runways — Lines"
+                                LinesDescription="One MultiLineString per airport ..." />
+-->
+<UserControl x:Class="FeBuddy.Wpf.Views.Cards.GeojsonFilesCard"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:infra="clr-namespace:FeBuddy.Wpf.Infrastructure"
+             xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance infra:IGeojsonFileChoices}"
+             d:DesignWidth="820"
+             x:Name="Self">
+    <ctl:Card Header="What Files Do You Want?">
+        <StackPanel>
+            <ctl:Option Margin="0,4,0,0" Description="{Binding LinesDescription, ElementName=Self}">
+                <CheckBox Content="{Binding LinesLabel, ElementName=Self}" IsChecked="{Binding EmitLines}" />
+            </ctl:Option>
+            <ctl:Option Margin="0,10,0,0" Description="{Binding SymbolsDescription, ElementName=Self}">
+                <CheckBox Content="{Binding SymbolsLabel, ElementName=Self}" IsChecked="{Binding EmitSymbols}" />
+            </ctl:Option>
+            <ctl:Option Margin="0,10,0,0" Description="{Binding TextDescription, ElementName=Self}">
+                <CheckBox Content="{Binding TextLabel, ElementName=Self}" IsChecked="{Binding EmitText}" />
+            </ctl:Option>
+            <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,10,0,0"
+                       MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
+                       Text="{Binding Footnote, ElementName=Self}"
+                       Visibility="{Binding Footnote, ElementName=Self, Converter={StaticResource StringToVis}}" />
+        </StackPanel>
+    </ctl:Card>
+</UserControl>

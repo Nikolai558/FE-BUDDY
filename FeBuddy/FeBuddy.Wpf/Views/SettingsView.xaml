@@ -82,7 +82,7 @@
                                    Visibility="{Binding FacilitiesReady, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
 
                         <StackPanel Visibility="{Binding FacilitiesReady, Converter={StaticResource BoolToVis}}">
-                            <TextBlock Text="Facility" Style="{StaticResource Text.Label}" Margin="0,4,0,4" />
+                            <ctl:SectionHeader Style="{StaticResource SectionHeader.Group}" Label="Facility" Margin="0,4,0,4" />
                             <ComboBox Style="{StaticResource Themed.ComboBox}"
                                       ItemsSource="{Binding Facilities}"
                                       SelectedValuePath="ArtccId" SelectedValue="{Binding SelectedFacility}"
@@ -97,7 +97,7 @@
 
                         <Border Style="{StaticResource Divider}" Margin="0,14" />
 
-                        <TextBlock Text="Default output directory" Style="{StaticResource Text.Label}" />
+                        <ctl:SectionHeader Style="{StaticResource SectionHeader.Group}" Label="Default Output Directory" />
                         <DockPanel Margin="0,4,0,0">
                             <Button DockPanel.Dock="Right" Style="{StaticResource Button.Ghost}" Content="Browse…"
                                     Command="{Binding BrowseOutputCommand}" Margin="8,0,0,0" />
@@ -128,13 +128,13 @@
                 <ctl:Card Header="GeoJSON Files">
                     <StackPanel>
 
-                        <TextBlock Text="FE-Buddy properties" Style="{StaticResource Text.Label}" Margin="0,4,0,0" />
+                        <ctl:SectionHeader Style="{StaticResource SectionHeader.Group}" Label="FE-Buddy Properties" Margin="0,4,0,0" />
                         <TextBlock Text="{Binding Source={x:Static vm:SettingsViewModel.FebPropertiesDescription}}"
                                    Style="{StaticResource Text.Prose}" Margin="0,4,0,0" />
 
                         <Border Style="{StaticResource Divider}" Margin="0,14" />
 
-                        <TextBlock Text="Maximum Coordinate Precision" Style="{StaticResource Text.Label}" />
+                        <ctl:SectionHeader Style="{StaticResource SectionHeader.Group}" Label="Maximum Coordinate Precision" />
                         <TextBlock Text="{Binding Source={x:Static vm:SettingsViewModel.CoordinatePrecisionDescription}}"
                                    Style="{StaticResource Text.Prose}" Margin="0,4,0,8" />
                         <StackPanel Orientation="Horizontal">
@@ -151,7 +151,7 @@
 
                         <Border Style="{StaticResource Divider}" Margin="0,14" />
 
-                        <TextBlock Text="File layout" Style="{StaticResource Text.Label}" />
+                        <ctl:SectionHeader Style="{StaticResource SectionHeader.Group}" Label="File Layout" />
                         <TextBlock Text="{Binding Source={x:Static vm:SettingsViewModel.FileLayoutDescription}}"
                                    Style="{StaticResource Text.Prose}" Margin="0,4,0,8" />
                         <StackPanel Orientation="Horizontal">

@@ -5,6 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="clr-namespace:FeBuddy.Wpf.ViewModels"
         xmlns:infra="clr-namespace:FeBuddy.Wpf.Infrastructure"
+        xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance vm:UpdateWindowViewModel}"
         Title="Update FE-Buddy"
@@ -44,7 +45,7 @@
 
             <Border Style="{StaticResource Divider}" Margin="0,16" />
 
-            <TextBlock Text="Release notes" Style="{StaticResource Text.Label}" Margin="0,0,0,6" />
+            <ctl:SectionHeader Style="{StaticResource SectionHeader.Group}" Label="Release Notes" Margin="0,0,0,6" />
             <ScrollViewer MaxHeight="220" VerticalScrollBarVisibility="Auto"
                           Background="{StaticResource Brush.Bg.Sunken}"
                           Padding="12">

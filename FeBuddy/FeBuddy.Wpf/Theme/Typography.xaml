@@ -119,11 +119,17 @@
     </Style>
 
     <!-- Card titles ("CRC ERAM DEFAULTS", the Preview page's "GENERAL"). The one place their
-         font is set: every card title is a ctl:SectionHeader, which uses this style (and which
-         upper-cases the text). ~10% larger than Text.Label so a card's title sits above the
-         panel and field labels inside it. -->
+         font is set: every card title is a ctl:SectionHeader, whose style uses this one (and
+         upper-cases the text). ~10% larger than Text.Label, which headings inside a card use
+         (SectionHeader.Group), so a card's title sits above them. -->
     <Style x:Key="Text.SectionHeader" TargetType="TextBlock" BasedOn="{StaticResource Text.Label}">
         <Setter Property="FontSize" Value="11.5" />
+    </Style>
+
+    <!-- The name to the left of a control in a label / control form grid ("Filters", "BCG"). -->
+    <Style x:Key="Text.FieldLabel" TargetType="TextBlock" BasedOn="{StaticResource Text.Body}">
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="Margin" Value="0,3,12,3" />
     </Style>
 
     <!-- Caption / helper text under a control. -->

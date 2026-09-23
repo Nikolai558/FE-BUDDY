@@ -5,6 +5,9 @@
         Card.Warn       ctl:Card - amber: something the user should know before going on
         Card.Danger     ctl:Card - red: something failed or blocks the run
         Card.Popup      ctl:Card - a floating panel (flyout) with a drop shadow
+        ctl:SectionHeader       (implicit) a card or section title
+        SectionHeader.Group     ctl:SectionHeader - a heading for a group of controls in a card
+        Panel.Inset     Border  - a hairline-bordered panel inside a card (a CRC defaults panel)
         Divider         Border  - 1px hairline rule
         Chip / Chip.*   Border  - small status badge (pair with Chip.Text)
         Chip.Text       TextBlock - the label inside a chip
@@ -15,7 +18,45 @@
 -->
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                    xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls">
+                    xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
+                    xmlns:infra="clr-namespace:FeBuddy.Wpf.Infrastructure">
+
+    <!-- ========================= SECTION HEADER ====================== -->
+    <!-- Every title in the app is a ctl:SectionHeader, so these two styles are the one place
+         titles are cased and sized. The label is upper-cased here (so call sites write normal
+         case); its font is the TextStyle - Text.SectionHeader for a card title, Text.Label one
+         step smaller for a heading inside a card, so a card's title always sits above them.
+         Text.* live in Typography.xaml, a sibling dictionary, hence DynamicResource. -->
+    <infra:UpperCaseConverter x:Key="SectionHeader.ToUpper" />
+
+    <Style TargetType="ctl:SectionHeader">
+        <Setter Property="TextStyle" Value="{DynamicResource Text.SectionHeader}" />
+        <Setter Property="Padding" Value="0,0,0,10" />
+        <Setter Property="Focusable" Value="False" />
+        <Setter Property="IsTabStop" Value="False" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ctl:SectionHeader">
+                    <DockPanel LastChildFill="False" Margin="{TemplateBinding Padding}">
+                        <TextBlock DockPanel.Dock="Left" VerticalAlignment="Center"
+                                   Style="{TemplateBinding TextStyle}"
+                                   Text="{Binding Label, RelativeSource={RelativeSource TemplatedParent},
+                                                  Converter={StaticResource SectionHeader.ToUpper}}" />
+                        <ContentPresenter DockPanel.Dock="Right" VerticalAlignment="Center"
+                                          Content="{TemplateBinding Aside}" />
+                    </DockPanel>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- A heading for a group of controls inside a card ("AMENDMENT DATE", a CRC panel's
+         "RUNWAYS — LINES"). No space of its own below it: the group's first control sets that. -->
+    <Style x:Key="SectionHeader.Group" TargetType="ctl:SectionHeader"
+           BasedOn="{StaticResource {x:Type ctl:SectionHeader}}">
+        <Setter Property="TextStyle" Value="{DynamicResource Text.Label}" />
+        <Setter Property="Padding" Value="0" />
+    </Style>
 
     <!-- ============================== CARD =========================== -->
     <!-- Every card in the app is a ctl:Card, so this style is the one place its look is set.
@@ -89,6 +130,19 @@
                                   Opacity="0.5" Color="#000000" />
             </Setter.Value>
         </Setter>
+    </Style>
+
+    <!-- ========================== INSET PANEL ======================== -->
+    <!-- A hairline-bordered panel inside a card, for a self-contained group that sits beside
+         others (the CRC ERAM defaults panels). The margin spaces panels in a WrapPanel. -->
+    <Style x:Key="Panel.Inset" TargetType="Border">
+        <Setter Property="BorderBrush" Value="{DynamicResource Brush.Stroke}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="{DynamicResource Radius.Control}" />
+        <Setter Property="Padding" Value="14,12" />
+        <Setter Property="Margin" Value="0,0,12,12" />
+        <Setter Property="VerticalAlignment" Value="Top" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
     </Style>
 
     <!-- ============================ DIVIDER ========================== -->

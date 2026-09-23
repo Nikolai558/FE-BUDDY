@@ -1,8 +1,9 @@
-# CI for FE-Buddy-DEV.
+# CI for FE-BUDDY 3.0.
 #
 # Verifies that it compiles and the unit tests pass on every push and pull
-# request to main. This is the development repo - unlike FE-BUDDY (the
-# release repo), there is no releases branch and no installer to build here.
+# request to v3-development. It does NOT produce a release (no installer or
+# release workflow yet; v2 on the development branch is the model to follow
+# when v3 gets one).
 
 name: "CI"
 
@@ -10,10 +11,10 @@ on:
   workflow_dispatch:
 
   push:
-    branches: [ main ]
+    branches: [ v3-development ]
 
   pull_request:
-    branches: [ main ]
+    branches: [ v3-development ]
 
 jobs:
   build:

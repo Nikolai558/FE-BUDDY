@@ -128,3 +128,16 @@ public sealed class EnumToBooleanConverter : IValueConverter
         return Binding.DoNothing;
     }
 }
+
+/// <summary>
+/// One-way string -> upper case in the binding's culture. Lets a title be written in normal case
+/// at the call site while SectionHeader decides how every title is cased.
+/// </summary>
+public sealed class UpperCaseConverter : IValueConverter
+{
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+        => (value as string)?.ToUpper(culture) ?? string.Empty;
+
+    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+        => Binding.DoNothing;
+}

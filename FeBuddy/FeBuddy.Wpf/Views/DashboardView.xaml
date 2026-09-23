@@ -20,7 +20,7 @@
 
         <!-- one News post -->
         <DataTemplate x:Key="NewsPostTemplate" DataType="{x:Type news:NewsPost}">
-            <Border Style="{StaticResource Card}" Margin="0,0,0,12" Padding="18">
+            <ctl:Card>
                 <StackPanel>
                     <DockPanel>
                         <TextBlock DockPanel.Dock="Right" Text="{Binding DateHeading}"
@@ -31,7 +31,7 @@
                     <TextBlock Text="{Binding Body, Converter={StaticResource MdToText}}" Style="{StaticResource Text.Prose}"
                                Margin="0,8,0,0" />
                 </StackPanel>
-            </Border>
+            </ctl:Card>
         </DataTemplate>
 
         <!-- one activity-log row -->
@@ -118,7 +118,7 @@
             </Grid.RowDefinitions>
 
             <!-- ===================== DESCRIPTION BOX (6.2) ===================== -->
-            <Border Grid.Row="0" Style="{StaticResource Card}" Padding="22">
+            <ctl:Card Grid.Row="0" Margin="0">
                 <StackPanel>
                     <TextBlock Text="{Binding Description}" Style="{StaticResource Text.Prose}" />
 
@@ -133,7 +133,7 @@
                         </TextBlock>
                     </DockPanel>
                 </StackPanel>
-            </Border>
+            </ctl:Card>
 
             <!-- ========================= NEWS (6.1) ========================= -->
             <DockPanel Grid.Row="1" Margin="0,20,0,0">
@@ -151,7 +151,7 @@
                             </Style>
                         </Button.Style>
                     </Button>
-                    <ctl:SectionHeader Label="NEWS" VerticalAlignment="Center" />
+                    <ctl:SectionHeader Label="News" VerticalAlignment="Center" />
                 </DockPanel>
 
                 <TextBlock DockPanel.Dock="Top" Style="{StaticResource Text.Prose}"
@@ -171,7 +171,7 @@
             </DockPanel>
 
             <!-- ==================== ACTIVITY LOG (6.4) ==================== -->
-            <Border Grid.Row="2" Style="{StaticResource Card}" Margin="0,18,0,0" Padding="18">
+            <ctl:Card Grid.Row="2" Margin="0,18,0,0">
                 <DockPanel>
                     <DockPanel DockPanel.Dock="Top">
                         <Button DockPanel.Dock="Right" Style="{StaticResource Button.Ghost}"
@@ -248,7 +248,7 @@
                         </ListBox.ItemContainerStyle>
                     </ListBox>
                 </DockPanel>
-            </Border>
+            </ctl:Card>
         </Grid>
     </Grid>
 </UserControl>

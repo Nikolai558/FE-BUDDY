@@ -393,14 +393,8 @@
                                    VerticalOffset="-14" HorizontalOffset="0"
                                    IsOpen="{Binding IsChecked, ElementName=HealthButton, Mode=TwoWay}"
                                    StaysOpen="False" AllowsTransparency="True" PopupAnimation="Fade">
-                                <Border Style="{StaticResource Card}" Background="{StaticResource Brush.Panel}"
-                                        Padding="12" MinWidth="264" Margin="10">
-                                    <Border.Effect>
-                                        <DropShadowEffect BlurRadius="24" ShadowDepth="6" Direction="90"
-                                                          Opacity="0.5" Color="#000000" />
-                                    </Border.Effect>
+                                <ctl:Card Header="Systems" Style="{StaticResource Card.Popup}" MinWidth="264">
                                     <StackPanel>
-                                        <ctl:SectionHeader Label="SYSTEMS" />
                                         <ItemsControl ItemsSource="{Binding SystemHealth}">
                                             <ItemsControl.ItemTemplate>
                                                 <DataTemplate>
@@ -435,17 +429,17 @@
                                                 HorizontalAlignment="Left"
                                                 Command="{Binding RecheckCommand}" />
                                     </StackPanel>
-                                </Border>
+                                </ctl:Card>
                             </Popup>
                         </Grid>
 
                         <StackPanel Margin="10,10,10,0">
-                            <ctl:SectionHeader Label="WORKSPACE" Margin="10,4,10,4"
+                            <ctl:SectionHeader Label="Workspace" Margin="10,4,10,4"
                                                Visibility="{Binding NavCollapsed, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
                             <ItemsControl ItemsSource="{Binding PrimaryNav}"
                                           ItemTemplate="{StaticResource NavRow}" />
 
-                            <ctl:SectionHeader Label="SYSTEM" Margin="10,18,10,4"
+                            <ctl:SectionHeader Label="System" Margin="10,18,10,4"
                                                Visibility="{Binding NavCollapsed, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
                             <ItemsControl ItemsSource="{Binding SystemNav}"
                                           ItemTemplate="{StaticResource NavRow}" />

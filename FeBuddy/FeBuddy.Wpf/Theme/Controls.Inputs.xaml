@@ -6,6 +6,7 @@
         Field        TextBox with rounded sunken fill + amber focus + placeholder
                      (set the placeholder via the control's Tag)
         Progress     thin rounded determinate ProgressBar (amber fill)
+        ctl:Option   (implicit) a control with its explanation indented underneath
 
     Implicit styles (no x:Key) so a bare control never falls back to the OS look:
         TextBox      -> Field
@@ -25,7 +26,36 @@
 -->
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                    xmlns:infra="clr-namespace:FeBuddy.Wpf.Infrastructure">
+                    xmlns:infra="clr-namespace:FeBuddy.Wpf.Infrastructure"
+                    xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls">
+
+    <!-- ============================ OPTION ============================ -->
+    <!-- One option row: the control, then its Description indented to sit under the control's
+         label text. The one place that indent and the description's text style are set. -->
+    <Style TargetType="ctl:Option">
+        <Setter Property="Focusable" Value="False" />
+        <Setter Property="IsTabStop" Value="False" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ctl:Option">
+                    <StackPanel>
+                        <ContentPresenter />
+                        <TextBlock x:Name="Description" Margin="20,4,0,0"
+                                   Style="{DynamicResource Text.Prose}"
+                                   Text="{TemplateBinding Description}" />
+                    </StackPanel>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="Description" Value="{x:Null}">
+                            <Setter TargetName="Description" Property="Visibility" Value="Collapsed" />
+                        </Trigger>
+                        <Trigger Property="Description" Value="">
+                            <Setter TargetName="Description" Property="Visibility" Value="Collapsed" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
 
     <!-- =========================== PILL RADIO ========================== -->
     <Style x:Key="Pill.Radio" TargetType="RadioButton">

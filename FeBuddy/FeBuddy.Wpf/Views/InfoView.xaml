@@ -29,7 +29,7 @@
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
             <StackPanel Margin="28,16,28,28">
 
-                <ctl:SectionHeader Label="RESOURCES" />
+                <ctl:SectionHeader Label="Resources" />
 
                 <ItemsControl ItemsSource="{Binding Resources}" Margin="0,10,0,0">
                     <ItemsControl.ItemsPanel>
@@ -39,8 +39,7 @@
                     </ItemsControl.ItemsPanel>
                     <ItemsControl.ItemTemplate>
                         <DataTemplate DataType="{x:Type vm:InfoViewModel+Resource}">
-                            <Border Style="{StaticResource Card}" Width="330" Height="176"
-                                    Margin="0,0,16,16" Padding="20">
+                            <ctl:Card Width="330" Height="176" Margin="0,0,16,16">
                                 <DockPanel>
                                     <Button DockPanel.Dock="Bottom" HorizontalAlignment="Left"
                                             Style="{StaticResource Button.Subtle}" Padding="0,4,0,0"
@@ -54,7 +53,7 @@
                                                    Margin="0,8,0,0" />
                                     </StackPanel>
                                 </DockPanel>
-                            </Border>
+                            </ctl:Card>
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>

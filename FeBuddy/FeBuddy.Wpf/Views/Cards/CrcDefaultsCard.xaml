@@ -1,0 +1,38 @@
+<!--
+    CrcDefaultsCard  -  the CRC ERAM Defaults card every GeoJSON sub-service tab shows: a
+    CrcDefaultsPanel per file, always Lines | Symbols | Text. Binds to the tab's view model
+    through ICrcDefaultsSettings; the tab supplies only the panel titles.
+
+    The panels sit side by side; the WrapPanel stacks them when the window is too narrow for all
+    three, so no panel is ever clipped. A panel shows only while its file is being produced
+    (picked on the What Files card).
+
+    Usage:
+        <cards:CrcDefaultsCard IsEnabled="{Binding GenerateGeojson}" LinesTitle="Runways — Lines" />
+-->
+<UserControl x:Class="FeBuddy.Wpf.Views.Cards.CrcDefaultsCard"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:infra="clr-namespace:FeBuddy.Wpf.Infrastructure"
+             xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
+             xmlns:cards="clr-namespace:FeBuddy.Wpf.Views.Cards"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance infra:ICrcDefaultsSettings}"
+             d:DesignWidth="900"
+             x:Name="Self">
+    <ctl:Card Header="CRC ERAM Defaults">
+        <WrapPanel Orientation="Horizontal" Margin="0,10,0,0">
+            <cards:CrcDefaultsPanel Title="{Binding LinesTitle, ElementName=Self}"
+                                    IsIncluded="{Binding IncludeCrcLineDefaults}" Classes="{Binding LineDefaults}"
+                                    Visibility="{Binding EmitLines, Converter={StaticResource BoolToVis}}" />
+            <cards:CrcDefaultsPanel Title="{Binding SymbolsTitle, ElementName=Self}"
+                                    IsIncluded="{Binding IncludeCrcSymbolDefaults}" Classes="{Binding SymbolDefaults}"
+                                    Visibility="{Binding EmitSymbols, Converter={StaticResource BoolToVis}}" />
+            <cards:CrcDefaultsPanel Title="{Binding TextTitle, ElementName=Self}"
+                                    IsIncluded="{Binding IncludeCrcTextDefaults}" Classes="{Binding TextDefaults}"
+                                    Visibility="{Binding EmitText, Converter={StaticResource BoolToVis}}" />
+        </WrapPanel>
+    </ctl:Card>
+</UserControl>

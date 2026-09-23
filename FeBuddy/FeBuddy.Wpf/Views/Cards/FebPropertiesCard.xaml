@@ -1,0 +1,41 @@
+<!--
+    FebPropertiesCard  -  the FE-Buddy Properties card every GeoJSON sub-service tab shows: the
+    master switch, then one box per feb.* property the sub-service can write. Binds to the tab's
+    view model through IFebPropertySettings; the property list is the only thing that differs.
+
+    Usage:
+        <cards:FebPropertiesCard IsEnabled="{Binding GenerateGeojson}" />
+-->
+<UserControl x:Class="FeBuddy.Wpf.Views.Cards.FebPropertiesCard"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:infra="clr-namespace:FeBuddy.Wpf.Infrastructure"
+             xmlns:m="clr-namespace:FeBuddy.Wpf.ViewModels.Models"
+             xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance infra:IFebPropertySettings}"
+             d:DesignWidth="820">
+    <ctl:Card Header="FE-Buddy Properties">
+        <StackPanel>
+            <!-- The description is verbatim from remediation plan 7.4. -->
+            <ctl:Option Margin="0,4,0,0"
+                        Description="Custom Geojson Property fields that increases file size but can be helpful for debugging or viewing data in a geojson viewer in order to identify object. Every FE-Buddy property will be prefixed with &quot;feb.&quot;">
+                <CheckBox Content="Include FE-Buddy Properties, when available." IsChecked="{Binding IncludeFebCustomProperties}" />
+            </ctl:Option>
+            <ItemsControl Margin="20,8,0,0" ItemsSource="{Binding FebProperties}"
+                          IsEnabled="{Binding IncludeFebCustomProperties}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate DataType="{x:Type m:FebPropertyToggle}">
+                        <CheckBox Content="{Binding JsonKey}" IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                                  ToolTip="{Binding Description}" Margin="0,0,14,6" />
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </StackPanel>
+    </ctl:Card>
+</UserControl>

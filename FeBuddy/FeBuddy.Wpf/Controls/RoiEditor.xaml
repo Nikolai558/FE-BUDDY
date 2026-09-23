@@ -47,13 +47,14 @@
                 <!-- Corner read-out header. The copy button hands the user the four corners as
                      one line of text - the one copy affordance the Map / ROI screens keep
                      (remediation plan Phase 8). It disables itself until all four boxes parse. -->
-                <DockPanel Margin="0,0,0,5">
-                    <ctl:CopyButton x:Name="CopyCornersButton" DockPanel.Dock="Right"
-                                    Style="{StaticResource Copy.Button}"
-                                    ToolTip="Copy the four corner coordinates"
-                                    IsEnabled="False" />
-                    <TextBlock Text="CORNERS" Style="{StaticResource Text.Label}" VerticalAlignment="Center" />
-                </DockPanel>
+                <ctl:SectionHeader Style="{StaticResource SectionHeader.Group}" Label="Corners" Margin="0,0,0,5">
+                    <ctl:SectionHeader.Aside>
+                        <ctl:CopyButton x:Name="CopyCornersButton"
+                                        Style="{StaticResource Copy.Button}"
+                                        ToolTip="Copy the four corner coordinates"
+                                        IsEnabled="False" />
+                    </ctl:SectionHeader.Aside>
+                </ctl:SectionHeader>
 
                 <Grid>
                     <Grid.ColumnDefinitions>

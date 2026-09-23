@@ -1,0 +1,63 @@
+<!--
+    RoiOverrideCard  -  the Region of Interest card every GeoJSON sub-service tab ends with: the
+    override switch, what applies when it is off, the four corners and the map picker. Binds to
+    the tab's view model through IRoiOverrideSettings. A sub-service with more to say about its
+    region (Departures: how the region selects procedures) puts it in AdditionalContent, which
+    shows under the corners.
+
+    Usage:
+        <cards:RoiOverrideCard IsEnabled="{Binding GenerateGeojson}" />
+
+        <cards:RoiOverrideCard>
+            <cards:RoiOverrideCard.AdditionalContent>
+                <StackPanel Margin="0,14,0,0"> ... </StackPanel>
+            </cards:RoiOverrideCard.AdditionalContent>
+        </cards:RoiOverrideCard>
+-->
+<UserControl x:Class="FeBuddy.Wpf.Views.Cards.RoiOverrideCard"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:infra="clr-namespace:FeBuddy.Wpf.Infrastructure"
+             xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance infra:IRoiOverrideSettings}"
+             d:DesignWidth="820"
+             x:Name="Self">
+    <ctl:Card Header="Region of Interest">
+        <StackPanel>
+            <CheckBox Content="{Binding Title}" ContentStringFormat="Override the default ROI for {0}"
+                      IsChecked="{Binding OverrideRoi}" Margin="0,4,0,0" />
+            <TextBlock Text="{Binding RoiFallbackHint}" Style="{StaticResource Text.Caption}" TextWrapping="Wrap"
+                       Margin="20,4,0,0"
+                       MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
+                       Visibility="{Binding OverrideRoi, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
+            <StackPanel Margin="20,8,0,0" IsEnabled="{Binding OverrideRoi}">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" /><ColumnDefinition Width="160" />
+                        <ColumnDefinition Width="Auto" /><ColumnDefinition Width="160" />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions><RowDefinition /><RowDefinition /></Grid.RowDefinitions>
+                    <TextBlock Text="NE lat" Style="{StaticResource Text.Caption}" VerticalAlignment="Center" Margin="0,0,8,4" />
+                    <TextBox Grid.Column="1" Margin="0,0,12,4" Text="{Binding NeLat, UpdateSourceTrigger=PropertyChanged}"
+                             infra:FieldState.Error="{Binding FieldErrors[NeLat]}" />
+                    <TextBlock Grid.Column="2" Text="NE lon" Style="{StaticResource Text.Caption}" VerticalAlignment="Center" Margin="0,0,8,4" />
+                    <TextBox Grid.Column="3" Margin="0,0,0,4" Text="{Binding NeLon, UpdateSourceTrigger=PropertyChanged}"
+                             infra:FieldState.Error="{Binding FieldErrors[NeLon]}" />
+                    <TextBlock Grid.Row="1" Text="SW lat" Style="{StaticResource Text.Caption}" VerticalAlignment="Center" Margin="0,0,8,0" />
+                    <TextBox Grid.Row="1" Grid.Column="1" Margin="0,0,12,0" Text="{Binding SwLat, UpdateSourceTrigger=PropertyChanged}"
+                             infra:FieldState.Error="{Binding FieldErrors[SwLat]}" />
+                    <TextBlock Grid.Row="1" Grid.Column="2" Text="SW lon" Style="{StaticResource Text.Caption}" VerticalAlignment="Center" Margin="0,0,8,0" />
+                    <TextBox Grid.Row="1" Grid.Column="3" Text="{Binding SwLon, UpdateSourceTrigger=PropertyChanged}"
+                             infra:FieldState.Error="{Binding FieldErrors[SwLon]}" />
+                </Grid>
+                <Button Content="Pick on map…" Style="{StaticResource Button.Ghost}" HorizontalAlignment="Left"
+                        Margin="0,8,0,0" Command="{Binding PickRoiOnMapCommand}" />
+            </StackPanel>
+
+            <ContentPresenter Content="{Binding AdditionalContent, ElementName=Self}" />
+        </StackPanel>
+    </ctl:Card>
+</UserControl>

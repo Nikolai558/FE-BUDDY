@@ -45,12 +45,11 @@
 
         <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
                       infra:WheelScroll.Amplify="3">
-            <StackPanel Margin="28,16,28,0">
+            <StackPanel Margin="28,34,28,8">
 
                 <!-- ================= 1. UPDATES ================= -->
-                <Border Style="{StaticResource Card}" Margin="0,18,0,0">
+                <ctl:Card Header="Updates">
                     <StackPanel>
-                        <ctl:SectionHeader Label="UPDATES" />
                         <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
                                    Foreground="{StaticResource Brush.Warn}"
                                    Text="Do not select anything but Stable unless a developer instructs you to, or you are one." />
@@ -72,19 +71,18 @@
                                     Command="{Binding RollbackCommand}" Margin="8,0,0,0" />
                         </StackPanel>
                     </StackPanel>
-                </Border>
+                </ctl:Card>
 
                 <!-- ================= 2. FACILITY PROFILE ================= -->
-                <Border Style="{StaticResource Card}" Margin="0,16,0,0">
+                <ctl:Card Header="Facility Profile">
                     <StackPanel>
-                        <ctl:SectionHeader Label="FACILITY PROFILE" />
 
                         <TextBlock Style="{StaticResource Text.Prose}"
                                    Text="{Binding FacilityWaitingMessage}" Margin="0,4,0,0"
                                    Visibility="{Binding FacilitiesReady, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
 
                         <StackPanel Visibility="{Binding FacilitiesReady, Converter={StaticResource BoolToVis}}">
-                            <TextBlock Text="Facility" Style="{StaticResource Text.Label}" Margin="0,4,0,4" />
+                            <ctl:SectionHeader Style="{StaticResource SectionHeader.Group}" Label="Facility" Margin="0,4,0,4" />
                             <ComboBox Style="{StaticResource Themed.ComboBox}"
                                       ItemsSource="{Binding Facilities}"
                                       SelectedValuePath="ArtccId" SelectedValue="{Binding SelectedFacility}"
@@ -99,7 +97,7 @@
 
                         <Border Style="{StaticResource Divider}" Margin="0,14" />
 
-                        <TextBlock Text="Default output directory" Style="{StaticResource Text.Label}" />
+                        <ctl:SectionHeader Style="{StaticResource SectionHeader.Group}" Label="Default Output Directory" />
                         <DockPanel Margin="0,4,0,0">
                             <Button DockPanel.Dock="Right" Style="{StaticResource Button.Ghost}" Content="Browse…"
                                     Command="{Binding BrowseOutputCommand}" Margin="8,0,0,0" />
@@ -108,12 +106,11 @@
                         <CheckBox Content="Add a FE-Buddy_Output folder inside that directory"
                                   IsChecked="{Binding AddFeBuddyOutputFolder}" Margin="0,8,0,0" />
                     </StackPanel>
-                </Border>
+                </ctl:Card>
 
                 <!-- ================= 3. DEFAULT REGION OF INTEREST ================= -->
-                <Border Style="{StaticResource Card}" Margin="0,16,0,0">
+                <ctl:Card Header="Default Region of Interest">
                     <StackPanel>
-                        <ctl:SectionHeader Label="DEFAULT REGION OF INTEREST" />
                         <TextBlock Text="{Binding Source={x:Static vm:SettingsViewModel.RoiExplainer}}"
                                    Style="{StaticResource Text.Prose}" Margin="0,4,0,10" />
                         <DockPanel>
@@ -125,20 +122,19 @@
                                        FontFamily="{StaticResource Font.Mono}" VerticalAlignment="Center" />
                         </DockPanel>
                     </StackPanel>
-                </Border>
+                </ctl:Card>
 
                 <!-- ================= 4. GEOJSON FILES ================= -->
-                <Border Style="{StaticResource Card}" Margin="0,16,0,24">
+                <ctl:Card Header="GeoJSON Files">
                     <StackPanel>
-                        <ctl:SectionHeader Label="GEOJSON FILES" />
 
-                        <TextBlock Text="FE-Buddy properties" Style="{StaticResource Text.Label}" Margin="0,4,0,0" />
+                        <ctl:SectionHeader Style="{StaticResource SectionHeader.Group}" Label="FE-Buddy Properties" Margin="0,4,0,0" />
                         <TextBlock Text="{Binding Source={x:Static vm:SettingsViewModel.FebPropertiesDescription}}"
                                    Style="{StaticResource Text.Prose}" Margin="0,4,0,0" />
 
                         <Border Style="{StaticResource Divider}" Margin="0,14" />
 
-                        <TextBlock Text="Maximum Coordinate Precision" Style="{StaticResource Text.Label}" />
+                        <ctl:SectionHeader Style="{StaticResource SectionHeader.Group}" Label="Maximum Coordinate Precision" />
                         <TextBlock Text="{Binding Source={x:Static vm:SettingsViewModel.CoordinatePrecisionDescription}}"
                                    Style="{StaticResource Text.Prose}" Margin="0,4,0,8" />
                         <StackPanel Orientation="Horizontal">
@@ -155,7 +151,7 @@
 
                         <Border Style="{StaticResource Divider}" Margin="0,14" />
 
-                        <TextBlock Text="File layout" Style="{StaticResource Text.Label}" />
+                        <ctl:SectionHeader Style="{StaticResource SectionHeader.Group}" Label="File Layout" />
                         <TextBlock Text="{Binding Source={x:Static vm:SettingsViewModel.FileLayoutDescription}}"
                                    Style="{StaticResource Text.Prose}" Margin="0,4,0,8" />
                         <StackPanel Orientation="Horizontal">
@@ -171,7 +167,7 @@
                                    Text="Developer mode is on, so GeoJSON is pretty printed whatever is chosen here."
                                    Visibility="{Binding IsDevModeForcingPrettyPrint, Converter={StaticResource BoolToVis}}" />
                     </StackPanel>
-                </Border>
+                </ctl:Card>
             </StackPanel>
         </ScrollViewer>
     </Grid>

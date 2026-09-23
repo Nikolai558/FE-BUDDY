@@ -9,43 +9,11 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:FeBuddy.Wpf.ViewModels"
-             xmlns:m="clr-namespace:FeBuddy.Wpf.ViewModels.Models"
              xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
-             xmlns:infra="clr-namespace:FeBuddy.Wpf.Infrastructure"
+             xmlns:cards="clr-namespace:FeBuddy.Wpf.Views.Cards"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance vm:AirportsViewModel}"
              d:DesignWidth="900" d:DesignHeight="1400">
-
-    <UserControl.Resources>
-        <!-- CRC ERAM DEFAULTS panels. Each kind (Lines / Symbols / Text) is its own bordered
-             panel listing its properties top to bottom, label on the left and control on the
-             right. The control column is a fixed width rather than Auto or star: the page fills
-             the window, and an Auto column sizes to whatever is selected, so the boxes of the
-             three panels would all end up different widths. The per-field ToolTips are worded
-             from the settings validator - keep them verbatim. -->
-        <Style x:Key="EramPanel" TargetType="Border">
-            <Setter Property="BorderBrush" Value="{StaticResource Brush.Stroke}" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="CornerRadius" Value="{StaticResource Radius.Control}" />
-            <Setter Property="Padding" Value="14,12" />
-            <Setter Property="Margin" Value="0,0,12,12" />
-            <Setter Property="VerticalAlignment" Value="Top" />
-            <Setter Property="SnapsToDevicePixels" Value="True" />
-        </Style>
-
-        <!-- property name on the left of a CRC panel row -->
-        <Style x:Key="EramFieldLabel" TargetType="TextBlock" BasedOn="{StaticResource Text.Body}">
-            <Setter Property="VerticalAlignment" Value="Center" />
-            <Setter Property="Margin" Value="0,3,12,3" />
-        </Style>
-
-        <!-- xOffset / yOffset box. The hint is a Style setter, not a local ToolTip, so the
-             implicit TextBox style's error trigger can still swap in the validation message
-             ("Must be a whole number, ...") - a local value would always win over it. -->
-        <Style x:Key="EramOffsetBox" TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
-            <Setter Property="ToolTip" Value="Any whole number of pixels. 0 for none." />
-        </Style>
-    </UserControl.Resources>
 
     <!-- No ScrollViewer here: the tab host owns the one page-level scroller
          that every sub-service tab is laid out inside (theme fixes P3a).
@@ -58,238 +26,27 @@
                        Visibility="{Binding ValidationError, Converter={StaticResource StringToVis}}" />
 
             <!-- ============ outputs ============ -->
-            <Border Style="{StaticResource Card}">
-                <StackPanel>
-                    <ctl:SectionHeader Label="OUTPUTS" />
-                    <CheckBox Content="GeoJSON files" IsChecked="{Binding GenerateGeojson}" Margin="0,4,0,0" />
-                    <TextBlock Style="{StaticResource Text.Prose}" Margin="20,4,0,0"
-                               Text="Writes the airport and runway GeoJSON files selected below." />
-                    <CheckBox Content="Alias file (Airports.txt)" IsChecked="{Binding GenerateAliasFile}" Margin="0,10,0,0" />
-                    <TextBlock Style="{StaticResource Text.Prose}" Margin="20,4,0,0"
-                               Text="Writes one alias command per airport FAA ID, and one for airports with an ICAO ID." />
-                    <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,10,0,0"
-                               MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
-                               Text="At least one output must stay on. To produce nothing for Airports, deselect Airports on the General tab." />
-                </StackPanel>
-            </Border>
+            <cards:OutputsCard GeojsonDescription="Writes the airport and runway GeoJSON files selected below."
+                               AliasFileName="Airports.txt"
+                               AliasDescription="Writes one alias command per airport FAA ID, and one for airports with an ICAO ID." />
 
             <!-- ============ which GeoJSON files ============ -->
-            <Border Style="{StaticResource Card}" Margin="0,16,0,0" IsEnabled="{Binding GenerateGeojson}">
-                <StackPanel>
-                    <ctl:SectionHeader Label="WHAT FILES DO YOU WANT?" />
-                    <CheckBox Content="Airports — Symbols" IsChecked="{Binding EmitAirportSymbols}" Margin="0,4,0,0" />
-                    <TextBlock Style="{StaticResource Text.Prose}" Margin="20,4,0,0"
-                               Text="One symbol per airport, placed at its reference point." />
-                    <CheckBox Content="Airports — Text" IsChecked="{Binding EmitAirportText}" Margin="0,10,0,0" />
-                    <TextBlock Style="{StaticResource Text.Prose}" Margin="20,4,0,0"
-                               Text="A label per airport showing the FAA ID and the airport name." />
-                    <CheckBox Content="Runways — Lines" IsChecked="{Binding EmitRunwayLines}" Margin="0,10,0,0" />
-                    <TextBlock Style="{StaticResource Text.Prose}" Margin="20,4,0,0"
-                               Text="One MultiLineString per airport holding that airport's runway centrelines." />
-                </StackPanel>
-            </Border>
+            <cards:GeojsonFilesCard IsEnabled="{Binding GenerateGeojson}"
+                                    LinesLabel="Runways — Lines"
+                                    LinesDescription="One MultiLineString per airport holding that airport's runway centrelines."
+                                    SymbolsLabel="Airports — Symbols"
+                                    SymbolsDescription="One symbol per airport, placed at its reference point."
+                                    TextLabel="Airports — Text"
+                                    TextDescription="A label per airport showing the FAA ID and the airport name." />
 
             <!-- ============ FE-Buddy properties ============ -->
-            <Border Style="{StaticResource Card}" Margin="0,16,0,0" IsEnabled="{Binding GenerateGeojson}">
-                <StackPanel>
-                    <ctl:SectionHeader Label="FE-BUDDY PROPERTIES" />
-                    <CheckBox Content="Include FE-Buddy Properties, when available."
-                              IsChecked="{Binding IncludeFebCustomProperties}" Margin="0,4,0,0" />
-                    <TextBlock Text="{Binding FebPropertiesDescription}" Style="{StaticResource Text.Prose}"
-                               Margin="20,4,0,0" />
-                    <StackPanel Margin="20,8,0,0" IsEnabled="{Binding IncludeFebCustomProperties}">
-                        <ItemsControl ItemsSource="{Binding FebProperties}">
-                            <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate DataType="{x:Type m:FebPropertyToggle}">
-                                    <CheckBox Content="{Binding JsonKey}" IsChecked="{Binding IsSelected, Mode=TwoWay}"
-                                              ToolTip="{Binding Description}" Margin="0,0,14,6" />
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                    </StackPanel>
-                </StackPanel>
-            </Border>
+            <cards:FebPropertiesCard IsEnabled="{Binding GenerateGeojson}" />
 
             <!-- ============ CRC ERAM defaults ============ -->
-            <Border Style="{StaticResource Card}" Margin="0,16,0,0" IsEnabled="{Binding GenerateGeojson}">
-                <StackPanel>
-                    <ctl:SectionHeader Label="CRC ERAM DEFAULTS" />
-                    <!-- Lines | Symbols | Text side by side; the WrapPanel stacks them when the
-                         window is too narrow for all three, so no panel is ever clipped. A panel
-                         shows only while its file is being produced (picked above). Its Include box
-                         decides whether that file gets the CRC ERAM defaults; unticked, the fields
-                         grey out but keep their values. Each Grid's DataContext is its defaults
-                         row, so its IsEnabled reaches back to the view model through the UserControl. -->
-                    <WrapPanel Orientation="Horizontal" Margin="0,10,0,0">
-                        <Border Style="{StaticResource EramPanel}" Visibility="{Binding EmitRunwayLines, Converter={StaticResource BoolToVis}}">
-                            <StackPanel>
-                                <DockPanel Margin="0,0,0,8">
-                                    <CheckBox DockPanel.Dock="Right" Content="Include" IsChecked="{Binding IncludeCrcLineDefaults}" Margin="16,0,0,0" />
-                                    <TextBlock Text="RUNWAYS — LINES" Style="{StaticResource Text.Label}" VerticalAlignment="Center" />
-                                </DockPanel>
-                                <Grid DataContext="{Binding RunwayLineDefaults[0]}"
-                                      IsEnabled="{Binding DataContext.IncludeCrcLineDefaults, RelativeSource={RelativeSource AncestorType=UserControl}}">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="160" />
-                                    </Grid.ColumnDefinitions>
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="Auto" />
-                                        <RowDefinition Height="Auto" />
-                                        <RowDefinition Height="Auto" />
-                                        <RowDefinition Height="Auto" />
-                                    </Grid.RowDefinitions>
-                                    <TextBlock Grid.Row="0" Text="Filters" Style="{StaticResource EramFieldLabel}" />
-                                    <ctl:FilterPicker Grid.Row="0" Grid.Column="1" Margin="0,3" Value="{Binding Filters, Mode=TwoWay}"
-                                                      infra:FieldState.Error="{Binding FiltersError}" />
-                                    <TextBlock Grid.Row="1" Text="BCG" Style="{StaticResource EramFieldLabel}" />
-                                    <ComboBox Grid.Row="1" Grid.Column="1" Margin="0,3" ItemsSource="{Binding BcgOptions}" SelectedItem="{Binding Bcg}"
-                                              infra:FieldState.Error="{Binding BcgError}"
-                                              ToolTip="BCG group: an integer 1–40." />
-                                    <TextBlock Grid.Row="2" Text="Style" Style="{StaticResource EramFieldLabel}" />
-                                    <ComboBox Grid.Row="2" Grid.Column="1" Margin="0,3" ItemsSource="{Binding StyleOptions}" SelectedItem="{Binding Style}"
-                                              infra:FieldState.Error="{Binding StyleError}"
-                                              ToolTip="Style: see the CRC GeoJSON concepts for the allowed values per kind." />
-                                    <TextBlock Grid.Row="3" Text="Thickness" Style="{StaticResource EramFieldLabel}" />
-                                    <ComboBox Grid.Row="3" Grid.Column="1" Margin="0,3" ItemsSource="{Binding ThicknessOptions}" SelectedItem="{Binding Thickness}"
-                                              infra:FieldState.Error="{Binding ThicknessError}"
-                                              ToolTip="Thickness: an integer 1–3." />
-                                </Grid>
-                            </StackPanel>
-                        </Border>
-
-                        <Border Style="{StaticResource EramPanel}" Visibility="{Binding EmitAirportSymbols, Converter={StaticResource BoolToVis}}">
-                            <StackPanel>
-                                <DockPanel Margin="0,0,0,8">
-                                    <CheckBox DockPanel.Dock="Right" Content="Include" IsChecked="{Binding IncludeCrcSymbolDefaults}" Margin="16,0,0,0" />
-                                    <TextBlock Text="AIRPORTS — SYMBOLS" Style="{StaticResource Text.Label}" VerticalAlignment="Center" />
-                                </DockPanel>
-                                <Grid DataContext="{Binding AirportSymbolDefaults[0]}"
-                                      IsEnabled="{Binding DataContext.IncludeCrcSymbolDefaults, RelativeSource={RelativeSource AncestorType=UserControl}}">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="160" />
-                                    </Grid.ColumnDefinitions>
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="Auto" />
-                                        <RowDefinition Height="Auto" />
-                                        <RowDefinition Height="Auto" />
-                                        <RowDefinition Height="Auto" />
-                                    </Grid.RowDefinitions>
-                                    <TextBlock Grid.Row="0" Text="Filters" Style="{StaticResource EramFieldLabel}" />
-                                    <ctl:FilterPicker Grid.Row="0" Grid.Column="1" Margin="0,3" Value="{Binding Filters, Mode=TwoWay}"
-                                                      infra:FieldState.Error="{Binding FiltersError}" />
-                                    <TextBlock Grid.Row="1" Text="BCG" Style="{StaticResource EramFieldLabel}" />
-                                    <ComboBox Grid.Row="1" Grid.Column="1" Margin="0,3" ItemsSource="{Binding BcgOptions}" SelectedItem="{Binding Bcg}"
-                                              infra:FieldState.Error="{Binding BcgError}"
-                                              ToolTip="BCG group: an integer 1–40." />
-                                    <TextBlock Grid.Row="2" Text="Style" Style="{StaticResource EramFieldLabel}" />
-                                    <ComboBox Grid.Row="2" Grid.Column="1" Margin="0,3" ItemsSource="{Binding StyleOptions}" SelectedItem="{Binding Style}"
-                                              infra:FieldState.Error="{Binding StyleError}"
-                                              ToolTip="Style: see the CRC GeoJSON concepts for the allowed values per kind." />
-                                    <TextBlock Grid.Row="3" Text="Size" Style="{StaticResource EramFieldLabel}" />
-                                    <ComboBox Grid.Row="3" Grid.Column="1" Margin="0,3" ItemsSource="{Binding SizeOptions}" SelectedItem="{Binding Size}"
-                                              infra:FieldState.Error="{Binding SizeError}"
-                                              ToolTip="Size: an integer 1–4." />
-                                </Grid>
-                            </StackPanel>
-                        </Border>
-
-                        <Border Style="{StaticResource EramPanel}" Visibility="{Binding EmitAirportText, Converter={StaticResource BoolToVis}}">
-                            <StackPanel>
-                                <DockPanel Margin="0,0,0,8">
-                                    <CheckBox DockPanel.Dock="Right" Content="Include" IsChecked="{Binding IncludeCrcTextDefaults}" Margin="16,0,0,0" />
-                                    <TextBlock Text="AIRPORTS — TEXT" Style="{StaticResource Text.Label}" VerticalAlignment="Center" />
-                                </DockPanel>
-                                <Grid DataContext="{Binding AirportTextDefaults[0]}"
-                                      IsEnabled="{Binding DataContext.IncludeCrcTextDefaults, RelativeSource={RelativeSource AncestorType=UserControl}}">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="160" />
-                                    </Grid.ColumnDefinitions>
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="Auto" />
-                                        <RowDefinition Height="Auto" />
-                                        <RowDefinition Height="Auto" />
-                                        <RowDefinition Height="Auto" />
-                                        <RowDefinition Height="Auto" />
-                                        <RowDefinition Height="Auto" />
-                                        <RowDefinition Height="Auto" />
-                                    </Grid.RowDefinitions>
-                                    <TextBlock Grid.Row="0" Text="Filters" Style="{StaticResource EramFieldLabel}" />
-                                    <ctl:FilterPicker Grid.Row="0" Grid.Column="1" Margin="0,3" Value="{Binding Filters, Mode=TwoWay}"
-                                                      infra:FieldState.Error="{Binding FiltersError}" />
-                                    <TextBlock Grid.Row="1" Text="BCG" Style="{StaticResource EramFieldLabel}" />
-                                    <ComboBox Grid.Row="1" Grid.Column="1" Margin="0,3" ItemsSource="{Binding BcgOptions}" SelectedItem="{Binding Bcg}"
-                                              infra:FieldState.Error="{Binding BcgError}"
-                                              ToolTip="BCG group: an integer 1–40." />
-                                    <TextBlock Grid.Row="2" Text="Size" Style="{StaticResource EramFieldLabel}" />
-                                    <ComboBox Grid.Row="2" Grid.Column="1" Margin="0,3" ItemsSource="{Binding SizeOptions}" SelectedItem="{Binding Size}"
-                                              infra:FieldState.Error="{Binding SizeError}"
-                                              ToolTip="Size: an integer 1–4." />
-                                    <TextBlock Grid.Row="3" Text="Opaque" Style="{StaticResource EramFieldLabel}" />
-                                    <ComboBox Grid.Row="3" Grid.Column="1" Margin="0,3" ItemsSource="{Binding YesNoOptions}"
-                                              SelectedValuePath="Value" SelectedValue="{Binding Opaque}"
-                                              infra:FieldState.Error="{Binding OpaqueError}"
-                                              ToolTip="Opaque: Yes or No." />
-                                    <TextBlock Grid.Row="4" Text="Underline" Style="{StaticResource EramFieldLabel}" />
-                                    <ComboBox Grid.Row="4" Grid.Column="1" Margin="0,3" ItemsSource="{Binding YesNoOptions}"
-                                              SelectedValuePath="Value" SelectedValue="{Binding Underline}"
-                                              infra:FieldState.Error="{Binding UnderlineError}"
-                                              ToolTip="Underline: Yes or No." />
-                                    <TextBlock Grid.Row="5" Text="X offset" Style="{StaticResource EramFieldLabel}" />
-                                    <TextBox Grid.Row="5" Grid.Column="1" Margin="0,3" Style="{StaticResource EramOffsetBox}"
-                                             Text="{Binding XOffset, UpdateSourceTrigger=PropertyChanged}"
-                                             infra:FieldState.Error="{Binding XOffsetError}" />
-                                    <TextBlock Grid.Row="6" Text="Y offset" Style="{StaticResource EramFieldLabel}" />
-                                    <TextBox Grid.Row="6" Grid.Column="1" Margin="0,3" Style="{StaticResource EramOffsetBox}"
-                                             Text="{Binding YOffset, UpdateSourceTrigger=PropertyChanged}"
-                                             infra:FieldState.Error="{Binding YOffsetError}" />
-                                </Grid>
-                            </StackPanel>
-                        </Border>
-                    </WrapPanel>
-                </StackPanel>
-            </Border>
+            <cards:CrcDefaultsCard IsEnabled="{Binding GenerateGeojson}"
+                                   LinesTitle="Runways — Lines" SymbolsTitle="Airports — Symbols" TextTitle="Airports — Text" />
 
             <!-- ============ region of interest ============ -->
-            <Border Style="{StaticResource Card}" Margin="0,16,0,0" IsEnabled="{Binding GenerateGeojson}">
-                <StackPanel>
-                    <ctl:SectionHeader Label="REGION OF INTEREST" />
-                    <CheckBox Content="Override the default ROI for Airports" IsChecked="{Binding OverrideRoi}" Margin="0,4,0,0" />
-                    <TextBlock Text="{Binding RoiFallbackHint}" Style="{StaticResource Text.Caption}" TextWrapping="Wrap"
-                               Margin="20,4,0,0"
-                               MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
-                               Visibility="{Binding OverrideRoi, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
-                    <StackPanel Margin="20,8,0,0" IsEnabled="{Binding OverrideRoi}">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" /><ColumnDefinition Width="160" />
-                                <ColumnDefinition Width="Auto" /><ColumnDefinition Width="160" />
-                            </Grid.ColumnDefinitions>
-                            <Grid.RowDefinitions><RowDefinition /><RowDefinition /></Grid.RowDefinitions>
-                            <TextBlock Text="NE lat" Style="{StaticResource Text.Caption}" VerticalAlignment="Center" Margin="0,0,8,4" />
-                            <TextBox Grid.Column="1" Margin="0,0,12,4" Text="{Binding NeLat, UpdateSourceTrigger=PropertyChanged}"
-                                     infra:FieldState.Error="{Binding FieldErrors[NeLat]}" />
-                            <TextBlock Grid.Column="2" Text="NE lon" Style="{StaticResource Text.Caption}" VerticalAlignment="Center" Margin="0,0,8,4" />
-                            <TextBox Grid.Column="3" Margin="0,0,0,4" Text="{Binding NeLon, UpdateSourceTrigger=PropertyChanged}"
-                                     infra:FieldState.Error="{Binding FieldErrors[NeLon]}" />
-                            <TextBlock Grid.Row="1" Text="SW lat" Style="{StaticResource Text.Caption}" VerticalAlignment="Center" Margin="0,0,8,0" />
-                            <TextBox Grid.Row="1" Grid.Column="1" Margin="0,0,12,0" Text="{Binding SwLat, UpdateSourceTrigger=PropertyChanged}"
-                                     infra:FieldState.Error="{Binding FieldErrors[SwLat]}" />
-                            <TextBlock Grid.Row="1" Grid.Column="2" Text="SW lon" Style="{StaticResource Text.Caption}" VerticalAlignment="Center" Margin="0,0,8,0" />
-                            <TextBox Grid.Row="1" Grid.Column="3" Text="{Binding SwLon, UpdateSourceTrigger=PropertyChanged}"
-                                     infra:FieldState.Error="{Binding FieldErrors[SwLon]}" />
-                        </Grid>
-                        <Button Content="Pick on map…" Style="{StaticResource Button.Ghost}" HorizontalAlignment="Left"
-                                Margin="0,8,0,0" Command="{Binding PickRoiOnMapCommand}" />
-                    </StackPanel>
-                </StackPanel>
-            </Border>
-
-        <Rectangle Height="8" Fill="Transparent" />
+            <cards:RoiOverrideCard IsEnabled="{Binding GenerateGeojson}" />
     </StackPanel>
 </UserControl>

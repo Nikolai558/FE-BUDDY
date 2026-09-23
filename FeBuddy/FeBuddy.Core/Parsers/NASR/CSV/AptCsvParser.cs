@@ -89,7 +89,7 @@ namespace FeBuddy.Core.Parsers.NASR.CSV
                     LongHemis = fields["LONG_HEMIS"],
                     BaseLongDecimal = FebCsvHelper.ParseDouble(fields["LONG_DECIMAL"]),
                     SurveyMethodCode = fields["SURVEY_METHOD_CODE"],
-                    Elev = FebCsvHelper.ParseDouble(fields["ELEV"]),
+                    Elev = FebCsvHelper.ParseNullableDouble(fields["ELEV"]),
                     ElevMethodCode = fields["ELEV_METHOD_CODE"],
                     MagVarn = FebCsvHelper.ParseNullableInt(fields["MAG_VARN"]),
                     MagHemis = fields["MAG_HEMIS"],

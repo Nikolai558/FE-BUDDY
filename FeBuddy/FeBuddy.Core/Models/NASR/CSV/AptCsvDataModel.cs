@@ -340,7 +340,7 @@ namespace FeBuddy.Core.Models.NASR.CSV
             /// _Nullable: No
             /// </summary>
             /// <remarks>Elevation measured at the highest point on the centerline of the usable landing surface, expressed to the nearest tenth of a foot above mean sea level (MSL). Examples: "-127.8" "0" "130.2"</remarks>
-            public double Elev { get; set; }
+            public double? Elev { get; set; }
             /// <summary>
             /// Airport Elevation Determination Method
             /// _Src: APT_BASE.csv(ELEV_METHOD_CODE)

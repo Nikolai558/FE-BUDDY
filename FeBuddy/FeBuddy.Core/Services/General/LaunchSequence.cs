@@ -1,3 +1,4 @@
+using FeBuddy.Core.Configuration;
 using FeBuddy.Core.Helpers;
 using FeBuddy.Core.Models.Services.Airac;
 using FeBuddy.Core.Models.Services.General;
@@ -19,6 +20,7 @@ public record LaunchResult(UtcTimeCheckResult Time, VersionCheckResult Version, 
 /// step that fails degrades the feature that depends on it and is never allowed to block launch.
 /// </summary>
 /// <remarks>
+
 /// Steps run in dependency order, not list order: temp clear and config read first (the
 /// version check and News need the config; the AIRAC download uses the temp folder), then the
 /// UTC time / internet check (AIRAC needs the time, and all three network steps use the
@@ -50,7 +52,15 @@ public static class LaunchSequence
 
 		RunStep(
 			progress, LaunchStep.ReadUserConfig, "Reading saved settings",
-			() => { UserConfigFile.ReadAll(); return true; },
+			() =>
+			{
+				UserConfigFile.ReadAll();
+
+				// App-wide output preferences are applied as soon as they are readable, so any
+				// file written this session follows them.
+				OutputFormatting.LoadFromUserConfig();
+				return true;
+			},
 			defaultValue: false);
 
 		UtcTimeCheckResult time = await RunStepAsync(

@@ -41,13 +41,38 @@ public static class AirwayService
 		AirwayBuildAllResult buildResult = AirwayBuilder.BuildAll(allNasrCsvData, parseResult.Settings);
 		messages.AddRange(buildResult.Messages);
 
+		// The ROI limits the GeoJSON only. The alias file gets every built airway and applies its
+		// own AliasRoiScope - "All" really is all, "ROI airways only" narrows it.
+		IReadOnlyList<Airway> airwaysInRoi = buildResult.Airways.Where(a => a.CrossesRoi).ToList();
+
 		AirwayGeojsonGenerateResult geojsonResult =
-			AirwayGeojsonService.Generate(buildResult.Airways, parseResult.Settings);
+			AirwayGeojsonService.Generate(airwaysInRoi, parseResult.Settings);
 		messages.AddRange(geojsonResult.Messages);
 
 		AirwayAliasGenerateResult? aliasResult = parseResult.Settings.GenerateAliasFile
 			? AirwayAliasService.Generate(buildResult.Airways, parseResult.Settings)
 			: null;
+
+		// Filters that leave nothing to write would otherwise end in a clean-looking run, so say
+		// which requested output came out empty and why.
+		bool noGeojson = parseResult.Settings.OutputBy != AirwayGeojsonOutputBy.None && airwaysInRoi.Count == 0;
+		bool noAlias = parseResult.Settings.GenerateAliasFile && aliasResult?.FilePath is null;
+
+		if (noGeojson || noAlias)
+		{
+			string what = (noGeojson, noAlias) switch
+			{
+				(true, true) => "no Airways GeoJSON or alias files were written",
+				(true, false) => "no Airways GeoJSON files were written",
+				_ => "no Airways alias file was written",
+			};
+
+			messages.Add(new ServiceMessage(LogLevel.Warning, "AirwayService",
+				$"No airways matched your designation and region filters, so {what}.")
+			{
+				IsAdvisory = true
+			});
+		}
 
 		stopwatch.Stop();
 
@@ -62,7 +87,7 @@ public static class AirwayService
 		{
 			Messages = messages,
 			Elapsed = stopwatch.Elapsed,
-			AirwayCount = buildResult.Airways.Count,
+			AirwayCount = airwaysInRoi.Count,
 			GeojsonFilesWritten = geojsonResult.FilesWritten,
 			GeojsonFeatureCountsByFile = geojsonResult.RenderedFeatureCountsByFile,
 			AliasFilePath = aliasResult?.FilePath,

@@ -4,7 +4,7 @@
 > post-GUI migration target. The active build (Airways services and everything that leads
 > up to the GUI) uses the `SERVICES` layout described in
 > [`FE-Buddy_3.0_Structure_And_Build_Plan.md`](FE-Buddy_3.0_Structure_And_Build_Plan.md).
-> Do not relocate existing `FEBuddyLibrary` code into `Domain`/`Application`/`Infrastructure`/
+> Do not relocate existing `FeBuddy.Core` code into `Domain`/`Application`/`Infrastructure`/
 > `Desktop` projects until that document says the migration phase has started.
 
 FE-BUDDY 3.0 follows a layered architecture inspired by common .NET Clean Architecture practices.  

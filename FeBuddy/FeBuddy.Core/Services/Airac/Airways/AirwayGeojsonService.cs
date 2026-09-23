@@ -138,9 +138,9 @@ public static class AirwayGeojsonService
 	{
 		FeatureCollection collection = new();
 
-		if (settings.IncludeCrcEramPropertyDefaults)
+		if (settings.IncludeCrcLineDefaults)
 		{
-			collection.Add(CrcEramPropertyHandler.CreateDefault(CrcFeatureKind.Line, settings.LineDefaults[referenceClass]));
+			collection.Add(CrcEramPropertyHandler.CreateDefault(settings.LineDefaults[referenceClass]));
 		}
 
 		int renderedCount = 0;
@@ -150,23 +150,22 @@ public static class AirwayGeojsonService
 			AttributesTable attributes;
 
 			bool needsOverride =
-				settings.IncludeCrcEramPropertyDefaults &&
+				settings.IncludeCrcLineDefaults &&
 				settings.OutputBy == AirwayGeojsonOutputBy.Designation &&
 				airway.AltitudeClass != referenceClass;
 
 			attributes = needsOverride
-				? CrcEramPropertyHandler.CreateFeatureProperty(CrcFeatureKind.Line, settings.LineDefaults[airway.AltitudeClass])
+				? CrcEramPropertyHandler.CreateFeatureProperty(CrcFeatureKind.Line, settings.LineDefaults[airway.AltitudeClass].ToFeatureProperties())
 				: new AttributesTable();
 
-			if (settings.IncludeFebCustomProperties)
+			// A Lines Feature is the whole airway: it carries the airway's own ID and its
+			// ordered point list, never a single point's ID.
+			AddFebProperties(attributes, settings, property => property switch
 			{
-				attributes.Add("feb.AwyId", airway.AwyId);
-
-				if (settings.IncludeAirwayWaypointIds)
-				{
-					attributes.Add("feb.AwyWaypoints", airway.Points.Select(p => p.PointId).ToArray());
-				}
-			}
+				AirwayFebProperty.AwyId => airway.AwyId,
+				AirwayFebProperty.Waypoints => airway.Points.Select(p => p.PointId).ToArray(),
+				_ => null,
+			});
 
 			collection.Add(new Feature(airway.Geometry, attributes));
 			renderedCount++;
@@ -191,15 +190,31 @@ public static class AirwayGeojsonService
 		Dictionary<string, int> renderedCounts)
 	{
 		// De-duplicate waypoints across every airway in this group; first occurrence wins.
+		// Alongside, note every airway that uses each point: a shared point is written once,
+		// so its feb.awyId has to name all of them.
 		Dictionary<string, AirwayPoint> uniquePoints = new(StringComparer.OrdinalIgnoreCase);
+		Dictionary<string, HashSet<string>> airwayIdSetsByPoint = new(StringComparer.OrdinalIgnoreCase);
 
 		foreach (Airway airway in airways)
 		{
 			foreach (AirwayPoint point in airway.Points)
 			{
 				uniquePoints.TryAdd(point.PointId, point);
+
+				if (!airwayIdSetsByPoint.TryGetValue(point.PointId, out HashSet<string>? airwayIds))
+				{
+					airwayIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+					airwayIdSetsByPoint[point.PointId] = airwayIds;
+				}
+
+				airwayIds.Add(airway.AwyId);
 			}
 		}
+
+		Dictionary<string, string[]> airwayIdsByPoint = airwayIdSetsByPoint.ToDictionary(
+			kvp => kvp.Key,
+			kvp => kvp.Value.OrderBy(id => id, StringComparer.OrdinalIgnoreCase).ToArray(),
+			StringComparer.OrdinalIgnoreCase);
 
 		IEnumerable<AirwayPoint> pointsToRender = uniquePoints.Values;
 
@@ -213,17 +228,18 @@ public static class AirwayGeojsonService
 
 		if (settings.EmitSymbols)
 		{
-			GenerateSymbols(orderedPoints, referenceClass, settings, directory, filePrefix, filesWritten, renderedCounts);
+			GenerateSymbols(orderedPoints, airwayIdsByPoint, referenceClass, settings, directory, filePrefix, filesWritten, renderedCounts);
 		}
 
 		if (settings.EmitText)
 		{
-			GenerateText(orderedPoints, referenceClass, settings, directory, filePrefix, filesWritten, renderedCounts);
+			GenerateText(orderedPoints, airwayIdsByPoint, referenceClass, settings, directory, filePrefix, filesWritten, renderedCounts);
 		}
 	}
 
 	private static void GenerateSymbols(
 		IReadOnlyList<AirwayPoint> points,
+		IReadOnlyDictionary<string, string[]> airwayIdsByPoint,
 		AirwayAltitudeClass referenceClass,
 		AirwaySettings settings,
 		string directory,
@@ -233,15 +249,21 @@ public static class AirwayGeojsonService
 	{
 		FeatureCollection collection = new();
 
-		if (settings.IncludeCrcEramPropertyDefaults)
+		if (settings.IncludeCrcSymbolDefaults)
 		{
-			collection.Add(CrcEramPropertyHandler.CreateDefault(CrcFeatureKind.Symbol, settings.SymbolDefaults[referenceClass]));
+			collection.Add(CrcEramPropertyHandler.CreateDefault(settings.SymbolDefaults[referenceClass]));
 		}
 
 		foreach (AirwayPoint point in points)
 		{
 			AttributesTable attributes = new();
 			attributes.Add("style", MapSymbolStyle(point.PointType));
+			AddFebProperties(attributes, settings, property => property switch
+			{
+				AirwayFebProperty.AwyId => airwayIdsByPoint[point.PointId],
+				AirwayFebProperty.PointId => point.PointId,
+				_ => null,
+			});
 
 			Feature feature = new(
 				AirwayGeometryBuilder.GeometryFactory.CreatePoint(new Coordinate(point.Longitude, point.Latitude)),
@@ -261,6 +283,7 @@ public static class AirwayGeojsonService
 
 	private static void GenerateText(
 		IReadOnlyList<AirwayPoint> points,
+		IReadOnlyDictionary<string, string[]> airwayIdsByPoint,
 		AirwayAltitudeClass referenceClass,
 		AirwaySettings settings,
 		string directory,
@@ -270,15 +293,22 @@ public static class AirwayGeojsonService
 	{
 		FeatureCollection collection = new();
 
-		if (settings.IncludeCrcEramPropertyDefaults)
+		if (settings.IncludeCrcTextDefaults)
 		{
-			collection.Add(CrcEramPropertyHandler.CreateDefault(CrcFeatureKind.Text, settings.TextDefaults[referenceClass]));
+			collection.Add(CrcEramPropertyHandler.CreateDefault(settings.TextDefaults[referenceClass]));
 		}
 
 		foreach (AirwayPoint point in points)
 		{
 			AttributesTable attributes = new();
 			attributes.Add("text", new[] { point.PointId });
+
+			// No feb.pointId here: the label already is the point's ID.
+			AddFebProperties(attributes, settings, property => property switch
+			{
+				AirwayFebProperty.AwyId => airwayIdsByPoint[point.PointId],
+				_ => null,
+			});
 
 			Feature feature = new(
 				AirwayGeometryBuilder.GeometryFactory.CreatePoint(new Coordinate(point.Longitude, point.Latitude)),
@@ -295,6 +325,51 @@ public static class AirwayGeojsonService
 			renderedCounts[path] = points.Count;
 		}
 	}
+
+	/// <summary>
+	/// Adds the selected <c>feb.*</c> properties to a Feature, in <see cref="AirwayFebProperty"/>
+	/// order, after its CRC attributes.
+	/// </summary>
+	/// <param name="attributes">The Feature's attribute table.</param>
+	/// <param name="settings">The parsed settings.</param>
+	/// <param name="valueFor">
+	/// The value of a property for this Feature, or <see langword="null"/> when the property is
+	/// not written on this kind of Feature.
+	/// </param>
+	private static void AddFebProperties(
+		AttributesTable attributes,
+		AirwaySettings settings,
+		Func<AirwayFebProperty, object?> valueFor)
+	{
+		if (!settings.IncludeFebCustomProperties)
+		{
+			return;
+		}
+
+		foreach (AirwayFebProperty property in settings.FebProperties.OrderBy(p => p))
+		{
+			object? value = valueFor(property);
+
+			if (value is not null)
+			{
+				attributes.Add($"feb.{Name(property)}", value);
+			}
+		}
+	}
+
+	/// <summary>
+	/// The property name as it appears after the <c>feb.</c> prefix. Spelled out rather than
+	/// derived from the enum so the JSON keys are camelCase (<c>awyId</c>, not <c>AwyId</c>).
+	/// </summary>
+	/// <param name="property">The property.</param>
+	/// <returns>The JSON name.</returns>
+	internal static string Name(AirwayFebProperty property) => property switch
+	{
+		AirwayFebProperty.AwyId => "awyId",
+		AirwayFebProperty.PointId => "pointId",
+		AirwayFebProperty.Waypoints => "waypoints",
+		_ => property.ToString(),
+	};
 
 	/// <summary>
 	/// Maps a NASR <c>FROM_PT_TYPE</c> to its CRC symbol style, defaulting to

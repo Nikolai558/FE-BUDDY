@@ -1,7 +1,5 @@
 using System.Collections.ObjectModel;
-using System.Diagnostics;
 using System.Globalization;
-using System.IO;
 using System.Text.RegularExpressions;
 using System.Windows.Input;
 
@@ -20,12 +18,12 @@ using FeBuddy.Core.Services.General;
 namespace FeBuddy.Wpf.ViewModels;
 
 /// <summary>
-/// The <b>Airways</b> sub-service page, hosted inside the AIRAC Service screen (rule 1.1).
-/// Its own settings menu (with the shared Save / Undo contract) plus the run result panel;
-/// the run itself is launched by the parent's <b>Run AIRAC Service</b> button
-/// (remediation plan Phase 7).
+/// The <b>Airways</b> sub-service tab inside the AIRAC Service screen: its settings menu, with
+/// the shared Save / Undo contract. Save, Undo and navigation come from the tab host's action
+/// bar; the run is launched by <b>Run AIRAC Service</b> on the Review tab, and its results are
+/// shown there, described by this tab through <see cref="ISubServiceRunTarget"/>.
 /// </summary>
-public sealed class AirwaysViewModel : SubServiceSettingsViewModel
+public sealed class AirwaysViewModel : SubServiceSettingsViewModel, ISubServiceRunTarget
 {
     private const string Node = "Services.AiracService.Geojson.Airways";
 
@@ -39,8 +37,9 @@ public sealed class AirwaysViewModel : SubServiceSettingsViewModel
     private bool _emitText = true;
     private bool _bufferAirwayWaypoints;
     private bool _includeFebCustomProperties;
-    private bool _includeAirwayWaypointIds;
-    private bool _includeCrcEramPropertyDefaults = true;
+    private bool _includeCrcLineDefaults = true;
+    private bool _includeCrcSymbolDefaults = true;
+    private bool _includeCrcTextDefaults = true;
     private bool _generateAliasFile = true;
     private bool _aliasRoiAirwaysOnly;
     private bool _splitAtAntimeridian = true;
@@ -52,27 +51,16 @@ public sealed class AirwaysViewModel : SubServiceSettingsViewModel
 
     private bool _isCycleReady;
 
-    // ---- run state ----
-    private bool _isRunning;
-    private bool _hasRun;
-    private string? _runError;
-    private double _elapsedSeconds;
-    private int _airwayCount;
-    private int _excludedCount;
-    private string? _aliasFilePath;
-    private int _aliasLineCount;
-    private string? _progressText;
-    private bool _isInfoExpanded;
-    private Stopwatch? _stopwatch;
-
     public AirwaysViewModel()
     {
+        FebProperties = new ObservableCollection<AirwayFebPropertyToggle>(
+            AirwayFebPropertyNames.All.Select(entry =>
+                new AirwayFebPropertyToggle(entry.Property, entry.Name, entry.Description, MarkDirty)));
+
         LineDefaults = BuildClassDefaults(EramFieldKind.Line);
         SymbolDefaults = BuildClassDefaults(EramFieldKind.Symbol);
         TextDefaults = BuildClassDefaults(EramFieldKind.Text);
 
-        ToggleInfoCommand = new RelayCommand(() => IsInfoExpanded = !IsInfoExpanded);
-        OpenOutputCommand = new RelayCommand(OpenOutputFolder, () => !string.IsNullOrEmpty(LastOutputDirectory));
         PickRoiOnMapCommand = new RelayCommand(PickRoiOnMap);
 
         DefaultRoiStore.Changed += (_, _) => OnPropertyChanged(nameof(RoiFallbackHint));
@@ -94,8 +82,27 @@ public sealed class AirwaysViewModel : SubServiceSettingsViewModel
     public AirwayGeojsonOutputBy OutputBy
     {
         get => _outputBy;
-        set { if (SetProperty(ref _outputBy, value)) { MarkDirty(); OnPropertyChanged(nameof(OutputModeHint)); } }
+        set
+        {
+            // Choosing "None" switches the GeoJSON output off, so it is guarded like any other
+            // output: it cannot be the one that leaves this sub-service producing nothing.
+            if (value == AirwayGeojsonOutputBy.None && !GenerateAliasFile && !CanTurnOffOutput())
+            {
+                RestoreRejectedToggle(nameof(OutputBy));
+                return;
+            }
+
+            if (SetProperty(ref _outputBy, value))
+            {
+                MarkDirty();
+                OnPropertyChanged(nameof(OutputModeHint));
+                OnPropertyChanged(nameof(IsGeojsonOutputOn));
+            }
+        }
     }
+
+    /// <summary>Whether any GeoJSON is written, i.e. <see cref="OutputBy"/> is not <c>None</c>.</summary>
+    public bool IsGeojsonOutputOn => OutputBy != AirwayGeojsonOutputBy.None;
 
     /// <summary>Multi-line description; both HIGH/LOW and DESIGNATION also emit <c>_Symbols</c> and <c>_Text</c> alongside <c>_Lines</c> (7.4).</summary>
     public string OutputModeHint => OutputBy switch
@@ -129,16 +136,44 @@ public sealed class AirwaysViewModel : SubServiceSettingsViewModel
 
     /// <summary>Verbatim FE-Buddy Properties description (remediation plan 7.4).</summary>
     public string FebPropertiesDescription =>
-        "Include FE-Buddy Properties, when available.\n\n" +
         "Custom Geojson Property fields that increases file size but can be helpful for debugging or " +
         "viewing data in a geojson viewer in order to identify object. Every FE-Buddy property will be " +
-        "prefixed with feb.";
+        "prefixed with \"feb.\"";
 
-    public bool IncludeAirwayWaypointIds { get => _includeAirwayWaypointIds; set { if (SetProperty(ref _includeAirwayWaypointIds, value)) MarkDirty(); } }
+    /// <summary>One toggle per available <c>feb.*</c> property.</summary>
+    public ObservableCollection<AirwayFebPropertyToggle> FebProperties { get; }
 
-    public bool IncludeCrcEramPropertyDefaults { get => _includeCrcEramPropertyDefaults; set { if (SetProperty(ref _includeCrcEramPropertyDefaults, value)) MarkDirty(); } }
+    /// <summary>Whether the CRC ERAM isDefaults Feature is written into each <c>_Lines</c> file.</summary>
+    public bool IncludeCrcLineDefaults { get => _includeCrcLineDefaults; set { if (SetProperty(ref _includeCrcLineDefaults, value)) MarkDirty(); } }
 
-    public bool GenerateAliasFile { get => _generateAliasFile; set { if (SetProperty(ref _generateAliasFile, value)) MarkDirty(); } }
+    /// <summary>Whether the CRC ERAM isDefaults Feature is written into each <c>_Symbols</c> file.</summary>
+    public bool IncludeCrcSymbolDefaults { get => _includeCrcSymbolDefaults; set { if (SetProperty(ref _includeCrcSymbolDefaults, value)) MarkDirty(); } }
+
+    /// <summary>Whether the CRC ERAM isDefaults Feature is written into each <c>_Text</c> file.</summary>
+    public bool IncludeCrcTextDefaults { get => _includeCrcTextDefaults; set { if (SetProperty(ref _includeCrcTextDefaults, value)) MarkDirty(); } }
+
+    public bool GenerateAliasFile
+    {
+        get => _generateAliasFile;
+        set
+        {
+            if (!value && !CanTurnOffOutput())
+            {
+                // The value never changed, but the control already did - put it back.
+                RestoreRejectedToggle(nameof(GenerateAliasFile));
+                return;
+            }
+
+            if (SetProperty(ref _generateAliasFile, value))
+            {
+                MarkDirty();
+            }
+        }
+    }
+
+    /// <inheritdoc />
+    protected override int EnabledOutputCount =>
+        (OutputBy == AirwayGeojsonOutputBy.None ? 0 : 1) + (GenerateAliasFile ? 1 : 0);
 
     /// <summary><see langword="true"/> = ROI airways only; <see langword="false"/> = all FAA airways (remediation plan 3.5 / 7.5).</summary>
     public bool AliasRoiAirwaysOnly { get => _aliasRoiAirwaysOnly; set { if (SetProperty(ref _aliasRoiAirwaysOnly, value)) MarkDirty(); } }
@@ -163,8 +198,8 @@ public sealed class AirwaysViewModel : SubServiceSettingsViewModel
     /// silent surprise.
     /// </summary>
     public string RoiFallbackHint => DefaultRoiStore.Load() is { } r
-        ? $"Not overridden — uses the Settings ▸ Default Region of Interest (SW {r.SwLat:0.####}, {r.SwLon:0.####}  ·  NE {r.NeLat:0.####}, {r.NeLon:0.####})."
-        : "Not overridden and no Settings ▸ Default Region of Interest is set — the run will include every airway.";
+        ? $"Using the default ROI: SW {r.SwLat:0.####}, {r.SwLon:0.####} / NE {r.NeLat:0.####}, {r.NeLon:0.####}"
+        : "No default ROI is set, so every airway is included. Set one in Settings, or override it here.";
 
     /// <summary>Designation include/exclude toggles, built from the selected cycle's parsed airways (7.4). Disabled until readiness.</summary>
     public ObservableCollection<DesignationToggle> Designations { get; } = new();
@@ -180,52 +215,7 @@ public sealed class AirwaysViewModel : SubServiceSettingsViewModel
     public ObservableCollection<EramClassDefault> SymbolDefaults { get; }
     public ObservableCollection<EramClassDefault> TextDefaults { get; }
 
-    public ICommand ToggleInfoCommand { get; }
-    public ICommand OpenOutputCommand { get; }
     public ICommand PickRoiOnMapCommand { get; }
-
-    // ================= run result panel =================
-
-    public bool IsRunning { get => _isRunning; private set { if (SetProperty(ref _isRunning, value)) OnPropertyChanged(nameof(ShowPanel)); } }
-    public bool HasRun { get => _hasRun; private set { if (SetProperty(ref _hasRun, value)) { OnPropertyChanged(nameof(ShowPanel)); OnPropertyChanged(nameof(RunSucceeded)); OnPropertyChanged(nameof(RunFailed)); } } }
-    public bool ShowPanel => IsRunning || HasRun;
-
-    public string? RunError
-    {
-        get => _runError;
-        private set { if (SetProperty(ref _runError, value)) { OnPropertyChanged(nameof(RunSucceeded)); OnPropertyChanged(nameof(RunFailed)); } }
-    }
-
-    public bool RunSucceeded => HasRun && RunError is null;
-    public bool RunFailed => HasRun && RunError is not null;
-
-    public string? ProgressText { get => _progressText; private set => SetProperty(ref _progressText, value); }
-
-    public double ElapsedSeconds { get => _elapsedSeconds; private set { if (SetProperty(ref _elapsedSeconds, value)) OnPropertyChanged(nameof(ElapsedText)); } }
-    public string ElapsedText => $"{ElapsedSeconds:0.0}s";
-
-    public int AirwayCount { get => _airwayCount; private set => SetProperty(ref _airwayCount, value); }
-    public int ExcludedCount { get => _excludedCount; private set { if (SetProperty(ref _excludedCount, value)) OnPropertyChanged(nameof(HasExcluded)); } }
-    public bool HasExcluded => ExcludedCount > 0;
-
-    public ObservableCollection<AirwaysOutputFileRow> Files { get; } = new();
-    public bool HasFiles => Files.Count > 0;
-
-    public string? AliasFilePath { get => _aliasFilePath; private set { if (SetProperty(ref _aliasFilePath, value)) OnPropertyChanged(nameof(HasAliasFile)); } }
-    public bool HasAliasFile => !string.IsNullOrEmpty(AliasFilePath);
-    public int AliasLineCount { get => _aliasLineCount; private set => SetProperty(ref _aliasLineCount, value); }
-
-    /// <summary>Run messages grouped by airway, each carrying its highest level (remediation plan 3.8).</summary>
-    public ObservableCollection<AirwaysMessageGroup> MessageGroups { get; } = new();
-    public bool HasWarnings => MessageGroups.Any(g => g.Level >= LogLevel.Warning);
-    public bool HasInfoOnly => MessageGroups.Count > 0 && MessageGroups.All(g => g.Level < LogLevel.Warning);
-    public int WarningGroupCount => MessageGroups.Count(g => g.Level >= LogLevel.Warning);
-    public int InfoGroupCount => MessageGroups.Count(g => g.Level < LogLevel.Warning);
-
-    public bool IsInfoExpanded { get => _isInfoExpanded; set { if (SetProperty(ref _isInfoExpanded, value)) OnPropertyChanged(nameof(InfoToggleLabel)); } }
-    public string InfoToggleLabel => IsInfoExpanded ? "Hide info messages" : $"Show {InfoGroupCount} info group(s)";
-
-    private string? LastOutputDirectory { get; set; }
 
     // ================= parent hooks =================
 
@@ -251,82 +241,45 @@ public sealed class AirwaysViewModel : SubServiceSettingsViewModel
         {
             Designations.Add(new DesignationToggle(d, included: !excluded.Contains(d), MarkDirty));
         }
+
+        // The list was empty when this tab snapshotted itself at construction, so the snapshot
+        // says "nothing excluded" while the config may well exclude several. Re-take it now the
+        // toggles reflect what is actually saved.
+        ResyncSavedState();
     }
 
-    /// <summary>Resets the result panel for a new run.</summary>
-    public void BeginRun()
+    /// <inheritdoc />
+    public SubServiceRunResult? DescribeRunResult(AiracServiceResult result)
     {
-        RunError = null;
-        HasRun = false;
-        IsRunning = true;
-        ProgressText = "Starting…";
-        Files.Clear();
-        MessageGroups.Clear();
-        AirwayCount = 0;
-        ExcludedCount = 0;
-        AliasFilePath = null;
-        AliasLineCount = 0;
-        IsInfoExpanded = false;
-        RaisePanelCounts();
-
-        _stopwatch = Stopwatch.StartNew();
-        ElapsedSeconds = 0;
-    }
-
-    /// <summary>Updates the in-panel progress line.</summary>
-    /// <param name="message">The progress message.</param>
-    public void ReportProgress(string message) => ProgressText = message;
-
-    /// <summary>Renders a finished <see cref="AiracServiceResult"/> into the panel.</summary>
-    /// <param name="result">The aggregated AIRAC Service result.</param>
-    public void ApplyAiracResult(AiracServiceResult result)
-    {
-        _stopwatch?.Stop();
-        ElapsedSeconds = _stopwatch?.Elapsed.TotalSeconds ?? 0;
-        IsRunning = false;
-        HasRun = true;
-        ProgressText = null;
-
-        ExcludedCount = result.ExcludedAirwayIds.Count;
-
-        AirwayServiceResult? airways = result.Airways;
-        if (airways is not null)
+        if (result.Airways is not { } airways)
         {
-            AirwayCount = airways.AirwayCount;
-
-            foreach (string path in airways.GeojsonFilesWritten)
-            {
-                int count = airways.GeojsonFeatureCountsByFile.TryGetValue(path, out int c) ? c : 0;
-                Files.Add(new AirwaysOutputFileRow(Path.GetFileName(path), path, count));
-                LastOutputDirectory = Path.GetDirectoryName(path);
-            }
-
-            AliasFilePath = airways.AliasFilePath;
-            AliasLineCount = airways.AliasAirwayLineCount;
-            if (airways.AliasFilePath is not null)
-            {
-                LastOutputDirectory ??= Path.GetDirectoryName(airways.AliasFilePath);
-            }
+            return null;
         }
 
-        foreach (AirwaysMessageGroup group in GroupMessages(result.Messages))
+        string summary = $"{airways.AirwayCount:N0} airways";
+
+        if (result.ExcludedAirwayIds.Count > 0)
         {
-            MessageGroups.Add(group);
+            summary += $", {result.ExcludedAirwayIds.Count:N0} excluded";
         }
 
-        RaisePanelCounts();
-    }
+        if (airways.AliasFilePath is not null)
+        {
+            summary += $", Airways.txt: {airways.AliasAirwayLineCount:N0} alias line(s)";
+        }
 
-    /// <summary>Marks the run failed with an error message.</summary>
-    /// <param name="error">The failure message.</param>
-    public void FailRun(string error)
-    {
-        _stopwatch?.Stop();
-        ElapsedSeconds = _stopwatch?.Elapsed.TotalSeconds ?? 0;
-        IsRunning = false;
-        HasRun = true;
-        RunError = error;
-        ProgressText = null;
+        if (airways.GeojsonFilesWritten.Count > 0)
+        {
+            summary += $", {airways.GeojsonFilesWritten.Count:N0} GeoJSON file(s)";
+        }
+
+        // Grouped by the airway each message names ("Airway 'T312': ..."), so a run does not
+        // read as one flat wall of text; anything that names no airway goes under "General".
+        return new SubServiceRunResult(Title, summary, airways.Messages, m =>
+        {
+            Match match = AirwayIdPattern.Match(m.Text);
+            return match.Success ? match.Groups[1].Value : "General";
+        });
     }
 
     /// <summary>Builds the raw Airways settings block for <see cref="AiracServiceSettings.Airways"/>.</summary>
@@ -351,8 +304,10 @@ public sealed class AirwaysViewModel : SubServiceSettingsViewModel
             ["EmitText"] = YesNo(EmitText),
             ["BufferAirwayWaypoints"] = YesNo(BufferAirwayWaypoints),
             ["IncludeFebCustomProperties"] = YesNo(IncludeFebCustomProperties),
-            ["IncludeAirwayWaypointIds"] = YesNo(IncludeAirwayWaypointIds),
-            ["IncludeCrcEramPropertyDefaults"] = YesNo(IncludeCrcEramPropertyDefaults),
+            ["FebProperties"] = string.Join(',', FebProperties.Where(p => p.IsSelected).Select(p => p.Name)),
+            ["IncludeCrcLineDefaults"] = YesNo(IncludeCrcLineDefaults),
+            ["IncludeCrcSymbolDefaults"] = YesNo(IncludeCrcSymbolDefaults),
+            ["IncludeCrcTextDefaults"] = YesNo(IncludeCrcTextDefaults),
             ["GenerateAliasFile"] = YesNo(GenerateAliasFile),
             ["AliasRoiScope"] = AliasRoiAirwaysOnly ? "RoiAirways" : "All",
             ["SplitAtAntimeridian"] = YesNo(SplitAtAntimeridian),
@@ -376,11 +331,13 @@ public sealed class AirwaysViewModel : SubServiceSettingsViewModel
             s["RoiNeLon"] = defaultRoi.NeLon.ToString(CultureInfo.InvariantCulture);
         }
 
-        if (IncludeCrcEramPropertyDefaults)
+        // Same rule as the parser: only the kinds being written, with their Include box ticked,
+        // carry defaults.
+        if (IsGeojsonOutputOn)
         {
-            WriteCrcBlock(s, "Line", LineDefaults);
-            WriteCrcBlock(s, "Symbol", SymbolDefaults);
-            WriteCrcBlock(s, "Text", TextDefaults);
+            if (IncludeCrcLineDefaults && EmitLines) WriteCrcBlock(s, "Line", LineDefaults);
+            if (IncludeCrcSymbolDefaults && EmitSymbols) WriteCrcBlock(s, "Symbol", SymbolDefaults);
+            if (IncludeCrcTextDefaults && EmitText) WriteCrcBlock(s, "Text", TextDefaults);
         }
 
         return s;
@@ -397,8 +354,9 @@ public sealed class AirwaysViewModel : SubServiceSettingsViewModel
         _emitText = GetBool("EmitText", true);
         _bufferAirwayWaypoints = GetBool("BufferAirwayWaypoints", false);
         _includeFebCustomProperties = GetBool("IncludeFebCustomProperties", false);
-        _includeAirwayWaypointIds = GetBool("IncludeAirwayWaypointIds", false);
-        _includeCrcEramPropertyDefaults = GetBool("IncludeCrcEramPropertyDefaults", true);
+        _includeCrcLineDefaults = GetBool("IncludeCrcLineDefaults", true);
+        _includeCrcSymbolDefaults = GetBool("IncludeCrcSymbolDefaults", true);
+        _includeCrcTextDefaults = GetBool("IncludeCrcTextDefaults", true);
         _generateAliasFile = GetBool("GenerateAliasFile", true);
         _aliasRoiAirwaysOnly = string.Equals(Get("AliasRoiScope"), "RoiAirways", StringComparison.OrdinalIgnoreCase);
         _splitAtAntimeridian = GetBool("SplitAtAntimeridian", true);
@@ -407,6 +365,14 @@ public sealed class AirwaysViewModel : SubServiceSettingsViewModel
         _swLon = Get("Roi.OverrideCoordindates.SwLon") ?? string.Empty;
         _neLat = Get("Roi.OverrideCoordindates.NeLat") ?? string.Empty;
         _neLon = Get("Roi.OverrideCoordindates.NeLon") ?? string.Empty;
+
+        HashSet<string> selectedFebProperties = (Get("FebProperties") ?? string.Empty)
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        foreach (AirwayFebPropertyToggle toggle in FebProperties)
+        {
+            toggle.IsSelected = selectedFebProperties.Contains(toggle.Name);
+        }
 
         LoadCrcBlock("Line", LineDefaults);
         LoadCrcBlock("Symbol", SymbolDefaults);
@@ -432,8 +398,10 @@ public sealed class AirwaysViewModel : SubServiceSettingsViewModel
         Set("EmitText", YesNo(EmitText));
         Set("BufferAirwayWaypoints", YesNo(BufferAirwayWaypoints));
         Set("IncludeFebCustomProperties", YesNo(IncludeFebCustomProperties));
-        Set("IncludeAirwayWaypointIds", YesNo(IncludeAirwayWaypointIds));
-        Set("IncludeCrcEramPropertyDefaults", YesNo(IncludeCrcEramPropertyDefaults));
+        Set("FebProperties", string.Join(',', FebProperties.Where(p => p.IsSelected).Select(p => p.Name)));
+        Set("IncludeCrcLineDefaults", YesNo(IncludeCrcLineDefaults));
+        Set("IncludeCrcSymbolDefaults", YesNo(IncludeCrcSymbolDefaults));
+        Set("IncludeCrcTextDefaults", YesNo(IncludeCrcTextDefaults));
         Set("GenerateAliasFile", YesNo(GenerateAliasFile));
         Set("AliasRoiScope", AliasRoiAirwaysOnly ? "RoiAirways" : "All");
         Set("SplitAtAntimeridian", YesNo(SplitAtAntimeridian));
@@ -455,6 +423,22 @@ public sealed class AirwaysViewModel : SubServiceSettingsViewModel
         if (OutputBy != AirwayGeojsonOutputBy.None && !EmitLines && !EmitSymbols && !EmitText)
         {
             validation.Add("Lines, Symbols and Text are all off, but Output is not \"None\". Turn at least one back on, or set Output to \"None\".");
+        }
+
+        if (IncludeFebCustomProperties && FebProperties.All(p => !p.IsSelected))
+        {
+            validation.Add("FE-Buddy properties are on but none are selected. Pick at least one, or switch them off.");
+        }
+
+        // Only the blocks whose file is actually written and whose Include box is ticked are
+        // needed; any other block is never read, so it is not held against the user.
+        MarkRequired(LineDefaults, IsGeojsonOutputOn && EmitLines && IncludeCrcLineDefaults);
+        MarkRequired(SymbolDefaults, IsGeojsonOutputOn && EmitSymbols && IncludeCrcSymbolDefaults);
+        MarkRequired(TextDefaults, IsGeojsonOutputOn && EmitText && IncludeCrcTextDefaults);
+
+        if (LineDefaults.Concat(SymbolDefaults).Concat(TextDefaults).Any(row => row.IsRequired && row.HasMissingValues))
+        {
+            validation.Add("Some CRC ERAM default values are empty or invalid. Fix the marked boxes, or untick Include on that panel.");
         }
 
         if (!OverrideRoi)
@@ -506,8 +490,17 @@ public sealed class AirwaysViewModel : SubServiceSettingsViewModel
         if (EmitSymbols) fileKinds.Add("Symbols");
         if (EmitText) fileKinds.Add("Text");
 
-        string febProperties = IncludeFebCustomProperties
-            ? IncludeAirwayWaypointIds ? "Yes, with waypoint IDs" : "Yes"
+        List<string> crcDefaults = new();
+        if (IsGeojsonOutputOn)
+        {
+            if (IncludeCrcLineDefaults && EmitLines) crcDefaults.Add("Lines");
+            if (IncludeCrcSymbolDefaults && EmitSymbols) crcDefaults.Add("Symbols");
+            if (IncludeCrcTextDefaults && EmitText) crcDefaults.Add("Text");
+        }
+
+        string[] selectedFebProperties = FebProperties.Where(p => p.IsSelected).Select(p => p.Name).ToArray();
+        string febProperties = IncludeFebCustomProperties && selectedFebProperties.Length > 0
+            ? string.Join(", ", selectedFebProperties)
             : "No";
 
         string aliasFile = GenerateAliasFile
@@ -520,19 +513,37 @@ public sealed class AirwaysViewModel : SubServiceSettingsViewModel
             ? string.Join(", ", Designations.Where(d => !d.Included).Select(d => d.Designation))
             : string.Join(", ", ParseExcludedFromConfig().OrderBy(d => d, StringComparer.OrdinalIgnoreCase));
 
+        // Only the geographic limit; the "Includes" row states what is covered once the
+        // designation exclusions are applied as well.
+        RegionOfInterest? defaultRoi = DefaultRoiStore.Load();
+        bool roiActive = OverrideRoi || defaultRoi is not null;
+
         string regionOfInterest = OverrideRoi
             ? $"Override: SW {SwLat}, {SwLon} / NE {NeLat}, {NeLon}"
-            : RoiFallbackHint;
+            : defaultRoi is { } roi
+                ? $"Default ROI: SW {roi.SwLat:0.####}, {roi.SwLon:0.####} / NE {roi.NeLat:0.####}, {roi.NeLon:0.####}"
+                : "None set - no geographic limit";
+
+        // Name what is covered - never "all except"; the exclusions have their own row. The
+        // designations come from the parsed cycle, so until it is loaded there is nothing to name.
+        string[] included = Designations.Where(d => d.Included).Select(d => d.Designation).ToArray();
+        string covered = Designations.Count == 0
+            ? "Waiting for the cycle's airway list"
+            : included.Length > 0 ? $"{string.Join(", ", included)} airways" : "No airways";
+
+        string includes = covered
+            + (roiActive ? ". GeoJSON: only the airways crossing the region, clipped to it." : ".");
 
         ServiceReviewRow[] rows =
         {
+            new ServiceReviewRow("Includes", includes),
+            new ServiceReviewRow("Excluded designations", string.IsNullOrEmpty(excluded) ? "none" : excluded),
             new ServiceReviewRow("GeoJSON output", OutputBy.ToString()),
             new ServiceReviewRow("File kinds", fileKinds.Count > 0 ? string.Join(", ", fileKinds) : "none"),
             new ServiceReviewRow("Buffer waypoints", BufferAirwayWaypoints ? "Yes" : "No"),
             new ServiceReviewRow("FE-Buddy properties", febProperties),
-            new ServiceReviewRow("CRC ERAM defaults", IncludeCrcEramPropertyDefaults ? "Yes" : "No"),
+            new ServiceReviewRow("CRC ERAM defaults", crcDefaults.Count > 0 ? string.Join(", ", crcDefaults) : "None"),
             new ServiceReviewRow("Alias file", aliasFile),
-            new ServiceReviewRow("Excluded designations", string.IsNullOrEmpty(excluded) ? "none" : excluded),
             new ServiceReviewRow("Region of interest", regionOfInterest),
             new ServiceReviewRow("Split at antimeridian", SplitAtAntimeridian ? "Yes" : "No"),
         };
@@ -566,20 +577,9 @@ public sealed class AirwaysViewModel : SubServiceSettingsViewModel
         }
     }
 
-    private void OpenOutputFolder()
-    {
-        if (string.IsNullOrEmpty(LastOutputDirectory) || !Directory.Exists(LastOutputDirectory))
-        {
-            Toast.Warn("Nothing to open", "Run the AIRAC Service first.");
-            return;
-        }
-
-        Process.Start(new ProcessStartInfo(LastOutputDirectory) { UseShellExecute = true });
-    }
-
     private static string YesNo(bool value) => value ? "Y" : "N";
 
-    private string? Get(string key) => UserConfigFile.GetValue($"{Node}.{key}");
+
 
     private bool GetBool(string key, bool fallback)
     {
@@ -591,7 +591,7 @@ public sealed class AirwaysViewModel : SubServiceSettingsViewModel
         };
     }
 
-    private void Set(string key, string value) => UserConfigFile.TrySetValue($"{Node}.{key}", value);
+
 
     private HashSet<string> ParseExcludedFromConfig() =>
         (Get("ExcludedDesignations") ?? string.Empty)
@@ -601,20 +601,21 @@ public sealed class AirwaysViewModel : SubServiceSettingsViewModel
 
     private ObservableCollection<EramClassDefault> BuildClassDefaults(EramFieldKind kind)
     {
-        (string bcg, string filters, string style)[] seed = kind switch
-        {
-            EramFieldKind.Line => new[] { ("3", "3", "solid"), ("2", "2", "shortDashed"), ("1", "1", "longDashed") },
-            EramFieldKind.Symbol => new[] { ("3", "3", "vor"), ("2", "2", "vor"), ("1", "1", "otherWaypoints") },
-            _ => new[] { ("3", "3", ""), ("2", "2", ""), ("1", "1", "") },
-        };
-
         ObservableCollection<EramClassDefault> rows = new();
-        for (int i = 0; i < AllClasses.Length; i++)
+        foreach (AirwayAltitudeClass altitudeClass in AllClasses)
         {
-            rows.Add(new EramClassDefault(AllClasses[i].ToString(), kind, seed[i].bcg, seed[i].filters, seed[i].style, MarkDirty));
+            rows.Add(new EramClassDefault(altitudeClass.ToString(), kind, MarkDirty));
         }
 
         return rows;
+    }
+
+    private static void MarkRequired(IEnumerable<EramClassDefault> rows, bool required)
+    {
+        foreach (EramClassDefault row in rows)
+        {
+            row.IsRequired = required;
+        }
     }
 
     private void LoadCrcBlock(string kind, ObservableCollection<EramClassDefault> rows)
@@ -627,6 +628,13 @@ public sealed class AirwaysViewModel : SubServiceSettingsViewModel
             row.Style = Get($"{p}.style") ?? row.Style;
             row.Thickness = Get($"{p}.thickness") ?? row.Thickness;
             row.Size = Get($"{p}.size") ?? row.Size;
+            if (kind is "Text")
+            {
+                row.Underline = Get($"{p}.underline") ?? row.Underline;
+                row.Opaque = Get($"{p}.opaque") ?? row.Opaque;
+                row.XOffset = Get($"{p}.xOffset") ?? row.XOffset;
+                row.YOffset = Get($"{p}.yOffset") ?? row.YOffset;
+            }
         }
     }
 
@@ -640,7 +648,14 @@ public sealed class AirwaysViewModel : SubServiceSettingsViewModel
             if (kind is "Line") Set($"{p}.style", row.Style);
             if (kind is "Symbol") { Set($"{p}.style", row.Style); Set($"{p}.size", row.Size); }
             if (kind is "Line") Set($"{p}.thickness", row.Thickness);
-            if (kind is "Text") { Set($"{p}.size", row.Size); }
+            if (kind is "Text")
+            {
+                Set($"{p}.size", row.Size);
+                Set($"{p}.underline", row.Underline);
+                Set($"{p}.opaque", row.Opaque);
+                Set($"{p}.xOffset", row.XOffset);
+                Set($"{p}.yOffset", row.YOffset);
+            }
         }
     }
 
@@ -653,7 +668,14 @@ public sealed class AirwaysViewModel : SubServiceSettingsViewModel
             s[$"{p}.filters"] = row.Filters;
             if (kind is "Line") { s[$"{p}.style"] = row.Style; s[$"{p}.thickness"] = row.Thickness; }
             if (kind is "Symbol") { s[$"{p}.style"] = row.Style; s[$"{p}.size"] = row.Size; }
-            if (kind is "Text") { s[$"{p}.size"] = row.Size; }
+            if (kind is "Text")
+            {
+                s[$"{p}.size"] = row.Size;
+                s[$"{p}.underline"] = row.Underline;
+                s[$"{p}.opaque"] = row.Opaque;
+                s[$"{p}.xOffset"] = row.XOffset.Trim();
+                s[$"{p}.yOffset"] = row.YOffset.Trim();
+            }
         }
     }
 
@@ -661,40 +683,15 @@ public sealed class AirwaysViewModel : SubServiceSettingsViewModel
     {
         foreach (string name in new[]
         {
-            nameof(OutputBy), nameof(OutputModeHint), nameof(EmitLines), nameof(EmitSymbols), nameof(EmitText),
-            nameof(BufferAirwayWaypoints), nameof(IncludeFebCustomProperties), nameof(IncludeAirwayWaypointIds),
-            nameof(IncludeCrcEramPropertyDefaults), nameof(GenerateAliasFile), nameof(AliasRoiAirwaysOnly),
+            nameof(OutputBy), nameof(OutputModeHint), nameof(IsGeojsonOutputOn), nameof(EmitLines), nameof(EmitSymbols), nameof(EmitText),
+            nameof(BufferAirwayWaypoints), nameof(IncludeFebCustomProperties),
+            nameof(IncludeCrcLineDefaults), nameof(IncludeCrcSymbolDefaults), nameof(IncludeCrcTextDefaults),
+            nameof(GenerateAliasFile), nameof(AliasRoiAirwaysOnly),
             nameof(SplitAtAntimeridian), nameof(OverrideRoi), nameof(SwLat), nameof(SwLon), nameof(NeLat), nameof(NeLon),
         })
         {
             OnPropertyChanged(name);
         }
     }
-
-    private void RaisePanelCounts()
-    {
-        foreach (string name in new[]
-        {
-            nameof(HasFiles), nameof(HasWarnings), nameof(HasInfoOnly), nameof(WarningGroupCount),
-            nameof(InfoGroupCount), nameof(InfoToggleLabel), nameof(HasAliasFile), nameof(HasExcluded),
-        })
-        {
-            OnPropertyChanged(name);
-        }
-    }
-
-    private static IEnumerable<AirwaysMessageGroup> GroupMessages(IReadOnlyList<ServiceMessage> messages) =>
-        messages
-            .GroupBy(m =>
-            {
-                Match match = AirwayIdPattern.Match(m.Text);
-                return match.Success ? match.Groups[1].Value : "General";
-            })
-            .Select(g => new AirwaysMessageGroup(
-                g.Key,
-                g.Max(m => m.Level),
-                g.Select(m => m.Text).ToList()))
-            .OrderByDescending(g => g.Level)
-            .ThenBy(g => g.AirwayId, StringComparer.OrdinalIgnoreCase);
 
 }

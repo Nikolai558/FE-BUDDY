@@ -3,16 +3,20 @@ using System.Diagnostics;
 using FeBuddy.Core.Models.NASR.CSV;
 using FeBuddy.Core.Models.Services.Airac;
 using FeBuddy.Core.Models.Services.General;
+using FeBuddy.Core.Models.Services.Airac.Airports;
 using FeBuddy.Core.Models.Services.Airac.Airways;
+using FeBuddy.Core.Models.Services.Airac.Departures;
+using FeBuddy.Core.Services.Airac.Airports;
 using FeBuddy.Core.Services.Airac.Airways;
+using FeBuddy.Core.Services.Airac.Departures;
 using FeBuddy.Core.Services.General;
 
 namespace FeBuddy.Core.Services.Airac;
 
 /// <summary>
 /// The AIRAC Service orchestrator. The GUI calls this once per "Run AIRAC Service"; it
-/// dispatches to each selected sub-service (today only Airways, rule 1.3) and aggregates the
-/// results.
+/// dispatches to each selected sub-service (Airways is the only one with a backend today) and
+/// aggregates the results.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -78,12 +82,14 @@ public static class AiracService
 		Stopwatch stopwatch = Stopwatch.StartNew();
 		List<ServiceMessage> messages = new();
 		AirwayServiceResult? airwaysResult = null;
+		AirportServiceResult? airportsResult = null;
+		DepartureServiceResult? departuresResult = null;
 
 		if (settings.Airways is { } airwayBlock)
 		{
 			cancellationToken.ThrowIfCancellationRequested();
 
-			AppLog.Info(LogSource, $"AIRAC Service: running Airways for cycle {settings.SelectedCycle.AiracCycleId}, facility {settings.ArtccId}.");
+			AppLog.Info(LogSource, $"AIRAC Service: running Airways for cycle {settings.SelectedCycle.AiracCycleId}.");
 			progress?.Report(new AiracServiceProgress("Airways", "Building airway GeoJSON and alias output"));
 
 			// The dictionary contract is preserved end to end (Phase 1.3): AirwayService.Run
@@ -99,7 +105,46 @@ public static class AiracService
 				100));
 			AppLog.Success(LogSource, $"Airways complete: {airwaysResult.AirwayCount} airway(s), {airwaysResult.GeojsonFilesWritten.Count} file(s).");
 		}
-		else
+
+		if (settings.Airports is { } airportBlock)
+		{
+			cancellationToken.ThrowIfCancellationRequested();
+
+			AppLog.Info(LogSource, $"AIRAC Service: running Airports for cycle {settings.SelectedCycle.AiracCycleId}.");
+			progress?.Report(new AiracServiceProgress("Airports", "Building airport GeoJSON and alias output"));
+
+			Dictionary<string, string> block = new(airportBlock, StringComparer.OrdinalIgnoreCase);
+
+			airportsResult = await Task.Run(() => AirportService.Run(nasrData, block), cancellationToken).ConfigureAwait(false);
+
+			messages.AddRange(airportsResult.Messages);
+			progress?.Report(new AiracServiceProgress(
+				"Airports",
+				$"Airports complete: {airportsResult.AirportCount} airport(s), {airportsResult.GeojsonFilesWritten.Count} GeoJSON file(s).",
+				100));
+			AppLog.Success(LogSource, $"Airports complete: {airportsResult.AirportCount} airport(s), {airportsResult.GeojsonFilesWritten.Count} file(s).");
+		}
+
+		if (settings.Departures is { } departureBlock)
+		{
+			cancellationToken.ThrowIfCancellationRequested();
+
+			AppLog.Info(LogSource, $"AIRAC Service: running Departures for cycle {settings.SelectedCycle.AiracCycleId}.");
+			progress?.Report(new AiracServiceProgress("Departures", "Building departure procedure GeoJSON and alias output"));
+
+			Dictionary<string, string> block = new(departureBlock, StringComparer.OrdinalIgnoreCase);
+
+			departuresResult = await Task.Run(() => DepartureService.Run(nasrData, block), cancellationToken).ConfigureAwait(false);
+
+			messages.AddRange(departuresResult.Messages);
+			progress?.Report(new AiracServiceProgress(
+				"Departures",
+				$"Departures complete: {departuresResult.AirportProcedureCount} airport procedure(s), {departuresResult.GeojsonFilesWritten.Count} GeoJSON file(s).",
+				100));
+			AppLog.Success(LogSource, $"Departures complete: {departuresResult.AirportProcedureCount} airport procedure(s), {departuresResult.GeojsonFilesWritten.Count} file(s).");
+		}
+
+		if (airwaysResult is null && airportsResult is null && departuresResult is null)
 		{
 			const string message = "AIRAC Service run requested with no sub-service selected; nothing to do.";
 			messages.Add(new ServiceMessage(LogLevel.Warning, LogSource, message));
@@ -113,6 +158,8 @@ public static class AiracService
 			Messages = messages,
 			Elapsed = stopwatch.Elapsed,
 			Airways = airwaysResult,
+			Airports = airportsResult,
+			Departures = departuresResult,
 			ExcludedAirwayIds = airwaysResult?.ExcludedAirwayIds ?? Array.Empty<string>(),
 		};
 	}

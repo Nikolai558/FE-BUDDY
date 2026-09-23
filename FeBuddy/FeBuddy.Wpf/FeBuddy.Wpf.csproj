@@ -1,15 +1,15 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!--
-    FeBuddy.Wpf  -  UI shell, now being grown into the real app.
+    FeBuddy.Wpf  -  the application's WPF front end.
     ===========================================================================
-    Started as a pure presentation layer (no FeBuddy.Core, no NuGet packages -
-    MVVM helpers and converters are hand-rolled and live under /Infrastructure).
-    Most screens are still sample-data-only prototypes.
+    No UI NuGet packages: the MVVM helpers, converters, toast store and the
+    tabbed-service model are hand-rolled and live under /Infrastructure.
 
-    The Airways screen is the first real, wired screen: it references
-    FeBuddy.Core directly and calls FeBuddy.Core.Services.Airways.AirwayService.Run.
-    Everything else stays sample data until it is grown the same way.
+    Every screen is wired to FeBuddy.Core - there is no sample data anywhere in
+    the app. The AIRAC Service screen runs through
+    FeBuddy.Core.Services.Airac.AiracService, which dispatches to its
+    sub-services (Airways today).
   -->
 
   <PropertyGroup>
@@ -39,8 +39,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- The Airways screen is real and calls into the library; every other
-         screen is still sample data and does not need this. -->
+    <!-- All of the app's data, services and settings come from here. -->
     <ProjectReference Include="..\FeBuddy.Core\FeBuddy.Core.csproj" />
   </ItemGroup>
 

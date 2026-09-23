@@ -10,9 +10,10 @@ namespace FeBuddy.Core.Services.General;
 
 /// <summary>
 /// Writes a GeoJSON <see cref="FeatureCollection"/> to disk following FE-Buddy's output
-/// rules: single-line output by default, pretty-printed only when
-/// <see cref="DevMode.IsEnabled"/> is <see langword="true"/>, and no file at all when there
-/// is nothing worth writing.
+/// rules: single-line output by default, pretty-printed when the user chose it in Settings or
+/// <see cref="DevMode.IsEnabled"/> is <see langword="true"/> (see
+/// <see cref="OutputFormatting.WriteIndentedGeojson"/>), and no file at all when there is
+/// nothing worth writing.
 /// </summary>
 public static class GeojsonFileWriter
 {
@@ -78,8 +79,9 @@ public static class GeojsonFileWriter
 
 		JsonSerializerOptions jsonOptions = new()
 		{
-			// Single-line output saves disk space; DevMode trades that for readability.
-			WriteIndented = DevMode.IsEnabled
+			// Single-line output saves disk space; the Settings preference or DevMode trades that
+			// for readability.
+			WriteIndented = OutputFormatting.WriteIndentedGeojson
 		};
 
 		jsonOptions.Converters.Add(new GeoJsonConverterFactory());

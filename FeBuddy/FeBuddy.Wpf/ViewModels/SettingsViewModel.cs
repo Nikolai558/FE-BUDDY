@@ -8,6 +8,7 @@ using System.Windows.Threading;
 using FeBuddy.Wpf.Infrastructure;
 using FeBuddy.Wpf.Views;
 
+using FeBuddy.Core.Configuration;
 using FeBuddy.Core.Helpers;
 using FeBuddy.Core.Models.Services.Airac;
 using FeBuddy.Core.Models.Services.General;
@@ -41,8 +42,10 @@ public sealed class SettingsViewModel : ObservableObject
     private string _outputDir = string.Empty;
     private bool _addFeBuddyFolder = true;
     private int _coordinatePrecision = 6;
+    private bool _prettyPrintGeojson;
     private RegionOfInterest? _defaultRoi;
     private bool _isDirty;
+    private SavedStateSnapshot _savedState = SavedStateSnapshot.Of(new Dictionary<string, string>());
 
     public SettingsViewModel()
     {
@@ -53,6 +56,8 @@ public sealed class SettingsViewModel : ObservableObject
         _outputDir = Blank(UserConfigFile.GetValue(OutputDirKey)) ?? DefaultOutputDirectory;
         _addFeBuddyFolder = !string.Equals(UserConfigFile.GetValue(AddFolderKey), "N", StringComparison.OrdinalIgnoreCase);
         _coordinatePrecision = int.TryParse(UserConfigFile.GetValue(PrecisionKey), out int p) && p is >= 0 and <= 15 ? p : 6;
+        _prettyPrintGeojson = string.Equals(
+            UserConfigFile.GetValue(OutputFormatting.PrettyPrintGeojsonKey)?.Trim(), "Y", StringComparison.OrdinalIgnoreCase);
 
         _defaultRoi = DefaultRoiStore.Load();
         DefaultRoiStore.Changed += OnDefaultRoiChanged;
@@ -69,6 +74,9 @@ public sealed class SettingsViewModel : ObservableObject
 
         AiracCycleDataCache.Instance.StateChanged += (_, _) => _dispatcher.BeginInvoke(RefreshFacilities);
         RefreshFacilities();
+
+        // Everything above is the loaded state; the page is clean until it differs from this.
+        _savedState = SavedStateSnapshot.Of(CurrentValues());
     }
 
     /// <summary><see langword="true"/> when a saved setting has been edited since the last Save.</summary>
@@ -78,8 +86,27 @@ public sealed class SettingsViewModel : ObservableObject
         private set => SetProperty(ref _isDirty, value);
     }
 
-    /// <summary>Marks the page dirty. Call from every setter whose value Save() persists.</summary>
-    private void MarkDirty() => IsDirty = true;
+    /// <summary>
+    /// Re-evaluates the page after a setting changed. Call from every setter whose value Save()
+    /// persists. Dirty means "differs from what was last saved", so putting a value back the
+    /// way it was clears the warning again.
+    /// </summary>
+    private void MarkDirty() => IsDirty = !_savedState.Matches(CurrentValues());
+
+    /// <summary>
+    /// Every value Save() persists, as the strings it would write. Keep in step with Save():
+    /// a value missing here would never raise "unsaved changes".
+    /// </summary>
+    /// <returns>The values by UserConfig key.</returns>
+    private Dictionary<string, string> CurrentValues() => new(StringComparer.Ordinal)
+    {
+        [ChannelKey] = Channel.ToString(),
+        [OutputDirKey] = OutputDirectory,
+        [AddFolderKey] = AddFeBuddyOutputFolder ? "Y" : "N",
+        [PrecisionKey] = CoordinatePrecision.ToString(CultureInfo.InvariantCulture),
+        [OutputFormatting.PrettyPrintGeojsonKey] = PrettyPrintGeojson ? "Y" : "N",
+        [ArtccKey] = SelectedFacility ?? string.Empty,
+    };
 
     // ================= 1. UPDATES =================
 
@@ -202,6 +229,28 @@ public sealed class SettingsViewModel : ObservableObject
     /// <summary>Parameter is <c>"5"</c>, <c>"6"</c> or <c>"7"</c>.</summary>
     public ICommand SetPrecisionCommand { get; }
 
+    /// <summary>Explains the file-layout choice under its heading.</summary>
+    public const string FileLayoutDescription =
+        "How every GeoJSON file FE-Buddy writes is laid out. Single line keeps files small; pretty print " +
+        "puts each property on its own line so a file is easy to read in a text editor. Applies to all " +
+        "GeoJSON output, whichever service writes it.";
+
+    /// <summary>
+    /// <see langword="true"/> to write GeoJSON pretty printed; <see langword="false"/> (the default)
+    /// for single line. Takes effect for the rest of the session as soon as Settings is saved.
+    /// </summary>
+    public bool PrettyPrintGeojson
+    {
+        get => _prettyPrintGeojson;
+        set { if (SetProperty(ref _prettyPrintGeojson, value)) MarkDirty(); }
+    }
+
+    /// <summary>
+    /// Shown under the choice when developer mode is on, because developer mode pretty prints
+    /// regardless and the single-line choice would otherwise look broken.
+    /// </summary>
+    public bool IsDevModeForcingPrettyPrint => DevMode.IsEnabled;
+
     // ================= save =================
 
     public ICommand SaveCommand { get; }
@@ -212,12 +261,18 @@ public sealed class SettingsViewModel : ObservableObject
         UserConfigFile.TrySetValue(OutputDirKey, OutputDirectory);
         UserConfigFile.TrySetValue(AddFolderKey, AddFeBuddyOutputFolder ? "Y" : "N");
         UserConfigFile.TrySetValue(PrecisionKey, CoordinatePrecision.ToString(CultureInfo.InvariantCulture));
+        UserConfigFile.TrySetValue(OutputFormatting.PrettyPrintGeojsonKey, PrettyPrintGeojson ? "Y" : "N");
         if (!string.IsNullOrWhiteSpace(SelectedFacility))
         {
             UserConfigFile.TrySetValue(ArtccKey, SelectedFacility!);
         }
 
         UserConfigFile.Write();
+
+        // Applied as soon as it is saved, so the next file written follows it without a restart.
+        OutputFormatting.PrettyPrintGeojson = PrettyPrintGeojson;
+
+        _savedState = SavedStateSnapshot.Of(CurrentValues());
         IsDirty = false;
         Toast.Success("Settings saved", "Written to UserConfig.json.");
     }

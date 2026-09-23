@@ -1,4 +1,4 @@
-using FeBuddy.Core.Handlers;
+using FeBuddy.Core.Handlers.General;
 using FeBuddy.Core.Models.Services.Airac.Airways;
 using FeBuddy.Core.Models.Services.General;
 using FeBuddy.Core.Services.General;

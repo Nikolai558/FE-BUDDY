@@ -1,6 +1,6 @@
 <!--
-    AiracGeneralTabView  -  the General tab of the AIRAC Service screen: which cycle,
-    which facility, and which sub-services to produce output for. Ticking a sub-service
+    AiracGeneralTabView  -  the General tab of the AIRAC Service screen: which cycle
+    and which sub-services to produce output for. Ticking a sub-service
     opens its own tab in the rail; Save / navigation come from the tab host's action bar.
 -->
 <UserControl x:Class="FeBuddy.Wpf.Views.AiracGeneralTabView"
@@ -10,19 +10,18 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:FeBuddy.Wpf.ViewModels"
              xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
-             xmlns:infra="clr-namespace:FeBuddy.Wpf.Infrastructure"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance vm:AiracGeneralTabViewModel}"
              d:DesignWidth="820" d:DesignHeight="700">
 
     <!-- No ScrollViewer here: the tab host owns the one page-level scroller. -->
-    <StackPanel MaxWidth="820" HorizontalAlignment="Left">
+    <StackPanel>
 
         <!-- waiting / unavailable banner (remediation plan 2.5) -->
         <Border Style="{StaticResource Card}" Margin="0,0,0,16" Padding="16"
                 Background="{StaticResource Brush.Warn.Soft}"
                 Visibility="{Binding IsReady, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}">
-            <TextBlock Text="{Binding WaitingMessage}" Style="{StaticResource Text.Body}" TextWrapping="Wrap" />
+            <TextBlock Text="{Binding WaitingMessage}" Style="{StaticResource Text.Prose}" />
         </Border>
 
         <!-- ============ cycle ============ -->
@@ -48,25 +47,11 @@
             </StackPanel>
         </Border>
 
-        <!-- ============ facility ============ -->
-        <Border Style="{StaticResource Card}" Margin="0,16,0,0">
-            <StackPanel>
-                <ctl:SectionHeader Label="FACILITY" />
-                <TextBlock Style="{StaticResource Text.Body}" Margin="0,4,0,6"
-                           Text="Your ARTCC / facility, from the selected cycle's parsed airports." />
-                <ComboBox ItemsSource="{Binding FacilityOptions}"
-                          SelectedItem="{Binding SelectedArtccId}"
-                          IsEnabled="{Binding IsReady}"
-                          infra:FieldState.Error="{Binding FieldErrors[ArtccId]}"
-                          Width="220" HorizontalAlignment="Left" />
-            </StackPanel>
-        </Border>
-
         <!-- ============ sub-services ============ -->
         <Border Style="{StaticResource Card}" Margin="0,16,0,24">
             <StackPanel>
                 <ctl:SectionHeader Label="SUB-SERVICES" />
-                <TextBlock Style="{StaticResource Text.Body}" TextWrapping="Wrap" Margin="0,4,0,10"
+                <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,10"
                            Text="Tick the data you want this cycle to produce. Each one opens its own tab where you choose its settings and output files." />
                 <ItemsControl ItemsSource="{Binding SubServices}">
                     <ItemsControl.ItemTemplate>

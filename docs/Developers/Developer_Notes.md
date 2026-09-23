@@ -26,7 +26,7 @@
 ## USER CONFIGURATION FILE
 - Description: A JSON file containing saved data concerning preferences and settings, required for effective App-Functionality.
 - File Name: `UserConfig.json`
-- Read/Write handled by a `FEBuddyLibrary` `UserConfig` Helper.
+- Read/Write handled by a `FeBuddy.Core` `UserConfig` Helper.
   - Method: `ReadAll`
   - Method: `Write`
 - On initial install, installer will create a UserConfig.json with blank values except:
@@ -188,7 +188,7 @@
 # GUI
 
 - Internet Connection
-  - Assume `bool hasInternetConnection` from FEBuddyLibrary is `true` until a return of `false` proves otherwise.
+  - Assume `bool hasInternetConnection` from FeBuddy.Core is `true` until a return of `false` proves otherwise.
   - Grey-out or display/hide data that requires internet connection accordingly, for example: program version number (for update checking) and AIRAC Cycle services.
 - Saving Settings
   - Settings-dependent operations will be greyed-out until all required settings are entered with the appropriate data or "saved" to the UserConfig.json
@@ -289,7 +289,7 @@ Second post for the same day.
 
 - If `UserConfig.DefaultRoi.FilterByRoi`=empty, grey-out this service and have a tooltip pop up advising them to navigate to SETTINGS > DEFAULT ROI and complete that form.
 - If all AIRAC Cycles (previous, current, next) are not yet downloaded/unzipped/parsed, show a indication `Waiting for AIRAC data to finish downloading and parsing. This service will be available in a moment` and maybe even a status bar.
-- GUI should get a refresh indicator from the FEBuddyLibrary telling it to refresh the service availability check to ungrey and make available this service.
+- GUI should get a refresh indicator from the FeBuddy.Core telling it to refresh the service availability check to ungrey and make available this service.
 - User selects Previous, Current, or Next AIRAC Cycle with the effective date displayed next to it.
   - Note: FE-Buddy will save the unzipped airac downloaded data for up to 3 airac cycles in the appdata, the previous cycle, current, and next/preview cycle. On launch, that appdata folder is checked and the cycles that are older than one cycle back is deleted while the previous, current, and next cycle are downloaded if not already exists.
 - User types their ARTCC ID from drop menu
@@ -319,7 +319,7 @@ Second post for the same day.
   - Set `...DefaultRoi.FilterByRoi`=`true/false`
   - If `FilterByRoi`=true
     - Ensure all `DefaultCoordindates` have values.
-    - Send the `DefaultCoordindates` to `FEBuddyLibrary.GuiProcessHandler.ValideateRoiCoordinates` to validate:
+    - Send the `DefaultCoordindates` to `FeBuddy.Core.GuiProcessHandler.ValideateRoiCoordinates` to validate:
       - Valid decimal values (`IsCoordinateValidFormat`)
       - SW `DefaultCoordindates` are actually southwest of the NE `DefaultCoordindates`. (`IsCoordinatesRelativePositionValid`)
     - Await for validation process to complete with success and then if `...DefaultRoi.FilterByRoi`= `true`
@@ -409,7 +409,7 @@ Second post for the same day.
 
 ### READ UserConfig.json
 
-- Read/Write handled by: `FEBuddyLibrary`.HELPERS.`UserConfigFile`
+- Read/Write handled by: `FeBuddy.Core`.HELPERS.`UserConfigFile`
   - Method: .`ReadAll`
     - Reads file and writes to a `UserConfig` dictionary
   - Method: .`Write`
@@ -443,7 +443,7 @@ Second post for the same day.
 - AIRAC Data NASR CSV Download URL effective date format: `DD_Mmm_YYYY`
 - AIRAC Data NASR CSV Download URL format: `https://nfdc.faa.gov/webContent/28DaySub/extra/<EffectiveDate>_CSV.zip`
   - Example:  `https://nfdc.faa.gov/webContent/28DaySub/extra/03_Sep_2026_CSV.zip`
-- Get the airac cycle ID and effective dates from `FEBuddyLibrary.Models.General.AiracCycleIdEffectiveDates`
+- Get the airac cycle ID and effective dates from `FeBuddy.Core.Models.General.AiracCycleIdEffectiveDates`
 - Download to the %temp$\FE-Buddy folder but unzip to the %appdata% FE-Buddy AiracCycles directory and store in a folder named after the AiracCycleId, ex `2602`, `2603`, `2604` etc...
 - On launch, that appdata folder is checked and the cycles that are not the previous cycle, current cycle, or next/preview cycle are deleted and then the download manager ensures the previous cycle, current cycle, or next/preview cycle are all available.
 - Failed to download and unzip any required cycle data should create a warning to the user.

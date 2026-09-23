@@ -10,8 +10,9 @@ namespace FeBuddy.Core.Services.General;
 
 /// <summary>
 /// Builds CRC ERAM GeoJSON property Features: the non-rendered "isDefaults" Feature that
-/// establishes a file's baseline properties, and the "Overriding Property" attribute sets
-/// written on individual rendered Features.
+/// establishes a file's baseline properties (from <see cref="CrcLineDefaults"/>,
+/// <see cref="CrcSymbolDefaults"/> or <see cref="CrcTextDefaults"/>), and the "Overriding
+/// Property" attribute sets written on individual rendered Features.
 /// </summary>
 /// <remarks>
 /// See the three-tier property model in
@@ -40,46 +41,80 @@ public static class CrcEramPropertyHandler
 		GeometryFactory.CreatePoint(new Coordinate(x: 90.0, y: 180.0));
 
 	/// <summary>
-	/// Builds the non-rendered isDefaults <see cref="Feature"/> for a GeoJSON file. This
-	/// Feature is written first in the file's <c>FeatureCollection</c> and supplies the
-	/// baseline properties for every rendered Feature in that file whose own
-	/// <c>properties</c> object is empty.
+	/// Builds the non-rendered <c>isLineDefaults</c> Feature for a GeoJSON file: first in the
+	/// file, it gives every Line Feature that does not override them their properties.
 	/// </summary>
-	/// <param name="kind">Which feature family <paramref name="properties"/> applies to.</param>
-	/// <param name="properties">
-	/// A <see cref="CrcLineProperties"/>, <see cref="CrcSymbolProperties"/>, or
-	/// <see cref="CrcTextProperties"/> instance matching <paramref name="kind"/>.
-	/// </param>
-	/// <returns>The isDefaults Feature, ready to insert at index 0 of the FeatureCollection.</returns>
-	/// <exception cref="ArgumentException">
-	/// Thrown when <paramref name="properties"/> fails CRC property validation, or is not the
-	/// type expected for <paramref name="kind"/>.
-	/// </exception>
-	public static Feature CreateDefault(CrcFeatureKind kind, object properties)
+	/// <param name="defaults">The defaults. Every value is written.</param>
+	/// <returns>The Feature, ready to insert at index 0 of the FeatureCollection.</returns>
+	/// <exception cref="ArgumentException">Thrown when <paramref name="defaults"/> fails CRC validation.</exception>
+	/// <remarks>
+	/// A defaults Feature only ever carries the properties CRC reads as defaults, in a fixed
+	/// order: the <c>is...Defaults</c> flag, <c>bcg</c>, <c>filters</c>, then the kind's own.
+	/// </remarks>
+	public static Feature CreateDefault(CrcLineDefaults defaults)
 	{
-		ValidateOrThrow(kind, properties, "isDefaults");
+		ThrowIfInvalid(CrcGeojsonPropertyValidator.ValidateLineDefaults(defaults), "Line");
 
-		AttributesTable attributes = BuildAttributesTable(kind, properties);
-
-		string isDefaultsFlagName = kind switch
-		{
-			CrcFeatureKind.Line => "isLineDefaults",
-			CrcFeatureKind.Symbol => "isSymbolDefaults",
-			CrcFeatureKind.Text => "isTextDefaults",
-			_ => throw new ArgumentOutOfRangeException(nameof(kind), kind, "Unknown CRC feature kind.")
-		};
-
-		attributes.Add(isDefaultsFlagName, true);
-
-		// "opaque" is not part of the source NASR/GeoMap data but is a CRC text option, so
-		// isDefaults for Text always carries it explicitly (matching ERAM_2_GEOJSON behavior)
-		// even when the caller did not set CrcTextProperties.Opaque.
-		if (kind == CrcFeatureKind.Text && !attributes.Exists("opaque"))
-		{
-			attributes.Add("opaque", false);
-		}
+		AttributesTable attributes = StartDefaults("isLineDefaults", defaults.Bcg, defaults.Filters);
+		attributes.Add("style", defaults.Style);
+		attributes.Add("thickness", defaults.Thickness);
 
 		return new Feature(IsDefaultsPoint, attributes);
+	}
+
+	/// <summary>Builds the non-rendered <c>isSymbolDefaults</c> Feature for a GeoJSON file.</summary>
+	/// <param name="defaults">The defaults. Every value is written.</param>
+	/// <returns>The Feature, ready to insert at index 0 of the FeatureCollection.</returns>
+	/// <exception cref="ArgumentException">Thrown when <paramref name="defaults"/> fails CRC validation.</exception>
+	public static Feature CreateDefault(CrcSymbolDefaults defaults)
+	{
+		ThrowIfInvalid(CrcGeojsonPropertyValidator.ValidateSymbolDefaults(defaults), "Symbol");
+
+		AttributesTable attributes = StartDefaults("isSymbolDefaults", defaults.Bcg, defaults.Filters);
+		attributes.Add("style", defaults.Style);
+		attributes.Add("size", defaults.Size);
+
+		return new Feature(IsDefaultsPoint, attributes);
+	}
+
+	/// <summary>
+	/// Builds the non-rendered <c>isTextDefaults</c> Feature for a GeoJSON file. It never
+	/// carries <c>text</c>: CRC does not read a label from a defaults Feature.
+	/// </summary>
+	/// <param name="defaults">The defaults. Every value is written.</param>
+	/// <returns>The Feature, ready to insert at index 0 of the FeatureCollection.</returns>
+	/// <exception cref="ArgumentException">Thrown when <paramref name="defaults"/> fails CRC validation.</exception>
+	public static Feature CreateDefault(CrcTextDefaults defaults)
+	{
+		ThrowIfInvalid(CrcGeojsonPropertyValidator.ValidateTextDefaults(defaults), "Text");
+
+		AttributesTable attributes = StartDefaults("isTextDefaults", defaults.Bcg, defaults.Filters);
+		attributes.Add("size", defaults.Size);
+		attributes.Add("underline", defaults.Underline);
+		attributes.Add("opaque", defaults.Opaque);
+		attributes.Add("xOffset", defaults.XOffset);
+		attributes.Add("yOffset", defaults.YOffset);
+
+		return new Feature(IsDefaultsPoint, attributes);
+	}
+
+	/// <summary>The flag, <c>bcg</c> and <c>filters</c> every defaults Feature starts with, in that order.</summary>
+	private static AttributesTable StartDefaults(string flagName, int bcg, IReadOnlyList<int> filters)
+	{
+		AttributesTable attributes = new();
+		attributes.Add(flagName, true);
+		attributes.Add("bcg", bcg);
+		attributes.Add("filters", filters.ToArray());
+		return attributes;
+	}
+
+	private static void ThrowIfInvalid(CrcPropertyValidationResult validation, string kind)
+	{
+		if (!validation.IsValid)
+		{
+			throw new ArgumentException(
+				$"Invalid CRC {kind} defaults:" + Environment.NewLine + string.Join(Environment.NewLine, validation.Errors));
+		}
 	}
 
 	/// <summary>
@@ -206,9 +241,15 @@ public static class CrcEramPropertyHandler
 			table.Add("size", size);
 		}
 
+		// Same order as a Text defaults Feature: size, underline, opaque, xOffset, yOffset.
 		if (properties.Underline is bool underline)
 		{
 			table.Add("underline", underline);
+		}
+
+		if (properties.Opaque is bool opaque)
+		{
+			table.Add("opaque", opaque);
 		}
 
 		if (properties.XOffset is int xOffset)
@@ -219,11 +260,6 @@ public static class CrcEramPropertyHandler
 		if (properties.YOffset is int yOffset)
 		{
 			table.Add("yOffset", yOffset);
-		}
-
-		if (properties.Opaque is bool opaque)
-		{
-			table.Add("opaque", opaque);
 		}
 	}
 }

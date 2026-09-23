@@ -2,7 +2,7 @@
 
 **Status:** Authoritative build spec for the Airways work.
 **Audience:** An AI coding assistant implementing this repo phase by phase.
-**Scope of this document:** Everything needed to finish the **Airways** services in `FEBuddyLibrary`, driven from the `FEBuddyTest` console project. The GUI comes *after* this document's phases are complete.
+**Scope of this document:** Everything needed to finish the **Airways** services in `FeBuddy.Core`, driven from the `FeBuddy.Harness` console project. The GUI comes *after* this document's phases are complete.
 
 ---
 
@@ -10,7 +10,7 @@
 
 1. Read §1 (Ground Rules) and §2 (What Already Exists) **before writing any code**. A large amount of working code already exists. Do not rewrite it — extend, move, and refactor it as directed.
 2. Work the phases in §9 **in order**. Do not start a phase until the previous phase builds and its acceptance criteria pass.
-3. §10 is the Decisions Log. It resolves contradictions found in `FE-Buddy_Dev_Notes.md`. Where the dev notes and this document disagree, **this document wins**.
+3. §10 is the Decisions Log. It resolves contradictions found in `Developer_Notes.md`. Where the dev notes and this document disagree, **this document wins**.
 4. Anything marked `[LATER]` is deliberately out of scope for this build. Do not implement it.
 
 ---
@@ -29,22 +29,22 @@ These apply to every file you write.
 
 - **Visual Studio XML summary comments on every public and internal type and member.** This is a hard requirement from the dev team. Include `<param>`, `<returns>`, and `<remarks>` where they add meaning.
 - Inline comments are encouraged. Assume the next reader is a new contributor, not an expert.
-- Tabs for indentation (matches existing files in `FEBuddyLibrary`).
+- Tabs for indentation (matches existing files in `FeBuddy.Core`).
 - File-scoped namespaces (`namespace X;`) for new files.
 - Explicit types over `var` for non-obvious types; the existing generator code is a good style reference.
 - Any repeated logic becomes a helper. Do not copy/paste a block into two services.
 
 ### 1.3 MVVM
 
-FE-Buddy uses MVVM. Practically, for this phase that means: **`FEBuddyLibrary` must contain zero UI code and zero `Console` calls.** All user-facing output happens in `FEBuddyTest` (and later the GUI). The library communicates via return values, typed result objects, and thrown exceptions.
+FE-Buddy uses MVVM. Practically, for this phase that means: **`FeBuddy.Core` must contain zero UI code and zero `Console` calls.** All user-facing output happens in `FeBuddy.Harness` (and later the GUI). The library communicates via return values, typed result objects, and thrown exceptions.
 
 ### 1.4 DevMode
 
 A single global switch changes troubleshooting behavior.
 
-- Location: `FEBuddyLibrary/Configuration/DevMode.cs`, `public static class DevMode { public static bool IsEnabled { get; set; } }`
+- Location: `FeBuddy.Core/Configuration/DevMode.cs`, `public static class DevMode { public static bool IsEnabled { get; set; } }`
 - Default: `false`.
-- Set by the caller (`FEBuddyTest.Program` sets it to `true`).
+- Set by the caller (`FeBuddy.Harness.Program` sets it to `true`).
 - **Effects in this phase:**
   - `IsEnabled == true` → GeoJSON is written pretty-printed (`WriteIndented = true`).
   - `IsEnabled == false` → GeoJSON is written single-line (`WriteIndented = false`) to save disk space.
@@ -60,8 +60,8 @@ A single global switch changes troubleshooting behavior.
 ### 1.6 Naming
 
 - A user-facing capability is a **Service** (e.g. "Airway GeoJSON", "Airway Alias").
-- Service code lives under `FEBuddyLibrary/Services/<ServiceName>/`.
-- Code shared by two or more services lives under `FEBuddyLibrary/Services/General/`.
+- Service code lives under `FeBuddy.Core/Services/<ServiceName>/`.
+- Code shared by two or more services lives under `FeBuddy.Core/Services/General/`.
 - Non-service code (parsers, models, config, cross-cutting handlers) lives **outside** `Services/`.
 
 ---
@@ -70,11 +70,11 @@ A single global switch changes troubleshooting behavior.
 
 Inventory as of this document. Paths are relative to `FeBuddy/`.
 
-### 2.1 `FEBuddyLibrary` — working and to be kept
+### 2.1 `FeBuddy.Core` — working and to be kept
 
 | Path | What it is | Action |
 |---|---|---|
-| `PARSERS/NASR/CSV/*.cs` (25 files) | Full async NASR CSV parser suite. `NasrCsvParserController.MainAsync(string[] args)` parses every group in parallel and returns `NasrCsvDataCollection`. | **Keep as-is.** Do not touch. |
+| `Parsers/NASR/CSV/*.cs` (25 files) | Full async NASR CSV parser suite. `NasrCsvParserController.MainAsync(string[] args)` parses every group in parallel and returns `NasrCsvDataCollection`. | **Keep as-is.** Do not touch. |
 | `Models/NASR/CSV/*.cs` (24 files) | Typed models for every NASR CSV group, with FAA field documentation in XML comments. | **Keep as-is.** Read `AwyCsvDataModels.cs` carefully; it is the airway data contract. |
 | `Handlers/CSV/FebCsvHelper.cs` | `ProcessLines<T>`, `ParseInt`, `ParseNullableInt`, `ParseDouble`, `ParseNullableDouble`. | Keep. |
 | `Handlers/CSV/FindWaypointCoordinates.cs` | `GetCoordinates(allNasrCsvData, waypointId, WaypointType?)` → `(lat, lon, foundIn)?`. 5-char IDs search FIX, others search NAVAID then Airport. | Keep, but **must be optimized** — see Phase 1.4. |
@@ -85,20 +85,20 @@ Inventory as of this document. Paths are relative to `FeBuddy/`.
 | `Models/General/AiracCycleIdEffectiveDates.cs` | AIRAC cycle ID ↔ effective date lookup (`yyyy-MM-dd` and `dd_MMM_yyyy`). | Keep. Note: currently `internal` — will need to become `public` when the download manager is built `[LATER]`. |
 | `Generators/NASR/AWY-Geojsons/AwyGeojsonGenerator*.cs` (5 partials) | Working airway geometry builder: settings parsing, segment normalization (collapses reference-only border points), LineString/MultiLineString assembly with gap handling, unresolved-trailing-waypoint tolerance. | **Move and refactor** into the Services layout — see Phase 2. The *logic* is good; the *organization and outputs* are incomplete. |
 
-### 2.2 `FEBuddyTest` — the GUI stand-in
+### 2.2 `FeBuddy.Harness` — the GUI stand-in
 
 Currently a single `Program.cs` with hard-coded paths that parses NASR and calls `AwyGeojsonGenerator.Generate`. This project is rebuilt in Phase 5 to be the harness described in §8.
 
-### 2.3 `UnitTests`
+### 2.3 `FeBuddy.UnitTests`
 
-`UnitTests/Handlers/CoordinateHandlerTests.cs`, `UnitTests/Library/Models/LocationTests.cs`. Confirm the test framework from `UnitTests.csproj` before adding tests.
-`FEBuddyTest/AWY_GEOJSON_RegressionTests.md` contains a written Stage-0 regression plan (tests B01–B15+). Treat it as the source for Phase 5 test cases.
+`FeBuddy.UnitTests/Handlers/CoordinateHandlerTests.cs`, `FeBuddy.UnitTests/Library/Models/LocationTests.cs`. Confirm the test framework from `FeBuddy.UnitTests.csproj` before adding tests.
+`AWY_GEOJSON_RegressionTests.md` contains a written Stage-0 regression plan (tests B01–B15+). Treat it as the source for Phase 5 test cases.
 
 ### 2.4 WPF projects — leave alone this phase
 
-`FeBuddy.Wpf`, `FeBuddyWPF`, `WPFUI`, and the out-of-solution `WPF` folder are four parallel unfinished front-ends. `FeBuddy.Wpf` is the intended keeper. **Do not modify any of them during this build.**
+At the time of writing there were four parallel unfinished front-ends - `FeBuddy.Wpf`, `FeBuddyWPF`, `WPFUI`, and the out-of-solution `WPF` folder - and none were to be modified during this build. `FeBuddy.Wpf` was the intended keeper; the other three were deleted in remediation plan 0.1 and only `FeBuddy.Wpf` exists today.
 
-### 2.5 `Project-Structure.md` (repo root)
+### 2.5 `docs/Developers/Project-Structure.md`
 
 Describes a four-project Clean Architecture layout (Domain / Application / Infrastructure / Desktop). **That layout is aspirational and is NOT what you build now.** It is a post-GUI migration target. Add a note at the top of that file saying so (Phase 0).
 
@@ -113,7 +113,9 @@ FE-Buddy-DEV/
 └── FeBuddy/
     ├── FeBuddy.sln
     │
-    ├── FEBuddyLibrary/
+    ├── FeBuddy.Core/
+    │   ├── News.md                                     NEW  (bundled News fallback, Phase 6.1)
+    │   │
     │   ├── Configuration/                              NEW
     │   │   └── DevMode.cs                              NEW
     │   │
@@ -127,9 +129,11 @@ FE-Buddy-DEV/
     │   │
     │   ├── Models/                                     (existing, non-service data)
     │   │   ├── General/
+    │   │   │   └── AiracCycleIdEffectiveDates.cs
     │   │   ├── Location/
-    │   │   ├── NASR/CSV/
-    │   │   ├── ...
+    │   │   │   └── Location.cs
+    │   │   ├── NASR/CSV/                               (24 NASR CSV group models)
+    │   │   │
     │   │   ├── Geojson/                                NEW
     │   │   │   ├── CrcLineProperties.cs                NEW
     │   │   │   ├── CrcSymbolProperties.cs              NEW
@@ -141,6 +145,8 @@ FE-Buddy-DEV/
     │   │       ├── General/
     │   │       │   ├── RegionOfInterest.cs             NEW
     │   │       │   ├── ServiceResult.cs                NEW
+    │   │       │   ├── ServiceMessage.cs               NEW  (Phase 3 message levels)
+    │   │       │   ├── NewsPost.cs                     NEW  (Phase 6.1)
     │   │       │   ├── UtcTimeCheckResult.cs           NEW  (Phase 0.4)
     │   │       │   ├── VersionCheckResult.cs           NEW  (Phase 0.4, + UpdateChannel enum)
     │   │       │   └── LaunchProgress.cs               NEW  (Phase 0.4)
@@ -148,22 +154,32 @@ FE-Buddy-DEV/
     │   │           ├── AiracCycleInfo.cs               (moved from General/)
     │   │           ├── AiracCyclePosition.cs           (moved from General/)
     │   │           ├── AiracDownloadProgress.cs        (moved from General/)
+    │   │           ├── AiracCyclePublicationState.cs   NEW  (Phase 2.3)
+    │   │           ├── CycleDataState.cs               NEW  (Phase 2.4)
     │   │           ├── AiracServiceSettings.cs         NEW  (Phase 1.2)
     │   │           ├── AiracServiceResult.cs           NEW  (Phase 1.2)
     │   │           ├── AiracServiceProgress.cs         NEW  (Phase 1.2)
     │   │           └── Airways/
+    │   │               ├── Airway.cs
+    │   │               ├── AirwayPoint.cs
+    │   │               ├── AirwaySegment.cs
     │   │               ├── AirwaySettings.cs
     │   │               ├── AirwayGeojsonOutputBy.cs    (enum)
     │   │               ├── AirwayAltitudeClass.cs      (enum: High, Low, Other)
-    │   │               ├── Airway.cs
-    │   │               ├── AirwayPoint.cs
-    │   │               └── AirwaySegment.cs
+    │   │               ├── AliasRoiScope.cs            (enum)
+    │   │               ├── AirwaySettingsParseResult.cs
+    │   │               ├── AirwayBuildAllResult.cs
+    │   │               ├── AirwayGeometryBuildResult.cs
+    │   │               ├── AirwayBufferResult.cs
+    │   │               ├── AirwayGeojsonGenerateResult.cs
+    │   │               ├── AirwayAliasGenerateResult.cs
+    │   │               └── AirwayServiceResult.cs
     │   │
     │   ├── Helpers/                                    NEW
     │   │   ├── UserConfigFile.cs                       NEW  (Phase 0.2)
     │   │   └── TempWorkspace.cs                        NEW  (Phase 0.4)
     │   │
-    │   ├── PARSERS/NASR/CSV/                           (existing, untouched)
+    │   ├── Parsers/NASR/CSV/                           (existing, untouched — 25 parsers)
     │   │
     │   └── Services/                                   NEW
     │       ├── General/
@@ -176,12 +192,16 @@ FE-Buddy-DEV/
     │       │   ├── AppEnvironment.cs                   NEW  (Phase 0.4)
     │       │   ├── UtcTimeCheck.cs                     NEW  (Phase 0.4)
     │       │   ├── VersionCheck.cs                     NEW  (Phase 0.4)
-    │       │   └── LaunchSequence.cs                   NEW  (Phase 0.4)
+    │       │   ├── LaunchSequence.cs                   NEW  (Phase 0.4)
+    │       │   ├── GitHubAuth.cs                       NEW  (Phase 6.1)
+    │       │   └── NewsService.cs                      NEW  (Phase 6.1)
     │       │
     │       └── Airac/                                 (Phase 1.1)
     │           ├── AiracService.cs                     NEW  (Phase 1.2 — AIRAC Service orchestrator)
     │           ├── AiracCycleResolver.cs               (moved from General/)
     │           ├── NasrCycleDownloadService.cs         (moved from General/)
+    │           ├── AiracCycleAvailability.cs           NEW  (Phase 2.3)
+    │           ├── AiracCycleDataCache.cs              NEW  (Phase 2.4)
     │           └── Airways/
     │               ├── AirwayService.cs                (public entry point; called by AiracService, tests, harness)
     │               ├── AirwayBuilder.cs                (CSV -> Airway objects)
@@ -191,49 +211,61 @@ FE-Buddy-DEV/
     │               ├── AirwayWaypointBuffer.cs
     │               ├── AirwaySettingsParser.cs
     │               ├── AirwayGeojsonService.cs
-    │               └── AirwayAliasService.cs
+    │               ├── AirwayAliasService.cs
+    │               ├── AirwayOutputPaths.cs
+    │               └── AirwayReferenceOnlyPoints.cs
     │
-    ├── FEBuddyTest/                                    (rebuilt in Phase 5)
+    ├── FeBuddy.Harness/                                (rebuilt in Phase 5)
     │   ├── Program.cs                                  REWRITTEN
     │   ├── HarnessSettings.cs                          NEW
     │   ├── ConsoleReport.cs                            NEW
     │   ├── AirwayGeojsonRunner.cs                      NEW
     │   └── AirwayAliasRunner.cs                        NEW
     │
-    └── UnitTests/                                      (extended in Phase 5)
-        ├── Handlers/
-        ├── Library/Models/
-        └── Services/Airac/                             (Phase 1.1 — Airways, launch + AiracService tests live under here)
+    ├── FeBuddy.UnitTests/                              (extended in Phase 5)
+    │   ├── Usings.cs
+    │   ├── Handlers/
+    │   ├── Helpers/
+    │   ├── Library/Models/
+    │   ├── Parsers/NASR/CSV/
+    │   └── Services/
+    │       ├── Airac/                                  (Phase 1.1 — Airways, launch + AiracService tests live under here)
+    │       │   └── Airways/
+    │       │       └── Fixtures/
+    │       └── General/
+    │
+    └── FeBuddy.Wpf/                                    (the GUI — built after this document's phases;
+                                                        see docs/Developers/FeBuddy.Wpf/README.md)
 ```
 
 ### 3.1 Namespaces
 
 | Folder | Namespace |
 |---|---|
-| `Configuration/` | `FEBuddyLibrary.Configuration` |
-| `Helpers/` | `FEBuddyLibrary.Helpers` |
-| `Models/Geojson/` | `FEBuddyLibrary.Models.Geojson` |
-| `Models/Services/General/` | `FEBuddyLibrary.Models.Services.General` |
-| `Models/Services/Airac/` | `FEBuddyLibrary.Models.Services.Airac` |
-| `Models/Services/Airac/Airways/` | `FEBuddyLibrary.Models.Services.Airac.Airways` |
-| `Services/General/` | `FEBuddyLibrary.Services.General` |
-| `Services/Airac/` | `FEBuddyLibrary.Services.Airac` |
-| `Services/Airac/Airways/` | `FEBuddyLibrary.Services.Airac.Airways` |
+| `Configuration/` | `FeBuddy.Core.Configuration` |
+| `Helpers/` | `FeBuddy.Core.Helpers` |
+| `Models/Geojson/` | `FeBuddy.Core.Models.Geojson` |
+| `Models/Services/General/` | `FeBuddy.Core.Models.Services.General` |
+| `Models/Services/Airac/` | `FeBuddy.Core.Models.Services.Airac` |
+| `Models/Services/Airac/Airways/` | `FeBuddy.Core.Models.Services.Airac.Airways` |
+| `Services/General/` | `FeBuddy.Core.Services.General` |
+| `Services/Airac/` | `FeBuddy.Core.Services.Airac` |
+| `Services/Airac/Airways/` | `FeBuddy.Core.Services.Airac.Airways` |
 
 > **Phase 1.1 (remediation plan):** Airways moved *inside* AIRAC Service. The old
-> `FEBuddyLibrary.Services.Airways` / `FEBuddyLibrary.Models.Services.Airways`
+> `FeBuddy.Core.Services.Airways` / `FeBuddy.Core.Models.Services.Airways`
 > namespaces and folders no longer exist; nothing outside `Services/Airac/` may
 > reference an Airways type. `AiracCycleResolver`, `NasrCycleDownloadService`, and
 > the `AiracCycle*` / `AiracDownloadProgress` models moved from `…/General/` to
 > `…/Airac/` in the same change.
 
-Existing namespaces (`FEBuddyLibrary.Handlers`, `FEBuddyLibrary.Parsers.NASR.CSV`, `FEBuddyLibrary.Models.NASR.CSV`, …) are unchanged.
+Existing namespaces (`FeBuddy.Core.Handlers`, `FeBuddy.Core.Parsers.NASR.CSV`, `FeBuddy.Core.Models.NASR.CSV`, …) are unchanged.
 
 ---
 
 ## 4. Settings Contract
 
-The GUI (and today, `FEBuddyTest`) hands the library a `Dictionary<string, string>`. The library immediately converts it to a typed record. **Only the parser touches the dictionary; the rest of the library uses the typed object.**
+The GUI (and today, `FeBuddy.Harness`) hands the library a `Dictionary<string, string>`. The library immediately converts it to a typed record. **Only the parser touches the dictionary; the rest of the library uses the typed object.**
 
 ### 4.1 `AirwaySettings` (typed)
 
@@ -293,7 +325,7 @@ public sealed record AirwaySettings
 Parsing rules:
 - Every `Y`/`N` parse is case-insensitive and trimmed. Anything else throws `ArgumentException` naming the setting.
 - An unknown dictionary key is ignored, but recorded as a warning on the result.
-- **Breaking change from existing code:** the current parser accepts `OutputBy` values `HighLow` and `Type`, and the key `WaypointBuffer`. Rename to `Designation` and `BufferAirwayWaypoints`. Update `FEBuddyTest` accordingly.
+- **Breaking change from existing code:** the current parser accepts `OutputBy` values `HighLow` and `Type`, and the key `WaypointBuffer`. Rename to `Designation` and `BufferAirwayWaypoints`. Update `FeBuddy.Harness` accordingly.
 
 ### 4.3 `RegionOfInterest`
 
@@ -309,7 +341,7 @@ Validation (used now by the parser, and later by the GUI's save button):
 - `IsCoordinatesRelativePositionValid` — `NeLat > SwLat` **and** `NeLon > SwLon`.
 - An ROI that crosses the antimeridian (`SwLon > NeLon`) is **rejected** in this phase with a clear error message. `[LATER]` support if a user needs it.
 
-Expose both checks as `public static` methods on `FEBuddyLibrary/Services/General/RoiFilter.cs` so the GUI can call them directly.
+Expose both checks as `public static` methods on `FeBuddy.Core/Services/General/RoiFilter.cs` so the GUI can call them directly.
 
 ---
 
@@ -377,7 +409,7 @@ When `OutputBy = Designation`, the group key is `AWY_BASE.AWY_DESIGNATION` trimm
 
 The existing generator **throws** `InvalidOperationException` when a waypoint mid-airway cannot be resolved. For a service that runs unattended over a full NASR cycle this is too brittle.
 
-**Change:** collect the problem as a warning on the airway, skip that airway's unresolvable portion, and continue. `AirwayServiceResult.Warnings` carries every message. `FEBuddyTest` prints them; the GUI will surface them later.
+**Change:** collect the problem as a warning on the airway, skip that airway's unresolvable portion, and continue. `AirwayServiceResult.Warnings` carries every message. `FeBuddy.Harness` prints them; the GUI will surface them later.
 
 Keep the *existing* behavior for the trailing-unresolved case (stop the airway at the last resolvable point — this correctly handles `CFQLS -> CFGFX -> U.S. CANADIAN BORDER-4`).
 
@@ -580,7 +612,7 @@ public static class GeojsonFileWriter
 
 ---
 
-## 8. `FEBuddyTest` — the GUI stand-in
+## 8. `FeBuddy.Harness` — the GUI stand-in
 
 One `.cs` per service; `Program.cs` only orchestrates.
 
@@ -618,7 +650,7 @@ internal static class HarnessSettings
 **`ConsoleReport.cs`** — all `Console.WriteLine` formatting: elapsed times, per-file feature counts, warnings grouped by airway.
 **`Program.cs`** — set `DevMode.IsEnabled`, parse NASR (timed), call each runner, print the report, exit non-zero on unhandled exception.
 
-`FEBuddyTest` must not contain any airway logic. If you find yourself computing geometry in the harness, it belongs in the library.
+`FeBuddy.Harness` must not contain any airway logic. If you find yourself computing geometry in the harness, it belongs in the library.
 
 ---
 
@@ -629,7 +661,7 @@ Each phase must compile and leave the solution green before the next begins.
 ### Phase 0 — Prep
 - Add the "aspirational, post-GUI" note to the top of `Project-Structure.md`.
 - Add `Configuration/DevMode.cs`.
-- Fix the `FEBuddyLibrary.csproj` `EditorConfigFiles` items — they contain a stale absolute path (`C:\Users\Nikolas\GitHubRepos\...`) that does not exist on this machine. Replace with a relative `.editorconfig` reference or remove both `ItemGroup`s.
+- Fix the `FeBuddy.Core.csproj` `EditorConfigFiles` items — they contain a stale absolute path (`C:\Users\Nikolas\GitHubRepos\...`) that does not exist on this machine. Replace with a relative `.editorconfig` reference or remove both `ItemGroup`s.
 - Confirm the solution builds.
 
 **Acceptance:** `dotnet build FeBuddy.sln` succeeds with no new warnings.
@@ -667,8 +699,8 @@ Each phase must compile and leave the solution green before the next begins.
 **Acceptance:** `Draw_Airway_Points.txt` contains one sorted line per airway in the `.J3F .FF OAK RBL LKV IMB GEG` format.
 
 ### Phase 5 — Harness and tests
-1. Rebuild `FEBuddyTest` per §8.
-2. Add `UnitTests/Services/Airways/` and implement the Category A baseline tests from `FEBuddyTest/AWY_GEOJSON_RegressionTests.md`, updated for the new type names.
+1. Rebuild `FeBuddy.Harness` per §8.
+2. Add `FeBuddy.UnitTests/Services/Airways/` and implement the Category A baseline tests from `AWY_GEOJSON_RegressionTests.md`, updated for the new type names.
 3. Add Category B contract tests for grouping, antimeridian, ROI clipping, and waypoint buffering — these are now real features, so they should pass.
 4. Use synthetic fixtures. Do **not** commit or depend on full FAA CSV files in unit tests.
 

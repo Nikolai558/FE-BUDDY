@@ -6,14 +6,14 @@ using System.Windows.Input;
 namespace FeBuddy.Wpf.Infrastructure;
 
 /// <summary>
-/// The last tab of a tabbed service screen: a plain rundown of everything the other tabs are set
-/// to, and the button that runs the service.
+/// The <b>Preview Settings</b> tab: a plain rundown of everything the other tabs are set to, and
+/// the button that runs the service.
 /// </summary>
 /// <remarks>
 /// The summary is rebuilt from the other tabs every time this tab is opened, so it always
 /// reflects the live state rather than a snapshot taken when the tab was created. The run button
-/// is supplied by the owning service; this tab only reports whether anything blocks it. The space
-/// under the run button is where the live per-process run feed will go.
+/// is supplied by the owning service; this tab only reports whether anything blocks it. What
+/// happened during the run itself belongs to the Review tab, which appears once a run starts.
 /// </remarks>
 public sealed class ServiceReviewTabViewModel : ServiceTabViewModel
 {

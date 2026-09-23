@@ -42,7 +42,7 @@ Find out how to report issues or make feature requests to help improve FE-Buddy.
 For detailed installation and usage instructions, please refer to the [Documentation](#link-to-documentation).
 
 ## License
-This project is licensed under the GNU General Public License v3.0 - see the [LICENSE.md](../LICENSE.md) file for details.
+This project is licensed under the GNU General Public License v3.0 - see the [LICENSE.md](LICENSE.md) file for details.
 
 ## Acknowledgments
 - [Nikolas Boling](https://github.com/Nikolai558) - Primary Developer and Programmer

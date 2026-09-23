@@ -1,5 +1,4 @@
-using FeBuddy.Core.Handlers;
-
+using FeBuddy.Core.Handlers.General;
 using NetTopologySuite.Geometries;
 
 using Location = FeBuddy.Core.Models.Location.Location;

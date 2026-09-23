@@ -2,12 +2,13 @@
     AiracServiceView  -  the AIRAC Services screen.
 
     Built as tabs: a permanent General tab (cycle, facility, which sub-services to
-    produce), one tab per selected sub-service, and a Review tab at the end that
-    summarises everything and runs the service. The rail runs down the left because
-    this service is expected to reach roughly twenty sub-services.
+    produce), one tab per selected sub-service, a Preview Settings tab that
+    summarises everything and runs the service, and - once a run has started - a
+    Review tab showing how it went. The rail runs down the left because this service
+    is expected to reach roughly twenty sub-services.
 
     The screen owns the single page-level scroller and the shared action bar
-    (Save / Undo / Previous / Next / Review), which is why the tab views themselves
+    (Save / Undo / Previous / Next / Preview), which is why the tab views themselves
     contain neither.
 -->
 <UserControl x:Class="FeBuddy.Wpf.Views.AiracServiceView"
@@ -27,8 +28,14 @@
         <DataTemplate DataType="{x:Type vm:AiracGeneralTabViewModel}">
             <local:AiracGeneralTabView />
         </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:AirportsViewModel}">
+            <local:AirportsView />
+        </DataTemplate>
         <DataTemplate DataType="{x:Type vm:AirwaysViewModel}">
             <local:AirwaysView />
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:DeparturesViewModel}">
+            <local:DeparturesView />
         </DataTemplate>
         <DataTemplate DataType="{x:Type infra:PlaceholderSubServiceViewModel}">
             <local:PlaceholderSubServiceView />
@@ -36,29 +43,46 @@
         <DataTemplate DataType="{x:Type infra:ServiceReviewTabViewModel}">
             <local:ServiceReviewTabView />
         </DataTemplate>
+        <DataTemplate DataType="{x:Type infra:ServiceRunReviewTabViewModel}">
+            <local:ServiceRunReviewTabView />
+        </DataTemplate>
 
         <!-- The action bar, rendered twice: pinned above the tab's content and again at
              the end of it, so neither the top nor the bottom of a long settings page is
              ever far from Save / Next. -->
+        <!-- The label takes the width it needs first (Auto column, no wrapping), and the
+             buttons flow onto a second row when the window is too narrow for one - so neither
+             the label nor the buttons ever get squeezed into a sliver. -->
         <DataTemplate x:Key="TabActionBar" DataType="{x:Type vm:AiracServiceViewModel}">
-            <DockPanel>
-                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
-                    <Button Style="{StaticResource Button.Ghost}" Content="Previous"
-                            Command="{Binding PreviousCommand}" Margin="0,0,8,0" />
-                    <Button Style="{StaticResource Button.Ghost}" Content="Next"
-                            Command="{Binding NextCommand}" Margin="0,0,8,0" />
-                    <Button Style="{StaticResource Button.Ghost}" Content="Review AIRAC Service settings"
-                            Command="{Binding GoToReviewCommand}" Margin="0,0,8,0" />
-                    <Button Style="{StaticResource Button.Ghost}" Content="Undo last save"
-                            Command="{Binding UndoLastSaveCommand}" Margin="0,0,8,0" />
-                    <Button Style="{StaticResource Button.Primary}" Content="Save" MinWidth="90"
-                            Command="{Binding SaveCommand}" />
-                </StackPanel>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
 
-                <TextBlock VerticalAlignment="Center" Style="{StaticResource Text.Caption}"
+                <TextBlock Grid.Column="0" VerticalAlignment="Center" Margin="0,0,16,0"
+                           Style="{StaticResource Text.Caption}" TextWrapping="NoWrap"
                            Foreground="{StaticResource Brush.Warn}" Text="Unsaved changes"
                            Visibility="{Binding SelectedTab.IsDirty, Converter={StaticResource BoolToVis}}" />
-            </DockPanel>
+
+                <WrapPanel Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center"
+                           Orientation="Horizontal" Margin="0,-4,0,-4">
+                    <Button Style="{StaticResource Button.Ghost}" Content="Previous"
+                            Command="{Binding PreviousCommand}" Margin="8,4,0,4" />
+                    <Button Style="{StaticResource Button.Ghost}" Content="Next"
+                            Command="{Binding NextCommand}" Margin="8,4,0,4" />
+                    <Button Style="{StaticResource Button.Ghost}" Content="Preview settings"
+                            Command="{Binding GoToPreviewCommand}" Margin="8,4,0,4" />
+                    <Button Style="{StaticResource Button.Ghost}" Content="Undo all changes"
+                            Command="{Binding RevertChangesCommand}" Margin="8,4,0,4"
+                            ToolTip="Discard the unsaved edits on this tab and go back to its last saved settings." />
+                    <Button Style="{StaticResource Button.Ghost}" Content="Undo last save"
+                            Command="{Binding UndoLastSaveCommand}" Margin="8,4,0,4"
+                            ToolTip="Step this tab's saved settings back to the previous save." />
+                    <Button Style="{StaticResource Button.Primary}" Content="Save" MinWidth="90"
+                            Command="{Binding SaveCommand}" Margin="8,4,0,4" />
+                </WrapPanel>
+            </Grid>
         </DataTemplate>
     </UserControl.Resources>
 

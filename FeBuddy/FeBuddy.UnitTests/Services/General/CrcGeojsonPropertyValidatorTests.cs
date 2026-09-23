@@ -108,19 +108,23 @@ public class CrcGeojsonPropertyValidatorTests
 	}
 
 	[Theory]
-	[InlineData(0, true)]
-	[InlineData(-1, false)]
-	public void text_x_offset_must_be_non_negative(int xOffset, bool expectedValid)
+	[InlineData(0)]
+	[InlineData(-1)]
+	[InlineData(-50)]
+	[InlineData(50)]
+	public void text_x_offset_accepts_any_integer(int xOffset)
 	{
-		Assert.Equal(expectedValid, CrcGeojsonPropertyValidator.ValidateText(Text(xOffset: xOffset)).IsValid);
+		Assert.True(CrcGeojsonPropertyValidator.ValidateText(Text(xOffset: xOffset)).IsValid);
 	}
 
 	[Theory]
-	[InlineData(0, true)]
-	[InlineData(-1, false)]
-	public void text_y_offset_must_be_non_negative(int yOffset, bool expectedValid)
+	[InlineData(0)]
+	[InlineData(-1)]
+	[InlineData(-50)]
+	[InlineData(50)]
+	public void text_y_offset_accepts_any_integer(int yOffset)
 	{
-		Assert.Equal(expectedValid, CrcGeojsonPropertyValidator.ValidateText(Text(yOffset: yOffset)).IsValid);
+		Assert.True(CrcGeojsonPropertyValidator.ValidateText(Text(yOffset: yOffset)).IsValid);
 	}
 
 	[Fact]

@@ -15,18 +15,16 @@ namespace FeBuddy.Core.Models.Services.Airac;
 /// block means that sub-service was not selected for this run.
 /// </para>
 /// <para>
-/// Only <see cref="Airways"/> exists today (rule 1.3). This record stays shaped so Departure
-/// Procedures, Arrival Procedures, and the rest can be added later as sibling blocks without
-/// changing the orchestrator's contract.
+/// <see cref="Airways"/> is the only sub-service with a backend today; the GUI also lists
+/// sub-services that have none yet, and those never produce a block here. This record stays
+/// shaped so the rest can be added later as sibling blocks without changing the orchestrator's
+/// contract.
 /// </para>
 /// </remarks>
 public sealed record AiracServiceSettings
 {
 	/// <summary>The AIRAC cycle to run against (its parsed NASR data is supplied separately).</summary>
 	public required AiracCycleInfo SelectedCycle { get; init; }
-
-	/// <summary>The user's ARTCC / facility ID, e.g. <c>ZOA</c>.</summary>
-	public required string ArtccId { get; init; }
 
 	/// <summary>The directory the user pointed output at.</summary>
 	public required string OutputDirectory { get; init; }
@@ -50,4 +48,16 @@ public sealed record AiracServiceSettings
 	/// selected for this run.
 	/// </summary>
 	public IReadOnlyDictionary<string, string>? Airways { get; init; }
+
+	/// <summary>
+	/// The Airports sub-service settings block, or <see langword="null"/> when Airports was not
+	/// selected for this run.
+	/// </summary>
+	public IReadOnlyDictionary<string, string>? Airports { get; init; }
+
+	/// <summary>
+	/// The Departures sub-service settings block, or <see langword="null"/> when Departures was
+	/// not selected for this run.
+	/// </summary>
+	public IReadOnlyDictionary<string, string>? Departures { get; init; }
 }

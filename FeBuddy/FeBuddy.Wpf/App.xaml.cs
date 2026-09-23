@@ -3,6 +3,7 @@ using System.Reflection;
 using System.Windows;
 using System.Windows.Threading;
 
+using FeBuddy.Core.Configuration;
 using FeBuddy.Core.Services.General;
 
 namespace FeBuddy.Wpf;
@@ -15,9 +16,21 @@ namespace FeBuddy.Wpf;
 /// </summary>
 public partial class App : Application
 {
+	/// <summary>
+	/// Developer mode for the app (<see cref="DevMode.IsEnabled"/>). Deliberately a code
+	/// constant and never a user setting: flip it here for a troubleshooting build, and keep it
+	/// <see langword="false"/> in anything released. While on, every GeoJSON file is pretty
+	/// printed whatever Settings says, and Debug-level log entries are recorded.
+	/// </summary>
+	/// <remarks><c>FeBuddy.Harness</c> has its own equivalent in <c>HarnessSettings.DevMode</c>.</remarks>
+	private const bool DevModeEnabled = false;
+
 	/// <inheritdoc />
 	protected override void OnStartup(StartupEventArgs e)
 	{
+		// First, so everything that follows - the log sink included - sees the right mode.
+		DevMode.IsEnabled = DevModeEnabled;
+
 		DispatcherUnhandledException += OnUnhandled;
 
 		// One shared log stream for the whole app; the file sink also prunes stale log files.

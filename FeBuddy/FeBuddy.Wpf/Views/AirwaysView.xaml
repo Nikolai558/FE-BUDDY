@@ -24,79 +24,49 @@
             </ObjectDataProvider.MethodParameters>
         </ObjectDataProvider>
 
-        <!-- one CRC ERAM class row. Column widths are echoed by the "EramHeader" template
-             below so the header labels line up exactly with the fields they describe. -->
-        <DataTemplate x:Key="EramRow" DataType="{x:Type m:EramClassDefault}">
-            <Grid Margin="0,3">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="70" />
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="*" />
-                </Grid.ColumnDefinitions>
-                <TextBlock Text="{Binding ClassName}" Style="{StaticResource Text.Body.Strong}" VerticalAlignment="Center" />
-                <TextBox Grid.Column="1" Margin="4,0" Text="{Binding Bcg, UpdateSourceTrigger=PropertyChanged}"
-                         ToolTip="BCG group: an integer 1–40." />
-                <TextBox Grid.Column="2" Margin="4,0" Text="{Binding Filters, UpdateSourceTrigger=PropertyChanged}"
-                         ToolTip="Filters: comma-separated integers, each 0–40, at least one entry." />
-                <TextBox Grid.Column="3" Margin="4,0" Text="{Binding Style, UpdateSourceTrigger=PropertyChanged}"
-                         Visibility="{Binding ShowStyle, Converter={StaticResource BoolToVis}}"
-                         ToolTip="Style: see the CRC GeoJSON concepts for the allowed values per kind." />
-                <TextBox Grid.Column="4" Margin="4,0" Text="{Binding Thickness, UpdateSourceTrigger=PropertyChanged}"
-                         Visibility="{Binding ShowThickness, Converter={StaticResource BoolToVis}}"
-                         ToolTip="Thickness: an integer 1–3." />
-                <TextBox Grid.Column="4" Margin="4,0" Text="{Binding Size, UpdateSourceTrigger=PropertyChanged}"
-                         Visibility="{Binding ShowSize, Converter={StaticResource BoolToVis}}"
-                         ToolTip="Size: an integer 1–4." />
-            </Grid>
-        </DataTemplate>
-
-        <!-- column-header style for the row above each EramRow ItemsControl -->
-        <Style x:Key="EramHeaderCell" TargetType="TextBlock" BasedOn="{StaticResource Text.Label}">
-            <Setter Property="Margin" Value="4,0" />
+        <!-- CRC ERAM DEFAULTS panels. Each kind (Lines / Symbols / Text) is its own bordered
+             panel: property labels down the left, one column per altitude class (High / Low /
+             Other) under a header row. The class columns are a fixed width rather than Auto or
+             star so the header, and every control in a column, line up exactly whatever each
+             box currently shows. The per-field ToolTips are worded from the settings validator -
+             keep them verbatim. -->
+        <Style x:Key="EramPanel" TargetType="Border">
+            <Setter Property="BorderBrush" Value="{StaticResource Brush.Stroke}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="{StaticResource Radius.Control}" />
+            <Setter Property="Padding" Value="14,12" />
+            <Setter Property="Margin" Value="0,0,12,12" />
+            <Setter Property="VerticalAlignment" Value="Top" />
+            <Setter Property="SnapsToDevicePixels" Value="True" />
         </Style>
 
-        <!-- one output file row -->
-        <DataTemplate x:Key="FileRow" DataType="{x:Type m:AirwaysOutputFileRow}">
-            <DockPanel Margin="0,3">
-                <TextBlock DockPanel.Dock="Right" Text="{Binding FeatureCount, StringFormat={}{0} feat.}"
-                           Style="{StaticResource Text.Caption}" VerticalAlignment="Center" />
-                <TextBlock Text="{Binding Name}" FontFamily="{StaticResource Font.Mono}" FontSize="11"
-                           Foreground="{StaticResource Brush.Text.Primary}"
-                           TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
-            </DockPanel>
-        </DataTemplate>
+        <!-- property name on the left of a CRC panel row -->
+        <Style x:Key="EramFieldLabel" TargetType="TextBlock" BasedOn="{StaticResource Text.Body}">
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Margin" Value="0,3,12,3" />
+        </Style>
 
-        <!-- one message group -->
-        <DataTemplate x:Key="MessageGroup" DataType="{x:Type m:AirwaysMessageGroup}">
-            <Border Margin="0,4" Padding="10" CornerRadius="{StaticResource Radius.Chip}"
-                    Background="{StaticResource Brush.Bg.Sunken}">
-                <StackPanel>
-                    <DockPanel>
-                        <TextBlock DockPanel.Dock="Right" Text="{Binding Count, StringFormat={}{0} msg}"
-                                   Style="{StaticResource Text.Caption}" />
-                        <TextBlock Text="{Binding AirwayId}" Style="{StaticResource Text.Body.Strong}" />
-                    </DockPanel>
-                    <ItemsControl ItemsSource="{Binding Messages}" Margin="0,4,0,0">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <TextBlock Text="{Binding}" Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,1" />
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                </StackPanel>
-            </Border>
-        </DataTemplate>
+        <!-- xOffset / yOffset box. The hint is a Style setter, not a local ToolTip, so the
+             implicit TextBox style's error trigger can still swap in the validation message
+             ("Must be a whole number, ...") - a local value would always win over it. -->
+        <Style x:Key="EramOffsetBox" TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+            <Setter Property="ToolTip" Value="Any whole number of pixels. 0 for none." />
+        </Style>
+
+        <!-- class name above each column of a CRC panel -->
+        <Style x:Key="EramClassHeader" TargetType="TextBlock" BasedOn="{StaticResource Text.Label}">
+            <Setter Property="Margin" Value="4,0,4,4" />
+        </Style>
     </UserControl.Resources>
 
     <!-- No ScrollViewer here: the tab host owns the one page-level scroller
          that every sub-service tab is laid out inside (theme fixes P3a).
          A second scroller stole the wheel and hid the lower sections. -->
-    <StackPanel MaxWidth="820" HorizontalAlignment="Left">
+    <StackPanel>
 
             <TextBlock Text="{Binding ValidationError}" Style="{StaticResource Text.Caption}"
                        Foreground="{StaticResource Brush.Danger}" TextWrapping="Wrap" Margin="0,0,0,12"
+                       MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
                        Visibility="{Binding ValidationError, Converter={StaticResource StringToVis}}" />
 
             <!-- ============ GeoJSON output ============ -->
@@ -106,26 +76,21 @@
                     <ComboBox Style="{StaticResource Themed.ComboBox}"
                               ItemsSource="{Binding Source={StaticResource OutputByValues}}"
                               SelectedItem="{Binding OutputBy}" Width="180" HorizontalAlignment="Left" Margin="0,4,0,0" />
-                    <TextBlock Text="{Binding OutputModeHint}" Style="{StaticResource Text.Body}"
-                               TextWrapping="Wrap" Margin="0,8,0,0" />
+                    <TextBlock Text="{Binding OutputModeHint}" Style="{StaticResource Text.Prose}"
+                               Margin="0,8,0,0" />
 
-                    <Border Style="{StaticResource Divider}" Margin="0,12" />
-                    <TextBlock Text="Emit which files" Style="{StaticResource Text.Label}" />
+                </StackPanel>
+            </Border>
+
+            <!-- ============ which GeoJSON files ============ -->
+            <Border Style="{StaticResource Card}" Margin="0,16,0,0" IsEnabled="{Binding IsGeojsonOutputOn}">
+                <StackPanel>
+                    <ctl:SectionHeader Label="WHAT FILES DO YOU WANT?" />
                     <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
                         <CheckBox Content="_Lines"   IsChecked="{Binding EmitLines}"   Margin="0,0,16,0" />
                         <CheckBox Content="_Symbols" IsChecked="{Binding EmitSymbols}" Margin="0,0,16,0" />
                         <CheckBox Content="_Text"    IsChecked="{Binding EmitText}" />
                     </StackPanel>
-
-                    <Border Style="{StaticResource Divider}" Margin="0,12" />
-                    <CheckBox Content="Buffer airway waypoints (lines stop short of the waypoint symbols)"
-                              IsChecked="{Binding BufferAirwayWaypoints}" />
-                    <CheckBox Content="Include FE-Buddy custom properties" IsChecked="{Binding IncludeFebCustomProperties}" Margin="0,8,0,0" />
-                    <TextBlock Text="{Binding FebPropertiesDescription}" Style="{StaticResource Text.Body}"
-                               TextWrapping="Wrap" Margin="20,4,0,0" />
-                    <CheckBox Content="Also include the airway waypoint ID list (feb.AwyWaypoints)"
-                              IsChecked="{Binding IncludeAirwayWaypointIds}" IsEnabled="{Binding IncludeFebCustomProperties}"
-                              Margin="20,6,0,0" />
                 </StackPanel>
             </Border>
 
@@ -133,7 +98,7 @@
             <Border Style="{StaticResource Card}" Margin="0,16,0,0">
                 <StackPanel>
                     <ctl:SectionHeader Label="DESIGNATIONS TO INCLUDE" />
-                    <TextBlock Style="{StaticResource Text.Body}" Margin="0,4,0,8"
+                    <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
                                Text="Derived from the selected cycle's AWY_IDs. All on by default; the deselected set is saved as ExcludedDesignations." />
                     <TextBlock Style="{StaticResource Text.Caption}"
                                Text="Waiting for AIRAC data…"
@@ -151,63 +116,281 @@
                 </StackPanel>
             </Border>
 
-            <!-- ============ CRC ERAM defaults (7.4) ============ -->
-            <Border Style="{StaticResource Card}" Margin="0,16,0,0">
+            <!-- ============ FE-Buddy properties ============ -->
+            <Border Style="{StaticResource Card}" Margin="0,16,0,0" IsEnabled="{Binding IsGeojsonOutputOn}">
                 <StackPanel>
-                    <DockPanel>
-                        <CheckBox DockPanel.Dock="Right" Content="Include" IsChecked="{Binding IncludeCrcEramPropertyDefaults}" />
-                        <ctl:SectionHeader Label="CRC ERAM DEFAULTS" />
-                    </DockPanel>
-                    <StackPanel IsEnabled="{Binding IncludeCrcEramPropertyDefaults}" Margin="0,6,0,0">
-                        <DockPanel>
-                            <CheckBox DockPanel.Dock="Right" Content="Emit" IsChecked="{Binding EmitLines}" />
-                            <TextBlock Text="Lines" Style="{StaticResource Text.Body.Strong}" />
-                        </DockPanel>
-                        <Grid Margin="0,8,0,2">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="70" /><ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="*" /><ColumnDefinition Width="*" /><ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="1" Text="BCG" Style="{StaticResource EramHeaderCell}" />
-                            <TextBlock Grid.Column="2" Text="Filters" Style="{StaticResource EramHeaderCell}" />
-                            <TextBlock Grid.Column="3" Text="Style" Style="{StaticResource EramHeaderCell}" />
-                            <TextBlock Grid.Column="4" Text="Thickness" Style="{StaticResource EramHeaderCell}" />
-                        </Grid>
-                        <ItemsControl ItemsSource="{Binding LineDefaults}" ItemTemplate="{StaticResource EramRow}" Margin="0,0,0,14" />
-
-                        <Border Style="{StaticResource Divider}" Margin="0,0,0,12" />
-                        <DockPanel>
-                            <CheckBox DockPanel.Dock="Right" Content="Emit" IsChecked="{Binding EmitSymbols}" />
-                            <TextBlock Text="Symbols" Style="{StaticResource Text.Body.Strong}" />
-                        </DockPanel>
-                        <Grid Margin="0,8,0,2">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="70" /><ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="*" /><ColumnDefinition Width="*" /><ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="1" Text="BCG" Style="{StaticResource EramHeaderCell}" />
-                            <TextBlock Grid.Column="2" Text="Filters" Style="{StaticResource EramHeaderCell}" />
-                            <TextBlock Grid.Column="3" Text="Style" Style="{StaticResource EramHeaderCell}" />
-                            <TextBlock Grid.Column="4" Text="Size" Style="{StaticResource EramHeaderCell}" />
-                        </Grid>
-                        <ItemsControl ItemsSource="{Binding SymbolDefaults}" ItemTemplate="{StaticResource EramRow}" Margin="0,0,0,14" />
-
-                        <Border Style="{StaticResource Divider}" Margin="0,0,0,12" />
-                        <DockPanel>
-                            <CheckBox DockPanel.Dock="Right" Content="Emit" IsChecked="{Binding EmitText}" />
-                            <TextBlock Text="Text" Style="{StaticResource Text.Body.Strong}" />
-                        </DockPanel>
-                        <Grid Margin="0,8,0,2">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="70" /><ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="*" /><ColumnDefinition Width="*" /><ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="1" Text="BCG" Style="{StaticResource EramHeaderCell}" />
-                            <TextBlock Grid.Column="2" Text="Filters" Style="{StaticResource EramHeaderCell}" />
-                            <TextBlock Grid.Column="4" Text="Size" Style="{StaticResource EramHeaderCell}" />
-                        </Grid>
-                        <ItemsControl ItemsSource="{Binding TextDefaults}" ItemTemplate="{StaticResource EramRow}" Margin="0,0,0,0" />
+                    <ctl:SectionHeader Label="FE-BUDDY PROPERTIES" />
+                    <CheckBox Content="Include FE-Buddy Properties, when available."
+                              IsChecked="{Binding IncludeFebCustomProperties}" Margin="0,4,0,0" />
+                    <TextBlock Text="{Binding FebPropertiesDescription}" Style="{StaticResource Text.Prose}"
+                               Margin="20,4,0,0" />
+                    <StackPanel Margin="20,8,0,0" IsEnabled="{Binding IncludeFebCustomProperties}">
+                        <ItemsControl ItemsSource="{Binding FebProperties}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="{x:Type m:AirwayFebPropertyToggle}">
+                                    <CheckBox Content="{Binding JsonKey}" IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                                              ToolTip="{Binding Description}" Margin="0,0,14,6" />
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
                     </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- ============ buffer airway waypoints ============ -->
+            <Border Style="{StaticResource Card}" Margin="0,16,0,0" IsEnabled="{Binding IsGeojsonOutputOn}">
+                <StackPanel>
+                    <ctl:SectionHeader Label="BUFFER AIRWAY WAYPOINTS" />
+                    <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
+                               Text="Lines stop short of each waypoint so they don't run through the waypoint symbols." />
+                    <CheckBox Content="Buffer airway waypoints" IsChecked="{Binding BufferAirwayWaypoints}" />
+                </StackPanel>
+            </Border>
+
+            <!-- ============ CRC ERAM defaults (7.4) ============ -->
+            <Border Style="{StaticResource Card}" Margin="0,16,0,0" IsEnabled="{Binding IsGeojsonOutputOn}">
+                <StackPanel>
+                    <ctl:SectionHeader Label="CRC ERAM DEFAULTS" />
+                    <!-- Lines | Symbols | Text side by side; the WrapPanel stacks them when the
+                         window is too narrow for all three, so no panel is ever clipped. A panel
+                         shows only while its file is being produced (picked above). Its Include box
+                         decides whether that file gets the CRC ERAM defaults; unticked, the fields
+                         grey out but keep their values. -->
+                    <WrapPanel Orientation="Horizontal" Margin="0,10,0,0">
+                        <Border Style="{StaticResource EramPanel}" Visibility="{Binding EmitLines, Converter={StaticResource BoolToVis}}">
+                            <StackPanel>
+                                <DockPanel Margin="0,0,0,8">
+                                    <CheckBox DockPanel.Dock="Right" Content="Include" IsChecked="{Binding IncludeCrcLineDefaults}" Margin="16,0,0,0" />
+                                    <TextBlock Text="LINES" Style="{StaticResource Text.Label}" VerticalAlignment="Center" />
+                                </DockPanel>
+                                <Grid IsEnabled="{Binding IncludeCrcLineDefaults}">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="110" />
+                                        <ColumnDefinition Width="110" />
+                                        <ColumnDefinition Width="110" />
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Grid.Column="1" Text="{Binding LineDefaults[0].ClassName}" Style="{StaticResource EramClassHeader}" />
+                                    <TextBlock Grid.Column="2" Text="{Binding LineDefaults[1].ClassName}" Style="{StaticResource EramClassHeader}" />
+                                    <TextBlock Grid.Column="3" Text="{Binding LineDefaults[2].ClassName}" Style="{StaticResource EramClassHeader}" />
+                                    <TextBlock Grid.Row="1" Text="Filters" Style="{StaticResource EramFieldLabel}" />
+                                    <ctl:FilterPicker Grid.Row="1" Grid.Column="1" Margin="4,3" Value="{Binding LineDefaults[0].Filters, Mode=TwoWay}"
+                                                      infra:FieldState.Error="{Binding LineDefaults[0].FiltersError}" />
+                                    <ctl:FilterPicker Grid.Row="1" Grid.Column="2" Margin="4,3" Value="{Binding LineDefaults[1].Filters, Mode=TwoWay}"
+                                                      infra:FieldState.Error="{Binding LineDefaults[1].FiltersError}" />
+                                    <ctl:FilterPicker Grid.Row="1" Grid.Column="3" Margin="4,3" Value="{Binding LineDefaults[2].Filters, Mode=TwoWay}"
+                                                      infra:FieldState.Error="{Binding LineDefaults[2].FiltersError}" />
+                                    <TextBlock Grid.Row="2" Text="BCG" Style="{StaticResource EramFieldLabel}" />
+                                    <ComboBox Grid.Row="2" Grid.Column="1" Margin="4,3" ItemsSource="{Binding LineDefaults[0].BcgOptions}" SelectedItem="{Binding LineDefaults[0].Bcg}"
+                                              infra:FieldState.Error="{Binding LineDefaults[0].BcgError}"
+                                              ToolTip="BCG group: an integer 1–40." />
+                                    <ComboBox Grid.Row="2" Grid.Column="2" Margin="4,3" ItemsSource="{Binding LineDefaults[1].BcgOptions}" SelectedItem="{Binding LineDefaults[1].Bcg}"
+                                              infra:FieldState.Error="{Binding LineDefaults[1].BcgError}"
+                                              ToolTip="BCG group: an integer 1–40." />
+                                    <ComboBox Grid.Row="2" Grid.Column="3" Margin="4,3" ItemsSource="{Binding LineDefaults[2].BcgOptions}" SelectedItem="{Binding LineDefaults[2].Bcg}"
+                                              infra:FieldState.Error="{Binding LineDefaults[2].BcgError}"
+                                              ToolTip="BCG group: an integer 1–40." />
+                                    <TextBlock Grid.Row="3" Text="Style" Style="{StaticResource EramFieldLabel}" />
+                                    <ComboBox Grid.Row="3" Grid.Column="1" Margin="4,3" ItemsSource="{Binding LineDefaults[0].StyleOptions}" SelectedItem="{Binding LineDefaults[0].Style}"
+                                              infra:FieldState.Error="{Binding LineDefaults[0].StyleError}"
+                                              ToolTip="Style: see the CRC GeoJSON concepts for the allowed values per kind." />
+                                    <ComboBox Grid.Row="3" Grid.Column="2" Margin="4,3" ItemsSource="{Binding LineDefaults[1].StyleOptions}" SelectedItem="{Binding LineDefaults[1].Style}"
+                                              infra:FieldState.Error="{Binding LineDefaults[1].StyleError}"
+                                              ToolTip="Style: see the CRC GeoJSON concepts for the allowed values per kind." />
+                                    <ComboBox Grid.Row="3" Grid.Column="3" Margin="4,3" ItemsSource="{Binding LineDefaults[2].StyleOptions}" SelectedItem="{Binding LineDefaults[2].Style}"
+                                              infra:FieldState.Error="{Binding LineDefaults[2].StyleError}"
+                                              ToolTip="Style: see the CRC GeoJSON concepts for the allowed values per kind." />
+                                    <TextBlock Grid.Row="4" Text="Thickness" Style="{StaticResource EramFieldLabel}" />
+                                    <ComboBox Grid.Row="4" Grid.Column="1" Margin="4,3" ItemsSource="{Binding LineDefaults[0].ThicknessOptions}" SelectedItem="{Binding LineDefaults[0].Thickness}"
+                                              infra:FieldState.Error="{Binding LineDefaults[0].ThicknessError}"
+                                              ToolTip="Thickness: an integer 1–3." />
+                                    <ComboBox Grid.Row="4" Grid.Column="2" Margin="4,3" ItemsSource="{Binding LineDefaults[1].ThicknessOptions}" SelectedItem="{Binding LineDefaults[1].Thickness}"
+                                              infra:FieldState.Error="{Binding LineDefaults[1].ThicknessError}"
+                                              ToolTip="Thickness: an integer 1–3." />
+                                    <ComboBox Grid.Row="4" Grid.Column="3" Margin="4,3" ItemsSource="{Binding LineDefaults[2].ThicknessOptions}" SelectedItem="{Binding LineDefaults[2].Thickness}"
+                                              infra:FieldState.Error="{Binding LineDefaults[2].ThicknessError}"
+                                              ToolTip="Thickness: an integer 1–3." />
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource EramPanel}" Visibility="{Binding EmitSymbols, Converter={StaticResource BoolToVis}}">
+                            <StackPanel>
+                                <DockPanel Margin="0,0,0,8">
+                                    <CheckBox DockPanel.Dock="Right" Content="Include" IsChecked="{Binding IncludeCrcSymbolDefaults}" Margin="16,0,0,0" />
+                                    <TextBlock Text="SYMBOLS" Style="{StaticResource Text.Label}" VerticalAlignment="Center" />
+                                </DockPanel>
+                                <Grid IsEnabled="{Binding IncludeCrcSymbolDefaults}">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="110" />
+                                        <ColumnDefinition Width="110" />
+                                        <ColumnDefinition Width="110" />
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Grid.Column="1" Text="{Binding SymbolDefaults[0].ClassName}" Style="{StaticResource EramClassHeader}" />
+                                    <TextBlock Grid.Column="2" Text="{Binding SymbolDefaults[1].ClassName}" Style="{StaticResource EramClassHeader}" />
+                                    <TextBlock Grid.Column="3" Text="{Binding SymbolDefaults[2].ClassName}" Style="{StaticResource EramClassHeader}" />
+                                    <TextBlock Grid.Row="1" Text="Filters" Style="{StaticResource EramFieldLabel}" />
+                                    <ctl:FilterPicker Grid.Row="1" Grid.Column="1" Margin="4,3" Value="{Binding SymbolDefaults[0].Filters, Mode=TwoWay}"
+                                                      infra:FieldState.Error="{Binding SymbolDefaults[0].FiltersError}" />
+                                    <ctl:FilterPicker Grid.Row="1" Grid.Column="2" Margin="4,3" Value="{Binding SymbolDefaults[1].Filters, Mode=TwoWay}"
+                                                      infra:FieldState.Error="{Binding SymbolDefaults[1].FiltersError}" />
+                                    <ctl:FilterPicker Grid.Row="1" Grid.Column="3" Margin="4,3" Value="{Binding SymbolDefaults[2].Filters, Mode=TwoWay}"
+                                                      infra:FieldState.Error="{Binding SymbolDefaults[2].FiltersError}" />
+                                    <TextBlock Grid.Row="2" Text="BCG" Style="{StaticResource EramFieldLabel}" />
+                                    <ComboBox Grid.Row="2" Grid.Column="1" Margin="4,3" ItemsSource="{Binding SymbolDefaults[0].BcgOptions}" SelectedItem="{Binding SymbolDefaults[0].Bcg}"
+                                              infra:FieldState.Error="{Binding SymbolDefaults[0].BcgError}"
+                                              ToolTip="BCG group: an integer 1–40." />
+                                    <ComboBox Grid.Row="2" Grid.Column="2" Margin="4,3" ItemsSource="{Binding SymbolDefaults[1].BcgOptions}" SelectedItem="{Binding SymbolDefaults[1].Bcg}"
+                                              infra:FieldState.Error="{Binding SymbolDefaults[1].BcgError}"
+                                              ToolTip="BCG group: an integer 1–40." />
+                                    <ComboBox Grid.Row="2" Grid.Column="3" Margin="4,3" ItemsSource="{Binding SymbolDefaults[2].BcgOptions}" SelectedItem="{Binding SymbolDefaults[2].Bcg}"
+                                              infra:FieldState.Error="{Binding SymbolDefaults[2].BcgError}"
+                                              ToolTip="BCG group: an integer 1–40." />
+                                    <TextBlock Grid.Row="3" Text="Style" Style="{StaticResource EramFieldLabel}" />
+                                    <ComboBox Grid.Row="3" Grid.Column="1" Margin="4,3" ItemsSource="{Binding SymbolDefaults[0].StyleOptions}" SelectedItem="{Binding SymbolDefaults[0].Style}"
+                                              infra:FieldState.Error="{Binding SymbolDefaults[0].StyleError}"
+                                              ToolTip="Style: see the CRC GeoJSON concepts for the allowed values per kind." />
+                                    <ComboBox Grid.Row="3" Grid.Column="2" Margin="4,3" ItemsSource="{Binding SymbolDefaults[1].StyleOptions}" SelectedItem="{Binding SymbolDefaults[1].Style}"
+                                              infra:FieldState.Error="{Binding SymbolDefaults[1].StyleError}"
+                                              ToolTip="Style: see the CRC GeoJSON concepts for the allowed values per kind." />
+                                    <ComboBox Grid.Row="3" Grid.Column="3" Margin="4,3" ItemsSource="{Binding SymbolDefaults[2].StyleOptions}" SelectedItem="{Binding SymbolDefaults[2].Style}"
+                                              infra:FieldState.Error="{Binding SymbolDefaults[2].StyleError}"
+                                              ToolTip="Style: see the CRC GeoJSON concepts for the allowed values per kind." />
+                                    <TextBlock Grid.Row="4" Text="Size" Style="{StaticResource EramFieldLabel}" />
+                                    <ComboBox Grid.Row="4" Grid.Column="1" Margin="4,3" ItemsSource="{Binding SymbolDefaults[0].SizeOptions}" SelectedItem="{Binding SymbolDefaults[0].Size}"
+                                              infra:FieldState.Error="{Binding SymbolDefaults[0].SizeError}"
+                                              ToolTip="Size: an integer 1–4." />
+                                    <ComboBox Grid.Row="4" Grid.Column="2" Margin="4,3" ItemsSource="{Binding SymbolDefaults[1].SizeOptions}" SelectedItem="{Binding SymbolDefaults[1].Size}"
+                                              infra:FieldState.Error="{Binding SymbolDefaults[1].SizeError}"
+                                              ToolTip="Size: an integer 1–4." />
+                                    <ComboBox Grid.Row="4" Grid.Column="3" Margin="4,3" ItemsSource="{Binding SymbolDefaults[2].SizeOptions}" SelectedItem="{Binding SymbolDefaults[2].Size}"
+                                              infra:FieldState.Error="{Binding SymbolDefaults[2].SizeError}"
+                                              ToolTip="Size: an integer 1–4." />
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource EramPanel}" Visibility="{Binding EmitText, Converter={StaticResource BoolToVis}}">
+                            <StackPanel>
+                                <DockPanel Margin="0,0,0,8">
+                                    <CheckBox DockPanel.Dock="Right" Content="Include" IsChecked="{Binding IncludeCrcTextDefaults}" Margin="16,0,0,0" />
+                                    <TextBlock Text="TEXT" Style="{StaticResource Text.Label}" VerticalAlignment="Center" />
+                                </DockPanel>
+                                <Grid IsEnabled="{Binding IncludeCrcTextDefaults}">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="110" />
+                                        <ColumnDefinition Width="110" />
+                                        <ColumnDefinition Width="110" />
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Grid.Column="1" Text="{Binding TextDefaults[0].ClassName}" Style="{StaticResource EramClassHeader}" />
+                                    <TextBlock Grid.Column="2" Text="{Binding TextDefaults[1].ClassName}" Style="{StaticResource EramClassHeader}" />
+                                    <TextBlock Grid.Column="3" Text="{Binding TextDefaults[2].ClassName}" Style="{StaticResource EramClassHeader}" />
+                                    <TextBlock Grid.Row="1" Text="Filters" Style="{StaticResource EramFieldLabel}" />
+                                    <ctl:FilterPicker Grid.Row="1" Grid.Column="1" Margin="4,3" Value="{Binding TextDefaults[0].Filters, Mode=TwoWay}"
+                                                      infra:FieldState.Error="{Binding TextDefaults[0].FiltersError}" />
+                                    <ctl:FilterPicker Grid.Row="1" Grid.Column="2" Margin="4,3" Value="{Binding TextDefaults[1].Filters, Mode=TwoWay}"
+                                                      infra:FieldState.Error="{Binding TextDefaults[1].FiltersError}" />
+                                    <ctl:FilterPicker Grid.Row="1" Grid.Column="3" Margin="4,3" Value="{Binding TextDefaults[2].Filters, Mode=TwoWay}"
+                                                      infra:FieldState.Error="{Binding TextDefaults[2].FiltersError}" />
+                                    <TextBlock Grid.Row="2" Text="BCG" Style="{StaticResource EramFieldLabel}" />
+                                    <ComboBox Grid.Row="2" Grid.Column="1" Margin="4,3" ItemsSource="{Binding TextDefaults[0].BcgOptions}" SelectedItem="{Binding TextDefaults[0].Bcg}"
+                                              infra:FieldState.Error="{Binding TextDefaults[0].BcgError}"
+                                              ToolTip="BCG group: an integer 1–40." />
+                                    <ComboBox Grid.Row="2" Grid.Column="2" Margin="4,3" ItemsSource="{Binding TextDefaults[1].BcgOptions}" SelectedItem="{Binding TextDefaults[1].Bcg}"
+                                              infra:FieldState.Error="{Binding TextDefaults[1].BcgError}"
+                                              ToolTip="BCG group: an integer 1–40." />
+                                    <ComboBox Grid.Row="2" Grid.Column="3" Margin="4,3" ItemsSource="{Binding TextDefaults[2].BcgOptions}" SelectedItem="{Binding TextDefaults[2].Bcg}"
+                                              infra:FieldState.Error="{Binding TextDefaults[2].BcgError}"
+                                              ToolTip="BCG group: an integer 1–40." />
+                                    <TextBlock Grid.Row="3" Text="Size" Style="{StaticResource EramFieldLabel}" />
+                                    <ComboBox Grid.Row="3" Grid.Column="1" Margin="4,3" ItemsSource="{Binding TextDefaults[0].SizeOptions}" SelectedItem="{Binding TextDefaults[0].Size}"
+                                              infra:FieldState.Error="{Binding TextDefaults[0].SizeError}"
+                                              ToolTip="Size: an integer 1–4." />
+                                    <ComboBox Grid.Row="3" Grid.Column="2" Margin="4,3" ItemsSource="{Binding TextDefaults[1].SizeOptions}" SelectedItem="{Binding TextDefaults[1].Size}"
+                                              infra:FieldState.Error="{Binding TextDefaults[1].SizeError}"
+                                              ToolTip="Size: an integer 1–4." />
+                                    <ComboBox Grid.Row="3" Grid.Column="3" Margin="4,3" ItemsSource="{Binding TextDefaults[2].SizeOptions}" SelectedItem="{Binding TextDefaults[2].Size}"
+                                              infra:FieldState.Error="{Binding TextDefaults[2].SizeError}"
+                                              ToolTip="Size: an integer 1–4." />
+                                    <TextBlock Grid.Row="4" Text="Opaque" Style="{StaticResource EramFieldLabel}" />
+                                    <ComboBox Grid.Row="4" Grid.Column="1" Margin="4,3" ItemsSource="{Binding TextDefaults[0].YesNoOptions}"
+                                              SelectedValuePath="Value" SelectedValue="{Binding TextDefaults[0].Opaque}"
+                                              infra:FieldState.Error="{Binding TextDefaults[0].OpaqueError}"
+                                              ToolTip="Opaque: Yes or No." />
+                                    <ComboBox Grid.Row="4" Grid.Column="2" Margin="4,3" ItemsSource="{Binding TextDefaults[1].YesNoOptions}"
+                                              SelectedValuePath="Value" SelectedValue="{Binding TextDefaults[1].Opaque}"
+                                              infra:FieldState.Error="{Binding TextDefaults[1].OpaqueError}"
+                                              ToolTip="Opaque: Yes or No." />
+                                    <ComboBox Grid.Row="4" Grid.Column="3" Margin="4,3" ItemsSource="{Binding TextDefaults[2].YesNoOptions}"
+                                              SelectedValuePath="Value" SelectedValue="{Binding TextDefaults[2].Opaque}"
+                                              infra:FieldState.Error="{Binding TextDefaults[2].OpaqueError}"
+                                              ToolTip="Opaque: Yes or No." />
+                                    <TextBlock Grid.Row="5" Text="Underline" Style="{StaticResource EramFieldLabel}" />
+                                    <ComboBox Grid.Row="5" Grid.Column="1" Margin="4,3" ItemsSource="{Binding TextDefaults[0].YesNoOptions}"
+                                              SelectedValuePath="Value" SelectedValue="{Binding TextDefaults[0].Underline}"
+                                              infra:FieldState.Error="{Binding TextDefaults[0].UnderlineError}"
+                                              ToolTip="Underline: Yes or No." />
+                                    <ComboBox Grid.Row="5" Grid.Column="2" Margin="4,3" ItemsSource="{Binding TextDefaults[1].YesNoOptions}"
+                                              SelectedValuePath="Value" SelectedValue="{Binding TextDefaults[1].Underline}"
+                                              infra:FieldState.Error="{Binding TextDefaults[1].UnderlineError}"
+                                              ToolTip="Underline: Yes or No." />
+                                    <ComboBox Grid.Row="5" Grid.Column="3" Margin="4,3" ItemsSource="{Binding TextDefaults[2].YesNoOptions}"
+                                              SelectedValuePath="Value" SelectedValue="{Binding TextDefaults[2].Underline}"
+                                              infra:FieldState.Error="{Binding TextDefaults[2].UnderlineError}"
+                                              ToolTip="Underline: Yes or No." />
+                                    <TextBlock Grid.Row="6" Text="X offset" Style="{StaticResource EramFieldLabel}" />
+                                    <TextBox Grid.Row="6" Grid.Column="1" Margin="4,3" Style="{StaticResource EramOffsetBox}"
+                                             Text="{Binding TextDefaults[0].XOffset, UpdateSourceTrigger=PropertyChanged}"
+                                             infra:FieldState.Error="{Binding TextDefaults[0].XOffsetError}" />
+                                    <TextBox Grid.Row="6" Grid.Column="2" Margin="4,3" Style="{StaticResource EramOffsetBox}"
+                                             Text="{Binding TextDefaults[1].XOffset, UpdateSourceTrigger=PropertyChanged}"
+                                             infra:FieldState.Error="{Binding TextDefaults[1].XOffsetError}" />
+                                    <TextBox Grid.Row="6" Grid.Column="3" Margin="4,3" Style="{StaticResource EramOffsetBox}"
+                                             Text="{Binding TextDefaults[2].XOffset, UpdateSourceTrigger=PropertyChanged}"
+                                             infra:FieldState.Error="{Binding TextDefaults[2].XOffsetError}" />
+                                    <TextBlock Grid.Row="7" Text="Y offset" Style="{StaticResource EramFieldLabel}" />
+                                    <TextBox Grid.Row="7" Grid.Column="1" Margin="4,3" Style="{StaticResource EramOffsetBox}"
+                                             Text="{Binding TextDefaults[0].YOffset, UpdateSourceTrigger=PropertyChanged}"
+                                             infra:FieldState.Error="{Binding TextDefaults[0].YOffsetError}" />
+                                    <TextBox Grid.Row="7" Grid.Column="2" Margin="4,3" Style="{StaticResource EramOffsetBox}"
+                                             Text="{Binding TextDefaults[1].YOffset, UpdateSourceTrigger=PropertyChanged}"
+                                             infra:FieldState.Error="{Binding TextDefaults[1].YOffsetError}" />
+                                    <TextBox Grid.Row="7" Grid.Column="3" Margin="4,3" Style="{StaticResource EramOffsetBox}"
+                                             Text="{Binding TextDefaults[2].YOffset, UpdateSourceTrigger=PropertyChanged}"
+                                             infra:FieldState.Error="{Binding TextDefaults[2].YOffsetError}" />
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+                    </WrapPanel>
                 </StackPanel>
             </Border>
 
@@ -215,14 +398,15 @@
             <Border Style="{StaticResource Card}" Margin="0,16,0,0">
                 <StackPanel>
                     <ctl:SectionHeader Label="ALIASES" />
-                    <TextBlock Style="{StaticResource Text.Body}" TextWrapping="Wrap" Margin="0,4,0,8"
+                    <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
                                Text="Provides a command to draw all airway waypoints on an ERAM or STARS window. Syntax: .&lt;awyId&gt;F  —  e.g. .J3F .FF OAK RBL LKV IMB GEG" />
                     <CheckBox Content="Include the Airways.txt alias file" IsChecked="{Binding GenerateAliasFile}" />
                     <StackPanel Margin="20,6,0,0" IsEnabled="{Binding GenerateAliasFile}">
                         <RadioButton GroupName="AliasScope" Content="All FAA airways"
                                      IsChecked="{Binding AliasRoiAirwaysOnly, Converter={StaticResource InverseBool}, Mode=TwoWay}" />
                         <RadioButton GroupName="AliasScope" Content="ROI airways only" Margin="0,3,0,0"
-                                     IsChecked="{Binding AliasRoiAirwaysOnly, Mode=TwoWay}" />
+                                     IsChecked="{Binding AliasRoiAirwaysOnly, Mode=TwoWay}"
+                                     ToolTip="Every airway whose line crosses the region - the same airways the GeoJSON draws - each with all of its waypoints." />
                     </StackPanel>
                 </StackPanel>
             </Border>
@@ -234,12 +418,13 @@
                     <CheckBox Content="Override the default ROI for Airways" IsChecked="{Binding OverrideRoi}" Margin="0,4,0,0" />
                     <TextBlock Text="{Binding RoiFallbackHint}" Style="{StaticResource Text.Caption}" TextWrapping="Wrap"
                                Margin="20,4,0,0"
+                               MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
                                Visibility="{Binding OverrideRoi, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
                     <StackPanel Margin="20,8,0,0" IsEnabled="{Binding OverrideRoi}">
                         <Grid>
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" /><ColumnDefinition Width="160" />
+                                <ColumnDefinition Width="Auto" /><ColumnDefinition Width="160" />
                             </Grid.ColumnDefinitions>
                             <Grid.RowDefinitions><RowDefinition /><RowDefinition /></Grid.RowDefinitions>
                             <TextBlock Text="NE lat" Style="{StaticResource Text.Caption}" VerticalAlignment="Center" Margin="0,0,8,4" />
@@ -262,61 +447,12 @@
             </Border>
 
             <!-- ============ antimeridian (7.8) ============ -->
-            <Border Style="{StaticResource Card}" Margin="0,16,0,0">
+            <Border Style="{StaticResource Card}" Margin="0,16,0,0" IsEnabled="{Binding IsGeojsonOutputOn}">
                 <StackPanel>
                     <ctl:SectionHeader Label="SPLIT GEOJSON AT THE ANTIMERIDIAN" />
-                    <TextBlock Style="{StaticResource Text.Body}" TextWrapping="Wrap" Margin="0,4,0,8"
+                    <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
                                Text="A line that crosses ±180° longitude is split into two LineStrings so it does not visually wrap across the whole map. Leave this on unless a downstream tool needs the un-split geometry." />
                     <CheckBox Content="Split airway geometry at the antimeridian" IsChecked="{Binding SplitAtAntimeridian}" />
-                </StackPanel>
-            </Border>
-
-            <!-- ============ run result panel (7.9) ============ -->
-            <Border Style="{StaticResource Card}" Margin="0,16,0,0"
-                    Visibility="{Binding ShowPanel, Converter={StaticResource BoolToVis}}">
-                <StackPanel>
-                    <ctl:SectionHeader Label="LAST RUN" />
-
-                    <TextBlock Text="{Binding ProgressText}" Style="{StaticResource Text.Body}" Margin="0,4,0,0"
-                               Visibility="{Binding IsRunning, Converter={StaticResource BoolToVis}}" />
-
-                    <StackPanel Visibility="{Binding RunFailed, Converter={StaticResource BoolToVis}}">
-                        <TextBlock Text="Run failed" Style="{StaticResource Text.Body.Strong}" Foreground="{StaticResource Brush.Danger}" />
-                        <TextBlock Text="{Binding RunError}" Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,4,0,0" />
-                    </StackPanel>
-
-                    <StackPanel Visibility="{Binding RunSucceeded, Converter={StaticResource BoolToVis}}">
-                        <WrapPanel Margin="0,4,0,0">
-                            <TextBlock Style="{StaticResource Text.Caption}" Margin="0,0,18,0"
-                                       Text="{Binding AirwayCount, StringFormat={}{0} airways}" />
-                            <TextBlock Style="{StaticResource Text.Caption}" Margin="0,0,18,0"
-                                       Foreground="{StaticResource Brush.Warn}"
-                                       Text="{Binding ExcludedCount, StringFormat={}{0} excluded}"
-                                       Visibility="{Binding HasExcluded, Converter={StaticResource BoolToVis}}" />
-                            <TextBlock Style="{StaticResource Text.Caption}" Text="{Binding ElapsedText}" />
-                        </WrapPanel>
-
-                        <ItemsControl ItemsSource="{Binding Files}" ItemTemplate="{StaticResource FileRow}" Margin="0,8,0,0"
-                                      Visibility="{Binding HasFiles, Converter={StaticResource BoolToVis}}" />
-
-                        <TextBlock Style="{StaticResource Text.Caption}" Margin="0,6,0,0"
-                                   Visibility="{Binding HasAliasFile, Converter={StaticResource BoolToVis}}"
-                                   Text="{Binding AliasLineCount, StringFormat=Airways.txt · {0} alias line(s)}" />
-
-                        <!-- warnings/errors expanded; info collapsed behind a count (3.8) -->
-                        <ItemsControl ItemsSource="{Binding MessageGroups}" ItemTemplate="{StaticResource MessageGroup}" Margin="0,8,0,0"
-                                      Visibility="{Binding HasWarnings, Converter={StaticResource BoolToVis}}" />
-
-                        <StackPanel Visibility="{Binding HasInfoOnly, Converter={StaticResource BoolToVis}}" Margin="0,8,0,0">
-                            <Button Style="{StaticResource Button.Ghost}" HorizontalAlignment="Left"
-                                    Content="{Binding InfoToggleLabel}" Command="{Binding ToggleInfoCommand}" />
-                            <ItemsControl ItemsSource="{Binding MessageGroups}" ItemTemplate="{StaticResource MessageGroup}"
-                                          Visibility="{Binding IsInfoExpanded, Converter={StaticResource BoolToVis}}" />
-                        </StackPanel>
-
-                        <Button Style="{StaticResource Button.Ghost}" HorizontalAlignment="Left" Margin="0,10,0,0"
-                                Content="Open output folder" Command="{Binding OpenOutputCommand}" />
-                    </StackPanel>
                 </StackPanel>
             </Border>
 

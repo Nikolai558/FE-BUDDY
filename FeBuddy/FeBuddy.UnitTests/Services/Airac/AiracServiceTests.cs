@@ -22,7 +22,6 @@ public sealed class AiracServiceTests
 		AiracServiceSettings settings = new()
 		{
 			SelectedCycle = Cycle,
-			ArtccId = "ZOA",
 			OutputDirectory = Path.GetTempPath(),
 			Airways = null,
 		};
@@ -49,7 +48,6 @@ public sealed class AiracServiceTests
 		AiracServiceSettings settings = new()
 		{
 			SelectedCycle = Cycle,
-			ArtccId = "ZOA",
 			OutputDirectory = Path.GetTempPath(),
 			// OutputBy=None keeps the run in memory - no files are written by this test.
 			Airways = new Dictionary<string, string>
@@ -75,7 +73,6 @@ public sealed class AiracServiceTests
 		AiracServiceSettings settings = new()
 		{
 			SelectedCycle = Cycle,
-			ArtccId = "ZOA",
 			OutputDirectory = Path.GetTempPath(),
 		};
 

@@ -12,6 +12,9 @@
         </ctl:SectionHeader>
 
     Aside (if set) is right-aligned on the same row as the label.
+
+    The label's look comes from the Text.SectionHeader style (Theme/Typography.xaml), the single
+    place to change every card title in the app.
 -->
 <UserControl x:Class="FeBuddy.Wpf.Controls.SectionHeader"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -20,7 +23,7 @@
     <DockPanel LastChildFill="False" Margin="0,0,0,10">
         <TextBlock DockPanel.Dock="Left"
                    VerticalAlignment="Center"
-                   Style="{StaticResource Text.Label}"
+                   Style="{StaticResource Text.SectionHeader}"
                    Text="{Binding Label, ElementName=Self}" />
         <ContentPresenter DockPanel.Dock="Right"
                           VerticalAlignment="Center"

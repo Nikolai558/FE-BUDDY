@@ -28,8 +28,8 @@ public static class AirwaySettingsParser
 	private static readonly HashSet<string> KnownScalarKeys = new(StringComparer.OrdinalIgnoreCase)
 	{
 		"OutputDirectory", "OutputBy", "BufferAirwayWaypoints", "IncludeFebCustomProperties",
-		"IncludeAirwayWaypointIds", "GenerateAliasFile", "SplitAtAntimeridian",
-		"IncludeCrcEramPropertyDefaults", "FilterByRoi",
+		"FebProperties", "GenerateAliasFile", "SplitAtAntimeridian",
+		CrcDefaultsReader.IncludeLineKey, CrcDefaultsReader.IncludeSymbolKey, CrcDefaultsReader.IncludeTextKey, "FilterByRoi",
 		"RoiSwLat", "RoiSwLon", "RoiNeLat", "RoiNeLon",
 		"ExcludedDesignations", "EmitLines", "EmitSymbols", "EmitText",
 		"AliasRoiScope", "CoordinatePrecision", "AddFeBuddyOutputFolder"
@@ -50,6 +50,14 @@ public static class AirwaySettingsParser
 		@"^Crc\.(High|Low|Other)\.(Line|Symbol|Text)\.(\w+)$",
 		RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
+	private static readonly Dictionary<string, AirwayFebProperty> FebPropertiesByName =
+		new(StringComparer.OrdinalIgnoreCase)
+		{
+			["awyId"] = AirwayFebProperty.AwyId,
+			["pointId"] = AirwayFebProperty.PointId,
+			["waypoints"] = AirwayFebProperty.Waypoints,
+		};
+
 	/// <summary>
 	/// Parses and validates <paramref name="airwaySettings"/> into a typed
 	/// <see cref="AirwaySettings"/>.
@@ -68,10 +76,9 @@ public static class AirwaySettingsParser
 
 		bool bufferAirwayWaypoints = ParseYesNo(airwaySettings, "BufferAirwayWaypoints", defaultValue: false);
 		bool includeFebCustomProperties = ParseYesNo(airwaySettings, "IncludeFebCustomProperties", defaultValue: false);
-		bool includeAirwayWaypointIds = ParseYesNo(airwaySettings, "IncludeAirwayWaypointIds", defaultValue: false);
+		IReadOnlyCollection<AirwayFebProperty> febProperties = ParseFebProperties(airwaySettings, includeFebCustomProperties);
 		bool generateAliasFile = ParseYesNo(airwaySettings, "GenerateAliasFile", defaultValue: true);
 		bool splitAtAntimeridian = ParseYesNo(airwaySettings, "SplitAtAntimeridian", defaultValue: true);
-		bool includeCrcDefaults = ParseYesNo(airwaySettings, "IncludeCrcEramPropertyDefaults", defaultValue: false);
 		bool filterByRoi = ParseYesNo(airwaySettings, "FilterByRoi", defaultValue: false);
 
 		RegionOfInterest? roi = filterByRoi ? ParseRoi(airwaySettings) : null;
@@ -94,26 +101,27 @@ public static class AirwaySettingsParser
 		int coordinatePrecision = ParseCoordinatePrecision(airwaySettings);
 		bool addFeBuddyOutputFolder = ParseYesNo(airwaySettings, "AddFeBuddyOutputFolder", defaultValue: true);
 
-		Dictionary<AirwayAltitudeClass, CrcLineProperties> lineDefaults = new();
-		Dictionary<AirwayAltitudeClass, CrcSymbolProperties> symbolDefaults = new();
-		Dictionary<AirwayAltitudeClass, CrcTextProperties> textDefaults = new();
+		// Each kind's defaults are written only when the user asked for them AND that file is
+		// produced; only then are its values required.
+		bool writingGeojson = outputBy != AirwayGeojsonOutputBy.None;
+		bool includeLineDefaults = CrcDefaultsReader.ReadInclude(airwaySettings, CrcFeatureKind.Line) && writingGeojson && emitLines;
+		bool includeSymbolDefaults = CrcDefaultsReader.ReadInclude(airwaySettings, CrcFeatureKind.Symbol) && writingGeojson && emitSymbols;
+		bool includeTextDefaults = CrcDefaultsReader.ReadInclude(airwaySettings, CrcFeatureKind.Text) && writingGeojson && emitText;
 
-		if (includeCrcDefaults)
+		Dictionary<AirwayAltitudeClass, CrcLineDefaults> lineDefaults = new();
+		Dictionary<AirwayAltitudeClass, CrcSymbolDefaults> symbolDefaults = new();
+		Dictionary<AirwayAltitudeClass, CrcTextDefaults> textDefaults = new();
+
+		foreach (AirwayAltitudeClass cls in AllClasses)
 		{
-			foreach (AirwayAltitudeClass cls in AllClasses)
-			{
-				CrcLineProperties line = ParseLineProperties(airwaySettings, cls);
-				CrcSymbolProperties symbol = ParseSymbolProperties(airwaySettings, cls);
-				CrcTextProperties text = ParseTextProperties(airwaySettings, cls);
+			if (includeLineDefaults)
+				lineDefaults[cls] = CrcDefaultsReader.ReadLine(airwaySettings, $"Crc.{cls}.Line");
 
-				ThrowIfInvalid(CrcGeojsonPropertyValidator.ValidateLine(line), cls, "Line");
-				ThrowIfInvalid(CrcGeojsonPropertyValidator.ValidateSymbol(symbol), cls, "Symbol");
-				ThrowIfInvalid(CrcGeojsonPropertyValidator.ValidateText(text), cls, "Text");
+			if (includeSymbolDefaults)
+				symbolDefaults[cls] = CrcDefaultsReader.ReadSymbol(airwaySettings, $"Crc.{cls}.Symbol");
 
-				lineDefaults[cls] = line;
-				symbolDefaults[cls] = symbol;
-				textDefaults[cls] = text;
-			}
+			if (includeTextDefaults)
+				textDefaults[cls] = CrcDefaultsReader.ReadText(airwaySettings, $"Crc.{cls}.Text");
 		}
 
 		List<ServiceMessage> messages = new();
@@ -125,10 +133,12 @@ public static class AirwaySettingsParser
 			OutputBy = outputBy,
 			BufferAirwayWaypoints = bufferAirwayWaypoints,
 			IncludeFebCustomProperties = includeFebCustomProperties,
-			IncludeAirwayWaypointIds = includeAirwayWaypointIds,
+			FebProperties = febProperties,
 			GenerateAliasFile = generateAliasFile,
 			SplitAtAntimeridian = splitAtAntimeridian,
-			IncludeCrcEramPropertyDefaults = includeCrcDefaults,
+			IncludeCrcLineDefaults = includeLineDefaults,
+			IncludeCrcSymbolDefaults = includeSymbolDefaults,
+			IncludeCrcTextDefaults = includeTextDefaults,
 			Roi = roi,
 			ExcludedDesignations = excludedDesignations,
 			EmitLines = emitLines,
@@ -171,6 +181,44 @@ public static class AirwaySettingsParser
 			.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
 			.Select(designation => designation.ToUpperInvariant())
 			.ToHashSet(StringComparer.OrdinalIgnoreCase);
+	}
+
+	private static IReadOnlyCollection<AirwayFebProperty> ParseFebProperties(
+		Dictionary<string, string> settings,
+		bool includeFebProperties)
+	{
+		if (!includeFebProperties)
+		{
+			return Array.Empty<AirwayFebProperty>();
+		}
+
+		IReadOnlyList<string> names = SettingsValueReader.StringList(settings, "FebProperties");
+
+		if (names.Count == 0)
+		{
+			throw new ArgumentException(
+				"IncludeFebCustomProperties is \"Y\" but 'FebProperties' names none. " +
+				"List the properties to write, e.g. \"awyId,pointId,waypoints\".");
+		}
+
+		List<AirwayFebProperty> properties = new();
+
+		foreach (string name in names)
+		{
+			if (!FebPropertiesByName.TryGetValue(name, out AirwayFebProperty property))
+			{
+				throw new ArgumentException(
+					$"'FebProperties' entry '{name}' is not a known property. Valid values: " +
+					string.Join(", ", FebPropertiesByName.Keys) + ".");
+			}
+
+			if (!properties.Contains(property))
+			{
+				properties.Add(property);
+			}
+		}
+
+		return properties;
 	}
 
 	private static AliasRoiScope ParseAliasRoiScope(Dictionary<string, string> settings)
@@ -232,49 +280,6 @@ public static class AirwaySettingsParser
 		return new RegionOfInterest(swLat, swLon, neLat, neLon);
 	}
 
-	private static CrcLineProperties ParseLineProperties(Dictionary<string, string> settings, AirwayAltitudeClass cls)
-	{
-		return new CrcLineProperties
-		{
-			Bcg = ParseOptionalInt(settings, CrcKey(cls, "Line", "bcg")),
-			Filters = ParseRequiredIntList(settings, CrcKey(cls, "Line", "filters")),
-			Style = NormalizeStyle(ParseOptionalString(settings, CrcKey(cls, "Line", "style")), CrcGeojsonPropertyValidator.ValidLineStyles),
-			Thickness = ParseOptionalInt(settings, CrcKey(cls, "Line", "thickness"))
-		};
-	}
-
-	private static CrcSymbolProperties ParseSymbolProperties(Dictionary<string, string> settings, AirwayAltitudeClass cls)
-	{
-		return new CrcSymbolProperties
-		{
-			Bcg = ParseOptionalInt(settings, CrcKey(cls, "Symbol", "bcg")),
-			Filters = ParseRequiredIntList(settings, CrcKey(cls, "Symbol", "filters")),
-			Style = NormalizeStyle(ParseOptionalString(settings, CrcKey(cls, "Symbol", "style")), CrcGeojsonPropertyValidator.ValidSymbolStyles),
-			Size = ParseOptionalInt(settings, CrcKey(cls, "Symbol", "size"))
-		};
-	}
-
-	private static CrcTextProperties ParseTextProperties(Dictionary<string, string> settings, AirwayAltitudeClass cls)
-	{
-		return new CrcTextProperties
-		{
-			Bcg = ParseOptionalInt(settings, CrcKey(cls, "Text", "bcg")),
-			Filters = ParseRequiredIntList(settings, CrcKey(cls, "Text", "filters")),
-			// Placeholder only: the isDefaults Text Feature is never rendered by CRC, and
-			// every real Text Feature always supplies its own waypoint-specific "text"
-			// override built by AirwayGeojsonService. See AirwaySettings.TextDefaults.
-			Text = new[] { $"{cls}_DEFAULT" },
-			Size = ParseOptionalInt(settings, CrcKey(cls, "Text", "size")),
-			Underline = ParseOptionalYesNo(settings, CrcKey(cls, "Text", "underline")),
-			XOffset = ParseOptionalInt(settings, CrcKey(cls, "Text", "xOffset")),
-			YOffset = ParseOptionalInt(settings, CrcKey(cls, "Text", "yOffset")),
-			Opaque = ParseOptionalYesNo(settings, CrcKey(cls, "Text", "opaque"))
-		};
-	}
-
-	private static string CrcKey(AirwayAltitudeClass cls, string kind, string property) =>
-		$"Crc.{cls}.{kind}.{property}";
-
 	private static string RequireNonEmpty(Dictionary<string, string> settings, string key)
 	{
 		if (!settings.TryGetValue(key, out string? value) || string.IsNullOrWhiteSpace(value))
@@ -295,16 +300,6 @@ public static class AirwaySettingsParser
 		return ParseYesNoValue(key, value);
 	}
 
-	private static bool? ParseOptionalYesNo(Dictionary<string, string> settings, string key)
-	{
-		if (!settings.TryGetValue(key, out string? value) || string.IsNullOrWhiteSpace(value))
-		{
-			return null;
-		}
-
-		return ParseYesNoValue(key, value);
-	}
-
 	private static bool ParseYesNoValue(string key, string value)
 	{
 		value = value.Trim();
@@ -316,82 +311,6 @@ public static class AirwaySettingsParser
 			return false;
 
 		throw new ArgumentException($"'{key}' must be either \"Y\" or \"N\", but was '{value}'.");
-	}
-
-	private static string? ParseOptionalString(Dictionary<string, string> settings, string key)
-	{
-		return settings.TryGetValue(key, out string? value) && !string.IsNullOrWhiteSpace(value)
-			? value.Trim()
-			: null;
-	}
-
-	private static int? ParseOptionalInt(Dictionary<string, string> settings, string key)
-	{
-		if (!settings.TryGetValue(key, out string? value) || string.IsNullOrWhiteSpace(value))
-		{
-			return null;
-		}
-
-		if (!int.TryParse(value.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out int parsed))
-		{
-			throw new ArgumentException($"'{key}' value '{value}' is not a valid integer.");
-		}
-
-		return parsed;
-	}
-
-	private static IReadOnlyList<int> ParseRequiredIntList(Dictionary<string, string> settings, string key)
-	{
-		string value = RequireNonEmpty(settings, key);
-
-		string[] parts = value.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-
-		if (parts.Length == 0)
-		{
-			throw new ArgumentException($"'{key}' must contain at least one comma-separated integer value.");
-		}
-
-		int[] result = new int[parts.Length];
-
-		for (int i = 0; i < parts.Length; i++)
-		{
-			if (!int.TryParse(parts[i], NumberStyles.Integer, CultureInfo.InvariantCulture, out result[i]))
-			{
-				throw new ArgumentException($"'{key}' entry '{parts[i]}' is not a valid integer.");
-			}
-		}
-
-		return result;
-	}
-
-	private static string? NormalizeStyle(string? raw, IReadOnlyList<string> validValues)
-	{
-		if (raw is null)
-		{
-			return null;
-		}
-
-		foreach (string candidate in validValues)
-		{
-			if (string.Equals(candidate, raw, StringComparison.OrdinalIgnoreCase))
-			{
-				return candidate;
-			}
-		}
-
-		// Not a recognized value; return as-is so the downstream CRC property validator
-		// reports it with the full list of valid options.
-		return raw;
-	}
-
-	private static void ThrowIfInvalid(Models.Geojson.CrcPropertyValidationResult result, AirwayAltitudeClass cls, string kind)
-	{
-		if (!result.IsValid)
-		{
-			throw new ArgumentException(
-				$"Invalid CRC {kind} property defaults for altitude class '{cls}':{Environment.NewLine}" +
-				string.Join(Environment.NewLine, result.Errors));
-		}
 	}
 
 	private static void CollectUnknownKeyWarnings(Dictionary<string, string> settings, List<ServiceMessage> messages)

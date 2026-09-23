@@ -5,8 +5,8 @@
 > (2026-09-07), which are folded in and marked **[OWNER]** where they resolve an ambiguity.
 > **Companion docs (read them; do not contradict them):**
 > `FE-Buddy_3.0_Structure_And_Build_Plan.md` (§3 structure, §4 settings contract, §6 CRC rules),
-> `FeBuddy/Developer_Notes.md` (UserConfig tree, launch processes, GUI wording),
-> `FeBuddy/FeBuddy.Wpf/README.md` (design-system conventions).
+> `Developer_Notes.md` (UserConfig tree, launch processes, GUI wording),
+> `FeBuddy.Wpf/README.md` (design-system conventions).
 >
 > Where this plan and those docs disagree, **this plan wins**, and the doc is updated in the
 > same commit (each phase names which).
@@ -33,10 +33,10 @@ layers:
 
 | Today | Must become |
 |---|---|
-| `FEBuddyLibrary/Services/Airways/` | `FEBuddyLibrary/Services/Airac/Airways/` |
-| `FEBuddyLibrary/Models/Services/Airways/` | `FEBuddyLibrary/Models/Services/Airac/Airways/` |
-| namespace `FEBuddyLibrary.Services.Airways` | `FEBuddyLibrary.Services.Airac.Airways` |
-| namespace `FEBuddyLibrary.Models.Services.Airways` | `FEBuddyLibrary.Models.Services.Airac.Airways` |
+| `FeBuddy.Core/Services/Airways/` | `FeBuddy.Core/Services/Airac/Airways/` |
+| `FeBuddy.Core/Models/Services/Airways/` | `FeBuddy.Core/Models/Services/Airac/Airways/` |
+| namespace `FeBuddy.Core.Services.Airways` | `FeBuddy.Core.Services.Airac.Airways` |
+| namespace `FeBuddy.Core.Models.Services.Airways` | `FeBuddy.Core.Models.Services.Airac.Airways` |
 | `AirwayService.Run(...)` called directly by the GUI | `AiracService.RunAsync(...)` called by the GUI; it dispatches to sub-services |
 | Shell nav item **"Airways"** | **deleted** — Airways is reachable only as an AIRAC Service sub-service |
 | `Views/AirwaysView.xaml` as a top-level screen | a sub-service page hosted inside the AIRAC Service screen |
@@ -51,7 +51,7 @@ sub-service page in the GUI. No new top-level "Airways" anything, ever.
 ### 1.2 Production, not prototype
 
 **[OWNER]** `FeBuddy.Wpf` has good prototype ideas; they are now to be *implemented*, not
-demoed. Every screen that ships is wired to `FEBuddyLibrary` or it is deleted. A screen that
+demoed. Every screen that ships is wired to `FeBuddy.Core` or it is deleted. A screen that
 cannot be made real this round is removed from navigation, not left showing samples. See 0.5 for
 the specific list.
 
@@ -88,15 +88,15 @@ keeps its forward-looking spec for them — that is a design doc, not code.)
 
 **Real and working — keep:**
 
-- `FEBuddyLibrary/Services/Airways/*` — `AirwayService` → `AirwaySettingsParser` →
+- `FeBuddy.Core/Services/Airways/*` — `AirwayService` → `AirwaySettingsParser` →
   `AirwayBuilder` → `AirwayGeojsonService` / `AirwayAliasService`, plus `AirwayNormalizer`,
   `AirwayGeometryBuilder`, `AirwayClassifier`, `AirwayWaypointBuffer`.
-- `FEBuddyLibrary/Services/General/*` — `GeojsonFileWriter`, `CrcEramPropertyHandler`,
+- `FeBuddy.Core/Services/General/*` — `GeojsonFileWriter`, `CrcEramPropertyHandler`,
   `CrcGeojsonPropertyValidator`, `RoiFilter`, `AntimeridianHandler`, `AiracCycleResolver`,
   `NasrCycleDownloadService`.
-- `FEBuddyLibrary/PARSERS/NASR/CSV/*` — `NasrCsvParserController.MainAsync(string[] dirs)`
+- `FeBuddy.Core/Parsers/NASR/CSV/*` — `NasrCsvParserController.MainAsync(string[] dirs)`
   parses **all 24 NASR groups** concurrently.
-- `UnitTests/Services/**` — real coverage; keep it green through the move.
+- `FeBuddy.UnitTests/Services/**` — real coverage; keep it green through the move.
 - `FeBuddy.Wpf/Views/AirwaysView.xaml` + `AirwaysViewModel` — the only genuinely wired screen;
   its result panel (files, feature counts, warnings grouped by airway, collapsible) is good work
   and survives into the sub-service page.
@@ -184,10 +184,10 @@ Remove `FeBuddyWPF`, `WPF`, and `WPFUI` — projects, folders, and `FeBuddy.sln`
 `FeBuddy.Wpf` is the app. Do this first, in a standalone commit, so nobody edits a dead project
 by mistake (this branch already added a `DialogService` to `FeBuddyWPF`).
 
-*Acceptance:* `FeBuddy.sln` contains `FeBuddy.Wpf`, `FEBuddyLibrary`, `FEBuddyTest`, `UnitTests`
+*Acceptance:* `FeBuddy.sln` contains `FeBuddy.Wpf`, `FeBuddy.Core`, `FeBuddy.Harness`, `FeBuddy.UnitTests`
 and nothing else; solution builds.
 
-### 0.2 `UserConfig` helper — `FEBuddyLibrary/Helpers/UserConfigFile.cs`
+### 0.2 `UserConfig` helper — `FeBuddy.Core/Helpers/UserConfigFile.cs`
 
 Per `Developer_Notes.md` → *USER CONFIGURATION FILE* and *LAUNCH PROCESSES → READ
 UserConfig.json*:
@@ -209,7 +209,7 @@ UserConfig.json*:
 *Acceptance:* unit tests for round-trip, missing file, missing key, undo-after-save,
 undo-with-no-snapshot, and per-node isolation (saving Airways does not revert Settings).
 
-### 0.3 Application logging — `FEBuddyLibrary/Services/General/AppLog.cs`
+### 0.3 Application logging — `FeBuddy.Core/Services/General/AppLog.cs`
 
 The Dashboard activity log (Phase 6.4) is a view over this; build the sink first.
 
@@ -283,25 +283,25 @@ returns nothing outside comments describing removed behaviour.
 Pure move + namespace rename, no behaviour change, one commit:
 
 ```
-FEBuddyLibrary/Services/Airways/*                                -> FEBuddyLibrary/Services/Airac/Airways/*
-FEBuddyLibrary/Models/Services/Airways/*                         -> FEBuddyLibrary/Models/Services/Airac/Airways/*
-FEBuddyLibrary/Services/General/AiracCycleResolver.cs            -> FEBuddyLibrary/Services/Airac/
-FEBuddyLibrary/Services/General/NasrCycleDownloadService.cs      -> FEBuddyLibrary/Services/Airac/
-FEBuddyLibrary/Models/Services/General/AiracCycleInfo.cs         -> FEBuddyLibrary/Models/Services/Airac/
-FEBuddyLibrary/Models/Services/General/AiracCyclePosition.cs     -> FEBuddyLibrary/Models/Services/Airac/
-FEBuddyLibrary/Models/Services/General/AiracDownloadProgress.cs  -> FEBuddyLibrary/Models/Services/Airac/
+FeBuddy.Core/Services/Airways/*                                -> FeBuddy.Core/Services/Airac/Airways/*
+FeBuddy.Core/Models/Services/Airways/*                         -> FeBuddy.Core/Models/Services/Airac/Airways/*
+FeBuddy.Core/Services/General/AiracCycleResolver.cs            -> FeBuddy.Core/Services/Airac/
+FeBuddy.Core/Services/General/NasrCycleDownloadService.cs      -> FeBuddy.Core/Services/Airac/
+FeBuddy.Core/Models/Services/General/AiracCycleInfo.cs         -> FeBuddy.Core/Models/Services/Airac/
+FeBuddy.Core/Models/Services/General/AiracCyclePosition.cs     -> FeBuddy.Core/Models/Services/Airac/
+FeBuddy.Core/Models/Services/General/AiracDownloadProgress.cs  -> FeBuddy.Core/Models/Services/Airac/
 ```
 
 `Services/General/` keeps only genuinely cross-service code: `GeojsonFileWriter`,
 `CrcEramPropertyHandler`, `CrcGeojsonPropertyValidator`, `RoiFilter`, `AntimeridianHandler`,
 `AppLog` — the future RADAR Video Map Conversion service needs all of them.
 
-Update `FEBuddyTest/*` and `UnitTests/Services/**` in the same commit; test folders mirror source
-folders (`UnitTests/Services/Airac/Airways/`).
+Update `FeBuddy.Harness/*` and `FeBuddy.UnitTests/Services/**` in the same commit; test folders mirror source
+folders (`FeBuddy.UnitTests/Services/Airac/Airways/`).
 
 *Acceptance:* solution builds; every existing unit test passes with no change beyond `using`s.
 
-### 1.2 New orchestrator — `FEBuddyLibrary/Services/Airac/AiracService.cs`
+### 1.2 New orchestrator — `FeBuddy.Core/Services/Airac/AiracService.cs`
 
 ```csharp
 public static class AiracService
@@ -346,8 +346,8 @@ fast as possible.
 
 ### 2.1 Download management (`%temp%`)
 
-Files: `FEBuddyLibrary/Services/Airac/NasrCycleDownloadService.cs`, new
-`FEBuddyLibrary/Helpers/TempWorkspace.cs`.
+Files: `FeBuddy.Core/Services/Airac/NasrCycleDownloadService.cs`, new
+`FeBuddy.Core/Helpers/TempWorkspace.cs`.
 
 Today the zip lands in `%TEMP%\FE-Buddy\` and `ZipFile.ExtractToDirectory` dumps the whole
 archive — 27 PDFs and a nested change-report zip included — into the cycle folder.
@@ -427,7 +427,7 @@ When Chart Recall is built, its availability check is **separate** from the NASR
 above: a cycle can be fully downloadable and parseable while its d-TPP metafile does not yet
 exist, and that must degrade only the Chart Recall output — never the cycle.
 
-### 2.4 Cycle data cache — `FEBuddyLibrary/Services/Airac/AiracCycleDataCache.cs`
+### 2.4 Cycle data cache — `FeBuddy.Core/Services/Airac/AiracCycleDataCache.cs`
 
 - One entry per cycle: `{ AiracCycleInfo Cycle, CycleDataState State, Task<NasrCsvDataCollection>? ParseTask }`.
 - `CycleDataState { NotYetPublished, NotDownloaded, Downloading, Downloaded, Parsing, Ready, Failed }`,
@@ -470,7 +470,7 @@ While waiting, show the Developer_Notes message — *"Waiting for AIRAC data to 
 and parsing. This service will be available in a moment"* — plus per-cycle progress. The static
 border indicator (4.3) shows the same state.
 
-*Acceptance:* update `NasrCycleDownloadServiceTests` (moved to `UnitTests/Services/Airac/`) —
+*Acceptance:* update `NasrCycleDownloadServiceTests` (moved to `FeBuddy.UnitTests/Services/Airac/`) —
 serve a zip containing `.csv`, `.pdf`, `.txt` and a nested folder; assert only `.csv` lands in
 the cycle folder, flattened; assert the zip goes to `Downloads` and is removed; assert
 `ClearOnLaunch` empties the temp tree. New tests for `AiracCycleAvailability` (200 → published,
@@ -487,7 +487,7 @@ These are behaviour changes in `Services/Airac/Airways/`. Land them before the G
 
 Three of them (3.3, 3.4, 3.5) add settings, and two (3.9, 3.10) change geometry. Whenever a
 setting is added, update all three of its homes in the same commit: the typed `AirwaySettings`
-record, the key table in `AirwaySettingsParser`, and **`FEBuddyTest/HarnessSettings.cs`** — the
+record, the key table in `AirwaySettingsParser`, and **`FeBuddy.Harness/HarnessSettings.cs`** — the
 console harness mirrors the settings dictionary and is how these changes get exercised before the
 GUI exists. Add the new keys to `FE-Buddy_3.0_Structure_And_Build_Plan.md` §4.2 as well.
 
@@ -809,7 +809,7 @@ System nav keeps `Settings` and `Info`.
 
 > **Amended 17 Sep 2026.** Replaces the hosted-page + `AIRAC Service › Airways` breadcrumb model
 > described here before: the owner moved the screen to tabs after the list-and-page approach did
-> not work out. **There is no breadcrumb.** `NavItem.SubServices` is left unpopulated — no nav
+> not work out. **There is no breadcrumb.** `NavItem.SubServices` has been removed — no nav
 > item has sub-services; the tab rail does that job.
 
 - A first-tier service screen is a **vertical tab rail down the left** plus one content pane.
@@ -861,10 +861,10 @@ bar (5.2). The General tab is a settings tab like any other.
 
 Files: `Views/DashboardView.xaml`, `ViewModels/DashboardViewModel.cs`.
 
-**6.1 News is the primary view.** New `FEBuddyLibrary/Services/General/NewsService.cs`
+**6.1 News is the primary view.** New `FeBuddy.Core/Services/General/NewsService.cs`
 implementing the `NewsChecker` sample in Developer_Notes (PostId regex
 `PostId:\s*(\d{4}-\d{2}-\d{2})\.(\d+)`) plus a reader that returns post content for display.
-Source: `FeBuddy/FEBuddyLibrary/News.md`, fetched from GitHub raw when online, falling back to
+Source: `FeBuddy/FeBuddy.Core/News.md`, fetched from GitHub raw when online, falling back to
 the bundled copy offline. On launch, parse and render the posts as the Dashboard's main content.
 A **News** button opens the GitHub News document in the browser and changes colour when the
 newest PostId is newer than `General.NewsLastOpen`; opening it writes that PostId back. A parse
@@ -1192,7 +1192,7 @@ sub-service with a backend), since both are easy to erode accidentally.
 
 ## 17. Definition of done for this round
 
-1. Solution builds with four projects; `UnitTests` green, including new tests for
+1. Solution builds with four projects; `FeBuddy.UnitTests` green, including new tests for
    `UserConfigFile`, `AppLog`, csv-only extraction, `AiracCycleAvailability`,
    `AiracCycleDataCache`, designation derivation, airway exclusion, border-crossing
    normalization, degenerate antimeridian geometry, message levels, designation filtering,

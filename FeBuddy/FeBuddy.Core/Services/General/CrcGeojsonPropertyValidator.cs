@@ -15,16 +15,35 @@ namespace FeBuddy.Core.Services.General;
 /// </remarks>
 public static class CrcGeojsonPropertyValidator
 {
-	private const int MinBcg = 1;
-	private const int MaxBcg = 40;
-	private const int MinFilter = 0;
-	private const int MaxFilter = 40;
-	private const int MinThickness = 1;
-	private const int MaxThickness = 3;
-	private const int MinSymbolSize = 1;
-	private const int MaxSymbolSize = 4;
-	private const int MinTextSize = 0;
-	private const int MaxTextSize = 5;
+	/// <summary>Lowest valid <c>bcg</c> group.</summary>
+	public const int MinBcg = 1;
+
+	/// <summary>Highest valid <c>bcg</c> group.</summary>
+	public const int MaxBcg = 40;
+
+	/// <summary>Lowest valid <c>filters</c> entry.</summary>
+	public const int MinFilter = 0;
+
+	/// <summary>Highest valid <c>filters</c> entry.</summary>
+	public const int MaxFilter = 40;
+
+	/// <summary>Lowest valid line <c>thickness</c>.</summary>
+	public const int MinThickness = 1;
+
+	/// <summary>Highest valid line <c>thickness</c>.</summary>
+	public const int MaxThickness = 3;
+
+	/// <summary>Lowest valid symbol <c>size</c>.</summary>
+	public const int MinSymbolSize = 1;
+
+	/// <summary>Highest valid symbol <c>size</c>.</summary>
+	public const int MaxSymbolSize = 4;
+
+	/// <summary>Lowest valid text <c>size</c>.</summary>
+	public const int MinTextSize = 0;
+
+	/// <summary>Highest valid text <c>size</c>.</summary>
+	public const int MaxTextSize = 5;
 
 	/// <summary>
 	/// The exact, case-sensitive line style values CRC accepts.
@@ -161,14 +180,55 @@ public static class CrcGeojsonPropertyValidator
 				$"Valid range: {MinTextSize}-{MaxTextSize}.");
 		}
 
-		if (properties.XOffset is int xOffset && xOffset < 0)
-		{
-			errors.Add($"Text 'xOffset' value {xOffset} is invalid; it must be >= 0.");
-		}
+		// xOffset / yOffset accept any integer (CRC spec), so there is nothing to range-check.
 
-		if (properties.YOffset is int yOffset && yOffset < 0)
+		return errors.Count == 0
+			? CrcPropertyValidationResult.Success
+			: CrcPropertyValidationResult.Failure(errors);
+	}
+
+	/// <summary>Validates the values of an <c>isLineDefaults</c> Feature.</summary>
+	/// <param name="defaults">The defaults.</param>
+	/// <returns>The validation result.</returns>
+	public static CrcPropertyValidationResult ValidateLineDefaults(CrcLineDefaults defaults)
+	{
+		ArgumentNullException.ThrowIfNull(defaults);
+		return ValidateLine(defaults.ToFeatureProperties());
+	}
+
+	/// <summary>Validates the values of an <c>isSymbolDefaults</c> Feature.</summary>
+	/// <param name="defaults">The defaults.</param>
+	/// <returns>The validation result.</returns>
+	public static CrcPropertyValidationResult ValidateSymbolDefaults(CrcSymbolDefaults defaults)
+	{
+		ArgumentNullException.ThrowIfNull(defaults);
+		return ValidateSymbol(new CrcSymbolProperties
 		{
-			errors.Add($"Text 'yOffset' value {yOffset} is invalid; it must be >= 0.");
+			Bcg = defaults.Bcg,
+			Filters = defaults.Filters,
+			Style = defaults.Style,
+			Size = defaults.Size,
+		});
+	}
+
+	/// <summary>Validates the values of an <c>isTextDefaults</c> Feature.</summary>
+	/// <param name="defaults">The defaults.</param>
+	/// <returns>The validation result.</returns>
+	/// <remarks>Checked directly rather than through <see cref="ValidateText"/>, which requires the <c>text</c> a defaults Feature never has.</remarks>
+	public static CrcPropertyValidationResult ValidateTextDefaults(CrcTextDefaults defaults)
+	{
+		ArgumentNullException.ThrowIfNull(defaults);
+
+		List<string> errors = new();
+
+		ValidateBcg(defaults.Bcg, errors);
+		ValidateFilters(defaults.Filters, errors);
+
+		if (defaults.Size < MinTextSize || defaults.Size > MaxTextSize)
+		{
+			errors.Add(
+				$"Text 'size' value {defaults.Size} is out of range. " +
+				$"Valid range: {MinTextSize}-{MaxTextSize}.");
 		}
 
 		return errors.Count == 0

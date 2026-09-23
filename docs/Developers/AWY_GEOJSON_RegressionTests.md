@@ -1,6 +1,12 @@
 ﻿# FE-Buddy AWY GeoJSON Generator
 # Stage 0 Regression Test Plan
 
+> **Superseded - historical record.** This plan targets `AwyGeojsonGenerator`, which was ported
+> into the Services layout and deleted in the build plan's Phase 2. Its Category A cases were
+> carried into the real tests, which live in `FeBuddy.UnitTests/Services/Airac/Airways/` and not
+> in the folder layout proposed below. Read this for the test *cases* and the reasoning behind
+> them; read the test project for what actually runs today.
+
 ## Purpose
 
 This document defines the Stage 0 regression-test plan for the existing `AwyGeojsonGenerator` before Stage 1 implementation begins.
@@ -42,11 +48,11 @@ This keeps the Stage 0 test project green rather than intentionally filling it w
 
 # Existing Unit Test Project
 
-Current structure:
+Structure at the time this plan was written:
 
 ```text
-UnitTests
-│   UnitTests.csproj
+FeBuddy.UnitTests
+│   FeBuddy.UnitTests.csproj
 │   Usings.cs
 │
 ├───Handlers
@@ -68,8 +74,8 @@ The names are compatible with the general style used by xUnit, NUnit, or MSTest.
 Do not create these files yet unless we agree to proceed with the test implementation.
 
 ```text
-UnitTests
-│   UnitTests.csproj
+FeBuddy.UnitTests
+│   FeBuddy.UnitTests.csproj
 │   Usings.cs
 │
 ├───Generators

@@ -18,12 +18,28 @@
     each call site: {StaticResource Text.Body} etc.
 -->
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=mscorlib">
 
     <FontFamily x:Key="Font.Display">Montserrat, Segoe UI, Arial</FontFamily>
     <FontFamily x:Key="Font.Body">Jost, Segoe UI, Arial</FontFamily>
     <FontFamily x:Key="Font.Icon">Segoe Fluent Icons, Segoe MDL2 Assets</FontFamily>
     <FontFamily x:Key="Font.Mono">Cascadia Mono, Consolas, Courier New</FontFamily>
+
+    <!-- ======================== LAYOUT MEASURES ======================== -->
+    <!--
+        A page fills the window - no view pins its content to the left edge and
+        leaves a dead gutter on the right. Body text is the one thing inside a
+        page that still needs a cap. A cluster of input controls is held to size
+        by giving its Grid fixed column widths, not by capping its container: a
+        star column inside a left-aligned container measures to its content, so
+        the boxes come out ragged and clipped.
+    -->
+
+    <!-- How wide a column of body text is allowed to get. Past roughly this, the
+         eye loses the start of the next line. Multi-sentence copy uses
+         Text.Prose (below); a caption that runs long sets MaxWidth to this. -->
+    <sys:Double x:Key="Layout.Prose.MaxWidth">820</sys:Double>
 
     <!-- ======================= DISPLAY / HEADINGS ===================== -->
 
@@ -35,13 +51,12 @@
         <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Primary}" />
         <Setter Property="LineHeight" Value="44" />
         <Setter Property="TextWrapping" Value="Wrap" />
-    </Style>
-
-    <Style x:Key="Text.H1" TargetType="TextBlock">
-        <Setter Property="FontFamily" Value="{DynamicResource Font.Display}" />
-        <Setter Property="FontSize" Value="23" />
-        <Setter Property="FontWeight" Value="Bold" />
-        <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Primary}" />
+        <!-- Inside a disabled card or panel, text dims to match its disabled controls. -->
+        <Style.Triggers>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Opacity" Value="0.31" />
+            </Trigger>
+        </Style.Triggers>
     </Style>
 
     <Style x:Key="Text.H2" TargetType="TextBlock">
@@ -49,14 +64,12 @@
         <Setter Property="FontSize" Value="16" />
         <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Primary}" />
-    </Style>
-
-    <!-- Big metric value inside a StatTile. -->
-    <Style x:Key="Text.Metric" TargetType="TextBlock">
-        <Setter Property="FontFamily" Value="{DynamicResource Font.Display}" />
-        <Setter Property="FontSize" Value="27" />
-        <Setter Property="FontWeight" Value="Bold" />
-        <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Primary}" />
+        <!-- Inside a disabled card or panel, text dims to match its disabled controls. -->
+        <Style.Triggers>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Opacity" Value="0.31" />
+            </Trigger>
+        </Style.Triggers>
     </Style>
 
     <!-- ============================= BODY ============================= -->
@@ -67,6 +80,12 @@
         <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Secondary}" />
         <Setter Property="LineHeight" Value="20" />
         <Setter Property="TextWrapping" Value="Wrap" />
+        <!-- Inside a disabled card or panel, text dims to match its disabled controls. -->
+        <Style.Triggers>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Opacity" Value="0.31" />
+            </Trigger>
+        </Style.Triggers>
     </Style>
 
     <Style x:Key="Text.Body.Strong" TargetType="TextBlock" BasedOn="{StaticResource Text.Body}">
@@ -75,12 +94,35 @@
     </Style>
 
     <!-- Tiny uppercase section label ("ONLINE ATC", "OUTPUT MODE"). -->
+    <!-- Multi-sentence explanatory copy: wraps, and stops at the prose measure so
+         it stays readable when the window is maximised. Short one-line labels and
+         values keep Text.Body / Text.Caption - capping those would do nothing but
+         make the intent harder to read at the call site. -->
+    <Style x:Key="Text.Prose" TargetType="TextBlock" BasedOn="{StaticResource Text.Body}">
+        <Setter Property="TextWrapping" Value="Wrap" />
+        <Setter Property="MaxWidth" Value="{StaticResource Layout.Prose.MaxWidth}" />
+        <Setter Property="HorizontalAlignment" Value="Left" />
+    </Style>
+
     <Style x:Key="Text.Label" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{DynamicResource Font.Body}" />
         <Setter Property="FontSize" Value="10.5" />
         <Setter Property="FontWeight" Value="Bold" />
         <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Tertiary}" />
         <Setter Property="TextOptions.TextFormattingMode" Value="Ideal" />
+        <!-- Inside a disabled card or panel, text dims to match its disabled controls. -->
+        <Style.Triggers>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Opacity" Value="0.31" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- Card titles ("CRC ERAM DEFAULTS", the Preview page's "General"). The one place their
+         look is set: every card title is a ctl:SectionHeader, which uses this style. ~10% larger
+         than Text.Label so a card's title sits above the panel and field labels inside it. -->
+    <Style x:Key="Text.SectionHeader" TargetType="TextBlock" BasedOn="{StaticResource Text.Label}">
+        <Setter Property="FontSize" Value="11.5" />
     </Style>
 
     <!-- Caption / helper text under a control. -->
@@ -88,11 +130,6 @@
         <Setter Property="FontSize" Value="11.5" />
         <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Tertiary}" />
         <Setter Property="LineHeight" Value="16" />
-    </Style>
-
-    <Style x:Key="Text.Mono" TargetType="TextBlock" BasedOn="{StaticResource Text.Body}">
-        <Setter Property="FontFamily" Value="{DynamicResource Font.Mono}" />
-        <Setter Property="FontSize" Value="12" />
     </Style>
 
 </ResourceDictionary>

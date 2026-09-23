@@ -2,7 +2,7 @@ using FeBuddy.Core.Models.Location;
 using System.Runtime.CompilerServices;
 
 [assembly: InternalsVisibleTo("FeBuddy.UnitTests")]
-namespace FeBuddy.Core.Handlers;
+namespace FeBuddy.Core.Handlers.General;
 /// <summary>
 /// A static class that handles all logic for coordinate math and conversions.
 /// </summary>
@@ -28,8 +28,8 @@ public class CoordinateHandler
     /// </summary>
     /// <param name="Lat">string: Latitude - Format: ['N', 'S']DDD.MM.SS.SSS</param>
     /// <param name="Lon">string: Longitude - Format: ['E', 'W']DDD.MM.SS.SSS</param>
-    /// <returns>bool: Returns True if the Latitude AND Longitude are valid DMS formats, otherwise returns False.</returns>
-    public static bool IsValidDMS(string Lat, string Lon)
+    /// <returns>bool: Returns True if the Latitude AND Longitude are valid DMS formats, otherwise returns False (including when either is null or empty).</returns>
+    public static bool IsValidDMS(string? Lat, string? Lon)
     {
         if (string.IsNullOrEmpty(Lat) || string.IsNullOrEmpty(Lon) ||
             Lat.Length < 2 || Lon.Length < 2)

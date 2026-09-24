@@ -112,7 +112,8 @@ public sealed class DashboardViewModel : ObservableObject
     /// <remarks>
     /// Starts collapsed on every launch and is deliberately not persisted: the log is a
     /// troubleshooting view, so expanding it is a decision about the session in front of the
-    /// user rather than a setting they would want carried forward.
+    /// user rather than a setting they would want carried forward. Picking any filter chip
+    /// expands it.
     /// </remarks>
     public bool IsLogCollapsed
     {
@@ -232,7 +233,8 @@ public sealed class DashboardViewModel : ObservableObject
         }
     }
 
-    private void SetLogFilter(string? which) =>
+    private void SetLogFilter(string? which)
+    {
         LevelFilter = which switch
         {
             "Info" => LogLevel.Info,
@@ -241,6 +243,11 @@ public sealed class DashboardViewModel : ObservableObject
             "Error" => LogLevel.Error,
             _ => null,
         };
+
+        // Picking a chip is asking to see those entries, so open the log; the user can still
+        // minimize it again.
+        IsLogCollapsed = false;
+    }
 
     private void RaiseLogCounts()
     {

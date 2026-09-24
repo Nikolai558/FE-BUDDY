@@ -19,17 +19,18 @@ public sealed record SubServiceMessageGroup(string Title, LogLevel Level, IReadO
 }
 
 /// <summary>
-/// One sub-service's block on the Review tab after a finished run: what it produced, the
-/// warnings the user should read, and its routine notices behind a toggle.
+/// One sub-service's block on the Review tab after a finished run: what it produced, and its
+/// warnings and routine notices, each behind its own toggle.
 /// </summary>
 /// <remarks>
 /// Errors and advisories (<see cref="ServiceMessage.IsAdvisory"/>) are left out: the Review tab
 /// already lists them in its own ERRORS and ADVISORIES cards, for every sub-service at once.
-/// The routine notices start collapsed on every run, like the Dashboard activity log - a run
-/// can report hundreds of them.
+/// The warnings and routine notices both start collapsed on every run, like the Dashboard
+/// activity log - a run can report hundreds of them.
 /// </remarks>
 public sealed class SubServiceRunResult : ObservableObject
 {
+    private bool _isAttentionExpanded;
     private bool _isInfoExpanded;
 
     /// <summary>Builds a sub-service's block from its run messages.</summary>
@@ -57,8 +58,10 @@ public sealed class SubServiceRunResult : ObservableObject
 
         Attention = Group(shown.Where(m => m.Level >= LogLevel.Warning), key);
         Info = Group(shown.Where(m => m.Level < LogLevel.Warning), key);
+        AttentionMessageCount = Attention.Sum(g => g.Count);
         InfoMessageCount = Info.Sum(g => g.Count);
 
+        ToggleAttentionCommand = new RelayCommand(() => IsAttentionExpanded = !IsAttentionExpanded);
         ToggleInfoCommand = new RelayCommand(() => IsInfoExpanded = !IsInfoExpanded);
     }
 
@@ -68,11 +71,29 @@ public sealed class SubServiceRunResult : ObservableObject
     /// <summary>One line of what the run produced.</summary>
     public string Summary { get; }
 
-    /// <summary>The warnings, grouped; shown expanded.</summary>
+    /// <summary>The warnings, grouped; shown behind <see cref="ToggleAttentionCommand"/>.</summary>
     public IReadOnlyList<SubServiceMessageGroup> Attention { get; }
 
     /// <summary>Whether there is any warning to show.</summary>
     public bool HasAttention => Attention.Count > 0;
+
+    /// <summary>How many warnings there are, across every group.</summary>
+    public int AttentionMessageCount { get; }
+
+    /// <summary>Whether the warnings are expanded.</summary>
+    public bool IsAttentionExpanded
+    {
+        get => _isAttentionExpanded;
+        set { if (SetProperty(ref _isAttentionExpanded, value)) OnPropertyChanged(nameof(AttentionToggleLabel)); }
+    }
+
+    /// <summary>The label on the warnings toggle.</summary>
+    public string AttentionToggleLabel => IsAttentionExpanded
+        ? "Hide warnings"
+        : $"Show {AttentionMessageCount} warning(s)";
+
+    /// <summary>Expands or collapses the warnings.</summary>
+    public ICommand ToggleAttentionCommand { get; }
 
     /// <summary>The routine notices, grouped; shown behind <see cref="ToggleInfoCommand"/>.</summary>
     public IReadOnlyList<SubServiceMessageGroup> Info { get; }

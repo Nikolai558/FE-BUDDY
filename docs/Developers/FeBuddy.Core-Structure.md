@@ -4,6 +4,16 @@
 NASR data, builds airways, airports and departures from it, and writes GeoJSON and alias files.
 `FeBuddy.Wpf` is a thin shell over it. This page explains where code lives and why.
 
+The projects around it follow the same standards (one `.editorconfig`, required XML docs,
+the Models/ rule, one type per file):
+
+| Project | What it is |
+|---|---|
+| `FeBuddy.Wpf` | The desktop app. Its layout is in [FeBuddy.Wpf/README.md](FeBuddy.Wpf/README.md). |
+| `FeBuddy.Versioning` | The SemVer version and the update rule (`ProductVersion`, `UpdatePolicy`). netstandard2.0, so both Core and the installer's custom action can use it. See [VERSIONING.md](VERSIONING.md). |
+| `FeBuddy.Installer.CustomActions` | The MSI's one managed custom action, a thin wrapper over `UpdatePolicy`. net472, because WiX's custom-action host only loads .NET Framework. Not unit tested (it needs an MSI session). |
+| `FeBuddy.UnitTests` | Tests for Core and Versioning, in folders that mirror theirs. |
+
 ## Three layers, one project
 
 Core is split into three top-level folders. They are layers, not separate projects, and each one

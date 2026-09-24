@@ -22,7 +22,7 @@ using FeBuddy.Core.Infrastructure.Logging;
 
 using Microsoft.Win32;
 
-using LibUpdateChannel = FeBuddy.Versioning.ReleaseChannel;
+using FeBuddy.Versioning.Models;
 
 namespace FeBuddy.Wpf.ViewModels;
 
@@ -42,7 +42,7 @@ public sealed class SettingsViewModel : ObservableObject
 	private readonly Action? _openUpdateWindow;
 	private bool _isCheckingForUpdates;
 
-	private LibUpdateChannel _channel;
+	private ReleaseChannel _channel;
 	private string? _selectedFacility;
 	private string _outputDir = string.Empty;
 	private bool _addFeBuddyFolder = true;
@@ -121,11 +121,11 @@ public sealed class SettingsViewModel : ObservableObject
 	// ================= 1. UPDATES =================
 
 	/// <summary>The update channels, in the order the menu shows them.</summary>
-	public IReadOnlyList<LibUpdateChannel> Channels { get; } =
-		[LibUpdateChannel.Stable, LibUpdateChannel.Beta, LibUpdateChannel.Alpha];
+	public IReadOnlyList<ReleaseChannel> Channels { get; } =
+		[ReleaseChannel.Stable, ReleaseChannel.Beta, ReleaseChannel.Alpha];
 
-	/// <summary>The update channel. <see cref="LibUpdateChannel.Stable"/> unless the developers tell you otherwise.</summary>
-	public LibUpdateChannel Channel
+	/// <summary>The update channel. <see cref="ReleaseChannel.Stable"/> unless the developers tell you otherwise.</summary>
+	public ReleaseChannel Channel
 	{
 		get => _channel;
 		set { if (SetProperty(ref _channel, value)) MarkDirty(); }

@@ -1,4 +1,5 @@
 using FeBuddy.Versioning;
+using FeBuddy.Versioning.Models;
 
 namespace FeBuddy.UnitTests.Versioning;
 

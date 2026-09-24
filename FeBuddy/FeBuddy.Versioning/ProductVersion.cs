@@ -1,3 +1,5 @@
+using FeBuddy.Versioning.Models;
+
 using System;
 
 using Semver;
@@ -102,7 +104,7 @@ public sealed class ProductVersion
 		string? trimmed = tag?.Trim();
 		if (trimmed is { Length: > 1 } && (trimmed[0] == 'v' || trimmed[0] == 'V') && char.IsDigit(trimmed[1]))
 		{
-			trimmed = trimmed.Substring(1);
+			trimmed = trimmed.TrimStart('v', 'V');
 		}
 
 		return TryParse(trimmed, out version);
@@ -111,6 +113,7 @@ public sealed class ProductVersion
 	/// <summary>SemVer 2.0 precedence comparison (build metadata ignored, per the spec).</summary>
 	/// <param name="other">The version to compare against.</param>
 	/// <returns>Negative if this is lower, zero if equal precedence, positive if higher.</returns>
+	/// <exception cref="ArgumentNullException"><paramref name="other"/> is <see langword="null"/>.</exception>
 	public int ComparePrecedenceTo(ProductVersion other)
 	{
 		if (other is null)

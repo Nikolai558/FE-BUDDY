@@ -15,6 +15,12 @@ public sealed class UpdatePolicyTests
 		Assert.True(UpdatePolicy.IsTransitionAllowed(null, ProductVersion.Parse("0.0.1-alpha.1")));
 	}
 
+	[Fact]
+	public void a_null_candidate_is_rejected()
+	{
+		Assert.Throws<ArgumentNullException>(() => UpdatePolicy.IsTransitionAllowed(ProductVersion.Parse("3.0.0"), null!));
+	}
+
 	[Theory]
 	[InlineData("2.8.3", "2.8.4")]
 	[InlineData("2.8.3", "2.8.3")]

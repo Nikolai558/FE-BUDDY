@@ -13,6 +13,8 @@ using FeBuddy.Core.Infrastructure.Logging.Models;
 using FeBuddy.Core.Infrastructure.Nasr.Models;
 using FeBuddy.Core.Infrastructure.Platform.Models;
 
+using FeBuddy.Versioning.Models;
+
 namespace FeBuddy.UnitTests.Application.Launch;
 
 /// <summary>
@@ -132,7 +134,7 @@ public sealed class LaunchSequenceTests : IDisposable
 		Assert.Equal(new DateTime(2026, 9, 7, 12, 34, 56, DateTimeKind.Utc), result.Time.UtcNow);
 		Assert.True(result.Version.UpdateAvailable);
 		Assert.Equal("3.1.0", result.Version.LatestVersion);
-		Assert.Equal(FeBuddy.Versioning.ReleaseChannel.Stable, result.Version.Channel);
+		Assert.Equal(ReleaseChannel.Stable, result.Version.Channel);
 		Assert.Equal(0, result.TempClearFailures);
 
 		Assert.True(AppEnvironment.HasInternetConnection);

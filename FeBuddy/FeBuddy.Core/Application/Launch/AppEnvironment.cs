@@ -5,6 +5,8 @@ using FeBuddy.Core.Infrastructure.Configuration;
 using FeBuddy.Core.Infrastructure.Platform;
 using FeBuddy.Core.Infrastructure.Platform.Models;
 
+using FeBuddy.Versioning.Models;
+
 namespace FeBuddy.Core.Application.Launch;
 
 /// <summary>
@@ -83,7 +85,7 @@ public static class AppEnvironment
 			LaunchUtcSource = time.Source;
 			RaiseChanged();
 
-			FeBuddy.Versioning.ReleaseChannel channel = VersionCheckResult.ParseChannel(
+			ReleaseChannel channel = VersionCheckResult.ParseChannel(
 				UserConfigFile.GetValue(UserConfigKeys.UpdateChannel));
 
 			string currentVersion = Version?.CurrentVersion ?? AppVersion.Current;

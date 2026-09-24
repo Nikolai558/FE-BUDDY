@@ -1,4 +1,4 @@
-namespace FeBuddy.Versioning;
+namespace FeBuddy.Versioning.Models;
 
 /// <summary>
 /// The release channel a version belongs to, from its pre-release tag - and the channel a user

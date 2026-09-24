@@ -5,7 +5,7 @@ using FeBuddy.Core.Application.Updates.Models;
 using FeBuddy.Core.Infrastructure.FileSystem;
 using FeBuddy.Core.Infrastructure.GitHub;
 using FeBuddy.Core.Infrastructure.Logging;
-using FeBuddy.Versioning;
+using FeBuddy.Versioning.Models;
 
 namespace FeBuddy.UnitTests.Application.Updates;
 

@@ -8,6 +8,7 @@ using FeBuddy.Core.Infrastructure.Http;
 using FeBuddy.Core.Infrastructure.Logging;
 using FeBuddy.Core.Infrastructure.Platform;
 using FeBuddy.Versioning;
+using FeBuddy.Versioning.Models;
 
 namespace FeBuddy.Core.Application.Updates;
 

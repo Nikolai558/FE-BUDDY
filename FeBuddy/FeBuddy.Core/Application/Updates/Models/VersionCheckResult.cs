@@ -1,4 +1,4 @@
-using FeBuddy.Versioning;
+using FeBuddy.Versioning.Models;
 
 namespace FeBuddy.Core.Application.Updates.Models;
 

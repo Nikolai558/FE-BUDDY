@@ -80,8 +80,7 @@ public static class AirwayBuilder
 			}
 
 			// Drop excluded designations before any geometry work, so GeoJSON and the alias
-			// file agree and no time is wasted building geometry that is thrown away
-			// (remediation plan 3.3).
+			// file agree and no time is wasted building geometry that is thrown away.
 			if (settings.ExcludedDesignations.Contains(designation))
 			{
 				continue;
@@ -100,8 +99,8 @@ public static class AirwayBuilder
 			messages.AddRange(geometryResult.Messages);
 
 			// An airway with any genuinely unresolvable waypoint is excluded entirely, so a
-			// half-built airway never misleads the user (remediation plan 3.2a). Border
-			// crossings are normalized away upstream and never land here.
+			// half-built airway never misleads the user. Border crossings are normalized away
+			// upstream and never land here.
 			if (geometryResult.UnresolvedWaypointIds.Count > 0)
 			{
 				string[] distinctIds = [.. geometryResult.UnresolvedWaypointIds.Distinct(StringComparer.OrdinalIgnoreCase)];

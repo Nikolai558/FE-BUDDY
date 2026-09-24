@@ -8,7 +8,7 @@ namespace FeBuddy.Core.Application.Airac.Airways.Models;
 /// any levelled messages noticed along the way (currently, unrecognized dictionary keys).
 /// </summary>
 /// <param name="Settings">The fully-parsed, typed settings.</param>
-/// <param name="Messages">Levelled messages noticed while parsing, e.g. an unrecognized key at <see cref="LogLevel.Warning"/> (remediation plan 3.8).</param>
+/// <param name="Messages">Levelled messages noticed while parsing, e.g. an unrecognized key at <see cref="LogLevel.Warning"/>.</param>
 public sealed record AirwaySettingsParseResult(
 	AirwaySettings Settings,
 	IReadOnlyList<ServiceMessage> Messages);

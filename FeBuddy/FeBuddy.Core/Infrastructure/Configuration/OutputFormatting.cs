@@ -3,8 +3,7 @@ namespace FeBuddy.Core.Infrastructure.Configuration;
 
 /// <summary>
 /// App-wide choices about how FE-Buddy lays out the files it writes. Applies to every GeoJSON
-/// file, whichever service produces it - the AIRAC Service today, converters and other
-/// services later - because they all write through <c>GeojsonFileWriter</c>.
+/// file whichever service produces it, because they all write through <c>GeojsonFileWriter</c>.
 /// </summary>
 /// <remarks>
 /// Like <see cref="DevMode"/>, this is a plain static the caller sets before running a service:

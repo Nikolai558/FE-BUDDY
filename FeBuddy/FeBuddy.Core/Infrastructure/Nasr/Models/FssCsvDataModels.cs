@@ -1,8 +1,12 @@
 namespace FeBuddy.Core.Infrastructure.Nasr.Models;
 
+/// <summary>
+/// Row models for the NASR <c>FSS</c> CSV files (flight service stations): one nested class per file.
+/// </summary>
 public class FssCsvDataModel
 {
 	#region Common Fields
+	/// <summary>The columns every <c>FSS</c> file shares.</summary>
 	public class CommonFields
 	{
 		/// <summary>
@@ -12,7 +16,7 @@ public class FssCsvDataModel
 		/// _DataType: string
 		/// _Nullable: No
 		/// </summary>
-		/// <remarks>The 28 Day NASR Subscription Effective Date in format �YYYY/MM/DD�.</remarks>
+		/// <remarks>The 28 Day NASR Subscription Effective Date in format "YYYY/MM/DD".</remarks>
 		public string EffDate { get; set; }
 
 		/// <summary>
@@ -65,6 +69,7 @@ public class FssCsvDataModel
 	#endregion
 
 	#region Fss_BASE Fields
+	/// <summary>One row of <c>FSS_BASE.csv</c>.</summary>
 	public class FssBase : CommonFields
 	{
 		/// <summary>
@@ -246,6 +251,7 @@ public class FssCsvDataModel
 	#endregion
 
 	#region Fss_RMK Fields
+	/// <summary>One row of <c>FSS_RMK.csv</c>.</summary>
 	public class FssRmk : CommonFields
 	{
 		/// <summary>

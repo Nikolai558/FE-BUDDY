@@ -1,8 +1,12 @@
 namespace FeBuddy.Core.Infrastructure.Nasr.Models;
 
+/// <summary>
+/// Row models for the NASR <c>FIX</c> CSV files (fixes and reporting points): one nested class per file.
+/// </summary>
 public class FixCsvDataModel
 {
 	#region Common Fields
+	/// <summary>The columns every <c>FIX</c> file shares.</summary>
 	public class CommonFields
 	{
 		/// <summary>
@@ -12,7 +16,7 @@ public class FixCsvDataModel
 		/// _DataType: string
 		/// _Nullable: No
 		/// </summary>
-		/// <remarks>The 28 Day NASR Subscription Effective Date in format �YYYY/MM/DD�.</remarks>
+		/// <remarks>The 28 Day NASR Subscription Effective Date in format "YYYY/MM/DD".</remarks>
 		public string EffDate { get; set; }
 
 		/// <summary>
@@ -57,6 +61,7 @@ public class FixCsvDataModel
 	#endregion
 
 	#region Fix_BASE Fields
+	/// <summary>One row of <c>FIX_BASE.csv</c>.</summary>
 	public class FixBase : CommonFields
 	{
 		/// <summary>
@@ -257,6 +262,7 @@ public class FixCsvDataModel
 	#endregion
 
 	#region Fix_CHRT Fields
+	/// <summary>One row of <c>FIX_CHRT.csv</c>.</summary>
 	public class FixChrt : CommonFields
 	{
 		/// <summary>

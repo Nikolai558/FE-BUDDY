@@ -1,5 +1,4 @@
 using System.IO.Compression;
-using System.Net.Http;
 
 using FeBuddy.Core.Domain.Airac;
 using FeBuddy.Core.Domain.Airac.Models;
@@ -16,7 +15,7 @@ namespace FeBuddy.Core.Infrastructure.Nasr;
 /// anything.
 /// </summary>
 /// <remarks>
-/// Matches the dev notes' AIRAC Data Download Management rules: cycles are cached under
+/// Cycles are cached under
 /// <c>%APPDATA%\FE-Buddy\AiracCycles\&lt;AiracCycleId&gt;\</c>, keyed by cycle ID so a cycle
 /// already downloaded is never re-fetched, and <see cref="PruneStaleCycles"/> removes cached
 /// cycles that are no longer the previous/current/next cycle.
@@ -41,6 +40,7 @@ public static class NasrCycleDownloader
 	/// <summary>
 	/// The default local cache root: <c>%APPDATA%\FE-Buddy\AiracCycles</c>.
 	/// </summary>
+	/// <returns>The folder's full path.</returns>
 	public static string GetDefaultCacheRoot() =>
 		Path.Combine(AppPaths.AppDataDirectory, "AiracCycles");
 
@@ -65,6 +65,7 @@ public static class NasrCycleDownloader
 	/// </summary>
 	/// <param name="cycle">The cycle to check.</param>
 	/// <param name="cacheRootDirectory">Where cycle folders are cached. Defaults to <see cref="GetDefaultCacheRoot"/>.</param>
+	/// <returns><see langword="true"/> when every required CSV is already in the cycle's folder.</returns>
 	public static bool IsCycleAvailableLocally(AiracCycleInfo cycle, string? cacheRootDirectory = null)
 	{
 		ArgumentNullException.ThrowIfNull(cycle);
@@ -101,6 +102,12 @@ public static class NasrCycleDownloader
 	/// point the download/extract/cache/prune mechanics at a local test server instead of the
 	/// real FAA endpoint.
 	/// </summary>
+	/// <param name="cycle">The cycle to ensure is available.</param>
+	/// <param name="downloadUrl">Where to download the cycle's zip from.</param>
+	/// <param name="cacheRootDirectory">Where cycle folders are cached. Defaults to <see cref="GetDefaultCacheRoot"/>.</param>
+	/// <param name="progress">Optional progress reporting.</param>
+	/// <param name="cancellationToken">Cancels the download.</param>
+	/// <returns>The local folder containing the cycle's CSV files.</returns>
 	internal static async Task<string> EnsureCycleAvailableFromUrlAsync(
 		AiracCycleInfo cycle,
 		string downloadUrl,

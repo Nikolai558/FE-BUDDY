@@ -1,4 +1,3 @@
-using FeBuddy.Core.Domain.Airports.Models;
 using FeBuddy.Core.Domain.Departures.Models;
 using FeBuddy.Core.Infrastructure.Nasr.Models;
 using FeBuddy.Core.Infrastructure.Nasr.Parsers;

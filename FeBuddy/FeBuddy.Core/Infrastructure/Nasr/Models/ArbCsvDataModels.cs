@@ -1,8 +1,12 @@
 namespace FeBuddy.Core.Infrastructure.Nasr.Models;
 
+/// <summary>
+/// Row models for the NASR <c>ARB</c> CSV files (ARTCC boundaries): one nested class per file.
+/// </summary>
 public class ArbCsvDataModel
 {
 	#region Common Fields
+	/// <summary>The columns every <c>ARB</c> file shares.</summary>
 	public class CommonFields
 	{
 		/// <summary>
@@ -12,7 +16,7 @@ public class ArbCsvDataModel
 		/// _DataType: string
 		/// _Nullable: No
 		/// </summary>
-		/// <remarks>The 28 Day NASR Subscription Effective Date in format �YYYY/MM/DD�.</remarks>
+		/// <remarks>The 28 Day NASR Subscription Effective Date in format "YYYY/MM/DD".</remarks>
 		public string EffDate { get; set; }
 
 		/// <summary>
@@ -38,6 +42,7 @@ public class ArbCsvDataModel
 	#endregion
 
 	#region Arb_BASE Fields
+	/// <summary>One row of <c>ARB_BASE.csv</c>.</summary>
 	public class ArbBase : CommonFields
 	{
 		/// <summary>
@@ -209,6 +214,7 @@ public class ArbCsvDataModel
 	#endregion
 
 	#region Arb_SEG Fields
+	/// <summary>One row of <c>ARB_SEG.csv</c>.</summary>
 	public class ArbSeg : CommonFields
 	{
 		/// <summary>

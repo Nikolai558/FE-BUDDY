@@ -285,8 +285,6 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
             AiracServiceSettings settings = new()
             {
                 SelectedCycle = cycle,
-                OutputDirectory = outputDir,
-                AddFeBuddyOutputFolder = addFeBuddyFolder,
                 Airways = AirwaysTab?.BuildSettingsBlock(outputDir, addFeBuddyFolder),
                 Airports = AirportsTab?.BuildSettingsBlock(outputDir, addFeBuddyFolder),
                 Departures = DeparturesTab?.BuildSettingsBlock(outputDir, addFeBuddyFolder),
@@ -405,7 +403,7 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
         if (result.Airways is { } airways)
         {
             parts.Add($"{airways.AirwayCount:N0} airway(s)"
-                + (result.ExcludedAirwayIds.Count > 0 ? $", {result.ExcludedAirwayIds.Count} excluded" : string.Empty));
+                + (airways.ExcludedAirwayIds.Count > 0 ? $", {airways.ExcludedAirwayIds.Count} excluded" : string.Empty));
         }
 
         if (result.Airports is { } airports)

@@ -1,12 +1,15 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
 using static FeBuddy.Core.Infrastructure.Nasr.Models.PjaCsvDataModel;
 
 namespace FeBuddy.Core.Infrastructure.Nasr.Parsers;
 
+/// <summary>
+/// Reads the NASR <c>PJA</c> CSV files (parachute jump areas), one file per method.
+/// </summary>
 public class PjaCsvParser
 {
+	/// <summary>Reads <c>PJA_BASE.csv</c>.</summary>
+	/// <param name="filePath">The full path of the file.</param>
+	/// <returns>A collection with only <see cref="PjaCsvDataCollection.PjaBase"/> filled in.</returns>
 	public PjaCsvDataCollection ParsePjaBase(string filePath)
 	{
 		var result = new PjaCsvDataCollection
@@ -51,6 +54,9 @@ public class PjaCsvParser
 		return result;
 	}
 
+	/// <summary>Reads <c>PJA_CON.csv</c>.</summary>
+	/// <param name="filePath">The full path of the file.</param>
+	/// <returns>A collection with only <see cref="PjaCsvDataCollection.PjaCon"/> filled in.</returns>
 	public PjaCsvDataCollection ParsePjaCon(string filePath)
 	{
 		var result = new PjaCsvDataCollection
@@ -78,8 +84,13 @@ public class PjaCsvParser
 
 }
 
+/// <summary>
+/// Every parsed row of the NASR <c>PJA</c> CSV files, one list per file.
+/// </summary>
 public class PjaCsvDataCollection
 {
+	/// <summary>The rows of <c>PJA_BASE.csv</c>.</summary>
 	public List<PjaBase> PjaBase { get; set; } = [];
+	/// <summary>The rows of <c>PJA_CON.csv</c>.</summary>
 	public List<PjaCon> PjaCon { get; set; } = [];
 }

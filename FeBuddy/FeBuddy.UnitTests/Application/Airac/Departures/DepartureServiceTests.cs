@@ -8,8 +8,6 @@ using FeBuddy.Core.Infrastructure.Geojson;
 using FeBuddy.Core.Infrastructure.Nasr.Models;
 
 using FeBuddy.UnitTests.Application.Airac.Departures.Fixtures;
-
-using NetTopologySuite;
 using NetTopologySuite.Geometries;
 
 namespace FeBuddy.UnitTests.Application.Airac.Departures;

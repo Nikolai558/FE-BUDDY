@@ -1,8 +1,12 @@
 namespace FeBuddy.Core.Infrastructure.Nasr.Models;
 
+/// <summary>
+/// Row models for the NASR <c>PFR</c> CSV files (preferred routes): one nested class per file.
+/// </summary>
 public class PfrCsvDataModel
 {
 	#region Common Fields
+	/// <summary>The columns every <c>PFR</c> file shares.</summary>
 	public class CommonFields
 	{
 		/// <summary>
@@ -12,7 +16,7 @@ public class PfrCsvDataModel
 		/// _DataType: string
 		/// _Nullable: No
 		/// </summary>
-		/// <remarks>The 28 Day NASR Subscription Effective Date in format �YYYY/MM/DD�.</remarks>
+		/// <remarks>The 28 Day NASR Subscription Effective Date in format "YYYY/MM/DD".</remarks>
 		public string EffDate { get; set; }
 
 		/// <summary>
@@ -58,6 +62,7 @@ public class PfrCsvDataModel
 	#endregion
 
 	#region Pfr_BASE Fields
+	/// <summary>One row of <c>PFR_BASE.csv</c>.</summary>
 	public class PfrBase : CommonFields
 	{
 		/// <summary>
@@ -219,13 +224,14 @@ public class PfrCsvDataModel
 		/// _DataType: string
 		/// _Nullable: Yes
 		/// </summary>
-		/// <remarks>Represents the formatted route string used in preferred routing. Canadian DPs and STARs are denoted generically as �-DP� and �-STAR�; refer to Canadian Aeronautical Data for the correct amendment number when filing</remarks>
+		/// <remarks>Represents the formatted route string used in preferred routing. Canadian DPs and STARs are denoted generically as "-DP" and "-STAR"; refer to Canadian Aeronautical Data for the correct amendment number when filing</remarks>
 		public string? BaseRouteString { get; set; }
 
 	}
 	#endregion
 
 	#region Pfr_RMT_FMT Fields
+	/// <summary>One row of <c>PFR_RMT_FMT.csv</c>.</summary>
 	public class PfrRmtFmt : CommonFields
 	{
 		/// <summary>
@@ -245,7 +251,7 @@ public class PfrCsvDataModel
 		/// _DataType: string
 		/// _Nullable: Yes
 		/// </summary>
-		/// <remarks>Represents the formatted route string used in preferred routing. Canadian DPs and STARs are denoted generically as �-DP� and �-STAR�; refer to Canadian Aeronautical Data for the correct amendment number when filing</remarks>
+		/// <remarks>Represents the formatted route string used in preferred routing. Canadian DPs and STARs are denoted generically as "-DP" and "-STAR"; refer to Canadian Aeronautical Data for the correct amendment number when filing</remarks>
 		public string? RmtFmtRouteString { get; set; }
 
 		/// <summary>
@@ -347,6 +353,7 @@ public class PfrCsvDataModel
 	#endregion
 
 	#region Pfr_SEG Fields
+	/// <summary>One row of <c>PFR_SEG.csv</c>.</summary>
 	public class PfrSeg : CommonFields
 	{
 		/// <summary>

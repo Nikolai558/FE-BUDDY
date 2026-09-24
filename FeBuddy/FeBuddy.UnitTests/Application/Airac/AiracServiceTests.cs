@@ -24,7 +24,6 @@ public sealed class AiracServiceTests
 		AiracServiceSettings settings = new()
 		{
 			SelectedCycle = Cycle,
-			OutputDirectory = Path.GetTempPath(),
 			Airways = null,
 		};
 
@@ -50,7 +49,6 @@ public sealed class AiracServiceTests
 		AiracServiceSettings settings = new()
 		{
 			SelectedCycle = Cycle,
-			OutputDirectory = Path.GetTempPath(),
 			// OutputBy=None keeps the run in memory - no files are written by this test.
 			Airways = new Dictionary<string, string>
 			{
@@ -65,7 +63,7 @@ public sealed class AiracServiceTests
 		Assert.NotNull(result.Airways);
 		Assert.Equal(1, result.Airways!.AirwayCount);
 		Assert.Empty(result.Airways.GeojsonFilesWritten);
-		Assert.Empty(result.ExcludedAirwayIds);
+		Assert.Empty(result.Airways.ExcludedAirwayIds);
 	}
 
 	/// <summary>With Airports and Departures blocks, both pipelines run and report progress; cancellation stops the run.</summary>
@@ -80,7 +78,6 @@ public sealed class AiracServiceTests
 			AiracServiceSettings settings = new()
 			{
 				SelectedCycle = Cycle,
-				OutputDirectory = output,
 				Airports = new Dictionary<string, string> { { "OutputDirectory", output }, { "GenerateGeojson", "N" } },
 				Departures = new Dictionary<string, string> { { "OutputDirectory", output }, { "GenerateGeojson", "N" } },
 			};
@@ -120,7 +117,6 @@ public sealed class AiracServiceTests
 		AiracServiceSettings settings = new()
 		{
 			SelectedCycle = Cycle,
-			OutputDirectory = Path.GetTempPath(),
 		};
 
 		await Assert.ThrowsAsync<ArgumentNullException>(() => AiracService.RunAsync((AiracServiceSettings)null!, new NasrCsvDataCollection()));

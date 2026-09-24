@@ -1,12 +1,15 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
 using static FeBuddy.Core.Infrastructure.Nasr.Models.AtcCsvDataModel;
 
 namespace FeBuddy.Core.Infrastructure.Nasr.Parsers;
 
+/// <summary>
+/// Reads the NASR <c>ATC</c> CSV files (air traffic control facilities), one file per method.
+/// </summary>
 public class AtcCsvParser
 {
+	/// <summary>Reads <c>ATC_ATIS.csv</c>.</summary>
+	/// <param name="filePath">The full path of the file.</param>
+	/// <returns>A collection with only <see cref="AtcCsvDataCollection.AtcAtis"/> filled in.</returns>
 	public AtcCsvDataCollection ParseAtcAtis(string filePath)
 	{
 		var result = new AtcCsvDataCollection
@@ -33,6 +36,9 @@ public class AtcCsvParser
 		return result;
 	}
 
+	/// <summary>Reads <c>ATC_BASE.csv</c>.</summary>
+	/// <param name="filePath">The full path of the file.</param>
+	/// <returns>A collection with only <see cref="AtcCsvDataCollection.AtcBase"/> filled in.</returns>
 	public AtcCsvDataCollection ParseAtcBase(string filePath)
 	{
 		var result = new AtcCsvDataCollection
@@ -77,6 +83,9 @@ public class AtcCsvParser
 		return result;
 	}
 
+	/// <summary>Reads <c>ATC_RMK.csv</c>.</summary>
+	/// <param name="filePath">The full path of the file.</param>
+	/// <returns>A collection with only <see cref="AtcCsvDataCollection.AtcRmk"/> filled in.</returns>
 	public AtcCsvDataCollection ParseAtcRmk(string filePath)
 	{
 		var result = new AtcCsvDataCollection
@@ -104,6 +113,9 @@ public class AtcCsvParser
 		return result;
 	}
 
+	/// <summary>Reads <c>ATC_SVC.csv</c>.</summary>
+	/// <param name="filePath">The full path of the file.</param>
+	/// <returns>A collection with only <see cref="AtcCsvDataCollection.AtcSvc"/> filled in.</returns>
 	public AtcCsvDataCollection ParseAtcSvc(string filePath)
 	{
 		var result = new AtcCsvDataCollection
@@ -129,10 +141,17 @@ public class AtcCsvParser
 
 }
 
+/// <summary>
+/// Every parsed row of the NASR <c>ATC</c> CSV files, one list per file.
+/// </summary>
 public class AtcCsvDataCollection
 {
+	/// <summary>The rows of <c>ATC_ATIS.csv</c>.</summary>
 	public List<AtcAtis> AtcAtis { get; set; } = [];
+	/// <summary>The rows of <c>ATC_BASE.csv</c>.</summary>
 	public List<AtcBase> AtcBase { get; set; } = [];
+	/// <summary>The rows of <c>ATC_RMK.csv</c>.</summary>
 	public List<AtcRmk> AtcRmk { get; set; } = [];
+	/// <summary>The rows of <c>ATC_SVC.csv</c>.</summary>
 	public List<AtcSvc> AtcSvc { get; set; } = [];
 }

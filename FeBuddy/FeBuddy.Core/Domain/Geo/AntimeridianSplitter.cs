@@ -1,4 +1,3 @@
-using FeBuddy.Core.Domain.Geo.Models;
 using NetTopologySuite.Geometries;
 
 using Location = FeBuddy.Core.Domain.Geo.Models.Location;

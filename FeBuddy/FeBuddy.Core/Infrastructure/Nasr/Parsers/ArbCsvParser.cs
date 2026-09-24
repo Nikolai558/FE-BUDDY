@@ -1,12 +1,15 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
 using static FeBuddy.Core.Infrastructure.Nasr.Models.ArbCsvDataModel;
 
 namespace FeBuddy.Core.Infrastructure.Nasr.Parsers;
 
+/// <summary>
+/// Reads the NASR <c>ARB</c> CSV files (ARTCC boundaries), one file per method.
+/// </summary>
 public class ArbCsvParser
 {
+	/// <summary>Reads <c>ARB_BASE.csv</c>.</summary>
+	/// <param name="filePath">The full path of the file.</param>
+	/// <returns>A collection with only <see cref="ArbCsvDataCollection.ArbBase"/> filled in.</returns>
 	public ArbCsvDataCollection ParseArbBase(string filePath)
 	{
 		var result = new ArbCsvDataCollection
@@ -41,6 +44,9 @@ public class ArbCsvParser
 		return result;
 	}
 
+	/// <summary>Reads <c>ARB_SEG.csv</c>.</summary>
+	/// <param name="filePath">The full path of the file.</param>
+	/// <returns>A collection with only <see cref="ArbCsvDataCollection.ArbSeg"/> filled in.</returns>
 	public ArbCsvDataCollection ParseArbSeg(string filePath)
 	{
 		var result = new ArbCsvDataCollection
@@ -76,8 +82,13 @@ public class ArbCsvParser
 
 }
 
+/// <summary>
+/// Every parsed row of the NASR <c>ARB</c> CSV files, one list per file.
+/// </summary>
 public class ArbCsvDataCollection
 {
+	/// <summary>The rows of <c>ARB_BASE.csv</c>.</summary>
 	public List<ArbBase> ArbBase { get; set; } = [];
+	/// <summary>The rows of <c>ARB_SEG.csv</c>.</summary>
 	public List<ArbSeg> ArbSeg { get; set; } = [];
 }

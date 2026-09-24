@@ -242,8 +242,8 @@ public class AptCsvDataModel
 		/// </summary>
 		/// <remarks>-90 through 90. Examples: "-90" "0" "7" "21" "90"</remarks>
 		public int LatDeg { get; set; }
-		/// <summaAirport Reference Point Latitude Minutesry>
-		/// 
+		/// <summary>
+		/// Airport Reference Point Latitude Minutes
 		/// _Src: APT_BASE.csv(LAT_MIN)
 		/// _MaxLength: (2,0)
 		/// _DataType: int
@@ -1159,8 +1159,8 @@ public class AptCsvDataModel
 		/// </summary>
 		/// <remarks>Letters W-Z</remarks>
 		public string? TirePresCode { get; set; }
-		/// <summarDetermination Methody>
-		/// 
+		/// <summary>
+		/// Determination Method
 		/// _Src: APT_RWY.csv(DTRM_METHOD_CODE)
 		/// _MaxLength: 1
 		/// _DataType: string

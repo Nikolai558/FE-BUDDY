@@ -1,8 +1,12 @@
 namespace FeBuddy.Core.Infrastructure.Nasr.Models;
 
+/// <summary>
+/// Row models for the NASR <c>LID</c> CSV files (location identifiers): one nested class per file.
+/// </summary>
 public class LidCsvDataModel
 {
 	#region Common Fields
+	/// <summary>The columns every <c>LID</c> file shares.</summary>
 	public class CommonFields
 	{
 		/// <summary>
@@ -12,13 +16,14 @@ public class LidCsvDataModel
 		/// _DataType: string
 		/// _Nullable: No
 		/// </summary>
-		/// <remarks>The 28 Day NASR Subscription Effective Date in format �YYYY/MM/DD�.</remarks>
+		/// <remarks>The 28 Day NASR Subscription Effective Date in format "YYYY/MM/DD".</remarks>
 		public string EffDate { get; set; }
 
 	}
 	#endregion
 
 	#region Lid Fields
+	/// <summary>One row of <c>LID.csv</c>.</summary>
 	public class Lid : CommonFields
 	{
 		/// <summary>

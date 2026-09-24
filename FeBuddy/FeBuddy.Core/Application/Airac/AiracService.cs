@@ -15,22 +15,13 @@ using FeBuddy.Core.Infrastructure.Nasr.Models;
 namespace FeBuddy.Core.Application.Airac;
 
 /// <summary>
-/// The AIRAC Service orchestrator. The GUI calls this once per "Run AIRAC Service"; it
-/// dispatches to each selected sub-service (Airways is the only one with a backend today) and
-/// aggregates the results.
+/// The AIRAC Service: the GUI calls this once per "Run AIRAC Service". It runs each selected
+/// sub-service (Airways, Airports, Departures) against one cycle's NASR data and gathers the
+/// results.
 /// </summary>
 /// <remarks>
-/// <para>
-/// The folder is <c>Services/Airac/</c> and this type is <c>AiracService</c> - deliberately
-/// not <c>AiracService.AiracService</c> in one chain. The user-facing name stays
-/// "AIRAC Service".
-/// </para>
-/// <para>
-/// This orchestrator does not parse NASR data. The caller supplies the already-parsed
-/// <see cref="NasrCsvDataCollection"/> for <see cref="AiracServiceSettings.SelectedCycle"/>.
-/// Phase 2 adds the cycle cache (<c>AiracCycleDataCache</c>) that will resolve it from the
-/// cycle ID and await an in-flight parse rather than starting a second one.
-/// </para>
+/// It never parses NASR data itself. The parsed cycle comes from
+/// <see cref="AiracCycleDataCache"/>, which the launch sequence has usually filled already.
 /// </remarks>
 public static class AiracService
 {
@@ -65,8 +56,7 @@ public static class AiracService
 	/// </summary>
 	/// <param name="settings">The run's cross-cutting choices and per-sub-service settings blocks.</param>
 	/// <param name="nasrData">
-	/// The parsed NASR CSV data for <see cref="AiracServiceSettings.SelectedCycle"/>. Never
-	/// parsed here - it comes from the cycle cache (Phase 2).
+	/// The parsed NASR CSV data for <see cref="AiracServiceSettings.SelectedCycle"/>.
 	/// </param>
 	/// <param name="progress">Optional per-sub-service progress for the run panel.</param>
 	/// <param name="cancellationToken">Cancels before the next sub-service starts.</param>
@@ -113,7 +103,6 @@ public static class AiracService
 			Airways = airwaysResult,
 			Airports = airportsResult,
 			Departures = departuresResult,
-			ExcludedAirwayIds = airwaysResult?.ExcludedAirwayIds ?? [],
 		};
 
 		// Runs one sub-service if it was selected (its settings block is not null), reporting

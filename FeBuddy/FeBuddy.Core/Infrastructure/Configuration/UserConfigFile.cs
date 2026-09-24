@@ -13,10 +13,9 @@ namespace FeBuddy.Core.Infrastructure.Configuration;
 /// </summary>
 /// <remarks>
 /// <para>
-/// On disk the file is a nested JSON object mirroring the tree in <c>Developer_Notes.md</c>.
-/// In memory it is exposed as a flat dictionary keyed by dotted path
-/// (e.g. <c>Services.AiracService.UserArtccId</c>), because that is the shape the GUI hands
-/// to <c>AirwaySettingsParser</c>. Every leaf value is a string.
+/// On disk the file is a nested JSON object. In memory it is a flat dictionary keyed by dotted
+/// path (e.g. <c>Services.AiracService.UserArtccId</c>), the same shape as the settings blocks
+/// the sub-services read. Every leaf value is a string.
 /// </para>
 /// <para>
 /// Saves are per sub-service: <see cref="Save(string)"/> writes only the subtree at one node
@@ -285,6 +284,7 @@ public static class UserConfigFile
 	/// <summary>
 	/// A snapshot of the current in-memory dictionary. Unit tests only.
 	/// </summary>
+	/// <returns>A copy of every key and value.</returns>
 	internal static IReadOnlyDictionary<string, string> SnapshotValues()
 	{
 		lock (Gate)

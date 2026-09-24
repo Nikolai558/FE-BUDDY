@@ -1,8 +1,12 @@
 namespace FeBuddy.Core.Infrastructure.Nasr.Models;
 
+/// <summary>
+/// Row models for the NASR <c>DP</c> CSV files (departure procedures): one nested class per file.
+/// </summary>
 public class DpCsvDataModel
 {
 	#region Common Fields
+	/// <summary>The columns every <c>DP</c> file shares.</summary>
 	public class CommonFields
 	{
 		/// <summary>
@@ -12,7 +16,7 @@ public class DpCsvDataModel
 		/// _DataType: string
 		/// _Nullable: No
 		/// </summary>
-		/// <remarks>The 28 Day NASR Subscription Effective Date in format �YYYY/MM/DD�.</remarks>
+		/// <remarks>The 28 Day NASR Subscription Effective Date in format "YYYY/MM/DD".</remarks>
 		public string EffDate { get; set; }
 
 		/// <summary>
@@ -47,6 +51,7 @@ public class DpCsvDataModel
 	#endregion
 
 	#region Dp_APT Fields
+	/// <summary>One row of <c>DP_APT.csv</c>.</summary>
 	public class DpApt : CommonFields
 	{
 
@@ -92,6 +97,7 @@ public class DpCsvDataModel
 	#endregion
 
 	#region Dp_BASE Fields
+	/// <summary>One row of <c>DP_BASE.csv</c>.</summary>
 	public class DpBase : CommonFields
 	{
 		/// <summary>
@@ -146,6 +152,7 @@ public class DpCsvDataModel
 	#endregion
 
 	#region Dp_RTE Fields
+	/// <summary>One row of <c>DP_RTE.csv</c>.</summary>
 	public class DpRte : CommonFields
 	{
 

@@ -1,8 +1,12 @@
 namespace FeBuddy.Core.Infrastructure.Nasr.Models;
 
+/// <summary>
+/// Row models for the NASR <c>MAA</c> CSV files (miscellaneous activity areas): one nested class per file.
+/// </summary>
 public class MaaCsvDataModel
 {
 	#region Common Fields
+	/// <summary>The columns every <c>MAA</c> file shares.</summary>
 	public class CommonFields
 	{
 		/// <summary>
@@ -12,7 +16,7 @@ public class MaaCsvDataModel
 		/// _DataType: string
 		/// _Nullable: No
 		/// </summary>
-		/// <remarks>The 28 Day NASR Subscription Effective Date in format �YYYY/MM/DD�.</remarks>
+		/// <remarks>The 28 Day NASR Subscription Effective Date in format "YYYY/MM/DD".</remarks>
 		public string EffDate { get; set; }
 
 		/// <summary>
@@ -29,6 +33,7 @@ public class MaaCsvDataModel
 	#endregion
 
 	#region Maa_BASE Fields
+	/// <summary>One row of <c>MAA_BASE.csv</c>.</summary>
 	public class MaaBase : CommonFields
 	{
 		/// <summary>
@@ -244,6 +249,7 @@ public class MaaCsvDataModel
 	#endregion
 
 	#region Maa_CON Fields
+	/// <summary>One row of <c>MAA_CON.csv</c>.</summary>
 	public class MaaCon : CommonFields
 	{
 		/// <summary>
@@ -314,6 +320,7 @@ public class MaaCsvDataModel
 	#endregion
 
 	#region Maa_RMK Fields
+	/// <summary>One row of <c>MAA_RMK.csv</c>.</summary>
 	public class MaaRmk : CommonFields
 	{
 		/// <summary>
@@ -359,6 +366,7 @@ public class MaaCsvDataModel
 	#endregion
 
 	#region Maa_SHP Fields
+	/// <summary>One row of <c>MAA_SHP.csv</c>.</summary>
 	public class MaaShp : CommonFields
 	{
 		/// <summary>

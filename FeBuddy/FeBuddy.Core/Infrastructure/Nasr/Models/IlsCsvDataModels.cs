@@ -1,8 +1,12 @@
 namespace FeBuddy.Core.Infrastructure.Nasr.Models;
 
+/// <summary>
+/// Row models for the NASR <c>ILS</c> CSV files (instrument landing systems): one nested class per file.
+/// </summary>
 public class IlsCsvDataModel
 {
 	#region Common Fields
+	/// <summary>The columns every <c>ILS</c> file shares.</summary>
 	public class CommonFields
 	{
 		/// <summary>
@@ -12,7 +16,7 @@ public class IlsCsvDataModel
 		/// _DataType: string
 		/// _Nullable: No
 		/// </summary>
-		/// <remarks>The 28 Day NASR Subscription Effective Date in format �YYYY/MM/DD�.</remarks>
+		/// <remarks>The 28 Day NASR Subscription Effective Date in format "YYYY/MM/DD".</remarks>
 		public string EffDate { get; set; }
 
 		/// <summary>
@@ -104,6 +108,7 @@ public class IlsCsvDataModel
 	#endregion
 
 	#region Ils_BASE Fields
+	/// <summary>One row of <c>ILS_BASE.csv</c>.</summary>
 	public class IlsBase : CommonFields
 	{
 		/// <summary>
@@ -363,6 +368,7 @@ public class IlsCsvDataModel
 	#endregion
 
 	#region Ils_DME Fields
+	/// <summary>One row of <c>ILS_DME.csv</c>.</summary>
 	public class IlsDme : CommonFields
 	{
 		/// <summary>
@@ -518,6 +524,7 @@ public class IlsCsvDataModel
 	#endregion
 
 	#region Ils_GS Fields
+	/// <summary>One row of <c>ILS_GS.csv</c>.</summary>
 	public class IlsGs : CommonFields
 	{
 		/// <summary>
@@ -692,6 +699,7 @@ public class IlsCsvDataModel
 	#endregion
 
 	#region Ils_MKR Fields
+	/// <summary>One row of <c>ILS_MKR.csv</c>.</summary>
 	public class IlsMkr : CommonFields
 	{
 		/// <summary>
@@ -914,6 +922,7 @@ public class IlsCsvDataModel
 	#endregion
 
 	#region Ils_RMK Fields
+	/// <summary>One row of <c>ILS_RMK.csv</c>.</summary>
 	public class IlsRmk : CommonFields
 	{
 		/// <summary>

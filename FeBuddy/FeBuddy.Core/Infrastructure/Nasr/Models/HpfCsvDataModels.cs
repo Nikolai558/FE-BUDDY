@@ -1,8 +1,12 @@
 namespace FeBuddy.Core.Infrastructure.Nasr.Models;
 
+/// <summary>
+/// Row models for the NASR <c>HPF</c> CSV files (holding patterns): one nested class per file.
+/// </summary>
 public class HpfCsvDataModel
 {
 	#region Common Fields
+	/// <summary>The columns every <c>HPF</c> file shares.</summary>
 	public class CommonFields
 	{
 		/// <summary>
@@ -12,7 +16,7 @@ public class HpfCsvDataModel
 		/// _DataType: string
 		/// _Nullable: No
 		/// </summary>
-		/// <remarks>The 28 Day NASR Subscription Effective Date in format �YYYY/MM/DD�.</remarks>
+		/// <remarks>The 28 Day NASR Subscription Effective Date in format "YYYY/MM/DD".</remarks>
 		public string EffDate { get; set; }
 
 		/// <summary>
@@ -57,6 +61,7 @@ public class HpfCsvDataModel
 	#endregion
 
 	#region Hpf_BASE Fields
+	/// <summary>One row of <c>HPF_BASE.csv</c>.</summary>
 	public class HpfBase : CommonFields
 	{
 		/// <summary>
@@ -157,6 +162,7 @@ public class HpfCsvDataModel
 	#endregion
 
 	#region Hpf_CHRT Fields
+	/// <summary>One row of <c>HPF_CHRT.csv</c>.</summary>
 	public class HpfChrt : CommonFields
 	{
 		/// <summary>
@@ -172,6 +178,7 @@ public class HpfCsvDataModel
 	#endregion
 
 	#region Hpf_RMK Fields
+	/// <summary>One row of <c>HPF_RMK.csv</c>.</summary>
 	public class HpfRmk : CommonFields
 	{
 		/// <summary>
@@ -216,6 +223,7 @@ public class HpfCsvDataModel
 	#endregion
 
 	#region Hpf_SpdAlt Fields
+	/// <summary>One row of <c>HPF_SPD_ALT.csv</c>.</summary>
 	public class HpfSpdAlt : CommonFields
 	{
 		/// <summary>

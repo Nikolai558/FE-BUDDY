@@ -1,5 +1,6 @@
 using FeBuddy.Core.Application.Airac.Departures.Models;
 using FeBuddy.Core.Application.Models;
+using FeBuddy.Core.Domain.Airac;
 using FeBuddy.Core.Domain.Departures.Models;
 using FeBuddy.Core.Domain.Geo;
 using FeBuddy.Core.Infrastructure.Logging.Models;
@@ -22,8 +23,6 @@ public static class DepartureFilter
 	private const string LogSource = "DepartureFilter";
 
 	/// <summary>The length of one AIRAC cycle, used to count amendment dates back from the cycle date.</summary>
-	private const int DaysPerCycle = 28;
-
 	/// <summary>
 	/// Keeps the procedures that pass the type, ARTCC and amendment-date filters.
 	/// </summary>
@@ -189,7 +188,7 @@ public static class DepartureFilter
 		{
 			// The cycle the data came from counts as the first, so N cycles reach back N - 1 steps.
 			DepartureAmendmentFilter.Cycles =>
-				procedure.CycleEffectiveDate?.AddDays(-DaysPerCycle * (settings.AmendedWithinCycles - 1)),
+				procedure.CycleEffectiveDate?.AddDays(-AiracCycleResolver.DaysPerCycle * (settings.AmendedWithinCycles - 1)),
 			DepartureAmendmentFilter.Days => today.AddDays(-settings.AmendedWithinDays),
 			DepartureAmendmentFilter.Date => settings.AmendedOnOrAfter,
 			_ => throw new ArgumentOutOfRangeException(

@@ -1,23 +1,28 @@
-using System;
-using System.Collections.Generic;
 using System.Runtime.CompilerServices;
-using FeBuddy.Core.Domain.Airports.Models;
 using FeBuddy.Core.Infrastructure.Nasr.Models;
 
 namespace FeBuddy.Core.Infrastructure.Nasr;
 
 /// <summary>
-/// Provides methods for locating waypoint coordinates from parsed NASR CSV data.
+/// Finds a waypoint's coordinates by identifier in parsed NASR data: fixes, navaids and airports.
 /// </summary>
+/// <remarks>
+/// Each lookup table is built the first time it is needed and cached per parsed dataset, so
+/// resolving every point on every airway is a dictionary lookup, not a scan of the whole file.
+/// When an identifier appears more than once, the first row in the file wins.
+/// </remarks>
 internal static class WaypointLocator
 {
-	/// <summary>
-	/// Defines the type of waypoint to search for.
-	/// </summary>
+	/// <summary>Which NASR table to search.</summary>
 	internal enum WaypointType
 	{
+		/// <summary><c>FIX_BASE</c>, by <c>FIX_ID</c>.</summary>
 		Fix,
+
+		/// <summary><c>NAV_BASE</c>, by <c>NAV_ID</c>.</summary>
 		Navaid,
+
+		/// <summary><c>APT_BASE</c>, by <c>ICAO_ID</c> or <c>ARPT_ID</c>.</summary>
 		Airport
 	}
 
@@ -40,50 +45,26 @@ internal static class WaypointLocator
 	}
 
 	/// <summary>
-	/// Caches one <see cref="CoordinateIndexSet"/> per <see cref="NasrCsvDataCollection"/>
-	/// instance. A <see cref="ConditionalWeakTable{TKey, TValue}"/> is used so the cache does
-	/// not keep a parsed NASR dataset (which can be large) alive any longer than the caller
-	/// already keeps it alive.
+	/// One <see cref="CoordinateIndexSet"/> per parsed dataset. A weak table, so the cache never
+	/// keeps a (large) dataset alive after its owner lets go of it.
 	/// </summary>
 	private static readonly ConditionalWeakTable<NasrCsvDataCollection, CoordinateIndexSet> IndexCache = [];
 
-
-	/*
-	    Waypoint type supplied?
-		│
-		├── Fix     → FixBase.FixId
-		├── NAVAID  → NavBase.NavId
-		└── Airport → AptBase.IcaoId OR AptBase.ArptId
-
-		Waypoint type NOT supplied?
-		│
-		├── ID length == 5
-		│      └── FixBase only
-		│
-		└── ID length != 5
-		       ├── NavBase first
-		       └── AptBase if NAVAID wasn't found
-	*/
-
 	/// <summary>
-	/// Finds the latitude and longitude for a waypoint from parsed NASR CSV data.
-	/// Optionally pass in arg waypoint type ("Fix", "Navaid", or "Airport"). If waypoint type not provided,
-	/// a 5-character identifier is searched in FIX data.
-	/// All other identifiers are searched in NAVAID data first, followed by airport data.
-	/// If the waypoint type is known, it will search only that data source.
+	/// Finds a waypoint's latitude and longitude.
 	/// </summary>
+	/// <param name="allNasrCsvData">The parsed NASR data to search.</param>
+	/// <param name="waypointId">The identifier, matched ignoring case and surrounding spaces.</param>
+	/// <param name="waypointType">
+	/// The table to search, when known. When <see langword="null"/>: a 5-character identifier is
+	/// a fix; anything else is tried as a navaid first, then as an airport.
+	/// </param>
 	/// <returns>
-	/// A tuple containing waypointLat and waypointLon when found; otherwise null. Will also return a string
-	/// indicating which data source the waypoint was found in ("fix", "navaid", or "airport").
+	/// The coordinates and the table they came from (<c>fix</c>, <c>navaid</c> or
+	/// <c>airport</c>), or <see langword="null"/> when not found.
 	/// </returns>
-	/// <remarks>
-	/// This method builds (and caches, per <paramref name="allNasrCsvData"/> instance) a
-	/// case-insensitive dictionary index over each of FixBase, NavBase, and AptBase the first
-	/// time any of that source's data is needed, so that resolving every waypoint on every
-	/// airway remains an O(1) lookup per waypoint instead of an O(n) linear scan. Public
-	/// behavior is unchanged from the original linear-scan implementation, including which
-	/// record "wins" when duplicate identifiers exist (first occurrence in the source list).
-	/// </remarks>
+	/// <exception cref="ArgumentNullException">Thrown when <paramref name="allNasrCsvData"/> is null.</exception>
+	/// <exception cref="ArgumentException">Thrown when <paramref name="waypointId"/> is blank.</exception>
 	internal static (double waypointLat, double waypointLon, string foundIn)? Find(
 		NasrCsvDataCollection allNasrCsvData,
 		string waypointId,
@@ -139,7 +120,6 @@ internal static class WaypointLocator
 		return FindAirport(allNasrCsvData, indexSet, waypointId);
 	}
 
-
 	/// <summary>
 	/// Searches the cached FIX_BASE index for a matching 5-character fix.
 	/// </summary>
@@ -193,8 +173,7 @@ internal static class WaypointLocator
 
 	/// <summary>
 	/// Builds a case-insensitive FixId -&gt; coordinate index from FIX_BASE. When duplicate
-	/// FixId values exist, the first occurrence in the source list wins, matching the
-	/// original <c>FirstOrDefault</c> behavior.
+	/// FixId values exist, the first occurrence wins.
 	/// </summary>
 	private static Dictionary<string, CoordinateEntry> BuildFixIndex(NasrCsvDataCollection allNasrCsvData)
 	{
@@ -219,8 +198,7 @@ internal static class WaypointLocator
 
 	/// <summary>
 	/// Builds a case-insensitive NavId -&gt; coordinate index from NAV_BASE. When duplicate
-	/// NavId values exist, the first occurrence in the source list wins, matching the
-	/// original <c>FirstOrDefault</c> behavior.
+	/// NavId values exist, the first occurrence wins.
 	/// </summary>
 	private static Dictionary<string, CoordinateEntry> BuildNavaidIndex(NasrCsvDataCollection allNasrCsvData)
 	{
@@ -246,8 +224,7 @@ internal static class WaypointLocator
 	/// <summary>
 	/// Builds a case-insensitive index from APT_BASE keyed by both IcaoId and ArptId, since
 	/// either identifier may be used to reference an airport as an airway waypoint. When
-	/// duplicate identifiers exist, the first occurrence in the source list wins, matching
-	/// the original <c>FirstOrDefault</c> behavior (which matched on either field).
+	/// an identifier appears more than once, the first occurrence wins.
 	/// </summary>
 	private static Dictionary<string, CoordinateEntry> BuildAirportIndex(NasrCsvDataCollection allNasrCsvData)
 	{

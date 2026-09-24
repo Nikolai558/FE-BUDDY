@@ -1,12 +1,15 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
 using static FeBuddy.Core.Infrastructure.Nasr.Models.StarCsvDataModel;
 
 namespace FeBuddy.Core.Infrastructure.Nasr.Parsers;
 
+/// <summary>
+/// Reads the NASR <c>STAR</c> CSV files (standard terminal arrivals), one file per method.
+/// </summary>
 public class StarCsvParser
 {
+	/// <summary>Reads <c>STAR_APT.csv</c>.</summary>
+	/// <param name="filePath">The full path of the file.</param>
+	/// <returns>A collection with only <see cref="StarCsvDataCollection.StarApt"/> filled in.</returns>
 	public StarCsvDataCollection ParseStarApt(string filePath)
 	{
 		var result = new StarCsvDataCollection
@@ -28,6 +31,9 @@ public class StarCsvParser
 		return result;
 	}
 
+	/// <summary>Reads <c>STAR_BASE.csv</c>.</summary>
+	/// <param name="filePath">The full path of the file.</param>
+	/// <returns>A collection with only <see cref="StarCsvDataCollection.StarBase"/> filled in.</returns>
 	public StarCsvDataCollection ParseStarBase(string filePath)
 	{
 		var result = new StarCsvDataCollection
@@ -50,6 +56,9 @@ public class StarCsvParser
 		return result;
 	}
 
+	/// <summary>Reads <c>STAR_RTE.csv</c>.</summary>
+	/// <param name="filePath">The full path of the file.</param>
+	/// <returns>A collection with only <see cref="StarCsvDataCollection.StarRte"/> filled in.</returns>
 	public StarCsvDataCollection ParseStarRte(string filePath)
 	{
 		var result = new StarCsvDataCollection
@@ -79,9 +88,15 @@ public class StarCsvParser
 
 }
 
+/// <summary>
+/// Every parsed row of the NASR <c>STAR</c> CSV files, one list per file.
+/// </summary>
 public class StarCsvDataCollection
 {
+	/// <summary>The rows of <c>STAR_APT.csv</c>.</summary>
 	public List<StarApt> StarApt { get; set; } = [];
+	/// <summary>The rows of <c>STAR_BASE.csv</c>.</summary>
 	public List<StarBase> StarBase { get; set; } = [];
+	/// <summary>The rows of <c>STAR_RTE.csv</c>.</summary>
 	public List<StarRte> StarRte { get; set; } = [];
 }

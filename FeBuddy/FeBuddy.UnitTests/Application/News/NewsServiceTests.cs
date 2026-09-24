@@ -1,5 +1,4 @@
 using System.Net;
-using System.Net.Http;
 
 using FeBuddy.Core.Application.News;
 using FeBuddy.Core.Application.News.Models;

@@ -1,8 +1,12 @@
 namespace FeBuddy.Core.Infrastructure.Nasr.Models;
 
+/// <summary>
+/// Row models for the NASR <c>ATC</c> CSV files (air traffic control facilities): one nested class per file.
+/// </summary>
 public class AtcCsvDataModel
 {
 	#region Common Fields
+	/// <summary>The columns every <c>ATC</c> file shares.</summary>
 	public class CommonFields
 	{
 		/// <summary>
@@ -89,6 +93,7 @@ public class AtcCsvDataModel
 	#endregion
 
 	#region Atc_ATIS Fields
+	/// <summary>One row of <c>ATC_ATIS.csv</c>.</summary>
 	public class AtcAtis : CommonFields
 	{
 		/// <summary>
@@ -133,6 +138,7 @@ public class AtcCsvDataModel
 	#endregion
 
 	#region Atc_BASE Fields
+	/// <summary>One row of <c>ATC_BASE.csv</c>.</summary>
 	public class AtcBase : CommonFields
 	{
 		/// <summary>
@@ -351,6 +357,7 @@ public class AtcCsvDataModel
 	#endregion
 
 	#region Atc_RMK Fields
+	/// <summary>One row of <c>ATC_RMK.csv</c>.</summary>
 	public class AtcRmk : CommonFields
 	{
 		/// <summary>
@@ -405,6 +412,7 @@ public class AtcCsvDataModel
 	#endregion
 
 	#region Atc_SVC Fields
+	/// <summary>One row of <c>ATC_SVC.csv</c>.</summary>
 	public class AtcSvc : CommonFields
 	{
 		/// <summary>

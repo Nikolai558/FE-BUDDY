@@ -1,12 +1,15 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
 using static FeBuddy.Core.Infrastructure.Nasr.Models.MtrCsvDataModel;
 
 namespace FeBuddy.Core.Infrastructure.Nasr.Parsers;
 
+/// <summary>
+/// Reads the NASR <c>MTR</c> CSV files (military training routes), one file per method.
+/// </summary>
 public class MtrCsvParser
 {
+	/// <summary>Reads <c>MTR_AGY.csv</c>.</summary>
+	/// <param name="filePath">The full path of the file.</param>
+	/// <returns>A collection with only <see cref="MtrCsvDataCollection.MtrAgy"/> filled in.</returns>
 	public MtrCsvDataCollection ParseMtrAgy(string filePath)
 	{
 		var result = new MtrCsvDataCollection
@@ -35,6 +38,9 @@ public class MtrCsvParser
 		return result;
 	}
 
+	/// <summary>Reads <c>MTR_BASE.csv</c>.</summary>
+	/// <param name="filePath">The full path of the file.</param>
+	/// <returns>A collection with only <see cref="MtrCsvDataCollection.MtrBase"/> filled in.</returns>
 	public MtrCsvDataCollection ParseMtrBase(string filePath)
 	{
 		var result = new MtrCsvDataCollection
@@ -55,6 +61,9 @@ public class MtrCsvParser
 		return result;
 	}
 
+	/// <summary>Reads <c>MTR_PT.csv</c>.</summary>
+	/// <param name="filePath">The full path of the file.</param>
+	/// <returns>A collection with only <see cref="MtrCsvDataCollection.MtrPt"/> filled in.</returns>
 	public MtrCsvDataCollection ParseMtrPt(string filePath)
 	{
 		var result = new MtrCsvDataCollection
@@ -90,6 +99,9 @@ public class MtrCsvParser
 		return result;
 	}
 
+	/// <summary>Reads <c>MTR_SOP.csv</c>.</summary>
+	/// <param name="filePath">The full path of the file.</param>
+	/// <returns>A collection with only <see cref="MtrCsvDataCollection.MtrSop"/> filled in.</returns>
 	public MtrCsvDataCollection ParseMtrSop(string filePath)
 	{
 		var result = new MtrCsvDataCollection
@@ -110,6 +122,9 @@ public class MtrCsvParser
 		return result;
 	}
 
+	/// <summary>Reads <c>MTR_TERR.csv</c>.</summary>
+	/// <param name="filePath">The full path of the file.</param>
+	/// <returns>A collection with only <see cref="MtrCsvDataCollection.MtrTerr"/> filled in.</returns>
 	public MtrCsvDataCollection ParseMtrTerr(string filePath)
 	{
 		var result = new MtrCsvDataCollection
@@ -130,6 +145,9 @@ public class MtrCsvParser
 		return result;
 	}
 
+	/// <summary>Reads <c>MTR_WDTH.csv</c>.</summary>
+	/// <param name="filePath">The full path of the file.</param>
+	/// <returns>A collection with only <see cref="MtrCsvDataCollection.MtrWdth"/> filled in.</returns>
 	public MtrCsvDataCollection ParseMtrWdth(string filePath)
 	{
 		var result = new MtrCsvDataCollection
@@ -152,12 +170,21 @@ public class MtrCsvParser
 
 }
 
+/// <summary>
+/// Every parsed row of the NASR <c>MTR</c> CSV files, one list per file.
+/// </summary>
 public class MtrCsvDataCollection
 {
+	/// <summary>The rows of <c>MTR_AGY.csv</c>.</summary>
 	public List<MtrAgy> MtrAgy { get; set; } = [];
+	/// <summary>The rows of <c>MTR_BASE.csv</c>.</summary>
 	public List<MtrBase> MtrBase { get; set; } = [];
+	/// <summary>The rows of <c>MTR_PT.csv</c>.</summary>
 	public List<MtrPt> MtrPt { get; set; } = [];
+	/// <summary>The rows of <c>MTR_SOP.csv</c>.</summary>
 	public List<MtrSop> MtrSop { get; set; } = [];
+	/// <summary>The rows of <c>MTR_TERR.csv</c>.</summary>
 	public List<MtrTerr> MtrTerr { get; set; } = [];
+	/// <summary>The rows of <c>MTR_WDTH.csv</c>.</summary>
 	public List<MtrWdth> MtrWdth { get; set; } = [];
 }

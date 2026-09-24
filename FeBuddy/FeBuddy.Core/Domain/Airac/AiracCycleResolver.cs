@@ -20,7 +20,8 @@ namespace FeBuddy.Core.Domain.Airac;
 /// </remarks>
 public static class AiracCycleResolver
 {
-	private const int DaysPerCycle = 28;
+	/// <summary>Days from one AIRAC cycle to the next.</summary>
+	public const int DaysPerCycle = 28;
 
 	/// <summary>The cycle every other is counted from: 2601, effective 2026-01-22.</summary>
 	private static readonly DateOnly ReferenceEffectiveDate = new(2026, 1, 22);

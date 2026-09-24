@@ -1,14 +1,26 @@
 ﻿using CsvHelper;
 using CsvHelper.Configuration;
-using System;
-using System.Collections.Generic;
 using System.Globalization;
-using System.IO;
 
 namespace FeBuddy.Core.Infrastructure.Nasr;
 
+/// <summary>
+/// Reads NASR CSV files: every row as a column-name dictionary, plus the value parsers the NASR
+/// parsers use on those fields.
+/// </summary>
 public static class NasrCsvReader
 {
+	/// <summary>
+	/// Reads every row of a CSV file with a header row, turning each into a value.
+	/// </summary>
+	/// <typeparam name="T">The row model to build.</typeparam>
+	/// <param name="filePath">The CSV file.</param>
+	/// <param name="lineProcessor">
+	/// Builds one row model from that row's fields, keyed by column name. Values are trimmed; a
+	/// column the row is too short to reach reads as an empty string, never <see langword="null"/>.
+	/// </param>
+	/// <returns>One model per data row, in file order.</returns>
+	/// <exception cref="InvalidDataException">Thrown when the file has no header row.</exception>
 	public static List<T> ProcessLines<T>(string filePath, Func<Dictionary<string, string>, T> lineProcessor)
 	{
 		var results = new List<T>();
@@ -59,12 +71,19 @@ public static class NasrCsvReader
 	/// cycles without notice). Use this instead of the dictionary indexer for any field that
 	/// isn't guaranteed to exist in every cycle's file.
 	/// </remarks>
+	/// <param name="fields">One row's fields, as <see cref="ProcessLines{T}"/> passes them.</param>
+	/// <param name="key">The column name.</param>
+	/// <returns>The value, or an empty string when the file has no such column.</returns>
 	public static string GetField(Dictionary<string, string> fields, string key)
 	{
 		return fields.TryGetValue(key, out string? value) ? value : string.Empty;
 	}
 
-	// Safely parse a non-nullable int.
+	/// <summary>Parses a required integer field.</summary>
+	/// <param name="value">The field's text.</param>
+	/// <returns>The integer.</returns>
+	/// <exception cref="ArgumentNullException">Thrown when the field is blank.</exception>
+	/// <exception cref="FormatException">Thrown when the field is not an integer.</exception>
 	public static int ParseInt(string value)
 	{
 		if (string.IsNullOrWhiteSpace(value))
@@ -76,13 +95,19 @@ public static class NasrCsvReader
 		return result;
 	}
 
-	// Safely parse a nullable int.
+	/// <summary>Parses an optional integer field.</summary>
+	/// <param name="value">The field's text.</param>
+	/// <returns>The integer, or <see langword="null"/> when the field is blank or not an integer.</returns>
 	public static int? ParseNullableInt(string value)
 	{
 		return int.TryParse(value, out int result) ? result : (int?)null;
 	}
 
-	// Safely parse a non-nullable double.
+	/// <summary>Parses a required decimal field.</summary>
+	/// <param name="value">The field's text.</param>
+	/// <returns>The number.</returns>
+	/// <exception cref="ArgumentNullException">Thrown when the field is blank.</exception>
+	/// <exception cref="FormatException">Thrown when the field is not a number.</exception>
 	public static double ParseDouble(string value)
 	{
 		if (string.IsNullOrWhiteSpace(value))
@@ -94,7 +119,9 @@ public static class NasrCsvReader
 		return result;
 	}
 
-	// Safely parse a nullable double.
+	/// <summary>Parses an optional decimal field.</summary>
+	/// <param name="value">The field's text.</param>
+	/// <returns>The number, or <see langword="null"/> when the field is blank or not a number.</returns>
 	public static double? ParseNullableDouble(string value)
 	{
 		return double.TryParse(value, out double result) ? result : (double?)null;

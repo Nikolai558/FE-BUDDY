@@ -1,19 +1,15 @@
-using FeBuddy.Core.Application.News;
-using FeBuddy.Core.Application.Updates;
-
 namespace FeBuddy.Core.Infrastructure.GitHub;
 
 /// <summary>
-/// Optional GitHub token support for <see cref="VersionCheck"/> and <see cref="NewsService"/>. NOT
-/// required for normal use - FE-Buddy's releases and News both live in the public
-/// <c>Nikolai558/FE-BUDDY</c> repo, and both fetches work completely unauthenticated by default. This exists for two edge cases: (1) raising
-/// GitHub's 60-requests/hour unauthenticated rate limit for anyone who happens to hit it, and
-/// (2) letting a developer point the check at a private repo (e.g. while testing) that requires
-/// authentication to even see.
+/// Optional GitHub token for the version check, the News fetch and the update download. Not
+/// needed for normal use: releases and News live in the public repository
+/// (<see cref="GitHubRepository"/>) and every request works unauthenticated. The token exists
+/// for two edge cases: getting past GitHub's 60-requests-an-hour anonymous limit, and letting a
+/// developer point FE-Buddy at a private repository while testing.
 /// </summary>
 /// <remarks>
-/// Only ever consulted as a fallback, after an unauthenticated request has already failed - see
-/// <see cref="VersionCheck"/>. That's deliberate: a stale or unrelated token sitting in someone's
+/// Only ever used as a fallback, after an unauthenticated request has already failed. That is
+/// deliberate: a stale or unrelated token sitting in someone's
 /// environment for a different tool must never be able to break a request that would otherwise
 /// have worked fine. Matches the same variable name and fallback-only behavior as the v2.x
 /// code's <c>FeBuddyLibrary.Update.GitHubAuth</c> (on the <c>development</c> branch), so a token a
@@ -28,7 +24,8 @@ public static class GitHubAuth
 	/// </summary>
 	public const string EnvironmentVariableName = "FEBUDDY_GITHUB_TOKEN";
 
-	/// <summary>Returns the token if set and non-empty, otherwise <see langword="null"/>.</summary>
+	/// <summary>Reads the token from <see cref="EnvironmentVariableName"/>.</summary>
+	/// <returns>The token, or <see langword="null"/> when the variable is unset or blank.</returns>
 	public static string? GetOptionalToken()
 	{
 		string? value = Environment.GetEnvironmentVariable(EnvironmentVariableName);

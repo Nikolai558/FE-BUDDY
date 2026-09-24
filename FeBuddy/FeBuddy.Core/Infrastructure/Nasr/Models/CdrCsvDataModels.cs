@@ -1,8 +1,12 @@
 namespace FeBuddy.Core.Infrastructure.Nasr.Models;
 
+/// <summary>
+/// Row models for the NASR <c>CDR</c> CSV files (coded departure routes): one nested class per file.
+/// </summary>
 public class CdrCsvDataModel
 {
 	#region Common Fields
+	/// <summary>The columns every <c>CDR</c> file shares.</summary>
 	public class CommonFields
 	{
 		/// <summary>
@@ -19,6 +23,7 @@ public class CdrCsvDataModel
 	#endregion
 
 	#region Cdr Fields
+	/// <summary>One row of <c>CDR.csv</c>.</summary>
 	public class Cdr : CommonFields
 	{
 		/// <summary>

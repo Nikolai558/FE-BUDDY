@@ -1,8 +1,12 @@
 namespace FeBuddy.Core.Infrastructure.Nasr.Models;
 
+/// <summary>
+/// Row models for the NASR <c>CLS_ARSP</c> CSV files (class airspace at airports): one nested class per file.
+/// </summary>
 public class ClsArspCsvDataModel
 {
 	#region Common Fields
+	/// <summary>The columns every <c>CLS_ARSP</c> file shares.</summary>
 	public class CommonFields
 	{
 		/// <summary>
@@ -12,7 +16,7 @@ public class ClsArspCsvDataModel
 		/// _DataType: string
 		/// _Nullable: No
 		/// </summary>
-		/// <remarks>The 28 Day NASR Subscription Effective Date in format �YYYY/MM/DD�.</remarks>
+		/// <remarks>The 28 Day NASR Subscription Effective Date in format "YYYY/MM/DD".</remarks>
 		public string EffDate { get; set; }
 
 		/// <summary>
@@ -79,6 +83,7 @@ public class ClsArspCsvDataModel
 	#endregion
 
 	#region ClsArsp Fields
+	/// <summary>One row of <c>CLS_ARSP.csv</c>.</summary>
 	public class ClsArsp : CommonFields
 	{
 		/// <summary>
@@ -88,7 +93,7 @@ public class ClsArspCsvDataModel
 		/// _DataType: string
 		/// _Nullable: Yes
 		/// </summary>
-		/// <remarks>Terminal Communication Facility containing Class B Airspace with be designated with �Y� else null</remarks>
+		/// <remarks>Terminal Communication Facility containing Class B Airspace will be designated with "Y" else null</remarks>
 		public string? ClassBAirspace { get; set; }
 
 		/// <summary>
@@ -98,7 +103,7 @@ public class ClsArspCsvDataModel
 		/// _DataType: string
 		/// _Nullable: Yes
 		/// </summary>
-		/// <remarks>Terminal Communication Facility containing Class C Airspace with be designated with �Y� else null</remarks>
+		/// <remarks>Terminal Communication Facility containing Class C Airspace will be designated with "Y" else null</remarks>
 		public string? ClassCAirspace { get; set; }
 
 		/// <summary>
@@ -108,7 +113,7 @@ public class ClsArspCsvDataModel
 		/// _DataType: string
 		/// _Nullable: Yes
 		/// </summary>
-		/// <remarks>Terminal Communication Facility containing Class D Airspace with be designated with �Y� else null</remarks>
+		/// <remarks>Terminal Communication Facility containing Class D Airspace will be designated with "Y" else null</remarks>
 		public string? ClassDAirspace { get; set; }
 
 		/// <summary>
@@ -118,7 +123,7 @@ public class ClsArspCsvDataModel
 		/// _DataType: string
 		/// _Nullable: Yes
 		/// </summary>
-		/// <remarks>Terminal Communication Facility containing Class E Airspace with be designated with �Y� else null</remarks>
+		/// <remarks>Terminal Communication Facility containing Class E Airspace will be designated with "Y" else null</remarks>
 		public string? ClassEAirspace { get; set; }
 
 		/// <summary>

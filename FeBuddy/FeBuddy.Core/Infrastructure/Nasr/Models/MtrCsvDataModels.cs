@@ -1,8 +1,12 @@
 namespace FeBuddy.Core.Infrastructure.Nasr.Models;
 
+/// <summary>
+/// Row models for the NASR <c>MTR</c> CSV files (military training routes): one nested class per file.
+/// </summary>
 public class MtrCsvDataModel
 {
 	#region Common Fields
+	/// <summary>The columns every <c>MTR</c> file shares.</summary>
 	public class CommonFields
 	{
 		/// <summary>
@@ -12,7 +16,7 @@ public class MtrCsvDataModel
 		/// _DataType: string
 		/// _Nullable: No
 		/// </summary>
-		/// <remarks>The 28 Day NASR Subscription Effective Date in format �YYYY/MM/DD�.</remarks>
+		/// <remarks>The 28 Day NASR Subscription Effective Date in format "YYYY/MM/DD".</remarks>
 		public string EffDate { get; set; }
 
 		/// <summary>
@@ -49,6 +53,7 @@ public class MtrCsvDataModel
 	#endregion
 
 	#region Mtr_AGY Fields
+	/// <summary>One row of <c>MTR_AGY.csv</c>.</summary>
 	public class MtrAgy : CommonFields
 	{
 		/// <summary>
@@ -146,6 +151,7 @@ public class MtrCsvDataModel
 	#endregion
 
 	#region Mtr_BASE Fields
+	/// <summary>One row of <c>MTR_BASE.csv</c>.</summary>
 	public class MtrBase : CommonFields
 	{
 		/// <summary>
@@ -171,6 +177,7 @@ public class MtrCsvDataModel
 	#endregion
 
 	#region Mtr_PT Fields
+	/// <summary>One row of <c>MTR_PT.csv</c>.</summary>
 	public class MtrPt : CommonFields
 	{
 		/// <summary>
@@ -333,6 +340,7 @@ public class MtrCsvDataModel
 	#endregion
 
 	#region Mtr_SOP Fields
+	/// <summary>One row of <c>MTR_SOP.csv</c>.</summary>
 	public class MtrSop : CommonFields
 	{
 		/// <summary>
@@ -357,6 +365,7 @@ public class MtrCsvDataModel
 	#endregion
 
 	#region Mtr_TERR Fields
+	/// <summary>One row of <c>MTR_TERR.csv</c>.</summary>
 	public class MtrTerr : CommonFields
 	{
 		/// <summary>
@@ -381,6 +390,7 @@ public class MtrCsvDataModel
 	#endregion
 
 	#region Mtr_WDTH Fields
+	/// <summary>One row of <c>MTR_WDTH.csv</c>.</summary>
 	public class MtrWdth : CommonFields
 	{
 		/// <summary>

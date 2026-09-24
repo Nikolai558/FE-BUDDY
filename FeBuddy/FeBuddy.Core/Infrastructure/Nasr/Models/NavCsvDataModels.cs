@@ -1,8 +1,12 @@
 namespace FeBuddy.Core.Infrastructure.Nasr.Models;
 
+/// <summary>
+/// Row models for the NASR <c>NAV</c> CSV files (navaids): one nested class per file.
+/// </summary>
 public class NavCsvDataModel
 {
 	#region Common Fields
+	/// <summary>The columns every <c>NAV</c> file shares.</summary>
 	public class CommonFields
 	{
 		/// <summary>
@@ -12,7 +16,7 @@ public class NavCsvDataModel
 		/// _DataType: string
 		/// _Nullable: No
 		/// </summary>
-		/// <remarks>The 28 Day NASR Subscription Effective Date in format �YYYY/MM/DD�.</remarks>
+		/// <remarks>The 28 Day NASR Subscription Effective Date in format "YYYY/MM/DD".</remarks>
 		public string EffDate { get; set; }
 
 		/// <summary>
@@ -65,6 +69,7 @@ public class NavCsvDataModel
 	#endregion
 
 	#region Nav_BASE Fields
+	/// <summary>One row of <c>NAV_BASE.csv</c>.</summary>
 	public class NavBase : CommonFields
 	{
 		/// <summary>
@@ -448,7 +453,7 @@ public class NavCsvDataModel
 		/// _DataType: int
 		/// _Nullable: Yes
 		/// </summary>
-		/// <remarks>Indicates magnetic variation in degrees. Not applicable to DME, VOT, and FAN MARKER NAVAID types�any values for these types should be ignored</remarks>
+		/// <remarks>Indicates magnetic variation in degrees. Not applicable to DME, VOT, and FAN MARKER NAVAID types - any values for these types should be ignored</remarks>
 		public int? MagVarn { get; set; }
 
 		/// <summary>
@@ -458,7 +463,7 @@ public class NavCsvDataModel
 		/// _DataType: string
 		/// _Nullable: Yes
 		/// </summary>
-		/// <remarks>Indicates the direction (East or West) of magnetic variation. Not applicable to DME, VOT, and FAN MARKER NAVAID types�any values for these types should be ignored</remarks>
+		/// <remarks>Indicates the direction (East or West) of magnetic variation. Not applicable to DME, VOT, and FAN MARKER NAVAID types - any values for these types should be ignored</remarks>
 		public string? MagVarnHemis { get; set; }
 
 		/// <summary>
@@ -468,7 +473,7 @@ public class NavCsvDataModel
 		/// _DataType: int
 		/// _Nullable: Yes
 		/// </summary>
-		/// <remarks>Represents the year of the magnetic variation reference (epoch). Not applicable to DME, VOT, and FAN MARKER NAVAID types�any values for these types should be ignored</remarks>
+		/// <remarks>Represents the year of the magnetic variation reference (epoch). Not applicable to DME, VOT, and FAN MARKER NAVAID types - any values for these types should be ignored</remarks>
 		public int? MagVarnYear { get; set; }
 
 		/// <summary>
@@ -571,7 +576,7 @@ public class NavCsvDataModel
 		/// _DataType: string
 		/// _Nullable: Yes
 		/// </summary>
-		/// <remarks>T=Terminal (1,000'�12,000' AGL, 25 NM) _ L=Low Altitude (1,000'�18,000' AGL, 40 NM) _ H=High Altitude: 1,000'�14,499' (40 NM), 14,500'�17,999' (100 NM), 18,000'�FL450 (130 NM), above FL450 (100 NM) _ VL=VOR Low: 1,000'�4,999' (40 NM), 5,000'�17,999' (70 NM) _ VH=VOR High: 1,000'�4,999' (40 NM), 5,000'�14,499' (70 NM), 14,500'�17,999' (100 NM), 18,000'�FL450 (130 NM), above FL450 (100 NM)</remarks>
+		/// <remarks>T=Terminal (1,000'-12,000' AGL, 25 NM) _ L=Low Altitude (1,000'-18,000' AGL, 40 NM) _ H=High Altitude: 1,000'-14,499' (40 NM), 14,500'-17,999' (100 NM), 18,000'-FL450 (130 NM), above FL450 (100 NM) _ VL=VOR Low: 1,000'-4,999' (40 NM), 5,000'-17,999' (70 NM) _ VH=VOR High: 1,000'-4,999' (40 NM), 5,000'-14,499' (70 NM), 14,500'-17,999' (100 NM), 18,000'-FL450 (130 NM), above FL450 (100 NM)</remarks>
 		public string? AltCode { get; set; }
 
 		/// <summary>
@@ -581,7 +586,7 @@ public class NavCsvDataModel
 		/// _DataType: string
 		/// _Nullable: Yes
 		/// </summary>
-		/// <remarks>T=Terminal (1,000'�12,000' AGL, 25 NM) _ L=Low Altitude (1,000'�18,000' AGL, 40 NM) _ H=High Altitude: 1,000'�14,499' (40 NM), 14,500'�17,999' (100 NM), 18,000'�FL450 (130 NM), above FL450 (100 NM) _ DL=DME Low: 12,900'�18,000' (130 NM) _ DH=DME High: 12,900'�FL450 (130 NM), above FL450 (100 NM)</remarks>
+		/// <remarks>T=Terminal (1,000'-12,000' AGL, 25 NM) _ L=Low Altitude (1,000'-18,000' AGL, 40 NM) _ H=High Altitude: 1,000'-14,499' (40 NM), 14,500'-17,999' (100 NM), 18,000'-FL450 (130 NM), above FL450 (100 NM) _ DL=DME Low: 12,900'-18,000' (130 NM) _ DH=DME High: 12,900'-FL450 (130 NM), above FL450 (100 NM)</remarks>
 		public string? DmeSsv { get; set; }
 
 		/// <summary>
@@ -699,6 +704,7 @@ public class NavCsvDataModel
 	#endregion
 
 	#region Nav_CKPT Fields
+	/// <summary>One row of <c>NAV_CKPT.csv</c>.</summary>
 	public class NavCkpt : CommonFields
 	{
 		/// <summary>
@@ -760,6 +766,7 @@ public class NavCsvDataModel
 	#endregion
 
 	#region Nav_RMK Fields
+	/// <summary>One row of <c>NAV_RMK.csv</c>.</summary>
 	public class NavRmk : CommonFields
 	{
 		/// <summary>

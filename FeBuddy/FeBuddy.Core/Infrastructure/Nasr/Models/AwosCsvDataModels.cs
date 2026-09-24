@@ -1,8 +1,12 @@
 namespace FeBuddy.Core.Infrastructure.Nasr.Models;
 
+/// <summary>
+/// Row models for the NASR <c>AWOS</c> CSV files (automated weather observing systems): one nested class per file.
+/// </summary>
 public class AwosCsvDataModel
 {
 	#region Common Fields
+	/// <summary>The columns every <c>AWOS</c> file shares.</summary>
 	public class CommonFields
 	{
 		/// <summary>
@@ -12,7 +16,7 @@ public class AwosCsvDataModel
 		/// _DataType: string
 		/// _Nullable: No
 		/// </summary>
-		/// <remarks>The 28 Day NASR Subscription Effective Date in format �YYYY/MM/DD�.</remarks>
+		/// <remarks>The 28 Day NASR Subscription Effective Date in format "YYYY/MM/DD".</remarks>
 		public string EffDate { get; set; }
 
 		/// <summary>
@@ -68,6 +72,7 @@ public class AwosCsvDataModel
 	#endregion
 
 	#region Awos Fields
+	/// <summary>One row of <c>AWOS.csv</c>.</summary>
 	public class Awos : CommonFields
 	{
 		/// <summary>
@@ -81,7 +86,7 @@ public class AwosCsvDataModel
 		public string? CommissionedDate { get; set; }
 
 		/// <summary>
-		/// Weather associated with NAVAID � Y/N Flag
+		/// Weather associated with NAVAID - Y/N Flag
 		/// _Src: AWOS.csv(NAVAID_FLAG)
 		/// _MaxLength: 1
 		/// _DataType: string

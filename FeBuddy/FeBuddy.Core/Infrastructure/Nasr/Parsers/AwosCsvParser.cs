@@ -1,12 +1,15 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
 using static FeBuddy.Core.Infrastructure.Nasr.Models.AwosCsvDataModel;
 
 namespace FeBuddy.Core.Infrastructure.Nasr.Parsers;
 
+/// <summary>
+/// Reads the NASR <c>AWOS</c> CSV files (automated weather observing systems), one file per method.
+/// </summary>
 public class AwosCsvParser
 {
+	/// <summary>Reads <c>AWOS.csv</c>.</summary>
+	/// <param name="filePath">The full path of the file.</param>
+	/// <returns>A collection with only <see cref="AwosCsvDataCollection.Awos"/> filled in.</returns>
 	public AwosCsvDataCollection ParseAwos(string filePath)
 	{
 		var result = new AwosCsvDataCollection
@@ -48,7 +51,11 @@ public class AwosCsvParser
 
 }
 
+/// <summary>
+/// Every parsed row of the NASR <c>AWOS</c> CSV files, one list per file.
+/// </summary>
 public class AwosCsvDataCollection
 {
+	/// <summary>The rows of <c>AWOS.csv</c>.</summary>
 	public List<Awos> Awos { get; set; } = [];
 }

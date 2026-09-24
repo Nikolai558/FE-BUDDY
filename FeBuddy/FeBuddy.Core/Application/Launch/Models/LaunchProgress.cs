@@ -1,9 +1,8 @@
 namespace FeBuddy.Core.Application.Launch.Models;
 
 /// <summary>
-/// The ordered steps of the application launch sequence (see <c>Developer_Notes.md</c> -&gt;
-/// LAUNCH PROCESSES). Steps run off the UI thread; a failure in any one degrades the
-/// dependent feature but never blocks launch.
+/// The steps of the launch sequence, in the order they start. Steps run off the UI thread; a
+/// failure in any one degrades the dependent feature but never blocks launch.
 /// </summary>
 public enum LaunchStep
 {
@@ -19,10 +18,10 @@ public enum LaunchStep
 	/// <summary>Ask GitHub whether a newer release exists on the user's channel.</summary>
 	CheckVersion = 3,
 
-	/// <summary>Ensure previous/current/next AIRAC cycles are downloaded and parsed (Phase 2 fills this in).</summary>
+	/// <summary>Ensure the previous, current and next AIRAC cycles are downloaded and parsed.</summary>
 	PrepareAiracData = 4,
 
-	/// <summary>Check for a newer News post (Phase 6.1 fills this in).</summary>
+	/// <summary>Check for a newer News post.</summary>
 	CheckNews = 5,
 
 	/// <summary>The sequence has finished.</summary>

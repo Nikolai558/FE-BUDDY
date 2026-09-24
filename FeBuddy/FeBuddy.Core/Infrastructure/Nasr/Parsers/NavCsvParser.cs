@@ -1,12 +1,15 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
 using static FeBuddy.Core.Infrastructure.Nasr.Models.NavCsvDataModel;
 
 namespace FeBuddy.Core.Infrastructure.Nasr.Parsers;
 
+/// <summary>
+/// Reads the NASR <c>NAV</c> CSV files (navaids), one file per method.
+/// </summary>
 public class NavCsvParser
 {
+	/// <summary>Reads <c>NAV_BASE.csv</c>.</summary>
+	/// <param name="filePath">The full path of the file.</param>
+	/// <returns>A collection with only <see cref="NavCsvDataCollection.NavBase"/> filled in.</returns>
 	public NavCsvDataCollection ParseNavBase(string filePath)
 	{
 		var result = new NavCsvDataCollection
@@ -93,6 +96,9 @@ public class NavCsvParser
 		return result;
 	}
 
+	/// <summary>Reads <c>NAV_CKPT.csv</c>.</summary>
+	/// <param name="filePath">The full path of the file.</param>
+	/// <returns>A collection with only <see cref="NavCsvDataCollection.NavCkpt"/> filled in.</returns>
 	public NavCsvDataCollection ParseNavCkpt(string filePath)
 	{
 		var result = new NavCsvDataCollection
@@ -119,6 +125,9 @@ public class NavCsvParser
 		return result;
 	}
 
+	/// <summary>Reads <c>NAV_RMK.csv</c>.</summary>
+	/// <param name="filePath">The full path of the file.</param>
+	/// <returns>A collection with only <see cref="NavCsvDataCollection.NavRmk"/> filled in.</returns>
 	public NavCsvDataCollection ParseNavRmk(string filePath)
 	{
 		var result = new NavCsvDataCollection
@@ -145,9 +154,15 @@ public class NavCsvParser
 
 }
 
+/// <summary>
+/// Every parsed row of the NASR <c>NAV</c> CSV files, one list per file.
+/// </summary>
 public class NavCsvDataCollection
 {
+	/// <summary>The rows of <c>NAV_BASE.csv</c>.</summary>
 	public List<NavBase> NavBase { get; set; } = [];
+	/// <summary>The rows of <c>NAV_CKPT.csv</c>.</summary>
 	public List<NavCkpt> NavCkpt { get; set; } = [];
+	/// <summary>The rows of <c>NAV_RMK.csv</c>.</summary>
 	public List<NavRmk> NavRmk { get; set; } = [];
 }

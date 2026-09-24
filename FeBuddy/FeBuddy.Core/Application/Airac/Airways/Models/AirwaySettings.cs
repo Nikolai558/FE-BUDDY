@@ -34,7 +34,7 @@ public sealed record AirwaySettings
 	/// <summary>Whether to write the <c>Airways.txt</c> alias file.</summary>
 	public required bool GenerateAliasFile { get; init; }
 
-	/// <summary>Which airways the <c>Airways.txt</c> alias file covers (remediation plan 3.5).</summary>
+	/// <summary>Which airways the <c>Airways.txt</c> alias file covers.</summary>
 	public AliasRoiScope AliasRoiScope { get; init; } = AliasRoiScope.All;
 
 	/// <summary>Whether to split airway geometry at the antimeridian.</summary>
@@ -42,22 +42,22 @@ public sealed record AirwaySettings
 
 	/// <summary>
 	/// Designations (from <see cref="Airway.Designation"/>, i.e. derived from <c>AWY_ID</c>) to
-	/// drop entirely - before any geometry work, so GeoJSON and the alias file agree
-	/// (remediation plan 3.3). Case-insensitive, upper-cased.
+	/// drop entirely - before any geometry work, so GeoJSON and the alias file agree.
+	/// Case-insensitive, upper-cased.
 	/// </summary>
 	public IReadOnlyCollection<string> ExcludedDesignations { get; init; } = [];
 
-	/// <summary>Emit the <c>_Lines</c> GeoJSON files. Default <see langword="true"/> (remediation plan 3.4).</summary>
+	/// <summary>Emit the <c>_Lines</c> GeoJSON files. Default <see langword="true"/>.</summary>
 	public bool EmitLines { get; init; } = true;
 
-	/// <summary>Emit the <c>_Symbols</c> GeoJSON files. Default <see langword="true"/> (remediation plan 3.4).</summary>
+	/// <summary>Emit the <c>_Symbols</c> GeoJSON files. Default <see langword="true"/>.</summary>
 	public bool EmitSymbols { get; init; } = true;
 
-	/// <summary>Emit the <c>_Text</c> GeoJSON files. Default <see langword="true"/> (remediation plan 3.4).</summary>
+	/// <summary>Emit the <c>_Text</c> GeoJSON files. Default <see langword="true"/>.</summary>
 	public bool EmitText { get; init; } = true;
 
 	/// <summary>
-	/// Maximum decimal places for coordinates written to GeoJSON (remediation plan 3.6).
+	/// Maximum decimal places for coordinates written to GeoJSON.
 	/// Default 6.
 	/// </summary>
 	public int CoordinatePrecision { get; init; } = 6;
@@ -65,8 +65,7 @@ public sealed record AirwaySettings
 	/// <summary>
 	/// When <see langword="true"/> (default), output is written under a <c>FE-Buddy_Output</c>
 	/// folder inside <see cref="OutputDirectory"/>; when <see langword="false"/>, straight into
-	/// <see cref="OutputDirectory"/> (the <c>Airways</c> sub-folder is kept either way -
-	/// remediation plan 3.7).
+	/// <see cref="OutputDirectory"/>. The <c>Airways</c> sub-folder is kept either way.
 	/// </summary>
 	public bool AddFeBuddyOutputFolder { get; init; } = true;
 

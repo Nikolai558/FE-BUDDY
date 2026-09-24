@@ -253,9 +253,9 @@ public sealed class AirwaysViewModel : SubServiceSettingsViewModel, ISubServiceR
 
         string summary = $"{airways.AirwayCount:N0} airways";
 
-        if (result.ExcludedAirwayIds.Count > 0)
+        if (airways.ExcludedAirwayIds.Count > 0)
         {
-            summary += $", {result.ExcludedAirwayIds.Count:N0} excluded";
+            summary += $", {airways.ExcludedAirwayIds.Count:N0} excluded";
         }
 
         if (airways.AliasFilePath is not null)

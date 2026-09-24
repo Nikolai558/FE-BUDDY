@@ -15,9 +15,8 @@ namespace FeBuddy.Core.Application.Airac.Airways;
 /// generates the requested GeoJSON and alias output.
 /// </summary>
 /// <remarks>
-/// This is the only Airways type <c>FeBuddy.Harness</c> (and later the GUI) needs to call
-/// directly. Every other type in <c>Services.Airac.Airways</c> is an implementation detail of this
-/// pipeline.
+/// The only Airways type <c>AiracService</c> and <c>FeBuddy.Harness</c> call directly; every
+/// other type in this folder is a step of this pipeline.
 /// </remarks>
 public static class AirwayService
 {
@@ -26,7 +25,7 @@ public static class AirwayService
 	/// (if enabled) generate the alias file.
 	/// </summary>
 	/// <param name="allNasrCsvData">All parsed NASR CSV data. <c>Awy</c> must not be null.</param>
-	/// <param name="airwaySettings">The raw Airways settings dictionary (see the build plan's Settings Contract).</param>
+	/// <param name="airwaySettings">The raw Airways settings block (see <see cref="AirwaySettingsParser"/> for the keys).</param>
 	/// <returns>What was built and written, plus timing and every warning collected along the way.</returns>
 	/// <exception cref="ArgumentException">Thrown when a required setting is missing or invalid.</exception>
 	/// <exception cref="InvalidOperationException">Thrown when <paramref name="allNasrCsvData"/>.Awy has not been parsed.</exception>
@@ -78,7 +77,7 @@ public static class AirwayService
 		stopwatch.Stop();
 
 		// Every message the run produced also flows to the shared application log, so the
-		// Dashboard activity log narrates the run (remediation plan 0.3 / 3.8).
+		// Dashboard activity log narrates the run.
 		foreach (ServiceMessage message in messages)
 		{
 			AppLog.Write(message.Level, message.Source, message.Text);

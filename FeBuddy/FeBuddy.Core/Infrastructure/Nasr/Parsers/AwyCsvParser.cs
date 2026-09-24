@@ -1,12 +1,15 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
 using static FeBuddy.Core.Infrastructure.Nasr.Models.AwyCsvDataModel;
 
 namespace FeBuddy.Core.Infrastructure.Nasr.Parsers;
 
+/// <summary>
+/// Reads the NASR <c>AWY</c> CSV files (airways), one file per method.
+/// </summary>
 public class AwyCsvParser
 {
+	/// <summary>Reads <c>AWY_BASE.csv</c>.</summary>
+	/// <param name="filePath">The full path of the file.</param>
+	/// <returns>A collection with only <see cref="AwyCsvDataCollection.AwyBase"/> filled in.</returns>
 	public AwyCsvDataCollection ParseAwyBase(string filePath)
 	{
 		var result = new AwyCsvDataCollection
@@ -29,6 +32,9 @@ public class AwyCsvParser
 		return result;
 	}
 
+	/// <summary>Reads <c>AWY_SEG_ALT.csv</c>.</summary>
+	/// <param name="filePath">The full path of the file.</param>
+	/// <returns>A collection with only <see cref="AwyCsvDataCollection.AwySegAlt"/> filled in.</returns>
 	public AwyCsvDataCollection ParseAwySegAlt(string filePath)
 	{
 		var result = new AwyCsvDataCollection
@@ -92,8 +98,13 @@ public class AwyCsvParser
 
 }
 
+/// <summary>
+/// Every parsed row of the NASR <c>AWY</c> CSV files, one list per file.
+/// </summary>
 public class AwyCsvDataCollection
 {
+	/// <summary>The rows of <c>AWY_BASE.csv</c>.</summary>
 	public List<AwyBase> AwyBase { get; set; } = [];
+	/// <summary>The rows of <c>AWY_SEG_ALT.csv</c>.</summary>
 	public List<AwySegAlt> AwySegAlt { get; set; } = [];
 }

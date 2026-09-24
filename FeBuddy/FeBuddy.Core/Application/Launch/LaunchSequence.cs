@@ -17,12 +17,11 @@ using FeBuddy.Versioning;
 namespace FeBuddy.Core.Application.Launch;
 
 /// <summary>
-/// Runs FE-Buddy's launch sequence off the UI thread (see <c>Developer_Notes.md</c> -&gt;
-/// LAUNCH PROCESSES). Every step logs its start and outcome through <see cref="AppLog"/>; a
-/// step that fails degrades the feature that depends on it and is never allowed to block launch.
+/// Runs FE-Buddy's launch steps off the UI thread. Every step logs its start and outcome
+/// through <see cref="AppLog"/>; a step that fails degrades the feature that depends on it and
+/// never blocks launch.
 /// </summary>
 /// <remarks>
-
 /// Steps run in dependency order, not list order: temp clear and config read first (the
 /// version check and News need the config; the AIRAC download uses the temp folder), then the
 /// UTC time / internet check (AIRAC needs the time, and all three network steps use the
@@ -97,7 +96,7 @@ public static class LaunchSequence
 		return new LaunchResult(time, version, tempClearFailures);
 	}
 
-	// Step 3 - version: ask GitHub whether a newer release exists on the user's channel.
+	// Ask GitHub whether a newer release exists on the user's channel.
 	private static async Task<VersionCheckResult> CheckVersionAsync(
 		string currentVersion,
 		UtcTimeCheckResult time,
@@ -117,7 +116,7 @@ public static class LaunchSequence
 		return version;
 	}
 
-	// Step 5 - AIRAC data pipeline: probe, download and parse previous/current/next.
+	// Probe, download and parse the previous, current and next AIRAC cycles.
 	private static Task PrepareAiracAsync(
 		UtcTimeCheckResult time,
 		IProgress<LaunchProgress>? progress,
@@ -139,7 +138,7 @@ public static class LaunchSequence
 			},
 			defaultValue: () => AiracCycleReadiness.Waiting);
 
-	// Step 6 - News: fetch (GitHub raw when online, bundled copy otherwise), parse, and count
+	// Fetch News (GitHub when online, the bundled copy otherwise), parse it, and count the
 	// posts newer than General.NewsLastOpen.
 	private static async Task<NewsCheckResult> CheckNewsAsync(
 		UtcTimeCheckResult time,

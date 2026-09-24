@@ -1,8 +1,12 @@
 namespace FeBuddy.Core.Infrastructure.Nasr.Models;
 
+/// <summary>
+/// Row models for the NASR <c>AWY</c> CSV files (airways): one nested class per file.
+/// </summary>
 public class AwyCsvDataModel
 {
 	#region Common Fields
+	/// <summary>The columns every <c>AWY</c> file shares.</summary>
 	public class CommonFields
 	{
 		/// <summary>
@@ -12,7 +16,7 @@ public class AwyCsvDataModel
 		/// _DataType: string
 		/// _Nullable: No
 		/// </summary>
-		/// <remarks>The 28 Day NASR Subscription Effective Date in format �YYYY/MM/DD�.</remarks>
+		/// <remarks>The 28 Day NASR Subscription Effective Date in format "YYYY/MM/DD".</remarks>
 		public string EffDate { get; set; }
 
 		/// <summary>
@@ -22,7 +26,7 @@ public class AwyCsvDataModel
 		/// _DataType: string
 		/// _Nullable: No
 		/// </summary>
-		/// <remarks>Identifies Airways published under 14 CFR (Code of Federal Regulation) Part-71 and Part-95 � Y/N</remarks>
+		/// <remarks>Identifies Airways published under 14 CFR (Code of Federal Regulation) Part-71 and Part-95 - Y/N</remarks>
 		public string Regulatory { get; set; }
 
 		/// <summary>
@@ -48,6 +52,7 @@ public class AwyCsvDataModel
 	#endregion
 
 	#region Awy_BASE Fields
+	/// <summary>One row of <c>AWY_BASE.csv</c>.</summary>
 	public class AwyBase : CommonFields
 	{
 		/// <summary>
@@ -93,6 +98,7 @@ public class AwyCsvDataModel
 	#endregion
 
 	#region Awy_SEG_ALT Fields
+	/// <summary>One row of <c>AWY_SEG_ALT.csv</c>.</summary>
 	public class AwySegAlt : CommonFields
 	{
 		/// <summary>
@@ -255,7 +261,7 @@ public class AwyCsvDataModel
 		/// _DataType: string
 		/// _Nullable: No
 		/// </summary>
-		/// <remarks>Airway Gap Flag Indicator for when Airway Discontinued � Y/N</remarks>
+		/// <remarks>Airway Gap Flag Indicator for when Airway Discontinued - Y/N</remarks>
 		public string AwySegGapFlag { get; set; }
 
 		/// <summary>
@@ -471,7 +477,7 @@ public class AwyCsvDataModel
 		public int? MaxAuthAlt { get; set; }
 
 		/// <summary>
-		/// Identifies whether a given MEA Segment is Unusable � �U�.
+		/// Identifies whether a given MEA Segment is Unusable - "U".
 		/// _Src: AWY_SEG_ALT.csv(MEA_GAP)
 		/// _MaxLength: 1
 		/// _DataType: string

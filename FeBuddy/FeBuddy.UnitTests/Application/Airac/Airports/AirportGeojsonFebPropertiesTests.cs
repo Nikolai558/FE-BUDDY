@@ -1,6 +1,4 @@
 using System.Text.Json;
-
-using FeBuddy.Core.Application.Airac;
 using FeBuddy.Core.Application.Airac.Airports;
 using FeBuddy.Core.Application.Airac.Airports.Models;
 using FeBuddy.Core.Domain.Airports.Models;

@@ -1,12 +1,15 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
 using static FeBuddy.Core.Infrastructure.Nasr.Models.FssCsvDataModel;
 
 namespace FeBuddy.Core.Infrastructure.Nasr.Parsers;
 
+/// <summary>
+/// Reads the NASR <c>FSS</c> CSV files (flight service stations), one file per method.
+/// </summary>
 public class FssCsvParser
 {
+	/// <summary>Reads <c>FSS_BASE.csv</c>.</summary>
+	/// <param name="filePath">The full path of the file.</param>
+	/// <returns>A collection with only <see cref="FssCsvDataCollection.FssBase"/> filled in.</returns>
 	public FssCsvDataCollection ParseFssBase(string filePath)
 	{
 		var result = new FssCsvDataCollection
@@ -46,6 +49,9 @@ public class FssCsvParser
 		return result;
 	}
 
+	/// <summary>Reads <c>FSS_RMK.csv</c>.</summary>
+	/// <param name="filePath">The full path of the file.</param>
+	/// <returns>A collection with only <see cref="FssCsvDataCollection.FssRmk"/> filled in.</returns>
 	public FssCsvDataCollection ParseFssRmk(string filePath)
 	{
 		var result = new FssCsvDataCollection
@@ -71,8 +77,13 @@ public class FssCsvParser
 
 }
 
+/// <summary>
+/// Every parsed row of the NASR <c>FSS</c> CSV files, one list per file.
+/// </summary>
 public class FssCsvDataCollection
 {
+	/// <summary>The rows of <c>FSS_BASE.csv</c>.</summary>
 	public List<FssBase> FssBase { get; set; } = [];
+	/// <summary>The rows of <c>FSS_RMK.csv</c>.</summary>
 	public List<FssRmk> FssRmk { get; set; } = [];
 }

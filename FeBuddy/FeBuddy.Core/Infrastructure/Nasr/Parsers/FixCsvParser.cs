@@ -1,12 +1,15 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
 using static FeBuddy.Core.Infrastructure.Nasr.Models.FixCsvDataModel;
 
 namespace FeBuddy.Core.Infrastructure.Nasr.Parsers;
 
+/// <summary>
+/// Reads the NASR <c>FIX</c> CSV files (fixes and reporting points), one file per method.
+/// </summary>
 public class FixCsvParser
 {
+	/// <summary>Reads <c>FIX_BASE.csv</c>.</summary>
+	/// <param name="filePath">The full path of the file.</param>
+	/// <returns>A collection with only <see cref="FixCsvDataCollection.FixBase"/> filled in.</returns>
 	public FixCsvDataCollection ParseFixBase(string filePath)
 	{
 		var result = new FixCsvDataCollection
@@ -47,6 +50,9 @@ public class FixCsvParser
 		return result;
 	}
 
+	/// <summary>Reads <c>FIX_CHRT.csv</c>.</summary>
+	/// <param name="filePath">The full path of the file.</param>
+	/// <returns>A collection with only <see cref="FixCsvDataCollection.FixChrt"/> filled in.</returns>
 	public FixCsvDataCollection ParseFixChrt(string filePath)
 	{
 		var result = new FixCsvDataCollection
@@ -67,6 +73,9 @@ public class FixCsvParser
 		return result;
 	}
 
+	/// <summary>Reads <c>FIX_NAV.csv</c>.</summary>
+	/// <param name="filePath">The full path of the file.</param>
+	/// <returns>A collection with only <see cref="FixCsvDataCollection.FixNav"/> filled in.</returns>
 	public FixCsvDataCollection ParseFixNav(string filePath)
 	{
 		var result = new FixCsvDataCollection
@@ -92,9 +101,15 @@ public class FixCsvParser
 
 }
 
+/// <summary>
+/// Every parsed row of the NASR <c>FIX</c> CSV files, one list per file.
+/// </summary>
 public class FixCsvDataCollection
 {
+	/// <summary>The rows of <c>FIX_BASE.csv</c>.</summary>
 	public List<FixBase> FixBase { get; set; } = [];
+	/// <summary>The rows of <c>FIX_CHRT.csv</c>.</summary>
 	public List<FixChrt> FixChrt { get; set; } = [];
+	/// <summary>The rows of <c>FIX_NAV.csv</c>.</summary>
 	public List<FixNav> FixNav { get; set; } = [];
 }

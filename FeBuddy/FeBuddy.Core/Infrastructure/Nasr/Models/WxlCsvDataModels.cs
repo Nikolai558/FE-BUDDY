@@ -1,8 +1,12 @@
 namespace FeBuddy.Core.Infrastructure.Nasr.Models;
 
+/// <summary>
+/// Row models for the NASR <c>WXL</c> CSV files (weather reporting locations): one nested class per file.
+/// </summary>
 public class WxlCsvDataModel
 {
 	#region Common Fields
+	/// <summary>The columns every <c>WXL</c> file shares.</summary>
 	public class CommonFields
 	{
 		/// <summary>
@@ -12,7 +16,7 @@ public class WxlCsvDataModel
 		/// _DataType: string
 		/// _Nullable: No
 		/// </summary>
-		/// <remarks>The 28 Day NASR Subscription Effective Date in format �YYYY/MM/DD�.</remarks>
+		/// <remarks>The 28 Day NASR Subscription Effective Date in format "YYYY/MM/DD".</remarks>
 		public string EffDate { get; set; }
 
 		/// <summary>
@@ -55,6 +59,7 @@ public class WxlCsvDataModel
 	#endregion
 
 	#region Wxl_BASE Fields
+	/// <summary>One row of <c>WXL_BASE.csv</c>.</summary>
 	public class WxlBase : CommonFields
 	{
 		/// <summary>
@@ -171,6 +176,7 @@ public class WxlCsvDataModel
 	#endregion
 
 	#region Wxl_SVC Fields
+	/// <summary>One row of <c>WXL_SVC.csv</c>.</summary>
 	public class WxlSvc : CommonFields
 	{
 		/// <summary>
@@ -180,7 +186,7 @@ public class WxlCsvDataModel
 		/// _DataType: string
 		/// _Nullable: No
 		/// </summary>
-		/// <remarks>AC=Severe Weather Outlook Narrative _ AWW=Severe Weather Forecast Alert _ CWA=Central Weather Advisory _ FA=Area Forecast _ FD=Winds & Temperature Aloft Forecast _ FT=Aviation Terminal Forecast _ FX=Miscellaneous Forecasts _ METAR=Aviation Routine Weather Report (ICAO) _ MIS=Meteorological Impact Summary _ NOTAM=Notice to Airmen _ SA=Surface Observation Report _ SD=Radar Weather Report _ SPECI=Aviation Special Weather Report (ICAO) _ SYNS=Transcribed Weather Broadcast Synopses _ TAF=Aviation Terminal Forecast (ICAO) _ TWEB=Transcribed Weather Broadcast _ UA=Aircraft Report (PIREP) _ WA=Weather Advisory _ WH=Abbreviated Hurricane Advisory _ WO=Tropical Depressions _ WS=Flight Advisory - SIGMET _ WST=Convective SIGMET _ WW=Severe Weather Broadcasts or Bulletins</remarks>
+		/// <remarks>AC=Severe Weather Outlook Narrative _ AWW=Severe Weather Forecast Alert _ CWA=Central Weather Advisory _ FA=Area Forecast _ FD=Winds &amp; Temperature Aloft Forecast _ FT=Aviation Terminal Forecast _ FX=Miscellaneous Forecasts _ METAR=Aviation Routine Weather Report (ICAO) _ MIS=Meteorological Impact Summary _ NOTAM=Notice to Airmen _ SA=Surface Observation Report _ SD=Radar Weather Report _ SPECI=Aviation Special Weather Report (ICAO) _ SYNS=Transcribed Weather Broadcast Synopses _ TAF=Aviation Terminal Forecast (ICAO) _ TWEB=Transcribed Weather Broadcast _ UA=Aircraft Report (PIREP) _ WA=Weather Advisory _ WH=Abbreviated Hurricane Advisory _ WO=Tropical Depressions _ WS=Flight Advisory - SIGMET _ WST=Convective SIGMET _ WW=Severe Weather Broadcasts or Bulletins</remarks>
 		public string WeaSvcTypeCode { get; set; }
 
 		/// <summary>

@@ -1,12 +1,15 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
 using static FeBuddy.Core.Infrastructure.Nasr.Models.AptCsvDataModel;
 
 namespace FeBuddy.Core.Infrastructure.Nasr.Parsers;
 
+/// <summary>
+/// Reads the NASR <c>APT</c> CSV files (airports), one file per method.
+/// </summary>
 public class AptCsvParser
 {
+	/// <summary>Reads <c>APT_ARS.csv</c>.</summary>
+	/// <param name="filePath">The full path of the file.</param>
+	/// <returns>A collection with only <see cref="AptCsvDataCollection.AptArs"/> filled in.</returns>
 	public AptCsvDataCollection ParseAptArs(string filePath)
 	{
 		var result = new AptCsvDataCollection
@@ -31,6 +34,9 @@ public class AptCsvParser
 		return result;
 	}
 
+	/// <summary>Reads <c>APT_ATT.csv</c>.</summary>
+	/// <param name="filePath">The full path of the file.</param>
+	/// <returns>A collection with only <see cref="AptCsvDataCollection.AptAtt"/> filled in.</returns>
 	public AptCsvDataCollection ParseAptAtt(string filePath)
 	{
 		var result = new AptCsvDataCollection
@@ -56,6 +62,9 @@ public class AptCsvParser
 		return result;
 	}
 
+	/// <summary>Reads <c>APT_BASE.csv</c>.</summary>
+	/// <param name="filePath">The full path of the file.</param>
+	/// <returns>A collection with only <see cref="AptCsvDataCollection.AptBase"/> filled in.</returns>
 	public AptCsvDataCollection ParseAptBase(string filePath)
 	{
 		var result = new AptCsvDataCollection
@@ -160,6 +169,9 @@ public class AptCsvParser
 		return result;
 	}
 
+	/// <summary>Reads <c>APT_CON.csv</c>.</summary>
+	/// <param name="filePath">The full path of the file.</param>
+	/// <returns>A collection with only <see cref="AptCsvDataCollection.AptCon"/> filled in.</returns>
 	public AptCsvDataCollection ParseAptCon(string filePath)
 	{
 		var result = new AptCsvDataCollection
@@ -190,6 +202,9 @@ public class AptCsvParser
 		return result;
 	}
 
+	/// <summary>Reads <c>APT_RMK.csv</c>.</summary>
+	/// <param name="filePath">The full path of the file.</param>
+	/// <returns>A collection with only <see cref="AptCsvDataCollection.AptRmk"/> filled in.</returns>
 	public AptCsvDataCollection ParseAptRmk(string filePath)
 	{
 		var result = new AptCsvDataCollection
@@ -217,6 +232,9 @@ public class AptCsvParser
 		return result;
 	}
 
+	/// <summary>Reads <c>APT_RWY.csv</c>.</summary>
+	/// <param name="filePath">The full path of the file.</param>
+	/// <returns>A collection with only <see cref="AptCsvDataCollection.AptRwy"/> filled in.</returns>
 	public AptCsvDataCollection ParseAptRwy(string filePath)
 	{
 		var result = new AptCsvDataCollection
@@ -260,6 +278,9 @@ public class AptCsvParser
 		return result;
 	}
 
+	/// <summary>Reads <c>APT_RWY_END.csv</c>.</summary>
+	/// <param name="filePath">The full path of the file.</param>
+	/// <returns>A collection with only <see cref="AptCsvDataCollection.AptRwyEnd"/> filled in.</returns>
 	public AptCsvDataCollection ParseAptRwyEnd(string filePath)
 	{
 		var result = new AptCsvDataCollection
@@ -356,13 +377,23 @@ public class AptCsvParser
 
 }
 
+/// <summary>
+/// Every parsed row of the NASR <c>APT</c> CSV files, one list per file.
+/// </summary>
 public class AptCsvDataCollection
 {
+	/// <summary>The rows of <c>APT_ARS.csv</c>.</summary>
 	public List<AptArs> AptArs { get; set; } = [];
+	/// <summary>The rows of <c>APT_ATT.csv</c>.</summary>
 	public List<AptAtt> AptAtt { get; set; } = [];
+	/// <summary>The rows of <c>APT_BASE.csv</c>.</summary>
 	public List<AptBase> AptBase { get; set; } = [];
+	/// <summary>The rows of <c>APT_CON.csv</c>.</summary>
 	public List<AptCon> AptCon { get; set; } = [];
+	/// <summary>The rows of <c>APT_RMK.csv</c>.</summary>
 	public List<AptRmk> AptRmk { get; set; } = [];
+	/// <summary>The rows of <c>APT_RWY.csv</c>.</summary>
 	public List<AptRwy> AptRwy { get; set; } = [];
+	/// <summary>The rows of <c>APT_RWY_END.csv</c>.</summary>
 	public List<AptRwyEnd> AptRwyEnd { get; set; } = [];
 }

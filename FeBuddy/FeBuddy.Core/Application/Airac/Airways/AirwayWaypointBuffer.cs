@@ -2,7 +2,6 @@ using FeBuddy.Core.Application.Airac.Airways.Models;
 using FeBuddy.Core.Application.Models;
 using FeBuddy.Core.Domain.Airways.Models;
 using FeBuddy.Core.Domain.Geo;
-using FeBuddy.Core.Domain.Geo.Models;
 using FeBuddy.Core.Infrastructure.Logging.Models;
 
 using NetTopologySuite.Geometries;
@@ -16,9 +15,9 @@ namespace FeBuddy.Core.Application.Airac.Airways;
 /// both ends, making waypoint markers legible instead of buried under the line.
 /// </summary>
 /// <remarks>
-/// Every leg becomes its own disjoint two-point LineString (see the build plan's
-/// "Consequence" note under §7.5): a buffered airway is a <see cref="MultiLineString"/> even
-/// when the un-buffered airway was a single continuous <see cref="LineString"/>.
+/// Every leg becomes its own disjoint two-point LineString, so a buffered airway is a
+/// <see cref="MultiLineString"/> even when the un-buffered airway was one continuous
+/// <see cref="LineString"/>.
 /// </remarks>
 public static class AirwayWaypointBuffer
 {
@@ -41,7 +40,7 @@ public static class AirwayWaypointBuffer
 	/// sitting exactly on +/-180). A leg endpoint that matches none of them is by definition
 	/// synthetic - a vertex the antimeridian split or ROI clip invented - and is <b>not</b>
 	/// buffered (radius 0), so an ROI-clipped airway reaches the ROI boundary instead of
-	/// stopping 5 NM inside it (remediation plan 3.10).
+	/// stopping 5 NM inside it.
 	/// </param>
 	/// <param name="awyId">The airway identifier being processed (used only in warning text).</param>
 	/// <returns>The buffered legs, plus a warning for each leg dropped as too short to buffer.</returns>
@@ -77,8 +76,7 @@ public static class AirwayWaypointBuffer
 
 				if (legDistanceNm <= startRadius + endRadius)
 				{
-					// Info, not Warning: this is the buffer doing exactly what it was asked to
-					// do (remediation plan 3.8).
+					// Info, not Warning: this is the buffer doing exactly what it was asked to do.
 					messages.Add(new ServiceMessage(LogLevel.Info, "AirwayWaypointBuffer",
 						$"Airway '{awyId}': a leg between ({start.Y:F5}, {start.X:F5}) and " +
 						$"({end.Y:F5}, {end.X:F5}) is {legDistanceNm:F2} NM long, shorter than " +
@@ -111,8 +109,7 @@ public static class AirwayWaypointBuffer
 	/// Determines the buffer radius for a leg endpoint: <see cref="FixRadiusNm"/> for a
 	/// matched 5-character fix, <see cref="OtherRadiusNm"/> for any other matched waypoint,
 	/// and <b>0</b> (no buffering) for an endpoint that matches no real waypoint - which is
-	/// exactly the definition of a synthetic antimeridian-split or ROI-clip vertex
-	/// (remediation plan 3.10).
+	/// exactly the definition of a synthetic antimeridian-split or ROI-clip vertex.
 	/// </summary>
 	private static double RadiusFor(
 		Coordinate coordinate,

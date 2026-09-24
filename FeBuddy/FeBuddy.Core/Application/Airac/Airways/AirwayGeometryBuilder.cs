@@ -21,21 +21,14 @@ public static class AirwayGeometryBuilder
 	/// <param name="allNasrCsvData">All parsed NASR CSV data.</param>
 	/// <param name="awyId">The airway identifier being processed (used only in warning text).</param>
 	/// <param name="segments">Normalized segments belonging to the airway.</param>
-	/// <returns>The airway's LineStrings, plus any warnings encountered while resolving waypoints.</returns>
+	/// <returns>
+	/// The airway's LineStrings, a warning per unresolved waypoint, and the unresolved IDs.
+	/// </returns>
 	/// <remarks>
-	/// Unlike the original implementation this was ported from, an unresolvable waypoint that
-	/// occurs in the middle of an airway (i.e. one where usable geometry exists later in the
-	/// segment list) no longer aborts the entire airway with an exception. It is recorded as
-	/// a warning, the problem segment is skipped, and geometry building continues - treating
-	/// the break the same way an explicit airway gap is treated. This keeps one bad NASR
-	/// record from aborting processing of an otherwise-good airway (see the build plan's
-	/// "warnings, not crashes" rule).
-	///
-	/// An unresolvable waypoint that occurs at the *trailing end* of an airway (nothing
-	/// resolvable exists after it) is not a warning - it is the normal, expected case of an
-	/// airway continuing past the edge of available NASR waypoint data (e.g. a segment ending
-	/// at "U.S. CANADIAN BORDER-4"). That case still simply stops the airway at the last
-	/// resolvable point, unchanged from the original behavior.
+	/// A segment whose waypoint cannot be found is reported, not thrown: it is skipped like an
+	/// airway gap and building carries on, so every unresolved ID is collected. Any unresolved
+	/// ID makes <see cref="AirwayBuilder"/> exclude the whole airway, so the geometry built
+	/// around the fault is never drawn.
 	/// </remarks>
 	public static AirwayGeometryBuildResult Build(
 		NasrCsvDataCollection allNasrCsvData,
@@ -146,8 +139,7 @@ public static class AirwayGeometryBuilder
 	/// Appends the accumulated coordinates as a LineString, after collapsing consecutive
 	/// duplicate coordinates and only when at least two <b>distinct</b> positions remain. This
 	/// stops a degenerate zero-length LineString (e.g. from a repeated NASR waypoint, or a
-	/// waypoint sitting exactly on the antimeridian) from ever being emitted (remediation
-	/// plan 3.9).
+	/// waypoint sitting exactly on the antimeridian) from ever being emitted.
 	/// </summary>
 	private static void FinishCurrentLineString(List<LineString> lineStrings, List<Coordinate> currentCoordinates)
 	{

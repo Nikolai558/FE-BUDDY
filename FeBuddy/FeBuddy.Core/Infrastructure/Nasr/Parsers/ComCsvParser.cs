@@ -1,12 +1,15 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
 using static FeBuddy.Core.Infrastructure.Nasr.Models.ComCsvDataModel;
 
 namespace FeBuddy.Core.Infrastructure.Nasr.Parsers;
 
+/// <summary>
+/// Reads the NASR <c>COM</c> CSV files (flight service station communication facilities), one file per method.
+/// </summary>
 public class ComCsvParser
 {
+	/// <summary>Reads <c>COM.csv</c>.</summary>
+	/// <param name="filePath">The full path of the file.</param>
+	/// <returns>A collection with only <see cref="ComCsvDataCollection.Com"/> filled in.</returns>
 	public ComCsvDataCollection ParseCom(string filePath)
 	{
 		var result = new ComCsvDataCollection
@@ -51,7 +54,11 @@ public class ComCsvParser
 
 }
 
+/// <summary>
+/// Every parsed row of the NASR <c>COM</c> CSV files, one list per file.
+/// </summary>
 public class ComCsvDataCollection
 {
+	/// <summary>The rows of <c>COM.csv</c>.</summary>
 	public List<Com> Com { get; set; } = [];
 }

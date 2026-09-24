@@ -1,12 +1,15 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
 using static FeBuddy.Core.Infrastructure.Nasr.Models.WxlCsvDataModel;
 
 namespace FeBuddy.Core.Infrastructure.Nasr.Parsers;
 
+/// <summary>
+/// Reads the NASR <c>WXL</c> CSV files (weather reporting locations), one file per method.
+/// </summary>
 public class WxlCsvParser
 {
+	/// <summary>Reads <c>WXL_BASE.csv</c>.</summary>
+	/// <param name="filePath">The full path of the file.</param>
+	/// <returns>A collection with only <see cref="WxlCsvDataCollection.WxlBase"/> filled in.</returns>
 	public WxlCsvDataCollection ParseWxlBase(string filePath)
 	{
 		var result = new WxlCsvDataCollection
@@ -38,6 +41,9 @@ public class WxlCsvParser
 		return result;
 	}
 
+	/// <summary>Reads <c>WXL_SVC.csv</c>.</summary>
+	/// <param name="filePath">The full path of the file.</param>
+	/// <returns>A collection with only <see cref="WxlCsvDataCollection.WxlSvc"/> filled in.</returns>
 	public WxlCsvDataCollection ParseWxlSvc(string filePath)
 	{
 		var result = new WxlCsvDataCollection
@@ -61,8 +67,13 @@ public class WxlCsvParser
 
 }
 
+/// <summary>
+/// Every parsed row of the NASR <c>WXL</c> CSV files, one list per file.
+/// </summary>
 public class WxlCsvDataCollection
 {
+	/// <summary>The rows of <c>WXL_BASE.csv</c>.</summary>
 	public List<WxlBase> WxlBase { get; set; } = [];
+	/// <summary>The rows of <c>WXL_SVC.csv</c>.</summary>
 	public List<WxlSvc> WxlSvc { get; set; } = [];
 }

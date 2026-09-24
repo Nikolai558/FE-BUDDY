@@ -1,12 +1,15 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
 using static FeBuddy.Core.Infrastructure.Nasr.Models.HpfCsvDataModel;
 
 namespace FeBuddy.Core.Infrastructure.Nasr.Parsers;
 
+/// <summary>
+/// Reads the NASR <c>HPF</c> CSV files (holding patterns), one file per method.
+/// </summary>
 public class HpfCsvParser
 {
+	/// <summary>Reads <c>HPF_BASE.csv</c>.</summary>
+	/// <param name="filePath">The full path of the file.</param>
+	/// <returns>A collection with only <see cref="HpfCsvDataCollection.HpfBase"/> filled in.</returns>
 	public HpfCsvDataCollection ParseHpfBase(string filePath)
 	{
 		var result = new HpfCsvDataCollection
@@ -36,6 +39,9 @@ public class HpfCsvParser
 		return result;
 	}
 
+	/// <summary>Reads <c>HPF_CHRT.csv</c>.</summary>
+	/// <param name="filePath">The full path of the file.</param>
+	/// <returns>A collection with only <see cref="HpfCsvDataCollection.HpfChrt"/> filled in.</returns>
 	public HpfCsvDataCollection ParseHpfChrt(string filePath)
 	{
 		var result = new HpfCsvDataCollection
@@ -56,6 +62,9 @@ public class HpfCsvParser
 		return result;
 	}
 
+	/// <summary>Reads <c>HPF_RMK.csv</c>.</summary>
+	/// <param name="filePath">The full path of the file.</param>
+	/// <returns>A collection with only <see cref="HpfCsvDataCollection.HpfRmk"/> filled in.</returns>
 	public HpfCsvDataCollection ParseHpfRmk(string filePath)
 	{
 		var result = new HpfCsvDataCollection
@@ -79,6 +88,9 @@ public class HpfCsvParser
 		return result;
 	}
 
+	/// <summary>Reads <c>HPF_SPD_ALT.csv</c>.</summary>
+	/// <param name="filePath">The full path of the file.</param>
+	/// <returns>A collection with only <see cref="HpfCsvDataCollection.HpfSpdAlt"/> filled in.</returns>
 	public HpfCsvDataCollection ParseHpfSpdAlt(string filePath)
 	{
 		var result = new HpfCsvDataCollection
@@ -102,10 +114,17 @@ public class HpfCsvParser
 
 }
 
+/// <summary>
+/// Every parsed row of the NASR <c>HPF</c> CSV files, one list per file.
+/// </summary>
 public class HpfCsvDataCollection
 {
+	/// <summary>The rows of <c>HPF_BASE.csv</c>.</summary>
 	public List<HpfBase> HpfBase { get; set; } = [];
+	/// <summary>The rows of <c>HPF_CHRT.csv</c>.</summary>
 	public List<HpfChrt> HpfChrt { get; set; } = [];
+	/// <summary>The rows of <c>HPF_RMK.csv</c>.</summary>
 	public List<HpfRmk> HpfRmk { get; set; } = [];
+	/// <summary>The rows of <c>HPF_SPD_ALT.csv</c>.</summary>
 	public List<HpfSpdAlt> HpfSpdAlt { get; set; } = [];
 }

@@ -1,8 +1,12 @@
 namespace FeBuddy.Core.Infrastructure.Nasr.Models;
 
+/// <summary>
+/// Row models for the NASR <c>PJA</c> CSV files (parachute jump areas): one nested class per file.
+/// </summary>
 public class PjaCsvDataModel
 {
 	#region Common Fields
+	/// <summary>The columns every <c>PJA</c> file shares.</summary>
 	public class CommonFields
 	{
 		/// <summary>
@@ -12,7 +16,7 @@ public class PjaCsvDataModel
 		/// _DataType: string
 		/// _Nullable: No
 		/// </summary>
-		/// <remarks>The 28 Day NASR Subscription Effective Date in format �YYYY/MM/DD�.</remarks>
+		/// <remarks>The 28 Day NASR Subscription Effective Date in format "YYYY/MM/DD".</remarks>
 		public string EffDate { get; set; }
 
 		/// <summary>
@@ -29,6 +33,7 @@ public class PjaCsvDataModel
 	#endregion
 
 	#region Pja_BASE Fields
+	/// <summary>One row of <c>PJA_BASE.csv</c>.</summary>
 	public class PjaBase : CommonFields
 	{
 		/// <summary>
@@ -292,6 +297,7 @@ public class PjaCsvDataModel
 	#endregion
 
 	#region Pja_CON Fields
+	/// <summary>One row of <c>PJA_CON.csv</c>.</summary>
 	public class PjaCon : CommonFields
 	{
 		/// <summary>

@@ -6,6 +6,7 @@ namespace FeBuddy.Core.Infrastructure.Nasr.Models;
 public class ComCsvDataModel
 {
 	#region Common Fields
+	/// <summary>The columns every <c>COM</c> file shares.</summary>
 	public class CommonFields
 	{
 		/// <summary>
@@ -15,7 +16,7 @@ public class ComCsvDataModel
 		/// _DataType: string
 		/// _Nullable: No
 		/// </summary>
-		/// <remarks>The 28 Day NASR Subscription Effective Date in format �YYYY/MM/DD�.</remarks>
+		/// <remarks>The 28 Day NASR Subscription Effective Date in format "YYYY/MM/DD".</remarks>
 		public string EffDate { get; set; }
 
 		/// <summary>
@@ -101,6 +102,7 @@ public class ComCsvDataModel
 	#endregion
 
 	#region Com Fields
+	/// <summary>One row of <c>COM.csv</c>.</summary>
 	public class Com : CommonFields
 	{
 		/// <summary>

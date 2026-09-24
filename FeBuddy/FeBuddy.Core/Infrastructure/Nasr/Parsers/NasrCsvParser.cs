@@ -1,10 +1,4 @@
 using FeBuddy.Core.Infrastructure.Nasr.Models;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 using static FeBuddy.Core.Infrastructure.Nasr.Models.AptCsvDataModel;
 using static FeBuddy.Core.Infrastructure.Nasr.Models.ArbCsvDataModel;
@@ -34,7 +28,7 @@ using static FeBuddy.Core.Infrastructure.Nasr.Models.WxlCsvDataModel;
 namespace FeBuddy.Core.Infrastructure.Nasr.Parsers;
 
 /// <summary>
-/// Primary call-point to parse all NASR CSV files and combine them into a single collection of data.
+/// Parses a whole NASR CSV cycle into one <see cref="NasrCsvDataCollection"/>.
 /// </summary>
 public class NasrCsvParser
 {
@@ -48,7 +42,7 @@ public class NasrCsvParser
 	/// <returns>Every group's parsed data.</returns>
 	public static async Task<NasrCsvDataCollection> ParseAllAsync(string sourceDirectory)
 	{
-		// Kick off every group's parsing without awaiting individually so they all run concurrently
+		// Start every group before awaiting any, so they all run at once.
 		Task<AptCsvDataCollection> aptTask = ParseAptAsync(sourceDirectory);
 		Task<AtcCsvDataCollection> atcTask = ParseAtcAsync(sourceDirectory);
 		Task<AwyCsvDataCollection> awyTask = ParseAwyAsync(sourceDirectory);
@@ -80,7 +74,6 @@ public class NasrCsvParser
 			mtrTask, maaTask, navTask, pjaTask, pfrTask, rdrTask, starTask, wxlTask
 		);
 
-		// Combine all parsed NASR CSV data into a single collection "allNasrCsvData"
 		NasrCsvDataCollection allNasrCsvData = new()
 		{
 			Apt = aptTask.Result,
@@ -112,11 +105,8 @@ public class NasrCsvParser
 		return allNasrCsvData;
 	}
 
-	// ---- Per-group parsing methods ----
-	// Each method parses every file belonging to its group in parallel via Task.Run,
-	// then assembles the group's data collection once all of its files are done.
-	// A fresh parser instance is used per file call so that concurrent parsing is
-	// safe even if the parser classes hold any per-call mutable state.
+	// Each group parses its files in parallel, then assembles the group once all are done. Every
+	// file gets its own parser instance, so no parser is ever shared between threads.
 
 	private static async Task<AptCsvDataCollection> ParseAptAsync(string sourceDirectory)
 	{

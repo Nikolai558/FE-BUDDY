@@ -1,8 +1,12 @@
 namespace FeBuddy.Core.Infrastructure.Nasr.Models;
 
+/// <summary>
+/// Row models for the NASR <c>STAR</c> CSV files (standard terminal arrivals): one nested class per file.
+/// </summary>
 public class StarCsvDataModel
 {
 	#region Common Fields
+	/// <summary>The columns every <c>STAR</c> file shares.</summary>
 	public class CommonFields
 	{
 		/// <summary>
@@ -12,7 +16,7 @@ public class StarCsvDataModel
 		/// _DataType: string
 		/// _Nullable: No
 		/// </summary>
-		/// <remarks>The 28 Day NASR Subscription Effective Date in format �YYYY/MM/DD�.</remarks>
+		/// <remarks>The 28 Day NASR Subscription Effective Date in format "YYYY/MM/DD".</remarks>
 		public string EffDate { get; set; }
 
 		/// <summary>
@@ -39,6 +43,7 @@ public class StarCsvDataModel
 	#endregion
 
 	#region Star_APT Fields
+	/// <summary>One row of <c>STAR_APT.csv</c>.</summary>
 	public class StarApt : CommonFields
 	{
 		/// <summary>
@@ -83,6 +88,7 @@ public class StarCsvDataModel
 	#endregion
 
 	#region Star_BASE Fields
+	/// <summary>One row of <c>STAR_BASE.csv</c>.</summary>
 	public class StarBase : CommonFields
 	{
 		/// <summary>
@@ -139,6 +145,7 @@ public class StarCsvDataModel
 	#endregion
 
 	#region Star_RTE Fields
+	/// <summary>One row of <c>STAR_RTE.csv</c>.</summary>
 	public class StarRte : CommonFields
 	{
 		/// <summary>

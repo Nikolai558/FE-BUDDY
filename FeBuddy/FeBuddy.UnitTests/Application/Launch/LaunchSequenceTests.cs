@@ -1,5 +1,4 @@
 using System.Net;
-using System.Net.Http;
 
 using FeBuddy.Core.Application.Airac;
 using FeBuddy.Core.Application.Airac.Models;
@@ -217,7 +216,7 @@ public sealed class LaunchSequenceTests : IDisposable
 
 		List<AiracServiceProgress> reports = [];
 		AiracServiceResult result = await AiracService.RunAsync(
-			new AiracServiceSettings { SelectedCycle = current, OutputDirectory = _root, DefaultRoi = null },
+			new AiracServiceSettings { SelectedCycle = current },
 			new SynchronousProgress<AiracServiceProgress>(reports.Add));
 
 		Assert.Contains(result.Warnings, w => w.Contains("no sub-service", StringComparison.OrdinalIgnoreCase));

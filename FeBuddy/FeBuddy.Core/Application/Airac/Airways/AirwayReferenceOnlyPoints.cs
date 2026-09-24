@@ -10,8 +10,8 @@ namespace FeBuddy.Core.Application.Airac.Airways;
 /// <remarks>
 /// NASR marks these structurally: a reference-only point appears as a row's <c>FROM_POINT</c>
 /// with a <b>blank</b> <c>FROM_PT_TYPE</c> (verified across cycle 2609 - 169 such rows, and
-/// zero border markers ever carry a populated <c>FROM_PT_TYPE</c>). Membership in this set is
-/// "border crossing", never "unresolved waypoint" - see remediation plan 3.2b.
+/// zero border markers ever carry a populated <c>FROM_PT_TYPE</c>). A point in this set is a
+/// border crossing to skip, never an unresolved waypoint to warn about.
 /// </remarks>
 internal static class AirwayReferenceOnlyPoints
 {

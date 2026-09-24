@@ -83,6 +83,9 @@ csharp_style_allow_blank_line_after_token_in_arrow_expression_clause_experimenta
 # CS8618: Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
 dotnet_diagnostic.CS8618.severity = silent
 
+# IDE0005: Remove unnecessary using directives.
+dotnet_diagnostic.IDE0005.severity = suggestion
+
 [*.{cs,vb}]
 #### Naming styles ####
 

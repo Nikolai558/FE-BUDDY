@@ -8,13 +8,14 @@ namespace FeBuddy.Core.Application.Airac.Airways.Models;
 /// every levelled message, and the IDs of airways excluded entirely.
 /// </summary>
 /// <param name="Airways">
-/// Every airway that produced usable geometry (and, when an ROI was configured, survived
-/// clipping to it).
+/// Every airway that produced usable geometry. With an ROI set, airways outside it are kept
+/// too, marked <see cref="Airway.CrossesRoi"/> <see langword="false"/>: the alias file can
+/// still list them.
 /// </param>
-/// <param name="Messages">Levelled messages noticed while building airways (remediation plan 3.8).</param>
+/// <param name="Messages">Levelled messages noticed while building airways.</param>
 /// <param name="ExcludedAirwayIds">
 /// IDs of airways excluded from all output because at least one of their waypoints could not
-/// be resolved (remediation plan 3.2a). Border crossings do not count - they are normalized
+/// be resolved. Border crossings do not count - they are normalized
 /// away before geometry building.
 /// </param>
 public sealed record AirwayBuildAllResult(

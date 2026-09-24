@@ -1,12 +1,15 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
 using static FeBuddy.Core.Infrastructure.Nasr.Models.PfrCsvDataModel;
 
 namespace FeBuddy.Core.Infrastructure.Nasr.Parsers;
 
+/// <summary>
+/// Reads the NASR <c>PFR</c> CSV files (preferred routes), one file per method.
+/// </summary>
 public class PfrCsvParser
 {
+	/// <summary>Reads <c>PFR_BASE.csv</c>.</summary>
+	/// <param name="filePath">The full path of the file.</param>
+	/// <returns>A collection with only <see cref="PfrCsvDataCollection.PfrBase"/> filled in.</returns>
 	public PfrCsvDataCollection ParsePfrBase(string filePath)
 	{
 		var result = new PfrCsvDataCollection
@@ -43,6 +46,9 @@ public class PfrCsvParser
 		return result;
 	}
 
+	/// <summary>Reads <c>PFR_RMT_FMT.csv</c>.</summary>
+	/// <param name="filePath">The full path of the file.</param>
+	/// <returns>A collection with only <see cref="PfrCsvDataCollection.PfrRmtFmt"/> filled in.</returns>
 	public PfrCsvDataCollection ParsePfrRmtFmt(string filePath)
 	{
 		var result = new PfrCsvDataCollection
@@ -69,6 +75,9 @@ public class PfrCsvParser
 		return result;
 	}
 
+	/// <summary>Reads <c>PFR_SEG.csv</c>.</summary>
+	/// <param name="filePath">The full path of the file.</param>
+	/// <returns>A collection with only <see cref="PfrCsvDataCollection.PfrSeg"/> filled in.</returns>
 	public PfrCsvDataCollection ParsePfrSeg(string filePath)
 	{
 		var result = new PfrCsvDataCollection
@@ -98,9 +107,15 @@ public class PfrCsvParser
 
 }
 
+/// <summary>
+/// Every parsed row of the NASR <c>PFR</c> CSV files, one list per file.
+/// </summary>
 public class PfrCsvDataCollection
 {
+	/// <summary>The rows of <c>PFR_BASE.csv</c>.</summary>
 	public List<PfrBase> PfrBase { get; set; } = [];
+	/// <summary>The rows of <c>PFR_RMT_FMT.csv</c>.</summary>
 	public List<PfrRmtFmt> PfrRmtFmt { get; set; } = [];
+	/// <summary>The rows of <c>PFR_SEG.csv</c>.</summary>
 	public List<PfrSeg> PfrSeg { get; set; } = [];
 }

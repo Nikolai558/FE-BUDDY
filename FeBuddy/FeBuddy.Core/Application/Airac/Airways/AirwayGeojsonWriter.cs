@@ -4,7 +4,6 @@ using FeBuddy.Core.Domain.Geo;
 using FeBuddy.Core.Infrastructure.Geojson;
 
 using NetTopologySuite.Features;
-using NetTopologySuite.Geometries;
 
 namespace FeBuddy.Core.Application.Airac.Airways;
 

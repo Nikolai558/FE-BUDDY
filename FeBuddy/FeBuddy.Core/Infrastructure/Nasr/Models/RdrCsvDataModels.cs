@@ -1,8 +1,12 @@
 namespace FeBuddy.Core.Infrastructure.Nasr.Models;
 
+/// <summary>
+/// Row models for the NASR <c>RDR</c> CSV files (radar facilities): one nested class per file.
+/// </summary>
 public class RdrCsvDataModel
 {
 	#region Common Fields
+	/// <summary>The columns every <c>RDR</c> file shares.</summary>
 	public class CommonFields
 	{
 		/// <summary>
@@ -12,13 +16,14 @@ public class RdrCsvDataModel
 		/// _DataType: string
 		/// _Nullable: No
 		/// </summary>
-		/// <remarks>The 28 Day NASR Subscription Effective Date in format �YYYY/MM/DD�.</remarks>
+		/// <remarks>The 28 Day NASR Subscription Effective Date in format "YYYY/MM/DD".</remarks>
 		public string EffDate { get; set; }
 
 	}
 	#endregion
 
 	#region Rdr Fields
+	/// <summary>One row of <c>RDR.csv</c>.</summary>
 	public class Rdr : CommonFields
 	{
 		/// <summary>
@@ -38,7 +43,7 @@ public class RdrCsvDataModel
 		/// _DataType: string
 		/// _Nullable: No
 		/// </summary>
-		/// <remarks>Type of Facility associated with the RADAR data � either AIRPORT or TRACON.</remarks>
+		/// <remarks>Type of Facility associated with the RADAR data - either AIRPORT or TRACON.</remarks>
 		public string FacilityType { get; set; }
 
 		/// <summary>

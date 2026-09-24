@@ -8,33 +8,29 @@ namespace FeBuddy.Core.Application.Models;
 /// Common result shape shared by every FE-Buddy service's top-level entry point.
 /// </summary>
 /// <remarks>
-/// Individual services (e.g. <c>AirwayServiceResult</c>) derive from this record and add
-/// service-specific fields such as file paths written and per-item counts.
-///
 /// <para>
-/// <see cref="Warnings"/> is always the complete list, regardless of
-/// <see cref="DevMode"/>. A service that skips a bad record and continues
-/// (see the Airways service's mid-airway unresolved-waypoint handling) must never let that
-/// problem go unreported just because developer mode is off — silently dropping warnings
-/// would defeat the purpose of collecting them in the first place. Trimming detail for
-/// display (e.g. summarizing many similar warnings) is a presentation concern and belongs in
-/// the caller (<c>FeBuddy.Harness</c>'s <c>ConsoleReport</c> today, the GUI later), not in the
-/// library.
+/// Each service (e.g. <c>AirwayServiceResult</c>) derives from this record and adds its own
+/// fields, such as the files written and per-item counts.
+/// </para>
+/// <para>
+/// <see cref="Messages"/> is always complete, whatever <see cref="DevMode"/> says: a service
+/// that skips a bad record must never let that go unreported. Summarizing many similar messages
+/// is the caller's job (the GUI, or <c>FeBuddy.Harness</c>'s console report), not the library's.
 /// </para>
 /// </remarks>
 public abstract record ServiceResult
 {
 	/// <summary>
-	/// Every levelled message the service emitted while running (remediation plan 3.8). The
-	/// service still completed; the caller presents these grouped by level. Also mirrored to
-	/// <see cref="AppLog"/> by the service's top-level entry point.
+	/// Every levelled message the service emitted while running. The service still completed;
+	/// the caller presents these grouped by level. Each service also copies them to
+	/// <see cref="AppLog"/>.
 	/// </summary>
 	public required IReadOnlyList<ServiceMessage> Messages { get; init; }
 
 	/// <summary>
-	/// Backwards-compatible view of <see cref="Messages"/>: just the text of the
-	/// <see cref="LogLevel.Warning"/> and <see cref="LogLevel.Error"/>
-	/// entries. Prefer <see cref="Messages"/> for anything level-aware.
+	/// The text of every <see cref="LogLevel.Warning"/> and <see cref="LogLevel.Error"/> in
+	/// <see cref="Messages"/> - what a plain-text report lists. Use <see cref="Messages"/> for
+	/// anything level-aware.
 	/// </summary>
 	public IReadOnlyList<string> Warnings =>
 		[.. Messages

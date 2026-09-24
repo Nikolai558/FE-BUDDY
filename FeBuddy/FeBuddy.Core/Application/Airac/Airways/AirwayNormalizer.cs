@@ -45,7 +45,7 @@ public static class AirwayNormalizer
 		// Border crossings (blank FROM_PT_TYPE) are reference-only, not waypoints. NASR closes
 		// a border-terminating airway with a terminator row that has a blank TO_POINT, and the
 		// look-ahead below can leave the marker as a segment's EndWptId; those segments are
-		// dropped after the loop so they never reach coordinate resolution (remediation 3.2b).
+		// dropped after the loop so they never reach coordinate resolution.
 		HashSet<string> referenceOnlyPoints = AirwayReferenceOnlyPoints.BuildSet(rawSegments);
 
 		for (int i = 0; i < rawSegments.Count; i++)
@@ -117,7 +117,7 @@ public static class AirwayNormalizer
 
 		// Drop any segment left ending at a border marker (the terminator-row case). J5 ending
 		// at CFDCT is the correct answer, and there is deliberately no warning - this is normal,
-		// expected NASR structure, not a resolution failure (remediation 3.2b).
+		// expected NASR structure, not a resolution failure.
 		if (referenceOnlyPoints.Count > 0)
 		{
 			normalizedSegments.RemoveAll(segment => referenceOnlyPoints.Contains(segment.EndWptId));

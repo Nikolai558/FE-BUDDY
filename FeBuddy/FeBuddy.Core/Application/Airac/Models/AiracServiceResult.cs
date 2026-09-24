@@ -6,8 +6,8 @@ using FeBuddy.Core.Application.Models;
 namespace FeBuddy.Core.Application.Airac.Models;
 
 /// <summary>
-/// The aggregated result of one <c>AiracService.RunAsync</c> call: each selected sub-service's
-/// own result, a combined warning list, and the cross-sub-service excluded-airway summary.
+/// The result of one <c>AiracService.RunAsync</c> call: each selected sub-service's own result,
+/// plus every message they reported, combined.
 /// </summary>
 public sealed record AiracServiceResult : ServiceResult
 {
@@ -28,10 +28,4 @@ public sealed record AiracServiceResult : ServiceResult
 	/// of this run.
 	/// </summary>
 	public DepartureServiceResult? Departures { get; init; }
-
-	/// <summary>
-	/// IDs of airways excluded from all output because they had an unresolvable waypoint
-	/// (Phase 3.2). Empty until that behaviour lands.
-	/// </summary>
-	public IReadOnlyList<string> ExcludedAirwayIds { get; init; } = [];
 }

@@ -1,5 +1,4 @@
 using System.Net;
-using System.Net.Http;
 
 using FeBuddy.Core.Domain.Airac.Models;
 using FeBuddy.Core.Infrastructure.Logging;

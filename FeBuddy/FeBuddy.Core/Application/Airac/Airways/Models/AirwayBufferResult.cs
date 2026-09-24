@@ -16,7 +16,7 @@ namespace FeBuddy.Core.Application.Airac.Airways.Models;
 /// <param name="Messages">
 /// Levelled messages raised while buffering. A leg shorter than the combined buffer radius of
 /// its two endpoints is dropped and reported at <see cref="LogLevel.Info"/> - it is the
-/// buffer doing exactly what it was asked to do, not a problem (remediation plan 3.8).
+/// buffer doing exactly what it was asked to do, not a problem.
 /// </param>
 public sealed record AirwayBufferResult(
 	IReadOnlyList<LineString> LineStrings,

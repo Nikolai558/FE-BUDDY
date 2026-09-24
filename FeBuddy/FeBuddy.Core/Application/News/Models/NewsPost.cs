@@ -4,7 +4,7 @@ namespace FeBuddy.Core.Application.News.Models;
 
 /// <summary>
 /// A News post identifier: a Zulu date plus a per-day sequence number, e.g.
-/// <c>2026-08-30.3</c> (see <c>Developer_Notes.md</c> → NEWS).
+/// <c>2026-08-30.3</c>, written in News.md as <c>&lt;!-- PostId: 2026-08-30.3 --&gt;</c>.
 /// </summary>
 /// <param name="Date">The post's date (always Zulu / GMT).</param>
 /// <param name="Sequence">The 1-based sequence number for that day.</param>
@@ -61,7 +61,7 @@ public readonly record struct NewsPostId(DateOnly Date, int Sequence) : ICompara
 public sealed record NewsPost(NewsPostId Id, string DateHeading, string Title, string Body);
 
 /// <summary>
-/// The outcome of checking News on launch (remediation plan 6.1).
+/// The outcome of checking News on launch.
 /// </summary>
 /// <param name="Posts">Every parsed post, newest first.</param>
 /// <param name="LatestPostId">The newest post's id, or <see langword="null"/> when there are no posts.</param>

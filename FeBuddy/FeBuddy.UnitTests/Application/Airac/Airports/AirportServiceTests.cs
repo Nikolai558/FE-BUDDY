@@ -2,7 +2,6 @@ using System.Text.Json;
 
 using FeBuddy.Core.Application.Airac.Airports;
 using FeBuddy.Core.Application.Airac.Airports.Models;
-using FeBuddy.Core.Domain.Airports.Models;
 using FeBuddy.Core.Infrastructure.Nasr.Models;
 
 using FeBuddy.UnitTests.Application.Airac.Airports.Fixtures;

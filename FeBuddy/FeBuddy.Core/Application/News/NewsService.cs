@@ -1,4 +1,3 @@
-using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Reflection;
 using System.Text.RegularExpressions;
@@ -14,13 +13,10 @@ namespace FeBuddy.Core.Application.News;
 /// <summary>
 /// Reads the FE-Buddy News document (<c>FeBuddy.Core/News.md</c>): fetched from GitHub raw
 /// when online, falling back to the copy bundled into this assembly offline. Parses the posts
-/// for display on the Dashboard and reports how many are newer than the user last saw
-/// (remediation plan 6.1).
+/// for display on the Dashboard and reports how many are newer than the user last saw.
 /// </summary>
 /// <remarks>
-/// News.md lives in the public <c>Nikolai558/FE-BUDDY</c> repo on the <c>v3-development</c>
-/// branch (the repo's default branch, <c>development</c>, is still the v2.x code and has no
-/// News.md). The plain unauthenticated raw URL is the normal path; only on failure - and only
+/// News.md is read from <see cref="GitHubRepository.Branch"/> of the public repository. The plain unauthenticated raw URL is the normal path; only on failure - and only
 /// if <see cref="GitHubAuth.EnvironmentVariableName"/> is set - it retries once via GitHub's
 /// Contents API with that token attached (the same fallback-only behavior as
 /// <see cref="VersionCheck"/>). The authenticated retry uses the documented API endpoint rather

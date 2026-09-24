@@ -1,5 +1,3 @@
-using FeBuddy.Core.Domain.Airports.Models;
-
 namespace FeBuddy.Core.Application.Airac.Departures.Models;
 
 /// <summary>How the Region of Interest decides whether an airport's departure is in scope.</summary>

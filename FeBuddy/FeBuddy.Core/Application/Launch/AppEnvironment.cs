@@ -13,9 +13,9 @@ namespace FeBuddy.Core.Application.Launch;
 /// version-check result.
 /// </summary>
 /// <remarks>
-/// Per <c>Developer_Notes.md</c>, <see cref="HasInternetConnection"/> is assumed
-/// <see langword="true"/> until the connectivity check proves otherwise, so a feature that
-/// reads it before launch finishes does not wrongly disable itself.
+/// <see cref="HasInternetConnection"/> is assumed <see langword="true"/> until the connectivity
+/// check proves otherwise, so a feature that reads it before launch finishes does not wrongly
+/// disable itself.
 /// </remarks>
 public static class AppEnvironment
 {

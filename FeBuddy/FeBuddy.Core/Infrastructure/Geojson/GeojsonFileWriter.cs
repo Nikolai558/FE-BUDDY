@@ -26,14 +26,13 @@ public static class GeojsonFileWriter
 	/// How many of the Features in <paramref name="collection"/> are actually rendered
 	/// content, as opposed to a non-rendered isDefaults Feature. Passed explicitly (rather
 	/// than inferred from <c>collection.Count</c>) so a file containing only an isDefaults
-	/// Feature and no real content is correctly treated as empty and not written, matching
-	/// old FE-Buddy's behavior of skipping empty output files.
+	/// Feature and no real content is treated as empty and not written.
 	/// </param>
 	/// <param name="directory">The directory to write into. Created if it does not exist.</param>
 	/// <param name="fileName">The file name to write, including extension.</param>
 	/// <param name="maxDecimalPlaces">
-	/// Maximum decimal places to keep for every coordinate, applied just before serialization
-	/// (remediation plan 3.6). A value of 0 or less means "do not round".
+	/// Maximum decimal places to keep for every coordinate, applied just before serialization.
+	/// A value of 0 or less means "do not round".
 	/// </param>
 	/// <returns>
 	/// The full path written, or <see langword="null"/> when
@@ -62,9 +61,7 @@ public static class GeojsonFileWriter
 				nameof(fileName));
 		}
 
-		// A file with zero rendered features is not written, matching old FE-Buddy's
-		// SerializeToFile behavior. An isDefaults-only file would draw nothing on ERAM and
-		// is just noise on disk.
+		// An isDefaults-only file would draw nothing on ERAM and is just noise on disk.
 		if (renderedFeatureCount <= 0)
 		{
 			return null;

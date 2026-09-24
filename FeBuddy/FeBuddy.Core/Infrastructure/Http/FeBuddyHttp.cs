@@ -1,5 +1,3 @@
-using System.Net.Http;
-
 namespace FeBuddy.Core.Infrastructure.Http;
 
 /// <summary>

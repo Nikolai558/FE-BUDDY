@@ -1,4 +1,3 @@
-using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Text.RegularExpressions;
@@ -18,6 +17,7 @@ namespace FeBuddy.Core.Application.Updates;
 /// actual update is a new MSI installer the user downloads and runs.
 /// </summary>
 /// <remarks>
+/// <para>
 /// Versions are the real SemVer versions (<see cref="ProductVersion"/>): release tags are parsed
 /// as strict SemVer (an optional leading <c>v</c> is allowed; anything else is skipped) and
 /// compared by SemVer precedence, so <c>3.0.0-rc.1 &lt; 3.0.0</c>. Each release's channel comes
@@ -26,13 +26,13 @@ namespace FeBuddy.Core.Application.Updates;
 /// they accept: Stable sees stable releases, ReleaseCandidate adds <c>-rc</c>, Beta adds
 /// <c>-beta</c>, Alpha sees everything. The check never throws - a network or parse failure
 /// yields <see cref="VersionCheckResult.CheckSucceeded"/> <see langword="false"/>.
-/// </remarks>
-/// <remarks>
-/// Always checks the public <c>Nikolai558/FE-BUDDY</c> repo's releases (v2.x and 3.x releases
-/// share that one list). The request is always tried
-/// unauthenticated first (the normal path for a public repo); only if that fails, and only if
-/// <see cref="GitHubAuth.EnvironmentVariableName"/> is set, it retries once with that token
-/// attached (see <see cref="GitHubAuth"/> for why this is a fallback rather than always-sent).
+/// </para>
+/// <para>
+/// Releases come from the public repository (<see cref="GitHubRepository"/>), where 2.x and
+/// 3.x releases share one list. The request is tried unauthenticated first; only if that fails,
+/// and only if <see cref="GitHubAuth.EnvironmentVariableName"/> is set, it retries once with
+/// that token (see <see cref="GitHubAuth"/> for why the token is a fallback).
+/// </para>
 /// </remarks>
 public static partial class VersionCheck
 {

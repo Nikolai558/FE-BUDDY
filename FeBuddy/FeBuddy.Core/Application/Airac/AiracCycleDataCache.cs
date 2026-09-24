@@ -275,9 +275,9 @@ public sealed class AiracCycleDataCache(
 	}
 
 	/// <summary>
-	/// Decides the AIRAC Service's overall readiness from the three cycles' states, per the
-	/// remediation plan's readiness table (2.5). The current cycle is mandatory; a failed
-	/// previous or next cycle only degrades the service; a not-yet-published next cycle is fine.
+	/// Decides the AIRAC Service's overall readiness from the three cycles' states. The current
+	/// cycle is mandatory; a failed previous or next cycle only degrades the service; a
+	/// not-yet-published next cycle is normal.
 	/// </summary>
 	/// <returns>The readiness verdict.</returns>
 	public AiracCycleReadiness ComputeReadiness()

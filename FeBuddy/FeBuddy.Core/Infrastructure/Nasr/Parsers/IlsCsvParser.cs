@@ -1,12 +1,15 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
 using static FeBuddy.Core.Infrastructure.Nasr.Models.IlsCsvDataModel;
 
 namespace FeBuddy.Core.Infrastructure.Nasr.Parsers;
 
+/// <summary>
+/// Reads the NASR <c>ILS</c> CSV files (instrument landing systems), one file per method.
+/// </summary>
 public class IlsCsvParser
 {
+	/// <summary>Reads <c>ILS_BASE.csv</c>.</summary>
+	/// <param name="filePath">The full path of the file.</param>
+	/// <returns>A collection with only <see cref="IlsCsvDataCollection.IlsBase"/> filled in.</returns>
 	public IlsCsvDataCollection ParseIlsBase(string filePath)
 	{
 		var result = new IlsCsvDataCollection
@@ -57,6 +60,9 @@ public class IlsCsvParser
 		return result;
 	}
 
+	/// <summary>Reads <c>ILS_DME.csv</c>.</summary>
+	/// <param name="filePath">The full path of the file.</param>
+	/// <returns>A collection with only <see cref="IlsCsvDataCollection.IlsDme"/> filled in.</returns>
 	public IlsCsvDataCollection ParseIlsDme(string filePath)
 	{
 		var result = new IlsCsvDataCollection
@@ -96,6 +102,9 @@ public class IlsCsvParser
 		return result;
 	}
 
+	/// <summary>Reads <c>ILS_GS.csv</c>.</summary>
+	/// <param name="filePath">The full path of the file.</param>
+	/// <returns>A collection with only <see cref="IlsCsvDataCollection.IlsGs"/> filled in.</returns>
 	public IlsCsvDataCollection ParseIlsGs(string filePath)
 	{
 		var result = new IlsCsvDataCollection
@@ -137,6 +146,9 @@ public class IlsCsvParser
 		return result;
 	}
 
+	/// <summary>Reads <c>ILS_MKR.csv</c>.</summary>
+	/// <param name="filePath">The full path of the file.</param>
+	/// <returns>A collection with only <see cref="IlsCsvDataCollection.IlsMkr"/> filled in.</returns>
 	public IlsCsvDataCollection ParseIlsMkr(string filePath)
 	{
 		var result = new IlsCsvDataCollection
@@ -183,6 +195,9 @@ public class IlsCsvParser
 		return result;
 	}
 
+	/// <summary>Reads <c>ILS_RMK.csv</c>.</summary>
+	/// <param name="filePath">The full path of the file.</param>
+	/// <returns>A collection with only <see cref="IlsCsvDataCollection.IlsRmk"/> filled in.</returns>
 	public IlsCsvDataCollection ParseIlsRmk(string filePath)
 	{
 		var result = new IlsCsvDataCollection
@@ -214,11 +229,19 @@ public class IlsCsvParser
 
 }
 
+/// <summary>
+/// Every parsed row of the NASR <c>ILS</c> CSV files, one list per file.
+/// </summary>
 public class IlsCsvDataCollection
 {
+	/// <summary>The rows of <c>ILS_BASE.csv</c>.</summary>
 	public List<IlsBase> IlsBase { get; set; } = [];
+	/// <summary>The rows of <c>ILS_DME.csv</c>.</summary>
 	public List<IlsDme> IlsDme { get; set; } = [];
+	/// <summary>The rows of <c>ILS_GS.csv</c>.</summary>
 	public List<IlsGs> IlsGs { get; set; } = [];
+	/// <summary>The rows of <c>ILS_MKR.csv</c>.</summary>
 	public List<IlsMkr> IlsMkr { get; set; } = [];
+	/// <summary>The rows of <c>ILS_RMK.csv</c>.</summary>
 	public List<IlsRmk> IlsRmk { get; set; } = [];
 }

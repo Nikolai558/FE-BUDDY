@@ -1,8 +1,12 @@
 namespace FeBuddy.Core.Infrastructure.Nasr.Models;
 
+/// <summary>
+/// Row models for the NASR <c>FRQ</c> CSV files (frequencies): one nested class per file.
+/// </summary>
 public class FrqCsvDataModel
 {
 	#region Common Fields
+	/// <summary>The columns every <c>FRQ</c> file shares.</summary>
 	public class CommonFields
 	{
 		/// <summary>
@@ -12,13 +16,14 @@ public class FrqCsvDataModel
 		/// _DataType: string
 		/// _Nullable: No
 		/// </summary>
-		/// <remarks>The 28 Day NASR Subscription Effective Date in format �YYYY/MM/DD�.</remarks>
+		/// <remarks>The 28 Day NASR Subscription Effective Date in format "YYYY/MM/DD".</remarks>
 		public string EffDate { get; set; }
 
 	}
 	#endregion
 
 	#region Frq Fields
+	/// <summary>One row of <c>FRQ.csv</c>.</summary>
 	public class Frq : CommonFields
 	{
 		/// <summary>

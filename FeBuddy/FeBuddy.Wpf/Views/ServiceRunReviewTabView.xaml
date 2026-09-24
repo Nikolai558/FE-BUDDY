@@ -2,7 +2,7 @@
     ServiceRunReviewTabView  -  the Review tab: everything about what happened when the
     service was run. It appears at the very end of the rail once a run has started, and shows
     how far each sub-service has got, anything that went wrong, the advisories, each
-    sub-service's results with its warnings (routine notices collapsed behind a toggle), and
+    sub-service's results with its warnings and routine notices (each collapsed behind a toggle), and
     the way out to the files. The sub-service tabs hold settings only.
 -->
 <UserControl x:Class="FeBuddy.Wpf.Views.ServiceRunReviewTabView"
@@ -76,22 +76,40 @@
             </Border>
         </DataTemplate>
 
-        <!-- one sub-service's results: what it produced, its warnings expanded, and its routine
-             notices behind a toggle, collapsed on every run -->
+        <!-- an expanded message list: bounded, with its own scroll bar, so a long list does not
+             stretch the page; the wheel passes to the page once the list reaches either end -->
+        <Style x:Key="MessageListScroller" TargetType="ScrollViewer">
+            <Setter Property="MaxHeight" Value="320" />
+            <Setter Property="VerticalScrollBarVisibility" Value="Auto" />
+            <Setter Property="HorizontalScrollBarVisibility" Value="Disabled" />
+            <Setter Property="infra:WheelScroll.BubbleUp" Value="True" />
+        </Style>
+
+        <!-- one sub-service's results: what it produced, then its warnings and its routine
+             notices, each behind a toggle, collapsed on every run -->
         <DataTemplate x:Key="SubServiceResultBlock" DataType="{x:Type infra:SubServiceRunResult}">
             <StackPanel Margin="0,4,0,8">
                 <TextBlock Text="{Binding Name}" Style="{StaticResource Text.Body.Strong}" />
                 <TextBlock Text="{Binding Summary}" Style="{StaticResource Text.Body}" TextWrapping="Wrap"
                            Margin="0,2,0,0" />
 
-                <ItemsControl ItemsSource="{Binding Attention}" ItemTemplate="{StaticResource MessageGroup}" Margin="0,6,0,0"
-                              Visibility="{Binding HasAttention, Converter={StaticResource BoolToVis}}" />
+                <StackPanel Margin="0,6,0,0" Visibility="{Binding HasAttention, Converter={StaticResource BoolToVis}}">
+                    <Button Style="{StaticResource Button.Ghost}" HorizontalAlignment="Left"
+                            Foreground="{StaticResource Brush.Warn}"
+                            Content="{Binding AttentionToggleLabel}" Command="{Binding ToggleAttentionCommand}" />
+                    <ScrollViewer Style="{StaticResource MessageListScroller}"
+                                  Visibility="{Binding IsAttentionExpanded, Converter={StaticResource BoolToVis}}">
+                        <ItemsControl ItemsSource="{Binding Attention}" ItemTemplate="{StaticResource MessageGroup}" />
+                    </ScrollViewer>
+                </StackPanel>
 
                 <StackPanel Margin="0,6,0,0" Visibility="{Binding HasInfo, Converter={StaticResource BoolToVis}}">
                     <Button Style="{StaticResource Button.Ghost}" HorizontalAlignment="Left"
                             Content="{Binding InfoToggleLabel}" Command="{Binding ToggleInfoCommand}" />
-                    <ItemsControl ItemsSource="{Binding Info}" ItemTemplate="{StaticResource MessageGroup}"
-                                  Visibility="{Binding IsInfoExpanded, Converter={StaticResource BoolToVis}}" />
+                    <ScrollViewer Style="{StaticResource MessageListScroller}"
+                                  Visibility="{Binding IsInfoExpanded, Converter={StaticResource BoolToVis}}">
+                        <ItemsControl ItemsSource="{Binding Info}" ItemTemplate="{StaticResource MessageGroup}" />
+                    </ScrollViewer>
                 </StackPanel>
             </StackPanel>
         </DataTemplate>

@@ -10,7 +10,8 @@ namespace FeBuddy.Wpf.Infrastructure;
 ///
 ///   <c>WheelScroll.Amplify="2.5"</c> on a <see cref="ScrollViewer"/> — multiplies
 ///   each wheel notch so a long page scrolls at a sane pace (WPF's default
-///   three-line step feels tiny on the AIRAC / Settings pages).
+///   three-line step feels tiny on the AIRAC / Settings pages). It stands
+///   aside while the pointer is over a nested scroller that can still move.
 ///
 ///   <c>WheelScroll.BubbleUp="True"</c> on an inner <see cref="ScrollViewer"/> or
 ///   an <see cref="ItemsControl"/> that sits inside another scroller — when the
@@ -43,10 +44,29 @@ public static class WheelScroll
         double factor = GetAmplify(sv);
         if (factor <= 0 || sv.ScrollableHeight <= 0) return;
 
+        // PreviewMouseWheel tunnels, so this outer scroller sees the wheel before any scroller
+        // nested inside it; leave the event alone while the one under the pointer can still move.
+        if (InnerCanScroll(e.OriginalSource as DependencyObject, sv, e.Delta)) return;
+
         // One notch is Delta 120. ~48 device-independent px per notch, times the
         // requested factor, matches "about 3x the current step" at factor 3.
         e.Handled = true;
         sv.ScrollToVerticalOffset(sv.VerticalOffset - e.Delta / 120.0 * 48.0 * factor);
+    }
+
+    private static bool InnerCanScroll(DependencyObject? d, ScrollViewer outer, int delta)
+    {
+        while (d is not null && d != outer)
+        {
+            if (d is ScrollViewer inner && inner.ScrollableHeight > 0)
+            {
+                bool canUp = delta > 0 && inner.VerticalOffset > 0.5;
+                bool canDown = delta < 0 && inner.VerticalOffset < inner.ScrollableHeight - 0.5;
+                if (canUp || canDown) return true;
+            }
+            d = d is Visual ? VisualTreeHelper.GetParent(d) : LogicalTreeHelper.GetParent(d);
+        }
+        return false;
     }
 
     // ----------------------------- BubbleUp -----------------------------

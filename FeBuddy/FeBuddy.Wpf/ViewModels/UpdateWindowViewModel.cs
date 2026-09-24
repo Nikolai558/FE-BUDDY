@@ -5,8 +5,9 @@ using System.Windows.Input;
 
 using FeBuddy.Wpf.Infrastructure;
 
-using FeBuddy.Core.Models.Services.General;
-using FeBuddy.Core.Services.General;
+using FeBuddy.Core.Application.Updates;
+using FeBuddy.Core.Application.Updates.Models;
+using FeBuddy.Core.Infrastructure.Logging;
 
 namespace FeBuddy.Wpf.ViewModels;
 

@@ -1,11 +1,11 @@
 using System.Text.RegularExpressions;
 
-using FeBuddy.Core.Configuration;
-using FeBuddy.Core.Models.Services.Airac.Airports;
-using FeBuddy.Core.Models.Services.Airac.Airways;
-using FeBuddy.Core.Models.Services.Airac.Departures;
-using FeBuddy.Core.Models.Services.General;
-using FeBuddy.Core.Services.General;
+using FeBuddy.Core.Application.Airac.Airports.Models;
+using FeBuddy.Core.Application.Airac.Airways.Models;
+using FeBuddy.Core.Application.Airac.Departures.Models;
+using FeBuddy.Core.Application.Models;
+using FeBuddy.Core.Infrastructure.Configuration;
+using FeBuddy.Core.Infrastructure.Logging.Models;
 
 namespace FeBuddy.Harness;
 

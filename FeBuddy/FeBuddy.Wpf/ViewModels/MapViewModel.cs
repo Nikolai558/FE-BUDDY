@@ -7,8 +7,8 @@ using System.Windows.Media;
 using FeBuddy.Wpf.Infrastructure;
 using FeBuddy.Wpf.Map;
 
-using FeBuddy.Core.Models.Services.General;
-using FeBuddy.Core.Services.General;
+using FeBuddy.Core.Domain.Geo.Models;
+using FeBuddy.Core.Infrastructure.Logging;
 
 using Microsoft.Win32;
 

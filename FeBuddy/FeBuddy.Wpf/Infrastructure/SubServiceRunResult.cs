@@ -1,7 +1,7 @@
 using System.Windows.Input;
 
-using FeBuddy.Core.Models.Services.General;
-using FeBuddy.Core.Services.General;
+using FeBuddy.Core.Application.Models;
+using FeBuddy.Core.Infrastructure.Logging.Models;
 
 namespace FeBuddy.Wpf.Infrastructure;
 

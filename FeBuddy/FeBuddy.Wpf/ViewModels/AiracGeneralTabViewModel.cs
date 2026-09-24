@@ -3,9 +3,11 @@ using System.Linq;
 
 using FeBuddy.Wpf.Infrastructure;
 
-using FeBuddy.Core.Helpers;
-using FeBuddy.Core.Models.Services.Airac;
-using FeBuddy.Core.Services.Airac;
+using FeBuddy.Core.Application.Airac;
+using FeBuddy.Core.Application.Airac.Models;
+using FeBuddy.Core.Domain.Airac;
+using FeBuddy.Core.Domain.Airac.Models;
+using FeBuddy.Core.Infrastructure.Configuration;
 
 namespace FeBuddy.Wpf.ViewModels;
 

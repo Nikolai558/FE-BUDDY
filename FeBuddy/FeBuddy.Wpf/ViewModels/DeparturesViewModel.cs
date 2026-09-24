@@ -5,12 +5,12 @@ using System.Windows.Input;
 using FeBuddy.Wpf.Infrastructure;
 using FeBuddy.Wpf.ViewModels.Models;
 
-using FeBuddy.Core.Helpers;
-using FeBuddy.Core.Models.NASR.CSV;
-using FeBuddy.Core.Models.Services.Airac;
-using FeBuddy.Core.Models.Services.Airac.Departures;
-using FeBuddy.Core.Models.Services.General;
-using FeBuddy.Core.Services.General;
+using FeBuddy.Core.Application.Airac.Departures.Models;
+using FeBuddy.Core.Application.Airac.Models;
+using FeBuddy.Core.Domain.Geo;
+using FeBuddy.Core.Domain.Geo.Models;
+using FeBuddy.Core.Infrastructure.Configuration;
+using FeBuddy.Core.Infrastructure.Nasr.Models;
 
 namespace FeBuddy.Wpf.ViewModels;
 

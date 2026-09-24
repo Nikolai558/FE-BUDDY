@@ -1,6 +1,6 @@
 using FeBuddy.Wpf.Infrastructure;
 
-using FeBuddy.Core.Models.Services.Airac.Airports;
+using FeBuddy.Core.Application.Airac.Airports.Models;
 
 namespace FeBuddy.Wpf.ViewModels.Models;
 

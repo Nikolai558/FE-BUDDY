@@ -8,12 +8,15 @@ using System.Windows.Threading;
 using FeBuddy.Wpf.Infrastructure;
 using FeBuddy.Wpf.Views;
 
-using FeBuddy.Core.Configuration;
-using FeBuddy.Core.Helpers;
-using FeBuddy.Core.Models.Services.Airac;
-using FeBuddy.Core.Models.Services.General;
-using FeBuddy.Core.Services.Airac;
-using FeBuddy.Core.Services.General;
+using FeBuddy.Core.Application.Airac;
+using FeBuddy.Core.Application.Airac.Models;
+using FeBuddy.Core.Application.Launch;
+using FeBuddy.Core.Application.Updates.Models;
+using FeBuddy.Core.Domain.Airac;
+using FeBuddy.Core.Domain.Airac.Models;
+using FeBuddy.Core.Domain.Geo.Models;
+using FeBuddy.Core.Infrastructure.Configuration;
+using FeBuddy.Core.Infrastructure.Logging;
 
 using Microsoft.Win32;
 

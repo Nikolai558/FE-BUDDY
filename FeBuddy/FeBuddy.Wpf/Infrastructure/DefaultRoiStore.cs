@@ -1,7 +1,7 @@
 using System.Globalization;
 
-using FeBuddy.Core.Helpers;
-using FeBuddy.Core.Models.Services.General;
+using FeBuddy.Core.Domain.Geo.Models;
+using FeBuddy.Core.Infrastructure.Configuration;
 
 namespace FeBuddy.Wpf.Infrastructure;
 

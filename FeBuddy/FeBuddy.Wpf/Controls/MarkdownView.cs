@@ -3,8 +3,8 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
 
-using FeBuddy.Core.Models.General;
-using FeBuddy.Core.Parsers.Markdown;
+using FeBuddy.Core.Infrastructure.Markdown;
+using FeBuddy.Core.Infrastructure.Markdown.Models;
 using FeBuddy.Wpf.Infrastructure;
 
 namespace FeBuddy.Wpf.Controls;

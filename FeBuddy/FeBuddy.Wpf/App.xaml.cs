@@ -2,8 +2,10 @@ using System.IO;
 using System.Windows;
 using System.Windows.Threading;
 
-using FeBuddy.Core.Configuration;
-using FeBuddy.Core.Services.General;
+using FeBuddy.Core.Application.Launch;
+using FeBuddy.Core.Infrastructure.Configuration;
+using FeBuddy.Core.Infrastructure.Logging;
+using FeBuddy.Core.Infrastructure.Platform;
 
 namespace FeBuddy.Wpf;
 

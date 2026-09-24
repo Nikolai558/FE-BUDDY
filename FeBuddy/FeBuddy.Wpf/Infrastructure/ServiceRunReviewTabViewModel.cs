@@ -3,9 +3,9 @@ using System.Diagnostics;
 using System.IO;
 using System.Windows.Input;
 
-using FeBuddy.Core.Models.Services.Airac;
-using FeBuddy.Core.Models.Services.General;
-using FeBuddy.Core.Services.General;
+using FeBuddy.Core.Application.Airac.Models;
+using FeBuddy.Core.Application.Models;
+using FeBuddy.Core.Infrastructure.Logging.Models;
 
 namespace FeBuddy.Wpf.Infrastructure;
 

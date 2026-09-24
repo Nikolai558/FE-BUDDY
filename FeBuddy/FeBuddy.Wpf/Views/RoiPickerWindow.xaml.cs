@@ -3,7 +3,7 @@ using System.Windows;
 using FeBuddy.Wpf.Infrastructure;
 using FeBuddy.Wpf.Map;
 
-using FeBuddy.Core.Models.Services.General;
+using FeBuddy.Core.Domain.Geo.Models;
 
 namespace FeBuddy.Wpf.Views;
 

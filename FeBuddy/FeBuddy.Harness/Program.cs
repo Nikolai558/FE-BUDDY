@@ -1,10 +1,9 @@
 using System.Diagnostics;
 
-using FeBuddy.Core.Configuration;
-using FeBuddy.Core.Models.NASR.CSV;
-using FeBuddy.Core.Models.Services.Airac.Airports;
-using FeBuddy.Core.Models.Services.Airac.Departures;
-using FeBuddy.Core.Parsers.NASR.CSV;
+using FeBuddy.Core.Application.Airac.Departures.Models;
+using FeBuddy.Core.Infrastructure.Configuration;
+using FeBuddy.Core.Infrastructure.Nasr.Models;
+using FeBuddy.Core.Infrastructure.Nasr.Parsers;
 
 namespace FeBuddy.Harness;
 
@@ -33,7 +32,7 @@ internal static class Program
 			Stopwatch parseStopwatch = Stopwatch.StartNew();
 
 			NasrCsvDataCollection allNasrCsvData =
-				await NasrCsvParserController.MainAsync(new[] { HarnessSettings.NasrSourceDirectory });
+				await NasrCsvParser.ParseAllAsync(HarnessSettings.NasrSourceDirectory);
 
 			parseStopwatch.Stop();
 

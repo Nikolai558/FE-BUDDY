@@ -1,5 +1,5 @@
-using FeBuddy.Core.Models.NASR.CSV;
-using FeBuddy.Core.Models.Services.Airac;
+using FeBuddy.Core.Application.Airac.Models;
+using FeBuddy.Core.Infrastructure.Nasr.Models;
 
 namespace FeBuddy.Wpf.Infrastructure;
 

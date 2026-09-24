@@ -7,7 +7,7 @@ using System.Windows.Controls;
 
 using FeBuddy.Wpf.Infrastructure;
 
-using FeBuddy.Core.Services.General;
+using FeBuddy.Core.Domain.Crc;
 
 namespace FeBuddy.Wpf.Controls;
 
@@ -60,7 +60,7 @@ public sealed class FilterOption : ObservableObject
 /// Values come back sorted and de-duplicated, which also makes a saved config diff cleanly.
 /// </para>
 /// <para>
-/// The range defaults to what <see cref="CrcGeojsonPropertyValidator"/> accepts, so the picker
+/// The range defaults to what <see cref="CrcPropertyValidator"/> accepts, so the picker
 /// cannot offer a number the validator would reject.
 /// </para>
 /// </remarks>
@@ -79,12 +79,12 @@ public partial class FilterPicker : UserControl, INotifyPropertyChanged
     /// <summary>The lowest selectable value.</summary>
     public static readonly DependencyProperty MinimumProperty = DependencyProperty.Register(
         nameof(Minimum), typeof(int), typeof(FilterPicker),
-        new PropertyMetadata(CrcGeojsonPropertyValidator.MinFilter, OnRangeChanged));
+        new PropertyMetadata(CrcPropertyValidator.MinFilter, OnRangeChanged));
 
     /// <summary>The highest selectable value.</summary>
     public static readonly DependencyProperty MaximumProperty = DependencyProperty.Register(
         nameof(Maximum), typeof(int), typeof(FilterPicker),
-        new PropertyMetadata(CrcGeojsonPropertyValidator.MaxFilter, OnRangeChanged));
+        new PropertyMetadata(CrcPropertyValidator.MaxFilter, OnRangeChanged));
 
     /// <summary>Creates the control.</summary>
     public FilterPicker()

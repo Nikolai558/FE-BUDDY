@@ -7,11 +7,15 @@ using System.Windows.Threading;
 
 using FeBuddy.Wpf.Infrastructure;
 
-using FeBuddy.Core.Helpers;
-using FeBuddy.Core.Models.Services.Airac;
-using FeBuddy.Core.Models.Services.General;
-using FeBuddy.Core.Services.Airac;
-using FeBuddy.Core.Services.General;
+using FeBuddy.Core.Application.Airac;
+using FeBuddy.Core.Application.Launch;
+using FeBuddy.Core.Application.News;
+using FeBuddy.Core.Application.News.Models;
+using FeBuddy.Core.Domain.Airac;
+using FeBuddy.Core.Domain.Airac.Models;
+using FeBuddy.Core.Infrastructure.Configuration;
+using FeBuddy.Core.Infrastructure.Logging;
+using FeBuddy.Core.Infrastructure.Logging.Models;
 
 namespace FeBuddy.Wpf.ViewModels;
 

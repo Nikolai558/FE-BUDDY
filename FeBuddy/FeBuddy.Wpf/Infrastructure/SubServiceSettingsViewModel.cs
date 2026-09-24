@@ -1,6 +1,6 @@
 using System.Windows.Input;
 
-using FeBuddy.Core.Helpers;
+using FeBuddy.Core.Infrastructure.Configuration;
 
 namespace FeBuddy.Wpf.Infrastructure;
 

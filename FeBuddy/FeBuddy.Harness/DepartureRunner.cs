@@ -1,6 +1,6 @@
-using FeBuddy.Core.Models.NASR.CSV;
-using FeBuddy.Core.Models.Services.Airac.Departures;
-using FeBuddy.Core.Services.Airac.Departures;
+using FeBuddy.Core.Application.Airac.Departures;
+using FeBuddy.Core.Application.Airac.Departures.Models;
+using FeBuddy.Core.Infrastructure.Nasr.Models;
 
 namespace FeBuddy.Harness;
 

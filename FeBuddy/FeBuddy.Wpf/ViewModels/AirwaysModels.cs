@@ -2,8 +2,8 @@ using System.Globalization;
 
 using FeBuddy.Wpf.Infrastructure;
 
-using FeBuddy.Core.Models.Services.Airac.Airways;
-using FeBuddy.Core.Services.General;
+using FeBuddy.Core.Application.Airac.Airways.Models;
+using FeBuddy.Core.Domain.Crc;
 
 namespace FeBuddy.Wpf.ViewModels.Models;
 
@@ -79,14 +79,14 @@ public sealed class EramClassDefault : ObservableObject
 
 		StyleOptions = kind switch
 		{
-			EramFieldKind.Line => CrcGeojsonPropertyValidator.ValidLineStyles,
-			EramFieldKind.Symbol => CrcGeojsonPropertyValidator.ValidSymbolStyles,
+			EramFieldKind.Line => CrcPropertyValidator.ValidLineStyles,
+			EramFieldKind.Symbol => CrcPropertyValidator.ValidSymbolStyles,
 			_ => Array.Empty<string>(),
 		};
 
 		SizeOptions = kind is EramFieldKind.Text
-			? Range(CrcGeojsonPropertyValidator.MinTextSize, CrcGeojsonPropertyValidator.MaxTextSize)
-			: Range(CrcGeojsonPropertyValidator.MinSymbolSize, CrcGeojsonPropertyValidator.MaxSymbolSize);
+			? Range(CrcPropertyValidator.MinTextSize, CrcPropertyValidator.MaxTextSize)
+			: Range(CrcPropertyValidator.MinSymbolSize, CrcPropertyValidator.MaxSymbolSize);
 	}
 
 	/// <summary>The altitude class this row is for (<c>High</c> / <c>Low</c> / <c>Other</c>).</summary>
@@ -115,11 +115,11 @@ public sealed class EramClassDefault : ObservableObject
 
 	/// <summary>The <c>bcg</c> values CRC accepts, for the drop-down.</summary>
 	public IReadOnlyList<string> BcgOptions { get; } = Range(
-		CrcGeojsonPropertyValidator.MinBcg, CrcGeojsonPropertyValidator.MaxBcg);
+		CrcPropertyValidator.MinBcg, CrcPropertyValidator.MaxBcg);
 
 	/// <summary>The <c>thickness</c> values CRC accepts, for the drop-down. Line only.</summary>
 	public IReadOnlyList<string> ThicknessOptions { get; } = Range(
-		CrcGeojsonPropertyValidator.MinThickness, CrcGeojsonPropertyValidator.MaxThickness);
+		CrcPropertyValidator.MinThickness, CrcPropertyValidator.MaxThickness);
 
 	/// <summary>
 	/// The <c>size</c> values CRC accepts for this kind, for the drop-down. Symbols and text

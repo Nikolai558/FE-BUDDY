@@ -11,41 +11,33 @@ namespace FeBuddy.Wpf.ViewModels.Models;
 /// <see cref="DepartureFebPropertyNames"/>), which pairs each name with the Core enum value the
 /// settings parser maps it to.
 /// </remarks>
-public sealed class FebPropertyToggle : ObservableObject
+/// <param name="name">Its name as written to the settings block and the GeoJSON key.</param>
+/// <param name="description">A short plain-English description for the tooltip.</param>
+/// <param name="onChanged">Called when the user ticks or unticks the row.</param>
+public sealed class FebPropertyToggle(string name, string description, Action onChanged) : ObservableObject
 {
-    private readonly Action _onChanged;
-    private bool _isSelected;
+	private readonly Action _onChanged = onChanged;
+	private bool _isSelected;
 
-    /// <summary>Creates a toggle.</summary>
-    /// <param name="name">Its name as written to the settings block and the GeoJSON key.</param>
-    /// <param name="description">A short plain-English description for the tooltip.</param>
-    /// <param name="onChanged">Called when the user ticks or unticks the row.</param>
-    public FebPropertyToggle(string name, string description, Action onChanged)
-    {
-        Name = name;
-        Description = description;
-        _onChanged = onChanged;
-    }
+	/// <summary>The settings / JSON name, e.g. <c>faaId</c> - written as <c>feb.faaId</c>.</summary>
+	public string Name { get; } = name;
 
-    /// <summary>The settings / JSON name, e.g. <c>faaId</c> - written as <c>feb.faaId</c>.</summary>
-    public string Name { get; }
+	/// <summary>What the property holds, for the tooltip.</summary>
+	public string Description { get; } = description;
 
-    /// <summary>What the property holds, for the tooltip.</summary>
-    public string Description { get; }
+	/// <summary>The key as it appears in the file, e.g. <c>feb.faaId</c>.</summary>
+	public string JsonKey => $"feb.{Name}";
 
-    /// <summary>The key as it appears in the file, e.g. <c>feb.faaId</c>.</summary>
-    public string JsonKey => $"feb.{Name}";
-
-    /// <summary>Whether the user wants this property written.</summary>
-    public bool IsSelected
-    {
-        get => _isSelected;
-        set
-        {
-            if (SetProperty(ref _isSelected, value))
-            {
-                _onChanged();
-            }
-        }
-    }
+	/// <summary>Whether the user wants this property written.</summary>
+	public bool IsSelected
+	{
+		get => _isSelected;
+		set
+		{
+			if (SetProperty(ref _isSelected, value))
+			{
+				_onChanged();
+			}
+		}
+	}
 }

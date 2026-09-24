@@ -40,7 +40,10 @@ public enum EramFieldKind
 /// valid, and anything else is marked on the box and counts as not filled in.
 /// </para>
 /// </remarks>
-public sealed class EramClassDefault : ObservableObject
+/// <param name="className">The class this row configures, e.g. <c>High</c> or <c>Airports</c>.</param>
+/// <param name="kind">Which block the row belongs to; decides the fields it shows.</param>
+/// <param name="onChanged">Called whenever one of the row's values changes.</param>
+public sealed class EramClassDefault(string className, EramFieldKind kind, Action onChanged) : ObservableObject
 {
 	private const string RequiredMessage = "Required while CRC ERAM defaults are on.";
 	private const string WholeNumberMessage = "Must be a whole number, e.g. 0, 12 or -4.";
@@ -52,7 +55,7 @@ public sealed class EramClassDefault : ObservableObject
 	/// <summary>The stored value for "No" in <see cref="Underline"/> and <see cref="Opaque"/>.</summary>
 	public const string No = "N";
 
-	private readonly Action _onChanged;
+	private readonly Action _onChanged = onChanged;
 	private string _bcg = string.Empty;
 	private string _filters = string.Empty;
 	private string _style = string.Empty;
@@ -64,54 +67,34 @@ public sealed class EramClassDefault : ObservableObject
 	private string _yOffset = string.Empty;
 	private bool _isRequired;
 
-	/// <summary>Creates an empty row for <paramref name="className"/> in the <paramref name="kind"/> block.</summary>
-	/// <param name="className">The class this row configures, e.g. <c>High</c> or <c>Airports</c>.</param>
-	/// <param name="kind">Which block the row belongs to; decides the fields it shows.</param>
-	/// <param name="onChanged">Called whenever one of the row's values changes.</param>
-	public EramClassDefault(string className, EramFieldKind kind, Action onChanged)
-	{
-		ClassName = className;
-		_onChanged = onChanged;
-		ShowStyle = kind is EramFieldKind.Line or EramFieldKind.Symbol;
-		ShowThickness = kind is EramFieldKind.Line;
-		ShowSize = kind is EramFieldKind.Symbol or EramFieldKind.Text;
-		ShowTextOptions = kind is EramFieldKind.Text;
-
-		StyleOptions = kind switch
-		{
-			EramFieldKind.Line => CrcPropertyValidator.ValidLineStyles,
-			EramFieldKind.Symbol => CrcPropertyValidator.ValidSymbolStyles,
-			_ => Array.Empty<string>(),
-		};
-
-		SizeOptions = kind is EramFieldKind.Text
-			? Range(CrcPropertyValidator.MinTextSize, CrcPropertyValidator.MaxTextSize)
-			: Range(CrcPropertyValidator.MinSymbolSize, CrcPropertyValidator.MaxSymbolSize);
-	}
-
 	/// <summary>The altitude class this row is for (<c>High</c> / <c>Low</c> / <c>Other</c>).</summary>
-	public string ClassName { get; }
+	public string ClassName { get; } = className;
 
 	/// <summary>Whether the <c>style</c> field applies to this kind.</summary>
-	public bool ShowStyle { get; }
+	public bool ShowStyle { get; } = kind is EramFieldKind.Line or EramFieldKind.Symbol;
 
 	/// <summary>Whether the <c>thickness</c> field applies to this kind.</summary>
-	public bool ShowThickness { get; }
+	public bool ShowThickness { get; } = kind is EramFieldKind.Line;
 
 	/// <summary>Whether the <c>size</c> field applies to this kind.</summary>
-	public bool ShowSize { get; }
+	public bool ShowSize { get; } = kind is EramFieldKind.Symbol or EramFieldKind.Text;
 
 	/// <summary>
 	/// Whether the Text-only fields (<c>underline</c>, <c>opaque</c>, <c>xOffset</c>,
 	/// <c>yOffset</c>) apply to this kind.
 	/// </summary>
-	public bool ShowTextOptions { get; }
+	public bool ShowTextOptions { get; } = kind is EramFieldKind.Text;
 
 	/// <summary>
 	/// The <c>style</c> values CRC accepts for this kind, for the drop-down. Empty for Text,
 	/// which has no style.
 	/// </summary>
-	public IReadOnlyList<string> StyleOptions { get; }
+	public IReadOnlyList<string> StyleOptions { get; } = kind switch
+	{
+		EramFieldKind.Line => CrcPropertyValidator.ValidLineStyles,
+		EramFieldKind.Symbol => CrcPropertyValidator.ValidSymbolStyles,
+		_ => [],
+	};
 
 	/// <summary>The <c>bcg</c> values CRC accepts, for the drop-down.</summary>
 	public IReadOnlyList<string> BcgOptions { get; } = Range(
@@ -125,17 +108,19 @@ public sealed class EramClassDefault : ObservableObject
 	/// The <c>size</c> values CRC accepts for this kind, for the drop-down. Symbols and text
 	/// have different ranges.
 	/// </summary>
-	public IReadOnlyList<string> SizeOptions { get; }
+	public IReadOnlyList<string> SizeOptions { get; } = kind is EramFieldKind.Text
+			? Range(CrcPropertyValidator.MinTextSize, CrcPropertyValidator.MaxTextSize)
+			: Range(CrcPropertyValidator.MinSymbolSize, CrcPropertyValidator.MaxSymbolSize);
 
 	/// <summary>
 	/// The choices for the <c>underline</c> and <c>opaque</c> drop-downs. Bind the ComboBox's
 	/// <c>SelectedValue</c> with <c>SelectedValuePath="Value"</c>; each option shows as its label.
 	/// </summary>
-	public IReadOnlyList<YesNoOption> YesNoOptions { get; } = new[]
-	{
+	public IReadOnlyList<YesNoOption> YesNoOptions { get; } =
+	[
 		new YesNoOption(Yes, "Yes"),
 		new YesNoOption(No, "No"),
-	};
+	];
 
 	private static IReadOnlyList<string> Range(int minimum, int maximum)
 	{
@@ -452,10 +437,10 @@ public sealed class DesignationToggle(string designation, bool included, Action 
 public static class AirwayFebPropertyNames
 {
 	/// <summary>Every property, in the order the tab lists them.</summary>
-	public static IReadOnlyList<(AirwayFebProperty Property, string Name, string Description)> All { get; } = new[]
-	{
+	public static IReadOnlyList<(AirwayFebProperty Property, string Name, string Description)> All { get; } =
+	[
 		(AirwayFebProperty.AwyId, "awyId", "The airway ID. On Symbols and Text, every airway in the file that uses the point."),
 		(AirwayFebProperty.PointId, "pointId", "The waypoint's ID. Symbols only."),
 		(AirwayFebProperty.Waypoints, "waypoints", "The airway's waypoint IDs, in order. Lines only."),
-	};
+	];
 }

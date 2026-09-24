@@ -19,39 +19,39 @@ namespace FeBuddy.Wpf.Infrastructure;
 /// </remarks>
 public sealed class SavedStateSnapshot
 {
-    private readonly IReadOnlyDictionary<string, string> _values;
+	private readonly IReadOnlyDictionary<string, string> _values;
 
-    private SavedStateSnapshot(IReadOnlyDictionary<string, string> values) => _values = values;
+	private SavedStateSnapshot(IReadOnlyDictionary<string, string> values) => _values = values;
 
-    /// <summary>Freezes a copy of <paramref name="values"/>.</summary>
-    /// <param name="values">Every value the screen persists, by key.</param>
-    /// <returns>The snapshot.</returns>
-    public static SavedStateSnapshot Of(IReadOnlyDictionary<string, string> values)
-    {
-        ArgumentNullException.ThrowIfNull(values);
-        return new SavedStateSnapshot(new Dictionary<string, string>(values, StringComparer.Ordinal));
-    }
+	/// <summary>Freezes a copy of <paramref name="values"/>.</summary>
+	/// <param name="values">Every value the screen persists, by key.</param>
+	/// <returns>The snapshot.</returns>
+	public static SavedStateSnapshot Of(IReadOnlyDictionary<string, string> values)
+	{
+		ArgumentNullException.ThrowIfNull(values);
+		return new SavedStateSnapshot(new Dictionary<string, string>(values, StringComparer.Ordinal));
+	}
 
-    /// <summary>Whether <paramref name="current"/> holds exactly the snapshot's keys and values.</summary>
-    /// <param name="current">The screen's values right now, keyed as when the snapshot was taken.</param>
-    /// <returns><see langword="true"/> when nothing differs.</returns>
-    public bool Matches(IReadOnlyDictionary<string, string> current)
-    {
-        ArgumentNullException.ThrowIfNull(current);
+	/// <summary>Whether <paramref name="current"/> holds exactly the snapshot's keys and values.</summary>
+	/// <param name="current">The screen's values right now, keyed as when the snapshot was taken.</param>
+	/// <returns><see langword="true"/> when nothing differs.</returns>
+	public bool Matches(IReadOnlyDictionary<string, string> current)
+	{
+		ArgumentNullException.ThrowIfNull(current);
 
-        if (current.Count != _values.Count)
-        {
-            return false;
-        }
+		if (current.Count != _values.Count)
+		{
+			return false;
+		}
 
-        foreach ((string key, string value) in current)
-        {
-            if (!_values.TryGetValue(key, out string? saved) || !string.Equals(saved, value, StringComparison.Ordinal))
-            {
-                return false;
-            }
-        }
+		foreach ((string key, string value) in current)
+		{
+			if (!_values.TryGetValue(key, out string? saved) || !string.Equals(saved, value, StringComparison.Ordinal))
+			{
+				return false;
+			}
+		}
 
-        return true;
-    }
+		return true;
+	}
 }

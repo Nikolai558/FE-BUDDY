@@ -15,13 +15,13 @@ namespace FeBuddy.Wpf.Controls;
 /// </summary>
 public sealed class Option : ContentControl
 {
-    public static readonly DependencyProperty DescriptionProperty = DependencyProperty.Register(
-        nameof(Description), typeof(string), typeof(Option), new PropertyMetadata(null));
+	public static readonly DependencyProperty DescriptionProperty = DependencyProperty.Register(
+		nameof(Description), typeof(string), typeof(Option), new PropertyMetadata(null));
 
-    /// <summary>The explanation shown under the control. Leave unset for none.</summary>
-    public string? Description
-    {
-        get => (string?)GetValue(DescriptionProperty);
-        set => SetValue(DescriptionProperty, value);
-    }
+	/// <summary>The explanation shown under the control. Leave unset for none.</summary>
+	public string? Description
+	{
+		get => (string?)GetValue(DescriptionProperty);
+		set => SetValue(DescriptionProperty, value);
+	}
 }

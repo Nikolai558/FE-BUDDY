@@ -68,6 +68,7 @@ public sealed class AiracCycleDataCacheTests : IDisposable
 	{
 		TaskCompletionSource releaseCurrentParse = new(TaskCreationOptions.RunContinuationsAsynchronously);
 		TaskCompletionSource previousDownloadStarted = new(TaskCreationOptions.RunContinuationsAsynchronously);
+		TaskCompletionSource currentParseStarted = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
 		AiracCycleDataCache cache = new(
 			probe: AlwaysPublished,
@@ -84,6 +85,7 @@ public sealed class AiracCycleDataCacheTests : IDisposable
 			{
 				if (dir.EndsWith("2610", StringComparison.Ordinal))
 				{
+					currentParseStarted.TrySetResult();
 					await releaseCurrentParse.Task;
 				}
 
@@ -93,7 +95,8 @@ public sealed class AiracCycleDataCacheTests : IDisposable
 		Task prepare = cache.PrepareCyclesAsync(Previous, Current, Next);
 
 		// Current's parse is held open, yet the previous cycle's download must still get going.
-		await previousDownloadStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+		// Wait for both: the pipeline may start that download before current's queued parse begins.
+		await Task.WhenAll(currentParseStarted.Task, previousDownloadStarted.Task).WaitAsync(TimeSpan.FromSeconds(5));
 		Assert.Equal(CycleDataState.Parsing, cache.GetEntry("2610")!.State);
 		Assert.False(prepare.IsCompleted);
 

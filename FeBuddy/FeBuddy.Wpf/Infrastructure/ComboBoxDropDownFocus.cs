@@ -26,89 +26,89 @@ namespace FeBuddy.Wpf.Infrastructure;
 /// </remarks>
 public static class ComboBoxDropDownFocus
 {
-    /// <summary>Wheel step for a pixel-scrolling drop-down (<c>CanContentScroll="False"</c>).</summary>
-    private const double PixelsPerNotch = 48.0;
+	/// <summary>Wheel step for a pixel-scrolling drop-down (<c>CanContentScroll="False"</c>).</summary>
+	private const double PixelsPerNotch = 48.0;
 
-    private static ComboBox? _openCombo;
+	private static ComboBox? _openCombo;
 
-    static ComboBoxDropDownFocus()
-    {
-        EventManager.RegisterClassHandler(
-            typeof(Window), UIElement.PreviewMouseWheelEvent,
-            new MouseWheelEventHandler(OnAnyPreviewMouseWheel), handledEventsToo: true);
-    }
+	static ComboBoxDropDownFocus()
+	{
+		EventManager.RegisterClassHandler(
+			typeof(Window), UIElement.PreviewMouseWheelEvent,
+			new MouseWheelEventHandler(OnAnyPreviewMouseWheel), handledEventsToo: true);
+	}
 
-    public static readonly DependencyProperty EnableProperty =
-        DependencyProperty.RegisterAttached(
-            "Enable", typeof(bool), typeof(ComboBoxDropDownFocus),
-            new PropertyMetadata(false, OnEnableChanged));
+	public static readonly DependencyProperty EnableProperty =
+		DependencyProperty.RegisterAttached(
+			"Enable", typeof(bool), typeof(ComboBoxDropDownFocus),
+			new PropertyMetadata(false, OnEnableChanged));
 
-    public static void SetEnable(DependencyObject o, bool value) => o.SetValue(EnableProperty, value);
+	public static void SetEnable(DependencyObject o, bool value) => o.SetValue(EnableProperty, value);
 
-    public static bool GetEnable(DependencyObject o) => (bool)o.GetValue(EnableProperty);
+	public static bool GetEnable(DependencyObject o) => (bool)o.GetValue(EnableProperty);
 
-    private static void OnEnableChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
-    {
-        if (d is not ComboBox comboBox)
-        {
-            return;
-        }
+	private static void OnEnableChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+	{
+		if (d is not ComboBox comboBox)
+		{
+			return;
+		}
 
-        comboBox.DropDownOpened -= OnDropDownOpened;
-        comboBox.DropDownClosed -= OnDropDownClosed;
-        if ((bool)e.NewValue)
-        {
-            comboBox.DropDownOpened += OnDropDownOpened;
-            comboBox.DropDownClosed += OnDropDownClosed;
-        }
-    }
+		comboBox.DropDownOpened -= OnDropDownOpened;
+		comboBox.DropDownClosed -= OnDropDownClosed;
+		if ((bool)e.NewValue)
+		{
+			comboBox.DropDownOpened += OnDropDownOpened;
+			comboBox.DropDownClosed += OnDropDownClosed;
+		}
+	}
 
-    private static void OnDropDownOpened(object? sender, EventArgs e) => _openCombo = sender as ComboBox;
+	private static void OnDropDownOpened(object? sender, EventArgs e) => _openCombo = sender as ComboBox;
 
-    private static void OnDropDownClosed(object? sender, EventArgs e)
-    {
-        if (ReferenceEquals(_openCombo, sender))
-        {
-            _openCombo = null;
-        }
-    }
+	private static void OnDropDownClosed(object? sender, EventArgs e)
+	{
+		if (ReferenceEquals(_openCombo, sender))
+		{
+			_openCombo = null;
+		}
+	}
 
-    private static void OnAnyPreviewMouseWheel(object sender, MouseWheelEventArgs e)
-    {
-        if (_openCombo is not { IsDropDownOpen: true } combo)
-        {
-            return;
-        }
+	private static void OnAnyPreviewMouseWheel(object sender, MouseWheelEventArgs e)
+	{
+		if (_openCombo is not { IsDropDownOpen: true } combo)
+		{
+			return;
+		}
 
-        if (combo.Template?.FindName("PART_DropDownScroll", combo) is not ScrollViewer scroller ||
-            !scroller.IsVisible)
-        {
-            return;
-        }
+		if (combo.Template?.FindName("PART_DropDownScroll", combo) is not ScrollViewer scroller ||
+			!scroller.IsVisible)
+		{
+			return;
+		}
 
-        // Mouse.GetPosition stays in WPF's own DPI-independent units throughout, unlike mixing
-        // a raw GetCursorPos (physical pixels) with PointToScreen (already DPI-scaled) - that
-        // combination is only correct at exactly 100% display scaling and silently miscomputes
-        // the hit-test everywhere else, which is why this ever needed fixing at all.
-        Point local = Mouse.GetPosition(scroller);
-        if (local.X < 0 || local.Y < 0 || local.X > scroller.ActualWidth || local.Y > scroller.ActualHeight)
-        {
-            return;
-        }
+		// Mouse.GetPosition stays in WPF's own DPI-independent units throughout, unlike mixing
+		// a raw GetCursorPos (physical pixels) with PointToScreen (already DPI-scaled) - that
+		// combination is only correct at exactly 100% display scaling and silently miscomputes
+		// the hit-test everywhere else, which is why this ever needed fixing at all.
+		Point local = Mouse.GetPosition(scroller);
+		if (local.X < 0 || local.Y < 0 || local.X > scroller.ActualWidth || local.Y > scroller.ActualHeight)
+		{
+			return;
+		}
 
-        // VerticalOffset's UNIT depends on the ScrollViewer: with CanContentScroll on it counts
-        // items; with it off it counts device-independent pixels. ComboBox's theme style turns
-        // CanContentScroll on (the drop-down list virtualizes), so the pixel-sized step this used
-        // to apply - 48 per notch - actually moved the list 48 *items*. On any list shorter than
-        // that, which is every list in the app, one notch jumped straight from the top to the
-        // bottom and the middle of the list could never be seen. Scroll in the unit the
-        // ScrollViewer is really using.
-        double notches = e.Delta / 120.0;
-        double step = scroller.CanContentScroll
-            ? notches * Math.Max(1, SystemParameters.WheelScrollLines)   // items per notch
-            : notches * PixelsPerNotch;                                  // pixels per notch
+		// VerticalOffset's UNIT depends on the ScrollViewer: with CanContentScroll on it counts
+		// items; with it off it counts device-independent pixels. ComboBox's theme style turns
+		// CanContentScroll on (the drop-down list virtualizes), so the pixel-sized step this used
+		// to apply - 48 per notch - actually moved the list 48 *items*. On any list shorter than
+		// that, which is every list in the app, one notch jumped straight from the top to the
+		// bottom and the middle of the list could never be seen. Scroll in the unit the
+		// ScrollViewer is really using.
+		double notches = e.Delta / 120.0;
+		double step = scroller.CanContentScroll
+			? notches * Math.Max(1, SystemParameters.WheelScrollLines)   // items per notch
+			: notches * PixelsPerNotch;                                  // pixels per notch
 
-        e.Handled = true;
-        scroller.ScrollToVerticalOffset(scroller.VerticalOffset - step);
-    }
+		e.Handled = true;
+		scroller.ScrollToVerticalOffset(scroller.VerticalOffset - step);
+	}
 }

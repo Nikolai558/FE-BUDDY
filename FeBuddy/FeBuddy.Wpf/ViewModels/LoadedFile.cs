@@ -10,38 +10,31 @@ namespace FeBuddy.Wpf.ViewModels;
 /// visibility toggle, and a remove command. Toggling <see cref="IsVisible"/>
 /// calls back into the owning view-model so it can rebuild the draw list.
 /// </summary>
-public sealed class LoadedFile : ObservableObject
+public sealed class LoadedFile(MapLayer layer, Action onVisibilityChanged, ICommand removeCommand) : ObservableObject
 {
-    private readonly Action _onVisibilityChanged;
-    private bool _isVisible = true;
+	private readonly Action _onVisibilityChanged = onVisibilityChanged;
+	private bool _isVisible = true;
 
-    public LoadedFile(MapLayer layer, Action onVisibilityChanged, ICommand removeCommand)
-    {
-        Layer = layer;
-        _onVisibilityChanged = onVisibilityChanged;
-        RemoveCommand = removeCommand;
-    }
+	public MapLayer Layer { get; } = layer;
 
-    public MapLayer Layer { get; }
+	public string Name => Layer.Name;
 
-    public string Name => Layer.Name;
+	/// <summary>Legend swatch colour (matches the on-map stroke).</summary>
+	public Brush Swatch => Layer.Stroke;
 
-    /// <summary>Legend swatch colour (matches the on-map stroke).</summary>
-    public Brush Swatch => Layer.Stroke;
+	public int GeometryCount => Layer.Geometries.Count;
 
-    public int GeometryCount => Layer.Geometries.Count;
+	public bool IsVisible
+	{
+		get => _isVisible;
+		set
+		{
+			if (SetProperty(ref _isVisible, value))
+			{
+				_onVisibilityChanged();
+			}
+		}
+	}
 
-    public bool IsVisible
-    {
-        get => _isVisible;
-        set
-        {
-            if (SetProperty(ref _isVisible, value))
-            {
-                _onVisibilityChanged();
-            }
-        }
-    }
-
-    public ICommand RemoveCommand { get; }
+	public ICommand RemoveCommand { get; } = removeCommand;
 }

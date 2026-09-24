@@ -16,11 +16,11 @@ namespace FeBuddy.Wpf.Infrastructure;
 /// </summary>
 public interface IOutputSettings
 {
-    /// <summary>The sub-service's name, used in the "at least one output" reminder.</summary>
-    string Title { get; }
+	/// <summary>The sub-service's name, used in the "at least one output" reminder.</summary>
+	string Title { get; }
 
-    /// <summary>Write the sub-service's alias file.</summary>
-    bool GenerateAliasFile { get; set; }
+	/// <summary>Write the sub-service's alias file.</summary>
+	bool GenerateAliasFile { get; set; }
 }
 
 /// <summary>
@@ -29,24 +29,24 @@ public interface IOutputSettings
 /// </summary>
 public interface IGeojsonFileChoices
 {
-    /// <summary>Write the <c>_Lines</c> file.</summary>
-    bool EmitLines { get; set; }
+	/// <summary>Write the <c>_Lines</c> file.</summary>
+	bool EmitLines { get; set; }
 
-    /// <summary>Write the <c>_Symbols</c> file.</summary>
-    bool EmitSymbols { get; set; }
+	/// <summary>Write the <c>_Symbols</c> file.</summary>
+	bool EmitSymbols { get; set; }
 
-    /// <summary>Write the <c>_Text</c> file.</summary>
-    bool EmitText { get; set; }
+	/// <summary>Write the <c>_Text</c> file.</summary>
+	bool EmitText { get; set; }
 }
 
 /// <summary>The FE-Buddy Properties card (<c>Views/Cards/FebPropertiesCard</c>).</summary>
 public interface IFebPropertySettings
 {
-    /// <summary>Whether Features carry the selected <c>feb.*</c> properties.</summary>
-    bool IncludeFebCustomProperties { get; set; }
+	/// <summary>Whether Features carry the selected <c>feb.*</c> properties.</summary>
+	bool IncludeFebCustomProperties { get; set; }
 
-    /// <summary>One toggle per <c>feb.*</c> property this sub-service can write.</summary>
-    ObservableCollection<FebPropertyToggle> FebProperties { get; }
+	/// <summary>One toggle per <c>feb.*</c> property this sub-service can write.</summary>
+	ObservableCollection<FebPropertyToggle> FebProperties { get; }
 }
 
 /// <summary>
@@ -56,52 +56,52 @@ public interface IFebPropertySettings
 /// </summary>
 public interface ICrcDefaultsSettings : IGeojsonFileChoices
 {
-    /// <summary>Write the CRC ERAM defaults into the <c>_Lines</c> file.</summary>
-    bool IncludeCrcLineDefaults { get; set; }
+	/// <summary>Write the CRC ERAM defaults into the <c>_Lines</c> file.</summary>
+	bool IncludeCrcLineDefaults { get; set; }
 
-    /// <summary>Write the CRC ERAM defaults into the <c>_Symbols</c> file.</summary>
-    bool IncludeCrcSymbolDefaults { get; set; }
+	/// <summary>Write the CRC ERAM defaults into the <c>_Symbols</c> file.</summary>
+	bool IncludeCrcSymbolDefaults { get; set; }
 
-    /// <summary>Write the CRC ERAM defaults into the <c>_Text</c> file.</summary>
-    bool IncludeCrcTextDefaults { get; set; }
+	/// <summary>Write the CRC ERAM defaults into the <c>_Text</c> file.</summary>
+	bool IncludeCrcTextDefaults { get; set; }
 
-    /// <summary>The Lines defaults: one row per class (one column in the panel each).</summary>
-    ObservableCollection<EramClassDefault> LineDefaults { get; }
+	/// <summary>The Lines defaults: one row per class (one column in the panel each).</summary>
+	ObservableCollection<EramClassDefault> LineDefaults { get; }
 
-    /// <summary>The Symbols defaults: one row per class.</summary>
-    ObservableCollection<EramClassDefault> SymbolDefaults { get; }
+	/// <summary>The Symbols defaults: one row per class.</summary>
+	ObservableCollection<EramClassDefault> SymbolDefaults { get; }
 
-    /// <summary>The Text defaults: one row per class.</summary>
-    ObservableCollection<EramClassDefault> TextDefaults { get; }
+	/// <summary>The Text defaults: one row per class.</summary>
+	ObservableCollection<EramClassDefault> TextDefaults { get; }
 }
 
 /// <summary>The Region of Interest card (<c>Views/Cards/RoiOverrideCard</c>).</summary>
 public interface IRoiOverrideSettings
 {
-    /// <summary>The sub-service's name, used in "Override the default ROI for ...".</summary>
-    string Title { get; }
+	/// <summary>The sub-service's name, used in "Override the default ROI for ...".</summary>
+	string Title { get; }
 
-    /// <summary>Whether this sub-service uses its own ROI instead of the shared default one.</summary>
-    bool OverrideRoi { get; set; }
+	/// <summary>Whether this sub-service uses its own ROI instead of the shared default one.</summary>
+	bool OverrideRoi { get; set; }
 
-    /// <summary>Southwest corner latitude of the override ROI.</summary>
-    string SwLat { get; set; }
+	/// <summary>Southwest corner latitude of the override ROI.</summary>
+	string SwLat { get; set; }
 
-    /// <summary>Southwest corner longitude of the override ROI.</summary>
-    string SwLon { get; set; }
+	/// <summary>Southwest corner longitude of the override ROI.</summary>
+	string SwLon { get; set; }
 
-    /// <summary>Northeast corner latitude of the override ROI.</summary>
-    string NeLat { get; set; }
+	/// <summary>Northeast corner latitude of the override ROI.</summary>
+	string NeLat { get; set; }
 
-    /// <summary>Northeast corner longitude of the override ROI.</summary>
-    string NeLon { get; set; }
+	/// <summary>Northeast corner longitude of the override ROI.</summary>
+	string NeLon { get; set; }
 
-    /// <summary>What the run uses when the override is off, shown under the checkbox.</summary>
-    string RoiFallbackHint { get; }
+	/// <summary>What the run uses when the override is off, shown under the checkbox.</summary>
+	string RoiFallbackHint { get; }
 
-    /// <summary>Per-field validation messages, keyed by property name (<c>SwLat</c> ...).</summary>
-    ServiceFieldErrors FieldErrors { get; }
+	/// <summary>Per-field validation messages, keyed by property name (<c>SwLat</c> ...).</summary>
+	ServiceFieldErrors FieldErrors { get; }
 
-    /// <summary>Opens the shared ROI picker and copies what the user confirms into the four boxes.</summary>
-    ICommand PickRoiOnMapCommand { get; }
+	/// <summary>Opens the shared ROI picker and copies what the user confirms into the four boxes.</summary>
+	ICommand PickRoiOnMapCommand { get; }
 }

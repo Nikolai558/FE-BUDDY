@@ -28,38 +28,38 @@ namespace FeBuddy.Wpf.Infrastructure;
 /// </summary>
 public class ChromeWindow : Window
 {
-    /// <summary>Initializes the window and installs the custom chrome.</summary>
-    public ChromeWindow()
-    {
-        SetResourceReference(StyleProperty, "ChromeWindowStyle");
+	/// <summary>Initializes the window and installs the custom chrome.</summary>
+	public ChromeWindow()
+	{
+		SetResourceReference(StyleProperty, "ChromeWindowStyle");
 
-        WindowStyle = WindowStyle.None;
-        WindowChrome.SetWindowChrome(this, new WindowChrome
-        {
-            CaptionHeight = 40,
-            ResizeBorderThickness = new Thickness(6),
-            CornerRadius = new CornerRadius(0),
-            GlassFrameThickness = new Thickness(0),
-            UseAeroCaptionButtons = false,
-        });
-        MaximizeToWorkArea.Attach(this);
-    }
+		WindowStyle = WindowStyle.None;
+		WindowChrome.SetWindowChrome(this, new WindowChrome
+		{
+			CaptionHeight = 40,
+			ResizeBorderThickness = new Thickness(6),
+			CornerRadius = new CornerRadius(0),
+			GlassFrameThickness = new Thickness(0),
+			UseAeroCaptionButtons = false,
+		});
+		MaximizeToWorkArea.Attach(this);
+	}
 
-    /// <inheritdoc />
-    public override void OnApplyTemplate()
-    {
-        base.OnApplyTemplate();
-        Hook("PART_Minimize", () => WindowState = WindowState.Minimized);
-        Hook("PART_MaxRestore", () => WindowState =
-            WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized);
-        Hook("PART_Close", Close);
-    }
+	/// <inheritdoc />
+	public override void OnApplyTemplate()
+	{
+		base.OnApplyTemplate();
+		Hook("PART_Minimize", () => WindowState = WindowState.Minimized);
+		Hook("PART_MaxRestore", () => WindowState =
+			WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized);
+		Hook("PART_Close", Close);
+	}
 
-    private void Hook(string partName, Action action)
-    {
-        if (GetTemplateChild(partName) is ButtonBase button)
-        {
-            button.Click += (_, _) => action();
-        }
-    }
+	private void Hook(string partName, Action action)
+	{
+		if (GetTemplateChild(partName) is ButtonBase button)
+		{
+			button.Click += (_, _) => action();
+		}
+	}
 }

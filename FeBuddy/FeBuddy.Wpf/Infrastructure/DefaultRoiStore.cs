@@ -19,52 +19,52 @@ namespace FeBuddy.Wpf.Infrastructure;
 /// </remarks>
 public static class DefaultRoiStore
 {
-    private const string Node = "Services.AiracService.DefaultRoi";
-    private const string FilterKey = $"{Node}.FilterByRoi";
-    private const string SwLatKey = $"{Node}.DefaultCoordindates.SwLat";
-    private const string SwLonKey = $"{Node}.DefaultCoordindates.SwLon";
-    private const string NeLatKey = $"{Node}.DefaultCoordindates.NeLat";
-    private const string NeLonKey = $"{Node}.DefaultCoordindates.NeLon";
+	private const string Node = "Services.AiracService.DefaultRoi";
+	private const string FilterKey = $"{Node}.FilterByRoi";
+	private const string SwLatKey = $"{Node}.DefaultCoordindates.SwLat";
+	private const string SwLonKey = $"{Node}.DefaultCoordindates.SwLon";
+	private const string NeLatKey = $"{Node}.DefaultCoordindates.NeLat";
+	private const string NeLonKey = $"{Node}.DefaultCoordindates.NeLon";
 
-    /// <summary>Raised after <see cref="Set"/> or <see cref="Clear"/> writes to disk.</summary>
-    public static event EventHandler? Changed;
+	/// <summary>Raised after <see cref="Set"/> or <see cref="Clear"/> writes to disk.</summary>
+	public static event EventHandler? Changed;
 
-    /// <summary>Reads the current default ROI, or <see langword="null"/> when none is set.</summary>
-    public static RegionOfInterest? Load()
-    {
-        // Clear() only flips this flag - it leaves the last-drawn coordinates in place (in case
-        // the user re-enables the ROI and wants them back), so they must not be trusted alone.
-        if (!string.Equals(UserConfigFile.GetValue(FilterKey), "true", StringComparison.OrdinalIgnoreCase))
-        {
-            return null;
-        }
+	/// <summary>Reads the current default ROI, or <see langword="null"/> when none is set.</summary>
+	public static RegionOfInterest? Load()
+	{
+		// Clear() only flips this flag - it leaves the last-drawn coordinates in place (in case
+		// the user re-enables the ROI and wants them back), so they must not be trusted alone.
+		if (!string.Equals(UserConfigFile.GetValue(FilterKey), "true", StringComparison.OrdinalIgnoreCase))
+		{
+			return null;
+		}
 
-        if (double.TryParse(UserConfigFile.GetValue(SwLatKey), NumberStyles.Float, CultureInfo.InvariantCulture, out double swLat)
-            && double.TryParse(UserConfigFile.GetValue(SwLonKey), NumberStyles.Float, CultureInfo.InvariantCulture, out double swLon)
-            && double.TryParse(UserConfigFile.GetValue(NeLatKey), NumberStyles.Float, CultureInfo.InvariantCulture, out double neLat)
-            && double.TryParse(UserConfigFile.GetValue(NeLonKey), NumberStyles.Float, CultureInfo.InvariantCulture, out double neLon))
-        {
-            return new RegionOfInterest(swLat, swLon, neLat, neLon);
-        }
+		if (double.TryParse(UserConfigFile.GetValue(SwLatKey), NumberStyles.Float, CultureInfo.InvariantCulture, out double swLat)
+			&& double.TryParse(UserConfigFile.GetValue(SwLonKey), NumberStyles.Float, CultureInfo.InvariantCulture, out double swLon)
+			&& double.TryParse(UserConfigFile.GetValue(NeLatKey), NumberStyles.Float, CultureInfo.InvariantCulture, out double neLat)
+			&& double.TryParse(UserConfigFile.GetValue(NeLonKey), NumberStyles.Float, CultureInfo.InvariantCulture, out double neLon))
+		{
+			return new RegionOfInterest(swLat, swLon, neLat, neLon);
+		}
 
-        return null;
-    }
+		return null;
+	}
 
-    public static void Set(RegionOfInterest roi)
-    {
-        UserConfigFile.TrySetValue(FilterKey, "true");
-        UserConfigFile.TrySetValue(SwLatKey, roi.SwLat.ToString(CultureInfo.InvariantCulture));
-        UserConfigFile.TrySetValue(SwLonKey, roi.SwLon.ToString(CultureInfo.InvariantCulture));
-        UserConfigFile.TrySetValue(NeLatKey, roi.NeLat.ToString(CultureInfo.InvariantCulture));
-        UserConfigFile.TrySetValue(NeLonKey, roi.NeLon.ToString(CultureInfo.InvariantCulture));
-        UserConfigFile.Save(Node);
-        Changed?.Invoke(null, EventArgs.Empty);
-    }
+	public static void Set(RegionOfInterest roi)
+	{
+		UserConfigFile.TrySetValue(FilterKey, "true");
+		UserConfigFile.TrySetValue(SwLatKey, roi.SwLat.ToString(CultureInfo.InvariantCulture));
+		UserConfigFile.TrySetValue(SwLonKey, roi.SwLon.ToString(CultureInfo.InvariantCulture));
+		UserConfigFile.TrySetValue(NeLatKey, roi.NeLat.ToString(CultureInfo.InvariantCulture));
+		UserConfigFile.TrySetValue(NeLonKey, roi.NeLon.ToString(CultureInfo.InvariantCulture));
+		UserConfigFile.Save(Node);
+		Changed?.Invoke(null, EventArgs.Empty);
+	}
 
-    public static void Clear()
-    {
-        UserConfigFile.TrySetValue(FilterKey, "false");
-        UserConfigFile.Save(Node);
-        Changed?.Invoke(null, EventArgs.Empty);
-    }
+	public static void Clear()
+	{
+		UserConfigFile.TrySetValue(FilterKey, "false");
+		UserConfigFile.Save(Node);
+		Changed?.Invoke(null, EventArgs.Empty);
+	}
 }

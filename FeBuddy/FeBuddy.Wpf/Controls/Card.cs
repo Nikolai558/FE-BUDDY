@@ -16,16 +16,16 @@ namespace FeBuddy.Wpf.Controls;
 /// </summary>
 public sealed class Card : ContentControl
 {
-    public static readonly DependencyProperty HeaderProperty = DependencyProperty.Register(
-        nameof(Header), typeof(string), typeof(Card), new PropertyMetadata(null));
+	public static readonly DependencyProperty HeaderProperty = DependencyProperty.Register(
+		nameof(Header), typeof(string), typeof(Card), new PropertyMetadata(null));
 
-    /// <summary>
-    /// The card's title, written in normal case ("Region of Interest"); SectionHeader sets the
-    /// casing. Leave unset for a card with no title.
-    /// </summary>
-    public string? Header
-    {
-        get => (string?)GetValue(HeaderProperty);
-        set => SetValue(HeaderProperty, value);
-    }
+	/// <summary>
+	/// The card's title, written in normal case ("Region of Interest"); SectionHeader sets the
+	/// casing. Leave unset for a card with no title.
+	/// </summary>
+	public string? Header
+	{
+		get => (string?)GetValue(HeaderProperty);
+		set => SetValue(HeaderProperty, value);
+	}
 }

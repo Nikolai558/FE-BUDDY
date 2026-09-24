@@ -23,20 +23,20 @@ namespace FeBuddy.Wpf.ViewModels;
 /// </remarks>
 public static class AiracSubServices
 {
-    /// <summary>The Airports sub-service key.</summary>
-    public const string AirportsKey = "Airports";
+	/// <summary>The Airports sub-service key.</summary>
+	public const string AirportsKey = "Airports";
 
-    /// <summary>The Airways sub-service key.</summary>
-    public const string AirwaysKey = "Airways";
+	/// <summary>The Airways sub-service key.</summary>
+	public const string AirwaysKey = "Airways";
 
-    /// <summary>The Departures sub-service key.</summary>
-    public const string DeparturesKey = "Departures";
+	/// <summary>The Departures sub-service key.</summary>
+	public const string DeparturesKey = "Departures";
 
-    /// <summary>Every sub-service, in the order the picker and the tab rail show them.</summary>
-    public static IReadOnlyList<SubServiceDescriptor> All { get; } = new[]
-    {
-        new SubServiceDescriptor(AirportsKey, "Airports", 10, true, () => new AirportsViewModel()),
-        new SubServiceDescriptor(AirwaysKey, "Airways", 20, true, () => new AirwaysViewModel()),
-        new SubServiceDescriptor(DeparturesKey, "Departures", 30, true, () => new DeparturesViewModel()),
-    };
+	/// <summary>Every sub-service, in the order the picker and the tab rail show them.</summary>
+	public static IReadOnlyList<SubServiceDescriptor> All { get; } =
+	[
+		new SubServiceDescriptor(AirportsKey, "Airports", 10, true, () => new AirportsViewModel()),
+		new SubServiceDescriptor(AirwaysKey, "Airways", 20, true, () => new AirwaysViewModel()),
+		new SubServiceDescriptor(DeparturesKey, "Departures", 30, true, () => new DeparturesViewModel()),
+	];
 }

@@ -4,5 +4,5 @@ namespace FeBuddy.Wpf.Views;
 
 public partial class InfoView : UserControl
 {
-    public InfoView() => InitializeComponent();
+	public InfoView() => InitializeComponent();
 }

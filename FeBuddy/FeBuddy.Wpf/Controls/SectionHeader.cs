@@ -25,33 +25,33 @@ namespace FeBuddy.Wpf.Controls;
 /// </summary>
 public sealed class SectionHeader : Control
 {
-    public static readonly DependencyProperty LabelProperty = DependencyProperty.Register(
-        nameof(Label), typeof(string), typeof(SectionHeader), new PropertyMetadata(string.Empty));
+	public static readonly DependencyProperty LabelProperty = DependencyProperty.Register(
+		nameof(Label), typeof(string), typeof(SectionHeader), new PropertyMetadata(string.Empty));
 
-    public static readonly DependencyProperty AsideProperty = DependencyProperty.Register(
-        nameof(Aside), typeof(object), typeof(SectionHeader), new PropertyMetadata(null));
+	public static readonly DependencyProperty AsideProperty = DependencyProperty.Register(
+		nameof(Aside), typeof(object), typeof(SectionHeader), new PropertyMetadata(null));
 
-    public static readonly DependencyProperty TextStyleProperty = DependencyProperty.Register(
-        nameof(TextStyle), typeof(Style), typeof(SectionHeader), new PropertyMetadata(null));
+	public static readonly DependencyProperty TextStyleProperty = DependencyProperty.Register(
+		nameof(TextStyle), typeof(Style), typeof(SectionHeader), new PropertyMetadata(null));
 
-    /// <summary>The heading text, in normal case; it is shown upper-cased.</summary>
-    public string Label
-    {
-        get => (string)GetValue(LabelProperty);
-        set => SetValue(LabelProperty, value);
-    }
+	/// <summary>The heading text, in normal case; it is shown upper-cased.</summary>
+	public string Label
+	{
+		get => (string)GetValue(LabelProperty);
+		set => SetValue(LabelProperty, value);
+	}
 
-    /// <summary>Optional element shown right-aligned next to the label (e.g. a link button).</summary>
-    public object? Aside
-    {
-        get => GetValue(AsideProperty);
-        set => SetValue(AsideProperty, value);
-    }
+	/// <summary>Optional element shown right-aligned next to the label (e.g. a link button).</summary>
+	public object? Aside
+	{
+		get => GetValue(AsideProperty);
+		set => SetValue(AsideProperty, value);
+	}
 
-    /// <summary>The label's TextBlock style. Set by the theme's SectionHeader styles, not at call sites.</summary>
-    public Style? TextStyle
-    {
-        get => (Style?)GetValue(TextStyleProperty);
-        set => SetValue(TextStyleProperty, value);
-    }
+	/// <summary>The label's TextBlock style. Set by the theme's SectionHeader styles, not at call sites.</summary>
+	public Style? TextStyle
+	{
+		get => (Style?)GetValue(TextStyleProperty);
+		set => SetValue(TextStyleProperty, value);
+	}
 }

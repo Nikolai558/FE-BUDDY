@@ -21,8 +21,8 @@ namespace FeBuddy.Wpf.Infrastructure;
 /// </param>
 /// <param name="CreateTab">Builds the tab view-model. Called once, the first time it is selected.</param>
 public sealed record SubServiceDescriptor(
-    string Key,
-    string DisplayName,
-    int Order,
-    bool IsImplemented,
-    Func<ServiceTabViewModel> CreateTab);
+	string Key,
+	string DisplayName,
+	int Order,
+	bool IsImplemented,
+	Func<ServiceTabViewModel> CreateTab);

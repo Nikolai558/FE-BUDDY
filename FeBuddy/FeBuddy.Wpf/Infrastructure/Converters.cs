@@ -14,30 +14,30 @@ namespace FeBuddy.Wpf.Infrastructure;
 /// </summary>
 public sealed partial class MarkdownToPlainTextConverter : IValueConverter
 {
-    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
-    {
-        if (value is not string s || s.Length == 0)
-        {
-            return value ?? string.Empty;
-        }
+	public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+	{
+		if (value is not string s || s.Length == 0)
+		{
+			return value ?? string.Empty;
+		}
 
-        s = LinkPattern().Replace(s, "$1");
-        s = EmphasisPattern().Replace(s, string.Empty);
-        s = HeadingPattern().Replace(s, string.Empty);
-        return s;
-    }
+		s = LinkPattern().Replace(s, "$1");
+		s = EmphasisPattern().Replace(s, string.Empty);
+		s = HeadingPattern().Replace(s, string.Empty);
+		return s;
+	}
 
-    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
-        => Binding.DoNothing;
+	public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+		=> Binding.DoNothing;
 
-    [GeneratedRegex(@"\[([^\]]+)\]\([^)]*\)")]
-    private static partial Regex LinkPattern();
+	[GeneratedRegex(@"\[([^\]]+)\]\([^)]*\)")]
+	private static partial Regex LinkPattern();
 
-    [GeneratedRegex(@"\*\*|__|(?<=\s)\*(?=\S)|(?<=\S)\*(?=\s)")]
-    private static partial Regex EmphasisPattern();
+	[GeneratedRegex(@"\*\*|__|(?<=\s)\*(?=\S)|(?<=\S)\*(?=\s)")]
+	private static partial Regex EmphasisPattern();
 
-    [GeneratedRegex(@"^\s{0,3}#{1,6}\s*", RegexOptions.Multiline)]
-    private static partial Regex HeadingPattern();
+	[GeneratedRegex(@"^\s{0,3}#{1,6}\s*", RegexOptions.Multiline)]
+	private static partial Regex HeadingPattern();
 }
 
 /// <summary>
@@ -46,25 +46,25 @@ public sealed partial class MarkdownToPlainTextConverter : IValueConverter
 /// </summary>
 public sealed class BoolToVisibilityConverter : IValueConverter
 {
-    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
-    {
-        var flag = value is true;
-        if (IsInvert(parameter))
-        {
-            flag = !flag;
-        }
+	public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+	{
+		var flag = value is true;
+		if (IsInvert(parameter))
+		{
+			flag = !flag;
+		}
 
-        return flag ? Visibility.Visible : Visibility.Collapsed;
-    }
+		return flag ? Visibility.Visible : Visibility.Collapsed;
+	}
 
-    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
-    {
-        var visible = value is Visibility.Visible;
-        return IsInvert(parameter) ? !visible : visible;
-    }
+	public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+	{
+		var visible = value is Visibility.Visible;
+		return IsInvert(parameter) ? !visible : visible;
+	}
 
-    private static bool IsInvert(object? parameter)
-        => string.Equals(parameter as string, "Invert", StringComparison.OrdinalIgnoreCase);
+	private static bool IsInvert(object? parameter)
+		=> string.Equals(parameter as string, "Invert", StringComparison.OrdinalIgnoreCase);
 }
 
 /// <summary>
@@ -74,19 +74,19 @@ public sealed class BoolToVisibilityConverter : IValueConverter
 /// </summary>
 public sealed class StringToVisibilityConverter : IValueConverter
 {
-    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
-    {
-        var hasText = !string.IsNullOrWhiteSpace(value as string);
-        if (string.Equals(parameter as string, "Invert", StringComparison.OrdinalIgnoreCase))
-        {
-            hasText = !hasText;
-        }
+	public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+	{
+		var hasText = !string.IsNullOrWhiteSpace(value as string);
+		if (string.Equals(parameter as string, "Invert", StringComparison.OrdinalIgnoreCase))
+		{
+			hasText = !hasText;
+		}
 
-        return hasText ? Visibility.Visible : Visibility.Collapsed;
-    }
+		return hasText ? Visibility.Visible : Visibility.Collapsed;
+	}
 
-    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
-        => Binding.DoNothing;
+	public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+		=> Binding.DoNothing;
 }
 
 /// <summary>
@@ -96,11 +96,11 @@ public sealed class StringToVisibilityConverter : IValueConverter
 /// </summary>
 public sealed class InverseBooleanConverter : IValueConverter
 {
-    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
-        => value is bool b && !b;
+	public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+		=> value is bool b && !b;
 
-    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
-        => value is bool b && !b;
+	public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+		=> value is bool b && !b;
 }
 
 /// <summary>
@@ -114,19 +114,19 @@ public sealed class InverseBooleanConverter : IValueConverter
 /// </summary>
 public sealed class EnumToBooleanConverter : IValueConverter
 {
-    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
-        => value is not null && parameter is string name
-           && string.Equals(value.ToString(), name, StringComparison.Ordinal);
+	public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+		=> value is not null && parameter is string name
+		   && string.Equals(value.ToString(), name, StringComparison.Ordinal);
 
-    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
-    {
-        if (value is true && parameter is string name && targetType.IsEnum)
-        {
-            return Enum.Parse(targetType, name);
-        }
+	public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+	{
+		if (value is true && parameter is string name && targetType.IsEnum)
+		{
+			return Enum.Parse(targetType, name);
+		}
 
-        return Binding.DoNothing;
-    }
+		return Binding.DoNothing;
+	}
 }
 
 /// <summary>
@@ -135,9 +135,9 @@ public sealed class EnumToBooleanConverter : IValueConverter
 /// </summary>
 public sealed class UpperCaseConverter : IValueConverter
 {
-    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
-        => (value as string)?.ToUpper(culture) ?? string.Empty;
+	public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+		=> (value as string)?.ToUpper(culture) ?? string.Empty;
 
-    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
-        => Binding.DoNothing;
+	public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+		=> Binding.DoNothing;
 }

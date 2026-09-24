@@ -12,51 +12,42 @@ namespace FeBuddy.Wpf.ViewModels;
 /// nav groups without any ListBox selection juggling.
 /// </para>
 /// </summary>
-public sealed class NavItem : ObservableObject
+/// <param name="title">The row's label.</param>
+/// <param name="glyph">Icon glyph from <c>Icons.xaml</c>.</param>
+/// <param name="viewModelFactory">Builds the section's view-model on first activation.</param>
+/// <param name="onActivated">Called when this row becomes the active one.</param>
+public sealed class NavItem(
+	string title,
+	string glyph,
+	Func<object> viewModelFactory,
+	Action<NavItem> onActivated) : ObservableObject
 {
-    private readonly Func<object> _viewModelFactory;
-    private readonly Action<NavItem> _onActivated;
-    private object? _viewModel;
-    private bool _isActive;
+	private readonly Func<object> _viewModelFactory = viewModelFactory;
+	private readonly Action<NavItem> _onActivated = onActivated;
+	private object? _viewModel;
+	private bool _isActive;
 
-    /// <summary>Creates a nav entry.</summary>
-    /// <param name="title">The row's label.</param>
-    /// <param name="glyph">Icon glyph from <c>Icons.xaml</c>.</param>
-    /// <param name="viewModelFactory">Builds the section's view-model on first activation.</param>
-    /// <param name="onActivated">Called when this row becomes the active one.</param>
-    public NavItem(
-        string title,
-        string glyph,
-        Func<object> viewModelFactory,
-        Action<NavItem> onActivated)
-    {
-        Title = title;
-        Glyph = glyph;
-        _viewModelFactory = viewModelFactory;
-        _onActivated = onActivated;
-    }
+	public string Title { get; } = title;
 
-    public string Title { get; }
+	/// <summary>Icon glyph string (from Icons.xaml).</summary>
+	public string Glyph { get; } = glyph;
 
-    /// <summary>Icon glyph string (from Icons.xaml).</summary>
-    public string Glyph { get; }
+	/// <summary>The section's view-model; built on first access, cached after.</summary>
+	public object ViewModel => _viewModel ??= _viewModelFactory();
 
-    /// <summary>The section's view-model; built on first access, cached after.</summary>
-    public object ViewModel => _viewModel ??= _viewModelFactory();
+	/// <summary>The section's view-model if it has been opened, without building it.</summary>
+	public object? CreatedViewModel => _viewModel;
 
-    /// <summary>The section's view-model if it has been opened, without building it.</summary>
-    public object? CreatedViewModel => _viewModel;
-
-    /// <summary>True when this is the section on screen. Bound two-way to the nav RadioButton.</summary>
-    public bool IsActive
-    {
-        get => _isActive;
-        set
-        {
-            if (SetProperty(ref _isActive, value) && value)
-            {
-                _onActivated(this);
-            }
-        }
-    }
+	/// <summary>True when this is the section on screen. Bound two-way to the nav RadioButton.</summary>
+	public bool IsActive
+	{
+		get => _isActive;
+		set
+		{
+			if (SetProperty(ref _isActive, value) && value)
+			{
+				_onActivated(this);
+			}
+		}
+	}
 }

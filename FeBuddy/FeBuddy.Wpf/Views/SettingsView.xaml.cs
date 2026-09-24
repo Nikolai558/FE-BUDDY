@@ -4,5 +4,5 @@ namespace FeBuddy.Wpf.Views;
 
 public partial class SettingsView : UserControl
 {
-    public SettingsView() => InitializeComponent();
+	public SettingsView() => InitializeComponent();
 }

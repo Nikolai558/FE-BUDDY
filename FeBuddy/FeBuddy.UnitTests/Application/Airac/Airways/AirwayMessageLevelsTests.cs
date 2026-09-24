@@ -38,13 +38,13 @@ public sealed class AirwayMessageLevelsTests : IDisposable
 		AirwayPoint a = new("AAAAA", "WP", 40.00000, -80.00000, "fix");
 		AirwayPoint b = new("BBBBB", "WP", 40.00100, -80.00100, "fix"); // ~0.08 NM away - well inside 2.5+2.5
 
-		LineString leg = Wgs84.Factory.CreateLineString(new[]
-		{
+		LineString leg = Wgs84.Factory.CreateLineString(
+		[
 			new Coordinate(a.Longitude, a.Latitude),
 			new Coordinate(b.Longitude, b.Latitude),
-		});
+		]);
 
-		AirwayBufferResult result = AirwayWaypointBuffer.Buffer(new[] { leg }, new[] { a, b }, "TEST");
+		AirwayBufferResult result = AirwayWaypointBuffer.Buffer([leg], [a, b], "TEST");
 
 		ServiceMessage message = Assert.Single(result.Messages);
 		Assert.Equal(LogLevel.Info, message.Level);
@@ -71,13 +71,13 @@ public sealed class AirwayMessageLevelsTests : IDisposable
 	public void airway_exclusion_is_a_warning_and_the_run_mirrors_messages_to_applog()
 	{
 		NasrCsvDataCollection data = AirwayTestDataBuilder.Build(
-			fixes: new[] { ("AAAAA", 40.0, -80.0), ("CCCCC", 42.0, -82.0), ("DDDDD", 43.0, -83.0) },
+			fixes: [("AAAAA", 40.0, -80.0), ("CCCCC", 42.0, -82.0), ("DDDDD", 43.0, -83.0)],
 			awyId: "J146",
-			segments: new[]
-			{
+			segments:
+			[
 				AirwayTestDataBuilder.Segment("J146", 10, "AAAAA", "WP", "MISNG"),
 				AirwayTestDataBuilder.Segment("J146", 20, "CCCCC", "WP", "DDDDD"),
-			});
+			]);
 
 		AirwayServiceResult result = AirwayService.Run(data, new Dictionary<string, string>
 		{

@@ -39,7 +39,7 @@ public class NasrCycleDownloaderTests : IDisposable
 	/// </summary>
 	private sealed class SyncProgress<T> : IProgress<T>
 	{
-		public List<T> Reports { get; } = new();
+		public List<T> Reports { get; } = [];
 
 		public void Report(T value)
 		{
@@ -291,7 +291,7 @@ public class NasrCycleDownloaderTests : IDisposable
 	public async Task a_failed_extract_leaves_the_zip_in_downloads_for_diagnosis()
 	{
 		// Serve bytes that are not a valid zip so ZipFile.OpenRead throws during extract.
-		var (listener, url, _, _) = StartZipServer(new byte[] { 1, 2, 3, 4, 5 });
+		var (listener, url, _, _) = StartZipServer([1, 2, 3, 4, 5]);
 
 		try
 		{
@@ -332,9 +332,9 @@ public class NasrCycleDownloaderTests : IDisposable
 		Directory.CreateDirectory(Path.Combine(_cacheRoot, "2610"));
 
 		IReadOnlyList<string> deleted = NasrCycleDownloader.PruneStaleCycles(
-			new[] { "2609", "2610" }, _cacheRoot);
+			["2609", "2610"], _cacheRoot);
 
-		Assert.Equal(new[] { "2608" }, deleted);
+		Assert.Equal(["2608"], deleted);
 		Assert.False(Directory.Exists(Path.Combine(_cacheRoot, "2608")));
 		Assert.True(Directory.Exists(Path.Combine(_cacheRoot, "2609")));
 		Assert.True(Directory.Exists(Path.Combine(_cacheRoot, "2610")));
@@ -350,9 +350,9 @@ public class NasrCycleDownloaderTests : IDisposable
 		// On Windows an open handle without FileShare.Delete blocks deleting the file, and so its folder.
 		using FileStream busy = new(Path.Combine(_cacheRoot, "2607", "APT_BASE.csv"), FileMode.Create, FileAccess.Write, FileShare.None);
 
-		IReadOnlyList<string> deleted = NasrCycleDownloader.PruneStaleCycles(new[] { "2609" }, _cacheRoot);
+		IReadOnlyList<string> deleted = NasrCycleDownloader.PruneStaleCycles(["2609"], _cacheRoot);
 
-		Assert.Equal(new[] { "2608" }, deleted);
+		Assert.Equal(["2608"], deleted);
 		Assert.True(Directory.Exists(Path.Combine(_cacheRoot, "2607")));
 		Assert.True(Directory.Exists(Path.Combine(_cacheRoot, "2609")));
 	}
@@ -363,12 +363,12 @@ public class NasrCycleDownloaderTests : IDisposable
 		string missingRoot = Path.Combine(_cacheRoot, "does-not-exist");
 
 		IReadOnlyList<string> deleted = NasrCycleDownloader.PruneStaleCycles(
-			new[] { "2609" }, missingRoot);
+			["2609"], missingRoot);
 
 		Assert.Empty(deleted);
 	}
 
-	private static readonly string[] RequiredFiles = { "AWY_BASE.csv", "AWY_SEG_ALT.csv", "FIX_BASE.csv", "NAV_BASE.csv", "APT_BASE.csv" };
+	private static readonly string[] RequiredFiles = ["AWY_BASE.csv", "AWY_SEG_ALT.csv", "FIX_BASE.csv", "NAV_BASE.csv", "APT_BASE.csv"];
 
 	private static byte[] BuildZip(params (string Path, string Content)[] entries)
 	{
@@ -467,10 +467,8 @@ public class NasrCycleDownloaderTests : IDisposable
 	public async Task unsafe_and_duplicate_archive_entries_are_skipped()
 	{
 		AiracCycleInfo cycle = new("9985", "01_Jan_2099", new DateOnly(2099, 1, 1));
-		byte[] zip = BuildZip(RequiredFiles.Select(f => (f, "first"))
-			.Append(("../escape.csv", "outside"))
-			.Append(("CSV_Data/APT_BASE.csv", "second"))
-			.ToArray());
+		byte[] zip = BuildZip([.. RequiredFiles.Select(f => (f, "first"))
+, ("../escape.csv", "outside"), ("CSV_Data/APT_BASE.csv", "second")]);
 		var (listener, url, _, _) = StartZipServer(zip);
 
 		try

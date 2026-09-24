@@ -51,7 +51,7 @@ public sealed class AppLogTests : IDisposable
 
 	/// <summary>A recorded entry appears in <see cref="AppLog.Entries"/> with its fields intact.</summary>
 	[Fact]
-	public void Write_RecordsEntryInMemory()
+	public void write_records_entry_in_memory()
 	{
 		AppLog.Write(LogLevel.Info, "TestSource", "hello world");
 
@@ -64,9 +64,9 @@ public sealed class AppLogTests : IDisposable
 
 	/// <summary><see cref="AppLog.EntryAdded"/> fires exactly once per recorded entry.</summary>
 	[Fact]
-	public void Write_RaisesEntryAddedOncePerEntry()
+	public void write_raises_entry_added_once_per_entry()
 	{
-		List<LogEntry> received = new();
+		List<LogEntry> received = [];
 		AppLog.EntryAdded += (_, e) => received.Add(e);
 
 		AppLog.Write(LogLevel.Info, "s", "one");
@@ -74,12 +74,12 @@ public sealed class AppLogTests : IDisposable
 		AppLog.Write(LogLevel.Error, "s", "three");
 
 		Assert.Equal(3, received.Count);
-		Assert.Equal(new[] { "one", "two", "three" }, received.Select(e => e.Message));
+		Assert.Equal(["one", "two", "three"], received.Select(e => e.Message));
 	}
 
 	/// <summary>A <see cref="LogLevel.Debug"/> entry is dropped entirely when DevMode is off.</summary>
 	[Fact]
-	public void Write_Debug_SuppressedWhenDevModeOff()
+	public void write_debug_suppressed_when_dev_mode_off()
 	{
 		DevMode.IsEnabled = false;
 		bool raised = false;
@@ -93,7 +93,7 @@ public sealed class AppLogTests : IDisposable
 
 	/// <summary>A <see cref="LogLevel.Debug"/> entry is recorded when DevMode is on.</summary>
 	[Fact]
-	public void Write_Debug_RecordedWhenDevModeOn()
+	public void write_debug_recorded_when_dev_mode_on()
 	{
 		DevMode.IsEnabled = true;
 
@@ -105,7 +105,7 @@ public sealed class AppLogTests : IDisposable
 
 	/// <summary>Entries reach the dated log file once the sink is started and flushed.</summary>
 	[Fact]
-	public void StartFileSink_WritesEntriesToDatedFile()
+	public void start_file_sink_writes_entries_to_dated_file()
 	{
 		AppLog.StartFileSink();
 		AppLog.Write(LogLevel.Warning, "AirwayService", "a warning happened");
@@ -122,7 +122,7 @@ public sealed class AppLogTests : IDisposable
 
 	/// <summary>Files older than the retention window are deleted; recent ones are kept.</summary>
 	[Fact]
-	public void PruneOldLogs_DeletesFilesOlderThanRetention()
+	public void prune_old_logs_deletes_files_older_than_retention()
 	{
 		Directory.CreateDirectory(_logDirectory);
 
@@ -139,7 +139,7 @@ public sealed class AppLogTests : IDisposable
 
 	/// <summary><see cref="AppLog.Error"/> records at <see cref="LogLevel.Error"/>.</summary>
 	[Fact]
-	public void Error_RecordsAnErrorEntry()
+	public void error_records_an_error_entry()
 	{
 		AppLog.Error("Test", "boom");
 
@@ -149,7 +149,7 @@ public sealed class AppLogTests : IDisposable
 
 	/// <summary>Files that are not FE-Buddy dated logs are never pruned.</summary>
 	[Fact]
-	public void PruneOldLogs_LeavesFilesItDoesNotRecognize()
+	public void prune_old_logs_leaves_files_it_does_not_recognize()
 	{
 		Directory.CreateDirectory(_logDirectory);
 

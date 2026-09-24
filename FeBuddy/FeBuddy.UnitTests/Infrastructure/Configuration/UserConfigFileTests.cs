@@ -47,7 +47,7 @@ public sealed class UserConfigFileTests : IDisposable
 
 	/// <summary>Values set in memory survive a <see cref="UserConfigFile.Write"/> / <see cref="UserConfigFile.ReadAll"/> cycle, and land in a nested file.</summary>
 	[Fact]
-	public void Write_ThenReadAll_RoundTripsValuesAndNestsThem()
+	public void write_then_read_all_round_trips_values_and_nests_them()
 	{
 		UserConfigFile.TrySetValue("General.UpdateChannel", "Stable");
 		UserConfigFile.TrySetValue("Services.AiracService.UserArtccId", "ZOA");
@@ -69,7 +69,7 @@ public sealed class UserConfigFileTests : IDisposable
 
 	/// <summary>A missing config file on the launch read path yields defaults, not an exception.</summary>
 	[Fact]
-	public void ReadAll_MissingFile_DoesNotThrowAndReturnsDefaults()
+	public void read_all_missing_file_does_not_throw_and_returns_defaults()
 	{
 		Assert.False(File.Exists(UserConfigFile.ConfigFilePath));
 
@@ -80,7 +80,7 @@ public sealed class UserConfigFileTests : IDisposable
 
 	/// <summary>An unset key returns <see langword="null"/> rather than throwing.</summary>
 	[Fact]
-	public void GetValue_MissingKey_ReturnsNull()
+	public void get_value_missing_key_returns_null()
 	{
 		UserConfigFile.TrySetValue("General.UpdateChannel", "Stable");
 		UserConfigFile.Write();
@@ -90,7 +90,7 @@ public sealed class UserConfigFileTests : IDisposable
 
 	/// <summary><see cref="UserConfigFile.Save(string)"/> persists only its own subtree.</summary>
 	[Fact]
-	public void Save_WritesOnlyItsOwnSubtree()
+	public void save_writes_only_its_own_subtree()
 	{
 		// Nothing else has been persisted yet.
 		UserConfigFile.TrySetValue(AirwaysNode + ".OutputBy", "Designation");
@@ -108,7 +108,7 @@ public sealed class UserConfigFileTests : IDisposable
 
 	/// <summary>Saving one node does not revert another node's saved value, and undo is per node.</summary>
 	[Fact]
-	public void Save_And_Undo_AreIsolatedPerNode()
+	public void save_and_undo_are_isolated_per_node()
 	{
 		// Persist General once.
 		UserConfigFile.TrySetValue("General.UpdateChannel", "Stable");
@@ -134,7 +134,7 @@ public sealed class UserConfigFileTests : IDisposable
 
 	/// <summary>Undo with no snapshot for the node is a no-op returning <see langword="false"/>.</summary>
 	[Fact]
-	public void Undo_WithNoSnapshot_ReturnsFalse()
+	public void undo_with_no_snapshot_returns_false()
 	{
 		Assert.False(UserConfigFile.CanUndo(AirwaysNode));
 		Assert.False(UserConfigFile.Undo(AirwaysNode));
@@ -149,7 +149,7 @@ public sealed class UserConfigFileTests : IDisposable
 
 	/// <summary>A config file that is valid JSON but not an object yields defaults and a warning.</summary>
 	[Fact]
-	public void ReadAll_NonObjectJson_UsesDefaultsAndWarns()
+	public void read_all_non_object_json_uses_defaults_and_warns()
 	{
 		Directory.CreateDirectory(_directory);
 		File.WriteAllText(UserConfigFile.ConfigFilePath, "[1, 2]");
@@ -162,7 +162,7 @@ public sealed class UserConfigFileTests : IDisposable
 
 	/// <summary>A corrupt config file yields defaults and a warning rather than an exception.</summary>
 	[Fact]
-	public void ReadAll_CorruptJson_UsesDefaultsAndWarns()
+	public void read_all_corrupt_json_uses_defaults_and_warns()
 	{
 		UserConfigFile.TrySetValue("General.UpdateChannel", "Stable");
 		Directory.CreateDirectory(_directory);
@@ -176,7 +176,7 @@ public sealed class UserConfigFileTests : IDisposable
 
 	/// <summary>Nulls read back as empty strings and arrays as their JSON text.</summary>
 	[Fact]
-	public void ReadAll_FlattensNullsAndArrays()
+	public void read_all_flattens_nulls_and_arrays()
 	{
 		Directory.CreateDirectory(_directory);
 		File.WriteAllText(UserConfigFile.ConfigFilePath, """{ "General": { "Cleared": null, "List": [1, 2], "Count": 5 } }""");
@@ -195,7 +195,7 @@ public sealed class UserConfigFileTests : IDisposable
 	[InlineData(".General")]
 	[InlineData("General.")]
 	[InlineData("General..UpdateChannel")]
-	public void MalformedPaths_AreRefused(string path)
+	public void malformed_paths_are_refused(string path)
 	{
 		Assert.False(UserConfigFile.TrySetValue(path, "x"));
 
@@ -210,7 +210,7 @@ public sealed class UserConfigFileTests : IDisposable
 
 	/// <summary>A null value is stored as an empty string.</summary>
 	[Fact]
-	public void TrySetValue_Null_StoresEmpty()
+	public void try_set_value_null_stores_empty()
 	{
 		Assert.True(UserConfigFile.TrySetValue("General.UpdateChannel", null!));
 
@@ -219,7 +219,7 @@ public sealed class UserConfigFileTests : IDisposable
 
 	/// <summary>Saving a single leaf writes just that value, even over a corrupt file.</summary>
 	[Fact]
-	public void Save_ALeafOverACorruptFile_WritesTheLeaf()
+	public void save_a_leaf_over_a_corrupt_file_writes_the_leaf()
 	{
 		Directory.CreateDirectory(_directory);
 		File.WriteAllText(UserConfigFile.ConfigFilePath, "{ not json");
@@ -233,7 +233,7 @@ public sealed class UserConfigFileTests : IDisposable
 
 	/// <summary>Saving a node with nothing in memory under it removes it from the file.</summary>
 	[Fact]
-	public void Save_AnEmptyNode_RemovesItFromTheFile()
+	public void save_an_empty_node_removes_it_from_the_file()
 	{
 		UserConfigFile.TrySetValue(AirwaysNode + ".OutputBy", "HighLow");
 		UserConfigFile.Save(AirwaysNode);
@@ -248,7 +248,7 @@ public sealed class UserConfigFileTests : IDisposable
 
 	/// <summary>A snapshot that recorded "nothing here" undoes to removing the node.</summary>
 	[Fact]
-	public void Undo_ANullSnapshot_RemovesTheNode()
+	public void undo_a_null_snapshot_removes_the_node()
 	{
 		UserConfigFile.TrySetValue("General.UpdateChannel", "Beta");
 		UserConfigFile.Save(GeneralNode);

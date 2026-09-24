@@ -19,7 +19,7 @@ public sealed class AirwayWaypointBufferTests
 	private static AirwayPoint Point(string id, double lat, double lon) => new(id, "WP", lat, lon, "fix");
 
 	private static LineString Leg((double Lon, double Lat) a, (double Lon, double Lat) b) =>
-		Factory.CreateLineString(new[] { new Coordinate(a.Lon, a.Lat), new Coordinate(b.Lon, b.Lat) });
+		Factory.CreateLineString([new Coordinate(a.Lon, a.Lat), new Coordinate(b.Lon, b.Lat)]);
 
 	private static Coordinate EndOf(LineString line) => line.Coordinates[^1];
 
@@ -34,7 +34,7 @@ public sealed class AirwayWaypointBufferTests
 		LineString leg = Leg((150.0, 20.0), (180.0, 20.60750));
 
 		AirwayBufferResult result = AirwayWaypointBuffer.Buffer(
-			new[] { leg }, new[] { start, resee }, "TEST");
+			[leg], [start, resee], "TEST");
 
 		LineString buffered = Assert.Single(result.LineStrings);
 		Coordinate end = EndOf(buffered);
@@ -54,7 +54,7 @@ public sealed class AirwayWaypointBufferTests
 		LineString leg = Leg((175.0, 20.0), synthetic);
 
 		AirwayBufferResult result = AirwayWaypointBuffer.Buffer(
-			new[] { leg }, new[] { a }, "TEST");
+			[leg], [a], "TEST");
 
 		Coordinate end = EndOf(Assert.Single(result.LineStrings));
 
@@ -72,7 +72,7 @@ public sealed class AirwayWaypointBufferTests
 		LineString leg = Leg((-80.0, 40.0), roiBoundary);
 
 		AirwayBufferResult result = AirwayWaypointBuffer.Buffer(
-			new[] { leg }, new[] { a }, "TEST");
+			[leg], [a], "TEST");
 
 		Coordinate end = EndOf(Assert.Single(result.LineStrings));
 
@@ -89,7 +89,7 @@ public sealed class AirwayWaypointBufferTests
 		LineString leg = Leg((-80.0, 40.0), (-81.0, 41.0));
 
 		AirwayBufferResult result = AirwayWaypointBuffer.Buffer(
-			new[] { leg }, new[] { a, b }, "TEST");
+			[leg], [a, b], "TEST");
 
 		Coordinate[] buffered = Assert.Single(result.LineStrings).Coordinates;
 

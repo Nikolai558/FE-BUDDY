@@ -19,7 +19,7 @@ public sealed class AiracServiceTests
 
 	/// <summary>No sub-service block selected: the run completes with a warning and no sub-results.</summary>
 	[Fact]
-	public async Task RunAsync_NoSubServiceSelected_WarnsAndDoesNothing()
+	public async Task run_async_no_sub_service_selected_warns_and_does_nothing()
 	{
 		AiracServiceSettings settings = new()
 		{
@@ -36,16 +36,16 @@ public sealed class AiracServiceTests
 
 	/// <summary>With an Airways block, the orchestrator runs the pipeline and surfaces its result.</summary>
 	[Fact]
-	public async Task RunAsync_WithAirwaysBlock_RunsThePipelineAndAggregates()
+	public async Task run_async_with_airways_block_runs_the_pipeline_and_aggregates()
 	{
 		NasrCsvDataCollection data = AirwayTestDataBuilder.Build(
-			fixes: new[] { ("AAAAA", 40.0, -80.0), ("BBBBB", 41.0, -81.0), ("CCCCC", 42.0, -82.0) },
+			fixes: [("AAAAA", 40.0, -80.0), ("BBBBB", 41.0, -81.0), ("CCCCC", 42.0, -82.0)],
 			awyId: "J1",
-			segments: new[]
-			{
+			segments:
+			[
 				AirwayTestDataBuilder.Segment("J1", 10, "AAAAA", "WP", "BBBBB"),
 				AirwayTestDataBuilder.Segment("J1", 20, "BBBBB", "WP", "CCCCC"),
-			});
+			]);
 
 		AiracServiceSettings settings = new()
 		{
@@ -70,7 +70,7 @@ public sealed class AiracServiceTests
 
 	/// <summary>With Airports and Departures blocks, both pipelines run and report progress; cancellation stops the run.</summary>
 	[Fact]
-	public async Task RunAsync_WithAirportsAndDeparturesBlocks_RunsBothAndReportsProgress()
+	public async Task run_async_with_airports_and_departures_blocks_runs_both_and_reports_progress()
 	{
 		string output = Path.Combine(Path.GetTempPath(), "FeBuddyTests_AiracService_" + Guid.NewGuid().ToString("N"));
 
@@ -85,14 +85,14 @@ public sealed class AiracServiceTests
 				Departures = new Dictionary<string, string> { { "OutputDirectory", output }, { "GenerateGeojson", "N" } },
 			};
 
-			List<AiracServiceProgress> reports = new();
+			List<AiracServiceProgress> reports = [];
 			AiracServiceResult result = await AiracService.RunAsync(settings, data, new SynchronousProgress(reports.Add));
 
 			Assert.Null(result.Airways);
 			Assert.Equal(1, result.Airports!.AirportCount);
 			Assert.Equal(1, result.Departures!.AirportProcedureCount);
 			Assert.Equal(
-				new[] { "Airports", "Airports", "Departures", "Departures" },
+				["Airports", "Airports", "Departures", "Departures"],
 				reports.Select(r => r.SubService));
 			Assert.Equal(100, reports[^1].PercentComplete);
 
@@ -115,7 +115,7 @@ public sealed class AiracServiceTests
 
 	/// <summary>A null settings or data argument is rejected up front.</summary>
 	[Fact]
-	public async Task RunAsync_NullArguments_Throw()
+	public async Task run_async_null_arguments_throw()
 	{
 		AiracServiceSettings settings = new()
 		{

@@ -67,7 +67,7 @@ public sealed class DepartureServiceTests : IDisposable
 		string symbols = Path.Combine(ProcedureDirectory(), "LAX_DOTSS_Symbols.geojson");
 		string text = Path.Combine(ProcedureDirectory(), "LAX_DOTSS_Text.geojson");
 
-		Assert.Equal(new[] { lines, symbols, text }, result.GeojsonFilesWritten);
+		Assert.Equal([lines, symbols, text], result.GeojsonFilesWritten);
 		Assert.Equal(1, result.GeojsonFeatureCountsByFile[lines]);
 		Assert.Equal(DepartureTestData.DotssFixes.Count, result.GeojsonFeatureCountsByFile[symbols]);
 		Assert.Equal(DepartureTestData.DotssFixes.Count, result.GeojsonFeatureCountsByFile[text]);
@@ -103,7 +103,7 @@ public sealed class DepartureServiceTests : IDisposable
 		foreach (string path in result.GeojsonFilesWritten)
 		{
 			using JsonDocument document = JsonDocument.Parse(File.ReadAllText(path));
-			JsonElement[] features = document.RootElement.GetProperty("features").EnumerateArray().ToArray();
+			JsonElement[] features = [.. document.RootElement.GetProperty("features").EnumerateArray()];
 
 			string defaultsFlag = path.EndsWith("_Lines.geojson", StringComparison.Ordinal) ? "isLineDefaults"
 				: path.EndsWith("_Symbols.geojson", StringComparison.Ordinal) ? "isSymbolDefaults"
@@ -127,7 +127,7 @@ public sealed class DepartureServiceTests : IDisposable
 			("EmitSymbols", "N"),
 			("EmitText", "N")));
 
-		Assert.Equal(new[] { Path.Combine(ProcedureDirectory(feBuddyOutputFolder: false), "LAX_DOTSS_Lines.geojson") }, result.GeojsonFilesWritten);
+		Assert.Equal([Path.Combine(ProcedureDirectory(feBuddyOutputFolder: false), "LAX_DOTSS_Lines.geojson")], result.GeojsonFilesWritten);
 		Assert.Equal(Path.Combine(_outputDirectory, "Departure Procedures", "Alias", "Departures.txt"), result.AliasFilePath);
 	}
 
@@ -170,9 +170,9 @@ public sealed class DepartureServiceTests : IDisposable
 		DepartureAirportProcedure airportProcedure = DepartureTestData.AirportProcedure(DepartureTestData.Procedure(), "DTW", only);
 		DepartureSettings settings = DepartureSettingsParser.Parse(Settings()).Settings;
 
-		GeojsonFileSet result = DepartureGeojsonWriter.Generate(new[] { airportProcedure }, settings);
+		GeojsonFileSet result = DepartureGeojsonWriter.Generate([airportProcedure], settings);
 
-		Assert.Equal(new[] { "DTW_ABC_Symbols.geojson", "DTW_ABC_Text.geojson" }, result.FilesWritten.Select(Path.GetFileName));
+		Assert.Equal(["DTW_ABC_Symbols.geojson", "DTW_ABC_Text.geojson"], result.FilesWritten.Select(Path.GetFileName));
 	}
 
 	[Fact]
@@ -181,7 +181,7 @@ public sealed class DepartureServiceTests : IDisposable
 		DepartureSettings settings = DepartureSettingsParser.Parse(Settings()).Settings;
 
 		Assert.Throws<ArgumentNullException>(() => DepartureGeojsonWriter.Generate(null!, settings));
-		Assert.Throws<ArgumentNullException>(() => DepartureGeojsonWriter.Generate(Array.Empty<DepartureAirportProcedure>(), null!));
+		Assert.Throws<ArgumentNullException>(() => DepartureGeojsonWriter.Generate([], null!));
 	}
 
 	[Theory]
@@ -206,12 +206,11 @@ public sealed class DepartureServiceTests : IDisposable
 		DepartureSettings settings = DepartureSettingsParser.Parse(Settings()).Settings;
 
 		DepartureAliasGenerateResult result = DepartureAliasWriter.Generate(
-			new[]
-			{
+			[
 				DepartureTestData.AirportProcedure(procedure, "DTW"),
 				DepartureTestData.AirportProcedure(procedure, "DTW", point),
 				DepartureTestData.AirportProcedure(procedure, "DTW", point),
-			},
+			],
 			settings);
 
 		Assert.Equal(1, result.CommandCount);
@@ -225,12 +224,12 @@ public sealed class DepartureServiceTests : IDisposable
 		DepartureSettings settings = DepartureSettingsParser.Parse(Settings()).Settings;
 
 		DepartureAliasGenerateResult result = DepartureAliasWriter.Generate(
-			new[] { DepartureTestData.AirportProcedure(DepartureTestData.Procedure(), "DTW") }, settings);
+			[DepartureTestData.AirportProcedure(DepartureTestData.Procedure(), "DTW")], settings);
 
 		Assert.Null(result.FilePath);
 		Assert.Equal(0, result.CommandCount);
 		Assert.Throws<ArgumentNullException>(() => DepartureAliasWriter.Generate(null!, settings));
-		Assert.Throws<ArgumentNullException>(() => DepartureAliasWriter.Generate(Array.Empty<DepartureAirportProcedure>(), null!));
+		Assert.Throws<ArgumentNullException>(() => DepartureAliasWriter.Generate([], null!));
 	}
 
 	[Fact]
@@ -245,12 +244,12 @@ public sealed class DepartureServiceTests : IDisposable
 		{
 			Procedure = DepartureTestData.Procedure(),
 			AirportId = "DTW",
-			Routes = new[]
-			{
-				new DepartureRoute("BODY", DepartureRouteKind.Body, new[] { alpha, bravo }),
-				new DepartureRoute("XRAYY TRANSITION", DepartureRouteKind.Transition, new[] { xray, yank }),
-			},
-			Points = new[] { alpha, bravo, xray, yank },
+			Routes =
+			[
+				new DepartureRoute("BODY", DepartureRouteKind.Body, [alpha, bravo]),
+				new DepartureRoute("XRAYY TRANSITION", DepartureRouteKind.Transition, [xray, yank]),
+			],
+			Points = [alpha, bravo, xray, yank],
 		};
 
 		MultiLineString? geometry = DepartureGeometryBuilder.Build(airportProcedure);

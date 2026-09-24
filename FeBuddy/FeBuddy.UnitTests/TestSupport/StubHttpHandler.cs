@@ -4,11 +4,9 @@ namespace FeBuddy.UnitTests.TestSupport;
 /// A canned <see cref="HttpMessageHandler"/> so network code can be tested without touching the
 /// real internet.
 /// </summary>
-internal sealed class StubHttpHandler : HttpMessageHandler
+internal sealed class StubHttpHandler(Func<HttpRequestMessage, HttpResponseMessage> responder) : HttpMessageHandler
 {
-	private readonly Func<HttpRequestMessage, HttpResponseMessage> _responder;
-
-	public StubHttpHandler(Func<HttpRequestMessage, HttpResponseMessage> responder) => _responder = responder;
+	private readonly Func<HttpRequestMessage, HttpResponseMessage> _responder = responder;
 
 	protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) =>
 		Task.FromResult(_responder(request));

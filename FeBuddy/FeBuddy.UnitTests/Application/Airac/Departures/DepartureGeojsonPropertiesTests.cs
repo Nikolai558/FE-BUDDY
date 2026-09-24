@@ -37,7 +37,7 @@ public class DepartureGeojsonPropertiesTests
 	public void a_point_feature_carries_its_point_id_and_no_waypoint_list()
 	{
 		DepartureAirportProcedure airportProcedure = Sample(out DeparturePoint point);
-		AttributesTable attributes = new();
+		AttributesTable attributes = [];
 
 		DepartureGeojsonWriter.AddFebProperties(
 			attributes, airportProcedure, SettingsWith("dpName", "pointId", "arptId", "waypoints"), point);
@@ -51,7 +51,7 @@ public class DepartureGeojsonPropertiesTests
 	public void the_lines_feature_carries_the_waypoint_list_and_no_point_id()
 	{
 		DepartureAirportProcedure airportProcedure = Sample(out _);
-		AttributesTable attributes = new();
+		AttributesTable attributes = [];
 
 		DepartureGeojsonWriter.AddFebProperties(
 			attributes, airportProcedure, SettingsWith("dpName", "pointId", "waypoints"), point: null);
@@ -66,7 +66,7 @@ public class DepartureGeojsonPropertiesTests
 		DepartureSettings settings = SettingsWith("dpName", "pointId", "waypoints");
 
 		Assert.Equal(
-			new[] { DepartureFebProperty.DpName, DepartureFebProperty.PointId, DepartureFebProperty.Waypoints },
+			[DepartureFebProperty.DpName, DepartureFebProperty.PointId, DepartureFebProperty.Waypoints],
 			settings.FebProperties);
 	}
 }

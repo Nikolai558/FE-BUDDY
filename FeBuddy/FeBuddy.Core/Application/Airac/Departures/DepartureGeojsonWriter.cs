@@ -76,7 +76,7 @@ public static class DepartureGeojsonWriter
 			return;
 		}
 
-		FeatureCollection collection = new();
+		FeatureCollection collection = [];
 
 		if (settings.IncludeCrcLineDefaults)
 		{
@@ -85,7 +85,7 @@ public static class DepartureGeojsonWriter
 
 		// One Feature for the whole procedure at this airport, so a controller sees it as a
 		// single object however many bodies and transitions it has.
-		AttributesTable attributes = new();
+		AttributesTable attributes = [];
 		AddFebProperties(attributes, airportProcedure, settings, point: null);
 		collection.Add(new Feature(geometry, attributes));
 
@@ -98,7 +98,7 @@ public static class DepartureGeojsonWriter
 		string directory,
 		GeojsonFileSet files)
 	{
-		FeatureCollection collection = new();
+		FeatureCollection collection = [];
 
 		if (settings.IncludeCrcSymbolDefaults)
 		{
@@ -107,7 +107,7 @@ public static class DepartureGeojsonWriter
 
 		foreach (DeparturePoint point in airportProcedure.Points)
 		{
-			AttributesTable attributes = new();
+			AttributesTable attributes = [];
 			AddFebProperties(attributes, airportProcedure, settings, point);
 			collection.Add(new Feature(CreatePoint(point), attributes));
 		}
@@ -122,7 +122,7 @@ public static class DepartureGeojsonWriter
 		string directory,
 		GeojsonFileSet files)
 	{
-		FeatureCollection collection = new();
+		FeatureCollection collection = [];
 
 		if (settings.IncludeCrcTextDefaults)
 		{
@@ -131,8 +131,10 @@ public static class DepartureGeojsonWriter
 
 		foreach (DeparturePoint point in airportProcedure.Points)
 		{
-			AttributesTable attributes = new();
-			attributes.Add("text", new[] { point.Id });
+			AttributesTable attributes = new()
+			{
+				{ "text", new[] { point.Id } }
+			};
 			AddFebProperties(attributes, airportProcedure, settings, point);
 			collection.Add(new Feature(CreatePoint(point), attributes));
 		}
@@ -167,16 +169,16 @@ public static class DepartureGeojsonWriter
 		DepartureAirportProcedure airportProcedure,
 		DepartureFebProperty property,
 		DeparturePoint? point) => property switch
-	{
-		DepartureFebProperty.DpName => airportProcedure.Procedure.DpName,
-		DepartureFebProperty.PointId => point?.Id,
-		DepartureFebProperty.ArptId => airportProcedure.AirportId,
-		DepartureFebProperty.Artcc => airportProcedure.Procedure.Artcc,
-		DepartureFebProperty.AmendmentNo => NullIfEmpty(airportProcedure.Procedure.AmendmentNo),
-		DepartureFebProperty.AmendEffDate => NullIfEmpty(airportProcedure.Procedure.AmendmentEffectiveDateText),
-		DepartureFebProperty.Waypoints => point is null ? airportProcedure.Points.Select(p => p.Id).ToArray() : null,
-		_ => null,
-	};
+		{
+			DepartureFebProperty.DpName => airportProcedure.Procedure.DpName,
+			DepartureFebProperty.PointId => point?.Id,
+			DepartureFebProperty.ArptId => airportProcedure.AirportId,
+			DepartureFebProperty.Artcc => airportProcedure.Procedure.Artcc,
+			DepartureFebProperty.AmendmentNo => NullIfEmpty(airportProcedure.Procedure.AmendmentNo),
+			DepartureFebProperty.AmendEffDate => NullIfEmpty(airportProcedure.Procedure.AmendmentEffectiveDateText),
+			DepartureFebProperty.Waypoints => point is null ? airportProcedure.Points.Select(p => p.Id).ToArray() : null,
+			_ => null,
+		};
 
 	private static string? NullIfEmpty(string value) => string.IsNullOrWhiteSpace(value) ? null : value;
 }

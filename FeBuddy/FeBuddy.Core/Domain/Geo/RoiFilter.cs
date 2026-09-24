@@ -11,9 +11,8 @@ namespace FeBuddy.Core.Domain.Geo;
 /// bounds.
 /// </summary>
 /// <remarks>
-/// <see cref="IsCoordinateValidFormat"/> and <see cref="IsCoordinatesRelativePositionValid"/>
-/// are exposed as public static methods specifically so the GUI's ROI settings screen can
-/// call the same validation the Airways settings parser uses, without duplicating the rules.
+/// The two validation methods are public so the GUI's ROI screen checks input with exactly the
+/// rules the settings parsers apply.
 /// </remarks>
 public static class RoiFilter
 {
@@ -59,8 +58,8 @@ public static class RoiFilter
 	/// </param>
 	/// <returns><see langword="true"/> when NeLat &gt; SwLat and NeLon &gt; SwLon.</returns>
 	/// <remarks>
-	/// An ROI that crosses the antimeridian (SwLon &gt; NeLon) is rejected here, not
-	/// supported, per this build's decisions log.
+	/// An ROI that crosses the antimeridian (SwLon &gt; NeLon) is rejected: clipping works on a
+	/// plain longitude range, which cannot wrap past ±180.
 	/// </remarks>
 	public static bool IsCoordinatesRelativePositionValid(
 		double swLat,
@@ -103,8 +102,8 @@ public static class RoiFilter
 		ArgumentNullException.ThrowIfNull(lines);
 		ArgumentNullException.ThrowIfNull(roi);
 
-		Geometry combined = Wgs84.Factory.CreateMultiLineString(lines.ToArray());
-		List<LineString> clipped = new();
+		Geometry combined = Wgs84.Factory.CreateMultiLineString([.. lines]);
+		List<LineString> clipped = [];
 		CollectLineStrings(combined.Intersection(roi.ToPolygon()), clipped);
 		return clipped;
 	}
@@ -116,6 +115,7 @@ public static class RoiFilter
 	/// <param name="roi">The Region of Interest to test against.</param>
 	/// <param name="latitude">The point's latitude, in decimal degrees.</param>
 	/// <param name="longitude">The point's longitude, in decimal degrees.</param>
+	/// <returns><see langword="true"/> when the point is inside or on the edge.</returns>
 	public static bool Contains(RegionOfInterest roi, double latitude, double longitude)
 	{
 		ArgumentNullException.ThrowIfNull(roi);

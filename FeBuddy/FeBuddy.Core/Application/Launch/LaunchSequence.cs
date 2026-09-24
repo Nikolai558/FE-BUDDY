@@ -153,7 +153,7 @@ public static class LaunchSequence
 				time.HasInternetConnection,
 				AppEnvironment.HttpClientForTesting,
 				cancellationToken),
-			defaultValue: () => new NewsCheckResult(Array.Empty<NewsPost>(), null, 0, ParseSucceeded: false, FromNetwork: false))
+			defaultValue: () => new NewsCheckResult([], null, 0, ParseSucceeded: false, FromNetwork: false))
 			.ConfigureAwait(false);
 
 		AppEnvironment.News = news;

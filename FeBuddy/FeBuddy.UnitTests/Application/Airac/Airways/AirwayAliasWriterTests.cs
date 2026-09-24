@@ -37,7 +37,7 @@ public sealed class AirwayAliasWriterTests : IDisposable
 		OutputBy = AirwayGeojsonOutputBy.None,
 		BufferAirwayWaypoints = false,
 		IncludeFebCustomProperties = false,
-		FebProperties = Array.Empty<AirwayFebProperty>(),
+		FebProperties = [],
 		GenerateAliasFile = true,
 		SplitAtAntimeridian = true,
 		IncludeCrcLineDefaults = false,
@@ -56,14 +56,14 @@ public sealed class AirwayAliasWriterTests : IDisposable
 	{
 		// J1 sits near (40, -80); Q1 sits far away near (10, 10).
 		var data = AirwayTestDataBuilder.Build(
-			fixes: new[] { ("AAAAA", 40.0, -80.0), ("BBBBB", 41.0, -81.0) },
+			fixes: [("AAAAA", 40.0, -80.0), ("BBBBB", 41.0, -81.0)],
 			awyId: "J1",
-			segments: new[] { AirwayTestDataBuilder.Segment("J1", 10, "AAAAA", "WP", "BBBBB") });
+			segments: [AirwayTestDataBuilder.Segment("J1", 10, "AAAAA", "WP", "BBBBB")]);
 
 		var farData = AirwayTestDataBuilder.Build(
-			fixes: new[] { ("CCCCC", 10.0, 10.0), ("DDDDD", 11.0, 11.0) },
+			fixes: [("CCCCC", 10.0, 10.0), ("DDDDD", 11.0, 11.0)],
 			awyId: "Q1",
-			segments: new[] { AirwayTestDataBuilder.Segment("Q1", 10, "CCCCC", "WP", "DDDDD") });
+			segments: [AirwayTestDataBuilder.Segment("Q1", 10, "CCCCC", "WP", "DDDDD")]);
 
 		data.Awy!.AwyBase.AddRange(farData.Awy!.AwyBase);
 		data.Awy.AwySegAlt.AddRange(farData.Awy.AwySegAlt);
@@ -75,7 +75,7 @@ public sealed class AirwayAliasWriterTests : IDisposable
 			OutputBy = AirwayGeojsonOutputBy.None,
 			BufferAirwayWaypoints = false,
 			IncludeFebCustomProperties = false,
-			FebProperties = Array.Empty<AirwayFebProperty>(),
+			FebProperties = [],
 			GenerateAliasFile = false,
 			SplitAtAntimeridian = true,
 			IncludeCrcLineDefaults = false,
@@ -88,7 +88,7 @@ public sealed class AirwayAliasWriterTests : IDisposable
 	}
 
 	[Fact]
-	public void the_alias_file_is_named_Airways_txt_under_the_febuddy_output_wrapper()
+	public void the_alias_file_is_named_airways_txt_under_the_febuddy_output_wrapper()
 	{
 		AirwayAliasGenerateResult result = AirwayAliasWriter.Generate(BuildTwoAirways(), Settings());
 
@@ -140,9 +140,9 @@ public sealed class AirwayAliasWriterTests : IDisposable
 		// but the line passes straight through - so the GeoJSON draws it, and the alias must
 		// include it too, with both of its waypoints.
 		var data = AirwayTestDataBuilder.Build(
-			fixes: new[] { ("WESTT", 40.0, -95.0), ("EASTT", 40.0, -70.0) },
+			fixes: [("WESTT", 40.0, -95.0), ("EASTT", 40.0, -70.0)],
 			awyId: "V9",
-			segments: new[] { AirwayTestDataBuilder.Segment("V9", 10, "WESTT", "WP", "EASTT") });
+			segments: [AirwayTestDataBuilder.Segment("V9", 10, "WESTT", "WP", "EASTT")]);
 
 		RegionOfInterest roi = new(38.0, -85.0, 43.0, -78.0);
 

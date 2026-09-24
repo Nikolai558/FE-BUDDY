@@ -26,8 +26,8 @@ namespace FeBuddy.Core.Infrastructure.Logging;
 /// </remarks>
 public static class AppLog
 {
-	private static readonly object _gate = new();
-	private static readonly List<LogEntry> _entries = new();
+	private static readonly Lock Gate = new();
+	private static readonly List<LogEntry> RecordedEntries = [];
 
 	private static Channel<LogEntry> _fileChannel = CreateChannel();
 	private static Task _fileWriterTask = Task.CompletedTask;
@@ -49,9 +49,9 @@ public static class AppLog
 	{
 		get
 		{
-			lock (_gate)
+			lock (Gate)
 			{
-				return _entries.ToArray();
+				return [.. RecordedEntries];
 			}
 		}
 	}
@@ -63,7 +63,7 @@ public static class AppLog
 	{
 		get
 		{
-			lock (_gate)
+			lock (Gate)
 			{
 				return _logDirectory;
 			}
@@ -87,9 +87,9 @@ public static class AppLog
 
 		LogEntry entry = new(DateTime.UtcNow, level, source ?? string.Empty, message ?? string.Empty);
 
-		lock (_gate)
+		lock (Gate)
 		{
-			_entries.Add(entry);
+			RecordedEntries.Add(entry);
 		}
 
 		// Fire-and-forget onto the background writer. TryWrite on an unbounded channel only
@@ -149,7 +149,7 @@ public static class AppLog
 	/// <param name="retentionDays">How many days of log files to keep. Older files are deleted.</param>
 	public static void StartFileSink(int retentionDays = 30)
 	{
-		lock (_gate)
+		lock (Gate)
 		{
 			if (!_fileSinkStarted)
 			{
@@ -224,9 +224,9 @@ public static class AppLog
 	{
 		FlushForTesting();
 
-		lock (_gate)
+		lock (Gate)
 		{
-			_entries.Clear();
+			RecordedEntries.Clear();
 			EntryAdded = null;
 			_logDirectory = logDirectory ?? GetDefaultLogDirectory();
 			_fileChannel = CreateChannel();
@@ -244,7 +244,7 @@ public static class AppLog
 		Channel<LogEntry> channel;
 		Task writer;
 
-		lock (_gate)
+		lock (Gate)
 		{
 			channel = _fileChannel;
 			writer = _fileWriterTask;

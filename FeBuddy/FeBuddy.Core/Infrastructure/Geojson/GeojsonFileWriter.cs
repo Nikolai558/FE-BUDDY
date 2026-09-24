@@ -114,11 +114,9 @@ public static class GeojsonFileWriter
 	}
 
 	/// <summary>An NTS coordinate filter that rounds X and Y to a fixed number of decimal places.</summary>
-	private sealed class RoundingFilter : ICoordinateSequenceFilter
+	private sealed class RoundingFilter(int decimals) : ICoordinateSequenceFilter
 	{
-		private readonly int _decimals;
-
-		public RoundingFilter(int decimals) => _decimals = decimals;
+		private readonly int _decimals = decimals;
 
 		public bool Done => false;
 

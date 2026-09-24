@@ -9,13 +9,13 @@ namespace FeBuddy.UnitTests.Domain.Crc;
 public class CrcPropertyValidatorTests
 {
 	private static CrcLineProperties Line(int? bcg = 1, IReadOnlyList<int>? filters = null, string? style = null, int? thickness = null) =>
-		new() { Bcg = bcg, Filters = filters ?? new[] { 1 }, Style = style, Thickness = thickness };
+		new() { Bcg = bcg, Filters = filters ?? [1], Style = style, Thickness = thickness };
 
 	private static CrcSymbolProperties Symbol(int? bcg = 1, IReadOnlyList<int>? filters = null, string? style = null, int? size = null) =>
-		new() { Bcg = bcg, Filters = filters ?? new[] { 1 }, Style = style, Size = size };
+		new() { Bcg = bcg, Filters = filters ?? [1], Style = style, Size = size };
 
 	private static CrcTextProperties Text(int? bcg = 1, IReadOnlyList<int>? filters = null, IReadOnlyList<string>? text = null, int? size = null, int? xOffset = null, int? yOffset = null) =>
-		new() { Bcg = bcg, Filters = filters ?? new[] { 1 }, Text = text ?? new[] { "ABC" }, Size = size, XOffset = xOffset, YOffset = yOffset };
+		new() { Bcg = bcg, Filters = filters ?? [1], Text = text ?? ["ABC"], Size = size, XOffset = xOffset, YOffset = yOffset };
 
 	[Theory]
 	[InlineData(1, true)]
@@ -40,13 +40,13 @@ public class CrcPropertyValidatorTests
 	[InlineData(41, false)]
 	public void filter_entry_boundaries_are_enforced(int filter, bool expectedValid)
 	{
-		Assert.Equal(expectedValid, CrcPropertyValidator.ValidateLine(Line(filters: new[] { filter })).IsValid);
+		Assert.Equal(expectedValid, CrcPropertyValidator.ValidateLine(Line(filters: [filter])).IsValid);
 	}
 
 	[Fact]
 	public void empty_filters_is_invalid_because_crc_cannot_auto_assign_it()
 	{
-		Assert.False(CrcPropertyValidator.ValidateLine(Line(filters: Array.Empty<int>())).IsValid);
+		Assert.False(CrcPropertyValidator.ValidateLine(Line(filters: [])).IsValid);
 	}
 
 	[Theory]
@@ -104,7 +104,7 @@ public class CrcPropertyValidatorTests
 	[Fact]
 	public void empty_text_is_invalid_because_crc_cannot_auto_assign_it()
 	{
-		Assert.False(CrcPropertyValidator.ValidateText(Text(text: Array.Empty<string>())).IsValid);
+		Assert.False(CrcPropertyValidator.ValidateText(Text(text: [])).IsValid);
 	}
 
 	[Theory]
@@ -131,7 +131,7 @@ public class CrcPropertyValidatorTests
 	public void multiple_violations_are_all_reported_not_just_the_first()
 	{
 		CrcPropertyValidationResult result = CrcPropertyValidator.ValidateLine(
-			new CrcLineProperties { Bcg = 999, Filters = Array.Empty<int>(), Style = "bogus", Thickness = 999 });
+			new CrcLineProperties { Bcg = 999, Filters = [], Style = "bogus", Thickness = 999 });
 
 		Assert.False(result.IsValid);
 		Assert.True(result.Errors.Count >= 4);

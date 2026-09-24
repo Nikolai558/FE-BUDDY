@@ -68,7 +68,7 @@ public sealed record Airport
 	/// The airport's runways - only true runways, i.e. <c>RWY_ID</c> values containing a
 	/// <c>/</c>. Helipads and other single-point surfaces are excluded upstream.
 	/// </summary>
-	public IReadOnlyList<AirportRunway> Runways { get; init; } = Array.Empty<AirportRunway>();
+	public IReadOnlyList<AirportRunway> Runways { get; init; } = [];
 
 	/// <summary>
 	/// The longest entry in <see cref="Runways"/>, or <see langword="null"/> when the airport

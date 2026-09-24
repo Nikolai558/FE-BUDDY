@@ -305,7 +305,7 @@ public class AirwaySettingsParserTests
 
 		AirwaySettings parsed = AirwaySettingsParser.Parse(settings).Settings;
 
-		Assert.Equal(new[] { "RN", "SL", "V" }, parsed.ExcludedDesignations.OrderBy(x => x));
+		Assert.Equal(["RN", "SL", "V"], parsed.ExcludedDesignations.OrderBy(x => x));
 		Assert.Contains("rn", parsed.ExcludedDesignations); // case-insensitive membership
 	}
 
@@ -481,7 +481,7 @@ public class AirwaySettingsParserTests
 		AirwaySettings parsed = AirwaySettingsParser.Parse(settings).Settings;
 
 		Assert.Equal(
-			new[] { AirwayFebProperty.AwyId, AirwayFebProperty.PointId, AirwayFebProperty.Waypoints },
+			[AirwayFebProperty.AwyId, AirwayFebProperty.PointId, AirwayFebProperty.Waypoints],
 			parsed.FebProperties);
 	}
 

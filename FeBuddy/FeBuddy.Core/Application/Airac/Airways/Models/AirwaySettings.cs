@@ -29,7 +29,7 @@ public sealed record AirwaySettings
 	public required bool IncludeFebCustomProperties { get; init; }
 
 	/// <summary>Which <c>feb.*</c> properties to write when <see cref="IncludeFebCustomProperties"/> is <see langword="true"/>.</summary>
-	public IReadOnlyCollection<AirwayFebProperty> FebProperties { get; init; } = Array.Empty<AirwayFebProperty>();
+	public IReadOnlyCollection<AirwayFebProperty> FebProperties { get; init; } = [];
 
 	/// <summary>Whether to write the <c>Airways.txt</c> alias file.</summary>
 	public required bool GenerateAliasFile { get; init; }
@@ -45,7 +45,7 @@ public sealed record AirwaySettings
 	/// drop entirely - before any geometry work, so GeoJSON and the alias file agree
 	/// (remediation plan 3.3). Case-insensitive, upper-cased.
 	/// </summary>
-	public IReadOnlyCollection<string> ExcludedDesignations { get; init; } = Array.Empty<string>();
+	public IReadOnlyCollection<string> ExcludedDesignations { get; init; } = [];
 
 	/// <summary>Emit the <c>_Lines</c> GeoJSON files. Default <see langword="true"/> (remediation plan 3.4).</summary>
 	public bool EmitLines { get; init; } = true;

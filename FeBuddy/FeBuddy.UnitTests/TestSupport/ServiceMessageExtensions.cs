@@ -10,5 +10,5 @@ internal static class ServiceMessageExtensions
 	/// <param name="messages">The messages.</param>
 	/// <returns>The texts, in order.</returns>
 	public static IReadOnlyList<string> WarningTexts(this IEnumerable<ServiceMessage> messages) =>
-		messages.Where(m => m.Level is LogLevel.Warning or LogLevel.Error).Select(m => m.Text).ToArray();
+		[.. messages.Where(m => m.Level is LogLevel.Warning or LogLevel.Error).Select(m => m.Text)];
 }

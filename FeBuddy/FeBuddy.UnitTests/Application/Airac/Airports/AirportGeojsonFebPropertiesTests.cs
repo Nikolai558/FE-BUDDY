@@ -137,7 +137,7 @@ public sealed class AirportGeojsonFebPropertiesTests : IDisposable
 			SecondEnd = new AirportRunwayEnd("34R", 47.431, -122.308),
 		};
 
-		Airport sea = AirportTestDataBuilder.BuiltAirport(faaId: "SEA", runways: new[] { first, noGeometry, second });
+		Airport sea = AirportTestDataBuilder.BuiltAirport(faaId: "SEA", runways: [first, noGeometry, second]);
 		Airport bfi = AirportTestDataBuilder.BuiltAirport(faaId: "BFI", name: "BOEING FIELD/KING COUNTY INTL");
 
 		AirportSettings settings = new()
@@ -153,7 +153,7 @@ public sealed class AirportGeojsonFebPropertiesTests : IDisposable
 			Roi = null,
 		};
 
-		GeojsonFileSet result = AirportGeojsonWriter.Generate(new[] { sea, bfi }, settings);
+		GeojsonFileSet result = AirportGeojsonWriter.Generate([sea, bfi], settings);
 
 		Assert.Equal(3, result.FilesWritten.Count);
 		return Path.GetDirectoryName(result.FilesWritten[0])!;
@@ -164,9 +164,7 @@ public sealed class AirportGeojsonFebPropertiesTests : IDisposable
 	{
 		using JsonDocument document = JsonDocument.Parse(File.ReadAllText(Path.Combine(directory, $"{fileStem}.geojson")));
 
-		return document.RootElement.GetProperty("features").EnumerateArray()
-			.Select(feature => feature.GetProperty("properties").Clone())
-			.ToList();
+		return [.. document.RootElement.GetProperty("features").EnumerateArray().Select(feature => feature.GetProperty("properties").Clone())];
 	}
 
 	/// <summary>
@@ -175,12 +173,11 @@ public sealed class AirportGeojsonFebPropertiesTests : IDisposable
 	/// </summary>
 	private static string[] FebNames(JsonElement properties) =>
 		properties.ValueKind == JsonValueKind.Object
-			? properties.EnumerateObject()
+			? [.. properties.EnumerateObject()
 				.Select(property => property.Name)
-				.Where(name => name.StartsWith("feb.", StringComparison.Ordinal))
-				.ToArray()
-			: Array.Empty<string>();
+				.Where(name => name.StartsWith("feb.", StringComparison.Ordinal))]
+			: [];
 
 	private static string[] Strings(JsonElement array) =>
-		array.EnumerateArray().Select(item => item.GetString()!).ToArray();
+		[.. array.EnumerateArray().Select(item => item.GetString()!)];
 }

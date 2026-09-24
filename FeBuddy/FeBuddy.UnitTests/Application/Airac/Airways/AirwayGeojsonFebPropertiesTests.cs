@@ -124,7 +124,7 @@ public sealed class AirwayGeojsonFebPropertiesTests : IDisposable
 		};
 
 		GeojsonFileSet result = AirwayGeojsonWriter.Generate(
-			new[] { BuildAirway("J2", b, c), BuildAirway("J1", a, b) }, settings);
+			[BuildAirway("J2", b, c), BuildAirway("J1", a, b)], settings);
 
 		Assert.Equal(3, result.FilesWritten.Count);
 		return Path.GetDirectoryName(result.FilesWritten[0])!;
@@ -136,13 +136,13 @@ public sealed class AirwayGeojsonFebPropertiesTests : IDisposable
 		Designation = "J",
 		AwyLocation = "C",
 		AltitudeClass = AirwayAltitudeClass.High,
-		Segments = new[] { new AirwaySegment(from.PointId, to.PointId, IsGap: false, MaxAuthAlt: null) },
-		Points = new[] { from, to },
-		Geometry = Wgs84.Factory.CreateLineString(new[]
-		{
+		Segments = [new AirwaySegment(from.PointId, to.PointId, IsGap: false, MaxAuthAlt: null)],
+		Points = [from, to],
+		Geometry = Wgs84.Factory.CreateLineString(
+		[
 			new Coordinate(from.Longitude, from.Latitude),
 			new Coordinate(to.Longitude, to.Latitude),
-		}),
+		]),
 	};
 
 	/// <summary>Reads the <c>properties</c> object of every Feature in <c>Airways_High_&lt;kind&gt;.geojson</c>.</summary>
@@ -150,9 +150,7 @@ public sealed class AirwayGeojsonFebPropertiesTests : IDisposable
 	{
 		using JsonDocument document = JsonDocument.Parse(File.ReadAllText(Path.Combine(directory, $"Airways_High_{kind}.geojson")));
 
-		return document.RootElement.GetProperty("features").EnumerateArray()
-			.Select(feature => feature.GetProperty("properties").Clone())
-			.ToList();
+		return [.. document.RootElement.GetProperty("features").EnumerateArray().Select(feature => feature.GetProperty("properties").Clone())];
 	}
 
 	/// <summary>
@@ -167,5 +165,5 @@ public sealed class AirwayGeojsonFebPropertiesTests : IDisposable
 		});
 
 	private static string[] Strings(JsonElement array) =>
-		array.EnumerateArray().Select(item => item.GetString()!).ToArray();
+		[.. array.EnumerateArray().Select(item => item.GetString()!)];
 }

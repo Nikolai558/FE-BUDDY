@@ -33,10 +33,10 @@ public class DepartureAliasWriterTests
 
 		string[] points = command[prefix.Length..].Split(' ');
 		string[] expected =
-		{
+		[
 			"DLREY", "ENNEY", "NAANC", "HAYNK", "PEVEE", "HOLTZ", "DOTSS", "DOCKR", "WEILR", "SHAEF",
 			"FABRA", "HIIPR", "ADORE", "EYEDL", "HOMER", "CLEEE", "WIILD", "BLCKD", "CSTWY", "CNERY"
-		};
+		];
 
 		Assert.Equal(points.Length, points.Distinct(StringComparer.Ordinal).Count());
 		Assert.Equal(expected.OrderBy(p => p, StringComparer.Ordinal), points.OrderBy(p => p, StringComparer.Ordinal));

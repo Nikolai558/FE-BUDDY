@@ -47,7 +47,7 @@ public class CrcDefaultsReaderTests
 		CrcLineDefaults defaults = CrcDefaultsReader.ReadLine(FullLine(), LinePrefix);
 
 		Assert.Equal(3, defaults.Bcg);
-		Assert.Equal(new[] { 3, 4 }, defaults.Filters);
+		Assert.Equal([3, 4], defaults.Filters);
 		Assert.Equal("solid", defaults.Style);
 		Assert.Equal(2, defaults.Thickness);
 	}
@@ -58,7 +58,7 @@ public class CrcDefaultsReaderTests
 		CrcSymbolDefaults defaults = CrcDefaultsReader.ReadSymbol(FullSymbol(), SymbolPrefix);
 
 		Assert.Equal(5, defaults.Bcg);
-		Assert.Equal(new[] { 7 }, defaults.Filters);
+		Assert.Equal([7], defaults.Filters);
 		Assert.Equal("vor", defaults.Style);
 		Assert.Equal(4, defaults.Size);
 	}
@@ -69,7 +69,7 @@ public class CrcDefaultsReaderTests
 		CrcTextDefaults defaults = CrcDefaultsReader.ReadText(FullText(), TextPrefix);
 
 		Assert.Equal(6, defaults.Bcg);
-		Assert.Equal(new[] { 8 }, defaults.Filters);
+		Assert.Equal([8], defaults.Filters);
 		Assert.Equal(2, defaults.Size);
 		Assert.True(defaults.Underline);
 		Assert.False(defaults.Opaque);

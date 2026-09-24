@@ -40,7 +40,7 @@ public sealed class TempWorkspaceTests : IDisposable
 
 	/// <summary><see cref="TempWorkspace.ClearOnLaunch"/> empties the tree and does not throw on a missing root.</summary>
 	[Fact]
-	public void TempWorkspace_ClearOnLaunch_EmptiesTree()
+	public void temp_workspace_clear_on_launch_empties_tree()
 	{
 		Assert.Equal(0, TempWorkspace.ClearOnLaunch()); // root does not exist yet
 
@@ -57,7 +57,7 @@ public sealed class TempWorkspaceTests : IDisposable
 
 	/// <summary>An entry that is still in use is counted and logged, and the rest are still cleared.</summary>
 	[Fact]
-	public void TempWorkspace_ClearOnLaunch_CountsWhatItCannotDelete()
+	public void temp_workspace_clear_on_launch_counts_what_it_cannot_delete()
 	{
 		Directory.CreateDirectory(Path.Combine(_tempRoot, "busy"));
 		Directory.CreateDirectory(Path.Combine(_tempRoot, "idle"));
@@ -78,7 +78,7 @@ public sealed class TempWorkspaceTests : IDisposable
 
 	/// <summary>Without an override the workspace lives in the system temp folder.</summary>
 	[Fact]
-	public void TempWorkspace_DefaultRoot_IsUnderTheSystemTempFolder()
+	public void temp_workspace_default_root_is_under_the_system_temp_folder()
 	{
 		TempWorkspace.ConfigureForTesting(null);
 

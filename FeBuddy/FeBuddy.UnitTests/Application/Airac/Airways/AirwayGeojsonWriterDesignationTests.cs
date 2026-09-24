@@ -38,14 +38,14 @@ public sealed class AirwayGeojsonWriterDesignationTests : IDisposable
 	{
 		// A "Q" RNAV airway whose NASR AWY_DESIGNATION says "RN" - the file must still be Airways_Q_*.
 		NasrCsvDataCollection data = AirwayTestDataBuilder.Build(
-			fixes: new[] { ("AAAAA", 40.0, -80.0), ("BBBBB", 41.0, -81.0), ("CCCCC", 42.0, -82.0) },
+			fixes: [("AAAAA", 40.0, -80.0), ("BBBBB", 41.0, -81.0), ("CCCCC", 42.0, -82.0)],
 			awyId: "Q100",
 			awyDesignation: "RN",
-			segments: new[]
-			{
+			segments:
+			[
 				AirwayTestDataBuilder.Segment("Q100", 10, "AAAAA", "WP", "BBBBB"),
 				AirwayTestDataBuilder.Segment("Q100", 20, "BBBBB", "WP", "CCCCC"),
-			});
+			]);
 
 		AirwaySettings settings = new()
 		{
@@ -53,7 +53,7 @@ public sealed class AirwayGeojsonWriterDesignationTests : IDisposable
 			OutputBy = AirwayGeojsonOutputBy.Designation,
 			BufferAirwayWaypoints = false,
 			IncludeFebCustomProperties = false,
-			FebProperties = Array.Empty<AirwayFebProperty>(),
+			FebProperties = [],
 			GenerateAliasFile = false,
 			SplitAtAntimeridian = true,
 			IncludeCrcLineDefaults = false,

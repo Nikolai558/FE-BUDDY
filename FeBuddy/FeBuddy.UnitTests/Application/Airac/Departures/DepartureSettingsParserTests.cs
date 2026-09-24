@@ -57,7 +57,7 @@ public class DepartureSettingsParserTests
 	[Fact]
 	public void missing_output_directory_throws()
 	{
-		Dictionary<string, string> settings = new();
+		Dictionary<string, string> settings = [];
 
 		Assert.Throws<ArgumentException>(() => DepartureSettingsParser.Parse(settings));
 	}
@@ -122,7 +122,7 @@ public class DepartureSettingsParserTests
 
 		DepartureSettings parsed = DepartureSettingsParser.Parse(settings).Settings;
 
-		Assert.Equal(new[] { "ZLA", "ZOA" }, parsed.ArtccFilter);
+		Assert.Equal(["ZLA", "ZOA"], parsed.ArtccFilter);
 	}
 
 	[Theory]
@@ -336,7 +336,7 @@ public class DepartureSettingsParserTests
 		DepartureSettings parsed = DepartureSettingsParser.Parse(settings).Settings;
 
 		Assert.True(parsed.IncludeFebCustomProperties);
-		Assert.Equal(new[] { DepartureFebProperty.DpName, DepartureFebProperty.PointId }, parsed.FebProperties);
+		Assert.Equal([DepartureFebProperty.DpName, DepartureFebProperty.PointId], parsed.FebProperties);
 	}
 
 	[Fact]

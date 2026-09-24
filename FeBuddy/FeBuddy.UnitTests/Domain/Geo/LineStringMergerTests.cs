@@ -62,7 +62,7 @@ public class LineStringMergerTests
 
 		MultiLineString geometry = BuildDotss();
 
-		List<(string, string)> drawn = new();
+		List<(string, string)> drawn = [];
 
 		for (int i = 0; i < geometry.NumGeometries; i++)
 		{
@@ -79,7 +79,7 @@ public class LineStringMergerTests
 		IEnumerable<string[]> routes = DepartureTestData.DotssBodies.Select(b => b.Points)
 			.Concat(DepartureTestData.DotssTransitions.Select(t => t.Points));
 
-		HashSet<(string, string)> expected = new();
+		HashSet<(string, string)> expected = [];
 
 		foreach (string[] route in routes)
 		{
@@ -97,7 +97,7 @@ public class LineStringMergerTests
 	public void two_identical_paths_make_one_line()
 	{
 		IReadOnlyList<LineString> lines = LineStringMerger.Merge(
-			new[] { Path("A", "B", "C"), Path("A", "B", "C") });
+			[Path("A", "B", "C"), Path("A", "B", "C")]);
 
 		LineString line = Assert.Single(lines);
 		Assert.Equal(3, line.NumPoints);
@@ -107,7 +107,7 @@ public class LineStringMergerTests
 	public void a_path_and_its_reverse_make_one_line()
 	{
 		IReadOnlyList<LineString> lines = LineStringMerger.Merge(
-			new[] { Path("A", "B", "C"), Path("C", "B", "A") });
+			[Path("A", "B", "C"), Path("C", "B", "A")]);
 
 		LineString line = Assert.Single(lines);
 		Assert.Equal(3, line.NumPoints);
@@ -117,7 +117,7 @@ public class LineStringMergerTests
 	public void repeated_consecutive_points_draw_a_single_segment()
 	{
 		IReadOnlyList<LineString> lines = LineStringMerger.Merge(
-			new[] { Path("A", "A", "B") });
+			[Path("A", "A", "B")]);
 
 		LineString line = Assert.Single(lines);
 		Assert.Equal(2, line.NumPoints);
@@ -129,7 +129,7 @@ public class LineStringMergerTests
 	public void no_path_with_two_distinct_points_gives_no_lines()
 	{
 		IReadOnlyList<LineString> lines = LineStringMerger.Merge(
-			new[] { Path("A"), Path("B", "B") });
+			[Path("A"), Path("B", "B")]);
 
 		Assert.Empty(lines);
 	}
@@ -138,10 +138,10 @@ public class LineStringMergerTests
 	public void a_branch_starts_on_the_point_where_it_leaves_the_base()
 	{
 		IReadOnlyList<LineString> lines = LineStringMerger.Merge(
-			new[] { Path("A", "B", "C"), Path("D", "B") });
+			[Path("A", "B", "C"), Path("D", "B")]);
 
 		Assert.Equal(2, lines.Count);
 		Assert.Equal(3, lines[0].NumPoints);
-		Assert.Equal(new[] { HandlerCoordinates["D"], HandlerCoordinates["B"] }, lines[1].Coordinates);
+		Assert.Equal([HandlerCoordinates["D"], HandlerCoordinates["B"]], lines[1].Coordinates);
 	}
 }

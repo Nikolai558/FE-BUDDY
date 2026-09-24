@@ -42,7 +42,7 @@ public static class AirportBuilder
 				"Airport data (APT) has not been parsed. The Airports sub-service cannot run without it.");
 		}
 
-		List<ServiceMessage> messages = new();
+		List<ServiceMessage> messages = [];
 
 		// One row per airport. NASR keys APT_BASE on SITE_NO, not ARPT_ID, so a duplicated
 		// identifier is possible in principle - and would collide in the alias file, where the
@@ -77,11 +77,11 @@ public static class AirportBuilder
 		ILookup<string, AptCsvDataModel.AptRwyEnd> endsByAirportAndRunway = allNasrCsvData.Apt.AptRwyEnd
 			.ToLookup(e => RunwayKey(e.ArptId, e.RwyEndRwyId), StringComparer.OrdinalIgnoreCase);
 
-		ILookup<string, FrqCsvDataModel.Frq> frequenciesByAirport = BuildFrequencyLookup(allNasrCsvData.Frq?.Frq ?? new());
+		ILookup<string, FrqCsvDataModel.Frq> frequenciesByAirport = BuildFrequencyLookup(allNasrCsvData.Frq?.Frq ?? []);
 
 		Dictionary<string, ClsArspCsvDataModel.ClsArsp> airspaceByAirport = new(StringComparer.OrdinalIgnoreCase);
 
-		foreach (ClsArspCsvDataModel.ClsArsp row in allNasrCsvData.ClsArsp?.ClsArsp ?? new())
+		foreach (ClsArspCsvDataModel.ClsArsp row in allNasrCsvData.ClsArsp?.ClsArsp ?? [])
 		{
 			airspaceByAirport.TryAdd(row.ArptId?.Trim() ?? string.Empty, row);
 		}
@@ -154,7 +154,7 @@ public static class AirportBuilder
 		ILookup<string, AptCsvDataModel.AptRwyEnd> endsByAirportAndRunway,
 		List<ServiceMessage> messages)
 	{
-		List<AirportRunway> runways = new();
+		List<AirportRunway> runways = [];
 
 		foreach (AptCsvDataModel.AptRwy row in rows)
 		{
@@ -167,14 +167,11 @@ public static class AirportBuilder
 
 			// Two rows per runway, one per end, told apart by RWY_END_ID. Ordering by that ID
 			// makes "first" and "second" deterministic rather than file-order dependent.
-			List<AptCsvDataModel.AptRwyEnd> endRows = endsByAirportAndRunway[RunwayKey(airportId, runwayId)]
-				.OrderBy(e => e.RwyEndRwyEndId, StringComparer.Ordinal)
-				.ToList();
+			List<AptCsvDataModel.AptRwyEnd> endRows = [.. endsByAirportAndRunway[RunwayKey(airportId, runwayId)].OrderBy(e => e.RwyEndRwyEndId, StringComparer.Ordinal)];
 
-			List<AirportRunwayEnd> ends = endRows
+			List<AirportRunwayEnd> ends = [.. endRows
 				.Select(ToRunwayEnd)
-				.OfType<AirportRunwayEnd>()
-				.ToList();
+				.OfType<AirportRunwayEnd>()];
 
 			AirportRunway runway = new()
 			{
@@ -234,7 +231,7 @@ public static class AirportBuilder
 	/// </remarks>
 	private static ILookup<string, FrqCsvDataModel.Frq> BuildFrequencyLookup(IReadOnlyList<FrqCsvDataModel.Frq> rows)
 	{
-		List<(string Key, FrqCsvDataModel.Frq Row)> indexed = new();
+		List<(string Key, FrqCsvDataModel.Frq Row)> indexed = [];
 
 		foreach (FrqCsvDataModel.Frq row in rows)
 		{

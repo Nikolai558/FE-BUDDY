@@ -18,7 +18,7 @@ namespace FeBuddy.UnitTests.Application.Updates;
 [Collection("AppLog")]
 public sealed class UpdateInstallerTests : IDisposable
 {
-	private static readonly byte[] Payload = Enumerable.Range(0, 200_000).Select(i => (byte)i).ToArray();
+	private static readonly byte[] Payload = [.. Enumerable.Range(0, 200_000).Select(i => (byte)i)];
 
 	private readonly string _tempRoot = Path.Combine(Path.GetTempPath(), "FeBuddyTests_Update_" + Guid.NewGuid().ToString("N"));
 
@@ -44,13 +44,13 @@ public sealed class UpdateInstallerTests : IDisposable
 	}
 
 	[Fact]
-	public void UpdatesDirectory_IsInTheTemporaryWorkspace()
+	public void updates_directory_is_in_the_temporary_workspace()
 	{
 		Assert.Equal(Path.Combine(_tempRoot, "Updates"), UpdateInstaller.UpdatesDirectory);
 	}
 
 	[Fact]
-	public async Task DownloadAsync_WritesTheFileAndReportsProgress()
+	public async Task download_async_writes_the_file_and_reports_progress()
 	{
 		var progress = new RecordingProgress();
 		using HttpClient client = new(new StubHttpHandler(_ => Ok(Payload)));
@@ -65,7 +65,7 @@ public sealed class UpdateInstallerTests : IDisposable
 	}
 
 	[Fact]
-	public async Task DownloadAsync_UnknownLength_UsesTheReportedSize()
+	public async Task download_async_unknown_length_uses_the_reported_size()
 	{
 		var progress = new RecordingProgress();
 		using HttpClient client = new(new StubHttpHandler(_ => OkWithoutLength(Payload)));
@@ -76,7 +76,7 @@ public sealed class UpdateInstallerTests : IDisposable
 	}
 
 	[Fact]
-	public async Task DownloadAsync_NoLengthAnywhere_StillDownloads()
+	public async Task download_async_no_length_anywhere_still_downloads()
 	{
 		var progress = new RecordingProgress();
 		using HttpClient client = new(new StubHttpHandler(_ => OkWithoutLength(Payload)));
@@ -89,7 +89,7 @@ public sealed class UpdateInstallerTests : IDisposable
 	}
 
 	[Fact]
-	public async Task DownloadAsync_ShortDownload_FailsAndLeavesNoFile()
+	public async Task download_async_short_download_fails_and_leaves_no_file()
 	{
 		using HttpClient client = new(new StubHttpHandler(_ => OkWithoutLength(Payload)));
 
@@ -99,7 +99,7 @@ public sealed class UpdateInstallerTests : IDisposable
 	}
 
 	[Fact]
-	public async Task DownloadAsync_FailsWithoutAToken_AndDoesNotRetry()
+	public async Task download_async_fails_without_a_token_and_does_not_retry()
 	{
 		int calls = 0;
 		using HttpClient client = new(new StubHttpHandler(_ =>
@@ -115,7 +115,7 @@ public sealed class UpdateInstallerTests : IDisposable
 	}
 
 	[Fact]
-	public async Task DownloadAsync_PublicUrlFails_RetriesThroughTheAssetsApiWithTheToken()
+	public async Task download_async_public_url_fails_retries_through_the_assets_api_with_the_token()
 	{
 		Environment.SetEnvironmentVariable(GitHubAuth.EnvironmentVariableName, "test-token");
 		HttpRequestMessage? retry = null;
@@ -139,7 +139,7 @@ public sealed class UpdateInstallerTests : IDisposable
 	}
 
 	[Fact]
-	public async Task DownloadAsync_NoAssetId_DoesNotRetryWithTheToken()
+	public async Task download_async_no_asset_id_does_not_retry_with_the_token()
 	{
 		Environment.SetEnvironmentVariable(GitHubAuth.EnvironmentVariableName, "test-token");
 		int calls = 0;
@@ -156,7 +156,7 @@ public sealed class UpdateInstallerTests : IDisposable
 	}
 
 	[Fact]
-	public async Task DownloadAsync_Cancelled_LeavesNoFile()
+	public async Task download_async_cancelled_leaves_no_file()
 	{
 		using CancellationTokenSource cts = new();
 		var progress = new CancellingProgress(cts);
@@ -173,20 +173,20 @@ public sealed class UpdateInstallerTests : IDisposable
 	[InlineData("FE-BUDDY-3.0.0.exe")]
 	[InlineData(@"..\FE-BUDDY-3.0.0.msi")]
 	[InlineData("sub/FE-BUDDY-3.0.0.msi")]
-	public async Task DownloadAsync_RejectsAnythingButAPlainMsiName(string fileName)
+	public async Task download_async_rejects_anything_but_a_plain_msi_name(string fileName)
 	{
 		await Assert.ThrowsAsync<ArgumentException>(() =>
 			UpdateInstaller.DownloadAsync(Installer(Payload.Length) with { FileName = fileName }));
 	}
 
 	[Fact]
-	public async Task DownloadAsync_NullInstaller_Throws()
+	public async Task download_async_null_installer_throws()
 	{
 		await Assert.ThrowsAsync<ArgumentNullException>(() => UpdateInstaller.DownloadAsync(null!));
 	}
 
 	[Fact]
-	public void InstallerArguments_InstallWithEveryFileCopied()
+	public void installer_arguments_install_with_every_file_copied()
 	{
 		Assert.Equal(
 			"/i \"C:\\Temp\\FE-Buddy\\Updates\\FE-BUDDY-3.0.0.msi\" REINSTALLMODE=amus",
@@ -196,7 +196,7 @@ public sealed class UpdateInstallerTests : IDisposable
 	[Theory]
 	[InlineData(null)]
 	[InlineData(" ")]
-	public void InstallerArguments_NeedAPath(string? path)
+	public void installer_arguments_need_a_path(string? path)
 	{
 		Assert.ThrowsAny<ArgumentException>(() => UpdateInstaller.InstallerArguments(path!));
 	}
@@ -211,7 +211,7 @@ public sealed class UpdateInstallerTests : IDisposable
 	[InlineData("""[ { "name": "no-url.msi" }, { "browser_download_url": "https://x.test/no-name.msi" } ]""", null, 0L, 0L)]
 	[InlineData("""[]""", null, 0L, 0L)]
 	[InlineData("null", null, 0L, 0L)]
-	public async Task VersionCheck_FindsTheLatestReleasesInstaller(string assetsJson, string? expectedName, long expectedId, long expectedSize)
+	public async Task version_check_finds_the_latest_releases_installer(string assetsJson, string? expectedName, long expectedId, long expectedSize)
 	{
 		string releasesJson = $$"""
 		[
@@ -232,7 +232,7 @@ public sealed class UpdateInstallerTests : IDisposable
 	}
 
 	[Fact]
-	public async Task VersionCheck_ReleaseWithoutAssets_HasNoInstaller()
+	public async Task version_check_release_without_assets_has_no_installer()
 	{
 		const string releasesJson = """[ { "tag_name": "3.1.0", "draft": false } ]""";
 		using HttpClient client = new(new StubHttpHandler(_ => new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(releasesJson) }));

@@ -45,7 +45,7 @@ internal static class WaypointLocator
 	/// not keep a parsed NASR dataset (which can be large) alive any longer than the caller
 	/// already keeps it alive.
 	/// </summary>
-	private static readonly ConditionalWeakTable<NasrCsvDataCollection, CoordinateIndexSet> _indexCache = new();
+	private static readonly ConditionalWeakTable<NasrCsvDataCollection, CoordinateIndexSet> IndexCache = [];
 
 
 	/*
@@ -100,7 +100,7 @@ internal static class WaypointLocator
 		waypointId = waypointId.Trim();
 
 		CoordinateIndexSet indexSet =
-			_indexCache.GetValue(
+			IndexCache.GetValue(
 				allNasrCsvData,
 				_ => new CoordinateIndexSet());
 

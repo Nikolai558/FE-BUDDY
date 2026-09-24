@@ -147,12 +147,11 @@ public static partial class VersionCheck
 				bool isAheadOfLatest = currentParsed is not null && currentVsBest > 0;
 
 				List<ReleaseSummary> newer = updateAvailable
-					? candidates
+					? [.. candidates
 						.Where(c => c.Parsed.ComparePrecedenceTo(currentParsed!) > 0)
 						.OrderByDescending(c => c.Parsed, Precedence)
 						.ThenByDescending(c => c.Release.PublishedAt)
-						.Select(c => c.Release)
-						.ToList()
+						.Select(c => c.Release)]
 					: [];
 
 				string message = updateAvailable

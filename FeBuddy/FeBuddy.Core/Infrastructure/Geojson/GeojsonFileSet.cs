@@ -6,15 +6,12 @@ namespace FeBuddy.Core.Infrastructure.Geojson;
 /// The GeoJSON files one run writes: each one goes through <see cref="GeojsonFileWriter"/>, and
 /// the set remembers which landed on disk and how many rendered Features each holds.
 /// </summary>
-public sealed class GeojsonFileSet
+/// <param name="coordinatePrecision">Decimal places kept for every coordinate written (0 keeps them all).</param>
+public sealed class GeojsonFileSet(int coordinatePrecision)
 {
-	private readonly List<string> _filesWritten = new();
-	private readonly Dictionary<string, int> _renderedFeatureCounts = new();
-	private readonly int _coordinatePrecision;
-
-	/// <summary>Creates an empty set.</summary>
-	/// <param name="coordinatePrecision">Decimal places kept for every coordinate written (0 keeps them all).</param>
-	public GeojsonFileSet(int coordinatePrecision) => _coordinatePrecision = coordinatePrecision;
+	private readonly List<string> _filesWritten = [];
+	private readonly Dictionary<string, int> _renderedFeatureCounts = [];
+	private readonly int _coordinatePrecision = coordinatePrecision;
 
 	/// <summary>Every file written, in the order written.</summary>
 	public IReadOnlyList<string> FilesWritten => _filesWritten;

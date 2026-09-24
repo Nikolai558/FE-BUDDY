@@ -9,7 +9,7 @@ namespace FeBuddy.UnitTests.Application.Settings;
 public class SettingsValueReaderTests
 {
 	[Fact]
-	public void IntInRange_uses_the_default_when_absent_and_enforces_the_range_when_present()
+	public void int_in_range_uses_the_default_when_absent_and_enforces_the_range_when_present()
 	{
 		Dictionary<string, string> settings = new() { ["Precision"] = "20" };
 
@@ -21,9 +21,9 @@ public class SettingsValueReaderTests
 	}
 
 	[Fact]
-	public void RequiredIntList_reads_a_comma_list_and_rejects_an_empty_or_non_numeric_one()
+	public void required_int_list_reads_a_comma_list_and_rejects_an_empty_or_non_numeric_one()
 	{
-		Assert.Equal(new[] { 1, 2, 3 }, SettingsValueReader.RequiredIntList(new Dictionary<string, string> { ["Filters"] = "1, 2 ,3" }, "Filters"));
+		Assert.Equal([1, 2, 3], SettingsValueReader.RequiredIntList(new Dictionary<string, string> { ["Filters"] = "1, 2 ,3" }, "Filters"));
 
 		ArgumentException empty = Assert.Throws<ArgumentException>(() =>
 			SettingsValueReader.RequiredIntList(new Dictionary<string, string> { ["Filters"] = ", ," }, "Filters"));
@@ -35,9 +35,9 @@ public class SettingsValueReaderTests
 	}
 
 	[Fact]
-	public void NormalizeStyle_returns_the_canonical_spelling_or_the_value_unchanged()
+	public void normalize_style_returns_the_canonical_spelling_or_the_value_unchanged()
 	{
-		string[] valid = { "solid", "shortDashed" };
+		string[] valid = ["solid", "shortDashed"];
 
 		Assert.Null(SettingsValueReader.NormalizeStyle(null, valid));
 		Assert.Equal("shortDashed", SettingsValueReader.NormalizeStyle("SHORTDASHED", valid));

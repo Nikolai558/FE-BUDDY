@@ -31,15 +31,15 @@ public sealed class AirwayServiceTests : IDisposable
 	/// <summary>J1: AAAAA -&gt; the ABC VOR/DME -&gt; CCCCC, running north-west.</summary>
 	private static NasrCsvDataCollection J1() =>
 		AirwayTestDataBuilder.Build(
-			fixes: new[] { ("AAAAA", 40.0, -80.0), ("CCCCC", 42.0, -82.0) },
-			navaids: new[] { ("ABC", 41.0, -81.0) },
+			fixes: [("AAAAA", 40.0, -80.0), ("CCCCC", 42.0, -82.0)],
+			navaids: [("ABC", 41.0, -81.0)],
 			awyId: "J1",
-			segments: new[]
-			{
+			segments:
+			[
 				AirwayTestDataBuilder.Segment("J1", 10, "AAAAA", "WP", "ABC"),
 				AirwayTestDataBuilder.Segment("J1", 20, "ABC", "VOR/DME", "CCCCC"),
 				AirwayTestDataBuilder.Segment("J1", 30, "CCCCC", "WP", null),
-			});
+			]);
 
 	private Dictionary<string, string> Settings(params (string Key, string Value)[] overrides)
 	{
@@ -59,11 +59,11 @@ public sealed class AirwayServiceTests : IDisposable
 
 	/// <summary>A region around AAAAA and ABC that leaves CCCCC outside.</summary>
 	private static (string, string)[] SouthEastRoi =>
-		new[] { ("FilterByRoi", "Y"), ("RoiSwLat", "39.5"), ("RoiSwLon", "-81.5"), ("RoiNeLat", "41.5"), ("RoiNeLon", "-79.5") };
+		[("FilterByRoi", "Y"), ("RoiSwLat", "39.5"), ("RoiSwLon", "-81.5"), ("RoiNeLat", "41.5"), ("RoiNeLon", "-79.5")];
 
 	/// <summary>A region far away from J1.</summary>
 	private static (string, string)[] FarAwayRoi =>
-		new[] { ("FilterByRoi", "Y"), ("RoiSwLat", "30.0"), ("RoiSwLon", "-100.0"), ("RoiNeLat", "31.0"), ("RoiNeLon", "-99.0") };
+		[("FilterByRoi", "Y"), ("RoiSwLat", "30.0"), ("RoiSwLon", "-100.0"), ("RoiNeLat", "31.0"), ("RoiNeLon", "-99.0")];
 
 	private static IEnumerable<(string, string)> CrcDefaults()
 	{
@@ -90,20 +90,22 @@ public sealed class AirwayServiceTests : IDisposable
 	private static JsonElement[] Features(string path)
 	{
 		using JsonDocument document = JsonDocument.Parse(File.ReadAllText(path));
-		return document.RootElement.GetProperty("features").EnumerateArray().Select(f => f.Clone()).ToArray();
+		return [.. document.RootElement.GetProperty("features").EnumerateArray().Select(f => f.Clone())];
 	}
 
 	[Fact]
 	public void run_with_crc_defaults_and_a_roi_draws_only_the_points_inside_it()
 	{
 		AirwayServiceResult result = AirwayService.Run(J1(), Settings(
-			CrcDefaults()
-				.Concat(SouthEastRoi)
-				.Append(("IncludeCrcLineDefaults", "Y"))
-				.Append(("IncludeCrcSymbolDefaults", "Y"))
-				.Append(("IncludeCrcTextDefaults", "Y"))
-				.Append(("GenerateAliasFile", "N"))
-				.ToArray()));
+			[
+				.. CrcDefaults()
+,
+				.. SouthEastRoi,
+				("IncludeCrcLineDefaults", "Y"),
+				("IncludeCrcSymbolDefaults", "Y"),
+				("IncludeCrcTextDefaults", "Y"),
+				("GenerateAliasFile", "N"),
+			]));
 
 		Assert.Equal(1, result.AirwayCount);
 		Assert.Empty(result.Warnings);
@@ -125,7 +127,7 @@ public sealed class AirwayServiceTests : IDisposable
 	public void run_that_buffers_waypoints_shortens_each_leg()
 	{
 		AirwayServiceResult result = AirwayService.Run(J1(), Settings(
-			SouthEastRoi.Append(("BufferAirwayWaypoints", "Y")).Append(("GenerateAliasFile", "N")).ToArray()));
+			[.. SouthEastRoi, ("BufferAirwayWaypoints", "Y"), ("GenerateAliasFile", "N")]));
 
 		Assert.Equal(1, result.AirwayCount);
 
@@ -140,16 +142,16 @@ public sealed class AirwayServiceTests : IDisposable
 	public void an_airway_whose_legs_are_all_shorter_than_the_buffer_is_dropped()
 	{
 		NasrCsvDataCollection data = AirwayTestDataBuilder.Build(
-			fixes: new[] { ("AAAAA", 40.0, -80.0), ("BBBBB", 40.001, -80.0) },
+			fixes: [("AAAAA", 40.0, -80.0), ("BBBBB", 40.001, -80.0)],
 			awyId: "J2",
-			segments: new[]
-			{
+			segments:
+			[
 				AirwayTestDataBuilder.Segment("J2", 10, "AAAAA", "WP", "BBBBB"),
 				AirwayTestDataBuilder.Segment("J2", 20, "BBBBB", "WP", null),
-			});
+			]);
 
 		AirwayServiceResult result = AirwayService.Run(data, Settings(
-			SouthEastRoi.Append(("BufferAirwayWaypoints", "Y")).Append(("GenerateAliasFile", "N")).ToArray()));
+			[.. SouthEastRoi, ("BufferAirwayWaypoints", "Y"), ("GenerateAliasFile", "N")]));
 
 		Assert.Equal(0, result.AirwayCount);
 	}
@@ -159,17 +161,17 @@ public sealed class AirwayServiceTests : IDisposable
 	{
 		// East -> far west (outside) -> back east: the clip is a MultiLineString.
 		NasrCsvDataCollection data = AirwayTestDataBuilder.Build(
-			fixes: new[] { ("AAAAA", 40.0, -80.0), ("WESTT", 40.2, -85.0), ("CCCCC", 40.4, -80.0) },
+			fixes: [("AAAAA", 40.0, -80.0), ("WESTT", 40.2, -85.0), ("CCCCC", 40.4, -80.0)],
 			awyId: "V1",
-			segments: new[]
-			{
+			segments:
+			[
 				AirwayTestDataBuilder.Segment("V1", 10, "AAAAA", "WP", "WESTT"),
 				AirwayTestDataBuilder.Segment("V1", 20, "WESTT", "WP", "CCCCC"),
 				AirwayTestDataBuilder.Segment("V1", 30, "CCCCC", "WP", null),
-			});
+			]);
 
 		AirwayServiceResult result = AirwayService.Run(data, Settings(
-			SouthEastRoi.Append(("GenerateAliasFile", "N")).Append(("EmitSymbols", "N")).Append(("EmitText", "N")).ToArray()));
+			[.. SouthEastRoi, ("GenerateAliasFile", "N"), ("EmitSymbols", "N"), ("EmitText", "N")]));
 
 		string lines = Assert.Single(result.GeojsonFilesWritten);
 		JsonElement geometry = Features(lines)[0].GetProperty("geometry");
@@ -184,7 +186,7 @@ public sealed class AirwayServiceTests : IDisposable
 	public void run_whose_filters_leave_nothing_says_which_output_is_missing(string outputBy, string aliasScope, string expected)
 	{
 		AirwayServiceResult result = AirwayService.Run(J1(), Settings(
-			FarAwayRoi.Append(("OutputBy", outputBy)).Append(("AliasRoiScope", aliasScope)).ToArray()));
+			[.. FarAwayRoi, ("OutputBy", outputBy), ("AliasRoiScope", aliasScope)]));
 
 		ServiceMessage advisory = Assert.Single(result.Messages, m => m.IsAdvisory);
 		Assert.Contains(expected, advisory.Text, StringComparison.Ordinal);
@@ -195,13 +197,13 @@ public sealed class AirwayServiceTests : IDisposable
 	public void an_airway_id_without_leading_letters_is_grouped_as_unknown_with_one_warning()
 	{
 		NasrCsvDataCollection data = AirwayTestDataBuilder.Build(
-			fixes: new[] { ("AAAAA", 40.0, -80.0), ("BBBBB", 41.0, -81.0) },
+			fixes: [("AAAAA", 40.0, -80.0), ("BBBBB", 41.0, -81.0)],
 			awyId: "123",
-			segments: new[]
-			{
+			segments:
+			[
 				AirwayTestDataBuilder.Segment("123", 10, "AAAAA", "WP", "BBBBB"),
 				AirwayTestDataBuilder.Segment("123", 20, "BBBBB", "WP", null),
-			});
+			]);
 
 		AirwayServiceResult result = AirwayService.Run(data, Settings(("OutputBy", "None"), ("GenerateAliasFile", "N")));
 
@@ -212,16 +214,16 @@ public sealed class AirwayServiceTests : IDisposable
 	public void a_segment_whose_start_cannot_be_located_excludes_the_airway()
 	{
 		NasrCsvDataCollection data = AirwayTestDataBuilder.Build(
-			fixes: new[] { ("AAAAA", 40.0, -80.0), ("BBBBB", 41.0, -81.0), ("DDDDD", 43.0, -83.0), ("EEEEE", 44.0, -84.0) },
+			fixes: [("AAAAA", 40.0, -80.0), ("BBBBB", 41.0, -81.0), ("DDDDD", 43.0, -83.0), ("EEEEE", 44.0, -84.0)],
 			awyId: "J3",
-			segments: new[]
-			{
+			segments:
+			[
 				AirwayTestDataBuilder.Segment("J3", 10, "AAAAA", "WP", "BBBBB"),
 				AirwayTestDataBuilder.Segment("J3", 20, "LOSTT", "WP", "LOST2"),
 				AirwayTestDataBuilder.Segment("J3", 30, "LOST2", "WP", "DDDDD"),
 				AirwayTestDataBuilder.Segment("J3", 40, "DDDDD", "WP", "EEEEE"),
 				AirwayTestDataBuilder.Segment("J3", 50, "EEEEE", "WP", null),
-			});
+			]);
 
 		AirwayServiceResult result = AirwayService.Run(data, Settings(("OutputBy", "None"), ("GenerateAliasFile", "N")));
 

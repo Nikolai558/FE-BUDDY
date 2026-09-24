@@ -149,17 +149,19 @@ public static class CrcFeatureFactory
 	/// <summary>The flag, <c>bcg</c> and <c>filters</c> every defaults Feature starts with, in that order.</summary>
 	private static AttributesTable StartDefaults(string flagName, int bcg, IReadOnlyList<int> filters)
 	{
-		AttributesTable attributes = new();
-		attributes.Add(flagName, true);
-		attributes.Add("bcg", bcg);
-		attributes.Add("filters", filters.ToArray());
+		AttributesTable attributes = new()
+		{
+			{ flagName, true },
+			{ "bcg", bcg },
+			{ "filters", filters.ToArray() }
+		};
 		return attributes;
 	}
 
 	/// <summary>The <c>bcg</c> (when set) and <c>filters</c> every override starts with.</summary>
 	private static AttributesTable StartOverride(int? bcg, IReadOnlyList<int> filters)
 	{
-		AttributesTable table = new();
+		AttributesTable table = [];
 		AddIfSet(table, "bcg", bcg);
 		table.Add("filters", filters.ToArray());
 		return table;

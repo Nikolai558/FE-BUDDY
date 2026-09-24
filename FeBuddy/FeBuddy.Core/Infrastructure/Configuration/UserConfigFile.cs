@@ -37,9 +37,9 @@ public static class UserConfigFile
 	private const string ConfigFileName = "UserConfig.json";
 	private const string PreviousFileName = "UserConfig.previous.json";
 
-	private static readonly object _gate = new();
-	private static readonly Dictionary<string, string> _values = new(StringComparer.Ordinal);
-	private static readonly JsonSerializerOptions _writeOptions = new() { WriteIndented = true };
+	private static readonly Lock Gate = new();
+	private static readonly Dictionary<string, string> Values = new(StringComparer.Ordinal);
+	private static readonly JsonSerializerOptions WriteOptions = new() { WriteIndented = true };
 
 	private static string _directory = AppPaths.AppDataDirectory;
 
@@ -50,7 +50,7 @@ public static class UserConfigFile
 	{
 		get
 		{
-			lock (_gate)
+			lock (Gate)
 			{
 				return _directory;
 			}
@@ -70,9 +70,9 @@ public static class UserConfigFile
 	/// </summary>
 	public static void ReadAll()
 	{
-		lock (_gate)
+		lock (Gate)
 		{
-			_values.Clear();
+			Values.Clear();
 
 			string path = ConfigFilePath;
 
@@ -89,7 +89,7 @@ public static class UserConfigFile
 
 				if (root is JsonObject obj)
 				{
-					FlattenInto(obj, prefix: string.Empty, _values);
+					FlattenInto(obj, prefix: string.Empty, Values);
 				}
 				else
 				{
@@ -98,7 +98,7 @@ public static class UserConfigFile
 			}
 			catch (Exception ex)
 			{
-				_values.Clear();
+				Values.Clear();
 				AppLog.Warning(LogSource, $"Could not read config file '{path}': {ex.Message}. Using defaults.");
 			}
 		}
@@ -110,9 +110,9 @@ public static class UserConfigFile
 	/// </summary>
 	public static void Write()
 	{
-		lock (_gate)
+		lock (Gate)
 		{
-			JsonObject root = BuildTree(_values);
+			JsonObject root = BuildTree(Values);
 			WriteObject(ConfigFilePath, root);
 		}
 
@@ -131,9 +131,9 @@ public static class UserConfigFile
 			return null;
 		}
 
-		lock (_gate)
+		lock (Gate)
 		{
-			if (_values.TryGetValue(dottedPath, out string? value))
+			if (Values.TryGetValue(dottedPath, out string? value))
 			{
 				return value;
 			}
@@ -157,9 +157,9 @@ public static class UserConfigFile
 			return false;
 		}
 
-		lock (_gate)
+		lock (Gate)
 		{
-			_values[dottedPath] = value ?? string.Empty;
+			Values[dottedPath] = value ?? string.Empty;
 		}
 
 		return true;
@@ -182,7 +182,7 @@ public static class UserConfigFile
 			throw new ArgumentException("A node path is required.", nameof(nodePath));
 		}
 
-		lock (_gate)
+		lock (Gate)
 		{
 			JsonObject onDisk = LoadObjectOrEmpty(ConfigFilePath);
 
@@ -193,7 +193,7 @@ public static class UserConfigFile
 			WriteObject(PreviousFilePath, previous);
 
 			// Replace the subtree on disk with the in-memory version built from the flat dict.
-			JsonNode? newSubtree = BuildSubtree(_values, nodePath);
+			JsonNode? newSubtree = BuildSubtree(Values, nodePath);
 			SetNodeAtPath(onDisk, nodePath, newSubtree);
 			WriteObject(ConfigFilePath, onDisk);
 		}
@@ -216,7 +216,7 @@ public static class UserConfigFile
 			return false;
 		}
 
-		lock (_gate)
+		lock (Gate)
 		{
 			JsonObject previous = LoadObjectOrEmpty(PreviousFilePath);
 			return NodeExistsAtPath(previous, nodePath);
@@ -238,7 +238,7 @@ public static class UserConfigFile
 			return false;
 		}
 
-		lock (_gate)
+		lock (Gate)
 		{
 			if (!File.Exists(PreviousFilePath))
 			{
@@ -275,9 +275,9 @@ public static class UserConfigFile
 	/// <param name="directory">A throwaway directory, or <see langword="null"/> to restore the default.</param>
 	internal static void ConfigureForTesting(string? directory)
 	{
-		lock (_gate)
+		lock (Gate)
 		{
-			_values.Clear();
+			Values.Clear();
 			_directory = directory ?? AppPaths.AppDataDirectory;
 		}
 	}
@@ -287,9 +287,9 @@ public static class UserConfigFile
 	/// </summary>
 	internal static IReadOnlyDictionary<string, string> SnapshotValues()
 	{
-		lock (_gate)
+		lock (Gate)
 		{
-			return new Dictionary<string, string>(_values, StringComparer.Ordinal);
+			return new Dictionary<string, string>(Values, StringComparer.Ordinal);
 		}
 	}
 
@@ -329,7 +329,7 @@ public static class UserConfigFile
 	/// <summary>Builds a full nested JSON object from every entry in the flat dictionary.</summary>
 	private static JsonObject BuildTree(IReadOnlyDictionary<string, string> values)
 	{
-		JsonObject root = new();
+		JsonObject root = [];
 
 		foreach (KeyValuePair<string, string> entry in values)
 		{
@@ -348,7 +348,7 @@ public static class UserConfigFile
 	private static JsonNode? BuildSubtree(IReadOnlyDictionary<string, string> values, string nodePath)
 	{
 		string childPrefix = nodePath + ".";
-		JsonObject subtree = new();
+		JsonObject subtree = [];
 		bool anyChild = false;
 
 		foreach (KeyValuePair<string, string> entry in values)
@@ -374,23 +374,23 @@ public static class UserConfigFile
 	{
 		if (!File.Exists(path))
 		{
-			return new JsonObject();
+			return [];
 		}
 
 		try
 		{
-			return JsonNode.Parse(File.ReadAllText(path)) as JsonObject ?? new JsonObject();
+			return JsonNode.Parse(File.ReadAllText(path)) as JsonObject ?? [];
 		}
 		catch
 		{
-			return new JsonObject();
+			return [];
 		}
 	}
 
 	private static void WriteObject(string path, JsonObject root)
 	{
 		System.IO.Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-		File.WriteAllText(path, root.ToJsonString(_writeOptions));
+		File.WriteAllText(path, root.ToJsonString(WriteOptions));
 	}
 
 	private static JsonNode? GetNodeAtPath(JsonObject root, string dottedPath)
@@ -450,7 +450,7 @@ public static class UserConfigFile
 
 			if (parent[segment] is not JsonObject child)
 			{
-				child = new JsonObject();
+				child = [];
 				parent[segment] = child;
 			}
 

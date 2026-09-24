@@ -39,7 +39,7 @@ public sealed record DepartureSettings
 	/// <summary>
 	/// The ARTCCs whose procedures are included, or empty for every ARTCC.
 	/// </summary>
-	public IReadOnlyCollection<string> ArtccFilter { get; init; } = Array.Empty<string>();
+	public IReadOnlyCollection<string> ArtccFilter { get; init; } = [];
 
 	/// <summary>
 	/// Which amendment-date filter applies. <see cref="DepartureAmendmentFilter.None"/> (the
@@ -87,7 +87,7 @@ public sealed record DepartureSettings
 	public required bool IncludeFebCustomProperties { get; init; }
 
 	/// <summary>Which <c>feb.*</c> properties to write when <see cref="IncludeFebCustomProperties"/> is <see langword="true"/>.</summary>
-	public IReadOnlyCollection<DepartureFebProperty> FebProperties { get; init; } = Array.Empty<DepartureFebProperty>();
+	public IReadOnlyCollection<DepartureFebProperty> FebProperties { get; init; } = [];
 
 	/// <summary>
 	/// Whether the Line defaults (<see cref="LineDefaults"/>) are written as an isLineDefaults

@@ -16,7 +16,7 @@ public sealed class ProductVersionTests
 	[InlineData("3.0.0-dev")]
 	[InlineData("0.0.1")]
 	[InlineData("10.20.30-alpha.1+build.5")]
-	public void Parse_ValidStrictSemVer_RoundTrips(string text)
+	public void parse_valid_strict_sem_ver_round_trips(string text)
 	{
 		Assert.Equal(text, ProductVersion.Parse(text).ToString());
 	}
@@ -30,7 +30,7 @@ public sealed class ProductVersionTests
 	[InlineData("2.8.3.0")]
 	[InlineData("2.8.3-")]
 	[InlineData("garbage")]
-	public void Parse_InvalidInput_ThrowsFormatException(string? text)
+	public void parse_invalid_input_throws_format_exception(string? text)
 	{
 		Assert.Throws<FormatException>(() => ProductVersion.Parse(text!));
 	}
@@ -38,7 +38,7 @@ public sealed class ProductVersionTests
 	[Theory]
 	[InlineData("2.8.3")]
 	[InlineData("3.0.0-alpha.1")]
-	public void TryParse_ValidInput_ReturnsTheVersion(string text)
+	public void try_parse_valid_input_returns_the_version(string text)
 	{
 		Assert.True(ProductVersion.TryParse(text, out ProductVersion? version));
 		Assert.Equal(text, version!.ToString());
@@ -51,7 +51,7 @@ public sealed class ProductVersionTests
 	[InlineData("not-a-version")]
 	[InlineData("2.8")]
 	[InlineData("2.8.1.0")]
-	public void TryParse_InvalidInput_ReturnsFalseAndNull(string? text)
+	public void try_parse_invalid_input_returns_false_and_null(string? text)
 	{
 		Assert.False(ProductVersion.TryParse(text, out ProductVersion? version));
 		Assert.Null(version);
@@ -62,7 +62,7 @@ public sealed class ProductVersionTests
 	[InlineData("v3.0.0-rc.1", "3.0.0-rc.1")]
 	[InlineData("V2.2.0", "2.2.0")]
 	[InlineData("  v2.9.0 ", "2.9.0")]
-	public void TryParseTag_AllowsALeadingV(string tag, string expected)
+	public void try_parse_tag_allows_a_leading_v(string tag, string expected)
 	{
 		Assert.True(ProductVersion.TryParseTag(tag, out ProductVersion? version));
 		Assert.Equal(expected, version!.ToString());
@@ -74,7 +74,7 @@ public sealed class ProductVersionTests
 	[InlineData("vnext")]
 	[InlineData("nightly")]
 	[InlineData("v2.9.0.0")]
-	public void TryParseTag_RejectsNonVersions(string? tag)
+	public void try_parse_tag_rejects_non_versions(string? tag)
 	{
 		Assert.False(ProductVersion.TryParseTag(tag, out ProductVersion? version));
 		Assert.Null(version);
@@ -84,7 +84,7 @@ public sealed class ProductVersionTests
 	[InlineData("3.0.0", false)]
 	[InlineData("3.0.0-alpha.1", true)]
 	[InlineData("3.0.0-rc.1", true)]
-	public void IsPrerelease_ReflectsThePrereleaseTag(string text, bool expected)
+	public void is_prerelease_reflects_the_prerelease_tag(string text, bool expected)
 	{
 		Assert.Equal(expected, ProductVersion.Parse(text).IsPrerelease);
 	}
@@ -100,7 +100,7 @@ public sealed class ProductVersionTests
 	[InlineData("3.0.0-rc", ReleaseChannel.ReleaseCandidate)]
 	[InlineData("3.0.0-RC.1", ReleaseChannel.ReleaseCandidate)]
 	[InlineData("3.0.0-Beta.2", ReleaseChannel.Beta)]
-	public void Channel_MapsThePrereleaseTag(string text, ReleaseChannel expected)
+	public void channel_maps_the_prerelease_tag(string text, ReleaseChannel expected)
 	{
 		Assert.Equal(expected, ProductVersion.Parse(text).Channel);
 	}
@@ -110,7 +110,7 @@ public sealed class ProductVersionTests
 	[InlineData("3.0.0-nightly")]
 	[InlineData("3.0.0-dev")]
 	[InlineData("3.0.0-0")]
-	public void Channel_UnrecognisedPrereleaseTag_IsAlpha(string text)
+	public void channel_unrecognised_prerelease_tag_is_alpha(string text)
 	{
 		Assert.Equal(ReleaseChannel.Alpha, ProductVersion.Parse(text).Channel);
 	}
@@ -126,7 +126,7 @@ public sealed class ProductVersionTests
 	[InlineData("3.0.0-alpha.1", "3.0.0-alpha.2")]
 	[InlineData("2.9.0", "3.0.0-alpha.1")]
 	[InlineData("1.9.9", "2.0.0")]
-	public void ComparePrecedenceTo_OrdersBySemVerPrecedence(string lower, string higher)
+	public void compare_precedence_to_orders_by_sem_ver_precedence(string lower, string higher)
 	{
 		ProductVersion a = ProductVersion.Parse(lower);
 		ProductVersion b = ProductVersion.Parse(higher);
@@ -138,19 +138,19 @@ public sealed class ProductVersionTests
 	[Theory]
 	[InlineData("2.8.3", "2.8.3")]
 	[InlineData("2.8.3+build.1", "2.8.3+build.2")]
-	public void ComparePrecedenceTo_EqualPrecedence_IsZero(string left, string right)
+	public void compare_precedence_to_equal_precedence_is_zero(string left, string right)
 	{
 		Assert.Equal(0, ProductVersion.Parse(left).ComparePrecedenceTo(ProductVersion.Parse(right)));
 	}
 
 	[Fact]
-	public void ComparePrecedenceTo_Null_Throws()
+	public void compare_precedence_to_null_throws()
 	{
 		Assert.Throws<ArgumentNullException>(() => ProductVersion.Parse("3.0.0").ComparePrecedenceTo(null!));
 	}
 
 	[Fact]
-	public void SemVersion_IsTheParsedValue()
+	public void sem_version_is_the_parsed_value()
 	{
 		Assert.Equal(3, ProductVersion.Parse("3.1.4-rc.2").SemVersion.Major);
 	}

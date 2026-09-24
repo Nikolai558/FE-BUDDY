@@ -27,9 +27,9 @@ public sealed class AiracCycleDataCacheTests : IDisposable
 		(_, _) => Task.FromResult(AiracCyclePublicationState.Published);
 
 	[Fact]
-	public async Task PrepareCycles_DownloadsInOrder_CurrentPreviousNext()
+	public async Task prepare_cycles_downloads_in_order_current_previous_next()
 	{
-		List<string> downloadOrder = new();
+		List<string> downloadOrder = [];
 
 		AiracCycleDataCache cache = new(
 			probe: AlwaysPublished,
@@ -47,7 +47,7 @@ public sealed class AiracCycleDataCacheTests : IDisposable
 	}
 
 	[Fact]
-	public async Task PrepareCycles_PrunesEveryCachedCycleButTheThreeOffered()
+	public async Task prepare_cycles_prunes_every_cached_cycle_but_the_three_offered()
 	{
 		IReadOnlyCollection<string>? kept = null;
 
@@ -60,11 +60,11 @@ public sealed class AiracCycleDataCacheTests : IDisposable
 		await cache.PrepareCyclesAsync(Previous, Current, Next);
 
 		Assert.NotNull(kept);
-		Assert.Equal(new[] { "2609", "2610", "2611" }, kept.Order());
+		Assert.Equal(["2609", "2610", "2611"], kept.Order());
 	}
 
 	[Fact]
-	public async Task NextDownload_StartsWhileEarlierCycleIsStillParsing()
+	public async Task next_download_starts_while_earlier_cycle_is_still_parsing()
 	{
 		TaskCompletionSource releaseCurrentParse = new(TaskCreationOptions.RunContinuationsAsynchronously);
 		TaskCompletionSource previousDownloadStarted = new(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -104,11 +104,11 @@ public sealed class AiracCycleDataCacheTests : IDisposable
 	}
 
 	[Fact]
-	public async Task Parses_NeverOverlap_AndRunInPriorityOrder()
+	public async Task parses_never_overlap_and_run_in_priority_order()
 	{
 		int running = 0;
 		int maxRunning = 0;
-		List<string> parseOrder = new();
+		List<string> parseOrder = [];
 
 		AiracCycleDataCache cache = new(
 			probe: AlwaysPublished,
@@ -132,7 +132,7 @@ public sealed class AiracCycleDataCacheTests : IDisposable
 	}
 
 	[Fact]
-	public async Task GetAsync_ForCycleWaitingForItsParseTurn_DoesNotParseItTwice()
+	public async Task get_async_for_cycle_waiting_for_its_parse_turn_does_not_parse_it_twice()
 	{
 		TaskCompletionSource releaseCurrentParse = new(TaskCreationOptions.RunContinuationsAsynchronously);
 		TaskCompletionSource previousDownloaded = new(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -177,7 +177,7 @@ public sealed class AiracCycleDataCacheTests : IDisposable
 	}
 
 	[Fact]
-	public async Task FailedParse_DoesNotStallTheParsesQueuedBehindIt()
+	public async Task failed_parse_does_not_stall_the_parses_queued_behind_it()
 	{
 		AiracCycleDataCache cache = new(
 			probe: AlwaysPublished,
@@ -205,7 +205,7 @@ public sealed class AiracCycleDataCacheTests : IDisposable
 	}
 
 	[Fact]
-	public async Task ConcurrentGetAsync_DoesNotParseTwice()
+	public async Task concurrent_get_async_does_not_parse_twice()
 	{
 		int parseCount = 0;
 
@@ -230,7 +230,7 @@ public sealed class AiracCycleDataCacheTests : IDisposable
 	}
 
 	[Fact]
-	public async Task DownloadThatKeepsFailing_IsRetriedOnceThenMarkedFailed()
+	public async Task download_that_keeps_failing_is_retried_once_then_marked_failed()
 	{
 		ConcurrentDictionary<string, int> attempts = new();
 
@@ -251,7 +251,7 @@ public sealed class AiracCycleDataCacheTests : IDisposable
 	}
 
 	[Fact]
-	public async Task Readiness_IsReady_WhenNextIsNotYetPublished()
+	public async Task readiness_is_ready_when_next_is_not_yet_published()
 	{
 		AiracCycleDataCache cache = new(
 			probe: (cycle, _) => Task.FromResult(
@@ -268,7 +268,7 @@ public sealed class AiracCycleDataCacheTests : IDisposable
 	}
 
 	[Fact]
-	public async Task Readiness_IsDegraded_WhenOnlyPreviousFails()
+	public async Task readiness_is_degraded_when_only_previous_fails()
 	{
 		AiracCycleDataCache cache = new(
 			probe: AlwaysPublished,
@@ -285,7 +285,7 @@ public sealed class AiracCycleDataCacheTests : IDisposable
 	}
 
 	[Fact]
-	public async Task BeforePrepare_NothingIsTracked()
+	public async Task before_prepare_nothing_is_tracked()
 	{
 		AiracCycleDataCache cache = new(AlwaysPublished, (_, _) => Task.FromResult("x"), (_, _) => Task.FromResult(new NasrCsvDataCollection()));
 
@@ -295,7 +295,7 @@ public sealed class AiracCycleDataCacheTests : IDisposable
 	}
 
 	[Fact]
-	public async Task InconclusiveProbe_IsAskedTwice_ThenTheDownloadDecides()
+	public async Task inconclusive_probe_is_asked_twice_then_the_download_decides()
 	{
 		ConcurrentDictionary<string, int> probes = new();
 
@@ -311,12 +311,12 @@ public sealed class AiracCycleDataCacheTests : IDisposable
 		await cache.PrepareCyclesAsync(Previous, Current, Next);
 
 		Assert.All(probes.Values, count => Assert.Equal(2, count));
-		Assert.Equal(new[] { "2610", "2609", "2611" }, cache.Entries.Select(e => e.Cycle.AiracCycleId));
+		Assert.Equal(["2610", "2609", "2611"], cache.Entries.Select(e => e.Cycle.AiracCycleId));
 		Assert.Equal(AiracCycleReadiness.Ready, cache.ComputeReadiness());
 	}
 
 	[Fact]
-	public async Task GetAsync_ForAnUnpublishedCycle_Throws()
+	public async Task get_async_for_an_unpublished_cycle_throws()
 	{
 		AiracCycleDataCache cache = new(
 			probe: (cycle, _) => Task.FromResult(
@@ -331,7 +331,7 @@ public sealed class AiracCycleDataCacheTests : IDisposable
 	}
 
 	[Fact]
-	public async Task GetAsync_ForAFailedCycle_TriesTheDownloadAgain()
+	public async Task get_async_for_a_failed_cycle_tries_the_download_again()
 	{
 		int currentAttempts = 0;
 		NasrCsvDataCollection parsed = new();
@@ -353,7 +353,7 @@ public sealed class AiracCycleDataCacheTests : IDisposable
 	}
 
 	[Fact]
-	public async Task GetAsync_ForACycleThatStillFails_Throws()
+	public async Task get_async_for_a_cycle_that_still_fails_throws()
 	{
 		AiracCycleDataCache cache = new(
 			probe: AlwaysPublished,
@@ -367,7 +367,7 @@ public sealed class AiracCycleDataCacheTests : IDisposable
 	}
 
 	[Fact]
-	public async Task Readiness_IsWaiting_WhileTheBestEffortCyclesAreStillParsing()
+	public async Task readiness_is_waiting_while_the_best_effort_cycles_are_still_parsing()
 	{
 		TaskCompletionSource previousParsing = new(TaskCreationOptions.RunContinuationsAsynchronously);
 		TaskCompletionSource releasePrevious = new(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -398,7 +398,7 @@ public sealed class AiracCycleDataCacheTests : IDisposable
 	}
 
 	[Fact]
-	public async Task AThrowingStateChangedSubscriber_DoesNotBreakThePipeline()
+	public async Task a_throwing_state_changed_subscriber_does_not_break_the_pipeline()
 	{
 		AiracCycleDataCache cache = new(
 			probe: AlwaysPublished,
@@ -412,7 +412,7 @@ public sealed class AiracCycleDataCacheTests : IDisposable
 	}
 
 	[Fact]
-	public async Task CancellationDuringDownload_IsNotSwallowedAsAFailure()
+	public async Task cancellation_during_download_is_not_swallowed_as_a_failure()
 	{
 		AiracCycleDataCache cache = new(
 			probe: AlwaysPublished,
@@ -424,7 +424,7 @@ public sealed class AiracCycleDataCacheTests : IDisposable
 	}
 
 	[Fact]
-	public async Task CancellationDuringParse_IsNotSwallowedAsAFailure()
+	public async Task cancellation_during_parse_is_not_swallowed_as_a_failure()
 	{
 		AiracCycleDataCache cache = new(
 			probe: AlwaysPublished,
@@ -436,7 +436,7 @@ public sealed class AiracCycleDataCacheTests : IDisposable
 	}
 
 	[Fact]
-	public void ConfigureForTesting_SwapsAndRestoresTheSharedInstance()
+	public void configure_for_testing_swaps_and_restores_the_shared_instance()
 	{
 		AiracCycleDataCache original = AiracCycleDataCache.Instance;
 		AiracCycleDataCache replacement = new(AlwaysPublished, (_, _) => Task.FromResult("x"), (_, _) => Task.FromResult(new NasrCsvDataCollection()));

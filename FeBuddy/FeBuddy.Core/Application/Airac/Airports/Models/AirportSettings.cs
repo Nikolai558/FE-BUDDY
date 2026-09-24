@@ -41,7 +41,7 @@ public sealed record AirportSettings
 	/// <see cref="AirportFebProperty.FaaId"/> and <see cref="AirportFebProperty.Name"/>, which
 	/// its <c>text</c> array already carries.
 	/// </summary>
-	public IReadOnlyCollection<AirportFebProperty> FebProperties { get; init; } = Array.Empty<AirportFebProperty>();
+	public IReadOnlyCollection<AirportFebProperty> FebProperties { get; init; } = [];
 
 	/// <summary>
 	/// Whether the Line defaults (<see cref="LineDefaults"/>) are written as an isLineDefaults

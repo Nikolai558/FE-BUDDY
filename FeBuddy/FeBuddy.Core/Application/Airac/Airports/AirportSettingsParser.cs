@@ -29,8 +29,8 @@ public static class AirportSettingsParser
 	private static readonly IReadOnlyDictionary<string, CrcFeatureKind[]> CrcKindsByClass =
 		new Dictionary<string, CrcFeatureKind[]>(StringComparer.OrdinalIgnoreCase)
 		{
-			[nameof(AirportCrcClass.Airports)] = new[] { CrcFeatureKind.Symbol, CrcFeatureKind.Text },
-			[nameof(AirportCrcClass.Runways)] = new[] { CrcFeatureKind.Line },
+			[nameof(AirportCrcClass.Airports)] = [CrcFeatureKind.Symbol, CrcFeatureKind.Text],
+			[nameof(AirportCrcClass.Runways)] = [CrcFeatureKind.Line],
 		};
 
 	/// <summary>Properties that used to be offered, and why they were withdrawn.</summary>
@@ -96,9 +96,9 @@ public static class AirportSettingsParser
 		bool includeSymbolDefaults = CrcDefaultsReader.ReadInclude(airportSettings, CrcFeatureKind.Symbol) && generateGeojson && emitSymbols;
 		bool includeTextDefaults = CrcDefaultsReader.ReadInclude(airportSettings, CrcFeatureKind.Text) && generateGeojson && emitText;
 
-		Dictionary<AirportCrcClass, CrcLineDefaults> lineDefaults = new();
-		Dictionary<AirportCrcClass, CrcSymbolDefaults> symbolDefaults = new();
-		Dictionary<AirportCrcClass, CrcTextDefaults> textDefaults = new();
+		Dictionary<AirportCrcClass, CrcLineDefaults> lineDefaults = [];
+		Dictionary<AirportCrcClass, CrcSymbolDefaults> symbolDefaults = [];
+		Dictionary<AirportCrcClass, CrcTextDefaults> textDefaults = [];
 
 		if (includeSymbolDefaults)
 		{

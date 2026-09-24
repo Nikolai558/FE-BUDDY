@@ -36,7 +36,7 @@ public static class AirwayService
 		ArgumentNullException.ThrowIfNull(airwaySettings);
 
 		Stopwatch stopwatch = Stopwatch.StartNew();
-		List<ServiceMessage> messages = new();
+		List<ServiceMessage> messages = [];
 
 		AirwaySettingsParseResult parseResult = AirwaySettingsParser.Parse(airwaySettings);
 		messages.AddRange(parseResult.Messages);
@@ -46,7 +46,7 @@ public static class AirwayService
 
 		// The ROI limits the GeoJSON only. The alias file gets every built airway and applies its
 		// own AliasRoiScope - "All" really is all, "ROI airways only" narrows it.
-		IReadOnlyList<Airway> airwaysInRoi = buildResult.Airways.Where(a => a.CrossesRoi).ToList();
+		IReadOnlyList<Airway> airwaysInRoi = [.. buildResult.Airways.Where(a => a.CrossesRoi)];
 
 		GeojsonFileSet geojsonFiles = AirwayGeojsonWriter.Generate(airwaysInRoi, parseResult.Settings);
 

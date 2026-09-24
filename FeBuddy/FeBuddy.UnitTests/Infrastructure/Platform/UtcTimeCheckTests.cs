@@ -39,7 +39,7 @@ public sealed class UtcTimeCheckTests : IDisposable
 
 	/// <summary>A good timeapi.io response yields <see cref="UtcTimeSource.TimeApi"/> and an online result.</summary>
 	[Fact]
-	public async Task UtcTimeCheck_ParsesTimeApiResponse()
+	public async Task utc_time_check_parses_time_api_response()
 	{
 		using HttpClient client = new(new StubHttpHandler(_ => new HttpResponseMessage(HttpStatusCode.OK)
 		{
@@ -55,7 +55,7 @@ public sealed class UtcTimeCheckTests : IDisposable
 
 	/// <summary>When every network call fails, the check falls back to the local clock and reports offline.</summary>
 	[Fact]
-	public async Task UtcTimeCheck_FallsBackToLocalClockWhenOffline()
+	public async Task utc_time_check_falls_back_to_local_clock_when_offline()
 	{
 		using HttpClient client = new(new StubHttpHandler(_ => throw new HttpRequestException("no network")));
 
@@ -69,7 +69,7 @@ public sealed class UtcTimeCheckTests : IDisposable
 	[Theory]
 	[InlineData(HttpStatusCode.ServiceUnavailable, "")]
 	[InlineData(HttpStatusCode.OK, """{"somethingElse":1}""")]
-	public async Task UtcTimeCheck_TimeApiUnusable_FallsBackToTheDateHeader(HttpStatusCode timeApiStatus, string timeApiBody)
+	public async Task utc_time_check_time_api_unusable_falls_back_to_the_date_header(HttpStatusCode timeApiStatus, string timeApiBody)
 	{
 		DateTimeOffset serverDate = new(2026, 9, 7, 1, 2, 3, TimeSpan.Zero);
 

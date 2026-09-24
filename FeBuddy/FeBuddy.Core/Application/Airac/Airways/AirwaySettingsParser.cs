@@ -71,9 +71,9 @@ public static class AirwaySettingsParser
 		bool includeSymbolDefaults = CrcDefaultsReader.ReadInclude(airwaySettings, CrcFeatureKind.Symbol) && writingGeojson && emitSymbols;
 		bool includeTextDefaults = CrcDefaultsReader.ReadInclude(airwaySettings, CrcFeatureKind.Text) && writingGeojson && emitText;
 
-		Dictionary<AirwayAltitudeClass, CrcLineDefaults> lineDefaults = new();
-		Dictionary<AirwayAltitudeClass, CrcSymbolDefaults> symbolDefaults = new();
-		Dictionary<AirwayAltitudeClass, CrcTextDefaults> textDefaults = new();
+		Dictionary<AirwayAltitudeClass, CrcLineDefaults> lineDefaults = [];
+		Dictionary<AirwayAltitudeClass, CrcSymbolDefaults> symbolDefaults = [];
+		Dictionary<AirwayAltitudeClass, CrcTextDefaults> textDefaults = [];
 
 		foreach (AirwayAltitudeClass altitudeClass in Enum.GetValues<AirwayAltitudeClass>())
 		{

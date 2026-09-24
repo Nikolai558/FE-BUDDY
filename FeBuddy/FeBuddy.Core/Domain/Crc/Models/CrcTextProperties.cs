@@ -37,10 +37,10 @@ public sealed record CrcTextProperties
 	/// <summary>Whether the text is underlined. Auto-assigned to false if null.</summary>
 	public bool? Underline { get; init; }
 
-	/// <summary>Horizontal pixel offset from the feature's point. Must be &gt;= 0. Auto-assigned to 0 if null.</summary>
+	/// <summary>Horizontal pixel offset from the feature's point; any integer. Auto-assigned to 0 if null.</summary>
 	public int? XOffset { get; init; }
 
-	/// <summary>Vertical pixel offset from the feature's point. Must be &gt;= 0. Auto-assigned to 0 if null.</summary>
+	/// <summary>Vertical pixel offset from the feature's point; any integer. Auto-assigned to 0 if null.</summary>
 	public int? YOffset { get; init; }
 
 	/// <summary>Whether the text is rendered with an opaque background. Auto-assigned to false if null.</summary>

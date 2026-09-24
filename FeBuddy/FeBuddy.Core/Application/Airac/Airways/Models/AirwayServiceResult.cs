@@ -27,5 +27,5 @@ public sealed record AirwayServiceResult : ServiceResult
 	/// IDs of airways excluded from every output (GeoJSON, alias, counts) because at least one
 	/// of their waypoints could not be resolved (remediation plan 3.2a).
 	/// </summary>
-	public IReadOnlyList<string> ExcludedAirwayIds { get; init; } = Array.Empty<string>();
+	public IReadOnlyList<string> ExcludedAirwayIds { get; init; } = [];
 }

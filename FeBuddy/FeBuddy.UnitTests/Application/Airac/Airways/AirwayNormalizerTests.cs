@@ -26,11 +26,11 @@ public class AirwayNormalizerTests
 	[Fact]
 	public void reference_only_points_are_collapsed_into_a_direct_segment()
 	{
-		List<AwyCsvDataModel.AwySegAlt> raw = new()
-		{
+		List<AwyCsvDataModel.AwySegAlt> raw =
+		[
 			Seg(10, "TIJ", "VOR", "U.S. MEXICAN BORDER-2"),
 			Seg(20, "U.S. MEXICAN BORDER-2", null, "TEYON"),
-		};
+		];
 
 		List<AirwaySegment> result = AirwayNormalizer.Normalize(raw);
 
@@ -42,11 +42,11 @@ public class AirwayNormalizerTests
 	[Fact]
 	public void gap_flag_on_a_collapsed_record_is_preserved()
 	{
-		List<AwyCsvDataModel.AwySegAlt> raw = new()
-		{
+		List<AwyCsvDataModel.AwySegAlt> raw =
+		[
 			Seg(10, "AAA", "WP", "BORDER-X"),
 			Seg(20, "BORDER-X", null, "BBB", gapFlag: "Y"),
-		};
+		];
 
 		var result = AirwayNormalizer.Normalize(raw);
 
@@ -56,10 +56,10 @@ public class AirwayNormalizerTests
 	[Fact]
 	public void a_reference_only_leading_record_does_not_produce_its_own_segment()
 	{
-		List<AwyCsvDataModel.AwySegAlt> raw = new()
-		{
+		List<AwyCsvDataModel.AwySegAlt> raw =
+		[
 			Seg(10, "BORDER-X", null, "AAA"),
-		};
+		];
 
 		var result = AirwayNormalizer.Normalize(raw);
 
@@ -69,11 +69,11 @@ public class AirwayNormalizerTests
 	[Fact]
 	public void highest_max_auth_alt_among_collapsed_records_is_carried_through()
 	{
-		List<AwyCsvDataModel.AwySegAlt> raw = new()
-		{
+		List<AwyCsvDataModel.AwySegAlt> raw =
+		[
 			Seg(10, "AAA", "WP", "BORDER-X", maxAuthAlt: 5000),
 			Seg(20, "BORDER-X", null, "BBB", maxAuthAlt: 18000),
-		};
+		];
 
 		var result = AirwayNormalizer.Normalize(raw);
 
@@ -89,12 +89,12 @@ public class AirwayNormalizerTests
 	[Fact]
 	public void a_border_terminator_row_does_not_leave_a_segment_ending_at_the_border_marker()
 	{
-		List<AwyCsvDataModel.AwySegAlt> raw = new()
-		{
+		List<AwyCsvDataModel.AwySegAlt> raw =
+		[
 			Seg(200, "CFJCC", "CN", "CFDCT"),
 			Seg(210, "CFDCT", "CN", "U.S. CANADIAN BORDER-4"),
 			Seg(220, "U.S. CANADIAN BORDER-4", null, ""), // terminator: blank ToPoint, blank type
-		};
+		];
 
 		var result = AirwayNormalizer.Normalize(raw);
 
@@ -107,11 +107,11 @@ public class AirwayNormalizerTests
 	[Fact]
 	public void unrelated_segments_are_kept_separate_not_merged()
 	{
-		List<AwyCsvDataModel.AwySegAlt> raw = new()
-		{
+		List<AwyCsvDataModel.AwySegAlt> raw =
+		[
 			Seg(10, "AAA", "WP", "BBB"),
 			Seg(20, "BBB", "WP", "CCC"),
-		};
+		];
 
 		var result = AirwayNormalizer.Normalize(raw);
 

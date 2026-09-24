@@ -58,7 +58,7 @@ public static class DepartureFilter
 		DateOnly runDate = today ?? DateOnly.FromDateTime(DateTime.Now);
 
 		HashSet<string> artccs = new(settings.ArtccFilter, StringComparer.OrdinalIgnoreCase);
-		List<DepartureProcedure> kept = new();
+		List<DepartureProcedure> kept = [];
 
 		foreach (DepartureProcedure procedure in procedures)
 		{
@@ -110,16 +110,14 @@ public static class DepartureFilter
 
 		if (settings.RoiMode == DepartureRoiMode.Waypoint)
 		{
-			return airportProcedures
-				.Where(ap => ap.Points.Any(point => RoiFilter.Contains(roi, point.Latitude, point.Longitude)))
-				.ToList();
+			return [.. airportProcedures.Where(ap => ap.Points.Any(point => RoiFilter.Contains(roi, point.Latitude, point.Longitude)))];
 		}
 
 		// Airport mode: the airport's own reference point decides. An airport NASR has no
 		// APT_BASE record for (TRMML lists CYQG, a Canadian field) has nothing to test, so it is
 		// left out - it stays a served airport for everything that does not need its location.
 		Dictionary<string, bool> inside = new(StringComparer.OrdinalIgnoreCase);
-		List<DepartureAirportProcedure> kept = new();
+		List<DepartureAirportProcedure> kept = [];
 
 		foreach (DepartureAirportProcedure airportProcedure in airportProcedures)
 		{

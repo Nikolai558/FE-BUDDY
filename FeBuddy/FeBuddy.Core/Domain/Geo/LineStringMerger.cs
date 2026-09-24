@@ -3,8 +3,8 @@ using NetTopologySuite.Geometries;
 namespace FeBuddy.Core.Domain.Geo;
 
 /// <summary>
-/// "Efficient Linestring Handling": turns a set of overlapping paths into the fewest, longest
-/// LineStrings that still draw every segment exactly once.
+/// Turns a set of overlapping paths into the fewest, longest LineStrings that still draw every
+/// segment exactly once.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -39,19 +39,18 @@ internal static class LineStringMerger
 	{
 		ArgumentNullException.ThrowIfNull(paths);
 
-		List<IReadOnlyList<(string Key, Coordinate Coordinate)>> ordered = paths
+		List<IReadOnlyList<(string Key, Coordinate Coordinate)>> ordered = [.. paths
 			.Select((path, index) => (Path: CollapseRepeats(path), Index: index))
 			.OrderByDescending(entry => entry.Path.Count)
 			.ThenBy(entry => entry.Index)
-			.Select(entry => entry.Path)
-			.ToList();
+			.Select(entry => entry.Path)];
 
-		HashSet<(string, string)> drawn = new();
-		List<LineString> lines = new();
+		HashSet<(string, string)> drawn = [];
+		List<LineString> lines = [];
 
 		foreach (IReadOnlyList<(string Key, Coordinate Coordinate)> path in ordered)
 		{
-			List<Coordinate> run = new();
+			List<Coordinate> run = [];
 
 			for (int i = 1; i < path.Count; i++)
 			{
@@ -112,7 +111,7 @@ internal static class LineStringMerger
 	{
 		if (run.Count >= 2)
 		{
-			lines.Add(Wgs84.Factory.CreateLineString(run.ToArray()));
+			lines.Add(Wgs84.Factory.CreateLineString([.. run]));
 		}
 
 		run.Clear();

@@ -74,7 +74,7 @@ public static class NewsService
 		catch (Exception ex)
 		{
 			AppLog.Warning(LogSource, $"Could not parse the News document: {ex.Message}. NewsLastOpen is left unchanged.");
-			return new NewsCheckResult(Array.Empty<NewsPost>(), null, 0, ParseSucceeded: false, fromNetwork);
+			return new NewsCheckResult([], null, 0, ParseSucceeded: false, fromNetwork);
 		}
 
 		if (posts.Count == 0)
@@ -115,11 +115,11 @@ public static class NewsService
 	{
 		if (string.IsNullOrWhiteSpace(markdown))
 		{
-			return Array.Empty<NewsPost>();
+			return [];
 		}
 
 		string[] sections = Regex.Split(markdown, @"(?m)^\s*---\s*$");
-		List<NewsPost> posts = new();
+		List<NewsPost> posts = [];
 
 		foreach (string section in sections)
 		{
@@ -148,9 +148,7 @@ public static class NewsService
 			posts.Add(new NewsPost(id, heading.Groups[1].Value.Trim(), title, body));
 		}
 
-		return posts
-			.OrderByDescending(p => p.Id)
-			.ToArray();
+		return [.. posts.OrderByDescending(p => p.Id)];
 	}
 
 	/// <summary>The News markdown bundled into this assembly, used offline or when the fetch fails.</summary>

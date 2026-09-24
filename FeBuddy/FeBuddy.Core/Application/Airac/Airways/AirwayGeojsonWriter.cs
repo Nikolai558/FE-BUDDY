@@ -67,7 +67,7 @@ public static class AirwayGeojsonWriter
 			AirwayAltitudeClass referenceClass = DetermineReferenceClass(group.Value);
 
 			List<Airway> orderedAirways =
-				group.Value.OrderBy(a => a.AwyId, StringComparer.OrdinalIgnoreCase).ToList();
+				[.. group.Value.OrderBy(a => a.AwyId, StringComparer.OrdinalIgnoreCase)];
 
 			if (settings.EmitLines)
 			{
@@ -98,7 +98,7 @@ public static class AirwayGeojsonWriter
 
 			if (!groups.TryGetValue(key, out List<Airway>? list))
 			{
-				list = new List<Airway>();
+				list = [];
 				groups[key] = list;
 			}
 
@@ -133,7 +133,7 @@ public static class AirwayGeojsonWriter
 		string filePrefix,
 		GeojsonFileSet files)
 	{
-		FeatureCollection collection = new();
+		FeatureCollection collection = [];
 
 		if (settings.IncludeCrcLineDefaults)
 		{
@@ -153,7 +153,7 @@ public static class AirwayGeojsonWriter
 
 			attributes = needsOverride
 				? CrcFeatureFactory.CreateOverrideProperties(settings.LineDefaults[airway.AltitudeClass].ToFeatureProperties())
-				: new AttributesTable();
+				: [];
 
 			// A Lines Feature is the whole airway: it carries the airway's own ID and its
 			// ordered point list, never a single point's ID.
@@ -214,7 +214,7 @@ public static class AirwayGeojsonWriter
 		}
 
 		List<AirwayPoint> orderedPoints =
-			pointsToRender.OrderBy(p => p.PointId, StringComparer.OrdinalIgnoreCase).ToList();
+			[.. pointsToRender.OrderBy(p => p.PointId, StringComparer.OrdinalIgnoreCase)];
 
 		if (settings.EmitSymbols)
 		{
@@ -236,7 +236,7 @@ public static class AirwayGeojsonWriter
 		string filePrefix,
 		GeojsonFileSet files)
 	{
-		FeatureCollection collection = new();
+		FeatureCollection collection = [];
 
 		if (settings.IncludeCrcSymbolDefaults)
 		{
@@ -245,8 +245,10 @@ public static class AirwayGeojsonWriter
 
 		foreach (AirwayPoint point in points)
 		{
-			AttributesTable attributes = new();
-			attributes.Add("style", MapSymbolStyle(point.PointType));
+			AttributesTable attributes = new()
+			{
+				{ "style", MapSymbolStyle(point.PointType) }
+			};
 			FebProperties.Add(attributes, settings.IncludeFebCustomProperties, settings.FebProperties.OrderBy(p => p), property => property switch
 			{
 				AirwayFebProperty.AwyId => airwayIdsByPoint[point.PointId],
@@ -273,7 +275,7 @@ public static class AirwayGeojsonWriter
 		string filePrefix,
 		GeojsonFileSet files)
 	{
-		FeatureCollection collection = new();
+		FeatureCollection collection = [];
 
 		if (settings.IncludeCrcTextDefaults)
 		{
@@ -282,8 +284,10 @@ public static class AirwayGeojsonWriter
 
 		foreach (AirwayPoint point in points)
 		{
-			AttributesTable attributes = new();
-			attributes.Add("text", new[] { point.PointId });
+			AttributesTable attributes = new()
+			{
+				{ "text", new[] { point.PointId } }
+			};
 
 			// No feb.pointId here: the label already is the point's ID.
 			FebProperties.Add(attributes, settings.IncludeFebCustomProperties, settings.FebProperties.OrderBy(p => p), property => property switch

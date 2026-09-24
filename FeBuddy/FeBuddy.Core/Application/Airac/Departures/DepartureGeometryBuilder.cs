@@ -35,7 +35,7 @@ internal static class DepartureGeometryBuilder
 
 		IReadOnlyList<LineString> lines = LineStringMerger.Merge(Paths(airportProcedure.Routes));
 
-		return lines.Count == 0 ? null : Wgs84.Factory.CreateMultiLineString(lines.ToArray());
+		return lines.Count == 0 ? null : Wgs84.Factory.CreateMultiLineString([.. lines]);
 	}
 
 	/// <summary>
@@ -46,18 +46,16 @@ internal static class DepartureGeometryBuilder
 	/// <returns>The paths, as keyed coordinates.</returns>
 	internal static List<IReadOnlyList<(string Key, Coordinate Coordinate)>> Paths(IReadOnlyList<DepartureRoute> routes)
 	{
-		List<DepartureRoute> bodies = routes.Where(r => r.Kind == DepartureRouteKind.Body && r.Points.Count > 0).ToList();
-		List<DepartureRoute> transitions = routes.Where(r => r.Kind == DepartureRouteKind.Transition && r.Points.Count > 0).ToList();
+		List<DepartureRoute> bodies = [.. routes.Where(r => r.Kind == DepartureRouteKind.Body && r.Points.Count > 0)];
+		List<DepartureRoute> transitions = [.. routes.Where(r => r.Kind == DepartureRouteKind.Transition && r.Points.Count > 0)];
 
-		List<IReadOnlyList<(string Key, Coordinate Coordinate)>> paths = new();
+		List<IReadOnlyList<(string Key, Coordinate Coordinate)>> paths = [];
 		HashSet<DepartureRoute> usedTransitions = new(ReferenceEqualityComparer.Instance);
 
 		foreach (DepartureRoute body in bodies)
 		{
 			string lastId = body.Points[^1].Id;
-			List<DepartureRoute> continuing = transitions
-				.Where(t => string.Equals(t.Points[0].Id, lastId, StringComparison.OrdinalIgnoreCase))
-				.ToList();
+			List<DepartureRoute> continuing = [.. transitions.Where(t => string.Equals(t.Points[0].Id, lastId, StringComparison.OrdinalIgnoreCase))];
 
 			if (continuing.Count == 0)
 			{

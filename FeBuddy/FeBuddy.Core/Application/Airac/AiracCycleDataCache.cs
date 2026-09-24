@@ -53,22 +53,40 @@ public sealed class AiracCycleDataCacheEntry
 /// cycle only degrades the service.
 /// </para>
 /// <para>
-/// The probe / download / parse steps are injectable so the pipeline can be tested without
-/// the FAA or real CSV files; the parameterless constructor wires the real implementations.
+/// Each pipeline step is a parameter, so tests can run the pipeline without the FAA or real CSV
+/// files. The parameterless constructor wires in the real steps.
 /// </para>
 /// </remarks>
-public sealed class AiracCycleDataCache
+/// <param name="probe">Publication probe for a cycle.</param>
+/// <param name="download">Downloads a cycle's CSVs and returns the local folder.</param>
+/// <param name="parse">Parses a cycle folder into a <see cref="NasrCsvDataCollection"/>.</param>
+/// <param name="isLocallyAvailable">
+/// Whether a cycle's CSVs are already cached, so the pipeline can skip announcing
+/// <see cref="CycleDataState.Downloading"/> when <paramref name="download"/> is about to
+/// resolve instantly from disk rather than actually fetch anything. Defaults to "never
+/// cached", so the state always passes through Downloading.
+/// </param>
+/// <param name="pruneAllBut">
+/// Deletes every cached cycle except the IDs given. Defaults to doing nothing, so a test
+/// never touches the real cycle cache.
+/// </param>
+public sealed class AiracCycleDataCache(
+	Func<AiracCycleInfo, CancellationToken, Task<AiracCyclePublicationState>> probe,
+	Func<AiracCycleInfo, CancellationToken, Task<string>> download,
+	Func<string, CancellationToken, Task<NasrCsvDataCollection>> parse,
+	Func<AiracCycleInfo, bool>? isLocallyAvailable = null,
+	Action<IReadOnlyCollection<string>>? pruneAllBut = null)
 {
 	private const string LogSource = "AiracCycleCache";
 
-	private readonly Func<AiracCycleInfo, CancellationToken, Task<AiracCyclePublicationState>> _probe;
-	private readonly Func<AiracCycleInfo, CancellationToken, Task<string>> _download;
-	private readonly Func<string, CancellationToken, Task<NasrCsvDataCollection>> _parse;
-	private readonly Func<AiracCycleInfo, bool> _isLocallyAvailable;
-	private readonly Action<IReadOnlyCollection<string>> _pruneAllBut;
+	private readonly Func<AiracCycleInfo, CancellationToken, Task<AiracCyclePublicationState>> _probe = probe ?? throw new ArgumentNullException(nameof(probe));
+	private readonly Func<AiracCycleInfo, CancellationToken, Task<string>> _download = download ?? throw new ArgumentNullException(nameof(download));
+	private readonly Func<string, CancellationToken, Task<NasrCsvDataCollection>> _parse = parse ?? throw new ArgumentNullException(nameof(parse));
+	private readonly Func<AiracCycleInfo, bool> _isLocallyAvailable = isLocallyAvailable ?? (_ => false);
+	private readonly Action<IReadOnlyCollection<string>> _pruneAllBut = pruneAllBut ?? (_ => { });
 
-	private readonly object _gate = new();
-	private readonly List<AiracCycleDataCacheEntry> _entries = new();
+	private readonly Lock _gate = new();
+	private readonly List<AiracCycleDataCacheEntry> _entries = [];
 	private readonly Dictionary<string, Task<NasrCsvDataCollection>> _flights = new(StringComparer.OrdinalIgnoreCase);
 
 	/// <summary>
@@ -78,44 +96,12 @@ public sealed class AiracCycleDataCache
 		: this(
 			probe: (cycle, ct) => AiracCycleAvailability.ProbeAsync(cycle, httpClient: null, ct),
 			download: (cycle, ct) => NasrCycleDownloader.EnsureCycleAvailableAsync(cycle, cacheRootDirectory: null, progress: null, ct),
-			// TODO (perf): ParseAllAsync parses all 24 NASR groups. A NasrDataSet flags overload
-			// would cut this to the ~24 MB Airways actually needs (APT/AWY/FIX/NAV). Refactor
-			// later - see remediation plan 2.2.
+			// TODO (perf): this parses every NASR group, but the sub-services only read APT, AWY,
+			// CLS_ARSP, DP, FIX, FRQ and NAV. Parsing just those would save memory and launch time.
 			parse: (dir, ct) => NasrCsvParser.ParseAllAsync(dir),
 			isLocallyAvailable: cycle => NasrCycleDownloader.IsCycleAvailableLocally(cycle, cacheRootDirectory: null),
 			pruneAllBut: cycleIds => NasrCycleDownloader.PruneStaleCycles(cycleIds, cacheRootDirectory: null))
 	{
-	}
-
-	/// <summary>
-	/// Creates a cache with injectable pipeline steps (for tests).
-	/// </summary>
-	/// <param name="probe">Publication probe for a cycle.</param>
-	/// <param name="download">Downloads a cycle's CSVs and returns the local folder.</param>
-	/// <param name="parse">Parses a cycle folder into a <see cref="NasrCsvDataCollection"/>.</param>
-	/// <param name="isLocallyAvailable">
-	/// Whether a cycle's CSVs are already cached, so the pipeline can skip announcing
-	/// <see cref="CycleDataState.Downloading"/> when <paramref name="download"/> is about to
-	/// resolve instantly from disk rather than actually fetch anything. Defaults to "never
-	/// cached" (always show Downloading), matching every test's expectations before this
-	/// existed.
-	/// </param>
-	/// <param name="pruneAllBut">
-	/// Deletes every cached cycle except the IDs given. Defaults to doing nothing, so a test
-	/// never touches the real cycle cache.
-	/// </param>
-	public AiracCycleDataCache(
-		Func<AiracCycleInfo, CancellationToken, Task<AiracCyclePublicationState>> probe,
-		Func<AiracCycleInfo, CancellationToken, Task<string>> download,
-		Func<string, CancellationToken, Task<NasrCsvDataCollection>> parse,
-		Func<AiracCycleInfo, bool>? isLocallyAvailable = null,
-		Action<IReadOnlyCollection<string>>? pruneAllBut = null)
-	{
-		_probe = probe ?? throw new ArgumentNullException(nameof(probe));
-		_download = download ?? throw new ArgumentNullException(nameof(download));
-		_parse = parse ?? throw new ArgumentNullException(nameof(parse));
-		_isLocallyAvailable = isLocallyAvailable ?? (_ => false);
-		_pruneAllBut = pruneAllBut ?? (_ => { });
 	}
 
 	/// <summary>The process-wide cache the GUI binds to.</summary>
@@ -138,7 +124,7 @@ public sealed class AiracCycleDataCache
 		{
 			lock (_gate)
 			{
-				return _entries.ToArray();
+				return [.. _entries];
 			}
 		}
 	}
@@ -192,7 +178,7 @@ public sealed class AiracCycleDataCache
 
 		// Only these three cycles are ever offered, so any other cached cycle is dead weight -
 		// without this the cache grows by a cycle every 28 days.
-		_pruneAllBut(new[] { previous.AiracCycleId, current.AiracCycleId, next.AiracCycleId });
+		_pruneAllBut([previous.AiracCycleId, current.AiracCycleId, next.AiracCycleId]);
 
 		// Probe all three concurrently - the probe is a cheap HEAD.
 		await Task.WhenAll(

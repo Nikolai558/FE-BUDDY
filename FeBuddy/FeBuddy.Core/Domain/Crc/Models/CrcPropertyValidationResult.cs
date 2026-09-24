@@ -6,8 +6,7 @@ namespace FeBuddy.Core.Domain.Crc.Models;
 /// CRC_Geojsons.md</see>.
 /// </summary>
 /// <remarks>
-/// Carries every violation found, not just the first, so a caller (the GUI's save button,
-/// eventually) can report all problems to the user at once instead of one at a time.
+/// Carries every violation found, not just the first, so all of them can be shown at once.
 /// </remarks>
 public sealed record CrcPropertyValidationResult
 {
@@ -16,7 +15,7 @@ public sealed record CrcPropertyValidationResult
 	/// </summary>
 	public static readonly CrcPropertyValidationResult Success = new()
 	{
-		Errors = Array.Empty<string>()
+		Errors = []
 	};
 
 	/// <summary>
@@ -25,10 +24,7 @@ public sealed record CrcPropertyValidationResult
 	/// </summary>
 	public required IReadOnlyList<string> Errors { get; init; }
 
-	/// <summary>
-	/// Gets a value indicating whether the property set passed validation
-	/// (i.e. <see cref="Errors"/> is empty).
-	/// </summary>
+	/// <summary>Whether the property set passed validation (<see cref="Errors"/> is empty).</summary>
 	public bool IsValid => Errors.Count == 0;
 
 	/// <summary>

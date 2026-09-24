@@ -68,7 +68,7 @@ public static class AirportGeojsonWriter
 	public static IReadOnlyList<Airport> FilterToRoi(IReadOnlyList<Airport> airports, RegionOfInterest? roi) =>
 		roi is null
 			? airports
-			: airports.Where(a => RoiFilter.Contains(roi, a.Latitude, a.Longitude)).ToList();
+			: [.. airports.Where(a => RoiFilter.Contains(roi, a.Latitude, a.Longitude))];
 
 	private static void GenerateSymbols(
 		IReadOnlyList<Airport> airports,
@@ -76,7 +76,7 @@ public static class AirportGeojsonWriter
 		string directory,
 		GeojsonFileSet files)
 	{
-		FeatureCollection collection = new();
+		FeatureCollection collection = [];
 
 		if (settings.IncludeCrcSymbolDefaults)
 		{
@@ -85,7 +85,7 @@ public static class AirportGeojsonWriter
 
 		foreach (Airport airport in airports)
 		{
-			AttributesTable attributes = new();
+			AttributesTable attributes = [];
 			AddFebProperties(attributes, airport, settings, forTextFile: false);
 
 			collection.Add(new Feature(CreatePoint(airport), attributes));
@@ -100,7 +100,7 @@ public static class AirportGeojsonWriter
 		string directory,
 		GeojsonFileSet files)
 	{
-		FeatureCollection collection = new();
+		FeatureCollection collection = [];
 
 		if (settings.IncludeCrcTextDefaults)
 		{
@@ -109,10 +109,11 @@ public static class AirportGeojsonWriter
 
 		foreach (Airport airport in airports)
 		{
-			AttributesTable attributes = new();
-
-			// Two rendered lines: the identifier, then the airport's name.
-			attributes.Add("text", new[] { airport.FaaId, airport.Name });
+			AttributesTable attributes = new()
+			{
+				// Two rendered lines: the identifier, then the airport's name.
+				{ "text", new[] { airport.FaaId, airport.Name } }
+			};
 
 			AddFebProperties(attributes, airport, settings, forTextFile: true);
 
@@ -128,7 +129,7 @@ public static class AirportGeojsonWriter
 		string directory,
 		GeojsonFileSet files)
 	{
-		FeatureCollection collection = new();
+		FeatureCollection collection = [];
 
 		if (settings.IncludeCrcLineDefaults)
 		{
@@ -141,15 +142,15 @@ public static class AirportGeojsonWriter
 		{
 			// One Feature per airport, one LineString per runway - so an airport is a single
 			// object to a controller regardless of how many runways it has.
-			AirportRunway[] drawable = airport.Runways.Where(r => r.HasGeometry).ToArray();
+			AirportRunway[] drawable = [.. airport.Runways.Where(r => r.HasGeometry)];
 
 			if (drawable.Length == 0)
 			{
 				continue;
 			}
 
-			LineString[] runwayLines = drawable.Select(ToLineString).ToArray();
-			AttributesTable attributes = new();
+			LineString[] runwayLines = [.. drawable.Select(ToLineString)];
+			AttributesTable attributes = [];
 
 			// feb.rwyId is the only property that describes a runway; it lines up one-for-one with
 			// the LineStrings above.
@@ -164,11 +165,11 @@ public static class AirportGeojsonWriter
 	}
 
 	private static LineString ToLineString(AirportRunway runway) =>
-		Wgs84.Factory.CreateLineString(new[]
-		{
+		Wgs84.Factory.CreateLineString(
+		[
 			new Coordinate(runway.FirstEnd!.Longitude, runway.FirstEnd.Latitude),
 			new Coordinate(runway.SecondEnd!.Longitude, runway.SecondEnd.Latitude),
-		});
+		]);
 
 	private static Point CreatePoint(Airport airport) =>
 		Wgs84.Point(airport.Latitude, airport.Longitude);

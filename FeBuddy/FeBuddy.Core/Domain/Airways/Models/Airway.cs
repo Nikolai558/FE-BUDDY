@@ -4,9 +4,8 @@ namespace FeBuddy.Core.Domain.Airways.Models;
 
 /// <summary>
 /// One fully-built airway: its identity, classification, resolved waypoints, and rendered
-/// geometry. One <see cref="Airway"/> always corresponds to exactly one GeoJSON Feature in
-/// the Lines output (see the "one airway = one Feature" rule in the build plan's ground
-/// rules).
+/// geometry. Each airway is exactly one Feature in the Lines output, so a controller can pick
+/// it as a single object whatever its gaps or splits.
 /// </summary>
 public sealed class Airway
 {
@@ -16,9 +15,7 @@ public sealed class Airway
 	/// <summary>
 	/// The airway designation, derived from the leading letters of <see cref="AwyId"/> before
 	/// the first digit, upper-cased (<c>J3</c> -&gt; <c>J</c>, <c>AT1</c> -&gt; <c>AT</c>). See
-	/// <c>AirwayClassifier.DeriveDesignation</c>. Never taken from
-	/// <c>AWY_BASE.AWY_DESIGNATION</c>. Feeds file naming, the exclusion filter, and the GUI
-	/// toggle list.
+	/// <see cref="AirwayClassifier.DeriveDesignation"/>.
 	/// </summary>
 	public required string Designation { get; init; }
 

@@ -16,7 +16,7 @@ public class AirwayBuilderTests
 		OutputBy = AirwayGeojsonOutputBy.HighLow,
 		BufferAirwayWaypoints = false,
 		IncludeFebCustomProperties = false,
-		FebProperties = Array.Empty<AirwayFebProperty>(),
+		FebProperties = [],
 		GenerateAliasFile = true,
 		SplitAtAntimeridian = true,
 		IncludeCrcLineDefaults = false,
@@ -37,14 +37,14 @@ public class AirwayBuilderTests
 	public void build_all_produces_one_airway_with_expected_identity_and_classification()
 	{
 		var data = AirwayTestDataBuilder.Build(
-			fixes: new[] { ("MONPI", 21.0, 140.6), ("OATSS", 16.75, 142.16666666) },
+			fixes: [("MONPI", 21.0, 140.6), ("OATSS", 16.75, 142.16666666)],
 			awyId: "A216",
 			awyDesignation: "A",
 			awyLocation: "C",
-			segments: new[]
-			{
+			segments:
+			[
 				AirwayTestDataBuilder.Segment("A216", 10, "MONPI", "WP", "OATSS", maxAuthAlt: 45000)
-			});
+			]);
 
 		AirwayBuildAllResult result = AirwayBuilder.BuildAll(data, MinimalSettings());
 
@@ -57,30 +57,30 @@ public class AirwayBuilderTests
 	}
 
 	[Fact]
-	public void build_all_resolves_ordered_deduplicated_waypoints_including_the_final_toPoint()
+	public void build_all_resolves_ordered_deduplicated_waypoints_including_the_final_to_point()
 	{
 		var data = AirwayTestDataBuilder.Build(
-			fixes: new[] { ("AAAAA", 40.0, -80.0), ("BBBBB", 41.0, -81.0), ("CCCCC", 42.0, -82.0) },
+			fixes: [("AAAAA", 40.0, -80.0), ("BBBBB", 41.0, -81.0), ("CCCCC", 42.0, -82.0)],
 			awyId: "J1",
-			segments: new[]
-			{
+			segments:
+			[
 				AirwayTestDataBuilder.Segment("J1", 10, "AAAAA", "WP", "BBBBB"),
 				AirwayTestDataBuilder.Segment("J1", 20, "BBBBB", "WP", "CCCCC"),
-			});
+			]);
 
 		AirwayBuildAllResult result = AirwayBuilder.BuildAll(data, MinimalSettings());
 
 		Airway airway = Assert.Single(result.Airways);
-		Assert.Equal(new[] { "AAAAA", "BBBBB", "CCCCC" }, airway.Points.Select(p => p.PointId));
+		Assert.Equal(["AAAAA", "BBBBB", "CCCCC"], airway.Points.Select(p => p.PointId));
 	}
 
 	[Fact]
 	public void an_airway_entirely_outside_the_roi_is_kept_but_marked_as_outside_it()
 	{
 		var data = AirwayTestDataBuilder.Build(
-			fixes: new[] { ("AAAAA", 10.0, 10.0), ("BBBBB", 11.0, 11.0) }, // nowhere near the ROI below
+			fixes: [("AAAAA", 10.0, 10.0), ("BBBBB", 11.0, 11.0)], // nowhere near the ROI below
 			awyId: "J1",
-			segments: new[] { AirwayTestDataBuilder.Segment("J1", 10, "AAAAA", "WP", "BBBBB") });
+			segments: [AirwayTestDataBuilder.Segment("J1", 10, "AAAAA", "WP", "BBBBB")]);
 
 		RegionOfInterest roi = new(38.0, -85.0, 43.0, -78.0);
 
@@ -95,9 +95,9 @@ public class AirwayBuilderTests
 	public void an_airway_crossing_the_roi_is_marked_as_crossing_it()
 	{
 		var data = AirwayTestDataBuilder.Build(
-			fixes: new[] { ("AAAAA", 40.0, -84.0), ("BBBBB", 41.0, -80.0) }, // both inside the ROI below
+			fixes: [("AAAAA", 40.0, -84.0), ("BBBBB", 41.0, -80.0)], // both inside the ROI below
 			awyId: "J1",
-			segments: new[] { AirwayTestDataBuilder.Segment("J1", 10, "AAAAA", "WP", "BBBBB") });
+			segments: [AirwayTestDataBuilder.Segment("J1", 10, "AAAAA", "WP", "BBBBB")]);
 
 		RegionOfInterest roi = new(38.0, -85.0, 43.0, -78.0);
 
@@ -111,11 +111,11 @@ public class AirwayBuilderTests
 	public void an_excluded_designation_is_dropped_before_any_geometry_work()
 	{
 		var data = AirwayTestDataBuilder.Build(
-			fixes: new[] { ("AAAAA", 40.0, -80.0), ("BBBBB", 41.0, -81.0) },
+			fixes: [("AAAAA", 40.0, -80.0), ("BBBBB", 41.0, -81.0)],
 			awyId: "V16",
-			segments: new[] { AirwayTestDataBuilder.Segment("V16", 10, "AAAAA", "WP", "BBBBB") });
+			segments: [AirwayTestDataBuilder.Segment("V16", 10, "AAAAA", "WP", "BBBBB")]);
 
-		AirwaySettings settings = MinimalSettings() with { ExcludedDesignations = new[] { "V" } };
+		AirwaySettings settings = MinimalSettings() with { ExcludedDesignations = ["V"] };
 
 		AirwayBuildAllResult result = AirwayBuilder.BuildAll(data, settings);
 
@@ -128,13 +128,13 @@ public class AirwayBuilderTests
 		// AAAAA and CCCCC resolve; the middle waypoint MISNG does not, and a resolvable
 		// segment lies after it, so this is a real data fault, not a border crossing.
 		var data = AirwayTestDataBuilder.Build(
-			fixes: new[] { ("AAAAA", 40.0, -80.0), ("CCCCC", 42.0, -82.0), ("DDDDD", 43.0, -83.0) },
+			fixes: [("AAAAA", 40.0, -80.0), ("CCCCC", 42.0, -82.0), ("DDDDD", 43.0, -83.0)],
 			awyId: "J146",
-			segments: new[]
-			{
+			segments:
+			[
 				AirwayTestDataBuilder.Segment("J146", 10, "AAAAA", "WP", "MISNG"),
 				AirwayTestDataBuilder.Segment("J146", 20, "CCCCC", "WP", "DDDDD"),
-			});
+			]);
 
 		AirwayBuildAllResult result = AirwayBuilder.BuildAll(data, MinimalSettings());
 
@@ -149,14 +149,14 @@ public class AirwayBuilderTests
 		// J5 pattern: ... -> CFDCT -> U.S. CANADIAN BORDER-4, closed by a blank-ToPoint
 		// terminator row. The airway must build, ending at CFDCT, with no warning.
 		var data = AirwayTestDataBuilder.Build(
-			fixes: new[] { ("CFJCC", 44.0, -83.0), ("CFDCT", 44.5, -82.5) },
+			fixes: [("CFJCC", 44.0, -83.0), ("CFDCT", 44.5, -82.5)],
 			awyId: "J5",
-			segments: new[]
-			{
+			segments:
+			[
 				AirwayTestDataBuilder.Segment("J5", 200, "CFJCC", "CN", "CFDCT"),
 				AirwayTestDataBuilder.Segment("J5", 210, "CFDCT", "CN", "U.S. CANADIAN BORDER-4"),
 				AirwayTestDataBuilder.Segment("J5", 220, "U.S. CANADIAN BORDER-4", null, ""),
-			});
+			]);
 
 		AirwayBuildAllResult result = AirwayBuilder.BuildAll(data, MinimalSettings());
 
@@ -164,16 +164,16 @@ public class AirwayBuilderTests
 		Assert.Equal("J5", airway.AwyId);
 		Assert.Empty(result.ExcludedAirwayIds);
 		Assert.Empty(result.Messages.WarningTexts());
-		Assert.Equal(new[] { "CFJCC", "CFDCT" }, airway.Points.Select(p => p.PointId));
+		Assert.Equal(["CFJCC", "CFDCT"], airway.Points.Select(p => p.PointId));
 	}
 
 	[Fact]
 	public void duplicate_awy_base_records_for_the_same_id_do_not_throw()
 	{
 		var data = AirwayTestDataBuilder.Build(
-			fixes: new[] { ("AAAAA", 40.0, -80.0), ("BBBBB", 41.0, -81.0) },
+			fixes: [("AAAAA", 40.0, -80.0), ("BBBBB", 41.0, -81.0)],
 			awyId: "J1",
-			segments: new[] { AirwayTestDataBuilder.Segment("J1", 10, "AAAAA", "WP", "BBBBB") });
+			segments: [AirwayTestDataBuilder.Segment("J1", 10, "AAAAA", "WP", "BBBBB")]);
 
 		// Add a second AWY_BASE record for the same AwyId, as duplicate NASR rows sometimes do.
 		data.Awy!.AwyBase.Add(new AwyCsvDataModel.AwyBase { AwyId = "J1", AwyDesignation = "J", AwyLocation = "C" });

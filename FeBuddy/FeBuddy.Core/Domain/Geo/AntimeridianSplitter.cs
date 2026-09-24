@@ -11,9 +11,8 @@ namespace FeBuddy.Core.Domain.Geo;
 /// entire map.
 /// </summary>
 /// <remarks>
-/// This is a thin wrapper around the existing <see cref="GeoMath.CrossesAntimeridian"/>
-/// and <see cref="GeoMath.SplitLineSegmentAtAntimeridian"/> logic, applied
-/// segment-by-segment across a full LineString.
+/// Applies <see cref="GeoMath.CrossesAntimeridian"/> and
+/// <see cref="GeoMath.SplitLineSegmentAtAntimeridian"/> to each segment of a LineString in turn.
 /// </remarks>
 public static class AntimeridianSplitter
 {
@@ -35,11 +34,11 @@ public static class AntimeridianSplitter
 
 		if (coordinates.Length < 2)
 		{
-			return new[] { lineString };
+			return [lineString];
 		}
 
-		List<LineString> result = new();
-		List<Coordinate> current = new() { coordinates[0] };
+		List<LineString> result = [];
+		List<Coordinate> current = [coordinates[0]];
 		bool crossedAtLeastOnce = false;
 
 		for (int i = 0; i < coordinates.Length - 1; i++)
@@ -47,7 +46,7 @@ public static class AntimeridianSplitter
 			Coordinate start = coordinates[i];
 			Coordinate end = coordinates[i + 1];
 
-			// NTS Coordinate.X = longitude, .Y = latitude; Location's constructor takes (lat, lon).
+			// A Coordinate is (longitude, latitude); a Location is built latitude first.
 			Location startLocation = new(start.Y, start.X);
 			Location endLocation = new(end.Y, end.X);
 
@@ -77,14 +76,14 @@ public static class AntimeridianSplitter
 			// the segment's endpoint itself, carry the endpoint alone (no degenerate two-point
 			// fragment made of the same coordinate twice).
 			current = CoordinatesEqual(antimeridianEnd, end)
-				? new List<Coordinate> { end }
-				: new List<Coordinate> { antimeridianEnd, end };
+				? [end]
+				: [antimeridianEnd, end];
 		}
 
 		// Never crossed: return the input untouched (as a single-element list).
 		if (!crossedAtLeastOnce)
 		{
-			return new[] { lineString };
+			return [lineString];
 		}
 
 		EmitFragment(result, current);
@@ -106,7 +105,7 @@ public static class AntimeridianSplitter
 	{
 		if (HasAtLeastTwoDistinctCoordinates(coordinates))
 		{
-			result.Add(Wgs84.Factory.CreateLineString(coordinates.ToArray()));
+			result.Add(Wgs84.Factory.CreateLineString([.. coordinates]));
 		}
 	}
 
@@ -138,11 +137,12 @@ public static class AntimeridianSplitter
 	/// flattens the results into a single list.
 	/// </summary>
 	/// <param name="lineStrings">The LineStrings to split.</param>
+	/// <returns>Every resulting LineString, in order.</returns>
 	public static IReadOnlyList<LineString> Split(IEnumerable<LineString> lineStrings)
 	{
 		ArgumentNullException.ThrowIfNull(lineStrings);
 
-		List<LineString> result = new();
+		List<LineString> result = [];
 
 		foreach (LineString lineString in lineStrings)
 		{

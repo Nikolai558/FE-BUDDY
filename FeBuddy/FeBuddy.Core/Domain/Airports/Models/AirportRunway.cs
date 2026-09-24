@@ -13,8 +13,8 @@ public sealed record AirportRunwayEnd(string EndId, double Latitude, double Long
 /// <remarks>
 /// A runway can be present for the alias file's "longest runway" line while still having no
 /// geometry: NASR occasionally publishes a runway whose end coordinates are blank. Both ends
-/// are therefore nullable, and <see cref="HasGeometry"/> is what the GeoJSON service tests
-/// before drawing it.
+/// are therefore nullable, and the GeoJSON writer checks <see cref="HasGeometry"/> before
+/// drawing it.
 /// </remarks>
 public sealed record AirportRunway
 {

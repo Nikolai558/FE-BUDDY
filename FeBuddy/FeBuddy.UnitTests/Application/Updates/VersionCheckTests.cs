@@ -41,7 +41,7 @@ public sealed class VersionCheckTests : IDisposable
 
 	/// <summary>Offline: the version check is skipped and reports an unknown state, not "up to date".</summary>
 	[Fact]
-	public async Task VersionCheck_Offline_ReportsUnknown()
+	public async Task version_check_offline_reports_unknown()
 	{
 		VersionCheckResult result = await VersionCheck.RunAsync("3.0.0", ReleaseChannel.Stable, hasInternetConnection: false);
 
@@ -52,7 +52,7 @@ public sealed class VersionCheckTests : IDisposable
 
 	/// <summary>A newer stable release on GitHub is reported as an available update; pre-releases are ignored on Stable.</summary>
 	[Fact]
-	public async Task VersionCheck_FindsNewerStableRelease()
+	public async Task version_check_finds_newer_stable_release()
 	{
 		const string releasesJson = """
 		[
@@ -76,7 +76,7 @@ public sealed class VersionCheckTests : IDisposable
 
 	/// <summary>On the Alpha channel the pre-release is considered.</summary>
 	[Fact]
-	public async Task VersionCheck_AlphaChannel_ConsidersPreReleases()
+	public async Task version_check_alpha_channel_considers_pre_releases()
 	{
 		const string releasesJson = """
 		[
@@ -103,7 +103,7 @@ public sealed class VersionCheckTests : IDisposable
 	/// the latest public release.
 	/// </summary>
 	[Fact]
-	public async Task VersionCheck_CurrentAheadOfLatestRelease_ReportsAhead()
+	public async Task version_check_current_ahead_of_latest_release_reports_ahead()
 	{
 		const string releasesJson = """
 		[
@@ -130,7 +130,7 @@ public sealed class VersionCheckTests : IDisposable
 	/// <see cref="GitHubAuth.EnvironmentVariableName"/> when it's set, and succeeds off that retry.
 	/// </summary>
 	[Fact]
-	public async Task VersionCheck_UnauthenticatedFails_RetriesWithToken()
+	public async Task version_check_unauthenticated_fails_retries_with_token()
 	{
 		const string releasesJson = """
 		[
@@ -160,7 +160,7 @@ public sealed class VersionCheckTests : IDisposable
 
 	/// <summary>With no token set, an unauthenticated failure is reported as-is - no retry is attempted.</summary>
 	[Fact]
-	public async Task VersionCheck_UnauthenticatedFails_NoTokenSet_ReportsFailureWithoutRetrying()
+	public async Task version_check_unauthenticated_fails_no_token_set_reports_failure_without_retrying()
 	{
 		Environment.SetEnvironmentVariable(GitHubAuth.EnvironmentVariableName, null);
 
@@ -183,7 +183,7 @@ public sealed class VersionCheckTests : IDisposable
 	/// are reported.
 	/// </summary>
 	[Fact]
-	public async Task VersionCheck_SkipsDraftsAndUnparseableTags_AndReportsTheWinnersNotes()
+	public async Task version_check_skips_drafts_and_unparseable_tags_and_reports_the_winners_notes()
 	{
 		const string releasesJson = """
 		[
@@ -213,7 +213,7 @@ public sealed class VersionCheckTests : IDisposable
 	/// dates, pre-release flags and install instructions stripped; older and equal ones are not.
 	/// </summary>
 	[Fact]
-	public async Task VersionCheck_ListsEveryNewerRelease_NewestFirst()
+	public async Task version_check_lists_every_newer_release_newest_first()
 	{
 		const string releasesJson = """
 		[
@@ -254,7 +254,7 @@ public sealed class VersionCheckTests : IDisposable
 	[InlineData(ReleaseChannel.ReleaseCandidate, "3.2.0-rc.1", new[] { "3.2.0-rc.1", "3.1.1", "3.1.0" })]
 	[InlineData(ReleaseChannel.Beta, "3.2.0-rc.1", new[] { "3.2.0-rc.1", "3.2.0-beta.1", "3.1.1", "3.1.0" })]
 	[InlineData(ReleaseChannel.Alpha, "3.3.0-alpha.1", new[] { "3.3.0-alpha.1", "3.2.0-rc.1", "3.2.0-preview", "3.2.0-beta.1", "3.1.1", "3.1.0" })]
-	public async Task VersionCheck_ChannelFiltersReleasesByTag(ReleaseChannel channel, string latest, string[] expected)
+	public async Task version_check_channel_filters_releases_by_tag(ReleaseChannel channel, string latest, string[] expected)
 	{
 		const string releasesJson = """
 		[
@@ -277,7 +277,7 @@ public sealed class VersionCheckTests : IDisposable
 
 	/// <summary>The highest version wins even when GitHub does not list it first.</summary>
 	[Fact]
-	public async Task VersionCheck_HighestVersionWins_WhateverTheOrder()
+	public async Task version_check_highest_version_wins_whatever_the_order()
 	{
 		const string releasesJson = """
 		[
@@ -297,7 +297,7 @@ public sealed class VersionCheckTests : IDisposable
 
 	/// <summary>No update means no release list, including for a build ahead of every release.</summary>
 	[Fact]
-	public async Task VersionCheck_NoUpdate_ListsNoReleases()
+	public async Task version_check_no_update_lists_no_releases()
 	{
 		const string releasesJson = """[ { "tag_name": "v3.1.0", "prerelease": false, "draft": false } ]""";
 		using HttpClient client = new(new StubHttpHandler(_ => new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(releasesJson) }));
@@ -320,7 +320,7 @@ public sealed class VersionCheckTests : IDisposable
 	[InlineData("3.0.0-rc.1", ReleaseChannel.ReleaseCandidate, "3.0.0-rc.1", false, false)]
 	[InlineData("3.0.0-dev", ReleaseChannel.Stable, "2.9.0", false, true)]
 	[InlineData("v2.8.3", ReleaseChannel.Stable, "2.9.0", true, false)]
-	public async Task VersionCheck_ComparesBySemVerPrecedence(
+	public async Task version_check_compares_by_sem_ver_precedence(
 		string current, ReleaseChannel channel, string releaseTag, bool updateAvailable, bool ahead)
 	{
 		string releasesJson = $$"""[ { "tag_name": "{{releaseTag}}", "draft": false } ]""";
@@ -338,7 +338,7 @@ public sealed class VersionCheckTests : IDisposable
 	/// 2.8.1.0 cannot be compared, so no update is offered rather than a wrong one.
 	/// </summary>
 	[Fact]
-	public async Task VersionCheck_FourPartCurrentVersion_IsNotCompared()
+	public async Task version_check_four_part_current_version_is_not_compared()
 	{
 		const string releasesJson = """[ { "tag_name": "2.9.0", "draft": false } ]""";
 		using HttpClient client = new(new StubHttpHandler(_ => new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(releasesJson) }));
@@ -360,7 +360,7 @@ public sealed class VersionCheckTests : IDisposable
 	[InlineData("# Intro\n## instructions TO INSTALL\n- x\n# Next\ny", "# Intro\n# Next\ny")]
 	[InlineData("## Change log:\n- Instructions to install are now shorter.", "## Change log:\n- Instructions to install are now shorter.")]
 	[InlineData("## Instructions to installer\n- kept", "## Instructions to installer\n- kept")]
-	public void StripInstallInstructions_RemovesOnlyThatSection(string? notes, string? expected)
+	public void strip_install_instructions_removes_only_that_section(string? notes, string? expected)
 	{
 		Assert.Equal(expected, VersionCheck.StripInstallInstructions(notes));
 	}
@@ -369,7 +369,7 @@ public sealed class VersionCheckTests : IDisposable
 	[Theory]
 	[InlineData("dev")]
 	[InlineData("")]
-	public async Task VersionCheck_UnparseableOrMissingCurrentVersion_IsNotOffered(string currentVersion)
+	public async Task version_check_unparseable_or_missing_current_version_is_not_offered(string currentVersion)
 	{
 		const string releasesJson = """[ { "tag_name": "v3.1.0", "prerelease": false, "draft": false } ]""";
 		using HttpClient client = new(new StubHttpHandler(_ => new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(releasesJson) }));
@@ -383,7 +383,7 @@ public sealed class VersionCheckTests : IDisposable
 
 	/// <summary>No release on the channel is a successful check with nothing to offer.</summary>
 	[Fact]
-	public async Task VersionCheck_NoComparableRelease_SucceedsWithNoUpdate()
+	public async Task version_check_no_comparable_release_succeeds_with_no_update()
 	{
 		const string releasesJson = """[ { "tag_name": "v3.1.0-rc.1", "prerelease": true, "draft": false } ]""";
 		using HttpClient client = new(new StubHttpHandler(_ => new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(releasesJson) }));
@@ -398,7 +398,7 @@ public sealed class VersionCheckTests : IDisposable
 
 	/// <summary>A response that is not JSON is reported as a failed check, not an exception.</summary>
 	[Fact]
-	public async Task VersionCheck_UnreadableResponse_ReportsFailure()
+	public async Task version_check_unreadable_response_reports_failure()
 	{
 		using HttpClient client = new(new StubHttpHandler(_ => new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("<html>rate limited</html>") }));
 
@@ -418,7 +418,7 @@ public sealed class VersionCheckTests : IDisposable
 	[InlineData(null, ReleaseChannel.Stable)]
 	[InlineData("nonsense", ReleaseChannel.Stable)]
 	[InlineData("0", ReleaseChannel.Stable)]
-	public void ParseChannel_HandlesStoredValues(string? stored, ReleaseChannel expected)
+	public void parse_channel_handles_stored_values(string? stored, ReleaseChannel expected)
 	{
 		Assert.Equal(expected, VersionCheckResult.ParseChannel(stored));
 	}

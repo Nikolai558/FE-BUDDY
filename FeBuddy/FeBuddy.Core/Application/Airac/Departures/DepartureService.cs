@@ -36,7 +36,7 @@ public static class DepartureService
 		ArgumentNullException.ThrowIfNull(departureSettings);
 
 		Stopwatch stopwatch = Stopwatch.StartNew();
-		List<ServiceMessage> messages = new();
+		List<ServiceMessage> messages = [];
 
 		DepartureSettingsParseResult parseResult = DepartureSettingsParser.Parse(departureSettings);
 		messages.AddRange(parseResult.Messages);

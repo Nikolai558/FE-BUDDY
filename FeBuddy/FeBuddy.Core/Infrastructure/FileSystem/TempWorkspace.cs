@@ -89,11 +89,11 @@ public static class TempWorkspace
 	{
 		try
 		{
-			return enumerate().ToArray();
+			return [.. enumerate()];
 		}
 		catch
 		{
-			return Array.Empty<string>();
+			return [];
 		}
 	}
 }

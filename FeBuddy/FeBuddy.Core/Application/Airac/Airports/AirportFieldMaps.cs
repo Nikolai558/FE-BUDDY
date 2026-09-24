@@ -72,7 +72,7 @@ public static class AirportFieldMaps
 			return null;
 		}
 
-		List<string> classes = new();
+		List<string> classes = [];
 
 		if (IsYes(row.ClassBAirspace)) classes.Add("Bravo");
 		if (IsYes(row.ClassCAirspace)) classes.Add("Charlie");

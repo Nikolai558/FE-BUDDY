@@ -55,8 +55,8 @@ public static class AirwayWaypointBuffer
 
 		Dictionary<(double Lon, double Lat), AirwayPoint> pointsByCoordinate = BuildCoordinateIndex(airwayPoints);
 
-		List<LineString> legs = new();
-		List<ServiceMessage> messages = new();
+		List<LineString> legs = [];
+		List<ServiceMessage> messages = [];
 
 		foreach (LineString lineString in lineStrings)
 		{
@@ -73,7 +73,7 @@ public static class AirwayWaypointBuffer
 				Location startLocation = new(start.Y, start.X);
 				Location endLocation = new(end.Y, end.X);
 
-				double legDistanceNm = GeoMath.Distance(startLocation, endLocation, Round: false);
+				double legDistanceNm = GeoMath.Distance(startLocation, endLocation, round: false);
 
 				if (legDistanceNm <= startRadius + endRadius)
 				{
@@ -96,11 +96,11 @@ public static class AirwayWaypointBuffer
 				Location bufferedEnd =
 					GeoMath.PointAtDistanceAndBearing(endLocation, endToStartBearing, endRadius);
 
-				legs.Add(Wgs84.Factory.CreateLineString(new[]
-				{
+				legs.Add(Wgs84.Factory.CreateLineString(
+				[
 					new Coordinate(bufferedStart.DecLon, bufferedStart.DecLat),
 					new Coordinate(bufferedEnd.DecLon, bufferedEnd.DecLat)
-				}));
+				]));
 			}
 		}
 
@@ -140,7 +140,7 @@ public static class AirwayWaypointBuffer
 	private static Dictionary<(double Lon, double Lat), AirwayPoint> BuildCoordinateIndex(
 		IReadOnlyList<AirwayPoint> airwayPoints)
 	{
-		Dictionary<(double Lon, double Lat), AirwayPoint> index = new();
+		Dictionary<(double Lon, double Lat), AirwayPoint> index = [];
 
 		foreach (AirwayPoint point in airwayPoints)
 		{

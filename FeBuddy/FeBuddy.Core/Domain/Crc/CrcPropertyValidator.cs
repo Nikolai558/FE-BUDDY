@@ -9,9 +9,8 @@ namespace FeBuddy.Core.Domain.Crc;
 /// CRC_Geojsons.md</see>.
 /// </summary>
 /// <remarks>
-/// Every <c>Validate*</c> method collects every violation found rather than stopping at the
-/// first one, so a caller can report the full list of problems at once (e.g. the GUI's save
-/// button will eventually surface all of them together).
+/// Every <c>Validate*</c> method collects every violation rather than stopping at the first,
+/// so the user sees the whole list of problems at once.
 /// </remarks>
 public static class CrcPropertyValidator
 {
@@ -48,29 +47,29 @@ public static class CrcPropertyValidator
 	/// <summary>
 	/// The exact, case-sensitive line style values CRC accepts.
 	/// </summary>
-	public static readonly IReadOnlyList<string> ValidLineStyles = new[]
-	{
+	public static readonly IReadOnlyList<string> ValidLineStyles =
+	[
 		"solid", "shortDashed", "longDashed", "longDashShortDash"
-	};
+	];
 
 	/// <summary>
 	/// The exact, case-sensitive symbol style values CRC accepts.
 	/// </summary>
-	public static readonly IReadOnlyList<string> ValidSymbolStyles = new[]
-	{
+	public static readonly IReadOnlyList<string> ValidSymbolStyles =
+	[
 		"obstruction1", "obstruction2", "heliport", "nuclear", "emergencyAirport", "radar",
 		"iaf", "rnavOnlyWaypoint", "rnav", "airwayIntersections", "ndb", "vor",
 		"otherWaypoints", "airport", "satelliteAirport", "tacan"
-	};
+	];
 
-	/// <summary>
-	/// Validates a Line feature's CRC properties.
-	/// </summary>
+	/// <summary>Validates a Line Feature's CRC properties.</summary>
+	/// <param name="properties">The properties to check.</param>
+	/// <returns>Every violation found, or <see cref="CrcPropertyValidationResult.Success"/>.</returns>
 	public static CrcPropertyValidationResult ValidateLine(CrcLineProperties properties)
 	{
 		ArgumentNullException.ThrowIfNull(properties);
 
-		List<string> errors = new();
+		List<string> errors = [];
 
 		ValidateBcg(properties.Bcg, errors);
 		ValidateFilters(properties.Filters, errors);
@@ -96,14 +95,14 @@ public static class CrcPropertyValidator
 			: CrcPropertyValidationResult.Failure(errors);
 	}
 
-	/// <summary>
-	/// Validates a Symbol feature's CRC properties.
-	/// </summary>
+	/// <summary>Validates a Symbol Feature's CRC properties.</summary>
+	/// <param name="properties">The properties to check.</param>
+	/// <returns>Every violation found, or <see cref="CrcPropertyValidationResult.Success"/>.</returns>
 	public static CrcPropertyValidationResult ValidateSymbol(CrcSymbolProperties properties)
 	{
 		ArgumentNullException.ThrowIfNull(properties);
 
-		List<string> errors = new();
+		List<string> errors = [];
 
 		ValidateBcg(properties.Bcg, errors);
 		ValidateFilters(properties.Filters, errors);
@@ -129,14 +128,14 @@ public static class CrcPropertyValidator
 			: CrcPropertyValidationResult.Failure(errors);
 	}
 
-	/// <summary>
-	/// Validates a Text feature's CRC properties.
-	/// </summary>
+	/// <summary>Validates a Text Feature's CRC properties.</summary>
+	/// <param name="properties">The properties to check.</param>
+	/// <returns>Every violation found, or <see cref="CrcPropertyValidationResult.Success"/>.</returns>
 	public static CrcPropertyValidationResult ValidateText(CrcTextProperties properties)
 	{
 		ArgumentNullException.ThrowIfNull(properties);
 
-		List<string> errors = new();
+		List<string> errors = [];
 
 		ValidateBcg(properties.Bcg, errors);
 		ValidateFilters(properties.Filters, errors);
@@ -189,7 +188,7 @@ public static class CrcPropertyValidator
 	{
 		ArgumentNullException.ThrowIfNull(defaults);
 
-		List<string> errors = new();
+		List<string> errors = [];
 
 		ValidateBcg(defaults.Bcg, errors);
 		ValidateFilters(defaults.Filters, errors);

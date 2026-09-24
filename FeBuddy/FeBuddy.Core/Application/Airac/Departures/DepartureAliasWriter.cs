@@ -46,7 +46,7 @@ public static class DepartureAliasWriter
 		ArgumentNullException.ThrowIfNull(airportProcedures);
 		ArgumentNullException.ThrowIfNull(settings);
 
-		List<ServiceMessage> messages = new();
+		List<ServiceMessage> messages = [];
 		StringBuilder builder = new();
 		HashSet<string> writtenCommands = new(StringComparer.OrdinalIgnoreCase);
 		int commandCount = 0;

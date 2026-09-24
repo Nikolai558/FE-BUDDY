@@ -23,25 +23,25 @@ internal static class AirwayTestDataBuilder
 	{
 		FixCsvDataCollection fixCollection = new();
 
-		foreach (var fix in fixes ?? Enumerable.Empty<(string, double, double)>())
+		foreach (var (Id, Lat, Lon) in fixes ?? [])
 		{
 			fixCollection.FixBase.Add(new FixCsvDataModel.FixBase
 			{
-				FixId = fix.Id,
-				LatDecimal = fix.Lat,
-				LongDecimal = fix.Lon
+				FixId = Id,
+				LatDecimal = Lat,
+				LongDecimal = Lon
 			});
 		}
 
 		NavCsvDataCollection navCollection = new();
 
-		foreach (var navaid in navaids ?? Enumerable.Empty<(string, double, double)>())
+		foreach (var (Id, Lat, Lon) in navaids ?? [])
 		{
 			navCollection.NavBase.Add(new NavCsvDataModel.NavBase
 			{
-				NavId = navaid.Id,
-				LatDecimal = navaid.Lat,
-				LongDecimal = navaid.Lon
+				NavId = Id,
+				LatDecimal = Lat,
+				LongDecimal = Lon
 			});
 		}
 

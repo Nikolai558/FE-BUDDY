@@ -45,9 +45,7 @@ public static class AirwayAliasWriter
 			candidates = candidates.Where(a => a.CrossesRoi);
 		}
 
-		List<Airway> airwaysWithPoints = candidates
-			.OrderBy(a => a.AwyId, StringComparer.OrdinalIgnoreCase)
-			.ToList();
+		List<Airway> airwaysWithPoints = [.. candidates.OrderBy(a => a.AwyId, StringComparer.OrdinalIgnoreCase)];
 
 		if (airwaysWithPoints.Count == 0)
 		{

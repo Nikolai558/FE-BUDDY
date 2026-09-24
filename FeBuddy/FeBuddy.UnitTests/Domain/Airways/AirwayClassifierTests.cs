@@ -16,7 +16,7 @@ public class AirwayClassifierTests
 	[InlineData(-100, AirwayAltitudeClass.Other)]
 	public void single_segment_classification_boundaries_are_correct(int maxAuthAlt, AirwayAltitudeClass expected)
 	{
-		var (altitudeClass, _) = AirwayClassifier.Classify(new[] { Seg(maxAuthAlt) });
+		var (altitudeClass, _) = AirwayClassifier.Classify([Seg(maxAuthAlt)]);
 
 		Assert.Equal(expected, altitudeClass);
 	}
@@ -24,7 +24,7 @@ public class AirwayClassifierTests
 	[Fact]
 	public void no_segment_with_a_value_classifies_as_other()
 	{
-		var (altitudeClass, maxAuthAlt) = AirwayClassifier.Classify(new[] { Seg(null), Seg(null) });
+		var (altitudeClass, maxAuthAlt) = AirwayClassifier.Classify([Seg(null), Seg(null)]);
 
 		Assert.Equal(AirwayAltitudeClass.Other, altitudeClass);
 		Assert.Null(maxAuthAlt);
@@ -33,7 +33,7 @@ public class AirwayClassifierTests
 	[Fact]
 	public void classification_uses_the_highest_segment_not_the_first_or_last()
 	{
-		var (altitudeClass, maxAuthAlt) = AirwayClassifier.Classify(new[] { Seg(5000), Seg(18000), Seg(9000) });
+		var (altitudeClass, maxAuthAlt) = AirwayClassifier.Classify([Seg(5000), Seg(18000), Seg(9000)]);
 
 		Assert.Equal(AirwayAltitudeClass.High, altitudeClass);
 		Assert.Equal(18000, maxAuthAlt);
@@ -44,7 +44,7 @@ public class AirwayClassifierTests
 	{
 		// A mixed-altitude airway (some Low segments, one High segment) still classifies as a
 		// single class - the highest one - rather than being split by altitude.
-		var (altitudeClass, _) = AirwayClassifier.Classify(new[] { Seg(5000), Seg(5000), Seg(20000), Seg(5000) });
+		var (altitudeClass, _) = AirwayClassifier.Classify([Seg(5000), Seg(5000), Seg(20000), Seg(5000)]);
 
 		Assert.Equal(AirwayAltitudeClass.High, altitudeClass);
 	}

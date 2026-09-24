@@ -137,7 +137,7 @@ public class AirportSettingsParserTests
 		AirportSettings parsed = AirportSettingsParser.Parse(settings).Settings;
 
 		Assert.Equal(
-			new[] { AirportFebProperty.FaaId, AirportFebProperty.IcaoId, AirportFebProperty.Elev },
+			[AirportFebProperty.FaaId, AirportFebProperty.IcaoId, AirportFebProperty.Elev],
 			parsed.FebProperties);
 	}
 

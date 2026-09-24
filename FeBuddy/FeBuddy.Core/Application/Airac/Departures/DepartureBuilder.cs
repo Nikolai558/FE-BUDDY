@@ -56,7 +56,7 @@ public static class DepartureBuilder
 				"Departure procedure data (DP) has not been parsed. The Departures sub-service cannot run without it.");
 		}
 
-		List<ServiceMessage> messages = new();
+		List<ServiceMessage> messages = [];
 
 		ILookup<(string, string), DpApt> aptRows = allNasrCsvData.Dp.DpApt.ToLookup(
 			row => ProcedureKey(row.DpName, row.Artcc), KeyComparer.Instance);
@@ -64,7 +64,7 @@ public static class DepartureBuilder
 		ILookup<(string, string), DpRte> routeRows = allNasrCsvData.Dp.DpRte.ToLookup(
 			row => ProcedureKey(row.DpName, row.Artcc), KeyComparer.Instance);
 
-		List<DepartureProcedure> procedures = new();
+		List<DepartureProcedure> procedures = [];
 
 		foreach (DpBase row in allNasrCsvData.Dp.DpBase)
 		{
@@ -79,8 +79,8 @@ public static class DepartureBuilder
 			}
 
 			(string, string) key = ProcedureKey(dpName, artcc);
-			List<DpApt> apts = aptRows[key].ToList();
-			List<DpRte> routes = routeRows[key].ToList();
+			List<DpApt> apts = [.. aptRows[key]];
+			List<DpRte> routes = [.. routeRows[key]];
 
 			string computerCode = row.DpComputerCode?.Trim() ?? string.Empty;
 			string codeId = DepartureNaming.CodeIdFor(computerCode, row.AmendmentNo, dpName, out _);
@@ -103,10 +103,9 @@ public static class DepartureBuilder
 			});
 		}
 
-		List<DepartureProcedure> ordered = procedures
+		List<DepartureProcedure> ordered = [.. procedures
 			.OrderBy(p => p.Artcc, StringComparer.OrdinalIgnoreCase)
-			.ThenBy(p => p.DpName, StringComparer.OrdinalIgnoreCase)
-			.ToList();
+			.ThenBy(p => p.DpName, StringComparer.OrdinalIgnoreCase)];
 
 		return new DepartureProcedureReadResult(ordered, messages);
 	}
@@ -125,8 +124,8 @@ public static class DepartureBuilder
 		ArgumentNullException.ThrowIfNull(procedures);
 		ArgumentNullException.ThrowIfNull(allNasrCsvData);
 
-		List<ServiceMessage> messages = new();
-		List<DepartureAirportProcedure> located = new();
+		List<ServiceMessage> messages = [];
+		List<DepartureAirportProcedure> located = [];
 		HashSet<(string, string)> identities = new(KeyComparer.Instance);
 		int skipped = 0;
 
@@ -182,10 +181,9 @@ public static class DepartureBuilder
 			}
 		}
 
-		List<DepartureAirportProcedure> ordered = located
+		List<DepartureAirportProcedure> ordered = [.. located
 			.OrderBy(p => p.AirportId, StringComparer.OrdinalIgnoreCase)
-			.ThenBy(p => p.Procedure.CodeId, StringComparer.OrdinalIgnoreCase)
-			.ToList();
+			.ThenBy(p => p.Procedure.CodeId, StringComparer.OrdinalIgnoreCase)];
 
 		return new DepartureLocateResult(ordered, skipped, messages);
 	}
@@ -221,7 +219,7 @@ public static class DepartureBuilder
 			? procedure.Bodies.Where(body => names.Contains(body.Name, StringComparer.OrdinalIgnoreCase))
 			: procedure.Bodies;
 
-		return bodies.Concat(procedure.Transitions).ToList();
+		return [.. bodies, .. procedure.Transitions];
 	}
 
 	private static bool TryLocate(
@@ -281,7 +279,7 @@ public static class DepartureBuilder
 	private static IReadOnlyList<DeparturePoint> DistinctPoints(IReadOnlyList<DepartureRoute> routes)
 	{
 		HashSet<string> seen = new(StringComparer.OrdinalIgnoreCase);
-		List<DeparturePoint> points = new();
+		List<DeparturePoint> points = [];
 
 		foreach (DeparturePoint point in routes.SelectMany(route => route.Points))
 		{
@@ -296,7 +294,7 @@ public static class DepartureBuilder
 
 	private static IReadOnlyList<string> ServedAirports(DpBase row, List<DpApt> apts)
 	{
-		List<string> airports = new();
+		List<string> airports = [];
 		HashSet<string> seen = new(StringComparer.OrdinalIgnoreCase);
 
 		IEnumerable<string> fromBase = (row.ServedArpt ?? string.Empty)
@@ -323,19 +321,18 @@ public static class DepartureBuilder
 			.GroupBy(apt => apt.ArptId.Trim(), StringComparer.OrdinalIgnoreCase)
 			.ToDictionary(
 				group => group.Key.ToUpperInvariant(),
-				group => (IReadOnlyList<string>)group
+				group => (IReadOnlyList<string>)[.. group
 					.Select(apt => apt.BodyName.Trim())
-					.Distinct(StringComparer.OrdinalIgnoreCase)
-					.ToList(),
+					.Distinct(StringComparer.OrdinalIgnoreCase)],
 				StringComparer.OrdinalIgnoreCase);
 
 	private static IReadOnlyList<DepartureRawRoute> ReadRoutes(List<DpRte> rows, string portion, DepartureRouteKind kind)
 	{
 		// A route is identified by its name and, for a transition, its code; the row order in
 		// DP_RTE is kept so bodies and transitions come out in the order NASR lists them.
-		List<DepartureRawRoute> routes = new();
+		List<DepartureRawRoute> routes = [];
 		Dictionary<(string, string), List<DpRte>> byRoute = new(KeyComparer.Instance);
-		List<(string, string)> order = new();
+		List<(string, string)> order = [];
 
 		foreach (DpRte row in rows)
 		{
@@ -348,7 +345,7 @@ public static class DepartureBuilder
 
 			if (!byRoute.TryGetValue(key, out List<DpRte>? routeRows))
 			{
-				routeRows = new List<DpRte>();
+				routeRows = [];
 				byRoute[key] = routeRows;
 				order.Add(key);
 			}
@@ -358,11 +355,10 @@ public static class DepartureBuilder
 
 		foreach ((string name, string transitionCode) in order)
 		{
-			List<DepartureRawPoint> points = byRoute[(name, transitionCode)]
+			List<DepartureRawPoint> points = [.. byRoute[(name, transitionCode)]
 				.Where(row => !string.IsNullOrWhiteSpace(row.Point))
 				.OrderBy(row => row.PointSeq)
-				.Select(row => new DepartureRawPoint(row.Point.Trim().ToUpperInvariant(), row.PointType?.Trim() ?? string.Empty))
-				.ToList();
+				.Select(row => new DepartureRawPoint(row.Point.Trim().ToUpperInvariant(), row.PointType?.Trim() ?? string.Empty))];
 
 			if (points.Count == 0)
 			{

@@ -37,10 +37,9 @@ public abstract record ServiceResult
 	/// entries. Prefer <see cref="Messages"/> for anything level-aware.
 	/// </summary>
 	public IReadOnlyList<string> Warnings =>
-		Messages
+		[.. Messages
 			.Where(m => m.Level is LogLevel.Warning or LogLevel.Error)
-			.Select(m => m.Text)
-			.ToArray();
+			.Select(m => m.Text)];
 
 	/// <summary>Total wall-clock time the service took to run.</summary>
 	public required TimeSpan Elapsed { get; init; }

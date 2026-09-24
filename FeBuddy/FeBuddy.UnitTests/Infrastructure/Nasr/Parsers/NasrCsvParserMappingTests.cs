@@ -93,8 +93,8 @@ public sealed class NasrCsvParserMappingTests
 	};
 
 	/// <summary>Model properties the FAA file has no column for; the parser leaves them at their default.</summary>
-	private static readonly HashSet<string> PropertiesWithNoColumn = new()
-	{
+	private static readonly HashSet<string> PropertiesWithNoColumn =
+	[
 		// PfrRmtFmt inherits the PFR common fields, but PFR_RMT_FMT.csv carries its own
 		// Orig/Dest/Type columns instead of any of them.
 		"PfrRmtFmt.EffDate",
@@ -102,24 +102,24 @@ public sealed class NasrCsvParserMappingTests
 		"PfrRmtFmt.DstnId",
 		"PfrRmtFmt.PfrTypeCode",
 		"PfrRmtFmt.RouteNo",
-	};
+	];
 
 	/// <summary>The file names, for <see cref="MemberDataAttribute"/>.</summary>
-	public static TheoryData<string> Files => new(ParseCalls.Keys);
+	public static TheoryData<string> Files => [.. ParseCalls.Keys];
 
 	/// <summary>Each parser reads every record, and every property holds its own column's value.</summary>
 	[Theory]
 	[MemberData(nameof(Files))]
-	public void Parser_MapsEveryPropertyFromItsOwnColumn(string fileName)
+	public void parser_maps_every_property_from_its_own_column(string fileName)
 	{
 		string path = Path.Combine(FixtureDirectory, fileName);
 		(string[] header, List<Dictionary<string, string>> rows) = ReadFixture(path);
 
-		List<object> records = ParseCalls[fileName](path).ToList();
+		List<object> records = [.. ParseCalls[fileName](path)];
 
 		Assert.Equal(rows.Count, records.Count);
 
-		List<string> mismatches = new();
+		List<string> mismatches = [];
 		for (int i = 0; i < records.Count; i++)
 		{
 			foreach (PropertyInfo property in records[i].GetType().GetProperties())
@@ -150,13 +150,13 @@ public sealed class NasrCsvParserMappingTests
 	/// <summary>Every column in the file is read into some property - nothing FAA publishes is silently dropped.</summary>
 	[Theory]
 	[MemberData(nameof(Files))]
-	public void Parser_ReadsEveryColumnInTheFile(string fileName)
+	public void parser_reads_every_column_in_the_file(string fileName)
 	{
 		string path = Path.Combine(FixtureDirectory, fileName);
 		(string[] header, _) = ReadFixture(path);
 
 		object record = ParseCalls[fileName](path).First();
-		HashSet<string?> mapped = record.GetType().GetProperties().Select(p => FindColumn(p.Name, header)).ToHashSet();
+		HashSet<string?> mapped = [.. record.GetType().GetProperties().Select(p => FindColumn(p.Name, header))];
 
 		Assert.DoesNotContain(header, column => !mapped.Contains(column));
 	}
@@ -166,7 +166,7 @@ public sealed class NasrCsvParserMappingTests
 	/// fills every list of the combined collection.
 	/// </summary>
 	[Fact]
-	public async Task MainAsync_ParsesEveryFileIntoTheCombinedCollection()
+	public async Task main_async_parses_every_file_into_the_combined_collection()
 	{
 		NasrCsvDataCollection all = await NasrCsvParser.ParseAllAsync(FixtureDirectory);
 
@@ -190,7 +190,7 @@ public sealed class NasrCsvParserMappingTests
 
 	/// <summary>A cycle folder missing a file fails the whole parse rather than returning partial data.</summary>
 	[Fact]
-	public async Task MainAsync_MissingDirectory_Throws()
+	public async Task main_async_missing_directory_throws()
 	{
 		string missing = Path.Combine(Path.GetTempPath(), "FeBuddyTests_NoSuchCycle_" + Guid.NewGuid().ToString("N"));
 
@@ -259,7 +259,7 @@ public sealed class NasrCsvParserMappingTests
 		csv.ReadHeader();
 		string[] header = csv.HeaderRecord!;
 
-		List<Dictionary<string, string>> rows = new();
+		List<Dictionary<string, string>> rows = [];
 		while (csv.Read())
 		{
 			rows.Add(header.ToDictionary(h => h, h => csv.GetField(h) ?? string.Empty));

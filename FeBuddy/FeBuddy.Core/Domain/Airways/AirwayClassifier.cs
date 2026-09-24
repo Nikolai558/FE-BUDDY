@@ -9,13 +9,13 @@ namespace FeBuddy.Core.Domain.Airways;
 /// found across its segments.
 /// </summary>
 /// <remarks>
-/// See Decisions Log 10.2 in the build plan: classification is intentionally based on
-/// altitude data rather than airway ID naming conventions (old FE-Buddy checked whether the
-/// ID contained "Q" or "J"), and one airway is always classified into exactly one class.
+/// Classification comes from the published altitudes, not the airway's name: a name's letter
+/// (J, Q, V, T...) is only a convention, and some airways do not follow it. Each airway lands
+/// in exactly one class - it is never split across files by altitude.
 /// </remarks>
 public static class AirwayClassifier
 {
-	/// <summary>Feet AGL/MSL at or above which an airway is classified as <see cref="AirwayAltitudeClass.High"/>.</summary>
+	/// <summary>The <c>MAX_AUTH_ALT</c> (feet MSL) at or above which an airway is <see cref="AirwayAltitudeClass.High"/>: the base of Class A airspace.</summary>
 	public const int HighAltitudeThresholdFeet = 18000;
 
 	/// <summary>The value used for <see cref="Airway.Designation"/> when an <c>AWY_ID</c> has no leading letters.</summary>
@@ -29,11 +29,10 @@ public static class AirwayClassifier
 	/// <c>AT1</c> -&gt; <c>AT</c>, <c>Q100</c> -&gt; <c>Q</c>, <c>T295</c> -&gt; <c>T</c>.
 	/// </summary>
 	/// <remarks>
-	/// The designation is <b>never</b> taken from <c>AWY_BASE.AWY_DESIGNATION</c> (the owner's
-	/// decision, remediation plan 3.1): that field is not an airway designation in the sense
-	/// FE-Buddy means, and using it filed RNAV airways under <c>RN</c> even though their IDs
-	/// start with <c>Q</c>/<c>T</c>. This one derived value feeds file naming, the designation
-	/// include/exclude filter, and the GUI toggle list.
+	/// The designation is deliberately <b>not</b> <c>AWY_BASE.AWY_DESIGNATION</c>: that field
+	/// is a route category, and using it filed RNAV airways under <c>RN</c> even though their
+	/// IDs start with <c>Q</c> or <c>T</c>. This one derived value feeds file naming, the
+	/// designation filter, and the GUI's designation list.
 	/// </remarks>
 	/// <param name="awyId">The airway ID (<c>AWY_BASE.AWY_ID</c>).</param>
 	/// <returns>

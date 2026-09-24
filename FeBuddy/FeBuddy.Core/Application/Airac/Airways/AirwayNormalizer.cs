@@ -40,7 +40,7 @@ public static class AirwayNormalizer
 	{
 		ArgumentNullException.ThrowIfNull(rawSegments);
 
-		List<AirwaySegment> normalizedSegments = new();
+		List<AirwaySegment> normalizedSegments = [];
 
 		// Border crossings (blank FROM_PT_TYPE) are reference-only, not waypoints. NASR closes
 		// a border-terminating airway with a terminator row that has a blank TO_POINT, and the

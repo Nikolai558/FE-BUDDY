@@ -11,14 +11,14 @@ public class NasrCsvReaderTests
 	[Theory]
 	[InlineData("")]
 	[InlineData("  ")]
-	public void ParseInt_and_ParseDouble_reject_a_blank_required_value(string value)
+	public void parse_int_and_parse_double_reject_a_blank_required_value(string value)
 	{
 		Assert.Throws<ArgumentNullException>(() => NasrCsvReader.ParseInt(value));
 		Assert.Throws<ArgumentNullException>(() => NasrCsvReader.ParseDouble(value));
 	}
 
 	[Fact]
-	public void ParseInt_and_ParseDouble_name_a_malformed_value()
+	public void parse_int_and_parse_double_name_a_malformed_value()
 	{
 		FormatException intError = Assert.Throws<FormatException>(() => NasrCsvReader.ParseInt("12a"));
 		FormatException doubleError = Assert.Throws<FormatException>(() => NasrCsvReader.ParseDouble("N/A"));
@@ -37,7 +37,7 @@ public class NasrCsvReaderTests
 	}
 
 	[Fact]
-	public void GetField_returns_empty_for_a_column_the_file_lacks()
+	public void get_field_returns_empty_for_a_column_the_file_lacks()
 	{
 		Dictionary<string, string> fields = new() { ["PRESENT"] = "yes" };
 

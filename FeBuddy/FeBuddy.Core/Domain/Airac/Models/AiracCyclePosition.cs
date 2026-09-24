@@ -1,12 +1,11 @@
 namespace FeBuddy.Core.Domain.Airac.Models;
 
 /// <summary>
-/// Which AIRAC cycle relative to today is being referenced.
+/// Which AIRAC cycle, relative to the one in effect today, is meant.
 /// </summary>
 /// <remarks>
-/// FE-Buddy keeps up to three cycles of NASR data available at once - the previous cycle,
-/// the current cycle, and the next (preview) cycle - matching the dev notes' AIRAC data
-/// download management rules.
+/// FE-Buddy offers exactly these three cycles of NASR data - previous, current and the next
+/// (preview) cycle - and keeps no others.
 /// </remarks>
 public enum AiracCyclePosition
 {

@@ -38,12 +38,12 @@ public class GeojsonFileWriterTests : IDisposable
 	[InlineData(7, "-80.1234568")]
 	public void write_rounds_coordinates_to_the_requested_precision(int decimals, string expectedLon)
 	{
-		FeatureCollection collection = new()
-		{
+		FeatureCollection collection =
+		[
 			new Feature(
 				Wgs84.Factory.CreatePoint(new Coordinate(-80.12345678, 40.0)),
 				new AttributesTable()),
-		};
+		];
 
 		string path = GeojsonFileWriter.Write(collection, renderedFeatureCount: 1, _directory, "Prec.geojson", maxDecimalPlaces: decimals)!;
 
@@ -54,12 +54,12 @@ public class GeojsonFileWriterTests : IDisposable
 	[Fact]
 	public void write_does_not_round_when_precision_is_zero_or_less()
 	{
-		FeatureCollection collection = new()
-		{
+		FeatureCollection collection =
+		[
 			new Feature(
 				Wgs84.Factory.CreatePoint(new Coordinate(-80.12345678, 40.0)),
 				new AttributesTable()),
-		};
+		];
 
 		string path = GeojsonFileWriter.Write(collection, renderedFeatureCount: 1, _directory, "NoPrec.geojson", maxDecimalPlaces: 0)!;
 
@@ -69,7 +69,7 @@ public class GeojsonFileWriterTests : IDisposable
 	[Fact]
 	public void write_returns_null_and_writes_nothing_when_rendered_count_is_zero()
 	{
-		FeatureCollection collection = new() { MakePointFeature() }; // an isDefaults-only file
+		FeatureCollection collection = [MakePointFeature()]; // an isDefaults-only file
 
 		string? path = GeojsonFileWriter.Write(collection, renderedFeatureCount: 0, _directory, "Test.geojson");
 
@@ -80,7 +80,7 @@ public class GeojsonFileWriterTests : IDisposable
 	[Fact]
 	public void write_creates_the_directory_and_returns_the_full_path()
 	{
-		FeatureCollection collection = new() { MakePointFeature() };
+		FeatureCollection collection = [MakePointFeature()];
 
 		string? path = GeojsonFileWriter.Write(collection, renderedFeatureCount: 1, _directory, "Test.geojson");
 
@@ -94,7 +94,7 @@ public class GeojsonFileWriterTests : IDisposable
 	{
 		DevMode.IsEnabled = false;
 		OutputFormatting.PrettyPrintGeojson = false;
-		FeatureCollection collection = new() { MakePointFeature() };
+		FeatureCollection collection = [MakePointFeature()];
 
 		string? path = GeojsonFileWriter.Write(collection, renderedFeatureCount: 1, _directory, "Test.geojson");
 
@@ -107,7 +107,7 @@ public class GeojsonFileWriterTests : IDisposable
 	{
 		DevMode.IsEnabled = true;
 		OutputFormatting.PrettyPrintGeojson = false; // dev mode wins over the saved single-line choice
-		FeatureCollection collection = new() { MakePointFeature() };
+		FeatureCollection collection = [MakePointFeature()];
 
 		string? path = GeojsonFileWriter.Write(collection, renderedFeatureCount: 1, _directory, "Test.geojson");
 
@@ -120,7 +120,7 @@ public class GeojsonFileWriterTests : IDisposable
 	{
 		DevMode.IsEnabled = false;
 		OutputFormatting.PrettyPrintGeojson = true;
-		FeatureCollection collection = new() { MakePointFeature() };
+		FeatureCollection collection = [MakePointFeature()];
 
 		string? path = GeojsonFileWriter.Write(collection, renderedFeatureCount: 1, _directory, "Pretty.geojson");
 
@@ -145,10 +145,10 @@ public class GeojsonFileWriterTests : IDisposable
 	[Theory]
 	[InlineData(" ", "file.geojson", "directory")]
 	[InlineData("out", " ", "fileName")]
-	public void Write_rejects_a_blank_directory_or_file_name(string directory, string fileName, string parameter)
+	public void write_rejects_a_blank_directory_or_file_name(string directory, string fileName, string parameter)
 	{
 		ArgumentException ex = Assert.Throws<ArgumentException>(() =>
-			GeojsonFileWriter.Write(new FeatureCollection(), 1, directory, fileName));
+			GeojsonFileWriter.Write([], 1, directory, fileName));
 
 		Assert.Equal(parameter, ex.ParamName);
 	}

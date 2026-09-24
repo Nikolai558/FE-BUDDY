@@ -77,10 +77,9 @@ public static class DepartureSettingsParser
 
 		bool includeObstacleDepartures = SettingsValueReader.YesNo(departureSettings, "IncludeObstacleDepartures", defaultValue: true);
 
-		IReadOnlyCollection<string> artccFilter = SettingsValueReader.StringList(departureSettings, "ArtccFilter")
+		IReadOnlyCollection<string> artccFilter = [.. SettingsValueReader.StringList(departureSettings, "ArtccFilter")
 			.Select(artcc => artcc.ToUpperInvariant())
-			.Distinct(StringComparer.OrdinalIgnoreCase)
-			.ToList();
+			.Distinct(StringComparer.OrdinalIgnoreCase)];
 
 		// Only the value the chosen mode uses is read (and required); the others are ignored.
 		DepartureAmendmentFilter amendmentFilter = SettingsValueReader.OptionalEnum(
@@ -119,9 +118,9 @@ public static class DepartureSettingsParser
 		bool includeSymbolDefaults = CrcDefaultsReader.ReadInclude(departureSettings, CrcFeatureKind.Symbol) && generateGeojson && emitSymbols;
 		bool includeTextDefaults = CrcDefaultsReader.ReadInclude(departureSettings, CrcFeatureKind.Text) && generateGeojson && emitText;
 
-		Dictionary<DepartureCrcClass, CrcLineDefaults> lineDefaults = new();
-		Dictionary<DepartureCrcClass, CrcSymbolDefaults> symbolDefaults = new();
-		Dictionary<DepartureCrcClass, CrcTextDefaults> textDefaults = new();
+		Dictionary<DepartureCrcClass, CrcLineDefaults> lineDefaults = [];
+		Dictionary<DepartureCrcClass, CrcSymbolDefaults> symbolDefaults = [];
+		Dictionary<DepartureCrcClass, CrcTextDefaults> textDefaults = [];
 
 		const DepartureCrcClass cls = DepartureCrcClass.Departures;
 

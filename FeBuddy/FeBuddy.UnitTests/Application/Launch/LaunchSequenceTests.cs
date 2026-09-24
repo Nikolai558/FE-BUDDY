@@ -46,7 +46,7 @@ public sealed class LaunchSequenceTests : IDisposable
 		""";
 
 	private readonly string _root = Path.Combine(Path.GetTempPath(), "FeBuddyTests_Launch_" + Guid.NewGuid().ToString("N"));
-	private readonly List<string> _preparedCycles = new();
+	private readonly List<string> _preparedCycles = [];
 
 	public LaunchSequenceTests()
 	{
@@ -102,7 +102,7 @@ public sealed class LaunchSequenceTests : IDisposable
 	/// <summary>Records every report; optionally throws when a step (not the final Complete) succeeds.</summary>
 	private sealed class RecordingProgress(bool failEveryStep = false) : IProgress<LaunchProgress>
 	{
-		public List<LaunchProgress> Reports { get; } = new();
+		public List<LaunchProgress> Reports { get; } = [];
 
 		public void Report(LaunchProgress value)
 		{
@@ -145,7 +145,7 @@ public sealed class LaunchSequenceTests : IDisposable
 		Assert.True(changes >= 4);
 
 		// 2026-09-07 is in cycle 2609: previous 2608, current 2609, next 2610.
-		Assert.Equal(new[] { "2608", "2609", "2610" }, _preparedCycles.Order());
+		Assert.Equal(["2608", "2609", "2610"], _preparedCycles.Order());
 		Assert.Equal(AiracCycleReadiness.Ready, AiracCycleDataCache.Instance.ComputeReadiness());
 
 		Assert.DoesNotContain(progress.Reports, r => r.Status == LaunchStepStatus.Failed);
@@ -182,7 +182,7 @@ public sealed class LaunchSequenceTests : IDisposable
 		Assert.False(AppEnvironment.News!.ParseSucceeded);
 		Assert.True(AppEnvironment.LaunchCompleted);
 
-		LaunchStep[] failed = progress.Reports.Where(r => r.Status == LaunchStepStatus.Failed).Select(r => r.Step).Order().ToArray();
+		LaunchStep[] failed = [.. progress.Reports.Where(r => r.Status == LaunchStepStatus.Failed).Select(r => r.Step).Order()];
 		Assert.Equal(
 			new[]
 			{
@@ -215,7 +215,7 @@ public sealed class LaunchSequenceTests : IDisposable
 		AiracCycleInfo next = new("2610", "01_Oct_2026", new DateOnly(2026, 10, 1));
 		await AiracCycleDataCache.Instance.PrepareCyclesAsync(previous, current, next);
 
-		List<AiracServiceProgress> reports = new();
+		List<AiracServiceProgress> reports = [];
 		AiracServiceResult result = await AiracService.RunAsync(
 			new AiracServiceSettings { SelectedCycle = current, OutputDirectory = _root, DefaultRoi = null },
 			new SynchronousProgress<AiracServiceProgress>(reports.Add));

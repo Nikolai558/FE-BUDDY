@@ -1,14 +1,34 @@
+# FE-Buddy code style - one file for every project in the solution.
+root = true
 
 [*.cs]
 #### Naming styles ####
 
 # Naming rules
+# Roslyn applies the most specific rule first, so the const / static readonly rules (which
+# require modifiers) win over the general private-field rule for those fields.
+
+dotnet_naming_rule.constant_fields_should_be_pascal_case.severity = suggestion
+dotnet_naming_rule.constant_fields_should_be_pascal_case.symbols = constant_fields
+dotnet_naming_rule.constant_fields_should_be_pascal_case.style = pascal_case
+
+dotnet_naming_rule.static_readonly_fields_should_be_pascal_case.severity = suggestion
+dotnet_naming_rule.static_readonly_fields_should_be_pascal_case.symbols = static_readonly_fields
+dotnet_naming_rule.static_readonly_fields_should_be_pascal_case.style = pascal_case
 
 dotnet_naming_rule.private_or_internal_field_should_be_private_fields.severity = suggestion
 dotnet_naming_rule.private_or_internal_field_should_be_private_fields.symbols = private_or_internal_field
 dotnet_naming_rule.private_or_internal_field_should_be_private_fields.style = private_fields
 
 # Symbol specifications
+
+dotnet_naming_symbols.constant_fields.applicable_kinds = field
+dotnet_naming_symbols.constant_fields.applicable_accessibilities = *
+dotnet_naming_symbols.constant_fields.required_modifiers = const
+
+dotnet_naming_symbols.static_readonly_fields.applicable_kinds = field
+dotnet_naming_symbols.static_readonly_fields.applicable_accessibilities = *
+dotnet_naming_symbols.static_readonly_fields.required_modifiers = static, readonly
 
 dotnet_naming_symbols.private_or_internal_field.applicable_kinds = field
 dotnet_naming_symbols.private_or_internal_field.applicable_accessibilities = internal, private, private_protected
@@ -24,7 +44,7 @@ csharp_indent_labels = one_less_than_current
 csharp_using_directive_placement = outside_namespace:silent
 csharp_prefer_simple_using_statement = true:suggestion
 csharp_prefer_braces = true:silent
-csharp_style_namespace_declarations = file_scoped:silent
+csharp_style_namespace_declarations = file_scoped:suggestion
 csharp_style_prefer_method_group_conversion = true:silent
 csharp_style_prefer_top_level_statements = true:silent
 csharp_style_expression_bodied_methods = false:silent
@@ -106,10 +126,6 @@ dotnet_naming_style.pascal_case.required_suffix =
 dotnet_naming_style.pascal_case.word_separator = 
 dotnet_naming_style.pascal_case.capitalization = pascal_case
 
-dotnet_naming_style.pascal_case.required_prefix = 
-dotnet_naming_style.pascal_case.required_suffix = 
-dotnet_naming_style.pascal_case.word_separator = 
-dotnet_naming_style.pascal_case.capitalization = pascal_case
 dotnet_style_operator_placement_when_wrapping = beginning_of_line
 tab_width = 4
 indent_size = 4
@@ -137,3 +153,16 @@ dotnet_style_require_accessibility_modifiers = for_non_interface_members:silent
 dotnet_style_allow_multiple_blank_lines_experimental = true:silent
 dotnet_style_allow_statement_immediately_after_block_experimental = true:silent
 indent_style = tab
+
+[FeBuddy.UnitTests/**Tests.cs]
+# Test methods read as sentences: snake_case, e.g. a_date_on_an_effective_date_belongs_to_the_new_cycle.
+# Public methods in a *Tests.cs file are the tests (Dispose implements an interface and is exempt).
+dotnet_naming_rule.test_methods_should_be_snake_case.severity = suggestion
+dotnet_naming_rule.test_methods_should_be_snake_case.symbols = test_methods
+dotnet_naming_rule.test_methods_should_be_snake_case.style = snake_case
+
+dotnet_naming_symbols.test_methods.applicable_kinds = method
+dotnet_naming_symbols.test_methods.applicable_accessibilities = public
+
+dotnet_naming_style.snake_case.capitalization = all_lower
+dotnet_naming_style.snake_case.word_separator = _

@@ -36,7 +36,7 @@ public static class AirportService
 		ArgumentNullException.ThrowIfNull(airportSettings);
 
 		Stopwatch stopwatch = Stopwatch.StartNew();
-		List<ServiceMessage> messages = new();
+		List<ServiceMessage> messages = [];
 
 		AirportSettingsParseResult parseResult = AirportSettingsParser.Parse(airportSettings);
 		messages.AddRange(parseResult.Messages);

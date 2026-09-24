@@ -24,15 +24,15 @@ internal static class AirportTestDataBuilder
 		IEnumerable<ClsArspCsvDataModel.ClsArsp>? classAirspace = null)
 	{
 		AptCsvDataCollection aptCollection = new();
-		aptCollection.AptBase.AddRange(airports ?? Enumerable.Empty<AptCsvDataModel.AptBase>());
-		aptCollection.AptRwy.AddRange(runways ?? Enumerable.Empty<AptCsvDataModel.AptRwy>());
-		aptCollection.AptRwyEnd.AddRange(runwayEnds ?? Enumerable.Empty<AptCsvDataModel.AptRwyEnd>());
+		aptCollection.AptBase.AddRange(airports ?? []);
+		aptCollection.AptRwy.AddRange(runways ?? []);
+		aptCollection.AptRwyEnd.AddRange(runwayEnds ?? []);
 
 		FrqCsvDataCollection frqCollection = new();
-		frqCollection.Frq.AddRange(frequencies ?? Enumerable.Empty<FrqCsvDataModel.Frq>());
+		frqCollection.Frq.AddRange(frequencies ?? []);
 
 		ClsArspCsvDataCollection clsArspCollection = new();
-		clsArspCollection.ClsArsp.AddRange(classAirspace ?? Enumerable.Empty<ClsArspCsvDataModel.ClsArsp>());
+		clsArspCollection.ClsArsp.AddRange(classAirspace ?? []);
 
 		return new NasrCsvDataCollection
 		{
@@ -166,7 +166,7 @@ internal static class AirportTestDataBuilder
 		string? classAirspace = null,
 		IReadOnlyList<AirportRunway>? runways = null)
 	{
-		IReadOnlyList<AirportRunway> resolvedRunways = runways ?? Array.Empty<AirportRunway>();
+		IReadOnlyList<AirportRunway> resolvedRunways = runways ?? [];
 
 		return new Airport
 		{

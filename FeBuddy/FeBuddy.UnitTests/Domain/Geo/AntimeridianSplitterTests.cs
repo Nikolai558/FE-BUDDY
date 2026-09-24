@@ -14,7 +14,7 @@ public sealed class AntimeridianSplitterTests
 	private static readonly GeometryFactory Factory = Wgs84.Factory;
 
 	private static LineString Line(params (double Lon, double Lat)[] points) =>
-		Factory.CreateLineString(points.Select(p => new Coordinate(p.Lon, p.Lat)).ToArray());
+		Factory.CreateLineString([.. points.Select(p => new Coordinate(p.Lon, p.Lat))]);
 
 	private static bool HasTwoDistinctCoordinates(LineString line)
 	{
@@ -70,7 +70,7 @@ public sealed class AntimeridianSplitterTests
 	[Fact]
 	public void an_empty_linestring_is_returned_unchanged()
 	{
-		LineString empty = Factory.CreateLineString(Array.Empty<Coordinate>());
+		LineString empty = Factory.CreateLineString([]);
 
 		Assert.Same(empty, Assert.Single(AntimeridianSplitter.Split(empty)));
 	}

@@ -37,12 +37,12 @@ public class DepartureFilterTests
 	{
 		DepartureProcedure sid = DepartureTestData.Procedure(codeId: "SID");
 		DepartureProcedure odp = DepartureTestData.Procedure(codeId: "ODP", isObstacleDeparture: true);
-		List<ServiceMessage> messages = new();
+		List<ServiceMessage> messages = [];
 
 		IReadOnlyList<DepartureProcedure> kept = DepartureFilter.ByProcedure(
-			new[] { sid, odp }, Settings() with { IncludeObstacleDepartures = false }, messages);
+			[sid, odp], Settings() with { IncludeObstacleDepartures = false }, messages);
 
-		Assert.Equal(new[] { "SID" }, kept.Select(p => p.CodeId));
+		Assert.Equal(["SID"], kept.Select(p => p.CodeId));
 	}
 
 	[Fact]
@@ -50,12 +50,12 @@ public class DepartureFilterTests
 	{
 		DepartureProcedure sid = DepartureTestData.Procedure(codeId: "SID");
 		DepartureProcedure odp = DepartureTestData.Procedure(codeId: "ODP", isObstacleDeparture: true);
-		List<ServiceMessage> messages = new();
+		List<ServiceMessage> messages = [];
 
 		IReadOnlyList<DepartureProcedure> kept = DepartureFilter.ByProcedure(
-			new[] { sid, odp }, Settings() with { IncludeObstacleDepartures = true }, messages);
+			[sid, odp], Settings() with { IncludeObstacleDepartures = true }, messages);
 
-		Assert.Equal(new[] { "SID", "ODP" }, kept.Select(p => p.CodeId));
+		Assert.Equal(["SID", "ODP"], kept.Select(p => p.CodeId));
 	}
 
 	[Fact]
@@ -64,12 +64,12 @@ public class DepartureFilterTests
 		DepartureProcedure zla = DepartureTestData.Procedure(codeId: "ONE", artcc: "ZLA");
 		DepartureProcedure zoa = DepartureTestData.Procedure(codeId: "TWO", artcc: "ZOA");
 		DepartureProcedure zse = DepartureTestData.Procedure(codeId: "THR", artcc: "ZSE");
-		List<ServiceMessage> messages = new();
+		List<ServiceMessage> messages = [];
 
 		IReadOnlyList<DepartureProcedure> kept = DepartureFilter.ByProcedure(
-			new[] { zla, zoa, zse }, Settings() with { ArtccFilter = new[] { "ZLA", "ZSE" } }, messages);
+			[zla, zoa, zse], Settings() with { ArtccFilter = ["ZLA", "ZSE"] }, messages);
 
-		Assert.Equal(new[] { "ZLA", "ZSE" }, kept.Select(p => p.Artcc));
+		Assert.Equal(["ZLA", "ZSE"], kept.Select(p => p.Artcc));
 	}
 
 	[Fact]
@@ -77,9 +77,9 @@ public class DepartureFilterTests
 	{
 		DepartureProcedure zla = DepartureTestData.Procedure(codeId: "ONE", artcc: "ZLA");
 		DepartureProcedure zoa = DepartureTestData.Procedure(codeId: "TWO", artcc: "ZOA");
-		List<ServiceMessage> messages = new();
+		List<ServiceMessage> messages = [];
 
-		IReadOnlyList<DepartureProcedure> kept = DepartureFilter.ByProcedure(new[] { zla, zoa }, Settings(), messages);
+		IReadOnlyList<DepartureProcedure> kept = DepartureFilter.ByProcedure([zla, zoa], Settings(), messages);
 
 		Assert.Equal(2, kept.Count);
 	}
@@ -89,12 +89,12 @@ public class DepartureFilterTests
 	{
 		DepartureProcedure thisCycle = Amended("NEW", new DateOnly(2026, 9, 3));
 		DepartureProcedure dayBefore = Amended("OLD", new DateOnly(2026, 9, 2));
-		List<ServiceMessage> messages = new();
+		List<ServiceMessage> messages = [];
 
 		IReadOnlyList<DepartureProcedure> kept = DepartureFilter.ByProcedure(
-			new[] { thisCycle, dayBefore }, Settings() with { AmendmentFilter = DepartureAmendmentFilter.Cycles, AmendedWithinCycles = 1 }, messages);
+			[thisCycle, dayBefore], Settings() with { AmendmentFilter = DepartureAmendmentFilter.Cycles, AmendedWithinCycles = 1 }, messages);
 
-		Assert.Equal(new[] { "NEW" }, kept.Select(p => p.CodeId));
+		Assert.Equal(["NEW"], kept.Select(p => p.CodeId));
 		Assert.Empty(messages);
 	}
 
@@ -107,12 +107,12 @@ public class DepartureFilterTests
 
 		DepartureProcedure onCutoff = Amended("KEEP", cutoff);
 		DepartureProcedure beforeCutoff = Amended("DROP", cutoff.AddDays(-1));
-		List<ServiceMessage> messages = new();
+		List<ServiceMessage> messages = [];
 
 		IReadOnlyList<DepartureProcedure> kept = DepartureFilter.ByProcedure(
-			new[] { onCutoff, beforeCutoff }, Settings() with { AmendmentFilter = DepartureAmendmentFilter.Cycles, AmendedWithinCycles = 4 }, messages);
+			[onCutoff, beforeCutoff], Settings() with { AmendmentFilter = DepartureAmendmentFilter.Cycles, AmendedWithinCycles = 4 }, messages);
 
-		Assert.Equal(new[] { "KEEP" }, kept.Select(p => p.CodeId));
+		Assert.Equal(["KEEP"], kept.Select(p => p.CodeId));
 	}
 
 	[Fact]
@@ -120,10 +120,10 @@ public class DepartureFilterTests
 	{
 		DepartureProcedure unreadable = DepartureTestData.Procedure(
 			codeId: "BAD", amendmentEffectiveDate: null, amendmentEffectiveDateText: "NOT A DATE", cycleEffectiveDate: CycleDate);
-		List<ServiceMessage> messages = new();
+		List<ServiceMessage> messages = [];
 
 		IReadOnlyList<DepartureProcedure> kept = DepartureFilter.ByProcedure(
-			new[] { unreadable }, Settings() with { AmendmentFilter = DepartureAmendmentFilter.Cycles, AmendedWithinCycles = 1 }, messages);
+			[unreadable], Settings() with { AmendmentFilter = DepartureAmendmentFilter.Cycles, AmendedWithinCycles = 1 }, messages);
 
 		Assert.Empty(kept);
 		ServiceMessage message = Assert.Single(messages);
@@ -136,9 +136,9 @@ public class DepartureFilterTests
 	{
 		DepartureProcedure unreadable = DepartureTestData.Procedure(
 			codeId: "BAD", amendmentEffectiveDate: null, amendmentEffectiveDateText: "NOT A DATE", cycleEffectiveDate: CycleDate);
-		List<ServiceMessage> messages = new();
+		List<ServiceMessage> messages = [];
 
-		IReadOnlyList<DepartureProcedure> kept = DepartureFilter.ByProcedure(new[] { unreadable }, Settings(), messages);
+		IReadOnlyList<DepartureProcedure> kept = DepartureFilter.ByProcedure([unreadable], Settings(), messages);
 
 		Assert.Single(kept);
 		Assert.Empty(messages);
@@ -153,15 +153,15 @@ public class DepartureFilterTests
 
 		DepartureProcedure onCutoff = Amended("KEEP", cutoff);
 		DepartureProcedure beforeCutoff = Amended("DROP", cutoff.AddDays(-1));
-		List<ServiceMessage> messages = new();
+		List<ServiceMessage> messages = [];
 
 		IReadOnlyList<DepartureProcedure> kept = DepartureFilter.ByProcedure(
-			new[] { onCutoff, beforeCutoff },
+			[onCutoff, beforeCutoff],
 			Settings() with { AmendmentFilter = DepartureAmendmentFilter.Days, AmendedWithinDays = 90 },
 			messages,
 			Today);
 
-		Assert.Equal(new[] { "KEEP" }, kept.Select(p => p.CodeId));
+		Assert.Equal(["KEEP"], kept.Select(p => p.CodeId));
 		Assert.Empty(messages);
 	}
 
@@ -170,10 +170,10 @@ public class DepartureFilterTests
 	{
 		// Amended on the cycle date, which is 19 days before Today: outside a 10-day window.
 		DepartureProcedure onCycleDate = Amended("OLD", CycleDate);
-		List<ServiceMessage> messages = new();
+		List<ServiceMessage> messages = [];
 
 		IReadOnlyList<DepartureProcedure> kept = DepartureFilter.ByProcedure(
-			new[] { onCycleDate },
+			[onCycleDate],
 			Settings() with { AmendmentFilter = DepartureAmendmentFilter.Days, AmendedWithinDays = 10 },
 			messages,
 			Today);
@@ -187,36 +187,36 @@ public class DepartureFilterTests
 		DateOnly since = new(2026, 1, 1);
 		DepartureProcedure onDate = Amended("KEEP", since);
 		DepartureProcedure dayBefore = Amended("DROP", since.AddDays(-1));
-		List<ServiceMessage> messages = new();
+		List<ServiceMessage> messages = [];
 
 		IReadOnlyList<DepartureProcedure> kept = DepartureFilter.ByProcedure(
-			new[] { onDate, dayBefore },
+			[onDate, dayBefore],
 			Settings() with { AmendmentFilter = DepartureAmendmentFilter.Date, AmendedOnOrAfter = since },
 			messages,
 			Today);
 
-		Assert.Equal(new[] { "KEEP" }, kept.Select(p => p.CodeId));
+		Assert.Equal(["KEEP"], kept.Select(p => p.CodeId));
 		Assert.Empty(messages);
 	}
 
 	[Fact]
 	public void date_mode_without_a_date_throws()
 	{
-		List<ServiceMessage> messages = new();
+		List<ServiceMessage> messages = [];
 
 		Assert.Throws<ArgumentException>(() => DepartureFilter.ByProcedure(
-			new[] { Amended("ANY", CycleDate) },
+			[Amended("ANY", CycleDate)],
 			Settings() with { AmendmentFilter = DepartureAmendmentFilter.Date },
 			messages,
 			Today));
 	}
 
-	public static TheoryData<DepartureAmendmentFilter> ActiveAmendmentFilters => new()
-	{
+	public static TheoryData<DepartureAmendmentFilter> ActiveAmendmentFilters =>
+	[
 		DepartureAmendmentFilter.Cycles,
 		DepartureAmendmentFilter.Days,
 		DepartureAmendmentFilter.Date,
-	};
+	];
 
 	private static DepartureSettings WithAmendmentFilter(DepartureAmendmentFilter mode) => Settings() with
 	{
@@ -231,12 +231,12 @@ public class DepartureFilterTests
 	public void future_amendments_are_kept_in_every_mode(DepartureAmendmentFilter mode)
 	{
 		DepartureProcedure future = Amended("FUT", Today.AddDays(30));
-		List<ServiceMessage> messages = new();
+		List<ServiceMessage> messages = [];
 
 		IReadOnlyList<DepartureProcedure> kept = DepartureFilter.ByProcedure(
-			new[] { future }, WithAmendmentFilter(mode), messages, Today);
+			[future], WithAmendmentFilter(mode), messages, Today);
 
-		Assert.Equal(new[] { "FUT" }, kept.Select(p => p.CodeId));
+		Assert.Equal(["FUT"], kept.Select(p => p.CodeId));
 		Assert.Empty(messages);
 	}
 
@@ -246,10 +246,10 @@ public class DepartureFilterTests
 	{
 		DepartureProcedure unreadable = DepartureTestData.Procedure(
 			codeId: "BAD", amendmentEffectiveDate: null, amendmentEffectiveDateText: "NOT A DATE", cycleEffectiveDate: CycleDate);
-		List<ServiceMessage> messages = new();
+		List<ServiceMessage> messages = [];
 
 		IReadOnlyList<DepartureProcedure> kept = DepartureFilter.ByProcedure(
-			new[] { unreadable }, WithAmendmentFilter(mode), messages, Today);
+			[unreadable], WithAmendmentFilter(mode), messages, Today);
 
 		Assert.Empty(kept);
 		ServiceMessage message = Assert.Single(messages);
@@ -262,10 +262,10 @@ public class DepartureFilterTests
 	{
 		DepartureProcedure noCycle = DepartureTestData.Procedure(
 			codeId: "NOCYC", amendmentEffectiveDate: CycleDate, cycleEffectiveDate: null);
-		List<ServiceMessage> messages = new();
+		List<ServiceMessage> messages = [];
 
 		IReadOnlyList<DepartureProcedure> kept = DepartureFilter.ByProcedure(
-			new[] { noCycle }, WithAmendmentFilter(DepartureAmendmentFilter.Cycles), messages, Today);
+			[noCycle], WithAmendmentFilter(DepartureAmendmentFilter.Cycles), messages, Today);
 
 		Assert.Empty(kept);
 		Assert.Equal(LogLevel.Warning, Assert.Single(messages).Level);
@@ -279,12 +279,12 @@ public class DepartureFilterTests
 
 		// The per-mode values are set but must be ignored while the mode is None.
 		DepartureSettings settings = WithAmendmentFilter(DepartureAmendmentFilter.None);
-		List<ServiceMessage> messages = new();
+		List<ServiceMessage> messages = [];
 
 		IReadOnlyList<DepartureProcedure> kept = DepartureFilter.ByProcedure(
-			new[] { ancient, recent }, settings, messages, Today);
+			[ancient, recent], settings, messages, Today);
 
-		Assert.Equal(new[] { "OLD", "NEW" }, kept.Select(p => p.CodeId));
+		Assert.Equal(["OLD", "NEW"], kept.Select(p => p.CodeId));
 		Assert.Empty(messages);
 	}
 
@@ -299,15 +299,15 @@ public class DepartureFilterTests
 			DepartureTestData.Procedure(codeId: "OUT"), "AAA",
 			new DeparturePoint("FARAW", "WP", 45.0, -100.0),
 			new DeparturePoint("FARBB", "WP", 46.0, -101.0));
-		List<ServiceMessage> messages = new();
+		List<ServiceMessage> messages = [];
 
 		IReadOnlyList<DepartureAirportProcedure> kept = DepartureFilter.ByRoi(
-			new[] { partlyInside, outside },
+			[partlyInside, outside],
 			Settings() with { Roi = SoCal, RoiMode = DepartureRoiMode.Waypoint },
 			DepartureTestData.Build(),
 			messages);
 
-		Assert.Equal(new[] { "IN" }, kept.Select(p => p.Procedure.CodeId));
+		Assert.Equal(["IN"], kept.Select(p => p.Procedure.CodeId));
 	}
 
 	[Fact]
@@ -321,20 +321,20 @@ public class DepartureFilterTests
 			DepartureTestData.Procedure(codeId: "FARDP"), "FAR",
 			new DeparturePoint("NEARB", "WP", 34.0, -118.0));
 
-		NasrCsvDataCollection data = DepartureTestData.Build(airports: new[]
-		{
+		NasrCsvDataCollection data = DepartureTestData.Build(airports:
+		[
 			DepartureTestData.Airport(DepartureTestData.LaxId, DepartureTestData.LaxLatitude, DepartureTestData.LaxLongitude, "KLAX"),
 			DepartureTestData.Airport("FAR", 46.92, -96.81, "KFAR"),
-		});
-		List<ServiceMessage> messages = new();
+		]);
+		List<ServiceMessage> messages = [];
 
 		IReadOnlyList<DepartureAirportProcedure> kept = DepartureFilter.ByRoi(
-			new[] { atLax, atFar },
+			[atLax, atFar],
 			Settings() with { Roi = SoCal, RoiMode = DepartureRoiMode.Airport },
 			data,
 			messages);
 
-		Assert.Equal(new[] { "LAXDP" }, kept.Select(p => p.Procedure.CodeId));
+		Assert.Equal(["LAXDP"], kept.Select(p => p.Procedure.CodeId));
 		Assert.Empty(messages);
 	}
 
@@ -344,10 +344,10 @@ public class DepartureFilterTests
 		DepartureAirportProcedure atUnknown = DepartureTestData.AirportProcedure(
 			DepartureTestData.Procedure(codeId: "CYQG"), "CYQG",
 			new DeparturePoint("NEARB", "WP", 34.0, -118.0));
-		List<ServiceMessage> messages = new();
+		List<ServiceMessage> messages = [];
 
 		IReadOnlyList<DepartureAirportProcedure> kept = DepartureFilter.ByRoi(
-			new[] { atUnknown },
+			[atUnknown],
 			Settings() with { Roi = SoCal, RoiMode = DepartureRoiMode.Airport },
 			DepartureTestData.Build(),
 			messages);
@@ -364,10 +364,10 @@ public class DepartureFilterTests
 		DepartureAirportProcedure anywhere = DepartureTestData.AirportProcedure(
 			DepartureTestData.Procedure(codeId: "ANY"), "NOAPT",
 			new DeparturePoint("FARAW", "WP", 45.0, -100.0));
-		List<ServiceMessage> messages = new();
+		List<ServiceMessage> messages = [];
 
 		IReadOnlyList<DepartureAirportProcedure> kept = DepartureFilter.ByRoi(
-			new[] { anywhere }, Settings(), DepartureTestData.Build(), messages);
+			[anywhere], Settings(), DepartureTestData.Build(), messages);
 
 		Assert.Single(kept);
 		Assert.Empty(messages);

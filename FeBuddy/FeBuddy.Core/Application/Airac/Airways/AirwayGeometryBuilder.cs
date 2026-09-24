@@ -45,12 +45,12 @@ public static class AirwayGeometryBuilder
 		ArgumentNullException.ThrowIfNull(allNasrCsvData);
 		ArgumentNullException.ThrowIfNull(segments);
 
-		List<LineString> lineStrings = new();
-		List<ServiceMessage> messages = new();
-		List<string> unresolvedWaypointIds = new();
-		List<Coordinate> currentCoordinates = new();
+		List<LineString> lineStrings = [];
+		List<ServiceMessage> messages = [];
+		List<string> unresolvedWaypointIds = [];
+		List<Coordinate> currentCoordinates = [];
 
-		List<AirwaySegment> segmentList = segments.ToList();
+		List<AirwaySegment> segmentList = [.. segments];
 
 		string? previousSegEndWptId = null;
 
@@ -87,7 +87,7 @@ public static class AirwayGeometryBuilder
 				// Otherwise treat the segment as a gap and keep going, so every unresolved ID
 				// lands in the exclusion message rather than only the first.
 				FinishCurrentLineString(lineStrings, currentCoordinates);
-				currentCoordinates = new List<Coordinate>();
+				currentCoordinates = [];
 				previousSegEndWptId = null;
 				continue;
 			}
@@ -129,7 +129,7 @@ public static class AirwayGeometryBuilder
 				// Discontinuity or explicit airway gap: finish the existing LineString and
 				// begin a new one.
 				FinishCurrentLineString(lineStrings, currentCoordinates);
-				currentCoordinates = new List<Coordinate> { segStartCoordinate, segEndCoordinate };
+				currentCoordinates = [segStartCoordinate, segEndCoordinate];
 			}
 
 			previousSegEndWptId = segEndWptId;
@@ -169,7 +169,7 @@ public static class AirwayGeometryBuilder
 
 		if (deduped.Count >= 2)
 		{
-			lineStrings.Add(Wgs84.Factory.CreateLineString(deduped.ToArray()));
+			lineStrings.Add(Wgs84.Factory.CreateLineString([.. deduped]));
 		}
 	}
 

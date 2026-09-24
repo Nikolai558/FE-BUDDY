@@ -188,7 +188,7 @@ public static class SettingsValueReader
 		string? value = OptionalString(settings, key);
 
 		return value is null
-			? Array.Empty<string>()
+			? []
 			: value.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 	}
 

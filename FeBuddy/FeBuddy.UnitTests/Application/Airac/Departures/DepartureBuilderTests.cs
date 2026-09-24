@@ -28,14 +28,16 @@ public class DepartureBuilderTests
 	/// </summary>
 	private static NasrCsvDataCollection TwoBodyProcedure(string servedArpt, params (string Body, string Airport)[] assignments)
 	{
-		List<DpCsvDataModel.DpRte> routes = new();
-		routes.AddRange(DepartureTestData.Body(TestName, TestArtcc, TestCode, "B1", new[] { "ALPHA", "CHRLI" }));
-		routes.AddRange(DepartureTestData.Body(TestName, TestArtcc, TestCode, "B2", new[] { "BRAVO", "CHRLI" }));
-		routes.AddRange(DepartureTestData.Transition(TestName, TestArtcc, TestCode, "DELTA TRANSITION", "TESTY1.DELTA", new[] { "CHRLI", "DELTA" }));
+		List<DpCsvDataModel.DpRte> routes =
+		[
+			.. DepartureTestData.Body(TestName, TestArtcc, TestCode, "B1", ["ALPHA", "CHRLI"]),
+			.. DepartureTestData.Body(TestName, TestArtcc, TestCode, "B2", ["BRAVO", "CHRLI"]),
+			.. DepartureTestData.Transition(TestName, TestArtcc, TestCode, "DELTA TRANSITION", "TESTY1.DELTA", ["CHRLI", "DELTA"]),
+		];
 
 		return DepartureTestData.Build(
-			bases: new[] { DepartureTestData.Base(TestName, TestArtcc, TestCode, servedArpt: servedArpt) },
-			apts: assignments.Select(a => DepartureTestData.Apt(TestName, TestArtcc, TestCode, a.Body, a.Airport)).ToList(),
+			bases: [DepartureTestData.Base(TestName, TestArtcc, TestCode, servedArpt: servedArpt)],
+			apts: [.. assignments.Select(a => DepartureTestData.Apt(TestName, TestArtcc, TestCode, a.Body, a.Airport))],
 			routes: routes,
 			fixes: DepartureTestData.SyntheticFixes("ALPHA", "BRAVO", "CHRLI", "DELTA"));
 	}
@@ -62,14 +64,14 @@ public class DepartureBuilderTests
 		Assert.Equal(new DateOnly(2017, 8, 17), procedure.AmendmentEffectiveDate);
 		Assert.Equal(new DateOnly(2026, 9, 3), procedure.CycleEffectiveDate);
 		Assert.False(procedure.IsObstacleDeparture);
-		Assert.Equal(new[] { "LAX" }, procedure.ServedAirports);
+		Assert.Equal(["LAX"], procedure.ServedAirports);
 		Assert.Equal(
-			new[] { "DLREY-DOTSS", "DOCKR-DOTSS", "FABRA-DOTSS", "HIIPR-DOTSS" },
+			["DLREY-DOTSS", "DOCKR-DOTSS", "FABRA-DOTSS", "HIIPR-DOTSS"],
 			procedure.Bodies.Select(b => b.Name));
 		Assert.Equal(
-			new[] { "CLEEE TRANSITION", "CNERY TRANSITION" },
+			["CLEEE TRANSITION", "CNERY TRANSITION"],
 			procedure.Transitions.Select(t => t.Name));
-		Assert.Equal(new[] { "DOTSS2.CLEEE", "DOTSS2.CNERY" }, procedure.Transitions.Select(t => t.TransitionCode));
+		Assert.Equal(["DOTSS2.CLEEE", "DOTSS2.CNERY"], procedure.Transitions.Select(t => t.TransitionCode));
 		Assert.All(procedure.Bodies, body => Assert.Null(body.TransitionCode));
 	}
 
@@ -83,7 +85,7 @@ public class DepartureBuilderTests
 
 		Assert.All(points, point => Assert.Equal("WP", point.PointType));
 		Assert.Equal(
-			new[] { "DLREY", "ENNEY", "NAANC", "HAYNK", "PEVEE", "HOLTZ", "DOTSS" },
+			["DLREY", "ENNEY", "NAANC", "HAYNK", "PEVEE", "HOLTZ", "DOTSS"],
 			procedure.Bodies[0].Points.Select(p => p.Id));
 	}
 
@@ -95,7 +97,7 @@ public class DepartureBuilderTests
 		DepartureProcedureReadResult result = DepartureBuilder.ReadProcedures(data);
 
 		DepartureProcedure procedure = Assert.Single(result.Procedures);
-		Assert.Equal(new[] { "AAA", "BBB" }, procedure.ServedAirports);
+		Assert.Equal(["AAA", "BBB"], procedure.ServedAirports);
 	}
 
 	[Fact]
@@ -119,11 +121,11 @@ public class DepartureBuilderTests
 
 		DepartureAirportProcedure airportProcedure = Assert.Single(result.AirportProcedures);
 
-		foreach ((string Id, double Lat, double Lon) fix in DepartureTestData.DotssFixes)
+		foreach ((string Id, double Lat, double Lon) in DepartureTestData.DotssFixes)
 		{
-			DeparturePoint point = Assert.Single(airportProcedure.Points, p => p.Id == fix.Id);
-			Assert.Equal(fix.Lat, point.Latitude);
-			Assert.Equal(fix.Lon, point.Longitude);
+			DeparturePoint point = Assert.Single(airportProcedure.Points, p => p.Id == Id);
+			Assert.Equal(Lat, point.Latitude);
+			Assert.Equal(Lon, point.Longitude);
 		}
 	}
 
@@ -137,10 +139,10 @@ public class DepartureBuilderTests
 		Assert.Equal(2, result.AirportProcedures.Count);
 
 		DepartureAirportProcedure aaa = Assert.Single(result.AirportProcedures, p => p.AirportId == "AAA");
-		Assert.Equal(new[] { "B1", "DELTA TRANSITION" }, aaa.Routes.Select(r => r.Name));
+		Assert.Equal(["B1", "DELTA TRANSITION"], aaa.Routes.Select(r => r.Name));
 
 		DepartureAirportProcedure bbb = Assert.Single(result.AirportProcedures, p => p.AirportId == "BBB");
-		Assert.Equal(new[] { "B2", "DELTA TRANSITION" }, bbb.Routes.Select(r => r.Name));
+		Assert.Equal(["B2", "DELTA TRANSITION"], bbb.Routes.Select(r => r.Name));
 	}
 
 	[Fact]
@@ -151,18 +153,18 @@ public class DepartureBuilderTests
 		DepartureLocateResult result = ReadAndLocate(data);
 
 		DepartureAirportProcedure ccc = Assert.Single(result.AirportProcedures, p => p.AirportId == "CCC");
-		Assert.Equal(new[] { "B1", "B2", "DELTA TRANSITION" }, ccc.Routes.Select(r => r.Name));
+		Assert.Equal(["B1", "B2", "DELTA TRANSITION"], ccc.Routes.Select(r => r.Name));
 
 		DepartureAirportProcedure aaa = Assert.Single(result.AirportProcedures, p => p.AirportId == "AAA");
-		Assert.Equal(new[] { "B1", "DELTA TRANSITION" }, aaa.Routes.Select(r => r.Name));
+		Assert.Equal(["B1", "DELTA TRANSITION"], aaa.Routes.Select(r => r.Name));
 	}
 
 	[Fact]
 	public void a_point_missing_from_fix_base_skips_the_pair_with_a_warning_naming_it()
 	{
 		NasrCsvDataCollection data = DepartureTestData.Build(
-			bases: new[] { DepartureTestData.Base(TestName, TestArtcc, TestCode, servedArpt: "AAA") },
-			routes: DepartureTestData.Body(TestName, TestArtcc, TestCode, "B1", new[] { "ALPHA", "MISNG" }),
+			bases: [DepartureTestData.Base(TestName, TestArtcc, TestCode, servedArpt: "AAA")],
+			routes: DepartureTestData.Body(TestName, TestArtcc, TestCode, "B1", ["ALPHA", "MISNG"]),
 			fixes: DepartureTestData.SyntheticFixes("ALPHA"));
 
 		DepartureLocateResult result = ReadAndLocate(data);
@@ -176,7 +178,7 @@ public class DepartureBuilderTests
 	public void a_procedure_with_no_dp_rte_rows_produces_nothing_with_an_info_message()
 	{
 		NasrCsvDataCollection data = DepartureTestData.Build(
-			bases: new[] { DepartureTestData.Base(TestName, TestArtcc, TestCode, servedArpt: "AAA") });
+			bases: [DepartureTestData.Base(TestName, TestArtcc, TestCode, servedArpt: "AAA")]);
 
 		DepartureProcedureReadResult read = DepartureBuilder.ReadProcedures(data);
 		DepartureProcedure procedure = Assert.Single(read.Procedures);
@@ -195,26 +197,26 @@ public class DepartureBuilderTests
 	public void a_single_point_procedure_has_no_drawable_route()
 	{
 		NasrCsvDataCollection data = DepartureTestData.Build(
-			bases: new[] { DepartureTestData.Base(TestName, TestArtcc, TestCode, servedArpt: "AAA") },
-			routes: DepartureTestData.Body(TestName, TestArtcc, TestCode, "ALPHA", new[] { "ALPHA" }),
+			bases: [DepartureTestData.Base(TestName, TestArtcc, TestCode, servedArpt: "AAA")],
+			routes: DepartureTestData.Body(TestName, TestArtcc, TestCode, "ALPHA", ["ALPHA"]),
 			fixes: DepartureTestData.SyntheticFixes("ALPHA"));
 
 		DepartureLocateResult result = ReadAndLocate(data);
 
 		DepartureAirportProcedure airportProcedure = Assert.Single(result.AirportProcedures);
 		Assert.False(airportProcedure.HasDrawableRoute);
-		Assert.Equal(new[] { "ALPHA" }, airportProcedure.Points.Select(p => p.Id));
+		Assert.Equal(["ALPHA"], airportProcedure.Points.Select(p => p.Id));
 	}
 
 	[Fact]
 	public void a_dp_base_row_with_no_name_is_skipped_with_a_warning()
 	{
 		NasrCsvDataCollection data = DepartureTestData.Build(
-			bases: new[]
-			{
+			bases:
+			[
 				DepartureTestData.Base("  ", TestArtcc, "NONAME1.NONAME", servedArpt: "AAA"),
 				DepartureTestData.Base(TestName, TestArtcc, TestCode, servedArpt: "AAA"),
-			});
+			]);
 
 		DepartureProcedureReadResult read = DepartureBuilder.ReadProcedures(data);
 
@@ -228,29 +230,29 @@ public class DepartureBuilderTests
 	public void procedures_are_read_in_artcc_then_name_order()
 	{
 		NasrCsvDataCollection data = DepartureTestData.Build(
-			bases: new[]
-			{
+			bases:
+			[
 				DepartureTestData.Base("ZULU", "ZAB", "ZULU1.ZULU"),
 				DepartureTestData.Base("ALPHA", "ZAB", "ALPHA1.ALPHA"),
 				DepartureTestData.Base("MIKE", "ZAA", "MIKE1.MIKE"),
-			});
+			]);
 
 		DepartureProcedureReadResult read = DepartureBuilder.ReadProcedures(data);
 
-		Assert.Equal(new[] { "MIKE", "ALPHA", "ZULU" }, read.Procedures.Select(p => p.DpName));
+		Assert.Equal(["MIKE", "ALPHA", "ZULU"], read.Procedures.Select(p => p.DpName));
 	}
 
 	[Fact]
 	public void an_airport_assigned_only_unknown_bodies_and_no_transitions_gets_an_info_message()
 	{
 		NasrCsvDataCollection data = DepartureTestData.Build(
-			bases: new[] { DepartureTestData.Base(TestName, TestArtcc, TestCode) },
-			apts: new[]
-			{
+			bases: [DepartureTestData.Base(TestName, TestArtcc, TestCode)],
+			apts:
+			[
 				DepartureTestData.Apt(TestName, TestArtcc, TestCode, "B1", "AAA"),
 				DepartureTestData.Apt(TestName, TestArtcc, TestCode, "GHOST", "BBB"),
-			},
-			routes: DepartureTestData.Body(TestName, TestArtcc, TestCode, "B1", new[] { "ALPHA", "CHRLI" }),
+			],
+			routes: DepartureTestData.Body(TestName, TestArtcc, TestCode, "B1", ["ALPHA", "CHRLI"]),
 			fixes: DepartureTestData.SyntheticFixes("ALPHA", "CHRLI"));
 
 		DepartureLocateResult result = ReadAndLocate(data);
@@ -267,16 +269,18 @@ public class DepartureBuilderTests
 		// The same procedure published under two ARTCCs: two procedures, one identifier.
 		const string otherArtcc = "ZYY";
 
-		List<DpCsvDataModel.DpRte> routes = new();
-		routes.AddRange(DepartureTestData.Body(TestName, TestArtcc, TestCode, "B1", new[] { "ALPHA", "CHRLI" }));
-		routes.AddRange(DepartureTestData.Body(TestName, otherArtcc, TestCode, "B1", new[] { "ALPHA", "CHRLI" }));
+		List<DpCsvDataModel.DpRte> routes =
+		[
+			.. DepartureTestData.Body(TestName, TestArtcc, TestCode, "B1", ["ALPHA", "CHRLI"]),
+			.. DepartureTestData.Body(TestName, otherArtcc, TestCode, "B1", ["ALPHA", "CHRLI"]),
+		];
 
 		NasrCsvDataCollection data = DepartureTestData.Build(
-			bases: new[]
-			{
+			bases:
+			[
 				DepartureTestData.Base(TestName, TestArtcc, TestCode, servedArpt: "AAA"),
 				DepartureTestData.Base(TestName, otherArtcc, TestCode, servedArpt: "AAA"),
-			},
+			],
 			routes: routes,
 			fixes: DepartureTestData.SyntheticFixes("ALPHA", "CHRLI"));
 
@@ -290,12 +294,14 @@ public class DepartureBuilderTests
 	[Fact]
 	public void a_route_whose_rows_name_no_points_is_dropped()
 	{
-		List<DpCsvDataModel.DpRte> routes = new();
-		routes.AddRange(DepartureTestData.Body(TestName, TestArtcc, TestCode, "B1", new[] { "ALPHA", "CHRLI" }));
-		routes.AddRange(DepartureTestData.Transition(TestName, TestArtcc, TestCode, "EMPTY TRANSITION", "TESTY1.EMPTY", new[] { " ", "" }));
+		List<DpCsvDataModel.DpRte> routes =
+		[
+			.. DepartureTestData.Body(TestName, TestArtcc, TestCode, "B1", ["ALPHA", "CHRLI"]),
+			.. DepartureTestData.Transition(TestName, TestArtcc, TestCode, "EMPTY TRANSITION", "TESTY1.EMPTY", [" ", ""]),
+		];
 
 		NasrCsvDataCollection data = DepartureTestData.Build(
-			bases: new[] { DepartureTestData.Base(TestName, TestArtcc, TestCode, servedArpt: "AAA") },
+			bases: [DepartureTestData.Base(TestName, TestArtcc, TestCode, servedArpt: "AAA")],
 			routes: routes);
 
 		DepartureProcedure procedure = Assert.Single(DepartureBuilder.ReadProcedures(data).Procedures);

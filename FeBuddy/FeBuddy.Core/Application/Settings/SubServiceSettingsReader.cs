@@ -106,7 +106,7 @@ public static partial class SubServiceSettingsReader
 				$"List the properties to write, e.g. \"{example}\".");
 		}
 
-		List<TProperty> properties = new();
+		List<TProperty> properties = [];
 
 		foreach (string name in names)
 		{
@@ -154,7 +154,7 @@ public static partial class SubServiceSettingsReader
 		string source,
 		string labelSource)
 	{
-		List<ServiceMessage> messages = new();
+		List<ServiceMessage> messages = [];
 
 		foreach (string key in settings.Keys)
 		{

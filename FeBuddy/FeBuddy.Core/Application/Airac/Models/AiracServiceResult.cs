@@ -33,5 +33,5 @@ public sealed record AiracServiceResult : ServiceResult
 	/// IDs of airways excluded from all output because they had an unresolvable waypoint
 	/// (Phase 3.2). Empty until that behaviour lands.
 	/// </summary>
-	public IReadOnlyList<string> ExcludedAirwayIds { get; init; } = Array.Empty<string>();
+	public IReadOnlyList<string> ExcludedAirwayIds { get; init; } = [];
 }

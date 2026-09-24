@@ -18,8 +18,8 @@ public class AirwayGeometryBuilderTests
 	[Fact]
 	public void geojson_uses_longitude_then_latitude()
 	{
-		var data = AirwayTestDataBuilder.Build(fixes: new[] { ("AAAAA", 40.0, -80.0), ("BBBBB", 41.0, -81.0) });
-		List<AirwaySegment> segments = new() { new("AAAAA", "BBBBB", IsGap: false, MaxAuthAlt: null) };
+		var data = AirwayTestDataBuilder.Build(fixes: [("AAAAA", 40.0, -80.0), ("BBBBB", 41.0, -81.0)]);
+		List<AirwaySegment> segments = [new("AAAAA", "BBBBB", IsGap: false, MaxAuthAlt: null)];
 
 		AirwayGeometryBuildResult result = AirwayGeometryBuilder.Build(data, "TEST1", segments);
 
@@ -32,8 +32,8 @@ public class AirwayGeometryBuilderTests
 	[Fact]
 	public void one_valid_segment_produces_one_linestring()
 	{
-		var data = AirwayTestDataBuilder.Build(fixes: new[] { ("AAAAA", 40.0, -80.0), ("BBBBB", 41.0, -81.0) });
-		List<AirwaySegment> segments = new() { new("AAAAA", "BBBBB", IsGap: false, MaxAuthAlt: null) };
+		var data = AirwayTestDataBuilder.Build(fixes: [("AAAAA", 40.0, -80.0), ("BBBBB", 41.0, -81.0)]);
+		List<AirwaySegment> segments = [new("AAAAA", "BBBBB", IsGap: false, MaxAuthAlt: null)];
 
 		AirwayGeometryBuildResult result = AirwayGeometryBuilder.Build(data, "TEST1", segments);
 
@@ -44,15 +44,15 @@ public class AirwayGeometryBuilderTests
 	[Fact]
 	public void two_continuous_segments_become_one_linestring()
 	{
-		var data = AirwayTestDataBuilder.Build(fixes: new[]
-		{
+		var data = AirwayTestDataBuilder.Build(fixes:
+		[
 			("AAAAA", 40.0, -80.0), ("BBBBB", 41.0, -81.0), ("CCCCC", 42.0, -82.0)
-		});
-		List<AirwaySegment> segments = new()
-		{
+		]);
+		List<AirwaySegment> segments =
+		[
 			new("AAAAA", "BBBBB", IsGap: false, MaxAuthAlt: null),
 			new("BBBBB", "CCCCC", IsGap: false, MaxAuthAlt: null),
-		};
+		];
 
 		AirwayGeometryBuildResult result = AirwayGeometryBuilder.Build(data, "TEST1", segments);
 
@@ -63,15 +63,15 @@ public class AirwayGeometryBuilderTests
 	[Fact]
 	public void a_gap_flag_splits_the_airway_into_two_linestrings()
 	{
-		var data = AirwayTestDataBuilder.Build(fixes: new[]
-		{
+		var data = AirwayTestDataBuilder.Build(fixes:
+		[
 			("AAAAA", 40.0, -80.0), ("BBBBB", 41.0, -81.0), ("CCCCC", 42.0, -82.0)
-		});
-		List<AirwaySegment> segments = new()
-		{
+		]);
+		List<AirwaySegment> segments =
+		[
 			new("AAAAA", "BBBBB", IsGap: false, MaxAuthAlt: null),
 			new("BBBBB", "CCCCC", IsGap: true, MaxAuthAlt: null),
-		};
+		];
 
 		AirwayGeometryBuildResult result = AirwayGeometryBuilder.Build(data, "TEST1", segments);
 
@@ -87,12 +87,12 @@ public class AirwayGeometryBuilderTests
 	[Fact]
 	public void trailing_unresolved_waypoint_marks_the_airway_for_exclusion()
 	{
-		var data = AirwayTestDataBuilder.Build(fixes: new[] { ("AAAAA", 40.0, -80.0), ("BBBBB", 41.0, -81.0) });
-		List<AirwaySegment> segments = new()
-		{
+		var data = AirwayTestDataBuilder.Build(fixes: [("AAAAA", 40.0, -80.0), ("BBBBB", 41.0, -81.0)]);
+		List<AirwaySegment> segments =
+		[
 			new("AAAAA", "BBBBB", IsGap: false, MaxAuthAlt: null),
 			new("BBBBB", "NOWHERE", IsGap: false, MaxAuthAlt: null), // NOWHERE is never resolvable
-		};
+		];
 
 		AirwayGeometryBuildResult result = AirwayGeometryBuilder.Build(data, "TEST1", segments);
 
@@ -107,19 +107,19 @@ public class AirwayGeometryBuilderTests
 	[Fact]
 	public void mid_airway_unresolved_waypoint_is_recorded_for_exclusion_and_processing_continues()
 	{
-		var data = AirwayTestDataBuilder.Build(fixes: new[]
-		{
+		var data = AirwayTestDataBuilder.Build(fixes:
+		[
 			("AAAAA", 40.0, -80.0), ("BBBBB", 41.0, -81.0),
 			("CCCCC", 42.0, -82.0), ("DDDDD", 43.0, -83.0)
-		});
-		List<AirwaySegment> segments = new()
-		{
+		]);
+		List<AirwaySegment> segments =
+		[
 			new("AAAAA", "BBBBB", IsGap: false, MaxAuthAlt: null),
 			// NOWHERE never resolves, but a fully-resolvable segment (CCCCC->DDDDD) exists
 			// later, so this is a genuine mid-airway problem, not trailing truncation.
 			new("BBBBB", "NOWHERE", IsGap: false, MaxAuthAlt: null),
 			new("CCCCC", "DDDDD", IsGap: false, MaxAuthAlt: null),
-		};
+		];
 
 		AirwayGeometryBuildResult result = AirwayGeometryBuilder.Build(data, "TEST1", segments);
 

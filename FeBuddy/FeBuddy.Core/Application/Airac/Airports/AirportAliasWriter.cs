@@ -71,7 +71,7 @@ public static class AirportAliasWriter
 		ArgumentNullException.ThrowIfNull(airports);
 		ArgumentNullException.ThrowIfNull(settings);
 
-		List<ServiceMessage> messages = new();
+		List<ServiceMessage> messages = [];
 
 		if (airports.Count == 0)
 		{

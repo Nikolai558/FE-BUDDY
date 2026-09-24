@@ -36,7 +36,7 @@ public static class NasrCycleDownloader
 	/// cycle folder actually contains a real, complete extraction rather than a partial or
 	/// corrupt one.
 	/// </summary>
-	private static readonly string[] RequiredFiles = { "AWY_BASE.csv", "AWY_SEG_ALT.csv", "FIX_BASE.csv", "NAV_BASE.csv", "APT_BASE.csv" };
+	private static readonly string[] RequiredFiles = ["AWY_BASE.csv", "AWY_SEG_ALT.csv", "FIX_BASE.csv", "NAV_BASE.csv", "APT_BASE.csv"];
 
 	/// <summary>
 	/// The default local cache root: <c>%APPDATA%\FE-Buddy\AiracCycles</c>.
@@ -205,10 +205,10 @@ public static class NasrCycleDownloader
 
 		if (!Directory.Exists(cacheRoot))
 		{
-			return Array.Empty<string>();
+			return [];
 		}
 
-		List<string> deleted = new();
+		List<string> deleted = [];
 
 		foreach (string directory in Directory.GetDirectories(cacheRoot))
 		{

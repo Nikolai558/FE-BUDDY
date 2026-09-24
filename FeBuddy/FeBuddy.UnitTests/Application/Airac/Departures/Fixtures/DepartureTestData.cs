@@ -37,8 +37,8 @@ internal static class DepartureTestData
 	public const string PaddedWaypointType = "WP   ";
 
 	/// <summary>Every DOTSS2 point with an invented, distinct SoCal coordinate.</summary>
-	public static readonly IReadOnlyList<(string Id, double Lat, double Lon)> DotssFixes = new[]
-	{
+	public static readonly IReadOnlyList<(string Id, double Lat, double Lon)> DotssFixes =
+	[
 		("DLREY", 33.9310, -118.5020),
 		("DOCKR", 33.9120, -118.4950),
 		("FABRA", 33.9380, -118.5110),
@@ -59,23 +59,23 @@ internal static class DepartureTestData
 		("BLCKD", 33.4460, -119.4020),
 		("CSTWY", 33.3690, -119.6350),
 		("CNERY", 33.2920, -119.8610),
-	};
+	];
 
 	/// <summary>DOTSS2's bodies as DP_RTE lists them: route name then points in sequence.</summary>
-	public static readonly IReadOnlyList<(string Name, string RunwayEnd, string[] Points)> DotssBodies = new[]
-	{
+	public static readonly IReadOnlyList<(string Name, string RunwayEnd, string[] Points)> DotssBodies =
+	[
 		("DLREY-DOTSS", "24L", new[] { "DLREY", "ENNEY", "NAANC", "HAYNK", "PEVEE", "HOLTZ", "DOTSS" }),
-		("DOCKR-DOTSS", "25R", new[] { "DOCKR", "WEILR", "SHAEF", "PEVEE", "HOLTZ", "DOTSS" }),
-		("FABRA-DOTSS", "24R", new[] { "FABRA", "ENNEY", "NAANC", "HAYNK", "PEVEE", "HOLTZ", "DOTSS" }),
-		("HIIPR-DOTSS", "25L", new[] { "HIIPR", "ADORE", "SHAEF", "PEVEE", "HOLTZ", "DOTSS" }),
-	};
+		("DOCKR-DOTSS", "25R", ["DOCKR", "WEILR", "SHAEF", "PEVEE", "HOLTZ", "DOTSS"]),
+		("FABRA-DOTSS", "24R", ["FABRA", "ENNEY", "NAANC", "HAYNK", "PEVEE", "HOLTZ", "DOTSS"]),
+		("HIIPR-DOTSS", "25L", ["HIIPR", "ADORE", "SHAEF", "PEVEE", "HOLTZ", "DOTSS"]),
+	];
 
 	/// <summary>DOTSS2's transitions as DP_RTE lists them: route name, transition code, then points in sequence.</summary>
-	public static readonly IReadOnlyList<(string Name, string Code, string[] Points)> DotssTransitions = new[]
-	{
+	public static readonly IReadOnlyList<(string Name, string Code, string[] Points)> DotssTransitions =
+	[
 		("CLEEE TRANSITION", "DOTSS2.CLEEE", new[] { "DOTSS", "EYEDL", "HOMER", "CLEEE" }),
-		("CNERY TRANSITION", "DOTSS2.CNERY", new[] { "DOTSS", "WIILD", "BLCKD", "CSTWY", "CNERY" }),
-	};
+		("CNERY TRANSITION", "DOTSS2.CNERY", ["DOTSS", "WIILD", "BLCKD", "CSTWY", "CNERY"]),
+	];
 
 	/// <summary>
 	/// Builds a <see cref="NasrCsvDataCollection"/> holding only the given DP, FIX, NAV and
@@ -90,36 +90,36 @@ internal static class DepartureTestData
 		IEnumerable<AptCsvDataModel.AptBase>? airports = null)
 	{
 		DpCsvDataCollection dpCollection = new();
-		dpCollection.DpBase.AddRange(bases ?? Enumerable.Empty<DpCsvDataModel.DpBase>());
-		dpCollection.DpApt.AddRange(apts ?? Enumerable.Empty<DpCsvDataModel.DpApt>());
-		dpCollection.DpRte.AddRange(routes ?? Enumerable.Empty<DpCsvDataModel.DpRte>());
+		dpCollection.DpBase.AddRange(bases ?? []);
+		dpCollection.DpApt.AddRange(apts ?? []);
+		dpCollection.DpRte.AddRange(routes ?? []);
 
 		FixCsvDataCollection fixCollection = new();
 
-		foreach ((string Id, double Lat, double Lon) fix in fixes ?? Enumerable.Empty<(string, double, double)>())
+		foreach ((string Id, double Lat, double Lon) in fixes ?? [])
 		{
 			fixCollection.FixBase.Add(new FixCsvDataModel.FixBase
 			{
-				FixId = fix.Id,
-				LatDecimal = fix.Lat,
-				LongDecimal = fix.Lon
+				FixId = Id,
+				LatDecimal = Lat,
+				LongDecimal = Lon
 			});
 		}
 
 		NavCsvDataCollection navCollection = new();
 
-		foreach ((string Id, double Lat, double Lon) navaid in navaids ?? Enumerable.Empty<(string, double, double)>())
+		foreach ((string Id, double Lat, double Lon) in navaids ?? [])
 		{
 			navCollection.NavBase.Add(new NavCsvDataModel.NavBase
 			{
-				NavId = navaid.Id,
-				LatDecimal = navaid.Lat,
-				LongDecimal = navaid.Lon
+				NavId = Id,
+				LatDecimal = Lat,
+				LongDecimal = Lon
 			});
 		}
 
 		AptCsvDataCollection aptCollection = new();
-		aptCollection.AptBase.AddRange(airports ?? Enumerable.Empty<AptCsvDataModel.AptBase>());
+		aptCollection.AptBase.AddRange(airports ?? []);
 
 		return new NasrCsvDataCollection
 		{
@@ -136,11 +136,11 @@ internal static class DepartureTestData
 	/// </summary>
 	public static NasrCsvDataCollection Dotss() =>
 		Build(
-			bases: new[] { DotssBase() },
+			bases: [DotssBase()],
 			apts: DotssApts(),
 			routes: DotssRoutes(),
 			fixes: DotssFixes,
-			airports: new[] { Airport(LaxId, LaxLatitude, LaxLongitude, "KLAX") });
+			airports: [Airport(LaxId, LaxLatitude, LaxLongitude, "KLAX")]);
 
 	/// <summary>DOTSS2's DP_BASE row.</summary>
 	public static DpCsvDataModel.DpBase DotssBase() =>
@@ -148,21 +148,21 @@ internal static class DepartureTestData
 
 	/// <summary>DOTSS2's DP_APT rows, one per body.</summary>
 	public static IEnumerable<DpCsvDataModel.DpApt> DotssApts() =>
-		DotssBodies.Select(body => Apt(DotssName, DotssArtcc, DotssCode, body.Name, LaxId, body.RunwayEnd)).ToList();
+		[.. DotssBodies.Select(body => Apt(DotssName, DotssArtcc, DotssCode, body.Name, LaxId, body.RunwayEnd))];
 
 	/// <summary>DOTSS2's DP_RTE rows: every body, then every transition.</summary>
 	public static IEnumerable<DpCsvDataModel.DpRte> DotssRoutes()
 	{
-		List<DpCsvDataModel.DpRte> rows = new();
+		List<DpCsvDataModel.DpRte> rows = [];
 
-		foreach ((string Name, string RunwayEnd, string[] Points) body in DotssBodies)
+		foreach ((string Name, string RunwayEnd, string[] Points) in DotssBodies)
 		{
-			rows.AddRange(Body(DotssName, DotssArtcc, DotssCode, body.Name, body.Points, $"{LaxId}/{body.RunwayEnd}"));
+			rows.AddRange(Body(DotssName, DotssArtcc, DotssCode, Name, Points, $"{LaxId}/{RunwayEnd}"));
 		}
 
-		foreach ((string Name, string Code, string[] Points) transition in DotssTransitions)
+		foreach ((string Name, string Code, string[] Points) in DotssTransitions)
 		{
-			rows.AddRange(Transition(DotssName, DotssArtcc, DotssCode, transition.Name, transition.Code, transition.Points));
+			rows.AddRange(Transition(DotssName, DotssArtcc, DotssCode, Name, Code, Points));
 		}
 
 		return rows;
@@ -276,12 +276,12 @@ internal static class DepartureTestData
 			AmendmentEffectiveDate = amendmentEffectiveDate,
 			CycleEffectiveDate = cycleEffectiveDate,
 			IsObstacleDeparture = isObstacleDeparture,
-			ServedAirports = new[] { "AAA" },
-			Bodies = new[]
-			{
-				new DepartureRawRoute("BODY", DepartureRouteKind.Body, null, new[] { new DepartureRawPoint("ALPHA", "WP") })
-			},
-			Transitions = Array.Empty<DepartureRawRoute>(),
+			ServedAirports = ["AAA"],
+			Bodies =
+			[
+				new DepartureRawRoute("BODY", DepartureRouteKind.Body, null, [new DepartureRawPoint("ALPHA", "WP")])
+			],
+			Transitions = [],
 			BodyNamesByAirport = new Dictionary<string, IReadOnlyList<string>>()
 		};
 
@@ -297,7 +297,7 @@ internal static class DepartureTestData
 		{
 			Procedure = procedure,
 			AirportId = airportId,
-			Routes = new[] { new DepartureRoute("BODY", DepartureRouteKind.Body, points) },
+			Routes = [new DepartureRoute("BODY", DepartureRouteKind.Body, points)],
 			Points = points
 		};
 

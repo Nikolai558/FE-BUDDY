@@ -82,7 +82,7 @@ public sealed class AirportAliasWriterTests : IDisposable
 	public void the_whole_written_file_is_one_physical_line_per_command()
 	{
 		AirportAliasGenerateResult result = AirportAliasWriter.Generate(
-			new[] { AirportTestDataBuilder.BuiltAirport(faaId: "PDX") }, Settings());
+			[AirportTestDataBuilder.BuiltAirport(faaId: "PDX")], Settings());
 
 		string[] lines = File.ReadAllLines(result.FilePath!);
 
@@ -98,7 +98,7 @@ public sealed class AirportAliasWriterTests : IDisposable
 
 		Assert.Contains("APT:" + Tab + Tab + Tab + "SEA - KSEA" + NewLine, body);
 
-		AirportAliasGenerateResult result = AirportAliasWriter.Generate(new[] { airport }, Settings());
+		AirportAliasGenerateResult result = AirportAliasWriter.Generate([airport], Settings());
 
 		Assert.Equal(2, result.CommandCount);
 
@@ -116,7 +116,7 @@ public sealed class AirportAliasWriterTests : IDisposable
 		Assert.Contains("APT:" + Tab + Tab + Tab + "PDX" + NewLine, body);
 		Assert.DoesNotContain(" - ", body);
 
-		AirportAliasGenerateResult result = AirportAliasWriter.Generate(new[] { airport }, Settings());
+		AirportAliasGenerateResult result = AirportAliasWriter.Generate([airport], Settings());
 
 		Assert.Equal(1, result.CommandCount);
 		Assert.DoesNotContain(".aptK", File.ReadAllText(result.FilePath!));
@@ -183,7 +183,7 @@ public sealed class AirportAliasWriterTests : IDisposable
 	public void an_airport_with_no_runways_prints_an_empty_longest_runway_with_no_empty_parentheses()
 	{
 		string body = AirportAliasWriter.BuildCommandBody(
-			AirportTestDataBuilder.BuiltAirport(runways: Array.Empty<AirportRunway>()));
+			AirportTestDataBuilder.BuiltAirport(runways: []));
 
 		Assert.Contains("LONGEST" + Space + "RWY:" + Tab + NewLine, body);
 		Assert.DoesNotContain("()", body);
@@ -195,7 +195,7 @@ public sealed class AirportAliasWriterTests : IDisposable
 		string body = AirportAliasWriter.BuildCommandBody(AirportTestDataBuilder.BuiltAirport(
 			elevation: 433,
 			trafficPatternAltitude: 1500,
-			runways: new[] { AirportTestDataBuilder.BuiltRunway("16L/34R", 11901, "ASPH-G") }));
+			runways: [AirportTestDataBuilder.BuiltRunway("16L/34R", 11901, "ASPH-G")]));
 
 		Assert.Contains("LONGEST" + Space + "RWY:" + Tab + "16L/34R (11901" + FeetMark + ")" + NewLine, body);
 		Assert.Contains("ELEV:" + Tab + Tab + Space + Space + Space + "433" + FeetMark + NewLine, body);
@@ -210,7 +210,7 @@ public sealed class AirportAliasWriterTests : IDisposable
 	public void the_surface_type_of_the_longest_runway_follows_it_on_its_own_line()
 	{
 		string body = AirportAliasWriter.BuildCommandBody(AirportTestDataBuilder.BuiltAirport(
-			runways: new[] { AirportTestDataBuilder.BuiltRunway("16L/34R", 11901, "ASPH-G") }));
+			runways: [AirportTestDataBuilder.BuiltRunway("16L/34R", 11901, "ASPH-G")]));
 
 		Assert.Contains(Tab + Tab + Tab + Tab + "ASPH-G" + NewLine, body);
 	}
@@ -218,7 +218,7 @@ public sealed class AirportAliasWriterTests : IDisposable
 	[Fact]
 	public void nothing_is_written_when_there_are_no_airports()
 	{
-		AirportAliasGenerateResult result = AirportAliasWriter.Generate(Array.Empty<Airport>(), Settings());
+		AirportAliasGenerateResult result = AirportAliasWriter.Generate([], Settings());
 
 		Assert.Null(result.FilePath);
 		Assert.Equal(0, result.CommandCount);

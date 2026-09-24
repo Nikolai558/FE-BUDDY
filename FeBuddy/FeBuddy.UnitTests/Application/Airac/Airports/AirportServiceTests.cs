@@ -35,12 +35,12 @@ public sealed class AirportServiceTests : IDisposable
 				AirportTestDataBuilder.Base("SEA", icaoId: "KSEA", name: "SEATTLE-TACOMA INTL", trafficPatternAltitude: 1433, fssId: "SEA"),
 				AirportTestDataBuilder.Base("PAE", icaoId: "KPAE", name: "SNOHOMISH COUNTY", latitude: 47.906, longitude: -122.282),
 			}.Concat(extraAirports),
-			runways: new[] { AirportTestDataBuilder.Runway("SEA", "16L/34R", 11901, "CONC") },
-			runwayEnds: new[]
-			{
+			runways: [AirportTestDataBuilder.Runway("SEA", "16L/34R", 11901, "CONC")],
+			runwayEnds:
+			[
 				AirportTestDataBuilder.RunwayEnd("SEA", "16L/34R", "16L", 47.4638, -122.3079),
 				AirportTestDataBuilder.RunwayEnd("SEA", "16L/34R", "34R", 47.4312, -122.3080),
-			});
+			]);
 
 	private Dictionary<string, string> Settings(params (string Key, string Value)[] overrides)
 	{
@@ -70,7 +70,7 @@ public sealed class AirportServiceTests : IDisposable
 		Assert.Empty(result.Warnings);
 
 		Assert.Equal(
-			new[] { GeojsonPath("Airports_Symbols.geojson"), GeojsonPath("Airports_Text.geojson"), GeojsonPath("Runways_Lines.geojson") },
+			[GeojsonPath("Airports_Symbols.geojson"), GeojsonPath("Airports_Text.geojson"), GeojsonPath("Runways_Lines.geojson")],
 			result.GeojsonFilesWritten);
 		Assert.Equal(2, result.GeojsonFeatureCountsByFile[GeojsonPath("Airports_Symbols.geojson")]);
 		Assert.Equal(1, result.GeojsonFeatureCountsByFile[GeojsonPath("Runways_Lines.geojson")]);
@@ -104,7 +104,7 @@ public sealed class AirportServiceTests : IDisposable
 		Assert.Equal(3, result.GeojsonFilesWritten.Count);
 
 		using JsonDocument symbols = JsonDocument.Parse(File.ReadAllText(GeojsonPath("Airports_Symbols.geojson")));
-		JsonElement[] features = symbols.RootElement.GetProperty("features").EnumerateArray().ToArray();
+		JsonElement[] features = [.. symbols.RootElement.GetProperty("features").EnumerateArray()];
 		Assert.True(features[0].GetProperty("properties").GetProperty("isSymbolDefaults").GetBoolean());
 
 		JsonElement sea = features.Skip(1)
@@ -216,7 +216,7 @@ public sealed class AirportServiceTests : IDisposable
 	{
 		AirportSettings settings = AirportSettingsParser.Parse(Settings()).Settings;
 
-		AirportAliasGenerateResult result = AirportAliasWriter.Generate(Array.Empty<Airport>(), settings);
+		AirportAliasGenerateResult result = AirportAliasWriter.Generate([], settings);
 
 		Assert.Null(result.FilePath);
 		Assert.Equal(0, result.CommandCount);

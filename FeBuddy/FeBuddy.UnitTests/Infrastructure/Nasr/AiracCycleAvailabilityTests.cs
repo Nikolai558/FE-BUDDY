@@ -23,7 +23,7 @@ public sealed class AiracCycleAvailabilityTests : IDisposable
 	public void Dispose() => AppLog.ConfigureForTesting(null);
 
 	[Fact]
-	public async Task Probe_200_IsPublished()
+	public async Task probe_200_is_published()
 	{
 		using HttpClient client = new(new StubHttpHandler(_ => new HttpResponseMessage(HttpStatusCode.OK)));
 
@@ -33,7 +33,7 @@ public sealed class AiracCycleAvailabilityTests : IDisposable
 	[Theory]
 	[InlineData(HttpStatusCode.NotFound)]
 	[InlineData(HttpStatusCode.Forbidden)]
-	public async Task Probe_404_or_403_IsNotYetPublished(HttpStatusCode status)
+	public async Task probe_404_or_403_is_not_yet_published(HttpStatusCode status)
 	{
 		using HttpClient client = new(new StubHttpHandler(_ => new HttpResponseMessage(status)));
 
@@ -41,7 +41,7 @@ public sealed class AiracCycleAvailabilityTests : IDisposable
 	}
 
 	[Fact]
-	public async Task Probe_NetworkError_IsUnknown()
+	public async Task probe_network_error_is_unknown()
 	{
 		using HttpClient client = new(new StubHttpHandler(_ => throw new HttpRequestException("dns failure")));
 
@@ -49,7 +49,7 @@ public sealed class AiracCycleAvailabilityTests : IDisposable
 	}
 
 	[Fact]
-	public async Task Probe_HeadRejected_FallsBackToRangedGet()
+	public async Task probe_head_rejected_falls_back_to_ranged_get()
 	{
 		using HttpClient client = new(new StubHttpHandler(request =>
 			request.Method == HttpMethod.Head

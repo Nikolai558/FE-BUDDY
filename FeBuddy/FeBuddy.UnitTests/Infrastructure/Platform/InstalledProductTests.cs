@@ -17,7 +17,7 @@ public sealed class InstalledProductTests : IDisposable
 	public void Dispose() => InstalledProduct.ReadValue = _realReader;
 
 	[Fact]
-	public void Values_ComeFromTheInstallersRegistryKey()
+	public void values_come_from_the_installers_registry_key()
 	{
 		_registry["InstallLocation"] = @"C:\Program Files\FE-BUDDY\";
 		_registry["ProductSemVer"] = "3.0.0-alpha.1";
@@ -37,7 +37,7 @@ public sealed class InstalledProductTests : IDisposable
 	[InlineData(" ", @"C:\Program Files\FE-BUDDY\", false)]
 	[InlineData(@"C:\Program Files\FE-BUDDY\", "", false)]
 	[InlineData("C:\\bad\0path", @"C:\Program Files\FE-BUDDY\", false)]
-	public void IsMsiInstalled_MatchesTheRunningFolderToTheInstallFolder(string? installLocation, string baseDirectory, bool expected)
+	public void is_msi_installed_matches_the_running_folder_to_the_install_folder(string? installLocation, string baseDirectory, bool expected)
 	{
 		_registry["InstallLocation"] = installLocation;
 
@@ -45,7 +45,7 @@ public sealed class InstalledProductTests : IDisposable
 	}
 
 	[Fact]
-	public void RealRegistry_ReadsWithoutThrowing()
+	public void real_registry_reads_without_throwing()
 	{
 		InstalledProduct.ReadValue = _realReader;
 
@@ -56,7 +56,7 @@ public sealed class InstalledProductTests : IDisposable
 	}
 
 	[Fact]
-	public void AppEnvironment_IsMsiInstalled_ChecksThisProcessFolder()
+	public void app_environment_is_msi_installed_checks_this_process_folder()
 	{
 		InstalledProduct.ReadValue = _realReader;
 

@@ -81,7 +81,7 @@ public static class AiracService
 		ArgumentNullException.ThrowIfNull(nasrData);
 
 		Stopwatch stopwatch = Stopwatch.StartNew();
-		List<ServiceMessage> messages = new();
+		List<ServiceMessage> messages = [];
 		AirwayServiceResult? airwaysResult = await RunSubServiceAsync(
 			settings.Airways, "Airways", "Building airway GeoJSON and alias output",
 			block => AirwayService.Run(nasrData, block),
@@ -113,7 +113,7 @@ public static class AiracService
 			Airways = airwaysResult,
 			Airports = airportsResult,
 			Departures = departuresResult,
-			ExcludedAirwayIds = airwaysResult?.ExcludedAirwayIds ?? Array.Empty<string>(),
+			ExcludedAirwayIds = airwaysResult?.ExcludedAirwayIds ?? [],
 		};
 
 		// Runs one sub-service if it was selected (its settings block is not null), reporting

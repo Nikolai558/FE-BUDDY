@@ -7,7 +7,7 @@ namespace FeBuddy.UnitTests.Domain.Geo;
 public class RoiFilterTests
 {
 	[Fact]
-	public void IsCoordinateValidFormat_accepts_valid_coordinates()
+	public void is_coordinate_valid_format_accepts_valid_coordinates()
 	{
 		Assert.True(RoiFilter.IsCoordinateValidFormat("38.0", "-85.0", "43.0", "-78.0", out string? error));
 		Assert.Null(error);
@@ -17,35 +17,35 @@ public class RoiFilterTests
 	[InlineData("not-a-number", "-85.0", "43.0", "-78.0")]
 	[InlineData("91.0", "-85.0", "43.0", "-78.0")] // latitude out of range
 	[InlineData("38.0", "-181.0", "43.0", "-78.0")] // longitude out of range
-	public void IsCoordinateValidFormat_rejects_invalid_coordinates(string swLat, string swLon, string neLat, string neLon)
+	public void is_coordinate_valid_format_rejects_invalid_coordinates(string swLat, string swLon, string neLat, string neLon)
 	{
 		Assert.False(RoiFilter.IsCoordinateValidFormat(swLat, swLon, neLat, neLon, out string? error));
 		Assert.NotNull(error);
 	}
 
 	[Fact]
-	public void IsCoordinatesRelativePositionValid_accepts_a_proper_box()
+	public void is_coordinates_relative_position_valid_accepts_a_proper_box()
 	{
 		Assert.True(RoiFilter.IsCoordinatesRelativePositionValid(38.0, -85.0, 43.0, -78.0, out string? error));
 		Assert.Null(error);
 	}
 
 	[Fact]
-	public void IsCoordinatesRelativePositionValid_rejects_ne_lat_not_north_of_sw()
+	public void is_coordinates_relative_position_valid_rejects_ne_lat_not_north_of_sw()
 	{
 		Assert.False(RoiFilter.IsCoordinatesRelativePositionValid(43.0, -85.0, 38.0, -78.0, out string? error));
 		Assert.NotNull(error);
 	}
 
 	[Fact]
-	public void IsCoordinatesRelativePositionValid_rejects_a_roi_that_crosses_the_antimeridian()
+	public void is_coordinates_relative_position_valid_rejects_a_roi_that_crosses_the_antimeridian()
 	{
 		Assert.False(RoiFilter.IsCoordinatesRelativePositionValid(38.0, 170.0, 43.0, -170.0, out string? error));
 		Assert.Contains("antimeridian", error, StringComparison.OrdinalIgnoreCase);
 	}
 
 	[Fact]
-	public void Contains_is_true_for_a_point_inside_the_roi_and_false_outside()
+	public void contains_is_true_for_a_point_inside_the_roi_and_false_outside()
 	{
 		RegionOfInterest roi = new(38.0, -85.0, 43.0, -78.0);
 
@@ -54,67 +54,67 @@ public class RoiFilterTests
 	}
 
 	[Fact]
-	public void ClipLines_returns_nothing_when_the_lines_are_entirely_outside_the_roi()
+	public void clip_lines_returns_nothing_when_the_lines_are_entirely_outside_the_roi()
 	{
 		RegionOfInterest roi = new(38.0, -85.0, 43.0, -78.0);
-		LineString farAway = Wgs84.Factory.CreateLineString(new[]
-		{
+		LineString farAway = Wgs84.Factory.CreateLineString(
+		[
 			new Coordinate(-120.0, 34.0),
 			new Coordinate(-121.0, 35.0)
-		});
+		]);
 
-		IReadOnlyList<LineString> result = RoiFilter.ClipLines(new[] { farAway }, roi);
+		IReadOnlyList<LineString> result = RoiFilter.ClipLines([farAway], roi);
 
 		Assert.Empty(result);
 	}
 
 	[Fact]
-	public void ClipLines_returns_the_whole_line_when_fully_inside_the_roi()
+	public void clip_lines_returns_the_whole_line_when_fully_inside_the_roi()
 	{
 		RegionOfInterest roi = new(38.0, -85.0, 43.0, -78.0);
-		LineString inside = Wgs84.Factory.CreateLineString(new[]
-		{
+		LineString inside = Wgs84.Factory.CreateLineString(
+		[
 			new Coordinate(-82.0, 40.0),
 			new Coordinate(-81.0, 41.0)
-		});
+		]);
 
-		IReadOnlyList<LineString> result = RoiFilter.ClipLines(new[] { inside }, roi);
+		IReadOnlyList<LineString> result = RoiFilter.ClipLines([inside], roi);
 
 		LineString clipped = Assert.Single(result);
 		Assert.Equal(2, clipped.NumPoints);
 	}
 
 	[Fact]
-	public void ClipLines_truncates_a_line_that_crosses_the_roi_boundary()
+	public void clip_lines_truncates_a_line_that_crosses_the_roi_boundary()
 	{
 		RegionOfInterest roi = new(38.0, -85.0, 43.0, -78.0);
 
 		// Runs straight through the ROI's eastern boundary at lon = -78.
-		LineString crossing = Wgs84.Factory.CreateLineString(new[]
-		{
+		LineString crossing = Wgs84.Factory.CreateLineString(
+		[
 			new Coordinate(-80.0, 40.0),
 			new Coordinate(-76.0, 40.0)
-		});
+		]);
 
-		IReadOnlyList<LineString> result = RoiFilter.ClipLines(new[] { crossing }, roi);
+		IReadOnlyList<LineString> result = RoiFilter.ClipLines([crossing], roi);
 
 		LineString clipped = Assert.Single(result);
 		Assert.All(clipped.Coordinates, c => Assert.True(c.X <= -78.0));
 	}
 
 	[Fact]
-	public void ClipLines_keeps_the_line_and_drops_a_point_where_the_line_only_touches_a_corner()
+	public void clip_lines_keeps_the_line_and_drops_a_point_where_the_line_only_touches_a_corner()
 	{
 		RegionOfInterest roi = new(0.0, 0.0, 10.0, 10.0);
 
 		// Touches the ROI's north-west corner, leaves, then crosses into it: the intersection is
 		// a point plus a line.
-		LineString line = Wgs84.Factory.CreateLineString(new[]
-		{
+		LineString line = Wgs84.Factory.CreateLineString(
+		[
 			new Coordinate(-1, 11), new Coordinate(0, 10), new Coordinate(-1, 9), new Coordinate(5, 5),
-		});
+		]);
 
-		IReadOnlyList<LineString> result = RoiFilter.ClipLines(new[] { line }, roi);
+		IReadOnlyList<LineString> result = RoiFilter.ClipLines([line], roi);
 
 		Assert.Single(result);
 	}

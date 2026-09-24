@@ -42,9 +42,9 @@ public static class AirwayBuilder
 			throw new InvalidOperationException("AWY NASR CSV data has not been parsed.");
 		}
 
-		List<ServiceMessage> messages = new();
-		List<Airway> airways = new();
-		List<string> excludedAirwayIds = new();
+		List<ServiceMessage> messages = [];
+		List<Airway> airways = [];
+		List<string> excludedAirwayIds = [];
 		bool warnedUnknownDesignation = false;
 
 		/*
@@ -88,7 +88,7 @@ public static class AirwayBuilder
 			}
 
 			List<AwyCsvDataModel.AwySegAlt> rawSegments =
-				airwaySegmentLookup[awyId].OrderBy(x => x.PointSeq).ToList();
+				[.. airwaySegmentLookup[awyId].OrderBy(x => x.PointSeq)];
 
 			List<AirwaySegment> normalizedSegments = AirwayNormalizer.Normalize(rawSegments);
 
@@ -104,9 +104,7 @@ public static class AirwayBuilder
 			// crossings are normalized away upstream and never land here.
 			if (geometryResult.UnresolvedWaypointIds.Count > 0)
 			{
-				string[] distinctIds = geometryResult.UnresolvedWaypointIds
-					.Distinct(StringComparer.OrdinalIgnoreCase)
-					.ToArray();
+				string[] distinctIds = [.. geometryResult.UnresolvedWaypointIds.Distinct(StringComparer.OrdinalIgnoreCase)];
 
 				messages.Add(new ServiceMessage(LogLevel.Warning, "AirwayBuilder",
 					$"Airway '{awyId}': excluded from all output - {distinctIds.Length} waypoint(s) " +
@@ -202,7 +200,7 @@ public static class AirwayBuilder
 		NasrCsvDataCollection allNasrCsvData,
 		IReadOnlyList<AwyCsvDataModel.AwySegAlt> rawSegments)
 	{
-		List<AirwayPoint> points = new();
+		List<AirwayPoint> points = [];
 		HashSet<string> seenIds = new(StringComparer.OrdinalIgnoreCase);
 
 		foreach (AwyCsvDataModel.AwySegAlt segment in rawSegments)

@@ -148,8 +148,8 @@ public sealed class NewsServiceTests : IDisposable
     }
 
     /// <summary>
-    /// News.md lives in the private FE-Buddy-DEV repo, so the plain raw URL is expected to fail;
-    /// with FEBUDDY_GITHUB_TOKEN set, the retry via the Contents API succeeds and is used.
+    /// When the plain raw URL fails and FEBUDDY_GITHUB_TOKEN is set, the retry via the Contents
+    /// API succeeds and is used.
     /// </summary>
     [Fact]
     public async Task CheckAsync_UnauthenticatedFails_RetriesWithTokenViaContentsApi()

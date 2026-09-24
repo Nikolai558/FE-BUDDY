@@ -15,7 +15,7 @@ namespace FeBuddy.Wpf.ViewModels;
 /// </summary>
 public sealed class UpdateWindowViewModel : ObservableObject
 {
-    private const string ReleasesPage = "https://github.com/Nikolai558/FE-Buddy-DEV/releases/latest";
+    private const string ReleasesPage = "https://github.com/Nikolai558/FE-BUDDY/releases/latest";
 
     /// <summary>Creates the view-model from a completed version check that found an update.</summary>
     /// <param name="version">The version-check result. <see cref="VersionCheckResult.UpdateAvailable"/> is expected to be true.</param>

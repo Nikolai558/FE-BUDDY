@@ -60,4 +60,4 @@ sure everyone gets the credit they're due.
 
 ---
 
-For more information, visit the [FE-Buddy GitHub Repository](https://github.com/Nikolai558/FE-Buddy-DEV).
+For more information, visit the [FE-Buddy GitHub Repository](https://github.com/Nikolai558/FE-BUDDY).

@@ -233,7 +233,7 @@ public sealed class DeparturesViewModel : GeojsonSubServiceViewModel, ISubServic
 			["RoiMode"] = _roiMode.ToString(),
 		};
 
-		// Only the active mode's value; the parser reads that key alone and warns about any other.
+		// Only the active mode's value; the parser reads that key alone and ignores the others.
 		switch (_amendmentFilter)
 		{
 			case DepartureAmendmentFilter.Cycles:

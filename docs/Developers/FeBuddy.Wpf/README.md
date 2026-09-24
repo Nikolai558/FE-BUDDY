@@ -4,9 +4,9 @@ A WPF shell for FE-Buddy 3.0 - a modern re-skin in the style of
 [clevelandcenter.org](https://clevelandcenter.org): dark blue-black surfaces, a
 single amber accent, hairline cards, big display headings over airy body text.
 
-All twelve phases of **`docs/Developers/FE-Buddy_3.0_Feedback_Remediation_Plan.md`**
-have landed - where this README and that plan disagree, the plan wins. No screen
-shows sample data.
+This README describes the app as it is. (The plans it was built from are in
+[Archive](../Archive/README.md), for history.) No screen shows sample data. For what each screen
+does from a user's point of view, see the [user guide](../../Users/User-Guide.md).
 
 This README lives at `docs/Developers/FeBuddy.Wpf/README.md`; every code path
 below is relative to `FeBuddy/FeBuddy.Wpf/` in the repo unless stated otherwise.

@@ -312,8 +312,8 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 		settings["IncludeCrcSymbolDefaults"] = YesNo(IncludeCrcSymbolDefaults);
 		settings["IncludeCrcTextDefaults"] = YesNo(IncludeCrcTextDefaults);
 
-		// Only the rows whose file is written and whose Include box is ticked; the parser requires
-		// exactly those and warns about any others.
+		// Only the rows whose file is written and whose Include box is ticked: the parser requires
+		// exactly those, and would only ignore any others.
 		foreach (EramClassDefault row in AllCrcRows().Where(IsCrcRowNeeded))
 		{
 			string prefix = $"Crc.{row.ClassName}.{row.Kind}";

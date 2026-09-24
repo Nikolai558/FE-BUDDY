@@ -65,8 +65,8 @@
          owns the title's font and casing; a card with no Header shows no title row. -->
     <Style TargetType="ctl:Card">
         <Setter Property="Background" Value="{DynamicResource Brush.Card}" />
-        <!-- P8: Brush.Stroke on Brush.Bg.Base was almost invisible - every screen
-             read as one flat field. Stronger hairline gives cards a real edge. -->
+        <!-- Brush.Stroke.Strong, not Brush.Stroke: the lighter hairline is almost invisible
+             on Brush.Bg.Base, and every screen would read as one flat field. -->
         <Setter Property="BorderBrush" Value="{DynamicResource Brush.Stroke.Strong}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="Padding" Value="18" />
@@ -153,7 +153,7 @@
     </Style>
 
     <!-- ============================= CHIP =========================== -->
-    <!-- Soft-cornered rectangle, not an oval (remediation plan 4.4). -->
+    <!-- Soft-cornered rectangle, not an oval. -->
     <Style x:Key="Chip" TargetType="Border">
         <Setter Property="Background" Value="{DynamicResource Brush.Overlay}" />
         <Setter Property="CornerRadius" Value="{DynamicResource Radius.Chip}" />

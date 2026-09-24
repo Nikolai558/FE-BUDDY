@@ -83,7 +83,7 @@
                     </Grid.ColumnDefinitions>
                     <Border x:Name="IconChip" Grid.Column="0" Width="28" Height="28" CornerRadius="9"
                             VerticalAlignment="Top" Background="{StaticResource Brush.Accent.Soft}">
-                        <TextBlock x:Name="Glyph" Text="&#xE946;"
+                        <TextBlock x:Name="Glyph" Text="{StaticResource Icon.Info}"
                                    FontFamily="{StaticResource Font.Icon}" FontSize="13"
                                    Foreground="{StaticResource Brush.Accent}"
                                    HorizontalAlignment="Center" VerticalAlignment="Center" />
@@ -94,7 +94,7 @@
                                    Visibility="{Binding HasMessage, Converter={StaticResource BoolToVis}}" />
                     </StackPanel>
                     <Button Grid.Column="2" Style="{StaticResource Button.Subtle}"
-                            Content="&#xE711;" FontFamily="{StaticResource Font.Icon}" FontSize="10"
+                            Content="{StaticResource Icon.Cancel}" FontFamily="{StaticResource Font.Icon}" FontSize="10"
                             Padding="7,4" VerticalAlignment="Top"
                             Command="{Binding DismissCommand}" ToolTip="Dismiss" />
                 </Grid>
@@ -117,17 +117,17 @@
                 <DataTrigger Binding="{Binding Kind}" Value="Success">
                     <Setter TargetName="IconChip" Property="Background" Value="{StaticResource Brush.Positive.Soft}" />
                     <Setter TargetName="Glyph" Property="Foreground" Value="{StaticResource Brush.Positive}" />
-                    <Setter TargetName="Glyph" Property="Text" Value="&#xE73E;" />
+                    <Setter TargetName="Glyph" Property="Text" Value="{StaticResource Icon.Check}" />
                 </DataTrigger>
                 <DataTrigger Binding="{Binding Kind}" Value="Warn">
                     <Setter TargetName="IconChip" Property="Background" Value="{StaticResource Brush.Warn.Soft}" />
                     <Setter TargetName="Glyph" Property="Foreground" Value="{StaticResource Brush.Warn}" />
-                    <Setter TargetName="Glyph" Property="Text" Value="&#xE7BA;" />
+                    <Setter TargetName="Glyph" Property="Text" Value="{StaticResource Icon.Warning}" />
                 </DataTrigger>
                 <DataTrigger Binding="{Binding Kind}" Value="Error">
                     <Setter TargetName="IconChip" Property="Background" Value="{StaticResource Brush.Danger.Soft}" />
                     <Setter TargetName="Glyph" Property="Foreground" Value="{StaticResource Brush.Danger}" />
-                    <Setter TargetName="Glyph" Property="Text" Value="&#xE783;" />
+                    <Setter TargetName="Glyph" Property="Text" Value="{StaticResource Icon.Error}" />
                 </DataTrigger>
             </DataTemplate.Triggers>
         </DataTemplate>
@@ -187,7 +187,7 @@
                         <Path Data="M9,9 L17,4" Stroke="{StaticResource Brush.Accent}" StrokeThickness="1.4" />
                     </Grid>
 
-                    <!-- Tooltip content is update state only (remediation plan 4.1). -->
+                    <!-- Tooltip content is update state only. -->
                     <TextBlock Text="FE-BUDDY"
                                Margin="10,0,0,0"
                                FontFamily="{StaticResource Font.Display}"
@@ -210,7 +210,7 @@
                     </TextBlock>
 
                     <!-- Version chip is a button: click opens the modal Update window when an
-                         update is available; otherwise it is disabled (remediation plan 4.2). -->
+                         update is available; otherwise it is disabled. -->
                     <Button Margin="10,0,0,0"
                             Command="{Binding OpenUpdateWindowCommand}"
                             ToolTip="{Binding UpdateTooltipTitle}"
@@ -237,7 +237,7 @@
                     </Button>
                 </StackPanel>
 
-                <!-- AIRAC status indicator, top-centre (remediation plan 4.3). Narrates the
+                <!-- AIRAC status indicator, top-centre. Narrates the
                      launch pipeline, then settles on the current cycle. -->
                 <TextBlock Grid.Column="1"
                            Text="{Binding AiracStatus}"
@@ -249,17 +249,17 @@
                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,6,0">
                     <Button x:Name="MinimizeButton"
                             Style="{StaticResource Caption.Button}"
-                            Content="&#xE921;"
+                            Content="{StaticResource Icon.Minimize}"
                             Click="OnMinimize"
                             shell:WindowChrome.IsHitTestVisibleInChrome="True" />
                     <Button x:Name="MaxRestoreButton"
                             Style="{StaticResource Caption.Button}"
-                            Content="&#xE922;"
+                            Content="{StaticResource Icon.Maximize}"
                             Click="OnMaxRestore"
                             shell:WindowChrome.IsHitTestVisibleInChrome="True" />
                     <Button x:Name="CloseButton"
                             Style="{StaticResource Caption.Close}"
-                            Content="&#xE8BB;"
+                            Content="{StaticResource Icon.Close}"
                             Click="OnClose"
                             shell:WindowChrome.IsHitTestVisibleInChrome="True" />
                 </StackPanel>
@@ -315,10 +315,10 @@
                                 <TextBlock FontFamily="{StaticResource Font.Icon}" FontSize="11">
                                     <TextBlock.Style>
                                         <Style TargetType="TextBlock">
-                                            <Setter Property="Text" Value="&#xE76B;" />
+                                            <Setter Property="Text" Value="{StaticResource Icon.Chevron.Left}" />
                                             <Style.Triggers>
                                                 <DataTrigger Binding="{Binding NavCollapsed}" Value="True">
-                                                    <Setter Property="Text" Value="&#xE76C;" />
+                                                    <Setter Property="Text" Value="{StaticResource Icon.Chevron.Right}" />
                                                 </DataTrigger>
                                             </Style.Triggers>
                                         </Style>
@@ -327,7 +327,7 @@
                             </Button>
                         </Grid>
 
-                        <!-- collapsed rail: keep a health signal (P8) - just the coloured dot,
+                        <!-- collapsed rail: keep a health signal - just the coloured dot,
                              tooltip carries the summary -->
                         <Grid DockPanel.Dock="Bottom" Margin="0,0,0,16" Height="24"
                               Visibility="{Binding NavCollapsed, Converter={StaticResource BoolToVis}}">
@@ -375,7 +375,7 @@
                                             </Style>
                                         </Ellipse.Style>
                                     </Ellipse>
-                                    <TextBlock DockPanel.Dock="Right" Text="&#xE70E;"
+                                    <TextBlock DockPanel.Dock="Right" Text="{StaticResource Icon.Chevron.Up}"
                                                FontFamily="{StaticResource Font.Icon}" FontSize="8"
                                                Foreground="{StaticResource Brush.Text.Tertiary}"
                                                VerticalAlignment="Center" />
@@ -470,7 +470,6 @@
                                Style="{StaticResource Text.Caption}"
                                VerticalAlignment="Center" />
                     <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
-                        <!-- The AIRAC readout moved to the top-centre of the border (4.3). -->
                         <TextBlock Text="{Binding ZuluClock}" Style="{StaticResource Text.Caption}"
                                    FontFamily="{StaticResource Font.Mono}"
                                    Foreground="{StaticResource Brush.Text.Secondary}" />

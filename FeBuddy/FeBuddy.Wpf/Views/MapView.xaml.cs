@@ -6,11 +6,13 @@ using FeBuddy.Wpf.ViewModels;
 namespace FeBuddy.Wpf.Views;
 
 /// <summary>
-/// Code-behind only bridges two view-model events to imperative calls on the map
-/// control (framing a loaded file, resetting the view) - both are view concerns.
+/// The Map Service screen. See MapView.xaml. Its code-behind only bridges two view-model
+/// events to calls on the map control (framing a loaded file, resetting the view) and hands
+/// the inline ROI editor's result to the view-model.
 /// </summary>
 public partial class MapView : UserControl
 {
+	/// <summary>Creates the view.</summary>
 	public MapView()
 	{
 		InitializeComponent();

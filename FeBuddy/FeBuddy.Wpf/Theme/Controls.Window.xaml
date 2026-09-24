@@ -47,11 +47,11 @@
                                             VerticalAlignment="Center" Margin="0,0,4,0"
                                             shell:WindowChrome.IsHitTestVisibleInChrome="True">
                                     <Button x:Name="PART_Minimize" Style="{DynamicResource Caption.Button}"
-                                            Content="&#xE921;" />
+                                            Content="{DynamicResource Icon.Minimize}" />
                                     <Button x:Name="PART_MaxRestore" Style="{DynamicResource Caption.Button}"
-                                            Content="&#xE922;" />
+                                            Content="{DynamicResource Icon.Maximize}" />
                                     <Button x:Name="PART_Close" Style="{DynamicResource Caption.Close}"
-                                            Content="&#xE8BB;" />
+                                            Content="{DynamicResource Icon.Close}" />
                                 </StackPanel>
 
                                 <Border Style="{DynamicResource Divider}" VerticalAlignment="Bottom" />
@@ -74,7 +74,7 @@
                         <!-- no maximised margin: ChromeWindow keeps the maximised window inside
                              the work area (MaximizeToWorkArea), so nothing overshoots the screen -->
                         <Trigger Property="WindowState" Value="Maximized">
-                            <Setter TargetName="PART_MaxRestore" Property="Content" Value="&#xE923;" />
+                            <Setter TargetName="PART_MaxRestore" Property="Content" Value="{DynamicResource Icon.Restore}" />
                         </Trigger>
                         <Trigger Property="ResizeMode" Value="NoResize">
                             <Setter TargetName="PART_Minimize" Property="Visibility" Value="Collapsed" />

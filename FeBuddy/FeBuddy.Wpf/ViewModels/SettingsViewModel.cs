@@ -25,10 +25,8 @@ using LibUpdateChannel = FeBuddy.Versioning.ReleaseChannel;
 namespace FeBuddy.Wpf.ViewModels;
 
 /// <summary>
-/// SYSTEM ▸ Settings (remediation plan Phase 9). Section order: Updates, Facility Profile,
-/// Default Region of Interest, GeoJSON Files. Every value persists to <c>UserConfig.json</c>.
-/// Multi-profile support, the display-scheme editor and the NASR data-source override are
-/// gone.
+/// SYSTEM ▸ Settings. Section order: Updates, Facility Profile, Default Region of Interest,
+/// GeoJSON Files. Every value persists to <c>UserConfig.json</c>.
 /// </summary>
 public sealed class SettingsViewModel : ObservableObject
 {
@@ -36,7 +34,7 @@ public sealed class SettingsViewModel : ObservableObject
 	private const string OutputDirKey = UserConfigKeys.DefaultOutputDirectory;
 	private const string AddFolderKey = UserConfigKeys.AddFeBuddyOutputFolder;
 	private const string ArtccKey = "Services.AiracService.UserArtccId";
-	private const string PrecisionKey = "Services.AiracService.CoordinatePrecision";
+	private const string PrecisionKey = UserConfigKeys.CoordinatePrecision;
 
 	private readonly Dispatcher _dispatcher;
 	private readonly Action? _openUpdateWindow;
@@ -76,8 +74,7 @@ public sealed class SettingsViewModel : ObservableObject
 
 		SaveCommand = new RelayCommand(Save);
 		CheckNowCommand = new RelayCommand(CheckForUpdates, () => AppEnvironment.HasInternetConnection && !IsCheckingForUpdates);
-		RollbackCommand = new RelayCommand(() =>
-			BrowserLauncher.Open("https://github.com/Nikolai558/FE-BUDDY/releases"));
+		RollbackCommand = new RelayCommand(() => BrowserLauncher.Open(Links.ChangeLog));
 		BrowseOutputCommand = new RelayCommand(BrowseOutput);
 		SetPrecisionCommand = new RelayCommand<string>(p => { if (int.TryParse(p, out int n)) CoordinatePrecision = n; });
 		EditRoiCommand = new RelayCommand(EditRoi);
@@ -98,14 +95,14 @@ public sealed class SettingsViewModel : ObservableObject
 	}
 
 	/// <summary>
-	/// Re-evaluates the page after a setting changed. Call from every setter whose value Save()
+	/// Re-evaluates the page after a setting changed. Call from every setter whose value <see cref="Save"/>
 	/// persists. Dirty means "differs from what was last saved", so putting a value back the
 	/// way it was clears the warning again.
 	/// </summary>
 	private void MarkDirty() => IsDirty = !_savedState.Matches(CurrentValues());
 
 	/// <summary>
-	/// Every value Save() persists, as the strings it would write. Keep in step with Save():
+	/// Every value <see cref="Save"/> persists, as the strings it would write. Keep in step with it:
 	/// a value missing here would never raise "unsaved changes".
 	/// </summary>
 	/// <returns>The values by UserConfig key.</returns>
@@ -121,6 +118,7 @@ public sealed class SettingsViewModel : ObservableObject
 
 	// ================= 1. UPDATES =================
 
+	/// <summary>The update channels, in the order the menu shows them.</summary>
 	public IReadOnlyList<LibUpdateChannel> Channels { get; } =
 		[LibUpdateChannel.Stable, LibUpdateChannel.Beta, LibUpdateChannel.Alpha];
 
@@ -131,6 +129,7 @@ public sealed class SettingsViewModel : ObservableObject
 		set { if (SetProperty(ref _channel, value)) MarkDirty(); }
 	}
 
+	/// <summary>Whether the machine has internet; the update check needs it.</summary>
 	public bool IsOnline => AppEnvironment.HasInternetConnection;
 
 	/// <summary>Re-runs the version check, then opens the update window or toasts that there is nothing new.</summary>
@@ -149,6 +148,7 @@ public sealed class SettingsViewModel : ObservableObject
 		}
 	}
 
+	/// <summary>Opens the releases page, where an older version can be downloaded.</summary>
 	public ICommand RollbackCommand { get; }
 
 	// ================= 2. FACILITY PROFILE =================
@@ -163,8 +163,10 @@ public sealed class SettingsViewModel : ObservableObject
 		set { if (SetProperty(ref _selectedFacility, value)) MarkDirty(); }
 	}
 
+	/// <summary>Whether the AIRAC data is ready, so <see cref="Facilities"/> can be filled.</summary>
 	public bool FacilitiesReady { get; private set; }
 
+	/// <summary>Shown in place of the facility list until <see cref="FacilitiesReady"/>.</summary>
 	public string FacilityWaitingMessage =>
 		"Waiting for AIRAC data to finish downloading and parsing. The facility list will be available in a moment.";
 
@@ -172,6 +174,7 @@ public sealed class SettingsViewModel : ObservableObject
 	public static string DefaultOutputDirectory =>
 		Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), "FE-Buddy_Output");
 
+	/// <summary>Where every service writes its output.</summary>
 	public string OutputDirectory
 	{
 		get => _outputDir;
@@ -185,10 +188,12 @@ public sealed class SettingsViewModel : ObservableObject
 		set { if (SetProperty(ref _addFeBuddyFolder, value)) MarkDirty(); }
 	}
 
+	/// <summary>Picks <see cref="OutputDirectory"/> with a folder dialog.</summary>
 	public ICommand BrowseOutputCommand { get; }
 
 	// ================= 3. DEFAULT REGION OF INTEREST =================
 
+	/// <summary>Explains what an ROI is, under the Default Region of Interest heading.</summary>
 	public const string RoiExplainer =
 		"Region of Interest (ROI): a lat/lon axis-aligned rectangular region defined by southwest " +
 		"(bottom-left) and northeast (top-right) corners - a box defining the data you are interested in. " +
@@ -197,6 +202,7 @@ public sealed class SettingsViewModel : ObservableObject
 		"boundary so nearby data still appears. Some operations let you override this ROI for specific " +
 		"files later.";
 
+	/// <summary>The saved default ROI, or <see langword="null"/> when none is set.</summary>
 	public RegionOfInterest? DefaultRoi
 	{
 		get => _defaultRoi;
@@ -211,27 +217,34 @@ public sealed class SettingsViewModel : ObservableObject
 		}
 	}
 
+	/// <summary>Whether a default ROI is saved.</summary>
 	public bool HasDefaultRoi => DefaultRoi is not null;
 
+	/// <summary>The default ROI's corners on one line, or that none is set.</summary>
 	public string DefaultRoiSummary => DefaultRoi is { } r
 		? $"SW {r.SwLat:0.####}, {r.SwLon:0.####}    ·    NE {r.NeLat:0.####}, {r.NeLon:0.####}"
 		: "No default ROI is set.";
 
+	/// <summary>Opens the ROI picker and saves what the user confirms. Saved straight away, not by <see cref="SaveCommand"/>.</summary>
 	public ICommand EditRoiCommand { get; }
 
+	/// <summary>Turns the default ROI off. Saved straight away.</summary>
 	public ICommand ClearRoiCommand { get; }
 
 	// ================= 4. GEOJSON FILES =================
 
+	/// <summary>Explains the FE-Buddy properties.</summary>
 	public const string FebPropertiesDescription =
 		"Include FE-Buddy Properties, when available. Custom GeoJSON property fields that increase file " +
 		"size but can be helpful for debugging or viewing data in a GeoJSON viewer in order to identify " +
 		"an object. Every FE-Buddy property is prefixed with feb.";
 
+	/// <summary>Explains the coordinate precision choice.</summary>
 	public const string CoordinatePrecisionDescription =
 		"Will round all coordinates in GeoJSON files to a maximum number of decimal points in order to " +
 		"save space but retain your desired level of accuracy.";
 
+	/// <summary>How many decimal places GeoJSON coordinates are rounded to.</summary>
 	public int CoordinatePrecision
 	{
 		get => _coordinatePrecision;
@@ -247,11 +260,16 @@ public sealed class SettingsViewModel : ObservableObject
 		}
 	}
 
+	/// <summary>Whether 5 decimal places is chosen.</summary>
 	public bool IsPrecision5 => CoordinatePrecision == 5;
+
+	/// <summary>Whether 6 decimal places is chosen.</summary>
 	public bool IsPrecision6 => CoordinatePrecision == 6;
+
+	/// <summary>Whether 7 decimal places is chosen.</summary>
 	public bool IsPrecision7 => CoordinatePrecision == 7;
 
-	/// <summary>Parameter is <c>"5"</c>, <c>"6"</c> or <c>"7"</c>.</summary>
+	/// <summary>Sets <see cref="CoordinatePrecision"/>. The command parameter is <c>"5"</c>, <c>"6"</c> or <c>"7"</c>.</summary>
 	public ICommand SetPrecisionCommand { get; }
 
 	/// <summary>Explains the file-layout choice under its heading.</summary>
@@ -278,6 +296,7 @@ public sealed class SettingsViewModel : ObservableObject
 
 	// ================= save =================
 
+	/// <summary>Writes every setting on the page to <c>UserConfig.json</c>.</summary>
 	public ICommand SaveCommand { get; }
 
 	private async void CheckForUpdates()
@@ -426,9 +445,8 @@ public sealed class SettingsViewModel : ObservableObject
 		DefaultRoi = null;
 	}
 
-	// View-models live for the whole session (NavItem caches them), so without this the
-	// Settings page would keep showing whatever ROI was current when it was first opened, even
-	// after the Map page's inline editor changes or clears it.
+	// View-models live for the whole session (NavItem caches them), so Settings has to hear when
+	// the Map page's inline editor changes or clears the default ROI.
 	private void OnDefaultRoiChanged(object? sender, EventArgs e) =>
 		_dispatcher.BeginInvoke(() => DefaultRoi = DefaultRoiStore.Load());
 

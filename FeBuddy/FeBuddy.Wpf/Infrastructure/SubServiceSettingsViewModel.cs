@@ -17,7 +17,7 @@ namespace FeBuddy.Wpf.Infrastructure;
 ///   <item>calls <see cref="LoadFromConfig"/> from its own constructor,</item>
 ///   <item>calls <see cref="ServiceTabViewModel.MarkDirty"/> from every bound setting's setter,</item>
 ///   <item>implements <see cref="WriteToConfig"/> (push fields into <see cref="UserConfigFile"/> via <c>TrySetValue</c>)
-///         and <see cref="ServiceTabViewModel.BuildReviewSummary"/>, and optionally
+///         and <see cref="ServiceTabViewModel.BuildPreviewSummary"/>, and optionally
 ///         <see cref="ServiceTabViewModel.Validate"/>.</item>
 /// </list>
 /// <para>
@@ -241,6 +241,31 @@ public abstract class SubServiceSettingsViewModel : ServiceTabViewModel
 	/// <param name="key">The key under this menu's node.</param>
 	/// <returns>The saved value, or <see langword="null"/> when it has none.</returns>
 	protected string? Get(string key) => UserConfigFile.GetValue($"{NodePath}.{key}");
+
+	/// <summary>Reads one of this menu's saved yes/no values.</summary>
+	/// <param name="key">The key under this menu's node.</param>
+	/// <param name="defaultValue">What to use when nothing is saved.</param>
+	/// <returns><see langword="true"/> for <c>Y</c> or <c>true</c> (any case), <see langword="false"/> for anything else.</returns>
+	protected bool GetBool(string key, bool defaultValue)
+	{
+		string? value = Get(key)?.Trim();
+
+		return string.IsNullOrEmpty(value)
+			? defaultValue
+			: value.Equals("Y", StringComparison.OrdinalIgnoreCase) || value.Equals("true", StringComparison.OrdinalIgnoreCase);
+	}
+
+	/// <summary>The <c>Y</c> / <c>N</c> spelling every yes/no setting is saved and sent in.</summary>
+	/// <param name="value">The value.</param>
+	/// <returns><c>Y</c> or <c>N</c>.</returns>
+	protected static string YesNo(bool value) => value ? "Y" : "N";
+
+	/// <summary>Splits a saved comma-separated list, ignoring blanks and case.</summary>
+	/// <param name="saved">The saved value, e.g. <c>ZOB, ZNY</c>.</param>
+	/// <returns>The entries.</returns>
+	protected static HashSet<string> ParseList(string? saved) =>
+		new((saved ?? string.Empty).Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries),
+			StringComparer.OrdinalIgnoreCase);
 
 	/// <summary>
 	/// Called after <see cref="RevertChanges"/> or <see cref="UndoLastSave"/> has reloaded this

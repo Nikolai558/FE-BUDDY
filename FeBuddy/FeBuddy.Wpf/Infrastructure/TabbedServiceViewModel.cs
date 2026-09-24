@@ -51,7 +51,7 @@ public abstract class TabbedServiceViewModel : ObservableObject
 			() => Tabs.Contains(PreviewTab) && !ReferenceEquals(SelectedTab, PreviewTab));
 	}
 
-	/// <summary>The open tabs, in rail order: General, the selected sub-services, then Review.</summary>
+	/// <summary>The open tabs, in rail order: General, the selected sub-services, Preview Settings, then Review after a run.</summary>
 	public ObservableCollection<ServiceTabViewModel> Tabs { get; } = [];
 
 	/// <summary>Saves the selected tab (validates first).</summary>
@@ -98,7 +98,7 @@ public abstract class TabbedServiceViewModel : ObservableObject
 	protected abstract ServiceTabViewModel GeneralTab { get; }
 
 	/// <summary>The settings-preview tab, present once at least one sub-service is selected.</summary>
-	protected abstract ServiceReviewTabViewModel PreviewTab { get; }
+	protected abstract ServicePreviewTabViewModel PreviewTab { get; }
 
 	/// <summary>
 	/// A tab that belongs at the very end and only exists after something has happened - the
@@ -109,8 +109,8 @@ public abstract class TabbedServiceViewModel : ObservableObject
 	/// <summary>
 	/// Reconciles <see cref="Tabs"/> with the sub-service tabs that should currently be open.
 	/// Existing tab instances are kept (so their state and their place in the rail survive), the
-	/// Review tab is added or removed to match, and the selection is moved only if the tab it
-	/// pointed at is gone.
+	/// Preview Settings and Review tabs are added or removed to match, and the selection is moved
+	/// only if the tab it pointed at is gone.
 	/// </summary>
 	/// <param name="subServiceTabs">The tabs for the selected sub-services, in display order.</param>
 	protected void RebuildTabs(IEnumerable<ServiceTabViewModel> subServiceTabs)

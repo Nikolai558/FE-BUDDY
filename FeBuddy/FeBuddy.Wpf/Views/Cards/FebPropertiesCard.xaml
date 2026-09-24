@@ -19,7 +19,6 @@
              d:DesignWidth="820">
     <ctl:Card Header="FE-Buddy Properties">
         <StackPanel>
-            <!-- The description is verbatim from remediation plan 7.4. -->
             <ctl:Option Margin="0,4,0,0"
                         Description="Custom Geojson Property fields that increases file size but can be helpful for debugging or viewing data in a geojson viewer in order to identify object. Every FE-Buddy property will be prefixed with &quot;feb.&quot;">
                 <CheckBox Content="Include FE-Buddy Properties, when available." IsChecked="{Binding IncludeFebCustomProperties}" />

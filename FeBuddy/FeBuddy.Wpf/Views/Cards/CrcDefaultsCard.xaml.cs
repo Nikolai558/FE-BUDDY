@@ -6,10 +6,16 @@ namespace FeBuddy.Wpf.Views.Cards;
 /// <summary>The shared CRC ERAM Defaults card. See CrcDefaultsCard.xaml.</summary>
 public partial class CrcDefaultsCard : UserControl
 {
+	/// <summary>Identifies the <see cref="LinesTitle"/> dependency property.</summary>
 	public static readonly DependencyProperty LinesTitleProperty = Register(nameof(LinesTitle), "Lines");
+
+	/// <summary>Identifies the <see cref="SymbolsTitle"/> dependency property.</summary>
 	public static readonly DependencyProperty SymbolsTitleProperty = Register(nameof(SymbolsTitle), "Symbols");
+
+	/// <summary>Identifies the <see cref="TextTitle"/> dependency property.</summary>
 	public static readonly DependencyProperty TextTitleProperty = Register(nameof(TextTitle), "Text");
 
+	/// <summary>Creates the card.</summary>
 	public CrcDefaultsCard() => InitializeComponent();
 
 	/// <summary>The Lines panel's heading. Defaults to "Lines".</summary>

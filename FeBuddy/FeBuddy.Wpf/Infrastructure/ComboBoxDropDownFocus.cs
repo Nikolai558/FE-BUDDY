@@ -38,13 +38,20 @@ public static class ComboBoxDropDownFocus
 			new MouseWheelEventHandler(OnAnyPreviewMouseWheel), handledEventsToo: true);
 	}
 
+	/// <summary>Identifies the <c>Enable</c> attached property.</summary>
 	public static readonly DependencyProperty EnableProperty =
 		DependencyProperty.RegisterAttached(
 			"Enable", typeof(bool), typeof(ComboBoxDropDownFocus),
 			new PropertyMetadata(false, OnEnableChanged));
 
+	/// <summary>Turns the dropdown wheel fix on or off for a <see cref="ComboBox"/>.</summary>
+	/// <param name="o">The combo box.</param>
+	/// <param name="value"><see langword="true"/> to scroll its open dropdown with the wheel.</param>
 	public static void SetEnable(DependencyObject o, bool value) => o.SetValue(EnableProperty, value);
 
+	/// <summary>Whether the dropdown wheel fix is on for a <see cref="ComboBox"/>.</summary>
+	/// <param name="o">The combo box.</param>
+	/// <returns><see langword="true"/> when it is on.</returns>
 	public static bool GetEnable(DependencyObject o) => (bool)o.GetValue(EnableProperty);
 
 	private static void OnEnableChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -86,23 +93,17 @@ public static class ComboBoxDropDownFocus
 			return;
 		}
 
-		// Mouse.GetPosition stays in WPF's own DPI-independent units throughout, unlike mixing
-		// a raw GetCursorPos (physical pixels) with PointToScreen (already DPI-scaled) - that
-		// combination is only correct at exactly 100% display scaling and silently miscomputes
-		// the hit-test everywhere else, which is why this ever needed fixing at all.
+		// Mouse.GetPosition stays in WPF's DPI-independent units. Mixing a raw GetCursorPos
+		// (physical pixels) with PointToScreen (DPI-scaled) is only right at 100% display scaling.
 		Point local = Mouse.GetPosition(scroller);
 		if (local.X < 0 || local.Y < 0 || local.X > scroller.ActualWidth || local.Y > scroller.ActualHeight)
 		{
 			return;
 		}
 
-		// VerticalOffset's UNIT depends on the ScrollViewer: with CanContentScroll on it counts
-		// items; with it off it counts device-independent pixels. ComboBox's theme style turns
-		// CanContentScroll on (the drop-down list virtualizes), so the pixel-sized step this used
-		// to apply - 48 per notch - actually moved the list 48 *items*. On any list shorter than
-		// that, which is every list in the app, one notch jumped straight from the top to the
-		// bottom and the middle of the list could never be seen. Scroll in the unit the
-		// ScrollViewer is really using.
+		// VerticalOffset's unit depends on the ScrollViewer: with CanContentScroll on it counts
+		// items, with it off device-independent pixels. The ComboBox theme turns it on (the list
+		// virtualizes), where a pixel-sized step would jump whole screens of items per notch.
 		double notches = e.Delta / 120.0;
 		double step = scroller.CanContentScroll
 			? notches * Math.Max(1, SystemParameters.WheelScrollLines)   // items per notch

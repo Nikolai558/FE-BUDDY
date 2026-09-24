@@ -15,6 +15,8 @@ namespace FeBuddy.Wpf.Map;
 public static class GeoJsonReader
 {
 	/// <summary>Parses <paramref name="json"/> into a flat list of map geometries.</summary>
+	/// <param name="json">The GeoJSON text.</param>
+	/// <returns>Every Point, LineString and Polygon geometry found, in file order.</returns>
 	/// <exception cref="FormatException">The text is not usable GeoJSON.</exception>
 	public static IReadOnlyList<MapGeometry> Read(string json)
 	{

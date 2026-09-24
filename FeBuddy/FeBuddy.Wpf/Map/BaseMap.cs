@@ -5,16 +5,9 @@ using System.Windows.Media;
 namespace FeBuddy.Wpf.Map;
 
 /// <summary>
-/// The reference base outline (contiguous US states), loaded once from the
-/// bundled <c>Assets/us-states.json</c> resource and shared by every map
-/// surface — the Map screen, the Settings mini-map, and the ROI picker window.
-///
-/// <para>
-/// Before this existed the Settings and Airways ROI dialogs passed
-/// <c>baseLayer: null</c> into <see cref="Views.RoiPickerWindow"/>, so the
-/// picker drew nothing but the graticule on near-black and looked broken
-/// (theme fixes P6).
-/// </para>
+/// The reference base outline (contiguous US states), loaded once from the bundled
+/// <c>Assets/us-states.json</c> resource and shared by every map: the Map screen and every
+/// <see cref="Views.RoiPickerWindow"/> (the Settings default ROI and each sub-service's ROI override).
 /// </summary>
 public static class BaseMap
 {

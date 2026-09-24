@@ -67,8 +67,11 @@ public sealed class EramClassDefault(string className, EramFieldKind kind, Actio
 	private string _yOffset = string.Empty;
 	private bool _isRequired;
 
-	/// <summary>The altitude class this row is for (<c>High</c> / <c>Low</c> / <c>Other</c>).</summary>
+	/// <summary>The class this row is for: an airway altitude class (<c>High</c> / <c>Low</c> / <c>Other</c>) or a sub-service's single class (<c>Airports</c>, <c>Runways</c>, <c>Departures</c>).</summary>
 	public string ClassName { get; } = className;
+
+	/// <summary>Which block the row belongs to.</summary>
+	public EramFieldKind Kind { get; } = kind;
 
 	/// <summary>Whether the <c>style</c> field applies to this kind.</summary>
 	public bool ShowStyle { get; } = kind is EramFieldKind.Line or EramFieldKind.Symbol;
@@ -399,10 +402,13 @@ public sealed record YesNoOption(string Value, string Label)
 }
 
 /// <summary>
-/// One airway designation with an include/exclude toggle (remediation plan 7.4). The
-/// designation is derived from <c>AWY_ID</c> (leading letters); toggles default on, and the
-/// <b>deselected</b> set is what gets persisted to <c>ExcludedDesignations</c>.
+/// One airway designation with an include/exclude toggle. The designation is derived from
+/// <c>AWY_ID</c> (leading letters); toggles default on, and the <b>deselected</b> set is what gets
+/// persisted to <c>ExcludedDesignations</c>.
 /// </summary>
+/// <param name="designation">The designation, e.g. <c>J</c>.</param>
+/// <param name="included">Whether it starts included.</param>
+/// <param name="onChanged">Called when the user ticks or unticks it.</param>
 public sealed class DesignationToggle(string designation, bool included, Action onChanged) : ObservableObject
 {
 	private bool _included = included;
@@ -425,22 +431,19 @@ public sealed class DesignationToggle(string designation, bool included, Action 
 }
 
 /// <summary>
-/// The FE-Buddy custom properties an airway Feature can carry, with the names the settings
-/// block and the GeoJSON keys use.
+/// The FE-Buddy custom properties the Airways tab offers, in display order, with their tooltip text.
 /// </summary>
 /// <remarks>
-/// The names here must match <c>AirwaySettingsParser</c>'s own list exactly - it rejects a
-/// name it does not recognize - so this is the GUI-side half of one contract, kept in one place
-/// rather than spelled out in XAML. The enum value beside each name is the Core property
-/// the parser maps it to.
+/// Each property's name comes from Core (<see cref="Core.Application.Airac.FebProperties.Name{TProperty}"/>),
+/// the same name <c>AirwaySettingsParser</c> accepts, so only the order and the wording live here.
 /// </remarks>
-public static class AirwayFebPropertyNames
+public static class AirwayFebPropertyOptions
 {
 	/// <summary>Every property, in the order the tab lists them.</summary>
-	public static IReadOnlyList<(AirwayFebProperty Property, string Name, string Description)> All { get; } =
+	public static IReadOnlyList<(AirwayFebProperty Property, string Description)> All { get; } =
 	[
-		(AirwayFebProperty.AwyId, "awyId", "The airway ID. On Symbols and Text, every airway in the file that uses the point."),
-		(AirwayFebProperty.PointId, "pointId", "The waypoint's ID. Symbols only."),
-		(AirwayFebProperty.Waypoints, "waypoints", "The airway's waypoint IDs, in order. Lines only."),
+		(AirwayFebProperty.AwyId, "The airway ID. On Symbols and Text, every airway in the file that uses the point."),
+		(AirwayFebProperty.PointId, "The waypoint's ID. Symbols only."),
+		(AirwayFebProperty.Waypoints, "The airway's waypoint IDs, in order. Lines only."),
 	];
 }

@@ -10,7 +10,7 @@ using FeBuddy.Core.Domain.Geo.Models;
 namespace FeBuddy.Wpf.Controls;
 
 /// <summary>
-/// The one shared ROI editor (remediation plan Phase 11): a <see cref="MapCanvas"/> the user
+/// The one shared ROI editor: a <see cref="MapCanvas"/> the user
 /// can rubber-band, the four corner lat/lon boxes, and a <b>Set ROI</b> / <b>Cancel</b> pair.
 /// Nothing reaches the caller until <b>Set ROI</b> is pressed and the box passes
 /// <see cref="RoiFilter"/> validation; <b>Cancel</b> discards everything (including a box the
@@ -22,7 +22,7 @@ public partial class RoiEditor : UserControl
 	private bool _syncingFromMap;
 	private bool _syncingFromText;
 
-	/// <summary>Initializes the control.</summary>
+	/// <summary>Creates the control.</summary>
 	public RoiEditor()
 	{
 		InitializeComponent();
@@ -35,23 +35,23 @@ public partial class RoiEditor : UserControl
 	/// <summary>Raised on <b>Cancel</b>.</summary>
 	public event EventHandler? Cancelled;
 
-	/// <summary><see cref="MapCanvas.BaseLayer"/> - the reference outline (US states).</summary>
+	/// <summary>Identifies the <see cref="BaseLayer"/> dependency property.</summary>
 	public static readonly DependencyProperty BaseLayerProperty = DependencyProperty.Register(
 		nameof(BaseLayer), typeof(MapLayer), typeof(RoiEditor), new PropertyMetadata(null));
 
-	/// <summary>The reference base outline shown behind the ROI.</summary>
+	/// <summary>The reference outline (US states) drawn behind the ROI; passed to the map's <see cref="MapCanvas.BaseLayer"/>.</summary>
 	public MapLayer? BaseLayer
 	{
 		get => (MapLayer?)GetValue(BaseLayerProperty);
 		set => SetValue(BaseLayerProperty, value);
 	}
 
-	/// <summary>The ROI to seed the editor with, or <see langword="null"/> to start empty.</summary>
+	/// <summary>Identifies the <see cref="InitialRoi"/> dependency property.</summary>
 	public static readonly DependencyProperty InitialRoiProperty = DependencyProperty.Register(
 		nameof(InitialRoi), typeof(RegionOfInterest), typeof(RoiEditor),
 		new PropertyMetadata(null, (d, _) => ((RoiEditor)d).SeedFromInitial()));
 
-	/// <summary>The ROI to seed the editor with.</summary>
+	/// <summary>The ROI to seed the editor with, or <see langword="null"/> to start empty.</summary>
 	public RegionOfInterest? InitialRoi
 	{
 		get => (RegionOfInterest?)GetValue(InitialRoiProperty);

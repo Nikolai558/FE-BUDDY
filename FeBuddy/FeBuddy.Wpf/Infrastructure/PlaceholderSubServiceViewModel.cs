@@ -6,7 +6,7 @@ namespace FeBuddy.Wpf.Infrastructure;
 /// <remarks>
 /// It exists so the tab model itself is exercised - opening, closing, ordering, navigation - long
 /// before the twenty-odd real sub-services arrive. It is never dirty, never invalid, and never
-/// blocks or contributes to a run; the Review tab lists it as carrying no settings.
+/// blocks or contributes to a run; the Preview Settings tab lists it as carrying no settings.
 /// </remarks>
 /// <param name="title">The sub-service's display name.</param>
 public sealed class PlaceholderSubServiceViewModel(string title) : ServiceTabViewModel
@@ -26,8 +26,8 @@ public sealed class PlaceholderSubServiceViewModel(string title) : ServiceTabVie
 		+ "meantime.";
 
 	/// <inheritdoc />
-	public override IReadOnlyList<ServiceReviewSection> BuildReviewSummary() =>
+	public override IReadOnlyList<ServicePreviewSection> BuildPreviewSummary() =>
 		[
-			new ServiceReviewSection(Title, [], "No settings yet - nothing will be produced for this sub-service."),
+			new ServicePreviewSection(Title, [], "No settings yet - nothing will be produced for this sub-service."),
 		];
 }

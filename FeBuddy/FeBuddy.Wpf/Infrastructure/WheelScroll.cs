@@ -7,28 +7,34 @@ namespace FeBuddy.Wpf.Infrastructure;
 
 /// <summary>
 /// Attached behaviours for mouse-wheel scrolling. Two independent opt-ins:
-///
-///   <c>WheelScroll.Amplify="2.5"</c> on a <see cref="ScrollViewer"/> — multiplies
-///   each wheel notch so a long page scrolls at a sane pace (WPF's default
-///   three-line step feels tiny on the AIRAC / Settings pages). It stands
-///   aside while the pointer is over a nested scroller that can still move.
-///
-///   <c>WheelScroll.BubbleUp="True"</c> on an inner <see cref="ScrollViewer"/> or
-///   an <see cref="ItemsControl"/> that sits inside another scroller — when the
-///   inner one is already at its top or bottom edge, the wheel event is
-///   re-raised to the parent so the outer page keeps scrolling instead of the
-///   gesture dying where the pointer happens to be.
+/// <list type="bullet">
+/// <item><c>WheelScroll.Amplify="2.5"</c> on a <see cref="ScrollViewer"/> multiplies each wheel
+/// notch so a long page scrolls at a sane pace (WPF's default three-line step feels tiny on the
+/// AIRAC and Settings pages). It stands aside while the pointer is over a nested scroller that
+/// can still move.</item>
+/// <item><c>WheelScroll.BubbleUp="True"</c> on an inner <see cref="ScrollViewer"/> or
+/// <see cref="ItemsControl"/> inside another scroller: once the inner one is at its top or bottom
+/// edge, the wheel event is re-raised to the parent so the outer page keeps scrolling.</item>
+/// </list>
 /// </summary>
 public static class WheelScroll
 {
 	// ----------------------------- Amplify ------------------------------
 
+	/// <summary>Identifies the <c>Amplify</c> attached property.</summary>
 	public static readonly DependencyProperty AmplifyProperty =
 		DependencyProperty.RegisterAttached(
 			"Amplify", typeof(double), typeof(WheelScroll),
 			new PropertyMetadata(0d, OnAmplifyChanged));
 
+	/// <summary>Gets the wheel multiplier for a <see cref="ScrollViewer"/>.</summary>
+	/// <param name="o">The scroll viewer.</param>
+	/// <returns>The multiplier; 0 or less means off.</returns>
 	public static double GetAmplify(DependencyObject o) => (double)o.GetValue(AmplifyProperty);
+
+	/// <summary>Sets the wheel multiplier for a <see cref="ScrollViewer"/>.</summary>
+	/// <param name="o">The scroll viewer.</param>
+	/// <param name="v">The multiplier; 0 or less turns it off.</param>
 	public static void SetAmplify(DependencyObject o, double v) => o.SetValue(AmplifyProperty, v);
 
 	private static void OnAmplifyChanged(DependencyObject o, DependencyPropertyChangedEventArgs e)
@@ -71,12 +77,20 @@ public static class WheelScroll
 
 	// ----------------------------- BubbleUp -----------------------------
 
+	/// <summary>Identifies the <c>BubbleUp</c> attached property.</summary>
 	public static readonly DependencyProperty BubbleUpProperty =
 		DependencyProperty.RegisterAttached(
 			"BubbleUp", typeof(bool), typeof(WheelScroll),
 			new PropertyMetadata(false, OnBubbleUpChanged));
 
+	/// <summary>Gets whether an inner scroller passes the wheel to its parent at its edges.</summary>
+	/// <param name="o">The inner scroller or items control.</param>
+	/// <returns><see langword="true"/> when it does.</returns>
 	public static bool GetBubbleUp(DependencyObject o) => (bool)o.GetValue(BubbleUpProperty);
+
+	/// <summary>Sets whether an inner scroller passes the wheel to its parent at its edges.</summary>
+	/// <param name="o">The inner scroller or items control.</param>
+	/// <param name="v"><see langword="true"/> to pass it on.</param>
 	public static void SetBubbleUp(DependencyObject o, bool v) => o.SetValue(BubbleUpProperty, v);
 
 	private static void OnBubbleUpChanged(DependencyObject o, DependencyPropertyChangedEventArgs e)

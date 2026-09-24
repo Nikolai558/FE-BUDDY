@@ -40,6 +40,7 @@ public static class MaximizeToWorkArea
 	private const uint ABE_LEFT = 0, ABE_TOP = 1, ABE_RIGHT = 2, ABE_BOTTOM = 3;
 
 	/// <summary>Hooks <paramref name="window"/> once its native handle exists.</summary>
+	/// <param name="window">A window with <see cref="WindowStyle.None"/>.</param>
 	public static void Attach(Window window) =>
 		window.SourceInitialized += (_, _) =>
 			HwndSource.FromHwnd(new WindowInteropHelper(window).Handle)?.AddHook(WndProc);

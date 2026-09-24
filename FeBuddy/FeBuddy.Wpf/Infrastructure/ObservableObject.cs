@@ -4,27 +4,29 @@ using System.Runtime.CompilerServices;
 namespace FeBuddy.Wpf.Infrastructure;
 
 /// <summary>
-/// Minimal <see cref="INotifyPropertyChanged"/> base for view-models.
-/// <para>
-/// Hand-rolled on purpose so this project pulls in no MVVM package. If the real
-/// app later adds CommunityToolkit.Mvvm, delete this file and change the base
-/// class to <c>ObservableObject</c> from that package - the API here is a strict
-/// subset, so nothing else needs to change.
-/// </para>
+/// Minimal <see cref="INotifyPropertyChanged"/> base for view-models. Hand-rolled so the
+/// project needs no MVVM package; its API is a subset of CommunityToolkit.Mvvm's
+/// <c>ObservableObject</c>, so switching to that later changes only the base class.
 /// </summary>
 public abstract class ObservableObject : INotifyPropertyChanged
 {
+	/// <inheritdoc />
 	public event PropertyChangedEventHandler? PropertyChanged;
 
-	/// <summary>Raises <see cref="PropertyChanged"/> for the calling property.</summary>
+	/// <summary>Raises <see cref="PropertyChanged"/>.</summary>
+	/// <param name="propertyName">The property that changed; defaults to the calling member.</param>
 	protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
 		=> PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 
 	/// <summary>
-	/// Assigns <paramref name="value"/> to <paramref name="field"/> and raises a
-	/// change notification, but only if the value actually changed. Returns
-	/// <see langword="true"/> when a change was made.
+	/// Assigns <paramref name="value"/> to <paramref name="field"/> and raises a change
+	/// notification, but only if the value actually changed.
 	/// </summary>
+	/// <typeparam name="T">The property type.</typeparam>
+	/// <param name="field">The backing field.</param>
+	/// <param name="value">The new value.</param>
+	/// <param name="propertyName">The property that changed; defaults to the calling member.</param>
+	/// <returns><see langword="true"/> when the value changed.</returns>
 	protected bool SetProperty<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
 	{
 		if (EqualityComparer<T>.Default.Equals(field, value))

@@ -1,6 +1,5 @@
 using System.Collections.ObjectModel;
 using System.IO;
-using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
 
@@ -15,9 +14,7 @@ using Microsoft.Win32;
 namespace FeBuddy.Wpf.ViewModels;
 
 /// <summary>
-/// The Map Service (remediation plan Phase 8): view the user's own GeoJSON files and manage
-/// the single default ROI. Everything else in the prototype (the ruler, the CRC display
-/// visualiser, the bundled sample layers) is gone.
+/// The Map Service: view the user's own GeoJSON files and manage the single default ROI.
 /// </summary>
 public sealed class MapViewModel : ObservableObject
 {
@@ -33,12 +30,10 @@ public sealed class MapViewModel : ObservableObject
 	private bool _showDefaultRoi = true;
 	private RegionOfInterest? _defaultRoi;
 
+	/// <summary>Creates the view-model with the US-states outline and the saved default ROI.</summary>
 	public MapViewModel()
 	{
-		// Reference geography, not sample data - a future cleanup should not mistake it for a
-		// prototype leftover.
-		BaseLayer = TryLoadLayer("Assets/us-states.json", "US states",
-			ThemeBrush("Brush.Stroke.Strong", Color.FromRgb(0x2A, 0x3D, 0x52)), thickness: 1.0);
+		BaseLayer = BaseMap.UsStates;
 
 		Layers = [];
 		LoadedFiles = [];
@@ -56,9 +51,8 @@ public sealed class MapViewModel : ObservableObject
 		DefaultRoiStore.Changed += OnDefaultRoiChanged;
 	}
 
-	// View-models live for the whole session (NavItem caches them), so without this the Map
-	// page would keep showing whatever ROI was current when it was first opened, even after
-	// Settings changes or clears it.
+	// View-models live for the whole session (NavItem caches them), so the Map page has to
+	// hear when Settings changes or clears the default ROI.
 	private void OnDefaultRoiChanged(object? sender, EventArgs e) => DefaultRoi = DefaultRoiStore.Load();
 
 	/// <summary>Raised when the view should zoom to a set of bounds (after a load).</summary>
@@ -76,8 +70,10 @@ public sealed class MapViewModel : ObservableObject
 	/// <summary>Every opened file, visible or not.</summary>
 	public ObservableCollection<LoadedFile> LoadedFiles { get; }
 
+	/// <summary>Whether any file is open.</summary>
 	public bool HasLoadedFiles => LoadedFiles.Count > 0;
 
+	/// <summary>The files button's label, e.g. <c>2 files</c>.</summary>
 	public string FilesButtonLabel => LoadedFiles.Count switch
 	{
 		0 => "No files loaded",
@@ -85,6 +81,7 @@ public sealed class MapViewModel : ObservableObject
 		var n => $"{n} files",
 	};
 
+	/// <summary>The result of the last load, e.g. which files could not be read.</summary>
 	public string? StatusMessage
 	{
 		get => _statusMessage;
@@ -109,8 +106,10 @@ public sealed class MapViewModel : ObservableObject
 		}
 	}
 
+	/// <summary>Whether a default ROI is saved.</summary>
 	public bool HasDefaultRoi => DefaultRoi is not null;
 
+	/// <summary>The default ROI's corners on one line, or how to set one.</summary>
 	public string DefaultRoiSummary => DefaultRoi is { } r
 		? $"SW {r.SwLat:0.####}, {r.SwLon:0.####}   ·   NE {r.NeLat:0.####}, {r.NeLon:0.####}"
 		: "No default ROI is set. Draw one below and press Set ROI.";
@@ -129,21 +128,24 @@ public sealed class MapViewModel : ObservableObject
 		}
 	}
 
-	/// <summary>SW corner shown on the main map (null hides the box).</summary>
+	/// <summary>SW corner shown on the main map (<see langword="null"/> hides the box).</summary>
 	public GeoPoint? RoiOnMapSouthWest => ShowDefaultRoi && DefaultRoi is { } r ? new GeoPoint(r.SwLat, r.SwLon) : null;
 
-	/// <summary>NE corner shown on the main map (null hides the box).</summary>
+	/// <summary>NE corner shown on the main map (<see langword="null"/> hides the box).</summary>
 	public GeoPoint? RoiOnMapNorthEast => ShowDefaultRoi && DefaultRoi is { } r ? new GeoPoint(r.NeLat, r.NeLon) : null;
 
+	/// <summary>Opens GeoJSON files onto the map.</summary>
 	public ICommand LoadFilesCommand { get; }
 
+	/// <summary>Removes every opened file.</summary>
 	public ICommand ClearFilesCommand { get; }
 
+	/// <summary>Resets the map to the contiguous US.</summary>
 	public ICommand ResetViewCommand { get; }
 
 	/// <summary>
-	/// Called by the view when the embedded <c>RoiEditor</c> confirms a box. Writes the one
-	/// default ROI node (the same node Settings writes) with a one-step undo.
+	/// Called by the view when the embedded <c>RoiEditor</c> confirms a box. Saves it as the one
+	/// default ROI, the same one Settings edits.
 	/// </summary>
 	/// <param name="roi">The confirmed region.</param>
 	public void SetDefaultRoi(RegionOfInterest roi)
@@ -256,36 +258,4 @@ public sealed class MapViewModel : ObservableObject
 	private static GeoBounds Union(GeoBounds a, GeoBounds b) => new(
 		new GeoPoint(Math.Min(a.South, b.South), Math.Min(a.West, b.West)),
 		new GeoPoint(Math.Max(a.North, b.North), Math.Max(a.East, b.East)));
-
-	private static MapLayer? TryLoadLayer(string relativeUri, string name, Brush stroke, double thickness = 1.4, double pointRadius = 3.5)
-	{
-		try
-		{
-			System.Windows.Resources.StreamResourceInfo? info = Application.GetResourceStream(new Uri(relativeUri, UriKind.Relative));
-			if (info is null)
-			{
-				return null;
-			}
-
-			using StreamReader reader = new(info.Stream);
-			IReadOnlyList<MapGeometry> geometries = GeoJsonReader.Read(reader.ReadToEnd());
-			return new MapLayer(name, geometries, stroke, thickness, pointRadius);
-		}
-		catch
-		{
-			return null;
-		}
-	}
-
-	private static Brush ThemeBrush(string key, Color fallback)
-	{
-		if (Application.Current?.TryFindResource(key) is Brush brush)
-		{
-			return brush;
-		}
-
-		SolidColorBrush solid = new(fallback);
-		solid.Freeze();
-		return solid;
-	}
 }

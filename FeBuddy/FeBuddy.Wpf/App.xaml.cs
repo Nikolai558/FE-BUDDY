@@ -10,8 +10,8 @@ using FeBuddy.Core.Infrastructure.Platform;
 namespace FeBuddy.Wpf;
 
 /// <summary>
-/// Application entry point. Starts the shared application log's file sink and kicks off the
-/// off-UI-thread launch sequence (see <c>Developer_Notes.md</c> -&gt; LAUNCH PROCESSES), then
+/// Application entry point. Starts the shared application log's file sink and runs
+/// <see cref="LaunchSequence"/> off the UI thread (see <c>Developer_Notes.md</c> -&gt; LAUNCH PROCESSES), then
 /// keeps a last-chance handler that writes an unhandled exception to disk so a crash on a
 /// user's machine leaves a trace.
 /// </summary>

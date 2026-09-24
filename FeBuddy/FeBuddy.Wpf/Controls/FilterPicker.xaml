@@ -29,7 +29,7 @@
                             Padding="11,7"
                             SnapsToDevicePixels="True">
                         <DockPanel>
-                            <TextBlock DockPanel.Dock="Right" Text="&#xE70D;"
+                            <TextBlock DockPanel.Dock="Right" Text="{DynamicResource Icon.Chevron.Down}"
                                        FontFamily="{DynamicResource Font.Icon}" FontSize="10"
                                        Foreground="{DynamicResource Brush.Text.Tertiary}"
                                        VerticalAlignment="Center" Margin="8,0,0,0" />

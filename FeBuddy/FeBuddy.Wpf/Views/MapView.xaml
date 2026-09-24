@@ -1,7 +1,6 @@
 <!--
-    MapView  -  the Map Service (remediation plan Phase 8): view GeoJSON files
-    and manage the single default ROI. Ruler, the CRC display visualiser, and
-    the bundled sample layers are gone.
+    MapView  -  the Map Service: view GeoJSON files and manage the single
+    default ROI.
 -->
 <UserControl x:Class="FeBuddy.Wpf.Views.MapView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"

@@ -19,8 +19,8 @@ namespace FeBuddy.Wpf.ViewModels;
 
 /// <summary>
 /// The <b>AIRAC Services</b> screen: a General tab (cycle, facility, and which sub-services to
-/// produce), one tab per selected sub-service, and a Review tab that summarises the lot and runs
-/// the service.
+/// produce), one tab per selected sub-service, a Preview Settings tab that summarises the lot and
+/// runs the service, and a Review tab for the run's outcome.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -39,7 +39,7 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 {
 	private readonly Dispatcher _dispatcher;
 	private readonly AiracGeneralTabViewModel _general;
-	private readonly ServiceReviewTabViewModel _preview;
+	private readonly ServicePreviewTabViewModel _preview;
 	private readonly ServiceRunReviewTabViewModel _runReview = new();
 	private readonly Dictionary<string, ServiceTabViewModel> _tabsByKey = new(StringComparer.OrdinalIgnoreCase);
 
@@ -59,7 +59,7 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 		_general.SubServiceSelectionChanged += (_, _) => SyncSubServiceTabs();
 		_general.CycleChanged += (_, _) => _ = LoadCycleDataAsync();
 
-		_preview = new ServiceReviewTabViewModel("Preview Settings", "Run AIRAC Service", RunCommand, () => Tabs);
+		_preview = new ServicePreviewTabViewModel("Preview Settings", "Run AIRAC Service", RunCommand, () => Tabs);
 
 		AiracCycleDataCache.Instance.StateChanged += (_, _) => _dispatcher.BeginInvoke(RefreshReadiness);
 		AppEnvironment.Changed += (_, _) => _dispatcher.BeginInvoke(RefreshReadiness);
@@ -69,7 +69,7 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 		_ = LoadCycleDataAsync();
 	}
 
-	/// <summary>Runs the AIRAC Service for every selected sub-service. Hosted on the Review tab.</summary>
+	/// <summary>Runs the AIRAC Service for every selected sub-service. Hosted on the Preview Settings tab.</summary>
 	public ICommand RunCommand { get; }
 
 	/// <summary><see langword="true"/> while a run is in progress.</summary>
@@ -86,8 +86,7 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 	}
 
 	/// <summary>
-	/// The AIRAC data readiness (remediation plan 2.5). Controls whether the facility list, the
-	/// designations list, and the run are enabled.
+	/// The AIRAC data readiness. Controls whether the cycle-dependent lists and the run are enabled.
 	/// </summary>
 	public AiracCycleReadiness Readiness =>
 		AiracCycleDataCache.Instance.Entries.Count == 0 ? AiracCycleReadiness.Waiting
@@ -100,7 +99,7 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 	protected override ServiceTabViewModel GeneralTab => _general;
 
 	/// <inheritdoc />
-	protected override ServiceReviewTabViewModel PreviewTab => _preview;
+	protected override ServicePreviewTabViewModel PreviewTab => _preview;
 
 	/// <summary>
 	/// The run-review tab, once a run has started. Held back until then so the rail does not
@@ -194,15 +193,7 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 			return;
 		}
 
-		string cycleId;
-		try
-		{
-			cycleId = AiracCycleResolver.GetCycle(_general.SelectedCyclePosition).AiracCycleId;
-		}
-		catch
-		{
-			return;
-		}
+		string cycleId = AiracCycleResolver.GetCycle(_general.SelectedCyclePosition).AiracCycleId;
 
 		if (_parsedCycleId == cycleId && _parsedForSelectedCycle is not null)
 		{
@@ -248,16 +239,7 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 			return;
 		}
 
-		AiracCycleInfo cycle;
-		try
-		{
-			cycle = AiracCycleResolver.GetCycle(_general.SelectedCyclePosition);
-		}
-		catch (Exception ex)
-		{
-			Toast.Error("Cannot run", ex.Message);
-			return;
-		}
+		AiracCycleInfo cycle = AiracCycleResolver.GetCycle(_general.SelectedCyclePosition);
 
 		IReadOnlyList<ISubServiceRunTarget> targets = RunTargets;
 		string[] runningTabTitles = [.. Tabs

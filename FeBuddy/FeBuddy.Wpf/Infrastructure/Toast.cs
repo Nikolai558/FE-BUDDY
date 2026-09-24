@@ -4,11 +4,19 @@ using System.Windows.Threading;
 
 namespace FeBuddy.Wpf.Infrastructure;
 
+/// <summary>A toast's severity, which sets its colour and icon.</summary>
 public enum ToastKind
 {
+	/// <summary>Neutral information.</summary>
 	Info,
+
+	/// <summary>Something finished successfully.</summary>
 	Success,
+
+	/// <summary>Something needs the user's attention.</summary>
 	Warn,
+
+	/// <summary>Something failed.</summary>
 	Error,
 }
 
@@ -23,14 +31,19 @@ public sealed class ToastItem : ObservableObject
 		DismissCommand = new RelayCommand(() => Toast.Dismiss(this));
 	}
 
+	/// <summary>The bold first line.</summary>
 	public string Title { get; }
 
+	/// <summary>Optional detail under the title.</summary>
 	public string? Message { get; }
 
+	/// <summary>The severity.</summary>
 	public ToastKind Kind { get; }
 
+	/// <summary>Whether there is a <see cref="Message"/> to show.</summary>
 	public bool HasMessage => !string.IsNullOrWhiteSpace(Message);
 
+	/// <summary>Closes the toast before it times out.</summary>
 	public ICommand DismissCommand { get; }
 }
 
@@ -45,16 +58,33 @@ public static class Toast
 	private const int MaxVisible = 4;
 	private static readonly TimeSpan Linger = TimeSpan.FromSeconds(4.5);
 
+	/// <summary>The toasts on screen, newest first.</summary>
 	public static ObservableCollection<ToastItem> Items { get; } = [];
 
+	/// <summary>Shows an <see cref="ToastKind.Info"/> toast.</summary>
+	/// <param name="title">The bold first line.</param>
+	/// <param name="message">Optional detail.</param>
 	public static void Info(string title, string? message = null) => Show(title, message, ToastKind.Info);
 
+	/// <summary>Shows a <see cref="ToastKind.Success"/> toast.</summary>
+	/// <param name="title">The bold first line.</param>
+	/// <param name="message">Optional detail.</param>
 	public static void Success(string title, string? message = null) => Show(title, message, ToastKind.Success);
 
+	/// <summary>Shows a <see cref="ToastKind.Warn"/> toast.</summary>
+	/// <param name="title">The bold first line.</param>
+	/// <param name="message">Optional detail.</param>
 	public static void Warn(string title, string? message = null) => Show(title, message, ToastKind.Warn);
 
+	/// <summary>Shows an <see cref="ToastKind.Error"/> toast.</summary>
+	/// <param name="title">The bold first line.</param>
+	/// <param name="message">Optional detail.</param>
 	public static void Error(string title, string? message = null) => Show(title, message, ToastKind.Error);
 
+	/// <summary>Shows a toast, dropping the oldest when more than a few are on screen.</summary>
+	/// <param name="title">The bold first line.</param>
+	/// <param name="message">Optional detail.</param>
+	/// <param name="kind">The severity.</param>
 	public static void Show(string title, string? message, ToastKind kind)
 	{
 		var item = new ToastItem(title, message, kind);
@@ -74,5 +104,7 @@ public static class Toast
 		timer.Start();
 	}
 
+	/// <summary>Removes a toast now.</summary>
+	/// <param name="item">The toast to remove.</param>
 	public static void Dismiss(ToastItem item) => Items.Remove(item);
 }

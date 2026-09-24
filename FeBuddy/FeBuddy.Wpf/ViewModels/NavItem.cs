@@ -27,6 +27,7 @@ public sealed class NavItem(
 	private object? _viewModel;
 	private bool _isActive;
 
+	/// <summary>The row's label.</summary>
 	public string Title { get; } = title;
 
 	/// <summary>Icon glyph string (from Icons.xaml).</summary>
@@ -38,7 +39,7 @@ public sealed class NavItem(
 	/// <summary>The section's view-model if it has been opened, without building it.</summary>
 	public object? CreatedViewModel => _viewModel;
 
-	/// <summary>True when this is the section on screen. Bound two-way to the nav RadioButton.</summary>
+	/// <summary><see langword="true"/> when this is the section on screen. Bound two-way to the nav RadioButton.</summary>
 	public bool IsActive
 	{
 		get => _isActive;

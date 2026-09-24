@@ -21,14 +21,17 @@ namespace FeBuddy.Wpf.Controls;
 /// </summary>
 public sealed class MarkdownView : Decorator
 {
+	/// <summary>Identifies the <see cref="Markdown"/> dependency property.</summary>
 	public static readonly DependencyProperty MarkdownProperty = DependencyProperty.Register(
 		nameof(Markdown), typeof(string), typeof(MarkdownView),
 		new PropertyMetadata(null, (d, _) => ((MarkdownView)d).Rebuild()));
 
+	/// <summary>Identifies the <see cref="IssueUrlBase"/> dependency property.</summary>
 	public static readonly DependencyProperty IssueUrlBaseProperty = DependencyProperty.Register(
 		nameof(IssueUrlBase), typeof(string), typeof(MarkdownView),
 		new PropertyMetadata(null, (d, _) => ((MarkdownView)d).Rebuild()));
 
+	/// <summary>Identifies the <see cref="HeadingOffset"/> dependency property.</summary>
 	public static readonly DependencyProperty HeadingOffsetProperty = DependencyProperty.Register(
 		nameof(HeadingOffset), typeof(int), typeof(MarkdownView),
 		new PropertyMetadata(0, (d, _) => ((MarkdownView)d).Rebuild()));

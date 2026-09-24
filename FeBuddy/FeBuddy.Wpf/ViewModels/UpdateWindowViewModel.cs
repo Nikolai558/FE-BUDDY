@@ -12,7 +12,7 @@ using FeBuddy.Core.Infrastructure.Logging;
 namespace FeBuddy.Wpf.ViewModels;
 
 /// <summary>
-/// Backs the modal update window (remediation plan 4.2): shows the running version, the latest
+/// Backs the modal update window: shows the running version, the latest
 /// version on the user's channel, and the notes for every release in between, newest first.
 /// </summary>
 /// <remarks>
@@ -41,7 +41,7 @@ public sealed class UpdateWindowViewModel : ObservableObject
 	private string? _errorText;
 
 	/// <summary>Creates the view-model from a completed version check that found an update.</summary>
-	/// <param name="version">The version-check result. <see cref="VersionCheckResult.UpdateAvailable"/> is expected to be true.</param>
+	/// <param name="version">The version-check result. <see cref="VersionCheckResult.UpdateAvailable"/> is expected to be <see langword="true"/>.</param>
 	/// <param name="isMsiInstalled">Whether this copy is the MSI-installed one (only that copy installs updates itself).</param>
 	/// <param name="unfinishedWork">Describes what closing FE-Buddy now would lose (a running job, unsaved edits); empty when nothing.</param>
 	public UpdateWindowViewModel(VersionCheckResult version, bool isMsiInstalled, Func<IReadOnlyList<string>> unfinishedWork)

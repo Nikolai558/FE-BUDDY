@@ -1,9 +1,8 @@
 namespace FeBuddy.Core.Infrastructure.Configuration;
 
 /// <summary>
-/// The app-wide <c>General.*</c> keys in <c>UserConfig.json</c>. Each sub-service's own keys
-/// belong to the screen that edits them; these are read in more than one place, so they are
-/// named once here.
+/// The <c>UserConfig.json</c> keys that are read in more than one place, so they are named once
+/// here. Each sub-service's own keys belong to the screen that edits them.
 /// </summary>
 public static class UserConfigKeys
 {
@@ -21,4 +20,7 @@ public static class UserConfigKeys
 
 	/// <summary>Whether output goes in a <c>FE-Buddy_Output</c> folder inside the output folder (<c>Y</c>/<c>N</c>).</summary>
 	public const string AddFeBuddyOutputFolder = "General.AddFeBuddyOutputFolder";
+
+	/// <summary>How many decimal places GeoJSON coordinates are rounded to, 0 to 15 (6 when unset).</summary>
+	public const string CoordinatePrecision = "Services.AiracService.CoordinatePrecision";
 }

@@ -15,6 +15,7 @@ namespace FeBuddy.Wpf.Controls;
 /// </summary>
 public sealed class Option : ContentControl
 {
+	/// <summary>Identifies the <see cref="Description"/> dependency property.</summary>
 	public static readonly DependencyProperty DescriptionProperty = DependencyProperty.Register(
 		nameof(Description), typeof(string), typeof(Option), new PropertyMetadata(null));
 

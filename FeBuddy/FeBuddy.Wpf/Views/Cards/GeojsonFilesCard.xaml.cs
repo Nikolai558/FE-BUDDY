@@ -6,14 +6,28 @@ namespace FeBuddy.Wpf.Views.Cards;
 /// <summary>The shared "What files do you want?" card. See GeojsonFilesCard.xaml.</summary>
 public partial class GeojsonFilesCard : UserControl
 {
+	/// <summary>Identifies the <see cref="LinesLabel"/> dependency property.</summary>
 	public static readonly DependencyProperty LinesLabelProperty = Register(nameof(LinesLabel), "Lines");
+
+	/// <summary>Identifies the <see cref="LinesDescription"/> dependency property.</summary>
 	public static readonly DependencyProperty LinesDescriptionProperty = Register(nameof(LinesDescription), null);
+
+	/// <summary>Identifies the <see cref="SymbolsLabel"/> dependency property.</summary>
 	public static readonly DependencyProperty SymbolsLabelProperty = Register(nameof(SymbolsLabel), "Symbols");
+
+	/// <summary>Identifies the <see cref="SymbolsDescription"/> dependency property.</summary>
 	public static readonly DependencyProperty SymbolsDescriptionProperty = Register(nameof(SymbolsDescription), null);
+
+	/// <summary>Identifies the <see cref="TextLabel"/> dependency property.</summary>
 	public static readonly DependencyProperty TextLabelProperty = Register(nameof(TextLabel), "Text");
+
+	/// <summary>Identifies the <see cref="TextDescription"/> dependency property.</summary>
 	public static readonly DependencyProperty TextDescriptionProperty = Register(nameof(TextDescription), null);
+
+	/// <summary>Identifies the <see cref="Footnote"/> dependency property.</summary>
 	public static readonly DependencyProperty FootnoteProperty = Register(nameof(Footnote), null);
 
+	/// <summary>Creates the card.</summary>
 	public GeojsonFilesCard() => InitializeComponent();
 
 	/// <summary>The Lines option's label. Defaults to "Lines".</summary>

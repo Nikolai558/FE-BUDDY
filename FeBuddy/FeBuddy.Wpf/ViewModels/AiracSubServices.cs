@@ -10,8 +10,8 @@ namespace FeBuddy.Wpf.ViewModels;
 /// <para>
 /// This list is the only place a sub-service is registered. Adding one means adding an entry here
 /// and a tab view-model for it; the General tab's picker, the tab rail, the save contract and the
-/// Review tab all pick it up with no further changes. The list is expected to grow to roughly
-/// twenty entries.
+/// Preview Settings tab all pick it up with no further changes. The list is expected to grow to
+/// roughly twenty entries.
 /// </para>
 /// <para>
 /// <see cref="SubServiceDescriptor.Key"/> is persisted in <c>UserConfig</c> under

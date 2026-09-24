@@ -7,7 +7,8 @@ namespace FeBuddy.Wpf.Infrastructure;
 /// <remarks>
 /// A catalogue of these is the whole registration surface for a sub-service. Adding the next one
 /// - AIRAC Service is expected to reach roughly twenty - is one entry here plus its tab
-/// view-model; nothing in the shell, the rail, the save contract or the Review tab changes.
+/// view-model; nothing in the shell, the rail, the save contract or the Preview Settings and
+/// Review tabs changes.
 /// </remarks>
 /// <param name="Key">
 /// The stable identifier persisted in <c>UserConfig</c> (e.g. <c>Airways</c>). Never localise or

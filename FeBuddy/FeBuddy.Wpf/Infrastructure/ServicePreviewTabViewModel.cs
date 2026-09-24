@@ -11,13 +11,14 @@ namespace FeBuddy.Wpf.Infrastructure;
 /// The summary is rebuilt from the other tabs every time this tab is opened, so it always
 /// reflects the live state rather than a snapshot taken when the tab was created. The run button
 /// is supplied by the owning service; this tab only reports whether anything blocks it. What
-/// happened during the run itself belongs to the Review tab, which appears once a run starts.
+/// happened during the run itself belongs to the Review tab (<see cref="ServiceRunReviewTabViewModel"/>),
+/// which appears once a run starts.
 /// </remarks>
-/// <param name="title">The tab's rail label, e.g. <c>Review</c>.</param>
+/// <param name="title">The tab's rail label, e.g. <c>Preview Settings</c>.</param>
 /// <param name="runLabel">The run button's label, e.g. <c>Run AIRAC Service</c>.</param>
 /// <param name="runCommand">The owning service's run command.</param>
 /// <param name="tabs">Supplies the tabs to summarise (this tab is skipped).</param>
-public sealed class ServiceReviewTabViewModel(
+public sealed class ServicePreviewTabViewModel(
 	string title,
 	string runLabel,
 	ICommand runCommand,
@@ -38,7 +39,7 @@ public sealed class ServiceReviewTabViewModel(
 	public ICommand RunCommand { get; } = runCommand;
 
 	/// <summary>The rundown, one section per contributing tab.</summary>
-	public ObservableCollection<ServiceReviewSection> Sections { get; } = [];
+	public ObservableCollection<ServicePreviewSection> Sections { get; } = [];
 
 	/// <summary>Set when a tab is invalid, naming the tabs that need fixing first.</summary>
 	public string? BlockingIssue
@@ -79,7 +80,7 @@ public sealed class ServiceReviewTabViewModel(
 
 		List<ServiceTabViewModel> others = [.. _tabs().Where(t => !ReferenceEquals(t, this))];
 
-		foreach (ServiceReviewSection section in others.SelectMany(t => t.BuildReviewSummary()))
+		foreach (ServicePreviewSection section in others.SelectMany(t => t.BuildPreviewSummary()))
 		{
 			Sections.Add(section);
 		}
@@ -102,7 +103,7 @@ public sealed class ServiceReviewTabViewModel(
 	}
 
 	/// <inheritdoc />
-	public override IReadOnlyList<ServiceReviewSection> BuildReviewSummary() => [];
+	public override IReadOnlyList<ServicePreviewSection> BuildPreviewSummary() => [];
 
 	private static string Join(IReadOnlyList<string> names) =>
 		names.Count switch

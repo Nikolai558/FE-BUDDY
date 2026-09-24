@@ -16,6 +16,7 @@ namespace FeBuddy.Wpf.Controls;
 /// </summary>
 public sealed class Card : ContentControl
 {
+	/// <summary>Identifies the <see cref="Header"/> dependency property.</summary>
 	public static readonly DependencyProperty HeaderProperty = DependencyProperty.Register(
 		nameof(Header), typeof(string), typeof(Card), new PropertyMetadata(null));
 

@@ -7,9 +7,8 @@ namespace FeBuddy.Wpf.Infrastructure;
 /// <summary>
 /// A <see cref="Window"/> that wears the app's own chrome — a dark titlebar with
 /// the shared caption buttons and a 1px window border — instead of the stock
-/// Windows title bar (theme fixes P6). The child dialogs (ROI picker, Confirm,
-/// Update) derive from this so they stop looking foreign against the shell.
-///
+/// Windows title bar. The child dialogs (ROI picker, Confirm, Update) derive from this so
+/// they match the shell.
 /// <para>
 /// The look lives in <c>Theme/Controls.Window.xaml</c>'s <c>ChromeWindowStyle</c>;
 /// this class just installs the <see cref="WindowChrome"/>, applies that style, and

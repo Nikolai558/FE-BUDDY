@@ -4,8 +4,8 @@ using System.Windows.Controls;
 namespace FeBuddy.Wpf.Controls;
 
 /// <summary>
-/// The small uppercase heading that titles a block, matching the reference site's
-/// "ONLINE ATC" / "TOP 3 CONTROLLERS" pattern. Lookless: its look lives in
+/// The small uppercase heading that titles a block ("OUTPUT MODE", "RECENT OUTPUT").
+/// Lookless: its look lives in
 /// Theme/Controls.Surfaces.xaml, in two levels -
 /// <list type="bullet">
 /// <item>the implicit style: a card or section title. Every ctl:Card draws its Header with one;
@@ -25,12 +25,15 @@ namespace FeBuddy.Wpf.Controls;
 /// </summary>
 public sealed class SectionHeader : Control
 {
+	/// <summary>Identifies the <see cref="Label"/> dependency property.</summary>
 	public static readonly DependencyProperty LabelProperty = DependencyProperty.Register(
 		nameof(Label), typeof(string), typeof(SectionHeader), new PropertyMetadata(string.Empty));
 
+	/// <summary>Identifies the <see cref="Aside"/> dependency property.</summary>
 	public static readonly DependencyProperty AsideProperty = DependencyProperty.Register(
 		nameof(Aside), typeof(object), typeof(SectionHeader), new PropertyMetadata(null));
 
+	/// <summary>Identifies the <see cref="TextStyle"/> dependency property.</summary>
 	public static readonly DependencyProperty TextStyleProperty = DependencyProperty.Register(
 		nameof(TextStyle), typeof(Style), typeof(SectionHeader), new PropertyMetadata(null));
 

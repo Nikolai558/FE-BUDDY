@@ -17,14 +17,6 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:sys="clr-namespace:System;assembly=mscorlib">
 
-    <!-- Navigation -->
-    <sys:String x:Key="Icon.Dashboard">&#xE80F;</sys:String>   <!-- Home        -->
-    <sys:String x:Key="Icon.Airac">&#xE787;</sys:String>       <!-- Calendar (AIRAC cycle); E72C Refresh had no nav glyph -->
-    <sys:String x:Key="Icon.Convert">&#xE8AB;</sys:String>     <!-- Switch      -->
-    <sys:String x:Key="Icon.Files">&#xE8B7;</sys:String>       <!-- Folder      -->
-    <sys:String x:Key="Icon.Settings">&#xE713;</sys:String>    <!-- Setting     -->
-    <sys:String x:Key="Icon.Info">&#xE946;</sys:String>        <!-- Info        -->
-
     <!-- Window caption -->
     <sys:String x:Key="Icon.Minimize">&#xE921;</sys:String>
     <sys:String x:Key="Icon.Maximize">&#xE922;</sys:String>
@@ -32,24 +24,19 @@
     <sys:String x:Key="Icon.Close">&#xE8BB;</sys:String>
 
     <!-- Content -->
+    <sys:String x:Key="Icon.Chevron.Up">&#xE70E;</sys:String>
     <sys:String x:Key="Icon.Chevron.Down">&#xE70D;</sys:String>
     <sys:String x:Key="Icon.Chevron.Left">&#xE76B;</sys:String>
     <sys:String x:Key="Icon.Chevron.Right">&#xE76C;</sys:String>
     <sys:String x:Key="Icon.Calendar">&#xE787;</sys:String>
     <sys:String x:Key="Icon.Check">&#xE73E;</sys:String>
-    <sys:String x:Key="Icon.Pending">&#xE823;</sys:String>     <!-- Clock       -->
     <sys:String x:Key="Icon.Dash">&#xE738;</sys:String>       <!-- Remove      -->
-    <sys:String x:Key="Icon.Download">&#xE896;</sys:String>
-    <sys:String x:Key="Icon.OpenFolder">&#xE8DA;</sys:String>
-    <sys:String x:Key="Icon.External">&#xE8A7;</sys:String>
-    <sys:String x:Key="Icon.News">&#xE7C3;</sys:String>       <!-- Page        -->
-    <sys:String x:Key="Icon.Discord">&#xE90A;</sys:String>    <!-- Message     -->
-    <sys:String x:Key="Icon.Book">&#xE82D;</sys:String>       <!-- Read        -->
-    <sys:String x:Key="Icon.Bug">&#xEBE8;</sys:String>
-    <sys:String x:Key="Icon.Globe">&#xE774;</sys:String>
-    <sys:String x:Key="Icon.Pin">&#xE707;</sys:String>        <!-- MapPin      -->
-    <sys:String x:Key="Icon.Bolt">&#xE945;</sys:String>       <!-- LightningBolt -->
-    <sys:String x:Key="Icon.Layers">&#xE81E;</sys:String>     <!-- MapLayers   -->
-    <sys:String x:Key="Icon.Tag">&#xE8EC;</sys:String>
+    <sys:String x:Key="Icon.Cancel">&#xE711;</sys:String>
+    <sys:String x:Key="Icon.Copy">&#xE8C8;</sys:String>
+
+    <!-- Status -->
+    <sys:String x:Key="Icon.Info">&#xE946;</sys:String>
+    <sys:String x:Key="Icon.Warning">&#xE7BA;</sys:String>
+    <sys:String x:Key="Icon.Error">&#xE783;</sys:String>      <!-- ErrorBadge  -->
 
 </ResourceDictionary>

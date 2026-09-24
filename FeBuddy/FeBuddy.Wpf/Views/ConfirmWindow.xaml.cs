@@ -6,8 +6,8 @@ namespace FeBuddy.Wpf.Views;
 
 /// <summary>
 /// A small themed modal confirm dialog: a title, a message, and a Confirm / Cancel pair.
-/// Reused for the "unsaved settings" prompt before a run (remediation plan 5.3 / 7.9) and
-/// any other yes/no decision.
+/// Used for the "unsaved settings" prompt before a run or a tab change, and any other yes/no
+/// decision.
 /// </summary>
 public partial class ConfirmWindow : ChromeWindow
 {

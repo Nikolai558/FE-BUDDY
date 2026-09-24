@@ -8,8 +8,8 @@ using FeBuddy.Core.Domain.Geo.Models;
 namespace FeBuddy.Wpf.Views;
 
 /// <summary>
-/// Modal host for the shared <see cref="Controls.RoiEditor"/> (remediation plan Phase 11),
-/// used by Settings ▸ Default ROI and the AIRAC Service ROI override.
+/// Modal host for the shared <see cref="Controls.RoiEditor"/>, used by Settings ▸ Default ROI
+/// and each sub-service's ROI override.
 /// </summary>
 public partial class RoiPickerWindow : ChromeWindow
 {

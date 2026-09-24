@@ -21,7 +21,8 @@ public enum ServiceTabStatus
 
 /// <summary>
 /// One tab inside a first-tier service screen (see <see cref="TabbedServiceViewModel"/>): the
-/// General tab, one tab per selected sub-service, and the Review tab at the end.
+/// General tab, one tab per selected sub-service, the Preview Settings tab, and (once a run
+/// has started) the Review tab.
 /// </summary>
 /// <remarks>
 /// The base owns the two things every tab needs and the rail reads: the dirty flag and the
@@ -99,10 +100,10 @@ public abstract class ServiceTabViewModel : ObservableObject
 	public bool NeedsAttention => Status != ServiceTabStatus.Ok;
 
 	/// <summary>
-	/// The tab's contribution to the Review tab: its settings as plain label / value rows.
+	/// The tab's contribution to the Preview Settings tab: its settings as plain label / value rows.
 	/// </summary>
 	/// <returns>Zero or more sections, in display order.</returns>
-	public abstract IReadOnlyList<ServiceReviewSection> BuildReviewSummary();
+	public abstract IReadOnlyList<ServicePreviewSection> BuildPreviewSummary();
 
 	/// <summary>
 	/// Persists this tab. The base does nothing and reports success; a settings tab overrides it
@@ -252,13 +253,13 @@ public sealed class ServiceFieldErrors : INotifyPropertyChanged
 	}
 }
 
-/// <summary>One label / value line on the Review tab.</summary>
+/// <summary>One label / value line on the Preview Settings tab.</summary>
 /// <param name="Label">What the setting is called.</param>
 /// <param name="Value">Its current value, already formatted for display.</param>
-public sealed record ServiceReviewRow(string Label, string Value);
+public sealed record ServicePreviewRow(string Label, string Value);
 
-/// <summary>A titled group of <see cref="ServiceReviewRow"/> on the Review tab.</summary>
+/// <summary>A titled group of <see cref="ServicePreviewRow"/> on the Preview Settings tab.</summary>
 /// <param name="Title">The group heading, usually the tab's title.</param>
 /// <param name="Rows">The rows, in display order.</param>
 /// <param name="Note">Optional line under the heading, e.g. why a tab contributes nothing.</param>
-public sealed record ServiceReviewSection(string Title, IReadOnlyList<ServiceReviewRow> Rows, string? Note = null);
+public sealed record ServicePreviewSection(string Title, IReadOnlyList<ServicePreviewRow> Rows, string? Note = null);

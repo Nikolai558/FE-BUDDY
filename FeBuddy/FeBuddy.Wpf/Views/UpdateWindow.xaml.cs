@@ -6,13 +6,13 @@ using FeBuddy.Wpf.ViewModels;
 namespace FeBuddy.Wpf.Views;
 
 /// <summary>
-/// The modal update window (remediation plan 4.2). Closes itself when its view-model raises
+/// The modal update window. Closes itself when its view-model raises
 /// <see cref="UpdateWindowViewModel.CloseRequested"/>, owns the "close FE-Buddy with unfinished
 /// work?" prompt, and cancels a download in progress when it is closed.
 /// </summary>
 public partial class UpdateWindow : ChromeWindow
 {
-	/// <summary>Initializes the window and wires the view-model's close request.</summary>
+	/// <summary>Creates the window. Set its DataContext to an <see cref="UpdateWindowViewModel"/>.</summary>
 	public UpdateWindow()
 	{
 		InitializeComponent();
@@ -43,5 +43,5 @@ public partial class UpdateWindow : ChromeWindow
 				+ string.Join("\n", work.Select(item => "•  " + item)),
 			confirmText: "Update anyway");
 
-	private void OnCloseRequested(object? sender, System.EventArgs e) => Close();
+	private void OnCloseRequested(object? sender, EventArgs e) => Close();
 }

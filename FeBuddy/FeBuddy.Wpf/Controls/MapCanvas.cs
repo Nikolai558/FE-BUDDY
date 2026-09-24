@@ -9,23 +9,18 @@ namespace FeBuddy.Wpf.Controls;
 
 /// <summary>
 /// A dependency-free interactive vector map.
-///
 /// <para>
 /// Purely presentation: Web-Mercator projection, a pan/zoom viewport, and
 /// <see cref="System.Windows.Media.StreamGeometry"/> rendering into a few
 /// <see cref="DrawingVisual"/>s. No tiles, no network, no map SDK.
 /// </para>
 /// <para>
-/// Modes (mutually exclusive, set by the host): default = pan; <see cref="RoiEnabled"/>
-/// = rubber-band a region of interest; <see cref="MeasureEnabled"/> = click two
-/// points for great-circle distance + bearing. <see cref="CursorText"/> always
-/// tracks the lat/lon under the pointer.
+/// Left-drag pans, or with <see cref="RoiEnabled"/> set, rubber-bands a region of interest.
+/// <see cref="CursorText"/> always tracks the lat/lon under the pointer.
 /// </para>
 /// </summary>
 public sealed class MapCanvas : FrameworkElement
 {
-	private const double EarthRadiusNm = 3440.065;
-
 	// --- viewport ------------------------------------------------------------
 	private double _scale = 1_000;          // pixels per world unit
 	private Point _center = new(0.5, 0.5);  // world-unit point at screen centre
@@ -39,18 +34,15 @@ public sealed class MapCanvas : FrameworkElement
 	private Point _roiCurrentScreen;
 	private bool _rightPanning;
 	private bool _rightPanMoved;
-	private GeoPoint? _measureA;
-	private GeoPoint? _measureB;
-	private Point _measureCursorScreen;
 
 	private readonly VisualCollection _visuals;
 	private readonly DrawingVisual _worldVisual = new();
 	private readonly DrawingVisual _roiVisual = new();
-	private readonly DrawingVisual _measureVisual = new();
 
+	/// <summary>Creates an empty map; it frames the contiguous US on its first layout.</summary>
 	public MapCanvas()
 	{
-		_visuals = new VisualCollection(this) { _worldVisual, _roiVisual, _measureVisual };
+		_visuals = new VisualCollection(this) { _worldVisual, _roiVisual };
 		ClipToBounds = true;
 		Focusable = true;
 		SnapsToDevicePixels = true;
@@ -58,41 +50,41 @@ public sealed class MapCanvas : FrameworkElement
 
 	// ======================= dependency properties =========================
 
+	/// <summary>Identifies the <see cref="BaseLayer"/> dependency property.</summary>
 	public static readonly DependencyProperty BaseLayerProperty = DependencyProperty.Register(
 		nameof(BaseLayer), typeof(MapLayer), typeof(MapCanvas),
 		new PropertyMetadata(null, OnMapDataChanged));
 
+	/// <summary>Identifies the <see cref="Layers"/> dependency property.</summary>
 	public static readonly DependencyProperty LayersProperty = DependencyProperty.Register(
 		nameof(Layers), typeof(IEnumerable<MapLayer>), typeof(MapCanvas),
 		new PropertyMetadata(null, OnLayersChanged));
 
+	/// <summary>Identifies the <see cref="RoiEnabled"/> dependency property.</summary>
 	public static readonly DependencyProperty RoiEnabledProperty = DependencyProperty.Register(
 		nameof(RoiEnabled), typeof(bool), typeof(MapCanvas),
 		new PropertyMetadata(false, OnModeChanged));
 
-	public static readonly DependencyProperty MeasureEnabledProperty = DependencyProperty.Register(
-		nameof(MeasureEnabled), typeof(bool), typeof(MapCanvas),
-		new PropertyMetadata(false, OnMeasureEnabledChanged));
-
+	/// <summary>Identifies the <see cref="RoiSouthWest"/> dependency property.</summary>
 	public static readonly DependencyProperty RoiSouthWestProperty = DependencyProperty.Register(
 		nameof(RoiSouthWest), typeof(GeoPoint?), typeof(MapCanvas),
 		new FrameworkPropertyMetadata(null,
 			FrameworkPropertyMetadataOptions.BindsTwoWayByDefault, OnRoiChanged));
 
+	/// <summary>Identifies the <see cref="RoiNorthEast"/> dependency property.</summary>
 	public static readonly DependencyProperty RoiNorthEastProperty = DependencyProperty.Register(
 		nameof(RoiNorthEast), typeof(GeoPoint?), typeof(MapCanvas),
 		new FrameworkPropertyMetadata(null,
 			FrameworkPropertyMetadataOptions.BindsTwoWayByDefault, OnRoiChanged));
 
+	/// <summary>Identifies the <see cref="ShowGraticule"/> dependency property.</summary>
 	public static readonly DependencyProperty ShowGraticuleProperty = DependencyProperty.Register(
 		nameof(ShowGraticule), typeof(bool), typeof(MapCanvas),
 		new PropertyMetadata(true, OnMapDataChanged));
 
+	/// <summary>Identifies the <see cref="CursorText"/> dependency property.</summary>
 	public static readonly DependencyProperty CursorTextProperty = DependencyProperty.Register(
 		nameof(CursorText), typeof(string), typeof(MapCanvas), new PropertyMetadata(string.Empty));
-
-	public static readonly DependencyProperty MeasureTextProperty = DependencyProperty.Register(
-		nameof(MeasureText), typeof(string), typeof(MapCanvas), new PropertyMetadata(string.Empty));
 
 	/// <summary>The always-on background layer (state / country outlines).</summary>
 	public MapLayer? BaseLayer
@@ -108,32 +100,31 @@ public sealed class MapCanvas : FrameworkElement
 		set => SetValue(LayersProperty, value);
 	}
 
-	/// <summary>When true, left-drag draws an ROI box instead of panning.</summary>
+	/// <summary>When <see langword="true"/>, left-drag draws an ROI box and right-drag pans.</summary>
 	public bool RoiEnabled
 	{
 		get => (bool)GetValue(RoiEnabledProperty);
 		set => SetValue(RoiEnabledProperty, value);
 	}
 
-	/// <summary>When true, left-clicks place the two ends of a measuring line.</summary>
-	public bool MeasureEnabled
-	{
-		get => (bool)GetValue(MeasureEnabledProperty);
-		set => SetValue(MeasureEnabledProperty, value);
-	}
-
+	/// <summary>
+	/// The ROI box's south-west corner, or <see langword="null"/> for no box. Two-way: a
+	/// rubber-band drag writes it, and a right-click clears it.
+	/// </summary>
 	public GeoPoint? RoiSouthWest
 	{
 		get => (GeoPoint?)GetValue(RoiSouthWestProperty);
 		set => SetValue(RoiSouthWestProperty, value);
 	}
 
+	/// <summary>The ROI box's north-east corner, or <see langword="null"/> for no box. Two-way, like <see cref="RoiSouthWest"/>.</summary>
 	public GeoPoint? RoiNorthEast
 	{
 		get => (GeoPoint?)GetValue(RoiNorthEastProperty);
 		set => SetValue(RoiNorthEastProperty, value);
 	}
 
+	/// <summary>Whether the 10-degree latitude/longitude grid is drawn. On by default.</summary>
 	public bool ShowGraticule
 	{
 		get => (bool)GetValue(ShowGraticuleProperty);
@@ -147,20 +138,14 @@ public sealed class MapCanvas : FrameworkElement
 		private set => SetValue(CursorTextProperty, value);
 	}
 
-	/// <summary>Ruler result, e.g. <c>128.4 NM · 072°</c>. Empty when no line is drawn.</summary>
-	public string MeasureText
-	{
-		get => (string)GetValue(MeasureTextProperty);
-		private set => SetValue(MeasureTextProperty, value);
-	}
-
 	// ============================ public API ===============================
 
 	/// <summary>Frames the contiguous US.</summary>
 	public void ResetView()
 		=> FrameBounds(new GeoBounds(new GeoPoint(24.0, -125.0), new GeoPoint(50.0, -66.0)));
 
-	/// <summary>Zooms/pans so <paramref name="bounds"/> fills the view with a margin.</summary>
+	/// <summary>Zooms and pans so <paramref name="bounds"/> fills the view with a margin.</summary>
+	/// <param name="bounds">The area to show.</param>
 	public void FrameBounds(GeoBounds bounds)
 	{
 		if (ActualWidth < 1 || ActualHeight < 1)
@@ -184,10 +169,13 @@ public sealed class MapCanvas : FrameworkElement
 
 	// ========================== visual plumbing ============================
 
+	/// <inheritdoc />
 	protected override int VisualChildrenCount => _visuals.Count;
 
+	/// <inheritdoc />
 	protected override Visual GetVisualChild(int index) => _visuals[index];
 
+	/// <inheritdoc />
 	protected override void OnRenderSizeChanged(SizeChangedInfo info)
 	{
 		base.OnRenderSizeChanged(info);
@@ -221,6 +209,7 @@ public sealed class MapCanvas : FrameworkElement
 
 	// ============================= input ==================================
 
+	/// <inheritdoc />
 	protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
 	{
 		base.OnMouseLeftButtonDown(e);
@@ -234,21 +223,6 @@ public sealed class MapCanvas : FrameworkElement
 			_roiStartScreen = _roiCurrentScreen = pos;
 			RedrawRoi();
 		}
-		else if (MeasureEnabled)
-		{
-			if (_measureA is null || _measureB is not null)
-			{
-				_measureA = ToGeo(pos);
-				_measureB = null;
-			}
-			else
-			{
-				_measureB = ToGeo(pos);
-			}
-
-			_measureCursorScreen = pos;
-			RedrawMeasure();
-		}
 		else
 		{
 			CaptureMouse();
@@ -257,6 +231,7 @@ public sealed class MapCanvas : FrameworkElement
 		}
 	}
 
+	/// <inheritdoc />
 	protected override void OnMouseMove(MouseEventArgs e)
 	{
 		base.OnMouseMove(e);
@@ -282,13 +257,9 @@ public sealed class MapCanvas : FrameworkElement
 			_roiCurrentScreen = pos;
 			RedrawRoi();
 		}
-		else if (MeasureEnabled && _measureA is not null && _measureB is null)
-		{
-			_measureCursorScreen = pos;
-			RedrawMeasure();
-		}
 	}
 
+	/// <inheritdoc />
 	protected override void OnMouseLeftButtonUp(MouseButtonEventArgs e)
 	{
 		base.OnMouseLeftButtonUp(e);
@@ -314,6 +285,7 @@ public sealed class MapCanvas : FrameworkElement
 		_panning = false;
 	}
 
+	/// <inheritdoc />
 	protected override void OnMouseRightButtonDown(MouseButtonEventArgs e)
 	{
 		base.OnMouseRightButtonDown(e);
@@ -330,16 +302,10 @@ public sealed class MapCanvas : FrameworkElement
 		}
 	}
 
+	/// <inheritdoc />
 	protected override void OnMouseRightButtonUp(MouseButtonEventArgs e)
 	{
 		base.OnMouseRightButtonUp(e);
-
-		if (MeasureEnabled)
-		{
-			_measureA = _measureB = null;
-			RedrawMeasure();
-			return;
-		}
 
 		if (_rightPanning)
 		{
@@ -356,10 +322,12 @@ public sealed class MapCanvas : FrameworkElement
 		SetCurrentValue(RoiNorthEastProperty, null);
 	}
 
+	/// <inheritdoc />
 	protected override void OnMouseWheel(MouseWheelEventArgs e)
 	{
 		base.OnMouseWheel(e);
 
+		// Zoom about the cursor: re-centre so the point under it stays put.
 		var factor = e.Delta > 0 ? 1.2 : 1.0 / 1.2;
 		var newScale = Math.Clamp(_scale * factor, 200.0, 40_000_000.0);
 
@@ -374,19 +342,21 @@ public sealed class MapCanvas : FrameworkElement
 		Redraw();
 	}
 
+	/// <inheritdoc />
 	protected override void OnMouseEnter(MouseEventArgs e)
 	{
 		base.OnMouseEnter(e);
 		Cursor = ModeCursor();
 	}
 
+	/// <inheritdoc />
 	protected override void OnMouseLeave(MouseEventArgs e)
 	{
 		base.OnMouseLeave(e);
 		CursorText = string.Empty;
 	}
 
-	private Cursor ModeCursor() => RoiEnabled || MeasureEnabled ? Cursors.Cross : Cursors.SizeAll;
+	private Cursor ModeCursor() => RoiEnabled ? Cursors.Cross : Cursors.SizeAll;
 
 	// ============================ rendering ================================
 
@@ -428,7 +398,6 @@ public sealed class MapCanvas : FrameworkElement
 		}
 
 		RedrawRoi();
-		RedrawMeasure();
 	}
 
 	private void DrawGraticule(DrawingContext dc, Pen pen)
@@ -518,69 +487,8 @@ public sealed class MapCanvas : FrameworkElement
 		dc.DrawRectangle(fill, new Pen(stroke, 1.5), rect);
 	}
 
-	private void RedrawMeasure()
-	{
-		using var dc = _measureVisual.RenderOpen();
-
-		if (_measureA is not { } a)
-		{
-			MeasureText = string.Empty;
-			return;
-		}
-
-		var end = _measureB ?? ToGeo(_measureCursorScreen);
-		var pa = ToScreen(a);
-		var pb = ToScreen(end);
-
-		var accent = Theme("Brush.Accent", Color.FromRgb(0xF4, 0xB7, 0x40));
-		var pen = new Pen(accent, 1.6) { DashStyle = new DashStyle([4, 3], 0) };
-
-		dc.DrawLine(pen, pa, pb);
-		dc.DrawEllipse(accent, null, pa, 3.5, 3.5);
-		dc.DrawEllipse(accent, null, pb, 3.5, 3.5);
-
-		var nm = Haversine(a, end);
-		var brg = InitialBearing(a, end);
-		var label = $"{nm:0.0} NM · {brg:000}°";
-		MeasureText = label;
-
-		var typeface = new Typeface(new FontFamily("Segoe UI, Consolas"), FontStyles.Normal, FontWeights.SemiBold, FontStretches.Normal);
-		var dpi = VisualTreeHelper.GetDpi(this).PixelsPerDip;
-		var ft = new FormattedText(label, CultureInfo.InvariantCulture, FlowDirection.LeftToRight, typeface, 11.5,
-			Theme("Brush.Text.Primary", Colors.White), dpi);
-
-		var mid = new Point((pa.X + pb.X) / 2.0, (pa.Y + pb.Y) / 2.0);
-		var box = new Rect(mid.X - (ft.Width / 2) - 7, mid.Y - (ft.Height / 2) - 4 - 16,
-			ft.Width + 14, ft.Height + 8);
-		dc.DrawRoundedRectangle(Theme("Brush.Panel", Color.FromRgb(0x0F, 0x1A, 0x26)),
-			new Pen(Theme("Brush.Stroke.Strong", Color.FromRgb(0x2A, 0x3D, 0x52)), 1), box, 6, 6);
-		dc.DrawText(ft, new Point(box.X + 7, box.Y + 4));
-	}
-
 	private static string Format(GeoPoint p)
 		=> $"{p.Lat.ToString("0.###", CultureInfo.InvariantCulture)}, {p.Lon.ToString("0.###", CultureInfo.InvariantCulture)}";
-
-	private static double Haversine(GeoPoint a, GeoPoint b)
-	{
-		static double Rad(double d) => d * Math.PI / 180.0;
-		var dLat = Rad(b.Lat - a.Lat);
-		var dLon = Rad(b.Lon - a.Lon);
-		var h = (Math.Sin(dLat / 2) * Math.Sin(dLat / 2)) +
-				(Math.Cos(Rad(a.Lat)) * Math.Cos(Rad(b.Lat)) * Math.Sin(dLon / 2) * Math.Sin(dLon / 2));
-		return 2 * EarthRadiusNm * Math.Asin(Math.Min(1.0, Math.Sqrt(h)));
-	}
-
-	private static double InitialBearing(GeoPoint a, GeoPoint b)
-	{
-		static double Rad(double d) => d * Math.PI / 180.0;
-		var lat1 = Rad(a.Lat);
-		var lat2 = Rad(b.Lat);
-		var dLon = Rad(b.Lon - a.Lon);
-		var y = Math.Sin(dLon) * Math.Cos(lat2);
-		var x = (Math.Cos(lat1) * Math.Sin(lat2)) - (Math.Sin(lat1) * Math.Cos(lat2) * Math.Cos(dLon));
-		var deg = Math.Atan2(y, x) * 180.0 / Math.PI;
-		return (deg + 360.0) % 360.0;
-	}
 
 	// ======================= change notifications =========================
 
@@ -594,17 +502,6 @@ public sealed class MapCanvas : FrameworkElement
 	{
 		var map = (MapCanvas)d;
 		map.Cursor = map.ModeCursor();
-	}
-
-	private static void OnMeasureEnabledChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
-	{
-		var map = (MapCanvas)d;
-		map.Cursor = map.ModeCursor();
-		if (!map.MeasureEnabled)
-		{
-			map._measureA = map._measureB = null;
-			map.RedrawMeasure();
-		}
 	}
 
 	private static void OnLayersChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)

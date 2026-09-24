@@ -11,14 +11,17 @@ namespace FeBuddy.Wpf.Controls;
 /// </summary>
 public sealed class CopyButton : Button
 {
+	/// <summary>Identifies the <see cref="Value"/> dependency property.</summary>
 	public static readonly DependencyProperty ValueProperty = DependencyProperty.Register(
 		nameof(Value), typeof(string), typeof(CopyButton), new PropertyMetadata(string.Empty));
 
 	private static readonly DependencyPropertyKey CopiedKey = DependencyProperty.RegisterReadOnly(
 		nameof(Copied), typeof(bool), typeof(CopyButton), new PropertyMetadata(false));
 
+	/// <summary>Identifies the read-only <see cref="Copied"/> dependency property.</summary>
 	public static readonly DependencyProperty CopiedProperty = CopiedKey.DependencyProperty;
 
+	/// <summary>Creates the button with its "Copy" tooltip.</summary>
 	public CopyButton()
 	{
 		Click += OnClick;
@@ -32,7 +35,7 @@ public sealed class CopyButton : Button
 		set => SetValue(ValueProperty, value);
 	}
 
-	/// <summary>True for ~1 s after a successful copy.</summary>
+	/// <summary><see langword="true"/> for about a second after a successful copy.</summary>
 	public bool Copied => (bool)GetValue(CopiedProperty);
 
 	private void OnClick(object sender, RoutedEventArgs e)

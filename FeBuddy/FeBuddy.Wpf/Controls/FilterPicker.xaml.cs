@@ -21,7 +21,7 @@ public sealed class FilterOption(int number, Action onChanged) : ObservableObjec
 	private readonly Action _onChanged = onChanged;
 	private bool _isSelected;
 
-	/// <summary>The value.</summary>
+	/// <summary>The number this option stands for.</summary>
 	public int Number { get; } = number;
 
 	/// <summary>Whether it is part of the selection.</summary>

@@ -7,13 +7,14 @@ namespace FeBuddy.Wpf.Infrastructure;
 
 /// <summary>
 /// Flattens a small subset of Markdown to plain text for a one-way binding into
-/// a <see cref="System.Windows.Controls.TextBlock"/> (theme fixes P8): the News
-/// feed was showing raw <c>**bold**</c> markers. Strips <c>**</c> / <c>__</c>
+/// a <see cref="System.Windows.Controls.TextBlock"/>, so a News preview never shows raw
+/// <c>**bold**</c> markers. Strips <c>**</c> / <c>__</c>
 /// emphasis and leading <c>#</c> heading marks, and rewrites <c>[label](url)</c>
 /// to just <c>label</c>. Everything else, including line breaks, is left as-is.
 /// </summary>
 public sealed partial class MarkdownToPlainTextConverter : IValueConverter
 {
+	/// <inheritdoc />
 	public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
 	{
 		if (value is not string s || s.Length == 0)
@@ -27,6 +28,7 @@ public sealed partial class MarkdownToPlainTextConverter : IValueConverter
 		return s;
 	}
 
+	/// <inheritdoc />
 	public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
 		=> Binding.DoNothing;
 
@@ -46,6 +48,7 @@ public sealed partial class MarkdownToPlainTextConverter : IValueConverter
 /// </summary>
 public sealed class BoolToVisibilityConverter : IValueConverter
 {
+	/// <inheritdoc />
 	public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
 	{
 		var flag = value is true;
@@ -57,6 +60,7 @@ public sealed class BoolToVisibilityConverter : IValueConverter
 		return flag ? Visibility.Visible : Visibility.Collapsed;
 	}
 
+	/// <inheritdoc />
 	public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
 	{
 		var visible = value is Visibility.Visible;
@@ -74,6 +78,7 @@ public sealed class BoolToVisibilityConverter : IValueConverter
 /// </summary>
 public sealed class StringToVisibilityConverter : IValueConverter
 {
+	/// <inheritdoc />
 	public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
 	{
 		var hasText = !string.IsNullOrWhiteSpace(value as string);
@@ -85,6 +90,7 @@ public sealed class StringToVisibilityConverter : IValueConverter
 		return hasText ? Visibility.Visible : Visibility.Collapsed;
 	}
 
+	/// <inheritdoc />
 	public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
 		=> Binding.DoNothing;
 }
@@ -96,9 +102,11 @@ public sealed class StringToVisibilityConverter : IValueConverter
 /// </summary>
 public sealed class InverseBooleanConverter : IValueConverter
 {
+	/// <inheritdoc />
 	public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
 		=> value is bool b && !b;
 
+	/// <inheritdoc />
 	public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
 		=> value is bool b && !b;
 }
@@ -114,10 +122,12 @@ public sealed class InverseBooleanConverter : IValueConverter
 /// </summary>
 public sealed class EnumToBooleanConverter : IValueConverter
 {
+	/// <inheritdoc />
 	public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
 		=> value is not null && parameter is string name
 		   && string.Equals(value.ToString(), name, StringComparison.Ordinal);
 
+	/// <inheritdoc />
 	public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
 	{
 		if (value is true && parameter is string name && targetType.IsEnum)
@@ -135,9 +145,11 @@ public sealed class EnumToBooleanConverter : IValueConverter
 /// </summary>
 public sealed class UpperCaseConverter : IValueConverter
 {
+	/// <inheritdoc />
 	public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
 		=> (value as string)?.ToUpper(culture) ?? string.Empty;
 
+	/// <inheritdoc />
 	public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
 		=> Binding.DoNothing;
 }

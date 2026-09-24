@@ -166,7 +166,7 @@ public sealed class ServiceRunReviewTabViewModel : ServiceTabViewModel
 		private set => SetProperty(ref _summary, value);
 	}
 
-	/// <summary>How long the run took.</summary>
+	/// <summary>How long the run took, in seconds.</summary>
 	public double ElapsedSeconds
 	{
 		get => _elapsedSeconds;
@@ -343,7 +343,7 @@ public sealed class ServiceRunReviewTabViewModel : ServiceTabViewModel
 	}
 
 	/// <inheritdoc />
-	public override IReadOnlyList<ServiceReviewSection> BuildReviewSummary() => [];
+	public override IReadOnlyList<ServicePreviewSection> BuildPreviewSummary() => [];
 
 	private void OpenOutputFolder()
 	{

@@ -11,11 +11,10 @@ namespace FeBuddy.Wpf.Infrastructure;
 /// </summary>
 /// <remarks>
 /// Each section's view-model is built once and kept alive for the rest of the session (see
-/// <see cref="NavItem"/>), so a plain "read the file in the constructor" load - what both view
-/// models did before this existed - goes stale the moment the *other* section changes it: set it
-/// in Settings, switch to Map, and the old value (or none) is still showing. Routing every read
-/// and write through here and raising <see cref="Changed"/> on every write means whichever
-/// view-model didn't make the change still hears about it.
+/// <see cref="ViewModels.NavItem"/>), so a value read once in a constructor goes stale as soon as
+/// another section changes it. Every read and write goes through here, and every write raises
+/// <see cref="Changed"/>, so the view-models that didn't make the change still hear about it.
+/// The misspelled <c>DefaultCoordindates</c> key is what existing config files contain.
 /// </remarks>
 public static class DefaultRoiStore
 {
@@ -29,7 +28,8 @@ public static class DefaultRoiStore
 	/// <summary>Raised after <see cref="Set"/> or <see cref="Clear"/> writes to disk.</summary>
 	public static event EventHandler? Changed;
 
-	/// <summary>Reads the current default ROI, or <see langword="null"/> when none is set.</summary>
+	/// <summary>Reads the current default ROI.</summary>
+	/// <returns>The saved ROI, or <see langword="null"/> when none is set or its corners don't parse.</returns>
 	public static RegionOfInterest? Load()
 	{
 		// Clear() only flips this flag - it leaves the last-drawn coordinates in place (in case
@@ -50,6 +50,8 @@ public static class DefaultRoiStore
 		return null;
 	}
 
+	/// <summary>Saves <paramref name="roi"/> as the default ROI and turns ROI filtering on.</summary>
+	/// <param name="roi">The new default ROI.</param>
 	public static void Set(RegionOfInterest roi)
 	{
 		UserConfigFile.TrySetValue(FilterKey, "true");
@@ -61,6 +63,7 @@ public static class DefaultRoiStore
 		Changed?.Invoke(null, EventArgs.Empty);
 	}
 
+	/// <summary>Turns the default ROI off. Its coordinates stay in the file (see <see cref="Load"/>).</summary>
 	public static void Clear()
 	{
 		UserConfigFile.TrySetValue(FilterKey, "false");

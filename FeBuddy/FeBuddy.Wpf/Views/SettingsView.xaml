@@ -1,6 +1,6 @@
 <!--
-    SettingsView  -  Updates / Facility Profile / Default ROI / GeoJSON Files
-    (remediation plan Phase 9). Everything persists to UserConfig.json.
+    SettingsView  -  Updates / Facility Profile / Default ROI / GeoJSON Files.
+    Everything persists to UserConfig.json.
 -->
 <UserControl x:Class="FeBuddy.Wpf.Views.SettingsView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -21,7 +21,7 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <!-- pinned page header (theme fixes P4): title stays put while the body scrolls -->
+        <!-- pinned page header: title stays put while the body scrolls -->
         <Grid Grid.Row="0" Background="{StaticResource Brush.Bg.Base}">
             <TextBlock Text="Settings" Style="{StaticResource Text.Display}" Margin="28,24,28,14" />
             <Border Style="{StaticResource Divider}" VerticalAlignment="Bottom" />

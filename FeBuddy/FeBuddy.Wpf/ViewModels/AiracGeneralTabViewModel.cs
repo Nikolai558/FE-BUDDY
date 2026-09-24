@@ -107,19 +107,12 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 	{
 		get
 		{
-			try
-			{
-				AiracCycleInfo info = AiracCycleResolver.GetCycle(SelectedCyclePosition);
-				return $"Cycle {info.AiracCycleId}  ·  effective {info.EffectiveDateUtc:dd MMM yyyy}";
-			}
-			catch (Exception ex)
-			{
-				return $"Unavailable: {ex.Message}";
-			}
+			AiracCycleInfo info = AiracCycleResolver.GetCycle(SelectedCyclePosition);
+			return $"Cycle {info.AiracCycleId}  ·  effective {info.EffectiveDateUtc:dd MMM yyyy}";
 		}
 	}
 
-	/// <summary>Whether the AIRAC data is ready enough to use the service (remediation plan 2.5).</summary>
+	/// <summary>Whether the AIRAC data is ready enough to use the service.</summary>
 	public bool IsReady
 	{
 		get => _isReady;
@@ -132,7 +125,7 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 		}
 	}
 
-	/// <summary>Shown while <see cref="IsReady"/> is false.</summary>
+	/// <summary>Shown while <see cref="IsReady"/> is <see langword="false"/>.</summary>
 	public string WaitingMessage
 	{
 		get => _waitingMessage;
@@ -161,17 +154,17 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 	}
 
 	/// <inheritdoc />
-	public override IReadOnlyList<ServiceReviewSection> BuildReviewSummary()
+	public override IReadOnlyList<ServicePreviewSection> BuildPreviewSummary()
 	{
 		string[] selected = [.. SelectedSubServices.Select(s => s.DisplayName)];
 
-		ServiceReviewRow[] rows =
+		ServicePreviewRow[] rows =
 		[
-			new ServiceReviewRow("Cycle", SelectedCycleLabel),
-			new ServiceReviewRow("Sub-services", selected.Length == 0 ? "none" : string.Join(", ", selected)),
+			new ServicePreviewRow("Cycle", SelectedCycleLabel),
+			new ServicePreviewRow("Sub-services", selected.Length == 0 ? "none" : string.Join(", ", selected)),
 		];
 
-		return [new ServiceReviewSection("General", rows)];
+		return [new ServicePreviewSection("General", rows)];
 	}
 
 	/// <inheritdoc />
@@ -220,15 +213,7 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 	/// <inheritdoc />
 	protected override void WriteToConfig()
 	{
-		try
-		{
-			Set("AiracCycleId", AiracCycleResolver.GetCycle(SelectedCyclePosition).AiracCycleId);
-		}
-		catch
-		{
-			// The cycle lookup table may not cover this date yet; leave the saved id alone.
-		}
-
+		Set("AiracCycleId", AiracCycleResolver.GetCycle(SelectedCyclePosition).AiracCycleId);
 		Set(SelectedSubServicesKey, string.Join(',', SelectedSubServices.Select(s => s.Key)));
 	}
 
@@ -244,16 +229,8 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 		SubServiceSelectionChanged?.Invoke(this, EventArgs.Empty);
 	}
 
-	private static HashSet<string> ParseSelectedKeysFromConfig()
-	{
-		string? saved = UserConfigFile.GetValue($"{Node}.{SelectedSubServicesKey}");
-
-		return string.IsNullOrWhiteSpace(saved)
-			? new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-			: new HashSet<string>(
-				saved.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries),
-				StringComparer.OrdinalIgnoreCase);
-	}
+	private static HashSet<string> ParseSelectedKeysFromConfig() =>
+		ParseList(UserConfigFile.GetValue($"{Node}.{SelectedSubServicesKey}"));
 
 	/// <summary>
 	/// Maps the saved cycle id back onto previous / current / next. The id is saved rather than the
@@ -272,16 +249,9 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 
 		foreach (AiracCyclePosition position in new[] { AiracCyclePosition.Previous, AiracCyclePosition.Current, AiracCyclePosition.Next })
 		{
-			try
+			if (string.Equals(AiracCycleResolver.GetCycle(position).AiracCycleId, savedId, StringComparison.OrdinalIgnoreCase))
 			{
-				if (string.Equals(AiracCycleResolver.GetCycle(position).AiracCycleId, savedId, StringComparison.OrdinalIgnoreCase))
-				{
-					return position;
-				}
-			}
-			catch
-			{
-				// That position is not resolvable right now; try the next one.
+				return position;
 			}
 		}
 
@@ -336,28 +306,20 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 		/// <summary>Re-reads this row's label and cache state.</summary>
 		public void Refresh()
 		{
-			try
-			{
-				AiracCycleInfo info = AiracCycleResolver.GetCycle(Position);
-				Label = $"{Position}  —  {info.AiracCycleId}  ·  eff {info.EffectiveDateUtc:dd MMM yyyy}";
+			AiracCycleInfo info = AiracCycleResolver.GetCycle(Position);
+			Label = $"{Position}  —  {info.AiracCycleId}  ·  eff {info.EffectiveDateUtc:dd MMM yyyy}";
 
-				AiracCycleDataCacheEntry? entry = AiracCycleDataCache.Instance.GetEntry(info.AiracCycleId);
-				State = entry?.State switch
-				{
-					CycleDataState.Ready => "ready",
-					CycleDataState.Parsing => "parsing…",
-					CycleDataState.Downloading => "downloading…",
-					CycleDataState.Downloaded => "parsing…",
-					CycleDataState.Failed => "failed",
-					CycleDataState.NotYetPublished => "not yet published",
-					_ => "preparing…",
-				};
-			}
-			catch
+			AiracCycleDataCacheEntry? entry = AiracCycleDataCache.Instance.GetEntry(info.AiracCycleId);
+			State = entry?.State switch
 			{
-				Label = $"{Position}  —  unavailable";
-				State = string.Empty;
-			}
+				CycleDataState.Ready => "ready",
+				CycleDataState.Parsing => "parsing…",
+				CycleDataState.Downloading => "downloading…",
+				CycleDataState.Downloaded => "parsing…",
+				CycleDataState.Failed => "failed",
+				CycleDataState.NotYetPublished => "not yet published",
+				_ => "preparing…",
+			};
 		}
 	}
 }

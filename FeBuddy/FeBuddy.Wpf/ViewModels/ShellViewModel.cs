@@ -19,14 +19,13 @@ namespace FeBuddy.Wpf.ViewModels;
 /// <summary>
 /// Backs <c>ShellWindow</c>: navigation, the status-bar Zulu clock, the top-centre AIRAC
 /// status indicator, and the version chip / update state. Everything but navigation is driven
-/// by <see cref="AppEnvironment"/> and <see cref="AiracCycleDataCache"/> - no sample data
-/// (remediation plan Phase 4).
+/// by <see cref="AppEnvironment"/> and <see cref="AiracCycleDataCache"/>.
 /// </summary>
 public sealed class ShellViewModel : ObservableObject
 {
-	// Segoe Fluent Icons code-points (see Theme/Icons.xaml for the same set in XAML).
+	// Segoe Fluent Icons code-points for the nav rows. The glyphs XAML uses live in Theme/Icons.xaml.
 	private const string GlyphDashboard = ""; // Home
-	private const string GlyphAiracService = ""; // Calendar (MDL2) - AIRAC cycle; U+25F7 was not a font glyph
+	private const string GlyphAiracService = ""; // Calendar (MDL2)
 	private const string GlyphMap = ""; // MapPin
 	private const string GlyphSettings = ""; // Setting
 	private const string GlyphInfo = ""; // Info
@@ -46,6 +45,7 @@ public sealed class ShellViewModel : ObservableObject
 	private string _updateTooltipTitle = "Checking for updates…";
 	private string _updateTooltipBody = string.Empty;
 
+	/// <summary>Builds the navigation, starts the Zulu clock, and follows the launch state.</summary>
 	public ShellViewModel()
 	{
 		_dispatcher = Application.Current?.Dispatcher ?? Dispatcher.CurrentDispatcher;
@@ -86,20 +86,25 @@ public sealed class ShellViewModel : ObservableObject
 		RefreshSystemHealth();
 	}
 
+	/// <summary>The main nav group: Dashboard, AIRAC Service, Map.</summary>
 	public ObservableCollection<NavItem> PrimaryNav { get; }
 
+	/// <summary>The SYSTEM nav group: Settings, Info.</summary>
 	public ObservableCollection<NavItem> SystemNav { get; }
 
+	/// <summary>The rows of the systems-health popover.</summary>
 	public ObservableCollection<HealthRow> SystemHealth { get; }
 
+	/// <summary>Re-runs the time, internet and version checks.</summary>
 	public ICommand RecheckCommand { get; }
 
+	/// <summary>Collapses or expands the nav rail.</summary>
 	public ICommand ToggleNavCommand { get; }
 
-	/// <summary>Opens the modal update window. Enabled only when an update is available (4.2).</summary>
+	/// <summary>Opens the modal update window. Enabled only when an update is available.</summary>
 	public ICommand OpenUpdateWindowCommand { get; }
 
-	/// <summary>Icons-only nav rail when true.</summary>
+	/// <summary><see langword="true"/> for an icons-only nav rail.</summary>
 	public bool NavCollapsed
 	{
 		get => _navCollapsed;
@@ -117,7 +122,7 @@ public sealed class ShellViewModel : ObservableObject
 	/// The top-centre AIRAC status readout: narrates the launch pipeline
 	/// (<c>Downloading cycle 2610…</c> → <c>Parsing cycle 2610…</c> →
 	/// <c>AIRAC 2610 · eff 01 OCT 2026</c>), then settles on the current cycle. Never a
-	/// constant - it reads <see cref="AiracCycleDataCache"/> state (4.3).
+	/// constant - it reads <see cref="AiracCycleDataCache"/> state.
 	/// </summary>
 	public string AiracStatus
 	{
@@ -132,7 +137,7 @@ public sealed class ShellViewModel : ObservableObject
 		private set => SetProperty(ref _versionText, value);
 	}
 
-	/// <summary>True when a newer version exists on the user's channel - makes the version chip a button (4.2).</summary>
+	/// <summary><see langword="true"/> when a newer version exists on the user's channel - makes the version chip a button.</summary>
 	public bool IsUpdateAvailable
 	{
 		get => _isUpdateAvailable;
@@ -145,7 +150,7 @@ public sealed class ShellViewModel : ObservableObject
 		}
 	}
 
-	/// <summary>Whether the machine currently has internet - gates the update tooltip (4.1).</summary>
+	/// <summary>Whether the machine currently has internet - gates the update tooltip.</summary>
 	public bool IsOnline
 	{
 		get => _isOnline;
@@ -169,10 +174,10 @@ public sealed class ShellViewModel : ObservableObject
 		}
 	}
 
-	/// <summary>True once the user has declined an available update this session - the version text turns amber.</summary>
+	/// <summary><see langword="true"/> once the user has declined an available update this session - the version text turns amber.</summary>
 	public bool VersionIsWarning => _versionBrushKey == "Brush.Warn";
 
-	/// <summary>Title line of the FE-BUDDY caption tooltip - update state only (4.1).</summary>
+	/// <summary>Title line of the FE-BUDDY caption tooltip - update state only.</summary>
 	public string UpdateTooltipTitle
 	{
 		get => _updateTooltipTitle;
@@ -199,6 +204,7 @@ public sealed class ShellViewModel : ObservableObject
 		SystemHealth.Any(h => h.Kind == StatusKind.Warn) ? StatusKind.Warn :
 		StatusKind.Ok;
 
+	/// <summary>The health popover's heading, e.g. <c>1 needs attention</c>.</summary>
 	public string HealthSummary
 	{
 		get
@@ -250,6 +256,7 @@ public sealed class ShellViewModel : ObservableObject
 		{
 			VersionText += " - DEV";
 		}
+
 		IsUpdateAvailable = version.UpdateAvailable && version.LatestVersion is not null;
 
 		if (!version.CheckSucceeded)

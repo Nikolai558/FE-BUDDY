@@ -6,21 +6,27 @@ namespace FeBuddy.Wpf.Views.Cards;
 /// <summary>The shared Outputs card. See OutputsCard.xaml.</summary>
 public partial class OutputsCard : UserControl
 {
+	/// <summary>Identifies the <see cref="GeojsonDescription"/> dependency property.</summary>
 	public static readonly DependencyProperty GeojsonDescriptionProperty = DependencyProperty.Register(
 		nameof(GeojsonDescription), typeof(string), typeof(OutputsCard), new PropertyMetadata(null));
 
+	/// <summary>Identifies the <see cref="GeojsonTemplate"/> dependency property.</summary>
 	public static readonly DependencyProperty GeojsonTemplateProperty = DependencyProperty.Register(
 		nameof(GeojsonTemplate), typeof(DataTemplate), typeof(OutputsCard), new PropertyMetadata(null));
 
+	/// <summary>Identifies the <see cref="AliasFileName"/> dependency property.</summary>
 	public static readonly DependencyProperty AliasFileNameProperty = DependencyProperty.Register(
 		nameof(AliasFileName), typeof(string), typeof(OutputsCard), new PropertyMetadata(string.Empty));
 
+	/// <summary>Identifies the <see cref="AliasDescription"/> dependency property.</summary>
 	public static readonly DependencyProperty AliasDescriptionProperty = DependencyProperty.Register(
 		nameof(AliasDescription), typeof(string), typeof(OutputsCard), new PropertyMetadata(null));
 
+	/// <summary>Identifies the <see cref="AliasOptions"/> dependency property.</summary>
 	public static readonly DependencyProperty AliasOptionsProperty = DependencyProperty.Register(
 		nameof(AliasOptions), typeof(object), typeof(OutputsCard), new PropertyMetadata(null));
 
+	/// <summary>Creates the card.</summary>
 	public OutputsCard() => InitializeComponent();
 
 	/// <summary>What the "GeoJSON files" checkbox writes. Unused when <see cref="GeojsonTemplate"/> is set.</summary>

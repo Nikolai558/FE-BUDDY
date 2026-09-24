@@ -1,7 +1,7 @@
 <!--
     AirportsView  -  the Airports sub-service tab inside the AIRAC Service screen.
-    Save / Undo / Previous / Next / Review come from the tab host's shared action
-    bar, and the tab host owns the page's single scroller.
+    Save / Undo / Previous / Next / Preview settings come from the tab host's shared
+    action bar, and the tab host owns the page's single scroller.
 -->
 <UserControl x:Class="FeBuddy.Wpf.Views.AirportsView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -16,8 +16,8 @@
              d:DesignWidth="900" d:DesignHeight="1400">
 
     <!-- No ScrollViewer here: the tab host owns the one page-level scroller
-         that every sub-service tab is laid out inside (theme fixes P3a).
-         A second scroller stole the wheel and hid the lower sections. -->
+         that every sub-service tab is laid out inside. A second scroller would
+         steal the wheel and hide the lower sections. -->
     <StackPanel>
 
             <TextBlock Text="{Binding ValidationError}" Style="{StaticResource Text.Caption}"

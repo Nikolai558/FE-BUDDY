@@ -40,8 +40,8 @@
         <DataTemplate DataType="{x:Type infra:PlaceholderSubServiceViewModel}">
             <local:PlaceholderSubServiceView />
         </DataTemplate>
-        <DataTemplate DataType="{x:Type infra:ServiceReviewTabViewModel}">
-            <local:ServiceReviewTabView />
+        <DataTemplate DataType="{x:Type infra:ServicePreviewTabViewModel}">
+            <local:ServicePreviewTabView />
         </DataTemplate>
         <DataTemplate DataType="{x:Type infra:ServiceRunReviewTabViewModel}">
             <local:ServiceRunReviewTabView />
@@ -92,7 +92,7 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <!-- pinned page header (theme fixes P4): title stays put while the body scrolls -->
+        <!-- pinned page header: title stays put while the body scrolls -->
         <Grid Grid.Row="0" Background="{StaticResource Brush.Bg.Base}">
             <TextBlock Text="AIRAC Services" Style="{StaticResource Text.Display}" Margin="28,24,28,14" />
             <Border Style="{StaticResource Divider}" VerticalAlignment="Bottom" />

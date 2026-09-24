@@ -59,11 +59,4 @@ public sealed class Airway
 	/// <see cref="Geometry"/> is the unclipped, unbuffered line and is not used.
 	/// </remarks>
 	public bool CrossesRoi { get; init; } = true;
-
-	/// <summary>
-	/// Non-fatal problems encountered while building this specific airway (e.g. an
-	/// unresolvable mid-airway waypoint that forced the airway to stop early). Empty when
-	/// nothing went wrong.
-	/// </summary>
-	public IReadOnlyList<string> Warnings { get; init; } = Array.Empty<string>();
 }

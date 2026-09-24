@@ -38,7 +38,7 @@ public class AirwayGeometryBuilderTests
 		AirwayGeometryBuildResult result = AirwayGeometryBuilder.Build(data, "TEST1", segments);
 
 		Assert.Single(result.LineStrings);
-		Assert.Empty(result.Warnings);
+		Assert.Empty(result.Messages.WarningTexts());
 	}
 
 	[Fact]
@@ -97,7 +97,7 @@ public class AirwayGeometryBuilderTests
 		AirwayGeometryBuildResult result = AirwayGeometryBuilder.Build(data, "TEST1", segments);
 
 		Assert.Contains("NOWHERE", result.UnresolvedWaypointIds);
-		Assert.Contains(result.Warnings, w => w.Contains("NOWHERE") && w.Contains("excluded from all output"));
+		Assert.Contains(result.Messages.WarningTexts(), w => w.Contains("NOWHERE") && w.Contains("excluded from all output"));
 	}
 
 	/// <summary>
@@ -124,7 +124,7 @@ public class AirwayGeometryBuilderTests
 		AirwayGeometryBuildResult result = AirwayGeometryBuilder.Build(data, "TEST1", segments);
 
 		Assert.Contains("NOWHERE", result.UnresolvedWaypointIds);
-		Assert.Contains(result.Warnings, w => w.Contains("NOWHERE") && w.Contains("TEST1"));
+		Assert.Contains(result.Messages.WarningTexts(), w => w.Contains("NOWHERE") && w.Contains("TEST1"));
 
 		// Processing kept going past the bad record (the CCCCC->DDDDD leg was still built),
 		// so every unresolved ID on the airway is available for the exclusion summary.

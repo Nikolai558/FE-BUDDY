@@ -1,6 +1,5 @@
 using FeBuddy.Core.Application.Models;
 using FeBuddy.Core.Domain.Airways.Models;
-using FeBuddy.Core.Infrastructure.Logging.Models;
 
 namespace FeBuddy.Core.Application.Airac.Airways.Models;
 
@@ -21,9 +20,4 @@ namespace FeBuddy.Core.Application.Airac.Airways.Models;
 public sealed record AirwayBuildAllResult(
 	IReadOnlyList<Airway> Airways,
 	IReadOnlyList<ServiceMessage> Messages,
-	IReadOnlyList<string> ExcludedAirwayIds)
-{
-	/// <summary>Backwards-compatible text-only view of the Warning/Error entries in <see cref="Messages"/>.</summary>
-	public IReadOnlyList<string> Warnings =>
-		Messages.Where(m => m.Level is LogLevel.Warning or LogLevel.Error).Select(m => m.Text).ToArray();
-}
+	IReadOnlyList<string> ExcludedAirwayIds);

@@ -281,7 +281,7 @@ public class AirwaySettingsParserTests
 
 		AirwaySettingsParseResult result = AirwaySettingsParser.Parse(settings);
 
-		Assert.Contains(result.Warnings, w => w.Contains("SomeTypo"));
+		Assert.Contains(result.Messages.WarningTexts(), w => w.Contains("SomeTypo"));
 	}
 
 	[Fact]
@@ -292,7 +292,7 @@ public class AirwaySettingsParserTests
 
 		AirwaySettingsParseResult result = AirwaySettingsParser.Parse(settings);
 
-		Assert.Contains(result.Warnings, w => w.Contains("Crc.High.Text.text"));
+		Assert.Contains(result.Messages.WarningTexts(), w => w.Contains("Crc.High.Text.text"));
 	}
 
 	// ---- Phase 3.3-3.7 settings ---------------------------------------
@@ -418,7 +418,7 @@ public class AirwaySettingsParserTests
 		Assert.Equal(3, result.Settings.SymbolDefaults.Count);
 		Assert.Empty(result.Settings.LineDefaults);
 		Assert.Empty(result.Settings.TextDefaults);
-		Assert.Empty(result.Warnings);
+		Assert.Empty(result.Messages.WarningTexts());
 	}
 
 	[Fact]
@@ -463,7 +463,7 @@ public class AirwaySettingsParserTests
 
 		AirwaySettingsParseResult result = AirwaySettingsParser.Parse(settings);
 
-		Assert.Contains(result.Warnings, w => w.Contains("IncludeCrcEramPropertyDefaults"));
+		Assert.Contains(result.Messages.WarningTexts(), w => w.Contains("IncludeCrcEramPropertyDefaults"));
 		Assert.False(result.Settings.IncludeCrcLineDefaults);
 		Assert.False(result.Settings.IncludeCrcSymbolDefaults);
 		Assert.False(result.Settings.IncludeCrcTextDefaults);
@@ -516,7 +516,7 @@ public class AirwaySettingsParserTests
 		AirwaySettingsParseResult result = AirwaySettingsParser.Parse(settings);
 
 		Assert.Empty(result.Settings.FebProperties);
-		Assert.DoesNotContain(result.Warnings, w => w.Contains("FebProperties"));
+		Assert.DoesNotContain(result.Messages.WarningTexts(), w => w.Contains("FebProperties"));
 	}
 
 	[Fact]
@@ -527,7 +527,7 @@ public class AirwaySettingsParserTests
 
 		AirwaySettingsParseResult result = AirwaySettingsParser.Parse(settings);
 
-		Assert.Contains(result.Warnings, w => w.Contains("IncludeAirwayWaypointIds"));
+		Assert.Contains(result.Messages.WarningTexts(), w => w.Contains("IncludeAirwayWaypointIds"));
 		Assert.Empty(result.Settings.FebProperties);
 	}
 }

@@ -187,6 +187,8 @@ public static class NasrCycleDownloader
 
 	/// <summary>
 	/// Deletes any cached cycle folders that are not in <paramref name="cycleIdsToKeep"/>.
+	/// Best-effort: a folder that cannot be deleted (a file in it is open) is logged and left
+	/// for the next launch; this never throws for that.
 	/// </summary>
 	/// <param name="cycleIdsToKeep">
 	/// The cycle IDs to retain - normally the previous, current, and next cycle's IDs.
@@ -217,8 +219,20 @@ public static class NasrCycleDownloader
 				continue;
 			}
 
-			Directory.Delete(directory, recursive: true);
-			deleted.Add(cycleId);
+			try
+			{
+				Directory.Delete(directory, recursive: true);
+				deleted.Add(cycleId);
+			}
+			catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+			{
+				AppLog.Warning(LogSource, $"Could not remove old cycle folder '{directory}': {ex.Message}. It will be retried next launch.");
+			}
+		}
+
+		if (deleted.Count > 0)
+		{
+			AppLog.Info(LogSource, $"Removed {deleted.Count} cached cycle(s) that are no longer offered: {string.Join(", ", deleted)}.");
 		}
 
 		return deleted;

@@ -53,24 +53,42 @@ public class AiracCycleResolverTests
 		Assert.Equal(new DateOnly(2026, 10, 1), next.EffectiveDateUtc);
 	}
 
-	[Fact]
-	public void a_date_before_the_earliest_known_cycle_throws()
+	[Theory]
+	[InlineData("2020-12-31", "2014", "31_Dec_2020")] // a 14-cycle year
+	[InlineData("2021-01-28", "2101", "28_Jan_2021")] // numbering restarts at 01 in the new year
+	[InlineData("2025-01-23", "2501", "23_Jan_2025")] // before the reference cycle
+	[InlineData("2026-12-24", "2613", "24_Dec_2026")]
+	[InlineData("2027-01-21", "2701", "21_Jan_2027")]
+	[InlineData("2119-12-21", "1913", "21_Dec_2119")] // far future: no table to run out of
+	public void published_cycles_are_calculated_from_their_effective_date(string effective, string expectedId, string expectedCsvDate)
 	{
-		DateOnly tooEarly = new(2000, 1, 1);
+		DateOnly effectiveDate = DateOnly.Parse(effective, System.Globalization.CultureInfo.InvariantCulture);
 
-		Assert.Throws<InvalidOperationException>(() =>
-			AiracCycleResolver.GetCycle(AiracCyclePosition.Current, tooEarly));
+		AiracCycleInfo cycle = AiracCycleResolver.GetCycle(AiracCyclePosition.Current, effectiveDate);
+
+		Assert.Equal(expectedId, cycle.AiracCycleId);
+		Assert.Equal(expectedCsvDate, cycle.NasrCsvEffectiveDate);
+		Assert.Equal(effectiveDate, cycle.EffectiveDateUtc);
 	}
 
 	[Fact]
-	public void a_next_cycle_past_the_end_of_the_table_throws()
+	public void consecutive_cycles_are_exactly_28_days_apart_across_a_year_boundary()
 	{
-		DateOnly afterTheLastCycle = new(2120, 1, 1);
+		DateOnly asOf = new(2026, 12, 30); // in 2613; the next cycle is 2701
 
-		Assert.Equal("1913", AiracCycleResolver.GetCycle(AiracCyclePosition.Current, afterTheLastCycle).AiracCycleId);
-		InvalidOperationException ex = Assert.Throws<InvalidOperationException>(() =>
-			AiracCycleResolver.GetCycle(AiracCyclePosition.Next, afterTheLastCycle));
-		Assert.Contains("needs more entries", ex.Message, StringComparison.Ordinal);
+		AiracCycleInfo current = AiracCycleResolver.GetCycle(AiracCyclePosition.Current, asOf);
+		AiracCycleInfo next = AiracCycleResolver.GetCycle(AiracCyclePosition.Next, asOf);
+
+		Assert.Equal("2613", current.AiracCycleId);
+		Assert.Equal("2701", next.AiracCycleId);
+		Assert.Equal(28, next.EffectiveDateUtc.DayNumber - current.EffectiveDateUtc.DayNumber);
+	}
+
+	[Fact]
+	public void an_unknown_position_is_rejected()
+	{
+		Assert.Throws<ArgumentOutOfRangeException>(() =>
+			AiracCycleResolver.GetCycle((AiracCyclePosition)99, new DateOnly(2026, 9, 6)));
 	}
 
 	[Fact]

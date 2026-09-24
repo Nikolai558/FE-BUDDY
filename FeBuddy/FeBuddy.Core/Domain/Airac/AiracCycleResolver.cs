@@ -5,81 +5,62 @@ using FeBuddy.Core.Domain.Airac.Models;
 namespace FeBuddy.Core.Domain.Airac;
 
 /// <summary>
-/// Resolves the Previous, Current, or Next AIRAC cycle relative to a date, from the
-/// <see cref="AiracCycleIdEffectiveDates.AllCycleDates"/> lookup table.
+/// Works out which AIRAC cycle is in effect on a date, and the cycles either side of it.
 /// </summary>
+/// <remarks>
+/// <para>
+/// AIRAC cycles follow a fixed 28-day cadence, so every cycle can be calculated from any one
+/// known cycle - no lookup table to maintain.
+/// </para>
+/// <para>
+/// A cycle's ID is the two-digit year it takes effect in, then its number within that year:
+/// cycle 01 is the first to take effect on or after 1 January. Most years have 13 cycles; about
+/// one year in nine has 14 (e.g. 2014, effective 2020-12-31).
+/// </para>
+/// </remarks>
 public static class AiracCycleResolver
 {
+	private const int DaysPerCycle = 28;
+
+	/// <summary>The cycle every other is counted from: 2601, effective 2026-01-22.</summary>
+	private static readonly DateOnly ReferenceEffectiveDate = new(2026, 1, 22);
+
 	/// <summary>
-	/// Resolves one AIRAC cycle relative to <paramref name="asOfUtc"/> (or today, UTC, when
-	/// not supplied).
+	/// Resolves one AIRAC cycle relative to <paramref name="asOfUtc"/>.
 	/// </summary>
-	/// <param name="position">Which cycle to resolve.</param>
+	/// <param name="position">Which cycle to resolve: the one in effect, or the one before or after it.</param>
 	/// <param name="asOfUtc">
-	/// The date to resolve "current" against. Defaults to today's date in UTC - always use
-	/// UTC here, per the dev notes' rule that AIRAC cycle calculations must be based on UTC
-	/// to stay consistent regardless of the user's local time zone.
+	/// The date to resolve against; defaults to today in UTC. Always pass a UTC date: cycles
+	/// change at 0000Z, so a local date can land on the wrong cycle.
 	/// </param>
-	/// <returns>The resolved cycle's identifier, effective date, and CSV download date string.</returns>
-	/// <exception cref="InvalidOperationException">
-	/// Thrown when <paramref name="asOfUtc"/> falls outside the range covered by the lookup
-	/// table (either before its first entry, or <paramref name="position"/> would resolve
-	/// past its last entry) - the table needs new entries appended.
-	/// </exception>
+	/// <returns>The cycle's ID, effective date, and the date string its NASR CSV download uses.</returns>
 	public static AiracCycleInfo GetCycle(AiracCyclePosition position, DateOnly? asOfUtc = null)
 	{
-		DateOnly today = asOfUtc ?? DateOnly.FromDateTime(DateTime.UtcNow);
+		DateOnly date = asOfUtc ?? DateOnly.FromDateTime(DateTime.UtcNow);
 
-		IReadOnlyList<AiracCycleIdEffectiveDates.AiracCycleDate> allCycles =
-			AiracCycleIdEffectiveDates.AllCycleDates;
-
-		int currentIndex = -1;
-
-		for (int i = 0; i < allCycles.Count; i++)
+		int offset = position switch
 		{
-			DateOnly effectiveDate = ParseEffectiveDate(allCycles[i]);
-
-			if (effectiveDate > today)
-			{
-				break;
-			}
-
-			currentIndex = i;
-		}
-
-		if (currentIndex < 0)
-		{
-			throw new InvalidOperationException(
-				$"No AIRAC cycle data covers {today:yyyy-MM-dd}; the earliest known cycle " +
-				$"starts {ParseEffectiveDate(allCycles[0]):yyyy-MM-dd}. The lookup table needs earlier entries.");
-		}
-
-		int targetIndex = position switch
-		{
-			AiracCyclePosition.Previous => currentIndex - 1,
-			AiracCyclePosition.Current => currentIndex,
-			AiracCyclePosition.Next => currentIndex + 1,
+			AiracCyclePosition.Previous => -1,
+			AiracCyclePosition.Current => 0,
+			AiracCyclePosition.Next => 1,
 			_ => throw new ArgumentOutOfRangeException(nameof(position), position, "Unknown AIRAC cycle position.")
 		};
 
-		if (targetIndex < 0 || targetIndex >= allCycles.Count)
-		{
-			throw new InvalidOperationException(
-				$"No AIRAC cycle data available for '{position}' relative to {today:yyyy-MM-dd}. " +
-				"The lookup table needs more entries.");
-		}
+		// Floor division: a date before the reference cycle belongs to a cycle before it.
+		int cyclesSinceReference = (int)Math.Floor((date.DayNumber - ReferenceEffectiveDate.DayNumber) / (double)DaysPerCycle);
 
-		AiracCycleIdEffectiveDates.AiracCycleDate cycle = allCycles[targetIndex];
-
-		return new AiracCycleInfo(
-			cycle.AiracCycleId,
-			cycle.NasrCsvAiracEffectiveDate,
-			ParseEffectiveDate(cycle));
+		return ForEffectiveDate(ReferenceEffectiveDate.AddDays((cyclesSinceReference + offset) * DaysPerCycle));
 	}
 
-	private static DateOnly ParseEffectiveDate(AiracCycleIdEffectiveDates.AiracCycleDate cycle) =>
-		DateOnly.ParseExact(
-			cycle.NasrGeneralAiracEffectiveDate,
-			"yyyy-MM-dd",
-			CultureInfo.InvariantCulture);
+	private static AiracCycleInfo ForEffectiveDate(DateOnly effectiveDate)
+	{
+		// The year's first cycle takes effect within its first 28 days, so the cycle number is
+		// how many whole cycles into the year this one starts, plus one.
+		int numberInYear = (effectiveDate.DayOfYear - 1) / DaysPerCycle + 1;
+
+		return new AiracCycleInfo(
+			AiracCycleId: $"{effectiveDate.Year % 100:00}{numberInYear:00}",
+			NasrCsvEffectiveDate: effectiveDate.ToString("dd_MMM_yyyy", CultureInfo.InvariantCulture),
+			EffectiveDateUtc: effectiveDate);
+	}
 }

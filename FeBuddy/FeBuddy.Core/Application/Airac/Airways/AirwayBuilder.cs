@@ -177,8 +177,7 @@ public static class AirwayBuilder
 				Segments = normalizedSegments,
 				Points = points,
 				Geometry = Combine(lineStrings),
-				CrossesRoi = crossesRoi,
-				Warnings = geometryResult.Warnings
+				CrossesRoi = crossesRoi
 			};
 
 			airways.Add(airway);

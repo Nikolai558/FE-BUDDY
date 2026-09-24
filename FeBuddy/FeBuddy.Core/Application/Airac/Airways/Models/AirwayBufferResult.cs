@@ -20,9 +20,4 @@ namespace FeBuddy.Core.Application.Airac.Airways.Models;
 /// </param>
 public sealed record AirwayBufferResult(
 	IReadOnlyList<LineString> LineStrings,
-	IReadOnlyList<ServiceMessage> Messages)
-{
-	/// <summary>Backwards-compatible text-only view of the Warning/Error entries in <see cref="Messages"/>.</summary>
-	public IReadOnlyList<string> Warnings =>
-		Messages.Where(m => m.Level is LogLevel.Warning or LogLevel.Error).Select(m => m.Text).ToArray();
-}
+	IReadOnlyList<ServiceMessage> Messages);

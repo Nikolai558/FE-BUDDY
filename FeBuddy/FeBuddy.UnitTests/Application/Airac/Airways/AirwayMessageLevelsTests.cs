@@ -49,7 +49,7 @@ public sealed class AirwayMessageLevelsTests : IDisposable
 		ServiceMessage message = Assert.Single(result.Messages);
 		Assert.Equal(LogLevel.Info, message.Level);
 		Assert.Equal("AirwayWaypointBuffer", message.Source);
-		Assert.Empty(result.Warnings); // the Info notice does not surface as a warning
+		Assert.Empty(result.Messages.WarningTexts()); // the Info notice does not surface as a warning
 	}
 
 	[Fact]

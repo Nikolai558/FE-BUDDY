@@ -65,6 +65,7 @@ public sealed class AiracCycleDataCache
 	private readonly Func<AiracCycleInfo, CancellationToken, Task<string>> _download;
 	private readonly Func<string, CancellationToken, Task<NasrCsvDataCollection>> _parse;
 	private readonly Func<AiracCycleInfo, bool> _isLocallyAvailable;
+	private readonly Action<IReadOnlyCollection<string>> _pruneAllBut;
 
 	private readonly object _gate = new();
 	private readonly List<AiracCycleDataCacheEntry> _entries = new();
@@ -81,7 +82,8 @@ public sealed class AiracCycleDataCache
 			// would cut this to the ~24 MB Airways actually needs (APT/AWY/FIX/NAV). Refactor
 			// later - see remediation plan 2.2.
 			parse: (dir, ct) => NasrCsvParser.ParseAllAsync(dir),
-			isLocallyAvailable: cycle => NasrCycleDownloader.IsCycleAvailableLocally(cycle, cacheRootDirectory: null))
+			isLocallyAvailable: cycle => NasrCycleDownloader.IsCycleAvailableLocally(cycle, cacheRootDirectory: null),
+			pruneAllBut: cycleIds => NasrCycleDownloader.PruneStaleCycles(cycleIds, cacheRootDirectory: null))
 	{
 	}
 
@@ -98,16 +100,22 @@ public sealed class AiracCycleDataCache
 	/// cached" (always show Downloading), matching every test's expectations before this
 	/// existed.
 	/// </param>
+	/// <param name="pruneAllBut">
+	/// Deletes every cached cycle except the IDs given. Defaults to doing nothing, so a test
+	/// never touches the real cycle cache.
+	/// </param>
 	public AiracCycleDataCache(
 		Func<AiracCycleInfo, CancellationToken, Task<AiracCyclePublicationState>> probe,
 		Func<AiracCycleInfo, CancellationToken, Task<string>> download,
 		Func<string, CancellationToken, Task<NasrCsvDataCollection>> parse,
-		Func<AiracCycleInfo, bool>? isLocallyAvailable = null)
+		Func<AiracCycleInfo, bool>? isLocallyAvailable = null,
+		Action<IReadOnlyCollection<string>>? pruneAllBut = null)
 	{
 		_probe = probe ?? throw new ArgumentNullException(nameof(probe));
 		_download = download ?? throw new ArgumentNullException(nameof(download));
 		_parse = parse ?? throw new ArgumentNullException(nameof(parse));
 		_isLocallyAvailable = isLocallyAvailable ?? (_ => false);
+		_pruneAllBut = pruneAllBut ?? (_ => { });
 	}
 
 	/// <summary>The process-wide cache the GUI binds to.</summary>
@@ -181,6 +189,10 @@ public sealed class AiracCycleDataCache
 		}
 
 		AppLog.Info(LogSource, $"Preparing AIRAC cycles: previous {previous.AiracCycleId}, current {current.AiracCycleId}, next {next.AiracCycleId}.");
+
+		// Only these three cycles are ever offered, so any other cached cycle is dead weight -
+		// without this the cache grows by a cycle every 28 days.
+		_pruneAllBut(new[] { previous.AiracCycleId, current.AiracCycleId, next.AiracCycleId });
 
 		// Probe all three concurrently - the probe is a cheap HEAD.
 		await Task.WhenAll(

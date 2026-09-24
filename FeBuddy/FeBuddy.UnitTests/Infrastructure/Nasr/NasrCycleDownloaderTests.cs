@@ -341,6 +341,23 @@ public class NasrCycleDownloaderTests : IDisposable
 	}
 
 	[Fact]
+	public void prune_stale_cycles_skips_a_folder_it_cannot_delete_and_carries_on()
+	{
+		Directory.CreateDirectory(Path.Combine(_cacheRoot, "2607"));
+		Directory.CreateDirectory(Path.Combine(_cacheRoot, "2608"));
+		Directory.CreateDirectory(Path.Combine(_cacheRoot, "2609"));
+
+		// On Windows an open handle without FileShare.Delete blocks deleting the file, and so its folder.
+		using FileStream busy = new(Path.Combine(_cacheRoot, "2607", "APT_BASE.csv"), FileMode.Create, FileAccess.Write, FileShare.None);
+
+		IReadOnlyList<string> deleted = NasrCycleDownloader.PruneStaleCycles(new[] { "2609" }, _cacheRoot);
+
+		Assert.Equal(new[] { "2608" }, deleted);
+		Assert.True(Directory.Exists(Path.Combine(_cacheRoot, "2607")));
+		Assert.True(Directory.Exists(Path.Combine(_cacheRoot, "2609")));
+	}
+
+	[Fact]
 	public void prune_stale_cycles_on_a_missing_cache_root_does_nothing()
 	{
 		string missingRoot = Path.Combine(_cacheRoot, "does-not-exist");

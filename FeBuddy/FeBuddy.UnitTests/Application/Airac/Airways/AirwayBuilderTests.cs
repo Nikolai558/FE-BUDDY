@@ -140,7 +140,7 @@ public class AirwayBuilderTests
 
 		Assert.Empty(result.Airways);
 		Assert.Contains("J146", result.ExcludedAirwayIds);
-		Assert.Contains(result.Warnings, w => w.Contains("J146") && w.Contains("excluded from all output"));
+		Assert.Contains(result.Messages.WarningTexts(), w => w.Contains("J146") && w.Contains("excluded from all output"));
 	}
 
 	[Fact]
@@ -163,7 +163,7 @@ public class AirwayBuilderTests
 		Airway airway = Assert.Single(result.Airways);
 		Assert.Equal("J5", airway.AwyId);
 		Assert.Empty(result.ExcludedAirwayIds);
-		Assert.Empty(result.Warnings);
+		Assert.Empty(result.Messages.WarningTexts());
 		Assert.Equal(new[] { "CFJCC", "CFDCT" }, airway.Points.Select(p => p.PointId));
 	}
 

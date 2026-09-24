@@ -47,6 +47,23 @@ public sealed class AiracCycleDataCacheTests : IDisposable
 	}
 
 	[Fact]
+	public async Task PrepareCycles_PrunesEveryCachedCycleButTheThreeOffered()
+	{
+		IReadOnlyCollection<string>? kept = null;
+
+		AiracCycleDataCache cache = new(
+			probe: AlwaysPublished,
+			download: (cycle, _) => Task.FromResult($@"C:\cache\{cycle.AiracCycleId}"),
+			parse: (_, _) => Task.FromResult(new NasrCsvDataCollection()),
+			pruneAllBut: cycleIds => kept = cycleIds);
+
+		await cache.PrepareCyclesAsync(Previous, Current, Next);
+
+		Assert.NotNull(kept);
+		Assert.Equal(new[] { "2609", "2610", "2611" }, kept.Order());
+	}
+
+	[Fact]
 	public async Task NextDownload_StartsWhileEarlierCycleIsStillParsing()
 	{
 		TaskCompletionSource releaseCurrentParse = new(TaskCreationOptions.RunContinuationsAsynchronously);

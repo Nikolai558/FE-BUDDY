@@ -37,6 +37,15 @@ public static class AppEnvironment
 	/// <summary>The result of the launch-time News check, or <see langword="null"/> until it runs.</summary>
 	public static NewsCheckResult? News { get; internal set; }
 
+	/// <summary>
+	/// <see langword="true"/> when this copy is the one the MSI installed (see
+	/// <see cref="InstalledProduct.IsMsiInstalled"/>); <see langword="false"/> for a dev build or a
+	/// copy run from anywhere else. Read once per process.
+	/// </summary>
+	public static bool IsMsiInstalled => IsMsiInstalledLazy.Value;
+
+	private static readonly Lazy<bool> IsMsiInstalledLazy = new(() => InstalledProduct.IsMsiInstalled(AppContext.BaseDirectory));
+
 	/// <summary><see langword="true"/> once the launch sequence has finished (successfully or with degraded steps).</summary>
 	public static bool LaunchCompleted { get; internal set; }
 
@@ -69,12 +78,10 @@ public static class AppEnvironment
 			LaunchUtcSource = time.Source;
 			RaiseChanged();
 
-			UpdateChannel channel = VersionCheckResult.ParseChannel(
+			FeBuddy.Versioning.ReleaseChannel channel = VersionCheckResult.ParseChannel(
 				FeBuddy.Core.Helpers.UserConfigFile.GetValue("General.UpdateChannel"));
 
-			string currentVersion = Version?.CurrentVersion
-				?? System.Reflection.Assembly.GetEntryAssembly()?.GetName().Version?.ToString()
-				?? "dev";
+			string currentVersion = Version?.CurrentVersion ?? AppVersion.Current;
 
 			Version = await VersionCheck
 				.RunAsync(currentVersion, channel, time.HasInternetConnection, HttpClientForTesting, cancellationToken)

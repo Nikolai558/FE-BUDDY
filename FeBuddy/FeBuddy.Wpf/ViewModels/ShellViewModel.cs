@@ -58,7 +58,7 @@ public sealed class ShellViewModel : ObservableObject
 
         SystemNav =
         [
-            Nav("Settings", GlyphSettings, () => new SettingsViewModel()),
+            Nav("Settings", GlyphSettings, () => new SettingsViewModel(OpenUpdateWindow)),
             Nav("Info",     GlyphInfo,     () => new InfoViewModel()),
         ];
 
@@ -243,6 +243,12 @@ public sealed class ShellViewModel : ObservableObject
         }
 
         VersionText = version.CurrentVersion is "0.0.0" or "" ? "dev" : $"v{version.CurrentVersion.TrimStart('v', 'V')}";
+
+        // As in 2.x: a copy the MSI did not install (a dev build, or one run from elsewhere) says so.
+        if (!AppEnvironment.IsMsiInstalled && VersionText != "dev")
+        {
+            VersionText += " - DEV";
+        }
         IsUpdateAvailable = version.UpdateAvailable && version.LatestVersion is not null;
 
         if (!version.CheckSucceeded)
@@ -359,7 +365,7 @@ public sealed class ShellViewModel : ObservableObject
             return;
         }
 
-        UpdateWindowViewModel vm = new(version);
+        UpdateWindowViewModel vm = new(version, AppEnvironment.IsMsiInstalled, DescribeUnfinishedWork);
         UpdateWindow window = new()
         {
             DataContext = vm,
@@ -368,11 +374,51 @@ public sealed class ShellViewModel : ObservableObject
 
         window.ShowDialog();
 
+        if (vm.InstallerStarted)
+        {
+            // The MSI cannot replace FE-Buddy's files while it runs; it relaunches FE-Buddy at the end.
+            Application.Current?.Shutdown();
+            return;
+        }
+
         if (vm.UserDeclined)
         {
             _updateDeclinedThisSession = true;
             RefreshVersionState();
         }
+    }
+
+    // What closing FE-Buddy for an update would lose: a running AIRAC Service run and unsaved
+    // edits on any page opened this session. Pages never opened have nothing to lose.
+    private IReadOnlyList<string> DescribeUnfinishedWork()
+    {
+        var work = new List<string>();
+
+        foreach (NavItem item in PrimaryNav.Concat(SystemNav))
+        {
+            switch (item.CreatedViewModel)
+            {
+                case AiracServiceViewModel airac:
+                    if (airac.IsRunning)
+                    {
+                        work.Add("An AIRAC Service run is in progress.");
+                    }
+
+                    string[] dirty = airac.Tabs.Where(t => t.IsDirty).Select(t => t.Title).ToArray();
+                    if (dirty.Length > 0)
+                    {
+                        work.Add($"AIRAC Service: {string.Join(", ", dirty)} {(dirty.Length == 1 ? "has" : "have")} unsaved changes.");
+                    }
+
+                    break;
+
+                case SettingsViewModel settings when settings.IsDirty:
+                    work.Add("Settings has unsaved changes.");
+                    break;
+            }
+        }
+
+        return work;
     }
 
     private void UpdateZulu()

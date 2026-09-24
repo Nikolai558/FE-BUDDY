@@ -7,6 +7,9 @@ for %%d in (
     ".\FeBuddy\FeBuddy.Wpf\bin"
     ".\FeBuddy\FeBuddy.Harness\bin"
     ".\FeBuddy\FeBuddy.UnitTests\bin"
+    ".\FeBuddy\FeBuddy.Versioning\bin"
+    ".\FeBuddy\FeBuddy.Installer.CustomActions\bin"
+    ".\FeBuddy\FeBuddy.Installer\bin"
 ) do (
     if exist "%%d" (
         echo Deleting all files and folders in %%d

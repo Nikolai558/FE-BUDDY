@@ -17,7 +17,7 @@ using FeBuddy.Core.Services.General;
 
 using Microsoft.Win32;
 
-using LibUpdateChannel = FeBuddy.Core.Models.Services.General.UpdateChannel;
+using LibUpdateChannel = FeBuddy.Versioning.ReleaseChannel;
 
 namespace FeBuddy.Wpf.ViewModels;
 
@@ -36,6 +36,8 @@ public sealed class SettingsViewModel : ObservableObject
     private const string PrecisionKey = "Services.AiracService.CoordinatePrecision";
 
     private readonly Dispatcher _dispatcher;
+    private readonly Action? _openUpdateWindow;
+    private bool _isCheckingForUpdates;
 
     private LibUpdateChannel _channel;
     private string? _selectedFacility;
@@ -47,9 +49,16 @@ public sealed class SettingsViewModel : ObservableObject
     private bool _isDirty;
     private SavedStateSnapshot _savedState = SavedStateSnapshot.Of(new Dictionary<string, string>());
 
-    public SettingsViewModel()
+    /// <summary>Creates the Settings page.</summary>
+    /// <param name="openUpdateWindow">
+    /// Opens the update window for the current <see cref="AppEnvironment.Version"/>. The shell
+    /// owns it (it tracks a "Later" for the version chip); "Check for updates now" calls it when
+    /// the check finds an update.
+    /// </param>
+    public SettingsViewModel(Action? openUpdateWindow = null)
     {
         _dispatcher = Application.Current?.Dispatcher ?? Dispatcher.CurrentDispatcher;
+        _openUpdateWindow = openUpdateWindow;
 
         _channel = VersionCheckResult.ParseChannel(UserConfigFile.GetValue(ChannelKey));
         _selectedFacility = Blank(UserConfigFile.GetValue(ArtccKey));
@@ -63,8 +72,7 @@ public sealed class SettingsViewModel : ObservableObject
         DefaultRoiStore.Changed += OnDefaultRoiChanged;
 
         SaveCommand = new RelayCommand(Save);
-        CheckNowCommand = new RelayCommand(() => { Toast.Info("Checking…", "Contacting the version service."); _ = AppEnvironment.RecheckAsync(); },
-            () => AppEnvironment.HasInternetConnection);
+        CheckNowCommand = new RelayCommand(CheckForUpdates, () => AppEnvironment.HasInternetConnection && !IsCheckingForUpdates);
         RollbackCommand = new RelayCommand(() =>
             BrowserLauncher.Open("https://github.com/Nikolai558/FE-BUDDY/releases"));
         BrowseOutputCommand = new RelayCommand(BrowseOutput);
@@ -122,7 +130,21 @@ public sealed class SettingsViewModel : ObservableObject
 
     public bool IsOnline => AppEnvironment.HasInternetConnection;
 
+    /// <summary>Re-runs the version check, then opens the update window or toasts that there is nothing new.</summary>
     public ICommand CheckNowCommand { get; }
+
+    /// <summary><see langword="true"/> while "Check for updates now" is waiting on GitHub (the button shows "Checking…").</summary>
+    public bool IsCheckingForUpdates
+    {
+        get => _isCheckingForUpdates;
+        private set
+        {
+            if (SetProperty(ref _isCheckingForUpdates, value))
+            {
+                CommandManager.InvalidateRequerySuggested();
+            }
+        }
+    }
 
     public ICommand RollbackCommand { get; }
 
@@ -254,6 +276,50 @@ public sealed class SettingsViewModel : ObservableObject
     // ================= save =================
 
     public ICommand SaveCommand { get; }
+
+    private async void CheckForUpdates()
+    {
+        IsCheckingForUpdates = true;
+        try
+        {
+            await AppEnvironment.RecheckAsync();
+        }
+        finally
+        {
+            IsCheckingForUpdates = false;
+        }
+
+        VersionCheckResult? version = AppEnvironment.Version;
+        if (version is null || !version.CheckSucceeded)
+        {
+            Toast.Warn("Could not check for updates", version?.Message ?? "The version service did not answer.");
+            return;
+        }
+
+        if (version.UpdateAvailable)
+        {
+            _openUpdateWindow?.Invoke();
+            return;
+        }
+
+        // The check reads the saved channel; say so if the page shows a different, unsaved one.
+        string unsaved = Channel != version.Channel ? $" Save to check the {Channel} channel instead." : string.Empty;
+        string current = version.CurrentVersion.TrimStart('v', 'V');
+
+        if (version.IsAheadOfLatestRelease)
+        {
+            Toast.Success("No update available",
+                $"This development build (v{current}) is ahead of the latest {version.Channel} release (v{version.LatestVersion}).{unsaved}");
+        }
+        else if (version.LatestVersion is null)
+        {
+            Toast.Success("No update available", $"There are no releases on the {version.Channel} channel yet.{unsaved}");
+        }
+        else
+        {
+            Toast.Success("You're up to date", $"v{current} is the latest {version.Channel} release.{unsaved}");
+        }
+    }
 
     private void Save()
     {

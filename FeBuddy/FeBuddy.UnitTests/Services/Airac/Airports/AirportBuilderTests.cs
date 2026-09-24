@@ -270,4 +270,36 @@ public class AirportBuilderTests
 		Assert.Equal("AIRPORT", airport.FacilityType);
 		Assert.Equal("Bravo & Echo", airport.ClassAirspace);
 	}
+
+	[Fact]
+	public void rows_without_an_identifier_are_ignored_and_a_duplicate_identifier_keeps_the_first()
+	{
+		NasrCsvDataCollection data = AirportTestDataBuilder.Build(
+			airports: new[]
+			{
+				AirportTestDataBuilder.Base(" "),
+				AirportTestDataBuilder.Base("SEA", name: "FIRST"),
+				AirportTestDataBuilder.Base("SEA", name: "SECOND"),
+			},
+			runways: new[] { AirportTestDataBuilder.Runway("SEA", " ", 5000) });
+
+		AirportBuildAllResult result = AirportBuilder.BuildAll(data);
+
+		Airport airport = Assert.Single(result.Airports);
+		Assert.Equal("FIRST", airport.Name);
+		Assert.Empty(airport.Runways);
+		Assert.Contains(result.Messages, m => m.Level == LogLevel.Warning && m.Text.Contains("more than one APT_BASE record"));
+	}
+
+	[Fact]
+	public void a_frequency_row_counts_for_both_its_facility_and_the_facility_it_serves()
+	{
+		NasrCsvDataCollection data = AirportTestDataBuilder.Build(
+			airports: new[] { AirportTestDataBuilder.Base("BFI"), AirportTestDataBuilder.Base("SEA") },
+			frequencies: new[] { AirportTestDataBuilder.Frequency("SEA", "118.575", "ASOS", servicedFacility: "BFI") });
+
+		IReadOnlyList<Airport> airports = AirportBuilder.BuildAll(data).Airports;
+
+		Assert.All(airports, airport => Assert.Equal("118.575", airport.WeatherFrequency));
+	}
 }

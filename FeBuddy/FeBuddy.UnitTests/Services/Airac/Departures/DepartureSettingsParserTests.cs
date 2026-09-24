@@ -484,4 +484,37 @@ public class DepartureSettingsParserTests
 		Assert.False(result.Settings.IncludeCrcSymbolDefaults);
 		Assert.False(result.Settings.IncludeCrcTextDefaults);
 	}
+
+	[Fact]
+	public void feb_custom_properties_on_with_an_empty_list_throws()
+	{
+		Dictionary<string, string> settings = MinimalValidSettings();
+		settings["IncludeFebCustomProperties"] = "Y";
+		settings["FebProperties"] = " ";
+
+		ArgumentException ex = Assert.Throws<ArgumentException>(() => DepartureSettingsParser.Parse(settings));
+		Assert.Contains("'FebProperties' names none", ex.Message);
+	}
+
+	[Theory]
+	[InlineData("north", "-85.0", "43.0", "-78.0")]
+	[InlineData("43.0", "-85.0", "38.0", "-78.0")]
+	public void an_invalid_region_of_interest_is_rejected(string swLat, string swLon, string neLat, string neLon)
+	{
+		ArgumentException ex = Assert.Throws<ArgumentException>(() => DepartureSettingsParser.Parse(WithRoi(swLat, swLon, neLat, neLon)));
+		Assert.StartsWith("Invalid Region of Interest", ex.Message);
+	}
+
+	[Theory]
+	[InlineData("Crc.Departures.Text.text", "each point is labelled with its own identifier")]
+	[InlineData("Crc.Departures.Symbol.madeUp", "Unrecognized departureSettings key")]
+	public void a_crc_key_that_cannot_apply_is_a_warning(string key, string expected)
+	{
+		Dictionary<string, string> settings = MinimalValidSettings();
+		settings[key] = "1";
+
+		DepartureSettingsParseResult result = DepartureSettingsParser.Parse(settings);
+
+		Assert.Contains(expected, Assert.Single(result.Messages).Text);
+	}
 }

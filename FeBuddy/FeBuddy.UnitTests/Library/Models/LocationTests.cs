@@ -34,4 +34,25 @@ public class LocationTests
     Assert.Equal(DmsLon, loc.DmsLon);
   }
 
+  [Fact]
+  public void constructor_with_invalid_dms_input_should_throw()
+  {
+    Assert.Throws<ArgumentException>(() => new Location("N091.00.00.000", "W112.03.50.103"));
+  }
+
+  [Fact]
+  public void constructor_with_invalid_dec_input_should_throw()
+  {
+    Assert.Throws<ArgumentException>(() => new Location(91.0, -112.0));
+  }
+
+  [Fact]
+  public void equal_locations_have_equal_hash_codes()
+  {
+    Location a = new Location(43.5190050, -112.0639175);
+    Location b = new Location(43.5190050, -112.0639175);
+
+    Assert.Equal(a, b);
+    Assert.Equal(a.GetHashCode(), b.GetHashCode());
+  }
 }

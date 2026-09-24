@@ -147,4 +147,66 @@ public class CrcEramPropertyHandlerTests
 		Assert.Throws<ArgumentException>(() =>
 			CrcEramPropertyHandler.CreateFeatureProperty(CrcFeatureKind.Symbol, lineProperties));
 	}
+
+	[Fact]
+	public void CreateFeatureProperty_for_a_full_line_writes_every_property()
+	{
+		CrcLineProperties properties = new() { Bcg = 2, Filters = new[] { 3 }, Style = "solid", Thickness = 1 };
+
+		AttributesTable attributes = CrcEramPropertyHandler.CreateFeatureProperty(CrcFeatureKind.Line, properties);
+
+		Assert.Equal(new[] { "bcg", "filters", "style", "thickness" }, attributes.GetNames());
+		Assert.Equal("solid", attributes["style"]);
+	}
+
+	[Fact]
+	public void CreateFeatureProperty_for_a_symbol_writes_only_the_properties_that_are_set()
+	{
+		AttributesTable full = CrcEramPropertyHandler.CreateFeatureProperty(
+			CrcFeatureKind.Symbol, new CrcSymbolProperties { Bcg = 2, Filters = new[] { 3 }, Style = "vor", Size = 1 });
+		AttributesTable sparse = CrcEramPropertyHandler.CreateFeatureProperty(
+			CrcFeatureKind.Symbol, new CrcSymbolProperties { Filters = new[] { 3 } });
+
+		Assert.Equal(new[] { "bcg", "filters", "style", "size" }, full.GetNames());
+		Assert.Equal("vor", full["style"]);
+		Assert.Equal(new[] { "filters" }, sparse.GetNames());
+	}
+
+	[Fact]
+	public void CreateFeatureProperty_for_text_writes_only_the_properties_that_are_set_in_defaults_order()
+	{
+		AttributesTable full = CrcEramPropertyHandler.CreateFeatureProperty(
+			CrcFeatureKind.Text,
+			new CrcTextProperties
+			{
+				Bcg = 2,
+				Filters = new[] { 3 },
+				Text = new[] { "SEA", "SEATTLE" },
+				Size = 1,
+				Underline = true,
+				Opaque = false,
+				XOffset = 1,
+				YOffset = -1,
+			});
+		AttributesTable sparse = CrcEramPropertyHandler.CreateFeatureProperty(
+			CrcFeatureKind.Text, new CrcTextProperties { Filters = new[] { 3 }, Text = new[] { "SEA" } });
+
+		Assert.Equal(new[] { "bcg", "filters", "text", "size", "underline", "opaque", "xOffset", "yOffset" }, full.GetNames());
+		Assert.Equal(new[] { "SEA", "SEATTLE" }, Assert.IsType<string[]>(full["text"]));
+		Assert.Equal(true, full["underline"]);
+		Assert.Equal(-1, full["yOffset"]);
+		Assert.Equal(new[] { "filters", "text" }, sparse.GetNames());
+	}
+
+	[Fact]
+	public void CreateFeatureProperty_rejects_values_crc_cannot_draw_and_names_the_context()
+	{
+		CrcLineProperties properties = new() { Bcg = 999, Filters = new[] { 3 } };
+
+		ArgumentException ex = Assert.Throws<ArgumentException>(() =>
+			CrcEramPropertyHandler.CreateFeatureProperty(CrcFeatureKind.Line, properties));
+
+		Assert.StartsWith("Invalid CRC Line properties for feature override:", ex.Message, StringComparison.Ordinal);
+		Assert.Equal("properties", ex.ParamName);
+	}
 }

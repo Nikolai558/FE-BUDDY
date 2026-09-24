@@ -141,4 +141,15 @@ public class GeojsonFileWriterTests : IDisposable
 
 		Assert.Equal(expected, OutputFormatting.WriteIndentedGeojson);
 	}
+
+	[Theory]
+	[InlineData(" ", "file.geojson", "directory")]
+	[InlineData("out", " ", "fileName")]
+	public void Write_rejects_a_blank_directory_or_file_name(string directory, string fileName, string parameter)
+	{
+		ArgumentException ex = Assert.Throws<ArgumentException>(() =>
+			GeojsonFileWriter.Write(new FeatureCollection(), 1, directory, fileName));
+
+		Assert.Equal(parameter, ex.ParamName);
+	}
 }

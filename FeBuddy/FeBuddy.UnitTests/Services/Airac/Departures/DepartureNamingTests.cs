@@ -25,6 +25,7 @@ public class DepartureNamingTests
 	[InlineData("NOT ASSIGNED", "ONE", "TURN-AGAIN", "TURNAGAIN")]
 	[InlineData("ABC3.X", "TWO", "MY NAME", "MYNAME")]
 	[InlineData("", "ONE", "SALT LAKE", "SALTLAKE")]
+	[InlineData("ABC1.X", "ORIGINAL", "MY NAME", "MYNAME")]
 	public void the_code_id_falls_back_to_the_cleaned_name_when_the_code_is_unusable(
 		string computerCode, string amendmentNo, string dpName, string expected)
 	{

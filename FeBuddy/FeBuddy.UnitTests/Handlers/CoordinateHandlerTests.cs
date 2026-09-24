@@ -40,6 +40,10 @@ public class CoordinateHandlerTests
   [InlineData("", "176.40.26.800")]
   [InlineData("", "")]
   [InlineData("N043.31.08.418", "")]
+  [InlineData("N043.31.08", "W112.03.50.103")]
+  [InlineData("N0X3.31.08.418", "W112.03.50.103")]
+  [InlineData("N091.00.00.000", "W112.03.50.103")]
+  [InlineData("N043.31.08.418", "W112.60.50.103")]
   public void validate_dms_input_should_be_false(string? Lat, string? Lon)
   {
     // Arrange

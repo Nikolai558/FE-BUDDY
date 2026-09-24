@@ -1,7 +1,9 @@
 # CI for FE-BUDDY 3.0.
 #
 # Verifies that it compiles and the unit tests pass on every push and pull
-# request to v3-development. It does NOT produce a release (no installer or
+# request to v3-development, and that FeBuddy.Core's code coverage has not
+# dropped (the table is on each run's summary page; the full HTML report is the
+# "coverage-report" artifact). It does NOT produce a release (no installer or
 # release workflow yet; v2 on the development branch is the model to follow
 # when v3 gets one).
 
@@ -46,5 +48,16 @@ jobs:
         with:
           dotnet-version: '10.x'
 
-      - name: Test library
-        run: dotnet test FeBuddy/FeBuddy.UnitTests/FeBuddy.UnitTests.csproj -c Release --logger "console;verbosity=normal"
+      # Runs the tests with coverage, writes the coverage table to this run's summary page,
+      # and fails if FeBuddy.Core coverage drops below the floor (line / branch percent).
+      - name: Test library with coverage
+        shell: pwsh
+        run: ./FeBuddy/coverage.ps1 -Configuration Release -MinimumLineCoverage 95 -MinimumBranchCoverage 90
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: FeBuddy/TestResults/CoverageReport
+          if-no-files-found: ignore

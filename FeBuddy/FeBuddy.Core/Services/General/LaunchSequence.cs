@@ -65,7 +65,7 @@ public static class LaunchSequence
 
 		UtcTimeCheckResult time = await RunStepAsync(
 			progress, LaunchStep.CheckUtcTimeAndInternet, "Checking the clock and internet connection",
-			() => UtcTimeCheck.RunAsync(cancellationToken: cancellationToken),
+			() => UtcTimeCheck.RunAsync(AppEnvironment.HttpClientForTesting, cancellationToken),
 			defaultValue: () => new UtcTimeCheckResult(DateTime.UtcNow, UtcTimeSource.LocalClock, HasInternetConnection: false))
 			.ConfigureAwait(false);
 
@@ -106,7 +106,7 @@ public static class LaunchSequence
 
 		VersionCheckResult version = await RunStepAsync(
 			progress, LaunchStep.CheckVersion, "Checking for a newer version",
-			() => VersionCheck.RunAsync(currentVersion, channel, time.HasInternetConnection, cancellationToken: cancellationToken),
+			() => VersionCheck.RunAsync(currentVersion, channel, time.HasInternetConnection, AppEnvironment.HttpClientForTesting, cancellationToken),
 			defaultValue: () => new VersionCheckResult(currentVersion, null, false, channel, CheckSucceeded: false, "Version check did not run."))
 			.ConfigureAwait(false);
 
@@ -149,7 +149,8 @@ public static class LaunchSequence
 			() => NewsService.CheckAsync(
 				UserConfigFile.GetValue("General.NewsLastOpen"),
 				time.HasInternetConnection,
-				cancellationToken: cancellationToken),
+				AppEnvironment.HttpClientForTesting,
+				cancellationToken),
 			defaultValue: () => new NewsCheckResult(Array.Empty<NewsPost>(), null, 0, ParseSucceeded: false, FromNetwork: false))
 			.ConfigureAwait(false);
 

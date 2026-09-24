@@ -58,7 +58,7 @@ public sealed class ShellViewModel : ObservableObject
 
         SystemNav =
         [
-            Nav("Settings", GlyphSettings, () => new SettingsViewModel()),
+            Nav("Settings", GlyphSettings, () => new SettingsViewModel(OpenUpdateWindow)),
             Nav("Info",     GlyphInfo,     () => new InfoViewModel()),
         ];
 

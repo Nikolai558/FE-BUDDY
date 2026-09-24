@@ -1,4 +1,4 @@
-using FeBuddy.Core.Application.Airac.Airways;
+using FeBuddy.Core.Domain.Geo;
 using FeBuddy.Core.Infrastructure.Configuration;
 using FeBuddy.Core.Infrastructure.Geojson;
 
@@ -30,7 +30,7 @@ public class GeojsonFileWriterTests : IDisposable
 	}
 
 	private static Feature MakePointFeature() =>
-		new(AirwayGeometryBuilder.GeometryFactory.CreatePoint(new Coordinate(-80.0, 40.0)), new AttributesTable());
+		new(Wgs84.Factory.CreatePoint(new Coordinate(-80.0, 40.0)), new AttributesTable());
 
 	[Theory]
 	[InlineData(5, "-80.12346")]
@@ -41,7 +41,7 @@ public class GeojsonFileWriterTests : IDisposable
 		FeatureCollection collection = new()
 		{
 			new Feature(
-				AirwayGeometryBuilder.GeometryFactory.CreatePoint(new Coordinate(-80.12345678, 40.0)),
+				Wgs84.Factory.CreatePoint(new Coordinate(-80.12345678, 40.0)),
 				new AttributesTable()),
 		};
 
@@ -57,7 +57,7 @@ public class GeojsonFileWriterTests : IDisposable
 		FeatureCollection collection = new()
 		{
 			new Feature(
-				AirwayGeometryBuilder.GeometryFactory.CreatePoint(new Coordinate(-80.12345678, 40.0)),
+				Wgs84.Factory.CreatePoint(new Coordinate(-80.12345678, 40.0)),
 				new AttributesTable()),
 		};
 

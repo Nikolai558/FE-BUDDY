@@ -1,7 +1,5 @@
 using FeBuddy.Core.Application.Airac.Airways.Models;
-using FeBuddy.Core.Application.Models;
 using FeBuddy.Core.Domain.Airways.Models;
-using FeBuddy.Core.Domain.Crc.Models;
 using FeBuddy.Core.Domain.Geo;
 using FeBuddy.Core.Infrastructure.Geojson;
 
@@ -47,22 +45,20 @@ public static class AirwayGeojsonWriter
 	/// </summary>
 	/// <param name="airways">The airways to render (already built and, if applicable, ROI-clipped/buffered).</param>
 	/// <param name="settings">The parsed Airways settings.</param>
-	/// <returns>Which files were written, their rendered feature counts, and any warnings.</returns>
-	public static AirwayGeojsonGenerateResult Generate(IReadOnlyList<Airway> airways, AirwaySettings settings)
+	/// <returns>The files written and how many rendered Features each holds.</returns>
+	public static GeojsonFileSet Generate(IReadOnlyList<Airway> airways, AirwaySettings settings)
 	{
 		ArgumentNullException.ThrowIfNull(airways);
 		ArgumentNullException.ThrowIfNull(settings);
 
-		List<string> filesWritten = new();
-		Dictionary<string, int> renderedCounts = new();
-		List<ServiceMessage> messages = new();
+		GeojsonFileSet files = new(settings.CoordinatePrecision);
 
 		if (settings.OutputBy == AirwayGeojsonOutputBy.None || airways.Count == 0)
 		{
-			return new AirwayGeojsonGenerateResult(filesWritten, renderedCounts, messages);
+			return files;
 		}
 
-		string geojsonDirectory = AirwayOutputPaths.Resolve(settings, "Geojson");
+		string geojsonDirectory = SubServiceOutputPaths.Resolve(settings.OutputDirectory, settings.AddFeBuddyOutputFolder, "Airways", "Geojson");
 
 		foreach (var group in GroupAirways(airways, settings.OutputBy))
 		{
@@ -75,13 +71,13 @@ public static class AirwayGeojsonWriter
 
 			if (settings.EmitLines)
 			{
-				GenerateLines(orderedAirways, referenceClass, settings, geojsonDirectory, filePrefix, filesWritten, renderedCounts);
+				GenerateLines(orderedAirways, referenceClass, settings, geojsonDirectory, filePrefix, files);
 			}
 
-			GenerateSymbolsAndText(orderedAirways, referenceClass, settings, geojsonDirectory, filePrefix, filesWritten, renderedCounts);
+			GenerateSymbolsAndText(orderedAirways, referenceClass, settings, geojsonDirectory, filePrefix, files);
 		}
 
-		return new AirwayGeojsonGenerateResult(filesWritten, renderedCounts, messages);
+		return files;
 	}
 
 	/// <summary>
@@ -135,14 +131,13 @@ public static class AirwayGeojsonWriter
 		AirwaySettings settings,
 		string directory,
 		string filePrefix,
-		List<string> filesWritten,
-		Dictionary<string, int> renderedCounts)
+		GeojsonFileSet files)
 	{
 		FeatureCollection collection = new();
 
 		if (settings.IncludeCrcLineDefaults)
 		{
-			collection.Add(CrcFeatureFactory.CreateDefault(settings.LineDefaults[referenceClass]));
+			collection.Add(CrcFeatureFactory.CreateDefaultsFeature(settings.LineDefaults[referenceClass]));
 		}
 
 		int renderedCount = 0;
@@ -157,12 +152,12 @@ public static class AirwayGeojsonWriter
 				airway.AltitudeClass != referenceClass;
 
 			attributes = needsOverride
-				? CrcFeatureFactory.CreateFeatureProperty(CrcFeatureKind.Line, settings.LineDefaults[airway.AltitudeClass].ToFeatureProperties())
+				? CrcFeatureFactory.CreateOverrideProperties(settings.LineDefaults[airway.AltitudeClass].ToFeatureProperties())
 				: new AttributesTable();
 
 			// A Lines Feature is the whole airway: it carries the airway's own ID and its
 			// ordered point list, never a single point's ID.
-			AddFebProperties(attributes, settings, property => property switch
+			FebProperties.Add(attributes, settings.IncludeFebCustomProperties, settings.FebProperties.OrderBy(p => p), property => property switch
 			{
 				AirwayFebProperty.AwyId => airway.AwyId,
 				AirwayFebProperty.Waypoints => airway.Points.Select(p => p.PointId).ToArray(),
@@ -173,13 +168,7 @@ public static class AirwayGeojsonWriter
 			renderedCount++;
 		}
 
-		string? path = GeojsonFileWriter.Write(collection, renderedCount, directory, $"{filePrefix}_Lines.geojson", settings.CoordinatePrecision);
-
-		if (path is not null)
-		{
-			filesWritten.Add(path);
-			renderedCounts[path] = renderedCount;
-		}
+		files.Write(collection, renderedCount, directory, $"{filePrefix}_Lines.geojson");
 	}
 
 	private static void GenerateSymbolsAndText(
@@ -188,8 +177,7 @@ public static class AirwayGeojsonWriter
 		AirwaySettings settings,
 		string directory,
 		string filePrefix,
-		List<string> filesWritten,
-		Dictionary<string, int> renderedCounts)
+		GeojsonFileSet files)
 	{
 		// De-duplicate waypoints across every airway in this group; first occurrence wins.
 		// Alongside, note every airway that uses each point: a shared point is written once,
@@ -230,12 +218,12 @@ public static class AirwayGeojsonWriter
 
 		if (settings.EmitSymbols)
 		{
-			GenerateSymbols(orderedPoints, airwayIdsByPoint, referenceClass, settings, directory, filePrefix, filesWritten, renderedCounts);
+			GenerateSymbols(orderedPoints, airwayIdsByPoint, referenceClass, settings, directory, filePrefix, files);
 		}
 
 		if (settings.EmitText)
 		{
-			GenerateText(orderedPoints, airwayIdsByPoint, referenceClass, settings, directory, filePrefix, filesWritten, renderedCounts);
+			GenerateText(orderedPoints, airwayIdsByPoint, referenceClass, settings, directory, filePrefix, files);
 		}
 	}
 
@@ -246,21 +234,20 @@ public static class AirwayGeojsonWriter
 		AirwaySettings settings,
 		string directory,
 		string filePrefix,
-		List<string> filesWritten,
-		Dictionary<string, int> renderedCounts)
+		GeojsonFileSet files)
 	{
 		FeatureCollection collection = new();
 
 		if (settings.IncludeCrcSymbolDefaults)
 		{
-			collection.Add(CrcFeatureFactory.CreateDefault(settings.SymbolDefaults[referenceClass]));
+			collection.Add(CrcFeatureFactory.CreateDefaultsFeature(settings.SymbolDefaults[referenceClass]));
 		}
 
 		foreach (AirwayPoint point in points)
 		{
 			AttributesTable attributes = new();
 			attributes.Add("style", MapSymbolStyle(point.PointType));
-			AddFebProperties(attributes, settings, property => property switch
+			FebProperties.Add(attributes, settings.IncludeFebCustomProperties, settings.FebProperties.OrderBy(p => p), property => property switch
 			{
 				AirwayFebProperty.AwyId => airwayIdsByPoint[point.PointId],
 				AirwayFebProperty.PointId => point.PointId,
@@ -268,19 +255,13 @@ public static class AirwayGeojsonWriter
 			});
 
 			Feature feature = new(
-				AirwayGeometryBuilder.GeometryFactory.CreatePoint(new Coordinate(point.Longitude, point.Latitude)),
+				Wgs84.Point(point.Latitude, point.Longitude),
 				attributes);
 
 			collection.Add(feature);
 		}
 
-		string? path = GeojsonFileWriter.Write(collection, points.Count, directory, $"{filePrefix}_Symbols.geojson", settings.CoordinatePrecision);
-
-		if (path is not null)
-		{
-			filesWritten.Add(path);
-			renderedCounts[path] = points.Count;
-		}
+		files.Write(collection, points.Count, directory, $"{filePrefix}_Symbols.geojson");
 	}
 
 	private static void GenerateText(
@@ -290,14 +271,13 @@ public static class AirwayGeojsonWriter
 		AirwaySettings settings,
 		string directory,
 		string filePrefix,
-		List<string> filesWritten,
-		Dictionary<string, int> renderedCounts)
+		GeojsonFileSet files)
 	{
 		FeatureCollection collection = new();
 
 		if (settings.IncludeCrcTextDefaults)
 		{
-			collection.Add(CrcFeatureFactory.CreateDefault(settings.TextDefaults[referenceClass]));
+			collection.Add(CrcFeatureFactory.CreateDefaultsFeature(settings.TextDefaults[referenceClass]));
 		}
 
 		foreach (AirwayPoint point in points)
@@ -306,72 +286,21 @@ public static class AirwayGeojsonWriter
 			attributes.Add("text", new[] { point.PointId });
 
 			// No feb.pointId here: the label already is the point's ID.
-			AddFebProperties(attributes, settings, property => property switch
+			FebProperties.Add(attributes, settings.IncludeFebCustomProperties, settings.FebProperties.OrderBy(p => p), property => property switch
 			{
 				AirwayFebProperty.AwyId => airwayIdsByPoint[point.PointId],
 				_ => null,
 			});
 
 			Feature feature = new(
-				AirwayGeometryBuilder.GeometryFactory.CreatePoint(new Coordinate(point.Longitude, point.Latitude)),
+				Wgs84.Point(point.Latitude, point.Longitude),
 				attributes);
 
 			collection.Add(feature);
 		}
 
-		string? path = GeojsonFileWriter.Write(collection, points.Count, directory, $"{filePrefix}_Text.geojson", settings.CoordinatePrecision);
-
-		if (path is not null)
-		{
-			filesWritten.Add(path);
-			renderedCounts[path] = points.Count;
-		}
+		files.Write(collection, points.Count, directory, $"{filePrefix}_Text.geojson");
 	}
-
-	/// <summary>
-	/// Adds the selected <c>feb.*</c> properties to a Feature, in <see cref="AirwayFebProperty"/>
-	/// order, after its CRC attributes.
-	/// </summary>
-	/// <param name="attributes">The Feature's attribute table.</param>
-	/// <param name="settings">The parsed settings.</param>
-	/// <param name="valueFor">
-	/// The value of a property for this Feature, or <see langword="null"/> when the property is
-	/// not written on this kind of Feature.
-	/// </param>
-	private static void AddFebProperties(
-		AttributesTable attributes,
-		AirwaySettings settings,
-		Func<AirwayFebProperty, object?> valueFor)
-	{
-		if (!settings.IncludeFebCustomProperties)
-		{
-			return;
-		}
-
-		foreach (AirwayFebProperty property in settings.FebProperties.OrderBy(p => p))
-		{
-			object? value = valueFor(property);
-
-			if (value is not null)
-			{
-				attributes.Add($"feb.{Name(property)}", value);
-			}
-		}
-	}
-
-	/// <summary>
-	/// The property name as it appears after the <c>feb.</c> prefix. Spelled out rather than
-	/// derived from the enum so the JSON keys are camelCase (<c>awyId</c>, not <c>AwyId</c>).
-	/// </summary>
-	/// <param name="property">The property.</param>
-	/// <returns>The JSON name.</returns>
-	internal static string Name(AirwayFebProperty property) => property switch
-	{
-		AirwayFebProperty.AwyId => "awyId",
-		AirwayFebProperty.PointId => "pointId",
-		AirwayFebProperty.Waypoints => "waypoints",
-		_ => property.ToString(),
-	};
 
 	/// <summary>
 	/// Maps a NASR <c>FROM_PT_TYPE</c> to its CRC symbol style, defaulting to

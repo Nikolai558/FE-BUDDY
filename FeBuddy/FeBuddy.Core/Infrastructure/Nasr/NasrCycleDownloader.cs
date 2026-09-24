@@ -4,6 +4,7 @@ using System.Net.Http;
 using FeBuddy.Core.Domain.Airac;
 using FeBuddy.Core.Domain.Airac.Models;
 using FeBuddy.Core.Infrastructure.FileSystem;
+using FeBuddy.Core.Infrastructure.Http;
 using FeBuddy.Core.Infrastructure.Logging;
 using FeBuddy.Core.Infrastructure.Nasr.Models;
 
@@ -41,7 +42,7 @@ public static class NasrCycleDownloader
 	/// The default local cache root: <c>%APPDATA%\FE-Buddy\AiracCycles</c>.
 	/// </summary>
 	public static string GetDefaultCacheRoot() =>
-		Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "FE-Buddy", "AiracCycles");
+		Path.Combine(AppPaths.AppDataDirectory, "AiracCycles");
 
 	/// <summary>
 	/// The FAA NASR CSV download URL for a cycle, e.g.
@@ -91,9 +92,7 @@ public static class NasrCycleDownloader
 	{
 		ArgumentNullException.ThrowIfNull(cycle);
 
-		string url = string.Format(DownloadUrlTemplate, cycle.NasrCsvEffectiveDate);
-
-		return EnsureCycleAvailableFromUrlAsync(cycle, url, cacheRootDirectory, progress, cancellationToken);
+		return EnsureCycleAvailableFromUrlAsync(cycle, BuildCsvDownloadUrl(cycle), cacheRootDirectory, progress, cancellationToken);
 	}
 
 	/// <summary>
@@ -125,34 +124,21 @@ public static class NasrCycleDownloader
 		string downloadsDirectory = TempWorkspace.EnsureDownloadsDirectory();
 		string zipPath = Path.Combine(downloadsDirectory, $"{cycle.AiracCycleId}_CSV.zip");
 
-		using (HttpClient client = new() { Timeout = TimeSpan.FromMinutes(15) })
+		using (HttpClient client = FeBuddyHttp.CreateClient(TimeSpan.FromMinutes(15)))
 		{
 			using HttpResponseMessage response = await client.GetAsync(
 				downloadUrl, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
 
 			response.EnsureSuccessStatusCode();
 
-			long? totalBytes = response.Content.Headers.ContentLength;
-
-			await using (FileStream fileStream = File.Create(zipPath))
-			await using (Stream contentStream = await response.Content.ReadAsStreamAsync(cancellationToken))
-			{
-				byte[] buffer = new byte[81920];
-				long totalRead = 0;
-				int bytesRead;
-
-				while ((bytesRead = await contentStream.ReadAsync(buffer, cancellationToken)) > 0)
-				{
-					await fileStream.WriteAsync(buffer.AsMemory(0, bytesRead), cancellationToken);
-					totalRead += bytesRead;
-
-					double? percent = totalBytes.HasValue
-						? Math.Round((double)totalRead / totalBytes.Value * 100, 1)
-						: null;
-
-					progress?.Report(new AiracDownloadProgress(AiracDownloadPhase.Downloading, percent));
-				}
-			}
+			await FeBuddyHttp.DownloadToFileAsync(
+				response,
+				zipPath,
+				expectedBytes: null,
+				(received, total) => progress?.Report(new AiracDownloadProgress(
+					AiracDownloadPhase.Downloading,
+					total is long bytes ? Math.Round((double)received / bytes * 100, 1) : null)),
+				cancellationToken);
 		}
 
 		progress?.Report(new AiracDownloadProgress(AiracDownloadPhase.Extracting, null));

@@ -13,15 +13,6 @@ public sealed record AirportSettingsParseResult(AirportSettings Settings, IReadO
 /// <param name="Messages">Messages collected while building (e.g. runways with no usable coordinates).</param>
 public sealed record AirportBuildAllResult(IReadOnlyList<Airport> Airports, IReadOnlyList<ServiceMessage> Messages);
 
-/// <summary>The outcome of generating the Airports GeoJSON files.</summary>
-/// <param name="FilesWritten">Full paths of every file written.</param>
-/// <param name="RenderedFeatureCountsByFile">Rendered Feature count for each written path.</param>
-/// <param name="Messages">Messages collected while generating.</param>
-public sealed record AirportGeojsonGenerateResult(
-	IReadOnlyList<string> FilesWritten,
-	IReadOnlyDictionary<string, int> RenderedFeatureCountsByFile,
-	IReadOnlyList<ServiceMessage> Messages);
-
 /// <summary>The outcome of generating the Airports alias file.</summary>
 /// <param name="FilePath">The file written, or <see langword="null"/> when there was nothing to write.</param>
 /// <param name="CommandCount">How many alias commands were written (an airport with an ICAO ID contributes two).</param>

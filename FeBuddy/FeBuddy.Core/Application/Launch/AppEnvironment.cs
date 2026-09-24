@@ -84,7 +84,7 @@ public static class AppEnvironment
 			RaiseChanged();
 
 			FeBuddy.Versioning.ReleaseChannel channel = VersionCheckResult.ParseChannel(
-				UserConfigFile.GetValue("General.UpdateChannel"));
+				UserConfigFile.GetValue(UserConfigKeys.UpdateChannel));
 
 			string currentVersion = Version?.CurrentVersion ?? AppVersion.Current;
 

@@ -1,8 +1,10 @@
 using System.Text.Json;
 
+using FeBuddy.Core.Application.Airac;
 using FeBuddy.Core.Application.Airac.Airports;
 using FeBuddy.Core.Application.Airac.Airports.Models;
 using FeBuddy.Core.Domain.Airports.Models;
+using FeBuddy.Core.Infrastructure.Geojson;
 using FeBuddy.UnitTests.Application.Airac.Airports.Fixtures;
 
 namespace FeBuddy.UnitTests.Application.Airac.Airports;
@@ -151,7 +153,7 @@ public sealed class AirportGeojsonFebPropertiesTests : IDisposable
 			Roi = null,
 		};
 
-		AirportGeojsonGenerateResult result = AirportGeojsonWriter.Generate(new[] { sea, bfi }, settings);
+		GeojsonFileSet result = AirportGeojsonWriter.Generate(new[] { sea, bfi }, settings);
 
 		Assert.Equal(3, result.FilesWritten.Count);
 		return Path.GetDirectoryName(result.FilesWritten[0])!;

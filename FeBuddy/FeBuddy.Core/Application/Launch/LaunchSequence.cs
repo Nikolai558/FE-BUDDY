@@ -104,7 +104,7 @@ public static class LaunchSequence
 		IProgress<LaunchProgress>? progress,
 		CancellationToken cancellationToken)
 	{
-		ReleaseChannel channel = VersionCheckResult.ParseChannel(UserConfigFile.GetValue("General.UpdateChannel"));
+		ReleaseChannel channel = VersionCheckResult.ParseChannel(UserConfigFile.GetValue(UserConfigKeys.UpdateChannel));
 
 		VersionCheckResult version = await RunStepAsync(
 			progress, LaunchStep.CheckVersion, "Checking for a newer version",
@@ -149,7 +149,7 @@ public static class LaunchSequence
 		NewsCheckResult news = await RunStepAsync(
 			progress, LaunchStep.CheckNews, "Checking for news",
 			() => NewsService.CheckAsync(
-				UserConfigFile.GetValue("General.NewsLastOpen"),
+				UserConfigFile.GetValue(UserConfigKeys.NewsLastOpen),
 				time.HasInternetConnection,
 				AppEnvironment.HttpClientForTesting,
 				cancellationToken),

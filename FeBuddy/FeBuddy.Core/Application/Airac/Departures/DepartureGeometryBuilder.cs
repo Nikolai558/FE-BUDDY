@@ -28,16 +28,14 @@ internal static class DepartureGeometryBuilder
 	/// Builds the geometry for one airport + procedure.
 	/// </summary>
 	/// <param name="airportProcedure">The located airport + procedure.</param>
-	/// <param name="factory">The geometry factory.</param>
 	/// <returns>The MultiLineString, or <see langword="null"/> when there is no segment to draw.</returns>
-	internal static MultiLineString? Build(DepartureAirportProcedure airportProcedure, GeometryFactory factory)
+	internal static MultiLineString? Build(DepartureAirportProcedure airportProcedure)
 	{
 		ArgumentNullException.ThrowIfNull(airportProcedure);
-		ArgumentNullException.ThrowIfNull(factory);
 
-		IReadOnlyList<LineString> lines = LineStringMerger.Merge(Paths(airportProcedure.Routes), factory);
+		IReadOnlyList<LineString> lines = LineStringMerger.Merge(Paths(airportProcedure.Routes));
 
-		return lines.Count == 0 ? null : factory.CreateMultiLineString(lines.ToArray());
+		return lines.Count == 0 ? null : Wgs84.Factory.CreateMultiLineString(lines.ToArray());
 	}
 
 	/// <summary>

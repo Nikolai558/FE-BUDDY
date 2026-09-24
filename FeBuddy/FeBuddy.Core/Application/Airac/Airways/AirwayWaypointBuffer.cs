@@ -43,18 +43,15 @@ public static class AirwayWaypointBuffer
 	/// buffered (radius 0), so an ROI-clipped airway reaches the ROI boundary instead of
 	/// stopping 5 NM inside it (remediation plan 3.10).
 	/// </param>
-	/// <param name="geometryFactory">The geometry factory used to build the resulting LineStrings.</param>
 	/// <param name="awyId">The airway identifier being processed (used only in warning text).</param>
 	/// <returns>The buffered legs, plus a warning for each leg dropped as too short to buffer.</returns>
 	public static AirwayBufferResult Buffer(
 		IReadOnlyList<LineString> lineStrings,
 		IReadOnlyList<AirwayPoint> airwayPoints,
-		GeometryFactory geometryFactory,
 		string awyId)
 	{
 		ArgumentNullException.ThrowIfNull(lineStrings);
 		ArgumentNullException.ThrowIfNull(airwayPoints);
-		ArgumentNullException.ThrowIfNull(geometryFactory);
 
 		Dictionary<(double Lon, double Lat), AirwayPoint> pointsByCoordinate = BuildCoordinateIndex(airwayPoints);
 
@@ -99,7 +96,7 @@ public static class AirwayWaypointBuffer
 				Location bufferedEnd =
 					GeoMath.PointAtDistanceAndBearing(endLocation, endToStartBearing, endRadius);
 
-				legs.Add(geometryFactory.CreateLineString(new[]
+				legs.Add(Wgs84.Factory.CreateLineString(new[]
 				{
 					new Coordinate(bufferedStart.DecLon, bufferedStart.DecLat),
 					new Coordinate(bufferedEnd.DecLon, bufferedEnd.DecLat)

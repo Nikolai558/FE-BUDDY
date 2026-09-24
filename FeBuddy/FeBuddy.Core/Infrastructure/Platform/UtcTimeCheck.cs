@@ -1,6 +1,7 @@
 using System.Net.Http;
 using System.Text.Json;
 
+using FeBuddy.Core.Infrastructure.Http;
 using FeBuddy.Core.Infrastructure.Logging;
 using FeBuddy.Core.Infrastructure.Platform.Models;
 
@@ -36,16 +37,11 @@ public static class UtcTimeCheck
 		HttpClient? httpClient = null,
 		CancellationToken cancellationToken = default)
 	{
-		bool ownsClient = httpClient is null;
-		HttpClient client = httpClient ?? new HttpClient { Timeout = TimeSpan.FromSeconds(8) };
+		using HttpClient? owned = httpClient is null ? FeBuddyHttp.CreateClient(TimeSpan.FromSeconds(8)) : null;
+		HttpClient client = httpClient ?? owned!;
 
 		try
 		{
-			if (client.DefaultRequestHeaders.UserAgent.Count == 0)
-			{
-				client.DefaultRequestHeaders.UserAgent.ParseAdd("FE-Buddy");
-			}
-
 			UtcTimeCheckResult? fromApi = await TryTimeApiAsync(client, cancellationToken).ConfigureAwait(false);
 			if (fromApi is not null)
 			{
@@ -67,13 +63,6 @@ public static class UtcTimeCheck
 		{
 			AppLog.Warning(LogSource, $"UTC time check failed unexpectedly ({ex.Message}). Using the local clock; treating the machine as offline.");
 			return new UtcTimeCheckResult(DateTime.UtcNow, UtcTimeSource.LocalClock, HasInternetConnection: false);
-		}
-		finally
-		{
-			if (ownsClient)
-			{
-				client.Dispose();
-			}
 		}
 	}
 

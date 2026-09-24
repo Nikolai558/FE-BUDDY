@@ -32,9 +32,9 @@ namespace FeBuddy.Wpf.ViewModels;
 /// </summary>
 public sealed class SettingsViewModel : ObservableObject
 {
-    private const string ChannelKey = "General.UpdateChannel";
-    private const string OutputDirKey = "General.DefaultOutputDirectory";
-    private const string AddFolderKey = "General.AddFeBuddyOutputFolder";
+    private const string ChannelKey = UserConfigKeys.UpdateChannel;
+    private const string OutputDirKey = UserConfigKeys.DefaultOutputDirectory;
+    private const string AddFolderKey = UserConfigKeys.AddFeBuddyOutputFolder;
     private const string ArtccKey = "Services.AiracService.UserArtccId";
     private const string PrecisionKey = "Services.AiracService.CoordinatePrecision";
 
@@ -69,7 +69,7 @@ public sealed class SettingsViewModel : ObservableObject
         _addFeBuddyFolder = !string.Equals(UserConfigFile.GetValue(AddFolderKey), "N", StringComparison.OrdinalIgnoreCase);
         _coordinatePrecision = int.TryParse(UserConfigFile.GetValue(PrecisionKey), out int p) && p is >= 0 and <= 15 ? p : 6;
         _prettyPrintGeojson = string.Equals(
-            UserConfigFile.GetValue(OutputFormatting.PrettyPrintGeojsonKey)?.Trim(), "Y", StringComparison.OrdinalIgnoreCase);
+            UserConfigFile.GetValue(UserConfigKeys.PrettyPrintGeojson)?.Trim(), "Y", StringComparison.OrdinalIgnoreCase);
 
         _defaultRoi = DefaultRoiStore.Load();
         DefaultRoiStore.Changed += OnDefaultRoiChanged;
@@ -115,7 +115,7 @@ public sealed class SettingsViewModel : ObservableObject
         [OutputDirKey] = OutputDirectory,
         [AddFolderKey] = AddFeBuddyOutputFolder ? "Y" : "N",
         [PrecisionKey] = CoordinatePrecision.ToString(CultureInfo.InvariantCulture),
-        [OutputFormatting.PrettyPrintGeojsonKey] = PrettyPrintGeojson ? "Y" : "N",
+        [UserConfigKeys.PrettyPrintGeojson] = PrettyPrintGeojson ? "Y" : "N",
         [ArtccKey] = SelectedFacility ?? string.Empty,
     };
 
@@ -330,7 +330,7 @@ public sealed class SettingsViewModel : ObservableObject
         UserConfigFile.TrySetValue(OutputDirKey, OutputDirectory);
         UserConfigFile.TrySetValue(AddFolderKey, AddFeBuddyOutputFolder ? "Y" : "N");
         UserConfigFile.TrySetValue(PrecisionKey, CoordinatePrecision.ToString(CultureInfo.InvariantCulture));
-        UserConfigFile.TrySetValue(OutputFormatting.PrettyPrintGeojsonKey, PrettyPrintGeojson ? "Y" : "N");
+        UserConfigFile.TrySetValue(UserConfigKeys.PrettyPrintGeojson, PrettyPrintGeojson ? "Y" : "N");
         if (!string.IsNullOrWhiteSpace(SelectedFacility))
         {
             UserConfigFile.TrySetValue(ArtccKey, SelectedFacility!);

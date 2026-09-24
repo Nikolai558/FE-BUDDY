@@ -1,5 +1,7 @@
+using FeBuddy.Core.Application.Airac;
 using FeBuddy.Core.Application.Airac.Airways;
 using FeBuddy.Core.Application.Airac.Airways.Models;
+using FeBuddy.Core.Infrastructure.Geojson;
 using FeBuddy.Core.Infrastructure.Nasr.Models;
 
 using FeBuddy.UnitTests.Application.Airac.Airways.Fixtures;
@@ -61,7 +63,7 @@ public sealed class AirwayGeojsonWriterDesignationTests : IDisposable
 		};
 
 		AirwayBuildAllResult built = AirwayBuilder.BuildAll(data, settings);
-		AirwayGeojsonGenerateResult result = AirwayGeojsonWriter.Generate(built.Airways, settings);
+		GeojsonFileSet result = AirwayGeojsonWriter.Generate(built.Airways, settings);
 
 		string[] fileNames = result.FilesWritten.Select(Path.GetFileName).ToArray()!;
 

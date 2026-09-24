@@ -125,7 +125,7 @@ public static class AirwayBuilder
 
 			if (settings.SplitAtAntimeridian)
 			{
-				lineStrings = AntimeridianSplitter.Split(lineStrings, AirwayGeometryBuilder.GeometryFactory);
+				lineStrings = AntimeridianSplitter.Split(lineStrings);
 			}
 
 			// An airway that misses the ROI is kept, marked, rather than dropped: the ROI limits
@@ -135,12 +135,7 @@ public static class AirwayBuilder
 
 			if (settings.Roi is not null)
 			{
-				Geometry combined = Combine(lineStrings);
-
-				Geometry? clipped =
-					RoiFilter.ClipLineGeometry(combined, settings.Roi, AirwayGeometryBuilder.GeometryFactory);
-
-				List<LineString> clippedLines = clipped is null ? new List<LineString>() : ExtractLineStrings(clipped);
+				IReadOnlyList<LineString> clippedLines = RoiFilter.ClipLines(lineStrings, settings.Roi);
 
 				if (clippedLines.Count == 0)
 				{
@@ -156,7 +151,7 @@ public static class AirwayBuilder
 			if (crossesRoi && settings.BufferAirwayWaypoints)
 			{
 				AirwayBufferResult bufferResult =
-					AirwayWaypointBuffer.Buffer(lineStrings, points, AirwayGeometryBuilder.GeometryFactory, awyId);
+					AirwayWaypointBuffer.Buffer(lineStrings, points, awyId);
 
 				messages.AddRange(bufferResult.Messages);
 
@@ -276,31 +271,6 @@ public static class AirwayBuilder
 	{
 		return lineStrings.Count == 1
 			? lineStrings[0]
-			: AirwayGeometryBuilder.GeometryFactory.CreateMultiLineString(lineStrings.ToArray());
-	}
-
-	/// <summary>
-	/// Extracts the LineString components of a Geometry (a LineString, MultiLineString, or
-	/// the line components of a GeometryCollection produced by a clip).
-	/// </summary>
-	private static List<LineString> ExtractLineStrings(Geometry geometry)
-	{
-		List<LineString> result = new();
-
-		switch (geometry)
-		{
-			case LineString lineString:
-				result.Add(lineString);
-				break;
-
-			case MultiLineString multiLineString:
-				for (int i = 0; i < multiLineString.NumGeometries; i++)
-				{
-					result.Add((LineString)multiLineString.GetGeometryN(i));
-				}
-				break;
-		}
-
-		return result;
+			: Wgs84.Factory.CreateMultiLineString(lineStrings.ToArray());
 	}
 }

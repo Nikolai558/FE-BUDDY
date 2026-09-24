@@ -1,13 +1,10 @@
 using System.Globalization;
-using System.Text.RegularExpressions;
 
 using FeBuddy.Core.Application.Airac.Departures.Models;
 using FeBuddy.Core.Application.Models;
 using FeBuddy.Core.Application.Settings;
 using FeBuddy.Core.Domain.Crc.Models;
-using FeBuddy.Core.Domain.Geo;
 using FeBuddy.Core.Domain.Geo.Models;
-using FeBuddy.Core.Infrastructure.Logging.Models;
 
 namespace FeBuddy.Core.Application.Airac.Departures;
 
@@ -23,42 +20,20 @@ public static class DepartureSettingsParser
 {
 	private const string LogSource = "DepartureSettingsParser";
 
-	/// <summary>Dictionary keys recognized outside of the <c>Crc.*</c> property-default keys.</summary>
-	private static readonly HashSet<string> KnownScalarKeys = new(StringComparer.OrdinalIgnoreCase)
+	/// <summary>The keys only Departures reads, on top of <see cref="SubServiceSettingsReader.CommonKeys"/>.</summary>
+	private static readonly IReadOnlySet<string> OwnKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
 	{
-		"OutputDirectory", "GenerateGeojson", "EmitLines", "EmitSymbols", "EmitText",
-		"GenerateAliasFile", "IncludeObstacleDepartures", "ArtccFilter",
+		"GenerateGeojson", "EmitLines", "EmitSymbols", "EmitText",
+		"IncludeObstacleDepartures", "ArtccFilter",
 		"AmendmentFilter", "AmendedWithinCycles", "AmendedWithinDays", "AmendedOnOrAfter",
-		"IncludeFebCustomProperties", "FebProperties", CrcDefaultsReader.IncludeLineKey, CrcDefaultsReader.IncludeSymbolKey, CrcDefaultsReader.IncludeTextKey,
-		"FilterByRoi", "RoiMode", "RoiSwLat", "RoiSwLon", "RoiNeLat", "RoiNeLon",
-		"CoordinatePrecision", "AddFeBuddyOutputFolder"
+		"RoiMode",
 	};
 
-	private static readonly HashSet<string> LinePropertyNames =
-		new(StringComparer.OrdinalIgnoreCase) { "bcg", "filters", "style", "thickness" };
-
-	private static readonly HashSet<string> SymbolPropertyNames =
-		new(StringComparer.OrdinalIgnoreCase) { "bcg", "filters", "style", "size" };
-
-	// Deliberately excludes "text": every point supplies its own label (its identifier), so a
-	// class-wide default for it would never be used.
-	private static readonly HashSet<string> TextPropertyNames =
-		new(StringComparer.OrdinalIgnoreCase) { "bcg", "filters", "size", "underline", "xOffset", "yOffset", "opaque" };
-
-	private static readonly Regex CrcKeyPattern = new(
-		@"^Crc\.(\w+)\.(Line|Symbol|Text)\.(\w+)$",
-		RegexOptions.IgnoreCase | RegexOptions.Compiled);
-
-	private static readonly Dictionary<string, DepartureFebProperty> FebPropertiesByName =
-		new(StringComparer.OrdinalIgnoreCase)
+	/// <summary>Departures has one CRC defaults class, which draws all three kinds.</summary>
+	private static readonly IReadOnlyDictionary<string, CrcFeatureKind[]> CrcKindsByClass =
+		new Dictionary<string, CrcFeatureKind[]>(StringComparer.OrdinalIgnoreCase)
 		{
-			["dpName"] = DepartureFebProperty.DpName,
-			["pointId"] = DepartureFebProperty.PointId,
-			["arptId"] = DepartureFebProperty.ArptId,
-			["artcc"] = DepartureFebProperty.Artcc,
-			["amendmentNo"] = DepartureFebProperty.AmendmentNo,
-			["amendEffDate"] = DepartureFebProperty.AmendEffDate,
-			["waypoints"] = DepartureFebProperty.Waypoints,
+			[nameof(DepartureCrcClass.Departures)] = Enum.GetValues<CrcFeatureKind>(),
 		};
 
 	/// <summary>
@@ -71,11 +46,11 @@ public static class DepartureSettingsParser
 	/// Thrown when a required setting is missing, a value is invalid, or the combination of
 	/// output choices would produce no output at all.
 	/// </exception>
-	public static DepartureSettingsParseResult Parse(Dictionary<string, string> departureSettings)
+	public static DepartureSettingsParseResult Parse(IReadOnlyDictionary<string, string> departureSettings)
 	{
 		ArgumentNullException.ThrowIfNull(departureSettings);
 
-		string outputDirectory = SettingsValueReader.RequireNonEmpty(departureSettings, "OutputDirectory");
+		string outputDirectory = SettingsValueReader.RequiredString(departureSettings, "OutputDirectory");
 
 		bool generateGeojson = SettingsValueReader.YesNo(departureSettings, "GenerateGeojson", defaultValue: true);
 		bool generateAliasFile = SettingsValueReader.YesNo(departureSettings, "GenerateAliasFile", defaultValue: true);
@@ -108,7 +83,10 @@ public static class DepartureSettingsParser
 			.ToList();
 
 		// Only the value the chosen mode uses is read (and required); the others are ignored.
-		DepartureAmendmentFilter amendmentFilter = ParseAmendmentFilter(departureSettings);
+		DepartureAmendmentFilter amendmentFilter = SettingsValueReader.OptionalEnum(
+			departureSettings, "AmendmentFilter", DepartureAmendmentFilter.None,
+			hint: "Use \"None\" (keep every procedure), \"Cycles\" (with AmendedWithinCycles), " +
+				"\"Days\" (with AmendedWithinDays) or \"Date\" (with AmendedOnOrAfter).");
 
 		int amendedWithinCycles = amendmentFilter == DepartureAmendmentFilter.Cycles
 			? SettingsValueReader.RequiredIntInRange(departureSettings, "AmendedWithinCycles", minimum: 1, maximum: 1000)
@@ -122,16 +100,16 @@ public static class DepartureSettingsParser
 			? ParseAmendedOnOrAfter(departureSettings)
 			: null;
 
-		bool filterByRoi = SettingsValueReader.YesNo(departureSettings, "FilterByRoi", defaultValue: false);
-		RegionOfInterest? roi = filterByRoi ? ParseRoi(departureSettings) : null;
-		DepartureRoiMode roiMode = ParseRoiMode(departureSettings);
+		RegionOfInterest? roi = SubServiceSettingsReader.ReadRoi(departureSettings);
+		DepartureRoiMode roiMode = SettingsValueReader.OptionalEnum(
+			departureSettings, "RoiMode", DepartureRoiMode.Airport,
+			hint: "Use \"Airport\" (every departure of an airport inside the ROI) " +
+				"or \"Waypoint\" (any departure with a point inside the ROI).");
 
-		bool includeFebProperties = SettingsValueReader.YesNo(departureSettings, "IncludeFebCustomProperties", defaultValue: false);
-		IReadOnlyCollection<DepartureFebProperty> febProperties = ParseFebProperties(departureSettings, includeFebProperties);
+		(bool includeFebProperties, IReadOnlyList<DepartureFebProperty> febProperties) =
+			SubServiceSettingsReader.ReadFebProperties<DepartureFebProperty>(departureSettings, example: "dpName,pointId,arptId");
 
-
-		int coordinatePrecision = SettingsValueReader.IntInRange(
-			departureSettings, "CoordinatePrecision", defaultValue: 6, minimum: 0, maximum: 15);
+		int coordinatePrecision = SubServiceSettingsReader.ReadCoordinatePrecision(departureSettings);
 
 		bool addFeBuddyOutputFolder = SettingsValueReader.YesNo(departureSettings, "AddFeBuddyOutputFolder", defaultValue: true);
 
@@ -156,8 +134,9 @@ public static class DepartureSettingsParser
 		if (includeTextDefaults)
 			textDefaults[cls] = CrcDefaultsReader.ReadText(departureSettings, $"Crc.{cls}.Text");
 
-		List<ServiceMessage> messages = new();
-		CollectUnknownKeyWarnings(departureSettings, messages);
+		IReadOnlyList<ServiceMessage> messages = SubServiceSettingsReader.UnknownKeyWarnings(
+			departureSettings, OwnKeys, CrcKindsByClass, LogSource,
+			labelSource: "each point is labelled with its own identifier");
 
 		DepartureSettings settings = new()
 		{
@@ -190,56 +169,9 @@ public static class DepartureSettingsParser
 		return new DepartureSettingsParseResult(settings, messages);
 	}
 
-	private static DepartureRoiMode ParseRoiMode(Dictionary<string, string> settings)
+	private static DateOnly ParseAmendedOnOrAfter(IReadOnlyDictionary<string, string> settings)
 	{
-		string? raw = SettingsValueReader.OptionalString(settings, "RoiMode");
-
-		if (string.IsNullOrWhiteSpace(raw))
-		{
-			return DepartureRoiMode.Airport;
-		}
-
-		// Matched by name only: Enum.TryParse would also accept "1" or "Airport,Waypoint".
-		foreach (DepartureRoiMode mode in Enum.GetValues<DepartureRoiMode>())
-		{
-			if (raw.Trim().Equals(mode.ToString(), StringComparison.OrdinalIgnoreCase))
-			{
-				return mode;
-			}
-		}
-
-		throw new ArgumentException(
-			$"'RoiMode' value '{raw}' is not valid. Use \"Airport\" (every departure of an airport inside the ROI) " +
-			"or \"Waypoint\" (any departure with a point inside the ROI).");
-	}
-
-	private static DepartureAmendmentFilter ParseAmendmentFilter(Dictionary<string, string> settings)
-	{
-		string? raw = SettingsValueReader.OptionalString(settings, "AmendmentFilter");
-
-		if (string.IsNullOrWhiteSpace(raw))
-		{
-			return DepartureAmendmentFilter.None;
-		}
-
-		// Matched by name only: Enum.TryParse would also accept "1" or "Cycles,Days".
-		foreach (DepartureAmendmentFilter mode in Enum.GetValues<DepartureAmendmentFilter>())
-		{
-			if (raw.Trim().Equals(mode.ToString(), StringComparison.OrdinalIgnoreCase))
-			{
-				return mode;
-			}
-		}
-
-		throw new ArgumentException(
-			$"'AmendmentFilter' value '{raw}' is not valid. Use \"None\" (keep every procedure), " +
-			"\"Cycles\" (with AmendedWithinCycles), \"Days\" (with AmendedWithinDays) " +
-			"or \"Date\" (with AmendedOnOrAfter).");
-	}
-
-	private static DateOnly ParseAmendedOnOrAfter(Dictionary<string, string> settings)
-	{
-		string raw = SettingsValueReader.RequireNonEmpty(settings, "AmendedOnOrAfter");
+		string raw = SettingsValueReader.RequiredString(settings, "AmendedOnOrAfter");
 
 		if (!DateOnly.TryParseExact(raw, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateOnly date))
 		{
@@ -248,114 +180,5 @@ public static class DepartureSettingsParser
 		}
 
 		return date;
-	}
-
-	private static IReadOnlyCollection<DepartureFebProperty> ParseFebProperties(
-		Dictionary<string, string> settings,
-		bool includeFebProperties)
-	{
-		if (!includeFebProperties)
-		{
-			return Array.Empty<DepartureFebProperty>();
-		}
-
-		IReadOnlyList<string> names = SettingsValueReader.StringList(settings, "FebProperties");
-
-		if (names.Count == 0)
-		{
-			throw new ArgumentException(
-				"IncludeFebCustomProperties is \"Y\" but 'FebProperties' names none. " +
-				"List the properties to write, e.g. \"dpName,pointId,arptId\".");
-		}
-
-		List<DepartureFebProperty> properties = new();
-
-		foreach (string name in names)
-		{
-			if (!FebPropertiesByName.TryGetValue(name, out DepartureFebProperty property))
-			{
-				throw new ArgumentException(
-					$"'FebProperties' entry '{name}' is not a known property. Valid values: " +
-					string.Join(", ", FebPropertiesByName.Keys) + ".");
-			}
-
-			if (!properties.Contains(property))
-			{
-				properties.Add(property);
-			}
-		}
-
-		return properties;
-	}
-
-	private static RegionOfInterest ParseRoi(Dictionary<string, string> settings)
-	{
-		string swLatText = SettingsValueReader.RequireNonEmpty(settings, "RoiSwLat");
-		string swLonText = SettingsValueReader.RequireNonEmpty(settings, "RoiSwLon");
-		string neLatText = SettingsValueReader.RequireNonEmpty(settings, "RoiNeLat");
-		string neLonText = SettingsValueReader.RequireNonEmpty(settings, "RoiNeLon");
-
-		if (!RoiFilter.IsCoordinateValidFormat(swLatText, swLonText, neLatText, neLonText, out string? formatError))
-		{
-			throw new ArgumentException($"Invalid Region of Interest: {formatError}");
-		}
-
-		double swLat = double.Parse(swLatText, NumberStyles.Float, CultureInfo.InvariantCulture);
-		double swLon = double.Parse(swLonText, NumberStyles.Float, CultureInfo.InvariantCulture);
-		double neLat = double.Parse(neLatText, NumberStyles.Float, CultureInfo.InvariantCulture);
-		double neLon = double.Parse(neLonText, NumberStyles.Float, CultureInfo.InvariantCulture);
-
-		if (!RoiFilter.IsCoordinatesRelativePositionValid(swLat, swLon, neLat, neLon, out string? positionError))
-		{
-			throw new ArgumentException($"Invalid Region of Interest: {positionError}");
-		}
-
-		return new RegionOfInterest(swLat, swLon, neLat, neLon);
-	}
-
-	private static void CollectUnknownKeyWarnings(Dictionary<string, string> settings, List<ServiceMessage> messages)
-	{
-		foreach (string key in settings.Keys)
-		{
-			if (KnownScalarKeys.Contains(key))
-			{
-				continue;
-			}
-
-			Match match = CrcKeyPattern.Match(key);
-
-			if (!match.Success
-				|| !match.Groups[1].Value.Equals(nameof(DepartureCrcClass.Departures), StringComparison.OrdinalIgnoreCase))
-			{
-				messages.Add(new ServiceMessage(LogLevel.Warning, LogSource,
-					$"Unrecognized departureSettings key '{key}' was ignored."));
-				continue;
-			}
-
-			string kind = match.Groups[2].Value;
-			string property = match.Groups[3].Value;
-
-			HashSet<string> allowedProperties = kind.Equals("Line", StringComparison.OrdinalIgnoreCase)
-				? LinePropertyNames
-				: kind.Equals("Symbol", StringComparison.OrdinalIgnoreCase)
-					? SymbolPropertyNames
-					: TextPropertyNames;
-
-			if (allowedProperties.Contains(property))
-			{
-				continue;
-			}
-
-			if (kind.Equals("Text", StringComparison.OrdinalIgnoreCase) &&
-				property.Equals("text", StringComparison.OrdinalIgnoreCase))
-			{
-				messages.Add(new ServiceMessage(LogLevel.Warning, LogSource,
-					$"'{key}' was ignored: each point is labelled with its own identifier, so a label cannot be set as a class-wide default."));
-				continue;
-			}
-
-			messages.Add(new ServiceMessage(LogLevel.Warning, LogSource,
-				$"Unrecognized departureSettings key '{key}' was ignored."));
-		}
 	}
 }

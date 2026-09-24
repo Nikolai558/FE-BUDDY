@@ -62,7 +62,7 @@ public static class AirwayAliasWriter
 			builder.AppendLine($".{airway.AwyId}F .FF {pointIds}");
 		}
 
-		string directory = AirwayOutputPaths.Resolve(settings, "Alias");
+		string directory = SubServiceOutputPaths.Resolve(settings.OutputDirectory, settings.AddFeBuddyOutputFolder, "Airways", "Alias");
 		Directory.CreateDirectory(directory);
 
 		string path = Path.Combine(directory, FileName);

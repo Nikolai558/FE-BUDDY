@@ -64,30 +64,6 @@ public static class CrcPropertyValidator
 	};
 
 	/// <summary>
-	/// Validates a set of properties for the given <see cref="CrcFeatureKind"/>.
-	/// </summary>
-	/// <param name="kind">Which feature family <paramref name="properties"/> belongs to.</param>
-	/// <param name="properties">
-	/// A <see cref="CrcLineProperties"/>, <see cref="CrcSymbolProperties"/>, or
-	/// <see cref="CrcTextProperties"/> instance matching <paramref name="kind"/>.
-	/// </param>
-	/// <returns>The validation result.</returns>
-	/// <exception cref="ArgumentException">
-	/// Thrown when <paramref name="properties"/> is not the type expected for
-	/// <paramref name="kind"/>.
-	/// </exception>
-	public static CrcPropertyValidationResult Validate(CrcFeatureKind kind, object properties)
-	{
-		return kind switch
-		{
-			CrcFeatureKind.Line => ValidateLine(AsType<CrcLineProperties>(properties, kind)),
-			CrcFeatureKind.Symbol => ValidateSymbol(AsType<CrcSymbolProperties>(properties, kind)),
-			CrcFeatureKind.Text => ValidateText(AsType<CrcTextProperties>(properties, kind)),
-			_ => throw new ArgumentOutOfRangeException(nameof(kind), kind, "Unknown CRC feature kind.")
-		};
-	}
-
-	/// <summary>
 	/// Validates a Line feature's CRC properties.
 	/// </summary>
 	public static CrcPropertyValidationResult ValidateLine(CrcLineProperties properties)
@@ -202,13 +178,7 @@ public static class CrcPropertyValidator
 	public static CrcPropertyValidationResult ValidateSymbolDefaults(CrcSymbolDefaults defaults)
 	{
 		ArgumentNullException.ThrowIfNull(defaults);
-		return ValidateSymbol(new CrcSymbolProperties
-		{
-			Bcg = defaults.Bcg,
-			Filters = defaults.Filters,
-			Style = defaults.Style,
-			Size = defaults.Size,
-		});
+		return ValidateSymbol(defaults.ToFeatureProperties());
 	}
 
 	/// <summary>Validates the values of an <c>isTextDefaults</c> Feature.</summary>
@@ -274,22 +244,20 @@ public static class CrcPropertyValidator
 	}
 
 	/// <summary>
-	/// Casts <paramref name="properties"/> to <typeparamref name="T"/>, throwing a clear
-	/// <see cref="ArgumentException"/> naming the mismatch when the runtime type does not
-	/// match the declared <see cref="CrcFeatureKind"/>.
+	/// Throws when <paramref name="result"/> has any errors, listing every one under
+	/// <paramref name="heading"/>.
 	/// </summary>
-	private static T AsType<T>(object properties, CrcFeatureKind kind) where T : class
+	/// <param name="result">The validation result.</param>
+	/// <param name="heading">What was being validated, e.g. <c>Invalid CRC defaults under 'Crc.High.Line'</c>.</param>
+	/// <param name="paramName">The argument that held the invalid values, when there is one.</param>
+	/// <exception cref="ArgumentException">Thrown when the result is not valid.</exception>
+	public static void ThrowIfInvalid(CrcPropertyValidationResult result, string heading, string? paramName = null)
 	{
-		ArgumentNullException.ThrowIfNull(properties);
-
-		if (properties is not T typed)
+		if (!result.IsValid)
 		{
 			throw new ArgumentException(
-				$"CRC feature kind '{kind}' requires a '{typeof(T).Name}' instance, " +
-				$"but a '{properties.GetType().Name}' was supplied.",
-				nameof(properties));
+				heading + ":" + Environment.NewLine + string.Join(Environment.NewLine, result.Errors),
+				paramName);
 		}
-
-		return typed;
 	}
 }

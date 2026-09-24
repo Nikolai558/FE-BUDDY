@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
+using FeBuddy.Core.Infrastructure.FileSystem;
 using FeBuddy.Core.Infrastructure.Logging;
 
 namespace FeBuddy.Core.Infrastructure.Configuration;
@@ -40,7 +41,7 @@ public static class UserConfigFile
 	private static readonly Dictionary<string, string> _values = new(StringComparer.Ordinal);
 	private static readonly JsonSerializerOptions _writeOptions = new() { WriteIndented = true };
 
-	private static string _directory = GetDefaultDirectory();
+	private static string _directory = AppPaths.AppDataDirectory;
 
 	/// <summary>
 	/// The directory holding <c>UserConfig.json</c>: <c>%APPDATA%\FE-Buddy</c> by default.
@@ -277,7 +278,7 @@ public static class UserConfigFile
 		lock (_gate)
 		{
 			_values.Clear();
-			_directory = directory ?? GetDefaultDirectory();
+			_directory = directory ?? AppPaths.AppDataDirectory;
 		}
 	}
 
@@ -291,9 +292,6 @@ public static class UserConfigFile
 			return new Dictionary<string, string>(_values, StringComparer.Ordinal);
 		}
 	}
-
-	private static string GetDefaultDirectory() =>
-		Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "FE-Buddy");
 
 	/// <summary>
 	/// Recursively walks a JSON object, adding every leaf (non-object) it reaches to

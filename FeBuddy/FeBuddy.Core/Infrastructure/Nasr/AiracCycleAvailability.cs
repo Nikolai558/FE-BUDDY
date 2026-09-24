@@ -3,6 +3,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 
 using FeBuddy.Core.Domain.Airac.Models;
+using FeBuddy.Core.Infrastructure.Http;
 using FeBuddy.Core.Infrastructure.Logging;
 using FeBuddy.Core.Infrastructure.Logging.Models;
 using FeBuddy.Core.Infrastructure.Nasr.Models;
@@ -50,16 +51,11 @@ public static class AiracCycleAvailability
 
 		string url = NasrCycleDownloader.BuildCsvDownloadUrl(cycle);
 
-		bool ownsClient = httpClient is null;
-		HttpClient client = httpClient ?? new HttpClient { Timeout = TimeSpan.FromSeconds(15) };
+		using HttpClient? owned = httpClient is null ? FeBuddyHttp.CreateClient(TimeSpan.FromSeconds(15)) : null;
+		HttpClient client = httpClient ?? owned!;
 
 		try
 		{
-			if (client.DefaultRequestHeaders.UserAgent.Count == 0)
-			{
-				client.DefaultRequestHeaders.UserAgent.ParseAdd("FE-Buddy");
-			}
-
 			AiracCyclePublicationState state = await SendAsync(client, HttpMethod.Head, url, cycle, cancellationToken).ConfigureAwait(false);
 
 			// Some servers/CDNs reject HEAD (405) - retry once with a one-byte ranged GET.
@@ -74,13 +70,6 @@ public static class AiracCycleAvailability
 		{
 			AppLog.Info(LogSource, $"Cycle {cycle.AiracCycleId}: publication probe could not reach the FAA ({ex.Message}). Will retry.");
 			return AiracCyclePublicationState.Unknown;
-		}
-		finally
-		{
-			if (ownsClient)
-			{
-				client.Dispose();
-			}
 		}
 	}
 

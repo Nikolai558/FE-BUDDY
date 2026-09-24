@@ -38,7 +38,5 @@ internal static class DepartureOutputPaths
 		$"{airportProcedure.AirportId}_{airportProcedure.Procedure.CodeId}_{kind}.geojson";
 
 	private static string Root(DepartureSettings settings) =>
-		settings.AddFeBuddyOutputFolder
-			? Path.Combine(settings.OutputDirectory, "FE-Buddy_Output", RootFolder)
-			: Path.Combine(settings.OutputDirectory, RootFolder);
+		SubServiceOutputPaths.Resolve(settings.OutputDirectory, settings.AddFeBuddyOutputFolder, RootFolder);
 }

@@ -2,6 +2,7 @@ using FeBuddy.Core.Application.Airac.Airways;
 using FeBuddy.Core.Application.Airac.Airways.Models;
 using FeBuddy.Core.Application.Models;
 using FeBuddy.Core.Domain.Airways.Models;
+using FeBuddy.Core.Domain.Geo;
 using FeBuddy.Core.Infrastructure.Logging;
 using FeBuddy.Core.Infrastructure.Logging.Models;
 using FeBuddy.Core.Infrastructure.Nasr.Models;
@@ -37,13 +38,13 @@ public sealed class AirwayMessageLevelsTests : IDisposable
 		AirwayPoint a = new("AAAAA", "WP", 40.00000, -80.00000, "fix");
 		AirwayPoint b = new("BBBBB", "WP", 40.00100, -80.00100, "fix"); // ~0.08 NM away - well inside 2.5+2.5
 
-		LineString leg = AirwayGeometryBuilder.GeometryFactory.CreateLineString(new[]
+		LineString leg = Wgs84.Factory.CreateLineString(new[]
 		{
 			new Coordinate(a.Longitude, a.Latitude),
 			new Coordinate(b.Longitude, b.Latitude),
 		});
 
-		AirwayBufferResult result = AirwayWaypointBuffer.Buffer(new[] { leg }, new[] { a, b }, AirwayGeometryBuilder.GeometryFactory, "TEST");
+		AirwayBufferResult result = AirwayWaypointBuffer.Buffer(new[] { leg }, new[] { a, b }, "TEST");
 
 		ServiceMessage message = Assert.Single(result.Messages);
 		Assert.Equal(LogLevel.Info, message.Level);

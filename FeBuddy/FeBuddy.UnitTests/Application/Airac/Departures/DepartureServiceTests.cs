@@ -1,8 +1,10 @@
 using System.Text.Json;
 
+using FeBuddy.Core.Application.Airac;
 using FeBuddy.Core.Application.Airac.Departures;
 using FeBuddy.Core.Application.Airac.Departures.Models;
 using FeBuddy.Core.Domain.Departures.Models;
+using FeBuddy.Core.Infrastructure.Geojson;
 using FeBuddy.Core.Infrastructure.Nasr.Models;
 
 using FeBuddy.UnitTests.Application.Airac.Departures.Fixtures;
@@ -168,7 +170,7 @@ public sealed class DepartureServiceTests : IDisposable
 		DepartureAirportProcedure airportProcedure = DepartureTestData.AirportProcedure(DepartureTestData.Procedure(), "DTW", only);
 		DepartureSettings settings = DepartureSettingsParser.Parse(Settings()).Settings;
 
-		DepartureGeojsonGenerateResult result = DepartureGeojsonWriter.Generate(new[] { airportProcedure }, settings);
+		GeojsonFileSet result = DepartureGeojsonWriter.Generate(new[] { airportProcedure }, settings);
 
 		Assert.Equal(new[] { "DTW_ABC_Symbols.geojson", "DTW_ABC_Text.geojson" }, result.FilesWritten.Select(Path.GetFileName));
 	}
@@ -193,7 +195,7 @@ public sealed class DepartureServiceTests : IDisposable
 	[InlineData((DepartureFebProperty)999, "999")]
 	public void feb_property_names_are_camel_case(DepartureFebProperty property, string expected)
 	{
-		Assert.Equal(expected, DepartureGeojsonWriter.Name(property));
+		Assert.Equal(expected, FebProperties.Name(property));
 	}
 
 	[Fact]
@@ -251,8 +253,7 @@ public sealed class DepartureServiceTests : IDisposable
 			Points = new[] { alpha, bravo, xray, yank },
 		};
 
-		MultiLineString? geometry = DepartureGeometryBuilder.Build(
-			airportProcedure, NtsGeometryServices.Instance.CreateGeometryFactory(4326));
+		MultiLineString? geometry = DepartureGeometryBuilder.Build(airportProcedure);
 
 		Assert.Equal(2, geometry!.NumGeometries);
 	}

@@ -20,7 +20,7 @@ public static class TempWorkspace
 
 	/// <summary>The scratch root: <c>%TEMP%\FE-Buddy</c>.</summary>
 	public static string RootDirectory =>
-		_rootOverride ?? Path.Combine(Path.GetTempPath(), "FE-Buddy");
+		_rootOverride ?? AppPaths.TempDirectory;
 
 	/// <summary>Where cycle archives are downloaded before extraction: <c>%TEMP%\FE-Buddy\Downloads</c>.</summary>
 	public static string DownloadsDirectory =>

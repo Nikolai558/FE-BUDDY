@@ -105,7 +105,7 @@ public static class AirportAliasWriter
 			return new AirportAliasGenerateResult(null, 0, messages);
 		}
 
-		string directory = AirportOutputPaths.Resolve(settings, "Alias");
+		string directory = SubServiceOutputPaths.Resolve(settings.OutputDirectory, settings.AddFeBuddyOutputFolder, "Airports", "Alias");
 		Directory.CreateDirectory(directory);
 
 		string path = Path.Combine(directory, FileName);

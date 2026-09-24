@@ -507,7 +507,7 @@ public class DepartureSettingsParserTests
 
 	[Theory]
 	[InlineData("Crc.Departures.Text.text", "each point is labelled with its own identifier")]
-	[InlineData("Crc.Departures.Symbol.madeUp", "Unrecognized departureSettings key")]
+	[InlineData("Crc.Departures.Symbol.madeUp", "Unrecognized setting 'Crc.Departures.Symbol.madeUp'")]
 	public void a_crc_key_that_cannot_apply_is_a_warning(string key, string expected)
 	{
 		Dictionary<string, string> settings = MinimalValidSettings();

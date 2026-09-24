@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Threading.Channels;
 
 using FeBuddy.Core.Infrastructure.Configuration;
+using FeBuddy.Core.Infrastructure.FileSystem;
 using FeBuddy.Core.Infrastructure.Logging.Models;
 
 namespace FeBuddy.Core.Infrastructure.Logging;
@@ -297,10 +298,7 @@ public static class AppLog
 	}
 
 	private static string GetDefaultLogDirectory() =>
-		Path.Combine(
-			Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-			"FE-Buddy",
-			"Logs");
+		Path.Combine(AppPaths.AppDataDirectory, "Logs");
 
 	private static bool TryParseLogFileDate(string filePath, out DateTime date)
 	{

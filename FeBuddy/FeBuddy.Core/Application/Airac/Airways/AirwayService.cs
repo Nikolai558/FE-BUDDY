@@ -3,6 +3,7 @@ using System.Diagnostics;
 using FeBuddy.Core.Application.Airac.Airways.Models;
 using FeBuddy.Core.Application.Models;
 using FeBuddy.Core.Domain.Airways.Models;
+using FeBuddy.Core.Infrastructure.Geojson;
 using FeBuddy.Core.Infrastructure.Logging;
 using FeBuddy.Core.Infrastructure.Logging.Models;
 using FeBuddy.Core.Infrastructure.Nasr.Models;
@@ -29,7 +30,7 @@ public static class AirwayService
 	/// <returns>What was built and written, plus timing and every warning collected along the way.</returns>
 	/// <exception cref="ArgumentException">Thrown when a required setting is missing or invalid.</exception>
 	/// <exception cref="InvalidOperationException">Thrown when <paramref name="allNasrCsvData"/>.Awy has not been parsed.</exception>
-	public static AirwayServiceResult Run(NasrCsvDataCollection allNasrCsvData, Dictionary<string, string> airwaySettings)
+	public static AirwayServiceResult Run(NasrCsvDataCollection allNasrCsvData, IReadOnlyDictionary<string, string> airwaySettings)
 	{
 		ArgumentNullException.ThrowIfNull(allNasrCsvData);
 		ArgumentNullException.ThrowIfNull(airwaySettings);
@@ -47,9 +48,7 @@ public static class AirwayService
 		// own AliasRoiScope - "All" really is all, "ROI airways only" narrows it.
 		IReadOnlyList<Airway> airwaysInRoi = buildResult.Airways.Where(a => a.CrossesRoi).ToList();
 
-		AirwayGeojsonGenerateResult geojsonResult =
-			AirwayGeojsonWriter.Generate(airwaysInRoi, parseResult.Settings);
-		messages.AddRange(geojsonResult.Messages);
+		GeojsonFileSet geojsonFiles = AirwayGeojsonWriter.Generate(airwaysInRoi, parseResult.Settings);
 
 		AirwayAliasGenerateResult? aliasResult = parseResult.Settings.GenerateAliasFile
 			? AirwayAliasWriter.Generate(buildResult.Airways, parseResult.Settings)
@@ -90,8 +89,8 @@ public static class AirwayService
 			Messages = messages,
 			Elapsed = stopwatch.Elapsed,
 			AirwayCount = airwaysInRoi.Count,
-			GeojsonFilesWritten = geojsonResult.FilesWritten,
-			GeojsonFeatureCountsByFile = geojsonResult.RenderedFeatureCountsByFile,
+			GeojsonFilesWritten = geojsonFiles.FilesWritten,
+			GeojsonFeatureCountsByFile = geojsonFiles.RenderedFeatureCountsByFile,
 			AliasFilePath = aliasResult?.FilePath,
 			AliasAirwayLineCount = aliasResult?.AirwayLineCount ?? 0,
 			ExcludedAirwayIds = buildResult.ExcludedAirwayIds

@@ -23,7 +23,7 @@ public static class SettingsValueReader
 	/// <param name="key">The key to read.</param>
 	/// <returns>The trimmed value.</returns>
 	/// <exception cref="ArgumentException">Thrown when the key is missing or blank.</exception>
-	public static string RequireNonEmpty(IReadOnlyDictionary<string, string> settings, string key)
+	public static string RequiredString(IReadOnlyDictionary<string, string> settings, string key)
 	{
 		if (!settings.TryGetValue(key, out string? value) || string.IsNullOrWhiteSpace(value))
 		{
@@ -157,7 +157,7 @@ public static class SettingsValueReader
 	/// <exception cref="ArgumentException">Thrown when the key is missing, blank, or holds a non-integer entry.</exception>
 	public static IReadOnlyList<int> RequiredIntList(IReadOnlyDictionary<string, string> settings, string key)
 	{
-		string value = RequireNonEmpty(settings, key);
+		string value = RequiredString(settings, key);
 
 		string[] parts = value.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
@@ -191,6 +191,35 @@ public static class SettingsValueReader
 			? Array.Empty<string>()
 			: value.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 	}
+
+	/// <summary>Reads an optional enum value, matched by name ignoring case.</summary>
+	/// <typeparam name="TEnum">The enum.</typeparam>
+	/// <param name="settings">The raw settings block.</param>
+	/// <param name="key">The key to read.</param>
+	/// <param name="defaultValue">The value to use when the key is absent or blank.</param>
+	/// <param name="hint">What to tell the user when the value is not valid; defaults to listing every name.</param>
+	/// <returns>The parsed value.</returns>
+	/// <exception cref="ArgumentException">Thrown when the value is not one of the enum's names.</exception>
+	public static TEnum OptionalEnum<TEnum>(
+		IReadOnlyDictionary<string, string> settings,
+		string key,
+		TEnum defaultValue,
+		string? hint = null)
+		where TEnum : struct, Enum
+	{
+		string? value = OptionalString(settings, key);
+		return value is null ? defaultValue : EnumValue<TEnum>(key, value, hint);
+	}
+
+	/// <summary>Reads an enum value that must be present, matched by name ignoring case.</summary>
+	/// <typeparam name="TEnum">The enum.</typeparam>
+	/// <param name="settings">The raw settings block.</param>
+	/// <param name="key">The key to read.</param>
+	/// <returns>The parsed value.</returns>
+	/// <exception cref="ArgumentException">Thrown when the key is missing, blank, or not one of the enum's names.</exception>
+	public static TEnum RequiredEnum<TEnum>(IReadOnlyDictionary<string, string> settings, string key)
+		where TEnum : struct, Enum =>
+		EnumValue<TEnum>(key, RequiredString(settings, key), hint: null);
 
 	/// <summary>
 	/// Matches a user-supplied CRC style value against the valid list case-insensitively and
@@ -229,6 +258,22 @@ public static class SettingsValueReader
 		}
 
 		return value;
+	}
+
+	// Names only: Enum.TryParse would also accept "1" or "A,B".
+	private static TEnum EnumValue<TEnum>(string key, string value, string? hint) where TEnum : struct, Enum
+	{
+		foreach (TEnum candidate in Enum.GetValues<TEnum>())
+		{
+			if (candidate.ToString().Equals(value, StringComparison.OrdinalIgnoreCase))
+			{
+				return candidate;
+			}
+		}
+
+		throw new ArgumentException(
+			$"'{key}' value '{value}' is not valid. " +
+			(hint ?? $"Use one of: {string.Join(", ", Enum.GetNames<TEnum>())}."));
 	}
 
 	private static bool YesNoValue(string key, string value)

@@ -13,9 +13,6 @@ namespace FeBuddy.Core.Infrastructure.Configuration;
 /// </remarks>
 public static class OutputFormatting
 {
-	/// <summary>The <c>UserConfig</c> key the preference is saved under (<c>Y</c> / <c>N</c>).</summary>
-	public const string PrettyPrintGeojsonKey = "General.PrettyPrintGeojson";
-
 	/// <summary>
 	/// The user's preference: <see langword="true"/> writes GeoJSON indented, one property per
 	/// line; <see langword="false"/> (the default) writes each file on a single line, which is
@@ -36,5 +33,5 @@ public static class OutputFormatting
 	/// </summary>
 	public static void LoadFromUserConfig() =>
 		PrettyPrintGeojson = string.Equals(
-			UserConfigFile.GetValue(PrettyPrintGeojsonKey)?.Trim(), "Y", StringComparison.OrdinalIgnoreCase);
+			UserConfigFile.GetValue(UserConfigKeys.PrettyPrintGeojson)?.Trim(), "Y", StringComparison.OrdinalIgnoreCase);
 }

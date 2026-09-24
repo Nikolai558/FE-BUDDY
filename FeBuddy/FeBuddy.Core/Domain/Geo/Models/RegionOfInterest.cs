@@ -1,4 +1,3 @@
-using NetTopologySuite;
 using NetTopologySuite.Geometries;
 
 namespace FeBuddy.Core.Domain.Geo.Models;
@@ -21,9 +20,6 @@ namespace FeBuddy.Core.Domain.Geo.Models;
 /// </remarks>
 public sealed record RegionOfInterest(double SwLat, double SwLon, double NeLat, double NeLon)
 {
-	private static readonly GeometryFactory GeometryFactory =
-		NtsGeometryServices.Instance.CreateGeometryFactory(srid: 4326);
-
 	/// <summary>
 	/// Converts this ROI to an NTS <see cref="Envelope"/> (X = longitude, Y = latitude).
 	/// </summary>
@@ -36,7 +32,7 @@ public sealed record RegionOfInterest(double SwLat, double SwLon, double NeLat, 
 	/// </summary>
 	public Polygon ToPolygon()
 	{
-		Geometry envelopeGeometry = GeometryFactory.ToGeometry(ToEnvelope());
+		Geometry envelopeGeometry = Wgs84.Factory.ToGeometry(ToEnvelope());
 
 		if (envelopeGeometry is not Polygon polygon)
 		{

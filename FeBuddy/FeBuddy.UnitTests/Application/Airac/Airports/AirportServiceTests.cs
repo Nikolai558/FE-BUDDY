@@ -201,7 +201,7 @@ public sealed class AirportServiceTests : IDisposable
 	[InlineData("Crc.Airports.Line.bcg", "'Airports' has no Line output")]
 	[InlineData("Crc.Runways.Symbol.bcg", "'Runways' has no Symbol output")]
 	[InlineData("Crc.Airports.Text.text", "label is always built from its identifier and name")]
-	[InlineData("Crc.Airports.Symbol.madeUp", "Unrecognized airportSettings key")]
+	[InlineData("Crc.Airports.Symbol.madeUp", "Unrecognized setting 'Crc.Airports.Symbol.madeUp'")]
 	public void a_crc_key_that_cannot_apply_is_a_warning(string key, string expected)
 	{
 		Dictionary<string, string> settings = Settings((key, "1"));

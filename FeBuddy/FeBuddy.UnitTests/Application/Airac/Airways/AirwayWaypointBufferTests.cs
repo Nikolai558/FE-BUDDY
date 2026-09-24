@@ -1,6 +1,7 @@
 using FeBuddy.Core.Application.Airac.Airways;
 using FeBuddy.Core.Application.Airac.Airways.Models;
 using FeBuddy.Core.Domain.Airways.Models;
+using FeBuddy.Core.Domain.Geo;
 
 using NetTopologySuite.Geometries;
 
@@ -13,7 +14,7 @@ namespace FeBuddy.UnitTests.Application.Airac.Airways;
 /// </summary>
 public sealed class AirwayWaypointBufferTests
 {
-	private static readonly GeometryFactory Factory = AirwayGeometryBuilder.GeometryFactory;
+	private static readonly GeometryFactory Factory = Wgs84.Factory;
 
 	private static AirwayPoint Point(string id, double lat, double lon) => new(id, "WP", lat, lon, "fix");
 
@@ -33,7 +34,7 @@ public sealed class AirwayWaypointBufferTests
 		LineString leg = Leg((150.0, 20.0), (180.0, 20.60750));
 
 		AirwayBufferResult result = AirwayWaypointBuffer.Buffer(
-			new[] { leg }, new[] { start, resee }, Factory, "TEST");
+			new[] { leg }, new[] { start, resee }, "TEST");
 
 		LineString buffered = Assert.Single(result.LineStrings);
 		Coordinate end = EndOf(buffered);
@@ -53,7 +54,7 @@ public sealed class AirwayWaypointBufferTests
 		LineString leg = Leg((175.0, 20.0), synthetic);
 
 		AirwayBufferResult result = AirwayWaypointBuffer.Buffer(
-			new[] { leg }, new[] { a }, Factory, "TEST");
+			new[] { leg }, new[] { a }, "TEST");
 
 		Coordinate end = EndOf(Assert.Single(result.LineStrings));
 
@@ -71,7 +72,7 @@ public sealed class AirwayWaypointBufferTests
 		LineString leg = Leg((-80.0, 40.0), roiBoundary);
 
 		AirwayBufferResult result = AirwayWaypointBuffer.Buffer(
-			new[] { leg }, new[] { a }, Factory, "TEST");
+			new[] { leg }, new[] { a }, "TEST");
 
 		Coordinate end = EndOf(Assert.Single(result.LineStrings));
 
@@ -88,7 +89,7 @@ public sealed class AirwayWaypointBufferTests
 		LineString leg = Leg((-80.0, 40.0), (-81.0, 41.0));
 
 		AirwayBufferResult result = AirwayWaypointBuffer.Buffer(
-			new[] { leg }, new[] { a, b }, Factory, "TEST");
+			new[] { leg }, new[] { a, b }, "TEST");
 
 		Coordinate[] buffered = Assert.Single(result.LineStrings).Coordinates;
 

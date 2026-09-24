@@ -31,16 +31,13 @@ internal static class LineStringMerger
 	/// Builds the LineStrings for a set of paths.
 	/// </summary>
 	/// <param name="paths">Each path as an ordered list of keyed coordinates.</param>
-	/// <param name="factory">The geometry factory to create LineStrings with.</param>
 	/// <returns>
 	/// The LineStrings, base first. Empty when no path has two different consecutive points.
 	/// </returns>
 	internal static IReadOnlyList<LineString> Merge(
-		IEnumerable<IReadOnlyList<(string Key, Coordinate Coordinate)>> paths,
-		GeometryFactory factory)
+		IEnumerable<IReadOnlyList<(string Key, Coordinate Coordinate)>> paths)
 	{
 		ArgumentNullException.ThrowIfNull(paths);
-		ArgumentNullException.ThrowIfNull(factory);
 
 		List<IReadOnlyList<(string Key, Coordinate Coordinate)>> ordered = paths
 			.Select((path, index) => (Path: CollapseRepeats(path), Index: index))
@@ -63,7 +60,7 @@ internal static class LineStringMerger
 
 				if (!drawn.Add(SegmentKey(from.Key, to.Key)))
 				{
-					Flush(run, lines, factory);
+					Flush(run, lines);
 					continue;
 				}
 
@@ -75,7 +72,7 @@ internal static class LineStringMerger
 				run.Add(to.Coordinate.Copy());
 			}
 
-			Flush(run, lines, factory);
+			Flush(run, lines);
 		}
 
 		return lines;
@@ -111,11 +108,11 @@ internal static class LineStringMerger
 		return string.CompareOrdinal(first, second) <= 0 ? (first, second) : (second, first);
 	}
 
-	private static void Flush(List<Coordinate> run, List<LineString> lines, GeometryFactory factory)
+	private static void Flush(List<Coordinate> run, List<LineString> lines)
 	{
 		if (run.Count >= 2)
 		{
-			lines.Add(factory.CreateLineString(run.ToArray()));
+			lines.Add(Wgs84.Factory.CreateLineString(run.ToArray()));
 		}
 
 		run.Clear();

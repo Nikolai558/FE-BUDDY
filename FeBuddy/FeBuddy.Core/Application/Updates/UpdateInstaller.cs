@@ -4,6 +4,7 @@ using System.Net.Http.Headers;
 using FeBuddy.Core.Application.Updates.Models;
 using FeBuddy.Core.Infrastructure.FileSystem;
 using FeBuddy.Core.Infrastructure.GitHub;
+using FeBuddy.Core.Infrastructure.Http;
 using FeBuddy.Core.Infrastructure.Logging;
 
 namespace FeBuddy.Core.Application.Updates;
@@ -22,7 +23,7 @@ namespace FeBuddy.Core.Application.Updates;
 public static class UpdateInstaller
 {
 	private const string LogSource = "UpdateInstaller";
-	private const string AssetApiUrl = "https://api.github.com/repos/Nikolai558/FE-BUDDY/releases/assets/";
+	private const string AssetApiUrl = GitHubRepository.ApiUrl + "/releases/assets/";
 
 	/// <summary>Where installers are downloaded: <c>%TEMP%\FE-Buddy\Updates</c>.</summary>
 	public static string UpdatesDirectory => Path.Combine(TempWorkspace.RootDirectory, "Updates");
@@ -58,8 +59,8 @@ public static class UpdateInstaller
 		Directory.CreateDirectory(UpdatesDirectory);
 		string destination = Path.Combine(UpdatesDirectory, fileName);
 
-		bool ownsClient = httpClient is null;
-		HttpClient client = httpClient ?? new HttpClient { Timeout = TimeSpan.FromMinutes(10) };
+		using HttpClient? owned = httpClient is null ? FeBuddyHttp.CreateClient(TimeSpan.FromMinutes(10)) : null;
+		HttpClient client = httpClient ?? owned!;
 
 		try
 		{
@@ -85,13 +86,6 @@ public static class UpdateInstaller
 			AppLog.Warning(LogSource, $"Downloading {fileName} failed: {ex.Message}");
 			TryDelete(destination);
 			throw;
-		}
-		finally
-		{
-			if (ownsClient)
-			{
-				client.Dispose();
-			}
 		}
 	}
 
@@ -119,7 +113,6 @@ public static class UpdateInstaller
 		CancellationToken cancellationToken)
 	{
 		using HttpRequestMessage request = new(HttpMethod.Get, url);
-		request.Headers.UserAgent.ParseAdd("FE-Buddy");
 		if (token is not null)
 		{
 			// The by-id assets endpoint returns JSON metadata unless asked for the file itself.
@@ -132,26 +125,12 @@ public static class UpdateInstaller
 			.ConfigureAwait(false);
 		response.EnsureSuccessStatusCode();
 
-		long? total = response.Content.Headers.ContentLength ?? (knownSizeBytes > 0 ? knownSizeBytes : null);
-
-		await using Stream source = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
-		await using (FileStream file = new(destination, FileMode.Create, FileAccess.Write, FileShare.None))
-		{
-			byte[] buffer = new byte[81920];
-			long received = 0;
-			int read;
-			while ((read = await source.ReadAsync(buffer, cancellationToken).ConfigureAwait(false)) > 0)
-			{
-				await file.WriteAsync(buffer.AsMemory(0, read), cancellationToken).ConfigureAwait(false);
-				received += read;
-				progress?.Report(new DownloadProgress(received, total));
-			}
-
-			if (total is long expected && received != expected)
-			{
-				throw new IOException($"The download ended after {received:N0} of {expected:N0} bytes.");
-			}
-		}
+		await FeBuddyHttp.DownloadToFileAsync(
+			response,
+			destination,
+			expectedBytes: knownSizeBytes > 0 ? knownSizeBytes : null,
+			(received, total) => progress?.Report(new DownloadProgress(received, total)),
+			cancellationToken).ConfigureAwait(false);
 	}
 
 	private static void TryDelete(string path)

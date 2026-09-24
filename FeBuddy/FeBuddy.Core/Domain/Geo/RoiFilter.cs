@@ -89,44 +89,24 @@ public static class RoiFilter
 	}
 
 	/// <summary>
-	/// Clips a LineString or MultiLineString to an ROI's rectangular bounds, returning only
-	/// the line components of the intersection.
+	/// Clips lines to an ROI's rectangular bounds.
 	/// </summary>
-	/// <param name="geometry">The LineString or MultiLineString to clip.</param>
+	/// <param name="lines">The lines to clip, treated as one geometry.</param>
 	/// <param name="roi">The Region of Interest to clip to.</param>
-	/// <param name="geometryFactory">The geometry factory used to build the resulting geometry.</param>
-	/// <returns>
-	/// A single <see cref="LineString"/> when exactly one line component remains after
-	/// clipping, a <see cref="MultiLineString"/> when more than one remains, or
-	/// <see langword="null"/> when the geometry does not intersect the ROI at all.
-	/// </returns>
+	/// <returns>The line pieces inside the ROI; empty when none of the lines reaches it.</returns>
 	/// <remarks>
-	/// NTS's <see cref="Geometry.Intersection(Geometry)"/> can return a Point,
-	/// GeometryCollection, or empty geometry at the edges of a clip in addition to
-	/// LineString/MultiLineString; this method discards any non-line component (a single
-	/// touching point at the ROI boundary carries no useful line geometry) before deciding
-	/// what to return.
+	/// An intersection can also produce points - a line that only touches the ROI's edge or
+	/// corner. Those carry no drawable line, so they are dropped.
 	/// </remarks>
-	public static Geometry? ClipLineGeometry(
-		Geometry geometry,
-		RegionOfInterest roi,
-		GeometryFactory geometryFactory)
+	public static IReadOnlyList<LineString> ClipLines(IReadOnlyList<LineString> lines, RegionOfInterest roi)
 	{
-		ArgumentNullException.ThrowIfNull(geometry);
+		ArgumentNullException.ThrowIfNull(lines);
 		ArgumentNullException.ThrowIfNull(roi);
-		ArgumentNullException.ThrowIfNull(geometryFactory);
 
-		Geometry clipped = geometry.Intersection(roi.ToPolygon());
-
-		List<LineString> lineComponents = new();
-		CollectLineStrings(clipped, lineComponents);
-
-		return lineComponents.Count switch
-		{
-			0 => null,
-			1 => lineComponents[0],
-			_ => geometryFactory.CreateMultiLineString(lineComponents.ToArray())
-		};
+		Geometry combined = Wgs84.Factory.CreateMultiLineString(lines.ToArray());
+		List<LineString> clipped = new();
+		CollectLineStrings(combined.Intersection(roi.ToPolygon()), clipped);
+		return clipped;
 	}
 
 	/// <summary>
@@ -144,9 +124,8 @@ public static class RoiFilter
 	}
 
 	/// <summary>
-	/// Recursively collects every LineString component out of a geometry that may be a
-	/// LineString, MultiLineString, or GeometryCollection (as produced by an intersection).
-	/// Point/MultiPoint components and empty geometry are silently discarded.
+	/// Recursively collects every non-empty LineString out of a geometry. A MultiLineString is
+	/// a GeometryCollection, so one case covers both; points and empty geometry add nothing.
 	/// </summary>
 	private static void CollectLineStrings(Geometry geometry, List<LineString> result)
 	{
@@ -156,21 +135,12 @@ public static class RoiFilter
 				result.Add(lineString);
 				break;
 
-			case MultiLineString multiLineString:
-				for (int i = 0; i < multiLineString.NumGeometries; i++)
-				{
-					CollectLineStrings(multiLineString.GetGeometryN(i), result);
-				}
-				break;
-
 			case GeometryCollection geometryCollection:
 				for (int i = 0; i < geometryCollection.NumGeometries; i++)
 				{
 					CollectLineStrings(geometryCollection.GetGeometryN(i), result);
 				}
 				break;
-
-				// Point, MultiPoint, and empty geometry contribute no line component.
 		}
 	}
 

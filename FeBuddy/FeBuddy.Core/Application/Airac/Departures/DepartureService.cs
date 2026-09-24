@@ -3,6 +3,7 @@ using System.Diagnostics;
 using FeBuddy.Core.Application.Airac.Departures.Models;
 using FeBuddy.Core.Application.Models;
 using FeBuddy.Core.Domain.Departures.Models;
+using FeBuddy.Core.Infrastructure.Geojson;
 using FeBuddy.Core.Infrastructure.Logging;
 using FeBuddy.Core.Infrastructure.Logging.Models;
 using FeBuddy.Core.Infrastructure.Nasr.Models;
@@ -29,7 +30,7 @@ public static class DepartureService
 	/// <returns>What was built and written, plus timing and every message collected along the way.</returns>
 	/// <exception cref="ArgumentException">Thrown when a required setting is missing or invalid.</exception>
 	/// <exception cref="InvalidOperationException">Thrown when the DP data has not been parsed.</exception>
-	public static DepartureServiceResult Run(NasrCsvDataCollection allNasrCsvData, Dictionary<string, string> departureSettings)
+	public static DepartureServiceResult Run(NasrCsvDataCollection allNasrCsvData, IReadOnlyDictionary<string, string> departureSettings)
 	{
 		ArgumentNullException.ThrowIfNull(allNasrCsvData);
 		ArgumentNullException.ThrowIfNull(departureSettings);
@@ -55,8 +56,7 @@ public static class DepartureService
 		IReadOnlyList<DepartureAirportProcedure> output =
 			DepartureFilter.ByRoi(locateResult.AirportProcedures, settings, allNasrCsvData, messages);
 
-		DepartureGeojsonGenerateResult geojsonResult = DepartureGeojsonWriter.Generate(output, settings);
-		messages.AddRange(geojsonResult.Messages);
+		GeojsonFileSet geojsonFiles = DepartureGeojsonWriter.Generate(output, settings);
 
 		DepartureAliasGenerateResult? aliasResult = settings.GenerateAliasFile
 			? DepartureAliasWriter.Generate(output, settings)
@@ -95,8 +95,8 @@ public static class DepartureService
 			ProceduresInScopeCount = inScope.Count,
 			AirportProcedureCount = output.Count,
 			SkippedForMissingPointsCount = locateResult.SkippedCount,
-			GeojsonFilesWritten = geojsonResult.FilesWritten,
-			GeojsonFeatureCountsByFile = geojsonResult.RenderedFeatureCountsByFile,
+			GeojsonFilesWritten = geojsonFiles.FilesWritten,
+			GeojsonFeatureCountsByFile = geojsonFiles.RenderedFeatureCountsByFile,
 			AliasFilePath = aliasResult?.FilePath,
 			AliasCommandCount = aliasResult?.CommandCount ?? 0
 		};

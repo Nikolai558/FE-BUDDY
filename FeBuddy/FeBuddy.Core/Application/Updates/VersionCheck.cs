@@ -5,6 +5,7 @@ using System.Text.RegularExpressions;
 
 using FeBuddy.Core.Application.Updates.Models;
 using FeBuddy.Core.Infrastructure.GitHub;
+using FeBuddy.Core.Infrastructure.Http;
 using FeBuddy.Core.Infrastructure.Logging;
 using FeBuddy.Core.Infrastructure.Platform;
 using FeBuddy.Versioning;
@@ -36,7 +37,7 @@ namespace FeBuddy.Core.Application.Updates;
 public static partial class VersionCheck
 {
 	private const string LogSource = "VersionCheck";
-	private const string ReleasesUrl = "https://api.github.com/repos/Nikolai558/FE-BUDDY/releases?per_page=30";
+	private const string ReleasesUrl = GitHubRepository.ApiUrl + "/releases?per_page=30";
 
 	// SemVer precedence, for sorting releases newest first.
 	private static readonly Comparer<ProductVersion> Precedence = Comparer<ProductVersion>.Create((a, b) => a.ComparePrecedenceTo(b));
@@ -68,16 +69,11 @@ public static partial class VersionCheck
 			return new VersionCheckResult(current, null, false, channel, CheckSucceeded: false, "Offline; update state unknown.");
 		}
 
-		bool ownsClient = httpClient is null;
-		HttpClient client = httpClient ?? new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
+		using HttpClient? owned = httpClient is null ? FeBuddyHttp.CreateClient(TimeSpan.FromSeconds(10)) : null;
+		HttpClient client = httpClient ?? owned!;
 
 		try
 		{
-			if (client.DefaultRequestHeaders.UserAgent.Count == 0)
-			{
-				client.DefaultRequestHeaders.UserAgent.ParseAdd("FE-Buddy");
-			}
-
 			HttpResponseMessage response = await SendReleasesRequestAsync(client, token: null, cancellationToken).ConfigureAwait(false);
 
 			if (!response.IsSuccessStatusCode)
@@ -179,13 +175,6 @@ public static partial class VersionCheck
 		{
 			AppLog.Warning(LogSource, $"Version check failed ({ex.Message}). Update state is unknown.");
 			return new VersionCheckResult(current, null, false, channel, CheckSucceeded: false, ex.Message);
-		}
-		finally
-		{
-			if (ownsClient)
-			{
-				client.Dispose();
-			}
 		}
 	}
 

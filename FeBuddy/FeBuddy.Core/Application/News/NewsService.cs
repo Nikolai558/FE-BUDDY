@@ -6,6 +6,7 @@ using System.Text.RegularExpressions;
 using FeBuddy.Core.Application.News.Models;
 using FeBuddy.Core.Application.Updates;
 using FeBuddy.Core.Infrastructure.GitHub;
+using FeBuddy.Core.Infrastructure.Http;
 using FeBuddy.Core.Infrastructure.Logging;
 
 namespace FeBuddy.Core.Application.News;
@@ -29,21 +30,20 @@ public static class NewsService
 {
 	private const string LogSource = "News";
 
-	// Pinned to v3-development rather than the default branch: while v2.x is still the default
-	// (development), a default-branch URL would 404. v3-development becomes the default at the
-	// 3.0 release, so these keep working unchanged after the switch.
+	/// <summary>Where News.md sits in the repository.</summary>
+	private const string NewsPath = "FeBuddy/FeBuddy.Core/News.md";
 
 	/// <summary>The raw News markdown URL on GitHub (used when online, unauthenticated).</summary>
-	public const string RawUrl = "https://raw.githubusercontent.com/Nikolai558/FE-BUDDY/v3-development/FeBuddy/FeBuddy.Core/News.md";
+	public const string RawUrl = GitHubRepository.RawUrl + "/" + NewsPath;
 
 	/// <summary>
 	/// The authenticated fallback: GitHub's Contents API, which honors a bearer token and returns
 	/// the file content when asked for the raw representation.
 	/// </summary>
-	private const string ContentsApiUrl = "https://api.github.com/repos/Nikolai558/FE-BUDDY/contents/FeBuddy/FeBuddy.Core/News.md?ref=v3-development";
+	private const string ContentsApiUrl = GitHubRepository.ApiUrl + "/contents/" + NewsPath + "?ref=" + GitHubRepository.Branch;
 
 	/// <summary>The human-facing News page the News button opens in a browser.</summary>
-	public const string PageUrl = "https://github.com/Nikolai558/FE-BUDDY/blob/v3-development/FeBuddy/FeBuddy.Core/News.md";
+	public const string PageUrl = GitHubRepository.WebUrl + "/blob/" + GitHubRepository.Branch + "/" + NewsPath;
 
 	private static readonly Regex PostIdPattern = new(
 		@"PostId:\s*(\d{4}-\d{2}-\d{2})\.(\d+)",
@@ -186,16 +186,11 @@ public static class NewsService
 			return (GetBundledMarkdown(), false);
 		}
 
-		bool ownsClient = httpClient is null;
-		HttpClient client = httpClient ?? new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
+		using HttpClient? owned = httpClient is null ? FeBuddyHttp.CreateClient(TimeSpan.FromSeconds(10)) : null;
+		HttpClient client = httpClient ?? owned!;
 
 		try
 		{
-			if (client.DefaultRequestHeaders.UserAgent.Count == 0)
-			{
-				client.DefaultRequestHeaders.UserAgent.ParseAdd("FE-Buddy");
-			}
-
 			(string? text, string? failureReason) = await TryFetchAsync(client, RawUrl, token: null, cancellationToken).ConfigureAwait(false);
 
 			if (text is null)
@@ -218,13 +213,6 @@ public static class NewsService
 		catch (Exception ex)
 		{
 			AppLog.Info(LogSource, $"Could not fetch News from GitHub ({ex.Message}); using the bundled copy.");
-		}
-		finally
-		{
-			if (ownsClient)
-			{
-				client.Dispose();
-			}
 		}
 
 		return (GetBundledMarkdown(), false);

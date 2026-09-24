@@ -28,6 +28,27 @@ public static class CrcDefaultsReader
 	/// <summary>Setting that asks for the Text defaults to be written (<c>Y</c>/<c>N</c>, default <c>N</c>).</summary>
 	public const string IncludeTextKey = "IncludeCrcTextDefaults";
 
+	private static readonly HashSet<string> LinePropertyNames =
+		new(StringComparer.OrdinalIgnoreCase) { "bcg", "filters", "style", "thickness" };
+
+	private static readonly HashSet<string> SymbolPropertyNames =
+		new(StringComparer.OrdinalIgnoreCase) { "bcg", "filters", "style", "size" };
+
+	// No "text": a defaults Feature never carries a label, every Text Feature brings its own.
+	private static readonly HashSet<string> TextPropertyNames =
+		new(StringComparer.OrdinalIgnoreCase) { "bcg", "filters", "size", "underline", "opaque", "xOffset", "yOffset" };
+
+	/// <summary>The property names a kind's defaults are read from, as in <c>&lt;prefix&gt;.&lt;name&gt;</c>.</summary>
+	/// <param name="kind">The feature kind.</param>
+	/// <returns>The names, matched ignoring case.</returns>
+	public static IReadOnlySet<string> PropertyNames(CrcFeatureKind kind) => kind switch
+	{
+		CrcFeatureKind.Line => LinePropertyNames,
+		CrcFeatureKind.Symbol => SymbolPropertyNames,
+		CrcFeatureKind.Text => TextPropertyNames,
+		_ => throw new ArgumentOutOfRangeException(nameof(kind), kind, "Unknown CRC feature kind.")
+	};
+
 	/// <summary>
 	/// Reads whether the user asked for <paramref name="kind"/>'s defaults to be written.
 	/// </summary>
@@ -65,12 +86,12 @@ public static class CrcDefaultsReader
 			Bcg = SettingsValueReader.RequiredInt(settings, $"{keyPrefix}.bcg"),
 			Filters = SettingsValueReader.RequiredIntList(settings, $"{keyPrefix}.filters"),
 			Style = SettingsValueReader.NormalizeStyle(
-				SettingsValueReader.RequireNonEmpty(settings, $"{keyPrefix}.style"),
+				SettingsValueReader.RequiredString(settings, $"{keyPrefix}.style"),
 				CrcPropertyValidator.ValidLineStyles)!,
 			Thickness = SettingsValueReader.RequiredInt(settings, $"{keyPrefix}.thickness"),
 		};
 
-		ThrowIfInvalid(CrcPropertyValidator.ValidateLineDefaults(defaults), keyPrefix);
+		CrcPropertyValidator.ThrowIfInvalid(CrcPropertyValidator.ValidateLineDefaults(defaults), $"Invalid CRC defaults under '{keyPrefix}'");
 		return defaults;
 	}
 
@@ -86,12 +107,12 @@ public static class CrcDefaultsReader
 			Bcg = SettingsValueReader.RequiredInt(settings, $"{keyPrefix}.bcg"),
 			Filters = SettingsValueReader.RequiredIntList(settings, $"{keyPrefix}.filters"),
 			Style = SettingsValueReader.NormalizeStyle(
-				SettingsValueReader.RequireNonEmpty(settings, $"{keyPrefix}.style"),
+				SettingsValueReader.RequiredString(settings, $"{keyPrefix}.style"),
 				CrcPropertyValidator.ValidSymbolStyles)!,
 			Size = SettingsValueReader.RequiredInt(settings, $"{keyPrefix}.size"),
 		};
 
-		ThrowIfInvalid(CrcPropertyValidator.ValidateSymbolDefaults(defaults), keyPrefix);
+		CrcPropertyValidator.ThrowIfInvalid(CrcPropertyValidator.ValidateSymbolDefaults(defaults), $"Invalid CRC defaults under '{keyPrefix}'");
 		return defaults;
 	}
 
@@ -113,17 +134,7 @@ public static class CrcDefaultsReader
 			YOffset = SettingsValueReader.RequiredInt(settings, $"{keyPrefix}.yOffset"),
 		};
 
-		ThrowIfInvalid(CrcPropertyValidator.ValidateTextDefaults(defaults), keyPrefix);
+		CrcPropertyValidator.ThrowIfInvalid(CrcPropertyValidator.ValidateTextDefaults(defaults), $"Invalid CRC defaults under '{keyPrefix}'");
 		return defaults;
-	}
-
-	private static void ThrowIfInvalid(CrcPropertyValidationResult result, string keyPrefix)
-	{
-		if (!result.IsValid)
-		{
-			throw new ArgumentException(
-				$"Invalid CRC defaults under '{keyPrefix}':{Environment.NewLine}" +
-				string.Join(Environment.NewLine, result.Errors));
-		}
 	}
 }

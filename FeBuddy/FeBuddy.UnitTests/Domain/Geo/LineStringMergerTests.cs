@@ -39,7 +39,7 @@ public class LineStringMergerTests
 		DepartureLocateResult located = DepartureBuilder.Locate(read.Procedures, data);
 		DepartureAirportProcedure airportProcedure = Assert.Single(located.AirportProcedures);
 
-		MultiLineString? geometry = DepartureGeometryBuilder.Build(airportProcedure, Factory);
+		MultiLineString? geometry = DepartureGeometryBuilder.Build(airportProcedure);
 
 		Assert.NotNull(geometry);
 		return geometry!;
@@ -97,7 +97,7 @@ public class LineStringMergerTests
 	public void two_identical_paths_make_one_line()
 	{
 		IReadOnlyList<LineString> lines = LineStringMerger.Merge(
-			new[] { Path("A", "B", "C"), Path("A", "B", "C") }, Factory);
+			new[] { Path("A", "B", "C"), Path("A", "B", "C") });
 
 		LineString line = Assert.Single(lines);
 		Assert.Equal(3, line.NumPoints);
@@ -107,7 +107,7 @@ public class LineStringMergerTests
 	public void a_path_and_its_reverse_make_one_line()
 	{
 		IReadOnlyList<LineString> lines = LineStringMerger.Merge(
-			new[] { Path("A", "B", "C"), Path("C", "B", "A") }, Factory);
+			new[] { Path("A", "B", "C"), Path("C", "B", "A") });
 
 		LineString line = Assert.Single(lines);
 		Assert.Equal(3, line.NumPoints);
@@ -117,7 +117,7 @@ public class LineStringMergerTests
 	public void repeated_consecutive_points_draw_a_single_segment()
 	{
 		IReadOnlyList<LineString> lines = LineStringMerger.Merge(
-			new[] { Path("A", "A", "B") }, Factory);
+			new[] { Path("A", "A", "B") });
 
 		LineString line = Assert.Single(lines);
 		Assert.Equal(2, line.NumPoints);
@@ -129,7 +129,7 @@ public class LineStringMergerTests
 	public void no_path_with_two_distinct_points_gives_no_lines()
 	{
 		IReadOnlyList<LineString> lines = LineStringMerger.Merge(
-			new[] { Path("A"), Path("B", "B") }, Factory);
+			new[] { Path("A"), Path("B", "B") });
 
 		Assert.Empty(lines);
 	}
@@ -138,7 +138,7 @@ public class LineStringMergerTests
 	public void a_branch_starts_on_the_point_where_it_leaves_the_base()
 	{
 		IReadOnlyList<LineString> lines = LineStringMerger.Merge(
-			new[] { Path("A", "B", "C"), Path("D", "B") }, Factory);
+			new[] { Path("A", "B", "C"), Path("D", "B") });
 
 		Assert.Equal(2, lines.Count);
 		Assert.Equal(3, lines[0].NumPoints);

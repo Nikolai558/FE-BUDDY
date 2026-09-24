@@ -1,11 +1,11 @@
 using FeBuddy.Core.Application.Airac.Airways.Models;
 using FeBuddy.Core.Application.Models;
 using FeBuddy.Core.Domain.Airways.Models;
+using FeBuddy.Core.Domain.Geo;
 using FeBuddy.Core.Infrastructure.Logging.Models;
 using FeBuddy.Core.Infrastructure.Nasr;
 using FeBuddy.Core.Infrastructure.Nasr.Models;
 
-using NetTopologySuite;
 using NetTopologySuite.Geometries;
 
 namespace FeBuddy.Core.Application.Airac.Airways;
@@ -15,14 +15,6 @@ namespace FeBuddy.Core.Application.Airac.Airways;
 /// </summary>
 public static class AirwayGeometryBuilder
 {
-	/// <summary>
-	/// Shared geometry factory (SRID 4326 / WGS84) used across the Airways services, so
-	/// antimeridian splitting, ROI clipping, and waypoint buffering all operate on geometry
-	/// built from the same factory.
-	/// </summary>
-	public static readonly GeometryFactory GeometryFactory =
-		NtsGeometryServices.Instance.CreateGeometryFactory(srid: 4326);
-
 	/// <summary>
 	/// Builds all continuous LineStrings belonging to a single airway.
 	/// </summary>
@@ -69,56 +61,31 @@ public static class AirwayGeometryBuilder
 			string segStartWptId = segment.StartWptId;
 			string segEndWptId = segment.EndWptId;
 
-			var segStartCoordinates =
-				WaypointLocator.Find(allNasrCsvData, segStartWptId);
+			var segStartCoordinates = WaypointLocator.Find(allNasrCsvData, segStartWptId);
+			var segEndCoordinates = segStartCoordinates.HasValue
+				? WaypointLocator.Find(allNasrCsvData, segEndWptId)
+				: null;
 
-			if (!segStartCoordinates.HasValue)
+			if (segStartCoordinates is null || segEndCoordinates is null)
 			{
-				unresolvedWaypointIds.Add(segStartWptId);
+				(string unresolvedId, string whichEnd) = segStartCoordinates is null
+					? (segStartWptId, "start")
+					: (segEndWptId, "end");
+
+				unresolvedWaypointIds.Add(unresolvedId);
 				messages.Add(new ServiceMessage(LogLevel.Warning, "AirwayGeometryBuilder",
-					$"Airway '{awyId}': unable to locate coordinates for segment start waypoint '{segStartWptId}'. This airway was excluded from all output."));
+					$"Airway '{awyId}': unable to locate coordinates for segment {whichEnd} waypoint '{unresolvedId}'. This airway was excluded from all output."));
 
-				bool hasResolvableSegmentAhead =
-					HasResolvableSegmentAhead(allNasrCsvData, segmentList, i + 1);
-
-				if (!hasResolvableSegmentAhead)
+				// Border crossings were normalized away upstream, so this is a real data fault and
+				// AirwayBuilder will exclude the airway. With nothing resolvable left there is
+				// nothing more to learn, so stop.
+				if (!HasResolvableSegmentAhead(allNasrCsvData, segmentList, i + 1))
 				{
-					// Post-3.2b a border crossing here has already been normalized away, so
-					// reaching this point is a real data fault - stop and let AirwayBuilder
-					// exclude the airway.
 					break;
 				}
 
-				// Mid-airway fault: skip this segment as if it were a gap and keep going, so
-				// every unresolved ID is collected for the exclusion summary.
-				FinishCurrentLineString(lineStrings, currentCoordinates);
-				currentCoordinates = new List<Coordinate>();
-				previousSegEndWptId = null;
-				continue;
-			}
-
-			var segEndCoordinates =
-				WaypointLocator.Find(allNasrCsvData, segEndWptId);
-
-			if (!segEndCoordinates.HasValue)
-			{
-				unresolvedWaypointIds.Add(segEndWptId);
-				messages.Add(new ServiceMessage(LogLevel.Warning, "AirwayGeometryBuilder",
-					$"Airway '{awyId}': unable to locate coordinates for segment end waypoint '{segEndWptId}'. This airway was excluded from all output."));
-
-				bool hasResolvableSegmentAhead =
-					HasResolvableSegmentAhead(allNasrCsvData, segmentList, i + 1);
-
-				if (!hasResolvableSegmentAhead)
-				{
-					// Post-3.2b a border crossing here has already been normalized away, so
-					// reaching this point is a real data fault - stop and let AirwayBuilder
-					// exclude the airway.
-					break;
-				}
-
-				// Mid-airway fault: skip this segment as if it were a gap and keep going, so
-				// every unresolved ID is collected for the exclusion summary.
+				// Otherwise treat the segment as a gap and keep going, so every unresolved ID
+				// lands in the exclusion message rather than only the first.
 				FinishCurrentLineString(lineStrings, currentCoordinates);
 				currentCoordinates = new List<Coordinate>();
 				previousSegEndWptId = null;
@@ -202,7 +169,7 @@ public static class AirwayGeometryBuilder
 
 		if (deduped.Count >= 2)
 		{
-			lineStrings.Add(GeometryFactory.CreateLineString(deduped.ToArray()));
+			lineStrings.Add(Wgs84.Factory.CreateLineString(deduped.ToArray()));
 		}
 	}
 

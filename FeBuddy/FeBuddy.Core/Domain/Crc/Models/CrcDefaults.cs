@@ -51,6 +51,16 @@ public sealed record CrcSymbolDefaults
 
 	/// <summary>Symbol size, 1-4.</summary>
 	public required int Size { get; init; }
+
+	/// <summary>The same values as a per-feature override, for a Feature that must not take the file's defaults.</summary>
+	/// <returns>The override properties.</returns>
+	public CrcSymbolProperties ToFeatureProperties() => new()
+	{
+		Bcg = Bcg,
+		Filters = Filters,
+		Style = Style,
+		Size = Size,
+	};
 }
 
 /// <summary>

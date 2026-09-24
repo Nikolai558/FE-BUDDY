@@ -136,11 +136,4 @@ public class CrcPropertyValidatorTests
 		Assert.False(result.IsValid);
 		Assert.True(result.Errors.Count >= 4);
 	}
-
-	[Fact]
-	public void validate_dispatches_on_feature_kind_and_rejects_mismatched_type()
-	{
-		Assert.Throws<ArgumentException>(() =>
-			CrcPropertyValidator.Validate(CrcFeatureKind.Line, Symbol()));
-	}
 }

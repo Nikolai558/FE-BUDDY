@@ -1,4 +1,3 @@
-using FeBuddy.Core.Application.Airac.Airways;
 using FeBuddy.Core.Domain.Geo;
 
 using NetTopologySuite.Geometries;
@@ -55,68 +54,68 @@ public class RoiFilterTests
 	}
 
 	[Fact]
-	public void ClipLineGeometry_returns_null_when_geometry_is_entirely_outside_the_roi()
+	public void ClipLines_returns_nothing_when_the_lines_are_entirely_outside_the_roi()
 	{
 		RegionOfInterest roi = new(38.0, -85.0, 43.0, -78.0);
-		LineString farAway = AirwayGeometryBuilder.GeometryFactory.CreateLineString(new[]
+		LineString farAway = Wgs84.Factory.CreateLineString(new[]
 		{
 			new Coordinate(-120.0, 34.0),
 			new Coordinate(-121.0, 35.0)
 		});
 
-		Geometry? result = RoiFilter.ClipLineGeometry(farAway, roi, AirwayGeometryBuilder.GeometryFactory);
+		IReadOnlyList<LineString> result = RoiFilter.ClipLines(new[] { farAway }, roi);
 
-		Assert.Null(result);
+		Assert.Empty(result);
 	}
 
 	[Fact]
-	public void ClipLineGeometry_returns_a_linestring_when_fully_inside_the_roi()
+	public void ClipLines_returns_the_whole_line_when_fully_inside_the_roi()
 	{
 		RegionOfInterest roi = new(38.0, -85.0, 43.0, -78.0);
-		LineString inside = AirwayGeometryBuilder.GeometryFactory.CreateLineString(new[]
+		LineString inside = Wgs84.Factory.CreateLineString(new[]
 		{
 			new Coordinate(-82.0, 40.0),
 			new Coordinate(-81.0, 41.0)
 		});
 
-		Geometry? result = RoiFilter.ClipLineGeometry(inside, roi, AirwayGeometryBuilder.GeometryFactory);
+		IReadOnlyList<LineString> result = RoiFilter.ClipLines(new[] { inside }, roi);
 
-		LineString clipped = Assert.IsType<LineString>(result);
+		LineString clipped = Assert.Single(result);
 		Assert.Equal(2, clipped.NumPoints);
 	}
 
 	[Fact]
-	public void ClipLineGeometry_truncates_a_line_that_crosses_the_roi_boundary()
+	public void ClipLines_truncates_a_line_that_crosses_the_roi_boundary()
 	{
 		RegionOfInterest roi = new(38.0, -85.0, 43.0, -78.0);
 
 		// Runs straight through the ROI's eastern boundary at lon = -78.
-		LineString crossing = AirwayGeometryBuilder.GeometryFactory.CreateLineString(new[]
+		LineString crossing = Wgs84.Factory.CreateLineString(new[]
 		{
 			new Coordinate(-80.0, 40.0),
 			new Coordinate(-76.0, 40.0)
 		});
 
-		Geometry? result = RoiFilter.ClipLineGeometry(crossing, roi, AirwayGeometryBuilder.GeometryFactory);
+		IReadOnlyList<LineString> result = RoiFilter.ClipLines(new[] { crossing }, roi);
 
-		LineString clipped = Assert.IsType<LineString>(result);
+		LineString clipped = Assert.Single(result);
 		Assert.All(clipped.Coordinates, c => Assert.True(c.X <= -78.0));
 	}
 
 	[Fact]
-	public void ClipLineGeometry_keeps_the_line_and_drops_a_point_where_the_line_only_touches_a_corner()
+	public void ClipLines_keeps_the_line_and_drops_a_point_where_the_line_only_touches_a_corner()
 	{
 		RegionOfInterest roi = new(0.0, 0.0, 10.0, 10.0);
 
 		// Touches the ROI's north-west corner, leaves, then crosses into it: the intersection is
 		// a point plus a line.
-		LineString line = AirwayGeometryBuilder.GeometryFactory.CreateLineString(new[]
+		LineString line = Wgs84.Factory.CreateLineString(new[]
 		{
 			new Coordinate(-1, 11), new Coordinate(0, 10), new Coordinate(-1, 9), new Coordinate(5, 5),
 		});
 
-		Geometry? result = RoiFilter.ClipLineGeometry(line, roi, AirwayGeometryBuilder.GeometryFactory);
+		IReadOnlyList<LineString> result = RoiFilter.ClipLines(new[] { line }, roi);
 
-		Assert.IsType<LineString>(result);
+		Assert.Single(result);
 	}
 }

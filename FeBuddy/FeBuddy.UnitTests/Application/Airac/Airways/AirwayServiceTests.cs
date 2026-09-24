@@ -1,5 +1,6 @@
 using System.Text.Json;
 
+using FeBuddy.Core.Application.Airac;
 using FeBuddy.Core.Application.Airac.Airways;
 using FeBuddy.Core.Application.Airac.Airways.Models;
 using FeBuddy.Core.Application.Models;
@@ -238,12 +239,12 @@ public sealed class AirwayServiceTests : IDisposable
 
 		AirwaySettingsParseResult result = AirwaySettingsParser.Parse(Settings(("Crc.High.Text.madeUp", "1")));
 
-		Assert.Contains("Unrecognized airwaySettings key 'Crc.High.Text.madeUp'", Assert.Single(result.Messages).Text, StringComparison.Ordinal);
+		Assert.Contains("Unrecognized setting 'Crc.High.Text.madeUp'", Assert.Single(result.Messages).Text, StringComparison.Ordinal);
 	}
 
 	[Fact]
 	public void feb_property_names_fall_back_to_the_enum_text()
 	{
-		Assert.Equal("99", AirwayGeojsonWriter.Name((AirwayFebProperty)99));
+		Assert.Equal("99", FebProperties.Name((AirwayFebProperty)99));
 	}
 }

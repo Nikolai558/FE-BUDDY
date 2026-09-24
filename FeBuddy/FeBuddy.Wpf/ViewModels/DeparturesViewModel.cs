@@ -5,6 +5,7 @@ using System.Windows.Input;
 using FeBuddy.Wpf.Infrastructure;
 using FeBuddy.Wpf.ViewModels.Models;
 
+using FeBuddy.Core.Application.Airac;
 using FeBuddy.Core.Application.Airac.Departures.Models;
 using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Domain.Geo;

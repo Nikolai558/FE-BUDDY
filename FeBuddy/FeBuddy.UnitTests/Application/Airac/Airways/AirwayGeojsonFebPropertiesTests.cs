@@ -1,8 +1,11 @@
 using System.Text.Json;
 
+using FeBuddy.Core.Application.Airac;
 using FeBuddy.Core.Application.Airac.Airways;
 using FeBuddy.Core.Application.Airac.Airways.Models;
 using FeBuddy.Core.Domain.Airways.Models;
+using FeBuddy.Core.Domain.Geo;
+using FeBuddy.Core.Infrastructure.Geojson;
 
 using NetTopologySuite.Geometries;
 
@@ -120,7 +123,7 @@ public sealed class AirwayGeojsonFebPropertiesTests : IDisposable
 			Roi = null,
 		};
 
-		AirwayGeojsonGenerateResult result = AirwayGeojsonWriter.Generate(
+		GeojsonFileSet result = AirwayGeojsonWriter.Generate(
 			new[] { BuildAirway("J2", b, c), BuildAirway("J1", a, b) }, settings);
 
 		Assert.Equal(3, result.FilesWritten.Count);
@@ -135,7 +138,7 @@ public sealed class AirwayGeojsonFebPropertiesTests : IDisposable
 		AltitudeClass = AirwayAltitudeClass.High,
 		Segments = new[] { new AirwaySegment(from.PointId, to.PointId, IsGap: false, MaxAuthAlt: null) },
 		Points = new[] { from, to },
-		Geometry = AirwayGeometryBuilder.GeometryFactory.CreateLineString(new[]
+		Geometry = Wgs84.Factory.CreateLineString(new[]
 		{
 			new Coordinate(from.Longitude, from.Latitude),
 			new Coordinate(to.Longitude, to.Latitude),

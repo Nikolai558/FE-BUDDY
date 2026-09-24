@@ -1,11 +1,9 @@
 using FeBuddy.Core.Application.Airac.Airports.Models;
-using FeBuddy.Core.Application.Models;
 using FeBuddy.Core.Domain.Airports.Models;
 using FeBuddy.Core.Domain.Geo;
 using FeBuddy.Core.Domain.Geo.Models;
 using FeBuddy.Core.Infrastructure.Geojson;
 
-using NetTopologySuite;
 using NetTopologySuite.Features;
 using NetTopologySuite.Geometries;
 
@@ -23,54 +21,42 @@ namespace FeBuddy.Core.Application.Airac.Airports;
 /// </remarks>
 public static class AirportGeojsonWriter
 {
-	private static readonly GeometryFactory GeometryFactory =
-		NtsGeometryServices.Instance.CreateGeometryFactory(srid: 4326);
-
 	/// <summary>
 	/// Generates every GeoJSON file called for by <paramref name="settings"/>.
 	/// </summary>
 	/// <param name="airports">The airports in scope - already ROI-filtered by the caller.</param>
 	/// <param name="settings">The parsed Airports settings.</param>
-	/// <returns>Which files were written, their rendered feature counts, and any messages.</returns>
-	public static AirportGeojsonGenerateResult Generate(IReadOnlyList<Airport> airports, AirportSettings settings)
+	/// <returns>The files written and how many rendered Features each holds.</returns>
+	public static GeojsonFileSet Generate(IReadOnlyList<Airport> airports, AirportSettings settings)
 	{
 		ArgumentNullException.ThrowIfNull(airports);
 		ArgumentNullException.ThrowIfNull(settings);
 
-		List<string> filesWritten = new();
-		Dictionary<string, int> renderedCounts = new();
-		List<ServiceMessage> messages = new();
+		GeojsonFileSet files = new(settings.CoordinatePrecision);
 
-		if (!settings.GenerateGeojson)
+		if (!settings.GenerateGeojson || airports.Count == 0)
 		{
-			return new AirportGeojsonGenerateResult(filesWritten, renderedCounts, messages);
+			return files;
 		}
 
-		IReadOnlyList<Airport> inScope = airports;
-
-		if (inScope.Count == 0)
-		{
-			return new AirportGeojsonGenerateResult(filesWritten, renderedCounts, messages);
-		}
-
-		string directory = AirportOutputPaths.Resolve(settings, "Geojson");
+		string directory = SubServiceOutputPaths.Resolve(settings.OutputDirectory, settings.AddFeBuddyOutputFolder, "Airports", "Geojson");
 
 		if (settings.EmitAirportSymbols)
 		{
-			GenerateSymbols(inScope, settings, directory, filesWritten, renderedCounts);
+			GenerateSymbols(airports, settings, directory, files);
 		}
 
 		if (settings.EmitAirportText)
 		{
-			GenerateText(inScope, settings, directory, filesWritten, renderedCounts);
+			GenerateText(airports, settings, directory, files);
 		}
 
 		if (settings.EmitRunwayLines)
 		{
-			GenerateRunways(inScope, settings, directory, filesWritten, renderedCounts);
+			GenerateRunways(airports, settings, directory, files);
 		}
 
-		return new AirportGeojsonGenerateResult(filesWritten, renderedCounts, messages);
+		return files;
 	}
 
 	/// <summary>
@@ -88,14 +74,13 @@ public static class AirportGeojsonWriter
 		IReadOnlyList<Airport> airports,
 		AirportSettings settings,
 		string directory,
-		List<string> filesWritten,
-		Dictionary<string, int> renderedCounts)
+		GeojsonFileSet files)
 	{
 		FeatureCollection collection = new();
 
 		if (settings.IncludeCrcSymbolDefaults)
 		{
-			collection.Add(CrcFeatureFactory.CreateDefault(settings.SymbolDefaults[AirportCrcClass.Airports]));
+			collection.Add(CrcFeatureFactory.CreateDefaultsFeature(settings.SymbolDefaults[AirportCrcClass.Airports]));
 		}
 
 		foreach (Airport airport in airports)
@@ -106,21 +91,20 @@ public static class AirportGeojsonWriter
 			collection.Add(new Feature(CreatePoint(airport), attributes));
 		}
 
-		Write(collection, airports.Count, directory, "Airports_Symbols.geojson", settings, filesWritten, renderedCounts);
+		files.Write(collection, airports.Count, directory, "Airports_Symbols.geojson");
 	}
 
 	private static void GenerateText(
 		IReadOnlyList<Airport> airports,
 		AirportSettings settings,
 		string directory,
-		List<string> filesWritten,
-		Dictionary<string, int> renderedCounts)
+		GeojsonFileSet files)
 	{
 		FeatureCollection collection = new();
 
 		if (settings.IncludeCrcTextDefaults)
 		{
-			collection.Add(CrcFeatureFactory.CreateDefault(settings.TextDefaults[AirportCrcClass.Airports]));
+			collection.Add(CrcFeatureFactory.CreateDefaultsFeature(settings.TextDefaults[AirportCrcClass.Airports]));
 		}
 
 		foreach (Airport airport in airports)
@@ -135,21 +119,20 @@ public static class AirportGeojsonWriter
 			collection.Add(new Feature(CreatePoint(airport), attributes));
 		}
 
-		Write(collection, airports.Count, directory, "Airports_Text.geojson", settings, filesWritten, renderedCounts);
+		files.Write(collection, airports.Count, directory, "Airports_Text.geojson");
 	}
 
 	private static void GenerateRunways(
 		IReadOnlyList<Airport> airports,
 		AirportSettings settings,
 		string directory,
-		List<string> filesWritten,
-		Dictionary<string, int> renderedCounts)
+		GeojsonFileSet files)
 	{
 		FeatureCollection collection = new();
 
 		if (settings.IncludeCrcLineDefaults)
 		{
-			collection.Add(CrcFeatureFactory.CreateDefault(settings.LineDefaults[AirportCrcClass.Runways]));
+			collection.Add(CrcFeatureFactory.CreateDefaultsFeature(settings.LineDefaults[AirportCrcClass.Runways]));
 		}
 
 		int rendered = 0;
@@ -170,27 +153,25 @@ public static class AirportGeojsonWriter
 
 			// feb.rwyId is the only property that describes a runway; it lines up one-for-one with
 			// the LineStrings above.
-			if (settings.IncludeFebCustomProperties && settings.FebProperties.Contains(AirportFebProperty.RwyId))
-			{
-				attributes.Add($"feb.{Name(AirportFebProperty.RwyId)}", drawable.Select(r => r.RunwayId).ToArray());
-			}
+			FebProperties.Add(attributes, settings.IncludeFebCustomProperties, settings.FebProperties, property =>
+				property == AirportFebProperty.RwyId ? drawable.Select(r => r.RunwayId).ToArray() : null);
 
-			collection.Add(new Feature(GeometryFactory.CreateMultiLineString(runwayLines), attributes));
+			collection.Add(new Feature(Wgs84.Factory.CreateMultiLineString(runwayLines), attributes));
 			rendered++;
 		}
 
-		Write(collection, rendered, directory, "Runways_Lines.geojson", settings, filesWritten, renderedCounts);
+		files.Write(collection, rendered, directory, "Runways_Lines.geojson");
 	}
 
 	private static LineString ToLineString(AirportRunway runway) =>
-		GeometryFactory.CreateLineString(new[]
+		Wgs84.Factory.CreateLineString(new[]
 		{
 			new Coordinate(runway.FirstEnd!.Longitude, runway.FirstEnd.Latitude),
 			new Coordinate(runway.SecondEnd!.Longitude, runway.SecondEnd.Latitude),
 		});
 
 	private static Point CreatePoint(Airport airport) =>
-		GeometryFactory.CreatePoint(new Coordinate(airport.Longitude, airport.Latitude));
+		Wgs84.Point(airport.Latitude, airport.Longitude);
 
 	/// <summary>
 	/// Adds the selected <c>feb.*</c> properties to a Feature.
@@ -208,25 +189,10 @@ public static class AirportGeojsonWriter
 		AirportSettings settings,
 		bool forTextFile)
 	{
-		if (!settings.IncludeFebCustomProperties)
-		{
-			return;
-		}
-
-		foreach (AirportFebProperty property in settings.FebProperties)
-		{
-			if (forTextFile && property is AirportFebProperty.FaaId or AirportFebProperty.Name)
-			{
-				continue;
-			}
-
-			object? value = ValueFor(airport, property);
-
-			if (value is not null)
-			{
-				attributes.Add($"feb.{Name(property)}", value);
-			}
-		}
+		FebProperties.Add(attributes, settings.IncludeFebCustomProperties, settings.FebProperties, property =>
+			forTextFile && property is AirportFebProperty.FaaId or AirportFebProperty.Name
+				? null
+				: ValueFor(airport, property));
 	}
 
 	private static object? ValueFor(Airport airport, AirportFebProperty property) => property switch
@@ -243,44 +209,4 @@ public static class AirportGeojsonWriter
 		AirportFebProperty.RwyId => null,
 		_ => null,
 	};
-
-	/// <summary>
-	/// The property name as it appears after the <c>feb.</c> prefix. Spelled out rather than
-	/// derived from the enum so the JSON keys match the spec exactly (<c>faaId</c>, not
-	/// <c>FaaId</c>).
-	/// </summary>
-	/// <param name="property">The property.</param>
-	/// <returns>The JSON name.</returns>
-	private static string Name(AirportFebProperty property) => property switch
-	{
-		AirportFebProperty.FaaId => "faaId",
-		AirportFebProperty.IcaoId => "icaoId",
-		AirportFebProperty.Name => "name",
-		AirportFebProperty.Elev => "elev",
-		AirportFebProperty.RespArtcc => "respArtcc",
-		AirportFebProperty.TfcPtrnAlt => "tfcPtrnAlt",
-		AirportFebProperty.FssId => "fssId",
-		AirportFebProperty.TwrType => "twrType",
-		AirportFebProperty.RwyId => "rwyId",
-		_ => property.ToString(),
-	};
-
-	private static void Write(
-		FeatureCollection collection,
-		int renderedFeatureCount,
-		string directory,
-		string fileName,
-		AirportSettings settings,
-		List<string> filesWritten,
-		Dictionary<string, int> renderedCounts)
-	{
-		string? path = GeojsonFileWriter.Write(
-			collection, renderedFeatureCount, directory, fileName, settings.CoordinatePrecision);
-
-		if (path is not null)
-		{
-			filesWritten.Add(path);
-			renderedCounts[path] = renderedFeatureCount;
-		}
-	}
 }

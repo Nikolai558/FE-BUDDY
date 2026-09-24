@@ -1,4 +1,3 @@
-using FeBuddy.Core.Application.Airac.Airways;
 using FeBuddy.Core.Domain.Geo;
 
 using NetTopologySuite.Geometries;
@@ -12,7 +11,7 @@ namespace FeBuddy.UnitTests.Domain.Geo;
 /// </summary>
 public sealed class AntimeridianSplitterTests
 {
-	private static readonly GeometryFactory Factory = AirwayGeometryBuilder.GeometryFactory;
+	private static readonly GeometryFactory Factory = Wgs84.Factory;
 
 	private static LineString Line(params (double Lon, double Lat)[] points) =>
 		Factory.CreateLineString(points.Select(p => new Coordinate(p.Lon, p.Lat)).ToArray());
@@ -26,7 +25,7 @@ public sealed class AntimeridianSplitterTests
 	[Fact]
 	public void a_normal_crossing_splits_into_two_valid_linestrings()
 	{
-		IReadOnlyList<LineString> result = AntimeridianSplitter.Split(Line((170, 10), (-170, 12)), Factory);
+		IReadOnlyList<LineString> result = AntimeridianSplitter.Split(Line((170, 10), (-170, 12)));
 
 		Assert.Equal(2, result.Count);
 		Assert.All(result, ls => Assert.True(HasTwoDistinctCoordinates(ls)));
@@ -39,7 +38,7 @@ public sealed class AntimeridianSplitterTests
 	{
 		// The endpoint sits exactly on +/-180 - the crossing point the split computes is
 		// identical to it, which used to create a two-point LineString of the same coordinate.
-		IReadOnlyList<LineString> result = AntimeridianSplitter.Split(Line((175, 20), (endLon, 20.6075)), Factory);
+		IReadOnlyList<LineString> result = AntimeridianSplitter.Split(Line((175, 20), (endLon, 20.6075)));
 
 		Assert.NotEmpty(result);
 		Assert.All(result, ls =>
@@ -53,7 +52,7 @@ public sealed class AntimeridianSplitterTests
 	[Fact]
 	public void repeated_consecutive_coordinates_do_not_create_a_zero_length_linestring()
 	{
-		IReadOnlyList<LineString> result = AntimeridianSplitter.Split(Line((10, 10), (10, 10), (11, 11)), Factory);
+		IReadOnlyList<LineString> result = AntimeridianSplitter.Split(Line((10, 10), (10, 10), (11, 11)));
 
 		Assert.All(result, ls => Assert.True(ls.Length > 0));
 	}
@@ -63,7 +62,7 @@ public sealed class AntimeridianSplitterTests
 	{
 		LineString input = Line((10, 10), (20, 20));
 
-		IReadOnlyList<LineString> result = AntimeridianSplitter.Split(input, Factory);
+		IReadOnlyList<LineString> result = AntimeridianSplitter.Split(input);
 
 		Assert.Same(input, Assert.Single(result));
 	}
@@ -73,14 +72,14 @@ public sealed class AntimeridianSplitterTests
 	{
 		LineString empty = Factory.CreateLineString(Array.Empty<Coordinate>());
 
-		Assert.Same(empty, Assert.Single(AntimeridianSplitter.Split(empty, Factory)));
+		Assert.Same(empty, Assert.Single(AntimeridianSplitter.Split(empty)));
 	}
 
 	[Fact]
 	public void a_crossing_whose_far_side_is_a_single_repeated_point_drops_that_side()
 	{
 		// Crosses +/-180, then every coordinate on the west side is the same point.
-		IReadOnlyList<LineString> result = AntimeridianSplitter.Split(Line((179.0, 10.0), (-179.0, 10.0), (-179.0, 10.0)), Factory);
+		IReadOnlyList<LineString> result = AntimeridianSplitter.Split(Line((179.0, 10.0), (-179.0, 10.0), (-179.0, 10.0)));
 
 		Assert.All(result, line => Assert.True(HasTwoDistinctCoordinates(line)));
 	}

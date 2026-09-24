@@ -82,68 +82,20 @@ public static class AiracService
 
 		Stopwatch stopwatch = Stopwatch.StartNew();
 		List<ServiceMessage> messages = new();
-		AirwayServiceResult? airwaysResult = null;
-		AirportServiceResult? airportsResult = null;
-		DepartureServiceResult? departuresResult = null;
+		AirwayServiceResult? airwaysResult = await RunSubServiceAsync(
+			settings.Airways, "Airways", "Building airway GeoJSON and alias output",
+			block => AirwayService.Run(nasrData, block),
+			result => $"{result.AirwayCount} airway(s), {result.GeojsonFilesWritten.Count} GeoJSON file(s)").ConfigureAwait(false);
 
-		if (settings.Airways is { } airwayBlock)
-		{
-			cancellationToken.ThrowIfCancellationRequested();
+		AirportServiceResult? airportsResult = await RunSubServiceAsync(
+			settings.Airports, "Airports", "Building airport GeoJSON and alias output",
+			block => AirportService.Run(nasrData, block),
+			result => $"{result.AirportCount} airport(s), {result.GeojsonFilesWritten.Count} GeoJSON file(s)").ConfigureAwait(false);
 
-			AppLog.Info(LogSource, $"AIRAC Service: running Airways for cycle {settings.SelectedCycle.AiracCycleId}.");
-			progress?.Report(new AiracServiceProgress("Airways", "Building airway GeoJSON and alias output"));
-
-			// The dictionary contract is preserved end to end (Phase 1.3): AirwayService.Run
-			// parses the block itself, so "what was saved" and "what runs" cannot diverge.
-			Dictionary<string, string> block = new(airwayBlock, StringComparer.OrdinalIgnoreCase);
-
-			airwaysResult = await Task.Run(() => AirwayService.Run(nasrData, block), cancellationToken).ConfigureAwait(false);
-
-			messages.AddRange(airwaysResult.Messages);
-			progress?.Report(new AiracServiceProgress(
-				"Airways",
-				$"Airways complete: {airwaysResult.AirwayCount} airway(s), {airwaysResult.GeojsonFilesWritten.Count} GeoJSON file(s).",
-				100));
-			AppLog.Success(LogSource, $"Airways complete: {airwaysResult.AirwayCount} airway(s), {airwaysResult.GeojsonFilesWritten.Count} file(s).");
-		}
-
-		if (settings.Airports is { } airportBlock)
-		{
-			cancellationToken.ThrowIfCancellationRequested();
-
-			AppLog.Info(LogSource, $"AIRAC Service: running Airports for cycle {settings.SelectedCycle.AiracCycleId}.");
-			progress?.Report(new AiracServiceProgress("Airports", "Building airport GeoJSON and alias output"));
-
-			Dictionary<string, string> block = new(airportBlock, StringComparer.OrdinalIgnoreCase);
-
-			airportsResult = await Task.Run(() => AirportService.Run(nasrData, block), cancellationToken).ConfigureAwait(false);
-
-			messages.AddRange(airportsResult.Messages);
-			progress?.Report(new AiracServiceProgress(
-				"Airports",
-				$"Airports complete: {airportsResult.AirportCount} airport(s), {airportsResult.GeojsonFilesWritten.Count} GeoJSON file(s).",
-				100));
-			AppLog.Success(LogSource, $"Airports complete: {airportsResult.AirportCount} airport(s), {airportsResult.GeojsonFilesWritten.Count} file(s).");
-		}
-
-		if (settings.Departures is { } departureBlock)
-		{
-			cancellationToken.ThrowIfCancellationRequested();
-
-			AppLog.Info(LogSource, $"AIRAC Service: running Departures for cycle {settings.SelectedCycle.AiracCycleId}.");
-			progress?.Report(new AiracServiceProgress("Departures", "Building departure procedure GeoJSON and alias output"));
-
-			Dictionary<string, string> block = new(departureBlock, StringComparer.OrdinalIgnoreCase);
-
-			departuresResult = await Task.Run(() => DepartureService.Run(nasrData, block), cancellationToken).ConfigureAwait(false);
-
-			messages.AddRange(departuresResult.Messages);
-			progress?.Report(new AiracServiceProgress(
-				"Departures",
-				$"Departures complete: {departuresResult.AirportProcedureCount} airport procedure(s), {departuresResult.GeojsonFilesWritten.Count} GeoJSON file(s).",
-				100));
-			AppLog.Success(LogSource, $"Departures complete: {departuresResult.AirportProcedureCount} airport procedure(s), {departuresResult.GeojsonFilesWritten.Count} file(s).");
-		}
+		DepartureServiceResult? departuresResult = await RunSubServiceAsync(
+			settings.Departures, "Departures", "Building departure procedure GeoJSON and alias output",
+			block => DepartureService.Run(nasrData, block),
+			result => $"{result.AirportProcedureCount} airport procedure(s), {result.GeojsonFilesWritten.Count} GeoJSON file(s)").ConfigureAwait(false);
 
 		if (airwaysResult is null && airportsResult is null && departuresResult is null)
 		{
@@ -163,5 +115,39 @@ public static class AiracService
 			Departures = departuresResult,
 			ExcludedAirwayIds = airwaysResult?.ExcludedAirwayIds ?? Array.Empty<string>(),
 		};
+
+		// Runs one sub-service if it was selected (its settings block is not null), reporting
+		// start and finish to the run panel and the log. Null when it was not selected.
+		async Task<TResult?> RunSubServiceAsync<TResult>(
+			IReadOnlyDictionary<string, string>? block,
+			string name,
+			string startMessage,
+			Func<IReadOnlyDictionary<string, string>, TResult> run,
+			Func<TResult, string> summarize)
+			where TResult : ServiceResult
+		{
+			if (block is null)
+			{
+				return null;
+			}
+
+			cancellationToken.ThrowIfCancellationRequested();
+
+			AppLog.Info(LogSource, $"AIRAC Service: running {name} for cycle {settings.SelectedCycle.AiracCycleId}.");
+			progress?.Report(new AiracServiceProgress(name, startMessage));
+
+			// Keys match ignoring case whatever dictionary the caller built.
+			Dictionary<string, string> caseInsensitive = new(block, StringComparer.OrdinalIgnoreCase);
+
+			TResult result = await Task.Run(() => run(caseInsensitive), cancellationToken).ConfigureAwait(false);
+
+			messages.AddRange(result.Messages);
+
+			string summary = $"{name} complete: {summarize(result)}.";
+			progress?.Report(new AiracServiceProgress(name, summary, 100));
+			AppLog.Success(LogSource, summary);
+
+			return result;
+		}
 	}
 }

@@ -27,7 +27,7 @@ public class CrcFeatureFactoryTests
 	[Fact]
 	public void CreateDefault_for_line_uses_the_out_of_range_coordinate_and_sets_the_is_defaults_flag()
 	{
-		Feature feature = CrcFeatureFactory.CreateDefault(LineDefaults());
+		Feature feature = CrcFeatureFactory.CreateDefaultsFeature(LineDefaults());
 
 		AssertIsDefaultsPoint(feature);
 		Assert.Equal(true, feature.Attributes["isLineDefaults"]);
@@ -38,7 +38,7 @@ public class CrcFeatureFactoryTests
 	[Fact]
 	public void CreateDefault_for_line_writes_every_property_in_a_fixed_order()
 	{
-		Feature feature = CrcFeatureFactory.CreateDefault(LineDefaults());
+		Feature feature = CrcFeatureFactory.CreateDefaultsFeature(LineDefaults());
 
 		string[] expected = { "isLineDefaults", "bcg", "filters", "style", "thickness" };
 		Assert.Equal(expected, feature.Attributes.GetNames());
@@ -51,7 +51,7 @@ public class CrcFeatureFactoryTests
 	[Fact]
 	public void CreateDefault_for_symbol_writes_every_property_in_a_fixed_order()
 	{
-		Feature feature = CrcFeatureFactory.CreateDefault(SymbolDefaults());
+		Feature feature = CrcFeatureFactory.CreateDefaultsFeature(SymbolDefaults());
 
 		AssertIsDefaultsPoint(feature);
 		string[] expected = { "isSymbolDefaults", "bcg", "filters", "style", "size" };
@@ -64,7 +64,7 @@ public class CrcFeatureFactoryTests
 	[Fact]
 	public void CreateDefault_for_text_writes_every_property_in_a_fixed_order()
 	{
-		Feature feature = CrcFeatureFactory.CreateDefault(TextDefaults());
+		Feature feature = CrcFeatureFactory.CreateDefaultsFeature(TextDefaults());
 
 		AssertIsDefaultsPoint(feature);
 		string[] expected = { "isTextDefaults", "bcg", "filters", "size", "underline", "opaque", "xOffset", "yOffset" };
@@ -74,7 +74,7 @@ public class CrcFeatureFactoryTests
 	[Fact]
 	public void CreateDefault_for_text_never_writes_a_text_attribute()
 	{
-		Feature feature = CrcFeatureFactory.CreateDefault(TextDefaults());
+		Feature feature = CrcFeatureFactory.CreateDefaultsFeature(TextDefaults());
 
 		Assert.False(feature.Attributes.Exists("text"));
 	}
@@ -82,7 +82,7 @@ public class CrcFeatureFactoryTests
 	[Fact]
 	public void CreateDefault_for_text_writes_flags_and_offsets_even_when_false_or_zero()
 	{
-		Feature feature = CrcFeatureFactory.CreateDefault(TextDefaults());
+		Feature feature = CrcFeatureFactory.CreateDefaultsFeature(TextDefaults());
 
 		Assert.Equal(false, feature.Attributes["underline"]);
 		Assert.Equal(false, feature.Attributes["opaque"]);
@@ -95,7 +95,7 @@ public class CrcFeatureFactoryTests
 	{
 		CrcTextDefaults defaults = TextDefaults() with { Underline = true, Opaque = true, XOffset = -4, YOffset = -7 };
 
-		Feature feature = CrcFeatureFactory.CreateDefault(defaults);
+		Feature feature = CrcFeatureFactory.CreateDefaultsFeature(defaults);
 
 		Assert.Equal(true, feature.Attributes["underline"]);
 		Assert.Equal(true, feature.Attributes["opaque"]);
@@ -109,7 +109,7 @@ public class CrcFeatureFactoryTests
 		CrcLineDefaults defaults = LineDefaults() with { Filters = Array.Empty<int>(), Bcg = 999 };
 
 		ArgumentException ex = Assert.Throws<ArgumentException>(() =>
-			CrcFeatureFactory.CreateDefault(defaults));
+			CrcFeatureFactory.CreateDefaultsFeature(defaults));
 
 		Assert.Contains("bcg", ex.Message);
 		Assert.Contains("filters", ex.Message);
@@ -121,17 +121,17 @@ public class CrcFeatureFactoryTests
 		CrcTextDefaults defaults = TextDefaults() with { Size = 9 };
 
 		ArgumentException ex = Assert.Throws<ArgumentException>(() =>
-			CrcFeatureFactory.CreateDefault(defaults));
+			CrcFeatureFactory.CreateDefaultsFeature(defaults));
 
 		Assert.Contains("size", ex.Message);
 	}
 
 	[Fact]
-	public void CreateFeatureProperty_omits_null_optional_properties_so_they_inherit()
+	public void CreateOverrideProperties_omits_null_optional_properties_so_they_inherit()
 	{
 		CrcLineProperties properties = new() { Filters = new[] { 1 } };
 
-		AttributesTable attributes = CrcFeatureFactory.CreateFeatureProperty(CrcFeatureKind.Line, properties);
+		AttributesTable attributes = CrcFeatureFactory.CreateOverrideProperties(properties);
 
 		Assert.True(attributes.Exists("filters"));
 		Assert.False(attributes.Exists("bcg"));
@@ -140,32 +140,21 @@ public class CrcFeatureFactoryTests
 	}
 
 	[Fact]
-	public void CreateFeatureProperty_throws_for_a_type_mismatched_with_the_feature_kind()
-	{
-		CrcLineProperties lineProperties = new() { Filters = new[] { 1 } };
-
-		Assert.Throws<ArgumentException>(() =>
-			CrcFeatureFactory.CreateFeatureProperty(CrcFeatureKind.Symbol, lineProperties));
-	}
-
-	[Fact]
-	public void CreateFeatureProperty_for_a_full_line_writes_every_property()
+	public void CreateOverrideProperties_for_a_full_line_writes_every_property()
 	{
 		CrcLineProperties properties = new() { Bcg = 2, Filters = new[] { 3 }, Style = "solid", Thickness = 1 };
 
-		AttributesTable attributes = CrcFeatureFactory.CreateFeatureProperty(CrcFeatureKind.Line, properties);
+		AttributesTable attributes = CrcFeatureFactory.CreateOverrideProperties(properties);
 
 		Assert.Equal(new[] { "bcg", "filters", "style", "thickness" }, attributes.GetNames());
 		Assert.Equal("solid", attributes["style"]);
 	}
 
 	[Fact]
-	public void CreateFeatureProperty_for_a_symbol_writes_only_the_properties_that_are_set()
+	public void CreateOverrideProperties_for_a_symbol_writes_only_the_properties_that_are_set()
 	{
-		AttributesTable full = CrcFeatureFactory.CreateFeatureProperty(
-			CrcFeatureKind.Symbol, new CrcSymbolProperties { Bcg = 2, Filters = new[] { 3 }, Style = "vor", Size = 1 });
-		AttributesTable sparse = CrcFeatureFactory.CreateFeatureProperty(
-			CrcFeatureKind.Symbol, new CrcSymbolProperties { Filters = new[] { 3 } });
+		AttributesTable full = CrcFeatureFactory.CreateOverrideProperties(new CrcSymbolProperties { Bcg = 2, Filters = new[] { 3 }, Style = "vor", Size = 1 });
+		AttributesTable sparse = CrcFeatureFactory.CreateOverrideProperties(new CrcSymbolProperties { Filters = new[] { 3 } });
 
 		Assert.Equal(new[] { "bcg", "filters", "style", "size" }, full.GetNames());
 		Assert.Equal("vor", full["style"]);
@@ -173,11 +162,9 @@ public class CrcFeatureFactoryTests
 	}
 
 	[Fact]
-	public void CreateFeatureProperty_for_text_writes_only_the_properties_that_are_set_in_defaults_order()
+	public void CreateOverrideProperties_for_text_writes_only_the_properties_that_are_set_in_defaults_order()
 	{
-		AttributesTable full = CrcFeatureFactory.CreateFeatureProperty(
-			CrcFeatureKind.Text,
-			new CrcTextProperties
+		AttributesTable full = CrcFeatureFactory.CreateOverrideProperties(new CrcTextProperties
 			{
 				Bcg = 2,
 				Filters = new[] { 3 },
@@ -188,8 +175,7 @@ public class CrcFeatureFactoryTests
 				XOffset = 1,
 				YOffset = -1,
 			});
-		AttributesTable sparse = CrcFeatureFactory.CreateFeatureProperty(
-			CrcFeatureKind.Text, new CrcTextProperties { Filters = new[] { 3 }, Text = new[] { "SEA" } });
+		AttributesTable sparse = CrcFeatureFactory.CreateOverrideProperties(new CrcTextProperties { Filters = new[] { 3 }, Text = new[] { "SEA" } });
 
 		Assert.Equal(new[] { "bcg", "filters", "text", "size", "underline", "opaque", "xOffset", "yOffset" }, full.GetNames());
 		Assert.Equal(new[] { "SEA", "SEATTLE" }, Assert.IsType<string[]>(full["text"]));
@@ -199,12 +185,12 @@ public class CrcFeatureFactoryTests
 	}
 
 	[Fact]
-	public void CreateFeatureProperty_rejects_values_crc_cannot_draw_and_names_the_context()
+	public void CreateOverrideProperties_rejects_values_crc_cannot_draw_and_names_the_context()
 	{
 		CrcLineProperties properties = new() { Bcg = 999, Filters = new[] { 3 } };
 
 		ArgumentException ex = Assert.Throws<ArgumentException>(() =>
-			CrcFeatureFactory.CreateFeatureProperty(CrcFeatureKind.Line, properties));
+			CrcFeatureFactory.CreateOverrideProperties(properties));
 
 		Assert.StartsWith("Invalid CRC Line properties for feature override:", ex.Message, StringComparison.Ordinal);
 		Assert.Equal("properties", ex.ParamName);

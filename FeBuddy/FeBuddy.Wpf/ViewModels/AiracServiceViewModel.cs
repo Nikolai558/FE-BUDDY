@@ -477,7 +477,7 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 
     private static string ResolveOutputDirectory()
     {
-        string? saved = UserConfigFile.GetValue("General.DefaultOutputDirectory");
+        string? saved = UserConfigFile.GetValue(UserConfigKeys.DefaultOutputDirectory);
         return string.IsNullOrWhiteSpace(saved)
             ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), "FE-Buddy_Output")
             : saved!;
@@ -485,7 +485,7 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 
     private static bool ResolveAddFeBuddyFolder()
     {
-        string? saved = UserConfigFile.GetValue("General.AddFeBuddyOutputFolder");
+        string? saved = UserConfigFile.GetValue(UserConfigKeys.AddFeBuddyOutputFolder);
         return !string.Equals(saved, "N", StringComparison.OrdinalIgnoreCase);
     }
 }

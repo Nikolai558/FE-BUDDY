@@ -231,7 +231,7 @@ public sealed class DashboardViewModel : ObservableObject
         NewsCheckResult? news = AppEnvironment.News;
         if (news is { ParseSucceeded: true, LatestPostId: { } latest })
         {
-            UserConfigFile.TrySetValue("General.NewsLastOpen", latest.ToString());
+            UserConfigFile.TrySetValue(UserConfigKeys.NewsLastOpen, latest.ToString());
             UserConfigFile.Save("General");
             NewsButtonHighlighted = false;
         }

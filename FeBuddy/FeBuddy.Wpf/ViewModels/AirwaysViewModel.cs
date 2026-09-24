@@ -6,6 +6,7 @@ using System.Windows.Input;
 using FeBuddy.Wpf.Infrastructure;
 using FeBuddy.Wpf.ViewModels.Models;
 
+using FeBuddy.Core.Application.Airac;
 using FeBuddy.Core.Application.Airac.Airways.Models;
 using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Domain.Airways;

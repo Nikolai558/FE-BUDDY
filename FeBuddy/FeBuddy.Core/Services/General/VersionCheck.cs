@@ -100,7 +100,7 @@ public static partial class VersionCheck
 				using JsonDocument document = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken).ConfigureAwait(false);
 
 				ProductVersion.TryParseTag(current, out ProductVersion? currentParsed);
-				var candidates = new List<(ProductVersion Parsed, ReleaseSummary Release)>();
+				var candidates = new List<(ProductVersion Parsed, ReleaseSummary Release, ReleaseInstaller? Installer)>();
 
 				foreach (JsonElement release in document.RootElement.EnumerateArray())
 				{
@@ -124,7 +124,7 @@ public static partial class VersionCheck
 							: null;
 
 					candidates.Add((parsed, new ReleaseSummary(
-						parsed.ToString(), published, parsed.IsPrerelease, StripInstallInstructions(body), url)));
+						parsed.ToString(), published, parsed.IsPrerelease, StripInstallInstructions(body), url), FindInstaller(release)));
 				}
 
 				if (candidates.Count == 0)
@@ -134,12 +134,12 @@ public static partial class VersionCheck
 				}
 
 				// On a tie the first one listed wins (GitHub lists newest first).
-				(ProductVersion best, ReleaseSummary latest) = candidates[0];
-				foreach ((ProductVersion parsed, ReleaseSummary release) in candidates)
+				(ProductVersion best, ReleaseSummary latest, ReleaseInstaller? latestInstaller) = candidates[0];
+				foreach ((ProductVersion parsed, ReleaseSummary release, ReleaseInstaller? installer) in candidates)
 				{
 					if (parsed.ComparePrecedenceTo(best) > 0)
 					{
-						(best, latest) = (parsed, release);
+						(best, latest, latestInstaller) = (parsed, release, installer);
 					}
 				}
 
@@ -168,6 +168,7 @@ public static partial class VersionCheck
 					LatestReleaseUrl: latest.Url, IsAheadOfLatestRelease: isAheadOfLatest)
 				{
 					NewerReleases = newer,
+					LatestInstaller = latestInstaller,
 				};
 			}
 		}
@@ -183,6 +184,35 @@ public static partial class VersionCheck
 				client.Dispose();
 			}
 		}
+	}
+
+	// The release's first .msi asset with a usable name and download URL, if any.
+	private static ReleaseInstaller? FindInstaller(JsonElement release)
+	{
+		if (!release.TryGetProperty("assets", out JsonElement assets) || assets.ValueKind != JsonValueKind.Array)
+		{
+			return null;
+		}
+
+		foreach (JsonElement asset in assets.EnumerateArray())
+		{
+			string? name = asset.TryGetProperty("name", out JsonElement nameElement) ? nameElement.GetString() : null;
+			string? downloadUrl = asset.TryGetProperty("browser_download_url", out JsonElement urlElement) ? urlElement.GetString() : null;
+
+			if (name is null
+				|| downloadUrl is null
+				|| !name.EndsWith(".msi", StringComparison.OrdinalIgnoreCase)
+				|| name != Path.GetFileName(name))
+			{
+				continue;
+			}
+
+			long id = asset.TryGetProperty("id", out JsonElement idElement) && idElement.TryGetInt64(out long parsedId) ? parsedId : 0;
+			long size = asset.TryGetProperty("size", out JsonElement sizeElement) && sizeElement.TryGetInt64(out long parsedSize) ? parsedSize : 0;
+			return new ReleaseInstaller(name, downloadUrl, id, size);
+		}
+
+		return null;
 	}
 
 	/// <summary>

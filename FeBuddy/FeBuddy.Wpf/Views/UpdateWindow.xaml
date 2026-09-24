@@ -83,14 +83,27 @@
                 </ItemsControl>
             </ScrollViewer>
 
+            <!-- What the main button does; replaced by the download's progress while it runs. -->
             <TextBlock Style="{StaticResource Text.Body}" Margin="0,10,0,0" TextWrapping="Wrap"
-                       Text="FE-Buddy installs from an MSI. Download the new installer and run it to update; your settings are kept." />
+                       Text="{Binding FooterText}"
+                       Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
+
+            <StackPanel Margin="0,12,0,0"
+                        Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}">
+                <ProgressBar Style="{StaticResource Progress}" Value="{Binding ProgressPercent, Mode=OneWay}" />
+                <TextBlock Style="{StaticResource Text.Caption}" Margin="0,6,0,0" Text="{Binding ProgressText}" />
+            </StackPanel>
+
+            <TextBlock Style="{StaticResource Text.Body}" Margin="0,10,0,0" TextWrapping="Wrap"
+                       Foreground="{StaticResource Brush.Danger}"
+                       Text="{Binding ErrorText}"
+                       Visibility="{Binding ErrorText, Converter={StaticResource StringToVis}}" />
 
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
-                <Button Content="Later" Style="{StaticResource Button.Ghost}"
+                <Button Content="{Binding LaterButtonText}" Style="{StaticResource Button.Ghost}"
                         Command="{Binding LaterCommand}" MinWidth="88" Margin="0,0,10,0" />
-                <Button Content="Download update" Style="{StaticResource Button.Primary}"
-                        Command="{Binding DownloadCommand}" MinWidth="150" />
+                <Button Content="{Binding UpdateButtonText}" Style="{StaticResource Button.Primary}"
+                        Command="{Binding UpdateCommand}" MinWidth="150" />
             </StackPanel>
         </StackPanel>
     </Border>

@@ -44,6 +44,9 @@ public sealed class NavItem : ObservableObject
     /// <summary>The section's view-model; built on first access, cached after.</summary>
     public object ViewModel => _viewModel ??= _viewModelFactory();
 
+    /// <summary>The section's view-model if it has been opened, without building it.</summary>
+    public object? CreatedViewModel => _viewModel;
+
     /// <summary>True when this is the section on screen. Bound two-way to the nav RadioButton.</summary>
     public bool IsActive
     {

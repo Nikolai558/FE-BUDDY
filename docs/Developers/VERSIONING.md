@@ -101,6 +101,13 @@ check reports it as "ahead of the latest release", and `-dev` counts as the Alph
 - **The version check** (`VersionCheck`) reads the repo's last 30 releases, parses each tag as
   strict SemVer (a leading `v` is allowed; anything else is skipped), keeps the releases on the
   user's channel, and compares by SemVer precedence (`FeBuddy.Versioning.ProductVersion`).
+- **Update now** (the update window) downloads the latest release's `.msi` into
+  `%TEMP%\FE-Buddy\Updates` (`UpdateInstaller`), runs `msiexec /i <msi> REINSTALLMODE=amus`
+  elevated with its normal UI, and closes FE-Buddy so the files can be replaced; the MSI
+  relaunches it. `REINSTALLMODE=amus` on the command line makes any MSI - including a 2.x one -
+  copy every file, so a rollback installed this way is complete. It first warns if closing would
+  lose a running AIRAC Service run or unsaved edits. A dev build, a release with no `.msi`, or a
+  failed download opens the release page instead.
 - **Installed or dev build** - `InstalledProduct.IsMsiInstalled` compares the running folder with
   the `InstallLocation` the installer recorded under `HKLM\Software\FE-BUDDY`. A copy the MSI did
   not install shows `- DEV` after its version in the title bar, as 2.x does.

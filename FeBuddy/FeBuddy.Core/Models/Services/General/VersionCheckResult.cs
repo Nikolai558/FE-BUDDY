@@ -42,6 +42,13 @@ public record VersionCheckResult(
 	public IReadOnlyList<ReleaseSummary> NewerReleases { get; init; } = [];
 
 	/// <summary>
+	/// The <c>.msi</c> attached to the <see cref="LatestVersion"/> release, for the update window's
+	/// "Update now"; <see langword="null"/> when that release has none (older releases predate the
+	/// MSI) or the check did not complete.
+	/// </summary>
+	public ReleaseInstaller? LatestInstaller { get; init; }
+
+	/// <summary>
 	/// Parses the user's update channel from its stored name (<c>General.UpdateChannel</c>:
 	/// <c>Stable</c>, <c>ReleaseCandidate</c>, <c>Beta</c> or <c>Alpha</c>), falling back to
 	/// <see cref="ReleaseChannel.Stable"/> for a missing or unrecognized value.
@@ -70,3 +77,22 @@ public sealed record ReleaseSummary(
 	bool IsPrerelease,
 	string? Notes,
 	string? Url);
+
+/// <summary>A release's <c>.msi</c> asset on GitHub.</summary>
+/// <param name="FileName">The asset's file name, e.g. <c>FE-BUDDY-3.0.0.msi</c>.</param>
+/// <param name="DownloadUrl">The public download URL (<c>browser_download_url</c>).</param>
+/// <param name="AssetId">
+/// GitHub's asset id. Only used when the public URL fails and a token is set: the authenticated
+/// download goes through the releases-assets API, which is addressed by id.
+/// </param>
+/// <param name="SizeBytes">The size GitHub reports, or 0 when it reports none.</param>
+public sealed record ReleaseInstaller(string FileName, string DownloadUrl, long AssetId, long SizeBytes);
+
+/// <summary>Progress of an installer download.</summary>
+/// <param name="BytesReceived">Bytes written so far.</param>
+/// <param name="TotalBytes">The expected total, or <see langword="null"/> when unknown.</param>
+public readonly record struct DownloadProgress(long BytesReceived, long? TotalBytes)
+{
+	/// <summary>Whole-number percent complete, or <see langword="null"/> when the total is unknown.</summary>
+	public int? Percent => TotalBytes is > 0 ? (int)Math.Min(100, BytesReceived * 100 / TotalBytes.Value) : null;
+}

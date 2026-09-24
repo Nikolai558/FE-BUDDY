@@ -6,9 +6,8 @@ namespace FeBuddy.Wpf.Infrastructure;
 /// </summary>
 public static class Links
 {
-	// TODO(owner): replace with the real FE-Buddy Discord invite.
 	/// <summary>The FE-Buddy Discord server invite.</summary>
-	public const string Discord = "https://discord.gg/febuddy";
+	public const string Discord = "https://discord.gg/GB46aeauH4";
 
 	/// <summary>The FE-Buddy manual. Pinned to v3-development: the default branch (development) is still v2.x until the 3.0 release.</summary>
 	public const string Manual = "https://github.com/Nikolai558/FE-BUDDY/tree/v3-development/docs/Users/Manual%20HTML";

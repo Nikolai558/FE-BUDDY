@@ -14,7 +14,7 @@ using FeBuddy.UnitTests.Application.Airac.Airways.Fixtures;
 namespace FeBuddy.UnitTests.Application.Airac.Airways;
 
 /// <summary>
-/// Verifies the message levels from remediation plan 3.8: the buffer's "leg too short"
+/// Verifies the airway message levels: the buffer's "leg too short"
 /// notice is Info (not Warning), airway exclusion and unrecognized-key notices are Warning,
 /// and a run with only Info notices reports zero warnings and mirrors every message to
 /// <see cref="AppLog"/>.

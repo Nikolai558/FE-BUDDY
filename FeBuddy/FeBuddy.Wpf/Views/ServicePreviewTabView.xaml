@@ -8,15 +8,16 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             xmlns:infra="clr-namespace:FeBuddy.Wpf.Infrastructure"
              xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
+             xmlns:tabs="clr-namespace:FeBuddy.Wpf.ViewModels.ServiceTabs"
+             xmlns:tabm="clr-namespace:FeBuddy.Wpf.ViewModels.ServiceTabs.Models"
              mc:Ignorable="d"
-             d:DataContext="{d:DesignInstance infra:ServicePreviewTabViewModel}"
+             d:DataContext="{d:DesignInstance tabs:ServicePreviewTabViewModel}"
              d:DesignWidth="820" d:DesignHeight="700">
 
     <UserControl.Resources>
         <!-- one label / value line -->
-        <DataTemplate x:Key="ReviewRow" DataType="{x:Type infra:ServicePreviewRow}">
+        <DataTemplate x:Key="ReviewRow" DataType="{x:Type tabm:ServicePreviewRow}">
             <Grid Margin="0,3">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="210" />
@@ -30,7 +31,7 @@
         </DataTemplate>
 
         <!-- one tab's section -->
-        <DataTemplate x:Key="ReviewSection" DataType="{x:Type infra:ServicePreviewSection}">
+        <DataTemplate x:Key="ReviewSection" DataType="{x:Type tabm:ServicePreviewSection}">
             <ctl:Card Header="{Binding Title}">
                 <StackPanel>
                     <TextBlock Text="{Binding Note}" Style="{StaticResource Text.Prose}"

@@ -9,7 +9,10 @@ using FeBuddy.UnitTests.Application.Airac.Departures.Fixtures;
 
 namespace FeBuddy.UnitTests.Application.Airac.Departures;
 
-public class DepartureFilterTests
+/// <summary>
+/// Covers <see cref="DepartureFilter"/>: the obstacle-departure, ARTCC and amendment-date filters.
+/// </summary>
+public sealed class DepartureFilterTests
 {
 	private static readonly DateOnly CycleDate = new(2026, 9, 3);
 

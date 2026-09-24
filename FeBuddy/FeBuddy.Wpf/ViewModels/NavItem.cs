@@ -1,4 +1,4 @@
-using FeBuddy.Wpf.Infrastructure;
+using FeBuddy.Wpf.Mvvm;
 
 namespace FeBuddy.Wpf.ViewModels;
 

@@ -9,7 +9,7 @@ namespace FeBuddy.UnitTests.Application.Airac.Airways;
 
 /// <summary>
 /// Verifies that an <see cref="AirwayGeojsonOutputBy.Designation"/> run names files from the
-/// designation derived from <c>AWY_ID</c> (remediation plan 3.1), so a <c>Q</c>/<c>T</c> RNAV
+/// designation derived from <c>AWY_ID</c>, so a <c>Q</c>/<c>T</c> RNAV
 /// airway lands in <c>Airways_Q_*</c> / <c>Airways_T_*</c> and never <c>Airways_RN_*</c>.
 /// </summary>
 public sealed class AirwayGeojsonWriterDesignationTests : IDisposable

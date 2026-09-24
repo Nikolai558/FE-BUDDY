@@ -14,7 +14,7 @@ namespace FeBuddy.UnitTests.Domain.Geo;
 /// Covers <see cref="LineStringMerger"/> directly and through
 /// <see cref="DepartureGeometryBuilder"/> on the real DOTSS2 procedure.
 /// </summary>
-public class LineStringMergerTests
+public sealed class LineStringMergerTests
 {
 	private static readonly GeometryFactory Factory = new();
 

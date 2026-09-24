@@ -5,7 +5,8 @@ using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Threading;
 
-using FeBuddy.Wpf.Infrastructure;
+using FeBuddy.Wpf.Mvvm;
+using FeBuddy.Wpf.Shell;
 
 using FeBuddy.Core.Application.Airac;
 using FeBuddy.Core.Application.Launch;

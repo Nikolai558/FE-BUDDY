@@ -12,9 +12,7 @@ This README lives at `docs/Developers/FeBuddy.Wpf/README.md`; every code path
 below is relative to `FeBuddy/FeBuddy.Wpf/` in the repo unless stated otherwise.
 
 - references `FeBuddy.Core`; no other NuGet packages - the MVVM helpers
-  (`ObservableObject`, `RelayCommand`, `SubServiceSettingsViewModel`), the tab
-  model for a first-tier service screen, the toast store, `Links`,
-  `BrowserLauncher` and the value converters live in `Infrastructure/`
+  (`ObservableObject`, `RelayCommand`) are hand-rolled in `Mvvm/`
 - **Airports, Airways and Departures are sub-services of AIRAC Service**, not
   top-level screens. The library code is `FeBuddy.Core.Application.Airac.*`; the GUI
   reaches each one only as a tab on the AIRAC Services screen.
@@ -42,25 +40,54 @@ Theme/                design system - the only place colours, type and control
                          (dark rounded popover, soft shadow, fade-in)
   Theme.xaml             merges the above; App.xaml merges only this
 
-Controls/             Card, SectionHeader, Option, CopyButton, FilterPicker,
-                      MarkdownView, MapCanvas, RoiEditor
-Infrastructure/       ObservableObject, RelayCommand, SubServiceSettingsViewModel,
-                      the tab model (TabbedServiceViewModel, ServiceTabViewModel,
-                      SubServiceDescriptor, SubServiceSelection,
-                      ServicePreviewTabViewModel, ServiceRunReviewTabViewModel,
-                      PlaceholderSubServiceViewModel), GeojsonSubServiceViewModel
-                      (what the GeoJSON sub-service tabs share),
-                      Toast, Links, BrowserLauncher, converters
-Map/                  GeoJSON reader (System.Text.Json), Web-Mercator, layer model
 Assets/               us-states.json (reference geography, not sample data)
+Behaviors/            attached properties a view opts into: FieldState (validation
+                      look), WheelScroll, ComboBoxDropDownFocus, MaximizeToWorkArea
+Controls/             reusable controls: Card, SectionHeader, Option, CopyButton,
+                      FilterPicker, MarkdownView, MapCanvas, RoiEditor, and
+                      ChromeWindow (the base for every dialog window)
+Converters/           one IValueConverter per file
+Map/                  GeoJSON reader (System.Text.Json), Web-Mercator, BaseMap
+  Models/               GeoPoint, GeoBounds, MapGeometry, MapLayer
+Mvvm/                 ObservableObject, RelayCommand
+Shell/                app-wide services: Toast, Links, BrowserLauncher,
+                      DefaultRoiStore (the one saved default ROI)
+  Models/               ToastKind
 ViewModels/           ShellViewModel + one per screen; AiracSubServices is the
                       AIRAC sub-service catalogue
+  Models/               small item and row view-models and records (HealthRow,
+                        FebPropertyToggle, EramClassDefault, ...)
+  ServiceTabs/          the framework for a tabbed service screen:
+                        TabbedServiceViewModel (the screen), ServiceTabViewModel
+                        (a tab), SubServiceSettingsViewModel (a saved settings tab),
+                        GeojsonSubServiceViewModel (what the GeoJSON sub-service tabs
+                        share), the Preview Settings and Review tabs, the card
+                        interfaces (IOutputSettings, ...), ISubServiceRunTarget
+    Models/               SubServiceDescriptor, ServicePreviewRow/Section, ...
 Views/                ShellWindow (custom chrome) + Dashboard, AiracService and
                       its tab views (AiracGeneralTabView, AirportsView, AirwaysView,
-                      DeparturesView, ServicePreviewTabView, ServiceRunReviewTabView,
-                      the shared Cards/), Map,
-                      Settings, Info; UpdateWindow, ConfirmWindow, RoiPickerWindow
+                      DeparturesView, ServicePreviewTabView, ServiceRunReviewTabView),
+                      Map, Settings, Info; UpdateWindow, ConfirmWindow, RoiPickerWindow
+  Cards/                the cards every GeoJSON sub-service tab shares; each binds
+                        to its tab through one ServiceTabs interface
 ```
+
+Namespaces follow folders (`FeBuddy.Wpf.ViewModels.ServiceTabs`), and every file
+holds one type. A type that only carries data (a record, an enum, a small row)
+goes in the nearest `Models/` folder; a class that does work sits at the folder
+root - the same rule as `FeBuddy.Core`.
+
+### Where do I put...
+
+- **A new sub-service** (say, STARs): an entry in `ViewModels/AiracSubServices.cs`,
+  a `StarsViewModel` in `ViewModels/` deriving from `GeojsonSubServiceViewModel` and
+  implementing `ISubServiceRunTarget`, a `StarsView` in `Views/` built from the
+  shared cards, and its settings block on `AiracServiceSettings` in Core.
+- **A reusable control:** `Controls/`, with its look in a `Theme/Controls.*.xaml` style.
+- **An attached property** a view sets (`bhv:Something.Enable="True"`): `Behaviors/`.
+- **A converter:** its own file in `Converters/`, instantiated once in `Theme/Theme.xaml`.
+- **Something every screen can use** (a store, a launcher, a notification): `Shell/`.
+- **A colour, font, radius or glyph:** `Theme/` - never a literal in a view.
 
 ### Screens
 
@@ -117,7 +144,7 @@ Primary nav is **Services only**: Dashboard, AIRAC Service, Map. `Settings` and
 
 ### Shell extras
 
-- **Toasts** - `Infrastructure/Toast.cs` static store; hosted bottom-right.
+- **Toasts** - `Shell/Toast.cs` static store; hosted bottom-right.
 - **Border chrome** - FE-BUDDY tooltip shows update state only; the version chip is
   a button that opens `UpdateWindow` when an update exists; the AIRAC status
   readout sits top-centre and narrates the launch pipeline.

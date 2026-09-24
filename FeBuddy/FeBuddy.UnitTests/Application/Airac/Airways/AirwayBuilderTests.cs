@@ -7,7 +7,11 @@ using FeBuddy.UnitTests.Application.Airac.Airways.Fixtures;
 
 namespace FeBuddy.UnitTests.Application.Airac.Airways;
 
-public class AirwayBuilderTests
+/// <summary>
+/// Covers <see cref="AirwayBuilder.BuildAll"/>: identity and classification, waypoint
+/// resolution, the ROI flags, excluded designations and airways, and border-terminating airways.
+/// </summary>
+public sealed class AirwayBuilderTests
 {
 	private static AirwaySettings MinimalSettings(RegionOfInterest? roi = null) => new()
 	{

@@ -10,7 +10,7 @@ namespace FeBuddy.UnitTests.Application.News;
 /// <summary>
 /// Covers <see cref="NewsService"/>: PostId parsing/ordering, markdown parsing, the
 /// unread-count comparison against <c>General.NewsLastOpen</c>, and the bundled-copy
-/// fallback (remediation plan 6.1).
+/// fallback.
 /// </summary>
 [Collection("AppLog")]
 public sealed class NewsServiceTests : IDisposable

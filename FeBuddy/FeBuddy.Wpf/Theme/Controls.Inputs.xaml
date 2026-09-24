@@ -24,8 +24,8 @@
 -->
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                    xmlns:infra="clr-namespace:FeBuddy.Wpf.Infrastructure"
-                    xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls">
+                    xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
+                    xmlns:bhv="clr-namespace:FeBuddy.Wpf.Behaviors">
 
     <!-- ============================ OPTION ============================ -->
     <!-- One option row: the control, then its Description indented to sit under the control's
@@ -110,15 +110,15 @@
     <!-- Every bare TextBox is Field; explicit Style="{StaticResource Field}"
          still works for the few call sites that want to be obvious about it. -->
     <!-- The implicit TextBox style. It also carries the validation-failure look: a box whose
-         infra:FieldState.Error is bound to its tab's FieldErrors[<key>] gets a red edge, a faint
+         bhv:FieldState.Error is bound to its tab's FieldErrors[<key>] gets a red edge, a faint
          red wash and the validator's own message as its tool-tip, so the box that needs fixing is
          obvious without reading the error list above the form. -->
     <Style TargetType="TextBox" BasedOn="{StaticResource Field}">
         <Style.Triggers>
-            <Trigger Property="infra:FieldState.HasError" Value="True">
+            <Trigger Property="bhv:FieldState.HasError" Value="True">
                 <Setter Property="BorderBrush" Value="{DynamicResource Brush.Danger}" />
                 <Setter Property="Background" Value="{DynamicResource Brush.Danger.Soft}" />
-                <Setter Property="ToolTip" Value="{Binding (infra:FieldState.Error), RelativeSource={RelativeSource Self}}" />
+                <Setter Property="ToolTip" Value="{Binding (bhv:FieldState.Error), RelativeSource={RelativeSource Self}}" />
             </Trigger>
         </Style.Triggers>
     </Style>
@@ -280,7 +280,7 @@
         <Setter Property="HorizontalContentAlignment" Value="Left" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
         <Setter Property="ItemContainerStyle" Value="{StaticResource Themed.ComboBoxItem}" />
-        <Setter Property="infra:ComboBoxDropDownFocus.Enable" Value="True" />
+        <Setter Property="bhv:ComboBoxDropDownFocus.Enable" Value="True" />
         <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled" />
         <Setter Property="ScrollViewer.CanContentScroll" Value="True" />
         <Setter Property="TextElement.Foreground" Value="{DynamicResource Brush.Text.Primary}" />
@@ -360,10 +360,10 @@
         <Style.Triggers>
             <!-- Same validation-failure look as a TextBox: the facility picker is a required
                  field, so it has to be able to say so the same way every other box does. -->
-            <Trigger Property="infra:FieldState.HasError" Value="True">
+            <Trigger Property="bhv:FieldState.HasError" Value="True">
                 <Setter Property="BorderBrush" Value="{DynamicResource Brush.Danger}" />
                 <Setter Property="Background" Value="{DynamicResource Brush.Danger.Soft}" />
-                <Setter Property="ToolTip" Value="{Binding (infra:FieldState.Error), RelativeSource={RelativeSource Self}}" />
+                <Setter Property="ToolTip" Value="{Binding (bhv:FieldState.Error), RelativeSource={RelativeSource Self}}" />
             </Trigger>
         </Style.Triggers>
         <Style.Resources>
@@ -801,10 +801,10 @@
         </Setter>
         <Style.Triggers>
             <!-- Same validation-failure look as a TextBox / ComboBox. -->
-            <Trigger Property="infra:FieldState.HasError" Value="True">
+            <Trigger Property="bhv:FieldState.HasError" Value="True">
                 <Setter Property="BorderBrush" Value="{DynamicResource Brush.Danger}" />
                 <Setter Property="Background" Value="{DynamicResource Brush.Danger.Soft}" />
-                <Setter Property="ToolTip" Value="{Binding (infra:FieldState.Error), RelativeSource={RelativeSource Self}}" />
+                <Setter Property="ToolTip" Value="{Binding (bhv:FieldState.Error), RelativeSource={RelativeSource Self}}" />
             </Trigger>
         </Style.Triggers>
     </Style>

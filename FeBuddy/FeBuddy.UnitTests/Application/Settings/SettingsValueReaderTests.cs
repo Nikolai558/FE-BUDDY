@@ -6,7 +6,7 @@ namespace FeBuddy.UnitTests.Application.Settings;
 /// Covers the <see cref="SettingsValueReader"/> paths the sub-service parsers do not reach:
 /// a present-but-out-of-range integer, malformed integer lists, and style normalization.
 /// </summary>
-public class SettingsValueReaderTests
+public sealed class SettingsValueReaderTests
 {
 	[Fact]
 	public void int_in_range_uses_the_default_when_absent_and_enforces_the_range_when_present()

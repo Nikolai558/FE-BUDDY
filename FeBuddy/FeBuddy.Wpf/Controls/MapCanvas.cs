@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
+using FeBuddy.Wpf.Map.Models;
 using FeBuddy.Wpf.Map;
 
 namespace FeBuddy.Wpf.Controls;

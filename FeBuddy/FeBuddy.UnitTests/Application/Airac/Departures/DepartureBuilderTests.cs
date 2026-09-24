@@ -9,7 +9,11 @@ using FeBuddy.UnitTests.Application.Airac.Departures.Fixtures;
 
 namespace FeBuddy.UnitTests.Application.Airac.Departures;
 
-public class DepartureBuilderTests
+/// <summary>
+/// Covers <see cref="DepartureBuilder"/>: reading procedures from the DP files, the airports each one
+/// serves, and locating their points.
+/// </summary>
+public sealed class DepartureBuilderTests
 {
 	private const string TestName = "TESTY";
 	private const string TestArtcc = "ZZZ";

@@ -10,7 +10,7 @@ namespace FeBuddy.UnitTests.Application.Airac.Airports;
 /// the known names, an unrecognized key is a warning rather than a failure, and CRC property
 /// defaults are demanded only for the files actually being emitted.
 /// </summary>
-public class AirportSettingsParserTests
+public sealed class AirportSettingsParserTests
 {
 	private static Dictionary<string, string> MinimalValidSettings() => new()
 	{

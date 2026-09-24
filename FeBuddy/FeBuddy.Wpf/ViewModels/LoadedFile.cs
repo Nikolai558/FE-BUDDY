@@ -1,7 +1,7 @@
 using System.Windows.Input;
 using System.Windows.Media;
-using FeBuddy.Wpf.Infrastructure;
-using FeBuddy.Wpf.Map;
+using FeBuddy.Wpf.Map.Models;
+using FeBuddy.Wpf.Mvvm;
 
 namespace FeBuddy.Wpf.ViewModels;
 

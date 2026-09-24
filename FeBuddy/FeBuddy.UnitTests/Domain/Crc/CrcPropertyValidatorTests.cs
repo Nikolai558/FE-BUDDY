@@ -6,7 +6,7 @@ namespace FeBuddy.UnitTests.Domain.Crc;
 /// <summary>
 /// Boundary tests for every CRC ERAM property range documented in CRC_Geojsons.md.
 /// </summary>
-public class CrcPropertyValidatorTests
+public sealed class CrcPropertyValidatorTests
 {
 	private static CrcLineProperties Line(int? bcg = 1, IReadOnlyList<int>? filters = null, string? style = null, int? thickness = null) =>
 		new() { Bcg = bcg, Filters = filters ?? [1], Style = style, Thickness = thickness };

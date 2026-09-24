@@ -16,7 +16,7 @@
         xmlns:vm="clr-namespace:FeBuddy.Wpf.ViewModels"
         xmlns:views="clr-namespace:FeBuddy.Wpf.Views"
         xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
-        xmlns:infra="clr-namespace:FeBuddy.Wpf.Infrastructure"
+        xmlns:app="clr-namespace:FeBuddy.Wpf.Shell"
         mc:Ignorable="d"
         Title="FE-Buddy"
         Width="1200" Height="780"
@@ -59,9 +59,9 @@
             <views:InfoView />
         </DataTemplate>
 
-        <!-- one transient notification (Infrastructure/Toast.cs). Colour + glyph
+        <!-- one transient notification (Shell/Toast.cs). Colour + glyph
              follow ToastItem.Kind; slides in from the right on load. -->
-        <DataTemplate x:Key="ToastCard" DataType="{x:Type infra:ToastItem}">
+        <DataTemplate x:Key="ToastCard" DataType="{x:Type app:ToastItem}">
             <Border Width="336" Margin="0,8,0,0"
                     Background="{StaticResource Brush.Panel}"
                     BorderBrush="{StaticResource Brush.Stroke.Strong}"
@@ -452,7 +452,7 @@
 
                 <!-- toast host: floats bottom-right over the content area -->
                 <ItemsControl Grid.Column="1"
-                              ItemsSource="{x:Static infra:Toast.Items}"
+                              ItemsSource="{x:Static app:Toast.Items}"
                               ItemTemplate="{StaticResource ToastCard}"
                               HorizontalAlignment="Right" VerticalAlignment="Bottom"
                               Margin="0,0,20,20" Panel.ZIndex="100"

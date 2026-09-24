@@ -4,7 +4,11 @@ using FeBuddy.Core.Domain.Airways.Models;
 
 namespace FeBuddy.UnitTests.Application.Airac.Airways;
 
-public class AirwaySettingsParserTests
+/// <summary>
+/// Covers <see cref="AirwaySettingsParser"/>: required and optional keys, yes/no values, the ROI,
+/// CRC defaults, and the Airways-only settings.
+/// </summary>
+public sealed class AirwaySettingsParserTests
 {
 	private static Dictionary<string, string> MinimalValidSettings() => new()
 	{
@@ -295,7 +299,7 @@ public class AirwaySettingsParserTests
 		Assert.Contains(result.Messages.WarningTexts(), w => w.Contains("Crc.High.Text.text"));
 	}
 
-	// ---- Phase 3.3-3.7 settings ---------------------------------------
+	// ---- designations, buffer, aliases, antimeridian, output folder ----
 
 	[Fact]
 	public void excluded_designations_parse_as_a_trimmed_upper_cased_set()

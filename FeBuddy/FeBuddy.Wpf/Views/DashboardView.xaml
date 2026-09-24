@@ -11,7 +11,7 @@
              xmlns:news="clr-namespace:FeBuddy.Core.Application.News.Models;assembly=FeBuddy.Core"
              xmlns:log="clr-namespace:FeBuddy.Core.Infrastructure.Logging.Models;assembly=FeBuddy.Core"
              xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
-             xmlns:infra="clr-namespace:FeBuddy.Wpf.Infrastructure"
+             xmlns:bhv="clr-namespace:FeBuddy.Wpf.Behaviors"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance vm:DashboardViewModel, IsDesignTimeCreatable=True}"
              d:DesignWidth="960" d:DesignHeight="720">
@@ -165,7 +165,7 @@
                            Visibility="{Binding NewsUnavailable, Converter={StaticResource BoolToVis}}" />
 
                 <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
-                              infra:WheelScroll.BubbleUp="True">
+                              bhv:WheelScroll.BubbleUp="True">
                     <ItemsControl ItemsSource="{Binding Posts}" ItemTemplate="{StaticResource NewsPostTemplate}" />
                 </ScrollViewer>
             </DockPanel>
@@ -232,7 +232,7 @@
                     <ListBox ItemsSource="{Binding LogView}" ItemTemplate="{StaticResource LogRowTemplate}"
                              Margin="0,12,0,0" MaxHeight="240"
                              Background="Transparent" BorderThickness="0"
-                             infra:WheelScroll.BubbleUp="True"
+                             bhv:WheelScroll.BubbleUp="True"
                              ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                              VirtualizingStackPanel.IsVirtualizing="True"
                              VirtualizingStackPanel.VirtualizationMode="Recycling"

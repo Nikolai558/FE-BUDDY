@@ -5,7 +5,9 @@ using System.Windows;
 using System.Windows.Input;
 using System.Windows.Threading;
 
-using FeBuddy.Wpf.Infrastructure;
+using FeBuddy.Wpf.Mvvm;
+using FeBuddy.Wpf.Shell;
+using FeBuddy.Wpf.ViewModels.ServiceTabs;
 using FeBuddy.Wpf.Views;
 
 using FeBuddy.Core.Application.Airac;

@@ -9,7 +9,7 @@ namespace FeBuddy.UnitTests.Infrastructure.Nasr.Parsers;
 /// and removed them between cycles), which previously threw
 /// <see cref="KeyNotFoundException"/> and aborted the entire run.
 /// </summary>
-public class AptCsvParserTests : IDisposable
+public sealed class AptCsvParserTests : IDisposable
 {
 	private readonly string _tempFile = Path.Combine(Path.GetTempPath(), $"FeBuddyTests_AptRwy_{Guid.NewGuid():N}.csv");
 

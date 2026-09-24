@@ -3,7 +3,11 @@ using FeBuddy.Core.Domain.Airac.Models;
 
 namespace FeBuddy.UnitTests.Domain.Airac;
 
-public class AiracCycleResolverTests
+/// <summary>
+/// Covers <see cref="AiracCycleResolver"/>: which cycle a date falls in, effective dates and
+/// the 28-day cadence across a year boundary.
+/// </summary>
+public sealed class AiracCycleResolverTests
 {
 	[Fact]
 	public void resolves_current_previous_and_next_for_a_known_date()

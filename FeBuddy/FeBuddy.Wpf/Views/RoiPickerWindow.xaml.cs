@@ -1,7 +1,6 @@
 using System.Windows;
-
-using FeBuddy.Wpf.Infrastructure;
-using FeBuddy.Wpf.Map;
+using FeBuddy.Wpf.Controls;
+using FeBuddy.Wpf.Map.Models;
 
 using FeBuddy.Core.Domain.Geo.Models;
 

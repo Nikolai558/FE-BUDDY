@@ -1,5 +1,5 @@
 using System.Windows;
-using FeBuddy.Wpf.Infrastructure;
+using FeBuddy.Wpf.Behaviors;
 using FeBuddy.Wpf.ViewModels;
 
 namespace FeBuddy.Wpf.Views;

@@ -2,6 +2,8 @@ using System.IO;
 using System.Windows;
 using System.Windows.Media;
 
+using FeBuddy.Wpf.Map.Models;
+
 namespace FeBuddy.Wpf.Map;
 
 /// <summary>

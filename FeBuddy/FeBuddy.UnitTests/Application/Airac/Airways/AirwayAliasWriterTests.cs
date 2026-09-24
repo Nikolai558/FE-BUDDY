@@ -8,7 +8,7 @@ namespace FeBuddy.UnitTests.Application.Airac.Airways;
 
 /// <summary>
 /// Covers the alias file's rename to <c>Airways.txt</c>, the <see cref="AliasRoiScope"/>
-/// toggle, and the "Add FE-Buddy_Output folder" preference (remediation plan 3.5 / 3.7).
+/// toggle, and the "Add FE-Buddy_Output folder" preference.
 /// </summary>
 public sealed class AirwayAliasWriterTests : IDisposable
 {

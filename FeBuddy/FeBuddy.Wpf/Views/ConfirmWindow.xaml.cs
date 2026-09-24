@@ -1,6 +1,7 @@
 using System.Windows;
 
-using FeBuddy.Wpf.Infrastructure;
+using FeBuddy.Wpf.Controls;
+using FeBuddy.Wpf.Mvvm;
 
 namespace FeBuddy.Wpf.Views;
 

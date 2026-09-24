@@ -1,8 +1,7 @@
 using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
-
-using FeBuddy.Wpf.Map;
+using FeBuddy.Wpf.Map.Models;
 
 using FeBuddy.Core.Domain.Geo;
 using FeBuddy.Core.Domain.Geo.Models;

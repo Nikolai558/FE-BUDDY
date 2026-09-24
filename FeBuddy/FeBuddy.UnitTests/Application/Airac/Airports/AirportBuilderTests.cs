@@ -15,7 +15,7 @@ namespace FeBuddy.UnitTests.Application.Airac.Airports;
 /// the routine "no end coordinates" gap being Info rather than Warning, the CTAF and weather
 /// frequency picks, and the stable output ordering.
 /// </summary>
-public class AirportBuilderTests
+public sealed class AirportBuilderTests
 {
 	[Fact]
 	public void build_all_throws_when_apt_data_was_never_parsed()

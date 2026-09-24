@@ -4,7 +4,11 @@ using FeBuddy.Core.Infrastructure.Logging.Models;
 
 namespace FeBuddy.UnitTests.Application.Airac.Departures;
 
-public class DepartureSettingsParserTests
+/// <summary>
+/// Covers <see cref="DepartureSettingsParser"/>: defaults, the output guard, the ARTCC filter, the
+/// ROI mode and the amendment-date filter.
+/// </summary>
+public sealed class DepartureSettingsParserTests
 {
 	private static Dictionary<string, string> MinimalValidSettings() => new()
 	{

@@ -7,7 +7,7 @@ namespace FeBuddy.UnitTests.Domain.Geo;
 /// <summary>
 /// Verifies <see cref="AntimeridianSplitter.Split"/> never emits a degenerate LineString
 /// (fewer than two distinct coordinates), including when a segment endpoint lies exactly on
-/// +/-180 or a coordinate is repeated (remediation plan 3.9).
+/// +/-180 or a coordinate is repeated.
 /// </summary>
 public sealed class AntimeridianSplitterTests
 {
@@ -37,7 +37,7 @@ public sealed class AntimeridianSplitterTests
 	public void a_segment_ending_exactly_on_the_antimeridian_produces_no_degenerate_linestring(double endLon)
 	{
 		// The endpoint sits exactly on +/-180 - the crossing point the split computes is
-		// identical to it, which used to create a two-point LineString of the same coordinate.
+		// identical to it, which must not produce a two-point LineString of the same coordinate.
 		IReadOnlyList<LineString> result = AntimeridianSplitter.Split(Line((175, 20), (endLon, 20.6075)));
 
 		Assert.NotEmpty(result);

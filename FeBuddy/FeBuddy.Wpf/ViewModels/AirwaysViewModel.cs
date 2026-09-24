@@ -1,8 +1,9 @@
 using System.Collections.ObjectModel;
 using System.Text.RegularExpressions;
 
-using FeBuddy.Wpf.Infrastructure;
 using FeBuddy.Wpf.ViewModels.Models;
+using FeBuddy.Wpf.ViewModels.ServiceTabs.Models;
+using FeBuddy.Wpf.ViewModels.ServiceTabs;
 
 using FeBuddy.Core.Application.Airac.Airways.Models;
 using FeBuddy.Core.Application.Airac.Models;

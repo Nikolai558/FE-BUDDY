@@ -10,7 +10,7 @@ namespace FeBuddy.UnitTests.Application.Airac.Airways;
 /// <summary>
 /// Verifies <see cref="AirwayWaypointBuffer"/> buffers real waypoints only - including a real
 /// fix expressed on the opposite side of the antimeridian - and never buffers a synthetic
-/// antimeridian-split or ROI-clip vertex (remediation plan 3.10).
+/// antimeridian-split or ROI-clip vertex.
 /// </summary>
 public sealed class AirwayWaypointBufferTests
 {
@@ -46,7 +46,7 @@ public sealed class AirwayWaypointBufferTests
 	[Fact]
 	public void a_synthetic_vertex_with_no_matching_waypoint_is_not_buffered()
 	{
-		// Only real waypoints are supplied; the leg ends at a vertex the AM split / ROI clip
+		// Only real waypoints are supplied; the leg ends at a vertex the antimeridian split / ROI clip
 		// invented (no matching waypoint).
 		AirwayPoint a = Point("AAAAA", 20.0, 175.0);
 		var synthetic = (Lon: 178.5, Lat: 20.4);

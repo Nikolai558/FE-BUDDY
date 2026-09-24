@@ -7,10 +7,16 @@ using NetTopologySuite.Geometries;
 
 namespace FeBuddy.UnitTests.Infrastructure.Geojson;
 
-// In the non-parallel "AppLog" collection because these tests set the process-wide DevMode and
-// OutputFormatting statics, which AppLogTests and others also read and set.
+/// <summary>
+/// Covers <see cref="GeojsonFileWriter"/>: coordinate rounding, single-line versus indented
+/// output, and when a file is or is not written.
+/// </summary>
+/// <remarks>
+/// In the non-parallel "AppLog" collection because these tests set the process-wide DevMode and
+/// OutputFormatting statics, which AppLogTests and others also read and set.
+/// </remarks>
 [Collection("AppLog")]
-public class GeojsonFileWriterTests : IDisposable
+public sealed class GeojsonFileWriterTests : IDisposable
 {
 	private readonly string _directory =
 		Path.Combine(Path.GetTempPath(), "FeBuddyTests_" + Guid.NewGuid().ToString("N"));

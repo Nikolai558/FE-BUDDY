@@ -10,7 +10,7 @@ namespace FeBuddy.UnitTests.Application.Airac.Airports;
 /// every published tower and facility code maps, an unpublished one passes through unchanged
 /// rather than being blanked, and one, two, and three flagged classes each read correctly.
 /// </summary>
-public class AirportFieldMapsTests
+public sealed class AirportFieldMapsTests
 {
 	[Theory]
 	[InlineData("ATCT", "TWR")]

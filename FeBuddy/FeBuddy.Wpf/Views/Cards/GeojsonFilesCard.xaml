@@ -13,10 +13,10 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             xmlns:infra="clr-namespace:FeBuddy.Wpf.Infrastructure"
              xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
+             xmlns:tabs="clr-namespace:FeBuddy.Wpf.ViewModels.ServiceTabs"
              mc:Ignorable="d"
-             d:DataContext="{d:DesignInstance infra:IGeojsonFileChoices}"
+             d:DataContext="{d:DesignInstance tabs:IGeojsonFileChoices}"
              d:DesignWidth="820"
              x:Name="Self">
     <ctl:Card Header="What Files Do You Want?">

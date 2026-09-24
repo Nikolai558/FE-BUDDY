@@ -1,6 +1,8 @@
 using System.Collections.ObjectModel;
 
-using FeBuddy.Wpf.Infrastructure;
+using FeBuddy.Wpf.Mvvm;
+using FeBuddy.Wpf.ViewModels.ServiceTabs.Models;
+using FeBuddy.Wpf.ViewModels.ServiceTabs;
 
 using FeBuddy.Core.Application.Airac;
 using FeBuddy.Core.Application.Airac.Models;

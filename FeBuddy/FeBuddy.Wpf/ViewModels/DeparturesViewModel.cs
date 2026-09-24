@@ -2,8 +2,10 @@ using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Windows.Input;
 
-using FeBuddy.Wpf.Infrastructure;
+using FeBuddy.Wpf.Mvvm;
 using FeBuddy.Wpf.ViewModels.Models;
+using FeBuddy.Wpf.ViewModels.ServiceTabs.Models;
+using FeBuddy.Wpf.ViewModels.ServiceTabs;
 
 using FeBuddy.Core.Application.Airac.Departures.Models;
 using FeBuddy.Core.Application.Airac.Models;

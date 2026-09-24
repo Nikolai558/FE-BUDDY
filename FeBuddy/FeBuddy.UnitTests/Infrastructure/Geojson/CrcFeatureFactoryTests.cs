@@ -6,7 +6,11 @@ using NetTopologySuite.Geometries;
 
 namespace FeBuddy.UnitTests.Infrastructure.Geojson;
 
-public class CrcFeatureFactoryTests
+/// <summary>
+/// Covers <see cref="CrcFeatureFactory"/>: the isDefaults Feature for each kind, per-Feature
+/// override properties, and the errors for values CRC cannot draw.
+/// </summary>
+public sealed class CrcFeatureFactoryTests
 {
 	private static CrcLineDefaults LineDefaults() =>
 		new() { Bcg = 2, Filters = [3], Style = "solid", Thickness = 1 };

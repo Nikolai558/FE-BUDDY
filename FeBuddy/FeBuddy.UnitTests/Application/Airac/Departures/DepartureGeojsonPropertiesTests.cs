@@ -12,7 +12,7 @@ namespace FeBuddy.UnitTests.Application.Airac.Departures;
 /// Covers which <c>feb.*</c> properties land on which Feature: <c>feb.pointId</c> on the
 /// per-point Symbols and Text Features, <c>feb.waypoints</c> on the Lines Feature only.
 /// </summary>
-public class DepartureGeojsonPropertiesTests
+public sealed class DepartureGeojsonPropertiesTests
 {
 	private static DepartureSettings SettingsWith(params string[] febProperties)
 	{

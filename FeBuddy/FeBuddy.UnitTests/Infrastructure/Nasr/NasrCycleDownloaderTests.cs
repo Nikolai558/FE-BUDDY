@@ -17,7 +17,7 @@ namespace FeBuddy.UnitTests.Infrastructure.Nasr;
 /// path the real <c>EnsureCycleAvailableAsync</c> uses, with only the URL swapped out.
 /// </summary>
 [Collection("AppLog")]
-public class NasrCycleDownloaderTests : IDisposable
+public sealed class NasrCycleDownloaderTests : IDisposable
 {
 	private readonly string _testRoot =
 		Path.Combine(Path.GetTempPath(), "FeBuddyTests_AiracDl_" + Guid.NewGuid().ToString("N"));

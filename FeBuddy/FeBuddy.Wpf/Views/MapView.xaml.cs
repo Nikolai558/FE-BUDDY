@@ -1,6 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
-using FeBuddy.Wpf.Map;
+using FeBuddy.Wpf.Map.Models;
 using FeBuddy.Wpf.ViewModels;
 
 namespace FeBuddy.Wpf.Views;

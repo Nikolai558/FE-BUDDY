@@ -11,7 +11,7 @@ namespace FeBuddy.UnitTests.Application.Airac.Departures;
 /// Covers the pure command-building half of <see cref="DepartureAliasWriter"/>. <c>Generate</c>
 /// writes to disk and is not exercised here.
 /// </summary>
-public class DepartureAliasWriterTests
+public sealed class DepartureAliasWriterTests
 {
 	private static DepartureAirportProcedure LocatedDotss()
 	{

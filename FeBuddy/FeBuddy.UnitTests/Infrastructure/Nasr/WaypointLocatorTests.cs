@@ -10,7 +10,7 @@ namespace FeBuddy.UnitTests.Infrastructure.Nasr;
 /// Covers <see cref="WaypointLocator.Find"/>: argument checks, a lookup
 /// restricted to one source, and data that is missing or has blank identifiers.
 /// </summary>
-public class WaypointLocatorTests
+public sealed class WaypointLocatorTests
 {
 	private static NasrCsvDataCollection Data()
 	{

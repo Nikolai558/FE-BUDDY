@@ -1,5 +1,7 @@
 using System.Text.Json;
 
+using FeBuddy.Wpf.Map.Models;
+
 namespace FeBuddy.Wpf.Map;
 
 /// <summary>

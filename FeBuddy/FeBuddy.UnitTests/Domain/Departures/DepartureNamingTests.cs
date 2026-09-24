@@ -2,7 +2,10 @@ using FeBuddy.Core.Domain.Departures;
 
 namespace FeBuddy.UnitTests.Domain.Departures;
 
-public class DepartureNamingTests
+/// <summary>
+/// Covers <see cref="DepartureNaming"/>: the procedure code id and its fallback to the name.
+/// </summary>
+public sealed class DepartureNamingTests
 {
 	[Theory]
 	[InlineData("DOTSS2.DOTSS", "TWO", "DOTSS", "DOTSS")]

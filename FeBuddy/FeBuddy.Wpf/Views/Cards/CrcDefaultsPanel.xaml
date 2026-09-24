@@ -21,9 +21,9 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:m="clr-namespace:FeBuddy.Wpf.ViewModels.Models"
-             xmlns:infra="clr-namespace:FeBuddy.Wpf.Infrastructure"
              xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
              xmlns:cards="clr-namespace:FeBuddy.Wpf.Views.Cards"
+             xmlns:bhv="clr-namespace:FeBuddy.Wpf.Behaviors"
              mc:Ignorable="d"
              x:Name="Self">
     <UserControl.Resources>
@@ -74,47 +74,47 @@
             <ctl:SectionHeader Style="{StaticResource SectionHeader.Group}" Label="{Binding ClassName}" />
         </DataTemplate>
         <DataTemplate x:Key="FiltersCell" DataType="{x:Type m:EramClassDefault}">
-            <ctl:FilterPicker Value="{Binding Filters, Mode=TwoWay}" infra:FieldState.Error="{Binding FiltersError}" />
+            <ctl:FilterPicker Value="{Binding Filters, Mode=TwoWay}" bhv:FieldState.Error="{Binding FiltersError}" />
         </DataTemplate>
         <DataTemplate x:Key="BcgCell" DataType="{x:Type m:EramClassDefault}">
             <ComboBox ItemsSource="{Binding BcgOptions}" SelectedItem="{Binding Bcg}"
-                      infra:FieldState.Error="{Binding BcgError}"
+                      bhv:FieldState.Error="{Binding BcgError}"
                       ToolTip="BCG group: an integer 1–40." />
         </DataTemplate>
         <DataTemplate x:Key="StyleCell" DataType="{x:Type m:EramClassDefault}">
             <ComboBox ItemsSource="{Binding StyleOptions}" SelectedItem="{Binding Style}"
-                      infra:FieldState.Error="{Binding StyleError}"
+                      bhv:FieldState.Error="{Binding StyleError}"
                       ToolTip="Style: see the CRC GeoJSON concepts for the allowed values per kind." />
         </DataTemplate>
         <DataTemplate x:Key="ThicknessCell" DataType="{x:Type m:EramClassDefault}">
             <ComboBox ItemsSource="{Binding ThicknessOptions}" SelectedItem="{Binding Thickness}"
-                      infra:FieldState.Error="{Binding ThicknessError}"
+                      bhv:FieldState.Error="{Binding ThicknessError}"
                       ToolTip="Thickness: an integer 1–3." />
         </DataTemplate>
         <DataTemplate x:Key="SizeCell" DataType="{x:Type m:EramClassDefault}">
             <ComboBox ItemsSource="{Binding SizeOptions}" SelectedItem="{Binding Size}"
-                      infra:FieldState.Error="{Binding SizeError}"
+                      bhv:FieldState.Error="{Binding SizeError}"
                       ToolTip="Size: an integer 1–4." />
         </DataTemplate>
         <DataTemplate x:Key="OpaqueCell" DataType="{x:Type m:EramClassDefault}">
             <ComboBox ItemsSource="{Binding YesNoOptions}" SelectedValuePath="Value" SelectedValue="{Binding Opaque}"
-                      infra:FieldState.Error="{Binding OpaqueError}"
+                      bhv:FieldState.Error="{Binding OpaqueError}"
                       ToolTip="Opaque: Yes or No." />
         </DataTemplate>
         <DataTemplate x:Key="UnderlineCell" DataType="{x:Type m:EramClassDefault}">
             <ComboBox ItemsSource="{Binding YesNoOptions}" SelectedValuePath="Value" SelectedValue="{Binding Underline}"
-                      infra:FieldState.Error="{Binding UnderlineError}"
+                      bhv:FieldState.Error="{Binding UnderlineError}"
                       ToolTip="Underline: Yes or No." />
         </DataTemplate>
         <DataTemplate x:Key="XOffsetCell" DataType="{x:Type m:EramClassDefault}">
             <TextBox Style="{StaticResource OffsetBox}"
                      Text="{Binding XOffset, UpdateSourceTrigger=PropertyChanged}"
-                     infra:FieldState.Error="{Binding XOffsetError}" />
+                     bhv:FieldState.Error="{Binding XOffsetError}" />
         </DataTemplate>
         <DataTemplate x:Key="YOffsetCell" DataType="{x:Type m:EramClassDefault}">
             <TextBox Style="{StaticResource OffsetBox}"
                      Text="{Binding YOffset, UpdateSourceTrigger=PropertyChanged}"
-                     infra:FieldState.Error="{Binding YOffsetError}" />
+                     bhv:FieldState.Error="{Binding YOffsetError}" />
         </DataTemplate>
     </UserControl.Resources>
 

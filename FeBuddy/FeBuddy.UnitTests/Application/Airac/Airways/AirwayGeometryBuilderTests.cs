@@ -8,7 +8,11 @@ using FeBuddy.UnitTests.Application.Airac.Airways.Fixtures;
 
 namespace FeBuddy.UnitTests.Application.Airac.Airways;
 
-public class AirwayGeometryBuilderTests
+/// <summary>
+/// Covers <see cref="AirwayGeometryBuilder"/>: lon/lat order, joining continuous segments,
+/// splitting at gaps, and recording unresolved waypoints for exclusion.
+/// </summary>
+public sealed class AirwayGeometryBuilderTests
 {
 	/// <summary>
 	/// GeoJSON coordinate order is [longitude, latitude]. NASR data (and this test fixture)
@@ -79,10 +83,10 @@ public class AirwayGeometryBuilderTests
 	}
 
 	/// <summary>
-	/// Post-3.2b, border crossings are normalized away before geometry building, so a
+	/// Border crossings are normalized away before geometry building, so a
 	/// remaining trailing unresolvable waypoint is a genuine data fault: it is recorded in
 	/// <see cref="AirwayGeometryBuildResult.UnresolvedWaypointIds"/> so <c>AirwayBuilder</c>
-	/// excludes the whole airway (remediation plan 3.2a).
+	/// excludes the whole airway.
 	/// </summary>
 	[Fact]
 	public void trailing_unresolved_waypoint_marks_the_airway_for_exclusion()

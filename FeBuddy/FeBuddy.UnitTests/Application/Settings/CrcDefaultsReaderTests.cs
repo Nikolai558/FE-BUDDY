@@ -8,7 +8,7 @@ namespace FeBuddy.UnitTests.Application.Settings;
 /// required and a missing one names its key, text offsets accept any integer, Y/N flags are
 /// strict, and styles are matched case-insensitively to their canonical spelling.
 /// </summary>
-public class CrcDefaultsReaderTests
+public sealed class CrcDefaultsReaderTests
 {
 	private const string LinePrefix = "Crc.High.Line";
 	private const string SymbolPrefix = "Crc.High.Symbol";

@@ -1,5 +1,6 @@
-using FeBuddy.Wpf.Infrastructure;
 using FeBuddy.Wpf.ViewModels.Models;
+using FeBuddy.Wpf.ViewModels.ServiceTabs.Models;
+using FeBuddy.Wpf.ViewModels.ServiceTabs;
 
 using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Infrastructure.Nasr.Models;

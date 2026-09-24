@@ -4,7 +4,10 @@ using NetTopologySuite.Geometries;
 
 namespace FeBuddy.UnitTests.Domain.Geo;
 
-public class RoiFilterTests
+/// <summary>
+/// Covers <see cref="RoiFilter"/>: validating ROI input, point containment and clipping lines to the ROI.
+/// </summary>
+public sealed class RoiFilterTests
 {
 	[Fact]
 	public void is_coordinate_valid_format_accepts_valid_coordinates()

@@ -1,4 +1,4 @@
-using FeBuddy.Wpf.Infrastructure;
+using FeBuddy.Wpf.ViewModels.ServiceTabs.Models;
 
 namespace FeBuddy.Wpf.ViewModels;
 

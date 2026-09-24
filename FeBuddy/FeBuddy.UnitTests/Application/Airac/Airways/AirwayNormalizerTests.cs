@@ -4,7 +4,11 @@ using FeBuddy.Core.Infrastructure.Nasr.Models;
 
 namespace FeBuddy.UnitTests.Application.Airac.Airways;
 
-public class AirwayNormalizerTests
+/// <summary>
+/// Covers <see cref="AirwayNormalizer"/>: collapsing reference-only points (border markers) into
+/// direct segments while keeping gap flags and the highest altitude.
+/// </summary>
+public sealed class AirwayNormalizerTests
 {
 	private static AwyCsvDataModel.AwySegAlt Seg(
 		int seq, string fromPoint, string? fromPtType, string? toPoint,
@@ -20,7 +24,7 @@ public class AirwayNormalizerTests
 		};
 
 	/// <summary>
-	/// The exact TIJ / U.S. MEXICAN BORDER-2 / TEYON example from the build plan: a
+	/// The real TIJ / U.S. MEXICAN BORDER-2 / TEYON case from NASR: a
 	/// reference-only middle point is collapsed out.
 	/// </summary>
 	[Fact]
@@ -81,10 +85,10 @@ public class AirwayNormalizerTests
 	}
 
 	/// <summary>
-	/// The J5 terminator-row case from the plan: NASR closes a border-terminating airway with
+	/// The J5 terminator-row case: NASR closes a border-terminating airway with
 	/// a row that has a blank TO_POINT. The segment left ending at the border marker
 	/// (CFDCT -&gt; U.S. CANADIAN BORDER-4) is dropped, so the airway ends at CFDCT with no
-	/// warning (remediation plan 3.2b).
+	/// warning.
 	/// </summary>
 	[Fact]
 	public void a_border_terminator_row_does_not_leave_a_segment_ending_at_the_border_marker()

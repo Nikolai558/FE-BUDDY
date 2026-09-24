@@ -1,7 +1,8 @@
 using System.Collections.ObjectModel;
 using System.Windows.Input;
 
-using FeBuddy.Wpf.Infrastructure;
+using FeBuddy.Wpf.Mvvm;
+using FeBuddy.Wpf.Shell;
 
 namespace FeBuddy.Wpf.ViewModels;
 

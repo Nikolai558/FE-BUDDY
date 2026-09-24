@@ -6,7 +6,7 @@ namespace FeBuddy.UnitTests.Infrastructure.Nasr;
 /// Covers the value parsers every NASR parser leans on: a required number that is blank or
 /// malformed fails loudly naming the value, while the nullable forms quietly return null.
 /// </summary>
-public class NasrCsvReaderTests
+public sealed class NasrCsvReaderTests
 {
 	[Theory]
 	[InlineData("")]

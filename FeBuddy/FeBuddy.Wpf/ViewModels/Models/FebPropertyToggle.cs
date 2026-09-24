@@ -1,6 +1,6 @@
 using System.Collections.ObjectModel;
 
-using FeBuddy.Wpf.Infrastructure;
+using FeBuddy.Wpf.Mvvm;
 
 using FeBuddy.Core.Application.Airac;
 

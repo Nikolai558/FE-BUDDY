@@ -3,8 +3,10 @@ using System.IO;
 using System.Windows.Input;
 using System.Windows.Media;
 
-using FeBuddy.Wpf.Infrastructure;
+using FeBuddy.Wpf.Map.Models;
 using FeBuddy.Wpf.Map;
+using FeBuddy.Wpf.Mvvm;
+using FeBuddy.Wpf.Shell;
 
 using FeBuddy.Core.Domain.Geo.Models;
 using FeBuddy.Core.Infrastructure.Logging;

@@ -3,7 +3,11 @@ using FeBuddy.Core.Domain.Airways.Models;
 
 namespace FeBuddy.UnitTests.Domain.Airways;
 
-public class AirwayClassifierTests
+/// <summary>
+/// Covers <see cref="AirwayClassifier"/>: the High / Low / Other altitude classification and the
+/// designation derived from <c>AWY_ID</c>.
+/// </summary>
+public sealed class AirwayClassifierTests
 {
 	private static AirwaySegment Seg(int? maxAuthAlt) => new("A", "B", IsGap: false, maxAuthAlt);
 

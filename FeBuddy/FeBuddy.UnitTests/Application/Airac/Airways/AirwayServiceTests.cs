@@ -131,7 +131,7 @@ public sealed class AirwayServiceTests : IDisposable
 
 		Assert.Equal(1, result.AirwayCount);
 
-		// The drawn line no longer starts on AAAAA itself but a buffer's distance along the leg.
+		// Buffered, the drawn line starts a buffer's distance along the leg, not on AAAAA itself.
 		string lines = Assert.Single(result.GeojsonFilesWritten, p => p.EndsWith("_Lines.geojson", StringComparison.Ordinal));
 		JsonElement start = Features(lines)[0].GetProperty("geometry").GetProperty("coordinates")[0][0];
 		Assert.NotEqual(-80.0, start[0].GetDouble());

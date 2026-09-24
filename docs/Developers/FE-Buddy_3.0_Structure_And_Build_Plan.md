@@ -109,7 +109,7 @@ Describes a four-project Clean Architecture layout (Domain / Application / Infra
 Only paths marked **NEW** are created by this build. Everything else already exists.
 
 ```text
-FE-Buddy-DEV/
+FE-BUDDY/
 └── FeBuddy/
     ├── FeBuddy.sln
     │

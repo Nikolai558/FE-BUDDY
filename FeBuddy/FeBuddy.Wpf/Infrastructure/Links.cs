@@ -10,12 +10,12 @@ public static class Links
     /// <summary>The FE-Buddy Discord server invite.</summary>
     public const string Discord = "https://discord.gg/febuddy";
 
-    /// <summary>The FE-Buddy manual.</summary>
-    public const string Manual = "https://github.com/Nikolai558/FE-Buddy-DEV/tree/main/docs/Users/Manual%20HTML";
+    /// <summary>The FE-Buddy manual. Pinned to v3-development: the default branch (development) is still v2.x until the 3.0 release.</summary>
+    public const string Manual = "https://github.com/Nikolai558/FE-BUDDY/tree/v3-development/docs/Users/Manual%20HTML";
 
-    /// <summary>The release / change log. FE-Buddy-DEV has no releases (private, dev-only) - this is FE-BUDDY's.</summary>
+    /// <summary>The release / change log.</summary>
     public const string ChangeLog = "https://github.com/Nikolai558/FE-BUDDY/releases";
 
     /// <summary>The issue and feature-request tracker.</summary>
-    public const string Issues = "https://github.com/Nikolai558/FE-Buddy-DEV/issues";
+    public const string Issues = "https://github.com/Nikolai558/FE-BUDDY/issues";
 }

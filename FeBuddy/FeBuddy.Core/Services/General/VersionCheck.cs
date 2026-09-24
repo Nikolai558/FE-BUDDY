@@ -18,8 +18,8 @@ namespace FeBuddy.Core.Services.General;
 /// failure yields <see cref="VersionCheckResult.CheckSucceeded"/> <see langword="false"/>.
 /// </remarks>
 /// <remarks>
-/// Always checks the real public <c>Nikolai558/FE-BUDDY</c> repo's releases - not this
-/// development repo, which has no releases and is private. The request is always tried
+/// Always checks the public <c>Nikolai558/FE-BUDDY</c> repo's releases (v2.x and 3.x releases
+/// share that one list). The request is always tried
 /// unauthenticated first (the normal path for a public repo); only if that fails, and only if
 /// <see cref="GitHubAuth.EnvironmentVariableName"/> is set, it retries once with that token
 /// attached (see <see cref="GitHubAuth"/> for why this is a fallback rather than always-sent).

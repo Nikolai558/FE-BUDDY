@@ -9,12 +9,13 @@ changes (see "Repo state").
 ## 1. The project
 
 FE-Buddy 3.0 is a from-scratch rewrite of a VATSIM ARTCC Facility Engineer tool
-(old repo: https://github.com/Nikolai558/FE-BUDDY). C# / .NET 10, WPF desktop app.
+(repo: https://github.com/Nikolai558/FE-BUDDY - 3.0 on `v3-development`, v2.x on `development`).
+C# / .NET 10, WPF desktop app.
 
 Goals of the rewrite: purpose-built with the end goals in mind, attractive for outside
 contributors, far more user control over output files and behaviour, and efficient.
 
-Solution layout (`FE-Buddy-DEV/FeBuddy/FeBuddy.sln`), all projects `net10.0-windows`:
+Solution layout (`FeBuddy/FeBuddy.sln`), all projects `net10.0-windows`:
 
 | Project | Role |
 |---|---|

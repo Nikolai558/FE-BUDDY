@@ -14,35 +14,33 @@ namespace FeBuddy.Core.Services.General;
 /// (remediation plan 6.1).
 /// </summary>
 /// <remarks>
-/// News.md lives in this repo (<c>FE-Buddy-DEV</c>), which is private - unlike
-/// <see cref="VersionCheck"/> (which checks the public FE-BUDDY repo's releases), this fetch is
-/// expected to need authentication. It still tries the plain unauthenticated raw URL first (so
-/// it starts working for free the moment this repo ever goes public), and only on failure - and
-/// only if <see cref="GitHubAuth.EnvironmentVariableName"/> is set - retries once via GitHub's
-/// Contents API with that token attached. A private repo's raw content isn't reliably reachable
-/// through raw.githubusercontent.com even with a token, so the authenticated retry uses the
-/// documented API endpoint instead (same reasoning as <c>UpdateInstaller</c>'s asset-download
-/// fallback in the FE-BUDDY repo).
+/// News.md lives in the public <c>Nikolai558/FE-BUDDY</c> repo on the <c>v3-development</c>
+/// branch (the repo's default branch, <c>development</c>, is still the v2.x code and has no
+/// News.md). The plain unauthenticated raw URL is the normal path; only on failure - and only
+/// if <see cref="GitHubAuth.EnvironmentVariableName"/> is set - it retries once via GitHub's
+/// Contents API with that token attached (the same fallback-only behavior as
+/// <see cref="VersionCheck"/>). The authenticated retry uses the documented API endpoint rather
+/// than raw.githubusercontent.com, which doesn't reliably honor a token.
 /// </remarks>
 public static class NewsService
 {
 	private const string LogSource = "News";
 
-	// Points at main, which is where News.md is expected to live once Kickstart merges (imminent
-	// as of this writing). If this ever 404s the way it briefly did mid-Kickstart, check whether
-	// the branch holding the current FeBuddy.Core/News.md path has actually landed on main yet.
+	// Pinned to v3-development rather than the default branch: while v2.x is still the default
+	// (development), a default-branch URL would 404. v3-development becomes the default at the
+	// 3.0 release, so these keep working unchanged after the switch.
 
 	/// <summary>The raw News markdown URL on GitHub (used when online, unauthenticated).</summary>
-	public const string RawUrl = "https://raw.githubusercontent.com/Nikolai558/FE-Buddy-DEV/main/FeBuddy/FeBuddy.Core/News.md";
+	public const string RawUrl = "https://raw.githubusercontent.com/Nikolai558/FE-BUDDY/v3-development/FeBuddy/FeBuddy.Core/News.md";
 
 	/// <summary>
-	/// The authenticated fallback: GitHub's Contents API, which honors a bearer token for a
-	/// private repo's file content when asked for the raw representation.
+	/// The authenticated fallback: GitHub's Contents API, which honors a bearer token and returns
+	/// the file content when asked for the raw representation.
 	/// </summary>
-	private const string ContentsApiUrl = "https://api.github.com/repos/Nikolai558/FE-Buddy-DEV/contents/FeBuddy/FeBuddy.Core/News.md?ref=main";
+	private const string ContentsApiUrl = "https://api.github.com/repos/Nikolai558/FE-BUDDY/contents/FeBuddy/FeBuddy.Core/News.md?ref=v3-development";
 
 	/// <summary>The human-facing News page the News button opens in a browser.</summary>
-	public const string PageUrl = "https://github.com/Nikolai558/FE-Buddy-DEV/blob/main/FeBuddy/FeBuddy.Core/News.md";
+	public const string PageUrl = "https://github.com/Nikolai558/FE-BUDDY/blob/v3-development/FeBuddy/FeBuddy.Core/News.md";
 
 	private static readonly Regex PostIdPattern = new(
 		@"PostId:\s*(\d{4}-\d{2}-\d{2})\.(\d+)",
@@ -202,7 +200,7 @@ public static class NewsService
 				string? token = GitHubAuth.GetOptionalToken();
 				if (token is not null)
 				{
-					AppLog.Info(LogSource, $"Unauthenticated News fetch failed ({failureReason}); News.md lives in the private FE-Buddy-DEV repo, retrying with {GitHubAuth.EnvironmentVariableName}.");
+					AppLog.Info(LogSource, $"Unauthenticated News fetch failed ({failureReason}); retrying with {GitHubAuth.EnvironmentVariableName}.");
 					(text, failureReason) = await TryFetchAsync(client, ContentsApiUrl, token, cancellationToken).ConfigureAwait(false);
 				}
 			}

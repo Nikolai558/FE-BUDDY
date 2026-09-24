@@ -9,7 +9,7 @@
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance vm:UpdateWindowViewModel}"
         Title="Update FE-Buddy"
-        Width="520" SizeToContent="Height"
+        Width="560" SizeToContent="Height"
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize"
         ShowInTaskbar="False"
@@ -46,12 +46,12 @@
             <Border Style="{StaticResource Divider}" Margin="0,16" />
 
             <ctl:SectionHeader Style="{StaticResource SectionHeader.Group}" Label="Release Notes" Margin="0,0,0,6" />
-            <ScrollViewer MaxHeight="220" VerticalScrollBarVisibility="Auto"
+            <ScrollViewer MaxHeight="320" VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled"
                           Background="{StaticResource Brush.Bg.Sunken}"
-                          Padding="12">
-                <TextBlock Text="{Binding ReleaseNotes}" TextWrapping="Wrap"
-                           FontFamily="{StaticResource Font.Mono}" FontSize="12"
-                           Foreground="{StaticResource Brush.Text.Secondary}" />
+                          Padding="14,12">
+                <ctl:MarkdownView Markdown="{Binding ReleaseNotes}"
+                                  IssueUrlBase="{x:Static infra:Links.IssueUrlBase}" />
             </ScrollViewer>
 
             <TextBlock Style="{StaticResource Text.Body}" Margin="0,10,0,0" TextWrapping="Wrap"

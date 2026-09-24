@@ -18,4 +18,7 @@ public static class Links
 
     /// <summary>The issue and feature-request tracker.</summary>
     public const string Issues = "https://github.com/Nikolai558/FE-BUDDY/issues";
+
+    /// <summary>The issue tracker with a trailing slash, for turning a <c>#123</c> reference into a link.</summary>
+    public const string IssueUrlBase = Issues + "/";
 }

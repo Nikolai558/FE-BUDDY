@@ -8,14 +8,16 @@
 
     Every screen is wired to FeBuddy.Core - there is no sample data anywhere in
     the app. The AIRAC Service screen runs through
-    FeBuddy.Core.Services.Airac.AiracService, which dispatches to its
-    sub-services (Airways today).
+    FeBuddy.Core.Application.Airac.AiracService, which dispatches to its
+    sub-services (Airways, Airports, Departures).
   -->
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net10.0-windows</TargetFramework>
     <RootNamespace>FeBuddy.Wpf</RootNamespace>
+    <!-- FeBuddy.Core.xml (its XML docs) is for developers' IntelliSense, not for the install folder. -->
+    <PublishReferencesDocumentationFiles>false</PublishReferencesDocumentationFiles>
     <!-- FE-BUDDY.exe, the same name as 2.x's: the installer's shortcuts, its "Launch FE-BUDDY"
          checkbox and every 2.x shortcut left behind by an in-place upgrade point at it. -->
     <AssemblyName>FE-BUDDY</AssemblyName>

@@ -1,5 +1,8 @@
 # FE-BUDDY 3.0 Project Structure
 
+> **Looking for how `FeBuddy.Core` is organized today?** See
+> [`FeBuddy.Core-Structure.md`](FeBuddy.Core-Structure.md).
+
 > **Aspirational — not the current build target.** This Clean Architecture layout is a
 > post-GUI migration target. The active build (Airways services and everything that leads
 > up to the GUI) uses the `SERVICES` layout described in

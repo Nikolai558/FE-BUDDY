@@ -157,9 +157,9 @@
         </DataTemplate>
     </Window.Resources>
 
-    <!-- Padding is pushed to 8 when maximised so content doesn't slide under the
-         screen edge (see ShellWindow.xaml.cs / OnStateChanged). -->
-    <Border x:Name="RootBorder" Padding="0">
+    <!-- No maximised padding: MaximizeToWorkArea keeps the maximised window inside the
+         monitor's work area, so nothing slides under a screen edge or the taskbar. -->
+    <Border>
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="46" />

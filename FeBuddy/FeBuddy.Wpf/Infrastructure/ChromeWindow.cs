@@ -42,6 +42,7 @@ public class ChromeWindow : Window
             GlassFrameThickness = new Thickness(0),
             UseAeroCaptionButtons = false,
         });
+        MaximizeToWorkArea.Attach(this);
     }
 
     /// <inheritdoc />

@@ -71,8 +71,9 @@
                         <Trigger Property="SizeToContent" Value="Height">
                             <Setter TargetName="BodyRow" Property="Height" Value="Auto" />
                         </Trigger>
+                        <!-- no maximised margin: ChromeWindow keeps the maximised window inside
+                             the work area (MaximizeToWorkArea), so nothing overshoots the screen -->
                         <Trigger Property="WindowState" Value="Maximized">
-                            <Setter TargetName="ChromeRoot" Property="Margin" Value="7" />
                             <Setter TargetName="PART_MaxRestore" Property="Content" Value="&#xE923;" />
                         </Trigger>
                         <Trigger Property="ResizeMode" Value="NoResize">

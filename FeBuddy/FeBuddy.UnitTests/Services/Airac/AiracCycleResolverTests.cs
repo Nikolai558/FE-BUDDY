@@ -63,4 +63,24 @@ public class AiracCycleResolverTests
 		Assert.Throws<InvalidOperationException>(() =>
 			AiracCycleResolver.GetCycle(AiracCyclePosition.Current, tooEarly));
 	}
+
+	[Fact]
+	public void a_next_cycle_past_the_end_of_the_table_throws()
+	{
+		DateOnly afterTheLastCycle = new(2120, 1, 1);
+
+		Assert.Equal("1913", AiracCycleResolver.GetCycle(AiracCyclePosition.Current, afterTheLastCycle).AiracCycleId);
+		InvalidOperationException ex = Assert.Throws<InvalidOperationException>(() =>
+			AiracCycleResolver.GetCycle(AiracCyclePosition.Next, afterTheLastCycle));
+		Assert.Contains("needs more entries", ex.Message, StringComparison.Ordinal);
+	}
+
+	[Fact]
+	public void without_a_date_the_current_utc_date_is_used()
+	{
+		AiracCycleInfo current = AiracCycleResolver.GetCycle(AiracCyclePosition.Current);
+
+		Assert.True(current.EffectiveDateUtc <= DateOnly.FromDateTime(DateTime.UtcNow));
+		Assert.True(AiracCycleResolver.GetCycle(AiracCyclePosition.Next).EffectiveDateUtc > DateOnly.FromDateTime(DateTime.UtcNow));
+	}
 }

@@ -3,13 +3,14 @@ using FeBuddy.Core.Models.Services.Airac;
 using FeBuddy.Core.Services.Airac;
 
 using FeBuddy.UnitTests.Services.Airac.Airways.Fixtures;
+using FeBuddy.UnitTests.Services.Airac.Departures.Fixtures;
 
 namespace FeBuddy.UnitTests.Services.Airac;
 
 /// <summary>
-/// Exercises the <see cref="AiracService"/> orchestrator: it dispatches the Airways
-/// sub-service when a block is present and aggregates its result, and it is a safe no-op
-/// (with a warning) when nothing is selected.
+/// Exercises the <see cref="AiracService"/> orchestrator: it dispatches each sub-service
+/// (Airways, Airports, Departures) whose block is present and aggregates its result, and it is
+/// a safe no-op (with a warning) when nothing is selected.
 /// </summary>
 public sealed class AiracServiceTests
 {
@@ -64,6 +65,51 @@ public sealed class AiracServiceTests
 		Assert.Equal(1, result.Airways!.AirwayCount);
 		Assert.Empty(result.Airways.GeojsonFilesWritten);
 		Assert.Empty(result.ExcludedAirwayIds);
+	}
+
+	/// <summary>With Airports and Departures blocks, both pipelines run and report progress; cancellation stops the run.</summary>
+	[Fact]
+	public async Task RunAsync_WithAirportsAndDeparturesBlocks_RunsBothAndReportsProgress()
+	{
+		string output = Path.Combine(Path.GetTempPath(), "FeBuddyTests_AiracService_" + Guid.NewGuid().ToString("N"));
+
+		try
+		{
+			NasrCsvDataCollection data = DepartureTestData.Dotss();
+			AiracServiceSettings settings = new()
+			{
+				SelectedCycle = Cycle,
+				OutputDirectory = output,
+				Airports = new Dictionary<string, string> { { "OutputDirectory", output }, { "GenerateGeojson", "N" } },
+				Departures = new Dictionary<string, string> { { "OutputDirectory", output }, { "GenerateGeojson", "N" } },
+			};
+
+			List<AiracServiceProgress> reports = new();
+			AiracServiceResult result = await AiracService.RunAsync(settings, data, new SynchronousProgress(reports.Add));
+
+			Assert.Null(result.Airways);
+			Assert.Equal(1, result.Airports!.AirportCount);
+			Assert.Equal(1, result.Departures!.AirportProcedureCount);
+			Assert.Equal(
+				new[] { "Airports", "Airports", "Departures", "Departures" },
+				reports.Select(r => r.SubService));
+			Assert.Equal(100, reports[^1].PercentComplete);
+
+			await Assert.ThrowsAnyAsync<OperationCanceledException>(
+				() => AiracService.RunAsync(settings, data, cancellationToken: new CancellationToken(canceled: true)));
+		}
+		finally
+		{
+			if (Directory.Exists(output))
+			{
+				Directory.Delete(output, recursive: true);
+			}
+		}
+	}
+
+	private sealed class SynchronousProgress(Action<AiracServiceProgress> report) : IProgress<AiracServiceProgress>
+	{
+		public void Report(AiracServiceProgress value) => report(value);
 	}
 
 	/// <summary>A null settings or data argument is rejected up front.</summary>

@@ -145,4 +145,117 @@ public sealed class UserConfigFileTests : IDisposable
 		Assert.False(UserConfigFile.CanUndo(AirwaysNode));
 		Assert.False(UserConfigFile.Undo(AirwaysNode));
 	}
+
+	/// <summary>A config file that is valid JSON but not an object yields defaults and a warning.</summary>
+	[Fact]
+	public void ReadAll_NonObjectJson_UsesDefaultsAndWarns()
+	{
+		Directory.CreateDirectory(_directory);
+		File.WriteAllText(UserConfigFile.ConfigFilePath, "[1, 2]");
+
+		UserConfigFile.ReadAll();
+
+		Assert.Empty(UserConfigFile.SnapshotValues());
+		Assert.Contains(AppLog.Entries, e => e.Level == LogLevel.Warning && e.Message.Contains("is not a JSON object", StringComparison.Ordinal));
+	}
+
+	/// <summary>A corrupt config file yields defaults and a warning rather than an exception.</summary>
+	[Fact]
+	public void ReadAll_CorruptJson_UsesDefaultsAndWarns()
+	{
+		UserConfigFile.TrySetValue("General.UpdateChannel", "Stable");
+		Directory.CreateDirectory(_directory);
+		File.WriteAllText(UserConfigFile.ConfigFilePath, "{ not json");
+
+		UserConfigFile.ReadAll();
+
+		Assert.Null(UserConfigFile.GetValue("General.UpdateChannel"));
+		Assert.Contains(AppLog.Entries, e => e.Level == LogLevel.Warning && e.Message.Contains("Could not read config file", StringComparison.Ordinal));
+	}
+
+	/// <summary>Nulls read back as empty strings and arrays as their JSON text.</summary>
+	[Fact]
+	public void ReadAll_FlattensNullsAndArrays()
+	{
+		Directory.CreateDirectory(_directory);
+		File.WriteAllText(UserConfigFile.ConfigFilePath, """{ "General": { "Cleared": null, "List": [1, 2], "Count": 5 } }""");
+
+		UserConfigFile.ReadAll();
+
+		Assert.Equal(string.Empty, UserConfigFile.GetValue("General.Cleared"));
+		Assert.Equal("[1,2]", UserConfigFile.GetValue("General.List"));
+		Assert.Equal("5", UserConfigFile.GetValue("General.Count"));
+	}
+
+	/// <summary>Blank or malformed paths are refused without touching the file.</summary>
+	[Theory]
+	[InlineData("")]
+	[InlineData("   ")]
+	[InlineData(".General")]
+	[InlineData("General.")]
+	[InlineData("General..UpdateChannel")]
+	public void MalformedPaths_AreRefused(string path)
+	{
+		Assert.False(UserConfigFile.TrySetValue(path, "x"));
+
+		if (string.IsNullOrWhiteSpace(path))
+		{
+			Assert.Null(UserConfigFile.GetValue(path));
+			Assert.False(UserConfigFile.CanUndo(path));
+			Assert.False(UserConfigFile.Undo(path));
+			Assert.Throws<ArgumentException>(() => UserConfigFile.Save(path));
+		}
+	}
+
+	/// <summary>A null value is stored as an empty string.</summary>
+	[Fact]
+	public void TrySetValue_Null_StoresEmpty()
+	{
+		Assert.True(UserConfigFile.TrySetValue("General.UpdateChannel", null!));
+
+		Assert.Equal(string.Empty, UserConfigFile.GetValue("General.UpdateChannel"));
+	}
+
+	/// <summary>Saving a single leaf writes just that value, even over a corrupt file.</summary>
+	[Fact]
+	public void Save_ALeafOverACorruptFile_WritesTheLeaf()
+	{
+		Directory.CreateDirectory(_directory);
+		File.WriteAllText(UserConfigFile.ConfigFilePath, "{ not json");
+		UserConfigFile.TrySetValue("General.UpdateChannel", "Beta");
+
+		UserConfigFile.Save("General.UpdateChannel");
+
+		JsonNode root = JsonNode.Parse(File.ReadAllText(UserConfigFile.ConfigFilePath))!;
+		Assert.Equal("Beta", root["General"]!["UpdateChannel"]!.GetValue<string>());
+	}
+
+	/// <summary>Saving a node with nothing in memory under it removes it from the file.</summary>
+	[Fact]
+	public void Save_AnEmptyNode_RemovesItFromTheFile()
+	{
+		UserConfigFile.TrySetValue(AirwaysNode + ".OutputBy", "HighLow");
+		UserConfigFile.Save(AirwaysNode);
+		UserConfigFile.ConfigureForTesting(_directory); // clear memory, keep the file
+
+		UserConfigFile.Save(AirwaysNode);
+
+		JsonNode root = JsonNode.Parse(File.ReadAllText(UserConfigFile.ConfigFilePath))!;
+		Assert.Null(root["Services"]!["AiracService"]!["Geojson"]!["Airways"]);
+		Assert.True(UserConfigFile.CanUndo(AirwaysNode));
+	}
+
+	/// <summary>A snapshot that recorded "nothing here" undoes to removing the node.</summary>
+	[Fact]
+	public void Undo_ANullSnapshot_RemovesTheNode()
+	{
+		UserConfigFile.TrySetValue("General.UpdateChannel", "Beta");
+		UserConfigFile.Save(GeneralNode);
+		File.WriteAllText(UserConfigFile.PreviousFilePath, """{ "General": null }""");
+
+		Assert.True(UserConfigFile.Undo(GeneralNode));
+
+		Assert.Null(UserConfigFile.GetValue("General.UpdateChannel"));
+		Assert.False(UserConfigFile.CanUndo(GeneralNode));
+	}
 }

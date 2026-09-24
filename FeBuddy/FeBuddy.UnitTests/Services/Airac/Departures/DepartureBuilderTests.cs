@@ -203,4 +203,102 @@ public class DepartureBuilderTests
 		Assert.False(airportProcedure.HasDrawableRoute);
 		Assert.Equal(new[] { "ALPHA" }, airportProcedure.Points.Select(p => p.Id));
 	}
+
+	[Fact]
+	public void a_dp_base_row_with_no_name_is_skipped_with_a_warning()
+	{
+		NasrCsvDataCollection data = DepartureTestData.Build(
+			bases: new[]
+			{
+				DepartureTestData.Base("  ", TestArtcc, "NONAME1.NONAME", servedArpt: "AAA"),
+				DepartureTestData.Base(TestName, TestArtcc, TestCode, servedArpt: "AAA"),
+			});
+
+		DepartureProcedureReadResult read = DepartureBuilder.ReadProcedures(data);
+
+		Assert.Equal(TestName, Assert.Single(read.Procedures).DpName);
+		ServiceMessage warning = Assert.Single(read.Messages);
+		Assert.Equal(LogLevel.Warning, warning.Level);
+		Assert.Contains($"ARTCC '{TestArtcc}' has no DP_NAME", warning.Text);
+	}
+
+	[Fact]
+	public void procedures_are_read_in_artcc_then_name_order()
+	{
+		NasrCsvDataCollection data = DepartureTestData.Build(
+			bases: new[]
+			{
+				DepartureTestData.Base("ZULU", "ZAB", "ZULU1.ZULU"),
+				DepartureTestData.Base("ALPHA", "ZAB", "ALPHA1.ALPHA"),
+				DepartureTestData.Base("MIKE", "ZAA", "MIKE1.MIKE"),
+			});
+
+		DepartureProcedureReadResult read = DepartureBuilder.ReadProcedures(data);
+
+		Assert.Equal(new[] { "MIKE", "ALPHA", "ZULU" }, read.Procedures.Select(p => p.DpName));
+	}
+
+	[Fact]
+	public void an_airport_assigned_only_unknown_bodies_and_no_transitions_gets_an_info_message()
+	{
+		NasrCsvDataCollection data = DepartureTestData.Build(
+			bases: new[] { DepartureTestData.Base(TestName, TestArtcc, TestCode) },
+			apts: new[]
+			{
+				DepartureTestData.Apt(TestName, TestArtcc, TestCode, "B1", "AAA"),
+				DepartureTestData.Apt(TestName, TestArtcc, TestCode, "GHOST", "BBB"),
+			},
+			routes: DepartureTestData.Body(TestName, TestArtcc, TestCode, "B1", new[] { "ALPHA", "CHRLI" }),
+			fixes: DepartureTestData.SyntheticFixes("ALPHA", "CHRLI"));
+
+		DepartureLocateResult result = ReadAndLocate(data);
+
+		Assert.Equal("AAA", Assert.Single(result.AirportProcedures).AirportId);
+		ServiceMessage message = Assert.Single(result.Messages);
+		Assert.Equal(LogLevel.Info, message.Level);
+		Assert.Contains("at BBB: DP_APT assigns it no body that DP_RTE lists", message.Text);
+	}
+
+	[Fact]
+	public void a_second_procedure_with_the_same_identifier_at_an_airport_is_skipped()
+	{
+		// The same procedure published under two ARTCCs: two procedures, one identifier.
+		const string otherArtcc = "ZYY";
+
+		List<DpCsvDataModel.DpRte> routes = new();
+		routes.AddRange(DepartureTestData.Body(TestName, TestArtcc, TestCode, "B1", new[] { "ALPHA", "CHRLI" }));
+		routes.AddRange(DepartureTestData.Body(TestName, otherArtcc, TestCode, "B1", new[] { "ALPHA", "CHRLI" }));
+
+		NasrCsvDataCollection data = DepartureTestData.Build(
+			bases: new[]
+			{
+				DepartureTestData.Base(TestName, TestArtcc, TestCode, servedArpt: "AAA"),
+				DepartureTestData.Base(TestName, otherArtcc, TestCode, servedArpt: "AAA"),
+			},
+			routes: routes,
+			fixes: DepartureTestData.SyntheticFixes("ALPHA", "CHRLI"));
+
+		DepartureLocateResult result = ReadAndLocate(data);
+
+		Assert.Single(result.AirportProcedures);
+		Assert.Equal(1, result.SkippedCount);
+		Assert.Contains(result.Messages, m => m.Level == LogLevel.Warning && m.Text.Contains("already uses the identifier 'TESTY'"));
+	}
+
+	[Fact]
+	public void a_route_whose_rows_name_no_points_is_dropped()
+	{
+		List<DpCsvDataModel.DpRte> routes = new();
+		routes.AddRange(DepartureTestData.Body(TestName, TestArtcc, TestCode, "B1", new[] { "ALPHA", "CHRLI" }));
+		routes.AddRange(DepartureTestData.Transition(TestName, TestArtcc, TestCode, "EMPTY TRANSITION", "TESTY1.EMPTY", new[] { " ", "" }));
+
+		NasrCsvDataCollection data = DepartureTestData.Build(
+			bases: new[] { DepartureTestData.Base(TestName, TestArtcc, TestCode, servedArpt: "AAA") },
+			routes: routes);
+
+		DepartureProcedure procedure = Assert.Single(DepartureBuilder.ReadProcedures(data).Procedures);
+
+		Assert.Single(procedure.Bodies);
+		Assert.Empty(procedure.Transitions);
+	}
 }

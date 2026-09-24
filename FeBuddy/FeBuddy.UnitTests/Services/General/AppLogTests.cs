@@ -135,4 +135,31 @@ public sealed class AppLogTests : IDisposable
 		Assert.False(File.Exists(oldFile));
 		Assert.True(File.Exists(recentFile));
 	}
+
+	/// <summary><see cref="AppLog.Error"/> records at <see cref="LogLevel.Error"/>.</summary>
+	[Fact]
+	public void Error_RecordsAnErrorEntry()
+	{
+		AppLog.Error("Test", "boom");
+
+		LogEntry entry = Assert.Single(AppLog.Entries, e => e.Message == "boom");
+		Assert.Equal(LogLevel.Error, entry.Level);
+	}
+
+	/// <summary>Files that are not FE-Buddy dated logs are never pruned.</summary>
+	[Fact]
+	public void PruneOldLogs_LeavesFilesItDoesNotRecognize()
+	{
+		Directory.CreateDirectory(_logDirectory);
+
+		string notes = Path.Combine(_logDirectory, "notes.log");
+		string badDate = Path.Combine(_logDirectory, "FE-Buddy_yesterday.log");
+		File.WriteAllText(notes, "keep");
+		File.WriteAllText(badDate, "keep");
+
+		AppLog.PruneOldLogs(retentionDays: 30);
+
+		Assert.True(File.Exists(notes));
+		Assert.True(File.Exists(badDate));
+	}
 }

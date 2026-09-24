@@ -29,4 +29,9 @@
     <ProjectReference Include="..\FeBuddy.Core\FeBuddy.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- A trimmed real NASR cycle (header + first 3 records of every CSV FE-Buddy reads). -->
+    <None Include="Fixtures\Nasr\*.csv" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

@@ -109,7 +109,14 @@ public sealed class AiracCycleDataCache
 	}
 
 	/// <summary>The process-wide cache the GUI binds to.</summary>
-	public static AiracCycleDataCache Instance { get; } = new();
+	public static AiracCycleDataCache Instance { get; private set; } = new();
+
+	/// <summary>
+	/// Replaces <see cref="Instance"/> with a cache built from injected steps, or restores a
+	/// real one when <paramref name="cache"/> is <see langword="null"/>. Unit tests only.
+	/// </summary>
+	/// <param name="cache">The cache to use.</param>
+	internal static void ConfigureForTesting(AiracCycleDataCache? cache) => Instance = cache ?? new();
 
 	/// <summary>Raised (with the entry that changed) on every cycle state transition. The GUI marshals to its dispatcher.</summary>
 	public event EventHandler<AiracCycleDataCacheEntry>? StateChanged;

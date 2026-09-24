@@ -67,4 +67,21 @@ public sealed class AntimeridianHandlerTests
 
 		Assert.Same(input, Assert.Single(result));
 	}
+
+	[Fact]
+	public void an_empty_linestring_is_returned_unchanged()
+	{
+		LineString empty = Factory.CreateLineString(Array.Empty<Coordinate>());
+
+		Assert.Same(empty, Assert.Single(AntimeridianHandler.Split(empty, Factory)));
+	}
+
+	[Fact]
+	public void a_crossing_whose_far_side_is_a_single_repeated_point_drops_that_side()
+	{
+		// Crosses +/-180, then every coordinate on the west side is the same point.
+		IReadOnlyList<LineString> result = AntimeridianHandler.Split(Line((179.0, 10.0), (-179.0, 10.0), (-179.0, 10.0)), Factory);
+
+		Assert.All(result, line => Assert.True(HasTwoDistinctCoordinates(line)));
+	}
 }

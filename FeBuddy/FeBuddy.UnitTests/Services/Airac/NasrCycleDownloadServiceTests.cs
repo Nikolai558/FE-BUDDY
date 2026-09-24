@@ -350,4 +350,126 @@ public class NasrCycleDownloadServiceTests : IDisposable
 
 		Assert.Empty(deleted);
 	}
+
+	private static readonly string[] RequiredFiles = { "AWY_BASE.csv", "AWY_SEG_ALT.csv", "FIX_BASE.csv", "NAV_BASE.csv", "APT_BASE.csv" };
+
+	private static byte[] BuildZip(params (string Path, string Content)[] entries)
+	{
+		using MemoryStream memoryStream = new();
+
+		using (ZipArchive archive = new(memoryStream, ZipArchiveMode.Create, leaveOpen: true))
+		{
+			foreach ((string path, string content) in entries)
+			{
+				using StreamWriter writer = new(archive.CreateEntry(path).Open());
+				writer.Write(content);
+			}
+		}
+
+		return memoryStream.ToArray();
+	}
+
+	[Fact]
+	public async Task a_complete_cached_cycle_is_available_locally_and_returned_without_a_download()
+	{
+		AiracCycleInfo cached = new("9981", "01_Jan_2099", new DateOnly(2099, 1, 1));
+		AiracCycleInfo missing = new("9982", "29_Jan_2099", new DateOnly(2099, 1, 29));
+		string folder = Path.Combine(_cacheRoot, cached.AiracCycleId);
+		Directory.CreateDirectory(folder);
+
+		foreach (string fileName in RequiredFiles)
+		{
+			File.WriteAllText(Path.Combine(folder, fileName), "EFF_DATE\n");
+		}
+
+		Assert.True(NasrCycleDownloadService.IsCycleAvailableLocally(cached, _cacheRoot));
+		Assert.False(NasrCycleDownloadService.IsCycleAvailableLocally(missing, _cacheRoot));
+
+		// The public entry point builds the FAA URL, but a complete cache means it never uses it.
+		SyncProgress<AiracDownloadProgress> progress = new();
+		string result = await NasrCycleDownloadService.EnsureCycleAvailableAsync(cached, _cacheRoot, progress);
+
+		Assert.Equal(folder, result);
+		Assert.Equal(AiracDownloadPhase.AlreadyAvailable, Assert.Single(progress.Reports).Phase);
+	}
+
+	[Fact]
+	public void the_default_cache_root_is_under_app_data()
+	{
+		Assert.Equal(
+			Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "FE-Buddy", "AiracCycles"),
+			NasrCycleDownloadService.GetDefaultCacheRoot());
+	}
+
+	[Fact]
+	public async Task a_partial_folder_left_by_an_earlier_attempt_is_replaced()
+	{
+		AiracCycleInfo cycle = new("9983", "01_Jan_2099", new DateOnly(2099, 1, 1));
+		string folder = Path.Combine(_cacheRoot, cycle.AiracCycleId);
+		Directory.CreateDirectory(folder);
+		File.WriteAllText(Path.Combine(folder, "APT_BASE.csv"), "half written");
+		File.WriteAllText(Path.Combine(folder, "leftover.csv"), "stale");
+
+		var (listener, url, _, _) = StartZipServer(BuildSyntheticCycleZip());
+
+		try
+		{
+			await NasrCycleDownloadService.EnsureCycleAvailableFromUrlAsync(cycle, url, _cacheRoot, null, CancellationToken.None);
+
+			Assert.False(File.Exists(Path.Combine(folder, "leftover.csv")));
+			Assert.Equal("EFF_DATE\n2026-10-01\n", File.ReadAllText(Path.Combine(folder, "APT_BASE.csv")));
+		}
+		finally
+		{
+			listener.Stop();
+			listener.Close();
+		}
+	}
+
+	[Fact]
+	public async Task an_archive_missing_required_files_is_reported_as_corrupt()
+	{
+		AiracCycleInfo cycle = new("9984", "01_Jan_2099", new DateOnly(2099, 1, 1));
+		var (listener, url, _, _) = StartZipServer(BuildZip(("APT_BASE.csv", "EFF_DATE\n")));
+
+		try
+		{
+			InvalidOperationException ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+				NasrCycleDownloadService.EnsureCycleAvailableFromUrlAsync(cycle, url, _cacheRoot, null, CancellationToken.None));
+
+			Assert.Contains("expected NASR CSV files are missing", ex.Message, StringComparison.Ordinal);
+		}
+		finally
+		{
+			listener.Stop();
+			listener.Close();
+		}
+	}
+
+	[Fact]
+	public async Task unsafe_and_duplicate_archive_entries_are_skipped()
+	{
+		AiracCycleInfo cycle = new("9985", "01_Jan_2099", new DateOnly(2099, 1, 1));
+		byte[] zip = BuildZip(RequiredFiles.Select(f => (f, "first"))
+			.Append(("../escape.csv", "outside"))
+			.Append(("CSV_Data/APT_BASE.csv", "second"))
+			.ToArray());
+		var (listener, url, _, _) = StartZipServer(zip);
+
+		try
+		{
+			string folder = await NasrCycleDownloadService.EnsureCycleAvailableFromUrlAsync(cycle, url, _cacheRoot, null, CancellationToken.None);
+
+			Assert.Equal("first", File.ReadAllText(Path.Combine(folder, "APT_BASE.csv")));
+			Assert.False(File.Exists(Path.Combine(folder, "escape.csv")));
+			Assert.False(File.Exists(Path.Combine(_cacheRoot, "escape.csv")));
+			Assert.Contains(AppLog.Entries, e => e.Message.Contains("path contains '..'", StringComparison.Ordinal));
+			Assert.Contains(AppLog.Entries, e => e.Message.Contains("more than one 'APT_BASE.csv'", StringComparison.Ordinal));
+		}
+		finally
+		{
+			listener.Stop();
+			listener.Close();
+		}
+	}
 }

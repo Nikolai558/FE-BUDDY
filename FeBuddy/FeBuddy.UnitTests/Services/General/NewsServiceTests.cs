@@ -188,6 +188,44 @@ public sealed class NewsServiceTests : IDisposable
         Assert.True(result.ParseSucceeded);
     }
 
+    /// <summary>An empty document has no posts.</summary>
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void Parse_EmptyDocument_HasNoPosts(string markdown)
+    {
+        Assert.Empty(NewsService.Parse(markdown));
+    }
+
+    /// <summary>A document with no valid posts is reported as a failed parse and marks nothing unread.</summary>
+    [Fact]
+    public async Task CheckAsync_DocumentWithNoPosts_IsAFailedParse()
+    {
+        using HttpClient client = new(new StubHttpHandler(_ => new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent("# FE-Buddy News\n\n---\n\n## A heading with no PostId\n\nText."),
+        }));
+
+        NewsCheckResult result = await NewsService.CheckAsync(null, hasInternetConnection: true, client);
+
+        Assert.True(result.FromNetwork);
+        Assert.False(result.ParseSucceeded);
+        Assert.Empty(result.Posts);
+        Assert.Equal(0, result.NewPostCount);
+    }
+
+    /// <summary>A network error while fetching falls back to the bundled copy.</summary>
+    [Fact]
+    public async Task CheckAsync_NetworkError_FallsBackToBundledCopy()
+    {
+        using HttpClient client = new(new StubHttpHandler(_ => throw new HttpRequestException("no network")));
+
+        NewsCheckResult result = await NewsService.CheckAsync(null, hasInternetConnection: true, client);
+
+        Assert.False(result.FromNetwork);
+        Assert.True(result.ParseSucceeded);
+    }
+
     [Fact]
     public void GetBundledMarkdown_IsEmbeddedAndNonEmpty()
     {

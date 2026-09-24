@@ -47,6 +47,13 @@ public static class AppEnvironment
 	public static event EventHandler? Changed;
 
 	/// <summary>
+	/// The <see cref="HttpClient"/> the launch and re-check network calls use, or
+	/// <see langword="null"/> (always, outside tests) for each check to create its own. Unit
+	/// tests only.
+	/// </summary>
+	internal static HttpClient? HttpClientForTesting { get; set; }
+
+	/// <summary>
 	/// Re-runs the online-state checks (UTC time / internet, then the version check) and
 	/// publishes the results, raising <see cref="Changed"/>. For the shell's "re-check" action
 	/// and Settings' "check for updates now". Never throws.
@@ -56,7 +63,7 @@ public static class AppEnvironment
 	{
 		try
 		{
-			UtcTimeCheckResult time = await UtcTimeCheck.RunAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
+			UtcTimeCheckResult time = await UtcTimeCheck.RunAsync(HttpClientForTesting, cancellationToken).ConfigureAwait(false);
 			HasInternetConnection = time.HasInternetConnection;
 			LaunchUtcNow = time.UtcNow;
 			LaunchUtcSource = time.Source;
@@ -70,7 +77,7 @@ public static class AppEnvironment
 				?? "dev";
 
 			Version = await VersionCheck
-				.RunAsync(currentVersion, channel, time.HasInternetConnection, cancellationToken: cancellationToken)
+				.RunAsync(currentVersion, channel, time.HasInternetConnection, HttpClientForTesting, cancellationToken)
 				.ConfigureAwait(false);
 
 			RaiseChanged();
@@ -104,5 +111,6 @@ public static class AppEnvironment
 		News = null;
 		LaunchCompleted = false;
 		Changed = null;
+		HttpClientForTesting = null;
 	}
 }

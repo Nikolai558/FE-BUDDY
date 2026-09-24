@@ -103,4 +103,21 @@ public class RoiFilterTests
 		LineString clipped = Assert.IsType<LineString>(result);
 		Assert.All(clipped.Coordinates, c => Assert.True(c.X <= -78.0));
 	}
+
+	[Fact]
+	public void ClipLineGeometry_keeps_the_line_and_drops_a_point_where_the_line_only_touches_a_corner()
+	{
+		RegionOfInterest roi = new(0.0, 0.0, 10.0, 10.0);
+
+		// Touches the ROI's north-west corner, leaves, then crosses into it: the intersection is
+		// a point plus a line.
+		LineString line = AirwayGeometryBuilder.GeometryFactory.CreateLineString(new[]
+		{
+			new Coordinate(-1, 11), new Coordinate(0, 10), new Coordinate(-1, 9), new Coordinate(5, 5),
+		});
+
+		Geometry? result = RoiFilter.ClipLineGeometry(line, roi, AirwayGeometryBuilder.GeometryFactory);
+
+		Assert.IsType<LineString>(result);
+	}
 }

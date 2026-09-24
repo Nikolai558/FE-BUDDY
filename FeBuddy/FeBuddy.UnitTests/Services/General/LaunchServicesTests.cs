@@ -76,6 +76,36 @@ public sealed class LaunchServicesTests : IDisposable
 		Assert.Empty(Directory.EnumerateFileSystemEntries(_tempRoot));
 	}
 
+	/// <summary>An entry that is still in use is counted and logged, and the rest are still cleared.</summary>
+	[Fact]
+	public void TempWorkspace_ClearOnLaunch_CountsWhatItCannotDelete()
+	{
+		Directory.CreateDirectory(Path.Combine(_tempRoot, "busy"));
+		Directory.CreateDirectory(Path.Combine(_tempRoot, "idle"));
+		File.WriteAllText(Path.Combine(_tempRoot, "idle.txt"), "x");
+
+		// On Windows an open handle without FileShare.Delete blocks deleting the file, and so its folder.
+		using FileStream busyFile = new(Path.Combine(_tempRoot, "busy.txt"), FileMode.Create, FileAccess.Write, FileShare.None);
+		using FileStream busyNested = new(Path.Combine(_tempRoot, "busy", "nested.txt"), FileMode.Create, FileAccess.Write, FileShare.None);
+
+		int failures = TempWorkspace.ClearOnLaunch();
+
+		Assert.Equal(2, failures);
+		Assert.False(Directory.Exists(Path.Combine(_tempRoot, "idle")));
+		Assert.False(File.Exists(Path.Combine(_tempRoot, "idle.txt")));
+		Assert.Contains(AppLog.Entries, e => e.Message.StartsWith("Could not delete temp folder", StringComparison.Ordinal));
+		Assert.Contains(AppLog.Entries, e => e.Message.StartsWith("Could not delete temp file", StringComparison.Ordinal));
+	}
+
+	/// <summary>Without an override the workspace lives in the system temp folder.</summary>
+	[Fact]
+	public void TempWorkspace_DefaultRoot_IsUnderTheSystemTempFolder()
+	{
+		TempWorkspace.ConfigureForTesting(null);
+
+		Assert.Equal(Path.Combine(Path.GetTempPath(), "FE-Buddy"), TempWorkspace.RootDirectory);
+	}
+
 	/// <summary>A good timeapi.io response yields <see cref="UtcTimeSource.TimeApi"/> and an online result.</summary>
 	[Fact]
 	public async Task UtcTimeCheck_ParsesTimeApiResponse()
@@ -240,6 +270,104 @@ public sealed class LaunchServicesTests : IDisposable
 
 		Assert.False(result.CheckSucceeded);
 		Assert.Equal(1, callCount);
+	}
+
+	/// <summary>When timeapi.io is down, the Date header of a HEAD probe supplies the time.</summary>
+	[Theory]
+	[InlineData(HttpStatusCode.ServiceUnavailable, "")]
+	[InlineData(HttpStatusCode.OK, """{"somethingElse":1}""")]
+	public async Task UtcTimeCheck_TimeApiUnusable_FallsBackToTheDateHeader(HttpStatusCode timeApiStatus, string timeApiBody)
+	{
+		DateTimeOffset serverDate = new(2026, 9, 7, 1, 2, 3, TimeSpan.Zero);
+
+		using HttpClient client = new(new StubHttpHandler(request =>
+		{
+			if (request.Method == HttpMethod.Head)
+			{
+				HttpResponseMessage probe = new(HttpStatusCode.OK);
+				probe.Headers.Date = serverDate;
+				return probe;
+			}
+
+			return new HttpResponseMessage(timeApiStatus) { Content = new StringContent(timeApiBody) };
+		}));
+
+		UtcTimeCheckResult result = await UtcTimeCheck.RunAsync(client);
+
+		Assert.Equal(UtcTimeSource.HttpDateHeader, result.Source);
+		Assert.Equal(serverDate.UtcDateTime, result.UtcNow);
+		Assert.True(result.HasInternetConnection);
+	}
+
+	/// <summary>
+	/// Drafts, releases without a tag and unparseable tags are skipped; a pre-release suffix is
+	/// ignored when comparing; the winner's notes and URL are reported.
+	/// </summary>
+	[Fact]
+	public async Task VersionCheck_SkipsDraftsAndUnparseableTags_AndReportsTheWinnersNotes()
+	{
+		const string releasesJson = """
+		[
+		  { "tag_name": "v9.0.0", "prerelease": false, "draft": true },
+		  { "prerelease": false, "draft": false },
+		  { "tag_name": "nightly", "prerelease": false, "draft": false },
+		  { "tag_name": "v3.2.0-hotfix", "prerelease": false, "draft": false, "body": "Fixes.", "html_url": "https://example.test/3.2.0" },
+		  { "tag_name": "v3.1.0", "prerelease": false, "draft": false }
+		]
+		""";
+
+		using HttpClient client = new(new StubHttpHandler(_ => new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(releasesJson) }));
+
+		VersionCheckResult result = await VersionCheck.RunAsync("  3.0.0 ", UpdateChannel.Stable, hasInternetConnection: true, client);
+
+		Assert.True(result.UpdateAvailable);
+		Assert.Equal("3.2.0-hotfix", result.LatestVersion);
+		Assert.Equal("Fixes.", result.LatestReleaseNotes);
+		Assert.Equal("https://example.test/3.2.0", result.LatestReleaseUrl);
+		Assert.Equal("3.0.0", result.CurrentVersion);
+	}
+
+	/// <summary>A dev build (unparseable current version) never claims an update is available.</summary>
+	[Theory]
+	[InlineData("dev")]
+	[InlineData("")]
+	public async Task VersionCheck_UnparseableOrMissingCurrentVersion_IsNotOffered(string currentVersion)
+	{
+		const string releasesJson = """[ { "tag_name": "v3.1.0", "prerelease": false, "draft": false } ]""";
+		using HttpClient client = new(new StubHttpHandler(_ => new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(releasesJson) }));
+
+		VersionCheckResult result = await VersionCheck.RunAsync(currentVersion, UpdateChannel.Stable, hasInternetConnection: true, client);
+
+		Assert.True(result.CheckSucceeded);
+		Assert.Equal(currentVersion == "" ? "0.0.0" : "dev", result.CurrentVersion);
+		Assert.Equal(currentVersion == "", result.UpdateAvailable);
+	}
+
+	/// <summary>No release on the channel is a successful check with nothing to offer.</summary>
+	[Fact]
+	public async Task VersionCheck_NoComparableRelease_SucceedsWithNoUpdate()
+	{
+		const string releasesJson = """[ { "tag_name": "v3.1.0", "prerelease": true, "draft": false } ]""";
+		using HttpClient client = new(new StubHttpHandler(_ => new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(releasesJson) }));
+
+		VersionCheckResult result = await VersionCheck.RunAsync("3.0.0", UpdateChannel.Stable, hasInternetConnection: true, client);
+
+		Assert.True(result.CheckSucceeded);
+		Assert.False(result.UpdateAvailable);
+		Assert.Null(result.LatestVersion);
+		Assert.Equal("No comparable release found.", result.Message);
+	}
+
+	/// <summary>A response that is not JSON is reported as a failed check, not an exception.</summary>
+	[Fact]
+	public async Task VersionCheck_UnreadableResponse_ReportsFailure()
+	{
+		using HttpClient client = new(new StubHttpHandler(_ => new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("<html>rate limited</html>") }));
+
+		VersionCheckResult result = await VersionCheck.RunAsync("3.0.0", UpdateChannel.Stable, hasInternetConnection: true, client);
+
+		Assert.False(result.CheckSucceeded);
+		Assert.False(result.UpdateAvailable);
 	}
 
 	/// <summary><see cref="VersionCheckResult.ParseChannel"/> is case-insensitive and defaults to Stable.</summary>

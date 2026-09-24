@@ -265,4 +265,175 @@ public sealed class AiracCycleDataCacheTests : IDisposable
 		Assert.Equal(CycleDataState.Ready, cache.GetEntry("2610")!.State);
 		Assert.Equal(AiracCycleReadiness.Degraded, cache.ComputeReadiness());
 	}
+
+	[Fact]
+	public async Task BeforePrepare_NothingIsTracked()
+	{
+		AiracCycleDataCache cache = new(AlwaysPublished, (_, _) => Task.FromResult("x"), (_, _) => Task.FromResult(new NasrCsvDataCollection()));
+
+		Assert.Empty(cache.Entries);
+		Assert.Equal(AiracCycleReadiness.Waiting, cache.ComputeReadiness());
+		await Assert.ThrowsAsync<InvalidOperationException>(() => cache.GetAsync("2610"));
+	}
+
+	[Fact]
+	public async Task InconclusiveProbe_IsAskedTwice_ThenTheDownloadDecides()
+	{
+		ConcurrentDictionary<string, int> probes = new();
+
+		AiracCycleDataCache cache = new(
+			probe: (cycle, _) =>
+			{
+				probes.AddOrUpdate(cycle.AiracCycleId, 1, (_, n) => n + 1);
+				return Task.FromResult(AiracCyclePublicationState.Unknown);
+			},
+			download: (cycle, _) => Task.FromResult($@"C:\cache\{cycle.AiracCycleId}"),
+			parse: (_, _) => Task.FromResult(new NasrCsvDataCollection()));
+
+		await cache.PrepareCyclesAsync(Previous, Current, Next);
+
+		Assert.All(probes.Values, count => Assert.Equal(2, count));
+		Assert.Equal(new[] { "2610", "2609", "2611" }, cache.Entries.Select(e => e.Cycle.AiracCycleId));
+		Assert.Equal(AiracCycleReadiness.Ready, cache.ComputeReadiness());
+	}
+
+	[Fact]
+	public async Task GetAsync_ForAnUnpublishedCycle_Throws()
+	{
+		AiracCycleDataCache cache = new(
+			probe: (cycle, _) => Task.FromResult(
+				cycle.AiracCycleId == Next.AiracCycleId ? AiracCyclePublicationState.NotYetPublished : AiracCyclePublicationState.Published),
+			download: (cycle, _) => Task.FromResult($@"C:\cache\{cycle.AiracCycleId}"),
+			parse: (_, _) => Task.FromResult(new NasrCsvDataCollection()));
+
+		await cache.PrepareCyclesAsync(Previous, Current, Next);
+
+		InvalidOperationException ex = await Assert.ThrowsAsync<InvalidOperationException>(() => cache.GetAsync("2611"));
+		Assert.Contains("has not been published", ex.Message, StringComparison.Ordinal);
+	}
+
+	[Fact]
+	public async Task GetAsync_ForAFailedCycle_TriesTheDownloadAgain()
+	{
+		int currentAttempts = 0;
+		NasrCsvDataCollection parsed = new();
+
+		AiracCycleDataCache cache = new(
+			probe: AlwaysPublished,
+			download: (cycle, _) =>
+				cycle.AiracCycleId == Current.AiracCycleId && Interlocked.Increment(ref currentAttempts) <= 2
+					? Task.FromException<string>(new IOException("network down"))
+					: Task.FromResult($@"C:\cache\{cycle.AiracCycleId}"),
+			parse: (_, _) => Task.FromResult(parsed));
+
+		await cache.PrepareCyclesAsync(Previous, Current, Next);
+		Assert.Equal(CycleDataState.Failed, cache.GetEntry("2610")!.State);
+
+		Assert.Same(parsed, await cache.GetAsync("2610"));
+		Assert.Equal(CycleDataState.Ready, cache.GetEntry("2610")!.State);
+		Assert.Equal(3, currentAttempts);
+	}
+
+	[Fact]
+	public async Task GetAsync_ForACycleThatStillFails_Throws()
+	{
+		AiracCycleDataCache cache = new(
+			probe: AlwaysPublished,
+			download: (_, _) => Task.FromException<string>(new IOException("network down")),
+			parse: (_, _) => Task.FromResult(new NasrCsvDataCollection()));
+
+		await cache.PrepareCyclesAsync(Previous, Current, Next);
+
+		InvalidOperationException ex = await Assert.ThrowsAsync<InvalidOperationException>(() => cache.GetAsync("2610"));
+		Assert.Contains("could not be prepared (state: Failed)", ex.Message, StringComparison.Ordinal);
+	}
+
+	[Fact]
+	public async Task Readiness_IsWaiting_WhileTheBestEffortCyclesAreStillParsing()
+	{
+		TaskCompletionSource previousParsing = new(TaskCreationOptions.RunContinuationsAsynchronously);
+		TaskCompletionSource releasePrevious = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+		AiracCycleDataCache cache = new(
+			probe: AlwaysPublished,
+			download: (cycle, _) => Task.FromResult(cycle.AiracCycleId),
+			parse: async (directory, _) =>
+			{
+				if (directory == Previous.AiracCycleId)
+				{
+					previousParsing.TrySetResult();
+					await releasePrevious.Task;
+				}
+
+				return new NasrCsvDataCollection();
+			});
+
+		Task prepare = cache.PrepareCyclesAsync(Previous, Current, Next);
+		await previousParsing.Task;
+
+		Assert.Equal(CycleDataState.Ready, cache.GetEntry("2610")!.State);
+		Assert.Equal(AiracCycleReadiness.Waiting, cache.ComputeReadiness());
+
+		releasePrevious.SetResult();
+		await prepare;
+		Assert.Equal(AiracCycleReadiness.Ready, cache.ComputeReadiness());
+	}
+
+	[Fact]
+	public async Task AThrowingStateChangedSubscriber_DoesNotBreakThePipeline()
+	{
+		AiracCycleDataCache cache = new(
+			probe: AlwaysPublished,
+			download: (cycle, _) => Task.FromResult(cycle.AiracCycleId),
+			parse: (_, _) => Task.FromResult(new NasrCsvDataCollection()));
+		cache.StateChanged += (_, _) => throw new InvalidOperationException("bad subscriber");
+
+		await cache.PrepareCyclesAsync(Previous, Current, Next);
+
+		Assert.Equal(AiracCycleReadiness.Ready, cache.ComputeReadiness());
+	}
+
+	[Fact]
+	public async Task CancellationDuringDownload_IsNotSwallowedAsAFailure()
+	{
+		AiracCycleDataCache cache = new(
+			probe: AlwaysPublished,
+			download: (_, _) => Task.FromException<string>(new OperationCanceledException()),
+			parse: (_, _) => Task.FromResult(new NasrCsvDataCollection()));
+
+		await Assert.ThrowsAnyAsync<OperationCanceledException>(() => cache.PrepareCyclesAsync(Previous, Current, Next));
+		Assert.NotEqual(CycleDataState.Failed, cache.GetEntry("2610")!.State);
+	}
+
+	[Fact]
+	public async Task CancellationDuringParse_IsNotSwallowedAsAFailure()
+	{
+		AiracCycleDataCache cache = new(
+			probe: AlwaysPublished,
+			download: (cycle, _) => Task.FromResult(cycle.AiracCycleId),
+			parse: (_, _) => Task.FromException<NasrCsvDataCollection>(new OperationCanceledException()));
+
+		await Assert.ThrowsAnyAsync<OperationCanceledException>(() => cache.PrepareCyclesAsync(Previous, Current, Next));
+		Assert.NotEqual(CycleDataState.Failed, cache.GetEntry("2610")!.State);
+	}
+
+	[Fact]
+	public void ConfigureForTesting_SwapsAndRestoresTheSharedInstance()
+	{
+		AiracCycleDataCache original = AiracCycleDataCache.Instance;
+		AiracCycleDataCache replacement = new(AlwaysPublished, (_, _) => Task.FromResult("x"), (_, _) => Task.FromResult(new NasrCsvDataCollection()));
+
+		try
+		{
+			AiracCycleDataCache.ConfigureForTesting(replacement);
+			Assert.Same(replacement, AiracCycleDataCache.Instance);
+		}
+		finally
+		{
+			AiracCycleDataCache.ConfigureForTesting(null);
+		}
+
+		Assert.NotSame(replacement, AiracCycleDataCache.Instance);
+		Assert.NotSame(original, AiracCycleDataCache.Instance);
+	}
 }

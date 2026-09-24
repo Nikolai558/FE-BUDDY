@@ -243,6 +243,12 @@ public sealed class ShellViewModel : ObservableObject
         }
 
         VersionText = version.CurrentVersion is "0.0.0" or "" ? "dev" : $"v{version.CurrentVersion.TrimStart('v', 'V')}";
+
+        // As in 2.x: a copy the MSI did not install (a dev build, or one run from elsewhere) says so.
+        if (!AppEnvironment.IsMsiInstalled && VersionText != "dev")
+        {
+            VersionText += " - DEV";
+        }
         IsUpdateAvailable = version.UpdateAvailable && version.LatestVersion is not null;
 
         if (!version.CheckSucceeded)

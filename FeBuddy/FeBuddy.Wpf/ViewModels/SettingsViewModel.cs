@@ -17,7 +17,7 @@ using FeBuddy.Core.Services.General;
 
 using Microsoft.Win32;
 
-using LibUpdateChannel = FeBuddy.Core.Models.Services.General.UpdateChannel;
+using LibUpdateChannel = FeBuddy.Versioning.ReleaseChannel;
 
 namespace FeBuddy.Wpf.ViewModels;
 

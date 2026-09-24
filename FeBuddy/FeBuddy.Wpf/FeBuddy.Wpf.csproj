@@ -16,13 +16,19 @@
     <OutputType>WinExe</OutputType>
     <TargetFramework>net10.0-windows</TargetFramework>
     <RootNamespace>FeBuddy.Wpf</RootNamespace>
-    <AssemblyName>FeBuddy.Wpf</AssemblyName>
-    <!-- 3.0.0 is this branch's target (see docs/Developers/FE-Buddy_3.0_*.md). The -dev suffix
-         shows up in the file's Product version (Explorer > Properties > Details) but is stripped
-         from AssemblyVersion/FileVersion by the SDK, so VersionCheck's numeric comparison against
-         the public FE-BUDDY repo's releases (currently in the 2.9.x range) correctly resolves to
-         "ahead of the latest release" rather than "update available" or "outdated". -->
-    <Version>3.0.0-dev</Version>
+    <!-- FE-BUDDY.exe, the same name as 2.x's: the installer's shortcuts, its "Launch FE-BUDDY"
+         checkbox and every 2.x shortcut left behind by an in-place upgrade point at it. -->
+    <AssemblyName>FE-BUDDY</AssemblyName>
+    <ApplicationIcon>Assets\FE-BUDDY.ico</ApplicationIcon>
+    <!-- THE version - the one place anyone bumps it (docs/Developers/VERSIONING.md). Strict SemVer:
+         3.0.0, 3.0.0-alpha.1, 3.0.0-rc.2. It becomes the exe's Product version, which the app reads
+         as its real version (AppVersion) and build.ps1 hands the installer as ProductSemVer. The
+         numeric AssemblyVersion/FileVersion the SDK also derives from it drop the pre-release tag,
+         so nothing compares with those. -dev marks an unreleased build: it outranks every 2.x
+         release, so the version check reports "ahead of the latest release". -->
+    <Version>3.0.0-alpha.1</Version>
+    <!-- Keep the Product version exactly <Version> - no "+<commit hash>" build metadata. -->
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <LangVersion>latest</LangVersion>

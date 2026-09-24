@@ -1,5 +1,4 @@
 using System.IO;
-using System.Reflection;
 using System.Windows;
 using System.Windows.Threading;
 
@@ -47,7 +46,7 @@ public partial class App : Application
 	{
 		try
 		{
-			string version = Assembly.GetEntryAssembly()?.GetName().Version?.ToString() ?? "dev";
+			string version = AppVersion.Current;
 			await LaunchSequence.RunAsync(version);
 		}
 		catch (Exception ex)

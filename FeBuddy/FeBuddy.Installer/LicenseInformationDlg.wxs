@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+  <Fragment>
+
+    <UI>
+      <Dialog Id="LicenseInformationDlg"
+              Width="370"
+              Height="270"
+              Title="!(loc.LicenseAgreementDlg_Title)">
+
+        <Control Id="Title"
+         Type="Text"
+         X="15"
+         Y="6"
+         Width="200"
+         Height="15"
+         Transparent="yes"
+         NoPrefix="yes"
+         Text="{\WixUI_Font_Title}License Information" />
+
+        <Control Id="BannerBitmap"
+                 Type="Bitmap"
+                 X="0"
+                 Y="0"
+                 Width="370"
+                 Height="44"
+                 TabSkip="no"
+                 Text="WixUI_Bmp_Banner" />
+
+        <Control Id="Description"
+                 Type="Text"
+                 X="25"
+                 Y="23"
+                 Width="280"
+                 Height="15"
+                 Transparent="yes"
+                 NoPrefix="yes"
+                 Text="Please review the FE-BUDDY license information." />
+
+        <Control Id="LicenseText"
+                 Type="ScrollableText"
+                 X="20"
+                 Y="55"
+                 Width="330"
+                 Height="155"
+                 Sunken="yes"
+                 TabSkip="no">
+          <Text SourceFile="!(wix.WixUILicenseRtf)" />
+        </Control>
+
+        <Control Id="Back"
+                 Type="PushButton"
+                 X="180"
+                 Y="243"
+                 Width="56"
+                 Height="17"
+                 Text="!(loc.WixUIBack)"
+                 TabSkip="no" />
+
+        <Control Id="Next"
+                 Type="PushButton"
+                 X="236"
+                 Y="243"
+                 Width="56"
+                 Height="17"
+                 Default="yes"
+                 Text="!(loc.WixUINext)"
+                 TabSkip="no" />
+
+        <Control Id="Cancel"
+                 Type="PushButton"
+                 X="304"
+                 Y="243"
+                 Width="56"
+                 Height="17"
+                 Cancel="yes"
+                 Text="!(loc.WixUICancel)"
+                 TabSkip="no">
+          <Publish Event="SpawnDialog"
+                   Value="CancelDlg" />
+        </Control>
+
+      </Dialog>
+    </UI>
+
+  </Fragment>
+</Wix>

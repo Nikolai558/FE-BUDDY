@@ -1,0 +1,51 @@
+<Project Sdk="WixToolset.Sdk/7.0.0">
+
+  <!--
+    FeBuddy.Installer  -  FE-Buddy's MSI (WiX 7).
+    ===========================================================================
+    Built by ../build.ps1, which publishes FeBuddy.Wpf into ../publish first and passes the two
+    version numbers in. It is in FeBuddy.sln so Visual Studio shows it, but not built by a
+    solution build (it needs that publish folder). See docs/Developers/VERSIONING.md.
+  -->
+
+  <PropertyGroup>
+    <AcceptEula>wix7</AcceptEula>
+
+    <!-- The MSI's internal ProductVersion - a counter with no meaning beyond "different from
+         what is installed" (docs/Developers/MSI-VERSION-NUMBERING.md). build.ps1 passes
+         /p:InstallerVersion from Get-InstallerVersion.ps1; this default is for a hand build. -->
+    <InstallerVersion Condition="'$(InstallerVersion)' == ''">1.0.0</InstallerVersion>
+    <InstallerPlatform>x64</InstallerPlatform>
+
+    <!-- The real FE-Buddy SemVer version (may carry -alpha/-beta/-rc). build.ps1 passes
+         /p:ProductSemVer from the built exe's Product version. -->
+    <ProductSemVer Condition="'$(ProductSemVer)' == ''">$(InstallerVersion)</ProductSemVer>
+
+    <DefineConstants>InstallerVersion=$(InstallerVersion);ProductSemVer=$(ProductSemVer)</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <BindPath Include="$(MSBuildProjectDirectory)\..\publish">
+      <BindName>PublishDir</BindName>
+    </BindPath>
+    <BindPath Include="$(MSBuildProjectDirectory)\..\FeBuddy.Installer.CustomActions\bin\$(Configuration)\net472">
+      <BindName>CustomActionsDir</BindName>
+    </BindPath>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="LICENSE.rtf" />
+    <None Include="Get-InstallerVersion.ps1" />
+    <None Include="installer-version-counter.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="WixToolset.UI.wixext" Version="7.0.0" />
+    <PackageReference Include="WixToolset.Util.wixext" Version="7.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\FeBuddy.Installer.CustomActions\FeBuddy.Installer.CustomActions.csproj" />
+  </ItemGroup>
+
+</Project>

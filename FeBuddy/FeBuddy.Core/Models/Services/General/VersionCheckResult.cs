@@ -1,21 +1,6 @@
+using FeBuddy.Versioning;
+
 namespace FeBuddy.Core.Models.Services.General;
-
-/// <summary>
-/// The release channel a user opts into for updates. Persisted as its name in
-/// <c>UserConfig.json</c> at <c>General.UpdateChannel</c>; <see cref="Stable"/> is the default
-/// and the only channel a normal user should pick.
-/// </summary>
-public enum UpdateChannel
-{
-	/// <summary>Production releases only. The default.</summary>
-	Stable = 0,
-
-	/// <summary>Stable releases plus beta pre-releases.</summary>
-	Beta = 1,
-
-	/// <summary>Stable releases plus all pre-releases, including alpha.</summary>
-	Alpha = 2,
-}
 
 /// <summary>
 /// The outcome of the launch-time application version check.
@@ -43,7 +28,7 @@ public record VersionCheckResult(
 	string CurrentVersion,
 	string? LatestVersion,
 	bool UpdateAvailable,
-	UpdateChannel Channel,
+	ReleaseChannel Channel,
 	bool CheckSucceeded,
 	string? Message,
 	string? LatestReleaseUrl = null,
@@ -57,13 +42,17 @@ public record VersionCheckResult(
 	public IReadOnlyList<ReleaseSummary> NewerReleases { get; init; } = [];
 
 	/// <summary>
-	/// Parses an <see cref="UpdateChannel"/> from its stored name, falling back to
-	/// <see cref="UpdateChannel.Stable"/> for a missing or unrecognized value.
+	/// Parses the user's update channel from its stored name (<c>General.UpdateChannel</c>:
+	/// <c>Stable</c>, <c>ReleaseCandidate</c>, <c>Beta</c> or <c>Alpha</c>), falling back to
+	/// <see cref="ReleaseChannel.Stable"/> for a missing or unrecognized value.
 	/// </summary>
 	/// <param name="value">The stored channel name (case-insensitive).</param>
-	/// <returns>The parsed channel, or <see cref="UpdateChannel.Stable"/>.</returns>
-	public static UpdateChannel ParseChannel(string? value) =>
-		Enum.TryParse(value, ignoreCase: true, out UpdateChannel channel) ? channel : UpdateChannel.Stable;
+	/// <returns>The parsed channel, or <see cref="ReleaseChannel.Stable"/>.</returns>
+	public static ReleaseChannel ParseChannel(string? value) =>
+		Enum.GetValues<ReleaseChannel>()
+			.Where(channel => string.Equals(channel.ToString(), value?.Trim(), StringComparison.OrdinalIgnoreCase))
+			.DefaultIfEmpty(ReleaseChannel.Stable)
+			.First();
 }
 
 /// <summary>One GitHub release, as shown in the update window.</summary>

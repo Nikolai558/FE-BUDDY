@@ -1,0 +1,55 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    FeBuddy.Installer.CustomActions  -  the MSI's managed custom action (EnforceVersionPolicy).
+    ===========================================================================
+    It is a thin wrapper: the rule itself is FeBuddy.Versioning.UpdatePolicy, shared with the
+    app and covered by FeBuddy.UnitTests. This project is not unit tested (it needs an MSI
+    session) and is outside the coverage report.
+  -->
+
+  <PropertyGroup>
+    <AcceptEula>wix7</AcceptEula>
+    <!--
+      WiX's managed-custom-action host (Deployment Tools Foundation) only loads .NET Framework
+      assemblies - msiexec.exe hosts the CLR through the classic shim, which cannot load modern
+      .NET. net472 is a hard requirement, not a style choice:
+      https://github.com/orgs/wixtoolset/discussions/7136
+    -->
+    <TargetFramework>net472</TargetFramework>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <Platforms>x64</Platforms>
+    <PlatformTarget>x64</PlatformTarget>
+
+    <!--
+      WixToolset.Dtf.CustomAction's PackCustomAction target picks the 32- or 64-bit native CA host
+      stub from $(Platform) - not $(PlatformTarget) or $(Platforms). Plain `dotnet build` (as
+      build.ps1 runs it) passes no Platform, and the target then silently falls back to the x86
+      stub: a 32-bit CA inside a 64-bit MSI, which a 64-bit msiexec cannot load (a near-instant,
+      almost silent install failure). Pinning it here gives an x64 CA however it is built.
+    -->
+    <Platform>x64</Platform>
+
+    <!--
+      Pin the output path. With a non-AnyCPU Platform, MSBuild otherwise inserts a Platform
+      segment (bin\x64\Release\net472\), and Visual Studio and `dotnet build` would put the DLL
+      in different places. FeBuddy.Installer's BindPath expects bin\$(Configuration)\net472\.
+    -->
+    <BaseOutputPath>bin\</BaseOutputPath>
+    <OutputPath>bin\$(Configuration)\</OutputPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="WixToolset.Dtf.CustomAction" Version="7.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="CustomAction.config" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\FeBuddy.Versioning\FeBuddy.Versioning.csproj" />
+  </ItemGroup>
+
+</Project>

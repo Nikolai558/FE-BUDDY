@@ -1,11 +1,11 @@
 # CI for FE-BUDDY 3.0.
 #
 # Verifies that it compiles and the unit tests pass on every push and pull
-# request to v3-development, and that FeBuddy.Core's code coverage has not
-# dropped (the table is on each run's summary page; the full HTML report is the
-# "coverage-report" artifact). It does NOT produce a release (no installer or
-# release workflow yet; v2 on the development branch is the model to follow
-# when v3 gets one).
+# request to v3-development, that the code coverage of FeBuddy.Core and
+# FeBuddy.Versioning has not dropped (the table is on each run's summary page;
+# the full HTML report is the "coverage-report" artifact), and that the MSI
+# still builds (the "installer" artifact - for testing, not a release). It does
+# NOT publish a release: there is no release workflow yet.
 
 name: "CI"
 
@@ -61,3 +61,30 @@ jobs:
           name: coverage-report
           path: FeBuddy/TestResults/CoverageReport
           if-no-files-found: ignore
+
+  installer:
+    name: Installer
+    runs-on: windows-2025
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '10.x'
+
+      # Publishes the app and builds the MSI exactly as a release would. The installer
+      # counter it advances stays in this runner's checkout (see
+      # docs/Developers/MSI-VERSION-NUMBERING.md).
+      - name: Build MSI
+        shell: pwsh
+        run: ./FeBuddy/build.ps1
+
+      - name: Upload MSI
+        uses: actions/upload-artifact@v4
+        with:
+          name: installer
+          path: FeBuddy/releases/*.msi
+          retention-days: 1

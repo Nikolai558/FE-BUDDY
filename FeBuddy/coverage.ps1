@@ -1,6 +1,7 @@
 <#
 .SYNOPSIS
-	Runs the unit tests with code coverage and builds a coverage report for FeBuddy.Core.
+	Runs the unit tests with code coverage and builds a coverage report for FeBuddy.Core and
+	FeBuddy.Versioning.
 
 .DESCRIPTION
 	1. Runs FeBuddy.UnitTests with the coverlet collector (settings in coverlet.runsettings).

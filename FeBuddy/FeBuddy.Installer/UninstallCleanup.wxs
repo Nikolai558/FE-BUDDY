@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  Removes FE-Buddy's per-user data folders on a full uninstall - never on an upgrade
+  (UPGRADINGPRODUCTCODE is set while a newer MSI removes the old one), so settings survive
+  every update, including 2.x -> 3.x.
+
+    %AppData%\FE-Buddy        3.x: UserConfig.json, logs, downloaded AIRAC cycles
+    %LocalAppData%\FE-BUDDY   2.x's data folder, left behind when 3.x upgraded it
+    %Temp%\FE-BUDDY           the temporary workspace (both lines use the same folder)
+
+  Each folder's path is recorded under HKCU\Software\FE-BUDDY when installing and read back on
+  uninstall for util:RemoveFolderEx. Like 2.x's, this cleans the folders of the user who runs the
+  uninstall; other users' profiles are not touched.
+-->
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:util="http://wixtoolset.org/schemas/v4/wxs/util">
+
+  <Fragment>
+
+    <Property Id="FEBUDDY_APPDATA_PATH">
+      <RegistrySearch Id="FindFEBUDDYAppDataPath"
+                      Root="HKCU"
+                      Key="Software\FE-BUDDY"
+                      Name="AppDataCleanup"
+                      Type="raw" />
+    </Property>
+
+    <Property Id="FEBUDDY_LOCALAPPDATA_PATH">
+      <RegistrySearch Id="FindFEBUDDYLocalAppDataPath"
+                      Root="HKCU"
+                      Key="Software\FE-BUDDY"
+                      Name="LocalAppDataCleanup"
+                      Type="raw" />
+    </Property>
+
+    <Property Id="FEBUDDY_TEMP_PATH">
+      <RegistrySearch Id="FindFEBUDDYTempPath"
+                      Root="HKCU"
+                      Key="Software\FE-BUDDY"
+                      Name="TempCleanup"
+                      Type="raw" />
+    </Property>
+
+    <StandardDirectory Id="AppDataFolder">
+      <Directory Id="FEBUDDYAppDataFolder"
+                 Name="FE-Buddy">
+
+        <Component Id="AppDataCleanupComponent">
+
+          <RegistryValue Root="HKCU"
+                         Key="Software\FE-BUDDY"
+                         Name="AppDataCleanup"
+                         Type="string"
+                         Value="[FEBUDDYAppDataFolder]"
+                         KeyPath="yes" />
+
+          <util:RemoveFolderEx Id="RemoveFEBUDDYAppData"
+                               On="uninstall"
+                               Property="FEBUDDY_APPDATA_PATH"
+                               Condition="REMOVE=&quot;ALL&quot; AND NOT UPGRADINGPRODUCTCODE" />
+
+          <RemoveFolder Id="RemoveFEBUDDYAppDataFolder"
+                        Directory="FEBUDDYAppDataFolder"
+                        On="uninstall" />
+
+        </Component>
+
+      </Directory>
+    </StandardDirectory>
+
+    <StandardDirectory Id="LocalAppDataFolder">
+      <Directory Id="FEBUDDYLocalAppDataFolder"
+                 Name="FE-BUDDY">
+
+        <Component Id="LocalAppDataCleanupComponent">
+
+          <RegistryValue Root="HKCU"
+                         Key="Software\FE-BUDDY"
+                         Name="LocalAppDataCleanup"
+                         Type="string"
+                         Value="[FEBUDDYLocalAppDataFolder]"
+                         KeyPath="yes" />
+
+          <util:RemoveFolderEx Id="RemoveFEBUDDYLocalAppData"
+                               On="uninstall"
+                               Property="FEBUDDY_LOCALAPPDATA_PATH"
+                               Condition="REMOVE=&quot;ALL&quot; AND NOT UPGRADINGPRODUCTCODE" />
+
+          <RemoveFolder Id="RemoveFEBUDDYLocalAppDataFolder"
+                        Directory="FEBUDDYLocalAppDataFolder"
+                        On="uninstall" />
+
+        </Component>
+
+      </Directory>
+    </StandardDirectory>
+
+    <StandardDirectory Id="TempFolder">
+      <Directory Id="FEBUDDYTempFolder"
+                 Name="FE-BUDDY">
+
+        <Component Id="TempCleanupComponent">
+
+          <RegistryValue Root="HKCU"
+                         Key="Software\FE-BUDDY"
+                         Name="TempCleanup"
+                         Type="string"
+                         Value="[FEBUDDYTempFolder]"
+                         KeyPath="yes" />
+
+          <util:RemoveFolderEx Id="RemoveFEBUDDYTemp"
+                               On="uninstall"
+                               Property="FEBUDDY_TEMP_PATH"
+                               Condition="REMOVE=&quot;ALL&quot; AND NOT UPGRADINGPRODUCTCODE" />
+
+          <RemoveFolder Id="RemoveFEBUDDYTempFolder"
+                        Directory="FEBUDDYTempFolder"
+                        On="uninstall" />
+
+        </Component>
+
+      </Directory>
+    </StandardDirectory>
+
+  </Fragment>
+
+</Wix>

@@ -435,6 +435,7 @@ Second post for the same day.
   - Consider allowing user option to check only once every 12hrs vs on every start
 - Utilizes GitHub API
 - Any checks against versioning number policy and Wix compliance
+  - See [VERSIONING.md](VERSIONING.md): the real version, channels, SemVer comparison and the MSI.
 - GUI needs results after process completion.
 
 ### AIRAC DATA DOWNLOAD MANAGEMENT

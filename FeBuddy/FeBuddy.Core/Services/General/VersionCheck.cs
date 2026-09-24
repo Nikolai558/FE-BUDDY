@@ -4,6 +4,7 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 
 using FeBuddy.Core.Models.Services.General;
+using FeBuddy.Versioning;
 
 namespace FeBuddy.Core.Services.General;
 
@@ -13,12 +14,14 @@ namespace FeBuddy.Core.Services.General;
 /// actual update is a new MSI installer the user downloads and runs.
 /// </summary>
 /// <remarks>
-/// Each release's channel comes from its tag (see <see cref="ReleaseChannel"/>): an <c>-alpha</c>
-/// tag is Alpha, a <c>-beta</c> or <c>-rc</c> tag is Beta, any other release GitHub flags as a
-/// pre-release is Alpha, and the rest are Stable. A user sees releases on their channel and every
-/// channel below it - Stable sees Stable, Beta sees Beta and Stable, Alpha sees everything. The
-/// check never throws - a network or parse failure yields
-/// <see cref="VersionCheckResult.CheckSucceeded"/> <see langword="false"/>.
+/// Versions are the real SemVer versions (<see cref="ProductVersion"/>): release tags are parsed
+/// as strict SemVer (an optional leading <c>v</c> is allowed; anything else is skipped) and
+/// compared by SemVer precedence, so <c>3.0.0-rc.1 &lt; 3.0.0</c>. Each release's channel comes
+/// from its tag alone (<see cref="ProductVersion.Channel"/>) - GitHub's pre-release flag is not
+/// consulted, the same rule FE-Buddy 2.x's updater applies. The user's channel is the lowest one
+/// they accept: Stable sees stable releases, ReleaseCandidate adds <c>-rc</c>, Beta adds
+/// <c>-beta</c>, Alpha sees everything. The check never throws - a network or parse failure
+/// yields <see cref="VersionCheckResult.CheckSucceeded"/> <see langword="false"/>.
 /// </remarks>
 /// <remarks>
 /// Always checks the public <c>Nikolai558/FE-BUDDY</c> repo's releases (v2.x and 3.x releases
@@ -32,11 +35,14 @@ public static partial class VersionCheck
 	private const string LogSource = "VersionCheck";
 	private const string ReleasesUrl = "https://api.github.com/repos/Nikolai558/FE-BUDDY/releases?per_page=30";
 
+	// SemVer precedence, for sorting releases newest first.
+	private static readonly Comparer<ProductVersion> Precedence = Comparer<ProductVersion>.Create((a, b) => a.ComparePrecedenceTo(b));
+
 	/// <summary>
 	/// Runs the version check. Never throws.
 	/// </summary>
-	/// <param name="currentVersion">The running application's version (e.g. from the entry assembly).</param>
-	/// <param name="channel">The channel to compare against.</param>
+	/// <param name="currentVersion">The running application's real version (see <see cref="AppVersion"/>).</param>
+	/// <param name="channel">The lowest channel the user accepts.</param>
 	/// <param name="hasInternetConnection">
 	/// If <see langword="false"/>, the check is skipped and returns
 	/// <see cref="VersionCheckResult.CheckSucceeded"/> <see langword="false"/>.
@@ -46,7 +52,7 @@ public static partial class VersionCheck
 	/// <returns>The comparison result.</returns>
 	public static async Task<VersionCheckResult> RunAsync(
 		string currentVersion,
-		UpdateChannel channel,
+		ReleaseChannel channel,
 		bool hasInternetConnection,
 		HttpClient? httpClient = null,
 		CancellationToken cancellationToken = default)
@@ -93,8 +99,8 @@ public static partial class VersionCheck
 				await using Stream stream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
 				using JsonDocument document = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken).ConfigureAwait(false);
 
-				Version? currentParsed = TryParseVersion(current);
-				var candidates = new List<(Version Parsed, ReleaseSummary Release)>();
+				ProductVersion.TryParseTag(current, out ProductVersion? currentParsed);
+				var candidates = new List<(ProductVersion Parsed, ReleaseSummary Release)>();
 
 				foreach (JsonElement release in document.RootElement.EnumerateArray())
 				{
@@ -103,16 +109,8 @@ public static partial class VersionCheck
 						continue;
 					}
 
-					bool isPrerelease = release.TryGetProperty("prerelease", out JsonElement pre) && pre.ValueKind == JsonValueKind.True;
 					string? tag = release.TryGetProperty("tag_name", out JsonElement tagElement) ? tagElement.GetString() : null;
-					Version? parsed = TryParseVersion(tag);
-					if (parsed is null)
-					{
-						continue;
-					}
-
-					UpdateChannel releaseChannel = ReleaseChannel(tag!, isPrerelease);
-					if (releaseChannel > channel)
+					if (!ProductVersion.TryParseTag(tag, out ProductVersion? parsed) || parsed!.Channel < channel)
 					{
 						continue;
 					}
@@ -126,7 +124,7 @@ public static partial class VersionCheck
 							: null;
 
 					candidates.Add((parsed, new ReleaseSummary(
-						tag!.Trim().TrimStart('v', 'V'), published, releaseChannel != UpdateChannel.Stable, StripInstallInstructions(body), url)));
+						parsed.ToString(), published, parsed.IsPrerelease, StripInstallInstructions(body), url)));
 				}
 
 				if (candidates.Count == 0)
@@ -136,22 +134,23 @@ public static partial class VersionCheck
 				}
 
 				// On a tie the first one listed wins (GitHub lists newest first).
-				(Version best, ReleaseSummary latest) = candidates[0];
-				foreach ((Version parsed, ReleaseSummary release) in candidates)
+				(ProductVersion best, ReleaseSummary latest) = candidates[0];
+				foreach ((ProductVersion parsed, ReleaseSummary release) in candidates)
 				{
-					if (parsed > best)
+					if (parsed.ComparePrecedenceTo(best) > 0)
 					{
 						(best, latest) = (parsed, release);
 					}
 				}
 
-				bool updateAvailable = currentParsed is not null && best > currentParsed;
-				bool isAheadOfLatest = currentParsed is not null && !updateAvailable && currentParsed > best;
+				int currentVsBest = currentParsed?.ComparePrecedenceTo(best) ?? 0;
+				bool updateAvailable = currentParsed is not null && currentVsBest < 0;
+				bool isAheadOfLatest = currentParsed is not null && currentVsBest > 0;
 
 				List<ReleaseSummary> newer = updateAvailable
 					? candidates
-						.Where(c => c.Parsed > currentParsed!)
-						.OrderByDescending(c => c.Parsed)
+						.Where(c => c.Parsed.ComparePrecedenceTo(currentParsed!) > 0)
+						.OrderByDescending(c => c.Parsed, Precedence)
 						.ThenByDescending(c => c.Release.PublishedAt)
 						.Select(c => c.Release)
 						.ToList()
@@ -184,36 +183,6 @@ public static partial class VersionCheck
 				client.Dispose();
 			}
 		}
-	}
-
-	/// <summary>
-	/// The channel a release belongs to, from its tag first and GitHub's pre-release flag second:
-	/// <c>-alpha</c> is <see cref="UpdateChannel.Alpha"/>; <c>-beta</c> or <c>-rc</c> is
-	/// <see cref="UpdateChannel.Beta"/>; any other flagged pre-release is <see cref="UpdateChannel.Alpha"/>
-	/// (only users who asked for everything get an unlabelled pre-release); the rest are
-	/// <see cref="UpdateChannel.Stable"/>.
-	/// </summary>
-	/// <param name="tag">The release tag, e.g. <c>v2.9.1-alpha.1</c>.</param>
-	/// <param name="isPrerelease">GitHub's <c>prerelease</c> flag.</param>
-	/// <returns>The lowest channel that is offered the release.</returns>
-	public static UpdateChannel ReleaseChannel(string tag, bool isPrerelease)
-	{
-		ArgumentNullException.ThrowIfNull(tag);
-
-		int dash = tag.IndexOf('-', StringComparison.Ordinal);
-		string suffix = dash >= 0 ? tag[(dash + 1)..] : string.Empty;
-
-		if (suffix.StartsWith("alpha", StringComparison.OrdinalIgnoreCase))
-		{
-			return UpdateChannel.Alpha;
-		}
-
-		if (suffix.StartsWith("beta", StringComparison.OrdinalIgnoreCase) || suffix.StartsWith("rc", StringComparison.OrdinalIgnoreCase))
-		{
-			return UpdateChannel.Beta;
-		}
-
-		return isPrerelease ? UpdateChannel.Alpha : UpdateChannel.Stable;
 	}
 
 	/// <summary>
@@ -275,29 +244,6 @@ public static partial class VersionCheck
 		}
 
 		return await client.SendAsync(request, cancellationToken).ConfigureAwait(false);
-	}
-
-	/// <summary>
-	/// Parses a version string that may carry a leading <c>v</c> and may have fewer than four
-	/// components. Returns <see langword="null"/> for anything unparseable (e.g. <c>"dev"</c>).
-	/// </summary>
-	/// <param name="value">The version text.</param>
-	/// <returns>The parsed <see cref="Version"/>, or <see langword="null"/>.</returns>
-	private static Version? TryParseVersion(string? value)
-	{
-		if (string.IsNullOrWhiteSpace(value))
-		{
-			return null;
-		}
-
-		string trimmed = value.Trim().TrimStart('v', 'V');
-		int dash = trimmed.IndexOf('-');
-		if (dash >= 0)
-		{
-			trimmed = trimmed[..dash];
-		}
-
-		return Version.TryParse(trimmed, out Version? parsed) ? parsed : null;
 	}
 
 	[GeneratedRegex(@"^ {0,3}(?<hashes>#{1,6})[ \t]+(?<text>.*)$")]

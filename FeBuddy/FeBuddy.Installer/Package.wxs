@@ -1,0 +1,101 @@
+<!--
+  FE-Buddy's MSI. See docs/Developers/VERSIONING.md and docs/Developers/MSI-VERSION-NUMBERING.md.
+
+  UpgradeCode, Package Id, Name and Manufacturer are FE-Buddy 2.x's, unchanged: that is what makes
+  this MSI a major upgrade of an installed 2.x (2.9 and later) - it replaces it in place, keeping
+  the install folder and shortcut choices - instead of installing beside it. Never change them.
+-->
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
+
+  <Package Id="com.febuddy.FE_BUDDY"
+           Name="FE-BUDDY"
+           Manufacturer="FE-BUDDY"
+           UpgradeCode="48F80EB0-2BA6-45F3-A0B5-96E9A05CF2B0"
+           Version="$(InstallerVersion)">
+
+    <MediaTemplate EmbedCab="yes"/>
+
+    <!--
+      AllowDowngrades="yes": Package/@Version is a monotonic counter, not the real product version
+      (see docs/Developers/MSI-VERSION-NUMBERING.md), so it carries no upgrade/downgrade meaning
+      and WiX's stock "never downgrade" check cannot be used. The real rule (block stable -> older
+      stable; allow rolling back off a pre-release) is enforced below by EnforceVersionPolicy and
+      the VERSIONPOLICY_BLOCKED LaunchCondition, on the real SemVer version.
+    -->
+    <MajorUpgrade AllowDowngrades="yes" />
+
+    <!--
+      Copy every file, whatever its version, so the rollback UpdatePolicy allows (off a
+      pre-release to an older release, e.g. 3.1.0-beta.1 -> 3.0.2) works. Windows Installer picks
+      which files to copy by comparing file versions *before* RemoveExistingProducts removes the
+      installed copy: a file whose installed version is newer is skipped, then deleted with the
+      old product - a rollback without this left the folder with no FE-BUDDY.exe. (Equal file
+      versions, e.g. 3.0.0-alpha.1 -> 3.0.0-alpha.2, upgrade correctly either way - tested.)
+      "a" forces the copy; everything goes into FE-Buddy's own folder, so nothing shared is
+      overwritten. It only helps when THIS MSI is the one being installed: rolling a 3.x back to
+      a 2.x release means running that older MSI with REINSTALLMODE=amus on its command line (or
+      uninstalling first, as 2.x's "Revert to Latest Stable" does). ICE40 warns about this
+      property; that is expected.
+    -->
+    <Property Id="REINSTALLMODE" Value="amus" />
+
+    <!--
+      The real FE-Buddy version this MSI installs (e.g. "3.0.0-alpha.1"), passed in by build.ps1
+      from the built exe's Product version. Kept apart from Package/@Version because an MSI
+      ProductVersion cannot hold a pre-release tag.
+    -->
+    <Property Id="PRODUCTSEMVER" Value="$(ProductSemVer)" />
+    <Property Id="VERSIONPOLICY_BLOCKED" Value="0" />
+
+    <Icon Id="FE_BUDDY.ico" SourceFile="..\FeBuddy.Wpf\Assets\FE-BUDDY.ico" />
+    <Property Id="ARPPRODUCTICON" Value="FE_BUDDY.ico" />
+
+    <Binary Id="VersionPolicyCA" SourceFile="!(bindpath.CustomActionsDir)\FeBuddy.Installer.CustomActions.CA.dll" />
+    <CustomAction Id="EnforceVersionPolicy"
+                  BinaryRef="VersionPolicyCA"
+                  DllEntry="EnforceVersionPolicy"
+                  Execute="immediate"
+                  Return="check" />
+
+    <InstallUISequence>
+      <Custom Action="EnforceVersionPolicy" After="AppSearch" />
+    </InstallUISequence>
+    <InstallExecuteSequence>
+      <Custom Action="EnforceVersionPolicy" After="AppSearch" />
+    </InstallExecuteSequence>
+
+    <Launch Condition="VERSIONPOLICY_BLOCKED = &quot;0&quot;"
+            Message="!(loc.VersionPolicyBlockedError)" />
+
+    <CustomAction Id="LaunchFEBUDDY"
+                  Directory="INSTALLFOLDER"
+                  ExeCommand="&quot;[INSTALLFOLDER]FE-BUDDY.exe&quot;"
+                  Execute="immediate"
+                  Impersonate="yes"
+                  Return="asyncNoWait" />
+
+    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT"
+              Value="Launch FE-BUDDY" />
+    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOX"
+              Value="1" />
+
+    <WixVariable Id="WixUILicenseRtf"
+                 Value="LICENSE.rtf" />
+
+    <ui:WixUI
+      Id="FE_BUDDY_InstallDir"
+      InstallDirectory="INSTALLFOLDER" />
+
+    <Feature Id="Main">
+      <ComponentGroupRef Id="ApplicationFiles" />
+      <ComponentRef Id="StartMenuShortcutComponent" />
+      <ComponentRef Id="DesktopShortcutComponent" />
+      <ComponentRef Id="InstallerStateComponent" />
+      <ComponentRef Id="AppDataCleanupComponent" />
+      <ComponentRef Id="LocalAppDataCleanupComponent" />
+      <ComponentRef Id="TempCleanupComponent" />
+    </Feature>
+
+  </Package>
+</Wix>

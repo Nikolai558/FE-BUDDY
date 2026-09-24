@@ -3,6 +3,7 @@ using FeBuddy.Core.Helpers;
 using FeBuddy.Core.Models.Services.Airac;
 using FeBuddy.Core.Models.Services.General;
 using FeBuddy.Core.Services.Airac;
+using FeBuddy.Versioning;
 
 namespace FeBuddy.Core.Services.General;
 
@@ -102,7 +103,7 @@ public static class LaunchSequence
 		IProgress<LaunchProgress>? progress,
 		CancellationToken cancellationToken)
 	{
-		UpdateChannel channel = VersionCheckResult.ParseChannel(UserConfigFile.GetValue("General.UpdateChannel"));
+		ReleaseChannel channel = VersionCheckResult.ParseChannel(UserConfigFile.GetValue("General.UpdateChannel"));
 
 		VersionCheckResult version = await RunStepAsync(
 			progress, LaunchStep.CheckVersion, "Checking for a newer version",

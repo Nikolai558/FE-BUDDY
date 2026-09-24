@@ -29,6 +29,10 @@ public sealed class MarkdownView : Decorator
         nameof(IssueUrlBase), typeof(string), typeof(MarkdownView),
         new PropertyMetadata(null, (d, _) => ((MarkdownView)d).Rebuild()));
 
+    public static readonly DependencyProperty HeadingOffsetProperty = DependencyProperty.Register(
+        nameof(HeadingOffset), typeof(int), typeof(MarkdownView),
+        new PropertyMetadata(0, (d, _) => ((MarkdownView)d).Rebuild()));
+
     // Bullet glyph per nesting depth, cycling after the third level.
     private static readonly string[] Bullets = ["•", "◦", "▪"];
 
@@ -46,11 +50,38 @@ public sealed class MarkdownView : Decorator
         set => SetValue(IssueUrlBaseProperty, value);
     }
 
+    /// <summary>
+    /// Levels to push every heading down by (capped at level 6), for Markdown shown under a
+    /// heading of its own - the update window's per-release sections use 1, so a release's
+    /// "## Change log" sits below its version header.
+    /// </summary>
+    public int HeadingOffset
+    {
+        get => (int)GetValue(HeadingOffsetProperty);
+        set => SetValue(HeadingOffsetProperty, value);
+    }
+
     private void Rebuild()
     {
         var root = new StackPanel();
-        AddBlocks(root, MarkdownParser.Parse(Markdown, IssueUrlBase), 0);
+        AddBlocks(root, Demote(MarkdownParser.Parse(Markdown, IssueUrlBase), HeadingOffset), 0);
         Child = root;
+    }
+
+    private static IReadOnlyList<MarkdownBlock> Demote(IReadOnlyList<MarkdownBlock> blocks, int offset)
+    {
+        if (offset <= 0)
+        {
+            return blocks;
+        }
+
+        return blocks.Select(block => block switch
+        {
+            MarkdownHeading heading => heading with { Level = Math.Min(6, heading.Level + offset) },
+            MarkdownList list => list with { Items = list.Items.Select(item => new MarkdownListItem(Demote(item.Blocks, offset))).ToList() },
+            MarkdownQuote quote => quote with { Blocks = Demote(quote.Blocks, offset) },
+            _ => block,
+        }).ToList();
     }
 
     private static void AddBlocks(Panel panel, IReadOnlyList<MarkdownBlock> blocks, int listDepth)

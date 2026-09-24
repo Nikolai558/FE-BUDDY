@@ -1,6 +1,7 @@
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 
 using FeBuddy.Core.Models.Services.General;
 
@@ -12,10 +13,12 @@ namespace FeBuddy.Core.Services.General;
 /// actual update is a new MSI installer the user downloads and runs.
 /// </summary>
 /// <remarks>
-/// GitHub's release API exposes a single <c>prerelease</c> flag, so <see cref="UpdateChannel.Beta"/>
-/// and <see cref="UpdateChannel.Alpha"/> are treated the same here (both include pre-releases);
-/// <see cref="UpdateChannel.Stable"/> ignores them. The check never throws - a network or parse
-/// failure yields <see cref="VersionCheckResult.CheckSucceeded"/> <see langword="false"/>.
+/// Each release's channel comes from its tag (see <see cref="ReleaseChannel"/>): an <c>-alpha</c>
+/// tag is Alpha, a <c>-beta</c> or <c>-rc</c> tag is Beta, any other release GitHub flags as a
+/// pre-release is Alpha, and the rest are Stable. A user sees releases on their channel and every
+/// channel below it - Stable sees Stable, Beta sees Beta and Stable, Alpha sees everything. The
+/// check never throws - a network or parse failure yields
+/// <see cref="VersionCheckResult.CheckSucceeded"/> <see langword="false"/>.
 /// </remarks>
 /// <remarks>
 /// Always checks the public <c>Nikolai558/FE-BUDDY</c> repo's releases (v2.x and 3.x releases
@@ -24,7 +27,7 @@ namespace FeBuddy.Core.Services.General;
 /// <see cref="GitHubAuth.EnvironmentVariableName"/> is set, it retries once with that token
 /// attached (see <see cref="GitHubAuth"/> for why this is a fallback rather than always-sent).
 /// </remarks>
-public static class VersionCheck
+public static partial class VersionCheck
 {
 	private const string LogSource = "VersionCheck";
 	private const string ReleasesUrl = "https://api.github.com/repos/Nikolai558/FE-BUDDY/releases?per_page=30";
@@ -91,10 +94,7 @@ public static class VersionCheck
 				using JsonDocument document = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken).ConfigureAwait(false);
 
 				Version? currentParsed = TryParseVersion(current);
-				Version? best = null;
-				string? bestTag = null;
-				string? bestNotes = null;
-				string? bestUrl = null;
+				var candidates = new List<(Version Parsed, ReleaseSummary Release)>();
 
 				foreach (JsonElement release in document.RootElement.EnumerateArray())
 				{
@@ -104,43 +104,72 @@ public static class VersionCheck
 					}
 
 					bool isPrerelease = release.TryGetProperty("prerelease", out JsonElement pre) && pre.ValueKind == JsonValueKind.True;
-
-					if (isPrerelease && channel == UpdateChannel.Stable)
+					string? tag = release.TryGetProperty("tag_name", out JsonElement tagElement) ? tagElement.GetString() : null;
+					Version? parsed = TryParseVersion(tag);
+					if (parsed is null)
 					{
 						continue;
 					}
 
-					string? tag = release.TryGetProperty("tag_name", out JsonElement tagElement) ? tagElement.GetString() : null;
-					Version? parsed = TryParseVersion(tag);
-
-					if (parsed is not null && (best is null || parsed > best))
+					UpdateChannel releaseChannel = ReleaseChannel(tag!, isPrerelease);
+					if (releaseChannel > channel)
 					{
-						best = parsed;
-						bestTag = tag;
-						bestNotes = release.TryGetProperty("body", out JsonElement body) ? body.GetString() : null;
-						bestUrl = release.TryGetProperty("html_url", out JsonElement url) ? url.GetString() : null;
+						continue;
 					}
+
+					string? body = release.TryGetProperty("body", out JsonElement bodyElement) ? bodyElement.GetString() : null;
+					string? url = release.TryGetProperty("html_url", out JsonElement urlElement) ? urlElement.GetString() : null;
+					DateTimeOffset? published = release.TryGetProperty("published_at", out JsonElement publishedElement)
+						&& publishedElement.ValueKind == JsonValueKind.String
+						&& publishedElement.TryGetDateTimeOffset(out DateTimeOffset publishedAt)
+							? publishedAt
+							: null;
+
+					candidates.Add((parsed, new ReleaseSummary(
+						tag!.Trim().TrimStart('v', 'V'), published, releaseChannel != UpdateChannel.Stable, StripInstallInstructions(body), url)));
 				}
 
-				if (best is null)
+				if (candidates.Count == 0)
 				{
 					AppLog.Info(LogSource, $"No comparable release found on the {channel} channel.");
 					return new VersionCheckResult(current, null, false, channel, CheckSucceeded: true, "No comparable release found.");
 				}
 
+				// On a tie the first one listed wins (GitHub lists newest first).
+				(Version best, ReleaseSummary latest) = candidates[0];
+				foreach ((Version parsed, ReleaseSummary release) in candidates)
+				{
+					if (parsed > best)
+					{
+						(best, latest) = (parsed, release);
+					}
+				}
+
 				bool updateAvailable = currentParsed is not null && best > currentParsed;
 				bool isAheadOfLatest = currentParsed is not null && !updateAvailable && currentParsed > best;
 
+				List<ReleaseSummary> newer = updateAvailable
+					? candidates
+						.Where(c => c.Parsed > currentParsed!)
+						.OrderByDescending(c => c.Parsed)
+						.ThenByDescending(c => c.Release.PublishedAt)
+						.Select(c => c.Release)
+						.ToList()
+					: [];
+
 				string message = updateAvailable
-					? $"v{bestTag?.TrimStart('v', 'V')} available on the {channel} channel."
+					? $"v{latest.Version} available on the {channel} channel ({newer.Count} newer release(s))."
 					: isAheadOfLatest
-						? $"Running a development build ahead of the latest {channel} release (v{bestTag?.TrimStart('v', 'V')})."
+						? $"Running a development build ahead of the latest {channel} release (v{latest.Version})."
 						: "You are running the latest version.";
 
 				AppLog.Info(LogSource, message);
 				return new VersionCheckResult(
-					current, bestTag?.TrimStart('v', 'V'), updateAvailable, channel, CheckSucceeded: true, message,
-					LatestReleaseNotes: bestNotes, LatestReleaseUrl: bestUrl, IsAheadOfLatestRelease: isAheadOfLatest);
+					current, latest.Version, updateAvailable, channel, CheckSucceeded: true, message,
+					LatestReleaseUrl: latest.Url, IsAheadOfLatestRelease: isAheadOfLatest)
+				{
+					NewerReleases = newer,
+				};
 			}
 		}
 		catch (Exception ex)
@@ -155,6 +184,80 @@ public static class VersionCheck
 				client.Dispose();
 			}
 		}
+	}
+
+	/// <summary>
+	/// The channel a release belongs to, from its tag first and GitHub's pre-release flag second:
+	/// <c>-alpha</c> is <see cref="UpdateChannel.Alpha"/>; <c>-beta</c> or <c>-rc</c> is
+	/// <see cref="UpdateChannel.Beta"/>; any other flagged pre-release is <see cref="UpdateChannel.Alpha"/>
+	/// (only users who asked for everything get an unlabelled pre-release); the rest are
+	/// <see cref="UpdateChannel.Stable"/>.
+	/// </summary>
+	/// <param name="tag">The release tag, e.g. <c>v2.9.1-alpha.1</c>.</param>
+	/// <param name="isPrerelease">GitHub's <c>prerelease</c> flag.</param>
+	/// <returns>The lowest channel that is offered the release.</returns>
+	public static UpdateChannel ReleaseChannel(string tag, bool isPrerelease)
+	{
+		ArgumentNullException.ThrowIfNull(tag);
+
+		int dash = tag.IndexOf('-', StringComparison.Ordinal);
+		string suffix = dash >= 0 ? tag[(dash + 1)..] : string.Empty;
+
+		if (suffix.StartsWith("alpha", StringComparison.OrdinalIgnoreCase))
+		{
+			return UpdateChannel.Alpha;
+		}
+
+		if (suffix.StartsWith("beta", StringComparison.OrdinalIgnoreCase) || suffix.StartsWith("rc", StringComparison.OrdinalIgnoreCase))
+		{
+			return UpdateChannel.Beta;
+		}
+
+		return isPrerelease ? UpdateChannel.Alpha : UpdateChannel.Stable;
+	}
+
+	/// <summary>
+	/// Removes the "Instructions to install" section release bodies start with - the heading and
+	/// everything under it, up to the next heading of the same or a higher level. Anyone reading
+	/// the notes in the update window already has FE-Buddy installed.
+	/// </summary>
+	/// <param name="notes">The release body (Markdown).</param>
+	/// <returns>The trimmed body without that section, or <see langword="null"/> when nothing is left.</returns>
+	public static string? StripInstallInstructions(string? notes)
+	{
+		if (string.IsNullOrWhiteSpace(notes))
+		{
+			return null;
+		}
+
+		var kept = new List<string>();
+		int skippingLevel = 0;
+
+		foreach (string line in notes.Replace("\r\n", "\n", StringComparison.Ordinal).Split('\n'))
+		{
+			Match heading = HeadingPattern().Match(line);
+			if (heading.Success)
+			{
+				int level = heading.Groups["hashes"].Length;
+				if (skippingLevel > 0 && level <= skippingLevel)
+				{
+					skippingLevel = 0;
+				}
+
+				if (skippingLevel == 0 && InstallHeadingPattern().IsMatch(heading.Groups["text"].Value))
+				{
+					skippingLevel = level;
+				}
+			}
+
+			if (skippingLevel == 0)
+			{
+				kept.Add(line);
+			}
+		}
+
+		string result = string.Join('\n', kept).Trim();
+		return result.Length == 0 ? null : result;
 	}
 
 	/// <summary>
@@ -196,4 +299,10 @@ public static class VersionCheck
 
 		return Version.TryParse(trimmed, out Version? parsed) ? parsed : null;
 	}
+
+	[GeneratedRegex(@"^ {0,3}(?<hashes>#{1,6})[ \t]+(?<text>.*)$")]
+	private static partial Regex HeadingPattern();
+
+	[GeneratedRegex(@"^instructions to install\b", RegexOptions.IgnoreCase)]
+	private static partial Regex InstallHeadingPattern();
 }

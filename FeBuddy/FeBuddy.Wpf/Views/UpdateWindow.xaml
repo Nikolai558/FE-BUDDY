@@ -21,6 +21,9 @@
             <TextBlock Text="Update available"
                        FontFamily="{StaticResource Font.Display}" FontSize="18" FontWeight="Bold"
                        Foreground="{StaticResource Brush.Text.Primary}" />
+            <!-- Only when more than one release behind. -->
+            <TextBlock Text="{Binding ReleasesBehind}" Style="{StaticResource Text.Caption}" Margin="0,4,0,0"
+                       Visibility="{Binding ReleasesBehind, Converter={StaticResource StringToVis}}" />
 
             <Grid Margin="0,14,0,0">
                 <Grid.ColumnDefinitions>
@@ -50,8 +53,34 @@
                           HorizontalScrollBarVisibility="Disabled"
                           Background="{StaticResource Brush.Bg.Sunken}"
                           Padding="14,12">
-                <ctl:MarkdownView Markdown="{Binding ReleaseNotes}"
-                                  IssueUrlBase="{x:Static infra:Links.IssueUrlBase}" />
+                <!-- One section per release, newest first: version header, then its notes. -->
+                <ItemsControl ItemsSource="{Binding Releases}" Focusable="False">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="{x:Type vm:ReleaseNotesItem}">
+                            <StackPanel>
+                                <Border Style="{StaticResource Divider}" Margin="0,18"
+                                        Visibility="{Binding IsFirst, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
+
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="{Binding Version}" VerticalAlignment="Center"
+                                               FontFamily="{StaticResource Font.Display}" FontSize="15" FontWeight="Bold"
+                                               Foreground="{StaticResource Brush.Text.Primary}" />
+                                    <TextBlock Text="{Binding PublishedOn}" Style="{StaticResource Text.Caption}"
+                                               VerticalAlignment="Center" Margin="10,1,0,0"
+                                               Visibility="{Binding PublishedOn, Converter={StaticResource StringToVis}}" />
+                                    <Border Style="{StaticResource Chip.Warn}" Margin="10,0,0,0"
+                                            Visibility="{Binding IsPrerelease, Converter={StaticResource BoolToVis}}">
+                                        <TextBlock Text="PRE-RELEASE" Style="{StaticResource Chip.Text}"
+                                                   Foreground="{StaticResource Brush.Warn}" />
+                                    </Border>
+                                </StackPanel>
+
+                                <ctl:MarkdownView Markdown="{Binding Notes}" HeadingOffset="1" Margin="0,10,0,0"
+                                                  IssueUrlBase="{x:Static infra:Links.IssueUrlBase}" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
             </ScrollViewer>
 
             <TextBlock Style="{StaticResource Text.Body}" Margin="0,10,0,0" TextWrapping="Wrap"

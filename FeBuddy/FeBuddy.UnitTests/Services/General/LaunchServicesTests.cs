@@ -322,9 +322,136 @@ public sealed class LaunchServicesTests : IDisposable
 
 		Assert.True(result.UpdateAvailable);
 		Assert.Equal("3.2.0-hotfix", result.LatestVersion);
-		Assert.Equal("Fixes.", result.LatestReleaseNotes);
+		Assert.Equal("Fixes.", result.NewerReleases[0].Notes);
 		Assert.Equal("https://example.test/3.2.0", result.LatestReleaseUrl);
 		Assert.Equal("3.0.0", result.CurrentVersion);
+	}
+
+	/// <summary>
+	/// Every release between the running version and the latest is returned newest first, with
+	/// dates, pre-release flags and install instructions stripped; older and equal ones are not.
+	/// </summary>
+	[Fact]
+	public async Task VersionCheck_ListsEveryNewerRelease_NewestFirst()
+	{
+		const string releasesJson = """
+		[
+		  { "tag_name": "v2.9.1-beta.1", "prerelease": true, "draft": false, "published_at": "2026-09-01T00:00:00Z", "body": "Beta notes." },
+		  { "tag_name": "v2.9.0", "prerelease": false, "draft": false, "published_at": "2026-08-30T02:14:57Z",
+		    "body": "## Instructions to install:\n- Download it.\n\n## Change log:\n- Things.", "html_url": "https://example.test/2.9.0" },
+		  { "tag_name": "v2.8.3", "prerelease": false, "draft": false, "published_at": "not a date" },
+		  { "tag_name": "v2.8.2", "prerelease": false, "draft": false, "published_at": null },
+		  { "tag_name": "v2.8.1", "prerelease": false, "draft": false },
+		  { "tag_name": "v2.8.0", "prerelease": false, "draft": false }
+		]
+		""";
+
+		using HttpClient client = new(new StubHttpHandler(_ => new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(releasesJson) }));
+
+		VersionCheckResult result = await VersionCheck.RunAsync("2.8.1.0", UpdateChannel.Beta, hasInternetConnection: true, client);
+
+		Assert.Equal("2.9.1-beta.1", result.LatestVersion);
+		Assert.Equal(["2.9.1-beta.1", "2.9.0", "2.8.3", "2.8.2"], result.NewerReleases.Select(r => r.Version));
+		Assert.True(result.NewerReleases[0].IsPrerelease);
+		Assert.False(result.NewerReleases[1].IsPrerelease);
+		Assert.Equal(new DateTimeOffset(2026, 8, 30, 2, 14, 57, TimeSpan.Zero), result.NewerReleases[1].PublishedAt);
+		Assert.Equal("## Change log:\n- Things.", result.NewerReleases[1].Notes);
+		Assert.Equal("https://example.test/2.9.0", result.NewerReleases[1].Url);
+		Assert.Null(result.NewerReleases[2].PublishedAt);
+		Assert.Null(result.NewerReleases[3].PublishedAt);
+		Assert.Null(result.NewerReleases[3].Notes);
+	}
+
+	/// <summary>Each channel sees its own releases and the ones below it: Stable &lt; Beta &lt; Alpha.</summary>
+	[Theory]
+	[InlineData(UpdateChannel.Stable, "3.1.0", new[] { "3.1.0" })]
+	[InlineData(UpdateChannel.Beta, "3.2.0-rc.1", new[] { "3.2.0-rc.1", "3.2.0-beta.1", "3.1.0" })]
+	[InlineData(UpdateChannel.Alpha, "3.3.0-alpha.1", new[] { "3.3.0-alpha.1", "3.2.0-rc.1", "3.2.0-beta.1", "3.2.0-preview", "3.1.0" })]
+	public async Task VersionCheck_ChannelFiltersReleasesByTag(UpdateChannel channel, string latest, string[] expected)
+	{
+		const string releasesJson = """
+		[
+		  { "tag_name": "v3.3.0-alpha.1", "prerelease": true, "draft": false },
+		  { "tag_name": "v3.2.0-rc.1", "prerelease": true, "draft": false },
+		  { "tag_name": "v3.2.0-beta.1", "prerelease": true, "draft": false },
+		  { "tag_name": "v3.2.0-preview", "prerelease": true, "draft": false },
+		  { "tag_name": "v3.1.0", "prerelease": false, "draft": false }
+		]
+		""";
+
+		using HttpClient client = new(new StubHttpHandler(_ => new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(releasesJson) }));
+
+		VersionCheckResult result = await VersionCheck.RunAsync("3.0.0", channel, hasInternetConnection: true, client);
+
+		Assert.Equal(latest, result.LatestVersion);
+		Assert.Equal(expected, result.NewerReleases.Select(r => r.Version));
+	}
+
+	/// <summary>The highest version wins even when GitHub does not list it first.</summary>
+	[Fact]
+	public async Task VersionCheck_HighestVersionWins_WhateverTheOrder()
+	{
+		const string releasesJson = """
+		[
+		  { "tag_name": "v3.1.0", "prerelease": false, "draft": false, "html_url": "https://example.test/3.1.0" },
+		  { "tag_name": "v3.2.0", "prerelease": false, "draft": false, "html_url": "https://example.test/3.2.0" }
+		]
+		""";
+
+		using HttpClient client = new(new StubHttpHandler(_ => new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(releasesJson) }));
+
+		VersionCheckResult result = await VersionCheck.RunAsync("3.0.0", UpdateChannel.Stable, hasInternetConnection: true, client);
+
+		Assert.Equal("3.2.0", result.LatestVersion);
+		Assert.Equal("https://example.test/3.2.0", result.LatestReleaseUrl);
+		Assert.Equal(["3.2.0", "3.1.0"], result.NewerReleases.Select(r => r.Version));
+	}
+
+	/// <summary>No update means no release list, including for a build ahead of every release.</summary>
+	[Fact]
+	public async Task VersionCheck_NoUpdate_ListsNoReleases()
+	{
+		const string releasesJson = """[ { "tag_name": "v3.1.0", "prerelease": false, "draft": false } ]""";
+		using HttpClient client = new(new StubHttpHandler(_ => new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(releasesJson) }));
+
+		VersionCheckResult result = await VersionCheck.RunAsync("3.1.0", UpdateChannel.Stable, hasInternetConnection: true, client);
+
+		Assert.False(result.UpdateAvailable);
+		Assert.Empty(result.NewerReleases);
+	}
+
+	/// <summary>The tag decides the channel; GitHub's pre-release flag only matters for an unlabelled tag.</summary>
+	[Theory]
+	[InlineData("v3.0.0", false, UpdateChannel.Stable)]
+	[InlineData("v3.0.0-hotfix", false, UpdateChannel.Stable)]
+	[InlineData("v3.0.0", true, UpdateChannel.Alpha)]
+	[InlineData("v3.0.0-preview.2", true, UpdateChannel.Alpha)]
+	[InlineData("v3.0.0-ALPHA.1", false, UpdateChannel.Alpha)]
+	[InlineData("v3.0.0-beta.2", false, UpdateChannel.Beta)]
+	[InlineData("v3.0.0-rc.1", true, UpdateChannel.Beta)]
+	public void ReleaseChannel_ComesFromTheTag(string tag, bool isPrerelease, UpdateChannel expected)
+	{
+		Assert.Equal(expected, VersionCheck.ReleaseChannel(tag, isPrerelease));
+	}
+
+	[Fact]
+	public void ReleaseChannel_NullTag_Throws()
+	{
+		Assert.Throws<ArgumentNullException>(() => VersionCheck.ReleaseChannel(null!, false));
+	}
+
+	/// <summary>The install-instructions section is removed up to the next heading of its level or higher.</summary>
+	[Theory]
+	[InlineData(null, null)]
+	[InlineData("  ", null)]
+	[InlineData("## Instructions to install:\r\n- Run it.", null)]
+	[InlineData("## Instructions to install:\r\n- Run it.\r\n### Sub\r\nmore\r\n\r\n## Change log:\r\n- A", "## Change log:\n- A")]
+	[InlineData("# Intro\n## instructions TO INSTALL\n- x\n# Next\ny", "# Intro\n# Next\ny")]
+	[InlineData("## Change log:\n- Instructions to install are now shorter.", "## Change log:\n- Instructions to install are now shorter.")]
+	[InlineData("## Instructions to installer\n- kept", "## Instructions to installer\n- kept")]
+	public void StripInstallInstructions_RemovesOnlyThatSection(string? notes, string? expected)
+	{
+		Assert.Equal(expected, VersionCheck.StripInstallInstructions(notes));
 	}
 
 	/// <summary>A dev build (unparseable current version) never claims an update is available.</summary>

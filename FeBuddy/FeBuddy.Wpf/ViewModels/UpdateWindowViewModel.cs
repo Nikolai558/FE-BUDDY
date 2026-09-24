@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Windows.Input;
 
 using FeBuddy.Wpf.Infrastructure;
@@ -8,10 +9,10 @@ namespace FeBuddy.Wpf.ViewModels;
 
 /// <summary>
 /// Backs the modal update window (remediation plan 4.2): shows the running version, the
-/// latest version on the user's channel, and that release's notes. FE-Buddy 3.0 ships as an
-/// MSI, so "update" means <b>download the new installer</b> - the button opens the release
-/// page where the MSI lives; <b>Later</b> dismisses (and colours the version text amber for
-/// the session).
+/// latest version on the user's channel, and the notes for every release in between, newest
+/// first. FE-Buddy 3.0 ships as an MSI, so "update" means <b>download the new installer</b> -
+/// the button opens the release page where the MSI lives; <b>Later</b> dismisses (and colours
+/// the version text amber for the session).
 /// </summary>
 public sealed class UpdateWindowViewModel : ObservableObject
 {
@@ -26,10 +27,14 @@ public sealed class UpdateWindowViewModel : ObservableObject
         CurrentVersion = string.IsNullOrWhiteSpace(version.CurrentVersion) ? "dev" : version.CurrentVersion.TrimStart('v', 'V');
         LatestVersion = version.LatestVersion ?? "unknown";
         Channel = version.Channel.ToString();
-        ReleaseNotes = string.IsNullOrWhiteSpace(version.LatestReleaseNotes)
-            ? "No release notes were provided for this version."
-            : version.LatestReleaseNotes!.Trim();
         ReleaseUrl = string.IsNullOrWhiteSpace(version.LatestReleaseUrl) ? ReleasesPage : version.LatestReleaseUrl!;
+
+        IReadOnlyList<ReleaseSummary> releases = version.NewerReleases.Count > 0
+            ? version.NewerReleases
+            : [new ReleaseSummary(LatestVersion, null, false, null, ReleaseUrl)];
+
+        Releases = releases.Select((release, index) => new ReleaseNotesItem(release, isFirst: index == 0)).ToList();
+        ReleasesBehind = Releases.Count > 1 ? $"{Releases.Count} releases since v{CurrentVersion}" : null;
 
         DownloadCommand = new RelayCommand(() =>
         {
@@ -56,8 +61,11 @@ public sealed class UpdateWindowViewModel : ObservableObject
     /// <summary>The update channel that was checked.</summary>
     public string Channel { get; }
 
-    /// <summary>The GitHub release body for <see cref="LatestVersion"/>.</summary>
-    public string ReleaseNotes { get; }
+    /// <summary>One entry per release newer than <see cref="CurrentVersion"/>, newest first.</summary>
+    public IReadOnlyList<ReleaseNotesItem> Releases { get; }
+
+    /// <summary>"3 releases since v2.8.1" when the user is more than one release behind; otherwise <see langword="null"/>.</summary>
+    public string? ReleasesBehind { get; }
 
     /// <summary>The release page URL (where the MSI download lives).</summary>
     public string ReleaseUrl { get; }
@@ -70,4 +78,37 @@ public sealed class UpdateWindowViewModel : ObservableObject
 
     /// <summary>Dismisses the window without downloading.</summary>
     public ICommand LaterCommand { get; }
+}
+
+/// <summary>One release's section in the update window: its version header and its notes.</summary>
+public sealed class ReleaseNotesItem
+{
+    /// <summary>Creates the section for <paramref name="release"/>.</summary>
+    /// <param name="release">The release.</param>
+    /// <param name="isFirst"><see langword="true"/> for the top section, which has no divider above it.</param>
+    public ReleaseNotesItem(ReleaseSummary release, bool isFirst)
+    {
+        ArgumentNullException.ThrowIfNull(release);
+
+        Version = "v" + release.Version;
+        PublishedOn = release.PublishedAt?.ToLocalTime().ToString("MMM d, yyyy", CultureInfo.CurrentCulture);
+        IsPrerelease = release.IsPrerelease;
+        Notes = string.IsNullOrWhiteSpace(release.Notes) ? "No release notes were provided for this version." : release.Notes;
+        IsFirst = isFirst;
+    }
+
+    /// <summary>The version header, e.g. <c>v2.9.0</c>.</summary>
+    public string Version { get; }
+
+    /// <summary>The publish date, e.g. <c>Aug 30, 2026</c>, or <see langword="null"/> when unknown.</summary>
+    public string? PublishedOn { get; }
+
+    /// <summary><see langword="true"/> for an alpha or beta release (shows a "Pre-release" chip).</summary>
+    public bool IsPrerelease { get; }
+
+    /// <summary>The release notes (Markdown).</summary>
+    public string Notes { get; }
+
+    /// <summary><see langword="true"/> for the newest release, which has no divider above it.</summary>
+    public bool IsFirst { get; }
 }

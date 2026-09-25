@@ -145,9 +145,6 @@ public sealed class AirportGeojsonFebPropertiesTests : IDisposable
 			GenerateAliasFile = false,
 			IncludeFebCustomProperties = includeFeb,
 			FebProperties = febProperties,
-			IncludeCrcLineDefaults = false,
-			IncludeCrcSymbolDefaults = false,
-			IncludeCrcTextDefaults = false,
 			Roi = null,
 		};
 

@@ -115,6 +115,8 @@
                         </DockPanel>
                         <CheckBox Content="Add a FE-Buddy__Output folder inside that directory"
                                   IsChecked="{Binding AddFeBuddyOutputFolder}" Margin="0,8,0,0" />
+                        <TextBlock Text="{Binding OutputFolderExample}" Style="{StaticResource Text.Caption}"
+                                   TextWrapping="Wrap" Margin="0,6,0,0" />
                     </StackPanel>
                 </ctl:Card>
 

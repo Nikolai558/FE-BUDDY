@@ -23,15 +23,15 @@ Written by **Settings** (except `NewsLastOpen`).
 | `UpdateChannel` | `Stable`, `ReleaseCandidate`, `Beta`, `Alpha` (the GUI offers Stable, Beta, Alpha) | `Stable` | launch version check, Settings |
 | `NewsLastOpen` | the newest News `PostId` seen, e.g. `2026-08-30.3` | none | launch News check. Written when the user opens News. |
 | `PrettyPrintGeojson` | `Y` / `N` | `N` | `OutputFormatting` (every GeoJSON writer) |
-| `DefaultOutputDirectory` | a folder path | `Desktop\FE-Buddy_Output` | every run, through `Shell/OutputPreferences` |
-| `AddFeBuddyOutputFolder` | `Y` / `N` | `Y` | every run, through `Shell/OutputPreferences` |
+| `DefaultOutputDirectory` | a folder path | the Desktop | every run, through `Shell/OutputPreferences`. An AIRAC Service run writes into `AIRAC_<cycle>` inside it; a file conversion into its own folder. |
+| `AddFeBuddyOutputFolder` | `Y` / `N` - put the `AIRAC_<cycle>` and conversion folders in a `FE-Buddy_Output` folder | `Y` | every run, through `Shell/OutputPreferences` |
 
 ## Services.AiracService
 
 | Key | Values | Default | Written / read by |
 |---|---|---|---|
 | `AiracCycleId` | a cycle ID, e.g. `2610` | current cycle | General tab. The ID (not "previous/current/next") is saved; on load it is matched back to one of the three, or falls back to current. |
-| `SelectedSubServices` | comma-separated keys: `Airports`, `Airways`, `Departures` | none | General tab. Keys are stable identifiers - never rename one without migrating this value. |
+| `SelectedSubServices` | comma-separated keys: `Airports`, `Airways`, `Departures`, `Arrivals` | none | General tab. Keys are stable identifiers - never rename one without migrating this value. |
 | `UserArtccId` | an ARTCC ID, e.g. `ZOB` | none | Settings ▸ Facility. Not read by any sub-service yet. |
 | `CoordinatePrecision` | `0`-`15` (the GUI offers 5, 6, 7) | `6` | Settings; sent by every tab that writes GeoJSON, AIRAC and File Conversions alike. |
 
@@ -58,6 +58,7 @@ Each GeoJSON sub-service tab saves its own node, with **Save** on its tab:
 | Airports | `Services.AiracService.Airports` |
 | Airways | `Services.AiracService.Geojson.Airways` |
 | Departures | `Services.AiracService.Departures` |
+| Arrivals | `Services.AiracService.Arrivals` |
 
 ### Keys every GeoJSON sub-service saves
 
@@ -69,8 +70,10 @@ Written by `GeojsonSubServiceViewModel`, under the sub-service's node.
 | `EmitLines`, `EmitSymbols`, `EmitText` (Airports: `EmitRunwayLines`, `EmitAirportSymbols`, `EmitAirportText`) | `Y` / `N` | `Y` |
 | `IncludeFebCustomProperties` | `Y` / `N` | `N` |
 | `FebProperties` | comma-separated property names, e.g. `awyId,pointId` | none |
-| `IncludeCrcLineDefaults`, `IncludeCrcSymbolDefaults`, `IncludeCrcTextDefaults` | `Y` / `N` | `Y` |
-| `CrcEramPropertyDefaults.<row>.<field>` | see below | none (the user must fill them) |
+| `Vnas.UploadFiles` | comma-separated file keys marked for vNAS (see [Settings blocks](Settings-Blocks.md#vnas-file-keys)), e.g. `Airways_High_Lines,Airways.txt` | none |
+| `Vnas.CrcDefaults` | which vNAS GeoJSON files get CRC-ERAM defaults: `None`, `AllVnasFiles`, `SpecificFiles` | `None` |
+| `Vnas.CrcFiles` | comma-separated file keys ticked for CRC-ERAM defaults; read with `SpecificFiles` | none |
+| `CrcEramPropertyDefaults.<row>.<field>` | see below | none (the user must fill the rows in use) |
 | `Roi.OverrideDefaultRoi` | `Y` / `N` | `N` |
 | `Roi.OverrideCoordindates.SwLat`, `.SwLon`, `.NeLat`, `.NeLon` | decimal degrees, as typed | none |
 
@@ -81,10 +84,17 @@ Written by `GeojsonSubServiceViewModel`, under the sub-service's node.
 | Airports | `Runways_Line`, `Airports_Symbol`, `Airports_Text` |
 | Airways | `Lines.Airway_<Class>_Lines`, `Symbols.Airway_<Class>_Symbols`, `Texts.Airway_<Class>_Texts`, for `<Class>` = `High`, `Low`, `Other` |
 | Departures | `Departures_Line`, `Departures_Symbol`, `Departures_Text` |
+| Arrivals | `Arrivals_Line`, `Arrivals_Symbol`, `Arrivals_Text` |
 
 and `<field>` depends on the kind: **Line** `bcg`, `filters`, `style`, `thickness`; **Symbol** `bcg`,
 `filters`, `style`, `size`; **Text** `bcg`, `filters`, `size`, `underline` (`Y`/`N`), `opaque`
 (`Y`/`N`), `xOffset`, `yOffset`. Allowed values are in the [user guide](../Users/User-Guide.md#the-cards-every-sub-service-tab-shares).
+
+**vNAS choices.** `Vnas.UploadFiles` and `Vnas.CrcFiles` keep every choice, including files the
+tab's current settings do not write, so a file switched off and on again keeps its choice; a run
+sends only the files actually written. Configs saved before these keys still hold
+`IncludeCrcLineDefaults`, `IncludeCrcSymbolDefaults` and `IncludeCrcTextDefaults`; no sub-service
+tab reads them any more (the [file conversion nodes](#file-conversion-nodes) still use their own).
 
 ### Airports only
 
@@ -114,6 +124,20 @@ and `<field>` depends on the kind: **Line** `bcg`, `filters`, `style`, `thicknes
 | `Amendment.WithinCycles` | whole number, 1-1000 | `1` |
 | `Amendment.WithinDays` | whole number, 1-36500 | `30` |
 | `Amendment.OnOrAfter` | `yyyy-MM-dd` | none |
+
+### Arrivals only
+
+| Key | Values | Default |
+|---|---|---|
+| `GenerateGeojson` | `Y` / `N` | `Y` |
+| `ArtccFilter` | comma-separated ARTCC IDs; empty means all | none |
+| `Roi.Mode` | `Airport`, `Waypoint` | `Airport` |
+| `Amendment.Filter` | `None`, `Cycles`, `Days`, `Date` | `None` |
+| `Amendment.WithinCycles` | whole number, 1-1000 | `1` |
+| `Amendment.WithinDays` | whole number, 1-36500 | `30` |
+| `Amendment.OnOrAfter` | `yyyy-MM-dd` | none |
+
+The same keys as Departures, minus `IncludeObstacleDepartures` - a STAR has no obstacle/SID split.
 
 ## File conversion nodes
 

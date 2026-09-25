@@ -218,7 +218,7 @@ public sealed class LaunchSequenceTests : IDisposable
 
 		List<AiracServiceProgress> reports = [];
 		AiracServiceResult result = await AiracService.RunAsync(
-			new AiracServiceSettings { SelectedCycle = current },
+			new AiracServiceSettings { SelectedCycle = current, OutputDirectory = Path.Combine(_root, "output") },
 			new SynchronousProgress<AiracServiceProgress>(reports.Add));
 
 		Assert.Contains(result.Warnings, w => w.Contains("no sub-service", StringComparison.OrdinalIgnoreCase));

@@ -14,7 +14,6 @@ using FeBuddy.Core.Application.Airac;
 using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Application.Launch;
 using FeBuddy.Core.Application.Updates.Models;
-using FeBuddy.Core.Domain.Airac;
 using FeBuddy.Core.Domain.Airac.Models;
 using FeBuddy.Core.Domain.Geo.Models;
 using FeBuddy.Core.Infrastructure.Configuration;
@@ -65,8 +64,8 @@ public sealed class SettingsViewModel : ObservableObject
 
 		_channel = VersionCheckResult.ParseChannel(UserConfigFile.GetValue(ChannelKey));
 		_selectedFacility = Blank(UserConfigFile.GetValue(ArtccKey));
-		_outputDir = Blank(UserConfigFile.GetValue(OutputDirKey)) ?? OutputPreferences.DefaultDirectory;
-		_addFeBuddyFolder = !string.Equals(UserConfigFile.GetValue(AddFolderKey), "N", StringComparison.OrdinalIgnoreCase);
+		_outputDir = OutputPreferences.Directory;
+		_addFeBuddyFolder = OutputPreferences.AddFeBuddyOutputFolder;
 		_coordinatePrecision = int.TryParse(UserConfigFile.GetValue(PrecisionKey), out int p) && p is >= 0 and <= 15 ? p : 6;
 		_prettyPrintGeojson = string.Equals(
 			UserConfigFile.GetValue(UserConfigKeys.PrettyPrintGeojson)?.Trim(), "Y", StringComparison.OrdinalIgnoreCase);
@@ -172,18 +171,45 @@ public sealed class SettingsViewModel : ObservableObject
 	public string FacilityWaitingMessage =>
 		"Waiting for AIRAC data to finish downloading and parsing. The facility list will be available in a moment.";
 
-	/// <summary>Where every service writes its output.</summary>
+	/// <summary>
+	/// Where every service writes its output; the Desktop until one is saved. An AIRAC Service run
+	/// writes into an <c>AIRAC_&lt;cycle&gt;</c> folder inside it.
+	/// </summary>
 	public string OutputDirectory
 	{
 		get => _outputDir;
-		set { if (SetProperty(ref _outputDir, value)) MarkDirty(); }
+		set
+		{
+			if (SetProperty(ref _outputDir, value))
+			{
+				MarkDirty();
+				OnPropertyChanged(nameof(OutputFolderExample));
+			}
+		}
 	}
 
 	/// <summary>When on (default), output is written under a <c>FE-Buddy_Output</c> folder; off means straight to the chosen directory.</summary>
 	public bool AddFeBuddyOutputFolder
 	{
 		get => _addFeBuddyFolder;
-		set { if (SetProperty(ref _addFeBuddyFolder, value)) MarkDirty(); }
+		set
+		{
+			if (SetProperty(ref _addFeBuddyFolder, value))
+			{
+				MarkDirty();
+				OnPropertyChanged(nameof(OutputFolderExample));
+			}
+		}
+	}
+
+	/// <summary>Where a run of the current cycle would write with the values on screen, e.g. <c>…\FE-Buddy_Output\AIRAC_2610</c>.</summary>
+	public string OutputFolderExample
+	{
+		get
+		{
+			string cycleId = AppEnvironment.GetAiracCycle(AiracCyclePosition.Current).AiracCycleId;
+			return $"A run of AIRAC cycle {cycleId} writes to {AiracOutputPaths.CycleDirectory(OutputDirectory, AddFeBuddyOutputFolder, cycleId)}";
+		}
 	}
 
 	/// <summary>Picks <see cref="OutputDirectory"/> with a folder dialog.</summary>
@@ -386,7 +412,7 @@ public sealed class SettingsViewModel : ObservableObject
 	{
 		try
 		{
-			AiracCycleInfo current = AiracCycleResolver.GetCycle(AiracCyclePosition.Current);
+			AiracCycleInfo current = AppEnvironment.GetAiracCycle(AiracCyclePosition.Current);
 			var data = await AiracCycleDataCache.Instance.GetAsync(current.AiracCycleId).ConfigureAwait(false);
 
 			var options = (data.Apt?.AptBase ?? [])

@@ -29,9 +29,10 @@ much quicker.
 
 Open **Settings**:
 
-1. **Default Output Directory** - where your files go. The default is a `FE-Buddy_Output` folder
-   on your Desktop. Leave **Add a FE-Buddy_Output folder inside that directory** on if you point
-   it at a folder that has other things in it.
+1. **Default Output Directory** - where your files go. The default is your Desktop, with
+   **Add a FE-Buddy_Output folder inside that directory** on, so files land in
+   `Desktop\FE-Buddy_Output`. Each run of a cycle gets its own folder in there, such as
+   `AIRAC_2610`.
 2. **Default Region of Interest** - press **Set ROI…** and drag a box around your ARTCC on the map,
    a little bigger than your boundary. Everything FE-Buddy makes is then limited to that box.
    You can skip this, but you will get the whole country.
@@ -42,10 +43,13 @@ Open **Settings**:
 1. Open **AIRAC Service**.
 2. On the **General** tab, leave the cycle on **Current** and tick **Airways** (tick others too if
    you like). A tab for each one appears in the rail on the left.
-3. Open the **Airways** tab. The defaults are sensible; the one thing you must fill in is the
-   **CRC ERAM Defaults** card - every box needs a value (or untick **Include** on that panel if you
-   do not want default styles in the file). Press **Save**.
-4. Open **Preview Settings**. It spells out what the run will do. Press **Run AIRAC Service**.
+3. Open the **Airways** tab. The defaults are sensible. Near the end, the **Upload to vNAS** card
+   lets you tick the files you will upload to vNAS; they go in their own `Upload_to_vNAS` folder.
+   If you tick a GeoJSON file, choose whether it gets CRC-ERAM defaults, and fill every box on the
+   **CRC ERAM Defaults** card that appears. Press **Save**.
+4. Open **Preview Settings**. It spells out what the run will do and where. Press **Run AIRAC
+   Service**. (If you have run this cycle before, FE-Buddy asks whether to overwrite the old
+   files or delete them first.)
 5. The **Review** tab shows progress and, when it finishes, what was written. Press
    **Open output folder** to see your files.
 

@@ -46,6 +46,7 @@ FeBuddy.Core/
 │   ├── Airac/        AiracCycleResolver: cycle ids and dates from the 28-day cadence
 │   ├── Airports/     Airport, AirportRunway models
 │   ├── Airways/      AirwayClassifier and the Airway/segment/point models
+│   ├── Arrivals/     ArrivalNaming and procedure models
 │   ├── Crc/          CRC feature properties and CrcPropertyValidator
 │   ├── Departures/   DepartureNaming and procedure models
 │   └── Geo/          GeoMath, antimeridian splitting, line merging and segment joining, ROI and
@@ -62,10 +63,11 @@ FeBuddy.Core/
 │   ├── Sct/            SctFileReader: VRC .sct2 / .sct sector files
 │   └── Veram/          VeramGeoMapReader: vERAM GeoMaps XML (streamed)
 └── Application/
-    ├── Airac/          AiracService (entry point), AiracCycleDataCache, FebProperties
+    ├── Airac/          AiracService (entry point), AiracCycleDataCache, AiracOutputPaths, FebProperties
     │   ├── Airways/    One folder per sub-service, all shaped the same way
     │   ├── Airports/
-    │   └── Departures/
+    │   ├── Departures/
+    │   └── Arrivals/
     ├── Conversions/    ConversionSettingsReader and ConversionFiles (what every conversion
     │   │               shares), then one folder per file conversion
     │   ├── DatToGeojson/
@@ -116,10 +118,11 @@ FAA has published (`NasrCycleDownloader` → `NasrCsvParser.ParseAllAsync`) and 
 other cached cycle. A failing step is logged and degrades only its
 own feature; launch never stops.
 
-**When the user runs AIRAC**, the UI builds an `AiracServiceSettings` (the selected cycle plus
-one settings block per sub-service) and calls `AiracService.RunAsync`. It gets the parsed cycle
-from the cache (waiting for an in-flight parse rather than starting another) and runs each
-sub-service whose settings block isn't null. Every sub-service follows the same pipeline:
+**When the user runs AIRAC**, the UI builds an `AiracServiceSettings` (the selected cycle, the
+output folder, plus one settings block per sub-service) and calls `AiracService.RunAsync`. It gets
+the parsed cycle from the cache (waiting for an in-flight parse rather than starting another) and
+runs each sub-service whose settings block isn't null, pointing every one at the same
+`AIRAC_<cycle>` folder (`AiracOutputPaths`). Every sub-service follows the same pipeline:
 
 ```
 AirwayService.Run(nasrData, settings)
@@ -130,7 +133,7 @@ AirwayService.Run(nasrData, settings)
   → AirwayServiceResult (files written, ServiceMessages, timing)
 ```
 
-Airports and Departures have the same shape. Problems are reported as `ServiceMessage`s
+Airports, Departures and Arrivals have the same shape. Problems are reported as `ServiceMessage`s
 (warnings or errors) in the result instead of being thrown, so one bad setting doesn't lose the
 whole run. The only exception is a missing required setting, which throws `ArgumentException`.
 
@@ -169,11 +172,12 @@ files per source (SCT2, vERAM).
 - **A new aviation or geometry rule** (no I/O): `Domain/<Feature>/`.
 - **A new NASR file**: its row model in `Infrastructure/Nasr/Models/`, its parser in
   `Infrastructure/Nasr/Parsers/`, and wire it into `NasrCsvParser`.
-- **A new AIRAC output** (say, STARs): `Application/Airac/Stars/` with `StarService`,
-  `StarSettingsParser`, `StarBuilder`, `StarGeojsonWriter` and a `Models/` folder. Add its settings
-  block to `AiracServiceSettings` and one `RunSubServiceAsync` call to `AiracService`. Reuse
-  `Application/Settings/SubServiceSettingsReader` for the common keys (precision, ROI,
-  FEB properties).
+- **A new AIRAC output** (say, Fixes): `Application/Airac/Fixes/` with `FixService`,
+  `FixSettingsParser`, `FixBuilder`, `FixGeojsonWriter`, `FixOutputFiles` (its file keys) and a
+  `Models/` folder. Add its settings block to `AiracServiceSettings` and one `RunSubServiceAsync`
+  call to `AiracService`. Reuse `Application/Settings/SubServiceSettingsReader` for the common keys
+  (precision, ROI, FEB properties, the vNAS files), and put each file where
+  `AiracOutputPaths.FileDirectory` says.
 - **A new file conversion** (say, vSTARS video maps): `Application/Conversions/VstarsToGeojson/`
   with its `*Service`, `*SettingsParser`, `*GeojsonWriter` and a `Models/` folder, shaped like
   `SctToGeojson/`: its settings derive from `ConversionSettings`, its result is a

@@ -13,7 +13,7 @@ below is relative to `FeBuddy/FeBuddy.Wpf/` in the repo unless stated otherwise.
 
 - references `FeBuddy.Core`; no other NuGet packages - the MVVM helpers
   (`ObservableObject`, `RelayCommand`) are hand-rolled in `Mvvm/`
-- **Airports, Airways and Departures are sub-services of AIRAC Service**, not
+- **Airports, Airways, Departures and Arrivals are sub-services of AIRAC Service**, not
   top-level screens. The library code is `FeBuddy.Core.Application.Airac.*`; the GUI
   reaches each one only as a tab on the AIRAC Services screen. In the same way, each
   **file conversion** (DAT to GeoJSON, SCT2 to GeoJSON) is a tab on the File Conversions screen
@@ -54,13 +54,15 @@ Map/                  GeoJSON reader (System.Text.Json), Web-Mercator, BaseMap
 Mvvm/                 ObservableObject, RelayCommand
 Shell/                app-wide services: Toast, Links, BrowserLauncher,
                       DefaultRoiStore (the one saved default ROI), OutputPreferences
-                      (output folder + coordinate precision, read at run time)
+                      (output folder, AIRAC cycle folder and coordinate precision,
+                      read at run time)
   Models/               ToastKind
 ViewModels/           ShellViewModel + one per screen; AiracSubServices is the
                       AIRAC sub-service catalogue; FileConversionsViewModel lists
                       the conversions
   Models/               small item and row view-models and records (HealthRow,
-                        FebPropertyToggle, EramClassDefault, SourceFileItem, ...)
+                        FebPropertyToggle, EramClassDefault, VnasFileToggle,
+                        SourceFileItem, ...)
   ServiceTabs/          the framework for a tabbed service screen:
                         TabbedServiceViewModel (the screen), ServiceTabViewModel
                         (a tab), SubServiceSettingsViewModel (a saved settings tab),
@@ -75,15 +77,19 @@ ViewModels/           ShellViewModel + one per screen; AiracSubServices is the
 Views/                ShellWindow (custom chrome) + Dashboard, TabbedServiceView
                       (the AIRAC Services and File Conversions screens) and their
                       tab views (AiracGeneralTabView, AirportsView, AirwaysView,
-                      DeparturesView, DatToGeojsonView, SctToGeojsonView, VeramToGeojsonView,
-                      ServicePreviewTabView,
+                      DeparturesView, ArrivalsView, DatToGeojsonView, SctToGeojsonView,
+                      VeramToGeojsonView, ServicePreviewTabView,
                       ServiceRunReviewTabView), Map, Settings, Info; UpdateWindow,
-                      ConfirmWindow, RoiPickerWindow
+                      ConfirmWindow (Confirm / Cancel, or a third choice between
+                      them), RoiPickerWindow
   Cards/                the cards every GeoJSON sub-service tab shares, RunCard
                         (the run button at the foot of the Preview Settings tab and
                         of every conversion tab) and SourceFilesCard (a conversion's
                         folder or picked files); each binds to its tab through one
-                        ServiceTabs interface
+                        ServiceTabs interface. The conversions turn on the CRC ERAM
+                        Defaults card's Include boxes (ShowInclude); the sub-services
+                        choose on their Upload to vNAS card instead
+  Models/               ConfirmChoice
 ```
 
 Namespaces follow folders (`FeBuddy.Wpf.ViewModels.ServiceTabs`), and every file
@@ -93,10 +99,11 @@ root - the same rule as `FeBuddy.Core`.
 
 ### Where do I put...
 
-- **A new sub-service** (say, STARs): an entry in `ViewModels/AiracSubServices.cs`,
-  a `StarsViewModel` in `ViewModels/` deriving from `GeojsonSubServiceViewModel` and
-  implementing `ISubServiceRunTarget`, a `StarsView` in `Views/` built from the
-  shared cards, and its settings block on `AiracServiceSettings` in Core.
+- **A new sub-service** (say, Fixes): an entry in `ViewModels/AiracSubServices.cs`,
+  a `FixesViewModel` in `ViewModels/` deriving from `GeojsonSubServiceViewModel` and
+  implementing `ISubServiceRunTarget` (its `OutputFiles` lists the files its settings
+  write, by the file keys Core's `FixOutputFiles` names), a `FixesView` in `Views/`
+  built from the shared cards, and its settings block on `AiracServiceSettings` in Core.
 - **A new file conversion:** a view-model in `ViewModels/` deriving from
   `FileConversionTabViewModel` (it only adds its own settings and says which service
   to call), added to the list in `FileConversionsViewModel`'s constructor, and a view
@@ -130,24 +137,31 @@ bar and page scroller are shared, and each screen's view-model says what differs
     restores it. The selection persists to
     `Services.AiracService.SelectedSubServices`.
   - **Sub-service catalogue** - `ViewModels/AiracSubServices.cs`: Airports,
-    Airways, Departures. Adding one is a catalogue entry plus a tab view-model; one
-    whose backend is not built yet opens a `PlaceholderSubServiceView` and
-    contributes nothing to a run.
+    Airways, Departures, Arrivals. Adding one is a catalogue entry plus a tab
+    view-model; one whose backend is not built yet opens a
+    `PlaceholderSubServiceView` and contributes nothing to a run.
   - **Sub-service tabs** - each is a `GeojsonSubServiceViewModel` (Save /
-    Undo-last-save / dirty, plus the outputs, file choices, `feb.*` properties, CRC
-    ERAM defaults and ROI override every GeoJSON sub-service shares). The Airways tab: Output mode + per-kind emit toggles, designation include/exclude (from
-    the cycle's `AWY_ID`s), buffer, verbatim `feb.*` properties, three stacked CRC
-    ERAM blocks, the aliases section (`Airways.txt` + ROI scope), the ROI override
-    (shared `RoiEditor`), and the antimeridian toggle. Its result panel shows files
-    + feature counts, the alias line count, the excluded-airway count, and messages
-    grouped by airway and presented by level (info collapsed behind a count).
+    Undo-last-save / dirty, plus the outputs, file choices, `feb.*` properties, ROI
+    override, vNAS files and CRC ERAM defaults every GeoJSON sub-service shares). The
+    cards run: Outputs, What Files, FE-Buddy Properties, the tab's own cards, Region of
+    Interest, then **Upload to vNAS** (a box per file the tab writes, from its
+    `OutputFiles`, and which of those get CRC-ERAM defaults) and **CRC ERAM Defaults**,
+    which shows only the panels and class columns the chosen files need. The Airways
+    tab adds: Output mode + per-kind emit toggles, designation include/exclude (from
+    the cycle's `AWY_ID`s), buffer, the aliases section (`Airways.txt` + ROI scope),
+    and the antimeridian toggle. Its result panel shows files + feature counts, the
+    alias line count, the excluded-airway count, and messages grouped by airway and
+    presented by level (info collapsed behind a count).
   - **Preview Settings tab** - present once at least one sub-service is selected:
-    every tab's settings as label/value rows, notices naming any unsaved or invalid
-    tab, and the single **Run AIRAC Service** button, which goes through
-    `AiracService.RunAsync`.
+    every tab's settings as label/value rows (the General section names the run's
+    `AIRAC_<cycle>` folder), notices naming any unsaved or invalid tab, and the single
+    **Run AIRAC Service** button, which goes through `AiracService.RunAsync` - after
+    asking, if the cycle folder already has files, whether to overwrite them or delete
+    them first.
   - **Review tab** - appears once a run starts: the live step feed, errors,
-    advisories, each sub-service's results, and the files written. The rail sets it
-    apart from the settings tabs with a divider (`IsSetApart`, on every tabbed screen).
+    advisories, each sub-service's results, the files written, and **Open output
+    folder** for the run's cycle folder. The rail sets it apart from the settings tabs
+    with a divider (`IsSetApart`, on every tabbed screen).
   - **Action bar** - above the tab content and again at the end of it: Previous,
     Next, Preview settings, Undo all changes, Undo last save, Save. Previous / Next /
     Preview settings offer to save a dirty tab first; cancelling keeps you where you are. The
@@ -182,8 +196,9 @@ bar and page scroller are shared, and each screen's view-model says what differs
   visibility / count / remove), and manage the one default ROI in place via the
   shared `RoiEditor`. No ruler, no CRC display visualiser, no sample layers.
 - **Settings** - Updates (channel + tooltips + "check now" + rollback), Facility
-  Profile (one facility from the parsed cycle, default output dir + FE-Buddy_Output
-  toggle), Default Region of Interest (`RoiPickerWindow`), GeoJSON Files (feb.*
+  Profile (one facility from the parsed cycle, default output dir - the Desktop until
+  one is saved - + FE-Buddy_Output toggle, with the cycle folder a run would write to),
+  Default Region of Interest (`RoiPickerWindow`), GeoJSON Files (feb.*
   description, Maximum Coordinate Precision 5/6/7 dp). Everything persists to
   `UserConfig.json`.
 - **Info** - Manual, Change log, Issues & requests as real links (About deleted).

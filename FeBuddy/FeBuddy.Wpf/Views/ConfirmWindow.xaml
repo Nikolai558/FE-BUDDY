@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
         Title="{Binding Title}"
-        Width="440" SizeToContent="Height"
+        Width="480" SizeToContent="Height"
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize"
         ShowInTaskbar="False"
@@ -19,11 +19,16 @@
             <TextBlock Text="{Binding Message}" TextWrapping="Wrap" Margin="0,12,0,0"
                        Style="{StaticResource Text.Body}" />
 
+            <!-- Cancel, then the alternative (only when there is one), then the primary confirm. -->
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,22,0,0">
                 <Button Content="{Binding CancelText}" Style="{StaticResource Button.Ghost}"
                         Command="{Binding CancelCommand}" MinWidth="96" Margin="0,0,10,0" />
+                <Button Content="{Binding AlternativeText}" Style="{StaticResource Button.Ghost}"
+                        Command="{Binding AlternativeCommand}" MinWidth="96" Margin="0,0,10,0"
+                        Visibility="{Binding HasAlternative, Converter={StaticResource BoolToVis}}" />
                 <Button Content="{Binding ConfirmText}" Style="{StaticResource Button.Primary}"
-                        Command="{Binding ConfirmCommand}" MinWidth="140" />
+                        Command="{Binding ConfirmCommand}" MinWidth="140"
+                        IsDefault="{Binding ConfirmIsDefault}" />
             </StackPanel>
         </StackPanel>
     </Border>

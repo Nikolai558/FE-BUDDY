@@ -1,4 +1,5 @@
 using FeBuddy.Core.Application.Airac.Airways.Models;
+using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Application.Models;
 using FeBuddy.Core.Application.Settings;
 using FeBuddy.Core.Domain.Airways.Models;
@@ -65,25 +66,25 @@ public static class AirwaySettingsParser
 		(bool includeFebProperties, IReadOnlyList<AirwayFebProperty> febProperties) =
 			SubServiceSettingsReader.ReadFebProperties<AirwayFebProperty>(airwaySettings, example: "awyId,pointId,waypoints");
 
-		// Each kind's defaults are written only when the user asked for them AND that file is
-		// produced; only then are its values required.
-		bool includeLineDefaults = CrcDefaultsReader.ReadInclude(airwaySettings, CrcFeatureKind.Line) && writingGeojson && emitLines;
-		bool includeSymbolDefaults = CrcDefaultsReader.ReadInclude(airwaySettings, CrcFeatureKind.Symbol) && writingGeojson && emitSymbols;
-		bool includeTextDefaults = CrcDefaultsReader.ReadInclude(airwaySettings, CrcFeatureKind.Text) && writingGeojson && emitText;
+		VnasFileChoices vnas = SubServiceSettingsReader.ReadVnasFiles(
+			airwaySettings, AirwayOutputFiles.Alias, AirwayOutputFiles.IsGeojsonKey,
+			example: $"{AirwayOutputFiles.GeojsonKey(nameof(AirwayAltitudeClass.High), CrcFeatureKind.Line)}, {AirwayOutputFiles.Alias}");
 
+		// A class's defaults are needed only when a file that gets CRC-ERAM defaults is actually
+		// written and can hold that class; only then are its values required.
 		Dictionary<AirwayAltitudeClass, CrcLineDefaults> lineDefaults = [];
 		Dictionary<AirwayAltitudeClass, CrcSymbolDefaults> symbolDefaults = [];
 		Dictionary<AirwayAltitudeClass, CrcTextDefaults> textDefaults = [];
 
 		foreach (AirwayAltitudeClass altitudeClass in Enum.GetValues<AirwayAltitudeClass>())
 		{
-			if (includeLineDefaults)
+			if (writingGeojson && emitLines && NeedsCrcDefaults(vnas, outputBy, altitudeClass, CrcFeatureKind.Line))
 				lineDefaults[altitudeClass] = CrcDefaultsReader.ReadLine(airwaySettings, $"Crc.{altitudeClass}.Line");
 
-			if (includeSymbolDefaults)
+			if (writingGeojson && emitSymbols && NeedsCrcDefaults(vnas, outputBy, altitudeClass, CrcFeatureKind.Symbol))
 				symbolDefaults[altitudeClass] = CrcDefaultsReader.ReadSymbol(airwaySettings, $"Crc.{altitudeClass}.Symbol");
 
-			if (includeTextDefaults)
+			if (writingGeojson && emitText && NeedsCrcDefaults(vnas, outputBy, altitudeClass, CrcFeatureKind.Text))
 				textDefaults[altitudeClass] = CrcDefaultsReader.ReadText(airwaySettings, $"Crc.{altitudeClass}.Text");
 		}
 
@@ -96,9 +97,7 @@ public static class AirwaySettingsParser
 			FebProperties = febProperties,
 			GenerateAliasFile = SettingsValueReader.YesNo(airwaySettings, "GenerateAliasFile", defaultValue: true),
 			SplitAtAntimeridian = SettingsValueReader.YesNo(airwaySettings, "SplitAtAntimeridian", defaultValue: true),
-			IncludeCrcLineDefaults = includeLineDefaults,
-			IncludeCrcSymbolDefaults = includeSymbolDefaults,
-			IncludeCrcTextDefaults = includeTextDefaults,
+			Vnas = vnas,
 			Roi = SubServiceSettingsReader.ReadRoi(airwaySettings),
 			ExcludedDesignations = SettingsValueReader.StringList(airwaySettings, "ExcludedDesignations")
 				.Select(designation => designation.ToUpperInvariant())
@@ -108,7 +107,6 @@ public static class AirwaySettingsParser
 			EmitText = emitText,
 			AliasRoiScope = SettingsValueReader.OptionalEnum(airwaySettings, "AliasRoiScope", AliasRoiScope.All),
 			CoordinatePrecision = SubServiceSettingsReader.ReadCoordinatePrecision(airwaySettings),
-			AddFeBuddyOutputFolder = SettingsValueReader.YesNo(airwaySettings, "AddFeBuddyOutputFolder", defaultValue: true),
 			LineDefaults = lineDefaults,
 			SymbolDefaults = symbolDefaults,
 			TextDefaults = textDefaults
@@ -120,4 +118,22 @@ public static class AirwaySettingsParser
 
 		return new AirwaySettingsParseResult(settings, messages);
 	}
+
+	/// <summary>
+	/// Whether a file that gets CRC-ERAM defaults needs <paramref name="altitudeClass"/>'s defaults
+	/// for <paramref name="kind"/>.
+	/// </summary>
+	/// <remarks>
+	/// A High/Low file holds one class, so only its own class is needed. A designation file can
+	/// hold every class (its isDefaults Feature takes the majority class, the rest are written as
+	/// per-feature overrides), so any designation file of that kind needs all three.
+	/// </remarks>
+	private static bool NeedsCrcDefaults(
+		VnasFileChoices vnas,
+		AirwayGeojsonOutputBy outputBy,
+		AirwayAltitudeClass altitudeClass,
+		CrcFeatureKind kind) =>
+		outputBy == AirwayGeojsonOutputBy.HighLow
+			? vnas.HasCrcDefaults(AirwayOutputFiles.GeojsonKey(altitudeClass.ToString(), kind))
+			: vnas.CrcDefaultsFiles.Any(key => AirwayOutputFiles.IsKind(key, kind));
 }

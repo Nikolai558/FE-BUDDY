@@ -4,7 +4,6 @@ using System.Text;
 using FeBuddy.Core.Application.Airac.Airports.Models;
 using FeBuddy.Core.Application.Models;
 using FeBuddy.Core.Domain.Airports.Models;
-using FeBuddy.Core.Infrastructure.FileSystem;
 using FeBuddy.Core.Infrastructure.Logging.Models;
 
 namespace FeBuddy.Core.Application.Airac.Airports;
@@ -40,7 +39,6 @@ namespace FeBuddy.Core.Application.Airac.Airports;
 public static class AirportAliasWriter
 {
 	private const string LogSource = "AirportAliasWriter";
-	private const string FileName = "Airports.txt";
 
 	/// <summary>The literal two-character escape CRC expands into a line break.</summary>
 	private const string NewLineEscape = @"\n";
@@ -106,10 +104,12 @@ public static class AirportAliasWriter
 			return new AirportAliasGenerateResult(null, 0, messages);
 		}
 
-		string directory = ServiceOutputPaths.Resolve(settings.OutputDirectory, settings.AddFeBuddyOutputFolder, "Airports", "Alias");
+		// The output folder itself, or Upload_to_vNAS when the user marked the file for vNAS.
+		string directory = AiracOutputPaths.FileDirectory(
+			settings.OutputDirectory, isGeojson: false, settings.Vnas.IsUploaded(AirportOutputFiles.Alias));
 		Directory.CreateDirectory(directory);
 
-		string path = Path.Combine(directory, FileName);
+		string path = Path.Combine(directory, AirportOutputFiles.Alias);
 
 		// UTF-8 without a BOM: CRC reads the file with File.ReadAllLines, which decodes UTF-8
 		// by default, and the feet marker is non-ASCII.

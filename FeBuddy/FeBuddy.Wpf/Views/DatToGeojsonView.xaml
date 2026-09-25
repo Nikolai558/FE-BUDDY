@@ -33,7 +33,9 @@
         <cards:SourceFilesCard />
 
         <!-- ============ CRC ERAM defaults ============ -->
-        <cards:CrcDefaultsCard LinesTitle="Video Map — Lines" />
+        <cards:CrcDefaultsCard LinesTitle="Video Map — Lines" ShowInclude="True"
+                               IncludeLines="{Binding IncludeCrcLineDefaults}"
+                               Note="The values written as the isDefaults feature at the top of each converted file. Untick Include to leave them out." />
 
         <!-- ============ cropping ============ -->
         <ctl:Card Header="Cropping">

@@ -53,9 +53,6 @@ public sealed class AirportAliasWriterTests : IDisposable
 		GenerateGeojson = false,
 		GenerateAliasFile = true,
 		IncludeFebCustomProperties = false,
-		IncludeCrcLineDefaults = false,
-		IncludeCrcSymbolDefaults = false,
-		IncludeCrcTextDefaults = false,
 	};
 
 	[Fact]

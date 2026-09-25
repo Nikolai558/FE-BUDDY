@@ -5,10 +5,13 @@ using FeBuddy.Wpf.ViewModels.Models;
 using FeBuddy.Wpf.ViewModels.ServiceTabs.Models;
 using FeBuddy.Wpf.ViewModels.ServiceTabs;
 
+using FeBuddy.Core.Application.Airac;
+using FeBuddy.Core.Application.Airac.Airways;
 using FeBuddy.Core.Application.Airac.Airways.Models;
 using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Domain.Airways;
 using FeBuddy.Core.Domain.Airways.Models;
+using FeBuddy.Core.Domain.Crc.Models;
 using FeBuddy.Core.Infrastructure.Nasr.Models;
 
 namespace FeBuddy.Wpf.ViewModels;
@@ -24,6 +27,13 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 	private const string Node = "Services.AiracService.Geojson.Airways";
 
 	private static readonly Regex AirwayIdPattern = new(@"^Airway '([^']+)':", RegexOptions.Compiled);
+
+	private static readonly AirwayAltitudeClass[] AltitudeClasses =
+		[AirwayAltitudeClass.High, AirwayAltitudeClass.Low, AirwayAltitudeClass.Other];
+
+	/// <summary>The three kinds of GeoJSON file, as Core names them and as the CRC ERAM panels group them.</summary>
+	private static readonly (CrcFeatureKind Kind, EramFieldKind Field)[] FileKinds =
+		[(CrcFeatureKind.Line, EramFieldKind.Line), (CrcFeatureKind.Symbol, EramFieldKind.Symbol), (CrcFeatureKind.Text, EramFieldKind.Text)];
 
 	private AirwayGeojsonOutputBy _outputBy = AirwayGeojsonOutputBy.HighLow;
 	private bool _bufferAirwayWaypoints;
@@ -114,11 +124,47 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 		(OutputBy == AirwayGeojsonOutputBy.None ? 0 : 1) + (GenerateAliasFile ? 1 : 0);
 
 	/// <inheritdoc />
-	protected override bool WritesGeojson => IsGeojsonOutputOn;
-
-	/// <inheritdoc />
 	protected override string NoDefaultRoiHint =>
 		"No default ROI is set, so every airway is included. Set one in Settings, or override it here.";
+
+	/// <inheritdoc />
+	/// <remarks>
+	/// A row per file group - High / Low / Other, or each included designation - with its Lines,
+	/// Symbols and Text files, then the alias file. A High/Low file holds one altitude class, so
+	/// it needs only that class's CRC defaults; a designation file can hold all three.
+	/// </remarks>
+	protected override IEnumerable<OutputFileOption> OutputFiles()
+	{
+		if (IsGeojsonOutputOn)
+		{
+			bool[] emitted = [EmitLines, EmitSymbols, EmitText];
+
+			foreach (string group in FileGroups())
+			{
+				for (int i = 0; i < FileKinds.Length; i++)
+				{
+					if (!emitted[i])
+					{
+						continue;
+					}
+
+					(CrcFeatureKind kind, EramFieldKind field) = FileKinds[i];
+					string key = AirwayOutputFiles.GeojsonKey(group, kind);
+
+					IReadOnlyList<(string, EramFieldKind)> crcRows = OutputBy == AirwayGeojsonOutputBy.HighLow
+						? [(group, field)]
+						: [.. AltitudeClasses.Select(altitudeClass => (altitudeClass.ToString(), field))];
+
+					yield return new OutputFileOption(key, group, AiracOutputPaths.FileKindSuffix(kind), key, IsGeojson: true, crcRows);
+				}
+			}
+		}
+
+		if (GenerateAliasFile)
+		{
+			yield return OutputFileOption.AliasFile(AirwayOutputFiles.Alias);
+		}
+	}
 
 	/// <inheritdoc />
 	/// <remarks>Airways keeps one row per altitude class, grouped by kind: <c>CrcEramPropertyDefaults.Lines.Airway_High_Lines</c>.</remarks>
@@ -144,6 +190,9 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 		{
 			Designations.Add(new DesignationToggle(d, included: !excluded.Contains(d), MarkDirty));
 		}
+
+		// In Designation mode the files - and so the Upload to vNAS rows - come from this list.
+		RefreshVnasFiles();
 
 		// The list was empty when this tab snapshotted itself at construction, so the snapshot
 		// says "nothing excluded" while the config may well exclude several. Re-take it now the
@@ -187,7 +236,7 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 
 	/// <inheritdoc />
 	/// <remarks>The block goes on <see cref="AiracServiceSettings.Airways"/>.</remarks>
-	public IReadOnlyDictionary<string, string> BuildSettingsBlock(string outputDirectory, bool addFeBuddyOutputFolder)
+	public IReadOnlyDictionary<string, string> BuildSettingsBlock()
 	{
 		Dictionary<string, string> s = new(StringComparer.OrdinalIgnoreCase)
 		{
@@ -198,7 +247,7 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 			["ExcludedDesignations"] = string.Join(',', Designations.Where(d => !d.Included).Select(d => d.Designation)),
 		};
 
-		AddSharedSettings(s, outputDirectory, addFeBuddyOutputFolder);
+		AddSharedSettings(s);
 		return s;
 	}
 
@@ -295,12 +344,13 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 			new ServicePreviewRow("Alias file", aliasFile),
 			new ServicePreviewRow("File kinds", fileKinds.Count > 0 ? string.Join(", ", fileKinds) : "none"),
 			new ServicePreviewRow("FE-Buddy properties", DescribeFebProperties()),
-			new ServicePreviewRow("CRC ERAM defaults", DescribeCrcDefaults()),
 			new ServicePreviewRow("Includes", includes),
 			new ServicePreviewRow("Excluded designations", string.IsNullOrEmpty(excluded) ? "none" : excluded),
 			new ServicePreviewRow("Buffer waypoints", BufferAirwayWaypoints ? "Yes" : "No"),
 			new ServicePreviewRow("Split at antimeridian", SplitAtAntimeridian ? "Yes" : "No"),
 			new ServicePreviewRow("Region of interest", DescribeRoi()),
+			new ServicePreviewRow("Upload to vNAS", DescribeVnasFiles()),
+			new ServicePreviewRow("CRC ERAM defaults", DescribeCrcDefaults()),
 		];
 
 		return [new ServicePreviewSection("Airways", rows)];
@@ -310,7 +360,32 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 
 	private HashSet<string> ParseExcludedFromConfig() => ParseList(Get("ExcludedDesignations"));
 
+	/// <summary>The groups the GeoJSON is split into: the altitude classes, or each included designation.</summary>
+	/// <returns>The group names, in display order.</returns>
+	private IEnumerable<string> FileGroups()
+	{
+		if (OutputBy == AirwayGeojsonOutputBy.HighLow)
+		{
+			return AltitudeClasses.Select(altitudeClass => altitudeClass.ToString());
+		}
+
+		if (Designations.Count > 0)
+		{
+			return Designations.Where(d => d.Included).Select(d => d.Designation);
+		}
+
+		// Before the cycle's designations load there is no list to offer, so keep the groups the
+		// saved choices name - a save or a run in the meantime must not drop them.
+		HashSet<string> excluded = ParseExcludedFromConfig();
+
+		return ChosenVnasFileKeys
+			.Where(AirwayOutputFiles.IsGeojsonKey)
+			.Select(key => key.Split('_')[1])
+			.Where(group => !excluded.Contains(group))
+			.Distinct(StringComparer.OrdinalIgnoreCase)
+			.Order(StringComparer.OrdinalIgnoreCase);
+	}
+
 	private ObservableCollection<EramClassDefault> BuildClassDefaults(EramFieldKind kind) =>
-		[.. new[] { AirwayAltitudeClass.High, AirwayAltitudeClass.Low, AirwayAltitudeClass.Other }
-			.Select(altitudeClass => new EramClassDefault(altitudeClass.ToString(), kind, MarkDirty))];
+		[.. AltitudeClasses.Select(altitudeClass => new EramClassDefault(altitudeClass.ToString(), kind, MarkDirty))];
 }

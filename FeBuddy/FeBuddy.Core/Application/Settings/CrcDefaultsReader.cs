@@ -14,20 +14,12 @@ namespace FeBuddy.Core.Application.Settings;
 /// to CRC's own fallback, so a missing one is an error that names the key.
 /// </para>
 /// <para>
-/// A service calls these only for the kinds it is actually writing.
+/// A service calls these only for the defaults a file it is writing actually needs: one that
+/// is uploaded to vNAS and chosen for CRC-ERAM defaults (<c>CrcDefaultsFor</c>).
 /// </para>
 /// </remarks>
 public static class CrcDefaultsReader
 {
-	/// <summary>Setting that asks for the Line defaults to be written (<c>Y</c>/<c>N</c>, default <c>N</c>).</summary>
-	public const string IncludeLineKey = "IncludeCrcLineDefaults";
-
-	/// <summary>Setting that asks for the Symbol defaults to be written (<c>Y</c>/<c>N</c>, default <c>N</c>).</summary>
-	public const string IncludeSymbolKey = "IncludeCrcSymbolDefaults";
-
-	/// <summary>Setting that asks for the Text defaults to be written (<c>Y</c>/<c>N</c>, default <c>N</c>).</summary>
-	public const string IncludeTextKey = "IncludeCrcTextDefaults";
-
 	private static readonly HashSet<string> LinePropertyNames =
 		new(StringComparer.OrdinalIgnoreCase) { "bcg", "filters", "style", "thickness" };
 
@@ -48,31 +40,6 @@ public static class CrcDefaultsReader
 		CrcFeatureKind.Text => TextPropertyNames,
 		_ => throw new ArgumentOutOfRangeException(nameof(kind), kind, "Unknown CRC feature kind.")
 	};
-
-	/// <summary>
-	/// Reads whether the user asked for <paramref name="kind"/>'s defaults to be written.
-	/// </summary>
-	/// <remarks>
-	/// Each kind is chosen on its own, so a user can produce a Symbols file without its defaults.
-	/// The caller still ANDs this with "is that file being produced": asking for defaults on a
-	/// file that is never written means nothing, and its values are then not required.
-	/// </remarks>
-	/// <param name="settings">The raw settings block.</param>
-	/// <param name="kind">Which kind's include flag to read.</param>
-	/// <returns><see langword="true"/> when the flag is <c>Y</c>; <see langword="false"/> when <c>N</c> or absent.</returns>
-	/// <exception cref="ArgumentException">Thrown when the flag is present but not <c>Y</c>/<c>N</c>.</exception>
-	public static bool ReadInclude(IReadOnlyDictionary<string, string> settings, CrcFeatureKind kind)
-	{
-		string key = kind switch
-		{
-			CrcFeatureKind.Line => IncludeLineKey,
-			CrcFeatureKind.Symbol => IncludeSymbolKey,
-			CrcFeatureKind.Text => IncludeTextKey,
-			_ => throw new ArgumentOutOfRangeException(nameof(kind), kind, "Unknown CRC feature kind.")
-		};
-
-		return SettingsValueReader.YesNo(settings, key, defaultValue: false);
-	}
 
 	/// <summary>Reads and validates the Line defaults under <paramref name="keyPrefix"/>.</summary>
 	/// <param name="settings">The raw settings block.</param>

@@ -43,11 +43,11 @@ public static class SctToGeojsonSettingsParser
 		(string? sourceFolder, IReadOnlyList<string> sourceFiles) = ConversionSettingsReader.ReadSource(settings);
 
 		// Only a ticked Include box makes that kind's defaults required.
-		bool includeLineDefaults = CrcDefaultsReader.ReadInclude(settings, CrcFeatureKind.Line);
-		bool includeTextDefaults = CrcDefaultsReader.ReadInclude(settings, CrcFeatureKind.Text);
+		bool includeLineDefaults = ConversionSettingsReader.ReadCrcInclude(settings, CrcFeatureKind.Line);
+		bool includeTextDefaults = ConversionSettingsReader.ReadCrcInclude(settings, CrcFeatureKind.Text);
 
 		IReadOnlyList<ServiceMessage> messages = SubServiceSettingsReader.UnknownKeyWarnings(
-			settings, ConversionSettingsReader.SourceKeys, CrcKindsByClass, LogSource,
+			settings, ConversionSettingsReader.ConversionKeys, CrcKindsByClass, LogSource,
 			labelSource: "each label keeps its own text from the sector file");
 
 		SctToGeojsonSettings parsed = new()

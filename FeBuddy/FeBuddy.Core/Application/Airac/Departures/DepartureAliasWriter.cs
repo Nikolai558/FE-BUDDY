@@ -31,7 +31,6 @@ namespace FeBuddy.Core.Application.Airac.Departures;
 public static class DepartureAliasWriter
 {
 	private const string LogSource = "DepartureAliasWriter";
-	private const string FileName = "Departures.txt";
 
 	/// <summary>
 	/// Writes the alias file for the airport + procedure pairs in scope.
@@ -76,10 +75,12 @@ public static class DepartureAliasWriter
 			return new DepartureAliasGenerateResult(null, 0, messages);
 		}
 
-		string directory = DepartureOutputPaths.AliasDirectory(settings);
+		// The output folder itself, or Upload_to_vNAS when the user marked the file for vNAS.
+		string directory = AiracOutputPaths.FileDirectory(
+			settings.OutputDirectory, isGeojson: false, settings.Vnas.IsUploaded(DepartureOutputFiles.Alias));
 		Directory.CreateDirectory(directory);
 
-		string path = Path.Combine(directory, FileName);
+		string path = Path.Combine(directory, DepartureOutputFiles.Alias);
 		File.WriteAllText(path, builder.ToString(), new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
 
 		return new DepartureAliasGenerateResult(path, commandCount, messages);

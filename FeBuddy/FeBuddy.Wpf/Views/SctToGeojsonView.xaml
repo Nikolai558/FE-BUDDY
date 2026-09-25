@@ -30,7 +30,9 @@
         <cards:SourceFilesCard />
 
         <!-- ============ CRC ERAM defaults ============ -->
-        <cards:CrcDefaultsCard LinesTitle="Sector File — Lines" TextTitle="Sector File — Labels" />
+        <cards:CrcDefaultsCard LinesTitle="Sector File — Lines" TextTitle="Sector File — Labels" ShowInclude="True"
+                               IncludeLines="{Binding IncludeCrcLineDefaults}" IncludeText="{Binding IncludeCrcTextDefaults}"
+                               Note="The values written as the isDefaults feature at the top of each converted file. Untick Include on a panel to leave its defaults out." />
 
         <!-- ============ run ============ -->
         <cards:RunCard Blocker="{Binding RunBlocker}"

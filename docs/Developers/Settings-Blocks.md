@@ -14,27 +14,61 @@ go through the same parser. This page lists every key each parser reads.
   throws `ArgumentException` naming the key - the run stops for that sub-service.
 - **Unknown keys are warnings**, not errors: the run goes on and the Review tab lists them. This is
   how a retired key in an old harness or config degrades gracefully.
-- **Only the CRC defaults actually needed are required**: those for a file kind that is being
-  written *and* whose `IncludeCrc…Defaults` is `Y`. Other valid CRC keys are accepted and ignored;
-  a key for a class, kind or field the sub-service does not have is a warning.
+- **Only the CRC defaults actually needed are required**: those a file that is being written
+  *and* is listed in `CrcDefaultsFor` needs (a file conversion: a kind it writes whose
+  `IncludeCrc…Defaults` is `Y`). Other valid CRC keys are accepted and ignored; a key for a class,
+  kind or field the sub-service does not have is a warning.
 
 Parsers: `AirportSettingsParser`, `AirwaySettingsParser`, `DepartureSettingsParser`,
-`DatToGeojsonSettingsParser`. Shared reading: `SubServiceSettingsReader`, `CrcDefaultsReader`,
-`SettingsValueReader` (all in `FeBuddy.Core/Application`).
+`ArrivalSettingsParser`, `DatToGeojsonSettingsParser`, `SctToGeojsonSettingsParser`,
+`VeramToGeojsonSettingsParser`. Shared reading: `SubServiceSettingsReader`, `CrcDefaultsReader`,
+`ConversionSettingsReader`, `SettingsValueReader` (all in `FeBuddy.Core/Application`).
 
 ## Keys every AIRAC sub-service reads
 
 | Key | Values | Default |
 |---|---|---|
-| `OutputDirectory` | folder path | **required** |
-| `AddFeBuddyOutputFolder` | `Y` / `N` - write into `<OutputDirectory>\FE-Buddy_Output\` | `Y` |
+| `OutputDirectory` | folder path - the folder the run writes into (below) | **required** |
 | `CoordinatePrecision` | `0`-`15` decimal places | `6` |
 | `GenerateAliasFile` | `Y` / `N` | `Y` |
 | `IncludeFebCustomProperties` | `Y` / `N` | `N` |
 | `FebProperties` | list of `feb.*` names (below); **required** when the above is `Y` | none |
-| `IncludeCrcLineDefaults`, `IncludeCrcSymbolDefaults`, `IncludeCrcTextDefaults` | `Y` / `N` | `Y` |
+| `UploadToVnas` | list of file keys (below) to write under `Upload_to_vNAS` | none |
+| `CrcDefaultsFor` | list of GeoJSON file keys that get CRC-ERAM defaults; each must also be in `UploadToVnas` | none |
 | `FilterByRoi` | `Y` / `N` | `N` |
 | `RoiSwLat`, `RoiSwLon`, `RoiNeLat`, `RoiNeLon` | decimal degrees; **required** when `FilterByRoi` is `Y` | none |
+
+### Where files go
+
+`OutputDirectory` is the folder the run writes into; files are laid out inside it by
+`AiracOutputPaths`. The GUI does not send it: `AiracService` sets it on every block to the run's
+cycle folder, `<output>[\FE-Buddy_Output]\AIRAC_<cycle>` (from `AiracServiceSettings`), so every
+sub-service writes into the same folder. The harness and tests pass their own.
+
+| File | Goes in |
+|---|---|
+| Alias file | `<OutputDirectory>\` |
+| GeoJSON | `<OutputDirectory>\Geojson\` (Departures, Arrivals: `…\Geojson\<ARTCC>\<ARPT>\`) |
+| Marked for vNAS | the same, under `<OutputDirectory>\Upload_to_vNAS\` instead |
+
+### vNAS file keys
+
+A **file key** names one output file: a GeoJSON file's name without `.geojson`, or the alias
+file's name. Departures and Arrivals each write thousands of GeoJSON files, so their keys name
+every file of one kind. Keys match ignoring case; a key the sub-service does not write, a
+`CrcDefaultsFor` key that is not in `UploadToVnas`, or the alias file in `CrcDefaultsFor`, throws.
+A key for a file that is not written this run (its kind is switched off, say) is accepted and does
+nothing.
+
+| Sub-service | GeoJSON keys | Alias key |
+|---|---|---|
+| Airports | `Runways_Lines`, `Airports_Symbols`, `Airports_Text` | `Airports.txt` |
+| Airways | `Airways_<group>_Lines` / `_Symbols` / `_Text`, where `<group>` is `High`, `Low`, `Other` or a designation (letters only) | `Airways.txt` |
+| Departures | `Departures_Lines`, `Departures_Symbols`, `Departures_Text` | `Departures.txt` |
+| Arrivals | `Arrivals_Lines`, `Arrivals_Symbols`, `Arrivals_Text` | `Arrivals.txt` |
+
+CRC-ERAM defaults are only ever written to files marked for vNAS, since CRC reads its maps from
+vNAS. The keys are listed in each sub-service's `*OutputFiles` class.
 
 ### CRC defaults
 
@@ -73,7 +107,9 @@ naming the key.
 | `ExcludedDesignations` | list, e.g. `RN,SL` (upper-cased) | none |
 | `AliasRoiScope` | `All`, `RoiAirways` | `All` |
 
-- **CRC classes:** `High`, `Low`, `Other`, each with `Line`, `Symbol` and `Text`.
+- **CRC classes:** `High`, `Low`, `Other`, each with `Line`, `Symbol` and `Text`. With `HighLow`,
+  a file in `CrcDefaultsFor` needs only its own class (`Airways_High_Lines` needs `Crc.High.Line.*`);
+  with `Designation`, a file can hold every class, so it needs all three of its kind.
 - **`FebProperties`:** `awyId`, `pointId`, `waypoints`.
 - `OutputBy = None` writes no GeoJSON (so no CRC defaults are needed); any other value needs at
   least one `Emit…`.
@@ -100,16 +136,41 @@ naming the key.
 - Only the active amendment mode's value is read (and required); values for the other modes are
   ignored.
 
+## Arrivals
+
+| Key | Values | Default |
+|---|---|---|
+| `GenerateGeojson` | `Y` / `N` | `Y` |
+| `EmitLines`, `EmitSymbols`, `EmitText` | `Y` / `N` | `Y` |
+| `ArtccFilter` | list of ARTCC IDs; empty means every ARTCC | none |
+| `AmendmentFilter` | `None`, `Cycles`, `Days`, `Date` | `None` |
+| `AmendedWithinCycles` | 1-1000 (1 = the selected cycle); **required** with `Cycles` | - |
+| `AmendedWithinDays` | 1-36500, counted back from today; **required** with `Days` | - |
+| `AmendedOnOrAfter` | `yyyy-MM-dd`; **required** with `Date` | - |
+| `RoiMode` | `Airport` (every arrival of an airport inside the ROI), `Waypoint` (any arrival with a point inside) | `Airport` |
+
+- **CRC class:** `Arrivals`, with `Line`, `Symbol` and `Text`.
+- **`FebProperties`:** `arrivalName`, `pointId`, `arptId`, `artcc`, `amendmentNo`, `amendEffDate`,
+  `waypoints`.
+- The same keys as Departures, minus `IncludeObstacleDepartures` - a STAR has no obstacle/SID
+  split, so the key is not read; sending it anyway is an unknown-key warning, not an error.
+- `GenerateGeojson` and `GenerateAliasFile` cannot both be `N`, and `GenerateGeojson = Y` needs at
+  least one `Emit…`.
+- Only the active amendment mode's value is read (and required); values for the other modes are
+  ignored.
+
 ## Keys every file conversion reads
 
-A file conversion is not an AIRAC sub-service: it has no alias file, `feb.*` properties or ROI.
-Every conversion reads these (shared reading: `ConversionSettingsReader`), plus
-`CoordinatePrecision` and the `IncludeCrc…Defaults` / `Crc.*` keys as in the table above.
+A file conversion is not an AIRAC sub-service: it has no alias file, `feb.*` properties, ROI or
+vNAS files. Every conversion reads these (shared reading: `ConversionSettingsReader`), plus
+`CoordinatePrecision` and the `Crc.*` keys as in the tables above. It writes into its own folder
+next to the `AIRAC_<cycle>` folders, `<OutputDirectory>[\FE-Buddy_Output]\<conversion>`.
 
 | Key | Values | Default |
 |---|---|---|
 | `OutputDirectory` | folder path | **required** |
 | `AddFeBuddyOutputFolder` | `Y` / `N` | `Y` |
+| `IncludeCrcLineDefaults`, `IncludeCrcSymbolDefaults`, `IncludeCrcTextDefaults` | `Y` / `N` - write that kind's CRC-ERAM defaults (the Include box on its panel); only a kind the conversion writes is read | `N` |
 | `SourceFolder` | a folder; every file directly in it with the conversion's extension is converted | - |
 | `SourceFiles` | file paths separated by `\|` (a comma is legal in a Windows path; `\|` is not) | - |
 
@@ -157,12 +218,13 @@ new Dictionary<string, string>
 	{ "GenerateAliasFile", "Y" },
 	{ "IncludeFebCustomProperties", "Y" },
 	{ "FebProperties", "awyId,pointId,waypoints" },
-	{ "IncludeCrcLineDefaults", "Y" },
+	{ "UploadToVnas", "Airways_High_Lines,Airways_Low_Lines,Airways.txt" },
+	{ "CrcDefaultsFor", "Airways_High_Lines" },
 	{ "Crc.High.Line.bcg", "1" },
 	{ "Crc.High.Line.filters", "1,2" },
 	{ "Crc.High.Line.style", "solid" },
 	{ "Crc.High.Line.thickness", "1" },
-	// ...the same for Low and Other, and for Symbol and Text if included
+	// ...a class and kind for every other file in CrcDefaultsFor
 	{ "FilterByRoi", "N" },
 };
 ```

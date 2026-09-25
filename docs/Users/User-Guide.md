@@ -39,8 +39,8 @@ The screen where you make files. It is a set of tabs down the left:
 
 | Tab | What it is |
 |---|---|
-| **General** | Which cycle, and which sub-services (Airports, Airways, Departures). Always there. |
-| **Airports / Airways / Departures** | One tab per sub-service you ticked, with its settings. |
+| **General** | Which cycle, and which sub-services (Airports, Airways, Departures, Arrivals). Always there. |
+| **Airports / Airways / Departures / Arrivals** | One tab per sub-service you ticked, with its settings. |
 | **Preview Settings** | Everything the run will do, in plain words, and the **Run AIRAC Service** button. Appears once a sub-service is ticked. |
 | **Review** | What happened in the last run. Appears once you run. |
 
@@ -87,10 +87,23 @@ one must stay on; to make nothing for a sub-service, untick it on the General ta
 GeoJSON viewer. Tick **Include FE-Buddy Properties** and then the ones you want; each has a tooltip
 saying what it holds.
 
-**CRC ERAM Defaults** - how CRC should draw the file, written as one hidden "defaults" feature at
-the top of each file. There is a panel per file (Lines, Symbols, Text); untick **Include** on a
-panel to leave that file without defaults. FE-Buddy never guesses these values: every box on an
-included panel must be filled in.
+**Region of Interest** - by default a run uses the **Default Region of Interest** from Settings.
+Tick **Override the default ROI for <sub-service>** to give it its own box: type the four corners or
+press **Pick on map…**. The note under the checkbox says which region applies when the override
+is off. With no region at all, the run covers the whole country.
+
+**Upload to vNAS** - near the end of the tab, once the files are set up: a box for every file the
+tab's settings will write. Tick the ones you will upload to vNAS; they are written to the cycle's
+`Upload_to_vNAS` folder instead of the usual one (see [Output files](#output-files)), so they are
+ready to upload. Once a GeoJSON file is ticked, a follow-up question asks whether those files get
+**CRC-ERAM Default Properties**: *No CRC-ERAM defaults*, *Every GeoJSON file going to vNAS*, or
+*Specific files* (then tick which).
+
+**CRC ERAM Defaults** - how CRC should draw a file, written as one hidden "defaults" feature at
+the top of it. Only files going to vNAS get them - CRC reads its maps from vNAS - so this card
+appears only once the Upload to vNAS card has files chosen for CRC-ERAM defaults, and shows only
+the panels and columns those files need. FE-Buddy never guesses these values: every box shown must
+be filled in.
 
 | Field | Values | Used on |
 |---|---|---|
@@ -102,12 +115,9 @@ included panel must be filled in.
 | Underline, Opaque | Yes / No | Text |
 | X offset, Y offset | any whole number | Text |
 
-Airways has one column per altitude class (High, Low, Other); Airports and Departures have one.
-
-**Region of Interest** - by default a run uses the **Default Region of Interest** from Settings.
-Tick **Override the default ROI for <sub-service>** to give it its own box: type the four corners or
-press **Pick on map…**. The note under the checkbox says which region applies when the override
-is off. With no region at all, the run covers the whole country.
+Airways has a column per altitude class (High, Low, Other) - with High/Low files, just the class of
+each file chosen; with designation files, all three, since one file can hold airways of every
+class. Airports, Departures and Arrivals have one.
 
 ### Airports tab
 
@@ -119,6 +129,8 @@ is off. With no region at all, the run covers the whole country.
 - **FE-Buddy properties:** `faaId`, `icaoId`, `name`, `elev`, `respArtcc`, `tfcPtrnAlt`, `fssId`,
   `twrType`, `rwyId`.
 - **Region:** an airport is included when its reference point is inside the region.
+- **Upload to vNAS:** each of the four files on its own - Runways Lines, Airports Symbols,
+  Airports Text, `Airports.txt`.
 
 ### Airways tab
 
@@ -141,6 +153,9 @@ is off. With no region at all, the run covers the whole country.
 - **FE-Buddy properties:** `awyId`, `pointId`, `waypoints`.
 - **Region:** an airway is included when its line crosses the region, and its GeoJSON is clipped
   to the region.
+- **Upload to vNAS:** a row per file group - High, Low and Other, or each included designation -
+  with its Lines, Symbols and Text files, then `Airways.txt`. With **Designation**, the rows appear
+  once the cycle's data is loaded.
 - An airway with a waypoint FE-Buddy cannot locate is left out entirely (a half-drawn airway is
   worse than none); the Review tab says which and why.
 
@@ -149,9 +164,8 @@ is off. With no region at all, the run covers the whole country.
 - **Outputs:** GeoJSON, and `Departures.txt` - a command per airport and procedure that draws the
   procedure's points.
 - **Files:** Lines (each airport's procedure, shared segments drawn once), Symbols (each point),
-  Text (each point's identifier). They are written per airport:
-  `Departure Procedures\<ARTCC>\<airport>\<airport>_<procedure>_Lines.geojson` (and `_Symbols`,
-  `_Text`).
+  Text (each point's identifier). They are written per airport, in the cycle's GeoJSON folder:
+  `Geojson\<ARTCC>\<airport>\<airport>_<procedure>_Lines.geojson` (and `_Symbols`, `_Text`).
 - **Procedures:**
   - **Include obstacle departures (ODPs)** - on by default; off gives SIDs only.
   - **ARTCCs** - tick the ARTCCs you want; none ticked means all. **Clear** unticks them all.
@@ -162,14 +176,58 @@ is off. With no region at all, the run covers the whole country.
   file.
 - **FE-Buddy properties:** `dpName`, `pointId`, `arptId`, `artcc`, `amendmentNo`, `amendEffDate`,
   `waypoints`.
+- **Upload to vNAS:** by kind, since a run writes thousands of files - every procedure's Lines,
+  Symbols or Text files - then `Departures.txt`. The `<ARTCC>\<airport>` folders are kept under
+  `Upload_to_vNAS\Geojson` too.
 - Procedures are named by their FAA computer code without the amendment digit (`DOTSS2.DOTSS` is
   `DOTSS`), or by their name with punctuation removed when there is no code (`O'HARE` is `OHARE`).
 
+### Arrivals tab
+
+The same shape as Departures, for STARs instead of SIDs, with no obstacle/SID split - so there is
+no "Include obstacle departures" equivalent here.
+
+- **Outputs:** GeoJSON, and `Arrivals.txt` - a command per airport and procedure that draws the
+  procedure's points.
+- **Files:** Lines (each airport's procedure, shared segments drawn once), Symbols (each point),
+  Text (each point's identifier). They are written per airport, in the same
+  `Geojson\<ARTCC>\<airport>\` folder as that airport's Departures files, but named with `STAR` in
+  them - `<airport>_<procedure>_STAR_Lines.geojson` (and `_Symbols`, `_Text`) - so a SID and a STAR
+  that share an identifier at one airport never overwrite each other.
+- **Procedures:**
+  - **ARTCCs** - tick the ARTCCs you want; none ticked means all. **Clear** unticks them all. A
+    STAR shared by two ARTCCs (rare) follows each airport's own ARTCC: ARLFT serves airports in
+    both ZDC and ZNY, so ticking only ZNY gives you ARLFT at its ZNY airport and nowhere else.
+  - **Amendment Date** - keep every procedure, or only those amended within the last *N* cycles
+    (1 = this cycle), within the last *N* days, or on or after a date.
+- **How the Region Selects Arrivals:** *every arrival for an airport inside the region*, or *any
+  arrival with a point inside the region*. The region limits both the GeoJSON and the alias file.
+- **FE-Buddy properties:** `arrivalName`, `pointId`, `arptId`, `artcc`, `amendmentNo`,
+  `amendEffDate`, `waypoints`.
+- **Upload to vNAS:** by kind, since a run writes thousands of files - every procedure's Lines,
+  Symbols or Text files - then `Arrivals.txt`. The `<ARTCC>\<airport>` folders are kept under
+  `Upload_to_vNAS\Geojson` too.
+- Procedures are named by their FAA computer code without the amendment digit, read in the
+  opposite order from a departure's code (`AALAN.BLAID2` is `BLAID`), or by their name with
+  punctuation removed when there is no code.
+- A STAR is flown transition to body, so its points - and the alias command's fix list - list
+  transitions first, then bodies (the reverse of a departure's order).
+
 ### Preview Settings tab
 
-A plain-words summary of every tab: what will be written, what it covers, and which region
-applies. It warns if a tab has something to fix (the run is blocked until you do) or unsaved
-changes (they are saved when the run starts). **Run AIRAC Service** starts the run.
+A plain-words summary of every tab: the folder the run writes to, what will be written, what it
+covers, which region applies, and which files go to vNAS and get CRC-ERAM defaults. It warns if a
+tab has something to fix (the run is blocked until you do) or unsaved changes (they are saved when
+the run starts). **Run AIRAC Service** starts the run.
+
+If the cycle has been run before - its `AIRAC_<cycle>` folder already has files in it - FE-Buddy
+asks what to do first:
+
+- **Overwrite files** (the default) - this run's files replace the old ones; any old file this run
+  does not write is left as it is.
+- **Delete all files** - everything in the `AIRAC_<cycle>` folder is permanently deleted (not sent
+  to the Recycle Bin) first, so afterwards it holds only this run's files.
+- **Cancel** - nothing runs.
 
 ### Review tab
 
@@ -179,8 +237,8 @@ changes (they are saved when the run starts). **Run AIRAC Service** starts the r
   matched your filters").
 - **Results** - per sub-service, what it produced, with its warnings and routine messages each
   behind a **Show** button.
-- **Output** - every file written (collapsed to a count; a Departures run writes thousands) and
-  **Open output folder**.
+- **Output** - every file written (collapsed to a count; a Departures or Arrivals run writes
+  thousands) and **Open output folder**, which opens the run's `AIRAC_<cycle>` folder.
 
 ## File Conversions
 
@@ -275,29 +333,41 @@ Line segments that meet are joined back into lines, including ones written backw
 
 ## Output files
 
-Everything goes in your output folder (Settings ▸ Default Output Directory), inside a
-`FE-Buddy_Output` folder if that option is on:
+Every run of a cycle writes into one folder, `AIRAC_<cycle>` (for example `AIRAC_2610`), in your
+output folder (Settings ▸ Default Output Directory) - inside a `FE-Buddy_Output` folder if that
+option is on. Every sub-service shares it: all the GeoJSON goes in its `Geojson` folder, and the
+alias files sit in the folder itself. The files you marked for vNAS go in `Upload_to_vNAS` instead,
+laid out the same way:
 
 ```
 <output folder>\
-└── FE-Buddy_Output\            (only with "Add a FE-Buddy_Output folder")
-    ├── Airports\
-    │   ├── Geojson\    Runways_Lines, Airports_Symbols, Airports_Text (.geojson)
-    │   └── Alias\      Airports.txt
-    ├── Airways\
-    │   ├── Geojson\    Airways_<group>_Lines / _Symbols / _Text (.geojson)
-    │   └── Alias\      Airways.txt
-    ├── Departure Procedures\
-    │   ├── <ARTCC>\<airport>\   <airport>_<procedure>_Lines / _Symbols / _Text (.geojson)
-    │   └── Alias\      Departures.txt
-    ├── DAT to GeoJSON\ <.dat file name>.geojson, one per converted map
+└── FE-Buddy_Output\                  (only with "Add a FE-Buddy_Output folder")
+    ├── AIRAC_2610\
+    │   ├── Airports.txt, Airways.txt, Departures.txt, Arrivals.txt
+    │   ├── Geojson\
+    │   │   ├── Runways_Lines, Airports_Symbols, Airports_Text (.geojson)
+    │   │   ├── Airways_<group>_Lines / _Symbols / _Text (.geojson)
+    │   │   └── <ARTCC>\<airport>\<airport>_<procedure>_Lines / _Symbols / _Text (.geojson)
+    │   └── Upload_to_vNAS\           (only the files marked for vNAS)
+    │       ├── the alias files marked for vNAS
+    │       └── Geojson\              the GeoJSON files marked for vNAS, laid out as above
+    ├── DAT to GeoJSON\               <.dat file name>.geojson, one per converted map
     ├── SCT2 to GeoJSON\
-    │   └── <sector file name>\   ARTCC, …, GEO, LABELS, REGIONS (.geojson), SID\, STAR\
+    │   └── <sector file name>\       ARTCC, …, GEO, LABELS, REGIONS (.geojson), SID\, STAR\
     └── vERAM to GeoJSON\
         └── <GeoMaps file name>\<GeoMap>\   <description>.geojson, or FILTER nn\ folders
 ```
 
-A run overwrites the files it writes. A file that would be empty (nothing matched) is not written.
+The File Conversions do not use the cycle folder: each conversion writes into its own folder, next
+to the `AIRAC_<cycle>` folders, and replaces any file of the same name.
+
+Departures and Arrivals share the same `<ARTCC>\<airport>` folder; an Arrivals file's name adds
+`_STAR_` before the kind (`LAS_BLAID_STAR_Lines.geojson`) so a SID and a STAR with the same
+identifier at one airport never overwrite each other.
+
+A folder is created only when something is written to it. A file that would be empty (nothing
+matched) is not written. A run of a cycle that has been run before asks first whether to
+overwrite the old files or delete them (see [Preview Settings tab](#preview-settings-tab)).
 
 ## Map
 
@@ -323,7 +393,9 @@ as soon as you set or clear it).
 - **Facility Profile**
   - **Facility** - your ARTCC, picked from the current cycle's data. Saved for future features;
     today's sub-services do not use it.
-  - **Default Output Directory** and **Add a FE-Buddy_Output folder inside that directory**.
+  - **Default Output Directory** (your Desktop until you choose one) and **Add a FE-Buddy_Output
+    folder inside that directory** (on by default). The line under them shows the folder a run of
+    the current cycle would write to.
 - **Default Region of Interest** - **Set ROI…** opens the map picker; **Clear** turns it off.
   Every sub-service uses it unless its own tab overrides it.
 - **GeoJSON Files**

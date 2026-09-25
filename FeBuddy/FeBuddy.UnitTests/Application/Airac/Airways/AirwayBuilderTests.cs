@@ -22,9 +22,6 @@ public sealed class AirwayBuilderTests
 		FebProperties = [],
 		GenerateAliasFile = true,
 		SplitAtAntimeridian = true,
-		IncludeCrcLineDefaults = false,
-		IncludeCrcSymbolDefaults = false,
-		IncludeCrcTextDefaults = false,
 		Roi = roi
 	};
 

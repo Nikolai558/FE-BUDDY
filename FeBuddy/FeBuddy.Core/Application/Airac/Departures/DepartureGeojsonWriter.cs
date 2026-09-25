@@ -1,4 +1,5 @@
 using FeBuddy.Core.Application.Airac.Departures.Models;
+using FeBuddy.Core.Domain.Crc.Models;
 using FeBuddy.Core.Domain.Departures.Models;
 using FeBuddy.Core.Domain.Geo;
 using FeBuddy.Core.Infrastructure.Geojson;
@@ -10,13 +11,19 @@ namespace FeBuddy.Core.Application.Airac.Departures;
 
 /// <summary>
 /// Generates the Departures GeoJSON output: for every airport + procedure, up to three files in
-/// <c>…\Departure Procedures\&lt;ARTCC&gt;\&lt;ARPT&gt;\</c> -
+/// <c>…\Geojson\&lt;ARTCC&gt;\&lt;ARPT&gt;\</c> -
 /// <c>&lt;ARPT&gt;_&lt;CODE&gt;_Lines.geojson</c> (one MultiLineString),
 /// <c>_Symbols.geojson</c> and <c>_Text.geojson</c> (one Point per procedure point).
 /// </summary>
 /// <remarks>
+/// <para>
 /// A procedure that is a single point, or whose points never form a segment, gets Symbols and
 /// Text but no Lines file.
+/// </para>
+/// <para>
+/// A kind the user marked for vNAS goes under <c>Upload_to_vNAS</c> instead, and only a kind
+/// chosen for CRC-ERAM defaults gets an isDefaults Feature (see <see cref="DepartureOutputFiles"/>).
+/// </para>
 /// </remarks>
 public static class DepartureGeojsonWriter
 {
@@ -42,31 +49,42 @@ public static class DepartureGeojsonWriter
 
 		foreach (DepartureAirportProcedure airportProcedure in airportProcedures)
 		{
-			string directory = DepartureOutputPaths.GeojsonDirectory(settings, airportProcedure);
-
 			if (settings.EmitLines)
 			{
-				GenerateLines(airportProcedure, settings, directory, files);
+				GenerateLines(airportProcedure, settings, files);
 			}
 
 			if (settings.EmitSymbols)
 			{
-				GenerateSymbols(airportProcedure, settings, directory, files);
+				GenerateSymbols(airportProcedure, settings, files);
 			}
 
 			if (settings.EmitText)
 			{
-				GenerateText(airportProcedure, settings, directory, files);
+				GenerateText(airportProcedure, settings, files);
 			}
 		}
 
 		return files;
 	}
 
+	/// <summary>Writes one airport + procedure's file of one kind, into the GeoJSON or vNAS folder as the user chose.</summary>
+	private static void WriteFile(
+		FeatureCollection collection,
+		int renderedCount,
+		DepartureAirportProcedure airportProcedure,
+		DepartureSettings settings,
+		CrcFeatureKind kind,
+		GeojsonFileSet files) =>
+		files.Write(
+			collection,
+			renderedCount,
+			DepartureOutputFiles.GeojsonDirectory(settings, airportProcedure, kind),
+			DepartureOutputFiles.GeojsonFileName(airportProcedure, kind));
+
 	private static void GenerateLines(
 		DepartureAirportProcedure airportProcedure,
 		DepartureSettings settings,
-		string directory,
 		GeojsonFileSet files)
 	{
 		MultiLineString? geometry = DepartureGeometryBuilder.Build(airportProcedure);
@@ -78,7 +96,7 @@ public static class DepartureGeojsonWriter
 
 		FeatureCollection collection = [];
 
-		if (settings.IncludeCrcLineDefaults)
+		if (settings.Vnas.HasCrcDefaults(DepartureOutputFiles.Lines))
 		{
 			collection.Add(CrcFeatureFactory.CreateDefaultsFeature(settings.LineDefaults[DepartureCrcClass.Departures]));
 		}
@@ -89,18 +107,17 @@ public static class DepartureGeojsonWriter
 		AddFebProperties(attributes, airportProcedure, settings, point: null);
 		collection.Add(new Feature(geometry, attributes));
 
-		files.Write(collection, 1, directory, DepartureOutputPaths.GeojsonFileName(airportProcedure, "Lines"));
+		WriteFile(collection, 1, airportProcedure, settings, CrcFeatureKind.Line, files);
 	}
 
 	private static void GenerateSymbols(
 		DepartureAirportProcedure airportProcedure,
 		DepartureSettings settings,
-		string directory,
 		GeojsonFileSet files)
 	{
 		FeatureCollection collection = [];
 
-		if (settings.IncludeCrcSymbolDefaults)
+		if (settings.Vnas.HasCrcDefaults(DepartureOutputFiles.Symbols))
 		{
 			collection.Add(CrcFeatureFactory.CreateDefaultsFeature(settings.SymbolDefaults[DepartureCrcClass.Departures]));
 		}
@@ -112,19 +129,17 @@ public static class DepartureGeojsonWriter
 			collection.Add(new Feature(CreatePoint(point), attributes));
 		}
 
-		files.Write(collection, airportProcedure.Points.Count, directory,
-			DepartureOutputPaths.GeojsonFileName(airportProcedure, "Symbols"));
+		WriteFile(collection, airportProcedure.Points.Count, airportProcedure, settings, CrcFeatureKind.Symbol, files);
 	}
 
 	private static void GenerateText(
 		DepartureAirportProcedure airportProcedure,
 		DepartureSettings settings,
-		string directory,
 		GeojsonFileSet files)
 	{
 		FeatureCollection collection = [];
 
-		if (settings.IncludeCrcTextDefaults)
+		if (settings.Vnas.HasCrcDefaults(DepartureOutputFiles.Text))
 		{
 			collection.Add(CrcFeatureFactory.CreateDefaultsFeature(settings.TextDefaults[DepartureCrcClass.Departures]));
 		}
@@ -139,8 +154,7 @@ public static class DepartureGeojsonWriter
 			collection.Add(new Feature(CreatePoint(point), attributes));
 		}
 
-		files.Write(collection, airportProcedure.Points.Count, directory,
-			DepartureOutputPaths.GeojsonFileName(airportProcedure, "Text"));
+		WriteFile(collection, airportProcedure.Points.Count, airportProcedure, settings, CrcFeatureKind.Text, files);
 	}
 
 	private static Point CreatePoint(DeparturePoint point) =>

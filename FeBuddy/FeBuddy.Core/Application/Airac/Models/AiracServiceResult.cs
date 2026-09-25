@@ -1,5 +1,6 @@
 using FeBuddy.Core.Application.Airac.Airports.Models;
 using FeBuddy.Core.Application.Airac.Airways.Models;
+using FeBuddy.Core.Application.Airac.Arrivals.Models;
 using FeBuddy.Core.Application.Airac.Departures.Models;
 using FeBuddy.Core.Application.Models;
 
@@ -11,6 +12,12 @@ namespace FeBuddy.Core.Application.Airac.Models;
 /// </summary>
 public sealed record AiracServiceResult : ServiceResult
 {
+	/// <summary>
+	/// The cycle folder the run wrote into (<see cref="AiracServiceSettings.CycleOutputDirectory"/>).
+	/// It exists only if the run wrote something.
+	/// </summary>
+	public required string OutputDirectory { get; init; }
+
 	/// <summary>
 	/// The Airways sub-service result, or <see langword="null"/> when Airways was not part of
 	/// this run.
@@ -28,4 +35,10 @@ public sealed record AiracServiceResult : ServiceResult
 	/// of this run.
 	/// </summary>
 	public DepartureServiceResult? Departures { get; init; }
+
+	/// <summary>
+	/// The Arrivals sub-service result, or <see langword="null"/> when Arrivals was not part of
+	/// this run.
+	/// </summary>
+	public ArrivalServiceResult? Arrivals { get; init; }
 }

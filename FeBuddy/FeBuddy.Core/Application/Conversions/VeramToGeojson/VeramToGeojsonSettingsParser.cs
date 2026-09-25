@@ -21,10 +21,10 @@ public static class VeramToGeojsonSettingsParser
 
 	/// <summary>
 	/// The keys only this conversion reads, on top of <see cref="SubServiceSettingsReader.CommonKeys"/>
-	/// and <see cref="ConversionSettingsReader.SourceKeys"/>.
+	/// and <see cref="ConversionSettingsReader.ConversionKeys"/>.
 	/// </summary>
 	private static readonly IReadOnlySet<string> OwnKeys = new HashSet<string>(
-		ConversionSettingsReader.SourceKeys.Concat(["OutputLayout", "DefaultsSource"]), StringComparer.OrdinalIgnoreCase);
+		ConversionSettingsReader.ConversionKeys.Concat(["OutputLayout", "DefaultsSource"]), StringComparer.OrdinalIgnoreCase);
 
 	/// <summary>A GeoMap draws lines, symbols and text.</summary>
 	private static readonly IReadOnlyDictionary<string, CrcFeatureKind[]> CrcKindsByClass =
@@ -74,13 +74,13 @@ public static class VeramToGeojsonSettingsParser
 			SourceFiles = sourceFiles,
 			OutputLayout = layout,
 			DefaultsSource = source,
-			LineDefaults = usesCard && CrcDefaultsReader.ReadInclude(settings, CrcFeatureKind.Line)
+			LineDefaults = usesCard && ConversionSettingsReader.ReadCrcInclude(settings, CrcFeatureKind.Line)
 				? CrcDefaultsReader.ReadLine(settings, $"Crc.{CrcClassName}.Line")
 				: null,
-			SymbolDefaults = usesCard && CrcDefaultsReader.ReadInclude(settings, CrcFeatureKind.Symbol)
+			SymbolDefaults = usesCard && ConversionSettingsReader.ReadCrcInclude(settings, CrcFeatureKind.Symbol)
 				? CrcDefaultsReader.ReadSymbol(settings, $"Crc.{CrcClassName}.Symbol")
 				: null,
-			TextDefaults = usesCard && CrcDefaultsReader.ReadInclude(settings, CrcFeatureKind.Text)
+			TextDefaults = usesCard && ConversionSettingsReader.ReadCrcInclude(settings, CrcFeatureKind.Text)
 				? CrcDefaultsReader.ReadText(settings, $"Crc.{CrcClassName}.Text")
 				: null,
 		};

@@ -1,10 +1,12 @@
 using FeBuddy.Core.Application.Settings;
+using FeBuddy.Core.Domain.Crc.Models;
 
 namespace FeBuddy.Core.Application.Conversions;
 
 /// <summary>
-/// Reads the settings every file conversion shares - the source (a folder or a list of files)
-/// and the output - so each conversion's parser only handles what is its own.
+/// Reads the settings every file conversion shares - the source (a folder or a list of files),
+/// the output and which kinds get CRC-ERAM defaults - so each conversion's parser only handles
+/// what is its own.
 /// </summary>
 public static class ConversionSettingsReader
 {
@@ -14,13 +16,23 @@ public static class ConversionSettingsReader
 	/// </summary>
 	public const char SourceFileSeparator = '|';
 
+	/// <summary>Setting that asks for the Line defaults to be written (<c>Y</c>/<c>N</c>, default <c>N</c>).</summary>
+	public const string IncludeLineKey = "IncludeCrcLineDefaults";
+
+	/// <summary>Setting that asks for the Symbol defaults to be written (<c>Y</c>/<c>N</c>, default <c>N</c>).</summary>
+	public const string IncludeSymbolKey = "IncludeCrcSymbolDefaults";
+
+	/// <summary>Setting that asks for the Text defaults to be written (<c>Y</c>/<c>N</c>, default <c>N</c>).</summary>
+	public const string IncludeTextKey = "IncludeCrcTextDefaults";
+
 	/// <summary>
-	/// The source keys, which every conversion reads on top of
-	/// <see cref="SubServiceSettingsReader.CommonKeys"/>.
+	/// The keys every conversion reads on top of <see cref="SubServiceSettingsReader.CommonKeys"/>:
+	/// the source, the <c>FE-Buddy_Output</c> folder and the CRC-ERAM defaults Include flags.
 	/// </summary>
-	public static readonly IReadOnlySet<string> SourceKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+	public static readonly IReadOnlySet<string> ConversionKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
 	{
-		"SourceFolder", "SourceFiles",
+		"SourceFolder", "SourceFiles", "AddFeBuddyOutputFolder",
+		IncludeLineKey, IncludeSymbolKey, IncludeTextKey,
 	};
 
 	/// <summary>
@@ -64,4 +76,29 @@ public static class ConversionSettingsReader
 	/// <exception cref="ArgumentException">Thrown when the value is not <c>Y</c> or <c>N</c>.</exception>
 	public static bool ReadAddFeBuddyOutputFolder(IReadOnlyDictionary<string, string> settings) =>
 		SettingsValueReader.YesNo(settings, "AddFeBuddyOutputFolder", defaultValue: true);
+
+	/// <summary>
+	/// Reads whether the user asked for <paramref name="kind"/>'s defaults to be written.
+	/// </summary>
+	/// <remarks>
+	/// Each kind is chosen on its own (the Include box on its CRC ERAM Defaults panel). The caller
+	/// still ANDs this with "is that file being produced": asking for defaults on a file that is
+	/// never written means nothing, and its values are then not required.
+	/// </remarks>
+	/// <param name="settings">The raw settings block.</param>
+	/// <param name="kind">Which kind's include flag to read.</param>
+	/// <returns><see langword="true"/> when the flag is <c>Y</c>; <see langword="false"/> when <c>N</c> or absent.</returns>
+	/// <exception cref="ArgumentException">Thrown when the flag is present but not <c>Y</c>/<c>N</c>.</exception>
+	public static bool ReadCrcInclude(IReadOnlyDictionary<string, string> settings, CrcFeatureKind kind)
+	{
+		string key = kind switch
+		{
+			CrcFeatureKind.Line => IncludeLineKey,
+			CrcFeatureKind.Symbol => IncludeSymbolKey,
+			CrcFeatureKind.Text => IncludeTextKey,
+			_ => throw new ArgumentOutOfRangeException(nameof(kind), kind, "Unknown CRC feature kind.")
+		};
+
+		return SettingsValueReader.YesNo(settings, key, defaultValue: false);
+	}
 }

@@ -6,7 +6,7 @@ namespace FeBuddy.UnitTests.Application.Airac.Departures;
 
 /// <summary>
 /// Covers <see cref="DepartureSettingsParser"/>: defaults, the output guard, the ARTCC filter, the
-/// ROI mode and the amendment-date filter.
+/// ROI mode, the amendment-date filter, the vNAS file keys, and which CRC defaults are required.
 /// </summary>
 public sealed class DepartureSettingsParserTests
 {
@@ -88,12 +88,41 @@ public sealed class DepartureSettingsParserTests
 		Assert.Empty(settings.ArtccFilter);
 		Assert.False(settings.IncludeFebCustomProperties);
 		Assert.Empty(settings.FebProperties);
-		Assert.False(settings.IncludeCrcLineDefaults);
-		Assert.False(settings.IncludeCrcSymbolDefaults);
-		Assert.False(settings.IncludeCrcTextDefaults);
+		Assert.Empty(settings.Vnas.UploadFiles);
+		Assert.Empty(settings.Vnas.CrcDefaultsFiles);
 		Assert.Equal(6, settings.CoordinatePrecision);
-		Assert.True(settings.AddFeBuddyOutputFolder);
 		Assert.Empty(result.Messages);
+	}
+
+	/// <summary>Marks every kind of Departures file for vNAS, and every GeoJSON kind for CRC-ERAM defaults.</summary>
+	private static void UploadEverythingWithCrcDefaults(Dictionary<string, string> settings)
+	{
+		settings["UploadToVnas"] = "Departures_Lines,Departures_Symbols,Departures_Text,Departures.txt";
+		settings["CrcDefaultsFor"] = "Departures_Lines,Departures_Symbols,Departures_Text";
+	}
+
+	[Fact]
+	public void every_departures_file_key_is_accepted_ignoring_case()
+	{
+		Dictionary<string, string> settings = MinimalValidSettings();
+		settings["UploadToVnas"] = "departures_lines, DEPARTURES_SYMBOLS, Departures_Text, departures.txt";
+
+		DepartureSettings parsed = DepartureSettingsParser.Parse(settings).Settings;
+
+		Assert.True(parsed.Vnas.IsUploaded(DepartureOutputFiles.Lines));
+		Assert.True(parsed.Vnas.IsUploaded(DepartureOutputFiles.Symbols));
+		Assert.True(parsed.Vnas.IsUploaded(DepartureOutputFiles.Text));
+		Assert.True(parsed.Vnas.IsUploaded(DepartureOutputFiles.Alias));
+	}
+
+	[Fact]
+	public void a_file_departures_does_not_write_is_rejected_for_vnas()
+	{
+		Dictionary<string, string> settings = MinimalValidSettings();
+		settings["UploadToVnas"] = "LAX_DOTSS_Lines";
+
+		ArgumentException ex = Assert.Throws<ArgumentException>(() => DepartureSettingsParser.Parse(settings));
+		Assert.Contains("LAX_DOTSS_Lines", ex.Message);
 	}
 
 	[Fact]
@@ -347,9 +376,7 @@ public sealed class DepartureSettingsParserTests
 	public void crc_defaults_are_only_required_for_the_kinds_being_emitted()
 	{
 		Dictionary<string, string> settings = MinimalValidSettings();
-		settings["IncludeCrcLineDefaults"] = "Y";
-		settings["IncludeCrcSymbolDefaults"] = "Y";
-		settings["IncludeCrcTextDefaults"] = "Y";
+		UploadEverythingWithCrcDefaults(settings);
 		settings["EmitSymbols"] = "N";
 		settings["EmitText"] = "N";
 		AddCrcDefaults(settings, "Departures", "Line");
@@ -366,9 +393,7 @@ public sealed class DepartureSettingsParserTests
 	public void crc_defaults_for_every_emitted_kind_are_required()
 	{
 		Dictionary<string, string> settings = MinimalValidSettings();
-		settings["IncludeCrcLineDefaults"] = "Y";
-		settings["IncludeCrcSymbolDefaults"] = "Y";
-		settings["IncludeCrcTextDefaults"] = "Y";
+		UploadEverythingWithCrcDefaults(settings);
 		// No Crc.* keys supplied at all.
 
 		Assert.Throws<ArgumentException>(() => DepartureSettingsParser.Parse(settings));
@@ -378,9 +403,7 @@ public sealed class DepartureSettingsParserTests
 	public void a_text_default_missing_x_offset_throws_naming_the_key_only_when_text_is_emitted()
 	{
 		Dictionary<string, string> settings = MinimalValidSettings();
-		settings["IncludeCrcLineDefaults"] = "Y";
-		settings["IncludeCrcSymbolDefaults"] = "Y";
-		settings["IncludeCrcTextDefaults"] = "Y";
+		UploadEverythingWithCrcDefaults(settings);
 		AddCrcDefaults(settings, "Departures", "Line");
 		AddCrcDefaults(settings, "Departures", "Symbol");
 		AddCrcDefaults(settings, "Departures", "Text");
@@ -421,20 +444,16 @@ public sealed class DepartureSettingsParserTests
 	}
 
 	[Fact]
-	public void only_the_crc_kinds_asked_for_have_their_defaults_read()
+	public void only_the_kinds_chosen_for_crc_defaults_have_their_defaults_read()
 	{
 		Dictionary<string, string> settings = MinimalValidSettings();
-		settings["IncludeCrcLineDefaults"] = "N";
-		settings["IncludeCrcSymbolDefaults"] = "Y";
-		settings["IncludeCrcTextDefaults"] = "N";
+		settings["UploadToVnas"] = "Departures_Lines,Departures_Symbols,Departures_Text";
+		settings["CrcDefaultsFor"] = "Departures_Symbols";
 		AddCrcDefaults(settings, "Departures", "Symbol");
-		// No Line or Text keys at all: those defaults were not asked for.
+		// No Line or Text keys at all: those kinds go to vNAS without defaults.
 
 		DepartureSettingsParseResult result = DepartureSettingsParser.Parse(settings);
 
-		Assert.False(result.Settings.IncludeCrcLineDefaults);
-		Assert.True(result.Settings.IncludeCrcSymbolDefaults);
-		Assert.False(result.Settings.IncludeCrcTextDefaults);
 		Assert.Equal("vor", Assert.Single(result.Settings.SymbolDefaults).Value.Style);
 		Assert.Empty(result.Settings.LineDefaults);
 		Assert.Empty(result.Settings.TextDefaults);
@@ -442,16 +461,16 @@ public sealed class DepartureSettingsParserTests
 	}
 
 	[Fact]
-	public void asking_for_crc_defaults_on_a_file_that_is_not_emitted_has_no_effect()
+	public void crc_defaults_for_a_kind_that_is_not_emitted_are_not_required()
 	{
 		Dictionary<string, string> settings = MinimalValidSettings();
-		settings["IncludeCrcLineDefaults"] = "Y";
+		settings["UploadToVnas"] = "Departures_Lines";
+		settings["CrcDefaultsFor"] = "Departures_Lines";
 		settings["EmitLines"] = "N";
-		// No Crc.Departures.Line.* keys: the lines file is not written, so its defaults are not needed.
+		// No Crc.Departures.Line.* keys: the lines files are not written, so their defaults are not needed.
 
 		DepartureSettings parsed = DepartureSettingsParser.Parse(settings).Settings;
 
-		Assert.False(parsed.IncludeCrcLineDefaults);
 		Assert.Empty(parsed.LineDefaults);
 	}
 
@@ -460,33 +479,30 @@ public sealed class DepartureSettingsParserTests
 	{
 		Dictionary<string, string> settings = MinimalValidSettings();
 		settings["GenerateGeojson"] = "N";
-		settings["IncludeCrcLineDefaults"] = "Y";
-		settings["IncludeCrcSymbolDefaults"] = "Y";
-		settings["IncludeCrcTextDefaults"] = "Y";
+		UploadEverythingWithCrcDefaults(settings);
 		// No Crc.* keys at all: no GeoJSON is written, so no defaults are needed.
 
 		DepartureSettings parsed = DepartureSettingsParser.Parse(settings).Settings;
 
-		Assert.False(parsed.IncludeCrcLineDefaults);
-		Assert.False(parsed.IncludeCrcSymbolDefaults);
-		Assert.False(parsed.IncludeCrcTextDefaults);
 		Assert.Empty(parsed.LineDefaults);
 		Assert.Empty(parsed.SymbolDefaults);
 		Assert.Empty(parsed.TextDefaults);
 	}
 
-	[Fact]
-	public void the_retired_combined_crc_include_key_produces_a_warning_and_includes_nothing()
+	[Theory]
+	[InlineData("IncludeCrcEramPropertyDefaults")]
+	[InlineData("IncludeCrcTextDefaults")]
+	[InlineData("AddFeBuddyOutputFolder")]
+	public void a_retired_key_produces_a_warning_and_changes_nothing(string key)
 	{
 		Dictionary<string, string> settings = MinimalValidSettings();
-		settings["IncludeCrcEramPropertyDefaults"] = "Y";
+		settings[key] = "Y";
 
 		DepartureSettingsParseResult result = DepartureSettingsParser.Parse(settings);
 
-		Assert.Contains(result.Messages, m => m.Level == LogLevel.Warning && m.Text.Contains("IncludeCrcEramPropertyDefaults"));
-		Assert.False(result.Settings.IncludeCrcLineDefaults);
-		Assert.False(result.Settings.IncludeCrcSymbolDefaults);
-		Assert.False(result.Settings.IncludeCrcTextDefaults);
+		Assert.Contains(result.Messages, m => m.Level == LogLevel.Warning && m.Text.Contains(key));
+		Assert.Empty(result.Settings.Vnas.CrcDefaultsFiles);
+		Assert.Empty(result.Settings.TextDefaults);
 	}
 
 	[Fact]

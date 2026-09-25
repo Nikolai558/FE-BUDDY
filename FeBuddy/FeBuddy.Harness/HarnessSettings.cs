@@ -1,5 +1,6 @@
 using FeBuddy.Core.Application.Airac.Airports.Models;
 using FeBuddy.Core.Application.Airac.Airways.Models;
+using FeBuddy.Core.Application.Airac.Arrivals.Models;
 using FeBuddy.Core.Application.Airac.Departures.Models;
 using FeBuddy.Core.Infrastructure.Configuration;
 
@@ -15,11 +16,22 @@ internal static class HarnessSettings
 	/// <summary>Directory containing an unzipped NASR 28-day subscription CSV set.</summary>
 	public const string NasrSourceDirectory = @"C:\Users\ksand\Downloads\03_Sep_2026_CSV";
 
-	/// <summary>Directory the services write output under (see FE-Buddy_Output/Airways/..., FE-Buddy_Output/Airports/...).</summary>
+	/// <summary>
+	/// The folder the services write into, as the AIRAC Service's <c>AIRAC_&lt;cycle&gt;</c> folder
+	/// would be: alias files here, GeoJSON in its <c>Geojson</c> folder, and anything marked for
+	/// vNAS under <c>Upload_to_vNAS</c>. The harness calls each service directly, so there is no
+	/// cycle folder of its own.
+	/// </summary>
 	public const string OutputDirectory = @"C:\Users\ksand\Downloads\FE-Buddy-Output";
 
 	/// <summary>Mirrors <c>DevMode.IsEnabled</c> for this run.</summary>
 	public const bool DevMode = true;
+
+	/// <summary>Every GeoJSON file a HighLow Airways run can write, by file key.</summary>
+	private const string AirwayHighLowFiles =
+		"Airways_High_Lines,Airways_High_Symbols,Airways_High_Text," +
+		"Airways_Low_Lines,Airways_Low_Symbols,Airways_Low_Text," +
+		"Airways_Other_Lines,Airways_Other_Symbols,Airways_Other_Text";
 
 	/// <summary>
 	/// Mirrors the Settings "File layout" choice (<c>OutputFormatting.PrettyPrintGeojson</c>).
@@ -45,9 +57,11 @@ internal static class HarnessSettings
 
 			{ "GenerateAliasFile", "Y" },
 			{ "SplitAtAntimeridian", "Y" },
-			{ "IncludeCrcLineDefaults", "Y" },
-			{ "IncludeCrcSymbolDefaults", "Y" },
-			{ "IncludeCrcTextDefaults", "Y" },
+
+			// Files marked for vNAS go under Upload_to_vNAS; only those in CrcDefaultsFor get the
+			// CRC ERAM defaults Feature, using the Crc.* values added by AddCrcDefaults below.
+			{ "UploadToVnas", AirwayHighLowFiles + ",Airways.txt" },
+			{ "CrcDefaultsFor", AirwayHighLowFiles },
 			{ "FilterByRoi", "N" },
 
 			// Phase 3.3-3.7 settings. Defaults shown; omit any of these and the parser uses
@@ -58,7 +72,6 @@ internal static class HarnessSettings
 			{ "EmitText", "Y" },
 			{ "AliasRoiScope", "All" },       // "All" or "RoiAirways" (3.5)
 			{ "CoordinatePrecision", "6" },   // max decimal places in GeoJSON coords (3.6)
-			{ "AddFeBuddyOutputFolder", "Y" } // N -> write straight into OutputDirectory\Airways (3.7)
 
 			// To exercise Designation grouping, waypoint buffering, or ROI clipping
 			// (all verified working against real NASR data during development), try e.g.:
@@ -107,11 +120,10 @@ internal static class HarnessSettings
 			{ "IncludeFebCustomProperties", "Y" },
 			{ "FebProperties", "faaId,icaoId,name,elev,respArtcc,tfcPtrnAlt,fssId,twrType,rwyId" },
 
-			// Writes the CRC ERAM defaults Feature at the head of each GeoJSON file, using the
-			// Crc.* values added by AddAirportCrcDefaults below.
-			{ "IncludeCrcLineDefaults", "Y" },
-			{ "IncludeCrcSymbolDefaults", "Y" },
-			{ "IncludeCrcTextDefaults", "Y" },
+			// Files marked for vNAS go under Upload_to_vNAS; only those in CrcDefaultsFor get the
+			// CRC ERAM defaults Feature, using the Crc.* values added by AddAirportCrcDefaults below.
+			{ "UploadToVnas", "Runways_Lines,Airports_Symbols,Airports_Text,Airports.txt" },
+			{ "CrcDefaultsFor", "Runways_Lines,Airports_Symbols,Airports_Text" },
 
 			// ROI filtering applies to the GeoJSON output only; the alias file always covers
 			// every airport. The four corner keys are read only when FilterByRoi is "Y" - set
@@ -123,7 +135,6 @@ internal static class HarnessSettings
 			{ "RoiNeLon", "" },              // e.g. "-78.0"
 
 			{ "CoordinatePrecision", "6" },  // max decimal places in GeoJSON coords (0-15)
-			{ "AddFeBuddyOutputFolder", "Y" } // N -> write straight into OutputDirectory\Airports
 		};
 
 		AddAirportCrcDefaults(settings,
@@ -179,20 +190,82 @@ internal static class HarnessSettings
 			{ "IncludeFebCustomProperties", "Y" },
 			{ "FebProperties", "dpName,pointId,arptId,artcc,amendmentNo,amendEffDate,waypoints" },
 
-			// Writes the CRC ERAM defaults Feature at the head of each GeoJSON file, using the
-			// Crc.Departures.* values added by AddDepartureCrcDefaults below.
-			{ "IncludeCrcLineDefaults", "Y" },
-			{ "IncludeCrcSymbolDefaults", "Y" },
-			{ "IncludeCrcTextDefaults", "Y" },
+			// Chosen per kind (a run writes thousands of files): each kind listed goes under
+			// Upload_to_vNAS, and only those in CrcDefaultsFor get the CRC ERAM defaults Feature,
+			// using the Crc.Departures.* values added by AddDepartureCrcDefaults below.
+			{ "UploadToVnas", "Departures_Lines,Departures_Symbols,Departures_Text,Departures.txt" },
+			{ "CrcDefaultsFor", "Departures_Lines,Departures_Symbols,Departures_Text" },
 
 			{ "CoordinatePrecision", "6" },       // max decimal places in GeoJSON coords (0-15)
-			{ "AddFeBuddyOutputFolder", "Y" }     // N -> write straight into OutputDirectory\Departure Procedures
 		};
 
 		AddDepartureCrcDefaults(settings,
 			lineBcg: 7, lineFilters: "7", lineStyle: "solid", lineThickness: 1,
 			symbolBcg: 7, symbolFilters: "7", symbolStyle: "otherWaypoints", symbolSize: 1,
 			textBcg: 7, textFilters: "7", textSize: 1);
+
+		return settings;
+	}
+
+	/// <summary>
+	/// Builds the raw settings dictionary for <c>ArrivalService.Run</c>. Every key the
+	/// Arrivals settings parser recognizes is listed below with its default value, so any of
+	/// them can be flipped here without hunting through <c>ArrivalSettingsParser</c>.
+	/// </summary>
+	public static Dictionary<string, string> ArrivalSettings()
+	{
+		Dictionary<string, string> settings = new()
+		{
+			{ "OutputDirectory", OutputDirectory },
+
+			// Which of the two outputs run. Turning both off is rejected by the parser, as is
+			// GenerateGeojson = "Y" with all three Emit* keys off.
+			{ "GenerateGeojson", "Y" },
+			{ "GenerateAliasFile", "Y" },
+
+			// Up to three files per airport + procedure. Lines is skipped automatically for a
+			// procedure that is a single point.
+			{ "EmitLines", "Y" },
+			{ "EmitSymbols", "Y" },
+			{ "EmitText", "Y" },
+
+			// Filters - every one applies to GeoJSON AND the alias file. STAR_BASE.ARTCC can list
+			// several centres space-separated (e.g. "ZDC ZNY") when a STAR is shared between them;
+			// each airport's copy of the procedure is still filtered by its own ARTCC.
+			{ "ArtccFilter", "ZOB" },                // e.g. "ZLA,ZOA"; empty = every ARTCC
+			// AmendmentFilter "None" keeps every procedure. Each other mode reads only its own key:
+			// "Cycles" + AmendedWithinCycles (1 = amended this cycle; 4 = this cycle or the 3 before),
+			// "Days" + AmendedWithinDays (e.g. "90", counted back from today),
+			// "Date" + AmendedOnOrAfter (yyyy-MM-dd, e.g. "2026-01-01").
+			{ "AmendmentFilter", "None" },
+
+			// ROI. The four corner keys are read only when FilterByRoi is "Y". RoiMode "Airport"
+			// keeps every arrival of an airport inside the box; "Waypoint" keeps any arrival
+			// with a point inside it.
+			{ "FilterByRoi", "N" },
+			{ "RoiMode", "Airport" },
+			{ "RoiSwLat", "" },                   // e.g. "32.5"
+			{ "RoiSwLon", "" },                   // e.g. "-121.0"
+			{ "RoiNeLat", "" },                   // e.g. "36.0"
+			{ "RoiNeLon", "" },                   // e.g. "-114.0"
+
+			// FE-Buddy's own (non-CRC) properties. FebProperties is required when this is "Y".
+			{ "IncludeFebCustomProperties", "Y" },
+			{ "FebProperties", "arrivalName,pointId,arptId,artcc,amendmentNo,amendEffDate,waypoints" },
+
+			// Chosen per kind (a run writes thousands of files): each kind listed goes under
+			// Upload_to_vNAS, and only those in CrcDefaultsFor get the CRC ERAM defaults Feature,
+			// using the Crc.Arrivals.* values added by AddArrivalCrcDefaults below.
+			{ "UploadToVnas", "Arrivals_Lines,Arrivals_Symbols,Arrivals_Text,Arrivals.txt" },
+			{ "CrcDefaultsFor", "Arrivals_Lines,Arrivals_Symbols,Arrivals_Text" },
+
+			{ "CoordinatePrecision", "6" },       // max decimal places in GeoJSON coords (0-15)
+		};
+
+		AddArrivalCrcDefaults(settings,
+			lineBcg: 8, lineFilters: "8", lineStyle: "solid", lineThickness: 1,
+			symbolBcg: 8, symbolFilters: "8", symbolStyle: "otherWaypoints", symbolSize: 1,
+			textBcg: 8, textFilters: "8", textSize: 1);
 
 		return settings;
 	}
@@ -312,6 +385,58 @@ internal static class HarnessSettings
 		settings["Crc.Departures.Text.xOffset"] = "0";
 		settings["Crc.Departures.Text.yOffset"] = "0";
 		settings["Crc.Departures.Text.opaque"] = "N";
+	}
+
+	/// <summary>
+	/// Adds the <c>Crc.Arrivals.*</c> property defaults - one class covering the Lines,
+	/// Symbols and Text files. These values are the harness's own; the GUI starts every CRC box
+	/// empty and makes the user choose.
+	/// </summary>
+	/// <param name="settings">The dictionary being built.</param>
+	/// <param name="lineBcg">Line BCG group, 1-40.</param>
+	/// <param name="lineFilters">Line filters, comma-separated, each 0-40, at least one.</param>
+	/// <param name="lineStyle">Line style, one of <c>CrcPropertyValidator.ValidLineStyles</c>.</param>
+	/// <param name="lineThickness">Line thickness, 1-3.</param>
+	/// <param name="symbolBcg">Symbol BCG group, 1-40.</param>
+	/// <param name="symbolFilters">Symbol filters, comma-separated, each 0-40, at least one.</param>
+	/// <param name="symbolStyle">Symbol style, one of <c>CrcPropertyValidator.ValidSymbolStyles</c>.</param>
+	/// <param name="symbolSize">Symbol size, 1-4.</param>
+	/// <param name="textBcg">Text BCG group, 1-40.</param>
+	/// <param name="textFilters">Text filters, comma-separated, each 0-40, at least one.</param>
+	/// <param name="textSize">Text size, 0-5.</param>
+	private static void AddArrivalCrcDefaults(
+		Dictionary<string, string> settings,
+		int lineBcg,
+		string lineFilters,
+		string lineStyle,
+		int lineThickness,
+		int symbolBcg,
+		string symbolFilters,
+		string symbolStyle,
+		int symbolSize,
+		int textBcg,
+		string textFilters,
+		int textSize)
+	{
+		settings["Crc.Arrivals.Line.bcg"] = lineBcg.ToString();
+		settings["Crc.Arrivals.Line.filters"] = lineFilters;
+		settings["Crc.Arrivals.Line.style"] = lineStyle;
+		settings["Crc.Arrivals.Line.thickness"] = lineThickness.ToString();
+
+		settings["Crc.Arrivals.Symbol.bcg"] = symbolBcg.ToString();
+		settings["Crc.Arrivals.Symbol.filters"] = symbolFilters;
+		settings["Crc.Arrivals.Symbol.style"] = symbolStyle;
+		settings["Crc.Arrivals.Symbol.size"] = symbolSize.ToString();
+
+		// No "Crc.Arrivals.Text.text": every point is labelled with its own identifier, and
+		// the parser warns if one is supplied here.
+		settings["Crc.Arrivals.Text.bcg"] = textBcg.ToString();
+		settings["Crc.Arrivals.Text.filters"] = textFilters;
+		settings["Crc.Arrivals.Text.size"] = textSize.ToString();
+		settings["Crc.Arrivals.Text.underline"] = "N";
+		settings["Crc.Arrivals.Text.xOffset"] = "0";
+		settings["Crc.Arrivals.Text.yOffset"] = "0";
+		settings["Crc.Arrivals.Text.opaque"] = "N";
 	}
 
 	private static void AddCrcDefaults(

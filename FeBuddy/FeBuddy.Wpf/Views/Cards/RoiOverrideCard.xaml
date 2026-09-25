@@ -2,8 +2,8 @@
     RoiOverrideCard  -  the Region of Interest card every GeoJSON sub-service tab ends with: the
     override switch, what applies when it is off, the four corners and the map picker. Binds to
     the tab's view model through IRoiOverrideSettings. A sub-service with more to say about its
-    region (Departures: how the region selects procedures) puts it in AdditionalContent, which
-    shows under the corners.
+    region (Departures or Arrivals: how the region selects procedures) puts it in
+    AdditionalContent, which shows under the corners.
 
     Usage:
         <cards:RoiOverrideCard IsEnabled="{Binding GenerateGeojson}" />

@@ -153,6 +153,7 @@ public sealed class VeramToGeojsonViewModel : FileConversionTabViewModel
 		{
 			nameof(LayoutByObject), nameof(LayoutByFilter),
 			nameof(DefaultsFromXml), nameof(DefaultsFromXmlThenCard), nameof(DefaultsFromCard), nameof(UsesCrcDefaults),
+			nameof(HasCrcDefaultsInUse),
 		})
 		{
 			OnPropertyChanged(name);

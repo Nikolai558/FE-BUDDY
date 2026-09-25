@@ -23,6 +23,7 @@ public sealed class SctFileReaderTests
 	[InlineData("S013.29.00.000", true, -(13 + 29 / 60d))]
 	[InlineData("W073.30.00.000", false, -73.5)]
 	[InlineData("E144.47.30.5", false, 144 + 47 / 60d + 30.5 / 3600)]
+	[InlineData("N031.53.60.000", true, 31 + 54 / 60d)]   // 60 seconds rolls over to the next minute
 	public void reads_dms_with_or_without_leading_zeros_and_fractions(string text, bool isLatitude, double expected)
 	{
 		Assert.True(SctFileReader.TryParseDms(text, isLatitude, out double degrees));
@@ -33,7 +34,7 @@ public sealed class SctFileReaderTests
 	[InlineData("W073.30.00.000", true)]    // a longitude where a latitude belongs
 	[InlineData("N040.30.00.000", false)]   // and the other way round
 	[InlineData("N040.60.00.000", true)]    // 60 minutes
-	[InlineData("N040.30.60.000", true)]    // 60 seconds
+	[InlineData("N040.30.60.001", true)]    // past 60 seconds
 	[InlineData("N091.00.00.000", true)]    // past the pole
 	[InlineData("E181.00.00.000", false)]   // past 180
 	[InlineData("KJFK", true)]              // a name, not DMS

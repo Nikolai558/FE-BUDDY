@@ -146,7 +146,9 @@ public static partial class SctFileReader
 		int minutes = int.Parse(match.Groups["m"].Value, CultureInfo.InvariantCulture);
 		double seconds = double.Parse($"{match.Groups["s"].Value}.{match.Groups["f"].Value}0", CultureInfo.InvariantCulture);
 
-		if (minutes >= 60 || seconds >= 60)
+		// Real files write a rounded-up value as 60 seconds (N031.53.60.000 is 31°54'), and VRC
+		// draws it, so exactly 60 rolls over; anything past it is a typo.
+		if (minutes >= 60 || seconds > 60)
 		{
 			return false;
 		}

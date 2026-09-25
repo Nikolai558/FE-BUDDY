@@ -53,6 +53,9 @@ public sealed class ServiceRunReviewTabViewModel : ServiceTabViewModel
 	/// <inheritdoc />
 	public override bool IsRunnable => false;
 
+	/// <inheritdoc />
+	public override bool IsSetApart => true;
+
 	/// <summary>One row per sub-service in the run, in the order they run.</summary>
 	public ObservableCollection<RunStep> Steps { get; } = [];
 

@@ -146,7 +146,8 @@ bar and page scroller are shared, and each screen's view-model says what differs
     tab, and the single **Run AIRAC Service** button, which goes through
     `AiracService.RunAsync`.
   - **Review tab** - appears once a run starts: the live step feed, errors,
-    advisories, each sub-service's results, and the files written.
+    advisories, each sub-service's results, and the files written. The rail sets it
+    apart from the settings tabs with a divider (`IsSetApart`, on every tabbed screen).
   - **Action bar** - above the tab content and again at the end of it: Previous,
     Next, Preview settings, Undo all changes, Undo last save, Save. Previous / Next /
     Preview settings offer to save a dirty tab first; cancelling keeps you where you are. The

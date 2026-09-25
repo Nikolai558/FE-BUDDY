@@ -26,6 +26,12 @@ public abstract class ServiceTabViewModel : ObservableObject
 	public abstract string Title { get; }
 
 	/// <summary>
+	/// <see langword="true"/> for a tab the rail sets apart from the ones above it with a divider -
+	/// the run review, which reports on the settings tabs rather than being one of them.
+	/// </summary>
+	public virtual bool IsSetApart => false;
+
+	/// <summary>
 	/// Per-field validation messages, keyed by the field key a view passes to
 	/// <c>FieldState.Error</c>. Bind as <c>{Binding FieldErrors[SwLat]}</c>.
 	/// </summary>

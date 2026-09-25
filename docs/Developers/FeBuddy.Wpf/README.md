@@ -75,7 +75,7 @@ ViewModels/           ShellViewModel + one per screen; AiracSubServices is the
 Views/                ShellWindow (custom chrome) + Dashboard, TabbedServiceView
                       (the AIRAC Services and File Conversions screens) and their
                       tab views (AiracGeneralTabView, AirportsView, AirwaysView,
-                      DeparturesView, DatToGeojsonView, SctToGeojsonView, VeramToGeojsonView,
+                      DeparturesView, DatToGeojsonView, SctToGeojsonView, EramToGeojsonView,
                       ServicePreviewTabView,
                       ServiceRunReviewTabView), Map, Settings, Info; UpdateWindow,
                       ConfirmWindow, RoiPickerWindow
@@ -170,11 +170,12 @@ bar and page scroller are shared, and each screen's view-model says what differs
     through `DatToGeojsonService.Run`.
   - **SCT2 to GeoJSON tab** - Lines and Labels panels, nothing of its own. Goes through
     `SctToGeojsonService.Run`.
-  - **vERAM to GeoJSON tab** - the output layout (GeoMapObject Description / Filter Index and
-    Similar Attributes) and the CRC defaults source (XML / XML then card / card). Lines,
-    Symbols and Text panels, shown only while the card is a source (`UsesCrcDefaults`); with the
-    XML as the only source nothing on the card is required or sent. Goes through
-    `VeramToGeojsonService.Run`.
+  - **ERAM to GeoJSON tab** - reads an ERAM adaptation export's `Geomaps.xml`; its folder
+    summary counts only Geomaps files (`IsSourceFile`), so the whole unzipped export can be the
+    source folder. The output layout (Object Type and Map Group / Filter Index and Similar
+    Attributes) and the CRC defaults source (XML / XML then card / card). Lines, Symbols and Text
+    panels, shown only while the card is a source (`UsesCrcDefaults`); with the XML as the only
+    source nothing on the card is required or sent. Goes through `EramToGeojsonService.Run`.
 - **Dashboard** - the verbatim description box + Discord link + next-cycle line,
   the News feed (from `NewsService`), and a live activity-log viewer over `AppLog`
   (filter chips with counts, minimizable).

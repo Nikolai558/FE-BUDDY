@@ -1,31 +1,32 @@
 using FeBuddy.Core.Application.Settings;
 using FeBuddy.Core.Domain.Crc;
 using FeBuddy.Core.Domain.Crc.Models;
-using FeBuddy.Core.Infrastructure.Veram.Models;
+using FeBuddy.Core.Infrastructure.Eram.Models;
 
 using NetTopologySuite.Features;
 
-namespace FeBuddy.Core.Application.Conversions.VeramToGeojson;
+namespace FeBuddy.Core.Application.Conversions.EramToGeojson;
 
 /// <summary>
-/// Turns vERAM display properties into CRC's: complete defaults for a file's
+/// Turns ERAM display properties into CRC's: complete defaults for a file's
 /// <c>isLineDefaults</c> / <c>isSymbolDefaults</c> / <c>isTextDefaults</c> Feature, and the
 /// per-feature overrides an element sets.
 /// </summary>
 /// <remarks>
-/// vERAM spells styles its own way (<c>Solid</c>, <c>ShortDashed</c>, <c>Vor</c>); CRC's names
-/// are the same words in camelCase, so they are matched ignoring case. Every value is checked
+/// ERAM spells styles its own way (<c>Solid</c>, <c>ShortDashed</c>, <c>RNAVOnlyWaypoint</c>);
+/// CRC's names are the same words in camelCase, so they are matched ignoring case. ERAM text has
+/// no opaque background, so its Text defaults always have <c>opaque</c> off. Every value is checked
 /// against what CRC can draw: a defaults set with a missing or invalid value is not used at all
 /// (CRC defaults are never guessed), and an invalid override value is left out so the feature
 /// takes its file's default instead.
 /// </remarks>
-internal static class VeramCrcProperties
+internal static class EramCrcProperties
 {
-	/// <summary>Complete, valid Line defaults from vERAM properties.</summary>
+	/// <summary>Complete, valid Line defaults from ERAM properties.</summary>
 	/// <param name="properties">An object's <c>LineDefaults</c>, or <see langword="null"/> when it has none.</param>
 	/// <param name="problem">Why they cannot be used, when they cannot.</param>
 	/// <returns>The defaults, or <see langword="null"/> when they are missing, incomplete or invalid.</returns>
-	public static CrcLineDefaults? LineDefaults(VeramProperties? properties, out string? problem)
+	public static CrcLineDefaults? LineDefaults(EramProperties? properties, out string? problem)
 	{
 		if (!TryRequire(properties, "LineDefaults", out problem, ("Bcg", properties?.Bcg), ("Filters", properties?.Filters),
 			("Style", properties?.Style), ("Thickness", properties?.Thickness)))
@@ -44,11 +45,11 @@ internal static class VeramCrcProperties
 		return Valid(CrcPropertyValidator.ValidateLineDefaults(defaults), "LineDefaults", ref problem) ? defaults : null;
 	}
 
-	/// <summary>Complete, valid Symbol defaults from vERAM properties.</summary>
+	/// <summary>Complete, valid Symbol defaults from ERAM properties.</summary>
 	/// <param name="properties">An object's <c>SymbolDefaults</c>, or <see langword="null"/> when it has none.</param>
 	/// <param name="problem">Why they cannot be used, when they cannot.</param>
 	/// <returns>The defaults, or <see langword="null"/> when they are missing, incomplete or invalid.</returns>
-	public static CrcSymbolDefaults? SymbolDefaults(VeramProperties? properties, out string? problem)
+	public static CrcSymbolDefaults? SymbolDefaults(EramProperties? properties, out string? problem)
 	{
 		if (!TryRequire(properties, "SymbolDefaults", out problem, ("Bcg", properties?.Bcg), ("Filters", properties?.Filters),
 			("Style", properties?.Style), ("Size", properties?.Size)))
@@ -67,14 +68,14 @@ internal static class VeramCrcProperties
 		return Valid(CrcPropertyValidator.ValidateSymbolDefaults(defaults), "SymbolDefaults", ref problem) ? defaults : null;
 	}
 
-	/// <summary>Complete, valid Text defaults from vERAM properties.</summary>
+	/// <summary>Complete, valid Text defaults from ERAM properties.</summary>
 	/// <param name="properties">An object's <c>TextDefaults</c>, or <see langword="null"/> when it has none.</param>
 	/// <param name="problem">Why they cannot be used, when they cannot.</param>
 	/// <returns>The defaults, or <see langword="null"/> when they are missing, incomplete or invalid.</returns>
-	public static CrcTextDefaults? TextDefaults(VeramProperties? properties, out string? problem)
+	public static CrcTextDefaults? TextDefaults(EramProperties? properties, out string? problem)
 	{
 		if (!TryRequire(properties, "TextDefaults", out problem, ("Bcg", properties?.Bcg), ("Filters", properties?.Filters),
-			("Size", properties?.Size), ("Underline", properties?.Underline), ("Opaque", properties?.Opaque),
+			("Size", properties?.Size), ("Underline", properties?.Underline),
 			("XOffset", properties?.XOffset), ("YOffset", properties?.YOffset)))
 		{
 			return null;
@@ -86,7 +87,7 @@ internal static class VeramCrcProperties
 			Filters = properties.Filters!,
 			Size = properties.Size!.Value,
 			Underline = properties.Underline!.Value,
-			Opaque = properties.Opaque!.Value,
+			Opaque = false,
 			XOffset = properties.XOffset!.Value,
 			YOffset = properties.YOffset!.Value,
 		};
@@ -94,10 +95,10 @@ internal static class VeramCrcProperties
 		return Valid(CrcPropertyValidator.ValidateTextDefaults(defaults), "TextDefaults", ref problem) ? defaults : null;
 	}
 
-	/// <summary>CRC defaults as vERAM properties, so an element's overrides can be laid over them.</summary>
+	/// <summary>CRC defaults as ERAM properties, so an element's overrides can be laid over them.</summary>
 	/// <param name="defaults">The Line, Symbol or Text defaults, or <see langword="null"/>.</param>
-	/// <returns>The same values as vERAM properties; <see cref="VeramProperties.None"/> for <see langword="null"/>.</returns>
-	public static VeramProperties AsVeram(object? defaults) => defaults switch
+	/// <returns>The same values as ERAM properties; <see cref="EramProperties.None"/> for <see langword="null"/>.</returns>
+	public static EramProperties AsEram(object? defaults) => defaults switch
 	{
 		CrcLineDefaults line => new() { Bcg = line.Bcg, Filters = line.Filters, Style = line.Style, Thickness = line.Thickness },
 		CrcSymbolDefaults symbol => new() { Bcg = symbol.Bcg, Filters = symbol.Filters, Style = symbol.Style, Size = symbol.Size },
@@ -107,18 +108,17 @@ internal static class VeramCrcProperties
 			Filters = text.Filters,
 			Size = text.Size,
 			Underline = text.Underline,
-			Opaque = text.Opaque,
 			XOffset = text.XOffset,
 			YOffset = text.YOffset,
 		},
-		_ => VeramProperties.None,
+		_ => EramProperties.None,
 	};
 
 	/// <summary>An element's overrides laid over its defaults: each value the element sets wins.</summary>
 	/// <param name="defaults">The defaults.</param>
 	/// <param name="overrides">The element's own values.</param>
 	/// <returns>The values the element is drawn with.</returns>
-	public static VeramProperties Over(VeramProperties defaults, VeramProperties overrides) => new()
+	public static EramProperties Over(EramProperties defaults, EramProperties overrides) => new()
 	{
 		Bcg = overrides.Bcg ?? defaults.Bcg,
 		Filters = overrides.Filters ?? defaults.Filters,
@@ -126,7 +126,6 @@ internal static class VeramCrcProperties
 		Thickness = overrides.Thickness ?? defaults.Thickness,
 		Size = overrides.Size ?? defaults.Size,
 		Underline = overrides.Underline ?? defaults.Underline,
-		Opaque = overrides.Opaque ?? defaults.Opaque,
 		XOffset = overrides.XOffset ?? defaults.XOffset,
 		YOffset = overrides.YOffset ?? defaults.YOffset,
 	};
@@ -138,7 +137,7 @@ internal static class VeramCrcProperties
 	/// <param name="overrides">The element's own values.</param>
 	/// <param name="dropped">Told of each value left out, as <c>name="value"</c>.</param>
 	/// <returns>The attributes, in CRC's order; empty when the element sets nothing usable.</returns>
-	public static AttributesTable Overrides(VeramElementKind kind, VeramProperties overrides, Action<string> dropped)
+	public static AttributesTable Overrides(EramElementKind kind, EramProperties overrides, Action<string> dropped)
 	{
 		AttributesTable table = [];
 
@@ -158,12 +157,12 @@ internal static class VeramCrcProperties
 
 		switch (kind)
 		{
-			case VeramElementKind.Line:
+			case EramElementKind.Line:
 				AddStyle(table, overrides.Style, CrcPropertyValidator.ValidLineStyles, dropped);
 				Add(table, "thickness", overrides.Thickness, value => value is >= CrcPropertyValidator.MinThickness and <= CrcPropertyValidator.MaxThickness, dropped);
 				break;
 
-			case VeramElementKind.Symbol:
+			case EramElementKind.Symbol:
 				AddStyle(table, overrides.Style, CrcPropertyValidator.ValidSymbolStyles, dropped);
 				Add(table, "size", overrides.Size, value => value is >= CrcPropertyValidator.MinSymbolSize and <= CrcPropertyValidator.MaxSymbolSize, dropped);
 				break;
@@ -171,7 +170,6 @@ internal static class VeramCrcProperties
 			default:
 				Add(table, "size", overrides.Size, value => value is >= CrcPropertyValidator.MinTextSize and <= CrcPropertyValidator.MaxTextSize, dropped);
 				Add(table, "underline", overrides.Underline, _ => true, dropped);
-				Add(table, "opaque", overrides.Opaque, _ => true, dropped);
 				Add(table, "xOffset", overrides.XOffset, _ => true, dropped);
 				Add(table, "yOffset", overrides.YOffset, _ => true, dropped);
 				break;
@@ -180,7 +178,7 @@ internal static class VeramCrcProperties
 		return table;
 	}
 
-	/// <summary>A vERAM style in CRC's spelling, or the value unchanged when CRC has no such style.</summary>
+	/// <summary>An ERAM style in CRC's spelling, or the value unchanged when CRC has no such style.</summary>
 	private static string? Style(string? style, IReadOnlyList<string> valid) => SettingsValueReader.NormalizeStyle(style, valid);
 
 	private static void AddStyle(AttributesTable table, string? style, IReadOnlyList<string> valid, Action<string> dropped)
@@ -220,7 +218,7 @@ internal static class VeramCrcProperties
 		}
 	}
 
-	private static bool TryRequire(VeramProperties? properties, string element, out string? problem, params (string Name, object? Value)[] values)
+	private static bool TryRequire(EramProperties? properties, string element, out string? problem, params (string Name, object? Value)[] values)
 	{
 		if (properties is null)
 		{

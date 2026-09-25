@@ -1,15 +1,15 @@
-using FeBuddy.Core.Application.Conversions.VeramToGeojson.Models;
+using FeBuddy.Core.Application.Conversions.EramToGeojson.Models;
 using FeBuddy.Core.Application.Models;
 using FeBuddy.Core.Application.Settings;
 using FeBuddy.Core.Domain.Crc.Models;
 
-namespace FeBuddy.Core.Application.Conversions.VeramToGeojson;
+namespace FeBuddy.Core.Application.Conversions.EramToGeojson;
 
 /// <summary>
 /// Parses the raw <c>Dictionary&lt;string, string&gt;</c> the GUI (or <c>FeBuddy.Harness</c>)
-/// supplies for the vERAM to GeoJSON conversion into a typed, validated <see cref="VeramToGeojsonSettings"/>.
+/// supplies for the ERAM to GeoJSON conversion into a typed, validated <see cref="EramToGeojsonSettings"/>.
 /// </summary>
-public static class VeramToGeojsonSettingsParser
+public static class EramToGeojsonSettingsParser
 {
 	/// <summary>
 	/// The CRC defaults class the tab's defaults are keyed under: <c>Crc.GeoMap.Line.*</c>,
@@ -17,7 +17,7 @@ public static class VeramToGeojsonSettingsParser
 	/// </summary>
 	public const string CrcClassName = "GeoMap";
 
-	private const string LogSource = "VeramToGeojsonSettingsParser";
+	private const string LogSource = "EramToGeojsonSettingsParser";
 
 	/// <summary>
 	/// The keys only this conversion reads, on top of <see cref="SubServiceSettingsReader.CommonKeys"/>
@@ -34,7 +34,7 @@ public static class VeramToGeojsonSettingsParser
 		};
 
 	/// <summary>
-	/// Parses and validates <paramref name="settings"/> into a typed <see cref="VeramToGeojsonSettings"/>.
+	/// Parses and validates <paramref name="settings"/> into a typed <see cref="EramToGeojsonSettings"/>.
 	/// </summary>
 	/// <param name="settings">The raw settings dictionary.</param>
 	/// <returns>The typed settings plus any non-fatal parsing messages.</returns>
@@ -42,30 +42,30 @@ public static class VeramToGeojsonSettingsParser
 	/// Thrown when a required setting is missing or a value is invalid, or when the source is not
 	/// exactly one of a folder or a list of files.
 	/// </exception>
-	public static VeramToGeojsonSettingsParseResult Parse(IReadOnlyDictionary<string, string> settings)
+	public static EramToGeojsonSettingsParseResult Parse(IReadOnlyDictionary<string, string> settings)
 	{
 		ArgumentNullException.ThrowIfNull(settings);
 
 		string outputDirectory = ConversionSettingsReader.ReadOutputDirectory(settings);
 		(string? sourceFolder, IReadOnlyList<string> sourceFiles) = ConversionSettingsReader.ReadSource(settings);
 
-		VeramOutputLayout layout = SettingsValueReader.OptionalEnum(
-			settings, "OutputLayout", VeramOutputLayout.ByObject,
-			hint: "Use \"ByObject\" (a file per GeoMapObject description) or \"ByFilter\" (files by filter index and similar attributes).");
+		EramOutputLayout layout = SettingsValueReader.OptionalEnum(
+			settings, "OutputLayout", EramOutputLayout.ByObject,
+			hint: "Use \"ByObject\" (a file per object type and map group) or \"ByFilter\" (files by filter index and similar attributes).");
 
-		VeramDefaultsSource source = SettingsValueReader.OptionalEnum(
-			settings, "DefaultsSource", VeramDefaultsSource.Xml,
+		EramDefaultsSource source = SettingsValueReader.OptionalEnum(
+			settings, "DefaultsSource", EramDefaultsSource.Xml,
 			hint: "Use \"Xml\" (carry over the XML's defaults), \"XmlThenCard\" (the tab's defaults where an object has none) or \"Card\" (the tab's defaults only).");
 
 		// The tab's defaults are read only when they can be used, and then only the kinds whose
 		// Include box is ticked.
-		bool usesCard = source != VeramDefaultsSource.Xml;
+		bool usesCard = source != EramDefaultsSource.Xml;
 
 		IReadOnlyList<ServiceMessage> messages = SubServiceSettingsReader.UnknownKeyWarnings(
 			settings, OwnKeys, CrcKindsByClass, LogSource,
 			labelSource: "each text keeps its own text from the GeoMap");
 
-		VeramToGeojsonSettings parsed = new()
+		EramToGeojsonSettings parsed = new()
 		{
 			OutputDirectory = outputDirectory,
 			AddFeBuddyOutputFolder = ConversionSettingsReader.ReadAddFeBuddyOutputFolder(settings),
@@ -85,6 +85,6 @@ public static class VeramToGeojsonSettingsParser
 				: null,
 		};
 
-		return new VeramToGeojsonSettingsParseResult(parsed, messages);
+		return new EramToGeojsonSettingsParseResult(parsed, messages);
 	}
 }

@@ -59,8 +59,8 @@ FeBuddy.Core/
 │   ├── Nasr/           Download, availability, CSV reading, WaypointLocator
 │   │   ├── Models/     One row-model file per NASR CSV group
 │   │   └── Parsers/    One parser per group + NasrCsvParser (parses them all)
-│   ├── Sct/            SctFileReader: VRC .sct2 / .sct sector files
-│   └── Veram/          VeramGeoMapReader: vERAM GeoMaps XML (streamed)
+│   ├── Eram/           EramGeoMapReader: an ERAM adaptation export's Geomaps.xml (streamed)
+│   └── Sct/            SctFileReader: VRC .sct2 / .sct sector files
 └── Application/
     ├── Airac/          AiracService (entry point), AiracCycleDataCache, FebProperties
     │   ├── Airways/    One folder per sub-service, all shaped the same way
@@ -69,8 +69,8 @@ FeBuddy.Core/
     ├── Conversions/    ConversionSettingsReader and ConversionFiles (what every conversion
     │   │               shares), then one folder per file conversion
     │   ├── DatToGeojson/
-    │   ├── SctToGeojson/
-    │   └── VeramToGeojson/
+    │   ├── EramToGeojson/
+    │   └── SctToGeojson/
     ├── Launch/         LaunchSequence, AppEnvironment
     ├── News/           NewsService
     ├── Settings/       Shared readers for the string settings dictionaries
@@ -150,9 +150,11 @@ DatToGeojsonService.Run(settings, progress)
 ```
 
 A file that cannot be read or cropped is an `Error` message and a failed `DatFileConversion`;
-the other files still convert. SCT2 to GeoJSON (`SctFileReader` → `SctGeojsonWriter`) and vERAM
-to GeoJSON (`VeramGeoMapReader` → `VeramGeojsonWriter`, with `VeramCrcProperties` turning vERAM's
-styling into validated CRC defaults and overrides) have the same shape. Both write lines through
+the other files still convert. SCT2 to GeoJSON (`SctFileReader` → `SctGeojsonWriter`) and ERAM
+to GeoJSON (`EramGeoMapReader` → `EramGeojsonWriter`, with `EramCrcProperties` turning ERAM's
+styling into validated CRC defaults and overrides) have the same shape. `ConversionFiles` takes an
+optional check on a folder's files, so ERAM picks `Geomaps.xml` out of a whole adaptation export
+(`EramGeoMapReader.IsGeoMapsFile`). Both write lines through
 `Domain/Geo/SegmentJoiner`, which joins two-point segments back into lines, merges repeats with
 `LineStringMerger` and splits them with `AntimeridianSplitter`.
 
@@ -162,7 +164,7 @@ files, the per-file loop that reports progress and turns an unreadable file into
 and file-safe and unique file names), and in `Models/` the `ConversionSettings`,
 `ConversionServiceResult` and `ConversionProgress` bases each conversion's own types derive from,
 plus `SourceFileConversion` / `SourceFilesConversionResult` for the conversions that write several
-files per source (SCT2, vERAM).
+files per source (SCT2, ERAM).
 
 ## Where do I put…
 

@@ -1,6 +1,6 @@
 <!--
     VeramToGeojsonView  -  the vERAM to GeoJSON tab on the File Conversions screen.
-    Save / Undo / Previous / Next come from the tab host's shared action bar, and the tab
+    Save / Undo come from the tab host's shared action bar, and the tab
     host owns the page's single scroller. The Convert card at the foot of the page starts the
     run, and the outcome appears on the screen's Review tab.
 

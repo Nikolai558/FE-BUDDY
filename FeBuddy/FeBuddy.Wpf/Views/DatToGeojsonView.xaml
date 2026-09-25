@@ -1,6 +1,6 @@
 <!--
     DatToGeojsonView  -  the DAT to GeoJSON tab on the File Conversions screen.
-    Save / Undo / Previous / Next come from the tab host's shared action bar, and the tab
+    Save / Undo come from the tab host's shared action bar, and the tab
     host owns the page's single scroller. Unlike an AIRAC sub-service, this tab runs on its
     own: the Convert card at the foot of the page starts it, and the outcome appears on the
     screen's Review tab.

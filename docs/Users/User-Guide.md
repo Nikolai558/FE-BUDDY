@@ -187,8 +187,9 @@ changes (they are saved when the run starts). **Run AIRAC Service** starts the r
 Turns files you already have into files CRC can use. It works like the AIRAC Service screen -
 tabs down the left, the same action bar, the same **Review** tab - with two differences: every
 conversion is always on the rail (there is nothing to tick), and each one runs on its own, from
-the button at the bottom of its own tab. Nothing here needs the AIRAC data, so the screen is
-ready as soon as FE-Buddy opens.
+the button at the bottom of its own tab. Because no tab leads to another, the action bar has no
+**Previous** / **Next**; pick a conversion on the left. Nothing here needs the AIRAC data, so the
+screen is ready as soon as FE-Buddy opens.
 
 ### DAT to GeoJSON tab
 

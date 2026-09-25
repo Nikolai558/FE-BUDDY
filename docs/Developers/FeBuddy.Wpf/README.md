@@ -159,7 +159,9 @@ bar and page scroller are shared, and each screen's view-model says what differs
   a dirty tab first (the user confirms), blocks an invalid one, runs the conversion on
   a background thread and fills the shared Review tab. A conversion's `RunBlocker`
   (e.g. "no files picked") keeps the button off without blocking Save, because picked
-  input files are not saved settings. Nothing here waits for AIRAC data.
+  input files are not saved settings. The action bar hides Previous / Next here
+  (`HasStepNavigation` is off), since the tabs are standalone rather than steps.
+  Nothing here waits for AIRAC data.
   - **Conversion tabs** - each is a `FileConversionTabViewModel`: source (a saved
     folder, or files picked one or several at a time and not saved) and the CRC ERAM
     defaults for the kinds it writes.

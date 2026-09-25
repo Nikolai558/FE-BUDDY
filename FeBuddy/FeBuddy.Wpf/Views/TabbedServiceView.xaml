@@ -80,9 +80,11 @@
                 <WrapPanel Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center"
                            Orientation="Horizontal" Margin="0,-4,0,-4">
                     <Button Style="{StaticResource Button.Ghost}" Content="Previous"
-                            Command="{Binding PreviousCommand}" Margin="8,4,0,4" />
+                            Command="{Binding PreviousCommand}" Margin="8,4,0,4"
+                            Visibility="{Binding HasStepNavigation, Converter={StaticResource BoolToVis}}" />
                     <Button Style="{StaticResource Button.Ghost}" Content="Next"
-                            Command="{Binding NextCommand}" Margin="8,4,0,4" />
+                            Command="{Binding NextCommand}" Margin="8,4,0,4"
+                            Visibility="{Binding HasStepNavigation, Converter={StaticResource BoolToVis}}" />
                     <Button Style="{StaticResource Button.Ghost}" Content="Preview settings"
                             Command="{Binding GoToPreviewCommand}" Margin="8,4,0,4"
                             Visibility="{Binding HasPreviewTab, Converter={StaticResource BoolToVis}}" />

@@ -56,6 +56,9 @@ public sealed class FileConversionsViewModel : TabbedServiceViewModel
 	/// <inheritdoc />
 	public override string ScreenTitle => "File Conversions";
 
+	/// <summary>Off: every conversion stands alone, so there is no next step to go to.</summary>
+	public override bool HasStepNavigation => false;
+
 	/// <summary>
 	/// The run-review tab, once a run has started. Held back until then so the rail does not
 	/// carry an empty tab about a run that has not happened.

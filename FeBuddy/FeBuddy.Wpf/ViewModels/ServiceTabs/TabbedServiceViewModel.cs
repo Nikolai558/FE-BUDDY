@@ -64,6 +64,12 @@ public abstract class TabbedServiceViewModel : ObservableObject
 	/// </summary>
 	public bool HasPreviewTab => PreviewTab is not null;
 
+	/// <summary>
+	/// Whether the action bar shows <b>Previous</b> / <b>Next</b>. They suit a screen whose tabs
+	/// are steps towards one run; a screen of standalone tabs leaves moving between them to the rail.
+	/// </summary>
+	public virtual bool HasStepNavigation => true;
+
 	/// <summary><see langword="true"/> while a run is in progress.</summary>
 	public bool IsRunning
 	{

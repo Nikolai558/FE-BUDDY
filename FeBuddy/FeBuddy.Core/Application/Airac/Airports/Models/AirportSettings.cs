@@ -1,3 +1,4 @@
+using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Domain.Crc.Models;
 using FeBuddy.Core.Domain.Geo.Models;
 
@@ -11,7 +12,10 @@ namespace FeBuddy.Core.Application.Airac.Airports.Models;
 /// </summary>
 public sealed record AirportSettings
 {
-	/// <summary>Directory the Airports services write their output under.</summary>
+	/// <summary>
+	/// The folder the run writes into - the <c>AIRAC_&lt;cycle&gt;</c> folder when run by the AIRAC
+	/// Service. Files are laid out inside it by <see cref="AiracOutputPaths"/>.
+	/// </summary>
 	public required string OutputDirectory { get; init; }
 
 	/// <summary>Whether to write GeoJSON at all. <see langword="false"/> means alias output only.</summary>
@@ -44,25 +48,10 @@ public sealed record AirportSettings
 	public IReadOnlyCollection<AirportFebProperty> FebProperties { get; init; } = [];
 
 	/// <summary>
-	/// Whether the Line defaults (<see cref="LineDefaults"/>) are written as an isLineDefaults
-	/// Feature. <see langword="true"/> only when the user asked for them and the file they belong
-	/// to is being produced.
+	/// Which files go to vNAS, and which of those get CRC-ERAM defaults, by file key (see
+	/// <see cref="AirportOutputFiles"/>). Default: none.
 	/// </summary>
-	public required bool IncludeCrcLineDefaults { get; init; }
-
-	/// <summary>
-	/// Whether the Symbol defaults (<see cref="SymbolDefaults"/>) are written as an isSymbolDefaults
-	/// Feature. <see langword="true"/> only when the user asked for them and the file they belong
-	/// to is being produced.
-	/// </summary>
-	public required bool IncludeCrcSymbolDefaults { get; init; }
-
-	/// <summary>
-	/// Whether the Text defaults (<see cref="TextDefaults"/>) are written as an isTextDefaults
-	/// Feature. <see langword="true"/> only when the user asked for them and the file they belong
-	/// to is being produced.
-	/// </summary>
-	public required bool IncludeCrcTextDefaults { get; init; }
+	public VnasFileChoices Vnas { get; init; } = VnasFileChoices.None;
 
 	/// <summary>
 	/// The Region of Interest the GeoJSON output is filtered to, or <see langword="null"/> for
@@ -74,23 +63,16 @@ public sealed record AirportSettings
 	/// <summary>Maximum decimal places for coordinates written to GeoJSON. Default 6.</summary>
 	public int CoordinatePrecision { get; init; } = 6;
 
-	/// <summary>
-	/// When <see langword="true"/> (default), output is written under a <c>FE-Buddy_Output</c>
-	/// folder inside <see cref="OutputDirectory"/>; when <see langword="false"/>, straight into
-	/// <see cref="OutputDirectory"/> (the <c>Airports</c> sub-folder is kept either way).
-	/// </summary>
-	public bool AddFeBuddyOutputFolder { get; init; } = true;
-
-	/// <summary>CRC line property defaults, keyed by class. Populated when <see cref="IncludeCrcLineDefaults"/> is <see langword="true"/>.</summary>
+	/// <summary>CRC line property defaults, keyed by class. Populated when <c>Runways_Lines</c> gets CRC-ERAM defaults.</summary>
 	public IReadOnlyDictionary<AirportCrcClass, CrcLineDefaults> LineDefaults { get; init; } =
 		new Dictionary<AirportCrcClass, CrcLineDefaults>();
 
-	/// <summary>CRC symbol property defaults, keyed by class. Populated when <see cref="IncludeCrcSymbolDefaults"/> is <see langword="true"/>.</summary>
+	/// <summary>CRC symbol property defaults, keyed by class. Populated when <c>Airports_Symbols</c> gets CRC-ERAM defaults.</summary>
 	public IReadOnlyDictionary<AirportCrcClass, CrcSymbolDefaults> SymbolDefaults { get; init; } =
 		new Dictionary<AirportCrcClass, CrcSymbolDefaults>();
 
 	/// <summary>
-	/// CRC text property defaults, keyed by class. Populated when <see cref="IncludeCrcTextDefaults"/> is <see langword="true"/>.
+	/// CRC text property defaults, keyed by class. Populated when <c>Airports_Text</c> gets CRC-ERAM defaults.
 	/// </summary>
 	public IReadOnlyDictionary<AirportCrcClass, CrcTextDefaults> TextDefaults { get; init; } =
 		new Dictionary<AirportCrcClass, CrcTextDefaults>();

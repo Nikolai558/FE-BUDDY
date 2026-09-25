@@ -37,14 +37,10 @@
                                     LinesDescription="One line feature per airport and procedure, shared segments drawn once."
                                     SymbolsDescription="One symbol per point on the procedure."
                                     TextDescription="A label per point showing its identifier."
-                                    Footnote="Files are written to Departure Procedures\&lt;ARTCC&gt;\&lt;airport&gt;\ as &lt;airport&gt;_&lt;procedure&gt;_Lines/Symbols/Text.geojson." />
+                                    Footnote="Files are written to Geojson\&lt;ARTCC&gt;\&lt;airport&gt;\ in the cycle's folder, as &lt;airport&gt;_&lt;procedure&gt;_Lines/Symbols/Text.geojson." />
 
             <!-- ============ FE-Buddy properties ============ -->
             <cards:FebPropertiesCard IsEnabled="{Binding GenerateGeojson}" />
-
-            <!-- ============ CRC ERAM defaults ============ -->
-            <cards:CrcDefaultsCard IsEnabled="{Binding GenerateGeojson}"
-                                   LinesTitle="Departures — Lines" SymbolsTitle="Departures — Symbols" TextTitle="Departures — Text" />
 
             <!-- ============ procedures ============ -->
             <ctl:Card Header="Procedures">
@@ -123,5 +119,9 @@
                     </StackPanel>
                 </cards:RoiOverrideCard.AdditionalContent>
             </cards:RoiOverrideCard>
+
+            <!-- ============ upload to vNAS, then the CRC ERAM defaults those files carry ============ -->
+            <cards:VnasUploadCard />
+            <cards:CrcDefaultsCard LinesTitle="Departures — Lines" SymbolsTitle="Departures — Symbols" TextTitle="Departures — Text" />
     </StackPanel>
 </UserControl>

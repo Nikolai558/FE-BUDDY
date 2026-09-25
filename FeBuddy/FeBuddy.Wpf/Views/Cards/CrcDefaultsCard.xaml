@@ -1,14 +1,19 @@
 <!--
-    CrcDefaultsCard  -  the CRC ERAM Defaults card every GeoJSON sub-service tab shows: a
-    CrcDefaultsPanel per file, always Lines | Symbols | Text. Binds to the tab's view model
-    through ICrcDefaultsSettings; the tab supplies only the panel titles.
+    CrcDefaultsCard  -  the CRC ERAM Defaults card every GeoJSON sub-service tab shows right after
+    its Upload to vNAS card: a CrcDefaultsPanel per kind of file, always Lines | Symbols | Text.
+    Binds to the tab's view model through ICrcDefaultsSettings; the tab supplies only the panel
+    titles.
+
+    Which files get CRC-ERAM defaults is chosen on the Upload to vNAS card, so the card shows only
+    once one does, a panel only while a file of its kind does, and a panel only the classes those
+    files need (Airways High/Low: just the class of each file chosen). A panel with no class to
+    show hides itself.
 
     The panels sit side by side; the WrapPanel stacks them when the window is too narrow for all
-    three, so no panel is ever clipped. A panel shows only while its file is being produced
-    (picked on the What Files card).
+    three, so no panel is ever clipped.
 
     Usage:
-        <cards:CrcDefaultsCard IsEnabled="{Binding GenerateGeojson}" LinesTitle="Runways — Lines" />
+        <cards:CrcDefaultsCard LinesTitle="Runways — Lines" />
 -->
 <UserControl x:Class="FeBuddy.Wpf.Views.Cards.CrcDefaultsCard"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -21,18 +26,17 @@
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance tabs:ICrcDefaultsSettings}"
              d:DesignWidth="900"
-             x:Name="Self">
+             x:Name="Self"
+             Visibility="{Binding HasCrcDefaultsInUse, Converter={StaticResource BoolToVis}}">
     <ctl:Card Header="CRC ERAM Defaults">
-        <WrapPanel Orientation="Horizontal" Margin="0,10,0,0">
-            <cards:CrcDefaultsPanel Title="{Binding LinesTitle, ElementName=Self}"
-                                    IsIncluded="{Binding IncludeCrcLineDefaults}" Classes="{Binding LineDefaults}"
-                                    Visibility="{Binding EmitLines, Converter={StaticResource BoolToVis}}" />
-            <cards:CrcDefaultsPanel Title="{Binding SymbolsTitle, ElementName=Self}"
-                                    IsIncluded="{Binding IncludeCrcSymbolDefaults}" Classes="{Binding SymbolDefaults}"
-                                    Visibility="{Binding EmitSymbols, Converter={StaticResource BoolToVis}}" />
-            <cards:CrcDefaultsPanel Title="{Binding TextTitle, ElementName=Self}"
-                                    IsIncluded="{Binding IncludeCrcTextDefaults}" Classes="{Binding TextDefaults}"
-                                    Visibility="{Binding EmitText, Converter={StaticResource BoolToVis}}" />
-        </WrapPanel>
+        <StackPanel>
+            <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,0"
+                       Text="The values written as the isDefaults feature at the top of each vNAS file chosen for CRC-ERAM defaults. Every box shown must be filled in." />
+            <WrapPanel Orientation="Horizontal" Margin="0,10,0,0">
+                <cards:CrcDefaultsPanel Title="{Binding LinesTitle, ElementName=Self}" Classes="{Binding LineDefaultsInUse}" />
+                <cards:CrcDefaultsPanel Title="{Binding SymbolsTitle, ElementName=Self}" Classes="{Binding SymbolDefaultsInUse}" />
+                <cards:CrcDefaultsPanel Title="{Binding TextTitle, ElementName=Self}" Classes="{Binding TextDefaultsInUse}" />
+            </WrapPanel>
+        </StackPanel>
     </ctl:Card>
 </UserControl>

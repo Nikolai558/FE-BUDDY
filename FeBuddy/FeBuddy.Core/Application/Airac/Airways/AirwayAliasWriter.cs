@@ -9,10 +9,12 @@ namespace FeBuddy.Core.Application.Airac.Airways;
 /// Generates the <c>Airways.txt</c> alias file: one <c>.FF</c> alias command per airway that
 /// draws every waypoint on it (e.g. <c>.J3F .FF OAK RBL LKV IMB GEG</c>).
 /// </summary>
+/// <remarks>
+/// The file goes in the output folder itself, or under <c>Upload_to_vNAS</c> when the user marked
+/// it for vNAS (see <see cref="AiracOutputPaths"/>).
+/// </remarks>
 public static class AirwayAliasWriter
 {
-	private const string FileName = "Airways.txt";
-
 	/// <summary>
 	/// Writes the alias file for every airway that has at least one resolved waypoint.
 	/// </summary>
@@ -60,10 +62,11 @@ public static class AirwayAliasWriter
 			builder.AppendLine($".{airway.AwyId}F .FF {pointIds}");
 		}
 
-		string directory = SubServiceOutputPaths.Resolve(settings.OutputDirectory, settings.AddFeBuddyOutputFolder, "Airways", "Alias");
+		string directory = AiracOutputPaths.FileDirectory(
+			settings.OutputDirectory, isGeojson: false, settings.Vnas.IsUploaded(AirwayOutputFiles.Alias));
 		Directory.CreateDirectory(directory);
 
-		string path = Path.Combine(directory, FileName);
+		string path = Path.Combine(directory, AirwayOutputFiles.Alias);
 		File.WriteAllText(path, builder.ToString());
 
 		return new AirwayAliasGenerateResult(path, airwaysWithPoints.Count);

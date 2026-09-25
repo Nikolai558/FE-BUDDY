@@ -12,6 +12,12 @@ namespace FeBuddy.Core.Application.Airac.Models;
 public sealed record AiracServiceResult : ServiceResult
 {
 	/// <summary>
+	/// The cycle folder the run wrote into (<see cref="AiracServiceSettings.CycleOutputDirectory"/>).
+	/// It exists only if the run wrote something.
+	/// </summary>
+	public required string OutputDirectory { get; init; }
+
+	/// <summary>
 	/// The Airways sub-service result, or <see langword="null"/> when Airways was not part of
 	/// this run.
 	/// </summary>

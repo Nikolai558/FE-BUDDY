@@ -15,11 +15,22 @@ internal static class HarnessSettings
 	/// <summary>Directory containing an unzipped NASR 28-day subscription CSV set.</summary>
 	public const string NasrSourceDirectory = @"C:\Users\ksand\Downloads\03_Sep_2026_CSV";
 
-	/// <summary>Directory the services write output under (see FE-Buddy_Output/Airways/..., FE-Buddy_Output/Airports/...).</summary>
+	/// <summary>
+	/// The folder the services write into, as the AIRAC Service's <c>AIRAC_&lt;cycle&gt;</c> folder
+	/// would be: alias files here, GeoJSON in its <c>Geojson</c> folder, and anything marked for
+	/// vNAS under <c>Upload_to_vNAS</c>. The harness calls each service directly, so there is no
+	/// cycle folder of its own.
+	/// </summary>
 	public const string OutputDirectory = @"C:\Users\ksand\Downloads\FE-Buddy-Output";
 
 	/// <summary>Mirrors <c>DevMode.IsEnabled</c> for this run.</summary>
 	public const bool DevMode = true;
+
+	/// <summary>Every GeoJSON file a HighLow Airways run can write, by file key.</summary>
+	private const string AirwayHighLowFiles =
+		"Airways_High_Lines,Airways_High_Symbols,Airways_High_Text," +
+		"Airways_Low_Lines,Airways_Low_Symbols,Airways_Low_Text," +
+		"Airways_Other_Lines,Airways_Other_Symbols,Airways_Other_Text";
 
 	/// <summary>
 	/// Mirrors the Settings "File layout" choice (<c>OutputFormatting.PrettyPrintGeojson</c>).
@@ -45,9 +56,11 @@ internal static class HarnessSettings
 
 			{ "GenerateAliasFile", "Y" },
 			{ "SplitAtAntimeridian", "Y" },
-			{ "IncludeCrcLineDefaults", "Y" },
-			{ "IncludeCrcSymbolDefaults", "Y" },
-			{ "IncludeCrcTextDefaults", "Y" },
+
+			// Files marked for vNAS go under Upload_to_vNAS; only those in CrcDefaultsFor get the
+			// CRC ERAM defaults Feature, using the Crc.* values added by AddCrcDefaults below.
+			{ "UploadToVnas", AirwayHighLowFiles + ",Airways.txt" },
+			{ "CrcDefaultsFor", AirwayHighLowFiles },
 			{ "FilterByRoi", "N" },
 
 			// Phase 3.3-3.7 settings. Defaults shown; omit any of these and the parser uses
@@ -58,7 +71,6 @@ internal static class HarnessSettings
 			{ "EmitText", "Y" },
 			{ "AliasRoiScope", "All" },       // "All" or "RoiAirways" (3.5)
 			{ "CoordinatePrecision", "6" },   // max decimal places in GeoJSON coords (3.6)
-			{ "AddFeBuddyOutputFolder", "Y" } // N -> write straight into OutputDirectory\Airways (3.7)
 
 			// To exercise Designation grouping, waypoint buffering, or ROI clipping
 			// (all verified working against real NASR data during development), try e.g.:
@@ -107,11 +119,10 @@ internal static class HarnessSettings
 			{ "IncludeFebCustomProperties", "Y" },
 			{ "FebProperties", "faaId,icaoId,name,elev,respArtcc,tfcPtrnAlt,fssId,twrType,rwyId" },
 
-			// Writes the CRC ERAM defaults Feature at the head of each GeoJSON file, using the
-			// Crc.* values added by AddAirportCrcDefaults below.
-			{ "IncludeCrcLineDefaults", "Y" },
-			{ "IncludeCrcSymbolDefaults", "Y" },
-			{ "IncludeCrcTextDefaults", "Y" },
+			// Files marked for vNAS go under Upload_to_vNAS; only those in CrcDefaultsFor get the
+			// CRC ERAM defaults Feature, using the Crc.* values added by AddAirportCrcDefaults below.
+			{ "UploadToVnas", "Runways_Lines,Airports_Symbols,Airports_Text,Airports.txt" },
+			{ "CrcDefaultsFor", "Runways_Lines,Airports_Symbols,Airports_Text" },
 
 			// ROI filtering applies to the GeoJSON output only; the alias file always covers
 			// every airport. The four corner keys are read only when FilterByRoi is "Y" - set
@@ -123,7 +134,6 @@ internal static class HarnessSettings
 			{ "RoiNeLon", "" },              // e.g. "-78.0"
 
 			{ "CoordinatePrecision", "6" },  // max decimal places in GeoJSON coords (0-15)
-			{ "AddFeBuddyOutputFolder", "Y" } // N -> write straight into OutputDirectory\Airports
 		};
 
 		AddAirportCrcDefaults(settings,
@@ -179,14 +189,13 @@ internal static class HarnessSettings
 			{ "IncludeFebCustomProperties", "Y" },
 			{ "FebProperties", "dpName,pointId,arptId,artcc,amendmentNo,amendEffDate,waypoints" },
 
-			// Writes the CRC ERAM defaults Feature at the head of each GeoJSON file, using the
-			// Crc.Departures.* values added by AddDepartureCrcDefaults below.
-			{ "IncludeCrcLineDefaults", "Y" },
-			{ "IncludeCrcSymbolDefaults", "Y" },
-			{ "IncludeCrcTextDefaults", "Y" },
+			// Chosen per kind (a run writes thousands of files): each kind listed goes under
+			// Upload_to_vNAS, and only those in CrcDefaultsFor get the CRC ERAM defaults Feature,
+			// using the Crc.Departures.* values added by AddDepartureCrcDefaults below.
+			{ "UploadToVnas", "Departures_Lines,Departures_Symbols,Departures_Text,Departures.txt" },
+			{ "CrcDefaultsFor", "Departures_Lines,Departures_Symbols,Departures_Text" },
 
 			{ "CoordinatePrecision", "6" },       // max decimal places in GeoJSON coords (0-15)
-			{ "AddFeBuddyOutputFolder", "Y" }     // N -> write straight into OutputDirectory\Departure Procedures
 		};
 
 		AddDepartureCrcDefaults(settings,

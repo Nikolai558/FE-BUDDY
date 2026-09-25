@@ -17,12 +17,11 @@ public interface ISubServiceRunTarget
 {
 	/// <summary>
 	/// Builds this sub-service's raw settings block, the same dictionary the library's parser
-	/// reads.
+	/// reads. It leaves out <c>OutputDirectory</c>: the AIRAC Service points every sub-service at
+	/// the run's cycle folder itself.
 	/// </summary>
-	/// <param name="outputDirectory">The run's resolved output directory.</param>
-	/// <param name="addFeBuddyOutputFolder">Whether to wrap output in a <c>FE-Buddy_Output</c> folder.</param>
 	/// <returns>The settings block.</returns>
-	IReadOnlyDictionary<string, string> BuildSettingsBlock(string outputDirectory, bool addFeBuddyOutputFolder);
+	IReadOnlyDictionary<string, string> BuildSettingsBlock();
 
 	/// <summary>Tells the tab whether the AIRAC data is ready to use.</summary>
 	/// <param name="ready">Whether the cycle cache reports readiness.</param>

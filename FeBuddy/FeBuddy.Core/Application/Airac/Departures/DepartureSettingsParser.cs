@@ -1,6 +1,7 @@
 using System.Globalization;
 
 using FeBuddy.Core.Application.Airac.Departures.Models;
+using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Application.Models;
 using FeBuddy.Core.Application.Settings;
 using FeBuddy.Core.Domain.Crc.Models;
@@ -110,27 +111,25 @@ public static class DepartureSettingsParser
 
 		int coordinatePrecision = SubServiceSettingsReader.ReadCoordinatePrecision(departureSettings);
 
-		bool addFeBuddyOutputFolder = SettingsValueReader.YesNo(departureSettings, "AddFeBuddyOutputFolder", defaultValue: true);
+		VnasFileChoices vnas = SubServiceSettingsReader.ReadVnasFiles(
+			departureSettings, DepartureOutputFiles.Alias, DepartureOutputFiles.IsGeojsonKey,
+			example: $"{DepartureOutputFiles.Lines}, {DepartureOutputFiles.Alias}");
 
-		// Each kind's defaults are written only when the user asked for them AND that file is
-		// produced; only then are its values required.
-		bool includeLineDefaults = CrcDefaultsReader.ReadInclude(departureSettings, CrcFeatureKind.Line) && generateGeojson && emitLines;
-		bool includeSymbolDefaults = CrcDefaultsReader.ReadInclude(departureSettings, CrcFeatureKind.Symbol) && generateGeojson && emitSymbols;
-		bool includeTextDefaults = CrcDefaultsReader.ReadInclude(departureSettings, CrcFeatureKind.Text) && generateGeojson && emitText;
-
+		// A kind's defaults are needed only when its files get CRC-ERAM defaults AND are actually
+		// written; only then are its values required.
 		Dictionary<DepartureCrcClass, CrcLineDefaults> lineDefaults = [];
 		Dictionary<DepartureCrcClass, CrcSymbolDefaults> symbolDefaults = [];
 		Dictionary<DepartureCrcClass, CrcTextDefaults> textDefaults = [];
 
 		const DepartureCrcClass cls = DepartureCrcClass.Departures;
 
-		if (includeLineDefaults)
+		if (generateGeojson && emitLines && vnas.HasCrcDefaults(DepartureOutputFiles.Lines))
 			lineDefaults[cls] = CrcDefaultsReader.ReadLine(departureSettings, $"Crc.{cls}.Line");
 
-		if (includeSymbolDefaults)
+		if (generateGeojson && emitSymbols && vnas.HasCrcDefaults(DepartureOutputFiles.Symbols))
 			symbolDefaults[cls] = CrcDefaultsReader.ReadSymbol(departureSettings, $"Crc.{cls}.Symbol");
 
-		if (includeTextDefaults)
+		if (generateGeojson && emitText && vnas.HasCrcDefaults(DepartureOutputFiles.Text))
 			textDefaults[cls] = CrcDefaultsReader.ReadText(departureSettings, $"Crc.{cls}.Text");
 
 		IReadOnlyList<ServiceMessage> messages = SubServiceSettingsReader.UnknownKeyWarnings(
@@ -155,11 +154,8 @@ public static class DepartureSettingsParser
 			RoiMode = roiMode,
 			IncludeFebCustomProperties = includeFebProperties,
 			FebProperties = febProperties,
-			IncludeCrcLineDefaults = includeLineDefaults,
-			IncludeCrcSymbolDefaults = includeSymbolDefaults,
-			IncludeCrcTextDefaults = includeTextDefaults,
+			Vnas = vnas,
 			CoordinatePrecision = coordinatePrecision,
-			AddFeBuddyOutputFolder = addFeBuddyOutputFolder,
 			LineDefaults = lineDefaults,
 			SymbolDefaults = symbolDefaults,
 			TextDefaults = textDefaults

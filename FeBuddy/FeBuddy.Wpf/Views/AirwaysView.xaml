@@ -74,9 +74,6 @@
             <!-- ============ FE-Buddy properties ============ -->
             <cards:FebPropertiesCard IsEnabled="{Binding IsGeojsonOutputOn}" />
 
-            <!-- ============ CRC ERAM defaults ============ -->
-            <cards:CrcDefaultsCard IsEnabled="{Binding IsGeojsonOutputOn}" />
-
             <!-- ============ designations ============ -->
             <ctl:Card Header="Designations to Include">
                 <StackPanel>
@@ -118,5 +115,9 @@
 
             <!-- ============ region of interest ============ -->
             <cards:RoiOverrideCard />
+
+            <!-- ============ upload to vNAS, then the CRC ERAM defaults those files carry ============ -->
+            <cards:VnasUploadCard />
+            <cards:CrcDefaultsCard />
     </StackPanel>
 </UserControl>

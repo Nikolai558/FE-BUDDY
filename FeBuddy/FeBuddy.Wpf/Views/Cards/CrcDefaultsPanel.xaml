@@ -1,12 +1,12 @@
 <!--
-    CrcDefaultsPanel  -  one file's CRC ERAM defaults (Lines, Symbols or Text) inside the CRC ERAM
-    Defaults card: its title with an Include box, then one row per property - name on the left,
-    one control per class to the right. Airports and Departures have one class, so one column;
-    Airways has High / Low / Other, so three columns under a class-name row.
+    CrcDefaultsPanel  -  one kind's CRC ERAM defaults (Lines, Symbols or Text) inside the CRC ERAM
+    Defaults card: its title, then one row per property - name on the left, one control per class
+    to the right. Airports and Departures have one class, so one column; Airways can have High /
+    Low / Other, so up to three columns under a class-name row. The card hands it only the classes
+    in use, and with none the panel hides itself.
 
     Which rows show comes from the classes themselves (EramClassDefault.ShowStyle / ShowThickness
-    / ShowSize / ShowTextOptions), so the same panel draws every kind. The Include box decides
-    whether the file gets the defaults; unticked, the rows grey out but keep their values.
+    / ShowSize / ShowTextOptions), so the same panel draws every kind.
 
     The cells are a fixed width rather than Auto or star: the page fills the window, and an Auto
     column sizes to whatever is selected, so the boxes of the three panels would all end up
@@ -25,7 +25,8 @@
              xmlns:cards="clr-namespace:FeBuddy.Wpf.Views.Cards"
              xmlns:bhv="clr-namespace:FeBuddy.Wpf.Behaviors"
              mc:Ignorable="d"
-             x:Name="Self">
+             x:Name="Self"
+             Visibility="Collapsed">
     <UserControl.Resources>
         <!-- xOffset / yOffset box. The hint is a Style setter, not a local ToolTip, so the
              implicit TextBox style's error trigger can still swap in the validation message
@@ -120,13 +121,9 @@
 
     <Border Style="{StaticResource Panel.Inset}">
         <StackPanel Grid.IsSharedSizeScope="True">
-            <ctl:SectionHeader Style="{StaticResource SectionHeader.Group}" Label="{Binding Title, ElementName=Self}" Margin="0,0,0,8">
-                <ctl:SectionHeader.Aside>
-                    <CheckBox Content="Include" IsChecked="{Binding IsIncluded, ElementName=Self}" Margin="16,0,0,0" />
-                </ctl:SectionHeader.Aside>
-            </ctl:SectionHeader>
+            <ctl:SectionHeader Style="{StaticResource SectionHeader.Group}" Label="{Binding Title, ElementName=Self}" Margin="0,0,0,8" />
 
-            <StackPanel IsEnabled="{Binding IsIncluded, ElementName=Self}">
+            <StackPanel>
                 <HeaderedItemsControl Style="{StaticResource FieldRow}" ItemTemplate="{StaticResource ClassNameCell}"
                                       Visibility="{Binding ShowClassNames, ElementName=Self, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}" />
                 <HeaderedItemsControl Style="{StaticResource FieldRow}" Header="Filters" ItemTemplate="{StaticResource FiltersCell}" />

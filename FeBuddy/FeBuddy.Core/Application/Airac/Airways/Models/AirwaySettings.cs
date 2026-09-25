@@ -1,3 +1,4 @@
+using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Domain.Airways.Models;
 using FeBuddy.Core.Domain.Crc.Models;
 using FeBuddy.Core.Domain.Geo.Models;
@@ -12,7 +13,10 @@ namespace FeBuddy.Core.Application.Airac.Airways.Models;
 /// </summary>
 public sealed record AirwaySettings
 {
-	/// <summary>Directory the Airways services write their output under.</summary>
+	/// <summary>
+	/// The folder the run writes into - the <c>AIRAC_&lt;cycle&gt;</c> folder when run by the AIRAC
+	/// Service. Files are laid out inside it by <see cref="AiracOutputPaths"/>.
+	/// </summary>
 	public required string OutputDirectory { get; init; }
 
 	/// <summary>How to group airways into GeoJSON files. <see cref="AirwayGeojsonOutputBy.None"/> generates no GeoJSON.</summary>
@@ -63,46 +67,31 @@ public sealed record AirwaySettings
 	public int CoordinatePrecision { get; init; } = 6;
 
 	/// <summary>
-	/// When <see langword="true"/> (default), output is written under a <c>FE-Buddy_Output</c>
-	/// folder inside <see cref="OutputDirectory"/>; when <see langword="false"/>, straight into
-	/// <see cref="OutputDirectory"/>. The <c>Airways</c> sub-folder is kept either way.
+	/// Which files go to vNAS, and which of those get CRC-ERAM defaults, by file key (see
+	/// <see cref="AirwayOutputFiles"/>). Default: none.
 	/// </summary>
-	public bool AddFeBuddyOutputFolder { get; init; } = true;
-
-	/// <summary>
-	/// Whether the Line defaults (<see cref="LineDefaults"/>) are written as an isLineDefaults
-	/// Feature. <see langword="true"/> only when the user asked for them and the file they belong
-	/// to is being produced.
-	/// </summary>
-	public required bool IncludeCrcLineDefaults { get; init; }
-
-	/// <summary>
-	/// Whether the Symbol defaults (<see cref="SymbolDefaults"/>) are written as an isSymbolDefaults
-	/// Feature. <see langword="true"/> only when the user asked for them and the file they belong
-	/// to is being produced.
-	/// </summary>
-	public required bool IncludeCrcSymbolDefaults { get; init; }
-
-	/// <summary>
-	/// Whether the Text defaults (<see cref="TextDefaults"/>) are written as an isTextDefaults
-	/// Feature. <see langword="true"/> only when the user asked for them and the file they belong
-	/// to is being produced.
-	/// </summary>
-	public required bool IncludeCrcTextDefaults { get; init; }
+	public VnasFileChoices Vnas { get; init; } = VnasFileChoices.None;
 
 	/// <summary>The Region of Interest to filter and clip output to, or <see langword="null"/> for no ROI filtering.</summary>
 	public RegionOfInterest? Roi { get; init; }
 
-	/// <summary>CRC line property defaults, keyed by altitude class. Populated when <see cref="IncludeCrcLineDefaults"/> is <see langword="true"/>.</summary>
+	/// <summary>
+	/// CRC line property defaults, keyed by altitude class. Holds every class a Lines file in
+	/// <see cref="VnasFileChoices.CrcDefaultsFiles"/> needs.
+	/// </summary>
 	public IReadOnlyDictionary<AirwayAltitudeClass, CrcLineDefaults> LineDefaults { get; init; } =
 		new Dictionary<AirwayAltitudeClass, CrcLineDefaults>();
 
-	/// <summary>CRC symbol property defaults, keyed by altitude class. Populated when <see cref="IncludeCrcSymbolDefaults"/> is <see langword="true"/>.</summary>
+	/// <summary>
+	/// CRC symbol property defaults, keyed by altitude class. Holds every class a Symbols file in
+	/// <see cref="VnasFileChoices.CrcDefaultsFiles"/> needs.
+	/// </summary>
 	public IReadOnlyDictionary<AirwayAltitudeClass, CrcSymbolDefaults> SymbolDefaults { get; init; } =
 		new Dictionary<AirwayAltitudeClass, CrcSymbolDefaults>();
 
 	/// <summary>
-	/// CRC text property defaults, keyed by altitude class. Populated when <see cref="IncludeCrcTextDefaults"/> is <see langword="true"/>.
+	/// CRC text property defaults, keyed by altitude class. Holds every class a Text file in
+	/// <see cref="VnasFileChoices.CrcDefaultsFiles"/> needs.
 	/// </summary>
 	public IReadOnlyDictionary<AirwayAltitudeClass, CrcTextDefaults> TextDefaults { get; init; } =
 		new Dictionary<AirwayAltitudeClass, CrcTextDefaults>();

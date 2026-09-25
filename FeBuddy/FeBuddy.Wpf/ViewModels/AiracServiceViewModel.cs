@@ -8,12 +8,12 @@ using FeBuddy.Wpf.Shell;
 using FeBuddy.Wpf.ViewModels.ServiceTabs.Models;
 using FeBuddy.Wpf.ViewModels.ServiceTabs;
 using FeBuddy.Wpf.Views;
+using FeBuddy.Wpf.Views.Models;
 
 using FeBuddy.Core.Application.Airac;
 using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Application.Launch;
 using FeBuddy.Core.Domain.Airac.Models;
-using FeBuddy.Core.Infrastructure.Configuration;
 using FeBuddy.Core.Infrastructure.Logging;
 using FeBuddy.Core.Infrastructure.Nasr.Models;
 
@@ -224,7 +224,8 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 
 	/// <summary>
 	/// Saves anything unsaved (with the user's blessing), refuses to start while a tab is invalid,
-	/// then runs every selected sub-service that has a backend.
+	/// asks what to do with an earlier run's files, then runs every selected sub-service that has
+	/// a backend.
 	/// </summary>
 	private async Task RunAsync()
 	{
@@ -243,6 +244,28 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 
 		AiracCycleInfo cycle = AppEnvironment.GetAiracCycle(_general.SelectedCyclePosition);
 
+		// The only sub-service-specific lines in the run: which block each tab's settings belong
+		// to. Everything else goes through ISubServiceRunTarget.
+		AiracServiceSettings settings = new()
+		{
+			SelectedCycle = cycle,
+			OutputDirectory = OutputLocation.Directory,
+			AddFeBuddyOutputFolder = OutputLocation.AddFeBuddyOutputFolder,
+			Airways = AirwaysTab?.BuildSettingsBlock(),
+			Airports = AirportsTab?.BuildSettingsBlock(),
+			Departures = DeparturesTab?.BuildSettingsBlock(),
+		};
+
+		if (AiracService.HasExistingOutput(settings))
+		{
+			if (AskAboutExistingOutput(settings) is not { } existingOutput)
+			{
+				return;
+			}
+
+			settings = settings with { ExistingOutput = existingOutput };
+		}
+
 		IReadOnlyList<ISubServiceRunTarget> targets = RunTargets;
 		string[] runningTabTitles = [.. Tabs
 			.Where(t => t is ISubServiceRunTarget)
@@ -256,19 +279,6 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 
 		try
 		{
-			string outputDir = ResolveOutputDirectory();
-			bool addFeBuddyFolder = ResolveAddFeBuddyFolder();
-
-			// The only sub-service-specific lines in the run: which block each tab's settings
-			// belong to. Everything else goes through ISubServiceRunTarget.
-			AiracServiceSettings settings = new()
-			{
-				SelectedCycle = cycle,
-				Airways = AirwaysTab?.BuildSettingsBlock(outputDir, addFeBuddyFolder),
-				Airports = AirportsTab?.BuildSettingsBlock(outputDir, addFeBuddyFolder),
-				Departures = DeparturesTab?.BuildSettingsBlock(outputDir, addFeBuddyFolder),
-			};
-
 			var progress = new Progress<AiracServiceProgress>(p =>
 				_dispatcher.BeginInvoke(() =>
 				{
@@ -289,14 +299,14 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 				summary,
 				subServiceResults,
 				files,
-				ResolveRunOutputDirectory(files, outputDir, addFeBuddyFolder));
+				ExistingFolder(result.OutputDirectory));
 
 			Toast.Success("AIRAC Service complete", summary);
 		}
 		catch (Exception ex)
 		{
-			_runReview.FailRun(ex.Message, outputDirectory: ResolveRunOutputDirectory(
-				[], ResolveOutputDirectory(), ResolveAddFeBuddyFolder()));
+			// A run that fails part way may already have written files; offer the folder if so.
+			_runReview.FailRun(ex.Message, outputDirectory: ExistingFolder(settings.CycleOutputDirectory));
 			Toast.Error("AIRAC Service failed", ex.Message);
 		}
 		finally
@@ -304,6 +314,42 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 			IsRunning = false;
 		}
 	}
+
+	/// <summary>
+	/// Asks what to do with the files an earlier run of this cycle left in its folder. Overwrite is
+	/// the default.
+	/// </summary>
+	/// <param name="settings">The run's settings.</param>
+	/// <returns>The user's choice, or <see langword="null"/> when they cancelled the run.</returns>
+	private static ExistingOutputAction? AskAboutExistingOutput(AiracServiceSettings settings)
+	{
+		string cycleId = settings.SelectedCycle.AiracCycleId;
+
+		ConfirmChoice choice = ConfirmWindow.ShowChoice(
+			Application.Current?.MainWindow,
+			$"AIRAC cycle {cycleId} already run",
+			$"Looks like AIRAC cycle {cycleId} has already been run at one point: {settings.CycleOutputDirectory} "
+			+ "already has files in it. Select what you would like to happen:"
+			+ Environment.NewLine + Environment.NewLine
+			+ "Overwrite files - this run's files replace the old ones; any other old file is left as it is."
+			+ Environment.NewLine
+			+ $"Delete all files - everything in {AiracOutputPaths.CycleFolderName(cycleId)} is permanently deleted first, "
+			+ "so it holds only this run's files.",
+			confirmText: "Overwrite files",
+			alternativeText: "Delete all files");
+
+		return choice switch
+		{
+			ConfirmChoice.Confirm => ExistingOutputAction.Overwrite,
+			ConfirmChoice.Alternative => ExistingOutputAction.DeleteExisting,
+			_ => null,
+		};
+	}
+
+	/// <summary>The folder the Review tab's "Open output folder" opens, once the run has written into it.</summary>
+	/// <param name="directory">The run's cycle folder.</param>
+	/// <returns>The folder, or <see langword="null"/> when nothing was written.</returns>
+	private static string? ExistingFolder(string directory) => Directory.Exists(directory) ? directory : null;
 
 	/// <summary>Every file the run wrote, across sub-services.</summary>
 	/// <param name="result">The aggregated result.</param>
@@ -343,31 +389,6 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 		}
 
 		return [.. files];
-	}
-
-	/// <summary>
-	/// The folder the Review tab's "open output folder" button points at.
-	/// </summary>
-	/// <param name="files">What the run wrote.</param>
-	/// <param name="outputDirectory">The directory the user configured.</param>
-	/// <param name="addFeBuddyOutputFolder">Whether output is wrapped in a FE-Buddy_Output folder.</param>
-	/// <returns>
-	/// The common root of what was written, so a run covering several sub-services opens the
-	/// folder holding all of them rather than just the last one's.
-	/// </returns>
-	private static string? ResolveRunOutputDirectory(string[] files, string outputDirectory, bool addFeBuddyOutputFolder)
-	{
-		string root = addFeBuddyOutputFolder
-			? Path.Combine(outputDirectory, "FE-Buddy_Output")
-			: outputDirectory;
-
-		if (Directory.Exists(root))
-		{
-			return root;
-		}
-
-		// A run that failed before writing anything has no folder to offer.
-		return files.Length > 0 ? Path.GetDirectoryName(files[0]) : null;
 	}
 
 	/// <summary>Builds the one-line "what the run produced" summary for the completion toast.</summary>
@@ -449,19 +470,5 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 		Toast.Warn("Cannot run", $"{invalid.Title} has settings that need fixing.");
 		SelectedTab = invalid;
 		return false;
-	}
-
-	private static string ResolveOutputDirectory()
-	{
-		string? saved = UserConfigFile.GetValue(UserConfigKeys.DefaultOutputDirectory);
-		return string.IsNullOrWhiteSpace(saved)
-			? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), "FE-Buddy_Output")
-			: saved!;
-	}
-
-	private static bool ResolveAddFeBuddyFolder()
-	{
-		string? saved = UserConfigFile.GetValue(UserConfigKeys.AddFeBuddyOutputFolder);
-		return !string.Equals(saved, "N", StringComparison.OrdinalIgnoreCase);
 	}
 }

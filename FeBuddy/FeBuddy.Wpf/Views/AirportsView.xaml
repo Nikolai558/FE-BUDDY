@@ -42,11 +42,11 @@
             <!-- ============ FE-Buddy properties ============ -->
             <cards:FebPropertiesCard IsEnabled="{Binding GenerateGeojson}" />
 
-            <!-- ============ CRC ERAM defaults ============ -->
-            <cards:CrcDefaultsCard IsEnabled="{Binding GenerateGeojson}"
-                                   LinesTitle="Runways — Lines" SymbolsTitle="Airports — Symbols" TextTitle="Airports — Text" />
-
             <!-- ============ region of interest ============ -->
             <cards:RoiOverrideCard IsEnabled="{Binding GenerateGeojson}" />
+
+            <!-- ============ upload to vNAS, then the CRC ERAM defaults those files carry ============ -->
+            <cards:VnasUploadCard />
+            <cards:CrcDefaultsCard LinesTitle="Runways — Lines" SymbolsTitle="Airports — Symbols" TextTitle="Airports — Text" />
     </StackPanel>
 </UserControl>

@@ -23,8 +23,8 @@ Written by **Settings** (except `NewsLastOpen`).
 | `UpdateChannel` | `Stable`, `ReleaseCandidate`, `Beta`, `Alpha` (the GUI offers Stable, Beta, Alpha) | `Stable` | launch version check, Settings |
 | `NewsLastOpen` | the newest News `PostId` seen, e.g. `2026-08-30.3` | none | launch News check. Written when the user opens News. |
 | `PrettyPrintGeojson` | `Y` / `N` | `N` | `OutputFormatting` (every GeoJSON writer) |
-| `DefaultOutputDirectory` | a folder path | `Desktop\FE-Buddy_Output` | AIRAC Service run |
-| `AddFeBuddyOutputFolder` | `Y` / `N` | `Y` | AIRAC Service run |
+| `DefaultOutputDirectory` | a folder path | the Desktop | AIRAC Service run (through `OutputLocation`). A run writes into `AIRAC_<cycle>` inside it. |
+| `AddFeBuddyOutputFolder` | `Y` / `N` - put the `AIRAC_<cycle>` folders in a `FE-Buddy_Output` folder | `Y` | AIRAC Service run (through `OutputLocation`) |
 
 ## Services.AiracService
 
@@ -69,8 +69,10 @@ Written by `GeojsonSubServiceViewModel`, under the sub-service's node.
 | `EmitLines`, `EmitSymbols`, `EmitText` (Airports: `EmitRunwayLines`, `EmitAirportSymbols`, `EmitAirportText`) | `Y` / `N` | `Y` |
 | `IncludeFebCustomProperties` | `Y` / `N` | `N` |
 | `FebProperties` | comma-separated property names, e.g. `awyId,pointId` | none |
-| `IncludeCrcLineDefaults`, `IncludeCrcSymbolDefaults`, `IncludeCrcTextDefaults` | `Y` / `N` | `Y` |
-| `CrcEramPropertyDefaults.<row>.<field>` | see below | none (the user must fill them) |
+| `Vnas.UploadFiles` | comma-separated file keys marked for vNAS (see [Settings blocks](Settings-Blocks.md#vnas-file-keys)), e.g. `Airways_High_Lines,Airways.txt` | none |
+| `Vnas.CrcDefaults` | which vNAS GeoJSON files get CRC-ERAM defaults: `None`, `AllVnasFiles`, `SpecificFiles` | `None` |
+| `Vnas.CrcFiles` | comma-separated file keys ticked for CRC-ERAM defaults; read with `SpecificFiles` | none |
+| `CrcEramPropertyDefaults.<row>.<field>` | see below | none (the user must fill the rows in use) |
 | `Roi.OverrideDefaultRoi` | `Y` / `N` | `N` |
 | `Roi.OverrideCoordindates.SwLat`, `.SwLon`, `.NeLat`, `.NeLon` | decimal degrees, as typed | none |
 
@@ -85,6 +87,12 @@ Written by `GeojsonSubServiceViewModel`, under the sub-service's node.
 and `<field>` depends on the kind: **Line** `bcg`, `filters`, `style`, `thickness`; **Symbol** `bcg`,
 `filters`, `style`, `size`; **Text** `bcg`, `filters`, `size`, `underline` (`Y`/`N`), `opaque`
 (`Y`/`N`), `xOffset`, `yOffset`. Allowed values are in the [user guide](../Users/User-Guide.md#the-cards-every-sub-service-tab-shares).
+
+**vNAS choices.** `Vnas.UploadFiles` and `Vnas.CrcFiles` keep every choice, including files the
+tab's current settings do not write, so a file switched off and on again keeps its choice; a run
+sends only the files actually written. Configs saved before these keys still hold
+`IncludeCrcLineDefaults`, `IncludeCrcSymbolDefaults` and `IncludeCrcTextDefaults`; nothing reads
+them any more.
 
 ### Airports only
 

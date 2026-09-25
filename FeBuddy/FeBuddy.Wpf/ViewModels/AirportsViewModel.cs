@@ -2,6 +2,7 @@ using FeBuddy.Wpf.ViewModels.Models;
 using FeBuddy.Wpf.ViewModels.ServiceTabs.Models;
 using FeBuddy.Wpf.ViewModels.ServiceTabs;
 
+using FeBuddy.Core.Application.Airac.Airports;
 using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Infrastructure.Nasr.Models;
 
@@ -64,9 +65,6 @@ public sealed class AirportsViewModel : GeojsonSubServiceViewModel, ISubServiceR
 		(GenerateGeojson ? 1 : 0) + (GenerateAliasFile ? 1 : 0);
 
 	/// <inheritdoc />
-	protected override bool WritesGeojson => GenerateGeojson;
-
-	/// <inheritdoc />
 	protected override string NoDefaultRoiHint =>
 		"No default ROI is set, so GeoJSON covers every airport. Set one in Settings, or override it here.";
 
@@ -74,6 +72,37 @@ public sealed class AirportsViewModel : GeojsonSubServiceViewModel, ISubServiceR
 	/// <remarks>The files are named for what they hold: <c>Runways_Lines</c>, <c>Airports_Symbols</c>, <c>Airports_Text</c>.</remarks>
 	protected override (string Lines, string Symbols, string Text) EmitKeys =>
 		("EmitRunwayLines", "EmitAirportSymbols", "EmitAirportText");
+
+	/// <inheritdoc />
+	/// <remarks>One GeoJSON row - Runways Lines, Airports Symbols, Airports Text - then the alias file.</remarks>
+	protected override IEnumerable<OutputFileOption> OutputFiles()
+	{
+		if (GenerateGeojson)
+		{
+			if (EmitLines)
+			{
+				yield return GeojsonFile(AirportOutputFiles.RunwaysLines, "Runways — Lines", "Runways", EramFieldKind.Line);
+			}
+
+			if (EmitSymbols)
+			{
+				yield return GeojsonFile(AirportOutputFiles.AirportsSymbols, "Airports — Symbols", "Airports", EramFieldKind.Symbol);
+			}
+
+			if (EmitText)
+			{
+				yield return GeojsonFile(AirportOutputFiles.AirportsText, "Airports — Text", "Airports", EramFieldKind.Text);
+			}
+		}
+
+		if (GenerateAliasFile)
+		{
+			yield return OutputFileOption.AliasFile(AirportOutputFiles.Alias);
+		}
+	}
+
+	private static OutputFileOption GeojsonFile(string key, string label, string crcClass, EramFieldKind kind) =>
+		new(key, "GeoJSON", label, key, IsGeojson: true, [(crcClass, kind)]);
 
 	// ================= parent hooks =================
 
@@ -107,14 +136,14 @@ public sealed class AirportsViewModel : GeojsonSubServiceViewModel, ISubServiceR
 	}
 
 	/// <inheritdoc />
-	public IReadOnlyDictionary<string, string> BuildSettingsBlock(string outputDirectory, bool addFeBuddyOutputFolder)
+	public IReadOnlyDictionary<string, string> BuildSettingsBlock()
 	{
 		Dictionary<string, string> s = new(StringComparer.OrdinalIgnoreCase)
 		{
 			["GenerateGeojson"] = YesNo(GenerateGeojson),
 		};
 
-		AddSharedSettings(s, outputDirectory, addFeBuddyOutputFolder);
+		AddSharedSettings(s);
 		return s;
 	}
 
@@ -133,8 +162,9 @@ public sealed class AirportsViewModel : GeojsonSubServiceViewModel, ISubServiceR
 			new ServicePreviewRow("Alias file",
 				GenerateAliasFile ? "Airports.txt, every open airport in NASR - the region never limits the alias file" : "No"),
 			new ServicePreviewRow("FE-Buddy properties", DescribeFebProperties()),
-			new ServicePreviewRow("CRC ERAM defaults", DescribeCrcDefaults("Runway lines")),
 			new ServicePreviewRow("Region of interest", DescribeRoi()),
+			new ServicePreviewRow("Upload to vNAS", DescribeVnasFiles()),
+			new ServicePreviewRow("CRC ERAM defaults", DescribeCrcDefaults()),
 		];
 
 		return [new ServicePreviewSection("Airports", rows)];

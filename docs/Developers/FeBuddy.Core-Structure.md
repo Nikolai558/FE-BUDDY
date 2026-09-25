@@ -58,7 +58,7 @@ FeBuddy.Core/
 │       ├── Models/     One row-model file per NASR CSV group
 │       └── Parsers/    One parser per group + NasrCsvParser (parses them all)
 └── Application/
-    ├── Airac/          AiracService (entry point), AiracCycleDataCache, FebProperties
+    ├── Airac/          AiracService (entry point), AiracCycleDataCache, AiracOutputPaths, FebProperties
     │   ├── Airways/    One folder per sub-service, all shaped the same way
     │   ├── Airports/
     │   └── Departures/
@@ -107,10 +107,11 @@ FAA has published (`NasrCycleDownloader` → `NasrCsvParser.ParseAllAsync`) and 
 other cached cycle. A failing step is logged and degrades only its
 own feature; launch never stops.
 
-**When the user runs AIRAC**, the UI builds an `AiracServiceSettings` (the selected cycle plus
-one settings block per sub-service) and calls `AiracService.RunAsync`. It gets the parsed cycle
-from the cache (waiting for an in-flight parse rather than starting another) and runs each
-sub-service whose settings block isn't null. Every sub-service follows the same pipeline:
+**When the user runs AIRAC**, the UI builds an `AiracServiceSettings` (the selected cycle, the
+output folder, plus one settings block per sub-service) and calls `AiracService.RunAsync`. It gets
+the parsed cycle from the cache (waiting for an in-flight parse rather than starting another) and
+runs each sub-service whose settings block isn't null, pointing every one at the same
+`AIRAC_<cycle>` folder (`AiracOutputPaths`). Every sub-service follows the same pipeline:
 
 ```
 AirwayService.Run(nasrData, settings)
@@ -131,10 +132,11 @@ whole run. The only exception is a missing required setting, which throws `Argum
 - **A new NASR file**: its row model in `Infrastructure/Nasr/Models/`, its parser in
   `Infrastructure/Nasr/Parsers/`, and wire it into `NasrCsvParser`.
 - **A new AIRAC output** (say, STARs): `Application/Airac/Stars/` with `StarService`,
-  `StarSettingsParser`, `StarBuilder`, `StarGeojsonWriter` and a `Models/` folder. Add its settings
-  block to `AiracServiceSettings` and one `RunSubServiceAsync` call to `AiracService`. Reuse
-  `Application/Settings/SubServiceSettingsReader` for the common keys (precision, ROI,
-  FEB properties).
+  `StarSettingsParser`, `StarBuilder`, `StarGeojsonWriter`, `StarOutputFiles` (its file keys) and a
+  `Models/` folder. Add its settings block to `AiracServiceSettings` and one `RunSubServiceAsync`
+  call to `AiracService`. Reuse `Application/Settings/SubServiceSettingsReader` for the common keys
+  (precision, ROI, FEB properties, the vNAS files), and put each file where
+  `AiracOutputPaths.FileDirectory` says.
 - **A new config key**: a constant in `Infrastructure/Configuration/UserConfigKeys`.
 - **Something shared by two features**: the lowest layer that both can see. Never copy it.
 

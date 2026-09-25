@@ -15,9 +15,16 @@ namespace FeBuddy.Core.Application.Airac.Airports;
 /// MultiLineString per airport that has drawable runways).
 /// </summary>
 /// <remarks>
+/// <para>
 /// ROI filtering is whole-airport and is tested on the airport reference point, so an airport's
 /// symbol, its label and its runways are always in or out together - a runway never survives
 /// into a file whose airport did not.
+/// </para>
+/// <para>
+/// Each file goes in the GeoJSON folder, or the vNAS one when the user marked it for vNAS (see
+/// <see cref="AirportOutputFiles"/>). Only a file chosen for CRC-ERAM defaults gets an
+/// isDefaults Feature.
+/// </para>
 /// </remarks>
 public static class AirportGeojsonWriter
 {
@@ -39,24 +46,34 @@ public static class AirportGeojsonWriter
 			return files;
 		}
 
-		string directory = SubServiceOutputPaths.Resolve(settings.OutputDirectory, settings.AddFeBuddyOutputFolder, "Airports", "Geojson");
-
 		if (settings.EmitAirportSymbols)
 		{
-			GenerateSymbols(airports, settings, directory, files);
+			GenerateSymbols(airports, settings, files);
 		}
 
 		if (settings.EmitAirportText)
 		{
-			GenerateText(airports, settings, directory, files);
+			GenerateText(airports, settings, files);
 		}
 
 		if (settings.EmitRunwayLines)
 		{
-			GenerateRunways(airports, settings, directory, files);
+			GenerateRunways(airports, settings, files);
 		}
 
 		return files;
+	}
+
+	/// <summary>Writes one file, into the GeoJSON or vNAS folder as the user chose.</summary>
+	private static void WriteFile(
+		FeatureCollection collection,
+		int renderedCount,
+		AirportSettings settings,
+		string fileKey,
+		GeojsonFileSet files)
+	{
+		string directory = AiracOutputPaths.FileDirectory(settings.OutputDirectory, isGeojson: true, settings.Vnas.IsUploaded(fileKey));
+		files.Write(collection, renderedCount, directory, $"{fileKey}.geojson");
 	}
 
 	/// <summary>
@@ -73,12 +90,11 @@ public static class AirportGeojsonWriter
 	private static void GenerateSymbols(
 		IReadOnlyList<Airport> airports,
 		AirportSettings settings,
-		string directory,
 		GeojsonFileSet files)
 	{
 		FeatureCollection collection = [];
 
-		if (settings.IncludeCrcSymbolDefaults)
+		if (settings.Vnas.HasCrcDefaults(AirportOutputFiles.AirportsSymbols))
 		{
 			collection.Add(CrcFeatureFactory.CreateDefaultsFeature(settings.SymbolDefaults[AirportCrcClass.Airports]));
 		}
@@ -91,18 +107,17 @@ public static class AirportGeojsonWriter
 			collection.Add(new Feature(CreatePoint(airport), attributes));
 		}
 
-		files.Write(collection, airports.Count, directory, "Airports_Symbols.geojson");
+		WriteFile(collection, airports.Count, settings, AirportOutputFiles.AirportsSymbols, files);
 	}
 
 	private static void GenerateText(
 		IReadOnlyList<Airport> airports,
 		AirportSettings settings,
-		string directory,
 		GeojsonFileSet files)
 	{
 		FeatureCollection collection = [];
 
-		if (settings.IncludeCrcTextDefaults)
+		if (settings.Vnas.HasCrcDefaults(AirportOutputFiles.AirportsText))
 		{
 			collection.Add(CrcFeatureFactory.CreateDefaultsFeature(settings.TextDefaults[AirportCrcClass.Airports]));
 		}
@@ -120,18 +135,17 @@ public static class AirportGeojsonWriter
 			collection.Add(new Feature(CreatePoint(airport), attributes));
 		}
 
-		files.Write(collection, airports.Count, directory, "Airports_Text.geojson");
+		WriteFile(collection, airports.Count, settings, AirportOutputFiles.AirportsText, files);
 	}
 
 	private static void GenerateRunways(
 		IReadOnlyList<Airport> airports,
 		AirportSettings settings,
-		string directory,
 		GeojsonFileSet files)
 	{
 		FeatureCollection collection = [];
 
-		if (settings.IncludeCrcLineDefaults)
+		if (settings.Vnas.HasCrcDefaults(AirportOutputFiles.RunwaysLines))
 		{
 			collection.Add(CrcFeatureFactory.CreateDefaultsFeature(settings.LineDefaults[AirportCrcClass.Runways]));
 		}
@@ -161,7 +175,7 @@ public static class AirportGeojsonWriter
 			rendered++;
 		}
 
-		files.Write(collection, rendered, directory, "Runways_Lines.geojson");
+		WriteFile(collection, rendered, settings, AirportOutputFiles.RunwaysLines, files);
 	}
 
 	private static LineString ToLineString(AirportRunway runway) =>

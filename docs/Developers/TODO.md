@@ -25,10 +25,6 @@ record. Add new items to the section they belong to.
 
 ## Tidy-ups
 
-- **The default output folder nests `FE-Buddy_Output` twice.** With no output directory saved,
-  runs use `Desktop\FE-Buddy_Output`, and "Add a FE-Buddy_Output folder" defaults to on, so
-  files land in `Desktop\FE-Buddy_Output\FE-Buddy_Output\...`. Default the directory to the
-  Desktop itself, or default the option to off.
 - **The Facility setting is saved but unused.** Settings ▸ Facility Profile ▸ Facility writes
   `Services.AiracService.UserArtccId`, but no sub-service reads it yet. Use it (e.g. to
   pre-select the Departures ARTCC filter) or remove it.

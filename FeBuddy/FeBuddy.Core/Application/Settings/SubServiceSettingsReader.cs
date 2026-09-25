@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text.RegularExpressions;
 
 using FeBuddy.Core.Application.Airac;
+using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Application.Models;
 using FeBuddy.Core.Domain.Crc.Models;
 using FeBuddy.Core.Domain.Geo;
@@ -12,20 +13,26 @@ namespace FeBuddy.Core.Application.Settings;
 
 /// <summary>
 /// Reads the settings every AIRAC sub-service shares - coordinate precision, Region of Interest,
-/// <c>feb.*</c> properties, unrecognized keys - so each sub-service's parser only handles what is
-/// its own.
+/// <c>feb.*</c> properties, the vNAS files, unrecognized keys - so each sub-service's parser only
+/// handles what is its own.
 /// </summary>
 public static partial class SubServiceSettingsReader
 {
+	/// <summary>The files to upload to vNAS, by file key (see <see cref="VnasFileChoices"/>).</summary>
+	public const string UploadToVnasKey = "UploadToVnas";
+
+	/// <summary>The vNAS files that get CRC-ERAM defaults, by file key; each must also be in <see cref="UploadToVnasKey"/>.</summary>
+	public const string CrcDefaultsForKey = "CrcDefaultsFor";
+
 	/// <summary>
 	/// The keys every sub-service understands. A parser adds its own keys to these when looking
 	/// for unrecognized settings.
 	/// </summary>
 	public static readonly IReadOnlySet<string> CommonKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
 	{
-		"OutputDirectory", "AddFeBuddyOutputFolder", "CoordinatePrecision", "GenerateAliasFile",
+		"OutputDirectory", "CoordinatePrecision", "GenerateAliasFile",
 		"IncludeFebCustomProperties", "FebProperties",
-		CrcDefaultsReader.IncludeLineKey, CrcDefaultsReader.IncludeSymbolKey, CrcDefaultsReader.IncludeTextKey,
+		UploadToVnasKey, CrcDefaultsForKey,
 		"FilterByRoi", "RoiSwLat", "RoiSwLon", "RoiNeLat", "RoiNeLon",
 	};
 
@@ -129,6 +136,55 @@ public static partial class SubServiceSettingsReader
 		}
 
 		return (true, properties);
+	}
+
+	/// <summary>
+	/// Reads <c>UploadToVnas</c> and <c>CrcDefaultsFor</c>: which output files go to vNAS, and
+	/// which of those get CRC-ERAM defaults. Both are comma-separated file keys and default to none.
+	/// </summary>
+	/// <param name="settings">The raw settings block.</param>
+	/// <param name="aliasFileKey">The sub-service's alias file key, e.g. <c>Airways.txt</c>.</param>
+	/// <param name="isGeojsonFileKey">Whether a key names one of the sub-service's GeoJSON files (or kinds of file).</param>
+	/// <param name="example">Sample keys for the error message, e.g. <c>Airways_High_Lines, Airways.txt</c>.</param>
+	/// <returns>The choices.</returns>
+	/// <exception cref="ArgumentException">
+	/// Thrown when a key is not a file the sub-service writes, a <c>CrcDefaultsFor</c> file is not
+	/// also in <c>UploadToVnas</c>, or <c>CrcDefaultsFor</c> names the alias file.
+	/// </exception>
+	public static VnasFileChoices ReadVnasFiles(
+		IReadOnlyDictionary<string, string> settings,
+		string aliasFileKey,
+		Func<string, bool> isGeojsonFileKey,
+		string example)
+	{
+		IReadOnlyList<string> uploadFiles = SettingsValueReader.StringList(settings, UploadToVnasKey);
+		IReadOnlyList<string> crcFiles = SettingsValueReader.StringList(settings, CrcDefaultsForKey);
+
+		foreach (string key in uploadFiles)
+		{
+			if (!key.Equals(aliasFileKey, StringComparison.OrdinalIgnoreCase) && !isGeojsonFileKey(key))
+			{
+				throw new ArgumentException(
+					$"'{UploadToVnasKey}' entry '{key}' is not a file this sub-service writes. Entries look like: {example}.");
+			}
+		}
+
+		foreach (string key in crcFiles)
+		{
+			if (key.Equals(aliasFileKey, StringComparison.OrdinalIgnoreCase))
+			{
+				throw new ArgumentException(
+					$"'{CrcDefaultsForKey}' entry '{key}' is the alias file, which has no CRC-ERAM defaults. Remove it from the list.");
+			}
+
+			if (!uploadFiles.Contains(key, StringComparer.OrdinalIgnoreCase))
+			{
+				throw new ArgumentException(
+					$"'{CrcDefaultsForKey}' entry '{key}' is not in '{UploadToVnasKey}'. CRC-ERAM defaults are only written to files uploaded to vNAS.");
+			}
+		}
+
+		return new VnasFileChoices(uploadFiles, crcFiles);
 	}
 
 	/// <summary>

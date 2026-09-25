@@ -18,11 +18,6 @@ public partial class CrcDefaultsPanel : UserControl
 	public static readonly DependencyProperty TitleProperty = DependencyProperty.Register(
 		nameof(Title), typeof(string), typeof(CrcDefaultsPanel), new PropertyMetadata(string.Empty));
 
-	/// <summary>Identifies the <see cref="IsIncluded"/> dependency property.</summary>
-	public static readonly DependencyProperty IsIncludedProperty = DependencyProperty.Register(
-		nameof(IsIncluded), typeof(bool), typeof(CrcDefaultsPanel),
-		new FrameworkPropertyMetadata(false, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault));
-
 	/// <summary>Identifies the <see cref="Classes"/> dependency property.</summary>
 	public static readonly DependencyProperty ClassesProperty = DependencyProperty.Register(
 		nameof(Classes), typeof(IReadOnlyList<EramClassDefault>), typeof(CrcDefaultsPanel),
@@ -56,14 +51,7 @@ public partial class CrcDefaultsPanel : UserControl
 		set => SetValue(TitleProperty, value);
 	}
 
-	/// <summary>Whether this file gets the CRC ERAM defaults (the Include box). Two-way.</summary>
-	public bool IsIncluded
-	{
-		get => (bool)GetValue(IsIncludedProperty);
-		set => SetValue(IsIncludedProperty, value);
-	}
-
-	/// <summary>The defaults to edit, one per class; all of the same kind.</summary>
+	/// <summary>The defaults to edit, one per class in use; all of the same kind. Empty hides the panel.</summary>
 	public IReadOnlyList<EramClassDefault>? Classes
 	{
 		get => (IReadOnlyList<EramClassDefault>?)GetValue(ClassesProperty);
@@ -82,10 +70,14 @@ public partial class CrcDefaultsPanel : UserControl
 	private static void OnClassesChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
 	{
 		var panel = (CrcDefaultsPanel)d;
-		bool several = e.NewValue is IReadOnlyList<EramClassDefault> { Count: > 1 };
+		int count = (e.NewValue as IReadOnlyList<EramClassDefault>)?.Count ?? 0;
+		bool several = count > 1;
 
 		panel.SetValue(CellWidthKey, several ? MultiClassCellWidth : SingleClassCellWidth);
 		panel.SetValue(CellMarginKey, several ? new Thickness(4, 3, 4, 3) : new Thickness(0, 3, 0, 3));
 		panel.SetValue(ShowClassNamesKey, several);
+
+		// No file of this kind gets CRC-ERAM defaults, so there is nothing to fill in.
+		panel.Visibility = count > 0 ? Visibility.Visible : Visibility.Collapsed;
 	}
 }

@@ -1,4 +1,5 @@
 using FeBuddy.Core.Application.Airac.Airports.Models;
+using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Application.Models;
 using FeBuddy.Core.Application.Settings;
 using FeBuddy.Core.Domain.Crc.Models;
@@ -88,31 +89,29 @@ public static class AirportSettingsParser
 		RegionOfInterest? roi = SubServiceSettingsReader.ReadRoi(airportSettings);
 		int coordinatePrecision = SubServiceSettingsReader.ReadCoordinatePrecision(airportSettings);
 
-		bool addFeBuddyOutputFolder = SettingsValueReader.YesNo(airportSettings, "AddFeBuddyOutputFolder", defaultValue: true);
+		VnasFileChoices vnas = SubServiceSettingsReader.ReadVnasFiles(
+			airportSettings, AirportOutputFiles.Alias, AirportOutputFiles.IsGeojsonKey,
+			example: $"{AirportOutputFiles.AirportsSymbols}, {AirportOutputFiles.Alias}");
 
-		// Each kind's defaults are written only when the user asked for them AND that file is
-		// produced; only then are its values required.
-		bool includeLineDefaults = CrcDefaultsReader.ReadInclude(airportSettings, CrcFeatureKind.Line) && generateGeojson && emitRunways;
-		bool includeSymbolDefaults = CrcDefaultsReader.ReadInclude(airportSettings, CrcFeatureKind.Symbol) && generateGeojson && emitSymbols;
-		bool includeTextDefaults = CrcDefaultsReader.ReadInclude(airportSettings, CrcFeatureKind.Text) && generateGeojson && emitText;
-
+		// A file's defaults are needed only when it gets CRC-ERAM defaults AND is actually
+		// written; only then are its values required.
 		Dictionary<AirportCrcClass, CrcLineDefaults> lineDefaults = [];
 		Dictionary<AirportCrcClass, CrcSymbolDefaults> symbolDefaults = [];
 		Dictionary<AirportCrcClass, CrcTextDefaults> textDefaults = [];
 
-		if (includeSymbolDefaults)
+		if (generateGeojson && emitSymbols && vnas.HasCrcDefaults(AirportOutputFiles.AirportsSymbols))
 		{
 			symbolDefaults[AirportCrcClass.Airports] =
 				CrcDefaultsReader.ReadSymbol(airportSettings, $"Crc.{AirportCrcClass.Airports}.Symbol");
 		}
 
-		if (includeTextDefaults)
+		if (generateGeojson && emitText && vnas.HasCrcDefaults(AirportOutputFiles.AirportsText))
 		{
 			textDefaults[AirportCrcClass.Airports] =
 				CrcDefaultsReader.ReadText(airportSettings, $"Crc.{AirportCrcClass.Airports}.Text");
 		}
 
-		if (includeLineDefaults)
+		if (generateGeojson && emitRunways && vnas.HasCrcDefaults(AirportOutputFiles.RunwaysLines))
 		{
 			lineDefaults[AirportCrcClass.Runways] =
 				CrcDefaultsReader.ReadLine(airportSettings, $"Crc.{AirportCrcClass.Runways}.Line");
@@ -132,12 +131,9 @@ public static class AirportSettingsParser
 			GenerateAliasFile = generateAliasFile,
 			IncludeFebCustomProperties = includeFebProperties,
 			FebProperties = febProperties,
-			IncludeCrcLineDefaults = includeLineDefaults,
-			IncludeCrcSymbolDefaults = includeSymbolDefaults,
-			IncludeCrcTextDefaults = includeTextDefaults,
+			Vnas = vnas,
 			Roi = roi,
 			CoordinatePrecision = coordinatePrecision,
-			AddFeBuddyOutputFolder = addFeBuddyOutputFolder,
 			LineDefaults = lineDefaults,
 			SymbolDefaults = symbolDefaults,
 			TextDefaults = textDefaults

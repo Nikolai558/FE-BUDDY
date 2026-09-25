@@ -1,0 +1,78 @@
+<!--
+    VeramToGeojsonView  -  the vERAM to GeoJSON tab on the File Conversions screen.
+    Save / Undo come from the tab host's shared action bar, and the tab
+    host owns the page's single scroller. The Convert card at the foot of the page starts the
+    run, and the outcome appears on the screen's Review tab.
+
+    The radios sit inside ctl:Option wrappers, so each group is tied together by GroupName
+    rather than by a shared parent.
+-->
+<UserControl x:Class="FeBuddy.Wpf.Views.VeramToGeojsonView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:FeBuddy.Wpf.ViewModels"
+             xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
+             xmlns:cards="clr-namespace:FeBuddy.Wpf.Views.Cards"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance vm:VeramToGeojsonViewModel}"
+             d:DesignWidth="900" d:DesignHeight="1300">
+
+    <!-- No ScrollViewer here: the tab host owns the one page-level scroller. -->
+    <StackPanel>
+
+        <TextBlock Style="{StaticResource Text.Prose}" Margin="0,0,0,14"
+                   Text="Converts vERAM GeoMaps XML files into CRC-ready GeoJSON: a folder per GeoMaps file, named after it, holding a folder per GeoMap." />
+
+        <TextBlock Text="{Binding ValidationError}" Style="{StaticResource Text.Caption}"
+                   Foreground="{StaticResource Brush.Danger}" TextWrapping="Wrap" Margin="0,0,0,12"
+                   MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
+                   Visibility="{Binding ValidationError, Converter={StaticResource StringToVis}}" />
+
+        <!-- ============ source ============ -->
+        <cards:SourceFilesCard />
+
+        <!-- ============ output layout ============ -->
+        <ctl:Card Header="Output Layout">
+            <StackPanel>
+                <ctl:Option Margin="0,4,0,0"
+                            Description="A file per GeoMapObject, named after its description. Objects sharing a description share a file when their defaults agree.">
+                    <RadioButton GroupName="VeramLayout" Content="GeoMapObject Description" IsChecked="{Binding LayoutByObject, Mode=TwoWay}" />
+                </ctl:Option>
+                <ctl:Option Margin="0,10,0,0"
+                            Description="Files grouped by filter, TDM setting, kind and look (FILTER 05\, MULTI FILTERS\), so everything in a file draws the same way.">
+                    <RadioButton GroupName="VeramLayout" Content="Filter Index and Similar Attributes" IsChecked="{Binding LayoutByFilter, Mode=TwoWay}" />
+                </ctl:Option>
+            </StackPanel>
+        </ctl:Card>
+
+        <!-- ============ CRC defaults source ============ -->
+        <ctl:Card Header="CRC ERAM Defaults Source">
+            <StackPanel>
+                <ctl:Option Margin="0,4,0,0"
+                            Description="Carry over as much as possible: each object's own Line, Symbol and Text defaults, and each element's own overrides. An object without defaults is listed on the Review tab.">
+                    <RadioButton GroupName="VeramDefaults" Content="From the XML" IsChecked="{Binding DefaultsFromXml, Mode=TwoWay}" />
+                </ctl:Option>
+                <ctl:Option Margin="0,10,0,0"
+                            Description="Use the XML's defaults, and the CRC ERAM Defaults below for any object that has none of its own.">
+                    <RadioButton GroupName="VeramDefaults" Content="From the XML, filling gaps from the card" IsChecked="{Binding DefaultsFromXmlThenCard, Mode=TwoWay}" />
+                </ctl:Option>
+                <ctl:Option Margin="0,10,0,0"
+                            Description="Ignore the XML's styling and use the CRC ERAM Defaults below for everything.">
+                    <RadioButton GroupName="VeramDefaults" Content="From the card only" IsChecked="{Binding DefaultsFromCard, Mode=TwoWay}" />
+                </ctl:Option>
+            </StackPanel>
+        </ctl:Card>
+
+        <!-- ============ CRC ERAM defaults (only while the card is a source) ============ -->
+        <cards:CrcDefaultsCard LinesTitle="GeoMap — Lines" SymbolsTitle="GeoMap — Symbols" TextTitle="GeoMap — Text" ShowInclude="True"
+                               IncludeLines="{Binding IncludeCrcLineDefaults}" IncludeSymbols="{Binding IncludeCrcSymbolDefaults}"
+                               IncludeText="{Binding IncludeCrcTextDefaults}"
+                               Note="The values written as the isDefaults feature at the top of each converted file. Untick Include on a panel to leave its defaults out." />
+
+        <!-- ============ run ============ -->
+        <cards:RunCard Blocker="{Binding RunBlocker}"
+                       Note="Unsaved settings are saved before the conversion starts. Existing files with the same name are replaced." />
+    </StackPanel>
+</UserControl>

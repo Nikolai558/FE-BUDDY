@@ -23,6 +23,15 @@ public partial class CrcDefaultsPanel : UserControl
 		nameof(Classes), typeof(IReadOnlyList<EramClassDefault>), typeof(CrcDefaultsPanel),
 		new PropertyMetadata(null, OnClassesChanged));
 
+	/// <summary>Identifies the <see cref="ShowInclude"/> dependency property.</summary>
+	public static readonly DependencyProperty ShowIncludeProperty = DependencyProperty.Register(
+		nameof(ShowInclude), typeof(bool), typeof(CrcDefaultsPanel), new PropertyMetadata(false));
+
+	/// <summary>Identifies the <see cref="IsIncluded"/> dependency property.</summary>
+	public static readonly DependencyProperty IsIncludedProperty = DependencyProperty.Register(
+		nameof(IsIncluded), typeof(bool), typeof(CrcDefaultsPanel),
+		new FrameworkPropertyMetadata(true, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault));
+
 	private static readonly DependencyPropertyKey CellWidthKey = DependencyProperty.RegisterReadOnly(
 		nameof(CellWidth), typeof(double), typeof(CrcDefaultsPanel), new PropertyMetadata(SingleClassCellWidth));
 
@@ -56,6 +65,23 @@ public partial class CrcDefaultsPanel : UserControl
 	{
 		get => (IReadOnlyList<EramClassDefault>?)GetValue(ClassesProperty);
 		set => SetValue(ClassesProperty, value);
+	}
+
+	/// <summary>Whether the title has an Include box (the File Conversions). Off by default.</summary>
+	public bool ShowInclude
+	{
+		get => (bool)GetValue(ShowIncludeProperty);
+		set => SetValue(ShowIncludeProperty, value);
+	}
+
+	/// <summary>
+	/// Whether this kind gets the CRC ERAM defaults (the Include box). Two-way; on by default, so a
+	/// panel without the box is always editable.
+	/// </summary>
+	public bool IsIncluded
+	{
+		get => (bool)GetValue(IsIncludedProperty);
+		set => SetValue(IsIncludedProperty, value);
 	}
 
 	/// <summary>Width of one class's cell; narrower when several classes share the panel.</summary>

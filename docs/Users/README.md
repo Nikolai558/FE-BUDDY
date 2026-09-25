@@ -19,13 +19,14 @@ and how it should look, and writes the files: **GeoJSON video maps** that CRC ca
 | **Airways** | Every airway as lines, with waypoint symbols and labels - split by high/low altitude or by designation (J, V, Q, T...) - and an alias file that draws an airway's fixes. |
 | **Departures** | Every departure procedure (SIDs, and obstacle departures if you want them), as lines, symbols and labels per airport, and an alias file. |
 | **Arrivals** | Every arrival procedure (STARs), as lines, symbols and labels per airport, and an alias file - the same idea as Departures, run the other way. |
+| **File conversions** | Your FAA `.dat` RADAR Video Maps as GeoJSON video maps, optionally cropped to a distance from each map's centre; your VRC `.sct2` sector files as GeoJSON - boundaries, airways, GEO, SIDs, STARs, labels and regions; and your vERAM GeoMaps XML as GeoJSON, keeping its styling as CRC defaults. |
 | **A map** | Open any GeoJSON file to check it, and draw your facility's Region of Interest. |
 
-Everything can be limited to a **Region of Interest** - a box around your ARTCC - so you only get
-the data you care about.
+Everything the AIRAC Service makes can be limited to a **Region of Interest** - a box around your
+ARTCC - so you only get the data you care about.
 
-Many of FE-Buddy 2.x's tools (chart-recall aliases, SCT2 and FAA video-map conversions,
-GeoJSON clean-up, procedure ISRs) are not in 3.0 yet. If you need them, keep using 2.x for now.
+Many of FE-Buddy 2.x's tools (chart-recall aliases, SCT2 to DXF, vSTARS and FAA GeoMap
+conversions, GeoJSON clean-up, procedure ISRs) are not in 3.0 yet. If you need them, keep using 2.x for now.
 
 ## How it works, in five steps
 

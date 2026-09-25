@@ -12,8 +12,14 @@
     The panels sit side by side; the WrapPanel stacks them when the window is too narrow for all
     three, so no panel is ever clipped.
 
+    The File Conversions have no Upload to vNAS card: they set ShowInclude, which puts an Include
+    box on each panel, bind IncludeLines / IncludeSymbols / IncludeText to their own flags, and
+    give their own Note.
+
     Usage:
         <cards:CrcDefaultsCard LinesTitle="Runways — Lines" />
+        <cards:CrcDefaultsCard LinesTitle="Video Map — Lines" ShowInclude="True"
+                               IncludeLines="{Binding IncludeCrcLineDefaults}" Note="..." />
 -->
 <UserControl x:Class="FeBuddy.Wpf.Views.Cards.CrcDefaultsCard"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -30,12 +36,17 @@
              Visibility="{Binding HasCrcDefaultsInUse, Converter={StaticResource BoolToVis}}">
     <ctl:Card Header="CRC ERAM Defaults">
         <StackPanel>
-            <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,0"
-                       Text="The values written as the isDefaults feature at the top of each vNAS file chosen for CRC-ERAM defaults. Every box shown must be filled in." />
+            <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,0" Text="{Binding Note, ElementName=Self}" />
             <WrapPanel Orientation="Horizontal" Margin="0,10,0,0">
-                <cards:CrcDefaultsPanel Title="{Binding LinesTitle, ElementName=Self}" Classes="{Binding LineDefaultsInUse}" />
-                <cards:CrcDefaultsPanel Title="{Binding SymbolsTitle, ElementName=Self}" Classes="{Binding SymbolDefaultsInUse}" />
-                <cards:CrcDefaultsPanel Title="{Binding TextTitle, ElementName=Self}" Classes="{Binding TextDefaultsInUse}" />
+                <cards:CrcDefaultsPanel Title="{Binding LinesTitle, ElementName=Self}" Classes="{Binding LineDefaultsInUse}"
+                                        ShowInclude="{Binding ShowInclude, ElementName=Self}"
+                                        IsIncluded="{Binding IncludeLines, ElementName=Self}" />
+                <cards:CrcDefaultsPanel Title="{Binding SymbolsTitle, ElementName=Self}" Classes="{Binding SymbolDefaultsInUse}"
+                                        ShowInclude="{Binding ShowInclude, ElementName=Self}"
+                                        IsIncluded="{Binding IncludeSymbols, ElementName=Self}" />
+                <cards:CrcDefaultsPanel Title="{Binding TextTitle, ElementName=Self}" Classes="{Binding TextDefaultsInUse}"
+                                        ShowInclude="{Binding ShowInclude, ElementName=Self}"
+                                        IsIncluded="{Binding IncludeText, ElementName=Self}" />
             </WrapPanel>
         </StackPanel>
     </ctl:Card>

@@ -23,8 +23,8 @@ Written by **Settings** (except `NewsLastOpen`).
 | `UpdateChannel` | `Stable`, `ReleaseCandidate`, `Beta`, `Alpha` (the GUI offers Stable, Beta, Alpha) | `Stable` | launch version check, Settings |
 | `NewsLastOpen` | the newest News `PostId` seen, e.g. `2026-08-30.3` | none | launch News check. Written when the user opens News. |
 | `PrettyPrintGeojson` | `Y` / `N` | `N` | `OutputFormatting` (every GeoJSON writer) |
-| `DefaultOutputDirectory` | a folder path | the Desktop | AIRAC Service run (through `OutputLocation`). A run writes into `AIRAC_<cycle>` inside it. |
-| `AddFeBuddyOutputFolder` | `Y` / `N` - put the `AIRAC_<cycle>` folders in a `FE-Buddy_Output` folder | `Y` | AIRAC Service run (through `OutputLocation`) |
+| `DefaultOutputDirectory` | a folder path | the Desktop | every run, through `Shell/OutputPreferences`. An AIRAC Service run writes into `AIRAC_<cycle>` inside it; a file conversion into its own folder. |
+| `AddFeBuddyOutputFolder` | `Y` / `N` - put the `AIRAC_<cycle>` and conversion folders in a `FE-Buddy_Output` folder | `Y` | every run, through `Shell/OutputPreferences` |
 
 ## Services.AiracService
 
@@ -33,7 +33,7 @@ Written by **Settings** (except `NewsLastOpen`).
 | `AiracCycleId` | a cycle ID, e.g. `2610` | current cycle | General tab. The ID (not "previous/current/next") is saved; on load it is matched back to one of the three, or falls back to current. |
 | `SelectedSubServices` | comma-separated keys: `Airports`, `Airways`, `Departures`, `Arrivals` | none | General tab. Keys are stable identifiers - never rename one without migrating this value. |
 | `UserArtccId` | an ARTCC ID, e.g. `ZOB` | none | Settings ▸ Facility. Not read by any sub-service yet. |
-| `CoordinatePrecision` | `0`-`15` (the GUI offers 5, 6, 7) | `6` | Settings; sent by every GeoJSON sub-service tab. |
+| `CoordinatePrecision` | `0`-`15` (the GUI offers 5, 6, 7) | `6` | Settings; sent by every tab that writes GeoJSON, AIRAC and File Conversions alike. |
 
 ### Services.AiracService.DefaultRoi
 
@@ -93,8 +93,8 @@ and `<field>` depends on the kind: **Line** `bcg`, `filters`, `style`, `thicknes
 **vNAS choices.** `Vnas.UploadFiles` and `Vnas.CrcFiles` keep every choice, including files the
 tab's current settings do not write, so a file switched off and on again keeps its choice; a run
 sends only the files actually written. Configs saved before these keys still hold
-`IncludeCrcLineDefaults`, `IncludeCrcSymbolDefaults` and `IncludeCrcTextDefaults`; nothing reads
-them any more.
+`IncludeCrcLineDefaults`, `IncludeCrcSymbolDefaults` and `IncludeCrcTextDefaults`; no sub-service
+tab reads them any more (the [file conversion nodes](#file-conversion-nodes) still use their own).
 
 ### Airports only
 
@@ -138,6 +138,30 @@ them any more.
 | `Amendment.OnOrAfter` | `yyyy-MM-dd` | none |
 
 The same keys as Departures, minus `IncludeObstacleDepartures` - a STAR has no obstacle/SID split.
+
+## File conversion nodes
+
+Each conversion tab on the File Conversions screen saves its own node, with **Save** on its tab
+(written by `FileConversionTabViewModel`). Files picked one by one are deliberately not saved;
+the folder is.
+
+| Conversion | Node | CRC defaults rows |
+|---|---|---|
+| DAT to GeoJSON | `Services.FileConversions.DatToGeojson` | `VideoMap_Line` |
+| SCT2 to GeoJSON | `Services.FileConversions.SctToGeojson` | `SectorFile_Line`, `SectorFile_Text` |
+| vERAM to GeoJSON | `Services.FileConversions.VeramToGeojson` | `GeoMap_Line`, `GeoMap_Symbol`, `GeoMap_Text` |
+
+| Key | Values | Default |
+|---|---|---|
+| `SourceType` | `Folder`, `Files` | `Folder` |
+| `SourceFolder` | a folder path | none |
+| `IncludeCrcLineDefaults` | `Y` / `N` | `Y` |
+| `IncludeCrcSymbolDefaults` | `Y` / `N` - only a conversion that writes symbols (vERAM) | `Y` |
+| `IncludeCrcTextDefaults` | `Y` / `N` - only a conversion that writes text (SCT2, vERAM) | `Y` |
+| `CrcEramPropertyDefaults.<row>.<field>` | the fields for the row's kind, as for the sub-services | none (the user must fill them) |
+| `CroppingDistance` | DAT only: NM, as typed; blank means no cropping | none |
+| `OutputLayout` | vERAM only: `ByObject`, `ByFilter` | `ByObject` |
+| `DefaultsSource` | vERAM only: `Xml`, `XmlThenCard`, `Card` | `Xml` |
 
 ## Adding a setting
 

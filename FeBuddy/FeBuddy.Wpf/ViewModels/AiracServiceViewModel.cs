@@ -45,7 +45,6 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 	private readonly ServiceRunReviewTabViewModel _runReview = new();
 	private readonly Dictionary<string, ServiceTabViewModel> _tabsByKey = new(StringComparer.OrdinalIgnoreCase);
 
-	private bool _isRunning;
 	private bool _runReviewShown;
 	private NasrCsvDataCollection? _parsedForSelectedCycle;
 	private string? _parsedCycleId;
@@ -74,18 +73,8 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 	/// <summary>Runs the AIRAC Service for every selected sub-service. Hosted on the Preview Settings tab.</summary>
 	public ICommand RunCommand { get; }
 
-	/// <summary><see langword="true"/> while a run is in progress.</summary>
-	public bool IsRunning
-	{
-		get => _isRunning;
-		private set
-		{
-			if (SetProperty(ref _isRunning, value))
-			{
-				CommandManager.InvalidateRequerySuggested();
-			}
-		}
-	}
+	/// <inheritdoc />
+	public override string ScreenTitle => "AIRAC Services";
 
 	/// <summary>
 	/// The AIRAC data readiness. Controls whether the cycle-dependent lists and the run are enabled.
@@ -221,7 +210,7 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 		}
 		catch (Exception ex)
 		{
-			AppLog.Warning("AiracServiceView", $"Could not load parsed data for cycle {cycleId}: {ex.Message}");
+			AppLog.Warning("AiracService", $"Could not load parsed data for cycle {cycleId}: {ex.Message}");
 		}
 	}
 
@@ -252,8 +241,8 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 		AiracServiceSettings settings = new()
 		{
 			SelectedCycle = cycle,
-			OutputDirectory = OutputLocation.Directory,
-			AddFeBuddyOutputFolder = OutputLocation.AddFeBuddyOutputFolder,
+			OutputDirectory = OutputPreferences.Directory,
+			AddFeBuddyOutputFolder = OutputPreferences.AddFeBuddyOutputFolder,
 			Airways = AirwaysTab?.BuildSettingsBlock(),
 			Airports = AirportsTab?.BuildSettingsBlock(),
 			Departures = DeparturesTab?.BuildSettingsBlock(),

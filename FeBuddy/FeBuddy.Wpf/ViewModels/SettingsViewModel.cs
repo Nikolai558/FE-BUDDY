@@ -64,8 +64,8 @@ public sealed class SettingsViewModel : ObservableObject
 
 		_channel = VersionCheckResult.ParseChannel(UserConfigFile.GetValue(ChannelKey));
 		_selectedFacility = Blank(UserConfigFile.GetValue(ArtccKey));
-		_outputDir = OutputLocation.Directory;
-		_addFeBuddyFolder = OutputLocation.AddFeBuddyOutputFolder;
+		_outputDir = OutputPreferences.Directory;
+		_addFeBuddyFolder = OutputPreferences.AddFeBuddyOutputFolder;
 		_coordinatePrecision = int.TryParse(UserConfigFile.GetValue(PrecisionKey), out int p) && p is >= 0 and <= 15 ? p : 6;
 		_prettyPrintGeojson = string.Equals(
 			UserConfigFile.GetValue(UserConfigKeys.PrettyPrintGeojson)?.Trim(), "Y", StringComparison.OrdinalIgnoreCase);

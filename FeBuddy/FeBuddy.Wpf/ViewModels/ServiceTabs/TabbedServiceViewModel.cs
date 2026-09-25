@@ -8,16 +8,18 @@ using FeBuddy.Wpf.Views;
 namespace FeBuddy.Wpf.ViewModels.ServiceTabs;
 
 /// <summary>
-/// Base for a first-tier service screen built as tabs: a permanent <b>General</b> tab, one tab
-/// per sub-service the user selected there, a <b>Preview Settings</b> tab once at least one
-/// sub-service is selected, and - after a run - a <b>Review</b> tab at the very end.
+/// Base for a first-tier service screen built as tabs: an optional permanent <b>General</b> tab,
+/// one tab per sub-service, an optional <b>Preview Settings</b> tab, and - after a run - a
+/// <b>Review</b> tab at the very end.
 /// </summary>
 /// <remarks>
 /// <para>
-/// The model is deliberately generic. AIRAC Service is the first screen built on it, but File
-/// Conversion Services, Data Viewers and File Health Services are expected to use the same shape,
-/// and AIRAC Service alone is expected to reach roughly twenty sub-services - so tabs are data,
-/// created and destroyed as the user selects sub-services, never hand-placed in XAML.
+/// The model is deliberately generic. AIRAC Service uses every part of it: a General tab to pick
+/// sub-services, and one Preview Settings tab that runs them all together. File Conversions has
+/// neither - every conversion is always on the rail and runs on its own from its own tab. Data
+/// Viewers and File Health Services are expected to take one of those two shapes, and AIRAC
+/// Service alone is expected to reach roughly twenty sub-services - so tabs are data, created
+/// and destroyed as the screen needs them, never hand-placed in XAML.
 /// </para>
 /// <para>
 /// Navigation goes through <see cref="NextCommand"/> / <see cref="PreviousCommand"/> /
@@ -28,6 +30,7 @@ namespace FeBuddy.Wpf.ViewModels.ServiceTabs;
 public abstract class TabbedServiceViewModel : ObservableObject
 {
 	private ServiceTabViewModel? _selectedTab;
+	private bool _isRunning;
 
 	/// <summary>Wires the shared tab-bar commands.</summary>
 	protected TabbedServiceViewModel()
@@ -49,7 +52,35 @@ public abstract class TabbedServiceViewModel : ObservableObject
 
 		GoToPreviewCommand = new RelayCommand(
 			GoToPreview,
-			() => Tabs.Contains(PreviewTab) && !ReferenceEquals(SelectedTab, PreviewTab));
+			() => PreviewTab is { } preview && Tabs.Contains(preview) && !ReferenceEquals(SelectedTab, preview));
+	}
+
+	/// <summary>The screen's heading, e.g. <c>AIRAC Services</c>.</summary>
+	public abstract string ScreenTitle { get; }
+
+	/// <summary>
+	/// Whether the screen has a Preview Settings tab at all. The action bar shows its
+	/// <b>Preview settings</b> button only when it does.
+	/// </summary>
+	public bool HasPreviewTab => PreviewTab is not null;
+
+	/// <summary>
+	/// Whether the action bar shows <b>Previous</b> / <b>Next</b>. They suit a screen whose tabs
+	/// are steps towards one run; a screen of standalone tabs leaves moving between them to the rail.
+	/// </summary>
+	public virtual bool HasStepNavigation => true;
+
+	/// <summary><see langword="true"/> while a run is in progress.</summary>
+	public bool IsRunning
+	{
+		get => _isRunning;
+		protected set
+		{
+			if (SetProperty(ref _isRunning, value))
+			{
+				CommandManager.InvalidateRequerySuggested();
+			}
+		}
 	}
 
 	/// <summary>The open tabs, in rail order: General, the selected sub-services, Preview Settings, then Review after a run.</summary>
@@ -81,9 +112,9 @@ public abstract class TabbedServiceViewModel : ObservableObject
 		{
 			if (SetProperty(ref _selectedTab, value))
 			{
-				if (value is not null && ReferenceEquals(value, PreviewTab))
+				if (value is not null && PreviewTab is { } preview && ReferenceEquals(value, preview))
 				{
-					PreviewTab.Refresh();
+					preview.Refresh();
 				}
 
 				OnPropertyChanged(nameof(SelectedTabTitle));
@@ -95,11 +126,17 @@ public abstract class TabbedServiceViewModel : ObservableObject
 	/// <summary>The selected tab's title, for the content header.</summary>
 	public string SelectedTabTitle => SelectedTab?.Title ?? string.Empty;
 
-	/// <summary>The permanent first tab: the service's own cycle-wide settings and the sub-service picker.</summary>
-	protected abstract ServiceTabViewModel GeneralTab { get; }
+	/// <summary>
+	/// The permanent first tab - the service's own settings and the sub-service picker - or
+	/// <see langword="null"/> for a screen whose sub-services are always on the rail.
+	/// </summary>
+	protected virtual ServiceTabViewModel? GeneralTab => null;
 
-	/// <summary>The settings-preview tab, present once at least one sub-service is selected.</summary>
-	protected abstract ServicePreviewTabViewModel PreviewTab { get; }
+	/// <summary>
+	/// The settings-preview tab that runs every sub-service together, present once at least one
+	/// is open; or <see langword="null"/> for a screen whose sub-services each run from their own tab.
+	/// </summary>
+	protected virtual ServicePreviewTabViewModel? PreviewTab => null;
 
 	/// <summary>
 	/// A tab that belongs at the very end and only exists after something has happened - the
@@ -113,14 +150,19 @@ public abstract class TabbedServiceViewModel : ObservableObject
 	/// Preview Settings and Review tabs are added or removed to match, and the selection is moved
 	/// only if the tab it pointed at is gone.
 	/// </summary>
-	/// <param name="subServiceTabs">The tabs for the selected sub-services, in display order.</param>
+	/// <param name="subServiceTabs">The tabs for the open sub-services, in display order.</param>
 	protected void RebuildTabs(IEnumerable<ServiceTabViewModel> subServiceTabs)
 	{
-		List<ServiceTabViewModel> desired = [GeneralTab, .. subServiceTabs];
+		List<ServiceTabViewModel> desired = [.. subServiceTabs];
 
-		if (desired.Count > 1)
+		if (desired.Count > 0 && PreviewTab is { } preview)
 		{
-			desired.Add(PreviewTab);
+			desired.Add(preview);
+		}
+
+		if (GeneralTab is { } general)
+		{
+			desired.Insert(0, general);
 		}
 
 		if (PostRunTab is { } postRun)
@@ -196,12 +238,12 @@ public abstract class TabbedServiceViewModel : ObservableObject
 
 	private void GoToPreview()
 	{
-		if (!Tabs.Contains(PreviewTab) || !ConfirmLeave(SelectedTab))
+		if (PreviewTab is not { } preview || !Tabs.Contains(preview) || !ConfirmLeave(SelectedTab))
 		{
 			return;
 		}
 
-		SelectedTab = PreviewTab;
+		SelectedTab = preview;
 	}
 
 	/// <summary>Brings the run-review tab into the rail and selects it.</summary>

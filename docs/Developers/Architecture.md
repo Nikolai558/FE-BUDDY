@@ -250,4 +250,9 @@ Decisions that were argued out once and should not be re-litigated without a rea
 - **Dirty tracking compares against a snapshot**, app-wide.
 - **The Review tab is the one place** a run's results, warnings, advisories, errors and files live.
 - **Every sub-service is a tab of the AIRAC Service**, never a top-level screen, and every GeoJSON
-  sub-service tab is built from the same shared cards.
+  sub-service tab is built from the same shared cards. Likewise every file conversion is a tab of
+  File Conversions; the two screens share one tabbed view and differ only in what their
+  view-models say (File Conversions has no General or Preview Settings tab - each conversion runs
+  from its own tab).
+- **Output locations are laid out in one place** (`ServiceOutputPaths`), so AIRAC output and
+  converted files sit side by side under the same `FE-Buddy_Output` folder.

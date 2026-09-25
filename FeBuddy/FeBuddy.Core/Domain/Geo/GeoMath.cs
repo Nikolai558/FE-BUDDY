@@ -23,9 +23,10 @@ namespace FeBuddy.Core.Domain.Geo;
 public static class GeoMath
 {
 	/// <summary>Mean Earth radius, in metres.</summary>
-	private const double EarthRadiusMetres = 6371e3;
+	internal const double EarthRadiusMetres = 6371e3;
 
-	private const double MetresPerNauticalMile = 1852;
+	/// <summary>Metres in one international nautical mile.</summary>
+	internal const double MetresPerNauticalMile = 1852;
 
 	private const int MillisecondsPerDegree = 3_600_000;
 

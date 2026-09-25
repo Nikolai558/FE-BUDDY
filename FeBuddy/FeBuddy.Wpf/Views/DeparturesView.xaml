@@ -76,7 +76,7 @@
                     <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
                         <RadioButton GroupName="DepartureAmendment" Content="Amended within the last" VerticalAlignment="Center"
                                      IsChecked="{Binding AmendmentByCycles, Mode=TwoWay}" />
-                        <TextBox Width="70" Margin="8,0" VerticalAlignment="Center"
+                        <TextBox Style="{StaticResource Field.Number}"
                                  IsEnabled="{Binding AmendmentByCycles}"
                                  Text="{Binding AmendedWithinCycles, UpdateSourceTrigger=PropertyChanged}"
                                  bhv:FieldState.Error="{Binding FieldErrors[AmendedWithinCycles]}" />
@@ -86,7 +86,7 @@
                     <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
                         <RadioButton GroupName="DepartureAmendment" Content="Amended within the last" VerticalAlignment="Center"
                                      IsChecked="{Binding AmendmentByDays, Mode=TwoWay}" />
-                        <TextBox Width="70" Margin="8,0" VerticalAlignment="Center"
+                        <TextBox Style="{StaticResource Field.Number}"
                                  IsEnabled="{Binding AmendmentByDays}"
                                  Text="{Binding AmendedWithinDays, UpdateSourceTrigger=PropertyChanged}"
                                  bhv:FieldState.Error="{Binding FieldErrors[AmendedWithinDays]}" />

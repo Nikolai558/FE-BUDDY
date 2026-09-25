@@ -1,0 +1,59 @@
+<!--
+    DatToGeojsonView  -  the DAT to GeoJSON tab on the File Conversions screen.
+    Save / Undo come from the tab host's shared action bar, and the tab
+    host owns the page's single scroller. Unlike an AIRAC sub-service, this tab runs on its
+    own: the Convert card at the foot of the page starts it, and the outcome appears on the
+    screen's Review tab.
+-->
+<UserControl x:Class="FeBuddy.Wpf.Views.DatToGeojsonView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:FeBuddy.Wpf.ViewModels"
+             xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
+             xmlns:cards="clr-namespace:FeBuddy.Wpf.Views.Cards"
+             xmlns:bhv="clr-namespace:FeBuddy.Wpf.Behaviors"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance vm:DatToGeojsonViewModel}"
+             d:DesignWidth="900" d:DesignHeight="1100">
+
+    <!-- No ScrollViewer here: the tab host owns the one page-level scroller. -->
+    <StackPanel>
+
+        <TextBlock Style="{StaticResource Text.Prose}" Margin="0,0,0,14"
+                   Text="Converts FAA .dat RADAR Video Maps (RVMs) into CRC-ready GeoJSON: one .geojson file per map, named after it, in a DAT to GeoJSON folder inside your output directory." />
+
+        <TextBlock Text="{Binding ValidationError}" Style="{StaticResource Text.Caption}"
+                   Foreground="{StaticResource Brush.Danger}" TextWrapping="Wrap" Margin="0,0,0,12"
+                   MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
+                   Visibility="{Binding ValidationError, Converter={StaticResource StringToVis}}" />
+
+        <!-- ============ source ============ -->
+        <cards:SourceFilesCard />
+
+        <!-- ============ CRC ERAM defaults ============ -->
+        <cards:CrcDefaultsCard LinesTitle="Video Map — Lines" ShowInclude="True"
+                               IncludeLines="{Binding IncludeCrcLineDefaults}"
+                               Note="The values written as the isDefaults feature at the top of each converted file. Untick Include to leave them out." />
+
+        <!-- ============ cropping ============ -->
+        <ctl:Card Header="Cropping">
+            <StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                    <TextBlock Text="Keep what lies within" Style="{StaticResource Text.Body}" VerticalAlignment="Center" />
+                    <TextBox Style="{StaticResource Field.Number}"
+                             Text="{Binding CroppingDistance, UpdateSourceTrigger=PropertyChanged}"
+                             bhv:FieldState.Error="{Binding FieldErrors[CroppingDistance]}" />
+                    <TextBlock Text="NM of the map's point of tangency" Style="{StaticResource Text.Body}" VerticalAlignment="Center" />
+                </StackPanel>
+                <TextBlock Style="{StaticResource Text.Prose}" Margin="0,8,0,0"
+                           Text="Leave blank to convert the whole map. Lines that cross the distance are cut exactly where they meet it. The point of tangency is the one the .dat file itself defines, so each map is cropped around its own." />
+            </StackPanel>
+        </ctl:Card>
+
+        <!-- ============ run ============ -->
+        <cards:RunCard Blocker="{Binding RunBlocker}"
+                       Note="Unsaved settings are saved before the conversion starts. Existing files with the same name are replaced." />
+    </StackPanel>
+</UserControl>

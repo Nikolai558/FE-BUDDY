@@ -4,15 +4,15 @@ Every screen and every option in FE-Buddy 3.0. New to FE-Buddy? Start with
 [Getting started](Getting-Started.md); unfamiliar words are in the [glossary](Glossary.md).
 
 **Contents:** [The window](#the-window) · [Dashboard](#dashboard) ·
-[AIRAC Service](#airac-service) · [Output files](#output-files) · [Map](#map) ·
-[Settings](#settings) · [Info](#info) · [Updating FE-Buddy](#updating-fe-buddy)
+[AIRAC Service](#airac-service) · [File Conversions](#file-conversions) ·
+[Output files](#output-files) · [Map](#map) · [Settings](#settings) · [Info](#info) · [Updating FE-Buddy](#updating-fe-buddy)
 
 ---
 
 ## The window
 
-- **Menu (left).** *Workspace*: Dashboard, AIRAC Service, Map. *System*: Settings, Info. The
-  arrow collapses the menu to icons.
+- **Menu (left).** *Workspace*: Dashboard, AIRAC Service, File Conversions, Map. *System*:
+  Settings, Info. The arrow collapses the menu to icons.
 - **Systems (bottom of the menu).** One line each for **Internet**, **AIRAC data** and
   **Updates**, with a coloured dot: green is fine, amber needs a look or is still working, red is
   not working. **Re-check** runs the checks again. When the menu is collapsed, just the dot shows.
@@ -240,6 +240,97 @@ asks what to do first:
 - **Output** - every file written (collapsed to a count; a Departures or Arrivals run writes
   thousands) and **Open output folder**, which opens the run's `AIRAC_<cycle>` folder.
 
+## File Conversions
+
+Turns files you already have into files CRC can use. It works like the AIRAC Service screen -
+tabs down the left, the same action bar, the same **Review** tab - with two differences: every
+conversion is always on the rail (there is nothing to tick), and each one runs on its own, from
+the button at the bottom of its own tab. Because no tab leads to another, the action bar has no
+**Previous** / **Next**; pick a conversion on the left. Nothing here needs the AIRAC data, so the
+screen is ready as soon as FE-Buddy opens.
+
+### DAT to GeoJSON tab
+
+Converts FAA `.dat` RADAR Video Maps (RVMs) into GeoJSON video maps: one `.geojson` per `.dat`,
+with the same name.
+
+- **Source Files** - either **every .dat file in a folder** (FE-Buddy remembers the folder; files
+  in its sub-folders are left out) or **files I pick**: add one or several at a time, and remove
+  any you did not mean to. Picked files are forgotten when FE-Buddy closes.
+- **CRC ERAM Defaults** - the Lines panel only, since a video map is all lines. Tick **Include**
+  and fill it in to give every converted map the same look; untick it to leave the look to CRC.
+- **Cropping** - keep only what lies within this many nautical miles of the map's **point of
+  tangency** (the centre the `.dat` file itself defines). Leave it blank to convert the whole
+  map. A line that crosses the distance is cut exactly where it meets it, not dropped. A map
+  without a point of tangency cannot be cropped; the Review tab says which.
+- **Convert DAT files** - saves any unsaved settings (you are asked first) and runs. It stays
+  off, with the reason beside it, until there is something to convert.
+
+A record in a `.dat` file that FE-Buddy cannot read is skipped and listed on the Review tab; the
+rest of the map still converts. Coordinates are read as north and west unless the file says
+otherwise, and a line crossing the 180° meridian (Guam, for example) is split so it draws
+correctly.
+
+### SCT2 to GeoJSON tab
+
+Converts VRC sector files (`.sct2` or `.sct`) into GeoJSON: a folder per sector file, named after
+it, holding:
+
+| File | From |
+|---|---|
+| `ARTCC`, `ARTCC-HIGH`, `ARTCC-LOW` | the boundary sections - one feature per boundary name |
+| `LOW-AIRWAY`, `HIGH-AIRWAY` | the airway sections - one feature per airway |
+| `GEO` | `[GEO]` |
+| `SID\<diagram>`, `STAR\<diagram>` | one file per SID and STAR diagram, named after it |
+| `LABELS` | `[LABELS]`, as text |
+| `REGIONS` | `[REGIONS]`, as filled areas |
+
+A section with nothing in it writes no file. Airports, VORs, NDBs and fixes are not written, but a
+coordinate given as one of their names (`DJB DJB`) is found and used. Lines that meet are joined
+back together and a segment drawn twice is written once, so the files are small and dashed styles
+stay dashed.
+
+- **Source Files** - the same as on the DAT tab: a remembered folder (every `.sct2` and `.sct` in
+  it) or files you pick.
+- **CRC ERAM Defaults** - a **Lines** panel for every lines file (boundaries, airways, GEO, SIDs
+  and STARs) and a **Labels** panel for the labels file. Regions have no CRC defaults.
+- **Convert sector files** - saves any unsaved settings (you are asked first) and runs.
+
+A record FE-Buddy cannot read - a mistyped coordinate, a name that is not defined anywhere in the
+file - is skipped and listed on the Review tab; the rest of the file still converts. VRC colours
+are not carried over: CRC styles lines through the CRC defaults instead.
+
+### vERAM to GeoJSON tab
+
+Converts vERAM GeoMaps XML files into GeoJSON: a folder per GeoMaps file, named after it, with a
+folder inside for each GeoMap.
+
+- **Source Files** - the same as on the other tabs: a remembered folder (every `.xml` in it) or
+  files you pick.
+- **Output Layout** - how the files are split:
+  - **GeoMapObject Description** - a file per GeoMapObject, named after its description. Objects
+    that share a description share a file when their defaults agree; otherwise the later one gets
+    a numbered file (`VIDEO (2)`).
+  - **Filter Index and Similar Attributes** - files grouped by filter, TDM setting, kind and look,
+    e.g. `FILTER 05\FILTER 05__TDM F__Line__BCG 3__Style solid__Thickness 1`. An element with
+    several filters goes under `MULTI FILTERS\`; one whose look cannot be fully worked out goes
+    under `MISSING DEFAULTS\`. Everything in a file draws the same way.
+- **CRC ERAM Defaults Source** - where each file's CRC defaults come from:
+  - **From the XML** - carry over as much as possible: each object's own Line, Symbol and Text
+    defaults, and each element's own overrides.
+  - **From the XML, filling gaps from the card** - the same, but an object with no usable defaults
+    of its own takes the CRC ERAM Defaults on the tab.
+  - **From the card only** - ignore the XML's styling and use the tab's CRC ERAM Defaults for
+    everything.
+- **CRC ERAM Defaults** - Lines, Symbols and Text panels. They only show, and only need filling
+  in, when the card is one of the sources.
+- **Convert GeoMaps** - saves any unsaved settings (you are asked first) and runs.
+
+vERAM's style names become CRC's (`Solid` → `solid`, `Vor` → `vor`), and every value is checked
+against what CRC can draw. An object whose defaults are missing, incomplete or invalid is listed
+on the Review tab; a value CRC cannot draw is left out, so that feature takes its file's default.
+Line segments that meet are joined back into lines, including ones written backwards.
+
 ## Output files
 
 Every run of a cycle writes into one folder, `AIRAC_<cycle>` (for example `AIRAC_2610`), in your
@@ -251,16 +342,24 @@ laid out the same way:
 ```
 <output folder>\
 └── FE-Buddy_Output\                  (only with "Add a FE-Buddy_Output folder")
-    └── AIRAC_2610\
-        ├── Airports.txt, Airways.txt, Departures.txt, Arrivals.txt
-        ├── Geojson\
-        │   ├── Runways_Lines, Airports_Symbols, Airports_Text (.geojson)
-        │   ├── Airways_<group>_Lines / _Symbols / _Text (.geojson)
-        │   └── <ARTCC>\<airport>\<airport>_<procedure>_Lines / _Symbols / _Text (.geojson)
-        └── Upload_to_vNAS\           (only the files marked for vNAS)
-            ├── the alias files marked for vNAS
-            └── Geojson\              the GeoJSON files marked for vNAS, laid out as above
+    ├── AIRAC_2610\
+    │   ├── Airports.txt, Airways.txt, Departures.txt, Arrivals.txt
+    │   ├── Geojson\
+    │   │   ├── Runways_Lines, Airports_Symbols, Airports_Text (.geojson)
+    │   │   ├── Airways_<group>_Lines / _Symbols / _Text (.geojson)
+    │   │   └── <ARTCC>\<airport>\<airport>_<procedure>_Lines / _Symbols / _Text (.geojson)
+    │   └── Upload_to_vNAS\           (only the files marked for vNAS)
+    │       ├── the alias files marked for vNAS
+    │       └── Geojson\              the GeoJSON files marked for vNAS, laid out as above
+    ├── DAT to GeoJSON\               <.dat file name>.geojson, one per converted map
+    ├── SCT2 to GeoJSON\
+    │   └── <sector file name>\       ARTCC, …, GEO, LABELS, REGIONS (.geojson), SID\, STAR\
+    └── vERAM to GeoJSON\
+        └── <GeoMaps file name>\<GeoMap>\   <description>.geojson, or FILTER nn\ folders
 ```
+
+The File Conversions do not use the cycle folder: each conversion writes into its own folder, next
+to the `AIRAC_<cycle>` folders, and replaces any file of the same name.
 
 Departures and Arrivals share the same `<ARTCC>\<airport>` folder; an Arrivals file's name adds
 `_STAR_` before the kind (`LAS_BLAID_STAR_Lines.geojson`) so a SID and a STAR with the same

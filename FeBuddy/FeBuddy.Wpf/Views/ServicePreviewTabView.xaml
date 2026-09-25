@@ -9,6 +9,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
+             xmlns:cards="clr-namespace:FeBuddy.Wpf.Views.Cards"
              xmlns:tabs="clr-namespace:FeBuddy.Wpf.ViewModels.ServiceTabs"
              xmlns:tabm="clr-namespace:FeBuddy.Wpf.ViewModels.ServiceTabs.Models"
              mc:Ignorable="d"
@@ -64,14 +65,6 @@
         <ItemsControl ItemsSource="{Binding Sections}" ItemTemplate="{StaticResource ReviewSection}" />
 
         <!-- run -->
-        <ctl:Card>
-            <DockPanel>
-                <Button DockPanel.Dock="Right" Style="{StaticResource Button.Primary}"
-                        Content="{Binding RunLabel}" MinWidth="180"
-                        Command="{Binding RunCommand}" />
-                <TextBlock VerticalAlignment="Center" Style="{StaticResource Text.Body}" TextWrapping="Wrap"
-                           Text="Unsaved settings are saved before the run starts." />
-            </DockPanel>
-        </ctl:Card>
+        <cards:RunCard Note="Unsaved settings are saved before the run starts." />
     </StackPanel>
 </UserControl>

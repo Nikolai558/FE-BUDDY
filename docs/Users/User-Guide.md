@@ -424,8 +424,8 @@ overwrite the old files or delete them (see [Preview Settings tab](#preview-sett
 
 ## Settings
 
-Changes here are saved with the **Save** button at the top (the Default Region of Interest saves
-as soon as you set or clear it). While something is unsaved, "Unsaved changes" shows beside Save,
+Changes here - the Default Region of Interest included - are saved with the **Save** button at the
+top. While something is unsaved, "Unsaved changes" shows beside Save,
 **Settings** in the side menu gets an amber dot, and Save is live; once saved - or changed back -
 all three clear.
 

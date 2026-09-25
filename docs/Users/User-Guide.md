@@ -119,8 +119,8 @@ Airways has a column per altitude class (High, Low, Other) - with High/Low files
 each file chosen; with designation files, all three, since one file can hold airways of every
 class. Airports, Departures and Arrivals have one. NAVAIDs has one column with *All in one file*,
 or one column per NAVAID type - style included - with *one pair per NAVAID type* (see the NAVAIDs
-tab). Columns that do not fit across the window carry on in a new row below, with their own
-labels, so every box stays on screen however narrow the window is.
+tab). Each class is its own block of boxes; blocks that do not fit across the window move to the
+next line, so every box stays on screen however narrow the window is.
 
 ### Airports tab
 

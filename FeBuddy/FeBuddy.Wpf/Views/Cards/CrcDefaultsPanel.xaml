@@ -1,30 +1,30 @@
 <!--
     CrcDefaultsPanel  -  one kind's CRC ERAM defaults (Lines, Symbols or Text) inside the CRC ERAM
-    Defaults card: its title, then one row per property - name on the left, one control per class
-    to the right. Airports, Departures and Arrivals have one class, so one column; Airways can have
-    High / Low / Other, and NAVAIDs split by type one per NAVAID type, each in its own column under
-    a class-name row. The card hands it only the classes in use, and with none the panel hides
-    itself.
+    Defaults card: its title, then one block per class - the class name (when there is more than
+    one), then a row per property, its name on the left and its control on the right. Airports,
+    Departures and Arrivals have one class, so one block; Airways can have High / Low / Other, and
+    NAVAIDs split by type one per NAVAID type. The card hands it only the classes in use, and with
+    none the panel hides itself.
 
-    Which rows show comes from the classes themselves (EramClassDefault.AsksForStyle /
-    ShowThickness / ShowSize / ShowTextOptions), so the same panel draws every kind. The style row
-    follows the first class: a NAVAIDs Symbols file styled by NAVAID type asks for no style.
+    The blocks sit in a WrapPanel, so blocks that do not fit across the width carry on in the next
+    line - thirteen NAVAID types, or a narrow window - and every box stays on screen. Nothing about
+    the layout is worked out in code: a panel that rebuilt its own items while being measured
+    would be measured again, and could go round without end.
+
+    Which rows show comes from each class itself (EramClassDefault.AsksForStyle / ShowThickness /
+    ShowSize / ShowTextOptions), so the same panel draws every kind; a NAVAIDs Symbols file styled
+    by NAVAID type asks for no style.
 
     The File Conversions choose each kind's defaults on the panel itself: they turn on ShowInclude,
     which adds an Include box to the title; unticked, the rows grey out but keep their values. The
     AIRAC sub-services choose on the Upload to vNAS card instead and leave it off.
 
-    The class columns come in bands: when there are more than fit across the width the panel is
-    given (thirteen NAVAID types, or a narrow window), the rest carry on in a new band below, with
-    its own row names, and the bands re-form as the window is resized. See Bands in the
-    code-behind.
-
-    The cells are a fixed width rather than Auto or star: the page fills the window, and an Auto
-    column sizes to whatever is selected, so the boxes of the three panels would all end up
-    different widths. The label column is shared across the rows and the bands (SharedSizeGroup)
-    so every row's cells line up. The conditional rows start Collapsed (FallbackValue) until Classes
-    arrives: a row measured even once while visible keeps widening that shared column. The per-field ToolTips are worded from the settings validator - keep
-    them verbatim.
+    The controls are a fixed width rather than Auto or star: the page fills the window, and an Auto
+    column sizes to whatever is selected, so the boxes would all end up different widths. The label
+    column is shared by every block (SharedSizeGroup), so the blocks are all one width and line up
+    in columns when they wrap. The conditional rows start Collapsed (FallbackValue) until their
+    binding resolves: a row measured even once while visible keeps widening that shared column.
+    The per-field ToolTips are worded from the settings validator - keep them verbatim.
 -->
 <UserControl x:Class="FeBuddy.Wpf.Views.Cards.CrcDefaultsPanel"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -46,28 +46,13 @@
             <Setter Property="ToolTip" Value="Any whole number of pixels. 0 for none." />
         </Style>
 
-        <!-- One property row of one band: its name (Header), then one cell per class in the band
-             (the row's DataContext). -->
-        <Style x:Key="FieldRow" TargetType="HeaderedItemsControl">
-            <Setter Property="ItemsSource" Value="{Binding}" />
+        <!-- One property row of one class: its name (Header), then its control at a fixed width. -->
+        <Style x:Key="Field" TargetType="HeaderedContentControl">
             <Setter Property="Focusable" Value="False" />
             <Setter Property="IsTabStop" Value="False" />
-            <Setter Property="ItemsPanel">
-                <Setter.Value>
-                    <ItemsPanelTemplate><StackPanel Orientation="Horizontal" /></ItemsPanelTemplate>
-                </Setter.Value>
-            </Setter>
-            <Setter Property="ItemContainerStyle">
-                <Setter.Value>
-                    <Style TargetType="ContentPresenter">
-                        <Setter Property="Width" Value="{Binding CellWidth, RelativeSource={RelativeSource AncestorType=cards:CrcDefaultsPanel}}" />
-                        <Setter Property="Margin" Value="{Binding CellMargin, RelativeSource={RelativeSource AncestorType=cards:CrcDefaultsPanel}}" />
-                    </Style>
-                </Setter.Value>
-            </Setter>
             <Setter Property="Template">
                 <Setter.Value>
-                    <ControlTemplate TargetType="HeaderedItemsControl">
+                    <ControlTemplate TargetType="HeaderedContentControl">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto" SharedSizeGroup="CrcFieldLabel" />
@@ -75,59 +60,70 @@
                             </Grid.ColumnDefinitions>
                             <TextBlock Style="{StaticResource Text.FieldLabel}"
                                        Text="{Binding Header, RelativeSource={RelativeSource TemplatedParent}}" />
-                            <ItemsPresenter Grid.Column="1" />
+                            <ContentPresenter Grid.Column="1" Margin="0,3"
+                                              Width="{Binding CellWidth, RelativeSource={RelativeSource AncestorType=cards:CrcDefaultsPanel}}" />
                         </Grid>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
         </Style>
 
-        <!-- one cell per property, for one class -->
-        <DataTemplate x:Key="ClassNameCell" DataType="{x:Type m:EramClassDefault}">
-            <ctl:SectionHeader Style="{StaticResource SectionHeader.Group}" Label="{Binding ClassName}" />
-        </DataTemplate>
-        <DataTemplate x:Key="FiltersCell" DataType="{x:Type m:EramClassDefault}">
-            <ctl:FilterPicker Value="{Binding Filters, Mode=TwoWay}" bhv:FieldState.Error="{Binding FiltersError}" />
-        </DataTemplate>
-        <DataTemplate x:Key="BcgCell" DataType="{x:Type m:EramClassDefault}">
-            <ComboBox ItemsSource="{Binding BcgOptions}" SelectedItem="{Binding Bcg}"
-                      bhv:FieldState.Error="{Binding BcgError}"
-                      ToolTip="BCG group: an integer 1–40." />
-        </DataTemplate>
-        <DataTemplate x:Key="StyleCell" DataType="{x:Type m:EramClassDefault}">
-            <ComboBox ItemsSource="{Binding StyleOptions}" SelectedItem="{Binding Style}"
-                      bhv:FieldState.Error="{Binding StyleError}"
-                      ToolTip="Style: see the CRC GeoJSON concepts for the allowed values per kind." />
-        </DataTemplate>
-        <DataTemplate x:Key="ThicknessCell" DataType="{x:Type m:EramClassDefault}">
-            <ComboBox ItemsSource="{Binding ThicknessOptions}" SelectedItem="{Binding Thickness}"
-                      bhv:FieldState.Error="{Binding ThicknessError}"
-                      ToolTip="Thickness: an integer 1–3." />
-        </DataTemplate>
-        <DataTemplate x:Key="SizeCell" DataType="{x:Type m:EramClassDefault}">
-            <ComboBox ItemsSource="{Binding SizeOptions}" SelectedItem="{Binding Size}"
-                      bhv:FieldState.Error="{Binding SizeError}"
-                      ToolTip="Size: an integer 1–4." />
-        </DataTemplate>
-        <DataTemplate x:Key="OpaqueCell" DataType="{x:Type m:EramClassDefault}">
-            <ComboBox ItemsSource="{Binding YesNoOptions}" SelectedValuePath="Value" SelectedValue="{Binding Opaque}"
-                      bhv:FieldState.Error="{Binding OpaqueError}"
-                      ToolTip="Opaque: Yes or No." />
-        </DataTemplate>
-        <DataTemplate x:Key="UnderlineCell" DataType="{x:Type m:EramClassDefault}">
-            <ComboBox ItemsSource="{Binding YesNoOptions}" SelectedValuePath="Value" SelectedValue="{Binding Underline}"
-                      bhv:FieldState.Error="{Binding UnderlineError}"
-                      ToolTip="Underline: Yes or No." />
-        </DataTemplate>
-        <DataTemplate x:Key="XOffsetCell" DataType="{x:Type m:EramClassDefault}">
-            <TextBox Style="{StaticResource OffsetBox}"
-                     Text="{Binding XOffset, UpdateSourceTrigger=PropertyChanged}"
-                     bhv:FieldState.Error="{Binding XOffsetError}" />
-        </DataTemplate>
-        <DataTemplate x:Key="YOffsetCell" DataType="{x:Type m:EramClassDefault}">
-            <TextBox Style="{StaticResource OffsetBox}"
-                     Text="{Binding YOffset, UpdateSourceTrigger=PropertyChanged}"
-                     bhv:FieldState.Error="{Binding YOffsetError}" />
+        <!-- One class: its name, then a row per property its kind has. -->
+        <DataTemplate x:Key="ClassBlock" DataType="{x:Type m:EramClassDefault}">
+            <StackPanel Margin="{Binding BlockMargin, RelativeSource={RelativeSource AncestorType=cards:CrcDefaultsPanel}}">
+                <ctl:SectionHeader Style="{StaticResource SectionHeader.Group}" Label="{Binding ClassName}" Margin="0,0,0,4"
+                                   Visibility="{Binding ShowClassNames, RelativeSource={RelativeSource AncestorType=cards:CrcDefaultsPanel}, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}" />
+                <HeaderedContentControl Style="{StaticResource Field}" Header="Filters">
+                    <ctl:FilterPicker Value="{Binding Filters, Mode=TwoWay}" bhv:FieldState.Error="{Binding FiltersError}" />
+                </HeaderedContentControl>
+                <HeaderedContentControl Style="{StaticResource Field}" Header="BCG">
+                    <ComboBox ItemsSource="{Binding BcgOptions}" SelectedItem="{Binding Bcg}"
+                              bhv:FieldState.Error="{Binding BcgError}"
+                              ToolTip="BCG group: an integer 1–40." />
+                </HeaderedContentControl>
+                <HeaderedContentControl Style="{StaticResource Field}" Header="Style"
+                                        Visibility="{Binding AsksForStyle, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}">
+                    <ComboBox ItemsSource="{Binding StyleOptions}" SelectedItem="{Binding Style}"
+                              bhv:FieldState.Error="{Binding StyleError}"
+                              ToolTip="Style: see the CRC GeoJSON concepts for the allowed values per kind." />
+                </HeaderedContentControl>
+                <HeaderedContentControl Style="{StaticResource Field}" Header="Thickness"
+                                        Visibility="{Binding ShowThickness, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}">
+                    <ComboBox ItemsSource="{Binding ThicknessOptions}" SelectedItem="{Binding Thickness}"
+                              bhv:FieldState.Error="{Binding ThicknessError}"
+                              ToolTip="Thickness: an integer 1–3." />
+                </HeaderedContentControl>
+                <HeaderedContentControl Style="{StaticResource Field}" Header="Size"
+                                        Visibility="{Binding ShowSize, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}">
+                    <ComboBox ItemsSource="{Binding SizeOptions}" SelectedItem="{Binding Size}"
+                              bhv:FieldState.Error="{Binding SizeError}"
+                              ToolTip="Size: an integer 1–4." />
+                </HeaderedContentControl>
+                <HeaderedContentControl Style="{StaticResource Field}" Header="Opaque"
+                                        Visibility="{Binding ShowTextOptions, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}">
+                    <ComboBox ItemsSource="{Binding YesNoOptions}" SelectedValuePath="Value" SelectedValue="{Binding Opaque}"
+                              bhv:FieldState.Error="{Binding OpaqueError}"
+                              ToolTip="Opaque: Yes or No." />
+                </HeaderedContentControl>
+                <HeaderedContentControl Style="{StaticResource Field}" Header="Underline"
+                                        Visibility="{Binding ShowTextOptions, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}">
+                    <ComboBox ItemsSource="{Binding YesNoOptions}" SelectedValuePath="Value" SelectedValue="{Binding Underline}"
+                              bhv:FieldState.Error="{Binding UnderlineError}"
+                              ToolTip="Underline: Yes or No." />
+                </HeaderedContentControl>
+                <HeaderedContentControl Style="{StaticResource Field}" Header="X offset"
+                                        Visibility="{Binding ShowTextOptions, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}">
+                    <TextBox Style="{StaticResource OffsetBox}"
+                             Text="{Binding XOffset, UpdateSourceTrigger=PropertyChanged}"
+                             bhv:FieldState.Error="{Binding XOffsetError}" />
+                </HeaderedContentControl>
+                <HeaderedContentControl Style="{StaticResource Field}" Header="Y offset"
+                                        Visibility="{Binding ShowTextOptions, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}">
+                    <TextBox Style="{StaticResource OffsetBox}"
+                             Text="{Binding YOffset, UpdateSourceTrigger=PropertyChanged}"
+                             bhv:FieldState.Error="{Binding YOffsetError}" />
+                </HeaderedContentControl>
+            </StackPanel>
         </DataTemplate>
     </UserControl.Resources>
 
@@ -140,36 +136,11 @@
                 </ctl:SectionHeader.Aside>
             </ctl:SectionHeader>
 
-            <!-- One band per line of class columns. Which rows show still follows the panel's first
-                 class, so every band has the same rows, and the label column is shared across all
-                 of them (Grid.IsSharedSizeScope above), so every band's cells line up. Each band
-                 has a gap above it; the negative margin cancels the first one. -->
-            <ItemsControl ItemsSource="{Binding Bands, ElementName=Self}" IsEnabled="{Binding IsIncluded, ElementName=Self}"
-                          Focusable="False" IsTabStop="False" Margin="0,-12,0,0">
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate>
-                        <StackPanel Margin="0,12,0,0">
-                            <HeaderedItemsControl Style="{StaticResource FieldRow}" ItemTemplate="{StaticResource ClassNameCell}"
-                                                  Visibility="{Binding ShowClassNames, RelativeSource={RelativeSource AncestorType=cards:CrcDefaultsPanel}, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}" />
-                            <HeaderedItemsControl Style="{StaticResource FieldRow}" Header="Filters" ItemTemplate="{StaticResource FiltersCell}" />
-                            <HeaderedItemsControl Style="{StaticResource FieldRow}" Header="BCG" ItemTemplate="{StaticResource BcgCell}" />
-                            <HeaderedItemsControl Style="{StaticResource FieldRow}" Header="Style" ItemTemplate="{StaticResource StyleCell}"
-                                                  Visibility="{Binding Classes[0].AsksForStyle, RelativeSource={RelativeSource AncestorType=cards:CrcDefaultsPanel}, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}" />
-                            <HeaderedItemsControl Style="{StaticResource FieldRow}" Header="Thickness" ItemTemplate="{StaticResource ThicknessCell}"
-                                                  Visibility="{Binding Classes[0].ShowThickness, RelativeSource={RelativeSource AncestorType=cards:CrcDefaultsPanel}, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}" />
-                            <HeaderedItemsControl Style="{StaticResource FieldRow}" Header="Size" ItemTemplate="{StaticResource SizeCell}"
-                                                  Visibility="{Binding Classes[0].ShowSize, RelativeSource={RelativeSource AncestorType=cards:CrcDefaultsPanel}, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}" />
-                            <HeaderedItemsControl Style="{StaticResource FieldRow}" Header="Opaque" ItemTemplate="{StaticResource OpaqueCell}"
-                                                  Visibility="{Binding Classes[0].ShowTextOptions, RelativeSource={RelativeSource AncestorType=cards:CrcDefaultsPanel}, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}" />
-                            <HeaderedItemsControl Style="{StaticResource FieldRow}" Header="Underline" ItemTemplate="{StaticResource UnderlineCell}"
-                                                  Visibility="{Binding Classes[0].ShowTextOptions, RelativeSource={RelativeSource AncestorType=cards:CrcDefaultsPanel}, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}" />
-                            <HeaderedItemsControl Style="{StaticResource FieldRow}" Header="X offset" ItemTemplate="{StaticResource XOffsetCell}"
-                                                  Visibility="{Binding Classes[0].ShowTextOptions, RelativeSource={RelativeSource AncestorType=cards:CrcDefaultsPanel}, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}" />
-                            <HeaderedItemsControl Style="{StaticResource FieldRow}" Header="Y offset" ItemTemplate="{StaticResource YOffsetCell}"
-                                                  Visibility="{Binding Classes[0].ShowTextOptions, RelativeSource={RelativeSource AncestorType=cards:CrcDefaultsPanel}, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}" />
-                        </StackPanel>
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
+            <ItemsControl ItemsSource="{Binding Classes, ElementName=Self}" ItemTemplate="{StaticResource ClassBlock}"
+                          IsEnabled="{Binding IsIncluded, ElementName=Self}" Focusable="False" IsTabStop="False">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
             </ItemsControl>
         </StackPanel>
     </Border>

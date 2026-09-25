@@ -12,7 +12,6 @@ using FeBuddy.Wpf.Views;
 using FeBuddy.Core.Application.Airac;
 using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Application.Launch;
-using FeBuddy.Core.Domain.Airac;
 using FeBuddy.Core.Domain.Airac.Models;
 using FeBuddy.Core.Infrastructure.Configuration;
 using FeBuddy.Core.Infrastructure.Logging;
@@ -196,7 +195,7 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 			return;
 		}
 
-		string cycleId = AiracCycleResolver.GetCycle(_general.SelectedCyclePosition).AiracCycleId;
+		string cycleId = AppEnvironment.GetAiracCycle(_general.SelectedCyclePosition).AiracCycleId;
 
 		if (_parsedCycleId == cycleId && _parsedForSelectedCycle is not null)
 		{
@@ -242,7 +241,7 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 			return;
 		}
 
-		AiracCycleInfo cycle = AiracCycleResolver.GetCycle(_general.SelectedCyclePosition);
+		AiracCycleInfo cycle = AppEnvironment.GetAiracCycle(_general.SelectedCyclePosition);
 
 		IReadOnlyList<ISubServiceRunTarget> targets = RunTargets;
 		string[] runningTabTitles = [.. Tabs

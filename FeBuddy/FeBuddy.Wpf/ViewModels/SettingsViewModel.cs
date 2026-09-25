@@ -14,7 +14,6 @@ using FeBuddy.Core.Application.Airac;
 using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Application.Launch;
 using FeBuddy.Core.Application.Updates.Models;
-using FeBuddy.Core.Domain.Airac;
 using FeBuddy.Core.Domain.Airac.Models;
 using FeBuddy.Core.Domain.Geo.Models;
 using FeBuddy.Core.Infrastructure.Configuration;
@@ -390,7 +389,7 @@ public sealed class SettingsViewModel : ObservableObject
 	{
 		try
 		{
-			AiracCycleInfo current = AiracCycleResolver.GetCycle(AiracCyclePosition.Current);
+			AiracCycleInfo current = AppEnvironment.GetAiracCycle(AiracCyclePosition.Current);
 			var data = await AiracCycleDataCache.Instance.GetAsync(current.AiracCycleId).ConfigureAwait(false);
 
 			var options = (data.Apt?.AptBase ?? [])

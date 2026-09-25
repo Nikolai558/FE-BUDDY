@@ -1,6 +1,8 @@
 using FeBuddy.Core.Application.News.Models;
 using FeBuddy.Core.Application.Updates;
 using FeBuddy.Core.Application.Updates.Models;
+using FeBuddy.Core.Domain.Airac;
+using FeBuddy.Core.Domain.Airac.Models;
 using FeBuddy.Core.Infrastructure.Configuration;
 using FeBuddy.Core.Infrastructure.Platform;
 using FeBuddy.Core.Infrastructure.Platform.Models;
@@ -29,14 +31,30 @@ public static class AppEnvironment
 	public static bool HasInternetConnection { get; internal set; } = true;
 
 	/// <summary>
-	/// The UTC time captured at launch from the most trustworthy available source. All AIRAC
-	/// cycle maths should be based on this rather than <see cref="DateTime.UtcNow"/> so a run
-	/// is consistent even if the machine clock drifts mid-session.
+	/// The UTC time captured at launch from the most trustworthy available source. AIRAC cycles
+	/// are worked out from it (see <see cref="GetAiracCycle"/>) rather than from
+	/// <see cref="DateTime.UtcNow"/>, so a wrong or drifting machine clock cannot change them.
 	/// </summary>
 	public static DateTime? LaunchUtcNow { get; internal set; }
 
 	/// <summary>How <see cref="LaunchUtcNow"/> was obtained.</summary>
 	public static UtcTimeSource? LaunchUtcSource { get; internal set; }
+
+	/// <summary>
+	/// The UTC date the time check found (<see cref="LaunchUtcNow"/>), or the machine's own UTC
+	/// date until the check has run.
+	/// </summary>
+	public static DateOnly CheckedUtcDate => DateOnly.FromDateTime(LaunchUtcNow ?? DateTime.UtcNow);
+
+	/// <summary>
+	/// The previous, current or next AIRAC cycle as of <see cref="CheckedUtcDate"/>. The launch
+	/// sequence downloads its cycles with this and the GUI names them with it, so the two always
+	/// agree.
+	/// </summary>
+	/// <param name="position">Which cycle.</param>
+	/// <returns>The cycle.</returns>
+	public static AiracCycleInfo GetAiracCycle(AiracCyclePosition position) =>
+		AiracCycleResolver.GetCycle(position, CheckedUtcDate);
 
 	/// <summary>The result of the launch-time version check, or <see langword="null"/> until it runs.</summary>
 	public static VersionCheckResult? Version { get; internal set; }

@@ -6,7 +6,7 @@ using FeBuddy.Wpf.ViewModels.ServiceTabs;
 
 using FeBuddy.Core.Application.Airac;
 using FeBuddy.Core.Application.Airac.Models;
-using FeBuddy.Core.Domain.Airac;
+using FeBuddy.Core.Application.Launch;
 using FeBuddy.Core.Domain.Airac.Models;
 using FeBuddy.Core.Infrastructure.Configuration;
 
@@ -109,7 +109,7 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 	{
 		get
 		{
-			AiracCycleInfo info = AiracCycleResolver.GetCycle(SelectedCyclePosition);
+			AiracCycleInfo info = AppEnvironment.GetAiracCycle(SelectedCyclePosition);
 			return $"Cycle {info.AiracCycleId}  ·  effective {info.EffectiveDateUtc:dd MMM yyyy}";
 		}
 	}
@@ -215,7 +215,7 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 	/// <inheritdoc />
 	protected override void WriteToConfig()
 	{
-		Set("AiracCycleId", AiracCycleResolver.GetCycle(SelectedCyclePosition).AiracCycleId);
+		Set("AiracCycleId", AppEnvironment.GetAiracCycle(SelectedCyclePosition).AiracCycleId);
 		Set(SelectedSubServicesKey, string.Join(',', SelectedSubServices.Select(s => s.Key)));
 	}
 
@@ -251,7 +251,7 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 
 		foreach (AiracCyclePosition position in new[] { AiracCyclePosition.Previous, AiracCyclePosition.Current, AiracCyclePosition.Next })
 		{
-			if (string.Equals(AiracCycleResolver.GetCycle(position).AiracCycleId, savedId, StringComparison.OrdinalIgnoreCase))
+			if (string.Equals(AppEnvironment.GetAiracCycle(position).AiracCycleId, savedId, StringComparison.OrdinalIgnoreCase))
 			{
 				return position;
 			}
@@ -308,7 +308,7 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 		/// <summary>Re-reads this row's label and cache state.</summary>
 		public void Refresh()
 		{
-			AiracCycleInfo info = AiracCycleResolver.GetCycle(Position);
+			AiracCycleInfo info = AppEnvironment.GetAiracCycle(Position);
 			Label = $"{Position}  —  {info.AiracCycleId}  ·  eff {info.EffectiveDateUtc:dd MMM yyyy}";
 
 			AiracCycleDataCacheEntry? entry = AiracCycleDataCache.Instance.GetEntry(info.AiracCycleId);

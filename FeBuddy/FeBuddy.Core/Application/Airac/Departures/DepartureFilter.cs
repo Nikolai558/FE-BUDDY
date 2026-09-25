@@ -22,7 +22,6 @@ public static class DepartureFilter
 {
 	private const string LogSource = "DepartureFilter";
 
-	/// <summary>The length of one AIRAC cycle, used to count amendment dates back from the cycle date.</summary>
 	/// <summary>
 	/// Keeps the procedures that pass the type, ARTCC and amendment-date filters.
 	/// </summary>

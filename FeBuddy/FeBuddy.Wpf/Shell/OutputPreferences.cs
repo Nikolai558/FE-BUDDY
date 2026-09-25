@@ -1,6 +1,6 @@
 using System.Globalization;
-using System.IO;
 
+using FeBuddy.Core.Application.Airac;
 using FeBuddy.Core.Infrastructure.Configuration;
 
 namespace FeBuddy.Wpf.Shell;
@@ -11,16 +11,18 @@ namespace FeBuddy.Wpf.Shell;
 /// </summary>
 /// <remarks>
 /// Every service screen reads these here, at the moment it runs, so a change in Settings applies
-/// to the next run on every screen without any of them having to listen for it.
+/// to the next run on every screen without any of them having to listen for it. Each AIRAC Service
+/// run of a cycle goes in its own <c>AIRAC_&lt;cycle&gt;</c> folder inside (see
+/// <see cref="AiracOutputPaths"/>).
 /// </remarks>
 public static class OutputPreferences
 {
 	/// <summary>The coordinate precision used when none is saved.</summary>
 	private const int DefaultCoordinatePrecision = 6;
 
-	/// <summary>The output directory used when none is saved: <c>%USERPROFILE%\Desktop\FE-Buddy_Output</c>.</summary>
+	/// <summary>The output directory used when none is saved: the user's Desktop.</summary>
 	public static string DefaultDirectory =>
-		Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), "FE-Buddy_Output");
+		Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
 
 	/// <summary>The saved output directory, or <see cref="DefaultDirectory"/> when none is saved.</summary>
 	public static string Directory =>
@@ -38,4 +40,10 @@ public static class OutputPreferences
 		&& saved is >= 0 and <= 15
 			? saved
 			: DefaultCoordinatePrecision;
+
+	/// <summary>The folder a run of a cycle writes into, e.g. <c>…\Desktop\FE-Buddy_Output\AIRAC_2610</c>.</summary>
+	/// <param name="cycleId">The four-digit cycle ID.</param>
+	/// <returns>The folder's full path.</returns>
+	public static string CycleDirectory(string cycleId) =>
+		AiracOutputPaths.CycleDirectory(Directory, AddFeBuddyOutputFolder, cycleId);
 }

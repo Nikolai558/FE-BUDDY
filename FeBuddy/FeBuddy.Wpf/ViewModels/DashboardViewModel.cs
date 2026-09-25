@@ -12,7 +12,6 @@ using FeBuddy.Core.Application.Airac;
 using FeBuddy.Core.Application.Launch;
 using FeBuddy.Core.Application.News;
 using FeBuddy.Core.Application.News.Models;
-using FeBuddy.Core.Domain.Airac;
 using FeBuddy.Core.Domain.Airac.Models;
 using FeBuddy.Core.Infrastructure.Configuration;
 using FeBuddy.Core.Infrastructure.Logging;
@@ -218,9 +217,9 @@ public sealed class DashboardViewModel : ObservableObject
 		AiracCycleDataCacheEntry? next = AiracCycleDataCache.Instance.Entries
 			.FirstOrDefault(x => x.Position == AiracCyclePosition.Next);
 
-		AiracCycleInfo cycle = next?.Cycle ?? AiracCycleResolver.GetCycle(AiracCyclePosition.Next);
+		AiracCycleInfo cycle = next?.Cycle ?? AppEnvironment.GetAiracCycle(AiracCyclePosition.Next);
 
-		int days = cycle.EffectiveDateUtc.DayNumber - DateOnly.FromDateTime(DateTime.UtcNow).DayNumber;
+		int days = cycle.EffectiveDateUtc.DayNumber - AppEnvironment.CheckedUtcDate.DayNumber;
 		string dayText = days switch
 		{
 			< 0 => "now in effect",

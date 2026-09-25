@@ -12,15 +12,16 @@ using FeBuddy.Core.Domain.Geo.Models;
 namespace FeBuddy.Wpf.ViewModels.ServiceTabs;
 
 /// <summary>
-/// Base for a sub-service tab that writes GeoJSON (Airports, Airways, Departures): everything
-/// those tabs share - the alias file, which GeoJSON files are written, the FE-Buddy properties,
-/// the CRC ERAM defaults, the Region of Interest override - with its config, settings-block and
-/// validation plumbing.
+/// Base for a sub-service tab that writes GeoJSON (Airports, Airways, Departures, Arrivals):
+/// everything those tabs share - the alias file, which GeoJSON files are written, the FE-Buddy properties,
+/// the Region of Interest override, the files to upload to vNAS and the CRC ERAM defaults they
+/// carry - with its config, settings-block and validation plumbing.
 /// </summary>
 /// <remarks>
 /// <para>
 /// A derived tab builds <see cref="FebProperties"/> and the three CRC defaults lists in its
-/// constructor, calls <see cref="LoadSharedSettings"/> from <see cref="SubServiceSettingsViewModel.LoadFromConfig"/>,
+/// constructor, lists the files its settings write in <see cref="OutputFiles"/>, calls
+/// <see cref="LoadSharedSettings"/> from <see cref="SubServiceSettingsViewModel.LoadFromConfig"/>,
 /// <see cref="SaveSharedSettings"/> from <see cref="SubServiceSettingsViewModel.WriteToConfig"/>,
 /// <see cref="AddSharedSettings"/> from its settings block, and <see cref="ValidateSharedSettings"/>
 /// from <see cref="ServiceTabViewModel.Validate"/>.
@@ -29,26 +30,43 @@ namespace FeBuddy.Wpf.ViewModels.ServiceTabs;
 /// The ROI rule is the same for every sub-service: this tab's override wins, otherwise the
 /// shared default ROI (<see cref="DefaultRoiStore"/>), otherwise no geographic limit.
 /// </para>
+/// <para>
+/// The vNAS choices are kept as sets of file keys, including files the current settings do not
+/// write (the Symbols files while Symbols is off, say), so switching a file off and on again
+/// keeps its choice. Only the files actually written are shown, sent to a run, and have their CRC
+/// values required.
+/// </para>
 /// </remarks>
 public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
-	IOutputSettings, IFebPropertySettings, ICrcDefaultsSettings, IRoiOverrideSettings
+	IOutputSettings, IGeojsonFileChoices, IFebPropertySettings, IVnasUploadSettings, ICrcDefaultsSettings, IRoiOverrideSettings
 {
 	private const string CrcDefaultsIncompleteMessage =
-		"Some CRC ERAM default values are empty or invalid. Fix the marked boxes, or untick Include on that panel.";
+		"Some CRC ERAM default values are empty or invalid. Fix the marked boxes, or take CRC-ERAM defaults off those files on the Upload to vNAS card.";
+
+	private const string NoCrcFilesMessage =
+		"CRC-ERAM defaults are set to go on specific files, but none is ticked. Tick at least one, or choose No CRC-ERAM defaults.";
 
 	private const string OverrideRoiKey = "Roi.OverrideDefaultRoi";
 
 	// "Coordindates" is misspelled in every saved config, so the key keeps the spelling.
 	private const string OverrideCornersNode = "Roi.OverrideCoordindates";
 
+	private const string VnasFilesKey = "Vnas.UploadFiles";
+	private const string CrcDefaultsScopeKey = "Vnas.CrcDefaults";
+	private const string CrcFilesKey = "Vnas.CrcFiles";
+
+	private readonly HashSet<string> _vnasFiles = new(StringComparer.OrdinalIgnoreCase);
+	private readonly HashSet<string> _crcFiles = new(StringComparer.OrdinalIgnoreCase);
+	private readonly HashSet<(string ClassName, EramFieldKind Kind)> _crcRowsInUse = [];
+
 	private bool _generateAliasFile = true;
 	private bool _emitLines = true;
 	private bool _emitSymbols = true;
 	private bool _emitText = true;
 	private bool _includeFebCustomProperties;
-	private bool _includeCrcLineDefaults = true;
-	private bool _includeCrcSymbolDefaults = true;
-	private bool _includeCrcTextDefaults = true;
+	private CrcDefaultsScope _crcDefaultsScope = CrcDefaultsScope.None;
+	private string? _vnasFilesSignature;
+	private string? _crcFilesSignature;
 	private bool _overrideRoi;
 	private string _swLat = string.Empty;
 	private string _swLon = string.Empty;
@@ -107,37 +125,59 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 	/// <remarks>Built by the derived tab's constructor with <see cref="FebPropertyToggle.ListFor"/>.</remarks>
 	public ObservableCollection<FebPropertyToggle> FebProperties { get; protected init; } = [];
 
+	// ================= upload to vNAS =================
+
+	/// <inheritdoc />
+	public ObservableCollection<VnasFileRow> VnasFileRows { get; } = [];
+
+	/// <inheritdoc />
+	public bool HasOutputFiles => VnasFileRows.Count > 0;
+
+	/// <inheritdoc />
+	public bool HasVnasGeojsonFiles => UploadedFiles().Any(file => file.IsGeojson);
+
+	/// <inheritdoc />
+	public CrcDefaultsScope CrcDefaultsScope
+	{
+		get => _crcDefaultsScope;
+		set
+		{
+			if (SetProperty(ref _crcDefaultsScope, value))
+			{
+				OnPropertyChanged(nameof(IsCrcDefaultsSpecific));
+				MarkDirty();
+			}
+		}
+	}
+
+	/// <inheritdoc />
+	public bool IsCrcDefaultsSpecific => CrcDefaultsScope == CrcDefaultsScope.SpecificFiles;
+
+	/// <inheritdoc />
+	public ObservableCollection<VnasFileRow> CrcFileRows { get; } = [];
+
 	// ================= CRC ERAM defaults =================
 
-	/// <inheritdoc />
-	public bool IncludeCrcLineDefaults
-	{
-		get => _includeCrcLineDefaults;
-		set { if (SetProperty(ref _includeCrcLineDefaults, value)) MarkDirty(); }
-	}
-
-	/// <inheritdoc />
-	public bool IncludeCrcSymbolDefaults
-	{
-		get => _includeCrcSymbolDefaults;
-		set { if (SetProperty(ref _includeCrcSymbolDefaults, value)) MarkDirty(); }
-	}
-
-	/// <inheritdoc />
-	public bool IncludeCrcTextDefaults
-	{
-		get => _includeCrcTextDefaults;
-		set { if (SetProperty(ref _includeCrcTextDefaults, value)) MarkDirty(); }
-	}
-
-	/// <inheritdoc />
+	/// <summary>The Lines defaults: one row per class, in use or not. Built by the derived tab's constructor.</summary>
 	public ObservableCollection<EramClassDefault> LineDefaults { get; protected init; } = [];
 
-	/// <inheritdoc />
+	/// <summary>The Symbols defaults: one row per class, in use or not. Built by the derived tab's constructor.</summary>
 	public ObservableCollection<EramClassDefault> SymbolDefaults { get; protected init; } = [];
 
-	/// <inheritdoc />
+	/// <summary>The Text defaults: one row per class, in use or not. Built by the derived tab's constructor.</summary>
 	public ObservableCollection<EramClassDefault> TextDefaults { get; protected init; } = [];
+
+	/// <inheritdoc />
+	public bool HasCrcDefaultsInUse => _crcRowsInUse.Count > 0;
+
+	/// <inheritdoc />
+	public IReadOnlyList<EramClassDefault> LineDefaultsInUse => [.. LineDefaults.Where(IsCrcRowInUse)];
+
+	/// <inheritdoc />
+	public IReadOnlyList<EramClassDefault> SymbolDefaultsInUse => [.. SymbolDefaults.Where(IsCrcRowInUse)];
+
+	/// <inheritdoc />
+	public IReadOnlyList<EramClassDefault> TextDefaultsInUse => [.. TextDefaults.Where(IsCrcRowInUse)];
 
 	// ================= region of interest =================
 
@@ -197,9 +237,6 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 
 	// ================= for the derived tab =================
 
-	/// <summary>Whether this tab writes any GeoJSON at all; CRC defaults only apply when it does.</summary>
-	protected abstract bool WritesGeojson { get; }
-
 	/// <summary>
 	/// What <see cref="RoiFallbackHint"/> says when no default ROI is set: what the run covers
 	/// instead, e.g. that every airway is included.
@@ -212,10 +249,105 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 	/// </summary>
 	protected virtual (string Lines, string Symbols, string Text) EmitKeys => ("EmitLines", "EmitSymbols", "EmitText");
 
+	/// <summary>
+	/// Every file the tab's current settings write, in the order the Upload to vNAS card lists
+	/// them; files in the same <see cref="OutputFileOption.Group"/> share a row.
+	/// </summary>
+	/// <returns>The files, alias file last.</returns>
+	protected abstract IEnumerable<OutputFileOption> OutputFiles();
+
+	/// <summary>
+	/// Every file key the user has marked for vNAS or CRC-ERAM defaults, including files the
+	/// current settings do not write.
+	/// </summary>
+	protected IEnumerable<string> ChosenVnasFileKeys => _vnasFiles.Union(_crcFiles, StringComparer.OrdinalIgnoreCase);
+
 	/// <summary>Where a CRC defaults row is saved under this tab's config node.</summary>
 	/// <param name="row">The row.</param>
 	/// <returns>The row's key prefix, e.g. <c>CrcEramPropertyDefaults.Airports_Symbol</c>.</returns>
 	protected virtual string CrcConfigPrefix(EramClassDefault row) => $"CrcEramPropertyDefaults.{row.ClassName}_{row.Kind}";
+
+	/// <inheritdoc />
+	/// <remarks>Refreshes the vNAS and CRC cards first, so validation sees the files as they now are.</remarks>
+	protected override void MarkDirty()
+	{
+		RefreshVnasFiles();
+		base.MarkDirty();
+	}
+
+	/// <inheritdoc />
+	/// <remarks>Refreshes the vNAS and CRC cards first, so the snapshot and validation see the files as they now are.</remarks>
+	protected override void ClearDirty()
+	{
+		RefreshVnasFiles();
+		base.ClearDirty();
+	}
+
+	/// <summary>
+	/// Brings the Upload to vNAS and CRC ERAM Defaults cards in line with the current settings:
+	/// the files listed, the vNAS GeoJSON files offered for CRC-ERAM defaults, and the CRC rows in
+	/// use. Called on every change, so it rebuilds only what actually changed - a rebuilt row
+	/// would take the focus from the box the user is typing in.
+	/// </summary>
+	/// <remarks>
+	/// A derived tab calls this itself only when its file list changes outside a setting - when a
+	/// cycle-dependent list arrives while the tab has unsaved edits, say.
+	/// </remarks>
+	protected void RefreshVnasFiles()
+	{
+		List<OutputFileOption> files = [.. OutputFiles()];
+		string filesSignature = string.Join('|', files.Select(file => $"{file.Group}/{file.Key}"));
+		bool rebuilt = filesSignature != _vnasFilesSignature;
+
+		if (rebuilt)
+		{
+			_vnasFilesSignature = filesSignature;
+			VnasFileRows.Clear();
+
+			foreach (IGrouping<string, OutputFileOption> group in files.GroupBy(file => file.Group))
+			{
+				VnasFileRows.Add(new VnasFileRow(group.Key,
+				[
+					.. group.Select(file => new VnasFileToggle(
+						file, _vnasFiles.Contains(file.Key), _crcFiles.Contains(file.Key), OnVnasFileToggled)),
+				]));
+			}
+
+			OnPropertyChanged(nameof(HasOutputFiles));
+		}
+
+		// The CRC choices are the vNAS GeoJSON files, in the same rows and the same toggles.
+		List<VnasFileRow> crcRows = [.. VnasFileRows
+			.Select(row => new VnasFileRow(row.Label, [.. row.Files.Where(file => file.IsUploaded && file.IsGeojson)]))
+			.Where(row => row.Files.Count > 0)];
+		string crcSignature = string.Join('|', crcRows.SelectMany(row => row.Files).Select(file => file.Key));
+
+		if (rebuilt || crcSignature != _crcFilesSignature)
+		{
+			_crcFilesSignature = crcSignature;
+			CrcFileRows.Clear();
+
+			foreach (VnasFileRow row in crcRows)
+			{
+				CrcFileRows.Add(row);
+			}
+
+			OnPropertyChanged(nameof(HasVnasGeojsonFiles));
+		}
+
+		HashSet<(string ClassName, EramFieldKind Kind)> inUse = [.. CrcFiles().SelectMany(file => file.File.CrcRows)];
+
+		if (!inUse.SetEquals(_crcRowsInUse))
+		{
+			_crcRowsInUse.Clear();
+			_crcRowsInUse.UnionWith(inUse);
+
+			OnPropertyChanged(nameof(HasCrcDefaultsInUse));
+			OnPropertyChanged(nameof(LineDefaultsInUse));
+			OnPropertyChanged(nameof(SymbolDefaultsInUse));
+			OnPropertyChanged(nameof(TextDefaultsInUse));
+		}
+	}
 
 	/// <summary>
 	/// Restores the shared settings from config, without marking the tab dirty. Call from
@@ -228,15 +360,25 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 		_emitSymbols = GetBool(EmitKeys.Symbols, true);
 		_emitText = GetBool(EmitKeys.Text, true);
 		_includeFebCustomProperties = GetBool("IncludeFebCustomProperties", false);
-		_includeCrcLineDefaults = GetBool("IncludeCrcLineDefaults", true);
-		_includeCrcSymbolDefaults = GetBool("IncludeCrcSymbolDefaults", true);
-		_includeCrcTextDefaults = GetBool("IncludeCrcTextDefaults", true);
 
 		HashSet<string> selected = ParseList(Get("FebProperties"));
 		foreach (FebPropertyToggle toggle in FebProperties)
 		{
 			toggle.IsSelected = selected.Contains(toggle.Name);
 		}
+
+		_vnasFiles.Clear();
+		_vnasFiles.UnionWith(ParseList(Get(VnasFilesKey)));
+		_crcFiles.Clear();
+		_crcFiles.UnionWith(ParseList(Get(CrcFilesKey)));
+
+		// By name only; anything else (a number, a typo) falls back to no CRC-ERAM defaults.
+		string? savedScope = Get(CrcDefaultsScopeKey)?.Trim();
+		_crcDefaultsScope = Enum.GetValues<CrcDefaultsScope>()
+			.FirstOrDefault(scope => scope.ToString().Equals(savedScope, StringComparison.OrdinalIgnoreCase));
+
+		// Rebuild the toggles from the reloaded choices on the next refresh.
+		_vnasFilesSignature = null;
 
 		foreach (EramClassDefault row in AllCrcRows())
 		{
@@ -252,8 +394,7 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 		foreach (string name in new[]
 		{
 			nameof(GenerateAliasFile), nameof(EmitLines), nameof(EmitSymbols), nameof(EmitText),
-			nameof(IncludeFebCustomProperties),
-			nameof(IncludeCrcLineDefaults), nameof(IncludeCrcSymbolDefaults), nameof(IncludeCrcTextDefaults),
+			nameof(IncludeFebCustomProperties), nameof(CrcDefaultsScope), nameof(IsCrcDefaultsSpecific),
 			nameof(OverrideRoi), nameof(SwLat), nameof(SwLon), nameof(NeLat), nameof(NeLon),
 		})
 		{
@@ -272,9 +413,11 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 		Set(EmitKeys.Text, YesNo(EmitText));
 		Set("IncludeFebCustomProperties", YesNo(IncludeFebCustomProperties));
 		Set("FebProperties", SelectedFebPropertyNames());
-		Set("IncludeCrcLineDefaults", YesNo(IncludeCrcLineDefaults));
-		Set("IncludeCrcSymbolDefaults", YesNo(IncludeCrcSymbolDefaults));
-		Set("IncludeCrcTextDefaults", YesNo(IncludeCrcTextDefaults));
+
+		// Every choice, written or not, so a file switched off and on again keeps it.
+		Set(VnasFilesKey, string.Join(',', _vnasFiles.Order(StringComparer.OrdinalIgnoreCase)));
+		Set(CrcDefaultsScopeKey, CrcDefaultsScope.ToString());
+		Set(CrcFilesKey, string.Join(',', _crcFiles.Order(StringComparer.OrdinalIgnoreCase)));
 
 		foreach (EramClassDefault row in AllCrcRows())
 		{
@@ -289,17 +432,13 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 	}
 
 	/// <summary>
-	/// Adds the settings every GeoJSON sub-service's parser reads the same way: the output
-	/// folder, coordinate precision, alias file, file choices, FE-Buddy properties, CRC defaults
-	/// and region of interest.
+	/// Adds the settings every GeoJSON sub-service's parser reads the same way: coordinate
+	/// precision, alias file, file choices, FE-Buddy properties, the vNAS files, the CRC defaults
+	/// they need, and the region of interest. The AIRAC Service adds the output folder itself.
 	/// </summary>
 	/// <param name="settings">The settings block being built.</param>
-	/// <param name="outputDirectory">The run's resolved output directory.</param>
-	/// <param name="addFeBuddyOutputFolder">Whether to wrap output in a <c>FE-Buddy_Output</c> folder.</param>
-	protected void AddSharedSettings(Dictionary<string, string> settings, string outputDirectory, bool addFeBuddyOutputFolder)
+	protected void AddSharedSettings(Dictionary<string, string> settings)
 	{
-		settings["OutputDirectory"] = outputDirectory;
-		settings["AddFeBuddyOutputFolder"] = YesNo(addFeBuddyOutputFolder);
 		settings["CoordinatePrecision"] = OutputPreferences.CoordinatePrecision.ToString(CultureInfo.InvariantCulture);
 		settings["GenerateAliasFile"] = YesNo(GenerateAliasFile);
 		settings[EmitKeys.Lines] = YesNo(EmitLines);
@@ -307,13 +446,14 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 		settings[EmitKeys.Text] = YesNo(EmitText);
 		settings["IncludeFebCustomProperties"] = YesNo(IncludeFebCustomProperties);
 		settings["FebProperties"] = SelectedFebPropertyNames();
-		settings["IncludeCrcLineDefaults"] = YesNo(IncludeCrcLineDefaults);
-		settings["IncludeCrcSymbolDefaults"] = YesNo(IncludeCrcSymbolDefaults);
-		settings["IncludeCrcTextDefaults"] = YesNo(IncludeCrcTextDefaults);
 
-		// Only the rows whose file is written and whose Include box is ticked: the parser requires
-		// exactly those, and would only ignore any others.
-		foreach (EramClassDefault row in AllCrcRows().Where(IsCrcRowNeeded))
+		// Only files that are actually written, so the parser sees exactly what the run will do.
+		settings["UploadToVnas"] = string.Join(',', UploadedFiles().Select(file => file.Key));
+		settings["CrcDefaultsFor"] = string.Join(',', CrcFiles().Select(file => file.Key));
+
+		// Only the rows those files need: the parser requires exactly those, and would only
+		// ignore any others.
+		foreach (EramClassDefault row in AllCrcRows().Where(IsCrcRowInUse))
 		{
 			CrcDefaultsRowIo.AddToSettingsBlock(row, settings);
 		}
@@ -338,8 +478,8 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 	}
 
 	/// <summary>
-	/// Validates the shared settings: the FE-Buddy properties, the CRC defaults that are
-	/// actually needed, and the ROI override. Call from <see cref="ServiceTabViewModel.Validate"/>.
+	/// Validates the shared settings: the FE-Buddy properties, the CRC-ERAM choice, the CRC
+	/// defaults actually in use, and the ROI override. Call from <see cref="ServiceTabViewModel.Validate"/>.
 	/// </summary>
 	/// <param name="validation">The collector to add failures to.</param>
 	protected void ValidateSharedSettings(ServiceValidation validation)
@@ -349,11 +489,16 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 			validation.Add("FE-Buddy properties are on but none are selected. Pick at least one, or switch them off.");
 		}
 
-		// Only the rows whose file is written and whose Include box is ticked are needed; any
-		// other row is never read, so it is not held against the user.
+		if (IsCrcDefaultsSpecific && HasVnasGeojsonFiles && !CrcFiles().Any())
+		{
+			validation.Add(NoCrcFilesMessage);
+		}
+
+		// Only the rows a file that gets CRC-ERAM defaults needs; any other row is never read,
+		// so it is not held against the user.
 		foreach (EramClassDefault row in AllCrcRows())
 		{
-			row.IsRequired = IsCrcRowNeeded(row);
+			row.IsRequired = IsCrcRowInUse(row);
 		}
 
 		if (AllCrcRows().Any(row => row.IsRequired && row.HasMissingValues))
@@ -364,17 +509,13 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 		ValidateRoiOverride(validation);
 	}
 
-	/// <summary>The CRC ERAM defaults that apply, by file kind, for the Preview Settings tab.</summary>
-	/// <param name="linesName">What to call the Lines file, e.g. <c>Runway lines</c>.</param>
-	/// <returns>e.g. <c>Lines, Symbols</c>, or <c>None</c>.</returns>
-	protected string DescribeCrcDefaults(string linesName = "Lines")
-	{
-		List<string> kinds = [];
-		if (WritesGeojson && IncludeCrcLineDefaults && EmitLines) kinds.Add(linesName);
-		if (WritesGeojson && IncludeCrcSymbolDefaults && EmitSymbols) kinds.Add("Symbols");
-		if (WritesGeojson && IncludeCrcTextDefaults && EmitText) kinds.Add("Text");
-		return kinds.Count > 0 ? string.Join(", ", kinds) : "None";
-	}
+	/// <summary>The files going to vNAS, for the Preview Settings tab.</summary>
+	/// <returns>e.g. <c>Airways_High_Lines, Airways.txt</c>, or <c>None</c>.</returns>
+	protected string DescribeVnasFiles() => DescribeFiles(UploadedFiles());
+
+	/// <summary>The files that get CRC-ERAM defaults, for the Preview Settings tab.</summary>
+	/// <returns>e.g. <c>Airways_High_Lines</c>, or <c>None</c>.</returns>
+	protected string DescribeCrcDefaults() => DescribeFiles(CrcFiles());
 
 	/// <summary>The selected FE-Buddy properties, for the Preview Settings tab.</summary>
 	/// <returns>e.g. <c>faaId, name</c>, or <c>No</c> when they are off or none is selected.</returns>
@@ -402,12 +543,44 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 
 	private IEnumerable<EramClassDefault> AllCrcRows() => LineDefaults.Concat(SymbolDefaults).Concat(TextDefaults);
 
-	private bool IsCrcRowNeeded(EramClassDefault row) => WritesGeojson && row.Kind switch
+	private bool IsCrcRowInUse(EramClassDefault row) => _crcRowsInUse.Contains((row.ClassName, row.Kind));
+
+	/// <summary>The files marked for vNAS that the current settings actually write.</summary>
+	private IEnumerable<VnasFileToggle> UploadedFiles() =>
+		VnasFileRows.SelectMany(row => row.Files).Where(file => file.IsUploaded);
+
+	/// <summary>The files that actually get CRC-ERAM defaults: vNAS GeoJSON files, as <see cref="CrcDefaultsScope"/> says.</summary>
+	private IEnumerable<VnasFileToggle> CrcFiles() => CrcDefaultsScope switch
 	{
-		EramFieldKind.Line => EmitLines && IncludeCrcLineDefaults,
-		EramFieldKind.Symbol => EmitSymbols && IncludeCrcSymbolDefaults,
-		_ => EmitText && IncludeCrcTextDefaults,
+		CrcDefaultsScope.AllVnasFiles => UploadedFiles().Where(file => file.IsGeojson),
+		CrcDefaultsScope.SpecificFiles => UploadedFiles().Where(file => file.IsGeojson && file.HasCrcDefaults),
+		_ => [],
 	};
+
+	private static string DescribeFiles(IEnumerable<VnasFileToggle> files)
+	{
+		string[] names = [.. files.Select(file => file.File.DisplayName)];
+		return names.Length > 0 ? string.Join(", ", names) : "None";
+	}
+
+	private void OnVnasFileToggled(VnasFileToggle toggle)
+	{
+		SetMembership(_vnasFiles, toggle.Key, toggle.IsUploaded);
+		SetMembership(_crcFiles, toggle.Key, toggle.HasCrcDefaults);
+		MarkDirty();
+	}
+
+	private static void SetMembership(HashSet<string> set, string key, bool isMember)
+	{
+		if (isMember)
+		{
+			set.Add(key);
+		}
+		else
+		{
+			set.Remove(key);
+		}
+	}
 
 	private string SelectedFebPropertyNames() =>
 		string.Join(',', FebProperties.Where(p => p.IsSelected).Select(p => p.Name));

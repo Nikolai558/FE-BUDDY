@@ -1,13 +1,35 @@
+using System.Globalization;
+
 using FeBuddy.Core.Infrastructure.Nasr;
 
 namespace FeBuddy.UnitTests.Infrastructure.Nasr;
 
 /// <summary>
 /// Covers the value parsers every NASR parser leans on: a required number that is blank or
-/// malformed fails loudly naming the value, while the nullable forms quietly return null.
+/// malformed fails loudly naming the value, the nullable forms quietly return null, and every
+/// number reads the same whatever the PC's regional format.
 /// </summary>
 public sealed class NasrCsvReaderTests
 {
+	[Fact]
+	public void coordinates_read_the_same_under_a_german_regional_format()
+	{
+		// German writes 40,123456 and uses the period as a thousands separator, so a
+		// culture-sensitive parse would read NASR's 40.123456 as 40123456.
+		CultureInfo original = CultureInfo.CurrentCulture;
+		CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("de-DE");
+
+		try
+		{
+			Assert.Equal(40.123456, NasrCsvReader.ParseDouble("40.123456"));
+			Assert.Equal(-80.5, NasrCsvReader.ParseNullableDouble("-80.5"));
+		}
+		finally
+		{
+			CultureInfo.CurrentCulture = original;
+		}
+	}
+
 	[Theory]
 	[InlineData("")]
 	[InlineData("  ")]

@@ -159,6 +159,7 @@ public sealed class EramToGeojsonViewModel : FileConversionTabViewModel
 		{
 			nameof(LayoutByObject), nameof(LayoutByFilter),
 			nameof(DefaultsFromXml), nameof(DefaultsFromXmlThenCard), nameof(DefaultsFromCard), nameof(UsesCrcDefaults),
+			nameof(HasCrcDefaultsInUse),
 		})
 		{
 			OnPropertyChanged(name);

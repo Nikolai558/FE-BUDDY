@@ -27,9 +27,6 @@ public sealed class DepartureFilterTests
 		GenerateGeojson = true,
 		GenerateAliasFile = true,
 		IncludeFebCustomProperties = false,
-		IncludeCrcLineDefaults = false,
-		IncludeCrcSymbolDefaults = false,
-		IncludeCrcTextDefaults = false
 	};
 
 	private static DepartureProcedure Amended(string codeId, DateOnly amended) =>

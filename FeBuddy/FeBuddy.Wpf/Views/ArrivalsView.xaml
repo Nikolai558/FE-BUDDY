@@ -1,0 +1,125 @@
+<!--
+    ArrivalsView  -  the Arrivals sub-service tab inside the AIRAC Service screen.
+    Save / Undo / Previous / Next / Preview settings come from the tab host's shared
+    action bar, and the tab host owns the page's single scroller.
+-->
+<UserControl x:Class="FeBuddy.Wpf.Views.ArrivalsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:FeBuddy.Wpf.ViewModels"
+             xmlns:m="clr-namespace:FeBuddy.Wpf.ViewModels.Models"
+             xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
+             xmlns:cards="clr-namespace:FeBuddy.Wpf.Views.Cards"
+             xmlns:bhv="clr-namespace:FeBuddy.Wpf.Behaviors"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance vm:ArrivalsViewModel}"
+             d:DesignWidth="900" d:DesignHeight="1600">
+
+    <!-- No ScrollViewer here: the tab host owns the one page-level scroller
+         that every sub-service tab is laid out inside. A second scroller would
+         steal the wheel and hide the lower sections. -->
+    <StackPanel>
+
+            <TextBlock Text="{Binding ValidationError}" Style="{StaticResource Text.Caption}"
+                       Foreground="{StaticResource Brush.Danger}" TextWrapping="Wrap" Margin="0,0,0,12"
+                       MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
+                       Visibility="{Binding ValidationError, Converter={StaticResource StringToVis}}" />
+
+            <!-- ============ outputs ============ -->
+            <cards:OutputsCard GeojsonDescription="Writes the arrival procedure (STAR) GeoJSON files selected below."
+                               AliasFileName="Arrivals.txt"
+                               AliasDescription="Writes one alias command per airport and procedure that draws the procedure's points." />
+
+            <!-- ============ which GeoJSON files ============ -->
+            <cards:GeojsonFilesCard IsEnabled="{Binding GenerateGeojson}"
+                                    LinesDescription="One line feature per airport and procedure, shared segments drawn once."
+                                    SymbolsDescription="One symbol per point on the procedure."
+                                    TextDescription="A label per point showing its identifier."
+                                    Footnote="Files are written to Geojson\&lt;ARTCC&gt;\&lt;airport&gt;\ in the cycle's folder, next to that airport's departures, as &lt;airport&gt;_&lt;procedure&gt;_STAR_Lines/Symbols/Text.geojson." />
+
+            <!-- ============ FE-Buddy properties ============ -->
+            <cards:FebPropertiesCard IsEnabled="{Binding GenerateGeojson}" />
+
+            <!-- ============ procedures ============ -->
+            <ctl:Card Header="Procedures">
+                <StackPanel>
+                    <ctl:SectionHeader Style="{StaticResource SectionHeader.Group}" Label="ARTCCs" Margin="0,4,0,0" />
+                    <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
+                               Text="Pick the ARTCCs whose arrivals you want. Leave all unticked to include every ARTCC. A STAR shared by two ARTCCs follows each airport's own ARTCC." />
+                    <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap"
+                               MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
+                               Text="ARTCCs appear once the selected cycle's data is loaded."
+                               Visibility="{Binding HasArtccs, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
+                    <ItemsControl ItemsSource="{Binding Artccs}" IsEnabled="{Binding IsCycleReady}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="{x:Type m:ArtccToggle}">
+                                <CheckBox Content="{Binding Artcc}" IsChecked="{Binding IsSelected}" Margin="0,0,14,6" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <Button Content="Clear" Style="{StaticResource Button.Ghost}" HorizontalAlignment="Left"
+                            Margin="0,6,0,0" Command="{Binding ClearArtccsCommand}"
+                            Visibility="{Binding HasArtccs, Converter={StaticResource BoolToVis}}" />
+
+                    <!-- Amendment-date filter. One radio per mode; each mode's input is live only
+                         while its radio is checked, and keeps its value when another is picked. -->
+                    <ctl:SectionHeader Style="{StaticResource SectionHeader.Group}" Label="Amendment Date" Margin="0,14,0,0" />
+                    <RadioButton GroupName="ArrivalAmendment" Content="Any amendment date" Margin="0,6,0,0"
+                                 IsChecked="{Binding AmendmentAny, Mode=TwoWay}" />
+                    <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                        <RadioButton GroupName="ArrivalAmendment" Content="Amended within the last" VerticalAlignment="Center"
+                                     IsChecked="{Binding AmendmentByCycles, Mode=TwoWay}" />
+                        <TextBox Width="70" Margin="8,0" VerticalAlignment="Center"
+                                 IsEnabled="{Binding AmendmentByCycles}"
+                                 Text="{Binding AmendedWithinCycles, UpdateSourceTrigger=PropertyChanged}"
+                                 bhv:FieldState.Error="{Binding FieldErrors[AmendedWithinCycles]}" />
+                        <TextBlock Text="cycles" Style="{StaticResource Text.Body}" VerticalAlignment="Center" />
+                        <TextBlock Text="(1 = this cycle)" Style="{StaticResource Text.Caption}" VerticalAlignment="Center" Margin="6,0,0,0" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                        <RadioButton GroupName="ArrivalAmendment" Content="Amended within the last" VerticalAlignment="Center"
+                                     IsChecked="{Binding AmendmentByDays, Mode=TwoWay}" />
+                        <TextBox Width="70" Margin="8,0" VerticalAlignment="Center"
+                                 IsEnabled="{Binding AmendmentByDays}"
+                                 Text="{Binding AmendedWithinDays, UpdateSourceTrigger=PropertyChanged}"
+                                 bhv:FieldState.Error="{Binding FieldErrors[AmendedWithinDays]}" />
+                        <TextBlock Text="days" Style="{StaticResource Text.Body}" VerticalAlignment="Center" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                        <RadioButton GroupName="ArrivalAmendment" Content="Amended on or after" VerticalAlignment="Center"
+                                     IsChecked="{Binding AmendmentByDate, Mode=TwoWay}" />
+                        <DatePicker Width="160" Margin="8,0,0,0" VerticalAlignment="Center"
+                                    IsEnabled="{Binding AmendmentByDate}"
+                                    SelectedDate="{Binding AmendedOnOrAfter, Mode=TwoWay}" SelectedDateFormat="Short"
+                                    bhv:FieldState.Error="{Binding FieldErrors[AmendedOnOrAfter]}" />
+                    </StackPanel>
+                    <TextBlock Style="{StaticResource Text.Prose}" Margin="0,8,0,0"
+                               Text="Filters on the date the procedure's current amendment became effective. Days count back from today." />
+                </StackPanel>
+            </ctl:Card>
+
+            <!-- ============ region of interest ============ -->
+            <cards:RoiOverrideCard>
+                <cards:RoiOverrideCard.AdditionalContent>
+                    <StackPanel Margin="0,14,0,0" IsEnabled="{Binding HasRoi}">
+                        <ctl:SectionHeader Style="{StaticResource SectionHeader.Group}" Label="How the Region Selects Arrivals" />
+                        <RadioButton GroupName="ArrivalRoiMode" Content="Every arrival for an airport inside the region" Margin="0,6,0,0"
+                                     IsChecked="{Binding RoiModeAirport, Mode=TwoWay}" />
+                        <RadioButton GroupName="ArrivalRoiMode" Content="Any arrival with a point inside the region" Margin="0,3,0,0"
+                                     IsChecked="{Binding RoiModeWaypoint, Mode=TwoWay}" />
+                        <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,0"
+                                   Text="The region filters both the GeoJSON files and the alias file." />
+                    </StackPanel>
+                </cards:RoiOverrideCard.AdditionalContent>
+            </cards:RoiOverrideCard>
+
+            <!-- ============ upload to vNAS, then the CRC ERAM defaults those files carry ============ -->
+            <cards:VnasUploadCard />
+            <cards:CrcDefaultsCard LinesTitle="Arrivals — Lines" SymbolsTitle="Arrivals — Symbols" TextTitle="Arrivals — Text" />
+    </StackPanel>
+</UserControl>

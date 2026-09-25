@@ -21,10 +21,10 @@ public static class DatToGeojsonSettingsParser
 
 	/// <summary>
 	/// The keys only this conversion reads, on top of <see cref="SubServiceSettingsReader.CommonKeys"/>
-	/// and <see cref="ConversionSettingsReader.SourceKeys"/>.
+	/// and <see cref="ConversionSettingsReader.ConversionKeys"/>.
 	/// </summary>
 	private static readonly IReadOnlySet<string> OwnKeys = new HashSet<string>(
-		ConversionSettingsReader.SourceKeys.Append("CroppingDistance"), StringComparer.OrdinalIgnoreCase);
+		ConversionSettingsReader.ConversionKeys.Append("CroppingDistance"), StringComparer.OrdinalIgnoreCase);
 
 	/// <summary>A video map is lines only.</summary>
 	private static readonly IReadOnlyDictionary<string, CrcFeatureKind[]> CrcKindsByClass =
@@ -52,7 +52,7 @@ public static class DatToGeojsonSettingsParser
 		double? croppingDistance = SettingsValueReader.OptionalPositiveDecimal(settings, "CroppingDistance", MaxCroppingDistanceNm);
 
 		// Only a ticked Include box makes the Line defaults required.
-		bool includeLineDefaults = CrcDefaultsReader.ReadInclude(settings, CrcFeatureKind.Line);
+		bool includeLineDefaults = ConversionSettingsReader.ReadCrcInclude(settings, CrcFeatureKind.Line);
 		CrcLineDefaults? lineDefaults = includeLineDefaults
 			? CrcDefaultsReader.ReadLine(settings, $"Crc.{CrcClassName}.Line")
 			: null;

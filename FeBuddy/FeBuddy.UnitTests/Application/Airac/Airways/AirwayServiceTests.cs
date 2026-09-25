@@ -96,19 +96,24 @@ public sealed class AirwayServiceTests : IDisposable
 	[Fact]
 	public void run_with_crc_defaults_and_a_roi_draws_only_the_points_inside_it()
 	{
+		string everyFile = string.Join(',',
+			from cls in new[] { "High", "Low", "Other" }
+			from kind in new[] { "Lines", "Symbols", "Text" }
+			select $"Airways_{cls}_{kind}");
+
 		AirwayServiceResult result = AirwayService.Run(J1(), Settings(
 			[
-				.. CrcDefaults()
-,
+				.. CrcDefaults(),
 				.. SouthEastRoi,
-				("IncludeCrcLineDefaults", "Y"),
-				("IncludeCrcSymbolDefaults", "Y"),
-				("IncludeCrcTextDefaults", "Y"),
+				("UploadToVnas", everyFile),
+				("CrcDefaultsFor", everyFile),
 				("GenerateAliasFile", "N"),
 			]));
 
 		Assert.Equal(1, result.AirwayCount);
 		Assert.Empty(result.Warnings);
+		Assert.All(result.GeojsonFilesWritten, path =>
+			Assert.Equal(Path.Combine(_outputDirectory, "Upload_to_vNAS", "Geojson"), Path.GetDirectoryName(path)));
 
 		string symbols = Assert.Single(result.GeojsonFilesWritten, p => p.EndsWith("_Symbols.geojson", StringComparison.Ordinal));
 		JsonElement[] features = Features(symbols);

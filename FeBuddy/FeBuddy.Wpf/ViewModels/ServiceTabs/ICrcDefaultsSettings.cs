@@ -1,31 +1,23 @@
-using System.Collections.ObjectModel;
-
 using FeBuddy.Wpf.ViewModels.Models;
 
 namespace FeBuddy.Wpf.ViewModels.ServiceTabs;
 
 /// <summary>
-/// The CRC ERAM Defaults card (<c>Views/Cards/CrcDefaultsCard</c>): per file, whether its
-/// isDefaults Feature is written and the values it holds. A file's panel shows only while
-/// that file is being written, hence the <see cref="IGeojsonFileChoices"/> base.
+/// The CRC ERAM Defaults card (<c>Views/Cards/CrcDefaultsCard</c>): the values the isDefaults
+/// Features hold. Only the rows the vNAS files chosen for CRC-ERAM defaults need are shown (see
+/// <see cref="IVnasUploadSettings"/>); the rest keep their values but stay hidden.
 /// </summary>
-public interface ICrcDefaultsSettings : IGeojsonFileChoices
+public interface ICrcDefaultsSettings
 {
-	/// <summary>Write the CRC ERAM defaults into the <c>_Lines</c> file.</summary>
-	bool IncludeCrcLineDefaults { get; set; }
+	/// <summary>Whether any file gets CRC-ERAM defaults, so the card shows.</summary>
+	bool HasCrcDefaultsInUse { get; }
 
-	/// <summary>Write the CRC ERAM defaults into the <c>_Symbols</c> file.</summary>
-	bool IncludeCrcSymbolDefaults { get; set; }
+	/// <summary>The Lines defaults in use: one row per class (one column in the panel each).</summary>
+	IReadOnlyList<EramClassDefault> LineDefaultsInUse { get; }
 
-	/// <summary>Write the CRC ERAM defaults into the <c>_Text</c> file.</summary>
-	bool IncludeCrcTextDefaults { get; set; }
+	/// <summary>The Symbols defaults in use: one row per class.</summary>
+	IReadOnlyList<EramClassDefault> SymbolDefaultsInUse { get; }
 
-	/// <summary>The Lines defaults: one row per class (one column in the panel each).</summary>
-	ObservableCollection<EramClassDefault> LineDefaults { get; }
-
-	/// <summary>The Symbols defaults: one row per class.</summary>
-	ObservableCollection<EramClassDefault> SymbolDefaults { get; }
-
-	/// <summary>The Text defaults: one row per class.</summary>
-	ObservableCollection<EramClassDefault> TextDefaults { get; }
+	/// <summary>The Text defaults in use: one row per class.</summary>
+	IReadOnlyList<EramClassDefault> TextDefaultsInUse { get; }
 }

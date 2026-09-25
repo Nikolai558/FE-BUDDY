@@ -51,7 +51,7 @@ public sealed class EramClassDefault(string className, EramFieldKind kind, Actio
 	private string _yOffset = string.Empty;
 	private bool _isRequired;
 
-	/// <summary>The class this row is for: an airway altitude class (<c>High</c> / <c>Low</c> / <c>Other</c>) or a sub-service's single class (<c>Airports</c>, <c>Runways</c>, <c>Departures</c>).</summary>
+	/// <summary>The class this row is for: an airway altitude class (<c>High</c> / <c>Low</c> / <c>Other</c>) or a sub-service's single class (<c>Airports</c>, <c>Runways</c>, <c>Departures</c>, <c>Arrivals</c>).</summary>
 	public string ClassName { get; } = className;
 
 	/// <summary>Which block the row belongs to.</summary>

@@ -90,9 +90,12 @@ AIRAC Service screen                                   FeBuddy.Core
 Preview Settings ▸ Run AIRAC Service
   save any dirty tab (the user confirms)
   block if any tab is invalid
-  each tab: BuildSettingsBlock()  ── Dictionary<string,string> ──►  AiracService.RunAsync(settings)
+  each tab: BuildSettingsBlock()  ── Dictionary<string,string>
+  AiracService.HasExistingOutput?  ── AIRAC_<cycle> has files: ask Overwrite / Delete all / Cancel
+                                   ── AiracServiceSettings ─────►  AiracService.RunAsync(settings)
                                                                        gets the cycle's parsed data from the cache
-                                                                       for each block present:
+                                                                       deletes AIRAC_<cycle> first, if asked
+                                                                       for each block present, OutputDirectory = AIRAC_<cycle>:
                                                                          XxxService.Run(nasrData, block)
                                                                            1. XxxSettingsParser.Parse   block → typed settings (+ warnings)
                                                                            2. XxxBuilder                NASR rows → domain objects
@@ -112,6 +115,13 @@ Preview Settings ▸ Run AIRAC Service
   loses a whole run.
 - Progress arrives through `IProgress<AiracServiceProgress>`; each sub-service reports starting
   and finishing.
+- **One folder per cycle.** A run writes everything into `<output>[\FE-Buddy_Output]\AIRAC_<cycle>`
+  (`AiracServiceSettings.CycleOutputDirectory`): alias files in the folder itself, every GeoJSON
+  file in its `Geojson` folder, and the files marked for vNAS under `Upload_to_vNAS` instead, laid
+  out the same way (`AiracOutputPaths`). A sub-service only knows the folder it is given
+  (`OutputDirectory`), so it can be run on its own by the harness and the tests. If the folder
+  already has files, the GUI asks before the run: overwrite them, or have the service
+  permanently delete the folder first (`ExistingOutputAction`).
 
 ## Settings and persistence
 
@@ -134,12 +144,15 @@ and addressed by dotted paths (`Services.AiracService.Geojson.Airways.OutputBy`)
 
 - **CRC's three tiers.** CRC decides how a feature looks from, in order: the feature's own
   properties, the file's **isDefaults** feature, then CRC's built-in fallback. FE-Buddy writes one
-  isDefaults feature at the head of each file from the user's **CRC ERAM Defaults**
+  isDefaults feature at the head of a file from the user's **CRC ERAM Defaults**
   (`CrcFeatureFactory`), and only the properties that differ on individual features. Every value is
   validated (`CrcPropertyValidator`) first, so FE-Buddy never writes a value CRC cannot draw. See
   [CRC GeoJSON concepts](https://github.com/KCSanders7070/CRC_GeoJson_Concepts/blob/main/CRC_Geojsons.md).
-- **Defaults are never guessed.** An included panel with an empty value is a validation error, not a
-  silent default.
+- **CRC defaults only go on vNAS files.** CRC reads its maps from vNAS, so a file gets an
+  isDefaults feature only when the user marked it for vNAS and chose it for CRC-ERAM defaults
+  (`VnasFileChoices`, from the `UploadToVnas` and `CrcDefaultsFor` keys).
+- **Defaults are never guessed.** A CRC value a chosen file needs that is empty is a validation
+  error, not a silent default.
 - **`feb.*` properties** are FE-Buddy's own, camelCase, opt-in, and written only on the kind of
   feature they describe (`pointId` on points; `waypoints` and `rwyId` on lines). No lat/lon
   properties - the geometry carries them.
@@ -175,6 +188,23 @@ The FAA's data has quirks; these rules handle them. Each lives in one class.
   amendment digit removed (`DOTSS2.DOTSS` → `DOTSS`), matched against `AMENDMENT_NO` rather than cut
   at the first digit (`1U71.LUNDI` → `1U7`). With no usable code, the published name with
   everything but letters and digits removed (`O'HARE` → `OHARE`).
+- **Arrival naming** (`ArrivalNaming`). The same rule as a departure, but a STAR's computer code
+  reads `TRANSITION.PROCEDURE` - the reverse order - so `AALAN.BLAID2` → `BLAID` and `FIM.FERN7`
+  (published as `FERNANDO`) → `FERN`.
+- **Arrival direction.** A STAR is flown transition → body, the reverse of a departure's body →
+  transition order, so an arrival's points (Symbols, Text, and the alias command's fix list) list
+  every transition before the bodies, and the Lines file joins each transition to the body that
+  starts where it ends.
+- **A STAR shared by two ARTCCs** (`ArrivalProcedure.ArtccFor`). `STAR_BASE.ARTCC` can list two
+  centres (e.g. `ZDC ZNY` for ARLFT, serving 33N/DOV/ILG). Each served airport's copy belongs to
+  whichever of the listed ARTCCs is that airport's `APT_BASE.RESP_ARTCC_ID` (the first listed
+  ARTCC when neither matches) - which decides that copy's output folder, its `feb.artcc`, and
+  which ARTCC filter tick includes it, so ticking ZNY gives ARLFT at ILG only.
+- **STARs and SIDs can collide.** In the cycle effective 2026-09-03 the FAA's STAR data also lists
+  ORF's NUTIY and SWOPE departures. The GeoJSON files never clash - an arrival's file name always
+  carries `STAR` - but both alias files end up with the same command (`.orfNUTIYf`,
+  `.orfSWOPEf`). Printed as duplicates on purpose for now; see
+  [FAQ](../Users/FAQ-and-Troubleshooting.md#why-does-the-same-alias-command-show-up-in-both-departurestxt-and-arrivalstxt).
 
 ## Messages and logging
 

@@ -8,8 +8,18 @@ namespace FeBuddy.Core.Infrastructure.Nasr;
 /// Reads NASR CSV files: every row as a column-name dictionary, plus the value parsers the NASR
 /// parsers use on those fields.
 /// </summary>
+/// <remarks>
+/// NASR writes numbers with a period for the decimal point (<c>40.123456</c>), so the value
+/// parsers read them with the invariant culture, never the PC's regional format. Under a German
+/// format, for example, the period is a thousands separator and <c>40.123456</c> would read as
+/// 40,123,456.
+/// </remarks>
 public static class NasrCsvReader
 {
+	// .NET's own default styles for each type, so only the culture changes.
+	private const NumberStyles IntegerStyle = NumberStyles.Integer;
+	private const NumberStyles DecimalStyle = NumberStyles.Float | NumberStyles.AllowThousands;
+
 	/// <summary>
 	/// Reads every row of a CSV file with a header row, turning each into a value.
 	/// </summary>
@@ -89,7 +99,7 @@ public static class NasrCsvReader
 		if (string.IsNullOrWhiteSpace(value))
 			throw new ArgumentNullException(nameof(value), "Expected non-null or non-empty string for int parsing.");
 
-		if (!int.TryParse(value, out int result))
+		if (!int.TryParse(value, IntegerStyle, CultureInfo.InvariantCulture, out int result))
 			throw new FormatException($"Invalid integer format: '{value}'");
 
 		return result;
@@ -100,7 +110,7 @@ public static class NasrCsvReader
 	/// <returns>The integer, or <see langword="null"/> when the field is blank or not an integer.</returns>
 	public static int? ParseNullableInt(string value)
 	{
-		return int.TryParse(value, out int result) ? result : (int?)null;
+		return int.TryParse(value, IntegerStyle, CultureInfo.InvariantCulture, out int result) ? result : (int?)null;
 	}
 
 	/// <summary>Parses a required decimal field.</summary>
@@ -113,7 +123,7 @@ public static class NasrCsvReader
 		if (string.IsNullOrWhiteSpace(value))
 			throw new ArgumentNullException(nameof(value), "Expected non-null or non-empty string for double parsing.");
 
-		if (!double.TryParse(value, out double result))
+		if (!double.TryParse(value, DecimalStyle, CultureInfo.InvariantCulture, out double result))
 			throw new FormatException($"Invalid double format: '{value}'");
 
 		return result;
@@ -124,7 +134,7 @@ public static class NasrCsvReader
 	/// <returns>The number, or <see langword="null"/> when the field is blank or not a number.</returns>
 	public static double? ParseNullableDouble(string value)
 	{
-		return double.TryParse(value, out double result) ? result : (double?)null;
+		return double.TryParse(value, DecimalStyle, CultureInfo.InvariantCulture, out double result) ? result : (double?)null;
 	}
 
 

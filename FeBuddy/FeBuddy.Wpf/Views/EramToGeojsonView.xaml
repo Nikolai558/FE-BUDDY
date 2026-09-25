@@ -66,8 +66,10 @@
         </ctl:Card>
 
         <!-- ============ CRC ERAM defaults (only while the card is a source) ============ -->
-        <cards:CrcDefaultsCard LinesTitle="GeoMap — Lines" SymbolsTitle="GeoMap — Symbols" TextTitle="GeoMap — Text"
-                               Visibility="{Binding UsesCrcDefaults, Converter={StaticResource BoolToVis}}" />
+        <cards:CrcDefaultsCard LinesTitle="GeoMap — Lines" SymbolsTitle="GeoMap — Symbols" TextTitle="GeoMap — Text" ShowInclude="True"
+                               IncludeLines="{Binding IncludeCrcLineDefaults}" IncludeSymbols="{Binding IncludeCrcSymbolDefaults}"
+                               IncludeText="{Binding IncludeCrcTextDefaults}"
+                               Note="The values written as the isDefaults feature at the top of each converted file. Untick Include on a panel to leave its defaults out." />
 
         <!-- ============ run ============ -->
         <cards:RunCard Blocker="{Binding RunBlocker}"

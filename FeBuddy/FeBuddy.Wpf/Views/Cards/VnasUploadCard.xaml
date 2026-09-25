@@ -1,0 +1,87 @@
+<!--
+    VnasUploadCard  -  the Upload to vNAS card every GeoJSON sub-service tab shows near its end,
+    once the files themselves are set up: a row per file group with a box per file the tab's
+    settings write, then - once a GeoJSON file is ticked - which of the vNAS files get CRC-ERAM
+    defaults. The CRC ERAM Defaults card below it then shows the values those files need. Binds
+    to the tab's view model through IVnasUploadSettings.
+
+    A file ticked here is written under AIRAC_<cycle>\Upload_to_vNAS instead of the usual folder.
+
+    Usage:
+        <cards:VnasUploadCard />
+-->
+<UserControl x:Class="FeBuddy.Wpf.Views.Cards.VnasUploadCard"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:m="clr-namespace:FeBuddy.Wpf.ViewModels.Models"
+             xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
+             xmlns:tabs="clr-namespace:FeBuddy.Wpf.ViewModels.ServiceTabs"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance tabs:IVnasUploadSettings}"
+             d:DesignWidth="820">
+    <UserControl.Resources>
+        <!-- One row: its label on the left, then a box per file. The two lists differ only in
+             which of the toggle's two choices the box sets. -->
+        <ItemsPanelTemplate x:Key="FileBoxes">
+            <WrapPanel />
+        </ItemsPanelTemplate>
+
+        <DataTemplate x:Key="UploadRow" DataType="{x:Type m:VnasFileRow}">
+            <DockPanel Margin="0,2">
+                <TextBlock DockPanel.Dock="Left" Width="120" Text="{Binding Label}"
+                           Style="{StaticResource Text.FieldLabel}" VerticalAlignment="Center" />
+                <ItemsControl ItemsSource="{Binding Files}" ItemsPanel="{StaticResource FileBoxes}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="{x:Type m:VnasFileToggle}">
+                            <CheckBox Content="{Binding Label}" IsChecked="{Binding IsUploaded}" Margin="0,3,14,3" />
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </DockPanel>
+        </DataTemplate>
+
+        <DataTemplate x:Key="CrcRow" DataType="{x:Type m:VnasFileRow}">
+            <DockPanel Margin="0,2">
+                <TextBlock DockPanel.Dock="Left" Width="120" Text="{Binding Label}"
+                           Style="{StaticResource Text.FieldLabel}" VerticalAlignment="Center" />
+                <ItemsControl ItemsSource="{Binding Files}" ItemsPanel="{StaticResource FileBoxes}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="{x:Type m:VnasFileToggle}">
+                            <CheckBox Content="{Binding Label}" IsChecked="{Binding HasCrcDefaults}" Margin="0,3,14,3" />
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </DockPanel>
+        </DataTemplate>
+    </UserControl.Resources>
+
+    <ctl:Card Header="Upload to vNAS">
+        <StackPanel>
+            <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
+                       Text="Tick the files you will upload to vNAS. They are written to the cycle's Upload_to_vNAS folder instead of the usual one, so they are ready to upload." />
+
+            <TextBlock Style="{StaticResource Text.Caption}" Text="This tab's settings write no files yet."
+                       Visibility="{Binding HasOutputFiles, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
+            <ItemsControl ItemsSource="{Binding VnasFileRows}" ItemTemplate="{StaticResource UploadRow}" />
+
+            <!-- The follow-up, once a GeoJSON file is going to vNAS: CRC defaults only ever go on
+                 vNAS files, since CRC reads its maps from vNAS. -->
+            <StackPanel Margin="0,14,0,0"
+                        Visibility="{Binding HasVnasGeojsonFiles, Converter={StaticResource BoolToVis}}">
+                <ctl:SectionHeader Style="{StaticResource SectionHeader.Group}" Label="CRC-ERAM Default Properties" />
+                <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,6"
+                           Text="Write CRC-ERAM defaults into the GeoJSON files going to vNAS? You set their values on the CRC ERAM Defaults card below." />
+                <RadioButton GroupName="VnasCrcDefaults" Content="No CRC-ERAM defaults" Margin="0,3"
+                             IsChecked="{Binding CrcDefaultsScope, Converter={StaticResource EnumToBool}, ConverterParameter=None}" />
+                <RadioButton GroupName="VnasCrcDefaults" Content="Every GeoJSON file going to vNAS" Margin="0,3"
+                             IsChecked="{Binding CrcDefaultsScope, Converter={StaticResource EnumToBool}, ConverterParameter=AllVnasFiles}" />
+                <RadioButton GroupName="VnasCrcDefaults" Content="Specific files" Margin="0,3"
+                             IsChecked="{Binding CrcDefaultsScope, Converter={StaticResource EnumToBool}, ConverterParameter=SpecificFiles}" />
+                <ItemsControl Margin="20,4,0,0" ItemsSource="{Binding CrcFileRows}" ItemTemplate="{StaticResource CrcRow}"
+                              Visibility="{Binding IsCrcDefaultsSpecific, Converter={StaticResource BoolToVis}}" />
+            </StackPanel>
+        </StackPanel>
+    </ctl:Card>
+</UserControl>

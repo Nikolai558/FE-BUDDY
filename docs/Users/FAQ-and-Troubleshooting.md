@@ -10,9 +10,18 @@ the FAA has published it (a few weeks before it takes effect).
 
 ### Where are my files?
 
-In your output folder: Settings ▸ **Default Output Directory**, inside a `FE-Buddy_Output` folder
-if that option is on. After a run, **Open output folder** on the Review tab takes you straight
-there. The [user guide](User-Guide.md#output-files) shows the full folder layout.
+In an `AIRAC_<cycle>` folder (for example `AIRAC_2610`) in your output folder: Settings ▸
+**Default Output Directory**, inside a `FE-Buddy_Output` folder if that option is on. GeoJSON
+files are in its `Geojson` folder, and anything you marked for vNAS is in its `Upload_to_vNAS`
+folder. After a run, **Open output folder** on the Review tab takes you straight there. The
+[user guide](User-Guide.md#output-files) shows the full folder layout.
+
+### FE-Buddy says the cycle has already been run
+
+The cycle's `AIRAC_<cycle>` folder already has files from an earlier run. Pick **Overwrite files**
+(the default) to write over them - any old file this run does not write stays - or **Delete all
+files** to empty the folder first so it holds only this run's files. Deleted files do not go to
+the Recycle Bin. **Cancel** stops the run.
 
 ### Why does Windows show a different version number for FE-Buddy?
 
@@ -32,6 +41,14 @@ may be broken.
 
 No. It downloads the FAA's public data, checks GitHub for updates and news, and writes files on
 your PC. Your settings stay in `%APPDATA%\FE-Buddy\UserConfig.json`.
+
+### Why does the same alias command show up in both Departures.txt and Arrivals.txt?
+
+For the cycle effective 2026-09-03, the FAA's data lists ORF's NUTIY and SWOPE departures as STARs
+too, so FE-Buddy writes `.orfNUTIYf` and `.orfSWOPEf` into both alias files. Their GeoJSON files
+do not clash - the Arrivals ones carry `STAR` in the name - but if you load both alias files, each
+of those two commands is defined twice. This comes from the FAA data, and FE-Buddy leaves it as it
+is for now.
 
 ### Do I still need FE-Buddy 2.x?
 
@@ -57,7 +74,13 @@ checks again every time it starts.
 
 A red tab has a setting that is missing or invalid. Open it: the field is outlined in red, and
 hovering it tells you what is wrong. The most common one is an empty box in **CRC ERAM Defaults**:
-fill every box on the panel, or untick **Include** on that panel.
+fill every box shown, or take CRC-ERAM defaults off those files on the **Upload to vNAS** card.
+
+### My GeoJSON files have no CRC ERAM defaults
+
+CRC-ERAM defaults are only written into files marked for vNAS - CRC reads its maps from vNAS, so
+anywhere else they would never be used. Tick the file on the **Upload to vNAS** card, then choose
+which of those files get defaults.
 
 ### A file I expected is missing
 

@@ -1,5 +1,6 @@
 using FeBuddy.Core.Application.Airac.Airways;
 using FeBuddy.Core.Application.Airac.Airways.Models;
+using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Domain.Airways.Models;
 
 using FeBuddy.UnitTests.Application.Airac.Airways.Fixtures;
@@ -7,8 +8,8 @@ using FeBuddy.UnitTests.Application.Airac.Airways.Fixtures;
 namespace FeBuddy.UnitTests.Application.Airac.Airways;
 
 /// <summary>
-/// Covers the alias file's rename to <c>Airways.txt</c>, the <see cref="AliasRoiScope"/>
-/// toggle, and the "Add FE-Buddy_Output folder" preference.
+/// Covers the <c>Airways.txt</c> alias file: where it goes (the output folder, or
+/// <c>Upload_to_vNAS</c> when marked for vNAS) and the <see cref="AliasRoiScope"/> toggle.
 /// </summary>
 public sealed class AirwayAliasWriterTests : IDisposable
 {
@@ -30,7 +31,7 @@ public sealed class AirwayAliasWriterTests : IDisposable
 		}
 	}
 
-	private AirwaySettings Settings(bool addWrapper = true, AliasRoiScope scope = AliasRoiScope.All, RegionOfInterest? roi = null) => new()
+	private AirwaySettings Settings(bool uploadToVnas = false, AliasRoiScope scope = AliasRoiScope.All, RegionOfInterest? roi = null) => new()
 	{
 		OutputDirectory = _outputDirectory,
 		OutputBy = AirwayGeojsonOutputBy.None,
@@ -39,10 +40,7 @@ public sealed class AirwayAliasWriterTests : IDisposable
 		FebProperties = [],
 		GenerateAliasFile = true,
 		SplitAtAntimeridian = true,
-		IncludeCrcLineDefaults = false,
-		IncludeCrcSymbolDefaults = false,
-		IncludeCrcTextDefaults = false,
-		AddFeBuddyOutputFolder = addWrapper,
+		Vnas = uploadToVnas ? new VnasFileChoices([AirwayOutputFiles.Alias], []) : VnasFileChoices.None,
 		AliasRoiScope = scope,
 		Roi = roi,
 	};
@@ -77,9 +75,6 @@ public sealed class AirwayAliasWriterTests : IDisposable
 			FebProperties = [],
 			GenerateAliasFile = false,
 			SplitAtAntimeridian = true,
-			IncludeCrcLineDefaults = false,
-			IncludeCrcSymbolDefaults = false,
-			IncludeCrcTextDefaults = false,
 			Roi = roi,
 		};
 
@@ -87,22 +82,20 @@ public sealed class AirwayAliasWriterTests : IDisposable
 	}
 
 	[Fact]
-	public void the_alias_file_is_named_airways_txt_under_the_febuddy_output_wrapper()
+	public void the_alias_file_is_airways_txt_in_the_output_folder_itself()
 	{
 		AirwayAliasGenerateResult result = AirwayAliasWriter.Generate(BuildTwoAirways(), Settings());
 
-		Assert.NotNull(result.FilePath);
-		Assert.Equal("Airways.txt", Path.GetFileName(result.FilePath));
-		Assert.Contains(Path.Combine("FE-Buddy_Output", "Airways", "Alias"), result.FilePath!);
+		Assert.Equal(Path.Combine(_outputDirectory, "Airways.txt"), result.FilePath);
 	}
 
 	[Fact]
-	public void turning_off_the_wrapper_writes_straight_into_the_output_directory()
+	public void an_alias_file_marked_for_vnas_goes_in_upload_to_vnas()
 	{
-		AirwayAliasGenerateResult result = AirwayAliasWriter.Generate(BuildTwoAirways(), Settings(addWrapper: false));
+		AirwayAliasGenerateResult result = AirwayAliasWriter.Generate(BuildTwoAirways(), Settings(uploadToVnas: true));
 
-		Assert.DoesNotContain("FE-Buddy_Output", result.FilePath!);
-		Assert.Equal(Path.Combine(_outputDirectory, "Airways", "Alias", "Airways.txt"), result.FilePath);
+		Assert.Equal(Path.Combine(_outputDirectory, "Upload_to_vNAS", "Airways.txt"), result.FilePath);
+		Assert.False(File.Exists(Path.Combine(_outputDirectory, "Airways.txt")));
 	}
 
 	[Fact]

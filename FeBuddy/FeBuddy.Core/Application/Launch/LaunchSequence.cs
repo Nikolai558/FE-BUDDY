@@ -5,7 +5,6 @@ using FeBuddy.Core.Application.News;
 using FeBuddy.Core.Application.News.Models;
 using FeBuddy.Core.Application.Updates;
 using FeBuddy.Core.Application.Updates.Models;
-using FeBuddy.Core.Domain.Airac;
 using FeBuddy.Core.Domain.Airac.Models;
 using FeBuddy.Core.Infrastructure.Configuration;
 using FeBuddy.Core.Infrastructure.FileSystem;
@@ -80,7 +79,7 @@ public static class LaunchSequence
 		// AppEnvironment the moment it finishes - a fast check is never held up behind the slow
 		// AIRAC pipeline. RunStepAsync catches every exception, so WhenAll cannot fault.
 		Task<VersionCheckResult> versionTask = CheckVersionAsync(currentVersion, time, progress, cancellationToken);
-		Task airacTask = PrepareAiracAsync(time, progress, cancellationToken);
+		Task airacTask = PrepareAiracAsync(progress, cancellationToken);
 		Task<NewsCheckResult> newsTask = CheckNewsAsync(time, progress, cancellationToken);
 
 		await Task.WhenAll(versionTask, airacTask, newsTask).ConfigureAwait(false);
@@ -116,19 +115,18 @@ public static class LaunchSequence
 		return version;
 	}
 
-	// Probe, download and parse the previous, current and next AIRAC cycles.
+	// Probe, download and parse the previous, current and next AIRAC cycles, as of the time
+	// check just published to AppEnvironment.
 	private static Task PrepareAiracAsync(
-		UtcTimeCheckResult time,
 		IProgress<LaunchProgress>? progress,
 		CancellationToken cancellationToken) =>
 		RunStepAsync(
 			progress, LaunchStep.PrepareAiracData, "Preparing AIRAC data (download + parse)",
 			async () =>
 			{
-				DateOnly asOfUtc = DateOnly.FromDateTime(time.UtcNow);
-				AiracCycleInfo previous = AiracCycleResolver.GetCycle(AiracCyclePosition.Previous, asOfUtc);
-				AiracCycleInfo current = AiracCycleResolver.GetCycle(AiracCyclePosition.Current, asOfUtc);
-				AiracCycleInfo next = AiracCycleResolver.GetCycle(AiracCyclePosition.Next, asOfUtc);
+				AiracCycleInfo previous = AppEnvironment.GetAiracCycle(AiracCyclePosition.Previous);
+				AiracCycleInfo current = AppEnvironment.GetAiracCycle(AiracCyclePosition.Current);
+				AiracCycleInfo next = AppEnvironment.GetAiracCycle(AiracCyclePosition.Next);
 
 				await AiracCycleDataCache.Instance
 					.PrepareCyclesAsync(previous, current, next, cancellationToken)

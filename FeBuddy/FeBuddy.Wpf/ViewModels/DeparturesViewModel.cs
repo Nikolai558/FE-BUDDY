@@ -7,8 +7,11 @@ using FeBuddy.Wpf.ViewModels.Models;
 using FeBuddy.Wpf.ViewModels.ServiceTabs.Models;
 using FeBuddy.Wpf.ViewModels.ServiceTabs;
 
+using FeBuddy.Core.Application.Airac;
+using FeBuddy.Core.Application.Airac.Departures;
 using FeBuddy.Core.Application.Airac.Departures.Models;
 using FeBuddy.Core.Application.Airac.Models;
+using FeBuddy.Core.Domain.Crc.Models;
 using FeBuddy.Core.Infrastructure.Nasr.Models;
 
 namespace FeBuddy.Wpf.ViewModels;
@@ -88,11 +91,47 @@ public sealed class DeparturesViewModel : GeojsonSubServiceViewModel, ISubServic
 		(GenerateGeojson ? 1 : 0) + (GenerateAliasFile ? 1 : 0);
 
 	/// <inheritdoc />
-	protected override bool WritesGeojson => GenerateGeojson;
-
-	/// <inheritdoc />
 	protected override string NoDefaultRoiHint =>
 		"No default ROI is set, so every departure procedure is included. Set one in Settings, or override it here.";
+
+	/// <inheritdoc />
+	/// <remarks>
+	/// A run writes a set of files per airport and procedure - often thousands - so they are
+	/// chosen by kind: one row for every procedure's Lines, Symbols and Text, then the alias file.
+	/// </remarks>
+	protected override IEnumerable<OutputFileOption> OutputFiles()
+	{
+		if (GenerateGeojson)
+		{
+			if (EmitLines)
+			{
+				yield return GeojsonFiles(CrcFeatureKind.Line, EramFieldKind.Line);
+			}
+
+			if (EmitSymbols)
+			{
+				yield return GeojsonFiles(CrcFeatureKind.Symbol, EramFieldKind.Symbol);
+			}
+
+			if (EmitText)
+			{
+				yield return GeojsonFiles(CrcFeatureKind.Text, EramFieldKind.Text);
+			}
+		}
+
+		if (GenerateAliasFile)
+		{
+			yield return OutputFileOption.AliasFile(DepartureOutputFiles.Alias);
+		}
+	}
+
+	private static OutputFileOption GeojsonFiles(CrcFeatureKind kind, EramFieldKind field)
+	{
+		string suffix = AiracOutputPaths.FileKindSuffix(kind);
+		return new OutputFileOption(
+			DepartureOutputFiles.KeyFor(kind), "Every procedure", suffix, $"every procedure's {suffix} file",
+			IsGeojson: true, [(CrcClassName, field)]);
+	}
 
 	// ================= procedures =================
 
@@ -222,7 +261,7 @@ public sealed class DeparturesViewModel : GeojsonSubServiceViewModel, ISubServic
 	}
 
 	/// <inheritdoc />
-	public IReadOnlyDictionary<string, string> BuildSettingsBlock(string outputDirectory, bool addFeBuddyOutputFolder)
+	public IReadOnlyDictionary<string, string> BuildSettingsBlock()
 	{
 		Dictionary<string, string> s = new(StringComparer.OrdinalIgnoreCase)
 		{
@@ -247,7 +286,7 @@ public sealed class DeparturesViewModel : GeojsonSubServiceViewModel, ISubServic
 				break;
 		}
 
-		AddSharedSettings(s, outputDirectory, addFeBuddyOutputFolder);
+		AddSharedSettings(s);
 		return s;
 	}
 
@@ -272,9 +311,10 @@ public sealed class DeparturesViewModel : GeojsonSubServiceViewModel, ISubServic
 			new ServicePreviewRow("Outputs", string.Join(", ", outputs)),
 			new ServicePreviewRow("GeoJSON files", GenerateGeojson ? string.Join(", ", geojsonFiles) : "No"),
 			new ServicePreviewRow("FE-Buddy properties", DescribeFebProperties()),
-			new ServicePreviewRow("CRC ERAM defaults", DescribeCrcDefaults()),
 			new ServicePreviewRow("Includes", DescribeScope(selectedArtccs)),
 			new ServicePreviewRow("Region of interest", DescribeRegion()),
+			new ServicePreviewRow("Upload to vNAS", DescribeVnasFiles()),
+			new ServicePreviewRow("CRC ERAM defaults", DescribeCrcDefaults()),
 		];
 
 		return [new ServicePreviewSection("Departures", rows)];

@@ -115,9 +115,6 @@ public sealed class AirwayGeojsonFebPropertiesTests : IDisposable
 			FebProperties = febProperties,
 			GenerateAliasFile = false,
 			SplitAtAntimeridian = true,
-			IncludeCrcLineDefaults = false,
-			IncludeCrcSymbolDefaults = false,
-			IncludeCrcTextDefaults = false,
 			Roi = null,
 		};
 

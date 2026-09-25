@@ -14,8 +14,8 @@ namespace FeBuddy.UnitTests.Application.Airac.Departures;
 
 /// <summary>
 /// Runs the whole Departures pipeline (<see cref="DepartureService.Run"/>) against the DOTSS2
-/// fixture and checks what lands on disk: the three GeoJSON files per airport + procedure, the
-/// alias file, and the warnings when there is nothing to write.
+/// fixture and checks what lands on disk, and where: the three GeoJSON files per airport +
+/// procedure, the alias file, the vNAS folder, and the warnings when there is nothing to write.
 /// </summary>
 public sealed class DepartureServiceTests : IDisposable
 {
@@ -45,10 +45,10 @@ public sealed class DepartureServiceTests : IDisposable
 		return settings;
 	}
 
-	private string ProcedureDirectory(bool feBuddyOutputFolder = true) =>
-		feBuddyOutputFolder
-			? Path.Combine(_outputDirectory, "FE-Buddy_Output", "Departure Procedures", "ZLA", "LAX")
-			: Path.Combine(_outputDirectory, "Departure Procedures", "ZLA", "LAX");
+	private string ProcedureDirectory(bool uploadToVnas = false) =>
+		uploadToVnas
+			? Path.Combine(_outputDirectory, "Upload_to_vNAS", "Geojson", "ZLA", "LAX")
+			: Path.Combine(_outputDirectory, "Geojson", "ZLA", "LAX");
 
 	[Fact]
 	public void run_writes_lines_symbols_and_text_for_each_airport_procedure_plus_the_alias_file()
@@ -71,9 +71,7 @@ public sealed class DepartureServiceTests : IDisposable
 		Assert.Equal(DepartureTestData.DotssFixes.Count, result.GeojsonFeatureCountsByFile[text]);
 
 		Assert.Equal(1, result.AliasCommandCount);
-		Assert.Equal(
-			Path.Combine(_outputDirectory, "FE-Buddy_Output", "Departure Procedures", "Alias", "Departures.txt"),
-			result.AliasFilePath);
+		Assert.Equal(Path.Combine(_outputDirectory, "Departures.txt"), result.AliasFilePath);
 		Assert.StartsWith(".laxDOTSSf .FF DLREY ", File.ReadAllText(result.AliasFilePath!));
 	}
 
@@ -81,9 +79,8 @@ public sealed class DepartureServiceTests : IDisposable
 	public void run_puts_crc_defaults_first_and_feb_properties_on_every_feature_when_asked()
 	{
 		DepartureServiceResult result = DepartureService.Run(DepartureTestData.Dotss(), Settings(
-			("IncludeCrcLineDefaults", "Y"),
-			("IncludeCrcSymbolDefaults", "Y"),
-			("IncludeCrcTextDefaults", "Y"),
+			("UploadToVnas", "Departures_Lines,Departures_Symbols,Departures_Text"),
+			("CrcDefaultsFor", "Departures_Lines,Departures_Symbols,Departures_Text"),
 			("Crc.Departures.Line.bcg", "3"), ("Crc.Departures.Line.filters", "3"),
 			("Crc.Departures.Line.style", "solid"), ("Crc.Departures.Line.thickness", "1"),
 			("Crc.Departures.Symbol.bcg", "3"), ("Crc.Departures.Symbol.filters", "3"),
@@ -118,15 +115,23 @@ public sealed class DepartureServiceTests : IDisposable
 	}
 
 	[Fact]
-	public void run_without_the_fe_buddy_output_folder_writes_straight_under_the_output_directory()
+	public void a_kind_marked_for_vnas_goes_under_upload_to_vnas_in_its_artcc_and_airport_folders()
 	{
 		DepartureServiceResult result = DepartureService.Run(DepartureTestData.Dotss(), Settings(
-			("AddFeBuddyOutputFolder", "N"),
-			("EmitSymbols", "N"),
+			("UploadToVnas", "Departures_Lines,Departures.txt"),
 			("EmitText", "N")));
 
-		Assert.Equal([Path.Combine(ProcedureDirectory(feBuddyOutputFolder: false), "LAX_DOTSS_Lines.geojson")], result.GeojsonFilesWritten);
-		Assert.Equal(Path.Combine(_outputDirectory, "Departure Procedures", "Alias", "Departures.txt"), result.AliasFilePath);
+		Assert.Equal(
+			[
+				Path.Combine(ProcedureDirectory(uploadToVnas: true), "LAX_DOTSS_Lines.geojson"),
+				Path.Combine(ProcedureDirectory(), "LAX_DOTSS_Symbols.geojson"),
+			],
+			result.GeojsonFilesWritten);
+		Assert.Equal(Path.Combine(_outputDirectory, "Upload_to_vNAS", "Departures.txt"), result.AliasFilePath);
+
+		// Uploaded without defaults: the procedure's one Feature, and no isLineDefaults before it.
+		using JsonDocument lines = JsonDocument.Parse(File.ReadAllText(result.GeojsonFilesWritten[0]));
+		Assert.Single(lines.RootElement.GetProperty("features").EnumerateArray());
 	}
 
 	[Fact]

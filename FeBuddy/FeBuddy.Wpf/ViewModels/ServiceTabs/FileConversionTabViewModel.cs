@@ -156,47 +156,63 @@ public abstract class FileConversionTabViewModel : ConversionTabViewModel, ISour
 
 	// ================= CRC ERAM defaults =================
 
-	/// <inheritdoc />
+	/// <summary>Whether the Line defaults are written (the Lines panel's Include box).</summary>
 	public bool IncludeCrcLineDefaults
 	{
 		get => _includeCrcLineDefaults;
 		set { if (SetProperty(ref _includeCrcLineDefaults, value)) MarkDirty(); }
 	}
 
-	/// <inheritdoc />
+	/// <summary>Whether the Symbol defaults are written (the Symbols panel's Include box).</summary>
 	public bool IncludeCrcSymbolDefaults
 	{
 		get => _includeCrcSymbolDefaults;
 		set { if (SetProperty(ref _includeCrcSymbolDefaults, value)) MarkDirty(); }
 	}
 
-	/// <inheritdoc />
+	/// <summary>Whether the Text defaults are written (the Text panel's Include box).</summary>
 	public bool IncludeCrcTextDefaults
 	{
 		get => _includeCrcTextDefaults;
 		set { if (SetProperty(ref _includeCrcTextDefaults, value)) MarkDirty(); }
 	}
 
-	/// <inheritdoc />
-	/// <remarks>Every conversion writes lines; always <see langword="true"/>, which keeps the Lines panel on the card.</remarks>
+	/// <summary>Every conversion writes lines; always <see langword="true"/>.</summary>
 	public bool EmitLines { get => true; set { } }
 
-	/// <inheritdoc />
-	/// <remarks>Whether the conversion writes symbols; fixed by the tab, and decides whether the Symbols panel shows.</remarks>
+	/// <summary>Whether the conversion writes symbols; fixed by the tab.</summary>
 	public bool EmitSymbols { get => SymbolDefaults.Count > 0; set { } }
 
-	/// <inheritdoc />
-	/// <remarks>Whether the conversion writes labels; fixed by the tab, and decides whether the Text panel shows.</remarks>
+	/// <summary>Whether the conversion writes labels; fixed by the tab.</summary>
 	public bool EmitText { get => TextDefaults.Count > 0; set { } }
 
-	/// <inheritdoc />
+	/// <summary>The Line defaults: one row, for the conversion's CRC class.</summary>
 	public ObservableCollection<EramClassDefault> LineDefaults { get; }
 
-	/// <inheritdoc />
+	/// <summary>The Symbol defaults: one row, or none when the conversion writes no symbols.</summary>
 	public ObservableCollection<EramClassDefault> SymbolDefaults { get; }
 
-	/// <inheritdoc />
+	/// <summary>The Text defaults: one row, or none when the conversion writes no labels.</summary>
 	public ObservableCollection<EramClassDefault> TextDefaults { get; }
+
+	/// <inheritdoc />
+	/// <remarks>
+	/// While the card is in use (<see cref="UsesCrcDefaults"/>). A conversion has no Upload to vNAS
+	/// card: each panel's Include box picks whether its kind gets the defaults.
+	/// </remarks>
+	public bool HasCrcDefaultsInUse => UsesCrcDefaults;
+
+	/// <inheritdoc />
+	/// <remarks>Always the Lines row: every conversion writes lines.</remarks>
+	public IReadOnlyList<EramClassDefault> LineDefaultsInUse => LineDefaults;
+
+	/// <inheritdoc />
+	/// <remarks>Empty, hiding the panel, when the conversion writes no symbols.</remarks>
+	public IReadOnlyList<EramClassDefault> SymbolDefaultsInUse => SymbolDefaults;
+
+	/// <inheritdoc />
+	/// <remarks>Empty, hiding the panel, when the conversion writes no labels.</remarks>
+	public IReadOnlyList<EramClassDefault> TextDefaultsInUse => TextDefaults;
 
 	/// <summary>
 	/// Whether the CRC ERAM Defaults card is in use. Always, unless a tab takes its defaults from

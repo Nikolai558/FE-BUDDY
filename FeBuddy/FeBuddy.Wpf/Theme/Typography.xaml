@@ -1,7 +1,7 @@
 <!--
     Typography.xaml  -  type ramp.
     ===========================================================================
-    Two families, matching the reference site:
+    Two families:
       * Display / headings : Montserrat (heavy, condensed feel)
       * Body / UI          : Jost (geometric humanist sans)
     Neither ships with Windows. Drop the .ttf files into /Assets/Fonts and change
@@ -10,8 +10,8 @@
     Until then the comma-separated fallbacks (Segoe UI / Arial) keep everything
     legible, so the app runs on a clean machine with no extra install.
 
-    WPF's TextBlock has no letter-spacing; the reference's tight display tracking
-    is approximated purely with weight + size. If it ever matters, switch the
+    WPF's TextBlock has no letter-spacing; tight display tracking is approximated
+    purely with weight + size. If it ever matters, switch the
     display TextBlocks to <Glyphs> or a custom run.
 
     Every style is x:Key'd (no implicit TextBlock style) so intent is explicit at
@@ -19,7 +19,8 @@
 -->
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                    xmlns:sys="clr-namespace:System;assembly=mscorlib">
+                    xmlns:sys="clr-namespace:System;assembly=mscorlib"
+                    xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls">
 
     <FontFamily x:Key="Font.Display">Montserrat, Segoe UI, Arial</FontFamily>
     <FontFamily x:Key="Font.Body">Jost, Segoe UI, Arial</FontFamily>
@@ -43,7 +44,7 @@
 
     <!-- ======================= DISPLAY / HEADINGS ===================== -->
 
-    <!-- Hero number/plates on the dashboard. -->
+    <!-- Large display text: the biggest heading size. -->
     <Style x:Key="Text.Display" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{DynamicResource Font.Display}" />
         <Setter Property="FontSize" Value="42" />
@@ -93,7 +94,7 @@
         <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Primary}" />
     </Style>
 
-    <!-- Tiny uppercase section label ("ONLINE ATC", "OUTPUT MODE"). -->
+    <!-- Tiny uppercase section label ("OUTPUT MODE"). -->
     <!-- Multi-sentence explanatory copy: wraps, and stops at the prose measure so
          it stays readable when the window is maximised. Short one-line labels and
          values keep Text.Body / Text.Caption - capping those would do nothing but

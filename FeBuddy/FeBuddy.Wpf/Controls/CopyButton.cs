@@ -11,53 +11,56 @@ namespace FeBuddy.Wpf.Controls;
 /// </summary>
 public sealed class CopyButton : Button
 {
-    public static readonly DependencyProperty ValueProperty = DependencyProperty.Register(
-        nameof(Value), typeof(string), typeof(CopyButton), new PropertyMetadata(string.Empty));
+	/// <summary>Identifies the <see cref="Value"/> dependency property.</summary>
+	public static readonly DependencyProperty ValueProperty = DependencyProperty.Register(
+		nameof(Value), typeof(string), typeof(CopyButton), new PropertyMetadata(string.Empty));
 
-    private static readonly DependencyPropertyKey CopiedKey = DependencyProperty.RegisterReadOnly(
-        nameof(Copied), typeof(bool), typeof(CopyButton), new PropertyMetadata(false));
+	private static readonly DependencyPropertyKey CopiedKey = DependencyProperty.RegisterReadOnly(
+		nameof(Copied), typeof(bool), typeof(CopyButton), new PropertyMetadata(false));
 
-    public static readonly DependencyProperty CopiedProperty = CopiedKey.DependencyProperty;
+	/// <summary>Identifies the read-only <see cref="Copied"/> dependency property.</summary>
+	public static readonly DependencyProperty CopiedProperty = CopiedKey.DependencyProperty;
 
-    public CopyButton()
-    {
-        Click += OnClick;
-        ToolTip = "Copy";
-    }
+	/// <summary>Creates the button with its "Copy" tooltip.</summary>
+	public CopyButton()
+	{
+		Click += OnClick;
+		ToolTip = "Copy";
+	}
 
-    /// <summary>Text placed on the clipboard when clicked.</summary>
-    public string? Value
-    {
-        get => (string?)GetValue(ValueProperty);
-        set => SetValue(ValueProperty, value);
-    }
+	/// <summary>Text placed on the clipboard when clicked.</summary>
+	public string? Value
+	{
+		get => (string?)GetValue(ValueProperty);
+		set => SetValue(ValueProperty, value);
+	}
 
-    /// <summary>True for ~1 s after a successful copy.</summary>
-    public bool Copied => (bool)GetValue(CopiedProperty);
+	/// <summary><see langword="true"/> for about a second after a successful copy.</summary>
+	public bool Copied => (bool)GetValue(CopiedProperty);
 
-    private void OnClick(object sender, RoutedEventArgs e)
-    {
-        if (string.IsNullOrEmpty(Value))
-        {
-            return;
-        }
+	private void OnClick(object sender, RoutedEventArgs e)
+	{
+		if (string.IsNullOrEmpty(Value))
+		{
+			return;
+		}
 
-        try
-        {
-            Clipboard.SetText(Value);
-        }
-        catch
-        {
-            return; // clipboard can be locked by another process
-        }
+		try
+		{
+			Clipboard.SetText(Value);
+		}
+		catch
+		{
+			return; // clipboard can be locked by another process
+		}
 
-        SetValue(CopiedKey, true);
-        var timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1.1) };
-        timer.Tick += (_, _) =>
-        {
-            timer.Stop();
-            SetValue(CopiedKey, false);
-        };
-        timer.Start();
-    }
+		SetValue(CopiedKey, true);
+		var timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1.1) };
+		timer.Tick += (_, _) =>
+		{
+			timer.Stop();
+			SetValue(CopiedKey, false);
+		};
+		timer.Start();
+	}
 }

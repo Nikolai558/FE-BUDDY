@@ -17,7 +17,7 @@
     <!-- No ScrollViewer here: the tab host owns the one page-level scroller. -->
     <StackPanel>
 
-        <!-- waiting / unavailable banner (remediation plan 2.5) -->
+        <!-- waiting / unavailable banner -->
         <ctl:Card Style="{StaticResource Card.Warn}"
                   Visibility="{Binding IsReady, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}">
             <TextBlock Text="{Binding WaitingMessage}" Style="{StaticResource Text.Prose}" />

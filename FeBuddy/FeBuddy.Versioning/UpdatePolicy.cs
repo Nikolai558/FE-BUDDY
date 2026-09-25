@@ -1,3 +1,5 @@
+using System;
+
 namespace FeBuddy.Versioning;
 
 /// <summary>
@@ -16,8 +18,14 @@ public static class UpdatePolicy
 	/// <param name="installed">The installed version, or <see langword="null"/> for a fresh install.</param>
 	/// <param name="candidate">The version about to be installed.</param>
 	/// <returns><see langword="true"/> if the transition is allowed.</returns>
+	/// <exception cref="ArgumentNullException"><paramref name="candidate"/> is <see langword="null"/>.</exception>
 	public static bool IsTransitionAllowed(ProductVersion? installed, ProductVersion candidate)
 	{
+		if (candidate is null)
+		{
+			throw new ArgumentNullException(nameof(candidate));
+		}
+
 		// Nothing installed (fresh install) - always allowed.
 		if (installed is null)
 		{

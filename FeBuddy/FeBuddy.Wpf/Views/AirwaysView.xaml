@@ -1,7 +1,7 @@
 <!--
     AirwaysView  -  the Airways sub-service tab inside the AIRAC Service screen.
-    Save / Undo / Previous / Next / Review come from the tab host's shared action
-    bar, and the tab host owns the page's single scroller.
+    Save / Undo / Previous / Next / Preview settings come from the tab host's shared
+    action bar, and the tab host owns the page's single scroller.
 -->
 <UserControl x:Class="FeBuddy.Wpf.Views.AirwaysView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -10,7 +10,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:FeBuddy.Wpf.ViewModels"
              xmlns:m="clr-namespace:FeBuddy.Wpf.ViewModels.Models"
-             xmlns:awy="clr-namespace:FeBuddy.Core.Models.Services.Airac.Airways;assembly=FeBuddy.Core"
+             xmlns:awy="clr-namespace:FeBuddy.Core.Application.Airac.Airways.Models;assembly=FeBuddy.Core"
              xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
              xmlns:cards="clr-namespace:FeBuddy.Wpf.Views.Cards"
              mc:Ignorable="d"
@@ -26,8 +26,8 @@
     </UserControl.Resources>
 
     <!-- No ScrollViewer here: the tab host owns the one page-level scroller
-         that every sub-service tab is laid out inside (theme fixes P3a).
-         A second scroller stole the wheel and hid the lower sections. -->
+         that every sub-service tab is laid out inside. A second scroller would
+         steal the wheel and hide the lower sections. -->
     <StackPanel>
 
             <TextBlock Text="{Binding ValidationError}" Style="{StaticResource Text.Caption}"
@@ -74,10 +74,10 @@
             <!-- ============ FE-Buddy properties ============ -->
             <cards:FebPropertiesCard IsEnabled="{Binding IsGeojsonOutputOn}" />
 
-            <!-- ============ CRC ERAM defaults (7.4) ============ -->
+            <!-- ============ CRC ERAM defaults ============ -->
             <cards:CrcDefaultsCard IsEnabled="{Binding IsGeojsonOutputOn}" />
 
-            <!-- ============ designations (7.4) ============ -->
+            <!-- ============ designations ============ -->
             <ctl:Card Header="Designations to Include">
                 <StackPanel>
                     <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
@@ -107,7 +107,7 @@
                 </StackPanel>
             </ctl:Card>
 
-            <!-- ============ antimeridian (7.8) ============ -->
+            <!-- ============ antimeridian ============ -->
             <ctl:Card Header="Split GeoJSON at the Antimeridian" IsEnabled="{Binding IsGeojsonOutputOn}">
                 <StackPanel>
                     <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
@@ -116,7 +116,7 @@
                 </StackPanel>
             </ctl:Card>
 
-            <!-- ============ region of interest (7.7) ============ -->
+            <!-- ============ region of interest ============ -->
             <cards:RoiOverrideCard />
     </StackPanel>
 </UserControl>

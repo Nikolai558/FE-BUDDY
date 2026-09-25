@@ -1,7 +1,6 @@
 <!--
-    InfoView  -  real resource links only (remediation plan Phase 10), laid out
-    as a card grid (theme fixes P8): the old single ~280px card left most of the
-    page empty and read as unfinished.
+    InfoView  -  links to the manual, change log and issue tracker, laid out as a
+    card grid so the page fills its width.
 -->
 <UserControl x:Class="FeBuddy.Wpf.Views.InfoView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -20,7 +19,7 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <!-- pinned page header (P4) -->
+        <!-- pinned page header -->
         <Grid Grid.Row="0" Background="{StaticResource Brush.Bg.Base}">
             <TextBlock Text="Info" Style="{StaticResource Text.Display}" Margin="28,24,28,14" />
             <Border Style="{StaticResource Divider}" VerticalAlignment="Bottom" />

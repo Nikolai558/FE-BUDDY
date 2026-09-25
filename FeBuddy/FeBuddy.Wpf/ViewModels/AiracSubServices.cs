@@ -1,4 +1,4 @@
-using FeBuddy.Wpf.Infrastructure;
+using FeBuddy.Wpf.ViewModels.ServiceTabs.Models;
 
 namespace FeBuddy.Wpf.ViewModels;
 
@@ -10,8 +10,8 @@ namespace FeBuddy.Wpf.ViewModels;
 /// <para>
 /// This list is the only place a sub-service is registered. Adding one means adding an entry here
 /// and a tab view-model for it; the General tab's picker, the tab rail, the save contract and the
-/// Review tab all pick it up with no further changes. The list is expected to grow to roughly
-/// twenty entries.
+/// Preview Settings tab all pick it up with no further changes. The list is expected to grow to
+/// roughly twenty entries.
 /// </para>
 /// <para>
 /// <see cref="SubServiceDescriptor.Key"/> is persisted in <c>UserConfig</c> under
@@ -23,20 +23,20 @@ namespace FeBuddy.Wpf.ViewModels;
 /// </remarks>
 public static class AiracSubServices
 {
-    /// <summary>The Airports sub-service key.</summary>
-    public const string AirportsKey = "Airports";
+	/// <summary>The Airports sub-service key.</summary>
+	public const string AirportsKey = "Airports";
 
-    /// <summary>The Airways sub-service key.</summary>
-    public const string AirwaysKey = "Airways";
+	/// <summary>The Airways sub-service key.</summary>
+	public const string AirwaysKey = "Airways";
 
-    /// <summary>The Departures sub-service key.</summary>
-    public const string DeparturesKey = "Departures";
+	/// <summary>The Departures sub-service key.</summary>
+	public const string DeparturesKey = "Departures";
 
-    /// <summary>Every sub-service, in the order the picker and the tab rail show them.</summary>
-    public static IReadOnlyList<SubServiceDescriptor> All { get; } = new[]
-    {
-        new SubServiceDescriptor(AirportsKey, "Airports", 10, true, () => new AirportsViewModel()),
-        new SubServiceDescriptor(AirwaysKey, "Airways", 20, true, () => new AirwaysViewModel()),
-        new SubServiceDescriptor(DeparturesKey, "Departures", 30, true, () => new DeparturesViewModel()),
-    };
+	/// <summary>Every sub-service, in the order the picker and the tab rail show them.</summary>
+	public static IReadOnlyList<SubServiceDescriptor> All { get; } =
+	[
+		new SubServiceDescriptor(AirportsKey, "Airports", 10, true, () => new AirportsViewModel()),
+		new SubServiceDescriptor(AirwaysKey, "Airways", 20, true, () => new AirwaysViewModel()),
+		new SubServiceDescriptor(DeparturesKey, "Departures", 30, true, () => new DeparturesViewModel()),
+	];
 }

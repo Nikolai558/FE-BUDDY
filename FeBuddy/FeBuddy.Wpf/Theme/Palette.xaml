@@ -41,14 +41,11 @@
     <Color x:Key="Color.Text.Primary">#F2F5F7</Color>
     <Color x:Key="Color.Text.Secondary">#B7C6D3</Color>   <!-- body copy: clears AA on Card -->
     <Color x:Key="Color.Text.Tertiary">#8B9DAD</Color>    <!-- quiet metadata: ~4.5:1 on Card -->
-    <!-- de-emphasised metadata only; the darker pre-bump value if ever needed -->
-    <Color x:Key="Color.Text.Faint">#68798A</Color>
     <Color x:Key="Color.Text.OnAccent">#10161C</Color>   <!-- dark text on the amber button -->
 
     <SolidColorBrush x:Key="Brush.Text.Primary"   Color="{StaticResource Color.Text.Primary}" />
     <SolidColorBrush x:Key="Brush.Text.Secondary" Color="{StaticResource Color.Text.Secondary}" />
     <SolidColorBrush x:Key="Brush.Text.Tertiary"  Color="{StaticResource Color.Text.Tertiary}" />
-    <SolidColorBrush x:Key="Brush.Text.Faint"     Color="{StaticResource Color.Text.Faint}" />
     <SolidColorBrush x:Key="Brush.Text.OnAccent"  Color="{StaticResource Color.Text.OnAccent}" />
 
     <!-- ============================ ACCENT ============================ -->
@@ -59,7 +56,7 @@
     <SolidColorBrush x:Key="Brush.Accent"        Color="{StaticResource Color.Accent}" />
     <SolidColorBrush x:Key="Brush.Accent.Bright" Color="{StaticResource Color.Accent.Bright}" />
     <SolidColorBrush x:Key="Brush.Accent.Text"   Color="{StaticResource Color.Accent.Text}" />
-    <!-- Translucent amber fills for pills / selected nav / focus ring. -->
+    <!-- Translucent amber fills for chips / selected nav / focus ring. -->
     <SolidColorBrush x:Key="Brush.Accent.Soft"   Color="#24FDC518" />
     <SolidColorBrush x:Key="Brush.Accent.Line"   Color="#66FDC518" />
     <SolidColorBrush x:Key="Brush.FocusRing"     Color="#8CFDC518" />
@@ -68,12 +65,10 @@
     <Color x:Key="Color.Positive">#34D399</Color>
     <Color x:Key="Color.Warn">#FBBF5C</Color>
     <Color x:Key="Color.Danger">#F26D6D</Color>
-    <Color x:Key="Color.Info">#7CC7F2</Color>
 
     <SolidColorBrush x:Key="Brush.Positive" Color="{StaticResource Color.Positive}" />
     <SolidColorBrush x:Key="Brush.Warn"     Color="{StaticResource Color.Warn}" />
     <SolidColorBrush x:Key="Brush.Danger"   Color="{StaticResource Color.Danger}" />
-    <SolidColorBrush x:Key="Brush.Info"     Color="{StaticResource Color.Info}" />
 
     <SolidColorBrush x:Key="Brush.Positive.Soft" Color="#1F34D399" />
     <SolidColorBrush x:Key="Brush.Warn.Soft"     Color="#1FFBBF5C" />
@@ -84,10 +79,7 @@
     <CornerRadius x:Key="Radius.Card">16</CornerRadius>
     <CornerRadius x:Key="Radius.Control">10</CornerRadius>
     <CornerRadius x:Key="Radius.Small">7</CornerRadius>
-    <!-- Chips / badges / status highlights: a soft-cornered rectangle, never an oval
-         (remediation plan 4.4). Radius.Pill stays only for genuine pill controls
-         (segmented selectors, toggle pills). -->
+    <!-- Chips / badges / status highlights: a soft-cornered rectangle, never an oval. -->
     <CornerRadius x:Key="Radius.Chip">6</CornerRadius>
-    <CornerRadius x:Key="Radius.Pill">999</CornerRadius>
 
 </ResourceDictionary>

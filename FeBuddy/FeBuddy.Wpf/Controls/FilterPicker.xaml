@@ -9,7 +9,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             xmlns:infra="clr-namespace:FeBuddy.Wpf.Infrastructure"
+             xmlns:bhv="clr-namespace:FeBuddy.Wpf.Behaviors"
              mc:Ignorable="d"
              x:Name="Self"
              d:DesignWidth="160" d:DesignHeight="34">
@@ -29,7 +29,7 @@
                             Padding="11,7"
                             SnapsToDevicePixels="True">
                         <DockPanel>
-                            <TextBlock DockPanel.Dock="Right" Text="&#xE70D;"
+                            <TextBlock DockPanel.Dock="Right" Text="{DynamicResource Icon.Chevron.Down}"
                                        FontFamily="{DynamicResource Font.Icon}" FontSize="10"
                                        Foreground="{DynamicResource Brush.Text.Tertiary}"
                                        VerticalAlignment="Center" Margin="8,0,0,0" />
@@ -41,9 +41,9 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <!-- Same validation-failure look as the TextBox and ComboBox styles, read
-                             from infra:FieldState.Error set on the FilterPicker itself. Declared
+                             from bhv:FieldState.Error set on the FilterPicker itself. Declared
                              first so the open / focused accent still wins while it is in use. -->
-                        <DataTrigger Binding="{Binding (infra:FieldState.HasError), ElementName=Self}" Value="True">
+                        <DataTrigger Binding="{Binding (bhv:FieldState.HasError), ElementName=Self}" Value="True">
                             <Setter TargetName="Box" Property="BorderBrush" Value="{DynamicResource Brush.Danger}" />
                             <Setter TargetName="Box" Property="Background" Value="{DynamicResource Brush.Danger.Soft}" />
                         </DataTrigger>

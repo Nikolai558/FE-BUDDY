@@ -1,3 +1,8 @@
+using FeBuddy.Core.Application.Airac.Airports.Models;
+using FeBuddy.Core.Application.Airac.Airways.Models;
+using FeBuddy.Core.Application.Airac.Departures.Models;
+using FeBuddy.Core.Infrastructure.Configuration;
+
 namespace FeBuddy.Harness;
 
 /// <summary>
@@ -13,7 +18,7 @@ internal static class HarnessSettings
 	/// <summary>Directory the services write output under (see FE-Buddy_Output/Airways/..., FE-Buddy_Output/Airports/...).</summary>
 	public const string OutputDirectory = @"C:\Users\ksand\Downloads\FE-Buddy-Output";
 
-	/// <summary>Mirrors <c>FeBuddy.Core.Configuration.DevMode.IsEnabled</c> for this run.</summary>
+	/// <summary>Mirrors <c>DevMode.IsEnabled</c> for this run.</summary>
 	public const bool DevMode = true;
 
 	/// <summary>
@@ -213,14 +218,14 @@ internal static class HarnessSettings
 	/// <param name="settings">The dictionary being built.</param>
 	/// <param name="symbolBcg">Airport symbol BCG group, 1-40.</param>
 	/// <param name="symbolFilters">Airport symbol filters, comma-separated, each 0-40, at least one.</param>
-	/// <param name="symbolStyle">Airport symbol style, one of <c>CrcGeojsonPropertyValidator.ValidSymbolStyles</c>.</param>
+	/// <param name="symbolStyle">Airport symbol style, one of <c>CrcPropertyValidator.ValidSymbolStyles</c>.</param>
 	/// <param name="symbolSize">Airport symbol size, 1-4.</param>
 	/// <param name="textBcg">Airport text BCG group, 1-40.</param>
 	/// <param name="textFilters">Airport text filters, comma-separated, each 0-40, at least one.</param>
 	/// <param name="textSize">Airport text size, 0-5.</param>
 	/// <param name="lineBcg">Runway line BCG group, 1-40.</param>
 	/// <param name="lineFilters">Runway line filters, comma-separated, each 0-40, at least one.</param>
-	/// <param name="lineStyle">Runway line style, one of <c>CrcGeojsonPropertyValidator.ValidLineStyles</c>.</param>
+	/// <param name="lineStyle">Runway line style, one of <c>CrcPropertyValidator.ValidLineStyles</c>.</param>
 	/// <param name="lineThickness">Runway line thickness, 1-3.</param>
 	private static void AddAirportCrcDefaults(
 		Dictionary<string, string> settings,
@@ -265,11 +270,11 @@ internal static class HarnessSettings
 	/// <param name="settings">The dictionary being built.</param>
 	/// <param name="lineBcg">Line BCG group, 1-40.</param>
 	/// <param name="lineFilters">Line filters, comma-separated, each 0-40, at least one.</param>
-	/// <param name="lineStyle">Line style, one of <c>CrcGeojsonPropertyValidator.ValidLineStyles</c>.</param>
+	/// <param name="lineStyle">Line style, one of <c>CrcPropertyValidator.ValidLineStyles</c>.</param>
 	/// <param name="lineThickness">Line thickness, 1-3.</param>
 	/// <param name="symbolBcg">Symbol BCG group, 1-40.</param>
 	/// <param name="symbolFilters">Symbol filters, comma-separated, each 0-40, at least one.</param>
-	/// <param name="symbolStyle">Symbol style, one of <c>CrcGeojsonPropertyValidator.ValidSymbolStyles</c>.</param>
+	/// <param name="symbolStyle">Symbol style, one of <c>CrcPropertyValidator.ValidSymbolStyles</c>.</param>
 	/// <param name="symbolSize">Symbol size, 1-4.</param>
 	/// <param name="textBcg">Text BCG group, 1-40.</param>
 	/// <param name="textFilters">Text filters, comma-separated, each 0-40, at least one.</param>

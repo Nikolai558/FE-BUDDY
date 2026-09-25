@@ -31,7 +31,7 @@
         </Border>
 
         <!-- coordinates: scrolls if the host doesn't have room, rather than pushing the
-             Cancel / Set ROI bar below (P4's "pinned header" pattern, applied to a footer). -->
+             Cancel / Set ROI bar below off screen (the pinned-footer row after it). -->
         <!-- MaxHeight caps this row's own Auto-sizing so the Grid never lets it demand more
              than this - without a cap, an Auto row always sizes to its content's full desired
              height, so the ScrollViewer inside would never be given less room than it wants and
@@ -45,8 +45,8 @@
                      page's 320px sidebar, where a two-pair-per-row layout ran the boxes off the
                      edge. A single column works at any width the control is hosted at. -->
                 <!-- Corner read-out header. The copy button hands the user the four corners as
-                     one line of text - the one copy affordance the Map / ROI screens keep
-                     (remediation plan Phase 8). It disables itself until all four boxes parse. -->
+                     one line of text - the only copy button the Map / ROI screens have. It
+                     disables itself until all four boxes parse. -->
                 <ctl:SectionHeader Style="{StaticResource SectionHeader.Group}" Label="Corners" Margin="0,0,0,5">
                     <ctl:SectionHeader.Aside>
                         <ctl:CopyButton x:Name="CopyCornersButton"

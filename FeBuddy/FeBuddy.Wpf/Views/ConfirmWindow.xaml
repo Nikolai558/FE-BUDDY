@@ -1,7 +1,7 @@
-<infra:ChromeWindow x:Class="FeBuddy.Wpf.Views.ConfirmWindow"
+<ctl:ChromeWindow x:Class="FeBuddy.Wpf.Views.ConfirmWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:infra="clr-namespace:FeBuddy.Wpf.Infrastructure"
+        xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
         Title="{Binding Title}"
         Width="440" SizeToContent="Height"
         WindowStartupLocation="CenterOwner"
@@ -27,4 +27,4 @@
             </StackPanel>
         </StackPanel>
     </Border>
-</infra:ChromeWindow>
+</ctl:ChromeWindow>

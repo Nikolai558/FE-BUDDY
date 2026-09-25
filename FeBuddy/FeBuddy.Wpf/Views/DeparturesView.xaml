@@ -1,7 +1,7 @@
 <!--
     DeparturesView  -  the Departures sub-service tab inside the AIRAC Service screen.
-    Save / Undo / Previous / Next / Review come from the tab host's shared action
-    bar, and the tab host owns the page's single scroller.
+    Save / Undo / Previous / Next / Preview settings come from the tab host's shared
+    action bar, and the tab host owns the page's single scroller.
 -->
 <UserControl x:Class="FeBuddy.Wpf.Views.DeparturesView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -12,14 +12,14 @@
              xmlns:m="clr-namespace:FeBuddy.Wpf.ViewModels.Models"
              xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
              xmlns:cards="clr-namespace:FeBuddy.Wpf.Views.Cards"
-             xmlns:infra="clr-namespace:FeBuddy.Wpf.Infrastructure"
+             xmlns:bhv="clr-namespace:FeBuddy.Wpf.Behaviors"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance vm:DeparturesViewModel}"
              d:DesignWidth="900" d:DesignHeight="1600">
 
     <!-- No ScrollViewer here: the tab host owns the one page-level scroller
-         that every sub-service tab is laid out inside (theme fixes P3a).
-         A second scroller stole the wheel and hid the lower sections. -->
+         that every sub-service tab is laid out inside. A second scroller would
+         steal the wheel and hide the lower sections. -->
     <StackPanel>
 
             <TextBlock Text="{Binding ValidationError}" Style="{StaticResource Text.Caption}"
@@ -83,7 +83,7 @@
                         <TextBox Width="70" Margin="8,0" VerticalAlignment="Center"
                                  IsEnabled="{Binding AmendmentByCycles}"
                                  Text="{Binding AmendedWithinCycles, UpdateSourceTrigger=PropertyChanged}"
-                                 infra:FieldState.Error="{Binding FieldErrors[AmendedWithinCycles]}" />
+                                 bhv:FieldState.Error="{Binding FieldErrors[AmendedWithinCycles]}" />
                         <TextBlock Text="cycles" Style="{StaticResource Text.Body}" VerticalAlignment="Center" />
                         <TextBlock Text="(1 = this cycle)" Style="{StaticResource Text.Caption}" VerticalAlignment="Center" Margin="6,0,0,0" />
                     </StackPanel>
@@ -93,7 +93,7 @@
                         <TextBox Width="70" Margin="8,0" VerticalAlignment="Center"
                                  IsEnabled="{Binding AmendmentByDays}"
                                  Text="{Binding AmendedWithinDays, UpdateSourceTrigger=PropertyChanged}"
-                                 infra:FieldState.Error="{Binding FieldErrors[AmendedWithinDays]}" />
+                                 bhv:FieldState.Error="{Binding FieldErrors[AmendedWithinDays]}" />
                         <TextBlock Text="days" Style="{StaticResource Text.Body}" VerticalAlignment="Center" />
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
@@ -102,7 +102,7 @@
                         <DatePicker Width="160" Margin="8,0,0,0" VerticalAlignment="Center"
                                     IsEnabled="{Binding AmendmentByDate}"
                                     SelectedDate="{Binding AmendedOnOrAfter, Mode=TwoWay}" SelectedDateFormat="Short"
-                                    infra:FieldState.Error="{Binding FieldErrors[AmendedOnOrAfter]}" />
+                                    bhv:FieldState.Error="{Binding FieldErrors[AmendedOnOrAfter]}" />
                     </StackPanel>
                     <TextBlock Style="{StaticResource Text.Prose}" Margin="0,8,0,0"
                                Text="Filters on the date the procedure's current amendment became effective. Days count back from today." />

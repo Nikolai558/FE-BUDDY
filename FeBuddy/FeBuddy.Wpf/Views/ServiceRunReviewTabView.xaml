@@ -10,10 +10,12 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             xmlns:infra="clr-namespace:FeBuddy.Wpf.Infrastructure"
              xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
+             xmlns:bhv="clr-namespace:FeBuddy.Wpf.Behaviors"
+             xmlns:tabs="clr-namespace:FeBuddy.Wpf.ViewModels.ServiceTabs"
+             xmlns:tabm="clr-namespace:FeBuddy.Wpf.ViewModels.ServiceTabs.Models"
              mc:Ignorable="d"
-             d:DataContext="{d:DesignInstance infra:ServiceRunReviewTabViewModel}"
+             d:DataContext="{d:DesignInstance tabs:ServiceRunReviewTabViewModel}"
              d:DesignWidth="820" d:DesignHeight="700">
 
     <UserControl.Resources>
@@ -33,7 +35,7 @@
         </Style>
 
         <!-- one sub-service's line in the feed -->
-        <DataTemplate x:Key="RunStepRow" DataType="{x:Type infra:RunStep}">
+        <DataTemplate x:Key="RunStepRow" DataType="{x:Type tabs:RunStep}">
             <StackPanel Margin="0,4">
                 <DockPanel>
                     <TextBlock DockPanel.Dock="Right" Text="{Binding StatusText}"
@@ -56,7 +58,7 @@
 
         <!-- one group of a sub-service's messages: its heading (a severity, or e.g. an airway ID)
              with the count on the right, then the messages -->
-        <DataTemplate x:Key="MessageGroup" DataType="{x:Type infra:SubServiceMessageGroup}">
+        <DataTemplate x:Key="MessageGroup" DataType="{x:Type tabm:SubServiceMessageGroup}">
             <Border Margin="0,4" Padding="10" CornerRadius="{StaticResource Radius.Chip}"
                     Background="{StaticResource Brush.Bg.Sunken}">
                 <StackPanel>
@@ -82,12 +84,12 @@
             <Setter Property="MaxHeight" Value="320" />
             <Setter Property="VerticalScrollBarVisibility" Value="Auto" />
             <Setter Property="HorizontalScrollBarVisibility" Value="Disabled" />
-            <Setter Property="infra:WheelScroll.BubbleUp" Value="True" />
+            <Setter Property="bhv:WheelScroll.BubbleUp" Value="True" />
         </Style>
 
         <!-- one sub-service's results: what it produced, then its warnings and its routine
              notices, each behind a toggle, collapsed on every run -->
-        <DataTemplate x:Key="SubServiceResultBlock" DataType="{x:Type infra:SubServiceRunResult}">
+        <DataTemplate x:Key="SubServiceResultBlock" DataType="{x:Type tabs:SubServiceRunResult}">
             <StackPanel Margin="0,4,0,8">
                 <TextBlock Text="{Binding Name}" Style="{StaticResource Text.Body.Strong}" />
                 <TextBlock Text="{Binding Summary}" Style="{StaticResource Text.Body}" TextWrapping="Wrap"
@@ -222,7 +224,7 @@
                 <ListBox ItemsSource="{Binding FilesWritten}" ItemTemplate="{StaticResource OutputFileRow}"
                          Margin="0,8,0,0" MaxHeight="320"
                          Background="Transparent" BorderThickness="0"
-                         infra:WheelScroll.BubbleUp="True"
+                         bhv:WheelScroll.BubbleUp="True"
                          ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                          VirtualizingStackPanel.IsVirtualizing="True"
                          VirtualizingStackPanel.VirtualizationMode="Recycling"

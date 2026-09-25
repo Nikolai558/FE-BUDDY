@@ -19,6 +19,8 @@
     <TargetFramework>net472</TargetFramework>
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
+    <!-- Every public member must be documented (CS1591), and unused usings are reported (IDE0005). -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <Platforms>x64</Platforms>
     <PlatformTarget>x64</PlatformTarget>
 

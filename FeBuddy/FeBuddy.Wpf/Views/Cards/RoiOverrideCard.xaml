@@ -19,10 +19,11 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             xmlns:infra="clr-namespace:FeBuddy.Wpf.Infrastructure"
              xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
+             xmlns:bhv="clr-namespace:FeBuddy.Wpf.Behaviors"
+             xmlns:tabs="clr-namespace:FeBuddy.Wpf.ViewModels.ServiceTabs"
              mc:Ignorable="d"
-             d:DataContext="{d:DesignInstance infra:IRoiOverrideSettings}"
+             d:DataContext="{d:DesignInstance tabs:IRoiOverrideSettings}"
              d:DesignWidth="820"
              x:Name="Self">
     <ctl:Card Header="Region of Interest">
@@ -42,16 +43,16 @@
                     <Grid.RowDefinitions><RowDefinition /><RowDefinition /></Grid.RowDefinitions>
                     <TextBlock Text="NE lat" Style="{StaticResource Text.Caption}" VerticalAlignment="Center" Margin="0,0,8,4" />
                     <TextBox Grid.Column="1" Margin="0,0,12,4" Text="{Binding NeLat, UpdateSourceTrigger=PropertyChanged}"
-                             infra:FieldState.Error="{Binding FieldErrors[NeLat]}" />
+                             bhv:FieldState.Error="{Binding FieldErrors[NeLat]}" />
                     <TextBlock Grid.Column="2" Text="NE lon" Style="{StaticResource Text.Caption}" VerticalAlignment="Center" Margin="0,0,8,4" />
                     <TextBox Grid.Column="3" Margin="0,0,0,4" Text="{Binding NeLon, UpdateSourceTrigger=PropertyChanged}"
-                             infra:FieldState.Error="{Binding FieldErrors[NeLon]}" />
+                             bhv:FieldState.Error="{Binding FieldErrors[NeLon]}" />
                     <TextBlock Grid.Row="1" Text="SW lat" Style="{StaticResource Text.Caption}" VerticalAlignment="Center" Margin="0,0,8,0" />
                     <TextBox Grid.Row="1" Grid.Column="1" Margin="0,0,12,0" Text="{Binding SwLat, UpdateSourceTrigger=PropertyChanged}"
-                             infra:FieldState.Error="{Binding FieldErrors[SwLat]}" />
+                             bhv:FieldState.Error="{Binding FieldErrors[SwLat]}" />
                     <TextBlock Grid.Row="1" Grid.Column="2" Text="SW lon" Style="{StaticResource Text.Caption}" VerticalAlignment="Center" Margin="0,0,8,0" />
                     <TextBox Grid.Row="1" Grid.Column="3" Text="{Binding SwLon, UpdateSourceTrigger=PropertyChanged}"
-                             infra:FieldState.Error="{Binding FieldErrors[SwLon]}" />
+                             bhv:FieldState.Error="{Binding FieldErrors[SwLon]}" />
                 </Grid>
                 <Button Content="Pick on map…" Style="{StaticResource Button.Ghost}" HorizontalAlignment="Left"
                         Margin="0,8,0,0" Command="{Binding PickRoiOnMapCommand}" />

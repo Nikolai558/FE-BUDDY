@@ -18,7 +18,8 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:FeBuddy.Wpf.ViewModels"
              xmlns:local="clr-namespace:FeBuddy.Wpf.Views"
-             xmlns:infra="clr-namespace:FeBuddy.Wpf.Infrastructure"
+             xmlns:bhv="clr-namespace:FeBuddy.Wpf.Behaviors"
+             xmlns:tabs="clr-namespace:FeBuddy.Wpf.ViewModels.ServiceTabs"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance vm:AiracServiceViewModel}"
              d:DesignWidth="1100" d:DesignHeight="760">
@@ -37,13 +38,13 @@
         <DataTemplate DataType="{x:Type vm:DeparturesViewModel}">
             <local:DeparturesView />
         </DataTemplate>
-        <DataTemplate DataType="{x:Type infra:PlaceholderSubServiceViewModel}">
+        <DataTemplate DataType="{x:Type tabs:PlaceholderSubServiceViewModel}">
             <local:PlaceholderSubServiceView />
         </DataTemplate>
-        <DataTemplate DataType="{x:Type infra:ServiceReviewTabViewModel}">
-            <local:ServiceReviewTabView />
+        <DataTemplate DataType="{x:Type tabs:ServicePreviewTabViewModel}">
+            <local:ServicePreviewTabView />
         </DataTemplate>
-        <DataTemplate DataType="{x:Type infra:ServiceRunReviewTabViewModel}">
+        <DataTemplate DataType="{x:Type tabs:ServiceRunReviewTabViewModel}">
             <local:ServiceRunReviewTabView />
         </DataTemplate>
 
@@ -92,7 +93,7 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <!-- pinned page header (theme fixes P4): title stays put while the body scrolls -->
+        <!-- pinned page header: title stays put while the body scrolls -->
         <Grid Grid.Row="0" Background="{StaticResource Brush.Bg.Base}">
             <TextBlock Text="AIRAC Services" Style="{StaticResource Text.Display}" Margin="28,24,28,14" />
             <Border Style="{StaticResource Divider}" VerticalAlignment="Bottom" />
@@ -128,7 +129,7 @@
                 </Grid>
 
                 <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
-                              infra:WheelScroll.Amplify="3">
+                              bhv:WheelScroll.Amplify="3">
                     <StackPanel Margin="28,18,28,0">
                         <TextBlock Text="{Binding SelectedTabTitle}" Style="{StaticResource Text.H2}"
                                    Margin="0,0,0,14" />

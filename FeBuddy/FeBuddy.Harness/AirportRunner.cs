@@ -1,8 +1,8 @@
 using System.Diagnostics;
 
-using FeBuddy.Core.Models.NASR.CSV;
-using FeBuddy.Core.Models.Services.Airac.Airports;
-using FeBuddy.Core.Services.Airac.Airports;
+using FeBuddy.Core.Application.Airac.Airports;
+using FeBuddy.Core.Application.Airac.Airports.Models;
+using FeBuddy.Core.Infrastructure.Nasr.Models;
 
 namespace FeBuddy.Harness;
 

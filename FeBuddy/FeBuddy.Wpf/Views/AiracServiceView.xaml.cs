@@ -2,8 +2,9 @@ using System.Windows.Controls;
 
 namespace FeBuddy.Wpf.Views;
 
-/// <summary>The AIRAC Services screen (remediation plan Phase 7). See AiracServiceView.xaml.</summary>
+/// <summary>The AIRAC Services screen. See AiracServiceView.xaml.</summary>
 public partial class AiracServiceView : UserControl
 {
-    public AiracServiceView() => InitializeComponent();
+	/// <summary>Creates the view.</summary>
+	public AiracServiceView() => InitializeComponent();
 }

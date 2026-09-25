@@ -1,16 +1,15 @@
 using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
+using FeBuddy.Wpf.Map.Models;
 
-using FeBuddy.Wpf.Map;
-
-using FeBuddy.Core.Models.Services.General;
-using FeBuddy.Core.Services.General;
+using FeBuddy.Core.Domain.Geo;
+using FeBuddy.Core.Domain.Geo.Models;
 
 namespace FeBuddy.Wpf.Controls;
 
 /// <summary>
-/// The one shared ROI editor (remediation plan Phase 11): a <see cref="MapCanvas"/> the user
+/// The one shared ROI editor: a <see cref="MapCanvas"/> the user
 /// can rubber-band, the four corner lat/lon boxes, and a <b>Set ROI</b> / <b>Cancel</b> pair.
 /// Nothing reaches the caller until <b>Set ROI</b> is pressed and the box passes
 /// <see cref="RoiFilter"/> validation; <b>Cancel</b> discards everything (including a box the
@@ -19,199 +18,199 @@ namespace FeBuddy.Wpf.Controls;
 /// </summary>
 public partial class RoiEditor : UserControl
 {
-    private bool _syncingFromMap;
-    private bool _syncingFromText;
+	private bool _syncingFromMap;
+	private bool _syncingFromText;
 
-    /// <summary>Initializes the control.</summary>
-    public RoiEditor()
-    {
-        InitializeComponent();
-        Loaded += OnLoaded;
-    }
+	/// <summary>Creates the control.</summary>
+	public RoiEditor()
+	{
+		InitializeComponent();
+		Loaded += OnLoaded;
+	}
 
-    /// <summary>Raised on <b>Set ROI</b> with the validated region.</summary>
-    public event EventHandler<RegionOfInterest>? RoiSet;
+	/// <summary>Raised on <b>Set ROI</b> with the validated region.</summary>
+	public event EventHandler<RegionOfInterest>? RoiSet;
 
-    /// <summary>Raised on <b>Cancel</b>.</summary>
-    public event EventHandler? Cancelled;
+	/// <summary>Raised on <b>Cancel</b>.</summary>
+	public event EventHandler? Cancelled;
 
-    /// <summary><see cref="MapCanvas.BaseLayer"/> - the reference outline (US states).</summary>
-    public static readonly DependencyProperty BaseLayerProperty = DependencyProperty.Register(
-        nameof(BaseLayer), typeof(MapLayer), typeof(RoiEditor), new PropertyMetadata(null));
+	/// <summary>Identifies the <see cref="BaseLayer"/> dependency property.</summary>
+	public static readonly DependencyProperty BaseLayerProperty = DependencyProperty.Register(
+		nameof(BaseLayer), typeof(MapLayer), typeof(RoiEditor), new PropertyMetadata(null));
 
-    /// <summary>The reference base outline shown behind the ROI.</summary>
-    public MapLayer? BaseLayer
-    {
-        get => (MapLayer?)GetValue(BaseLayerProperty);
-        set => SetValue(BaseLayerProperty, value);
-    }
+	/// <summary>The reference outline (US states) drawn behind the ROI; passed to the map's <see cref="MapCanvas.BaseLayer"/>.</summary>
+	public MapLayer? BaseLayer
+	{
+		get => (MapLayer?)GetValue(BaseLayerProperty);
+		set => SetValue(BaseLayerProperty, value);
+	}
 
-    /// <summary>The ROI to seed the editor with, or <see langword="null"/> to start empty.</summary>
-    public static readonly DependencyProperty InitialRoiProperty = DependencyProperty.Register(
-        nameof(InitialRoi), typeof(RegionOfInterest), typeof(RoiEditor),
-        new PropertyMetadata(null, (d, _) => ((RoiEditor)d).SeedFromInitial()));
+	/// <summary>Identifies the <see cref="InitialRoi"/> dependency property.</summary>
+	public static readonly DependencyProperty InitialRoiProperty = DependencyProperty.Register(
+		nameof(InitialRoi), typeof(RegionOfInterest), typeof(RoiEditor),
+		new PropertyMetadata(null, (d, _) => ((RoiEditor)d).SeedFromInitial()));
 
-    /// <summary>The ROI to seed the editor with.</summary>
-    public RegionOfInterest? InitialRoi
-    {
-        get => (RegionOfInterest?)GetValue(InitialRoiProperty);
-        set => SetValue(InitialRoiProperty, value);
-    }
+	/// <summary>The ROI to seed the editor with, or <see langword="null"/> to start empty.</summary>
+	public RegionOfInterest? InitialRoi
+	{
+		get => (RegionOfInterest?)GetValue(InitialRoiProperty);
+		set => SetValue(InitialRoiProperty, value);
+	}
 
-    private bool _wired;
+	private bool _wired;
 
-    private void OnLoaded(object sender, RoutedEventArgs e)
-    {
-        if (!_wired)
-        {
-            _wired = true;
-            DescriptorFor(MapCanvas.RoiSouthWestProperty)?.AddValueChanged(Map, (_, _) => OnMapRoiChanged());
-            DescriptorFor(MapCanvas.RoiNorthEastProperty)?.AddValueChanged(Map, (_, _) => OnMapRoiChanged());
-        }
+	private void OnLoaded(object sender, RoutedEventArgs e)
+	{
+		if (!_wired)
+		{
+			_wired = true;
+			DescriptorFor(MapCanvas.RoiSouthWestProperty)?.AddValueChanged(Map, (_, _) => OnMapRoiChanged());
+			DescriptorFor(MapCanvas.RoiNorthEastProperty)?.AddValueChanged(Map, (_, _) => OnMapRoiChanged());
+		}
 
-        SeedFromInitial();
-    }
+		SeedFromInitial();
+	}
 
-    private static System.ComponentModel.DependencyPropertyDescriptor? DescriptorFor(DependencyProperty dp) =>
-        System.ComponentModel.DependencyPropertyDescriptor.FromProperty(dp, typeof(MapCanvas));
+	private static System.ComponentModel.DependencyPropertyDescriptor? DescriptorFor(DependencyProperty dp) =>
+		System.ComponentModel.DependencyPropertyDescriptor.FromProperty(dp, typeof(MapCanvas));
 
-    private void SeedFromInitial()
-    {
-        if (!IsLoaded)
-        {
-            return;
-        }
+	private void SeedFromInitial()
+	{
+		if (!IsLoaded)
+		{
+			return;
+		}
 
-        if (InitialRoi is { } roi)
-        {
-            _syncingFromText = true;
-            NeLatBox.Text = roi.NeLat.ToString("0.######", CultureInfo.InvariantCulture);
-            NeLonBox.Text = roi.NeLon.ToString("0.######", CultureInfo.InvariantCulture);
-            SwLatBox.Text = roi.SwLat.ToString("0.######", CultureInfo.InvariantCulture);
-            SwLonBox.Text = roi.SwLon.ToString("0.######", CultureInfo.InvariantCulture);
-            _syncingFromText = false;
+		if (InitialRoi is { } roi)
+		{
+			_syncingFromText = true;
+			NeLatBox.Text = roi.NeLat.ToString("0.######", CultureInfo.InvariantCulture);
+			NeLonBox.Text = roi.NeLon.ToString("0.######", CultureInfo.InvariantCulture);
+			SwLatBox.Text = roi.SwLat.ToString("0.######", CultureInfo.InvariantCulture);
+			SwLonBox.Text = roi.SwLon.ToString("0.######", CultureInfo.InvariantCulture);
+			_syncingFromText = false;
 
-            Map.RoiSouthWest = new GeoPoint(roi.SwLat, roi.SwLon);
-            Map.RoiNorthEast = new GeoPoint(roi.NeLat, roi.NeLon);
-            Map.FrameBounds(new GeoBounds(new GeoPoint(roi.SwLat, roi.SwLon), new GeoPoint(roi.NeLat, roi.NeLon)));
-        }
+			Map.RoiSouthWest = new GeoPoint(roi.SwLat, roi.SwLon);
+			Map.RoiNorthEast = new GeoPoint(roi.NeLat, roi.NeLon);
+			Map.FrameBounds(new GeoBounds(new GeoPoint(roi.SwLat, roi.SwLon), new GeoPoint(roi.NeLat, roi.NeLon)));
+		}
 
-        RefreshCopyValue();
-    }
+		RefreshCopyValue();
+	}
 
-    /// <summary>
-    /// Puts the current corners on the copy button as one line, and disables it while any of
-    /// the four boxes is empty or unparseable - copying half an ROI is never what the user
-    /// wanted.
-    /// </summary>
-    private void RefreshCopyValue()
-    {
-        if (CopyCornersButton is null)
-        {
-            return;   // called from a TextChanged that fired during InitializeComponent
-        }
+	/// <summary>
+	/// Puts the current corners on the copy button as one line, and disables it while any of
+	/// the four boxes is empty or unparseable - copying half an ROI is never what the user
+	/// wanted.
+	/// </summary>
+	private void RefreshCopyValue()
+	{
+		if (CopyCornersButton is null)
+		{
+			return;   // called from a TextChanged that fired during InitializeComponent
+		}
 
-        if (TryReadCoords(out double swLat, out double swLon, out double neLat, out double neLon))
-        {
-            CopyCornersButton.Value = string.Create(
-                CultureInfo.InvariantCulture,
-                $"SW {swLat:0.######}, {swLon:0.######} / NE {neLat:0.######}, {neLon:0.######}");
-            CopyCornersButton.IsEnabled = true;
-        }
-        else
-        {
-            CopyCornersButton.Value = string.Empty;
-            CopyCornersButton.IsEnabled = false;
-        }
-    }
+		if (TryReadCoords(out double swLat, out double swLon, out double neLat, out double neLon))
+		{
+			CopyCornersButton.Value = string.Create(
+				CultureInfo.InvariantCulture,
+				$"SW {swLat:0.######}, {swLon:0.######} / NE {neLat:0.######}, {neLon:0.######}");
+			CopyCornersButton.IsEnabled = true;
+		}
+		else
+		{
+			CopyCornersButton.Value = string.Empty;
+			CopyCornersButton.IsEnabled = false;
+		}
+	}
 
-    private void OnMapRoiChanged()
-    {
-        if (_syncingFromText)
-        {
-            return;
-        }
+	private void OnMapRoiChanged()
+	{
+		if (_syncingFromText)
+		{
+			return;
+		}
 
-        _syncingFromMap = true;
-        if (Map.RoiNorthEast is { } ne)
-        {
-            NeLatBox.Text = ne.Lat.ToString("0.######", CultureInfo.InvariantCulture);
-            NeLonBox.Text = ne.Lon.ToString("0.######", CultureInfo.InvariantCulture);
-        }
+		_syncingFromMap = true;
+		if (Map.RoiNorthEast is { } ne)
+		{
+			NeLatBox.Text = ne.Lat.ToString("0.######", CultureInfo.InvariantCulture);
+			NeLonBox.Text = ne.Lon.ToString("0.######", CultureInfo.InvariantCulture);
+		}
 
-        if (Map.RoiSouthWest is { } sw)
-        {
-            SwLatBox.Text = sw.Lat.ToString("0.######", CultureInfo.InvariantCulture);
-            SwLonBox.Text = sw.Lon.ToString("0.######", CultureInfo.InvariantCulture);
-        }
+		if (Map.RoiSouthWest is { } sw)
+		{
+			SwLatBox.Text = sw.Lat.ToString("0.######", CultureInfo.InvariantCulture);
+			SwLonBox.Text = sw.Lon.ToString("0.######", CultureInfo.InvariantCulture);
+		}
 
-        _syncingFromMap = false;
-    }
+		_syncingFromMap = false;
+	}
 
-    private void OnCoordTextChanged(object sender, TextChangedEventArgs e)
-    {
-        // Before the early-outs below: every path that changes a corner - typing, the map
-        // rubber-band, and seeding from InitialRoi - writes to these boxes, so refreshing here
-        // keeps the copy button in step with all three without a hook in each.
-        RefreshCopyValue();
+	private void OnCoordTextChanged(object sender, TextChangedEventArgs e)
+	{
+		// Before the early-outs below: every path that changes a corner - typing, the map
+		// rubber-band, and seeding from InitialRoi - writes to these boxes, so refreshing here
+		// keeps the copy button in step with all three without a hook in each.
+		RefreshCopyValue();
 
-        if (_syncingFromMap || !IsLoaded)
-        {
-            return;
-        }
+		if (_syncingFromMap || !IsLoaded)
+		{
+			return;
+		}
 
-        if (TryReadCoords(out double swLat, out double swLon, out double neLat, out double neLon))
-        {
-            _syncingFromText = true;
-            Map.RoiSouthWest = new GeoPoint(swLat, swLon);
-            Map.RoiNorthEast = new GeoPoint(neLat, neLon);
-            _syncingFromText = false;
-        }
-    }
+		if (TryReadCoords(out double swLat, out double swLon, out double neLat, out double neLon))
+		{
+			_syncingFromText = true;
+			Map.RoiSouthWest = new GeoPoint(swLat, swLon);
+			Map.RoiNorthEast = new GeoPoint(neLat, neLon);
+			_syncingFromText = false;
+		}
+	}
 
-    private void OnSetRoi(object sender, RoutedEventArgs e)
-    {
-        ErrorText.Visibility = Visibility.Collapsed;
+	private void OnSetRoi(object sender, RoutedEventArgs e)
+	{
+		ErrorText.Visibility = Visibility.Collapsed;
 
-        string swLat = SwLatBox.Text.Trim();
-        string swLon = SwLonBox.Text.Trim();
-        string neLat = NeLatBox.Text.Trim();
-        string neLon = NeLonBox.Text.Trim();
+		string swLat = SwLatBox.Text.Trim();
+		string swLon = SwLonBox.Text.Trim();
+		string neLat = NeLatBox.Text.Trim();
+		string neLon = NeLonBox.Text.Trim();
 
-        if (!RoiFilter.IsCoordinateValidFormat(swLat, swLon, neLat, neLon, out string? formatError))
-        {
-            ShowError(formatError);
-            return;
-        }
+		if (!RoiFilter.IsCoordinateValidFormat(swLat, swLon, neLat, neLon, out string? formatError))
+		{
+			ShowError(formatError);
+			return;
+		}
 
-        double sLat = double.Parse(swLat, CultureInfo.InvariantCulture);
-        double sLon = double.Parse(swLon, CultureInfo.InvariantCulture);
-        double nLat = double.Parse(neLat, CultureInfo.InvariantCulture);
-        double nLon = double.Parse(neLon, CultureInfo.InvariantCulture);
+		double sLat = double.Parse(swLat, CultureInfo.InvariantCulture);
+		double sLon = double.Parse(swLon, CultureInfo.InvariantCulture);
+		double nLat = double.Parse(neLat, CultureInfo.InvariantCulture);
+		double nLon = double.Parse(neLon, CultureInfo.InvariantCulture);
 
-        if (!RoiFilter.IsCoordinatesRelativePositionValid(sLat, sLon, nLat, nLon, out string? positionError))
-        {
-            ShowError(positionError);
-            return;
-        }
+		if (!RoiFilter.IsCoordinatesRelativePositionValid(sLat, sLon, nLat, nLon, out string? positionError))
+		{
+			ShowError(positionError);
+			return;
+		}
 
-        RoiSet?.Invoke(this, new RegionOfInterest(sLat, sLon, nLat, nLon));
-    }
+		RoiSet?.Invoke(this, new RegionOfInterest(sLat, sLon, nLat, nLon));
+	}
 
-    private void OnCancel(object sender, RoutedEventArgs e) => Cancelled?.Invoke(this, EventArgs.Empty);
+	private void OnCancel(object sender, RoutedEventArgs e) => Cancelled?.Invoke(this, EventArgs.Empty);
 
-    private void ShowError(string? message)
-    {
-        ErrorText.Text = message ?? "Invalid Region of Interest.";
-        ErrorText.Visibility = Visibility.Visible;
-    }
+	private void ShowError(string? message)
+	{
+		ErrorText.Text = message ?? "Invalid Region of Interest.";
+		ErrorText.Visibility = Visibility.Visible;
+	}
 
-    private bool TryReadCoords(out double swLat, out double swLon, out double neLat, out double neLon)
-    {
-        swLat = swLon = neLat = neLon = 0;
-        return double.TryParse(SwLatBox.Text.Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out swLat)
-            && double.TryParse(SwLonBox.Text.Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out swLon)
-            && double.TryParse(NeLatBox.Text.Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out neLat)
-            && double.TryParse(NeLonBox.Text.Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out neLon);
-    }
+	private bool TryReadCoords(out double swLat, out double swLon, out double neLat, out double neLon)
+	{
+		swLat = swLon = neLat = neLon = 0;
+		return double.TryParse(SwLatBox.Text.Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out swLat)
+			&& double.TryParse(SwLonBox.Text.Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out swLon)
+			&& double.TryParse(NeLatBox.Text.Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out neLat)
+			&& double.TryParse(NeLonBox.Text.Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out neLon);
+	}
 }

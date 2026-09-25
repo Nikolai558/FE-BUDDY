@@ -1,8 +1,6 @@
 <!--
     Controls.Inputs.xaml
     ===========================================================================
-        Pill.Radio   RadioButton styled as a segmented pill (output-mode pickers)
-        Switch       ToggleButton styled as an iOS-style switch (on/off options)
         Field        TextBox with rounded sunken fill + amber focus + placeholder
                      (set the placeholder via the control's Tag)
         Progress     thin rounded determinate ProgressBar (amber fill)
@@ -12,8 +10,8 @@
         TextBox      -> Field
         CheckBox     -> 16px sunken box, amber when checked
         RadioButton  -> 16px sunken disc, amber dot when checked
-    A control that sets its own Style="{StaticResource ...}" (Pill.Radio,
-    Nav.Item, LogChip, Segmented) opts out of these automatically.
+    A control that sets its own Style="{StaticResource ...}" (Nav.Item,
+    LogChip) opts out of these automatically.
 
         ComboBox     -> Themed.ComboBox (dark sunken box + dark popup, kills the
                         system blue bar, and carries the drop-down wheel-scroll
@@ -26,8 +24,8 @@
 -->
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                    xmlns:infra="clr-namespace:FeBuddy.Wpf.Infrastructure"
-                    xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls">
+                    xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
+                    xmlns:bhv="clr-namespace:FeBuddy.Wpf.Behaviors">
 
     <!-- ============================ OPTION ============================ -->
     <!-- One option row: the control, then its Description indented to sit under the control's
@@ -50,180 +48,6 @@
                         </Trigger>
                         <Trigger Property="Description" Value="">
                             <Setter TargetName="Description" Property="Visibility" Value="Collapsed" />
-                        </Trigger>
-                    </ControlTemplate.Triggers>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
-    </Style>
-
-    <!-- =========================== PILL RADIO ========================== -->
-    <Style x:Key="Pill.Radio" TargetType="RadioButton">
-        <Setter Property="FontFamily" Value="{DynamicResource Font.Body}" />
-        <Setter Property="FontSize" Value="12.5" />
-        <Setter Property="FontWeight" Value="Medium" />
-        <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Secondary}" />
-        <Setter Property="Padding" Value="15,7" />
-        <Setter Property="Margin" Value="0,0,8,0" />
-        <Setter Property="Cursor" Value="Hand" />
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="RadioButton">
-                    <Border x:Name="Root"
-                            Background="Transparent"
-                            BorderBrush="{DynamicResource Brush.Stroke.Strong}"
-                            BorderThickness="1"
-                            CornerRadius="{DynamicResource Radius.Pill}"
-                            Padding="{TemplateBinding Padding}">
-                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
-                                          />
-                    </Border>
-                    <ControlTemplate.Triggers>
-                        <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="Root" Property="Background" Value="{DynamicResource Brush.Overlay}" />
-                        </Trigger>
-                        <Trigger Property="IsChecked" Value="True">
-                            <Setter TargetName="Root" Property="Background" Value="{DynamicResource Brush.Accent.Soft}" />
-                            <Setter TargetName="Root" Property="BorderBrush" Value="{DynamicResource Brush.Accent.Line}" />
-                            <Setter Property="Foreground" Value="{DynamicResource Brush.Accent.Text}" />
-                        </Trigger>
-                        <Trigger Property="IsEnabled" Value="False">
-                            <Setter TargetName="Root" Property="Opacity" Value="0.31" />
-                        </Trigger>
-                    </ControlTemplate.Triggers>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
-    </Style>
-
-    <!-- ============================ PILL TOGGLE ======================= -->
-    <!-- Same pill look as Pill.Radio but multi-select (ToggleButton). Used for
-         the airway designation include / exclude chips. -->
-    <Style x:Key="Pill.Toggle" TargetType="ToggleButton">
-        <Setter Property="FontFamily" Value="{DynamicResource Font.Body}" />
-        <Setter Property="FontSize" Value="12" />
-        <Setter Property="FontWeight" Value="SemiBold" />
-        <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Tertiary}" />
-        <Setter Property="Padding" Value="12,5" />
-        <Setter Property="Margin" Value="0,0,6,6" />
-        <Setter Property="Cursor" Value="Hand" />
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="ToggleButton">
-                    <Border x:Name="Root" Background="Transparent"
-                            BorderBrush="{DynamicResource Brush.Stroke.Strong}" BorderThickness="1"
-                            CornerRadius="{DynamicResource Radius.Pill}" Padding="{TemplateBinding Padding}">
-                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
-                    </Border>
-                    <ControlTemplate.Triggers>
-                        <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="Root" Property="Background" Value="{DynamicResource Brush.Overlay}" />
-                        </Trigger>
-                        <Trigger Property="IsChecked" Value="True">
-                            <Setter TargetName="Root" Property="Background" Value="{DynamicResource Brush.Accent.Soft}" />
-                            <Setter TargetName="Root" Property="BorderBrush" Value="{DynamicResource Brush.Accent.Line}" />
-                            <Setter Property="Foreground" Value="{DynamicResource Brush.Accent.Text}" />
-                        </Trigger>
-                    </ControlTemplate.Triggers>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
-    </Style>
-
-    <!-- ============================ SEGMENTED ======================== -->
-    <!-- ListBox whose items are pills; SelectedItem two-way binds to a value.
-         Used for the Settings profile switcher. -->
-    <Style x:Key="Segmented.Item" TargetType="ListBoxItem">
-        <Setter Property="FontFamily" Value="{DynamicResource Font.Body}" />
-        <Setter Property="FontSize" Value="12.5" />
-        <Setter Property="FontWeight" Value="Medium" />
-        <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Secondary}" />
-        <Setter Property="Margin" Value="0,0,8,8" />
-        <Setter Property="Cursor" Value="Hand" />
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="ListBoxItem">
-                    <Border x:Name="Root" Background="Transparent"
-                            BorderBrush="{DynamicResource Brush.Stroke.Strong}" BorderThickness="1"
-                            CornerRadius="{DynamicResource Radius.Pill}" Padding="14,6">
-                        <ContentPresenter />
-                    </Border>
-                    <ControlTemplate.Triggers>
-                        <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="Root" Property="Background" Value="{DynamicResource Brush.Overlay}" />
-                        </Trigger>
-                        <Trigger Property="IsSelected" Value="True">
-                            <Setter TargetName="Root" Property="Background" Value="{DynamicResource Brush.Accent.Soft}" />
-                            <Setter TargetName="Root" Property="BorderBrush" Value="{DynamicResource Brush.Accent.Line}" />
-                            <Setter Property="Foreground" Value="{DynamicResource Brush.Accent.Text}" />
-                        </Trigger>
-                    </ControlTemplate.Triggers>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
-    </Style>
-
-    <Style x:Key="Segmented" TargetType="ListBox">
-        <Setter Property="Background" Value="Transparent" />
-        <Setter Property="BorderThickness" Value="0" />
-        <Setter Property="Padding" Value="0" />
-        <Setter Property="ItemContainerStyle" Value="{StaticResource Segmented.Item}" />
-        <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled" />
-        <Setter Property="ItemsPanel">
-            <Setter.Value>
-                <ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate>
-            </Setter.Value>
-        </Setter>
-    </Style>
-
-    <!-- ============================= SWITCH ============================ -->
-    <Style x:Key="Switch" TargetType="ToggleButton">
-        <Setter Property="Cursor" Value="Hand" />
-        <Setter Property="HorizontalAlignment" Value="Left" />
-        <Setter Property="VerticalAlignment" Value="Center" />
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="ToggleButton">
-                    <Grid Width="40" Height="22" Background="Transparent">
-                        <Border x:Name="Track" CornerRadius="11"
-                                Background="{DynamicResource Brush.Bg.Sunken}"
-                                BorderBrush="{DynamicResource Brush.Stroke.Strong}"
-                                BorderThickness="1" />
-                        <Border x:Name="Knob" Width="16" Height="16" CornerRadius="8"
-                                HorizontalAlignment="Left" Margin="3,0,0,0"
-                                Background="{DynamicResource Brush.Text.Tertiary}"
-                                RenderTransformOrigin="0.5,0.5">
-                            <Border.RenderTransform>
-                                <TranslateTransform x:Name="KnobShift" X="0" />
-                            </Border.RenderTransform>
-                        </Border>
-                    </Grid>
-                    <ControlTemplate.Triggers>
-                        <Trigger Property="IsChecked" Value="True">
-                            <Trigger.EnterActions>
-                                <BeginStoryboard>
-                                    <Storyboard>
-                                        <DoubleAnimation Storyboard.TargetName="KnobShift"
-                                                         Storyboard.TargetProperty="X"
-                                                         To="18" Duration="0:0:0.12" />
-                                    </Storyboard>
-                                </BeginStoryboard>
-                            </Trigger.EnterActions>
-                            <Trigger.ExitActions>
-                                <BeginStoryboard>
-                                    <Storyboard>
-                                        <DoubleAnimation Storyboard.TargetName="KnobShift"
-                                                         Storyboard.TargetProperty="X"
-                                                         To="0" Duration="0:0:0.12" />
-                                    </Storyboard>
-                                </BeginStoryboard>
-                            </Trigger.ExitActions>
-                            <Setter TargetName="Track" Property="Background" Value="{DynamicResource Brush.Accent.Soft}" />
-                            <Setter TargetName="Track" Property="BorderBrush" Value="{DynamicResource Brush.Accent.Line}" />
-                            <Setter TargetName="Knob" Property="Background" Value="{DynamicResource Brush.Accent}" />
-                        </Trigger>
-                        <Trigger Property="IsEnabled" Value="False">
-                            <Setter Property="Opacity" Value="0.31" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -286,15 +110,15 @@
     <!-- Every bare TextBox is Field; explicit Style="{StaticResource Field}"
          still works for the few call sites that want to be obvious about it. -->
     <!-- The implicit TextBox style. It also carries the validation-failure look: a box whose
-         infra:FieldState.Error is bound to its tab's FieldErrors[<key>] gets a red edge, a faint
+         bhv:FieldState.Error is bound to its tab's FieldErrors[<key>] gets a red edge, a faint
          red wash and the validator's own message as its tool-tip, so the box that needs fixing is
          obvious without reading the error list above the form. -->
     <Style TargetType="TextBox" BasedOn="{StaticResource Field}">
         <Style.Triggers>
-            <Trigger Property="infra:FieldState.HasError" Value="True">
+            <Trigger Property="bhv:FieldState.HasError" Value="True">
                 <Setter Property="BorderBrush" Value="{DynamicResource Brush.Danger}" />
                 <Setter Property="Background" Value="{DynamicResource Brush.Danger.Soft}" />
-                <Setter Property="ToolTip" Value="{Binding (infra:FieldState.Error), RelativeSource={RelativeSource Self}}" />
+                <Setter Property="ToolTip" Value="{Binding (bhv:FieldState.Error), RelativeSource={RelativeSource Self}}" />
             </Trigger>
         </Style.Triggers>
     </Style>
@@ -315,7 +139,7 @@
                                 Background="{DynamicResource Brush.Bg.Sunken}"
                                 BorderBrush="{DynamicResource Brush.Stroke.Strong}"
                                 BorderThickness="1" SnapsToDevicePixels="True">
-                            <TextBlock x:Name="Glyph" Text="&#xE73E;"
+                            <TextBlock x:Name="Glyph" Text="{DynamicResource Icon.Check}"
                                        FontFamily="{DynamicResource Font.Icon}" FontSize="10"
                                        Foreground="{DynamicResource Brush.Text.OnAccent}"
                                        HorizontalAlignment="Center" VerticalAlignment="Center"
@@ -334,7 +158,7 @@
                             <Setter TargetName="Glyph" Property="Opacity" Value="1" />
                         </Trigger>
                         <Trigger Property="IsChecked" Value="{x:Null}">
-                            <Setter TargetName="Glyph" Property="Text" Value="&#xE738;" />
+                            <Setter TargetName="Glyph" Property="Text" Value="{DynamicResource Icon.Dash}" />
                             <Setter TargetName="Glyph" Property="Opacity" Value="1" />
                             <Setter TargetName="Box" Property="Background" Value="{DynamicResource Brush.Accent.Soft}" />
                             <Setter TargetName="Box" Property="BorderBrush" Value="{DynamicResource Brush.Accent.Line}" />
@@ -355,7 +179,7 @@
     </Style>
 
     <!-- =================== RADIOBUTTON (implicit) =================== -->
-    <!-- Classic disc. Pill.Radio / Nav.Item / LogChip set Style explicitly and
+    <!-- Classic disc. Nav.Item / LogChip set Style explicitly and
          are unaffected. -->
     <Style TargetType="RadioButton">
         <Setter Property="FontFamily" Value="{DynamicResource Font.Body}" />
@@ -456,7 +280,7 @@
         <Setter Property="HorizontalContentAlignment" Value="Left" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
         <Setter Property="ItemContainerStyle" Value="{StaticResource Themed.ComboBoxItem}" />
-        <Setter Property="infra:ComboBoxDropDownFocus.Enable" Value="True" />
+        <Setter Property="bhv:ComboBoxDropDownFocus.Enable" Value="True" />
         <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled" />
         <Setter Property="ScrollViewer.CanContentScroll" Value="True" />
         <Setter Property="TextElement.Foreground" Value="{DynamicResource Brush.Text.Primary}" />
@@ -489,7 +313,7 @@
                                           HorizontalAlignment="Left" VerticalAlignment="Center"
                                           TextElement.Foreground="{DynamicResource Brush.Text.Primary}" />
 
-                        <TextBlock x:Name="Chevron" Text="&#xE70D;" IsHitTestVisible="False"
+                        <TextBlock x:Name="Chevron" Text="{DynamicResource Icon.Chevron.Down}" IsHitTestVisible="False"
                                    FontFamily="{DynamicResource Font.Icon}" FontSize="10"
                                    Foreground="{DynamicResource Brush.Text.Tertiary}"
                                    HorizontalAlignment="Right" VerticalAlignment="Center"
@@ -536,10 +360,10 @@
         <Style.Triggers>
             <!-- Same validation-failure look as a TextBox: the facility picker is a required
                  field, so it has to be able to say so the same way every other box does. -->
-            <Trigger Property="infra:FieldState.HasError" Value="True">
+            <Trigger Property="bhv:FieldState.HasError" Value="True">
                 <Setter Property="BorderBrush" Value="{DynamicResource Brush.Danger}" />
                 <Setter Property="Background" Value="{DynamicResource Brush.Danger.Soft}" />
-                <Setter Property="ToolTip" Value="{Binding (infra:FieldState.Error), RelativeSource={RelativeSource Self}}" />
+                <Setter Property="ToolTip" Value="{Binding (bhv:FieldState.Error), RelativeSource={RelativeSource Self}}" />
             </Trigger>
         </Style.Triggers>
         <Style.Resources>
@@ -977,10 +801,10 @@
         </Setter>
         <Style.Triggers>
             <!-- Same validation-failure look as a TextBox / ComboBox. -->
-            <Trigger Property="infra:FieldState.HasError" Value="True">
+            <Trigger Property="bhv:FieldState.HasError" Value="True">
                 <Setter Property="BorderBrush" Value="{DynamicResource Brush.Danger}" />
                 <Setter Property="Background" Value="{DynamicResource Brush.Danger.Soft}" />
-                <Setter Property="ToolTip" Value="{Binding (infra:FieldState.Error), RelativeSource={RelativeSource Self}}" />
+                <Setter Property="ToolTip" Value="{Binding (bhv:FieldState.Error), RelativeSource={RelativeSource Self}}" />
             </Trigger>
         </Style.Triggers>
     </Style>
@@ -989,8 +813,8 @@
 
     <!-- ========================= NUMBER TOGGLE ======================== -->
     <!-- A small square toggle for picking numbers out of a fixed range (the CRC
-         filters picker). Deliberately tighter than Pill.Toggle: forty-one of these
-         have to sit in a popup without it becoming a wall. -->
+         filters picker). Deliberately small: forty-one of these (0 to 40) have to
+         sit in a popup without it becoming a wall. -->
     <Style x:Key="Toggle.Number" TargetType="ToggleButton">
         <Setter Property="Width" Value="36" />
         <Setter Property="Height" Value="28" />

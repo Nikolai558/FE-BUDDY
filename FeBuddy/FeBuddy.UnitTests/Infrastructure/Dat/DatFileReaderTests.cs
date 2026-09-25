@@ -6,9 +6,14 @@ using NetTopologySuite.Geometries;
 namespace FeBuddy.UnitTests.Infrastructure.Dat;
 
 /// <summary>
-/// Covers <see cref="DatFileReader"/>: the point of tangency, <c>LINE</c> blocks, the optional
-/// hemisphere letters and label, and records that cannot be used.
+/// Covers <see cref="DatFileReader"/>: the point of tangency, <c>LINE</c> blocks, comments, the
+/// optional hemisphere letters and label, and records that cannot be used - including a made-up
+/// file in the FAA layout (<c>Fixtures/Dat</c>).
 /// </summary>
+/// <remarks>
+/// Every map and coordinate here is invented. Real FAA <c>.dat</c> files must never be committed
+/// to the repository.
+/// </remarks>
 public sealed class DatFileReaderTests
 {
 	private static DatFile Parse(params string[] records) => DatFileReader.Parse(records, "TEST.dat");
@@ -70,7 +75,7 @@ public sealed class DatFileReaderTests
 	[InlineData("40 30 00.00 N")]                           // latitude only
 	[InlineData("A B 40 30 00.00 N 073 30 00.00 W")]        // more than one label
 	[InlineData("40 60 00.00 N 073 30 00.00 W")]            // 60 minutes
-	[InlineData("40 30 60.00 N 073 30 00.00 W")]            // 60 seconds
+	[InlineData("40 30 60.01 N 073 30 00.00 W")]            // past 60 seconds
 	[InlineData("91 00 00.00 N 073 30 00.00 W")]            // latitude past the pole
 	[InlineData("40 30 00.00 N 181 00 00.00 W")]            // longitude past 180
 	[InlineData("40 30 00.00 N 073 30 xx W")]               // not a number
@@ -78,6 +83,56 @@ public sealed class DatFileReaderTests
 	public void rejects_what_is_not_a_point(string text)
 	{
 		Assert.False(DatFileReader.TryParsePoint(text, out _, out _));
+	}
+
+	[Fact]
+	public void sixty_seconds_is_the_next_minute_as_the_faa_writes_it()
+	{
+		Assert.True(DatFileReader.TryParsePoint("GP 40 00 00.0000  099 59 60.0000", out double lat, out double lon));
+
+		Assert.Equal(40, lat, 9);
+		Assert.Equal(-100, lon, 9);
+	}
+
+	[Fact]
+	public void reads_the_faa_layout_with_comments_and_the_point_of_tangency_in_the_header()
+	{
+		DatFile file = Parse(
+			"!   Filename:    test.dgn",
+			"!   9900    40 00 00.0000  100 00 00.0000",
+			"!   9901    00 00 00.0000  100 00 00.0000",
+			"!   9909    400000",
+			"LINE !",
+			"GP 40 00 00.0000  099 59 60.0000  !",
+			"LINE !",
+			"GP 40 10 00.0000  100 10 00.0000  !",
+			"GP 40 12 30.5000  100 05 00.0000  ! trailing comment",
+			"! a comment inside a block",
+			"GP 40 15 00.0000  100 00 00.0000  !");
+
+		Assert.Equal(40, file.PointOfTangency!.DecLat, 6);
+		Assert.Equal(-100, file.PointOfTangency.DecLon, 6);
+		Assert.Equal(3, Assert.Single(file.Lines).NumPoints);
+		Assert.Equal(1, file.ShortLineBlocks);
+		Assert.Empty(file.Problems);
+	}
+
+	[Fact]
+	public void reads_a_file_in_the_faa_layout_from_disk()
+	{
+		DatFile file = DatFileReader.Read(Path.Combine(AppContext.BaseDirectory, "Fixtures", "Dat", "synthetic-rvm.dat"));
+
+		Assert.Equal(40, file.PointOfTangency!.DecLat, 6);
+		Assert.Equal(-100, file.PointOfTangency.DecLon, 6);
+
+		// Three LINE blocks: the one-point dot at the point of tangency, a closed square and a zigzag.
+		Assert.Equal(2, file.Lines.Count);
+		Assert.Equal(1, file.ShortLineBlocks);
+		Assert.Empty(file.Problems);
+		Assert.True(file.Lines[0].IsClosed);
+		Assert.Equal(9, file.Lines[1].NumPoints);
+		Assert.Equal(-100.4, file.Lines[1].Coordinates[0].X, 9);
+		Assert.Equal(40.1, file.Lines[1].Coordinates[0].Y, 9);
 	}
 
 	[Fact]
@@ -100,7 +155,7 @@ public sealed class DatFileReaderTests
 	}
 
 	[Fact]
-	public void a_line_block_with_fewer_than_two_points_is_reported_and_skipped()
+	public void a_line_block_with_fewer_than_two_points_is_counted_not_reported()
 	{
 		DatFile file = Parse(
 			"LINE 01",
@@ -111,11 +166,8 @@ public sealed class DatFileReaderTests
 			" 40 45 00.00 N 073 45 00.00 W");
 
 		Assert.Single(file.Lines);
-		Assert.Equal(2, file.Problems.Count);
-		Assert.StartsWith("Line 1:", file.Problems[0]);
-		Assert.Contains("1 point(s)", file.Problems[0]);
-		Assert.StartsWith("Line 3:", file.Problems[1]);
-		Assert.Contains("0 point(s)", file.Problems[1]);
+		Assert.Equal(2, file.ShortLineBlocks);
+		Assert.Empty(file.Problems);
 	}
 
 	[Fact]

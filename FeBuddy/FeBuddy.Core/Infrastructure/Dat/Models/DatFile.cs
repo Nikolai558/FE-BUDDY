@@ -12,9 +12,11 @@ namespace FeBuddy.Core.Infrastructure.Dat.Models;
 /// The map's point of tangency - the <c>9900</c> record in the header, the point the map is
 /// drawn around - or <see langword="null"/> when the file has none.
 /// </param>
-/// <param name="Lines">
-/// One LineString per <c>LINE</c> block, in file order. Blocks with fewer than two points draw
-/// nothing and are left out (and listed in <paramref name="Problems"/>).
+/// <param name="Lines">One LineString per <c>LINE</c> block of two or more points, in file order.</param>
+/// <param name="ShortLineBlocks">
+/// How many <c>LINE</c> blocks had fewer than two points and were left out, as they draw nothing.
+/// FAA files routinely have one or two (a dot at the point of tangency), so these are counted,
+/// not reported as problems.
 /// </param>
 /// <param name="Problems">
 /// Each record that could not be used, with its line number, e.g. a coordinate that does not
@@ -24,4 +26,5 @@ public sealed record DatFile(
 	string SourcePath,
 	Location? PointOfTangency,
 	IReadOnlyList<LineString> Lines,
+	int ShortLineBlocks,
 	IReadOnlyList<string> Problems);

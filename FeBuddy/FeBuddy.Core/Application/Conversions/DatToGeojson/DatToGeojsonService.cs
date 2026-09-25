@@ -101,6 +101,13 @@ public static class DatToGeojsonService
 			messages.Add(new ServiceMessage(LogLevel.Warning, LogSource, $"{name}: {problem}"));
 		}
 
+		// Routine in FAA files (a dot at the point of tangency), so a notice, not a warning.
+		if (datFile.ShortLineBlocks > 0)
+		{
+			messages.Add(new ServiceMessage(LogLevel.Info, LogSource,
+				$"{name}: {datFile.ShortLineBlocks:N0} LINE block(s) with fewer than two points draw nothing and were left out."));
+		}
+
 		if (datFile.Lines.Count == 0)
 		{
 			messages.Add(new ServiceMessage(LogLevel.Warning, LogSource,

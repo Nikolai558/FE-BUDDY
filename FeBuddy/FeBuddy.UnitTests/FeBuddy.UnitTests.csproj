@@ -32,6 +32,9 @@
   <ItemGroup>
     <!-- A trimmed real NASR cycle (header + first 3 records of every CSV FE-Buddy reads). -->
     <None Include="Fixtures\Nasr\*.csv" CopyToOutputDirectory="PreserveNewest" />
+    <!-- A made-up RADAR Video Map in the FAA .dat layout. Real FAA .dat files must never be
+         committed: every fixture here is invented. -->
+    <None Include="Fixtures\Dat\*.dat" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

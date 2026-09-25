@@ -89,7 +89,8 @@ public static class AiracService
 	/// <exception cref="ArgumentException">Thrown when <see cref="AiracServiceSettings.OutputDirectory"/> is blank.</exception>
 	/// <exception cref="IOException">
 	/// Thrown when <see cref="ExistingOutputAction.DeleteExisting"/> cannot delete the cycle
-	/// folder (a file in it is open elsewhere, say). Nothing is written in that case.
+	/// folder (a file in it is open elsewhere, say). Nothing is written in that case, but the
+	/// files deleted before the failure stay deleted.
 	/// </exception>
 	public static async Task<AiracServiceResult> RunAsync(
 		AiracServiceSettings settings,
@@ -112,7 +113,10 @@ public static class AiracService
 		if (anySelected && settings.ExistingOutput == ExistingOutputAction.DeleteExisting && Directory.Exists(outputDirectory))
 		{
 			progress?.Report(new AiracServiceProgress("AIRAC", $"Deleting the files already in {outputDirectory}"));
-			Directory.Delete(outputDirectory, recursive: true);
+
+			// Off the caller's thread: a Departures or Arrivals run leaves thousands of files, and
+			// the GUI awaits this from its UI thread.
+			await Task.Run(() => Directory.Delete(outputDirectory, recursive: true), cancellationToken).ConfigureAwait(false);
 			AppLog.Info(LogSource, $"Deleted the earlier output in '{outputDirectory}' before the run.");
 		}
 

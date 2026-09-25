@@ -1,4 +1,5 @@
 using FeBuddy.Core.Domain.Crc.Models;
+using FeBuddy.Core.Infrastructure.FileSystem;
 
 namespace FeBuddy.Core.Application.Airac;
 
@@ -25,9 +26,6 @@ namespace FeBuddy.Core.Application.Airac;
 /// </remarks>
 public static class AiracOutputPaths
 {
-	/// <summary>The folder the "Add a FE-Buddy_Output folder" preference puts the cycle folders in.</summary>
-	public const string FeBuddyOutputFolder = "FE-Buddy_Output";
-
 	/// <summary>The folder GeoJSON files go in, inside the cycle folder and inside <see cref="VnasFolder"/>.</summary>
 	public const string GeojsonFolder = "Geojson";
 
@@ -43,16 +41,14 @@ public static class AiracOutputPaths
 	/// The folder a run of <paramref name="cycleId"/> writes into:
 	/// <c>&lt;output&gt;\FE-Buddy_Output\AIRAC_&lt;cycle&gt;</c> when
 	/// <paramref name="addFeBuddyOutputFolder"/> is set, otherwise <c>&lt;output&gt;\AIRAC_&lt;cycle&gt;</c>.
+	/// It sits next to the File Conversions' folders: both go through <see cref="ServiceOutputPaths"/>.
 	/// </summary>
 	/// <param name="outputDirectory">The folder the user pointed output at.</param>
 	/// <param name="addFeBuddyOutputFolder">Whether to put the cycle folder inside a <c>FE-Buddy_Output</c> folder.</param>
 	/// <param name="cycleId">The four-digit cycle ID.</param>
 	/// <returns>The cycle folder's full path.</returns>
-	public static string CycleDirectory(string outputDirectory, bool addFeBuddyOutputFolder, string cycleId)
-	{
-		string root = addFeBuddyOutputFolder ? Path.Combine(outputDirectory, FeBuddyOutputFolder) : outputDirectory;
-		return Path.Combine(root, CycleFolderName(cycleId));
-	}
+	public static string CycleDirectory(string outputDirectory, bool addFeBuddyOutputFolder, string cycleId) =>
+		ServiceOutputPaths.Resolve(outputDirectory, addFeBuddyOutputFolder, CycleFolderName(cycleId));
 
 	/// <summary>
 	/// The folder one file goes in, inside the folder a run writes into.

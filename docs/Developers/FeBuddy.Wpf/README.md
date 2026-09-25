@@ -15,7 +15,9 @@ below is relative to `FeBuddy/FeBuddy.Wpf/` in the repo unless stated otherwise.
   (`ObservableObject`, `RelayCommand`) are hand-rolled in `Mvvm/`
 - **Airports, Airways and Departures are sub-services of AIRAC Service**, not
   top-level screens. The library code is `FeBuddy.Core.Application.Airac.*`; the GUI
-  reaches each one only as a tab on the AIRAC Services screen.
+  reaches each one only as a tab on the AIRAC Services screen. In the same way, each
+  **file conversion** (DAT to GeoJSON, SCT2 to GeoJSON) is a tab on the File Conversions screen
+  (`FeBuddy.Core.Application.Conversions.*`).
 - On launch, `App.xaml.cs` starts `AppLog`'s file sink then runs
   `LaunchSequence` off the UI thread: clear `%TEMP%\FE-Buddy`, read
   `UserConfig.json`, UTC/internet check, version check, the AIRAC data pipeline
@@ -51,25 +53,37 @@ Map/                  GeoJSON reader (System.Text.Json), Web-Mercator, BaseMap
   Models/               GeoPoint, GeoBounds, MapGeometry, MapLayer
 Mvvm/                 ObservableObject, RelayCommand
 Shell/                app-wide services: Toast, Links, BrowserLauncher,
-                      DefaultRoiStore (the one saved default ROI)
+                      DefaultRoiStore (the one saved default ROI), OutputPreferences
+                      (output folder + coordinate precision, read at run time)
   Models/               ToastKind
 ViewModels/           ShellViewModel + one per screen; AiracSubServices is the
-                      AIRAC sub-service catalogue
+                      AIRAC sub-service catalogue; FileConversionsViewModel lists
+                      the conversions
   Models/               small item and row view-models and records (HealthRow,
-                        FebPropertyToggle, EramClassDefault, ...)
+                        FebPropertyToggle, EramClassDefault, SourceFileItem, ...)
   ServiceTabs/          the framework for a tabbed service screen:
                         TabbedServiceViewModel (the screen), ServiceTabViewModel
                         (a tab), SubServiceSettingsViewModel (a saved settings tab),
                         GeojsonSubServiceViewModel (what the GeoJSON sub-service tabs
-                        share), the Preview Settings and Review tabs, the card
+                        share), ConversionTabViewModel (a conversion tab with its own
+                        run button), FileConversionTabViewModel (what the file-to-GeoJSON
+                        conversion tabs share: source, CRC defaults, save contract, run
+                        summary), CrcDefaultsRowIo (a CRC defaults row in and out
+                        of config), the Preview Settings and Review tabs, the card
                         interfaces (IOutputSettings, ...), ISubServiceRunTarget
     Models/               SubServiceDescriptor, ServicePreviewRow/Section, ...
-Views/                ShellWindow (custom chrome) + Dashboard, AiracService and
-                      its tab views (AiracGeneralTabView, AirportsView, AirwaysView,
-                      DeparturesView, ServicePreviewTabView, ServiceRunReviewTabView),
-                      Map, Settings, Info; UpdateWindow, ConfirmWindow, RoiPickerWindow
-  Cards/                the cards every GeoJSON sub-service tab shares; each binds
-                        to its tab through one ServiceTabs interface
+Views/                ShellWindow (custom chrome) + Dashboard, TabbedServiceView
+                      (the AIRAC Services and File Conversions screens) and their
+                      tab views (AiracGeneralTabView, AirportsView, AirwaysView,
+                      DeparturesView, DatToGeojsonView, SctToGeojsonView, VeramToGeojsonView,
+                      ServicePreviewTabView,
+                      ServiceRunReviewTabView), Map, Settings, Info; UpdateWindow,
+                      ConfirmWindow, RoiPickerWindow
+  Cards/                the cards every GeoJSON sub-service tab shares, RunCard
+                        (the run button at the foot of the Preview Settings tab and
+                        of every conversion tab) and SourceFilesCard (a conversion's
+                        folder or picked files); each binds to its tab through one
+                        ServiceTabs interface
 ```
 
 Namespaces follow folders (`FeBuddy.Wpf.ViewModels.ServiceTabs`), and every file
@@ -83,6 +97,12 @@ root - the same rule as `FeBuddy.Core`.
   a `StarsViewModel` in `ViewModels/` deriving from `GeojsonSubServiceViewModel` and
   implementing `ISubServiceRunTarget`, a `StarsView` in `Views/` built from the
   shared cards, and its settings block on `AiracServiceSettings` in Core.
+- **A new file conversion:** a view-model in `ViewModels/` deriving from
+  `FileConversionTabViewModel` (it only adds its own settings and says which service
+  to call), added to the list in `FileConversionsViewModel`'s constructor, and a view
+  in `Views/` built from the shared cards (`SourceFilesCard`, `CrcDefaultsCard`,
+  `RunCard`), with its DataTemplate in `TabbedServiceView.xaml`. The screen runs it and
+  shows the outcome on its Review tab.
 - **A reusable control:** `Controls/`, with its look in a `Theme/Controls.*.xaml` style.
 - **An attached property** a view sets (`bhv:Something.Enable="True"`): `Behaviors/`.
 - **A converter:** its own file in `Converters/`, instantiated once in `Theme/Theme.xaml`.
@@ -91,8 +111,12 @@ root - the same rule as `FeBuddy.Core`.
 
 ### Screens
 
-Primary nav is **Services only**: Dashboard, AIRAC Service, Map. `Settings` and
-`Info` are system nav.
+Primary nav is **Services only**: Dashboard, AIRAC Service, File Conversions, Map.
+`Settings` and `Info` are system nav.
+
+Both tabbed screens are one view, `TabbedServiceView`: the heading, tab rail, action
+bar and page scroller are shared, and each screen's view-model says what differs
+(its title, and whether it has General and Preview Settings tabs).
 
 - **AIRAC Services** - a tabbed screen: a vertical tab rail down the left, a
   permanent **General** tab, one tab per selected sub-service, a **Preview
@@ -122,13 +146,35 @@ Primary nav is **Services only**: Dashboard, AIRAC Service, Map. `Settings` and
     tab, and the single **Run AIRAC Service** button, which goes through
     `AiracService.RunAsync`.
   - **Review tab** - appears once a run starts: the live step feed, errors,
-    advisories, each sub-service's results, and the files written.
+    advisories, each sub-service's results, and the files written. The rail sets it
+    apart from the settings tabs with a divider (`IsSetApart`, on every tabbed screen).
   - **Action bar** - above the tab content and again at the end of it: Previous,
     Next, Preview settings, Undo all changes, Undo last save, Save. Previous / Next /
     Preview settings offer to save a dirty tab first; cancelling keeps you where you are. The
     rail dot is amber for unsaved edits and red for a missing or invalid value, and
     an invalid field highlights in place with the validator's message as its
     tool-tip.
+- **File Conversions** - the same tabbed screen with no General or Preview Settings
+  tab: every conversion is always on the rail, and each runs on its own from the
+  button at the foot of its tab (`ConversionTabViewModel.RunCommand`). The screen saves
+  a dirty tab first (the user confirms), blocks an invalid one, runs the conversion on
+  a background thread and fills the shared Review tab. A conversion's `RunBlocker`
+  (e.g. "no files picked") keeps the button off without blocking Save, because picked
+  input files are not saved settings. The action bar hides Previous / Next here
+  (`HasStepNavigation` is off), since the tabs are standalone rather than steps.
+  Nothing here waits for AIRAC data.
+  - **Conversion tabs** - each is a `FileConversionTabViewModel`: source (a saved
+    folder, or files picked one or several at a time and not saved) and the CRC ERAM
+    defaults for the kinds it writes.
+  - **DAT to GeoJSON tab** - the Lines panel only, plus the cropping distance. Goes
+    through `DatToGeojsonService.Run`.
+  - **SCT2 to GeoJSON tab** - Lines and Labels panels, nothing of its own. Goes through
+    `SctToGeojsonService.Run`.
+  - **vERAM to GeoJSON tab** - the output layout (GeoMapObject Description / Filter Index and
+    Similar Attributes) and the CRC defaults source (XML / XML then card / card). Lines,
+    Symbols and Text panels, shown only while the card is a source (`UsesCrcDefaults`); with the
+    XML as the only source nothing on the card is required or sent. Goes through
+    `VeramToGeojsonService.Run`.
 - **Dashboard** - the verbatim description box + Discord link + next-cycle line,
   the News feed (from `NewsService`), and a live activity-log viewer over `AppLog`
   (filter chips with counts, minimizable).

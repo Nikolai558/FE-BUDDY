@@ -44,7 +44,10 @@
             <views:DashboardView />
         </DataTemplate>
         <DataTemplate DataType="{x:Type vm:AiracServiceViewModel}">
-            <views:AiracServiceView />
+            <views:TabbedServiceView />
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:FileConversionsViewModel}">
+            <views:TabbedServiceView />
         </DataTemplate>
         <DataTemplate DataType="{x:Type vm:AirwaysViewModel}">
             <views:AirwaysView />

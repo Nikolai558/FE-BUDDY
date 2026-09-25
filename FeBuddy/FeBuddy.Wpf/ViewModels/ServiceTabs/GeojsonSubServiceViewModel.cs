@@ -8,7 +8,6 @@ using FeBuddy.Wpf.ViewModels.Models;
 
 using FeBuddy.Core.Domain.Geo;
 using FeBuddy.Core.Domain.Geo.Models;
-using FeBuddy.Core.Infrastructure.Configuration;
 
 namespace FeBuddy.Wpf.ViewModels.ServiceTabs;
 
@@ -241,7 +240,7 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 
 		foreach (EramClassDefault row in AllCrcRows())
 		{
-			LoadCrcRow(row);
+			CrcDefaultsRowIo.Load(row, CrcConfigPrefix(row), Get);
 		}
 
 		_overrideRoi = GetBool(OverrideRoiKey, false);
@@ -279,7 +278,7 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 
 		foreach (EramClassDefault row in AllCrcRows())
 		{
-			SaveCrcRow(row);
+			CrcDefaultsRowIo.Save(row, CrcConfigPrefix(row), Set);
 		}
 
 		Set(OverrideRoiKey, YesNo(OverrideRoi));
@@ -301,7 +300,7 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 	{
 		settings["OutputDirectory"] = outputDirectory;
 		settings["AddFeBuddyOutputFolder"] = YesNo(addFeBuddyOutputFolder);
-		settings["CoordinatePrecision"] = SavedCoordinatePrecision().ToString(CultureInfo.InvariantCulture);
+		settings["CoordinatePrecision"] = OutputPreferences.CoordinatePrecision.ToString(CultureInfo.InvariantCulture);
 		settings["GenerateAliasFile"] = YesNo(GenerateAliasFile);
 		settings[EmitKeys.Lines] = YesNo(EmitLines);
 		settings[EmitKeys.Symbols] = YesNo(EmitSymbols);
@@ -316,32 +315,7 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 		// exactly those, and would only ignore any others.
 		foreach (EramClassDefault row in AllCrcRows().Where(IsCrcRowNeeded))
 		{
-			string prefix = $"Crc.{row.ClassName}.{row.Kind}";
-			settings[$"{prefix}.bcg"] = row.Bcg;
-			settings[$"{prefix}.filters"] = row.Filters;
-
-			if (row.ShowStyle)
-			{
-				settings[$"{prefix}.style"] = row.Style;
-			}
-
-			if (row.ShowThickness)
-			{
-				settings[$"{prefix}.thickness"] = row.Thickness;
-			}
-
-			if (row.ShowSize)
-			{
-				settings[$"{prefix}.size"] = row.Size;
-			}
-
-			if (row.ShowTextOptions)
-			{
-				settings[$"{prefix}.underline"] = row.Underline;
-				settings[$"{prefix}.opaque"] = row.Opaque;
-				settings[$"{prefix}.xOffset"] = row.XOffset.Trim();
-				settings[$"{prefix}.yOffset"] = row.YOffset.Trim();
-			}
+			CrcDefaultsRowIo.AddToSettingsBlock(row, settings);
 		}
 
 		RegionOfInterest? defaultRoi = OverrideRoi ? null : DefaultRoiStore.Load();
@@ -438,68 +412,6 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 	private string SelectedFebPropertyNames() =>
 		string.Join(',', FebProperties.Where(p => p.IsSelected).Select(p => p.Name));
 
-	private void LoadCrcRow(EramClassDefault row)
-	{
-		string prefix = CrcConfigPrefix(row);
-
-		row.Bcg = Get($"{prefix}.bcg") ?? row.Bcg;
-		row.Filters = Get($"{prefix}.filters") ?? row.Filters;
-
-		if (row.ShowStyle)
-		{
-			row.Style = Get($"{prefix}.style") ?? row.Style;
-		}
-
-		if (row.ShowThickness)
-		{
-			row.Thickness = Get($"{prefix}.thickness") ?? row.Thickness;
-		}
-
-		if (row.ShowSize)
-		{
-			row.Size = Get($"{prefix}.size") ?? row.Size;
-		}
-
-		if (row.ShowTextOptions)
-		{
-			row.Underline = Get($"{prefix}.underline") ?? row.Underline;
-			row.Opaque = Get($"{prefix}.opaque") ?? row.Opaque;
-			row.XOffset = Get($"{prefix}.xOffset") ?? row.XOffset;
-			row.YOffset = Get($"{prefix}.yOffset") ?? row.YOffset;
-		}
-	}
-
-	private void SaveCrcRow(EramClassDefault row)
-	{
-		string prefix = CrcConfigPrefix(row);
-
-		Set($"{prefix}.bcg", row.Bcg);
-		Set($"{prefix}.filters", row.Filters);
-
-		if (row.ShowStyle)
-		{
-			Set($"{prefix}.style", row.Style);
-		}
-
-		if (row.ShowThickness)
-		{
-			Set($"{prefix}.thickness", row.Thickness);
-		}
-
-		if (row.ShowSize)
-		{
-			Set($"{prefix}.size", row.Size);
-		}
-
-		if (row.ShowTextOptions)
-		{
-			Set($"{prefix}.underline", row.Underline);
-			Set($"{prefix}.opaque", row.Opaque);
-			Set($"{prefix}.xOffset", row.XOffset);
-			Set($"{prefix}.yOffset", row.YOffset);
-		}
-	}
-
 	private void ValidateRoiOverride(ServiceValidation validation)
 	{
 		if (!OverrideRoi)
@@ -561,10 +473,4 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 		OnPropertyChanged(nameof(RoiFallbackHint));
 		OnPropertyChanged(nameof(HasRoi));
 	}
-
-	private static int SavedCoordinatePrecision() =>
-		int.TryParse(UserConfigFile.GetValue(UserConfigKeys.CoordinatePrecision), NumberStyles.Integer, CultureInfo.InvariantCulture, out int saved)
-		&& saved is >= 0 and <= 15
-			? saved
-			: 6;
 }

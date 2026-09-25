@@ -1,5 +1,6 @@
 using FeBuddy.Core.Application.Airac.Departures.Models;
 using FeBuddy.Core.Domain.Departures.Models;
+using FeBuddy.Core.Infrastructure.FileSystem;
 
 namespace FeBuddy.Core.Application.Airac.Departures;
 
@@ -38,5 +39,5 @@ internal static class DepartureOutputPaths
 		$"{airportProcedure.AirportId}_{airportProcedure.Procedure.CodeId}_{kind}.geojson";
 
 	private static string Root(DepartureSettings settings) =>
-		SubServiceOutputPaths.Resolve(settings.OutputDirectory, settings.AddFeBuddyOutputFolder, RootFolder);
+		ServiceOutputPaths.Resolve(settings.OutputDirectory, settings.AddFeBuddyOutputFolder, RootFolder);
 }

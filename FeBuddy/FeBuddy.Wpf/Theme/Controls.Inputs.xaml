@@ -3,6 +3,8 @@
     ===========================================================================
         Field        TextBox with rounded sunken fill + amber focus + placeholder
                      (set the placeholder via the control's Tag)
+        Field.Number a short number typed inline in a sentence: fixed width,
+                     right-aligned, validation look included
         Progress     thin rounded determinate ProgressBar (amber fill)
         ctl:Option   (implicit) a control with its explanation indented underneath
 
@@ -75,18 +77,23 @@
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}"
                             CornerRadius="{DynamicResource Radius.Control}">
+                        <!-- The text host applies the TextBox's Padding itself, so the
+                             ScrollViewer takes no margin - giving it the Padding as well
+                             doubled the inset and made every box taller than a ComboBox.
+                             The hint sits in the same inset, plus the 2px the text host
+                             keeps before the caret, so it lines up with typed text. -->
                         <Grid>
-                            <TextBlock x:Name="Hint"
-                                       Text="{TemplateBinding Tag}"
-                                       Margin="{TemplateBinding Padding}"
-                                       VerticalAlignment="Center"
-                                       IsHitTestVisible="False"
-                                       Visibility="Collapsed"
-                                       FontFamily="{DynamicResource Font.Body}"
-                                       FontSize="13"
-                                       Foreground="{DynamicResource Brush.Text.Tertiary}" />
+                            <Border Padding="{TemplateBinding Padding}" IsHitTestVisible="False">
+                                <TextBlock x:Name="Hint"
+                                           Text="{TemplateBinding Tag}"
+                                           Margin="2,0,0,0"
+                                           VerticalAlignment="Center"
+                                           Visibility="Collapsed"
+                                           FontFamily="{DynamicResource Font.Body}"
+                                           FontSize="13"
+                                           Foreground="{DynamicResource Brush.Text.Tertiary}" />
+                            </Border>
                             <ScrollViewer x:Name="PART_ContentHost"
-                                          Margin="{TemplateBinding Padding}"
                                           VerticalAlignment="Center" />
                         </Grid>
                     </Border>
@@ -121,6 +128,16 @@
                 <Setter Property="ToolTip" Value="{Binding (bhv:FieldState.Error), RelativeSource={RelativeSource Self}}" />
             </Trigger>
         </Style.Triggers>
+    </Style>
+
+    <!-- ========================= FIELD.NUMBER ======================== -->
+    <!-- A short number typed inline in a sentence ("within the last [ 30 ] days"): the
+         implicit TextBox look and validation state, at one width everywhere. -->
+    <Style x:Key="Field.Number" TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+        <Setter Property="Width" Value="72" />
+        <Setter Property="Margin" Value="8,0" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="HorizontalContentAlignment" Value="Right" />
     </Style>
 
     <!-- ===================== CHECKBOX (implicit) ===================== -->

@@ -1,9 +1,9 @@
 # Settings blocks
 
-A **settings block** is the `Dictionary<string, string>` one sub-service receives for one run.
-The GUI builds it (`BuildSettingsBlock` on each tab), the harness writes it by hand
-(`HarnessSettings.cs`), and the tests build it inline - and all of them go through the same
-parser. This page lists every key each parser reads.
+A **settings block** is the `Dictionary<string, string>` one sub-service (or one file
+conversion) receives for one run. The GUI builds it (`BuildSettingsBlock` on each tab), the
+harness writes it by hand (`HarnessSettings.cs`), and the tests build it inline - and all of them
+go through the same parser. This page lists every key each parser reads.
 
 ## How a block is read
 
@@ -18,11 +18,11 @@ parser. This page lists every key each parser reads.
   written *and* whose `IncludeCrc…Defaults` is `Y`. Other valid CRC keys are accepted and ignored;
   a key for a class, kind or field the sub-service does not have is a warning.
 
-Parsers: `AirportSettingsParser`, `AirwaySettingsParser`, `DepartureSettingsParser`. Shared
-reading: `SubServiceSettingsReader`, `CrcDefaultsReader`, `SettingsValueReader`
-(all in `FeBuddy.Core/Application`).
+Parsers: `AirportSettingsParser`, `AirwaySettingsParser`, `DepartureSettingsParser`,
+`DatToGeojsonSettingsParser`. Shared reading: `SubServiceSettingsReader`, `CrcDefaultsReader`,
+`SettingsValueReader` (all in `FeBuddy.Core/Application`).
 
-## Keys every sub-service reads
+## Keys every AIRAC sub-service reads
 
 | Key | Values | Default |
 |---|---|---|
@@ -99,6 +99,53 @@ naming the key.
   least one `Emit…`.
 - Only the active amendment mode's value is read (and required); values for the other modes are
   ignored.
+
+## Keys every file conversion reads
+
+A file conversion is not an AIRAC sub-service: it has no alias file, `feb.*` properties or ROI.
+Every conversion reads these (shared reading: `ConversionSettingsReader`), plus
+`CoordinatePrecision` and the `IncludeCrc…Defaults` / `Crc.*` keys as in the table above.
+
+| Key | Values | Default |
+|---|---|---|
+| `OutputDirectory` | folder path | **required** |
+| `AddFeBuddyOutputFolder` | `Y` / `N` | `Y` |
+| `SourceFolder` | a folder; every file directly in it with the conversion's extension is converted | - |
+| `SourceFiles` | file paths separated by `\|` (a comma is legal in a Windows path; `\|` is not) | - |
+
+- Exactly one of `SourceFolder` and `SourceFiles` is required. A `SourceFolder` that does not
+  exist throws; a file in `SourceFiles` that cannot be read fails that file only.
+
+## DAT to GeoJSON (File Conversions)
+
+Extension `.dat`.
+
+| Key | Values | Default |
+|---|---|---|
+| `CroppingDistance` | NM from each map's point of tangency, greater than 0 and at most 1000; blank keeps every line | none |
+
+- **CRC class:** `VideoMap`, with `Line` only (`Crc.VideoMap.Line.*`).
+
+## SCT2 to GeoJSON (File Conversions)
+
+Extensions `.sct2` and `.sct`. No keys of its own.
+
+- **CRC class:** `SectorFile`, with `Line` (every lines file) and `Text` (the labels file):
+  `Crc.SectorFile.Line.*`, `Crc.SectorFile.Text.*`. Regions have no CRC defaults.
+
+## vERAM to GeoJSON (File Conversions)
+
+Extension `.xml` (a vERAM GeoMaps file; any other XML fails that file only).
+
+| Key | Values | Default |
+|---|---|---|
+| `OutputLayout` | `ByObject` (a file per GeoMapObject description), `ByFilter` (files by filter index and similar attributes) | `ByObject` |
+| `DefaultsSource` | `Xml` (carry over the XML's defaults and element overrides), `XmlThenCard` (the tab's defaults where an object has none), `Card` (the tab's defaults only; the XML's styling is ignored) | `Xml` |
+
+- **CRC class:** `GeoMap`, with `Line`, `Symbol` and `Text`: `Crc.GeoMap.Line.*`,
+  `Crc.GeoMap.Symbol.*`, `Crc.GeoMap.Text.*`.
+- The tab's CRC defaults are read only when `DefaultsSource` is `XmlThenCard` or `Card`, and then
+  only for kinds whose `IncludeCrc…Defaults` is `Y`. With `Xml` they are ignored.
 
 ## An example (Airways, as the harness writes it)
 

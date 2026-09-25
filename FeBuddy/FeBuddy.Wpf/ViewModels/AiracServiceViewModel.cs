@@ -14,7 +14,6 @@ using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Application.Launch;
 using FeBuddy.Core.Domain.Airac;
 using FeBuddy.Core.Domain.Airac.Models;
-using FeBuddy.Core.Infrastructure.Configuration;
 using FeBuddy.Core.Infrastructure.Logging;
 using FeBuddy.Core.Infrastructure.Nasr.Models;
 
@@ -46,7 +45,6 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 	private readonly ServiceRunReviewTabViewModel _runReview = new();
 	private readonly Dictionary<string, ServiceTabViewModel> _tabsByKey = new(StringComparer.OrdinalIgnoreCase);
 
-	private bool _isRunning;
 	private bool _runReviewShown;
 	private NasrCsvDataCollection? _parsedForSelectedCycle;
 	private string? _parsedCycleId;
@@ -75,18 +73,8 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 	/// <summary>Runs the AIRAC Service for every selected sub-service. Hosted on the Preview Settings tab.</summary>
 	public ICommand RunCommand { get; }
 
-	/// <summary><see langword="true"/> while a run is in progress.</summary>
-	public bool IsRunning
-	{
-		get => _isRunning;
-		private set
-		{
-			if (SetProperty(ref _isRunning, value))
-			{
-				CommandManager.InvalidateRequerySuggested();
-			}
-		}
-	}
+	/// <inheritdoc />
+	public override string ScreenTitle => "AIRAC Services";
 
 	/// <summary>
 	/// The AIRAC data readiness. Controls whether the cycle-dependent lists and the run are enabled.
@@ -219,7 +207,7 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 		}
 		catch (Exception ex)
 		{
-			AppLog.Warning("AiracServiceView", $"Could not load parsed data for cycle {cycleId}: {ex.Message}");
+			AppLog.Warning("AiracService", $"Could not load parsed data for cycle {cycleId}: {ex.Message}");
 		}
 	}
 
@@ -257,8 +245,8 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 
 		try
 		{
-			string outputDir = ResolveOutputDirectory();
-			bool addFeBuddyFolder = ResolveAddFeBuddyFolder();
+			string outputDir = OutputPreferences.Directory;
+			bool addFeBuddyFolder = OutputPreferences.AddFeBuddyOutputFolder;
 
 			// The only sub-service-specific lines in the run: which block each tab's settings
 			// belong to. Everything else goes through ISubServiceRunTarget.
@@ -297,7 +285,7 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 		catch (Exception ex)
 		{
 			_runReview.FailRun(ex.Message, outputDirectory: ResolveRunOutputDirectory(
-				[], ResolveOutputDirectory(), ResolveAddFeBuddyFolder()));
+				[], OutputPreferences.Directory, OutputPreferences.AddFeBuddyOutputFolder));
 			Toast.Error("AIRAC Service failed", ex.Message);
 		}
 		finally
@@ -450,19 +438,5 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 		Toast.Warn("Cannot run", $"{invalid.Title} has settings that need fixing.");
 		SelectedTab = invalid;
 		return false;
-	}
-
-	private static string ResolveOutputDirectory()
-	{
-		string? saved = UserConfigFile.GetValue(UserConfigKeys.DefaultOutputDirectory);
-		return string.IsNullOrWhiteSpace(saved)
-			? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), "FE-Buddy_Output")
-			: saved!;
-	}
-
-	private static bool ResolveAddFeBuddyFolder()
-	{
-		string? saved = UserConfigFile.GetValue(UserConfigKeys.AddFeBuddyOutputFolder);
-		return !string.Equals(saved, "N", StringComparison.OrdinalIgnoreCase);
 	}
 }

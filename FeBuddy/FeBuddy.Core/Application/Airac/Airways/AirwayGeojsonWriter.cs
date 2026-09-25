@@ -1,6 +1,7 @@
 using FeBuddy.Core.Application.Airac.Airways.Models;
 using FeBuddy.Core.Domain.Airways.Models;
 using FeBuddy.Core.Domain.Geo;
+using FeBuddy.Core.Infrastructure.FileSystem;
 using FeBuddy.Core.Infrastructure.Geojson;
 
 using NetTopologySuite.Features;
@@ -57,7 +58,7 @@ public static class AirwayGeojsonWriter
 			return files;
 		}
 
-		string geojsonDirectory = SubServiceOutputPaths.Resolve(settings.OutputDirectory, settings.AddFeBuddyOutputFolder, "Airways", "Geojson");
+		string geojsonDirectory = ServiceOutputPaths.Resolve(settings.OutputDirectory, settings.AddFeBuddyOutputFolder, "Airways", "Geojson");
 
 		foreach (var group in GroupAirways(airways, settings.OutputBy))
 		{

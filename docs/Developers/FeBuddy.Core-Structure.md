@@ -48,20 +48,29 @@ FeBuddy.Core/
 │   ├── Airways/      AirwayClassifier and the Airway/segment/point models
 │   ├── Crc/          CRC feature properties and CrcPropertyValidator
 │   ├── Departures/   DepartureNaming and procedure models
-│   └── Geo/          GeoMath, antimeridian splitting, line merging, ROI clipping, Wgs84
+│   └── Geo/          GeoMath, antimeridian splitting, line merging and segment joining, ROI and
+│                     radius clipping, Wgs84
 ├── Infrastructure/
 │   ├── Configuration/  UserConfigFile, UserConfigKeys, DevMode, OutputFormatting
-│   ├── FileSystem/     AppPaths, TempWorkspace
+│   ├── Dat/            DatFileReader: FAA .dat RADAR Video Maps
+│   ├── FileSystem/     AppPaths, TempWorkspace, ServiceOutputPaths (the FE-Buddy_Output layout)
 │   ├── Geojson/        CrcFeatureFactory, GeojsonFileWriter, GeojsonFileSet
 │   ├── GitHub/  Http/  Logging/  Markdown/  Platform/
-│   └── Nasr/           Download, availability, CSV reading, WaypointLocator
-│       ├── Models/     One row-model file per NASR CSV group
-│       └── Parsers/    One parser per group + NasrCsvParser (parses them all)
+│   ├── Nasr/           Download, availability, CSV reading, WaypointLocator
+│   │   ├── Models/     One row-model file per NASR CSV group
+│   │   └── Parsers/    One parser per group + NasrCsvParser (parses them all)
+│   ├── Sct/            SctFileReader: VRC .sct2 / .sct sector files
+│   └── Veram/          VeramGeoMapReader: vERAM GeoMaps XML (streamed)
 └── Application/
     ├── Airac/          AiracService (entry point), AiracCycleDataCache, FebProperties
     │   ├── Airways/    One folder per sub-service, all shaped the same way
     │   ├── Airports/
     │   └── Departures/
+    ├── Conversions/    ConversionSettingsReader and ConversionFiles (what every conversion
+    │   │               shares), then one folder per file conversion
+    │   ├── DatToGeojson/
+    │   ├── SctToGeojson/
+    │   └── VeramToGeojson/
     ├── Launch/         LaunchSequence, AppEnvironment
     ├── News/           NewsService
     ├── Settings/       Shared readers for the string settings dictionaries
@@ -125,6 +134,36 @@ Airports and Departures have the same shape. Problems are reported as `ServiceMe
 (warnings or errors) in the result instead of being thrown, so one bad setting doesn't lose the
 whole run. The only exception is a missing required setting, which throws `ArgumentException`.
 
+**When the user runs a file conversion**, the UI builds one settings block and calls that
+conversion's service directly - there is no cycle data and no aggregate. The pipeline has the
+same shape, one input file at a time:
+
+```
+DatToGeojsonService.Run(settings, progress)
+  1. DatToGeojsonSettingsParser.Parse  string settings → DatToGeojsonSettings + warnings
+  for each .dat file (a folder's, or the ones named):
+  2. DatFileReader.Read                .dat file       → point of tangency + LineStrings
+  3. RadiusFilter.ClipLines            (if cropping)   → the pieces within the distance
+  4. AntimeridianSplitter.Split                        → no line wraps round the map
+  5. DatGeojsonWriter.Write                            → <name>.geojson
+  → DatToGeojsonServiceResult (one DatFileConversion per file, ServiceMessages, timing)
+```
+
+A file that cannot be read or cropped is an `Error` message and a failed `DatFileConversion`;
+the other files still convert. SCT2 to GeoJSON (`SctFileReader` → `SctGeojsonWriter`) and vERAM
+to GeoJSON (`VeramGeoMapReader` → `VeramGeojsonWriter`, with `VeramCrcProperties` turning vERAM's
+styling into validated CRC defaults and overrides) have the same shape. Both write lines through
+`Domain/Geo/SegmentJoiner`, which joins two-point segments back into lines, merges repeats with
+`LineStringMerger` and splits them with `AntimeridianSplitter`.
+
+What every conversion shares lives in `Application/Conversions/`, never copied into each one:
+`ConversionSettingsReader` (the source and output keys), `ConversionFiles` (finding a folder's
+files, the per-file loop that reports progress and turns an unreadable file into one failed file,
+and file-safe and unique file names), and in `Models/` the `ConversionSettings`,
+`ConversionServiceResult` and `ConversionProgress` bases each conversion's own types derive from,
+plus `SourceFileConversion` / `SourceFilesConversionResult` for the conversions that write several
+files per source (SCT2, vERAM).
+
 ## Where do I put…
 
 - **A new aviation or geometry rule** (no I/O): `Domain/<Feature>/`.
@@ -135,6 +174,13 @@ whole run. The only exception is a missing required setting, which throws `Argum
   block to `AiracServiceSettings` and one `RunSubServiceAsync` call to `AiracService`. Reuse
   `Application/Settings/SubServiceSettingsReader` for the common keys (precision, ROI,
   FEB properties).
+- **A new file conversion** (say, vSTARS video maps): `Application/Conversions/VstarsToGeojson/`
+  with its `*Service`, `*SettingsParser`, `*GeojsonWriter` and a `Models/` folder, shaped like
+  `SctToGeojson/`: its settings derive from `ConversionSettings`, its result is a
+  `SourceFilesConversionResult` (or derives from `ConversionServiceResult`), and its service runs
+  through `ConversionFiles`. A reader that finds the content is not its format throws
+  `InvalidDataException`, which fails that one file. The code that reads
+  the source format goes in `Infrastructure/<Format>/`.
 - **A new config key**: a constant in `Infrastructure/Configuration/UserConfigKeys`.
 - **Something shared by two features**: the lowest layer that both can see. Never copy it.
 

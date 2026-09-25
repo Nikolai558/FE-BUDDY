@@ -65,7 +65,7 @@ public sealed class SettingsViewModel : ObservableObject
 
 		_channel = VersionCheckResult.ParseChannel(UserConfigFile.GetValue(ChannelKey));
 		_selectedFacility = Blank(UserConfigFile.GetValue(ArtccKey));
-		_outputDir = Blank(UserConfigFile.GetValue(OutputDirKey)) ?? DefaultOutputDirectory;
+		_outputDir = Blank(UserConfigFile.GetValue(OutputDirKey)) ?? OutputPreferences.DefaultDirectory;
 		_addFeBuddyFolder = !string.Equals(UserConfigFile.GetValue(AddFolderKey), "N", StringComparison.OrdinalIgnoreCase);
 		_coordinatePrecision = int.TryParse(UserConfigFile.GetValue(PrecisionKey), out int p) && p is >= 0 and <= 15 ? p : 6;
 		_prettyPrintGeojson = string.Equals(
@@ -171,10 +171,6 @@ public sealed class SettingsViewModel : ObservableObject
 	/// <summary>Shown in place of the facility list until <see cref="FacilitiesReady"/>.</summary>
 	public string FacilityWaitingMessage =>
 		"Waiting for AIRAC data to finish downloading and parsing. The facility list will be available in a moment.";
-
-	/// <summary>The default output directory: <c>%USERPROFILE%\Desktop\FE-Buddy_Output</c>.</summary>
-	public static string DefaultOutputDirectory =>
-		Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), "FE-Buddy_Output");
 
 	/// <summary>Where every service writes its output.</summary>
 	public string OutputDirectory

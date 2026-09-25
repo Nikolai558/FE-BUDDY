@@ -2,6 +2,7 @@ using System.Text;
 
 using FeBuddy.Core.Application.Airac.Airways.Models;
 using FeBuddy.Core.Domain.Airways.Models;
+using FeBuddy.Core.Infrastructure.FileSystem;
 
 namespace FeBuddy.Core.Application.Airac.Airways;
 
@@ -60,7 +61,7 @@ public static class AirwayAliasWriter
 			builder.AppendLine($".{airway.AwyId}F .FF {pointIds}");
 		}
 
-		string directory = SubServiceOutputPaths.Resolve(settings.OutputDirectory, settings.AddFeBuddyOutputFolder, "Airways", "Alias");
+		string directory = ServiceOutputPaths.Resolve(settings.OutputDirectory, settings.AddFeBuddyOutputFolder, "Airways", "Alias");
 		Directory.CreateDirectory(directory);
 
 		string path = Path.Combine(directory, FileName);

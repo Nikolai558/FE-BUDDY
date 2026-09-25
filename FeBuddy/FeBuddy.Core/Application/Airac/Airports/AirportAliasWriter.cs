@@ -4,6 +4,7 @@ using System.Text;
 using FeBuddy.Core.Application.Airac.Airports.Models;
 using FeBuddy.Core.Application.Models;
 using FeBuddy.Core.Domain.Airports.Models;
+using FeBuddy.Core.Infrastructure.FileSystem;
 using FeBuddy.Core.Infrastructure.Logging.Models;
 
 namespace FeBuddy.Core.Application.Airac.Airports;
@@ -105,7 +106,7 @@ public static class AirportAliasWriter
 			return new AirportAliasGenerateResult(null, 0, messages);
 		}
 
-		string directory = SubServiceOutputPaths.Resolve(settings.OutputDirectory, settings.AddFeBuddyOutputFolder, "Airports", "Alias");
+		string directory = ServiceOutputPaths.Resolve(settings.OutputDirectory, settings.AddFeBuddyOutputFolder, "Airports", "Alias");
 		Directory.CreateDirectory(directory);
 
 		string path = Path.Combine(directory, FileName);

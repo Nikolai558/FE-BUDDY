@@ -1,0 +1,39 @@
+<!--
+    SctToGeojsonView  -  the SCT2 to GeoJSON tab on the File Conversions screen.
+    Save / Undo come from the tab host's shared action bar, and the tab
+    host owns the page's single scroller. The Convert card at the foot of the page starts the
+    run, and the outcome appears on the screen's Review tab.
+-->
+<UserControl x:Class="FeBuddy.Wpf.Views.SctToGeojsonView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:FeBuddy.Wpf.ViewModels"
+             xmlns:cards="clr-namespace:FeBuddy.Wpf.Views.Cards"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance vm:SctToGeojsonViewModel}"
+             d:DesignWidth="900" d:DesignHeight="900">
+
+    <!-- No ScrollViewer here: the tab host owns the one page-level scroller. -->
+    <StackPanel>
+
+        <TextBlock Style="{StaticResource Text.Prose}" Margin="0,0,0,14"
+                   Text="Converts VRC sector files (.sct2 / .sct) into CRC-ready GeoJSON: a folder per sector file, named after it, holding its ARTCC boundaries, airways, GEO, labels and regions, and a file per SID and STAR diagram." />
+
+        <TextBlock Text="{Binding ValidationError}" Style="{StaticResource Text.Caption}"
+                   Foreground="{StaticResource Brush.Danger}" TextWrapping="Wrap" Margin="0,0,0,12"
+                   MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
+                   Visibility="{Binding ValidationError, Converter={StaticResource StringToVis}}" />
+
+        <!-- ============ source ============ -->
+        <cards:SourceFilesCard />
+
+        <!-- ============ CRC ERAM defaults ============ -->
+        <cards:CrcDefaultsCard LinesTitle="Sector File — Lines" TextTitle="Sector File — Labels" />
+
+        <!-- ============ run ============ -->
+        <cards:RunCard Blocker="{Binding RunBlocker}"
+                       Note="Unsaved settings are saved before the conversion starts. Existing files with the same name are replaced." />
+    </StackPanel>
+</UserControl>

@@ -100,21 +100,38 @@ naming the key.
 - Only the active amendment mode's value is read (and required); values for the other modes are
   ignored.
 
-## DAT to GeoJSON (File Conversions)
+## Keys every file conversion reads
 
-A file conversion is not an AIRAC sub-service: it reads only the keys below (plus
-`OutputDirectory`, `AddFeBuddyOutputFolder`, `CoordinatePrecision` and `IncludeCrcLineDefaults`,
-read as in the table above). It has no alias file, `feb.*` properties or ROI.
+A file conversion is not an AIRAC sub-service: it has no alias file, `feb.*` properties or ROI.
+Every conversion reads these (shared reading: `ConversionSettingsReader`), plus
+`CoordinatePrecision` and the `IncludeCrc…Defaults` / `Crc.*` keys as in the table above.
 
 | Key | Values | Default |
 |---|---|---|
-| `SourceFolder` | a folder; every `.dat` directly in it is converted | - |
-| `SourceFiles` | `.dat` paths separated by `\|` (a comma is legal in a Windows path; `\|` is not) | - |
-| `CroppingDistance` | NM from each map's point of tangency, greater than 0 and at most 1000; blank keeps every line | none |
+| `OutputDirectory` | folder path | **required** |
+| `AddFeBuddyOutputFolder` | `Y` / `N` | `Y` |
+| `SourceFolder` | a folder; every file directly in it with the conversion's extension is converted | - |
+| `SourceFiles` | file paths separated by `\|` (a comma is legal in a Windows path; `\|` is not) | - |
 
 - Exactly one of `SourceFolder` and `SourceFiles` is required. A `SourceFolder` that does not
   exist throws; a file in `SourceFiles` that cannot be read fails that file only.
+
+## DAT to GeoJSON (File Conversions)
+
+Extension `.dat`.
+
+| Key | Values | Default |
+|---|---|---|
+| `CroppingDistance` | NM from each map's point of tangency, greater than 0 and at most 1000; blank keeps every line | none |
+
 - **CRC class:** `VideoMap`, with `Line` only (`Crc.VideoMap.Line.*`).
+
+## SCT2 to GeoJSON (File Conversions)
+
+Extensions `.sct2` and `.sct`. No keys of its own.
+
+- **CRC class:** `SectorFile`, with `Line` (every lines file) and `Text` (the labels file):
+  `Crc.SectorFile.Line.*`, `Crc.SectorFile.Text.*`. Regions have no CRC defaults.
 
 ## An example (Airways, as the harness writes it)
 

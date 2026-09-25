@@ -212,6 +212,35 @@ rest of the map still converts. Coordinates are read as north and west unless th
 otherwise, and a line crossing the 180° meridian (Guam, for example) is split so it draws
 correctly.
 
+### SCT2 to GeoJSON tab
+
+Converts VRC sector files (`.sct2` or `.sct`) into GeoJSON: a folder per sector file, named after
+it, holding:
+
+| File | From |
+|---|---|
+| `ARTCC`, `ARTCC-HIGH`, `ARTCC-LOW` | the boundary sections - one feature per boundary name |
+| `LOW-AIRWAY`, `HIGH-AIRWAY` | the airway sections - one feature per airway |
+| `GEO` | `[GEO]` |
+| `SID\<diagram>`, `STAR\<diagram>` | one file per SID and STAR diagram, named after it |
+| `LABELS` | `[LABELS]`, as text |
+| `REGIONS` | `[REGIONS]`, as filled areas |
+
+A section with nothing in it writes no file. Airports, VORs, NDBs and fixes are not written, but a
+coordinate given as one of their names (`DJB DJB`) is found and used. Lines that meet are joined
+back together and a segment drawn twice is written once, so the files are small and dashed styles
+stay dashed.
+
+- **Source Files** - the same as on the DAT tab: a remembered folder (every `.sct2` and `.sct` in
+  it) or files you pick.
+- **CRC ERAM Defaults** - a **Lines** panel for every lines file (boundaries, airways, GEO, SIDs
+  and STARs) and a **Labels** panel for the labels file. Regions have no CRC defaults.
+- **Convert sector files** - saves any unsaved settings (you are asked first) and runs.
+
+A record FE-Buddy cannot read - a mistyped coordinate, a name that is not defined anywhere in the
+file - is skipped and listed on the Review tab; the rest of the file still converts. VRC colours
+are not carried over: CRC styles lines through the CRC defaults instead.
+
 ## Output files
 
 Everything goes in your output folder (Settings ▸ Default Output Directory), inside a
@@ -229,7 +258,9 @@ Everything goes in your output folder (Settings ▸ Default Output Directory), i
     ├── Departure Procedures\
     │   ├── <ARTCC>\<airport>\   <airport>_<procedure>_Lines / _Symbols / _Text (.geojson)
     │   └── Alias\      Departures.txt
-    └── DAT to GeoJSON\ <.dat file name>.geojson, one per converted map
+    ├── DAT to GeoJSON\ <.dat file name>.geojson, one per converted map
+    └── SCT2 to GeoJSON\
+        └── <sector file name>\   ARTCC, …, GEO, LABELS, REGIONS (.geojson), SID\, STAR\
 ```
 
 A run overwrites the files it writes. A file that would be empty (nothing matched) is not written.

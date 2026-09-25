@@ -35,9 +35,9 @@ your PC. Your settings stay in `%APPDATA%\FE-Buddy\UserConfig.json`.
 
 ### Do I still need FE-Buddy 2.x?
 
-Only for the tools 3.0 does not have yet: chart-recall and ISR aliases, SCT2 and GeoMap
-conversions, GeoJSON clean-up and procedure ISRs. (FAA `.dat` video maps already convert in 3.0,
-on the File Conversions screen.) Installing 3.0 replaces 2.x, so if you still need those, hold
+Only for the tools 3.0 does not have yet: chart-recall and ISR aliases, SCT2 to DXF and GeoMap
+conversions, GeoJSON clean-up and procedure ISRs. (FAA `.dat` video maps and SCT2 sector files
+already convert to GeoJSON in 3.0, on the File Conversions screen.) Installing 3.0 replaces 2.x, so if you still need those, hold
 off upgrading for now.
 
 ## Something is wrong

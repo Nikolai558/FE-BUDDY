@@ -11,7 +11,6 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:FeBuddy.Wpf.ViewModels"
-             xmlns:m="clr-namespace:FeBuddy.Wpf.ViewModels.Models"
              xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
              xmlns:cards="clr-namespace:FeBuddy.Wpf.Views.Cards"
              xmlns:bhv="clr-namespace:FeBuddy.Wpf.Behaviors"
@@ -31,54 +30,7 @@
                    Visibility="{Binding ValidationError, Converter={StaticResource StringToVis}}" />
 
         <!-- ============ source ============ -->
-        <ctl:Card Header="Source Files">
-            <StackPanel>
-                <RadioButton GroupName="DatSource" Content="Every .dat file in a folder" Margin="0,4,0,0"
-                             IsChecked="{Binding SourceIsFolder, Mode=TwoWay}" />
-                <StackPanel Margin="26,6,0,0" IsEnabled="{Binding SourceIsFolder}">
-                    <DockPanel>
-                        <Button DockPanel.Dock="Right" Style="{StaticResource Button.Ghost}" Content="Browse…"
-                                Command="{Binding BrowseFolderCommand}" Margin="8,0,0,0" />
-                        <TextBox Text="{Binding SourceFolder, UpdateSourceTrigger=PropertyChanged}" />
-                    </DockPanel>
-                    <TextBlock Style="{StaticResource Text.Caption}" Margin="0,6,0,0" Text="{Binding FolderSummary}" />
-                    <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,2,0,0"
-                               MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
-                               Text="The folder is remembered. Files in its sub-folders are not included." />
-                </StackPanel>
-
-                <RadioButton GroupName="DatSource" Content="Files I pick" Margin="0,14,0,0"
-                             IsChecked="{Binding SourceIsFiles, Mode=TwoWay}" />
-                <StackPanel Margin="26,6,0,0" IsEnabled="{Binding SourceIsFiles}">
-                    <StackPanel Orientation="Horizontal">
-                        <Button Style="{StaticResource Button.Ghost}" Content="Add files…"
-                                Command="{Binding BrowseFilesCommand}" />
-                        <Button Style="{StaticResource Button.Ghost}" Content="Clear" Margin="8,0,0,0"
-                                Command="{Binding ClearFilesCommand}" />
-                    </StackPanel>
-                    <ItemsControl ItemsSource="{Binding SourceFiles}" Margin="0,8,0,0">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate DataType="{x:Type m:SourceFileItem}">
-                                <Border Margin="0,3" Padding="8,6" CornerRadius="{StaticResource Radius.Chip}"
-                                        Background="{StaticResource Brush.Bg.Sunken}" ToolTip="{Binding Path}">
-                                    <DockPanel>
-                                        <Button DockPanel.Dock="Right" Style="{StaticResource Button.Subtle}" Content="✕" Padding="6,2"
-                                                ToolTip="Remove this file"
-                                                Command="{Binding DataContext.RemoveFileCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                                CommandParameter="{Binding}" />
-                                        <TextBlock Text="{Binding Name}" Style="{StaticResource Text.Body}"
-                                                   VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
-                                    </DockPanel>
-                                </Border>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                    <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,2,0,0"
-                               MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
-                               Text="Pick one file or several at once. Picked files are not remembered once FE-Buddy closes." />
-                </StackPanel>
-            </StackPanel>
-        </ctl:Card>
+        <cards:SourceFilesCard />
 
         <!-- ============ CRC ERAM defaults ============ -->
         <cards:CrcDefaultsCard LinesTitle="Video Map — Lines" />

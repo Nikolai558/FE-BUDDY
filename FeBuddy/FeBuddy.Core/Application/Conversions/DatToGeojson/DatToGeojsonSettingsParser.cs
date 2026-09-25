@@ -11,12 +11,6 @@ namespace FeBuddy.Core.Application.Conversions.DatToGeojson;
 /// </summary>
 public static class DatToGeojsonSettingsParser
 {
-	/// <summary>
-	/// What separates the paths in <c>SourceFiles</c>. A comma cannot be used, as it is legal in
-	/// a Windows path; <c>|</c> is not.
-	/// </summary>
-	public const char SourceFileSeparator = '|';
-
 	/// <summary>The CRC defaults class every converted file's Line defaults are keyed under: <c>Crc.VideoMap.Line.*</c>.</summary>
 	public const string CrcClassName = "VideoMap";
 
@@ -25,11 +19,12 @@ public static class DatToGeojsonSettingsParser
 
 	private const string LogSource = "DatToGeojsonSettingsParser";
 
-	/// <summary>The keys only this conversion reads, on top of <see cref="SubServiceSettingsReader.CommonKeys"/>.</summary>
-	private static readonly IReadOnlySet<string> OwnKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-	{
-		"SourceFolder", "SourceFiles", "CroppingDistance",
-	};
+	/// <summary>
+	/// The keys only this conversion reads, on top of <see cref="SubServiceSettingsReader.CommonKeys"/>
+	/// and <see cref="ConversionSettingsReader.SourceKeys"/>.
+	/// </summary>
+	private static readonly IReadOnlySet<string> OwnKeys = new HashSet<string>(
+		ConversionSettingsReader.SourceKeys.Append("CroppingDistance"), StringComparer.OrdinalIgnoreCase);
 
 	/// <summary>A video map is lines only.</summary>
 	private static readonly IReadOnlyDictionary<string, CrcFeatureKind[]> CrcKindsByClass =
@@ -51,22 +46,8 @@ public static class DatToGeojsonSettingsParser
 	{
 		ArgumentNullException.ThrowIfNull(settings);
 
-		string outputDirectory = SettingsValueReader.RequiredString(settings, "OutputDirectory");
-
-		string? sourceFolder = SettingsValueReader.OptionalString(settings, "SourceFolder");
-		string[] sourceFiles = SettingsValueReader.OptionalString(settings, "SourceFiles")
-			?.Split(SourceFileSeparator, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-			?? [];
-
-		bool hasFolder = sourceFolder is not null;
-		bool hasFiles = sourceFiles.Length > 0;
-
-		if (hasFolder == hasFiles)
-		{
-			throw new ArgumentException(
-				"Give either 'SourceFolder' (convert every .dat file in a folder) or 'SourceFiles' " +
-				$"(the .dat files to convert, separated by '{SourceFileSeparator}'), but not both.");
-		}
+		string outputDirectory = ConversionSettingsReader.ReadOutputDirectory(settings);
+		(string? sourceFolder, IReadOnlyList<string> sourceFiles) = ConversionSettingsReader.ReadSource(settings);
 
 		double? croppingDistance = SettingsValueReader.OptionalPositiveDecimal(settings, "CroppingDistance", MaxCroppingDistanceNm);
 
@@ -83,7 +64,7 @@ public static class DatToGeojsonSettingsParser
 		DatToGeojsonSettings parsed = new()
 		{
 			OutputDirectory = outputDirectory,
-			AddFeBuddyOutputFolder = SettingsValueReader.YesNo(settings, "AddFeBuddyOutputFolder", defaultValue: true),
+			AddFeBuddyOutputFolder = ConversionSettingsReader.ReadAddFeBuddyOutputFolder(settings),
 			CoordinatePrecision = SubServiceSettingsReader.ReadCoordinatePrecision(settings),
 			SourceFolder = sourceFolder,
 			SourceFiles = sourceFiles,

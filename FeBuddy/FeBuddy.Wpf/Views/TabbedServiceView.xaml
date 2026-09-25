@@ -43,6 +43,9 @@
         <DataTemplate DataType="{x:Type vm:DatToGeojsonViewModel}">
             <local:DatToGeojsonView />
         </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:SctToGeojsonViewModel}">
+            <local:SctToGeojsonView />
+        </DataTemplate>
         <DataTemplate DataType="{x:Type tabs:PlaceholderSubServiceViewModel}">
             <local:PlaceholderSubServiceView />
         </DataTemplate>

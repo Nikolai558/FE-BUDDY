@@ -41,6 +41,7 @@ public sealed class FileConversionsViewModel : TabbedServiceViewModel
 		_conversions =
 		[
 			new DatToGeojsonViewModel(),
+			new SctToGeojsonViewModel(),
 		];
 
 		foreach (ConversionTabViewModel conversion in _conversions)

@@ -115,18 +115,25 @@ and `<field>` depends on the kind: **Line** `bcg`, `filters`, `style`, `thicknes
 | `Amendment.WithinDays` | whole number, 1-36500 | `30` |
 | `Amendment.OnOrAfter` | `yyyy-MM-dd` | none |
 
-## Services.FileConversions.DatToGeojson
+## File conversion nodes
 
-Written by the **DAT to GeoJSON** tab on the File Conversions screen, with **Save** on its tab.
-Files picked one by one are deliberately not saved; the folder is.
+Each conversion tab on the File Conversions screen saves its own node, with **Save** on its tab
+(written by `FileConversionTabViewModel`). Files picked one by one are deliberately not saved;
+the folder is.
+
+| Conversion | Node | CRC defaults rows |
+|---|---|---|
+| DAT to GeoJSON | `Services.FileConversions.DatToGeojson` | `VideoMap_Line` |
+| SCT2 to GeoJSON | `Services.FileConversions.SctToGeojson` | `SectorFile_Line`, `SectorFile_Text` |
 
 | Key | Values | Default |
 |---|---|---|
 | `SourceType` | `Folder`, `Files` | `Folder` |
 | `SourceFolder` | a folder path | none |
-| `CroppingDistance` | NM, as typed; blank means no cropping | none |
 | `IncludeCrcLineDefaults` | `Y` / `N` | `Y` |
-| `CrcEramPropertyDefaults.VideoMap_Line.<field>` | `bcg`, `filters`, `style`, `thickness`, as for the sub-services | none (the user must fill them) |
+| `IncludeCrcTextDefaults` | `Y` / `N` - only a conversion that writes labels (SCT2) | `Y` |
+| `CrcEramPropertyDefaults.<row>.<field>` | the fields for the row's kind, as for the sub-services | none (the user must fill them) |
+| `CroppingDistance` | DAT only: NM, as typed; blank means no cropping | none |
 
 ## Adding a setting
 

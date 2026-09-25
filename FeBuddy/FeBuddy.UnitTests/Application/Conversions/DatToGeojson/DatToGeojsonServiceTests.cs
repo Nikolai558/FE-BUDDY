@@ -2,6 +2,7 @@ using System.Text.Json;
 
 using FeBuddy.Core.Application.Conversions.DatToGeojson;
 using FeBuddy.Core.Application.Conversions.DatToGeojson.Models;
+using FeBuddy.Core.Application.Conversions.Models;
 using FeBuddy.Core.Infrastructure.Geojson;
 using FeBuddy.Core.Infrastructure.Logging.Models;
 
@@ -95,6 +96,7 @@ public sealed class DatToGeojsonServiceTests : IDisposable
 			[Path.Combine(ConvertedFolder, "A.geojson"), Path.Combine(ConvertedFolder, "B.geojson")],
 			result.GeojsonFilesWritten);
 		Assert.Equal(ConvertedFolder, result.OutputDirectory);
+		Assert.Equal(2, result.SourceFileCount);
 		Assert.Equal(0, result.FailedCount);
 		Assert.Empty(result.Warnings);
 
@@ -262,7 +264,7 @@ public sealed class DatToGeojsonServiceTests : IDisposable
 	{
 		WriteMap("A.dat");
 		WriteMap("NOPOT.dat", withPointOfTangency: false);
-		List<DatToGeojsonProgress> reports = [];
+		List<ConversionProgress> reports = [];
 
 		DatToGeojsonService.Run(Settings(("CroppingDistance", "60")), new InlineProgress(reports.Add));
 
@@ -277,7 +279,7 @@ public sealed class DatToGeojsonServiceTests : IDisposable
 	public void progress_says_when_a_file_had_nothing_to_write()
 	{
 		File.WriteAllLines(Path.Combine(Source, "EMPTY.dat"), ["LINE 01"]);
-		List<DatToGeojsonProgress> reports = [];
+		List<ConversionProgress> reports = [];
 
 		DatToGeojsonService.Run(Settings(), new InlineProgress(reports.Add));
 
@@ -307,8 +309,8 @@ public sealed class DatToGeojsonServiceTests : IDisposable
 	}
 
 	/// <summary>Reports straight away on the calling thread, so the order is exactly the order reported.</summary>
-	private sealed class InlineProgress(Action<DatToGeojsonProgress> report) : IProgress<DatToGeojsonProgress>
+	private sealed class InlineProgress(Action<ConversionProgress> report) : IProgress<ConversionProgress>
 	{
-		public void Report(DatToGeojsonProgress value) => report(value);
+		public void Report(ConversionProgress value) => report(value);
 	}
 }

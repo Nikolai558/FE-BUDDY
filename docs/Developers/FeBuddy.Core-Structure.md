@@ -55,16 +55,19 @@ FeBuddy.Core/
 │   ├── FileSystem/     AppPaths, TempWorkspace, ServiceOutputPaths (the FE-Buddy_Output layout)
 │   ├── Geojson/        CrcFeatureFactory, GeojsonFileWriter, GeojsonFileSet
 │   ├── GitHub/  Http/  Logging/  Markdown/  Platform/
-│   └── Nasr/           Download, availability, CSV reading, WaypointLocator
-│       ├── Models/     One row-model file per NASR CSV group
-│       └── Parsers/    One parser per group + NasrCsvParser (parses them all)
+│   ├── Nasr/           Download, availability, CSV reading, WaypointLocator
+│   │   ├── Models/     One row-model file per NASR CSV group
+│   │   └── Parsers/    One parser per group + NasrCsvParser (parses them all)
+│   └── Sct/            SctFileReader: VRC .sct2 / .sct sector files
 └── Application/
     ├── Airac/          AiracService (entry point), AiracCycleDataCache, FebProperties
     │   ├── Airways/    One folder per sub-service, all shaped the same way
     │   ├── Airports/
     │   └── Departures/
-    ├── Conversions/    One folder per file conversion, shaped like an AIRAC sub-service
-    │   └── DatToGeojson/
+    ├── Conversions/    ConversionSettingsReader and ConversionFiles (what every conversion
+    │   │               shares), then one folder per file conversion
+    │   ├── DatToGeojson/
+    │   └── SctToGeojson/
     ├── Launch/         LaunchSequence, AppEnvironment
     ├── News/           NewsService
     ├── Settings/       Shared readers for the string settings dictionaries
@@ -144,7 +147,15 @@ DatToGeojsonService.Run(settings, progress)
 ```
 
 A file that cannot be read or cropped is an `Error` message and a failed `DatFileConversion`;
-the other files still convert.
+the other files still convert. SCT2 to GeoJSON has the same shape
+(`SctFileReader` → `SctGeojsonWriter`, which joins segments back into lines with
+`LineStringMerger` and splits them with `AntimeridianSplitter`).
+
+What every conversion shares lives in `Application/Conversions/`, never copied into each one:
+`ConversionSettingsReader` (the source and output keys), `ConversionFiles` (finding a folder's
+files, and the per-file loop that reports progress and turns an I/O failure into one failed file),
+and in `Models/` the `ConversionSettings`, `ConversionServiceResult` and `ConversionProgress` bases
+each conversion's own types derive from.
 
 ## Where do I put…
 
@@ -158,7 +169,9 @@ the other files still convert.
   FEB properties).
 - **A new file conversion** (say, GeoMaps): `Application/Conversions/GeoMapToGeojson/` with its
   `*Service`, `*SettingsParser`, `*GeojsonWriter` and a `Models/` folder, shaped like
-  `DatToGeojson/`. The code that reads the source format goes in `Infrastructure/<Format>/`.
+  `SctToGeojson/`: its settings derive from `ConversionSettings`, its result from
+  `ConversionServiceResult`, and its service runs through `ConversionFiles`. The code that reads
+  the source format goes in `Infrastructure/<Format>/`.
 - **A new config key**: a constant in `Infrastructure/Configuration/UserConfigKeys`.
 - **Something shared by two features**: the lowest layer that both can see. Never copy it.
 

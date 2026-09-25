@@ -133,6 +133,8 @@
                             <TextBlock Text="{Binding DefaultRoiSummary}" Style="{StaticResource Text.Caption}"
                                        FontFamily="{StaticResource Font.Mono}" VerticalAlignment="Center" />
                         </DockPanel>
+                        <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,8,0,0"
+                                   Text="Set ROI… and Clear save the default ROI straight away - there is nothing to Save afterwards." />
                     </StackPanel>
                 </ctl:Card>
 

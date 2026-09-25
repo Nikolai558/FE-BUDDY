@@ -425,7 +425,9 @@ overwrite the old files or delete them (see [Preview Settings tab](#preview-sett
 ## Settings
 
 Changes here are saved with the **Save** button at the top (the Default Region of Interest saves
-as soon as you set or clear it).
+as soon as you set or clear it). While something is unsaved, "Unsaved changes" shows beside Save,
+**Settings** in the side menu gets an amber dot, and Save is live; once saved - or changed back -
+all three clear.
 
 - **Updates**
   - **Channel** - *Stable* (the right choice for almost everyone), *Beta* or *Alpha*. Only pick

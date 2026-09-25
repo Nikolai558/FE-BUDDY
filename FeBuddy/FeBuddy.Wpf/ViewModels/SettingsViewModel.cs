@@ -29,7 +29,12 @@ namespace FeBuddy.Wpf.ViewModels;
 /// SYSTEM ▸ Settings. Section order: Updates, Facility Profile, Default Region of Interest,
 /// GeoJSON Files. Every value persists to <c>UserConfig.json</c>.
 /// </summary>
-public sealed class SettingsViewModel : ObservableObject
+/// <remarks>
+/// Most values wait for <b>Save</b>, and while any differs from what is saved the page shows
+/// "Unsaved changes", its nav row an amber dot, and Save is live. The default ROI is the
+/// exception: Set ROI and Clear write it straight away, so it is never an unsaved change.
+/// </remarks>
+public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges
 {
 	private const string ChannelKey = UserConfigKeys.UpdateChannel;
 	private const string OutputDirKey = UserConfigKeys.DefaultOutputDirectory;
@@ -73,7 +78,7 @@ public sealed class SettingsViewModel : ObservableObject
 		_defaultRoi = DefaultRoiStore.Load();
 		DefaultRoiStore.Changed += OnDefaultRoiChanged;
 
-		SaveCommand = new RelayCommand(Save);
+		SaveCommand = new RelayCommand(Save, () => IsDirty);
 		CheckNowCommand = new RelayCommand(CheckForUpdates, () => AppEnvironment.HasInternetConnection && !IsCheckingForUpdates);
 		RollbackCommand = new RelayCommand(() => BrowserLauncher.Open(Links.ChangeLog));
 		BrowseOutputCommand = new RelayCommand(BrowseOutput);
@@ -92,8 +97,20 @@ public sealed class SettingsViewModel : ObservableObject
 	public bool IsDirty
 	{
 		get => _isDirty;
-		private set => SetProperty(ref _isDirty, value);
+		private set
+		{
+			if (SetProperty(ref _isDirty, value))
+			{
+				OnPropertyChanged(nameof(HasUnsavedChanges));
+
+				// Save is live only while there is something to save.
+				CommandManager.InvalidateRequerySuggested();
+			}
+		}
 	}
+
+	/// <inheritdoc />
+	public bool HasUnsavedChanges => IsDirty;
 
 	/// <summary>
 	/// Re-evaluates the page after a setting changed. Call from every setter whose value <see cref="Save"/>
@@ -320,7 +337,7 @@ public sealed class SettingsViewModel : ObservableObject
 
 	// ================= save =================
 
-	/// <summary>Writes every setting on the page to <c>UserConfig.json</c>.</summary>
+	/// <summary>Writes every setting on the page to <c>UserConfig.json</c>. Live only while <see cref="IsDirty"/>.</summary>
 	public ICommand SaveCommand { get; }
 
 	private async void CheckForUpdates()
@@ -467,6 +484,7 @@ public sealed class SettingsViewModel : ObservableObject
 	{
 		DefaultRoiStore.Clear();
 		DefaultRoi = null;
+		Toast.Success("Default ROI cleared", "Written to UserConfig.json.");
 	}
 
 	// View-models live for the whole session (NavItem caches them), so Settings has to hear when

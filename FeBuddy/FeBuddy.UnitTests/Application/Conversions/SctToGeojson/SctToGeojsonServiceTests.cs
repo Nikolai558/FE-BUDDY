@@ -1,5 +1,6 @@
 using System.Text.Json;
 
+using FeBuddy.Core.Application.Conversions;
 using FeBuddy.Core.Application.Conversions.Models;
 using FeBuddy.Core.Application.Conversions.SctToGeojson;
 using FeBuddy.Core.Application.Conversions.SctToGeojson.Models;
@@ -105,7 +106,7 @@ public sealed class SctToGeojsonServiceTests : IDisposable
 	{
 		WriteFullSector();
 
-		SctToGeojsonServiceResult result = SctToGeojsonService.Run(Settings());
+		SourceFilesConversionResult result = SctToGeojsonService.Run(Settings());
 		string folder = Converted("ZXX");
 
 		Assert.Equal(
@@ -128,7 +129,7 @@ public sealed class SctToGeojsonServiceTests : IDisposable
 		Assert.Empty(result.Warnings);
 		Assert.Equal(Path.Combine(Output, "FE-Buddy_Output", SctGeojsonWriter.RootFolder), result.OutputDirectory);
 
-		SctFileConversion file = Assert.Single(result.Files);
+		SourceFileConversion file = Assert.Single(result.Files);
 		// Two ARTCC names, one feature in each other line file, one SID, one STAR, one label, one region.
 		Assert.Equal(11, file.FeaturesWritten);
 		Assert.Equal(0, file.RecordsSkipped);
@@ -245,7 +246,7 @@ public sealed class SctToGeojsonServiceTests : IDisposable
 			$"{"KXXX A?B",-26}{B} {C}",
 			$"{"kxxx a/b",-26}{C} {D}");
 
-		SctToGeojsonServiceResult result = SctToGeojsonService.Run(Settings());
+		SourceFilesConversionResult result = SctToGeojsonService.Run(Settings());
 		string sid = Path.Combine(Converted("NAMES"), "SID");
 
 		// Names differing only in case are one diagram; names differing only in characters a
@@ -277,9 +278,9 @@ public sealed class SctToGeojsonServiceTests : IDisposable
 			$"{A} {A} ZERO_LENGTH",
 			"not a record");
 
-		SctToGeojsonServiceResult result = SctToGeojsonService.Run(Settings());
+		SourceFilesConversionResult result = SctToGeojsonService.Run(Settings());
 
-		SctFileConversion empty = Assert.Single(result.Files);
+		SourceFileConversion empty = Assert.Single(result.Files);
 		Assert.Empty(empty.OutputPaths);
 		Assert.Equal(1, empty.RecordsSkipped);
 		Assert.Contains(result.Messages, m => m.IsAdvisory && m.Text.Contains("has nothing FE-Buddy converts"));
@@ -293,7 +294,7 @@ public sealed class SctToGeojsonServiceTests : IDisposable
 		WriteFullSector("TWO.SCT");
 		File.WriteAllText(Path.Combine(Source, "notes.sct2.bak"), "[GEO]");
 
-		SctToGeojsonServiceResult result = SctToGeojsonService.Run(Settings());
+		SourceFilesConversionResult result = SctToGeojsonService.Run(Settings());
 
 		Assert.Equal(["ONE.sct2", "TWO.SCT"], result.Files.Select(f => Path.GetFileName(f.SourcePath)));
 	}
@@ -308,7 +309,7 @@ public sealed class SctToGeojsonServiceTests : IDisposable
 		Dictionary<string, string> settings = Settings(("SourceFiles", $"{missing}|{present}"), ("AddFeBuddyOutputFolder", "N"));
 		settings.Remove("SourceFolder");
 
-		SctToGeojsonServiceResult result = SctToGeojsonService.Run(settings, new InlineProgress(reports.Add));
+		SourceFilesConversionResult result = SctToGeojsonService.Run(settings, new InlineProgress(reports.Add));
 
 		Assert.Equal(1, result.FailedCount);
 		Assert.Contains("GONE.sct2 could not be converted", result.Files[0].Error);
@@ -344,7 +345,7 @@ public sealed class SctToGeojsonServiceTests : IDisposable
 		Assert.Throws<ArgumentNullException>(() => SctGeojsonWriter.Write(empty, null!, files));
 		Assert.Throws<ArgumentNullException>(() => SctGeojsonWriter.Write(empty, settings, null!));
 		Assert.Throws<ArgumentNullException>(() => SctGeojsonWriter.OutputDirectory(null!));
-		Assert.Equal("Unnamed", SctGeojsonWriter.SafeFileName("  "));
+		Assert.Equal("Unnamed", ConversionFiles.SafeFileName("  "));
 	}
 
 	/// <summary>The written files in the order the writer produces them: sections, then SID, STAR, labels, regions.</summary>

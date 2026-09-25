@@ -43,15 +43,18 @@ public abstract class FileConversionTabViewModel : ConversionTabViewModel, ISour
 	private ConversionSourceType _sourceType = ConversionSourceType.Folder;
 	private string _sourceFolder = string.Empty;
 	private bool _includeCrcLineDefaults = true;
+	private bool _includeCrcSymbolDefaults = true;
 	private bool _includeCrcTextDefaults = true;
 	private int? _folderFileCount;
 
 	/// <summary>Builds the CRC defaults rows and wires the source commands.</summary>
 	/// <param name="crcClassName">The CRC class the library reads this conversion's defaults under, e.g. <c>VideoMap</c>.</param>
+	/// <param name="writesSymbols">Whether the conversion writes symbols, and so has Symbol defaults.</param>
 	/// <param name="writesText">Whether the conversion writes labels, and so has Text defaults.</param>
-	protected FileConversionTabViewModel(string crcClassName, bool writesText)
+	protected FileConversionTabViewModel(string crcClassName, bool writesSymbols, bool writesText)
 	{
 		LineDefaults = [new(crcClassName, EramFieldKind.Line, MarkDirty)];
+		SymbolDefaults = writesSymbols ? [new(crcClassName, EramFieldKind.Symbol, MarkDirty)] : [];
 		TextDefaults = writesText ? [new(crcClassName, EramFieldKind.Text, MarkDirty)] : [];
 
 		SourceFiles.CollectionChanged += (_, _) =>
@@ -152,8 +155,11 @@ public abstract class FileConversionTabViewModel : ConversionTabViewModel, ISour
 	}
 
 	/// <inheritdoc />
-	/// <remarks>A conversion draws no symbols; always <see langword="false"/>.</remarks>
-	public bool IncludeCrcSymbolDefaults { get => false; set { } }
+	public bool IncludeCrcSymbolDefaults
+	{
+		get => _includeCrcSymbolDefaults;
+		set { if (SetProperty(ref _includeCrcSymbolDefaults, value)) MarkDirty(); }
+	}
 
 	/// <inheritdoc />
 	public bool IncludeCrcTextDefaults
@@ -167,8 +173,8 @@ public abstract class FileConversionTabViewModel : ConversionTabViewModel, ISour
 	public bool EmitLines { get => true; set { } }
 
 	/// <inheritdoc />
-	/// <remarks>Always <see langword="false"/>, which keeps the Symbols panel off the card.</remarks>
-	public bool EmitSymbols { get => false; set { } }
+	/// <remarks>Whether the conversion writes symbols; fixed by the tab, and decides whether the Symbols panel shows.</remarks>
+	public bool EmitSymbols { get => SymbolDefaults.Count > 0; set { } }
 
 	/// <inheritdoc />
 	/// <remarks>Whether the conversion writes labels; fixed by the tab, and decides whether the Text panel shows.</remarks>
@@ -178,10 +184,17 @@ public abstract class FileConversionTabViewModel : ConversionTabViewModel, ISour
 	public ObservableCollection<EramClassDefault> LineDefaults { get; }
 
 	/// <inheritdoc />
-	public ObservableCollection<EramClassDefault> SymbolDefaults { get; } = [];
+	public ObservableCollection<EramClassDefault> SymbolDefaults { get; }
 
 	/// <inheritdoc />
 	public ObservableCollection<EramClassDefault> TextDefaults { get; }
+
+	/// <summary>
+	/// Whether the CRC ERAM Defaults card is in use. Always, unless a tab takes its defaults from
+	/// somewhere else - vERAM can carry over the source file's own - in which case the card is
+	/// hidden, nothing on it is required, and nothing on it is sent.
+	/// </summary>
+	public virtual bool UsesCrcDefaults => true;
 
 	// ================= run =================
 
@@ -213,6 +226,11 @@ public abstract class FileConversionTabViewModel : ConversionTabViewModel, ISour
 		else
 		{
 			settings["SourceFiles"] = string.Join(ConversionSettingsReader.SourceFileSeparator, SourceFiles.Select(f => f.Path));
+		}
+
+		if (EmitSymbols)
+		{
+			settings["IncludeCrcSymbolDefaults"] = YesNo(IncludeCrcSymbolDefaults);
 		}
 
 		if (EmitText)
@@ -277,6 +295,7 @@ public abstract class FileConversionTabViewModel : ConversionTabViewModel, ISour
 			: ConversionSourceType.Folder;
 		_sourceFolder = Get("SourceFolder") ?? string.Empty;
 		_includeCrcLineDefaults = GetBool("IncludeCrcLineDefaults", true);
+		_includeCrcSymbolDefaults = GetBool("IncludeCrcSymbolDefaults", true);
 		_includeCrcTextDefaults = GetBool("IncludeCrcTextDefaults", true);
 
 		foreach (EramClassDefault row in CrcRows())
@@ -289,7 +308,7 @@ public abstract class FileConversionTabViewModel : ConversionTabViewModel, ISour
 		foreach (string name in new[]
 		{
 			nameof(SourceIsFolder), nameof(SourceIsFiles), nameof(SourceFolder),
-			nameof(IncludeCrcLineDefaults), nameof(IncludeCrcTextDefaults),
+			nameof(IncludeCrcLineDefaults), nameof(IncludeCrcSymbolDefaults), nameof(IncludeCrcTextDefaults),
 		})
 		{
 			OnPropertyChanged(name);
@@ -305,6 +324,11 @@ public abstract class FileConversionTabViewModel : ConversionTabViewModel, ISour
 		Set("SourceType", _sourceType.ToString());
 		Set("SourceFolder", SourceFolder);
 		Set("IncludeCrcLineDefaults", YesNo(IncludeCrcLineDefaults));
+
+		if (EmitSymbols)
+		{
+			Set("IncludeCrcSymbolDefaults", YesNo(IncludeCrcSymbolDefaults));
+		}
 
 		if (EmitText)
 		{
@@ -359,18 +383,24 @@ public abstract class FileConversionTabViewModel : ConversionTabViewModel, ISour
 
 	/// <summary>
 	/// One more thing the run summary should say, e.g. how many lines were written, or
-	/// <see langword="null"/> for nothing. The base says nothing more.
+	/// <see langword="null"/> for nothing.
 	/// </summary>
 	/// <param name="result">The run's result.</param>
 	/// <returns>The detail, or <see langword="null"/>.</returns>
-	protected virtual string? DescribeDetail(ConversionServiceResult result) => null;
+	/// <remarks>The base gives the feature count for a conversion that writes several files per source.</remarks>
+	protected virtual string? DescribeDetail(ConversionServiceResult result) =>
+		result is SourceFilesConversionResult files ? $"{files.FeaturesWritten:N0} feature(s)" : null;
 
 	// ================= private =================
 
-	private IEnumerable<EramClassDefault> CrcRows() => LineDefaults.Concat(TextDefaults);
+	private IEnumerable<EramClassDefault> CrcRows() => LineDefaults.Concat(SymbolDefaults).Concat(TextDefaults);
 
-	private bool IsCrcRowNeeded(EramClassDefault row) =>
-		row.Kind == EramFieldKind.Line ? IncludeCrcLineDefaults : IncludeCrcTextDefaults;
+	private bool IsCrcRowNeeded(EramClassDefault row) => UsesCrcDefaults && row.Kind switch
+	{
+		EramFieldKind.Line => IncludeCrcLineDefaults,
+		EramFieldKind.Symbol => IncludeCrcSymbolDefaults,
+		_ => IncludeCrcTextDefaults,
+	};
 
 	private static string CrcConfigPrefix(EramClassDefault row) => $"CrcEramPropertyDefaults.{row.ClassName}_{row.Kind}";
 

@@ -1,34 +1,34 @@
 using System.Diagnostics;
 
 using FeBuddy.Core.Application.Conversions.Models;
-using FeBuddy.Core.Application.Conversions.SctToGeojson.Models;
+using FeBuddy.Core.Application.Conversions.VeramToGeojson.Models;
 using FeBuddy.Core.Application.Models;
 using FeBuddy.Core.Infrastructure.Geojson;
 using FeBuddy.Core.Infrastructure.Logging;
 using FeBuddy.Core.Infrastructure.Logging.Models;
-using FeBuddy.Core.Infrastructure.Sct;
-using FeBuddy.Core.Infrastructure.Sct.Models;
+using FeBuddy.Core.Infrastructure.Veram;
+using FeBuddy.Core.Infrastructure.Veram.Models;
 
-namespace FeBuddy.Core.Application.Conversions.SctToGeojson;
+namespace FeBuddy.Core.Application.Conversions.VeramToGeojson;
 
 /// <summary>
-/// Public entry point for the SCT2 to GeoJSON conversion: turns VRC sector files into
-/// CRC-ready GeoJSON, a folder of files per sector file (see <see cref="SctGeojsonWriter"/>).
+/// Public entry point for the vERAM to GeoJSON conversion: turns vERAM GeoMaps XML files into
+/// CRC-ready GeoJSON, a folder per GeoMap (see <see cref="VeramGeojsonWriter"/>).
 /// </summary>
 /// <remarks>
-/// Each file is converted on its own (<see cref="ConversionFiles"/>): one that cannot be read is
-/// reported as an error in the result and the rest still convert. Only a bad setting - which would
-/// fail every file the same way - stops the run, by throwing.
+/// Each file is converted on its own (<see cref="ConversionFiles"/>): one that cannot be read, or
+/// is not a GeoMaps file, is reported as an error in the result and the rest still convert. Only a
+/// bad setting - which would fail every file the same way - stops the run, by throwing.
 /// </remarks>
-public static class SctToGeojsonService
+public static class VeramToGeojsonService
 {
 	/// <summary>The extensions a source folder's files must have to be converted.</summary>
-	public static readonly IReadOnlyList<string> Extensions = [".sct2", ".sct"];
+	public static readonly IReadOnlyList<string> Extensions = [".xml"];
 
-	private const string LogSource = "SctToGeojsonService";
+	private const string LogSource = "VeramToGeojsonService";
 
 	/// <summary>Runs the conversion.</summary>
-	/// <param name="settings">The raw settings dictionary (see <see cref="SctToGeojsonSettingsParser"/>).</param>
+	/// <param name="settings">The raw settings dictionary (see <see cref="VeramToGeojsonSettingsParser"/>).</param>
 	/// <param name="progress">Told as each file starts and finishes; optional.</param>
 	/// <returns>What happened to each file, plus timing and every message collected along the way.</returns>
 	/// <exception cref="ArgumentException">Thrown when a required setting is missing or invalid, or the source folder does not exist.</exception>
@@ -41,9 +41,9 @@ public static class SctToGeojsonService
 		Stopwatch stopwatch = Stopwatch.StartNew();
 		List<ServiceMessage> messages = [];
 
-		SctToGeojsonSettingsParseResult parseResult = SctToGeojsonSettingsParser.Parse(settings);
+		VeramToGeojsonSettingsParseResult parseResult = VeramToGeojsonSettingsParser.Parse(settings);
 		messages.AddRange(parseResult.Messages);
-		SctToGeojsonSettings parsed = parseResult.Settings;
+		VeramToGeojsonSettings parsed = parseResult.Settings;
 
 		IReadOnlyList<string> sources = ConversionFiles.Resolve(parsed, Extensions, LogSource, messages);
 		GeojsonFileSet files = new(parsed.CoordinatePrecision);
@@ -71,30 +71,30 @@ public static class SctToGeojsonService
 			Messages = messages,
 			Elapsed = stopwatch.Elapsed,
 			Files = conversions,
-			OutputDirectory = SctGeojsonWriter.OutputDirectory(parsed),
+			OutputDirectory = VeramGeojsonWriter.OutputDirectory(parsed),
 		};
 	}
 
 	private static SourceFileConversion Convert(
 		string source,
-		SctToGeojsonSettings settings,
+		VeramToGeojsonSettings settings,
 		GeojsonFileSet files,
 		List<ServiceMessage> messages)
 	{
 		string name = Path.GetFileName(source);
-		SctFile sctFile = SctFileReader.Read(source);
+		VeramGeoMapFile geoMaps = VeramGeoMapReader.Read(source);
 
-		foreach (string problem in sctFile.Problems)
+		foreach (string problem in geoMaps.Problems)
 		{
 			messages.Add(new ServiceMessage(LogLevel.Warning, LogSource, $"{name}: {problem}"));
 		}
 
-		(IReadOnlyList<string> paths, int featureCount) = SctGeojsonWriter.Write(sctFile, settings, files);
+		(IReadOnlyList<string> paths, int featureCount) = VeramGeojsonWriter.Write(geoMaps, settings, files, messages);
 
 		if (paths.Count == 0)
 		{
 			messages.Add(new ServiceMessage(LogLevel.Warning, LogSource,
-				$"{name} has nothing FE-Buddy converts (lines, SIDs, STARs, labels or regions), so no GeoJSON was written for it.")
+				$"{name} has no elements to draw, so no GeoJSON was written for it.")
 			{
 				IsAdvisory = true
 			});
@@ -105,7 +105,7 @@ public static class SctToGeojsonService
 			SourcePath = source,
 			OutputPaths = paths,
 			FeaturesWritten = featureCount,
-			RecordsSkipped = sctFile.Problems.Count,
+			RecordsSkipped = geoMaps.Problems.Count,
 		};
 	}
 

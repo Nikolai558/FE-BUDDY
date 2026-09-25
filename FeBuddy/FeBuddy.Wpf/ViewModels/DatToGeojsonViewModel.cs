@@ -26,7 +26,7 @@ public sealed class DatToGeojsonViewModel : FileConversionTabViewModel
 
 	/// <summary>Builds the tab and restores its saved settings.</summary>
 	public DatToGeojsonViewModel()
-		: base(DatToGeojsonSettingsParser.CrcClassName, writesText: false)
+		: base(DatToGeojsonSettingsParser.CrcClassName, writesSymbols: false, writesText: false)
 	{
 		LoadFromConfig();
 	}

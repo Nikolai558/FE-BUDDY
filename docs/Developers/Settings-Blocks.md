@@ -133,6 +133,20 @@ Extensions `.sct2` and `.sct`. No keys of its own.
 - **CRC class:** `SectorFile`, with `Line` (every lines file) and `Text` (the labels file):
   `Crc.SectorFile.Line.*`, `Crc.SectorFile.Text.*`. Regions have no CRC defaults.
 
+## vERAM to GeoJSON (File Conversions)
+
+Extension `.xml` (a vERAM GeoMaps file; any other XML fails that file only).
+
+| Key | Values | Default |
+|---|---|---|
+| `OutputLayout` | `ByObject` (a file per GeoMapObject description), `ByFilter` (files by filter index and similar attributes) | `ByObject` |
+| `DefaultsSource` | `Xml` (carry over the XML's defaults and element overrides), `XmlThenCard` (the tab's defaults where an object has none), `Card` (the tab's defaults only; the XML's styling is ignored) | `Xml` |
+
+- **CRC class:** `GeoMap`, with `Line`, `Symbol` and `Text`: `Crc.GeoMap.Line.*`,
+  `Crc.GeoMap.Symbol.*`, `Crc.GeoMap.Text.*`.
+- The tab's CRC defaults are read only when `DefaultsSource` is `XmlThenCard` or `Card`, and then
+  only for kinds whose `IncludeCrc…Defaults` is `Y`. With `Xml` they are ignored.
+
 ## An example (Airways, as the harness writes it)
 
 ```csharp

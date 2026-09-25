@@ -48,7 +48,8 @@ FeBuddy.Core/
 │   ├── Airways/      AirwayClassifier and the Airway/segment/point models
 │   ├── Crc/          CRC feature properties and CrcPropertyValidator
 │   ├── Departures/   DepartureNaming and procedure models
-│   └── Geo/          GeoMath, antimeridian splitting, line merging, ROI and radius clipping, Wgs84
+│   └── Geo/          GeoMath, antimeridian splitting, line merging and segment joining, ROI and
+│                     radius clipping, Wgs84
 ├── Infrastructure/
 │   ├── Configuration/  UserConfigFile, UserConfigKeys, DevMode, OutputFormatting
 │   ├── Dat/            DatFileReader: FAA .dat RADAR Video Maps
@@ -58,7 +59,8 @@ FeBuddy.Core/
 │   ├── Nasr/           Download, availability, CSV reading, WaypointLocator
 │   │   ├── Models/     One row-model file per NASR CSV group
 │   │   └── Parsers/    One parser per group + NasrCsvParser (parses them all)
-│   └── Sct/            SctFileReader: VRC .sct2 / .sct sector files
+│   ├── Sct/            SctFileReader: VRC .sct2 / .sct sector files
+│   └── Veram/          VeramGeoMapReader: vERAM GeoMaps XML (streamed)
 └── Application/
     ├── Airac/          AiracService (entry point), AiracCycleDataCache, FebProperties
     │   ├── Airways/    One folder per sub-service, all shaped the same way
@@ -67,7 +69,8 @@ FeBuddy.Core/
     ├── Conversions/    ConversionSettingsReader and ConversionFiles (what every conversion
     │   │               shares), then one folder per file conversion
     │   ├── DatToGeojson/
-    │   └── SctToGeojson/
+    │   ├── SctToGeojson/
+    │   └── VeramToGeojson/
     ├── Launch/         LaunchSequence, AppEnvironment
     ├── News/           NewsService
     ├── Settings/       Shared readers for the string settings dictionaries
@@ -147,15 +150,19 @@ DatToGeojsonService.Run(settings, progress)
 ```
 
 A file that cannot be read or cropped is an `Error` message and a failed `DatFileConversion`;
-the other files still convert. SCT2 to GeoJSON has the same shape
-(`SctFileReader` → `SctGeojsonWriter`, which joins segments back into lines with
-`LineStringMerger` and splits them with `AntimeridianSplitter`).
+the other files still convert. SCT2 to GeoJSON (`SctFileReader` → `SctGeojsonWriter`) and vERAM
+to GeoJSON (`VeramGeoMapReader` → `VeramGeojsonWriter`, with `VeramCrcProperties` turning vERAM's
+styling into validated CRC defaults and overrides) have the same shape. Both write lines through
+`Domain/Geo/SegmentJoiner`, which joins two-point segments back into lines, merges repeats with
+`LineStringMerger` and splits them with `AntimeridianSplitter`.
 
 What every conversion shares lives in `Application/Conversions/`, never copied into each one:
 `ConversionSettingsReader` (the source and output keys), `ConversionFiles` (finding a folder's
-files, and the per-file loop that reports progress and turns an I/O failure into one failed file),
-and in `Models/` the `ConversionSettings`, `ConversionServiceResult` and `ConversionProgress` bases
-each conversion's own types derive from.
+files, the per-file loop that reports progress and turns an unreadable file into one failed file,
+and file-safe and unique file names), and in `Models/` the `ConversionSettings`,
+`ConversionServiceResult` and `ConversionProgress` bases each conversion's own types derive from,
+plus `SourceFileConversion` / `SourceFilesConversionResult` for the conversions that write several
+files per source (SCT2, vERAM).
 
 ## Where do I put…
 
@@ -167,10 +174,12 @@ each conversion's own types derive from.
   block to `AiracServiceSettings` and one `RunSubServiceAsync` call to `AiracService`. Reuse
   `Application/Settings/SubServiceSettingsReader` for the common keys (precision, ROI,
   FEB properties).
-- **A new file conversion** (say, GeoMaps): `Application/Conversions/GeoMapToGeojson/` with its
-  `*Service`, `*SettingsParser`, `*GeojsonWriter` and a `Models/` folder, shaped like
-  `SctToGeojson/`: its settings derive from `ConversionSettings`, its result from
-  `ConversionServiceResult`, and its service runs through `ConversionFiles`. The code that reads
+- **A new file conversion** (say, vSTARS video maps): `Application/Conversions/VstarsToGeojson/`
+  with its `*Service`, `*SettingsParser`, `*GeojsonWriter` and a `Models/` folder, shaped like
+  `SctToGeojson/`: its settings derive from `ConversionSettings`, its result is a
+  `SourceFilesConversionResult` (or derives from `ConversionServiceResult`), and its service runs
+  through `ConversionFiles`. A reader that finds the content is not its format throws
+  `InvalidDataException`, which fails that one file. The code that reads
   the source format goes in `Infrastructure/<Format>/`.
 - **A new config key**: a constant in `Infrastructure/Configuration/UserConfigKeys`.
 - **Something shared by two features**: the lowest layer that both can see. Never copy it.

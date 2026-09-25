@@ -125,15 +125,19 @@ the folder is.
 |---|---|---|
 | DAT to GeoJSON | `Services.FileConversions.DatToGeojson` | `VideoMap_Line` |
 | SCT2 to GeoJSON | `Services.FileConversions.SctToGeojson` | `SectorFile_Line`, `SectorFile_Text` |
+| vERAM to GeoJSON | `Services.FileConversions.VeramToGeojson` | `GeoMap_Line`, `GeoMap_Symbol`, `GeoMap_Text` |
 
 | Key | Values | Default |
 |---|---|---|
 | `SourceType` | `Folder`, `Files` | `Folder` |
 | `SourceFolder` | a folder path | none |
 | `IncludeCrcLineDefaults` | `Y` / `N` | `Y` |
-| `IncludeCrcTextDefaults` | `Y` / `N` - only a conversion that writes labels (SCT2) | `Y` |
+| `IncludeCrcSymbolDefaults` | `Y` / `N` - only a conversion that writes symbols (vERAM) | `Y` |
+| `IncludeCrcTextDefaults` | `Y` / `N` - only a conversion that writes text (SCT2, vERAM) | `Y` |
 | `CrcEramPropertyDefaults.<row>.<field>` | the fields for the row's kind, as for the sub-services | none (the user must fill them) |
 | `CroppingDistance` | DAT only: NM, as typed; blank means no cropping | none |
+| `OutputLayout` | vERAM only: `ByObject`, `ByFilter` | `ByObject` |
+| `DefaultsSource` | vERAM only: `Xml`, `XmlThenCard`, `Card` | `Xml` |
 
 ## Adding a setting
 

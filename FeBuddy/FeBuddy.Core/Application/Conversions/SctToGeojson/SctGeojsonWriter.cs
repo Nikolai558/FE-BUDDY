@@ -1,5 +1,3 @@
-using System.Globalization;
-
 using FeBuddy.Core.Application.Conversions.Models;
 using FeBuddy.Core.Application.Conversions.SctToGeojson.Models;
 using FeBuddy.Core.Domain.Geo;
@@ -21,13 +19,11 @@ namespace FeBuddy.Core.Application.Conversions.SctToGeojson;
 /// <remarks>
 /// <para>
 /// A sector file draws every line as separate two-point segments. They are joined back into
-/// lines - consecutive segments that meet become one line, and a segment drawn twice is drawn
-/// once (<see cref="LineStringMerger"/>) - so the output is smaller and dashed styles stay dashed.
+/// lines (<see cref="SegmentJoiner"/>), so the output is smaller and dashed styles stay dashed.
 /// </para>
 /// <para>
 /// In the boundary and airway files each name (<c>ZOB</c>, <c>V14</c>) is one Feature, so a
-/// boundary is never joined onto the one beside it. Lines crossing the antimeridian are split
-/// (<see cref="AntimeridianSplitter"/>).
+/// boundary is never joined onto the one beside it.
 /// </para>
 /// </remarks>
 public static class SctGeojsonWriter
@@ -70,7 +66,7 @@ public static class SctGeojsonWriter
 		ArgumentNullException.ThrowIfNull(files);
 
 		int before = files.FilesWritten.Count;
-		string directory = Path.Combine(OutputDirectory(settings), SafeFileName(Path.GetFileNameWithoutExtension(sctFile.SourcePath)));
+		string directory = Path.Combine(OutputDirectory(settings), ConversionFiles.SafeFileName(Path.GetFileNameWithoutExtension(sctFile.SourcePath)));
 
 		foreach ((SctLineSection section, IReadOnlyList<SctSegment> segments) in sctFile.Lines)
 		{
@@ -84,16 +80,6 @@ public static class SctGeojsonWriter
 
 		string[] written = [.. files.FilesWritten.Skip(before)];
 		return (written, written.Sum(path => files.RenderedFeatureCountsByFile[path]));
-	}
-
-	/// <summary>A name made safe for a file name: characters Windows forbids become <c>-</c>.</summary>
-	/// <param name="name">The name.</param>
-	/// <returns>The file name, or <c>Unnamed</c> for a blank one.</returns>
-	internal static string SafeFileName(string name)
-	{
-		char[] invalid = Path.GetInvalidFileNameChars();
-		string safe = new([.. name.Trim().Select(c => invalid.Contains(c) ? '-' : c)]);
-		return safe.Length == 0 ? "Unnamed" : safe;
 	}
 
 	/// <summary>Groups segments by name, case-insensitively, in the order each name first appears.</summary>
@@ -121,7 +107,7 @@ public static class SctGeojsonWriter
 
 		foreach ((string _, IReadOnlyList<SctSegment> segments) in groups)
 		{
-			IReadOnlyList<LineString> lines = Join(segments);
+			IReadOnlyList<LineString> lines = SegmentJoiner.Join(segments.Select(segment => (segment.Start, segment.End)));
 
 			if (lines.Count > 0)
 			{
@@ -145,14 +131,7 @@ public static class SctGeojsonWriter
 		foreach ((string name, IReadOnlyList<SctSegment> diagram) in ByName(segments))
 		{
 			// Two names can differ only in characters a file name cannot hold.
-			string fileName = SafeFileName(name);
-
-			for (int copy = 2; !used.Add(fileName); copy++)
-			{
-				fileName = $"{SafeFileName(name)} ({copy})";
-			}
-
-			WriteLines([(name, diagram)], settings, files, directory, fileName);
+			WriteLines([(name, diagram)], settings, files, directory, ConversionFiles.UniqueFileName(name, used));
 		}
 	}
 
@@ -198,30 +177,4 @@ public static class SctGeojsonWriter
 
 		files.Write(collection, regions.Count, directory, "REGIONS.geojson");
 	}
-
-	/// <summary>
-	/// Joins segments back into lines: consecutive segments that meet become one path, then each
-	/// segment is drawn once and the result is split at the antimeridian.
-	/// </summary>
-	private static IReadOnlyList<LineString> Join(IReadOnlyList<SctSegment> segments)
-	{
-		List<List<(string Key, Coordinate Coordinate)>> paths = [];
-		List<(string Key, Coordinate Coordinate)>? path = null;
-
-		foreach (SctSegment segment in segments)
-		{
-			if (path is null || !path[^1].Coordinate.Equals2D(segment.Start))
-			{
-				path = [Keyed(segment.Start)];
-				paths.Add(path);
-			}
-
-			path.Add(Keyed(segment.End));
-		}
-
-		return AntimeridianSplitter.Split(LineStringMerger.Merge(paths));
-	}
-
-	private static (string Key, Coordinate Coordinate) Keyed(Coordinate coordinate) =>
-		(string.Create(CultureInfo.InvariantCulture, $"{coordinate.Y:F7},{coordinate.X:F7}"), coordinate);
 }

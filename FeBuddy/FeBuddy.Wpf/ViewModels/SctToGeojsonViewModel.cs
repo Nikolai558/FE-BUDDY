@@ -1,8 +1,6 @@
 using FeBuddy.Wpf.ViewModels.ServiceTabs;
 
-using FeBuddy.Core.Application.Conversions.Models;
 using FeBuddy.Core.Application.Conversions.SctToGeojson;
-using FeBuddy.Core.Application.Conversions.SctToGeojson.Models;
 using FeBuddy.Core.Application.Models;
 
 namespace FeBuddy.Wpf.ViewModels;
@@ -22,7 +20,7 @@ public sealed class SctToGeojsonViewModel : FileConversionTabViewModel
 
 	/// <summary>Builds the tab and restores its saved settings.</summary>
 	public SctToGeojsonViewModel()
-		: base(SctToGeojsonSettingsParser.CrcClassName, writesText: true)
+		: base(SctToGeojsonSettingsParser.CrcClassName, writesSymbols: false, writesText: true)
 	{
 		LoadFromConfig();
 	}
@@ -48,8 +46,4 @@ public sealed class SctToGeojsonViewModel : FileConversionTabViewModel
 	/// <inheritdoc />
 	public override ServiceResult Execute(IReadOnlyDictionary<string, string> settings, Action<string, string, bool> reportStep) =>
 		SctToGeojsonService.Run(settings, StepProgress(reportStep));
-
-	/// <inheritdoc />
-	protected override string? DescribeDetail(ConversionServiceResult result) =>
-		$"{((SctToGeojsonServiceResult)result).Files.Sum(f => f.FeaturesWritten):N0} feature(s)";
 }

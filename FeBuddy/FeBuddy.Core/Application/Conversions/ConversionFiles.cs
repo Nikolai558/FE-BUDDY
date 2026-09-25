@@ -54,10 +54,41 @@ internal static class ConversionFiles
 		return found;
 	}
 
+	/// <summary>A name made safe for a file or folder name: characters Windows forbids become <c>-</c>.</summary>
+	/// <param name="name">The name.</param>
+	/// <returns>The file name, or <c>Unnamed</c> for a blank one.</returns>
+	public static string SafeFileName(string name)
+	{
+		char[] invalid = Path.GetInvalidFileNameChars();
+		string safe = new([.. name.Trim().Select(c => invalid.Contains(c) ? '-' : c)]);
+		return safe.Length == 0 ? "Unnamed" : safe;
+	}
+
+	/// <summary>
+	/// A file-safe name not yet in <paramref name="used"/>: the name itself, or the name with
+	/// <c> (2)</c>, <c> (3)</c>… when it is taken. The name returned is added to <paramref name="used"/>.
+	/// </summary>
+	/// <param name="name">The name.</param>
+	/// <param name="used">The names already given out in this folder; compare them ignoring case.</param>
+	/// <returns>The unique, file-safe name.</returns>
+	public static string UniqueFileName(string name, ISet<string> used)
+	{
+		string safe = SafeFileName(name);
+		string unique = safe;
+
+		for (int copy = 2; !used.Add(unique); copy++)
+		{
+			unique = $"{safe} ({copy})";
+		}
+
+		return unique;
+	}
+
 	/// <summary>
 	/// Converts each source file in turn, reporting progress as each starts and finishes. A file
-	/// that cannot be read or written becomes an error message and a failed result; the rest
-	/// still convert.
+	/// that cannot be read or written - or whose content is not the format expected
+	/// (<see cref="InvalidDataException"/>) - becomes an error message and a failed result; the
+	/// rest still convert.
 	/// </summary>
 	/// <typeparam name="TFile">The conversion's per-file result.</typeparam>
 	/// <param name="sources">The files to convert.</param>
@@ -90,7 +121,7 @@ internal static class ConversionFiles
 			{
 				result = convert(source);
 			}
-			catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+			catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException)
 			{
 				string error = $"{name} could not be converted: {ex.Message}";
 				messages.Add(new ServiceMessage(LogLevel.Error, logSource, error));

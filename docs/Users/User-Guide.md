@@ -241,6 +241,37 @@ A record FE-Buddy cannot read - a mistyped coordinate, a name that is not define
 file - is skipped and listed on the Review tab; the rest of the file still converts. VRC colours
 are not carried over: CRC styles lines through the CRC defaults instead.
 
+### vERAM to GeoJSON tab
+
+Converts vERAM GeoMaps XML files into GeoJSON: a folder per GeoMaps file, named after it, with a
+folder inside for each GeoMap.
+
+- **Source Files** - the same as on the other tabs: a remembered folder (every `.xml` in it) or
+  files you pick.
+- **Output Layout** - how the files are split:
+  - **GeoMapObject Description** - a file per GeoMapObject, named after its description. Objects
+    that share a description share a file when their defaults agree; otherwise the later one gets
+    a numbered file (`VIDEO (2)`).
+  - **Filter Index and Similar Attributes** - files grouped by filter, TDM setting, kind and look,
+    e.g. `FILTER 05\FILTER 05__TDM F__Line__BCG 3__Style solid__Thickness 1`. An element with
+    several filters goes under `MULTI FILTERS\`; one whose look cannot be fully worked out goes
+    under `MISSING DEFAULTS\`. Everything in a file draws the same way.
+- **CRC ERAM Defaults Source** - where each file's CRC defaults come from:
+  - **From the XML** - carry over as much as possible: each object's own Line, Symbol and Text
+    defaults, and each element's own overrides.
+  - **From the XML, filling gaps from the card** - the same, but an object with no usable defaults
+    of its own takes the CRC ERAM Defaults on the tab.
+  - **From the card only** - ignore the XML's styling and use the tab's CRC ERAM Defaults for
+    everything.
+- **CRC ERAM Defaults** - Lines, Symbols and Text panels. They only show, and only need filling
+  in, when the card is one of the sources.
+- **Convert GeoMaps** - saves any unsaved settings (you are asked first) and runs.
+
+vERAM's style names become CRC's (`Solid` → `solid`, `Vor` → `vor`), and every value is checked
+against what CRC can draw. An object whose defaults are missing, incomplete or invalid is listed
+on the Review tab; a value CRC cannot draw is left out, so that feature takes its file's default.
+Line segments that meet are joined back into lines, including ones written backwards.
+
 ## Output files
 
 Everything goes in your output folder (Settings ▸ Default Output Directory), inside a
@@ -259,8 +290,10 @@ Everything goes in your output folder (Settings ▸ Default Output Directory), i
     │   ├── <ARTCC>\<airport>\   <airport>_<procedure>_Lines / _Symbols / _Text (.geojson)
     │   └── Alias\      Departures.txt
     ├── DAT to GeoJSON\ <.dat file name>.geojson, one per converted map
-    └── SCT2 to GeoJSON\
-        └── <sector file name>\   ARTCC, …, GEO, LABELS, REGIONS (.geojson), SID\, STAR\
+    ├── SCT2 to GeoJSON\
+    │   └── <sector file name>\   ARTCC, …, GEO, LABELS, REGIONS (.geojson), SID\, STAR\
+    └── vERAM to GeoJSON\
+        └── <GeoMaps file name>\<GeoMap>\   <description>.geojson, or FILTER nn\ folders
 ```
 
 A run overwrites the files it writes. A file that would be empty (nothing matched) is not written.

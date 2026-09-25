@@ -1,9 +1,12 @@
-namespace FeBuddy.Core.Application.Conversions.SctToGeojson.Models;
+namespace FeBuddy.Core.Application.Conversions.Models;
 
-/// <summary>What happened to one sector file in an SCT2 to GeoJSON run.</summary>
-public sealed record SctFileConversion
+/// <summary>
+/// What happened to one source file in a conversion that writes several GeoJSON files per source
+/// (SCT2 to GeoJSON, vERAM to GeoJSON).
+/// </summary>
+public sealed record SourceFileConversion
 {
-	/// <summary>The sector file that was read.</summary>
+	/// <summary>The source file that was read.</summary>
 	public required string SourcePath { get; init; }
 
 	/// <summary>Every GeoJSON file written for it; empty when it could not be read or had nothing to draw.</summary>

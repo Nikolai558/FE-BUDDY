@@ -50,6 +50,16 @@ public partial class CrcDefaultsPanel : UserControl
 	/// <summary>Identifies the read-only <see cref="ShowClassNames"/> dependency property.</summary>
 	public static readonly DependencyProperty ShowClassNamesProperty = ShowClassNamesKey.DependencyProperty;
 
+	private static readonly DependencyPropertyKey BandsKey = DependencyProperty.RegisterReadOnly(
+		nameof(Bands), typeof(IReadOnlyList<IReadOnlyList<EramClassDefault>>), typeof(CrcDefaultsPanel),
+		new PropertyMetadata(Array.Empty<IReadOnlyList<EramClassDefault>>()));
+
+	/// <summary>Identifies the read-only <see cref="Bands"/> dependency property.</summary>
+	public static readonly DependencyProperty BandsProperty = BandsKey.DependencyProperty;
+
+	/// <summary>How many class columns each band holds now; the last band may hold fewer.</summary>
+	private int _columnsPerBand;
+
 	/// <summary>Creates the panel.</summary>
 	public CrcDefaultsPanel() => InitializeComponent();
 
@@ -93,6 +103,39 @@ public partial class CrcDefaultsPanel : UserControl
 	/// <summary>Whether the class-name row shows: only when there is more than one class to tell apart.</summary>
 	public bool ShowClassNames => (bool)GetValue(ShowClassNamesProperty);
 
+	/// <summary>
+	/// <see cref="Classes"/> split into the lines of columns the panel draws, as many to a line as
+	/// fit the width it is given. One band while they all fit - always, for a single class.
+	/// </summary>
+	public IReadOnlyList<IReadOnlyList<EramClassDefault>> Bands => (IReadOnlyList<IReadOnlyList<EramClassDefault>>)GetValue(BandsProperty);
+
+	/// <inheritdoc />
+	/// <remarks>
+	/// Re-forms <see cref="Bands"/> for the width on offer before measuring: first measures the
+	/// panel with unlimited width to learn how much of it is not class columns (the border, its
+	/// padding and the row names), then fits as many fixed-width columns as the rest allows, at
+	/// least one to a band. Runs on every resize, so the bands follow the window.
+	/// </remarks>
+	protected override Size MeasureOverride(Size constraint)
+	{
+		int count = Classes?.Count ?? 0;
+
+		if (count > 1 && !double.IsInfinity(constraint.Width))
+		{
+			double column = CellWidth + CellMargin.Left + CellMargin.Right;
+			Size natural = base.MeasureOverride(new Size(double.PositiveInfinity, constraint.Height));
+			double overhead = natural.Width - (_columnsPerBand * column);
+			int fit = Math.Clamp((int)Math.Floor((constraint.Width - overhead) / column), 1, count);
+
+			if (fit != _columnsPerBand)
+			{
+				SetBands(fit);
+			}
+		}
+
+		return base.MeasureOverride(constraint);
+	}
+
 	private static void OnClassesChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
 	{
 		var panel = (CrcDefaultsPanel)d;
@@ -103,7 +146,22 @@ public partial class CrcDefaultsPanel : UserControl
 		panel.SetValue(CellMarginKey, several ? new Thickness(4, 3, 4, 3) : new Thickness(0, 3, 0, 3));
 		panel.SetValue(ShowClassNamesKey, several);
 
+		// Every class on one line until the next measure knows the width.
+		panel.SetBands(count);
+
 		// No file of this kind gets CRC-ERAM defaults, so there is nothing to fill in.
 		panel.Visibility = count > 0 ? Visibility.Visible : Visibility.Collapsed;
+	}
+
+	/// <summary>Splits <see cref="Classes"/> into bands of <paramref name="columnsPerBand"/>.</summary>
+	/// <param name="columnsPerBand">Columns per band; the last band takes what is left.</param>
+	private void SetBands(int columnsPerBand)
+	{
+		IReadOnlyList<EramClassDefault> classes = Classes ?? [];
+		_columnsPerBand = Math.Max(1, Math.Min(columnsPerBand, classes.Count));
+
+		SetValue(BandsKey, classes.Count == 0
+			? Array.Empty<IReadOnlyList<EramClassDefault>>()
+			: [.. classes.Chunk(_columnsPerBand).Select(band => (IReadOnlyList<EramClassDefault>)band)]);
 	}
 }

@@ -13,7 +13,7 @@ below is relative to `FeBuddy/FeBuddy.Wpf/` in the repo unless stated otherwise.
 
 - references `FeBuddy.Core`; no other NuGet packages - the MVVM helpers
   (`ObservableObject`, `RelayCommand`) are hand-rolled in `Mvvm/`
-- **Airports, Airways, Departures and Arrivals are sub-services of AIRAC Service**, not
+- **Airports, Airways, Departures, Arrivals and NAVAIDs are sub-services of AIRAC Service**, not
   top-level screens. The library code is `FeBuddy.Core.Application.Airac.*`; the GUI
   reaches each one only as a tab on the AIRAC Services screen. In the same way, each
   **file conversion** (DAT to GeoJSON, SCT2 to GeoJSON) is a tab on the File Conversions screen
@@ -61,7 +61,9 @@ ViewModels/           ShellViewModel + one per screen; AiracSubServices is the
                       AIRAC sub-service catalogue; FileConversionsViewModel lists
                       the conversions
   Models/               small item and row view-models and records (HealthRow,
-                        FebPropertyToggle, EramClassDefault, VnasFileToggle,
+                        FebPropertyToggle, EramClassDefault (StyleFromFeatures
+                        / AsksForStyle, for a class whose Symbol style lives on
+                        the Features instead of the card), VnasFileToggle,
                         SourceFileItem, ...)
   ServiceTabs/          the framework for a tabbed service screen:
                         TabbedServiceViewModel (the screen), ServiceTabViewModel
@@ -77,8 +79,8 @@ ViewModels/           ShellViewModel + one per screen; AiracSubServices is the
 Views/                ShellWindow (custom chrome) + Dashboard, TabbedServiceView
                       (the AIRAC Services and File Conversions screens) and their
                       tab views (AiracGeneralTabView, AirportsView, AirwaysView,
-                      DeparturesView, ArrivalsView, DatToGeojsonView, SctToGeojsonView,
-                      EramToGeojsonView, ServicePreviewTabView,
+                      DeparturesView, ArrivalsView, NavaidsView, DatToGeojsonView,
+                      SctToGeojsonView, EramToGeojsonView, ServicePreviewTabView,
                       ServiceRunReviewTabView), Map, Settings, Info; UpdateWindow,
                       ConfirmWindow (Confirm / Cancel, or a third choice between
                       them), RoiPickerWindow
@@ -137,8 +139,8 @@ bar and page scroller are shared, and each screen's view-model says what differs
     restores it. The selection persists to
     `Services.AiracService.SelectedSubServices`.
   - **Sub-service catalogue** - `ViewModels/AiracSubServices.cs`: Airports,
-    Airways, Departures, Arrivals. Adding one is a catalogue entry plus a tab
-    view-model; one whose backend is not built yet opens a
+    Airways, Departures, Arrivals, NAVAIDs. Adding one is a catalogue entry plus
+    a tab view-model; one whose backend is not built yet opens a
     `PlaceholderSubServiceView` and contributes nothing to a run.
   - **Sub-service tabs** - each is a `GeojsonSubServiceViewModel` (Save /
     Undo-last-save / dirty, plus the outputs, file choices, `feb.*` properties, ROI
@@ -151,7 +153,15 @@ bar and page scroller are shared, and each screen's view-model says what differs
     the cycle's `AWY_ID`s), buffer, the aliases section (`Airways.txt` + ROI scope),
     and the antimeridian toggle. Its result panel shows files + feature counts, the
     alias line count, the excluded-airway count, and messages grouped by airway and
-    presented by level (info collapsed behind a count).
+    presented by level (info collapsed behind a count). The NAVAIDs tab adds: NAVAID
+    Types (one tick per type present in the cycle, all on by default - unticking one
+    drops it from GeoJSON and the alias file alike), File Layout (merged, or one
+    Symbols/Text pair per type), and, once the Symbols file is chosen for CRC-ERAM
+    defaults under the merged layout, NAVAID Symbol Style (style each NAVAID by its
+    type - with a Fan marker style drop-down - or one style for the whole file).
+    NAVAIDs is also the first sub-service with no Lines file at all:
+    `GeojsonSubServiceViewModel.EmitKeys.Lines` is nullable so a sub-service can say
+    it has no Lines kind, and `GeojsonFilesCard.ShowLines` hides the Lines box for it.
   - **Preview Settings tab** - present once at least one sub-service is selected:
     every tab's settings as label/value rows (the General section names the run's
     `AIRAC_<cycle>` folder), notices naming any unsaved or invalid tab, and the single

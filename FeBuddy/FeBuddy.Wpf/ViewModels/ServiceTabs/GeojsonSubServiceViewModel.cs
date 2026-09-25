@@ -12,7 +12,7 @@ using FeBuddy.Core.Domain.Geo.Models;
 namespace FeBuddy.Wpf.ViewModels.ServiceTabs;
 
 /// <summary>
-/// Base for a sub-service tab that writes GeoJSON (Airports, Airways, Departures, Arrivals):
+/// Base for a sub-service tab that writes GeoJSON (Airports, Airways, Departures, Arrivals, NAVAIDs):
 /// everything those tabs share - the alias file, which GeoJSON files are written, the FE-Buddy properties,
 /// the Region of Interest override, the files to upload to vNAS and the CRC ERAM defaults they
 /// carry - with its config, settings-block and validation plumbing.
@@ -245,9 +245,11 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 
 	/// <summary>
 	/// The keys the three GeoJSON file choices are saved and sent under. The same key serves the
-	/// config and the settings block.
+	/// config and the settings block. <c>Lines</c> is <see langword="null"/> for a sub-service
+	/// with no Lines file (NAVAIDs): <see cref="EmitLines"/> is then always off and is never
+	/// saved or sent.
 	/// </summary>
-	protected virtual (string Lines, string Symbols, string Text) EmitKeys => ("EmitLines", "EmitSymbols", "EmitText");
+	protected virtual (string? Lines, string Symbols, string Text) EmitKeys => ("EmitLines", "EmitSymbols", "EmitText");
 
 	/// <summary>
 	/// Every file the tab's current settings write, in the order the Upload to vNAS card lists
@@ -356,7 +358,7 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 	protected void LoadSharedSettings()
 	{
 		_generateAliasFile = GetBool("GenerateAliasFile", true);
-		_emitLines = GetBool(EmitKeys.Lines, true);
+		_emitLines = EmitKeys.Lines is { } linesKey && GetBool(linesKey, true);
 		_emitSymbols = GetBool(EmitKeys.Symbols, true);
 		_emitText = GetBool(EmitKeys.Text, true);
 		_includeFebCustomProperties = GetBool("IncludeFebCustomProperties", false);
@@ -408,7 +410,12 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 	protected void SaveSharedSettings()
 	{
 		Set("GenerateAliasFile", YesNo(GenerateAliasFile));
-		Set(EmitKeys.Lines, YesNo(EmitLines));
+
+		if (EmitKeys.Lines is { } linesKey)
+		{
+			Set(linesKey, YesNo(EmitLines));
+		}
+
 		Set(EmitKeys.Symbols, YesNo(EmitSymbols));
 		Set(EmitKeys.Text, YesNo(EmitText));
 		Set("IncludeFebCustomProperties", YesNo(IncludeFebCustomProperties));
@@ -441,7 +448,12 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 	{
 		settings["CoordinatePrecision"] = OutputPreferences.CoordinatePrecision.ToString(CultureInfo.InvariantCulture);
 		settings["GenerateAliasFile"] = YesNo(GenerateAliasFile);
-		settings[EmitKeys.Lines] = YesNo(EmitLines);
+
+		if (EmitKeys.Lines is { } linesKey)
+		{
+			settings[linesKey] = YesNo(EmitLines);
+		}
+
 		settings[EmitKeys.Symbols] = YesNo(EmitSymbols);
 		settings[EmitKeys.Text] = YesNo(EmitText);
 		settings["IncludeFebCustomProperties"] = YesNo(IncludeFebCustomProperties);

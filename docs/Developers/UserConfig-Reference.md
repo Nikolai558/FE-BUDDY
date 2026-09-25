@@ -31,7 +31,7 @@ Written by **Settings** (except `NewsLastOpen`).
 | Key | Values | Default | Written / read by |
 |---|---|---|---|
 | `AiracCycleId` | a cycle ID, e.g. `2610` | current cycle | General tab. The ID (not "previous/current/next") is saved; on load it is matched back to one of the three, or falls back to current. |
-| `SelectedSubServices` | comma-separated keys: `Airports`, `Airways`, `Departures`, `Arrivals` | none | General tab. Keys are stable identifiers - never rename one without migrating this value. |
+| `SelectedSubServices` | comma-separated keys: `Airports`, `Airways`, `Departures`, `Arrivals`, `Navaids` | none | General tab. Keys are stable identifiers - never rename one without migrating this value. |
 | `UserArtccId` | an ARTCC ID, e.g. `ZOB` | none | Settings ▸ Facility. Not read by any sub-service yet. |
 | `CoordinatePrecision` | `0`-`15` (the GUI offers 5, 6, 7) | `6` | Settings; sent by every tab that writes GeoJSON, AIRAC and File Conversions alike. |
 
@@ -59,6 +59,7 @@ Each GeoJSON sub-service tab saves its own node, with **Save** on its tab:
 | Airways | `Services.AiracService.Geojson.Airways` |
 | Departures | `Services.AiracService.Departures` |
 | Arrivals | `Services.AiracService.Arrivals` |
+| NAVAIDs | `Services.AiracService.Navaids` |
 
 ### Keys every GeoJSON sub-service saves
 
@@ -67,7 +68,7 @@ Written by `GeojsonSubServiceViewModel`, under the sub-service's node.
 | Key | Values | Default |
 |---|---|---|
 | `GenerateAliasFile` | `Y` / `N` | `Y` |
-| `EmitLines`, `EmitSymbols`, `EmitText` (Airports: `EmitRunwayLines`, `EmitAirportSymbols`, `EmitAirportText`) | `Y` / `N` | `Y` |
+| `EmitLines`, `EmitSymbols`, `EmitText` (Airports: `EmitRunwayLines`, `EmitAirportSymbols`, `EmitAirportText`; NAVAIDs: `EmitSymbols`, `EmitText` only - there is no `EmitLines`) | `Y` / `N` | `Y` |
 | `IncludeFebCustomProperties` | `Y` / `N` | `N` |
 | `FebProperties` | comma-separated property names, e.g. `awyId,pointId` | none |
 | `Vnas.UploadFiles` | comma-separated file keys marked for vNAS (see [Settings blocks](Settings-Blocks.md#vnas-file-keys)), e.g. `Airways_High_Lines,Airways.txt` | none |
@@ -85,6 +86,7 @@ Written by `GeojsonSubServiceViewModel`, under the sub-service's node.
 | Airways | `Lines.Airway_<Class>_Lines`, `Symbols.Airway_<Class>_Symbols`, `Texts.Airway_<Class>_Texts`, for `<Class>` = `High`, `Low`, `Other` |
 | Departures | `Departures_Line`, `Departures_Symbol`, `Departures_Text` |
 | Arrivals | `Arrivals_Line`, `Arrivals_Symbol`, `Arrivals_Text` |
+| NAVAIDs | `NAVAIDs_Symbol`, `NAVAIDs_Text` (`OutputBy=All`), or `<Token>_Symbol`, `<Token>_Text` per NAVAID type present (`OutputBy=Type`) - `<Token>` is `VOR`, `VORTAC`, `VOR-DME`, `VOT`, `TACAN`, `DME`, `NDB`, `NDB-DME`, `MARINE-NDB`, `MARINE-NDB-DME`, `UHF-NDB`, `FAN-MARKER` or `CONSOLAN`. There is no `_Line` row: NAVAIDs writes no Lines file. |
 
 and `<field>` depends on the kind: **Line** `bcg`, `filters`, `style`, `thickness`; **Symbol** `bcg`,
 `filters`, `style`, `size`; **Text** `bcg`, `filters`, `size`, `underline` (`Y`/`N`), `opaque`
@@ -138,6 +140,19 @@ tab reads them any more (the [file conversion nodes](#file-conversion-nodes) sti
 | `Amendment.OnOrAfter` | `yyyy-MM-dd` | none |
 
 The same keys as Departures, minus `IncludeObstacleDepartures` - a STAR has no obstacle/SID split.
+
+### NAVAIDs only
+
+| Key | Values | Default |
+|---|---|---|
+| `GenerateGeojson` | `Y` / `N` | `Y` |
+| `OutputBy` | `All`, `Type` | `All` |
+| `ExcludedTypes` | comma-separated NASR NAVAID types - the unticked boxes on the NAVAID Types card | none |
+| `SymbolStyleBy` | `Type`, `File` | `Type` |
+| `FanMarkerStyle` | a CRC symbol style, saved when fan markers need one (see [Settings blocks](Settings-Blocks.md#navaids)) | none |
+
+There is no `Roi.Mode` or `Amendment.*`: NAVAIDs has no ARTCC filter or amendment filter - every
+NAVAID NASR publishes (other than a `SHUTDOWN` one) is a candidate.
 
 ## File conversion nodes
 

@@ -2,11 +2,13 @@
     CrcDefaultsPanel  -  one kind's CRC ERAM defaults (Lines, Symbols or Text) inside the CRC ERAM
     Defaults card: its title, then one row per property - name on the left, one control per class
     to the right. Airports, Departures and Arrivals have one class, so one column; Airways can have
-    High / Low / Other, so up to three columns under a class-name row. The card hands it only the
-    classes in use, and with none the panel hides itself.
+    High / Low / Other, and NAVAIDs split by type one per NAVAID type, each in its own column under
+    a class-name row. The card hands it only the classes in use, and with none the panel hides
+    itself.
 
-    Which rows show comes from the classes themselves (EramClassDefault.ShowStyle / ShowThickness
-    / ShowSize / ShowTextOptions), so the same panel draws every kind.
+    Which rows show comes from the classes themselves (EramClassDefault.AsksForStyle /
+    ShowThickness / ShowSize / ShowTextOptions), so the same panel draws every kind. The style row
+    follows the first class: a NAVAIDs Symbols file styled by NAVAID type asks for no style.
 
     The File Conversions choose each kind's defaults on the panel itself: they turn on ShowInclude,
     which adds an Include box to the title; unticked, the rows grey out but keep their values. The
@@ -138,7 +140,7 @@
                 <HeaderedItemsControl Style="{StaticResource FieldRow}" Header="Filters" ItemTemplate="{StaticResource FiltersCell}" />
                 <HeaderedItemsControl Style="{StaticResource FieldRow}" Header="BCG" ItemTemplate="{StaticResource BcgCell}" />
                 <HeaderedItemsControl Style="{StaticResource FieldRow}" Header="Style" ItemTemplate="{StaticResource StyleCell}"
-                                      Visibility="{Binding Classes[0].ShowStyle, ElementName=Self, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}" />
+                                      Visibility="{Binding Classes[0].AsksForStyle, ElementName=Self, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}" />
                 <HeaderedItemsControl Style="{StaticResource FieldRow}" Header="Thickness" ItemTemplate="{StaticResource ThicknessCell}"
                                       Visibility="{Binding Classes[0].ShowThickness, ElementName=Self, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}" />
                 <HeaderedItemsControl Style="{StaticResource FieldRow}" Header="Size" ItemTemplate="{StaticResource SizeCell}"

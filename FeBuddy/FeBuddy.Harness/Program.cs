@@ -1,6 +1,6 @@
 using System.Diagnostics;
 
-using FeBuddy.Core.Application.Airac.Arrivals.Models;
+using FeBuddy.Core.Application.Airac.Navaids.Models;
 using FeBuddy.Core.Infrastructure.Configuration;
 using FeBuddy.Core.Infrastructure.Nasr.Models;
 using FeBuddy.Core.Infrastructure.Nasr.Parsers;
@@ -51,8 +51,11 @@ internal static class Program
 			// DepartureServiceResult departureResult = DepartureRunner.Run(allNasrCsvData);
 			// ConsoleReport.PrintDepartureServiceResult("Departures: GeoJSON + Alias", departureResult);
 
-			ArrivalServiceResult arrivalResult = ArrivalRunner.Run(allNasrCsvData);
-			ConsoleReport.PrintArrivalServiceResult("Arrivals: GeoJSON + Alias", arrivalResult);
+			// ArrivalServiceResult arrivalResult = ArrivalRunner.Run(allNasrCsvData);
+			// ConsoleReport.PrintArrivalServiceResult("Arrivals: GeoJSON + Alias", arrivalResult);
+
+			NavaidServiceResult navaidResult = NavaidRunner.Run(allNasrCsvData);
+			ConsoleReport.PrintNavaidServiceResult("NAVAIDs: GeoJSON + Alias", navaidResult);
 		}
 		catch (Exception ex)
 		{

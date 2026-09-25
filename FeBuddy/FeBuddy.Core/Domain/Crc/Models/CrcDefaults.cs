@@ -46,8 +46,12 @@ public sealed record CrcSymbolDefaults
 	/// <summary>ERAM filter groups, each 0-40; at least one.</summary>
 	public required IReadOnlyList<int> Filters { get; init; }
 
-	/// <summary>Symbol style, one of the CRC symbol styles.</summary>
-	public required string Style { get; init; }
+	/// <summary>
+	/// Symbol style, one of the CRC symbol styles, or <see langword="null"/> when every Symbol
+	/// Feature in the file carries its own <c>style</c> property instead - NAVAIDs, for example,
+	/// styled per NAVAID type rather than one style for the whole file.
+	/// </summary>
+	public required string? Style { get; init; }
 
 	/// <summary>Symbol size, 1-4.</summary>
 	public required int Size { get; init; }

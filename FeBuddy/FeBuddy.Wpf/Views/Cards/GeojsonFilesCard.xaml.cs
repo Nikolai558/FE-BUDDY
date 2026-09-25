@@ -27,6 +27,10 @@ public partial class GeojsonFilesCard : UserControl
 	/// <summary>Identifies the <see cref="Footnote"/> dependency property.</summary>
 	public static readonly DependencyProperty FootnoteProperty = Register(nameof(Footnote), null);
 
+	/// <summary>Identifies the <see cref="ShowLines"/> dependency property.</summary>
+	public static readonly DependencyProperty ShowLinesProperty =
+		DependencyProperty.Register(nameof(ShowLines), typeof(bool), typeof(GeojsonFilesCard), new PropertyMetadata(true));
+
 	/// <summary>Creates the card.</summary>
 	public GeojsonFilesCard() => InitializeComponent();
 
@@ -50,6 +54,9 @@ public partial class GeojsonFilesCard : UserControl
 
 	/// <summary>Optional small print under the options, e.g. where the files are written.</summary>
 	public string? Footnote { get => (string?)GetValue(FootnoteProperty); set => SetValue(FootnoteProperty, value); }
+
+	/// <summary>Whether the Lines option is offered. Default <see langword="true"/>; off for a sub-service with no Lines file (NAVAIDs).</summary>
+	public bool ShowLines { get => (bool)GetValue(ShowLinesProperty); set => SetValue(ShowLinesProperty, value); }
 
 	private static DependencyProperty Register(string name, string? defaultValue) =>
 		DependencyProperty.Register(name, typeof(string), typeof(GeojsonFilesCard), new PropertyMetadata(defaultValue));

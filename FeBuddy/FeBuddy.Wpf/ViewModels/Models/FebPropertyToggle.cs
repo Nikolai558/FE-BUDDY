@@ -12,8 +12,8 @@ namespace FeBuddy.Wpf.ViewModels.Models;
 /// <remarks>
 /// Every sub-service uses this one type; what differs is the list it is built from
 /// (<see cref="AirportFebPropertyOptions"/>, <see cref="AirwayFebPropertyOptions"/>,
-/// <see cref="DepartureFebPropertyOptions"/>, <see cref="ArrivalFebPropertyOptions"/>) through
-/// <see cref="ListFor"/>.
+/// <see cref="DepartureFebPropertyOptions"/>, <see cref="ArrivalFebPropertyOptions"/>,
+/// <see cref="NavaidFebPropertyOptions"/>) through <see cref="ListFor"/>.
 /// </remarks>
 /// <param name="name">Its name as written to the settings block and the GeoJSON key.</param>
 /// <param name="description">A short plain-English description for the tooltip.</param>

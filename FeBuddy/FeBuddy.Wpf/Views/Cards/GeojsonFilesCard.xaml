@@ -1,7 +1,8 @@
 <!--
     GeojsonFilesCard  -  the "What files do you want?" card every GeoJSON sub-service tab shows:
     one option per file, always in the order Lines, Symbols, Text. Binds to the tab's view model
-    through IGeojsonFileChoices; the tab supplies only the wording.
+    through IGeojsonFileChoices; the tab supplies only the wording, and ShowLines="False" for a
+    sub-service with no Lines file.
 
     Usage:
         <cards:GeojsonFilesCard IsEnabled="{Binding GenerateGeojson}"
@@ -21,7 +22,8 @@
              x:Name="Self">
     <ctl:Card Header="What Files Do You Want?">
         <StackPanel>
-            <ctl:Option Margin="0,4,0,0" Description="{Binding LinesDescription, ElementName=Self}">
+            <ctl:Option Margin="0,4,0,0" Description="{Binding LinesDescription, ElementName=Self}"
+                        Visibility="{Binding ShowLines, ElementName=Self, Converter={StaticResource BoolToVis}}">
                 <CheckBox Content="{Binding LinesLabel, ElementName=Self}" IsChecked="{Binding EmitLines}" />
             </ctl:Option>
             <ctl:Option Margin="0,10,0,0" Description="{Binding SymbolsDescription, ElementName=Self}">

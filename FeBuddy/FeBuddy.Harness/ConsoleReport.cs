@@ -4,6 +4,7 @@ using FeBuddy.Core.Application.Airac.Airports.Models;
 using FeBuddy.Core.Application.Airac.Airways.Models;
 using FeBuddy.Core.Application.Airac.Arrivals.Models;
 using FeBuddy.Core.Application.Airac.Departures.Models;
+using FeBuddy.Core.Application.Airac.Navaids.Models;
 using FeBuddy.Core.Application.Models;
 using FeBuddy.Core.Infrastructure.Configuration;
 using FeBuddy.Core.Infrastructure.Logging.Models;
@@ -196,6 +197,49 @@ internal static class ConsoleReport
 				int count = result.GeojsonFeatureCountsByFile.TryGetValue(file, out int c) ? c : 0;
 				Console.WriteLine($"  {Path.GetFileName(file)} - {count:N0} feature(s)");
 				shown++;
+			}
+		}
+
+		if (result.AliasFilePath is not null)
+		{
+			Console.WriteLine($"Alias file:   {result.AliasFilePath} ({result.AliasCommandCount:N0} command(s))");
+		}
+		else
+		{
+			Console.WriteLine("Alias file:   (not generated)");
+		}
+
+		PrintMessagesByLevel(result.Messages);
+	}
+
+	/// <summary>
+	/// Prints one NAVAIDs run: timing, how many NAVAIDs were built and how many survived ROI
+	/// filtering for the GeoJSON, every GeoJSON file with its Feature count, the alias file with
+	/// its command count, and the run's messages grouped by level.
+	/// </summary>
+	/// <param name="label">Heading for this run, e.g. "NAVAIDs: GeoJSON + Alias".</param>
+	/// <param name="result">What <c>NavaidService.Run</c> returned.</param>
+	public static void PrintNavaidServiceResult(string label, NavaidServiceResult result)
+	{
+		Console.WriteLine();
+		Console.WriteLine($"=== {label} ===");
+		Console.WriteLine($"Elapsed:      {result.Elapsed.TotalMilliseconds:N0} ms");
+		Console.WriteLine($"NAVAIDs built: {result.NavaidCount:N0}");
+		Console.WriteLine($"NAVAIDs in ROI (GeoJSON): {result.GeojsonNavaidCount:N0}");
+
+		if (result.GeojsonFilesWritten.Count == 0)
+		{
+			Console.WriteLine("GeoJSON files written: (none)");
+		}
+		else
+		{
+			Console.WriteLine($"GeoJSON files written: {result.GeojsonFilesWritten.Count:N0}");
+
+			foreach (string file in result.GeojsonFilesWritten)
+			{
+				int count = result.GeojsonFeatureCountsByFile.TryGetValue(file, out int c) ? c : 0;
+				Console.WriteLine($"  {Path.GetFileName(file)} - {count:N0} feature(s)");
+				Console.WriteLine($"    {file}");
 			}
 		}
 

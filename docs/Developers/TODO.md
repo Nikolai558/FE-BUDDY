@@ -19,8 +19,8 @@ record. Add new items to the section they belong to.
 ## Performance
 
 - **Parse only the NASR groups the sub-services read.** `AiracCycleDataCache` parses every NASR
-  CSV group, but Airports, Airways, Departures and Arrivals only read APT, AWY, CLS_ARSP, DP,
-  STAR, FIX, FRQ and NAV. Parsing just those would cut memory and launch time. (Marked
+  CSV group, but Airports, Airways, Departures, Arrivals and NAVAIDs only read APT, AWY, CLS_ARSP,
+  DP, STAR, FIX, FRQ and NAV. Parsing just those would cut memory and launch time. (Marked
   `TODO (perf)` in `AiracCycleDataCache.cs`.)
 
 ## Tidy-ups

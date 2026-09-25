@@ -65,17 +65,27 @@ public static class CrcDefaultsReader
 	/// <summary>Reads and validates the Symbol defaults under <paramref name="keyPrefix"/>.</summary>
 	/// <param name="settings">The raw settings block.</param>
 	/// <param name="keyPrefix">e.g. <c>Crc.Airports.Symbol</c>.</param>
+	/// <param name="readStyle">
+	/// When <see langword="false"/>, <c>&lt;keyPrefix&gt;.style</c> is not read and
+	/// <see cref="CrcSymbolDefaults.Style"/> is left <see langword="null"/> - for a class whose
+	/// Features each carry their own style rather than one style for the whole file (e.g. NAVAIDs
+	/// styled by type). Default <see langword="true"/>.
+	/// </param>
 	/// <returns>The validated defaults.</returns>
 	/// <exception cref="ArgumentException">Thrown when a value is missing or invalid.</exception>
-	public static CrcSymbolDefaults ReadSymbol(IReadOnlyDictionary<string, string> settings, string keyPrefix)
+	public static CrcSymbolDefaults ReadSymbol(IReadOnlyDictionary<string, string> settings, string keyPrefix, bool readStyle = true)
 	{
+		string? style = readStyle
+			? SettingsValueReader.NormalizeStyle(
+				SettingsValueReader.RequiredString(settings, $"{keyPrefix}.style"),
+				CrcPropertyValidator.ValidSymbolStyles)
+			: null;
+
 		CrcSymbolDefaults defaults = new()
 		{
 			Bcg = SettingsValueReader.RequiredInt(settings, $"{keyPrefix}.bcg"),
 			Filters = SettingsValueReader.RequiredIntList(settings, $"{keyPrefix}.filters"),
-			Style = SettingsValueReader.NormalizeStyle(
-				SettingsValueReader.RequiredString(settings, $"{keyPrefix}.style"),
-				CrcPropertyValidator.ValidSymbolStyles)!,
+			Style = style,
 			Size = SettingsValueReader.RequiredInt(settings, $"{keyPrefix}.size"),
 		};
 

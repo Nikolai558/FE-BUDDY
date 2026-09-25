@@ -18,9 +18,9 @@ parser. This page lists every key each parser reads.
   *and* is listed in `CrcDefaultsFor` needs. Other valid CRC keys are accepted and ignored; a key
   for a class, kind or field the sub-service does not have is a warning.
 
-Parsers: `AirportSettingsParser`, `AirwaySettingsParser`, `DepartureSettingsParser`. Shared
-reading: `SubServiceSettingsReader`, `CrcDefaultsReader`, `SettingsValueReader`
-(all in `FeBuddy.Core/Application`).
+Parsers: `AirportSettingsParser`, `AirwaySettingsParser`, `DepartureSettingsParser`,
+`ArrivalSettingsParser`. Shared reading: `SubServiceSettingsReader`, `CrcDefaultsReader`,
+`SettingsValueReader` (all in `FeBuddy.Core/Application`).
 
 ## Keys every sub-service reads
 
@@ -46,22 +46,24 @@ sub-service writes into the same folder. The harness and tests pass their own.
 | File | Goes in |
 |---|---|
 | Alias file | `<OutputDirectory>\` |
-| GeoJSON | `<OutputDirectory>\Geojson\` (Departures: `…\Geojson\<ARTCC>\<ARPT>\`) |
+| GeoJSON | `<OutputDirectory>\Geojson\` (Departures, Arrivals: `…\Geojson\<ARTCC>\<ARPT>\`) |
 | Marked for vNAS | the same, under `<OutputDirectory>\Upload_to_vNAS\` instead |
 
 ### vNAS file keys
 
 A **file key** names one output file: a GeoJSON file's name without `.geojson`, or the alias
-file's name. Departures writes thousands of GeoJSON files, so its keys name every file of one kind.
-Keys match ignoring case; a key the sub-service does not write, a `CrcDefaultsFor` key that is not
-in `UploadToVnas`, or the alias file in `CrcDefaultsFor`, throws. A key for a file that is not
-written this run (its kind is switched off, say) is accepted and does nothing.
+file's name. Departures and Arrivals each write thousands of GeoJSON files, so their keys name
+every file of one kind. Keys match ignoring case; a key the sub-service does not write, a
+`CrcDefaultsFor` key that is not in `UploadToVnas`, or the alias file in `CrcDefaultsFor`, throws.
+A key for a file that is not written this run (its kind is switched off, say) is accepted and does
+nothing.
 
 | Sub-service | GeoJSON keys | Alias key |
 |---|---|---|
 | Airports | `Runways_Lines`, `Airports_Symbols`, `Airports_Text` | `Airports.txt` |
 | Airways | `Airways_<group>_Lines` / `_Symbols` / `_Text`, where `<group>` is `High`, `Low`, `Other` or a designation (letters only) | `Airways.txt` |
 | Departures | `Departures_Lines`, `Departures_Symbols`, `Departures_Text` | `Departures.txt` |
+| Arrivals | `Arrivals_Lines`, `Arrivals_Symbols`, `Arrivals_Text` | `Arrivals.txt` |
 
 CRC-ERAM defaults are only ever written to files marked for vNAS, since CRC reads its maps from
 vNAS. The keys are listed in each sub-service's `*OutputFiles` class.
@@ -127,6 +129,29 @@ naming the key.
 - **CRC class:** `Departures`, with `Line`, `Symbol` and `Text`.
 - **`FebProperties`:** `dpName`, `pointId`, `arptId`, `artcc`, `amendmentNo`, `amendEffDate`,
   `waypoints`.
+- `GenerateGeojson` and `GenerateAliasFile` cannot both be `N`, and `GenerateGeojson = Y` needs at
+  least one `Emit…`.
+- Only the active amendment mode's value is read (and required); values for the other modes are
+  ignored.
+
+## Arrivals
+
+| Key | Values | Default |
+|---|---|---|
+| `GenerateGeojson` | `Y` / `N` | `Y` |
+| `EmitLines`, `EmitSymbols`, `EmitText` | `Y` / `N` | `Y` |
+| `ArtccFilter` | list of ARTCC IDs; empty means every ARTCC | none |
+| `AmendmentFilter` | `None`, `Cycles`, `Days`, `Date` | `None` |
+| `AmendedWithinCycles` | 1-1000 (1 = the selected cycle); **required** with `Cycles` | - |
+| `AmendedWithinDays` | 1-36500, counted back from today; **required** with `Days` | - |
+| `AmendedOnOrAfter` | `yyyy-MM-dd`; **required** with `Date` | - |
+| `RoiMode` | `Airport` (every arrival of an airport inside the ROI), `Waypoint` (any arrival with a point inside) | `Airport` |
+
+- **CRC class:** `Arrivals`, with `Line`, `Symbol` and `Text`.
+- **`FebProperties`:** `arrivalName`, `pointId`, `arptId`, `artcc`, `amendmentNo`, `amendEffDate`,
+  `waypoints`.
+- The same keys as Departures, minus `IncludeObstacleDepartures` - a STAR has no obstacle/SID
+  split, so the key is not read; sending it anyway is an unknown-key warning, not an error.
 - `GenerateGeojson` and `GenerateAliasFile` cannot both be `N`, and `GenerateGeojson = Y` needs at
   least one `Emit…`.
 - Only the active amendment mode's value is read (and required); values for the other modes are

@@ -46,6 +46,7 @@ FeBuddy.Core/
 │   ├── Airac/        AiracCycleResolver: cycle ids and dates from the 28-day cadence
 │   ├── Airports/     Airport, AirportRunway models
 │   ├── Airways/      AirwayClassifier and the Airway/segment/point models
+│   ├── Arrivals/     ArrivalNaming and procedure models
 │   ├── Crc/          CRC feature properties and CrcPropertyValidator
 │   ├── Departures/   DepartureNaming and procedure models
 │   └── Geo/          GeoMath, antimeridian splitting, line merging, ROI clipping, Wgs84
@@ -61,7 +62,8 @@ FeBuddy.Core/
     ├── Airac/          AiracService (entry point), AiracCycleDataCache, AiracOutputPaths, FebProperties
     │   ├── Airways/    One folder per sub-service, all shaped the same way
     │   ├── Airports/
-    │   └── Departures/
+    │   ├── Departures/
+    │   └── Arrivals/
     ├── Launch/         LaunchSequence, AppEnvironment
     ├── News/           NewsService
     ├── Settings/       Shared readers for the string settings dictionaries
@@ -122,7 +124,7 @@ AirwayService.Run(nasrData, settings)
   → AirwayServiceResult (files written, ServiceMessages, timing)
 ```
 
-Airports and Departures have the same shape. Problems are reported as `ServiceMessage`s
+Airports, Departures and Arrivals have the same shape. Problems are reported as `ServiceMessage`s
 (warnings or errors) in the result instead of being thrown, so one bad setting doesn't lose the
 whole run. The only exception is a missing required setting, which throws `ArgumentException`.
 
@@ -131,8 +133,8 @@ whole run. The only exception is a missing required setting, which throws `Argum
 - **A new aviation or geometry rule** (no I/O): `Domain/<Feature>/`.
 - **A new NASR file**: its row model in `Infrastructure/Nasr/Models/`, its parser in
   `Infrastructure/Nasr/Parsers/`, and wire it into `NasrCsvParser`.
-- **A new AIRAC output** (say, STARs): `Application/Airac/Stars/` with `StarService`,
-  `StarSettingsParser`, `StarBuilder`, `StarGeojsonWriter`, `StarOutputFiles` (its file keys) and a
+- **A new AIRAC output** (say, Fixes): `Application/Airac/Fixes/` with `FixService`,
+  `FixSettingsParser`, `FixBuilder`, `FixGeojsonWriter`, `FixOutputFiles` (its file keys) and a
   `Models/` folder. Add its settings block to `AiracServiceSettings` and one `RunSubServiceAsync`
   call to `AiracService`. Reuse `Application/Settings/SubServiceSettingsReader` for the common keys
   (precision, ROI, FEB properties, the vNAS files), and put each file where

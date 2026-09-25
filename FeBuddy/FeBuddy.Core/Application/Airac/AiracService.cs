@@ -4,6 +4,8 @@ using FeBuddy.Core.Application.Airac.Airports;
 using FeBuddy.Core.Application.Airac.Airports.Models;
 using FeBuddy.Core.Application.Airac.Airways;
 using FeBuddy.Core.Application.Airac.Airways.Models;
+using FeBuddy.Core.Application.Airac.Arrivals;
+using FeBuddy.Core.Application.Airac.Arrivals.Models;
 using FeBuddy.Core.Application.Airac.Departures;
 using FeBuddy.Core.Application.Airac.Departures.Models;
 using FeBuddy.Core.Application.Airac.Models;
@@ -16,8 +18,8 @@ namespace FeBuddy.Core.Application.Airac;
 
 /// <summary>
 /// The AIRAC Service: the GUI calls this once per "Run AIRAC Service". It runs each selected
-/// sub-service (Airways, Airports, Departures) against one cycle's NASR data and gathers the
-/// results.
+/// sub-service (Airways, Airports, Departures, Arrivals) against one cycle's NASR data and
+/// gathers the results.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -102,7 +104,8 @@ public static class AiracService
 		Stopwatch stopwatch = Stopwatch.StartNew();
 		List<ServiceMessage> messages = [];
 		string outputDirectory = settings.CycleOutputDirectory;
-		bool anySelected = settings.Airways is not null || settings.Airports is not null || settings.Departures is not null;
+		bool anySelected = settings.Airways is not null || settings.Airports is not null
+			|| settings.Departures is not null || settings.Arrivals is not null;
 
 		// Only when there is something to write: a run with nothing selected must not empty the
 		// folder and leave it that way.
@@ -128,6 +131,11 @@ public static class AiracService
 			block => DepartureService.Run(nasrData, block),
 			result => $"{result.AirportProcedureCount} airport procedure(s), {result.GeojsonFilesWritten.Count} GeoJSON file(s)").ConfigureAwait(false);
 
+		ArrivalServiceResult? arrivalsResult = await RunSubServiceAsync(
+			settings.Arrivals, "Arrivals", "Building arrival procedure GeoJSON and alias output",
+			block => ArrivalService.Run(nasrData, block),
+			result => $"{result.AirportProcedureCount} airport procedure(s), {result.GeojsonFilesWritten.Count} GeoJSON file(s)").ConfigureAwait(false);
+
 		if (!anySelected)
 		{
 			const string message = "AIRAC Service run requested with no sub-service selected; nothing to do.";
@@ -145,6 +153,7 @@ public static class AiracService
 			Airways = airwaysResult,
 			Airports = airportsResult,
 			Departures = departuresResult,
+			Arrivals = arrivalsResult,
 		};
 
 		// Runs one sub-service if it was selected (its settings block is not null), reporting

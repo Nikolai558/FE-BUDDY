@@ -56,4 +56,10 @@ public sealed record AiracServiceSettings
 	/// not selected for this run.
 	/// </summary>
 	public IReadOnlyDictionary<string, string>? Departures { get; init; }
+
+	/// <summary>
+	/// The Arrivals sub-service settings block, or <see langword="null"/> when Arrivals was not
+	/// selected for this run.
+	/// </summary>
+	public IReadOnlyDictionary<string, string>? Arrivals { get; init; }
 }

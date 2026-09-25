@@ -19,15 +19,15 @@ record. Add new items to the section they belong to.
 ## Performance
 
 - **Parse only the NASR groups the sub-services read.** `AiracCycleDataCache` parses every NASR
-  CSV group, but Airports, Airways and Departures only read APT, AWY, CLS_ARSP, DP, FIX, FRQ and
-  NAV. Parsing just those would cut memory and launch time. (Marked `TODO (perf)` in
-  `AiracCycleDataCache.cs`.)
+  CSV group, but Airports, Airways, Departures and Arrivals only read APT, AWY, CLS_ARSP, DP,
+  STAR, FIX, FRQ and NAV. Parsing just those would cut memory and launch time. (Marked
+  `TODO (perf)` in `AiracCycleDataCache.cs`.)
 
 ## Tidy-ups
 
 - **The Facility setting is saved but unused.** Settings ▸ Facility Profile ▸ Facility writes
   `Services.AiracService.UserArtccId`, but no sub-service reads it yet. Use it (e.g. to
-  pre-select the Departures ARTCC filter) or remove it.
+  pre-select the Departures or Arrivals ARTCC filter) or remove it.
 - **Misspelled config keys.** `DefaultCoordindates` and `OverrideCoordindates` in
   `UserConfig.json` are misspelled, and every saved config holds them that way. Renaming them
   needs a one-time migration that copies the old keys to the new ones.

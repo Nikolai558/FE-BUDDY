@@ -13,8 +13,8 @@ using FeBuddy.Core.Infrastructure.Configuration;
 namespace FeBuddy.Wpf.ViewModels.ServiceTabs;
 
 /// <summary>
-/// Base for a sub-service tab that writes GeoJSON (Airports, Airways, Departures): everything
-/// those tabs share - the alias file, which GeoJSON files are written, the FE-Buddy properties,
+/// Base for a sub-service tab that writes GeoJSON (Airports, Airways, Departures, Arrivals):
+/// everything those tabs share - the alias file, which GeoJSON files are written, the FE-Buddy properties,
 /// the Region of Interest override, the files to upload to vNAS and the CRC ERAM defaults they
 /// carry - with its config, settings-block and validation plumbing.
 /// </summary>

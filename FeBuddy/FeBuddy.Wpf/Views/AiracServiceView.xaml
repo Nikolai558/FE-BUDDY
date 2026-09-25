@@ -38,6 +38,9 @@
         <DataTemplate DataType="{x:Type vm:DeparturesViewModel}">
             <local:DeparturesView />
         </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:ArrivalsViewModel}">
+            <local:ArrivalsView />
+        </DataTemplate>
         <DataTemplate DataType="{x:Type tabs:PlaceholderSubServiceViewModel}">
             <local:PlaceholderSubServiceView />
         </DataTemplate>

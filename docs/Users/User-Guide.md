@@ -39,8 +39,8 @@ The screen where you make files. It is a set of tabs down the left:
 
 | Tab | What it is |
 |---|---|
-| **General** | Which cycle, and which sub-services (Airports, Airways, Departures). Always there. |
-| **Airports / Airways / Departures** | One tab per sub-service you ticked, with its settings. |
+| **General** | Which cycle, and which sub-services (Airports, Airways, Departures, Arrivals). Always there. |
+| **Airports / Airways / Departures / Arrivals** | One tab per sub-service you ticked, with its settings. |
 | **Preview Settings** | Everything the run will do, in plain words, and the **Run AIRAC Service** button. Appears once a sub-service is ticked. |
 | **Review** | What happened in the last run. Appears once you run. |
 
@@ -117,7 +117,7 @@ be filled in.
 
 Airways has a column per altitude class (High, Low, Other) - with High/Low files, just the class of
 each file chosen; with designation files, all three, since one file can hold airways of every
-class. Airports and Departures have one.
+class. Airports, Departures and Arrivals have one.
 
 ### Airports tab
 
@@ -182,6 +182,37 @@ class. Airports and Departures have one.
 - Procedures are named by their FAA computer code without the amendment digit (`DOTSS2.DOTSS` is
   `DOTSS`), or by their name with punctuation removed when there is no code (`O'HARE` is `OHARE`).
 
+### Arrivals tab
+
+The same shape as Departures, for STARs instead of SIDs, with no obstacle/SID split - so there is
+no "Include obstacle departures" equivalent here.
+
+- **Outputs:** GeoJSON, and `Arrivals.txt` - a command per airport and procedure that draws the
+  procedure's points.
+- **Files:** Lines (each airport's procedure, shared segments drawn once), Symbols (each point),
+  Text (each point's identifier). They are written per airport, in the same
+  `Geojson\<ARTCC>\<airport>\` folder as that airport's Departures files, but named with `STAR` in
+  them - `<airport>_<procedure>_STAR_Lines.geojson` (and `_Symbols`, `_Text`) - so a SID and a STAR
+  that share an identifier at one airport never overwrite each other.
+- **Procedures:**
+  - **ARTCCs** - tick the ARTCCs you want; none ticked means all. **Clear** unticks them all. A
+    STAR shared by two ARTCCs (rare) follows each airport's own ARTCC: ARLFT serves airports in
+    both ZDC and ZNY, so ticking only ZNY gives you ARLFT at its ZNY airport and nowhere else.
+  - **Amendment Date** - keep every procedure, or only those amended within the last *N* cycles
+    (1 = this cycle), within the last *N* days, or on or after a date.
+- **How the Region Selects Arrivals:** *every arrival for an airport inside the region*, or *any
+  arrival with a point inside the region*. The region limits both the GeoJSON and the alias file.
+- **FE-Buddy properties:** `arrivalName`, `pointId`, `arptId`, `artcc`, `amendmentNo`,
+  `amendEffDate`, `waypoints`.
+- **Upload to vNAS:** by kind, since a run writes thousands of files - every procedure's Lines,
+  Symbols or Text files - then `Arrivals.txt`. The `<ARTCC>\<airport>` folders are kept under
+  `Upload_to_vNAS\Geojson` too.
+- Procedures are named by their FAA computer code without the amendment digit, read in the
+  opposite order from a departure's code (`AALAN.BLAID2` is `BLAID`), or by their name with
+  punctuation removed when there is no code.
+- A STAR is flown transition to body, so its points - and the alias command's fix list - list
+  transitions first, then bodies (the reverse of a departure's order).
+
 ### Preview Settings tab
 
 A plain-words summary of every tab: the folder the run writes to, what will be written, what it
@@ -206,8 +237,8 @@ asks what to do first:
   matched your filters").
 - **Results** - per sub-service, what it produced, with its warnings and routine messages each
   behind a **Show** button.
-- **Output** - every file written (collapsed to a count; a Departures run writes thousands) and
-  **Open output folder**, which opens the run's `AIRAC_<cycle>` folder.
+- **Output** - every file written (collapsed to a count; a Departures or Arrivals run writes
+  thousands) and **Open output folder**, which opens the run's `AIRAC_<cycle>` folder.
 
 ## Output files
 
@@ -221,7 +252,7 @@ laid out the same way:
 <output folder>\
 └── FE-Buddy_Output\                  (only with "Add a FE-Buddy_Output folder")
     └── AIRAC_2610\
-        ├── Airports.txt, Airways.txt, Departures.txt
+        ├── Airports.txt, Airways.txt, Departures.txt, Arrivals.txt
         ├── Geojson\
         │   ├── Runways_Lines, Airports_Symbols, Airports_Text (.geojson)
         │   ├── Airways_<group>_Lines / _Symbols / _Text (.geojson)
@@ -230,6 +261,10 @@ laid out the same way:
             ├── the alias files marked for vNAS
             └── Geojson\              the GeoJSON files marked for vNAS, laid out as above
 ```
+
+Departures and Arrivals share the same `<ARTCC>\<airport>` folder; an Arrivals file's name adds
+`_STAR_` before the kind (`LAS_BLAID_STAR_Lines.geojson`) so a SID and a STAR with the same
+identifier at one airport never overwrite each other.
 
 A folder is created only when something is written to it. A file that would be empty (nothing
 matched) is not written. A run of a cycle that has been run before asks first whether to

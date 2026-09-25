@@ -36,6 +36,7 @@ FE-Buddy 3.0 is a from-scratch rewrite. Today it produces:
 | **Airports** | airport symbols and labels, runway lines | `Airports.txt` |
 | **Airways** | airway lines, waypoint symbols and labels - by high/low altitude or by designation | `Airways.txt` |
 | **Departures** | SIDs (and ODPs if you want them), per airport | `Departures.txt` |
+| **Arrivals** | STARs, per airport | `Arrivals.txt` |
 
 plus a map to check GeoJSON files and set your Region of Interest. Many 2.x tools (chart-recall
 and ISR aliases, SCT2 / FAA video map / GeoMap conversions, GeoJSON clean-up, procedure ISRs) are

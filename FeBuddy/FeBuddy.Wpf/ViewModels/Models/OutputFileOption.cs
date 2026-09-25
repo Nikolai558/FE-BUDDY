@@ -1,8 +1,8 @@
 namespace FeBuddy.Wpf.ViewModels.Models;
 
 /// <summary>
-/// One file (or, for Departures, one kind of file) a sub-service tab's current settings will
-/// write - a choice on the Upload to vNAS card.
+/// One file (or, for Departures and Arrivals, one kind of file) a sub-service tab's current
+/// settings will write - a choice on the Upload to vNAS card.
 /// </summary>
 /// <param name="Key">The file key Core names it by, e.g. <c>Airways_High_Lines</c> or <c>Airways.txt</c>.</param>
 /// <param name="Group">The card row it sits in, e.g. <c>High</c>, <c>J</c> or <c>Alias file</c>.</param>

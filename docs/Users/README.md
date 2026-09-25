@@ -18,6 +18,7 @@ and how it should look, and writes the files: **GeoJSON video maps** that CRC ca
 | **Airports** | A symbol and a label for every airport, a line for every runway, and an alias file of airport commands. |
 | **Airways** | Every airway as lines, with waypoint symbols and labels - split by high/low altitude or by designation (J, V, Q, T...) - and an alias file that draws an airway's fixes. |
 | **Departures** | Every departure procedure (SIDs, and obstacle departures if you want them), as lines, symbols and labels per airport, and an alias file. |
+| **Arrivals** | Every arrival procedure (STARs), as lines, symbols and labels per airport, and an alias file - the same idea as Departures, run the other way. |
 | **A map** | Open any GeoJSON file to check it, and draw your facility's Region of Interest. |
 
 Everything can be limited to a **Region of Interest** - a box around your ARTCC - so you only get
@@ -32,7 +33,7 @@ GeoJSON clean-up, procedure ISRs) are not in 3.0 yet. If you need them, keep usi
    cycle, the one before it and the one after it (if the FAA has published it yet). The status
    at the top of the window tells you when it is ready.
 2. **You pick a cycle and what to make** on the AIRAC Service screen: Airports, Airways,
-   Departures, or any mix.
+   Departures, Arrivals, or any mix.
 3. **You choose the settings** on each one's tab: which files, which styles, which area.
    FE-Buddy remembers everything, so next cycle you only press Run.
 4. **You check the summary** on the Preview Settings tab and press **Run AIRAC Service**.

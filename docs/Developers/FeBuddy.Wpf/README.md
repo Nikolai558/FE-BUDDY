@@ -13,7 +13,7 @@ below is relative to `FeBuddy/FeBuddy.Wpf/` in the repo unless stated otherwise.
 
 - references `FeBuddy.Core`; no other NuGet packages - the MVVM helpers
   (`ObservableObject`, `RelayCommand`) are hand-rolled in `Mvvm/`
-- **Airports, Airways and Departures are sub-services of AIRAC Service**, not
+- **Airports, Airways, Departures and Arrivals are sub-services of AIRAC Service**, not
   top-level screens. The library code is `FeBuddy.Core.Application.Airac.*`; the GUI
   reaches each one only as a tab on the AIRAC Services screen.
 - On launch, `App.xaml.cs` starts `AppLog`'s file sink then runs
@@ -67,9 +67,10 @@ ViewModels/           ShellViewModel + one per screen; AiracSubServices is the
     Models/               SubServiceDescriptor, ServicePreviewRow/Section, ...
 Views/                ShellWindow (custom chrome) + Dashboard, AiracService and
                       its tab views (AiracGeneralTabView, AirportsView, AirwaysView,
-                      DeparturesView, ServicePreviewTabView, ServiceRunReviewTabView),
-                      Map, Settings, Info; UpdateWindow, ConfirmWindow (Confirm /
-                      Cancel, or a third choice between them), RoiPickerWindow
+                      DeparturesView, ArrivalsView, ServicePreviewTabView,
+                      ServiceRunReviewTabView), Map, Settings, Info; UpdateWindow,
+                      ConfirmWindow (Confirm / Cancel, or a third choice between
+                      them), RoiPickerWindow
   Cards/                the cards every GeoJSON sub-service tab shares; each binds
                         to its tab through one ServiceTabs interface
   Models/               ConfirmChoice
@@ -82,10 +83,10 @@ root - the same rule as `FeBuddy.Core`.
 
 ### Where do I put...
 
-- **A new sub-service** (say, STARs): an entry in `ViewModels/AiracSubServices.cs`,
-  a `StarsViewModel` in `ViewModels/` deriving from `GeojsonSubServiceViewModel` and
+- **A new sub-service** (say, Fixes): an entry in `ViewModels/AiracSubServices.cs`,
+  a `FixesViewModel` in `ViewModels/` deriving from `GeojsonSubServiceViewModel` and
   implementing `ISubServiceRunTarget` (its `OutputFiles` lists the files its settings
-  write, by the file keys Core's `StarOutputFiles` names), a `StarsView` in `Views/`
+  write, by the file keys Core's `FixOutputFiles` names), a `FixesView` in `Views/`
   built from the shared cards, and its settings block on `AiracServiceSettings` in Core.
 - **A reusable control:** `Controls/`, with its look in a `Theme/Controls.*.xaml` style.
 - **An attached property** a view sets (`bhv:Something.Enable="True"`): `Behaviors/`.
@@ -110,9 +111,9 @@ Primary nav is **Services only**: Dashboard, AIRAC Service, Map. `Settings` and
     restores it. The selection persists to
     `Services.AiracService.SelectedSubServices`.
   - **Sub-service catalogue** - `ViewModels/AiracSubServices.cs`: Airports,
-    Airways, Departures. Adding one is a catalogue entry plus a tab view-model; one
-    whose backend is not built yet opens a `PlaceholderSubServiceView` and
-    contributes nothing to a run.
+    Airways, Departures, Arrivals. Adding one is a catalogue entry plus a tab
+    view-model; one whose backend is not built yet opens a
+    `PlaceholderSubServiceView` and contributes nothing to a run.
   - **Sub-service tabs** - each is a `GeojsonSubServiceViewModel` (Save /
     Undo-last-save / dirty, plus the outputs, file choices, `feb.*` properties, ROI
     override, vNAS files and CRC ERAM defaults every GeoJSON sub-service shares). The

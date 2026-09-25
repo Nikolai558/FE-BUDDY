@@ -42,6 +42,14 @@ may be broken.
 No. It downloads the FAA's public data, checks GitHub for updates and news, and writes files on
 your PC. Your settings stay in `%APPDATA%\FE-Buddy\UserConfig.json`.
 
+### Why does the same alias command show up in both Departures.txt and Arrivals.txt?
+
+For the cycle effective 2026-09-03, the FAA's data lists ORF's NUTIY and SWOPE departures as STARs
+too, so FE-Buddy writes `.orfNUTIYf` and `.orfSWOPEf` into both alias files. Their GeoJSON files
+do not clash - the Arrivals ones carry `STAR` in the name - but if you load both alias files, each
+of those two commands is defined twice. This comes from the FAA data, and FE-Buddy leaves it as it
+is for now.
+
 ### Do I still need FE-Buddy 2.x?
 
 Only for the tools 3.0 does not have yet: chart-recall and ISR aliases, SCT2 / FAA video map /

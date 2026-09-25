@@ -10,7 +10,7 @@ on its *effective date*.
 
 **Alias file** - A text file of dot-commands for CRC. A controller types a short command
 (`.J3F`) and CRC expands it into something longer (the list of fixes on airway J3). FE-Buddy
-writes `Airports.txt`, `Airways.txt` and `Departures.txt`.
+writes `Airports.txt`, `Airways.txt`, `Departures.txt` and `Arrivals.txt`.
 
 **Antimeridian** - The line of ±180° longitude, on the far side of the world from Greenwich. A
 line crossing it has to be split in two or it draws the long way round, across the whole map.
@@ -64,8 +64,10 @@ FE-Buddy only writes data inside (or crossing) it. Make it a little bigger than 
 
 **SID** - Standard Instrument Departure: a published departure route from an airport.
 
-**Sub-service** - One kind of data the AIRAC Service can produce: Airports, Airways or
-Departures. Each has its own tab and settings.
+**STAR** - Standard Terminal Arrival: a published arrival route into an airport.
+
+**Sub-service** - One kind of data the AIRAC Service can produce: Airports, Airways, Departures
+or Arrivals. Each has its own tab and settings.
 
 **Video map** - The map background on a controller's scope: airways, airports, boundaries.
 In CRC, these are GeoJSON files.

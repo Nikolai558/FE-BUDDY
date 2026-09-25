@@ -188,6 +188,23 @@ The FAA's data has quirks; these rules handle them. Each lives in one class.
   amendment digit removed (`DOTSS2.DOTSS` → `DOTSS`), matched against `AMENDMENT_NO` rather than cut
   at the first digit (`1U71.LUNDI` → `1U7`). With no usable code, the published name with
   everything but letters and digits removed (`O'HARE` → `OHARE`).
+- **Arrival naming** (`ArrivalNaming`). The same rule as a departure, but a STAR's computer code
+  reads `TRANSITION.PROCEDURE` - the reverse order - so `AALAN.BLAID2` → `BLAID` and `FIM.FERN7`
+  (published as `FERNANDO`) → `FERN`.
+- **Arrival direction.** A STAR is flown transition → body, the reverse of a departure's body →
+  transition order, so an arrival's points (Symbols, Text, and the alias command's fix list) list
+  every transition before the bodies, and the Lines file joins each transition to the body that
+  starts where it ends.
+- **A STAR shared by two ARTCCs** (`ArrivalProcedure.ArtccFor`). `STAR_BASE.ARTCC` can list two
+  centres (e.g. `ZDC ZNY` for ARLFT, serving 33N/DOV/ILG). Each served airport's copy belongs to
+  whichever of the listed ARTCCs is that airport's `APT_BASE.RESP_ARTCC_ID` (the first listed
+  ARTCC when neither matches) - which decides that copy's output folder, its `feb.artcc`, and
+  which ARTCC filter tick includes it, so ticking ZNY gives ARLFT at ILG only.
+- **STARs and SIDs can collide.** In the cycle effective 2026-09-03 the FAA's STAR data also lists
+  ORF's NUTIY and SWOPE departures. The GeoJSON files never clash - an arrival's file name always
+  carries `STAR` - but both alias files end up with the same command (`.orfNUTIYf`,
+  `.orfSWOPEf`). Printed as duplicates on purpose for now; see
+  [FAQ](../Users/FAQ-and-Troubleshooting.md#why-does-the-same-alias-command-show-up-in-both-departurestxt-and-arrivalstxt).
 
 ## Messages and logging
 

@@ -118,6 +118,9 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 	/// <summary>The Departures tab while it is open, otherwise <see langword="null"/>.</summary>
 	private DeparturesViewModel? DeparturesTab => TabFor<DeparturesViewModel>(AiracSubServices.DeparturesKey);
 
+	/// <summary>The Arrivals tab while it is open, otherwise <see langword="null"/>.</summary>
+	private ArrivalsViewModel? ArrivalsTab => TabFor<ArrivalsViewModel>(AiracSubServices.ArrivalsKey);
+
 	/// <summary>The open tabs that take part in a run.</summary>
 	private IReadOnlyList<ISubServiceRunTarget> RunTargets =>
 		[.. Tabs.OfType<ISubServiceRunTarget>()];
@@ -254,6 +257,7 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 			Airways = AirwaysTab?.BuildSettingsBlock(),
 			Airports = AirportsTab?.BuildSettingsBlock(),
 			Departures = DeparturesTab?.BuildSettingsBlock(),
+			Arrivals = ArrivalsTab?.BuildSettingsBlock(),
 		};
 
 		if (AiracService.HasExistingOutput(settings))
@@ -388,6 +392,16 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 			}
 		}
 
+		if (result.Arrivals is { } arrivals)
+		{
+			files.AddRange(arrivals.GeojsonFilesWritten);
+
+			if (arrivals.AliasFilePath is { } arrivalAlias)
+			{
+				files.Add(arrivalAlias);
+			}
+		}
+
 		return [.. files];
 	}
 
@@ -414,6 +428,12 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 		{
 			parts.Add($"{departures.AirportProcedureCount:N0} airport departure(s)"
 				+ (departures.SkippedForMissingPointsCount > 0 ? $", {departures.SkippedForMissingPointsCount} skipped" : string.Empty));
+		}
+
+		if (result.Arrivals is { } arrivals)
+		{
+			parts.Add($"{arrivals.AirportProcedureCount:N0} airport arrival(s)"
+				+ (arrivals.SkippedForMissingPointsCount > 0 ? $", {arrivals.SkippedForMissingPointsCount} skipped" : string.Empty));
 		}
 
 		return parts.Count == 0

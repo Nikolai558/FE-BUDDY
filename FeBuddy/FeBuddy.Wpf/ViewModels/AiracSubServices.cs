@@ -32,11 +32,15 @@ public static class AiracSubServices
 	/// <summary>The Departures sub-service key.</summary>
 	public const string DeparturesKey = "Departures";
 
+	/// <summary>The Arrivals sub-service key.</summary>
+	public const string ArrivalsKey = "Arrivals";
+
 	/// <summary>Every sub-service, in the order the picker and the tab rail show them.</summary>
 	public static IReadOnlyList<SubServiceDescriptor> All { get; } =
 	[
 		new SubServiceDescriptor(AirportsKey, "Airports", 10, true, () => new AirportsViewModel()),
 		new SubServiceDescriptor(AirwaysKey, "Airways", 20, true, () => new AirwaysViewModel()),
 		new SubServiceDescriptor(DeparturesKey, "Departures", 30, true, () => new DeparturesViewModel()),
+		new SubServiceDescriptor(ArrivalsKey, "Arrivals", 40, true, () => new ArrivalsViewModel()),
 	];
 }

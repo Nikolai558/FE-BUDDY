@@ -4,8 +4,8 @@ using FeBuddy.Wpf.Mvvm;
 namespace FeBuddy.Wpf.ViewModels.Models;
 
 /// <summary>
-/// One ARTCC in the Departures tab's ARTCC filter. The <b>selected</b> set is what gets
-/// persisted to <c>ArtccFilter</c>; none selected means every ARTCC.
+/// One ARTCC in the Departures or Arrivals tab's ARTCC filter. The <b>selected</b> set is what
+/// gets persisted to <c>ArtccFilter</c>; none selected means every ARTCC.
 /// </summary>
 /// <param name="artcc">The ARTCC identifier.</param>
 /// <param name="isSelected">Whether it starts selected.</param>

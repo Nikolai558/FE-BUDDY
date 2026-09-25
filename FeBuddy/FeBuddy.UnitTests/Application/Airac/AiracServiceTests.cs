@@ -4,6 +4,7 @@ using FeBuddy.Core.Domain.Airac.Models;
 using FeBuddy.Core.Infrastructure.Nasr.Models;
 
 using FeBuddy.UnitTests.Application.Airac.Airways.Fixtures;
+using FeBuddy.UnitTests.Application.Airac.Arrivals.Fixtures;
 using FeBuddy.UnitTests.Application.Airac.Departures.Fixtures;
 
 namespace FeBuddy.UnitTests.Application.Airac;
@@ -121,6 +122,71 @@ public sealed class AiracServiceTests : IDisposable
 		Assert.Equal(CycleFolder, result.OutputDirectory);
 		Assert.Equal(Path.Combine(CycleFolder, "Airports.txt"), result.Airports!.AliasFilePath);
 		Assert.Equal(Path.Combine(CycleFolder, "Departures.txt"), result.Departures!.AliasFilePath);
+	}
+
+	[Fact]
+	public async Task run_async_with_an_arrivals_block_runs_the_pipeline_and_aggregates()
+	{
+		AiracServiceSettings settings = new()
+		{
+			SelectedCycle = Cycle,
+			OutputDirectory = _output,
+			Arrivals = new Dictionary<string, string> { { "GenerateGeojson", "N" } },
+		};
+
+		AiracServiceResult result = await AiracService.RunAsync(settings, ArrivalTestData.Blaid());
+
+		Assert.Null(result.Departures);
+		Assert.NotNull(result.Arrivals);
+		Assert.Equal(1, result.Arrivals!.AirportProcedureCount);
+		Assert.Equal(Path.Combine(CycleFolder, "Arrivals.txt"), result.Arrivals.AliasFilePath);
+	}
+
+	[Fact]
+	public async Task an_arrivals_block_writes_star_named_geojson_into_the_cycle_folder()
+	{
+		AiracServiceSettings settings = new()
+		{
+			SelectedCycle = Cycle,
+			OutputDirectory = _output,
+			Arrivals = new Dictionary<string, string> { { "GenerateAliasFile", "N" } },
+		};
+
+		AiracServiceResult result = await AiracService.RunAsync(settings, ArrivalTestData.Blaid());
+
+		Assert.Equal(1, result.Arrivals!.AirportProcedureCount);
+		string linesFile = Path.Combine(CycleFolder, "Geojson", "ZLA", "LAS", "LAS_BLAID_STAR_Lines.geojson");
+		Assert.Contains(linesFile, result.Arrivals.GeojsonFilesWritten);
+		Assert.True(File.Exists(linesFile));
+	}
+
+	[Fact]
+	public async Task a_run_with_only_arrivals_selected_counts_as_something_selected()
+	{
+		string stale = WriteStaleFile();
+		AiracServiceSettings settings = new()
+		{
+			SelectedCycle = Cycle,
+			OutputDirectory = _output,
+			ExistingOutput = ExistingOutputAction.DeleteExisting,
+			Arrivals = new Dictionary<string, string> { { "GenerateGeojson", "N" } },
+		};
+
+		await AiracService.RunAsync(settings, ArrivalTestData.Blaid());
+
+		// DeleteExisting only runs when something is selected: Arrivals alone must still trigger it.
+		Assert.False(File.Exists(stale));
+		Assert.True(File.Exists(Path.Combine(CycleFolder, "Arrivals.txt")));
+	}
+
+	[Fact]
+	public async Task a_null_arrivals_block_leaves_result_arrivals_null()
+	{
+		AiracServiceSettings settings = AliasOnlySettings() with { Arrivals = null };
+
+		AiracServiceResult result = await AiracService.RunAsync(settings, DepartureTestData.Dotss());
+
+		Assert.Null(result.Arrivals);
 	}
 
 	[Fact]

@@ -1,7 +1,7 @@
-namespace FeBuddy.Core.Application.Conversions.VeramToGeojson.Models;
+namespace FeBuddy.Core.Application.Conversions.EramToGeojson.Models;
 
-/// <summary>Where the vERAM to GeoJSON conversion takes each file's CRC defaults from.</summary>
-public enum VeramDefaultsSource
+/// <summary>Where the ERAM to GeoJSON conversion takes each file's CRC defaults from.</summary>
+public enum EramDefaultsSource
 {
 	/// <summary>
 	/// Carry over as much as possible from the XML: each object's own Line / Symbol / Text

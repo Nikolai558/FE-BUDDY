@@ -1,13 +1,13 @@
-using FeBuddy.Core.Application.Conversions.VeramToGeojson;
-using FeBuddy.Core.Application.Conversions.VeramToGeojson.Models;
+using FeBuddy.Core.Application.Conversions.EramToGeojson;
+using FeBuddy.Core.Application.Conversions.EramToGeojson.Models;
 
-namespace FeBuddy.UnitTests.Application.Conversions.VeramToGeojson;
+namespace FeBuddy.UnitTests.Application.Conversions.EramToGeojson;
 
 /// <summary>
-/// Covers <see cref="VeramToGeojsonSettingsParser"/>: the layout and defaults-source choices, and
+/// Covers <see cref="EramToGeojsonSettingsParser"/>: the layout and defaults-source choices, and
 /// the tab's CRC defaults, read only when they can be used.
 /// </summary>
-public sealed class VeramToGeojsonSettingsParserTests
+public sealed class EramToGeojsonSettingsParserTests
 {
 	private static Dictionary<string, string> Settings(params (string Key, string Value)[] entries)
 	{
@@ -39,10 +39,10 @@ public sealed class VeramToGeojsonSettingsParserTests
 	[Fact]
 	public void defaults_to_a_file_per_object_with_defaults_from_the_xml()
 	{
-		VeramToGeojsonSettingsParseResult result = VeramToGeojsonSettingsParser.Parse(Settings());
+		EramToGeojsonSettingsParseResult result = EramToGeojsonSettingsParser.Parse(Settings());
 
-		Assert.Equal(VeramOutputLayout.ByObject, result.Settings.OutputLayout);
-		Assert.Equal(VeramDefaultsSource.Xml, result.Settings.DefaultsSource);
+		Assert.Equal(EramOutputLayout.ByObject, result.Settings.OutputLayout);
+		Assert.Equal(EramDefaultsSource.Xml, result.Settings.DefaultsSource);
 		Assert.Equal(@"C:\GeoMaps", result.Settings.SourceFolder);
 		Assert.Null(result.Settings.LineDefaults);
 		Assert.Empty(result.Messages);
@@ -51,9 +51,9 @@ public sealed class VeramToGeojsonSettingsParserTests
 	[Fact]
 	public void the_tab_s_defaults_are_ignored_while_the_xml_is_the_source()
 	{
-		VeramToGeojsonSettings settings = VeramToGeojsonSettingsParser.Parse(Settings(AllCard(("OutputLayout", "byfilter")))).Settings;
+		EramToGeojsonSettings settings = EramToGeojsonSettingsParser.Parse(Settings(AllCard(("OutputLayout", "byfilter")))).Settings;
 
-		Assert.Equal(VeramOutputLayout.ByFilter, settings.OutputLayout);
+		Assert.Equal(EramOutputLayout.ByFilter, settings.OutputLayout);
 		Assert.Null(settings.LineDefaults);
 		Assert.Null(settings.SymbolDefaults);
 		Assert.Null(settings.TextDefaults);
@@ -64,7 +64,7 @@ public sealed class VeramToGeojsonSettingsParserTests
 	[InlineData("Card")]
 	public void the_tab_s_defaults_are_read_when_they_are_a_source(string source)
 	{
-		VeramToGeojsonSettings settings = VeramToGeojsonSettingsParser.Parse(Settings(AllCard(("DefaultsSource", source)))).Settings;
+		EramToGeojsonSettings settings = EramToGeojsonSettingsParser.Parse(Settings(AllCard(("DefaultsSource", source)))).Settings;
 
 		Assert.Equal(1, settings.LineDefaults!.Bcg);
 		Assert.Equal("vor", settings.SymbolDefaults!.Style);
@@ -74,7 +74,7 @@ public sealed class VeramToGeojsonSettingsParserTests
 	[Fact]
 	public void only_included_kinds_of_the_tab_s_defaults_are_read()
 	{
-		VeramToGeojsonSettings settings = VeramToGeojsonSettingsParser.Parse(Settings(
+		EramToGeojsonSettings settings = EramToGeojsonSettingsParser.Parse(Settings(
 			("DefaultsSource", "Card"),
 			("IncludeCrcLineDefaults", "Y"),
 			("Crc.GeoMap.Line.bcg", "1"), ("Crc.GeoMap.Line.filters", "1"),
@@ -84,7 +84,7 @@ public sealed class VeramToGeojsonSettingsParserTests
 		Assert.Null(settings.SymbolDefaults);
 		Assert.Null(settings.TextDefaults);
 
-		Assert.Throws<ArgumentException>(() => VeramToGeojsonSettingsParser.Parse(Settings(
+		Assert.Throws<ArgumentException>(() => EramToGeojsonSettingsParser.Parse(Settings(
 			("DefaultsSource", "Card"), ("IncludeCrcTextDefaults", "Y"))));
 	}
 
@@ -93,7 +93,7 @@ public sealed class VeramToGeojsonSettingsParserTests
 	[InlineData("DefaultsSource", "Somewhere")]
 	public void unknown_choices_are_rejected(string key, string value)
 	{
-		ArgumentException error = Assert.Throws<ArgumentException>(() => VeramToGeojsonSettingsParser.Parse(Settings((key, value))));
+		ArgumentException error = Assert.Throws<ArgumentException>(() => EramToGeojsonSettingsParser.Parse(Settings((key, value))));
 
 		Assert.Contains($"'{key}'", error.Message);
 	}
@@ -101,7 +101,7 @@ public sealed class VeramToGeojsonSettingsParserTests
 	[Fact]
 	public void unknown_keys_are_warned_about_not_failed()
 	{
-		VeramToGeojsonSettingsParseResult result = VeramToGeojsonSettingsParser.Parse(Settings(
+		EramToGeojsonSettingsParseResult result = EramToGeojsonSettingsParser.Parse(Settings(
 			("CroppingDistance", "30"),
 			("Crc.GeoMap.Text.text", "X")));
 
@@ -112,6 +112,6 @@ public sealed class VeramToGeojsonSettingsParserTests
 	[Fact]
 	public void null_settings_are_rejected()
 	{
-		Assert.Throws<ArgumentNullException>(() => VeramToGeojsonSettingsParser.Parse(null!));
+		Assert.Throws<ArgumentNullException>(() => EramToGeojsonSettingsParser.Parse(null!));
 	}
 }

@@ -5,7 +5,7 @@ using NetTopologySuite.Geometries;
 namespace FeBuddy.Core.Domain.Geo;
 
 /// <summary>
-/// Joins a list of separate two-point segments - the way sector files and vERAM GeoMaps store
+/// Joins a list of separate two-point segments - the way sector files and ERAM GeoMaps store
 /// lines - back into lines.
 /// </summary>
 /// <remarks>

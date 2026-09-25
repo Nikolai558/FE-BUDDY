@@ -86,6 +86,15 @@ public abstract class FileConversionTabViewModel : ConversionTabViewModel, ISour
 	/// <summary>What the file dialog calls the files, e.g. <c>FAA video maps</c>.</summary>
 	protected abstract string FileDescription { get; }
 
+	/// <summary>
+	/// Whether a folder file with the right extension is one this conversion reads; the folder
+	/// summary counts only those. Every one, unless a tab looks closer - ERAM picks
+	/// <c>Geomaps.xml</c> out of a whole adaptation export, as its service does.
+	/// </summary>
+	/// <param name="path">The file.</param>
+	/// <returns><see langword="true"/> to count it.</returns>
+	protected virtual bool IsSourceFile(string path) => true;
+
 	// ================= source =================
 
 	/// <inheritdoc />
@@ -207,7 +216,7 @@ public abstract class FileConversionTabViewModel : ConversionTabViewModel, ISour
 
 	/// <summary>
 	/// Whether the CRC ERAM Defaults card is in use. Always, unless a tab takes its defaults from
-	/// somewhere else - vERAM can carry over the source file's own - in which case the card is
+	/// somewhere else - ERAM can carry over the source file's own - in which case the card is
 	/// hidden, nothing on it is required, and nothing on it is sent.
 	/// </summary>
 	public virtual bool UsesCrcDefaults => true;
@@ -445,7 +454,7 @@ public abstract class FileConversionTabViewModel : ConversionTabViewModel, ISour
 		{
 			_folderFileCount = folder.Length > 0 && Directory.Exists(folder)
 				? Directory.EnumerateFiles(folder, "*", SearchOption.TopDirectoryOnly)
-					.Count(path => Extensions.Contains(Path.GetExtension(path), StringComparer.OrdinalIgnoreCase))
+					.Count(path => Extensions.Contains(Path.GetExtension(path), StringComparer.OrdinalIgnoreCase) && IsSourceFile(path))
 				: null;
 		}
 		catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)

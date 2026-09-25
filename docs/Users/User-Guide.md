@@ -300,36 +300,41 @@ A record FE-Buddy cannot read - a mistyped coordinate, a name that is not define
 file - is skipped and listed on the Review tab; the rest of the file still converts. VRC colours
 are not carried over: CRC styles lines through the CRC defaults instead.
 
-### vERAM to GeoJSON tab
+### ERAM to GeoJSON tab
 
-Converts vERAM GeoMaps XML files into GeoJSON: a folder per GeoMaps file, named after it, with a
-folder inside for each GeoMap.
+Converts the `Geomaps.xml` of an ERAM adaptation export into GeoJSON: a folder per Geomaps file,
+named after it, with a folder inside for each GeoMap (named after its `GeomapId`). Lines, symbols
+(and their labels), text and SAA boundaries and labels are all converted.
 
-- **Source Files** - the same as on the other tabs: a remembered folder (every `.xml` in it) or
-  files you pick.
+- **Source Files** - `Geomaps.xml` itself, or a remembered folder. The folder can be the whole
+  unzipped export: only its Geomaps file is converted, and the other files are listed on the
+  Review tab as left alone.
 - **Output Layout** - how the files are split:
-  - **GeoMapObject Description** - a file per GeoMapObject, named after its description. Objects
-    that share a description share a file when their defaults agree; otherwise the later one gets
-    a numbered file (`VIDEO (2)`).
-  - **Filter Index and Similar Attributes** - files grouped by filter, TDM setting, kind and look,
-    e.g. `FILTER 05\FILTER 05__TDM F__Line__BCG 3__Style solid__Thickness 1`. An element with
-    several filters goes under `MULTI FILTERS\`; one whose look cannot be fully worked out goes
-    under `MISSING DEFAULTS\`. Everything in a file draws the same way.
+  - **Object Type and Map Group** - a file per map object, named after its type and map group
+    (`AIRWAY_3`, `SECTOR_12`, `SAA_53`). Objects that share a name share a file when their
+    defaults agree; otherwise the later one gets a numbered file (`AIRWAY_3 (2)`).
+  - **Filter Index and Similar Attributes** - files grouped by filter, kind and look, e.g.
+    `FILTER 05\FILTER 05__Line__BCG 3__Style solid__Thickness 1`. An element with several filters
+    goes under `MULTI FILTERS\`; one whose look cannot be fully worked out goes under
+    `MISSING DEFAULTS\`. Everything in a file draws the same way.
 - **CRC ERAM Defaults Source** - where each file's CRC defaults come from:
   - **From the XML** - carry over as much as possible: each object's own Line, Symbol and Text
     defaults, and each element's own overrides.
   - **From the XML, filling gaps from the card** - the same, but an object with no usable defaults
-    of its own takes the CRC ERAM Defaults on the tab.
+    of its own takes the CRC ERAM Defaults on the tab. SAA objects carry no BCG or filters of
+    their own, so this is the choice that gives them a look in CRC.
   - **From the card only** - ignore the XML's styling and use the tab's CRC ERAM Defaults for
     everything.
 - **CRC ERAM Defaults** - Lines, Symbols and Text panels. They only show, and only need filling
   in, when the card is one of the sources.
 - **Convert GeoMaps** - saves any unsaved settings (you are asked first) and runs.
 
-vERAM's style names become CRC's (`Solid` → `solid`, `Vor` → `vor`), and every value is checked
-against what CRC can draw. An object whose defaults are missing, incomplete or invalid is listed
-on the Review tab; a value CRC cannot draw is left out, so that feature takes its file's default.
-Line segments that meet are joined back into lines, including ones written backwards.
+ERAM's style names become CRC's (`Solid` → `solid`, `RNAVOnlyWaypoint` → `rnavOnlyWaypoint`), and
+every value is checked against what CRC can draw - `DME` symbols, for example, have no CRC style.
+An object whose defaults are missing, incomplete or invalid is listed on the Review tab; a value
+CRC cannot draw is left out, so that feature takes its file's default. ERAM text has no opaque
+background, so its text is never opaque; ERAM's colours and display settings are not carried
+over. Line segments that meet are joined back into lines, including ones written backwards.
 
 ## Output files
 
@@ -354,8 +359,8 @@ laid out the same way:
     ├── DAT to GeoJSON\               <.dat file name>.geojson, one per converted map
     ├── SCT2 to GeoJSON\
     │   └── <sector file name>\       ARTCC, …, GEO, LABELS, REGIONS (.geojson), SID\, STAR\
-    └── vERAM to GeoJSON\
-        └── <GeoMaps file name>\<GeoMap>\   <description>.geojson, or FILTER nn\ folders
+    └── ERAM to GeoJSON\
+        └── <Geomaps file name>\<GeomapId>\   <type>_<group>.geojson, or FILTER nn\ folders
 ```
 
 The File Conversions do not use the cycle folder: each conversion writes into its own folder, next

@@ -2,7 +2,7 @@ namespace FeBuddy.Core.Application.Conversions.Models;
 
 /// <summary>
 /// What happened to one source file in a conversion that writes several GeoJSON files per source
-/// (SCT2 to GeoJSON, vERAM to GeoJSON).
+/// (SCT2 to GeoJSON, ERAM to GeoJSON).
 /// </summary>
 public sealed record SourceFileConversion
 {

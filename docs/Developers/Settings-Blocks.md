@@ -21,7 +21,7 @@ go through the same parser. This page lists every key each parser reads.
 
 Parsers: `AirportSettingsParser`, `AirwaySettingsParser`, `DepartureSettingsParser`,
 `ArrivalSettingsParser`, `DatToGeojsonSettingsParser`, `SctToGeojsonSettingsParser`,
-`VeramToGeojsonSettingsParser`. Shared reading: `SubServiceSettingsReader`, `CrcDefaultsReader`,
+`EramToGeojsonSettingsParser`. Shared reading: `SubServiceSettingsReader`, `CrcDefaultsReader`,
 `ConversionSettingsReader`, `SettingsValueReader` (all in `FeBuddy.Core/Application`).
 
 ## Keys every AIRAC sub-service reads
@@ -194,19 +194,23 @@ Extensions `.sct2` and `.sct`. No keys of its own.
 - **CRC class:** `SectorFile`, with `Line` (every lines file) and `Text` (the labels file):
   `Crc.SectorFile.Line.*`, `Crc.SectorFile.Text.*`. Regions have no CRC defaults.
 
-## vERAM to GeoJSON (File Conversions)
+## ERAM to GeoJSON (File Conversions)
 
-Extension `.xml` (a vERAM GeoMaps file; any other XML fails that file only).
+Extension `.xml`: the `Geomaps.xml` (`Geomaps_Records`) of an ERAM adaptation export. A
+`SourceFolder` may hold the whole export; only its Geomaps files are converted and the other XML
+files are named in one message. A picked file that is not a Geomaps file fails that file only.
 
 | Key | Values | Default |
 |---|---|---|
-| `OutputLayout` | `ByObject` (a file per GeoMapObject description), `ByFilter` (files by filter index and similar attributes) | `ByObject` |
+| `OutputLayout` | `ByObject` (a file per object, named `<MapObjectType>_<MapGroupId>`), `ByFilter` (files by filter index and similar attributes) | `ByObject` |
 | `DefaultsSource` | `Xml` (carry over the XML's defaults and element overrides), `XmlThenCard` (the tab's defaults where an object has none), `Card` (the tab's defaults only; the XML's styling is ignored) | `Xml` |
 
 - **CRC class:** `GeoMap`, with `Line`, `Symbol` and `Text`: `Crc.GeoMap.Line.*`,
   `Crc.GeoMap.Symbol.*`, `Crc.GeoMap.Text.*`.
 - The tab's CRC defaults are read only when `DefaultsSource` is `XmlThenCard` or `Card`, and then
   only for kinds whose `IncludeCrc…Defaults` is `Y`. With `Xml` they are ignored.
+- ERAM text has no opaque background, so Text defaults taken from the XML always have `opaque`
+  off. ERAM's `Color` and `DisplaySetting` have no CRC equivalent and are not carried over.
 
 ## An example (Airways, as the harness writes it)
 

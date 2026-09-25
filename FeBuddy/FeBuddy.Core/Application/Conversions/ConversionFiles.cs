@@ -18,13 +18,19 @@ internal static class ConversionFiles
 	/// <param name="extensions">The extensions a folder's files must have, e.g. <c>.dat</c>; matched ignoring case.</param>
 	/// <param name="logSource">The source for the message when the folder has nothing to convert.</param>
 	/// <param name="messages">Where that message goes.</param>
+	/// <param name="isSource">
+	/// Optionally, a closer look at a folder's files with the right extension: only those it accepts
+	/// are converted, and the rest are named in one message. Files picked one by one are never
+	/// filtered - picking a file says it is meant.
+	/// </param>
 	/// <returns>The source files, in the order they will be converted.</returns>
 	/// <exception cref="ArgumentException">Thrown when the source folder does not exist.</exception>
 	public static IReadOnlyList<string> Resolve(
 		ConversionSettings settings,
 		IReadOnlyList<string> extensions,
 		string logSource,
-		List<ServiceMessage> messages)
+		List<ServiceMessage> messages,
+		Func<string, bool>? isSource = null)
 	{
 		if (settings.SourceFolder is not { } folder)
 		{
@@ -42,10 +48,23 @@ internal static class ConversionFiles
 			.Where(path => extensions.Contains(Path.GetExtension(path), StringComparer.OrdinalIgnoreCase))
 			.Order(StringComparer.OrdinalIgnoreCase)];
 
+		if (isSource is not null && found.Length > 0)
+		{
+			string[] others = [.. found.Where(path => !isSource(path))];
+
+			if (others.Length > 0)
+			{
+				found = [.. found.Except(others)];
+				messages.Add(new ServiceMessage(LogLevel.Info, logSource,
+					$"{others.Length:N0} other file(s) in {folder} are not what this conversion reads and were left alone: " +
+					string.Join(", ", others.Select(Path.GetFileName))));
+			}
+		}
+
 		if (found.Length == 0)
 		{
 			messages.Add(new ServiceMessage(LogLevel.Warning, logSource,
-				$"There are no {string.Join(" or ", extensions)} files in {folder}, so nothing was converted.")
+				$"There are no {string.Join(" or ", extensions)} files in {folder}{(isSource is null ? string.Empty : " that this conversion reads")}, so nothing was converted.")
 			{
 				IsAdvisory = true
 			});

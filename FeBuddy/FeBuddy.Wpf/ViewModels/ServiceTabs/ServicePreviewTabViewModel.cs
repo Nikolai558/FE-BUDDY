@@ -24,7 +24,7 @@ public sealed class ServicePreviewTabViewModel(
 	string title,
 	string runLabel,
 	ICommand runCommand,
-	Func<IEnumerable<ServiceTabViewModel>> tabs) : ServiceTabViewModel
+	Func<IEnumerable<ServiceTabViewModel>> tabs) : ServiceTabViewModel, IRunAction
 {
 	private readonly Func<IEnumerable<ServiceTabViewModel>> _tabs = tabs;
 	private readonly string _title = title;
@@ -34,10 +34,11 @@ public sealed class ServicePreviewTabViewModel(
 	/// <inheritdoc />
 	public override string Title => _title;
 
-	/// <summary>The run button's label.</summary>
+	/// <inheritdoc />
 	public string RunLabel { get; } = runLabel;
 
-	/// <summary>The owning service's run command.</summary>
+	/// <inheritdoc />
+	/// <remarks>The owning service's run command.</remarks>
 	public ICommand RunCommand { get; } = runCommand;
 
 	/// <summary>The rundown, one section per contributing tab.</summary>

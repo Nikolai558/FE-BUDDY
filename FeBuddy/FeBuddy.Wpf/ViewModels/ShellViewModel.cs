@@ -7,6 +7,7 @@ using System.Windows.Threading;
 using FeBuddy.Wpf.Mvvm;
 using FeBuddy.Wpf.Shell;
 using FeBuddy.Wpf.ViewModels.Models;
+using FeBuddy.Wpf.ViewModels.ServiceTabs;
 using FeBuddy.Wpf.Views;
 
 using FeBuddy.Core.Application.Airac;
@@ -27,6 +28,7 @@ public sealed class ShellViewModel : ObservableObject
 	// Segoe Fluent Icons code-points for the nav rows. The glyphs XAML uses live in Theme/Icons.xaml.
 	private const string GlyphDashboard = ""; // Home
 	private const string GlyphAiracService = ""; // Calendar (MDL2)
+	private const string GlyphFileConversions = ""; // Switch
 	private const string GlyphMap = ""; // MapPin
 	private const string GlyphSettings = ""; // Setting
 	private const string GlyphInfo = ""; // Info
@@ -55,6 +57,7 @@ public sealed class ShellViewModel : ObservableObject
 		[
 			Nav("Dashboard",      GlyphDashboard,     () => new DashboardViewModel()),
 			Nav("AIRAC Service",  GlyphAiracService,  () => new AiracServiceViewModel()),
+			Nav("File Conversions", GlyphFileConversions, () => new FileConversionsViewModel()),
 			Nav("Map",            GlyphMap,           () => new MapViewModel()),
 		];
 
@@ -87,7 +90,7 @@ public sealed class ShellViewModel : ObservableObject
 		RefreshSystemHealth();
 	}
 
-	/// <summary>The main nav group: Dashboard, AIRAC Service, Map.</summary>
+	/// <summary>The main nav group: Dashboard, AIRAC Service, File Conversions, Map.</summary>
 	public ObservableCollection<NavItem> PrimaryNav { get; }
 
 	/// <summary>The SYSTEM nav group: Settings, Info.</summary>
@@ -397,8 +400,8 @@ public sealed class ShellViewModel : ObservableObject
 		}
 	}
 
-	// What closing FE-Buddy for an update would lose: a running AIRAC Service run and unsaved
-	// edits on any page opened this session. Pages never opened have nothing to lose.
+	// What closing FE-Buddy for an update would lose: a run in progress and unsaved edits on any
+	// page opened this session. Pages never opened have nothing to lose.
 	private IReadOnlyList<string> DescribeUnfinishedWork()
 	{
 		var work = new List<string>();
@@ -407,16 +410,16 @@ public sealed class ShellViewModel : ObservableObject
 		{
 			switch (item.CreatedViewModel)
 			{
-				case AiracServiceViewModel airac:
-					if (airac.IsRunning)
+				case TabbedServiceViewModel service:
+					if (service.IsRunning)
 					{
-						work.Add("An AIRAC Service run is in progress.");
+						work.Add($"A {service.ScreenTitle} run is in progress.");
 					}
 
-					string[] dirty = [.. airac.Tabs.Where(t => t.IsDirty).Select(t => t.Title)];
+					string[] dirty = [.. service.Tabs.Where(t => t.IsDirty).Select(t => t.Title)];
 					if (dirty.Length > 0)
 					{
-						work.Add($"AIRAC Service: {string.Join(", ", dirty)} {(dirty.Length == 1 ? "has" : "have")} unsaved changes.");
+						work.Add($"{service.ScreenTitle}: {string.Join(", ", dirty)} {(dirty.Length == 1 ? "has" : "have")} unsaved changes.");
 					}
 
 					break;

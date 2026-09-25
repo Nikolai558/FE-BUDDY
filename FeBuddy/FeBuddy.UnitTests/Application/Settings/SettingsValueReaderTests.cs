@@ -4,7 +4,8 @@ namespace FeBuddy.UnitTests.Application.Settings;
 
 /// <summary>
 /// Covers the <see cref="SettingsValueReader"/> paths the sub-service parsers do not reach:
-/// a present-but-out-of-range integer, malformed integer lists, and style normalization.
+/// a present-but-out-of-range integer, malformed integer lists, positive decimals, and style
+/// normalization.
 /// </summary>
 public sealed class SettingsValueReaderTests
 {
@@ -18,6 +19,35 @@ public sealed class SettingsValueReaderTests
 
 		settings["Precision"] = "8";
 		Assert.Equal(8, SettingsValueReader.IntInRange(settings, "Precision", 6, 0, 15));
+	}
+
+	[Theory]
+	[InlineData(null, null)]
+	[InlineData("  ", null)]
+	[InlineData("106", 106d)]
+	[InlineData(" 12.5 ", 12.5d)]
+	[InlineData("1000", 1000d)]
+	public void optional_positive_decimal_reads_a_number_or_nothing(string? value, double? expected)
+	{
+		Dictionary<string, string> settings = value is null ? [] : new() { ["Distance"] = value };
+
+		Assert.Equal(expected, SettingsValueReader.OptionalPositiveDecimal(settings, "Distance", maximum: 1000));
+	}
+
+	[Theory]
+	[InlineData("0")]
+	[InlineData("-5")]
+	[InlineData("1000.1")]
+	[InlineData("ten")]
+	[InlineData("1,000")]
+	public void optional_positive_decimal_rejects_zero_negative_too_large_and_non_numbers(string value)
+	{
+		Dictionary<string, string> settings = new() { ["Distance"] = value };
+
+		ArgumentException error = Assert.Throws<ArgumentException>(() =>
+			SettingsValueReader.OptionalPositiveDecimal(settings, "Distance", maximum: 1000));
+
+		Assert.Contains("'Distance'", error.Message);
 	}
 
 	[Fact]

@@ -1,17 +1,19 @@
 <!--
-    AiracServiceView  -  the AIRAC Services screen.
+    TabbedServiceView  -  every tabbed service screen: AIRAC Services and File Conversions.
 
-    Built as tabs: a permanent General tab (cycle, facility, which sub-services to
-    produce), one tab per selected sub-service, a Preview Settings tab that
-    summarises everything and runs the service, and - once a run has started - a
-    Review tab showing how it went. The rail runs down the left because this service
-    is expected to reach roughly twenty sub-services.
+    Built as tabs (TabbedServiceViewModel): a rail down the left, the selected tab's page
+    on the right. AIRAC Services has a permanent General tab (cycle, facility, which
+    sub-services to produce), one tab per selected sub-service, and a Preview Settings
+    tab that summarises everything and runs the service. File Conversions has one tab
+    per conversion, each with its own run button. Either way, once a run has started a
+    Review tab shows how it went. The rail runs down the left because AIRAC Service is
+    expected to reach roughly twenty sub-services.
 
     The screen owns the single page-level scroller and the shared action bar
     (Save / Undo / Previous / Next / Preview), which is why the tab views themselves
-    contain neither.
+    contain neither. Adding a tab type means adding its DataTemplate below.
 -->
-<UserControl x:Class="FeBuddy.Wpf.Views.AiracServiceView"
+<UserControl x:Class="FeBuddy.Wpf.Views.TabbedServiceView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -21,7 +23,7 @@
              xmlns:bhv="clr-namespace:FeBuddy.Wpf.Behaviors"
              xmlns:tabs="clr-namespace:FeBuddy.Wpf.ViewModels.ServiceTabs"
              mc:Ignorable="d"
-             d:DataContext="{d:DesignInstance vm:AiracServiceViewModel}"
+             d:DataContext="{d:DesignInstance tabs:TabbedServiceViewModel}"
              d:DesignWidth="1100" d:DesignHeight="760">
 
     <UserControl.Resources>
@@ -37,6 +39,9 @@
         </DataTemplate>
         <DataTemplate DataType="{x:Type vm:DeparturesViewModel}">
             <local:DeparturesView />
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:DatToGeojsonViewModel}">
+            <local:DatToGeojsonView />
         </DataTemplate>
         <DataTemplate DataType="{x:Type tabs:PlaceholderSubServiceViewModel}">
             <local:PlaceholderSubServiceView />
@@ -54,7 +59,7 @@
         <!-- The label takes the width it needs first (Auto column, no wrapping), and the
              buttons flow onto a second row when the window is too narrow for one - so neither
              the label nor the buttons ever get squeezed into a sliver. -->
-        <DataTemplate x:Key="TabActionBar" DataType="{x:Type vm:AiracServiceViewModel}">
+        <DataTemplate x:Key="TabActionBar" DataType="{x:Type tabs:TabbedServiceViewModel}">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
@@ -73,7 +78,8 @@
                     <Button Style="{StaticResource Button.Ghost}" Content="Next"
                             Command="{Binding NextCommand}" Margin="8,4,0,4" />
                     <Button Style="{StaticResource Button.Ghost}" Content="Preview settings"
-                            Command="{Binding GoToPreviewCommand}" Margin="8,4,0,4" />
+                            Command="{Binding GoToPreviewCommand}" Margin="8,4,0,4"
+                            Visibility="{Binding HasPreviewTab, Converter={StaticResource BoolToVis}}" />
                     <Button Style="{StaticResource Button.Ghost}" Content="Undo all changes"
                             Command="{Binding RevertChangesCommand}" Margin="8,4,0,4"
                             ToolTip="Discard the unsaved edits on this tab and go back to its last saved settings." />
@@ -95,7 +101,7 @@
 
         <!-- pinned page header: title stays put while the body scrolls -->
         <Grid Grid.Row="0" Background="{StaticResource Brush.Bg.Base}">
-            <TextBlock Text="AIRAC Services" Style="{StaticResource Text.Display}" Margin="28,24,28,14" />
+            <TextBlock Text="{Binding ScreenTitle}" Style="{StaticResource Text.Display}" Margin="28,24,28,14" />
             <Border Style="{StaticResource Divider}" VerticalAlignment="Bottom" />
         </Grid>
 

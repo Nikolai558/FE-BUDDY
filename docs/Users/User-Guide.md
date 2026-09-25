@@ -4,15 +4,15 @@ Every screen and every option in FE-Buddy 3.0. New to FE-Buddy? Start with
 [Getting started](Getting-Started.md); unfamiliar words are in the [glossary](Glossary.md).
 
 **Contents:** [The window](#the-window) · [Dashboard](#dashboard) ·
-[AIRAC Service](#airac-service) · [Output files](#output-files) · [Map](#map) ·
-[Settings](#settings) · [Info](#info) · [Updating FE-Buddy](#updating-fe-buddy)
+[AIRAC Service](#airac-service) · [File Conversions](#file-conversions) ·
+[Output files](#output-files) · [Map](#map) · [Settings](#settings) · [Info](#info) · [Updating FE-Buddy](#updating-fe-buddy)
 
 ---
 
 ## The window
 
-- **Menu (left).** *Workspace*: Dashboard, AIRAC Service, Map. *System*: Settings, Info. The
-  arrow collapses the menu to icons.
+- **Menu (left).** *Workspace*: Dashboard, AIRAC Service, File Conversions, Map. *System*:
+  Settings, Info. The arrow collapses the menu to icons.
 - **Systems (bottom of the menu).** One line each for **Internet**, **AIRAC data** and
   **Updates**, with a coloured dot: green is fine, amber needs a look or is still working, red is
   not working. **Re-check** runs the checks again. When the menu is collapsed, just the dot shows.
@@ -182,6 +182,36 @@ changes (they are saved when the run starts). **Run AIRAC Service** starts the r
 - **Output** - every file written (collapsed to a count; a Departures run writes thousands) and
   **Open output folder**.
 
+## File Conversions
+
+Turns files you already have into files CRC can use. It works like the AIRAC Service screen -
+tabs down the left, the same action bar, the same **Review** tab - with two differences: every
+conversion is always on the rail (there is nothing to tick), and each one runs on its own, from
+the button at the bottom of its own tab. Nothing here needs the AIRAC data, so the screen is
+ready as soon as FE-Buddy opens.
+
+### DAT to GeoJSON tab
+
+Converts FAA `.dat` RADAR Video Maps (RVMs) into GeoJSON video maps: one `.geojson` per `.dat`,
+with the same name.
+
+- **Source Files** - either **every .dat file in a folder** (FE-Buddy remembers the folder; files
+  in its sub-folders are left out) or **files I pick**: add one or several at a time, and remove
+  any you did not mean to. Picked files are forgotten when FE-Buddy closes.
+- **CRC ERAM Defaults** - the Lines panel only, since a video map is all lines. Tick **Include**
+  and fill it in to give every converted map the same look; untick it to leave the look to CRC.
+- **Cropping** - keep only what lies within this many nautical miles of the map's **point of
+  tangency** (the centre the `.dat` file itself defines). Leave it blank to convert the whole
+  map. A line that crosses the distance is cut exactly where it meets it, not dropped. A map
+  without a point of tangency cannot be cropped; the Review tab says which.
+- **Convert DAT files** - saves any unsaved settings (you are asked first) and runs. It stays
+  off, with the reason beside it, until there is something to convert.
+
+A record in a `.dat` file that FE-Buddy cannot read is skipped and listed on the Review tab; the
+rest of the map still converts. Coordinates are read as north and west unless the file says
+otherwise, and a line crossing the 180° meridian (Guam, for example) is split so it draws
+correctly.
+
 ## Output files
 
 Everything goes in your output folder (Settings ▸ Default Output Directory), inside a
@@ -196,9 +226,10 @@ Everything goes in your output folder (Settings ▸ Default Output Directory), i
     ├── Airways\
     │   ├── Geojson\    Airways_<group>_Lines / _Symbols / _Text (.geojson)
     │   └── Alias\      Airways.txt
-    └── Departure Procedures\
-        ├── <ARTCC>\<airport>\   <airport>_<procedure>_Lines / _Symbols / _Text (.geojson)
-        └── Alias\      Departures.txt
+    ├── Departure Procedures\
+    │   ├── <ARTCC>\<airport>\   <airport>_<procedure>_Lines / _Symbols / _Text (.geojson)
+    │   └── Alias\      Departures.txt
+    └── DAT to GeoJSON\ <.dat file name>.geojson, one per converted map
 ```
 
 A run overwrites the files it writes. A file that would be empty (nothing matched) is not written.

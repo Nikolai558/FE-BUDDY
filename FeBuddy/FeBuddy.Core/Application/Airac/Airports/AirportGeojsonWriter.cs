@@ -2,6 +2,7 @@ using FeBuddy.Core.Application.Airac.Airports.Models;
 using FeBuddy.Core.Domain.Airports.Models;
 using FeBuddy.Core.Domain.Geo;
 using FeBuddy.Core.Domain.Geo.Models;
+using FeBuddy.Core.Infrastructure.FileSystem;
 using FeBuddy.Core.Infrastructure.Geojson;
 
 using NetTopologySuite.Features;
@@ -39,7 +40,7 @@ public static class AirportGeojsonWriter
 			return files;
 		}
 
-		string directory = SubServiceOutputPaths.Resolve(settings.OutputDirectory, settings.AddFeBuddyOutputFolder, "Airports", "Geojson");
+		string directory = ServiceOutputPaths.Resolve(settings.OutputDirectory, settings.AddFeBuddyOutputFolder, "Airports", "Geojson");
 
 		if (settings.EmitAirportSymbols)
 		{

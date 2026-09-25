@@ -48,10 +48,11 @@ FeBuddy.Core/
 │   ├── Airways/      AirwayClassifier and the Airway/segment/point models
 │   ├── Crc/          CRC feature properties and CrcPropertyValidator
 │   ├── Departures/   DepartureNaming and procedure models
-│   └── Geo/          GeoMath, antimeridian splitting, line merging, ROI clipping, Wgs84
+│   └── Geo/          GeoMath, antimeridian splitting, line merging, ROI and radius clipping, Wgs84
 ├── Infrastructure/
 │   ├── Configuration/  UserConfigFile, UserConfigKeys, DevMode, OutputFormatting
-│   ├── FileSystem/     AppPaths, TempWorkspace
+│   ├── Dat/            DatFileReader: FAA .dat RADAR Video Maps
+│   ├── FileSystem/     AppPaths, TempWorkspace, ServiceOutputPaths (the FE-Buddy_Output layout)
 │   ├── Geojson/        CrcFeatureFactory, GeojsonFileWriter, GeojsonFileSet
 │   ├── GitHub/  Http/  Logging/  Markdown/  Platform/
 │   └── Nasr/           Download, availability, CSV reading, WaypointLocator
@@ -62,6 +63,8 @@ FeBuddy.Core/
     │   ├── Airways/    One folder per sub-service, all shaped the same way
     │   ├── Airports/
     │   └── Departures/
+    ├── Conversions/    One folder per file conversion, shaped like an AIRAC sub-service
+    │   └── DatToGeojson/
     ├── Launch/         LaunchSequence, AppEnvironment
     ├── News/           NewsService
     ├── Settings/       Shared readers for the string settings dictionaries
@@ -125,6 +128,24 @@ Airports and Departures have the same shape. Problems are reported as `ServiceMe
 (warnings or errors) in the result instead of being thrown, so one bad setting doesn't lose the
 whole run. The only exception is a missing required setting, which throws `ArgumentException`.
 
+**When the user runs a file conversion**, the UI builds one settings block and calls that
+conversion's service directly - there is no cycle data and no aggregate. The pipeline has the
+same shape, one input file at a time:
+
+```
+DatToGeojsonService.Run(settings, progress)
+  1. DatToGeojsonSettingsParser.Parse  string settings → DatToGeojsonSettings + warnings
+  for each .dat file (a folder's, or the ones named):
+  2. DatFileReader.Read                .dat file       → point of tangency + LineStrings
+  3. RadiusFilter.ClipLines            (if cropping)   → the pieces within the distance
+  4. AntimeridianSplitter.Split                        → no line wraps round the map
+  5. DatGeojsonWriter.Write                            → <name>.geojson
+  → DatToGeojsonServiceResult (one DatFileConversion per file, ServiceMessages, timing)
+```
+
+A file that cannot be read or cropped is an `Error` message and a failed `DatFileConversion`;
+the other files still convert.
+
 ## Where do I put…
 
 - **A new aviation or geometry rule** (no I/O): `Domain/<Feature>/`.
@@ -135,6 +156,9 @@ whole run. The only exception is a missing required setting, which throws `Argum
   block to `AiracServiceSettings` and one `RunSubServiceAsync` call to `AiracService`. Reuse
   `Application/Settings/SubServiceSettingsReader` for the common keys (precision, ROI,
   FEB properties).
+- **A new file conversion** (say, GeoMaps): `Application/Conversions/GeoMapToGeojson/` with its
+  `*Service`, `*SettingsParser`, `*GeojsonWriter` and a `Models/` folder, shaped like
+  `DatToGeojson/`. The code that reads the source format goes in `Infrastructure/<Format>/`.
 - **A new config key**: a constant in `Infrastructure/Configuration/UserConfigKeys`.
 - **Something shared by two features**: the lowest layer that both can see. Never copy it.
 

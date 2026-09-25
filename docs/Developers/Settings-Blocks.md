@@ -1,9 +1,9 @@
 # Settings blocks
 
-A **settings block** is the `Dictionary<string, string>` one sub-service receives for one run.
-The GUI builds it (`BuildSettingsBlock` on each tab), the harness writes it by hand
-(`HarnessSettings.cs`), and the tests build it inline - and all of them go through the same
-parser. This page lists every key each parser reads.
+A **settings block** is the `Dictionary<string, string>` one sub-service (or one file
+conversion) receives for one run. The GUI builds it (`BuildSettingsBlock` on each tab), the
+harness writes it by hand (`HarnessSettings.cs`), and the tests build it inline - and all of them
+go through the same parser. This page lists every key each parser reads.
 
 ## How a block is read
 
@@ -18,11 +18,11 @@ parser. This page lists every key each parser reads.
   written *and* whose `IncludeCrc…Defaults` is `Y`. Other valid CRC keys are accepted and ignored;
   a key for a class, kind or field the sub-service does not have is a warning.
 
-Parsers: `AirportSettingsParser`, `AirwaySettingsParser`, `DepartureSettingsParser`. Shared
-reading: `SubServiceSettingsReader`, `CrcDefaultsReader`, `SettingsValueReader`
-(all in `FeBuddy.Core/Application`).
+Parsers: `AirportSettingsParser`, `AirwaySettingsParser`, `DepartureSettingsParser`,
+`DatToGeojsonSettingsParser`. Shared reading: `SubServiceSettingsReader`, `CrcDefaultsReader`,
+`SettingsValueReader` (all in `FeBuddy.Core/Application`).
 
-## Keys every sub-service reads
+## Keys every AIRAC sub-service reads
 
 | Key | Values | Default |
 |---|---|---|
@@ -99,6 +99,22 @@ naming the key.
   least one `Emit…`.
 - Only the active amendment mode's value is read (and required); values for the other modes are
   ignored.
+
+## DAT to GeoJSON (File Conversions)
+
+A file conversion is not an AIRAC sub-service: it reads only the keys below (plus
+`OutputDirectory`, `AddFeBuddyOutputFolder`, `CoordinatePrecision` and `IncludeCrcLineDefaults`,
+read as in the table above). It has no alias file, `feb.*` properties or ROI.
+
+| Key | Values | Default |
+|---|---|---|
+| `SourceFolder` | a folder; every `.dat` directly in it is converted | - |
+| `SourceFiles` | `.dat` paths separated by `\|` (a comma is legal in a Windows path; `\|` is not) | - |
+| `CroppingDistance` | NM from each map's point of tangency, greater than 0 and at most 1000; blank keeps every line | none |
+
+- Exactly one of `SourceFolder` and `SourceFiles` is required. A `SourceFolder` that does not
+  exist throws; a file in `SourceFiles` that cannot be read fails that file only.
+- **CRC class:** `VideoMap`, with `Line` only (`Crc.VideoMap.Line.*`).
 
 ## An example (Airways, as the harness writes it)
 

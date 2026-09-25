@@ -7,7 +7,6 @@ using FeBuddy.Wpf.Mvvm;
 using FeBuddy.Wpf.Shell;
 using FeBuddy.Wpf.ViewModels.ServiceTabs.Models;
 
-using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Application.Models;
 using FeBuddy.Core.Infrastructure.Logging.Models;
 
@@ -206,13 +205,13 @@ public sealed class ServiceRunReviewTabViewModel : ServiceTabViewModel
 	/// Records a finished run: its errors and advisories, each sub-service's results, its files,
 	/// and how long it took.
 	/// </summary>
-	/// <param name="result">The aggregated result.</param>
+	/// <param name="result">The run's result: an AIRAC Service run's aggregate, or one conversion's.</param>
 	/// <param name="summary">The one-line summary of what was produced.</param>
 	/// <param name="subServiceResults">Each sub-service's block, in run order.</param>
 	/// <param name="filesWritten">Every file written, across sub-services.</param>
 	/// <param name="outputDirectory">The folder to offer to open.</param>
 	public void CompleteRun(
-		AiracServiceResult result,
+		ServiceResult result,
 		string summary,
 		IEnumerable<SubServiceRunResult> subServiceResults,
 		IEnumerable<string> filesWritten,

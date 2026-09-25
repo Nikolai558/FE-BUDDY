@@ -23,8 +23,8 @@ Written by **Settings** (except `NewsLastOpen`).
 | `UpdateChannel` | `Stable`, `ReleaseCandidate`, `Beta`, `Alpha` (the GUI offers Stable, Beta, Alpha) | `Stable` | launch version check, Settings |
 | `NewsLastOpen` | the newest News `PostId` seen, e.g. `2026-08-30.3` | none | launch News check. Written when the user opens News. |
 | `PrettyPrintGeojson` | `Y` / `N` | `N` | `OutputFormatting` (every GeoJSON writer) |
-| `DefaultOutputDirectory` | a folder path | `Desktop\FE-Buddy_Output` | AIRAC Service run |
-| `AddFeBuddyOutputFolder` | `Y` / `N` | `Y` | AIRAC Service run |
+| `DefaultOutputDirectory` | a folder path | `Desktop\FE-Buddy_Output` | every run, through `Shell/OutputPreferences` |
+| `AddFeBuddyOutputFolder` | `Y` / `N` | `Y` | every run, through `Shell/OutputPreferences` |
 
 ## Services.AiracService
 
@@ -33,7 +33,7 @@ Written by **Settings** (except `NewsLastOpen`).
 | `AiracCycleId` | a cycle ID, e.g. `2610` | current cycle | General tab. The ID (not "previous/current/next") is saved; on load it is matched back to one of the three, or falls back to current. |
 | `SelectedSubServices` | comma-separated keys: `Airports`, `Airways`, `Departures` | none | General tab. Keys are stable identifiers - never rename one without migrating this value. |
 | `UserArtccId` | an ARTCC ID, e.g. `ZOB` | none | Settings ▸ Facility. Not read by any sub-service yet. |
-| `CoordinatePrecision` | `0`-`15` (the GUI offers 5, 6, 7) | `6` | Settings; sent by every GeoJSON sub-service tab. |
+| `CoordinatePrecision` | `0`-`15` (the GUI offers 5, 6, 7) | `6` | Settings; sent by every tab that writes GeoJSON, AIRAC and File Conversions alike. |
 
 ### Services.AiracService.DefaultRoi
 
@@ -114,6 +114,19 @@ and `<field>` depends on the kind: **Line** `bcg`, `filters`, `style`, `thicknes
 | `Amendment.WithinCycles` | whole number, 1-1000 | `1` |
 | `Amendment.WithinDays` | whole number, 1-36500 | `30` |
 | `Amendment.OnOrAfter` | `yyyy-MM-dd` | none |
+
+## Services.FileConversions.DatToGeojson
+
+Written by the **DAT to GeoJSON** tab on the File Conversions screen, with **Save** on its tab.
+Files picked one by one are deliberately not saved; the folder is.
+
+| Key | Values | Default |
+|---|---|---|
+| `SourceType` | `Folder`, `Files` | `Folder` |
+| `SourceFolder` | a folder path | none |
+| `CroppingDistance` | NM, as typed; blank means no cropping | none |
+| `IncludeCrcLineDefaults` | `Y` / `N` | `Y` |
+| `CrcEramPropertyDefaults.VideoMap_Line.<field>` | `bcg`, `filters`, `style`, `thickness`, as for the sub-services | none (the user must fill them) |
 
 ## Adding a setting
 

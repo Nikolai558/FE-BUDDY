@@ -102,6 +102,30 @@ public static class SettingsValueReader
 		OptionalInt(settings, key)
 			?? throw new ArgumentException($"Settings must contain a non-empty '{key}' value.");
 
+	/// <summary>Reads an optional decimal number that must be greater than zero.</summary>
+	/// <param name="settings">The raw settings block.</param>
+	/// <param name="key">The key to read.</param>
+	/// <param name="maximum">Highest accepted value, inclusive.</param>
+	/// <returns>The parsed number, or <see langword="null"/> when absent or blank.</returns>
+	/// <exception cref="ArgumentException">Thrown when the value is not a number greater than zero and at most <paramref name="maximum"/>.</exception>
+	public static double? OptionalPositiveDecimal(IReadOnlyDictionary<string, string> settings, string key, double maximum)
+	{
+		if (!settings.TryGetValue(key, out string? value) || string.IsNullOrWhiteSpace(value))
+		{
+			return null;
+		}
+
+		if (!double.TryParse(value.Trim(), NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out double parsed)
+			|| parsed <= 0
+			|| parsed > maximum)
+		{
+			throw new ArgumentException(
+				$"'{key}' value '{value}' is not valid. Must be a number greater than 0 and at most {maximum.ToString(CultureInfo.InvariantCulture)}.");
+		}
+
+		return parsed;
+	}
+
 	/// <summary>Reads a <c>Y</c>/<c>N</c> flag that must be present.</summary>
 	/// <param name="settings">The raw settings block.</param>
 	/// <param name="key">The key to read.</param>

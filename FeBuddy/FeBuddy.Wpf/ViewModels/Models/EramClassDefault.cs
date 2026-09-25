@@ -50,15 +50,47 @@ public sealed class EramClassDefault(string className, EramFieldKind kind, Actio
 	private string _xOffset = string.Empty;
 	private string _yOffset = string.Empty;
 	private bool _isRequired;
+	private bool _styleFromFeatures;
 
-	/// <summary>The class this row is for: an airway altitude class (<c>High</c> / <c>Low</c> / <c>Other</c>) or a sub-service's single class (<c>Airports</c>, <c>Runways</c>, <c>Departures</c>, <c>Arrivals</c>).</summary>
+	/// <summary>
+	/// The class this row is for: an airway altitude class (<c>High</c> / <c>Low</c> / <c>Other</c>),
+	/// a sub-service's single class (<c>Airports</c>, <c>Runways</c>, <c>Departures</c>,
+	/// <c>Arrivals</c>), or - for NAVAIDs - <c>NAVAIDs</c> (every type merged) or one NAVAID
+	/// type's token (e.g. <c>VORTAC</c>).
+	/// </summary>
 	public string ClassName { get; } = className;
 
 	/// <summary>Which block the row belongs to.</summary>
 	public EramFieldKind Kind { get; } = kind;
 
-	/// <summary>Whether the <c>style</c> field applies to this kind.</summary>
+	/// <summary>
+	/// Whether the <c>style</c> field applies to this kind. Its value is kept and saved whenever
+	/// it does; whether the box is shown and sent is <see cref="AsksForStyle"/>.
+	/// </summary>
 	public bool ShowStyle { get; } = kind is EramFieldKind.Line or EramFieldKind.Symbol;
+
+	/// <summary>
+	/// Whether every Feature in the file carries its own <c>style</c>, so the defaults take none -
+	/// a NAVAIDs Symbols file styled by NAVAID type. Set by the owning tab.
+	/// </summary>
+	public bool StyleFromFeatures
+	{
+		get => _styleFromFeatures;
+		set
+		{
+			if (SetProperty(ref _styleFromFeatures, value))
+			{
+				OnPropertyChanged(nameof(AsksForStyle));
+				OnPropertyChanged(nameof(StyleError));
+			}
+		}
+	}
+
+	/// <summary>
+	/// Whether the <c>style</c> box is shown, required and sent in the run settings: the kind has
+	/// a style and the Features do not bring their own (<see cref="StyleFromFeatures"/>).
+	/// </summary>
+	public bool AsksForStyle => ShowStyle && !StyleFromFeatures;
 
 	/// <summary>Whether the <c>thickness</c> field applies to this kind.</summary>
 	public bool ShowThickness { get; } = kind is EramFieldKind.Line;
@@ -208,7 +240,7 @@ public sealed class EramClassDefault(string className, EramFieldKind kind, Actio
 	public bool HasMissingValues =>
 		IsBlank(Bcg)
 		|| IsBlank(Filters)
-		|| (ShowStyle && IsBlank(Style))
+		|| (AsksForStyle && IsBlank(Style))
 		|| (ShowThickness && IsBlank(Thickness))
 		|| (ShowSize && IsBlank(Size))
 		|| (ShowTextOptions && (!IsYesNo(Underline) || !IsYesNo(Opaque) || !IsInteger(XOffset) || !IsInteger(YOffset)));
@@ -220,7 +252,7 @@ public sealed class EramClassDefault(string className, EramFieldKind kind, Actio
 	public string? FiltersError => MissingError(true, Filters);
 
 	/// <summary>The <c>style</c> box's error, for <c>bhv:FieldState.Error</c>.</summary>
-	public string? StyleError => MissingError(ShowStyle, Style);
+	public string? StyleError => MissingError(AsksForStyle, Style);
 
 	/// <summary>The <c>thickness</c> box's error, for <c>bhv:FieldState.Error</c>.</summary>
 	public string? ThicknessError => MissingError(ShowThickness, Thickness);

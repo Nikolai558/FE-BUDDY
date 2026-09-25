@@ -39,8 +39,8 @@ The screen where you make files. It is a set of tabs down the left:
 
 | Tab | What it is |
 |---|---|
-| **General** | Which cycle, and which sub-services (Airports, Airways, Departures, Arrivals). Always there. |
-| **Airports / Airways / Departures / Arrivals** | One tab per sub-service you ticked, with its settings. |
+| **General** | Which cycle, and which sub-services (Airports, Airways, Departures, Arrivals, NAVAIDs). Always there. |
+| **Airports / Airways / Departures / Arrivals / NAVAIDs** | One tab per sub-service you ticked, with its settings. |
 | **Preview Settings** | Everything the run will do, in plain words, and the **Run AIRAC Service** button. Appears once a sub-service is ticked. |
 | **Review** | What happened in the last run. Appears once you run. |
 
@@ -117,7 +117,9 @@ be filled in.
 
 Airways has a column per altitude class (High, Low, Other) - with High/Low files, just the class of
 each file chosen; with designation files, all three, since one file can hold airways of every
-class. Airports, Departures and Arrivals have one.
+class. Airports, Departures and Arrivals have one. NAVAIDs has one column with *All in one file*,
+or one column per NAVAID type - style included - with *one pair per NAVAID type* (see the NAVAIDs
+tab).
 
 ### Airports tab
 
@@ -212,6 +214,39 @@ no "Include obstacle departures" equivalent here.
   punctuation removed when there is no code.
 - A STAR is flown transition to body, so its points - and the alias command's fix list - list
   transitions first, then bodies (the reverse of a departure's order).
+
+### NAVAIDs tab
+
+- **Outputs:** GeoJSON, and `NAVAIDs.txt` - a `.nav<ID>` command per NAVAID identifier and a
+  `.nav<name>` command per name (letters and digits only), each an `.echo` that prints the
+  NAVAID's identifier, name, type, frequency, and its ARTCC high and low boundaries. Duplicate
+  identifiers are normal in NASR data (`ABQ` is both a VORTAC and a VOT; `AA` is two NDBs) - a
+  command shared by several NAVAIDs is written once, listing each of them in turn. The alias file
+  always covers every ticked-type NAVAID; the region only limits the GeoJSON.
+- **NAVAID Types** - a tick box per NAVAID type found in the cycle (VOR, VORTAC, VOR/DME, VOT,
+  TACAN, DME, NDB, FAN MARKER and so on), all ticked by default. Unticking a type leaves it out of
+  the GeoJSON *and* the alias file. NAVAIDs NASR marks SHUTDOWN are always left out.
+- **File Layout** - *All in one file* (`NAVAIDs_Symbols`, `NAVAIDs_Text`) or *one pair per NAVAID
+  type* (`NAVAIDs_<Type>s_Symbols`, `NAVAIDs_<Type>s_Text` - e.g. `NAVAIDs_VORTACs_Symbols.geojson`,
+  `NAVAIDs_VOR-DMEs_Text.geojson`; a `/` or space in the type becomes a `-`). Files go straight in
+  the Geojson folder - there are no per-airport sub-folders.
+- **Files:** *Symbols* (one per NAVAID, at its published coordinates), *Text* (its identifier, then
+  its name and type, e.g. `CGT` and `CHICAGO HEIGHTS VORTAC`). There is no Lines file.
+- **NAVAID Symbol Style** - appears once the Symbols file gets CRC-ERAM defaults, but only with
+  *All in one file* (with *one pair per type*, each type's own file already draws one kind of
+  NAVAID, styled from its own CRC ERAM Defaults column). Choose **Style each NAVAID by its type** -
+  VOR, VORTAC, VOR/DME and VOT draw as `vor`; TACAN and DME as `tacan`; NDB, NDB/DME, MARINE NDB,
+  MARINE NDB/DME and UHF/NDB as `ndb`; fan markers use the **Fan marker style** dropdown, shown
+  once fan markers are ticked; CONSOLAN has no style and gets a warning - or **One style for the
+  whole file**, set on the CRC ERAM Defaults card. With **Style each NAVAID by its type**, the
+  NAVAIDs Symbols defaults have no style box of their own.
+- **FE-Buddy properties:** `navId`, `navType`, `name`, `freq`, `lowAltArtccId`, `highAltArtccId`.
+  The Text file never carries `navId`, `navType` or `name` - its label already shows all three.
+- **Region:** a NAVAID is included in the GeoJSON when its own coordinates are inside the region;
+  the alias file is never limited by it, the same as Airports.
+- **Upload to vNAS:** *All in one file* - `NAVAIDs_Symbols`, `NAVAIDs_Text`, then `NAVAIDs.txt`.
+  *One pair per type* - each included type's `NAVAIDs_<Type>s_Symbols` / `_Text`, then
+  `NAVAIDs.txt`.
 
 ### Preview Settings tab
 
@@ -348,10 +383,11 @@ laid out the same way:
 <output folder>\
 └── FE-Buddy_Output\                  (only with "Add a FE-Buddy_Output folder")
     ├── AIRAC_2610\
-    │   ├── Airports.txt, Airways.txt, Departures.txt, Arrivals.txt
+    │   ├── Airports.txt, Airways.txt, Departures.txt, Arrivals.txt, NAVAIDs.txt
     │   ├── Geojson\
     │   │   ├── Runways_Lines, Airports_Symbols, Airports_Text (.geojson)
     │   │   ├── Airways_<group>_Lines / _Symbols / _Text (.geojson)
+    │   │   ├── NAVAIDs_Symbols / _Text (.geojson), or NAVAIDs_<type>s_Symbols / _Text per type
     │   │   └── <ARTCC>\<airport>\<airport>_<procedure>_Lines / _Symbols / _Text (.geojson)
     │   └── Upload_to_vNAS\           (only the files marked for vNAS)
     │       ├── the alias files marked for vNAS

@@ -43,6 +43,9 @@
         <DataTemplate DataType="{x:Type vm:ArrivalsViewModel}">
             <local:ArrivalsView />
         </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:NavaidsViewModel}">
+            <local:NavaidsView />
+        </DataTemplate>
         <DataTemplate DataType="{x:Type vm:DatToGeojsonViewModel}">
             <local:DatToGeojsonView />
         </DataTemplate>

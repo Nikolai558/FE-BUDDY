@@ -6,6 +6,7 @@ using FeBuddy.Core.Infrastructure.Nasr.Models;
 using FeBuddy.UnitTests.Application.Airac.Airways.Fixtures;
 using FeBuddy.UnitTests.Application.Airac.Arrivals.Fixtures;
 using FeBuddy.UnitTests.Application.Airac.Departures.Fixtures;
+using FeBuddy.UnitTests.Application.Airac.Navaids.Fixtures;
 
 namespace FeBuddy.UnitTests.Application.Airac;
 
@@ -187,6 +188,70 @@ public sealed class AiracServiceTests : IDisposable
 		AiracServiceResult result = await AiracService.RunAsync(settings, DepartureTestData.Dotss());
 
 		Assert.Null(result.Arrivals);
+	}
+
+	[Fact]
+	public async Task run_async_with_a_navaids_block_runs_the_pipeline_and_aggregates()
+	{
+		AiracServiceSettings settings = new()
+		{
+			SelectedCycle = Cycle,
+			OutputDirectory = _output,
+			Navaids = new Dictionary<string, string> { { "GenerateGeojson", "N" } },
+		};
+
+		AiracServiceResult result = await AiracService.RunAsync(settings, NavaidTestData.Build([NavaidTestData.CgtRow()]));
+
+		Assert.Null(result.Arrivals);
+		Assert.NotNull(result.Navaids);
+		Assert.Equal(1, result.Navaids!.NavaidCount);
+		Assert.Equal(Path.Combine(CycleFolder, "NAVAIDs.txt"), result.Navaids.AliasFilePath);
+	}
+
+	[Fact]
+	public async Task a_navaids_block_writes_geojson_into_the_cycle_folder()
+	{
+		AiracServiceSettings settings = new()
+		{
+			SelectedCycle = Cycle,
+			OutputDirectory = _output,
+			Navaids = new Dictionary<string, string> { { "GenerateAliasFile", "N" } },
+		};
+
+		AiracServiceResult result = await AiracService.RunAsync(settings, NavaidTestData.Build([NavaidTestData.CgtRow()]));
+
+		string symbolsFile = Path.Combine(CycleFolder, "Geojson", "NAVAIDs_Symbols.geojson");
+		Assert.Contains(symbolsFile, result.Navaids!.GeojsonFilesWritten);
+		Assert.True(File.Exists(symbolsFile));
+	}
+
+	[Fact]
+	public async Task a_run_with_only_navaids_selected_counts_as_something_selected()
+	{
+		string stale = WriteStaleFile();
+		AiracServiceSettings settings = new()
+		{
+			SelectedCycle = Cycle,
+			OutputDirectory = _output,
+			ExistingOutput = ExistingOutputAction.DeleteExisting,
+			Navaids = new Dictionary<string, string> { { "GenerateGeojson", "N" } },
+		};
+
+		await AiracService.RunAsync(settings, NavaidTestData.Build([NavaidTestData.CgtRow()]));
+
+		// DeleteExisting only runs when something is selected: NAVAIDs alone must still trigger it.
+		Assert.False(File.Exists(stale));
+		Assert.True(File.Exists(Path.Combine(CycleFolder, "NAVAIDs.txt")));
+	}
+
+	[Fact]
+	public async Task a_null_navaids_block_leaves_result_navaids_null()
+	{
+		AiracServiceSettings settings = AliasOnlySettings() with { Navaids = null };
+
+		AiracServiceResult result = await AiracService.RunAsync(settings, DepartureTestData.Dotss());
+
+		Assert.Null(result.Navaids);
 	}
 
 	[Fact]

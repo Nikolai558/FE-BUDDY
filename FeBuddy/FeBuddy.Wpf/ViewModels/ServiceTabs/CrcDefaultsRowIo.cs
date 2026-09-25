@@ -8,7 +8,9 @@ namespace FeBuddy.Wpf.ViewModels.ServiceTabs;
 /// </summary>
 /// <remarks>
 /// Only the fields the row's kind shows are read, saved or sent: a Line row never writes a
-/// <c>size</c>, a Text row never a <c>style</c>.
+/// <c>size</c>, a Text row never a <c>style</c>. A row whose Features bring their own style
+/// (<see cref="EramClassDefault.StyleFromFeatures"/>) still saves its style, so switching back
+/// restores it, but does not send one.
 /// </remarks>
 public static class CrcDefaultsRowIo
 {
@@ -99,7 +101,7 @@ public static class CrcDefaultsRowIo
 		settings[$"{prefix}.bcg"] = row.Bcg;
 		settings[$"{prefix}.filters"] = row.Filters;
 
-		if (row.ShowStyle)
+		if (row.AsksForStyle)
 		{
 			settings[$"{prefix}.style"] = row.Style;
 		}

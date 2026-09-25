@@ -261,6 +261,7 @@ public static partial class SubServiceSettingsReader
 			: $"Unrecognized setting '{key}' was ignored.";
 	}
 
-	[GeneratedRegex(@"^Crc\.(?<class>\w+)\.(?<kind>Line|Symbol|Text)\.(?<property>\w+)$", RegexOptions.IgnoreCase)]
+	// A class name can hold a hyphen: NAVAIDs' per-type classes are tokens like VOR-DME.
+	[GeneratedRegex(@"^Crc\.(?<class>[\w-]+)\.(?<kind>Line|Symbol|Text)\.(?<property>\w+)$", RegexOptions.IgnoreCase)]
 	private static partial Regex CrcKeyPattern();
 }

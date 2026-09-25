@@ -49,8 +49,12 @@ public static class CrcFeatureFactory
 		return new Feature(IsDefaultsPoint, attributes);
 	}
 
-	/// <summary>Builds a file's non-rendered <c>isSymbolDefaults</c> Feature.</summary>
-	/// <param name="defaults">The defaults. Every value is written.</param>
+	/// <summary>
+	/// Builds a file's non-rendered <c>isSymbolDefaults</c> Feature. <c>style</c> is left out
+	/// when <see cref="CrcSymbolDefaults.Style"/> is <see langword="null"/>: every Symbol
+	/// Feature in the file then carries its own <c>style</c> instead.
+	/// </summary>
+	/// <param name="defaults">The defaults. Every value but <c>style</c> is always written.</param>
 	/// <returns>The Feature, to insert first in the FeatureCollection.</returns>
 	/// <exception cref="ArgumentException">Thrown when <paramref name="defaults"/> fails CRC validation.</exception>
 	public static Feature CreateDefaultsFeature(CrcSymbolDefaults defaults)
@@ -58,7 +62,7 @@ public static class CrcFeatureFactory
 		CrcPropertyValidator.ThrowIfInvalid(CrcPropertyValidator.ValidateSymbolDefaults(defaults), "Invalid CRC Symbol defaults");
 
 		AttributesTable attributes = StartDefaults("isSymbolDefaults", defaults.Bcg, defaults.Filters);
-		attributes.Add("style", defaults.Style);
+		AddIfSet(attributes, "style", defaults.Style);
 		attributes.Add("size", defaults.Size);
 
 		return new Feature(IsDefaultsPoint, attributes);

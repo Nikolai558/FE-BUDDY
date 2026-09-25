@@ -1,0 +1,120 @@
+<!--
+    NavaidsView  -  the NAVAIDs sub-service tab inside the AIRAC Service screen.
+    Save / Undo / Previous / Next / Preview settings come from the tab host's shared
+    action bar, and the tab host owns the page's single scroller.
+-->
+<UserControl x:Class="FeBuddy.Wpf.Views.NavaidsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:FeBuddy.Wpf.ViewModels"
+             xmlns:m="clr-namespace:FeBuddy.Wpf.ViewModels.Models"
+             xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
+             xmlns:cards="clr-namespace:FeBuddy.Wpf.Views.Cards"
+             xmlns:bhv="clr-namespace:FeBuddy.Wpf.Behaviors"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance vm:NavaidsViewModel}"
+             d:DesignWidth="900" d:DesignHeight="1700">
+
+    <!-- No ScrollViewer here: the tab host owns the one page-level scroller
+         that every sub-service tab is laid out inside. A second scroller would
+         steal the wheel and hide the lower sections. -->
+    <StackPanel>
+
+            <TextBlock Text="{Binding ValidationError}" Style="{StaticResource Text.Caption}"
+                       Foreground="{StaticResource Brush.Danger}" TextWrapping="Wrap" Margin="0,0,0,12"
+                       MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
+                       Visibility="{Binding ValidationError, Converter={StaticResource StringToVis}}" />
+
+            <!-- ============ outputs ============ -->
+            <cards:OutputsCard GeojsonDescription="Writes the NAVAID GeoJSON files selected below."
+                               AliasFileName="NAVAIDs.txt"
+                               AliasDescription="Writes a .nav&lt;ID&gt; and a .nav&lt;name&gt; command per NAVAID that print its name, type, frequency and ARTCCs. NAVAIDs sharing a command are listed together." />
+
+            <!-- ============ which GeoJSON files ============ -->
+            <cards:GeojsonFilesCard IsEnabled="{Binding GenerateGeojson}" ShowLines="False"
+                                    SymbolsDescription="One symbol per NAVAID."
+                                    TextDescription="A two-line label per NAVAID: its identifier, then its name and type."
+                                    Footnote="Files are written to Geojson\ in the cycle's folder." />
+
+            <!-- ============ file layout ============ -->
+            <ctl:Card Header="File Layout" IsEnabled="{Binding GenerateGeojson}">
+                <StackPanel>
+                    <RadioButton GroupName="NavaidOutputBy" Margin="0,4,0,0"
+                                 Content="All NAVAIDs in one file (NAVAIDs_Symbols.geojson, NAVAIDs_Text.geojson)"
+                                 IsChecked="{Binding OutputAllInOne, Mode=TwoWay}" />
+                    <RadioButton GroupName="NavaidOutputBy" Margin="0,6,0,0"
+                                 Content="One file per NAVAID type (e.g. NAVAIDs_VORTACs_Symbols.geojson)"
+                                 IsChecked="{Binding OutputByType, Mode=TwoWay}" />
+                </StackPanel>
+            </ctl:Card>
+
+            <!-- ============ FE-Buddy properties ============ -->
+            <cards:FebPropertiesCard IsEnabled="{Binding GenerateGeojson}" />
+
+            <!-- ============ NAVAID types ============ -->
+            <ctl:Card Header="NAVAID Types">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
+                               Text="Tick the NAVAID types you want. Unticked types are left out of the GeoJSON and the alias file." />
+                    <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap"
+                               MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
+                               Text="NAVAID types appear once the selected cycle's data is loaded."
+                               Visibility="{Binding HasTypes, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
+                    <ItemsControl ItemsSource="{Binding Types}" IsEnabled="{Binding IsCycleReady}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="{x:Type m:NavaidTypeToggle}">
+                                <CheckBox Content="{Binding Type}" IsChecked="{Binding IsSelected}" Margin="0,0,14,6" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <Button Content="Tick all" Style="{StaticResource Button.Ghost}" HorizontalAlignment="Left"
+                            Margin="0,6,0,0" Command="{Binding TickAllTypesCommand}"
+                            Visibility="{Binding HasTypes, Converter={StaticResource BoolToVis}}" />
+                </StackPanel>
+            </ctl:Card>
+
+            <!-- ============ region of interest ============ -->
+            <cards:RoiOverrideCard>
+                <cards:RoiOverrideCard.AdditionalContent>
+                    <TextBlock Style="{StaticResource Text.Prose}" Margin="0,14,0,0"
+                               Text="The region limits the GeoJSON files only. The alias file always covers every NAVAID." />
+                </cards:RoiOverrideCard.AdditionalContent>
+            </cards:RoiOverrideCard>
+
+            <!-- ============ upload to vNAS ============ -->
+            <cards:VnasUploadCard />
+
+            <!-- ============ symbol style ============ -->
+            <ctl:Card Header="NAVAID Symbol Style" Visibility="{Binding ShowSymbolStyleChoice, Converter={StaticResource BoolToVis}}">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
+                               Text="How the NAVAIDs Symbols file gets its CRC symbol styles." />
+                    <RadioButton GroupName="NavaidSymbolStyle" Margin="0,3,0,0"
+                                 Content="Style each NAVAID by its type"
+                                 IsChecked="{Binding StyleByNavaidType, Mode=TwoWay}" />
+                    <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="24,2,0,4"
+                               MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
+                               Text="VOR, VORTAC, VOR/DME and VOT draw as vor; TACAN and DME as tacan; NDB types as ndb. The CRC ERAM Defaults card then asks for no Symbols style." />
+                    <RadioButton GroupName="NavaidSymbolStyle" Margin="0,3,0,0"
+                                 Content="One style for the whole file, set on the CRC ERAM Defaults card below"
+                                 IsChecked="{Binding StyleForWholeFile, Mode=TwoWay}" />
+                    <StackPanel Orientation="Horizontal" Margin="0,10,0,0"
+                                Visibility="{Binding ShowFanMarkerStyle, Converter={StaticResource BoolToVis}}">
+                        <TextBlock Text="Fan marker style" Style="{StaticResource Text.FieldLabel}"
+                                   VerticalAlignment="Center" Margin="0,0,12,0" />
+                        <ComboBox MinWidth="160" ItemsSource="{Binding FanMarkerStyleOptions}" SelectedItem="{Binding FanMarkerStyle}"
+                                  bhv:FieldState.Error="{Binding FieldErrors[FanMarkerStyle]}"
+                                  ToolTip="CRC has no fan marker symbol: pick the style every fan marker is drawn with." />
+                    </StackPanel>
+                </StackPanel>
+            </ctl:Card>
+
+            <!-- ============ CRC ERAM defaults ============ -->
+            <cards:CrcDefaultsCard SymbolsTitle="NAVAIDs — Symbols" TextTitle="NAVAIDs — Text" />
+    </StackPanel>
+</UserControl>

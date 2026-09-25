@@ -156,6 +156,15 @@ and addressed by dotted paths (`Services.AiracService.Geojson.Airways.OutputBy`)
 - **`feb.*` properties** are FE-Buddy's own, camelCase, opt-in, and written only on the kind of
   feature they describe (`pointId` on points; `waypoints` and `rwyId` on lines). No lat/lon
   properties - the geometry carries them.
+- **A symbol's style can live on the Feature instead of the file's defaults.**
+  `CrcSymbolDefaults.Style` is nullable - `null` means every Symbol Feature in the file carries its
+  own `style` rather than one shared default - and `CrcDefaultsReader.ReadSymbol` takes a
+  `readStyle` flag so a caller can skip the style box entirely when the Features will carry it.
+  NAVAIDs is the first sub-service to use this: a merged `OutputBy = All` Symbols file with
+  `SymbolStyleBy = Type` gives each Feature its own style from `NavaidTypes.SymbolStyleFor` (or the
+  chosen fan marker style), so the file's own CRC defaults carry none; a type with no mapped style
+  (`CONSOLAN`, or one FE-Buddy does not recognize) is left with none, and a warning is reported once
+  per such type.
 - **Coordinates** are rounded to the user's precision (0-15 decimal places, default 6).
 - **Layout.** Single-line by default (smaller files); pretty printed when the user chooses it or in
   developer mode.
@@ -205,6 +214,27 @@ The FAA's data has quirks; these rules handle them. Each lives in one class.
   carries `STAR` - but both alias files end up with the same command (`.orfNUTIYf`,
   `.orfSWOPEf`). Printed as duplicates on purpose for now; see
   [FAQ](../Users/FAQ-and-Troubleshooting.md#why-does-the-same-alias-command-show-up-in-both-departurestxt-and-arrivalstxt).
+- **NAVAID data** (`NavaidBuilder`). Built from `NAV_BASE` only; a NAVAID with a `NAV_STATUS` of
+  `SHUTDOWN` is always skipped. Duplicate `NAV_ID`s are normal in real NASR data and are never
+  merged - `ABQ` is both a VORTAC and a VOT, `AA` is two NDBs - every row NASR publishes becomes its
+  own NAVAID.
+- **NAVAID alias commands** (`NavaidAliasWriter`). Each NAVAID contributes a `.nav<NavId>` command
+  and, when its name yields a different one, a `.nav<name, letters and digits only>` command, each
+  an `.echo` printing the NAVAID's identifier, name, type, frequency (two decimals for a VHF/UHF
+  facility, e.g. `114.20`; whole kHz for an NDB-family one, e.g. `365`; blank when NASR publishes
+  none) and its ARTCC high/low boundaries. A command already seen is not overwritten: its new block
+  is appended, joined by a `\n---` line, so `.navABQ` lists both the VORTAC and the VOT, and
+  `.navAA` both NDBs:
+
+  ```
+  .navCGT .echo \nNAVAID:\t\t\sCGT\s-\sCHICAGO HEIGHTS\n\t\t\t\tVORTAC\nFREQ:\t\t\s\s\s114.20\nARTCC\sHIGH:\t\sZAU\nARTCC\sLOW:\t\s\sZAU
+  .navCHICAGOHEIGHTS .echo \nNAVAID:\t\t\sCGT\s-\sCHICAGO HEIGHTS\n\t\t\t\tVORTAC\nFREQ:\t\t\s\s\s114.20\nARTCC\sHIGH:\t\sZAU\nARTCC\sLOW:\t\s\sZAU
+  ```
+
+  Column alignment and line breaks are literal `\t`, `\n` and `\s` escapes - never real tabs,
+  newlines or spaces - because CRC tokenizes an alias's replacement text on whitespace and rejoins
+  it with single spaces; `AirportAliasWriter` follows the same convention. The alias file is never
+  ROI-filtered, the same as every other sub-service's.
 
 ## Messages and logging
 

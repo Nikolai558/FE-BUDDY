@@ -20,9 +20,10 @@ go through the same parser. This page lists every key each parser reads.
   kind or field the sub-service does not have is a warning.
 
 Parsers: `AirportSettingsParser`, `AirwaySettingsParser`, `DepartureSettingsParser`,
-`ArrivalSettingsParser`, `DatToGeojsonSettingsParser`, `SctToGeojsonSettingsParser`,
-`EramToGeojsonSettingsParser`. Shared reading: `SubServiceSettingsReader`, `CrcDefaultsReader`,
-`ConversionSettingsReader`, `SettingsValueReader` (all in `FeBuddy.Core/Application`).
+`ArrivalSettingsParser`, `NavaidSettingsParser`, `DatToGeojsonSettingsParser`,
+`SctToGeojsonSettingsParser`, `EramToGeojsonSettingsParser`. Shared reading:
+`SubServiceSettingsReader`, `CrcDefaultsReader`, `ConversionSettingsReader`, `SettingsValueReader`
+(all in `FeBuddy.Core/Application`).
 
 ## Keys every AIRAC sub-service reads
 
@@ -66,6 +67,7 @@ nothing.
 | Airways | `Airways_<group>_Lines` / `_Symbols` / `_Text`, where `<group>` is `High`, `Low`, `Other` or a designation (letters only) | `Airways.txt` |
 | Departures | `Departures_Lines`, `Departures_Symbols`, `Departures_Text` | `Departures.txt` |
 | Arrivals | `Arrivals_Lines`, `Arrivals_Symbols`, `Arrivals_Text` | `Arrivals.txt` |
+| NAVAIDs | `NAVAIDs_Symbols`, `NAVAIDs_Text` (`OutputBy=All`), or `NAVAIDs_<Token>s_Symbols` / `_Text` per NAVAID type (`OutputBy=Type`), e.g. `NAVAIDs_VORTACs_Symbols`, `NAVAIDs_VOR-DMEs_Text` | `NAVAIDs.txt` |
 
 CRC-ERAM defaults are only ever written to files marked for vNAS, since CRC reads its maps from
 vNAS. The keys are listed in each sub-service's `*OutputFiles` class.
@@ -158,6 +160,34 @@ naming the key.
   least one `Emit…`.
 - Only the active amendment mode's value is read (and required); values for the other modes are
   ignored.
+
+## NAVAIDs
+
+| Key | Values | Default |
+|---|---|---|
+| `GenerateGeojson` | `Y` / `N` | `Y` |
+| `EmitSymbols`, `EmitText` | `Y` / `N` | `Y` |
+| `OutputBy` | `All`, `Type` | `All` |
+| `ExcludedTypes` | list of NASR `NAV_TYPE` names (upper-cased) - the types left out of GeoJSON *and* the alias file | none |
+| `SymbolStyleBy` | `Type`, `File` - read (and meaningful) only when `OutputBy = All` | `Type` |
+| `FanMarkerStyle` | a CRC symbol style; read only when the merged `OutputBy = All` Symbols file gets CRC-ERAM defaults, `SymbolStyleBy = Type`, and `FAN MARKER` is not excluded. Optional: a fan marker written without one gets no style, with a warning (the GUI requires it whenever the cycle has fan markers) | - |
+
+- **CRC classes:** with `OutputBy = All`, `NAVAIDs` (`Symbol`, `Text`); with `OutputBy = Type`, one
+  class per NAVAID type present, keyed by its token - `VOR`, `VORTAC`, `VOR-DME`, `VOT`, `TACAN`,
+  `DME`, `NDB`, `NDB-DME`, `MARINE-NDB`, `MARINE-NDB-DME`, `UHF-NDB`, `FAN-MARKER`, `CONSOLAN` - each
+  with `Symbol` and `Text`. There is no `Line` class; NAVAIDs writes no Lines file.
+- **`FebProperties`:** `navId`, `navType`, `name`, `freq`, `lowAltArtccId`, `highAltArtccId` - the
+  Text file never writes `navId`, `navType` or `name`; its `text` array already carries all three.
+- `GenerateGeojson` and `GenerateAliasFile` cannot both be `N`; `GenerateGeojson = Y` needs at least
+  one of `EmitSymbols` / `EmitText` (there is no `EmitLines`).
+- `ExcludedTypes` warns about a name that is not a known NAVAID type (it is still excluded, so a
+  type NASR adds can be unticked), and excluding every known type throws - NAVAIDs would then have
+  nothing to write.
+- Data comes from `NAV_BASE` only. A NAVAID with a `NAV_STATUS` of `SHUTDOWN` is always skipped;
+  duplicate `NAV_ID`s (e.g. `ABQ`, both a VORTAC and a VOT) are normal and every row is kept.
+- With `OutputBy = Type`, CRC defaults are read from whichever type keys are chosen for CRC-ERAM
+  defaults rather than from the known type list, so a `NAV_TYPE` FE-Buddy does not recognize still
+  gets its own file's defaults.
 
 ## Keys every file conversion reads
 

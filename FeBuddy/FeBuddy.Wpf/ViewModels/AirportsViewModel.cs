@@ -70,7 +70,7 @@ public sealed class AirportsViewModel : GeojsonSubServiceViewModel, ISubServiceR
 
 	/// <inheritdoc />
 	/// <remarks>The files are named for what they hold: <c>Runways_Lines</c>, <c>Airports_Symbols</c>, <c>Airports_Text</c>.</remarks>
-	protected override (string Lines, string Symbols, string Text) EmitKeys =>
+	protected override (string? Lines, string Symbols, string Text) EmitKeys =>
 		("EmitRunwayLines", "EmitAirportSymbols", "EmitAirportText");
 
 	/// <inheritdoc />

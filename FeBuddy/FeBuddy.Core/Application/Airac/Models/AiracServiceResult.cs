@@ -2,6 +2,7 @@ using FeBuddy.Core.Application.Airac.Airports.Models;
 using FeBuddy.Core.Application.Airac.Airways.Models;
 using FeBuddy.Core.Application.Airac.Arrivals.Models;
 using FeBuddy.Core.Application.Airac.Departures.Models;
+using FeBuddy.Core.Application.Airac.Navaids.Models;
 using FeBuddy.Core.Application.Models;
 
 namespace FeBuddy.Core.Application.Airac.Models;
@@ -41,4 +42,10 @@ public sealed record AiracServiceResult : ServiceResult
 	/// this run.
 	/// </summary>
 	public ArrivalServiceResult? Arrivals { get; init; }
+
+	/// <summary>
+	/// The NAVAIDs sub-service result, or <see langword="null"/> when NAVAIDs was not part of
+	/// this run.
+	/// </summary>
+	public NavaidServiceResult? Navaids { get; init; }
 }

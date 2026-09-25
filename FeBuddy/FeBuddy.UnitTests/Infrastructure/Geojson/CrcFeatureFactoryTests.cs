@@ -66,6 +66,15 @@ public sealed class CrcFeatureFactoryTests
 	}
 
 	[Fact]
+	public void create_default_for_symbol_omits_style_when_it_is_null()
+	{
+		Feature feature = CrcFeatureFactory.CreateDefaultsFeature(SymbolDefaults() with { Style = null });
+
+		Assert.False(feature.Attributes.Exists("style"));
+		Assert.Equal(new[] { "isSymbolDefaults", "bcg", "filters", "size" }, feature.Attributes.GetNames());
+	}
+
+	[Fact]
 	public void create_default_for_text_writes_every_property_in_a_fixed_order()
 	{
 		Feature feature = CrcFeatureFactory.CreateDefaultsFeature(TextDefaults());

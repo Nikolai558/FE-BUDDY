@@ -92,6 +92,28 @@ public sealed class CrcDefaultsReaderTests
 		Assert.Contains($"{LinePrefix}.{property}", ex.Message);
 	}
 
+	[Fact]
+	public void read_symbol_with_read_style_false_leaves_style_null_and_does_not_require_the_style_key()
+	{
+		Dictionary<string, string> settings = FullSymbol();
+		settings.Remove($"{SymbolPrefix}.style");
+
+		CrcSymbolDefaults defaults = CrcDefaultsReader.ReadSymbol(settings, SymbolPrefix, readStyle: false);
+
+		Assert.Null(defaults.Style);
+		Assert.Equal(5, defaults.Bcg);
+		Assert.Equal([7], defaults.Filters);
+		Assert.Equal(4, defaults.Size);
+	}
+
+	[Fact]
+	public void read_symbol_with_read_style_false_ignores_a_style_key_even_when_one_is_present()
+	{
+		CrcSymbolDefaults defaults = CrcDefaultsReader.ReadSymbol(FullSymbol(), SymbolPrefix, readStyle: false);
+
+		Assert.Null(defaults.Style);
+	}
+
 	[Theory]
 	[InlineData("bcg")]
 	[InlineData("filters")]

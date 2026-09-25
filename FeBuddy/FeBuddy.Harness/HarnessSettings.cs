@@ -271,6 +271,65 @@ internal static class HarnessSettings
 	}
 
 	/// <summary>
+	/// Builds the raw settings dictionary for <c>NavaidService.Run</c>. Every key the NAVAIDs
+	/// settings parser recognizes is listed below with its default value, so any of them can be
+	/// flipped here without hunting through <c>NavaidSettingsParser</c>.
+	/// </summary>
+	public static Dictionary<string, string> NavaidSettings()
+	{
+		Dictionary<string, string> settings = new()
+		{
+			{ "OutputDirectory", OutputDirectory },
+
+			// Which of the two outputs run. Turning both off is rejected by the parser, as is
+			// GenerateGeojson = "Y" with both Emit* keys off. There is no EmitLines: NAVAIDs has
+			// no Lines file.
+			{ "GenerateGeojson", "Y" },
+			{ "GenerateAliasFile", "Y" },
+			{ "EmitSymbols", "Y" },
+			{ "EmitText", "Y" },
+
+			// How the GeoJSON is grouped. "All" writes one merged Symbols/Text pair; "Type"
+			// writes a Symbols/Text pair per NAVAID type present (NavaidOutputFiles.TypeKey).
+			{ "OutputBy", "All" },   // or "Type"
+			{ "ExcludedTypes", "" }, // e.g. "CONSOLAN,MARINE NDB" to drop those types entirely
+
+			// SymbolStyleBy and FanMarkerStyle matter only in "All" mode, and only when the
+			// merged Symbols file gets CRC-ERAM defaults (below). "Type" styles each NAVAID from
+			// its own type (NavaidTypes.SymbolStyleFor); fan markers have no fixed style, so they
+			// take FanMarkerStyle - without it they get none, and the run warns.
+			{ "SymbolStyleBy", "Type" }, // or "File"
+			{ "FanMarkerStyle", "otherWaypoints" },
+
+			// FE-Buddy's own (non-CRC) properties. FebProperties is required when this is "Y".
+			{ "IncludeFebCustomProperties", "Y" },
+			{ "FebProperties", "navId,navType,name,freq,lowAltArtccId,highAltArtccId" },
+
+			// Files marked for vNAS go under Upload_to_vNAS; only those in CrcDefaultsFor get the
+			// CRC ERAM defaults Feature, using the Crc.NAVAIDs.* values added by
+			// AddNavaidCrcDefaults below.
+			{ "UploadToVnas", "NAVAIDs_Symbols,NAVAIDs_Text,NAVAIDs.txt" },
+			{ "CrcDefaultsFor", "NAVAIDs_Symbols,NAVAIDs_Text" },
+
+			// ROI filtering applies to the GeoJSON output only; the alias file always covers
+			// every NAVAID.
+			{ "FilterByRoi", "N" },
+			{ "RoiSwLat", "" },              // e.g. "38.0"
+			{ "RoiSwLon", "" },              // e.g. "-85.0"
+			{ "RoiNeLat", "" },              // e.g. "43.0"
+			{ "RoiNeLon", "" },              // e.g. "-78.0"
+
+			{ "CoordinatePrecision", "6" },  // max decimal places in GeoJSON coords (0-15)
+		};
+
+		AddNavaidCrcDefaults(settings,
+			symbolBcg: 9, symbolFilters: "9", symbolSize: 1,
+			textBcg: 9, textFilters: "9", textSize: 1);
+
+		return settings;
+	}
+
+	/// <summary>
 	/// Settings for exercising the alias-only path (<c>OutputBy = None</c>, alias file still
 	/// generated), matching the "written even when OutputBy = None" contract.
 	/// </summary>
@@ -437,6 +496,45 @@ internal static class HarnessSettings
 		settings["Crc.Arrivals.Text.xOffset"] = "0";
 		settings["Crc.Arrivals.Text.yOffset"] = "0";
 		settings["Crc.Arrivals.Text.opaque"] = "N";
+	}
+
+	/// <summary>
+	/// Adds the <c>Crc.NAVAIDs.*</c> property defaults for the merged All-mode Symbols and Text
+	/// files. These values are the harness's own; the GUI starts every CRC box empty and makes
+	/// the user choose.
+	/// </summary>
+	/// <param name="settings">The dictionary being built.</param>
+	/// <param name="symbolBcg">Symbol BCG group, 1-40.</param>
+	/// <param name="symbolFilters">Symbol filters, comma-separated, each 0-40, at least one.</param>
+	/// <param name="symbolSize">Symbol size, 1-4.</param>
+	/// <param name="textBcg">Text BCG group, 1-40.</param>
+	/// <param name="textFilters">Text filters, comma-separated, each 0-40, at least one.</param>
+	/// <param name="textSize">Text size, 0-5.</param>
+	private static void AddNavaidCrcDefaults(
+		Dictionary<string, string> settings,
+		int symbolBcg,
+		string symbolFilters,
+		int symbolSize,
+		int textBcg,
+		string textFilters,
+		int textSize)
+	{
+		// No "Crc.NAVAIDs.Symbol.style": SymbolStyleBy "Type" styles each NAVAID from its own
+		// type (NavaidTypes.SymbolStyleFor), so the merged file's own defaults carry no style of
+		// their own - see NavaidSettingsParser's readStyle argument.
+		settings["Crc.NAVAIDs.Symbol.bcg"] = symbolBcg.ToString();
+		settings["Crc.NAVAIDs.Symbol.filters"] = symbolFilters;
+		settings["Crc.NAVAIDs.Symbol.size"] = symbolSize.ToString();
+
+		// No "Crc.NAVAIDs.Text.text": every NAVAID supplies its own label from its identifier,
+		// name and type, and the parser warns if one is supplied here.
+		settings["Crc.NAVAIDs.Text.bcg"] = textBcg.ToString();
+		settings["Crc.NAVAIDs.Text.filters"] = textFilters;
+		settings["Crc.NAVAIDs.Text.size"] = textSize.ToString();
+		settings["Crc.NAVAIDs.Text.underline"] = "N";
+		settings["Crc.NAVAIDs.Text.xOffset"] = "0";
+		settings["Crc.NAVAIDs.Text.yOffset"] = "0";
+		settings["Crc.NAVAIDs.Text.opaque"] = "N";
 	}
 
 	private static void AddCrcDefaults(

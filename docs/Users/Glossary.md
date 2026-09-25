@@ -10,7 +10,7 @@ on its *effective date*.
 
 **Alias file** - A text file of dot-commands for CRC. A controller types a short command
 (`.J3F`) and CRC expands it into something longer (the list of fixes on airway J3). FE-Buddy
-writes `Airports.txt`, `Airways.txt`, `Departures.txt` and `Arrivals.txt`.
+writes `Airports.txt`, `Airways.txt`, `Departures.txt`, `Arrivals.txt` and `NAVAIDs.txt`.
 
 **Antimeridian** - The line of ±180° longitude, on the far side of the world from Greenwich. A
 line crossing it has to be split in two or it draws the long way round, across the whole map.
@@ -42,14 +42,18 @@ as the airway ID or the airport name. Useful for checking a file; CRC ignores th
 controller can turn groups of map elements on and off.
 
 **Fix / waypoint** - A named point used for navigation, like `DOTSS`. Five-letter names are
-*fixes* (intersections); navaids (VORs, NDBs) and airports are points too.
+*fixes* (intersections); NAVAIDs (VORs, NDBs) and airports are points too.
 
 **GeoJSON** - A standard file format for map shapes: points, lines and polygons with
 properties. CRC's video maps are GeoJSON files.
 
 **NASR** - The FAA's National Airspace System Resources data: every airport, runway, airway,
-fix, navaid and procedure in the US, published as a set of CSV files every AIRAC cycle.
+fix, NAVAID and procedure in the US, published as a set of CSV files every AIRAC cycle.
 FE-Buddy downloads it from the FAA and builds everything from it.
+
+**NAVAID** - Navigational aid: a ground-based transmitter a pilot navigates by, such as a VOR,
+VORTAC or NDB. FE-Buddy writes a symbol, a label and alias commands for each NAVAID NASR publishes
+(except ones marked SHUTDOWN), for the NAVAID types you tick.
 
 **ODP** - Obstacle Departure Procedure: a departure procedure that exists to keep aircraft clear
 of terrain and obstacles, as opposed to a SID.
@@ -66,8 +70,8 @@ FE-Buddy only writes data inside (or crossing) it. Make it a little bigger than 
 
 **STAR** - Standard Terminal Arrival: a published arrival route into an airport.
 
-**Sub-service** - One kind of data the AIRAC Service can produce: Airports, Airways, Departures
-or Arrivals. Each has its own tab and settings.
+**Sub-service** - One kind of data the AIRAC Service can produce: Airports, Airways, Departures,
+Arrivals or NAVAIDs. Each has its own tab and settings.
 
 **Video map** - The map background on a controller's scope: airways, airports, boundaries.
 In CRC, these are GeoJSON files.

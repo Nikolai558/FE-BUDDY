@@ -110,6 +110,9 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 	/// <summary>The Arrivals tab while it is open, otherwise <see langword="null"/>.</summary>
 	private ArrivalsViewModel? ArrivalsTab => TabFor<ArrivalsViewModel>(AiracSubServices.ArrivalsKey);
 
+	/// <summary>The NAVAIDs tab while it is open, otherwise <see langword="null"/>.</summary>
+	private NavaidsViewModel? NavaidsTab => TabFor<NavaidsViewModel>(AiracSubServices.NavaidsKey);
+
 	/// <summary>The open tabs that take part in a run.</summary>
 	private IReadOnlyList<ISubServiceRunTarget> RunTargets =>
 		[.. Tabs.OfType<ISubServiceRunTarget>()];
@@ -247,6 +250,7 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 			Airports = AirportsTab?.BuildSettingsBlock(),
 			Departures = DeparturesTab?.BuildSettingsBlock(),
 			Arrivals = ArrivalsTab?.BuildSettingsBlock(),
+			Navaids = NavaidsTab?.BuildSettingsBlock(),
 		};
 
 		if (AiracService.HasExistingOutput(settings))
@@ -391,6 +395,16 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 			}
 		}
 
+		if (result.Navaids is { } navaids)
+		{
+			files.AddRange(navaids.GeojsonFilesWritten);
+
+			if (navaids.AliasFilePath is { } navaidAlias)
+			{
+				files.Add(navaidAlias);
+			}
+		}
+
 		return [.. files];
 	}
 
@@ -423,6 +437,11 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 		{
 			parts.Add($"{arrivals.AirportProcedureCount:N0} airport arrival(s)"
 				+ (arrivals.SkippedForMissingPointsCount > 0 ? $", {arrivals.SkippedForMissingPointsCount} skipped" : string.Empty));
+		}
+
+		if (result.Navaids is { } navaids)
+		{
+			parts.Add($"{navaids.NavaidCount:N0} NAVAID(s)");
 		}
 
 		return parts.Count == 0

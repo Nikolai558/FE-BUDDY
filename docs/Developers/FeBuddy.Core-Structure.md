@@ -49,8 +49,10 @@ FeBuddy.Core/
 │   ├── Arrivals/     ArrivalNaming and procedure models
 │   ├── Crc/          CRC feature properties and CrcPropertyValidator
 │   ├── Departures/   DepartureNaming and procedure models
-│   └── Geo/          GeoMath, antimeridian splitting, line merging and segment joining, ROI and
-│                     radius clipping, Wgs84
+│   ├── Geo/          GeoMath, antimeridian splitting, line merging and segment joining, ROI and
+│   │                 radius clipping, Wgs84
+│   └── Navaids/      NavaidTypes (the NAV_TYPE vocabulary, file-naming tokens, CRC symbol styles,
+│                     frequency formatting) and the Navaid model
 ├── Infrastructure/
 │   ├── Configuration/  UserConfigFile, UserConfigKeys, DevMode, OutputFormatting
 │   ├── Dat/            DatFileReader: FAA .dat RADAR Video Maps
@@ -67,7 +69,8 @@ FeBuddy.Core/
     │   ├── Airways/    One folder per sub-service, all shaped the same way
     │   ├── Airports/
     │   ├── Departures/
-    │   └── Arrivals/
+    │   ├── Arrivals/
+    │   └── Navaids/
     ├── Conversions/    ConversionSettingsReader and ConversionFiles (what every conversion
     │   │               shares), then one folder per file conversion
     │   ├── DatToGeojson/
@@ -133,7 +136,8 @@ AirwayService.Run(nasrData, settings)
   → AirwayServiceResult (files written, ServiceMessages, timing)
 ```
 
-Airports, Departures and Arrivals have the same shape. Problems are reported as `ServiceMessage`s
+Airports, Departures, Arrivals and NAVAIDs have the same shape (NAVAIDs' writer just skips the
+Lines step - it has no Lines file). Problems are reported as `ServiceMessage`s
 (warnings or errors) in the result instead of being thrown, so one bad setting doesn't lose the
 whole run. The only exception is a missing required setting, which throws `ArgumentException`.
 

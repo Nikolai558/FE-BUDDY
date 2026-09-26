@@ -72,7 +72,7 @@ public partial class MapWorkspace : UserControl
 
 	/// <summary>
 	/// A popup opened to edit an existing box frames that box; otherwise the map opens where the
-	/// last one closed, or on the contiguous US the first time.
+	/// last one closed, or the first time, on the user's home view (the contiguous US by default).
 	/// </summary>
 	private void ApplyInitialView()
 	{
@@ -88,6 +88,22 @@ public partial class MapWorkspace : UserControl
 		else if (_vm.State.LastView is { } view)
 		{
 			Map.SetView(view);
+		}
+		else
+		{
+			GoHome();
+		}
+	}
+
+	private void GoHome()
+	{
+		if (_vm?.State.Home is { } home)
+		{
+			Map.GoTo(home);
+		}
+		else
+		{
+			Map.ResetView();
 		}
 	}
 
@@ -109,13 +125,21 @@ public partial class MapWorkspace : UserControl
 
 	private void OnZoomOut(object sender, RoutedEventArgs e) => Map.ZoomBy(0.5);
 
-	private void OnHome(object sender, RoutedEventArgs e) => Map.ResetView();
+	private void OnHome(object sender, RoutedEventArgs e) => GoHome();
+
+	private void OnSetHome(object sender, RoutedEventArgs e)
+	{
+		if (_vm is not null && Map.GetHome() is { } home)
+		{
+			_vm.State.SetHome(home);
+		}
+	}
 
 	private void OnFitLayers(object sender, RoutedEventArgs e)
 	{
 		if (_vm is null || !Map.FrameLayers(_vm.State.Layers))
 		{
-			Map.ResetView();
+			GoHome();
 		}
 	}
 }

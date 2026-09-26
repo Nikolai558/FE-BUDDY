@@ -265,6 +265,27 @@ public sealed class MapCanvas : FrameworkElement
 	/// <param name="factor">Above 1 zooms in, below 1 zooms out.</param>
 	public void ZoomBy(double factor) => ZoomAbout(new Point(ActualWidth / 2.0, ActualHeight / 2.0), factor);
 
+	/// <summary>Centres the map on <paramref name="home"/> at its zoom level.</summary>
+	/// <param name="home">The point and zoom to show.</param>
+	public void GoTo(MapHome home)
+	{
+		_centerX = WebMercator.LonToWorldX(WebMercator.NormalizeLon(home.Lon));
+		_centerY = WebMercator.LatToWorldY(home.Lat);
+		_scale = WebMercator.ZoomToScale(home.Zoom);
+		_framed = true;
+		ClampView();
+		InvalidateMap();
+	}
+
+	/// <summary>The point at the centre of the view and the zoom level, to save as a home view.</summary>
+	/// <returns>The current centre and zoom, or <see langword="null"/> before the map has laid out.</returns>
+	public MapHome? GetHome() => _framed
+		? new MapHome(
+			Math.Round(WebMercator.WorldYToLat(_centerY), 5),
+			Math.Round(WebMercator.NormalizeLon(WebMercator.WorldXToLon(_centerX)), 5),
+			Math.Round(Zoom, 2))
+		: null;
+
 	/// <summary>Where the map is looking, to hand to <see cref="SetView"/> later.</summary>
 	/// <returns>The current view, or <see langword="null"/> before the map has laid out.</returns>
 	public MapViewState? GetView() => _framed ? new MapViewState(_centerX, _centerY, _scale) : null;
@@ -760,7 +781,11 @@ public sealed class MapCanvas : FrameworkElement
 
 		if (Zoom < layer.MinZoom)
 		{
-			heldBack.Add(layer.Name);
+			if (!layer.QuietBelowMinZoom)
+			{
+				heldBack.Add(layer.Name);
+			}
+
 			return;
 		}
 
@@ -847,15 +872,14 @@ public sealed class MapCanvas : FrameworkElement
 				}
 
 				Point at = new(ScreenX(x), ScreenY(point.Y));
-				if (point.Label is null)
+				bool symbol = point.Label is null || layer.LabelBesideSymbol;
+				if (symbol && !dotsOver)
 				{
-					if (!dotsOver)
-					{
-						dots.Add(at);
-						dotsOver = dots.Count > PointBudget;
-					}
+					dots.Add(at);
+					dotsOver = dots.Count > PointBudget;
 				}
-				else if (wantLabels && !textsOver)
+
+				if (point.Label is not null && wantLabels && !textsOver)
 				{
 					texts.Add((at, point.Label));
 					textsOver = texts.Count > LabelBudget;
@@ -870,34 +894,66 @@ public sealed class MapCanvas : FrameworkElement
 
 		if (!dotsOver && dots.Count > 0)
 		{
-			double r = layer.PointRadius;
-			StreamGeometry geometry = new() { FillRule = FillRule.Nonzero };   // even-odd would punch holes where dots overlap
-			using (StreamGeometryContext ctx = geometry.Open())
+			DrawSymbols(dc, layer, dots);
+		}
+
+		if (!textsOver && !(layer.LabelBesideSymbol && dotsOver))
+		{
+			foreach ((Point at, string text) in texts)
 			{
-				Size radius = new(r, r);
-				foreach (Point p in dots)
+				// Beside the symbol (an airport ID to the right of its dot), or in the point's place
+				// (a vNAS text feature is nothing but its text).
+				FormattedText formatted = Text(text, layer.Stroke);
+				Rect box = layer.LabelBesideSymbol
+					? new(at.X + layer.PointRadius + 4, at.Y - (formatted.Height / 2.0), formatted.Width, formatted.Height)
+					: new(at.X - (formatted.Width / 2.0), at.Y - (formatted.Height / 2.0), formatted.Width, formatted.Height);
+				if (labels.TryPlace(box))
+				{
+					dc.DrawText(formatted, box.TopLeft);
+				}
+			}
+		}
+	}
+
+	/// <summary>Draws every symbol of a layer as one geometry: filled dots, or hexagon outlines.</summary>
+	private static void DrawSymbols(DrawingContext dc, MapLayer layer, List<Point> points)
+	{
+		double r = layer.PointRadius;
+		bool hexagon = layer.PointShape == MapPointShape.Hexagon;
+		StreamGeometry geometry = new() { FillRule = FillRule.Nonzero };   // even-odd would punch holes where dots overlap
+		using (StreamGeometryContext ctx = geometry.Open())
+		{
+			Size radius = new(r, r);
+			foreach (Point p in points)
+			{
+				if (hexagon)
+				{
+					ctx.BeginFigure(new Point(p.X + r, p.Y), isFilled: false, isClosed: true);
+					for (int i = 1; i < 6; i++)
+					{
+						double angle = i * Math.PI / 3.0;
+						ctx.LineTo(new Point(p.X + (r * Math.Cos(angle)), p.Y + (r * Math.Sin(angle))), isStroked: true, isSmoothJoin: false);
+					}
+				}
+				else
 				{
 					ctx.BeginFigure(new Point(p.X - r, p.Y), isFilled: true, isClosed: true);
 					ctx.ArcTo(new Point(p.X + r, p.Y), radius, 0, false, SweepDirection.Clockwise, true, false);
 					ctx.ArcTo(new Point(p.X - r, p.Y), radius, 0, false, SweepDirection.Clockwise, true, false);
 				}
 			}
-
-			geometry.Freeze();
-			dc.DrawGeometry(layer.Stroke, null, geometry);
 		}
 
-		if (!textsOver)
+		geometry.Freeze();
+		if (hexagon)
 		{
-			foreach ((Point at, string text) in texts)
-			{
-				FormattedText formatted = Text(text, layer.Stroke);
-				Rect box = new(at.X - (formatted.Width / 2.0), at.Y - (formatted.Height / 2.0), formatted.Width, formatted.Height);
-				if (labels.TryPlace(box))
-				{
-					dc.DrawText(formatted, box.TopLeft);
-				}
-			}
+			Pen pen = new(layer.Stroke, 1.4);
+			pen.Freeze();
+			dc.DrawGeometry(null, pen, geometry);
+		}
+		else
+		{
+			dc.DrawGeometry(layer.Stroke, null, geometry);
 		}
 	}
 
@@ -1097,8 +1153,15 @@ public sealed class MapCanvas : FrameworkElement
 			return;
 		}
 
+		// The amber wash helps find a small box on a zoomed-out map, but zoomed in on the box it
+		// just tints everything the user is trying to read: fade it out as the box fills the view.
+		Rect viewRect = new(0, 0, ActualWidth, ActualHeight);
+		double covered = copies.Sum(c => Rect.Intersect(c, viewRect) is { IsEmpty: false } i ? i.Width * i.Height : 0.0)
+			/ (ActualWidth * ActualHeight);
+		double washStrength = Math.Clamp((0.14 - covered) / 0.10, 0.0, 1.0);   // full up to 4% of the view, gone by 14%
+
 		Brush accent = Theme("Brush.Accent", Color.FromRgb(0xF4, 0xB7, 0x40));
-		SolidColorBrush fill = new(Color.FromArgb(editing ? (byte)0x14 : (byte)0x22, 0xF4, 0xB7, 0x40));
+		SolidColorBrush fill = new(Color.FromArgb((byte)((editing ? 0x14 : 0x22) * washStrength), 0xF4, 0xB7, 0x40));
 		Pen outline = new(accent, editing ? 2.0 : 1.5);
 		Brush handleFill = Theme("Brush.Bg.Base", Color.FromRgb(0x0B, 0x0F, 0x14));
 		Pen handlePen = new(accent, 1.5);

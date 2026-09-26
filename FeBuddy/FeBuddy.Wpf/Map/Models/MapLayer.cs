@@ -37,8 +37,23 @@ public sealed class MapLayer(
 	/// </summary>
 	public double MinZoom { get; init; }
 
+	/// <summary>
+	/// When on, the map does not list the layer as waiting for a zoom-in while it is below
+	/// <see cref="MinZoom"/> - for detail that is expected to appear only up close (runways).
+	/// </summary>
+	public bool QuietBelowMinZoom { get; init; }
+
 	/// <summary>The zoom level below which the layer's point labels are not drawn.</summary>
 	public double LabelMinZoom { get; init; }
+
+	/// <summary>How the layer's points are drawn: a filled dot (the default) or a hexagon outline (a VOR).</summary>
+	public MapPointShape PointShape { get; init; }
+
+	/// <summary>
+	/// When on, a labelled point is drawn as its symbol with the label beside it (an airport ID
+	/// next to its dot). When off, the label is drawn in the point's place (a vNAS text feature).
+	/// </summary>
+	public bool LabelBesideSymbol { get; init; }
 
 	/// <summary>Bounding box of every coordinate in the layer, or <see langword="null"/> when it is empty.</summary>
 	public GeoBounds? Extent { get; } = ComputeExtent(geometries);

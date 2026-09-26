@@ -19,7 +19,8 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
-                    xmlns:conv="clr-namespace:FeBuddy.Wpf.Converters">
+                    xmlns:conv="clr-namespace:FeBuddy.Wpf.Converters"
+                    xmlns:bhv="clr-namespace:FeBuddy.Wpf.Behaviors">
 
     <!-- ========================= SECTION HEADER ====================== -->
     <!-- Every title in the app is a ctl:SectionHeader, so these two styles are the one place
@@ -187,6 +188,16 @@
         <Setter Property="CornerRadius" Value="{DynamicResource Radius.Chip}" />
         <Setter Property="Padding" Value="8,5,4,5" />
         <Setter Property="Margin" Value="0,0,0,6" />
+    </Style>
+
+    <!-- A list of files in the map sidebar: capped at a few rows with its own scroll bar, so a
+         long list (up to 150 picked output files) never pushes the rest of the sidebar out of
+         reach. At either end the wheel hands over to the sidebar. -->
+    <Style x:Key="Map.ScrollList" TargetType="ScrollViewer">
+        <Setter Property="MaxHeight" Value="264" />
+        <Setter Property="VerticalScrollBarVisibility" Value="Auto" />
+        <Setter Property="HorizontalScrollBarVisibility" Value="Disabled" />
+        <Setter Property="bhv:WheelScroll.BubbleUp" Value="True" />
     </Style>
 
     <!-- A layer's colour key in a map list. -->

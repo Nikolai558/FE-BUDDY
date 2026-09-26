@@ -1,29 +1,32 @@
 using System.Windows.Media;
 
+using FeBuddy.Wpf.Map;
 using FeBuddy.Wpf.Map.Models;
 using FeBuddy.Wpf.Mvvm;
 
 namespace FeBuddy.Wpf.ViewModels;
 
 /// <summary>
-/// One built-in layer the Map page can switch on - an ARTCC boundary stratum from the parsed
-/// AIRAC cycle. Its <see cref="Layer"/> is built only once the user switches it on.
+/// One live AIRAC layer the Map screen can switch on (ARTCC boundaries, towered airports,
+/// VORs). Its <see cref="Layers"/> are built from the chosen cycle only once it is switched on.
 /// </summary>
-/// <param name="key">The name its on/off state is saved under.</param>
-/// <param name="name">The name shown in the list.</param>
+/// <param name="kind">Which layer it is; also the name its on/off state is saved under.</param>
 /// <param name="swatch">The colour it is drawn in.</param>
 /// <param name="isVisible">Whether it starts switched on.</param>
 /// <param name="onVisibilityChanged">Called when the user switches it on or off.</param>
-public sealed class MapLayerToggle(string key, string name, Brush swatch, bool isVisible, Action<MapLayerToggle> onVisibilityChanged) : ObservableObject
+public sealed class MapLayerToggle(AiracLayerKind kind, Brush swatch, bool isVisible, Action<MapLayerToggle> onVisibilityChanged) : ObservableObject
 {
 	private bool _isVisible = isVisible;
-	private MapLayer? _layer;
+	private IReadOnlyList<MapLayer>? _layers;
 
-	/// <summary>The name its on/off state is saved under.</summary>
-	public string Key { get; } = key;
+	/// <summary>Which layer it is.</summary>
+	public AiracLayerKind Kind { get; } = kind;
 
 	/// <summary>The name shown in the list.</summary>
-	public string Name { get; } = name;
+	public string Name => AiracMapLayers.Name(Kind);
+
+	/// <summary>What the layer shows, for its tooltip.</summary>
+	public string Description => AiracMapLayers.Description(Kind);
 
 	/// <summary>Legend swatch colour.</summary>
 	public Brush Swatch { get; } = swatch;
@@ -41,10 +44,10 @@ public sealed class MapLayerToggle(string key, string name, Brush swatch, bool i
 		}
 	}
 
-	/// <summary>The layer for the chosen cycle, or <see langword="null"/> until it has been built.</summary>
-	public MapLayer? Layer
+	/// <summary>The map layers for the chosen cycle, or <see langword="null"/> until they have been built.</summary>
+	public IReadOnlyList<MapLayer>? Layers
 	{
-		get => _layer;
-		set => SetProperty(ref _layer, value);
+		get => _layers;
+		set => SetProperty(ref _layers, value);
 	}
 }

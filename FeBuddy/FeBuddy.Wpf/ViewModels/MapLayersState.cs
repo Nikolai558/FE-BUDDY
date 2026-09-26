@@ -12,7 +12,6 @@ using FeBuddy.Core.Application.Airac;
 using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Application.Launch;
 using FeBuddy.Core.Domain.Airac.Models;
-using FeBuddy.Core.Domain.ArtccBoundaries.Models;
 using FeBuddy.Core.Infrastructure.Configuration;
 using FeBuddy.Core.Infrastructure.Logging;
 using FeBuddy.Core.Infrastructure.Nasr.Models;
@@ -31,20 +30,23 @@ namespace FeBuddy.Wpf.ViewModels;
 /// popup is a true replica of the Map page. Holds three kinds of layer, drawn in this order
 /// over the US-states outline:
 /// <list type="number">
-/// <item>ARTCC boundaries built live from the parsed AIRAC cycle (<see cref="ArtccToggles"/>);</item>
+/// <item>live layers built from the parsed AIRAC cycle - ARTCC boundaries, towered airports,
+/// VORs (<see cref="AiracToggles"/>);</item>
 /// <item>GeoJSON files an earlier run wrote, chosen in the output picker (<see cref="OutputFiles"/>);</item>
 /// <item>GeoJSON files the user opened from anywhere (<see cref="UserFiles"/>).</item>
 /// </list>
-/// The chosen output files and the ARTCC switches are saved under <c>Services.MapService</c>.
+/// The chosen output files, the live-layer switches and the home view are saved under
+/// <c>Services.MapService</c>.
 /// </summary>
 public sealed class MapLayersState : ObservableObject
 {
 	private const string Node = "Services.MapService";
 	private const string OutputKey = Node + ".OutputGeojson";
-	private const string ArtccKey = Node + ".ArtccBoundaries";
+	private const string AiracKey = Node + ".AiracLayers";
+	private const string HomeKey = Node + ".Home";
 
-	// Clear of the ARTCC blue, green and purple (AiracMapLayers.ArtccColor), so a file never
-	// looks like a boundary layer.
+	// Clear of the live layers' blue, green and purple (AiracMapLayers.Color), so a file never
+	// looks like one of them.
 	private static readonly Color[] FileColors =
 	[
 		Color.FromRgb(0xF0, 0xA3, 0x5A), Color.FromRgb(0xF2, 0x87, 0x9B),
@@ -58,7 +60,7 @@ public sealed class MapLayersState : ObservableObject
 	private readonly Dispatcher _dispatcher;
 	private readonly HashSet<string> _selectedOutputs;
 	private readonly Dictionary<string, MapFileItem> _outputItems = new(StringComparer.OrdinalIgnoreCase);
-	private readonly Dictionary<string, IReadOnlyDictionary<ArtccBoundaryAltitude, MapLayer>> _artccByCycle = [];
+	private readonly Dictionary<(string CycleId, AiracLayerKind Kind), IReadOnlyList<MapLayer>> _airacBuilt = [];
 	private int _userColorCursor;
 	private int _airacLoadVersion;
 	private CycleOption? _selectedCycle;
@@ -68,6 +70,7 @@ public sealed class MapLayersState : ObservableObject
 	private string _outputDirectory = string.Empty;
 	private string _outputFilter = string.Empty;
 	private bool _isPanelOpen = true;
+	private MapHome? _home;
 	private ICollectionView _outputChoicesView = CollectionViewSource.GetDefaultView(Array.Empty<OutputFileChoice>());
 	private IReadOnlyList<AiracOutputGeojsonFile> _listedFiles = [];
 
@@ -76,17 +79,16 @@ public sealed class MapLayersState : ObservableObject
 		_dispatcher = Application.Current?.Dispatcher ?? Dispatcher.CurrentDispatcher;
 
 		_selectedOutputs = new(Split(UserConfigFile.GetValue(OutputKey), '|'), StringComparer.OrdinalIgnoreCase);
-		HashSet<string> artccOn = new(Split(UserConfigFile.GetValue(ArtccKey), ','), StringComparer.OrdinalIgnoreCase);
+		HashSet<string> airacOn = new(Split(UserConfigFile.GetValue(AiracKey), ','), StringComparer.OrdinalIgnoreCase);
+		_home = MapHome.Parse(UserConfigFile.GetValue(HomeKey));
 
-		ArtccToggles =
+		AiracToggles =
 		[
-			.. new[] { ArtccBoundaryAltitude.High, ArtccBoundaryAltitude.Low, ArtccBoundaryAltitude.Unlimited }
-				.Select(altitude => new MapLayerToggle(
-					altitude.ToString(),
-					altitude.ToString(),
-					Frozen(AiracMapLayers.ArtccColor(altitude)),
-					artccOn.Contains(altitude.ToString()),
-					OnArtccToggled)),
+			.. Enum.GetValues<AiracLayerKind>().Select(kind => new MapLayerToggle(
+				kind,
+				Frozen(AiracMapLayers.Color(kind)),
+				airacOn.Contains(kind.ToString()),
+				OnAiracToggled)),
 		];
 
 		UserFiles.CollectionChanged += (_, _) => OnPropertyChanged(nameof(HasUserFiles));
@@ -98,6 +100,7 @@ public sealed class MapLayersState : ObservableObject
 		OpenOutputFolderCommand = new RelayCommand(OpenOutputFolder, () => Directory.Exists(OutputDirectory));
 		SelectAllOutputsCommand = new RelayCommand(() => SetAllOutputs(true), () => OutputChoices.Count > 0);
 		SelectNoOutputsCommand = new RelayCommand(() => SetAllOutputs(false), () => _selectedOutputs.Count > 0);
+		ResetHomeCommand = new RelayCommand(ResetHome, () => HasCustomHome);
 
 		AiracCycleDataCache.Instance.StateChanged += (_, _) => _dispatcher.BeginInvoke(OnCacheStateChanged);
 
@@ -125,6 +128,44 @@ public sealed class MapLayersState : ObservableObject
 	/// <summary>Where the last map to close was looking, so the next one opens there.</summary>
 	public MapViewState? LastView { get; set; }
 
+	/// <summary>
+	/// The user's saved home view (the toolbar's home button and where a map first opens), or
+	/// <see langword="null"/> for the default, the contiguous US.
+	/// </summary>
+	public MapHome? Home
+	{
+		get => _home;
+		private set
+		{
+			if (SetProperty(ref _home, value))
+			{
+				OnPropertyChanged(nameof(HomeSummary));
+				OnPropertyChanged(nameof(HasCustomHome));
+			}
+		}
+	}
+
+	/// <summary>Whether the user has saved a home view of their own.</summary>
+	public bool HasCustomHome => Home is not null;
+
+	/// <summary>The home view on one line, e.g. <c>34.05, -118.25 at zoom 6.5</c>.</summary>
+	public string HomeSummary => Home is { } h
+		? string.Create(System.Globalization.CultureInfo.InvariantCulture, $"{h.Lat:0.###}, {h.Lon:0.###} at zoom {h.Zoom:0.#}")
+		: "The contiguous US (default)";
+
+	/// <summary>Puts the home view back to the contiguous US.</summary>
+	public ICommand ResetHomeCommand { get; }
+
+	/// <summary>Saves <paramref name="home"/> as the home view.</summary>
+	/// <param name="home">The centre and zoom to come back to.</param>
+	public void SetHome(MapHome home)
+	{
+		Home = home;
+		UserConfigFile.TrySetValue(HomeKey, home.ToConfig());
+		UserConfigFile.Save(Node);
+		Toast.Success("Home view saved", "The home button (and every map that opens fresh) now starts here.");
+	}
+
 	/// <summary>Whether the side panel (ROI and layers) is shown; hiding it gives the map the room.</summary>
 	public bool IsPanelOpen
 	{
@@ -145,9 +186,9 @@ public sealed class MapLayersState : ObservableObject
 		{
 			if (SetProperty(ref _selectedCycle, value))
 			{
-				foreach (MapLayerToggle toggle in ArtccToggles)
+				foreach (MapLayerToggle toggle in AiracToggles)
 				{
-					toggle.Layer = null;
+					toggle.Layers = null;
 				}
 
 				RefreshOutputs();
@@ -158,8 +199,8 @@ public sealed class MapLayersState : ObservableObject
 
 	// ---- AIRAC layers ----
 
-	/// <summary>The ARTCC boundary strata (High, Low, Unlimited), each switched on separately.</summary>
-	public IReadOnlyList<MapLayerToggle> ArtccToggles { get; }
+	/// <summary>The live AIRAC layers (ARTCC boundaries, towered airports, VORs), each switched on separately.</summary>
+	public IReadOnlyList<MapLayerToggle> AiracToggles { get; }
 
 	/// <summary>Where the AIRAC layers stand, e.g. <c>Loading AIRAC 2610…</c>.</summary>
 	public string AiracStatus
@@ -185,6 +226,9 @@ public sealed class MapLayersState : ObservableObject
 
 	/// <summary>Whether any output file is picked.</summary>
 	public bool HasOutputFiles => OutputFiles.Count > 0;
+
+	/// <summary>The run-output section's heading, naming the cycle whose folder it reads, e.g. <c>Output of the AIRAC 2609 run</c>.</summary>
+	public string OutputHeader => SelectedCycle is { } cycle ? $"Output of the AIRAC {cycle.Id} run" : "Run output";
 
 	/// <summary>The chosen cycle's output folder.</summary>
 	public string OutputDirectory
@@ -288,6 +332,13 @@ public sealed class MapLayersState : ObservableObject
 		RefreshOutputs();
 	}
 
+	private void ResetHome()
+	{
+		Home = null;
+		UserConfigFile.TrySetValue(HomeKey, string.Empty);
+		UserConfigFile.Save(Node);
+	}
+
 	// ============================ cycles ================================
 
 	private void RebuildCycles()
@@ -350,7 +401,7 @@ public sealed class MapLayersState : ObservableObject
 	private void OnCacheStateChanged()
 	{
 		RebuildCycles();
-		if (ArtccToggles.Any(t => t.IsVisible && t.Layer is null) && !IsAiracLoading)
+		if (AiracToggles.Any(t => t.IsVisible && t.Layers is null) && !IsAiracLoading)
 		{
 			_ = LoadAiracAsync();
 		}
@@ -358,19 +409,25 @@ public sealed class MapLayersState : ObservableObject
 
 	// ============================ AIRAC =================================
 
-	private void OnArtccToggled(MapLayerToggle toggle)
+	private void OnAiracToggled(MapLayerToggle toggle)
 	{
-		UserConfigFile.TrySetValue(ArtccKey, string.Join(',', ArtccToggles.Where(t => t.IsVisible).Select(t => t.Key)));
+		UserConfigFile.TrySetValue(AiracKey, string.Join(',', AiracToggles.Where(t => t.IsVisible).Select(t => t.Kind)));
 		UserConfigFile.Save(Node);
 
-		if (toggle.IsVisible && toggle.Layer is null)
+		if (toggle.IsVisible && toggle.Layers is null)
 		{
 			_ = LoadAiracAsync();
 		}
-
-		SyncLayers();
+		else
+		{
+			SyncLayers();
+		}
 	}
 
+	/// <summary>
+	/// Builds whichever switched-on live layers the chosen cycle does not have yet (each is built
+	/// once per cycle, then kept), and reports how that is going in <see cref="AiracStatus"/>.
+	/// </summary>
 	private async Task LoadAiracAsync()
 	{
 		int version = ++_airacLoadVersion;
@@ -381,15 +438,18 @@ public sealed class MapLayersState : ObservableObject
 			return;
 		}
 
-		if (_artccByCycle.TryGetValue(cycleId, out IReadOnlyDictionary<ArtccBoundaryAltitude, MapLayer>? built))
+		foreach (MapLayerToggle toggle in AiracToggles)
 		{
-			AssignArtcc(built, cycleId);
-			return;
+			toggle.Layers ??= _airacBuilt.GetValueOrDefault((cycleId, toggle.Kind));
 		}
 
-		if (!ArtccToggles.Any(t => t.IsVisible))
+		List<MapLayerToggle> missing = [.. AiracToggles.Where(t => t.IsVisible && t.Layers is null)];
+		if (missing.Count == 0)
 		{
-			AiracStatus = $"Built from AIRAC {cycleId} when switched on.";
+			AiracStatus = AiracToggles.Any(t => t.IsVisible)
+				? $"From the parsed AIRAC {cycleId} data."
+				: $"Built from the parsed AIRAC {cycleId} data when switched on.";
+			SyncLayers();
 			return;
 		}
 
@@ -411,21 +471,30 @@ public sealed class MapLayersState : ObservableObject
 		try
 		{
 			NasrCsvDataCollection data = await AiracCycleDataCache.Instance.GetAsync(cycleId);
-			IReadOnlyDictionary<ArtccBoundaryAltitude, MapLayer> layers = await Task.Run(() =>
+			foreach (MapLayerToggle toggle in missing)
 			{
-				IReadOnlyDictionary<ArtccBoundaryAltitude, MapLayer> result = AiracMapLayers.BuildArtccBoundaries(data);
-				foreach (MapLayer layer in result.Values)
+				IReadOnlyList<MapLayer> layers = await Task.Run(() =>
 				{
-					ProjectedLayer.For(layer);   // project off the UI thread, not on first draw
+					IReadOnlyList<MapLayer> result = AiracMapLayers.Build(toggle.Kind, data);
+					foreach (MapLayer layer in result)
+					{
+						ProjectedLayer.For(layer);   // project off the UI thread, not on first draw
+					}
+
+					return result;
+				});
+
+				_airacBuilt[(cycleId, toggle.Kind)] = layers;
+				if (version == _airacLoadVersion)
+				{
+					toggle.Layers = layers;
+					SyncLayers();   // each layer appears as soon as it is ready
 				}
+			}
 
-				return result;
-			});
-
-			_artccByCycle[cycleId] = layers;
 			if (version == _airacLoadVersion)
 			{
-				AssignArtcc(layers, cycleId);
+				AiracStatus = $"From the parsed AIRAC {cycleId} data.";
 			}
 		}
 		catch (Exception ex)
@@ -443,19 +512,6 @@ public sealed class MapLayersState : ObservableObject
 				IsAiracLoading = false;
 			}
 		}
-	}
-
-	private void AssignArtcc(IReadOnlyDictionary<ArtccBoundaryAltitude, MapLayer> layers, string cycleId)
-	{
-		foreach (MapLayerToggle toggle in ArtccToggles)
-		{
-			toggle.Layer = Enum.TryParse(toggle.Key, out ArtccBoundaryAltitude altitude) && layers.TryGetValue(altitude, out MapLayer? layer)
-				? layer
-				: null;
-		}
-
-		AiracStatus = $"From the parsed AIRAC {cycleId} data.";
-		SyncLayers();
 	}
 
 	// ========================== run output ==============================
@@ -490,6 +546,7 @@ public sealed class MapLayersState : ObservableObject
 
 		SyncOutputItems(files);
 		OnPropertyChanged(nameof(OutputSummary));
+		OnPropertyChanged(nameof(OutputHeader));
 		CommandManager.InvalidateRequerySuggested();
 	}
 
@@ -775,7 +832,7 @@ public sealed class MapLayersState : ObservableObject
 	{
 		List<MapLayer> wanted =
 		[
-			.. ArtccToggles.Where(t => t.IsVisible && t.Layer is not null).Select(t => t.Layer!),
+			.. AiracToggles.Where(t => t.IsVisible && t.Layers is not null).SelectMany(t => t.Layers!),
 			.. OutputFiles.Where(f => f.IsVisible && f.Layer is not null).Select(f => f.Layer!),
 			.. UserFiles.Where(f => f.IsVisible && f.Layer is not null).Select(f => f.Layer!),
 		];

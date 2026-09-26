@@ -81,7 +81,8 @@
                         <Border Style="{StaticResource Map.Overlay.Divider}" />
                         <Button Style="{StaticResource Button.Icon}" Content="{StaticResource Icon.ZoomIn}" Click="OnZoomIn" ToolTip="Zoom in (+)" />
                         <Button Style="{StaticResource Button.Icon}" Content="{StaticResource Icon.ZoomOut}" Click="OnZoomOut" ToolTip="Zoom out (-)" />
-                        <Button Style="{StaticResource Button.Icon}" Content="{StaticResource Icon.Home}" Click="OnHome" ToolTip="Show the contiguous US" />
+                        <Button Style="{StaticResource Button.Icon}" Content="{StaticResource Icon.Home}" Click="OnHome" ToolTip="Go to your home view" />
+                        <Button Style="{StaticResource Button.Icon}" Content="{StaticResource Icon.Pin}" Click="OnSetHome" ToolTip="Make this view your home" />
                         <Button Style="{StaticResource Button.Icon}" Content="{StaticResource Icon.FitPage}" Click="OnFitLayers" ToolTip="Fit every layer on the map" />
                         <Button Style="{StaticResource Button.Icon}" Content="{StaticResource Icon.Crop}" Command="{Binding ZoomToRoiCommand}" ToolTip="Zoom to the ROI box" />
                         <Border Style="{StaticResource Map.Overlay.Divider}" />
@@ -190,24 +191,21 @@
                         </StackPanel>
                     </ctl:Card>
 
-                    <!-- ================ cycle + AIRAC data ================ -->
-                    <ctl:Card Header="AIRAC Data">
+                    <!-- ================ the cycle: its live data and its run's output ================ -->
+                    <!-- One card on purpose: the cycle picked at the top drives both sections below it. -->
+                    <ctl:Card Header="AIRAC Cycle">
                         <StackPanel>
-                            <TextBlock Text="Cycle" Style="{StaticResource Text.FieldLabel}" Margin="0,0,0,4" />
                             <ComboBox ItemsSource="{Binding State.Cycles}" SelectedItem="{Binding State.SelectedCycle}"
                                       DisplayMemberPath="Label"
-                                      ToolTip="The cycle whose parsed data and output files the map shows" />
+                                      ToolTip="The cycle whose parsed data and output folder the map shows" />
+                            <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,6,0,0"
+                                       Text="Both sections below come from this cycle: its parsed data, and the output folder of its AIRAC Service run." />
 
-                            <ctl:SectionHeader Style="{StaticResource SectionHeader.Group}" Label="ARTCC Boundaries" Margin="0,14,0,6" />
-                            <ItemsControl ItemsSource="{Binding State.ArtccToggles}">
-                                <ItemsControl.ItemsPanel>
-                                    <ItemsPanelTemplate>
-                                        <WrapPanel />
-                                    </ItemsPanelTemplate>
-                                </ItemsControl.ItemsPanel>
+                            <ctl:SectionHeader Style="{StaticResource SectionHeader.Group}" Label="Live data" Margin="0,16,0,8" />
+                            <ItemsControl ItemsSource="{Binding State.AiracToggles}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate DataType="{x:Type vm:MapLayerToggle}">
-                                        <CheckBox IsChecked="{Binding IsVisible}" Margin="0,0,16,6">
+                                        <CheckBox IsChecked="{Binding IsVisible}" Margin="0,0,0,8" ToolTip="{Binding Description}">
                                             <StackPanel Orientation="Horizontal">
                                                 <Rectangle Style="{StaticResource Map.Swatch}" Fill="{Binding Swatch}" />
                                                 <TextBlock Text="{Binding Name}" />
@@ -217,13 +215,10 @@
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
                             <TextBlock Text="{Binding State.AiracStatus}" Style="{StaticResource Text.Caption}" TextWrapping="Wrap" />
-                        </StackPanel>
-                    </ctl:Card>
 
-                    <!-- ================ run output ================ -->
-                    <ctl:Card Header="Run Output">
-                        <StackPanel>
-                            <ctl:SectionHeader Style="{StaticResource SectionHeader.Group}" Label="Files from this cycle's run" Margin="0,0,0,8">
+                            <Border Style="{StaticResource Divider}" Margin="0,16" />
+
+                            <ctl:SectionHeader Style="{StaticResource SectionHeader.Group}" Label="{Binding State.OutputHeader}" Margin="0,0,0,2">
                                 <ctl:SectionHeader.Aside>
                                     <!-- Not clickable while the picker is open: the click that closes it (StaysOpen=False)
                                          would otherwise land here and open it again. -->
@@ -235,9 +230,15 @@
                                 </ctl:SectionHeader.Aside>
                             </ctl:SectionHeader>
 
-                            <ItemsControl ItemsSource="{Binding State.OutputFiles}" ItemTemplate="{StaticResource MapFileRow}" />
+                            <TextBlock Text="{Binding State.OutputDirectory}" ToolTip="{Binding State.OutputDirectory}"
+                                       Style="{StaticResource Text.Caption}" FontFamily="{StaticResource Font.Mono}"
+                                       TextTrimming="CharacterEllipsis" Margin="0,0,0,8" />
+
+                            <ScrollViewer Style="{StaticResource Map.ScrollList}">
+                                <ItemsControl ItemsSource="{Binding State.OutputFiles}" ItemTemplate="{StaticResource MapFileRow}" />
+                            </ScrollViewer>
                             <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap"
-                                       Text="Nothing shown yet. Use the gear to pick files this cycle's AIRAC Service run wrote - only the ones you pick are drawn."
+                                       Text="Nothing shown yet. Use the gear to pick files from this folder - only the ones you pick are drawn."
                                        Visibility="{Binding State.HasOutputFiles, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
 
                             <Popup x:Name="OutputPopup" PlacementTarget="{Binding ElementName=SidePanel}" Placement="Left"
@@ -314,11 +315,13 @@
                     <!-- ================ the user's own files ================ -->
                     <ctl:Card Header="Your Files">
                         <StackPanel>
-                            <ItemsControl ItemsSource="{Binding State.UserFiles}" ItemTemplate="{StaticResource MapFileRow}" />
+                            <ScrollViewer Style="{StaticResource Map.ScrollList}">
+                                <ItemsControl ItemsSource="{Binding State.UserFiles}" ItemTemplate="{StaticResource MapFileRow}" />
+                            </ScrollViewer>
                             <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,0,0,10"
                                        Text="Open any GeoJSON file to lay it over the map. A file that can't be read is flagged; the others still load."
                                        Visibility="{Binding State.HasUserFiles, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
-                            <DockPanel>
+                            <DockPanel Margin="0,4,0,0">
                                 <Button DockPanel.Dock="Right" Style="{StaticResource Button.Subtle}" Content="Clear all"
                                         Command="{Binding State.ClearFilesCommand}"
                                         Visibility="{Binding State.HasUserFiles, Converter={StaticResource BoolToVis}}" />
@@ -326,6 +329,25 @@
                                     <StackPanel Orientation="Horizontal">
                                         <TextBlock Text="{StaticResource Icon.OpenFile}" FontFamily="{StaticResource Font.Icon}" VerticalAlignment="Center" Margin="0,0,8,0" />
                                         <TextBlock Text="Load GeoJSON…" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </Button>
+                            </DockPanel>
+                        </StackPanel>
+                    </ctl:Card>
+
+                    <!-- ================ home view ================ -->
+                    <ctl:Card Header="Home View">
+                        <StackPanel>
+                            <TextBlock Text="{Binding State.HomeSummary}" Style="{StaticResource Text.Body}" FontFamily="{StaticResource Font.Mono}" />
+                            <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,4,0,12"
+                                       Text="Where the home button takes you, and where a map opens the first time. Pan and zoom to your airspace, then set it." />
+                            <DockPanel>
+                                <Button DockPanel.Dock="Right" Style="{StaticResource Button.Subtle}" Content="Reset"
+                                        Command="{Binding State.ResetHomeCommand}" ToolTip="Go back to the contiguous US" />
+                                <Button Style="{StaticResource Button.Ghost}" HorizontalAlignment="Left" Click="OnSetHome">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="{StaticResource Icon.Pin}" FontFamily="{StaticResource Font.Icon}" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                        <TextBlock Text="Use current view" VerticalAlignment="Center" />
                                     </StackPanel>
                                 </Button>
                             </DockPanel>

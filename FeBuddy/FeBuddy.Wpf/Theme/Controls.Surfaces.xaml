@@ -177,7 +177,9 @@
     <!-- ========================= NAVIGATION ========================= -->
     <!-- Nav rows are grouped RadioButtons (GroupName in the DataTemplate) so a
          single highlight is shared across the two separate nav groups without
-         any ListBox selection coordination. -->
+         any ListBox selection coordination.
+         A row whose page has unsaved edits (NavItem.HasUnsavedChanges) carries the
+         same amber dot as a tab-rail row. -->
     <Style x:Key="Nav.Item" TargetType="RadioButton">
         <Setter Property="Height" Value="38" />
         <Setter Property="Margin" Value="0,1" />
@@ -194,9 +196,16 @@
                                     Margin="0,8" CornerRadius="2"
                                     Background="{DynamicResource Brush.Accent}" Opacity="0" />
                             <ContentPresenter VerticalAlignment="Center" Margin="15,0,10,0" />
+                            <Ellipse x:Name="Dot" Width="8" Height="8" Margin="0,0,10,0"
+                                     HorizontalAlignment="Right" VerticalAlignment="Center"
+                                     Fill="{DynamicResource Brush.Warn}" ToolTip="Unsaved changes"
+                                     Visibility="Collapsed" />
                         </Grid>
                     </Border>
                     <ControlTemplate.Triggers>
+                        <DataTrigger Binding="{Binding HasUnsavedChanges}" Value="True">
+                            <Setter TargetName="Dot" Property="Visibility" Value="Visible" />
+                        </DataTrigger>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="Root" Property="Background" Value="{DynamicResource Brush.Overlay}" />
                         </Trigger>

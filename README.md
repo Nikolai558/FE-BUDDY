@@ -38,6 +38,9 @@ FE-Buddy 3.0 is a from-scratch rewrite. Today it produces:
 | **Departures** | SIDs (and ODPs if you want them), per airport | `Departures.txt` |
 | **Arrivals** | STARs, per airport | `Arrivals.txt` |
 | **NAVAIDs** | VOR, NDB, TACAN and the rest of the NASR NAVAID types | `NAVAIDs.txt` |
+| **ARTCC Boundaries** | Every ARTCC's lateral boundary, by high/low altitude, high/low/unlimited, or one file per ARTCC | *(no alias file)* |
+| **Fixes** | A symbol and a label for every NASR fix, all in one file, by fix use, by chart, or by chart and fix use | *(no alias file)* |
+| **Wx Stations** | A symbol and a two-line label for every US METAR-reporting station - source: aviationweather.gov, not NASR | *(no alias file)* |
 
 plus a map to check GeoJSON files and set your Region of Interest. Many 2.x tools (chart-recall
 and ISR aliases, SCT2 / FAA video map / GeoMap conversions, GeoJSON clean-up, procedure ISRs) are

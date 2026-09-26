@@ -354,6 +354,17 @@ public sealed class AirwaySettingsParserTests
 	}
 
 	[Fact]
+	public void generate_alias_file_is_airways_own_key_and_produces_no_unknown_key_warning()
+	{
+		Dictionary<string, string> settings = MinimalValidSettings();
+		settings["GenerateAliasFile"] = "Y";
+
+		AirwaySettingsParseResult result = AirwaySettingsParser.Parse(settings);
+
+		Assert.DoesNotContain(result.Messages.WarningTexts(), w => w.Contains("GenerateAliasFile"));
+	}
+
+	[Fact]
 	public void per_waypoint_text_key_is_ignored_with_an_explanatory_warning()
 	{
 		Dictionary<string, string> settings = MinimalValidSettings();

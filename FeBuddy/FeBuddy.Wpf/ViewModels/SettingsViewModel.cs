@@ -29,7 +29,18 @@ namespace FeBuddy.Wpf.ViewModels;
 /// SYSTEM ▸ Settings. Section order: Updates, Facility Profile, Default Region of Interest,
 /// GeoJSON Files. Every value persists to <c>UserConfig.json</c>.
 /// </summary>
-public sealed class SettingsViewModel : ObservableObject
+/// <remarks>
+/// <para>
+/// Every value, the default ROI included, waits for <b>Save</b>. While any differs from what is
+/// saved the page shows "Unsaved changes", its nav row an amber dot, and Save is live.
+/// </para>
+/// <para>
+/// The default ROI is also written by the Map page (through <see cref="DefaultRoiStore"/>), so
+/// the page keeps the saved ROI apart from the one on screen: an edit here stays pending until
+/// Save, and a change made on the Map shows here unless an edit here is still pending.
+/// </para>
+/// </remarks>
+public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges
 {
 	private const string ChannelKey = UserConfigKeys.UpdateChannel;
 	private const string OutputDirKey = UserConfigKeys.DefaultOutputDirectory;
@@ -48,6 +59,7 @@ public sealed class SettingsViewModel : ObservableObject
 	private int _coordinatePrecision = 6;
 	private bool _prettyPrintGeojson;
 	private RegionOfInterest? _defaultRoi;
+	private RegionOfInterest? _savedRoi;
 	private bool _isDirty;
 	private SavedStateSnapshot _savedState = SavedStateSnapshot.Of(new Dictionary<string, string>());
 
@@ -70,10 +82,11 @@ public sealed class SettingsViewModel : ObservableObject
 		_prettyPrintGeojson = string.Equals(
 			UserConfigFile.GetValue(UserConfigKeys.PrettyPrintGeojson)?.Trim(), "Y", StringComparison.OrdinalIgnoreCase);
 
-		_defaultRoi = DefaultRoiStore.Load();
+		_savedRoi = DefaultRoiStore.Load();
+		_defaultRoi = _savedRoi;
 		DefaultRoiStore.Changed += OnDefaultRoiChanged;
 
-		SaveCommand = new RelayCommand(Save);
+		SaveCommand = new RelayCommand(Save, () => IsDirty);
 		CheckNowCommand = new RelayCommand(CheckForUpdates, () => AppEnvironment.HasInternetConnection && !IsCheckingForUpdates);
 		RollbackCommand = new RelayCommand(() => BrowserLauncher.Open(Links.ChangeLog));
 		BrowseOutputCommand = new RelayCommand(BrowseOutput);
@@ -92,15 +105,30 @@ public sealed class SettingsViewModel : ObservableObject
 	public bool IsDirty
 	{
 		get => _isDirty;
-		private set => SetProperty(ref _isDirty, value);
+		private set
+		{
+			if (SetProperty(ref _isDirty, value))
+			{
+				OnPropertyChanged(nameof(HasUnsavedChanges));
+
+				// Save is live only while there is something to save.
+				CommandManager.InvalidateRequerySuggested();
+			}
+		}
 	}
+
+	/// <inheritdoc />
+	public bool HasUnsavedChanges => IsDirty;
 
 	/// <summary>
 	/// Re-evaluates the page after a setting changed. Call from every setter whose value <see cref="Save"/>
 	/// persists. Dirty means "differs from what was last saved", so putting a value back the
 	/// way it was clears the warning again.
 	/// </summary>
-	private void MarkDirty() => IsDirty = !_savedState.Matches(CurrentValues());
+	private void MarkDirty() => IsDirty = !_savedState.Matches(CurrentValues()) || IsRoiPending;
+
+	/// <summary>Whether the ROI on screen differs from the saved one: set or cleared here, not saved yet.</summary>
+	private bool IsRoiPending => DefaultRoi != _savedRoi;
 
 	/// <summary>
 	/// Every value <see cref="Save"/> persists, as the strings it would write. Keep in step with it:
@@ -226,7 +254,10 @@ public sealed class SettingsViewModel : ObservableObject
 		"boundary so nearby data still appears. Some operations let you override this ROI for specific " +
 		"files later.";
 
-	/// <summary>The saved default ROI, or <see langword="null"/> when none is set.</summary>
+	/// <summary>
+	/// The default ROI on screen, or <see langword="null"/> when none is set. It becomes the saved
+	/// default ROI when the page is saved.
+	/// </summary>
 	public RegionOfInterest? DefaultRoi
 	{
 		get => _defaultRoi;
@@ -236,12 +267,13 @@ public sealed class SettingsViewModel : ObservableObject
 			{
 				OnPropertyChanged(nameof(DefaultRoiSummary));
 				OnPropertyChanged(nameof(HasDefaultRoi));
+				MarkDirty();
 				CommandManager.InvalidateRequerySuggested();
 			}
 		}
 	}
 
-	/// <summary>Whether a default ROI is saved.</summary>
+	/// <summary>Whether a default ROI is set on screen.</summary>
 	public bool HasDefaultRoi => DefaultRoi is not null;
 
 	/// <summary>The default ROI's corners on one line, or that none is set.</summary>
@@ -249,10 +281,10 @@ public sealed class SettingsViewModel : ObservableObject
 		? $"SW {r.SwLat:0.####}, {r.SwLon:0.####}    ·    NE {r.NeLat:0.####}, {r.NeLon:0.####}"
 		: "No default ROI is set.";
 
-	/// <summary>Opens the ROI picker and saves what the user confirms. Saved straight away, not by <see cref="SaveCommand"/>.</summary>
+	/// <summary>Opens the ROI picker; what the user confirms is saved with the rest of the page by <see cref="SaveCommand"/>.</summary>
 	public ICommand EditRoiCommand { get; }
 
-	/// <summary>Turns the default ROI off. Saved straight away.</summary>
+	/// <summary>Turns the default ROI off; saved with the rest of the page by <see cref="SaveCommand"/>.</summary>
 	public ICommand ClearRoiCommand { get; }
 
 	// ================= 4. GEOJSON FILES =================
@@ -320,7 +352,7 @@ public sealed class SettingsViewModel : ObservableObject
 
 	// ================= save =================
 
-	/// <summary>Writes every setting on the page to <c>UserConfig.json</c>.</summary>
+	/// <summary>Writes every setting on the page to <c>UserConfig.json</c>. Live only while <see cref="IsDirty"/>.</summary>
 	public ICommand SaveCommand { get; }
 
 	private async void CheckForUpdates()
@@ -380,6 +412,21 @@ public sealed class SettingsViewModel : ObservableObject
 		}
 
 		UserConfigFile.Write();
+
+		// Only an ROI set or cleared here: an untouched one is left as the Map page last saved it.
+		if (IsRoiPending)
+		{
+			_savedRoi = DefaultRoi;
+
+			if (DefaultRoi is { } roi)
+			{
+				DefaultRoiStore.Set(roi);
+			}
+			else
+			{
+				DefaultRoiStore.Clear();
+			}
+		}
 
 		// Applied as soon as it is saved, so the next file written follows it without a restart.
 		OutputFormatting.PrettyPrintGeojson = PrettyPrintGeojson;
@@ -457,22 +504,29 @@ public sealed class SettingsViewModel : ObservableObject
 			Application.Current?.MainWindow, DefaultRoi, Map.BaseMap.UsStates);
 		if (picked is not null)
 		{
-			DefaultRoiStore.Set(picked);
+			// Pending until Save, like every other value on the page.
 			DefaultRoi = picked;
-			Toast.Success("Default ROI saved", "Written to UserConfig.json.");
 		}
 	}
 
-	private void ClearRoi()
-	{
-		DefaultRoiStore.Clear();
-		DefaultRoi = null;
-	}
+	private void ClearRoi() => DefaultRoi = null;
 
 	// View-models live for the whole session (NavItem caches them), so Settings has to hear when
-	// the Map page's inline editor changes or clears the default ROI.
+	// the Map page's inline editor changes or clears the default ROI. The saved ROI always
+	// follows it; the one on screen does too, unless an edit made here is still waiting for Save.
 	private void OnDefaultRoiChanged(object? sender, EventArgs e) =>
-		_dispatcher.BeginInvoke(() => DefaultRoi = DefaultRoiStore.Load());
+		_dispatcher.BeginInvoke(() =>
+		{
+			bool pendingHere = IsRoiPending;
+			_savedRoi = DefaultRoiStore.Load();
+
+			if (!pendingHere)
+			{
+				DefaultRoi = _savedRoi;
+			}
+
+			MarkDirty();
+		});
 
 	private static string? Blank(string? v) => string.IsNullOrWhiteSpace(v) ? null : v;
 

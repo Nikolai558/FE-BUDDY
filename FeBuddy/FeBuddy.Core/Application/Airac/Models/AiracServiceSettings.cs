@@ -68,4 +68,22 @@ public sealed record AiracServiceSettings
 	/// selected for this run.
 	/// </summary>
 	public IReadOnlyDictionary<string, string>? Navaids { get; init; }
+
+	/// <summary>
+	/// The ARTCC Boundaries sub-service settings block, or <see langword="null"/> when ARTCC
+	/// Boundaries was not selected for this run.
+	/// </summary>
+	public IReadOnlyDictionary<string, string>? ArtccBoundaries { get; init; }
+
+	/// <summary>
+	/// The Fixes sub-service settings block, or <see langword="null"/> when Fixes was not selected
+	/// for this run.
+	/// </summary>
+	public IReadOnlyDictionary<string, string>? Fixes { get; init; }
+
+	/// <summary>
+	/// The Wx Stations sub-service settings block, or <see langword="null"/> when Wx Stations was
+	/// not selected for this run.
+	/// </summary>
+	public IReadOnlyDictionary<string, string>? WxStations { get; init; }
 }

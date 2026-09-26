@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Windows;
 using System.Windows.Controls;
 
@@ -31,7 +32,7 @@ public sealed class SectionHeader : Control
 
 	/// <summary>Identifies the <see cref="Aside"/> dependency property.</summary>
 	public static readonly DependencyProperty AsideProperty = DependencyProperty.Register(
-		nameof(Aside), typeof(object), typeof(SectionHeader), new PropertyMetadata(null));
+		nameof(Aside), typeof(object), typeof(SectionHeader), new PropertyMetadata(null, OnAsideChanged));
 
 	/// <summary>Identifies the <see cref="TextStyle"/> dependency property.</summary>
 	public static readonly DependencyProperty TextStyleProperty = DependencyProperty.Register(
@@ -44,7 +45,12 @@ public sealed class SectionHeader : Control
 		set => SetValue(LabelProperty, value);
 	}
 
-	/// <summary>Optional element shown right-aligned next to the label (e.g. a link button).</summary>
+	/// <summary>
+	/// Optional element shown right-aligned next to the label (e.g. a link button). It is this
+	/// header's logical child, so its bindings find names and data from where it is declared even
+	/// before the template shows it - a header inside something hidden is never templated, and an
+	/// <c>ElementName</c> binding that fails then never recovers.
+	/// </summary>
 	public object? Aside
 	{
 		get => GetValue(AsideProperty);
@@ -56,5 +62,16 @@ public sealed class SectionHeader : Control
 	{
 		get => (Style?)GetValue(TextStyleProperty);
 		set => SetValue(TextStyleProperty, value);
+	}
+
+	/// <inheritdoc />
+	protected override IEnumerator LogicalChildren =>
+		Aside is { } aside ? new[] { aside }.GetEnumerator() : base.LogicalChildren;
+
+	private static void OnAsideChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+	{
+		SectionHeader header = (SectionHeader)d;
+		header.RemoveLogicalChild(e.OldValue);
+		header.AddLogicalChild(e.NewValue);
 	}
 }

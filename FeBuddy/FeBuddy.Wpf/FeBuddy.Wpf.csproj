@@ -9,7 +9,8 @@
     Every screen is wired to FeBuddy.Core - there is no sample data anywhere in
     the app. The AIRAC Service screen runs through
     FeBuddy.Core.Application.Airac.AiracService, which dispatches to its
-    sub-services (Airways, Airports, Departures, Arrivals, NAVAIDs).
+    sub-services (Airways, Airports, Departures, Arrivals, NAVAIDs, ARTCC Boundaries, Fixes,
+    Wx Stations).
   -->
 
   <PropertyGroup>

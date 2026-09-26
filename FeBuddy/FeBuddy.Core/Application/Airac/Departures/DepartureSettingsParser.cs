@@ -27,7 +27,7 @@ public static class DepartureSettingsParser
 		"GenerateGeojson", "EmitLines", "EmitSymbols", "EmitText",
 		"IncludeObstacleDepartures", "ArtccFilter",
 		"AmendmentFilter", "AmendedWithinCycles", "AmendedWithinDays", "AmendedOnOrAfter",
-		"RoiMode",
+		"RoiMode", "GenerateAliasFile",
 	};
 
 	/// <summary>Departures has one CRC defaults class, which draws all three kinds.</summary>

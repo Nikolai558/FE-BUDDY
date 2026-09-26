@@ -82,6 +82,16 @@ the Systems box turns green, the AIRAC Service screen unlocks.
 Asking for a cycle's data while it is still parsing waits for that parse rather than starting a
 second one.
 
+**Wx Stations rides along, but is not part of the pipeline above.** Its data is not a NASR CSV
+group at all: it comes from aviationweather.gov's own station list, and `WxStationDownloader`
+downloads it at most once per launch and copies it into every cycle folder that does not already
+have it - previous, current and next alike - next to that cycle's NASR CSVs. A folder that already
+has it is never re-downloaded, so its station data is only as current as the day it was first
+filled in; a failed download never holds up the rest of the cycle, and is retried at the next
+launch. `AiracCycleDataCache.GetWxStationsAsync` reads a cycle's copy fresh from disk on every call
+(it is small, unlike the NASR data `GetAsync` memoizes) and returns `null` when the file is not
+there yet - which the Wx Stations tab reports as missing and blocks the run on.
+
 ## A run, end to end
 
 ```
@@ -105,6 +115,13 @@ Preview Settings ▸ Run AIRAC Service
   Review tab ◄── progress reports, then AiracServiceResult ───────────
     each tab: DescribeRunResult(result)
 ```
+
+ARTCC Boundaries has no step 4: `ArtccBoundaryService` stops after `ArtccBoundaryGeojsonWriter`,
+since it has no alias file. Fixes likewise has no step 4: `FixService` stops after
+`FixGeojsonWriter`, since it too has no alias file. Wx Stations has no step 4 either
+(`WxStationService` stops after `WxStationGeojsonWriter`), and its step 1 input is not `nasrData`:
+`AiracService` loads `wxStationData` from `AiracCycleDataCache.GetWxStationsAsync` only when Wx
+Stations is selected, and hands it to `WxStationService.Run` instead.
 
 - **The settings block is the contract.** Every tab (and the harness) hands Core a flat
   `Dictionary<string, string>`. Core never sees view-models, and the GUI never sees typed settings.
@@ -218,6 +235,13 @@ The FAA's data has quirks; these rules handle them. Each lives in one class.
   `SHUTDOWN` is always skipped. Duplicate `NAV_ID`s are normal in real NASR data and are never
   merged - `ABQ` is both a VORTAC and a VOT, `AA` is two NDBs - every row NASR publishes becomes its
   own NAVAID.
+- **ARTCC boundary rings** (`ArtccBoundaryBuilder`). Built from `ARB_BASE` (the location) and
+  `ARB_SEG` (the points), grouped by LocationId and altitude; within a group, a new ring starts at
+  the first row and again wherever `POINT_SEQ` is not greater than the previous row's - the FAA's
+  own signal for a new ring, e.g. ZAK's UNLIMITED group is a CTA ring followed by a FIR ring. A ring
+  is closed by repeating its first point when NASR's own last point differs, then skipped (with a
+  message) if it still has fewer than two distinct points. Only the LocationIds with `ARB_SEG` rows
+  draw anything - the Canadian, foreign and CERAP entries `ARB_BASE` also lists have none.
 - **NAVAID alias commands** (`NavaidAliasWriter`). Each NAVAID contributes a `.nav<NavId>` command
   and, when its name yields a different one, a `.nav<name, letters and digits only>` command, each
   an `.echo` printing the NAVAID's identifier, name, type, frequency (two decimals for a VHF/UHF
@@ -235,6 +259,12 @@ The FAA's data has quirks; these rules handle them. Each lives in one class.
   newlines or spaces - because CRC tokenizes an alias's replacement text on whitespace and rejoins
   it with single spaces; `AirportAliasWriter` follows the same convention. The alias file is never
   ROI-filtered, the same as every other sub-service's.
+- **Fix use and chart tokens** (`FixTokens`, shared by `FixUses.Token` and `FixCharts.Token`).
+  NASR's `FIX_USE_CODE` maps to a display name (`WP` → `WYPNT`); any other code keeps its own text,
+  sanitized into a file-safe token (`UNKNOWN` when blank). NASR's `CHARTS` is split on commas into
+  the chart names it lists; each becomes a token by collapsing every run of non-alphanumeric
+  characters to a single `-` (`ENROUTE LOW` → `ENROUTE-LOW`), and a fix with no charts is grouped
+  under `NO-CHART`. A fix on several charts belongs to every one of their groups.
 
 ## Messages and logging
 
@@ -280,9 +310,10 @@ Decisions that were argued out once and should not be re-litigated without a rea
 - **Dirty tracking compares against a snapshot**, app-wide.
 - **The Review tab is the one place** a run's results, warnings, advisories, errors and files live.
 - **Every sub-service is a tab of the AIRAC Service**, never a top-level screen, and every GeoJSON
-  sub-service tab is built from the same shared cards. Likewise every file conversion is a tab of
-  File Conversions; the two screens share one tabbed view and differ only in what their
-  view-models say (File Conversions has no General or Preview Settings tab - each conversion runs
-  from its own tab).
+  sub-service tab is built from the same shared cards - except the alias-file ones, which ARTCC
+  Boundaries, Fixes and Wx Stations opt out of (`GeojsonSubServiceViewModel.HasAliasFile`). Likewise every file
+  conversion is a tab of File Conversions; the two screens share one tabbed view and differ only in
+  what their view-models say (File Conversions has no General or Preview Settings tab - each
+  conversion runs from its own tab).
 - **Output locations are laid out in one place** (`ServiceOutputPaths`), so AIRAC output and
   converted files sit side by side under the same `FE-Buddy_Output` folder.

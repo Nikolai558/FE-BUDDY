@@ -39,8 +39,8 @@ The screen where you make files. It is a set of tabs down the left:
 
 | Tab | What it is |
 |---|---|
-| **General** | Which cycle, and which sub-services (Airports, Airways, Departures, Arrivals, NAVAIDs). Always there. |
-| **Airports / Airways / Departures / Arrivals / NAVAIDs** | One tab per sub-service you ticked, with its settings. |
+| **General** | Which cycle, and which sub-services (Airports, Airways, Departures, Arrivals, NAVAIDs, ARTCC Boundaries, Fixes, Wx Stations). Always there. |
+| **Airports / Airways / Departures / Arrivals / NAVAIDs / ARTCC Boundaries / Fixes / Wx Stations** | One tab per sub-service you ticked, with its settings. |
 | **Preview Settings** | Everything the run will do, in plain words, and the **Run AIRAC Service** button. Appears once a sub-service is ticked. |
 | **Review** | What happened in the last run. Appears once you run. |
 
@@ -72,7 +72,9 @@ is saved".
 ### The cards every sub-service tab shares
 
 **Outputs** - what the sub-service writes: **GeoJSON files** and/or the **alias file**. At least
-one must stay on; to make nothing for a sub-service, untick it on the General tab instead.
+one must stay on; to make nothing for a sub-service, untick it on the General tab instead. ARTCC
+Boundaries, Fixes and Wx Stations have no Outputs card: none has an alias file, and all three
+always write GeoJSON.
 
 **What Files Do You Want?** - the three GeoJSON files each sub-service can write:
 
@@ -119,7 +121,14 @@ Airways has a column per altitude class (High, Low, Other) - with High/Low files
 each file chosen; with designation files, all three, since one file can hold airways of every
 class. Airports, Departures and Arrivals have one. NAVAIDs has one column with *All in one file*,
 or one column per NAVAID type - style included - with *one pair per NAVAID type* (see the NAVAIDs
-tab).
+tab). ARTCC Boundaries has a column per class - High and Low, or High, Low and Unlimited - or,
+with *one file per ARTCC and altitude*, one column per ARTCC and altitude (`ZOB-HIGH`, `ZOB-LOW`,
+…), so your own ARTCC can be styled apart from its neighbours (see the ARTCC Boundaries tab). Fixes
+has one column for *All*, or one column per fix use, chart, or chart + fix use combination present,
+depending on its File Layout (see the Fixes tab). Wx Stations has one column, since there is only
+the one class. Each class is its own block of boxes; blocks that
+do not fit across the window move to the next line, so every box stays on screen however narrow the
+window is.
 
 ### Airports tab
 
@@ -247,6 +256,84 @@ no "Include obstacle departures" equivalent here.
 - **Upload to vNAS:** *All in one file* - `NAVAIDs_Symbols`, `NAVAIDs_Text`, then `NAVAIDs.txt`.
   *One pair per type* - each included type's `NAVAIDs_<Type>s_Symbols` / `_Text`, then
   `NAVAIDs.txt`.
+
+### ARTCC Boundaries tab
+
+- **Outputs:** GeoJSON Lines only, always written - there is no alias file and no Symbols or Text
+  file, so the tab has no Outputs or file-choice card: every ring is drawn as a line.
+- **ARTCCs** - a tick box per ARTCC with boundary data in the cycle, none ticked means all - the
+  same as the Departures and Arrivals ARTCC filter. NASR also publishes Canadian, foreign and
+  CERAP entries with no boundary lines of their own, so they are not offered.
+- **File Layout** - **High and Low** (the default) - `ARTCC-Boundary_High_Lines` and
+  `ARTCC-Boundary_Low_Lines`; an UNLIMITED ring is written into both. **High, Low and Unlimited** -
+  adds `ARTCC-Boundary_Unlimited_Lines`; each of the three files then holds one altitude only.
+  **One file per ARTCC and altitude** - `ARTCC-Boundary_<ARTCC>-<altitude>_Lines`, e.g.
+  `ARTCC-Boundary_ZOB-HIGH_Lines`, so your own ARTCC can be styled apart from its neighbours. Files
+  go straight in the Geojson folder - there are no per-airport sub-folders.
+- **Files:** *Lines* only - one closed line per boundary ring, running through its points in
+  published order back to its start. ZAK, ZAP and ZWY each have two rings sharing an altitude - a
+  CTA ring and a FIR ring.
+- **Split GeoJSON at the Antimeridian** - on by default, the same as Airways: ZAK, ZAN, ZAP and the
+  oceanic part of ZOA cross ±180° longitude, so a ring that does becomes a MultiLineString instead
+  of running off the edge of the map.
+- **FE-Buddy properties:** `locationId`, `locationName`, `locationType`, `icaoId`, `computerId`,
+  `altitude` (`HIGH`, `LOW` or `UNLIMITED`), `type` (`ARTCC`, `CTA`, `FIR`, `CTA/FIR` or `UTA` -
+  tells the overlapping oceanic CTA and FIR rings apart), `city`, `countryCode`.
+- **Region:** a ring is clipped at the region's edge, the same as Airways; a ring entirely outside
+  the region is left out.
+- **Upload to vNAS:** *High and Low* - `ARTCC-Boundary_High_Lines`, `ARTCC-Boundary_Low_Lines`.
+  *High, Low and Unlimited* - adds `ARTCC-Boundary_Unlimited_Lines`. *One file per ARTCC and
+  altitude* - each ARTCC-and-altitude file. There is no alias file to upload.
+
+### Fixes tab
+
+- **Outputs:** GeoJSON Symbols and Text only, always written - there is no alias file, so the tab
+  has no Outputs card. Tick **Symbols** and/or **Text** under GeoJSON files; at least one must
+  stay on.
+- **Files:** *Symbols* (one point per fix, styled from the file's CRC ERAM defaults), *Text*
+  (each fix's identifier). There is no Lines file.
+- **File Layout:**
+  - **All fixes in one file** (the default) - `Fix_Symbols`, `Fix_Text`.
+  - **One file per fix use** - one pair per fix use present in the cycle, e.g. `Fix_WYPNT_Symbols` /
+    `_Text`. A **Fix Uses** tick-list appears, all ticked by default; untick one to leave it out.
+  - **One file per chart** - one pair per NASR chart present, e.g. `Fix_ENROUTE-LOW_Symbols` / `_Text` (a
+    run of spaces or punctuation in the chart's name becomes a hyphen). A fix shown on several
+    charts goes into each of their files; one shown on none goes into `Fix_NO-CHART_Symbols` /
+    `_Text`. A **Charts** tick-list appears, all ticked by default; untick one to leave it out.
+  - **One file per chart + fix use combination** - one pair per chart + fix use combination you list, e.g.
+    `Fix_ENROUTE-LOW-WYPNT_Symbols` / `_Text`; a fix needs both the chart and the fix use to be
+    included. A **Combinations** card appears: **Add combination** picks a chart and a fix use
+    from two drop-downs and adds the pair; each listed combination has **Edit** and **Delete**. A
+    combination that matches no fix in the cycle gives a warning and writes no files.
+
+  Files go straight in the Geojson folder - there are no per-airport sub-folders.
+- **Fix use names:** COMPUTER-NAV, MIL-RPRTNG-PNT, MIL-WYPNT, NRS-WYPNT, RADAR, RPRTNG-PNT,
+  VFR-WYPNT and WYPNT, mapped from NASR's raw code (`CN`, `MR`, `MW`, `NRS`, `RADAR`, `RP`, `VFR`,
+  `WP`). Any other code NASR publishes is kept as written - characters not allowed in a file name
+  become spaces, and a blank code becomes `UNKNOWN`.
+- **FE-Buddy properties:** `fixId`, `fixUseCode` (the fix use name, e.g. `WYPNT`), `charts` (the
+  NASR chart names the fix is depicted on, left out for a fix on no charts). The Text file never
+  carries `fixId` - its label is always the fix's own identifier.
+- **Region:** a fix is included when its own coordinates are inside the region.
+- **Upload to vNAS:** a box per file the chosen File Layout writes - `Fix_Symbols` / `Fix_Text`
+  for *All fixes in one file*, or each group's pair otherwise. There is no alias file to upload.
+
+### Wx Stations tab
+
+- **Outputs:** GeoJSON Symbols and Text only, always written - there is no alias file, so the tab
+  has no Outputs card. Tick **Symbols** and/or **Text** under GeoJSON files; at least one must
+  stay on.
+- **Files:** *Symbols* (one point per station, styled from the file's CRC ERAM defaults), *Text*
+  (the station's ICAO ID, then its IATA ID and site name where it has one, e.g. `KDTW` /
+  `DTW_Detroit/Metro Wayne Cnty`, otherwise just the site name). There is no Lines file.
+- **Station Data** - where the list comes from: aviationweather.gov's own station list, not the
+  NASR cycle, downloaded once at launch and shared by every cycle that needs it. It shows which
+  stations are included (a US or US-territory station with an ICAO ID that reports METAR and has
+  usable coordinates) and a status line for the selected cycle: the date the data was downloaded,
+  or **Missing** - deselect Wx Stations or restart FE-Buddy online to try again.
+- **Region:** a station is included when its own coordinates are inside the region.
+- **Upload to vNAS:** `Wx_Symbols` and/or `Wx_Text`, whichever the tab writes. There is no alias
+  file to upload.
 
 ### Preview Settings tab
 
@@ -388,6 +475,9 @@ laid out the same way:
     │   │   ├── Runways_Lines, Airports_Symbols, Airports_Text (.geojson)
     │   │   ├── Airways_<group>_Lines / _Symbols / _Text (.geojson)
     │   │   ├── NAVAIDs_Symbols / _Text (.geojson), or NAVAIDs_<type>s_Symbols / _Text per type
+    │   │   ├── ARTCC-Boundary_High/Low/Unlimited_Lines, or _<ARTCC>-<altitude>_Lines per ARTCC
+    │   │   ├── Fix_Symbols / _Text, or Fix_<fixUse|chart|chart-fixUse>_Symbols / _Text per group
+    │   │   ├── Wx_Symbols / _Text (.geojson)
     │   │   └── <ARTCC>\<airport>\<airport>_<procedure>_Lines / _Symbols / _Text (.geojson)
     │   └── Upload_to_vNAS\           (only the files marked for vNAS)
     │       ├── the alias files marked for vNAS
@@ -423,8 +513,10 @@ overwrite the old files or delete them (see [Preview Settings tab](#preview-sett
 
 ## Settings
 
-Changes here are saved with the **Save** button at the top (the Default Region of Interest saves
-as soon as you set or clear it).
+Changes here - the Default Region of Interest included - are saved with the **Save** button at the
+top. While something is unsaved, "Unsaved changes" shows beside Save,
+**Settings** in the side menu gets an amber dot, and Save is live; once saved - or changed back -
+all three clear.
 
 - **Updates**
   - **Channel** - *Stable* (the right choice for almost everyone), *Beta* or *Alpha*. Only pick

@@ -1,3 +1,5 @@
+using System.ComponentModel;
+
 using FeBuddy.Wpf.Mvvm;
 
 namespace FeBuddy.Wpf.ViewModels;
@@ -34,10 +36,16 @@ public sealed class NavItem(
 	public string Glyph { get; } = glyph;
 
 	/// <summary>The section's view-model; built on first access, cached after.</summary>
-	public object ViewModel => _viewModel ??= _viewModelFactory();
+	public object ViewModel => _viewModel ??= CreateViewModel();
 
 	/// <summary>The section's view-model if it has been opened, without building it.</summary>
 	public object? CreatedViewModel => _viewModel;
+
+	/// <summary>
+	/// Whether the section has edits that are not saved yet, for the row's amber dot: only a
+	/// page that implements <see cref="IHasUnsavedChanges"/> and has been opened can have any.
+	/// </summary>
+	public bool HasUnsavedChanges => _viewModel is IHasUnsavedChanges { HasUnsavedChanges: true };
 
 	/// <summary><see langword="true"/> when this is the section on screen. Bound two-way to the nav RadioButton.</summary>
 	public bool IsActive
@@ -50,5 +58,25 @@ public sealed class NavItem(
 				_onActivated(this);
 			}
 		}
+	}
+
+	/// <summary>Builds the section's view-model and, when it can hold unsaved edits, follows them for the dot.</summary>
+	/// <returns>The view-model.</returns>
+	private object CreateViewModel()
+	{
+		object viewModel = _viewModelFactory();
+
+		if (viewModel is IHasUnsavedChanges and INotifyPropertyChanged notifier)
+		{
+			notifier.PropertyChanged += (_, e) =>
+			{
+				if (e.PropertyName == nameof(IHasUnsavedChanges.HasUnsavedChanges))
+				{
+					OnPropertyChanged(nameof(HasUnsavedChanges));
+				}
+			};
+		}
+
+		return viewModel;
 	}
 }

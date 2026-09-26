@@ -56,7 +56,9 @@ public sealed class EramClassDefault(string className, EramFieldKind kind, Actio
 	/// The class this row is for: an airway altitude class (<c>High</c> / <c>Low</c> / <c>Other</c>),
 	/// a sub-service's single class (<c>Airports</c>, <c>Runways</c>, <c>Departures</c>,
 	/// <c>Arrivals</c>), or - for NAVAIDs - <c>NAVAIDs</c> (every type merged) or one NAVAID
-	/// type's token (e.g. <c>VORTAC</c>).
+	/// type's token (e.g. <c>VORTAC</c>). For ARTCC Boundaries it is one of the fixed groups
+	/// (<c>High</c> / <c>Low</c> / <c>Unlimited</c>) or, in ArtccAltitude mode, a per-file class
+	/// like <c>ZOB-HIGH</c>.
 	/// </summary>
 	public string ClassName { get; } = className;
 

@@ -23,7 +23,7 @@ public static class AirportSettingsParser
 	/// <summary>The keys only Airports reads, on top of <see cref="SubServiceSettingsReader.CommonKeys"/>.</summary>
 	private static readonly IReadOnlySet<string> OwnKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
 	{
-		"GenerateGeojson", "EmitAirportSymbols", "EmitAirportText", "EmitRunwayLines",
+		"GenerateGeojson", "EmitAirportSymbols", "EmitAirportText", "EmitRunwayLines", "GenerateAliasFile",
 	};
 
 	/// <summary>Airports draws points (Symbol and Text); Runways draws lines.</summary>

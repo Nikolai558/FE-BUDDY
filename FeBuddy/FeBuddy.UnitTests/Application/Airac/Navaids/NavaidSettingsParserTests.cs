@@ -389,6 +389,17 @@ public sealed class NavaidSettingsParserTests
 	}
 
 	[Fact]
+	public void generate_alias_file_is_navaids_own_key_and_produces_no_unknown_key_warning()
+	{
+		Dictionary<string, string> settings = MinimalValidSettings();
+		settings["GenerateAliasFile"] = "Y";
+
+		NavaidSettingsParseResult result = NavaidSettingsParser.Parse(settings);
+
+		Assert.DoesNotContain(result.Messages.WarningTexts(), w => w.Contains("GenerateAliasFile"));
+	}
+
+	[Fact]
 	public void a_per_navaid_text_default_is_ignored_with_an_explanatory_warning()
 	{
 		Dictionary<string, string> settings = MinimalValidSettings();

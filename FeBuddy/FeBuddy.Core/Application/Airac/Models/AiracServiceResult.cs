@@ -1,8 +1,11 @@
 using FeBuddy.Core.Application.Airac.Airports.Models;
 using FeBuddy.Core.Application.Airac.Airways.Models;
 using FeBuddy.Core.Application.Airac.Arrivals.Models;
+using FeBuddy.Core.Application.Airac.ArtccBoundaries.Models;
 using FeBuddy.Core.Application.Airac.Departures.Models;
+using FeBuddy.Core.Application.Airac.Fixes.Models;
 using FeBuddy.Core.Application.Airac.Navaids.Models;
+using FeBuddy.Core.Application.Airac.WxStations.Models;
 using FeBuddy.Core.Application.Models;
 
 namespace FeBuddy.Core.Application.Airac.Models;
@@ -48,4 +51,22 @@ public sealed record AiracServiceResult : ServiceResult
 	/// this run.
 	/// </summary>
 	public NavaidServiceResult? Navaids { get; init; }
+
+	/// <summary>
+	/// The ARTCC Boundaries sub-service result, or <see langword="null"/> when ARTCC Boundaries
+	/// was not part of this run.
+	/// </summary>
+	public ArtccBoundaryServiceResult? ArtccBoundaries { get; init; }
+
+	/// <summary>
+	/// The Fixes sub-service result, or <see langword="null"/> when Fixes was not part of this
+	/// run.
+	/// </summary>
+	public FixServiceResult? Fixes { get; init; }
+
+	/// <summary>
+	/// The Wx Stations sub-service result, or <see langword="null"/> when Wx Stations was not part
+	/// of this run.
+	/// </summary>
+	public WxStationServiceResult? WxStations { get; init; }
 }

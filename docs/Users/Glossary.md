@@ -18,6 +18,11 @@ line crossing it has to be split in two or it draws the long way round, across t
 **ARTCC** - Air Route Traffic Control Center: the facility that controls a large area of
 airspace, like Cleveland Center (ZOB). On VATSIM, each ARTCC has its own facility files.
 
+**ARTCC Boundaries** - The sub-service that draws each ARTCC's lateral boundary as lines, split by
+altitude structure (HIGH, LOW, UNLIMITED); an oceanic ARTCC like ZAK, ZAP or ZWY draws a CTA ring
+and a FIR ring at the same altitude. No alias file - a boundary line carries no label to write
+one from.
+
 **BCG** - Brightness Control Group: a CRC setting (1-40) that decides which brightness knob on
 the scope controls a map element.
 
@@ -44,8 +49,16 @@ controller can turn groups of map elements on and off.
 **Fix / waypoint** - A named point used for navigation, like `DOTSS`. Five-letter names are
 *fixes* (intersections); NAVAIDs (VORs, NDBs) and airports are points too.
 
+**Fixes** - The sub-service that draws a symbol and a label for every NASR fix - reporting
+points, waypoints, military points and the rest - split all in one file, by fix use, by chart, or
+by chart and fix use. No alias file - a fix's label is always its own identifier.
+
 **GeoJSON** - A standard file format for map shapes: points, lines and polygons with
 properties. CRC's video maps are GeoJSON files.
+
+**METAR** - A routine weather report for an airport or station - wind, visibility, sky condition,
+temperature and altimeter setting - issued every hour. Wx Stations includes only stations that
+report METAR.
 
 **NASR** - The FAA's National Airspace System Resources data: every airport, runway, airway,
 fix, NAVAID and procedure in the US, published as a set of CSV files every AIRAC cycle.
@@ -71,7 +84,7 @@ FE-Buddy only writes data inside (or crossing) it. Make it a little bigger than 
 **STAR** - Standard Terminal Arrival: a published arrival route into an airport.
 
 **Sub-service** - One kind of data the AIRAC Service can produce: Airports, Airways, Departures,
-Arrivals or NAVAIDs. Each has its own tab and settings.
+Arrivals, NAVAIDs, ARTCC Boundaries, Fixes or Wx Stations. Each has its own tab and settings.
 
 **Video map** - The map background on a controller's scope: airways, airports, boundaries.
 In CRC, these are GeoJSON files.
@@ -79,3 +92,8 @@ In CRC, these are GeoJSON files.
 **vNAS** - VATSIM's system for ARTCC facility data. You upload the files FE-Buddy makes to vNAS
 for CRC to use. The files you mark for vNAS on a sub-service tab are written to an
 `Upload_to_vNAS` folder, ready to upload.
+
+**Wx Stations** - The sub-service that draws a symbol and a two-line label for every US (and
+territory) station that reports METAR. Unlike every other sub-service, its data comes from
+aviationweather.gov's own station list, not the NASR cycle. No alias file - a station's label is
+always its own ICAO ID, then its IATA ID and site name.

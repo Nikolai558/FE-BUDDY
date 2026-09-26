@@ -46,6 +46,15 @@
         <DataTemplate DataType="{x:Type vm:NavaidsViewModel}">
             <local:NavaidsView />
         </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:ArtccBoundariesViewModel}">
+            <local:ArtccBoundariesView />
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:FixesViewModel}">
+            <local:FixesView />
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:WxStationsViewModel}">
+            <local:WxStationsView />
+        </DataTemplate>
         <DataTemplate DataType="{x:Type vm:DatToGeojsonViewModel}">
             <local:DatToGeojsonView />
         </DataTemplate>

@@ -169,6 +169,17 @@ public sealed class AirportSettingsParserTests
 	}
 
 	[Fact]
+	public void generate_alias_file_is_airports_own_key_and_produces_no_unknown_key_warning()
+	{
+		Dictionary<string, string> settings = MinimalValidSettings();
+		settings["GenerateAliasFile"] = "Y";
+
+		AirportSettingsParseResult result = AirportSettingsParser.Parse(settings);
+
+		Assert.DoesNotContain(result.Messages, m => m.Text.Contains("GenerateAliasFile"));
+	}
+
+	[Fact]
 	public void a_fully_default_settings_block_produces_no_messages()
 	{
 		AirportSettingsParseResult result = AirportSettingsParser.Parse(MinimalValidSettings());

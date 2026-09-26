@@ -20,10 +20,10 @@ go through the same parser. This page lists every key each parser reads.
   kind or field the sub-service does not have is a warning.
 
 Parsers: `AirportSettingsParser`, `AirwaySettingsParser`, `DepartureSettingsParser`,
-`ArrivalSettingsParser`, `NavaidSettingsParser`, `DatToGeojsonSettingsParser`,
-`SctToGeojsonSettingsParser`, `EramToGeojsonSettingsParser`. Shared reading:
-`SubServiceSettingsReader`, `CrcDefaultsReader`, `ConversionSettingsReader`, `SettingsValueReader`
-(all in `FeBuddy.Core/Application`).
+`ArrivalSettingsParser`, `NavaidSettingsParser`, `ArtccBoundarySettingsParser`,
+`FixSettingsParser`, `WxStationSettingsParser`, `DatToGeojsonSettingsParser`, `SctToGeojsonSettingsParser`,
+`EramToGeojsonSettingsParser`. Shared reading: `SubServiceSettingsReader`, `CrcDefaultsReader`,
+`ConversionSettingsReader`, `SettingsValueReader` (all in `FeBuddy.Core/Application`).
 
 ## Keys every AIRAC sub-service reads
 
@@ -31,13 +31,16 @@ Parsers: `AirportSettingsParser`, `AirwaySettingsParser`, `DepartureSettingsPars
 |---|---|---|
 | `OutputDirectory` | folder path - the folder the run writes into (below) | **required** |
 | `CoordinatePrecision` | `0`-`15` decimal places | `6` |
-| `GenerateAliasFile` | `Y` / `N` | `Y` |
 | `IncludeFebCustomProperties` | `Y` / `N` | `N` |
 | `FebProperties` | list of `feb.*` names (below); **required** when the above is `Y` | none |
 | `UploadToVnas` | list of file keys (below) to write under `Upload_to_vNAS` | none |
 | `CrcDefaultsFor` | list of GeoJSON file keys that get CRC-ERAM defaults; each must also be in `UploadToVnas` | none |
 | `FilterByRoi` | `Y` / `N` | `N` |
 | `RoiSwLat`, `RoiSwLon`, `RoiNeLat`, `RoiNeLon` | decimal degrees; **required** when `FilterByRoi` is `Y` | none |
+
+`GenerateAliasFile` (`Y` / `N`, default `Y`) is not here: it is one of every sub-service's own keys
+*except* ARTCC Boundaries, Fixes and Wx Stations, none of which has an alias file or reads it - see
+each sub-service's own key table below.
 
 ### Where files go
 
@@ -68,6 +71,9 @@ nothing.
 | Departures | `Departures_Lines`, `Departures_Symbols`, `Departures_Text` | `Departures.txt` |
 | Arrivals | `Arrivals_Lines`, `Arrivals_Symbols`, `Arrivals_Text` | `Arrivals.txt` |
 | NAVAIDs | `NAVAIDs_Symbols`, `NAVAIDs_Text` (`OutputBy=All`), or `NAVAIDs_<Token>s_Symbols` / `_Text` per NAVAID type (`OutputBy=Type`), e.g. `NAVAIDs_VORTACs_Symbols`, `NAVAIDs_VOR-DMEs_Text` | `NAVAIDs.txt` |
+| ARTCC Boundaries | `ARTCC-Boundary_High_Lines` / `_Low_Lines` (`OutputBy=HighLow`, an UNLIMITED ring in both), adds `_Unlimited_Lines` (`OutputBy=HighLowUnlimited`), or `ARTCC-Boundary_<LocationId>-<ALTITUDE>_Lines` per ARTCC and altitude (`OutputBy=ArtccAltitude`), e.g. `ARTCC-Boundary_ZOB-HIGH_Lines` | none |
+| Fixes | `Fix_Symbols`, `Fix_Text` (`OutputBy=All`), or `Fix_<Group>_Symbols` / `_Text` per fix use, chart, or chart + fix use combination present (`OutputBy=FixUse`/`Chart`/`ChartAndFixUse`), e.g. `Fix_WYPNT_Symbols`, `Fix_ENROUTE-LOW-WYPNT_Text` | none |
+| Wx Stations | `Wx_Symbols`, `Wx_Text` | none |
 
 CRC-ERAM defaults are only ever written to files marked for vNAS, since CRC reads its maps from
 vNAS. The keys are listed in each sub-service's `*OutputFiles` class.
@@ -90,6 +96,7 @@ naming the key.
 | Key | Values | Default |
 |---|---|---|
 | `GenerateGeojson` | `Y` / `N` | `Y` |
+| `GenerateAliasFile` | `Y` / `N` | `Y` |
 | `EmitRunwayLines`, `EmitAirportSymbols`, `EmitAirportText` | `Y` / `N` | `Y` |
 
 - **CRC classes:** `Runways` (`Line`), `Airports` (`Symbol`, `Text`).
@@ -104,6 +111,7 @@ naming the key.
 |---|---|---|
 | `OutputBy` | `HighLow`, `Designation`, `None` | **required** |
 | `EmitLines`, `EmitSymbols`, `EmitText` | `Y` / `N` | `Y` |
+| `GenerateAliasFile` | `Y` / `N` | `Y` |
 | `BufferAirwayWaypoints` | `Y` / `N` | `N` |
 | `SplitAtAntimeridian` | `Y` / `N` | `Y` |
 | `ExcludedDesignations` | list, e.g. `RN,SL` (upper-cased) | none |
@@ -121,6 +129,7 @@ naming the key.
 | Key | Values | Default |
 |---|---|---|
 | `GenerateGeojson` | `Y` / `N` | `Y` |
+| `GenerateAliasFile` | `Y` / `N` | `Y` |
 | `EmitLines`, `EmitSymbols`, `EmitText` | `Y` / `N` | `Y` |
 | `IncludeObstacleDepartures` | `Y` / `N` | `Y` |
 | `ArtccFilter` | list of ARTCC IDs; empty means every ARTCC | none |
@@ -143,6 +152,7 @@ naming the key.
 | Key | Values | Default |
 |---|---|---|
 | `GenerateGeojson` | `Y` / `N` | `Y` |
+| `GenerateAliasFile` | `Y` / `N` | `Y` |
 | `EmitLines`, `EmitSymbols`, `EmitText` | `Y` / `N` | `Y` |
 | `ArtccFilter` | list of ARTCC IDs; empty means every ARTCC | none |
 | `AmendmentFilter` | `None`, `Cycles`, `Days`, `Date` | `None` |
@@ -166,6 +176,7 @@ naming the key.
 | Key | Values | Default |
 |---|---|---|
 | `GenerateGeojson` | `Y` / `N` | `Y` |
+| `GenerateAliasFile` | `Y` / `N` | `Y` |
 | `EmitSymbols`, `EmitText` | `Y` / `N` | `Y` |
 | `OutputBy` | `All`, `Type` | `All` |
 | `ExcludedTypes` | list of NASR `NAV_TYPE` names (upper-cased) - the types left out of GeoJSON *and* the alias file | none |
@@ -188,6 +199,85 @@ naming the key.
 - With `OutputBy = Type`, CRC defaults are read from whichever type keys are chosen for CRC-ERAM
   defaults rather than from the known type list, so a `NAV_TYPE` FE-Buddy does not recognize still
   gets its own file's defaults.
+
+## ARTCC Boundaries
+
+| Key | Values | Default |
+|---|---|---|
+| `OutputBy` | `HighLow`, `HighLowUnlimited`, `ArtccAltitude` | `HighLow` |
+| `LocationFilter` | list of ARTCC IDs; empty means every one with boundary data | none |
+| `SplitAtAntimeridian` | `Y` / `N` | `Y` |
+
+- Unlike every other AIRAC sub-service, there is no `GenerateGeojson`, `GenerateAliasFile` or
+  `Emit…` key: ARTCC Boundaries always writes GeoJSON, has no alias file, and writes Lines only.
+- **CRC classes:** with `OutputBy = HighLow`, `High` and `Low` (each `Line` only) - an UNLIMITED
+  ring is written into both files; with `HighLowUnlimited`, `High`, `Low` and `Unlimited`; with
+  `ArtccAltitude`, one class per LocationId and altitude present, e.g. `ZOB-HIGH`, so your own
+  ARTCC can be styled apart from its neighbours. There is no `Symbol` or `Text` class.
+- **`FebProperties`:** `locationId`, `locationName`, `locationType`, `icaoId`, `computerId`,
+  `altitude` (`HIGH`, `LOW` or `UNLIMITED`), `type` (`ARTCC`, `CTA`, `FIR`, `CTA/FIR` or `UTA` -
+  tells the overlapping oceanic CTA and FIR rings apart), `city`, `countryCode`.
+- Data comes from `ARB_BASE` (the location) and `ARB_SEG` (the boundary points). Only the
+  LocationIds with `ARB_SEG` rows draw a boundary - the Canadian, foreign and CERAP entries
+  `ARB_BASE` also publishes have none. Within one LocationId and altitude, a new ring starts
+  wherever `POINT_SEQ` drops back to a low value - ZAK, ZAP and ZWY each have a CTA ring and a FIR
+  ring - and each ring is closed back to its own first point.
+- `LocationFilter` limits the GeoJSON only; there is no alias file for it to limit.
+
+## Fixes
+
+| Key | Values | Default |
+|---|---|---|
+| `EmitSymbols`, `EmitText` | `Y` / `N` | `Y` |
+| `OutputBy` | `All`, `FixUse`, `Chart`, `ChartAndFixUse` | `All` |
+| `ExcludedFixUses` | list of fix use names (below); only used in the `FixUse` layout | none |
+| `ExcludedCharts` | list of NASR chart names; only used in the `Chart` layout | none |
+| `Combinations` | list of `<Chart>+<FixUse>` pairs, e.g. `ENROUTE-LOW+WYPNT,IAP+RPRTNG-PNT`; **required** (at least one) when `OutputBy = ChartAndFixUse` | none |
+
+- Unlike every other AIRAC sub-service except ARTCC Boundaries, there is no `GenerateGeojson` or
+  `GenerateAliasFile` key: Fixes always writes GeoJSON and has no alias file.
+- **CRC classes:** with `OutputBy = All`, `Fix` (`Symbol`, `Text`); with `OutputBy = FixUse`, one
+  class per fix use present, keyed by its token - `COMPUTER-NAV`, `MIL-RPRTNG-PNT`, `MIL-WYPNT`,
+  `NRS-WYPNT`, `RADAR`, `RPRTNG-PNT`, `VFR-WYPNT`, `WYPNT`, or any other NASR code kept as written -
+  with `OutputBy = Chart`, one class per chart token present (a run of non-alphanumeric characters
+  becomes `-`, e.g. `ENROUTE LOW` → `ENROUTE-LOW`), or `NO-CHART` for a fix with no chart; with
+  `OutputBy = ChartAndFixUse`, one class per listed combination, e.g. `ENROUTE-LOW-WYPNT`. Each with
+  `Symbol` and `Text`. There is no `Line` class; Fixes writes no Lines file.
+- **`FebProperties`:** `fixId`, `fixUseCode`, `charts` - the Text file never writes `fixId`; its
+  `text` array already carries it.
+- `EmitSymbols` and `EmitText` cannot both be `N`.
+- `ExcludedFixUses` warns about a name that is not a known fix use (it is still excluded, so a fix
+  use NASR adds can be unticked), and excluding every known fix use in the `FixUse` layout throws.
+- A `Combinations` entry naming an unrecognized fix use is still used, with a warning; an entry
+  that does not tokenize to both a chart and a fix use throws. `OutputBy = ChartAndFixUse` with no
+  `Combinations` throws. A combination matching no fix in the cycle is a run warning, and writes no
+  files.
+- Data comes from `FIX_BASE` only.
+
+## Wx Stations
+
+| Key | Values | Default |
+|---|---|---|
+| `EmitSymbols`, `EmitText` | `Y` / `N` | `Y` |
+
+- The simplest AIRAC sub-service settings: there is no `GenerateGeojson`, `GenerateAliasFile` or
+  `OutputBy` key - Wx Stations always writes GeoJSON, has no alias file, and writes one merged
+  Symbols/Text pair, never split into groups.
+- **CRC class:** `Wx` (`Symbol`, `Text`). There is no `Line` class; Wx Stations writes no Lines
+  file.
+- There are no `FebProperties`: a station's label is always its ICAO ID, then its IATA ID and
+  site name. `IncludeFebCustomProperties = Y` is accepted but only warns, since there is nothing
+  for it to add.
+- `EmitSymbols` and `EmitText` cannot both be `N`.
+- Data comes from aviationweather.gov's `stations.cache.xml`, not a NASR CSV group - downloaded
+  once per launch and cached in the cycle's own folder (see
+  [Architecture](Architecture.md#the-airac-data-pipeline)). A cycle whose file has not downloaded
+  yet (or whose earlier attempt failed) has no data to build from, and `WxStationBuilder.Read`
+  throws rather than silently writing nothing.
+- A station is included only when all hold: its country is `US` or a US territory (`PR`, `VI`,
+  `GU`, `MP`, `AS`, `UM`); it has an ICAO ID; `METAR` is among its site types; and it has usable
+  coordinates - present, finite, and within -90..90 / -180..180 (the feed's `-99.99, -99.99`
+  placeholder is left out, with an Info message naming the station).
 
 ## Keys every file conversion reads
 

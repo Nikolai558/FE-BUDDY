@@ -38,6 +38,15 @@ public static class AiracSubServices
 	/// <summary>The NAVAIDs sub-service key.</summary>
 	public const string NavaidsKey = "Navaids";
 
+	/// <summary>The ARTCC Boundaries sub-service key.</summary>
+	public const string ArtccBoundariesKey = "ArtccBoundaries";
+
+	/// <summary>The Fixes sub-service key.</summary>
+	public const string FixesKey = "Fixes";
+
+	/// <summary>The Wx Stations sub-service key.</summary>
+	public const string WxStationsKey = "WxStations";
+
 	/// <summary>Every sub-service, in the order the picker and the tab rail show them.</summary>
 	public static IReadOnlyList<SubServiceDescriptor> All { get; } =
 	[
@@ -46,5 +55,8 @@ public static class AiracSubServices
 		new SubServiceDescriptor(DeparturesKey, "Departures", 30, true, () => new DeparturesViewModel()),
 		new SubServiceDescriptor(ArrivalsKey, "Arrivals", 40, true, () => new ArrivalsViewModel()),
 		new SubServiceDescriptor(NavaidsKey, "NAVAIDs", 50, true, () => new NavaidsViewModel()),
+		new SubServiceDescriptor(ArtccBoundariesKey, "ARTCC Boundaries", 60, true, () => new ArtccBoundariesViewModel()),
+		new SubServiceDescriptor(FixesKey, "Fixes", 70, true, () => new FixesViewModel()),
+		new SubServiceDescriptor(WxStationsKey, "Wx Stations", 80, true, () => new WxStationsViewModel()),
 	];
 }

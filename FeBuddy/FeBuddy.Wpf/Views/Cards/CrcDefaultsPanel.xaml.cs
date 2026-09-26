@@ -8,11 +8,11 @@ namespace FeBuddy.Wpf.Views.Cards;
 /// <summary>One file's CRC ERAM defaults inside the CRC ERAM Defaults card. See CrcDefaultsPanel.xaml.</summary>
 public partial class CrcDefaultsPanel : UserControl
 {
-	/// <summary>Cell width with one class: the panel has room for wide boxes.</summary>
+	/// <summary>Control width with one class: the panel has room for wide boxes.</summary>
 	private const double SingleClassCellWidth = 160;
 
-	/// <summary>Cell width per class when several sit side by side (Airways: High / Low / Other).</summary>
-	private const double MultiClassCellWidth = 110;
+	/// <summary>Control width when there are several class blocks (Airways High / Low / Other, NAVAIDs by type).</summary>
+	private const double MultiClassCellWidth = 130;
 
 	/// <summary>Identifies the <see cref="Title"/> dependency property.</summary>
 	public static readonly DependencyProperty TitleProperty = DependencyProperty.Register(
@@ -38,11 +38,11 @@ public partial class CrcDefaultsPanel : UserControl
 	/// <summary>Identifies the read-only <see cref="CellWidth"/> dependency property.</summary>
 	public static readonly DependencyProperty CellWidthProperty = CellWidthKey.DependencyProperty;
 
-	private static readonly DependencyPropertyKey CellMarginKey = DependencyProperty.RegisterReadOnly(
-		nameof(CellMargin), typeof(Thickness), typeof(CrcDefaultsPanel), new PropertyMetadata(new Thickness(0, 3, 0, 3)));
+	private static readonly DependencyPropertyKey BlockMarginKey = DependencyProperty.RegisterReadOnly(
+		nameof(BlockMargin), typeof(Thickness), typeof(CrcDefaultsPanel), new PropertyMetadata(new Thickness(0)));
 
-	/// <summary>Identifies the read-only <see cref="CellMargin"/> dependency property.</summary>
-	public static readonly DependencyProperty CellMarginProperty = CellMarginKey.DependencyProperty;
+	/// <summary>Identifies the read-only <see cref="BlockMargin"/> dependency property.</summary>
+	public static readonly DependencyProperty BlockMarginProperty = BlockMarginKey.DependencyProperty;
 
 	private static readonly DependencyPropertyKey ShowClassNamesKey = DependencyProperty.RegisterReadOnly(
 		nameof(ShowClassNames), typeof(bool), typeof(CrcDefaultsPanel), new PropertyMetadata(false));
@@ -84,13 +84,13 @@ public partial class CrcDefaultsPanel : UserControl
 		set => SetValue(IsIncludedProperty, value);
 	}
 
-	/// <summary>Width of one class's cell; narrower when several classes share the panel.</summary>
+	/// <summary>Width of one control; narrower when there are several class blocks.</summary>
 	public double CellWidth => (double)GetValue(CellWidthProperty);
 
-	/// <summary>Space around one class's cell; columns get a gutter when there are several.</summary>
-	public Thickness CellMargin => (Thickness)GetValue(CellMarginProperty);
+	/// <summary>Space around one class block: a gap to the next block when there are several.</summary>
+	public Thickness BlockMargin => (Thickness)GetValue(BlockMarginProperty);
 
-	/// <summary>Whether the class-name row shows: only when there is more than one class to tell apart.</summary>
+	/// <summary>Whether each block shows its class name: only when there is more than one class to tell apart.</summary>
 	public bool ShowClassNames => (bool)GetValue(ShowClassNamesProperty);
 
 	private static void OnClassesChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -100,7 +100,7 @@ public partial class CrcDefaultsPanel : UserControl
 		bool several = count > 1;
 
 		panel.SetValue(CellWidthKey, several ? MultiClassCellWidth : SingleClassCellWidth);
-		panel.SetValue(CellMarginKey, several ? new Thickness(4, 3, 4, 3) : new Thickness(0, 3, 0, 3));
+		panel.SetValue(BlockMarginKey, several ? new Thickness(0, 0, 24, 10) : new Thickness(0));
 		panel.SetValue(ShowClassNamesKey, several);
 
 		// No file of this kind gets CRC-ERAM defaults, so there is nothing to fill in.

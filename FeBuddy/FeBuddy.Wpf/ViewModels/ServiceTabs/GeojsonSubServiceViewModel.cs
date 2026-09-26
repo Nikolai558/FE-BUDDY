@@ -12,10 +12,10 @@ using FeBuddy.Core.Domain.Geo.Models;
 namespace FeBuddy.Wpf.ViewModels.ServiceTabs;
 
 /// <summary>
-/// Base for a sub-service tab that writes GeoJSON (Airports, Airways, Departures, Arrivals, NAVAIDs):
-/// everything those tabs share - the alias file, which GeoJSON files are written, the FE-Buddy properties,
-/// the Region of Interest override, the files to upload to vNAS and the CRC ERAM defaults they
-/// carry - with its config, settings-block and validation plumbing.
+/// Base for a sub-service tab that writes GeoJSON (Airports, Airways, Departures, Arrivals, NAVAIDs,
+/// ARTCC Boundaries, Fixes, Wx Stations): everything those tabs share - the alias file, which GeoJSON files are
+/// written, the FE-Buddy properties, the Region of Interest override, the files to upload to vNAS
+/// and the CRC ERAM defaults they carry - with its config, settings-block and validation plumbing.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -245,11 +245,17 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 
 	/// <summary>
 	/// The keys the three GeoJSON file choices are saved and sent under. The same key serves the
-	/// config and the settings block. <c>Lines</c> is <see langword="null"/> for a sub-service
-	/// with no Lines file (NAVAIDs): <see cref="EmitLines"/> is then always off and is never
-	/// saved or sent.
+	/// config and the settings block. A key is <see langword="null"/> when the sub-service has no
+	/// choice for that kind - NAVAIDs has no Lines file; ARTCC Boundaries writes Lines only, so
+	/// has no choice at all. Such a choice is always off, and is never saved or sent.
 	/// </summary>
-	protected virtual (string? Lines, string Symbols, string Text) EmitKeys => ("EmitLines", "EmitSymbols", "EmitText");
+	protected virtual (string? Lines, string? Symbols, string? Text) EmitKeys => ("EmitLines", "EmitSymbols", "EmitText");
+
+	/// <summary>
+	/// Whether the sub-service has an alias file. When <see langword="false"/> (ARTCC Boundaries),
+	/// <see cref="GenerateAliasFile"/> is always off and is never saved or sent.
+	/// </summary>
+	protected virtual bool HasAliasFile => true;
 
 	/// <summary>
 	/// Every file the tab's current settings write, in the order the Upload to vNAS card lists
@@ -268,6 +274,39 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 	/// <param name="row">The row.</param>
 	/// <returns>The row's key prefix, e.g. <c>CrcEramPropertyDefaults.Airports_Symbol</c>.</returns>
 	protected virtual string CrcConfigPrefix(EramClassDefault row) => $"CrcEramPropertyDefaults.{row.ClassName}_{row.Kind}";
+
+	/// <summary>
+	/// Adds CRC defaults rows after construction, for a tab whose classes come from the cycle's
+	/// data (ARTCC Boundaries: one class per ARTCC and altitude). Each new row is filled from the
+	/// saved config first; a row whose class and kind are already there is left alone.
+	/// </summary>
+	/// <param name="rows">The rows to add, each built with the tab's <c>MarkDirty</c> as its change callback.</param>
+	/// <remarks>
+	/// Rows are only ever added, never removed, so a class that drops out of a later cycle keeps its
+	/// saved values. Call <c>ResyncSavedState</c> afterwards if the tab has no unsaved edits.
+	/// </remarks>
+	protected void AddCrcRows(IEnumerable<EramClassDefault> rows)
+	{
+		ArgumentNullException.ThrowIfNull(rows);
+
+		foreach (EramClassDefault row in rows)
+		{
+			ObservableCollection<EramClassDefault> list = row.Kind switch
+			{
+				EramFieldKind.Line => LineDefaults,
+				EramFieldKind.Symbol => SymbolDefaults,
+				_ => TextDefaults,
+			};
+
+			if (list.Any(existing => existing.ClassName.Equals(row.ClassName, StringComparison.OrdinalIgnoreCase)))
+			{
+				continue;
+			}
+
+			CrcDefaultsRowIo.Load(row, CrcConfigPrefix(row), Get);
+			list.Add(row);
+		}
+	}
 
 	/// <inheritdoc />
 	/// <remarks>Refreshes the vNAS and CRC cards first, so validation sees the files as they now are.</remarks>
@@ -357,10 +396,10 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 	/// </summary>
 	protected void LoadSharedSettings()
 	{
-		_generateAliasFile = GetBool("GenerateAliasFile", true);
+		_generateAliasFile = HasAliasFile && GetBool("GenerateAliasFile", true);
 		_emitLines = EmitKeys.Lines is { } linesKey && GetBool(linesKey, true);
-		_emitSymbols = GetBool(EmitKeys.Symbols, true);
-		_emitText = GetBool(EmitKeys.Text, true);
+		_emitSymbols = EmitKeys.Symbols is { } symbolsKey && GetBool(symbolsKey, true);
+		_emitText = EmitKeys.Text is { } textKey && GetBool(textKey, true);
 		_includeFebCustomProperties = GetBool("IncludeFebCustomProperties", false);
 
 		HashSet<string> selected = ParseList(Get("FebProperties"));
@@ -409,15 +448,19 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 	/// <summary>Writes the shared settings. Call from <see cref="SubServiceSettingsViewModel.WriteToConfig"/>.</summary>
 	protected void SaveSharedSettings()
 	{
-		Set("GenerateAliasFile", YesNo(GenerateAliasFile));
-
-		if (EmitKeys.Lines is { } linesKey)
+		if (HasAliasFile)
 		{
-			Set(linesKey, YesNo(EmitLines));
+			Set("GenerateAliasFile", YesNo(GenerateAliasFile));
 		}
 
-		Set(EmitKeys.Symbols, YesNo(EmitSymbols));
-		Set(EmitKeys.Text, YesNo(EmitText));
+		foreach ((string? key, bool emit) in EmitChoices())
+		{
+			if (key is not null)
+			{
+				Set(key, YesNo(emit));
+			}
+		}
+
 		Set("IncludeFebCustomProperties", YesNo(IncludeFebCustomProperties));
 		Set("FebProperties", SelectedFebPropertyNames());
 
@@ -447,15 +490,20 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 	protected void AddSharedSettings(Dictionary<string, string> settings)
 	{
 		settings["CoordinatePrecision"] = OutputPreferences.CoordinatePrecision.ToString(CultureInfo.InvariantCulture);
-		settings["GenerateAliasFile"] = YesNo(GenerateAliasFile);
 
-		if (EmitKeys.Lines is { } linesKey)
+		if (HasAliasFile)
 		{
-			settings[linesKey] = YesNo(EmitLines);
+			settings["GenerateAliasFile"] = YesNo(GenerateAliasFile);
 		}
 
-		settings[EmitKeys.Symbols] = YesNo(EmitSymbols);
-		settings[EmitKeys.Text] = YesNo(EmitText);
+		foreach ((string? key, bool emit) in EmitChoices())
+		{
+			if (key is not null)
+			{
+				settings[key] = YesNo(emit);
+			}
+		}
+
 		settings["IncludeFebCustomProperties"] = YesNo(IncludeFebCustomProperties);
 		settings["FebProperties"] = SelectedFebPropertyNames();
 
@@ -554,6 +602,10 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 	// ================= private =================
 
 	private IEnumerable<EramClassDefault> AllCrcRows() => LineDefaults.Concat(SymbolDefaults).Concat(TextDefaults);
+
+	/// <summary>Each GeoJSON file choice with its key (<see langword="null"/> when the sub-service has no such choice).</summary>
+	private IEnumerable<(string? Key, bool Emit)> EmitChoices() =>
+		[(EmitKeys.Lines, EmitLines), (EmitKeys.Symbols, EmitSymbols), (EmitKeys.Text, EmitText)];
 
 	private bool IsCrcRowInUse(EramClassDefault row) => _crcRowsInUse.Contains((row.ClassName, row.Kind));
 

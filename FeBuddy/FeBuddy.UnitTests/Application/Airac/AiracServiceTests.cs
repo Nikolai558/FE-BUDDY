@@ -2,11 +2,15 @@ using FeBuddy.Core.Application.Airac;
 using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Domain.Airac.Models;
 using FeBuddy.Core.Infrastructure.Nasr.Models;
+using FeBuddy.Core.Infrastructure.WxStations.Models;
 
 using FeBuddy.UnitTests.Application.Airac.Airways.Fixtures;
 using FeBuddy.UnitTests.Application.Airac.Arrivals.Fixtures;
+using FeBuddy.UnitTests.Application.Airac.ArtccBoundaries.Fixtures;
 using FeBuddy.UnitTests.Application.Airac.Departures.Fixtures;
+using FeBuddy.UnitTests.Application.Airac.Fixes.Fixtures;
 using FeBuddy.UnitTests.Application.Airac.Navaids.Fixtures;
+using FeBuddy.UnitTests.Application.Airac.WxStations.Fixtures;
 
 namespace FeBuddy.UnitTests.Application.Airac;
 
@@ -252,6 +256,220 @@ public sealed class AiracServiceTests : IDisposable
 		AiracServiceResult result = await AiracService.RunAsync(settings, DepartureTestData.Dotss());
 
 		Assert.Null(result.Navaids);
+	}
+
+	[Fact]
+	public async Task run_async_with_an_artcc_boundaries_block_runs_the_pipeline_and_aggregates()
+	{
+		NasrCsvDataCollection data = ArtccBoundaryTestData.Build(
+			[ArtccBoundaryTestData.ZobBaseRow()],
+			[.. ArtccBoundaryTestData.ZobHighRows(), .. ArtccBoundaryTestData.ZobLowRows()]);
+
+		AiracServiceSettings settings = new()
+		{
+			SelectedCycle = Cycle,
+			OutputDirectory = _output,
+			ArtccBoundaries = new Dictionary<string, string>(),
+		};
+
+		AiracServiceResult result = await AiracService.RunAsync(settings, data);
+
+		Assert.NotNull(result.ArtccBoundaries);
+		Assert.Equal(1, result.ArtccBoundaries!.LocationCount);
+		Assert.Equal(2, result.ArtccBoundaries.RingCount);
+
+		string highFile = Path.Combine(CycleFolder, "Geojson", "ARTCC-Boundary_High_Lines.geojson");
+		Assert.Contains(highFile, result.ArtccBoundaries.GeojsonFilesWritten);
+		Assert.True(File.Exists(highFile));
+	}
+
+	[Fact]
+	public async Task a_run_with_only_artcc_boundaries_selected_counts_as_something_selected()
+	{
+		string stale = WriteStaleFile();
+		AiracServiceSettings settings = new()
+		{
+			SelectedCycle = Cycle,
+			OutputDirectory = _output,
+			ExistingOutput = ExistingOutputAction.DeleteExisting,
+			ArtccBoundaries = new Dictionary<string, string>(),
+		};
+
+		NasrCsvDataCollection data = ArtccBoundaryTestData.Build(
+			[ArtccBoundaryTestData.ZobBaseRow()],
+			ArtccBoundaryTestData.ZobHighRows());
+
+		await AiracService.RunAsync(settings, data);
+
+		// DeleteExisting only runs when something is selected: ARTCC Boundaries alone must still trigger it.
+		Assert.False(File.Exists(stale));
+		Assert.True(File.Exists(Path.Combine(CycleFolder, "Geojson", "ARTCC-Boundary_High_Lines.geojson")));
+	}
+
+	[Fact]
+	public async Task a_null_artcc_boundaries_block_leaves_result_artcc_boundaries_null()
+	{
+		AiracServiceSettings settings = AliasOnlySettings() with { ArtccBoundaries = null };
+
+		AiracServiceResult result = await AiracService.RunAsync(settings, DepartureTestData.Dotss());
+
+		Assert.Null(result.ArtccBoundaries);
+	}
+
+	[Fact]
+	public async Task run_async_with_a_fixes_block_runs_the_pipeline_and_aggregates()
+	{
+		NasrCsvDataCollection data = FixTestData.Build([FixTestData.AcmeRow()]);
+
+		AiracServiceSettings settings = new()
+		{
+			SelectedCycle = Cycle,
+			OutputDirectory = _output,
+			Fixes = new Dictionary<string, string>(),
+		};
+
+		AiracServiceResult result = await AiracService.RunAsync(settings, data);
+
+		Assert.Null(result.ArtccBoundaries);
+		Assert.NotNull(result.Fixes);
+		Assert.Equal(1, result.Fixes!.FixCount);
+	}
+
+	[Fact]
+	public async Task a_fixes_block_writes_geojson_into_the_cycle_folder()
+	{
+		NasrCsvDataCollection data = FixTestData.Build([FixTestData.AcmeRow()]);
+
+		AiracServiceSettings settings = new()
+		{
+			SelectedCycle = Cycle,
+			OutputDirectory = _output,
+			Fixes = new Dictionary<string, string>(),
+		};
+
+		AiracServiceResult result = await AiracService.RunAsync(settings, data);
+
+		string symbolsFile = Path.Combine(CycleFolder, "Geojson", "Fix_Symbols.geojson");
+		Assert.Contains(symbolsFile, result.Fixes!.GeojsonFilesWritten);
+		Assert.True(File.Exists(symbolsFile));
+	}
+
+	[Fact]
+	public async Task a_run_with_only_fixes_selected_counts_as_something_selected()
+	{
+		string stale = WriteStaleFile();
+		AiracServiceSettings settings = new()
+		{
+			SelectedCycle = Cycle,
+			OutputDirectory = _output,
+			ExistingOutput = ExistingOutputAction.DeleteExisting,
+			Fixes = new Dictionary<string, string>(),
+		};
+
+		await AiracService.RunAsync(settings, FixTestData.Build([FixTestData.AcmeRow()]));
+
+		// DeleteExisting only runs when something is selected: Fixes alone must still trigger it.
+		Assert.False(File.Exists(stale));
+		Assert.True(File.Exists(Path.Combine(CycleFolder, "Geojson", "Fix_Symbols.geojson")));
+	}
+
+	[Fact]
+	public async Task a_null_fixes_block_leaves_result_fixes_null()
+	{
+		AiracServiceSettings settings = AliasOnlySettings() with { Fixes = null };
+
+		AiracServiceResult result = await AiracService.RunAsync(settings, DepartureTestData.Dotss());
+
+		Assert.Null(result.Fixes);
+	}
+
+	[Fact]
+	public async Task run_async_with_a_wx_stations_block_runs_the_pipeline_and_aggregates()
+	{
+		WxStationDataCollection wxData = WxStationTestData.Build([WxStationTestData.DtwRow()]);
+
+		AiracServiceSettings settings = new()
+		{
+			SelectedCycle = Cycle,
+			OutputDirectory = _output,
+			WxStations = new Dictionary<string, string>(),
+		};
+
+		AiracServiceResult result = await AiracService.RunAsync(settings, new NasrCsvDataCollection(), wxData);
+
+		Assert.Null(result.Fixes);
+		Assert.NotNull(result.WxStations);
+		Assert.Equal(1, result.WxStations!.StationCount);
+	}
+
+	[Fact]
+	public async Task a_wx_stations_block_writes_geojson_into_the_cycle_folder()
+	{
+		WxStationDataCollection wxData = WxStationTestData.Build([WxStationTestData.DtwRow()]);
+
+		AiracServiceSettings settings = new()
+		{
+			SelectedCycle = Cycle,
+			OutputDirectory = _output,
+			WxStations = new Dictionary<string, string>(),
+		};
+
+		AiracServiceResult result = await AiracService.RunAsync(settings, new NasrCsvDataCollection(), wxData);
+
+		string symbolsFile = Path.Combine(CycleFolder, "Geojson", "Wx_Symbols.geojson");
+		Assert.Contains(symbolsFile, result.WxStations!.GeojsonFilesWritten);
+		Assert.True(File.Exists(symbolsFile));
+	}
+
+	[Fact]
+	public async Task a_run_with_only_wx_stations_selected_counts_as_something_selected()
+	{
+		string stale = WriteStaleFile();
+		WxStationDataCollection wxData = WxStationTestData.Build([WxStationTestData.DtwRow()]);
+
+		AiracServiceSettings settings = new()
+		{
+			SelectedCycle = Cycle,
+			OutputDirectory = _output,
+			ExistingOutput = ExistingOutputAction.DeleteExisting,
+			WxStations = new Dictionary<string, string>(),
+		};
+
+		await AiracService.RunAsync(settings, new NasrCsvDataCollection(), wxData);
+
+		// DeleteExisting only runs when something is selected: Wx Stations alone must still trigger it.
+		Assert.False(File.Exists(stale));
+		Assert.True(File.Exists(Path.Combine(CycleFolder, "Geojson", "Wx_Symbols.geojson")));
+	}
+
+	[Fact]
+	public async Task a_null_wx_stations_block_leaves_result_wx_stations_null()
+	{
+		AiracServiceSettings settings = AliasOnlySettings() with { WxStations = null };
+
+		AiracServiceResult result = await AiracService.RunAsync(settings, DepartureTestData.Dotss(), wxStationData: null);
+
+		Assert.Null(result.WxStations);
+	}
+
+	[Fact]
+	public async Task the_two_argument_overload_with_a_wx_stations_block_fails_with_no_weather_station_data()
+	{
+		AiracServiceSettings settings = new()
+		{
+			SelectedCycle = Cycle,
+			OutputDirectory = _output,
+			WxStations = new Dictionary<string, string>(),
+		};
+
+		// The two-argument RunAsync(settings, nasrData) overload passes no Wx station data at all
+		// (WxStationService.Run receives a null WxStationDataCollection), so a selected Wx Stations
+		// block fails with WxStationBuilder.Read's "no weather station data" guard rather than
+		// running, and the whole call throws before returning a result.
+		InvalidOperationException ex = await Assert.ThrowsAsync<InvalidOperationException>(
+			() => AiracService.RunAsync(settings, new NasrCsvDataCollection()));
+
+		Assert.Contains("No weather station data for this cycle", ex.Message, StringComparison.Ordinal);
 	}
 
 	[Fact]

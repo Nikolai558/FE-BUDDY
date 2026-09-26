@@ -27,6 +27,7 @@ public static class NavaidSettingsParser
 	private static readonly IReadOnlySet<string> OwnKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
 	{
 		"GenerateGeojson", "EmitSymbols", "EmitText", "OutputBy", "ExcludedTypes", "SymbolStyleBy", "FanMarkerStyle",
+		"GenerateAliasFile",
 	};
 
 	/// <summary>

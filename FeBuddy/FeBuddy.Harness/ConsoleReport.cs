@@ -3,8 +3,11 @@ using System.Text.RegularExpressions;
 using FeBuddy.Core.Application.Airac.Airports.Models;
 using FeBuddy.Core.Application.Airac.Airways.Models;
 using FeBuddy.Core.Application.Airac.Arrivals.Models;
+using FeBuddy.Core.Application.Airac.ArtccBoundaries.Models;
 using FeBuddy.Core.Application.Airac.Departures.Models;
+using FeBuddy.Core.Application.Airac.Fixes.Models;
 using FeBuddy.Core.Application.Airac.Navaids.Models;
+using FeBuddy.Core.Application.Airac.WxStations.Models;
 using FeBuddy.Core.Application.Models;
 using FeBuddy.Core.Infrastructure.Configuration;
 using FeBuddy.Core.Infrastructure.Logging.Models;
@@ -250,6 +253,109 @@ internal static class ConsoleReport
 		else
 		{
 			Console.WriteLine("Alias file:   (not generated)");
+		}
+
+		PrintMessagesByLevel(result.Messages);
+	}
+
+	/// <summary>
+	/// Prints one ARTCC Boundaries run: timing, how many ARTCCs and boundary lines were built,
+	/// every GeoJSON file with its Feature count, and the run's messages grouped by level. There
+	/// is no alias file.
+	/// </summary>
+	/// <param name="label">Heading for this run, e.g. "ARTCC Boundaries: GeoJSON".</param>
+	/// <param name="result">What <c>ArtccBoundaryService.Run</c> returned.</param>
+	public static void PrintArtccBoundaryServiceResult(string label, ArtccBoundaryServiceResult result)
+	{
+		Console.WriteLine();
+		Console.WriteLine($"=== {label} ===");
+		Console.WriteLine($"Elapsed:      {result.Elapsed.TotalMilliseconds:N0} ms");
+		Console.WriteLine($"ARTCCs in scope: {result.LocationCount:N0}");
+		Console.WriteLine($"Boundary lines built: {result.RingCount:N0}");
+
+		if (result.GeojsonFilesWritten.Count == 0)
+		{
+			Console.WriteLine("GeoJSON files written: (none)");
+		}
+		else
+		{
+			Console.WriteLine($"GeoJSON files written: {result.GeojsonFilesWritten.Count:N0}");
+
+			foreach (string file in result.GeojsonFilesWritten)
+			{
+				int count = result.GeojsonFeatureCountsByFile.TryGetValue(file, out int c) ? c : 0;
+				Console.WriteLine($"  {Path.GetFileName(file)} - {count:N0} feature(s)");
+				Console.WriteLine($"    {file}");
+			}
+		}
+
+		PrintMessagesByLevel(result.Messages);
+	}
+
+	/// <summary>
+	/// Prints one Fixes run: timing, how many fixes were built and how many survived ROI
+	/// filtering, every GeoJSON file with its Feature count, and the run's messages grouped by
+	/// level. There is no alias file.
+	/// </summary>
+	/// <param name="label">Heading for this run, e.g. "Fixes: GeoJSON".</param>
+	/// <param name="result">What <c>FixService.Run</c> returned.</param>
+	public static void PrintFixServiceResult(string label, FixServiceResult result)
+	{
+		Console.WriteLine();
+		Console.WriteLine($"=== {label} ===");
+		Console.WriteLine($"Elapsed:      {result.Elapsed.TotalMilliseconds:N0} ms");
+		Console.WriteLine($"Fixes built: {result.FixCount:N0}");
+		Console.WriteLine($"Fixes in ROI (GeoJSON): {result.GeojsonFixCount:N0}");
+
+		if (result.GeojsonFilesWritten.Count == 0)
+		{
+			Console.WriteLine("GeoJSON files written: (none)");
+		}
+		else
+		{
+			Console.WriteLine($"GeoJSON files written: {result.GeojsonFilesWritten.Count:N0}");
+
+			foreach (string file in result.GeojsonFilesWritten)
+			{
+				int count = result.GeojsonFeatureCountsByFile.TryGetValue(file, out int c) ? c : 0;
+				Console.WriteLine($"  {Path.GetFileName(file)} - {count:N0} feature(s)");
+				Console.WriteLine($"    {file}");
+			}
+		}
+
+		PrintMessagesByLevel(result.Messages);
+	}
+
+	/// <summary>
+	/// Prints one Wx Stations run: timing, how many stations were in the source file and how many
+	/// were included (and how many of those survived ROI filtering), every GeoJSON file with its
+	/// Feature count, and the run's messages grouped by level. There is no alias file.
+	/// </summary>
+	/// <param name="label">Heading for this run, e.g. "Wx Stations: GeoJSON".</param>
+	/// <param name="result">What <c>WxStationService.Run</c> returned.</param>
+	public static void PrintWxStationServiceResult(string label, WxStationServiceResult result)
+	{
+		Console.WriteLine();
+		Console.WriteLine($"=== {label} ===");
+		Console.WriteLine($"Elapsed:      {result.Elapsed.TotalMilliseconds:N0} ms");
+		Console.WriteLine($"Stations in source file: {result.TotalStationCount:N0}");
+		Console.WriteLine($"Stations included: {result.StationCount:N0}");
+		Console.WriteLine($"Stations in ROI (GeoJSON): {result.GeojsonStationCount:N0}");
+
+		if (result.GeojsonFilesWritten.Count == 0)
+		{
+			Console.WriteLine("GeoJSON files written: (none)");
+		}
+		else
+		{
+			Console.WriteLine($"GeoJSON files written: {result.GeojsonFilesWritten.Count:N0}");
+
+			foreach (string file in result.GeojsonFilesWritten)
+			{
+				int count = result.GeojsonFeatureCountsByFile.TryGetValue(file, out int c) ? c : 0;
+				Console.WriteLine($"  {Path.GetFileName(file)} - {count:N0} feature(s)");
+				Console.WriteLine($"    {file}");
+			}
 		}
 
 		PrintMessagesByLevel(result.Messages);

@@ -2,7 +2,7 @@ using FeBuddy.Core.Application.Airac.Airports.Models;
 using FeBuddy.Core.Application.Airac.Airways.Models;
 using FeBuddy.Core.Application.Airac.Arrivals.Models;
 using FeBuddy.Core.Application.Airac.Departures.Models;
-using FeBuddy.Core.Infrastructure.Configuration;
+using FeBuddy.Core.Application.Airac.WxStations;
 
 namespace FeBuddy.Harness;
 
@@ -15,6 +15,9 @@ internal static class HarnessSettings
 {
 	/// <summary>Directory containing an unzipped NASR 28-day subscription CSV set.</summary>
 	public const string NasrSourceDirectory = @"C:\Users\ksand\Downloads\03_Sep_2026_CSV";
+
+	/// <summary>Full path to an unzipped copy of the aviationweather.gov Wx Stations cache file.</summary>
+	public const string WxStationsSourceFile = @"C:\Users\ksand\Downloads\stations.cache.xml\stations.cache.xml";
 
 	/// <summary>
 	/// The folder the services write into, as the AIRAC Service's <c>AIRAC_&lt;cycle&gt;</c> folder
@@ -330,6 +333,139 @@ internal static class HarnessSettings
 	}
 
 	/// <summary>
+	/// Builds the raw settings dictionary for <c>ArtccBoundaryService.Run</c>. Every key the ARTCC
+	/// Boundaries settings parser recognizes is listed below with its default value, so any of
+	/// them can be flipped here without hunting through <c>ArtccBoundarySettingsParser</c>.
+	/// </summary>
+	public static Dictionary<string, string> ArtccBoundarySettings()
+	{
+		Dictionary<string, string> settings = new()
+		{
+			{ "OutputDirectory", OutputDirectory },
+
+			// How the GeoJSON is grouped. "HighLow" writes one High file and one Low file, an
+			// UNLIMITED ring going into both; "HighLowUnlimited" adds a third, Unlimited-only
+			// file; "ArtccAltitude" writes one file per LocationId and altitude present, e.g.
+			// ARTCC-Boundary_ZOB-HIGH_Lines.
+			{ "OutputBy", "HighLow" },   // or "HighLowUnlimited", "ArtccAltitude"
+			{ "LocationFilter", "" },    // e.g. "ZOB,ZNY"; empty = every ARTCC
+
+			{ "SplitAtAntimeridian", "Y" },
+
+			// FE-Buddy's own (non-CRC) properties. FebProperties is required when this is "Y".
+			{ "IncludeFebCustomProperties", "Y" },
+			{ "FebProperties", "locationId,locationName,locationType,icaoId,computerId,altitude,type,city,countryCode" },
+
+			// Files marked for vNAS go under Upload_to_vNAS; only those in CrcDefaultsFor get the
+			// CRC ERAM defaults Feature, using the Crc.High.* / Crc.Low.* values added by
+			// AddArtccBoundaryCrcDefaults below.
+			{ "UploadToVnas", "ARTCC-Boundary_High_Lines,ARTCC-Boundary_Low_Lines" },
+			{ "CrcDefaultsFor", "ARTCC-Boundary_High_Lines,ARTCC-Boundary_Low_Lines" },
+
+			{ "FilterByRoi", "N" },
+			{ "RoiSwLat", "" },              // e.g. "38.0"
+			{ "RoiSwLon", "" },              // e.g. "-85.0"
+			{ "RoiNeLat", "" },              // e.g. "43.0"
+			{ "RoiNeLon", "" },              // e.g. "-78.0"
+
+			{ "CoordinatePrecision", "6" },  // max decimal places in GeoJSON coords (0-15)
+		};
+
+		AddArtccBoundaryCrcDefaults(settings,
+			bcg: 10, filters: "10", highStyle: "solid", lowStyle: "longDashed", thickness: 1);
+
+		return settings;
+	}
+
+	/// <summary>
+	/// Builds the raw settings dictionary for <c>FixService.Run</c>. Every key the Fixes settings
+	/// parser recognizes is listed below with its default value, so any of them can be flipped
+	/// here without hunting through <c>FixSettingsParser</c>.
+	/// </summary>
+	public static Dictionary<string, string> FixSettings()
+	{
+		Dictionary<string, string> settings = new()
+		{
+			{ "OutputDirectory", OutputDirectory },
+
+			// GeoJSON is the only output the Fixes sub-service has - there is no GenerateGeojson
+			// and no alias file.
+			{ "EmitSymbols", "Y" },
+			{ "EmitText", "Y" },
+
+			// How the GeoJSON is grouped. "ChartAndFixUse" writes a Symbols/Text pair per listed
+			// combination below; the other layouts are "All", "FixUse" and "Chart".
+			{ "OutputBy", "ChartAndFixUse" },   // or "All", "FixUse", "Chart"
+			{ "ExcludedFixUses", "" },          // e.g. "RADAR,MIL-WYPNT" - only used in "FixUse" layout
+			{ "ExcludedCharts", "" },           // e.g. "SECTIONAL,AREA" - only used in "Chart" layout
+			{ "Combinations", "ENROUTE-LOW+WYPNT,ENROUTE-HIGH+WYPNT,IAP+RPRTNG-PNT" },
+
+			// FE-Buddy's own (non-CRC) properties. FebProperties is required when this is "Y".
+			{ "IncludeFebCustomProperties", "Y" },
+			{ "FebProperties", "fixId,fixUseCode,charts" },
+
+			// Files marked for vNAS go under Upload_to_vNAS; only those in CrcDefaultsFor get the
+			// CRC ERAM defaults Feature, using the Crc.ENROUTE-LOW-WYPNT.* values added by
+			// AddFixCrcDefaults below.
+			{ "UploadToVnas", "Fix_ENROUTE-LOW-WYPNT_Symbols,Fix_ENROUTE-LOW-WYPNT_Text" },
+			{ "CrcDefaultsFor", "Fix_ENROUTE-LOW-WYPNT_Symbols,Fix_ENROUTE-LOW-WYPNT_Text" },
+
+			// ROI filtering applies to the GeoJSON output only.
+			{ "FilterByRoi", "N" },
+			{ "RoiSwLat", "" },              // e.g. "38.0"
+			{ "RoiSwLon", "" },              // e.g. "-85.0"
+			{ "RoiNeLat", "" },              // e.g. "43.0"
+			{ "RoiNeLon", "" },              // e.g. "-78.0"
+
+			{ "CoordinatePrecision", "6" },  // max decimal places in GeoJSON coords (0-15)
+		};
+
+		AddFixCrcDefaults(settings, "ENROUTE-LOW-WYPNT",
+			symbolBcg: 11, symbolFilters: "11", symbolStyle: "otherWaypoints", symbolSize: 1,
+			textBcg: 11, textFilters: "11", textSize: 1);
+
+		return settings;
+	}
+
+	/// <summary>
+	/// Builds the raw settings dictionary for <c>WxStationService.Run</c>. Every key the Wx
+	/// Stations settings parser recognizes is listed below with its default value.
+	/// </summary>
+	public static Dictionary<string, string> WxStationSettings()
+	{
+		Dictionary<string, string> settings = new()
+		{
+			{ "OutputDirectory", OutputDirectory },
+
+			// GeoJSON is the only output the Wx Stations sub-service has - there is no
+			// GenerateGeojson, no alias file, and no feb.* properties.
+			{ "EmitSymbols", "Y" },
+			{ "EmitText", "Y" },
+
+			// Only the Symbols file goes to vNAS/gets CRC-ERAM defaults here, even though both
+			// Crc.Wx.Symbol.* and Crc.Wx.Text.* are populated below - Text's block is simply
+			// unused by this run, exercising a station being labelled without CRC defaults.
+			{ "UploadToVnas", WxStationOutputFiles.Symbols },
+			{ "CrcDefaultsFor", WxStationOutputFiles.Symbols },
+
+			// ROI filtering applies to the GeoJSON output only.
+			{ "FilterByRoi", "N" },
+			{ "RoiSwLat", "" },              // e.g. "38.0"
+			{ "RoiSwLon", "" },              // e.g. "-85.0"
+			{ "RoiNeLat", "" },              // e.g. "43.0"
+			{ "RoiNeLon", "" },              // e.g. "-78.0"
+
+			{ "CoordinatePrecision", "6" },  // max decimal places in GeoJSON coords (0-15)
+		};
+
+		AddWxStationCrcDefaults(settings,
+			symbolBcg: 12, symbolFilters: "12", symbolStyle: "otherWaypoints", symbolSize: 1,
+			textBcg: 12, textFilters: "12", textSize: 1);
+
+		return settings;
+	}
+
+	/// <summary>
 	/// Settings for exercising the alias-only path (<c>OutputBy = None</c>, alias file still
 	/// generated), matching the "written even when OutputBy = None" contract.
 	/// </summary>
@@ -535,6 +671,114 @@ internal static class HarnessSettings
 		settings["Crc.NAVAIDs.Text.xOffset"] = "0";
 		settings["Crc.NAVAIDs.Text.yOffset"] = "0";
 		settings["Crc.NAVAIDs.Text.opaque"] = "N";
+	}
+
+	/// <summary>
+	/// Adds the <c>Crc.High.Line.*</c> and <c>Crc.Low.Line.*</c> property defaults. These values
+	/// are the harness's own; the GUI starts every CRC box empty and makes the user choose.
+	/// </summary>
+	/// <param name="settings">The dictionary being built.</param>
+	/// <param name="bcg">BCG group, 1-40, shared by both classes.</param>
+	/// <param name="filters">Filters, comma-separated, each 0-40, at least one, shared by both classes.</param>
+	/// <param name="highStyle">High line style, one of <c>CrcPropertyValidator.ValidLineStyles</c>.</param>
+	/// <param name="lowStyle">Low line style, one of <c>CrcPropertyValidator.ValidLineStyles</c>.</param>
+	/// <param name="thickness">Line thickness, 1-3, shared by both classes.</param>
+	private static void AddArtccBoundaryCrcDefaults(
+		Dictionary<string, string> settings,
+		int bcg,
+		string filters,
+		string highStyle,
+		string lowStyle,
+		int thickness)
+	{
+		settings["Crc.High.Line.bcg"] = bcg.ToString();
+		settings["Crc.High.Line.filters"] = filters;
+		settings["Crc.High.Line.style"] = highStyle;
+		settings["Crc.High.Line.thickness"] = thickness.ToString();
+
+		settings["Crc.Low.Line.bcg"] = bcg.ToString();
+		settings["Crc.Low.Line.filters"] = filters;
+		settings["Crc.Low.Line.style"] = lowStyle;
+		settings["Crc.Low.Line.thickness"] = thickness.ToString();
+	}
+
+	/// <summary>
+	/// Adds the <c>Crc.&lt;cls&gt;.Symbol.*</c> and <c>Crc.&lt;cls&gt;.Text.*</c> property defaults
+	/// for one Fixes group - a fix use, a chart, or a chart + fix use combination. These values
+	/// are the harness's own; the GUI starts every CRC box empty and makes the user choose.
+	/// </summary>
+	/// <param name="settings">The dictionary being built.</param>
+	/// <param name="cls">The group's CRC class name, e.g. <c>ENROUTE-LOW-WYPNT</c>.</param>
+	/// <param name="symbolBcg">Symbol BCG group, 1-40.</param>
+	/// <param name="symbolFilters">Symbol filters, comma-separated, each 0-40, at least one.</param>
+	/// <param name="symbolStyle">Symbol style, one of <c>CrcPropertyValidator.ValidSymbolStyles</c>.</param>
+	/// <param name="symbolSize">Symbol size, 1-4.</param>
+	/// <param name="textBcg">Text BCG group, 1-40.</param>
+	/// <param name="textFilters">Text filters, comma-separated, each 0-40, at least one.</param>
+	/// <param name="textSize">Text size, 0-5.</param>
+	private static void AddFixCrcDefaults(
+		Dictionary<string, string> settings,
+		string cls,
+		int symbolBcg,
+		string symbolFilters,
+		string symbolStyle,
+		int symbolSize,
+		int textBcg,
+		string textFilters,
+		int textSize)
+	{
+		settings[$"Crc.{cls}.Symbol.bcg"] = symbolBcg.ToString();
+		settings[$"Crc.{cls}.Symbol.filters"] = symbolFilters;
+		settings[$"Crc.{cls}.Symbol.style"] = symbolStyle;
+		settings[$"Crc.{cls}.Symbol.size"] = symbolSize.ToString();
+
+		// No "Crc.<cls>.Text.text": every fix supplies its own label from its identifier, and the
+		// parser warns if one is supplied here.
+		settings[$"Crc.{cls}.Text.bcg"] = textBcg.ToString();
+		settings[$"Crc.{cls}.Text.filters"] = textFilters;
+		settings[$"Crc.{cls}.Text.size"] = textSize.ToString();
+		settings[$"Crc.{cls}.Text.underline"] = "N";
+		settings[$"Crc.{cls}.Text.xOffset"] = "0";
+		settings[$"Crc.{cls}.Text.yOffset"] = "0";
+		settings[$"Crc.{cls}.Text.opaque"] = "N";
+	}
+
+	/// <summary>
+	/// Adds the <c>Crc.Wx.Symbol.*</c> and <c>Crc.Wx.Text.*</c> property defaults. These values are
+	/// the harness's own; the GUI starts every CRC box empty and makes the user choose.
+	/// </summary>
+	/// <param name="settings">The dictionary being built.</param>
+	/// <param name="symbolBcg">Symbol BCG group, 1-40.</param>
+	/// <param name="symbolFilters">Symbol filters, comma-separated, each 0-40, at least one.</param>
+	/// <param name="symbolStyle">Symbol style, one of <c>CrcPropertyValidator.ValidSymbolStyles</c>.</param>
+	/// <param name="symbolSize">Symbol size, 1-4.</param>
+	/// <param name="textBcg">Text BCG group, 1-40.</param>
+	/// <param name="textFilters">Text filters, comma-separated, each 0-40, at least one.</param>
+	/// <param name="textSize">Text size, 0-5.</param>
+	private static void AddWxStationCrcDefaults(
+		Dictionary<string, string> settings,
+		int symbolBcg,
+		string symbolFilters,
+		string symbolStyle,
+		int symbolSize,
+		int textBcg,
+		string textFilters,
+		int textSize)
+	{
+		settings[$"Crc.{WxStationOutputFiles.AllClass}.Symbol.bcg"] = symbolBcg.ToString();
+		settings[$"Crc.{WxStationOutputFiles.AllClass}.Symbol.filters"] = symbolFilters;
+		settings[$"Crc.{WxStationOutputFiles.AllClass}.Symbol.style"] = symbolStyle;
+		settings[$"Crc.{WxStationOutputFiles.AllClass}.Symbol.size"] = symbolSize.ToString();
+
+		// No "Crc.Wx.Text.text": every station supplies its own label from its ICAO ID, IATA ID
+		// and site, and the parser warns if one is supplied here.
+		settings[$"Crc.{WxStationOutputFiles.AllClass}.Text.bcg"] = textBcg.ToString();
+		settings[$"Crc.{WxStationOutputFiles.AllClass}.Text.filters"] = textFilters;
+		settings[$"Crc.{WxStationOutputFiles.AllClass}.Text.size"] = textSize.ToString();
+		settings[$"Crc.{WxStationOutputFiles.AllClass}.Text.underline"] = "N";
+		settings[$"Crc.{WxStationOutputFiles.AllClass}.Text.xOffset"] = "0";
+		settings[$"Crc.{WxStationOutputFiles.AllClass}.Text.yOffset"] = "0";
+		settings[$"Crc.{WxStationOutputFiles.AllClass}.Text.opaque"] = "N";
 	}
 
 	private static void AddCrcDefaults(

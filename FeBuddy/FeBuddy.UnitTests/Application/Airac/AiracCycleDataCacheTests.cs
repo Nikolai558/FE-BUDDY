@@ -5,6 +5,8 @@ using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Domain.Airac.Models;
 using FeBuddy.Core.Infrastructure.Logging;
 using FeBuddy.Core.Infrastructure.Nasr.Models;
+using FeBuddy.Core.Infrastructure.WxStations;
+using FeBuddy.Core.Infrastructure.WxStations.Models;
 
 namespace FeBuddy.UnitTests.Application.Airac;
 
@@ -233,6 +235,47 @@ public sealed class AiracCycleDataCacheTests : IDisposable
 	}
 
 	[Fact]
+	public async Task concurrent_get_async_calls_for_a_failed_cycles_retry_share_the_same_flight()
+	{
+		TaskCompletionSource<string> releaseThirdAttempt = new(TaskCreationOptions.RunContinuationsAsynchronously);
+		int currentAttempts = 0;
+
+		AiracCycleDataCache cache = new(
+			probe: AlwaysPublished,
+			download: (cycle, _) =>
+			{
+				if (cycle.AiracCycleId != Current.AiracCycleId)
+				{
+					return Task.FromResult($@"C:\cache\{cycle.AiracCycleId}");
+				}
+
+				// The first two attempts (both during PrepareCyclesAsync's own one-retry) fail; the
+				// third (GetAsync's retry) hangs until released, so a second concurrent GetAsync call
+				// has a real in-flight task to find.
+				return Interlocked.Increment(ref currentAttempts) <= 2
+					? Task.FromException<string>(new IOException("network down"))
+					: releaseThirdAttempt.Task;
+			},
+			parse: (_, _) => Task.FromResult(new NasrCsvDataCollection()));
+
+		await cache.PrepareCyclesAsync(Previous, Current, Next);
+		Assert.Equal(CycleDataState.Failed, cache.GetEntry("2610")!.State);
+		Assert.Equal(2, currentAttempts);
+
+		Task<NasrCsvDataCollection> first = cache.GetAsync("2610");
+		Task<NasrCsvDataCollection> second = cache.GetAsync("2610");
+
+		// The second call found the first's retry already in _flights rather than starting its own.
+		Assert.Same(first, second);
+
+		releaseThirdAttempt.SetResult(@"C:\cache\2610");
+		await Task.WhenAll(first, second);
+
+		Assert.Equal(3, currentAttempts);
+		Assert.Equal(CycleDataState.Ready, cache.GetEntry("2610")!.State);
+	}
+
+	[Fact]
 	public async Task download_that_keeps_failing_is_retried_once_then_marked_failed()
 	{
 		ConcurrentDictionary<string, int> attempts = new();
@@ -436,6 +479,221 @@ public sealed class AiracCycleDataCacheTests : IDisposable
 
 		await Assert.ThrowsAnyAsync<OperationCanceledException>(() => cache.PrepareCyclesAsync(Previous, Current, Next));
 		Assert.NotEqual(CycleDataState.Failed, cache.GetEntry("2610")!.State);
+	}
+
+	// ---- Wx Stations: ensureWxStations ----
+
+	[Fact]
+	public async Task ensure_wx_stations_is_called_with_the_cycle_folder_after_a_successful_download()
+	{
+		List<string> calledWithFolders = [];
+
+		AiracCycleDataCache cache = new(
+			probe: AlwaysPublished,
+			download: (cycle, _) => Task.FromResult($@"C:\cache\{cycle.AiracCycleId}"),
+			parse: (_, _) => Task.FromResult(new NasrCsvDataCollection()),
+			ensureWxStations: (cycleDirectory, _) =>
+			{
+				lock (calledWithFolders) { calledWithFolders.Add(cycleDirectory); }
+				return Task.CompletedTask;
+			});
+
+		await cache.PrepareCyclesAsync(Previous, Current, Next);
+
+		Assert.Equal(3, calledWithFolders.Count);
+		Assert.Contains(@"C:\cache\2609", calledWithFolders);
+		Assert.Contains(@"C:\cache\2610", calledWithFolders);
+		Assert.Contains(@"C:\cache\2611", calledWithFolders);
+	}
+
+	[Fact]
+	public async Task ensure_wx_stations_runs_even_for_an_already_cached_cycle()
+	{
+		bool called = false;
+
+		AiracCycleDataCache cache = new(
+			probe: AlwaysPublished,
+			download: (cycle, _) => Task.FromResult($@"C:\cache\{cycle.AiracCycleId}"),
+			parse: (_, _) => Task.FromResult(new NasrCsvDataCollection()),
+			isLocallyAvailable: _ => true,
+			ensureWxStations: (_, _) =>
+			{
+				called = true;
+				return Task.CompletedTask;
+			});
+
+		await cache.PrepareCyclesAsync(Previous, Current, Next);
+
+		Assert.True(called);
+	}
+
+	[Fact]
+	public async Task an_exception_from_ensure_wx_stations_is_swallowed_and_the_cycle_still_reaches_ready()
+	{
+		AiracCycleDataCache cache = new(
+			probe: AlwaysPublished,
+			download: (cycle, _) => Task.FromResult($@"C:\cache\{cycle.AiracCycleId}"),
+			parse: (_, _) => Task.FromResult(new NasrCsvDataCollection()),
+			ensureWxStations: (_, _) => Task.FromException(new IOException("network down")));
+
+		await cache.PrepareCyclesAsync(Previous, Current, Next);
+
+		Assert.Equal(CycleDataState.Ready, cache.GetEntry("2610")!.State);
+		Assert.Equal(AiracCycleReadiness.Ready, cache.ComputeReadiness());
+	}
+
+	[Fact]
+	public async Task cancellation_from_ensure_wx_stations_propagates()
+	{
+		AiracCycleDataCache cache = new(
+			probe: AlwaysPublished,
+			download: (cycle, _) => Task.FromResult($@"C:\cache\{cycle.AiracCycleId}"),
+			parse: (_, _) => Task.FromResult(new NasrCsvDataCollection()),
+			ensureWxStations: (_, _) => Task.FromException(new OperationCanceledException()));
+
+		await Assert.ThrowsAnyAsync<OperationCanceledException>(() => cache.PrepareCyclesAsync(Previous, Current, Next));
+	}
+
+	// ---- Wx Stations: GetWxStationsAsync ----
+
+	[Fact]
+	public async Task get_wx_stations_async_for_an_untracked_cycle_throws()
+	{
+		AiracCycleDataCache cache = new(AlwaysPublished, (_, _) => Task.FromResult("x"), (_, _) => Task.FromResult(new NasrCsvDataCollection()));
+
+		await Assert.ThrowsAsync<InvalidOperationException>(() => cache.GetWxStationsAsync("2610"));
+	}
+
+	[Fact]
+	public async Task get_wx_stations_async_before_download_returns_null_without_calling_the_loader()
+	{
+		bool loaderCalled = false;
+
+		AiracCycleDataCache cache = new(
+			probe: (cycle, _) => Task.FromResult(
+				cycle.AiracCycleId == Next.AiracCycleId ? AiracCyclePublicationState.NotYetPublished : AiracCyclePublicationState.Published),
+			download: (cycle, _) => Task.FromResult($@"C:\cache\{cycle.AiracCycleId}"),
+			parse: (_, _) => Task.FromResult(new NasrCsvDataCollection()),
+			loadWxStations: (_, _) =>
+			{
+				loaderCalled = true;
+				return Task.FromResult<WxStationDataCollection?>(null);
+			});
+
+		await cache.PrepareCyclesAsync(Previous, Current, Next);
+
+		// Next has not been published, so its CycleDirectory is still null.
+		WxStationDataCollection? result = await cache.GetWxStationsAsync("2611");
+
+		Assert.Null(result);
+		Assert.False(loaderCalled);
+	}
+
+	[Fact]
+	public async Task get_wx_stations_async_after_download_returns_the_injected_loaders_result()
+	{
+		WxStationDataCollection expected = new() { NumResults = 1 };
+		string? loadedFromFolder = null;
+
+		AiracCycleDataCache cache = new(
+			probe: AlwaysPublished,
+			download: (cycle, _) => Task.FromResult($@"C:\cache\{cycle.AiracCycleId}"),
+			parse: (_, _) => Task.FromResult(new NasrCsvDataCollection()),
+			loadWxStations: (cycleDirectory, _) =>
+			{
+				loadedFromFolder = cycleDirectory;
+				return Task.FromResult<WxStationDataCollection?>(expected);
+			});
+
+		await cache.PrepareCyclesAsync(Previous, Current, Next);
+
+		WxStationDataCollection? result = await cache.GetWxStationsAsync("2610");
+
+		Assert.Same(expected, result);
+		Assert.Equal(@"C:\cache\2610", loadedFromFolder);
+	}
+
+	// ---- Wx Stations: FindWxStationsFile ----
+
+	[Fact]
+	public void find_wx_stations_file_for_an_untracked_cycle_is_null()
+	{
+		AiracCycleDataCache cache = new(AlwaysPublished, (_, _) => Task.FromResult("x"), (_, _) => Task.FromResult(new NasrCsvDataCollection()));
+
+		Assert.Null(cache.FindWxStationsFile("2610"));
+	}
+
+	[Fact]
+	public async Task find_wx_stations_file_before_download_is_null()
+	{
+		AiracCycleDataCache cache = new(
+			probe: (cycle, _) => Task.FromResult(
+				cycle.AiracCycleId == Next.AiracCycleId ? AiracCyclePublicationState.NotYetPublished : AiracCyclePublicationState.Published),
+			download: (cycle, _) => Task.FromResult($@"C:\cache\{cycle.AiracCycleId}"),
+			parse: (_, _) => Task.FromResult(new NasrCsvDataCollection()));
+
+		await cache.PrepareCyclesAsync(Previous, Current, Next);
+
+		Assert.Null(cache.FindWxStationsFile("2611"));
+	}
+
+	[Fact]
+	public async Task find_wx_stations_file_when_missing_from_the_cycle_folder_is_null()
+	{
+		string cycleDirectory = Path.Combine(Path.GetTempPath(), "FeBuddyTests_FindWx_" + Guid.NewGuid().ToString("N"));
+		Directory.CreateDirectory(cycleDirectory);
+
+		try
+		{
+			AiracCycleDataCache cache = new(
+				probe: AlwaysPublished,
+				download: (_, _) => Task.FromResult(cycleDirectory),
+				parse: (_, _) => Task.FromResult(new NasrCsvDataCollection()));
+
+			await cache.PrepareCyclesAsync(Previous, Current, Next);
+
+			Assert.Null(cache.FindWxStationsFile("2610"));
+		}
+		finally
+		{
+			Directory.Delete(cycleDirectory, recursive: true);
+		}
+	}
+
+	[Fact]
+	public async Task find_wx_stations_file_when_present_returns_its_path()
+	{
+		string cycleDirectory = Path.Combine(Path.GetTempPath(), "FeBuddyTests_FindWx_" + Guid.NewGuid().ToString("N"));
+		Directory.CreateDirectory(cycleDirectory);
+		string stationsFile = Path.Combine(cycleDirectory, WxStationFiles.FileName);
+		File.WriteAllText(stationsFile, "<response><data></data></response>");
+
+		try
+		{
+			AiracCycleDataCache cache = new(
+				probe: AlwaysPublished,
+				download: (_, _) => Task.FromResult(cycleDirectory),
+				parse: (_, _) => Task.FromResult(new NasrCsvDataCollection()));
+
+			await cache.PrepareCyclesAsync(Previous, Current, Next);
+
+			Assert.Equal(stationsFile, cache.FindWxStationsFile("2610"));
+		}
+		finally
+		{
+			Directory.Delete(cycleDirectory, recursive: true);
+		}
+	}
+
+	// ---- Wx Stations: parameterless constructor ----
+
+	[Fact]
+	public void the_parameterless_constructor_produces_an_untouched_cache_without_touching_the_network()
+	{
+		AiracCycleDataCache cache = new();
+
+		Assert.Empty(cache.Entries);
+		Assert.Equal(AiracCycleReadiness.Waiting, cache.ComputeReadiness());
 	}
 
 	[Fact]

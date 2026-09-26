@@ -165,52 +165,55 @@ jobs:
         if: ${{ github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch' }}
         shell: pwsh
         env:
-          GH_PAT: ${{ secrets.RELEASE_COUNTER_PAT }}
+          # gh authenticates as the PAT owner here, not as GITHUB_TOKEN.
+          GH_TOKEN: ${{ secrets.RELEASE_COUNTER_PAT }}
         run: |
           $ErrorActionPreference = 'Stop'
 
           # build.ps1 already bumped this in the runner's working copy. Commit it
           # back so it is not lost - see docs/MSI-VERSION-NUMBERING.md.
-          $bumped = Get-Content -Path 'FE-BUDDY.Installer/installer-version-counter.json' -Raw
+          $counterPath = 'FE-BUDDY.Installer/installer-version-counter.json'
+          # The Windows checkout may have CRLF; the repo stores LF.
+          $bumped = (Get-Content -Path $counterPath -Raw) -replace "`r`n", "`n"
           $c = $bumped | ConvertFrom-Json
           $counterVersion = "$($c.major).$($c.counterMinor).$($c.counterBuild)"
           $rel   = '${{ steps.preflight.outputs.version }}'
+          $repo  = '${{ github.repository }}'
 
-          $repoUrl  = "https://x-access-token:$env:GH_PAT@github.com/${{ github.repository }}.git"
-          $counterPath = 'FE-BUDDY.Installer/installer-version-counter.json'
-
+          # Commits go through the GraphQL createCommitOnBranch mutation rather than
+          # git push: GitHub builds and signs them server-side, so they show as
+          # Verified and satisfy the `releases` required-signatures rule.
           function Push-Counter([string]$branch) {
-              # Isolated clone per branch so we never touch this job's own checkout.
-              $dir = "sync-$branch"
-              git clone --depth 1 --branch $branch $repoUrl $dir
-              if ($LASTEXITCODE -ne 0) { throw "Could not clone branch '$branch'." }
-
-              Set-Content -Path "$dir/$counterPath" -Value $bumped -NoNewline -Encoding utf8
-
-              Push-Location $dir
-              try {
-                  git config user.name  'fe-buddy-release-bot'
-                  git config user.email '${{ github.repository_owner }}@users.noreply.github.com'
-                  git add $counterPath
-
-                  # `git diff --cached --quiet` exits non-zero when there IS a staged
-                  # change. Under pwsh a native non-zero exit does not throw, so we
-                  # branch on $LASTEXITCODE rather than relying on ErrorAction.
-                  git diff --cached --quiet
-                  if ($LASTEXITCODE -eq 0) {
-                      Write-Host "Counter already current on '$branch'; nothing to commit."
-                      return
-                  }
-
-                  git commit -m "chore: bump installer version counter to $counterVersion (release $rel) [skip ci]"
-                  if ($LASTEXITCODE -ne 0) { throw "Commit failed on '$branch'." }
-                  git push origin "HEAD:$branch"
-                  if ($LASTEXITCODE -ne 0) { throw "Push to '$branch' failed." }
-                  Write-Host "Pushed counter $counterVersion to '$branch'."
+              $current = gh api "repos/$repo/contents/$($counterPath)?ref=$branch" -H 'Accept: application/vnd.github.raw'
+              if ($LASTEXITCODE -ne 0) { throw "Could not read counter on '$branch'." }
+              if (($current -join "`n").Trim() -eq $bumped.Trim()) {
+                  Write-Host "Counter already current on '$branch'; nothing to commit."
+                  return
               }
-              finally {
-                  Pop-Location
-              }
+
+              $head = gh api "repos/$repo/branches/$branch" --jq '.commit.sha'
+              if ($LASTEXITCODE -ne 0) { throw "Could not read head of '$branch'." }
+
+              $payload = @{
+                  query     = 'mutation($input: CreateCommitOnBranchInput!) { createCommitOnBranch(input: $input) { commit { oid } } }'
+                  variables = @{ input = @{
+                      branch          = @{ repositoryNameWithOwner = $repo; branchName = $branch }
+                      message         = @{ headline = "chore: bump installer version counter to $counterVersion (release $rel) [skip ci]" }
+                      expectedHeadOid = $head.Trim()
+                      fileChanges     = @{ additions = @(@{
+                          path     = $counterPath
+                          contents = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($bumped))
+                      }) }
+                  } }
+              } | ConvertTo-Json -Depth 10
+
+              # Via a file, not a pipe, so no BOM can sneak in - the GraphQL endpoint
+              # rejects one. WriteAllText writes UTF-8 without a BOM.
+              $payloadPath = Join-Path $env:RUNNER_TEMP "counter-$branch.json"
+              [IO.File]::WriteAllText($payloadPath, $payload)
+              $oid = gh api graphql --input $payloadPath --jq '.data.createCommitOnBranch.commit.oid'
+              if ($LASTEXITCODE -ne 0 -or -not $oid) { throw "Commit to '$branch' failed." }
+              Write-Host "Committed counter $counterVersion to '$branch' ($oid)."
           }
 
           # `releases` first: it is the branch this job checks out and reads the

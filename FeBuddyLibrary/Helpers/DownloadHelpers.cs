@@ -2,42 +2,45 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Net.Http;
+using System.Threading;
 using FeBuddyLibrary.Models;
 
 namespace FeBuddyLibrary.Helpers
 {
     public class DownloadHelpers
     {
+        private static readonly TimeSpan StallTimeout = TimeSpan.FromSeconds(100);
+
         /// <param name="onBytes">
         /// Optional callback invoked as the body streams in: (bytesReceivedSoFar, totalBytesOrNull).
         /// Called once with 0 up front so callers can show the file starting even before the
-        /// first chunk arrives. When null, the fast bulk copy is used instead.
+        /// first chunk arrives.
         /// </param>
         private static void DownloadFile(string url, string destPath, Action<long, long?> onBytes = null)
         {
-            using var response = SharedHttp.Client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead)
+            using var cts = new CancellationTokenSource(StallTimeout);
+
+            using var response = SharedHttp.Client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, cts.Token)
                                                   .GetAwaiter().GetResult();
             response.EnsureSuccessStatusCode();
-            using var src = response.Content.ReadAsStreamAsync().GetAwaiter().GetResult();
+            using var src = response.Content.ReadAsStreamAsync(cts.Token).GetAwaiter().GetResult();
             using var dst = new FileStream(destPath, FileMode.Create, FileAccess.Write, FileShare.None);
-
-            if (onBytes == null)
-            {
-                src.CopyTo(dst);
-                return;
-            }
 
             long? totalBytes = response.Content.Headers.ContentLength;
             byte[] buffer = new byte[81920];
             long totalRead = 0;
             int bytesRead;
 
-            onBytes(0, totalBytes);
-            while ((bytesRead = src.Read(buffer, 0, buffer.Length)) > 0)
+            onBytes?.Invoke(0, totalBytes);
+            cts.CancelAfter(StallTimeout);
+            while ((bytesRead = src.ReadAsync(buffer, 0, buffer.Length, cts.Token).GetAwaiter().GetResult()) > 0)
             {
                 dst.Write(buffer, 0, bytesRead);
                 totalRead += bytesRead;
-                onBytes(totalRead, totalBytes);
+                onBytes?.Invoke(totalRead, totalBytes);
+                // Restart the idle clock now that a chunk has landed. A large slow file is
+                // fine; a connection that goes StallTimeout with nothing is not.
+                cts.CancelAfter(StallTimeout);
             }
         }
 

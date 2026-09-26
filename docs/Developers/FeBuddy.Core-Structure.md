@@ -73,6 +73,11 @@ FeBuddy.Core/
 │   │   │               CSVs in each cycle's folder
 │   │   ├── Models/     WxStationXmlDataModel, WxStationDataCollection
 │   │   └── Parsers/    WxStationXmlParser
+│   ├── Dtpp/           DtppFiles - the FAA d-TPP Metafile (d-tpp_Metafile.xml), the Digital
+│   │   │               Terminal Procedures Publication index; models and a streaming parser only
+│   │   │               so far, not yet wired into a sub-service
+│   │   ├── Models/     DtppMetafileXmlDataModel, DtppMetafileDataCollection
+│   │   └── Parsers/    DtppMetafileXmlParser
 │   ├── Eram/           EramGeoMapReader: an ERAM adaptation export's Geomaps.xml (streamed)
 │   └── Sct/            SctFileReader: VRC .sct2 / .sct sector files
 └── Application/

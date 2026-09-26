@@ -68,4 +68,10 @@ public sealed record AiracServiceSettings
 	/// selected for this run.
 	/// </summary>
 	public IReadOnlyDictionary<string, string>? Navaids { get; init; }
+
+	/// <summary>
+	/// The ARTCC Boundaries sub-service settings block, or <see langword="null"/> when ARTCC
+	/// Boundaries was not selected for this run.
+	/// </summary>
+	public IReadOnlyDictionary<string, string>? ArtccBoundaries { get; init; }
 }

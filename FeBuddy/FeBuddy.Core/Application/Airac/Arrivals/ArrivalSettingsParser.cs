@@ -27,7 +27,7 @@ public static class ArrivalSettingsParser
 		"GenerateGeojson", "EmitLines", "EmitSymbols", "EmitText",
 		"ArtccFilter",
 		"AmendmentFilter", "AmendedWithinCycles", "AmendedWithinDays", "AmendedOnOrAfter",
-		"RoiMode",
+		"RoiMode", "GenerateAliasFile",
 	};
 
 	/// <summary>Arrivals has one CRC defaults class, which draws all three kinds.</summary>

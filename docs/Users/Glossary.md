@@ -18,6 +18,11 @@ line crossing it has to be split in two or it draws the long way round, across t
 **ARTCC** - Air Route Traffic Control Center: the facility that controls a large area of
 airspace, like Cleveland Center (ZOB). On VATSIM, each ARTCC has its own facility files.
 
+**ARTCC Boundaries** - The sub-service that draws each ARTCC's lateral boundary as lines, split by
+altitude structure (HIGH, LOW, UNLIMITED); an oceanic ARTCC like ZAK, ZAP or ZWY draws a CTA ring
+and a FIR ring at the same altitude. No alias file - a boundary line carries no label to write
+one from.
+
 **BCG** - Brightness Control Group: a CRC setting (1-40) that decides which brightness knob on
 the scope controls a map element.
 
@@ -71,7 +76,7 @@ FE-Buddy only writes data inside (or crossing) it. Make it a little bigger than 
 **STAR** - Standard Terminal Arrival: a published arrival route into an airport.
 
 **Sub-service** - One kind of data the AIRAC Service can produce: Airports, Airways, Departures,
-Arrivals or NAVAIDs. Each has its own tab and settings.
+Arrivals, NAVAIDs or ARTCC Boundaries. Each has its own tab and settings.
 
 **Video map** - The map background on a controller's scope: airways, airports, boundaries.
 In CRC, these are GeoJSON files.

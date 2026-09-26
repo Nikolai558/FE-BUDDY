@@ -28,9 +28,11 @@ public static partial class SubServiceSettingsReader
 	/// The keys every sub-service understands. A parser adds its own keys to these when looking
 	/// for unrecognized settings.
 	/// </summary>
+	// "GenerateAliasFile" is deliberately not here: every sub-service reads it except ARTCC
+	// Boundaries, which has no alias file, so each of the others lists it in its own OwnKeys.
 	public static readonly IReadOnlySet<string> CommonKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
 	{
-		"OutputDirectory", "CoordinatePrecision", "GenerateAliasFile",
+		"OutputDirectory", "CoordinatePrecision",
 		"IncludeFebCustomProperties", "FebProperties",
 		UploadToVnasKey, CrcDefaultsForKey,
 		"FilterByRoi", "RoiSwLat", "RoiSwLon", "RoiNeLat", "RoiNeLon",
@@ -143,7 +145,10 @@ public static partial class SubServiceSettingsReader
 	/// which of those get CRC-ERAM defaults. Both are comma-separated file keys and default to none.
 	/// </summary>
 	/// <param name="settings">The raw settings block.</param>
-	/// <param name="aliasFileKey">The sub-service's alias file key, e.g. <c>Airways.txt</c>.</param>
+	/// <param name="aliasFileKey">
+	/// The sub-service's alias file key, e.g. <c>Airways.txt</c>, or <see langword="null"/> when the
+	/// sub-service has no alias file (e.g. ARTCC Boundaries).
+	/// </param>
 	/// <param name="isGeojsonFileKey">Whether a key names one of the sub-service's GeoJSON files (or kinds of file).</param>
 	/// <param name="example">Sample keys for the error message, e.g. <c>Airways_High_Lines, Airways.txt</c>.</param>
 	/// <returns>The choices.</returns>
@@ -153,7 +158,7 @@ public static partial class SubServiceSettingsReader
 	/// </exception>
 	public static VnasFileChoices ReadVnasFiles(
 		IReadOnlyDictionary<string, string> settings,
-		string aliasFileKey,
+		string? aliasFileKey,
 		Func<string, bool> isGeojsonFileKey,
 		string example)
 	{

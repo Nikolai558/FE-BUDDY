@@ -6,6 +6,8 @@ using FeBuddy.Core.Application.Airac.Airways;
 using FeBuddy.Core.Application.Airac.Airways.Models;
 using FeBuddy.Core.Application.Airac.Arrivals;
 using FeBuddy.Core.Application.Airac.Arrivals.Models;
+using FeBuddy.Core.Application.Airac.ArtccBoundaries;
+using FeBuddy.Core.Application.Airac.ArtccBoundaries.Models;
 using FeBuddy.Core.Application.Airac.Departures;
 using FeBuddy.Core.Application.Airac.Departures.Models;
 using FeBuddy.Core.Application.Airac.Models;
@@ -20,8 +22,8 @@ namespace FeBuddy.Core.Application.Airac;
 
 /// <summary>
 /// The AIRAC Service: the GUI calls this once per "Run AIRAC Service". It runs each selected
-/// sub-service (Airways, Airports, Departures, Arrivals, NAVAIDs) against one cycle's NASR data
-/// and gathers the results.
+/// sub-service (Airways, Airports, Departures, Arrivals, NAVAIDs, ARTCC Boundaries) against one
+/// cycle's NASR data and gathers the results.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -108,7 +110,8 @@ public static class AiracService
 		List<ServiceMessage> messages = [];
 		string outputDirectory = settings.CycleOutputDirectory;
 		bool anySelected = settings.Airways is not null || settings.Airports is not null
-			|| settings.Departures is not null || settings.Arrivals is not null || settings.Navaids is not null;
+			|| settings.Departures is not null || settings.Arrivals is not null || settings.Navaids is not null
+			|| settings.ArtccBoundaries is not null;
 
 		// Only when there is something to write: a run with nothing selected must not empty the
 		// folder and leave it that way.
@@ -147,6 +150,11 @@ public static class AiracService
 			block => NavaidService.Run(nasrData, block),
 			result => $"{result.NavaidCount} NAVAID(s), {result.GeojsonFilesWritten.Count} GeoJSON file(s)").ConfigureAwait(false);
 
+		ArtccBoundaryServiceResult? artccBoundariesResult = await RunSubServiceAsync(
+			settings.ArtccBoundaries, "ARTCC Boundaries", "Building ARTCC boundary GeoJSON output",
+			block => ArtccBoundaryService.Run(nasrData, block),
+			result => $"{result.LocationCount} ARTCC(s), {result.RingCount} boundary line(s), {result.GeojsonFilesWritten.Count} GeoJSON file(s)").ConfigureAwait(false);
+
 		if (!anySelected)
 		{
 			const string message = "AIRAC Service run requested with no sub-service selected; nothing to do.";
@@ -166,6 +174,7 @@ public static class AiracService
 			Departures = departuresResult,
 			Arrivals = arrivalsResult,
 			Navaids = navaidsResult,
+			ArtccBoundaries = artccBoundariesResult,
 		};
 
 		// Runs one sub-service if it was selected (its settings block is not null), reporting

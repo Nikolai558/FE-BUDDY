@@ -61,4 +61,36 @@ public sealed class SubServiceSettingsReaderTests
 
 		Assert.Contains("alias file", ex.Message, StringComparison.Ordinal);
 	}
+
+	// ---- a null aliasFileKey (a sub-service with no alias file, e.g. ARTCC Boundaries) ----
+
+	private static VnasFileChoices ReadNoAlias(params (string Key, string Value)[] entries) =>
+		SubServiceSettingsReader.ReadVnasFiles(
+			entries.ToDictionary(e => e.Key, e => e.Value, StringComparer.OrdinalIgnoreCase),
+			aliasFileKey: null, IsGeojson, example: "Things_Lines");
+
+	[Fact]
+	public void a_null_alias_file_key_accepts_geojson_keys()
+	{
+		VnasFileChoices choices = ReadNoAlias(("UploadToVnas", "Things_Lines"), ("CrcDefaultsFor", "Things_Lines"));
+
+		Assert.True(choices.IsUploaded("Things_Lines"));
+		Assert.True(choices.HasCrcDefaults("Things_Lines"));
+	}
+
+	[Fact]
+	public void a_null_alias_file_key_rejects_the_key_the_alias_file_would_have_used()
+	{
+		ArgumentException ex = Assert.Throws<ArgumentException>(() => ReadNoAlias(("UploadToVnas", Alias)));
+
+		Assert.Contains($"'{Alias}'", ex.Message, StringComparison.Ordinal);
+	}
+
+	[Fact]
+	public void a_null_alias_file_key_rejects_any_other_unrecognized_key_too()
+	{
+		ArgumentException ex = Assert.Throws<ArgumentException>(() => ReadNoAlias(("UploadToVnas", "junk")));
+
+		Assert.Contains("'junk'", ex.Message, StringComparison.Ordinal);
+	}
 }

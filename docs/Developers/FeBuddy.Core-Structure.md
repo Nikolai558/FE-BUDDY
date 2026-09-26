@@ -47,6 +47,8 @@ FeBuddy.Core/
 │   ├── Airports/     Airport, AirportRunway models
 │   ├── Airways/      AirwayClassifier and the Airway/segment/point models
 │   ├── Arrivals/     ArrivalNaming and procedure models
+│   ├── ArtccBoundaries/  ArtccBoundaryAltitudes (the ALTITUDE vocabulary) and the boundary
+│   │                     location/point/ring models
 │   ├── Crc/          CRC feature properties and CrcPropertyValidator
 │   ├── Departures/   DepartureNaming and procedure models
 │   ├── Geo/          GeoMath, antimeridian splitting, line merging and segment joining, ROI and
@@ -70,7 +72,8 @@ FeBuddy.Core/
     │   ├── Airports/
     │   ├── Departures/
     │   ├── Arrivals/
-    │   └── Navaids/
+    │   ├── Navaids/
+    │   └── ArtccBoundaries/  No alias file, so no *AliasWriter and no GenerateAliasFile key
     ├── Conversions/    ConversionSettingsReader and ConversionFiles (what every conversion
     │   │               shares), then one folder per file conversion
     │   ├── DatToGeojson/
@@ -137,7 +140,9 @@ AirwayService.Run(nasrData, settings)
 ```
 
 Airports, Departures, Arrivals and NAVAIDs have the same shape (NAVAIDs' writer just skips the
-Lines step - it has no Lines file). Problems are reported as `ServiceMessage`s
+Lines step - it has no Lines file). ARTCC Boundaries differs more: it has no step 4 at all -
+`ArtccBoundaryService` stops after `ArtccBoundaryGeojsonWriter`, since it has no alias file, and
+its writer produces Lines only. Problems are reported as `ServiceMessage`s
 (warnings or errors) in the result instead of being thrown, so one bad setting doesn't lose the
 whole run. The only exception is a missing required setting, which throws `ArgumentException`.
 

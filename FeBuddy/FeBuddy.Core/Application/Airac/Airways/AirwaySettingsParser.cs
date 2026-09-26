@@ -24,7 +24,7 @@ public static class AirwaySettingsParser
 	private static readonly IReadOnlySet<string> OwnKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
 	{
 		"OutputBy", "BufferAirwayWaypoints", "SplitAtAntimeridian", "ExcludedDesignations",
-		"EmitLines", "EmitSymbols", "EmitText", "AliasRoiScope",
+		"EmitLines", "EmitSymbols", "EmitText", "AliasRoiScope", "GenerateAliasFile",
 	};
 
 	/// <summary>CRC defaults are set per altitude class (<c>Crc.High.Line.bcg</c>), and every class draws all three kinds.</summary>

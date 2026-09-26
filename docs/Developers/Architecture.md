@@ -106,6 +106,9 @@ Preview Settings ▸ Run AIRAC Service
     each tab: DescribeRunResult(result)
 ```
 
+ARTCC Boundaries has no step 4: `ArtccBoundaryService` stops after `ArtccBoundaryGeojsonWriter`,
+since it has no alias file.
+
 - **The settings block is the contract.** Every tab (and the harness) hands Core a flat
   `Dictionary<string, string>`. Core never sees view-models, and the GUI never sees typed settings.
   The keys are listed in [Settings blocks](Settings-Blocks.md).
@@ -218,6 +221,13 @@ The FAA's data has quirks; these rules handle them. Each lives in one class.
   `SHUTDOWN` is always skipped. Duplicate `NAV_ID`s are normal in real NASR data and are never
   merged - `ABQ` is both a VORTAC and a VOT, `AA` is two NDBs - every row NASR publishes becomes its
   own NAVAID.
+- **ARTCC boundary rings** (`ArtccBoundaryBuilder`). Built from `ARB_BASE` (the location) and
+  `ARB_SEG` (the points), grouped by LocationId and altitude; within a group, a new ring starts at
+  the first row and again wherever `POINT_SEQ` is not greater than the previous row's - the FAA's
+  own signal for a new ring, e.g. ZAK's UNLIMITED group is a CTA ring followed by a FIR ring. A ring
+  is closed by repeating its first point when NASR's own last point differs, then skipped (with a
+  message) if it still has fewer than two distinct points. Only the LocationIds with `ARB_SEG` rows
+  draw anything - the Canadian, foreign and CERAP entries `ARB_BASE` also lists have none.
 - **NAVAID alias commands** (`NavaidAliasWriter`). Each NAVAID contributes a `.nav<NavId>` command
   and, when its name yields a different one, a `.nav<name, letters and digits only>` command, each
   an `.echo` printing the NAVAID's identifier, name, type, frequency (two decimals for a VHF/UHF
@@ -280,9 +290,10 @@ Decisions that were argued out once and should not be re-litigated without a rea
 - **Dirty tracking compares against a snapshot**, app-wide.
 - **The Review tab is the one place** a run's results, warnings, advisories, errors and files live.
 - **Every sub-service is a tab of the AIRAC Service**, never a top-level screen, and every GeoJSON
-  sub-service tab is built from the same shared cards. Likewise every file conversion is a tab of
-  File Conversions; the two screens share one tabbed view and differ only in what their
-  view-models say (File Conversions has no General or Preview Settings tab - each conversion runs
-  from its own tab).
+  sub-service tab is built from the same shared cards - except the alias-file ones, which ARTCC
+  Boundaries opts out of (`GeojsonSubServiceViewModel.HasAliasFile`). Likewise every file
+  conversion is a tab of File Conversions; the two screens share one tabbed view and differ only in
+  what their view-models say (File Conversions has no General or Preview Settings tab - each
+  conversion runs from its own tab).
 - **Output locations are laid out in one place** (`ServiceOutputPaths`), so AIRAC output and
   converted files sit side by side under the same `FE-Buddy_Output` folder.

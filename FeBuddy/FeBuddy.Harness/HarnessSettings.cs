@@ -330,6 +330,51 @@ internal static class HarnessSettings
 	}
 
 	/// <summary>
+	/// Builds the raw settings dictionary for <c>ArtccBoundaryService.Run</c>. Every key the ARTCC
+	/// Boundaries settings parser recognizes is listed below with its default value, so any of
+	/// them can be flipped here without hunting through <c>ArtccBoundarySettingsParser</c>.
+	/// </summary>
+	public static Dictionary<string, string> ArtccBoundarySettings()
+	{
+		Dictionary<string, string> settings = new()
+		{
+			{ "OutputDirectory", OutputDirectory },
+
+			// How the GeoJSON is grouped. "HighLow" writes one High file and one Low file, an
+			// UNLIMITED ring going into both; "HighLowUnlimited" adds a third, Unlimited-only
+			// file; "ArtccAltitude" writes one file per LocationId and altitude present, e.g.
+			// ARTCC-Boundary_ZOB-HIGH_Lines.
+			{ "OutputBy", "HighLow" },   // or "HighLowUnlimited", "ArtccAltitude"
+			{ "LocationFilter", "" },    // e.g. "ZOB,ZNY"; empty = every ARTCC
+
+			{ "SplitAtAntimeridian", "Y" },
+
+			// FE-Buddy's own (non-CRC) properties. FebProperties is required when this is "Y".
+			{ "IncludeFebCustomProperties", "Y" },
+			{ "FebProperties", "locationId,locationName,locationType,icaoId,computerId,altitude,type,city,countryCode" },
+
+			// Files marked for vNAS go under Upload_to_vNAS; only those in CrcDefaultsFor get the
+			// CRC ERAM defaults Feature, using the Crc.High.* / Crc.Low.* values added by
+			// AddArtccBoundaryCrcDefaults below.
+			{ "UploadToVnas", "ARTCC-Boundary_High_Lines,ARTCC-Boundary_Low_Lines" },
+			{ "CrcDefaultsFor", "ARTCC-Boundary_High_Lines,ARTCC-Boundary_Low_Lines" },
+
+			{ "FilterByRoi", "N" },
+			{ "RoiSwLat", "" },              // e.g. "38.0"
+			{ "RoiSwLon", "" },              // e.g. "-85.0"
+			{ "RoiNeLat", "" },              // e.g. "43.0"
+			{ "RoiNeLon", "" },              // e.g. "-78.0"
+
+			{ "CoordinatePrecision", "6" },  // max decimal places in GeoJSON coords (0-15)
+		};
+
+		AddArtccBoundaryCrcDefaults(settings,
+			bcg: 10, filters: "10", highStyle: "solid", lowStyle: "longDashed", thickness: 1);
+
+		return settings;
+	}
+
+	/// <summary>
 	/// Settings for exercising the alias-only path (<c>OutputBy = None</c>, alias file still
 	/// generated), matching the "written even when OutputBy = None" contract.
 	/// </summary>
@@ -535,6 +580,35 @@ internal static class HarnessSettings
 		settings["Crc.NAVAIDs.Text.xOffset"] = "0";
 		settings["Crc.NAVAIDs.Text.yOffset"] = "0";
 		settings["Crc.NAVAIDs.Text.opaque"] = "N";
+	}
+
+	/// <summary>
+	/// Adds the <c>Crc.High.Line.*</c> and <c>Crc.Low.Line.*</c> property defaults. These values
+	/// are the harness's own; the GUI starts every CRC box empty and makes the user choose.
+	/// </summary>
+	/// <param name="settings">The dictionary being built.</param>
+	/// <param name="bcg">BCG group, 1-40, shared by both classes.</param>
+	/// <param name="filters">Filters, comma-separated, each 0-40, at least one, shared by both classes.</param>
+	/// <param name="highStyle">High line style, one of <c>CrcPropertyValidator.ValidLineStyles</c>.</param>
+	/// <param name="lowStyle">Low line style, one of <c>CrcPropertyValidator.ValidLineStyles</c>.</param>
+	/// <param name="thickness">Line thickness, 1-3, shared by both classes.</param>
+	private static void AddArtccBoundaryCrcDefaults(
+		Dictionary<string, string> settings,
+		int bcg,
+		string filters,
+		string highStyle,
+		string lowStyle,
+		int thickness)
+	{
+		settings["Crc.High.Line.bcg"] = bcg.ToString();
+		settings["Crc.High.Line.filters"] = filters;
+		settings["Crc.High.Line.style"] = highStyle;
+		settings["Crc.High.Line.thickness"] = thickness.ToString();
+
+		settings["Crc.Low.Line.bcg"] = bcg.ToString();
+		settings["Crc.Low.Line.filters"] = filters;
+		settings["Crc.Low.Line.style"] = lowStyle;
+		settings["Crc.Low.Line.thickness"] = thickness.ToString();
 	}
 
 	private static void AddCrcDefaults(

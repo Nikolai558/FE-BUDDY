@@ -90,7 +90,7 @@ public sealed class NavaidsViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 
 	/// <inheritdoc />
 	/// <remarks>NAVAIDs has no Lines file: only Symbols and Text are ever written.</remarks>
-	protected override (string? Lines, string Symbols, string Text) EmitKeys => (null, "EmitSymbols", "EmitText");
+	protected override (string? Lines, string? Symbols, string? Text) EmitKeys => (null, "EmitSymbols", "EmitText");
 
 	// ================= file layout =================
 

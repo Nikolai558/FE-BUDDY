@@ -20,10 +20,10 @@ go through the same parser. This page lists every key each parser reads.
   kind or field the sub-service does not have is a warning.
 
 Parsers: `AirportSettingsParser`, `AirwaySettingsParser`, `DepartureSettingsParser`,
-`ArrivalSettingsParser`, `NavaidSettingsParser`, `DatToGeojsonSettingsParser`,
-`SctToGeojsonSettingsParser`, `EramToGeojsonSettingsParser`. Shared reading:
-`SubServiceSettingsReader`, `CrcDefaultsReader`, `ConversionSettingsReader`, `SettingsValueReader`
-(all in `FeBuddy.Core/Application`).
+`ArrivalSettingsParser`, `NavaidSettingsParser`, `ArtccBoundarySettingsParser`,
+`DatToGeojsonSettingsParser`, `SctToGeojsonSettingsParser`, `EramToGeojsonSettingsParser`. Shared
+reading: `SubServiceSettingsReader`, `CrcDefaultsReader`, `ConversionSettingsReader`,
+`SettingsValueReader` (all in `FeBuddy.Core/Application`).
 
 ## Keys every AIRAC sub-service reads
 
@@ -31,13 +31,16 @@ Parsers: `AirportSettingsParser`, `AirwaySettingsParser`, `DepartureSettingsPars
 |---|---|---|
 | `OutputDirectory` | folder path - the folder the run writes into (below) | **required** |
 | `CoordinatePrecision` | `0`-`15` decimal places | `6` |
-| `GenerateAliasFile` | `Y` / `N` | `Y` |
 | `IncludeFebCustomProperties` | `Y` / `N` | `N` |
 | `FebProperties` | list of `feb.*` names (below); **required** when the above is `Y` | none |
 | `UploadToVnas` | list of file keys (below) to write under `Upload_to_vNAS` | none |
 | `CrcDefaultsFor` | list of GeoJSON file keys that get CRC-ERAM defaults; each must also be in `UploadToVnas` | none |
 | `FilterByRoi` | `Y` / `N` | `N` |
 | `RoiSwLat`, `RoiSwLon`, `RoiNeLat`, `RoiNeLon` | decimal degrees; **required** when `FilterByRoi` is `Y` | none |
+
+`GenerateAliasFile` (`Y` / `N`, default `Y`) is not here: it is one of every sub-service's own keys
+*except* ARTCC Boundaries, which has no alias file and does not read it - see each sub-service's
+own key table below.
 
 ### Where files go
 
@@ -68,6 +71,7 @@ nothing.
 | Departures | `Departures_Lines`, `Departures_Symbols`, `Departures_Text` | `Departures.txt` |
 | Arrivals | `Arrivals_Lines`, `Arrivals_Symbols`, `Arrivals_Text` | `Arrivals.txt` |
 | NAVAIDs | `NAVAIDs_Symbols`, `NAVAIDs_Text` (`OutputBy=All`), or `NAVAIDs_<Token>s_Symbols` / `_Text` per NAVAID type (`OutputBy=Type`), e.g. `NAVAIDs_VORTACs_Symbols`, `NAVAIDs_VOR-DMEs_Text` | `NAVAIDs.txt` |
+| ARTCC Boundaries | `ARTCC-Boundary_High_Lines` / `_Low_Lines` (`OutputBy=HighLow`, an UNLIMITED ring in both), adds `_Unlimited_Lines` (`OutputBy=HighLowUnlimited`), or `ARTCC-Boundary_<LocationId>-<ALTITUDE>_Lines` per ARTCC and altitude (`OutputBy=ArtccAltitude`), e.g. `ARTCC-Boundary_ZOB-HIGH_Lines` | none |
 
 CRC-ERAM defaults are only ever written to files marked for vNAS, since CRC reads its maps from
 vNAS. The keys are listed in each sub-service's `*OutputFiles` class.
@@ -90,6 +94,7 @@ naming the key.
 | Key | Values | Default |
 |---|---|---|
 | `GenerateGeojson` | `Y` / `N` | `Y` |
+| `GenerateAliasFile` | `Y` / `N` | `Y` |
 | `EmitRunwayLines`, `EmitAirportSymbols`, `EmitAirportText` | `Y` / `N` | `Y` |
 
 - **CRC classes:** `Runways` (`Line`), `Airports` (`Symbol`, `Text`).
@@ -104,6 +109,7 @@ naming the key.
 |---|---|---|
 | `OutputBy` | `HighLow`, `Designation`, `None` | **required** |
 | `EmitLines`, `EmitSymbols`, `EmitText` | `Y` / `N` | `Y` |
+| `GenerateAliasFile` | `Y` / `N` | `Y` |
 | `BufferAirwayWaypoints` | `Y` / `N` | `N` |
 | `SplitAtAntimeridian` | `Y` / `N` | `Y` |
 | `ExcludedDesignations` | list, e.g. `RN,SL` (upper-cased) | none |
@@ -121,6 +127,7 @@ naming the key.
 | Key | Values | Default |
 |---|---|---|
 | `GenerateGeojson` | `Y` / `N` | `Y` |
+| `GenerateAliasFile` | `Y` / `N` | `Y` |
 | `EmitLines`, `EmitSymbols`, `EmitText` | `Y` / `N` | `Y` |
 | `IncludeObstacleDepartures` | `Y` / `N` | `Y` |
 | `ArtccFilter` | list of ARTCC IDs; empty means every ARTCC | none |
@@ -143,6 +150,7 @@ naming the key.
 | Key | Values | Default |
 |---|---|---|
 | `GenerateGeojson` | `Y` / `N` | `Y` |
+| `GenerateAliasFile` | `Y` / `N` | `Y` |
 | `EmitLines`, `EmitSymbols`, `EmitText` | `Y` / `N` | `Y` |
 | `ArtccFilter` | list of ARTCC IDs; empty means every ARTCC | none |
 | `AmendmentFilter` | `None`, `Cycles`, `Days`, `Date` | `None` |
@@ -166,6 +174,7 @@ naming the key.
 | Key | Values | Default |
 |---|---|---|
 | `GenerateGeojson` | `Y` / `N` | `Y` |
+| `GenerateAliasFile` | `Y` / `N` | `Y` |
 | `EmitSymbols`, `EmitText` | `Y` / `N` | `Y` |
 | `OutputBy` | `All`, `Type` | `All` |
 | `ExcludedTypes` | list of NASR `NAV_TYPE` names (upper-cased) - the types left out of GeoJSON *and* the alias file | none |
@@ -188,6 +197,30 @@ naming the key.
 - With `OutputBy = Type`, CRC defaults are read from whichever type keys are chosen for CRC-ERAM
   defaults rather than from the known type list, so a `NAV_TYPE` FE-Buddy does not recognize still
   gets its own file's defaults.
+
+## ARTCC Boundaries
+
+| Key | Values | Default |
+|---|---|---|
+| `OutputBy` | `HighLow`, `HighLowUnlimited`, `ArtccAltitude` | `HighLow` |
+| `LocationFilter` | list of ARTCC IDs; empty means every one with boundary data | none |
+| `SplitAtAntimeridian` | `Y` / `N` | `Y` |
+
+- Unlike every other AIRAC sub-service, there is no `GenerateGeojson`, `GenerateAliasFile` or
+  `Emit…` key: ARTCC Boundaries always writes GeoJSON, has no alias file, and writes Lines only.
+- **CRC classes:** with `OutputBy = HighLow`, `High` and `Low` (each `Line` only) - an UNLIMITED
+  ring is written into both files; with `HighLowUnlimited`, `High`, `Low` and `Unlimited`; with
+  `ArtccAltitude`, one class per LocationId and altitude present, e.g. `ZOB-HIGH`, so your own
+  ARTCC can be styled apart from its neighbours. There is no `Symbol` or `Text` class.
+- **`FebProperties`:** `locationId`, `locationName`, `locationType`, `icaoId`, `computerId`,
+  `altitude` (`HIGH`, `LOW` or `UNLIMITED`), `type` (`ARTCC`, `CTA`, `FIR`, `CTA/FIR` or `UTA` -
+  tells the overlapping oceanic CTA and FIR rings apart), `city`, `countryCode`.
+- Data comes from `ARB_BASE` (the location) and `ARB_SEG` (the boundary points). Only the
+  LocationIds with `ARB_SEG` rows draw a boundary - the Canadian, foreign and CERAP entries
+  `ARB_BASE` also publishes have none. Within one LocationId and altitude, a new ring starts
+  wherever `POINT_SEQ` drops back to a low value - ZAK, ZAP and ZWY each have a CTA ring and a FIR
+  ring - and each ring is closed back to its own first point.
+- `LocationFilter` limits the GeoJSON only; there is no alias file for it to limit.
 
 ## Keys every file conversion reads
 

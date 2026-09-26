@@ -12,8 +12,8 @@ Think of FE-Buddy as a small factory with a control panel.
    downloads the zips for three cycles (last, this, next), unpacks them into a cache on disk,
    and reads every spreadsheet into memory.
 2. **The user fills in an order form.** On the AIRAC Service screen they tick what they want
-   (Airports, Airways, Departures, Arrivals, NAVAIDs) and set the options - which files, which
-   styles, which area.
+   (Airports, Airways, Departures, Arrivals, NAVAIDs, ARTCC Boundaries) and set the options - which
+   files, which styles, which area.
    Each tab turns its options into a simple list of `key = value` settings, the same format the
    test harness uses.
 3. **The factory builds.** For each ticked item, the library checks the settings, finds the right

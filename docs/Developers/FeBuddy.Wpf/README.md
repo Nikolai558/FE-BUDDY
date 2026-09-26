@@ -13,9 +13,10 @@ below is relative to `FeBuddy/FeBuddy.Wpf/` in the repo unless stated otherwise.
 
 - references `FeBuddy.Core`; no other NuGet packages - the MVVM helpers
   (`ObservableObject`, `RelayCommand`) are hand-rolled in `Mvvm/`
-- **Airports, Airways, Departures, Arrivals and NAVAIDs are sub-services of AIRAC Service**, not
-  top-level screens. The library code is `FeBuddy.Core.Application.Airac.*`; the GUI
-  reaches each one only as a tab on the AIRAC Services screen. In the same way, each
+- **Airports, Airways, Departures, Arrivals, NAVAIDs and ARTCC Boundaries are sub-services of
+  AIRAC Service**, not top-level screens. The library code is
+  `FeBuddy.Core.Application.Airac.*`; the GUI reaches each one only as a tab on the AIRAC
+  Services screen. In the same way, each
   **file conversion** (DAT to GeoJSON, SCT2 to GeoJSON) is a tab on the File Conversions screen
   (`FeBuddy.Core.Application.Conversions.*`).
 - On launch, `App.xaml.cs` starts `AppLog`'s file sink then runs
@@ -79,8 +80,8 @@ ViewModels/           ShellViewModel + one per screen; AiracSubServices is the
 Views/                ShellWindow (custom chrome) + Dashboard, TabbedServiceView
                       (the AIRAC Services and File Conversions screens) and their
                       tab views (AiracGeneralTabView, AirportsView, AirwaysView,
-                      DeparturesView, ArrivalsView, NavaidsView, DatToGeojsonView,
-                      SctToGeojsonView, EramToGeojsonView, ServicePreviewTabView,
+                      DeparturesView, ArrivalsView, NavaidsView, ArtccBoundariesView,
+                      DatToGeojsonView, SctToGeojsonView, EramToGeojsonView, ServicePreviewTabView,
                       ServiceRunReviewTabView), Map, Settings, Info; UpdateWindow,
                       ConfirmWindow (Confirm / Cancel, or a third choice between
                       them), RoiPickerWindow
@@ -139,8 +140,8 @@ bar and page scroller are shared, and each screen's view-model says what differs
     restores it. The selection persists to
     `Services.AiracService.SelectedSubServices`.
   - **Sub-service catalogue** - `ViewModels/AiracSubServices.cs`: Airports,
-    Airways, Departures, Arrivals, NAVAIDs. Adding one is a catalogue entry plus
-    a tab view-model; one whose backend is not built yet opens a
+    Airways, Departures, Arrivals, NAVAIDs, ARTCC Boundaries. Adding one is a
+    catalogue entry plus a tab view-model; one whose backend is not built yet opens a
     `PlaceholderSubServiceView` and contributes nothing to a run.
   - **Sub-service tabs** - each is a `GeojsonSubServiceViewModel` (Save /
     Undo-last-save / dirty, plus the outputs, file choices, `feb.*` properties, ROI
@@ -162,6 +163,16 @@ bar and page scroller are shared, and each screen's view-model says what differs
     NAVAIDs is also the first sub-service with no Lines file at all:
     `GeojsonSubServiceViewModel.EmitKeys.Lines` is nullable so a sub-service can say
     it has no Lines kind, and `GeojsonFilesCard.ShowLines` hides the Lines box for it.
+    The ARTCC Boundaries tab adds: ARTCCs (one tick per ARTCC with boundary data in
+    the cycle, none ticked means all - the same pattern as the Departures/Arrivals
+    ARTCC filter) and File Layout (High and Low, High/Low/Unlimited, or one file per
+    ARTCC and altitude), plus the antimeridian toggle. It is the first sub-service
+    with no alias file at all: `GeojsonSubServiceViewModel.HasAliasFile` is virtual
+    and `false` here, so `GenerateAliasFile` is never shown, saved or sent, and every
+    one of its `EmitKeys` is null too, since it always writes Lines only with no
+    choice to make. Its CRC ERAM Defaults classes come from the cycle's own data
+    (one per ARTCC and altitude, under the per-ARTCC layout) rather than a fixed
+    list, added after construction with `AddCrcRows`.
   - **Preview Settings tab** - present once at least one sub-service is selected:
     every tab's settings as label/value rows (the General section names the run's
     `AIRAC_<cycle>` folder), notices naming any unsaved or invalid tab, and the single

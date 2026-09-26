@@ -444,6 +444,17 @@ public sealed class ArrivalSettingsParserTests
 	}
 
 	[Fact]
+	public void generate_alias_file_is_arrivals_own_key_and_produces_no_unknown_key_warning()
+	{
+		Dictionary<string, string> settings = MinimalValidSettings();
+		settings["GenerateAliasFile"] = "Y";
+
+		ArrivalSettingsParseResult result = ArrivalSettingsParser.Parse(settings);
+
+		Assert.DoesNotContain(result.Messages, m => m.Text.Contains("GenerateAliasFile"));
+	}
+
+	[Fact]
 	public void a_crc_key_for_another_class_produces_a_warning_rather_than_failing()
 	{
 		Dictionary<string, string> settings = MinimalValidSettings();

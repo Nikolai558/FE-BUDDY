@@ -3,6 +3,7 @@ using System.Text.RegularExpressions;
 using FeBuddy.Core.Application.Airac.Airports.Models;
 using FeBuddy.Core.Application.Airac.Airways.Models;
 using FeBuddy.Core.Application.Airac.Arrivals.Models;
+using FeBuddy.Core.Application.Airac.ArtccBoundaries.Models;
 using FeBuddy.Core.Application.Airac.Departures.Models;
 using FeBuddy.Core.Application.Airac.Navaids.Models;
 using FeBuddy.Core.Application.Models;
@@ -250,6 +251,40 @@ internal static class ConsoleReport
 		else
 		{
 			Console.WriteLine("Alias file:   (not generated)");
+		}
+
+		PrintMessagesByLevel(result.Messages);
+	}
+
+	/// <summary>
+	/// Prints one ARTCC Boundaries run: timing, how many ARTCCs and boundary lines were built,
+	/// every GeoJSON file with its Feature count, and the run's messages grouped by level. There
+	/// is no alias file.
+	/// </summary>
+	/// <param name="label">Heading for this run, e.g. "ARTCC Boundaries: GeoJSON".</param>
+	/// <param name="result">What <c>ArtccBoundaryService.Run</c> returned.</param>
+	public static void PrintArtccBoundaryServiceResult(string label, ArtccBoundaryServiceResult result)
+	{
+		Console.WriteLine();
+		Console.WriteLine($"=== {label} ===");
+		Console.WriteLine($"Elapsed:      {result.Elapsed.TotalMilliseconds:N0} ms");
+		Console.WriteLine($"ARTCCs in scope: {result.LocationCount:N0}");
+		Console.WriteLine($"Boundary lines built: {result.RingCount:N0}");
+
+		if (result.GeojsonFilesWritten.Count == 0)
+		{
+			Console.WriteLine("GeoJSON files written: (none)");
+		}
+		else
+		{
+			Console.WriteLine($"GeoJSON files written: {result.GeojsonFilesWritten.Count:N0}");
+
+			foreach (string file in result.GeojsonFilesWritten)
+			{
+				int count = result.GeojsonFeatureCountsByFile.TryGetValue(file, out int c) ? c : 0;
+				Console.WriteLine($"  {Path.GetFileName(file)} - {count:N0} feature(s)");
+				Console.WriteLine($"    {file}");
+			}
 		}
 
 		PrintMessagesByLevel(result.Messages);

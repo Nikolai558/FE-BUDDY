@@ -5,6 +5,7 @@ using FeBuddy.Core.Infrastructure.Nasr.Models;
 
 using FeBuddy.UnitTests.Application.Airac.Airways.Fixtures;
 using FeBuddy.UnitTests.Application.Airac.Arrivals.Fixtures;
+using FeBuddy.UnitTests.Application.Airac.ArtccBoundaries.Fixtures;
 using FeBuddy.UnitTests.Application.Airac.Departures.Fixtures;
 using FeBuddy.UnitTests.Application.Airac.Navaids.Fixtures;
 
@@ -252,6 +253,64 @@ public sealed class AiracServiceTests : IDisposable
 		AiracServiceResult result = await AiracService.RunAsync(settings, DepartureTestData.Dotss());
 
 		Assert.Null(result.Navaids);
+	}
+
+	[Fact]
+	public async Task run_async_with_an_artcc_boundaries_block_runs_the_pipeline_and_aggregates()
+	{
+		NasrCsvDataCollection data = ArtccBoundaryTestData.Build(
+			[ArtccBoundaryTestData.ZobBaseRow()],
+			[.. ArtccBoundaryTestData.ZobHighRows(), .. ArtccBoundaryTestData.ZobLowRows()]);
+
+		AiracServiceSettings settings = new()
+		{
+			SelectedCycle = Cycle,
+			OutputDirectory = _output,
+			ArtccBoundaries = new Dictionary<string, string>(),
+		};
+
+		AiracServiceResult result = await AiracService.RunAsync(settings, data);
+
+		Assert.NotNull(result.ArtccBoundaries);
+		Assert.Equal(1, result.ArtccBoundaries!.LocationCount);
+		Assert.Equal(2, result.ArtccBoundaries.RingCount);
+
+		string highFile = Path.Combine(CycleFolder, "Geojson", "ARTCC-Boundary_High_Lines.geojson");
+		Assert.Contains(highFile, result.ArtccBoundaries.GeojsonFilesWritten);
+		Assert.True(File.Exists(highFile));
+	}
+
+	[Fact]
+	public async Task a_run_with_only_artcc_boundaries_selected_counts_as_something_selected()
+	{
+		string stale = WriteStaleFile();
+		AiracServiceSettings settings = new()
+		{
+			SelectedCycle = Cycle,
+			OutputDirectory = _output,
+			ExistingOutput = ExistingOutputAction.DeleteExisting,
+			ArtccBoundaries = new Dictionary<string, string>(),
+		};
+
+		NasrCsvDataCollection data = ArtccBoundaryTestData.Build(
+			[ArtccBoundaryTestData.ZobBaseRow()],
+			ArtccBoundaryTestData.ZobHighRows());
+
+		await AiracService.RunAsync(settings, data);
+
+		// DeleteExisting only runs when something is selected: ARTCC Boundaries alone must still trigger it.
+		Assert.False(File.Exists(stale));
+		Assert.True(File.Exists(Path.Combine(CycleFolder, "Geojson", "ARTCC-Boundary_High_Lines.geojson")));
+	}
+
+	[Fact]
+	public async Task a_null_artcc_boundaries_block_leaves_result_artcc_boundaries_null()
+	{
+		AiracServiceSettings settings = AliasOnlySettings() with { ArtccBoundaries = null };
+
+		AiracServiceResult result = await AiracService.RunAsync(settings, DepartureTestData.Dotss());
+
+		Assert.Null(result.ArtccBoundaries);
 	}
 
 	[Fact]

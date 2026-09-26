@@ -96,8 +96,8 @@ public sealed class AiracCycleDataCache(
 		: this(
 			probe: (cycle, ct) => AiracCycleAvailability.ProbeAsync(cycle, httpClient: null, ct),
 			download: (cycle, ct) => NasrCycleDownloader.EnsureCycleAvailableAsync(cycle, cacheRootDirectory: null, progress: null, ct),
-			// TODO (perf): this parses every NASR group, but the sub-services only read APT, AWY,
-			// CLS_ARSP, DP, FIX, FRQ, NAV and STAR. Parsing just those would save memory and
+			// TODO (perf): this parses every NASR group, but the sub-services only read APT, ARB,
+			// AWY, CLS_ARSP, DP, FIX, FRQ, NAV and STAR. Parsing just those would save memory and
 			// launch time.
 			parse: (dir, ct) => NasrCsvParser.ParseAllAsync(dir),
 			isLocallyAvailable: cycle => NasrCycleDownloader.IsCycleAvailableLocally(cycle, cacheRootDirectory: null),

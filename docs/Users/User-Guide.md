@@ -39,8 +39,8 @@ The screen where you make files. It is a set of tabs down the left:
 
 | Tab | What it is |
 |---|---|
-| **General** | Which cycle, and which sub-services (Airports, Airways, Departures, Arrivals, NAVAIDs). Always there. |
-| **Airports / Airways / Departures / Arrivals / NAVAIDs** | One tab per sub-service you ticked, with its settings. |
+| **General** | Which cycle, and which sub-services (Airports, Airways, Departures, Arrivals, NAVAIDs, ARTCC Boundaries). Always there. |
+| **Airports / Airways / Departures / Arrivals / NAVAIDs / ARTCC Boundaries** | One tab per sub-service you ticked, with its settings. |
 | **Preview Settings** | Everything the run will do, in plain words, and the **Run AIRAC Service** button. Appears once a sub-service is ticked. |
 | **Review** | What happened in the last run. Appears once you run. |
 
@@ -72,7 +72,8 @@ is saved".
 ### The cards every sub-service tab shares
 
 **Outputs** - what the sub-service writes: **GeoJSON files** and/or the **alias file**. At least
-one must stay on; to make nothing for a sub-service, untick it on the General tab instead.
+one must stay on; to make nothing for a sub-service, untick it on the General tab instead. ARTCC
+Boundaries has no Outputs card: it has no alias file and always writes GeoJSON.
 
 **What Files Do You Want?** - the three GeoJSON files each sub-service can write:
 
@@ -119,8 +120,11 @@ Airways has a column per altitude class (High, Low, Other) - with High/Low files
 each file chosen; with designation files, all three, since one file can hold airways of every
 class. Airports, Departures and Arrivals have one. NAVAIDs has one column with *All in one file*,
 or one column per NAVAID type - style included - with *one pair per NAVAID type* (see the NAVAIDs
-tab). Each class is its own block of boxes; blocks that do not fit across the window move to the
-next line, so every box stays on screen however narrow the window is.
+tab). ARTCC Boundaries has a column per class - High and Low, or High, Low and Unlimited - or,
+with *one file per ARTCC and altitude*, one column per ARTCC and altitude (`ZOB-HIGH`, `ZOB-LOW`,
+…), so your own ARTCC can be styled apart from its neighbours (see the ARTCC Boundaries tab). Each
+class is its own block of boxes; blocks that do not fit across the window move to the next line,
+so every box stays on screen however narrow the window is.
 
 ### Airports tab
 
@@ -248,6 +252,34 @@ no "Include obstacle departures" equivalent here.
 - **Upload to vNAS:** *All in one file* - `NAVAIDs_Symbols`, `NAVAIDs_Text`, then `NAVAIDs.txt`.
   *One pair per type* - each included type's `NAVAIDs_<Type>s_Symbols` / `_Text`, then
   `NAVAIDs.txt`.
+
+### ARTCC Boundaries tab
+
+- **Outputs:** GeoJSON Lines only, always written - there is no alias file and no Symbols or Text
+  file, so the tab has no Outputs or file-choice card: every ring is drawn as a line.
+- **ARTCCs** - a tick box per ARTCC with boundary data in the cycle, none ticked means all - the
+  same as the Departures and Arrivals ARTCC filter. NASR also publishes Canadian, foreign and
+  CERAP entries with no boundary lines of their own, so they are not offered.
+- **File Layout** - **High and Low** (the default) - `ARTCC-Boundary_High_Lines` and
+  `ARTCC-Boundary_Low_Lines`; an UNLIMITED ring is written into both. **High, Low and Unlimited** -
+  adds `ARTCC-Boundary_Unlimited_Lines`; each of the three files then holds one altitude only.
+  **One file per ARTCC and altitude** - `ARTCC-Boundary_<ARTCC>-<altitude>_Lines`, e.g.
+  `ARTCC-Boundary_ZOB-HIGH_Lines`, so your own ARTCC can be styled apart from its neighbours. Files
+  go straight in the Geojson folder - there are no per-airport sub-folders.
+- **Files:** *Lines* only - one closed line per boundary ring, running through its points in
+  published order back to its start. ZAK, ZAP and ZWY each have two rings sharing an altitude - a
+  CTA ring and a FIR ring.
+- **Split GeoJSON at the Antimeridian** - on by default, the same as Airways: ZAK, ZAN, ZAP and the
+  oceanic part of ZOA cross ±180° longitude, so a ring that does becomes a MultiLineString instead
+  of running off the edge of the map.
+- **FE-Buddy properties:** `locationId`, `locationName`, `locationType`, `icaoId`, `computerId`,
+  `altitude` (`HIGH`, `LOW` or `UNLIMITED`), `type` (`ARTCC`, `CTA`, `FIR`, `CTA/FIR` or `UTA` -
+  tells the overlapping oceanic CTA and FIR rings apart), `city`, `countryCode`.
+- **Region:** a ring is clipped at the region's edge, the same as Airways; a ring entirely outside
+  the region is left out.
+- **Upload to vNAS:** *High and Low* - `ARTCC-Boundary_High_Lines`, `ARTCC-Boundary_Low_Lines`.
+  *High, Low and Unlimited* - adds `ARTCC-Boundary_Unlimited_Lines`. *One file per ARTCC and
+  altitude* - each ARTCC-and-altitude file. There is no alias file to upload.
 
 ### Preview Settings tab
 
@@ -389,6 +421,7 @@ laid out the same way:
     │   │   ├── Runways_Lines, Airports_Symbols, Airports_Text (.geojson)
     │   │   ├── Airways_<group>_Lines / _Symbols / _Text (.geojson)
     │   │   ├── NAVAIDs_Symbols / _Text (.geojson), or NAVAIDs_<type>s_Symbols / _Text per type
+    │   │   ├── ARTCC-Boundary_High/Low/Unlimited_Lines, or _<ARTCC>-<altitude>_Lines per ARTCC
     │   │   └── <ARTCC>\<airport>\<airport>_<procedure>_Lines / _Symbols / _Text (.geojson)
     │   └── Upload_to_vNAS\           (only the files marked for vNAS)
     │       ├── the alias files marked for vNAS

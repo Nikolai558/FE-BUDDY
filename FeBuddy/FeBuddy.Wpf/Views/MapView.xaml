@@ -1,6 +1,6 @@
 <!--
-    MapView  -  the Map Service: view GeoJSON files and manage the single
-    default ROI.
+    MapView  -  the Map Service page: the shared map workspace, editing the saved default ROI.
+    Every map popup hosts the same MapWorkspace, so there is one map screen to maintain.
 -->
 <UserControl x:Class="FeBuddy.Wpf.Views.MapView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -8,102 +8,10 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:FeBuddy.Wpf.ViewModels"
-             xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
+             xmlns:views="clr-namespace:FeBuddy.Wpf.Views"
              mc:Ignorable="d"
-             d:DataContext="{d:DesignInstance vm:MapViewModel, IsDesignTimeCreatable=True}"
-             d:DesignWidth="1000" d:DesignHeight="720">
+             d:DataContext="{d:DesignInstance vm:MapViewModel}"
+             d:DesignWidth="1200" d:DesignHeight="800">
 
-    <Grid Background="{StaticResource Brush.Bg.Base}">
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*" />
-            <ColumnDefinition Width="320" />
-        </Grid.ColumnDefinitions>
-
-        <!-- ===================== main map ===================== -->
-        <Grid Grid.Column="0" Margin="16">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="*" />
-                <RowDefinition Height="Auto" />
-            </Grid.RowDefinitions>
-
-            <DockPanel Grid.Row="0" Margin="0,0,0,10">
-                <Button Style="{StaticResource Button.Primary}" Content="Load GeoJSON…" Command="{Binding LoadFilesCommand}" />
-                <Button Style="{StaticResource Button.Ghost}" Content="Clear all" Command="{Binding ClearFilesCommand}" Margin="8,0,0,0" />
-                <Button Style="{StaticResource Button.Ghost}" Content="Reset view" Command="{Binding ResetViewCommand}" Margin="8,0,0,0" />
-                <CheckBox Content="Show default ROI" IsChecked="{Binding ShowDefaultRoi}" VerticalAlignment="Center" Margin="16,0,0,0"
-                          Visibility="{Binding HasDefaultRoi, Converter={StaticResource BoolToVis}}" />
-                <TextBlock Text="{Binding FilesButtonLabel}" Style="{StaticResource Text.Caption}"
-                           HorizontalAlignment="Right" VerticalAlignment="Center" />
-            </DockPanel>
-
-            <Border Grid.Row="1" BorderBrush="{StaticResource Brush.Stroke.Strong}" BorderThickness="1"
-                    CornerRadius="{StaticResource Radius.Control}" ClipToBounds="True">
-                <Grid>
-                    <ctl:MapCanvas x:Name="Map"
-                                   BaseLayer="{Binding BaseLayer}"
-                                   Layers="{Binding Layers}"
-                                   RoiSouthWest="{Binding RoiOnMapSouthWest, Mode=OneWay}"
-                                   RoiNorthEast="{Binding RoiOnMapNorthEast, Mode=OneWay}" />
-
-                    <Border VerticalAlignment="Top" HorizontalAlignment="Left" Margin="10"
-                            Background="{StaticResource Brush.Panel}" CornerRadius="{StaticResource Radius.Chip}" Padding="8,4"
-                            Visibility="{Binding CursorText, ElementName=Map, Converter={StaticResource StringToVis}}">
-                        <TextBlock Text="{Binding CursorText, ElementName=Map}" Style="{StaticResource Text.Caption}"
-                                   FontFamily="{StaticResource Font.Mono}" />
-                    </Border>
-                </Grid>
-            </Border>
-
-            <TextBlock Grid.Row="2" Text="{Binding StatusMessage}" Style="{StaticResource Text.Body}" Margin="2,8,0,0" />
-        </Grid>
-
-        <!-- ===================== side panel ===================== -->
-        <Border Grid.Column="1" Background="{StaticResource Brush.Panel}"
-                BorderBrush="{StaticResource Brush.Stroke}" BorderThickness="1,0,0,0">
-            <ScrollViewer VerticalScrollBarVisibility="Auto">
-                <StackPanel Margin="16">
-
-                    <ctl:SectionHeader Label="Layers" />
-                    <TextBlock Style="{StaticResource Text.Body}" Margin="0,4,0,8"
-                               Text="Load one or more GeoJSON files. A malformed or empty file is skipped and reported; the others still load."
-                               Visibility="{Binding HasLoadedFiles, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
-                    <ItemsControl ItemsSource="{Binding LoadedFiles}">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate DataType="{x:Type vm:LoadedFile}">
-                                <Border Margin="0,3" Padding="8" CornerRadius="{StaticResource Radius.Chip}"
-                                        Background="{StaticResource Brush.Bg.Sunken}">
-                                    <DockPanel>
-                                        <Button DockPanel.Dock="Right" Style="{StaticResource Button.Subtle}" Content="✕"
-                                                Command="{Binding RemoveCommand}" Padding="6,2" />
-                                        <CheckBox DockPanel.Dock="Left" IsChecked="{Binding IsVisible}" VerticalAlignment="Center" Margin="0,0,8,0" />
-                                        <Rectangle DockPanel.Dock="Left" Width="10" Height="10" Margin="0,0,8,0"
-                                                   Fill="{Binding Swatch}" RadiusX="2" RadiusY="2" VerticalAlignment="Center" />
-                                        <StackPanel>
-                                            <TextBlock Text="{Binding Name}" Style="{StaticResource Text.Body.Strong}"
-                                                       TextTrimming="CharacterEllipsis" />
-                                            <TextBlock Text="{Binding GeometryCount, StringFormat={}{0} geometries}"
-                                                       Style="{StaticResource Text.Caption}" />
-                                        </StackPanel>
-                                    </DockPanel>
-                                </Border>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-
-                    <Border Style="{StaticResource Divider}" Margin="0,16" />
-
-                    <ctl:SectionHeader Label="Default Region of Interest" />
-                    <TextBlock Text="{Binding DefaultRoiSummary}" Style="{StaticResource Text.Caption}"
-                               FontFamily="{StaticResource Font.Mono}" TextWrapping="Wrap" Margin="0,4,0,10" />
-                    <!-- No fixed Height: the sidebar's own ScrollViewer handles overflow, and a
-                         hard height here just clipped the coordinate fields and buttons off the
-                         bottom once the editor's minimum content grew past it. -->
-                    <ctl:RoiEditor x:Name="RoiEditorControl" MinHeight="480"
-                                   BaseLayer="{Binding BaseLayer}"
-                                   InitialRoi="{Binding DefaultRoi, Mode=OneWay}" />
-                </StackPanel>
-            </ScrollViewer>
-        </Border>
-    </Grid>
+    <views:MapWorkspace />
 </UserControl>

@@ -33,6 +33,19 @@
     <sys:String x:Key="Icon.Dash">&#xE738;</sys:String>       <!-- Remove      -->
     <sys:String x:Key="Icon.Cancel">&#xE711;</sys:String>
     <sys:String x:Key="Icon.Copy">&#xE8C8;</sys:String>
+    <sys:String x:Key="Icon.Settings">&#xE713;</sys:String>
+    <sys:String x:Key="Icon.Refresh">&#xE72C;</sys:String>
+    <sys:String x:Key="Icon.FolderOpen">&#xE838;</sys:String>
+    <sys:String x:Key="Icon.OpenFile">&#xE8E5;</sys:String>
+    <sys:String x:Key="Icon.Edit">&#xE70F;</sys:String>
+
+    <!-- Map -->
+    <sys:String x:Key="Icon.ZoomIn">&#xE8A3;</sys:String>
+    <sys:String x:Key="Icon.ZoomOut">&#xE71F;</sys:String>
+    <sys:String x:Key="Icon.Home">&#xE80F;</sys:String>
+    <sys:String x:Key="Icon.FitPage">&#xE9A6;</sys:String>
+    <sys:String x:Key="Icon.Crop">&#xE7A8;</sys:String>        <!-- the ROI box -->
+    <sys:String x:Key="Icon.Pane">&#xE8A0;</sys:String>        <!-- OpenPane: the side panel -->
 
     <!-- Status -->
     <sys:String x:Key="Icon.Info">&#xE946;</sys:String>

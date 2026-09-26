@@ -693,7 +693,7 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 	private void PickRoiOnMap()
 	{
 		RegionOfInterest? picked = Views.RoiPickerWindow.Pick(
-			System.Windows.Application.Current?.MainWindow, TryReadOverrideCorners(), Map.BaseMap.UsStates);
+			System.Windows.Application.Current?.MainWindow, TryReadOverrideCorners(), $"{Title} ROI Override", DefaultRoiStore.Load());
 
 		if (picked is { } roi)
 		{

@@ -501,7 +501,7 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges
 	private void EditRoi()
 	{
 		RegionOfInterest? picked = RoiPickerWindow.Pick(
-			Application.Current?.MainWindow, DefaultRoi, Map.BaseMap.UsStates);
+			Application.Current?.MainWindow, DefaultRoi, "Default Region of Interest");
 		if (picked is not null)
 		{
 			// Pending until Save, like every other value on the page.

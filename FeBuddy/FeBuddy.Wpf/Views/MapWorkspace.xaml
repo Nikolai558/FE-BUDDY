@@ -1,0 +1,341 @@
+<!--
+    MapWorkspace  -  the one map screen. The Map page is just this; every map popup (Settings'
+    default ROI, each sub-service's "Pick on map…") hosts this too, so a popup is a replica of
+    the Map page: the same layers (MapLayersState is shared), the same tools, the same ROI card.
+    Only the ROI it edits differs (MapViewModel.Target).
+
+    Left: the map, with a floating toolbar, the cursor read-out, the editing banner and the
+    zoom-in hint. Right: the ROI card, then the layers - AIRAC data, run output, the user's files.
+-->
+<UserControl x:Class="FeBuddy.Wpf.Views.MapWorkspace"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:FeBuddy.Wpf.ViewModels"
+             xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance vm:MapViewModel}"
+             d:DesignWidth="1200" d:DesignHeight="800">
+
+    <UserControl.InputBindings>
+        <KeyBinding Key="Escape" Command="{Binding CancelRoiCommand}" />
+    </UserControl.InputBindings>
+
+    <UserControl.Resources>
+        <!-- One file on the map: show/hide, colour, name, feature count, zoom-to, remove. -->
+        <DataTemplate x:Key="MapFileRow" DataType="{x:Type vm:MapFileItem}">
+            <Border Style="{StaticResource Map.ListRow}" ToolTip="{Binding Path}">
+                <DockPanel>
+                    <Button DockPanel.Dock="Right" Style="{StaticResource Button.Icon.Small}"
+                            Content="{StaticResource Icon.Cancel}" Command="{Binding RemoveCommand}"
+                            ToolTip="Take this file off the map" />
+                    <Button DockPanel.Dock="Right" Style="{StaticResource Button.Icon.Small}"
+                            Content="{StaticResource Icon.FitPage}" Command="{Binding ZoomCommand}"
+                            ToolTip="Zoom to this file" />
+                    <CheckBox DockPanel.Dock="Left" IsChecked="{Binding IsVisible}" VerticalAlignment="Center"
+                              ToolTip="Show or hide on the map" />
+                    <Rectangle DockPanel.Dock="Left" Style="{StaticResource Map.Swatch}" Fill="{Binding Swatch}" Margin="4,0,8,0" />
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="{Binding Name}" Style="{StaticResource Text.Body.Strong}" TextTrimming="CharacterEllipsis" />
+                        <TextBlock x:Name="Detail" Text="{Binding Detail}" Style="{StaticResource Text.Caption}" TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                </DockPanel>
+            </Border>
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding HasProblem}" Value="True">
+                    <Setter TargetName="Detail" Property="Foreground" Value="{StaticResource Brush.Warn}" />
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+    </UserControl.Resources>
+
+    <Grid Background="{StaticResource Brush.Bg.Base}">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
+
+        <!-- ============================ map ============================ -->
+        <Border Grid.Column="0" Margin="16" BorderBrush="{StaticResource Brush.Stroke.Strong}" BorderThickness="1"
+                CornerRadius="{StaticResource Radius.Control}" ClipToBounds="True">
+            <Grid>
+                <ctl:MapCanvas x:Name="Map"
+                               BaseLayer="{Binding State.BaseLayer}"
+                               Layers="{Binding State.Layers}"
+                               Roi="{Binding DraftRoi, Mode=TwoWay}"
+                               ReferenceRoi="{Binding ReferenceRoi}"
+                               RoiEditing="{Binding IsEditingRoi}" />
+
+                <!-- toolbar -->
+                <Border Style="{StaticResource Map.Overlay}" HorizontalAlignment="Left" VerticalAlignment="Top">
+                    <StackPanel Orientation="Horizontal">
+                        <ToggleButton Style="{StaticResource Toggle.Tool}" IsChecked="{Binding IsEditingRoi}"
+                                      ToolTip="Draw, move or resize the ROI box. Shift + drag draws and saves a box at any time.">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="{StaticResource Icon.Crop}" FontFamily="{StaticResource Font.Icon}"
+                                           VerticalAlignment="Center" Margin="0,0,8,0" />
+                                <TextBlock Text="Edit ROI" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </ToggleButton>
+                        <Border Style="{StaticResource Map.Overlay.Divider}" />
+                        <Button Style="{StaticResource Button.Icon}" Content="{StaticResource Icon.ZoomIn}" Click="OnZoomIn" ToolTip="Zoom in (+)" />
+                        <Button Style="{StaticResource Button.Icon}" Content="{StaticResource Icon.ZoomOut}" Click="OnZoomOut" ToolTip="Zoom out (-)" />
+                        <Button Style="{StaticResource Button.Icon}" Content="{StaticResource Icon.Home}" Click="OnHome" ToolTip="Show the contiguous US" />
+                        <Button Style="{StaticResource Button.Icon}" Content="{StaticResource Icon.FitPage}" Click="OnFitLayers" ToolTip="Fit every layer on the map" />
+                        <Button Style="{StaticResource Button.Icon}" Content="{StaticResource Icon.Crop}" Command="{Binding ZoomToRoiCommand}" ToolTip="Zoom to the ROI box" />
+                        <Border Style="{StaticResource Map.Overlay.Divider}" />
+                        <ToggleButton Style="{StaticResource Toggle.Icon}" Content="{StaticResource Icon.Pane}" VerticalAlignment="Center"
+                                      IsChecked="{Binding State.IsPanelOpen}" ToolTip="Show or hide the side panel" />
+                    </StackPanel>
+                </Border>
+
+                <!-- cursor read-out -->
+                <Border Style="{StaticResource Map.Overlay.Chip}" HorizontalAlignment="Right" VerticalAlignment="Top"
+                        Visibility="{Binding CursorText, ElementName=Map, Converter={StaticResource StringToVis}}">
+                    <TextBlock Text="{Binding CursorText, ElementName=Map}" Style="{StaticResource Text.Caption}"
+                               FontFamily="{StaticResource Font.Mono}" />
+                </Border>
+
+                <!-- editing banner, just under the toolbar -->
+                <Border Style="{StaticResource Map.Overlay.Accent}" HorizontalAlignment="Left" VerticalAlignment="Top"
+                        Margin="12,62,12,12" MaxWidth="330"
+                        Visibility="{Binding IsEditingRoi, Converter={StaticResource BoolToVis}}">
+                    <TextBlock Style="{StaticResource Text.Caption}" Foreground="{StaticResource Brush.Accent.Text}" TextWrapping="Wrap"
+                               Text="Drag to draw a box, drag its handles to resize, drag inside to move. Right-drag pans. Esc cancels." />
+                </Border>
+
+                <!-- held-back layers -->
+                <Border Style="{StaticResource Map.Overlay.Chip}" HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                        MaxWidth="360"
+                        Visibility="{Binding DensityHint, ElementName=Map, Converter={StaticResource StringToVis}}">
+                    <TextBlock Text="{Binding DensityHint, ElementName=Map}" Style="{StaticResource Text.Caption}" TextWrapping="Wrap" />
+                </Border>
+            </Grid>
+        </Border>
+
+        <!-- ========================== sidebar ========================== -->
+        <Border x:Name="SidePanel" Grid.Column="1" Width="360" Background="{StaticResource Brush.Panel}"
+                BorderBrush="{StaticResource Brush.Stroke}" BorderThickness="1,0,0,0"
+                Visibility="{Binding State.IsPanelOpen, Converter={StaticResource BoolToVis}}">
+            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <StackPanel Margin="16">
+
+                    <!-- ================ ROI ================ -->
+                    <ctl:Card Header="{Binding Target.Title}">
+                        <StackPanel>
+                            <DockPanel Margin="0,0,0,10">
+                                <ctl:CopyButton DockPanel.Dock="Right" Style="{StaticResource Copy.Button}" VerticalAlignment="Center"
+                                                Value="{Binding CopyText}" IsEnabled="{Binding HasDraftRoi}"
+                                                ToolTip="Copy the four corner coordinates" />
+                                <Border Style="{StaticResource Chip.State}" Tag="{Binding RoiStateKind}" HorizontalAlignment="Left">
+                                    <TextBlock Text="{Binding RoiState}" Style="{StaticResource Chip.State.Text}" />
+                                </Border>
+                            </DockPanel>
+
+                            <TextBlock Text="{Binding Target.Description}" Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,0,0,12" />
+
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="10" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Text="NE lat" Style="{StaticResource Text.FieldLabel}" Margin="0,0,0,4" />
+                                <TextBlock Grid.Column="2" Text="NE lon" Style="{StaticResource Text.FieldLabel}" Margin="0,0,0,4" />
+                                <TextBox Grid.Row="1" Text="{Binding NeLat, UpdateSourceTrigger=PropertyChanged}" Tag="e.g. 44.5" Margin="0,0,0,10" />
+                                <TextBox Grid.Row="1" Grid.Column="2" Text="{Binding NeLon, UpdateSourceTrigger=PropertyChanged}" Tag="e.g. -78.0" Margin="0,0,0,10" />
+
+                                <TextBlock Grid.Row="2" Text="SW lat" Style="{StaticResource Text.FieldLabel}" Margin="0,0,0,4" />
+                                <TextBlock Grid.Row="2" Grid.Column="2" Text="SW lon" Style="{StaticResource Text.FieldLabel}" Margin="0,0,0,4" />
+                                <TextBox Grid.Row="3" Text="{Binding SwLat, UpdateSourceTrigger=PropertyChanged}" Tag="e.g. 39.0" />
+                                <TextBox Grid.Row="3" Grid.Column="2" Text="{Binding SwLon, UpdateSourceTrigger=PropertyChanged}" Tag="e.g. -86.0" />
+                            </Grid>
+
+                            <TextBlock Text="{Binding RoiError}" Style="{StaticResource Text.Caption}" Foreground="{StaticResource Brush.Danger}"
+                                       TextWrapping="Wrap" Margin="0,10,0,0"
+                                       Visibility="{Binding RoiError, Converter={StaticResource StringToVis}}" />
+
+                            <!-- not editing: Edit (and Clear on the Map page) -->
+                            <DockPanel Margin="0,14,0,0"
+                                       Visibility="{Binding IsEditingRoi, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}">
+                                <Button DockPanel.Dock="Right" Style="{StaticResource Button.Subtle}" Content="Clear"
+                                        Command="{Binding ClearRoiCommand}"
+                                        Visibility="{Binding Target.CanClear, Converter={StaticResource BoolToVis}}"
+                                        ToolTip="Remove the default ROI (press Save to confirm)" />
+                                <Button Style="{StaticResource Button.Ghost}" HorizontalAlignment="Left" Command="{Binding EditRoiCommand}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="{StaticResource Icon.Edit}" FontFamily="{StaticResource Font.Icon}" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                        <TextBlock Text="Edit ROI" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </Button>
+                            </DockPanel>
+
+                            <!-- editing: Cancel / Save -->
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,14,0,0"
+                                        Visibility="{Binding IsEditingRoi, Converter={StaticResource BoolToVis}}">
+                                <Button Style="{StaticResource Button.Ghost}" Content="Cancel" Command="{Binding CancelRoiCommand}" Margin="0,0,8,0" />
+                                <Button Style="{StaticResource Button.Primary}" Content="{Binding Target.SaveLabel}" Command="{Binding SaveRoiCommand}" IsDefault="True" />
+                            </StackPanel>
+
+                            <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,12,0,0"
+                                       Text="Tip: Shift + drag on the map draws a box and saves it in one go." />
+                        </StackPanel>
+                    </ctl:Card>
+
+                    <!-- ================ cycle + AIRAC data ================ -->
+                    <ctl:Card Header="AIRAC Data">
+                        <StackPanel>
+                            <TextBlock Text="Cycle" Style="{StaticResource Text.FieldLabel}" Margin="0,0,0,4" />
+                            <ComboBox ItemsSource="{Binding State.Cycles}" SelectedItem="{Binding State.SelectedCycle}"
+                                      DisplayMemberPath="Label"
+                                      ToolTip="The cycle whose parsed data and output files the map shows" />
+
+                            <ctl:SectionHeader Style="{StaticResource SectionHeader.Group}" Label="ARTCC Boundaries" Margin="0,14,0,6" />
+                            <ItemsControl ItemsSource="{Binding State.ArtccToggles}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <WrapPanel />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type vm:MapLayerToggle}">
+                                        <CheckBox IsChecked="{Binding IsVisible}" Margin="0,0,16,6">
+                                            <StackPanel Orientation="Horizontal">
+                                                <Rectangle Style="{StaticResource Map.Swatch}" Fill="{Binding Swatch}" />
+                                                <TextBlock Text="{Binding Name}" />
+                                            </StackPanel>
+                                        </CheckBox>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <TextBlock Text="{Binding State.AiracStatus}" Style="{StaticResource Text.Caption}" TextWrapping="Wrap" />
+                        </StackPanel>
+                    </ctl:Card>
+
+                    <!-- ================ run output ================ -->
+                    <ctl:Card Header="Run Output">
+                        <StackPanel>
+                            <ctl:SectionHeader Style="{StaticResource SectionHeader.Group}" Label="Files from this cycle's run" Margin="0,0,0,8">
+                                <ctl:SectionHeader.Aside>
+                                    <!-- Not clickable while the picker is open: the click that closes it (StaysOpen=False)
+                                         would otherwise land here and open it again. -->
+                                    <ToggleButton x:Name="OutputGear" Style="{StaticResource Toggle.Icon}"
+                                                  IsHitTestVisible="{Binding IsOpen, ElementName=OutputPopup, Converter={StaticResource InverseBool}}"
+                                                  Content="{StaticResource Icon.Settings}"
+                                                  IsChecked="{Binding State.IsOutputPickerOpen}"
+                                                  ToolTip="Choose which output files to show" />
+                                </ctl:SectionHeader.Aside>
+                            </ctl:SectionHeader>
+
+                            <ItemsControl ItemsSource="{Binding State.OutputFiles}" ItemTemplate="{StaticResource MapFileRow}" />
+                            <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap"
+                                       Text="Nothing shown yet. Use the gear to pick files this cycle's AIRAC Service run wrote - only the ones you pick are drawn."
+                                       Visibility="{Binding State.HasOutputFiles, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
+
+                            <Popup x:Name="OutputPopup" PlacementTarget="{Binding ElementName=SidePanel}" Placement="Left"
+                                   HorizontalOffset="4" VerticalOffset="6"
+                                   IsOpen="{Binding State.IsOutputPickerOpen, Mode=TwoWay}"
+                                   StaysOpen="False" AllowsTransparency="True" PopupAnimation="Fade">
+                                <ctl:Card Header="Output Files" Style="{StaticResource Card.Popup}" Width="440">
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding State.OutputDirectory}" Style="{StaticResource Text.Caption}"
+                                                   FontFamily="{StaticResource Font.Mono}" TextWrapping="Wrap" Margin="0,0,0,10" />
+                                        <TextBox Text="{Binding State.OutputFilter, UpdateSourceTrigger=PropertyChanged, Delay=150}"
+                                                 Tag="Filter, e.g. Airways  ·  ABQ  ·  Lines" Margin="0,0,0,8" />
+                                        <DockPanel Margin="0,0,0,6">
+                                            <Button DockPanel.Dock="Right" Style="{StaticResource Button.Icon}" Content="{StaticResource Icon.FolderOpen}"
+                                                    Command="{Binding State.OpenOutputFolderCommand}" ToolTip="Open the folder" />
+                                            <Button DockPanel.Dock="Right" Style="{StaticResource Button.Icon}" Content="{StaticResource Icon.Refresh}"
+                                                    Command="{Binding State.RefreshOutputsCommand}" ToolTip="Look for new files" />
+                                            <StackPanel Orientation="Horizontal">
+                                                <Button Style="{StaticResource Button.Subtle}" Content="All" Command="{Binding State.SelectAllOutputsCommand}"
+                                                        ToolTip="Tick every file the filter shows" />
+                                                <Button Style="{StaticResource Button.Subtle}" Content="None" Command="{Binding State.SelectNoOutputsCommand}"
+                                                        ToolTip="Untick every file the filter shows" />
+                                            </StackPanel>
+                                        </DockPanel>
+
+                                        <!-- Virtualized (a Departures run alone writes thousands of files): the
+                                             ScrollViewer has to be the ItemsControl's own for that to work. -->
+                                        <ItemsControl ItemsSource="{Binding State.OutputChoicesView}" MaxHeight="420"
+                                                      VirtualizingPanel.IsVirtualizing="True"
+                                                      VirtualizingPanel.IsVirtualizingWhenGrouping="True"
+                                                      VirtualizingPanel.ScrollUnit="Pixel">
+                                            <ItemsControl.Template>
+                                                <ControlTemplate TargetType="ItemsControl">
+                                                    <ScrollViewer CanContentScroll="True" Focusable="False"
+                                                                  VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                                                        <ItemsPresenter />
+                                                    </ScrollViewer>
+                                                </ControlTemplate>
+                                            </ItemsControl.Template>
+                                            <ItemsControl.ItemsPanel>
+                                                <ItemsPanelTemplate>
+                                                    <VirtualizingStackPanel />
+                                                </ItemsPanelTemplate>
+                                            </ItemsControl.ItemsPanel>
+                                                <ItemsControl.GroupStyle>
+                                                    <GroupStyle>
+                                                        <GroupStyle.HeaderTemplate>
+                                                            <DataTemplate>
+                                                                <ctl:SectionHeader Style="{StaticResource SectionHeader.Group}" Label="{Binding Name}" Margin="0,8,0,6" />
+                                                            </DataTemplate>
+                                                        </GroupStyle.HeaderTemplate>
+                                                    </GroupStyle>
+                                                </ItemsControl.GroupStyle>
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate DataType="{x:Type vm:OutputFileChoice}">
+                                                        <DockPanel Margin="0,0,4,6">
+                                                            <TextBlock DockPanel.Dock="Right" Text="{Binding SizeText}" Style="{StaticResource Text.Caption}"
+                                                                       VerticalAlignment="Center" Margin="8,0,0,0" />
+                                                            <CheckBox IsChecked="{Binding IsSelected}" ToolTip="{Binding File.FullPath}">
+                                                                <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
+                                                            </CheckBox>
+                                                        </DockPanel>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+
+                                        <TextBlock Text="{Binding State.OutputSummary}" Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,8,0,0" />
+                                    </StackPanel>
+                                </ctl:Card>
+                            </Popup>
+                        </StackPanel>
+                    </ctl:Card>
+
+                    <!-- ================ the user's own files ================ -->
+                    <ctl:Card Header="Your Files">
+                        <StackPanel>
+                            <ItemsControl ItemsSource="{Binding State.UserFiles}" ItemTemplate="{StaticResource MapFileRow}" />
+                            <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,0,0,10"
+                                       Text="Open any GeoJSON file to lay it over the map. A file that can't be read is flagged; the others still load."
+                                       Visibility="{Binding State.HasUserFiles, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
+                            <DockPanel>
+                                <Button DockPanel.Dock="Right" Style="{StaticResource Button.Subtle}" Content="Clear all"
+                                        Command="{Binding State.ClearFilesCommand}"
+                                        Visibility="{Binding State.HasUserFiles, Converter={StaticResource BoolToVis}}" />
+                                <Button Style="{StaticResource Button.Ghost}" HorizontalAlignment="Left" Command="{Binding State.LoadFilesCommand}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="{StaticResource Icon.OpenFile}" FontFamily="{StaticResource Font.Icon}" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                        <TextBlock Text="Load GeoJSON…" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </Button>
+                            </DockPanel>
+                        </StackPanel>
+                    </ctl:Card>
+
+                    <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="2,0,2,8"
+                               Text="The US state outlines are always drawn for reference. Dense layers wait until you zoom in; the map says which." />
+                </StackPanel>
+            </ScrollViewer>
+        </Border>
+    </Grid>
+</UserControl>

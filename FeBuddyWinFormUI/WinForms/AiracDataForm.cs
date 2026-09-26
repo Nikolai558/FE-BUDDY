@@ -342,7 +342,14 @@ namespace FeBuddyWinFormUI
             SetControlPropertyThreadSafe(processingDataLabel, "Text", "Downloading FAA Data");
             SetControlPropertyThreadSafe(downloadProgressBar, "Visible", true);
             SetControlPropertyThreadSafe(downloadStatusLabel, "Visible", true);
-            DownloadHelpers.DownloadAllFiles(GlobalConfig.airacEffectiveDate, AiracDateCycleModel.AllCycleDates[GlobalConfig.airacEffectiveDate], progress: _downloadProgress);
+
+            bool getMetaFile = currentAiracSelection.Checked || nextAiracAvailable;
+            if (!getMetaFile)
+            {
+                Logger.LogMessage("DEBUG", "NEXT AIRAC NOT PUBLISHED YET - EXCLUDING D-TPP META FILE FROM DOWNLOAD");
+            }
+
+            DownloadHelpers.DownloadAllFiles(GlobalConfig.airacEffectiveDate, AiracDateCycleModel.AllCycleDates[GlobalConfig.airacEffectiveDate], getMetaFile: getMetaFile, progress: _downloadProgress);
             SetControlPropertyThreadSafe(downloadProgressBar, "Visible", false);
             SetControlPropertyThreadSafe(downloadStatusLabel, "Visible", false);
 

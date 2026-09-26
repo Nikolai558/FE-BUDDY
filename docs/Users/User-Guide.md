@@ -39,8 +39,8 @@ The screen where you make files. It is a set of tabs down the left:
 
 | Tab | What it is |
 |---|---|
-| **General** | Which cycle, and which sub-services (Airports, Airways, Departures, Arrivals, NAVAIDs, ARTCC Boundaries, Fixes). Always there. |
-| **Airports / Airways / Departures / Arrivals / NAVAIDs / ARTCC Boundaries / Fixes** | One tab per sub-service you ticked, with its settings. |
+| **General** | Which cycle, and which sub-services (Airports, Airways, Departures, Arrivals, NAVAIDs, ARTCC Boundaries, Fixes, Wx Stations). Always there. |
+| **Airports / Airways / Departures / Arrivals / NAVAIDs / ARTCC Boundaries / Fixes / Wx Stations** | One tab per sub-service you ticked, with its settings. |
 | **Preview Settings** | Everything the run will do, in plain words, and the **Run AIRAC Service** button. Appears once a sub-service is ticked. |
 | **Review** | What happened in the last run. Appears once you run. |
 
@@ -73,8 +73,8 @@ is saved".
 
 **Outputs** - what the sub-service writes: **GeoJSON files** and/or the **alias file**. At least
 one must stay on; to make nothing for a sub-service, untick it on the General tab instead. ARTCC
-Boundaries and Fixes have no Outputs card: neither has an alias file, and both always write
-GeoJSON.
+Boundaries, Fixes and Wx Stations have no Outputs card: none has an alias file, and all three
+always write GeoJSON.
 
 **What Files Do You Want?** - the three GeoJSON files each sub-service can write:
 
@@ -125,7 +125,8 @@ tab). ARTCC Boundaries has a column per class - High and Low, or High, Low and U
 with *one file per ARTCC and altitude*, one column per ARTCC and altitude (`ZOB-HIGH`, `ZOB-LOW`,
 …), so your own ARTCC can be styled apart from its neighbours (see the ARTCC Boundaries tab). Fixes
 has one column for *All*, or one column per fix use, chart, or chart + fix use combination present,
-depending on its File Layout (see the Fixes tab). Each class is its own block of boxes; blocks that
+depending on its File Layout (see the Fixes tab). Wx Stations has one column, since there is only
+the one class. Each class is its own block of boxes; blocks that
 do not fit across the window move to the next line, so every box stays on screen however narrow the
 window is.
 
@@ -317,6 +318,23 @@ no "Include obstacle departures" equivalent here.
 - **Upload to vNAS:** a box per file the chosen File Layout writes - `Fix_Symbols` / `Fix_Text`
   for *All fixes in one file*, or each group's pair otherwise. There is no alias file to upload.
 
+### Wx Stations tab
+
+- **Outputs:** GeoJSON Symbols and Text only, always written - there is no alias file, so the tab
+  has no Outputs card. Tick **Symbols** and/or **Text** under GeoJSON files; at least one must
+  stay on.
+- **Files:** *Symbols* (one point per station, styled from the file's CRC ERAM defaults), *Text*
+  (the station's ICAO ID, then its IATA ID and site name where it has one, e.g. `KDTW` /
+  `DTW_Detroit/Metro Wayne Cnty`, otherwise just the site name). There is no Lines file.
+- **Station Data** - where the list comes from: aviationweather.gov's own station list, not the
+  NASR cycle, downloaded once at launch and shared by every cycle that needs it. It shows which
+  stations are included (a US or US-territory station with an ICAO ID that reports METAR and has
+  usable coordinates) and a status line for the selected cycle: the date the data was downloaded,
+  or **Missing** - deselect Wx Stations or restart FE-Buddy online to try again.
+- **Region:** a station is included when its own coordinates are inside the region.
+- **Upload to vNAS:** `Wx_Symbols` and/or `Wx_Text`, whichever the tab writes. There is no alias
+  file to upload.
+
 ### Preview Settings tab
 
 A plain-words summary of every tab: the folder the run writes to, what will be written, what it
@@ -459,6 +477,7 @@ laid out the same way:
     │   │   ├── NAVAIDs_Symbols / _Text (.geojson), or NAVAIDs_<type>s_Symbols / _Text per type
     │   │   ├── ARTCC-Boundary_High/Low/Unlimited_Lines, or _<ARTCC>-<altitude>_Lines per ARTCC
     │   │   ├── Fix_Symbols / _Text, or Fix_<fixUse|chart|chart-fixUse>_Symbols / _Text per group
+    │   │   ├── Wx_Symbols / _Text (.geojson)
     │   │   └── <ARTCC>\<airport>\<airport>_<procedure>_Lines / _Symbols / _Text (.geojson)
     │   └── Upload_to_vNAS\           (only the files marked for vNAS)
     │       ├── the alias files marked for vNAS

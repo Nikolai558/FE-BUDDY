@@ -82,6 +82,16 @@ the Systems box turns green, the AIRAC Service screen unlocks.
 Asking for a cycle's data while it is still parsing waits for that parse rather than starting a
 second one.
 
+**Wx Stations rides along, but is not part of the pipeline above.** Its data is not a NASR CSV
+group at all: it comes from aviationweather.gov's own station list, and `WxStationDownloader`
+downloads it at most once per launch and copies it into every cycle folder that does not already
+have it - previous, current and next alike - next to that cycle's NASR CSVs. A folder that already
+has it is never re-downloaded, so its station data is only as current as the day it was first
+filled in; a failed download never holds up the rest of the cycle, and is retried at the next
+launch. `AiracCycleDataCache.GetWxStationsAsync` reads a cycle's copy fresh from disk on every call
+(it is small, unlike the NASR data `GetAsync` memoizes) and returns `null` when the file is not
+there yet - which the Wx Stations tab reports as missing and blocks the run on.
+
 ## A run, end to end
 
 ```
@@ -108,7 +118,10 @@ Preview Settings ▸ Run AIRAC Service
 
 ARTCC Boundaries has no step 4: `ArtccBoundaryService` stops after `ArtccBoundaryGeojsonWriter`,
 since it has no alias file. Fixes likewise has no step 4: `FixService` stops after
-`FixGeojsonWriter`, since it too has no alias file.
+`FixGeojsonWriter`, since it too has no alias file. Wx Stations has no step 4 either
+(`WxStationService` stops after `WxStationGeojsonWriter`), and its step 1 input is not `nasrData`:
+`AiracService` loads `wxStationData` from `AiracCycleDataCache.GetWxStationsAsync` only when Wx
+Stations is selected, and hands it to `WxStationService.Run` instead.
 
 - **The settings block is the contract.** Every tab (and the harness) hands Core a flat
   `Dictionary<string, string>`. Core never sees view-models, and the GUI never sees typed settings.
@@ -298,7 +311,7 @@ Decisions that were argued out once and should not be re-litigated without a rea
 - **The Review tab is the one place** a run's results, warnings, advisories, errors and files live.
 - **Every sub-service is a tab of the AIRAC Service**, never a top-level screen, and every GeoJSON
   sub-service tab is built from the same shared cards - except the alias-file ones, which ARTCC
-  Boundaries and Fixes opt out of (`GeojsonSubServiceViewModel.HasAliasFile`). Likewise every file
+  Boundaries, Fixes and Wx Stations opt out of (`GeojsonSubServiceViewModel.HasAliasFile`). Likewise every file
   conversion is a tab of File Conversions; the two screens share one tabbed view and differ only in
   what their view-models say (File Conversions has no General or Preview Settings tab - each
   conversion runs from its own tab).

@@ -4,6 +4,9 @@ using FeBuddy.Core.Infrastructure.Logging;
 using FeBuddy.Core.Infrastructure.Nasr;
 using FeBuddy.Core.Infrastructure.Nasr.Models;
 using FeBuddy.Core.Infrastructure.Nasr.Parsers;
+using FeBuddy.Core.Infrastructure.WxStations;
+using FeBuddy.Core.Infrastructure.WxStations.Models;
+using FeBuddy.Core.Infrastructure.WxStations.Parsers;
 
 namespace FeBuddy.Core.Application.Airac;
 
@@ -44,7 +47,8 @@ public sealed class AiracCycleDataCacheEntry
 /// runs the launch pipeline that fills it: probe each cycle's publication state, then, for
 /// each published cycle in the order current -&gt; previous -&gt; next, download the CSVs and
 /// parse them - one parse at a time so peak memory is one in-flight parse plus the finished
-/// datasets.
+/// datasets. The same pipeline also fills in each cycle's Wx Stations data (not part of the NASR
+/// cycle at all - see <see cref="GetWxStationsAsync"/>), best-effort and never blocking readiness.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -70,12 +74,22 @@ public sealed class AiracCycleDataCacheEntry
 /// Deletes every cached cycle except the IDs given. Defaults to doing nothing, so a test
 /// never touches the real cycle cache.
 /// </param>
+/// <param name="ensureWxStations">
+/// Ensures a cycle folder has the Wx Stations cache file, given the folder. Defaults to doing
+/// nothing, so a test never touches the network.
+/// </param>
+/// <param name="loadWxStations">
+/// Reads a cycle folder's Wx Stations data, or <see langword="null"/> when it is not there yet.
+/// Defaults to always returning <see langword="null"/>.
+/// </param>
 public sealed class AiracCycleDataCache(
 	Func<AiracCycleInfo, CancellationToken, Task<AiracCyclePublicationState>> probe,
 	Func<AiracCycleInfo, CancellationToken, Task<string>> download,
 	Func<string, CancellationToken, Task<NasrCsvDataCollection>> parse,
 	Func<AiracCycleInfo, bool>? isLocallyAvailable = null,
-	Action<IReadOnlyCollection<string>>? pruneAllBut = null)
+	Action<IReadOnlyCollection<string>>? pruneAllBut = null,
+	Func<string, CancellationToken, Task>? ensureWxStations = null,
+	Func<string, CancellationToken, Task<WxStationDataCollection?>>? loadWxStations = null)
 {
 	private const string LogSource = "AiracCycleCache";
 
@@ -84,13 +98,23 @@ public sealed class AiracCycleDataCache(
 	private readonly Func<string, CancellationToken, Task<NasrCsvDataCollection>> _parse = parse ?? throw new ArgumentNullException(nameof(parse));
 	private readonly Func<AiracCycleInfo, bool> _isLocallyAvailable = isLocallyAvailable ?? (_ => false);
 	private readonly Action<IReadOnlyCollection<string>> _pruneAllBut = pruneAllBut ?? (_ => { });
+	private readonly Func<string, CancellationToken, Task> _ensureWxStations = ensureWxStations ?? ((_, _) => Task.CompletedTask);
+	private readonly Func<string, CancellationToken, Task<WxStationDataCollection?>> _loadWxStations = loadWxStations ?? ((_, _) => Task.FromResult<WxStationDataCollection?>(null));
 
 	private readonly Lock _gate = new();
 	private readonly List<AiracCycleDataCacheEntry> _entries = [];
 	private readonly Dictionary<string, Task<NasrCsvDataCollection>> _flights = new(StringComparer.OrdinalIgnoreCase);
 
 	/// <summary>
-	/// Creates a cache wired to the real FAA download and the real NASR CSV parser.
+	/// The one <see cref="WxStationDownloader"/> instance the parameterless constructor wires
+	/// every real cache into, so its once-per-launch download memo spans all three cycles
+	/// (previous/current/next) rather than one per cycle.
+	/// </summary>
+	private static readonly WxStationDownloader SharedWxStationDownloader = new();
+
+	/// <summary>
+	/// Creates a cache wired to the real FAA download, the real NASR CSV parser, and the real
+	/// Wx Stations download/parse.
 	/// </summary>
 	public AiracCycleDataCache()
 		: this(
@@ -101,8 +125,23 @@ public sealed class AiracCycleDataCache(
 			// launch time.
 			parse: (dir, ct) => NasrCsvParser.ParseAllAsync(dir),
 			isLocallyAvailable: cycle => NasrCycleDownloader.IsCycleAvailableLocally(cycle, cacheRootDirectory: null),
-			pruneAllBut: cycleIds => NasrCycleDownloader.PruneStaleCycles(cycleIds, cacheRootDirectory: null))
+			pruneAllBut: cycleIds => NasrCycleDownloader.PruneStaleCycles(cycleIds, cacheRootDirectory: null),
+			ensureWxStations: (cycleDirectory, ct) => SharedWxStationDownloader.EnsureCycleHasWxStationsAsync(cycleDirectory, ct),
+			loadWxStations: LoadWxStationsFromDiskAsync)
 	{
+	}
+
+	/// <summary>Reads a cycle folder's <c>stations.cache.xml</c>, or <see langword="null"/> when it is not there.</summary>
+	private static async Task<WxStationDataCollection?> LoadWxStationsFromDiskAsync(string cycleDirectory, CancellationToken cancellationToken)
+	{
+		string path = Path.Combine(cycleDirectory, WxStationFiles.FileName);
+
+		if (!File.Exists(path))
+		{
+			return null;
+		}
+
+		return await WxStationXmlParser.ParseAsync(path, cancellationToken).ConfigureAwait(false);
 	}
 
 	/// <summary>The process-wide cache the GUI binds to.</summary>
@@ -248,6 +287,49 @@ public sealed class AiracCycleDataCache(
 		}
 	}
 
+	/// <summary>
+	/// Returns a cycle's Wx Stations data, parsed fresh from its folder on every call (the file is
+	/// small, so there is no need to memoize it the way <see cref="GetAsync"/> does for the much
+	/// larger NASR data).
+	/// </summary>
+	/// <param name="cycleId">The cycle ID to get.</param>
+	/// <param name="cancellationToken">Cancels the read.</param>
+	/// <returns>
+	/// The parsed Wx Stations data, or <see langword="null"/> when the cycle's folder does not
+	/// have <c>stations.cache.xml</c> yet (it has not downloaded, or the download has failed so
+	/// far - see <see cref="Infrastructure.WxStations.WxStationDownloader"/>).
+	/// </returns>
+	/// <exception cref="InvalidOperationException">The cycle is not tracked.</exception>
+	public Task<WxStationDataCollection?> GetWxStationsAsync(string cycleId, CancellationToken cancellationToken = default)
+	{
+		AiracCycleDataCacheEntry entry = GetEntry(cycleId)
+			?? throw new InvalidOperationException($"Cycle '{cycleId}' is not tracked by the cache. Call {nameof(PrepareCyclesAsync)} first.");
+
+		return entry.CycleDirectory is { } cycleDirectory
+			? _loadWxStations(cycleDirectory, cancellationToken)
+			: Task.FromResult<WxStationDataCollection?>(null);
+	}
+
+	/// <summary>
+	/// Where a cycle's Wx Stations file is, if it has one - so the GUI can say up front that the
+	/// Wx Stations sub-service has nothing to run on, rather than let a run fail on it.
+	/// </summary>
+	/// <param name="cycleId">The cycle ID.</param>
+	/// <returns>
+	/// The full path of the cycle's <c>stations.cache.xml</c>, or <see langword="null"/> when the
+	/// cycle is not tracked, not downloaded yet, or its folder does not have the file.
+	/// </returns>
+	public string? FindWxStationsFile(string cycleId)
+	{
+		if (GetEntry(cycleId)?.CycleDirectory is not { } cycleDirectory)
+		{
+			return null;
+		}
+
+		string path = Path.Combine(cycleDirectory, WxStationFiles.FileName);
+		return File.Exists(path) ? path : null;
+	}
+
 	private async Task<NasrCsvDataCollection> RunFlightAsync(AiracCycleDataCacheEntry entry, CancellationToken cancellationToken)
 	{
 		try
@@ -359,8 +441,38 @@ public sealed class AiracCycleDataCache(
 		}
 
 		entry.CycleDirectory = cycleDirectory;
+
+		// Runs for an already-cached cycle too (the NASR download above just resolved instantly
+		// from disk), which is exactly what fills Wx Stations data into a cycle folder that
+		// predates this feature, or retries one whose earlier attempt failed.
+		await EnsureWxStationsAsync(entry, cycleDirectory, cancellationToken).ConfigureAwait(false);
+
 		SetState(entry, CycleDataState.Downloaded);
 		return true;
+	}
+
+	/// <summary>
+	/// Ensures <paramref name="cycleDirectory"/> has its Wx Stations data. Never fails or
+	/// delay-fails the cycle: any failure but cancellation is logged and swallowed, so the NASR
+	/// data this cycle otherwise has is not held back by a Wx Stations problem. FE-Buddy retries at
+	/// the next launch.
+	/// </summary>
+	private async Task EnsureWxStationsAsync(AiracCycleDataCacheEntry entry, string cycleDirectory, CancellationToken cancellationToken)
+	{
+		try
+		{
+			await _ensureWxStations(cycleDirectory, cancellationToken).ConfigureAwait(false);
+		}
+		catch (OperationCanceledException)
+		{
+			throw;
+		}
+		catch (Exception ex)
+		{
+			AppLog.Warning(LogSource,
+				$"Wx station data could not be downloaded for cycle {entry.Cycle.AiracCycleId}; the Wx Stations sub-service " +
+				$"can't run on it until it is (FE-Buddy retries at the next launch). {ex.Message}");
+		}
 	}
 
 	/// <summary>

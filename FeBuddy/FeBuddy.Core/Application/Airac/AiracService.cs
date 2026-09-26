@@ -15,17 +15,22 @@ using FeBuddy.Core.Application.Airac.Fixes.Models;
 using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Application.Airac.Navaids;
 using FeBuddy.Core.Application.Airac.Navaids.Models;
+using FeBuddy.Core.Application.Airac.WxStations;
+using FeBuddy.Core.Application.Airac.WxStations.Models;
 using FeBuddy.Core.Application.Models;
 using FeBuddy.Core.Infrastructure.Logging;
 using FeBuddy.Core.Infrastructure.Logging.Models;
 using FeBuddy.Core.Infrastructure.Nasr.Models;
+using FeBuddy.Core.Infrastructure.WxStations.Models;
 
 namespace FeBuddy.Core.Application.Airac;
 
 /// <summary>
 /// The AIRAC Service: the GUI calls this once per "Run AIRAC Service". It runs each selected
-/// sub-service (Airways, Airports, Departures, Arrivals, NAVAIDs, ARTCC Boundaries, Fixes) against
-/// one cycle's NASR data and gathers the results.
+/// sub-service (Airways, Airports, Departures, Arrivals, NAVAIDs, ARTCC Boundaries, Fixes, Wx
+/// Stations) against one cycle's NASR data and gathers the results. Wx Stations is the one
+/// exception: its data does not come from the NASR cycle at all, but from a separately downloaded
+/// and cached <c>stations.cache.xml</c> (see <see cref="AiracCycleDataCache.GetWxStationsAsync"/>).
 /// </summary>
 /// <remarks>
 /// <para>
@@ -61,7 +66,8 @@ public static class AiracService
 	/// <summary>
 	/// Runs every selected sub-service, resolving the parsed cycle data for
 	/// <see cref="AiracServiceSettings.SelectedCycle"/> from <see cref="AiracCycleDataCache.Instance"/>
-	/// (awaiting an in-flight parse rather than starting a second one).
+	/// (awaiting an in-flight parse rather than starting a second one) - and, when Wx Stations is
+	/// selected, that cycle's Wx station data the same way.
 	/// </summary>
 	/// <param name="settings">The run's cross-cutting choices and per-sub-service settings blocks.</param>
 	/// <param name="progress">Optional per-sub-service progress for the run panel.</param>
@@ -79,11 +85,23 @@ public static class AiracService
 			.GetAsync(settings.SelectedCycle.AiracCycleId, cancellationToken)
 			.ConfigureAwait(false);
 
-		return await RunAsync(settings, nasrData, progress, cancellationToken).ConfigureAwait(false);
+		WxStationDataCollection? wxStationData = null;
+
+		if (settings.WxStations is not null)
+		{
+			progress?.Report(new AiracServiceProgress("AIRAC", $"Loading Wx station data for cycle {settings.SelectedCycle.AiracCycleId}"));
+			wxStationData = await AiracCycleDataCache.Instance
+				.GetWxStationsAsync(settings.SelectedCycle.AiracCycleId, cancellationToken)
+				.ConfigureAwait(false);
+		}
+
+		return await RunAsync(settings, nasrData, wxStationData, progress, cancellationToken).ConfigureAwait(false);
 	}
 
 	/// <summary>
-	/// Runs every selected sub-service against the supplied parsed cycle data.
+	/// Runs every selected sub-service against the supplied parsed cycle data, with no Wx station
+	/// data: a selected Wx Stations sub-service fails, saying the cycle has none. Kept for callers
+	/// from before Wx Stations existed.
 	/// </summary>
 	/// <param name="settings">The run's cross-cutting choices and per-sub-service settings blocks.</param>
 	/// <param name="nasrData">
@@ -98,9 +116,38 @@ public static class AiracService
 	/// folder (a file in it is open elsewhere, say). Nothing is written in that case, but the
 	/// files deleted before the failure stay deleted.
 	/// </exception>
+	public static Task<AiracServiceResult> RunAsync(
+		AiracServiceSettings settings,
+		NasrCsvDataCollection nasrData,
+		IProgress<AiracServiceProgress>? progress = null,
+		CancellationToken cancellationToken = default) =>
+		RunAsync(settings, nasrData, wxStationData: null, progress, cancellationToken);
+
+	/// <summary>
+	/// Runs every selected sub-service against the supplied parsed cycle data and Wx station data.
+	/// </summary>
+	/// <param name="settings">The run's cross-cutting choices and per-sub-service settings blocks.</param>
+	/// <param name="nasrData">
+	/// The parsed NASR CSV data for <see cref="AiracServiceSettings.SelectedCycle"/>.
+	/// </param>
+	/// <param name="wxStationData">
+	/// The parsed Wx station data for <see cref="AiracServiceSettings.SelectedCycle"/>, or
+	/// <see langword="null"/> when it has not downloaded yet. Only read when
+	/// <see cref="AiracServiceSettings.WxStations"/> is not <see langword="null"/>.
+	/// </param>
+	/// <param name="progress">Optional per-sub-service progress for the run panel.</param>
+	/// <param name="cancellationToken">Cancels before the next sub-service starts.</param>
+	/// <returns>The aggregated result: each sub-service's result plus a combined warning list.</returns>
+	/// <exception cref="ArgumentException">Thrown when <see cref="AiracServiceSettings.OutputDirectory"/> is blank.</exception>
+	/// <exception cref="IOException">
+	/// Thrown when <see cref="ExistingOutputAction.DeleteExisting"/> cannot delete the cycle
+	/// folder (a file in it is open elsewhere, say). Nothing is written in that case, but the
+	/// files deleted before the failure stay deleted.
+	/// </exception>
 	public static async Task<AiracServiceResult> RunAsync(
 		AiracServiceSettings settings,
 		NasrCsvDataCollection nasrData,
+		WxStationDataCollection? wxStationData,
 		IProgress<AiracServiceProgress>? progress = null,
 		CancellationToken cancellationToken = default)
 	{
@@ -113,7 +160,7 @@ public static class AiracService
 		string outputDirectory = settings.CycleOutputDirectory;
 		bool anySelected = settings.Airways is not null || settings.Airports is not null
 			|| settings.Departures is not null || settings.Arrivals is not null || settings.Navaids is not null
-			|| settings.ArtccBoundaries is not null || settings.Fixes is not null;
+			|| settings.ArtccBoundaries is not null || settings.Fixes is not null || settings.WxStations is not null;
 
 		// Only when there is something to write: a run with nothing selected must not empty the
 		// folder and leave it that way.
@@ -162,6 +209,11 @@ public static class AiracService
 			block => FixService.Run(nasrData, block),
 			result => $"{result.FixCount} fix(es), {result.GeojsonFilesWritten.Count} GeoJSON file(s)").ConfigureAwait(false);
 
+		WxStationServiceResult? wxStationsResult = await RunSubServiceAsync(
+			settings.WxStations, "Wx Stations", "Building weather station GeoJSON output",
+			block => WxStationService.Run(wxStationData, block),
+			result => $"{result.StationCount} station(s), {result.GeojsonFilesWritten.Count} GeoJSON file(s)").ConfigureAwait(false);
+
 		if (!anySelected)
 		{
 			const string message = "AIRAC Service run requested with no sub-service selected; nothing to do.";
@@ -183,6 +235,7 @@ public static class AiracService
 			Navaids = navaidsResult,
 			ArtccBoundaries = artccBoundariesResult,
 			Fixes = fixesResult,
+			WxStations = wxStationsResult,
 		};
 
 		// Runs one sub-service if it was selected (its settings block is not null), reporting

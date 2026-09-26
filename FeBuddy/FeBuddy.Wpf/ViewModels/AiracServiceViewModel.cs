@@ -119,6 +119,9 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 	/// <summary>The Fixes tab while it is open, otherwise <see langword="null"/>.</summary>
 	private FixesViewModel? FixesTab => TabFor<FixesViewModel>(AiracSubServices.FixesKey);
 
+	/// <summary>The Wx Stations tab while it is open, otherwise <see langword="null"/>.</summary>
+	private WxStationsViewModel? WxStationsTab => TabFor<WxStationsViewModel>(AiracSubServices.WxStationsKey);
+
 	/// <summary>The open tabs that take part in a run.</summary>
 	private IReadOnlyList<ISubServiceRunTarget> RunTargets =>
 		[.. Tabs.OfType<ISubServiceRunTarget>()];
@@ -170,6 +173,7 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 		}
 
 		RebuildTabs(open);
+		RefreshWxStationsData();
 	}
 
 	private void RefreshReadiness()
@@ -215,12 +219,30 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 				{
 					target.LoadCycleDependentLists(data);
 				}
+
+				RefreshWxStationsData();
 			});
 		}
 		catch (Exception ex)
 		{
 			AppLog.Warning("AiracService", $"Could not load parsed data for cycle {cycleId}: {ex.Message}");
 		}
+	}
+
+	/// <summary>
+	/// Tells the open Wx Stations tab whether the selected cycle's <c>stations.cache.xml</c> has
+	/// downloaded. Unlike every other sub-service, Wx Stations' data does not come from the NASR
+	/// cycle <see cref="ISubServiceRunTarget.LoadCycleDependentLists"/> hands out, so it is
+	/// reported here instead, alongside it.
+	/// </summary>
+	private void RefreshWxStationsData()
+	{
+		if (WxStationsTab is not { } tab || _parsedCycleId is not { } cycleId)
+		{
+			return;
+		}
+
+		tab.SetStationData(cycleId, AiracCycleDataCache.Instance.FindWxStationsFile(cycleId));
 	}
 
 	/// <summary>
@@ -259,6 +281,7 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 			Navaids = NavaidsTab?.BuildSettingsBlock(),
 			ArtccBoundaries = ArtccBoundariesTab?.BuildSettingsBlock(),
 			Fixes = FixesTab?.BuildSettingsBlock(),
+			WxStations = WxStationsTab?.BuildSettingsBlock(),
 		};
 
 		if (AiracService.HasExistingOutput(settings))
@@ -423,6 +446,11 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 			files.AddRange(fixes.GeojsonFilesWritten);
 		}
 
+		if (result.WxStations is { } wxStations)
+		{
+			files.AddRange(wxStations.GeojsonFilesWritten);
+		}
+
 		return [.. files];
 	}
 
@@ -470,6 +498,11 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 		if (result.Fixes is { } fixes)
 		{
 			parts.Add($"{fixes.FixCount:N0} fix(es)");
+		}
+
+		if (result.WxStations is { } wxStations)
+		{
+			parts.Add($"{wxStations.StationCount:N0} weather station(s)");
 		}
 
 		return parts.Count == 0

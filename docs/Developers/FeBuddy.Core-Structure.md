@@ -55,8 +55,10 @@ FeBuddy.Core/
 │   │                 the shared file-naming/CRC-class token rule) and the Fix model
 │   ├── Geo/          GeoMath, antimeridian splitting, line merging and segment joining, ROI and
 │   │                 radius clipping, Wgs84
-│   └── Navaids/      NavaidTypes (the NAV_TYPE vocabulary, file-naming tokens, CRC symbol styles,
-│                     frequency formatting) and the Navaid model
+│   ├── Navaids/      NavaidTypes (the NAV_TYPE vocabulary, file-naming tokens, CRC symbol styles,
+│   │                 frequency formatting) and the Navaid model
+│   └── WxStations/   WxStationCountries (the included US/territory codes), WxStationLabels (the
+│                     Text second-line rule) and the WxStation model
 ├── Infrastructure/
 │   ├── Configuration/  UserConfigFile, UserConfigKeys, DevMode, OutputFormatting
 │   ├── Dat/            DatFileReader: FAA .dat RADAR Video Maps
@@ -66,6 +68,11 @@ FeBuddy.Core/
 │   ├── Nasr/           Download, availability, CSV reading, WaypointLocator
 │   │   ├── Models/     One row-model file per NASR CSV group
 │   │   └── Parsers/    One parser per group + NasrCsvParser (parses them all)
+│   ├── WxStations/     WxStationDownloader, WxStationFiles - aviationweather.gov's own station
+│   │   │               list, not NASR, downloaded once per launch and cached alongside the NASR
+│   │   │               CSVs in each cycle's folder
+│   │   ├── Models/     WxStationXmlDataModel, WxStationDataCollection
+│   │   └── Parsers/    WxStationXmlParser
 │   ├── Eram/           EramGeoMapReader: an ERAM adaptation export's Geomaps.xml (streamed)
 │   └── Sct/            SctFileReader: VRC .sct2 / .sct sector files
 └── Application/
@@ -76,7 +83,9 @@ FeBuddy.Core/
     │   ├── Arrivals/
     │   ├── Navaids/
     │   ├── ArtccBoundaries/  No alias file, so no *AliasWriter and no GenerateAliasFile key
-    │   └── Fixes/            No alias file either, so no *AliasWriter and no GenerateAliasFile key
+    │   ├── Fixes/            No alias file either, so no *AliasWriter and no GenerateAliasFile key
+    │   └── WxStations/       No alias file either; its data comes from Infrastructure/WxStations,
+    │                         not a NASR CSV group
     ├── Conversions/    ConversionSettingsReader and ConversionFiles (what every conversion
     │   │               shares), then one folder per file conversion
     │   ├── DatToGeojson/
@@ -143,10 +152,14 @@ AirwayService.Run(nasrData, settings)
 ```
 
 Airports, Departures, Arrivals and NAVAIDs have the same shape (NAVAIDs' writer just skips the
-Lines step - it has no Lines file). ARTCC Boundaries and Fixes differ more: neither has step 4 at
-all - `ArtccBoundaryService` stops after `ArtccBoundaryGeojsonWriter`, and `FixService` stops after
-`FixGeojsonWriter` - since neither has an alias file. ARTCC Boundaries' writer produces Lines only;
-Fixes' produces Symbols and Text only, the same Lines-skipping shape as NAVAIDs. Problems are
+Lines step - it has no Lines file). ARTCC Boundaries, Fixes and Wx Stations differ more: none has
+step 4 at all - `ArtccBoundaryService` stops after `ArtccBoundaryGeojsonWriter`, `FixService` stops
+after `FixGeojsonWriter`, and `WxStationService` stops after `WxStationGeojsonWriter` - since none
+has an alias file. ARTCC Boundaries' writer produces Lines only; Fixes' and Wx Stations' each
+produce Symbols and Text only, the same Lines-skipping shape as NAVAIDs. Wx Stations also breaks
+the `nasrData` pattern at step 1: its input is a `WxStationDataCollection` parsed from
+aviationweather.gov's own station list (`Infrastructure/WxStations`), not the NASR cycle - see
+[Architecture](Architecture.md#the-airac-data-pipeline). Problems are
 reported as `ServiceMessage`s (warnings or errors) in the result instead of being thrown, so one
 bad setting doesn't lose the whole run. The only exception is a missing required setting, which
 throws `ArgumentException`.
@@ -195,7 +208,8 @@ files per source (SCT2, ERAM).
   `AiracService`. Reuse `Application/Settings/SubServiceSettingsReader` for the common keys
   (precision, ROI, FEB properties, the vNAS files), and put each file where
   `AiracOutputPaths.FileDirectory` says. `Application/Airac/Fixes/` is a real example of this shape
-  to copy from.
+  to copy from - or `Application/Airac/WxStations/` for one whose data doesn't come from a NASR CSV
+  group at all.
 - **A new file conversion** (say, vSTARS video maps): `Application/Conversions/VstarsToGeojson/`
   with its `*Service`, `*SettingsParser`, `*GeojsonWriter` and a `Models/` folder, shaped like
   `SctToGeojson/`: its settings derive from `ConversionSettings`, its result is a

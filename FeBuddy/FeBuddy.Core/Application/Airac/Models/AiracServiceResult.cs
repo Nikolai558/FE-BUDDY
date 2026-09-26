@@ -5,6 +5,7 @@ using FeBuddy.Core.Application.Airac.ArtccBoundaries.Models;
 using FeBuddy.Core.Application.Airac.Departures.Models;
 using FeBuddy.Core.Application.Airac.Fixes.Models;
 using FeBuddy.Core.Application.Airac.Navaids.Models;
+using FeBuddy.Core.Application.Airac.WxStations.Models;
 using FeBuddy.Core.Application.Models;
 
 namespace FeBuddy.Core.Application.Airac.Models;
@@ -62,4 +63,10 @@ public sealed record AiracServiceResult : ServiceResult
 	/// run.
 	/// </summary>
 	public FixServiceResult? Fixes { get; init; }
+
+	/// <summary>
+	/// The Wx Stations sub-service result, or <see langword="null"/> when Wx Stations was not part
+	/// of this run.
+	/// </summary>
+	public WxStationServiceResult? WxStations { get; init; }
 }

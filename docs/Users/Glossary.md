@@ -56,6 +56,10 @@ by chart and fix use. No alias file - a fix's label is always its own identifier
 **GeoJSON** - A standard file format for map shapes: points, lines and polygons with
 properties. CRC's video maps are GeoJSON files.
 
+**METAR** - A routine weather report for an airport or station - wind, visibility, sky condition,
+temperature and altimeter setting - issued every hour. Wx Stations includes only stations that
+report METAR.
+
 **NASR** - The FAA's National Airspace System Resources data: every airport, runway, airway,
 fix, NAVAID and procedure in the US, published as a set of CSV files every AIRAC cycle.
 FE-Buddy downloads it from the FAA and builds everything from it.
@@ -80,7 +84,7 @@ FE-Buddy only writes data inside (or crossing) it. Make it a little bigger than 
 **STAR** - Standard Terminal Arrival: a published arrival route into an airport.
 
 **Sub-service** - One kind of data the AIRAC Service can produce: Airports, Airways, Departures,
-Arrivals, NAVAIDs, ARTCC Boundaries or Fixes. Each has its own tab and settings.
+Arrivals, NAVAIDs, ARTCC Boundaries, Fixes or Wx Stations. Each has its own tab and settings.
 
 **Video map** - The map background on a controller's scope: airways, airports, boundaries.
 In CRC, these are GeoJSON files.
@@ -88,3 +92,8 @@ In CRC, these are GeoJSON files.
 **vNAS** - VATSIM's system for ARTCC facility data. You upload the files FE-Buddy makes to vNAS
 for CRC to use. The files you mark for vNAS on a sub-service tab are written to an
 `Upload_to_vNAS` folder, ready to upload.
+
+**Wx Stations** - The sub-service that draws a symbol and a two-line label for every US (and
+territory) station that reports METAR. Unlike every other sub-service, its data comes from
+aviationweather.gov's own station list, not the NASR cycle. No alias file - a station's label is
+always its own ICAO ID, then its IATA ID and site name.

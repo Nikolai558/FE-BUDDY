@@ -2,7 +2,7 @@ using FeBuddy.Core.Application.Airac.Airports.Models;
 using FeBuddy.Core.Application.Airac.Airways.Models;
 using FeBuddy.Core.Application.Airac.Arrivals.Models;
 using FeBuddy.Core.Application.Airac.Departures.Models;
-using FeBuddy.Core.Infrastructure.Configuration;
+using FeBuddy.Core.Application.Airac.WxStations;
 
 namespace FeBuddy.Harness;
 
@@ -15,6 +15,9 @@ internal static class HarnessSettings
 {
 	/// <summary>Directory containing an unzipped NASR 28-day subscription CSV set.</summary>
 	public const string NasrSourceDirectory = @"C:\Users\ksand\Downloads\03_Sep_2026_CSV";
+
+	/// <summary>Full path to an unzipped copy of the aviationweather.gov Wx Stations cache file.</summary>
+	public const string WxStationsSourceFile = @"C:\Users\ksand\Downloads\stations.cache.xml\stations.cache.xml";
 
 	/// <summary>
 	/// The folder the services write into, as the AIRAC Service's <c>AIRAC_&lt;cycle&gt;</c> folder
@@ -425,6 +428,44 @@ internal static class HarnessSettings
 	}
 
 	/// <summary>
+	/// Builds the raw settings dictionary for <c>WxStationService.Run</c>. Every key the Wx
+	/// Stations settings parser recognizes is listed below with its default value.
+	/// </summary>
+	public static Dictionary<string, string> WxStationSettings()
+	{
+		Dictionary<string, string> settings = new()
+		{
+			{ "OutputDirectory", OutputDirectory },
+
+			// GeoJSON is the only output the Wx Stations sub-service has - there is no
+			// GenerateGeojson, no alias file, and no feb.* properties.
+			{ "EmitSymbols", "Y" },
+			{ "EmitText", "Y" },
+
+			// Only the Symbols file goes to vNAS/gets CRC-ERAM defaults here, even though both
+			// Crc.Wx.Symbol.* and Crc.Wx.Text.* are populated below - Text's block is simply
+			// unused by this run, exercising a station being labelled without CRC defaults.
+			{ "UploadToVnas", WxStationOutputFiles.Symbols },
+			{ "CrcDefaultsFor", WxStationOutputFiles.Symbols },
+
+			// ROI filtering applies to the GeoJSON output only.
+			{ "FilterByRoi", "N" },
+			{ "RoiSwLat", "" },              // e.g. "38.0"
+			{ "RoiSwLon", "" },              // e.g. "-85.0"
+			{ "RoiNeLat", "" },              // e.g. "43.0"
+			{ "RoiNeLon", "" },              // e.g. "-78.0"
+
+			{ "CoordinatePrecision", "6" },  // max decimal places in GeoJSON coords (0-15)
+		};
+
+		AddWxStationCrcDefaults(settings,
+			symbolBcg: 12, symbolFilters: "12", symbolStyle: "otherWaypoints", symbolSize: 1,
+			textBcg: 12, textFilters: "12", textSize: 1);
+
+		return settings;
+	}
+
+	/// <summary>
 	/// Settings for exercising the alias-only path (<c>OutputBy = None</c>, alias file still
 	/// generated), matching the "written even when OutputBy = None" contract.
 	/// </summary>
@@ -700,6 +741,44 @@ internal static class HarnessSettings
 		settings[$"Crc.{cls}.Text.xOffset"] = "0";
 		settings[$"Crc.{cls}.Text.yOffset"] = "0";
 		settings[$"Crc.{cls}.Text.opaque"] = "N";
+	}
+
+	/// <summary>
+	/// Adds the <c>Crc.Wx.Symbol.*</c> and <c>Crc.Wx.Text.*</c> property defaults. These values are
+	/// the harness's own; the GUI starts every CRC box empty and makes the user choose.
+	/// </summary>
+	/// <param name="settings">The dictionary being built.</param>
+	/// <param name="symbolBcg">Symbol BCG group, 1-40.</param>
+	/// <param name="symbolFilters">Symbol filters, comma-separated, each 0-40, at least one.</param>
+	/// <param name="symbolStyle">Symbol style, one of <c>CrcPropertyValidator.ValidSymbolStyles</c>.</param>
+	/// <param name="symbolSize">Symbol size, 1-4.</param>
+	/// <param name="textBcg">Text BCG group, 1-40.</param>
+	/// <param name="textFilters">Text filters, comma-separated, each 0-40, at least one.</param>
+	/// <param name="textSize">Text size, 0-5.</param>
+	private static void AddWxStationCrcDefaults(
+		Dictionary<string, string> settings,
+		int symbolBcg,
+		string symbolFilters,
+		string symbolStyle,
+		int symbolSize,
+		int textBcg,
+		string textFilters,
+		int textSize)
+	{
+		settings[$"Crc.{WxStationOutputFiles.AllClass}.Symbol.bcg"] = symbolBcg.ToString();
+		settings[$"Crc.{WxStationOutputFiles.AllClass}.Symbol.filters"] = symbolFilters;
+		settings[$"Crc.{WxStationOutputFiles.AllClass}.Symbol.style"] = symbolStyle;
+		settings[$"Crc.{WxStationOutputFiles.AllClass}.Symbol.size"] = symbolSize.ToString();
+
+		// No "Crc.Wx.Text.text": every station supplies its own label from its ICAO ID, IATA ID
+		// and site, and the parser warns if one is supplied here.
+		settings[$"Crc.{WxStationOutputFiles.AllClass}.Text.bcg"] = textBcg.ToString();
+		settings[$"Crc.{WxStationOutputFiles.AllClass}.Text.filters"] = textFilters;
+		settings[$"Crc.{WxStationOutputFiles.AllClass}.Text.size"] = textSize.ToString();
+		settings[$"Crc.{WxStationOutputFiles.AllClass}.Text.underline"] = "N";
+		settings[$"Crc.{WxStationOutputFiles.AllClass}.Text.xOffset"] = "0";
+		settings[$"Crc.{WxStationOutputFiles.AllClass}.Text.yOffset"] = "0";
+		settings[$"Crc.{WxStationOutputFiles.AllClass}.Text.opaque"] = "N";
 	}
 
 	private static void AddCrcDefaults(

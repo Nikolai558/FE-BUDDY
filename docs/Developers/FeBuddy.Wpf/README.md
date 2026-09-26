@@ -13,8 +13,8 @@ below is relative to `FeBuddy/FeBuddy.Wpf/` in the repo unless stated otherwise.
 
 - references `FeBuddy.Core`; no other NuGet packages - the MVVM helpers
   (`ObservableObject`, `RelayCommand`) are hand-rolled in `Mvvm/`
-- **Airports, Airways, Departures, Arrivals, NAVAIDs, ARTCC Boundaries and Fixes are sub-services
-  of AIRAC Service**, not top-level screens. The library code is
+- **Airports, Airways, Departures, Arrivals, NAVAIDs, ARTCC Boundaries, Fixes and Wx Stations are
+  sub-services of AIRAC Service**, not top-level screens. The library code is
   `FeBuddy.Core.Application.Airac.*`; the GUI reaches each one only as a tab on the AIRAC
   Services screen. In the same way, each
   **file conversion** (DAT to GeoJSON, SCT2 to GeoJSON) is a tab on the File Conversions screen
@@ -81,8 +81,8 @@ Views/                ShellWindow (custom chrome) + Dashboard, TabbedServiceView
                       (the AIRAC Services and File Conversions screens) and their
                       tab views (AiracGeneralTabView, AirportsView, AirwaysView,
                       DeparturesView, ArrivalsView, NavaidsView, ArtccBoundariesView, FixesView,
-                      DatToGeojsonView, SctToGeojsonView, EramToGeojsonView, ServicePreviewTabView,
-                      ServiceRunReviewTabView), Map, Settings, Info; UpdateWindow,
+                      WxStationsView, DatToGeojsonView, SctToGeojsonView, EramToGeojsonView,
+                      ServicePreviewTabView, ServiceRunReviewTabView), Map, Settings, Info; UpdateWindow,
                       ConfirmWindow (Confirm / Cancel, or a third choice between
                       them), RoiPickerWindow
   Cards/                the cards every GeoJSON sub-service tab shares, RunCard
@@ -141,7 +141,7 @@ bar and page scroller are shared, and each screen's view-model says what differs
     restores it. The selection persists to
     `Services.AiracService.SelectedSubServices`.
   - **Sub-service catalogue** - `ViewModels/AiracSubServices.cs`: Airports,
-    Airways, Departures, Arrivals, NAVAIDs, ARTCC Boundaries, Fixes. Adding one is a
+    Airways, Departures, Arrivals, NAVAIDs, ARTCC Boundaries, Fixes, Wx Stations. Adding one is a
     catalogue entry plus a tab view-model; one whose backend is not built yet opens a
     `PlaceholderSubServiceView` and contributes nothing to a run.
   - **Sub-service tabs** - each is a `GeojsonSubServiceViewModel` (Save /
@@ -183,7 +183,13 @@ bar and page scroller are shared, and each screen's view-model says what differs
     `GenerateAliasFile` is never shown, saved or sent either. Its CRC ERAM Defaults
     classes also come from the cycle's own data (one per fix use, chart, or chart +
     fix use combination present, depending on File Layout), added the same way with
-    `AddCrcRows`.
+    `AddCrcRows`. The Wx Stations tab adds: a Station Data card - where the list
+    comes from (aviationweather.gov's own station list, not the NASR cycle), which
+    stations are included, and a status line for the selected cycle (downloaded
+    date, or missing, which blocks the run). Like NAVAIDs and Fixes it has no Lines
+    file; like ARTCC Boundaries and Fixes it has no alias file at all. Unlike Fixes,
+    its CRC ERAM Defaults have a single fixed class (`Wx`), never rows added from
+    the cycle's own data - there is no File Layout choice to split it by.
   - **Preview Settings tab** - present once at least one sub-service is selected:
     every tab's settings as label/value rows (the General section names the run's
     `AIRAC_<cycle>` folder), notices naming any unsaved or invalid tab, and the single

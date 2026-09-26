@@ -22,6 +22,7 @@ and how it should look, and writes the files: **GeoJSON video maps** that CRC ca
 | **NAVAIDs** | A symbol and a label for every VOR, NDB, TACAN and the rest of the NASR NAVAID types, plus an alias file of NAVAID commands. |
 | **ARTCC Boundaries** | Every ARTCC's boundary as lines, split by high/low altitude, high/low/unlimited, or one file per ARTCC and altitude - no alias file, since a boundary line carries no label. |
 | **Fixes** | A symbol and a label for every NASR fix - reporting points, waypoints, military points and the rest - split all in one file, by fix use, by chart, or by chart and fix use - no alias file, since a fix's label is always its own identifier. |
+| **Wx Stations** | A symbol and a two-line label for every US (and territory) station that reports METAR - no alias file, since a station's label is always its own ICAO ID and IATA ID/name. Unlike every other sub-service, its data comes from aviationweather.gov's own station list, not the FAA's NASR cycle. |
 | **File conversions** | Your FAA `.dat` RADAR Video Maps as GeoJSON video maps, optionally cropped to a distance from each map's centre; your VRC `.sct2` sector files as GeoJSON - boundaries, airways, GEO, SIDs, STARs, labels and regions; and the `Geomaps.xml` from your ERAM adaptation export as GeoJSON - lines, symbols, text and SAAs - keeping its styling as CRC defaults. |
 | **A map** | Open any GeoJSON file to check it, and draw your facility's Region of Interest. |
 
@@ -37,7 +38,7 @@ conversions, GeoJSON clean-up, procedure ISRs) are not in 3.0 yet. If you need t
    cycle, the one before it and the one after it (if the FAA has published it yet). The status
    at the top of the window tells you when it is ready.
 2. **You pick a cycle and what to make** on the AIRAC Service screen: Airports, Airways,
-   Departures, Arrivals, NAVAIDs, ARTCC Boundaries, Fixes, or any mix.
+   Departures, Arrivals, NAVAIDs, ARTCC Boundaries, Fixes, Wx Stations, or any mix.
 3. **You choose the settings** on each one's tab: which files, which styles, which area.
    FE-Buddy remembers everything, so next cycle you only press Run.
 4. **You check the summary** on the Preview Settings tab and press **Run AIRAC Service**.

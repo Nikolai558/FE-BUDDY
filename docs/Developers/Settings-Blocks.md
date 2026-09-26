@@ -21,7 +21,7 @@ go through the same parser. This page lists every key each parser reads.
 
 Parsers: `AirportSettingsParser`, `AirwaySettingsParser`, `DepartureSettingsParser`,
 `ArrivalSettingsParser`, `NavaidSettingsParser`, `ArtccBoundarySettingsParser`,
-`FixSettingsParser`, `DatToGeojsonSettingsParser`, `SctToGeojsonSettingsParser`,
+`FixSettingsParser`, `WxStationSettingsParser`, `DatToGeojsonSettingsParser`, `SctToGeojsonSettingsParser`,
 `EramToGeojsonSettingsParser`. Shared reading: `SubServiceSettingsReader`, `CrcDefaultsReader`,
 `ConversionSettingsReader`, `SettingsValueReader` (all in `FeBuddy.Core/Application`).
 
@@ -39,8 +39,8 @@ Parsers: `AirportSettingsParser`, `AirwaySettingsParser`, `DepartureSettingsPars
 | `RoiSwLat`, `RoiSwLon`, `RoiNeLat`, `RoiNeLon` | decimal degrees; **required** when `FilterByRoi` is `Y` | none |
 
 `GenerateAliasFile` (`Y` / `N`, default `Y`) is not here: it is one of every sub-service's own keys
-*except* ARTCC Boundaries and Fixes, neither of which has an alias file or reads it - see each
-sub-service's own key table below.
+*except* ARTCC Boundaries, Fixes and Wx Stations, none of which has an alias file or reads it - see
+each sub-service's own key table below.
 
 ### Where files go
 
@@ -73,6 +73,7 @@ nothing.
 | NAVAIDs | `NAVAIDs_Symbols`, `NAVAIDs_Text` (`OutputBy=All`), or `NAVAIDs_<Token>s_Symbols` / `_Text` per NAVAID type (`OutputBy=Type`), e.g. `NAVAIDs_VORTACs_Symbols`, `NAVAIDs_VOR-DMEs_Text` | `NAVAIDs.txt` |
 | ARTCC Boundaries | `ARTCC-Boundary_High_Lines` / `_Low_Lines` (`OutputBy=HighLow`, an UNLIMITED ring in both), adds `_Unlimited_Lines` (`OutputBy=HighLowUnlimited`), or `ARTCC-Boundary_<LocationId>-<ALTITUDE>_Lines` per ARTCC and altitude (`OutputBy=ArtccAltitude`), e.g. `ARTCC-Boundary_ZOB-HIGH_Lines` | none |
 | Fixes | `Fix_Symbols`, `Fix_Text` (`OutputBy=All`), or `Fix_<Group>_Symbols` / `_Text` per fix use, chart, or chart + fix use combination present (`OutputBy=FixUse`/`Chart`/`ChartAndFixUse`), e.g. `Fix_WYPNT_Symbols`, `Fix_ENROUTE-LOW-WYPNT_Text` | none |
+| Wx Stations | `Wx_Symbols`, `Wx_Text` | none |
 
 CRC-ERAM defaults are only ever written to files marked for vNAS, since CRC reads its maps from
 vNAS. The keys are listed in each sub-service's `*OutputFiles` class.
@@ -252,6 +253,31 @@ naming the key.
   `Combinations` throws. A combination matching no fix in the cycle is a run warning, and writes no
   files.
 - Data comes from `FIX_BASE` only.
+
+## Wx Stations
+
+| Key | Values | Default |
+|---|---|---|
+| `EmitSymbols`, `EmitText` | `Y` / `N` | `Y` |
+
+- The simplest AIRAC sub-service settings: there is no `GenerateGeojson`, `GenerateAliasFile` or
+  `OutputBy` key - Wx Stations always writes GeoJSON, has no alias file, and writes one merged
+  Symbols/Text pair, never split into groups.
+- **CRC class:** `Wx` (`Symbol`, `Text`). There is no `Line` class; Wx Stations writes no Lines
+  file.
+- There are no `FebProperties`: a station's label is always its ICAO ID, then its IATA ID and
+  site name. `IncludeFebCustomProperties = Y` is accepted but only warns, since there is nothing
+  for it to add.
+- `EmitSymbols` and `EmitText` cannot both be `N`.
+- Data comes from aviationweather.gov's `stations.cache.xml`, not a NASR CSV group - downloaded
+  once per launch and cached in the cycle's own folder (see
+  [Architecture](Architecture.md#the-airac-data-pipeline)). A cycle whose file has not downloaded
+  yet (or whose earlier attempt failed) has no data to build from, and `WxStationBuilder.Read`
+  throws rather than silently writing nothing.
+- A station is included only when all hold: its country is `US` or a US territory (`PR`, `VI`,
+  `GU`, `MP`, `AS`, `UM`); it has an ICAO ID; `METAR` is among its site types; and it has usable
+  coordinates - present, finite, and within -90..90 / -180..180 (the feed's `-99.99, -99.99`
+  placeholder is left out, with an Info message naming the station).
 
 ## Keys every file conversion reads
 

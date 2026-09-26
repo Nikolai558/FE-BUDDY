@@ -1,0 +1,76 @@
+<!--
+    WxStationsView  -  the Wx Stations sub-service tab inside the AIRAC Service screen.
+    Save / Undo / Previous / Next / Preview settings come from the tab host's shared
+    action bar, and the tab host owns the page's single scroller.
+-->
+<UserControl x:Class="FeBuddy.Wpf.Views.WxStationsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:FeBuddy.Wpf.ViewModels"
+             xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
+             xmlns:cards="clr-namespace:FeBuddy.Wpf.Views.Cards"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance vm:WxStationsViewModel}"
+             d:DesignWidth="900" d:DesignHeight="1300">
+
+    <!-- No ScrollViewer here: the tab host owns the one page-level scroller
+         that every sub-service tab is laid out inside. A second scroller would
+         steal the wheel and hide the lower sections. -->
+    <StackPanel>
+
+            <TextBlock Text="{Binding ValidationError}" Style="{StaticResource Text.Caption}"
+                       Foreground="{StaticResource Brush.Danger}" TextWrapping="Wrap" Margin="0,0,0,12"
+                       MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
+                       Visibility="{Binding ValidationError, Converter={StaticResource StringToVis}}" />
+
+            <!-- ============ which GeoJSON files ============ -->
+            <cards:GeojsonFilesCard ShowLines="False"
+                                    SymbolsDescription="One symbol per weather station."
+                                    TextDescription="A two-line label per station: its ICAO ID, then its IATA ID and name (e.g. KDTW, DTW_Detroit/Metro Wayne Cnty)."
+                                    Footnote="Files are written to Geojson\ in the cycle's folder." />
+
+            <!-- ============ station data ============ -->
+            <ctl:Card Header="Station Data">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource Text.Prose}" TextWrapping="Wrap" Margin="0,4,0,8"
+                               MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
+                               Text="Weather stations come from aviationweather.gov's station list, not the FAA's AIRAC data. FE-Buddy downloads it along with each new AIRAC cycle, so it is as current as the day that cycle was downloaded." />
+                    <TextBlock Style="{StaticResource Text.Prose}" TextWrapping="Wrap" Margin="0,0,0,8"
+                               MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
+                               Text="Included: stations that report METARs and have an ICAO ID, in the US, Puerto Rico, the US Virgin Islands, Guam, the Northern Mariana Islands, American Samoa and the US Minor Outlying Islands." />
+                    <TextBlock Text="{Binding StationDataStatus}" TextWrapping="Wrap"
+                               MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock" BasedOn="{StaticResource Text.Caption}">
+                                <Style.Triggers>
+                                    <MultiDataTrigger>
+                                        <MultiDataTrigger.Conditions>
+                                            <Condition Binding="{Binding IsStationDataKnown}" Value="True" />
+                                            <Condition Binding="{Binding HasStationData}" Value="False" />
+                                        </MultiDataTrigger.Conditions>
+                                        <Setter Property="Foreground" Value="{StaticResource Brush.Danger}" />
+                                    </MultiDataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                </StackPanel>
+            </ctl:Card>
+
+            <!-- ============ region of interest ============ -->
+            <cards:RoiOverrideCard>
+                <cards:RoiOverrideCard.AdditionalContent>
+                    <TextBlock Style="{StaticResource Text.Prose}" Margin="0,14,0,0"
+                               Text="The region limits which stations are written: a station outside it is left out of both files." />
+                </cards:RoiOverrideCard.AdditionalContent>
+            </cards:RoiOverrideCard>
+
+            <!-- ============ upload to vNAS ============ -->
+            <cards:VnasUploadCard />
+
+            <!-- ============ CRC ERAM defaults ============ -->
+            <cards:CrcDefaultsCard SymbolsTitle="Wx Stations — Symbols" TextTitle="Wx Stations — Text" />
+    </StackPanel>
+</UserControl>

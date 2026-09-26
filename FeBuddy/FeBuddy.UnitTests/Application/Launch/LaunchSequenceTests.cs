@@ -12,6 +12,9 @@ using FeBuddy.Core.Infrastructure.Logging;
 using FeBuddy.Core.Infrastructure.Logging.Models;
 using FeBuddy.Core.Infrastructure.Nasr.Models;
 using FeBuddy.Core.Infrastructure.Platform.Models;
+using FeBuddy.Core.Infrastructure.WxStations.Models;
+
+using FeBuddy.UnitTests.Application.Airac.WxStations.Fixtures;
 
 using FeBuddy.Versioning.Models;
 
@@ -224,6 +227,47 @@ public sealed class LaunchSequenceTests : IDisposable
 		Assert.Contains(result.Warnings, w => w.Contains("no sub-service", StringComparison.OrdinalIgnoreCase));
 		Assert.Equal("Loading parsed data for cycle 2609", Assert.Single(reports).Message);
 		await Assert.ThrowsAsync<ArgumentNullException>(() => AiracService.RunAsync((AiracServiceSettings)null!));
+	}
+
+	[Fact]
+	public async Task airac_service_loads_wx_station_data_from_the_cache_when_wx_stations_is_selected()
+	{
+		AiracCycleInfo previous = new("2608", "06_Aug_2026", new DateOnly(2026, 8, 6));
+		AiracCycleInfo current = new("2609", "03_Sep_2026", new DateOnly(2026, 9, 3));
+		AiracCycleInfo next = new("2610", "01_Oct_2026", new DateOnly(2026, 10, 1));
+
+		WxStationDataCollection wxData = WxStationTestData.Build([WxStationTestData.DtwRow()]);
+		string? loadedForCycle = null;
+
+		// The single-settings RunAsync overload resolves both the NASR and Wx station data for the
+		// selected cycle from AiracCycleDataCache.Instance itself, only when settings.WxStations is
+		// not null - this re-wires that instance with a loadWxStations step to exercise it.
+		AiracCycleDataCache.ConfigureForTesting(new AiracCycleDataCache(
+			probe: (_, _) => Task.FromResult(AiracCyclePublicationState.Published),
+			download: (cycle, _) => Task.FromResult(cycle.AiracCycleId),
+			parse: (_, _) => Task.FromResult(new NasrCsvDataCollection()),
+			loadWxStations: (cycleDirectory, _) =>
+			{
+				loadedForCycle = cycleDirectory;
+				return Task.FromResult<WxStationDataCollection?>(wxData);
+			}));
+
+		await AiracCycleDataCache.Instance.PrepareCyclesAsync(previous, current, next);
+
+		List<AiracServiceProgress> reports = [];
+		AiracServiceResult result = await AiracService.RunAsync(
+			new AiracServiceSettings
+			{
+				SelectedCycle = current,
+				OutputDirectory = Path.Combine(_root, "output"),
+				WxStations = new Dictionary<string, string>(),
+			},
+			new SynchronousProgress<AiracServiceProgress>(reports.Add));
+
+		Assert.Equal("2609", loadedForCycle);
+		Assert.Contains(reports, r => r.Message == "Loading Wx station data for cycle 2609");
+		Assert.NotNull(result.WxStations);
+		Assert.Equal(1, result.WxStations!.StationCount);
 	}
 
 	private sealed class SynchronousProgress<T>(Action<T> report) : IProgress<T>

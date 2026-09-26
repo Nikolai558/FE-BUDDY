@@ -107,7 +107,8 @@ Preview Settings ▸ Run AIRAC Service
 ```
 
 ARTCC Boundaries has no step 4: `ArtccBoundaryService` stops after `ArtccBoundaryGeojsonWriter`,
-since it has no alias file.
+since it has no alias file. Fixes likewise has no step 4: `FixService` stops after
+`FixGeojsonWriter`, since it too has no alias file.
 
 - **The settings block is the contract.** Every tab (and the harness) hands Core a flat
   `Dictionary<string, string>`. Core never sees view-models, and the GUI never sees typed settings.
@@ -245,6 +246,12 @@ The FAA's data has quirks; these rules handle them. Each lives in one class.
   newlines or spaces - because CRC tokenizes an alias's replacement text on whitespace and rejoins
   it with single spaces; `AirportAliasWriter` follows the same convention. The alias file is never
   ROI-filtered, the same as every other sub-service's.
+- **Fix use and chart tokens** (`FixTokens`, shared by `FixUses.Token` and `FixCharts.Token`).
+  NASR's `FIX_USE_CODE` maps to a display name (`WP` → `WYPNT`); any other code keeps its own text,
+  sanitized into a file-safe token (`UNKNOWN` when blank). NASR's `CHARTS` is split on commas into
+  the chart names it lists; each becomes a token by collapsing every run of non-alphanumeric
+  characters to a single `-` (`ENROUTE LOW` → `ENROUTE-LOW`), and a fix with no charts is grouped
+  under `NO-CHART`. A fix on several charts belongs to every one of their groups.
 
 ## Messages and logging
 
@@ -291,7 +298,7 @@ Decisions that were argued out once and should not be re-litigated without a rea
 - **The Review tab is the one place** a run's results, warnings, advisories, errors and files live.
 - **Every sub-service is a tab of the AIRAC Service**, never a top-level screen, and every GeoJSON
   sub-service tab is built from the same shared cards - except the alias-file ones, which ARTCC
-  Boundaries opts out of (`GeojsonSubServiceViewModel.HasAliasFile`). Likewise every file
+  Boundaries and Fixes opt out of (`GeojsonSubServiceViewModel.HasAliasFile`). Likewise every file
   conversion is a tab of File Conversions; the two screens share one tabbed view and differ only in
   what their view-models say (File Conversions has no General or Preview Settings tab - each
   conversion runs from its own tab).

@@ -49,6 +49,10 @@ controller can turn groups of map elements on and off.
 **Fix / waypoint** - A named point used for navigation, like `DOTSS`. Five-letter names are
 *fixes* (intersections); NAVAIDs (VORs, NDBs) and airports are points too.
 
+**Fixes** - The sub-service that draws a symbol and a label for every NASR fix - reporting
+points, waypoints, military points and the rest - split all in one file, by fix use, by chart, or
+by chart and fix use. No alias file - a fix's label is always its own identifier.
+
 **GeoJSON** - A standard file format for map shapes: points, lines and polygons with
 properties. CRC's video maps are GeoJSON files.
 
@@ -76,7 +80,7 @@ FE-Buddy only writes data inside (or crossing) it. Make it a little bigger than 
 **STAR** - Standard Terminal Arrival: a published arrival route into an airport.
 
 **Sub-service** - One kind of data the AIRAC Service can produce: Airports, Airways, Departures,
-Arrivals, NAVAIDs or ARTCC Boundaries. Each has its own tab and settings.
+Arrivals, NAVAIDs, ARTCC Boundaries or Fixes. Each has its own tab and settings.
 
 **Video map** - The map background on a controller's scope: airways, airports, boundaries.
 In CRC, these are GeoJSON files.

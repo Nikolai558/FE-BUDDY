@@ -74,4 +74,10 @@ public sealed record AiracServiceSettings
 	/// Boundaries was not selected for this run.
 	/// </summary>
 	public IReadOnlyDictionary<string, string>? ArtccBoundaries { get; init; }
+
+	/// <summary>
+	/// The Fixes sub-service settings block, or <see langword="null"/> when Fixes was not selected
+	/// for this run.
+	/// </summary>
+	public IReadOnlyDictionary<string, string>? Fixes { get; init; }
 }

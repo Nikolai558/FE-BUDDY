@@ -1,6 +1,6 @@
 using System.Diagnostics;
 
-using FeBuddy.Core.Application.Airac.ArtccBoundaries.Models;
+using FeBuddy.Core.Application.Airac.Fixes.Models;
 using FeBuddy.Core.Infrastructure.Configuration;
 using FeBuddy.Core.Infrastructure.Nasr.Models;
 using FeBuddy.Core.Infrastructure.Nasr.Parsers;
@@ -57,8 +57,11 @@ internal static class Program
 			// NavaidServiceResult navaidResult = NavaidRunner.Run(allNasrCsvData);
 			// ConsoleReport.PrintNavaidServiceResult("NAVAIDs: GeoJSON + Alias", navaidResult);
 
-			ArtccBoundaryServiceResult artccBoundaryResult = ArtccBoundaryRunner.Run(allNasrCsvData);
-			ConsoleReport.PrintArtccBoundaryServiceResult("ARTCC Boundaries: GeoJSON", artccBoundaryResult);
+			// ArtccBoundaryServiceResult artccBoundaryResult = ArtccBoundaryRunner.Run(allNasrCsvData);
+			// ConsoleReport.PrintArtccBoundaryServiceResult("ARTCC Boundaries: GeoJSON", artccBoundaryResult);
+
+			FixServiceResult fixResult = FixRunner.Run(allNasrCsvData);
+			ConsoleReport.PrintFixServiceResult("Fixes: GeoJSON", fixResult);
 		}
 		catch (Exception ex)
 		{

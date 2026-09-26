@@ -51,6 +51,8 @@ FeBuddy.Core/
 │   │                     location/point/ring models
 │   ├── Crc/          CRC feature properties and CrcPropertyValidator
 │   ├── Departures/   DepartureNaming and procedure models
+│   ├── Fixes/        FixUses, FixCharts, FixTokens (the FIX_USE_CODE and CHARTS vocabularies, and
+│   │                 the shared file-naming/CRC-class token rule) and the Fix model
 │   ├── Geo/          GeoMath, antimeridian splitting, line merging and segment joining, ROI and
 │   │                 radius clipping, Wgs84
 │   └── Navaids/      NavaidTypes (the NAV_TYPE vocabulary, file-naming tokens, CRC symbol styles,
@@ -73,7 +75,8 @@ FeBuddy.Core/
     │   ├── Departures/
     │   ├── Arrivals/
     │   ├── Navaids/
-    │   └── ArtccBoundaries/  No alias file, so no *AliasWriter and no GenerateAliasFile key
+    │   ├── ArtccBoundaries/  No alias file, so no *AliasWriter and no GenerateAliasFile key
+    │   └── Fixes/            No alias file either, so no *AliasWriter and no GenerateAliasFile key
     ├── Conversions/    ConversionSettingsReader and ConversionFiles (what every conversion
     │   │               shares), then one folder per file conversion
     │   ├── DatToGeojson/
@@ -140,11 +143,13 @@ AirwayService.Run(nasrData, settings)
 ```
 
 Airports, Departures, Arrivals and NAVAIDs have the same shape (NAVAIDs' writer just skips the
-Lines step - it has no Lines file). ARTCC Boundaries differs more: it has no step 4 at all -
-`ArtccBoundaryService` stops after `ArtccBoundaryGeojsonWriter`, since it has no alias file, and
-its writer produces Lines only. Problems are reported as `ServiceMessage`s
-(warnings or errors) in the result instead of being thrown, so one bad setting doesn't lose the
-whole run. The only exception is a missing required setting, which throws `ArgumentException`.
+Lines step - it has no Lines file). ARTCC Boundaries and Fixes differ more: neither has step 4 at
+all - `ArtccBoundaryService` stops after `ArtccBoundaryGeojsonWriter`, and `FixService` stops after
+`FixGeojsonWriter` - since neither has an alias file. ARTCC Boundaries' writer produces Lines only;
+Fixes' produces Symbols and Text only, the same Lines-skipping shape as NAVAIDs. Problems are
+reported as `ServiceMessage`s (warnings or errors) in the result instead of being thrown, so one
+bad setting doesn't lose the whole run. The only exception is a missing required setting, which
+throws `ArgumentException`.
 
 **When the user runs a file conversion**, the UI builds one settings block and calls that
 conversion's service directly - there is no cycle data and no aggregate. The pipeline has the
@@ -183,12 +188,14 @@ files per source (SCT2, ERAM).
 - **A new aviation or geometry rule** (no I/O): `Domain/<Feature>/`.
 - **A new NASR file**: its row model in `Infrastructure/Nasr/Models/`, its parser in
   `Infrastructure/Nasr/Parsers/`, and wire it into `NasrCsvParser`.
-- **A new AIRAC output** (say, Fixes): `Application/Airac/Fixes/` with `FixService`,
-  `FixSettingsParser`, `FixBuilder`, `FixGeojsonWriter`, `FixOutputFiles` (its file keys) and a
-  `Models/` folder. Add its settings block to `AiracServiceSettings` and one `RunSubServiceAsync`
-  call to `AiracService`. Reuse `Application/Settings/SubServiceSettingsReader` for the common keys
+- **A new AIRAC output** (say, Preferred Routes): `Application/Airac/PreferredRoutes/` with
+  `PreferredRouteService`, `PreferredRouteSettingsParser`, `PreferredRouteBuilder`,
+  `PreferredRouteGeojsonWriter`, `PreferredRouteOutputFiles` (its file keys) and a `Models/` folder.
+  Add its settings block to `AiracServiceSettings` and one `RunSubServiceAsync` call to
+  `AiracService`. Reuse `Application/Settings/SubServiceSettingsReader` for the common keys
   (precision, ROI, FEB properties, the vNAS files), and put each file where
-  `AiracOutputPaths.FileDirectory` says.
+  `AiracOutputPaths.FileDirectory` says. `Application/Airac/Fixes/` is a real example of this shape
+  to copy from.
 - **A new file conversion** (say, vSTARS video maps): `Application/Conversions/VstarsToGeojson/`
   with its `*Service`, `*SettingsParser`, `*GeojsonWriter` and a `Models/` folder, shaped like
   `SctToGeojson/`: its settings derive from `ConversionSettings`, its result is a

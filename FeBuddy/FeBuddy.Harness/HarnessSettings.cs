@@ -375,6 +375,56 @@ internal static class HarnessSettings
 	}
 
 	/// <summary>
+	/// Builds the raw settings dictionary for <c>FixService.Run</c>. Every key the Fixes settings
+	/// parser recognizes is listed below with its default value, so any of them can be flipped
+	/// here without hunting through <c>FixSettingsParser</c>.
+	/// </summary>
+	public static Dictionary<string, string> FixSettings()
+	{
+		Dictionary<string, string> settings = new()
+		{
+			{ "OutputDirectory", OutputDirectory },
+
+			// GeoJSON is the only output the Fixes sub-service has - there is no GenerateGeojson
+			// and no alias file.
+			{ "EmitSymbols", "Y" },
+			{ "EmitText", "Y" },
+
+			// How the GeoJSON is grouped. "ChartAndFixUse" writes a Symbols/Text pair per listed
+			// combination below; the other layouts are "All", "FixUse" and "Chart".
+			{ "OutputBy", "ChartAndFixUse" },   // or "All", "FixUse", "Chart"
+			{ "ExcludedFixUses", "" },          // e.g. "RADAR,MIL-WYPNT" - only used in "FixUse" layout
+			{ "ExcludedCharts", "" },           // e.g. "SECTIONAL,AREA" - only used in "Chart" layout
+			{ "Combinations", "ENROUTE-LOW+WYPNT,ENROUTE-HIGH+WYPNT,IAP+RPRTNG-PNT" },
+
+			// FE-Buddy's own (non-CRC) properties. FebProperties is required when this is "Y".
+			{ "IncludeFebCustomProperties", "Y" },
+			{ "FebProperties", "fixId,fixUseCode,charts" },
+
+			// Files marked for vNAS go under Upload_to_vNAS; only those in CrcDefaultsFor get the
+			// CRC ERAM defaults Feature, using the Crc.ENROUTE-LOW-WYPNT.* values added by
+			// AddFixCrcDefaults below.
+			{ "UploadToVnas", "Fix_ENROUTE-LOW-WYPNT_Symbols,Fix_ENROUTE-LOW-WYPNT_Text" },
+			{ "CrcDefaultsFor", "Fix_ENROUTE-LOW-WYPNT_Symbols,Fix_ENROUTE-LOW-WYPNT_Text" },
+
+			// ROI filtering applies to the GeoJSON output only.
+			{ "FilterByRoi", "N" },
+			{ "RoiSwLat", "" },              // e.g. "38.0"
+			{ "RoiSwLon", "" },              // e.g. "-85.0"
+			{ "RoiNeLat", "" },              // e.g. "43.0"
+			{ "RoiNeLon", "" },              // e.g. "-78.0"
+
+			{ "CoordinatePrecision", "6" },  // max decimal places in GeoJSON coords (0-15)
+		};
+
+		AddFixCrcDefaults(settings, "ENROUTE-LOW-WYPNT",
+			symbolBcg: 11, symbolFilters: "11", symbolStyle: "otherWaypoints", symbolSize: 1,
+			textBcg: 11, textFilters: "11", textSize: 1);
+
+		return settings;
+	}
+
+	/// <summary>
 	/// Settings for exercising the alias-only path (<c>OutputBy = None</c>, alias file still
 	/// generated), matching the "written even when OutputBy = None" contract.
 	/// </summary>
@@ -609,6 +659,47 @@ internal static class HarnessSettings
 		settings["Crc.Low.Line.filters"] = filters;
 		settings["Crc.Low.Line.style"] = lowStyle;
 		settings["Crc.Low.Line.thickness"] = thickness.ToString();
+	}
+
+	/// <summary>
+	/// Adds the <c>Crc.&lt;cls&gt;.Symbol.*</c> and <c>Crc.&lt;cls&gt;.Text.*</c> property defaults
+	/// for one Fixes group - a fix use, a chart, or a chart + fix use combination. These values
+	/// are the harness's own; the GUI starts every CRC box empty and makes the user choose.
+	/// </summary>
+	/// <param name="settings">The dictionary being built.</param>
+	/// <param name="cls">The group's CRC class name, e.g. <c>ENROUTE-LOW-WYPNT</c>.</param>
+	/// <param name="symbolBcg">Symbol BCG group, 1-40.</param>
+	/// <param name="symbolFilters">Symbol filters, comma-separated, each 0-40, at least one.</param>
+	/// <param name="symbolStyle">Symbol style, one of <c>CrcPropertyValidator.ValidSymbolStyles</c>.</param>
+	/// <param name="symbolSize">Symbol size, 1-4.</param>
+	/// <param name="textBcg">Text BCG group, 1-40.</param>
+	/// <param name="textFilters">Text filters, comma-separated, each 0-40, at least one.</param>
+	/// <param name="textSize">Text size, 0-5.</param>
+	private static void AddFixCrcDefaults(
+		Dictionary<string, string> settings,
+		string cls,
+		int symbolBcg,
+		string symbolFilters,
+		string symbolStyle,
+		int symbolSize,
+		int textBcg,
+		string textFilters,
+		int textSize)
+	{
+		settings[$"Crc.{cls}.Symbol.bcg"] = symbolBcg.ToString();
+		settings[$"Crc.{cls}.Symbol.filters"] = symbolFilters;
+		settings[$"Crc.{cls}.Symbol.style"] = symbolStyle;
+		settings[$"Crc.{cls}.Symbol.size"] = symbolSize.ToString();
+
+		// No "Crc.<cls>.Text.text": every fix supplies its own label from its identifier, and the
+		// parser warns if one is supplied here.
+		settings[$"Crc.{cls}.Text.bcg"] = textBcg.ToString();
+		settings[$"Crc.{cls}.Text.filters"] = textFilters;
+		settings[$"Crc.{cls}.Text.size"] = textSize.ToString();
+		settings[$"Crc.{cls}.Text.underline"] = "N";
+		settings[$"Crc.{cls}.Text.xOffset"] = "0";
+		settings[$"Crc.{cls}.Text.yOffset"] = "0";
+		settings[$"Crc.{cls}.Text.opaque"] = "N";
 	}
 
 	private static void AddCrcDefaults(

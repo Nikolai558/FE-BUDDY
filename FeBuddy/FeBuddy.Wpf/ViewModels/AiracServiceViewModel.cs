@@ -116,6 +116,9 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 	/// <summary>The ARTCC Boundaries tab while it is open, otherwise <see langword="null"/>.</summary>
 	private ArtccBoundariesViewModel? ArtccBoundariesTab => TabFor<ArtccBoundariesViewModel>(AiracSubServices.ArtccBoundariesKey);
 
+	/// <summary>The Fixes tab while it is open, otherwise <see langword="null"/>.</summary>
+	private FixesViewModel? FixesTab => TabFor<FixesViewModel>(AiracSubServices.FixesKey);
+
 	/// <summary>The open tabs that take part in a run.</summary>
 	private IReadOnlyList<ISubServiceRunTarget> RunTargets =>
 		[.. Tabs.OfType<ISubServiceRunTarget>()];
@@ -255,6 +258,7 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 			Arrivals = ArrivalsTab?.BuildSettingsBlock(),
 			Navaids = NavaidsTab?.BuildSettingsBlock(),
 			ArtccBoundaries = ArtccBoundariesTab?.BuildSettingsBlock(),
+			Fixes = FixesTab?.BuildSettingsBlock(),
 		};
 
 		if (AiracService.HasExistingOutput(settings))
@@ -414,6 +418,11 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 			files.AddRange(artccBoundaries.GeojsonFilesWritten);
 		}
 
+		if (result.Fixes is { } fixes)
+		{
+			files.AddRange(fixes.GeojsonFilesWritten);
+		}
+
 		return [.. files];
 	}
 
@@ -456,6 +465,11 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 		if (result.ArtccBoundaries is { } b)
 		{
 			parts.Add($"{b.RingCount:N0} ARTCC boundary line(s)");
+		}
+
+		if (result.Fixes is { } fixes)
+		{
+			parts.Add($"{fixes.FixCount:N0} fix(es)");
 		}
 
 		return parts.Count == 0

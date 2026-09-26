@@ -3,6 +3,7 @@ using FeBuddy.Core.Application.Airac.Airways.Models;
 using FeBuddy.Core.Application.Airac.Arrivals.Models;
 using FeBuddy.Core.Application.Airac.ArtccBoundaries.Models;
 using FeBuddy.Core.Application.Airac.Departures.Models;
+using FeBuddy.Core.Application.Airac.Fixes.Models;
 using FeBuddy.Core.Application.Airac.Navaids.Models;
 using FeBuddy.Core.Application.Models;
 
@@ -55,4 +56,10 @@ public sealed record AiracServiceResult : ServiceResult
 	/// was not part of this run.
 	/// </summary>
 	public ArtccBoundaryServiceResult? ArtccBoundaries { get; init; }
+
+	/// <summary>
+	/// The Fixes sub-service result, or <see langword="null"/> when Fixes was not part of this
+	/// run.
+	/// </summary>
+	public FixServiceResult? Fixes { get; init; }
 }

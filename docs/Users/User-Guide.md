@@ -39,8 +39,8 @@ The screen where you make files. It is a set of tabs down the left:
 
 | Tab | What it is |
 |---|---|
-| **General** | Which cycle, and which sub-services (Airports, Airways, Departures, Arrivals, NAVAIDs, ARTCC Boundaries). Always there. |
-| **Airports / Airways / Departures / Arrivals / NAVAIDs / ARTCC Boundaries** | One tab per sub-service you ticked, with its settings. |
+| **General** | Which cycle, and which sub-services (Airports, Airways, Departures, Arrivals, NAVAIDs, ARTCC Boundaries, Fixes). Always there. |
+| **Airports / Airways / Departures / Arrivals / NAVAIDs / ARTCC Boundaries / Fixes** | One tab per sub-service you ticked, with its settings. |
 | **Preview Settings** | Everything the run will do, in plain words, and the **Run AIRAC Service** button. Appears once a sub-service is ticked. |
 | **Review** | What happened in the last run. Appears once you run. |
 
@@ -73,7 +73,8 @@ is saved".
 
 **Outputs** - what the sub-service writes: **GeoJSON files** and/or the **alias file**. At least
 one must stay on; to make nothing for a sub-service, untick it on the General tab instead. ARTCC
-Boundaries has no Outputs card: it has no alias file and always writes GeoJSON.
+Boundaries and Fixes have no Outputs card: neither has an alias file, and both always write
+GeoJSON.
 
 **What Files Do You Want?** - the three GeoJSON files each sub-service can write:
 
@@ -122,9 +123,11 @@ class. Airports, Departures and Arrivals have one. NAVAIDs has one column with *
 or one column per NAVAID type - style included - with *one pair per NAVAID type* (see the NAVAIDs
 tab). ARTCC Boundaries has a column per class - High and Low, or High, Low and Unlimited - or,
 with *one file per ARTCC and altitude*, one column per ARTCC and altitude (`ZOB-HIGH`, `ZOB-LOW`,
-…), so your own ARTCC can be styled apart from its neighbours (see the ARTCC Boundaries tab). Each
-class is its own block of boxes; blocks that do not fit across the window move to the next line,
-so every box stays on screen however narrow the window is.
+…), so your own ARTCC can be styled apart from its neighbours (see the ARTCC Boundaries tab). Fixes
+has one column for *All*, or one column per fix use, chart, or chart + fix use combination present,
+depending on its File Layout (see the Fixes tab). Each class is its own block of boxes; blocks that
+do not fit across the window move to the next line, so every box stays on screen however narrow the
+window is.
 
 ### Airports tab
 
@@ -281,6 +284,39 @@ no "Include obstacle departures" equivalent here.
   *High, Low and Unlimited* - adds `ARTCC-Boundary_Unlimited_Lines`. *One file per ARTCC and
   altitude* - each ARTCC-and-altitude file. There is no alias file to upload.
 
+### Fixes tab
+
+- **Outputs:** GeoJSON Symbols and Text only, always written - there is no alias file, so the tab
+  has no Outputs card. Tick **Symbols** and/or **Text** under GeoJSON files; at least one must
+  stay on.
+- **Files:** *Symbols* (one point per fix, styled from the file's CRC ERAM defaults), *Text*
+  (each fix's identifier). There is no Lines file.
+- **File Layout:**
+  - **All fixes in one file** (the default) - `Fix_Symbols`, `Fix_Text`.
+  - **One file per fix use** - one pair per fix use present in the cycle, e.g. `Fix_WYPNT_Symbols` /
+    `_Text`. A **Fix Uses** tick-list appears, all ticked by default; untick one to leave it out.
+  - **One file per chart** - one pair per NASR chart present, e.g. `Fix_ENROUTE-LOW_Symbols` / `_Text` (a
+    run of spaces or punctuation in the chart's name becomes a hyphen). A fix shown on several
+    charts goes into each of their files; one shown on none goes into `Fix_NO-CHART_Symbols` /
+    `_Text`. A **Charts** tick-list appears, all ticked by default; untick one to leave it out.
+  - **One file per chart + fix use combination** - one pair per chart + fix use combination you list, e.g.
+    `Fix_ENROUTE-LOW-WYPNT_Symbols` / `_Text`; a fix needs both the chart and the fix use to be
+    included. A **Combinations** card appears: **Add combination** picks a chart and a fix use
+    from two drop-downs and adds the pair; each listed combination has **Edit** and **Delete**. A
+    combination that matches no fix in the cycle gives a warning and writes no files.
+
+  Files go straight in the Geojson folder - there are no per-airport sub-folders.
+- **Fix use names:** COMPUTER-NAV, MIL-RPRTNG-PNT, MIL-WYPNT, NRS-WYPNT, RADAR, RPRTNG-PNT,
+  VFR-WYPNT and WYPNT, mapped from NASR's raw code (`CN`, `MR`, `MW`, `NRS`, `RADAR`, `RP`, `VFR`,
+  `WP`). Any other code NASR publishes is kept as written - characters not allowed in a file name
+  become spaces, and a blank code becomes `UNKNOWN`.
+- **FE-Buddy properties:** `fixId`, `fixUseCode` (the fix use name, e.g. `WYPNT`), `charts` (the
+  NASR chart names the fix is depicted on, left out for a fix on no charts). The Text file never
+  carries `fixId` - its label is always the fix's own identifier.
+- **Region:** a fix is included when its own coordinates are inside the region.
+- **Upload to vNAS:** a box per file the chosen File Layout writes - `Fix_Symbols` / `Fix_Text`
+  for *All fixes in one file*, or each group's pair otherwise. There is no alias file to upload.
+
 ### Preview Settings tab
 
 A plain-words summary of every tab: the folder the run writes to, what will be written, what it
@@ -422,6 +458,7 @@ laid out the same way:
     │   │   ├── Airways_<group>_Lines / _Symbols / _Text (.geojson)
     │   │   ├── NAVAIDs_Symbols / _Text (.geojson), or NAVAIDs_<type>s_Symbols / _Text per type
     │   │   ├── ARTCC-Boundary_High/Low/Unlimited_Lines, or _<ARTCC>-<altitude>_Lines per ARTCC
+    │   │   ├── Fix_Symbols / _Text, or Fix_<fixUse|chart|chart-fixUse>_Symbols / _Text per group
     │   │   └── <ARTCC>\<airport>\<airport>_<procedure>_Lines / _Symbols / _Text (.geojson)
     │   └── Upload_to_vNAS\           (only the files marked for vNAS)
     │       ├── the alias files marked for vNAS

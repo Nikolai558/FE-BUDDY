@@ -7,6 +7,7 @@ using FeBuddy.UnitTests.Application.Airac.Airways.Fixtures;
 using FeBuddy.UnitTests.Application.Airac.Arrivals.Fixtures;
 using FeBuddy.UnitTests.Application.Airac.ArtccBoundaries.Fixtures;
 using FeBuddy.UnitTests.Application.Airac.Departures.Fixtures;
+using FeBuddy.UnitTests.Application.Airac.Fixes.Fixtures;
 using FeBuddy.UnitTests.Application.Airac.Navaids.Fixtures;
 
 namespace FeBuddy.UnitTests.Application.Airac;
@@ -311,6 +312,73 @@ public sealed class AiracServiceTests : IDisposable
 		AiracServiceResult result = await AiracService.RunAsync(settings, DepartureTestData.Dotss());
 
 		Assert.Null(result.ArtccBoundaries);
+	}
+
+	[Fact]
+	public async Task run_async_with_a_fixes_block_runs_the_pipeline_and_aggregates()
+	{
+		NasrCsvDataCollection data = FixTestData.Build([FixTestData.AcmeRow()]);
+
+		AiracServiceSettings settings = new()
+		{
+			SelectedCycle = Cycle,
+			OutputDirectory = _output,
+			Fixes = new Dictionary<string, string>(),
+		};
+
+		AiracServiceResult result = await AiracService.RunAsync(settings, data);
+
+		Assert.Null(result.ArtccBoundaries);
+		Assert.NotNull(result.Fixes);
+		Assert.Equal(1, result.Fixes!.FixCount);
+	}
+
+	[Fact]
+	public async Task a_fixes_block_writes_geojson_into_the_cycle_folder()
+	{
+		NasrCsvDataCollection data = FixTestData.Build([FixTestData.AcmeRow()]);
+
+		AiracServiceSettings settings = new()
+		{
+			SelectedCycle = Cycle,
+			OutputDirectory = _output,
+			Fixes = new Dictionary<string, string>(),
+		};
+
+		AiracServiceResult result = await AiracService.RunAsync(settings, data);
+
+		string symbolsFile = Path.Combine(CycleFolder, "Geojson", "Fix_Symbols.geojson");
+		Assert.Contains(symbolsFile, result.Fixes!.GeojsonFilesWritten);
+		Assert.True(File.Exists(symbolsFile));
+	}
+
+	[Fact]
+	public async Task a_run_with_only_fixes_selected_counts_as_something_selected()
+	{
+		string stale = WriteStaleFile();
+		AiracServiceSettings settings = new()
+		{
+			SelectedCycle = Cycle,
+			OutputDirectory = _output,
+			ExistingOutput = ExistingOutputAction.DeleteExisting,
+			Fixes = new Dictionary<string, string>(),
+		};
+
+		await AiracService.RunAsync(settings, FixTestData.Build([FixTestData.AcmeRow()]));
+
+		// DeleteExisting only runs when something is selected: Fixes alone must still trigger it.
+		Assert.False(File.Exists(stale));
+		Assert.True(File.Exists(Path.Combine(CycleFolder, "Geojson", "Fix_Symbols.geojson")));
+	}
+
+	[Fact]
+	public async Task a_null_fixes_block_leaves_result_fixes_null()
+	{
+		AiracServiceSettings settings = AliasOnlySettings() with { Fixes = null };
+
+		AiracServiceResult result = await AiracService.RunAsync(settings, DepartureTestData.Dotss());
+
+		Assert.Null(result.Fixes);
 	}
 
 	[Fact]

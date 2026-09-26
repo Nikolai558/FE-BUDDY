@@ -1,0 +1,187 @@
+<!--
+    FixesView  -  the Fixes sub-service tab inside the AIRAC Service screen.
+    Save / Undo / Previous / Next / Preview settings come from the tab host's shared
+    action bar, and the tab host owns the page's single scroller.
+-->
+<UserControl x:Class="FeBuddy.Wpf.Views.FixesView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:FeBuddy.Wpf.ViewModels"
+             xmlns:m="clr-namespace:FeBuddy.Wpf.ViewModels.Models"
+             xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
+             xmlns:cards="clr-namespace:FeBuddy.Wpf.Views.Cards"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance vm:FixesViewModel}"
+             d:DesignWidth="900" d:DesignHeight="1900">
+
+    <!-- No ScrollViewer here: the tab host owns the one page-level scroller
+         that every sub-service tab is laid out inside. A second scroller would
+         steal the wheel and hide the lower sections. -->
+    <StackPanel>
+
+            <TextBlock Text="{Binding ValidationError}" Style="{StaticResource Text.Caption}"
+                       Foreground="{StaticResource Brush.Danger}" TextWrapping="Wrap" Margin="0,0,0,12"
+                       MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
+                       Visibility="{Binding ValidationError, Converter={StaticResource StringToVis}}" />
+
+            <!-- ============ which GeoJSON files ============ -->
+            <cards:GeojsonFilesCard ShowLines="False"
+                                    SymbolsDescription="One symbol per fix."
+                                    TextDescription="A label per fix: its identifier."
+                                    Footnote="Files are written to Geojson\ in the cycle's folder." />
+
+            <!-- ============ file layout ============ -->
+            <ctl:Card Header="File Layout">
+                <StackPanel>
+                    <RadioButton GroupName="FixOutputBy" Margin="0,4,0,0"
+                                 Content="All fixes in one file (Fix_Symbols.geojson, Fix_Text.geojson)"
+                                 IsChecked="{Binding OutputAll, Mode=TwoWay}" />
+                    <RadioButton GroupName="FixOutputBy" Margin="0,6,0,0"
+                                 Content="One file per fix use (e.g. Fix_WYPNT_Symbols.geojson)"
+                                 IsChecked="{Binding OutputByFixUse, Mode=TwoWay}" />
+                    <RadioButton GroupName="FixOutputBy" Margin="0,6,0,0"
+                                 Content="One file per chart (e.g. Fix_ENROUTE-LOW_Symbols.geojson)"
+                                 IsChecked="{Binding OutputByChart, Mode=TwoWay}" />
+                    <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="24,2,0,6"
+                               MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
+                               Text="A fix on several charts goes into each of their files; fixes on no chart go into Fix_NO-CHART." />
+                    <RadioButton GroupName="FixOutputBy" Margin="0,0,0,0"
+                                 Content="One file per chart + fix use combination you list below (e.g. Fix_ENROUTE-LOW-WYPNT_Symbols.geojson)"
+                                 IsChecked="{Binding OutputByCombination, Mode=TwoWay}" />
+                </StackPanel>
+            </ctl:Card>
+
+            <!-- ============ FE-Buddy properties ============ -->
+            <cards:FebPropertiesCard />
+
+            <!-- ============ fix uses ============ -->
+            <ctl:Card Header="Fix Uses" Visibility="{Binding ShowFixUses, Converter={StaticResource BoolToVis}}">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
+                               Text="Tick the fix uses you want a file for." />
+                    <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap"
+                               MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
+                               Text="Fix uses appear once the selected cycle's data is loaded."
+                               Visibility="{Binding HasFixUses, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
+                    <ItemsControl ItemsSource="{Binding FixUses}" IsEnabled="{Binding IsCycleReady}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="{x:Type m:FixGroupToggle}">
+                                <CheckBox Content="{Binding Label}" IsChecked="{Binding IsSelected}" Margin="0,0,14,6" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <Button Content="Tick all" Style="{StaticResource Button.Ghost}" HorizontalAlignment="Left"
+                            Margin="0,6,0,0" Command="{Binding TickAllFixUsesCommand}"
+                            Visibility="{Binding HasFixUses, Converter={StaticResource BoolToVis}}" />
+                </StackPanel>
+            </ctl:Card>
+
+            <!-- ============ charts ============ -->
+            <ctl:Card Header="Charts" Visibility="{Binding ShowCharts, Converter={StaticResource BoolToVis}}">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
+                               Text="Tick the charts you want a file for." />
+                    <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap"
+                               MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
+                               Text="Charts appear once the selected cycle's data is loaded."
+                               Visibility="{Binding HasCharts, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
+                    <ItemsControl ItemsSource="{Binding Charts}" IsEnabled="{Binding IsCycleReady}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="{x:Type m:FixGroupToggle}">
+                                <CheckBox Content="{Binding Label}" IsChecked="{Binding IsSelected}" Margin="0,0,14,6" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <Button Content="Tick all" Style="{StaticResource Button.Ghost}" HorizontalAlignment="Left"
+                            Margin="0,6,0,0" Command="{Binding TickAllChartsCommand}"
+                            Visibility="{Binding HasCharts, Converter={StaticResource BoolToVis}}" />
+                </StackPanel>
+            </ctl:Card>
+
+            <!-- ============ combinations ============ -->
+            <ctl:Card Header="Combinations" Visibility="{Binding ShowCombinations, Converter={StaticResource BoolToVis}}">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
+                               Text="Each combination writes the fixes that are on that chart and have that fix use." />
+
+                    <TextBlock Style="{StaticResource Text.Caption}" Margin="0,0,0,8"
+                               Text="No combinations yet."
+                               Visibility="{Binding HasCombinations, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
+
+                    <ItemsControl ItemsSource="{Binding Combinations}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="{x:Type m:FixCombinationItem}">
+                                <Border Margin="0,3" Padding="8,6" CornerRadius="{StaticResource Radius.Chip}"
+                                        Background="{StaticResource Brush.Bg.Sunken}">
+                                    <DockPanel>
+                                        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                                            <Button Content="Edit" Style="{StaticResource Button.Ghost}" Margin="8,0,0,0"
+                                                    Command="{Binding DataContext.EditCombinationCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                    CommandParameter="{Binding}" />
+                                            <Button Content="Delete" Style="{StaticResource Button.Ghost}" Margin="8,0,0,0"
+                                                    Command="{Binding DataContext.DeleteCombinationCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                    CommandParameter="{Binding}" />
+                                        </StackPanel>
+                                        <StackPanel VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding Label}" Style="{StaticResource Text.Body}" />
+                                            <TextBlock Text="{Binding FileNames}" Style="{StaticResource Text.Caption}" />
+                                        </StackPanel>
+                                    </DockPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <!-- editor row -->
+                    <StackPanel Margin="0,10,0,0" Visibility="{Binding IsEditingCombination, Converter={StaticResource BoolToVis}}">
+                        <StackPanel Orientation="Horizontal">
+                            <StackPanel>
+                                <TextBlock Text="Chart" Style="{StaticResource Text.FieldLabel}" Margin="0,0,0,4" />
+                                <ComboBox MinWidth="200" ItemsSource="{Binding ChartOptions}"
+                                          SelectedItem="{Binding SelectedChartOption}" />
+                            </StackPanel>
+                            <TextBlock Text="+" Style="{StaticResource Text.Prose}" VerticalAlignment="Bottom" Margin="10,0,10,8" />
+                            <StackPanel>
+                                <TextBlock Text="Fix use" Style="{StaticResource Text.FieldLabel}" Margin="0,0,0,4" />
+                                <ComboBox MinWidth="160" ItemsSource="{Binding FixUseOptions}"
+                                          SelectedItem="{Binding SelectedFixUseOption}" />
+                            </StackPanel>
+                            <Button Content="{Binding ConfirmCombinationText}" Style="{StaticResource Button.Primary}"
+                                    Margin="16,0,0,0" VerticalAlignment="Bottom" Command="{Binding ConfirmCombinationCommand}" />
+                            <Button Content="Cancel" Style="{StaticResource Button.Ghost}"
+                                    Margin="8,0,0,0" VerticalAlignment="Bottom" Command="{Binding CancelCombinationCommand}" />
+                        </StackPanel>
+                        <TextBlock Text="{Binding CombinationEditorHint}" Style="{StaticResource Text.Caption}" Margin="0,6,0,0"
+                                   Foreground="{StaticResource Brush.Danger}"
+                                   Visibility="{Binding CombinationEditorHint, Converter={StaticResource StringToVis}}" />
+                    </StackPanel>
+
+                    <Button Content="Add combination" Style="{StaticResource Button.Ghost}" HorizontalAlignment="Left"
+                            Margin="0,10,0,0" Command="{Binding AddCombinationCommand}"
+                            Visibility="{Binding IsEditingCombination, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
+                </StackPanel>
+            </ctl:Card>
+
+            <!-- ============ region of interest ============ -->
+            <cards:RoiOverrideCard>
+                <cards:RoiOverrideCard.AdditionalContent>
+                    <TextBlock Style="{StaticResource Text.Prose}" Margin="0,14,0,0"
+                               Text="The region limits which fixes are written: a fix outside it is left out of every file." />
+                </cards:RoiOverrideCard.AdditionalContent>
+            </cards:RoiOverrideCard>
+
+            <!-- ============ upload to vNAS ============ -->
+            <cards:VnasUploadCard />
+
+            <!-- ============ CRC ERAM defaults ============ -->
+            <cards:CrcDefaultsCard SymbolsTitle="Fixes — Symbols" TextTitle="Fixes — Text" />
+    </StackPanel>
+</UserControl>

@@ -21,9 +21,9 @@ go through the same parser. This page lists every key each parser reads.
 
 Parsers: `AirportSettingsParser`, `AirwaySettingsParser`, `DepartureSettingsParser`,
 `ArrivalSettingsParser`, `NavaidSettingsParser`, `ArtccBoundarySettingsParser`,
-`DatToGeojsonSettingsParser`, `SctToGeojsonSettingsParser`, `EramToGeojsonSettingsParser`. Shared
-reading: `SubServiceSettingsReader`, `CrcDefaultsReader`, `ConversionSettingsReader`,
-`SettingsValueReader` (all in `FeBuddy.Core/Application`).
+`FixSettingsParser`, `DatToGeojsonSettingsParser`, `SctToGeojsonSettingsParser`,
+`EramToGeojsonSettingsParser`. Shared reading: `SubServiceSettingsReader`, `CrcDefaultsReader`,
+`ConversionSettingsReader`, `SettingsValueReader` (all in `FeBuddy.Core/Application`).
 
 ## Keys every AIRAC sub-service reads
 
@@ -39,8 +39,8 @@ reading: `SubServiceSettingsReader`, `CrcDefaultsReader`, `ConversionSettingsRea
 | `RoiSwLat`, `RoiSwLon`, `RoiNeLat`, `RoiNeLon` | decimal degrees; **required** when `FilterByRoi` is `Y` | none |
 
 `GenerateAliasFile` (`Y` / `N`, default `Y`) is not here: it is one of every sub-service's own keys
-*except* ARTCC Boundaries, which has no alias file and does not read it - see each sub-service's
-own key table below.
+*except* ARTCC Boundaries and Fixes, neither of which has an alias file or reads it - see each
+sub-service's own key table below.
 
 ### Where files go
 
@@ -72,6 +72,7 @@ nothing.
 | Arrivals | `Arrivals_Lines`, `Arrivals_Symbols`, `Arrivals_Text` | `Arrivals.txt` |
 | NAVAIDs | `NAVAIDs_Symbols`, `NAVAIDs_Text` (`OutputBy=All`), or `NAVAIDs_<Token>s_Symbols` / `_Text` per NAVAID type (`OutputBy=Type`), e.g. `NAVAIDs_VORTACs_Symbols`, `NAVAIDs_VOR-DMEs_Text` | `NAVAIDs.txt` |
 | ARTCC Boundaries | `ARTCC-Boundary_High_Lines` / `_Low_Lines` (`OutputBy=HighLow`, an UNLIMITED ring in both), adds `_Unlimited_Lines` (`OutputBy=HighLowUnlimited`), or `ARTCC-Boundary_<LocationId>-<ALTITUDE>_Lines` per ARTCC and altitude (`OutputBy=ArtccAltitude`), e.g. `ARTCC-Boundary_ZOB-HIGH_Lines` | none |
+| Fixes | `Fix_Symbols`, `Fix_Text` (`OutputBy=All`), or `Fix_<Group>_Symbols` / `_Text` per fix use, chart, or chart + fix use combination present (`OutputBy=FixUse`/`Chart`/`ChartAndFixUse`), e.g. `Fix_WYPNT_Symbols`, `Fix_ENROUTE-LOW-WYPNT_Text` | none |
 
 CRC-ERAM defaults are only ever written to files marked for vNAS, since CRC reads its maps from
 vNAS. The keys are listed in each sub-service's `*OutputFiles` class.
@@ -221,6 +222,36 @@ naming the key.
   wherever `POINT_SEQ` drops back to a low value - ZAK, ZAP and ZWY each have a CTA ring and a FIR
   ring - and each ring is closed back to its own first point.
 - `LocationFilter` limits the GeoJSON only; there is no alias file for it to limit.
+
+## Fixes
+
+| Key | Values | Default |
+|---|---|---|
+| `EmitSymbols`, `EmitText` | `Y` / `N` | `Y` |
+| `OutputBy` | `All`, `FixUse`, `Chart`, `ChartAndFixUse` | `All` |
+| `ExcludedFixUses` | list of fix use names (below); only used in the `FixUse` layout | none |
+| `ExcludedCharts` | list of NASR chart names; only used in the `Chart` layout | none |
+| `Combinations` | list of `<Chart>+<FixUse>` pairs, e.g. `ENROUTE-LOW+WYPNT,IAP+RPRTNG-PNT`; **required** (at least one) when `OutputBy = ChartAndFixUse` | none |
+
+- Unlike every other AIRAC sub-service except ARTCC Boundaries, there is no `GenerateGeojson` or
+  `GenerateAliasFile` key: Fixes always writes GeoJSON and has no alias file.
+- **CRC classes:** with `OutputBy = All`, `Fix` (`Symbol`, `Text`); with `OutputBy = FixUse`, one
+  class per fix use present, keyed by its token - `COMPUTER-NAV`, `MIL-RPRTNG-PNT`, `MIL-WYPNT`,
+  `NRS-WYPNT`, `RADAR`, `RPRTNG-PNT`, `VFR-WYPNT`, `WYPNT`, or any other NASR code kept as written -
+  with `OutputBy = Chart`, one class per chart token present (a run of non-alphanumeric characters
+  becomes `-`, e.g. `ENROUTE LOW` → `ENROUTE-LOW`), or `NO-CHART` for a fix with no chart; with
+  `OutputBy = ChartAndFixUse`, one class per listed combination, e.g. `ENROUTE-LOW-WYPNT`. Each with
+  `Symbol` and `Text`. There is no `Line` class; Fixes writes no Lines file.
+- **`FebProperties`:** `fixId`, `fixUseCode`, `charts` - the Text file never writes `fixId`; its
+  `text` array already carries it.
+- `EmitSymbols` and `EmitText` cannot both be `N`.
+- `ExcludedFixUses` warns about a name that is not a known fix use (it is still excluded, so a fix
+  use NASR adds can be unticked), and excluding every known fix use in the `FixUse` layout throws.
+- A `Combinations` entry naming an unrecognized fix use is still used, with a warning; an entry
+  that does not tokenize to both a chart and a fix use throws. `OutputBy = ChartAndFixUse` with no
+  `Combinations` throws. A combination matching no fix in the cycle is a run warning, and writes no
+  files.
+- Data comes from `FIX_BASE` only.
 
 ## Keys every file conversion reads
 

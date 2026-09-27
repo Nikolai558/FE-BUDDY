@@ -86,4 +86,10 @@ public sealed record AiracServiceSettings
 	/// not selected for this run.
 	/// </summary>
 	public IReadOnlyDictionary<string, string>? WxStations { get; init; }
+
+	/// <summary>
+	/// The Procedures sub-service settings block, or <see langword="null"/> when Procedures was
+	/// not selected for this run.
+	/// </summary>
+	public IReadOnlyDictionary<string, string>? Procedures { get; init; }
 }

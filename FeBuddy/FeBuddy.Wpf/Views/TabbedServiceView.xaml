@@ -55,6 +55,9 @@
         <DataTemplate DataType="{x:Type vm:WxStationsViewModel}">
             <local:WxStationsView />
         </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:ProceduresViewModel}">
+            <local:ProceduresView />
+        </DataTemplate>
         <DataTemplate DataType="{x:Type vm:DatToGeojsonViewModel}">
             <local:DatToGeojsonView />
         </DataTemplate>

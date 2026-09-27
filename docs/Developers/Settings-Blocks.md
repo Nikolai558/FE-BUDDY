@@ -21,7 +21,8 @@ go through the same parser. This page lists every key each parser reads.
 
 Parsers: `AirportSettingsParser`, `AirwaySettingsParser`, `DepartureSettingsParser`,
 `ArrivalSettingsParser`, `NavaidSettingsParser`, `ArtccBoundarySettingsParser`,
-`FixSettingsParser`, `WxStationSettingsParser`, `DatToGeojsonSettingsParser`, `SctToGeojsonSettingsParser`,
+`FixSettingsParser`, `WxStationSettingsParser`, `ProcedureSettingsParser`,
+`DatToGeojsonSettingsParser`, `SctToGeojsonSettingsParser`,
 `EramToGeojsonSettingsParser`. Shared reading: `SubServiceSettingsReader`, `CrcDefaultsReader`,
 `ConversionSettingsReader`, `SettingsValueReader` (all in `FeBuddy.Core/Application`).
 
@@ -39,8 +40,8 @@ Parsers: `AirportSettingsParser`, `AirwaySettingsParser`, `DepartureSettingsPars
 | `RoiSwLat`, `RoiSwLon`, `RoiNeLat`, `RoiNeLon` | decimal degrees; **required** when `FilterByRoi` is `Y` | none |
 
 `GenerateAliasFile` (`Y` / `N`, default `Y`) is not here: it is one of every sub-service's own keys
-*except* ARTCC Boundaries, Fixes and Wx Stations, none of which has an alias file or reads it - see
-each sub-service's own key table below.
+*except* ARTCC Boundaries, Fixes, Wx Stations and Procedures, none of which has an alias file (not
+yet, for Procedures) or reads it - see each sub-service's own key table below.
 
 ### Where files go
 
@@ -278,6 +279,48 @@ naming the key.
   `GU`, `MP`, `AS`, `UM`); it has an ICAO ID; `METAR` is among its site types; and it has usable
   coordinates - present, finite, and within -90..90 / -180..180 (the feed's `-99.99, -99.99`
   placeholder is left out, with an Info message naming the station).
+
+## Procedures
+
+| Key | Values | Default |
+|---|---|---|
+| `GenerateChangesDocument` | `Y` / `N` | `Y` |
+| `GenerateProceduresJson` | `Y` / `N` | `Y` |
+| `Facilities` | list of ARTCC IDs; every included airport's procedures (of the chart types below) are included for each one | none |
+| `PrimaryFacility` | an ARTCC ID; its section leads both documents when it ends up with any included airport | none |
+| `IncludeRoiAirports` | `Y` / `N` - also include every airport whose NASR coordinates fall inside the Region of Interest; **required** to have a ROI set (`FilterByRoi = Y` plus its four corners) when `Y` | `N` |
+| `Airports` | list of FAA or ICAO airport identifiers to include (whole), regardless of `Facilities` or the ROI | none |
+| `Procedures` | list of procedure base chart names to include at every airport that has one, regardless of `ChartTypes` or whether the airport is otherwise included | none |
+| `AirportProcedures` | list of `<Airport>\|<Procedure name>` pairs to include, e.g. `PIT\|ILS OR LOC RWY 28C` | none |
+| `ChartTypes` | list of d-TPP chart codes (`IAP`, `STR`, `DP`, `ODP`, `DAU`, `APD`, `MIN`, `HOT`, `LAH`) a whole included airport's procedures are limited to; a name picked by `Procedures` or `AirportProcedures` is included regardless | `IAP,STR,DP,ODP,DAU,APD` |
+| `JsonFields` | list of `Procedures.json` optional field names (below); only meaningful with `GenerateProceduresJson = Y` | `icaoId,airportName,responsibleArtcc,airspaceClass,chartType,chartUrl,change,compareUrl` |
+
+- Unlike every other AIRAC sub-service, Procedures writes no GeoJSON at all: there is no `Emit…`,
+  `FebProperties`, `UploadToVnas`, `CrcDefaultsFor` or `Crc.*` key, and `GenerateAliasFile` is not
+  one of its own keys either - there is no alias file yet, so sending it gets the ordinary
+  unknown-key warning. `IncludeFebCustomProperties = Y` is accepted but only warns, pointing at
+  `JsonFields` instead, since that is where Procedures' own optional fields live.
+- `GenerateChangesDocument` and `GenerateProceduresJson` cannot both be `N` - Procedures would then
+  produce nothing.
+- At least one of `Facilities`, `IncludeRoiAirports` (with a Region of Interest set), `Airports`,
+  `Procedures` or `AirportProcedures` is required - Procedures needs some source of airports or
+  procedures to include. The filters add up: every airport of the ticked facilities, plus
+  (optionally) every airport inside the ROI, plus explicitly listed airports, plus procedures picked
+  by name at any airport, plus specific airport + procedure pairs.
+- Data comes from the FAA's d-TPP Metafile (`d-tpp_Metafile.xml`), not a NASR CSV group - downloaded
+  once per cycle and cached alongside the NASR CSVs (see
+  [Architecture](Architecture.md#the-airac-data-pipeline)) - joined to NASR `APT_BASE` (each
+  airport's responsible ARTCC and coordinates) and `CLS_ARSP` (its highest class airspace: B, C, D
+  or E). The FAA posts a cycle's metafile only 15-18 days before its effective date, so the next
+  cycle's is often not yet published; a run then writes no Procedures documents, with an advisory
+  saying why, but is not blocked. The previous cycle's metafile, when cached, links a procedure this
+  cycle deleted to the last chart it had.
+- `JsonFields` values (`ProcedureJsonField`) - airport-level: `icaoId`, `airportName`, `city`,
+  `state`, `responsibleArtcc`, `airspaceClass`, `military`; procedure-level: `chartType`,
+  `chartUrl`, `change`, `compareUrl`, `amendment`, `amendmentDate`, `procedureUid`, `computerCode`,
+  `producer`. An airport's `airportId` and a procedure's `name` are always written, regardless of
+  `JsonFields`; a field with no value for a given airport or procedure is left out rather than
+  written null.
 
 ## Keys every file conversion reads
 

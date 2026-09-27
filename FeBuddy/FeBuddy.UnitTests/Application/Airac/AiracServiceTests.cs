@@ -1,6 +1,7 @@
 using FeBuddy.Core.Application.Airac;
 using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Domain.Airac.Models;
+using FeBuddy.Core.Infrastructure.Dtpp.Models;
 using FeBuddy.Core.Infrastructure.Nasr.Models;
 using FeBuddy.Core.Infrastructure.WxStations.Models;
 
@@ -10,6 +11,7 @@ using FeBuddy.UnitTests.Application.Airac.ArtccBoundaries.Fixtures;
 using FeBuddy.UnitTests.Application.Airac.Departures.Fixtures;
 using FeBuddy.UnitTests.Application.Airac.Fixes.Fixtures;
 using FeBuddy.UnitTests.Application.Airac.Navaids.Fixtures;
+using FeBuddy.UnitTests.Application.Airac.Procedures.Fixtures;
 using FeBuddy.UnitTests.Application.Airac.WxStations.Fixtures;
 
 namespace FeBuddy.UnitTests.Application.Airac;
@@ -470,6 +472,174 @@ public sealed class AiracServiceTests : IDisposable
 			() => AiracService.RunAsync(settings, new NasrCsvDataCollection()));
 
 		Assert.Contains("No weather station data for this cycle", ex.Message, StringComparison.Ordinal);
+	}
+
+	// ---- the AiracSupplementalData overload ----
+
+	[Fact]
+	public async Task the_supplemental_data_overload_is_the_real_implementation_the_others_delegate_to()
+	{
+		WxStationDataCollection wxData = WxStationTestData.Build([WxStationTestData.DtwRow()]);
+
+		AiracServiceSettings settings = new()
+		{
+			SelectedCycle = Cycle,
+			OutputDirectory = _output,
+			WxStations = new Dictionary<string, string>(),
+		};
+
+		AiracServiceResult result = await AiracService.RunAsync(
+			settings, new NasrCsvDataCollection(), new AiracSupplementalData { WxStations = wxData });
+
+		Assert.NotNull(result.WxStations);
+		Assert.Equal(1, result.WxStations!.StationCount);
+	}
+
+	[Fact]
+	public async Task the_wx_station_data_overload_delegates_to_the_supplemental_data_overload()
+	{
+		// Both overloads must reach WxStationService with the same data - the three-argument
+		// overload just wraps it in an AiracSupplementalData with everything else left null.
+		WxStationDataCollection wxData = WxStationTestData.Build([WxStationTestData.DtwRow()]);
+
+		AiracServiceSettings settings = new()
+		{
+			SelectedCycle = Cycle,
+			OutputDirectory = _output,
+			WxStations = new Dictionary<string, string>(),
+		};
+
+		AiracServiceResult viaWxOverload = await AiracService.RunAsync(settings, new NasrCsvDataCollection(), wxData);
+		AiracServiceResult viaSupplementalOverload = await AiracService.RunAsync(
+			settings, new NasrCsvDataCollection(), new AiracSupplementalData { WxStations = wxData });
+
+		Assert.Equal(viaSupplementalOverload.WxStations!.StationCount, viaWxOverload.WxStations!.StationCount);
+	}
+
+	[Fact]
+	public async Task run_async_rejects_a_null_supplemental_data()
+	{
+		AiracServiceSettings settings = new() { SelectedCycle = Cycle, OutputDirectory = _output };
+
+		await Assert.ThrowsAsync<ArgumentNullException>(
+			() => AiracService.RunAsync(settings, new NasrCsvDataCollection(), (AiracSupplementalData)null!));
+	}
+
+	// ---- Procedures ----
+
+	[Fact]
+	public async Task a_run_with_only_procedures_selected_counts_as_something_selected()
+	{
+		string stale = WriteStaleFile();
+		AiracServiceSettings settings = new()
+		{
+			SelectedCycle = Cycle,
+			OutputDirectory = _output,
+			ExistingOutput = ExistingOutputAction.DeleteExisting,
+			Procedures = new Dictionary<string, string> { ["Facilities"] = "ZOB" },
+		};
+
+		// No Dtpp is supplied, so the Procedures sub-service completes with its advisory (see
+		// below) and writes nothing - but DeleteExisting must still fire beforehand.
+		await AiracService.RunAsync(settings, new NasrCsvDataCollection());
+
+		Assert.False(File.Exists(stale));
+	}
+
+	[Fact]
+	public async Task a_procedures_block_alone_does_not_run_any_other_sub_service()
+	{
+		AiracServiceSettings settings = new()
+		{
+			SelectedCycle = Cycle,
+			OutputDirectory = _output,
+			Procedures = new Dictionary<string, string> { ["Facilities"] = "ZOB" },
+		};
+
+		AiracServiceResult result = await AiracService.RunAsync(settings, new NasrCsvDataCollection());
+
+		Assert.Null(result.Airways);
+		Assert.Null(result.Airports);
+		Assert.Null(result.Departures);
+		Assert.Null(result.Arrivals);
+		Assert.Null(result.Navaids);
+		Assert.Null(result.ArtccBoundaries);
+		Assert.Null(result.Fixes);
+		Assert.Null(result.WxStations);
+		Assert.DoesNotContain(result.Warnings, w => w.Contains("no sub-service", StringComparison.OrdinalIgnoreCase));
+	}
+
+	[Fact]
+	public async Task a_procedures_block_with_no_metafile_supplied_still_completes_with_the_advisory()
+	{
+		AiracServiceSettings settings = new()
+		{
+			SelectedCycle = Cycle,
+			OutputDirectory = _output,
+			Procedures = new Dictionary<string, string> { ["Facilities"] = "ZOB" },
+		};
+
+		// The two-argument overload supplies no supplemental data at all, so Dtpp is null: the
+		// Procedures sub-service must complete with its advisory rather than throwing, even
+		// though the NasrCsvDataCollection below has no Apt/ClsArsp parsed.
+		AiracServiceResult result = await AiracService.RunAsync(settings, new NasrCsvDataCollection());
+
+		Assert.NotNull(result.Procedures);
+		Assert.Empty(result.Procedures!.FilesWritten);
+		Assert.Contains(result.Procedures.Messages, m => m.IsAdvisory);
+	}
+
+	[Fact]
+	public async Task run_async_with_a_procedures_block_and_a_metafile_runs_the_pipeline_and_fills_the_result()
+	{
+		NasrCsvDataCollection nasr = ProcedureTestData.Nasr([ProcedureTestData.AptBaseRow("AAA", respArtccId: "ZOB")]);
+		DtppMetafileDataCollection dtpp = ProcedureTestData.Dtpp("2610",
+			airports: [ProcedureTestData.AirportRow("AAA", alnum: 100)],
+			records: [ProcedureTestData.RecordRow("AAA", 10, "IAP", "ILS RWY 1", "00100ILS1.PDF", userAction: "A")]);
+
+		AiracServiceSettings settings = new()
+		{
+			SelectedCycle = Cycle,
+			OutputDirectory = _output,
+			Procedures = new Dictionary<string, string> { ["Facilities"] = "ZOB" },
+		};
+
+		AiracServiceResult result = await AiracService.RunAsync(settings, nasr, new AiracSupplementalData { Dtpp = dtpp });
+
+		Assert.NotNull(result.Procedures);
+		Assert.Equal(1, result.Procedures!.AirportCount);
+		Assert.Equal(1, result.Procedures.NewCount);
+		Assert.Equal(
+			Path.Combine(CycleFolder, "Publication_Docs", "Procedure_Changes.md"),
+			result.Procedures.FilesWritten.Single(f => f.EndsWith(".md", StringComparison.Ordinal)));
+		Assert.True(File.Exists(Path.Combine(CycleFolder, "Publication_Docs", "Procedures.json")));
+	}
+
+	[Fact]
+	public async Task the_previous_cycle_metafile_flows_through_to_a_deleted_procedures_previous_chart_link()
+	{
+		NasrCsvDataCollection nasr = ProcedureTestData.Nasr([ProcedureTestData.AptBaseRow("AAA", respArtccId: "ZOB")]);
+		DtppMetafileDataCollection dtpp = ProcedureTestData.Dtpp("2610",
+			airports: [ProcedureTestData.AirportRow("AAA", alnum: 100)],
+			records: [ProcedureTestData.RecordRow("AAA", 10, "IAP", "ILS RWY 1", "DELETED_JOB.PDF", userAction: "D")]);
+		DtppMetafileDataCollection previousDtpp = ProcedureTestData.Dtpp("2609",
+			records: [ProcedureTestData.RecordRow("AAA", 10, "IAP", "ILS RWY 1", "00100ILS1.PDF")]);
+
+		AiracServiceSettings settings = new()
+		{
+			SelectedCycle = Cycle,
+			OutputDirectory = _output,
+			Procedures = new Dictionary<string, string> { ["Facilities"] = "ZOB" },
+		};
+
+		AiracServiceResult result = await AiracService.RunAsync(
+			settings, nasr, new AiracSupplementalData { Dtpp = dtpp, PreviousDtpp = previousDtpp });
+
+		Assert.DoesNotContain(result.Procedures!.Messages, m =>
+			m.Text.Contains("previous cycle's d-TPP Metafile is not available", StringComparison.Ordinal));
+
+		string markdown = File.ReadAllText(Path.Combine(CycleFolder, "Publication_Docs", "Procedure_Changes.md"));
+		Assert.Contains("https://aeronav.faa.gov/d-tpp/2609/00100ILS1.PDF", markdown);
 	}
 
 	[Fact]

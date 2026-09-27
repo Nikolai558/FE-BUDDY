@@ -16,6 +16,7 @@ namespace FeBuddy.Core.Application.Airac;
 /// AIRAC_2610\
 /// ├── Airways.txt, Airports.txt, ...    alias and other non-GeoJSON files
 /// ├── Geojson\                          every GeoJSON file
+/// ├── Publication_Docs\                 the Procedures sub-service's two documents
 /// └── Upload_to_vNAS\                   only the files marked for vNAS, same layout
 ///     └── Geojson\
 /// </code>
@@ -31,6 +32,9 @@ public static class AiracOutputPaths
 
 	/// <summary>The folder for the files the user marked for upload to vNAS.</summary>
 	public const string VnasFolder = "Upload_to_vNAS";
+
+	/// <summary>The folder the Procedures sub-service's documents go in, inside the cycle folder.</summary>
+	public const string PublicationDocsFolder = "Publication_Docs";
 
 	/// <summary>The name of a cycle's folder, e.g. <c>AIRAC_2610</c>.</summary>
 	/// <param name="cycleId">The four-digit cycle ID.</param>
@@ -62,6 +66,16 @@ public static class AiracOutputPaths
 		string root = uploadToVnas ? Path.Combine(outputDirectory, VnasFolder) : outputDirectory;
 		return isGeojson ? Path.Combine(root, GeojsonFolder) : root;
 	}
+
+	/// <summary>
+	/// The folder the Procedures sub-service's two documents go in:
+	/// <c>&lt;output&gt;\Publication_Docs</c>. Never the vNAS folder - <see cref="FileDirectory"/> is
+	/// not used for these files.
+	/// </summary>
+	/// <param name="outputDirectory">The folder the run writes into - the cycle folder, for an AIRAC Service run.</param>
+	/// <returns>The folder's full path.</returns>
+	public static string PublicationDocsDirectory(string outputDirectory) =>
+		Path.Combine(outputDirectory, PublicationDocsFolder);
 
 	/// <summary>
 	/// The word a GeoJSON file of this kind ends in, e.g. <c>Lines</c> in

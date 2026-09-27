@@ -5,12 +5,15 @@ using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Application.Launch;
 using FeBuddy.Core.Application.Launch.Models;
 using FeBuddy.Core.Application.News;
+using FeBuddy.Core.Domain.Airac;
 using FeBuddy.Core.Domain.Airac.Models;
 using FeBuddy.Core.Infrastructure.Configuration;
+using FeBuddy.Core.Infrastructure.Dtpp.Models;
 using FeBuddy.Core.Infrastructure.FileSystem;
 using FeBuddy.Core.Infrastructure.Logging;
 using FeBuddy.Core.Infrastructure.Logging.Models;
 using FeBuddy.Core.Infrastructure.Nasr.Models;
+using FeBuddy.Core.Infrastructure.Nasr.Parsers;
 using FeBuddy.Core.Infrastructure.Platform.Models;
 using FeBuddy.Core.Infrastructure.WxStations.Models;
 
@@ -268,6 +271,64 @@ public sealed class LaunchSequenceTests : IDisposable
 		Assert.Contains(reports, r => r.Message == "Loading Wx station data for cycle 2609");
 		Assert.NotNull(result.WxStations);
 		Assert.Equal(1, result.WxStations!.StationCount);
+	}
+
+	[Fact]
+	public async Task airac_service_loads_dtpp_and_previous_dtpp_from_the_cache_when_procedures_is_selected()
+	{
+		AiracCycleInfo previous = new("2608", "06_Aug_2026", new DateOnly(2026, 8, 6));
+		AiracCycleInfo current = new("2609", "03_Sep_2026", new DateOnly(2026, 9, 3));
+		AiracCycleInfo next = new("2610", "01_Oct_2026", new DateOnly(2026, 10, 1));
+
+		// The cycle immediately before "current" - what AiracService itself resolves to load the
+		// previous cycle's d-TPP Metafile, so the test does not have to hard-code which cycle ID
+		// that is.
+		AiracCycleInfo previousOfCurrent = AiracCycleResolver.GetCycle(AiracCyclePosition.Previous, asOfUtc: current.EffectiveDateUtc);
+
+		DtppMetafileDataCollection currentDtpp = new() { Cycle = current.AiracCycleId };
+		DtppMetafileDataCollection previousDtpp = new() { Cycle = previousOfCurrent.AiracCycleId };
+		List<string> loadedForCycles = [];
+
+		// The single-settings RunAsync overload resolves both the selected cycle's d-TPP Metafile
+		// and the previous cycle's from AiracCycleDataCache.Instance, only when settings.Procedures
+		// is not null - this re-wires that instance with a loadDtpp step to exercise it.
+		AiracCycleDataCache.ConfigureForTesting(new AiracCycleDataCache(
+			probe: (_, _) => Task.FromResult(AiracCyclePublicationState.Published),
+			download: (cycle, _) => Task.FromResult(cycle.AiracCycleId),
+			// Apt and ClsArsp must be non-null (even empty) for ProcedureBuilder.Build, which the
+			// Procedures block below now actually reaches.
+			parse: (_, _) => Task.FromResult(new NasrCsvDataCollection
+			{
+				Apt = new AptCsvDataCollection(),
+				ClsArsp = new ClsArspCsvDataCollection(),
+			}),
+			loadDtpp: (cycleDirectory, _) =>
+			{
+				lock (loadedForCycles) { loadedForCycles.Add(cycleDirectory); }
+
+				DtppMetafileDataCollection? found =
+					cycleDirectory == current.AiracCycleId ? currentDtpp
+					: cycleDirectory == previousOfCurrent.AiracCycleId ? previousDtpp
+					: null;
+
+				return Task.FromResult(found);
+			}));
+
+		await AiracCycleDataCache.Instance.PrepareCyclesAsync(previous, current, next);
+
+		List<AiracServiceProgress> reports = [];
+		AiracServiceResult result = await AiracService.RunAsync(
+			new AiracServiceSettings
+			{
+				SelectedCycle = current,
+				OutputDirectory = Path.Combine(_root, "output"),
+				Procedures = new Dictionary<string, string> { ["Facilities"] = "ZOB" },
+			},
+			new SynchronousProgress<AiracServiceProgress>(reports.Add));
+
+		Assert.Equal(new[] { current.AiracCycleId, previousOfCurrent.AiracCycleId }.Order(), loadedForCycles.Order());
+		Assert.Contains(reports, r => r.Message == $"Loading d-TPP Metafile data for cycle {current.AiracCycleId}");
+		Assert.Contains(reports, r => r.Message == $"Loading d-TPP Metafile data for cycle {previousOfCurrent.AiracCycleId}");
 	}
 
 	private sealed class SynchronousProgress<T>(Action<T> report) : IProgress<T>

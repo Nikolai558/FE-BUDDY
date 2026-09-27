@@ -92,6 +92,19 @@ launch. `AiracCycleDataCache.GetWxStationsAsync` reads a cycle's copy fresh from
 (it is small, unlike the NASR data `GetAsync` memoizes) and returns `null` when the file is not
 there yet - which the Wx Stations tab reports as missing and blocks the run on.
 
+**Procedures rides along the same way, feeding on the FAA's d-TPP Metafile instead of a NASR CSV
+group.** `DtppDownloader.EnsureCycleHasMetafileAsync` downloads a cycle's `d-tpp_Metafile.xml` at
+launch and places it in that cycle's folder, next to its NASR CSVs (and Wx Stations file, if any).
+Unlike Wx Stations' file, this one is not shared across cycles - the download URL is keyed by cycle
+ID, so every cycle folder needs its own request - and the FAA publishes it only about 15-18 days
+before the cycle's effective date, so the next cycle's is often not there yet: a 404 is reported as
+`DtppDownloadOutcome.NotYetPublished`, logged as Info, and simply retried at the next launch, never
+an error. A folder that already has the file is left alone. `AiracCycleDataCache.GetDtppAsync`
+reads a cycle's copy fresh from disk on every call and returns `null` both when the file has not
+downloaded yet and when the cycle is not one of the three the cache tracks (the previous cycle's
+metafile, used to link a deleted procedure to its last chart, often falls outside that window) -
+which the Procedures sub-service treats as an advisory, never a reason to block the run.
+
 ## A run, end to end
 
 ```
@@ -122,6 +135,14 @@ since it has no alias file. Fixes likewise has no step 4: `FixService` stops aft
 (`WxStationService` stops after `WxStationGeojsonWriter`), and its step 1 input is not `nasrData`:
 `AiracService` loads `wxStationData` from `AiracCycleDataCache.GetWxStationsAsync` only when Wx
 Stations is selected, and hands it to `WxStationService.Run` instead.
+
+Procedures has no steps 3 or 4 at all - `ProcedureService` builds its two documents
+(`ProcedureChangesMarkdownWriter`, `ProceduresJsonWriter`) straight from step 2's domain objects,
+since it writes no GeoJSON and no alias file. Its step 1 also takes an extra input alongside
+`nasrData`: `AiracService` loads the selected cycle's (and the previous cycle's) FAA d-TPP Metafile
+from `AiracCycleDataCache.GetDtppAsync` only when Procedures is selected, and hands both to
+`ProcedureService.Run`. A `null` metafile (the FAA has not published this cycle's yet) is not an
+error - the run still completes, with an advisory saying no Procedures documents were written.
 
 - **The settings block is the contract.** Every tab (and the harness) hands Core a flat
   `Dictionary<string, string>`. Core never sees view-models, and the GUI never sees typed settings.
@@ -311,7 +332,9 @@ Decisions that were argued out once and should not be re-litigated without a rea
 - **The Review tab is the one place** a run's results, warnings, advisories, errors and files live.
 - **Every sub-service is a tab of the AIRAC Service**, never a top-level screen, and every GeoJSON
   sub-service tab is built from the same shared cards - except the alias-file ones, which ARTCC
-  Boundaries, Fixes and Wx Stations opt out of (`GeojsonSubServiceViewModel.HasAliasFile`). Likewise every file
+  Boundaries, Fixes and Wx Stations opt out of (`GeojsonSubServiceViewModel.HasAliasFile`).
+  Procedures opts out of the shared cards altogether - it writes no GeoJSON and no alias file at
+  all, so its tab is built from its own cards instead. Likewise every file
   conversion is a tab of File Conversions; the two screens share one tabbed view and differ only in
   what their view-models say (File Conversions has no General or Preview Settings tab - each
   conversion runs from its own tab).

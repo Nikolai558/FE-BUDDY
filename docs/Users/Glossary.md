@@ -34,6 +34,12 @@ options) CRC should use for everything in a GeoJSON file, stored in one hidden f
 of the file. A feature can still override them individually. FE-Buddy writes them only into files
 marked for vNAS.
 
+**d-TPP Metafile** - The FAA's index of every chart in the Digital Terminal Procedures Publication
+(d-TPP) - approach plates, SIDs, STARs, airport diagrams and the rest - published once per AIRAC
+cycle, but only 15-18 days before the cycle's effective date, so the next cycle's copy is often
+missing. Procedures builds both its documents from it, joined to NASR for each airport's ARTCC,
+coordinates and airspace class.
+
 **Designation** - The letters at the front of an airway ID: `J` in J3, `V` in V23, `Q` in Q100.
 Roughly, J and Q are high altitude, V and T are low - but FE-Buddy classifies by the published
 altitudes, not the letter.
@@ -74,6 +80,11 @@ of terrain and obstacles, as opposed to a SID.
 **Output folder** - Where FE-Buddy writes your files (Settings ▸ Default Output Directory). Each
 run of a cycle writes into its own `AIRAC_<cycle>` folder there.
 
+**Procedures** - The sub-service that writes two documents from the FAA's d-TPP Metafile instead of
+GeoJSON: `Procedure_Changes.md` (what changed this cycle, with links to the FAA's charts) and
+`Procedures.json` (every included airport's current charts). Like Wx Stations, its data is not the
+NASR cycle.
+
 **Region of Interest (ROI)** - A box on the map, set by its south-west and north-east corners.
 FE-Buddy only writes data inside (or crossing) it. Make it a little bigger than your ARTCC.
 
@@ -84,7 +95,8 @@ FE-Buddy only writes data inside (or crossing) it. Make it a little bigger than 
 **STAR** - Standard Terminal Arrival: a published arrival route into an airport.
 
 **Sub-service** - One kind of data the AIRAC Service can produce: Airports, Airways, Departures,
-Arrivals, NAVAIDs, ARTCC Boundaries, Fixes or Wx Stations. Each has its own tab and settings.
+Arrivals, NAVAIDs, ARTCC Boundaries, Fixes, Wx Stations or Procedures. Each has its own tab and
+settings.
 
 **Video map** - The map background on a controller's scope: airways, airports, boundaries.
 In CRC, these are GeoJSON files.

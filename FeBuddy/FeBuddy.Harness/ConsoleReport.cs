@@ -7,6 +7,7 @@ using FeBuddy.Core.Application.Airac.ArtccBoundaries.Models;
 using FeBuddy.Core.Application.Airac.Departures.Models;
 using FeBuddy.Core.Application.Airac.Fixes.Models;
 using FeBuddy.Core.Application.Airac.Navaids.Models;
+using FeBuddy.Core.Application.Airac.Procedures.Models;
 using FeBuddy.Core.Application.Airac.WxStations.Models;
 using FeBuddy.Core.Application.Models;
 using FeBuddy.Core.Infrastructure.Configuration;
@@ -355,6 +356,39 @@ internal static class ConsoleReport
 				int count = result.GeojsonFeatureCountsByFile.TryGetValue(file, out int c) ? c : 0;
 				Console.WriteLine($"  {Path.GetFileName(file)} - {count:N0} feature(s)");
 				Console.WriteLine($"    {file}");
+			}
+		}
+
+		PrintMessagesByLevel(result.Messages);
+	}
+
+	/// <summary>
+	/// Prints one Procedures run: timing, how many airports and procedures were included, the
+	/// New/Changed/Deleted (and re-added) counts, every document written, and the run's messages
+	/// grouped by level.
+	/// </summary>
+	/// <param name="label">Heading for this run, e.g. "Procedures: Changes + JSON".</param>
+	/// <param name="result">What <c>ProcedureService.Run</c> returned.</param>
+	public static void PrintProcedureServiceResult(string label, ProcedureServiceResult result)
+	{
+		Console.WriteLine();
+		Console.WriteLine($"=== {label} ===");
+		Console.WriteLine($"Elapsed:      {result.Elapsed.TotalMilliseconds:N0} ms");
+		Console.WriteLine($"Airports included:   {result.AirportCount:N0}");
+		Console.WriteLine($"Procedures included: {result.ProcedureCount:N0}");
+		Console.WriteLine($"New: {result.NewCount:N0}, Changed: {result.ChangedCount:N0} (incl. {result.ReAddedCount:N0} re-added), Deleted: {result.DeletedCount:N0}");
+
+		if (result.FilesWritten.Count == 0)
+		{
+			Console.WriteLine("Documents written: (none)");
+		}
+		else
+		{
+			Console.WriteLine($"Documents written: {result.FilesWritten.Count}");
+
+			foreach (string file in result.FilesWritten)
+			{
+				Console.WriteLine($"  {file}");
 			}
 		}
 

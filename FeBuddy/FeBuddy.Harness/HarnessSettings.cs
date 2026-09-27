@@ -19,6 +19,9 @@ internal static class HarnessSettings
 	/// <summary>Full path to an unzipped copy of the aviationweather.gov Wx Stations cache file.</summary>
 	public const string WxStationsSourceFile = @"C:\Users\ksand\Downloads\stations.cache.xml\stations.cache.xml";
 
+	/// <summary>Full path to a local copy of the FAA d-TPP Metafile for the cycle in <see cref="NasrSourceDirectory"/>.</summary>
+	public const string DtppMetafileFile = @"C:\Users\ksand\Desktop\ProjFolder\FE-Buddy-Dev\d-tpp_Metafile.xml";
+
 	/// <summary>
 	/// The folder the services write into, as the AIRAC Service's <c>AIRAC_&lt;cycle&gt;</c> folder
 	/// would be: alias files here, GeoJSON in its <c>Geojson</c> folder, and anything marked for
@@ -461,6 +464,46 @@ internal static class HarnessSettings
 		AddWxStationCrcDefaults(settings,
 			symbolBcg: 12, symbolFilters: "12", symbolStyle: "otherWaypoints", symbolSize: 1,
 			textBcg: 12, textFilters: "12", textSize: 1);
+
+		return settings;
+	}
+
+	/// <summary>
+	/// Builds the raw settings dictionary for <c>ProcedureService.Run</c>. Every key the Procedures
+	/// settings parser recognizes is listed below with its default value, so any of them can be
+	/// flipped here without hunting through <c>ProcedureSettingsParser</c>.
+	/// </summary>
+	public static Dictionary<string, string> ProcedureSettings()
+	{
+		Dictionary<string, string> settings = new()
+		{
+			{ "OutputDirectory", OutputDirectory },
+
+			// Both documents; turning both off is rejected by the parser.
+			{ "GenerateChangesDocument", "Y" },
+			{ "GenerateProceduresJson", "Y" },
+
+			// Additive inclusion: every ZOB airport (by RESP_ARTCC_ID), plus GRR and CID from
+			// elsewhere - exercises both the whole-facility path and the explicit-airport path in
+			// one run.
+			{ "Facilities", "ZOB" },
+			{ "PrimaryFacility", "ZOB" },
+
+			// IncludeRoiAirports reuses the shared ROI keys below via SubServiceSettingsReader.ReadRoi.
+			{ "IncludeRoiAirports", "N" },
+			{ "FilterByRoi", "N" },
+			{ "RoiSwLat", "" },              // e.g. "38.0"
+			{ "RoiSwLon", "" },              // e.g. "-85.0"
+			{ "RoiNeLat", "" },              // e.g. "43.0"
+			{ "RoiNeLon", "" },              // e.g. "-78.0"
+
+			{ "Airports", "GRR,CID" },
+			{ "Procedures", "" },            // e.g. "GRUUB ONE (RNAV)" to always include that chart wherever it is served
+			{ "AirportProcedures", "" },     // e.g. "PIT|ILS OR LOC RWY 28C"
+
+			{ "ChartTypes", "" },            // blank = default: IAP, STR, DP, ODP, DAU, APD
+			{ "JsonFields", "" },            // blank = default: icaoId, airportName, responsibleArtcc, airspaceClass, chartType, chartUrl, change, compareUrl
+		};
 
 		return settings;
 	}

@@ -1,6 +1,6 @@
 using System.Diagnostics;
 
-using FeBuddy.Core.Application.Airac.WxStations.Models;
+using FeBuddy.Core.Application.Airac.Procedures.Models;
 using FeBuddy.Core.Infrastructure.Configuration;
 using FeBuddy.Core.Infrastructure.Nasr.Models;
 using FeBuddy.Core.Infrastructure.Nasr.Parsers;
@@ -64,8 +64,11 @@ internal static class Program
 			// FixServiceResult fixResult = FixRunner.Run(allNasrCsvData);
 			// ConsoleReport.PrintFixServiceResult("Fixes: GeoJSON", fixResult);
 
-			WxStationServiceResult wxStationResult = WxStationRunner.Run();
-			ConsoleReport.PrintWxStationServiceResult("Wx Stations: GeoJSON", wxStationResult);
+			// WxStationServiceResult wxStationResult = WxStationRunner.Run();
+			// ConsoleReport.PrintWxStationServiceResult("Wx Stations: GeoJSON", wxStationResult);
+
+			ProcedureServiceResult procedureResult = ProcedureRunner.Run(allNasrCsvData);
+			ConsoleReport.PrintProcedureServiceResult("Procedures: Changes + JSON", procedureResult);
 		}
 		catch (Exception ex)
 		{

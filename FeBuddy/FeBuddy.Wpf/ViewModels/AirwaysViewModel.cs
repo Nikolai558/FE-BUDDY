@@ -244,7 +244,7 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 			["BufferAirwayWaypoints"] = YesNo(BufferAirwayWaypoints),
 			["AliasRoiScope"] = AliasRoiAirwaysOnly ? "RoiAirways" : "All",
 			["SplitAtAntimeridian"] = YesNo(SplitAtAntimeridian),
-			["ExcludedDesignations"] = string.Join(',', Designations.Where(d => !d.Included).Select(d => d.Designation)),
+			["ExcludedDesignations"] = ExcludedDesignationsValue(),
 		};
 
 		AddSharedSettings(s);
@@ -288,7 +288,7 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 		Set("BufferAirwayWaypoints", YesNo(BufferAirwayWaypoints));
 		Set("AliasRoiScope", AliasRoiAirwaysOnly ? "RoiAirways" : "All");
 		Set("SplitAtAntimeridian", YesNo(SplitAtAntimeridian));
-		Set("ExcludedDesignations", string.Join(',', Designations.Where(d => !d.Included).Select(d => d.Designation)));
+		Set("ExcludedDesignations", ExcludedDesignationsValue());
 		SaveSharedSettings();
 	}
 
@@ -359,6 +359,16 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 	// ================= helpers =================
 
 	private HashSet<string> ParseExcludedFromConfig() => ParseList(Get("ExcludedDesignations"));
+
+	/// <summary>
+	/// The excluded designations as saved and sent: from the toggles, or - before the cycle's list
+	/// is built - the saved ones, so a save in the meantime keeps them instead of clearing them.
+	/// </summary>
+	/// <returns>The comma-separated designations.</returns>
+	private string ExcludedDesignationsValue() =>
+		Designations.Count > 0
+			? string.Join(',', Designations.Where(d => !d.Included).Select(d => d.Designation))
+			: string.Join(',', ParseExcludedFromConfig().Order(StringComparer.OrdinalIgnoreCase));
 
 	/// <summary>The groups the GeoJSON is split into: the altitude classes, or each included designation.</summary>
 	/// <returns>The group names, in display order.</returns>

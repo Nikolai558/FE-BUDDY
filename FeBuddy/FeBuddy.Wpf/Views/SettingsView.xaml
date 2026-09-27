@@ -27,13 +27,19 @@
             <Border Style="{StaticResource Divider}" VerticalAlignment="Bottom" />
         </Grid>
 
-        <!-- pinned action bar: subtitle on the left, dirty indicator + Save grouped on the right -->
+        <!-- pinned action bar: subtitle on the left; dirty indicator, Import / Export and Save grouped on the right -->
         <Grid Grid.Row="1" Background="{StaticResource Brush.Bg.Base}">
             <DockPanel Margin="28,14">
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
                     <TextBlock VerticalAlignment="Center" Style="{StaticResource Text.Caption}"
                                Foreground="{StaticResource Brush.Warn}" Text="Unsaved changes" Margin="0,0,12,0"
                                Visibility="{Binding IsDirty, Converter={StaticResource BoolToVis}}" />
+                    <Button Style="{StaticResource Button.Ghost}" Content="Import…" Margin="0,0,8,0"
+                            Command="{Binding ImportCommand}"
+                            ToolTip="Make this PC's settings match a settings file someone exported. Their folders are moved into your own user folders and only used where they work on this PC; your update channel stays as it is." />
+                    <Button Style="{StaticResource Button.Ghost}" Content="Export…" Margin="0,0,8,0"
+                            Command="{Binding ExportCommand}"
+                            ToolTip="Save every FE-Buddy setting to a file you can share. Folders under your Desktop, Documents or user folder are written so they work on another PC; settings that only apply to this PC are left out." />
                     <Button Style="{StaticResource Button.Primary}" Content="Save"
                             Command="{Binding SaveCommand}" MinWidth="90" />
                 </StackPanel>

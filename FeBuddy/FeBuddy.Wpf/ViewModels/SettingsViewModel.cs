@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Globalization;
 using System.IO;
+using System.Text;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Threading;
@@ -17,7 +18,9 @@ using FeBuddy.Core.Application.Updates.Models;
 using FeBuddy.Core.Domain.Airac.Models;
 using FeBuddy.Core.Domain.Geo.Models;
 using FeBuddy.Core.Infrastructure.Configuration;
+using FeBuddy.Core.Infrastructure.Configuration.Models;
 using FeBuddy.Core.Infrastructure.Logging;
+using FeBuddy.Core.Infrastructure.Platform;
 
 using Microsoft.Win32;
 
@@ -39,8 +42,12 @@ namespace FeBuddy.Wpf.ViewModels;
 /// the page keeps the saved ROI apart from the one on screen: an edit here stays pending until
 /// Save, and a change made on the Map shows here unless an edit here is still pending.
 /// </para>
+/// <para>
+/// Export and Import move every setting in the app (not only this page's) to and from a file,
+/// through <see cref="UserConfigTransfer"/>, so one user's setup can be handed to another.
+/// </para>
 /// </remarks>
-public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges
+public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IConfigPage
 {
 	private const string ChannelKey = UserConfigKeys.UpdateChannel;
 	private const string OutputDirKey = UserConfigKeys.DefaultOutputDirectory;
@@ -79,17 +86,9 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges
 		_dispatcher = Application.Current?.Dispatcher ?? Dispatcher.CurrentDispatcher;
 		_openUpdateWindow = openUpdateWindow;
 
-		_channel = VersionCheckResult.ParseChannel(UserConfigFile.GetValue(ChannelKey));
-		_selectedFacility = Blank(UserConfigFile.GetValue(ArtccKey));
-		_outputDir = OutputPreferences.Directory;
-		_addFeBuddyFolder = OutputPreferences.AddFeBuddyOutputFolder;
-		_coordinatePrecision = int.TryParse(UserConfigFile.GetValue(PrecisionKey), out int p) && p is >= 0 and <= 15 ? p : 6;
-		_prettyPrintGeojson = string.Equals(
-			UserConfigFile.GetValue(UserConfigKeys.PrettyPrintGeojson)?.Trim(), "Y", StringComparison.OrdinalIgnoreCase);
-
-		_savedRoi = DefaultRoiStore.Load();
-		_defaultRoi = _savedRoi;
+		LoadFromConfig();
 		DefaultRoiStore.Changed += OnDefaultRoiChanged;
+		ConfigPages.Register(this);
 
 		SaveCommand = new RelayCommand(Save, () => IsDirty);
 		CheckNowCommand = new RelayCommand(CheckForUpdates, () => AppEnvironment.HasInternetConnection && !IsCheckingForUpdates);
@@ -98,12 +97,11 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges
 		SetPrecisionCommand = new RelayCommand<string>(p => { if (int.TryParse(p, out int n)) CoordinatePrecision = n; });
 		EditRoiCommand = new RelayCommand(EditRoi);
 		ClearRoiCommand = new RelayCommand(ClearRoi, () => DefaultRoi is not null);
+		ExportCommand = new RelayCommand(Export);
+		ImportCommand = new RelayCommand(Import);
 
 		AiracCycleDataCache.Instance.StateChanged += (_, _) => _dispatcher.BeginInvoke(RefreshFacilities);
 		RefreshFacilities();
-
-		// Everything above is the loaded state; the page is clean until it differs from this.
-		_savedState = SavedStateSnapshot.Of(CurrentValues());
 	}
 
 	/// <summary><see langword="true"/> when a saved setting has been edited since the last Save.</summary>
@@ -124,6 +122,9 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges
 
 	/// <inheritdoc />
 	public bool HasUnsavedChanges => IsDirty;
+
+	/// <inheritdoc />
+	public string ConfigPageName => "Settings";
 
 	/// <summary>
 	/// Re-evaluates the page after a setting changed. Call from every setter whose value <see cref="Save"/>
@@ -360,6 +361,20 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges
 	/// <summary>Writes every setting on the page to <c>UserConfig.json</c>. Live only while <see cref="IsDirty"/>.</summary>
 	public ICommand SaveCommand { get; }
 
+	// ================= export / import =================
+
+	/// <summary>The file-dialog filter for settings files.</summary>
+	private const string SettingsFileFilter = "FE-Buddy settings (*.json)|*.json|All files (*.*)|*.*";
+
+	/// <summary>Writes every saved setting that can leave this PC to a file the user picks.</summary>
+	public ICommand ExportCommand { get; }
+
+	/// <summary>Reads a settings file the user picks, shows what it would change, and imports it once confirmed.</summary>
+	public ICommand ImportCommand { get; }
+
+	/// <inheritdoc />
+	public void ReloadFromConfig() => LoadFromConfig();
+
 	private async void CheckForUpdates()
 	{
 		IsCheckingForUpdates = true;
@@ -440,6 +455,216 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges
 		IsDirty = false;
 		Toast.Success("Settings saved", "Written to UserConfig.json.");
 	}
+
+	/// <summary>
+	/// Puts every value on the page to what <c>UserConfig</c> holds, dropping unsaved edits. The
+	/// values read become the saved state: the page is clean until one differs from it.
+	/// </summary>
+	private void LoadFromConfig()
+	{
+		Channel = VersionCheckResult.ParseChannel(UserConfigFile.GetValue(ChannelKey));
+		SelectedFacility = Blank(UserConfigFile.GetValue(ArtccKey));
+		OutputDirectory = OutputPreferences.Directory;
+		AddFeBuddyOutputFolder = OutputPreferences.AddFeBuddyOutputFolder;
+		CoordinatePrecision = int.TryParse(UserConfigFile.GetValue(PrecisionKey), out int p) && p is >= 0 and <= 15 ? p : 6;
+		PrettyPrintGeojson = string.Equals(
+			UserConfigFile.GetValue(UserConfigKeys.PrettyPrintGeojson)?.Trim(), "Y", StringComparison.OrdinalIgnoreCase);
+
+		_savedRoi = DefaultRoiStore.Load();
+		DefaultRoi = _savedRoi;
+
+		_savedState = SavedStateSnapshot.Of(CurrentValues());
+		MarkDirty();
+	}
+
+	private void Export()
+	{
+		Window? owner = Application.Current?.MainWindow;
+
+		// The export is of what is saved; edits still on screen would silently be missing from it.
+		IReadOnlyList<string> unsaved = ConfigPages.WithUnsavedChanges();
+		if (unsaved.Count > 0
+			&& !ConfirmWindow.Show(
+				owner,
+				"Unsaved changes",
+				$"{JoinNames(unsaved)} {(unsaved.Count == 1 ? "has" : "have")} unsaved changes, which will not be in the export. "
+				+ "Save them first to include them.",
+				confirmText: "Export saved settings"))
+		{
+			return;
+		}
+
+		string facility = string.IsNullOrWhiteSpace(SelectedFacility) ? string.Empty : $" {SelectedFacility}";
+
+		SaveFileDialog dialog = new()
+		{
+			Title = "Export FE-Buddy settings",
+			Filter = SettingsFileFilter,
+			DefaultExt = ".json",
+			AddExtension = true,
+			FileName = $"FE-Buddy Settings{facility} {DateTime.Now:yyyy-MM-dd}.json",
+			InitialDirectory = Directory.Exists(OutputPreferences.Directory) ? OutputPreferences.Directory : null,
+		};
+
+		if (dialog.ShowDialog(owner) != true)
+		{
+			return;
+		}
+
+		try
+		{
+			UserConfigExportResult result = UserConfigTransfer.Export(dialog.FileName);
+			string leftOut = result.LeftOutCount > 0 ? " Settings that only apply to this PC were left out." : string.Empty;
+			Toast.Success("Settings exported", $"{result.SettingCount} settings written to {Path.GetFileName(result.Path)}.{leftOut}");
+		}
+		catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+		{
+			AppLog.Warning("Settings", $"Could not export settings to '{dialog.FileName}': {ex.Message}");
+			Toast.Error("Export failed", ex.Message);
+		}
+	}
+
+	private void Import()
+	{
+		Window? owner = Application.Current?.MainWindow;
+
+		OpenFileDialog dialog = new()
+		{
+			Title = "Import FE-Buddy settings",
+			Filter = SettingsFileFilter,
+			Multiselect = false,
+		};
+
+		if (dialog.ShowDialog(owner) != true)
+		{
+			return;
+		}
+
+		UserConfigImportPlan plan;
+		try
+		{
+			plan = UserConfigTransfer.Plan(UserConfigTransfer.Read(dialog.FileName));
+		}
+		catch (UserConfigTransferException ex)
+		{
+			AppLog.Warning("Settings", $"Could not import '{dialog.FileName}': {ex.Message}");
+			Toast.Error("Cannot import settings", ex.Message);
+			return;
+		}
+
+		if (!plan.HasChanges)
+		{
+			Toast.Info("Nothing to import", $"{plan.Package.FileName} has the same settings as this PC.");
+			return;
+		}
+
+		if (!ConfirmWindow.Show(owner, "Import settings", DescribeImport(plan, ConfigPages.WithUnsavedChanges()), confirmText: "Import"))
+		{
+			return;
+		}
+
+		try
+		{
+			UserConfigTransfer.Apply(plan);
+		}
+		catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+		{
+			AppLog.Warning("Settings", $"Could not import '{dialog.FileName}': {ex.Message}");
+			Toast.Error("Import failed", $"Nothing was changed. {ex.Message}");
+			return;
+		}
+
+		// Every page built so far read its values once; have each read the imported ones.
+		OutputFormatting.LoadFromUserConfig();
+		ConfigPages.ReloadAll();
+		MapLayersState.ReloadFromConfigIfCreated();
+		DefaultRoiStore.NotifyReloaded();
+
+		string skipped = plan.SkippedFolders.Count > 0
+			? " Some of its folders do not work on this PC, so yours were kept."
+			: string.Empty;
+		Toast.Success("Settings imported", $"{plan.ChangedCount} settings updated from {plan.Package.FileName}.{skipped}");
+	}
+
+	/// <summary>The import confirmation: what changes, what this PC keeps, and what is lost.</summary>
+	/// <param name="plan">The import.</param>
+	/// <param name="unsavedPages">The pages whose unsaved edits the import would drop.</param>
+	/// <returns>The dialog text.</returns>
+	private static string DescribeImport(UserConfigImportPlan plan, IReadOnlyList<string> unsavedPages)
+	{
+		UserConfigPackage package = plan.Package;
+		StringBuilder text = new();
+
+		text.Append(CultureInfo.InvariantCulture, $"Import the settings in {package.FileName}");
+		if (package.IsPlainConfigFile)
+		{
+			text.Append(" (a UserConfig.json from another PC)");
+		}
+		else if (package.AppVersion is { } version)
+		{
+			string when = package.ExportedUtc is { } exported
+				? $" on {exported.ToLocalTime().ToString("d MMM yyyy", CultureInfo.InvariantCulture)}"
+				: string.Empty;
+			text.Append(CultureInfo.InvariantCulture, $" (exported from FE-Buddy v{version.TrimStart('v', 'V')}{when})");
+		}
+
+		text.Append(CultureInfo.InvariantCulture, $"?\n\n{plan.ChangedCount} {(plan.ChangedCount == 1 ? "setting changes" : "settings change")}.");
+
+		// The same settings can produce different output on a different version of FE-Buddy.
+		string running = AppVersion.Current.TrimStart('v', 'V');
+		if (package.AppVersion?.TrimStart('v', 'V') is { } theirs && !string.Equals(theirs, running, StringComparison.OrdinalIgnoreCase))
+		{
+			text.Append(
+				$"\n\nThis PC runs FE-Buddy v{running}, the file came from v{theirs}. The settings import all the same, "
+				+ "but for identical output both PCs should run the same version.");
+		}
+
+		if (plan.AppliedFolders.Count > 0)
+		{
+			text.Append("\n\nFolders:");
+			foreach (ImportedFolder folder in plan.AppliedFolders)
+			{
+				string detail = folder.Path.Length == 0 ? folder.Note!
+					: folder.Note is null ? folder.Path
+					: $"{folder.Path} ({folder.Note})";
+				text.Append(CultureInfo.InvariantCulture, $"\n  • {folder.Label}: {detail}");
+			}
+		}
+
+		if (plan.SkippedFolders.Count > 0)
+		{
+			text.Append("\n\nFolders kept as they are on this PC:");
+			foreach (ImportedFolder folder in plan.SkippedFolders)
+			{
+				text.Append(CultureInfo.InvariantCulture, $"\n  • {folder.Label}: the file's {folder.Path} {folder.Note}");
+			}
+		}
+
+		if (plan.KeptForThisPc.Count > 0)
+		{
+			string kept = JoinNames([.. plan.KeptForThisPc.Select(label => char.ToLowerInvariant(label[0]) + label[1..])]);
+			text.Append(CultureInfo.InvariantCulture, $"\n\nKept as they are on this PC: {kept}.");
+		}
+
+		if (unsavedPages.Count > 0)
+		{
+			text.Append(CultureInfo.InvariantCulture, $"\n\nUnsaved changes on {JoinNames(unsavedPages)} will be lost.");
+		}
+
+		text.Append(CultureInfo.InvariantCulture, $"\n\nYour current settings are kept in {Path.GetFileName(UserConfigFile.BeforeImportFilePath)} in case you want them back.");
+
+		return text.ToString();
+	}
+
+	/// <summary>e.g. <c>Settings, Airways and Fixes</c>.</summary>
+	/// <param name="names">The names.</param>
+	/// <returns>The names as one phrase.</returns>
+	private static string JoinNames(IReadOnlyList<string> names) => names.Count switch
+	{
+		0 => string.Empty,
+		1 => names[0],
+		_ => $"{string.Join(", ", names.Take(names.Count - 1))} and {names[^1]}",
+	};
 
 	private void RefreshFacilities()
 	{

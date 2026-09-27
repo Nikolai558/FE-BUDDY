@@ -23,4 +23,10 @@ public static class UserConfigKeys
 
 	/// <summary>How many decimal places GeoJSON coordinates are rounded to, 0 to 15 (6 when unset).</summary>
 	public const string CoordinatePrecision = "Services.AiracService.CoordinatePrecision";
+
+	/// <summary>
+	/// The output GeoJSON files the Map shows, <c>|</c>-joined and relative to the cycle's output
+	/// folder - so the same picks work on any PC, and show as missing until that PC has run them.
+	/// </summary>
+	public const string MapOutputGeojson = "Services.MapService.OutputGeojson";
 }

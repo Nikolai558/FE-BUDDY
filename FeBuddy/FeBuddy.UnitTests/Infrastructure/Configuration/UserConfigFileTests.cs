@@ -259,4 +259,54 @@ public sealed class UserConfigFileTests : IDisposable
 		Assert.Null(UserConfigFile.GetValue("General.UpdateChannel"));
 		Assert.False(UserConfigFile.CanUndo(GeneralNode));
 	}
+
+	/// <summary><see cref="UserConfigFile.ReplaceAll"/> swaps every value, backs up the old file and drops the per-node undo snapshots.</summary>
+	[Fact]
+	public void replace_all_swaps_every_value_backs_up_the_file_and_drops_undo()
+	{
+		UserConfigFile.TrySetValue("General.UpdateChannel", "Beta");
+		UserConfigFile.Save(GeneralNode);
+		UserConfigFile.TrySetValue("General.UpdateChannel", "Alpha");
+		UserConfigFile.Save(GeneralNode);
+		Assert.True(UserConfigFile.CanUndo(GeneralNode));
+
+		UserConfigFile.ReplaceAll(new Dictionary<string, string>
+		{
+			["Services.AiracService.UserArtccId"] = "ZOB",
+			["General..Broken"] = "dropped",
+			["General.PrettyPrintGeojson"] = null!,
+		});
+
+		Assert.Equal("ZOB", UserConfigFile.GetValue("Services.AiracService.UserArtccId"));
+		Assert.Null(UserConfigFile.GetValue("General.UpdateChannel"));
+		Assert.Null(UserConfigFile.GetValue("General..Broken"));
+		Assert.Equal(string.Empty, UserConfigFile.GetValue("General.PrettyPrintGeojson"));
+		Assert.False(UserConfigFile.CanUndo(GeneralNode));
+
+		JsonNode backup = JsonNode.Parse(File.ReadAllText(UserConfigFile.BeforeImportFilePath))!;
+		Assert.Equal("Alpha", backup["General"]!["UpdateChannel"]!.GetValue<string>());
+	}
+
+	/// <summary>With no config file yet there is nothing to back up, and the new file is still written.</summary>
+	[Fact]
+	public void replace_all_without_a_file_writes_one_and_no_backup()
+	{
+		UserConfigFile.ReplaceAll(new Dictionary<string, string> { ["General.PrettyPrintGeojson"] = "Y" });
+
+		Assert.True(File.Exists(UserConfigFile.ConfigFilePath));
+		Assert.False(File.Exists(UserConfigFile.BeforeImportFilePath));
+		Assert.Equal("Y", UserConfigFile.GetValue("General.PrettyPrintGeojson"));
+	}
+
+	/// <summary>A copy of the values is handed out, so changing it does not change the config.</summary>
+	[Fact]
+	public void snapshot_values_is_a_copy()
+	{
+		UserConfigFile.TrySetValue("General.UpdateChannel", "Beta");
+
+		IReadOnlyDictionary<string, string> snapshot = UserConfigFile.SnapshotValues();
+		UserConfigFile.TrySetValue("General.UpdateChannel", "Alpha");
+
+		Assert.Equal("Beta", snapshot["General.UpdateChannel"]);
+	}
 }

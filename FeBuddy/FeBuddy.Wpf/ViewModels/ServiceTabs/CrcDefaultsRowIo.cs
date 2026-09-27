@@ -14,7 +14,11 @@ namespace FeBuddy.Wpf.ViewModels.ServiceTabs;
 /// </remarks>
 public static class CrcDefaultsRowIo
 {
-	/// <summary>Restores a row from the tab's saved config; a field with nothing saved keeps its value.</summary>
+	/// <summary>
+	/// Restores a row from the tab's saved config. A field with nothing saved is blank, as a new
+	/// row starts - never what the row held before, or a reload (discard, undo, a settings import)
+	/// would keep a value the config no longer has and the next save would write it back.
+	/// </summary>
 	/// <param name="row">The row to fill.</param>
 	/// <param name="prefix">Where the row is saved under the tab's node, e.g. <c>CrcEramPropertyDefaults.Airports_Symbol</c>.</param>
 	/// <param name="get">Reads one of the tab's saved values by its key under the tab's node.</param>
@@ -23,30 +27,30 @@ public static class CrcDefaultsRowIo
 		ArgumentNullException.ThrowIfNull(row);
 		ArgumentNullException.ThrowIfNull(get);
 
-		row.Bcg = get($"{prefix}.bcg") ?? row.Bcg;
-		row.Filters = get($"{prefix}.filters") ?? row.Filters;
+		row.Bcg = get($"{prefix}.bcg") ?? string.Empty;
+		row.Filters = get($"{prefix}.filters") ?? string.Empty;
 
 		if (row.ShowStyle)
 		{
-			row.Style = get($"{prefix}.style") ?? row.Style;
+			row.Style = get($"{prefix}.style") ?? string.Empty;
 		}
 
 		if (row.ShowThickness)
 		{
-			row.Thickness = get($"{prefix}.thickness") ?? row.Thickness;
+			row.Thickness = get($"{prefix}.thickness") ?? string.Empty;
 		}
 
 		if (row.ShowSize)
 		{
-			row.Size = get($"{prefix}.size") ?? row.Size;
+			row.Size = get($"{prefix}.size") ?? string.Empty;
 		}
 
 		if (row.ShowTextOptions)
 		{
-			row.Underline = get($"{prefix}.underline") ?? row.Underline;
-			row.Opaque = get($"{prefix}.opaque") ?? row.Opaque;
-			row.XOffset = get($"{prefix}.xOffset") ?? row.XOffset;
-			row.YOffset = get($"{prefix}.yOffset") ?? row.YOffset;
+			row.Underline = get($"{prefix}.underline") ?? string.Empty;
+			row.Opaque = get($"{prefix}.opaque") ?? string.Empty;
+			row.XOffset = get($"{prefix}.xOffset") ?? string.Empty;
+			row.YOffset = get($"{prefix}.yOffset") ?? string.Empty;
 		}
 	}
 

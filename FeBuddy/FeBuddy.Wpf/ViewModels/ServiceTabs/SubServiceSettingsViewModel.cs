@@ -29,7 +29,7 @@ namespace FeBuddy.Wpf.ViewModels.ServiceTabs;
 /// commands here - a tab hosted on its own still works exactly the same way.
 /// </para>
 /// </remarks>
-public abstract class SubServiceSettingsViewModel : ServiceTabViewModel
+public abstract class SubServiceSettingsViewModel : ServiceTabViewModel, IConfigPage
 {
 	private Dictionary<string, string>? _captureBuffer;
 	private SavedStateSnapshot? _savedState;
@@ -40,6 +40,9 @@ public abstract class SubServiceSettingsViewModel : ServiceTabViewModel
 		SaveCommand = new RelayCommand(() => Save(), () => IsDirty);
 		UndoLastSaveCommand = new RelayCommand(UndoLastSave, () => CanUndo);
 		RevertChangesCommand = new RelayCommand(RevertChanges, () => IsDirty);
+
+		// Tabs live for the session, so a settings import has to reach them.
+		ConfigPages.Register(this);
 	}
 
 	/// <summary>Raised after a successful <see cref="Save"/>.</summary>
@@ -47,6 +50,9 @@ public abstract class SubServiceSettingsViewModel : ServiceTabViewModel
 
 	/// <summary>The dotted <c>UserConfig</c> path this menu owns, e.g. <c>Services.AiracService.Geojson.Airways</c>.</summary>
 	public abstract string NodePath { get; }
+
+	/// <inheritdoc />
+	public virtual string ConfigPageName => Title;
 
 	/// <summary>Whether <see cref="UndoLastSaveCommand"/> can restore a previous save of this node.</summary>
 	public bool CanUndo => UserConfigFile.CanUndo(NodePath);
@@ -137,10 +143,7 @@ public abstract class SubServiceSettingsViewModel : ServiceTabViewModel
 			return;
 		}
 
-		LoadFromConfig();
-		OnReloadedFromConfig();
-		ClearDirty();
-		CommandManager.InvalidateRequerySuggested();
+		ReloadFromConfig();
 		Toast.Info("Changes discarded", $"{Title} is back to its last saved settings.");
 	}
 
@@ -152,12 +155,21 @@ public abstract class SubServiceSettingsViewModel : ServiceTabViewModel
 			return;
 		}
 
+		ReloadFromConfig();
+		Toast.Info("Reverted", $"{Title} settings reverted to the previous save.");
+	}
+
+	/// <summary>
+	/// Re-reads this tab from the config, dropping unsaved edits: after a discard, an undo, or a
+	/// settings import that replaced the file underneath it.
+	/// </summary>
+	public void ReloadFromConfig()
+	{
 		LoadFromConfig();
 		OnReloadedFromConfig();
 		ClearDirty();
 		OnPropertyChanged(nameof(CanUndo));
 		CommandManager.InvalidateRequerySuggested();
-		Toast.Info("Reverted", $"{Title} settings reverted to the previous save.");
 	}
 
 	/// <summary>
@@ -271,8 +283,8 @@ public abstract class SubServiceSettingsViewModel : ServiceTabViewModel
 			StringComparer.OrdinalIgnoreCase);
 
 	/// <summary>
-	/// Called after <see cref="RevertChanges"/> or <see cref="UndoLastSave"/> has reloaded this
-	/// tab from the config. The base does nothing.
+	/// Called after <see cref="ReloadFromConfig"/> has reloaded this tab from the config (a
+	/// discard, an undo or an import). The base does nothing.
 	/// </summary>
 	/// <remarks>
 	/// <see cref="LoadFromConfig"/> restores values with its change events suppressed, which is

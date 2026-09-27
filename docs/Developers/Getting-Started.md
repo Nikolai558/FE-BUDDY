@@ -124,6 +124,8 @@ separately.
 
 - **`DEV-CleanBuild.bat`** (repository root) empties every project's `bin\` folder, for when a
   build gets confused.
-- **`FEBUDDY_GITHUB_TOKEN`** (optional environment variable) - a GitHub token the version check,
-  News and update download fall back to if an anonymous request fails (for example after GitHub's
-  60-requests-an-hour limit). Nobody needs it for normal use.
+- **A GitHub token** (optional) - save one in Settings ▸ Credentials and tick "use it for
+  FE-Buddy's update checks, News and update downloads"; they fall back to it if an anonymous
+  request fails (for example after GitHub's 60-requests-an-hour limit). Nobody needs it for normal
+  use. The old `FEBUDDY_GITHUB_TOKEN` environment variable is no longer read; Settings offers to
+  move it into a credential. See [Credentials](Credentials.md).

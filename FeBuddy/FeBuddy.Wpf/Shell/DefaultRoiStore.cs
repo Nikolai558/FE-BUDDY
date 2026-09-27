@@ -63,6 +63,12 @@ public static class DefaultRoiStore
 		Changed?.Invoke(null, EventArgs.Empty);
 	}
 
+	/// <summary>
+	/// Raises <see cref="Changed"/> without writing anything: for when the whole config was replaced
+	/// (a settings import), so every page showing the default ROI re-reads it.
+	/// </summary>
+	public static void NotifyReloaded() => Changed?.Invoke(null, EventArgs.Empty);
+
 	/// <summary>Turns the default ROI off. Its coordinates stay in the file (see <see cref="Load"/>).</summary>
 	public static void Clear()
 	{

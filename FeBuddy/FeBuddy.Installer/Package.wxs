@@ -61,8 +61,20 @@
     <InstallUISequence>
       <Custom Action="EnforceVersionPolicy" After="AppSearch" />
     </InstallUISequence>
+    <!--
+      On a full uninstall - never an upgrade, like the folder cleanup in UninstallCleanup.wxs - remove
+      the user's FE-Buddy credentials from Windows Credential Manager. Immediate, so it runs as the
+      user whose credentials they are; Return="ignore" so a failure can never block an uninstall.
+    -->
+    <CustomAction Id="RemoveFeBuddyCredentials"
+                  BinaryRef="VersionPolicyCA"
+                  DllEntry="RemoveFeBuddyCredentials"
+                  Execute="immediate"
+                  Return="ignore" />
     <InstallExecuteSequence>
       <Custom Action="EnforceVersionPolicy" After="AppSearch" />
+      <Custom Action="RemoveFeBuddyCredentials" After="InstallInitialize"
+              Condition="REMOVE=&quot;ALL&quot; AND NOT UPGRADINGPRODUCTCODE" />
     </InstallExecuteSequence>
 
     <Launch Condition="VERSIONPOLICY_BLOCKED = &quot;0&quot;"

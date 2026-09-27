@@ -3,7 +3,6 @@ using System.Net;
 using FeBuddy.Core.Application.Updates;
 using FeBuddy.Core.Application.Updates.Models;
 using FeBuddy.Core.Infrastructure.FileSystem;
-using FeBuddy.Core.Infrastructure.GitHub;
 using FeBuddy.Core.Infrastructure.Logging;
 using FeBuddy.Versioning.Models;
 
@@ -25,12 +24,12 @@ public sealed class UpdateInstallerTests : IDisposable
 	{
 		AppLog.ConfigureForTesting(Path.Combine(_tempRoot, "logs"));
 		TempWorkspace.ConfigureForTesting(_tempRoot);
-		Environment.SetEnvironmentVariable(GitHubAuth.EnvironmentVariableName, null);
+		TestCredentials.Reset();
 	}
 
 	public void Dispose()
 	{
-		Environment.SetEnvironmentVariable(GitHubAuth.EnvironmentVariableName, null);
+		TestCredentials.Reset();
 		TempWorkspace.ConfigureForTesting(null);
 		AppLog.ConfigureForTesting(null);
 		try
@@ -116,7 +115,7 @@ public sealed class UpdateInstallerTests : IDisposable
 	[Fact]
 	public async Task download_async_public_url_fails_retries_through_the_assets_api_with_the_token()
 	{
-		Environment.SetEnvironmentVariable(GitHubAuth.EnvironmentVariableName, "test-token");
+		using IDisposable token = TestCredentials.UseGitHubToken("test-token");
 		HttpRequestMessage? retry = null;
 		using HttpClient client = new(new StubHttpHandler(request =>
 		{
@@ -140,7 +139,7 @@ public sealed class UpdateInstallerTests : IDisposable
 	[Fact]
 	public async Task download_async_no_asset_id_does_not_retry_with_the_token()
 	{
-		Environment.SetEnvironmentVariable(GitHubAuth.EnvironmentVariableName, "test-token");
+		using IDisposable token = TestCredentials.UseGitHubToken("test-token");
 		int calls = 0;
 		using HttpClient client = new(new StubHttpHandler(_ =>
 		{

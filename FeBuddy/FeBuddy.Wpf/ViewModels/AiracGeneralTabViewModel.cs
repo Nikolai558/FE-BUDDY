@@ -67,6 +67,9 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 	/// <inheritdoc />
 	public override string Title => "General";
 
+	/// <inheritdoc />
+	public override string ConfigPageName => "AIRAC Services General";
+
 	/// <summary>The three selectable cycles with their live cache state.</summary>
 	public ObservableCollection<CycleOption> CycleOptions { get; }
 

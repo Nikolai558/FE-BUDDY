@@ -31,7 +31,7 @@ namespace FeBuddy.Core.Application.Updates;
 /// <para>
 /// Releases come from the public repository (<see cref="GitHubRepository"/>), where 2.x and
 /// 3.x releases share one list. The request is tried unauthenticated first; only if that fails,
-/// and only if <see cref="GitHubAuth.EnvironmentVariableName"/> is set, it retries once with
+/// and only if the user chose a GitHub token (<see cref="GitHubAuth"/>), it retries once with
 /// that token (see <see cref="GitHubAuth"/> for why the token is a fallback).
 /// </para>
 /// </remarks>
@@ -82,7 +82,7 @@ public static partial class VersionCheck
 				string? token = GitHubAuth.GetOptionalToken();
 				if (token is not null)
 				{
-					AppLog.Info(LogSource, $"Unauthenticated release check returned {(int)response.StatusCode}; retrying with {GitHubAuth.EnvironmentVariableName}.");
+					AppLog.Info(LogSource, $"Unauthenticated release check returned {(int)response.StatusCode}; retrying with {GitHubAuth.TokenDescription}.");
 					response.Dispose();
 					response = await SendReleasesRequestAsync(client, token, cancellationToken).ConfigureAwait(false);
 				}

@@ -55,6 +55,7 @@ All in `FeBuddy/FeBuddy.sln`:
 | find or add code in the app | [FeBuddy.Wpf](FeBuddy.Wpf/README.md) |
 | know every settings key a sub-service reads | [Settings blocks](Settings-Blocks.md) |
 | know every saved setting | [UserConfig.json reference](UserConfig-Reference.md) |
+| use a saved password or token in a feature | [Credentials](Credentials.md) |
 | cut a release | [Versioning](VERSIONING.md) |
 | pick something up | [TODO](TODO.md) |
 

@@ -18,6 +18,9 @@ public static class Links
 	/// <summary>The issue and feature-request tracker.</summary>
 	public const string Issues = "https://github.com/Nikolai558/FE-BUDDY/issues";
 
+	/// <summary>GitHub's page for creating a fine-grained personal access token.</summary>
+	public const string GitHubNewToken = "https://github.com/settings/personal-access-tokens/new";
+
 	/// <summary>The issue tracker with a trailing slash, for turning a <c>#123</c> reference into a link.</summary>
 	public const string IssueUrlBase = Issues + "/";
 }

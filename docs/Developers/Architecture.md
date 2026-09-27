@@ -329,8 +329,9 @@ The FAA's data has quirks; these rules handle them. Each lives in one class.
 - **News** (`NewsService`). `FeBuddy/FeBuddy.Core/News.md` on `v3-development`, fetched from GitHub
   (the bundled copy when offline). Posts carry a `PostId` (`yyyy-mm-dd.N`); the newest is compared
   with `General.NewsLastOpen` to light up the News button.
-- Every GitHub request works anonymously; `FEBUDDY_GITHUB_TOKEN` is only a fallback after an
-  anonymous request fails.
+- Every GitHub request works anonymously; a GitHub token the user saved in Settings ▸ Credentials
+  is only a fallback after an anonymous request fails. Credentials live in Windows Credential
+  Manager, never in `UserConfig.json` - see [Credentials](Credentials.md).
 
 ## Design decisions
 

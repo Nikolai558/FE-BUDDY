@@ -41,7 +41,7 @@ namespace FeBuddy.Wpf.ViewModels;
 public sealed class MapLayersState : ObservableObject
 {
 	private const string Node = "Services.MapService";
-	private const string OutputKey = Node + ".OutputGeojson";
+	private const string OutputKey = UserConfigKeys.MapOutputGeojson;
 	private const string AiracKey = Node + ".AiracLayers";
 	private const string HomeKey = Node + ".Home";
 
@@ -71,6 +71,7 @@ public sealed class MapLayersState : ObservableObject
 	private string _outputFilter = string.Empty;
 	private bool _isPanelOpen = true;
 	private MapHome? _home;
+	private bool _reloadingFromConfig;
 	private ICollectionView _outputChoicesView = CollectionViewSource.GetDefaultView(Array.Empty<OutputFileChoice>());
 	private IReadOnlyList<AiracOutputGeojsonFile> _listedFiles = [];
 
@@ -115,6 +116,13 @@ public sealed class MapLayersState : ObservableObject
 
 	/// <summary>The one instance every map shares. Created on the UI thread on first use.</summary>
 	public static MapLayersState Shared => _shared ??= new MapLayersState();
+
+	/// <summary>
+	/// Re-reads the home view, the live-layer switches and the chosen output files after a
+	/// settings import replaced <c>UserConfig</c>. Does nothing until a map has been opened: the
+	/// state is read fresh then.
+	/// </summary>
+	public static void ReloadFromConfigIfCreated() => _shared?.ReloadFromConfig();
 
 	/// <summary>Raised when the maps should frame some layers (a file just loaded, or its zoom button).</summary>
 	public event EventHandler<IReadOnlyList<MapLayer>>? FrameLayersRequested;
@@ -332,6 +340,46 @@ public sealed class MapLayersState : ObservableObject
 		RefreshOutputs();
 	}
 
+	private void ReloadFromConfig()
+	{
+		Home = MapHome.Parse(UserConfigFile.GetValue(HomeKey));
+		HashSet<string> airacOn = new(Split(UserConfigFile.GetValue(AiracKey), ','), StringComparer.OrdinalIgnoreCase);
+
+		// Set every switch without saving each one back: the file already holds these values.
+		_reloadingFromConfig = true;
+		try
+		{
+			foreach (MapLayerToggle toggle in AiracToggles)
+			{
+				toggle.IsVisible = airacOn.Contains(toggle.Kind.ToString());
+			}
+		}
+		finally
+		{
+			_reloadingFromConfig = false;
+		}
+
+		if (AiracToggles.Any(t => t.IsVisible && t.Layers is null))
+		{
+			_ = LoadAiracAsync();
+		}
+		else
+		{
+			SyncLayers();
+		}
+
+		// The picks are relative to the cycle's output folder, which the import may have moved too.
+		_selectedOutputs.Clear();
+		_selectedOutputs.UnionWith(Split(UserConfigFile.GetValue(OutputKey), '|'));
+
+		foreach (OutputFileChoice choice in OutputChoices)
+		{
+			choice.SetSelectedSilently(_selectedOutputs.Contains(choice.File.RelativePath));
+		}
+
+		RefreshOutputs();
+	}
+
 	private void ResetHome()
 	{
 		Home = null;
@@ -411,6 +459,11 @@ public sealed class MapLayersState : ObservableObject
 
 	private void OnAiracToggled(MapLayerToggle toggle)
 	{
+		if (_reloadingFromConfig)
+		{
+			return;
+		}
+
 		UserConfigFile.TrySetValue(AiracKey, string.Join(',', AiracToggles.Where(t => t.IsVisible).Select(t => t.Kind)));
 		UserConfigFile.Save(Node);
 

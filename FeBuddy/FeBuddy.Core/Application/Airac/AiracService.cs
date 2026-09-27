@@ -15,9 +15,14 @@ using FeBuddy.Core.Application.Airac.Fixes.Models;
 using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Application.Airac.Navaids;
 using FeBuddy.Core.Application.Airac.Navaids.Models;
+using FeBuddy.Core.Application.Airac.Procedures;
+using FeBuddy.Core.Application.Airac.Procedures.Models;
 using FeBuddy.Core.Application.Airac.WxStations;
 using FeBuddy.Core.Application.Airac.WxStations.Models;
 using FeBuddy.Core.Application.Models;
+using FeBuddy.Core.Domain.Airac;
+using FeBuddy.Core.Domain.Airac.Models;
+using FeBuddy.Core.Infrastructure.Dtpp.Models;
 using FeBuddy.Core.Infrastructure.Logging;
 using FeBuddy.Core.Infrastructure.Logging.Models;
 using FeBuddy.Core.Infrastructure.Nasr.Models;
@@ -28,9 +33,11 @@ namespace FeBuddy.Core.Application.Airac;
 /// <summary>
 /// The AIRAC Service: the GUI calls this once per "Run AIRAC Service". It runs each selected
 /// sub-service (Airways, Airports, Departures, Arrivals, NAVAIDs, ARTCC Boundaries, Fixes, Wx
-/// Stations) against one cycle's NASR data and gathers the results. Wx Stations is the one
-/// exception: its data does not come from the NASR cycle at all, but from a separately downloaded
-/// and cached <c>stations.cache.xml</c> (see <see cref="AiracCycleDataCache.GetWxStationsAsync"/>).
+/// Stations, Procedures) against one cycle's NASR data and gathers the results. Wx Stations and
+/// Procedures are the exceptions: Wx Stations' data does not come from the NASR cycle at all, but
+/// from a separately downloaded and cached <c>stations.cache.xml</c> (see
+/// <see cref="AiracCycleDataCache.GetWxStationsAsync"/>); Procedures also needs the selected cycle's
+/// (and the previous cycle's) FAA d-TPP Metafile (see <see cref="AiracCycleDataCache.GetDtppAsync"/>).
 /// </summary>
 /// <remarks>
 /// <para>
@@ -42,6 +49,11 @@ namespace FeBuddy.Core.Application.Airac;
 /// (<see cref="AiracServiceSettings.CycleOutputDirectory"/>): the service sets it as each
 /// block's <c>OutputDirectory</c>, so the GeoJSON of every sub-service lands in one
 /// <c>Geojson</c> folder (see <see cref="AiracOutputPaths"/>).
+/// </para>
+/// <para>
+/// Once every sub-service has run, the alias files the run wrote are checked together for
+/// commands more than one line uses (<see cref="DuplicateAliasReport"/>), and
+/// <c>Duplicate_Alias_Commands.txt</c> is written into the cycle folder.
 /// </para>
 /// </remarks>
 public static class AiracService
@@ -66,8 +78,8 @@ public static class AiracService
 	/// <summary>
 	/// Runs every selected sub-service, resolving the parsed cycle data for
 	/// <see cref="AiracServiceSettings.SelectedCycle"/> from <see cref="AiracCycleDataCache.Instance"/>
-	/// (awaiting an in-flight parse rather than starting a second one) - and, when Wx Stations is
-	/// selected, that cycle's Wx station data the same way.
+	/// (awaiting an in-flight parse rather than starting a second one) - and, when Wx Stations or
+	/// Procedures is selected, that sub-service's own supplemental data the same way.
 	/// </summary>
 	/// <param name="settings">The run's cross-cutting choices and per-sub-service settings blocks.</param>
 	/// <param name="progress">Optional per-sub-service progress for the run panel.</param>
@@ -95,7 +107,35 @@ public static class AiracService
 				.ConfigureAwait(false);
 		}
 
-		return await RunAsync(settings, nasrData, wxStationData, progress, cancellationToken).ConfigureAwait(false);
+		DtppMetafileDataCollection? dtppData = null;
+		DtppMetafileDataCollection? previousDtppData = null;
+
+		if (settings.Procedures is not null)
+		{
+			progress?.Report(new AiracServiceProgress("AIRAC", $"Loading d-TPP Metafile data for cycle {settings.SelectedCycle.AiracCycleId}"));
+			dtppData = await AiracCycleDataCache.Instance
+				.GetDtppAsync(settings.SelectedCycle.AiracCycleId, cancellationToken)
+				.ConfigureAwait(false);
+
+			// The previous cycle's metafile is what links a procedure the selected cycle deletes
+			// back to the chart it last had (see AiracSupplementalData.PreviousDtpp) - it may not be
+			// one of the three cycles the cache tracks, in which case GetDtppAsync just answers null.
+			AiracCycleInfo previousCycle = AiracCycleResolver.GetCycle(AiracCyclePosition.Previous, asOfUtc: settings.SelectedCycle.EffectiveDateUtc);
+
+			progress?.Report(new AiracServiceProgress("AIRAC", $"Loading d-TPP Metafile data for cycle {previousCycle.AiracCycleId}"));
+			previousDtppData = await AiracCycleDataCache.Instance
+				.GetDtppAsync(previousCycle.AiracCycleId, cancellationToken)
+				.ConfigureAwait(false);
+		}
+
+		AiracSupplementalData supplementalData = new()
+		{
+			WxStations = wxStationData,
+			Dtpp = dtppData,
+			PreviousDtpp = previousDtppData,
+		};
+
+		return await RunAsync(settings, nasrData, supplementalData, progress, cancellationToken).ConfigureAwait(false);
 	}
 
 	/// <summary>
@@ -125,6 +165,9 @@ public static class AiracService
 
 	/// <summary>
 	/// Runs every selected sub-service against the supplied parsed cycle data and Wx station data.
+	/// Delegates to the overload that also accepts a d-TPP Metafile, wrapping
+	/// <paramref name="wxStationData"/> in an <see cref="AiracSupplementalData"/> with everything
+	/// else left <see langword="null"/>. Kept for callers from before Procedures existed.
 	/// </summary>
 	/// <param name="settings">The run's cross-cutting choices and per-sub-service settings blocks.</param>
 	/// <param name="nasrData">
@@ -144,15 +187,45 @@ public static class AiracService
 	/// folder (a file in it is open elsewhere, say). Nothing is written in that case, but the
 	/// files deleted before the failure stay deleted.
 	/// </exception>
-	public static async Task<AiracServiceResult> RunAsync(
+	public static Task<AiracServiceResult> RunAsync(
 		AiracServiceSettings settings,
 		NasrCsvDataCollection nasrData,
 		WxStationDataCollection? wxStationData,
+		IProgress<AiracServiceProgress>? progress = null,
+		CancellationToken cancellationToken = default) =>
+		RunAsync(settings, nasrData, new AiracSupplementalData { WxStations = wxStationData }, progress, cancellationToken);
+
+	/// <summary>
+	/// Runs every selected sub-service against the supplied parsed cycle data and supplemental
+	/// data (Wx station data and, when Procedures is selected, the FAA d-TPP Metafile). This is
+	/// the real implementation every other <c>RunAsync</c> overload delegates to.
+	/// </summary>
+	/// <param name="settings">The run's cross-cutting choices and per-sub-service settings blocks.</param>
+	/// <param name="nasrData">
+	/// The parsed NASR CSV data for <see cref="AiracServiceSettings.SelectedCycle"/>.
+	/// </param>
+	/// <param name="supplementalData">
+	/// The Wx station and d-TPP Metafile data the selected sub-services need beyond the NASR data.
+	/// </param>
+	/// <param name="progress">Optional per-sub-service progress for the run panel.</param>
+	/// <param name="cancellationToken">Cancels before the next sub-service starts.</param>
+	/// <returns>The aggregated result: each sub-service's result plus a combined warning list.</returns>
+	/// <exception cref="ArgumentException">Thrown when <see cref="AiracServiceSettings.OutputDirectory"/> is blank.</exception>
+	/// <exception cref="IOException">
+	/// Thrown when <see cref="ExistingOutputAction.DeleteExisting"/> cannot delete the cycle
+	/// folder (a file in it is open elsewhere, say). Nothing is written in that case, but the
+	/// files deleted before the failure stay deleted.
+	/// </exception>
+	public static async Task<AiracServiceResult> RunAsync(
+		AiracServiceSettings settings,
+		NasrCsvDataCollection nasrData,
+		AiracSupplementalData supplementalData,
 		IProgress<AiracServiceProgress>? progress = null,
 		CancellationToken cancellationToken = default)
 	{
 		ArgumentNullException.ThrowIfNull(settings);
 		ArgumentNullException.ThrowIfNull(nasrData);
+		ArgumentNullException.ThrowIfNull(supplementalData);
 		ArgumentException.ThrowIfNullOrWhiteSpace(settings.OutputDirectory, nameof(settings));
 
 		Stopwatch stopwatch = Stopwatch.StartNew();
@@ -160,7 +233,8 @@ public static class AiracService
 		string outputDirectory = settings.CycleOutputDirectory;
 		bool anySelected = settings.Airways is not null || settings.Airports is not null
 			|| settings.Departures is not null || settings.Arrivals is not null || settings.Navaids is not null
-			|| settings.ArtccBoundaries is not null || settings.Fixes is not null || settings.WxStations is not null;
+			|| settings.ArtccBoundaries is not null || settings.Fixes is not null || settings.WxStations is not null
+			|| settings.Procedures is not null;
 
 		// Only when there is something to write: a run with nothing selected must not empty the
 		// folder and leave it that way.
@@ -211,8 +285,43 @@ public static class AiracService
 
 		WxStationServiceResult? wxStationsResult = await RunSubServiceAsync(
 			settings.WxStations, "Wx Stations", "Building weather station GeoJSON output",
-			block => WxStationService.Run(wxStationData, block),
+			block => WxStationService.Run(supplementalData.WxStations, block),
 			result => $"{result.StationCount} station(s), {result.GeojsonFilesWritten.Count} GeoJSON file(s)").ConfigureAwait(false);
+
+		ProcedureServiceResult? proceduresResult = await RunSubServiceAsync(
+			settings.Procedures, "Procedures", "Building procedure publication documents",
+			block => ProcedureService.Run(nasrData, supplementalData.Dtpp, supplementalData.PreviousDtpp, block),
+			result => $"{result.AirportCount} airport(s), {result.NewCount + result.ChangedCount + result.DeletedCount} change(s), {result.FilesWritten.Count} document(s)"
+				+ (result.AliasFilePath is not null ? $", {result.AliasCommandCount} FAA Chart Recall command(s)" : string.Empty)).ConfigureAwait(false);
+
+		// Every alias file this run wrote, in the order the sub-services ran, checked together for
+		// commands two lines share.
+		string[] aliasFiles = [.. new[]
+		{
+			airwaysResult?.AliasFilePath,
+			airportsResult?.AliasFilePath,
+			departuresResult?.AliasFilePath,
+			arrivalsResult?.AliasFilePath,
+			navaidsResult?.AliasFilePath,
+			proceduresResult?.AliasFilePath,
+		}.OfType<string>()];
+
+		DuplicateAliasReportResult? duplicateAliasReport = null;
+
+		if (aliasFiles.Length > 0)
+		{
+			cancellationToken.ThrowIfCancellationRequested();
+			progress?.Report(new AiracServiceProgress("AIRAC", "Checking the alias files for duplicate commands"));
+
+			duplicateAliasReport = await Task.Run(
+				() => DuplicateAliasReport.Write(
+					aliasFiles, nasrData, settings.SelectedCycle.AiracCycleId, outputDirectory, settings.PrimaryFacility, DateTime.UtcNow),
+				cancellationToken).ConfigureAwait(false);
+
+			ServiceMessage reportMessage = DuplicateAliasMessage(duplicateAliasReport, aliasFiles.Length);
+			messages.Add(reportMessage);
+			AppLog.Write(reportMessage.Level, reportMessage.Source, reportMessage.Text);
+		}
 
 		if (!anySelected)
 		{
@@ -228,6 +337,7 @@ public static class AiracService
 			Messages = messages,
 			Elapsed = stopwatch.Elapsed,
 			OutputDirectory = outputDirectory,
+			DuplicateAliasReport = duplicateAliasReport,
 			Airways = airwaysResult,
 			Airports = airportsResult,
 			Departures = departuresResult,
@@ -236,6 +346,7 @@ public static class AiracService
 			ArtccBoundaries = artccBoundariesResult,
 			Fixes = fixesResult,
 			WxStations = wxStationsResult,
+			Procedures = proceduresResult,
 		};
 
 		// Runs one sub-service if it was selected (its settings block is not null), reporting
@@ -275,5 +386,25 @@ public static class AiracService
 
 			return result;
 		}
+	}
+
+	/// <summary>
+	/// What the run panel says about the duplicate alias report: an advisory warning when there is
+	/// something to fix, otherwise a note that the files were checked.
+	/// </summary>
+	private static ServiceMessage DuplicateAliasMessage(DuplicateAliasReportResult report, int fileCount)
+	{
+		if (report.Duplicates.Count == 0)
+		{
+			return new ServiceMessage(LogLevel.Info, LogSource,
+				$"No duplicate alias commands in the {fileCount} alias file(s) this run wrote.");
+		}
+
+		return new ServiceMessage(LogLevel.Warning, LogSource,
+			$"{report.Duplicates.Count:N0} alias command(s) are used by more than one line of this run's alias files, so CRC can only run " +
+			$"one of each. They are listed by ARTCC in {AiracOutputPaths.DuplicateAliasReportFileName} in the cycle folder.")
+		{
+			IsAdvisory = true
+		};
 	}
 }

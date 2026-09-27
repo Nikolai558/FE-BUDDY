@@ -13,7 +13,10 @@ using FeBuddy.Wpf.Views.Models;
 using FeBuddy.Core.Application.Airac;
 using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Application.Launch;
+using FeBuddy.Core.Domain.Airac;
 using FeBuddy.Core.Domain.Airac.Models;
+using FeBuddy.Core.Infrastructure.Configuration;
+using FeBuddy.Core.Infrastructure.Dtpp.Models;
 using FeBuddy.Core.Infrastructure.Logging;
 using FeBuddy.Core.Infrastructure.Nasr.Models;
 
@@ -122,6 +125,9 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 	/// <summary>The Wx Stations tab while it is open, otherwise <see langword="null"/>.</summary>
 	private WxStationsViewModel? WxStationsTab => TabFor<WxStationsViewModel>(AiracSubServices.WxStationsKey);
 
+	/// <summary>The Procedures tab while it is open, otherwise <see langword="null"/>.</summary>
+	private ProceduresViewModel? ProceduresTab => TabFor<ProceduresViewModel>(AiracSubServices.ProceduresKey);
+
 	/// <summary>The open tabs that take part in a run.</summary>
 	private IReadOnlyList<ISubServiceRunTarget> RunTargets =>
 		[.. Tabs.OfType<ISubServiceRunTarget>()];
@@ -174,6 +180,7 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 
 		RebuildTabs(open);
 		RefreshWxStationsData();
+		RefreshProceduresData();
 	}
 
 	private void RefreshReadiness()
@@ -221,6 +228,7 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 				}
 
 				RefreshWxStationsData();
+				RefreshProceduresData();
 			});
 		}
 		catch (Exception ex)
@@ -243,6 +251,54 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 		}
 
 		tab.SetStationData(cycleId, AiracCycleDataCache.Instance.FindWxStationsFile(cycleId));
+	}
+
+	/// <summary>
+	/// Tells the open Procedures tab about the selected cycle's FAA d-TPP Metafile (and the
+	/// previous cycle's, for linking deleted procedures back to their chart). Unlike the NASR
+	/// cycle data <see cref="ISubServiceRunTarget.LoadCycleDependentLists"/> hands out, the
+	/// metafile is loaded here, off the UI thread - it is up to 16 MB and takes about 0.3 s to
+	/// parse - the same way <see cref="RefreshWxStationsData"/> reports its own supplemental data.
+	/// </summary>
+	private void RefreshProceduresData()
+	{
+		if (ProceduresTab is not { } tab || _parsedCycleId is not { } cycleId)
+		{
+			return;
+		}
+
+		AiracCycleInfo selectedCycle = AppEnvironment.GetAiracCycle(_general.SelectedCyclePosition);
+		string previousCycleId = AiracCycleResolver.GetCycle(AiracCyclePosition.Previous, selectedCycle.EffectiveDateUtc).AiracCycleId;
+
+		_ = LoadProceduresDataAsync(tab, cycleId, previousCycleId);
+	}
+
+	private async Task LoadProceduresDataAsync(ProceduresViewModel tab, string cycleId, string previousCycleId)
+	{
+		try
+		{
+			DtppMetafileDataCollection? dtpp = await AiracCycleDataCache.Instance.GetDtppAsync(cycleId).ConfigureAwait(false);
+
+			bool previousAvailable = AiracCycleDataCache.Instance.FindDtppFile(previousCycleId) is not null;
+
+			DateTime? downloadedLocal = AiracCycleDataCache.Instance.FindDtppFile(cycleId) is { } file
+				? File.GetLastWriteTime(file)
+				: null;
+
+			await _dispatcher.BeginInvoke(() =>
+			{
+				// The user may have picked another cycle while this one was parsing; its own load
+				// reports in separately, so a stale result must not overwrite it.
+				if (_parsedCycleId == cycleId)
+				{
+					tab.SetDtppData(cycleId, dtpp, previousCycleId, previousAvailable, downloadedLocal);
+				}
+			});
+		}
+		catch (Exception ex)
+		{
+			AppLog.Warning("AiracService", $"Could not load the d-TPP Metafile for cycle {cycleId}: {ex.Message}");
+		}
 	}
 
 	/// <summary>
@@ -274,6 +330,10 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 			SelectedCycle = cycle,
 			OutputDirectory = OutputPreferences.Directory,
 			AddFeBuddyOutputFolder = OutputPreferences.AddFeBuddyOutputFolder,
+			// Settings ▸ Facility Profile: listed first in the duplicate alias report.
+			PrimaryFacility = UserConfigFile.GetValue(SettingsViewModel.ArtccKey)?.Trim() is { Length: > 0 } facility
+				? facility.ToUpperInvariant()
+				: null,
 			Airways = AirwaysTab?.BuildSettingsBlock(),
 			Airports = AirportsTab?.BuildSettingsBlock(),
 			Departures = DeparturesTab?.BuildSettingsBlock(),
@@ -282,6 +342,7 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 			ArtccBoundaries = ArtccBoundariesTab?.BuildSettingsBlock(),
 			Fixes = FixesTab?.BuildSettingsBlock(),
 			WxStations = WxStationsTab?.BuildSettingsBlock(),
+			Procedures = ProceduresTab?.BuildSettingsBlock(),
 		};
 
 		if (AiracService.HasExistingOutput(settings))
@@ -451,6 +512,21 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 			files.AddRange(wxStations.GeojsonFilesWritten);
 		}
 
+		if (result.Procedures is { } procedures)
+		{
+			files.AddRange(procedures.FilesWritten);
+
+			if (procedures.AliasFilePath is { } chartRecallAlias)
+			{
+				files.Add(chartRecallAlias);
+			}
+		}
+
+		if (result.DuplicateAliasReport is { } duplicateAliasReport)
+		{
+			files.Add(duplicateAliasReport.FilePath);
+		}
+
 		return [.. files];
 	}
 
@@ -503,6 +579,27 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 		if (result.WxStations is { } wxStations)
 		{
 			parts.Add($"{wxStations.StationCount:N0} weather station(s)");
+		}
+
+		if (result.Procedures is { } procedures)
+		{
+			if (procedures.FilesWritten.Count > 0)
+			{
+				parts.Add($"{procedures.AirportCount:N0} airport(s) with procedure changes"
+					+ (procedures.NewCount + procedures.ChangedCount + procedures.DeletedCount > 0
+						? $", {procedures.NewCount + procedures.ChangedCount + procedures.DeletedCount} change(s)"
+						: string.Empty));
+			}
+
+			if (procedures.AliasFilePath is not null)
+			{
+				parts.Add($"{procedures.AliasCommandCount:N0} FAA Chart Recall command(s)");
+			}
+		}
+
+		if (result.DuplicateAliasReport is { Duplicates.Count: > 0 } duplicateAliasReport)
+		{
+			parts.Add($"{duplicateAliasReport.Duplicates.Count:N0} duplicate alias command(s)");
 		}
 
 		return parts.Count == 0

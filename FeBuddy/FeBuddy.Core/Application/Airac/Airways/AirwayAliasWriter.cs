@@ -10,8 +10,8 @@ namespace FeBuddy.Core.Application.Airac.Airways;
 /// draws every waypoint on it (e.g. <c>.J3F .FF OAK RBL LKV IMB GEG</c>).
 /// </summary>
 /// <remarks>
-/// The file goes in the output folder itself, or under <c>Upload_to_vNAS</c> when the user marked
-/// it for vNAS (see <see cref="AiracOutputPaths"/>).
+/// The file goes in the output folder's <c>Aliases</c> folder, or under <c>Upload_to_vNAS</c> when
+/// the user marked it for vNAS (see <see cref="AiracOutputPaths"/>).
 /// </remarks>
 public static class AirwayAliasWriter
 {
@@ -62,8 +62,8 @@ public static class AirwayAliasWriter
 			builder.AppendLine($".{airway.AwyId}F .FF {pointIds}");
 		}
 
-		string directory = AiracOutputPaths.FileDirectory(
-			settings.OutputDirectory, isGeojson: false, settings.Vnas.IsUploaded(AirwayOutputFiles.Alias));
+		string directory = AiracOutputPaths.AliasDirectory(
+			settings.OutputDirectory, settings.Vnas.IsUploaded(AirwayOutputFiles.Alias));
 		Directory.CreateDirectory(directory);
 
 		string path = Path.Combine(directory, AirwayOutputFiles.Alias);

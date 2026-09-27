@@ -1,5 +1,8 @@
 using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Domain.Airac.Models;
+using FeBuddy.Core.Infrastructure.Dtpp;
+using FeBuddy.Core.Infrastructure.Dtpp.Models;
+using FeBuddy.Core.Infrastructure.Dtpp.Parsers;
 using FeBuddy.Core.Infrastructure.Logging;
 using FeBuddy.Core.Infrastructure.Nasr;
 using FeBuddy.Core.Infrastructure.Nasr.Models;
@@ -47,8 +50,9 @@ public sealed class AiracCycleDataCacheEntry
 /// runs the launch pipeline that fills it: probe each cycle's publication state, then, for
 /// each published cycle in the order current -&gt; previous -&gt; next, download the CSVs and
 /// parse them - one parse at a time so peak memory is one in-flight parse plus the finished
-/// datasets. The same pipeline also fills in each cycle's Wx Stations data (not part of the NASR
-/// cycle at all - see <see cref="GetWxStationsAsync"/>), best-effort and never blocking readiness.
+/// datasets. The same pipeline also fills in each cycle's Wx Stations data and its FAA d-TPP
+/// Metafile - neither is part of the NASR cycle at all - see <see cref="GetWxStationsAsync"/> and
+/// <see cref="GetDtppAsync"/> - best-effort and never blocking readiness.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -82,6 +86,14 @@ public sealed class AiracCycleDataCacheEntry
 /// Reads a cycle folder's Wx Stations data, or <see langword="null"/> when it is not there yet.
 /// Defaults to always returning <see langword="null"/>.
 /// </param>
+/// <param name="ensureDtpp">
+/// Ensures a cycle folder has its FAA d-TPP Metafile, given the folder and the cycle's AIRAC ID.
+/// Defaults to doing nothing, so a test never touches the network.
+/// </param>
+/// <param name="loadDtpp">
+/// Reads a cycle folder's d-TPP Metafile data, or <see langword="null"/> when it is not there
+/// yet. Defaults to always returning <see langword="null"/>.
+/// </param>
 public sealed class AiracCycleDataCache(
 	Func<AiracCycleInfo, CancellationToken, Task<AiracCyclePublicationState>> probe,
 	Func<AiracCycleInfo, CancellationToken, Task<string>> download,
@@ -89,7 +101,9 @@ public sealed class AiracCycleDataCache(
 	Func<AiracCycleInfo, bool>? isLocallyAvailable = null,
 	Action<IReadOnlyCollection<string>>? pruneAllBut = null,
 	Func<string, CancellationToken, Task>? ensureWxStations = null,
-	Func<string, CancellationToken, Task<WxStationDataCollection?>>? loadWxStations = null)
+	Func<string, CancellationToken, Task<WxStationDataCollection?>>? loadWxStations = null,
+	Func<string, string, CancellationToken, Task>? ensureDtpp = null,
+	Func<string, CancellationToken, Task<DtppMetafileDataCollection?>>? loadDtpp = null)
 {
 	private const string LogSource = "AiracCycleCache";
 
@@ -100,6 +114,8 @@ public sealed class AiracCycleDataCache(
 	private readonly Action<IReadOnlyCollection<string>> _pruneAllBut = pruneAllBut ?? (_ => { });
 	private readonly Func<string, CancellationToken, Task> _ensureWxStations = ensureWxStations ?? ((_, _) => Task.CompletedTask);
 	private readonly Func<string, CancellationToken, Task<WxStationDataCollection?>> _loadWxStations = loadWxStations ?? ((_, _) => Task.FromResult<WxStationDataCollection?>(null));
+	private readonly Func<string, string, CancellationToken, Task> _ensureDtpp = ensureDtpp ?? ((_, _, _) => Task.CompletedTask);
+	private readonly Func<string, CancellationToken, Task<DtppMetafileDataCollection?>> _loadDtpp = loadDtpp ?? ((_, _) => Task.FromResult<DtppMetafileDataCollection?>(null));
 
 	private readonly Lock _gate = new();
 	private readonly List<AiracCycleDataCacheEntry> _entries = [];
@@ -127,7 +143,9 @@ public sealed class AiracCycleDataCache(
 			isLocallyAvailable: cycle => NasrCycleDownloader.IsCycleAvailableLocally(cycle, cacheRootDirectory: null),
 			pruneAllBut: cycleIds => NasrCycleDownloader.PruneStaleCycles(cycleIds, cacheRootDirectory: null),
 			ensureWxStations: (cycleDirectory, ct) => SharedWxStationDownloader.EnsureCycleHasWxStationsAsync(cycleDirectory, ct),
-			loadWxStations: LoadWxStationsFromDiskAsync)
+			loadWxStations: LoadWxStationsFromDiskAsync,
+			ensureDtpp: (cycleDirectory, cycleId, ct) => new DtppDownloader().EnsureCycleHasMetafileAsync(cycleDirectory, cycleId, ct),
+			loadDtpp: LoadDtppFromDiskAsync)
 	{
 	}
 
@@ -142,6 +160,19 @@ public sealed class AiracCycleDataCache(
 		}
 
 		return await WxStationXmlParser.ParseAsync(path, cancellationToken).ConfigureAwait(false);
+	}
+
+	/// <summary>Reads a cycle folder's <see cref="DtppFiles.FileName"/>, or <see langword="null"/> when it is not there.</summary>
+	private static async Task<DtppMetafileDataCollection?> LoadDtppFromDiskAsync(string cycleDirectory, CancellationToken cancellationToken)
+	{
+		string path = Path.Combine(cycleDirectory, DtppFiles.FileName);
+
+		if (!File.Exists(path))
+		{
+			return null;
+		}
+
+		return await DtppMetafileXmlParser.ParseAsync(path, cancellationToken).ConfigureAwait(false);
 	}
 
 	/// <summary>The process-wide cache the GUI binds to.</summary>
@@ -330,6 +361,48 @@ public sealed class AiracCycleDataCache(
 		return File.Exists(path) ? path : null;
 	}
 
+	/// <summary>
+	/// Returns a cycle's FAA d-TPP Metafile data, parsed fresh from its folder on every call -
+	/// like <see cref="GetWxStationsAsync"/>, there is no need to memoize it the way
+	/// <see cref="GetAsync"/> does for the much larger NASR data.
+	/// </summary>
+	/// <param name="cycleId">The cycle ID to get.</param>
+	/// <param name="cancellationToken">Cancels the read.</param>
+	/// <returns>
+	/// The parsed d-TPP Metafile data; <see langword="null"/> when <paramref name="cycleId"/> is
+	/// not tracked by the cache (unlike <see cref="GetWxStationsAsync"/>, this never throws for an
+	/// untracked cycle - the Procedures sub-service also asks for the cycle before the selected
+	/// one, which may not be one of the three tracked cycles); or <see langword="null"/> when the
+	/// cycle's folder does not have <see cref="DtppFiles.FileName"/> yet (not downloaded, not yet
+	/// published by the FAA, or an earlier download attempt failed).
+	/// </returns>
+	public Task<DtppMetafileDataCollection?> GetDtppAsync(string cycleId, CancellationToken cancellationToken = default)
+	{
+		return GetEntry(cycleId)?.CycleDirectory is { } cycleDirectory
+			? _loadDtpp(cycleDirectory, cancellationToken)
+			: Task.FromResult<DtppMetafileDataCollection?>(null);
+	}
+
+	/// <summary>
+	/// Where a cycle's FAA d-TPP Metafile is, if it has one - so the Procedures sub-service can
+	/// say up front that it has nothing to run on, rather than let a run fail on it.
+	/// </summary>
+	/// <param name="cycleId">The cycle ID.</param>
+	/// <returns>
+	/// The full path of the cycle's <see cref="DtppFiles.FileName"/>, or <see langword="null"/>
+	/// when the cycle is not tracked, not downloaded yet, or its folder does not have the file.
+	/// </returns>
+	public string? FindDtppFile(string cycleId)
+	{
+		if (GetEntry(cycleId)?.CycleDirectory is not { } cycleDirectory)
+		{
+			return null;
+		}
+
+		string path = Path.Combine(cycleDirectory, DtppFiles.FileName);
+		return File.Exists(path) ? path : null;
+	}
+
 	private async Task<NasrCsvDataCollection> RunFlightAsync(AiracCycleDataCacheEntry entry, CancellationToken cancellationToken)
 	{
 		try
@@ -447,6 +520,10 @@ public sealed class AiracCycleDataCache(
 		// predates this feature, or retries one whose earlier attempt failed.
 		await EnsureWxStationsAsync(entry, cycleDirectory, cancellationToken).ConfigureAwait(false);
 
+		// Same reasoning as EnsureWxStationsAsync above: runs for an already-cached cycle too,
+		// which is what fills in a next cycle's metafile once the FAA publishes it, at a later launch.
+		await EnsureDtppAsync(entry, cycleDirectory, cancellationToken).ConfigureAwait(false);
+
 		SetState(entry, CycleDataState.Downloaded);
 		return true;
 	}
@@ -471,6 +548,31 @@ public sealed class AiracCycleDataCache(
 		{
 			AppLog.Warning(LogSource,
 				$"Wx station data could not be downloaded for cycle {entry.Cycle.AiracCycleId}; the Wx Stations sub-service " +
+				$"can't run on it until it is (FE-Buddy retries at the next launch). {ex.Message}");
+		}
+	}
+
+	/// <summary>
+	/// Ensures <paramref name="cycleDirectory"/> has its FAA d-TPP Metafile. Never fails or
+	/// delay-fails the cycle: any failure but cancellation is logged and swallowed, so the NASR
+	/// data this cycle otherwise has is not held back by a d-TPP Metafile problem (the FAA not
+	/// having published it yet is already logged as Info by <see cref="DtppDownloader"/> and is
+	/// not a failure at all). FE-Buddy retries at the next launch.
+	/// </summary>
+	private async Task EnsureDtppAsync(AiracCycleDataCacheEntry entry, string cycleDirectory, CancellationToken cancellationToken)
+	{
+		try
+		{
+			await _ensureDtpp(cycleDirectory, entry.Cycle.AiracCycleId, cancellationToken).ConfigureAwait(false);
+		}
+		catch (OperationCanceledException)
+		{
+			throw;
+		}
+		catch (Exception ex)
+		{
+			AppLog.Warning(LogSource,
+				$"d-TPP Metafile could not be downloaded for cycle {entry.Cycle.AiracCycleId}; the Procedures sub-service " +
 				$"can't run on it until it is (FE-Buddy retries at the next launch). {ex.Message}");
 		}
 	}

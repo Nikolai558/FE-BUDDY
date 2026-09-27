@@ -5,6 +5,7 @@ using FeBuddy.Core.Application.Airac.ArtccBoundaries.Models;
 using FeBuddy.Core.Application.Airac.Departures.Models;
 using FeBuddy.Core.Application.Airac.Fixes.Models;
 using FeBuddy.Core.Application.Airac.Navaids.Models;
+using FeBuddy.Core.Application.Airac.Procedures.Models;
 using FeBuddy.Core.Application.Airac.WxStations.Models;
 using FeBuddy.Core.Application.Models;
 
@@ -21,6 +22,12 @@ public sealed record AiracServiceResult : ServiceResult
 	/// It exists only if the run wrote something.
 	/// </summary>
 	public required string OutputDirectory { get; init; }
+
+	/// <summary>
+	/// The duplicate alias report (<c>Duplicate_Alias_Commands.txt</c>) this run wrote, or
+	/// <see langword="null"/> when the run wrote no alias file, so there was nothing to check.
+	/// </summary>
+	public DuplicateAliasReportResult? DuplicateAliasReport { get; init; }
 
 	/// <summary>
 	/// The Airways sub-service result, or <see langword="null"/> when Airways was not part of
@@ -69,4 +76,10 @@ public sealed record AiracServiceResult : ServiceResult
 	/// of this run.
 	/// </summary>
 	public WxStationServiceResult? WxStations { get; init; }
+
+	/// <summary>
+	/// The Procedures sub-service result, or <see langword="null"/> when Procedures was not part of
+	/// this run.
+	/// </summary>
+	public ProcedureServiceResult? Procedures { get; init; }
 }

@@ -21,7 +21,8 @@ go through the same parser. This page lists every key each parser reads.
 
 Parsers: `AirportSettingsParser`, `AirwaySettingsParser`, `DepartureSettingsParser`,
 `ArrivalSettingsParser`, `NavaidSettingsParser`, `ArtccBoundarySettingsParser`,
-`FixSettingsParser`, `WxStationSettingsParser`, `DatToGeojsonSettingsParser`, `SctToGeojsonSettingsParser`,
+`FixSettingsParser`, `WxStationSettingsParser`, `ProcedureSettingsParser`,
+`DatToGeojsonSettingsParser`, `SctToGeojsonSettingsParser`,
 `EramToGeojsonSettingsParser`. Shared reading: `SubServiceSettingsReader`, `CrcDefaultsReader`,
 `ConversionSettingsReader`, `SettingsValueReader` (all in `FeBuddy.Core/Application`).
 
@@ -51,9 +52,15 @@ sub-service writes into the same folder. The harness and tests pass their own.
 
 | File | Goes in |
 |---|---|
-| Alias file | `<OutputDirectory>\` |
+| Alias file | `<OutputDirectory>\Aliases\` |
 | GeoJSON | `<OutputDirectory>\Geojson\` (Departures, Arrivals: `…\Geojson\<ARTCC>\<ARPT>\`) |
-| Marked for vNAS | the same, under `<OutputDirectory>\Upload_to_vNAS\` instead |
+| Marked for vNAS | the same, under `<OutputDirectory>\Upload_to_vNAS\` instead - an alias file directly inside it, not in an `Aliases` subfolder |
+
+After an AIRAC Service run writes at least one alias file, it also checks every alias file the run
+wrote together for commands more than one line uses, and writes
+`<OutputDirectory>\Duplicate_Alias_Commands.txt` listing them, grouped by ARTCC (`DuplicateAliasReport`)
+- see [Architecture](Architecture.md#a-run-end-to-end). This is not driven by a settings-block key:
+`AiracService` runs it itself once every selected sub-service has finished.
 
 ### vNAS file keys
 
@@ -74,6 +81,7 @@ nothing.
 | ARTCC Boundaries | `ARTCC-Boundary_High_Lines` / `_Low_Lines` (`OutputBy=HighLow`, an UNLIMITED ring in both), adds `_Unlimited_Lines` (`OutputBy=HighLowUnlimited`), or `ARTCC-Boundary_<LocationId>-<ALTITUDE>_Lines` per ARTCC and altitude (`OutputBy=ArtccAltitude`), e.g. `ARTCC-Boundary_ZOB-HIGH_Lines` | none |
 | Fixes | `Fix_Symbols`, `Fix_Text` (`OutputBy=All`), or `Fix_<Group>_Symbols` / `_Text` per fix use, chart, or chart + fix use combination present (`OutputBy=FixUse`/`Chart`/`ChartAndFixUse`), e.g. `Fix_WYPNT_Symbols`, `Fix_ENROUTE-LOW-WYPNT_Text` | none |
 | Wx Stations | `Wx_Symbols`, `Wx_Text` | none |
+| Procedures | none - writes no GeoJSON | `FAA_CHART_RECALL.txt` |
 
 CRC-ERAM defaults are only ever written to files marked for vNAS, since CRC reads its maps from
 vNAS. The keys are listed in each sub-service's `*OutputFiles` class.
@@ -278,6 +286,60 @@ naming the key.
   `GU`, `MP`, `AS`, `UM`); it has an ICAO ID; `METAR` is among its site types; and it has usable
   coordinates - present, finite, and within -90..90 / -180..180 (the feed's `-99.99, -99.99`
   placeholder is left out, with an Info message naming the station).
+
+## Procedures
+
+| Key | Values | Default |
+|---|---|---|
+| `GenerateChangesDocument` | `Y` / `N` | `Y` |
+| `GenerateProceduresJson` | `Y` / `N` | `Y` |
+| `GenerateAliasFile` | `Y` / `N` - whether to write `FAA_CHART_RECALL.txt` | `Y` |
+| `Facilities` | list of ARTCC IDs; every included airport's procedures (of the chart types below) are included for each one | none |
+| `PrimaryFacility` | an ARTCC ID; its section leads both documents when it ends up with any included airport | none |
+| `IncludeRoiAirports` | `Y` / `N` - also include every airport whose NASR coordinates fall inside the Region of Interest; **required** to have a ROI set (`FilterByRoi = Y` plus its four corners) when `Y` | `N` |
+| `Airports` | list of FAA or ICAO airport identifiers to include (whole), regardless of `Facilities` or the ROI | none |
+| `Procedures` | list of procedure base chart names to include at every airport that has one, regardless of `ChartTypes` or whether the airport is otherwise included | none |
+| `AirportProcedures` | list of `<Airport>\|<Procedure name>` pairs to include, e.g. `PIT\|ILS OR LOC RWY 28C` | none |
+| `ChartTypes` | list of d-TPP chart codes (`IAP`, `STR`, `DP`, `ODP`, `DAU`, `APD`, `MIN`, `HOT`, `LAH`) a whole included airport's procedures are limited to; a name picked by `Procedures` or `AirportProcedures` is included regardless | `IAP,STR,DP,ODP,DAU,APD` |
+| `JsonFields` | list of `Procedures.json` optional field names (below); only meaningful with `GenerateProceduresJson = Y` | `icaoId,airportName,responsibleArtcc,airspaceClass,chartType,chartUrl,change,compareUrl` |
+| `UploadToVnas` | file keys to write under `Upload_to_vNAS`; the only one Procedures ever writes is `FAA_CHART_RECALL.txt` | none |
+
+- Unlike every other AIRAC sub-service, Procedures writes no GeoJSON at all: there is no `Emit…`,
+  `FebProperties`, `CrcDefaultsFor` or `Crc.*` key - nothing it writes carries CRC-ERAM defaults. It
+  does have an alias file, `FAA_CHART_RECALL.txt` (built by `ChartRecallAliasBuilder`): one
+  `.OPENURL` command per page of every current chart at every airport in the d-TPP Metafile,
+  whatever `Facilities`, `Airports`, `Procedures`, `AirportProcedures`, `ChartTypes` and
+  `IncludeRoiAirports` say - those settings pick only what the two documents cover.
+  `IncludeFebCustomProperties = Y` is accepted but only warns, pointing at `JsonFields` instead,
+  since that is where Procedures' own optional fields live.
+- `GenerateChangesDocument`, `GenerateProceduresJson` and `GenerateAliasFile` cannot all three be
+  `N` - Procedures would then produce nothing.
+- At least one of `Facilities`, `IncludeRoiAirports` (with a Region of Interest set), `Airports`,
+  `Procedures` or `AirportProcedures` is required **only when a document is on**
+  (`GenerateChangesDocument` or `GenerateProceduresJson`) - the alias file needs no inclusion
+  source, since it covers every airport regardless. The filters add up: every airport of the ticked
+  facilities, plus (optionally) every airport inside the ROI, plus explicitly listed airports, plus
+  procedures picked by name at any airport, plus specific airport + procedure pairs.
+- Data comes from the FAA's d-TPP Metafile (`d-tpp_Metafile.xml`), not a NASR CSV group - downloaded
+  once per cycle and cached alongside the NASR CSVs (see
+  [Architecture](Architecture.md#the-airac-data-pipeline)) - joined to NASR `APT_BASE` (each
+  airport's responsible ARTCC and coordinates) and `CLS_ARSP` (its highest class airspace: B, C, D
+  or E). The FAA posts a cycle's metafile only 15-18 days before its effective date, so the next
+  cycle's is often not yet published; a run then writes no Procedures output at all, with an
+  advisory saying why, but is not blocked. The previous cycle's metafile, when cached, links a
+  procedure this cycle deleted to the last chart it had.
+- `JsonFields` values (`ProcedureJsonField`) - airport-level: `icaoId`, `airportName`, `city`,
+  `state`, `responsibleArtcc`, `airspaceClass`, `military`; procedure-level: `chartType`,
+  `chartUrl`, `change`, `compareUrl`, `amendment`, `amendmentDate`, `procedureUid`, `computerCode`,
+  `producer`. An airport's `airportId` and a procedure's `name` are always written, regardless of
+  `JsonFields`; a field with no value for a given airport or procedure is left out rather than
+  written null.
+- The FAA Chart Recall command rules (how a chart's type, runway and computer code become its
+  command, and what gets no command) are documented in the XML doc comments of `ChartRecallCodes`,
+  `ApproachCodes`, `SidStarCodes` and `ChartRecallSkipReason`
+  (`FeBuddy.Core/Domain/Procedures/ChartRecall/`) and `ChartRecallAliasBuilder`
+  (`FeBuddy.Core/Application/Airac/Procedures/`); for the controller-facing summary, see the
+  [user guide](../Users/User-Guide.md#faa-chart-recall-commands).
 
 ## Keys every file conversion reads
 

@@ -1,5 +1,9 @@
-using FeBuddy.Core.Application.Airac.WxStations.Models;
+using System.Diagnostics;
+
+using FeBuddy.Core.Application.Airac.Procedures.Models;
 using FeBuddy.Core.Infrastructure.Configuration;
+using FeBuddy.Core.Infrastructure.Nasr.Models;
+using FeBuddy.Core.Infrastructure.Nasr.Parsers;
 
 namespace FeBuddy.Harness;
 
@@ -10,12 +14,13 @@ namespace FeBuddy.Harness;
 /// </summary>
 internal static class Program
 {
-	public static void Main()
+	public static async Task Main()
 	{
 		DevMode.IsEnabled = HarnessSettings.DevMode;
 		OutputFormatting.PrettyPrintGeojson = HarnessSettings.PrettyPrintGeojson;
 
 		Console.WriteLine("FE-Buddy Test Harness");
+		Console.WriteLine($"NASR source: {HarnessSettings.NasrSourceDirectory}");
 		Console.WriteLine($"Wx Stations source: {HarnessSettings.WxStationsSourceFile}");
 		Console.WriteLine($"Output:      {HarnessSettings.OutputDirectory}");
 		Console.WriteLine($"DevMode:     {DevMode.IsEnabled}");
@@ -23,17 +28,17 @@ internal static class Program
 
 		try
 		{
-			// Console.Write("Parsing NASR CSV data... ");
-			//
-			// Stopwatch parseStopwatch = Stopwatch.StartNew();
-			//
-			// NasrCsvDataCollection allNasrCsvData =
-			// 	await NasrCsvParser.ParseAllAsync(HarnessSettings.NasrSourceDirectory);
-			//
-			// parseStopwatch.Stop();
-			//
-			// Console.WriteLine("done.");
-			// ConsoleReport.PrintNasrParseSummary(parseStopwatch.Elapsed);
+			Console.Write("Parsing NASR CSV data... ");
+
+			Stopwatch parseStopwatch = Stopwatch.StartNew();
+
+			NasrCsvDataCollection allNasrCsvData =
+				await NasrCsvParser.ParseAllAsync(HarnessSettings.NasrSourceDirectory);
+
+			parseStopwatch.Stop();
+
+			Console.WriteLine("done.");
+			ConsoleReport.PrintNasrParseSummary(parseStopwatch.Elapsed);
 
 			// var geojsonResult = AirwayGeojsonRunner.Run(allNasrCsvData);
 			// ConsoleReport.PrintAirwayServiceResult("Airways: HighLow GeoJSON + Alias", geojsonResult);
@@ -59,8 +64,11 @@ internal static class Program
 			// FixServiceResult fixResult = FixRunner.Run(allNasrCsvData);
 			// ConsoleReport.PrintFixServiceResult("Fixes: GeoJSON", fixResult);
 
-			WxStationServiceResult wxStationResult = WxStationRunner.Run();
-			ConsoleReport.PrintWxStationServiceResult("Wx Stations: GeoJSON", wxStationResult);
+			// WxStationServiceResult wxStationResult = WxStationRunner.Run();
+			// ConsoleReport.PrintWxStationServiceResult("Wx Stations: GeoJSON", wxStationResult);
+
+			ProcedureServiceResult procedureResult = ProcedureRunner.Run(allNasrCsvData);
+			ConsoleReport.PrintProcedureServiceResult("Procedures: Changes + JSON", procedureResult);
 		}
 		catch (Exception ex)
 		{

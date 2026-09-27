@@ -92,6 +92,19 @@ launch. `AiracCycleDataCache.GetWxStationsAsync` reads a cycle's copy fresh from
 (it is small, unlike the NASR data `GetAsync` memoizes) and returns `null` when the file is not
 there yet - which the Wx Stations tab reports as missing and blocks the run on.
 
+**Procedures rides along the same way, feeding on the FAA's d-TPP Metafile instead of a NASR CSV
+group.** `DtppDownloader.EnsureCycleHasMetafileAsync` downloads a cycle's `d-tpp_Metafile.xml` at
+launch and places it in that cycle's folder, next to its NASR CSVs (and Wx Stations file, if any).
+Unlike Wx Stations' file, this one is not shared across cycles - the download URL is keyed by cycle
+ID, so every cycle folder needs its own request - and the FAA publishes it only about 15-18 days
+before the cycle's effective date, so the next cycle's is often not there yet: a 404 is reported as
+`DtppDownloadOutcome.NotYetPublished`, logged as Info, and simply retried at the next launch, never
+an error. A folder that already has the file is left alone. `AiracCycleDataCache.GetDtppAsync`
+reads a cycle's copy fresh from disk on every call and returns `null` both when the file has not
+downloaded yet and when the cycle is not one of the three the cache tracks (the previous cycle's
+metafile, used to link a deleted procedure to its last chart, often falls outside that window) -
+which the Procedures sub-service treats as an advisory, never a reason to block the run.
+
 ## A run, end to end
 
 ```
@@ -112,6 +125,8 @@ Preview Settings ▸ Run AIRAC Service
                                                                            3. XxxGeojsonWriter          → .geojson files
                                                                            4. XxxAliasWriter            → alias .txt
                                                                          → XxxServiceResult
+                                                                       once every alias file is written: DuplicateAliasReport.Write
+                                                                         → Duplicate_Alias_Commands.txt
   Review tab ◄── progress reports, then AiracServiceResult ───────────
     each tab: DescribeRunResult(result)
 ```
@@ -123,6 +138,17 @@ since it has no alias file. Fixes likewise has no step 4: `FixService` stops aft
 `AiracService` loads `wxStationData` from `AiracCycleDataCache.GetWxStationsAsync` only when Wx
 Stations is selected, and hands it to `WxStationService.Run` instead.
 
+Procedures has no step 3 at all - it writes no GeoJSON - but keeps step 4: `ProcedureService` builds
+its two documents (`ProcedureChangesMarkdownWriter`, `ProceduresJsonWriter`) straight from step 2's
+domain objects, and separately builds its alias file, `FAA_CHART_RECALL.txt`
+(`ChartRecallAliasBuilder`, `ChartRecallAliasWriter`), straight from the d-TPP Metafile rather than
+from step 2's selected objects - it covers every airport in the metafile whatever the documents'
+facility/airport/procedure/chart-type selection says. Its step 1 also takes an extra input
+alongside `nasrData`: `AiracService` loads the selected cycle's (and the previous cycle's) FAA
+d-TPP Metafile from `AiracCycleDataCache.GetDtppAsync` only when Procedures is selected, and hands
+both to `ProcedureService.Run`. A `null` metafile (the FAA has not published this cycle's yet) is
+not an error - the run still completes, with an advisory saying no Procedures output was written.
+
 - **The settings block is the contract.** Every tab (and the harness) hands Core a flat
   `Dictionary<string, string>`. Core never sees view-models, and the GUI never sees typed settings.
   The keys are listed in [Settings blocks](Settings-Blocks.md).
@@ -133,12 +159,23 @@ Stations is selected, and hands it to `WxStationService.Run` instead.
 - Progress arrives through `IProgress<AiracServiceProgress>`; each sub-service reports starting
   and finishing.
 - **One folder per cycle.** A run writes everything into `<output>[\FE-Buddy_Output]\AIRAC_<cycle>`
-  (`AiracServiceSettings.CycleOutputDirectory`): alias files in the folder itself, every GeoJSON
-  file in its `Geojson` folder, and the files marked for vNAS under `Upload_to_vNAS` instead, laid
+  (`AiracServiceSettings.CycleOutputDirectory`): alias files not marked for vNAS in an `Aliases`
+  folder, every GeoJSON file in its `Geojson` folder, and the files marked for vNAS under
+  `Upload_to_vNAS` instead (an alias file directly inside it, not in an `Aliases` subfolder), laid
   out the same way (`AiracOutputPaths`). A sub-service only knows the folder it is given
   (`OutputDirectory`), so it can be run on its own by the harness and the tests. If the folder
   already has files, the GUI asks before the run: overwrite them, or have the service
   permanently delete the folder first (`ExistingOutputAction`).
+- **Duplicate alias commands are checked once, after every sub-service has run.** Once the run has
+  written its alias files, `DuplicateAliasReport.Write` reads them all back and lists every command
+  more than one of their lines uses - CRC can only run one - in
+  `Duplicate_Alias_Commands.txt` in the cycle folder, grouped by the ARTCC responsible for each
+  line's airport (NASR `APT_BASE.RESP_ARTCC_ID`): the user's own facility
+  (`AiracServiceSettings.PrimaryFacility`, from Settings ▸ Facility Profile) first, the rest
+  alphabetically, then `OTHER` for a command (an airway or a NAVAID) that names no airport. The
+  report is written whenever at least one alias file was written, saying so when there are no
+  duplicates, so an older report is never left behind to mislead; the run shows an advisory warning
+  when there are.
 
 ## Settings and persistence
 
@@ -229,7 +266,8 @@ The FAA's data has quirks; these rules handle them. Each lives in one class.
 - **STARs and SIDs can collide.** In the cycle effective 2026-09-03 the FAA's STAR data also lists
   ORF's NUTIY and SWOPE departures. The GeoJSON files never clash - an arrival's file name always
   carries `STAR` - but both alias files end up with the same command (`.orfNUTIYf`,
-  `.orfSWOPEf`). Printed as duplicates on purpose for now; see
+  `.orfSWOPEf`). Printed as duplicates on purpose for now, and now caught by `DuplicateAliasReport`
+  like any other duplicate; see
   [FAQ](../Users/FAQ-and-Troubleshooting.md#why-does-the-same-alias-command-show-up-in-both-departurestxt-and-arrivalstxt).
 - **NAVAID data** (`NavaidBuilder`). Built from `NAV_BASE` only; a NAVAID with a `NAV_STATUS` of
   `SHUTDOWN` is always skipped. Duplicate `NAV_ID`s are normal in real NASR data and are never
@@ -311,7 +349,11 @@ Decisions that were argued out once and should not be re-litigated without a rea
 - **The Review tab is the one place** a run's results, warnings, advisories, errors and files live.
 - **Every sub-service is a tab of the AIRAC Service**, never a top-level screen, and every GeoJSON
   sub-service tab is built from the same shared cards - except the alias-file ones, which ARTCC
-  Boundaries, Fixes and Wx Stations opt out of (`GeojsonSubServiceViewModel.HasAliasFile`). Likewise every file
+  Boundaries, Fixes and Wx Stations opt out of (`GeojsonSubServiceViewModel.HasAliasFile` is
+  `false`). Procedures opts out of the GeoJSON cards (What Files, FE-Buddy Properties, CRC ERAM
+  Defaults) - it writes no GeoJSON at all - but keeps `HasAliasFile` `true` and the Upload to vNAS
+  card for its own alias file, so its tab is built from its own Outputs, Facilities/Airports/etc.
+  and Upload to vNAS cards instead of the shared ones. Likewise every file
   conversion is a tab of File Conversions; the two screens share one tabbed view and differ only in
   what their view-models say (File Conversions has no General or Preview Settings tab - each
   conversion runs from its own tab).

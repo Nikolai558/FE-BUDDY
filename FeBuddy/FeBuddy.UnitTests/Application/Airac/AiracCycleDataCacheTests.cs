@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using FeBuddy.Core.Application.Airac;
 using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Domain.Airac.Models;
+using FeBuddy.Core.Infrastructure.Dtpp.Models;
 using FeBuddy.Core.Infrastructure.Logging;
 using FeBuddy.Core.Infrastructure.Nasr.Models;
 using FeBuddy.Core.Infrastructure.WxStations;
@@ -714,5 +715,225 @@ public sealed class AiracCycleDataCacheTests : IDisposable
 
 		Assert.NotSame(replacement, AiracCycleDataCache.Instance);
 		Assert.NotSame(original, AiracCycleDataCache.Instance);
+	}
+
+	// ---- Dtpp: ensureDtpp ----
+
+	[Fact]
+	public async Task ensure_dtpp_is_called_with_the_cycle_folder_and_cycle_id_after_a_successful_download()
+	{
+		List<(string Folder, string CycleId)> calledWith = [];
+
+		AiracCycleDataCache cache = new(
+			probe: AlwaysPublished,
+			download: (cycle, _) => Task.FromResult($@"C:\cache\{cycle.AiracCycleId}"),
+			parse: (_, _) => Task.FromResult(new NasrCsvDataCollection()),
+			ensureDtpp: (cycleDirectory, cycleId, _) =>
+			{
+				lock (calledWith) { calledWith.Add((cycleDirectory, cycleId)); }
+				return Task.CompletedTask;
+			});
+
+		await cache.PrepareCyclesAsync(Previous, Current, Next);
+
+		Assert.Equal(3, calledWith.Count);
+		Assert.Contains((@"C:\cache\2609", "2609"), calledWith);
+		Assert.Contains((@"C:\cache\2610", "2610"), calledWith);
+		Assert.Contains((@"C:\cache\2611", "2611"), calledWith);
+	}
+
+	[Fact]
+	public async Task ensure_dtpp_runs_even_for_an_already_cached_cycle()
+	{
+		bool called = false;
+
+		AiracCycleDataCache cache = new(
+			probe: AlwaysPublished,
+			download: (cycle, _) => Task.FromResult($@"C:\cache\{cycle.AiracCycleId}"),
+			parse: (_, _) => Task.FromResult(new NasrCsvDataCollection()),
+			isLocallyAvailable: _ => true,
+			ensureDtpp: (_, _, _) =>
+			{
+				called = true;
+				return Task.CompletedTask;
+			});
+
+		await cache.PrepareCyclesAsync(Previous, Current, Next);
+
+		Assert.True(called);
+	}
+
+	[Fact]
+	public async Task an_exception_from_ensure_dtpp_is_swallowed_and_the_cycle_still_reaches_ready()
+	{
+		AiracCycleDataCache cache = new(
+			probe: AlwaysPublished,
+			download: (cycle, _) => Task.FromResult($@"C:\cache\{cycle.AiracCycleId}"),
+			parse: (_, _) => Task.FromResult(new NasrCsvDataCollection()),
+			ensureDtpp: (_, _, _) => Task.FromException(new IOException("network down")));
+
+		await cache.PrepareCyclesAsync(Previous, Current, Next);
+
+		Assert.Equal(CycleDataState.Ready, cache.GetEntry("2610")!.State);
+		Assert.Equal(AiracCycleReadiness.Ready, cache.ComputeReadiness());
+	}
+
+	[Fact]
+	public async Task cancellation_from_ensure_dtpp_propagates()
+	{
+		AiracCycleDataCache cache = new(
+			probe: AlwaysPublished,
+			download: (cycle, _) => Task.FromResult($@"C:\cache\{cycle.AiracCycleId}"),
+			parse: (_, _) => Task.FromResult(new NasrCsvDataCollection()),
+			ensureDtpp: (_, _, _) => Task.FromException(new OperationCanceledException()));
+
+		await Assert.ThrowsAnyAsync<OperationCanceledException>(() => cache.PrepareCyclesAsync(Previous, Current, Next));
+	}
+
+	// ---- Dtpp: GetDtppAsync ----
+
+	[Fact]
+	public async Task get_dtpp_async_for_an_untracked_cycle_returns_null_without_calling_the_loader()
+	{
+		bool loaderCalled = false;
+
+		AiracCycleDataCache cache = new(
+			AlwaysPublished,
+			(_, _) => Task.FromResult("x"),
+			(_, _) => Task.FromResult(new NasrCsvDataCollection()),
+			loadDtpp: (_, _) =>
+			{
+				loaderCalled = true;
+				return Task.FromResult<DtppMetafileDataCollection?>(null);
+			});
+
+		// Unlike GetWxStationsAsync, an untracked cycle - e.g. the one before the selected one,
+		// which Procedures also asks for and which may not be one of the three tracked cycles -
+		// answers null rather than throwing.
+		DtppMetafileDataCollection? result = await cache.GetDtppAsync("2610");
+
+		Assert.Null(result);
+		Assert.False(loaderCalled);
+	}
+
+	[Fact]
+	public async Task get_dtpp_async_before_download_returns_null_without_calling_the_loader()
+	{
+		bool loaderCalled = false;
+
+		AiracCycleDataCache cache = new(
+			probe: (cycle, _) => Task.FromResult(
+				cycle.AiracCycleId == Next.AiracCycleId ? AiracCyclePublicationState.NotYetPublished : AiracCyclePublicationState.Published),
+			download: (cycle, _) => Task.FromResult($@"C:\cache\{cycle.AiracCycleId}"),
+			parse: (_, _) => Task.FromResult(new NasrCsvDataCollection()),
+			loadDtpp: (_, _) =>
+			{
+				loaderCalled = true;
+				return Task.FromResult<DtppMetafileDataCollection?>(null);
+			});
+
+		await cache.PrepareCyclesAsync(Previous, Current, Next);
+
+		// Next has not been published, so its CycleDirectory is still null.
+		DtppMetafileDataCollection? result = await cache.GetDtppAsync("2611");
+
+		Assert.Null(result);
+		Assert.False(loaderCalled);
+	}
+
+	[Fact]
+	public async Task get_dtpp_async_after_download_returns_the_injected_loaders_result()
+	{
+		DtppMetafileDataCollection expected = new() { Cycle = "2610" };
+		string? loadedFromFolder = null;
+
+		AiracCycleDataCache cache = new(
+			probe: AlwaysPublished,
+			download: (cycle, _) => Task.FromResult($@"C:\cache\{cycle.AiracCycleId}"),
+			parse: (_, _) => Task.FromResult(new NasrCsvDataCollection()),
+			loadDtpp: (cycleDirectory, _) =>
+			{
+				loadedFromFolder = cycleDirectory;
+				return Task.FromResult<DtppMetafileDataCollection?>(expected);
+			});
+
+		await cache.PrepareCyclesAsync(Previous, Current, Next);
+
+		DtppMetafileDataCollection? result = await cache.GetDtppAsync("2610");
+
+		Assert.Same(expected, result);
+		Assert.Equal(@"C:\cache\2610", loadedFromFolder);
+	}
+
+	// ---- Dtpp: FindDtppFile ----
+
+	[Fact]
+	public void find_dtpp_file_for_an_untracked_cycle_is_null()
+	{
+		AiracCycleDataCache cache = new(AlwaysPublished, (_, _) => Task.FromResult("x"), (_, _) => Task.FromResult(new NasrCsvDataCollection()));
+
+		Assert.Null(cache.FindDtppFile("2610"));
+	}
+
+	[Fact]
+	public async Task find_dtpp_file_before_download_is_null()
+	{
+		AiracCycleDataCache cache = new(
+			probe: (cycle, _) => Task.FromResult(
+				cycle.AiracCycleId == Next.AiracCycleId ? AiracCyclePublicationState.NotYetPublished : AiracCyclePublicationState.Published),
+			download: (cycle, _) => Task.FromResult($@"C:\cache\{cycle.AiracCycleId}"),
+			parse: (_, _) => Task.FromResult(new NasrCsvDataCollection()));
+
+		await cache.PrepareCyclesAsync(Previous, Current, Next);
+
+		Assert.Null(cache.FindDtppFile("2611"));
+	}
+
+	[Fact]
+	public async Task find_dtpp_file_when_missing_from_the_cycle_folder_is_null()
+	{
+		string cycleDirectory = Path.Combine(Path.GetTempPath(), "FeBuddyTests_FindDtpp_" + Guid.NewGuid().ToString("N"));
+		Directory.CreateDirectory(cycleDirectory);
+
+		try
+		{
+			AiracCycleDataCache cache = new(
+				probe: AlwaysPublished,
+				download: (_, _) => Task.FromResult(cycleDirectory),
+				parse: (_, _) => Task.FromResult(new NasrCsvDataCollection()));
+
+			await cache.PrepareCyclesAsync(Previous, Current, Next);
+
+			Assert.Null(cache.FindDtppFile("2610"));
+		}
+		finally
+		{
+			Directory.Delete(cycleDirectory, recursive: true);
+		}
+	}
+
+	[Fact]
+	public async Task find_dtpp_file_when_present_returns_its_path()
+	{
+		string cycleDirectory = Path.Combine(Path.GetTempPath(), "FeBuddyTests_FindDtpp_" + Guid.NewGuid().ToString("N"));
+		Directory.CreateDirectory(cycleDirectory);
+		string dtppFile = Path.Combine(cycleDirectory, "d-tpp_Metafile.xml");
+		File.WriteAllText(dtppFile, "<digital_tpp></digital_tpp>");
+
+		try
+		{
+			AiracCycleDataCache cache = new(
+				probe: AlwaysPublished,
+				download: (_, _) => Task.FromResult(cycleDirectory),
+				parse: (_, _) => Task.FromResult(new NasrCsvDataCollection()));
+
+			await cache.PrepareCyclesAsync(Previous, Current, Next);
+
+			Assert.Equal(dtppFile, cache.FindDtppFile("2610"));
+		}
+		finally
+		{
+			Directory.Delete(cycleDirectory, recursive: true);
+		}
 	}
 }

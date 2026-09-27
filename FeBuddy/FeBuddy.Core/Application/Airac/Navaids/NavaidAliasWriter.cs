@@ -95,8 +95,9 @@ public static class NavaidAliasWriter
 			builder.Append(command).Append(" .echo ").Append(body).AppendLine();
 		}
 
-		string directory = AiracOutputPaths.FileDirectory(
-			settings.OutputDirectory, isGeojson: false, settings.Vnas.IsUploaded(NavaidOutputFiles.Alias));
+		// The Aliases folder, or Upload_to_vNAS when the user marked the file for vNAS.
+		string directory = AiracOutputPaths.AliasDirectory(
+			settings.OutputDirectory, settings.Vnas.IsUploaded(NavaidOutputFiles.Alias));
 		Directory.CreateDirectory(directory);
 
 		string path = Path.Combine(directory, NavaidOutputFiles.Alias);

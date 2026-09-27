@@ -47,6 +47,9 @@ public static class AiracSubServices
 	/// <summary>The Wx Stations sub-service key.</summary>
 	public const string WxStationsKey = "WxStations";
 
+	/// <summary>The Procedures sub-service key.</summary>
+	public const string ProceduresKey = "Procedures";
+
 	/// <summary>Every sub-service, in the order the picker and the tab rail show them.</summary>
 	public static IReadOnlyList<SubServiceDescriptor> All { get; } =
 	[
@@ -58,5 +61,6 @@ public static class AiracSubServices
 		new SubServiceDescriptor(ArtccBoundariesKey, "ARTCC Boundaries", 60, true, () => new ArtccBoundariesViewModel()),
 		new SubServiceDescriptor(FixesKey, "Fixes", 70, true, () => new FixesViewModel()),
 		new SubServiceDescriptor(WxStationsKey, "Wx Stations", 80, true, () => new WxStationsViewModel()),
+		new SubServiceDescriptor(ProceduresKey, "Procedures", 90, true, () => new ProceduresViewModel()),
 	];
 }

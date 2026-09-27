@@ -79,7 +79,7 @@ public sealed class AirportServiceTests : IDisposable
 
 		// One .apt command per identifier: SEA, KSEA, PAE, KPAE.
 		Assert.Equal(4, result.AliasCommandCount);
-		Assert.Equal(Path.Combine(_outputDirectory, "Airports.txt"), result.AliasFilePath);
+		Assert.Equal(Path.Combine(_outputDirectory, "Aliases", "Airports.txt"), result.AliasFilePath);
 		Assert.Contains(".aptKSEA ", File.ReadAllText(result.AliasFilePath!), StringComparison.Ordinal);
 		Assert.False(Directory.Exists(Path.Combine(_outputDirectory, "Upload_to_vNAS")));
 	}
@@ -162,7 +162,7 @@ public sealed class AirportServiceTests : IDisposable
 		AirportServiceResult result = AirportService.Run(SeattleData(), Settings(("GenerateGeojson", "N")));
 
 		Assert.Empty(result.GeojsonFilesWritten);
-		Assert.Equal(Path.Combine(_outputDirectory, "Airports.txt"), result.AliasFilePath);
+		Assert.Equal(Path.Combine(_outputDirectory, "Aliases", "Airports.txt"), result.AliasFilePath);
 		Assert.False(Directory.Exists(Path.Combine(_outputDirectory, "Geojson")));
 		Assert.Empty(result.Warnings);
 	}

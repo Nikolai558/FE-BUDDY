@@ -45,7 +45,12 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges
 	private const string ChannelKey = UserConfigKeys.UpdateChannel;
 	private const string OutputDirKey = UserConfigKeys.DefaultOutputDirectory;
 	private const string AddFolderKey = UserConfigKeys.AddFeBuddyOutputFolder;
-	private const string ArtccKey = "Services.AiracService.UserArtccId";
+	/// <summary>
+	/// Where the selected facility persists. Internal (rather than private) so the Procedures tab
+	/// can read it directly at settings-build time, as <c>PrimaryFacility</c>, without copying the
+	/// value into its own config node.
+	/// </summary>
+	internal const string ArtccKey = "Services.AiracService.UserArtccId";
 	private const string PrecisionKey = UserConfigKeys.CoordinatePrecision;
 
 	private readonly Dispatcher _dispatcher;

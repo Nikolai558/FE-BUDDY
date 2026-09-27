@@ -33,6 +33,12 @@ public sealed record AiracServiceSettings
 	public ExistingOutputAction ExistingOutput { get; init; } = ExistingOutputAction.Overwrite;
 
 	/// <summary>
+	/// The user's own ARTCC (Settings ▸ Facility Profile), listed first in
+	/// <c>Duplicate_Alias_Commands.txt</c>; <see langword="null"/> lists every ARTCC alphabetically.
+	/// </summary>
+	public string? PrimaryFacility { get; init; }
+
+	/// <summary>
 	/// The folder this run writes every file into, e.g.
 	/// <c>C:\Users\me\Desktop\FE-Buddy_Output\AIRAC_2610</c> (see <see cref="AiracOutputPaths"/>).
 	/// </summary>
@@ -86,4 +92,10 @@ public sealed record AiracServiceSettings
 	/// not selected for this run.
 	/// </summary>
 	public IReadOnlyDictionary<string, string>? WxStations { get; init; }
+
+	/// <summary>
+	/// The Procedures sub-service settings block, or <see langword="null"/> when Procedures was
+	/// not selected for this run.
+	/// </summary>
+	public IReadOnlyDictionary<string, string>? Procedures { get; init; }
 }

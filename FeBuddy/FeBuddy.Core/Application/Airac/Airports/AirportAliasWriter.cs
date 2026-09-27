@@ -104,9 +104,9 @@ public static class AirportAliasWriter
 			return new AirportAliasGenerateResult(null, 0, messages);
 		}
 
-		// The output folder itself, or Upload_to_vNAS when the user marked the file for vNAS.
-		string directory = AiracOutputPaths.FileDirectory(
-			settings.OutputDirectory, isGeojson: false, settings.Vnas.IsUploaded(AirportOutputFiles.Alias));
+		// The Aliases folder, or Upload_to_vNAS when the user marked the file for vNAS.
+		string directory = AiracOutputPaths.AliasDirectory(
+			settings.OutputDirectory, settings.Vnas.IsUploaded(AirportOutputFiles.Alias));
 		Directory.CreateDirectory(directory);
 
 		string path = Path.Combine(directory, AirportOutputFiles.Alias);

@@ -71,7 +71,7 @@ public sealed class DepartureServiceTests : IDisposable
 		Assert.Equal(DepartureTestData.DotssFixes.Count, result.GeojsonFeatureCountsByFile[text]);
 
 		Assert.Equal(1, result.AliasCommandCount);
-		Assert.Equal(Path.Combine(_outputDirectory, "Departures.txt"), result.AliasFilePath);
+		Assert.Equal(Path.Combine(_outputDirectory, "Aliases", "Departures.txt"), result.AliasFilePath);
 		Assert.StartsWith(".laxDOTSSf .FF DLREY ", File.ReadAllText(result.AliasFilePath!));
 	}
 

@@ -1,6 +1,7 @@
 using FeBuddy.Core.Application.Airac;
 using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Domain.Airac.Models;
+using FeBuddy.Core.Infrastructure.Dtpp.Models;
 using FeBuddy.Core.Infrastructure.Nasr.Models;
 using FeBuddy.Core.Infrastructure.WxStations.Models;
 
@@ -10,6 +11,7 @@ using FeBuddy.UnitTests.Application.Airac.ArtccBoundaries.Fixtures;
 using FeBuddy.UnitTests.Application.Airac.Departures.Fixtures;
 using FeBuddy.UnitTests.Application.Airac.Fixes.Fixtures;
 using FeBuddy.UnitTests.Application.Airac.Navaids.Fixtures;
+using FeBuddy.UnitTests.Application.Airac.Procedures.Fixtures;
 using FeBuddy.UnitTests.Application.Airac.WxStations.Fixtures;
 
 namespace FeBuddy.UnitTests.Application.Airac;
@@ -110,10 +112,12 @@ public sealed class AiracServiceTests : IDisposable
 		Assert.Null(result.Airways);
 		Assert.Equal(1, result.Airports!.AirportCount);
 		Assert.Equal(1, result.Departures!.AirportProcedureCount);
+		// Both sub-services wrote an alias file, so one more "AIRAC" report follows for the
+		// duplicate-alias check once every sub-service has run.
 		Assert.Equal(
-			["Airports", "Airports", "Departures", "Departures"],
+			["Airports", "Airports", "Departures", "Departures", "AIRAC"],
 			reports.Select(r => r.SubService));
-		Assert.Equal(100, reports[^1].PercentComplete);
+		Assert.Equal(100, reports[^2].PercentComplete);
 
 		await Assert.ThrowsAnyAsync<OperationCanceledException>(
 			() => AiracService.RunAsync(settings, data, cancellationToken: new CancellationToken(canceled: true)));
@@ -125,8 +129,60 @@ public sealed class AiracServiceTests : IDisposable
 		AiracServiceResult result = await AiracService.RunAsync(AliasOnlySettings(), DepartureTestData.Dotss());
 
 		Assert.Equal(CycleFolder, result.OutputDirectory);
-		Assert.Equal(Path.Combine(CycleFolder, "Airports.txt"), result.Airports!.AliasFilePath);
-		Assert.Equal(Path.Combine(CycleFolder, "Departures.txt"), result.Departures!.AliasFilePath);
+		Assert.Equal(Path.Combine(CycleFolder, "Aliases", "Airports.txt"), result.Airports!.AliasFilePath);
+		Assert.Equal(Path.Combine(CycleFolder, "Aliases", "Departures.txt"), result.Departures!.AliasFilePath);
+
+		// The duplicate-alias report is part of the one cycle folder too.
+		Assert.NotNull(result.DuplicateAliasReport);
+		Assert.Equal(Path.Combine(CycleFolder, AiracOutputPaths.DuplicateAliasReportFileName), result.DuplicateAliasReport!.FilePath);
+		Assert.True(File.Exists(result.DuplicateAliasReport.FilePath));
+	}
+
+	[Fact]
+	public async Task a_dp_and_a_star_sharing_a_command_produce_the_duplicate_report_and_an_advisory_warning()
+	{
+		// ORF genuinely publishes both a NUTIY departure and a NUTIY arrival (see
+		// ArrivalAliasWriter.CommandName's remarks), so both alias files write ".orfNUTIYf" -
+		// exactly the case the duplicate-alias check exists to catch.
+		NasrCsvDataCollection data = DepartureTestData.Build(
+			bases: [DepartureTestData.Base("NUTIY", "ZDC", "NUTIY1.NUTIY", amendmentNo: "ONE", servedArpt: "ORF")],
+			apts: [DepartureTestData.Apt("NUTIY", "ZDC", "NUTIY1.NUTIY", "BODY", "ORF")],
+			routes: DepartureTestData.Body("NUTIY", "ZDC", "NUTIY1.NUTIY", "BODY", ["AAAAA", "BBBBB"]),
+			fixes: [("AAAAA", 36.9, -76.2), ("BBBBB", 37.0, -76.3)]);
+
+		NasrCsvDataCollection arrivalData = ArrivalTestData.Build(
+			bases: [ArrivalTestData.Base("NUTIY", "ZDC", "TRANS.NUTIY1", amendmentNo: "ONE", servedArpt: "ORF")],
+			apts: [ArrivalTestData.Apt("ZDC", "TRANS.NUTIY1", "BODY", "ORF")],
+			routes: ArrivalTestData.Body("ZDC", "TRANS.NUTIY1", "BODY", ["CCCCC", "DDDDD"]),
+			fixes: [("CCCCC", 36.95, -76.25), ("DDDDD", 37.05, -76.35)]);
+
+		data.Star = arrivalData.Star;
+		data.Fix!.FixBase.AddRange(arrivalData.Fix!.FixBase);
+		data.Apt!.AptBase.Add(new AptCsvDataModel.AptBase
+		{
+			ArptId = "ORF",
+			IcaoId = "KORF",
+			BaseLatDecimal = 36.8946,
+			BaseLongDecimal = -76.2012,
+			RespArtccId = "ZDC",
+		});
+
+		AiracServiceSettings settings = new()
+		{
+			SelectedCycle = Cycle,
+			OutputDirectory = _output,
+			Departures = new Dictionary<string, string> { { "GenerateGeojson", "N" } },
+			Arrivals = new Dictionary<string, string> { { "GenerateGeojson", "N" } },
+		};
+
+		AiracServiceResult result = await AiracService.RunAsync(settings, data);
+
+		Assert.NotNull(result.DuplicateAliasReport);
+		Assert.NotEmpty(result.DuplicateAliasReport!.Duplicates);
+		Assert.Contains(result.DuplicateAliasReport.Duplicates, d => d.Command.Equals(".orfNUTIYf", StringComparison.OrdinalIgnoreCase));
+		Assert.True(File.Exists(result.DuplicateAliasReport.FilePath));
+		Assert.Contains(result.Messages, m =>
+			m.IsAdvisory && m.Text.Contains("alias command(s) are used by more than one line", StringComparison.Ordinal));
 	}
 
 	[Fact]
@@ -144,7 +200,12 @@ public sealed class AiracServiceTests : IDisposable
 		Assert.Null(result.Departures);
 		Assert.NotNull(result.Arrivals);
 		Assert.Equal(1, result.Arrivals!.AirportProcedureCount);
-		Assert.Equal(Path.Combine(CycleFolder, "Arrivals.txt"), result.Arrivals.AliasFilePath);
+		Assert.Equal(Path.Combine(CycleFolder, "Aliases", "Arrivals.txt"), result.Arrivals.AliasFilePath);
+
+		// One alias file, no duplicates: the report still exists and says so.
+		Assert.NotNull(result.DuplicateAliasReport);
+		Assert.Empty(result.DuplicateAliasReport!.Duplicates);
+		Assert.Contains(result.Messages, m => m.Text.Contains("No duplicate alias commands", StringComparison.Ordinal));
 	}
 
 	[Fact]
@@ -181,7 +242,7 @@ public sealed class AiracServiceTests : IDisposable
 
 		// DeleteExisting only runs when something is selected: Arrivals alone must still trigger it.
 		Assert.False(File.Exists(stale));
-		Assert.True(File.Exists(Path.Combine(CycleFolder, "Arrivals.txt")));
+		Assert.True(File.Exists(Path.Combine(CycleFolder, "Aliases", "Arrivals.txt")));
 	}
 
 	[Fact]
@@ -209,7 +270,12 @@ public sealed class AiracServiceTests : IDisposable
 		Assert.Null(result.Arrivals);
 		Assert.NotNull(result.Navaids);
 		Assert.Equal(1, result.Navaids!.NavaidCount);
-		Assert.Equal(Path.Combine(CycleFolder, "NAVAIDs.txt"), result.Navaids.AliasFilePath);
+		Assert.Equal(Path.Combine(CycleFolder, "Aliases", "NAVAIDs.txt"), result.Navaids.AliasFilePath);
+
+		// One alias file, no duplicates: the report still exists and says so.
+		Assert.NotNull(result.DuplicateAliasReport);
+		Assert.Empty(result.DuplicateAliasReport!.Duplicates);
+		Assert.Contains(result.Messages, m => m.Text.Contains("No duplicate alias commands", StringComparison.Ordinal));
 	}
 
 	[Fact]
@@ -245,7 +311,7 @@ public sealed class AiracServiceTests : IDisposable
 
 		// DeleteExisting only runs when something is selected: NAVAIDs alone must still trigger it.
 		Assert.False(File.Exists(stale));
-		Assert.True(File.Exists(Path.Combine(CycleFolder, "NAVAIDs.txt")));
+		Assert.True(File.Exists(Path.Combine(CycleFolder, "Aliases", "NAVAIDs.txt")));
 	}
 
 	[Fact]
@@ -472,6 +538,174 @@ public sealed class AiracServiceTests : IDisposable
 		Assert.Contains("No weather station data for this cycle", ex.Message, StringComparison.Ordinal);
 	}
 
+	// ---- the AiracSupplementalData overload ----
+
+	[Fact]
+	public async Task the_supplemental_data_overload_is_the_real_implementation_the_others_delegate_to()
+	{
+		WxStationDataCollection wxData = WxStationTestData.Build([WxStationTestData.DtwRow()]);
+
+		AiracServiceSettings settings = new()
+		{
+			SelectedCycle = Cycle,
+			OutputDirectory = _output,
+			WxStations = new Dictionary<string, string>(),
+		};
+
+		AiracServiceResult result = await AiracService.RunAsync(
+			settings, new NasrCsvDataCollection(), new AiracSupplementalData { WxStations = wxData });
+
+		Assert.NotNull(result.WxStations);
+		Assert.Equal(1, result.WxStations!.StationCount);
+	}
+
+	[Fact]
+	public async Task the_wx_station_data_overload_delegates_to_the_supplemental_data_overload()
+	{
+		// Both overloads must reach WxStationService with the same data - the three-argument
+		// overload just wraps it in an AiracSupplementalData with everything else left null.
+		WxStationDataCollection wxData = WxStationTestData.Build([WxStationTestData.DtwRow()]);
+
+		AiracServiceSettings settings = new()
+		{
+			SelectedCycle = Cycle,
+			OutputDirectory = _output,
+			WxStations = new Dictionary<string, string>(),
+		};
+
+		AiracServiceResult viaWxOverload = await AiracService.RunAsync(settings, new NasrCsvDataCollection(), wxData);
+		AiracServiceResult viaSupplementalOverload = await AiracService.RunAsync(
+			settings, new NasrCsvDataCollection(), new AiracSupplementalData { WxStations = wxData });
+
+		Assert.Equal(viaSupplementalOverload.WxStations!.StationCount, viaWxOverload.WxStations!.StationCount);
+	}
+
+	[Fact]
+	public async Task run_async_rejects_a_null_supplemental_data()
+	{
+		AiracServiceSettings settings = new() { SelectedCycle = Cycle, OutputDirectory = _output };
+
+		await Assert.ThrowsAsync<ArgumentNullException>(
+			() => AiracService.RunAsync(settings, new NasrCsvDataCollection(), (AiracSupplementalData)null!));
+	}
+
+	// ---- Procedures ----
+
+	[Fact]
+	public async Task a_run_with_only_procedures_selected_counts_as_something_selected()
+	{
+		string stale = WriteStaleFile();
+		AiracServiceSettings settings = new()
+		{
+			SelectedCycle = Cycle,
+			OutputDirectory = _output,
+			ExistingOutput = ExistingOutputAction.DeleteExisting,
+			Procedures = new Dictionary<string, string> { ["Facilities"] = "ZOB" },
+		};
+
+		// No Dtpp is supplied, so the Procedures sub-service completes with its advisory (see
+		// below) and writes nothing - but DeleteExisting must still fire beforehand.
+		await AiracService.RunAsync(settings, new NasrCsvDataCollection());
+
+		Assert.False(File.Exists(stale));
+	}
+
+	[Fact]
+	public async Task a_procedures_block_alone_does_not_run_any_other_sub_service()
+	{
+		AiracServiceSettings settings = new()
+		{
+			SelectedCycle = Cycle,
+			OutputDirectory = _output,
+			Procedures = new Dictionary<string, string> { ["Facilities"] = "ZOB" },
+		};
+
+		AiracServiceResult result = await AiracService.RunAsync(settings, new NasrCsvDataCollection());
+
+		Assert.Null(result.Airways);
+		Assert.Null(result.Airports);
+		Assert.Null(result.Departures);
+		Assert.Null(result.Arrivals);
+		Assert.Null(result.Navaids);
+		Assert.Null(result.ArtccBoundaries);
+		Assert.Null(result.Fixes);
+		Assert.Null(result.WxStations);
+		Assert.DoesNotContain(result.Warnings, w => w.Contains("no sub-service", StringComparison.OrdinalIgnoreCase));
+	}
+
+	[Fact]
+	public async Task a_procedures_block_with_no_metafile_supplied_still_completes_with_the_advisory()
+	{
+		AiracServiceSettings settings = new()
+		{
+			SelectedCycle = Cycle,
+			OutputDirectory = _output,
+			Procedures = new Dictionary<string, string> { ["Facilities"] = "ZOB" },
+		};
+
+		// The two-argument overload supplies no supplemental data at all, so Dtpp is null: the
+		// Procedures sub-service must complete with its advisory rather than throwing, even
+		// though the NasrCsvDataCollection below has no Apt/ClsArsp parsed.
+		AiracServiceResult result = await AiracService.RunAsync(settings, new NasrCsvDataCollection());
+
+		Assert.NotNull(result.Procedures);
+		Assert.Empty(result.Procedures!.FilesWritten);
+		Assert.Contains(result.Procedures.Messages, m => m.IsAdvisory);
+	}
+
+	[Fact]
+	public async Task run_async_with_a_procedures_block_and_a_metafile_runs_the_pipeline_and_fills_the_result()
+	{
+		NasrCsvDataCollection nasr = ProcedureTestData.Nasr([ProcedureTestData.AptBaseRow("AAA", respArtccId: "ZOB")]);
+		DtppMetafileDataCollection dtpp = ProcedureTestData.Dtpp("2610",
+			airports: [ProcedureTestData.AirportRow("AAA", alnum: 100)],
+			records: [ProcedureTestData.RecordRow("AAA", 10, "IAP", "ILS RWY 1", "00100ILS1.PDF", userAction: "A")]);
+
+		AiracServiceSettings settings = new()
+		{
+			SelectedCycle = Cycle,
+			OutputDirectory = _output,
+			Procedures = new Dictionary<string, string> { ["Facilities"] = "ZOB" },
+		};
+
+		AiracServiceResult result = await AiracService.RunAsync(settings, nasr, new AiracSupplementalData { Dtpp = dtpp });
+
+		Assert.NotNull(result.Procedures);
+		Assert.Equal(1, result.Procedures!.AirportCount);
+		Assert.Equal(1, result.Procedures.NewCount);
+		Assert.Equal(
+			Path.Combine(CycleFolder, "Publication_Docs", "Procedure_Changes.md"),
+			result.Procedures.FilesWritten.Single(f => f.EndsWith(".md", StringComparison.Ordinal)));
+		Assert.True(File.Exists(Path.Combine(CycleFolder, "Publication_Docs", "Procedures.json")));
+	}
+
+	[Fact]
+	public async Task the_previous_cycle_metafile_flows_through_to_a_deleted_procedures_previous_chart_link()
+	{
+		NasrCsvDataCollection nasr = ProcedureTestData.Nasr([ProcedureTestData.AptBaseRow("AAA", respArtccId: "ZOB")]);
+		DtppMetafileDataCollection dtpp = ProcedureTestData.Dtpp("2610",
+			airports: [ProcedureTestData.AirportRow("AAA", alnum: 100)],
+			records: [ProcedureTestData.RecordRow("AAA", 10, "IAP", "ILS RWY 1", "DELETED_JOB.PDF", userAction: "D")]);
+		DtppMetafileDataCollection previousDtpp = ProcedureTestData.Dtpp("2609",
+			records: [ProcedureTestData.RecordRow("AAA", 10, "IAP", "ILS RWY 1", "00100ILS1.PDF")]);
+
+		AiracServiceSettings settings = new()
+		{
+			SelectedCycle = Cycle,
+			OutputDirectory = _output,
+			Procedures = new Dictionary<string, string> { ["Facilities"] = "ZOB" },
+		};
+
+		AiracServiceResult result = await AiracService.RunAsync(
+			settings, nasr, new AiracSupplementalData { Dtpp = dtpp, PreviousDtpp = previousDtpp });
+
+		Assert.DoesNotContain(result.Procedures!.Messages, m =>
+			m.Text.Contains("previous cycle's d-TPP Metafile is not available", StringComparison.Ordinal));
+
+		string markdown = File.ReadAllText(Path.Combine(CycleFolder, "Publication_Docs", "Procedure_Changes.md"));
+		Assert.Contains("https://aeronav.faa.gov/d-tpp/2609/00100ILS1.PDF", markdown);
+	}
+
 	[Fact]
 	public async Task without_the_fe_buddy_output_folder_the_cycle_folder_sits_in_the_output_directory()
 	{
@@ -479,7 +713,7 @@ public sealed class AiracServiceTests : IDisposable
 			AliasOnlySettings(addFeBuddyOutputFolder: false), DepartureTestData.Dotss());
 
 		Assert.Equal(Path.Combine(_output, "AIRAC_2610"), result.OutputDirectory);
-		Assert.True(File.Exists(Path.Combine(_output, "AIRAC_2610", "Airports.txt")));
+		Assert.True(File.Exists(Path.Combine(_output, "AIRAC_2610", "Aliases", "Airports.txt")));
 	}
 
 	[Fact]
@@ -504,7 +738,7 @@ public sealed class AiracServiceTests : IDisposable
 		await AiracService.RunAsync(AliasOnlySettings(), DepartureTestData.Dotss());
 
 		Assert.True(File.Exists(stale));
-		Assert.True(File.Exists(Path.Combine(CycleFolder, "Airports.txt")));
+		Assert.True(File.Exists(Path.Combine(CycleFolder, "Aliases", "Airports.txt")));
 	}
 
 	[Fact]
@@ -517,7 +751,7 @@ public sealed class AiracServiceTests : IDisposable
 
 		Assert.False(File.Exists(stale));
 		Assert.False(Directory.Exists(Path.GetDirectoryName(stale)));
-		Assert.True(File.Exists(Path.Combine(CycleFolder, "Airports.txt")));
+		Assert.True(File.Exists(Path.Combine(CycleFolder, "Aliases", "Airports.txt")));
 	}
 
 	[Fact]

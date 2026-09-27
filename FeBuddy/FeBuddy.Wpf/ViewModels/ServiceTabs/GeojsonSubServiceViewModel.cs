@@ -19,6 +19,13 @@ namespace FeBuddy.Wpf.ViewModels.ServiceTabs;
 /// </summary>
 /// <remarks>
 /// <para>
+/// Also the base for Procedures, which writes no GeoJSON at all: it still wants the Region of
+/// Interest override and the shared "keep at least one output on" plumbing, so it derives from
+/// this class too, with <see cref="EmitKeys"/> <c>(null, null, null)</c>, <see cref="HasAliasFile"/>
+/// <see langword="false"/>, and <see cref="OutputFiles"/> always empty - it never shows the GeoJSON
+/// Files, FE-Buddy Properties or Upload to vNAS / CRC ERAM Defaults cards.
+/// </para>
+/// <para>
 /// A derived tab builds <see cref="FebProperties"/> and the three CRC defaults lists in its
 /// constructor, lists the files its settings write in <see cref="OutputFiles"/>, calls
 /// <see cref="LoadSharedSettings"/> from <see cref="SubServiceSettingsViewModel.LoadFromConfig"/>,

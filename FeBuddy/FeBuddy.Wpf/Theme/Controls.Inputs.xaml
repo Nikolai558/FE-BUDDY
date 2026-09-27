@@ -10,6 +10,7 @@
 
     Implicit styles (no x:Key) so a bare control never falls back to the OS look:
         TextBox      -> Field
+        PasswordBox  -> the Field look (no placeholder: put the hint beside it)
         CheckBox     -> 16px sunken box, amber when checked
         RadioButton  -> 16px sunken disc, amber dot when checked
     A control that sets its own Style="{StaticResource ...}" (Nav.Item,
@@ -101,6 +102,43 @@
                         <Trigger Property="Text" Value="">
                             <Setter TargetName="Hint" Property="Visibility" Value="Visible" />
                         </Trigger>
+                        <Trigger Property="IsKeyboardFocused" Value="True">
+                            <Setter TargetName="Root" Property="BorderBrush" Value="{DynamicResource Brush.Accent}" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="Root" Property="Opacity" Value="0.34" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- ============================= PASSWORDBOX ============================ -->
+    <!-- The Field look for a password or token: same fill, edge, padding and focus ring, so it
+         lines up with the text boxes around it. Implicit, so a bare PasswordBox never looks
+         like the OS control. -->
+    <Style TargetType="PasswordBox">
+        <Setter Property="FontFamily" Value="{DynamicResource Font.Body}" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Primary}" />
+        <Setter Property="CaretBrush" Value="{DynamicResource Brush.Accent}" />
+        <Setter Property="SelectionBrush" Value="{DynamicResource Brush.Accent}" />
+        <Setter Property="Background" Value="{DynamicResource Brush.Bg.Sunken}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource Brush.Stroke.Strong}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Padding" Value="11,8" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="PasswordBox">
+                    <Border x:Name="Root"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="{DynamicResource Radius.Control}">
+                        <ScrollViewer x:Name="PART_ContentHost" VerticalAlignment="Center" />
+                    </Border>
+                    <ControlTemplate.Triggers>
                         <Trigger Property="IsKeyboardFocused" Value="True">
                             <Setter TargetName="Root" Property="BorderBrush" Value="{DynamicResource Brush.Accent}" />
                         </Trigger>

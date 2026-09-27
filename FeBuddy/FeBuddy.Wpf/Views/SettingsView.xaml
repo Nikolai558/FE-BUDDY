@@ -1,5 +1,5 @@
 <!--
-    SettingsView  -  Facility Profile / Default ROI / GeoJSON Files / Updates.
+    SettingsView  -  Facility Profile / Default ROI / GeoJSON Files / Credentials / Updates.
     Everything persists to UserConfig.json.
 -->
 <UserControl x:Class="FeBuddy.Wpf.Views.SettingsView"
@@ -151,7 +151,74 @@
                     </StackPanel>
                 </ctl:Card>
 
-                <!-- ================= 4. UPDATES ================= -->
+                <!-- ================= 4. CREDENTIALS ================= -->
+                <!-- Saved at once, in Windows Credential Manager: not part of this page's Save. -->
+                <ctl:Card Header="Credentials" DataContext="{Binding Credentials}">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
+                                   Text="{Binding Source={x:Static vm:CredentialsViewModel.Description}}" />
+
+                        <Border Style="{StaticResource Panel.Inset}" Margin="0,4,0,8"
+                                Visibility="{Binding HasLegacyToken, Converter={StaticResource BoolToVis}}">
+                            <DockPanel>
+                                <Button DockPanel.Dock="Right" Style="{StaticResource Button.Ghost}" Content="Move it here"
+                                        VerticalAlignment="Center" Margin="12,0,0,0"
+                                        Command="{Binding MoveLegacyTokenCommand}" />
+                                <TextBlock Style="{StaticResource Text.Prose}" Foreground="{StaticResource Brush.Warn}"
+                                           Text="{Binding LegacyTokenMessage}" />
+                            </DockPanel>
+                        </Border>
+
+                        <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
+                                   Foreground="{StaticResource Brush.Danger}" Text="{Binding LoadError}"
+                                   Visibility="{Binding HasLoadError, Converter={StaticResource BoolToVis}}" />
+
+                        <TextBlock Style="{StaticResource Text.Caption}" Margin="0,4,0,8" Text="No credentials yet."
+                                   Visibility="{Binding HasCredentials, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
+
+                        <ItemsControl ItemsSource="{Binding Rows}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <StackPanel>
+                                        <DockPanel Margin="0,8">
+                                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                                                <Button Style="{StaticResource Button.Ghost}" Content="{Binding CheckLabel}" Margin="8,0,0,0"
+                                                        ToolTip="Ask GitHub whether this token still works."
+                                                        Visibility="{Binding CanCheck, Converter={StaticResource BoolToVis}}"
+                                                        Command="{Binding DataContext.CheckCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                        CommandParameter="{Binding}" />
+                                                <Button Style="{StaticResource Button.Ghost}" Content="Edit…" Margin="8,0,0,0"
+                                                        Command="{Binding DataContext.EditCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                        CommandParameter="{Binding}" />
+                                                <Button Style="{StaticResource Button.Ghost}" Content="Remove" Margin="8,0,0,0"
+                                                        Command="{Binding DataContext.RemoveCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                        CommandParameter="{Binding}" />
+                                            </StackPanel>
+                                            <StackPanel VerticalAlignment="Center">
+                                                <TextBlock Style="{StaticResource Text.Body.Strong}" Text="{Binding Name}" />
+                                                <TextBlock Style="{StaticResource Text.Caption}" Text="{Binding Details}" TextWrapping="Wrap" />
+                                                <TextBlock Style="{StaticResource Text.Caption}" Foreground="{StaticResource Brush.Accent.Text}"
+                                                           Text="Used for FE-Buddy's update checks, News and update downloads"
+                                                           Visibility="{Binding IsUsedByFeBuddy, Converter={StaticResource BoolToVis}}" />
+                                            </StackPanel>
+                                        </DockPanel>
+                                        <Border Style="{StaticResource Divider}" />
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                            <Button Style="{StaticResource Button.Primary}" Content="Add credential…"
+                                    Command="{Binding AddCommand}" />
+                            <Button Style="{StaticResource Button.Ghost}" Content="Remove all" Margin="8,0,0,0"
+                                    ToolTip="Remove every FE-Buddy credential from this PC."
+                                    Command="{Binding RemoveAllCommand}" />
+                        </StackPanel>
+                    </StackPanel>
+                </ctl:Card>
+
+                <!-- ================= 5. UPDATES ================= -->
                 <!-- Most finished channel first; each one also offers every channel above it. -->
                 <ctl:Card Header="Updates">
                     <StackPanel>

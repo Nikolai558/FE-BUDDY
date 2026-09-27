@@ -19,6 +19,7 @@ using FeBuddy.Core.Domain.Airac.Models;
 using FeBuddy.Core.Domain.Geo.Models;
 using FeBuddy.Core.Infrastructure.Configuration;
 using FeBuddy.Core.Infrastructure.Configuration.Models;
+using FeBuddy.Core.Infrastructure.Credentials;
 using FeBuddy.Core.Infrastructure.Logging;
 using FeBuddy.Core.Infrastructure.Platform;
 
@@ -31,7 +32,8 @@ namespace FeBuddy.Wpf.ViewModels;
 
 /// <summary>
 /// SYSTEM ▸ Settings. Section order: Facility Profile, Default Region of Interest, GeoJSON Files,
-/// Updates. Every value persists to <c>UserConfig.json</c>.
+/// Credentials, Updates. Every value persists to <c>UserConfig.json</c>, except credentials, which
+/// live in Windows Credential Manager and are saved at once (<see cref="CredentialsViewModel"/>).
 /// </summary>
 /// <remarks>
 /// <para>
@@ -322,7 +324,12 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 	/// </summary>
 	public bool IsDevModeForcingPrettyPrint => DevMode.IsEnabled;
 
-	// ================= 4. UPDATES =================
+	// ================= 4. CREDENTIALS =================
+
+	/// <summary>The Credentials card. Its changes are saved at once and take no part in <see cref="SaveCommand"/>.</summary>
+	public CredentialsViewModel Credentials { get; } = new(CredentialStore.Default);
+
+	// ================= 5. UPDATES =================
 
 	/// <summary>The update channels, in the order the menu shows them: most finished first.</summary>
 	public IReadOnlyList<ReleaseChannel> Channels { get; } =

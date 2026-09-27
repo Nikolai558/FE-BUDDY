@@ -1,263 +1,368 @@
-using System.Collections.ObjectModel;
-using System.IO;
+using System.Globalization;
+using System.Windows;
 using System.Windows.Input;
-using System.Windows.Media;
+using System.Windows.Threading;
 
-using FeBuddy.Wpf.Map.Models;
-using FeBuddy.Wpf.Map;
-using FeBuddy.Wpf.Mvvm;
-using FeBuddy.Wpf.Shell;
-
+using FeBuddy.Core.Domain.Geo;
 using FeBuddy.Core.Domain.Geo.Models;
-using FeBuddy.Core.Infrastructure.Logging;
-
-using Microsoft.Win32;
+using FeBuddy.Wpf.Map.Models;
+using FeBuddy.Wpf.Mvvm;
 
 namespace FeBuddy.Wpf.ViewModels;
 
 /// <summary>
-/// The Map Service: view the user's own GeoJSON files and manage the single default ROI.
+/// One map workspace: the shared layers (<see cref="State"/>) plus the ROI this map edits. The
+/// Map page builds one for the saved default ROI; each map popup builds one for whatever opened
+/// it (see <see cref="IRoiTarget"/>), so every map in the app is the same screen.
+/// <para>
+/// ROI editing: <see cref="IsEditingRoi"/> switches the map into drawing mode (draw, move and
+/// resize the box, or type its corners) until <b>Save</b> commits it and switches editing off,
+/// or <b>Cancel</b> puts the saved box back. <b>Shift + drag</b> on the map skips all that: the
+/// box is saved the moment the mouse is let go (<see cref="OnQuickDrawn"/>).
+/// </para>
 /// </summary>
 public sealed class MapViewModel : ObservableObject
 {
-	private static readonly Color[] FileColors =
-	[
-		Color.FromRgb(0x7C, 0xC7, 0xF2), Color.FromRgb(0x5A, 0xD1, 0xA0),
-		Color.FromRgb(0xB4, 0x8C, 0xF0), Color.FromRgb(0xF2, 0x87, 0x9B),
-		Color.FromRgb(0xF0, 0xA3, 0x5A),
-	];
+	private readonly Dispatcher _dispatcher;
+	private GeoBounds? _draftRoi;
+	private string _neLat = string.Empty;
+	private string _neLon = string.Empty;
+	private string _swLat = string.Empty;
+	private string _swLon = string.Empty;
+	private bool _isEditingRoi;
+	private string? _roiError;
+	private bool _syncing;
 
-	private int _colorCursor;
-	private string? _statusMessage;
-	private bool _showDefaultRoi = true;
-	private RegionOfInterest? _defaultRoi;
-
-	/// <summary>Creates the view-model with the US-states outline and the saved default ROI.</summary>
+	/// <summary>Creates the Map page's workspace, editing the saved default ROI.</summary>
 	public MapViewModel()
+		: this(new DefaultRoiTarget())
 	{
-		BaseLayer = BaseMap.UsStates;
-
-		Layers = [];
-		LoadedFiles = [];
-		LoadedFiles.CollectionChanged += (_, _) =>
-		{
-			OnPropertyChanged(nameof(HasLoadedFiles));
-			OnPropertyChanged(nameof(FilesButtonLabel));
-		};
-
-		LoadFilesCommand = new RelayCommand(LoadFiles);
-		ClearFilesCommand = new RelayCommand(() => { LoadedFiles.Clear(); SyncLayers(); }, () => HasLoadedFiles);
-		ResetViewCommand = new RelayCommand(() => ResetRequested?.Invoke(this, EventArgs.Empty));
-
-		DefaultRoi = DefaultRoiStore.Load();
-		DefaultRoiStore.Changed += OnDefaultRoiChanged;
 	}
 
-	// View-models live for the whole session (NavItem caches them), so the Map page has to
-	// hear when Settings changes or clears the default ROI.
-	private void OnDefaultRoiChanged(object? sender, EventArgs e) => DefaultRoi = DefaultRoiStore.Load();
+	/// <summary>Creates a workspace that edits <paramref name="target"/>'s ROI.</summary>
+	/// <param name="target">Where a saved ROI goes.</param>
+	public MapViewModel(IRoiTarget target)
+	{
+		_dispatcher = Application.Current?.Dispatcher ?? Dispatcher.CurrentDispatcher;
+		Target = target;
+		State = MapLayersState.Shared;
 
-	/// <summary>Raised when the view should zoom to a set of bounds (after a load).</summary>
+		EditRoiCommand = new RelayCommand(() => IsEditingRoi = true);
+		SaveRoiCommand = new RelayCommand(SaveRoi, () => IsEditingRoi);
+		CancelRoiCommand = new RelayCommand(CancelRoi);
+		ClearRoiCommand = new RelayCommand(ClearRoi, () => Target.CanClear && DraftRoi is not null);
+		ZoomToRoiCommand = new RelayCommand(() => FrameRequested?.Invoke(this, DraftRoi!.Value), () => DraftRoi is not null);
+
+		target.CurrentChanged += (_, _) => _dispatcher.BeginInvoke(OnTargetChanged);
+
+		ResetDraft();
+		_isEditingRoi = target.StartsEditing;
+	}
+
+	/// <summary>Raised when the map should frame a box (Zoom to ROI).</summary>
 	public event EventHandler<GeoBounds>? FrameRequested;
 
-	/// <summary>Raised when the view should reset the map to the default extent.</summary>
-	public event EventHandler? ResetRequested;
+	/// <summary>The layers every map shares.</summary>
+	public MapLayersState State { get; }
 
-	/// <summary>The reference base outline (US states).</summary>
-	public MapLayer? BaseLayer { get; }
+	/// <summary>Where a saved ROI goes.</summary>
+	public IRoiTarget Target { get; }
 
-	/// <summary>The draw list the map binds to (rebuilt by <see cref="SyncLayers"/>).</summary>
-	public ObservableCollection<MapLayer> Layers { get; }
+	/// <summary>A second box drawn dashed for comparison (the default ROI, when editing an override).</summary>
+	public GeoBounds? ReferenceRoi => ToBounds(Target.Reference);
 
-	/// <summary>Every opened file, visible or not.</summary>
-	public ObservableCollection<LoadedFile> LoadedFiles { get; }
-
-	/// <summary>Whether any file is open.</summary>
-	public bool HasLoadedFiles => LoadedFiles.Count > 0;
-
-	/// <summary>The files button's label, e.g. <c>2 files</c>.</summary>
-	public string FilesButtonLabel => LoadedFiles.Count switch
-	{
-		0 => "No files loaded",
-		1 => "1 file",
-		var n => $"{n} files",
-	};
-
-	/// <summary>The result of the last load, e.g. which files could not be read.</summary>
-	public string? StatusMessage
-	{
-		get => _statusMessage;
-		private set => SetProperty(ref _statusMessage, value);
-	}
-
-	// ---- default ROI ----
-
-	/// <summary>The saved default ROI, or <see langword="null"/> when none is set.</summary>
-	public RegionOfInterest? DefaultRoi
-	{
-		get => _defaultRoi;
-		private set
-		{
-			if (SetProperty(ref _defaultRoi, value))
-			{
-				OnPropertyChanged(nameof(HasDefaultRoi));
-				OnPropertyChanged(nameof(DefaultRoiSummary));
-				OnPropertyChanged(nameof(RoiOnMapSouthWest));
-				OnPropertyChanged(nameof(RoiOnMapNorthEast));
-			}
-		}
-	}
-
-	/// <summary>Whether a default ROI is saved.</summary>
-	public bool HasDefaultRoi => DefaultRoi is not null;
-
-	/// <summary>The default ROI's corners on one line, or how to set one.</summary>
-	public string DefaultRoiSummary => DefaultRoi is { } r
-		? $"SW {r.SwLat:0.####}, {r.SwLon:0.####}   ·   NE {r.NeLat:0.####}, {r.NeLon:0.####}"
-		: "No default ROI is set. Draw one below and press Set ROI.";
-
-	/// <summary>When on, the saved default ROI box is drawn on the main map.</summary>
-	public bool ShowDefaultRoi
-	{
-		get => _showDefaultRoi;
-		set
-		{
-			if (SetProperty(ref _showDefaultRoi, value))
-			{
-				OnPropertyChanged(nameof(RoiOnMapSouthWest));
-				OnPropertyChanged(nameof(RoiOnMapNorthEast));
-			}
-		}
-	}
-
-	/// <summary>SW corner shown on the main map (<see langword="null"/> hides the box).</summary>
-	public GeoPoint? RoiOnMapSouthWest => ShowDefaultRoi && DefaultRoi is { } r ? new GeoPoint(r.SwLat, r.SwLon) : null;
-
-	/// <summary>NE corner shown on the main map (<see langword="null"/> hides the box).</summary>
-	public GeoPoint? RoiOnMapNorthEast => ShowDefaultRoi && DefaultRoi is { } r ? new GeoPoint(r.NeLat, r.NeLon) : null;
-
-	/// <summary>Opens GeoJSON files onto the map.</summary>
-	public ICommand LoadFilesCommand { get; }
-
-	/// <summary>Removes every opened file.</summary>
-	public ICommand ClearFilesCommand { get; }
-
-	/// <summary>Resets the map to the contiguous US.</summary>
-	public ICommand ResetViewCommand { get; }
+	// ============================= the box ===============================
 
 	/// <summary>
-	/// Called by the view when the embedded <c>RoiEditor</c> confirms a box. Saves it as the one
-	/// default ROI, the same one Settings edits.
+	/// The box on the map. Two-way with the map: drawing, moving or resizing it lands here and
+	/// fills the corner fields; typing valid corners moves it.
 	/// </summary>
-	/// <param name="roi">The confirmed region.</param>
-	public void SetDefaultRoi(RegionOfInterest roi)
+	public GeoBounds? DraftRoi
 	{
-		DefaultRoiStore.Set(roi);
-		Toast.Success("Default ROI saved", "Settings ▸ Default Region of Interest now uses this box.");
+		get => _draftRoi;
+		set
+		{
+			if (!SetProperty(ref _draftRoi, value))
+			{
+				return;
+			}
+
+			if (!_syncing)
+			{
+				WriteFields(value);
+				if (!IsEditingRoi)
+				{
+					IsEditingRoi = true;
+				}
+			}
+
+			RoiError = null;
+			RaiseRoiState();
+		}
 	}
 
-	private void LoadFiles()
+	/// <summary>The north-east latitude field.</summary>
+	public string NeLat
 	{
-		OpenFileDialog dialog = new()
-		{
-			Title = "Open GeoJSON",
-			Filter = "GeoJSON (*.geojson;*.json)|*.geojson;*.json|All files (*.*)|*.*",
-			Multiselect = true,
-		};
+		get => _neLat;
+		set => SetField(ref _neLat, value);
+	}
 
-		if (dialog.ShowDialog() != true)
+	/// <summary>The north-east longitude field.</summary>
+	public string NeLon
+	{
+		get => _neLon;
+		set => SetField(ref _neLon, value);
+	}
+
+	/// <summary>The south-west latitude field.</summary>
+	public string SwLat
+	{
+		get => _swLat;
+		set => SetField(ref _swLat, value);
+	}
+
+	/// <summary>The south-west longitude field.</summary>
+	public string SwLon
+	{
+		get => _swLon;
+		set => SetField(ref _swLon, value);
+	}
+
+	/// <summary>
+	/// Whether the map is in ROI editing mode. Switching it off by hand is a cancel: an unsaved
+	/// box goes back to the saved one.
+	/// </summary>
+	public bool IsEditingRoi
+	{
+		get => _isEditingRoi;
+		set
+		{
+			if (_isEditingRoi == value)
+			{
+				return;
+			}
+
+			if (!value && IsRoiDirty)
+			{
+				ResetDraft();
+			}
+
+			SetProperty(ref _isEditingRoi, value);
+			RoiError = null;
+			RaiseRoiState();
+		}
+	}
+
+	/// <summary>Why the last Save was refused, or <see langword="null"/>.</summary>
+	public string? RoiError
+	{
+		get => _roiError;
+		private set => SetProperty(ref _roiError, value);
+	}
+
+	/// <summary>Whether the box differs from the saved one.</summary>
+	public bool IsRoiDirty => !Nullable.Equals(DraftRoi, ToBounds(Target.Current));
+
+	/// <summary>A one-word state for the ROI card's chip: Editing, Unsaved, Saved or Not set.</summary>
+	public string RoiState => IsEditingRoi
+		? IsRoiDirty ? "Unsaved" : "Editing"
+		: Target.Current is null ? "Not set" : "Saved";
+
+	/// <summary>The chip colour for <see cref="RoiState"/>: Accent, Warn, Positive or Neutral (see Chip.State).</summary>
+	public string RoiStateKind => RoiState switch
+	{
+		"Editing" => "Accent",
+		"Unsaved" => "Warn",
+		"Saved" => "Positive",
+		_ => "Neutral",
+	};
+
+	/// <summary>The four corners on one line, for the copy button; empty when there is no box.</summary>
+	public string CopyText => DraftRoi is { } b
+		? string.Create(CultureInfo.InvariantCulture, $"SW {b.South:0.####}, {b.West:0.####} / NE {b.North:0.####}, {b.East:0.####}")
+		: string.Empty;
+
+	/// <summary>Whether there is a box to copy or zoom to.</summary>
+	public bool HasDraftRoi => DraftRoi is not null;
+
+	// ============================ commands ===============================
+
+	/// <summary>Switches ROI editing on.</summary>
+	public ICommand EditRoiCommand { get; }
+
+	/// <summary>Validates and saves the box, then leaves editing mode.</summary>
+	public ICommand SaveRoiCommand { get; }
+
+	/// <summary>Drops unsaved changes and leaves editing mode (and closes a popup).</summary>
+	public ICommand CancelRoiCommand { get; }
+
+	/// <summary>Removes the box, to save "no ROI" (the Map page only).</summary>
+	public ICommand ClearRoiCommand { get; }
+
+	/// <summary>Frames the box on the map.</summary>
+	public ICommand ZoomToRoiCommand { get; }
+
+	/// <summary>A Shift + drag finished: take the box and save it straight away.</summary>
+	/// <param name="box">The box drawn.</param>
+	public void OnQuickDrawn(GeoBounds box)
+	{
+		DraftRoi = box;
+		SaveRoi();
+	}
+
+	private void SaveRoi()
+	{
+		RoiError = null;
+
+		if (string.IsNullOrWhiteSpace(SwLat) && string.IsNullOrWhiteSpace(SwLon)
+			&& string.IsNullOrWhiteSpace(NeLat) && string.IsNullOrWhiteSpace(NeLon))
+		{
+			if (!Target.CanClear)
+			{
+				RoiError = "Draw a box on the map (or type its corners) first.";
+				return;
+			}
+
+			Finish(null);
+			return;
+		}
+
+		string swLat = SwLat.Trim(), swLon = SwLon.Trim(), neLat = NeLat.Trim(), neLon = NeLon.Trim();
+
+		if (CrossesAntimeridian(swLon, neLon))
+		{
+			RoiError = "The box crosses the 180° meridian. An ROI has to sit on one side of it - redraw it there.";
+			return;
+		}
+
+		if (!RoiFilter.IsCoordinateValidFormat(swLat, swLon, neLat, neLon, out string? formatError))
+		{
+			RoiError = formatError;
+			return;
+		}
+
+		double sLat = double.Parse(swLat, CultureInfo.InvariantCulture);
+		double sLon = double.Parse(swLon, CultureInfo.InvariantCulture);
+		double nLat = double.Parse(neLat, CultureInfo.InvariantCulture);
+		double nLon = double.Parse(neLon, CultureInfo.InvariantCulture);
+
+		if (!RoiFilter.IsCoordinatesRelativePositionValid(sLat, sLon, nLat, nLon, out string? positionError))
+		{
+			RoiError = positionError;
+			return;
+		}
+
+		Finish(new RegionOfInterest(sLat, sLon, nLat, nLon));
+	}
+
+	private void Finish(RegionOfInterest? roi)
+	{
+		Target.Commit(roi);
+		_isEditingRoi = false;
+		OnPropertyChanged(nameof(IsEditingRoi));
+		ResetDraft();
+	}
+
+	private void CancelRoi()
+	{
+		ResetDraft();
+		_isEditingRoi = false;
+		OnPropertyChanged(nameof(IsEditingRoi));
+		RoiError = null;
+		RaiseRoiState();
+		Target.Cancel();
+	}
+
+	private void ClearRoi()
+	{
+		DraftRoi = null;
+		IsEditingRoi = true;
+	}
+
+	// ============================= syncing ===============================
+
+	private void OnTargetChanged()
+	{
+		if (!IsEditingRoi)
+		{
+			ResetDraft();
+		}
+
+		RaiseRoiState();
+	}
+
+	/// <summary>Puts the saved ROI back in the box and the fields.</summary>
+	private void ResetDraft()
+	{
+		_syncing = true;
+		DraftRoi = ToBounds(Target.Current);
+		WriteFields(DraftRoi);
+		_syncing = false;
+		RaiseRoiState();
+	}
+
+	private void WriteFields(GeoBounds? box)
+	{
+		bool wasSyncing = _syncing;
+		_syncing = true;
+		NeLat = box is { } b1 ? Format(b1.North) : string.Empty;
+		NeLon = box is { } b2 ? Format(b2.East) : string.Empty;
+		SwLat = box is { } b3 ? Format(b3.South) : string.Empty;
+		SwLon = box is { } b4 ? Format(b4.West) : string.Empty;
+		_syncing = wasSyncing;
+	}
+
+	/// <summary>A typed corner: once all four parse, the box on the map follows.</summary>
+	private void SetField(ref string field, string value, [System.Runtime.CompilerServices.CallerMemberName] string? name = null)
+	{
+		if (!SetProperty(ref field, value ?? string.Empty, name) || _syncing)
 		{
 			return;
 		}
 
-		int added = 0;
-		List<string> failed = [];
-		GeoBounds? combined = null;
-
-		foreach (string path in dialog.FileNames)
+		if (!IsEditingRoi)
 		{
-			try
-			{
-				IReadOnlyList<MapGeometry> geometries = GeoJsonReader.Read(File.ReadAllText(path));
-
-				if (geometries.Count == 0)
-				{
-					failed.Add($"{Path.GetFileName(path)} (no supported features)");
-					AppLog.Warning("Map", $"'{Path.GetFileName(path)}' had no supported GeoJSON features.");
-					continue;
-				}
-
-				SolidColorBrush brush = new(FileColors[_colorCursor++ % FileColors.Length]);
-				brush.Freeze();
-
-				MapLayer layer = new(Path.GetFileName(path), geometries, brush, thickness: 1.9, pointRadius: 4.0);
-
-				LoadedFile file = null!;
-				file = new LoadedFile(layer, SyncLayers, new RelayCommand(() => RemoveFile(file)));
-				LoadedFiles.Add(file);
-				added++;
-
-				if (layer.Extent is { } extent)
-				{
-					combined = combined is { } c ? Union(c, extent) : extent;
-				}
-			}
-			catch (Exception ex) when (ex is FormatException or IOException or UnauthorizedAccessException)
-			{
-				failed.Add($"{Path.GetFileName(path)} ({ex.Message})");
-				AppLog.Warning("Map", $"Could not read '{Path.GetFileName(path)}': {ex.Message}");
-			}
+			IsEditingRoi = true;
 		}
 
-		SyncLayers();
-		StatusMessage = BuildStatus(added, failed);
-
-		if (failed.Count > 0)
+		if (TryParse(SwLat, out double swLat) && TryParse(SwLon, out double swLon)
+			&& TryParse(NeLat, out double neLat) && TryParse(NeLon, out double neLon))
 		{
-			Toast.Warn("Some files could not be loaded", string.Join("; ", failed));
+			_syncing = true;
+			DraftRoi = new GeoBounds(
+				new GeoPoint(Math.Min(swLat, neLat), Math.Min(swLon, neLon)),
+				new GeoPoint(Math.Max(swLat, neLat), Math.Max(swLon, neLon)));
+			_syncing = false;
 		}
 
-		if (combined is { } bounds)
-		{
-			FrameRequested?.Invoke(this, bounds);
-		}
+		RaiseRoiState();
 	}
 
-	private void RemoveFile(LoadedFile file)
+	private void RaiseRoiState()
 	{
-		LoadedFiles.Remove(file);
-		SyncLayers();
-	}
-
-	/// <summary>Rebuilds <see cref="Layers"/> from the visible loaded files, in load order.</summary>
-	private void SyncLayers()
-	{
-		Layers.Clear();
-		foreach (LoadedFile file in LoadedFiles)
-		{
-			if (file.IsVisible)
-			{
-				Layers.Add(file.Layer);
-			}
-		}
-
-		OnPropertyChanged(nameof(HasLoadedFiles));
-		OnPropertyChanged(nameof(FilesButtonLabel));
+		OnPropertyChanged(nameof(IsRoiDirty));
+		OnPropertyChanged(nameof(RoiState));
+		OnPropertyChanged(nameof(RoiStateKind));
+		OnPropertyChanged(nameof(CopyText));
+		OnPropertyChanged(nameof(HasDraftRoi));
 		CommandManager.InvalidateRequerySuggested();
 	}
 
-	private static string BuildStatus(int added, IReadOnlyList<string> failed)
-	{
-		if (failed.Count == 0)
-		{
-			return added switch { 0 => string.Empty, 1 => "Loaded 1 file.", _ => $"Loaded {added} files." };
-		}
+	/// <summary>
+	/// Whether the corners describe a box drawn across the 180th meridian: the map writes such a
+	/// box with one edge past ±180 (e.g. west 170, east 190), which no ROI can hold.
+	/// </summary>
+	private static bool CrossesAntimeridian(string swLon, string neLon) =>
+		(TryParse(swLon, out double west) && west is < -180.0 and >= -360.0)
+		|| (TryParse(neLon, out double east) && east is > 180.0 and <= 360.0);
 
-		string head = added > 0 ? $"Loaded {added}; " : string.Empty;
-		return head + "couldn't read " + string.Join(", ", failed);
-	}
+	private static bool TryParse(string text, out double value) =>
+		double.TryParse(text.Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out value);
 
-	private static GeoBounds Union(GeoBounds a, GeoBounds b) => new(
-		new GeoPoint(Math.Min(a.South, b.South), Math.Min(a.West, b.West)),
-		new GeoPoint(Math.Max(a.North, b.North), Math.Max(a.East, b.East)));
+	private static string Format(double value) => value.ToString("0.####", CultureInfo.InvariantCulture);
+
+	private static GeoBounds? ToBounds(RegionOfInterest? roi) => roi is { } r
+		? new GeoBounds(new GeoPoint(r.SwLat, r.SwLon), new GeoPoint(r.NeLat, r.NeLon))
+		: null;
 }

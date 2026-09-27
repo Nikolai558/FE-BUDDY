@@ -9,7 +9,7 @@ namespace FeBuddy.Wpf.Map;
 /// <summary>
 /// The reference base outline (contiguous US states), loaded once from the bundled
 /// <c>Assets/us-states.json</c> resource and shared by every map: the Map screen and every
-/// <see cref="Views.RoiPickerWindow"/> (the Settings default ROI and each sub-service's ROI override).
+/// map popup (<see cref="Views.RoiPickerWindow"/>, for the Settings default ROI and each sub-service's ROI override).
 /// </summary>
 public static class BaseMap
 {

@@ -55,7 +55,7 @@ public sealed class TelephonyAliasWriterTests : IDisposable
 		string card = TelephonyAliasWriter.BuildCard(entry);
 
 		Assert.Equal(
-			@"\n3LD:\t\t\tAVA\nTELEPHONY:\t\s\sAVIANCA\nCOMPANY:\t\s\s\sAEROVIAS DEL CONTINENTE AMERICANO S.A.\nCOUNTRY:\t\s\s\sCOLOMBIA",
+			@"\n3LD:\t\t\tAVA\nTELEPHONY:\t\s\sAVIANCA\nCOMPANY:\t\tAEROVIAS DEL CONTINENTE AMERICANO S.A.\nCOUNTRY:\t\tCOLOMBIA",
 			card);
 	}
 
@@ -67,7 +67,7 @@ public sealed class TelephonyAliasWriterTests : IDisposable
 		string card = TelephonyAliasWriter.BuildCard(entry);
 
 		Assert.Equal(
-			@"\nID:\t\t\t\sARSIX\nTELEPHONY:\t\s\sAIR SIX\nAGENCY:\t\t\sNYC ENVIRONMENTAL PROTECTION (NEW WINDSOR, NY)\nEXPIRES:\t\s\s\s24-FEB-2027",
+			@"\nID:\t\t\t\sARSIX\nTELEPHONY:\t\s\sAIR SIX\nAGENCY:\t\t\sNYC ENVIRONMENTAL PROTECTION (NEW WINDSOR, NY)\nEXPIRES:\t\t24-FEB-2027",
 			card);
 	}
 

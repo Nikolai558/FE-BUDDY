@@ -9,7 +9,7 @@ namespace FeBuddy.Core.Application.Airac.Telephony;
 /// <summary>
 /// Writes <c>Telephony.txt</c>: an <c>.echo</c> command per designator, identifier and telephony
 /// that shows the operator's card in CRC, e.g.
-/// <c>.idAVA .echo \n3LD:\t\t\tAVA\nTELEPHONY:\t\s\sAVIANCA\nCOMPANY:\t\s\s\s...\nCOUNTRY:\t\s\s\sCOLOMBIA</c>.
+/// <c>.idAVA .echo \n3LD:\t\t\tAVA\nTELEPHONY:\t\s\sAVIANCA\nCOMPANY:\t\t...\nCOUNTRY:\t\tCOLOMBIA</c>.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -131,7 +131,6 @@ public static class TelephonyAliasWriter
 		string tab2 = tab + tab;
 		string tab3 = tab2 + tab;
 		string space2 = SpaceEscape + SpaceEscape;
-		string space3 = space2 + SpaceEscape;
 
 		StringBuilder card = new();
 
@@ -139,15 +138,15 @@ public static class TelephonyAliasWriter
 		{
 			AppendLine(card, "3LD:", tab3, entry.Identifier);
 			AppendLine(card, "TELEPHONY:", tab + space2, entry.Telephony);
-			AppendLine(card, "COMPANY:", tab + tab, entry.Organization);
-			AppendLine(card, "COUNTRY:", tab + tab, entry.Detail);
+			AppendLine(card, "COMPANY:", tab2, entry.Organization);
+			AppendLine(card, "COUNTRY:", tab2, entry.Detail);
 		}
 		else
 		{
 			AppendLine(card, "ID:", tab3 + SpaceEscape, entry.Identifier);
 			AppendLine(card, "TELEPHONY:", tab + space2, entry.Telephony);
 			AppendLine(card, "AGENCY:", tab2 + SpaceEscape, entry.Organization);
-			AppendLine(card, "EXPIRES:", tab + tab, entry.Detail);
+			AppendLine(card, "EXPIRES:", tab2, entry.Detail);
 		}
 
 		return card.ToString();

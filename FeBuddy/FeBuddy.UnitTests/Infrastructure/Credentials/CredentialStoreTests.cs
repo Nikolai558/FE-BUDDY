@@ -120,19 +120,17 @@ public sealed class CredentialStoreTests : IDisposable
 
 	/// <summary>Each rule a credential must meet, with the message the user sees.</summary>
 	[Theory]
-	[InlineData("", CredentialKind.Token, null, "abc", "example.com", false, "Give the credential a name.")]
-	[InlineData("taken", CredentialKind.Token, null, "abc", "example.com", false, "There is already a credential called 'taken'.")]
-	[InlineData("TAKEN", CredentialKind.Token, null, "abc", "example.com", false, "There is already a credential called 'TAKEN'.")]
-	[InlineData("x", CredentialKind.UsernamePassword, " ", "abc", "example.com", false, "Enter the user name.")]
-	[InlineData("x", CredentialKind.UsernamePassword, "bob", "", "example.com", false, "Enter the password.")]
-	[InlineData("x", CredentialKind.GitHubToken, null, " ", "github.com", false, "Enter the token.")]
-	[InlineData("x", CredentialKind.Token, null, "abc", "", false, "Name at least one website it may be used with.")]
-	[InlineData("x", CredentialKind.Token, null, "abc", "github.com", true, "Only a GitHub token can be used for FE-Buddy's own GitHub requests.")]
-	[InlineData("x", CredentialKind.GitHubToken, null, "abc", "example.com", true, "To use it for FE-Buddy's own GitHub requests, its websites must include github.com (or api.github.com).")]
-	public void validate_reports_each_rule(string name, CredentialKind kind, string? user, string secret, string hosts, bool forGitHub, string expected)
+	[InlineData("", CredentialKind.Token, null, "abc", "example.com", "Give the credential a name.")]
+	[InlineData("taken", CredentialKind.Token, null, "abc", "example.com", "There is already a credential called 'taken'.")]
+	[InlineData("TAKEN", CredentialKind.Token, null, "abc", "example.com", "There is already a credential called 'TAKEN'.")]
+	[InlineData("x", CredentialKind.UsernamePassword, " ", "abc", "example.com", "Enter the user name.")]
+	[InlineData("x", CredentialKind.UsernamePassword, "bob", "", "example.com", "Enter the password.")]
+	[InlineData("x", CredentialKind.GitHubToken, null, " ", "github.com", "Enter the token.")]
+	[InlineData("x", CredentialKind.Token, null, "abc", "", "Name at least one website it may be used with.")]
+	public void validate_reports_each_rule(string name, CredentialKind kind, string? user, string secret, string hosts, string expected)
 	{
 		_store.Save(Token("taken", "abc", CredentialKind.Token, Example));
-		CredentialDraft draft = new(null, name, kind, user, secret, hosts.Length == 0 ? [] : [hosts], forGitHub);
+		CredentialDraft draft = new(null, name, kind, user, secret, hosts.Length == 0 ? [] : [hosts]);
 
 		Assert.Equal(expected, _store.Validate(draft));
 		ArgumentException ex = Assert.Throws<ArgumentException>(() => _store.Save(draft));
@@ -175,38 +173,36 @@ public sealed class CredentialStoreTests : IDisposable
 
 	// ============================ FE-Buddy's GitHub token ============================
 
-	/// <summary>Only one credential is used for FE-Buddy's own GitHub requests: marking another unmarks the first.</summary>
+	/// <summary>FE-Buddy's own GitHub requests get the chosen GitHub token's secret.</summary>
 	[Fact]
-	public void marking_a_github_token_unmarks_the_other()
+	public void get_github_token_gives_a_github_tokens_secret()
 	{
-		CredentialInfo first = _store.Save(Token("First", "one", CredentialKind.GitHubToken, CredentialHosts.GitHubDefaults, forGitHub: true));
-		Assert.Equal("one", _store.GetFeBuddyGitHubToken());
+		CredentialInfo token = _store.Save(Token("GitHub", "ghp_abc", CredentialKind.GitHubToken, CredentialHosts.GitHubDefaults));
 
-		CredentialInfo second = _store.Save(Token("Second", "two", CredentialKind.GitHubToken, CredentialHosts.GitHubDefaults, forGitHub: true));
-
-		Assert.False(_store.Find(first.Id)!.UseForFeBuddyGitHub);
-		Assert.True(_store.Find(second.Id)!.UseForFeBuddyGitHub);
-		Assert.Equal("two", _store.GetFeBuddyGitHubToken());
+		Assert.Equal("ghp_abc", _store.GetGitHubToken(token.Id));
+		Assert.Null(_store.GetGitHubToken(Guid.NewGuid()));
 	}
 
-	/// <summary>With no token marked, FE-Buddy's GitHub requests have none.</summary>
-	[Fact]
-	public void no_marked_token_is_none()
-	{
-		_store.Save(Token("Unmarked", "abc", CredentialKind.GitHubToken, CredentialHosts.GitHubDefaults));
-
-		Assert.Null(_store.GetFeBuddyGitHubToken());
-	}
-
-	/// <summary>A marked entry that is not a GitHub token for GitHub's API - planted by hand - is never used.</summary>
+	/// <summary>A credential that is not a GitHub token for GitHub's API never gives one.</summary>
 	[Theory]
-	[InlineData("GitHubToken", "example.com")]
-	[InlineData("Token", "github.com")]
-	public void a_marked_entry_that_does_not_qualify_is_ignored(string kind, string host)
+	[InlineData(CredentialKind.GitHubToken, "example.com")]
+	[InlineData(CredentialKind.Token, "github.com")]
+	public void get_github_token_ignores_a_credential_that_does_not_qualify(CredentialKind kind, string host)
 	{
-		Plant(Guid.NewGuid(), $$"""{"version":1,"name":"Planted","kind":"{{kind}}","hosts":["{{host}}"],"useForFeBuddyGitHub":true,"secret":"abc"}""");
+		CredentialInfo saved = _store.Save(Token("Other", "abc", kind, [host]));
 
-		Assert.Null(_store.GetFeBuddyGitHubToken());
+		Assert.Null(_store.GetGitHubToken(saved.Id));
+	}
+
+	/// <summary>An entry saved while credentials could be marked for FE-Buddy's requests still reads.</summary>
+	[Fact]
+	public void an_entry_with_the_old_marker_still_reads()
+	{
+		Guid id = Guid.NewGuid();
+		Plant(id, """{"version":1,"name":"Old","kind":"GitHubToken","hosts":["github.com"],"useForFeBuddyGitHub":true,"secret":"abc"}""");
+
+		Assert.Equal("Old", _store.Find(id)!.Name);
+		Assert.Equal("abc", _store.GetGitHubToken(id));
 	}
 
 	// ============================ authorize ============================
@@ -317,8 +313,8 @@ public sealed class CredentialStoreTests : IDisposable
 	public void default_is_one_shared_store() =>
 		Assert.Same(CredentialStore.Default, CredentialStore.Default);
 
-	private static CredentialDraft Token(string name, string secret, CredentialKind kind, IReadOnlyList<string> hosts, bool forGitHub = false) =>
-		new(null, name, kind, null, secret, hosts, forGitHub);
+	private static CredentialDraft Token(string name, string secret, CredentialKind kind, IReadOnlyList<string> hosts) =>
+		new(null, name, kind, null, secret, hosts);
 
 	private static string Base64(string text) => Convert.ToBase64String(Encoding.UTF8.GetBytes(text));
 

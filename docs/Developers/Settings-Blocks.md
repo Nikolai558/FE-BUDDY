@@ -392,8 +392,9 @@ Numbered keys, one group per custom alias file (`<n>` from 1); files are merged 
   unknown field under `Sources.<n>.`, is a warning.
 - Each `<n>` needs exactly one of `FilePath` and `Url`: both or neither, a `FilePath` that is not
   a full path, a `Url` that is not `http`/`https`, or a `CredentialId` that is not a GUID throws.
-  A `CredentialId` on a `FilePath` is ignored, with an Info message. No sources is a warning -
-  `vNAS_Alias.txt` then holds only FE-Buddy's aliases.
+  A `CredentialId` on a `FilePath` is ignored, with an Info message. No sources is fine (an Info
+  message) - `vNAS_Alias.txt` then holds only FE-Buddy's aliases. The GUI tab is only invalid when
+  there is nothing to merge at all: no source and no FE-Buddy alias file marked for vNAS.
 - `AliasSourceLoader` reads every source before the sub-services run, with a 30-second timeout
   each. A GitHub file address (`github.com/{owner}/{repo}/blob|raw/{branch}/{path}`,
   `raw.githubusercontent.com/{owner}/{repo}/{branch}/{path}` or `…/refs/heads/{branch}/{path}`) is

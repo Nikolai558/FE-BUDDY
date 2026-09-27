@@ -38,6 +38,62 @@
             </StackPanel>
         </ctl:Card>
 
+        <!-- ============ FE-Buddy's alias files: what the other tabs put in ============ -->
+        <ctl:Card Header="FE-Buddy Alias Files">
+            <StackPanel>
+                <TextBlock Style="{StaticResource Text.Prose}" TextWrapping="Wrap" Margin="0,4,0,8"
+                           MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
+                           Text="The alias files FE-Buddy adds below your custom aliases. Each one goes in when its sub-service is selected on the General tab, writes its alias file, and has it ticked on its Upload to vNAS card. This list shows those tabs' settings as they are now." />
+
+                <ItemsControl ItemsSource="{Binding FeBuddyAliasFiles}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="{x:Type m:FeBuddyAliasFileRow}">
+                            <StackPanel>
+                                <DockPanel Margin="0,6">
+                                    <Button DockPanel.Dock="Right" Style="{StaticResource Button.Ghost}" Content="Open tab" Margin="8,0,0,0"
+                                            VerticalAlignment="Center" ToolTip="Go to this sub-service's tab, to change its Outputs or Upload to vNAS card."
+                                            Command="{Binding OpenTabCommand}"
+                                            Visibility="{Binding CanOpenTab, Converter={StaticResource BoolToVis}}" />
+                                    <StackPanel VerticalAlignment="Center">
+                                        <TextBlock Style="{StaticResource Text.Body.Strong}">
+                                            <Run Text="{Binding SubService, Mode=OneWay}" />
+                                            <Run Text=" · " />
+                                            <Run Text="{Binding FileName, Mode=OneWay}" />
+                                        </TextBlock>
+                                        <TextBlock Text="{Binding Status}" TextWrapping="Wrap">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock" BasedOn="{StaticResource Text.Caption}">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsAdded}" Value="True">
+                                                            <Setter Property="Foreground" Value="{StaticResource Brush.Positive}" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </StackPanel>
+                                </DockPanel>
+                                <Border Style="{StaticResource Divider}" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <TextBlock Text="{Binding FeBuddyAliasSummary}" TextWrapping="Wrap" Margin="0,10,0,0"
+                           MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock" BasedOn="{StaticResource Text.Caption}">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding HasNoFeBuddyAliasFiles}" Value="True">
+                                    <Setter Property="Foreground" Value="{StaticResource Brush.Warn}" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+            </StackPanel>
+        </ctl:Card>
+
         <!-- ============ custom alias files ============ -->
         <ctl:Card Header="Custom Alias Files">
             <StackPanel>
@@ -48,7 +104,7 @@
                            MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
                            Text="On GitHub, paste the address of the file's page (…/blob/main/…) or its Raw link. For a private repository, choose a GitHub token that can read it; one credential can serve several files. Credentials are kept in Settings ▸ Credentials, never in FE-Buddy's settings." />
 
-                <TextBlock Style="{StaticResource Text.Caption}" Margin="0,0,0,8" Text="No custom alias files yet."
+                <TextBlock Style="{StaticResource Text.Caption}" Margin="0,0,0,8" Text="No custom alias files. That's fine: vNAS_Alias.txt then holds only the FE-Buddy alias files ticked for vNAS."
                            Visibility="{Binding HasSources, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
 
                 <ItemsControl ItemsSource="{Binding Sources}">

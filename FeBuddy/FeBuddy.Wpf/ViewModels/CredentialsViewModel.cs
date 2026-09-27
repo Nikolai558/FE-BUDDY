@@ -27,9 +27,7 @@ public sealed class CredentialsViewModel : ObservableObject
 
 	private readonly CredentialStore _store;
 	private readonly Dispatcher _dispatcher;
-	private LegacyGitHubToken? _legacyToken;
 	private string? _loadError;
-	private bool _isBusy;
 
 	/// <summary>Builds the card over <paramref name="store"/> and lists what it holds.</summary>
 	/// <param name="store">The credentials.</param>
@@ -38,12 +36,11 @@ public sealed class CredentialsViewModel : ObservableObject
 		_store = store;
 		_dispatcher = Application.Current?.Dispatcher ?? Dispatcher.CurrentDispatcher;
 
-		AddCommand = new RelayCommand(Add, () => !IsBusy);
-		EditCommand = new RelayCommand<CredentialRow>(Edit, _ => !IsBusy);
-		RemoveCommand = new RelayCommand<CredentialRow>(Remove, _ => !IsBusy);
+		AddCommand = new RelayCommand(Add);
+		EditCommand = new RelayCommand<CredentialRow>(Edit);
+		RemoveCommand = new RelayCommand<CredentialRow>(Remove);
 		CheckCommand = new RelayCommand<CredentialRow>(row => _ = CheckAsync(row), row => row is { CanCheck: true, IsChecking: false });
-		RemoveAllCommand = new RelayCommand(RemoveAll, () => !IsBusy && HasCredentials);
-		MoveLegacyTokenCommand = new RelayCommand(() => _ = MoveLegacyTokenAsync(), () => !IsBusy);
+		RemoveAllCommand = new RelayCommand(RemoveAll, () => HasCredentials);
 
 		// Kyle's features, or another window, may add or remove credentials too.
 		_store.Changed += (_, _) => _dispatcher.BeginInvoke(Refresh);
@@ -79,28 +76,6 @@ public sealed class CredentialsViewModel : ObservableObject
 	/// <summary>Whether <see cref="LoadError"/> is shown.</summary>
 	public bool HasLoadError => LoadError is not null;
 
-	/// <summary>Whether the old <c>FEBUDDY_GITHUB_TOKEN</c> environment variable holds a token that can be moved here.</summary>
-	public bool HasLegacyToken => _legacyToken is not null;
-
-	/// <summary>The notice about the old environment variable.</summary>
-	public string LegacyTokenMessage =>
-		$"A GitHub token is set in the {GitHubAuth.LegacyEnvironmentVariableName} environment variable. FE-Buddy no longer " +
-		"reads it: Windows keeps environment variables as plain text that every program can read. Move it here to keep " +
-		"using it for FE-Buddy's GitHub requests.";
-
-	/// <summary>Whether an action that talks to Credential Manager is running.</summary>
-	public bool IsBusy
-	{
-		get => _isBusy;
-		private set
-		{
-			if (SetProperty(ref _isBusy, value))
-			{
-				CommandManager.InvalidateRequerySuggested();
-			}
-		}
-	}
-
 	/// <summary>Opens the editor for a new credential.</summary>
 	public ICommand AddCommand { get; }
 
@@ -115,9 +90,6 @@ public sealed class CredentialsViewModel : ObservableObject
 
 	/// <summary>Removes every FE-Buddy credential from this PC, once confirmed.</summary>
 	public ICommand RemoveAllCommand { get; }
-
-	/// <summary>Moves the token in <c>FEBUDDY_GITHUB_TOKEN</c> into a credential and removes the variable.</summary>
-	public ICommand MoveLegacyTokenCommand { get; }
 
 	private static Window? Owner => Application.Current?.MainWindow;
 
@@ -142,14 +114,7 @@ public sealed class CredentialsViewModel : ObservableObject
 			Rows.Add(new CredentialRow(credential));
 		}
 
-		// A machine-wide variable left behind after a move needs an administrator; once a token is
-		// in use here, stop asking about it.
-		LegacyGitHubToken? legacy = GitHubAuth.FindLegacyToken();
-		bool movedAlready = legacy is { IsMachineWide: true } && credentials.Any(c => c.UseForFeBuddyGitHub);
-		_legacyToken = movedAlready ? null : legacy;
-
 		OnPropertyChanged(nameof(HasCredentials));
-		OnPropertyChanged(nameof(HasLegacyToken));
 		CommandManager.InvalidateRequerySuggested();
 	}
 
@@ -240,53 +205,6 @@ public sealed class CredentialsViewModel : ObservableObject
 		}
 	}
 
-	private async Task MoveLegacyTokenAsync()
-	{
-		if (!ConfirmWindow.Show(
-			Owner,
-			"Move the GitHub token",
-			$"Move the token in {GitHubAuth.LegacyEnvironmentVariableName} into a GitHub credential, used for FE-Buddy's " +
-			"update checks, News and update downloads? The variable is then removed from your Windows user settings, " +
-			"so FE-Buddy 2.x will no longer see it either.",
-			confirmText: "Move it"))
-		{
-			return;
-		}
-
-		IsBusy = true;
-		try
-		{
-			// Removing a user variable notifies every open window, which can take a few seconds.
-			LegacyTokenMove? move = await Task.Run(GitHubAuth.MoveLegacyToken);
-
-			if (move is null)
-			{
-				Toast.Info("Nothing to move", $"{GitHubAuth.LegacyEnvironmentVariableName} is no longer set.");
-			}
-			else if (move.MachineVariableRemains)
-			{
-				Toast.Warn(
-					"Token moved",
-					$"It is now the credential {move.Credential.Name}. A copy of {GitHubAuth.LegacyEnvironmentVariableName} is set for " +
-					"every user of this PC; an administrator can remove it in System Properties ▸ Environment Variables.");
-			}
-			else
-			{
-				Toast.Success("Token moved", $"It is now the credential {move.Credential.Name}, and the environment variable is gone.");
-			}
-		}
-		catch (Exception ex) when (ex is Win32Exception or ArgumentException or System.Security.SecurityException)
-		{
-			AppLog.Warning(LogSource, $"Could not move the GitHub token: {ex.Message}");
-			Toast.Error("Could not move the token", ex.Message);
-		}
-		finally
-		{
-			IsBusy = false;
-			Refresh();
-		}
-	}
-
 	private void Run(Action action)
 	{
 		try
@@ -320,9 +238,6 @@ public sealed class CredentialsViewModel : ObservableObject
 				Info.UserName is { Length: > 0 } user ? $"user {user}" : null,
 				$"only for {string.Join(", ", Info.Hosts)}",
 			}.Where(part => part is not null));
-
-		/// <summary>Whether FE-Buddy's own GitHub requests use it.</summary>
-		public bool IsUsedByFeBuddy => Info.UseForFeBuddyGitHub;
 
 		/// <summary>Whether it can be checked with GitHub.</summary>
 		public bool CanCheck => Info.Kind == CredentialKind.GitHubToken;

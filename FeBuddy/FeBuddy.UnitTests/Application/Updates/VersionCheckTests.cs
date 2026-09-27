@@ -125,11 +125,11 @@ public sealed class VersionCheckTests : IDisposable
 	}
 
 	/// <summary>
-	/// An unauthenticated failure (e.g. the repo requires auth to be visible) retries once with the
-	/// GitHub token the user chose (<see cref="GitHubAuth"/>), and succeeds off that retry.
+	/// With a GitHub token chosen (<see cref="GitHubAuth"/>), the check is sent with it - so it works
+	/// even where the repository needs one to be visible.
 	/// </summary>
 	[Fact]
-	public async Task version_check_unauthenticated_fails_retries_with_token()
+	public async Task version_check_with_a_token_sends_it()
 	{
 		const string releasesJson = """
 		[
@@ -167,6 +167,32 @@ public sealed class VersionCheckTests : IDisposable
 
 		Assert.False(result.CheckSucceeded);
 		Assert.Equal(1, callCount);
+	}
+
+	/// <summary>A check that fails with the token (say, a revoked one) is tried once more without it.</summary>
+	[Fact]
+	public async Task version_check_token_fails_retries_without_it()
+	{
+		const string releasesJson = """
+		[
+		  { "tag_name": "v3.1.0", "prerelease": false, "draft": false }
+		]
+		""";
+
+		using IDisposable token = TestCredentials.UseGitHubToken("revoked-token");
+		int callCount = 0;
+		using HttpClient client = new(new StubHttpHandler(request =>
+		{
+			callCount++;
+			return request.Headers.Authorization is null
+				? new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(releasesJson) }
+				: new HttpResponseMessage(HttpStatusCode.Unauthorized);
+		}));
+
+		VersionCheckResult result = await VersionCheck.RunAsync("3.0.0", ReleaseChannel.Stable, hasInternetConnection: true, client);
+
+		Assert.True(result.CheckSucceeded);
+		Assert.Equal(2, callCount);
 	}
 
 	/// <summary>

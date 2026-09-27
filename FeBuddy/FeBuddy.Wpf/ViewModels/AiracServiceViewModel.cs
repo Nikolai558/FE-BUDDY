@@ -68,6 +68,17 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 		AiracCycleDataCache.Instance.StateChanged += (_, _) => _dispatcher.BeginInvoke(RefreshReadiness);
 		AppEnvironment.Changed += (_, _) => _dispatcher.BeginInvoke(RefreshReadiness);
 
+		// The vNAS Alias Upload tab lists what the other tabs put into vNAS_Alias.txt, and is only valid
+		// when something goes in; re-read it whenever the user moves between tabs, so its list and its
+		// dot in the rail follow edits made elsewhere.
+		PropertyChanged += (_, e) =>
+		{
+			if (e.PropertyName == nameof(SelectedTab))
+			{
+				VnasAliasTab?.RefreshFeBuddyAliasFiles();
+			}
+		};
+
 		SyncSubServiceTabs();
 		RefreshReadiness();
 		_ = LoadCycleDataAsync();
@@ -179,6 +190,13 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 						target.LoadCycleDependentLists(data);
 					}
 				}
+
+				if (tab is VnasAliasViewModel vnasAlias)
+				{
+					vnasAlias.AttachToService(
+						descriptor => TabFor<ServiceTabViewModel>(descriptor.Key),
+						shown => SelectedTab = shown);
+				}
 			}
 
 			open.Add(tab);
@@ -187,6 +205,7 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 		RebuildTabs(open);
 		RefreshDownloadedDataStatus();
 		RefreshProceduresData();
+		VnasAliasTab?.RefreshFeBuddyAliasFiles();
 	}
 
 	private void RefreshReadiness()
@@ -308,6 +327,9 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 	/// </summary>
 	private async Task RunAsync()
 	{
+		// The vNAS Alias Upload tab's validity depends on what the other tabs tick for vNAS.
+		VnasAliasTab?.RefreshFeBuddyAliasFiles();
+
 		if (!TrySaveDirtyTabs() || !EnsureNoInvalidTabs())
 		{
 			return;

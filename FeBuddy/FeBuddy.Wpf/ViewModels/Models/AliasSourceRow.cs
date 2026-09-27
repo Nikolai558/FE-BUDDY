@@ -265,12 +265,3 @@ public sealed class AliasSourceRow : ObservableObject
 	}
 }
 
-/// <summary>One entry in a custom alias file's credential drop-down.</summary>
-/// <param name="Id">The credential's id; <see cref="Guid.Empty"/> for "no credential".</param>
-/// <param name="Name">The credential's name.</param>
-/// <param name="Label">What the drop-down shows, e.g. <c>ZOB GitHub (GitHub personal access token)</c>.</param>
-public sealed record CredentialChoice(Guid Id, string Name, string Label)
-{
-	/// <summary>Download without a credential.</summary>
-	public static CredentialChoice None { get; } = new(Guid.Empty, "None", "None - the file is public");
-}

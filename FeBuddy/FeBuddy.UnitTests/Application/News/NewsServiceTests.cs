@@ -147,23 +147,41 @@ public sealed class NewsServiceTests : IDisposable
 		Assert.Equal("2026-09-02.1", result.LatestPostId!.Value.ToString());
 	}
 
-	/// <summary>
-	/// When the plain raw URL fails and the user chose a GitHub token, the retry via the Contents
-	/// API succeeds and is used.
-	/// </summary>
+	/// <summary>With a GitHub token chosen, News comes through the Contents API with that token.</summary>
 	[Fact]
-	public async Task check_async_unauthenticated_fails_retries_with_token_via_contents_api()
+	public async Task check_async_with_a_token_fetches_through_the_contents_api()
 	{
 		using IDisposable token = TestCredentials.UseGitHubToken("test-token");
+		List<HttpRequestMessage> sent = [];
 		using HttpClient client = new(new StubHttpHandler(request =>
-			request.Headers.Authorization is not null
+		{
+			sent.Add(request);
+			return request.Headers.Authorization is not null
 				? new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(SampleMarkdown) }
-				: new HttpResponseMessage(HttpStatusCode.NotFound)));
+				: new HttpResponseMessage(HttpStatusCode.NotFound);
+		}));
 
 		NewsCheckResult result = await NewsService.CheckAsync(null, hasInternetConnection: true, client);
 
 		Assert.True(result.FromNetwork);
 		Assert.True(result.ParseSucceeded);
+		Assert.Equal("2026-09-02.1", result.LatestPostId!.Value.ToString());
+		Assert.StartsWith("https://api.github.com/", Assert.Single(sent).RequestUri!.ToString(), StringComparison.Ordinal);
+	}
+
+	/// <summary>A fetch that fails with the token is tried once more from the raw URL, without it.</summary>
+	[Fact]
+	public async Task check_async_token_fetch_fails_retries_the_raw_url_without_it()
+	{
+		using IDisposable token = TestCredentials.UseGitHubToken("stale-token");
+		using HttpClient client = new(new StubHttpHandler(request =>
+			request.Headers.Authorization is null
+				? new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(SampleMarkdown) }
+				: new HttpResponseMessage(HttpStatusCode.Unauthorized)));
+
+		NewsCheckResult result = await NewsService.CheckAsync(null, hasInternetConnection: true, client);
+
+		Assert.True(result.FromNetwork);
 		Assert.Equal("2026-09-02.1", result.LatestPostId!.Value.ToString());
 	}
 

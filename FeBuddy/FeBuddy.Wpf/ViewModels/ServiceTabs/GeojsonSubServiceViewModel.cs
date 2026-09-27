@@ -143,6 +143,18 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 	/// <inheritdoc />
 	public bool HasVnasGeojsonFiles => UploadedFiles().Any(file => file.IsGeojson);
 
+	/// <summary>Whether the tab's current settings write its alias file.</summary>
+	public bool WritesAliasFile => HasAliasFile && GenerateAliasFile;
+
+	/// <summary>
+	/// Whether a file the tab's current settings write is ticked on the Upload to vNAS card - for an
+	/// alias file, whether it goes into <c>vNAS_Alias.txt</c>.
+	/// </summary>
+	/// <param name="fileKey">The file's key, e.g. <c>Airways.txt</c>.</param>
+	/// <returns><see langword="true"/> when it is written and ticked.</returns>
+	public bool IsMarkedForVnas(string fileKey) =>
+		UploadedFiles().Any(file => string.Equals(file.File.Key, fileKey, StringComparison.OrdinalIgnoreCase));
+
 	/// <inheritdoc />
 	public CrcDefaultsScope CrcDefaultsScope
 	{

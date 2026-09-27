@@ -57,6 +57,8 @@ public sealed class VnasAliasViewModel : SubServiceSettingsViewModel, ISubServic
 	private readonly CredentialStore _store;
 	private readonly Dispatcher _dispatcher;
 	private bool _loading;
+	private Func<SubServiceDescriptor, ServiceTabViewModel?>? _openTabFor;
+	private Action<ServiceTabViewModel>? _showTab;
 
 	/// <summary>Builds the tab over this user's credentials and restores its saved settings.</summary>
 	public VnasAliasViewModel()
@@ -109,6 +111,29 @@ public sealed class VnasAliasViewModel : SubServiceSettingsViewModel, ISubServic
 
 	/// <summary>"None", then every saved credential, for a web address's drop-down.</summary>
 	public ObservableCollection<CredentialChoice> Credentials { get; } = [];
+
+	/// <summary>
+	/// Every FE-Buddy alias file, and whether it goes into <c>vNAS_Alias.txt</c> with the settings on
+	/// the other tabs right now. Refreshed each time this tab is shown.
+	/// </summary>
+	public ObservableCollection<FeBuddyAliasFileRow> FeBuddyAliasFiles { get; } = [];
+
+	/// <summary>One line on how many of FE-Buddy's alias files go in, e.g. <c>3 of 7 FE-Buddy alias files go in.</c></summary>
+	public string FeBuddyAliasSummary
+	{
+		get
+		{
+			int added = FeBuddyAliasFiles.Count(row => row.IsAdded);
+
+			return added == 0
+				? $"None of FE-Buddy's alias files go into {AiracOutputPaths.VnasAliasFileName}, so it will hold only your custom aliases. " +
+					"To add one, select its sub-service on the General tab, and tick its alias file on that tab's Upload to vNAS card."
+				: $"{added} of {FeBuddyAliasFiles.Count} FE-Buddy alias files go in, below your custom aliases.";
+		}
+	}
+
+	/// <summary>Whether no FE-Buddy alias file goes into <c>vNAS_Alias.txt</c>.</summary>
+	public bool HasNoFeBuddyAliasFiles => FeBuddyAliasFiles.All(row => !row.IsAdded);
 
 	/// <summary>Adds files on this PC, chosen in a file dialog.</summary>
 	public ICommand AddFileCommand { get; }
@@ -187,6 +212,13 @@ public sealed class VnasAliasViewModel : SubServiceSettingsViewModel, ISubServic
 		foreach (AliasSourceRow row in Sources)
 		{
 			rows.Add(new ServicePreviewRow($"Custom alias file {row.Number}", Describe(row)));
+		}
+
+		RefreshFeBuddyAliasFiles();
+
+		foreach (FeBuddyAliasFileRow file in FeBuddyAliasFiles)
+		{
+			rows.Add(new ServicePreviewRow(file.FileName, file.Status));
 		}
 
 		return [new ServicePreviewSection(Title, rows)];
@@ -273,9 +305,14 @@ public sealed class VnasAliasViewModel : SubServiceSettingsViewModel, ISubServic
 	/// <inheritdoc />
 	protected override void Validate(ServiceValidation validation)
 	{
-		if (Sources.Count == 0)
+		// Custom files are optional, but vNAS_Alias.txt needs something in it: without a custom file,
+		// at least one FE-Buddy alias file has to be ticked for vNAS.
+		if (Sources.Count == 0 && HasNoFeBuddyAliasFiles)
 		{
-			validation.Add("Add at least one custom alias file, or deselect vNAS Alias Upload on the General tab.");
+			validation.Add(
+				$"{AiracOutputPaths.VnasAliasFileName} would be empty: there is no custom alias file, and no FE-Buddy alias file is ticked " +
+				"for vNAS. Add a custom alias file, tick an alias file on a sub-service's Upload to vNAS card, or deselect vNAS Alias " +
+				"Upload on the General tab.");
 		}
 
 		foreach (AliasSourceRow row in Sources)
@@ -287,6 +324,55 @@ public sealed class VnasAliasViewModel : SubServiceSettingsViewModel, ISubServic
 				validation.Add($"Custom alias file {row.Number}: {error}");
 			}
 		}
+	}
+
+	// ================= FE-Buddy's alias files =================
+
+	/// <summary>
+	/// Lets the tab see the AIRAC Service's other tabs, to list which alias files they put into
+	/// <c>vNAS_Alias.txt</c>, and open one.
+	/// </summary>
+	/// <param name="openTabFor">The sub-service's tab when it is selected on the General tab, otherwise <see langword="null"/>.</param>
+	/// <param name="showTab">Shows a tab.</param>
+	internal void AttachToService(Func<SubServiceDescriptor, ServiceTabViewModel?> openTabFor, Action<ServiceTabViewModel> showTab)
+	{
+		_openTabFor = openTabFor;
+		_showTab = showTab;
+		RefreshFeBuddyAliasFiles();
+	}
+
+	/// <summary>Re-reads, from the other tabs, which of FE-Buddy's alias files go into <c>vNAS_Alias.txt</c>.</summary>
+	internal void RefreshFeBuddyAliasFiles()
+	{
+		FeBuddyAliasFiles.Clear();
+
+		foreach (SubServiceDescriptor descriptor in AiracSubServices.All.Where(d => d.AliasFileName is not null))
+		{
+			string fileName = descriptor.AliasFileName!;
+			ServiceTabViewModel? tab = _openTabFor?.Invoke(descriptor);
+
+			(string status, bool added) = tab switch
+			{
+				null => ("Not selected on the General tab", false),
+				GeojsonSubServiceViewModel { WritesAliasFile: false } => ("Alias file turned off on its Outputs card", false),
+				GeojsonSubServiceViewModel geojson when !geojson.IsMarkedForVnas(fileName) => ("Not ticked on its Upload to vNAS card", false),
+				_ => ($"Added to {AiracOutputPaths.VnasAliasFileName}", true),
+			};
+
+			if (tab is { IsDirty: true })
+			{
+				status += " (that tab has unsaved changes)";
+			}
+
+			ICommand? open = tab is not null && _showTab is { } show ? new RelayCommand(() => show(tab)) : null;
+			FeBuddyAliasFiles.Add(new FeBuddyAliasFileRow(descriptor.DisplayName, fileName, status, added, open));
+		}
+
+		OnPropertyChanged(nameof(FeBuddyAliasSummary));
+		OnPropertyChanged(nameof(HasNoFeBuddyAliasFiles));
+
+		// Whether the tab is valid depends on the other tabs too (see Validate).
+		Revalidate();
 	}
 
 	// ================= rows =================
@@ -530,37 +616,7 @@ public sealed class VnasAliasViewModel : SubServiceSettingsViewModel, ISubServic
 	/// </summary>
 	private void RefreshCredentials()
 	{
-		List<CredentialChoice> wanted =
-		[
-			CredentialChoice.None,
-			.. _store.List().Select(info => new CredentialChoice(info.Id, info.Name, $"{info.Name} ({info.Kind.DisplayName()})")),
-		];
-
-		for (int i = Credentials.Count - 1; i >= 0; i--)
-		{
-			if (!wanted.Contains(Credentials[i]))
-			{
-				Credentials.RemoveAt(i);
-			}
-		}
-
-		for (int i = 0; i < wanted.Count; i++)
-		{
-			if (i >= Credentials.Count || Credentials[i] != wanted[i])
-			{
-				int existing = Credentials.IndexOf(wanted[i]);
-
-				if (existing >= 0)
-				{
-					Credentials.Move(existing, i);
-				}
-				else
-				{
-					Credentials.Insert(i, wanted[i]);
-				}
-			}
-		}
-
+		CredentialChoice.Sync(Credentials, [CredentialChoice.None, .. _store.List().Select(CredentialChoice.For)]);
 		RefreshRowHints();
 	}
 

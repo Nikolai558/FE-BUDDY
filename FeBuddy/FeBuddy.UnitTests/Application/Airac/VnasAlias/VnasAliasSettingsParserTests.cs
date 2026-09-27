@@ -45,12 +45,14 @@ public sealed class VnasAliasSettingsParserTests
 	}
 
 	[Fact]
-	public void no_sources_warns_that_only_fe_buddy_aliases_are_written()
+	public void no_sources_notes_that_only_fe_buddy_aliases_are_written()
 	{
 		VnasAliasSettingsParseResult result = VnasAliasSettingsParser.Parse(Block(("Sources.1.FilePath", " "), ("Sources.1.Url", "")));
 
 		Assert.Empty(result.Sources);
-		Assert.Contains("holds only FE-Buddy's aliases", Assert.Single(result.Messages).Text, StringComparison.Ordinal);
+		ServiceMessage note = Assert.Single(result.Messages);
+		Assert.Equal(LogLevel.Info, note.Level);
+		Assert.Contains("holds only FE-Buddy's aliases", note.Text, StringComparison.Ordinal);
 	}
 
 	[Theory]

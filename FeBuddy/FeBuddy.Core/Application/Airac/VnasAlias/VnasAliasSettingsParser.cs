@@ -96,7 +96,7 @@ public static class VnasAliasSettingsParser
 
 		if (sources.Count == 0)
 		{
-			messages.Add(new ServiceMessage(LogLevel.Warning, LogSource,
+			messages.Add(new ServiceMessage(LogLevel.Info, LogSource,
 				$"No custom alias files are set, so {AiracOutputPaths.VnasAliasFileName} holds only FE-Buddy's aliases."));
 		}
 

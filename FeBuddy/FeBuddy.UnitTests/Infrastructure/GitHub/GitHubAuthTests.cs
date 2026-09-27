@@ -1,5 +1,6 @@
 using System.Net;
 
+using FeBuddy.Core.Infrastructure.Configuration;
 using FeBuddy.Core.Infrastructure.Credentials;
 using FeBuddy.Core.Infrastructure.Credentials.Models;
 using FeBuddy.Core.Infrastructure.GitHub;
@@ -9,14 +10,12 @@ using FeBuddy.Core.Infrastructure.Logging;
 namespace FeBuddy.UnitTests.Infrastructure.GitHub;
 
 /// <summary>
-/// Exercises <see cref="GitHubAuth"/>: FE-Buddy's own GitHub token comes from the chosen credential,
-/// a token in the old environment variable moves into one, and a saved token can be checked.
+/// Exercises <see cref="GitHubAuth"/>: FE-Buddy's own GitHub token is the credential chosen in
+/// Settings, only when it is a GitHub token for GitHub's API, and a saved token can be checked.
 /// </summary>
 [Collection("AppLog")]
 public sealed class GitHubAuthTests : IDisposable
 {
-	private const string Variable = GitHubAuth.LegacyEnvironmentVariableName;
-
 	private readonly string _logs = Path.Combine(Path.GetTempPath(), "FeBuddyTests_GitHubAuth_" + Guid.NewGuid().ToString("N"));
 	private readonly CredentialStore _store = new(new InMemoryCredentialVault());
 
@@ -27,10 +26,11 @@ public sealed class GitHubAuthTests : IDisposable
 		GitHubAuth.ConfigureForTesting(_store);
 	}
 
-	/// <summary>Restores the empty test store and the log.</summary>
+	/// <summary>Restores the empty test store, the config and the log.</summary>
 	public void Dispose()
 	{
 		TestCredentials.Reset();
+		UserConfigFile.ConfigureForTesting(null);
 		AppLog.ConfigureForTesting(null);
 
 		try
@@ -45,93 +45,57 @@ public sealed class GitHubAuthTests : IDisposable
 
 	// ============================ the token ============================
 
-	/// <summary>The token is the credential marked for FE-Buddy's GitHub requests, and none until one is.</summary>
+	/// <summary>With no credential chosen, FE-Buddy's GitHub requests have no token.</summary>
 	[Fact]
-	public void get_optional_token_is_the_marked_credential()
+	public void no_chosen_credential_is_no_token()
 	{
+		_store.Save(GitHubToken("ghp_abc"));
+
+		Assert.Null(GitHubAuth.ChosenCredentialId);
 		Assert.Null(GitHubAuth.GetOptionalToken());
+	}
 
-		_store.Save(GitHubToken("ghp_abc", forGitHub: true));
+	/// <summary>The token is the chosen GitHub token's.</summary>
+	[Fact]
+	public void the_token_is_the_chosen_credentials()
+	{
+		CredentialInfo chosen = _store.Save(GitHubToken("ghp_abc"));
+		GitHubAuth.ConfigureForTesting(_store, chosen.Id);
 
+		Assert.Equal(chosen.Id, GitHubAuth.ChosenCredentialId);
 		Assert.Equal("ghp_abc", GitHubAuth.GetOptionalToken());
 	}
 
-	// ============================ the old environment variable ============================
-
-	/// <summary>A token in the user's, FE-Buddy's or the machine's environment is found, and where.</summary>
+	/// <summary>A chosen credential that is gone, not a GitHub token, or not for GitHub's API gives no token.</summary>
 	[Theory]
-	[InlineData(" user-token ", null, null, "user-token", false)]
-	[InlineData(null, "process-token", null, "process-token", false)]
-	[InlineData(null, null, "machine-token", "machine-token", true)]
-	[InlineData("user-token", null, "machine-token", "user-token", true)]
-	public void find_legacy_token_reads_every_environment(string? user, string? process, string? machine, string expected, bool machineWide)
+	[InlineData("gone")]
+	[InlineData("token")]
+	[InlineData("elsewhere")]
+	public void a_chosen_credential_that_does_not_qualify_gives_no_token(string which)
 	{
-		LegacyGitHubToken? found = GitHubAuth.FindLegacyToken(Reader(user, process, machine));
+		Guid id = which switch
+		{
+			"token" => _store.Save(new CredentialDraft(null, "Api key", CredentialKind.Token, null, "abc", CredentialHosts.GitHubDefaults)).Id,
+			"elsewhere" => _store.Save(new CredentialDraft(null, "Elsewhere", CredentialKind.GitHubToken, null, "abc", ["example.com"])).Id,
+			_ => Guid.NewGuid(),
+		};
+		GitHubAuth.ConfigureForTesting(_store, id);
 
-		Assert.Equal(new LegacyGitHubToken(expected, machineWide), found);
+		Assert.Null(GitHubAuth.GetOptionalToken());
 	}
 
-	/// <summary>No variable, or a blank one, is no token.</summary>
-	[Fact]
-	public void find_legacy_token_blank_is_none() =>
-		Assert.Null(GitHubAuth.FindLegacyToken(Reader(" ", null, "")));
-
-	/// <summary>The found token never shows up when the record is printed.</summary>
-	[Fact]
-	public void legacy_token_never_prints_the_token() =>
-		Assert.DoesNotContain("secret", new LegacyGitHubToken("secret", false).ToString(), StringComparison.Ordinal);
-
-	/// <summary>Reading this PC's real environment works, whatever it holds.</summary>
-	[Fact]
-	public void find_legacy_token_reads_the_real_environment()
+	/// <summary>Outside tests, the chosen credential is the id saved in Settings; anything else is none.</summary>
+	[Theory]
+	[InlineData("0f8fad5bd9cb469fa16570867728950e", true)]
+	[InlineData("", false)]
+	[InlineData("not an id", false)]
+	public void the_chosen_credential_is_read_from_settings(string saved, bool expected)
 	{
-		LegacyGitHubToken? found = GitHubAuth.FindLegacyToken();
+		UserConfigFile.ConfigureForTesting(Path.Combine(_logs, "config"));
+		UserConfigFile.TrySetValue(UserConfigKeys.FeBuddyGitHubCredentialId, saved);
+		GitHubAuth.ConfigureForTesting(null);
 
-		Assert.True(found is null || found.Token.Length > 0);
-	}
-
-	/// <summary>
-	/// Moving the token makes it a GitHub credential used for FE-Buddy's requests, then removes the
-	/// variable from the user's and FE-Buddy's environments.
-	/// </summary>
-	[Fact]
-	public void move_legacy_token_makes_a_credential_and_clears_the_variable()
-	{
-		List<EnvironmentVariableTarget> cleared = [];
-
-		LegacyTokenMove? move = GitHubAuth.MoveLegacyToken(_store, Reader("ghp_old", null, null), cleared.Add);
-
-		Assert.NotNull(move);
-		Assert.False(move.MachineVariableRemains);
-		Assert.Equal(GitHubAuth.LegacyCredentialName, move.Credential.Name);
-		Assert.Equal(CredentialKind.GitHubToken, move.Credential.Kind);
-		Assert.True(move.Credential.UseForFeBuddyGitHub);
-		Assert.Equal(CredentialHosts.GitHubDefaults, move.Credential.Hosts);
-		Assert.Equal("ghp_old", GitHubAuth.GetOptionalToken());
-		Assert.Equal<EnvironmentVariableTarget>([EnvironmentVariableTarget.User, EnvironmentVariableTarget.Process], cleared);
-	}
-
-	/// <summary>A machine-wide copy is reported as left behind; a name already taken gets a number.</summary>
-	[Fact]
-	public void move_legacy_token_reports_a_machine_variable_and_avoids_a_taken_name()
-	{
-		_store.Save(new CredentialDraft(null, GitHubAuth.LegacyCredentialName, CredentialKind.Token, null, "x", ["example.com"]));
-
-		LegacyTokenMove? move = GitHubAuth.MoveLegacyToken(_store, Reader(null, null, "ghp_machine"), _ => { });
-
-		Assert.True(move!.MachineVariableRemains);
-		Assert.Equal(GitHubAuth.LegacyCredentialName + " 2", move.Credential.Name);
-	}
-
-	/// <summary>With no variable set there is nothing to move, and nothing is saved or cleared.</summary>
-	[Fact]
-	public void move_legacy_token_without_a_variable_does_nothing()
-	{
-		bool cleared = false;
-
-		Assert.Null(GitHubAuth.MoveLegacyToken(_store, Reader(null, null, null), _ => cleared = true));
-		Assert.False(cleared);
-		Assert.Empty(_store.List());
+		Assert.Equal(expected ? Guid.Parse(saved) : null, GitHubAuth.ChosenCredentialId);
 	}
 
 	// ============================ checking a token ============================
@@ -187,18 +151,6 @@ public sealed class GitHubAuthTests : IDisposable
 		Assert.Equal(0, calls);
 	}
 
-	private static CredentialDraft GitHubToken(string token, bool forGitHub = false) =>
-		new(null, "GitHub " + Guid.NewGuid().ToString("N")[..6], CredentialKind.GitHubToken, null, token, CredentialHosts.GitHubDefaults, forGitHub);
-
-	private static Func<string, EnvironmentVariableTarget, string?> Reader(string? user, string? process, string? machine) =>
-		(name, target) =>
-		{
-			Assert.Equal(Variable, name);
-			return target switch
-			{
-				EnvironmentVariableTarget.User => user,
-				EnvironmentVariableTarget.Machine => machine,
-				_ => process,
-			};
-		};
+	private static CredentialDraft GitHubToken(string token) =>
+		new(null, "GitHub " + Guid.NewGuid().ToString("N")[..6], CredentialKind.GitHubToken, null, token, CredentialHosts.GitHubDefaults);
 }

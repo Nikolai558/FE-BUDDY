@@ -108,24 +108,13 @@ public sealed class CredentialStore
 			return "Name at least one website it may be used with.";
 		}
 
-		if (draft.UseForFeBuddyGitHub && draft.Kind != CredentialKind.GitHubToken)
-		{
-			return "Only a GitHub token can be used for FE-Buddy's own GitHub requests.";
-		}
-
-		if (draft.UseForFeBuddyGitHub && !CredentialHosts.Allows(draft.Hosts, CredentialHosts.GitHubApiHost))
-		{
-			return $"To use it for FE-Buddy's own GitHub requests, its websites must include github.com (or {CredentialHosts.GitHubApiHost}).";
-		}
-
 		return Serialize(ToStored(draft, existing)).Length > WindowsCredentialVault.MaxSecretBytes
 			? "That is too long to store. Check the token or password, the name and the websites."
 			: null;
 	}
 
 	/// <summary>
-	/// Adds a new credential or replaces an edited one. Marking one for FE-Buddy's own GitHub
-	/// requests unmarks any other, since only one can be used.
+	/// Adds a new credential or replaces an edited one.
 	/// </summary>
 	/// <param name="draft">The credential; check it with <see cref="Validate(CredentialDraft)"/> first.</param>
 	/// <returns>The saved credential.</returns>
@@ -138,14 +127,6 @@ public sealed class CredentialStore
 		}
 
 		StoredCredential stored = ToStored(draft, draft.Id is { } id ? ReadOne(id) : null);
-
-		if (stored.Info.UseForFeBuddyGitHub)
-		{
-			foreach (StoredCredential other in ReadAll().Where(s => s.Info.UseForFeBuddyGitHub && s.Info.Id != stored.Info.Id))
-			{
-				Write(other with { Info = other.Info with { UseForFeBuddyGitHub = false } });
-			}
-		}
 
 		Write(stored);
 		AppLog.Info(LogSource, $"Saved the credential '{stored.Info.Name}'.");
@@ -219,17 +200,17 @@ public sealed class CredentialStore
 	}
 
 	/// <summary>
-	/// The GitHub token the user chose for FE-Buddy's own GitHub requests - update checks, News
-	/// and update downloads, which only ever call GitHub's API.
+	/// A GitHub token's secret, for FE-Buddy's own GitHub requests - update checks, News and update
+	/// downloads, which only ever call GitHub's API. Only a <see cref="CredentialKind.GitHubToken"/>
+	/// whose websites include GitHub's API gives one.
 	/// </summary>
-	/// <returns>The token, or <see langword="null"/> when none is chosen.</returns>
-	internal string? GetFeBuddyGitHubToken() =>
-		ReadAll()
-			.Where(s => s.Info.UseForFeBuddyGitHub
-				&& s.Info.Kind == CredentialKind.GitHubToken
-				&& CredentialHosts.Allows(s.Info.Hosts, CredentialHosts.GitHubApiHost))
-			.Select(s => s.Secret)
-			.FirstOrDefault();
+	/// <param name="id">The credential the user chose in Settings.</param>
+	/// <returns>The token, or <see langword="null"/> when there is no such GitHub token.</returns>
+	internal string? GetGitHubToken(Guid id) =>
+		ReadOne(id) is { Info.Kind: CredentialKind.GitHubToken } stored
+			&& CredentialHosts.Allows(stored.Info.Hosts, CredentialHosts.GitHubApiHost)
+			? stored.Secret
+			: null;
 
 	private static string Target(Guid id) => TargetPrefix + id.ToString("N");
 
@@ -244,15 +225,14 @@ public sealed class CredentialStore
 			draft.Name.Trim(),
 			draft.Kind,
 			draft.Kind == CredentialKind.UsernamePassword ? draft.UserName?.Trim() : null,
-			[.. draft.Hosts],
-			draft.UseForFeBuddyGitHub);
+			[.. draft.Hosts]);
 
 		return new StoredCredential(info, secret);
 	}
 
 	private static byte[] Serialize(StoredCredential stored) =>
 		JsonSerializer.SerializeToUtf8Bytes(
-			new Payload(1, stored.Info.Name, stored.Info.Kind, stored.Info.UserName, stored.Info.Hosts, stored.Info.UseForFeBuddyGitHub, stored.Secret),
+			new Payload(1, stored.Info.Name, stored.Info.Kind, stored.Info.UserName, stored.Info.Hosts, stored.Secret),
 			JsonOptions);
 
 	private void Write(StoredCredential stored) =>
@@ -284,7 +264,7 @@ public sealed class CredentialStore
 			if (JsonSerializer.Deserialize<Payload>(bytes, JsonOptions) is { Name.Length: > 0, Secret: not null, Hosts: not null } p
 				&& Enum.IsDefined(p.Kind))
 			{
-				return new StoredCredential(new CredentialInfo(id, p.Name, p.Kind, p.UserName, p.Hosts, p.UseForFeBuddyGitHub), p.Secret);
+				return new StoredCredential(new CredentialInfo(id, p.Name, p.Kind, p.UserName, p.Hosts), p.Secret);
 			}
 		}
 		catch (JsonException)
@@ -306,6 +286,5 @@ public sealed class CredentialStore
 		CredentialKind Kind,
 		string? UserName,
 		IReadOnlyList<string> Hosts,
-		bool UseForFeBuddyGitHub,
 		string Secret);
 }

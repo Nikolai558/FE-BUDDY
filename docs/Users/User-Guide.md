@@ -535,9 +535,16 @@ merged into one file before every upload. This tab does that: it writes
 ticked on its tab's **Upload to vNAS** card.
 
 - **Outputs** - `Upload_to_vNAS\vNAS_Alias.txt` only.
+- **FE-Buddy Alias Files** - every alias file FE-Buddy can write, and whether it goes in with the
+  other tabs' settings as they are now: *Added to vNAS_Alias.txt*, *Not ticked on its Upload to vNAS
+  card*, *Alias file turned off on its Outputs card*, or *Not selected on the General tab*. **Open
+  tab** jumps to that sub-service to change it. If none go in, the card says so: `vNAS_Alias.txt`
+  will hold only your custom aliases.
 - **Custom Alias Files** - your facility's own alias files, merged in the order listed; the arrows
-  move a file up or down, and the cross removes it. At least one is needed (otherwise untick vNAS
-  Alias Upload on the General tab).
+  move a file up or down, and the cross removes it. Optional: with none, `vNAS_Alias.txt` holds only
+  the FE-Buddy alias files ticked for vNAS. The tab needs *something* to put in the file, though -
+  with no custom alias file and no FE-Buddy alias file ticked for vNAS, it asks you to add one or
+  untick vNAS Alias Upload on the General tab.
   - **Add file…** - a file on this PC; **Browse…** picks a different one. The full path is saved.
   - **Add web address** - a file on the web, starting with `https://`. On GitHub, paste the address
     of the file's own page (it has `/blob/` in it) or its Raw link - not the repository's or a
@@ -791,6 +798,16 @@ all three clear.
     files; 7 is for high-precision airport tracing; 5 keeps files smallest.
   - **File Layout** - *Single line* (smallest, the default) or *Pretty print* (readable in a
     text editor).
+- **Credentials** - sign-ins FE-Buddy uses to download from protected websites, such as a GitHub
+  token for a private repository that holds your custom alias file. They are kept in Windows
+  Credential Manager, never in FE-Buddy's settings or an export, and a saved token is never shown
+  again. **Add credential…**, **Edit…**, **Remove**, **Remove all**, and **Check** (asks GitHub
+  whether a GitHub token still works). Changes here are saved straight away, not with Save.
+- **FE-Buddy's GitHub Requests** (advanced - most people never need it) - whether FE-Buddy's own
+  update checks, News and update downloads use a GitHub token. *Don't use a GitHub token* is the
+  default and works for everyone. *Use a GitHub token* lets you pick one of your GitHub tokens (or
+  **New GitHub token…**), to get past GitHub's limit of 60 requests an hour. If a request with the
+  token fails, FE-Buddy tries once more without it.
 
 ## Info
 

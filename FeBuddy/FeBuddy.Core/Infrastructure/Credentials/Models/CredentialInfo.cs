@@ -9,11 +9,9 @@ namespace FeBuddy.Core.Infrastructure.Credentials.Models;
 /// <param name="Kind">What it is.</param>
 /// <param name="UserName">The user name, for <see cref="CredentialKind.UsernamePassword"/>; otherwise <see langword="null"/>.</param>
 /// <param name="Hosts">The websites it may be sent to (each host and its subdomains), e.g. <c>github.com</c>.</param>
-/// <param name="UseForFeBuddyGitHub">Whether FE-Buddy's own GitHub requests (update checks, News, update downloads) use it.</param>
 public sealed record CredentialInfo(
 	Guid Id,
 	string Name,
 	CredentialKind Kind,
 	string? UserName,
-	IReadOnlyList<string> Hosts,
-	bool UseForFeBuddyGitHub);
+	IReadOnlyList<string> Hosts);

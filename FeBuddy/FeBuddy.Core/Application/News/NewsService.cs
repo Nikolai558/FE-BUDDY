@@ -16,11 +16,10 @@ namespace FeBuddy.Core.Application.News;
 /// for display on the Dashboard and reports how many are newer than the user last saw.
 /// </summary>
 /// <remarks>
-/// News.md is read from <see cref="GitHubRepository.Branch"/> of the public repository. The plain unauthenticated raw URL is the normal path; only on failure - and only
-/// if the user chose a GitHub token (<see cref="GitHubAuth"/>) - it retries once via GitHub's
-/// Contents API with that token attached (the same fallback-only behavior as
-/// <see cref="VersionCheck"/>). The authenticated retry uses the documented API endpoint rather
-/// than raw.githubusercontent.com, which doesn't reliably honor a token.
+/// News.md is read from <see cref="GitHubRepository.Branch"/> of the public repository: from the
+/// raw URL, or - when the user chose a GitHub token (<see cref="GitHubAuth"/>) - through GitHub's
+/// Contents API with that token, since raw.githubusercontent.com doesn't reliably honor one. A
+/// failed fetch with the token is tried once more from the raw URL without it.
 /// </remarks>
 public static class NewsService
 {
@@ -33,7 +32,7 @@ public static class NewsService
 	public const string RawUrl = GitHubRepository.RawUrl + "/" + NewsPath;
 
 	/// <summary>
-	/// The authenticated fallback: GitHub's Contents API, which honors a bearer token and returns
+	/// Where News comes from with a token: GitHub's Contents API, which honors a bearer token and returns
 	/// the file content when asked for the raw representation.
 	/// </summary>
 	private const string ContentsApiUrl = GitHubRepository.ApiUrl + "/contents/" + NewsPath + "?ref=" + GitHubRepository.Branch;
@@ -185,16 +184,25 @@ public static class NewsService
 
 		try
 		{
-			(string? text, string? failureReason) = await TryFetchAsync(client, RawUrl, token: null, cancellationToken).ConfigureAwait(false);
+			// With a token, News comes through the Contents API, which honours it; without one, from
+			// the raw file. A failed fetch with the token is tried once more without it.
+			string? token = GitHubAuth.GetOptionalToken();
+			string? text = null;
+			string? failureReason = null;
+
+			if (token is not null)
+			{
+				(text, failureReason) = await TryFetchAsync(client, ContentsApiUrl, token, cancellationToken).ConfigureAwait(false);
+
+				if (text is null)
+				{
+					AppLog.Warning(LogSource, $"Fetching News with {GitHubAuth.TokenDescription} failed ({failureReason}); trying again without it.");
+				}
+			}
 
 			if (text is null)
 			{
-				string? token = GitHubAuth.GetOptionalToken();
-				if (token is not null)
-				{
-					AppLog.Info(LogSource, $"Unauthenticated News fetch failed ({failureReason}); retrying with {GitHubAuth.TokenDescription}.");
-					(text, failureReason) = await TryFetchAsync(client, ContentsApiUrl, token, cancellationToken).ConfigureAwait(false);
-				}
+				(text, failureReason) = await TryFetchAsync(client, RawUrl, token: null, cancellationToken).ConfigureAwait(false);
 			}
 
 			if (!string.IsNullOrWhiteSpace(text))

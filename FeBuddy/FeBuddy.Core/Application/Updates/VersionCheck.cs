@@ -30,9 +30,8 @@ namespace FeBuddy.Core.Application.Updates;
 /// </para>
 /// <para>
 /// Releases come from the public repository (<see cref="GitHubRepository"/>), where 2.x and
-/// 3.x releases share one list. The request is tried unauthenticated first; only if that fails,
-/// and only if the user chose a GitHub token (<see cref="GitHubAuth"/>), it retries once with
-/// that token (see <see cref="GitHubAuth"/> for why the token is a fallback).
+/// 3.x releases share one list. The request is sent with the GitHub token the user chose
+/// (<see cref="GitHubAuth"/>), if any; a failed request with it is tried once more without it.
 /// </para>
 /// </remarks>
 public static partial class VersionCheck
@@ -75,17 +74,15 @@ public static partial class VersionCheck
 
 		try
 		{
-			HttpResponseMessage response = await SendReleasesRequestAsync(client, token: null, cancellationToken).ConfigureAwait(false);
+			string? token = GitHubAuth.GetOptionalToken();
+			HttpResponseMessage response = await SendReleasesRequestAsync(client, token, cancellationToken).ConfigureAwait(false);
 
-			if (!response.IsSuccessStatusCode)
+			// A stale token must never hide an update: try once more without it.
+			if (!response.IsSuccessStatusCode && token is not null)
 			{
-				string? token = GitHubAuth.GetOptionalToken();
-				if (token is not null)
-				{
-					AppLog.Info(LogSource, $"Unauthenticated release check returned {(int)response.StatusCode}; retrying with {GitHubAuth.TokenDescription}.");
-					response.Dispose();
-					response = await SendReleasesRequestAsync(client, token, cancellationToken).ConfigureAwait(false);
-				}
+				AppLog.Warning(LogSource, $"The release check with {GitHubAuth.TokenDescription} returned {(int)response.StatusCode}; trying again without it.");
+				response.Dispose();
+				response = await SendReleasesRequestAsync(client, token: null, cancellationToken).ConfigureAwait(false);
 			}
 
 			using (response)

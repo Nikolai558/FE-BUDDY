@@ -139,15 +139,15 @@ public static class TelephonyAliasWriter
 		{
 			AppendLine(card, "3LD:", tab3, entry.Identifier);
 			AppendLine(card, "TELEPHONY:", tab + space2, entry.Telephony);
-			AppendLine(card, "COMPANY:", tab + space3, entry.Organization);
-			AppendLine(card, "COUNTRY:", tab + space3, entry.Detail);
+			AppendLine(card, "COMPANY:", tab + tab, entry.Organization);
+			AppendLine(card, "COUNTRY:", tab + tab, entry.Detail);
 		}
 		else
 		{
 			AppendLine(card, "ID:", tab3 + SpaceEscape, entry.Identifier);
 			AppendLine(card, "TELEPHONY:", tab + space2, entry.Telephony);
 			AppendLine(card, "AGENCY:", tab2 + SpaceEscape, entry.Organization);
-			AppendLine(card, "EXPIRES:", tab + space3, entry.Detail);
+			AppendLine(card, "EXPIRES:", tab + tab, entry.Detail);
 		}
 
 		return card.ToString();

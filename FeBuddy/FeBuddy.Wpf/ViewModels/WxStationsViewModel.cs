@@ -7,6 +7,7 @@ using FeBuddy.Wpf.ViewModels.ServiceTabs;
 using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Application.Airac.WxStations;
 using FeBuddy.Core.Infrastructure.Nasr.Models;
+using FeBuddy.Core.Infrastructure.WxStations;
 
 namespace FeBuddy.Wpf.ViewModels;
 
@@ -19,22 +20,17 @@ namespace FeBuddy.Wpf.ViewModels;
 /// The simplest GeoJSON sub-service tab: there is no file layout choice, no alias file and no
 /// FE-Buddy properties - a station's label is always its ICAO ID, then its IATA ID and site name.
 /// Unlike every other AIRAC sub-service, its data does not come from the selected cycle's NASR
-/// data at all, but from a separately cached <c>stations.cache.xml</c> that may not have
-/// downloaded yet - see <see cref="SetStationData"/>. Save, Undo and navigation come from the tab
-/// host's action bar; the run is launched by <b>Run AIRAC Service</b> on the Preview Settings tab,
-/// and its results are shown on the Review tab, described by this tab through
+/// data at all, but from aviationweather.gov's station list, which every run downloads fresh into
+/// one kept copy - see <see cref="RefreshStationData"/>. Save, Undo and navigation come from the
+/// tab host's action bar; the run is launched by <b>Run AIRAC Service</b> on the Preview Settings
+/// tab, and its results are shown on the Review tab, described by this tab through
 /// <see cref="ISubServiceRunTarget"/>.
 /// </remarks>
 public sealed class WxStationsViewModel : GeojsonSubServiceViewModel, ISubServiceRunTarget
 {
 	private const string Node = "Services.AiracService.WxStations";
 
-	private const string StationDataUnknownMessage =
-		"Station data appears once the selected cycle's data is loaded.";
-
-	private string? _stationDataCycleId;
-	private bool _hasStationData;
-	private string _stationDataStatus = StationDataUnknownMessage;
+	private string _stationDataStatus = string.Empty;
 
 	/// <summary>Builds the tab and restores its saved settings.</summary>
 	public WxStationsViewModel()
@@ -43,6 +39,7 @@ public sealed class WxStationsViewModel : GeojsonSubServiceViewModel, ISubServic
 		TextDefaults = [new(WxStationOutputFiles.AllClass, EramFieldKind.Text, MarkDirty)];
 
 		LoadFromConfig();
+		RefreshStationData();
 	}
 
 	/// <inheritdoc />
@@ -70,51 +67,25 @@ public sealed class WxStationsViewModel : GeojsonSubServiceViewModel, ISubServic
 
 	// ================= station data =================
 
-	/// <summary>
-	/// Whether <see cref="SetStationData"/> has been called yet for the currently selected cycle -
-	/// that is, whether the selected cycle's data has finished loading.
-	/// <see langword="false"/> right after the tab is built, until the parent reports in.
-	/// </summary>
-	public bool IsStationDataKnown => _stationDataCycleId is not null;
-
-	/// <summary>
-	/// Whether the selected cycle has a downloaded <c>stations.cache.xml</c>. Only meaningful once
-	/// <see cref="IsStationDataKnown"/> is <see langword="true"/>.
-	/// </summary>
-	public bool HasStationData => _hasStationData;
-
-	/// <summary>What the Station Data card and the Preview Settings tab say about the data's availability.</summary>
+	/// <summary>What the Station Data card and the Preview Settings tab say about FE-Buddy's kept copy of the station list.</summary>
 	public string StationDataStatus => _stationDataStatus;
 
 	/// <summary>
-	/// Called by the AIRAC Service screen whenever the selected cycle's data is (re)loaded, to
-	/// report whether that cycle's Wx Stations data has downloaded.
+	/// Re-reads how old FE-Buddy's kept copy of the station list is
+	/// (<see cref="WxStationFiles.SharedFilePath"/>). Called when the tab is built and by the AIRAC
+	/// Service screen after every run, which is when the copy is replaced.
 	/// </summary>
-	/// <param name="cycleId">The selected cycle's ID.</param>
-	/// <param name="filePath">
-	/// The cycle's <c>stations.cache.xml</c> path (see <c>AiracCycleDataCache.FindWxStationsFile</c>),
-	/// or <see langword="null"/> when it has not downloaded yet.
-	/// </param>
 	/// <remarks>
-	/// Station data is not a saved setting, so this never marks the tab dirty - it only
-	/// re-validates, which is also what lets a missing file block the run (see
-	/// <see cref="Validate"/>).
+	/// Never blocks the run: a missing copy is what the run downloads, and a failed download is
+	/// reported by the run itself.
 	/// </remarks>
-	public void SetStationData(string cycleId, string? filePath)
+	public void RefreshStationData()
 	{
-		ArgumentNullException.ThrowIfNull(cycleId);
+		_stationDataStatus = File.Exists(WxStationFiles.SharedFilePath)
+			? $"FE-Buddy's copy is from {File.GetLastWriteTime(WxStationFiles.SharedFilePath):d MMM yyyy}. Every run downloads the latest list first, and uses this copy only if it can't."
+			: "FE-Buddy has no copy yet. Every run downloads the latest list first, so the first run needs an internet connection.";
 
-		_stationDataCycleId = cycleId;
-		_hasStationData = filePath is not null;
-
-		_stationDataStatus = filePath is not null
-			? $"Station data for cycle {cycleId}: downloaded {File.GetLastWriteTime(filePath):d MMM yyyy}."
-			: $"Station data for cycle {cycleId} isn't downloaded yet. FE-Buddy fetches it at launch: restart FE-Buddy with an internet connection, or deselect Wx Stations on the General tab.";
-
-		OnPropertyChanged(nameof(IsStationDataKnown));
-		OnPropertyChanged(nameof(HasStationData));
 		OnPropertyChanged(nameof(StationDataStatus));
-		Revalidate();
 	}
 
 	// ================= parent hooks =================
@@ -122,8 +93,7 @@ public sealed class WxStationsViewModel : GeojsonSubServiceViewModel, ISubServic
 	/// <inheritdoc />
 	/// <remarks>
 	/// Does nothing: unlike every other AIRAC sub-service, Wx Stations has no lists built from the
-	/// selected cycle's NASR data. Its own data's readiness is reported through
-	/// <see cref="SetStationData"/> instead, on its own schedule.
+	/// selected cycle's NASR data. Its own data is downloaded by the run itself.
 	/// </remarks>
 	public void LoadCycleDependentLists(NasrCsvDataCollection data)
 	{
@@ -191,13 +161,6 @@ public sealed class WxStationsViewModel : GeojsonSubServiceViewModel, ISubServic
 		if (!EmitSymbols && !EmitText)
 		{
 			validation.Add("Neither Symbols nor Text is selected. Turn at least one back on, or deselect Wx Stations on the General tab.");
-		}
-
-		// Blocks the run rather than letting it fail on its last step, once the cycle's data is
-		// known to be missing.
-		if (IsStationDataKnown && !HasStationData)
-		{
-			validation.Add(StationDataStatus);
 		}
 
 		ValidateSharedSettings(validation);

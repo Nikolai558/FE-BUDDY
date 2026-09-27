@@ -43,6 +43,16 @@ may be broken.
 No. It downloads the FAA's public data, checks GitHub for updates and news, and writes files on
 your PC. Your settings stay in `%APPDATA%\FE-Buddy\UserConfig.json`.
 
+### What happens if Wx Stations or Telephony can't download their data?
+
+Wx Stations' station list and Telephony's FAA pages aren't part of the AIRAC cycle, so every AIRAC
+Service run that includes either downloads the latest copy first, whichever cycle you run. If that
+download fails, FE-Buddy falls back to its last kept copy, and the Review tab shows an advisory
+warning naming its date and how old it is. If FE-Buddy has no copy at all yet - your very first run,
+or no internet connection - that sub-service writes nothing and the Review tab shows an error, but
+the rest of the run still completes. Telephony's U.S. special call signs page is optional: without
+a copy of it, Telephony still writes `Telephony.txt` from the ICAO register alone, with a warning.
+
 ### Why does the same alias command show up in both Departures.txt and Arrivals.txt?
 
 For the cycle effective 2026-09-03, the FAA's data lists ORF's NUTIY and SWOPE departures as STARs

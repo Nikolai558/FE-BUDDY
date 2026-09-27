@@ -69,6 +69,9 @@ internal static class Program
 
 			ProcedureServiceResult procedureResult = ProcedureRunner.Run(allNasrCsvData);
 			ConsoleReport.PrintProcedureServiceResult("Procedures: Changes + JSON", procedureResult);
+
+			// var telephonyRun = await TelephonyRunner.RunAsync();
+			// ConsoleReport.PrintTelephonyServiceResult("Telephony: Alias", telephonyRun);
 		}
 		catch (Exception ex)
 		{

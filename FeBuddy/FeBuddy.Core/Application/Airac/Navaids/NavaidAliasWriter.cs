@@ -8,7 +8,7 @@ using FeBuddy.Core.Domain.Navaids.Models;
 namespace FeBuddy.Core.Application.Airac.Navaids;
 
 /// <summary>
-/// Generates the <c>NAVAIDs.txt</c> alias file: an <c>.echo</c> command per NAVAID that prints its
+/// Generates the <c>Navaids.txt</c> alias file: an <c>.echo</c> command per NAVAID that prints its
 /// identifier, name, type, frequency and ARTCC boundaries.
 /// </summary>
 /// <remarks>

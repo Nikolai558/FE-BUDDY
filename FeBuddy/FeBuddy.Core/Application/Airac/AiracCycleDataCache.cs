@@ -7,9 +7,6 @@ using FeBuddy.Core.Infrastructure.Logging;
 using FeBuddy.Core.Infrastructure.Nasr;
 using FeBuddy.Core.Infrastructure.Nasr.Models;
 using FeBuddy.Core.Infrastructure.Nasr.Parsers;
-using FeBuddy.Core.Infrastructure.WxStations;
-using FeBuddy.Core.Infrastructure.WxStations.Models;
-using FeBuddy.Core.Infrastructure.WxStations.Parsers;
 
 namespace FeBuddy.Core.Application.Airac;
 
@@ -50,15 +47,21 @@ public sealed class AiracCycleDataCacheEntry
 /// runs the launch pipeline that fills it: probe each cycle's publication state, then, for
 /// each published cycle in the order current -&gt; previous -&gt; next, download the CSVs and
 /// parse them - one parse at a time so peak memory is one in-flight parse plus the finished
-/// datasets. The same pipeline also fills in each cycle's Wx Stations data and its FAA d-TPP
-/// Metafile - neither is part of the NASR cycle at all - see <see cref="GetWxStationsAsync"/> and
-/// <see cref="GetDtppAsync"/> - best-effort and never blocking readiness.
+/// datasets. The same pipeline also fills in each cycle's FAA d-TPP Metafile - not part of the
+/// NASR cycle, but published per cycle - see <see cref="GetDtppAsync"/> - best-effort and never
+/// blocking readiness.
 /// </summary>
 /// <remarks>
 /// <para>
 /// A not-yet-published next cycle is normal and never blocks the service (see
 /// <see cref="ComputeReadiness"/>). The current cycle is mandatory; a failed previous or next
 /// cycle only degrades the service.
+/// </para>
+/// <para>
+/// Data that is not published per cycle - the Wx Stations list and the FAA telephony pages - is not
+/// kept here at all: every AIRAC Service run downloads the latest copy of it into one shared folder
+/// (see <see cref="Infrastructure.SharedData.SharedDataDownload"/>). A Wx Stations file an older
+/// FE-Buddy left in a cycle folder is deleted when the cycle is prepared.
 /// </para>
 /// <para>
 /// Each pipeline step is a parameter, so tests can run the pipeline without the FAA or real CSV
@@ -78,14 +81,6 @@ public sealed class AiracCycleDataCacheEntry
 /// Deletes every cached cycle except the IDs given. Defaults to doing nothing, so a test
 /// never touches the real cycle cache.
 /// </param>
-/// <param name="ensureWxStations">
-/// Ensures a cycle folder has the Wx Stations cache file, given the folder. Defaults to doing
-/// nothing, so a test never touches the network.
-/// </param>
-/// <param name="loadWxStations">
-/// Reads a cycle folder's Wx Stations data, or <see langword="null"/> when it is not there yet.
-/// Defaults to always returning <see langword="null"/>.
-/// </param>
 /// <param name="ensureDtpp">
 /// Ensures a cycle folder has its FAA d-TPP Metafile, given the folder and the cycle's AIRAC ID.
 /// Defaults to doing nothing, so a test never touches the network.
@@ -100,8 +95,6 @@ public sealed class AiracCycleDataCache(
 	Func<string, CancellationToken, Task<NasrCsvDataCollection>> parse,
 	Func<AiracCycleInfo, bool>? isLocallyAvailable = null,
 	Action<IReadOnlyCollection<string>>? pruneAllBut = null,
-	Func<string, CancellationToken, Task>? ensureWxStations = null,
-	Func<string, CancellationToken, Task<WxStationDataCollection?>>? loadWxStations = null,
 	Func<string, string, CancellationToken, Task>? ensureDtpp = null,
 	Func<string, CancellationToken, Task<DtppMetafileDataCollection?>>? loadDtpp = null)
 {
@@ -112,8 +105,6 @@ public sealed class AiracCycleDataCache(
 	private readonly Func<string, CancellationToken, Task<NasrCsvDataCollection>> _parse = parse ?? throw new ArgumentNullException(nameof(parse));
 	private readonly Func<AiracCycleInfo, bool> _isLocallyAvailable = isLocallyAvailable ?? (_ => false);
 	private readonly Action<IReadOnlyCollection<string>> _pruneAllBut = pruneAllBut ?? (_ => { });
-	private readonly Func<string, CancellationToken, Task> _ensureWxStations = ensureWxStations ?? ((_, _) => Task.CompletedTask);
-	private readonly Func<string, CancellationToken, Task<WxStationDataCollection?>> _loadWxStations = loadWxStations ?? ((_, _) => Task.FromResult<WxStationDataCollection?>(null));
 	private readonly Func<string, string, CancellationToken, Task> _ensureDtpp = ensureDtpp ?? ((_, _, _) => Task.CompletedTask);
 	private readonly Func<string, CancellationToken, Task<DtppMetafileDataCollection?>> _loadDtpp = loadDtpp ?? ((_, _) => Task.FromResult<DtppMetafileDataCollection?>(null));
 
@@ -122,15 +113,14 @@ public sealed class AiracCycleDataCache(
 	private readonly Dictionary<string, Task<NasrCsvDataCollection>> _flights = new(StringComparer.OrdinalIgnoreCase);
 
 	/// <summary>
-	/// The one <see cref="WxStationDownloader"/> instance the parameterless constructor wires
-	/// every real cache into, so its once-per-launch download memo spans all three cycles
-	/// (previous/current/next) rather than one per cycle.
+	/// The Wx Stations file an older FE-Buddy kept in every cycle folder, before the one shared copy
+	/// replaced it (see <see cref="DeleteRetiredCycleFiles"/>).
 	/// </summary>
-	private static readonly WxStationDownloader SharedWxStationDownloader = new();
+	internal const string RetiredWxStationsFileName = "stations.cache.xml";
 
 	/// <summary>
 	/// Creates a cache wired to the real FAA download, the real NASR CSV parser, and the real
-	/// Wx Stations download/parse.
+	/// d-TPP Metafile download/parse.
 	/// </summary>
 	public AiracCycleDataCache()
 		: this(
@@ -142,24 +132,9 @@ public sealed class AiracCycleDataCache(
 			parse: (dir, ct) => NasrCsvParser.ParseAllAsync(dir),
 			isLocallyAvailable: cycle => NasrCycleDownloader.IsCycleAvailableLocally(cycle, cacheRootDirectory: null),
 			pruneAllBut: cycleIds => NasrCycleDownloader.PruneStaleCycles(cycleIds, cacheRootDirectory: null),
-			ensureWxStations: (cycleDirectory, ct) => SharedWxStationDownloader.EnsureCycleHasWxStationsAsync(cycleDirectory, ct),
-			loadWxStations: LoadWxStationsFromDiskAsync,
 			ensureDtpp: (cycleDirectory, cycleId, ct) => new DtppDownloader().EnsureCycleHasMetafileAsync(cycleDirectory, cycleId, ct),
 			loadDtpp: LoadDtppFromDiskAsync)
 	{
-	}
-
-	/// <summary>Reads a cycle folder's <c>stations.cache.xml</c>, or <see langword="null"/> when it is not there.</summary>
-	private static async Task<WxStationDataCollection?> LoadWxStationsFromDiskAsync(string cycleDirectory, CancellationToken cancellationToken)
-	{
-		string path = Path.Combine(cycleDirectory, WxStationFiles.FileName);
-
-		if (!File.Exists(path))
-		{
-			return null;
-		}
-
-		return await WxStationXmlParser.ParseAsync(path, cancellationToken).ConfigureAwait(false);
 	}
 
 	/// <summary>Reads a cycle folder's <see cref="DtppFiles.FileName"/>, or <see langword="null"/> when it is not there.</summary>
@@ -319,60 +294,17 @@ public sealed class AiracCycleDataCache(
 	}
 
 	/// <summary>
-	/// Returns a cycle's Wx Stations data, parsed fresh from its folder on every call (the file is
-	/// small, so there is no need to memoize it the way <see cref="GetAsync"/> does for the much
-	/// larger NASR data).
-	/// </summary>
-	/// <param name="cycleId">The cycle ID to get.</param>
-	/// <param name="cancellationToken">Cancels the read.</param>
-	/// <returns>
-	/// The parsed Wx Stations data, or <see langword="null"/> when the cycle's folder does not
-	/// have <c>stations.cache.xml</c> yet (it has not downloaded, or the download has failed so
-	/// far - see <see cref="Infrastructure.WxStations.WxStationDownloader"/>).
-	/// </returns>
-	/// <exception cref="InvalidOperationException">The cycle is not tracked.</exception>
-	public Task<WxStationDataCollection?> GetWxStationsAsync(string cycleId, CancellationToken cancellationToken = default)
-	{
-		AiracCycleDataCacheEntry entry = GetEntry(cycleId)
-			?? throw new InvalidOperationException($"Cycle '{cycleId}' is not tracked by the cache. Call {nameof(PrepareCyclesAsync)} first.");
-
-		return entry.CycleDirectory is { } cycleDirectory
-			? _loadWxStations(cycleDirectory, cancellationToken)
-			: Task.FromResult<WxStationDataCollection?>(null);
-	}
-
-	/// <summary>
-	/// Where a cycle's Wx Stations file is, if it has one - so the GUI can say up front that the
-	/// Wx Stations sub-service has nothing to run on, rather than let a run fail on it.
-	/// </summary>
-	/// <param name="cycleId">The cycle ID.</param>
-	/// <returns>
-	/// The full path of the cycle's <c>stations.cache.xml</c>, or <see langword="null"/> when the
-	/// cycle is not tracked, not downloaded yet, or its folder does not have the file.
-	/// </returns>
-	public string? FindWxStationsFile(string cycleId)
-	{
-		if (GetEntry(cycleId)?.CycleDirectory is not { } cycleDirectory)
-		{
-			return null;
-		}
-
-		string path = Path.Combine(cycleDirectory, WxStationFiles.FileName);
-		return File.Exists(path) ? path : null;
-	}
-
-	/// <summary>
 	/// Returns a cycle's FAA d-TPP Metafile data, parsed fresh from its folder on every call -
-	/// like <see cref="GetWxStationsAsync"/>, there is no need to memoize it the way
-	/// <see cref="GetAsync"/> does for the much larger NASR data.
+	/// there is no need to memoize it the way <see cref="GetAsync"/> does for the much larger NASR
+	/// data.
 	/// </summary>
 	/// <param name="cycleId">The cycle ID to get.</param>
 	/// <param name="cancellationToken">Cancels the read.</param>
 	/// <returns>
 	/// The parsed d-TPP Metafile data; <see langword="null"/> when <paramref name="cycleId"/> is
-	/// not tracked by the cache (unlike <see cref="GetWxStationsAsync"/>, this never throws for an
-	/// untracked cycle - the Procedures sub-service also asks for the cycle before the selected
-	/// one, which may not be one of the three tracked cycles); or <see langword="null"/> when the
+	/// not tracked by the cache (this never throws for an untracked cycle - the Procedures
+	/// sub-service also asks for the cycle before the selected one, which may not be one of the
+	/// three tracked cycles); or <see langword="null"/> when the
 	/// cycle's folder does not have <see cref="DtppFiles.FileName"/> yet (not downloaded, not yet
 	/// published by the FAA, or an earlier download attempt failed).
 	/// </returns>
@@ -514,14 +446,11 @@ public sealed class AiracCycleDataCache(
 		}
 
 		entry.CycleDirectory = cycleDirectory;
+		DeleteRetiredCycleFiles(cycleDirectory);
 
 		// Runs for an already-cached cycle too (the NASR download above just resolved instantly
-		// from disk), which is exactly what fills Wx Stations data into a cycle folder that
-		// predates this feature, or retries one whose earlier attempt failed.
-		await EnsureWxStationsAsync(entry, cycleDirectory, cancellationToken).ConfigureAwait(false);
-
-		// Same reasoning as EnsureWxStationsAsync above: runs for an already-cached cycle too,
-		// which is what fills in a next cycle's metafile once the FAA publishes it, at a later launch.
+		// from disk), which is what fills in a next cycle's metafile once the FAA publishes it, at
+		// a later launch, or retries one whose earlier attempt failed.
 		await EnsureDtppAsync(entry, cycleDirectory, cancellationToken).ConfigureAwait(false);
 
 		SetState(entry, CycleDataState.Downloaded);
@@ -529,26 +458,26 @@ public sealed class AiracCycleDataCache(
 	}
 
 	/// <summary>
-	/// Ensures <paramref name="cycleDirectory"/> has its Wx Stations data. Never fails or
-	/// delay-fails the cycle: any failure but cancellation is logged and swallowed, so the NASR
-	/// data this cycle otherwise has is not held back by a Wx Stations problem. FE-Buddy retries at
-	/// the next launch.
+	/// Deletes the per-cycle Wx Stations file an older FE-Buddy kept in every cycle folder
+	/// (<see cref="RetiredWxStationsFileName"/>); the station list now lives in one shared folder,
+	/// refreshed on every run. Best-effort: a file that cannot be deleted is only clutter, and goes
+	/// with its cycle folder once that cycle is no longer offered.
 	/// </summary>
-	private async Task EnsureWxStationsAsync(AiracCycleDataCacheEntry entry, string cycleDirectory, CancellationToken cancellationToken)
+	private static void DeleteRetiredCycleFiles(string cycleDirectory)
 	{
+		string retired = Path.Combine(cycleDirectory, RetiredWxStationsFileName);
+
 		try
 		{
-			await _ensureWxStations(cycleDirectory, cancellationToken).ConfigureAwait(false);
+			if (File.Exists(retired))
+			{
+				File.Delete(retired);
+				AppLog.Info(LogSource, $"Deleted the retired per-cycle Wx Stations file '{retired}'.");
+			}
 		}
-		catch (OperationCanceledException)
+		catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
 		{
-			throw;
-		}
-		catch (Exception ex)
-		{
-			AppLog.Warning(LogSource,
-				$"Wx station data could not be downloaded for cycle {entry.Cycle.AiracCycleId}; the Wx Stations sub-service " +
-				$"can't run on it until it is (FE-Buddy retries at the next launch). {ex.Message}");
+			AppLog.Warning(LogSource, $"Could not delete the retired per-cycle Wx Stations file '{retired}': {ex.Message}");
 		}
 	}
 

@@ -55,14 +55,14 @@ public sealed record ProcedureServiceResult : ServiceResult
 	public required IReadOnlyList<string> FilesWritten { get; init; }
 
 	/// <summary>
-	/// Full path of <c>FAA_CHART_RECALL.txt</c>, or <see langword="null"/> when it was not written (not
+	/// Full path of <c>Faa_Chart_Recall.txt</c>, or <see langword="null"/> when it was not written (not
 	/// requested, no metafile, or no command to write).
 	/// </summary>
 	public string? AliasFilePath { get; init; }
 
-	/// <summary>How many commands <c>FAA_CHART_RECALL.txt</c> holds; 0 when it was not written.</summary>
+	/// <summary>How many commands <c>Faa_Chart_Recall.txt</c> holds; 0 when it was not written.</summary>
 	public int AliasCommandCount { get; init; }
 
-	/// <summary>How many airports have at least one command in <c>FAA_CHART_RECALL.txt</c>; 0 when it was not written.</summary>
+	/// <summary>How many airports have at least one command in <c>Faa_Chart_Recall.txt</c>; 0 when it was not written.</summary>
 	public int AliasAirportCount { get; init; }
 }

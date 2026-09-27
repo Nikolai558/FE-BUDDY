@@ -205,12 +205,12 @@ public sealed class ProcedureServiceTests : IDisposable
 
 		ProcedureServiceResult result = ProcedureService.Run(nasr, dtpp, null, Settings());
 
-		string expectedPath = Path.Combine(_outputDirectory, "Aliases", "FAA_CHART_RECALL.txt");
+		string expectedPath = Path.Combine(_outputDirectory, "Aliases", "Faa_Chart_Recall.txt");
 		Assert.Equal(expectedPath, result.AliasFilePath);
 		Assert.Equal([".aaaI1c", ".bbbR3c"], File.ReadAllLines(expectedPath).Select(line => line.Split(' ')[0]));
 		Assert.Equal(2, result.AliasCommandCount);
 		Assert.Equal(2, result.AliasAirportCount);
-		Assert.Contains(result.Messages, m => m.Text.StartsWith("FAA_CHART_RECALL.txt: 2 command(s) for 2 airport(s)", StringComparison.Ordinal));
+		Assert.Contains(result.Messages, m => m.Text.StartsWith("Faa_Chart_Recall.txt: 2 command(s) for 2 airport(s)", StringComparison.Ordinal));
 	}
 
 	[Fact]
@@ -244,9 +244,9 @@ public sealed class ProcedureServiceTests : IDisposable
 	{
 		(NasrCsvDataCollection nasr, DtppMetafileDataCollection dtpp) = TwoAirportScenario();
 
-		ProcedureServiceResult result = ProcedureService.Run(nasr, dtpp, null, Settings(("UploadToVnas", "FAA_CHART_RECALL.txt")));
+		ProcedureServiceResult result = ProcedureService.Run(nasr, dtpp, null, Settings(("UploadToVnas", "Faa_Chart_Recall.txt")));
 
-		Assert.Equal(Path.Combine(_outputDirectory, "Upload_to_vNAS", "FAA_CHART_RECALL.txt"), result.AliasFilePath);
+		Assert.Equal(Path.Combine(_outputDirectory, "Upload_to_vNAS", "Faa_Chart_Recall.txt"), result.AliasFilePath);
 	}
 
 	[Fact]

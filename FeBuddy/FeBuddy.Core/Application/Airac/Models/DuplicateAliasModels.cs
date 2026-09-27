@@ -1,7 +1,7 @@
 namespace FeBuddy.Core.Application.Airac.Models;
 
 /// <summary>One line of an alias file that shares its command with another line.</summary>
-/// <param name="FileName">The alias file the line is in, e.g. <c>FAA_CHART_RECALL.txt</c>.</param>
+/// <param name="FileName">The alias file the line is in, e.g. <c>Faa_Chart_Recall.txt</c>.</param>
 /// <param name="Text">The whole line, as written.</param>
 /// <param name="ArtccId">
 /// The ARTCC responsible for the airport the line belongs to, e.g. <c>ZLA</c>; <see langword="null"/>

@@ -128,6 +128,9 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 	/// <summary>The Procedures tab while it is open, otherwise <see langword="null"/>.</summary>
 	private ProceduresViewModel? ProceduresTab => TabFor<ProceduresViewModel>(AiracSubServices.ProceduresKey);
 
+	/// <summary>The Telephony tab while it is open, otherwise <see langword="null"/>.</summary>
+	private TelephonyViewModel? TelephonyTab => TabFor<TelephonyViewModel>(AiracSubServices.TelephonyKey);
+
 	/// <summary>The open tabs that take part in a run.</summary>
 	private IReadOnlyList<ISubServiceRunTarget> RunTargets =>
 		[.. Tabs.OfType<ISubServiceRunTarget>()];
@@ -179,7 +182,7 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 		}
 
 		RebuildTabs(open);
-		RefreshWxStationsData();
+		RefreshDownloadedDataStatus();
 		RefreshProceduresData();
 	}
 
@@ -227,7 +230,6 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 					target.LoadCycleDependentLists(data);
 				}
 
-				RefreshWxStationsData();
 				RefreshProceduresData();
 			});
 		}
@@ -238,19 +240,14 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 	}
 
 	/// <summary>
-	/// Tells the open Wx Stations tab whether the selected cycle's <c>stations.cache.xml</c> has
-	/// downloaded. Unlike every other sub-service, Wx Stations' data does not come from the NASR
-	/// cycle <see cref="ISubServiceRunTarget.LoadCycleDependentLists"/> hands out, so it is
-	/// reported here instead, alongside it.
+	/// Tells the open Wx Stations and Telephony tabs how old FE-Buddy's kept copies of their data
+	/// are. That data is not part of any AIRAC cycle - every run downloads the latest copy - so it
+	/// is re-read when the tabs open and after every run, not when the selected cycle changes.
 	/// </summary>
-	private void RefreshWxStationsData()
+	private void RefreshDownloadedDataStatus()
 	{
-		if (WxStationsTab is not { } tab || _parsedCycleId is not { } cycleId)
-		{
-			return;
-		}
-
-		tab.SetStationData(cycleId, AiracCycleDataCache.Instance.FindWxStationsFile(cycleId));
+		WxStationsTab?.RefreshStationData();
+		TelephonyTab?.RefreshTelephonyData();
 	}
 
 	/// <summary>
@@ -258,7 +255,7 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 	/// previous cycle's, for linking deleted procedures back to their chart). Unlike the NASR
 	/// cycle data <see cref="ISubServiceRunTarget.LoadCycleDependentLists"/> hands out, the
 	/// metafile is loaded here, off the UI thread - it is up to 16 MB and takes about 0.3 s to
-	/// parse - the same way <see cref="RefreshWxStationsData"/> reports its own supplemental data.
+	/// parse.
 	/// </summary>
 	private void RefreshProceduresData()
 	{
@@ -343,6 +340,7 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 			Fixes = FixesTab?.BuildSettingsBlock(),
 			WxStations = WxStationsTab?.BuildSettingsBlock(),
 			Procedures = ProceduresTab?.BuildSettingsBlock(),
+			Telephony = TelephonyTab?.BuildSettingsBlock(),
 		};
 
 		if (AiracService.HasExistingOutput(settings))
@@ -401,6 +399,9 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 		finally
 		{
 			IsRunning = false;
+
+			// The run replaced the kept Wx Stations and telephony copies when it could download them.
+			RefreshDownloadedDataStatus();
 		}
 	}
 
@@ -522,6 +523,11 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 			}
 		}
 
+		if (result.Telephony?.AliasFilePath is { } telephonyAlias)
+		{
+			files.Add(telephonyAlias);
+		}
+
 		if (result.DuplicateAliasReport is { } duplicateAliasReport)
 		{
 			files.Add(duplicateAliasReport.FilePath);
@@ -595,6 +601,11 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 			{
 				parts.Add($"{procedures.AliasCommandCount:N0} FAA Chart Recall command(s)");
 			}
+		}
+
+		if (result.Telephony is { AliasFilePath: not null } telephony)
+		{
+			parts.Add($"{telephony.AliasCommandCount:N0} telephony command(s)");
 		}
 
 		if (result.DuplicateAliasReport is { Duplicates.Count: > 0 } duplicateAliasReport)

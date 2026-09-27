@@ -9,7 +9,8 @@ namespace FeBuddy.UnitTests.Application.Airac.WxStations;
 /// <summary>
 /// Runs the whole Wx Stations pipeline (<see cref="WxStationService.Run"/>): the built/GeoJSON
 /// counts, that the ROI narrows the GeoJSON output only, the no-files-written advisory, that
-/// builder messages flow through, and that missing-data/invalid-settings errors propagate.
+/// builder messages flow through, that no Wx station data at all produces a warning and zero
+/// counts rather than throwing, and that invalid-settings errors still propagate.
 /// </summary>
 public sealed class WxStationServiceTests : IDisposable
 {
@@ -108,8 +109,18 @@ public sealed class WxStationServiceTests : IDisposable
 		Assert.Throws<ArgumentNullException>(() => WxStationService.Run(WxStationTestData.Build(), null!));
 
 	[Fact]
-	public void run_throws_when_wx_station_data_was_never_downloaded() =>
-		Assert.Throws<InvalidOperationException>(() => WxStationService.Run(null, Settings()));
+	public void run_with_no_wx_station_data_writes_nothing_and_warns()
+	{
+		WxStationServiceResult result = WxStationService.Run(null, Settings());
+
+		Assert.Equal(0, result.StationCount);
+		Assert.Equal(0, result.TotalStationCount);
+		Assert.Equal(0, result.GeojsonStationCount);
+		Assert.Empty(result.GeojsonFilesWritten);
+		Assert.Empty(result.GeojsonFeatureCountsByFile);
+		Assert.Contains(result.Messages, m =>
+			!m.IsAdvisory && m.Text.Contains("no weather station data to build from", StringComparison.Ordinal));
+	}
 
 	[Fact]
 	public void invalid_settings_errors_propagate_from_run()

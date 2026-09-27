@@ -4,7 +4,7 @@ using FeBuddy.Core.Domain.Procedures.ChartRecall.Models;
 namespace FeBuddy.Core.Application.Airac.Procedures.Models;
 
 /// <summary>
-/// One line of <c>FAA_CHART_RECALL.txt</c>: a command that opens one chart page, e.g.
+/// One line of <c>Faa_Chart_Recall.txt</c>: a command that opens one chart page, e.g.
 /// <c>.dtwI22Lc .OPENURL https://aeronav.faa.gov/d-tpp/2609/00058IL22L.PDF  ; DETROIT METRO WAYNE COUNTY-ILS OR LOC RWY 22L</c>.
 /// </summary>
 /// <param name="AirportId">The FAA identifier of the airport the chart is listed under, e.g. <c>DTW</c>.</param>
@@ -55,7 +55,7 @@ public sealed record ChartRecallBuildResult(
 	ChartRecallSummary Summary,
 	IReadOnlyList<ServiceMessage> Messages);
 
-/// <summary>The outcome of writing <c>FAA_CHART_RECALL.txt</c>.</summary>
+/// <summary>The outcome of writing <c>Faa_Chart_Recall.txt</c>.</summary>
 /// <param name="FilePath">The path written, or <see langword="null"/> when there was no command to write.</param>
 /// <param name="CommandCount">How many commands were written.</param>
 public sealed record ChartRecallAliasWriteResult(string? FilePath, int CommandCount);

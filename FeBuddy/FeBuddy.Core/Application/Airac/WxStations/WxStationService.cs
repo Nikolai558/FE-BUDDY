@@ -16,9 +16,10 @@ namespace FeBuddy.Core.Application.Airac.WxStations;
 /// <remarks>
 /// The only Wx Stations type <c>AiracService</c> and <c>FeBuddy.Harness</c> call directly; every
 /// other type in this folder is a step of this pipeline. Unlike every other AIRAC sub-service,
-/// its data does not come from a NASR CSV cycle - it comes from
-/// <see cref="Infrastructure.WxStations.WxStationDownloader"/>'s cached
-/// <c>stations.cache.xml</c>, supplied here already parsed. There is no alias file.
+/// its data does not come from a NASR CSV cycle - it comes from aviationweather.gov's live station
+/// list, which every AIRAC Service run downloads into one kept copy (see
+/// <see cref="Infrastructure.WxStations.WxStationDownloader"/>), supplied here already parsed.
+/// There is no alias file.
 /// </remarks>
 public static class WxStationService
 {
@@ -29,13 +30,13 @@ public static class WxStationService
 	/// ROI, and generate GeoJSON.
 	/// </summary>
 	/// <param name="wxStationData">
-	/// The parsed <c>stations.cache.xml</c> data for the cycle, or <see langword="null"/> when it
-	/// has not been downloaded yet.
+	/// The parsed <c>stations.cache.xml</c> data, or <see langword="null"/> when FE-Buddy has no copy
+	/// of it - the run then writes nothing and says so; the AIRAC Service reports why the download
+	/// failed.
 	/// </param>
 	/// <param name="wxStationSettings">The raw Wx Stations settings dictionary.</param>
 	/// <returns>What was built and written, plus timing and every message collected along the way.</returns>
 	/// <exception cref="ArgumentException">Thrown when a required setting is missing or invalid.</exception>
-	/// <exception cref="InvalidOperationException">Thrown when <paramref name="wxStationData"/> is <see langword="null"/>.</exception>
 	public static WxStationServiceResult Run(WxStationDataCollection? wxStationData, IReadOnlyDictionary<string, string> wxStationSettings)
 	{
 		ArgumentNullException.ThrowIfNull(wxStationSettings);
@@ -45,6 +46,26 @@ public static class WxStationService
 
 		WxStationSettingsParseResult parseResult = WxStationSettingsParser.Parse(wxStationSettings);
 		messages.AddRange(parseResult.Messages);
+
+		if (wxStationData is null)
+		{
+			messages.Add(new ServiceMessage(LogLevel.Warning, LogSource,
+				"There was no weather station data to build from, so no Wx Stations files were written."));
+
+			stopwatch.Stop();
+			LogAll(messages);
+
+			return new WxStationServiceResult
+			{
+				Messages = messages,
+				Elapsed = stopwatch.Elapsed,
+				StationCount = 0,
+				TotalStationCount = 0,
+				GeojsonStationCount = 0,
+				GeojsonFilesWritten = [],
+				GeojsonFeatureCountsByFile = new Dictionary<string, int>(),
+			};
+		}
 
 		WxStationBuildResult buildResult = WxStationBuilder.Read(wxStationData);
 		messages.AddRange(buildResult.Messages);
@@ -66,13 +87,7 @@ public static class WxStationService
 		}
 
 		stopwatch.Stop();
-
-		// Every message also flows to the shared application log, so the Dashboard activity log
-		// narrates the run.
-		foreach (ServiceMessage message in messages)
-		{
-			AppLog.Write(message.Level, message.Source, message.Text);
-		}
+		LogAll(messages);
 
 		return new WxStationServiceResult
 		{
@@ -84,5 +99,17 @@ public static class WxStationService
 			GeojsonFilesWritten = geojsonResult.Files.FilesWritten,
 			GeojsonFeatureCountsByFile = geojsonResult.Files.RenderedFeatureCountsByFile
 		};
+	}
+
+	/// <summary>
+	/// Copies every message to the shared application log, so the Dashboard activity log narrates
+	/// the run.
+	/// </summary>
+	private static void LogAll(List<ServiceMessage> messages)
+	{
+		foreach (ServiceMessage message in messages)
+		{
+			AppLog.Write(message.Level, message.Source, message.Text);
+		}
 	}
 }

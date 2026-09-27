@@ -53,7 +53,7 @@ public sealed class NavaidServiceTests : IDisposable
 		Assert.Equal(2, result.GeojsonFilesWritten.Count);
 		Assert.Contains(result.GeojsonFilesWritten, f => f.EndsWith("NAVAIDs_Symbols.geojson", StringComparison.Ordinal));
 		Assert.Contains(result.GeojsonFilesWritten, f => f.EndsWith("NAVAIDs_Text.geojson", StringComparison.Ordinal));
-		Assert.Equal(Path.Combine(_outputDirectory, "Aliases", "NAVAIDs.txt"), result.AliasFilePath);
+		Assert.Equal(Path.Combine(_outputDirectory, "Aliases", "Navaids.txt"), result.AliasFilePath);
 		Assert.True(result.AliasCommandCount > 0);
 	}
 

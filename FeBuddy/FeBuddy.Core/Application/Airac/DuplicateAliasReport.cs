@@ -6,6 +6,7 @@ using FeBuddy.Core.Application.Airac.Arrivals;
 using FeBuddy.Core.Application.Airac.Departures;
 using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Application.Airac.Procedures;
+using FeBuddy.Core.Application.Airac.Telephony;
 using FeBuddy.Core.Infrastructure.Nasr.Models;
 
 namespace FeBuddy.Core.Application.Airac;
@@ -26,15 +27,19 @@ namespace FeBuddy.Core.Application.Airac;
 /// <para>
 /// The ARTCC comes from NASR (<c>APT_BASE.RESP_ARTCC_ID</c>) for the airport each command names:
 /// the identifier after <c>.apt</c> in <c>Airports.txt</c>, and the lower-case airport at the start
-/// of a <c>Departures.txt</c>, <c>Arrivals.txt</c> or <c>FAA_CHART_RECALL.txt</c> command. A command
-/// that belongs to no airport - an airway or a NAVAID - is listed under <c>OTHER</c>. The report
-/// is written for every run that writes an alias file, saying so when there is nothing to fix, so
-/// an older report is never left behind to mislead.
+/// of a <c>Departures.txt</c>, <c>Arrivals.txt</c> or <c>Faa_Chart_Recall.txt</c> command. A
+/// <c>Telephony.txt</c> command is listed under <c>TELEPHONY</c>, and any other command that belongs
+/// to no airport - an airway or a NAVAID - under <c>OTHER</c>. The report is written for every run
+/// that writes an alias file, saying so when there is nothing to fix, so an older report is never
+/// left behind to mislead.
 /// </para>
 /// </remarks>
 public static class DuplicateAliasReport
 {
-	/// <summary>The group for commands that belong to no airport FE-Buddy can tie to an ARTCC.</summary>
+	/// <summary>The group for <c>Telephony.txt</c> commands, which belong to an operator rather than an airport.</summary>
+	internal const string TelephonyGroup = "TELEPHONY";
+
+	/// <summary>The group for any other command that belongs to no airport FE-Buddy can tie to an ARTCC.</summary>
 	internal const string OtherGroup = "OTHER";
 
 	/// <summary>
@@ -175,6 +180,11 @@ public static class DuplicateAliasReport
 		string groupCounts = string.Join(", ", groups.Select(group => string.Create(CultureInfo.InvariantCulture, $"{group.Group} {group.Commands.Count:N0}")));
 		report.AppendLine(CultureInfo.InvariantCulture, $"Summary: {duplicates.Count:N0} duplicate command(s) on {lineCount:N0} line(s) - {groupCounts}");
 
+		if (groups.Any(group => group.Group == TelephonyGroup))
+		{
+			report.AppendLine($"{TelephonyGroup} holds the commands from {TelephonyOutputFiles.Alias}, which belong to an operator rather than an airport.");
+		}
+
 		if (groups.Any(group => group.Group == OtherGroup))
 		{
 			report.AppendLine($"{OtherGroup} holds the commands FE-Buddy can't tie to an airport's ARTCC, such as airways and NAVAIDs.");
@@ -201,8 +211,9 @@ public static class DuplicateAliasReport
 
 	/// <summary>
 	/// Groups the duplicates by ARTCC: <paramref name="primaryFacility"/> first, the rest
-	/// alphabetically, then <see cref="OtherGroup"/>. A command whose lines belong to airports of two
-	/// ARTCCs is listed under both, so each sees it.
+	/// alphabetically, then <see cref="TelephonyGroup"/>, then <see cref="OtherGroup"/>. A command whose
+	/// lines fall in two groups (two ARTCCs' airports, or an airport and a telephony) is listed under
+	/// both, so each sees it.
 	/// </summary>
 	private static IReadOnlyList<(string Group, IReadOnlyList<DuplicateAliasCommand> Commands)> GroupByArtcc(
 		IReadOnlyList<DuplicateAliasCommand> duplicates,
@@ -212,7 +223,7 @@ public static class DuplicateAliasReport
 
 		foreach (DuplicateAliasCommand duplicate in duplicates)
 		{
-			foreach (string group in duplicate.Lines.Select(line => line.ArtccId ?? OtherGroup).Distinct(StringComparer.OrdinalIgnoreCase))
+			foreach (string group in duplicate.Lines.Select(GroupOf).Distinct(StringComparer.OrdinalIgnoreCase))
 			{
 				if (!byGroup.TryGetValue(group, out List<DuplicateAliasCommand>? commands))
 				{
@@ -227,10 +238,25 @@ public static class DuplicateAliasReport
 		string primary = primaryFacility?.Trim() ?? string.Empty;
 
 		return [.. byGroup
-			.OrderBy(pair => pair.Key.Equals(primary, StringComparison.OrdinalIgnoreCase) ? 0 : pair.Key == OtherGroup ? 2 : 1)
+			.OrderBy(pair => GroupRank(pair.Key, primary))
 			.ThenBy(pair => pair.Key, StringComparer.OrdinalIgnoreCase)
 			.Select(pair => (pair.Key, (IReadOnlyList<DuplicateAliasCommand>)[.. pair.Value.OrderBy(command => command.Command, StringComparer.OrdinalIgnoreCase)]))];
 	}
+
+	/// <summary>The group a line is listed under: <see cref="TelephonyGroup"/> for a <c>Telephony.txt</c> line, else its ARTCC, else <see cref="OtherGroup"/>.</summary>
+	private static string GroupOf(DuplicateAliasLine line) =>
+		line.FileName.Equals(TelephonyOutputFiles.Alias, StringComparison.OrdinalIgnoreCase)
+			? TelephonyGroup
+			: line.ArtccId ?? OtherGroup;
+
+	/// <summary>Where a group sorts: the primary facility, then every other ARTCC, then TELEPHONY, then OTHER.</summary>
+	private static int GroupRank(string group, string primaryFacility) => group switch
+	{
+		_ when group.Equals(primaryFacility, StringComparison.OrdinalIgnoreCase) => 0,
+		TelephonyGroup => 2,
+		OtherGroup => 3,
+		_ => 1,
+	};
 
 	/// <summary>Finds the ARTCC responsible for the airport an alias command names, from NASR.</summary>
 	private sealed class ArtccLookup
@@ -278,7 +304,7 @@ public static class DuplicateAliasReport
 				return ForLowerCaseAirport(command);
 			}
 
-			// Airways.txt and NAVAIDs.txt commands name no airport.
+			// Airways.txt and Navaids.txt commands name no airport.
 			return null;
 		}
 

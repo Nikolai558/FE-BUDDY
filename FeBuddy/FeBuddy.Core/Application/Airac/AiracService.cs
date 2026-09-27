@@ -17,6 +17,8 @@ using FeBuddy.Core.Application.Airac.Navaids;
 using FeBuddy.Core.Application.Airac.Navaids.Models;
 using FeBuddy.Core.Application.Airac.Procedures;
 using FeBuddy.Core.Application.Airac.Procedures.Models;
+using FeBuddy.Core.Application.Airac.Telephony;
+using FeBuddy.Core.Application.Airac.Telephony.Models;
 using FeBuddy.Core.Application.Airac.WxStations;
 using FeBuddy.Core.Application.Airac.WxStations.Models;
 using FeBuddy.Core.Application.Models;
@@ -26,6 +28,7 @@ using FeBuddy.Core.Infrastructure.Dtpp.Models;
 using FeBuddy.Core.Infrastructure.Logging;
 using FeBuddy.Core.Infrastructure.Logging.Models;
 using FeBuddy.Core.Infrastructure.Nasr.Models;
+using FeBuddy.Core.Infrastructure.Telephony.Models;
 using FeBuddy.Core.Infrastructure.WxStations.Models;
 
 namespace FeBuddy.Core.Application.Airac;
@@ -33,11 +36,12 @@ namespace FeBuddy.Core.Application.Airac;
 /// <summary>
 /// The AIRAC Service: the GUI calls this once per "Run AIRAC Service". It runs each selected
 /// sub-service (Airways, Airports, Departures, Arrivals, NAVAIDs, ARTCC Boundaries, Fixes, Wx
-/// Stations, Procedures) against one cycle's NASR data and gathers the results. Wx Stations and
-/// Procedures are the exceptions: Wx Stations' data does not come from the NASR cycle at all, but
-/// from a separately downloaded and cached <c>stations.cache.xml</c> (see
-/// <see cref="AiracCycleDataCache.GetWxStationsAsync"/>); Procedures also needs the selected cycle's
-/// (and the previous cycle's) FAA d-TPP Metafile (see <see cref="AiracCycleDataCache.GetDtppAsync"/>).
+/// Stations, Procedures, Telephony) against one cycle's NASR data and gathers the results. Three
+/// need more than the NASR cycle: Wx Stations and Telephony read data that is not published per
+/// cycle at all - aviationweather.gov's station list and the FAA telephony pages - which the run
+/// downloads fresh every time (see <see cref="AiracSharedDataLoader"/>); Procedures also needs the
+/// selected cycle's (and the previous cycle's) FAA d-TPP Metafile (see
+/// <see cref="AiracCycleDataCache.GetDtppAsync"/>).
 /// </summary>
 /// <remarks>
 /// <para>
@@ -78,8 +82,10 @@ public static class AiracService
 	/// <summary>
 	/// Runs every selected sub-service, resolving the parsed cycle data for
 	/// <see cref="AiracServiceSettings.SelectedCycle"/> from <see cref="AiracCycleDataCache.Instance"/>
-	/// (awaiting an in-flight parse rather than starting a second one) - and, when Wx Stations or
-	/// Procedures is selected, that sub-service's own supplemental data the same way.
+	/// (awaiting an in-flight parse rather than starting a second one). When Procedures is selected
+	/// its d-TPP Metafiles come from the cache the same way; when Wx Stations or Telephony is
+	/// selected, the latest copy of its data is downloaded first (see
+	/// <see cref="AiracSharedDataLoader"/>), falling back on the last good copy.
 	/// </summary>
 	/// <param name="settings">The run's cross-cutting choices and per-sub-service settings blocks.</param>
 	/// <param name="progress">Optional per-sub-service progress for the run panel.</param>
@@ -97,14 +103,28 @@ public static class AiracService
 			.GetAsync(settings.SelectedCycle.AiracCycleId, cancellationToken)
 			.ConfigureAwait(false);
 
+		List<ServiceMessage> supplementalMessages = [];
 		WxStationDataCollection? wxStationData = null;
+		TelephonyDataCollection? telephonyData = null;
 
 		if (settings.WxStations is not null)
 		{
-			progress?.Report(new AiracServiceProgress("AIRAC", $"Loading Wx station data for cycle {settings.SelectedCycle.AiracCycleId}"));
-			wxStationData = await AiracCycleDataCache.Instance
-				.GetWxStationsAsync(settings.SelectedCycle.AiracCycleId, cancellationToken)
-				.ConfigureAwait(false);
+			progress?.Report(new AiracServiceProgress("AIRAC", "Downloading the latest Wx station data"));
+			AiracSharedDataLoadResult<WxStationDataCollection> loaded =
+				await AiracSharedDataLoader.LoadWxStationsAsync(cancellationToken).ConfigureAwait(false);
+
+			wxStationData = loaded.Data;
+			supplementalMessages.AddRange(loaded.Messages);
+		}
+
+		if (settings.Telephony is not null)
+		{
+			progress?.Report(new AiracServiceProgress("AIRAC", "Downloading the latest FAA telephony pages"));
+			AiracSharedDataLoadResult<TelephonyDataCollection> loaded =
+				await AiracSharedDataLoader.LoadTelephonyAsync(cancellationToken).ConfigureAwait(false);
+
+			telephonyData = loaded.Data;
+			supplementalMessages.AddRange(loaded.Messages);
 		}
 
 		DtppMetafileDataCollection? dtppData = null;
@@ -131,8 +151,10 @@ public static class AiracService
 		AiracSupplementalData supplementalData = new()
 		{
 			WxStations = wxStationData,
+			Telephony = telephonyData,
 			Dtpp = dtppData,
 			PreviousDtpp = previousDtppData,
+			Messages = supplementalMessages,
 		};
 
 		return await RunAsync(settings, nasrData, supplementalData, progress, cancellationToken).ConfigureAwait(false);
@@ -140,8 +162,8 @@ public static class AiracService
 
 	/// <summary>
 	/// Runs every selected sub-service against the supplied parsed cycle data, with no Wx station
-	/// data: a selected Wx Stations sub-service fails, saying the cycle has none. Kept for callers
-	/// from before Wx Stations existed.
+	/// data: a selected Wx Stations sub-service writes nothing, saying it had no data. Kept for
+	/// callers from before Wx Stations existed.
 	/// </summary>
 	/// <param name="settings">The run's cross-cutting choices and per-sub-service settings blocks.</param>
 	/// <param name="nasrData">
@@ -174,8 +196,7 @@ public static class AiracService
 	/// The parsed NASR CSV data for <see cref="AiracServiceSettings.SelectedCycle"/>.
 	/// </param>
 	/// <param name="wxStationData">
-	/// The parsed Wx station data for <see cref="AiracServiceSettings.SelectedCycle"/>, or
-	/// <see langword="null"/> when it has not downloaded yet. Only read when
+	/// The parsed Wx station data, or <see langword="null"/> when there is none. Only read when
 	/// <see cref="AiracServiceSettings.WxStations"/> is not <see langword="null"/>.
 	/// </param>
 	/// <param name="progress">Optional per-sub-service progress for the run panel.</param>
@@ -197,15 +218,17 @@ public static class AiracService
 
 	/// <summary>
 	/// Runs every selected sub-service against the supplied parsed cycle data and supplemental
-	/// data (Wx station data and, when Procedures is selected, the FAA d-TPP Metafile). This is
-	/// the real implementation every other <c>RunAsync</c> overload delegates to.
+	/// data (Wx station data, the FAA telephony pages and, when Procedures is selected, the FAA
+	/// d-TPP Metafile). This is the real implementation every other <c>RunAsync</c> overload
+	/// delegates to.
 	/// </summary>
 	/// <param name="settings">The run's cross-cutting choices and per-sub-service settings blocks.</param>
 	/// <param name="nasrData">
 	/// The parsed NASR CSV data for <see cref="AiracServiceSettings.SelectedCycle"/>.
 	/// </param>
 	/// <param name="supplementalData">
-	/// The Wx station and d-TPP Metafile data the selected sub-services need beyond the NASR data.
+	/// The Wx station, telephony and d-TPP Metafile data the selected sub-services need beyond the
+	/// NASR data, and what getting it produced for the Review tab (added to the run's messages).
 	/// </param>
 	/// <param name="progress">Optional per-sub-service progress for the run panel.</param>
 	/// <param name="cancellationToken">Cancels before the next sub-service starts.</param>
@@ -229,12 +252,20 @@ public static class AiracService
 		ArgumentException.ThrowIfNullOrWhiteSpace(settings.OutputDirectory, nameof(settings));
 
 		Stopwatch stopwatch = Stopwatch.StartNew();
-		List<ServiceMessage> messages = [];
 		string outputDirectory = settings.CycleOutputDirectory;
 		bool anySelected = settings.Airways is not null || settings.Airports is not null
 			|| settings.Departures is not null || settings.Arrivals is not null || settings.Navaids is not null
 			|| settings.ArtccBoundaries is not null || settings.Fixes is not null || settings.WxStations is not null
-			|| settings.Procedures is not null;
+			|| settings.Procedures is not null || settings.Telephony is not null;
+
+		// What getting the downloaded data produced (a fresh copy, an older copy and its age, or none)
+		// leads the run's messages, so the Review tab says it before anything built from that data.
+		List<ServiceMessage> messages = [.. supplementalData.Messages];
+
+		foreach (ServiceMessage message in supplementalData.Messages)
+		{
+			AppLog.Write(message.Level, message.Source, message.Text);
+		}
 
 		// Only when there is something to write: a run with nothing selected must not empty the
 		// folder and leave it that way.
@@ -294,6 +325,11 @@ public static class AiracService
 			result => $"{result.AirportCount} airport(s), {result.NewCount + result.ChangedCount + result.DeletedCount} change(s), {result.FilesWritten.Count} document(s)"
 				+ (result.AliasFilePath is not null ? $", {result.AliasCommandCount} FAA Chart Recall command(s)" : string.Empty)).ConfigureAwait(false);
 
+		TelephonyServiceResult? telephonyResult = await RunSubServiceAsync(
+			settings.Telephony, "Telephony", "Building the telephony alias file",
+			block => TelephonyService.Run(supplementalData.Telephony, block),
+			result => $"{result.AliasCommandCount} command(s), {result.MergedCommandCount} showing more than one operator").ConfigureAwait(false);
+
 		// Every alias file this run wrote, in the order the sub-services ran, checked together for
 		// commands two lines share.
 		string[] aliasFiles = [.. new[]
@@ -304,6 +340,7 @@ public static class AiracService
 			arrivalsResult?.AliasFilePath,
 			navaidsResult?.AliasFilePath,
 			proceduresResult?.AliasFilePath,
+			telephonyResult?.AliasFilePath,
 		}.OfType<string>()];
 
 		DuplicateAliasReportResult? duplicateAliasReport = null;
@@ -347,6 +384,7 @@ public static class AiracService
 			Fixes = fixesResult,
 			WxStations = wxStationsResult,
 			Procedures = proceduresResult,
+			Telephony = telephonyResult,
 		};
 
 		// Runs one sub-service if it was selected (its settings block is not null), reporting

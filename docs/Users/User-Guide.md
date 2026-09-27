@@ -39,8 +39,8 @@ The screen where you make files. It is a set of tabs down the left:
 
 | Tab | What it is |
 |---|---|
-| **General** | Which cycle, and which sub-services (Airports, Airways, Departures, Arrivals, NAVAIDs, ARTCC Boundaries, Fixes, Wx Stations, Procedures). Always there. |
-| **Airports / Airways / Departures / Arrivals / NAVAIDs / ARTCC Boundaries / Fixes / Wx Stations / Procedures** | One tab per sub-service you ticked, with its settings. |
+| **General** | Which cycle, and which sub-services (Airports, Airways, Departures, Arrivals, NAVAIDs, ARTCC Boundaries, Fixes, Wx Stations, Procedures, Telephony). Always there. |
+| **Airports / Airways / Departures / Arrivals / NAVAIDs / ARTCC Boundaries / Fixes / Wx Stations / Procedures / Telephony** | One tab per sub-service you ticked, with its settings. |
 | **Preview Settings** | Everything the run will do, in plain words, and the **Run AIRAC Service** button. Appears once a sub-service is ticked. |
 | **Review** | What happened in the last run. Appears once you run. |
 
@@ -71,11 +71,13 @@ is saved".
 
 ### The cards every sub-service tab shares
 
-Procedures does not use the What Files, FE-Buddy Properties or CRC ERAM Defaults cards below at all
-- it writes no GeoJSON. Its own Outputs card covers its two documents and its alias file instead of
-the generic one described here, and its own Upload to vNAS card offers the alias file only. It does
-share the Region of Interest card, though the box means something different there; see its own tab,
-further down.
+Procedures and Telephony do not use the What Files, FE-Buddy Properties or CRC ERAM Defaults cards
+below at all - neither writes any GeoJSON. Procedures' own Outputs card covers its two documents and
+its alias file instead of the generic one described here, and its own Upload to vNAS card offers the
+alias file only; it does share the Region of Interest card, though the box means something different
+there. Telephony's own Outputs card just names its one output, `Telephony.txt`, with nothing to turn
+on or off, and it has no Region of Interest card at all - it covers every operator regardless of
+area. See each one's own tab, further down.
 
 **Outputs** - what the sub-service writes: **GeoJSON files** and/or the **alias file**. At least
 one must stay on; to make nothing for a sub-service, untick it on the General tab instead. ARTCC
@@ -232,7 +234,7 @@ no "Include obstacle departures" equivalent here.
 
 ### NAVAIDs tab
 
-- **Outputs:** GeoJSON, and `NAVAIDs.txt` - a `.nav<ID>` command per NAVAID identifier and a
+- **Outputs:** GeoJSON, and `Navaids.txt` - a `.nav<ID>` command per NAVAID identifier and a
   `.nav<name>` command per name (letters and digits only), each an `.echo` that prints the
   NAVAID's identifier, name, type, frequency, and its ARTCC high and low boundaries. Duplicate
   identifiers are normal in NASR data (`ABQ` is both a VORTAC and a VOT; `AA` is two NDBs) - a
@@ -259,9 +261,9 @@ no "Include obstacle departures" equivalent here.
   The Text file never carries `navId`, `navType` or `name` - its label already shows all three.
 - **Region:** a NAVAID is included in the GeoJSON when its own coordinates are inside the region;
   the alias file is never limited by it, the same as Airports.
-- **Upload to vNAS:** *All in one file* - `NAVAIDs_Symbols`, `NAVAIDs_Text`, then `NAVAIDs.txt`.
+- **Upload to vNAS:** *All in one file* - `NAVAIDs_Symbols`, `NAVAIDs_Text`, then `Navaids.txt`.
   *One pair per type* - each included type's `NAVAIDs_<Type>s_Symbols` / `_Text`, then
-  `NAVAIDs.txt`.
+  `Navaids.txt`.
 
 ### ARTCC Boundaries tab
 
@@ -333,10 +335,10 @@ no "Include obstacle departures" equivalent here.
   (the station's ICAO ID, then its IATA ID and site name where it has one, e.g. `KDTW` /
   `DTW_Detroit/Metro Wayne Cnty`, otherwise just the site name). There is no Lines file.
 - **Station Data** - where the list comes from: aviationweather.gov's own station list, not the
-  NASR cycle, downloaded once at launch and shared by every cycle that needs it. It shows which
-  stations are included (a US or US-territory station with an ICAO ID that reports METAR and has
-  usable coordinates) and a status line for the selected cycle: the date the data was downloaded,
-  or **Missing** - deselect Wx Stations or restart FE-Buddy online to try again.
+  NASR cycle. Every run downloads the latest list first, whichever cycle you run, and only falls
+  back to FE-Buddy's kept copy if that fails. It shows which stations are included (a US or
+  US-territory station with an ICAO ID that reports METAR and has usable coordinates) and the kept
+  copy's date, or that FE-Buddy has no copy yet - the first run then needs an internet connection.
 - **Region:** a station is included when its own coordinates are inside the region.
 - **Upload to vNAS:** `Wx_Symbols` and/or `Wx_Text`, whichever the tab writes. There is no alias
   file to upload.
@@ -351,7 +353,7 @@ until it is.
 
 - **Outputs:** **Procedure Changes document** (`Procedure_Changes.md`) and/or **Procedures.json**,
   written into the cycle's `Publication_Docs` folder, and/or the **alias file**
-  (`FAA_CHART_RECALL.txt`, see [FAA Chart Recall commands](#faa-chart-recall-commands) below) -
+  (`Faa_Chart_Recall.txt`, see [FAA Chart Recall commands](#faa-chart-recall-commands) below) -
   there is no GeoJSON. At least one of the three must stay on. The Facilities, Airports, Procedures
   at Any Airport, Airport + Procedure and Chart Types cards below (and the Region of Interest card,
   used as below) only pick what the two documents cover and grey out while neither is on - the
@@ -359,7 +361,7 @@ until it is.
 - **d-TPP Data** - where the data comes from, and the selected cycle's status: how many airports and
   procedures its d-TPP Metafile has and when it was downloaded, or **Not published yet**. It also
   says whether a deleted procedure can be linked to its last chart, which needs the previous cycle's
-  metafile too. Unlike the Wx Stations tab's Station Data card, this never blocks the run - a cycle
+  metafile too. Like the Wx Stations tab's Station Data card, this never blocks the run - a cycle
   with no metafile yet still runs, it just writes no Procedures output this time, and the Review
   tab carries an advisory saying why.
 - **Facilities** - tick the ARTCCs to include every one of their airports' procedures (of the chart
@@ -438,7 +440,7 @@ per-airport data, not a change report.
 
 #### FAA Chart Recall commands
 
-**`FAA_CHART_RECALL.txt`** is one `.OPENURL` command per page of every current chart at every
+**`Faa_Chart_Recall.txt`** is one `.OPENURL` command per page of every current chart at every
 airport in the FAA's d-TPP Metafile - not just the airports and chart types picked above, which only
 limit the two documents. For example:
 
@@ -496,7 +498,32 @@ is the airport's own name, the airport's identifier is used instead of it -
 `TATALINA FOUR (OBSTACLE) (RNAV)` at TATALINA LRRS is `.tljTLJc` - unless two charts at the airport
 would then share it, or another chart's code there is already the identifier.
 
-The Review tab names how many commands `FAA_CHART_RECALL.txt` holds and for how many airports.
+The Review tab names how many commands `Faa_Chart_Recall.txt` holds and for how many airports.
+
+### Telephony tab
+
+- **Outputs:** `Telephony.txt` only - Telephony's only output, and it can't be turned off.
+- **Telephony Data** - where the cards come from: FAA Order JO 7340.2, Chapter 3 - the ICAO
+  register (Section 1) and the U.S. special call signs (Section 4). Like Wx Stations, this is not
+  part of the AIRAC cycle, so every run downloads the latest pages first, whichever cycle you run,
+  and falls back to FE-Buddy's kept copies only if it can't. It shows the kept copies' date, or that
+  FE-Buddy has no copy yet. Left out: a register entry with no three-letter designator or no
+  telephony, and a U.S. special call sign that has expired (one with a date FE-Buddy can't read is
+  kept instead, with a warning).
+- **Commands** - each operator gets an `.id` command for its three-letter designator (ICAO
+  register) or identifier (U.S. special call sign), and another for its telephony reduced to
+  letters and digits, e.g. `.idAVA` and `.idAVIANCA` for AVIANCA - one command when the two are the
+  same, e.g. `.idNASA`. Typing either the designator/identifier from the data block or the
+  telephony the pilot said works. Both are a lower-case `.id`, and the command is a lower-case
+  `.echo`; the card it prints is upper case: an ICAO operator's card shows its three-letter
+  designator, telephony, company and country; a U.S. special call sign's shows its identifier,
+  telephony, operating agency and expiration date. When a telephony spells another operator's
+  designator, or two operators' telephony only differ by spacing, one command shows every one of
+  their cards, separated by `---`, the command's own operator first. Commands are listed
+  alphabetically.
+- **Region:** none - Telephony is not limited to a region; every operator in the FAA's pages gets a
+  card.
+- **Upload to vNAS:** `Telephony.txt`, the only file there is.
 
 ### Preview Settings tab
 
@@ -639,7 +666,7 @@ for an example of what it catches:
     ├── AIRAC_2610\
     │   ├── Duplicate_Alias_Commands.txt  (only when the run wrote at least one alias file)
     │   ├── Aliases\
-    │   │   └── Airports.txt, Airways.txt, Departures.txt, Arrivals.txt, NAVAIDs.txt, FAA_CHART_RECALL.txt
+    │   │   └── Airports.txt, Airways.txt, Departures.txt, Arrivals.txt, Navaids.txt, Faa_Chart_Recall.txt, Telephony.txt
     │   ├── Geojson\
     │   │   ├── Runways_Lines, Airports_Symbols, Airports_Text (.geojson)
     │   │   ├── Airways_<group>_Lines / _Symbols / _Text (.geojson)
@@ -675,8 +702,9 @@ overwrite the old files or delete them (see [Preview Settings tab](#preview-sett
 **`Duplicate_Alias_Commands.txt`** lists every alias command used by more than one line across all
 the alias files the run wrote - CRC can only run one of them - grouped by the ARTCC responsible for
 each line's airport: your own facility (Settings ▸ Facility Profile) first, other ARTCCs
-alphabetically, then `OTHER` for a command (an airway or a NAVAID) that names no airport. It says so
-when there are no duplicates, and the Review tab carries an advisory warning when there are.
+alphabetically, then `TELEPHONY` for a `Telephony.txt` command (it belongs to an operator, not an
+airport), then `OTHER` for any other command (an airway or a NAVAID) that names no airport. It says
+so when there are no duplicates, and the Review tab carries an advisory warning when there are.
 
 ## Map
 

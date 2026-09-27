@@ -13,8 +13,8 @@ below is relative to `FeBuddy/FeBuddy.Wpf/` in the repo unless stated otherwise.
 
 - references `FeBuddy.Core`; no other NuGet packages - the MVVM helpers
   (`ObservableObject`, `RelayCommand`) are hand-rolled in `Mvvm/`
-- **Airports, Airways, Departures, Arrivals, NAVAIDs, ARTCC Boundaries, Fixes, Wx Stations and
-  Procedures are sub-services of AIRAC Service**, not top-level screens. The library code is
+- **Airports, Airways, Departures, Arrivals, NAVAIDs, ARTCC Boundaries, Fixes, Wx Stations,
+  Procedures and Telephony are sub-services of AIRAC Service**, not top-level screens. The library code is
   `FeBuddy.Core.Application.Airac.*`; the GUI reaches each one only as a tab on the AIRAC
   Services screen. In the same way, each
   **file conversion** (DAT to GeoJSON, SCT2 to GeoJSON) is a tab on the File Conversions screen
@@ -81,7 +81,7 @@ Views/                ShellWindow (custom chrome) + Dashboard, TabbedServiceView
                       (the AIRAC Services and File Conversions screens) and their
                       tab views (AiracGeneralTabView, AirportsView, AirwaysView,
                       DeparturesView, ArrivalsView, NavaidsView, ArtccBoundariesView, FixesView,
-                      WxStationsView, ProceduresView, DatToGeojsonView, SctToGeojsonView, EramToGeojsonView,
+                      WxStationsView, ProceduresView, TelephonyView, DatToGeojsonView, SctToGeojsonView, EramToGeojsonView,
                       ServicePreviewTabView, ServiceRunReviewTabView), Map, Settings, Info; UpdateWindow,
                       ConfirmWindow (Confirm / Cancel, or a third choice between
                       them), RoiPickerWindow
@@ -141,9 +141,9 @@ bar and page scroller are shared, and each screen's view-model says what differs
     restores it. The selection persists to
     `Services.AiracService.SelectedSubServices`.
   - **Sub-service catalogue** - `ViewModels/AiracSubServices.cs`: Airports,
-    Airways, Departures, Arrivals, NAVAIDs, ARTCC Boundaries, Fixes, Wx Stations, Procedures.
-    Adding one is a catalogue entry plus a tab view-model; one whose backend is not built yet opens
-    a `PlaceholderSubServiceView` and contributes nothing to a run.
+    Airways, Departures, Arrivals, NAVAIDs, ARTCC Boundaries, Fixes, Wx Stations, Procedures,
+    Telephony. Adding one is a catalogue entry plus a tab view-model; one whose backend is not built
+    yet opens a `PlaceholderSubServiceView` and contributes nothing to a run.
   - **Sub-service tabs** - each is a `GeojsonSubServiceViewModel` (Save /
     Undo-last-save / dirty, plus the outputs, file choices, `feb.*` properties, ROI
     override, vNAS files and CRC ERAM defaults every GeoJSON sub-service shares). The
@@ -185,22 +185,23 @@ bar and page scroller are shared, and each screen's view-model says what differs
     fix use combination present, depending on File Layout), added the same way with
     `AddCrcRows`. The Wx Stations tab adds: a Station Data card - where the list
     comes from (aviationweather.gov's own station list, not the NASR cycle), which
-    stations are included, and a status line for the selected cycle (downloaded
-    date, or missing, which blocks the run). Like NAVAIDs and Fixes it has no Lines
-    file; like ARTCC Boundaries and Fixes it has no alias file at all. Unlike Fixes,
-    its CRC ERAM Defaults have a single fixed class (`Wx`), never rows added from
+    stations are included, and a status line showing FE-Buddy's kept copy's date, or that there is
+    no copy yet (every run downloads the latest list first, whichever cycle you run, and only falls
+    back to the kept copy if that fails; missing data no longer blocks the run). Like NAVAIDs and
+    Fixes it has no Lines file; like ARTCC Boundaries and Fixes it has no alias file at all. Unlike
+    Fixes, its CRC ERAM Defaults have a single fixed class (`Wx`), never rows added from
     the cycle's own data - there is no File Layout choice to split it by.
   - **The Procedures tab** writes no GeoJSON at all, but does have an alias file, so it still builds
     on `GeojsonSubServiceViewModel` for the alias-file plumbing and its region-of-interest card:
     every `EmitKeys` entry is null (there is nothing to emit) but `HasAliasFile` is `true`, and the
     view has no GeoJSON Files, FE-Buddy Properties or CRC ERAM Defaults cards - nothing it writes
     carries CRC-ERAM defaults. Its own cards: **Outputs** (which of `Procedure_Changes.md`,
-    `Procedures.json` and the alias file, `FAA_CHART_RECALL.txt`, to write - at least one; the
+    `Procedures.json` and the alias file, `Faa_Chart_Recall.txt`, to write - at least one; the
     facility/airport/procedure/chart-type choices below never limit the alias file, only the
     documents), **d-TPP Data** (where
     the data comes from, the selected cycle's d-TPP Metafile status - airports, procedures,
     downloaded date, or "not published yet" - and whether a deleted procedure can be linked to the
-    previous cycle; unlike the Wx Stations tab's Station Data card, this never blocks the run),
+    previous cycle; like the Wx Stations tab's Station Data card, this never blocks the run),
     **Facilities** (a tick per ARTCC, the same pattern as Departures/Arrivals/ARTCC Boundaries, but
     for whole-airport inclusion rather than a narrowing filter), **Airports** (list by FAA/ICAO ID,
     plus "Also include every airport inside the region of interest"), **Procedures at Any Airport**
@@ -217,6 +218,17 @@ bar and page scroller are shared, and each screen's view-model says what differs
     alias file's own command and airport counts
     (`ProcedureServiceResult.AliasCommandCount`/`AliasAirportCount`), alongside the documents'
     airport/new/changed/deleted counts.
+  - **The Telephony tab** writes no GeoJSON either, but like Procedures it keeps `HasAliasFile`
+    `true`: `EmitKeys` is `(null, null, null)` and `EnabledOutputCount` is a fixed `1`, so its
+    **Outputs** card just names `Telephony.txt` as the tab's one output, with nothing to turn on or
+    off. Its own **Telephony Data** card names where the FAA pages come from (JO 7340.2, Chapter 3,
+    Sections 1 and 4) and shows FE-Buddy's kept copies' date - the same idea as the Wx Stations tab's
+    Station Data card, downloaded fresh by every run, and missing data doesn't block the run here
+    either. There is no Region of Interest card at all (`NoDefaultRoiHint` explains why, though
+    nothing in the tab ever shows it): Telephony covers every operator regardless of area. Its only
+    other card is **Upload to vNAS**, for `Telephony.txt`. It is the tenth and last sub-service in
+    the catalogue. Its Review tab result names the alias file's command count and how many show more
+    than one operator (`TelephonyServiceResult.AliasCommandCount`/`MergedCommandCount`).
   - **Preview Settings tab** - present once at least one sub-service is selected:
     every tab's settings as label/value rows (the General section names the run's
     `AIRAC_<cycle>` folder), notices naming any unsaved or invalid tab, and the single

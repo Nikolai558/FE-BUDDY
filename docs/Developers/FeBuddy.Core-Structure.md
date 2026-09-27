@@ -65,6 +65,8 @@ FeBuddy.Core/
 │   │                     chart_code), ApproachCodes (IAP charts, visuals included), SidStarCodes
 │   │                     (DP/ODP/STAR charts, from the computer code or the chart name), ChartRecallText
 │   │                     (shared text cleanup); models: ChartRecallCodeResult, ChartRecallSkipReason
+│   ├── Telephony/    TelephonyNaming (the .id command name and three-letter-designator rules);
+│   │                 models: TelephonyEntry, TelephonyEntryKind
 │   └── WxStations/   WxStationCountries (the included US/territory codes), WxStationLabels (the
 │                     Text second-line rule) and the WxStation model
 ├── Infrastructure/
@@ -76,11 +78,19 @@ FeBuddy.Core/
 │   ├── Nasr/           Download, availability, CSV reading, WaypointLocator
 │   │   ├── Models/     One row-model file per NASR CSV group
 │   │   └── Parsers/    One parser per group + NasrCsvParser (parses them all)
+│   ├── SharedData/     SharedDataDownload: downloads, checks and swaps in a fresh copy of data that
+│   │                   is not published per AIRAC cycle at all, keeping one shared copy outside
+│   │                   every cycle folder. WxStations/ and Telephony/ below are both built on it
 │   ├── WxStations/     WxStationDownloader, WxStationFiles - aviationweather.gov's own station
-│   │   │               list, not NASR, downloaded once per launch and cached alongside the NASR
-│   │   │               CSVs in each cycle's folder
+│   │   │               list, not NASR; one shared copy under %APPDATA%\FE-Buddy\WxStations,
+│   │   │               refreshed by every AIRAC Service run that includes Wx Stations
 │   │   ├── Models/     WxStationXmlDataModel, WxStationDataCollection
 │   │   └── Parsers/    WxStationXmlParser
+│   ├── Telephony/      TelephonyDownloader, TelephonyFiles - the FAA's telephony pages (JO 7340.2,
+│   │   │               Chapter 3, Sections 1 and 4), also not NASR; kept and refreshed the same way
+│   │   │               as WxStations/ above, under %APPDATA%\FE-Buddy\Telephony
+│   │   ├── Models/     TelephonyDataCollection, TelephonyHtmlDataModel, TelephonyRefreshResult
+│   │   └── Parsers/    TelephonyHtmlParser
 │   ├── Dtpp/           DtppFiles (the FAA d-TPP Metafile's name and download/chart/compare URLs)
 │   │   │               and DtppDownloader - unlike WxStationDownloader, the URL is keyed by cycle
 │   │   │               ID, so every cycle folder needs its own request; downloaded once per cycle
@@ -90,8 +100,10 @@ FeBuddy.Core/
 │   ├── Eram/           EramGeoMapReader: an ERAM adaptation export's Geomaps.xml (streamed)
 │   └── Sct/            SctFileReader: VRC .sct2 / .sct sector files
 └── Application/
-    ├── Airac/          AiracService (entry point), AiracCycleDataCache, AiracOutputPaths, FebProperties,
-    │   │               DuplicateAliasReport (the run-level duplicate-alias-command report)
+    ├── Airac/          AiracService (entry point), AiracCycleDataCache, AiracSharedDataLoader
+    │   │               (downloads the Wx Stations/Telephony data a run needs), AiracOutputPaths,
+    │   │               FebProperties, DuplicateAliasReport (the run-level duplicate-alias-command
+    │   │               report)
     │   ├── Airways/    One folder per sub-service, all shaped the same way
     │   ├── Airports/
     │   ├── Departures/
@@ -101,13 +113,17 @@ FeBuddy.Core/
     │   ├── Fixes/            No alias file either, so no *AliasWriter and no GenerateAliasFile key
     │   ├── WxStations/       No alias file either; its data comes from Infrastructure/WxStations,
     │   │                     not a NASR CSV group
-    │   └── Procedures/       No GeoJSON at all - it writes Procedure_Changes.md and Procedures.json
-    │                         (ProcedureChangesMarkdownWriter, ProceduresJsonWriter) - but does have
-    │                         an alias file, FAA_CHART_RECALL.txt (ChartRecallAliasBuilder,
-    │                         ChartRecallAliasWriter), covering every airport in the metafile
-    │                         regardless of the two documents' own selection; its data comes from
-    │                         Infrastructure/Dtpp (the FAA d-TPP Metafile), joined to NASR
-    │                         APT_BASE/CLS_ARSP
+    │   ├── Procedures/       No GeoJSON at all - it writes Procedure_Changes.md and Procedures.json
+    │   │                     (ProcedureChangesMarkdownWriter, ProceduresJsonWriter) - but does have
+    │   │                     an alias file, Faa_Chart_Recall.txt (ChartRecallAliasBuilder,
+    │   │                     ChartRecallAliasWriter), covering every airport in the metafile
+    │   │                     regardless of the two documents' own selection; its data comes from
+    │   │                     Infrastructure/Dtpp (the FAA d-TPP Metafile), joined to NASR
+    │   │                     APT_BASE/CLS_ARSP
+    │   └── Telephony/        No GeoJSON at all; writes only Telephony.txt (TelephonyBuilder,
+    │                         TelephonyAliasWriter), covering every operator in the FAA's telephony
+    │                         pages (Infrastructure/Telephony), not a NASR CSV group. Runs last of
+    │                         the ten sub-services
     ├── Conversions/    ConversionSettingsReader and ConversionFiles (what every conversion
     │   │               shares), then one folder per file conversion
     │   ├── DatToGeojson/
@@ -199,6 +215,15 @@ Its `dtpp` input is a `DtppMetafileDataCollection` parsed from the FAA's d-TPP M
 cycle's effective date, so a missing metafile is not an error: the run still completes, with an
 advisory message and no Procedures output written.
 
+Telephony breaks the pattern the same way Wx Stations does, but goes further: it writes no GeoJSON
+at all, so there is no step 3, and step 2 is `TelephonyBuilder.Read` (the parsed FAA telephony
+pages, not NASR rows, turned into `TelephonyEntry` cards, leaving out a row with no designator, no
+telephony, or an expired U.S. special call sign), followed by step 4, `TelephonyAliasWriter.Generate`
+(→ `Telephony.txt`). Its data - the FAA's JO 7340.2 register and U.S. special call signs - is
+downloaded fresh by every run that includes it, the same as Wx Stations' station list
+(`AiracSharedDataLoader`), and a run with no usable copy just writes nothing, with a warning,
+rather than throwing. Telephony runs last of the ten sub-services.
+
 **When the user runs a file conversion**, the UI builds one settings block and calls that
 conversion's service directly - there is no cycle data and no aggregate. The pipeline has the
 same shape, one input file at a time:
@@ -244,7 +269,10 @@ files per source (SCT2, ERAM).
   (precision, ROI, FEB properties, the vNAS files), and put each file where
   `AiracOutputPaths.FileDirectory` says. `Application/Airac/Fixes/` is a real example of this shape
   to copy from - or `Application/Airac/WxStations/` for one whose data doesn't come from a NASR CSV
-  group at all, or `Application/Airac/Procedures/` for one that writes documents
+  group at all (see `Infrastructure/SharedData/SharedDataDownload` for the shared-copy
+  download/check/replace mechanism such a sub-service needs), `Application/Airac/Telephony/` for
+  the same idea with only an alias file and no GeoJSON at all, or `Application/Airac/Procedures/`
+  for one that writes documents
   (`AiracOutputPaths.PublicationDocsDirectory`) instead of GeoJSON, plus its own alias file
   (`AiracOutputPaths.AliasDirectory`) built straight from its own downloaded data
   (`Infrastructure/Dtpp`) joined to NASR, independently of the documents' own selection.

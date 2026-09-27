@@ -5,7 +5,7 @@ using FeBuddy.Core.Application.Airac.Procedures.Models;
 namespace FeBuddy.Core.Application.Airac.Procedures;
 
 /// <summary>
-/// Writes <c>FAA_CHART_RECALL.txt</c>, the FAA Chart Recall alias file, from the lines
+/// Writes <c>Faa_Chart_Recall.txt</c>, the FAA Chart Recall alias file, from the lines
 /// <see cref="ChartRecallAliasBuilder"/> built.
 /// </summary>
 /// <remarks>

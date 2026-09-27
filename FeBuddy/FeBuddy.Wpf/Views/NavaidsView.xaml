@@ -29,7 +29,7 @@
 
             <!-- ============ outputs ============ -->
             <cards:OutputsCard GeojsonDescription="Writes the NAVAID GeoJSON files selected below."
-                               AliasFileName="NAVAIDs.txt"
+                               AliasFileName="Navaids.txt"
                                AliasDescription="Writes a .nav&lt;ID&gt; and a .nav&lt;name&gt; command per NAVAID that print its name, type, frequency and ARTCCs. NAVAIDs sharing a command are listed together." />
 
             <!-- ============ which GeoJSON files ============ -->

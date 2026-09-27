@@ -4,17 +4,18 @@ using System.Text;
 
 using FeBuddy.Core.Infrastructure.FileSystem;
 using FeBuddy.Core.Infrastructure.Logging;
+using FeBuddy.Core.Infrastructure.SharedData.Models;
 using FeBuddy.Core.Infrastructure.WxStations;
 using FeBuddy.Core.Infrastructure.WxStations.Parsers;
 
 namespace FeBuddy.UnitTests.Infrastructure.WxStations;
 
 /// <summary>
-/// Exercises the real download -&gt; decompress -&gt; place mechanics of <see cref="WxStationDownloader"/>
-/// against a local <see cref="HttpListener"/> serving synthetic payloads, using
-/// <see cref="WxStationDownloader.EnsureCycleHasWxStationsFromUrlAsync"/> - the same code path the
-/// real <see cref="WxStationDownloader.EnsureCycleHasWxStationsAsync"/> uses, with only the URL
-/// swapped out.
+/// Exercises the real download -&gt; decompress -&gt; replace mechanics of
+/// <see cref="WxStationDownloader"/> against a local <see cref="HttpListener"/> serving synthetic
+/// payloads, through <see cref="WxStationDownloader.RefreshFromUrlAsync"/> - the same code path
+/// <see cref="WxStationDownloader.RefreshAsync"/> uses, with only the URL and destination swapped
+/// out for a local server and a scratch folder.
 /// </summary>
 [Collection("AppLog")]
 public sealed class WxStationDownloaderTests : IDisposable
@@ -49,6 +50,9 @@ public sealed class WxStationDownloaderTests : IDisposable
 	private const string StationsXml =
 		"<response><data num_results=\"1\"><Station><icao_id>KDTW</icao_id></Station></data></response>";
 
+	/// <summary>A destination under this test's own scratch root - never the real <c>%APPDATA%</c>.</summary>
+	private string Destination => Path.Combine(_testRoot, "shared", WxStationFiles.FileName);
+
 	private static byte[] Gzip(string text)
 	{
 		using MemoryStream memoryStream = new();
@@ -63,12 +67,10 @@ public sealed class WxStationDownloaderTests : IDisposable
 	}
 
 	/// <summary>
-	/// Starts a minimal local HTTP server that serves <paramref name="payload"/>, failing the first
-	/// <paramref name="failFirstNRequests"/> requests with a 500 instead, optionally delaying each
-	/// response by <paramref name="delay"/> (to widen the window for a concurrency test).
+	/// Starts a minimal local HTTP server that serves <paramref name="payload"/> on every request,
+	/// or a 500 for every request when <paramref name="fail"/> is set.
 	/// </summary>
-	private static (HttpListener Listener, string Url, Func<int> RequestCount) StartServer(
-		byte[] payload, int failFirstNRequests = 0, TimeSpan delay = default)
+	private static (HttpListener Listener, string Url) StartServer(byte[]? payload, bool fail = false)
 	{
 		HttpListener listener = new();
 		string url;
@@ -91,8 +93,6 @@ public sealed class WxStationDownloaderTests : IDisposable
 			}
 		}
 
-		int requestCount = 0;
-
 		_ = Task.Run(async () =>
 		{
 			try
@@ -100,21 +100,15 @@ public sealed class WxStationDownloaderTests : IDisposable
 				while (listener.IsListening)
 				{
 					HttpListenerContext context = await listener.GetContextAsync();
-					int thisRequest = Interlocked.Increment(ref requestCount);
 
-					if (delay > TimeSpan.Zero)
-					{
-						await Task.Delay(delay);
-					}
-
-					if (thisRequest <= failFirstNRequests)
+					if (fail)
 					{
 						context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
 						context.Response.OutputStream.Close();
 						continue;
 					}
 
-					context.Response.ContentLength64 = payload.Length;
+					context.Response.ContentLength64 = payload!.Length;
 					await context.Response.OutputStream.WriteAsync(payload);
 					context.Response.OutputStream.Close();
 				}
@@ -125,7 +119,7 @@ public sealed class WxStationDownloaderTests : IDisposable
 			}
 		});
 
-		return (listener, url, () => requestCount);
+		return (listener, url);
 	}
 
 	private static int GetFreeTcpPort()
@@ -142,17 +136,15 @@ public sealed class WxStationDownloaderTests : IDisposable
 	[Fact]
 	public async Task a_gzip_payload_is_decompressed_and_lands_byte_identical()
 	{
-		var (listener, url, _) = StartServer(Gzip(StationsXml));
+		(HttpListener listener, string url) = StartServer(Gzip(StationsXml));
 
 		try
 		{
-			WxStationDownloader downloader = new();
-			string dir = Path.Combine(_testRoot, "cycle");
+			SharedDataRefreshResult result = await WxStationDownloader.RefreshFromUrlAsync(url, Destination, CancellationToken.None);
 
-			await downloader.EnsureCycleHasWxStationsFromUrlAsync(dir, url, CancellationToken.None);
-
-			byte[] decompressed = File.ReadAllBytes(Path.Combine(dir, WxStationFiles.FileName));
-			Assert.Equal(Encoding.UTF8.GetBytes(StationsXml), decompressed);
+			Assert.True(result.IsFresh);
+			Assert.Equal(Destination, result.FilePath);
+			Assert.Equal(Encoding.UTF8.GetBytes(StationsXml), File.ReadAllBytes(Destination));
 		}
 		finally
 		{
@@ -165,16 +157,14 @@ public sealed class WxStationDownloaderTests : IDisposable
 	public async Task an_already_xml_payload_is_used_as_is_without_decompression()
 	{
 		byte[] payload = Encoding.UTF8.GetBytes(StationsXml);
-		var (listener, url, _) = StartServer(payload);
+		(HttpListener listener, string url) = StartServer(payload);
 
 		try
 		{
-			WxStationDownloader downloader = new();
-			string dir = Path.Combine(_testRoot, "cycle");
+			SharedDataRefreshResult result = await WxStationDownloader.RefreshFromUrlAsync(url, Destination, CancellationToken.None);
 
-			await downloader.EnsureCycleHasWxStationsFromUrlAsync(dir, url, CancellationToken.None);
-
-			Assert.Equal(payload, File.ReadAllBytes(Path.Combine(dir, WxStationFiles.FileName)));
+			Assert.True(result.IsFresh);
+			Assert.Equal(payload, File.ReadAllBytes(Destination));
 		}
 		finally
 		{
@@ -188,18 +178,15 @@ public sealed class WxStationDownloaderTests : IDisposable
 	{
 		byte[] bom = [0xEF, 0xBB, 0xBF];
 		byte[] payload = [.. bom, .. Encoding.UTF8.GetBytes(StationsXml)];
-		var (listener, url, _) = StartServer(payload);
+		(HttpListener listener, string url) = StartServer(payload);
 
 		try
 		{
-			WxStationDownloader downloader = new();
-			string dir = Path.Combine(_testRoot, "cycle");
+			SharedDataRefreshResult result = await WxStationDownloader.RefreshFromUrlAsync(url, Destination, CancellationToken.None);
 
-			await downloader.EnsureCycleHasWxStationsFromUrlAsync(dir, url, CancellationToken.None);
-
-			string destination = Path.Combine(dir, WxStationFiles.FileName);
-			Assert.Equal(payload, File.ReadAllBytes(destination));
-			Assert.Equal("KDTW", WxStationXmlParser.Parse(destination).Stations[0].IcaoId);
+			Assert.True(result.IsFresh);
+			Assert.Equal(payload, File.ReadAllBytes(Destination));
+			Assert.Equal("KDTW", WxStationXmlParser.Parse(Destination).Stations[0].IcaoId);
 		}
 		finally
 		{
@@ -212,16 +199,14 @@ public sealed class WxStationDownloaderTests : IDisposable
 	public async Task an_already_xml_payload_with_leading_whitespace_is_used_as_is()
 	{
 		byte[] payload = Encoding.UTF8.GetBytes("\n\n   " + StationsXml);
-		var (listener, url, _) = StartServer(payload);
+		(HttpListener listener, string url) = StartServer(payload);
 
 		try
 		{
-			WxStationDownloader downloader = new();
-			string dir = Path.Combine(_testRoot, "cycle");
+			SharedDataRefreshResult result = await WxStationDownloader.RefreshFromUrlAsync(url, Destination, CancellationToken.None);
 
-			await downloader.EnsureCycleHasWxStationsFromUrlAsync(dir, url, CancellationToken.None);
-
-			Assert.Equal(payload, File.ReadAllBytes(Path.Combine(dir, WxStationFiles.FileName)));
+			Assert.True(result.IsFresh);
+			Assert.Equal(payload, File.ReadAllBytes(Destination));
 		}
 		finally
 		{
@@ -233,20 +218,41 @@ public sealed class WxStationDownloaderTests : IDisposable
 	// ---- bad payloads ----
 
 	[Fact]
-	public async Task a_garbage_payload_that_is_neither_gzip_nor_xml_throws_and_places_nothing()
+	public async Task a_garbage_payload_that_is_neither_gzip_nor_xml_is_a_failed_refresh_with_no_copy()
 	{
-		var (listener, url, _) = StartServer([1, 2, 3, 4, 5]);
+		(HttpListener listener, string url) = StartServer([1, 2, 3, 4, 5]);
 
 		try
 		{
-			WxStationDownloader downloader = new();
-			string dir = Path.Combine(_testRoot, "cycle");
+			SharedDataRefreshResult result = await WxStationDownloader.RefreshFromUrlAsync(url, Destination, CancellationToken.None);
 
-			InvalidDataException ex = await Assert.ThrowsAsync<InvalidDataException>(
-				() => downloader.EnsureCycleHasWxStationsFromUrlAsync(dir, url, CancellationToken.None));
+			Assert.False(result.IsFresh);
+			Assert.False(result.HasCopy);
+			Assert.Null(result.FilePath);
+			Assert.Null(result.DownloadedUtc);
+			Assert.Contains("neither gzip-compressed nor XML", result.FailureReason, StringComparison.Ordinal);
+			Assert.False(File.Exists(Destination));
+		}
+		finally
+		{
+			listener.Stop();
+			listener.Close();
+		}
+	}
 
-			Assert.Contains("neither gzip-compressed nor XML", ex.Message, StringComparison.Ordinal);
-			Assert.False(File.Exists(Path.Combine(dir, WxStationFiles.FileName)));
+	[Theory]
+	[InlineData("")]
+	[InlineData("  \r\n  ")]
+	public async Task an_empty_or_blank_payload_is_a_failed_refresh_with_no_copy(string payload)
+	{
+		(HttpListener listener, string url) = StartServer(Encoding.UTF8.GetBytes(payload));
+
+		try
+		{
+			SharedDataRefreshResult result = await WxStationDownloader.RefreshFromUrlAsync(url, Destination, CancellationToken.None);
+
+			Assert.False(result.HasCopy);
+			Assert.Contains("neither gzip-compressed nor XML", result.FailureReason, StringComparison.Ordinal);
 		}
 		finally
 		{
@@ -256,19 +262,19 @@ public sealed class WxStationDownloaderTests : IDisposable
 	}
 
 	[Fact]
-	public async Task an_xml_payload_that_is_not_a_stations_file_throws_and_places_nothing()
+	public async Task an_xml_payload_that_is_not_a_stations_file_is_a_failed_refresh_with_no_copy()
 	{
-		var (listener, url, _) = StartServer(Encoding.UTF8.GetBytes("<foo></foo>"));
+		(HttpListener listener, string url) = StartServer(Encoding.UTF8.GetBytes("<foo></foo>"));
 
 		try
 		{
-			WxStationDownloader downloader = new();
-			string dir = Path.Combine(_testRoot, "cycle");
+			SharedDataRefreshResult result = await WxStationDownloader.RefreshFromUrlAsync(url, Destination, CancellationToken.None);
 
-			await Assert.ThrowsAsync<InvalidDataException>(
-				() => downloader.EnsureCycleHasWxStationsFromUrlAsync(dir, url, CancellationToken.None));
-
-			Assert.False(File.Exists(Path.Combine(dir, WxStationFiles.FileName)));
+			Assert.False(result.IsFresh);
+			Assert.False(result.HasCopy);
+			Assert.Null(result.FilePath);
+			Assert.NotNull(result.FailureReason);
+			Assert.False(File.Exists(Destination));
 		}
 		finally
 		{
@@ -277,50 +283,23 @@ public sealed class WxStationDownloaderTests : IDisposable
 		}
 	}
 
-	// ---- caching / single-flight ----
+	// ---- HTTP failure, with and without a previous copy ----
 
 	[Fact]
-	public async Task a_folder_that_already_has_the_file_is_untouched_and_triggers_no_request()
+	public async Task an_http_error_with_no_previous_copy_returns_no_file_and_no_downloaded_time()
 	{
-		var (listener, url, requestCount) = StartServer(Gzip(StationsXml));
+		(HttpListener listener, string url) = StartServer(payload: null, fail: true);
 
 		try
 		{
-			string dir = Path.Combine(_testRoot, "cycle");
-			Directory.CreateDirectory(dir);
-			string destination = Path.Combine(dir, WxStationFiles.FileName);
-			File.WriteAllText(destination, "already here");
+			SharedDataRefreshResult result = await WxStationDownloader.RefreshFromUrlAsync(url, Destination, CancellationToken.None);
 
-			WxStationDownloader downloader = new();
-			await downloader.EnsureCycleHasWxStationsFromUrlAsync(dir, url, CancellationToken.None);
-
-			Assert.Equal(0, requestCount());
-			Assert.Equal("already here", File.ReadAllText(destination));
-		}
-		finally
-		{
-			listener.Stop();
-			listener.Close();
-		}
-	}
-
-	[Fact]
-	public async Task a_second_folder_reuses_the_first_folders_download()
-	{
-		var (listener, url, requestCount) = StartServer(Gzip(StationsXml));
-
-		try
-		{
-			WxStationDownloader downloader = new();
-			string dir1 = Path.Combine(_testRoot, "cycleA");
-			string dir2 = Path.Combine(_testRoot, "cycleB");
-
-			await downloader.EnsureCycleHasWxStationsFromUrlAsync(dir1, url, CancellationToken.None);
-			await downloader.EnsureCycleHasWxStationsFromUrlAsync(dir2, url, CancellationToken.None);
-
-			Assert.Equal(1, requestCount());
-			Assert.True(File.Exists(Path.Combine(dir1, WxStationFiles.FileName)));
-			Assert.True(File.Exists(Path.Combine(dir2, WxStationFiles.FileName)));
+			Assert.False(result.IsFresh);
+			Assert.False(result.HasCopy);
+			Assert.Null(result.FilePath);
+			Assert.Null(result.DownloadedUtc);
+			Assert.NotNull(result.FailureReason);
+			Assert.False(File.Exists(Destination));
 		}
 		finally
 		{
@@ -330,24 +309,27 @@ public sealed class WxStationDownloaderTests : IDisposable
 	}
 
 	[Fact]
-	public async Task concurrent_calls_on_the_same_instance_result_in_one_request()
+	public async Task an_http_error_with_a_previous_copy_keeps_it_byte_identical()
 	{
-		var (listener, url, requestCount) = StartServer(Gzip(StationsXml), delay: TimeSpan.FromMilliseconds(50));
+		Directory.CreateDirectory(Path.GetDirectoryName(Destination)!);
+		byte[] previous = Encoding.UTF8.GetBytes(StationsXml);
+		File.WriteAllBytes(Destination, previous);
+		DateTime previousWriteUtc = DateTime.UtcNow.AddDays(-3);
+		File.SetLastWriteTimeUtc(Destination, previousWriteUtc);
+
+		(HttpListener listener, string url) = StartServer(payload: null, fail: true);
 
 		try
 		{
-			WxStationDownloader downloader = new();
-			string dir1 = Path.Combine(_testRoot, "cycle1");
-			string dir2 = Path.Combine(_testRoot, "cycle2");
+			SharedDataRefreshResult result = await WxStationDownloader.RefreshFromUrlAsync(url, Destination, CancellationToken.None);
 
-			Task first = downloader.EnsureCycleHasWxStationsFromUrlAsync(dir1, url, CancellationToken.None);
-			Task second = downloader.EnsureCycleHasWxStationsFromUrlAsync(dir2, url, CancellationToken.None);
-
-			await Task.WhenAll(first, second);
-
-			Assert.Equal(1, requestCount());
-			Assert.True(File.Exists(Path.Combine(dir1, WxStationFiles.FileName)));
-			Assert.True(File.Exists(Path.Combine(dir2, WxStationFiles.FileName)));
+			Assert.False(result.IsFresh);
+			Assert.True(result.HasCopy);
+			Assert.Equal(Destination, result.FilePath);
+			Assert.Equal(File.GetLastWriteTimeUtc(Destination), result.DownloadedUtc);
+			Assert.Equal(previousWriteUtc, result.DownloadedUtc!.Value, TimeSpan.FromSeconds(2));
+			Assert.NotNull(result.FailureReason);
+			Assert.Equal(previous, File.ReadAllBytes(Destination));
 		}
 		finally
 		{
@@ -356,27 +338,48 @@ public sealed class WxStationDownloaderTests : IDisposable
 		}
 	}
 
-	// ---- failures ----
+	// ---- a successful refresh replaces an existing older copy ----
 
 	[Fact]
-	public async Task a_failed_download_is_not_memoized_and_a_later_call_retries_and_succeeds()
+	public async Task a_successful_refresh_replaces_an_existing_older_copy_and_is_fresh()
 	{
-		var (listener, url, requestCount) = StartServer(Gzip(StationsXml), failFirstNRequests: 1);
+		Directory.CreateDirectory(Path.GetDirectoryName(Destination)!);
+		File.WriteAllText(Destination, "stale copy");
+		File.SetLastWriteTimeUtc(Destination, DateTime.UtcNow.AddDays(-10));
+
+		(HttpListener listener, string url) = StartServer(Gzip(StationsXml));
 
 		try
 		{
-			WxStationDownloader downloader = new();
-			string dir1 = Path.Combine(_testRoot, "cycle1");
-			string dir2 = Path.Combine(_testRoot, "cycle2");
+			DateTime before = DateTime.UtcNow;
+			SharedDataRefreshResult result = await WxStationDownloader.RefreshFromUrlAsync(url, Destination, CancellationToken.None);
+			DateTime after = DateTime.UtcNow;
 
-			await Assert.ThrowsAsync<HttpRequestException>(
-				() => downloader.EnsureCycleHasWxStationsFromUrlAsync(dir1, url, CancellationToken.None));
-			Assert.False(File.Exists(Path.Combine(dir1, WxStationFiles.FileName)));
+			Assert.True(result.IsFresh);
+			Assert.Equal(Destination, result.FilePath);
+			Assert.InRange(result.DownloadedUtc!.Value, before.AddSeconds(-1), after.AddSeconds(1));
+			Assert.Equal(File.GetLastWriteTimeUtc(Destination), result.DownloadedUtc);
+			Assert.Equal(Encoding.UTF8.GetBytes(StationsXml), File.ReadAllBytes(Destination));
+		}
+		finally
+		{
+			listener.Stop();
+			listener.Close();
+		}
+	}
 
-			await downloader.EnsureCycleHasWxStationsFromUrlAsync(dir2, url, CancellationToken.None);
+	// ---- no leftover temp files ----
 
-			Assert.True(File.Exists(Path.Combine(dir2, WxStationFiles.FileName)));
-			Assert.Equal(2, requestCount());
+	[Fact]
+	public async Task no_temp_files_are_left_behind_after_a_successful_download()
+	{
+		(HttpListener listener, string url) = StartServer(Gzip(StationsXml));
+
+		try
+		{
+			await WxStationDownloader.RefreshFromUrlAsync(url, Destination, CancellationToken.None);
+
+			AssertNoLeftoverTempFiles();
 		}
 		finally
 		{
@@ -386,17 +389,15 @@ public sealed class WxStationDownloaderTests : IDisposable
 	}
 
 	[Fact]
-	public async Task an_http_error_from_the_server_propagates()
+	public async Task no_temp_files_are_left_behind_after_a_failed_download()
 	{
-		var (listener, url, _) = StartServer(Gzip(StationsXml), failFirstNRequests: int.MaxValue);
+		(HttpListener listener, string url) = StartServer([1, 2, 3]);
 
 		try
 		{
-			WxStationDownloader downloader = new();
-			string dir = Path.Combine(_testRoot, "cycle");
+			await WxStationDownloader.RefreshFromUrlAsync(url, Destination, CancellationToken.None);
 
-			await Assert.ThrowsAsync<HttpRequestException>(
-				() => downloader.EnsureCycleHasWxStationsFromUrlAsync(dir, url, CancellationToken.None));
+			AssertNoLeftoverTempFiles();
 		}
 		finally
 		{
@@ -405,50 +406,36 @@ public sealed class WxStationDownloaderTests : IDisposable
 		}
 	}
 
-	[Fact]
-	public async Task no_tmp_files_are_left_behind_after_a_successful_download()
+	/// <summary>No <c>*.tmp</c> beside the destination, and no <c>*.download</c>/<c>*.prepared</c> in the temp downloads folder.</summary>
+	private void AssertNoLeftoverTempFiles()
 	{
-		var (listener, url, _) = StartServer(Gzip(StationsXml));
+		string destinationDirectory = Path.GetDirectoryName(Destination)!;
 
-		try
+		if (Directory.Exists(destinationDirectory))
 		{
-			WxStationDownloader downloader = new();
-			string dir = Path.Combine(_testRoot, "cycle");
-
-			await downloader.EnsureCycleHasWxStationsFromUrlAsync(dir, url, CancellationToken.None);
-
-			Assert.Empty(Directory.GetFiles(dir, "*.tmp"));
+			Assert.Empty(Directory.GetFiles(destinationDirectory, "*.tmp"));
 		}
-		finally
-		{
-			listener.Stop();
-			listener.Close();
-		}
+
+		Assert.Empty(Directory.GetFiles(TempWorkspace.DownloadsDirectory, "*.download"));
+		Assert.Empty(Directory.GetFiles(TempWorkspace.DownloadsDirectory, "*.prepared"));
 	}
 
-	// ---- argument checks and the public entry point ----
+	// ---- argument checks ----
 
 	[Fact]
-	public async Task ensure_from_url_rejects_blank_arguments()
-	{
-		WxStationDownloader downloader = new();
-
+	public async Task refresh_from_url_rejects_a_blank_url() =>
 		await Assert.ThrowsAsync<ArgumentException>(
-			() => downloader.EnsureCycleHasWxStationsFromUrlAsync(" ", "http://example.test/x", CancellationToken.None));
-		await Assert.ThrowsAsync<ArgumentException>(
-			() => downloader.EnsureCycleHasWxStationsFromUrlAsync(Path.Combine(_testRoot, "cycle"), " ", CancellationToken.None));
-	}
+			() => WxStationDownloader.RefreshFromUrlAsync(" ", Destination, CancellationToken.None));
 
 	[Fact]
-	public async Task the_public_entry_point_also_skips_an_already_cached_folder()
-	{
-		string dir = Path.Combine(_testRoot, "cycle");
-		Directory.CreateDirectory(dir);
-		File.WriteAllText(Path.Combine(dir, WxStationFiles.FileName), "cached");
+	public async Task refresh_from_url_rejects_a_blank_destination_path() =>
+		await Assert.ThrowsAsync<ArgumentException>(
+			() => WxStationDownloader.RefreshFromUrlAsync("http://example.test/x", " ", CancellationToken.None));
 
-		WxStationDownloader downloader = new();
-		await downloader.EnsureCycleHasWxStationsAsync(dir, CancellationToken.None);
+	// ---- cancellation ----
 
-		Assert.Equal("cached", File.ReadAllText(Path.Combine(dir, WxStationFiles.FileName)));
-	}
+	[Fact]
+	public async Task an_already_cancelled_token_throws_operation_canceled() =>
+		await Assert.ThrowsAnyAsync<OperationCanceledException>(
+			() => WxStationDownloader.RefreshFromUrlAsync("http://127.0.0.1:1/unused", Destination, new CancellationToken(canceled: true)));
 }

@@ -83,14 +83,14 @@ public sealed class TelephonyAliasWriterTests : IDisposable
 	}
 
 	[Fact]
-	public void the_alias_file_goes_under_upload_to_vnas_when_marked()
+	public void the_alias_file_stays_in_the_aliases_folder_when_marked_for_vnas()
 	{
 		TelephonySettings settings = Settings(new VnasFileChoices([TelephonyOutputFiles.Alias], []));
 
 		TelephonyAliasGenerateResult result = TelephonyAliasWriter.Generate(
 			[Icao("AVA", "AVIANCA", "AVIANCA S.A.", "COLOMBIA")], settings);
 
-		Assert.Equal(Path.Combine(_outputDirectory, "Upload_to_vNAS", "Telephony.txt"), result.FilePath);
+		Assert.Equal(Path.Combine(_outputDirectory, "Aliases", "Telephony.txt"), result.FilePath);
 	}
 
 	[Fact]

@@ -19,12 +19,15 @@ namespace FeBuddy.Core.Application.Airac;
 /// ├── Geojson\                          every GeoJSON file
 /// ├── Publication_Docs\                 the Procedures sub-service's two documents
 /// └── Upload_to_vNAS\                   only the files marked for vNAS
-///     ├── Airways.txt, ...              alias files, directly inside
+///     ├── vNAS_Alias.txt                the one alias file to upload (see VnasAliasFileWriter)
 ///     └── Geojson\
 /// </code>
 /// <para>
-/// A file marked for vNAS is written to <c>Upload_to_vNAS</c> instead of, not as well as, the
-/// ordinary folder. A folder is created only when a file is written into it.
+/// A GeoJSON file marked for vNAS is written to <c>Upload_to_vNAS</c> instead of, not as well as,
+/// the ordinary folder. Alias files are different: vNAS takes one alias file per facility, so every
+/// alias file is written to <c>Aliases</c>, and the ones marked for vNAS are copied, one after
+/// another, into <c>vNAS_Alias.txt</c> - below the user's own custom alias files when the vNAS Alias
+/// Upload sub-service is selected. A folder is created only when a file is written into it.
 /// </para>
 /// </remarks>
 public static class AiracOutputPaths
@@ -32,11 +35,17 @@ public static class AiracOutputPaths
 	/// <summary>The folder GeoJSON files go in, inside the cycle folder and inside <see cref="VnasFolder"/>.</summary>
 	public const string GeojsonFolder = "Geojson";
 
-	/// <summary>The folder alias files not marked for vNAS go in, inside the cycle folder.</summary>
+	/// <summary>The folder every alias file goes in, inside the cycle folder.</summary>
 	public const string AliasFolder = "Aliases";
 
 	/// <summary>The folder for the files the user marked for upload to vNAS.</summary>
 	public const string VnasFolder = "Upload_to_vNAS";
+
+	/// <summary>
+	/// The one alias file to upload to vNAS, inside <see cref="VnasFolder"/>: the user's custom alias
+	/// files, then every alias file marked for vNAS.
+	/// </summary>
+	public const string VnasAliasFileName = "vNAS_Alias.txt";
 
 	/// <summary>The folder the Procedures sub-service's documents go in, inside the cycle folder.</summary>
 	public const string PublicationDocsFolder = "Publication_Docs";
@@ -81,14 +90,18 @@ public static class AiracOutputPaths
 
 	/// <summary>
 	/// The folder an alias file goes in, inside the folder a run writes into:
-	/// <c>&lt;output&gt;\Aliases</c>, or <c>&lt;output&gt;\Upload_to_vNAS</c> itself when the user
-	/// marked the file for vNAS.
+	/// <c>&lt;output&gt;\Aliases</c>. Always there, even when the user marked the file for vNAS: that
+	/// only copies it into <see cref="VnasAliasFilePath"/>.
 	/// </summary>
 	/// <param name="outputDirectory">The folder the run writes into - the cycle folder, for an AIRAC Service run.</param>
-	/// <param name="uploadToVnas">Whether the user marked the file for vNAS.</param>
 	/// <returns>The folder's full path.</returns>
-	public static string AliasDirectory(string outputDirectory, bool uploadToVnas) =>
-		uploadToVnas ? Path.Combine(outputDirectory, VnasFolder) : Path.Combine(outputDirectory, AliasFolder);
+	public static string AliasDirectory(string outputDirectory) => Path.Combine(outputDirectory, AliasFolder);
+
+	/// <summary>The one alias file to upload to vNAS: <c>&lt;output&gt;\Upload_to_vNAS\vNAS_Alias.txt</c>.</summary>
+	/// <param name="outputDirectory">The folder the run writes into - the cycle folder, for an AIRAC Service run.</param>
+	/// <returns>The file's full path.</returns>
+	public static string VnasAliasFilePath(string outputDirectory) =>
+		Path.Combine(outputDirectory, VnasFolder, VnasAliasFileName);
 
 	/// <summary>
 	/// The folder the Procedures sub-service's two documents go in:

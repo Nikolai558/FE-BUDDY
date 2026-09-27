@@ -7,8 +7,8 @@ using FeBuddy.Core.Application.Airac.Procedures.Models;
 namespace FeBuddy.UnitTests.Application.Airac.Procedures;
 
 /// <summary>
-/// Covers <see cref="ChartRecallAliasWriter"/>: the file lands in the <c>Aliases</c> folder, or in
-/// <c>Upload_to_vNAS</c> when marked for vNAS, one line per command in order, UTF-8 without a BOM,
+/// Covers <see cref="ChartRecallAliasWriter"/>: the file lands in the <c>Aliases</c> folder, even
+/// when marked for vNAS, one line per command in order, UTF-8 without a BOM,
 /// and nothing is written when there is no command.
 /// </summary>
 public sealed class ChartRecallAliasWriterTests : IDisposable
@@ -53,12 +53,12 @@ public sealed class ChartRecallAliasWriterTests : IDisposable
 	}
 
 	[Fact]
-	public void a_file_marked_for_vnas_goes_straight_into_upload_to_vnas()
+	public void a_file_marked_for_vnas_still_goes_in_the_aliases_folder()
 	{
 		ChartRecallAliasWriteResult result = ChartRecallAliasWriter.Generate(TwoLines, Settings(uploadToVnas: true));
 
-		Assert.Equal(Path.Combine(_outputDirectory, "Upload_to_vNAS", "Faa_Chart_Recall.txt"), result.FilePath);
-		Assert.False(Directory.Exists(Path.Combine(_outputDirectory, "Aliases")));
+		Assert.Equal(Path.Combine(_outputDirectory, "Aliases", "Faa_Chart_Recall.txt"), result.FilePath);
+		Assert.False(Directory.Exists(Path.Combine(_outputDirectory, "Upload_to_vNAS")));
 	}
 
 	[Fact]

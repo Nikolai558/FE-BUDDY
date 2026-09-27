@@ -12,8 +12,9 @@ the FAA has published it (a few weeks before it takes effect).
 
 In an `AIRAC_<cycle>` folder (for example `AIRAC_2610`) in your output folder: Settings ▸
 **Default Output Directory**, inside a `FE-Buddy_Output` folder if that option is on. GeoJSON
-files are in its `Geojson` folder, alias files are in its `Aliases` folder, and anything you
-marked for vNAS is in its `Upload_to_vNAS` folder instead. After a run, **Open output folder** on
+files are in its `Geojson` folder and alias files are in its `Aliases` folder. GeoJSON you marked
+for vNAS is in its `Upload_to_vNAS` folder instead, and the alias files you marked for vNAS are
+merged into `Upload_to_vNAS\vNAS_Alias.txt` - the one alias file to upload. After a run, **Open output folder** on
 the Review tab takes you straight there. The [user guide](User-Guide.md#output-files) shows the
 full folder layout.
 
@@ -40,8 +41,10 @@ may be broken.
 
 ### Does FE-Buddy send my data anywhere?
 
-No. It downloads the FAA's public data, checks GitHub for updates and news, and writes files on
-your PC. Your settings stay in `%APPDATA%\FE-Buddy\UserConfig.json`.
+No. It downloads the FAA's public data, checks GitHub for updates and news, downloads any custom
+alias file you gave a web address for, and writes files on your PC. Your settings stay in
+`%APPDATA%\FE-Buddy\UserConfig.json`. A token or password you save in Settings ▸ Credentials is
+kept in Windows Credential Manager, and only ever sent to the websites you allow it for.
 
 ### What happens if Wx Stations or Telephony can't download their data?
 
@@ -101,6 +104,24 @@ Look at **Advisories** and **Results** on the Review tab. A file is not written 
 matched: for example a Region of Interest that contains no airports, or an ARTCC filter that
 excludes everything. An airway is left out entirely when one of its waypoints could not be
 located; the Review tab names it.
+
+### My custom alias file on GitHub can't be read
+
+The run leaves that file out of `vNAS_Alias.txt` and says why on the Review tab - don't upload the
+file until it's fixed, or that file's aliases disappear from vNAS. Press **Check** on the vNAS Alias
+Upload tab to try again straight away. The usual reasons:
+
+- **GitHub could not find it (404).** Check the address is the file's own page (with `/blob/` in
+  it) or its Raw link. A private repository looks missing without a token: choose a GitHub token
+  for the file in its **Credential** box (add one in Settings ▸ Credentials, or with **New
+  credential…**).
+- **GitHub refused the credential (401).** The token is mistyped, expired or revoked. Make a new
+  one on GitHub and edit the credential in Settings ▸ Credentials.
+- **GitHub does not let the credential read it (403).** A fine-grained token must include this
+  repository, with *Contents: Read-only*. With no token at all, a 403 can also mean GitHub's limit
+  on downloads without a token was reached - choose a token, or try again in an hour.
+- **GitHub sent a web page, not an alias file.** The address is a repository or folder page, or
+  a sign-in page. Use the file's own address.
 
 ### The installer says this version cannot replace what's installed
 

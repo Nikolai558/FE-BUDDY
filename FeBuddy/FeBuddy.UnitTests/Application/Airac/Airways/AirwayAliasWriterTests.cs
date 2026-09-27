@@ -8,8 +8,8 @@ using FeBuddy.UnitTests.Application.Airac.Airways.Fixtures;
 namespace FeBuddy.UnitTests.Application.Airac.Airways;
 
 /// <summary>
-/// Covers the <c>Airways.txt</c> alias file: where it goes (the output folder, or
-/// <c>Upload_to_vNAS</c> when marked for vNAS) and the <see cref="AliasRoiScope"/> toggle.
+/// Covers the <c>Airways.txt</c> alias file: where it goes (the <c>Aliases</c> folder,
+/// even when marked for vNAS) and the <see cref="AliasRoiScope"/> toggle.
 /// </summary>
 public sealed class AirwayAliasWriterTests : IDisposable
 {
@@ -90,12 +90,12 @@ public sealed class AirwayAliasWriterTests : IDisposable
 	}
 
 	[Fact]
-	public void an_alias_file_marked_for_vnas_goes_in_upload_to_vnas()
+	public void an_alias_file_marked_for_vnas_still_goes_in_the_aliases_folder()
 	{
 		AirwayAliasGenerateResult result = AirwayAliasWriter.Generate(BuildTwoAirways(), Settings(uploadToVnas: true));
 
-		Assert.Equal(Path.Combine(_outputDirectory, "Upload_to_vNAS", "Airways.txt"), result.FilePath);
-		Assert.False(File.Exists(Path.Combine(_outputDirectory, "Airways.txt")));
+		Assert.Equal(Path.Combine(_outputDirectory, "Aliases", "Airways.txt"), result.FilePath);
+		Assert.False(Directory.Exists(Path.Combine(_outputDirectory, "Upload_to_vNAS")));
 	}
 
 	[Fact]

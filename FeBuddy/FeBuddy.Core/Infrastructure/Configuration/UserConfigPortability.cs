@@ -10,7 +10,7 @@ namespace FeBuddy.Core.Infrastructure.Configuration;
 /// <para>
 /// The rules work on key shape, so a setting added later is classified without anyone having to
 /// list it here: any key under <c>General</c> or <c>Services</c> is <see cref="ConfigKeyScope.Shared"/>
-/// unless it is named below, ends in <c>Folder</c> or <c>Directory</c>
+/// unless it is named below, ends in <c>Folder</c>, <c>Directory</c> or <c>FilePath</c>
 /// (<see cref="ConfigKeyScope.MachinePath"/>), or looks like a credential. A yes/no setting whose
 /// name happens to end that way (<c>AddFeBuddyOutputFolder</c>) must be listed as not a folder.
 /// </para>
@@ -28,6 +28,9 @@ public static class UserConfigPortability
 	/// <summary>The top-level section credentials belong under.</summary>
 	public const string SecretsRoot = "Secrets";
 
+	/// <summary>How the name of a setting that holds a file's path ends.</summary>
+	private const string FileSuffix = "FilePath";
+
 	private static readonly string[] SharedRoots = ["General", "Services"];
 
 	private static readonly HashSet<string> LocalKeys = new(StringComparer.Ordinal)
@@ -40,7 +43,7 @@ public static class UserConfigPortability
 
 	private static readonly string[] SecretNames = ["Pat"];
 
-	private static readonly string[] FolderSuffixes = ["Folder", "Directory"];
+	private static readonly string[] FolderSuffixes = ["Folder", "Directory", FileSuffix];
 
 	private static readonly HashSet<string> NotFolderKeys = new(StringComparer.Ordinal)
 	{
@@ -95,6 +98,20 @@ public static class UserConfigPortability
 		return key.Split('.')[^1].Contains("Output", StringComparison.Ordinal);
 	}
 
+	/// <summary>
+	/// Whether a <see cref="ConfigKeyScope.MachinePath"/> setting is a file (its name ends in
+	/// <c>FilePath</c>, such as a custom alias file) rather than a folder. An import only takes it when
+	/// the file exists on the importing PC.
+	/// </summary>
+	/// <param name="key">A dotted <c>UserConfig</c> key.</param>
+	/// <returns><see langword="true"/> for a file.</returns>
+	public static bool IsFile(string key)
+	{
+		ArgumentNullException.ThrowIfNull(key);
+
+		return key.Split('.')[^1].EndsWith(FileSuffix, StringComparison.Ordinal);
+	}
+
 	/// <summary>A setting's name for people, for the import summary.</summary>
 	/// <param name="key">A dotted <c>UserConfig</c> key.</param>
 	/// <returns>e.g. <c>Default output directory</c>; the key itself when it has no friendlier name.</returns>
@@ -113,6 +130,11 @@ public static class UserConfigPortability
 		}
 
 		string[] segments = key.Split('.');
+
+		if (segments.Length >= 4 && segments[^1] == FileSuffix && segments[^3] == "Sources")
+		{
+			return $"Custom alias file {segments[^2]}";
+		}
 
 		if (segments.Length >= 2 && segments[^1] == "SourceFolder")
 		{

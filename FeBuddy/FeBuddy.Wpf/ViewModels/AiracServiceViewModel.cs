@@ -131,6 +131,9 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 	/// <summary>The Telephony tab while it is open, otherwise <see langword="null"/>.</summary>
 	private TelephonyViewModel? TelephonyTab => TabFor<TelephonyViewModel>(AiracSubServices.TelephonyKey);
 
+	/// <summary>The vNAS Alias Upload tab while it is open, otherwise <see langword="null"/>.</summary>
+	private VnasAliasViewModel? VnasAliasTab => TabFor<VnasAliasViewModel>(AiracSubServices.VnasAliasKey);
+
 	/// <summary>The open tabs that take part in a run.</summary>
 	private IReadOnlyList<ISubServiceRunTarget> RunTargets =>
 		[.. Tabs.OfType<ISubServiceRunTarget>()];
@@ -341,6 +344,7 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 			WxStations = WxStationsTab?.BuildSettingsBlock(),
 			Procedures = ProceduresTab?.BuildSettingsBlock(),
 			Telephony = TelephonyTab?.BuildSettingsBlock(),
+			VnasAlias = VnasAliasTab?.BuildSettingsBlock(),
 		};
 
 		if (AiracService.HasExistingOutput(settings))
@@ -533,6 +537,11 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 			files.Add(duplicateAliasReport.FilePath);
 		}
 
+		if (result.VnasAlias?.FilePath is { } vnasAlias)
+		{
+			files.Add(vnasAlias);
+		}
+
 		return [.. files];
 	}
 
@@ -606,6 +615,11 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 		if (result.Telephony is { AliasFilePath: not null } telephony)
 		{
 			parts.Add($"{telephony.AliasCommandCount:N0} telephony command(s)");
+		}
+
+		if (result.VnasAlias is { FilePath: not null } vnasAlias)
+		{
+			parts.Add($"{AiracOutputPaths.VnasAliasFileName} ({vnasAlias.CustomCommandCount + vnasAlias.FeBuddyCommandCount:N0} command(s))");
 		}
 
 		if (result.DuplicateAliasReport is { Duplicates.Count: > 0 } duplicateAliasReport)

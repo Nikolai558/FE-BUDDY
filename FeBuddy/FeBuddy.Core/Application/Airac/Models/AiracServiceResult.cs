@@ -7,6 +7,7 @@ using FeBuddy.Core.Application.Airac.Fixes.Models;
 using FeBuddy.Core.Application.Airac.Navaids.Models;
 using FeBuddy.Core.Application.Airac.Procedures.Models;
 using FeBuddy.Core.Application.Airac.Telephony.Models;
+using FeBuddy.Core.Application.Airac.VnasAlias.Models;
 using FeBuddy.Core.Application.Airac.WxStations.Models;
 using FeBuddy.Core.Application.Models;
 
@@ -89,4 +90,10 @@ public sealed record AiracServiceResult : ServiceResult
 	/// this run.
 	/// </summary>
 	public TelephonyServiceResult? Telephony { get; init; }
+
+	/// <summary>
+	/// What writing <c>Upload_to_vNAS\vNAS_Alias.txt</c> produced, or <see langword="null"/> when it was
+	/// not written: vNAS Alias Upload was not selected and no alias file was marked for vNAS.
+	/// </summary>
+	public VnasAliasResult? VnasAlias { get; init; }
 }

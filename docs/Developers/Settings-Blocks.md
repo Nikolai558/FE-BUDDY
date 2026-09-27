@@ -22,7 +22,7 @@ go through the same parser. This page lists every key each parser reads.
 Parsers: `AirportSettingsParser`, `AirwaySettingsParser`, `DepartureSettingsParser`,
 `ArrivalSettingsParser`, `NavaidSettingsParser`, `ArtccBoundarySettingsParser`,
 `FixSettingsParser`, `WxStationSettingsParser`, `ProcedureSettingsParser`,
-`TelephonySettingsParser`, `DatToGeojsonSettingsParser`, `SctToGeojsonSettingsParser`,
+`TelephonySettingsParser`, `VnasAliasSettingsParser`, `DatToGeojsonSettingsParser`, `SctToGeojsonSettingsParser`,
 `EramToGeojsonSettingsParser`. Shared reading: `SubServiceSettingsReader`, `CrcDefaultsReader`,
 `ConversionSettingsReader`, `SettingsValueReader` (all in `FeBuddy.Core/Application`).
 
@@ -34,7 +34,7 @@ Parsers: `AirportSettingsParser`, `AirwaySettingsParser`, `DepartureSettingsPars
 | `CoordinatePrecision` | `0`-`15` decimal places | `6` |
 | `IncludeFebCustomProperties` | `Y` / `N` | `N` |
 | `FebProperties` | list of `feb.*` names (below); **required** when the above is `Y` | none |
-| `UploadToVnas` | list of file keys (below) to write under `Upload_to_vNAS` | none |
+| `UploadToVnas` | list of file keys (below) marked for vNAS: GeoJSON written under `Upload_to_vNAS`, an alias file merged into `vNAS_Alias.txt` | none |
 | `CrcDefaultsFor` | list of GeoJSON file keys that get CRC-ERAM defaults; each must also be in `UploadToVnas` | none |
 | `FilterByRoi` | `Y` / `N` | `N` |
 | `RoiSwLat`, `RoiSwLon`, `RoiNeLat`, `RoiNeLon` | decimal degrees; **required** when `FilterByRoi` is `Y` | none |
@@ -54,13 +54,16 @@ sub-service writes into the same folder. The harness and tests pass their own.
 |---|---|
 | Alias file | `<OutputDirectory>\Aliases\` |
 | GeoJSON | `<OutputDirectory>\Geojson\` (Departures, Arrivals: `…\Geojson\<ARTCC>\<ARPT>\`) |
-| Marked for vNAS | the same, under `<OutputDirectory>\Upload_to_vNAS\` instead - an alias file directly inside it, not in an `Aliases` subfolder |
+| Marked for vNAS | GeoJSON: the same, under `<OutputDirectory>\Upload_to_vNAS\` instead. Alias file: still `<OutputDirectory>\Aliases\`, and also merged into `<OutputDirectory>\Upload_to_vNAS\vNAS_Alias.txt` |
 
 After an AIRAC Service run writes at least one alias file, it also checks every alias file the run
 wrote together for commands more than one line uses, and writes
 `<OutputDirectory>\Duplicate_Alias_Commands.txt` listing them, grouped by ARTCC (`DuplicateAliasReport`)
 - see [Architecture](Architecture.md#a-run-end-to-end). This is not driven by a settings-block key:
-`AiracService` runs it itself once every selected sub-service has finished.
+`AiracService` runs it itself once every selected sub-service has finished. After it, when any
+alias file is marked for vNAS or [vNAS Alias Upload](#vnas-alias-upload) is selected, `AiracService`
+writes `<OutputDirectory>\Upload_to_vNAS\vNAS_Alias.txt` (`VnasAliasFileWriter`): the custom alias
+files, then every marked alias file - vNAS takes one alias file per facility.
 
 ### vNAS file keys
 
@@ -305,7 +308,7 @@ naming the key.
 | `AirportProcedures` | list of `<Airport>\|<Procedure name>` pairs to include, e.g. `PIT\|ILS OR LOC RWY 28C` | none |
 | `ChartTypes` | list of d-TPP chart codes (`IAP`, `STR`, `DP`, `ODP`, `DAU`, `APD`, `MIN`, `HOT`, `LAH`) a whole included airport's procedures are limited to; a name picked by `Procedures` or `AirportProcedures` is included regardless | `IAP,STR,DP,ODP,DAU,APD` |
 | `JsonFields` | list of `Procedures.json` optional field names (below); only meaningful with `GenerateProceduresJson = Y` | `icaoId,airportName,responsibleArtcc,airspaceClass,chartType,chartUrl,change,compareUrl` |
-| `UploadToVnas` | file keys to write under `Upload_to_vNAS`; the only one Procedures ever writes is `Faa_Chart_Recall.txt` | none |
+| `UploadToVnas` | file keys to merge into `Upload_to_vNAS\vNAS_Alias.txt`; the only one Procedures ever writes is `Faa_Chart_Recall.txt` | none |
 
 - Unlike every other AIRAC sub-service, Procedures writes no GeoJSON at all: there is no `Emit…`,
   `FebProperties`, `CrcDefaultsFor` or `Crc.*` key - nothing it writes carries CRC-ERAM defaults. It
@@ -349,7 +352,7 @@ naming the key.
 | Key | Values | Default |
 |---|---|---|
 | `GenerateAliasFile` | `Y` / `N` - must stay `Y`; the alias file is Telephony's only output, so `N` throws | `Y` |
-| `UploadToVnas` | file key to write under `Upload_to_vNAS`; the only one Telephony ever writes is `Telephony.txt` | none |
+| `UploadToVnas` | file key to merge into `Upload_to_vNAS\vNAS_Alias.txt`; the only one Telephony ever writes is `Telephony.txt` | none |
 
 - Unlike every other AIRAC sub-service, there is no `FebProperties`, `CrcDefaultsFor` or `Crc.*`
   key, and no region of interest: Telephony writes no GeoJSON and covers every operator regardless
@@ -373,6 +376,39 @@ naming the key.
   command shows every one of their cards, separated by `\n---`, the command's own operator first.
   Commands are written in alphabetical order. For the controller-facing command and card rules, see
   the [user guide](../Users/User-Guide.md#telephony-tab).
+
+## vNAS Alias Upload
+
+Numbered keys, one group per custom alias file (`<n>` from 1); files are merged in number order.
+
+| Key | Values | Default |
+|---|---|---|
+| `Sources.<n>.FilePath` | full path of an alias file on this PC | none |
+| `Sources.<n>.Url` | `http://` or `https://` address of an alias file | none |
+| `Sources.<n>.CredentialId` | id of a saved credential (`CredentialStore`, `"N"` GUID format) to download `Url` with; only ever the id, never a secret | none |
+
+- Reads none of the keys every other AIRAC sub-service reads (it writes no GeoJSON and has no
+  alias file of its own); `OutputDirectory` is accepted and ignored. Any other key, including an
+  unknown field under `Sources.<n>.`, is a warning.
+- Each `<n>` needs exactly one of `FilePath` and `Url`: both or neither, a `FilePath` that is not
+  a full path, a `Url` that is not `http`/`https`, or a `CredentialId` that is not a GUID throws.
+  A `CredentialId` on a `FilePath` is ignored, with an Info message. No sources is a warning -
+  `vNAS_Alias.txt` then holds only FE-Buddy's aliases.
+- `AliasSourceLoader` reads every source before the sub-services run, with a 30-second timeout
+  each. A GitHub file address (`github.com/{owner}/{repo}/blob|raw/{branch}/{path}`,
+  `raw.githubusercontent.com/{owner}/{repo}/{branch}/{path}` or `…/refs/heads/{branch}/{path}`) is
+  fetched through `https://api.github.com/repos/{owner}/{repo}/contents/{path}?ref={branch}` with
+  `Accept: application/vnd.github.raw` (`GitHubFileUrl`), so a private repository works with a
+  token; a GitHub repository or folder page is refused. Any other address is fetched as given.
+- The credential is applied only through `CredentialStore.Authorize`. When it is not on this PC,
+  the address is not `https`, or the credential is not allowed on that website, the file is not
+  downloaded at all - never anonymously instead. 401, 403 (including GitHub's anonymous rate limit
+  and a fine-grained token without Contents: Read-only), 404, an HTML page instead of a file, a
+  file with no alias commands, an unreachable site and a timeout each get their own message.
+- A source that can't be read never stops the run: it is left out of `vNAS_Alias.txt` with an
+  advisory warning, and the file is written from the rest. For the file's layout see
+  [Architecture](Architecture.md#a-run-end-to-end); for the user's view, the
+  [user guide](../Users/User-Guide.md#vnas-alias-upload-tab).
 
 ## Keys every file conversion reads
 

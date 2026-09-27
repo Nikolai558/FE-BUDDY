@@ -5,7 +5,8 @@
     defaults. The CRC ERAM Defaults card below it then shows the values those files need. Binds
     to the tab's view model through IVnasUploadSettings.
 
-    A file ticked here is written under AIRAC_<cycle>\Upload_to_vNAS instead of the usual folder.
+    A GeoJSON file ticked here is written under AIRAC_<cycle>\Upload_to_vNAS instead of the usual
+    folder; a ticked alias file stays in Aliases and is added to Upload_to_vNAS\vNAS_Alias.txt.
 
     Usage:
         <cards:VnasUploadCard />
@@ -60,7 +61,7 @@
     <ctl:Card Header="Upload to vNAS">
         <StackPanel>
             <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
-                       Text="Tick the files you will upload to vNAS. They are written to the cycle's Upload_to_vNAS folder instead of the usual one, so they are ready to upload." />
+                       Text="Tick the files you will upload to vNAS. A GeoJSON file is written to the cycle's Upload_to_vNAS folder instead of the usual one. vNAS takes one alias file, so a ticked alias file stays in Aliases and is added to Upload_to_vNAS\vNAS_Alias.txt, under your custom alias files when vNAS Alias Upload is selected." />
 
             <TextBlock Style="{StaticResource Text.Caption}" Text="This tab's settings write no files yet."
                        Visibility="{Binding HasOutputFiles, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />

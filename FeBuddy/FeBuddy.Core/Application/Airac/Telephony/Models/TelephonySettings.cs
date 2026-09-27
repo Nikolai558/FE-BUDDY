@@ -18,8 +18,8 @@ public sealed record TelephonySettings
 	public required string OutputDirectory { get; init; }
 
 	/// <summary>
-	/// Whether the alias file goes to vNAS (<c>Upload_to_vNAS</c>) rather than the <c>Aliases</c>
-	/// folder. Its only possible file key is <c>Telephony.txt</c>.
+	/// Whether the alias file goes to vNAS: copied into <c>Upload_to_vNAS\vNAS_Alias.txt</c> as well as
+	/// written to the <c>Aliases</c> folder. Its only possible file key is <c>Telephony.txt</c>.
 	/// </summary>
 	public VnasFileChoices Vnas { get; init; } = VnasFileChoices.None;
 }

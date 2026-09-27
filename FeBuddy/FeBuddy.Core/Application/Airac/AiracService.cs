@@ -19,11 +19,15 @@ using FeBuddy.Core.Application.Airac.Procedures;
 using FeBuddy.Core.Application.Airac.Procedures.Models;
 using FeBuddy.Core.Application.Airac.Telephony;
 using FeBuddy.Core.Application.Airac.Telephony.Models;
+using FeBuddy.Core.Application.Airac.VnasAlias;
+using FeBuddy.Core.Application.Airac.VnasAlias.Models;
 using FeBuddy.Core.Application.Airac.WxStations;
 using FeBuddy.Core.Application.Airac.WxStations.Models;
 using FeBuddy.Core.Application.Models;
+using FeBuddy.Core.Application.Settings;
 using FeBuddy.Core.Domain.Airac;
 using FeBuddy.Core.Domain.Airac.Models;
+using FeBuddy.Core.Infrastructure.Credentials;
 using FeBuddy.Core.Infrastructure.Dtpp.Models;
 using FeBuddy.Core.Infrastructure.Logging;
 using FeBuddy.Core.Infrastructure.Logging.Models;
@@ -63,6 +67,9 @@ namespace FeBuddy.Core.Application.Airac;
 public static class AiracService
 {
 	private const string LogSource = "AiracService";
+
+	/// <summary>The vNAS Alias Upload sub-service's name in progress reports: its tab's title.</summary>
+	private const string VnasAliasName = "vNAS Alias Upload";
 
 	/// <summary>
 	/// Whether the run's cycle folder already holds anything - an earlier run of the same cycle
@@ -148,12 +155,26 @@ public static class AiracService
 				.ConfigureAwait(false);
 		}
 
+		IReadOnlyList<AliasSourceLoad>? customAliasFiles = null;
+
+		if (settings.VnasAlias is not null)
+		{
+			progress?.Report(new AiracServiceProgress(VnasAliasName, "Reading your custom alias files"));
+			VnasAliasSettingsParseResult parsed = VnasAliasSettingsParser.Parse(settings.VnasAlias);
+			supplementalMessages.AddRange(parsed.Messages);
+
+			customAliasFiles = await AliasSourceLoader
+				.LoadAllAsync(parsed.Sources, CredentialStore.Default, cancellationToken: cancellationToken)
+				.ConfigureAwait(false);
+		}
+
 		AiracSupplementalData supplementalData = new()
 		{
 			WxStations = wxStationData,
 			Telephony = telephonyData,
 			Dtpp = dtppData,
 			PreviousDtpp = previousDtppData,
+			CustomAliasFiles = customAliasFiles,
 			Messages = supplementalMessages,
 		};
 
@@ -256,7 +277,8 @@ public static class AiracService
 		bool anySelected = settings.Airways is not null || settings.Airports is not null
 			|| settings.Departures is not null || settings.Arrivals is not null || settings.Navaids is not null
 			|| settings.ArtccBoundaries is not null || settings.Fixes is not null || settings.WxStations is not null
-			|| settings.Procedures is not null || settings.Telephony is not null;
+			|| settings.Procedures is not null || settings.Telephony is not null
+			|| settings.VnasAlias is not null;
 
 		// What getting the downloaded data produced (a fresh copy, an older copy and its age, or none)
 		// leads the run's messages, so the Review tab says it before anything built from that data.
@@ -360,6 +382,44 @@ public static class AiracService
 			AppLog.Write(reportMessage.Level, reportMessage.Source, reportMessage.Text);
 		}
 
+		// vNAS takes one alias file, so the alias files marked for vNAS go into vNAS_Alias.txt,
+		// below the user's own custom alias files when vNAS Alias Upload is selected.
+		string[] vnasAliasFiles = [.. MarkedForVnas(
+			(settings.Airways, airwaysResult?.AliasFilePath),
+			(settings.Airports, airportsResult?.AliasFilePath),
+			(settings.Departures, departuresResult?.AliasFilePath),
+			(settings.Arrivals, arrivalsResult?.AliasFilePath),
+			(settings.Navaids, navaidsResult?.AliasFilePath),
+			(settings.Procedures, proceduresResult?.AliasFilePath),
+			(settings.Telephony, telephonyResult?.AliasFilePath))];
+
+		VnasAliasResult? vnasAliasResult = null;
+
+		if (settings.VnasAlias is not null || vnasAliasFiles.Length > 0)
+		{
+			cancellationToken.ThrowIfCancellationRequested();
+
+			// Reported against the vNAS Alias Upload tab when it is selected; otherwise the file is
+			// simply part of the run.
+			string step = settings.VnasAlias is not null ? VnasAliasName : "AIRAC";
+			progress?.Report(new AiracServiceProgress(step, $"Writing {AiracOutputPaths.VnasAliasFileName}"));
+
+			IReadOnlyList<AliasSourceLoad> customFiles = settings.VnasAlias is not null ? supplementalData.CustomAliasFiles ?? [] : [];
+
+			vnasAliasResult = await Task.Run(
+				() => VnasAliasFileWriter.Write(customFiles, vnasAliasFiles, settings.SelectedCycle.AiracCycleId, outputDirectory),
+				cancellationToken).ConfigureAwait(false);
+
+			messages.AddRange(vnasAliasResult.Messages);
+
+			string summary = vnasAliasResult.FilePath is null
+				? $"{AiracOutputPaths.VnasAliasFileName} not written."
+				: $"{AiracOutputPaths.VnasAliasFileName}: {vnasAliasResult.CustomCommandCount:N0} custom command(s), " +
+					$"then {vnasAliasResult.FeBuddyCommandCount:N0} from {vnasAliasResult.FeBuddyFiles.Count} FE-Buddy alias file(s).";
+
+			progress?.Report(new AiracServiceProgress(step, summary, settings.VnasAlias is not null ? 100 : null));
+		}
+
 		if (!anySelected)
 		{
 			const string message = "AIRAC Service run requested with no sub-service selected; nothing to do.";
@@ -385,6 +445,7 @@ public static class AiracService
 			WxStations = wxStationsResult,
 			Procedures = proceduresResult,
 			Telephony = telephonyResult,
+			VnasAlias = vnasAliasResult,
 		};
 
 		// Runs one sub-service if it was selected (its settings block is not null), reporting
@@ -423,6 +484,32 @@ public static class AiracService
 			AppLog.Success(LogSource, summary);
 
 			return result;
+		}
+	}
+
+	/// <summary>
+	/// The alias files a sub-service wrote that its settings block marks for vNAS
+	/// (<c>UploadToVnas</c> names the alias file), in the order given.
+	/// </summary>
+	/// <param name="outputs">Each sub-service's settings block and the alias file it wrote, either of which may be <see langword="null"/>.</param>
+	/// <returns>The full paths of the alias files marked for vNAS.</returns>
+	private static IEnumerable<string> MarkedForVnas(params (IReadOnlyDictionary<string, string>? Block, string? AliasFilePath)[] outputs)
+	{
+		foreach ((IReadOnlyDictionary<string, string>? block, string? aliasFilePath) in outputs)
+		{
+			if (block is null || aliasFilePath is null)
+			{
+				continue;
+			}
+
+			// The block's keys match ignoring case, whatever dictionary the caller built.
+			Dictionary<string, string> caseInsensitive = new(block, StringComparer.OrdinalIgnoreCase);
+
+			if (SettingsValueReader.StringList(caseInsensitive, SubServiceSettingsReader.UploadToVnasKey)
+				.Contains(Path.GetFileName(aliasFilePath), StringComparer.OrdinalIgnoreCase))
+			{
+				yield return aliasFilePath;
+			}
 		}
 	}
 

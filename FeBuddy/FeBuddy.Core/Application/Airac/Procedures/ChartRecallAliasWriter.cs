@@ -9,9 +9,9 @@ namespace FeBuddy.Core.Application.Airac.Procedures;
 /// <see cref="ChartRecallAliasBuilder"/> built.
 /// </summary>
 /// <remarks>
-/// The file goes in the cycle folder's <c>Aliases</c> folder, or in <c>Upload_to_vNAS</c> when the
-/// user marked it for vNAS (see <see cref="AiracOutputPaths.AliasDirectory"/>), like every other
-/// alias file.
+/// The file goes in the cycle folder's <c>Aliases</c> folder (see
+/// <see cref="AiracOutputPaths.AliasDirectory"/>), like every other alias file; when the user marked it
+/// for vNAS it is also copied into <c>vNAS_Alias.txt</c>.
 /// </remarks>
 public static class ChartRecallAliasWriter
 {
@@ -38,7 +38,7 @@ public static class ChartRecallAliasWriter
 			builder.Append(line.Text).AppendLine();
 		}
 
-		string directory = AiracOutputPaths.AliasDirectory(settings.OutputDirectory, settings.Vnas.IsUploaded(ProcedureOutputFiles.Alias));
+		string directory = AiracOutputPaths.AliasDirectory(settings.OutputDirectory);
 		Directory.CreateDirectory(directory);
 
 		string path = Path.Combine(directory, ProcedureOutputFiles.Alias);

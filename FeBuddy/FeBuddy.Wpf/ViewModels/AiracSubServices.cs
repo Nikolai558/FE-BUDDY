@@ -53,6 +53,9 @@ public static class AiracSubServices
 	/// <summary>The Telephony sub-service key.</summary>
 	public const string TelephonyKey = "Telephony";
 
+	/// <summary>The vNAS Alias Upload sub-service key.</summary>
+	public const string VnasAliasKey = "VnasAlias";
+
 	/// <summary>Every sub-service, in the order the picker and the tab rail show them.</summary>
 	public static IReadOnlyList<SubServiceDescriptor> All { get; } =
 	[
@@ -66,5 +69,6 @@ public static class AiracSubServices
 		new SubServiceDescriptor(WxStationsKey, "Wx Stations", 80, true, () => new WxStationsViewModel()),
 		new SubServiceDescriptor(ProceduresKey, "Procedures", 90, true, () => new ProceduresViewModel()),
 		new SubServiceDescriptor(TelephonyKey, "Telephony", 100, true, () => new TelephonyViewModel()),
+		new SubServiceDescriptor(VnasAliasKey, "vNAS Alias Upload", 110, true, () => new VnasAliasViewModel()),
 	];
 }

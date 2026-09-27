@@ -43,9 +43,9 @@ public sealed record ProcedureSettings
 	public bool GenerateAliasFile { get; init; } = true;
 
 	/// <summary>
-	/// Whether the alias file goes to vNAS (<c>Upload_to_vNAS</c>) rather than the <c>Aliases</c>
-	/// folder. Its only possible file key is <c>Faa_Chart_Recall.txt</c>; nothing Procedures writes
-	/// carries CRC-ERAM defaults.
+	/// Whether the alias file goes to vNAS: copied into <c>Upload_to_vNAS\vNAS_Alias.txt</c> as well as
+	/// written to the <c>Aliases</c> folder. Its only possible file key is <c>Faa_Chart_Recall.txt</c>;
+	/// nothing Procedures writes carries CRC-ERAM defaults.
 	/// </summary>
 	public VnasFileChoices Vnas { get; init; } = VnasFileChoices.None;
 

@@ -1,5 +1,6 @@
 using FeBuddy.Core.Application.Airac;
 using FeBuddy.Core.Application.Airac.Models;
+using FeBuddy.Core.Application.Airac.VnasAlias.Models;
 using FeBuddy.Core.Application.Models;
 using FeBuddy.Core.Domain.Airac.Models;
 using FeBuddy.Core.Infrastructure.Dtpp.Models;
@@ -669,6 +670,116 @@ public sealed class AiracServiceTests : IDisposable
 		Assert.False(File.Exists(Path.Combine(CycleFolder, "Aliases", "Telephony.txt")));
 		Assert.Contains(result.Telephony.Messages, m =>
 			m.Text.Contains("no telephony data to build from", StringComparison.Ordinal));
+	}
+
+	// ---- vNAS_Alias.txt ----
+
+	private static TelephonyDataCollection OneOperator => new()
+	{
+		Assignments =
+		[
+			new TelephonyHtmlDataModel.Assignment { Company = "AVIANCA", Country = "COLOMBIA", Telephony = "AVIANCA", ThreeLetterDesignator = "AVA" },
+		],
+	};
+
+	private string VnasAliasFile => Path.Combine(CycleFolder, "Upload_to_vNAS", "vNAS_Alias.txt");
+
+	[Fact]
+	public async Task an_alias_file_marked_for_vnas_stays_in_aliases_and_is_copied_into_vnas_alias_txt()
+	{
+		AiracServiceSettings settings = new()
+		{
+			SelectedCycle = Cycle,
+			OutputDirectory = _output,
+			Telephony = new Dictionary<string, string> { ["uploadtovnas"] = "telephony.TXT" },
+		};
+
+		AiracServiceResult result = await AiracService.RunAsync(
+			settings, new NasrCsvDataCollection(), new AiracSupplementalData { Telephony = OneOperator });
+
+		string telephony = Path.Combine(CycleFolder, "Aliases", "Telephony.txt");
+		Assert.Equal(telephony, result.Telephony!.AliasFilePath);
+
+		Assert.NotNull(result.VnasAlias);
+		Assert.Equal(VnasAliasFile, result.VnasAlias!.FilePath);
+		Assert.Equal(["Telephony.txt"], result.VnasAlias.FeBuddyFiles);
+		Assert.Equal(0, result.VnasAlias.CustomFileCount);
+
+		string written = File.ReadAllText(VnasAliasFile);
+		Assert.StartsWith("; ===== FE-Buddy aliases (AIRAC 2610) start here.", written, StringComparison.Ordinal);
+		Assert.Contains(File.ReadAllText(telephony).TrimEnd(), written, StringComparison.Ordinal);
+	}
+
+	[Fact]
+	public async Task no_alias_file_marked_for_vnas_and_no_vnas_alias_block_writes_no_vnas_alias_txt()
+	{
+		AiracServiceSettings settings = new()
+		{
+			SelectedCycle = Cycle,
+			OutputDirectory = _output,
+			Telephony = new Dictionary<string, string>(),
+		};
+
+		AiracServiceResult result = await AiracService.RunAsync(
+			settings, new NasrCsvDataCollection(), new AiracSupplementalData { Telephony = OneOperator });
+
+		Assert.Null(result.VnasAlias);
+		Assert.False(Directory.Exists(Path.Combine(CycleFolder, "Upload_to_vNAS")));
+	}
+
+	[Fact]
+	public async Task the_vnas_alias_block_puts_the_custom_files_first_and_reports_its_progress()
+	{
+		AiracServiceSettings settings = new()
+		{
+			SelectedCycle = Cycle,
+			OutputDirectory = _output,
+			Telephony = new Dictionary<string, string> { ["UploadToVnas"] = "Telephony.txt" },
+			VnasAlias = new Dictionary<string, string> { ["Sources.1.FilePath"] = @"C:\ZOB-Alias.txt" },
+		};
+
+		AiracSupplementalData supplemental = new()
+		{
+			Telephony = OneOperator,
+			CustomAliasFiles =
+			[
+				AliasSourceLoad.Read(new AliasSource(1, AliasSourceKind.File, @"C:\ZOB-Alias.txt"), ".FeUseOnly first\r\n.dtwdv .ECHO DTW\r\n"),
+				AliasSourceLoad.Failed(new AliasSource(2, AliasSourceKind.Url, "https://github.com/o/r/blob/main/Extra.txt"), "GitHub could not find it."),
+			],
+		};
+
+		List<AiracServiceProgress> reports = [];
+		AiracServiceResult result = await AiracService.RunAsync(settings, new NasrCsvDataCollection(), supplemental, new SynchronousProgress(reports.Add));
+
+		Assert.Equal(2, result.VnasAlias!.CustomFileCount);
+		Assert.Equal(1, result.VnasAlias.CustomFilesMerged);
+		Assert.StartsWith(".FeUseOnly first" + Environment.NewLine + ".dtwdv .ECHO DTW" + Environment.NewLine, File.ReadAllText(VnasAliasFile), StringComparison.Ordinal);
+
+		Assert.Contains(result.Messages, m => m.IsAdvisory && m.Text.StartsWith("Left custom alias file 2 (Extra.txt) out", StringComparison.Ordinal));
+
+		AiracServiceProgress done = reports.Last(p => p.SubService == "vNAS Alias Upload");
+		Assert.Equal(100, done.PercentComplete);
+		Assert.StartsWith("vNAS_Alias.txt: 1 custom command(s), then ", done.Message, StringComparison.Ordinal);
+		Assert.EndsWith(" from 1 FE-Buddy alias file(s).", done.Message, StringComparison.Ordinal);
+	}
+
+	[Fact]
+	public async Task a_vnas_alias_block_alone_counts_as_something_selected()
+	{
+		AiracServiceSettings settings = new()
+		{
+			SelectedCycle = Cycle,
+			OutputDirectory = _output,
+			VnasAlias = new Dictionary<string, string>(),
+		};
+
+		List<AiracServiceProgress> reports = [];
+		AiracServiceResult result = await AiracService.RunAsync(
+			settings, new NasrCsvDataCollection(), new AiracSupplementalData(), new SynchronousProgress(reports.Add));
+
+		Assert.DoesNotContain(result.Messages, m => m.Text.Contains("no sub-service selected", StringComparison.Ordinal));
+		Assert.Null(result.VnasAlias!.FilePath);
+		Assert.Contains("vNAS_Alias.txt not written.", reports.Last().Message, StringComparison.Ordinal);
 	}
 
 	// ---- Procedures ----

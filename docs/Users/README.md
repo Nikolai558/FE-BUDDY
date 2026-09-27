@@ -25,6 +25,7 @@ and how it should look, and writes the files: **GeoJSON video maps** that CRC ca
 | **Wx Stations** | A symbol and a two-line label for every US (and territory) station that reports METAR - no alias file, since a station's label is always its own ICAO ID and IATA ID/name. Unlike every other sub-service, its data comes from aviationweather.gov's own station list, not the FAA's NASR cycle. |
 | **Procedures** | A Markdown changes report and/or a JSON document of the FAA's approach plates, SIDs, STARs, airport diagrams and more, for the facilities, airports and procedures you pick, plus an alias file (FAA Chart Recall) that opens every page of every current chart at every airport in the FAA's index, whatever you picked for the other two - no GeoJSON, though. Like Wx Stations, its data isn't the NASR cycle - it's the FAA's own d-TPP Metafile, posted only 15-18 days ahead of the cycle. |
 | **Telephony** | An alias file (`Telephony.txt`) of `.id` commands - one for an operator's three-letter designator or identifier, another for its spoken telephony - built from the FAA's ICAO register and U.S. special call signs. No GeoJSON, and like Wx Stations and Procedures, its data isn't the NASR cycle. |
+| **vNAS Alias Upload** | The one alias file vNAS takes, `vNAS_Alias.txt`: your facility's own alias files - on your PC or on the web, private GitHub repositories included - with every FE-Buddy alias file you marked for vNAS added underneath, ready to upload. |
 | **File conversions** | Your FAA `.dat` RADAR Video Maps as GeoJSON video maps, optionally cropped to a distance from each map's centre; your VRC `.sct2` sector files as GeoJSON - boundaries, airways, GEO, SIDs, STARs, labels and regions; and the `Geomaps.xml` from your ERAM adaptation export as GeoJSON - lines, symbols, text and SAAs - keeping its styling as CRC defaults. |
 | **A map** | Open any GeoJSON file to check it, and draw your facility's Region of Interest. |
 
@@ -40,8 +41,8 @@ procedure ISRs) are not in 3.0 yet. If you need them, keep using 2.x for now.
    cycle, the one before it and the one after it (if the FAA has published it yet). The status
    at the top of the window tells you when it is ready.
 2. **You pick a cycle and what to make** on the AIRAC Service screen: Airports, Airways,
-   Departures, Arrivals, NAVAIDs, ARTCC Boundaries, Fixes, Wx Stations, Procedures, Telephony, or
-   any mix.
+   Departures, Arrivals, NAVAIDs, ARTCC Boundaries, Fixes, Wx Stations, Procedures, Telephony,
+   vNAS Alias Upload, or any mix.
 3. **You choose the settings** on each one's tab: which files, which styles, which area.
    FE-Buddy remembers everything, so next cycle you only press Run.
 4. **You check the summary** on the Preview Settings tab and press **Run AIRAC Service**.

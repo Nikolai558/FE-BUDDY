@@ -47,7 +47,9 @@ website can never collect a user's token, because the token is not allowed there
 ## Using a credential in a feature
 
 Everything goes through `CredentialStore` (`FeBuddy.Core/Infrastructure/Credentials`). A feature
-never reads or stores a secret itself.
+never reads or stores a secret itself. The vNAS Alias Upload sub-service is the working example:
+`VnasAliasViewModel` offers the drop-down and saves `Sources.<n>.CredentialId`, and
+`AliasSourceLoader` (`FeBuddy.Core/Application/Airac/VnasAlias`) downloads with it.
 
 ```csharp
 CredentialStore store = CredentialStore.Default;
@@ -56,7 +58,7 @@ CredentialStore store = CredentialStore.Default;
 IReadOnlyList<CredentialInfo> choices = store.List();          // by name
 string label = $"{info.Name} ({info.Kind.DisplayName()})";     // e.g. "ZOB GitHub (GitHub personal access token)"
 
-// 2. Save only the id with the feature's own settings, e.g. "AliasSource.CredentialId" = info.Id.ToString("N").
+// 2. Save only the id with the feature's own settings, e.g. "Sources.1.CredentialId" = info.Id.ToString("N").
 
 // 3. When downloading, let the store add the header.
 using HttpRequestMessage request = new(HttpMethod.Get, url);
@@ -77,7 +79,8 @@ using HttpResponseMessage response = await client.SendAsync(request, cancellatio
 - **Downloading from GitHub.**
   - For a file in a private repository, request
     `https://api.github.com/repos/{owner}/{repo}/contents/{path}?ref={branch}` with
-    `Accept: application/vnd.github.raw`.
+    `Accept: application/vnd.github.raw`. `GitHubFileUrl.ToContentsApi` turns a file's `github.com`
+    or `raw.githubusercontent.com` address into that one.
   - `raw.githubusercontent.com` does not reliably honour a token (see `NewsService`).
 - **Settings key names.** Name a key that holds a credential id so it is plainly an id, e.g.
   `CredentialId`. Keys whose name ends in `Token`, `Password`, `Secret`, `ApiKey` or `Credential`,

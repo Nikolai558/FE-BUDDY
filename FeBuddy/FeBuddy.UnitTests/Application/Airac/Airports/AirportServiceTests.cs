@@ -100,7 +100,7 @@ public sealed class AirportServiceTests : IDisposable
 			("IncludeFebCustomProperties", "Y"),
 			("FebProperties", "faaId,icaoId,name,elev,respArtcc,tfcPtrnAlt,fssId,twrType,rwyId")));
 
-		Assert.Equal(Path.Combine(_outputDirectory, "Upload_to_vNAS", "Airports.txt"), result.AliasFilePath);
+		Assert.Equal(Path.Combine(_outputDirectory, "Aliases", "Airports.txt"), result.AliasFilePath);
 		Assert.Equal(
 			[VnasGeojsonPath("Airports_Symbols.geojson"), VnasGeojsonPath("Airports_Text.geojson"), VnasGeojsonPath("Runways_Lines.geojson")],
 			result.GeojsonFilesWritten);

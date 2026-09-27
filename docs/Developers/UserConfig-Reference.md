@@ -31,7 +31,7 @@ Written by **Settings** (except `NewsLastOpen`).
 | Key | Values | Default | Written / read by |
 |---|---|---|---|
 | `AiracCycleId` | a cycle ID, e.g. `2610` | current cycle | General tab. The ID (not "previous/current/next") is saved; on load it is matched back to one of the three, or falls back to current. |
-| `SelectedSubServices` | comma-separated keys: `Airports`, `Airways`, `Departures`, `Arrivals`, `Navaids`, `ArtccBoundaries`, `Fixes`, `WxStations`, `Procedures`, `Telephony` | none | General tab. Keys are stable identifiers - never rename one without migrating this value. |
+| `SelectedSubServices` | comma-separated keys: `Airports`, `Airways`, `Departures`, `Arrivals`, `Navaids`, `ArtccBoundaries`, `Fixes`, `WxStations`, `Procedures`, `Telephony`, `VnasAlias` | none | General tab. Keys are stable identifiers - never rename one without migrating this value. |
 | `UserArtccId` | an ARTCC ID, e.g. `ZOB` | none | Settings ▸ Facility. Read by Procedures as its `PrimaryFacility` - the facility whose section leads both documents - and by `AiracService` as the run's own `PrimaryFacility`, listed first in `Duplicate_Alias_Commands.txt`. |
 | `CoordinatePrecision` | `0`-`15` (the GUI offers 5, 6, 7) | `6` | Settings; sent by every tab that writes GeoJSON, AIRAC and File Conversions alike. |
 
@@ -51,7 +51,7 @@ spelling - see [TODO](TODO.md).)
 
 ## Sub-service nodes
 
-Each GeoJSON sub-service tab saves its own node, with **Save** on its tab:
+Each sub-service tab saves its own node, with **Save** on its tab:
 
 | Sub-service | Node |
 |---|---|
@@ -65,6 +65,7 @@ Each GeoJSON sub-service tab saves its own node, with **Save** on its tab:
 | Wx Stations | `Services.AiracService.WxStations` |
 | Procedures | `Services.AiracService.Procedures` |
 | Telephony | `Services.AiracService.Telephony` |
+| vNAS Alias Upload | `Services.AiracService.VnasAlias` |
 
 ### Keys every GeoJSON sub-service saves
 
@@ -232,6 +233,26 @@ and `IncludeFebCustomProperties` stays `N`. `Vnas.UploadFiles` can only ever hol
 The ROI keys (`Roi.OverrideDefaultRoi` and its corners) are saved like every other sub-service's,
 but Telephony has no Region of Interest card to set them from and its parser ignores them - every
 operator gets a card regardless of area.
+
+### vNAS Alias Upload only
+
+Not a `GeojsonSubServiceViewModel` (`VnasAliasViewModel` derives from `SubServiceSettingsViewModel`),
+so it saves none of the keys above - only its list of custom alias files, as numbered keys, the
+same keys its settings block sends (see [Settings blocks](Settings-Blocks.md#vnas-alias-upload)).
+Each save first removes the whole `Sources` subtree (`RemoveSubtree`, backed by
+`UserConfigFile.RemoveValues`), so a list saved again with fewer files leaves no stale numbers.
+
+| Key | Values | Default |
+|---|---|---|
+| `Sources.<n>.FilePath` | full path of a custom alias file on this PC | none |
+| `Sources.<n>.Url` | web address of a custom alias file | none |
+| `Sources.<n>.CredentialId` | id of a saved credential (Settings ▸ Credentials), `"N"` GUID format - never the secret | none |
+
+In a settings export, `FilePath` is a machine path (`UserConfigPortability`: any key ending in
+`FilePath`, like one ending in `Folder` or `Directory`): it is tokenized like a folder, and an
+import takes it only if the file exists on the importing PC (`UserConfigPortability.IsFile`); the
+import summary calls it "Custom alias file <n>". `Url` and `CredentialId` are shared as they
+are - a credential id matches nothing on another PC, so the user picks one of their own.
 
 ## File conversion nodes
 

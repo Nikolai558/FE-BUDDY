@@ -104,4 +104,12 @@ public sealed record AiracServiceSettings
 	/// selected for this run.
 	/// </summary>
 	public IReadOnlyDictionary<string, string>? Telephony { get; init; }
+
+	/// <summary>
+	/// The vNAS Alias Upload sub-service settings block - the user's custom alias files, merged into the
+	/// top of <c>vNAS_Alias.txt</c> - or <see langword="null"/> when vNAS Alias Upload was not selected
+	/// for this run. <c>vNAS_Alias.txt</c> is still written without it whenever an alias file is marked
+	/// for vNAS.
+	/// </summary>
+	public IReadOnlyDictionary<string, string>? VnasAlias { get; init; }
 }

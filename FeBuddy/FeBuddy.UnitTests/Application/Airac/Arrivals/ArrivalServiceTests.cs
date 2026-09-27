@@ -127,7 +127,7 @@ public sealed class ArrivalServiceTests : IDisposable
 				Path.Combine(ProcedureDirectory(), "LAS_BLAID_STAR_Symbols.geojson"),
 			],
 			result.GeojsonFilesWritten);
-		Assert.Equal(Path.Combine(_outputDirectory, "Upload_to_vNAS", "Arrivals.txt"), result.AliasFilePath);
+		Assert.Equal(Path.Combine(_outputDirectory, "Aliases", "Arrivals.txt"), result.AliasFilePath);
 
 		// Uploaded without defaults: the procedure's one Feature, and no isLineDefaults before it.
 		using JsonDocument lines = JsonDocument.Parse(File.ReadAllText(result.GeojsonFilesWritten[0]));

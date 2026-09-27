@@ -252,6 +252,23 @@ public abstract class SubServiceSettingsViewModel : ServiceTabViewModel, IConfig
 		UserConfigFile.TrySetValue($"{NodePath}.{key}", value);
 	}
 
+	/// <summary>
+	/// Clears one of this menu's values and everything below it, relative to <see cref="NodePath"/>,
+	/// before <see cref="WriteToConfig"/> writes a numbered list again - so a removed entry does not
+	/// leave its keys behind.
+	/// </summary>
+	/// <param name="key">The key under this menu's node, e.g. <c>Sources</c>.</param>
+	/// <remarks>Does nothing while a snapshot is being taken: the buffer starts empty anyway.</remarks>
+	protected void RemoveSubtree(string key)
+	{
+		if (_captureBuffer is not null)
+		{
+			return;
+		}
+
+		UserConfigFile.RemoveValues($"{NodePath}.{key}");
+	}
+
 	/// <summary>Reads one of this menu's saved values, relative to <see cref="NodePath"/>.</summary>
 	/// <param name="key">The key under this menu's node.</param>
 	/// <returns>The saved value, or <see langword="null"/> when it has none.</returns>

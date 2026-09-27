@@ -82,15 +82,26 @@ the Systems box turns green, the AIRAC Service screen unlocks.
 Asking for a cycle's data while it is still parsing waits for that parse rather than starting a
 second one.
 
-**Wx Stations rides along, but is not part of the pipeline above.** Its data is not a NASR CSV
-group at all: it comes from aviationweather.gov's own station list, and `WxStationDownloader`
-downloads it at most once per launch and copies it into every cycle folder that does not already
-have it - previous, current and next alike - next to that cycle's NASR CSVs. A folder that already
-has it is never re-downloaded, so its station data is only as current as the day it was first
-filled in; a failed download never holds up the rest of the cycle, and is retried at the next
-launch. `AiracCycleDataCache.GetWxStationsAsync` reads a cycle's copy fresh from disk on every call
-(it is small, unlike the NASR data `GetAsync` memoizes) and returns `null` when the file is not
-there yet - which the Wx Stations tab reports as missing and blocks the run on.
+**Wx Stations and Telephony ride along, but are not part of the pipeline above, and are not cached
+per cycle at all.** Neither's data is a NASR CSV group, or published on the FAA's 28-day AIRAC
+schedule: Wx Stations' station list comes from aviationweather.gov, and Telephony's two pages (FAA
+Order JO 7340.2, Chapter 3, Sections 1 and 4 - the ICAO register and the U.S. special call signs)
+from the FAA's website. Each keeps one copy outside every cycle folder, under `%APPDATA%\FE-Buddy`
+(`SharedDataDownload.SharedDataDirectory`): `WxStations\stations.cache.xml` and
+`Telephony\telephony_register.html` / `us_special_call_signs.html`. Every AIRAC Service run that
+includes Wx Stations or Telephony downloads the latest copy first
+(`AiracSharedDataLoader.LoadWxStationsAsync` / `LoadTelephonyAsync`, backed by
+`WxStationDownloader` / `TelephonyDownloader`), whichever cycle is run - not once per launch, the
+way Wx Stations used to work - and a new download is parsed before it replaces the kept copy, so a
+bad or cut-off download never overwrites a good one (`SharedDataDownload.RefreshAsync`). A download
+that fails falls back on the last kept copy, and the run carries an advisory warning naming its
+date and age; with no copy at all, the sub-service that needs it (Wx Stations, or Telephony's
+register) writes nothing and the run carries an error, while the rest of the run still completes -
+Telephony's U.S. special call signs page is optional, so without a copy of it Telephony just
+carries a warning and goes on without U.S. special call signs.
+`AiracCycleDataCache.GetWxStationsAsync`/`FindWxStationsFile` are gone along with the per-cycle
+copy; a `stations.cache.xml` an older FE-Buddy left directly in a cycle folder is deleted when that
+cycle is prepared (`AiracCycleDataCache.DeleteRetiredCycleFiles`).
 
 **Procedures rides along the same way, feeding on the FAA's d-TPP Metafile instead of a NASR CSV
 group.** `DtppDownloader.EnsureCycleHasMetafileAsync` downloads a cycle's `d-tpp_Metafile.xml` at
@@ -135,12 +146,14 @@ ARTCC Boundaries has no step 4: `ArtccBoundaryService` stops after `ArtccBoundar
 since it has no alias file. Fixes likewise has no step 4: `FixService` stops after
 `FixGeojsonWriter`, since it too has no alias file. Wx Stations has no step 4 either
 (`WxStationService` stops after `WxStationGeojsonWriter`), and its step 1 input is not `nasrData`:
-`AiracService` loads `wxStationData` from `AiracCycleDataCache.GetWxStationsAsync` only when Wx
-Stations is selected, and hands it to `WxStationService.Run` instead.
+`AiracService` loads `wxStationData` from `AiracSharedDataLoader.LoadWxStationsAsync` - downloading
+the latest station list first - only when Wx Stations is selected, and hands it to
+`WxStationService.Run` instead. A `null` collection (no usable copy of the list at all) is no
+longer fatal: `WxStationService.Run` just writes nothing, with a warning, rather than throwing.
 
 Procedures has no step 3 at all - it writes no GeoJSON - but keeps step 4: `ProcedureService` builds
 its two documents (`ProcedureChangesMarkdownWriter`, `ProceduresJsonWriter`) straight from step 2's
-domain objects, and separately builds its alias file, `FAA_CHART_RECALL.txt`
+domain objects, and separately builds its alias file, `Faa_Chart_Recall.txt`
 (`ChartRecallAliasBuilder`, `ChartRecallAliasWriter`), straight from the d-TPP Metafile rather than
 from step 2's selected objects - it covers every airport in the metafile whatever the documents'
 facility/airport/procedure/chart-type selection says. Its step 1 also takes an extra input
@@ -148,6 +161,16 @@ alongside `nasrData`: `AiracService` loads the selected cycle's (and the previou
 d-TPP Metafile from `AiracCycleDataCache.GetDtppAsync` only when Procedures is selected, and hands
 both to `ProcedureService.Run`. A `null` metafile (the FAA has not published this cycle's yet) is
 not an error - the run still completes, with an advisory saying no Procedures output was written.
+
+Telephony breaks the pattern the same way Wx Stations does, but keeps even less of it: it writes no
+GeoJSON at all, so there is no step 3, and step 2 is `TelephonyBuilder.Read` - the parsed FAA
+telephony pages, not NASR rows, turned into cards, leaving out a row with no designator, no
+telephony, or an expired U.S. special call sign - followed by step 4,
+`TelephonyAliasWriter.Generate` (→ `Telephony.txt`). Its step 1 input, like Wx Stations', is not
+`nasrData`: `AiracService` loads `telephonyData` from `AiracSharedDataLoader.LoadTelephonyAsync`
+only when Telephony is selected, and a `null` collection (no copy of the register at all) leaves
+`TelephonyService.Run` writing nothing, with a warning, the same as Wx Stations. Telephony runs
+last of the ten sub-services.
 
 - **The settings block is the contract.** Every tab (and the harness) hands Core a flat
   `Dictionary<string, string>`. Core never sees view-models, and the GUI never sees typed settings.
@@ -172,7 +195,8 @@ not an error - the run still completes, with an advisory saying no Procedures ou
   `Duplicate_Alias_Commands.txt` in the cycle folder, grouped by the ARTCC responsible for each
   line's airport (NASR `APT_BASE.RESP_ARTCC_ID`): the user's own facility
   (`AiracServiceSettings.PrimaryFacility`, from Settings ▸ Facility Profile) first, the rest
-  alphabetically, then `OTHER` for a command (an airway or a NAVAID) that names no airport. The
+  alphabetically, then `TELEPHONY` for a `Telephony.txt` command (it belongs to an operator, not an
+  airport), then `OTHER` for any other command (an airway or a NAVAID) that names no airport. The
   report is written whenever at least one alias file was written, saying so when there are no
   duplicates, so an older report is never left behind to mislead; the run shows an advisory warning
   when there are.
@@ -354,7 +378,10 @@ Decisions that were argued out once and should not be re-litigated without a rea
   `false`). Procedures opts out of the GeoJSON cards (What Files, FE-Buddy Properties, CRC ERAM
   Defaults) - it writes no GeoJSON at all - but keeps `HasAliasFile` `true` and the Upload to vNAS
   card for its own alias file, so its tab is built from its own Outputs, Facilities/Airports/etc.
-  and Upload to vNAS cards instead of the shared ones. Likewise every file
+  and Upload to vNAS cards instead of the shared ones. Telephony goes further: it opts out of the
+  GeoJSON cards the same way, but has nothing else to choose - its Outputs card just names its one
+  output, and it has no Region of Interest card at all, since it covers every operator regardless
+  of area. Likewise every file
   conversion is a tab of File Conversions; the two screens share one tabbed view and differ only in
   what their view-models say (File Conversions has no General or Preview Settings tab - each
   conversion runs from its own tab).

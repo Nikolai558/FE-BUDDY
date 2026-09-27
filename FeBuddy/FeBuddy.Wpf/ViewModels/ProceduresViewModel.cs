@@ -194,7 +194,7 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 	protected override (string? Lines, string? Symbols, string? Text) EmitKeys => (null, null, null);
 
 	/// <inheritdoc />
-	/// <remarks>The FAA Chart Recall alias file, <c>FAA_CHART_RECALL.txt</c>.</remarks>
+	/// <remarks>The FAA Chart Recall alias file, <c>Faa_Chart_Recall.txt</c>.</remarks>
 	protected override bool HasAliasFile => true;
 
 	// ================= d-TPP data =================

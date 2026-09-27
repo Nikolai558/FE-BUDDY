@@ -222,7 +222,7 @@ public sealed class NavaidsViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 
 		if (navaids.AliasFilePath is not null)
 		{
-			summary += $", NAVAIDs.txt: {navaids.AliasCommandCount:N0} alias command(s)";
+			summary += $", Navaids.txt: {navaids.AliasCommandCount:N0} alias command(s)";
 		}
 
 		return new SubServiceRunResult(Title, summary, navaids.Messages);
@@ -260,7 +260,7 @@ public sealed class NavaidsViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 	{
 		List<string> outputs = [];
 		if (GenerateGeojson) outputs.Add("GeoJSON");
-		if (GenerateAliasFile) outputs.Add("Alias file (NAVAIDs.txt)");
+		if (GenerateAliasFile) outputs.Add("Alias file (Navaids.txt)");
 
 		List<ServicePreviewRow> rows =
 		[

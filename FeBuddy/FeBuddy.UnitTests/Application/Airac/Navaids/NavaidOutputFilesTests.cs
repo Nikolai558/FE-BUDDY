@@ -32,7 +32,7 @@ public sealed class NavaidOutputFilesTests
 		Assert.True(NavaidOutputFiles.IsGeojsonKey(key));
 
 	[Theory]
-	[InlineData("NAVAIDs.txt")]
+	[InlineData("Navaids.txt")]
 	[InlineData("Airports_Symbols")]
 	[InlineData("NAVAIDs_VORTACs_Lines")] // NAVAIDs has no Lines file
 	[InlineData("junk")]
@@ -53,7 +53,7 @@ public sealed class NavaidOutputFilesTests
 	[Theory]
 	[InlineData("NAVAIDs_Symbols")]
 	[InlineData("junk")]
-	[InlineData("NAVAIDs.txt")]
+	[InlineData("Navaids.txt")]
 	public void try_parse_type_key_fails_for_the_all_mode_keys_and_junk(string key)
 	{
 		Assert.False(NavaidOutputFiles.TryParseTypeKey(key, out string token, out _));

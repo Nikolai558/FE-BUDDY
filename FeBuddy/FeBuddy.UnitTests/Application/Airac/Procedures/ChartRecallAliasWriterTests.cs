@@ -48,7 +48,7 @@ public sealed class ChartRecallAliasWriterTests : IDisposable
 	{
 		ChartRecallAliasWriteResult result = ChartRecallAliasWriter.Generate(TwoLines, Settings());
 
-		Assert.Equal(Path.Combine(_outputDirectory, "Aliases", "FAA_CHART_RECALL.txt"), result.FilePath);
+		Assert.Equal(Path.Combine(_outputDirectory, "Aliases", "Faa_Chart_Recall.txt"), result.FilePath);
 		Assert.Equal(2, result.CommandCount);
 	}
 
@@ -57,7 +57,7 @@ public sealed class ChartRecallAliasWriterTests : IDisposable
 	{
 		ChartRecallAliasWriteResult result = ChartRecallAliasWriter.Generate(TwoLines, Settings(uploadToVnas: true));
 
-		Assert.Equal(Path.Combine(_outputDirectory, "Upload_to_vNAS", "FAA_CHART_RECALL.txt"), result.FilePath);
+		Assert.Equal(Path.Combine(_outputDirectory, "Upload_to_vNAS", "Faa_Chart_Recall.txt"), result.FilePath);
 		Assert.False(Directory.Exists(Path.Combine(_outputDirectory, "Aliases")));
 	}
 

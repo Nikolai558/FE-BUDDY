@@ -1,8 +1,11 @@
 using FeBuddy.Core.Application.Airac;
 using FeBuddy.Core.Application.Airac.Models;
+using FeBuddy.Core.Application.Models;
 using FeBuddy.Core.Domain.Airac.Models;
 using FeBuddy.Core.Infrastructure.Dtpp.Models;
+using FeBuddy.Core.Infrastructure.Logging.Models;
 using FeBuddy.Core.Infrastructure.Nasr.Models;
+using FeBuddy.Core.Infrastructure.Telephony.Models;
 using FeBuddy.Core.Infrastructure.WxStations.Models;
 
 using FeBuddy.UnitTests.Application.Airac.Airways.Fixtures;
@@ -270,7 +273,7 @@ public sealed class AiracServiceTests : IDisposable
 		Assert.Null(result.Arrivals);
 		Assert.NotNull(result.Navaids);
 		Assert.Equal(1, result.Navaids!.NavaidCount);
-		Assert.Equal(Path.Combine(CycleFolder, "Aliases", "NAVAIDs.txt"), result.Navaids.AliasFilePath);
+		Assert.Equal(Path.Combine(CycleFolder, "Aliases", "Navaids.txt"), result.Navaids.AliasFilePath);
 
 		// One alias file, no duplicates: the report still exists and says so.
 		Assert.NotNull(result.DuplicateAliasReport);
@@ -311,7 +314,7 @@ public sealed class AiracServiceTests : IDisposable
 
 		// DeleteExisting only runs when something is selected: NAVAIDs alone must still trigger it.
 		Assert.False(File.Exists(stale));
-		Assert.True(File.Exists(Path.Combine(CycleFolder, "Aliases", "NAVAIDs.txt")));
+		Assert.True(File.Exists(Path.Combine(CycleFolder, "Aliases", "Navaids.txt")));
 	}
 
 	[Fact]
@@ -519,7 +522,7 @@ public sealed class AiracServiceTests : IDisposable
 	}
 
 	[Fact]
-	public async Task the_two_argument_overload_with_a_wx_stations_block_fails_with_no_weather_station_data()
+	public async Task the_two_argument_overload_with_a_wx_stations_block_completes_with_the_wx_warning_and_zero_stations()
 	{
 		AiracServiceSettings settings = new()
 		{
@@ -529,13 +532,17 @@ public sealed class AiracServiceTests : IDisposable
 		};
 
 		// The two-argument RunAsync(settings, nasrData) overload passes no Wx station data at all
-		// (WxStationService.Run receives a null WxStationDataCollection), so a selected Wx Stations
-		// block fails with WxStationBuilder.Read's "no weather station data" guard rather than
-		// running, and the whole call throws before returning a result.
-		InvalidOperationException ex = await Assert.ThrowsAsync<InvalidOperationException>(
-			() => AiracService.RunAsync(settings, new NasrCsvDataCollection()));
+		// (WxStationService.Run receives a null WxStationDataCollection). That no longer throws: the
+		// run completes with zero stations, nothing written, and a warning saying there was nothing
+		// to build from.
+		AiracServiceResult result = await AiracService.RunAsync(settings, new NasrCsvDataCollection());
 
-		Assert.Contains("No weather station data for this cycle", ex.Message, StringComparison.Ordinal);
+		Assert.NotNull(result.WxStations);
+		Assert.Equal(0, result.WxStations!.StationCount);
+		Assert.Equal(0, result.WxStations.TotalStationCount);
+		Assert.Empty(result.WxStations.GeojsonFilesWritten);
+		Assert.Contains(result.WxStations.Messages, m =>
+			m.Text.Contains("no weather station data to build from", StringComparison.Ordinal));
 	}
 
 	// ---- the AiracSupplementalData overload ----
@@ -587,6 +594,81 @@ public sealed class AiracServiceTests : IDisposable
 
 		await Assert.ThrowsAsync<ArgumentNullException>(
 			() => AiracService.RunAsync(settings, new NasrCsvDataCollection(), (AiracSupplementalData)null!));
+	}
+
+	[Fact]
+	public async Task supplemental_messages_come_first_in_the_results_messages()
+	{
+		ServiceMessage first = new(LogLevel.Info, "Test", "first supplemental message");
+		ServiceMessage second = new(LogLevel.Warning, "Test", "second supplemental message");
+		AiracServiceSettings settings = new() { SelectedCycle = Cycle, OutputDirectory = _output };
+
+		AiracServiceResult result = await AiracService.RunAsync(
+			settings, new NasrCsvDataCollection(), new AiracSupplementalData { Messages = [first, second] });
+
+		Assert.Equal(first, result.Messages[0]);
+		Assert.Equal(second, result.Messages[1]);
+	}
+
+	// ---- Telephony ----
+
+	[Fact]
+	public async Task a_telephony_block_with_parsed_data_writes_the_alias_file_and_sets_result_counts()
+	{
+		TelephonyDataCollection telephonyData = new()
+		{
+			Assignments =
+			[
+				new TelephonyHtmlDataModel.Assignment { Company = "AVIANCA", Country = "COLOMBIA", Telephony = "AVIANCA", ThreeLetterDesignator = "AVA" },
+				new TelephonyHtmlDataModel.Assignment { Company = "NO DESIGNATOR AIRLINE", Country = "USA", Telephony = "SOMETHING", ThreeLetterDesignator = "..." },
+				new TelephonyHtmlDataModel.Assignment { Company = "NO TELEPHONY AIRLINE", Country = "USA", Telephony = "", ThreeLetterDesignator = "XYZ" },
+			],
+			SpecialCallSigns =
+			[
+				new TelephonyHtmlDataModel.SpecialCallSign { Telephony = "AIR SIX", Identifier = "ARSIX", Agency = "Some Agency", ExpirationDate = "N/A" },
+			],
+		};
+
+		AiracServiceSettings settings = new()
+		{
+			SelectedCycle = Cycle,
+			OutputDirectory = _output,
+			Telephony = new Dictionary<string, string>(),
+		};
+
+		AiracServiceResult result = await AiracService.RunAsync(
+			settings, new NasrCsvDataCollection(), new AiracSupplementalData { Telephony = telephonyData });
+
+		string aliasFile = Path.Combine(CycleFolder, "Aliases", "Telephony.txt");
+		Assert.True(File.Exists(aliasFile));
+		Assert.NotNull(result.Telephony);
+		Assert.Equal(aliasFile, result.Telephony!.AliasFilePath);
+		Assert.Equal(1, result.Telephony.IcaoAssignmentCount);
+		Assert.Equal(1, result.Telephony.SpecialCallSignCount);
+		Assert.Equal(1, result.Telephony.NoDesignatorCount);
+		Assert.Equal(1, result.Telephony.NoTelephonyCount);
+
+		Assert.NotNull(result.DuplicateAliasReport);
+		Assert.Contains("Telephony.txt", File.ReadAllText(result.DuplicateAliasReport!.FilePath));
+	}
+
+	[Fact]
+	public async Task a_telephony_block_with_no_data_completes_with_its_warning_and_writes_no_file()
+	{
+		AiracServiceSettings settings = new()
+		{
+			SelectedCycle = Cycle,
+			OutputDirectory = _output,
+			Telephony = new Dictionary<string, string>(),
+		};
+
+		AiracServiceResult result = await AiracService.RunAsync(settings, new NasrCsvDataCollection());
+
+		Assert.NotNull(result.Telephony);
+		Assert.Null(result.Telephony!.AliasFilePath);
+		Assert.False(File.Exists(Path.Combine(CycleFolder, "Aliases", "Telephony.txt")));
+		Assert.Contains(result.Telephony.Messages, m =>
+			m.Text.Contains("no telephony data to build from", StringComparison.Ordinal));
 	}
 
 	// ---- Procedures ----

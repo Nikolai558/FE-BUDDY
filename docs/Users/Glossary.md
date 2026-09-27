@@ -10,8 +10,8 @@ on its *effective date*.
 
 **Alias file** - A text file of dot-commands for CRC. A controller types a short command
 (`.J3F`) and CRC expands it into something longer (the list of fixes on airway J3). FE-Buddy
-writes `Airports.txt`, `Airways.txt`, `Departures.txt`, `Arrivals.txt`, `NAVAIDs.txt` and
-Procedures' `FAA_CHART_RECALL.txt` (see **FAA Chart Recall**).
+writes `Airports.txt`, `Airways.txt`, `Departures.txt`, `Arrivals.txt`, `Navaids.txt`,
+`Telephony.txt` and Procedures' `Faa_Chart_Recall.txt` (see **FAA Chart Recall**).
 
 **Antimeridian** - The line of ±180° longitude, on the far side of the world from Greenwich. A
 line crossing it has to be split in two or it draws the long way round, across the whole map.
@@ -48,11 +48,11 @@ altitudes, not the letter.
 **Duplicate alias report** - `Duplicate_Alias_Commands.txt`, written after every AIRAC Service run
 that writes at least one alias file: every alias command used by more than one line across all of
 that run's alias files, since CRC can only run one of them. Grouped by ARTCC, your own facility
-first.
+first, then Telephony commands, then anything else that names no airport.
 
 **Effective date** - The day a cycle takes over from the one before.
 
-**FAA Chart Recall** - `FAA_CHART_RECALL.txt`, one of Procedures' outputs: a command that opens
+**FAA Chart Recall** - `Faa_Chart_Recall.txt`, one of Procedures' outputs: a command that opens
 each page of every current chart at every airport in the d-TPP Metafile, e.g. `.dtwI22Lc` for
 DTW's ILS OR LOC RWY 22L. Covers every airport regardless of the Procedures tab's other settings.
 See the [user guide](User-Guide.md#faa-chart-recall-commands) for how the commands are built.
@@ -107,8 +107,14 @@ FE-Buddy only writes data inside (or crossing) it. Make it a little bigger than 
 **STAR** - Standard Terminal Arrival: a published arrival route into an airport.
 
 **Sub-service** - One kind of data the AIRAC Service can produce: Airports, Airways, Departures,
-Arrivals, NAVAIDs, ARTCC Boundaries, Fixes, Wx Stations or Procedures. Each has its own tab and
-settings.
+Arrivals, NAVAIDs, ARTCC Boundaries, Fixes, Wx Stations, Procedures or Telephony. Each has its own
+tab and settings.
+
+**Telephony** - The sub-service that writes `Telephony.txt`: a `.id` command for every operator's
+three-letter designator or identifier, and another for its telephony (the spoken call sign), from
+FAA Order JO 7340.2, Chapter 3 - the ICAO register and the U.S. special call signs. No GeoJSON, and
+like Wx Stations and Procedures, its data isn't the NASR cycle. See the
+[user guide](User-Guide.md#telephony-tab).
 
 **Video map** - The map background on a controller's scope: airways, airports, boundaries.
 In CRC, these are GeoJSON files.
@@ -118,6 +124,6 @@ for CRC to use. The files you mark for vNAS on a sub-service tab are written to 
 `Upload_to_vNAS` folder, ready to upload.
 
 **Wx Stations** - The sub-service that draws a symbol and a two-line label for every US (and
-territory) station that reports METAR. Unlike every other sub-service, its data comes from
-aviationweather.gov's own station list, not the NASR cycle. No alias file - a station's label is
-always its own ICAO ID, then its IATA ID and site name.
+territory) station that reports METAR. Like Procedures and Telephony, its data isn't the NASR
+cycle - it comes from aviationweather.gov's own station list instead. No alias file - a station's
+label is always its own ICAO ID, then its IATA ID and site name.

@@ -8,6 +8,7 @@ using FeBuddy.Core.Application.Airac.Departures.Models;
 using FeBuddy.Core.Application.Airac.Fixes.Models;
 using FeBuddy.Core.Application.Airac.Navaids.Models;
 using FeBuddy.Core.Application.Airac.Procedures.Models;
+using FeBuddy.Core.Application.Airac.Telephony.Models;
 using FeBuddy.Core.Application.Airac.WxStations.Models;
 using FeBuddy.Core.Application.Models;
 using FeBuddy.Core.Infrastructure.Configuration;
@@ -358,6 +359,35 @@ internal static class ConsoleReport
 				Console.WriteLine($"    {file}");
 			}
 		}
+
+		PrintMessagesByLevel(result.Messages);
+	}
+
+	/// <summary>
+	/// Prints one Telephony run: what the downloads said (fresh, an older kept copy, or none),
+	/// timing, how many operators got a card and why rows were left out, the alias file, and the
+	/// run's messages grouped by level.
+	/// </summary>
+	/// <param name="label">Heading for this run, e.g. "Telephony: Alias".</param>
+	/// <param name="run">What <c>TelephonyRunner.RunAsync</c> returned.</param>
+	public static void PrintTelephonyServiceResult(string label, TelephonyRun run)
+	{
+		TelephonyServiceResult result = run.Result;
+
+		Console.WriteLine();
+		Console.WriteLine($"=== {label} ===");
+
+		foreach (ServiceMessage message in run.DownloadMessages)
+		{
+			Console.WriteLine($"Download:     [{message.Level}] {message.Text}");
+		}
+
+		Console.WriteLine($"Elapsed:      {result.Elapsed.TotalMilliseconds:N0} ms");
+		Console.WriteLine($"ICAO operators: {result.IcaoAssignmentCount:N0}, U.S. special call signs: {result.SpecialCallSignCount:N0}");
+		Console.WriteLine($"Left out: {result.NoDesignatorCount:N0} with no designator, {result.NoTelephonyCount:N0} with no telephony, {result.ExpiredCount:N0} expired");
+		Console.WriteLine(result.AliasFilePath is null
+			? "Alias file:   (none)"
+			: $"Alias file:   {result.AliasCommandCount:N0} command(s), {result.MergedCommandCount:N0} showing more than one operator -> {result.AliasFilePath}");
 
 		PrintMessagesByLevel(result.Messages);
 	}

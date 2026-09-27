@@ -36,26 +36,12 @@
                 <StackPanel>
                     <TextBlock Style="{StaticResource Text.Prose}" TextWrapping="Wrap" Margin="0,4,0,8"
                                MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
-                               Text="Weather stations come from aviationweather.gov's station list, not the FAA's AIRAC data. FE-Buddy downloads it along with each new AIRAC cycle, so it is as current as the day that cycle was downloaded." />
+                               Text="Weather stations come from aviationweather.gov's station list, not the FAA's AIRAC data, so every run downloads the latest list, whichever cycle you run." />
                     <TextBlock Style="{StaticResource Text.Prose}" TextWrapping="Wrap" Margin="0,0,0,8"
                                MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
                                Text="Included: stations that report METARs and have an ICAO ID, in the US, Puerto Rico, the US Virgin Islands, Guam, the Northern Mariana Islands, American Samoa and the US Minor Outlying Islands." />
-                    <TextBlock Text="{Binding StationDataStatus}" TextWrapping="Wrap"
-                               MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left">
-                        <TextBlock.Style>
-                            <Style TargetType="TextBlock" BasedOn="{StaticResource Text.Caption}">
-                                <Style.Triggers>
-                                    <MultiDataTrigger>
-                                        <MultiDataTrigger.Conditions>
-                                            <Condition Binding="{Binding IsStationDataKnown}" Value="True" />
-                                            <Condition Binding="{Binding HasStationData}" Value="False" />
-                                        </MultiDataTrigger.Conditions>
-                                        <Setter Property="Foreground" Value="{StaticResource Brush.Danger}" />
-                                    </MultiDataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </TextBlock.Style>
-                    </TextBlock>
+                    <TextBlock Text="{Binding StationDataStatus}" Style="{StaticResource Text.Caption}" TextWrapping="Wrap"
+                               MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left" />
                 </StackPanel>
             </ctl:Card>
 

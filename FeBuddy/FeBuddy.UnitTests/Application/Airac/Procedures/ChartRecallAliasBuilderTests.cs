@@ -214,7 +214,7 @@ public sealed class ChartRecallAliasBuilderTests
 		ServiceMessage summary = Assert.Single(result.Messages);
 		Assert.Equal(LogLevel.Info, summary.Level);
 		Assert.Equal(
-			"FAA_CHART_RECALL.txt: 3 command(s) for 1 airport(s) - IAP 2, DP 1. No command, by rule: 1 COPTER approach(es). " +
+			"Faa_Chart_Recall.txt: 3 command(s) for 1 airport(s) - IAP 2, DP 1. No command, by rule: 1 COPTER approach(es). " +
 			"1 departure(s)/STAR(s) had no computer code, so were named from the chart name (0 of them after their airport).",
 			summary.Text);
 	}
@@ -251,7 +251,7 @@ public sealed class ChartRecallAliasBuilderTests
 		ChartRecallBuildResult result = Build();
 
 		Assert.Empty(result.Lines);
-		Assert.Equal("FAA_CHART_RECALL.txt: 0 command(s) for 0 airport(s).", Assert.Single(result.Messages).Text);
+		Assert.Equal("Faa_Chart_Recall.txt: 0 command(s) for 0 airport(s).", Assert.Single(result.Messages).Text);
 	}
 
 	[Fact]

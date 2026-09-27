@@ -8,7 +8,7 @@ using FeBuddy.UnitTests.Application.Airac.Navaids.Fixtures;
 namespace FeBuddy.UnitTests.Application.Airac.Navaids;
 
 /// <summary>
-/// Covers the <c>NAVAIDs.txt</c> alias file. Like <c>AirportAliasWriterTests</c>, the load-bearing
+/// Covers the <c>Navaids.txt</c> alias file. Like <c>AirportAliasWriterTests</c>, the load-bearing
 /// assertion is that a block holds literal <c>\n</c>, <c>\t</c> and <c>\s</c> escapes - never real
 /// newlines, tabs or spaces holding a column - plus the NAVAIDs-specific command-merging rules:
 /// several NAVAIDs sharing an ID or a name command are appended, joined by <c>\n---</c>, in the
@@ -172,7 +172,7 @@ public sealed class NavaidAliasWriterTests : IDisposable
 
 		NavaidAliasGenerateResult result = NavaidAliasWriter.Generate([NavaidTestData.Cgt()], settings);
 
-		Assert.Equal(Path.Combine(_outputDirectory, "Upload_to_vNAS", "NAVAIDs.txt"), result.FilePath);
+		Assert.Equal(Path.Combine(_outputDirectory, "Upload_to_vNAS", "Navaids.txt"), result.FilePath);
 	}
 
 	[Fact]

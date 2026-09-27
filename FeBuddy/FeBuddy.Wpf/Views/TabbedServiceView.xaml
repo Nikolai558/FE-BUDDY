@@ -58,6 +58,9 @@
         <DataTemplate DataType="{x:Type vm:ProceduresViewModel}">
             <local:ProceduresView />
         </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:TelephonyViewModel}">
+            <local:TelephonyView />
+        </DataTemplate>
         <DataTemplate DataType="{x:Type vm:DatToGeojsonViewModel}">
             <local:DatToGeojsonView />
         </DataTemplate>

@@ -27,7 +27,7 @@ public sealed record NavaidSettings
 	/// <summary>Emit a label per included NAVAID.</summary>
 	public bool EmitText { get; init; } = true;
 
-	/// <summary>Whether to write the <c>NAVAIDs.txt</c> alias file.</summary>
+	/// <summary>Whether to write the <c>Navaids.txt</c> alias file.</summary>
 	public required bool GenerateAliasFile { get; init; }
 
 	/// <summary>How to group NAVAIDs into GeoJSON files. Default <see cref="NavaidOutputBy.All"/>.</summary>

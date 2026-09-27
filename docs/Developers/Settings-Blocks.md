@@ -22,7 +22,7 @@ go through the same parser. This page lists every key each parser reads.
 Parsers: `AirportSettingsParser`, `AirwaySettingsParser`, `DepartureSettingsParser`,
 `ArrivalSettingsParser`, `NavaidSettingsParser`, `ArtccBoundarySettingsParser`,
 `FixSettingsParser`, `WxStationSettingsParser`, `ProcedureSettingsParser`,
-`DatToGeojsonSettingsParser`, `SctToGeojsonSettingsParser`,
+`TelephonySettingsParser`, `DatToGeojsonSettingsParser`, `SctToGeojsonSettingsParser`,
 `EramToGeojsonSettingsParser`. Shared reading: `SubServiceSettingsReader`, `CrcDefaultsReader`,
 `ConversionSettingsReader`, `SettingsValueReader` (all in `FeBuddy.Core/Application`).
 
@@ -77,11 +77,12 @@ nothing.
 | Airways | `Airways_<group>_Lines` / `_Symbols` / `_Text`, where `<group>` is `High`, `Low`, `Other` or a designation (letters only) | `Airways.txt` |
 | Departures | `Departures_Lines`, `Departures_Symbols`, `Departures_Text` | `Departures.txt` |
 | Arrivals | `Arrivals_Lines`, `Arrivals_Symbols`, `Arrivals_Text` | `Arrivals.txt` |
-| NAVAIDs | `NAVAIDs_Symbols`, `NAVAIDs_Text` (`OutputBy=All`), or `NAVAIDs_<Token>s_Symbols` / `_Text` per NAVAID type (`OutputBy=Type`), e.g. `NAVAIDs_VORTACs_Symbols`, `NAVAIDs_VOR-DMEs_Text` | `NAVAIDs.txt` |
+| NAVAIDs | `NAVAIDs_Symbols`, `NAVAIDs_Text` (`OutputBy=All`), or `NAVAIDs_<Token>s_Symbols` / `_Text` per NAVAID type (`OutputBy=Type`), e.g. `NAVAIDs_VORTACs_Symbols`, `NAVAIDs_VOR-DMEs_Text` | `Navaids.txt` |
 | ARTCC Boundaries | `ARTCC-Boundary_High_Lines` / `_Low_Lines` (`OutputBy=HighLow`, an UNLIMITED ring in both), adds `_Unlimited_Lines` (`OutputBy=HighLowUnlimited`), or `ARTCC-Boundary_<LocationId>-<ALTITUDE>_Lines` per ARTCC and altitude (`OutputBy=ArtccAltitude`), e.g. `ARTCC-Boundary_ZOB-HIGH_Lines` | none |
 | Fixes | `Fix_Symbols`, `Fix_Text` (`OutputBy=All`), or `Fix_<Group>_Symbols` / `_Text` per fix use, chart, or chart + fix use combination present (`OutputBy=FixUse`/`Chart`/`ChartAndFixUse`), e.g. `Fix_WYPNT_Symbols`, `Fix_ENROUTE-LOW-WYPNT_Text` | none |
 | Wx Stations | `Wx_Symbols`, `Wx_Text` | none |
-| Procedures | none - writes no GeoJSON | `FAA_CHART_RECALL.txt` |
+| Procedures | none - writes no GeoJSON | `Faa_Chart_Recall.txt` |
+| Telephony | none - writes no GeoJSON | `Telephony.txt` |
 
 CRC-ERAM defaults are only ever written to files marked for vNAS, since CRC reads its maps from
 vNAS. The keys are listed in each sub-service's `*OutputFiles` class.
@@ -277,11 +278,13 @@ naming the key.
   site name. `IncludeFebCustomProperties = Y` is accepted but only warns, since there is nothing
   for it to add.
 - `EmitSymbols` and `EmitText` cannot both be `N`.
-- Data comes from aviationweather.gov's `stations.cache.xml`, not a NASR CSV group - downloaded
-  once per launch and cached in the cycle's own folder (see
-  [Architecture](Architecture.md#the-airac-data-pipeline)). A cycle whose file has not downloaded
-  yet (or whose earlier attempt failed) has no data to build from, and `WxStationBuilder.Read`
-  throws rather than silently writing nothing.
+- Data comes from aviationweather.gov's `stations.cache.xml`, not a NASR CSV group, and not
+  published per AIRAC cycle at all. Every AIRAC Service run that includes Wx Stations downloads the
+  latest copy first, whichever cycle is run, falling back on FE-Buddy's one kept copy
+  (`%APPDATA%\FE-Buddy\WxStations\stations.cache.xml`) when that fails (see
+  [Architecture](Architecture.md#the-airac-data-pipeline)). With no copy at all,
+  `WxStationService.Run` accepts a `null` collection and just writes nothing, with a warning,
+  rather than throwing; the rest of the run still completes.
 - A station is included only when all hold: its country is `US` or a US territory (`PR`, `VI`,
   `GU`, `MP`, `AS`, `UM`); it has an ICAO ID; `METAR` is among its site types; and it has usable
   coordinates - present, finite, and within -90..90 / -180..180 (the feed's `-99.99, -99.99`
@@ -293,7 +296,7 @@ naming the key.
 |---|---|---|
 | `GenerateChangesDocument` | `Y` / `N` | `Y` |
 | `GenerateProceduresJson` | `Y` / `N` | `Y` |
-| `GenerateAliasFile` | `Y` / `N` - whether to write `FAA_CHART_RECALL.txt` | `Y` |
+| `GenerateAliasFile` | `Y` / `N` - whether to write `Faa_Chart_Recall.txt` | `Y` |
 | `Facilities` | list of ARTCC IDs; every included airport's procedures (of the chart types below) are included for each one | none |
 | `PrimaryFacility` | an ARTCC ID; its section leads both documents when it ends up with any included airport | none |
 | `IncludeRoiAirports` | `Y` / `N` - also include every airport whose NASR coordinates fall inside the Region of Interest; **required** to have a ROI set (`FilterByRoi = Y` plus its four corners) when `Y` | `N` |
@@ -302,11 +305,11 @@ naming the key.
 | `AirportProcedures` | list of `<Airport>\|<Procedure name>` pairs to include, e.g. `PIT\|ILS OR LOC RWY 28C` | none |
 | `ChartTypes` | list of d-TPP chart codes (`IAP`, `STR`, `DP`, `ODP`, `DAU`, `APD`, `MIN`, `HOT`, `LAH`) a whole included airport's procedures are limited to; a name picked by `Procedures` or `AirportProcedures` is included regardless | `IAP,STR,DP,ODP,DAU,APD` |
 | `JsonFields` | list of `Procedures.json` optional field names (below); only meaningful with `GenerateProceduresJson = Y` | `icaoId,airportName,responsibleArtcc,airspaceClass,chartType,chartUrl,change,compareUrl` |
-| `UploadToVnas` | file keys to write under `Upload_to_vNAS`; the only one Procedures ever writes is `FAA_CHART_RECALL.txt` | none |
+| `UploadToVnas` | file keys to write under `Upload_to_vNAS`; the only one Procedures ever writes is `Faa_Chart_Recall.txt` | none |
 
 - Unlike every other AIRAC sub-service, Procedures writes no GeoJSON at all: there is no `Emit…`,
   `FebProperties`, `CrcDefaultsFor` or `Crc.*` key - nothing it writes carries CRC-ERAM defaults. It
-  does have an alias file, `FAA_CHART_RECALL.txt` (built by `ChartRecallAliasBuilder`): one
+  does have an alias file, `Faa_Chart_Recall.txt` (built by `ChartRecallAliasBuilder`): one
   `.OPENURL` command per page of every current chart at every airport in the d-TPP Metafile,
   whatever `Facilities`, `Airports`, `Procedures`, `AirportProcedures`, `ChartTypes` and
   `IncludeRoiAirports` say - those settings pick only what the two documents cover.
@@ -340,6 +343,36 @@ naming the key.
   (`FeBuddy.Core/Domain/Procedures/ChartRecall/`) and `ChartRecallAliasBuilder`
   (`FeBuddy.Core/Application/Airac/Procedures/`); for the controller-facing summary, see the
   [user guide](../Users/User-Guide.md#faa-chart-recall-commands).
+
+## Telephony
+
+| Key | Values | Default |
+|---|---|---|
+| `GenerateAliasFile` | `Y` / `N` - must stay `Y`; the alias file is Telephony's only output, so `N` throws | `Y` |
+| `UploadToVnas` | file key to write under `Upload_to_vNAS`; the only one Telephony ever writes is `Telephony.txt` | none |
+
+- Unlike every other AIRAC sub-service, there is no `FebProperties`, `CrcDefaultsFor` or `Crc.*`
+  key, and no region of interest: Telephony writes no GeoJSON and covers every operator regardless
+  of area. The shared keys every sub-service block reads (`FilterByRoi` and its four corners,
+  `IncludeFebCustomProperties`) are accepted and ignored, with a warning for
+  `IncludeFebCustomProperties = Y`.
+- Data comes from FAA Order JO 7340.2, Chapter 3: Section 1 (the ICAO register) and Section 4 (U.S.
+  special call signs) - not a NASR CSV group, and not published per AIRAC cycle at all. Every AIRAC
+  Service run that includes Telephony downloads the latest copy of both pages first (see
+  [Architecture](Architecture.md#the-airac-data-pipeline)); the register is required - with no
+  usable copy, `TelephonyService.Run` writes nothing, with a warning - and the U.S. special call
+  signs page is optional: without a copy of it, Telephony still writes `Telephony.txt` from the
+  register alone, with a warning.
+- `TelephonyBuilder.Read` turns the parsed pages into cards, leaving out a register row with no
+  three-letter designator (the FAA prints `...` or `--`) or no telephony, and a U.S. special call
+  sign that has expired; one whose expiration date FE-Buddy can't read is kept, with a warning.
+- `TelephonyAliasWriter.Generate` writes two commands per operator - `.id` plus its designator or
+  identifier, and `.id` plus its telephony reduced to letters and digits - one command when the two
+  are the same (e.g. `NASA`). When several operators land on the same command (a telephony that
+  spells another operator's designator, or two telephonies that only differ by spacing), the
+  command shows every one of their cards, separated by `\n---`, the command's own operator first.
+  Commands are written in alphabetical order. For the controller-facing command and card rules, see
+  the [user guide](../Users/User-Guide.md#telephony-tab).
 
 ## Keys every file conversion reads
 

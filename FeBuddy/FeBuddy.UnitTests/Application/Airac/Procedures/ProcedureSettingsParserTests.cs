@@ -405,7 +405,7 @@ public sealed class ProcedureSettingsParserTests
 	public void upload_to_vnas_may_name_the_alias_file()
 	{
 		Dictionary<string, string> settings = MinimalValidSettings();
-		settings["UploadToVnas"] = "FAA_CHART_RECALL.txt";
+		settings["UploadToVnas"] = "Faa_Chart_Recall.txt";
 
 		ProcedureSettings parsed = ProcedureSettingsParser.Parse(settings).Settings;
 
@@ -426,11 +426,11 @@ public sealed class ProcedureSettingsParserTests
 	public void crc_defaults_for_naming_the_alias_file_throws()
 	{
 		Dictionary<string, string> settings = MinimalValidSettings();
-		settings["UploadToVnas"] = "FAA_CHART_RECALL.txt";
-		settings["CrcDefaultsFor"] = "FAA_CHART_RECALL.txt";
+		settings["UploadToVnas"] = "Faa_Chart_Recall.txt";
+		settings["CrcDefaultsFor"] = "Faa_Chart_Recall.txt";
 
 		ArgumentException ex = Assert.Throws<ArgumentException>(() => ProcedureSettingsParser.Parse(settings));
-		Assert.Contains("FAA_CHART_RECALL.txt", ex.Message);
+		Assert.Contains("Faa_Chart_Recall.txt", ex.Message);
 	}
 
 	[Fact]

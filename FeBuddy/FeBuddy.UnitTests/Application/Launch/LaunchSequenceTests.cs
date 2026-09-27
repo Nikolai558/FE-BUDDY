@@ -15,9 +15,8 @@ using FeBuddy.Core.Infrastructure.Logging.Models;
 using FeBuddy.Core.Infrastructure.Nasr.Models;
 using FeBuddy.Core.Infrastructure.Nasr.Parsers;
 using FeBuddy.Core.Infrastructure.Platform.Models;
-using FeBuddy.Core.Infrastructure.WxStations.Models;
-
-using FeBuddy.UnitTests.Application.Airac.WxStations.Fixtures;
+using FeBuddy.Core.Infrastructure.SharedData.Models;
+using FeBuddy.Core.Infrastructure.Telephony.Models;
 
 using FeBuddy.Versioning.Models;
 
@@ -233,47 +232,6 @@ public sealed class LaunchSequenceTests : IDisposable
 	}
 
 	[Fact]
-	public async Task airac_service_loads_wx_station_data_from_the_cache_when_wx_stations_is_selected()
-	{
-		AiracCycleInfo previous = new("2608", "06_Aug_2026", new DateOnly(2026, 8, 6));
-		AiracCycleInfo current = new("2609", "03_Sep_2026", new DateOnly(2026, 9, 3));
-		AiracCycleInfo next = new("2610", "01_Oct_2026", new DateOnly(2026, 10, 1));
-
-		WxStationDataCollection wxData = WxStationTestData.Build([WxStationTestData.DtwRow()]);
-		string? loadedForCycle = null;
-
-		// The single-settings RunAsync overload resolves both the NASR and Wx station data for the
-		// selected cycle from AiracCycleDataCache.Instance itself, only when settings.WxStations is
-		// not null - this re-wires that instance with a loadWxStations step to exercise it.
-		AiracCycleDataCache.ConfigureForTesting(new AiracCycleDataCache(
-			probe: (_, _) => Task.FromResult(AiracCyclePublicationState.Published),
-			download: (cycle, _) => Task.FromResult(cycle.AiracCycleId),
-			parse: (_, _) => Task.FromResult(new NasrCsvDataCollection()),
-			loadWxStations: (cycleDirectory, _) =>
-			{
-				loadedForCycle = cycleDirectory;
-				return Task.FromResult<WxStationDataCollection?>(wxData);
-			}));
-
-		await AiracCycleDataCache.Instance.PrepareCyclesAsync(previous, current, next);
-
-		List<AiracServiceProgress> reports = [];
-		AiracServiceResult result = await AiracService.RunAsync(
-			new AiracServiceSettings
-			{
-				SelectedCycle = current,
-				OutputDirectory = Path.Combine(_root, "output"),
-				WxStations = new Dictionary<string, string>(),
-			},
-			new SynchronousProgress<AiracServiceProgress>(reports.Add));
-
-		Assert.Equal("2609", loadedForCycle);
-		Assert.Contains(reports, r => r.Message == "Loading Wx station data for cycle 2609");
-		Assert.NotNull(result.WxStations);
-		Assert.Equal(1, result.WxStations!.StationCount);
-	}
-
-	[Fact]
 	public async Task airac_service_loads_dtpp_and_previous_dtpp_from_the_cache_when_procedures_is_selected()
 	{
 		AiracCycleInfo previous = new("2608", "06_Aug_2026", new DateOnly(2026, 8, 6));
@@ -329,6 +287,62 @@ public sealed class LaunchSequenceTests : IDisposable
 		Assert.Equal(new[] { current.AiracCycleId, previousOfCurrent.AiracCycleId }.Order(), loadedForCycles.Order());
 		Assert.Contains(reports, r => r.Message == $"Loading d-TPP Metafile data for cycle {current.AiracCycleId}");
 		Assert.Contains(reports, r => r.Message == $"Loading d-TPP Metafile data for cycle {previousOfCurrent.AiracCycleId}");
+	}
+
+	[Fact]
+	public async Task airac_service_downloads_the_latest_wx_station_and_telephony_data_when_those_are_selected()
+	{
+		AiracCycleInfo previous = new("2608", "06_Aug_2026", new DateOnly(2026, 8, 6));
+		AiracCycleInfo current = new("2609", "03_Sep_2026", new DateOnly(2026, 9, 3));
+		AiracCycleInfo next = new("2610", "01_Oct_2026", new DateOnly(2026, 10, 1));
+
+		Directory.CreateDirectory(_root);
+		string stationsFile = Path.Combine(_root, "stations.cache.xml");
+		File.WriteAllText(stationsFile, "<response><data num_results=\"1\"><Station><icao_id>KDTW</icao_id></Station></data></response>");
+		string registerFile = Path.Combine(_root, "telephony_register.html");
+		File.WriteAllText(registerFile,
+			"<table><thead><tr><th>Company</th><th>Country</th><th>Telephony</th><th>3-Ltr</th></tr></thead>" +
+			"<tbody><tr><td>AEROVIAS DEL CONTINENTE AMERICANO S.A.</td><td>COLOMBIA</td><td>AVIANCA</td><td>AVA</td></tr></tbody></table>");
+
+		// The single-settings RunAsync overload downloads the latest copies itself, only for the
+		// sub-services selected - these stand in for the downloads, so nothing touches the network.
+		AiracSharedDataLoader.ConfigureForTesting(
+			refreshWxStations: _ => Task.FromResult(new SharedDataRefreshResult(stationsFile, DateTime.UtcNow, FailureReason: null)),
+			refreshTelephony: _ => Task.FromResult(new TelephonyRefreshResult(
+				new SharedDataRefreshResult(registerFile, DateTime.UtcNow, FailureReason: null),
+				new SharedDataRefreshResult(FilePath: null, DownloadedUtc: null, "offline"))));
+
+		try
+		{
+			await AiracCycleDataCache.Instance.PrepareCyclesAsync(previous, current, next);
+
+			List<AiracServiceProgress> reports = [];
+			AiracServiceResult result = await AiracService.RunAsync(
+				new AiracServiceSettings
+				{
+					SelectedCycle = current,
+					OutputDirectory = Path.Combine(_root, "output"),
+					WxStations = new Dictionary<string, string>(),
+					Telephony = new Dictionary<string, string>(),
+				},
+				new SynchronousProgress<AiracServiceProgress>(reports.Add));
+
+			Assert.Contains(reports, r => r.Message == "Downloading the latest Wx station data");
+			Assert.Contains(reports, r => r.Message == "Downloading the latest FAA telephony pages");
+			Assert.Equal(1, result.WxStations!.TotalStationCount);
+			Assert.Equal(2, result.Telephony!.AliasCommandCount);
+
+			// What the downloads said leads the run's messages: two fresh copies, then the optional
+			// page that could not be had.
+			Assert.Equal("Downloaded the latest Wx station data.", result.Messages[0].Text);
+			Assert.Equal("Downloaded the latest FAA telephony register.", result.Messages[1].Text);
+			Assert.True(result.Messages[2].IsAdvisory);
+			Assert.Contains("FAA U.S. special call signs (offline)", result.Messages[2].Text, StringComparison.Ordinal);
+		}
+		finally
+		{
+			AiracSharedDataLoader.ConfigureForTesting(null, null);
+		}
 	}
 
 	private sealed class SynchronousProgress<T>(Action<T> report) : IProgress<T>

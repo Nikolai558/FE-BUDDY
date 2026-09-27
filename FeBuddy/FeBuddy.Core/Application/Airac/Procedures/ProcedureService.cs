@@ -14,7 +14,7 @@ namespace FeBuddy.Core.Application.Airac.Procedures;
 /// Public entry point for the Procedures sub-service: parses settings, builds every airport and
 /// procedure from the FAA d-TPP Metafile and NASR data, applies the user's selection, and writes
 /// <c>Procedure_Changes.md</c> and/or <c>Procedures.json</c> - and, independently of that selection,
-/// the FAA Chart Recall alias file <c>FAA_CHART_RECALL.txt</c> for every airport in the metafile.
+/// the FAA Chart Recall alias file <c>Faa_Chart_Recall.txt</c> for every airport in the metafile.
 /// </summary>
 /// <remarks>
 /// Unlike every other AIRAC sub-service, its data does not come from the NASR cycle alone - it also
@@ -168,7 +168,7 @@ public static class ProcedureService
 		return new DocumentOutcome(included.Count, procedureCount, newCount, changedCount, deletedCount, reAddedCount, filesWritten);
 	}
 
-	/// <summary>Builds and writes <c>FAA_CHART_RECALL.txt</c> for every airport in the metafile.</summary>
+	/// <summary>Builds and writes <c>Faa_Chart_Recall.txt</c> for every airport in the metafile.</summary>
 	private static AliasOutcome WriteAliasFile(DtppMetafileDataCollection dtpp, ProcedureSettings settings, List<ServiceMessage> messages)
 	{
 		ChartRecallBuildResult buildResult = ChartRecallAliasBuilder.Build(dtpp);

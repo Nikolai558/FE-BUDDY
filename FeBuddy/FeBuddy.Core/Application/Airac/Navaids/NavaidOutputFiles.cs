@@ -33,7 +33,7 @@ public static partial class NavaidOutputFiles
 	public const string Text = "NAVAIDs_Text";
 
 	/// <summary>The alias file.</summary>
-	public const string Alias = "NAVAIDs.txt";
+	public const string Alias = "Navaids.txt";
 
 	/// <summary>
 	/// The file key for one NAVAID type's Symbols or Text file, written in

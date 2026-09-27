@@ -24,8 +24,8 @@ public static class WxStationBuilder
 	/// Builds every included station from the parsed Wx station data.
 	/// </summary>
 	/// <param name="data">
-	/// The parsed <c>stations.cache.xml</c> data for the cycle, or <see langword="null"/> when it
-	/// has not been downloaded yet.
+	/// The parsed <c>stations.cache.xml</c> data, or <see langword="null"/> when FE-Buddy has no
+	/// copy of it.
 	/// </param>
 	/// <returns>
 	/// Every included station, ordered by ICAO ID (ignoring case), stable, the file's total
@@ -46,8 +46,8 @@ public static class WxStationBuilder
 		if (data is null)
 		{
 			throw new InvalidOperationException(
-				"No weather station data for this cycle: 'stations.cache.xml' is missing from the cycle's folder. " +
-				"FE-Buddy downloads it at launch, so restart FE-Buddy with an internet connection.");
+				"No weather station data: FE-Buddy has no copy of 'stations.cache.xml'. " +
+				"Every AIRAC Service run that includes Wx Stations downloads it, so run again with an internet connection.");
 		}
 
 		List<ServiceMessage> messages = [];

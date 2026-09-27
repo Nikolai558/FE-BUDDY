@@ -98,4 +98,10 @@ public sealed record AiracServiceSettings
 	/// not selected for this run.
 	/// </summary>
 	public IReadOnlyDictionary<string, string>? Procedures { get; init; }
+
+	/// <summary>
+	/// The Telephony sub-service settings block, or <see langword="null"/> when Telephony was not
+	/// selected for this run.
+	/// </summary>
+	public IReadOnlyDictionary<string, string>? Telephony { get; init; }
 }

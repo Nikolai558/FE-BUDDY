@@ -42,7 +42,7 @@
                     <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="24,2,0,10"
                                MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
                                Text="Every current chart at the airports you pick, with the fields chosen below." />
-                    <CheckBox Content="Alias file (FAA_CHART_RECALL.txt)" IsChecked="{Binding GenerateAliasFile}" Margin="0,0,0,0" />
+                    <CheckBox Content="Alias file (Faa_Chart_Recall.txt)" IsChecked="{Binding GenerateAliasFile}" Margin="0,0,0,0" />
                     <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="24,2,0,10"
                                MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
                                Text="FAA Chart Recall: a command that opens each page of every chart at every airport in the d-TPP metafile, e.g. .dtwI22Lc for ILS OR LOC RWY 22L at DTW. The choices below pick what the documents cover; they never limit the alias file." />

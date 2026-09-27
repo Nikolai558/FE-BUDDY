@@ -314,7 +314,7 @@ internal static class HarnessSettings
 			// Files marked for vNAS go under Upload_to_vNAS; only those in CrcDefaultsFor get the
 			// CRC ERAM defaults Feature, using the Crc.NAVAIDs.* values added by
 			// AddNavaidCrcDefaults below.
-			{ "UploadToVnas", "NAVAIDs_Symbols,NAVAIDs_Text,NAVAIDs.txt" },
+			{ "UploadToVnas", "NAVAIDs_Symbols,NAVAIDs_Text,Navaids.txt" },
 			{ "CrcDefaultsFor", "NAVAIDs_Symbols,NAVAIDs_Text" },
 
 			// ROI filtering applies to the GeoJSON output only; the alias file always covers
@@ -485,7 +485,7 @@ internal static class HarnessSettings
 			{ "GenerateChangesDocument", "Y" },
 			{ "GenerateProceduresJson", "Y" },
 			{ "GenerateAliasFile", "Y" },
-			{ "UploadToVnas", "" },          // "FAA_CHART_RECALL.txt" writes it to Upload_to_vNAS instead of Aliases
+			{ "UploadToVnas", "" },          // "Faa_Chart_Recall.txt" writes it to Upload_to_vNAS instead of Aliases
 
 			// Additive inclusion: every ZOB airport (by RESP_ARTCC_ID), plus GRR and CID from
 			// elsewhere - exercises both the whole-facility path and the explicit-airport path in
@@ -507,6 +507,22 @@ internal static class HarnessSettings
 
 			{ "ChartTypes", "" },            // blank = default: IAP, STR, DP, ODP, DAU, APD
 			{ "JsonFields", "" },            // blank = default: icaoId, airportName, responsibleArtcc, airspaceClass, chartType, chartUrl, change, compareUrl
+		};
+
+		return settings;
+	}
+
+	/// <summary>
+	/// Builds the raw settings dictionary for <c>TelephonyService.Run</c>. The alias file is
+	/// Telephony's only output and covers every operator, so all there is to choose is whether it
+	/// goes to vNAS.
+	/// </summary>
+	public static Dictionary<string, string> TelephonySettings()
+	{
+		Dictionary<string, string> settings = new()
+		{
+			{ "OutputDirectory", OutputDirectory },
+			{ "UploadToVnas", "" },          // "Telephony.txt" writes it to Upload_to_vNAS instead of Aliases
 		};
 
 		return settings;

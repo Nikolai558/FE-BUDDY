@@ -6,14 +6,13 @@ using FeBuddy.Core.Domain.Airac.Models;
 using FeBuddy.Core.Infrastructure.Dtpp.Models;
 using FeBuddy.Core.Infrastructure.Logging;
 using FeBuddy.Core.Infrastructure.Nasr.Models;
-using FeBuddy.Core.Infrastructure.WxStations;
-using FeBuddy.Core.Infrastructure.WxStations.Models;
 
 namespace FeBuddy.UnitTests.Application.Airac;
 
 /// <summary>
 /// Exercises <see cref="AiracCycleDataCache"/> with injected probe/download/parse steps:
-/// prepare order, single-flight parsing, one-retry-then-Failed, and the readiness table.
+/// prepare order, single-flight parsing, one-retry-then-Failed, the readiness table, and that
+/// preparing a cycle deletes a leftover per-cycle Wx Stations file.
 /// </summary>
 [Collection("AppLog")]
 public sealed class AiracCycleDataCacheTests : IDisposable
@@ -482,167 +481,17 @@ public sealed class AiracCycleDataCacheTests : IDisposable
 		Assert.NotEqual(CycleDataState.Failed, cache.GetEntry("2610")!.State);
 	}
 
-	// ---- Wx Stations: ensureWxStations ----
+	// ---- retired per-cycle Wx Stations file ----
 
 	[Fact]
-	public async Task ensure_wx_stations_is_called_with_the_cycle_folder_after_a_successful_download()
+	public async Task preparing_a_cycle_deletes_a_leftover_wx_stations_file_from_the_cycle_folder()
 	{
-		List<string> calledWithFolders = [];
-
-		AiracCycleDataCache cache = new(
-			probe: AlwaysPublished,
-			download: (cycle, _) => Task.FromResult($@"C:\cache\{cycle.AiracCycleId}"),
-			parse: (_, _) => Task.FromResult(new NasrCsvDataCollection()),
-			ensureWxStations: (cycleDirectory, _) =>
-			{
-				lock (calledWithFolders) { calledWithFolders.Add(cycleDirectory); }
-				return Task.CompletedTask;
-			});
-
-		await cache.PrepareCyclesAsync(Previous, Current, Next);
-
-		Assert.Equal(3, calledWithFolders.Count);
-		Assert.Contains(@"C:\cache\2609", calledWithFolders);
-		Assert.Contains(@"C:\cache\2610", calledWithFolders);
-		Assert.Contains(@"C:\cache\2611", calledWithFolders);
-	}
-
-	[Fact]
-	public async Task ensure_wx_stations_runs_even_for_an_already_cached_cycle()
-	{
-		bool called = false;
-
-		AiracCycleDataCache cache = new(
-			probe: AlwaysPublished,
-			download: (cycle, _) => Task.FromResult($@"C:\cache\{cycle.AiracCycleId}"),
-			parse: (_, _) => Task.FromResult(new NasrCsvDataCollection()),
-			isLocallyAvailable: _ => true,
-			ensureWxStations: (_, _) =>
-			{
-				called = true;
-				return Task.CompletedTask;
-			});
-
-		await cache.PrepareCyclesAsync(Previous, Current, Next);
-
-		Assert.True(called);
-	}
-
-	[Fact]
-	public async Task an_exception_from_ensure_wx_stations_is_swallowed_and_the_cycle_still_reaches_ready()
-	{
-		AiracCycleDataCache cache = new(
-			probe: AlwaysPublished,
-			download: (cycle, _) => Task.FromResult($@"C:\cache\{cycle.AiracCycleId}"),
-			parse: (_, _) => Task.FromResult(new NasrCsvDataCollection()),
-			ensureWxStations: (_, _) => Task.FromException(new IOException("network down")));
-
-		await cache.PrepareCyclesAsync(Previous, Current, Next);
-
-		Assert.Equal(CycleDataState.Ready, cache.GetEntry("2610")!.State);
-		Assert.Equal(AiracCycleReadiness.Ready, cache.ComputeReadiness());
-	}
-
-	[Fact]
-	public async Task cancellation_from_ensure_wx_stations_propagates()
-	{
-		AiracCycleDataCache cache = new(
-			probe: AlwaysPublished,
-			download: (cycle, _) => Task.FromResult($@"C:\cache\{cycle.AiracCycleId}"),
-			parse: (_, _) => Task.FromResult(new NasrCsvDataCollection()),
-			ensureWxStations: (_, _) => Task.FromException(new OperationCanceledException()));
-
-		await Assert.ThrowsAnyAsync<OperationCanceledException>(() => cache.PrepareCyclesAsync(Previous, Current, Next));
-	}
-
-	// ---- Wx Stations: GetWxStationsAsync ----
-
-	[Fact]
-	public async Task get_wx_stations_async_for_an_untracked_cycle_throws()
-	{
-		AiracCycleDataCache cache = new(AlwaysPublished, (_, _) => Task.FromResult("x"), (_, _) => Task.FromResult(new NasrCsvDataCollection()));
-
-		await Assert.ThrowsAsync<InvalidOperationException>(() => cache.GetWxStationsAsync("2610"));
-	}
-
-	[Fact]
-	public async Task get_wx_stations_async_before_download_returns_null_without_calling_the_loader()
-	{
-		bool loaderCalled = false;
-
-		AiracCycleDataCache cache = new(
-			probe: (cycle, _) => Task.FromResult(
-				cycle.AiracCycleId == Next.AiracCycleId ? AiracCyclePublicationState.NotYetPublished : AiracCyclePublicationState.Published),
-			download: (cycle, _) => Task.FromResult($@"C:\cache\{cycle.AiracCycleId}"),
-			parse: (_, _) => Task.FromResult(new NasrCsvDataCollection()),
-			loadWxStations: (_, _) =>
-			{
-				loaderCalled = true;
-				return Task.FromResult<WxStationDataCollection?>(null);
-			});
-
-		await cache.PrepareCyclesAsync(Previous, Current, Next);
-
-		// Next has not been published, so its CycleDirectory is still null.
-		WxStationDataCollection? result = await cache.GetWxStationsAsync("2611");
-
-		Assert.Null(result);
-		Assert.False(loaderCalled);
-	}
-
-	[Fact]
-	public async Task get_wx_stations_async_after_download_returns_the_injected_loaders_result()
-	{
-		WxStationDataCollection expected = new() { NumResults = 1 };
-		string? loadedFromFolder = null;
-
-		AiracCycleDataCache cache = new(
-			probe: AlwaysPublished,
-			download: (cycle, _) => Task.FromResult($@"C:\cache\{cycle.AiracCycleId}"),
-			parse: (_, _) => Task.FromResult(new NasrCsvDataCollection()),
-			loadWxStations: (cycleDirectory, _) =>
-			{
-				loadedFromFolder = cycleDirectory;
-				return Task.FromResult<WxStationDataCollection?>(expected);
-			});
-
-		await cache.PrepareCyclesAsync(Previous, Current, Next);
-
-		WxStationDataCollection? result = await cache.GetWxStationsAsync("2610");
-
-		Assert.Same(expected, result);
-		Assert.Equal(@"C:\cache\2610", loadedFromFolder);
-	}
-
-	// ---- Wx Stations: FindWxStationsFile ----
-
-	[Fact]
-	public void find_wx_stations_file_for_an_untracked_cycle_is_null()
-	{
-		AiracCycleDataCache cache = new(AlwaysPublished, (_, _) => Task.FromResult("x"), (_, _) => Task.FromResult(new NasrCsvDataCollection()));
-
-		Assert.Null(cache.FindWxStationsFile("2610"));
-	}
-
-	[Fact]
-	public async Task find_wx_stations_file_before_download_is_null()
-	{
-		AiracCycleDataCache cache = new(
-			probe: (cycle, _) => Task.FromResult(
-				cycle.AiracCycleId == Next.AiracCycleId ? AiracCyclePublicationState.NotYetPublished : AiracCyclePublicationState.Published),
-			download: (cycle, _) => Task.FromResult($@"C:\cache\{cycle.AiracCycleId}"),
-			parse: (_, _) => Task.FromResult(new NasrCsvDataCollection()));
-
-		await cache.PrepareCyclesAsync(Previous, Current, Next);
-
-		Assert.Null(cache.FindWxStationsFile("2611"));
-	}
-
-	[Fact]
-	public async Task find_wx_stations_file_when_missing_from_the_cycle_folder_is_null()
-	{
-		string cycleDirectory = Path.Combine(Path.GetTempPath(), "FeBuddyTests_FindWx_" + Guid.NewGuid().ToString("N"));
+		string cycleDirectory = Path.Combine(Path.GetTempPath(), "FeBuddyTests_RetiredWx_" + Guid.NewGuid().ToString("N"));
 		Directory.CreateDirectory(cycleDirectory);
+		string retiredFile = Path.Combine(cycleDirectory, AiracCycleDataCache.RetiredWxStationsFileName);
+		string otherFile = Path.Combine(cycleDirectory, "APT_BASE.csv");
+		File.WriteAllText(retiredFile, "<response><data></data></response>");
+		File.WriteAllText(otherFile, "keep me");
 
 		try
 		{
@@ -653,7 +502,9 @@ public sealed class AiracCycleDataCacheTests : IDisposable
 
 			await cache.PrepareCyclesAsync(Previous, Current, Next);
 
-			Assert.Null(cache.FindWxStationsFile("2610"));
+			Assert.False(File.Exists(retiredFile));
+			Assert.True(File.Exists(otherFile));
+			Assert.Equal(CycleDataState.Ready, cache.GetEntry("2610")!.State);
 		}
 		finally
 		{
@@ -662,12 +513,12 @@ public sealed class AiracCycleDataCacheTests : IDisposable
 	}
 
 	[Fact]
-	public async Task find_wx_stations_file_when_present_returns_its_path()
+	public async Task preparing_a_cycle_without_a_leftover_wx_stations_file_leaves_its_other_files_alone()
 	{
-		string cycleDirectory = Path.Combine(Path.GetTempPath(), "FeBuddyTests_FindWx_" + Guid.NewGuid().ToString("N"));
+		string cycleDirectory = Path.Combine(Path.GetTempPath(), "FeBuddyTests_RetiredWx_" + Guid.NewGuid().ToString("N"));
 		Directory.CreateDirectory(cycleDirectory);
-		string stationsFile = Path.Combine(cycleDirectory, WxStationFiles.FileName);
-		File.WriteAllText(stationsFile, "<response><data></data></response>");
+		string otherFile = Path.Combine(cycleDirectory, "APT_BASE.csv");
+		File.WriteAllText(otherFile, "keep me");
 
 		try
 		{
@@ -678,7 +529,38 @@ public sealed class AiracCycleDataCacheTests : IDisposable
 
 			await cache.PrepareCyclesAsync(Previous, Current, Next);
 
-			Assert.Equal(stationsFile, cache.FindWxStationsFile("2610"));
+			Assert.Equal(CycleDataState.Ready, cache.GetEntry("2610")!.State);
+			Assert.True(File.Exists(otherFile));
+		}
+		finally
+		{
+			Directory.Delete(cycleDirectory, recursive: true);
+		}
+	}
+
+	[Fact]
+	public async Task a_leftover_wx_stations_file_that_cannot_be_deleted_is_logged_and_the_cycle_still_reaches_ready()
+	{
+		string cycleDirectory = Path.Combine(Path.GetTempPath(), "FeBuddyTests_RetiredWx_" + Guid.NewGuid().ToString("N"));
+		Directory.CreateDirectory(cycleDirectory);
+		string retiredFile = Path.Combine(cycleDirectory, AiracCycleDataCache.RetiredWxStationsFileName);
+		File.WriteAllText(retiredFile, "<response><data></data></response>");
+
+		try
+		{
+			// Held open with no sharing, so deleting it fails the way a file open elsewhere would.
+			using (new FileStream(retiredFile, FileMode.Open, FileAccess.Read, FileShare.None))
+			{
+				AiracCycleDataCache cache = new(
+					probe: AlwaysPublished,
+					download: (_, _) => Task.FromResult(cycleDirectory),
+					parse: (_, _) => Task.FromResult(new NasrCsvDataCollection()));
+
+				await cache.PrepareCyclesAsync(Previous, Current, Next);
+
+				Assert.Equal(CycleDataState.Ready, cache.GetEntry("2610")!.State);
+				Assert.True(File.Exists(retiredFile));
+			}
 		}
 		finally
 		{
@@ -807,9 +689,9 @@ public sealed class AiracCycleDataCacheTests : IDisposable
 				return Task.FromResult<DtppMetafileDataCollection?>(null);
 			});
 
-		// Unlike GetWxStationsAsync, an untracked cycle - e.g. the one before the selected one,
-		// which Procedures also asks for and which may not be one of the three tracked cycles -
-		// answers null rather than throwing.
+		// Unlike GetAsync, an untracked cycle - e.g. the one before the selected one, which
+		// Procedures also asks for and which may not be one of the three tracked cycles - answers
+		// null rather than throwing.
 		DtppMetafileDataCollection? result = await cache.GetDtppAsync("2610");
 
 		Assert.Null(result);

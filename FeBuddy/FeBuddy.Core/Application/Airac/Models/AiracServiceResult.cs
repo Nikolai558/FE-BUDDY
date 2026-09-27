@@ -6,6 +6,7 @@ using FeBuddy.Core.Application.Airac.Departures.Models;
 using FeBuddy.Core.Application.Airac.Fixes.Models;
 using FeBuddy.Core.Application.Airac.Navaids.Models;
 using FeBuddy.Core.Application.Airac.Procedures.Models;
+using FeBuddy.Core.Application.Airac.Telephony.Models;
 using FeBuddy.Core.Application.Airac.WxStations.Models;
 using FeBuddy.Core.Application.Models;
 
@@ -82,4 +83,10 @@ public sealed record AiracServiceResult : ServiceResult
 	/// this run.
 	/// </summary>
 	public ProcedureServiceResult? Procedures { get; init; }
+
+	/// <summary>
+	/// The Telephony sub-service result, or <see langword="null"/> when Telephony was not part of
+	/// this run.
+	/// </summary>
+	public TelephonyServiceResult? Telephony { get; init; }
 }

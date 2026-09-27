@@ -18,5 +18,5 @@ public static class ProcedureOutputFiles
 	/// The FAA Chart Recall alias file (<c>ChartRecallAliasWriter</c>) - also its file key on the
 	/// Upload to vNAS card.
 	/// </summary>
-	public const string Alias = "FAA_CHART_RECALL.txt";
+	public const string Alias = "Faa_Chart_Recall.txt";
 }

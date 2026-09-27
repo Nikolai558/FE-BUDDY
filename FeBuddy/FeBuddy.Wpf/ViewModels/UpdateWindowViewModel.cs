@@ -11,6 +11,8 @@ using FeBuddy.Core.Application.Updates;
 using FeBuddy.Core.Application.Updates.Models;
 using FeBuddy.Core.Infrastructure.Logging;
 
+using FeBuddy.Versioning;
+
 namespace FeBuddy.Wpf.ViewModels;
 
 /// <summary>
@@ -57,7 +59,7 @@ public sealed class UpdateWindowViewModel : ObservableObject
 
 		CurrentVersion = string.IsNullOrWhiteSpace(version.CurrentVersion) ? "dev" : version.CurrentVersion.TrimStart('v', 'V');
 		LatestVersion = version.LatestVersion ?? "unknown";
-		Channel = version.Channel.ToString();
+		Channel = version.Channel.DisplayName();
 		ReleaseUrl = string.IsNullOrWhiteSpace(version.LatestReleaseUrl) ? ReleasesPage : version.LatestReleaseUrl!;
 
 		IReadOnlyList<ReleaseSummary> releases = version.NewerReleases.Count > 0

@@ -16,7 +16,7 @@ namespace FeBuddy.Core.Application.Updates;
 /// <remarks>
 /// The same design as FE-Buddy 2.x's updater: the download goes to the temporary workspace
 /// (<c>%TEMP%\FE-Buddy\Updates</c>, cleared on every launch) and tries the public asset URL first;
-/// only if that fails, and only if <see cref="GitHubAuth.EnvironmentVariableName"/> is set, it
+/// only if that fails, and only if the user chose a GitHub token (<see cref="GitHubAuth"/>), it
 /// retries once through the authenticated releases-assets API.
 /// </remarks>
 public static class UpdateInstaller
@@ -72,7 +72,7 @@ public static class UpdateInstaller
 			}
 			catch (HttpRequestException ex) when (installer.AssetId > 0 && GitHubAuth.GetOptionalToken() is { } token)
 			{
-				AppLog.Info(LogSource, $"Public download failed ({ex.Message}); retrying with {GitHubAuth.EnvironmentVariableName}.");
+				AppLog.Info(LogSource, $"Public download failed ({ex.Message}); retrying with {GitHubAuth.TokenDescription}.");
 				await DownloadToFileAsync(client, AssetApiUrl + installer.AssetId, token, installer.SizeBytes, destination, progress, cancellationToken)
 					.ConfigureAwait(false);
 			}

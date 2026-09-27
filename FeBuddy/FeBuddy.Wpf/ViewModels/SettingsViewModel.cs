@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Globalization;
 using System.IO;
+using System.Text;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Threading;
@@ -17,17 +18,22 @@ using FeBuddy.Core.Application.Updates.Models;
 using FeBuddy.Core.Domain.Airac.Models;
 using FeBuddy.Core.Domain.Geo.Models;
 using FeBuddy.Core.Infrastructure.Configuration;
+using FeBuddy.Core.Infrastructure.Configuration.Models;
+using FeBuddy.Core.Infrastructure.Credentials;
 using FeBuddy.Core.Infrastructure.Logging;
+using FeBuddy.Core.Infrastructure.Platform;
 
 using Microsoft.Win32;
 
+using FeBuddy.Versioning;
 using FeBuddy.Versioning.Models;
 
 namespace FeBuddy.Wpf.ViewModels;
 
 /// <summary>
-/// SYSTEM ▸ Settings. Section order: Updates, Facility Profile, Default Region of Interest,
-/// GeoJSON Files. Every value persists to <c>UserConfig.json</c>.
+/// SYSTEM ▸ Settings. Section order: Facility Profile, Default Region of Interest, GeoJSON Files,
+/// Credentials, Updates. Every value persists to <c>UserConfig.json</c>, except credentials, which
+/// live in Windows Credential Manager and are saved at once (<see cref="CredentialsViewModel"/>).
 /// </summary>
 /// <remarks>
 /// <para>
@@ -39,8 +45,12 @@ namespace FeBuddy.Wpf.ViewModels;
 /// the page keeps the saved ROI apart from the one on screen: an edit here stays pending until
 /// Save, and a change made on the Map shows here unless an edit here is still pending.
 /// </para>
+/// <para>
+/// Export and Import move every setting in the app (not only this page's) to and from a file,
+/// through <see cref="UserConfigTransfer"/>, so one user's setup can be handed to another.
+/// </para>
 /// </remarks>
-public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges
+public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IConfigPage
 {
 	private const string ChannelKey = UserConfigKeys.UpdateChannel;
 	private const string OutputDirKey = UserConfigKeys.DefaultOutputDirectory;
@@ -79,17 +89,9 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges
 		_dispatcher = Application.Current?.Dispatcher ?? Dispatcher.CurrentDispatcher;
 		_openUpdateWindow = openUpdateWindow;
 
-		_channel = VersionCheckResult.ParseChannel(UserConfigFile.GetValue(ChannelKey));
-		_selectedFacility = Blank(UserConfigFile.GetValue(ArtccKey));
-		_outputDir = OutputPreferences.Directory;
-		_addFeBuddyFolder = OutputPreferences.AddFeBuddyOutputFolder;
-		_coordinatePrecision = int.TryParse(UserConfigFile.GetValue(PrecisionKey), out int p) && p is >= 0 and <= 15 ? p : 6;
-		_prettyPrintGeojson = string.Equals(
-			UserConfigFile.GetValue(UserConfigKeys.PrettyPrintGeojson)?.Trim(), "Y", StringComparison.OrdinalIgnoreCase);
-
-		_savedRoi = DefaultRoiStore.Load();
-		_defaultRoi = _savedRoi;
+		LoadFromConfig();
 		DefaultRoiStore.Changed += OnDefaultRoiChanged;
+		ConfigPages.Register(this);
 
 		SaveCommand = new RelayCommand(Save, () => IsDirty);
 		CheckNowCommand = new RelayCommand(CheckForUpdates, () => AppEnvironment.HasInternetConnection && !IsCheckingForUpdates);
@@ -98,12 +100,11 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges
 		SetPrecisionCommand = new RelayCommand<string>(p => { if (int.TryParse(p, out int n)) CoordinatePrecision = n; });
 		EditRoiCommand = new RelayCommand(EditRoi);
 		ClearRoiCommand = new RelayCommand(ClearRoi, () => DefaultRoi is not null);
+		ExportCommand = new RelayCommand(Export);
+		ImportCommand = new RelayCommand(Import);
 
 		AiracCycleDataCache.Instance.StateChanged += (_, _) => _dispatcher.BeginInvoke(RefreshFacilities);
 		RefreshFacilities();
-
-		// Everything above is the loaded state; the page is clean until it differs from this.
-		_savedState = SavedStateSnapshot.Of(CurrentValues());
 	}
 
 	/// <summary><see langword="true"/> when a saved setting has been edited since the last Save.</summary>
@@ -124,6 +125,9 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges
 
 	/// <inheritdoc />
 	public bool HasUnsavedChanges => IsDirty;
+
+	/// <inheritdoc />
+	public string ConfigPageName => "Settings";
 
 	/// <summary>
 	/// Re-evaluates the page after a setting changed. Call from every setter whose value <see cref="Save"/>
@@ -150,42 +154,7 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges
 		[ArtccKey] = SelectedFacility ?? string.Empty,
 	};
 
-	// ================= 1. UPDATES =================
-
-	/// <summary>The update channels, in the order the menu shows them.</summary>
-	public IReadOnlyList<ReleaseChannel> Channels { get; } =
-		[ReleaseChannel.Stable, ReleaseChannel.Beta, ReleaseChannel.Alpha];
-
-	/// <summary>The update channel. <see cref="ReleaseChannel.Stable"/> unless the developers tell you otherwise.</summary>
-	public ReleaseChannel Channel
-	{
-		get => _channel;
-		set { if (SetProperty(ref _channel, value)) MarkDirty(); }
-	}
-
-	/// <summary>Whether the machine has internet; the update check needs it.</summary>
-	public bool IsOnline => AppEnvironment.HasInternetConnection;
-
-	/// <summary>Re-runs the version check, then opens the update window or toasts that there is nothing new.</summary>
-	public ICommand CheckNowCommand { get; }
-
-	/// <summary><see langword="true"/> while "Check for updates now" is waiting on GitHub (the button shows "Checking…").</summary>
-	public bool IsCheckingForUpdates
-	{
-		get => _isCheckingForUpdates;
-		private set
-		{
-			if (SetProperty(ref _isCheckingForUpdates, value))
-			{
-				CommandManager.InvalidateRequerySuggested();
-			}
-		}
-	}
-
-	/// <summary>Opens the releases page, where an older version can be downloaded.</summary>
-	public ICommand RollbackCommand { get; }
-
-	// ================= 2. FACILITY PROFILE =================
+	// ================= 1. FACILITY PROFILE =================
 
 	/// <summary>Facilities from the current cycle's parsed airports, as <c>ArtccName (RespArtccId)</c>.</summary>
 	public ObservableCollection<FacilityOption> Facilities { get; } = [];
@@ -248,7 +217,7 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges
 	/// <summary>Picks <see cref="OutputDirectory"/> with a folder dialog.</summary>
 	public ICommand BrowseOutputCommand { get; }
 
-	// ================= 3. DEFAULT REGION OF INTEREST =================
+	// ================= 2. DEFAULT REGION OF INTEREST =================
 
 	/// <summary>Explains what an ROI is, under the Default Region of Interest heading.</summary>
 	public const string RoiExplainer =
@@ -292,7 +261,7 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges
 	/// <summary>Turns the default ROI off; saved with the rest of the page by <see cref="SaveCommand"/>.</summary>
 	public ICommand ClearRoiCommand { get; }
 
-	// ================= 4. GEOJSON FILES =================
+	// ================= 3. GEOJSON FILES =================
 
 	/// <summary>Explains the FE-Buddy properties.</summary>
 	public const string FebPropertiesDescription =
@@ -355,10 +324,116 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges
 	/// </summary>
 	public bool IsDevModeForcingPrettyPrint => DevMode.IsEnabled;
 
+	// ================= 4. CREDENTIALS =================
+
+	/// <summary>The Credentials card. Its changes are saved at once and take no part in <see cref="SaveCommand"/>.</summary>
+	public CredentialsViewModel Credentials { get; } = new(CredentialStore.Default);
+
+	// ================= 5. UPDATES =================
+
+	/// <summary>The update channels, in the order the menu shows them: most finished first.</summary>
+	public IReadOnlyList<ReleaseChannel> Channels { get; } =
+		[ReleaseChannel.Stable, ReleaseChannel.ReleaseCandidate, ReleaseChannel.Beta, ReleaseChannel.Alpha];
+
+	/// <summary>Explains the channels under the Updates heading: each one includes every channel above it.</summary>
+	public const string UpdatesDescription =
+		"Choose the earliest stage of release you want to be offered. You are also offered every release that is further " +
+		"along, so each channel includes the ones listed above it: Release Candidate offers release candidates and stable " +
+		"releases, and Alpha offers every release.";
+
+	/// <summary>What choosing Stable offers.</summary>
+	public const string StableOffers = "Stable releases only";
+
+	/// <summary>What a stable release is, for the Stable tooltip.</summary>
+	public const string StableDescription =
+		"Fully tested releases with no known serious problems. The right choice for almost everyone.";
+
+	/// <summary>What choosing Release Candidate offers.</summary>
+	public const string ReleaseCandidateOffers = "Release candidates and stable releases";
+
+	/// <summary>What a release candidate is, for the Release Candidate tooltip.</summary>
+	public const string ReleaseCandidateDescription =
+		"Believed to be finished and working correctly, and in a final round of testing. If no problems turn up, it " +
+		"becomes the next stable release.";
+
+	/// <summary>What choosing Beta offers.</summary>
+	public const string BetaOffers = "Betas, release candidates and stable releases";
+
+	/// <summary>What a beta is, for the Beta tooltip.</summary>
+	public const string BetaDescription =
+		"Every planned feature is in and working, but testing is still under way, so expect some bugs that have not been " +
+		"fixed yet.";
+
+	/// <summary>What choosing Alpha offers.</summary>
+	public const string AlphaOffers = "Every release: alphas, betas, release candidates and stable releases";
+
+	/// <summary>What an alpha is, for the Alpha tooltip.</summary>
+	public const string AlphaDescription =
+		"Early builds with features still being worked on. Things may be unfinished, change from one build to the next, " +
+		"or not work at all.";
+
+	/// <summary>The update channel. <see cref="ReleaseChannel.Stable"/> unless the developers tell you otherwise.</summary>
+	public ReleaseChannel Channel
+	{
+		get => _channel;
+		set
+		{
+			if (SetProperty(ref _channel, value))
+			{
+				MarkDirty();
+				OnPropertyChanged(nameof(IsPreReleaseChannel));
+				OnPropertyChanged(nameof(ChannelWarning));
+			}
+		}
+	}
+
+	/// <summary>Whether a channel other than Stable is chosen, which shows <see cref="ChannelWarning"/>.</summary>
+	public bool IsPreReleaseChannel => Channel != ReleaseChannel.Stable;
+
+	/// <summary>The recommendation to stay on Stable, naming the pre-release channel chosen.</summary>
+	public string ChannelWarning =>
+		$"We recommend staying on Stable. The {Channel.DisplayName()} channel may change or break things you are used to.";
+
+	/// <summary>Whether the machine has internet; the update check needs it.</summary>
+	public bool IsOnline => AppEnvironment.HasInternetConnection;
+
+	/// <summary>Re-runs the version check, then opens the update window or toasts that there is nothing new.</summary>
+	public ICommand CheckNowCommand { get; }
+
+	/// <summary><see langword="true"/> while "Check for updates now" is waiting on GitHub (the button shows "Checking…").</summary>
+	public bool IsCheckingForUpdates
+	{
+		get => _isCheckingForUpdates;
+		private set
+		{
+			if (SetProperty(ref _isCheckingForUpdates, value))
+			{
+				CommandManager.InvalidateRequerySuggested();
+			}
+		}
+	}
+
+	/// <summary>Opens the releases page, where an older version can be downloaded.</summary>
+	public ICommand RollbackCommand { get; }
+
 	// ================= save =================
 
 	/// <summary>Writes every setting on the page to <c>UserConfig.json</c>. Live only while <see cref="IsDirty"/>.</summary>
 	public ICommand SaveCommand { get; }
+
+	// ================= export / import =================
+
+	/// <summary>The file-dialog filter for settings files.</summary>
+	private const string SettingsFileFilter = "FE-Buddy settings (*.json)|*.json|All files (*.*)|*.*";
+
+	/// <summary>Writes every saved setting that can leave this PC to a file the user picks.</summary>
+	public ICommand ExportCommand { get; }
+
+	/// <summary>Reads a settings file the user picks, shows what it would change, and imports it once confirmed.</summary>
+	public ICommand ImportCommand { get; }
+
+	/// <inheritdoc />
+	public void ReloadFromConfig() => LoadFromConfig();
 
 	private async void CheckForUpdates()
 	{
@@ -386,21 +461,21 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges
 		}
 
 		// The check reads the saved channel; say so if the page shows a different, unsaved one.
-		string unsaved = Channel != version.Channel ? $" Save to check the {Channel} channel instead." : string.Empty;
+		string unsaved = Channel != version.Channel ? $" Save to check the {Channel.DisplayName()} channel instead." : string.Empty;
 		string current = version.CurrentVersion.TrimStart('v', 'V');
 
 		if (version.IsAheadOfLatestRelease)
 		{
 			Toast.Success("No update available",
-				$"This development build (v{current}) is ahead of the latest {version.Channel} release (v{version.LatestVersion}).{unsaved}");
+				$"This development build (v{current}) is ahead of the latest {version.Channel.DisplayName()} release (v{version.LatestVersion}).{unsaved}");
 		}
 		else if (version.LatestVersion is null)
 		{
-			Toast.Success("No update available", $"There are no releases on the {version.Channel} channel yet.{unsaved}");
+			Toast.Success("No update available", $"There are no releases on the {version.Channel.DisplayName()} channel yet.{unsaved}");
 		}
 		else
 		{
-			Toast.Success("You're up to date", $"v{current} is the latest {version.Channel} release.{unsaved}");
+			Toast.Success("You're up to date", $"v{current} is the latest {version.Channel.DisplayName()} release.{unsaved}");
 		}
 	}
 
@@ -440,6 +515,216 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges
 		IsDirty = false;
 		Toast.Success("Settings saved", "Written to UserConfig.json.");
 	}
+
+	/// <summary>
+	/// Puts every value on the page to what <c>UserConfig</c> holds, dropping unsaved edits. The
+	/// values read become the saved state: the page is clean until one differs from it.
+	/// </summary>
+	private void LoadFromConfig()
+	{
+		Channel = VersionCheckResult.ParseChannel(UserConfigFile.GetValue(ChannelKey));
+		SelectedFacility = Blank(UserConfigFile.GetValue(ArtccKey));
+		OutputDirectory = OutputPreferences.Directory;
+		AddFeBuddyOutputFolder = OutputPreferences.AddFeBuddyOutputFolder;
+		CoordinatePrecision = int.TryParse(UserConfigFile.GetValue(PrecisionKey), out int p) && p is >= 0 and <= 15 ? p : 6;
+		PrettyPrintGeojson = string.Equals(
+			UserConfigFile.GetValue(UserConfigKeys.PrettyPrintGeojson)?.Trim(), "Y", StringComparison.OrdinalIgnoreCase);
+
+		_savedRoi = DefaultRoiStore.Load();
+		DefaultRoi = _savedRoi;
+
+		_savedState = SavedStateSnapshot.Of(CurrentValues());
+		MarkDirty();
+	}
+
+	private void Export()
+	{
+		Window? owner = Application.Current?.MainWindow;
+
+		// The export is of what is saved; edits still on screen would silently be missing from it.
+		IReadOnlyList<string> unsaved = ConfigPages.WithUnsavedChanges();
+		if (unsaved.Count > 0
+			&& !ConfirmWindow.Show(
+				owner,
+				"Unsaved changes",
+				$"{JoinNames(unsaved)} {(unsaved.Count == 1 ? "has" : "have")} unsaved changes, which will not be in the export. "
+				+ "Save them first to include them.",
+				confirmText: "Export saved settings"))
+		{
+			return;
+		}
+
+		string facility = string.IsNullOrWhiteSpace(SelectedFacility) ? string.Empty : $" {SelectedFacility}";
+
+		SaveFileDialog dialog = new()
+		{
+			Title = "Export FE-Buddy settings",
+			Filter = SettingsFileFilter,
+			DefaultExt = ".json",
+			AddExtension = true,
+			FileName = $"FE-Buddy Settings{facility} {DateTime.Now:yyyy-MM-dd}.json",
+			InitialDirectory = Directory.Exists(OutputPreferences.Directory) ? OutputPreferences.Directory : null,
+		};
+
+		if (dialog.ShowDialog(owner) != true)
+		{
+			return;
+		}
+
+		try
+		{
+			UserConfigExportResult result = UserConfigTransfer.Export(dialog.FileName);
+			string leftOut = result.LeftOutCount > 0 ? " Settings that only apply to this PC were left out." : string.Empty;
+			Toast.Success("Settings exported", $"{result.SettingCount} settings written to {Path.GetFileName(result.Path)}.{leftOut}");
+		}
+		catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+		{
+			AppLog.Warning("Settings", $"Could not export settings to '{dialog.FileName}': {ex.Message}");
+			Toast.Error("Export failed", ex.Message);
+		}
+	}
+
+	private void Import()
+	{
+		Window? owner = Application.Current?.MainWindow;
+
+		OpenFileDialog dialog = new()
+		{
+			Title = "Import FE-Buddy settings",
+			Filter = SettingsFileFilter,
+			Multiselect = false,
+		};
+
+		if (dialog.ShowDialog(owner) != true)
+		{
+			return;
+		}
+
+		UserConfigImportPlan plan;
+		try
+		{
+			plan = UserConfigTransfer.Plan(UserConfigTransfer.Read(dialog.FileName));
+		}
+		catch (UserConfigTransferException ex)
+		{
+			AppLog.Warning("Settings", $"Could not import '{dialog.FileName}': {ex.Message}");
+			Toast.Error("Cannot import settings", ex.Message);
+			return;
+		}
+
+		if (!plan.HasChanges)
+		{
+			Toast.Info("Nothing to import", $"{plan.Package.FileName} has the same settings as this PC.");
+			return;
+		}
+
+		if (!ConfirmWindow.Show(owner, "Import settings", DescribeImport(plan, ConfigPages.WithUnsavedChanges()), confirmText: "Import"))
+		{
+			return;
+		}
+
+		try
+		{
+			UserConfigTransfer.Apply(plan);
+		}
+		catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+		{
+			AppLog.Warning("Settings", $"Could not import '{dialog.FileName}': {ex.Message}");
+			Toast.Error("Import failed", $"Nothing was changed. {ex.Message}");
+			return;
+		}
+
+		// Every page built so far read its values once; have each read the imported ones.
+		OutputFormatting.LoadFromUserConfig();
+		ConfigPages.ReloadAll();
+		MapLayersState.ReloadFromConfigIfCreated();
+		DefaultRoiStore.NotifyReloaded();
+
+		string skipped = plan.SkippedFolders.Count > 0
+			? " Some of its folders do not work on this PC, so yours were kept."
+			: string.Empty;
+		Toast.Success("Settings imported", $"{plan.ChangedCount} settings updated from {plan.Package.FileName}.{skipped}");
+	}
+
+	/// <summary>The import confirmation: what changes, what this PC keeps, and what is lost.</summary>
+	/// <param name="plan">The import.</param>
+	/// <param name="unsavedPages">The pages whose unsaved edits the import would drop.</param>
+	/// <returns>The dialog text.</returns>
+	private static string DescribeImport(UserConfigImportPlan plan, IReadOnlyList<string> unsavedPages)
+	{
+		UserConfigPackage package = plan.Package;
+		StringBuilder text = new();
+
+		text.Append(CultureInfo.InvariantCulture, $"Import the settings in {package.FileName}");
+		if (package.IsPlainConfigFile)
+		{
+			text.Append(" (a UserConfig.json from another PC)");
+		}
+		else if (package.AppVersion is { } version)
+		{
+			string when = package.ExportedUtc is { } exported
+				? $" on {exported.ToLocalTime().ToString("d MMM yyyy", CultureInfo.InvariantCulture)}"
+				: string.Empty;
+			text.Append(CultureInfo.InvariantCulture, $" (exported from FE-Buddy v{version.TrimStart('v', 'V')}{when})");
+		}
+
+		text.Append(CultureInfo.InvariantCulture, $"?\n\n{plan.ChangedCount} {(plan.ChangedCount == 1 ? "setting changes" : "settings change")}.");
+
+		// The same settings can produce different output on a different version of FE-Buddy.
+		string running = AppVersion.Current.TrimStart('v', 'V');
+		if (package.AppVersion?.TrimStart('v', 'V') is { } theirs && !string.Equals(theirs, running, StringComparison.OrdinalIgnoreCase))
+		{
+			text.Append(
+				$"\n\nThis PC runs FE-Buddy v{running}, the file came from v{theirs}. The settings import all the same, "
+				+ "but for identical output both PCs should run the same version.");
+		}
+
+		if (plan.AppliedFolders.Count > 0)
+		{
+			text.Append("\n\nFolders:");
+			foreach (ImportedFolder folder in plan.AppliedFolders)
+			{
+				string detail = folder.Path.Length == 0 ? folder.Note!
+					: folder.Note is null ? folder.Path
+					: $"{folder.Path} ({folder.Note})";
+				text.Append(CultureInfo.InvariantCulture, $"\n  • {folder.Label}: {detail}");
+			}
+		}
+
+		if (plan.SkippedFolders.Count > 0)
+		{
+			text.Append("\n\nFolders kept as they are on this PC:");
+			foreach (ImportedFolder folder in plan.SkippedFolders)
+			{
+				text.Append(CultureInfo.InvariantCulture, $"\n  • {folder.Label}: the file's {folder.Path} {folder.Note}");
+			}
+		}
+
+		if (plan.KeptForThisPc.Count > 0)
+		{
+			string kept = JoinNames([.. plan.KeptForThisPc.Select(label => char.ToLowerInvariant(label[0]) + label[1..])]);
+			text.Append(CultureInfo.InvariantCulture, $"\n\nKept as they are on this PC: {kept}.");
+		}
+
+		if (unsavedPages.Count > 0)
+		{
+			text.Append(CultureInfo.InvariantCulture, $"\n\nUnsaved changes on {JoinNames(unsavedPages)} will be lost.");
+		}
+
+		text.Append(CultureInfo.InvariantCulture, $"\n\nYour current settings are kept in {Path.GetFileName(UserConfigFile.BeforeImportFilePath)} in case you want them back.");
+
+		return text.ToString();
+	}
+
+	/// <summary>e.g. <c>Settings, Airways and Fixes</c>.</summary>
+	/// <param name="names">The names.</param>
+	/// <returns>The names as one phrase.</returns>
+	private static string JoinNames(IReadOnlyList<string> names) => names.Count switch
+	{
+		0 => string.Empty,
+		1 => names[0],
+		_ => $"{string.Join(", ", names.Take(names.Count - 1))} and {names[^1]}",
+	};
 
 	private void RefreshFacilities()
 	{

@@ -2,7 +2,6 @@ using System.Net;
 
 using FeBuddy.Core.Application.News;
 using FeBuddy.Core.Application.News.Models;
-using FeBuddy.Core.Infrastructure.GitHub;
 using FeBuddy.Core.Infrastructure.Logging;
 
 namespace FeBuddy.UnitTests.Application.News;
@@ -149,37 +148,30 @@ public sealed class NewsServiceTests : IDisposable
 	}
 
 	/// <summary>
-	/// When the plain raw URL fails and FEBUDDY_GITHUB_TOKEN is set, the retry via the Contents
+	/// When the plain raw URL fails and the user chose a GitHub token, the retry via the Contents
 	/// API succeeds and is used.
 	/// </summary>
 	[Fact]
 	public async Task check_async_unauthenticated_fails_retries_with_token_via_contents_api()
 	{
-		Environment.SetEnvironmentVariable(GitHubAuth.EnvironmentVariableName, "test-token");
-		try
-		{
-			using HttpClient client = new(new StubHttpHandler(request =>
-				request.Headers.Authorization is not null
-					? new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(SampleMarkdown) }
-					: new HttpResponseMessage(HttpStatusCode.NotFound)));
+		using IDisposable token = TestCredentials.UseGitHubToken("test-token");
+		using HttpClient client = new(new StubHttpHandler(request =>
+			request.Headers.Authorization is not null
+				? new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(SampleMarkdown) }
+				: new HttpResponseMessage(HttpStatusCode.NotFound)));
 
-			NewsCheckResult result = await NewsService.CheckAsync(null, hasInternetConnection: true, client);
+		NewsCheckResult result = await NewsService.CheckAsync(null, hasInternetConnection: true, client);
 
-			Assert.True(result.FromNetwork);
-			Assert.True(result.ParseSucceeded);
-			Assert.Equal("2026-09-02.1", result.LatestPostId!.Value.ToString());
-		}
-		finally
-		{
-			Environment.SetEnvironmentVariable(GitHubAuth.EnvironmentVariableName, null);
-		}
+		Assert.True(result.FromNetwork);
+		Assert.True(result.ParseSucceeded);
+		Assert.Equal("2026-09-02.1", result.LatestPostId!.Value.ToString());
 	}
 
-	/// <summary>With no token set, a failed fetch falls back to the bundled copy rather than retrying.</summary>
+	/// <summary>With no token chosen, a failed fetch falls back to the bundled copy rather than retrying.</summary>
 	[Fact]
 	public async Task check_async_unauthenticated_fails_no_token_falls_back_to_bundled_copy()
 	{
-		Environment.SetEnvironmentVariable(GitHubAuth.EnvironmentVariableName, null);
+		TestCredentials.Reset();
 
 		using HttpClient client = new(new StubHttpHandler(_ => new HttpResponseMessage(HttpStatusCode.NotFound)));
 

@@ -35,6 +35,7 @@ public static class UserConfigFile
 	private const string LogSource = "UserConfig";
 	private const string ConfigFileName = "UserConfig.json";
 	private const string PreviousFileName = "UserConfig.previous.json";
+	private const string BeforeImportFileName = "UserConfig.before-import.json";
 
 	private static readonly Lock Gate = new();
 	private static readonly Dictionary<string, string> Values = new(StringComparer.Ordinal);
@@ -61,6 +62,12 @@ public static class UserConfigFile
 
 	/// <summary>The full path of the one-step undo snapshot file, <c>UserConfig.previous.json</c>.</summary>
 	public static string PreviousFilePath => Path.Combine(Directory, PreviousFileName);
+
+	/// <summary>
+	/// The full path of <c>UserConfig.before-import.json</c>: the whole file as it was before the
+	/// last <see cref="ReplaceAll"/>, kept so an import can be taken back by hand.
+	/// </summary>
+	public static string BeforeImportFilePath => Path.Combine(Directory, BeforeImportFileName);
 
 	/// <summary>
 	/// Reads <c>UserConfig.json</c> from disk into the in-memory dictionary, replacing whatever
@@ -151,7 +158,7 @@ public static class UserConfigFile
 	/// <returns><see langword="true"/> if the value was set; <see langword="false"/> if the path was invalid.</returns>
 	public static bool TrySetValue(string dottedPath, string value)
 	{
-		if (string.IsNullOrWhiteSpace(dottedPath) || dottedPath.StartsWith('.') || dottedPath.EndsWith('.') || dottedPath.Contains(".."))
+		if (!IsValidKey(dottedPath))
 		{
 			return false;
 		}
@@ -162,6 +169,52 @@ public static class UserConfigFile
 		}
 
 		return true;
+	}
+
+	/// <summary>
+	/// Replaces every setting at once with <paramref name="values"/> and writes the whole file -
+	/// the one write that is not per node, used by a settings import.
+	/// </summary>
+	/// <remarks>
+	/// The file being replaced is first copied to <see cref="BeforeImportFilePath"/>. The per-node
+	/// undo snapshots are deleted: they describe settings that no longer exist, so an "undo last
+	/// save" would otherwise put a pre-import subtree back into the imported file. Keys that
+	/// <see cref="TrySetValue"/> would refuse are dropped. The in-memory dictionary only changes
+	/// once the new file is on disk, so a failed write leaves memory and disk as they were.
+	/// </remarks>
+	/// <param name="values">Every setting the file should hold afterwards, by dotted path.</param>
+	public static void ReplaceAll(IReadOnlyDictionary<string, string> values)
+	{
+		ArgumentNullException.ThrowIfNull(values);
+
+		Dictionary<string, string> replacement = new(StringComparer.Ordinal);
+
+		foreach (KeyValuePair<string, string> entry in values)
+		{
+			if (IsValidKey(entry.Key))
+			{
+				replacement[entry.Key] = entry.Value ?? string.Empty;
+			}
+		}
+
+		lock (Gate)
+		{
+			if (File.Exists(ConfigFilePath))
+			{
+				File.Copy(ConfigFilePath, BeforeImportFilePath, overwrite: true);
+			}
+
+			WriteObject(ConfigFilePath, BuildTree(replacement));
+
+			if (File.Exists(PreviousFilePath))
+			{
+				File.Delete(PreviousFilePath);
+			}
+		}
+
+		ReadAll();
+
+		AppLog.Info(LogSource, $"Replaced every setting ({replacement.Count} values); the previous file is kept as '{BeforeImportFileName}'.");
 	}
 
 	/// <summary>
@@ -281,11 +334,9 @@ public static class UserConfigFile
 		}
 	}
 
-	/// <summary>
-	/// A snapshot of the current in-memory dictionary. Unit tests only.
-	/// </summary>
+	/// <summary>A copy of every setting currently in memory, by dotted path.</summary>
 	/// <returns>A copy of every key and value.</returns>
-	internal static IReadOnlyDictionary<string, string> SnapshotValues()
+	public static IReadOnlyDictionary<string, string> SnapshotValues()
 	{
 		lock (Gate)
 		{
@@ -298,7 +349,7 @@ public static class UserConfigFile
 	/// <paramref name="dest"/> keyed by its dotted path. Arrays and nulls are stored as their
 	/// JSON text; every other scalar is stored as its string form.
 	/// </summary>
-	private static void FlattenInto(JsonObject obj, string prefix, Dictionary<string, string> dest)
+	internal static void FlattenInto(JsonObject obj, string prefix, Dictionary<string, string> dest)
 	{
 		foreach (KeyValuePair<string, JsonNode?> pair in obj)
 		{
@@ -326,8 +377,20 @@ public static class UserConfigFile
 		}
 	}
 
+	/// <summary>
+	/// Whether <paramref name="dottedPath"/> can name a setting: not blank, and no empty segment
+	/// (no leading, trailing or doubled dot).
+	/// </summary>
+	/// <param name="dottedPath">The candidate key.</param>
+	/// <returns><see langword="true"/> when the key is usable.</returns>
+	internal static bool IsValidKey(string? dottedPath) =>
+		!string.IsNullOrWhiteSpace(dottedPath)
+		&& !dottedPath.StartsWith('.')
+		&& !dottedPath.EndsWith('.')
+		&& !dottedPath.Contains("..", StringComparison.Ordinal);
+
 	/// <summary>Builds a full nested JSON object from every entry in the flat dictionary.</summary>
-	private static JsonObject BuildTree(IReadOnlyDictionary<string, string> values)
+	internal static JsonObject BuildTree(IReadOnlyDictionary<string, string> values)
 	{
 		JsonObject root = [];
 

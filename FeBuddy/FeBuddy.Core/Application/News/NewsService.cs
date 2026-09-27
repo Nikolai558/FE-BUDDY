@@ -17,7 +17,7 @@ namespace FeBuddy.Core.Application.News;
 /// </summary>
 /// <remarks>
 /// News.md is read from <see cref="GitHubRepository.Branch"/> of the public repository. The plain unauthenticated raw URL is the normal path; only on failure - and only
-/// if <see cref="GitHubAuth.EnvironmentVariableName"/> is set - it retries once via GitHub's
+/// if the user chose a GitHub token (<see cref="GitHubAuth"/>) - it retries once via GitHub's
 /// Contents API with that token attached (the same fallback-only behavior as
 /// <see cref="VersionCheck"/>). The authenticated retry uses the documented API endpoint rather
 /// than raw.githubusercontent.com, which doesn't reliably honor a token.
@@ -192,7 +192,7 @@ public static class NewsService
 				string? token = GitHubAuth.GetOptionalToken();
 				if (token is not null)
 				{
-					AppLog.Info(LogSource, $"Unauthenticated News fetch failed ({failureReason}); retrying with {GitHubAuth.EnvironmentVariableName}.");
+					AppLog.Info(LogSource, $"Unauthenticated News fetch failed ({failureReason}); retrying with {GitHubAuth.TokenDescription}.");
 					(text, failureReason) = await TryFetchAsync(client, ContentsApiUrl, token, cancellationToken).ConfigureAwait(false);
 				}
 			}

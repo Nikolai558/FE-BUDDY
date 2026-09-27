@@ -125,8 +125,8 @@ public sealed class VersionCheckTests : IDisposable
 	}
 
 	/// <summary>
-	/// An unauthenticated failure (e.g. the repo requires auth to be visible) retries once with
-	/// <see cref="GitHubAuth.EnvironmentVariableName"/> when it's set, and succeeds off that retry.
+	/// An unauthenticated failure (e.g. the repo requires auth to be visible) retries once with the
+	/// GitHub token the user chose (<see cref="GitHubAuth"/>), and succeeds off that retry.
 	/// </summary>
 	[Fact]
 	public async Task version_check_unauthenticated_fails_retries_with_token()
@@ -137,31 +137,24 @@ public sealed class VersionCheckTests : IDisposable
 		]
 		""";
 
-		Environment.SetEnvironmentVariable(GitHubAuth.EnvironmentVariableName, "test-token");
-		try
-		{
-			using HttpClient client = new(new StubHttpHandler(request =>
-				request.Headers.Authorization is not null
-					? new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(releasesJson) }
-					: new HttpResponseMessage(HttpStatusCode.NotFound)));
+		using IDisposable token = TestCredentials.UseGitHubToken("test-token");
+		using HttpClient client = new(new StubHttpHandler(request =>
+			request.Headers.Authorization is not null
+				? new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(releasesJson) }
+				: new HttpResponseMessage(HttpStatusCode.NotFound)));
 
-			VersionCheckResult result = await VersionCheck.RunAsync("3.0.0", ReleaseChannel.Stable, hasInternetConnection: true, client);
+		VersionCheckResult result = await VersionCheck.RunAsync("3.0.0", ReleaseChannel.Stable, hasInternetConnection: true, client);
 
-			Assert.True(result.CheckSucceeded);
-			Assert.True(result.UpdateAvailable);
-			Assert.Equal("3.1.0", result.LatestVersion);
-		}
-		finally
-		{
-			Environment.SetEnvironmentVariable(GitHubAuth.EnvironmentVariableName, null);
-		}
+		Assert.True(result.CheckSucceeded);
+		Assert.True(result.UpdateAvailable);
+		Assert.Equal("3.1.0", result.LatestVersion);
 	}
 
-	/// <summary>With no token set, an unauthenticated failure is reported as-is - no retry is attempted.</summary>
+	/// <summary>With no token chosen, an unauthenticated failure is reported as-is - no retry is attempted.</summary>
 	[Fact]
 	public async Task version_check_unauthenticated_fails_no_token_set_reports_failure_without_retrying()
 	{
-		Environment.SetEnvironmentVariable(GitHubAuth.EnvironmentVariableName, null);
+		TestCredentials.Reset();
 
 		int callCount = 0;
 		using HttpClient client = new(new StubHttpHandler(_ =>

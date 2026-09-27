@@ -15,6 +15,7 @@ using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Application.Launch;
 using FeBuddy.Core.Domain.Airac;
 using FeBuddy.Core.Domain.Airac.Models;
+using FeBuddy.Core.Infrastructure.Configuration;
 using FeBuddy.Core.Infrastructure.Dtpp.Models;
 using FeBuddy.Core.Infrastructure.Logging;
 using FeBuddy.Core.Infrastructure.Nasr.Models;
@@ -329,6 +330,10 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 			SelectedCycle = cycle,
 			OutputDirectory = OutputPreferences.Directory,
 			AddFeBuddyOutputFolder = OutputPreferences.AddFeBuddyOutputFolder,
+			// Settings ▸ Facility Profile: listed first in the duplicate alias report.
+			PrimaryFacility = UserConfigFile.GetValue(SettingsViewModel.ArtccKey)?.Trim() is { Length: > 0 } facility
+				? facility.ToUpperInvariant()
+				: null,
 			Airways = AirwaysTab?.BuildSettingsBlock(),
 			Airports = AirportsTab?.BuildSettingsBlock(),
 			Departures = DeparturesTab?.BuildSettingsBlock(),
@@ -510,6 +515,16 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 		if (result.Procedures is { } procedures)
 		{
 			files.AddRange(procedures.FilesWritten);
+
+			if (procedures.AliasFilePath is { } chartRecallAlias)
+			{
+				files.Add(chartRecallAlias);
+			}
+		}
+
+		if (result.DuplicateAliasReport is { } duplicateAliasReport)
+		{
+			files.Add(duplicateAliasReport.FilePath);
 		}
 
 		return [.. files];
@@ -568,10 +583,23 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 
 		if (result.Procedures is { } procedures)
 		{
-			parts.Add($"{procedures.AirportCount:N0} airport(s) with procedure changes"
-				+ (procedures.NewCount + procedures.ChangedCount + procedures.DeletedCount > 0
-					? $", {procedures.NewCount + procedures.ChangedCount + procedures.DeletedCount} change(s)"
-					: string.Empty));
+			if (procedures.FilesWritten.Count > 0)
+			{
+				parts.Add($"{procedures.AirportCount:N0} airport(s) with procedure changes"
+					+ (procedures.NewCount + procedures.ChangedCount + procedures.DeletedCount > 0
+						? $", {procedures.NewCount + procedures.ChangedCount + procedures.DeletedCount} change(s)"
+						: string.Empty));
+			}
+
+			if (procedures.AliasFilePath is not null)
+			{
+				parts.Add($"{procedures.AliasCommandCount:N0} FAA Chart Recall command(s)");
+			}
+		}
+
+		if (result.DuplicateAliasReport is { Duplicates.Count: > 0 } duplicateAliasReport)
+		{
+			parts.Add($"{duplicateAliasReport.Duplicates.Count:N0} duplicate alias command(s)");
 		}
 
 		return parts.Count == 0

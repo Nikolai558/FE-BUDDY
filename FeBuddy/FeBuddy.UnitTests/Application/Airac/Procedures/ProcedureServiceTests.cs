@@ -10,8 +10,9 @@ namespace FeBuddy.UnitTests.Application.Airac.Procedures;
 /// <summary>
 /// Runs the whole Procedures pipeline (<see cref="ProcedureService.Run"/>): the missing-metafile
 /// advisory (nothing written, no throw), the missing-previous-metafile info message, where the
-/// documents land, that only the chosen documents are written, the reported counts, and that
-/// settings and builder errors propagate.
+/// documents land, that only the chosen documents are written, the reported counts, that settings
+/// and builder errors propagate, and the FAA Chart Recall alias file: where it lands, that it covers
+/// every airport whatever the documents select, and when it is not written.
 /// </summary>
 public sealed class ProcedureServiceTests : IDisposable
 {
@@ -193,5 +194,93 @@ public sealed class ProcedureServiceTests : IDisposable
 		(_, DtppMetafileDataCollection dtpp) = TwoAirportScenario();
 
 		Assert.Throws<InvalidOperationException>(() => ProcedureService.Run(new NasrCsvDataCollection(), dtpp, null, Settings()));
+	}
+
+	// ---- the FAA Chart Recall alias file ----
+
+	[Fact]
+	public void the_alias_file_is_written_to_the_aliases_folder_by_default()
+	{
+		(NasrCsvDataCollection nasr, DtppMetafileDataCollection dtpp) = TwoAirportScenario();
+
+		ProcedureServiceResult result = ProcedureService.Run(nasr, dtpp, null, Settings());
+
+		string expectedPath = Path.Combine(_outputDirectory, "Aliases", "FAA_CHART_RECALL.txt");
+		Assert.Equal(expectedPath, result.AliasFilePath);
+		Assert.Equal([".aaaI1c", ".bbbR3c"], File.ReadAllLines(expectedPath).Select(line => line.Split(' ')[0]));
+		Assert.Equal(2, result.AliasCommandCount);
+		Assert.Equal(2, result.AliasAirportCount);
+		Assert.Contains(result.Messages, m => m.Text.StartsWith("FAA_CHART_RECALL.txt: 2 command(s) for 2 airport(s)", StringComparison.Ordinal));
+	}
+
+	[Fact]
+	public void the_alias_file_covers_every_airport_whatever_the_documents_select()
+	{
+		(NasrCsvDataCollection nasr, DtppMetafileDataCollection dtpp) = TwoAirportScenario();
+
+		// Only AAA is picked for the documents; the alias file still covers BBB.
+		ProcedureServiceResult result = ProcedureService.Run(nasr, dtpp, null, Settings(("Facilities", ""), ("Airports", "AAA")));
+
+		Assert.Equal(1, result.AirportCount);
+		Assert.Equal(2, result.AliasAirportCount);
+	}
+
+	[Fact]
+	public void an_alias_only_run_needs_no_selection_and_no_nasr_airport_data()
+	{
+		(_, DtppMetafileDataCollection dtpp) = TwoAirportScenario();
+
+		ProcedureServiceResult result = ProcedureService.Run(new NasrCsvDataCollection(), dtpp, null, Settings(
+			("Facilities", ""), ("GenerateChangesDocument", "N"), ("GenerateProceduresJson", "N")));
+
+		Assert.Empty(result.FilesWritten);
+		Assert.Equal(0, result.AirportCount);
+		Assert.NotNull(result.AliasFilePath);
+		Assert.False(Directory.Exists(Path.Combine(_outputDirectory, "Publication_Docs")));
+	}
+
+	[Fact]
+	public void an_alias_file_marked_for_vnas_goes_to_upload_to_vnas()
+	{
+		(NasrCsvDataCollection nasr, DtppMetafileDataCollection dtpp) = TwoAirportScenario();
+
+		ProcedureServiceResult result = ProcedureService.Run(nasr, dtpp, null, Settings(("UploadToVnas", "FAA_CHART_RECALL.txt")));
+
+		Assert.Equal(Path.Combine(_outputDirectory, "Upload_to_vNAS", "FAA_CHART_RECALL.txt"), result.AliasFilePath);
+	}
+
+	[Fact]
+	public void turning_the_alias_file_off_writes_no_alias_file()
+	{
+		(NasrCsvDataCollection nasr, DtppMetafileDataCollection dtpp) = TwoAirportScenario();
+
+		ProcedureServiceResult result = ProcedureService.Run(nasr, dtpp, null, Settings(("GenerateAliasFile", "N")));
+
+		Assert.Null(result.AliasFilePath);
+		Assert.Equal(0, result.AliasCommandCount);
+		Assert.Equal(0, result.AliasAirportCount);
+		Assert.False(Directory.Exists(Path.Combine(_outputDirectory, "Aliases")));
+	}
+
+	[Fact]
+	public void a_metafile_with_no_current_chart_writes_no_alias_file()
+	{
+		DtppMetafileDataCollection dtpp = ProcedureTestData.Dtpp("2609",
+			records: [ProcedureTestData.RecordRow("AAA", 10, "IAP", "VOR RWY 2", "DELETED_JOB.PDF", userAction: "D")]);
+
+		ProcedureServiceResult result = ProcedureService.Run(new NasrCsvDataCollection(), dtpp, null, Settings(
+			("GenerateChangesDocument", "N"), ("GenerateProceduresJson", "N")));
+
+		Assert.Null(result.AliasFilePath);
+		Assert.Equal(0, result.AliasAirportCount);
+	}
+
+	[Fact]
+	public void a_null_metafile_says_the_alias_file_was_not_written_either()
+	{
+		ProcedureServiceResult result = ProcedureService.Run(new NasrCsvDataCollection(), null, null, Settings());
+
+		Assert.Null(result.AliasFilePath);
+		Assert.Contains(result.Messages, m => m.IsAdvisory && m.Text.Contains("FAA Chart Recall alias file", StringComparison.Ordinal));
 	}
 }

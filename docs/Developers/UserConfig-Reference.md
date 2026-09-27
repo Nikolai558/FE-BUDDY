@@ -32,7 +32,7 @@ Written by **Settings** (except `NewsLastOpen`).
 |---|---|---|---|
 | `AiracCycleId` | a cycle ID, e.g. `2610` | current cycle | General tab. The ID (not "previous/current/next") is saved; on load it is matched back to one of the three, or falls back to current. |
 | `SelectedSubServices` | comma-separated keys: `Airports`, `Airways`, `Departures`, `Arrivals`, `Navaids`, `ArtccBoundaries`, `Fixes`, `WxStations`, `Procedures` | none | General tab. Keys are stable identifiers - never rename one without migrating this value. |
-| `UserArtccId` | an ARTCC ID, e.g. `ZOB` | none | Settings ▸ Facility. Read by Procedures as its `PrimaryFacility` - the facility whose section leads both documents. |
+| `UserArtccId` | an ARTCC ID, e.g. `ZOB` | none | Settings ▸ Facility. Read by Procedures as its `PrimaryFacility` - the facility whose section leads both documents - and by `AiracService` as the run's own `PrimaryFacility`, listed first in `Duplicate_Alias_Commands.txt`. |
 | `CoordinatePrecision` | `0`-`15` (the GUI offers 5, 6, 7) | `6` | Settings; sent by every tab that writes GeoJSON, AIRAC and File Conversions alike. |
 
 ### Services.AiracService.DefaultRoi
@@ -71,7 +71,7 @@ Written by `GeojsonSubServiceViewModel`, under the sub-service's node.
 
 | Key | Values | Default |
 |---|---|---|
-| `GenerateAliasFile` | `Y` / `N` - not saved for ARTCC Boundaries, Fixes, Wx Stations or Procedures, none of which has an alias file | `Y` |
+| `GenerateAliasFile` | `Y` / `N` - not saved for ARTCC Boundaries, Fixes or Wx Stations, none of which has an alias file | `Y` |
 | `EmitLines`, `EmitSymbols`, `EmitText` (Airports: `EmitRunwayLines`, `EmitAirportSymbols`, `EmitAirportText`; NAVAIDs, Fixes and Wx Stations: `EmitSymbols`, `EmitText` only - there is no `EmitLines`; ARTCC Boundaries: none of these - it always writes Lines only, with no choice; Procedures: none - it writes no GeoJSON) | `Y` / `N` | `Y` |
 | `IncludeFebCustomProperties` | `Y` / `N` | `N` |
 | `FebProperties` | comma-separated property names, e.g. `awyId,pointId` | none |
@@ -194,16 +194,19 @@ cycle at all - see [Settings blocks](Settings-Blocks.md#wx-stations).
 
 ### Procedures only
 
-Procedures writes no GeoJSON and no alias file (yet). Its tab is still a `GeojsonSubServiceViewModel`,
+Procedures writes no GeoJSON, but does write an alias file, `FAA_CHART_RECALL.txt` (see
+[Settings blocks](Settings-Blocks.md#procedures)). Its tab is still a `GeojsonSubServiceViewModel`,
 so it saves the ["keys every GeoJSON sub-service saves"](#keys-every-geojson-sub-service-saves) above
-except `GenerateAliasFile` and the `Emit…` keys; `Vnas.*` stays empty, it has no
-`CrcEramPropertyDefaults.*` rows, and `IncludeFebCustomProperties` stays `N`. The ROI override
-(`Roi.*`) is the region `IncludeRoiAirports` uses.
+except the `Emit…` keys, which no GeoJSON sub-service needs here; `Vnas.UploadFiles` can only ever
+hold `FAA_CHART_RECALL.txt`, it has no `CrcEramPropertyDefaults.*` rows (nothing it writes carries
+CRC-ERAM defaults), and `IncludeFebCustomProperties` stays `N`. The ROI override (`Roi.*`) is the
+region `IncludeRoiAirports` uses.
 
 | Key | Values | Default |
 |---|---|---|
 | `GenerateChangesDocument` | `Y` / `N` | `Y` |
 | `GenerateProceduresJson` | `Y` / `N` | `Y` |
+| `GenerateAliasFile` | `Y` / `N` - whether to write `FAA_CHART_RECALL.txt` | `Y` |
 | `Facilities` | comma-separated ARTCC IDs - the ticked boxes on the Facilities card | your Settings ▸ Facility Profile facility, until the tab is first saved |
 | `IncludeRoiAirports` | `Y` / `N` | `N` |
 | `Airports` | comma-separated FAA airport identifiers (an ICAO ID typed on the tab is saved as the FAA ID) | none |

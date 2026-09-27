@@ -58,18 +58,34 @@ public sealed class ProcedureSettingsParserTests
 			result.Settings.JsonFields);
 	}
 
-	// ---- GenerateChangesDocument / GenerateProceduresJson ----
+	// ---- GenerateChangesDocument / GenerateProceduresJson / GenerateAliasFile ----
 
 	[Fact]
-	public void turning_off_both_generate_flags_throws()
+	public void turning_off_all_three_generate_flags_throws()
+	{
+		Dictionary<string, string> settings = MinimalValidSettings();
+		settings["GenerateChangesDocument"] = "N";
+		settings["GenerateProceduresJson"] = "N";
+		settings["GenerateAliasFile"] = "N";
+
+		ArgumentException ex = Assert.Throws<ArgumentException>(() => ProcedureSettingsParser.Parse(settings));
+		Assert.Contains("GenerateChangesDocument", ex.Message);
+		Assert.Contains("GenerateProceduresJson", ex.Message);
+		Assert.Contains("GenerateAliasFile", ex.Message);
+	}
+
+	[Fact]
+	public void turning_off_both_documents_with_the_alias_file_on_parses_fine()
 	{
 		Dictionary<string, string> settings = MinimalValidSettings();
 		settings["GenerateChangesDocument"] = "N";
 		settings["GenerateProceduresJson"] = "N";
 
-		ArgumentException ex = Assert.Throws<ArgumentException>(() => ProcedureSettingsParser.Parse(settings));
-		Assert.Contains("GenerateChangesDocument", ex.Message);
-		Assert.Contains("GenerateProceduresJson", ex.Message);
+		ProcedureSettings parsed = ProcedureSettingsParser.Parse(settings).Settings;
+
+		Assert.False(parsed.GenerateChangesDocument);
+		Assert.False(parsed.GenerateProceduresJson);
+		Assert.True(parsed.GenerateAliasFile);
 	}
 
 	[Theory]
@@ -309,14 +325,24 @@ public sealed class ProcedureSettingsParserTests
 	}
 
 	[Fact]
-	public void generate_alias_file_is_an_unknown_key_warning()
+	public void generate_alias_file_is_a_known_key_that_defaults_to_true_with_no_warning()
+	{
+		ProcedureSettingsParseResult result = ProcedureSettingsParser.Parse(MinimalValidSettings());
+
+		Assert.True(result.Settings.GenerateAliasFile);
+		Assert.Empty(result.Messages);
+	}
+
+	[Fact]
+	public void generate_alias_file_n_is_honoured()
 	{
 		Dictionary<string, string> settings = MinimalValidSettings();
 		settings["GenerateAliasFile"] = "N";
 
 		ProcedureSettingsParseResult result = ProcedureSettingsParser.Parse(settings);
 
-		Assert.Contains(result.Messages.WarningTexts(), w => w.Contains("GenerateAliasFile"));
+		Assert.False(result.Settings.GenerateAliasFile);
+		Assert.Empty(result.Messages);
 	}
 
 	[Fact]
@@ -328,6 +354,93 @@ public sealed class ProcedureSettingsParserTests
 		ProcedureSettingsParseResult result = ProcedureSettingsParser.Parse(settings);
 
 		Assert.Contains(result.Messages.WarningTexts(), w => w.Contains("TotallyMadeUpKey"));
+	}
+
+	// ---- alias-only runs (no document generated) ----
+
+	[Fact]
+	public void alias_only_settings_with_no_inclusion_source_at_all_parses_fine()
+	{
+		// Neither document is generated, so none of Facilities/Airports/Procedures/
+		// AirportProcedures/IncludeRoiAirports is needed: the alias file covers every airport
+		// in the metafile regardless.
+		Dictionary<string, string> settings = new(StringComparer.OrdinalIgnoreCase)
+		{
+			["OutputDirectory"] = @"C:\Output",
+			["GenerateChangesDocument"] = "N",
+			["GenerateProceduresJson"] = "N",
+		};
+
+		ProcedureSettingsParseResult result = ProcedureSettingsParser.Parse(settings);
+
+		Assert.True(result.Settings.GenerateAliasFile);
+		Assert.Empty(result.Settings.Facilities);
+		Assert.Empty(result.Settings.Airports);
+		Assert.Empty(result.Settings.Procedures);
+		Assert.Empty(result.Settings.AirportProcedures);
+		Assert.False(result.Settings.IncludeRoiAirports);
+	}
+
+	[Fact]
+	public void alias_only_settings_with_include_roi_airports_and_no_region_of_interest_parses_fine()
+	{
+		// The "IncludeRoiAirports without ROI" guard only applies when a document is generated.
+		Dictionary<string, string> settings = new(StringComparer.OrdinalIgnoreCase)
+		{
+			["OutputDirectory"] = @"C:\Output",
+			["GenerateChangesDocument"] = "N",
+			["GenerateProceduresJson"] = "N",
+			["IncludeRoiAirports"] = "Y",
+		};
+
+		ProcedureSettings parsed = ProcedureSettingsParser.Parse(settings).Settings;
+
+		Assert.True(parsed.IncludeRoiAirports);
+		Assert.Null(parsed.Roi);
+	}
+
+	// ---- UploadToVnas / CrcDefaultsFor ----
+
+	[Fact]
+	public void upload_to_vnas_may_name_the_alias_file()
+	{
+		Dictionary<string, string> settings = MinimalValidSettings();
+		settings["UploadToVnas"] = "FAA_CHART_RECALL.txt";
+
+		ProcedureSettings parsed = ProcedureSettingsParser.Parse(settings).Settings;
+
+		Assert.True(parsed.Vnas.IsUploaded(ProcedureOutputFiles.Alias));
+	}
+
+	[Fact]
+	public void upload_to_vnas_naming_any_other_file_throws()
+	{
+		Dictionary<string, string> settings = MinimalValidSettings();
+		settings["UploadToVnas"] = "Procedures.json";
+
+		ArgumentException ex = Assert.Throws<ArgumentException>(() => ProcedureSettingsParser.Parse(settings));
+		Assert.Contains("Procedures.json", ex.Message);
+	}
+
+	[Fact]
+	public void crc_defaults_for_naming_the_alias_file_throws()
+	{
+		Dictionary<string, string> settings = MinimalValidSettings();
+		settings["UploadToVnas"] = "FAA_CHART_RECALL.txt";
+		settings["CrcDefaultsFor"] = "FAA_CHART_RECALL.txt";
+
+		ArgumentException ex = Assert.Throws<ArgumentException>(() => ProcedureSettingsParser.Parse(settings));
+		Assert.Contains("FAA_CHART_RECALL.txt", ex.Message);
+	}
+
+	[Fact]
+	public void generate_alias_file_and_vnas_default_to_on_and_nothing_uploaded()
+	{
+		ProcedureSettings parsed = ProcedureSettingsParser.Parse(MinimalValidSettings()).Settings;
+
+		Assert.True(parsed.GenerateAliasFile);
+		Assert.Empty(parsed.Vnas.UploadFiles);
+		Assert.False(parsed.Vnas.IsUploaded(ProcedureOutputFiles.Alias));
 	}
 
 	// ---- ROI reuse ----

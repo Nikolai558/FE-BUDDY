@@ -24,6 +24,12 @@ public sealed record AiracServiceResult : ServiceResult
 	public required string OutputDirectory { get; init; }
 
 	/// <summary>
+	/// The duplicate alias report (<c>Duplicate_Alias_Commands.txt</c>) this run wrote, or
+	/// <see langword="null"/> when the run wrote no alias file, so there was nothing to check.
+	/// </summary>
+	public DuplicateAliasReportResult? DuplicateAliasReport { get; init; }
+
+	/// <summary>
 	/// The Airways sub-service result, or <see langword="null"/> when Airways was not part of
 	/// this run.
 	/// </summary>

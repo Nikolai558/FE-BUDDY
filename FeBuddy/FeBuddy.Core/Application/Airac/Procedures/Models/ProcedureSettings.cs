@@ -1,3 +1,4 @@
+using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Domain.Geo.Models;
 
 namespace FeBuddy.Core.Application.Airac.Procedures.Models;
@@ -9,9 +10,17 @@ namespace FeBuddy.Core.Application.Airac.Procedures.Models;
 /// never the raw dictionary.
 /// </summary>
 /// <remarks>
-/// Unlike every other AIRAC sub-service, there is no GeoJSON, no alias file, and no <c>feb.*</c>
-/// properties: the two outputs are <c>Procedure_Changes.md</c> and <c>Procedures.json</c>, written
-/// to <see cref="AiracOutputPaths.PublicationDocsFolder"/>.
+/// <para>
+/// Unlike every other AIRAC sub-service, there is no GeoJSON and no <c>feb.*</c> properties. The
+/// outputs are two documents, <c>Procedure_Changes.md</c> and <c>Procedures.json</c>, written to
+/// <see cref="AiracOutputPaths.PublicationDocsFolder"/>, and the FAA Chart Recall alias file,
+/// <c>FAA_CHART_RECALL.txt</c>, written where every alias file goes.
+/// </para>
+/// <para>
+/// The selection settings - facilities, airports, procedures, chart types - pick what the two
+/// documents cover. The alias file ignores them: it covers every chart at every airport in the
+/// metafile.
+/// </para>
 /// </remarks>
 public sealed record ProcedureSettings
 {
@@ -26,6 +35,19 @@ public sealed record ProcedureSettings
 
 	/// <summary>Whether to write <c>Procedures.json</c>. Default <see langword="true"/>.</summary>
 	public bool GenerateProceduresJson { get; init; } = true;
+
+	/// <summary>
+	/// Whether to write the FAA Chart Recall alias file, <c>FAA_CHART_RECALL.txt</c>. Default
+	/// <see langword="true"/>.
+	/// </summary>
+	public bool GenerateAliasFile { get; init; } = true;
+
+	/// <summary>
+	/// Whether the alias file goes to vNAS (<c>Upload_to_vNAS</c>) rather than the <c>Aliases</c>
+	/// folder. Its only possible file key is <c>FAA_CHART_RECALL.txt</c>; nothing Procedures writes
+	/// carries CRC-ERAM defaults.
+	/// </summary>
+	public VnasFileChoices Vnas { get; init; } = VnasFileChoices.None;
 
 	/// <summary>
 	/// Every included airport's every procedure is included whenever its

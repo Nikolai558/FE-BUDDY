@@ -82,11 +82,11 @@ public sealed class AirwayAliasWriterTests : IDisposable
 	}
 
 	[Fact]
-	public void the_alias_file_is_airways_txt_in_the_output_folder_itself()
+	public void the_alias_file_is_airways_txt_in_the_aliases_folder()
 	{
 		AirwayAliasGenerateResult result = AirwayAliasWriter.Generate(BuildTwoAirways(), Settings());
 
-		Assert.Equal(Path.Combine(_outputDirectory, "Airways.txt"), result.FilePath);
+		Assert.Equal(Path.Combine(_outputDirectory, "Aliases", "Airways.txt"), result.FilePath);
 	}
 
 	[Fact]

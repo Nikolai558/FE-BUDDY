@@ -71,7 +71,7 @@ public sealed class ArrivalServiceTests : IDisposable
 		Assert.Equal(pointCount, result.GeojsonFeatureCountsByFile[text]);
 
 		Assert.Equal(1, result.AliasCommandCount);
-		Assert.Equal(Path.Combine(_outputDirectory, "Arrivals.txt"), result.AliasFilePath);
+		Assert.Equal(Path.Combine(_outputDirectory, "Aliases", "Arrivals.txt"), result.AliasFilePath);
 		Assert.StartsWith(".lasBLAIDf .FF BCE ", File.ReadAllText(result.AliasFilePath!));
 	}
 

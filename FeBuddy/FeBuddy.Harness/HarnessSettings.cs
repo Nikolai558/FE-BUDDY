@@ -479,9 +479,13 @@ internal static class HarnessSettings
 		{
 			{ "OutputDirectory", OutputDirectory },
 
-			// Both documents; turning both off is rejected by the parser.
+			// Both documents and the FAA Chart Recall alias file; turning all three off is rejected by
+			// the parser. The alias file covers every airport in the metafile, whatever the inclusion
+			// keys below say.
 			{ "GenerateChangesDocument", "Y" },
 			{ "GenerateProceduresJson", "Y" },
+			{ "GenerateAliasFile", "Y" },
+			{ "UploadToVnas", "" },          // "FAA_CHART_RECALL.txt" writes it to Upload_to_vNAS instead of Aliases
 
 			// Additive inclusion: every ZOB airport (by RESP_ARTCC_ID), plus GRR and CID from
 			// elsewhere - exercises both the whole-facility path and the explicit-airport path in

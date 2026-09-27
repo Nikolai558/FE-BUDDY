@@ -40,6 +40,16 @@ public sealed class AiracOutputPathsTests
 	}
 
 	[Theory]
+	[InlineData(false, new[] { "Aliases" })]
+	[InlineData(true, new[] { "Upload_to_vNAS" })]
+	public void an_alias_file_goes_in_aliases_or_upload_to_vnas(bool uploadToVnas, string[] folders)
+	{
+		Assert.Equal(
+			Path.Combine([Output, .. folders]),
+			AiracOutputPaths.AliasDirectory(Output, uploadToVnas));
+	}
+
+	[Theory]
 	[InlineData(CrcFeatureKind.Line, "Lines")]
 	[InlineData(CrcFeatureKind.Symbol, "Symbols")]
 	[InlineData(CrcFeatureKind.Text, "Text")]

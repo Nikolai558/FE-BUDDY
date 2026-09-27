@@ -71,9 +71,11 @@ is saved".
 
 ### The cards every sub-service tab shares
 
-Procedures does not use the Outputs, What Files, FE-Buddy Properties, Upload to vNAS or CRC ERAM
-Defaults cards below at all - it writes no GeoJSON and no alias file (yet). It does share the Region
-of Interest card, though the box means something different there; see its own tab, further down.
+Procedures does not use the What Files, FE-Buddy Properties or CRC ERAM Defaults cards below at all
+- it writes no GeoJSON. Its own Outputs card covers its two documents and its alias file instead of
+the generic one described here, and its own Upload to vNAS card offers the alias file only. It does
+share the Region of Interest card, though the box means something different there; see its own tab,
+further down.
 
 **Outputs** - what the sub-service writes: **GeoJSON files** and/or the **alias file**. At least
 one must stay on; to make nothing for a sub-service, untick it on the General tab instead. ARTCC
@@ -347,14 +349,18 @@ cycle. The FAA posts a cycle's copy only 15-18 days before its effective date, s
 is often not there yet; that never blocks a run; it just means Procedures has nothing to build from
 until it is.
 
-- **Documents:** **Procedure Changes document** (`Procedure_Changes.md`) and/or
-  **Procedures.json**, written into the cycle's `Publication_Docs` folder - there is no GeoJSON, no
-  alias file yet, and nothing to mark for vNAS. At least one document must stay on.
+- **Outputs:** **Procedure Changes document** (`Procedure_Changes.md`) and/or **Procedures.json**,
+  written into the cycle's `Publication_Docs` folder, and/or the **alias file**
+  (`FAA_CHART_RECALL.txt`, see [FAA Chart Recall commands](#faa-chart-recall-commands) below) -
+  there is no GeoJSON. At least one of the three must stay on. The Facilities, Airports, Procedures
+  at Any Airport, Airport + Procedure and Chart Types cards below (and the Region of Interest card,
+  used as below) only pick what the two documents cover and grey out while neither is on - the
+  alias file always covers every current chart at every airport in the metafile, whatever they say.
 - **d-TPP Data** - where the data comes from, and the selected cycle's status: how many airports and
   procedures its d-TPP Metafile has and when it was downloaded, or **Not published yet**. It also
   says whether a deleted procedure can be linked to its last chart, which needs the previous cycle's
   metafile too. Unlike the Wx Stations tab's Station Data card, this never blocks the run - a cycle
-  with no metafile yet still runs, it just writes no Procedures documents this time, and the Review
+  with no metafile yet still runs, it just writes no Procedures output this time, and the Review
   tab carries an advisory saying why.
 - **Facilities** - tick the ARTCCs to include every one of their airports' procedures (of the chart
   types below) - the same idea as the ARTCC filter on Departures and Arrivals. Your Settings ▸
@@ -382,6 +388,8 @@ until it is.
   own box with **Override the default ROI for Procedures**. Unlike everywhere else it appears, it
   never clips a file - Procedures writes no GeoJSON - it only decides which airports **Also include
   every airport inside the region of interest** (above) adds.
+- **Upload to vNAS** - the alias file only, shown once **Alias file** is ticked on the Outputs card
+  above.
 
 **`Procedure_Changes.md`** lists every included airport with a procedure that changed this cycle,
 grouped into one section per facility (see Facilities above for the section order). A section with
@@ -427,6 +435,68 @@ comparative document. This is common with Military facilities.
 belongs in the changes document instead), airports in the same order as the changes document. A
 STAR shared by several included airports is repeated under every one of them, since this is
 per-airport data, not a change report.
+
+#### FAA Chart Recall commands
+
+**`FAA_CHART_RECALL.txt`** is one `.OPENURL` command per page of every current chart at every
+airport in the FAA's d-TPP Metafile - not just the airports and chart types picked above, which only
+limit the two documents. For example:
+
+```
+.dtwI22Lc .OPENURL https://aeronav.faa.gov/d-tpp/2609/00058IL22L.PDF  ; DETROIT METRO WAYNE COUNTY-ILS OR LOC RWY 22L
+```
+
+A command is a period, the airport's FAA identifier in lower case, the chart's own code (below),
+then a lower-case `c`; a chart's second and later pages add the page number after the `c`
+(`.dtwHHOWEc`, then `.dtwHHOWEc2`). A chart the FAA deleted this cycle gets no command, and a chart
+type or approach type FE-Buddy does not yet recognize gets none either, with a warning on the
+Review tab naming it - please report it, so it can be taught to FE-Buddy.
+
+**Approach charts (IAP)** - the approach type's own code, then `BC` for a back course, then any
+variant letter, then the runway exactly as the FAA prints it:
+
+| Type | Code | Type | Code |
+|---|---|---|---|
+| RNAV (any bracket, e.g. RNAV (GPS)) | R | LDA | D |
+| ILS | I | LDA/DME | DD |
+| LOC | L | GPS (not RNAV (GPS)) | G |
+| LOC/DME | LD | TACAN | T |
+| VOR | O | NDB | N |
+| VOR/DME | OD | NDB/DME | ND |
+
+For example, `ILS OR LOC RWY 22L` is `.dtwI22Lc` and `.dtwL22Lc` - one command per "OR" part.
+`ILS Y OR LOC Y RWY 22L` is `.dtwIY22Lc` and `.dtwLY22Lc`; a variant the FAA prints on only one part
+of an "OR" chart still applies to every part of it. `RWY 30L/R` gets one command per runway. A
+circling approach keeps its letter (`VOR-A` is code `OA`). A charted visual approach is a lower-case
+`v`, its name with spaces and punctuation removed, then its runway: `RIVER VISUAL RWY 19` is
+`.aaavRIVER19c`.
+
+No command at all for: a name starting `HI-` or `COPTER` (the whole chart), one holding the word
+`PRM`, a bracket holding `CAT` (a Category II/III or special-authorization approach),
+`CONVERGING`, an attention-all-users page (a name ending `AAUP`, or an RNAV DP AAUP), or a numbered
+approach such as `VOR-1`. A GLS approach, or the GLS or LOC/NDB part of an "OR" chart, gets no
+command either, though the chart's other parts still do.
+
+**Other chart types:**
+
+| Chart | Command |
+|---|---|
+| Airport diagram | `APD` |
+| Takeoff minimums, diverse vector area, radar minimums | `TM`, `DVA`, `RM` - each opens straight to the airport's own page of the shared, multi-airport PDF |
+| Alternate minimums | no command |
+| Hot spots | `HS` |
+| LAHSO | `LAHSO` |
+
+**Departures, obstacle departures and STARs** use the chart's own FAA computer code when it has
+one: a departure's command is the code's first half, a STAR's the second half, less the version
+number the chart's name spells out - `JALEX3.JALEX` is `JALEX`, `BRODE.GRUUB1` is `GRUUB`. With no
+usable computer code, the chart's name is spelled out instead, with the version, every bracketed
+word, and the words `RNAV`, `OBSTACLE` and `COPTER` dropped - `KNIK THREE` is `KNIK`. When that name
+is the airport's own name, the airport's identifier is used instead of it -
+`TATALINA FOUR (OBSTACLE) (RNAV)` at TATALINA LRRS is `.tljTLJc` - unless two charts at the airport
+would then share it, or another chart's code there is already the identifier.
+
+The Review tab names how many commands `FAA_CHART_RECALL.txt` holds and for how many airports.
 
 ### Preview Settings tab
 
@@ -556,14 +626,20 @@ over. Line segments that meet are joined back into lines, including ones written
 Every run of a cycle writes into one folder, `AIRAC_<cycle>` (for example `AIRAC_2610`), in your
 output folder (Settings ▸ Default Output Directory) - inside a `FE-Buddy_Output` folder if that
 option is on. Every sub-service shares it: all the GeoJSON goes in its `Geojson` folder, the alias
-files sit in the folder itself, and Procedures' two documents go in its `Publication_Docs` folder.
-The files you marked for vNAS go in `Upload_to_vNAS` instead, laid out the same way:
+files that are not marked for vNAS go in its `Aliases` folder, and Procedures' two documents go in
+its `Publication_Docs` folder. The files you marked for vNAS go in `Upload_to_vNAS` instead of
+`Aliases` or `Geojson`, laid out the same way. If the run wrote at least one alias file, it also
+writes `Duplicate_Alias_Commands.txt` straight in the cycle folder - see
+[Why does the same alias command show up in both Departures.txt and Arrivals.txt?](FAQ-and-Troubleshooting.md#why-does-the-same-alias-command-show-up-in-both-departurestxt-and-arrivalstxt)
+for an example of what it catches:
 
 ```
 <output folder>\
 └── FE-Buddy_Output\                  (only with "Add a FE-Buddy_Output folder")
     ├── AIRAC_2610\
-    │   ├── Airports.txt, Airways.txt, Departures.txt, Arrivals.txt, NAVAIDs.txt
+    │   ├── Duplicate_Alias_Commands.txt  (only when the run wrote at least one alias file)
+    │   ├── Aliases\
+    │   │   └── Airports.txt, Airways.txt, Departures.txt, Arrivals.txt, NAVAIDs.txt, FAA_CHART_RECALL.txt
     │   ├── Geojson\
     │   │   ├── Runways_Lines, Airports_Symbols, Airports_Text (.geojson)
     │   │   ├── Airways_<group>_Lines / _Symbols / _Text (.geojson)
@@ -575,7 +651,7 @@ The files you marked for vNAS go in `Upload_to_vNAS` instead, laid out the same 
     │   ├── Publication_Docs\
     │   │   └── Procedure_Changes.md, Procedures.json
     │   └── Upload_to_vNAS\           (only the files marked for vNAS)
-    │       ├── the alias files marked for vNAS
+    │       ├── the alias files marked for vNAS, directly inside (not in an Aliases folder)
     │       └── Geojson\              the GeoJSON files marked for vNAS, laid out as above
     ├── DAT to GeoJSON\               <.dat file name>.geojson, one per converted map
     ├── SCT2 to GeoJSON\
@@ -584,6 +660,7 @@ The files you marked for vNAS go in `Upload_to_vNAS` instead, laid out the same 
         └── <Geomaps file name>\<GeomapId>\   <type>_<group>.geojson, or FILTER nn\ folders
 ```
 
+A file marked for vNAS goes to `Upload_to_vNAS` instead of, not as well as, `Aliases` or `Geojson`.
 The File Conversions do not use the cycle folder: each conversion writes into its own folder, next
 to the `AIRAC_<cycle>` folders, and replaces any file of the same name.
 
@@ -594,6 +671,12 @@ identifier at one airport never overwrite each other.
 A folder is created only when something is written to it. A file that would be empty (nothing
 matched) is not written. A run of a cycle that has been run before asks first whether to
 overwrite the old files or delete them (see [Preview Settings tab](#preview-settings-tab)).
+
+**`Duplicate_Alias_Commands.txt`** lists every alias command used by more than one line across all
+the alias files the run wrote - CRC can only run one of them - grouped by the ARTCC responsible for
+each line's airport: your own facility (Settings ▸ Facility Profile) first, other ARTCCs
+alphabetically, then `OTHER` for a command (an airway or a NAVAID) that names no airport. It says so
+when there are no duplicates, and the Review tab carries an advisory warning when there are.
 
 ## Map
 
@@ -620,7 +703,8 @@ all three clear.
     use it to go back to stable from a pre-release).
 - **Facility Profile**
   - **Facility** - your ARTCC, picked from the current cycle's data. Procedures uses it as the
-    facility whose section leads both of its documents.
+    facility whose section leads both of its documents, and every AIRAC Service run lists it first
+    in `Duplicate_Alias_Commands.txt`.
   - **Default Output Directory** (your Desktop until you choose one) and **Add a FE-Buddy_Output
     folder inside that directory** (on by default). The line under them shows the folder a run of
     the current cycle would write to.

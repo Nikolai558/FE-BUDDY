@@ -190,25 +190,33 @@ bar and page scroller are shared, and each screen's view-model says what differs
     file; like ARTCC Boundaries and Fixes it has no alias file at all. Unlike Fixes,
     its CRC ERAM Defaults have a single fixed class (`Wx`), never rows added from
     the cycle's own data - there is no File Layout choice to split it by.
-  - **The Procedures tab** writes no GeoJSON and no alias file (yet), but still builds on
-    `GeojsonSubServiceViewModel` for its region-of-interest card and shared plumbing, with every
-    `EmitKeys` entry null, `HasAliasFile` false and no vNAS or CRC ERAM cards in its view. Its own
-    cards: **Documents** (which of `Procedure_Changes.md` and `Procedures.json` to
-    write - at least one), **d-TPP Data** (where the data comes from, the selected cycle's d-TPP
-    Metafile status - airports, procedures, downloaded date, or "not published yet" - and whether a
-    deleted procedure can be linked to the previous cycle; unlike the Wx Stations tab's Station Data
-    card, this never blocks the run), **Facilities** (a tick per ARTCC, the same pattern as
-    Departures/Arrivals/ARTCC Boundaries, but for whole-airport inclusion rather than a narrowing
-    filter), **Airports** (list by FAA/ICAO ID, plus "Also include every airport inside the region
-    of interest"), **Procedures at Any Airport** (a procedure name, included wherever it is
-    charted), **Airport + Procedure** (add/edit/delete pairs), **Chart Types** (which d-TPP
-    `chart_code` values a whole included airport contributes - every kind but the volume-wide
-    minimums, hot spot and LAHSO sheets is on by default), **Procedures.json Fields** (shown only
-    while Procedures.json is on), and **Region of Interest** (the same override-or-default box as
-    every other sub-service, but used here as an inclusion source rather than a clip - Procedures
-    writes no GeoJSON to clip). It is the ninth sub-service in the catalogue, and, like ARTCC
-    Boundaries, Fixes and Wx Stations, has no alias file - here because there is not one yet, not
-    because there can never be one.
+  - **The Procedures tab** writes no GeoJSON at all, but does have an alias file, so it still builds
+    on `GeojsonSubServiceViewModel` for the alias-file plumbing and its region-of-interest card:
+    every `EmitKeys` entry is null (there is nothing to emit) but `HasAliasFile` is `true`, and the
+    view has no GeoJSON Files, FE-Buddy Properties or CRC ERAM Defaults cards - nothing it writes
+    carries CRC-ERAM defaults. Its own cards: **Outputs** (which of `Procedure_Changes.md`,
+    `Procedures.json` and the alias file, `FAA_CHART_RECALL.txt`, to write - at least one; the
+    facility/airport/procedure/chart-type choices below never limit the alias file, only the
+    documents), **d-TPP Data** (where
+    the data comes from, the selected cycle's d-TPP Metafile status - airports, procedures,
+    downloaded date, or "not published yet" - and whether a deleted procedure can be linked to the
+    previous cycle; unlike the Wx Stations tab's Station Data card, this never blocks the run),
+    **Facilities** (a tick per ARTCC, the same pattern as Departures/Arrivals/ARTCC Boundaries, but
+    for whole-airport inclusion rather than a narrowing filter), **Airports** (list by FAA/ICAO ID,
+    plus "Also include every airport inside the region of interest"), **Procedures at Any Airport**
+    (a procedure name, included wherever it is charted), **Airport + Procedure** (add/edit/delete
+    pairs), **Chart Types** (which d-TPP `chart_code` values a whole included airport contributes -
+    every kind but the volume-wide minimums, hot spot and LAHSO sheets is on by default),
+    **Procedures.json Fields** (shown only while Procedures.json is on), and **Region of Interest**
+    (the same override-or-default box as every other sub-service, but used here as an inclusion
+    source rather than a clip - Procedures writes no GeoJSON to clip). The Facilities, Airports,
+    Procedures at Any Airport, Airport + Procedure, Chart Types and Region of Interest cards all
+    grey out while neither document is on (`GeneratesDocument`), since the alias file needs no
+    selection at all; its own **Upload to vNAS** card (the alias file only) shows only while the
+    alias file is on. It is the ninth sub-service in the catalogue. Its Review tab result names the
+    alias file's own command and airport counts
+    (`ProcedureServiceResult.AliasCommandCount`/`AliasAirportCount`), alongside the documents'
+    airport/new/changed/deleted counts.
   - **Preview Settings tab** - present once at least one sub-service is selected:
     every tab's settings as label/value rows (the General section names the run's
     `AIRAC_<cycle>` folder), notices naming any unsaved or invalid tab, and the single

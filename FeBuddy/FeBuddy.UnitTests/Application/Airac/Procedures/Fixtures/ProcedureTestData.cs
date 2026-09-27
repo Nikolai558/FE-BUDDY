@@ -99,7 +99,7 @@ internal static class ProcedureTestData
 			Alnum = alnum,
 		};
 
-	/// <summary>Builds one <c>record</c> row (a chart page).</summary>
+	/// <summary>Builds one <c>record</c> row (a chart page); <paramref name="airportName"/> is the airport it is listed under.</summary>
 	public static DtppMetafileXmlDataModel.Record RecordRow(
 		string aptIdent,
 		int chartSeq,
@@ -111,7 +111,8 @@ internal static class ProcedureTestData
 		string? civil = null,
 		string? amdtNum = null,
 		string? amdtDate = null,
-		string? faanfd18 = null) =>
+		string? faanfd18 = null,
+		string airportName = "") =>
 		new()
 		{
 			AptIdent = aptIdent,
@@ -129,7 +130,7 @@ internal static class ProcedureTestData
 			StateCode = string.Empty,
 			StateFullName = string.Empty,
 			Volume = string.Empty,
-			AirportName = string.Empty,
+			AirportName = airportName,
 			Military = "N",
 			CnFlg = "N",
 			TwoColored = "N",

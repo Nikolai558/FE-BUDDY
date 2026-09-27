@@ -4,8 +4,8 @@ namespace FeBuddy.UnitTests.Domain.Procedures;
 
 /// <summary>
 /// Covers <see cref="ProcedureNaming"/>: stripping the <c>, CONT.n</c> continuation marker (with
-/// its spacing and case variants), collapsing internal whitespace, and detecting a continuation
-/// page.
+/// its spacing and case variants), collapsing internal whitespace, detecting a continuation page,
+/// and numbering a chart's pages.
 /// </summary>
 public sealed class ProcedureNamingTests
 {
@@ -47,4 +47,17 @@ public sealed class ProcedureNamingTests
 	[Fact]
 	public void is_continuation_rejects_a_null_argument() =>
 		Assert.Throws<ArgumentNullException>(() => ProcedureNaming.IsContinuation(null!));
+
+	[Theory]
+	[InlineData("ILS OR LOC RWY 28C", 1)]
+	[InlineData("GRUUB ONE (RNAV), CONT.1", 2)]
+	[InlineData("GRUUB ONE (RNAV), cont.2", 3)]
+	[InlineData("GRUUB ONE (RNAV),CONT.10", 11)]
+	[InlineData("", 1)]
+	public void page_number_is_one_for_the_first_page_and_n_plus_one_for_cont_n(string chartName, int expected) =>
+		Assert.Equal(expected, ProcedureNaming.PageNumber(chartName));
+
+	[Fact]
+	public void page_number_rejects_a_null_argument() =>
+		Assert.Throws<ArgumentNullException>(() => ProcedureNaming.PageNumber(null!));
 }

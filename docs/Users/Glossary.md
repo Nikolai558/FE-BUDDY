@@ -10,7 +10,8 @@ on its *effective date*.
 
 **Alias file** - A text file of dot-commands for CRC. A controller types a short command
 (`.J3F`) and CRC expands it into something longer (the list of fixes on airway J3). FE-Buddy
-writes `Airports.txt`, `Airways.txt`, `Departures.txt`, `Arrivals.txt` and `NAVAIDs.txt`.
+writes `Airports.txt`, `Airways.txt`, `Departures.txt`, `Arrivals.txt`, `NAVAIDs.txt` and
+Procedures' `FAA_CHART_RECALL.txt` (see **FAA Chart Recall**).
 
 **Antimeridian** - The line of ±180° longitude, on the far side of the world from Greenwich. A
 line crossing it has to be split in two or it draws the long way round, across the whole map.
@@ -37,14 +38,24 @@ marked for vNAS.
 **d-TPP Metafile** - The FAA's index of every chart in the Digital Terminal Procedures Publication
 (d-TPP) - approach plates, SIDs, STARs, airport diagrams and the rest - published once per AIRAC
 cycle, but only 15-18 days before the cycle's effective date, so the next cycle's copy is often
-missing. Procedures builds both its documents from it, joined to NASR for each airport's ARTCC,
-coordinates and airspace class.
+missing. Procedures builds its documents and its alias file from it, joined to NASR for each
+airport's ARTCC, coordinates and airspace class.
 
 **Designation** - The letters at the front of an airway ID: `J` in J3, `V` in V23, `Q` in Q100.
 Roughly, J and Q are high altitude, V and T are low - but FE-Buddy classifies by the published
 altitudes, not the letter.
 
+**Duplicate alias report** - `Duplicate_Alias_Commands.txt`, written after every AIRAC Service run
+that writes at least one alias file: every alias command used by more than one line across all of
+that run's alias files, since CRC can only run one of them. Grouped by ARTCC, your own facility
+first.
+
 **Effective date** - The day a cycle takes over from the one before.
+
+**FAA Chart Recall** - `FAA_CHART_RECALL.txt`, one of Procedures' outputs: a command that opens
+each page of every current chart at every airport in the d-TPP Metafile, e.g. `.dtwI22Lc` for
+DTW's ILS OR LOC RWY 22L. Covers every airport regardless of the Procedures tab's other settings.
+See the [user guide](User-Guide.md#faa-chart-recall-commands) for how the commands are built.
 
 **FE-Buddy properties (`feb.*`)** - Extra fields FE-Buddy can add to each GeoJSON feature, such
 as the airway ID or the airport name. Useful for checking a file; CRC ignores them.
@@ -82,8 +93,9 @@ run of a cycle writes into its own `AIRAC_<cycle>` folder there.
 
 **Procedures** - The sub-service that writes two documents from the FAA's d-TPP Metafile instead of
 GeoJSON: `Procedure_Changes.md` (what changed this cycle, with links to the FAA's charts) and
-`Procedures.json` (every included airport's current charts). Like Wx Stations, its data is not the
-NASR cycle.
+`Procedures.json` (every included airport's current charts) - plus the FAA Chart Recall alias file,
+which covers every airport in the metafile regardless of what the documents are limited to. Like Wx
+Stations, its data is not the NASR cycle.
 
 **Region of Interest (ROI)** - A box on the map, set by its south-west and north-east corners.
 FE-Buddy only writes data inside (or crossing) it. Make it a little bigger than your ARTCC.

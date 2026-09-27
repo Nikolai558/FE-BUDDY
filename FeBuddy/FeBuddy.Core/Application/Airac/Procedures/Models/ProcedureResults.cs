@@ -27,6 +27,10 @@ public sealed record ProceduresJsonWriteResult(string? FilePath, IReadOnlyList<S
 /// The result of running the top-level Procedures sub-service (<c>ProcedureService.Run</c>): what
 /// was built and written, plus timing and every message collected along the way.
 /// </summary>
+/// <remarks>
+/// The counts from <see cref="AirportCount"/> to <see cref="ReAddedCount"/> describe the two
+/// documents' selection; the alias file covers every airport in the metafile and has its own counts.
+/// </remarks>
 public sealed record ProcedureServiceResult : ServiceResult
 {
 	/// <summary>How many airports were included (had at least one included procedure) after selection.</summary>
@@ -49,4 +53,16 @@ public sealed record ProcedureServiceResult : ServiceResult
 
 	/// <summary>Full paths of every document written (<c>Procedure_Changes.md</c>, <c>Procedures.json</c>).</summary>
 	public required IReadOnlyList<string> FilesWritten { get; init; }
+
+	/// <summary>
+	/// Full path of <c>FAA_CHART_RECALL.txt</c>, or <see langword="null"/> when it was not written (not
+	/// requested, no metafile, or no command to write).
+	/// </summary>
+	public string? AliasFilePath { get; init; }
+
+	/// <summary>How many commands <c>FAA_CHART_RECALL.txt</c> holds; 0 when it was not written.</summary>
+	public int AliasCommandCount { get; init; }
+
+	/// <summary>How many airports have at least one command in <c>FAA_CHART_RECALL.txt</c>; 0 when it was not written.</summary>
+	public int AliasAirportCount { get; init; }
 }

@@ -61,6 +61,10 @@ FeBuddy.Core/
 │   │                 ProcedureNaming (the base chart name / continuation-page rule); models:
 │   │                 Procedure, ProcedureAirport, ProcedureChange, ProcedurePage,
 │   │                 ProcedureAirspaceClass
+│   │   └── ChartRecall/  The FAA Chart Recall alias command rules: ChartRecallCodes (dispatches by
+│   │                     chart_code), ApproachCodes (IAP charts, visuals included), SidStarCodes
+│   │                     (DP/ODP/STAR charts, from the computer code or the chart name), ChartRecallText
+│   │                     (shared text cleanup); models: ChartRecallCodeResult, ChartRecallSkipReason
 │   └── WxStations/   WxStationCountries (the included US/territory codes), WxStationLabels (the
 │                     Text second-line rule) and the WxStation model
 ├── Infrastructure/
@@ -86,7 +90,8 @@ FeBuddy.Core/
 │   ├── Eram/           EramGeoMapReader: an ERAM adaptation export's Geomaps.xml (streamed)
 │   └── Sct/            SctFileReader: VRC .sct2 / .sct sector files
 └── Application/
-    ├── Airac/          AiracService (entry point), AiracCycleDataCache, AiracOutputPaths, FebProperties
+    ├── Airac/          AiracService (entry point), AiracCycleDataCache, AiracOutputPaths, FebProperties,
+    │   │               DuplicateAliasReport (the run-level duplicate-alias-command report)
     │   ├── Airways/    One folder per sub-service, all shaped the same way
     │   ├── Airports/
     │   ├── Departures/
@@ -96,10 +101,13 @@ FeBuddy.Core/
     │   ├── Fixes/            No alias file either, so no *AliasWriter and no GenerateAliasFile key
     │   ├── WxStations/       No alias file either; its data comes from Infrastructure/WxStations,
     │   │                     not a NASR CSV group
-    │   └── Procedures/       No GeoJSON or alias file at all - it writes Procedure_Changes.md and
-    │                         Procedures.json instead (ProcedureChangesMarkdownWriter,
-    │                         ProceduresJsonWriter); its data comes from Infrastructure/Dtpp (the
-    │                         FAA d-TPP Metafile), joined to NASR APT_BASE/CLS_ARSP
+    │   └── Procedures/       No GeoJSON at all - it writes Procedure_Changes.md and Procedures.json
+    │                         (ProcedureChangesMarkdownWriter, ProceduresJsonWriter) - but does have
+    │                         an alias file, FAA_CHART_RECALL.txt (ChartRecallAliasBuilder,
+    │                         ChartRecallAliasWriter), covering every airport in the metafile
+    │                         regardless of the two documents' own selection; its data comes from
+    │                         Infrastructure/Dtpp (the FAA d-TPP Metafile), joined to NASR
+    │                         APT_BASE/CLS_ARSP
     ├── Conversions/    ConversionSettingsReader and ConversionFiles (what every conversion
     │   │               shares), then one folder per file conversion
     │   ├── DatToGeojson/
@@ -179,14 +187,17 @@ bad setting doesn't lose the whole run. The only exception is a missing required
 throws `ArgumentException`.
 
 Procedures breaks the pattern furthest of all: it writes no GeoJSON, so there is no
-`*GeojsonWriter` step either. `ProcedureService.Run(nasrData, dtpp, previousDtpp, settings)` runs
+`*GeojsonWriter` step. `ProcedureService.Run(nasrData, dtpp, previousDtpp, settings)` runs
 `ProcedureBuilder.Build` (every airport and procedure the FAA d-TPP Metafile lists, joined to NASR
 `APT_BASE`/`CLS_ARSP`), then `ProcedureSelection.Select` (the user's facility/ROI/airport/procedure
 picks), then `ProcedureChangesMarkdownWriter.Generate` and/or `ProceduresJsonWriter.Generate`. Its
-`dtpp` input is a `DtppMetafileDataCollection` parsed from the FAA's d-TPP Metafile
+step 4 is `ChartRecallAliasBuilder.Build` (straight from `dtpp`, not from the selected/built
+procedures) and `ChartRecallAliasWriter.Write`, run independently of the two documents: the FAA
+Chart Recall alias file covers every airport in the metafile whatever the selection settings say.
+Its `dtpp` input is a `DtppMetafileDataCollection` parsed from the FAA's d-TPP Metafile
 (`Infrastructure/Dtpp`), not the NASR cycle - and the FAA publishes it only 15-18 days before a
 cycle's effective date, so a missing metafile is not an error: the run still completes, with an
-advisory message and no Procedures documents written.
+advisory message and no Procedures output written.
 
 **When the user runs a file conversion**, the UI builds one settings block and calls that
 conversion's service directly - there is no cycle data and no aggregate. The pipeline has the
@@ -234,8 +245,9 @@ files per source (SCT2, ERAM).
   `AiracOutputPaths.FileDirectory` says. `Application/Airac/Fixes/` is a real example of this shape
   to copy from - or `Application/Airac/WxStations/` for one whose data doesn't come from a NASR CSV
   group at all, or `Application/Airac/Procedures/` for one that writes documents
-  (`AiracOutputPaths.PublicationDocsDirectory`) instead of GeoJSON, from its own downloaded data
-  (`Infrastructure/Dtpp`) joined to NASR.
+  (`AiracOutputPaths.PublicationDocsDirectory`) instead of GeoJSON, plus its own alias file
+  (`AiracOutputPaths.AliasDirectory`) built straight from its own downloaded data
+  (`Infrastructure/Dtpp`) joined to NASR, independently of the documents' own selection.
 - **A new file conversion** (say, vSTARS video maps): `Application/Conversions/VstarsToGeojson/`
   with its `*Service`, `*SettingsParser`, `*GeojsonWriter` and a `Models/` folder, shaped like
   `SctToGeojson/`: its settings derive from `ConversionSettings`, its result is a

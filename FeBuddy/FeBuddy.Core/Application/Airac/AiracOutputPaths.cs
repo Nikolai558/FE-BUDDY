@@ -14,10 +14,12 @@ namespace FeBuddy.Core.Application.Airac;
 /// </para>
 /// <code>
 /// AIRAC_2610\
-/// ├── Airways.txt, Airports.txt, ...    alias and other non-GeoJSON files
+/// ├── Duplicate_Alias_Commands.txt      the alias commands the run's alias files share
+/// ├── Aliases\                          every alias file (Airways.txt, FAA_CHART_RECALL.txt, ...)
 /// ├── Geojson\                          every GeoJSON file
 /// ├── Publication_Docs\                 the Procedures sub-service's two documents
-/// └── Upload_to_vNAS\                   only the files marked for vNAS, same layout
+/// └── Upload_to_vNAS\                   only the files marked for vNAS
+///     ├── Airways.txt, ...              alias files, directly inside
 ///     └── Geojson\
 /// </code>
 /// <para>
@@ -30,11 +32,20 @@ public static class AiracOutputPaths
 	/// <summary>The folder GeoJSON files go in, inside the cycle folder and inside <see cref="VnasFolder"/>.</summary>
 	public const string GeojsonFolder = "Geojson";
 
+	/// <summary>The folder alias files not marked for vNAS go in, inside the cycle folder.</summary>
+	public const string AliasFolder = "Aliases";
+
 	/// <summary>The folder for the files the user marked for upload to vNAS.</summary>
 	public const string VnasFolder = "Upload_to_vNAS";
 
 	/// <summary>The folder the Procedures sub-service's documents go in, inside the cycle folder.</summary>
 	public const string PublicationDocsFolder = "Publication_Docs";
+
+	/// <summary>
+	/// The report of the alias commands more than one line of the run's alias files uses, written
+	/// directly inside the cycle folder (<c>DuplicateAliasReport</c>).
+	/// </summary>
+	public const string DuplicateAliasReportFileName = "Duplicate_Alias_Commands.txt";
 
 	/// <summary>The name of a cycle's folder, e.g. <c>AIRAC_2610</c>.</summary>
 	/// <param name="cycleId">The four-digit cycle ID.</param>
@@ -55,7 +66,8 @@ public static class AiracOutputPaths
 		ServiceOutputPaths.Resolve(outputDirectory, addFeBuddyOutputFolder, CycleFolderName(cycleId));
 
 	/// <summary>
-	/// The folder one file goes in, inside the folder a run writes into.
+	/// The folder one file goes in, inside the folder a run writes into. An alias file goes in
+	/// <see cref="AliasDirectory"/> instead.
 	/// </summary>
 	/// <param name="outputDirectory">The folder the run writes into - the cycle folder, for an AIRAC Service run.</param>
 	/// <param name="isGeojson">Whether the file is GeoJSON (it goes in a <c>Geojson</c> folder).</param>
@@ -66,6 +78,17 @@ public static class AiracOutputPaths
 		string root = uploadToVnas ? Path.Combine(outputDirectory, VnasFolder) : outputDirectory;
 		return isGeojson ? Path.Combine(root, GeojsonFolder) : root;
 	}
+
+	/// <summary>
+	/// The folder an alias file goes in, inside the folder a run writes into:
+	/// <c>&lt;output&gt;\Aliases</c>, or <c>&lt;output&gt;\Upload_to_vNAS</c> itself when the user
+	/// marked the file for vNAS.
+	/// </summary>
+	/// <param name="outputDirectory">The folder the run writes into - the cycle folder, for an AIRAC Service run.</param>
+	/// <param name="uploadToVnas">Whether the user marked the file for vNAS.</param>
+	/// <returns>The folder's full path.</returns>
+	public static string AliasDirectory(string outputDirectory, bool uploadToVnas) =>
+		uploadToVnas ? Path.Combine(outputDirectory, VnasFolder) : Path.Combine(outputDirectory, AliasFolder);
 
 	/// <summary>
 	/// The folder the Procedures sub-service's two documents go in:

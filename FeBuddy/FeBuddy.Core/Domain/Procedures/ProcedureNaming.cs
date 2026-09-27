@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.RegularExpressions;
 
 namespace FeBuddy.Core.Domain.Procedures;
@@ -41,7 +42,24 @@ public static partial class ProcedureNaming
 		return ContinuationSuffix().IsMatch(chartName);
 	}
 
-	[GeneratedRegex(@",\s*CONT\.\d+\s*$", RegexOptions.IgnoreCase)]
+	/// <summary>
+	/// Which page of its procedure a chart is: 1 for the first page, and n + 1 for the
+	/// <c>, CONT.n</c> continuation page - <c>"GRUUB ONE (RNAV), CONT.1"</c> is page 2.
+	/// </summary>
+	/// <param name="chartName">The raw <c>chart_name</c>.</param>
+	/// <returns>The page number, from 1.</returns>
+	public static int PageNumber(string chartName)
+	{
+		ArgumentNullException.ThrowIfNull(chartName);
+
+		Match match = ContinuationSuffix().Match(chartName);
+
+		return match.Success && int.TryParse(match.Groups["page"].ValueSpan, NumberStyles.None, CultureInfo.InvariantCulture, out int continuation)
+			? continuation + 1
+			: 1;
+	}
+
+	[GeneratedRegex(@",\s*CONT\.(?<page>\d+)\s*$", RegexOptions.IgnoreCase)]
 	private static partial Regex ContinuationSuffix();
 
 	[GeneratedRegex(@"\s+")]

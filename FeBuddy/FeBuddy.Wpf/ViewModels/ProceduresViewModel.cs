@@ -25,18 +25,23 @@ namespace FeBuddy.Wpf.ViewModels;
 
 /// <summary>
 /// The <b>Procedures</b> sub-service tab inside the AIRAC Service screen: which documents to
-/// write, which facilities/airports/procedures to include, the chart types a whole included
-/// airport is limited to, and the optional <c>Procedures.json</c> fields.
+/// write and whether to write the FAA Chart Recall alias file, which facilities/airports/procedures
+/// the documents include, the chart types a whole included airport is limited to, and the optional
+/// <c>Procedures.json</c> fields.
 /// </summary>
 /// <remarks>
 /// <para>
-/// Unlike every other AIRAC sub-service, Procedures writes no GeoJSON, has no alias file and no
-/// FE-Buddy properties - it still derives from <see cref="GeojsonSubServiceViewModel"/> for the
-/// Region of Interest override plumbing and the shared "keep at least one output on" pattern
-/// (<see cref="EnabledOutputCount"/>), but never shows the GeoJSON Files, FE-Buddy Properties or
-/// Upload to vNAS / CRC ERAM Defaults cards: <see cref="EmitKeys"/> is <c>(null, null, null)</c>,
-/// <see cref="HasAliasFile"/> is <see langword="false"/>, and <see cref="OutputFiles"/> is always
-/// empty.
+/// Unlike every other AIRAC sub-service, Procedures writes no GeoJSON and has no FE-Buddy
+/// properties - it still derives from <see cref="GeojsonSubServiceViewModel"/> for the alias file,
+/// the Upload to vNAS card, the Region of Interest override plumbing and the shared "keep at least
+/// one output on" pattern (<see cref="EnabledOutputCount"/>), but never shows the GeoJSON Files,
+/// FE-Buddy Properties or CRC ERAM Defaults cards: <see cref="EmitKeys"/> is
+/// <c>(null, null, null)</c>, and <see cref="OutputFiles"/> offers only the alias file.
+/// </para>
+/// <para>
+/// The alias file covers every airport in the d-TPP Metafile; the facility, airport, procedure and
+/// chart type choices pick what the two documents cover, so they are only checked while a document
+/// is on.
 /// </para>
 /// <para>
 /// Its data comes from two places besides the selected cycle's NASR data: the FAA d-TPP Metafile
@@ -147,6 +152,7 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 
 			if (SetProperty(ref _generateChangesDocument, value))
 			{
+				OnPropertyChanged(nameof(GeneratesDocument));
 				MarkDirty();
 			}
 		}
@@ -166,13 +172,18 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 
 			if (SetProperty(ref _generateProceduresJson, value))
 			{
+				OnPropertyChanged(nameof(GeneratesDocument));
 				MarkDirty();
 			}
 		}
 	}
 
+	/// <summary>Whether either document is on - the facility, airport, procedure and chart type choices only matter then.</summary>
+	public bool GeneratesDocument => _generateChangesDocument || _generateProceduresJson;
+
 	/// <inheritdoc />
-	protected override int EnabledOutputCount => (GenerateChangesDocument ? 1 : 0) + (GenerateProceduresJson ? 1 : 0);
+	protected override int EnabledOutputCount =>
+		(GenerateChangesDocument ? 1 : 0) + (GenerateProceduresJson ? 1 : 0) + (GenerateAliasFile ? 1 : 0);
 
 	/// <inheritdoc />
 	protected override string NoDefaultRoiHint =>
@@ -183,8 +194,8 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 	protected override (string? Lines, string? Symbols, string? Text) EmitKeys => (null, null, null);
 
 	/// <inheritdoc />
-	/// <remarks>Procedures has no alias file (alias commands come later).</remarks>
-	protected override bool HasAliasFile => false;
+	/// <remarks>The FAA Chart Recall alias file, <c>FAA_CHART_RECALL.txt</c>.</remarks>
+	protected override bool HasAliasFile => true;
 
 	// ================= d-TPP data =================
 
@@ -588,8 +599,20 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 			return null;
 		}
 
-		string summary = $"{procedures.AirportCount:N0} airport(s), {procedures.NewCount} new, "
-			+ $"{procedures.ChangedCount} changed, {procedures.DeletedCount} deleted, {procedures.FilesWritten.Count} document(s)";
+		List<string> parts = [];
+
+		if (procedures.FilesWritten.Count > 0)
+		{
+			parts.Add($"{procedures.AirportCount:N0} airport(s), {procedures.NewCount} new, "
+				+ $"{procedures.ChangedCount} changed, {procedures.DeletedCount} deleted, {procedures.FilesWritten.Count} document(s)");
+		}
+
+		if (procedures.AliasFilePath is not null)
+		{
+			parts.Add($"{ProcedureOutputFiles.Alias}: {procedures.AliasCommandCount:N0} command(s) for {procedures.AliasAirportCount:N0} airport(s)");
+		}
+
+		string summary = parts.Count > 0 ? string.Join("; ", parts) : "Nothing written";
 
 		return new SubServiceRunResult(Title, summary, procedures.Messages);
 	}
@@ -623,6 +646,9 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 		ServicePreviewRow[] rows =
 		[
 			new ServicePreviewRow("Documents", DescribeDocuments()),
+			new ServicePreviewRow("Alias file",
+				GenerateAliasFile ? $"{ProcedureOutputFiles.Alias}, every chart at every airport in the d-TPP metafile - the choices below never limit it" : "No"),
+			new ServicePreviewRow("Upload to vNAS", DescribeVnasFiles()),
 			new ServicePreviewRow("Facilities", DescribeFacilities()),
 			new ServicePreviewRow("Airports", Airports.Count > 0 ? string.Join(", ", Airports) : "None"),
 			new ServicePreviewRow("Procedures", ProcedureNames.Count > 0 ? string.Join(", ", ProcedureNames) : "None"),
@@ -646,6 +672,14 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 			_generateChangesDocument = GetBool("GenerateChangesDocument", true);
 			_generateProceduresJson = GetBool("GenerateProceduresJson", true);
 			_includeRoiAirports = GetBool("IncludeRoiAirports", false);
+
+			// Every output off would leave the tab in a state its own guard forbids; a hand-edited
+			// config is the only way to get here, so fall back to the defaults rather than honour it.
+			if (!_generateChangesDocument && !_generateProceduresJson && !GetBool("GenerateAliasFile", true))
+			{
+				_generateChangesDocument = true;
+				_generateProceduresJson = true;
+			}
 
 			bool hasSavedFacilities = Get("Facilities") is not null;
 			_savedFacilities = ParseList(Get("Facilities"));
@@ -729,18 +763,30 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 	/// <inheritdoc />
 	protected override void Validate(ServiceValidation validation)
 	{
-		if (!_generateChangesDocument && !_generateProceduresJson)
+		if (!_generateChangesDocument && !_generateProceduresJson && !GenerateAliasFile)
 		{
-			validation.Add("Neither Procedure_Changes.md nor Procedures.json is selected. Turn at least one back on, or deselect Procedures on the General tab.");
+			validation.Add("Neither document nor the alias file is selected. Turn at least one back on, or deselect Procedures on the General tab.");
 		}
 
+		// The choices below only pick what the documents cover; the alias file covers every airport.
+		if (GeneratesDocument)
+		{
+			ValidateDocumentSelection(validation);
+		}
+
+		ValidateSharedSettings(validation);
+	}
+
+	/// <summary>Checks that the documents' facility, airport, procedure and chart type choices include something.</summary>
+	private void ValidateDocumentSelection(ServiceValidation validation)
+	{
 		bool hasFacility = SelectedFacilityIds().Any();
 		bool hasWholeAirportSource = hasFacility || _includeRoiAirports || Airports.Count > 0;
 		bool hasInclusionSource = hasWholeAirportSource || ProcedureNames.Count > 0 || AirportProcedures.Count > 0;
 
 		if (!hasInclusionSource)
 		{
-			validation.Add("Pick at least one facility, airport or procedure to include.");
+			validation.Add("Pick at least one facility, airport or procedure for the documents to include.");
 		}
 
 		if (hasWholeAirportSource && ChartTypeToggles.All(t => !t.IsSelected))
@@ -754,13 +800,20 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 				"Set a region of interest below (or a default one in Settings), or untick "
 				+ "'Also include every airport inside the region of interest'.");
 		}
-
-		ValidateSharedSettings(validation);
 	}
 
 	/// <inheritdoc />
-	/// <remarks>Procedures writes no GeoJSON, so there is nothing to offer the Upload to vNAS or CRC ERAM Defaults cards.</remarks>
-	protected override IEnumerable<OutputFileOption> OutputFiles() => [];
+	/// <remarks>
+	/// Only the alias file: the documents are never uploaded to vNAS, and with no GeoJSON there is
+	/// nothing to carry CRC-ERAM defaults.
+	/// </remarks>
+	protected override IEnumerable<OutputFileOption> OutputFiles()
+	{
+		if (GenerateAliasFile)
+		{
+			yield return OutputFileOption.AliasFile(ProcedureOutputFiles.Alias);
+		}
+	}
 
 	// ================= helpers =================
 
@@ -1016,6 +1069,7 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 	{
 		OnPropertyChanged(nameof(GenerateChangesDocument));
 		OnPropertyChanged(nameof(GenerateProceduresJson));
+		OnPropertyChanged(nameof(GeneratesDocument));
 		OnPropertyChanged(nameof(IncludeRoiAirports));
 		OnPropertyChanged(nameof(PrimaryFacilityCaption));
 	}

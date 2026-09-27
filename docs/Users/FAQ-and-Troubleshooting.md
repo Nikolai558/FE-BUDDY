@@ -12,9 +12,10 @@ the FAA has published it (a few weeks before it takes effect).
 
 In an `AIRAC_<cycle>` folder (for example `AIRAC_2610`) in your output folder: Settings ▸
 **Default Output Directory**, inside a `FE-Buddy_Output` folder if that option is on. GeoJSON
-files are in its `Geojson` folder, and anything you marked for vNAS is in its `Upload_to_vNAS`
-folder. After a run, **Open output folder** on the Review tab takes you straight there. The
-[user guide](User-Guide.md#output-files) shows the full folder layout.
+files are in its `Geojson` folder, alias files are in its `Aliases` folder, and anything you
+marked for vNAS is in its `Upload_to_vNAS` folder instead. After a run, **Open output folder** on
+the Review tab takes you straight there. The [user guide](User-Guide.md#output-files) shows the
+full folder layout.
 
 ### FE-Buddy says the cycle has already been run
 
@@ -48,14 +49,16 @@ For the cycle effective 2026-09-03, the FAA's data lists ORF's NUTIY and SWOPE d
 too, so FE-Buddy writes `.orfNUTIYf` and `.orfSWOPEf` into both alias files. Their GeoJSON files
 do not clash - the Arrivals ones carry `STAR` in the name - but if you load both alias files, each
 of those two commands is defined twice. This comes from the FAA data, and FE-Buddy leaves it as it
-is for now.
+is for now - you will see the same pair flagged in `Duplicate_Alias_Commands.txt` after the run,
+alongside any other duplicate alias commands that cycle happens to have.
 
 ### Do I still need FE-Buddy 2.x?
 
-Only for the tools 3.0 does not have yet: chart-recall and ISR aliases, SCT2 to DXF, vSTARS and
-FAA GeoMap conversions, GeoJSON clean-up and procedure ISRs. (FAA `.dat` video maps, SCT2 sector
-files and ERAM Geomaps already convert to GeoJSON in 3.0, on the File Conversions screen.)
-Installing 3.0 replaces 2.x, so if you still need those, hold off upgrading for now.
+Only for the tools 3.0 does not have yet: ISR aliases, SCT2 to DXF, vSTARS and FAA GeoMap
+conversions, GeoJSON clean-up and procedure ISRs. (FAA `.dat` video maps, SCT2 sector files and
+ERAM Geomaps already convert to GeoJSON in 3.0, on the File Conversions screen, and FAA Chart
+Recall aliases are part of the Procedures sub-service.) Installing 3.0 replaces 2.x, so if you
+still need those, hold off upgrading for now.
 
 ## Something is wrong
 

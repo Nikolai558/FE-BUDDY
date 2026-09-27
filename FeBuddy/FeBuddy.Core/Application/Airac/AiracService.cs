@@ -50,6 +50,11 @@ namespace FeBuddy.Core.Application.Airac;
 /// block's <c>OutputDirectory</c>, so the GeoJSON of every sub-service lands in one
 /// <c>Geojson</c> folder (see <see cref="AiracOutputPaths"/>).
 /// </para>
+/// <para>
+/// Once every sub-service has run, the alias files the run wrote are checked together for
+/// commands more than one line uses (<see cref="DuplicateAliasReport"/>), and
+/// <c>Duplicate_Alias_Commands.txt</c> is written into the cycle folder.
+/// </para>
 /// </remarks>
 public static class AiracService
 {
@@ -286,7 +291,37 @@ public static class AiracService
 		ProcedureServiceResult? proceduresResult = await RunSubServiceAsync(
 			settings.Procedures, "Procedures", "Building procedure publication documents",
 			block => ProcedureService.Run(nasrData, supplementalData.Dtpp, supplementalData.PreviousDtpp, block),
-			result => $"{result.AirportCount} airport(s), {result.NewCount + result.ChangedCount + result.DeletedCount} change(s), {result.FilesWritten.Count} document(s)").ConfigureAwait(false);
+			result => $"{result.AirportCount} airport(s), {result.NewCount + result.ChangedCount + result.DeletedCount} change(s), {result.FilesWritten.Count} document(s)"
+				+ (result.AliasFilePath is not null ? $", {result.AliasCommandCount} FAA Chart Recall command(s)" : string.Empty)).ConfigureAwait(false);
+
+		// Every alias file this run wrote, in the order the sub-services ran, checked together for
+		// commands two lines share.
+		string[] aliasFiles = [.. new[]
+		{
+			airwaysResult?.AliasFilePath,
+			airportsResult?.AliasFilePath,
+			departuresResult?.AliasFilePath,
+			arrivalsResult?.AliasFilePath,
+			navaidsResult?.AliasFilePath,
+			proceduresResult?.AliasFilePath,
+		}.OfType<string>()];
+
+		DuplicateAliasReportResult? duplicateAliasReport = null;
+
+		if (aliasFiles.Length > 0)
+		{
+			cancellationToken.ThrowIfCancellationRequested();
+			progress?.Report(new AiracServiceProgress("AIRAC", "Checking the alias files for duplicate commands"));
+
+			duplicateAliasReport = await Task.Run(
+				() => DuplicateAliasReport.Write(
+					aliasFiles, nasrData, settings.SelectedCycle.AiracCycleId, outputDirectory, settings.PrimaryFacility, DateTime.UtcNow),
+				cancellationToken).ConfigureAwait(false);
+
+			ServiceMessage reportMessage = DuplicateAliasMessage(duplicateAliasReport, aliasFiles.Length);
+			messages.Add(reportMessage);
+			AppLog.Write(reportMessage.Level, reportMessage.Source, reportMessage.Text);
+		}
 
 		if (!anySelected)
 		{
@@ -302,6 +337,7 @@ public static class AiracService
 			Messages = messages,
 			Elapsed = stopwatch.Elapsed,
 			OutputDirectory = outputDirectory,
+			DuplicateAliasReport = duplicateAliasReport,
 			Airways = airwaysResult,
 			Airports = airportsResult,
 			Departures = departuresResult,
@@ -350,5 +386,25 @@ public static class AiracService
 
 			return result;
 		}
+	}
+
+	/// <summary>
+	/// What the run panel says about the duplicate alias report: an advisory warning when there is
+	/// something to fix, otherwise a note that the files were checked.
+	/// </summary>
+	private static ServiceMessage DuplicateAliasMessage(DuplicateAliasReportResult report, int fileCount)
+	{
+		if (report.Duplicates.Count == 0)
+		{
+			return new ServiceMessage(LogLevel.Info, LogSource,
+				$"No duplicate alias commands in the {fileCount} alias file(s) this run wrote.");
+		}
+
+		return new ServiceMessage(LogLevel.Warning, LogSource,
+			$"{report.Duplicates.Count:N0} alias command(s) are used by more than one line of this run's alias files, so CRC can only run " +
+			$"one of each. They are listed by ARTCC in {AiracOutputPaths.DuplicateAliasReportFileName} in the cycle folder.")
+		{
+			IsAdvisory = true
+		};
 	}
 }

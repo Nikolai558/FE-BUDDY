@@ -13,7 +13,8 @@ namespace FeBuddy.Core.Application.Airac.Procedures;
 /// <summary>
 /// Public entry point for the Procedures sub-service: parses settings, builds every airport and
 /// procedure from the FAA d-TPP Metafile and NASR data, applies the user's selection, and writes
-/// <c>Procedure_Changes.md</c> and/or <c>Procedures.json</c>.
+/// <c>Procedure_Changes.md</c> and/or <c>Procedures.json</c> - and, independently of that selection,
+/// the FAA Chart Recall alias file <c>FAA_CHART_RECALL.txt</c> for every airport in the metafile.
 /// </summary>
 /// <remarks>
 /// Unlike every other AIRAC sub-service, its data does not come from the NASR cycle alone - it also
@@ -27,9 +28,12 @@ public static class ProcedureService
 
 	/// <summary>
 	/// Runs the full Procedures pipeline: parse settings, build every airport and procedure, select
-	/// the included ones, and write the requested documents.
+	/// the included ones, write the requested documents, and write the alias file when requested.
 	/// </summary>
-	/// <param name="nasr">All parsed NASR CSV data. <c>Apt</c> and <c>ClsArsp</c> must not be null.</param>
+	/// <param name="nasr">
+	/// All parsed NASR CSV data. <c>Apt</c> and <c>ClsArsp</c> must not be null when a document is
+	/// requested; the alias file alone reads no NASR data.
+	/// </param>
 	/// <param name="dtpp">
 	/// The selected cycle's parsed FAA d-TPP Metafile, or <see langword="null"/> when the FAA has not
 	/// published it yet - the run then writes nothing and says why.
@@ -41,7 +45,9 @@ public static class ProcedureService
 	/// <param name="procedureSettings">The raw Procedures settings dictionary.</param>
 	/// <returns>What was built and written, plus timing and every message collected along the way.</returns>
 	/// <exception cref="ArgumentException">Thrown when a required setting is missing or invalid.</exception>
-	/// <exception cref="InvalidOperationException">Thrown when <paramref name="nasr"/>.Apt or .ClsArsp has not been parsed.</exception>
+	/// <exception cref="InvalidOperationException">
+	/// Thrown when a document is requested and <paramref name="nasr"/>.Apt or .ClsArsp has not been parsed.
+	/// </exception>
 	public static ProcedureServiceResult Run(
 		NasrCsvDataCollection nasr,
 		DtppMetafileDataCollection? dtpp,
@@ -56,23 +62,43 @@ public static class ProcedureService
 
 		ProcedureSettingsParseResult parseResult = ProcedureSettingsParser.Parse(procedureSettings);
 		messages.AddRange(parseResult.Messages);
+		ProcedureSettings settings = parseResult.Settings;
 
 		if (dtpp is null)
 		{
 			messages.Add(new ServiceMessage(LogLevel.Warning, LogSource,
 				"The FAA has not published the d-TPP metafile for this cycle yet (it is posted 15-18 days before the " +
-				"cycle's effective date), so no procedure documents were written.")
+				"cycle's effective date), so no procedure documents or FAA Chart Recall alias file were written.")
 			{
 				IsAdvisory = true
 			});
 
-			return Finish(stopwatch, messages, [], filesWritten: [], newCount: 0, changedCount: 0, deletedCount: 0, reAddedCount: 0, procedureCount: 0);
+			return Finish(stopwatch, messages, DocumentOutcome.None, alias: null);
 		}
 
+		DocumentOutcome documents = settings.GenerateChangesDocument || settings.GenerateProceduresJson
+			? WriteDocuments(nasr, dtpp, previousDtpp, settings, messages)
+			: DocumentOutcome.None;
+
+		AliasOutcome? alias = settings.GenerateAliasFile
+			? WriteAliasFile(dtpp, settings, messages)
+			: null;
+
+		return Finish(stopwatch, messages, documents, alias);
+	}
+
+	/// <summary>Builds, selects and writes the requested documents, counting the changes they report.</summary>
+	private static DocumentOutcome WriteDocuments(
+		NasrCsvDataCollection nasr,
+		DtppMetafileDataCollection dtpp,
+		DtppMetafileDataCollection? previousDtpp,
+		ProcedureSettings settings,
+		List<ServiceMessage> messages)
+	{
 		ProcedureBuildResult buildResult = ProcedureBuilder.Build(nasr, dtpp, previousDtpp);
 		messages.AddRange(buildResult.Messages);
 
-		IReadOnlyList<ProcedureAirport> included = ProcedureSelection.Select(buildResult.Airports, parseResult.Settings, messages);
+		IReadOnlyList<ProcedureAirport> included = ProcedureSelection.Select(buildResult.Airports, settings, messages);
 
 		int newCount = 0;
 		int changedCount = 0;
@@ -117,9 +143,9 @@ public static class ProcedureService
 
 		List<string> filesWritten = [];
 
-		if (parseResult.Settings.GenerateChangesDocument)
+		if (settings.GenerateChangesDocument)
 		{
-			ProcedureChangesWriteResult changesResult = ProcedureChangesMarkdownWriter.Generate(included, parseResult.Settings, dtpp, previousDtpp);
+			ProcedureChangesWriteResult changesResult = ProcedureChangesMarkdownWriter.Generate(included, settings, dtpp, previousDtpp);
 			messages.AddRange(changesResult.Messages);
 
 			if (changesResult.FilePath is not null)
@@ -128,9 +154,9 @@ public static class ProcedureService
 			}
 		}
 
-		if (parseResult.Settings.GenerateProceduresJson)
+		if (settings.GenerateProceduresJson)
 		{
-			ProceduresJsonWriteResult jsonResult = ProceduresJsonWriter.Generate(included, parseResult.Settings, dtpp);
+			ProceduresJsonWriteResult jsonResult = ProceduresJsonWriter.Generate(included, settings, dtpp);
 			messages.AddRange(jsonResult.Messages);
 
 			if (jsonResult.FilePath is not null)
@@ -139,20 +165,26 @@ public static class ProcedureService
 			}
 		}
 
-		return Finish(stopwatch, messages, included, filesWritten, newCount, changedCount, deletedCount, reAddedCount, procedureCount);
+		return new DocumentOutcome(included.Count, procedureCount, newCount, changedCount, deletedCount, reAddedCount, filesWritten);
+	}
+
+	/// <summary>Builds and writes <c>FAA_CHART_RECALL.txt</c> for every airport in the metafile.</summary>
+	private static AliasOutcome WriteAliasFile(DtppMetafileDataCollection dtpp, ProcedureSettings settings, List<ServiceMessage> messages)
+	{
+		ChartRecallBuildResult buildResult = ChartRecallAliasBuilder.Build(dtpp);
+		messages.AddRange(buildResult.Messages);
+
+		ChartRecallAliasWriteResult writeResult = ChartRecallAliasWriter.Generate(buildResult.Lines, settings);
+
+		return new AliasOutcome(writeResult.FilePath, writeResult.CommandCount, writeResult.FilePath is null ? 0 : buildResult.Summary.AirportCount);
 	}
 
 	/// <summary>Stops the clock, copies every message to the shared application log, and assembles the result.</summary>
 	private static ProcedureServiceResult Finish(
 		Stopwatch stopwatch,
 		List<ServiceMessage> messages,
-		IReadOnlyList<ProcedureAirport> included,
-		IReadOnlyList<string> filesWritten,
-		int newCount,
-		int changedCount,
-		int deletedCount,
-		int reAddedCount,
-		int procedureCount)
+		DocumentOutcome documents,
+		AliasOutcome? alias)
 	{
 		stopwatch.Stop();
 
@@ -165,13 +197,33 @@ public static class ProcedureService
 		{
 			Messages = messages,
 			Elapsed = stopwatch.Elapsed,
-			AirportCount = included.Count,
-			ProcedureCount = procedureCount,
-			NewCount = newCount,
-			ChangedCount = changedCount,
-			DeletedCount = deletedCount,
-			ReAddedCount = reAddedCount,
-			FilesWritten = filesWritten,
+			AirportCount = documents.AirportCount,
+			ProcedureCount = documents.ProcedureCount,
+			NewCount = documents.NewCount,
+			ChangedCount = documents.ChangedCount,
+			DeletedCount = documents.DeletedCount,
+			ReAddedCount = documents.ReAddedCount,
+			FilesWritten = documents.FilesWritten,
+			AliasFilePath = alias?.FilePath,
+			AliasCommandCount = alias?.CommandCount ?? 0,
+			AliasAirportCount = alias?.AirportCount ?? 0,
 		};
 	}
+
+	/// <summary>What the documents covered and which were written.</summary>
+	private sealed record DocumentOutcome(
+		int AirportCount,
+		int ProcedureCount,
+		int NewCount,
+		int ChangedCount,
+		int DeletedCount,
+		int ReAddedCount,
+		IReadOnlyList<string> FilesWritten)
+	{
+		/// <summary>No document was requested, or there was no metafile to write one from.</summary>
+		public static DocumentOutcome None { get; } = new(0, 0, 0, 0, 0, 0, []);
+	}
+
+	/// <summary>Where the alias file was written, and what it holds.</summary>
+	private sealed record AliasOutcome(string? FilePath, int CommandCount, int AirportCount);
 }

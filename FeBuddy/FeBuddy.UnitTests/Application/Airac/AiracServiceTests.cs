@@ -112,10 +112,12 @@ public sealed class AiracServiceTests : IDisposable
 		Assert.Null(result.Airways);
 		Assert.Equal(1, result.Airports!.AirportCount);
 		Assert.Equal(1, result.Departures!.AirportProcedureCount);
+		// Both sub-services wrote an alias file, so one more "AIRAC" report follows for the
+		// duplicate-alias check once every sub-service has run.
 		Assert.Equal(
-			["Airports", "Airports", "Departures", "Departures"],
+			["Airports", "Airports", "Departures", "Departures", "AIRAC"],
 			reports.Select(r => r.SubService));
-		Assert.Equal(100, reports[^1].PercentComplete);
+		Assert.Equal(100, reports[^2].PercentComplete);
 
 		await Assert.ThrowsAnyAsync<OperationCanceledException>(
 			() => AiracService.RunAsync(settings, data, cancellationToken: new CancellationToken(canceled: true)));
@@ -127,8 +129,60 @@ public sealed class AiracServiceTests : IDisposable
 		AiracServiceResult result = await AiracService.RunAsync(AliasOnlySettings(), DepartureTestData.Dotss());
 
 		Assert.Equal(CycleFolder, result.OutputDirectory);
-		Assert.Equal(Path.Combine(CycleFolder, "Airports.txt"), result.Airports!.AliasFilePath);
-		Assert.Equal(Path.Combine(CycleFolder, "Departures.txt"), result.Departures!.AliasFilePath);
+		Assert.Equal(Path.Combine(CycleFolder, "Aliases", "Airports.txt"), result.Airports!.AliasFilePath);
+		Assert.Equal(Path.Combine(CycleFolder, "Aliases", "Departures.txt"), result.Departures!.AliasFilePath);
+
+		// The duplicate-alias report is part of the one cycle folder too.
+		Assert.NotNull(result.DuplicateAliasReport);
+		Assert.Equal(Path.Combine(CycleFolder, AiracOutputPaths.DuplicateAliasReportFileName), result.DuplicateAliasReport!.FilePath);
+		Assert.True(File.Exists(result.DuplicateAliasReport.FilePath));
+	}
+
+	[Fact]
+	public async Task a_dp_and_a_star_sharing_a_command_produce_the_duplicate_report_and_an_advisory_warning()
+	{
+		// ORF genuinely publishes both a NUTIY departure and a NUTIY arrival (see
+		// ArrivalAliasWriter.CommandName's remarks), so both alias files write ".orfNUTIYf" -
+		// exactly the case the duplicate-alias check exists to catch.
+		NasrCsvDataCollection data = DepartureTestData.Build(
+			bases: [DepartureTestData.Base("NUTIY", "ZDC", "NUTIY1.NUTIY", amendmentNo: "ONE", servedArpt: "ORF")],
+			apts: [DepartureTestData.Apt("NUTIY", "ZDC", "NUTIY1.NUTIY", "BODY", "ORF")],
+			routes: DepartureTestData.Body("NUTIY", "ZDC", "NUTIY1.NUTIY", "BODY", ["AAAAA", "BBBBB"]),
+			fixes: [("AAAAA", 36.9, -76.2), ("BBBBB", 37.0, -76.3)]);
+
+		NasrCsvDataCollection arrivalData = ArrivalTestData.Build(
+			bases: [ArrivalTestData.Base("NUTIY", "ZDC", "TRANS.NUTIY1", amendmentNo: "ONE", servedArpt: "ORF")],
+			apts: [ArrivalTestData.Apt("ZDC", "TRANS.NUTIY1", "BODY", "ORF")],
+			routes: ArrivalTestData.Body("ZDC", "TRANS.NUTIY1", "BODY", ["CCCCC", "DDDDD"]),
+			fixes: [("CCCCC", 36.95, -76.25), ("DDDDD", 37.05, -76.35)]);
+
+		data.Star = arrivalData.Star;
+		data.Fix!.FixBase.AddRange(arrivalData.Fix!.FixBase);
+		data.Apt!.AptBase.Add(new AptCsvDataModel.AptBase
+		{
+			ArptId = "ORF",
+			IcaoId = "KORF",
+			BaseLatDecimal = 36.8946,
+			BaseLongDecimal = -76.2012,
+			RespArtccId = "ZDC",
+		});
+
+		AiracServiceSettings settings = new()
+		{
+			SelectedCycle = Cycle,
+			OutputDirectory = _output,
+			Departures = new Dictionary<string, string> { { "GenerateGeojson", "N" } },
+			Arrivals = new Dictionary<string, string> { { "GenerateGeojson", "N" } },
+		};
+
+		AiracServiceResult result = await AiracService.RunAsync(settings, data);
+
+		Assert.NotNull(result.DuplicateAliasReport);
+		Assert.NotEmpty(result.DuplicateAliasReport!.Duplicates);
+		Assert.Contains(result.DuplicateAliasReport.Duplicates, d => d.Command.Equals(".orfNUTIYf", StringComparison.OrdinalIgnoreCase));
+		Assert.True(File.Exists(result.DuplicateAliasReport.FilePath));
+		Assert.Contains(result.Messages, m =>
+			m.IsAdvisory && m.Text.Contains("alias command(s) are used by more than one line", StringComparison.Ordinal));
 	}
 
 	[Fact]
@@ -146,7 +200,12 @@ public sealed class AiracServiceTests : IDisposable
 		Assert.Null(result.Departures);
 		Assert.NotNull(result.Arrivals);
 		Assert.Equal(1, result.Arrivals!.AirportProcedureCount);
-		Assert.Equal(Path.Combine(CycleFolder, "Arrivals.txt"), result.Arrivals.AliasFilePath);
+		Assert.Equal(Path.Combine(CycleFolder, "Aliases", "Arrivals.txt"), result.Arrivals.AliasFilePath);
+
+		// One alias file, no duplicates: the report still exists and says so.
+		Assert.NotNull(result.DuplicateAliasReport);
+		Assert.Empty(result.DuplicateAliasReport!.Duplicates);
+		Assert.Contains(result.Messages, m => m.Text.Contains("No duplicate alias commands", StringComparison.Ordinal));
 	}
 
 	[Fact]
@@ -183,7 +242,7 @@ public sealed class AiracServiceTests : IDisposable
 
 		// DeleteExisting only runs when something is selected: Arrivals alone must still trigger it.
 		Assert.False(File.Exists(stale));
-		Assert.True(File.Exists(Path.Combine(CycleFolder, "Arrivals.txt")));
+		Assert.True(File.Exists(Path.Combine(CycleFolder, "Aliases", "Arrivals.txt")));
 	}
 
 	[Fact]
@@ -211,7 +270,12 @@ public sealed class AiracServiceTests : IDisposable
 		Assert.Null(result.Arrivals);
 		Assert.NotNull(result.Navaids);
 		Assert.Equal(1, result.Navaids!.NavaidCount);
-		Assert.Equal(Path.Combine(CycleFolder, "NAVAIDs.txt"), result.Navaids.AliasFilePath);
+		Assert.Equal(Path.Combine(CycleFolder, "Aliases", "NAVAIDs.txt"), result.Navaids.AliasFilePath);
+
+		// One alias file, no duplicates: the report still exists and says so.
+		Assert.NotNull(result.DuplicateAliasReport);
+		Assert.Empty(result.DuplicateAliasReport!.Duplicates);
+		Assert.Contains(result.Messages, m => m.Text.Contains("No duplicate alias commands", StringComparison.Ordinal));
 	}
 
 	[Fact]
@@ -247,7 +311,7 @@ public sealed class AiracServiceTests : IDisposable
 
 		// DeleteExisting only runs when something is selected: NAVAIDs alone must still trigger it.
 		Assert.False(File.Exists(stale));
-		Assert.True(File.Exists(Path.Combine(CycleFolder, "NAVAIDs.txt")));
+		Assert.True(File.Exists(Path.Combine(CycleFolder, "Aliases", "NAVAIDs.txt")));
 	}
 
 	[Fact]
@@ -649,7 +713,7 @@ public sealed class AiracServiceTests : IDisposable
 			AliasOnlySettings(addFeBuddyOutputFolder: false), DepartureTestData.Dotss());
 
 		Assert.Equal(Path.Combine(_output, "AIRAC_2610"), result.OutputDirectory);
-		Assert.True(File.Exists(Path.Combine(_output, "AIRAC_2610", "Airports.txt")));
+		Assert.True(File.Exists(Path.Combine(_output, "AIRAC_2610", "Aliases", "Airports.txt")));
 	}
 
 	[Fact]
@@ -674,7 +738,7 @@ public sealed class AiracServiceTests : IDisposable
 		await AiracService.RunAsync(AliasOnlySettings(), DepartureTestData.Dotss());
 
 		Assert.True(File.Exists(stale));
-		Assert.True(File.Exists(Path.Combine(CycleFolder, "Airports.txt")));
+		Assert.True(File.Exists(Path.Combine(CycleFolder, "Aliases", "Airports.txt")));
 	}
 
 	[Fact]
@@ -687,7 +751,7 @@ public sealed class AiracServiceTests : IDisposable
 
 		Assert.False(File.Exists(stale));
 		Assert.False(Directory.Exists(Path.GetDirectoryName(stale)));
-		Assert.True(File.Exists(Path.Combine(CycleFolder, "Airports.txt")));
+		Assert.True(File.Exists(Path.Combine(CycleFolder, "Aliases", "Airports.txt")));
 	}
 
 	[Fact]

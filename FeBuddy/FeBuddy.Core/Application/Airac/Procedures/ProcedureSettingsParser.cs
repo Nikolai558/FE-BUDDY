@@ -1,3 +1,4 @@
+using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Application.Airac.Procedures.Models;
 using FeBuddy.Core.Application.Models;
 using FeBuddy.Core.Application.Settings;
@@ -14,9 +15,9 @@ namespace FeBuddy.Core.Application.Airac.Procedures;
 /// </summary>
 /// <remarks>
 /// The only place in the Procedures sub-service that touches the raw dictionary. Unlike every
-/// other AIRAC sub-service, there is no GeoJSON, no alias file yet, and no <c>feb.*</c> properties -
-/// a <c>GenerateAliasFile</c> key gets the ordinary unrecognized-key warning, and
-/// <c>IncludeFebCustomProperties</c> is read only so it can say the same.
+/// other AIRAC sub-service, there is no GeoJSON and no <c>feb.*</c> properties -
+/// <c>IncludeFebCustomProperties</c> is read only so it can say so. The only file
+/// <c>UploadToVnas</c> may name is the alias file.
 /// </remarks>
 public static class ProcedureSettingsParser
 {
@@ -42,7 +43,7 @@ public static class ProcedureSettingsParser
 	/// <summary>The keys only Procedures reads, on top of <see cref="SubServiceSettingsReader.CommonKeys"/>.</summary>
 	private static readonly IReadOnlySet<string> OwnKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
 	{
-		"GenerateChangesDocument", "GenerateProceduresJson",
+		"GenerateChangesDocument", "GenerateProceduresJson", "GenerateAliasFile",
 		"Facilities", "PrimaryFacility",
 		"IncludeRoiAirports",
 		"Airports", "Procedures", "AirportProcedures",
@@ -71,13 +72,18 @@ public static class ProcedureSettingsParser
 
 		bool generateChangesDocument = SettingsValueReader.YesNo(procedureSettings, "GenerateChangesDocument", defaultValue: true);
 		bool generateProceduresJson = SettingsValueReader.YesNo(procedureSettings, "GenerateProceduresJson", defaultValue: true);
+		bool generateAliasFile = SettingsValueReader.YesNo(procedureSettings, "GenerateAliasFile", defaultValue: true);
 
-		if (!generateChangesDocument && !generateProceduresJson)
+		if (!generateChangesDocument && !generateProceduresJson && !generateAliasFile)
 		{
 			throw new ArgumentException(
-				"'GenerateChangesDocument' and 'GenerateProceduresJson' are both \"N\", so the Procedures sub-service would " +
-				"produce nothing. Turn at least one back on, or deselect Procedures.");
+				"'GenerateChangesDocument', 'GenerateProceduresJson' and 'GenerateAliasFile' are all \"N\", so the Procedures " +
+				"sub-service would produce nothing. Turn at least one back on, or deselect Procedures.");
 		}
+
+		// The selection settings below pick what the two documents cover; the alias file covers every
+		// airport in the metafile whatever they say.
+		bool generatesDocument = generateChangesDocument || generateProceduresJson;
 
 		List<ServiceMessage> messages = [];
 
@@ -99,7 +105,7 @@ public static class ProcedureSettingsParser
 		bool includeRoiAirports = SettingsValueReader.YesNo(procedureSettings, "IncludeRoiAirports", defaultValue: false);
 		RegionOfInterest? roi = SubServiceSettingsReader.ReadRoi(procedureSettings);
 
-		if (includeRoiAirports && roi is null)
+		if (generatesDocument && includeRoiAirports && roi is null)
 		{
 			throw new ArgumentException(
 				"'IncludeRoiAirports' is \"Y\" but no Region of Interest is set. Set 'FilterByRoi' to \"Y\" and its four " +
@@ -110,7 +116,8 @@ public static class ProcedureSettingsParser
 		IReadOnlyCollection<string> procedures = [.. SettingsValueReader.StringList(procedureSettings, "Procedures")];
 		IReadOnlyList<ProcedureAirportPick> airportProcedures = ParseAirportProcedures(procedureSettings);
 
-		if (facilities.Count == 0 && !includeRoiAirports && airports.Count == 0 && procedures.Count == 0 && airportProcedures.Count == 0)
+		if (generatesDocument
+			&& facilities.Count == 0 && !includeRoiAirports && airports.Count == 0 && procedures.Count == 0 && airportProcedures.Count == 0)
 		{
 			throw new ArgumentException(
 				"Procedures has no inclusion source: set 'Facilities', turn on 'IncludeRoiAirports' (with a Region of " +
@@ -123,6 +130,11 @@ public static class ProcedureSettingsParser
 		(IReadOnlyCollection<ProcedureJsonField> jsonFields, IReadOnlyList<ServiceMessage> jsonFieldMessages) = ParseJsonFields(procedureSettings);
 		messages.AddRange(jsonFieldMessages);
 
+		// Nothing Procedures writes is GeoJSON, so the alias file is the only key UploadToVnas may
+		// name, and CrcDefaultsFor none at all.
+		VnasFileChoices vnas = SubServiceSettingsReader.ReadVnasFiles(
+			procedureSettings, ProcedureOutputFiles.Alias, isGeojsonFileKey: _ => false, example: ProcedureOutputFiles.Alias);
+
 		messages.AddRange(SubServiceSettingsReader.UnknownKeyWarnings(
 			procedureSettings, OwnKeys, CrcKindsByClass, LogSource,
 			labelSource: "Procedures writes no GeoJSON, so it has no per-feature CRC output"));
@@ -132,6 +144,8 @@ public static class ProcedureSettingsParser
 			OutputDirectory = outputDirectory,
 			GenerateChangesDocument = generateChangesDocument,
 			GenerateProceduresJson = generateProceduresJson,
+			GenerateAliasFile = generateAliasFile,
+			Vnas = vnas,
 			Facilities = facilities,
 			PrimaryFacility = primaryFacility,
 			IncludeRoiAirports = includeRoiAirports,

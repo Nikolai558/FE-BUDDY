@@ -3,8 +3,10 @@
     Save / Undo / Previous / Next / Preview settings come from the tab host's shared
     action bar, and the tab host owns the page's single scroller.
 
-    Unlike every other AIRAC sub-service tab, this one writes no GeoJSON and has no alias file,
-    FE-Buddy properties or vNAS/CRC cards - see ProceduresViewModel's class remarks.
+    Unlike every other AIRAC sub-service tab, this one writes no GeoJSON and has no FE-Buddy
+    properties or CRC cards - see ProceduresViewModel's class remarks. Its Upload to vNAS card
+    offers only the alias file, so it shows only while the alias file is on. The selection cards
+    pick what the two documents cover, so they grey out while neither document is on.
 -->
 <UserControl x:Class="FeBuddy.Wpf.Views.ProceduresView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -29,8 +31,8 @@
                        MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
                        Visibility="{Binding ValidationError, Converter={StaticResource StringToVis}}" />
 
-            <!-- ============ documents ============ -->
-            <ctl:Card Header="Documents">
+            <!-- ============ outputs ============ -->
+            <ctl:Card Header="Outputs">
                 <StackPanel>
                     <CheckBox Content="Procedure_Changes.md" IsChecked="{Binding GenerateChangesDocument}" Margin="0,4,0,0" />
                     <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="24,2,0,10"
@@ -40,9 +42,16 @@
                     <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="24,2,0,10"
                                MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
                                Text="Every current chart at the airports you pick, with the fields chosen below." />
+                    <CheckBox Content="Alias file (FAA_CHART_RECALL.txt)" IsChecked="{Binding GenerateAliasFile}" Margin="0,0,0,0" />
+                    <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="24,2,0,10"
+                               MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
+                               Text="FAA Chart Recall: a command that opens each page of every chart at every airport in the d-TPP metafile, e.g. .dtwI22Lc for ILS OR LOC RWY 22L at DTW. The choices below pick what the documents cover; they never limit the alias file." />
                     <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap"
                                MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
-                               Text="Written to Publication_Docs\ in the cycle's folder." />
+                               Text="The documents are written to Publication_Docs\ in the cycle's folder, and the alias file to Aliases\ (or Upload_to_vNAS\, if ticked below)." />
+                    <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,10,0,0"
+                               MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
+                               Text="At least one output must stay on. To produce nothing for Procedures, deselect Procedures on the General tab." />
                 </StackPanel>
             </ctl:Card>
 
@@ -75,7 +84,7 @@
             </ctl:Card>
 
             <!-- ============ facilities ============ -->
-            <ctl:Card Header="Facilities">
+            <ctl:Card Header="Facilities" IsEnabled="{Binding GeneratesDocument}">
                 <StackPanel>
                     <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
                                Text="Include every airport these ARTCCs are responsible for." />
@@ -99,7 +108,7 @@
             </ctl:Card>
 
             <!-- ============ airports ============ -->
-            <ctl:Card Header="Airports">
+            <ctl:Card Header="Airports" IsEnabled="{Binding GeneratesDocument}">
                 <StackPanel>
                     <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
                                Text="Include every procedure at these airports." />
@@ -135,7 +144,7 @@
             </ctl:Card>
 
             <!-- ============ procedures at any airport ============ -->
-            <ctl:Card Header="Procedures at Any Airport">
+            <ctl:Card Header="Procedures at Any Airport" IsEnabled="{Binding GeneratesDocument}">
                 <StackPanel>
                     <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
                                Text="Include a procedure wherever it appears, e.g. a STAR that serves several airports." />
@@ -184,7 +193,7 @@
             </ctl:Card>
 
             <!-- ============ airport + procedure ============ -->
-            <ctl:Card Header="Airport + Procedure">
+            <ctl:Card Header="Airport + Procedure" IsEnabled="{Binding GeneratesDocument}">
                 <StackPanel>
                     <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
                                Text="Include one procedure at one airport." />
@@ -251,7 +260,7 @@
             </ctl:Card>
 
             <!-- ============ chart types ============ -->
-            <ctl:Card Header="Chart Types">
+            <ctl:Card Header="Chart Types" IsEnabled="{Binding GeneratesDocument}">
                 <StackPanel>
                     <TextBlock Style="{StaticResource Text.Prose}" TextWrapping="Wrap" Margin="0,4,0,8"
                                MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
@@ -288,12 +297,15 @@
             </ctl:Card>
 
             <!-- ============ region of interest ============ -->
-            <cards:RoiOverrideCard>
+            <cards:RoiOverrideCard IsEnabled="{Binding GeneratesDocument}">
                 <cards:RoiOverrideCard.AdditionalContent>
                     <TextBlock Style="{StaticResource Text.Prose}" Margin="0,14,0,0" TextWrapping="Wrap"
                                MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
                                Text="Used only when 'Also include every airport inside the region of interest' is ticked under Airports." />
                 </cards:RoiOverrideCard.AdditionalContent>
             </cards:RoiOverrideCard>
+
+            <!-- ============ upload to vNAS (the alias file only) ============ -->
+            <cards:VnasUploadCard Visibility="{Binding GenerateAliasFile, Converter={StaticResource BoolToVis}}" />
     </StackPanel>
 </UserControl>

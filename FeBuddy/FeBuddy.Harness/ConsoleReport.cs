@@ -364,8 +364,8 @@ internal static class ConsoleReport
 
 	/// <summary>
 	/// Prints one Procedures run: timing, how many airports and procedures were included, the
-	/// New/Changed/Deleted (and re-added) counts, every document written, and the run's messages
-	/// grouped by level.
+	/// New/Changed/Deleted (and re-added) counts, every document written, the FAA Chart Recall alias
+	/// file, and the run's messages grouped by level.
 	/// </summary>
 	/// <param name="label">Heading for this run, e.g. "Procedures: Changes + JSON".</param>
 	/// <param name="result">What <c>ProcedureService.Run</c> returned.</param>
@@ -391,6 +391,10 @@ internal static class ConsoleReport
 				Console.WriteLine($"  {file}");
 			}
 		}
+
+		Console.WriteLine(result.AliasFilePath is null
+			? "Alias file:   (none)"
+			: $"Alias file:   {result.AliasCommandCount:N0} command(s) for {result.AliasAirportCount:N0} airport(s) -> {result.AliasFilePath}");
 
 		PrintMessagesByLevel(result.Messages);
 	}

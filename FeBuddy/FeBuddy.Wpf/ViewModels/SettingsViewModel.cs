@@ -24,13 +24,14 @@ using FeBuddy.Core.Infrastructure.Platform;
 
 using Microsoft.Win32;
 
+using FeBuddy.Versioning;
 using FeBuddy.Versioning.Models;
 
 namespace FeBuddy.Wpf.ViewModels;
 
 /// <summary>
-/// SYSTEM ▸ Settings. Section order: Updates, Facility Profile, Default Region of Interest,
-/// GeoJSON Files. Every value persists to <c>UserConfig.json</c>.
+/// SYSTEM ▸ Settings. Section order: Facility Profile, Default Region of Interest, GeoJSON Files,
+/// Updates. Every value persists to <c>UserConfig.json</c>.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -151,42 +152,7 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 		[ArtccKey] = SelectedFacility ?? string.Empty,
 	};
 
-	// ================= 1. UPDATES =================
-
-	/// <summary>The update channels, in the order the menu shows them.</summary>
-	public IReadOnlyList<ReleaseChannel> Channels { get; } =
-		[ReleaseChannel.Stable, ReleaseChannel.Beta, ReleaseChannel.Alpha];
-
-	/// <summary>The update channel. <see cref="ReleaseChannel.Stable"/> unless the developers tell you otherwise.</summary>
-	public ReleaseChannel Channel
-	{
-		get => _channel;
-		set { if (SetProperty(ref _channel, value)) MarkDirty(); }
-	}
-
-	/// <summary>Whether the machine has internet; the update check needs it.</summary>
-	public bool IsOnline => AppEnvironment.HasInternetConnection;
-
-	/// <summary>Re-runs the version check, then opens the update window or toasts that there is nothing new.</summary>
-	public ICommand CheckNowCommand { get; }
-
-	/// <summary><see langword="true"/> while "Check for updates now" is waiting on GitHub (the button shows "Checking…").</summary>
-	public bool IsCheckingForUpdates
-	{
-		get => _isCheckingForUpdates;
-		private set
-		{
-			if (SetProperty(ref _isCheckingForUpdates, value))
-			{
-				CommandManager.InvalidateRequerySuggested();
-			}
-		}
-	}
-
-	/// <summary>Opens the releases page, where an older version can be downloaded.</summary>
-	public ICommand RollbackCommand { get; }
-
-	// ================= 2. FACILITY PROFILE =================
+	// ================= 1. FACILITY PROFILE =================
 
 	/// <summary>Facilities from the current cycle's parsed airports, as <c>ArtccName (RespArtccId)</c>.</summary>
 	public ObservableCollection<FacilityOption> Facilities { get; } = [];
@@ -249,7 +215,7 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 	/// <summary>Picks <see cref="OutputDirectory"/> with a folder dialog.</summary>
 	public ICommand BrowseOutputCommand { get; }
 
-	// ================= 3. DEFAULT REGION OF INTEREST =================
+	// ================= 2. DEFAULT REGION OF INTEREST =================
 
 	/// <summary>Explains what an ROI is, under the Default Region of Interest heading.</summary>
 	public const string RoiExplainer =
@@ -293,7 +259,7 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 	/// <summary>Turns the default ROI off; saved with the rest of the page by <see cref="SaveCommand"/>.</summary>
 	public ICommand ClearRoiCommand { get; }
 
-	// ================= 4. GEOJSON FILES =================
+	// ================= 3. GEOJSON FILES =================
 
 	/// <summary>Explains the FE-Buddy properties.</summary>
 	public const string FebPropertiesDescription =
@@ -356,6 +322,93 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 	/// </summary>
 	public bool IsDevModeForcingPrettyPrint => DevMode.IsEnabled;
 
+	// ================= 4. UPDATES =================
+
+	/// <summary>The update channels, in the order the menu shows them: most finished first.</summary>
+	public IReadOnlyList<ReleaseChannel> Channels { get; } =
+		[ReleaseChannel.Stable, ReleaseChannel.ReleaseCandidate, ReleaseChannel.Beta, ReleaseChannel.Alpha];
+
+	/// <summary>Explains the channels under the Updates heading: each one includes every channel above it.</summary>
+	public const string UpdatesDescription =
+		"Choose the earliest stage of release you want to be offered. You are also offered every release that is further " +
+		"along, so each channel includes the ones listed above it: Release Candidate offers release candidates and stable " +
+		"releases, and Alpha offers every release.";
+
+	/// <summary>What choosing Stable offers.</summary>
+	public const string StableOffers = "Stable releases only";
+
+	/// <summary>What a stable release is, for the Stable tooltip.</summary>
+	public const string StableDescription =
+		"Fully tested releases with no known serious problems. The right choice for almost everyone.";
+
+	/// <summary>What choosing Release Candidate offers.</summary>
+	public const string ReleaseCandidateOffers = "Release candidates and stable releases";
+
+	/// <summary>What a release candidate is, for the Release Candidate tooltip.</summary>
+	public const string ReleaseCandidateDescription =
+		"Believed to be finished and working correctly, and in a final round of testing. If no problems turn up, it " +
+		"becomes the next stable release.";
+
+	/// <summary>What choosing Beta offers.</summary>
+	public const string BetaOffers = "Betas, release candidates and stable releases";
+
+	/// <summary>What a beta is, for the Beta tooltip.</summary>
+	public const string BetaDescription =
+		"Every planned feature is in and working, but testing is still under way, so expect some bugs that have not been " +
+		"fixed yet.";
+
+	/// <summary>What choosing Alpha offers.</summary>
+	public const string AlphaOffers = "Every release: alphas, betas, release candidates and stable releases";
+
+	/// <summary>What an alpha is, for the Alpha tooltip.</summary>
+	public const string AlphaDescription =
+		"Early builds with features still being worked on. Things may be unfinished, change from one build to the next, " +
+		"or not work at all.";
+
+	/// <summary>The update channel. <see cref="ReleaseChannel.Stable"/> unless the developers tell you otherwise.</summary>
+	public ReleaseChannel Channel
+	{
+		get => _channel;
+		set
+		{
+			if (SetProperty(ref _channel, value))
+			{
+				MarkDirty();
+				OnPropertyChanged(nameof(IsPreReleaseChannel));
+				OnPropertyChanged(nameof(ChannelWarning));
+			}
+		}
+	}
+
+	/// <summary>Whether a channel other than Stable is chosen, which shows <see cref="ChannelWarning"/>.</summary>
+	public bool IsPreReleaseChannel => Channel != ReleaseChannel.Stable;
+
+	/// <summary>The recommendation to stay on Stable, naming the pre-release channel chosen.</summary>
+	public string ChannelWarning =>
+		$"We recommend staying on Stable. The {Channel.DisplayName()} channel may change or break things you are used to.";
+
+	/// <summary>Whether the machine has internet; the update check needs it.</summary>
+	public bool IsOnline => AppEnvironment.HasInternetConnection;
+
+	/// <summary>Re-runs the version check, then opens the update window or toasts that there is nothing new.</summary>
+	public ICommand CheckNowCommand { get; }
+
+	/// <summary><see langword="true"/> while "Check for updates now" is waiting on GitHub (the button shows "Checking…").</summary>
+	public bool IsCheckingForUpdates
+	{
+		get => _isCheckingForUpdates;
+		private set
+		{
+			if (SetProperty(ref _isCheckingForUpdates, value))
+			{
+				CommandManager.InvalidateRequerySuggested();
+			}
+		}
+	}
+
+	/// <summary>Opens the releases page, where an older version can be downloaded.</summary>
+	public ICommand RollbackCommand { get; }
+
 	// ================= save =================
 
 	/// <summary>Writes every setting on the page to <c>UserConfig.json</c>. Live only while <see cref="IsDirty"/>.</summary>
@@ -401,21 +454,21 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 		}
 
 		// The check reads the saved channel; say so if the page shows a different, unsaved one.
-		string unsaved = Channel != version.Channel ? $" Save to check the {Channel} channel instead." : string.Empty;
+		string unsaved = Channel != version.Channel ? $" Save to check the {Channel.DisplayName()} channel instead." : string.Empty;
 		string current = version.CurrentVersion.TrimStart('v', 'V');
 
 		if (version.IsAheadOfLatestRelease)
 		{
 			Toast.Success("No update available",
-				$"This development build (v{current}) is ahead of the latest {version.Channel} release (v{version.LatestVersion}).{unsaved}");
+				$"This development build (v{current}) is ahead of the latest {version.Channel.DisplayName()} release (v{version.LatestVersion}).{unsaved}");
 		}
 		else if (version.LatestVersion is null)
 		{
-			Toast.Success("No update available", $"There are no releases on the {version.Channel} channel yet.{unsaved}");
+			Toast.Success("No update available", $"There are no releases on the {version.Channel.DisplayName()} channel yet.{unsaved}");
 		}
 		else
 		{
-			Toast.Success("You're up to date", $"v{current} is the latest {version.Channel} release.{unsaved}");
+			Toast.Success("You're up to date", $"v{current} is the latest {version.Channel.DisplayName()} release.{unsaved}");
 		}
 	}
 

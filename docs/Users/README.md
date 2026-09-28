@@ -53,5 +53,6 @@ procedure ISRs) are not in 3.0 yet. If you need them, keep using 2.x for now.
 
 - **New to it?** [Getting started](Getting-Started.md) walks you from installing to your first files.
 - **Want every detail?** The [user guide](User-Guide.md) covers every screen and option.
+- **Need a GitHub token** for a private alias file? See [Creating a GitHub token for FE-Buddy](GitHub-Token-Guide.md).
 - **A word you don't know?** Try the [glossary](Glossary.md).
 - **Something wrong?** See [FAQ and troubleshooting](FAQ-and-Troubleshooting.md).

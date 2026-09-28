@@ -41,6 +41,7 @@ public sealed class CredentialEditorViewModel : ObservableObject
 		SaveCommand = new RelayCommand(Save);
 		CancelCommand = new RelayCommand(() => CloseRequested?.Invoke(this, EventArgs.Empty));
 		CreateGitHubTokenCommand = new RelayCommand(() => BrowserLauncher.Open(Links.GitHubNewToken));
+		OpenGitHubTokenGuideCommand = new RelayCommand(() => BrowserLauncher.Open(Links.GitHubTokenGuide));
 	}
 
 	/// <summary>Raised when the editor should close: saved, or cancelled.</summary>
@@ -163,6 +164,9 @@ public sealed class CredentialEditorViewModel : ObservableObject
 
 	/// <summary>Opens GitHub's page for creating a fine-grained token.</summary>
 	public ICommand CreateGitHubTokenCommand { get; }
+
+	/// <summary>Opens the step-by-step guide to the settings to choose on that page.</summary>
+	public ICommand OpenGitHubTokenGuideCommand { get; }
 
 	private void Save()
 	{

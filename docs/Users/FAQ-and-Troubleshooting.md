@@ -109,7 +109,8 @@ located; the Review tab names it.
 
 The run leaves that file out of `vNAS_Alias.txt` and says why on the Review tab - don't upload the
 file until it's fixed, or that file's aliases disappear from vNAS. Press **Check** on the vNAS Alias
-Upload tab to try again straight away. The usual reasons:
+Upload tab to try again straight away. [Creating a GitHub token for FE-Buddy](GitHub-Token-Guide.md)
+walks through the token settings step by step. The usual reasons:
 
 - **GitHub could not find it (404).** Check the address is the file's own page (with `/blob/` in
   it) or its Raw link. A private repository looks missing without a token: choose a GitHub token

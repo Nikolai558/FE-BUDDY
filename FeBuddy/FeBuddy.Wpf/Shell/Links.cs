@@ -21,6 +21,12 @@ public static class Links
 	/// <summary>GitHub's page for creating a fine-grained personal access token.</summary>
 	public const string GitHubNewToken = "https://github.com/settings/personal-access-tokens/new";
 
+	/// <summary>
+	/// The step-by-step guide to making that token with the least access FE-Buddy needs. Pinned to
+	/// v3-development, like <see cref="Manual"/>.
+	/// </summary>
+	public const string GitHubTokenGuide = "https://github.com/Nikolai558/FE-BUDDY/blob/v3-development/docs/Users/GitHub-Token-Guide.md";
+
 	/// <summary>The issue tracker with a trailing slash, for turning a <c>#123</c> reference into a link.</summary>
 	public const string IssueUrlBase = Issues + "/";
 }

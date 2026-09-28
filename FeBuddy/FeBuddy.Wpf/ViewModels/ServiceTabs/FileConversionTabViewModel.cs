@@ -471,7 +471,7 @@ public abstract class FileConversionTabViewModel : ConversionTabViewModel, ISour
 		OpenFolderDialog dialog = new()
 		{
 			Title = $"Select the folder of {FileTypeLabel} files to convert",
-			InitialDirectory = Directory.Exists(SourceFolder) ? SourceFolder : null,
+			InitialDirectory = OutputPreferences.BrowseDirectory(SourceFolder),
 		};
 
 		if (dialog.ShowDialog() == true)
@@ -489,6 +489,7 @@ public abstract class FileConversionTabViewModel : ConversionTabViewModel, ISour
 			Title = $"Select the {FileTypeLabel} files to convert",
 			Filter = $"{FileDescription} ({patterns})|{patterns}|All files (*.*)|*.*",
 			Multiselect = true,
+			InitialDirectory = OutputPreferences.BrowseDirectory(),
 		};
 
 		if (dialog.ShowDialog() != true)

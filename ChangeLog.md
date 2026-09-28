@@ -13,6 +13,13 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
 -->
 
 ## Unreleased
+- Bug #251 - Fixed Airways losing its High and Low Files choices when you switched to another tab,
+  which left the tab flagged with errors that you couldn't clear by saving again.
+- Bug #256 - Links in News posts on the Dashboard can now be clicked, and posts show their formatting.
+- File and folder pickers (Map ▸ Load GeoJSON, File Conversions, Settings, custom alias files) now
+  open in your output folder, or on the Desktop if you haven't set one (#253).
+- The Info screen's Manual link is now **User Guide** and opens the 3.0 guide. A new
+  **FAQ / Troubleshooting** link opens the FAQ (#254).
 
 ## 3.0.0-alpha.1
 - FE-BUDDY 3.0 is a from-scratch rewrite with a new interface. This first alpha is for testers:

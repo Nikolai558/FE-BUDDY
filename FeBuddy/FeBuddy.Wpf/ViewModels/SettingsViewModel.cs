@@ -693,7 +693,7 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 			DefaultExt = ".json",
 			AddExtension = true,
 			FileName = $"FE-Buddy Settings{facility} {DateTime.Now:yyyy-MM-dd}.json",
-			InitialDirectory = Directory.Exists(OutputPreferences.Directory) ? OutputPreferences.Directory : null,
+			InitialDirectory = OutputPreferences.BrowseDirectory(),
 		};
 
 		if (dialog.ShowDialog(owner) != true)
@@ -723,6 +723,7 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 			Title = "Import FE-Buddy settings",
 			Filter = SettingsFileFilter,
 			Multiselect = false,
+			InitialDirectory = OutputPreferences.BrowseDirectory(),
 		};
 
 		if (dialog.ShowDialog(owner) != true)
@@ -929,7 +930,7 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 		OpenFolderDialog dialog = new()
 		{
 			Title = "Select the default output directory",
-			InitialDirectory = Directory.Exists(OutputDirectory) ? OutputDirectory : null,
+			InitialDirectory = OutputPreferences.BrowseDirectory(OutputDirectory),
 		};
 
 		if (dialog.ShowDialog() == true)

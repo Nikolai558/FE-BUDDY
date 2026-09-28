@@ -9,8 +9,11 @@ public static class Links
 	/// <summary>The FE-Buddy Discord server invite.</summary>
 	public const string Discord = "https://discord.gg/GB46aeauH4";
 
-	/// <summary>The FE-Buddy manual. Pinned to v3-development by name, like <c>GitHubRepository.Branch</c>, so changing the default branch never moves it.</summary>
-	public const string Manual = "https://github.com/Nikolai558/FE-BUDDY/tree/v3-development/docs/Users/Manual%20HTML";
+	/// <summary>The FE-Buddy User Guide. Pinned to v3-development by name, like <c>GitHubRepository.Branch</c>, so changing the default branch never moves it.</summary>
+	public const string UserGuide = "https://github.com/Nikolai558/FE-BUDDY/blob/v3-development/docs/Users/User-Guide.md";
+
+	/// <summary>The FAQ and troubleshooting page. Pinned to v3-development, like <see cref="UserGuide"/>.</summary>
+	public const string FaqAndTroubleshooting = "https://github.com/Nikolai558/FE-BUDDY/blob/v3-development/docs/Users/FAQ-and-Troubleshooting.md";
 
 	/// <summary>The release / change log.</summary>
 	public const string ChangeLog = "https://github.com/Nikolai558/FE-BUDDY/releases";
@@ -23,7 +26,7 @@ public static class Links
 
 	/// <summary>
 	/// The step-by-step guide to making that token with the least access FE-Buddy needs. Pinned to
-	/// v3-development, like <see cref="Manual"/>.
+	/// v3-development, like <see cref="UserGuide"/>.
 	/// </summary>
 	public const string GitHubTokenGuide = "https://github.com/Nikolai558/FE-BUDDY/blob/v3-development/docs/Users/GitHub-Token-Guide.md";
 

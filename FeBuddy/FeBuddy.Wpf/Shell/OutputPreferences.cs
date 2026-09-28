@@ -30,6 +30,17 @@ public static class OutputPreferences
 			? saved
 			: DefaultDirectory;
 
+	/// <summary>
+	/// Where a file or folder picker opens: <paramref name="preferred"/> - the folder the picker's
+	/// field already names - while it exists, else the output directory while it exists, else the Desktop.
+	/// </summary>
+	/// <param name="preferred">A more specific folder to open in, or <see langword="null"/>.</param>
+	/// <returns>The folder's full path.</returns>
+	public static string BrowseDirectory(string? preferred = null) =>
+		!string.IsNullOrWhiteSpace(preferred) && System.IO.Directory.Exists(preferred) ? preferred
+		: System.IO.Directory.Exists(Directory) ? Directory
+		: DefaultDirectory;
+
 	/// <summary>Whether to wrap output in a <c>FE-Buddy_Output</c> folder. On unless saved as <c>N</c>.</summary>
 	public static bool AddFeBuddyOutputFolder =>
 		!string.Equals(UserConfigFile.GetValue(UserConfigKeys.AddFeBuddyOutputFolder), "N", StringComparison.OrdinalIgnoreCase);

@@ -32,6 +32,11 @@ public sealed class MarkdownView : Decorator
 		nameof(IssueUrlBase), typeof(string), typeof(MarkdownView),
 		new PropertyMetadata(null, (d, _) => ((MarkdownView)d).Rebuild()));
 
+	/// <summary>Identifies the <see cref="LinkBase"/> dependency property.</summary>
+	public static readonly DependencyProperty LinkBaseProperty = DependencyProperty.Register(
+		nameof(LinkBase), typeof(string), typeof(MarkdownView),
+		new PropertyMetadata(null, (d, _) => ((MarkdownView)d).Rebuild()));
+
 	/// <summary>Identifies the <see cref="HeadingOffset"/> dependency property.</summary>
 	public static readonly DependencyProperty HeadingOffsetProperty = DependencyProperty.Register(
 		nameof(HeadingOffset), typeof(int), typeof(MarkdownView),
@@ -55,6 +60,16 @@ public sealed class MarkdownView : Decorator
 	}
 
 	/// <summary>
+	/// The web address of the page the Markdown lives on, so a relative link - <c>docs/Users/User-Guide.md</c> -
+	/// opens where GitHub would take it. Without one, a relative link shows as plain text.
+	/// </summary>
+	public string? LinkBase
+	{
+		get => (string?)GetValue(LinkBaseProperty);
+		set => SetValue(LinkBaseProperty, value);
+	}
+
+	/// <summary>
 	/// Levels to push every heading down by (capped at level 6), for Markdown shown under a
 	/// heading of its own - the update window's per-release sections use 1, so a release's
 	/// "## Change log" sits below its version header.
@@ -68,7 +83,8 @@ public sealed class MarkdownView : Decorator
 	private void Rebuild()
 	{
 		var root = new StackPanel();
-		AddBlocks(root, Demote(MarkdownParser.Parse(Markdown, IssueUrlBase), HeadingOffset), 0);
+		Uri? linkBase = Uri.TryCreate(LinkBase, UriKind.Absolute, out Uri? uri) ? uri : null;
+		AddBlocks(root, Demote(MarkdownParser.Parse(Markdown, IssueUrlBase, linkBase), HeadingOffset), 0);
 		Child = root;
 	}
 

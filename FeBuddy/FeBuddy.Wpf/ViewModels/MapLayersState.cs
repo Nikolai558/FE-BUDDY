@@ -867,6 +867,7 @@ public sealed class MapLayersState : ObservableObject
 			Title = "Open GeoJSON",
 			Filter = "GeoJSON (*.geojson;*.json)|*.geojson;*.json|All files (*.*)|*.*",
 			Multiselect = true,
+			InitialDirectory = OutputPreferences.BrowseDirectory(),
 		};
 
 		if (dialog.ShowDialog() != true)

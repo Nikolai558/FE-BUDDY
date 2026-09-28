@@ -1,0 +1,111 @@
+<ctl:ChromeWindow x:Class="FeBuddy.Wpf.Views.UpdateWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:FeBuddy.Wpf.ViewModels"
+        xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
+        xmlns:app="clr-namespace:FeBuddy.Wpf.Shell"
+        xmlns:m="clr-namespace:FeBuddy.Wpf.ViewModels.Models"
+        mc:Ignorable="d"
+        d:DataContext="{d:DesignInstance vm:UpdateWindowViewModel}"
+        Title="Update FE-Buddy"
+        Width="560" SizeToContent="Height"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False"
+        FontFamily="{StaticResource Font.Body}"
+        Background="{StaticResource Brush.Bg.Base}">
+
+    <Border Padding="24">
+        <StackPanel>
+            <TextBlock Text="Update available"
+                       FontFamily="{StaticResource Font.Display}" FontSize="18" FontWeight="Bold"
+                       Foreground="{StaticResource Brush.Text.Primary}" />
+            <!-- Only when more than one release behind. -->
+            <TextBlock Text="{Binding ReleasesBehind}" Style="{StaticResource Text.Caption}" Margin="0,4,0,0"
+                       Visibility="{Binding ReleasesBehind, Converter={StaticResource StringToVis}}" />
+
+            <Grid Margin="0,14,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <TextBlock Grid.Row="0" Grid.Column="0" Text="Installed" Style="{StaticResource Text.Caption}" Margin="0,0,16,4" />
+                <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding CurrentVersion, StringFormat=v{0}}" Style="{StaticResource Text.Body}" Margin="0,0,0,4" />
+
+                <TextBlock Grid.Row="1" Grid.Column="0" Text="Latest" Style="{StaticResource Text.Caption}" Margin="0,0,16,4" />
+                <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding LatestVersion, StringFormat=v{0}}" Style="{StaticResource Text.Body.Strong}" Margin="0,0,0,4" />
+
+                <TextBlock Grid.Row="2" Grid.Column="0" Text="Channel" Style="{StaticResource Text.Caption}" Margin="0,0,16,0" />
+                <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Channel}" Style="{StaticResource Text.Body}" />
+            </Grid>
+
+            <Border Style="{StaticResource Divider}" Margin="0,16" />
+
+            <ctl:SectionHeader Style="{StaticResource SectionHeader.Group}" Label="Release Notes" Margin="0,0,0,6" />
+            <ScrollViewer MaxHeight="320" VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled"
+                          Background="{StaticResource Brush.Bg.Sunken}"
+                          Padding="14,12">
+                <!-- One section per release, newest first: version header, then its notes. -->
+                <ItemsControl ItemsSource="{Binding Releases}" Focusable="False">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="{x:Type m:ReleaseNotesItem}">
+                            <StackPanel>
+                                <Border Style="{StaticResource Divider}" Margin="0,18"
+                                        Visibility="{Binding IsFirst, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
+
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="{Binding Version}" VerticalAlignment="Center"
+                                               FontFamily="{StaticResource Font.Display}" FontSize="15" FontWeight="Bold"
+                                               Foreground="{StaticResource Brush.Text.Primary}" />
+                                    <TextBlock Text="{Binding PublishedOn}" Style="{StaticResource Text.Caption}"
+                                               VerticalAlignment="Center" Margin="10,1,0,0"
+                                               Visibility="{Binding PublishedOn, Converter={StaticResource StringToVis}}" />
+                                    <Border Style="{StaticResource Chip.Warn}" Margin="10,0,0,0"
+                                            Visibility="{Binding IsPrerelease, Converter={StaticResource BoolToVis}}">
+                                        <TextBlock Text="PRE-RELEASE" Style="{StaticResource Chip.Text}"
+                                                   Foreground="{StaticResource Brush.Warn}" />
+                                    </Border>
+                                </StackPanel>
+
+                                <ctl:MarkdownView Markdown="{Binding Notes}" HeadingOffset="1" Margin="0,10,0,0"
+                                                  IssueUrlBase="{x:Static app:Links.IssueUrlBase}" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+
+            <!-- What the main button does; replaced by the download's progress while it runs. -->
+            <TextBlock Style="{StaticResource Text.Body}" Margin="0,10,0,0" TextWrapping="Wrap"
+                       Text="{Binding FooterText}"
+                       Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
+
+            <StackPanel Margin="0,12,0,0"
+                        Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}">
+                <ProgressBar Style="{StaticResource Progress}" Value="{Binding ProgressPercent, Mode=OneWay}" />
+                <TextBlock Style="{StaticResource Text.Caption}" Margin="0,6,0,0" Text="{Binding ProgressText}" />
+            </StackPanel>
+
+            <TextBlock Style="{StaticResource Text.Body}" Margin="0,10,0,0" TextWrapping="Wrap"
+                       Foreground="{StaticResource Brush.Danger}"
+                       Text="{Binding ErrorText}"
+                       Visibility="{Binding ErrorText, Converter={StaticResource StringToVis}}" />
+
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
+                <Button Content="{Binding LaterButtonText}" Style="{StaticResource Button.Ghost}"
+                        Command="{Binding LaterCommand}" MinWidth="88" Margin="0,0,10,0" />
+                <Button Content="{Binding UpdateButtonText}" Style="{StaticResource Button.Primary}"
+                        Command="{Binding UpdateCommand}" MinWidth="150" />
+            </StackPanel>
+        </StackPanel>
+    </Border>
+</ctl:ChromeWindow>

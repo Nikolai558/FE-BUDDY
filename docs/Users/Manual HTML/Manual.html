@@ -1,0 +1,1621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FE-Buddy Manual</title>
+
+    <link rel="icon" href="Media/FEB_ICON.ico" type="image/x-icon">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<! -- CSS stuff -->
+<style>
+    
+    /* GENERAL */
+
+            /* Reset some default styles and set the base font family and colors */
+            body {
+                font-family: Arial, sans-serif;
+                background-color: #141414; /* Background color of the entire page */
+                color: #C6C6C6; /* Text color */
+                margin: 0; /* Remove default margin */
+                padding: 0; /* Remove default padding */
+                display: flex; /* Use flex layout to position sidebar and content */
+            }
+
+            /* Center images within tooltips and centered-img div */
+            .tooltip img,
+            .centered-img {
+                display: block;
+                margin: 0 auto; /* Center the images horizontally */
+            }
+
+            /* CSS for collapsible sections - initially hidden */
+            .section {
+                display: none;
+            }
+            
+            /* CSS for active (visible) collapsible sections */
+            .section.active {
+                display: block;
+            }
+
+            /* CSS creating color aliases/classes */
+            .blue { color: #0076E7; }
+            .light-blue { color: #009EE7; }
+            .green { color: #00a305; }
+            .red { color: #bd0202; }
+
+    /* SIDE BAR AREA */
+
+            /* Style for the sidebar */
+            #sidebar {
+                width: 250px; /* Set the width of the sidebar */
+                background-color: #0D0D0D; /* Background color of the sidebar */
+                padding: 20px; /* Add padding to the sidebar content */
+            }
+            /* Style for links in the sidebar */
+            #sidebar a {
+                display: block; /* Display links as blocks for spacing */
+                color: #C6C6C6; /* Text color for links */
+                text-decoration: none; /* Remove underlines from links */
+                margin-bottom: 10px; /* Add spacing between links */
+            }
+
+            /* Style for links in the sidebar on hover */
+            #sidebar a:hover {
+                text-decoration: underline; /* Underline links when hovered */
+            }
+
+    /* CONTENT AREA */
+
+            /* Style for the main content area */
+            #content {
+                flex: 1; /* Allow the content area to grow and fill the remaining space */
+                padding: 20px; /* Add padding to the content area */
+            }
+
+            /* Style for links in the main content area */
+            #content a {
+                color: #c800e7; /* Change link color to blue in the main content area */
+            }
+
+            /* Centering the tables */
+            .center-table {
+                margin: 0 auto; /* Set left and right margin to auto for centering */
+            }
+
+            /* Add this style for centering text in table cells */
+            .center-table td {
+                text-align: center;
+            }
+
+            /* Add this style for adjusting column widths */
+            .center-table th, .center-table td {
+                width: 130px; /* Set your desired width here */
+            }
+
+</style>
+</head>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<body>
+
+    <! -- Sidebar content -->
+
+<div id="sidebar">
+    <h2>FE-Buddy Manual</h2>
+    <ul>
+        <li><a href="#overview">Overview</a></li>
+        <li><a href="#historyCreds">History and Credits</a></li>
+        <li><a href="#systemRequirements">System Requirements</a></li>
+        <li><a href="#reportIssuesFeatReq">Issues or Feature Requests</a></li>
+        <li>
+            <a href="#" id="toggleAiracUpdates">AIRAC Updates</a>
+            <ul id="airacUpdatesList" style="display: none;">
+                <li><a href="#faaChartRecall">Alias-Chart Recall</a></li>
+                <li><a href="#contentDisplay">Alias-Content Display</a></li>
+                <li><a href="#inScopeReference">Alias-ISR</a></li>
+                <li><a href="#aliasTestFile">Alias-Test File</a></li>
+                <li><a href="#duplicateCommands">Alias-Duplicates</a></li>
+                <li><a href="#publications">Publications</a></li>
+                <li><a href="#mapApt">Maps-Airports</a></li>
+                <li><a href="#mapArtcc">Maps-ARTCC Boundaries</a></li>
+                <li><a href="#mapAwy">Maps-Airways</a></li>
+                <li><a href="#mapFixes">Maps-Fixes</a></li>
+                <li><a href="#mapNavaids">Maps-NAVAIDs</a></li>
+                <li><a href="#mapRwy">Maps-Runways</a></li>
+                <li><a href="#mapWx">Maps-Wx Stations</a></li>
+                <li><a href="#mapStarDp">Maps-STAR/DP</a></li>
+            </ul>
+        </li>
+        <li><a href="#createGeojson">Create GeoJSON</a></li>
+        <li><a href="#geojsonCleanup">GeoJSON Clean-up</a></li>
+        <li><a href="#procedureIsrs">Procedure ISRs</a></li>
+        <li><a href="#sct2ToGeoJSON">SCT2 > GeoJSON</a></li>
+        <li><a href="#faaRVMToGeoJSON">FAA RVM > GeoJSON</a></li>
+        <li><a href="#faaGeoMapToGeoJSON">FAA GeoMap > GeoJSON</a></li>
+    </ul>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        <! -- Content Pages -->
+
+        <div id="content">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        <! -- General Overview content -->
+
+        <div class="section active" id="overview">
+            <h1>Overview</h1>
+            <!-- Separator -->
+            <hr>
+            
+            <div class="tooltip">
+              <img src="Media/Overview_Header_Image.png"
+              alt="Test Image 1"
+              width="424"
+              height="264"
+              title="Alt Text: Overview_Header_Image&#10;Image Source: Media/Overview_Header_Image.png"
+              class="centered-img">
+        </div>
+
+            <p>FE-Buddy is a valuable tool designed for VATSIM/VATUSA ARTCC Facility Engineers. It simplifies the creation, editing, and maintenance of facility files like GeoMaps, RADAR video maps (RVMs), and alias command files. Additionally, FE-Buddy offers the ability to convert FAA GeoMaps, RVMs, and NASR data into GeoJSON files, which can be seamlessly used in the CRC program. The program boasts several essential features:</p>
+            <ul>
+			
+			<br>
+			
+              <li>
+                <strong>AIRAC Update:</strong>
+                <p>Keep your software current with the latest FAA NASR data. Options include comprehensive or custom updates, saved user preferences, and GeoJSON file customization.</p>
+              </li>
+			  
+			  <br>
+			  
+              <li>
+                <strong>FAA RADAR Video Maps Conversion:</strong>
+                <p>Streamline the conversion of real-world RADAR video maps from .DAT and .KMLZ files. Customize your point of tangency (POT) options and retain distance settings for batch processing.</p>
+              </li>
+			  
+			  <br>
+			  
+              <li>
+                <strong>FAA GeoMap Conversions:</strong>
+                <p>Transform FAA ERAM GEOMAP data into versatile GeoJSON files. Export options include GeoMap Object Description, Filter Assignment, or Identical Attributes. Log files provide detailed insights.</p>
+              </li>
+			  
+			  <br>
+			  
+              <li>
+                <strong>.SCT2 File Conversion:</strong>
+                <p>Convert .SCT2 files into usable GeoJSON files. Export section titles and include exceptions for SID and STAR sections.</p>
+              </li>
+			  
+			  <br>
+			  
+              <li>
+                <strong>Create GeoJSON:</strong>
+                <p>Empower users to craft custom GeoJSON files with a user-friendly interface. Supports features like line string breaks.</p>
+              </li>
+			  
+			  <br>
+			  
+              <li>
+                <strong>GeoJSON Cleanup:</strong>
+                <p>Optimize GeoJSON files for CRC use by setting default values, cascading code, and combining features for cleaner code.</p>
+              </li>
+			  
+			  <br>
+			  
+              <li>
+                <strong>Procedure ISR:</strong>
+                <p>Access a quick-reference guide for controllers, referencing procedures from the d-TPP MetaFile. Pre-fill available information and customize fields as needed.</p>
+              </li>
+			  
+			  <br>
+			  
+              <li>
+                <strong>Settings Menu:</strong>
+                <p>Customize your program experience with general settings. Manage notifications and preferences for optimal control.</p>
+              </li>
+            </ul>
+        </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        <! -- Credit and History content -->
+
+        <div class="section" id="historyCreds">
+            <h1>History and Credits</h1>
+            <!-- Separator -->
+            <hr>
+            
+           <p>FE-Buddy has an interesting history of development, stemming from the desire to automate the Facility Files updating process.</p>
+           <p>In 2020, Nikolas and Kyle initiated their journey to automate the Facility Files updating process, focusing on providing monthly AIRAC cycle updates for the vZLC ARTCC.</p>
+           <p>Recognizing the potential for broader utility, they expanded the project's scope, aiming to create a tool accessible to all ARTCCs.</p>
+           <p>The early stages of FE-Buddy, specifically pre-version 3.0, were characterized by the rapid development of foundational functionality. The program's growth was a learning experience, with an emphasis on acquiring C# skills and adhering to coding best practices.</p>
+           <p>In 2023, a comprehensive rebuild of FE-Buddy was initiated. This ongoing effort aims to enhance the program's functionality, user experience, and maintainability.</p>
+
+			
+			<br>
+
+            <p>Special thanks to the following contributors for their roles in the development and success of FE-Buddy:</p>
+            <ul>
+              <li>Nikolas Boling - Primary Developer and Programmer</li>
+              <li>Kyle Sanders - Concept Design and Original Author</li>
+              <li>Kyle Rodgers - Developer and Antimeridian Split Logic</li>
+              <li>John Lewis - Icon and Logo Design</li>
+              <li>Chris James - Program Name</li>
+              <li>Cian Ormond - dotNET 6 Conversion Assistance</li>
+              <li>Caelan Sayler - dotNET 6 Conversion Assistance and Clowd.Squirrel Development</li>
+              <li>Ian Drake - FAA FOIA RVM Conversion source code reference</li>
+            </ul>
+            </p>
+        </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+       <! -- System Requirements content -->
+       
+       <div class="section" id="systemRequirements">
+           <h1>System Requirements</h1>
+           <!-- Separator -->
+           <hr>
+           
+           <p>Windows OS required, with version 8.1 or newer recommended.</p>
+           
+           <p>cURL recommended but not required. To check if cURL is installed on your system:</p>
+           
+           <ol>
+               <li>Open Command Prompt by selecting the Windows key on your keyboard, type the following and press enter: <code>CMD</code></li>
+               <li>In the prompt window, type the following and press enter: <code>curl --version</code></li>
+               <li>If cURL is installed, the prompt will respond with "<code>curl x.x.x</code>" where x = the version number installed.</li>
+               <li>If cURL does not respond with that, then it is recommended that you <a href="https://www.google.com/search?q=how+to+install+curl">install cURL</a>.</li>
+           </ol>
+       </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        <! -- Issues/Feature requests content -->
+
+        <div class="section" id="reportIssuesFeatReq">
+            <h1>Issues or Feature Requests</h1>
+            <!-- Separator -->
+            <hr>
+            
+
+            <h2>Check If Your Issue Already Exists</h2>
+            <p>Before reporting a new issue or making a feature request, please check if someone else has already submitted a similar request. This helps avoid duplicates and streamlines the process. You can browse the existing issues by visiting the <a href="https://github.com/Nikolai558/FE-BUDDY/issues" target="_blank">FE-Buddy GitHub Issues page</a>. This page displays all the open issues, making it easy to see if your concern has already been addressed.</p>
+            
+            <h2>Submit Report</h2>
+            <ul>
+              <li>Visit the <a href="https://github.com/Nikolai558/FE-BUDDY/issues" target="_blank">FE-Buddy GitHub Issues page</a>.</li>
+              <li>Click the "New Issue" button.</li>
+              <li>You will be presented with issue templates. Choose the relevant template based on your concern:
+                <ul>
+                  <li>If you are experiencing a problem or bug, select "Bug report."</li>
+                  <li>If you have a new feature or enhancement in mind, choose "Feature request."</li>
+                </ul>
+              </li>
+              <li>Fill out the provided form with as much detail as possible:
+                <ul>
+                  <li>Describe the issue or feature request clearly and concisely.</li>
+                  <li>Include information about your operating system, FE-Buddy version, and any relevant context that might help the developers understand your request.</li>
+                </ul>
+              </li>
+              <li>Once you've filled out the form, click the "Submit new issue" button.</li>
+            </ul>
+          </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        <! -- AIRAC Update Overview content -->
+
+        <div class="section" id="airacUpdate">
+            <h1>AIRAC Updates</h1>
+                
+            <!-- Separator -->
+            <hr>
+            
+            <p>FE-Buddy will assist Facility Engineers in the updating of their facility files and procedures by gathering upcoming AIRAC data and compiling it into required formats such as Alias, geoJSON, and Procedure Change files.</p>
+            <!-- Maybe place some example screenshots of the files here? -->
+        </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        <! -- FAA Chart Recall aliases content -->
+
+        <div class="section" id="faaChartRecall">
+            <h1>FAA Chart Recall Aliases</h1>
+                
+            <!-- Separator -->
+            <hr>
+            
+            <h3>Overview</h3>
+                <ul>
+                  <li><strong>FILE:</strong> FAA_CHART_RECALL_ALIAS.txt</li>
+                  <li><strong>DESCRIPTION:</strong> The user inputs a command with a syntax that contains the procedure ID or name, and it results in the users default webbrowser opening the FAA chart for that procedure.</li>
+                  <li><strong>SYNTAX:</strong> Variable; Explained below.</span></li>
+                  <li><strong>INCLUDED:</strong></li>
+                    <ul>
+                      <li>Takeoff Minimums/Obstacle Departure Procedure Page</li>
+                      <li>Diverse Vector Area Page</li>
+                      <li>Hot Spots Page</li>
+                      <li>Land and Hold Short Operations Page</li>
+                      <li>Airport Diagrams</li>
+                      <li>DP/STAR Plates</li>
+                      <li>IAP Plates</li>
+                    </ul>
+                  <li><strong>NOTE:</strong> For the purpose of these commands, "APT" is meant as the FAA ID for the airport.</li>
+                </ul>
+				
+				<br>
+				<br>
+                
+                <h3>Takeoff Minimums/Obstacle Departure Procedure Page</h3>
+                <ul>
+                  <li><strong>SYNTAX:</strong> .<span class="blue">&lt;APT&gt;</span>TMC</li>
+                  <li><strong>EXAMPLE:</strong> .<span class="blue">SLC</span>TMC</li>
+                </ul>
+                <!-- TODO: Add image of the SLCTMC chart -->
+				
+				<br>
+				<br>
+                
+                <h3>Diverse Vector Area Page</h3>
+                <ul>
+                  <li><strong>SYNTAX:</strong> .<span class="blue">&lt;APT&gt;</span>DVAC</li>
+                  <li><strong>EXAMPLE:</strong> .<span class="blue">SDL</span>DVAC</li>
+                </ul>
+                <!-- TODO: Add image of the SDLDVAC chart -->
+				
+				<br>
+				<br>
+                
+                <h3>Hot Spots Page</h3>
+                <ul>
+                  <li><strong>SYNTAX:</strong> .<span class="blue">&lt;APT&gt;</span>HSC</li>
+                  <li><strong>EXAMPLE:</strong> .<span class="blue">EDF</span>HSC</li>
+                </ul>
+                <!-- TODO: Add image of the EDFHSC chart -->
+				
+				<br>
+				<br>
+                
+                <h3>Land and Hold Short Operations Page</h3>
+                <ul>
+                  <li><strong>SYNTAX:</strong> .<span class="blue">&lt;APT&gt;</span>LHASOC</li>
+                  <li><strong>EXAMPLE:</strong> .<span class="blue">BZN</span>LAHSOC</li>
+                </ul>
+                <!-- TODO: Add image of the BZNLAHSO chart -->
+				
+				<br>
+				<br>
+                
+                <h3>Airport Diagrams</h3>
+                <ul>
+                  <li><strong>SYNTAX:</strong> .<span class="blue">&lt;APT&gt;</span>APDC</li>
+                  <li><strong>EXAMPLE:</strong> .<span class="blue">SLC</span>APDC</li>
+                </ul>
+                <!-- TODO: Add image of the SLCAPDC chart -->
+				
+				<br>
+				<br>
+                
+                <h3>DP/STAR Plates</h3>
+                <ul>
+                  <li><strong>SYNTAX:</strong> .<span class="light-blue">&lt;APT&gt;</span><span class="blue">&lt;PROCEDURE ID without version number&gt;</span>C<span class="red">&lt;page number, if not 1&gt;</span></li>
+                  <li><strong>EXAMPLES:</strong>
+                    <ul>
+                      <li>.<span class="light-blue">DEN</span><span class="blue">AALLE</span>C</li>
+                      <li>.<span class="light-blue">DEN</span><span class="blue">AALLE</span>C<span class="red">2</span></li>
+                      <li>.<span class="light-blue">DEN</span><span class="blue">AALLE</span>C<span class="red">3</span></ul>
+                  </ul>
+                <!-- TODO: Add images of the DENALLEC charts -->
+				
+				<br>
+				<br>
+                
+                <h3>DP/STAR Plates - Without FAA Assigned Computer Code</h3>
+                <ul>
+                  <li><strong>SYNTAX:</strong> .<span class="light-blue">&lt;APT&gt;</span><span class="blue">&lt;first 5 characters of procedure name (no spaces)&gt;</span>C<span class="red">&lt;page number, if not 1&gt;</span></li>
+                  <li><strong>EXAMPLES:</strong>
+                    <ul>
+                      <li>TNX-TUMBE ONE
+                          <ul><li>.<span class="light-blue">TNX</span><span class="blue">TUMBE</span>C</li></ul>
+                      </li>
+                      <li>TTD-BLUE LAKE THREE
+                          <ul><li>.<span class="light-blue">TTD</span><span class="blue">BLUEL</span>C</li></ul>
+                      </li>
+                      <li>GEG-SPOKANE SIX
+                          <ul><li>.<span class="light-blue">GEG</span><span class="blue">SPOKA</span>C</li></ul>
+                      </li>
+                      <li>GEG-SPOKANE, CONT. SIX
+                          <ul><li>.<span class="light-blue">GEG</span><span class="blue">SPOKA</span>C<span class="red">2</span></ul></ul>
+                      </li>
+                  </ul>
+                <!-- TODO: Add images of the GEGSPOKA charts -->
+				
+				<br>
+				<br>
+                
+                <h3>Instrument Approach Plates</h3>
+                <ul><li><strong>SCRATCHPAD (SPad) CODE INFO:</strong>
+                    <ul><li>This collection of codes is intended to be utilized FAA-wide and formatted in an intuitive manner.</li></ul>
+                    <ul><li>The idea is to attempt to keep every code limited to 3 characters, while allowing an increase to 4 characters when the situation requires. Never will you see a 5 character SPad Code.</li></ul>
+                    <ul><li>When creating a general syntax for such a dynamic library of approaches, there will be limitations; Some approaches were not included in this colletion such as PRM, SA CAT (i,ii,iii), HI-, BACK COURSE, LOC/NDB/COPTER, CONVERGING ILS, and GLS.</li></ul>
+                    <ul><li>When a Runway number must be shortened, the last digit in the runway number is used along wiht the parallel/type runway (L/C/R/G/W) designator, if there is one.</li></ul>
+                    <ul><li>The only time you will see a 4 character SPad code is when there is a Variant, 2-digit runway number, and a L/C/R designator.</li></ul>
+                  </li>
+                <li><strong>SYNTAX:</strong> .<span class="light-blue">&lt;APT&gt;</span><span class="blue">&lt;IAP SPad Code&gt;</span>C</li>
+                </ul>
+                
+                    <table border="1" class="center-table">
+                        <thead>
+                            <tr>
+                                <th>APP TYPE</th>
+                                <th>ABBREVIATION</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Visual</td>
+                                <td>V</td>
+                            </tr>
+                            <tr>
+                                <td>Contact</td>
+                                <td>C</td>
+                            </tr>
+                            <tr>
+                                <td>ILS</td>
+                                <td>I</td>
+                            </tr>
+                            <tr>
+                                <td>LOC</td>
+                                <td>L</td>
+                            </tr>
+                            <tr>
+                                <td>RNAV</td>
+                                <td>R</td>
+                            </tr>
+                            <tr>
+                                <td>GPS</td>
+                                <td>G</td>
+                            </tr>
+                            <tr>
+                                <td>VOR</td>
+                                <td>O</td>
+                            </tr>
+                            <tr>
+                                <td>NDB</td>
+                                <td>N</td>
+                            </tr>
+                            <tr>
+                                <td>SDF</td>
+                                <td>S</td>
+                            </tr>
+                            <tr>
+                                <td>LDA</td>
+                                <td>D</td>
+                            </tr>
+                            <tr>
+                                <td>TACAN</td>
+                                <td>T</td>
+                            </tr>
+                            <tr>
+                                <td>VOR/DME</td>
+                                <td>F</td>
+                            </tr>
+                            <tr>
+                                <td>LOC/DME</td>
+                                <td>K</td>
+                            </tr>
+                            <tr>
+                                <td>ILS/DME</td>
+                                <td>J</td>
+                            </tr>
+                            <tr>
+                                <td>NDB/DME</td>
+                                <td>D</td>
+                            </tr>
+                            <tr>
+                                <td>LDA/DME</td>
+                                <td>A</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                
+                <!-- blank line -->
+                <br>
+                
+                    <table border="1" class="center-table">
+                        <thead>
+                            <tr>
+                                <th><span class="blue">TYPE</span></th>
+                                <th><span class="green">VARIANT</span></th>
+                                <th><span class="red">RWY</span></th>
+                                <th>SPAD CODE</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>ILS</td>
+                                <td></td>
+                                <td>10</td>
+                                <td><span class="blue">I</span><span class="red">10</span></td>
+                            </tr>
+                            <tr>
+                                <td>ILS</td>
+                                <td>Y</td>
+                                <td>10</td>
+                                <td><span class="blue">I</span><span class="green">Y</span><span class="red">0</span></td>
+                            </tr>
+                                <td>ILS</td>
+                                <td></td>
+                                <td>28R</td>
+                                <td><span class="blue">I</span><span class="red">8R</span></td>
+                            </tr>
+                            <tr>
+                                <td>ILS</td>
+                                <td>Y</td>
+                                <td>28R</td>
+                                <td><span class="blue">I</span><span class="green">Y</span><span class="red">8R</span></td>
+                            </tr>
+                            <tr>
+                                <td>VOR</td>
+                                <td></td>
+                                <td>12</td>
+                                <td><span class="blue">O</span><span class="red">12</span></td>
+                            </tr>
+                            <tr>
+                                <td>VOR</td>
+                                <td>B</td>
+                                <td></td>
+                                <td><span class="blue">O</span><span class="green">B</span></td>
+                            </tr>
+                            <tr>
+                                <td>RNAV</td>
+                                <td></td>
+                                <td>04</td>
+                                <td><span class="blue">R</span><span class="red">04</span></td>
+                            </tr>
+                            <tr>
+                                <td>RNAV</td>
+                                <td>X</td>
+                                <td>04C</td>
+                                <td><span style="color: #0076E7">R</span><span class="green">X</span><span class="red">4C</span></td>
+                            </tr>
+                            <tr>
+                                <td>LOC/DME</td>
+                                <td>Z</td>
+                                <td>18L</td>
+                                <td><span class="blue">K</span><span class="green">Z</span><span class="red">8L</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                
+                <!-- blank line -->
+                <br>
+                
+                    <table border="1" class="center-table" style="width: 630px;">
+                        <thead>
+                            <tr>
+                                <th><span class="blue">AIRPORT</span></th>
+                                <th>APPROACH</th>
+                                <th>COMMAND<br><span class="red">(SPad = RED)</span></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>SLC</td>
+                                <td>ILS RWY 16L</td>
+                                <td>.<span class="blue">SLC</span><span class="red">I6L</span>C</td>
+                            </tr>
+                            <tr>
+                            <tr>
+                                <td>SLC</td>
+                                <td>LOC RWY 16L</td>
+                                <td>.<span class="blue">SLC</span><span class="red">L6L</span>C</td>
+                            </tr>
+                            <tr>
+                                <td>ENV</td>
+                                <td>RNAV-A</td>
+                                <td>.<span class="blue">ENV</span><span class="red">RA</span>C</td>
+                            </tr>
+                            <tr>
+                                <td>XSA</td>
+                                <td>RNAV (GPS) RWY 10</td>
+                                <td>.<span class="blue">XSA</span><span class="red">R10</span>C</td>
+                            </tr>
+                            <tr>
+                                <td>EKN</td>
+                                <td>LDA-C</td>
+                                <td>.<span class="blue">EKN</span><span class="red">DC</span>C</td>
+                            </tr>
+                            <tr>
+                                <td>SFO</td>
+                                <td>RNAV (RNP) Y RWY 28R</td>
+                                <td>.<span class="blue">SFO</span><span class="red">RY8R</span>C</td>
+                            </tr>
+                            <tr>
+                                <td>SFO</td>
+                                <td>RNAV (RNP) X RWY 28R</td>
+                                <td>.<span class="blue">SFO</span><span class="red">RX8R</span>C</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                
+                <!-- blank line -->
+                <br>
+				<br>
+                
+                <h3>Charted Visual Instrument Approach Plates</h3>
+                <li><strong>SYNTAX:</strong> .<span class="light-blue">&lt;APT&gt;</span>V<span class="blue">&lt;1st character of each word prior to "Visual"&gt;</span>C</li>
+                
+                <!-- blank line -->
+                <br>
+                
+                    <table border="1" class="center-table" style="width: 630px;">
+                        <thead>
+                            <tr>
+                                <th>AIRPORT</th>
+                                <th>APPROACH NAME</th>
+                                <th>SPad</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="light-blue">SFO</span></td>
+                                <td>QUIET BRIEDGE VISUAL RWY 28L/R</td>
+                                <td>.<span class="light-blue">SFO</span>V<span class="blue">QB</span>C</td>
+                            </tr>
+                            <tr>
+                                <td><span class="light-blue">SFO</span></td>
+                                <td>TIPP TOE VISUAL RWY 28L/R</td>
+                                <td>.<span class="light-blue">SFO</span>V<span class="blue">TT</span>C</td>
+                            </tr>
+                            <tr>
+                                <td><span class="light-blue">SJC</span></td>
+                                <td>FAIRGROUNDS VISUAL RWY 30L/R</td>
+                                <td>.<span class="light-blue">SJC</span>V<span class="blue">F</span>C</td>
+                            </tr>
+                            <tr>
+                                <td><span class="light-blue">ASE</span></td>
+                                <td>ROARING FORK VISUAL RWY 15</td>
+                                <td>.<span class="light-blue">ASE</span>V<span class="blue">RF</span>C</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                
+                <!-- blank line -->
+                <br>
+				<br>
+                
+                <h3>Multi-Page Instrument Approach Plates</h3>
+                <li><strong>SYNTAX:</strong> .<span class="light-blue">&lt;APT&gt;</span><span class="blue">&lt;SPad Code&gt;</span>C<span class="red">&lt;page number, if not 1&gt;</span></li>
+                <li><strong>EXAMPLES:</strong>
+                  <ul>
+                    <li>.<span class="light-blue">SEA</span><span class="blue">RZ6C</span>C</li>
+                    <li>.<span class="light-blue">SEA</span><span class="blue">RZ6C</span>C<span class="red">2</span></li>
+                  </ul>
+                </li>
+        </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        <! -- Alias Content Display content -->
+
+        <div class="section" id="contentDisplay">
+            <h1>Content Display</h1>
+            <!-- Separator -->
+            <hr>
+
+            <h3>AWY_FIXES_ALIAS.txt</h3>
+            <ul>
+              <li><strong>DESCRIPTION:</strong> The user inputs a command containing the airway ID, and it results in the display of all the fixes for that airway.</li>
+              <li><strong>SYNTAX:</strong> .<span class="blue">&lt;AIRWAY ID&gt;</span>F</li>
+              <li><strong>EXAMPLE:</strong> .<span class="blue">J16</span>F</li>
+            </ul>
+            <!-- TODO: Add image of J16 fixes drawn here -->
+			
+			<br>
+			<br>
+            
+            <h3>STAR_DP_FIXES_ALIAS.txt</h3>
+            <ul>
+              <li><strong>DESCRIPTION:</strong> The user inputs a command containing the STAR/DP without the version number, and it results in the display of all the fixes for that airway.</li>
+              <li><strong>SYNTAX:</strong> .<span class="light-blue">&lt;APT ID&gt;</span><span class="blue">&lt;STAR or DP ID&gt;</span>F</li>
+              <li><strong>EXAMPLE:</strong> .<span class="light-blue">DTW</span><span class="blue">TPGUN</span>F</li>
+            </ul>
+            <!-- TODO: Add image of DTW TPGUN fixes drawn here -->
+        </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        <! -- AIRAC data In-Scope Reference content -->
+
+        <div class="section" id="inScopeReference">
+            <h1>In-Scope Reference (ISR) Aliases</h1>
+            <!-- Separator -->
+            <hr>
+
+            <h3>ISR_APT_ALIAS.txt</h3>
+            <ul>
+              <li><strong>DESCRIPTION:</strong> The user inputs a command containing the airport ID, and it results in a message returning to the user in the CRC text communications window with details concerning that airport.</li>
+              <li><strong>SYNTAX:</strong> .APT<span class="blue">&lt;APT FAA or ICAO ID&gt;</span></li>
+              <li><strong>EXAMPLE:</strong> .APT<span class="blue">JFK</span></li>
+            </ul>
+            <!-- TODO: Add image of the JFK APT ISR displayed in the messages window -->
+			
+			<br>
+			<br>
+            
+            <h3>ISR_NAVAID_ALIAS.txt</h3>
+            <ul>
+              <li><strong>DESCRIPTION:</strong> The user inputs a command containing the NAVAID ID or name (without spaces or special characters), and it results in a message returning to the user in the CRC text communications window with details concerning that NAVAID.</li>
+              <li><strong>SYNTAX:</strong> .NAV<span class="blue">&lt;NAVAID ID or Name without spaces and special characters&gt;</span></li>
+              <li><strong>EXAMPLE:</strong> .NAV<span class="blue">JHW</span></li>
+            </ul>
+            <!-- TODO: Add image of the JHW ISR displayed in the messages window -->
+			
+			<br>
+			<br>
+            
+            <h3>ISR_TELEPHONY.txt</h3>
+            <ul>
+              <li><strong>DESCRIPTION:</strong> The user inputs a command containing the 3LD or name (without spaces or special characters), and it results in a message returning to the user in the CRC text communications window with details concerning that telephony.</li>
+              <li><strong>SYNTAX:</strong> .ID<span class="blue">&lt;3LD or Name without spaces and special characters&gt;</span></li>
+              <li><strong>EXAMPLES:</strong>
+                <ul>
+                  <li>.ID<span class="blue">NKP</span></li>
+                  <li>.ID<span class="blue">ABAKANAIR</span></li>
+                </ul>
+            </ul>
+        </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        <! -- Test Alias File content -->
+
+        <div class="section" id="aliasTestFile">
+            <h1>Alias Test File</h1>
+            <!-- Separator -->
+            <hr>
+
+            <h3>ALIAS_TEST_FILE.txt</h3>
+            <ul>
+              <li><strong>DESCRIPTION:</strong>All alias output data will be combined into this file for easier testing or simple copy/paste into your facility file.</li>
+            </ul>
+        </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        <! -- Duplicate Commands content -->
+
+        <div class="section" id="duplicateCommands">
+            <h1>Duplicate Commands File</h1>
+            <!-- Separator -->
+            <hr>
+
+            <h3>DUPLICATE_COMMANDS.txt</h3>
+            <ul>
+              <li><strong>DESCRIPTION:</strong>The alias syntax is unable to account for every situation that would create a duplicate command for two different charts and therefore, the local Facility Engineer will need to create a cusom command for these situations and that is placed prior to these commands in the alias file. This file will assist in this process.</li>
+            </ul>
+        </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        <! -- Publications content -->
+
+        <div class="section" id="publications">
+            <h1>Publications</h1>
+            <!-- Separator -->
+            <hr>
+
+            <h3>PROCEDURE_CHANGES.txt</h3>
+            <ul>
+              <li><strong>DESCRIPTION:</strong>This file lists all changes that are happening to an airport under the jurisdiction of the selected ARTCC. A link to the PDF Compare page will also be provided if the FAA provides one.</li>
+              <li><strong>DESIGNATORS:</strong>
+                <ul>
+                  <li>C - Procedure has changed.</li>
+                  <li>A - New procedure (added).</li>
+                  <li>D - Removed procedure (deleted).</li>
+                </ul>
+              <li>NOTE: In some cases, the link will return a 404 error. This is because the FAA does not have a comparative document, as common with DOD facilities.</li>
+            </ul>
+			
+			<br>
+			<br>
+
+            <h3>PROCEDURES.txt</h3>
+            <ul>
+              <li><strong>DESCRIPTION:</strong>A list of all airports and a link to their procedures for the selected ARTCC.</li>
+            </ul>
+			
+			<br>
+			<br>
+
+            <h3>&lt;ARTCC ID&gt;_AIRPORTS.csv</h3>
+            <ul>
+              <li><strong>DESCRIPTION:</strong>Lists all of the airport under the jurisdiction of the selected ARTCC. Left of the comma is the FAA ID, to the right of the comma is the ICAO ID if there is one.</li>
+            </ul>
+        </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        <! -- Airport content -->
+
+        <div class="section" id="vmApt">
+            <h1>Airports Video Maps</h1>
+            <!-- Separator -->
+            <hr>
+
+            <h3>APT_SYMBOLS.geojson</h3>
+            <ul>
+              <li><strong>DESCRIPTION:</strong> Displays symbols for airports.</li>
+            </ul>
+			
+			<br>
+			<br>
+
+            <h3>APT_TEXT.geojson</h3>
+            <ul>
+              <li><strong>DESCRIPTION:</strong> Displays the airport ID and Name next to the symbol.</li>
+            </ul>
+        </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        <! -- ARTCC Boundaries content -->
+
+        <div class="section" id="#mapArtcc">
+            <h1>ARTCC Boundaries Video Maps</h1>
+            <!-- Separator -->
+            <hr>
+
+            <h3>ARTCC_BOUNDARY_HIGH_LINES.geojson</h3>
+            <ul>
+              <li><strong>DESCRIPTION:</strong> Displays the High ARTCC Boundaries from NASR data as lines.</li>
+            </ul>
+			
+			<br>
+			<br>
+
+            <h3>ARTCC_BOUNDARY_LOW_LINES.geojson</h3>
+            <ul>
+              <li><strong>DESCRIPTION:</strong> Displays the Low ARTCC Boundaries from NASR data as lines.</li>
+            </ul>
+        </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        <! -- Airway content -->
+
+        <div class="section" id="#mapAwy">
+            <h1>Airways Video Maps</h1>
+            <!-- Separator -->
+            <hr>
+
+            <h3>AWY_HIGH_LINES.geojson</h3>
+            <ul>
+              <li><strong>DESCRIPTION:</strong> Displays the High Airways as lines.</li>
+            </ul>
+			
+			<br>
+			<br>
+
+            <h3>AWY_HIGH_SYMBOLS.geojson</h3>
+            <ul>
+              <li><strong>DESCRIPTION:</strong> Displays the High Airways fixes and NAVAIDs as their respective symbols.</li>
+            </ul>
+			
+			<br>
+			<br>
+
+            <h3>AWY_HIGH_TEXT.geojson</h3>
+            <ul>
+              <li><strong>DESCRIPTION:</strong> Displays the High Airways fixes and NAVAIDs ID/Name next to their respective symbols.</li>
+            </ul>
+			
+			<br>
+			<br>
+
+            <h3>AWY_LOW_LINES.geojson</h3>
+            <ul>
+              <li><strong>DESCRIPTION:</strong> Displays the Low Airways as lines.</li>
+            </ul>
+			
+			<br>
+			<br>
+
+            <h3>AWY_LOW_SYMBOLS.geojson</h3>
+            <ul>
+              <li><strong>DESCRIPTION:</strong> Displays the Low Airways fixes and NAVAIDs as their respective symbols.</li>
+            </ul>
+			
+			<br>
+			<br>
+
+            <h3>AWY_LOW_TEXT.geojson</h3>
+            <ul>
+              <li><strong>DESCRIPTION:</strong> Displays the Low Airways fixes and NAVAIDs ID/Name next to their respective symbols.</li>
+            </ul>
+        </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        <! -- Fixes content -->
+
+        <div class="section" id="#mapFixes">
+            <h1>Fixes Video Maps</h1>
+            <!-- Separator -->
+            <hr>
+
+            <h3>FIX_SYMBOLS.geojson</h3>
+            <ul>
+              <li><strong>DESCRIPTION:</strong> Displays all fixes from NASR data as symbols.</li>
+            </ul>
+			
+			<br>
+			<br>
+
+            <h3>FIX_TEXT.geojson</h3>
+            <ul>
+              <li><strong>DESCRIPTION:</strong> Displays all fix names from NASR data next to their symbols.</li>
+            </ul>
+        </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        <! -- NAVAIDs content -->
+
+        <div class="section" id="#mapNavaids">
+            <h1>NAVAIDs Video Maps</h1>
+            <!-- Separator -->
+            <hr>
+
+            <h3>NAV_VOR_SYMBOLS.geojson</h3>
+            <ul>
+              <li><strong>DESCRIPTION:</strong> Displays all VOR, VOR/DME, and TACAN NAVAIDs from NASR data as a VOR symbol.</li>
+            </ul>
+			
+			<br>
+			<br>
+
+            <h3>NAV_NDB_SYMBOLS.geojson</h3>
+            <ul>
+              <li><strong>DESCRIPTION:</strong> Displays all NDB and DME station NAVAIDs from NASR data as a NDB symbol.</li>
+            </ul>
+        </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        <! -- Runway content -->
+
+        <div class="section" id="#mapRwy">
+            <h1>Runways Video Maps</h1>
+            <!-- Separator -->
+            <hr>
+
+            <h3>RWY_LINES.geojson</h3>
+            <ul>
+              <li><strong>DESCRIPTION:</strong> Displays all runways from NASR data as a single line drawn from threshold to threshold.</li>
+            </ul>
+        </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        <! -- Wx Station content -->
+
+        <div class="section" id="#mapWx">
+            <h1>Weather Stations Video Maps</h1>
+            <!-- Separator -->
+            <hr>
+
+            <h3>WX_SYMBOLS.geojson</h3>
+            <ul>
+              <li><strong>DESCRIPTION:</strong> Displays all symbols from weather stations found in the weather.gov data and then cross matched with the NASR AWOS data as symbols.</li>
+            </ul>
+			
+			<br>
+			<br>
+
+            <h3>WX_TEXT.geojson</h3>
+            <ul>
+              <li><strong>DESCRIPTION:</strong> Displays all weather station airport names next to the their symbols.</li>
+            </ul>
+        </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        <! -- STAR and DP content -->
+
+        <div class="section" id="#mapStarDp">
+            <h1>STAR and DP Video Maps</h1>
+            <!-- Separator -->
+            <hr>
+            
+			<p>The STAR and DP video maps will be found in the subdirectory folders "STAR" and "DP".</p>
+			
+			<br>
+
+            <h3><span class="light-blue">&lt;STAR/DP ID&gt;</span>_LINES.geojson</h3>
+            <ul>
+              <li><strong>DESCRIPTION:</strong> Displays all lines the respective STAR or DP.</li>
+            </ul>
+			
+			<br>
+			<br>
+
+            <h3><span class="light-blue">&lt;STAR/DP ID&gt;</span>_SYMBOLS.geojson</h3>
+            <ul>
+              <li><strong>DESCRIPTION:</strong> Displays all NAVAIDs/Fixes associated with the associated STAR or DP as their respective symbols.</li>
+            </ul>
+			
+			<br>
+			<br>
+
+            <h3><span class="light-blue">&lt;STAR/DP ID&gt;</span>_TEXT.geojson</h3>
+            <ul>
+              <li><strong>DESCRIPTION:</strong> Displays the IDs/Names of the NAVAIDs/Fixes for the associated STAR or DP next to their symbols.</li>
+            </ul>
+        </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        <! -- create geojson page content -->
+
+        <div class="section" id="createGeojson">
+            <h1>Create GeoJSON</h1>
+            <!-- Separator -->
+            <hr>
+            
+            <p>This feature will allow you to create a GeoJSON for use by CRC from scratch.</p>
+        </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        <! -- cleanup geojson page content -->
+
+        <div class="section" id="geojsonCleanup">
+            <h1>GeoJSON Clean-up</h1>
+            <!-- Separator -->
+            <hr>
+            
+            <p>This feature will allow you to select your GeoJSON file and FE-Buddy will ensure it is cascaded to a single line, look for common errors such as duplicate defaults, and remove common 0.0,0.0 coordinates from legacy SCT2 file conversions.</p>
+        </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        <! -- procedure ISR page content -->
+
+        <div class="section" id="procedureIsrs">
+            <h1>Procedure ISRs</h1>
+            <!-- Separator -->
+            <hr>
+            
+            <p>This feature will guide you through creating helpful in-scope references for your facility's procedures per phase of flight.</p>
+        </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        <! -- SCT2 to GeoJSON page content -->
+
+        <div class="section" id="sct2ToGeoJSON">
+            <h1>SCT2 to GeoJSON</h1>
+            <!-- Separator -->
+            <hr>
+            
+            <p>Will convert a .SCT2 file to .GeoJSON(s) for use by CRC.</p>
+        </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        <! -- FAA RVM to GeoJSON page content -->
+
+        <div class="section" id="faaRVMToGeoJSON">
+            <h1>FAA RVM to GeoJSON</h1>
+            <!-- Separator -->
+            <hr>
+            
+            <p>Will convert a FAA RVM .dat file to .GeoJSON for use by CRC. Later development will likely result in conversions of the FAA .KML(z) files as well.</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        <! -- FAA GeoMap to GeoJSON page content -->
+
+        <div class="section" id="faaGeoMapToGeoJSON">
+            <h1>FAA GeoMap to GeoJSON</h1>
+            <!-- Separator -->
+            <hr>
+            
+            <p>Will convert a FAA GeoMap (ERAM) to .GeoJSON.</p>
+        </div>
+    </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <! -- scripts go here -->
+
+    <script>
+        // JavaScript to handle section toggling and scroll to top
+        const sections = document.querySelectorAll('.section');
+        sections[0].classList.add('active'); // Initially, the first section is active
+        
+        document.querySelectorAll('#sidebar a').forEach((link, index) => {
+            link.addEventListener('click', () => {
+                // Remove 'active' class from all sections
+                sections.forEach((section) => section.classList.remove('active'));
+                // Add 'active' class to the clicked section
+                sections[index].classList.add('active');
+        
+                // Scroll to the top of the page
+                window.scrollTo({
+                    top: 0,
+                    behavior: 'smooth' // You can use 'auto' instead of 'smooth' for an instant jump
+                });
+            });
+        });
+    </script>
+
+    <script>
+        // JavaScript to toggle visibility of the AIRAC Updates list
+        document.addEventListener('DOMContentLoaded', function () {
+            var toggleButton = document.getElementById('toggleAiracUpdates');
+            var airacList = document.getElementById('airacUpdatesList');
+            
+            toggleButton.addEventListener('click', function () {
+                if (airacList.style.display === 'none') {
+                    airacList.style.display = 'block';
+                } else {
+                    airacList.style.display = 'none';
+                }
+            });
+        });
+    </script>
+
+</body>
+</html>

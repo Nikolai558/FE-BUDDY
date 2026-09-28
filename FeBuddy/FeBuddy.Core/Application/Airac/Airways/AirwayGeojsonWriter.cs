@@ -1,0 +1,379 @@
+using FeBuddy.Core.Application.Airac.Airways.Models;
+using FeBuddy.Core.Domain.Airways.Models;
+using FeBuddy.Core.Domain.Crc.Models;
+using FeBuddy.Core.Domain.Geo;
+using FeBuddy.Core.Infrastructure.Geojson;
+
+using NetTopologySuite.Features;
+
+namespace FeBuddy.Core.Application.Airac.Airways;
+
+/// <summary>
+/// Generates the Airways GeoJSON output files (Lines, Symbols, Text) from a built list of
+/// <see cref="Airway"/> objects, grouped per <see cref="AirwaySettings.OutputBy"/>.
+/// </summary>
+/// <remarks>
+/// Each file is named <c>Airways_&lt;group&gt;_&lt;kind&gt;.geojson</c> (its name without the
+/// extension is its file key, see <see cref="AirwayOutputFiles"/>) and goes in the GeoJSON folder,
+/// or the vNAS one when the user marked it for vNAS. Only a file chosen for CRC-ERAM defaults gets
+/// an isDefaults Feature.
+/// </remarks>
+public static class AirwayGeojsonWriter
+{
+	/// <summary>
+	/// Maps a NASR <c>FROM_PT_TYPE</c> value to the CRC symbol <c>style</c> it should render
+	/// as. Any type not listed here (including <see langword="null"/>, for the final,
+	/// type-less point of an airway - see <c>AirwayBuilder.ResolveOrderedPoints</c>) falls
+	/// back to "airwayIntersections".
+	/// </summary>
+	private static readonly Dictionary<string, string> SymbolStyleByPointType =
+		new(StringComparer.OrdinalIgnoreCase)
+		{
+			["NDB"] = "ndb",
+			["NDB/DME"] = "ndb",
+			["MARINE NDB"] = "ndb",
+			["MARINE NDB/DME"] = "ndb",
+			["UHF/NDB"] = "ndb",
+
+			["VOR"] = "vor",
+			["VOR/DME"] = "vor",
+			["VORTAC"] = "vor",
+			["DME"] = "vor",
+			["TACAN"] = "vor",
+			["VOT"] = "vor",
+			["CONSOLAN"] = "vor",
+		};
+
+	private const string DefaultSymbolStyle = "airwayIntersections";
+
+	/// <summary>
+	/// Generates every Lines/Symbols/Text file called for by <paramref name="settings"/>.
+	/// </summary>
+	/// <param name="airways">The airways to render (already built and, if applicable, ROI-clipped/buffered).</param>
+	/// <param name="settings">The parsed Airways settings.</param>
+	/// <returns>The files written and how many rendered Features each holds.</returns>
+	public static GeojsonFileSet Generate(IReadOnlyList<Airway> airways, AirwaySettings settings)
+	{
+		ArgumentNullException.ThrowIfNull(airways);
+		ArgumentNullException.ThrowIfNull(settings);
+
+		GeojsonFileSet files = new(settings.CoordinatePrecision);
+
+		if (settings.OutputBy == AirwayGeojsonOutputBy.None || airways.Count == 0)
+		{
+			return files;
+		}
+
+		foreach ((string group, List<Airway> groupAirways) in GroupAirways(airways, settings))
+		{
+			// A High or Low file is its class, whatever each airway's published altitudes say.
+			AirwayAltitudeClass referenceClass = settings.OutputBy == AirwayGeojsonOutputBy.HighLow
+				? Enum.Parse<AirwayAltitudeClass>(group)
+				: DetermineReferenceClass(groupAirways);
+
+			List<Airway> orderedAirways =
+				[.. groupAirways.OrderBy(a => a.AwyId, StringComparer.OrdinalIgnoreCase)];
+
+			if (settings.EmitLines)
+			{
+				GenerateLines(orderedAirways, referenceClass, settings, group, files);
+			}
+
+			GenerateSymbolsAndText(orderedAirways, referenceClass, settings, group, files);
+		}
+
+		return files;
+	}
+
+	/// <summary>
+	/// The designations among <paramref name="airways"/> that have no High/Low file chosen, so are
+	/// left out of the High and Low files; none unless <see cref="AirwaySettings.OutputBy"/> is
+	/// <see cref="AirwayGeojsonOutputBy.HighLow"/>.
+	/// </summary>
+	/// <param name="airways">The airways to render.</param>
+	/// <param name="settings">The parsed Airways settings.</param>
+	/// <returns>The designations, in name order.</returns>
+	public static IReadOnlyList<string> DesignationsWithoutStratum(IReadOnlyList<Airway> airways, AirwaySettings settings)
+	{
+		ArgumentNullException.ThrowIfNull(airways);
+		ArgumentNullException.ThrowIfNull(settings);
+
+		return settings.OutputBy != AirwayGeojsonOutputBy.HighLow
+			? []
+			: [.. airways
+				.Select(airway => airway.Designation)
+				.Where(designation => !settings.DesignationStrata.ContainsKey(designation))
+				.Distinct(StringComparer.OrdinalIgnoreCase)
+				.Order(StringComparer.OrdinalIgnoreCase)];
+	}
+
+	/// <summary>Writes one group's file of one kind, into the GeoJSON or vNAS folder as the user chose, under the name they chose.</summary>
+	private static void WriteFile(
+		FeatureCollection collection,
+		int renderedCount,
+		AirwaySettings settings,
+		string fileKey,
+		GeojsonFileSet files)
+	{
+		string directory = AiracOutputPaths.FileDirectory(settings.OutputDirectory, isGeojson: true, settings.Vnas.IsUploaded(fileKey));
+		files.Write(collection, renderedCount, directory, settings.FileNames.FileName(fileKey));
+	}
+
+	/// <summary>
+	/// Groups airways by designation, or - for High and Low files - into "High" and "Low" by the
+	/// stratum the user chose for each designation: an airway whose designation goes in Both is in
+	/// both groups, and one whose designation has no stratum is in neither.
+	/// </summary>
+	private static IEnumerable<(string Group, List<Airway> Airways)> GroupAirways(
+		IReadOnlyList<Airway> airways,
+		AirwaySettings settings)
+	{
+		Dictionary<string, List<Airway>> groups = new(StringComparer.OrdinalIgnoreCase);
+
+		foreach (Airway airway in airways)
+		{
+			foreach (string key in GroupsOf(airway, settings))
+			{
+				if (!groups.TryGetValue(key, out List<Airway>? list))
+				{
+					list = [];
+					groups[key] = list;
+				}
+
+				list.Add(airway);
+			}
+		}
+
+		return groups
+			.OrderBy(kvp => kvp.Key, StringComparer.OrdinalIgnoreCase)
+			.Select(kvp => (kvp.Key, kvp.Value));
+	}
+
+	/// <summary>The groups one airway belongs to.</summary>
+	private static IEnumerable<string> GroupsOf(Airway airway, AirwaySettings settings)
+	{
+		if (settings.OutputBy != AirwayGeojsonOutputBy.HighLow)
+		{
+			return [airway.Designation];
+		}
+
+		return settings.DesignationStrata.TryGetValue(airway.Designation, out AirwayStratum stratum)
+			? stratum switch
+			{
+				AirwayStratum.High => [nameof(AirwayAltitudeClass.High)],
+				AirwayStratum.Low => [nameof(AirwayAltitudeClass.Low)],
+				_ => [nameof(AirwayAltitudeClass.High), nameof(AirwayAltitudeClass.Low)],
+			}
+			: [];
+	}
+
+	/// <summary>
+	/// Determines which altitude class's CRC defaults should be used as a group's isDefaults:
+	/// the majority class among its airways, with ties broken High &gt; Low &gt; Other for
+	/// determinism.
+	/// </summary>
+	private static AirwayAltitudeClass DetermineReferenceClass(IReadOnlyList<Airway> group)
+	{
+		return group
+			.GroupBy(a => a.AltitudeClass)
+			.OrderByDescending(g => g.Count())
+			.ThenBy(g => (int)g.Key)
+			.First()
+			.Key;
+	}
+
+	private static void GenerateLines(
+		IReadOnlyList<Airway> airways,
+		AirwayAltitudeClass referenceClass,
+		AirwaySettings settings,
+		string group,
+		GeojsonFileSet files)
+	{
+		string fileKey = AirwayOutputFiles.GeojsonKey(group, CrcFeatureKind.Line);
+		bool crcDefaults = settings.Vnas.HasCrcDefaults(fileKey);
+		FeatureCollection collection = [];
+
+		if (crcDefaults)
+		{
+			collection.Add(CrcFeatureFactory.CreateDefaultsFeature(settings.LineDefaults[referenceClass]));
+		}
+
+		int renderedCount = 0;
+
+		foreach (Airway airway in airways)
+		{
+			AttributesTable attributes;
+
+			bool needsOverride =
+				crcDefaults &&
+				settings.OutputBy == AirwayGeojsonOutputBy.Designation &&
+				airway.AltitudeClass != referenceClass;
+
+			attributes = needsOverride
+				? CrcFeatureFactory.CreateOverrideProperties(settings.LineDefaults[airway.AltitudeClass].ToFeatureProperties())
+				: [];
+
+			// A Lines Feature is the whole airway: it carries the airway's own ID and its
+			// ordered point list, never a single point's ID.
+			FebProperties.Add(attributes, settings.IncludeFebCustomProperties, settings.FebProperties.OrderBy(p => p), property => property switch
+			{
+				AirwayFebProperty.AwyId => airway.AwyId,
+				AirwayFebProperty.Waypoints => airway.Points.Select(p => p.PointId).ToArray(),
+				_ => null,
+			});
+
+			collection.Add(new Feature(airway.Geometry, attributes));
+			renderedCount++;
+		}
+
+		WriteFile(collection, renderedCount, settings, fileKey, files);
+	}
+
+	private static void GenerateSymbolsAndText(
+		IReadOnlyList<Airway> airways,
+		AirwayAltitudeClass referenceClass,
+		AirwaySettings settings,
+		string group,
+		GeojsonFileSet files)
+	{
+		// De-duplicate waypoints across every airway in this group; first occurrence wins.
+		// Alongside, note every airway that uses each point: a shared point is written once,
+		// so its feb.awyId has to name all of them.
+		Dictionary<string, AirwayPoint> uniquePoints = new(StringComparer.OrdinalIgnoreCase);
+		Dictionary<string, HashSet<string>> airwayIdSetsByPoint = new(StringComparer.OrdinalIgnoreCase);
+
+		foreach (Airway airway in airways)
+		{
+			foreach (AirwayPoint point in airway.Points)
+			{
+				uniquePoints.TryAdd(point.PointId, point);
+
+				if (!airwayIdSetsByPoint.TryGetValue(point.PointId, out HashSet<string>? airwayIds))
+				{
+					airwayIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+					airwayIdSetsByPoint[point.PointId] = airwayIds;
+				}
+
+				airwayIds.Add(airway.AwyId);
+			}
+		}
+
+		Dictionary<string, string[]> airwayIdsByPoint = airwayIdSetsByPoint.ToDictionary(
+			kvp => kvp.Key,
+			kvp => kvp.Value.OrderBy(id => id, StringComparer.OrdinalIgnoreCase).ToArray(),
+			StringComparer.OrdinalIgnoreCase);
+
+		IEnumerable<AirwayPoint> pointsToRender = uniquePoints.Values;
+
+		if (settings.Roi is not null)
+		{
+			pointsToRender = pointsToRender.Where(p => RoiFilter.Contains(settings.Roi, p.Latitude, p.Longitude));
+		}
+
+		List<AirwayPoint> orderedPoints =
+			[.. pointsToRender.OrderBy(p => p.PointId, StringComparer.OrdinalIgnoreCase)];
+
+		if (settings.EmitSymbols)
+		{
+			GenerateSymbols(orderedPoints, airwayIdsByPoint, referenceClass, settings, group, files);
+		}
+
+		if (settings.EmitText)
+		{
+			GenerateText(orderedPoints, airwayIdsByPoint, referenceClass, settings, group, files);
+		}
+	}
+
+	private static void GenerateSymbols(
+		IReadOnlyList<AirwayPoint> points,
+		IReadOnlyDictionary<string, string[]> airwayIdsByPoint,
+		AirwayAltitudeClass referenceClass,
+		AirwaySettings settings,
+		string group,
+		GeojsonFileSet files)
+	{
+		string fileKey = AirwayOutputFiles.GeojsonKey(group, CrcFeatureKind.Symbol);
+		FeatureCollection collection = [];
+
+		if (settings.Vnas.HasCrcDefaults(fileKey))
+		{
+			collection.Add(CrcFeatureFactory.CreateDefaultsFeature(settings.SymbolDefaults[referenceClass]));
+		}
+
+		foreach (AirwayPoint point in points)
+		{
+			AttributesTable attributes = new()
+			{
+				{ "style", MapSymbolStyle(point.PointType) }
+			};
+			FebProperties.Add(attributes, settings.IncludeFebCustomProperties, settings.FebProperties.OrderBy(p => p), property => property switch
+			{
+				AirwayFebProperty.AwyId => airwayIdsByPoint[point.PointId],
+				AirwayFebProperty.PointId => point.PointId,
+				_ => null,
+			});
+
+			Feature feature = new(
+				Wgs84.Point(point.Latitude, point.Longitude),
+				attributes);
+
+			collection.Add(feature);
+		}
+
+		WriteFile(collection, points.Count, settings, fileKey, files);
+	}
+
+	private static void GenerateText(
+		IReadOnlyList<AirwayPoint> points,
+		IReadOnlyDictionary<string, string[]> airwayIdsByPoint,
+		AirwayAltitudeClass referenceClass,
+		AirwaySettings settings,
+		string group,
+		GeojsonFileSet files)
+	{
+		string fileKey = AirwayOutputFiles.GeojsonKey(group, CrcFeatureKind.Text);
+		FeatureCollection collection = [];
+
+		if (settings.Vnas.HasCrcDefaults(fileKey))
+		{
+			collection.Add(CrcFeatureFactory.CreateDefaultsFeature(settings.TextDefaults[referenceClass]));
+		}
+
+		foreach (AirwayPoint point in points)
+		{
+			AttributesTable attributes = new()
+			{
+				{ "text", new[] { point.PointId } }
+			};
+
+			// No feb.pointId here: the label already is the point's ID.
+			FebProperties.Add(attributes, settings.IncludeFebCustomProperties, settings.FebProperties.OrderBy(p => p), property => property switch
+			{
+				AirwayFebProperty.AwyId => airwayIdsByPoint[point.PointId],
+				_ => null,
+			});
+
+			Feature feature = new(
+				Wgs84.Point(point.Latitude, point.Longitude),
+				attributes);
+
+			collection.Add(feature);
+		}
+
+		WriteFile(collection, points.Count, settings, fileKey, files);
+	}
+
+	/// <summary>
+	/// Maps a NASR <c>FROM_PT_TYPE</c> to its CRC symbol style, defaulting to
+	/// "airwayIntersections" for any unrecognized or missing type.
+	/// </summary>
+	private static string MapSymbolStyle(string? pointType)
+	{
+		if (pointType is not null && SymbolStyleByPointType.TryGetValue(pointType.Trim(), out string? style))
+		{
+			return style;
+		}
+
+		return DefaultSymbolStyle;
+	}
+}

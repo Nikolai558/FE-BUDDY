@@ -1,326 +1,107 @@
-# CHANGELOG
+# Change log
 
----
-- ## Version 2.9.3
-  - Updated the Roadmap, Credits and Change log menu links so they keep working after the GitHub repository restructure.
+Every FE-BUDDY 3.x release, newest first. When a release is made, its section here becomes the
+"Change log" part of its GitHub release notes, which is also what FE-BUDDY's update window shows.
+FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/FE-BUDDY/blob/2.9.3/ChangeLog.md).
 
-- ## Version 2.9.2
-  - Bug #215 - Fixed an issue where download bar and program would stall when the next
-    AIRAC cycle DTPP Meta File was not available yet. 
+<!--
+  Adding an entry: put one bullet under "## Unreleased" in the same pull request as the change.
+  Write it for users, not developers: what changed and why they care, in one line. Issue numbers
+  become links ("Bug #215 - ..."). Put developer-only changes under a "(Dev notes)" bullet. Link
+  a doc at the release's tag (blob/<version>/docs/...), never at a branch.
+  Full guide: docs/Developers/RELEASING.md.
+-->
 
-- ## Version 2.9.1-alpha.1
-  - Testing Alpha version, No changes.
+## Unreleased
 
-- ## Version 2.9.0
-  - FE-BUDDY now installs with a standard Windows Installer (MSI) instead of Squirrel.
-    - New install screens, GPLv3 license page, and FE-BUDDY now launches automatically after installing.
-    - Your settings and preferences carry over when you install or update.
-    - Uninstalling now fully removes FE-BUDDY, including leftover data in AppData and Temp folders.
-  - Reworked the in-app update experience.
-    - New "Update Available" screen shows download progress while it updates.
-    - New "Update Settings" screen.
-    - You can now choose an update channel: Stable (default) or Pre-release.
-    - Pre-release users can use "Revert to Latest Stable" to move back to a stable version.
-  - AIRAC "Get Data" now shows a progress bar while downloading FAA data.
-  - The version number is always shown in the title bar. Running a non-installed build now shows "- DEV".
-  - Bug #166 - Wrong coordinates / broken GeoJSON on non-US Windows region settings.
-    - On PCs that use a comma as the decimal separator, coordinate conversions produced
-      incorrect values and invalid GeoJSON. FE-BUDDY now always uses "." internally, so
-      output is correct regardless of your Windows region.
-  - Bug #182 - cURL is no longer required. All downloads now use FE-BUDDY's built-in downloader.
-  - Bug #152 - The GeoJSON conversion log now lists combined objects and their differences.
-  - Bug #155 - CRC style values are corrected to their proper spelling, and unknown values
-    are now flagged with a WARNING in the log instead of passing through silently.
-  - Bug #134 - Cleaned up the log file; removed messages that were being written from unused code.
-  - Bug #191 - Clearer message if a settings backup fails during an update.
-  - Bug #137 - Fix duplicate Coordinate at antimeridian-crossing
-  - (Dev notes)
-    - Migrated from .NET 6 to .NET 10.
-    - Installer built with WiX; MSI build added to the CI pipeline; build can take an external version number.
-    - Repository reorganized - documentation moved to /docs, batch scripts moved to /scripts.
-    - Security: patched SharpCompress vulnerability, resolved CodeQL warnings, updated Security Policy and CodeQL workflow.
-    - Added versioning unit tests and a versioning CI action.
-    - New docs: VERSIONING, MSI-VERSION-NUMBERING, SQUIRREL-TO-MSI-MIGRATION, GITHUB-TOKEN-SETUP.
+## 3.0.0-alpha.1
+- FE-BUDDY 3.0 is a from-scratch rewrite with a new interface. This first alpha is for testers:
+  expect rough edges, and keep 2.x handy. Not yet in 3.0: VRC `.sct2`, vERAM GeoMap and vSTARS
+  XML output, ISR aliases and the combined all-SID/all-STAR files
+  ([Do I still need 2.x?](https://github.com/Nikolai558/FE-BUDDY/blob/3.0.0-alpha.1/docs/Users/FAQ-and-Troubleshooting.md#do-i-still-need-fe-buddy-2x)).
 
-- ## Version 2.8.3
-  - GET-AIRAC (Cycle 2609) issue resolved.
-  - WX Geojson creation now works more efficiently but removes Wx data output for VRC, vSTARS, and vERAM
-  - Geojson Wx Station files are now output at the cost of VRC and vERAM Wx Station files.
-  - (Dev notes) Unzipper now handles .gz files in the same method.
+### Output
+- Everything for a cycle goes into one `AIRAC_<cycle>` folder: `Aliases`, `Geojson`,
+  `Publication_Docs` and `Upload_to_vNAS`. File names say what they hold, e.g.
+  `Airports_Symbols.geojson`, `Airports.txt` (was `ISR_APT.txt`), `Navaids.txt` (was `ISR_NAVAID.txt`).
+- Every output has options: pick which files to write, how to split them, and what goes in them.
+- The File Names tab lists every file a run will write, by folder, and lets you give any of them
+  your own name (the Departures and Arrivals per-procedure files keep theirs). A file a changed
+  setting adds is flagged until you name it or choose to keep FE-BUDDY's name.
+- Maps can be limited to a Region of Interest (draw it on the Map).
+- Mark any file for vNAS and it goes into `Upload_to_vNAS`, with CRC-ERAM style defaults you set
+  (brightness group, filters, line style, symbol, text size). Marked alias files and your own custom alias
+  files are combined into one `vNAS_Alias.txt`, each under a heading naming where it came from.
+- Coordinates are rounded rather than cut off, to 6 decimals by default (adjustable). Features can
+  also carry extra information for your own tools (`feb.*` properties) if you turn it on.
 
-- ## Version 2.8.2
-  - GetTelephony Issue fixed
+### Aliases
+- Airport (`.aptLAX`), NAVAID (`.navABQ`) and telephony (`.idAAL`) commands show a labelled,
+  multi-line card. Airports add the facility type, longest runway, elevation, pattern altitude,
+  airspace class, FSS, CTAF and weather frequency.
+- Chart recall commands use the full runway (`.laxI24Lc` for RWY 24L; 2.x wrote `.LAXI4LC`, so
+  different runways could share one command), and visual approaches are spelled out per runway
+  (`.sfovQUIETBRIDGE28Rc`).
+- An identifier used by more than one NAVAID or airline is one command showing every match,
+  instead of duplicate commands. The duplicate-command report lists each duplicate's file and ARTCC.
+- NAVAIDs cover every FAA type, including VOTs, fan markers and marine NDBs (untick the ones you
+  don't want), and leave out NAVAIDs the FAA lists as shut down.
+- Telephony adds U.S. special call signs (e.g. `.idNASA`).
+- Departure and arrival fix commands are split into `Departures.txt` and `Arrivals.txt`, and each
+  airport's list has only the fixes of procedures that serve it.
+- The airway alias file can cover every FAA airway or only those in your Region of Interest.
 
-- ## Version 2.8.1
-  - ISR commands changed from `.MSG` to `.ECHO`
-    - Now supports `\n` expressions for multi-line output
-  - Added `SharedHttp` client fallback
-    - Used automatically if the user does not have cURL installed
-  - AIRAC Cycle ID and effective dates now:
-    - Calculated dynamically
-    - Verified against the FAA APRA API
-    - No longer dependent on a predefined dictionary
-  - .DAT conversion
-    - User may now select multiple source files
+### Video maps (GeoJSON)
+- Airways: one symbol and one label per point, instead of one per airway where airways share a
+  point (on a low-altitude map, about half the labels were stacked duplicates).
+  - Split them High / Low, choosing which file each airway type goes in (High, Low or Both; J and
+    Q start in High, V and T in Low), or one file per designation (J, V, Q, T, ...), and leave out
+    designations you don't need.
+  - The DME-cutoff airway files are replaced by the Buffer Airway Waypoints option: lines stop short
+    of each waypoint so they don't run through the symbols.
+- Runways: draws runways 2.x left out (about a third more in a typical area), including water
+  runways.
+- Airport labels show the FAA ID (`BFL`) instead of the ICAO ID (`KBFL`), and names with `&` are
+  no longer written as `&amp;`.
+- NAVAIDs: one map for every type, or one map per type, replacing the separate VOR and NDB maps.
+- Fixes: one map, or split by fix use (waypoint, reporting point, VFR waypoint, ...), by chart,
+  or by chosen chart + fix use combinations.
+- ARTCC boundaries: split High / Low, High / Low / Unlimited, or one file per ARTCC and altitude
+  (so your own ARTCC can be styled apart from its neighbours), for every ARTCC or only the ones
+  you pick.
+- Wx station labels no longer end in a stray space.
 
-- ## Version 2.8.0
-  - Starting with AIRAC 2604, the FAA changed the "STAR" ChartCode value to "STR".
+### SIDs and STARs
+- Each airport's procedures are in their own folder (`Geojson\<ARTCC>\<airport>\`), and each
+  procedure can have lines, fix symbols and fix labels (2.x drew lines only).
+- Pick which procedures to write: by ARTCC, by Region of Interest, and only those amended recently
+  if you like. Obstacle departures are optional.
+- Each segment is drawn once. 2.x repeated segments that transitions share, drawing about half
+  again as many lines.
+- Each airport's STAR map has only its own runway transitions (2.x also drew other airports',
+  e.g. SNA's DSNEE drew LGB's).
 
-- ## Version 2.7.0
-  - Bug #163 - Missing Root Element Error (NWS Weather Stations)
-    - The National Weather Service (NWS) website is undergoing a revamp, and in the process, 
-      they changed a download link that FE-Buddy uses to gather complete airport data and 
-      their respective weather station codes. 
-    - FE-Buddy is now using an API from the NWS website to gather the necessary data.
+### Procedure changes
+- One `Procedure_Changes.md` for all your facilities, with New, Changed and Deleted sections and a
+  link to every chart (and to the previous cycle's chart for deletions). A STAR serving several
+  airports is listed once, and continuation pages are folded into their chart.
+- Choose what it covers: whole facilities, airports in your Region of Interest, chosen airports or
+  single procedures, and which chart types (minimums, hot spots and LAHSO charts are off by default).
+- Catches deleted charts 2.x missed.
+- `Procedures.json` has the same information for other tools, with the fields you choose.
 
-- ## Version 2.6.9
-  - Bug #161 - FAA changed their website to a different link structure for AIRAC
-    - Fixed the issue to account for their change. 
-
-- ## Version 2.6.8
-  - Bug #159 - vERAM to Geojson conversion input string error.
-    - Some facilities were getting an error when converting vERAM files to Geojson.
-    - The error was caused by defaults in their vERAM files having filter values 
-      that were blank. ex. 'filters=""'. If this is the case, FE-Buddy will still 
-      create a default inside the geojson, however the filter will just be blank. 
-      - ex. filter = []. 
-    - It will also place a message inside the log file, so users should just be 
-      able to "find" WARNING messages and fix their file as needed.
-
-- ## Version 2.6.7
-  - Bug #156 - vERAM to Geojson conversion defaults fixed.
-    - Geojson files had multiple instances of default values inside one file. 
-    - Some Geojson files did not have all the appropriate default value features.
-      - ex: missing text defaults when the geo map had text defaults.
-  - CRC AIRAC Weather Station File now inlcudes the full name of the station.
-  - Log file for when converting by geomap objects now contains the filter vaules
-
-- ## Version 2.6.6
-  - Geojson Output format by Filters no longer duplicate files that were
-    assined multiple filter indexes.
-    - Tooltip examples updated to reflect new format allowing multi-filter index values.
-  - Geojson by Attribute file name no longer duplicates filter index values.
-  - vSTARS/vERAM to Geojson output files now include line, text, and symbol defaults.
-
-- ## Version 2.6.5
-  - #148 Fixed an issue where if the GeoMap Object had multiple objects with 
-    the same description, the converter would only output the last object.
-
-- ## Version 2.6.4
-  - #144 AWY LO DME Cuttoff now has a BCG and Filter value of 15 instead of 5
-  - #139 Potential fix for persistent user settings between updates.
-  - FAA DAT file conversions straight to geojson now available. 
-
-- ## Version 2.6.3
-  - New VERAM AWY (High and Low) xml files that feature the
-  DME Cutoff distance.
-
-- ## Version 2.6.2
-  - Fixed an error in SCT2-GeoJSON where it was looking for 
-  specific data in the INFO section. #140
-  - Adjusted the AWY DME cutoff distances from 10/4 to 5/2. #141
-  - Got rid of the annoying "Dash" in the GeoJSON output folder name.
-
-- ## Version 2.6.1
-  - New AWY Line Files (High and Low) that feature the following:
-    - Airways will start and end 5nm from NAVAIDS and 2nm from FIXES.
-  - CRC WX Station Names #136
-    - WX station IDs will appear on line 1 and names on line 2.
-  - CRC NDB/VOR Types #135
-    - NAVAID IDs will appear on line 1 and the names and types on line 2
-
-- ## Version 2.6.0
-  - Added feature: CRC AIRAC Data Geojsons
-    - The output for this feature will be located in
-    FE-BUDDY_Output -> CRC with the following data:
-      - APT Symbols and Text 
-      - ARTCC Boundaries (High and Low) Lines
-      - AWY High Lines, Symbols, and Text
-      - AWY Low Lines, Symbols, and Text
-      - FIX Symbols and Text
-      - NDB Symbols and Text
-      - VOR Symbols and Text
-      - RUNWAY Lines
-      - WX STATIONS Symbols and Text
-      - DPs Lines
-      - STARs Lines
-    - NOTE: AWY Symbols are the only files that have Overriding 
-    Properties in the geojson.
-
-- ## Version 2.5.0
-  - Added feature: SCT2 to GeoJson
-    - Data from the following headers will be included 
-    with the conversion:
-      - ARTCC
-      - ARTCC HIGH
-      - ARTCC LOW
-      - SID
-      - STAR
-      - LOW AIRWAY
-      - HIGH AIRWAY
-      - GEO
-      - REGIONS
-      - LABELS
-    - Each individual SID and STAR diagram will be output to a GeoJson file.
-
-- ## Version 2.4.2
-  - BUG FIX #127: Missing Lines when vERAM to Geojson
-  conversions using the filter and properties option.
-
-- ## Version 2.4.1
-  - BUG FIX #125: Index out of bounds for AIRAC Data error.
-  - vERAM conversion to Geojson file now checks for 
-  reversed coordinates. Example: IF the start lat/lon
-  is the same as the ending of the next coordinate lat/lon.
-
-- ## Version 2.4.0
-  - AIRAC Date selection now displays the AIRAC Cycle number
-  - vERAM-to-GeoJSON now allows the user to select an option
-  to have all elements with identical attributes to be grouped
-  together into the same GeoJSON file.
-
-- ## Version 2.3.7
-  - High and Low AWY Geomap default line style changed to Solid.
-  - Roadmap and Credit buttons link changed to GitHub Development Branch.
-  - GeoMapObject-GeoJSON feature now includes a log GeoMapObjects Properties.txt
-  that lists all of the default values for the user to more easily manage the update
-  to the vNAS website.
-  - Fixed an issue where FE-Buddy GeoJSON outputs from vERAM 
-  conversions included certain properties from the element 
-  defaults such as Line Thickess, Filter assignments, etc... 
-  This resulted in the GeoJSON properties overriding what the 
-  user input as the defaults in the vNAS Admin site. Now, the 
-  only time the converter will include the default properties 
-  in the GeoJSON is when the individual element has overriding 
-  properties within the element line from the .xml.
-    - Note: If you have already done the work to convert your 
-    files, upload, and set the vNAS default properties, you can 
-    use FE-Buddy to do the conversions again and you only need 
-    to ensure the file names match what is already on the vNAS 
-    site and use the Batch Upload feature of the vNAS site. 
-    This will ensure you don't have to set the default properties 
-    again in the vNAS site.
-
-- ## Version 2.3.6
-  -  Fixed #105 T and J Airways not in [HIGH AIRWAY].txt file.
-  - Note for FE's:
-    - Default BCG and Filter values for high airways is 5
-    - Default BCG and Filter values for low airways is 15
-
-- ## Version 2.3.5
-  - .SCT2 Airways File changes: 
-    - Filtered out all non "V, T, Q, J" airways from the Regulatory Airway Data.
-    - All Non-Regulatory Airways are placed inside the High Airway file.
-    - Kept all data for the find-fix alias command for EVERY Airway.
-  - Geomap Airways File changes:
-    - Hi and Lo airways for the geomap xml files behave exactly like the sct2 file airways.
-    - Two new files are created to replace the AWY_GEOPMAP.XML file.
-      - AWY_HI_GEOMAP.xml and AWY_LO_GEOMAP.xml
-
-- ## Version 2.3.4
-  - #100: Temporary fix for when a color is not defined inside the vSTARS video map. (Skips "color" property)
-  - #101: Temporary fix for labels inside the vSTARS video map. (Ignore labels)
-  - Added uninstall batch file to GitHub Repository
-
-- ## Version 2.3.3
-  - #97: Fixed the problem where the .id commands for the 3LD were not working.
-
-- ## Version 2.3.2
-  - #95: Elements inside a ASDEX VideoMap that are not a xsi:type of "Path" will not be included in the geojson output
-  (CRC will not render anything other than Polygon's / Paths inside of an ASDEX file)
-
-- ## Version 2.3.1
-  - #92: Corrected ASDEX properties in the geojson output files
-  - #93: Default property settings are not included in "feature-level" properties
-
-- ## Version 2.3.0
-  - New Feature: vSTARS/vERAM Maps to GeoJson (CRC) format
-
-- ## Version 2.2.0
-  - Created GUI for .SCT2 to .KML Conversions
-    - Only .sct2 to .kml conversions are possible right now. This feature is still being developed.
-  - Error messages will now be displayed to the user that were previously hidden from users by Windows.
-  - Fixed Bugs #72 and #73 - AIRAC processing screens.
-  - FE-Buddy now runs as 64bit instead of 32bit.
-
-- ## Version 2.1.1
-  - Fixed #69 - WX station website was not downloading on certain computers, this has been fixed.
-  - Fixed #68 - .id commands using the 3ld will appear before the ones that use the name.
-  - Fixed #67 - Checks for '&' characters in all necessary items 
-  - Fixed #65 - Changed the landing page button text.
-  - Started work on the new feature for SCT2 to KML and vice versa
-
-- ## Version 2.1.0
-  - Added Feature - Convert DAT files into SCT2 files.
-  - Added Feature - Convert DXF files into SCT2 and vice versa.
-  - Fixed uninstall prompt ending message.
-  - Changed GUI - New landing page to select the different features available.
-  - Fixed #60 - Menu Fonts not displaying correctly.
-  - Changed Discord button Name from "Buddies" to "Discord"
-
-- ## Version 2.0.1
-  ## FOR USERS:
-    - Added #42 - Added button ("Buddies") that links to the FE-BUDDY Discord server.
-    - Fixed #52 - Navaid Geomap for vERAM has no data
-    - Fixed #55 - Reading SCT2 Fixes in Place of Coordinates
-    - Fixed #58 - Changed Uninstall Prompt Message
-    - Fixed #54 - .ID alias commands are now added to the AliasTestFile
-    - Fixed #49 - Fixed the Star/DP Name Alignment in the SCT Files
-    - Fixed #45 - All comments in the SCT file should follow the same format.
-  ## FOR DEVELOPERS:
-    - Fixed #41 - Menu display Unhandled Exception
-    - Backend code cleanup and standardized.
-    - Updated Squirrel to latest stable (Squirrel is the auto updater system)
-    - Updated/Corrected logging messages
-    - Started development on SCT to DXF file conversions.
-      - This option is currently disabled as it is not fully functioning.
-    - Modified GUI - Different options for future updates.
-  
-- ## Version 2.0.0
-  ### FOR USERS:
-    - Modified menu presentation
-    - Fixed frequency formatting in [VOR].SCT2; All frequencies will be formatted as xxx.xx
-    - Added ASOS/AWOS frequencies to APT_ISR.txt
-  ### FOR DEVELOPERS:
-    - Conversion from .Net Framework 4.7 to .Net Core 6
-    - Connected Squirrel Logging to FE-Buddy Logging
-    - Updater now uses Delta Nuget Packages when updating. Install will use Full Nuget Package
-    - New landing page and winforms added (commented out) in preparation for future feature releases.
-    - Backend code file and function name changes/refactoring
-    - Added feature-not-implemented popup
-    - Refactored parsing controls (backend)
-    - Added aircraft data alias command output (AircraftDataInfo.txt)
-      - Commented out until we can figure out how to get updated C/D and SRS data in an automated way
-    - Added Error Handling on various functions
-
----
-- ## Version 1.0.3
-  - #26 KASE and many other airports were effected by a bug causing some airports and runways to be missing from the Airports.xml file.
-
-- ## Version 1.0.2
-  - In the Publications Output, if a procedure is Added (A) or Deleted (D), the link is NOT generated and instead will display a quick explanation. #20
-  - Restructured Menu Buttons
-  - New Menu button for "Reporting Issues" #23
-  - Fixed Bug #22 - Menu Fonts Changing Randomly
-  - Fixed Bug #19 - Clearing the FAC ID field
-  - Fixed Bug #21 - Browser not opening on Menu Button click
-
-- ## Version 1.0.1
-  - The Main Window has a background image instead of a solid color.
-  - Changed the Update view background colors to match new main window colors.
-  - "Start" and "Exit" Buttons display a different color when clicking them.
-  - The color of the Hover state of all buttons has changed.
-  - Implemented a simple Logger.
-    - This log file will be included in the output folder.
-  - Misc. code clean-up and function design changes.
-
-- ## Version 1.0.0
-  - New GitHub Repository
-  - Name changed from "NASR2SCT" to "FE-BUDDY".
-  - GUI Color changed.
-  - "Credits" button takes you to a link in the in the GitHub repository.
-  - Added Roadmap button.
-  - Updated License to GPLv3
-  - Fixed compatibility issue with users that use drives other than "C:"
-  - Backend code changes such as comments, c# namespaces, and file structures.
-
+### Everything else
+- File Conversions: DAT, SCT2 and vERAM files to GeoJSON.
+- Map: check GeoJSON files, draw and edit your Region of Interest, and view the AIRAC layers.
+- Settings: import and export your settings, pick your update channel, and store a GitHub token
+  securely in Windows Credential Manager (with a step-by-step token guide).
+- If you set `FEBUDDY_GITHUB_TOKEN` for FE-BUDDY 2.x, delete it: 3.0 doesn't use it, and Windows
+  keeps it as plain text. FE-BUDDY tells you once if it is still set
+  ([how to delete it](https://github.com/Nikolai558/FE-BUDDY/blob/3.0.0-alpha.1/docs/Users/FAQ-and-Troubleshooting.md#i-set-febuddy_github_token-for-fe-buddy-2x)).
+- The update window shows the notes for every release you are missing, then downloads and runs
+  the installer for you.
+- Installs with the same Windows Installer (MSI) as 2.9 and upgrades an existing 2.9 install in place.
+- (Dev notes)
+  - Rewritten in WPF on .NET 10, with the logic in a separate, unit-tested FeBuddy.Core library.
+  - Semantic versioning (alpha, beta, rc) shared by the app and the installer.
+  - Automated release pipeline: pre-flight checks on the pull request, then a drafted release.

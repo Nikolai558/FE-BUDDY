@@ -1,0 +1,95 @@
+# Release checks for FE-BUDDY 3.x.
+#
+# Runs on every pull request into releases, so anything that would stop the
+# release shows up - and blocks the merge - before the pull request merges, not
+# after. Both jobs are required checks on the release-branch ruleset:
+#
+#   Release source      - only v3-development (from this repository) may be
+#                         merged into releases.
+#   Release pre-flight  - Test-ReleaseReadiness.ps1 (version, one-step rule,
+#                         ChangeLog.md, no existing release, developer mode, the
+#                         installer-counter token), then Build-ReleaseAssets.ps1
+#                         (builds the MSI exactly as the release will, checks
+#                         it, and renders the release notes onto this run's
+#                         summary page). The MSI and notes are the
+#                         "release-preview" artifact.
+#
+# A deliberate exception to the one-step version rule: add the
+# "skip-version-step" label to the pull request. See docs/Developers/RELEASING.md.
+
+name: "Release checks"
+
+on:
+  pull_request:
+    branches: [ releases ]
+    types: [ opened, synchronize, reopened, edited, labeled, unlabeled ]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-checks-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  source:
+    name: Release source
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Pull request must come from v3-development
+        env:
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+        run: |
+          if [ "$HEAD_REF" != "v3-development" ] || [ "$HEAD_REPO" != "$GITHUB_REPOSITORY" ]; then
+            echo "::error title=Release source::Only v3-development of $GITHUB_REPOSITORY may be merged into releases. This pull request is from $HEAD_REPO:$HEAD_REF - retarget it to v3-development."
+            exit 1
+          fi
+          echo "Source is $HEAD_REPO:$HEAD_REF."
+
+  preflight:
+    name: Release pre-flight
+    runs-on: windows-2025
+
+    steps:
+      # No token is left in the checkout: build.ps1 runs the pull request's code, and the steps
+      # that need a token pass one.
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '10.x'
+
+      # The release-counter token lists draft releases too, and is itself checked here.
+      - name: Pre-flight checks
+        id: checks
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_COUNTER_PAT }}
+          RELEASE_COUNTER_TOKEN: ${{ secrets.RELEASE_COUNTER_PAT }}
+          SKIP_VERSION_STEP: ${{ contains(github.event.pull_request.labels.*.name, 'skip-version-step') }}
+        run: ./.github/scripts/Test-ReleaseReadiness.ps1 -SkipVersionStep:($env:SKIP_VERSION_STEP -eq 'true')
+
+      # Runs even when the checks above failed, so one run reports every problem.
+      - name: Build, check the MSI and render the release notes
+        if: ${{ !cancelled() }}
+        shell: pwsh
+        env:
+          PREVIOUS_VERSION: ${{ steps.checks.outputs.previous }}
+        run: ./.github/scripts/Build-ReleaseAssets.ps1 -PreviousVersion "$env:PREVIOUS_VERSION"
+
+      - name: Upload release preview
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-preview
+          path: |
+            FeBuddy/releases/FE-BUDDY-Setup.msi
+            FeBuddy/releases/release-notes.md
+          if-no-files-found: ignore
+          retention-days: 7

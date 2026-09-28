@@ -1,0 +1,529 @@
+using System.Text.RegularExpressions;
+
+using FeBuddy.Core.Application.Airac.Airports.Models;
+using FeBuddy.Core.Application.Airac.Airways.Models;
+using FeBuddy.Core.Application.Airac.Arrivals.Models;
+using FeBuddy.Core.Application.Airac.ArtccBoundaries.Models;
+using FeBuddy.Core.Application.Airac.Departures.Models;
+using FeBuddy.Core.Application.Airac.Fixes.Models;
+using FeBuddy.Core.Application.Airac.Navaids.Models;
+using FeBuddy.Core.Application.Airac.Procedures.Models;
+using FeBuddy.Core.Application.Airac.Telephony.Models;
+using FeBuddy.Core.Application.Airac.WxStations.Models;
+using FeBuddy.Core.Application.Models;
+using FeBuddy.Core.Infrastructure.Configuration;
+using FeBuddy.Core.Infrastructure.Logging.Models;
+
+namespace FeBuddy.Harness;
+
+/// <summary>
+/// All console formatting for this harness lives here. <see cref="Program"/> and the runner
+/// classes never call <c>Console.Write*</c> directly for airway-related output.
+/// </summary>
+internal static class ConsoleReport
+{
+	private static readonly Regex AirwayIdPattern = new(@"^Airway '([^']+)':", RegexOptions.Compiled);
+
+	public static void PrintNasrParseSummary(TimeSpan elapsed)
+	{
+		Console.WriteLine($"NASR CSV parsing complete. ({elapsed.TotalMilliseconds:N0} ms)");
+	}
+
+	public static void PrintAirwayServiceResult(string label, AirwayServiceResult result)
+	{
+		Console.WriteLine();
+		Console.WriteLine($"=== {label} ===");
+		Console.WriteLine($"Elapsed:      {result.Elapsed.TotalMilliseconds:N0} ms");
+		Console.WriteLine($"Airways built: {result.AirwayCount:N0}");
+
+		if (result.GeojsonFilesWritten.Count == 0)
+		{
+			Console.WriteLine("GeoJSON files written: (none)");
+		}
+		else
+		{
+			Console.WriteLine($"GeoJSON files written: {result.GeojsonFilesWritten.Count}");
+
+			foreach (string file in result.GeojsonFilesWritten)
+			{
+				int count = result.GeojsonFeatureCountsByFile.TryGetValue(file, out int c) ? c : 0;
+				Console.WriteLine($"  {Path.GetFileName(file)} - {count:N0} feature(s)");
+				Console.WriteLine($"    {file}");
+			}
+		}
+
+		if (result.AliasFilePath is not null)
+		{
+			Console.WriteLine($"Alias file:   {result.AliasFilePath} ({result.AliasAirwayLineCount:N0} airway line(s))");
+		}
+		else
+		{
+			Console.WriteLine("Alias file:   (not generated)");
+		}
+
+		PrintWarnings(result.Warnings);
+	}
+
+	/// <summary>
+	/// Prints one Airports run: timing, how many airports were built and how many survived ROI
+	/// filtering, every GeoJSON file with its Feature count, the alias file with its command
+	/// count, and the run's messages grouped by level.
+	/// </summary>
+	/// <param name="label">Heading for this run, e.g. "Airports: GeoJSON + Alias".</param>
+	/// <param name="result">What <c>AirportService.Run</c> returned.</param>
+	public static void PrintAirportServiceResult(string label, AirportServiceResult result)
+	{
+		Console.WriteLine();
+		Console.WriteLine($"=== {label} ===");
+		Console.WriteLine($"Elapsed:      {result.Elapsed.TotalMilliseconds:N0} ms");
+		Console.WriteLine($"Airports built: {result.AirportCount:N0}");
+		Console.WriteLine($"Airports in ROI: {result.AirportsInRoiCount:N0}");
+
+		if (result.GeojsonFilesWritten.Count == 0)
+		{
+			Console.WriteLine("GeoJSON files written: (none)");
+		}
+		else
+		{
+			Console.WriteLine($"GeoJSON files written: {result.GeojsonFilesWritten.Count}");
+
+			foreach (string file in result.GeojsonFilesWritten)
+			{
+				int count = result.GeojsonFeatureCountsByFile.TryGetValue(file, out int c) ? c : 0;
+				Console.WriteLine($"  {Path.GetFileName(file)} - {count:N0} feature(s)");
+				Console.WriteLine($"    {file}");
+			}
+		}
+
+		if (result.AliasFilePath is not null)
+		{
+			Console.WriteLine($"Alias file:   {result.AliasFilePath} ({result.AliasCommandCount:N0} command(s))");
+		}
+		else
+		{
+			Console.WriteLine("Alias file:   (not generated)");
+		}
+
+		PrintMessagesByLevel(result.Messages);
+	}
+
+	/// <summary>
+	/// Prints one Departures run: timing, how many procedures were read and survived each filter
+	/// stage, how many GeoJSON files were written (a handful listed; every path with DevMode on -
+	/// a full run writes thousands), the alias file with its command count, and the run's
+	/// messages grouped by level.
+	/// </summary>
+	/// <param name="label">Heading for this run, e.g. "Departures: GeoJSON + Alias".</param>
+	/// <param name="result">What <c>DepartureService.Run</c> returned.</param>
+	public static void PrintDepartureServiceResult(string label, DepartureServiceResult result)
+	{
+		Console.WriteLine();
+		Console.WriteLine($"=== {label} ===");
+		Console.WriteLine($"Elapsed:      {result.Elapsed.TotalMilliseconds:N0} ms");
+		Console.WriteLine($"Procedures in DP_BASE:          {result.ProcedureCount:N0}");
+		Console.WriteLine($"Procedures after type/ARTCC/amendment filters: {result.ProceduresInScopeCount:N0}");
+		Console.WriteLine($"Airport + procedure pairs output: {result.AirportProcedureCount:N0}");
+		Console.WriteLine($"Pairs skipped (point not found):  {result.SkippedForMissingPointsCount:N0}");
+
+		if (result.GeojsonFilesWritten.Count == 0)
+		{
+			Console.WriteLine("GeoJSON files written: (none)");
+		}
+		else
+		{
+			Console.WriteLine($"GeoJSON files written: {result.GeojsonFilesWritten.Count:N0}");
+
+			const int maxWhenNotVerbose = 6;
+			int shown = 0;
+
+			foreach (string file in result.GeojsonFilesWritten)
+			{
+				if (!DevMode.IsEnabled && shown >= maxWhenNotVerbose)
+				{
+					Console.WriteLine($"  ... and {result.GeojsonFilesWritten.Count - shown:N0} more (enable DevMode to list every file)");
+					break;
+				}
+
+				int count = result.GeojsonFeatureCountsByFile.TryGetValue(file, out int c) ? c : 0;
+				Console.WriteLine($"  {Path.GetFileName(file)} - {count:N0} feature(s)");
+				shown++;
+			}
+		}
+
+		if (result.AliasFilePath is not null)
+		{
+			Console.WriteLine($"Alias file:   {result.AliasFilePath} ({result.AliasCommandCount:N0} command(s))");
+		}
+		else
+		{
+			Console.WriteLine("Alias file:   (not generated)");
+		}
+
+		PrintMessagesByLevel(result.Messages);
+	}
+
+	/// <summary>
+	/// Prints one Arrivals run: timing, how many procedures were read and survived each filter
+	/// stage, how many GeoJSON files were written (a handful listed; every path with DevMode on -
+	/// a full run writes thousands), the alias file with its command count, and the run's
+	/// messages grouped by level.
+	/// </summary>
+	/// <param name="label">Heading for this run, e.g. "Arrivals: GeoJSON + Alias".</param>
+	/// <param name="result">What <c>ArrivalService.Run</c> returned.</param>
+	public static void PrintArrivalServiceResult(string label, ArrivalServiceResult result)
+	{
+		Console.WriteLine();
+		Console.WriteLine($"=== {label} ===");
+		Console.WriteLine($"Elapsed:      {result.Elapsed.TotalMilliseconds:N0} ms");
+		Console.WriteLine($"Procedures in STAR_BASE:          {result.ProcedureCount:N0}");
+		Console.WriteLine($"Procedures after ARTCC/amendment filters: {result.ProceduresInScopeCount:N0}");
+		Console.WriteLine($"Airport + procedure pairs output: {result.AirportProcedureCount:N0}");
+		Console.WriteLine($"Pairs skipped (point not found):  {result.SkippedForMissingPointsCount:N0}");
+
+		if (result.GeojsonFilesWritten.Count == 0)
+		{
+			Console.WriteLine("GeoJSON files written: (none)");
+		}
+		else
+		{
+			Console.WriteLine($"GeoJSON files written: {result.GeojsonFilesWritten.Count:N0}");
+
+			const int maxWhenNotVerbose = 6;
+			int shown = 0;
+
+			foreach (string file in result.GeojsonFilesWritten)
+			{
+				if (!DevMode.IsEnabled && shown >= maxWhenNotVerbose)
+				{
+					Console.WriteLine($"  ... and {result.GeojsonFilesWritten.Count - shown:N0} more (enable DevMode to list every file)");
+					break;
+				}
+
+				int count = result.GeojsonFeatureCountsByFile.TryGetValue(file, out int c) ? c : 0;
+				Console.WriteLine($"  {Path.GetFileName(file)} - {count:N0} feature(s)");
+				shown++;
+			}
+		}
+
+		if (result.AliasFilePath is not null)
+		{
+			Console.WriteLine($"Alias file:   {result.AliasFilePath} ({result.AliasCommandCount:N0} command(s))");
+		}
+		else
+		{
+			Console.WriteLine("Alias file:   (not generated)");
+		}
+
+		PrintMessagesByLevel(result.Messages);
+	}
+
+	/// <summary>
+	/// Prints one NAVAIDs run: timing, how many NAVAIDs were built and how many survived ROI
+	/// filtering for the GeoJSON, every GeoJSON file with its Feature count, the alias file with
+	/// its command count, and the run's messages grouped by level.
+	/// </summary>
+	/// <param name="label">Heading for this run, e.g. "NAVAIDs: GeoJSON + Alias".</param>
+	/// <param name="result">What <c>NavaidService.Run</c> returned.</param>
+	public static void PrintNavaidServiceResult(string label, NavaidServiceResult result)
+	{
+		Console.WriteLine();
+		Console.WriteLine($"=== {label} ===");
+		Console.WriteLine($"Elapsed:      {result.Elapsed.TotalMilliseconds:N0} ms");
+		Console.WriteLine($"NAVAIDs built: {result.NavaidCount:N0}");
+		Console.WriteLine($"NAVAIDs in ROI (GeoJSON): {result.GeojsonNavaidCount:N0}");
+
+		if (result.GeojsonFilesWritten.Count == 0)
+		{
+			Console.WriteLine("GeoJSON files written: (none)");
+		}
+		else
+		{
+			Console.WriteLine($"GeoJSON files written: {result.GeojsonFilesWritten.Count:N0}");
+
+			foreach (string file in result.GeojsonFilesWritten)
+			{
+				int count = result.GeojsonFeatureCountsByFile.TryGetValue(file, out int c) ? c : 0;
+				Console.WriteLine($"  {Path.GetFileName(file)} - {count:N0} feature(s)");
+				Console.WriteLine($"    {file}");
+			}
+		}
+
+		if (result.AliasFilePath is not null)
+		{
+			Console.WriteLine($"Alias file:   {result.AliasFilePath} ({result.AliasCommandCount:N0} command(s))");
+		}
+		else
+		{
+			Console.WriteLine("Alias file:   (not generated)");
+		}
+
+		PrintMessagesByLevel(result.Messages);
+	}
+
+	/// <summary>
+	/// Prints one ARTCC Boundaries run: timing, how many ARTCCs and boundary lines were built,
+	/// every GeoJSON file with its Feature count, and the run's messages grouped by level. There
+	/// is no alias file.
+	/// </summary>
+	/// <param name="label">Heading for this run, e.g. "ARTCC Boundaries: GeoJSON".</param>
+	/// <param name="result">What <c>ArtccBoundaryService.Run</c> returned.</param>
+	public static void PrintArtccBoundaryServiceResult(string label, ArtccBoundaryServiceResult result)
+	{
+		Console.WriteLine();
+		Console.WriteLine($"=== {label} ===");
+		Console.WriteLine($"Elapsed:      {result.Elapsed.TotalMilliseconds:N0} ms");
+		Console.WriteLine($"ARTCCs in scope: {result.LocationCount:N0}");
+		Console.WriteLine($"Boundary lines built: {result.RingCount:N0}");
+
+		if (result.GeojsonFilesWritten.Count == 0)
+		{
+			Console.WriteLine("GeoJSON files written: (none)");
+		}
+		else
+		{
+			Console.WriteLine($"GeoJSON files written: {result.GeojsonFilesWritten.Count:N0}");
+
+			foreach (string file in result.GeojsonFilesWritten)
+			{
+				int count = result.GeojsonFeatureCountsByFile.TryGetValue(file, out int c) ? c : 0;
+				Console.WriteLine($"  {Path.GetFileName(file)} - {count:N0} feature(s)");
+				Console.WriteLine($"    {file}");
+			}
+		}
+
+		PrintMessagesByLevel(result.Messages);
+	}
+
+	/// <summary>
+	/// Prints one Fixes run: timing, how many fixes were built and how many survived ROI
+	/// filtering, every GeoJSON file with its Feature count, and the run's messages grouped by
+	/// level. There is no alias file.
+	/// </summary>
+	/// <param name="label">Heading for this run, e.g. "Fixes: GeoJSON".</param>
+	/// <param name="result">What <c>FixService.Run</c> returned.</param>
+	public static void PrintFixServiceResult(string label, FixServiceResult result)
+	{
+		Console.WriteLine();
+		Console.WriteLine($"=== {label} ===");
+		Console.WriteLine($"Elapsed:      {result.Elapsed.TotalMilliseconds:N0} ms");
+		Console.WriteLine($"Fixes built: {result.FixCount:N0}");
+		Console.WriteLine($"Fixes in ROI (GeoJSON): {result.GeojsonFixCount:N0}");
+
+		if (result.GeojsonFilesWritten.Count == 0)
+		{
+			Console.WriteLine("GeoJSON files written: (none)");
+		}
+		else
+		{
+			Console.WriteLine($"GeoJSON files written: {result.GeojsonFilesWritten.Count:N0}");
+
+			foreach (string file in result.GeojsonFilesWritten)
+			{
+				int count = result.GeojsonFeatureCountsByFile.TryGetValue(file, out int c) ? c : 0;
+				Console.WriteLine($"  {Path.GetFileName(file)} - {count:N0} feature(s)");
+				Console.WriteLine($"    {file}");
+			}
+		}
+
+		PrintMessagesByLevel(result.Messages);
+	}
+
+	/// <summary>
+	/// Prints one Wx Stations run: timing, how many stations were in the source file and how many
+	/// were included (and how many of those survived ROI filtering), every GeoJSON file with its
+	/// Feature count, and the run's messages grouped by level. There is no alias file.
+	/// </summary>
+	/// <param name="label">Heading for this run, e.g. "Wx Stations: GeoJSON".</param>
+	/// <param name="result">What <c>WxStationService.Run</c> returned.</param>
+	public static void PrintWxStationServiceResult(string label, WxStationServiceResult result)
+	{
+		Console.WriteLine();
+		Console.WriteLine($"=== {label} ===");
+		Console.WriteLine($"Elapsed:      {result.Elapsed.TotalMilliseconds:N0} ms");
+		Console.WriteLine($"Stations in source file: {result.TotalStationCount:N0}");
+		Console.WriteLine($"Stations included: {result.StationCount:N0}");
+		Console.WriteLine($"Stations in ROI (GeoJSON): {result.GeojsonStationCount:N0}");
+
+		if (result.GeojsonFilesWritten.Count == 0)
+		{
+			Console.WriteLine("GeoJSON files written: (none)");
+		}
+		else
+		{
+			Console.WriteLine($"GeoJSON files written: {result.GeojsonFilesWritten.Count:N0}");
+
+			foreach (string file in result.GeojsonFilesWritten)
+			{
+				int count = result.GeojsonFeatureCountsByFile.TryGetValue(file, out int c) ? c : 0;
+				Console.WriteLine($"  {Path.GetFileName(file)} - {count:N0} feature(s)");
+				Console.WriteLine($"    {file}");
+			}
+		}
+
+		PrintMessagesByLevel(result.Messages);
+	}
+
+	/// <summary>
+	/// Prints one Telephony run: what the downloads said (fresh, an older kept copy, or none),
+	/// timing, how many operators got a card and why rows were left out, the alias file, and the
+	/// run's messages grouped by level.
+	/// </summary>
+	/// <param name="label">Heading for this run, e.g. "Telephony: Alias".</param>
+	/// <param name="run">What <c>TelephonyRunner.RunAsync</c> returned.</param>
+	public static void PrintTelephonyServiceResult(string label, TelephonyRun run)
+	{
+		TelephonyServiceResult result = run.Result;
+
+		Console.WriteLine();
+		Console.WriteLine($"=== {label} ===");
+
+		foreach (ServiceMessage message in run.DownloadMessages)
+		{
+			Console.WriteLine($"Download:     [{message.Level}] {message.Text}");
+		}
+
+		Console.WriteLine($"Elapsed:      {result.Elapsed.TotalMilliseconds:N0} ms");
+		Console.WriteLine($"ICAO operators: {result.IcaoAssignmentCount:N0}, U.S. special call signs: {result.SpecialCallSignCount:N0}");
+		Console.WriteLine($"Left out: {result.NoDesignatorCount:N0} with no designator, {result.NoTelephonyCount:N0} with no telephony, {result.ExpiredCount:N0} expired");
+		Console.WriteLine(result.AliasFilePath is null
+			? "Alias file:   (none)"
+			: $"Alias file:   {result.AliasCommandCount:N0} command(s), {result.MergedCommandCount:N0} showing more than one operator -> {result.AliasFilePath}");
+
+		PrintMessagesByLevel(result.Messages);
+	}
+
+	/// <summary>
+	/// Prints one Procedures run: timing, how many airports and procedures were included, the
+	/// New/Changed/Deleted (and re-added) counts, every document written, the FAA Chart Recall alias
+	/// file, and the run's messages grouped by level.
+	/// </summary>
+	/// <param name="label">Heading for this run, e.g. "Procedures: Changes + JSON".</param>
+	/// <param name="result">What <c>ProcedureService.Run</c> returned.</param>
+	public static void PrintProcedureServiceResult(string label, ProcedureServiceResult result)
+	{
+		Console.WriteLine();
+		Console.WriteLine($"=== {label} ===");
+		Console.WriteLine($"Elapsed:      {result.Elapsed.TotalMilliseconds:N0} ms");
+		Console.WriteLine($"Airports included:   {result.AirportCount:N0}");
+		Console.WriteLine($"Procedures included: {result.ProcedureCount:N0}");
+		Console.WriteLine($"New: {result.NewCount:N0}, Changed: {result.ChangedCount:N0} (incl. {result.ReAddedCount:N0} re-added), Deleted: {result.DeletedCount:N0}");
+
+		if (result.FilesWritten.Count == 0)
+		{
+			Console.WriteLine("Documents written: (none)");
+		}
+		else
+		{
+			Console.WriteLine($"Documents written: {result.FilesWritten.Count}");
+
+			foreach (string file in result.FilesWritten)
+			{
+				Console.WriteLine($"  {file}");
+			}
+		}
+
+		Console.WriteLine(result.AliasFilePath is null
+			? "Alias file:   (none)"
+			: $"Alias file:   {result.AliasCommandCount:N0} command(s) for {result.AliasAirportCount:N0} airport(s) -> {result.AliasFilePath}");
+
+		PrintMessagesByLevel(result.Messages);
+	}
+
+	/// <summary>
+	/// Prints a service's levelled messages grouped by <see cref="LogLevel"/>, most severe
+	/// first. Warnings and errors are listed; the routine levels below them are collapsed to a
+	/// count so a clean run stays readable. As with the airway warnings above, only the first
+	/// few of any group print unless <see cref="DevMode.IsEnabled"/> is set.
+	/// </summary>
+	/// <param name="messages">Every message the service emitted, in the order it emitted them.</param>
+	private static void PrintMessagesByLevel(IReadOnlyList<ServiceMessage> messages)
+	{
+		if (messages.Count == 0)
+		{
+			Console.WriteLine("Messages:     none");
+			return;
+		}
+
+		Console.WriteLine($"Messages:     {messages.Count}");
+
+		bool verbose = DevMode.IsEnabled;
+		const int maxWhenNotVerbose = 3;
+
+		var grouped = messages
+			.GroupBy(m => m.Level)
+			.OrderByDescending(g => g.Key);
+
+		foreach (var group in grouped)
+		{
+			Console.WriteLine($"  [{group.Key}] ({group.Count()})");
+
+			// Warnings and errors are the point of the list, so they always print. Info,
+			// Success and Debug are routine narration and stay behind their count unless
+			// developer mode asks for everything.
+			if (group.Key is not (LogLevel.Warning or LogLevel.Error) && !verbose)
+			{
+				continue;
+			}
+
+			int shown = 0;
+
+			foreach (ServiceMessage message in group)
+			{
+				if (!verbose && shown >= maxWhenNotVerbose)
+				{
+					Console.WriteLine($"    ... and {group.Count() - shown} more (enable DevMode for full detail)");
+					break;
+				}
+
+				Console.WriteLine($"    - [{message.Source}] {message.Text}");
+				shown++;
+			}
+		}
+	}
+
+	private static void PrintWarnings(IReadOnlyList<string> warnings)
+	{
+		if (warnings.Count == 0)
+		{
+			Console.WriteLine("Warnings:     none");
+			return;
+		}
+
+		Console.WriteLine($"Warnings:     {warnings.Count}");
+
+		// Group by the airway ID named at the start of the message ("Airway 'J3': ..."),
+		// falling back to a "General" bucket for warnings not tied to one airway (e.g.
+		// unrecognized settings keys).
+		var grouped = warnings
+			.GroupBy(w =>
+			{
+				Match match = AirwayIdPattern.Match(w);
+				return match.Success ? match.Groups[1].Value : "General";
+			})
+			.OrderBy(g => g.Key, StringComparer.OrdinalIgnoreCase);
+
+		bool verbose = DevMode.IsEnabled;
+
+		foreach (var group in grouped)
+		{
+			Console.WriteLine($"  [{group.Key}] ({group.Count()})");
+
+			// DevMode prints every warning; otherwise only the first few per group, to keep
+			// a full-cycle run's console output readable.
+			int shown = 0;
+			const int maxWhenNotVerbose = 3;
+
+			foreach (string warning in group)
+			{
+				if (!verbose && shown >= maxWhenNotVerbose)
+				{
+					Console.WriteLine($"    ... and {group.Count() - shown} more (enable DevMode for full detail)");
+					break;
+				}
+
+				Console.WriteLine($"    - {warning}");
+				shown++;
+			}
+		}
+	}
+}

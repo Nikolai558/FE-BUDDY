@@ -1,0 +1,143 @@
+<!--
+    Typography.xaml  -  type ramp.
+    ===========================================================================
+    Two families:
+      * Display / headings : Montserrat (heavy, condensed feel)
+      * Body / UI          : Jost (geometric humanist sans)
+    Neither ships with Windows. Drop the .ttf files into /Assets/Fonts and change
+    the two FontFamily values below to e.g.
+        pack://application:,,,/Assets/Fonts/#Montserrat
+    Until then the comma-separated fallbacks (Segoe UI / Arial) keep everything
+    legible, so the app runs on a clean machine with no extra install.
+
+    WPF's TextBlock has no letter-spacing; tight display tracking is approximated
+    purely with weight + size. If it ever matters, switch the
+    display TextBlocks to <Glyphs> or a custom run.
+
+    Every style is x:Key'd (no implicit TextBlock style) so intent is explicit at
+    each call site: {StaticResource Text.Body} etc.
+-->
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=mscorlib"
+                    xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls">
+
+    <FontFamily x:Key="Font.Display">Montserrat, Segoe UI, Arial</FontFamily>
+    <FontFamily x:Key="Font.Body">Jost, Segoe UI, Arial</FontFamily>
+    <FontFamily x:Key="Font.Icon">Segoe Fluent Icons, Segoe MDL2 Assets</FontFamily>
+    <FontFamily x:Key="Font.Mono">Cascadia Mono, Consolas, Courier New</FontFamily>
+
+    <!-- ======================== LAYOUT MEASURES ======================== -->
+    <!--
+        A page fills the window - no view pins its content to the left edge and
+        leaves a dead gutter on the right. Body text is the one thing inside a
+        page that still needs a cap. A cluster of input controls is held to size
+        by giving its Grid fixed column widths, not by capping its container: a
+        star column inside a left-aligned container measures to its content, so
+        the boxes come out ragged and clipped.
+    -->
+
+    <!-- How wide a column of body text is allowed to get. Past roughly this, the
+         eye loses the start of the next line. Multi-sentence copy uses
+         Text.Prose (below); a caption that runs long sets MaxWidth to this. -->
+    <sys:Double x:Key="Layout.Prose.MaxWidth">820</sys:Double>
+
+    <!-- ======================= DISPLAY / HEADINGS ===================== -->
+
+    <!-- Large display text: the biggest heading size. -->
+    <Style x:Key="Text.Display" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{DynamicResource Font.Display}" />
+        <Setter Property="FontSize" Value="42" />
+        <Setter Property="FontWeight" Value="Bold" />
+        <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Primary}" />
+        <Setter Property="LineHeight" Value="44" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+        <!-- Inside a disabled card or panel, text dims to match its disabled controls. -->
+        <Style.Triggers>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Opacity" Value="0.31" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style x:Key="Text.H2" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{DynamicResource Font.Display}" />
+        <Setter Property="FontSize" Value="16" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Primary}" />
+        <!-- Inside a disabled card or panel, text dims to match its disabled controls. -->
+        <Style.Triggers>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Opacity" Value="0.31" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- ============================= BODY ============================= -->
+
+    <Style x:Key="Text.Body" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{DynamicResource Font.Body}" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Secondary}" />
+        <Setter Property="LineHeight" Value="20" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+        <!-- Inside a disabled card or panel, text dims to match its disabled controls. -->
+        <Style.Triggers>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Opacity" Value="0.31" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style x:Key="Text.Body.Strong" TargetType="TextBlock" BasedOn="{StaticResource Text.Body}">
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Primary}" />
+    </Style>
+
+    <!-- Tiny uppercase section label ("OUTPUT MODE"). -->
+    <!-- Multi-sentence explanatory copy: wraps, and stops at the prose measure so
+         it stays readable when the window is maximised. Short one-line labels and
+         values keep Text.Body / Text.Caption - capping those would do nothing but
+         make the intent harder to read at the call site. -->
+    <Style x:Key="Text.Prose" TargetType="TextBlock" BasedOn="{StaticResource Text.Body}">
+        <Setter Property="TextWrapping" Value="Wrap" />
+        <Setter Property="MaxWidth" Value="{StaticResource Layout.Prose.MaxWidth}" />
+        <Setter Property="HorizontalAlignment" Value="Left" />
+    </Style>
+
+    <Style x:Key="Text.Label" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{DynamicResource Font.Body}" />
+        <Setter Property="FontSize" Value="10.5" />
+        <Setter Property="FontWeight" Value="Bold" />
+        <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Tertiary}" />
+        <Setter Property="TextOptions.TextFormattingMode" Value="Ideal" />
+        <!-- Inside a disabled card or panel, text dims to match its disabled controls. -->
+        <Style.Triggers>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Opacity" Value="0.31" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- Card titles ("CRC ERAM DEFAULTS", the Preview page's "GENERAL"). The one place their
+         font is set: every card title is a ctl:SectionHeader, whose style uses this one (and
+         upper-cases the text). ~10% larger than Text.Label, which headings inside a card use
+         (SectionHeader.Group), so a card's title sits above them. -->
+    <Style x:Key="Text.SectionHeader" TargetType="TextBlock" BasedOn="{StaticResource Text.Label}">
+        <Setter Property="FontSize" Value="11.5" />
+    </Style>
+
+    <!-- The name to the left of a control in a label / control form grid ("Filters", "BCG"). -->
+    <Style x:Key="Text.FieldLabel" TargetType="TextBlock" BasedOn="{StaticResource Text.Body}">
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="Margin" Value="0,3,12,3" />
+    </Style>
+
+    <!-- Caption / helper text under a control. -->
+    <Style x:Key="Text.Caption" TargetType="TextBlock" BasedOn="{StaticResource Text.Body}">
+        <Setter Property="FontSize" Value="11.5" />
+        <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Tertiary}" />
+        <Setter Property="LineHeight" Value="16" />
+    </Style>
+
+</ResourceDictionary>

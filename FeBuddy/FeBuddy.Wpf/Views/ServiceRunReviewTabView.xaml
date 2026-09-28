@@ -1,0 +1,248 @@
+<!--
+    ServiceRunReviewTabView  -  the Review tab: everything about what happened when the
+    service was run. It appears at the very end of the rail once a run has started, and shows
+    how far each sub-service has got, anything that went wrong, the advisories, each
+    sub-service's results with its warnings and routine notices (each collapsed behind a toggle), and
+    the way out to the files. The sub-service tabs hold settings only.
+-->
+<UserControl x:Class="FeBuddy.Wpf.Views.ServiceRunReviewTabView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
+             xmlns:bhv="clr-namespace:FeBuddy.Wpf.Behaviors"
+             xmlns:tabs="clr-namespace:FeBuddy.Wpf.ViewModels.ServiceTabs"
+             xmlns:tabm="clr-namespace:FeBuddy.Wpf.ViewModels.ServiceTabs.Models"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance tabs:ServiceRunReviewTabViewModel}"
+             d:DesignWidth="820" d:DesignHeight="700">
+
+    <UserControl.Resources>
+        <!-- the status word, coloured by where the step has got to; Waiting keeps the default -->
+        <Style x:Key="RunStepStatusText" TargetType="TextBlock" BasedOn="{StaticResource Text.Caption}">
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding Status}" Value="Working">
+                    <Setter Property="Foreground" Value="{StaticResource Brush.Accent}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Status}" Value="Finished">
+                    <Setter Property="Foreground" Value="{StaticResource Brush.Positive}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Status}" Value="Failed">
+                    <Setter Property="Foreground" Value="{StaticResource Brush.Danger}" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- one sub-service's line in the feed -->
+        <DataTemplate x:Key="RunStepRow" DataType="{x:Type tabs:RunStep}">
+            <StackPanel Margin="0,4">
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Right" Text="{Binding StatusText}"
+                               Style="{StaticResource RunStepStatusText}"
+                               VerticalAlignment="Center" Margin="12,0,0,0" />
+                    <TextBlock Text="{Binding Name}" Style="{StaticResource Text.Body.Strong}"
+                               VerticalAlignment="Center" />
+                </DockPanel>
+                <TextBlock Text="{Binding Detail}" Style="{StaticResource Text.Caption}" TextWrapping="Wrap"
+                           MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
+                           Margin="0,2,0,0"
+                           Visibility="{Binding Detail, Converter={StaticResource StringToVis}}" />
+            </StackPanel>
+        </DataTemplate>
+
+        <!-- one error line -->
+        <DataTemplate x:Key="ErrorRow">
+            <TextBlock Text="{Binding}" Style="{StaticResource Text.Prose}" Margin="0,3" />
+        </DataTemplate>
+
+        <!-- one group of a sub-service's messages: its heading (a severity, or e.g. an airway ID)
+             with the count on the right, then the messages -->
+        <DataTemplate x:Key="MessageGroup" DataType="{x:Type tabm:SubServiceMessageGroup}">
+            <Border Margin="0,4" Padding="10" CornerRadius="{StaticResource Radius.Chip}"
+                    Background="{StaticResource Brush.Bg.Sunken}">
+                <StackPanel>
+                    <DockPanel>
+                        <TextBlock DockPanel.Dock="Right" Text="{Binding Count, StringFormat={}{0} msg}"
+                                   Style="{StaticResource Text.Caption}" />
+                        <TextBlock Text="{Binding Title}" Style="{StaticResource Text.Body.Strong}" />
+                    </DockPanel>
+                    <ItemsControl ItemsSource="{Binding Messages}" Margin="0,4,0,0">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding}" Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,1" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+        </DataTemplate>
+
+        <!-- an expanded message list: bounded, with its own scroll bar, so a long list does not
+             stretch the page; the wheel passes to the page once the list reaches either end -->
+        <Style x:Key="MessageListScroller" TargetType="ScrollViewer">
+            <Setter Property="MaxHeight" Value="320" />
+            <Setter Property="VerticalScrollBarVisibility" Value="Auto" />
+            <Setter Property="HorizontalScrollBarVisibility" Value="Disabled" />
+            <Setter Property="bhv:WheelScroll.BubbleUp" Value="True" />
+        </Style>
+
+        <!-- one sub-service's results: what it produced, then its warnings and its routine
+             notices, each behind a toggle, collapsed on every run -->
+        <DataTemplate x:Key="SubServiceResultBlock" DataType="{x:Type tabs:SubServiceRunResult}">
+            <StackPanel Margin="0,4,0,8">
+                <TextBlock Text="{Binding Name}" Style="{StaticResource Text.Body.Strong}" />
+                <TextBlock Text="{Binding Summary}" Style="{StaticResource Text.Body}" TextWrapping="Wrap"
+                           Margin="0,2,0,0" />
+
+                <StackPanel Margin="0,6,0,0" Visibility="{Binding HasAttention, Converter={StaticResource BoolToVis}}">
+                    <Button Style="{StaticResource Button.Ghost}" HorizontalAlignment="Left"
+                            Foreground="{StaticResource Brush.Warn}"
+                            Content="{Binding AttentionToggleLabel}" Command="{Binding ToggleAttentionCommand}" />
+                    <ScrollViewer Style="{StaticResource MessageListScroller}"
+                                  Visibility="{Binding IsAttentionExpanded, Converter={StaticResource BoolToVis}}">
+                        <ItemsControl ItemsSource="{Binding Attention}" ItemTemplate="{StaticResource MessageGroup}" />
+                    </ScrollViewer>
+                </StackPanel>
+
+                <StackPanel Margin="0,6,0,0" Visibility="{Binding HasInfo, Converter={StaticResource BoolToVis}}">
+                    <Button Style="{StaticResource Button.Ghost}" HorizontalAlignment="Left"
+                            Content="{Binding InfoToggleLabel}" Command="{Binding ToggleInfoCommand}" />
+                    <ScrollViewer Style="{StaticResource MessageListScroller}"
+                                  Visibility="{Binding IsInfoExpanded, Converter={StaticResource BoolToVis}}">
+                        <ItemsControl ItemsSource="{Binding Info}" ItemTemplate="{StaticResource MessageGroup}" />
+                    </ScrollViewer>
+                </StackPanel>
+            </StackPanel>
+        </DataTemplate>
+
+        <!-- one written file -->
+        <DataTemplate x:Key="OutputFileRow">
+            <TextBlock Text="{Binding}" FontFamily="{StaticResource Font.Mono}" FontSize="11"
+                       Foreground="{StaticResource Brush.Text.Primary}"
+                       TextTrimming="CharacterEllipsis" Margin="0,3" />
+        </DataTemplate>
+    </UserControl.Resources>
+
+    <!-- No ScrollViewer here: the tab host owns the one page-level scroller. -->
+    <StackPanel>
+
+        <!-- how far each sub-service has got -->
+        <ctl:Card Header="Progress">
+            <StackPanel>
+
+                <TextBlock Text="{Binding Summary}" Style="{StaticResource Text.Body}" TextWrapping="Wrap"
+                           Margin="0,0,0,6"
+                           Visibility="{Binding Summary, Converter={StaticResource StringToVis}}" />
+
+                <TextBlock Text="In progress…" Style="{StaticResource Text.Caption}" Margin="0,0,0,6"
+                           Visibility="{Binding IsRunning, Converter={StaticResource BoolToVis}}" />
+
+                <ItemsControl ItemsSource="{Binding Steps}" ItemTemplate="{StaticResource RunStepRow}" />
+            </StackPanel>
+        </ctl:Card>
+
+        <!-- something failed, in any sub-service -->
+        <ctl:Card Header="Errors"
+                  Style="{StaticResource Card.Danger}"
+                  Visibility="{Binding HasErrors, Converter={StaticResource BoolToVis}}">
+            <StackPanel>
+                <ItemsControl ItemsSource="{Binding Errors}" ItemTemplate="{StaticResource ErrorRow}" />
+            </StackPanel>
+        </ctl:Card>
+
+        <!-- advisories: output the user would expect but won't find, and why -->
+        <ctl:Card Header="Advisories"
+                  Style="{StaticResource Card.Warn}"
+                  Visibility="{Binding HasAdvisories, Converter={StaticResource BoolToVis}}">
+            <StackPanel>
+                <ItemsControl ItemsSource="{Binding Advisories}" ItemTemplate="{StaticResource ErrorRow}" />
+            </StackPanel>
+        </ctl:Card>
+
+        <!-- the run finished and reported nothing: say so rather than showing an empty tab -->
+        <ctl:Card>
+            <ctl:Card.Style>
+                <Style TargetType="ctl:Card" BasedOn="{StaticResource {x:Type ctl:Card}}">
+                    <Setter Property="Visibility" Value="Collapsed" />
+                    <Style.Triggers>
+                        <MultiDataTrigger>
+                            <MultiDataTrigger.Conditions>
+                                <Condition Binding="{Binding HasRun}" Value="True" />
+                                <Condition Binding="{Binding HasErrors}" Value="False" />
+                                <Condition Binding="{Binding HasAdvisories}" Value="False" />
+                            </MultiDataTrigger.Conditions>
+                            <Setter Property="Visibility" Value="Visible" />
+                        </MultiDataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </ctl:Card.Style>
+            <TextBlock Style="{StaticResource Text.Body}" TextWrapping="Wrap"
+                       Text="The run finished with no errors." />
+        </ctl:Card>
+
+        <!-- what each sub-service produced, with its warnings and routine notices -->
+        <ctl:Card Header="Results" Visibility="{Binding HasResults, Converter={StaticResource BoolToVis}}">
+            <StackPanel>
+                <ItemsControl ItemsSource="{Binding Results}" ItemTemplate="{StaticResource SubServiceResultBlock}" />
+            </StackPanel>
+        </ctl:Card>
+
+        <!-- what the run wrote -->
+        <ctl:Card Header="Output" Visibility="{Binding HasFiles, Converter={StaticResource BoolToVis}}">
+            <StackPanel>
+
+                <!-- Minimized by default, like the Dashboard activity log: the count is what most
+                     runs need, and a Departures run alone writes thousands of files. -->
+                <DockPanel>
+                    <Button DockPanel.Dock="Right" Style="{StaticResource Button.Ghost}"
+                            Command="{Binding ToggleFileListCommand}">
+                        <TextBlock>
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Text" Value="Minimize" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsFileListCollapsed}" Value="True">
+                                            <Setter Property="Text" Value="Show files" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </Button>
+
+                    <WrapPanel VerticalAlignment="Center">
+                        <TextBlock Style="{StaticResource Text.Caption}" Margin="0,0,18,0"
+                                   Text="{Binding ElapsedText}" />
+                        <TextBlock Style="{StaticResource Text.Caption}"
+                                   Text="{Binding FilesWritten.Count, StringFormat={}{0:N0} file(s)}" />
+                    </WrapPanel>
+                </DockPanel>
+
+                <!-- Bounded and virtualised so thousands of rows cost only what is on screen; the
+                     wheel passes to the page once the list reaches either end. -->
+                <ListBox ItemsSource="{Binding FilesWritten}" ItemTemplate="{StaticResource OutputFileRow}"
+                         Margin="0,8,0,0" MaxHeight="320"
+                         Background="Transparent" BorderThickness="0"
+                         bhv:WheelScroll.BubbleUp="True"
+                         ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                         VirtualizingStackPanel.IsVirtualizing="True"
+                         VirtualizingStackPanel.VirtualizationMode="Recycling"
+                         Visibility="{Binding IsFileListCollapsed, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}">
+                    <ListBox.ItemContainerStyle>
+                        <Style TargetType="ListBoxItem">
+                            <Setter Property="Focusable" Value="False" />
+                            <Setter Property="Padding" Value="0" />
+                            <Setter Property="Background" Value="Transparent" />
+                            <Setter Property="BorderThickness" Value="0" />
+                            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                        </Style>
+                    </ListBox.ItemContainerStyle>
+                </ListBox>
+
+                <Button Style="{StaticResource Button.Ghost}" HorizontalAlignment="Left" Margin="0,10,0,0"
+                        Content="Open output folder" Command="{Binding OpenOutputFolderCommand}" />
+            </StackPanel>
+        </ctl:Card>
+    </StackPanel>
+</UserControl>

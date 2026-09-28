@@ -1,7 +1,12 @@
-# CodeQL security analysis for FE-BUDDY.
+# CodeQL security analysis for FE-BUDDY 3.0.
 #
-# Scans C# code on pushes and pull requests to the primary development
-# and release branches, as well as on a weekly schedule.
+# Scans the C# code and the GitHub Actions workflows on pushes to v3-development
+# and releases, pull requests into either, and on a weekly schedule (the
+# schedule runs only from the default branch). Results upload to GitHub code
+# scanning (free for this public repo), which the dev-branch and release-branch
+# rulesets require before a pull request can merge. Scanning each push to
+# releases keeps a current analysis of the released code, which the next
+# release pull request is compared against.
 
 name: "CodeQL"
 
@@ -9,10 +14,10 @@ on:
   workflow_dispatch:
 
   push:
-    branches: [ development, releases ]
+    branches: [ v3-development, releases ]
 
   pull_request:
-    branches: [ development, releases ]
+    branches: [ v3-development, releases ]
 
   schedule:
     - cron: '0 8 * * 1'
@@ -20,23 +25,27 @@ on:
 jobs:
   analyze:
     name: Analyze
-    runs-on: windows-2025
+    # The workflows need no build, so they are scanned on a quicker Linux runner.
+    runs-on: ${{ matrix.language == 'actions' && 'ubuntu-latest' || 'windows-2025' }}
 
     permissions:
       actions: read
       contents: read
       security-events: write
 
+    # Only "language" varies: it names each result set (category), so C# keeps
+    # the same category - and alert history - it has always had.
     strategy:
       fail-fast: false
       matrix:
-        language: [ 'csharp' ]
+        language: [ 'csharp', 'actions' ]
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
 
       - name: Setup .NET SDK
+        if: matrix.language == 'csharp'
         uses: actions/setup-dotnet@v5
         with:
           dotnet-version: '10.x'
@@ -45,7 +54,7 @@ jobs:
         uses: github/codeql-action/init@v4
         with:
           languages: ${{ matrix.language }}
-          build-mode: autobuild
+          build-mode: ${{ matrix.language == 'actions' && 'none' || 'autobuild' }}
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v4

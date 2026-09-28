@@ -1,0 +1,173 @@
+using System.Globalization;
+
+using FeBuddy.Core.Domain.Geo.Models;
+
+using NetTopologySuite.Geometries;
+
+namespace FeBuddy.Core.Domain.Geo;
+
+/// <summary>
+/// Validates Region of Interest (ROI) input and clips geometry to an ROI's rectangular
+/// bounds.
+/// </summary>
+/// <remarks>
+/// The two validation methods are public so the GUI's ROI screen checks input with exactly the
+/// rules the settings parsers apply.
+/// </remarks>
+public static class RoiFilter
+{
+	/// <summary>
+	/// Validates that all four ROI coordinate strings parse as decimal degrees within valid
+	/// latitude (-90..90) and longitude (-180..180) ranges. Does not check the coordinates'
+	/// relative position; use <see cref="IsCoordinatesRelativePositionValid"/> for that once
+	/// format validation has passed.
+	/// </summary>
+	/// <param name="swLatText">Southwest corner latitude, as user-entered text.</param>
+	/// <param name="swLonText">Southwest corner longitude, as user-entered text.</param>
+	/// <param name="neLatText">Northeast corner latitude, as user-entered text.</param>
+	/// <param name="neLonText">Northeast corner longitude, as user-entered text.</param>
+	/// <param name="error">
+	/// When this method returns <see langword="false"/>, a human-readable message describing
+	/// the first problem found; otherwise <see langword="null"/>.
+	/// </param>
+	/// <returns><see langword="true"/> when every coordinate is a valid decimal value in range.</returns>
+	public static bool IsCoordinateValidFormat(
+		string? swLatText,
+		string? swLonText,
+		string? neLatText,
+		string? neLonText,
+		out string? error)
+	{
+		return
+			TryParseDegrees(swLatText, -90, 90, "Southwest Latitude", out _, out error) &&
+			TryParseDegrees(swLonText, -180, 180, "Southwest Longitude", out _, out error) &&
+			TryParseDegrees(neLatText, -90, 90, "Northeast Latitude", out _, out error) &&
+			TryParseDegrees(neLonText, -180, 180, "Northeast Longitude", out _, out error);
+	}
+
+	/// <summary>
+	/// Validates that the northeast corner is actually northeast of the southwest corner.
+	/// </summary>
+	/// <param name="swLat">Southwest corner latitude, in decimal degrees.</param>
+	/// <param name="swLon">Southwest corner longitude, in decimal degrees.</param>
+	/// <param name="neLat">Northeast corner latitude, in decimal degrees.</param>
+	/// <param name="neLon">Northeast corner longitude, in decimal degrees.</param>
+	/// <param name="error">
+	/// When this method returns <see langword="false"/>, a human-readable message describing
+	/// the problem; otherwise <see langword="null"/>.
+	/// </param>
+	/// <returns><see langword="true"/> when NeLat &gt; SwLat and NeLon &gt; SwLon.</returns>
+	/// <remarks>
+	/// An ROI that crosses the antimeridian (SwLon &gt; NeLon) is rejected: clipping works on a
+	/// plain longitude range, which cannot wrap past ±180.
+	/// </remarks>
+	public static bool IsCoordinatesRelativePositionValid(
+		double swLat,
+		double swLon,
+		double neLat,
+		double neLon,
+		out string? error)
+	{
+		if (neLat <= swLat)
+		{
+			error = "The Northeast Latitude must be greater than the Southwest Latitude.";
+			return false;
+		}
+
+		if (neLon <= swLon)
+		{
+			error = neLon < swLon
+				? "The Northeast Longitude must be greater than the Southwest Longitude. " +
+				  "A Region of Interest that crosses the antimeridian is not currently supported."
+				: "The Northeast Longitude must be greater than the Southwest Longitude.";
+			return false;
+		}
+
+		error = null;
+		return true;
+	}
+
+	/// <summary>
+	/// Clips lines to an ROI's rectangular bounds.
+	/// </summary>
+	/// <param name="lines">The lines to clip, treated as one geometry.</param>
+	/// <param name="roi">The Region of Interest to clip to.</param>
+	/// <returns>The line pieces inside the ROI; empty when none of the lines reaches it.</returns>
+	/// <remarks>
+	/// An intersection can also produce points - a line that only touches the ROI's edge or
+	/// corner. Those carry no drawable line, so they are dropped.
+	/// </remarks>
+	public static IReadOnlyList<LineString> ClipLines(IReadOnlyList<LineString> lines, RegionOfInterest roi)
+	{
+		ArgumentNullException.ThrowIfNull(lines);
+		ArgumentNullException.ThrowIfNull(roi);
+
+		Geometry combined = Wgs84.Factory.CreateMultiLineString([.. lines]);
+		List<LineString> clipped = [];
+		CollectLineStrings(combined.Intersection(roi.ToPolygon()), clipped);
+		return clipped;
+	}
+
+	/// <summary>
+	/// Determines whether a point falls inside (or on the boundary of) an ROI's rectangular
+	/// bounds.
+	/// </summary>
+	/// <param name="roi">The Region of Interest to test against.</param>
+	/// <param name="latitude">The point's latitude, in decimal degrees.</param>
+	/// <param name="longitude">The point's longitude, in decimal degrees.</param>
+	/// <returns><see langword="true"/> when the point is inside or on the edge.</returns>
+	public static bool Contains(RegionOfInterest roi, double latitude, double longitude)
+	{
+		ArgumentNullException.ThrowIfNull(roi);
+
+		return roi.ToEnvelope().Contains(longitude, latitude);
+	}
+
+	/// <summary>
+	/// Recursively collects every non-empty LineString out of a geometry. A MultiLineString is
+	/// a GeometryCollection, so one case covers both; points and empty geometry add nothing.
+	/// </summary>
+	private static void CollectLineStrings(Geometry geometry, List<LineString> result)
+	{
+		switch (geometry)
+		{
+			case LineString lineString when !lineString.IsEmpty:
+				result.Add(lineString);
+				break;
+
+			case GeometryCollection geometryCollection:
+				for (int i = 0; i < geometryCollection.NumGeometries; i++)
+				{
+					CollectLineStrings(geometryCollection.GetGeometryN(i), result);
+				}
+				break;
+		}
+	}
+
+	/// <summary>
+	/// Parses one coordinate value and checks it against the valid range for its axis.
+	/// </summary>
+	private static bool TryParseDegrees(
+		string? text,
+		double min,
+		double max,
+		string fieldName,
+		out double value,
+		out string? error)
+	{
+		if (!double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out value))
+		{
+			error = $"{fieldName} '{text}' is not a valid decimal coordinate.";
+			return false;
+		}
+
+		if (value < min || value > max)
+		{
+			error = $"{fieldName} {value} is out of range. Valid range: {min} to {max}.";
+			return false;
+		}
+
+		error = null;
+		return true;
+	}
+}

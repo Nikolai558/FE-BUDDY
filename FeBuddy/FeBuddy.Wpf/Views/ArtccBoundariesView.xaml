@@ -1,0 +1,96 @@
+<!--
+    ArtccBoundariesView  -  the ARTCC Boundaries sub-service tab inside the AIRAC Service screen.
+    Save / Undo / Previous / Next / Preview settings come from the tab host's shared
+    action bar, and the tab host owns the page's single scroller.
+-->
+<UserControl x:Class="FeBuddy.Wpf.Views.ArtccBoundariesView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:FeBuddy.Wpf.ViewModels"
+             xmlns:m="clr-namespace:FeBuddy.Wpf.ViewModels.Models"
+             xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
+             xmlns:cards="clr-namespace:FeBuddy.Wpf.Views.Cards"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance vm:ArtccBoundariesViewModel}"
+             d:DesignWidth="900" d:DesignHeight="1400">
+
+    <!-- No ScrollViewer here: the tab host owns the one page-level scroller
+         that every sub-service tab is laid out inside. A second scroller would
+         steal the wheel and hide the lower sections. -->
+    <StackPanel>
+
+            <TextBlock Text="{Binding ValidationError}" Style="{StaticResource Text.Caption}"
+                       Foreground="{StaticResource Brush.Danger}" TextWrapping="Wrap" Margin="0,0,0,12"
+                       MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
+                       Visibility="{Binding ValidationError, Converter={StaticResource StringToVis}}" />
+
+            <!-- ============ file layout ============ -->
+            <ctl:Card Header="File Layout">
+                <StackPanel>
+                    <RadioButton GroupName="ArtccBoundaryOutputBy" Margin="0,4,0,0"
+                                 Content="High and Low - ARTCC-Boundary_High_Lines / _Low_Lines; UNLIMITED lines go in both"
+                                 IsChecked="{Binding OutputHighLow, Mode=TwoWay}" />
+                    <RadioButton GroupName="ArtccBoundaryOutputBy" Margin="0,6,0,0"
+                                 Content="High, Low and Unlimited - adds ARTCC-Boundary_Unlimited_Lines"
+                                 IsChecked="{Binding OutputHighLowUnlimited, Mode=TwoWay}" />
+                    <RadioButton GroupName="ArtccBoundaryOutputBy" Margin="0,6,0,0"
+                                 Content="One file per ARTCC and altitude - e.g. ARTCC-Boundary_ZOB-HIGH_Lines"
+                                 IsChecked="{Binding OutputByArtccAltitude, Mode=TwoWay}" />
+                    <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,10,0,0"
+                               MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
+                               Text="Files are written to Geojson\ in the cycle's folder." />
+                </StackPanel>
+            </ctl:Card>
+
+            <!-- ============ FE-Buddy properties ============ -->
+            <cards:FebPropertiesCard />
+
+            <!-- ============ ARTCCs ============ -->
+            <ctl:Card Header="ARTCCs">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
+                               Text="Pick the ARTCCs whose boundaries you want. Leave all unticked to include every one." />
+                    <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap"
+                               MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
+                               Text="ARTCCs appear once the selected cycle's data is loaded."
+                               Visibility="{Binding HasLocations, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
+                    <ItemsControl ItemsSource="{Binding Locations}" IsEnabled="{Binding IsCycleReady}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="{x:Type m:ArtccToggle}">
+                                <CheckBox Content="{Binding Artcc}" IsChecked="{Binding IsSelected}" Margin="0,0,14,6" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <Button Content="Clear" Style="{StaticResource Button.Ghost}" HorizontalAlignment="Left"
+                            Margin="0,6,0,0" Command="{Binding ClearLocationsCommand}"
+                            Visibility="{Binding HasLocations, Converter={StaticResource BoolToVis}}" />
+                </StackPanel>
+            </ctl:Card>
+
+            <!-- ============ antimeridian ============ -->
+            <ctl:Card Header="Split GeoJSON at the Antimeridian">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
+                               Text="A line that crosses ±180° longitude is split into two LineStrings so it does not visually wrap across the whole map. ZAK, ZAN and ZAP cross it. Leave this on unless a downstream tool needs the un-split geometry." />
+                    <CheckBox Content="Split boundary lines at the antimeridian" IsChecked="{Binding SplitAtAntimeridian}" />
+                </StackPanel>
+            </ctl:Card>
+
+            <!-- ============ region of interest ============ -->
+            <cards:RoiOverrideCard>
+                <cards:RoiOverrideCard.AdditionalContent>
+                    <TextBlock Style="{StaticResource Text.Prose}" Margin="0,14,0,0"
+                               Text="The region clips the boundary lines at its edge." />
+                </cards:RoiOverrideCard.AdditionalContent>
+            </cards:RoiOverrideCard>
+
+            <!-- ============ upload to vNAS, then the CRC ERAM defaults those files carry ============ -->
+            <cards:VnasUploadCard />
+            <cards:CrcDefaultsCard LinesTitle="ARTCC Boundaries — Lines" />
+    </StackPanel>
+</UserControl>

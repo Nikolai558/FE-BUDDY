@@ -1,0 +1,52 @@
+<!--
+    AirportsView  -  the Airports sub-service tab inside the AIRAC Service screen.
+    Save / Undo / Previous / Next / Preview settings come from the tab host's shared
+    action bar, and the tab host owns the page's single scroller.
+-->
+<UserControl x:Class="FeBuddy.Wpf.Views.AirportsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:FeBuddy.Wpf.ViewModels"
+             xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
+             xmlns:cards="clr-namespace:FeBuddy.Wpf.Views.Cards"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance vm:AirportsViewModel}"
+             d:DesignWidth="900" d:DesignHeight="1400">
+
+    <!-- No ScrollViewer here: the tab host owns the one page-level scroller
+         that every sub-service tab is laid out inside. A second scroller would
+         steal the wheel and hide the lower sections. -->
+    <StackPanel>
+
+            <TextBlock Text="{Binding ValidationError}" Style="{StaticResource Text.Caption}"
+                       Foreground="{StaticResource Brush.Danger}" TextWrapping="Wrap" Margin="0,0,0,12"
+                       MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
+                       Visibility="{Binding ValidationError, Converter={StaticResource StringToVis}}" />
+
+            <!-- ============ outputs ============ -->
+            <cards:OutputsCard GeojsonDescription="Writes the airport and runway GeoJSON files selected below."
+                               AliasFileName="Airports.txt"
+                               AliasDescription="Writes one alias command per airport FAA ID, and one for airports with an ICAO ID." />
+
+            <!-- ============ which GeoJSON files ============ -->
+            <cards:GeojsonFilesCard IsEnabled="{Binding GenerateGeojson}"
+                                    LinesLabel="Runways — Lines"
+                                    LinesDescription="One MultiLineString per airport holding that airport's runway centrelines."
+                                    SymbolsLabel="Airports — Symbols"
+                                    SymbolsDescription="One symbol per airport, placed at its reference point."
+                                    TextLabel="Airports — Text"
+                                    TextDescription="A label per airport showing the FAA ID and the airport name." />
+
+            <!-- ============ FE-Buddy properties ============ -->
+            <cards:FebPropertiesCard IsEnabled="{Binding GenerateGeojson}" />
+
+            <!-- ============ region of interest ============ -->
+            <cards:RoiOverrideCard IsEnabled="{Binding GenerateGeojson}" />
+
+            <!-- ============ upload to vNAS, then the CRC ERAM defaults those files carry ============ -->
+            <cards:VnasUploadCard />
+            <cards:CrcDefaultsCard LinesTitle="Runways — Lines" SymbolsTitle="Airports — Symbols" TextTitle="Airports — Text" />
+    </StackPanel>
+</UserControl>

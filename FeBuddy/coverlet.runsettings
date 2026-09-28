@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+	Code coverage settings for FeBuddy.UnitTests (used by coverage.ps1 and CI).
+
+	FeBuddy.Core and FeBuddy.Versioning are measured (Core references Versioning, so the tests
+	reach both); the WPF shell, the Harness console and the installer projects are deliberately
+	out of scope. The tests do reach the WPF shell's map logic (FeBuddy.UnitTests/Wpf), but it is
+	not measured: most of the shell is XAML and view code that no unit test runs.
+-->
+<RunSettings>
+	<DataCollectionRunSettings>
+		<DataCollectors>
+			<DataCollector friendlyName="XPlat code coverage">
+				<Configuration>
+					<Format>cobertura</Format>
+					<Include>[FeBuddy.Core]*,[FeBuddy.Versioning]*</Include>
+					<!-- Not CompilerGeneratedAttribute: that also hides auto-properties, lambdas and
+					     async methods, which would inflate the number instead of measuring it. -->
+					<ExcludeByAttribute>GeneratedCodeAttribute,ExcludeFromCodeCoverageAttribute</ExcludeByAttribute>
+				</Configuration>
+			</DataCollector>
+		</DataCollectors>
+	</DataCollectionRunSettings>
+</RunSettings>

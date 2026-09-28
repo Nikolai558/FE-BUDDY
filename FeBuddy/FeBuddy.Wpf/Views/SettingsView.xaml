@@ -1,0 +1,311 @@
+<!--
+    SettingsView  -  Facility Profile / Default ROI / GeoJSON Files / Credentials / FE-Buddy's GitHub Requests / Updates.
+    Everything persists to UserConfig.json.
+-->
+<UserControl x:Class="FeBuddy.Wpf.Views.SettingsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:FeBuddy.Wpf.ViewModels"
+             xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
+             xmlns:bhv="clr-namespace:FeBuddy.Wpf.Behaviors"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance vm:SettingsViewModel, IsDesignTimeCreatable=True}"
+             d:DesignWidth="900" d:DesignHeight="820">
+
+    <Grid Background="{StaticResource Brush.Bg.Base}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- pinned page header: title stays put while the body scrolls -->
+        <Grid Grid.Row="0" Background="{StaticResource Brush.Bg.Base}">
+            <TextBlock Text="Settings" Style="{StaticResource Text.Display}" Margin="28,24,28,14" />
+            <Border Style="{StaticResource Divider}" VerticalAlignment="Bottom" />
+        </Grid>
+
+        <!-- pinned action bar: subtitle on the left; dirty indicator, Import / Export and Save grouped on the right -->
+        <Grid Grid.Row="1" Background="{StaticResource Brush.Bg.Base}">
+            <DockPanel Margin="28,14">
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                    <TextBlock VerticalAlignment="Center" Style="{StaticResource Text.Caption}"
+                               Foreground="{StaticResource Brush.Warn}" Text="Unsaved changes" Margin="0,0,12,0"
+                               Visibility="{Binding IsDirty, Converter={StaticResource BoolToVis}}" />
+                    <Button Style="{StaticResource Button.Ghost}" Content="Import…" Margin="0,0,8,0"
+                            Command="{Binding ImportCommand}"
+                            ToolTip="Make this PC's settings match a settings file someone exported. Their folders are moved into your own user folders and only used where they work on this PC; your update channel stays as it is." />
+                    <Button Style="{StaticResource Button.Ghost}" Content="Export…" Margin="0,0,8,0"
+                            Command="{Binding ExportCommand}"
+                            ToolTip="Save every FE-Buddy setting to a file you can share. Folders under your Desktop, Documents or user folder are written so they work on another PC; settings that only apply to this PC are left out." />
+                    <Button Style="{StaticResource Button.Primary}" Content="Save"
+                            Command="{Binding SaveCommand}" MinWidth="90" />
+                </StackPanel>
+                <TextBlock Text="Preferences for this installation, saved to UserConfig.json."
+                           Style="{StaticResource Text.Body}" VerticalAlignment="Center" />
+            </DockPanel>
+            <Border Style="{StaticResource Divider}" VerticalAlignment="Bottom" />
+        </Grid>
+
+        <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
+                      bhv:WheelScroll.Amplify="3">
+            <StackPanel Margin="28,34,28,8">
+
+                <!-- ================= 1. FACILITY PROFILE ================= -->
+                <ctl:Card Header="Facility Profile">
+                    <StackPanel>
+
+                        <TextBlock Style="{StaticResource Text.Prose}"
+                                   Text="{Binding FacilityWaitingMessage}" Margin="0,4,0,0"
+                                   Visibility="{Binding FacilitiesReady, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
+
+                        <StackPanel Visibility="{Binding FacilitiesReady, Converter={StaticResource BoolToVis}}">
+                            <ctl:SectionHeader Style="{StaticResource SectionHeader.Group}" Label="Facility" Margin="0,4,0,4" />
+                            <ComboBox Style="{StaticResource Themed.ComboBox}"
+                                      ItemsSource="{Binding Facilities}"
+                                      SelectedValuePath="ArtccId" SelectedValue="{Binding SelectedFacility}"
+                                      Width="300" HorizontalAlignment="Left">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Display}" />
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
+                        </StackPanel>
+
+                        <Border Style="{StaticResource Divider}" Margin="0,14" />
+
+                        <ctl:SectionHeader Style="{StaticResource SectionHeader.Group}" Label="Default Output Directory" />
+                        <DockPanel Margin="0,4,0,0">
+                            <Button DockPanel.Dock="Right" Style="{StaticResource Button.Ghost}" Content="Browse…"
+                                    Command="{Binding BrowseOutputCommand}" Margin="8,0,0,0" />
+                            <TextBox Text="{Binding OutputDirectory, UpdateSourceTrigger=PropertyChanged}" />
+                        </DockPanel>
+                        <CheckBox Content="Add a FE-Buddy__Output folder inside that directory"
+                                  IsChecked="{Binding AddFeBuddyOutputFolder}" Margin="0,8,0,0" />
+                        <TextBlock Text="{Binding OutputFolderExample}" Style="{StaticResource Text.Caption}"
+                                   TextWrapping="Wrap" Margin="0,6,0,0" />
+                    </StackPanel>
+                </ctl:Card>
+
+                <!-- ================= 2. DEFAULT REGION OF INTEREST ================= -->
+                <ctl:Card Header="Default Region of Interest">
+                    <StackPanel>
+                        <TextBlock Text="{Binding Source={x:Static vm:SettingsViewModel.RoiExplainer}}"
+                                   Style="{StaticResource Text.Prose}" Margin="0,4,0,10" />
+                        <DockPanel>
+                            <Button DockPanel.Dock="Right" Style="{StaticResource Button.Ghost}" Content="Clear"
+                                    Command="{Binding ClearRoiCommand}" Margin="8,0,0,0" />
+                            <Button DockPanel.Dock="Right" Style="{StaticResource Button.Primary}" Content="Set ROI…"
+                                    Command="{Binding EditRoiCommand}" MinWidth="110" />
+                            <TextBlock Text="{Binding DefaultRoiSummary}" Style="{StaticResource Text.Caption}"
+                                       FontFamily="{StaticResource Font.Mono}" VerticalAlignment="Center" />
+                        </DockPanel>
+                    </StackPanel>
+                </ctl:Card>
+
+                <!-- ================= 3. GEOJSON FILES ================= -->
+                <ctl:Card Header="GeoJSON Files">
+                    <StackPanel>
+
+                        <ctl:SectionHeader Style="{StaticResource SectionHeader.Group}" Label="FE-Buddy Properties" Margin="0,4,0,0" />
+                        <TextBlock Text="{Binding Source={x:Static vm:SettingsViewModel.FebPropertiesDescription}}"
+                                   Style="{StaticResource Text.Prose}" Margin="0,4,0,0" />
+
+                        <Border Style="{StaticResource Divider}" Margin="0,14" />
+
+                        <ctl:SectionHeader Style="{StaticResource SectionHeader.Group}" Label="Maximum Coordinate Precision" />
+                        <TextBlock Text="{Binding Source={x:Static vm:SettingsViewModel.CoordinatePrecisionDescription}}"
+                                   Style="{StaticResource Text.Prose}" Margin="0,4,0,8" />
+                        <StackPanel Orientation="Horizontal">
+                            <RadioButton GroupName="Precision" Content="5 dp" Margin="0,0,16,0" ToolTip="General object references."
+                                         IsChecked="{Binding IsPrecision5, Mode=OneWay}"
+                                         Command="{Binding SetPrecisionCommand}" CommandParameter="5" />
+                            <RadioButton GroupName="Precision" Content="6 dp" Margin="0,0,16,0" ToolTip="Airport layout tracing / CAB-like files."
+                                         IsChecked="{Binding IsPrecision6, Mode=OneWay}"
+                                         Command="{Binding SetPrecisionCommand}" CommandParameter="6" />
+                            <RadioButton GroupName="Precision" Content="7 dp" ToolTip="High-precision navigation and airport tracing."
+                                         IsChecked="{Binding IsPrecision7, Mode=OneWay}"
+                                         Command="{Binding SetPrecisionCommand}" CommandParameter="7" />
+                        </StackPanel>
+
+                        <Border Style="{StaticResource Divider}" Margin="0,14" />
+
+                        <ctl:SectionHeader Style="{StaticResource SectionHeader.Group}" Label="File Layout" />
+                        <TextBlock Text="{Binding Source={x:Static vm:SettingsViewModel.FileLayoutDescription}}"
+                                   Style="{StaticResource Text.Prose}" Margin="0,4,0,8" />
+                        <StackPanel Orientation="Horizontal">
+                            <RadioButton GroupName="FileLayout" Content="Single line" Margin="0,0,16,0"
+                                         ToolTip="Smallest files. The default."
+                                         IsChecked="{Binding PrettyPrintGeojson, Converter={StaticResource InverseBool}, Mode=TwoWay}" />
+                            <RadioButton GroupName="FileLayout" Content="Pretty print"
+                                         ToolTip="Larger files, easy to read in a text editor."
+                                         IsChecked="{Binding PrettyPrintGeojson, Mode=TwoWay}" />
+                        </StackPanel>
+                        <TextBlock Style="{StaticResource Text.Caption}" Margin="0,8,0,0"
+                                   Foreground="{StaticResource Brush.Warn}"
+                                   Text="Developer mode is on, so GeoJSON is pretty printed whatever is chosen here."
+                                   Visibility="{Binding IsDevModeForcingPrettyPrint, Converter={StaticResource BoolToVis}}" />
+                    </StackPanel>
+                </ctl:Card>
+
+                <!-- ================= 4. CREDENTIALS ================= -->
+                <!-- Saved at once, in Windows Credential Manager: not part of this page's Save. -->
+                <ctl:Card Header="Credentials" DataContext="{Binding Credentials}">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
+                                   Text="{Binding Source={x:Static vm:CredentialsViewModel.Description}}" />
+
+                        <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
+                                   Foreground="{StaticResource Brush.Danger}" Text="{Binding LoadError}"
+                                   Visibility="{Binding HasLoadError, Converter={StaticResource BoolToVis}}" />
+
+                        <TextBlock Style="{StaticResource Text.Caption}" Margin="0,4,0,8" Text="No credentials yet."
+                                   Visibility="{Binding HasCredentials, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
+
+                        <ItemsControl ItemsSource="{Binding Rows}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <StackPanel>
+                                        <DockPanel Margin="0,8">
+                                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                                                <Button Style="{StaticResource Button.Ghost}" Content="{Binding CheckLabel}" Margin="8,0,0,0"
+                                                        ToolTip="Ask GitHub whether this token still works."
+                                                        Visibility="{Binding CanCheck, Converter={StaticResource BoolToVis}}"
+                                                        Command="{Binding DataContext.CheckCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                        CommandParameter="{Binding}" />
+                                                <Button Style="{StaticResource Button.Ghost}" Content="Edit…" Margin="8,0,0,0"
+                                                        Command="{Binding DataContext.EditCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                        CommandParameter="{Binding}" />
+                                                <Button Style="{StaticResource Button.Ghost}" Content="Remove" Margin="8,0,0,0"
+                                                        Command="{Binding DataContext.RemoveCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                        CommandParameter="{Binding}" />
+                                            </StackPanel>
+                                            <StackPanel VerticalAlignment="Center">
+                                                <TextBlock Style="{StaticResource Text.Body.Strong}" Text="{Binding Name}" />
+                                                <TextBlock Style="{StaticResource Text.Caption}" Text="{Binding Details}" TextWrapping="Wrap" />
+                                            </StackPanel>
+                                        </DockPanel>
+                                        <Border Style="{StaticResource Divider}" />
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                            <Button Style="{StaticResource Button.Primary}" Content="Add credential…"
+                                    Command="{Binding AddCommand}" />
+                            <Button Style="{StaticResource Button.Ghost}" Content="Remove all" Margin="8,0,0,0"
+                                    ToolTip="Remove every FE-Buddy credential from this PC."
+                                    Command="{Binding RemoveAllCommand}" />
+                        </StackPanel>
+                    </StackPanel>
+                </ctl:Card>
+
+                <!-- ================= 5. FE-BUDDY'S GITHUB REQUESTS (advanced) ================= -->
+                <!-- Part of this page's Save: only the chosen token's id is saved, never the token. -->
+                <ctl:Card Header="FE-Buddy's GitHub Requests">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
+                                   Text="{Binding Source={x:Static vm:SettingsViewModel.GitHubRequestsDescription}}" />
+
+                        <RadioButton GroupName="FeBuddyGitHubToken" Margin="0,3" Content="Don't use a GitHub token"
+                                     IsChecked="{Binding DontUseGitHubToken}" />
+                        <RadioButton GroupName="FeBuddyGitHubToken" Margin="0,3" Content="Use a GitHub token for update checks, News and update downloads"
+                                     IsChecked="{Binding UseGitHubToken}" />
+
+                        <StackPanel Margin="0,8,0,0" Visibility="{Binding UseGitHubToken, Converter={StaticResource BoolToVis}}">
+                            <DockPanel>
+                                <Button DockPanel.Dock="Right" Style="{StaticResource Button.Ghost}" Content="New GitHub token…" Margin="8,0,0,0"
+                                        ToolTip="Add a GitHub token in Credentials and use it here."
+                                        Command="{Binding NewGitHubTokenCommand}" />
+                                <ComboBox Style="{StaticResource Themed.ComboBox}" ItemsSource="{Binding GitHubTokens}"
+                                          SelectedValuePath="Id" SelectedValue="{Binding GitHubCredentialId}">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding Label}" />
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
+                            </DockPanel>
+                            <TextBlock Style="{StaticResource Text.Caption}" Margin="0,6,0,0" TextWrapping="Wrap"
+                                       Foreground="{StaticResource Brush.Warn}" Text="{Binding GitHubTokenNotice}"
+                                       Visibility="{Binding HasGitHubTokenNotice, Converter={StaticResource BoolToVis}}" />
+                            <TextBlock Style="{StaticResource Text.Caption}" Margin="0,6,0,0" TextWrapping="Wrap"
+                                       Text="If a request with the token fails, FE-Buddy tries it once more without it, so an expired token never stops you getting updates. The token only needs read access; FE-Buddy never writes to GitHub." />
+                        </StackPanel>
+                    </StackPanel>
+                </ctl:Card>
+
+                <!-- ================= 6. UPDATES ================= -->
+                <!-- Most finished channel first; each one also offers every channel above it. -->
+                <ctl:Card Header="Updates">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
+                                   Text="{Binding Source={x:Static vm:SettingsViewModel.UpdatesDescription}}" />
+                        <TextBlock Style="{StaticResource Text.Prose}" Margin="0,0,0,8"
+                                   Foreground="{StaticResource Brush.Warn}"
+                                   Text="{Binding ChannelWarning}"
+                                   Visibility="{Binding IsPreReleaseChannel, Converter={StaticResource BoolToVis}}" />
+                        <StackPanel>
+                            <RadioButton GroupName="Channel" Margin="0,3" Foreground="{StaticResource Brush.Text.Primary}"
+                                         ToolTip="{Binding Source={x:Static vm:SettingsViewModel.StableDescription}}"
+                                         IsChecked="{Binding Channel, Converter={StaticResource EnumToBool}, ConverterParameter=Stable}">
+                                <StackPanel>
+                                    <TextBlock Text="Stable" />
+                                    <TextBlock Style="{StaticResource Text.Caption}"
+                                               Text="{Binding Source={x:Static vm:SettingsViewModel.StableOffers}}" />
+                                </StackPanel>
+                            </RadioButton>
+                            <RadioButton GroupName="Channel" Margin="0,3" Foreground="{StaticResource Brush.Text.Primary}"
+                                         ToolTip="{Binding Source={x:Static vm:SettingsViewModel.ReleaseCandidateDescription}}"
+                                         IsChecked="{Binding Channel, Converter={StaticResource EnumToBool}, ConverterParameter=ReleaseCandidate}">
+                                <StackPanel>
+                                    <TextBlock Text="Release Candidate" />
+                                    <TextBlock Style="{StaticResource Text.Caption}"
+                                               Text="{Binding Source={x:Static vm:SettingsViewModel.ReleaseCandidateOffers}}" />
+                                </StackPanel>
+                            </RadioButton>
+                            <RadioButton GroupName="Channel" Margin="0,3" Foreground="{StaticResource Brush.Text.Primary}"
+                                         ToolTip="{Binding Source={x:Static vm:SettingsViewModel.BetaDescription}}"
+                                         IsChecked="{Binding Channel, Converter={StaticResource EnumToBool}, ConverterParameter=Beta}">
+                                <StackPanel>
+                                    <TextBlock Text="Beta" />
+                                    <TextBlock Style="{StaticResource Text.Caption}"
+                                               Text="{Binding Source={x:Static vm:SettingsViewModel.BetaOffers}}" />
+                                </StackPanel>
+                            </RadioButton>
+                            <RadioButton GroupName="Channel" Margin="0,3" Foreground="{StaticResource Brush.Text.Primary}"
+                                         ToolTip="{Binding Source={x:Static vm:SettingsViewModel.AlphaDescription}}"
+                                         IsChecked="{Binding Channel, Converter={StaticResource EnumToBool}, ConverterParameter=Alpha}">
+                                <StackPanel>
+                                    <TextBlock Text="Alpha" />
+                                    <TextBlock Style="{StaticResource Text.Caption}"
+                                               Text="{Binding Source={x:Static vm:SettingsViewModel.AlphaOffers}}" />
+                                </StackPanel>
+                            </RadioButton>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                            <Button Command="{Binding CheckNowCommand}">
+                                <Button.Style>
+                                    <Style TargetType="Button" BasedOn="{StaticResource Button.Ghost}">
+                                        <Setter Property="Content" Value="Check for updates now" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsCheckingForUpdates}" Value="True">
+                                                <Setter Property="Content" Value="Checking…" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Button.Style>
+                            </Button>
+                            <Button Style="{StaticResource Button.Ghost}" Content="Get the latest stable installer"
+                                    Command="{Binding RollbackCommand}" Margin="8,0,0,0" />
+                        </StackPanel>
+                    </StackPanel>
+                </ctl:Card>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

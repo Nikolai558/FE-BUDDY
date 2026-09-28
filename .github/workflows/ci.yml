@@ -1,7 +1,13 @@
-# CI for FE-BUDDY.
+# CI for FE-BUDDY 3.0.
 #
 # Verifies that it compiles and the unit tests pass on every push and pull
-# request to the development and release branches. It does NOT produce a release i.e. no MSI or squirrel packages).
+# request to v3-development (and every pull request into releases), that the
+# code coverage of FeBuddy.Core and FeBuddy.Versioning has not dropped (the
+# table is on each run's summary page; the full HTML report is the
+# "coverage-report" artifact), and that the MSI still builds (the "installer"
+# artifact - for testing, not a release). Build and Test are required checks on
+# both branches' rulesets. Releases are made by release-checks.yml and
+# release.yml - see docs/Developers/RELEASING.md.
 
 name: "CI"
 
@@ -9,10 +15,14 @@ on:
   workflow_dispatch:
 
   push:
-    branches: [ development, releases ]
+    branches: [ v3-development ]
 
   pull_request:
-    branches: [ development, releases ]
+    branches: [ v3-development, releases ]
+
+# Build, test and package only - nothing here writes to the repository.
+permissions:
+  contents: read
 
 jobs:
   build:
@@ -27,10 +37,9 @@ jobs:
         uses: actions/setup-dotnet@v5
         with:
           dotnet-version: '10.x'
-      - name: Build app
-        run: dotnet build FeBuddyWinFormUI/FeBuddyWinFormUI.csproj -c Release
-      - name: Build installer custom actions
-        run: dotnet build FE-BUDDY.Installer.CustomActions/FE-BUDDY.Installer.CustomActions.csproj -c Release -p:Platform=x64
+
+      - name: Build solution
+        run: dotnet build FeBuddy/FeBuddy.sln -c Release
 
   test:
     name: Test
@@ -45,8 +54,43 @@ jobs:
         with:
           dotnet-version: '10.x'
 
-      - name: Test versioning
-        run: dotnet test FeBuddy.Versioning.Tests/FeBuddy.Versioning.Tests.csproj -c Release --logger "console;verbosity=normal"
+      # Runs the tests with coverage, writes the coverage table to this run's summary page,
+      # and fails if FeBuddy.Core coverage drops below the floor (line / branch percent).
+      - name: Test library with coverage
+        shell: pwsh
+        run: ./FeBuddy/coverage.ps1 -Configuration Release -MinimumLineCoverage 95 -MinimumBranchCoverage 90
 
-      - name: Test library
-        run: dotnet test FeBuddyLibrary.Tests/FeBuddyLibrary.Tests.csproj -c Release --logger "console;verbosity=normal"
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: FeBuddy/TestResults/CoverageReport
+          if-no-files-found: ignore
+
+  installer:
+    name: Installer
+    runs-on: windows-2025
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '10.x'
+
+      # Publishes the app and builds the MSI exactly as a release would. The installer
+      # counter it advances stays in this runner's checkout (see
+      # docs/Developers/MSI-VERSION-NUMBERING.md).
+      - name: Build MSI
+        shell: pwsh
+        run: ./FeBuddy/build.ps1
+
+      - name: Upload MSI
+        uses: actions/upload-artifact@v4
+        with:
+          name: installer
+          path: FeBuddy/releases/*.msi
+          retention-days: 1

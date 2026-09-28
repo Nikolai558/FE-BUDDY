@@ -1,0 +1,68 @@
+<!--
+    AiracGeneralTabView  -  the General tab of the AIRAC Service screen: which cycle
+    and which sub-services to produce output for. Ticking a sub-service
+    opens its own tab in the rail; Save / navigation come from the tab host's action bar.
+-->
+<UserControl x:Class="FeBuddy.Wpf.Views.AiracGeneralTabView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:FeBuddy.Wpf.ViewModels"
+             xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance vm:AiracGeneralTabViewModel}"
+             d:DesignWidth="820" d:DesignHeight="700">
+
+    <!-- No ScrollViewer here: the tab host owns the one page-level scroller. -->
+    <StackPanel>
+
+        <!-- waiting / unavailable banner -->
+        <ctl:Card Style="{StaticResource Card.Warn}"
+                  Visibility="{Binding IsReady, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}">
+            <TextBlock Text="{Binding WaitingMessage}" Style="{StaticResource Text.Prose}" />
+        </ctl:Card>
+
+        <!-- ============ cycle ============ -->
+        <ctl:Card Header="Cycle">
+            <StackPanel>
+                <ItemsControl ItemsSource="{Binding CycleOptions}" Margin="0,4,0,0">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <DockPanel Margin="0,3">
+                                <TextBlock DockPanel.Dock="Right" Text="{Binding State}"
+                                           Style="{StaticResource Text.Caption}" VerticalAlignment="Center" />
+                                <RadioButton GroupName="AiracCycle" Content="{Binding Label}"
+                                             Foreground="{StaticResource Brush.Text.Primary}"
+                                             IsChecked="{Binding IsSelected, Mode=TwoWay}" />
+                            </DockPanel>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <TextBlock Text="{Binding SelectedCycleLabel}" Style="{StaticResource Text.Caption}"
+                           FontFamily="{StaticResource Font.Mono}" Margin="0,8,0,0" />
+            </StackPanel>
+        </ctl:Card>
+
+        <!-- ============ sub-services ============ -->
+        <ctl:Card Header="Sub-Services">
+            <StackPanel>
+                <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,10"
+                           Text="Tick the data you want this cycle to produce. Each one opens its own tab where you choose its settings and output files." />
+                <ItemsControl ItemsSource="{Binding SubServices}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <DockPanel Margin="0,4">
+                                <TextBlock DockPanel.Dock="Right" Text="{Binding Hint}"
+                                           Style="{StaticResource Text.Caption}" VerticalAlignment="Center"
+                                           Visibility="{Binding Hint, Converter={StaticResource StringToVis}}" />
+                                <CheckBox Content="{Binding DisplayName}" IsChecked="{Binding IsSelected, Mode=TwoWay}" />
+                            </DockPanel>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+        </ctl:Card>
+    </StackPanel>
+</UserControl>

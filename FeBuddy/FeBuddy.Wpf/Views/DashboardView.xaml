@@ -1,0 +1,254 @@
+<!--
+    DashboardView  -  description box (top), News feed (primary), and a live
+    activity-log viewer over AppLog (bottom).
+-->
+<UserControl x:Class="FeBuddy.Wpf.Views.DashboardView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:FeBuddy.Wpf.ViewModels"
+             xmlns:news="clr-namespace:FeBuddy.Core.Application.News.Models;assembly=FeBuddy.Core"
+             xmlns:log="clr-namespace:FeBuddy.Core.Infrastructure.Logging.Models;assembly=FeBuddy.Core"
+             xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
+             xmlns:bhv="clr-namespace:FeBuddy.Wpf.Behaviors"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance vm:DashboardViewModel, IsDesignTimeCreatable=True}"
+             d:DesignWidth="960" d:DesignHeight="720">
+
+    <UserControl.Resources>
+
+        <!-- one News post -->
+        <DataTemplate x:Key="NewsPostTemplate" DataType="{x:Type news:NewsPost}">
+            <ctl:Card>
+                <StackPanel>
+                    <DockPanel>
+                        <TextBlock DockPanel.Dock="Right" Text="{Binding DateHeading}"
+                                   Style="{StaticResource Text.Caption}" VerticalAlignment="Center" />
+                        <TextBlock Text="{Binding Title}" Style="{StaticResource Text.H2}"
+                                   TextTrimming="CharacterEllipsis" />
+                    </DockPanel>
+                    <TextBlock Text="{Binding Body, Converter={StaticResource MdToText}}" Style="{StaticResource Text.Prose}"
+                               Margin="0,8,0,0" />
+                </StackPanel>
+            </ctl:Card>
+        </DataTemplate>
+
+        <!-- one activity-log row -->
+        <DataTemplate x:Key="LogRowTemplate" DataType="{x:Type log:LogEntry}">
+            <Grid Margin="0,3">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <Border x:Name="Tick" Width="4" Height="14" CornerRadius="2" Margin="0,0,10,0"
+                        Background="{StaticResource Brush.Text.Tertiary}" />
+
+                <TextBlock Grid.Column="1" Text="{Binding UtcTimestamp, StringFormat=HH:mm:ss}"
+                           FontFamily="{StaticResource Font.Mono}" FontSize="11"
+                           Foreground="{StaticResource Brush.Text.Tertiary}" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="1" Text="Z" FontFamily="{StaticResource Font.Mono}" FontSize="9"
+                           Foreground="{StaticResource Brush.Text.Tertiary}" VerticalAlignment="Center"
+                           HorizontalAlignment="Right" Margin="0,0,-8,0" />
+
+                <TextBlock Grid.Column="2" Text="{Binding Source}"
+                           FontFamily="{StaticResource Font.Mono}" FontSize="11"
+                           Foreground="{StaticResource Brush.Text.Secondary}" VerticalAlignment="Center"
+                           Margin="16,0,12,0" MinWidth="120" />
+
+                <TextBlock Grid.Column="3" Text="{Binding Message}" Style="{StaticResource Text.Body}"
+                           TextWrapping="Wrap" VerticalAlignment="Center" />
+            </Grid>
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding Level}" Value="Info">
+                    <Setter TargetName="Tick" Property="Background" Value="{StaticResource Brush.Text.Tertiary}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Level}" Value="Success">
+                    <Setter TargetName="Tick" Property="Background" Value="{StaticResource Brush.Positive}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Level}" Value="Warning">
+                    <Setter TargetName="Tick" Property="Background" Value="{StaticResource Brush.Warn}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Level}" Value="Error">
+                    <Setter TargetName="Tick" Property="Background" Value="{StaticResource Brush.Danger}" />
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+
+        <!-- filter chip: a grouped RadioButton bound to SetLogFilterCommand -->
+        <Style x:Key="LogChip" TargetType="RadioButton">
+            <Setter Property="GroupName" Value="LogFilter" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Margin" Value="0,0,8,0" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <!-- A hairline outline on unchecked chips: a Brush.Overlay fill alone is
+                             near-invisible, and the label + count need an edge to read. -->
+                        <Border x:Name="Root" Background="Transparent"
+                                BorderBrush="{DynamicResource Brush.Stroke.Strong}" BorderThickness="1"
+                                CornerRadius="{DynamicResource Radius.Chip}" Padding="10,4">
+                            <ContentPresenter />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Root" Property="Background" Value="{DynamicResource Brush.Overlay}" />
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Root" Property="Background" Value="{DynamicResource Brush.Accent.Soft}" />
+                                <Setter TargetName="Root" Property="BorderBrush" Value="{DynamicResource Brush.Accent.Line}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+    </UserControl.Resources>
+
+    <Grid Background="{StaticResource Brush.Bg.Base}">
+        <Grid Margin="28">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <!-- ======================== DESCRIPTION BOX ======================== -->
+            <ctl:Card Grid.Row="0" Margin="0">
+                <StackPanel>
+                    <TextBlock Text="{Binding Description}" Style="{StaticResource Text.Prose}" />
+
+                    <DockPanel Margin="0,14,0,0">
+                        <TextBlock DockPanel.Dock="Right" Text="{Binding NextCycleLine}"
+                                   Style="{StaticResource Text.Caption}" FontFamily="{StaticResource Font.Mono}"
+                                   VerticalAlignment="Center" />
+                        <TextBlock>
+                            <Hyperlink Command="{Binding OpenDiscordCommand}" Foreground="{StaticResource Brush.Accent}">
+                                Discord Server
+                            </Hyperlink>
+                        </TextBlock>
+                    </DockPanel>
+                </StackPanel>
+            </ctl:Card>
+
+            <!-- ============================ NEWS ============================ -->
+            <DockPanel Grid.Row="1" Margin="0,20,0,0">
+                <DockPanel DockPanel.Dock="Top" Margin="2,0,0,10">
+                    <Button DockPanel.Dock="Right" Content="News on GitHub"
+                            Command="{Binding OpenNewsCommand}">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource Button.Ghost}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding NewsButtonHighlighted}" Value="True">
+                                        <Setter Property="Foreground" Value="{StaticResource Brush.Warn}" />
+                                        <Setter Property="Content" Value="New post — open News" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+                    <ctl:SectionHeader Label="News" VerticalAlignment="Center" />
+                </DockPanel>
+
+                <TextBlock DockPanel.Dock="Top" Style="{StaticResource Text.Prose}"
+                           Margin="2,0,0,10"
+                           Text="Reaching out to the FE-Buddy development team for the latest news…"
+                           Visibility="{Binding NewsFetching, Converter={StaticResource BoolToVis}}" />
+
+                <TextBlock DockPanel.Dock="Top" Style="{StaticResource Text.Prose}"
+                           Margin="2,0,0,10"
+                           Text="News could not be loaded right now. Open it on GitHub for the latest posts."
+                           Visibility="{Binding NewsUnavailable, Converter={StaticResource BoolToVis}}" />
+
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
+                              bhv:WheelScroll.BubbleUp="True">
+                    <ItemsControl ItemsSource="{Binding Posts}" ItemTemplate="{StaticResource NewsPostTemplate}" />
+                </ScrollViewer>
+            </DockPanel>
+
+            <!-- ======================== ACTIVITY LOG ======================== -->
+            <ctl:Card Grid.Row="2" Margin="0,18,0,0">
+                <DockPanel>
+                    <DockPanel DockPanel.Dock="Top">
+                        <Button DockPanel.Dock="Right" Style="{StaticResource Button.Ghost}"
+                                Command="{Binding ToggleLogCommand}">
+                            <TextBlock>
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Text" Value="Minimize" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsLogCollapsed}" Value="True">
+                                                <Setter Property="Text" Value="Expand" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </Button>
+
+                        <WrapPanel VerticalAlignment="Center">
+                            <RadioButton Style="{StaticResource LogChip}" IsChecked="{Binding FilterIsAll, Mode=OneWay}"
+                                         Command="{Binding SetLogFilterCommand}" CommandParameter="All">
+                                <TextBlock>
+                                    <Run Text="All " Foreground="{StaticResource Brush.Text.Secondary}" FontWeight="SemiBold" FontSize="11" />
+                                    <Run Text="{Binding AllCount, Mode=OneWay}" Foreground="{StaticResource Brush.Text.Tertiary}" FontSize="11" />
+                                </TextBlock>
+                            </RadioButton>
+                            <RadioButton Style="{StaticResource LogChip}" IsChecked="{Binding FilterIsInfo, Mode=OneWay}"
+                                         Command="{Binding SetLogFilterCommand}" CommandParameter="Info">
+                                <TextBlock>
+                                    <Run Text="Info " Foreground="{StaticResource Brush.Text.Tertiary}" FontWeight="SemiBold" FontSize="11" />
+                                    <Run Text="{Binding InfoCount, Mode=OneWay}" Foreground="{StaticResource Brush.Text.Tertiary}" FontSize="11" />
+                                </TextBlock>
+                            </RadioButton>
+                            <RadioButton Style="{StaticResource LogChip}" IsChecked="{Binding FilterIsSuccess, Mode=OneWay}"
+                                         Command="{Binding SetLogFilterCommand}" CommandParameter="Success">
+                                <TextBlock>
+                                    <Run Text="Success " Foreground="{StaticResource Brush.Positive}" FontWeight="SemiBold" FontSize="11" />
+                                    <Run Text="{Binding SuccessCount, Mode=OneWay}" Foreground="{StaticResource Brush.Text.Tertiary}" FontSize="11" />
+                                </TextBlock>
+                            </RadioButton>
+                            <RadioButton Style="{StaticResource LogChip}" IsChecked="{Binding FilterIsWarning, Mode=OneWay}"
+                                         Command="{Binding SetLogFilterCommand}" CommandParameter="Warning">
+                                <TextBlock>
+                                    <Run Text="Warning " Foreground="{StaticResource Brush.Warn}" FontWeight="SemiBold" FontSize="11" />
+                                    <Run Text="{Binding WarningCount, Mode=OneWay}" Foreground="{StaticResource Brush.Text.Tertiary}" FontSize="11" />
+                                </TextBlock>
+                            </RadioButton>
+                            <RadioButton Style="{StaticResource LogChip}" IsChecked="{Binding FilterIsError, Mode=OneWay}"
+                                         Command="{Binding SetLogFilterCommand}" CommandParameter="Error">
+                                <TextBlock>
+                                    <Run Text="Error " Foreground="{StaticResource Brush.Danger}" FontWeight="SemiBold" FontSize="11" />
+                                    <Run Text="{Binding ErrorCount, Mode=OneWay}" Foreground="{StaticResource Brush.Text.Tertiary}" FontSize="11" />
+                                </TextBlock>
+                            </RadioButton>
+                        </WrapPanel>
+                    </DockPanel>
+
+                    <ListBox ItemsSource="{Binding LogView}" ItemTemplate="{StaticResource LogRowTemplate}"
+                             Margin="0,12,0,0" MaxHeight="240"
+                             Background="Transparent" BorderThickness="0"
+                             bhv:WheelScroll.BubbleUp="True"
+                             ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                             VirtualizingStackPanel.IsVirtualizing="True"
+                             VirtualizingStackPanel.VirtualizationMode="Recycling"
+                             Visibility="{Binding IsLogCollapsed, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}">
+                        <ListBox.ItemContainerStyle>
+                            <Style TargetType="ListBoxItem">
+                                <Setter Property="Focusable" Value="False" />
+                                <Setter Property="Padding" Value="0" />
+                                <Setter Property="Background" Value="Transparent" />
+                                <Setter Property="BorderThickness" Value="0" />
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                            </Style>
+                        </ListBox.ItemContainerStyle>
+                    </ListBox>
+                </DockPanel>
+            </ctl:Card>
+        </Grid>
+    </Grid>
+</UserControl>

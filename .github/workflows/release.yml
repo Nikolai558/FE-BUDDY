@@ -1,10 +1,23 @@
-# Creates a draft GitHub Release for FE-BUDDY.
+# Drafts a FE-BUDDY 3.x GitHub release.
+#
+# Runs when a pull request merges into releases (the only way anything reaches
+# it; release-checks.yml has already run every check on that pull request).
+# It runs the checks again, builds the MSI, commits the advanced installer
+# counter to v3-development, and creates a DRAFT release: tag = the version,
+# target = releases, notes = .github/release-notes-template.md filled in from
+# ChangeLog.md, asset = FE-BUDDY-Setup.msi. A person reviews the draft and
+# presses "Publish release"; nothing is public until then.
+#
+# Re-run it from the Actions tab ("Run workflow" on releases) if it failed for
+# a reason outside the code, e.g. a GitHub outage. See
+# docs/Developers/RELEASING.md.
+
 name: "Release"
 
 on:
-  pull_request:
-    types: [closed]
-    branches: [releases]
+  push:
+    branches: [ releases ]
+
   workflow_dispatch:
 
 concurrency:
@@ -18,223 +31,82 @@ jobs:
   draft-release:
     name: Draft release
     runs-on: windows-2025
-    if: github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch'
-
-    env:
-      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    if: github.ref == 'refs/heads/releases'
 
     steps:
-      - name: Checkout releases branch
+      # persist-credentials: false - checkout would otherwise leave this job's write-access token
+      # in the checkout's git config while build.ps1 runs. The steps that need a token pass one.
+      - name: Checkout releases
         uses: actions/checkout@v6
         with:
-          ref: releases
-          fetch-depth: 0
+          persist-credentials: false
 
       - name: Setup .NET SDK
         uses: actions/setup-dotnet@v5
         with:
           dotnet-version: '10.x'
 
+      # The one-step version rule was enforced on the pull request (where the
+      # "skip-version-step" label can excuse it); everything else is re-checked.
       - name: Pre-flight checks
-        id: preflight
-        shell: pwsh
-        run: |
-          $ErrorActionPreference = 'Stop'
-
-          # --- DEVMODE must be off ------------------------------------------------
-          $globalConfig = Get-Content -Path 'FeBuddyLibrary/GlobalConfig.cs' -Raw
-          if ($globalConfig -notmatch 'public\s+static\s+bool\s+DEVMODE\s*=\s*false\s*;') {
-              Write-Host "::error::GlobalConfig.DEVMODE is not set to false. Set it to false before releasing."
-              exit 1
-          }
-
-          # --- Version (from the csproj, for fast pre-build guards) --------------
-          [xml]$proj = Get-Content -Path 'FeBuddyWinFormUI/FeBuddyWinFormUI.csproj'
-          $ver = (($proj.Project.PropertyGroup.Version) | Where-Object { $_ }) -as [string]
-          if ([string]::IsNullOrWhiteSpace($ver)) {
-              Write-Host "::error::Could not read <Version> from FeBuddyWinFormUI.csproj."
-              exit 1
-          }
-          $ver = $ver.Trim()
-          Write-Host "Version: $ver"
-
-          # --- ChangeLog.md must have a literal section for this exact version --
-          $header = "- ## Version $ver"
-          $changelog = Get-Content -Path 'ChangeLog.md'
-          if (-not ($changelog | Where-Object { $_.Trim() -eq $header })) {
-              Write-Host "::error::ChangeLog.md has no '$header' section. Add the changelog entry before releasing."
-              exit 1
-          }
-
-          # --- The tag / release must not already exist -------------------------
-          git rev-parse -q --verify "refs/tags/$ver" *> $null
-          if ($LASTEXITCODE -eq 0) {
-              Write-Host "::error::Git tag '$ver' already exists."
-              exit 1
-          }
-          gh release view "$ver" *> $null
-          if ($LASTEXITCODE -eq 0) {
-              Write-Host "::error::A release named '$ver' already exists."
-              exit 1
-          }
-
-          $sha = (git rev-parse HEAD).Trim()
-
-          Add-Content -Path $env:GITHUB_OUTPUT -Value "version=$ver"
-          Add-Content -Path $env:GITHUB_OUTPUT -Value "sha=$sha"
-
-      - name: Build (build.ps1)
-        shell: pwsh
-        run: ./build.ps1
-
-      - name: Extract release notes and verify build
-        id: notes
-        shell: pwsh
-        run: |
-          $ErrorActionPreference = 'Stop'
-          $expected = '${{ steps.preflight.outputs.version }}'
-
-          # --- Authoritative version: the ProductVersion of the built DLL -------
-          $verInfo = Get-ChildItem -Path 'publish/FE-BUDDY.dll' -Recurse |
-                     Select-Object -First 1 -ExpandProperty VersionInfo
-          if (-not $verInfo) {
-              Write-Host "::error::build.ps1 did not produce publish/FE-BUDDY.dll."
-              exit 1
-          }
-          $dllVer = $verInfo.ProductVersion.Trim()
-          if ($dllVer -ne $expected) {
-              Write-Host "::error::Version mismatch - csproj says '$expected', built DLL says '$dllVer'."
-              exit 1
-          }
-
-          # --- MSI must exist -------------------------------------------------
-          $msi = Get-ChildItem -Path 'releases/FE-BUDDY-*.msi' | Select-Object -First 1
-          if (-not $msi) {
-              Write-Host "::error::build.ps1 did not produce releases/FE-BUDDY-*.msi."
-              exit 1
-          }
-
-          # --- Slice the matching ChangeLog.md section --------------------------
-          $header = "- ## Version $expected"
-          $lines  = Get-Content -Path 'ChangeLog.md'
-          $start  = -1
-          for ($i = 0; $i -lt $lines.Count; $i++) {
-              if ($lines[$i].Trim() -eq $header) { $start = $i; break }
-          }
-          if ($start -lt 0) {
-              Write-Host "::error::ChangeLog.md section '$header' vanished between pre-flight and now."
-              exit 1
-          }
-          $body = [System.Collections.Generic.List[string]]::new()
-          for ($i = $start + 1; $i -lt $lines.Count; $i++) {
-              if ($lines[$i] -match '^- ## Version ') { break }
-              $body.Add($lines[$i])
-          }
-          # Drop one indent level so the bullets render at top level on GitHub.
-          $text = (($body -join "`n") -replace '(?m)^  ', '').Trim()
-          if ([string]::IsNullOrWhiteSpace($text)) {
-              Write-Host "::error::ChangeLog.md section '$header' is empty."
-              exit 1
-          }
-          Set-Content -Path 'release-notes.md' -Value $text -Encoding utf8
-
-          $prerelease = if ($expected -match '-') { 'true' } else { 'false' }
-
-          Add-Content -Path $env:GITHUB_OUTPUT -Value "msi=releases/$($msi.Name)"
-          Add-Content -Path $env:GITHUB_OUTPUT -Value "prerelease=$prerelease"
-          Write-Host "Notes: $($body.Count) lines | prerelease=$prerelease | msi=$($msi.Name)"
-
-      - name: Fetch Squirrel bridge assets
-        if: vars.SQUIRREL_BRIDGE_TAG != ''
-        shell: pwsh
-        run: |
-          $ErrorActionPreference = 'Stop'
-          New-Item -ItemType Directory -Force -Path 'bridge' | Out-Null
-          gh release download '${{ vars.SQUIRREL_BRIDGE_TAG }}' `
-            --dir bridge `
-            --pattern '*.nupkg' `
-            --pattern 'RELEASES' `
-            --pattern 'FE-BUDDYSetup.exe'
-          if ($LASTEXITCODE -ne 0) {
-              Write-Host "::error::Could not download Squirrel bridge assets from release '${{ vars.SQUIRREL_BRIDGE_TAG }}'."
-              exit 1
-          }
-          Get-ChildItem bridge | Format-Table Name, Length
-
-      - name: Persist installer version counter
-        if: ${{ github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch' }}
+        id: checks
         shell: pwsh
         env:
-          # gh authenticates as the PAT owner here, not as GITHUB_TOKEN.
           GH_TOKEN: ${{ secrets.RELEASE_COUNTER_PAT }}
+          RELEASE_COUNTER_TOKEN: ${{ secrets.RELEASE_COUNTER_PAT }}
+        run: ./.github/scripts/Test-ReleaseReadiness.ps1 -SkipVersionStep
+
+      - name: Build, check the MSI and render the release notes
+        id: build
+        shell: pwsh
+        env:
+          PREVIOUS_VERSION: ${{ steps.checks.outputs.previous }}
+        run: ./.github/scripts/Build-ReleaseAssets.ps1 -PreviousVersion "$env:PREVIOUS_VERSION"
+
+      # Before the draft exists, so a draft never ships without its counter saved.
+      - name: Commit the installer counter to v3-development
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_COUNTER_PAT }}
+          RELEASE_VERSION: ${{ steps.checks.outputs.version }}
+        run: ./.github/scripts/Push-InstallerCounter.ps1 -Release "$env:RELEASE_VERSION"
+
+      - name: Create draft release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_VERSION: ${{ steps.checks.outputs.version }}
+          PRERELEASE: ${{ steps.checks.outputs.prerelease }}
+          NOTES_PATH: ${{ steps.build.outputs.notes }}
+          MSI_PATH: ${{ steps.build.outputs.msi }}
         run: |
           $ErrorActionPreference = 'Stop'
 
-          # build.ps1 already bumped this in the runner's working copy. Commit it
-          # back so it is not lost - see docs/MSI-VERSION-NUMBERING.md.
-          $counterPath = 'FE-BUDDY.Installer/installer-version-counter.json'
-          # The Windows checkout may have CRLF; the repo stores LF.
-          $bumped = (Get-Content -Path $counterPath -Raw) -replace "`r`n", "`n"
-          $c = $bumped | ConvertFrom-Json
-          $counterVersion = "$($c.major).$($c.counterMinor).$($c.counterBuild)"
-          $rel   = '${{ steps.preflight.outputs.version }}'
-          $repo  = '${{ github.repository }}'
-
-          # Commits go through the GraphQL createCommitOnBranch mutation rather than
-          # git push: GitHub builds and signs them server-side, so they show as
-          # Verified and satisfy the `releases` required-signatures rule.
-          function Push-Counter([string]$branch) {
-              $current = gh api "repos/$repo/contents/$($counterPath)?ref=$branch" -H 'Accept: application/vnd.github.raw'
-              if ($LASTEXITCODE -ne 0) { throw "Could not read counter on '$branch'." }
-              if (($current -join "`n").Trim() -eq $bumped.Trim()) {
-                  Write-Host "Counter already current on '$branch'; nothing to commit."
-                  return
-              }
-
-              $head = gh api "repos/$repo/branches/$branch" --jq '.commit.sha'
-              if ($LASTEXITCODE -ne 0) { throw "Could not read head of '$branch'." }
-
-              $payload = @{
-                  query     = 'mutation($input: CreateCommitOnBranchInput!) { createCommitOnBranch(input: $input) { commit { oid } } }'
-                  variables = @{ input = @{
-                      branch          = @{ repositoryNameWithOwner = $repo; branchName = $branch }
-                      message         = @{ headline = "chore: bump installer version counter to $counterVersion (release $rel) [skip ci]" }
-                      expectedHeadOid = $head.Trim()
-                      fileChanges     = @{ additions = @(@{
-                          path     = $counterPath
-                          contents = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($bumped))
-                      }) }
-                  } }
-              } | ConvertTo-Json -Depth 10
-
-              # Via a file, not a pipe, so no BOM can sneak in - the GraphQL endpoint
-              # rejects one. WriteAllText writes UTF-8 without a BOM.
-              $payloadPath = Join-Path $env:RUNNER_TEMP "counter-$branch.json"
-              [IO.File]::WriteAllText($payloadPath, $payload)
-              $oid = gh api graphql --input $payloadPath --jq '.data.createCommitOnBranch.commit.oid'
-              if ($LASTEXITCODE -ne 0 -or -not $oid) { throw "Commit to '$branch' failed." }
-              Write-Host "Committed counter $counterVersion to '$branch' ($oid)."
+          # The draft targets the releases branch, and its tag is created from that
+          # branch's tip when it is published - so the tip must be what was built.
+          $tip = gh api "repos/$env:GITHUB_REPOSITORY/branches/releases" --jq '.commit.sha'
+          if ($LASTEXITCODE -ne 0) { throw 'Could not read the tip of releases.' }
+          if ("$tip".Trim() -ne $env:GITHUB_SHA) {
+              Write-Host "::error title=Release::releases moved on (now $tip) since this run's commit ($env:GITHUB_SHA). Let the newer run draft the release."
+              exit 1
           }
 
-          # `releases` first: it is the branch this job checks out and reads the
-          # counter from, so the next release must see the new value there.
-          Push-Counter 'releases'
-          # `development` too, so the source branch does not drift behind.
-          Push-Counter 'development'
+          $releaseArgs = @(
+              $env:RELEASE_VERSION, $env:MSI_PATH,
+              '--draft',
+              '--target', 'releases',
+              '--title', "v$env:RELEASE_VERSION",
+              '--notes-file', $env:NOTES_PATH
+          )
+          if ($env:PRERELEASE -eq 'true') { $releaseArgs += '--prerelease' }
 
-      - name: Create draft release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ steps.preflight.outputs.version }}
-          name: v${{ steps.preflight.outputs.version }}
-          target_commitish: ${{ steps.preflight.outputs.sha }}
-          draft: true
-          prerelease: ${{ steps.notes.outputs.prerelease }}
-          body_path: release-notes.md
-          fail_on_unmatched_files: false
-          files: |
-            ${{ steps.notes.outputs.msi }}
-            bridge/FE-BUDDYSetup.exe
-            bridge/RELEASES
-            bridge/FE-BUDDY-*-full.nupkg
-            bridge/FE-BUDDY-*-delta.nupkg
+          $url = gh release create @releaseArgs
+          if ($LASTEXITCODE -ne 0) { throw 'Creating the draft release failed.' }
+
+          Write-Host "Draft release: $url"
+          Add-Content -Path $env:GITHUB_STEP_SUMMARY -Encoding utf8 -Value @(
+              "## Draft release v$env:RELEASE_VERSION is ready",
+              '',
+              "Review it, then press **Publish release**: $url",
+              ''
+          )

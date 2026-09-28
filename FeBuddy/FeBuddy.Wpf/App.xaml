@@ -1,0 +1,9 @@
+<Application x:Class="FeBuddy.Wpf.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             StartupUri="Views/ShellWindow.xaml">
+    <Application.Resources>
+        <!-- The whole design system loads through this one merge. -->
+        <ResourceDictionary Source="Theme/Theme.xaml" />
+    </Application.Resources>
+</Application>

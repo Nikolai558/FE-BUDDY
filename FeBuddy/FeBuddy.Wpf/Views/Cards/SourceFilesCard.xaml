@@ -1,0 +1,70 @@
+<!--
+    SourceFilesCard  -  the first card on every file-conversion tab: what to convert. Either
+    every matching file in a folder (remembered) or files picked one or several at a time (not
+    remembered). Binds to the tab's view model through ISourceFileSettings; the tab's
+    FileTypeLabel supplies the wording (".dat", ".sct2 / .sct").
+
+    Usage:
+        <cards:SourceFilesCard />
+-->
+<UserControl x:Class="FeBuddy.Wpf.Views.Cards.SourceFilesCard"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
+             xmlns:m="clr-namespace:FeBuddy.Wpf.ViewModels.Models"
+             xmlns:tabs="clr-namespace:FeBuddy.Wpf.ViewModels.ServiceTabs"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance tabs:ISourceFileSettings}"
+             d:DesignWidth="820">
+    <ctl:Card Header="Source Files">
+        <!-- The two radios share this panel, which is what groups them: no GroupName, so two
+             cards on screen at once never steal each other's selection. -->
+        <StackPanel>
+            <RadioButton Margin="0,4,0,0" IsChecked="{Binding SourceIsFolder, Mode=TwoWay}"
+                         Content="{Binding FileTypeLabel}" ContentStringFormat="Every {0} file in a folder" />
+            <StackPanel Margin="26,6,0,0" IsEnabled="{Binding SourceIsFolder}">
+                <DockPanel>
+                    <Button DockPanel.Dock="Right" Style="{StaticResource Button.Ghost}" Content="Browse…"
+                            Command="{Binding BrowseFolderCommand}" Margin="8,0,0,0" />
+                    <TextBox Text="{Binding SourceFolder, UpdateSourceTrigger=PropertyChanged}" />
+                </DockPanel>
+                <TextBlock Style="{StaticResource Text.Caption}" Margin="0,6,0,0" Text="{Binding FolderSummary}" />
+                <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,2,0,0"
+                           MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
+                           Text="The folder is remembered. Files in its sub-folders are not included." />
+            </StackPanel>
+
+            <RadioButton Content="Files I pick" Margin="0,14,0,0" IsChecked="{Binding SourceIsFiles, Mode=TwoWay}" />
+            <StackPanel Margin="26,6,0,0" IsEnabled="{Binding SourceIsFiles}">
+                <StackPanel Orientation="Horizontal">
+                    <Button Style="{StaticResource Button.Ghost}" Content="Add files…"
+                            Command="{Binding BrowseFilesCommand}" />
+                    <Button Style="{StaticResource Button.Ghost}" Content="Clear" Margin="8,0,0,0"
+                            Command="{Binding ClearFilesCommand}" />
+                </StackPanel>
+                <ItemsControl ItemsSource="{Binding SourceFiles}" Margin="0,8,0,0">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="{x:Type m:SourceFileItem}">
+                            <Border Margin="0,3" Padding="8,6" CornerRadius="{StaticResource Radius.Chip}"
+                                    Background="{StaticResource Brush.Bg.Sunken}" ToolTip="{Binding Path}">
+                                <DockPanel>
+                                    <Button DockPanel.Dock="Right" Style="{StaticResource Button.Subtle}" Content="✕" Padding="6,2"
+                                            ToolTip="Remove this file"
+                                            Command="{Binding DataContext.RemoveFileCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                            CommandParameter="{Binding}" />
+                                    <TextBlock Text="{Binding Name}" Style="{StaticResource Text.Body}"
+                                               VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                                </DockPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,2,0,0"
+                           MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
+                           Text="Pick one file or several at once. Picked files are not remembered once FE-Buddy closes." />
+            </StackPanel>
+        </StackPanel>
+    </ctl:Card>
+</UserControl>

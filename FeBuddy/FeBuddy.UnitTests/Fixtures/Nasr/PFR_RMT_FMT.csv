@@ -1,0 +1,4 @@
+"Orig","Route String","Dest","Hours1","Type","Area","Altitude","Aircraft","Direction","Seq","DCNTR","ACNTR"
+"ABE","ABE FJC ARD CYN ACY","ACY","","TEC","","5000","","","1","ZNY","ZDC"
+"ABE","ABE FJC LAAYK ALB","ALB","","TEC","TO ALB,SCH","7000","","","1","ZNY","ZBW"
+"ABE","ABE FJC LVZ AVP","AVP","","TEC","","7000","","","2","ZNY","ZNY"

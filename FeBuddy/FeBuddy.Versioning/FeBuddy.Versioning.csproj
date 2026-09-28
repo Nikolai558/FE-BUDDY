@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    FeBuddy.Versioning  -  FE-Buddy's real (SemVer) version and the rules built on it.
+    ===========================================================================
+    netstandard2.0 is deliberate: this assembly is referenced both by FeBuddy.Core
+    (net10.0-windows) and by the installer's version-policy custom action
+    (FeBuddy.Installer.CustomActions, net472 - WiX's managed custom-action host only loads
+    .NET Framework). netstandard2.0 is the one target both can consume, so the version rules
+    are written once and shared. See docs/Developers/VERSIONING.md.
+  -->
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <!-- Every public member must be documented (CS1591), and unused usings are reported (IDE0005). -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Semver" Version="3.0.0" />
+  </ItemGroup>
+
+</Project>

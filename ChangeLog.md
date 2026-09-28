@@ -1,6 +1,9 @@
 # CHANGELOG
 
 ---
+- ## Version 2.9.3
+  - Updated the Roadmap, Credits and Change log menu links so they keep working after the GitHub repository restructure.
+
 - ## Version 2.9.2
   - Bug #215 - Fixed an issue where download bar and program would stall when the next
     AIRAC cycle DTPP Meta File was not available yet. 

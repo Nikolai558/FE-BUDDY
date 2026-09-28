@@ -307,8 +307,8 @@ namespace FeBuddyWinFormUI
         private void RoadmapMenuItem_Click(object sender, EventArgs e)
         {
             Logger.LogMessage("DEBUG", "ROADMAP MENU ITEM CLICKED");
-            Process.Start(new ProcessStartInfo("https://github.com/Nikolai558/FE-BUDDY/blob/development/docs/ROADMAP.md") { UseShellExecute = true });
-            //Process.Start("https://github.com/Nikolai558/FE-BUDDY/blob/development/docs/ROADMAP.md");
+            Process.Start(new ProcessStartInfo("https://github.com/Nikolai558/FE-BUDDY/blob/2.9.3/docs/ROADMAP.md") { UseShellExecute = true });
+            //Process.Start("https://github.com/Nikolai558/FE-BUDDY/blob/2.9.3/docs/ROADMAP.md");
         }
 
         private void FAQMenuItem_Click(object sender, EventArgs e)
@@ -321,15 +321,15 @@ namespace FeBuddyWinFormUI
         private void ChangeLogMenuItem_Click(object sender, EventArgs e)
         {
             Logger.LogMessage("DEBUG", "CHANGELOG MENU ITEM CLICKED");
-            Process.Start(new ProcessStartInfo("https://github.com/Nikolai558/FE-BUDDY/blob/releases/ChangeLog.md") { UseShellExecute = true });
-            //Process.Start("https://github.com/Nikolai558/FE-BUDDY/blob/releases/ChangeLog.md");
+            Process.Start(new ProcessStartInfo("https://github.com/Nikolai558/FE-BUDDY/releases") { UseShellExecute = true });
+            //Process.Start("https://github.com/Nikolai558/FE-BUDDY/releases");
         }
 
         private void CreditsMenuItem_Click(object sender, EventArgs e)
         {
             Logger.LogMessage("DEBUG", "CREDITS MENU ITEM CLICKED");
-            Process.Start(new ProcessStartInfo("https://github.com/Nikolai558/FE-BUDDY/blob/development/docs/Credits.md") { UseShellExecute = true });
-            //Process.Start("https://github.com/Nikolai558/FE-BUDDY/blob/development/docs/Credits.md");
+            Process.Start(new ProcessStartInfo("https://github.com/Nikolai558/FE-BUDDY/blob/2.9.3/docs/Credits.md") { UseShellExecute = true });
+            //Process.Start("https://github.com/Nikolai558/FE-BUDDY/blob/2.9.3/docs/Credits.md");
             // CreditsForm frm = new CreditsForm();
             // frm.ShowDialog();
         }

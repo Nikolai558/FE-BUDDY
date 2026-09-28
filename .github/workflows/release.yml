@@ -1,0 +1,108 @@
+# Drafts a FE-BUDDY 3.x GitHub release.
+#
+# Runs when a pull request merges into releases (the only way anything reaches
+# it; release-checks.yml has already run every check on that pull request).
+# It runs the checks again, builds the MSI, commits the advanced installer
+# counter to v3-development, and creates a DRAFT release: tag = the version,
+# target = releases, notes = .github/release-notes-template.md filled in from
+# ChangeLog.md, asset = FE-BUDDY-Setup.msi. A person reviews the draft and
+# presses "Publish release"; nothing is public until then.
+#
+# Re-run it from the Actions tab ("Run workflow" on releases) if it failed for
+# a reason outside the code, e.g. a GitHub outage. See
+# docs/Developers/RELEASING.md.
+
+name: "Release"
+
+on:
+  push:
+    branches: [ releases ]
+
+  workflow_dispatch:
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  draft-release:
+    name: Draft release
+    runs-on: windows-2025
+    if: github.ref == 'refs/heads/releases'
+
+    steps:
+      - name: Checkout releases
+        uses: actions/checkout@v6
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '10.x'
+
+      # The one-step version rule was enforced on the pull request (where the
+      # "skip-version-step" label can excuse it); everything else is re-checked.
+      - name: Pre-flight checks
+        id: checks
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_COUNTER_PAT }}
+          RELEASE_COUNTER_TOKEN: ${{ secrets.RELEASE_COUNTER_PAT }}
+        run: ./.github/scripts/Test-ReleaseReadiness.ps1 -SkipVersionStep
+
+      - name: Build, check the MSI and render the release notes
+        id: build
+        shell: pwsh
+        env:
+          PREVIOUS_VERSION: ${{ steps.checks.outputs.previous }}
+        run: ./.github/scripts/Build-ReleaseAssets.ps1 -PreviousVersion "$env:PREVIOUS_VERSION"
+
+      # Before the draft exists, so a draft never ships without its counter saved.
+      - name: Commit the installer counter to v3-development
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_COUNTER_PAT }}
+          RELEASE_VERSION: ${{ steps.checks.outputs.version }}
+        run: ./.github/scripts/Push-InstallerCounter.ps1 -Release "$env:RELEASE_VERSION"
+
+      - name: Create draft release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_VERSION: ${{ steps.checks.outputs.version }}
+          PRERELEASE: ${{ steps.checks.outputs.prerelease }}
+          NOTES_PATH: ${{ steps.build.outputs.notes }}
+          MSI_PATH: ${{ steps.build.outputs.msi }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+
+          # The draft targets the releases branch, and its tag is created from that
+          # branch's tip when it is published - so the tip must be what was built.
+          $tip = gh api "repos/$env:GITHUB_REPOSITORY/branches/releases" --jq '.commit.sha'
+          if ($LASTEXITCODE -ne 0) { throw 'Could not read the tip of releases.' }
+          if ("$tip".Trim() -ne $env:GITHUB_SHA) {
+              Write-Host "::error title=Release::releases moved on (now $tip) since this run's commit ($env:GITHUB_SHA). Let the newer run draft the release."
+              exit 1
+          }
+
+          $releaseArgs = @(
+              $env:RELEASE_VERSION, $env:MSI_PATH,
+              '--draft',
+              '--target', 'releases',
+              '--title', "v$env:RELEASE_VERSION",
+              '--notes-file', $env:NOTES_PATH
+          )
+          if ($env:PRERELEASE -eq 'true') { $releaseArgs += '--prerelease' }
+
+          $url = gh release create @releaseArgs
+          if ($LASTEXITCODE -ne 0) { throw 'Creating the draft release failed.' }
+
+          Write-Host "Draft release: $url"
+          Add-Content -Path $env:GITHUB_STEP_SUMMARY -Encoding utf8 -Value @(
+              "## Draft release v$env:RELEASE_VERSION is ready",
+              '',
+              "Review it, then press **Publish release**: $url",
+              ''
+          )

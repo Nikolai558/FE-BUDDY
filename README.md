@@ -7,8 +7,8 @@
 
 ## [DOWNLOAD](https://github.com/Nikolai558/FE-BUDDY/releases)
 
-FE-Buddy 3.x installs from `FE-BUDDY-<version>.msi` on the [Releases](https://github.com/Nikolai558/FE-BUDDY/releases)
-page. It upgrades an existing 2.x install in place.
+FE-Buddy 3.x installs from `FE-BUDDY-Setup.msi` on the [Releases](https://github.com/Nikolai558/FE-BUDDY/releases)
+page. It upgrades an existing 2.x install in place. What changed in each release: [ChangeLog.md](ChangeLog.md).
 
 ---
 

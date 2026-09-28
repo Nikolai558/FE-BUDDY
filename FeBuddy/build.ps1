@@ -7,10 +7,12 @@
 	2. Reads the real version from the built FE-BUDDY.dll's Product version - the csproj
 	   <Version>, e.g. 3.0.0-alpha.1 - and checks it is SemVer.
 	3. Gets the MSI's internal counter version from FeBuddy.Installer\Get-InstallerVersion.ps1,
-	   which advances FeBuddy.Installer\installer-version-counter.json (commit that change with a
-	   release; nobody edits it by hand).
+	   which advances FeBuddy.Installer\installer-version-counter.json (the release workflow
+	   commits that change to v3-development; nobody edits it by hand).
 	4. Builds FeBuddy.Installer (and its custom action) with both numbers and copies the MSI to
-	   releases\FE-BUDDY-<version>.msi.
+	   releases\FE-BUDDY-Setup.msi. The name never changes, so
+	   .../releases/latest/download/FE-BUDDY-Setup.msi always finds the latest stable release's
+	   installer. The version is the release's tag (and the MSI's ProductSemVer property).
 
 	See docs/Developers/VERSIONING.md and docs/Developers/MSI-VERSION-NUMBERING.md. publish\ and
 	releases\ are gitignored and recreated on every run.
@@ -80,7 +82,7 @@ $msiSource = Get-ChildItem (Join-Path $root 'FeBuddy.Installer\bin\Release') -Re
 if (-not $msiSource) { throw 'The MSI build did not produce FeBuddy.Installer.msi.' }
 
 New-Item -ItemType Directory -Path $releasedir -Force | Out-Null
-$msiDestination = Join-Path $releasedir "FE-BUDDY-$ver.msi"
+$msiDestination = Join-Path $releasedir 'FE-BUDDY-Setup.msi'
 Copy-Item -Path $msiSource.FullName -Destination $msiDestination -Force
 
 Write-Output ''

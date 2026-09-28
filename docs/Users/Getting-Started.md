@@ -5,7 +5,7 @@ waiting for the FAA data to download the first time.
 
 ## 1. Install
 
-1. Download the latest `FE-BUDDY-<version>.msi` from
+1. Download `FE-BUDDY-Setup.msi` from the newest release on
    [GitHub Releases](https://github.com/Nikolai558/FE-BUDDY/releases).
 2. Run it. Windows may ask for administrator permission - FE-Buddy installs for everyone on the
    PC, into `Program Files\FE-BUDDY`, with a Start menu and a desktop shortcut.

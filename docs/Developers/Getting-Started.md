@@ -94,31 +94,29 @@ is a warning. The rules themselves (layers, the Models/ rule, naming) are in
 
 (or double-click `FeBuddy/build.cmd`). It publishes the app self-contained for win-x64, reads the
 version from the built `FE-BUDDY.dll`, advances the installer counter, builds the MSI and copies
-it to `FeBuddy/releases/FE-BUDDY-<version>.msi`. `publish/` and `releases/` are recreated on every
-run and are gitignored.
+it to `FeBuddy/releases/FE-BUDDY-Setup.msi` (always that name, whatever the version).
+`publish/` and `releases/` are recreated on every run and are gitignored.
 
-Every run advances `FeBuddy/FeBuddy.Installer/installer-version-counter.json`. Commit that change
-with a release; discard it after a local test build. Why the counter exists:
+Every run advances `FeBuddy/FeBuddy.Installer/installer-version-counter.json`. Discard that change
+after a local build - only the release workflow commits it. Why the counter exists:
 [MSI version numbering](MSI-VERSION-NUMBERING.md).
 
 ## Releasing
 
-1. Bump `<Version>` in `FeBuddy/FeBuddy.Wpf/FeBuddy.Wpf.csproj` - the only place the version
-   lives. The rules for MAJOR / MINOR / PATCH and `-alpha` / `-beta` / `-rc` are in
-   [Versioning](VERSIONING.md).
-2. Run `build.ps1` and test the MSI (install over the previous release too).
-3. Commit the version bump and the advanced installer counter.
-4. Create a GitHub release tagged with the version (e.g. `3.0.0-beta.1`, marked pre-release when
-   it has a tag) and attach the MSI. There is no release workflow yet; this is by hand.
-5. Optionally post to News (`FeBuddy/FeBuddy.Core/News.md` - the format is at the top of the
-   file); the app reads it from `v3-development` on GitHub.
+See [Releasing](RELEASING.md): add a `ChangeLog.md` entry with every user-facing change, and to
+release, bump `<Version>` and open a pull request from `v3-development` into `releases`. GitHub
+Actions checks it, builds the MSI and drafts the release to publish.
+
+Optionally post to News as well (`FeBuddy/FeBuddy.Core/News.md` - the format is at the top of the
+file); the app reads it from `v3-development` on GitHub.
 
 ## Continuous integration
 
-`.github/workflows/ci.yml` runs on every push and pull request to `v3-development`, in three jobs:
-**Build** (the solution, Release), **Test** (the coverage gate; the report is a run artifact) and
-**Installer** (`build.ps1`; the MSI is a run artifact, kept one day, for testing only). CodeQL runs
-separately.
+`.github/workflows/ci.yml` runs on every push and pull request to `v3-development` (and on pull
+requests into `releases`), in three jobs: **Build** (the solution, Release), **Test** (the
+coverage gate; the report is a run artifact) and **Installer** (`build.ps1`; the MSI is a run
+artifact, kept one day, for testing only). CodeQL runs separately. Pull requests into `releases`
+also run the release checks - see [Releasing](RELEASING.md).
 
 ## Handy extras
 

@@ -58,7 +58,7 @@ All in `FeBuddy/FeBuddy.sln`:
 | know every settings key a sub-service reads | [Settings blocks](Settings-Blocks.md) |
 | know every saved setting | [UserConfig.json reference](UserConfig-Reference.md) |
 | use a saved password or token in a feature | [Credentials](Credentials.md) |
-| cut a release | [Versioning](VERSIONING.md) |
+| cut a release | [Releasing](RELEASING.md), then [Versioning](VERSIONING.md) for the numbering rules |
 | pick something up | [TODO](TODO.md) |
 
 The standards every project follows (one `.editorconfig`, required XML docs, the Models/ rule,

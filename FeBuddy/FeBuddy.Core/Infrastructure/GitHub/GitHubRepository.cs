@@ -7,8 +7,8 @@ namespace FeBuddy.Core.Infrastructure.GitHub;
 public static class GitHubRepository
 {
 	/// <summary>
-	/// The branch FE-Buddy 3.x files are read from. While 2.x is still the repository's default
-	/// branch, a default-branch URL would not find them.
+	/// The branch FE-Buddy 3.x files (News) are read from. Named rather than left to the
+	/// repository's default branch, so changing the default never moves them.
 	/// </summary>
 	public const string Branch = "v3-development";
 

@@ -1,8 +1,10 @@
 # CodeQL security analysis for FE-BUDDY 3.0.
 #
-# Scans C# code on pushes and pull requests to v3-development, as well as on a
-# weekly schedule. Results upload to GitHub code scanning (free for this public
-# repo), which the dev-branch ruleset requires before a pull request can merge.
+# Scans C# code on pushes and pull requests to v3-development, pull requests
+# into releases, and on a weekly schedule (the schedule runs only from the
+# default branch). Results upload to GitHub code scanning (free for this public
+# repo), which the dev-branch and release-branch rulesets require before a pull
+# request can merge.
 
 name: "CodeQL"
 
@@ -13,7 +15,7 @@ on:
     branches: [ v3-development ]
 
   pull_request:
-    branches: [ v3-development ]
+    branches: [ v3-development, releases ]
 
   schedule:
     - cron: '0 8 * * 1'

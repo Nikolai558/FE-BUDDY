@@ -79,7 +79,7 @@ public sealed record ReleaseSummary(
 	string? Url);
 
 /// <summary>A release's <c>.msi</c> asset on GitHub.</summary>
-/// <param name="FileName">The asset's file name, e.g. <c>FE-BUDDY-3.0.0.msi</c>.</param>
+/// <param name="FileName">The asset's file name, e.g. <c>FE-BUDDY-Setup.msi</c>.</param>
 /// <param name="DownloadUrl">The public download URL (<c>browser_download_url</c>).</param>
 /// <param name="AssetId">
 /// GitHub's asset id. Only used when the public URL fails and a token is set: the authenticated

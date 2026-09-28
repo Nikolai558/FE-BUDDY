@@ -57,7 +57,8 @@ internal static class ArtccBoundaryTestData
 		int pointSeq,
 		double latitude,
 		double longitude,
-		string? locationName = null) =>
+		string? locationName = null,
+		string? description = null) =>
 		new()
 		{
 			LocationId = locationId,
@@ -67,6 +68,7 @@ internal static class ArtccBoundaryTestData
 			PointSeq = pointSeq,
 			SegLatDecimal = latitude,
 			SegLongDecimal = longitude,
+			BndryPtDescrip = description,
 		};
 
 	// ---- ZOB: CLEVELAND, a plain domestic ARTCC with a HIGH ring and a LOW ring ----

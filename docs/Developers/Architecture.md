@@ -322,7 +322,10 @@ The FAA's data has quirks; these rules handle them. Each lives in one class.
 - **ARTCC boundary rings** (`ArtccBoundaryBuilder`). Built from `ARB_BASE` (the location) and
   `ARB_SEG` (the points), grouped by LocationId and altitude; within a group, a new ring starts at
   the first row and again wherever `POINT_SEQ` is not greater than the previous row's - the FAA's
-  own signal for a new ring, e.g. ZAK's UNLIMITED group is a CTA ring followed by a FIR ring. A ring
+  own signal for a new ring, e.g. ZAK's UNLIMITED group is a CTA ring followed by a FIR ring - and
+  again after any row whose `BNDRY_PT_DESCRIP` contains "POINT OF BEGINNING", since some groups
+  number several rings in one unbroken `POINT_SEQ` run (ZOA's UNLIMITED group is four UTA rings,
+  ZMA's two CTA/FIR sectors). A ring
   is closed by repeating its first point when NASR's own last point differs, then skipped (with a
   message) if it still has fewer than two distinct points. Only the LocationIds with `ARB_SEG` rows
   draw anything - the Canadian, foreign and CERAP entries `ARB_BASE` also lists have none.

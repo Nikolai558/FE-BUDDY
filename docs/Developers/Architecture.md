@@ -225,10 +225,14 @@ every alias file marked for vNAS are merged into `vNAS_Alias.txt` (below).
   line every cycle. =====`, then each marked FE-Buddy alias file under `; ----- <name> -----`. A
   custom file that has the marker (last cycle's uploaded `vNAS_Alias.txt` reused as the custom
   file) is cut there, with an Info message. A custom file that could not be read is left out with
-  an advisory warning, and the file is still written from the rest; a command in more than one
-  merged file gets an advisory listing up to ten. UTF-8 without a BOM. With nothing to merge the
-  file is not written (`VnasAliasResult.FilePath` is `null`, with an advisory). The result is
-  `AiracServiceResult.VnasAlias`.
+  an advisory warning, and the file is still written from the rest; a command from a custom file
+  that another merged file has too gets an advisory listing up to ten (commands only FE-Buddy's
+  own files share are left to the duplicate report). UTF-8 without a BOM. With nothing to merge the
+  file is not written (`VnasAliasResult.FilePath` is `null`, with an advisory), and a
+  `vNAS_Alias.txt` an earlier run left is deleted, like the duplicate report, so it cannot be
+  uploaded by mistake. Without vNAS Alias Upload selected, the file holds FE-Buddy's aliases only,
+  and `AiracService` adds an advisory that uploading it would remove the facility's own aliases.
+  The result is `AiracServiceResult.VnasAlias`.
 
 ## Settings and persistence
 

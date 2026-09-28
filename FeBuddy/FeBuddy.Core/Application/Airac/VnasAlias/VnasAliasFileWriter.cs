@@ -36,7 +36,13 @@ namespace FeBuddy.Core.Application.Airac.VnasAlias;
 /// FE-Buddy aliases are not merged in a second time.
 /// </para>
 /// <para>
-/// A command in more than one of the merged files is reported, as CRC runs only one of each.
+/// A command from a custom file that another merged file has too is reported, as CRC runs only one
+/// of each. Commands FE-Buddy's own files share are left to <c>Duplicate_Alias_Commands.txt</c>,
+/// which already lists them.
+/// </para>
+/// <para>
+/// When there is nothing to merge, no file is written, and one an earlier run left in
+/// <c>Upload_to_vNAS</c> is deleted, so last run's file cannot be uploaded by mistake.
 /// </para>
 /// </remarks>
 public static class VnasAliasFileWriter
@@ -124,7 +130,8 @@ public static class VnasAliasFileWriter
 		if (custom.Count == 0 && feBuddy.Count == 0)
 		{
 			Add(messages, new ServiceMessage(LogLevel.Warning, LogSource,
-				$"{AiracOutputPaths.VnasAliasFileName} was not written: no custom alias file could be read, and no FE-Buddy alias file is marked for vNAS.")
+				$"{AiracOutputPaths.VnasAliasFileName} was not written: no custom alias file could be read, and no FE-Buddy alias file is marked for vNAS." +
+				DeleteEarlierFile(outputDirectory))
 			{ IsAdvisory = true });
 
 			return Result(null, customFiles.Count, 0, 0, [], 0, 0, messages, stopwatch);
@@ -168,7 +175,7 @@ public static class VnasAliasFileWriter
 		Directory.CreateDirectory(Path.GetDirectoryName(path)!);
 		File.WriteAllText(path, builder.ToString(), new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
 
-		int duplicates = ReportDuplicates([.. custom, .. feBuddy], messages);
+		int duplicates = ReportDuplicates(custom, feBuddy, messages);
 
 		return Result(path, customFiles.Count, custom.Count, customCommands, [.. feBuddy.Select(f => f.Name)], feBuddyCommands, duplicates, messages, stopwatch);
 	}
@@ -184,16 +191,24 @@ public static class VnasAliasFileWriter
 	}
 
 	/// <summary>
-	/// Adds an advisory warning for every command more than one merged file has, and returns how
-	/// many there are. A command repeated inside one file is that file's business - FE-Buddy's own
-	/// are listed in <c>Duplicate_Alias_Commands.txt</c>.
+	/// Adds an advisory warning for every command a custom file has that another merged file has
+	/// too, and returns how many there are. A command repeated inside one file is that file's
+	/// business, and one only FE-Buddy's own files share is already in
+	/// <c>Duplicate_Alias_Commands.txt</c>, so neither is reported here.
 	/// </summary>
-	private static int ReportDuplicates(IReadOnlyList<(string Name, IReadOnlyList<string> Lines)> files, List<ServiceMessage> messages)
+	private static int ReportDuplicates(
+		IReadOnlyList<(string Name, IReadOnlyList<string> Lines)> custom,
+		IReadOnlyList<(string Name, IReadOnlyList<string> Lines)> feBuddy,
+		List<ServiceMessage> messages)
 	{
 		Dictionary<string, List<string>> filesByCommand = new(StringComparer.OrdinalIgnoreCase);
+		HashSet<string> inCustomFile = new(StringComparer.OrdinalIgnoreCase);
 		List<string> order = [];
 
-		foreach ((string name, IReadOnlyList<string> lines) in files)
+		IEnumerable<(string Name, IReadOnlyList<string> Lines, bool IsCustom)> files =
+			custom.Select(f => (f.Name, f.Lines, true)).Concat(feBuddy.Select(f => (f.Name, f.Lines, false)));
+
+		foreach ((string name, IReadOnlyList<string> lines, bool isCustom) in files)
 		{
 			foreach (string command in lines.Select(CommandOf).OfType<string>().Distinct(StringComparer.OrdinalIgnoreCase))
 			{
@@ -205,10 +220,15 @@ public static class VnasAliasFileWriter
 				}
 
 				names.Add(name);
+
+				if (isCustom)
+				{
+					inCustomFile.Add(command);
+				}
 			}
 		}
 
-		string[] duplicates = [.. order.Where(command => filesByCommand[command].Count > 1)];
+		string[] duplicates = [.. order.Where(command => filesByCommand[command].Count > 1 && inCustomFile.Contains(command))];
 
 		if (duplicates.Length > 0)
 		{
@@ -217,13 +237,39 @@ public static class VnasAliasFileWriter
 				.Select(command => $"{command} ({string.Join(", ", filesByCommand[command])})"));
 
 			Add(messages, new ServiceMessage(LogLevel.Warning, LogSource,
-				$"{duplicates.Length:N0} alias command(s) are in more than one of the files merged into {AiracOutputPaths.VnasAliasFileName}, " +
-				$"so CRC can only run one of each: {listed}" + (duplicates.Length > DuplicatesListed ? ", ..." : string.Empty) +
-				". Remove them from your custom alias file, or untick the FE-Buddy file.")
+				$"{duplicates.Length:N0} alias command(s) from your custom alias files are also in another file merged into " +
+				$"{AiracOutputPaths.VnasAliasFileName}, so CRC can only run one of each: {listed}" +
+				(duplicates.Length > DuplicatesListed ? ", ..." : string.Empty) +
+				". Remove the extra copies from your custom alias files, or untick the FE-Buddy file.")
 			{ IsAdvisory = true });
 		}
 
 		return duplicates.Length;
+	}
+
+	/// <summary>
+	/// Deletes the <c>vNAS_Alias.txt</c> an earlier run left, when this run writes none, so it cannot
+	/// be uploaded by mistake.
+	/// </summary>
+	/// <returns>A sentence for the "not written" message saying what happened to it; empty when there was none.</returns>
+	private static string DeleteEarlierFile(string outputDirectory)
+	{
+		string path = AiracOutputPaths.VnasAliasFilePath(outputDirectory);
+
+		if (!File.Exists(path))
+		{
+			return string.Empty;
+		}
+
+		try
+		{
+			File.Delete(path);
+			return " The one an earlier run wrote was deleted, so it cannot be uploaded by mistake.";
+		}
+		catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+		{
+			return $" The one an earlier run wrote could not be deleted ({ex.Message}): do not upload it.";
+		}
 	}
 
 	private static VnasAliasResult Result(

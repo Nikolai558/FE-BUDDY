@@ -548,7 +548,9 @@ ticked on its tab's **Upload to vNAS** card.
   - **Add file…** - a file on this PC; **Browse…** picks a different one. The full path is saved.
   - **Add web address** - a file on the web, starting with `https://`. On GitHub, paste the address
     of the file's own page (it has `/blob/` in it) or its Raw link - not the repository's or a
-    folder's page.
+    folder's page. An address with a sign-in written into it (`https://user:password@…`, or the
+    `?token=…` GitHub adds when you view a private file's raw text) is refused, because addresses
+    are saved in FE-Buddy's settings and exports: use the plain address and choose a credential.
   - **Credential** - for a file in a private GitHub repository, choose a GitHub token that can read
     it, or **New credential…** to add one. Credentials are kept in Settings ▸ Credentials, never in
     FE-Buddy's settings. One token can serve several files: a web address with no credential, on
@@ -562,7 +564,8 @@ ticked on its tab's **Upload to vNAS** card.
 - **A file that can't be read is left out, not the whole run.** `vNAS_Alias.txt` is still written
   from the rest, and the Review tab warns which file was left out and why. Uploading that
   `vNAS_Alias.txt` would remove the missing file's aliases from vNAS, so fix the problem and run
-  again first.
+  again first. If nothing at all can go in, no `vNAS_Alias.txt` is written, and one an earlier run
+  left in `Upload_to_vNAS` is deleted so it can't be uploaded by mistake.
 - **How the file is laid out:** a `.FeUseOnly` line, if any of your files has one, goes first (only
   the first one found is kept); then each of your files, separated by a blank line; then the
   line `; ===== FE-Buddy aliases (AIRAC <cycle>) start here. FE-Buddy replaces everything below
@@ -571,11 +574,13 @@ ticked on its tab's **Upload to vNAS** card.
 - **Reusing last cycle's upload:** you can keep the `vNAS_Alias.txt` you uploaded last cycle as your
   custom file. Everything from that marker line down is left out, so last cycle's FE-Buddy aliases
   are replaced rather than added twice - just keep your own aliases above the line.
-- **Duplicates:** a command in more than one of the merged files gets a warning on the Review tab
-  (the first ten are named), since CRC can only run one of each.
+- **Duplicates:** a command from your custom files that another merged file has too gets a warning
+  on the Review tab (the first ten are named), since CRC can only run one of each. Commands only
+  FE-Buddy's own files share are listed in `Duplicate_Alias_Commands.txt` instead.
 
 Without this tab ticked, `vNAS_Alias.txt` is still written whenever an FE-Buddy alias file is ticked
-for vNAS - it then holds FE-Buddy's aliases only.
+for vNAS - it then holds FE-Buddy's aliases only, and the Review tab warns that uploading it would
+remove your facility's own aliases from vNAS.
 
 ### Preview Settings tab
 

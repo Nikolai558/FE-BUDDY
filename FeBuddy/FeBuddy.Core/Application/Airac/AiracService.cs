@@ -412,6 +412,19 @@ public static class AiracService
 
 			messages.AddRange(vnasAliasResult.Messages);
 
+			// vNAS takes one alias file per facility, so uploading this one would drop the facility's own aliases.
+			if (settings.VnasAlias is null && vnasAliasResult.FilePath is not null)
+			{
+				ServiceMessage onlyFeBuddy = new(LogLevel.Warning, LogSource,
+					$"vNAS Alias Upload is not selected, so {AiracOutputPaths.VnasAliasFileName} holds only FE-Buddy's aliases. " +
+					"vNAS takes one alias file per facility, so uploading it would remove your facility's own aliases from vNAS. " +
+					"To keep them, select vNAS Alias Upload and add your facility's alias file.")
+				{ IsAdvisory = true };
+
+				messages.Add(onlyFeBuddy);
+				AppLog.Write(onlyFeBuddy.Level, onlyFeBuddy.Source, onlyFeBuddy.Text);
+			}
+
 			string summary = vnasAliasResult.FilePath is null
 				? $"{AiracOutputPaths.VnasAliasFileName} not written."
 				: $"{AiracOutputPaths.VnasAliasFileName}: {vnasAliasResult.CustomCommandCount:N0} custom command(s), " +

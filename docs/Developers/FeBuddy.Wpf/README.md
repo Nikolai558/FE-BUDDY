@@ -242,10 +242,13 @@ bar and page scroller are shared, and each screen's view-model says what differs
     `CredentialStore.Changed`) and **New credential…**; a row with none is offered "Use
     <credential>, like file N" when an earlier row's credential is allowed on the same website (for
     GitHub, `api.github.com` - `GitHubFileUrl.ToContentsApi`). **Check** reads the file now through
-    `AliasSourceLoader` and shows its command count or the problem. Validation mirrors
-    `VnasAliasSettingsParser` (at least one file; a full path; an http(s) address; not a GitHub
-    repository or folder page; a credential only to https); a file or credential not on this PC is
-    a non-blocking notice. `WriteToConfig` removes the `Sources` subtree before writing the list
+    `AliasSourceLoader` and shows its command count or the problem; a result that arrives after the
+    row's address or credential changed is dropped, and anything unexpected is shown on the row
+    rather than thrown. Validation mirrors `VnasAliasSettingsParser` (a full path; an http(s)
+    address with no sign-in written into it - `UrlSecrets`; not a GitHub repository or folder page;
+    a credential only to https, or to a GitHub file address, which is downloaded over https), and
+    the tab is invalid only when there is nothing to merge; a file or credential not on this PC, or
+    a Credential Manager that cannot be read, is a non-blocking notice. `WriteToConfig` removes the `Sources` subtree before writing the list
     again. It is the eleventh and last sub-service in the catalogue. Its Review tab result gives
     `vNAS_Alias.txt`'s custom and FE-Buddy command counts (`AiracServiceResult.VnasAlias`).
   - **Preview Settings tab** - present once at least one sub-service is selected:

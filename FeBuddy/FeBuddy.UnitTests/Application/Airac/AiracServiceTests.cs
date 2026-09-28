@@ -708,6 +708,12 @@ public sealed class AiracServiceTests : IDisposable
 		string written = File.ReadAllText(VnasAliasFile);
 		Assert.StartsWith("; ===== FE-Buddy aliases (AIRAC 2610) start here.", written, StringComparison.Ordinal);
 		Assert.Contains(File.ReadAllText(telephony).TrimEnd(), written, StringComparison.Ordinal);
+
+		// Without vNAS Alias Upload the file has no facility aliases, and the Review tab says what uploading it would do.
+		ServiceMessage onlyFeBuddy = Assert.Single(result.Messages, m => m.Text.StartsWith("vNAS Alias Upload is not selected", StringComparison.Ordinal));
+		Assert.True(onlyFeBuddy.IsAdvisory);
+		Assert.Equal(LogLevel.Warning, onlyFeBuddy.Level);
+		Assert.Contains("uploading it would remove your facility's own aliases from vNAS", onlyFeBuddy.Text, StringComparison.Ordinal);
 	}
 
 	[Fact]
@@ -756,6 +762,7 @@ public sealed class AiracServiceTests : IDisposable
 		Assert.StartsWith(".FeUseOnly first" + Environment.NewLine + ".dtwdv .ECHO DTW" + Environment.NewLine, File.ReadAllText(VnasAliasFile), StringComparison.Ordinal);
 
 		Assert.Contains(result.Messages, m => m.IsAdvisory && m.Text.StartsWith("Left custom alias file 2 (Extra.txt) out", StringComparison.Ordinal));
+		Assert.DoesNotContain(result.Messages, m => m.Text.StartsWith("vNAS Alias Upload is not selected", StringComparison.Ordinal));
 
 		AiracServiceProgress done = reports.Last(p => p.SubService == "vNAS Alias Upload");
 		Assert.Equal(100, done.PercentComplete);

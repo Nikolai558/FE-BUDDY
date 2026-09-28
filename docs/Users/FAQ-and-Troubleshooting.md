@@ -139,6 +139,10 @@ walks through the token settings step by step. The usual reasons:
 - **GitHub does not let the credential read it (403).** A fine-grained token must include this
   repository, with *Contents: Read-only*. With no token at all, a 403 can also mean GitHub's limit
   on downloads without a token was reached - choose a token, or try again in an hour.
+- **GitHub needs the credential authorized for single sign-on (403).** The repository's
+  organization uses SAML single sign-on: on GitHub, authorize the token for the organization.
+- **GitHub is limiting how often it can be asked.** Too many requests in a short time - wait a few
+  minutes and try again.
 - **GitHub sent a web page, not an alias file.** The address is a repository or folder page, or
   a sign-in page. Use the file's own address.
 

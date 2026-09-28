@@ -406,7 +406,10 @@ public sealed class VnasAliasViewModel : SubServiceSettingsViewModel, ISubServic
 		}
 	}
 
-	/// <summary>Reads a row's file now, and shows what the run would get.</summary>
+	/// <summary>
+	/// Reads a row's file now, and shows what the run would get. A result for an address or
+	/// credential the user has changed since is dropped, so it never shows against the new one.
+	/// </summary>
 	/// <param name="row">The row.</param>
 	/// <returns>A task that completes when the row shows the result.</returns>
 	internal async Task CheckAsync(AliasSourceRow row)
@@ -417,20 +420,42 @@ public sealed class VnasAliasViewModel : SubServiceSettingsViewModel, ISubServic
 			return;
 		}
 
+		AliasSource source = row.ToSource();
 		row.IsChecking = true;
 
 		try
 		{
-			AliasSourceLoad load = await AliasSourceLoader.LoadAsync(row.ToSource(), _store);
+			AliasSourceLoad load = await AliasSourceLoader.LoadAsync(source, _store);
 
-			row.SetCheck(load.Succeeded, load.Succeeded
-				? $"Read {load.CommandCount:N0} alias command(s)."
-				: load.Problem ?? "It could not be read.");
+			if (IsStill(row, source))
+			{
+				row.SetCheck(load.Succeeded, load.Succeeded
+					? $"Read {load.CommandCount:N0} alias command(s)."
+					: load.Problem ?? "It could not be read.");
+			}
+		}
+		catch (Exception ex)
+		{
+			// The loader never throws for a file it cannot read; this keeps anything unexpected from
+			// taking FE-Buddy down, since the button's command does not wait for the check.
+			AppLog.Warning(LogSource, $"Checking {source.DisplayName} failed: {ex.Message}");
+
+			if (IsStill(row, source))
+			{
+				row.SetCheck(false, $"It could not be checked: {ex.Message}");
+			}
 		}
 		finally
 		{
 			row.IsChecking = false;
 		}
+	}
+
+	/// <summary>Whether the row still points at the file it had when a check started.</summary>
+	private static bool IsStill(AliasSourceRow row, AliasSource source)
+	{
+		AliasSource now = row.ToSource();
+		return now.Location == source.Location && now.CredentialId == source.CredentialId;
 	}
 
 	/// <summary>Adds a credential in the credential editor and chooses it for a row.</summary>
@@ -564,7 +589,14 @@ public sealed class VnasAliasViewModel : SubServiceSettingsViewModel, ISubServic
 			return "This is a GitHub page, not a file. Open the alias file on GitHub and copy that page's address (it has /blob/ in it).";
 		}
 
-		if (row.CredentialId != Guid.Empty && url.Scheme != Uri.UriSchemeHttps)
+		if (UrlSecrets.Describe(url) is { } secret)
+		{
+			return $"This address has {secret} in it. Remove it and choose a credential instead: web addresses are saved " +
+				"in FE-Buddy's settings and in settings exports.";
+		}
+
+		// A file on GitHub is downloaded from GitHub's API over https whatever the address says.
+		if (row.CredentialId != Guid.Empty && url.Scheme != Uri.UriSchemeHttps && GitHubFileUrl.ToContentsApi(url) is null)
 		{
 			return "A credential is only ever sent to an https:// address.";
 		}

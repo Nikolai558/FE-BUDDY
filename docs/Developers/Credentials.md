@@ -102,7 +102,9 @@ using HttpResponseMessage response = await client.SendAsync(request, cancellatio
 
 - **Never log, toast, show or put in an exception a secret or a whole request's headers.** Name the
   credential instead.
-- **Never put a secret in a URL.** Query strings end up in logs and browser history.
+- **Never put a secret in a URL.** Query strings end up in logs and browser history. A URL the
+  user types into a setting is checked with `UrlSecrets.Describe`, which finds a user name and
+  password or a sign-in token in the query; the vNAS Alias Upload tab and its parser refuse one.
 - **Never copy a secret into `UserConfig`, a file, or an environment variable.**
 - **Never let a record print a secret.** A record's generated `ToString` prints every member, so a
   record that holds one must leave it out, as `CredentialDraft` does. `CredentialStore` keeps its

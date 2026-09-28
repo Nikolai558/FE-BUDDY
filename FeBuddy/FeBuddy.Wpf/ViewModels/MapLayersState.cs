@@ -92,7 +92,7 @@ public sealed class MapLayersState : ObservableObject
 		[
 			.. Enum.GetValues<AiracLayerKind>().Select(kind => new MapLayerToggle(
 				kind,
-				Frozen(AiracMapLayers.Color(kind)),
+				FrozenBrush.Of(AiracMapLayers.Color(kind)),
 				airacOn.Contains(kind.ToString()),
 				OnAiracToggled)),
 		];
@@ -228,13 +228,6 @@ public sealed class MapLayersState : ObservableObject
 	{
 		get => _airacStatus;
 		private set => SetProperty(ref _airacStatus, value);
-	}
-
-	/// <summary>Whether the AIRAC layers are being built.</summary>
-	public bool IsAiracLoading
-	{
-		get => _isAiracLoading;
-		private set => SetProperty(ref _isAiracLoading, value);
 	}
 
 	// ---- run output ----
@@ -504,7 +497,7 @@ public sealed class MapLayersState : ObservableObject
 	private void OnCacheStateChanged()
 	{
 		RebuildCycles();
-		if (AiracToggles.Any(t => t.IsVisible && t.Layers is null) && !IsAiracLoading)
+		if (AiracToggles.Any(t => t.IsVisible && t.Layers is null) && !_isAiracLoading)
 		{
 			_ = LoadAiracAsync();
 		}
@@ -542,7 +535,7 @@ public sealed class MapLayersState : ObservableObject
 
 		// This call now owns the flag. A load it replaced must not leave it on - the early returns
 		// below load nothing - or later cache changes would never start a load.
-		IsAiracLoading = false;
+		_isAiracLoading = false;
 
 		if (SelectedCycle?.Id is not { } cycleId)
 		{
@@ -579,7 +572,7 @@ public sealed class MapLayersState : ObservableObject
 		}
 
 		AiracStatus = $"Loading AIRAC {cycleId}…";
-		IsAiracLoading = true;
+		_isAiracLoading = true;
 		try
 		{
 			NasrCsvDataCollection data = await AiracCycleDataCache.Instance.GetAsync(cycleId);
@@ -621,7 +614,7 @@ public sealed class MapLayersState : ObservableObject
 		{
 			if (version == _airacLoadVersion)
 			{
-				IsAiracLoading = false;
+				_isAiracLoading = false;
 			}
 		}
 	}
@@ -807,7 +800,7 @@ public sealed class MapLayersState : ObservableObject
 	}
 
 	private MapFileItem NewOutputItem(string name, string path) =>
-		new(name, path, Frozen(FileColors[StableIndex(name)]), SyncLayers, RemoveOutputItem, Zoom);
+		new(name, path, FrozenBrush.Of(FileColors[StableIndex(name)]), SyncLayers, RemoveOutputItem, Zoom);
 
 	private void ReplaceOutputItem(string relative, MapFileItem? old, MapFileItem? replacement)
 	{
@@ -885,7 +878,7 @@ public sealed class MapLayersState : ObservableObject
 		List<Task> loads = [];
 		foreach (string path in dialog.FileNames)
 		{
-			SolidColorBrush brush = Frozen(FileColors[_userColorCursor++ % FileColors.Length]);
+			SolidColorBrush brush = FrozenBrush.Of(FileColors[_userColorCursor++ % FileColors.Length]);
 			MapFileItem item = new(Path.GetFileName(path), path, brush, SyncLayers, RemoveUserFile, Zoom);
 			UserFiles.Add(item);
 			added.Add(item);
@@ -989,13 +982,6 @@ public sealed class MapLayersState : ObservableObject
 		}
 
 		return (int)((uint)hash % (uint)FileColors.Length);
-	}
-
-	private static SolidColorBrush Frozen(Color color)
-	{
-		SolidColorBrush brush = new(color);
-		brush.Freeze();
-		return brush;
 	}
 
 	private static IEnumerable<string> Split(string? saved, char separator) =>

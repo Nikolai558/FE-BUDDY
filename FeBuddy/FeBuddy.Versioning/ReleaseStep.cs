@@ -20,7 +20,7 @@ namespace FeBuddy.Versioning;
 public static class ReleaseStep
 {
 	/// <summary>The pre-release labels a release may carry, lowest first.</summary>
-	public static IReadOnlyList<string> PrereleaseLabels { get; } = new[] { "alpha", "beta", "rc" };
+	public static IReadOnlyList<string> PrereleaseLabels { get; } = ["alpha", "beta", "rc"];
 
 	/// <summary>
 	/// Is <paramref name="version"/> something FE-Buddy may be released as: <c>X.Y.Z</c>, or
@@ -98,11 +98,10 @@ public static class ReleaseStep
 			}
 		}
 
-		return candidates
+		return [.. candidates
 			.Select(ProductVersion.Parse)
 			.Where(candidate => candidate.ComparePrecedenceTo(previous) > 0)
-			.OrderBy(candidate => candidate.SemVersion, SemVersion.PrecedenceComparer)
-			.ToList();
+			.OrderBy(candidate => candidate.SemVersion, SemVersion.PrecedenceComparer)];
 	}
 
 	/// <summary>Is <paramref name="next"/> an allowed release right after <paramref name="previous"/>?</summary>

@@ -5,6 +5,7 @@ using FeBuddy.Core.Application.Airac.ArtccBoundaries;
 using FeBuddy.Core.Application.Airac.Navaids;
 using FeBuddy.Core.Domain.Airports.Models;
 using FeBuddy.Core.Domain.ArtccBoundaries.Models;
+using FeBuddy.Core.Domain.Navaids;
 using FeBuddy.Core.Domain.Navaids.Models;
 using FeBuddy.Core.Infrastructure.Nasr.Models;
 using FeBuddy.Wpf.Map.Models;
@@ -34,7 +35,10 @@ public enum AiracLayerKind
 internal static class AiracMapLayers
 {
 	/// <summary>The NAVAID types drawn: the VOR family and TACANs, the stations airways hang off.</summary>
-	private static readonly HashSet<string> VorTypes = new(StringComparer.OrdinalIgnoreCase) { "VOR", "VOR/DME", "VORTAC", "TACAN" };
+	private static readonly HashSet<string> VorTypes = new(StringComparer.OrdinalIgnoreCase)
+	{
+		NavaidTypes.Vor, NavaidTypes.VorDme, NavaidTypes.Vortac, NavaidTypes.Tacan,
+	};
 
 	/// <summary>The name shown next to a layer's switch.</summary>
 	/// <param name="kind">The layer.</param>
@@ -181,10 +185,5 @@ internal static class AiracMapLayers
 		return new GeoPoint(latSum / points.Count, WebMercator.NormalizeLon(lonSum / points.Count));
 	}
 
-	private static SolidColorBrush Frozen(AiracLayerKind kind)
-	{
-		SolidColorBrush brush = new(Color(kind));
-		brush.Freeze();
-		return brush;
-	}
+	private static SolidColorBrush Frozen(AiracLayerKind kind) => FrozenBrush.Of(Color(kind));
 }

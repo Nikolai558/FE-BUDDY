@@ -332,7 +332,7 @@ public static class VnasAliasFileWriter
 		string.Equals(CommandOf(line), command, StringComparison.OrdinalIgnoreCase);
 
 	private static IReadOnlyList<string> SplitLines(string text) =>
-		text.TrimStart('﻿').ReplaceLineEndings("\n").Split('\n');
+		text.TrimStart('\uFEFF').ReplaceLineEndings("\n").Split('\n');
 
 	/// <summary>The lines without the blank lines at either end, so files join with exactly one blank line.</summary>
 	private static IReadOnlyList<string> TrimBlankEnds(IReadOnlyList<string> lines)

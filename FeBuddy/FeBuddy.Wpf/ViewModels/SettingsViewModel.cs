@@ -452,10 +452,6 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 
 	// ================= 6. UPDATES =================
 
-	/// <summary>The update channels, in the order the menu shows them: most finished first.</summary>
-	public IReadOnlyList<ReleaseChannel> Channels { get; } =
-		[ReleaseChannel.Stable, ReleaseChannel.ReleaseCandidate, ReleaseChannel.Beta, ReleaseChannel.Alpha];
-
 	/// <summary>Explains the channels under the Updates heading: each one includes every channel above it.</summary>
 	public const string UpdatesDescription =
 		"Choose the earliest stage of release you want to be offered. You are also offered every release that is further " +

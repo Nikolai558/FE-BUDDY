@@ -76,7 +76,7 @@ behind it (a service account, some build agents), which has no Credential Manage
 ## Code standards
 
 One `.editorconfig` (`FeBuddy/.editorconfig`) covers every project. Before you push, these should
-report nothing (except in `FeBuddy.Harness`, which is not held to the standard yet - see
+report nothing (`FeBuddy.Harness` is not yet held to the rest of the standard - see
 [TODO](TODO.md)):
 
 ```bash

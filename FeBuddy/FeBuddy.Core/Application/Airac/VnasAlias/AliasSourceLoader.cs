@@ -249,7 +249,7 @@ public static class AliasSourceLoader
 			return true;
 		}
 
-		string start = text.TrimStart('﻿', ' ', '\t', '\r', '\n');
+		string start = text.TrimStart('\uFEFF', ' ', '\t', '\r', '\n');
 		return start.StartsWith("<!DOCTYPE html", StringComparison.OrdinalIgnoreCase)
 			|| start.StartsWith("<html", StringComparison.OrdinalIgnoreCase);
 	}
@@ -257,7 +257,7 @@ public static class AliasSourceLoader
 	/// <summary>A file that was read - unless it holds no alias command at all, which means it is not an alias file.</summary>
 	private static AliasSourceLoad Checked(AliasSource source, string text)
 	{
-		text = text.TrimStart('﻿');
+		text = text.TrimStart('\uFEFF');
 
 		return VnasAliasFileWriter.CountCommands(text) > 0
 			? AliasSourceLoad.Read(source, text)

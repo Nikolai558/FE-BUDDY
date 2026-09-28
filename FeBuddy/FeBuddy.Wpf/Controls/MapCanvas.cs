@@ -139,11 +139,6 @@ public sealed class MapCanvas : FrameworkElement
 		nameof(RoiEditing), typeof(bool), typeof(MapCanvas),
 		new PropertyMetadata(false, OnRoiChanged));
 
-	/// <summary>Identifies the <see cref="ShowGraticule"/> dependency property.</summary>
-	public static readonly DependencyProperty ShowGraticuleProperty = DependencyProperty.Register(
-		nameof(ShowGraticule), typeof(bool), typeof(MapCanvas),
-		new PropertyMetadata(true, OnMapDataChanged));
-
 	private static readonly DependencyPropertyKey CursorTextPropertyKey = DependencyProperty.RegisterReadOnly(
 		nameof(CursorText), typeof(string), typeof(MapCanvas), new PropertyMetadata(string.Empty));
 
@@ -193,13 +188,6 @@ public sealed class MapCanvas : FrameworkElement
 	{
 		get => (bool)GetValue(RoiEditingProperty);
 		set => SetValue(RoiEditingProperty, value);
-	}
-
-	/// <summary>Whether the latitude/longitude grid is drawn. On by default.</summary>
-	public bool ShowGraticule
-	{
-		get => (bool)GetValue(ShowGraticuleProperty);
-		set => SetValue(ShowGraticuleProperty, value);
 	}
 
 	/// <summary>
@@ -738,7 +726,7 @@ public sealed class MapCanvas : FrameworkElement
 	// ============================ rendering ================================
 
 	private Brush Theme(string key, Color fallback)
-		=> TryFindResource(key) as Brush ?? new SolidColorBrush(fallback);
+		=> TryFindResource(key) as Brush ?? FrozenBrush.Of(fallback);
 
 	/// <summary>Queues one full redraw for the next frame, however many changes ask for it.</summary>
 	private void InvalidateMap()
@@ -767,7 +755,7 @@ public sealed class MapCanvas : FrameworkElement
 		{
 			dc.DrawRectangle(Theme("Brush.Bg.Sunken", Color.FromRgb(0x07, 0x0B, 0x10)), null, new Rect(0, 0, ActualWidth, ActualHeight));
 
-			GraticuleLines? grid = ShowGraticule ? DrawGraticule(dc) : null;
+			GraticuleLines grid = DrawGraticule(dc);
 
 			if (BaseLayer is { } baseLayer)
 			{
@@ -782,10 +770,8 @@ public sealed class MapCanvas : FrameworkElement
 				}
 			}
 
-			if (grid is { } g)
-			{
-				DrawGraticuleLabels(dc, g);
-			}
+			// Over the layers, so no line hides a grid label.
+			DrawGraticuleLabels(dc, grid);
 		}
 
 		string hint = heldBack.Count == 0 ? string.Empty : "Zoom in to see " + string.Join(", ", heldBack.Distinct());
@@ -1018,13 +1004,9 @@ public sealed class MapCanvas : FrameworkElement
 
 	private GraticuleLines DrawGraticule(DrawingContext dc)
 	{
-		SolidColorBrush lineBrush = new(Color.FromArgb(0x12, 0xFF, 0xFF, 0xFF));
-		lineBrush.Freeze();
-		Pen pen = new(lineBrush, 1);
+		Pen pen = new(FrozenBrush.Of(Color.FromArgb(0x12, 0xFF, 0xFF, 0xFF)), 1);
 		pen.Freeze();
-		SolidColorBrush strongBrush = new(Color.FromArgb(0x26, 0xFF, 0xFF, 0xFF));
-		strongBrush.Freeze();
-		Pen strong = new(strongBrush, 1);
+		Pen strong = new(FrozenBrush.Of(Color.FromArgb(0x26, 0xFF, 0xFF, 0xFF)), 1);
 		strong.Freeze();
 
 		// Aim for a line roughly every 100 pixels.

@@ -37,7 +37,7 @@
                                Text="A card for every operator in the FAA telephony pages: its three-letter designator, telephony, company and country. Type .id and either the designator from the data block or the telephony the pilot said, e.g. .idAVA or .idAVIANCA. When one command fits more than one operator, it shows all of them." />
                     <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap"
                                MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
-                               Text="Written to Aliases\ in the cycle's folder (or Upload_to_vNAS\, if ticked below)." />
+                               Text="Written to Aliases\ in the cycle's folder. Ticked below, it is also added to Upload_to_vNAS\vNAS_Alias.txt." />
                 </StackPanel>
             </ctl:Card>
 

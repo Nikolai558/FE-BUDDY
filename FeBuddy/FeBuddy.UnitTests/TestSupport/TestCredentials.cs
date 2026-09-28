@@ -22,7 +22,7 @@ internal static class TestCredentials
 	public static void Reset() => GitHubAuth.ConfigureForTesting(new CredentialStore(new InMemoryCredentialVault()));
 
 	/// <summary>
-	/// Points <see cref="GitHubAuth"/> at a store holding one GitHub token chosen for FE-Buddy's own
+	/// Points <see cref="GitHubAuth"/> at a store holding one GitHub token, chosen for FE-Buddy's own
 	/// requests, until the returned scope is disposed. Use from tests in the <c>AppLog</c> collection,
 	/// which run one at a time.
 	/// </summary>
@@ -31,8 +31,8 @@ internal static class TestCredentials
 	public static IDisposable UseGitHubToken(string token)
 	{
 		CredentialStore store = new(new InMemoryCredentialVault());
-		store.Save(new CredentialDraft(null, "Test GitHub", CredentialKind.GitHubToken, null, token, CredentialHosts.GitHubDefaults, UseForFeBuddyGitHub: true));
-		GitHubAuth.ConfigureForTesting(store);
+		CredentialInfo saved = store.Save(new CredentialDraft(null, "Test GitHub", CredentialKind.GitHubToken, null, token, CredentialHosts.GitHubDefaults));
+		GitHubAuth.ConfigureForTesting(store, saved.Id);
 		return new Scope();
 	}
 

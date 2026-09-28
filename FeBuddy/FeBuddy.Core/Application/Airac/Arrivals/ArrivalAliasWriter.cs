@@ -75,9 +75,7 @@ public static class ArrivalAliasWriter
 			return new ArrivalAliasGenerateResult(null, 0, messages);
 		}
 
-		// The Aliases folder, or Upload_to_vNAS when the user marked the file for vNAS.
-		string directory = AiracOutputPaths.AliasDirectory(
-			settings.OutputDirectory, settings.Vnas.IsUploaded(ArrivalOutputFiles.Alias));
+		string directory = AiracOutputPaths.AliasDirectory(settings.OutputDirectory);
 		Directory.CreateDirectory(directory);
 
 		string path = Path.Combine(directory, ArrivalOutputFiles.Alias);

@@ -13,7 +13,8 @@ Think of FE-Buddy as a small factory with a control panel.
    and reads every spreadsheet into memory.
 2. **The user fills in an order form.** On the AIRAC Service screen they tick what they want
    (Airports, Airways, Departures, Arrivals, NAVAIDs, ARTCC Boundaries, Fixes, Wx Stations,
-   Procedures, Telephony) and set the options - which files, which styles, which area.
+   Procedures, Telephony, vNAS Alias Upload) and set the options - which files, which styles,
+   which area.
    Each tab turns its options into a simple list of `key = value` settings, the same format the
    test harness uses.
 3. **The factory builds.** For each ticked item, the library checks the settings, finds the right
@@ -22,7 +23,8 @@ Think of FE-Buddy as a small factory with a control panel.
    not real waypoints, procedures named by an amendment code, and so on).
 4. **The goods are packaged.** Writers turn those objects into GeoJSON files (map shapes CRC can
    draw, with the styling CRC needs) and alias files (dot-commands), and put them in the user's
-   output folder.
+   output folder. vNAS takes one alias file per facility, so the alias files meant for vNAS are
+   finally merged, under the facility's own custom alias files, into one `vNAS_Alias.txt`.
 5. **A receipt comes back.** Everything that happened - files written, warnings, things skipped
    and why - is returned to the app, which shows it on the Review tab and in the activity log.
 

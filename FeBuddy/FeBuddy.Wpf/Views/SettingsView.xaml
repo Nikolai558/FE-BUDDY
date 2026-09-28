@@ -1,5 +1,5 @@
 <!--
-    SettingsView  -  Facility Profile / Default ROI / GeoJSON Files / Credentials / Updates.
+    SettingsView  -  Facility Profile / Default ROI / GeoJSON Files / Credentials / FE-Buddy's GitHub Requests / Updates.
     Everything persists to UserConfig.json.
 -->
 <UserControl x:Class="FeBuddy.Wpf.Views.SettingsView"
@@ -158,17 +158,6 @@
                         <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
                                    Text="{Binding Source={x:Static vm:CredentialsViewModel.Description}}" />
 
-                        <Border Style="{StaticResource Panel.Inset}" Margin="0,4,0,8"
-                                Visibility="{Binding HasLegacyToken, Converter={StaticResource BoolToVis}}">
-                            <DockPanel>
-                                <Button DockPanel.Dock="Right" Style="{StaticResource Button.Ghost}" Content="Move it here"
-                                        VerticalAlignment="Center" Margin="12,0,0,0"
-                                        Command="{Binding MoveLegacyTokenCommand}" />
-                                <TextBlock Style="{StaticResource Text.Prose}" Foreground="{StaticResource Brush.Warn}"
-                                           Text="{Binding LegacyTokenMessage}" />
-                            </DockPanel>
-                        </Border>
-
                         <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
                                    Foreground="{StaticResource Brush.Danger}" Text="{Binding LoadError}"
                                    Visibility="{Binding HasLoadError, Converter={StaticResource BoolToVis}}" />
@@ -197,9 +186,6 @@
                                             <StackPanel VerticalAlignment="Center">
                                                 <TextBlock Style="{StaticResource Text.Body.Strong}" Text="{Binding Name}" />
                                                 <TextBlock Style="{StaticResource Text.Caption}" Text="{Binding Details}" TextWrapping="Wrap" />
-                                                <TextBlock Style="{StaticResource Text.Caption}" Foreground="{StaticResource Brush.Accent.Text}"
-                                                           Text="Used for FE-Buddy's update checks, News and update downloads"
-                                                           Visibility="{Binding IsUsedByFeBuddy, Converter={StaticResource BoolToVis}}" />
                                             </StackPanel>
                                         </DockPanel>
                                         <Border Style="{StaticResource Divider}" />
@@ -218,7 +204,42 @@
                     </StackPanel>
                 </ctl:Card>
 
-                <!-- ================= 5. UPDATES ================= -->
+                <!-- ================= 5. FE-BUDDY'S GITHUB REQUESTS (advanced) ================= -->
+                <!-- Part of this page's Save: only the chosen token's id is saved, never the token. -->
+                <ctl:Card Header="FE-Buddy's GitHub Requests">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
+                                   Text="{Binding Source={x:Static vm:SettingsViewModel.GitHubRequestsDescription}}" />
+
+                        <RadioButton GroupName="FeBuddyGitHubToken" Margin="0,3" Content="Don't use a GitHub token"
+                                     IsChecked="{Binding DontUseGitHubToken}" />
+                        <RadioButton GroupName="FeBuddyGitHubToken" Margin="0,3" Content="Use a GitHub token for update checks, News and update downloads"
+                                     IsChecked="{Binding UseGitHubToken}" />
+
+                        <StackPanel Margin="0,8,0,0" Visibility="{Binding UseGitHubToken, Converter={StaticResource BoolToVis}}">
+                            <DockPanel>
+                                <Button DockPanel.Dock="Right" Style="{StaticResource Button.Ghost}" Content="New GitHub token…" Margin="8,0,0,0"
+                                        ToolTip="Add a GitHub token in Credentials and use it here."
+                                        Command="{Binding NewGitHubTokenCommand}" />
+                                <ComboBox Style="{StaticResource Themed.ComboBox}" ItemsSource="{Binding GitHubTokens}"
+                                          SelectedValuePath="Id" SelectedValue="{Binding GitHubCredentialId}">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding Label}" />
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
+                            </DockPanel>
+                            <TextBlock Style="{StaticResource Text.Caption}" Margin="0,6,0,0" TextWrapping="Wrap"
+                                       Foreground="{StaticResource Brush.Warn}" Text="{Binding GitHubTokenNotice}"
+                                       Visibility="{Binding HasGitHubTokenNotice, Converter={StaticResource BoolToVis}}" />
+                            <TextBlock Style="{StaticResource Text.Caption}" Margin="0,6,0,0" TextWrapping="Wrap"
+                                       Text="If a request with the token fails, FE-Buddy tries it once more without it, so an expired token never stops you getting updates. The token only needs read access; FE-Buddy never writes to GitHub." />
+                        </StackPanel>
+                    </StackPanel>
+                </ctl:Card>
+
+                <!-- ================= 6. UPDATES ================= -->
                 <!-- Most finished channel first; each one also offers every channel above it. -->
                 <ctl:Card Header="Updates">
                     <StackPanel>

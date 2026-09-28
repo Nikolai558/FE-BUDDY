@@ -14,7 +14,7 @@ below is relative to `FeBuddy/FeBuddy.Wpf/` in the repo unless stated otherwise.
 - references `FeBuddy.Core`; no other NuGet packages - the MVVM helpers
   (`ObservableObject`, `RelayCommand`) are hand-rolled in `Mvvm/`
 - **Airports, Airways, Departures, Arrivals, NAVAIDs, ARTCC Boundaries, Fixes, Wx Stations,
-  Procedures and Telephony are sub-services of AIRAC Service**, not top-level screens. The library code is
+  Procedures, Telephony and vNAS Alias Upload are sub-services of AIRAC Service**, not top-level screens. The library code is
   `FeBuddy.Core.Application.Airac.*`; the GUI reaches each one only as a tab on the AIRAC
   Services screen. In the same way, each
   **file conversion** (DAT to GeoJSON, SCT2 to GeoJSON) is a tab on the File Conversions screen
@@ -65,10 +65,12 @@ ViewModels/           ShellViewModel + one per screen; AiracSubServices is the
                         FebPropertyToggle, EramClassDefault (StyleFromFeatures
                         / AsksForStyle, for a class whose Symbol style lives on
                         the Features instead of the card), VnasFileToggle,
-                        SourceFileItem, ...)
+                        SourceFileItem, AliasSourceRow (a vNAS Alias Upload
+                        custom alias file row), ...)
   ServiceTabs/          the framework for a tabbed service screen:
                         TabbedServiceViewModel (the screen), ServiceTabViewModel
-                        (a tab), SubServiceSettingsViewModel (a saved settings tab),
+                        (a tab), SubServiceSettingsViewModel (a saved settings tab;
+                        RemoveSubtree clears a numbered list before it is saved again),
                         GeojsonSubServiceViewModel (what the GeoJSON sub-service tabs
                         share), ConversionTabViewModel (a conversion tab with its own
                         run button), FileConversionTabViewModel (what the file-to-GeoJSON
@@ -81,7 +83,7 @@ Views/                ShellWindow (custom chrome) + Dashboard, TabbedServiceView
                       (the AIRAC Services and File Conversions screens) and their
                       tab views (AiracGeneralTabView, AirportsView, AirwaysView,
                       DeparturesView, ArrivalsView, NavaidsView, ArtccBoundariesView, FixesView,
-                      WxStationsView, ProceduresView, TelephonyView, DatToGeojsonView, SctToGeojsonView, EramToGeojsonView,
+                      WxStationsView, ProceduresView, TelephonyView, VnasAliasView, DatToGeojsonView, SctToGeojsonView, EramToGeojsonView,
                       ServicePreviewTabView, ServiceRunReviewTabView), Map, Settings, Info; UpdateWindow,
                       ConfirmWindow (Confirm / Cancel, or a third choice between
                       them), RoiPickerWindow
@@ -142,7 +144,7 @@ bar and page scroller are shared, and each screen's view-model says what differs
     `Services.AiracService.SelectedSubServices`.
   - **Sub-service catalogue** - `ViewModels/AiracSubServices.cs`: Airports,
     Airways, Departures, Arrivals, NAVAIDs, ARTCC Boundaries, Fixes, Wx Stations, Procedures,
-    Telephony. Adding one is a catalogue entry plus a tab view-model; one whose backend is not built
+    Telephony, vNAS Alias Upload. Adding one is a catalogue entry plus a tab view-model; one whose backend is not built
     yet opens a `PlaceholderSubServiceView` and contributes nothing to a run.
   - **Sub-service tabs** - each is a `GeojsonSubServiceViewModel` (Save /
     Undo-last-save / dirty, plus the outputs, file choices, `feb.*` properties, ROI
@@ -226,9 +228,25 @@ bar and page scroller are shared, and each screen's view-model says what differs
     Station Data card, downloaded fresh by every run, and missing data doesn't block the run here
     either. There is no Region of Interest card at all (`NoDefaultRoiHint` explains why, though
     nothing in the tab ever shows it): Telephony covers every operator regardless of area. Its only
-    other card is **Upload to vNAS**, for `Telephony.txt`. It is the tenth and last sub-service in
-    the catalogue. Its Review tab result names the alias file's command count and how many show more
+    other card is **Upload to vNAS**, for `Telephony.txt`. It is the tenth sub-service in the
+    catalogue. Its Review tab result names the alias file's command count and how many show more
     than one operator (`TelephonyServiceResult.AliasCommandCount`/`MergedCommandCount`).
+  - **The vNAS Alias Upload tab** (`VnasAliasViewModel`, key `VnasAlias`) is not a
+    `GeojsonSubServiceViewModel`: it derives from `SubServiceSettingsViewModel` and implements
+    `ISubServiceRunTarget` itself, and uses none of the shared cards. **Outputs** names
+    `Upload_to_vNAS\vNAS_Alias.txt` and how it is laid out. **Custom Alias Files** lists the
+    facility's own alias files (`AliasSourceRow`), merged in order - move up/down, remove, **Add
+    file…** / **Browse…** for a file on this PC, **Add web address** for one on the web. A web
+    address has a credential drop-down ("None" plus every saved credential, refreshed on
+    `CredentialStore.Changed`) and **New credential…**; a row with none is offered "Use
+    <credential>, like file N" when an earlier row's credential is allowed on the same website (for
+    GitHub, `api.github.com` - `GitHubFileUrl.ToContentsApi`). **Check** reads the file now through
+    `AliasSourceLoader` and shows its command count or the problem. Validation mirrors
+    `VnasAliasSettingsParser` (at least one file; a full path; an http(s) address; not a GitHub
+    repository or folder page; a credential only to https); a file or credential not on this PC is
+    a non-blocking notice. `WriteToConfig` removes the `Sources` subtree before writing the list
+    again. It is the eleventh and last sub-service in the catalogue. Its Review tab result gives
+    `vNAS_Alias.txt`'s custom and FE-Buddy command counts (`AiracServiceResult.VnasAlias`).
   - **Preview Settings tab** - present once at least one sub-service is selected:
     every tab's settings as label/value rows (the General section names the run's
     `AIRAC_<cycle>` folder), notices naming any unsaved or invalid tab, and the single

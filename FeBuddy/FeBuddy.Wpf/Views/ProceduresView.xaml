@@ -48,7 +48,7 @@
                                Text="FAA Chart Recall: a command that opens each page of every chart at every airport in the d-TPP metafile, e.g. .dtwI22Lc for ILS OR LOC RWY 22L at DTW. The choices below pick what the documents cover; they never limit the alias file." />
                     <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap"
                                MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
-                               Text="The documents are written to Publication_Docs\ in the cycle's folder, and the alias file to Aliases\ (or Upload_to_vNAS\, if ticked below)." />
+                               Text="The documents are written to Publication_Docs\ in the cycle's folder, and the alias file to Aliases\. Ticked below, it is also added to Upload_to_vNAS\vNAS_Alias.txt." />
                     <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,10,0,0"
                                MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
                                Text="At least one output must stay on. To produce nothing for Procedures, deselect Procedures on the General tab." />

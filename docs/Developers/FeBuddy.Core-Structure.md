@@ -74,7 +74,9 @@ FeBuddy.Core/
 │   ├── Dat/            DatFileReader: FAA .dat RADAR Video Maps
 │   ├── FileSystem/     AppPaths, TempWorkspace, ServiceOutputPaths (the FE-Buddy_Output layout)
 │   ├── Geojson/        CrcFeatureFactory, GeojsonFileWriter, GeojsonFileSet
-│   ├── GitHub/  Http/  Logging/  Markdown/  Platform/
+│   ├── GitHub/         GitHubAuth, GitHubRepository, GitHubFileUrl (a GitHub file's web address →
+│   │                   the contents API address that works for a private repository with a token)
+│   ├── Http/  Logging/  Markdown/  Platform/
 │   ├── Nasr/           Download, availability, CSV reading, WaypointLocator
 │   │   ├── Models/     One row-model file per NASR CSV group
 │   │   └── Parsers/    One parser per group + NasrCsvParser (parses them all)
@@ -120,10 +122,15 @@ FeBuddy.Core/
     │   │                     regardless of the two documents' own selection; its data comes from
     │   │                     Infrastructure/Dtpp (the FAA d-TPP Metafile), joined to NASR
     │   │                     APT_BASE/CLS_ARSP
-    │   └── Telephony/        No GeoJSON at all; writes only Telephony.txt (TelephonyBuilder,
-    │                         TelephonyAliasWriter), covering every operator in the FAA's telephony
-    │                         pages (Infrastructure/Telephony), not a NASR CSV group. Runs last of
-    │                         the ten sub-services
+    │   ├── Telephony/        No GeoJSON at all; writes only Telephony.txt (TelephonyBuilder,
+    │   │                     TelephonyAliasWriter), covering every operator in the FAA's telephony
+    │   │                     pages (Infrastructure/Telephony), not a NASR CSV group. Runs last of
+    │   │                     the ten sub-services that build their own files
+    │   └── VnasAlias/        vNAS Alias Upload: VnasAliasSettingsParser (the user's custom alias
+    │                         files), AliasSourceLoader (reads each from this PC or the web, with a
+    │                         saved credential), VnasAliasFileWriter (merges them and every alias
+    │                         file marked for vNAS into Upload_to_vNAS\vNAS_Alias.txt, after the
+    │                         duplicate report); models: AliasSource, AliasSourceLoad, VnasAliasResult
     ├── Conversions/    ConversionSettingsReader and ConversionFiles (what every conversion
     │   │               shares), then one folder per file conversion
     │   ├── DatToGeojson/
@@ -222,7 +229,14 @@ telephony, or an expired U.S. special call sign), followed by step 4, `Telephony
 (→ `Telephony.txt`). Its data - the FAA's JO 7340.2 register and U.S. special call signs - is
 downloaded fresh by every run that includes it, the same as Wx Stations' station list
 (`AiracSharedDataLoader`), and a run with no usable copy just writes nothing, with a warning,
-rather than throwing. Telephony runs last of the ten sub-services.
+rather than throwing. Telephony runs last of the ten sub-services that build their own files.
+
+vNAS Alias Upload (`Application/Airac/VnasAlias/`) has none of the four steps. `AiracService`
+parses its block and reads the custom alias files (`AliasSourceLoader`) before the sub-services
+run, and once they - and the duplicate report - are done, `VnasAliasFileWriter.Write` merges the
+custom files and every alias file marked for vNAS into `Upload_to_vNAS\vNAS_Alias.txt` (→
+`AiracServiceResult.VnasAlias`). That last step also runs without the sub-service whenever an
+alias file is marked for vNAS.
 
 **When the user runs a file conversion**, the UI builds one settings block and calls that
 conversion's service directly - there is no cycle data and no aggregate. The pipeline has the

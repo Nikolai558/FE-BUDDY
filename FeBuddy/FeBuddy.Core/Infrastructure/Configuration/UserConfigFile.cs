@@ -172,6 +172,35 @@ public static class UserConfigFile
 	}
 
 	/// <summary>
+	/// Removes a value and every value below it from the in-memory dictionary - e.g. a list whose
+	/// entries are numbered keys, before it is written again with fewer entries. Does <b>not</b>
+	/// persist - call <see cref="Save(string)"/> to write it to disk.
+	/// </summary>
+	/// <param name="dottedPath">The dotted path to remove, e.g. <c>Services.AiracService.VnasAlias.Sources</c>.</param>
+	/// <returns>How many values were removed.</returns>
+	public static int RemoveValues(string dottedPath)
+	{
+		if (!IsValidKey(dottedPath))
+		{
+			return 0;
+		}
+
+		string below = dottedPath + ".";
+
+		lock (Gate)
+		{
+			string[] keys = [.. Values.Keys.Where(key => key == dottedPath || key.StartsWith(below, StringComparison.Ordinal))];
+
+			foreach (string key in keys)
+			{
+				Values.Remove(key);
+			}
+
+			return keys.Length;
+		}
+	}
+
+	/// <summary>
 	/// Replaces every setting at once with <paramref name="values"/> and writes the whole file -
 	/// the one write that is not per node, used by a settings import.
 	/// </summary>

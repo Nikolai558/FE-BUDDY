@@ -88,6 +88,34 @@ public sealed class UserConfigFileTests : IDisposable
 		Assert.Null(UserConfigFile.GetValue("Services.AiracService.Nope"));
 	}
 
+	/// <summary>
+	/// <see cref="UserConfigFile.RemoveValues(string)"/> drops a value and everything below it, and a
+	/// save then leaves them off disk - a numbered list written again with fewer entries.
+	/// </summary>
+	[Fact]
+	public void remove_values_drops_a_subtree_and_nothing_beside_it()
+	{
+		const string Node = "Services.AiracService.VnasAlias";
+		UserConfigFile.TrySetValue(Node + ".Sources.1.Url", "https://example.com/a.txt");
+		UserConfigFile.TrySetValue(Node + ".Sources.2.FilePath", @"C:\b.txt");
+		UserConfigFile.TrySetValue(Node + ".SourcesNote", "kept: only its name starts the same");
+		UserConfigFile.Save(Node);
+
+		Assert.Equal(2, UserConfigFile.RemoveValues(Node + ".Sources"));
+		Assert.Equal(0, UserConfigFile.RemoveValues(Node + ".Sources"));
+		Assert.Equal(0, UserConfigFile.RemoveValues(".bad."));
+		Assert.Equal(1, UserConfigFile.RemoveValues(Node + ".SourcesNote"));
+		UserConfigFile.TrySetValue(Node + ".SourcesNote", "kept: only its name starts the same");
+
+		UserConfigFile.TrySetValue(Node + ".Sources.1.FilePath", @"C:\a.txt");
+		UserConfigFile.Save(Node);
+
+		Assert.Null(UserConfigFile.GetValue(Node + ".Sources.2.FilePath"));
+		Assert.Null(UserConfigFile.GetValue(Node + ".Sources.1.Url"));
+		Assert.Equal(@"C:\a.txt", UserConfigFile.GetValue(Node + ".Sources.1.FilePath"));
+		Assert.NotNull(UserConfigFile.GetValue(Node + ".SourcesNote"));
+	}
+
 	/// <summary><see cref="UserConfigFile.Save(string)"/> persists only its own subtree.</summary>
 	[Fact]
 	public void save_writes_only_its_own_subtree()

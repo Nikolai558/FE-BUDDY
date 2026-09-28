@@ -21,6 +21,13 @@ public static class UserConfigKeys
 	/// <summary>Whether output goes in a <c>FE-Buddy_Output</c> folder inside the output folder (<c>Y</c>/<c>N</c>).</summary>
 	public const string AddFeBuddyOutputFolder = "General.AddFeBuddyOutputFolder";
 
+	/// <summary>
+	/// The GitHub token credential FE-Buddy's own GitHub requests (update checks, News, update
+	/// downloads) are sent with, by id; unset or blank sends them without one. Kept on this PC: a
+	/// credential id means nothing on another.
+	/// </summary>
+	public const string FeBuddyGitHubCredentialId = "General.FeBuddyGitHub.CredentialId";
+
 	/// <summary>How many decimal places GeoJSON coordinates are rounded to, 0 to 15 (6 when unset).</summary>
 	public const string CoordinatePrecision = "Services.AiracService.CoordinatePrecision";
 

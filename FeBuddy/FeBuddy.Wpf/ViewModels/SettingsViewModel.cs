@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Globalization;
 using System.IO;
 using System.Text;
@@ -8,6 +9,7 @@ using System.Windows.Threading;
 
 using FeBuddy.Wpf.Mvvm;
 using FeBuddy.Wpf.Shell;
+using FeBuddy.Wpf.ViewModels.Models;
 using FeBuddy.Wpf.ViewModels.ServiceTabs;
 using FeBuddy.Wpf.Views;
 
@@ -20,6 +22,7 @@ using FeBuddy.Core.Domain.Geo.Models;
 using FeBuddy.Core.Infrastructure.Configuration;
 using FeBuddy.Core.Infrastructure.Configuration.Models;
 using FeBuddy.Core.Infrastructure.Credentials;
+using FeBuddy.Core.Infrastructure.Credentials.Models;
 using FeBuddy.Core.Infrastructure.Logging;
 using FeBuddy.Core.Infrastructure.Platform;
 
@@ -32,8 +35,9 @@ namespace FeBuddy.Wpf.ViewModels;
 
 /// <summary>
 /// SYSTEM ▸ Settings. Section order: Facility Profile, Default Region of Interest, GeoJSON Files,
-/// Credentials, Updates. Every value persists to <c>UserConfig.json</c>, except credentials, which
-/// live in Windows Credential Manager and are saved at once (<see cref="CredentialsViewModel"/>).
+/// Credentials, FE-Buddy's GitHub Requests, Updates. Every value persists to <c>UserConfig.json</c>,
+/// except credentials, which live in Windows Credential Manager and are saved at once
+/// (<see cref="CredentialsViewModel"/>). FE-Buddy's GitHub Requests saves only the chosen token's id.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -75,6 +79,8 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 	private bool _prettyPrintGeojson;
 	private RegionOfInterest? _defaultRoi;
 	private RegionOfInterest? _savedRoi;
+	private bool _useGitHubToken;
+	private Guid _gitHubCredentialId;
 	private bool _isDirty;
 	private SavedStateSnapshot _savedState = SavedStateSnapshot.Of(new Dictionary<string, string>());
 
@@ -89,6 +95,8 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 		_dispatcher = Application.Current?.Dispatcher ?? Dispatcher.CurrentDispatcher;
 		_openUpdateWindow = openUpdateWindow;
 
+		RefreshGitHubTokens();
+		CredentialStore.Default.Changed += (_, _) => _dispatcher.BeginInvoke(RefreshGitHubTokens);
 		LoadFromConfig();
 		DefaultRoiStore.Changed += OnDefaultRoiChanged;
 		ConfigPages.Register(this);
@@ -102,6 +110,7 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 		ClearRoiCommand = new RelayCommand(ClearRoi, () => DefaultRoi is not null);
 		ExportCommand = new RelayCommand(Export);
 		ImportCommand = new RelayCommand(Import);
+		NewGitHubTokenCommand = new RelayCommand(NewGitHubToken);
 
 		AiracCycleDataCache.Instance.StateChanged += (_, _) => _dispatcher.BeginInvoke(RefreshFacilities);
 		RefreshFacilities();
@@ -152,6 +161,7 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 		[PrecisionKey] = CoordinatePrecision.ToString(CultureInfo.InvariantCulture),
 		[UserConfigKeys.PrettyPrintGeojson] = PrettyPrintGeojson ? "Y" : "N",
 		[ArtccKey] = SelectedFacility ?? string.Empty,
+		[UserConfigKeys.FeBuddyGitHubCredentialId] = GitHubCredentialValue,
 	};
 
 	// ================= 1. FACILITY PROFILE =================
@@ -329,7 +339,118 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 	/// <summary>The Credentials card. Its changes are saved at once and take no part in <see cref="SaveCommand"/>.</summary>
 	public CredentialsViewModel Credentials { get; } = new(CredentialStore.Default);
 
-	// ================= 5. UPDATES =================
+	// ================= 5. FE-BUDDY'S GITHUB REQUESTS =================
+
+	/// <summary>Explains the card under its heading.</summary>
+	public const string GitHubRequestsDescription =
+		"Advanced - most people never need this. FE-Buddy checks for updates, reads News and downloads updates from " +
+		"its public GitHub repository, which works without a GitHub account. A GitHub token lifts GitHub's limit of " +
+		"60 requests an hour, or lets a developer test FE-Buddy against a private copy of its repository.";
+
+	/// <summary>Whether FE-Buddy's own GitHub requests are sent with a GitHub token.</summary>
+	public bool UseGitHubToken
+	{
+		get => _useGitHubToken;
+		set
+		{
+			if (SetProperty(ref _useGitHubToken, value))
+			{
+				OnPropertyChanged(nameof(DontUseGitHubToken));
+				OnPropertyChanged(nameof(GitHubTokenNotice));
+				OnPropertyChanged(nameof(HasGitHubTokenNotice));
+				MarkDirty();
+			}
+		}
+	}
+
+	/// <summary>The "Don't use a GitHub token" radio button: the opposite of <see cref="UseGitHubToken"/>.</summary>
+	public bool DontUseGitHubToken
+	{
+		get => !UseGitHubToken;
+		set => UseGitHubToken = !value;
+	}
+
+	/// <summary>The GitHub token to send them with; <see cref="Guid.Empty"/> until one is chosen.</summary>
+	public Guid GitHubCredentialId
+	{
+		get => _gitHubCredentialId;
+		set
+		{
+			if (SetProperty(ref _gitHubCredentialId, value))
+			{
+				OnPropertyChanged(nameof(GitHubTokenNotice));
+				OnPropertyChanged(nameof(HasGitHubTokenNotice));
+				MarkDirty();
+			}
+		}
+	}
+
+	/// <summary>The saved GitHub tokens that may go to GitHub's API, for the drop-down.</summary>
+	public ObservableCollection<CredentialChoice> GitHubTokens { get; } = [];
+
+	/// <summary>What is missing while "Use a GitHub token" is on, or <see langword="null"/>.</summary>
+	public string? GitHubTokenNotice =>
+		!UseGitHubToken ? null
+		: GitHubTokens.Count == 0 ? "You have no GitHub token saved yet. Add one with New GitHub token…"
+		: GitHubTokens.All(t => t.Id != GitHubCredentialId) ? "Choose a GitHub token. Until you do, FE-Buddy's requests go without one."
+		: null;
+
+	/// <summary>Whether <see cref="GitHubTokenNotice"/> is shown.</summary>
+	public bool HasGitHubTokenNotice => GitHubTokenNotice is not null;
+
+	/// <summary>Adds a GitHub token in the credential editor and chooses it.</summary>
+	public ICommand NewGitHubTokenCommand { get; }
+
+	/// <summary>What <see cref="Save"/> writes: the chosen token's id, or blank for none.</summary>
+	private string GitHubCredentialValue =>
+		UseGitHubToken && GitHubCredentialId != Guid.Empty ? GitHubCredentialId.ToString("N") : string.Empty;
+
+	private void RefreshGitHubTokens()
+	{
+		IReadOnlyList<CredentialInfo> saved;
+
+		try
+		{
+			saved = CredentialStore.Default.List();
+		}
+		catch (Win32Exception)
+		{
+			saved = [];   // The Credentials card reports it.
+		}
+
+		CredentialChoice.Sync(GitHubTokens,
+		[
+			.. saved
+				.Where(info => info.Kind == CredentialKind.GitHubToken && CredentialHosts.Allows(info.Hosts, CredentialHosts.GitHubApiHost))
+				.Select(CredentialChoice.For),
+		]);
+
+		OnPropertyChanged(nameof(GitHubTokenNotice));
+		OnPropertyChanged(nameof(HasGitHubTokenNotice));
+	}
+
+	private void NewGitHubToken()
+	{
+		if (CredentialEditorWindow.Edit(Application.Current?.MainWindow, CredentialStore.Default, null) is not { } saved)
+		{
+			return;
+		}
+
+		RefreshGitHubTokens();
+
+		if (GitHubTokens.Any(t => t.Id == saved.Id))
+		{
+			UseGitHubToken = true;
+			GitHubCredentialId = saved.Id;
+		}
+		else
+		{
+			Toast.Warn("Not a GitHub token for github.com",
+				$"{saved.Name} is saved, but only a GitHub personal access token whose websites include github.com can be used here.");
+		}
+	}
+
+	// ================= 6. UPDATES =================
 
 	/// <summary>The update channels, in the order the menu shows them: most finished first.</summary>
 	public IReadOnlyList<ReleaseChannel> Channels { get; } =
@@ -486,6 +607,7 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 		UserConfigFile.TrySetValue(AddFolderKey, AddFeBuddyOutputFolder ? "Y" : "N");
 		UserConfigFile.TrySetValue(PrecisionKey, CoordinatePrecision.ToString(CultureInfo.InvariantCulture));
 		UserConfigFile.TrySetValue(UserConfigKeys.PrettyPrintGeojson, PrettyPrintGeojson ? "Y" : "N");
+		UserConfigFile.TrySetValue(UserConfigKeys.FeBuddyGitHubCredentialId, GitHubCredentialValue);
 		if (!string.IsNullOrWhiteSpace(SelectedFacility))
 		{
 			UserConfigFile.TrySetValue(ArtccKey, SelectedFacility!);
@@ -529,6 +651,8 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 		CoordinatePrecision = int.TryParse(UserConfigFile.GetValue(PrecisionKey), out int p) && p is >= 0 and <= 15 ? p : 6;
 		PrettyPrintGeojson = string.Equals(
 			UserConfigFile.GetValue(UserConfigKeys.PrettyPrintGeojson)?.Trim(), "Y", StringComparison.OrdinalIgnoreCase);
+		GitHubCredentialId = Guid.TryParse(UserConfigFile.GetValue(UserConfigKeys.FeBuddyGitHubCredentialId), out Guid gitHubId) ? gitHubId : Guid.Empty;
+		UseGitHubToken = GitHubCredentialId != Guid.Empty;
 
 		_savedRoi = DefaultRoiStore.Load();
 		DefaultRoi = _savedRoi;

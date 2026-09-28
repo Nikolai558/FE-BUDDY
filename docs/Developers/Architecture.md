@@ -138,6 +138,9 @@ Preview Settings ▸ Run AIRAC Service
                                                                          → XxxServiceResult
                                                                        once every alias file is written: DuplicateAliasReport.Write
                                                                          → Duplicate_Alias_Commands.txt
+                                                                       then, if any alias file is marked for vNAS or vNAS Alias
+                                                                       Upload is selected: VnasAliasFileWriter.Write
+                                                                         → Upload_to_vNAS\vNAS_Alias.txt
   Review tab ◄── progress reports, then AiracServiceResult ───────────
     each tab: DescribeRunResult(result)
 ```
@@ -170,7 +173,14 @@ telephony, or an expired U.S. special call sign - followed by step 4,
 `nasrData`: `AiracService` loads `telephonyData` from `AiracSharedDataLoader.LoadTelephonyAsync`
 only when Telephony is selected, and a `null` collection (no copy of the register at all) leaves
 `TelephonyService.Run` writing nothing, with a warning, the same as Wx Stations. Telephony runs
-last of the ten sub-services.
+last of the ten sub-services that build their own files.
+
+vNAS Alias Upload (`VnasAlias`, the eleventh) builds nothing from FAA data and has no steps 2-4 of
+its own. Before the run, `AiracService` parses its block (`VnasAliasSettingsParser`) and reads the
+user's custom alias files (`AliasSourceLoader.LoadAllAsync`, see
+[Settings blocks](Settings-Blocks.md#vnas-alias-upload)); a file that can't be read is carried as
+a failed `AliasSourceLoad`, never an exception. After the duplicate report, the custom files and
+every alias file marked for vNAS are merged into `vNAS_Alias.txt` (below).
 
 - **The settings block is the contract.** Every tab (and the harness) hands Core a flat
   `Dictionary<string, string>`. Core never sees view-models, and the GUI never sees typed settings.
@@ -182,10 +192,9 @@ last of the ten sub-services.
 - Progress arrives through `IProgress<AiracServiceProgress>`; each sub-service reports starting
   and finishing.
 - **One folder per cycle.** A run writes everything into `<output>[\FE-Buddy_Output]\AIRAC_<cycle>`
-  (`AiracServiceSettings.CycleOutputDirectory`): alias files not marked for vNAS in an `Aliases`
-  folder, every GeoJSON file in its `Geojson` folder, and the files marked for vNAS under
-  `Upload_to_vNAS` instead (an alias file directly inside it, not in an `Aliases` subfolder), laid
-  out the same way (`AiracOutputPaths`). A sub-service only knows the folder it is given
+  (`AiracServiceSettings.CycleOutputDirectory`): every alias file in an `Aliases` folder, whether
+  or not it is marked for vNAS, every GeoJSON file in its `Geojson` folder, and the GeoJSON files
+  marked for vNAS under `Upload_to_vNAS\Geojson` instead (`AiracOutputPaths`). A sub-service only knows the folder it is given
   (`OutputDirectory`), so it can be run on its own by the harness and the tests. If the folder
   already has files, the GUI asks before the run: overwrite them, or have the service
   permanently delete the folder first (`ExistingOutputAction`).
@@ -200,6 +209,19 @@ last of the ten sub-services.
   report is written whenever at least one alias file was written, saying so when there are no
   duplicates, so an older report is never left behind to mislead; the run shows an advisory warning
   when there are.
+- **vNAS gets one alias file, `Upload_to_vNAS\vNAS_Alias.txt`, written last.** vNAS takes a single
+  alias file per facility, so once the duplicate report is written, `VnasAliasFileWriter.Write`
+  builds it whenever an alias file is marked for vNAS (its block's `UploadToVnas` names it) or vNAS
+  Alias Upload is selected: the first `.FeUseOnly` line any custom file has (moved to the top, the
+  rest dropped), each custom alias file in order separated by a blank line, then the marker line
+  `; ===== FE-Buddy aliases (AIRAC <cycle>) start here. FE-Buddy replaces everything below this
+  line every cycle. =====`, then each marked FE-Buddy alias file under `; ----- <name> -----`. A
+  custom file that has the marker (last cycle's uploaded `vNAS_Alias.txt` reused as the custom
+  file) is cut there, with an Info message. A custom file that could not be read is left out with
+  an advisory warning, and the file is still written from the rest; a command in more than one
+  merged file gets an advisory listing up to ten. UTF-8 without a BOM. With nothing to merge the
+  file is not written (`VnasAliasResult.FilePath` is `null`, with an advisory). The result is
+  `AiracServiceResult.VnasAlias`.
 
 ## Settings and persistence
 
@@ -381,7 +403,8 @@ Decisions that were argued out once and should not be re-litigated without a rea
   and Upload to vNAS cards instead of the shared ones. Telephony goes further: it opts out of the
   GeoJSON cards the same way, but has nothing else to choose - its Outputs card just names its one
   output, and it has no Region of Interest card at all, since it covers every operator regardless
-  of area. Likewise every file
+  of area. vNAS Alias Upload uses none of the shared cards: just its own Outputs and Custom Alias
+  Files cards. Likewise every file
   conversion is a tab of File Conversions; the two screens share one tabbed view and differ only in
   what their view-models say (File Conversions has no General or Preview Settings tab - each
   conversion runs from its own tab).

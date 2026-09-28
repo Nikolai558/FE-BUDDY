@@ -21,7 +21,6 @@ public sealed class CredentialEditorViewModel : ObservableObject
 	private CredentialKindOption _selectedKind;
 	private string _userName;
 	private string _hostsText;
-	private bool _useForFeBuddyGitHub;
 	private string? _error;
 
 	/// <summary>Opens the editor.</summary>
@@ -38,11 +37,11 @@ public sealed class CredentialEditorViewModel : ObservableObject
 		_selectedKind = Kinds.First(k => k.Kind == (existing?.Kind ?? CredentialKind.GitHubToken));
 		_userName = existing?.UserName ?? string.Empty;
 		_hostsText = string.Join(", ", existing?.Hosts ?? DefaultHosts(_selectedKind.Kind));
-		_useForFeBuddyGitHub = existing?.UseForFeBuddyGitHub ?? false;
 
 		SaveCommand = new RelayCommand(Save);
 		CancelCommand = new RelayCommand(() => CloseRequested?.Invoke(this, EventArgs.Empty));
 		CreateGitHubTokenCommand = new RelayCommand(() => BrowserLauncher.Open(Links.GitHubNewToken));
+		OpenGitHubTokenGuideCommand = new RelayCommand(() => BrowserLauncher.Open(Links.GitHubTokenGuide));
 	}
 
 	/// <summary>Raised when the editor should close: saved, or cancelled.</summary>
@@ -80,11 +79,6 @@ public sealed class CredentialEditorViewModel : ObservableObject
 			if (string.IsNullOrWhiteSpace(HostsText) || HostsText == string.Join(", ", DefaultHosts(before)))
 			{
 				HostsText = string.Join(", ", DefaultHosts(value.Kind));
-			}
-
-			if (value.Kind != CredentialKind.GitHubToken)
-			{
-				UseForFeBuddyGitHub = false;
 			}
 
 			foreach (string name in new[]
@@ -136,13 +130,6 @@ public sealed class CredentialEditorViewModel : ObservableObject
 		set => SetProperty(ref _hostsText, value);
 	}
 
-	/// <summary>Whether FE-Buddy's own GitHub requests (update checks, News, update downloads) use this token.</summary>
-	public bool UseForFeBuddyGitHub
-	{
-		get => _useForFeBuddyGitHub;
-		set => SetProperty(ref _useForFeBuddyGitHub, value);
-	}
-
 	/// <summary>Why the credential cannot be saved yet; <see langword="null"/> while there is nothing wrong.</summary>
 	public string? Error
 	{
@@ -178,6 +165,9 @@ public sealed class CredentialEditorViewModel : ObservableObject
 	/// <summary>Opens GitHub's page for creating a fine-grained token.</summary>
 	public ICommand CreateGitHubTokenCommand { get; }
 
+	/// <summary>Opens the step-by-step guide to the settings to choose on that page.</summary>
+	public ICommand OpenGitHubTokenGuideCommand { get; }
+
 	private void Save()
 	{
 		if (!CredentialHosts.TryParse(HostsText, out IReadOnlyList<string> hosts, out string? hostError))
@@ -187,7 +177,7 @@ public sealed class CredentialEditorViewModel : ObservableObject
 		}
 
 		CredentialDraft draft = new(
-			_existing?.Id, Name, SelectedKind.Kind, UserName, Secret, hosts, IsGitHubToken && UseForFeBuddyGitHub);
+			_existing?.Id, Name, SelectedKind.Kind, UserName, Secret, hosts);
 
 		try
 		{

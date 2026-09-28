@@ -113,31 +113,45 @@ public sealed class UpdateInstallerTests : IDisposable
 	}
 
 	[Fact]
-	public async Task download_async_public_url_fails_retries_through_the_assets_api_with_the_token()
+	public async Task download_async_with_a_token_downloads_through_the_assets_api()
 	{
 		using IDisposable token = TestCredentials.UseGitHubToken("test-token");
-		HttpRequestMessage? retry = null;
+		List<HttpRequestMessage> sent = [];
 		using HttpClient client = new(new StubHttpHandler(request =>
 		{
-			if (request.Headers.Authorization is null)
-			{
-				return new HttpResponseMessage(HttpStatusCode.NotFound);
-			}
-
-			retry = request;
-			return Ok(Payload);
+			sent.Add(request);
+			return request.Headers.Authorization is null ? new HttpResponseMessage(HttpStatusCode.NotFound) : Ok(Payload);
 		}));
 
 		string path = await UpdateInstaller.DownloadAsync(Installer(Payload.Length), httpClient: client);
 
 		Assert.Equal(Payload, await File.ReadAllBytesAsync(path));
-		Assert.Equal("https://api.github.com/repos/Nikolai558/FE-BUDDY/releases/assets/42", retry!.RequestUri!.ToString());
-		Assert.Equal("test-token", retry.Headers.Authorization!.Parameter);
-		Assert.Contains(retry.Headers.Accept, a => a.MediaType == "application/octet-stream");
+		HttpRequestMessage request = Assert.Single(sent);
+		Assert.Equal("https://api.github.com/repos/Nikolai558/FE-BUDDY/releases/assets/42", request.RequestUri!.ToString());
+		Assert.Equal("test-token", request.Headers.Authorization!.Parameter);
+		Assert.Contains(request.Headers.Accept, a => a.MediaType == "application/octet-stream");
 	}
 
 	[Fact]
-	public async Task download_async_no_asset_id_does_not_retry_with_the_token()
+	public async Task download_async_token_download_fails_retries_the_public_url_without_it()
+	{
+		using IDisposable token = TestCredentials.UseGitHubToken("revoked-token");
+		List<HttpRequestMessage> sent = [];
+		using HttpClient client = new(new StubHttpHandler(request =>
+		{
+			sent.Add(request);
+			return request.Headers.Authorization is null ? Ok(Payload) : new HttpResponseMessage(HttpStatusCode.Unauthorized);
+		}));
+
+		string path = await UpdateInstaller.DownloadAsync(Installer(Payload.Length), httpClient: client);
+
+		Assert.Equal(Payload, await File.ReadAllBytesAsync(path));
+		Assert.Equal(2, sent.Count);
+		Assert.Null(sent[1].Headers.Authorization);
+	}
+
+	[Fact]
+	public async Task download_async_no_asset_id_does_not_use_the_token()
 	{
 		using IDisposable token = TestCredentials.UseGitHubToken("test-token");
 		int calls = 0;

@@ -221,19 +221,21 @@ public static class UserConfigTransfer
 	/// <param name="package">A file read by <see cref="Read(string)"/>.</param>
 	/// <returns>The import, ready for <see cref="Apply(UserConfigImportPlan)"/>.</returns>
 	public static UserConfigImportPlan Plan(UserConfigPackage package) =>
-		Plan(package, UserConfigFile.SnapshotValues(), PortablePathTokens.ForCurrentUser(), Directory.Exists);
+		Plan(package, UserConfigFile.SnapshotValues(), PortablePathTokens.ForCurrentUser(), Directory.Exists, File.Exists);
 
 	/// <summary>Works out an import against <paramref name="current"/>. The public overload passes this PC's.</summary>
 	/// <param name="package">The file being imported.</param>
 	/// <param name="current">This PC's settings, by dotted path.</param>
 	/// <param name="tokens">How to expand the file's folder tokens.</param>
 	/// <param name="directoryExists">Whether a folder exists on this PC.</param>
+	/// <param name="fileExists">Whether a file exists on this PC; <see langword="null"/> uses <see cref="File.Exists(string)"/>.</param>
 	/// <returns>The import.</returns>
 	internal static UserConfigImportPlan Plan(
 		UserConfigPackage package,
 		IReadOnlyDictionary<string, string> current,
 		PortablePathTokens tokens,
-		Func<string, bool> directoryExists)
+		Func<string, bool> directoryExists,
+		Func<string, bool>? fileExists = null)
 	{
 		ArgumentNullException.ThrowIfNull(package);
 
@@ -280,7 +282,7 @@ public static class UserConfigTransfer
 
 		foreach (string key in folderKeys)
 		{
-			PlanFolder(key, package.Values.GetValueOrDefault(key), current.GetValueOrDefault(key), tokens, directoryExists, settings, applied, skipped);
+			PlanFolder(key, package.Values.GetValueOrDefault(key), current.GetValueOrDefault(key), tokens, directoryExists, fileExists ?? File.Exists, settings, applied, skipped);
 		}
 
 		// An unset setting and a blank one both mean "the default", so neither counts as a change from the other.
@@ -320,9 +322,9 @@ public static class UserConfigTransfer
 	/// <summary>
 	/// Matches one folder setting to the file's. The file's folder, made this user's, is taken when
 	/// it works here: an output folder needs only its drive (FE-Buddy creates the folder when it
-	/// writes), a folder FE-Buddy reads from must exist. When it cannot work here, this PC keeps its
-	/// own and the folder is listed as skipped. A folder the file does not set goes back to the
-	/// default.
+	/// writes), a folder FE-Buddy reads from must exist, and so must a file (a custom alias file).
+	/// When it cannot work here, this PC keeps its own and the folder is listed as skipped. A folder
+	/// the file does not set goes back to the default.
 	/// </summary>
 	private static void PlanFolder(
 		string key,
@@ -330,6 +332,7 @@ public static class UserConfigTransfer
 		string? mine,
 		PortablePathTokens tokens,
 		Func<string, bool> directoryExists,
+		Func<string, bool> fileExists,
 		Dictionary<string, string> settings,
 		List<ImportedFolder> applied,
 		List<ImportedFolder> skipped)
@@ -349,8 +352,11 @@ public static class UserConfigTransfer
 		string folder = tokens.Localize(packaged);
 		bool isOutput = UserConfigPortability.IsOutputFolder(key);
 
+		bool isFile = UserConfigPortability.IsFile(key);
+
 		string? problem =
-			!IsLocalDrivePath(folder) ? "is not a folder on a drive of this PC"
+			!IsLocalDrivePath(folder) ? (isFile ? "is not a file on a drive of this PC" : "is not a folder on a drive of this PC")
+			: isFile ? (fileExists(folder) ? null : "is not found on this PC")
 			: isOutput ? (directoryExists(Path.GetPathRoot(folder)!) ? null : "is on a drive this PC does not have")
 			: directoryExists(folder) ? null : "is not found on this PC";
 

@@ -10,12 +10,10 @@ namespace FeBuddy.Core.Infrastructure.Credentials.Models;
 /// again, so the user only types it to replace it.
 /// </param>
 /// <param name="Hosts">The websites it may be sent to.</param>
-/// <param name="UseForFeBuddyGitHub">Whether FE-Buddy's own GitHub requests use it; only a <see cref="CredentialKind.GitHubToken"/> can.</param>
 public sealed record CredentialDraft(
 	Guid? Id,
 	string Name,
 	CredentialKind Kind,
 	string? UserName,
 	string? Secret,
-	IReadOnlyList<string> Hosts,
-	bool UseForFeBuddyGitHub = false);
+	IReadOnlyList<string> Hosts);

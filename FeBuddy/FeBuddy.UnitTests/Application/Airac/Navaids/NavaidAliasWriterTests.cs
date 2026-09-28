@@ -166,13 +166,13 @@ public sealed class NavaidAliasWriterTests : IDisposable
 	}
 
 	[Fact]
-	public void the_alias_file_goes_under_upload_to_vnas_when_marked()
+	public void the_alias_file_stays_in_the_aliases_folder_when_marked_for_vnas()
 	{
 		NavaidSettings settings = Settings() with { Vnas = new VnasFileChoices([NavaidOutputFiles.Alias], []) };
 
 		NavaidAliasGenerateResult result = NavaidAliasWriter.Generate([NavaidTestData.Cgt()], settings);
 
-		Assert.Equal(Path.Combine(_outputDirectory, "Upload_to_vNAS", "Navaids.txt"), result.FilePath);
+		Assert.Equal(Path.Combine(_outputDirectory, "Aliases", "Navaids.txt"), result.FilePath);
 	}
 
 	[Fact]

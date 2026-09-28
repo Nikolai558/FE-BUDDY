@@ -12,8 +12,7 @@ downloads from a protected website uses one.
     another account.
   - Entries use local-machine persistence, so they never roam with a roaming profile.
 - **One entry per credential**, named `FE-Buddy:credential:<id>`. It holds everything about the
-  credential: name, type, user name, websites, whether FE-Buddy's own GitHub requests use it, and
-  the secret.
+  credential: name, type, user name, websites and the secret.
   - Users can see or delete the entries in Control Panel ▸ Credential Manager ▸ Windows Credentials.
 - **Settings save only the credential's id.** On another PC the id matches nothing, so an imported
   or copied config never carries a secret, and the user picks one of their own credentials.
@@ -47,7 +46,9 @@ website can never collect a user's token, because the token is not allowed there
 ## Using a credential in a feature
 
 Everything goes through `CredentialStore` (`FeBuddy.Core/Infrastructure/Credentials`). A feature
-never reads or stores a secret itself.
+never reads or stores a secret itself. The vNAS Alias Upload sub-service is the working example:
+`VnasAliasViewModel` offers the drop-down and saves `Sources.<n>.CredentialId`, and
+`AliasSourceLoader` (`FeBuddy.Core/Application/Airac/VnasAlias`) downloads with it.
 
 ```csharp
 CredentialStore store = CredentialStore.Default;
@@ -56,7 +57,7 @@ CredentialStore store = CredentialStore.Default;
 IReadOnlyList<CredentialInfo> choices = store.List();          // by name
 string label = $"{info.Name} ({info.Kind.DisplayName()})";     // e.g. "ZOB GitHub (GitHub personal access token)"
 
-// 2. Save only the id with the feature's own settings, e.g. "AliasSource.CredentialId" = info.Id.ToString("N").
+// 2. Save only the id with the feature's own settings, e.g. "Sources.1.CredentialId" = info.Id.ToString("N").
 
 // 3. When downloading, let the store add the header.
 using HttpRequestMessage request = new(HttpMethod.Get, url);
@@ -77,7 +78,8 @@ using HttpResponseMessage response = await client.SendAsync(request, cancellatio
 - **Downloading from GitHub.**
   - For a file in a private repository, request
     `https://api.github.com/repos/{owner}/{repo}/contents/{path}?ref={branch}` with
-    `Accept: application/vnd.github.raw`.
+    `Accept: application/vnd.github.raw`. `GitHubFileUrl.ToContentsApi` turns a file's `github.com`
+    or `raw.githubusercontent.com` address into that one.
   - `raw.githubusercontent.com` does not reliably honour a token (see `NewsService`).
 - **Settings key names.** Name a key that holds a credential id so it is plainly an id, e.g.
   `CredentialId`. Keys whose name ends in `Token`, `Password`, `Secret`, `ApiKey` or `Credential`,
@@ -93,13 +95,14 @@ using HttpResponseMessage response = await client.SendAsync(request, cancellatio
 
 ## FE-Buddy's own GitHub requests
 
-- **What uses it.** The update check, News and the update download try GitHub anonymously first,
-  and retry once with a token only if that fails (`GitHubAuth`).
-- **Where the token comes from.** The GitHub credential the user marked "use for FE-Buddy's update
-  checks, News and update downloads"; only one can be marked.
-- **The old environment variable.** FE-Buddy used to read the token from the
-  `FEBUDDY_GITHUB_TOKEN` environment variable.
-  - It no longer does: Windows keeps environment variables as plain text that every program can
-    read.
-  - When the variable is set, Settings ▸ Credentials offers to move it into a credential and remove
-    the variable.
+- **What uses it.** The update check, News and the update download (`GitHubAuth`). None of them
+  needs a token: the repository is public.
+- **Whether to use one.** An advanced setting, Settings ▸ FE-Buddy's GitHub Requests: "Don't use a
+  GitHub token" (the default) or "Use a GitHub token" and which one.
+  - Only the credential's id is saved, in `General.FeBuddyGitHub.CredentialId`. It is a local
+    setting, so a settings export leaves it out.
+  - Only a GitHub personal access token whose websites include github.com can be chosen.
+- **How it is used.** With a token chosen, the requests are sent with it: News through the Contents
+  API and the update download through the release-assets API, since both honour a token. A request
+  that fails with the token is tried once more without it, so an expired token never stops updates.
+- **No environment variable.** FE-Buddy 3 does not read `FEBUDDY_GITHUB_TOKEN`.

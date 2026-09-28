@@ -107,8 +107,8 @@ FE-Buddy only writes data inside (or crossing) it. Make it a little bigger than 
 **STAR** - Standard Terminal Arrival: a published arrival route into an airport.
 
 **Sub-service** - One kind of data the AIRAC Service can produce: Airports, Airways, Departures,
-Arrivals, NAVAIDs, ARTCC Boundaries, Fixes, Wx Stations, Procedures or Telephony. Each has its own
-tab and settings.
+Arrivals, NAVAIDs, ARTCC Boundaries, Fixes, Wx Stations, Procedures, Telephony or vNAS Alias
+Upload. Each has its own tab and settings.
 
 **Telephony** - The sub-service that writes `Telephony.txt`: a `.id` command for every operator's
 three-letter designator or identifier, and another for its telephony (the spoken call sign), from
@@ -120,8 +120,16 @@ like Wx Stations and Procedures, its data isn't the NASR cycle. See the
 In CRC, these are GeoJSON files.
 
 **vNAS** - VATSIM's system for ARTCC facility data. You upload the files FE-Buddy makes to vNAS
-for CRC to use. The files you mark for vNAS on a sub-service tab are written to an
-`Upload_to_vNAS` folder, ready to upload.
+for CRC to use. The files you mark for vNAS on a sub-service tab go in an `Upload_to_vNAS` folder,
+ready to upload: GeoJSON files as they are, alias files merged into **`vNAS_Alias.txt`**.
+
+**vNAS Alias Upload** - The sub-service that puts your facility's own alias files (custom alias
+files, on your PC or on the web) at the top of `vNAS_Alias.txt`. See the
+[user guide](User-Guide.md#vnas-alias-upload-tab).
+
+**`vNAS_Alias.txt`** - The one alias file a facility uploads to vNAS, written to `Upload_to_vNAS`:
+your custom alias files first (with vNAS Alias Upload), then a marker line, then every FE-Buddy
+alias file you marked for vNAS. Everything below the marker line is replaced every cycle.
 
 **Wx Stations** - The sub-service that draws a symbol and a two-line label for every US (and
 territory) station that reports METAR. Like Procedures and Telephony, its data isn't the NASR

@@ -15,9 +15,10 @@ namespace FeBuddy.Core.Application.Updates;
 /// </summary>
 /// <remarks>
 /// The same design as FE-Buddy 2.x's updater: the download goes to the temporary workspace
-/// (<c>%TEMP%\FE-Buddy\Updates</c>, cleared on every launch) and tries the public asset URL first;
-/// only if that fails, and only if the user chose a GitHub token (<see cref="GitHubAuth"/>), it
-/// retries once through the authenticated releases-assets API.
+/// (<c>%TEMP%\FE-Buddy\Updates</c>, cleared on every launch). When the user chose a GitHub token
+/// (<see cref="GitHubAuth"/>), it comes through the releases-assets API with that token, and a
+/// failed download with it is tried once more from the public asset URL; otherwise it comes from
+/// the public asset URL.
 /// </remarks>
 public static class UpdateInstaller
 {
@@ -65,15 +66,27 @@ public static class UpdateInstaller
 		{
 			AppLog.Info(LogSource, $"Downloading {fileName} from {installer.DownloadUrl}.");
 
-			try
+			// With a token, the installer comes through the release-assets API, which honours it; a
+			// failed download with it is tried once more from the public link, without it.
+			bool downloaded = false;
+
+			if (installer.AssetId > 0 && GitHubAuth.GetOptionalToken() is { } token)
+			{
+				try
+				{
+					await DownloadToFileAsync(client, AssetApiUrl + installer.AssetId, token, installer.SizeBytes, destination, progress, cancellationToken)
+						.ConfigureAwait(false);
+					downloaded = true;
+				}
+				catch (HttpRequestException ex)
+				{
+					AppLog.Warning(LogSource, $"Downloading with {GitHubAuth.TokenDescription} failed ({ex.Message}); trying the public link without it.");
+				}
+			}
+
+			if (!downloaded)
 			{
 				await DownloadToFileAsync(client, installer.DownloadUrl, token: null, installer.SizeBytes, destination, progress, cancellationToken)
-					.ConfigureAwait(false);
-			}
-			catch (HttpRequestException ex) when (installer.AssetId > 0 && GitHubAuth.GetOptionalToken() is { } token)
-			{
-				AppLog.Info(LogSource, $"Public download failed ({ex.Message}); retrying with {GitHubAuth.TokenDescription}.");
-				await DownloadToFileAsync(client, AssetApiUrl + installer.AssetId, token, installer.SizeBytes, destination, progress, cancellationToken)
 					.ConfigureAwait(false);
 			}
 

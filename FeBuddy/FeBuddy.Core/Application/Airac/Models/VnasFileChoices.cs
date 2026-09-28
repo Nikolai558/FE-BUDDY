@@ -13,9 +13,10 @@ namespace FeBuddy.Core.Application.Airac.Models;
 /// keys in its <c>*OutputFiles</c> class. Keys match ignoring case.
 /// </para>
 /// <para>
-/// A file marked for vNAS is written under <c>Upload_to_vNAS</c> (see
-/// <see cref="AiracOutputPaths"/>). CRC-ERAM defaults are only ever written to files marked for
-/// vNAS: CRC reads its maps from vNAS, so defaults anywhere else would never be used.
+/// A GeoJSON file marked for vNAS is written under <c>Upload_to_vNAS</c>; an alias file marked for
+/// vNAS is copied into <c>Upload_to_vNAS\vNAS_Alias.txt</c> (see <see cref="AiracOutputPaths"/>).
+/// CRC-ERAM defaults are only ever written to files marked for vNAS: CRC reads its maps from vNAS,
+/// so defaults anywhere else would never be used.
 /// </para>
 /// </remarks>
 public sealed class VnasFileChoices
@@ -51,7 +52,7 @@ public sealed class VnasFileChoices
 
 	/// <summary>Whether a file is marked for vNAS.</summary>
 	/// <param name="fileKey">The file's key.</param>
-	/// <returns><see langword="true"/> when it goes under <c>Upload_to_vNAS</c>.</returns>
+	/// <returns><see langword="true"/> when it goes to vNAS.</returns>
 	public bool IsUploaded(string fileKey) => UploadFiles.Contains(fileKey);
 
 	/// <summary>Whether a file gets CRC-ERAM defaults.</summary>

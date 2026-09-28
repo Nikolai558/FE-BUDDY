@@ -1,5 +1,13 @@
 using FeBuddy.Wpf.ViewModels.ServiceTabs.Models;
 
+using FeBuddy.Core.Application.Airac.Airports;
+using FeBuddy.Core.Application.Airac.Airways;
+using FeBuddy.Core.Application.Airac.Arrivals;
+using FeBuddy.Core.Application.Airac.Departures;
+using FeBuddy.Core.Application.Airac.Navaids;
+using FeBuddy.Core.Application.Airac.Procedures;
+using FeBuddy.Core.Application.Airac.Telephony;
+
 namespace FeBuddy.Wpf.ViewModels;
 
 /// <summary>
@@ -53,18 +61,22 @@ public static class AiracSubServices
 	/// <summary>The Telephony sub-service key.</summary>
 	public const string TelephonyKey = "Telephony";
 
+	/// <summary>The vNAS Alias Upload sub-service key.</summary>
+	public const string VnasAliasKey = "VnasAlias";
+
 	/// <summary>Every sub-service, in the order the picker and the tab rail show them.</summary>
 	public static IReadOnlyList<SubServiceDescriptor> All { get; } =
 	[
-		new SubServiceDescriptor(AirportsKey, "Airports", 10, true, () => new AirportsViewModel()),
-		new SubServiceDescriptor(AirwaysKey, "Airways", 20, true, () => new AirwaysViewModel()),
-		new SubServiceDescriptor(DeparturesKey, "Departures", 30, true, () => new DeparturesViewModel()),
-		new SubServiceDescriptor(ArrivalsKey, "Arrivals", 40, true, () => new ArrivalsViewModel()),
-		new SubServiceDescriptor(NavaidsKey, "NAVAIDs", 50, true, () => new NavaidsViewModel()),
+		new SubServiceDescriptor(AirportsKey, "Airports", 10, true, () => new AirportsViewModel(), AirportOutputFiles.Alias),
+		new SubServiceDescriptor(AirwaysKey, "Airways", 20, true, () => new AirwaysViewModel(), AirwayOutputFiles.Alias),
+		new SubServiceDescriptor(DeparturesKey, "Departures", 30, true, () => new DeparturesViewModel(), DepartureOutputFiles.Alias),
+		new SubServiceDescriptor(ArrivalsKey, "Arrivals", 40, true, () => new ArrivalsViewModel(), ArrivalOutputFiles.Alias),
+		new SubServiceDescriptor(NavaidsKey, "NAVAIDs", 50, true, () => new NavaidsViewModel(), NavaidOutputFiles.Alias),
 		new SubServiceDescriptor(ArtccBoundariesKey, "ARTCC Boundaries", 60, true, () => new ArtccBoundariesViewModel()),
 		new SubServiceDescriptor(FixesKey, "Fixes", 70, true, () => new FixesViewModel()),
 		new SubServiceDescriptor(WxStationsKey, "Wx Stations", 80, true, () => new WxStationsViewModel()),
-		new SubServiceDescriptor(ProceduresKey, "Procedures", 90, true, () => new ProceduresViewModel()),
-		new SubServiceDescriptor(TelephonyKey, "Telephony", 100, true, () => new TelephonyViewModel()),
+		new SubServiceDescriptor(ProceduresKey, "Procedures", 90, true, () => new ProceduresViewModel(), ProcedureOutputFiles.Alias),
+		new SubServiceDescriptor(TelephonyKey, "Telephony", 100, true, () => new TelephonyViewModel(), TelephonyOutputFiles.Alias),
+		new SubServiceDescriptor(VnasAliasKey, "vNAS Alias Upload", 110, true, () => new VnasAliasViewModel()),
 	];
 }

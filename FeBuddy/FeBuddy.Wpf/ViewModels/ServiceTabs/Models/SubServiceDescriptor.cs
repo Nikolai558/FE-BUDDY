@@ -21,9 +21,14 @@ namespace FeBuddy.Wpf.ViewModels.ServiceTabs.Models;
 /// layout is exercised and the user can see it is coming), but it contributes nothing to a run.
 /// </param>
 /// <param name="CreateTab">Builds the tab view-model. Called once, the first time it is selected.</param>
+/// <param name="AliasFileName">
+/// The alias file the sub-service can write (e.g. <c>Airways.txt</c>), or <see langword="null"/> when it
+/// writes none. The vNAS Alias Upload tab lists these, to show which go into <c>vNAS_Alias.txt</c>.
+/// </param>
 public sealed record SubServiceDescriptor(
 	string Key,
 	string DisplayName,
 	int Order,
 	bool IsImplemented,
-	Func<ServiceTabViewModel> CreateTab);
+	Func<ServiceTabViewModel> CreateTab,
+	string? AliasFileName = null);

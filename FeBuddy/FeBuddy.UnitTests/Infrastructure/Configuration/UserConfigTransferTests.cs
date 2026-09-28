@@ -450,6 +450,36 @@ public sealed class UserConfigTransferTests : IDisposable
 		Assert.Empty(plan.SkippedFolders);
 	}
 
+	/// <summary>A custom alias file is taken, made this user's, only when that file is on this PC.</summary>
+	[Fact]
+	public void plan_takes_a_file_only_when_it_exists_here()
+	{
+		const string Found = "Services.AiracService.VnasAlias.Sources.1.FilePath";
+		const string Missing = "Services.AiracService.VnasAlias.Sources.2.FilePath";
+		const string Remote = "Services.AiracService.VnasAlias.Sources.3.FilePath";
+
+		UserConfigImportPlan plan = UserConfigTransfer.Plan(
+			Package(new()
+			{
+				[Found] = @"%USERPROFILE%\Documents\ZOB-Alias.txt",
+				[Missing] = @"D:\Nowhere\Alias.txt",
+				[Remote] = @"\\server\share\Alias.txt",
+			}),
+			new Dictionary<string, string> { [Missing] = @"C:\Mine\Alias.txt" },
+			Bob,
+			directoryExists: _ => throw new InvalidOperationException("a file is never checked as a folder"),
+			fileExists: path => path == @"C:\Users\bob\Documents\ZOB-Alias.txt");
+
+		Assert.Equal(@"C:\Users\bob\Documents\ZOB-Alias.txt", plan.Settings[Found]);
+		Assert.Equal(@"C:\Mine\Alias.txt", plan.Settings[Missing]);
+		Assert.False(plan.Settings.ContainsKey(Remote));
+
+		Assert.Equal("Custom alias file 1", Assert.Single(plan.AppliedFolders).Label);
+		Assert.Equal(
+			[("Custom alias file 2", "is not found on this PC"), ("Custom alias file 3", "is not a file on a drive of this PC")],
+			plan.SkippedFolders.Select(f => (f.Label, f.Note)));
+	}
+
 	/// <summary>The public overload plans against the live config and this PC's folders.</summary>
 	[Fact]
 	public void plan_of_the_live_config_uses_it()

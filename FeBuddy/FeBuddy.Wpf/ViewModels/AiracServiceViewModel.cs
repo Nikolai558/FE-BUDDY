@@ -68,6 +68,17 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 		AiracCycleDataCache.Instance.StateChanged += (_, _) => _dispatcher.BeginInvoke(RefreshReadiness);
 		AppEnvironment.Changed += (_, _) => _dispatcher.BeginInvoke(RefreshReadiness);
 
+		// The vNAS Alias Upload tab lists what the other tabs put into vNAS_Alias.txt, and is only valid
+		// when something goes in; re-read it whenever the user moves between tabs, so its list and its
+		// dot in the rail follow edits made elsewhere.
+		PropertyChanged += (_, e) =>
+		{
+			if (e.PropertyName == nameof(SelectedTab))
+			{
+				VnasAliasTab?.RefreshFeBuddyAliasFiles();
+			}
+		};
+
 		SyncSubServiceTabs();
 		RefreshReadiness();
 		_ = LoadCycleDataAsync();
@@ -131,6 +142,9 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 	/// <summary>The Telephony tab while it is open, otherwise <see langword="null"/>.</summary>
 	private TelephonyViewModel? TelephonyTab => TabFor<TelephonyViewModel>(AiracSubServices.TelephonyKey);
 
+	/// <summary>The vNAS Alias Upload tab while it is open, otherwise <see langword="null"/>.</summary>
+	private VnasAliasViewModel? VnasAliasTab => TabFor<VnasAliasViewModel>(AiracSubServices.VnasAliasKey);
+
 	/// <summary>The open tabs that take part in a run.</summary>
 	private IReadOnlyList<ISubServiceRunTarget> RunTargets =>
 		[.. Tabs.OfType<ISubServiceRunTarget>()];
@@ -176,6 +190,13 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 						target.LoadCycleDependentLists(data);
 					}
 				}
+
+				if (tab is VnasAliasViewModel vnasAlias)
+				{
+					vnasAlias.AttachToService(
+						descriptor => TabFor<ServiceTabViewModel>(descriptor.Key),
+						shown => SelectedTab = shown);
+				}
 			}
 
 			open.Add(tab);
@@ -184,6 +205,7 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 		RebuildTabs(open);
 		RefreshDownloadedDataStatus();
 		RefreshProceduresData();
+		VnasAliasTab?.RefreshFeBuddyAliasFiles();
 	}
 
 	private void RefreshReadiness()
@@ -305,6 +327,9 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 	/// </summary>
 	private async Task RunAsync()
 	{
+		// The vNAS Alias Upload tab's validity depends on what the other tabs tick for vNAS.
+		VnasAliasTab?.RefreshFeBuddyAliasFiles();
+
 		if (!TrySaveDirtyTabs() || !EnsureNoInvalidTabs())
 		{
 			return;
@@ -341,6 +366,7 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 			WxStations = WxStationsTab?.BuildSettingsBlock(),
 			Procedures = ProceduresTab?.BuildSettingsBlock(),
 			Telephony = TelephonyTab?.BuildSettingsBlock(),
+			VnasAlias = VnasAliasTab?.BuildSettingsBlock(),
 		};
 
 		if (AiracService.HasExistingOutput(settings))
@@ -533,6 +559,11 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 			files.Add(duplicateAliasReport.FilePath);
 		}
 
+		if (result.VnasAlias?.FilePath is { } vnasAlias)
+		{
+			files.Add(vnasAlias);
+		}
+
 		return [.. files];
 	}
 
@@ -606,6 +637,11 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 		if (result.Telephony is { AliasFilePath: not null } telephony)
 		{
 			parts.Add($"{telephony.AliasCommandCount:N0} telephony command(s)");
+		}
+
+		if (result.VnasAlias is { FilePath: not null } vnasAlias)
+		{
+			parts.Add($"{AiracOutputPaths.VnasAliasFileName} ({vnasAlias.CustomCommandCount + vnasAlias.FeBuddyCommandCount:N0} command(s))");
 		}
 
 		if (result.DuplicateAliasReport is { Duplicates.Count: > 0 } duplicateAliasReport)

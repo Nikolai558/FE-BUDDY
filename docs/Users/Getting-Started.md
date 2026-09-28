@@ -44,7 +44,9 @@ Open **Settings**:
 2. On the **General** tab, leave the cycle on **Current** and tick **Airways** (tick others too if
    you like). A tab for each one appears in the rail on the left.
 3. Open the **Airways** tab. The defaults are sensible. Near the end, the **Upload to vNAS** card
-   lets you tick the files you will upload to vNAS; they go in their own `Upload_to_vNAS` folder.
+   lets you tick the files you will upload to vNAS: a GeoJSON file goes in the `Upload_to_vNAS`
+   folder, and an alias file is added to `Upload_to_vNAS\vNAS_Alias.txt` (tick **vNAS Alias
+   Upload** on the General tab to put your facility's own aliases at the top of it).
    If you tick a GeoJSON file, choose whether it gets CRC-ERAM defaults, and fill every box on the
    **CRC ERAM Defaults** card that appears. Press **Save**.
 4. Open **Preview Settings**. It spells out what the run will do and where. Press **Run AIRAC

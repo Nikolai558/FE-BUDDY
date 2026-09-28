@@ -11,7 +11,7 @@ namespace FeBuddy.UnitTests.Application.Airac.ArtccBoundaries;
 
 /// <summary>
 /// Covers <see cref="ArtccBoundaryBuilder.Read"/>: ring splitting by <c>POINT_SEQ</c> (never by
-/// sorting), closing a ring exactly once, skipping a degenerate ring, an unrecognized
+/// sorting) and by "POINT OF BEGINNING" in <c>BNDRY_PT_DESCRIP</c>, closing a ring exactly once, skipping a degenerate ring, an unrecognized
 /// <c>ALTITUDE</c>, a LocationId with no <c>ARB_BASE</c> row, field trimming/casing, and the final
 /// ordering.
 /// </summary>
@@ -77,6 +77,88 @@ public sealed class ArtccBoundaryBuilderTests
 		Assert.Equal(2, result.Rings.Count);
 		Assert.Equal([40.0, 41.0], result.Rings[0].Points.Take(2).Select(p => p.Latitude));
 		Assert.Equal([42.0, 43.0], result.Rings[1].Points.Take(2).Select(p => p.Latitude));
+	}
+
+	[Fact]
+	public void point_of_beginning_ends_a_ring_even_when_point_seq_keeps_increasing()
+	{
+		// Two triangles numbered in one unbroken POINT_SEQ run, as NASR publishes ZOA's UNLIMITED
+		// UTA rings: only the description says where the first ends.
+		NasrCsvDataCollection data = ArtccBoundaryTestData.Build(
+			[ArtccBoundaryTestData.ZobBaseRow()],
+			[
+				ArtccBoundaryTestData.SegRow("ZOB", "UNLIMITED", "UTA", 10, 20.0, 150.0, description: "SAMPLE UTA."),
+				ArtccBoundaryTestData.SegRow("ZOB", "UNLIMITED", "UTA", 20, 20.0, 152.0, description: "TO"),
+				ArtccBoundaryTestData.SegRow("ZOB", "UNLIMITED", "UTA", 30, 22.0, 151.0, description: "TO POINT OF BEGINNING."),
+				ArtccBoundaryTestData.SegRow("ZOB", "UNLIMITED", "UTA", 40, 25.0, 160.0, description: "SAMPLE UTA."),
+				ArtccBoundaryTestData.SegRow("ZOB", "UNLIMITED", "UTA", 50, 25.0, 162.0, description: "TO"),
+				ArtccBoundaryTestData.SegRow("ZOB", "UNLIMITED", "UTA", 60, 27.0, 161.0, description: "TO POINT OF BEGINNING"),
+			]);
+
+		ArtccBoundaryBuildAllResult result = ArtccBoundaryBuilder.Read(data);
+
+		Assert.Equal(2, result.Rings.Count);
+		Assert.Equal([20.0, 20.0, 22.0, 20.0], result.Rings[0].Points.Select(p => p.Latitude));
+		Assert.Equal([25.0, 25.0, 27.0, 25.0], result.Rings[1].Points.Select(p => p.Latitude));
+		Assert.Empty(result.Messages);
+	}
+
+	[Theory]
+	[InlineData("to point of beginning")]
+	[InlineData("COMMON SAMPLE ARTCC /TO POINT OF BEGINNING")]
+	[InlineData("TO POINT OF BEGINNING. EXCLUDING A SAMPLE AREA. SAMPLE ALSO INCLUDES THE FOLLOWING AREA:")]
+	public void point_of_beginning_is_matched_anywhere_in_the_description_ignoring_case(string description)
+	{
+		NasrCsvDataCollection data = ArtccBoundaryTestData.Build(
+			[ArtccBoundaryTestData.ZobBaseRow()],
+			[
+				ArtccBoundaryTestData.SegRow("ZOB", "HIGH", "ARTCC", 10, 40.0, -81.0),
+				ArtccBoundaryTestData.SegRow("ZOB", "HIGH", "ARTCC", 20, 41.0, -82.0),
+				ArtccBoundaryTestData.SegRow("ZOB", "HIGH", "ARTCC", 30, 40.0, -83.0, description: description),
+				ArtccBoundaryTestData.SegRow("ZOB", "HIGH", "ARTCC", 40, 30.0, -81.0),
+				ArtccBoundaryTestData.SegRow("ZOB", "HIGH", "ARTCC", 50, 31.0, -82.0),
+				ArtccBoundaryTestData.SegRow("ZOB", "HIGH", "ARTCC", 60, 30.0, -83.0),
+			]);
+
+		ArtccBoundaryBuildAllResult result = ArtccBoundaryBuilder.Read(data);
+
+		Assert.Equal(2, result.Rings.Count);
+	}
+
+	[Fact]
+	public void a_description_naming_the_beginning_of_a_boundary_does_not_end_a_ring()
+	{
+		NasrCsvDataCollection data = ArtccBoundaryTestData.Build(
+			[ArtccBoundaryTestData.ZobBaseRow()],
+			[
+				ArtccBoundaryTestData.SegRow("ZOB", "HIGH", "ARTCC", 10, 40.0, -81.0, description: "BEGINNING OF SAMPLE CTA/FIR (SCTR A), COMMON SAMPLE ARTCC TO"),
+				ArtccBoundaryTestData.SegRow("ZOB", "HIGH", "ARTCC", 20, 41.0, -82.0, description: "TO"),
+				ArtccBoundaryTestData.SegRow("ZOB", "HIGH", "ARTCC", 30, 40.0, -83.0, description: "TO POINT OF BEGINNING"),
+			]);
+
+		ArtccBoundaryRing ring = Assert.Single(ArtccBoundaryBuilder.Read(data).Rings);
+
+		Assert.Equal(4, ring.Points.Count);
+	}
+
+	[Fact]
+	public void point_of_beginning_followed_by_a_point_seq_reset_starts_only_one_new_ring()
+	{
+		NasrCsvDataCollection data = ArtccBoundaryTestData.Build(
+			[ArtccBoundaryTestData.ZakBaseRow()],
+			[
+				ArtccBoundaryTestData.SegRow("ZAK", "UNLIMITED", "CTA", 10, 30.0, 170.0),
+				ArtccBoundaryTestData.SegRow("ZAK", "UNLIMITED", "CTA", 20, 31.0, 179.0),
+				ArtccBoundaryTestData.SegRow("ZAK", "UNLIMITED", "CTA", 30, 30.0, -179.0, description: "TO POINT OF BEGINNING."),
+				ArtccBoundaryTestData.SegRow("ZAK", "UNLIMITED", "FIR", 10, 35.0, 170.0),
+				ArtccBoundaryTestData.SegRow("ZAK", "UNLIMITED", "FIR", 20, 36.0, 179.0),
+				ArtccBoundaryTestData.SegRow("ZAK", "UNLIMITED", "FIR", 30, 35.0, -179.0, description: "TO POINT OF BEGINNING."),
+			]);
+
+		ArtccBoundaryBuildAllResult result = ArtccBoundaryBuilder.Read(data);
+
+		Assert.Equal(["CTA", "FIR"], result.Rings.Select(r => r.Type));
+		Assert.Empty(result.Messages);
 	}
 
 	[Fact]

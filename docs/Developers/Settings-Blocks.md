@@ -269,7 +269,9 @@ naming the key.
   LocationIds with `ARB_SEG` rows draw a boundary - the Canadian, foreign and CERAP entries
   `ARB_BASE` also publishes have none. Within one LocationId and altitude, a new ring starts
   wherever `POINT_SEQ` drops back to a low value - ZAK, ZAP and ZWY each have a CTA ring and a FIR
-  ring - and each ring is closed back to its own first point.
+  ring - and after any point described as running "TO POINT OF BEGINNING" (ZOA's UNLIMITED group
+  is four UTA rings, ZMA's two CTA/FIR sectors, all in one `POINT_SEQ` run). Each ring is closed
+  back to its own first point.
 - `LocationFilter` limits the GeoJSON only; there is no alias file for it to limit.
 
 ## Fixes

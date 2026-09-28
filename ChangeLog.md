@@ -20,6 +20,8 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
   Both - instead of FE-Buddy guessing from published altitudes, which put V airways the FAA also
   publishes in Hawaii (V6, V8, V23, …) on the high map. J and Q start in High, V and T in Low; any
   other type needs your choice. The `Airways_Other` files are gone.
+- ARTCC boundaries made of several separate areas (ZOA's UNLIMITED UTA areas, ZMA's UNLIMITED
+  CTA/FIR sectors) are drawn as separate shapes again, instead of one line zig-zagging between them.
 
 ## 3.0.0-alpha.1
 - FE-BUDDY 3.0 is a from-scratch rewrite with a new interface. This first alpha is for testers:

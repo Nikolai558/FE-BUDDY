@@ -8,7 +8,8 @@ namespace FeBuddy.Core.Domain.ArtccBoundaries.Models;
 /// <remarks>
 /// A single (LocationId, Altitude) group can hold more than one ring - e.g. ZAK's UNLIMITED
 /// group is a CTA ring followed by a FIR ring - which <c>ArtccBoundaryBuilder</c> tells apart by
-/// <c>ARB_SEG.POINT_SEQ</c> resetting to a lower value.
+/// <c>ARB_SEG.POINT_SEQ</c> resetting to a lower value, or by a row's
+/// <c>ARB_SEG.BNDRY_PT_DESCRIP</c> running "TO POINT OF BEGINNING".
 /// </remarks>
 public sealed class ArtccBoundaryRing
 {

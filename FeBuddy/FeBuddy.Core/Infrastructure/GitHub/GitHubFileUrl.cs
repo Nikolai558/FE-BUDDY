@@ -16,10 +16,16 @@ namespace FeBuddy.Core.Infrastructure.GitHub;
 /// <code>
 /// https://github.com/{owner}/{repo}/blob/{branch}/{path}
 /// https://github.com/{owner}/{repo}/raw/{branch}/{path}
+/// https://github.com/{owner}/{repo}/raw/refs/heads/{branch}/{path}      (GitHub's own Raw button)
 /// https://raw.githubusercontent.com/{owner}/{repo}/{branch}/{path}
 /// https://raw.githubusercontent.com/{owner}/{repo}/refs/heads/{branch}/{path}
 ///   → https://api.github.com/repos/{owner}/{repo}/contents/{path}?ref={branch}
 /// </code>
+/// <para>
+/// <c>blob</c> addresses can carry <c>refs/heads/</c> too, and a tag reads the same way as a branch,
+/// through <c>refs/tags/{tag}</c> or as the plain name. The branch goes in the query escaped, so a name
+/// with <c>&amp;</c>, <c>+</c> or <c>#</c> in it still names that branch.
+/// </para>
 /// <para>
 /// A branch name with a <c>/</c> in it cannot be told apart from the path in these addresses; the
 /// first part is taken as the branch, as GitHub's own links do for most repositories.
@@ -54,31 +60,18 @@ public static class GitHubFileUrl
 		string[] parts = url.AbsolutePath.Split('/', StringSplitOptions.RemoveEmptyEntries);
 		string host = url.Host.ToLowerInvariant();
 
-		// {owner}/{repo}/blob|raw/{branch}/{path...}
+		// {owner}/{repo}/blob|raw/{ref}/{path...}
 		if ((host is WebHost or WwwHost)
-			&& parts.Length >= 5
+			&& parts.Length >= 3
 			&& (parts[2].Equals("blob", StringComparison.OrdinalIgnoreCase) || parts[2].Equals("raw", StringComparison.OrdinalIgnoreCase)))
 		{
-			return Build(parts[0], parts[1], parts[3], parts[4..]);
+			return FromRef(parts[0], parts[1], parts[3..]);
 		}
 
-		if (host == RawHost)
+		// {owner}/{repo}/{ref}/{path...}
+		if (host == RawHost && parts.Length >= 2)
 		{
-			bool isRefsForm = parts.Length >= 4
-				&& parts[2].Equals("refs", StringComparison.OrdinalIgnoreCase)
-				&& parts[3].Equals("heads", StringComparison.OrdinalIgnoreCase);
-
-			// {owner}/{repo}/refs/heads/{branch}/{path...}
-			if (isRefsForm)
-			{
-				return parts.Length >= 6 ? Build(parts[0], parts[1], parts[4], parts[5..]) : null;
-			}
-
-			// {owner}/{repo}/{branch}/{path...}
-			if (parts.Length >= 4)
-			{
-				return Build(parts[0], parts[1], parts[2], parts[3..]);
-			}
+			return FromRef(parts[0], parts[1], parts[2..]);
 		}
 
 		return null;
@@ -100,8 +93,29 @@ public static class GitHubFileUrl
 			&& ToContentsApi(url) is null;
 	}
 
-	/// <summary>The contents endpoint for one file. The parts are still escaped, as they came in the address.</summary>
+	/// <summary>
+	/// The contents endpoint for the part of an address from the branch on: <c>{branch}/{path...}</c>,
+	/// or <c>refs/heads/{branch}/{path...}</c> (<c>refs/tags/{tag}/…</c> for a tag). <see langword="null"/>
+	/// when there is no path after the branch - a folder, not a file.
+	/// </summary>
+	private static Uri? FromRef(string owner, string repo, string[] rest)
+	{
+		bool isRefsForm = rest.Length >= 2
+			&& rest[0].Equals("refs", StringComparison.OrdinalIgnoreCase)
+			&& (rest[1].Equals("heads", StringComparison.OrdinalIgnoreCase) || rest[1].Equals("tags", StringComparison.OrdinalIgnoreCase));
+
+		string[] fromBranch = isRefsForm ? rest[2..] : rest;
+
+		return fromBranch.Length >= 2 ? Build(owner, repo, fromBranch[0], fromBranch[1..]) : null;
+	}
+
+	/// <summary>
+	/// The contents endpoint for one file. The owner, repository and path stay escaped, as they came
+	/// in the address; the branch is escaped again for the query, where <c>&amp;</c>, <c>+</c> and
+	/// <c>#</c> mean something else.
+	/// </summary>
 	private static Uri Build(string owner, string repo, string branch, string[] path) =>
-		new($"https://{CredentialHosts.GitHubApiHost}/repos/{owner}/{repo}/contents/{string.Join('/', path)}?ref={branch}");
+		new($"https://{CredentialHosts.GitHubApiHost}/repos/{owner}/{repo}/contents/{string.Join('/', path)}" +
+			$"?ref={Uri.EscapeDataString(Uri.UnescapeDataString(branch))}");
 }
 

@@ -51,7 +51,7 @@ public static class AiracOutputCatalog
 	/// one per procedure under <c>&lt;ARTCC&gt;\&lt;airport&gt;</c>), all in name order.
 	/// </summary>
 	/// <param name="cycleDirectory">The cycle's folder, from <see cref="AiracOutputPaths.CycleDirectory"/>.</param>
-	/// <returns>The files; empty when neither folder exists or they cannot be read.</returns>
+	/// <returns>The files; empty when neither folder exists or they cannot be read. A sub-folder that cannot be read is skipped.</returns>
 	public static IReadOnlyList<AiracOutputGeojsonFile> FindGeojsonFiles(string cycleDirectory)
 	{
 		List<AiracOutputGeojsonFile> files = [];
@@ -71,8 +71,10 @@ public static class AiracOutputCatalog
 				return;
 			}
 
+			// Sub-folders that cannot be read are skipped, rather than losing every other file with them.
 			string root = Path.GetFullPath(folder);
-			into.AddRange(new DirectoryInfo(root).EnumerateFiles("*.geojson", SearchOption.AllDirectories)
+			EnumerationOptions everyFolder = new() { RecurseSubdirectories = true, IgnoreInaccessible = true };
+			into.AddRange(new DirectoryInfo(root).EnumerateFiles("*.geojson", everyFolder)
 				.Select(file => (File: file, SubFolder: Path.GetRelativePath(root, file.DirectoryName!)))
 				.Select(f => new AiracOutputGeojsonFile(
 					f.File.FullName,

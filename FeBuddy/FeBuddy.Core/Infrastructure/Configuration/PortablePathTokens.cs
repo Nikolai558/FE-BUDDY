@@ -76,6 +76,16 @@ public sealed class PortablePathTokens
 		return trimmed;
 	}
 
+	/// <summary>
+	/// Whether <paramref name="value"/> starts with one of the tokens - that is, it stands for a folder
+	/// inside the user's own Desktop, Documents or profile.
+	/// </summary>
+	/// <param name="value">A folder as it appears in a settings file.</param>
+	/// <returns><see langword="true"/> when it starts with a token.</returns>
+	public static bool StartsWithToken(string? value) =>
+		!string.IsNullOrWhiteSpace(value)
+		&& new[] { DesktopToken, DocumentsToken, UserProfileToken }.Any(token => TryStripPrefix(value.Trim(), token, out _));
+
 	/// <summary>Swaps a leading token in <paramref name="value"/> for this user's folder.</summary>
 	/// <param name="value">A path that may start with a token.</param>
 	/// <returns>The expanded path; or the value unchanged when it starts with no known token.</returns>

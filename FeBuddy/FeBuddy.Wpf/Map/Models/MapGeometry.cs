@@ -7,8 +7,9 @@ namespace FeBuddy.Wpf.Map.Models;
 /// <param name="kind">What the shape is drawn as.</param>
 /// <param name="parts">The coordinate runs.</param>
 /// <param name="label">
-/// Text to draw at a point (a vNAS text feature's <c>text</c> lines, joined), or
-/// <see langword="null"/> for none. A labelled point is drawn as its text rather than a dot.
+/// Text to draw at a point (a vNAS text feature's <c>text</c> lines, joined, or an airport's ID),
+/// or <see langword="null"/> for none. A labelled point is drawn as its text rather than a dot,
+/// unless its layer draws labels beside their symbols (<see cref="MapLayer.LabelBesideSymbol"/>).
 /// </param>
 public sealed class MapGeometry(MapGeometryKind kind, IReadOnlyList<IReadOnlyList<GeoPoint>> parts, string? label = null)
 {

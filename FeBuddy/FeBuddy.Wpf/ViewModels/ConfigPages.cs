@@ -31,10 +31,16 @@ public static class ConfigPages
 	/// <remarks>
 	/// Works on a copy of the list: a page that reloads can open tabs, which register as they are
 	/// built (and read the new file themselves). One page failing to reload is logged, not allowed
-	/// to stop the rest.
+	/// to stop the rest, and named in the result so the user can be told.
 	/// </remarks>
-	public static void ReloadAll()
+	/// <returns>
+	/// The names of the pages that could not reload. They still show the settings from before, and
+	/// saving on one would write those back over the new ones.
+	/// </returns>
+	public static IReadOnlyList<string> ReloadAll()
 	{
+		List<string> failed = [];
+
 		foreach (IConfigPage page in Live())
 		{
 			try
@@ -44,8 +50,11 @@ public static class ConfigPages
 			catch (Exception ex)
 			{
 				AppLog.Warning("Settings", $"Could not reload '{page.ConfigPageName}' after the import: {ex.Message}");
+				failed.Add(page.ConfigPageName);
 			}
 		}
+
+		return [.. failed.Distinct(StringComparer.Ordinal)];
 	}
 
 	private static List<IConfigPage> Live() =>

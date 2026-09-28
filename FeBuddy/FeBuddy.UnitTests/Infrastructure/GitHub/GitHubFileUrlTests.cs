@@ -18,11 +18,25 @@ public sealed class GitHubFileUrlTests
 	[InlineData("https://github.com/vZOB/facility/blob/main/aliases/ZOB-Alias.txt?plain=1")]
 	[InlineData("https://raw.githubusercontent.com/vZOB/facility/main/aliases/ZOB-Alias.txt")]
 	[InlineData("https://raw.githubusercontent.com/vZOB/facility/refs/heads/main/aliases/ZOB-Alias.txt")]
+	[InlineData("https://github.com/vZOB/facility/raw/refs/heads/main/aliases/ZOB-Alias.txt")]
+	[InlineData("https://github.com/vZOB/facility/blob/refs/heads/main/aliases/ZOB-Alias.txt")]
 	public void a_file_address_becomes_the_contents_api(string url)
 	{
 		Assert.Equal(Api, GitHubFileUrl.ToContentsApi(new Uri(url))!.AbsoluteUri);
 		Assert.False(GitHubFileUrl.IsPageButNotFile(new Uri(url)));
 	}
+
+	/// <summary>A tag reads like a branch, and a branch name goes into the query escaped, whatever is in it.</summary>
+	[Theory]
+	[InlineData("https://github.com/o/r/raw/refs/tags/v1.2/a.txt", "v1.2")]
+	[InlineData("https://raw.githubusercontent.com/o/r/refs/tags/v1.2/a.txt", "v1.2")]
+	[InlineData("https://github.com/o/r/blob/v1.2/a.txt", "v1.2")]
+	[InlineData("https://github.com/o/r/blob/fix&test/a.txt", "fix%26test")]
+	[InlineData("https://github.com/o/r/blob/a+b/a.txt", "a%2Bb")]
+	[InlineData("https://github.com/o/r/blob/x%23y/a.txt", "x%23y")]
+	[InlineData("https://github.com/o/r/blob/my%20branch/a.txt", "my%20branch")]
+	public void the_branch_or_tag_goes_in_the_query_escaped(string url, string expectedRef) =>
+		Assert.Equal($"https://api.github.com/repos/o/r/contents/a.txt?ref={expectedRef}", GitHubFileUrl.ToContentsApi(new Uri(url))!.AbsoluteUri);
 
 	[Fact]
 	public void an_escaped_path_stays_escaped()
@@ -36,6 +50,8 @@ public sealed class GitHubFileUrlTests
 	[InlineData("https://github.com/Nikolai558/test-repo")]
 	[InlineData("https://github.com/Nikolai558/test-repo/tree/main/aliases")]
 	[InlineData("https://github.com/Nikolai558/test-repo/blob/main")]
+	[InlineData("https://github.com/Nikolai558/test-repo/raw/refs/heads/main")]
+	[InlineData("https://github.com/Nikolai558/test-repo/blob")]
 	[InlineData("https://www.github.com/Nikolai558")]
 	public void a_github_page_that_is_not_a_file_has_no_api_address(string url)
 	{

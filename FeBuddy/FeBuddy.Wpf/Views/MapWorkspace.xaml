@@ -245,7 +245,8 @@
                                    HorizontalOffset="4" VerticalOffset="6"
                                    IsOpen="{Binding State.IsOutputPickerOpen, Mode=TwoWay}"
                                    StaysOpen="False" AllowsTransparency="True" PopupAnimation="Fade">
-                                <ctl:Card Header="Output Files" Style="{StaticResource Card.Popup}" Width="440">
+                                <ctl:Card Header="Output Files" Style="{StaticResource Card.Popup}" Width="440"
+                                          KeyDown="OnOutputPickerKeyDown">
                                     <StackPanel>
                                         <TextBlock Text="{Binding State.OutputDirectory}" Style="{StaticResource Text.Caption}"
                                                    FontFamily="{StaticResource Font.Mono}" TextWrapping="Wrap" Margin="0,0,0,10" />
@@ -343,7 +344,7 @@
                                        Text="Where the home button takes you, and where a map opens the first time. Pan and zoom to your airspace, then set it." />
                             <DockPanel>
                                 <Button DockPanel.Dock="Right" Style="{StaticResource Button.Subtle}" Content="Reset"
-                                        Command="{Binding State.ResetHomeCommand}" ToolTip="Go back to the contiguous US" />
+                                        Command="{Binding State.ResetHomeCommand}" ToolTip="Make the contiguous US your home view again" />
                                 <Button Style="{StaticResource Button.Ghost}" HorizontalAlignment="Left" Click="OnSetHome">
                                     <StackPanel Orientation="Horizontal">
                                         <TextBlock Text="{StaticResource Icon.Pin}" FontFamily="{StaticResource Font.Icon}" VerticalAlignment="Center" Margin="0,0,8,0" />

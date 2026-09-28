@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Net;
 
 using FeBuddy.Core.Application.Airac.VnasAlias.Models;
@@ -14,9 +15,10 @@ namespace FeBuddy.Core.Application.Airac.VnasAlias;
 /// </summary>
 /// <remarks>
 /// <para>
-/// A file that cannot be read never throws: the result says why, in words the user can act on
-/// (a mistyped path, a token GitHub refused, a private repository and no credential, and so on).
-/// The vNAS Alias Upload tab's <b>Check</b> button and the AIRAC run both use it.
+/// A file that cannot be read never throws - not even when Windows Credential Manager cannot be
+/// read, or a download cannot be read as text; only cancelling does. The result says why, in words
+/// the user can act on (a mistyped path, a token GitHub refused, a private repository and no
+/// credential, and so on). The vNAS Alias Upload tab's <b>Check</b> button and the AIRAC run both use it.
 /// </para>
 /// <para>
 /// A credential is added by <see cref="CredentialStore.Authorize"/> only, so it goes over HTTPS to
@@ -126,10 +128,21 @@ public static class AliasSourceLoader
 
 		if (source.CredentialId is { } credentialId)
 		{
-			credentialName = store.Find(credentialId)?.Name;
 			string host = request.RequestUri!.Host;
+			CredentialUseResult use;
 
-			switch (store.Authorize(request, credentialId))
+			try
+			{
+				credentialName = store.Find(credentialId)?.Name;
+				use = store.Authorize(request, credentialId);
+			}
+			catch (Win32Exception ex)
+			{
+				return AliasSourceLoad.Failed(source,
+					$"Windows Credential Manager could not be read, so its credential could not be used: {ex.Message}");
+			}
+
+			switch (use)
 			{
 				case CredentialUseResult.NotFound:
 					return AliasSourceLoad.Failed(source,
@@ -151,7 +164,17 @@ public static class AliasSourceLoader
 
 			if (response.StatusCode == HttpStatusCode.OK)
 			{
-				string text = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+				string text;
+
+				try
+				{
+					text = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+				}
+				catch (InvalidOperationException ex)
+				{
+					// .NET could not turn the download into text, e.g. it names a character set .NET does not know.
+					return AliasSourceLoad.Failed(source, $"{site} sent the file in a form FE-Buddy cannot read as text: {ex.Message}");
+				}
 
 				return IsWebPage(response, text)
 					? AliasSourceLoad.Failed(source,
@@ -162,7 +185,7 @@ public static class AliasSourceLoader
 
 			return AliasSourceLoad.Failed(source, DescribeRefusal(response, site, credentialName, gitHubApi is not null));
 		}
-		catch (HttpRequestException ex)
+		catch (Exception ex) when (ex is HttpRequestException or IOException)
 		{
 			return AliasSourceLoad.Failed(source, $"Could not reach {url.Host}: {ex.Message}");
 		}
@@ -173,10 +196,19 @@ public static class AliasSourceLoader
 	}
 
 	/// <summary>Why a website refused the download, and what to do about it.</summary>
+	/// <remarks>
+	/// GitHub answers 403 for more than a missing permission, so its other reasons are told apart
+	/// first: the hourly limit (<c>x-ratelimit-remaining: 0</c>), a short-term limit on bursts of
+	/// requests (<c>Retry-After</c>), and a token not yet authorized for an organization's single
+	/// sign-on (<c>X-GitHub-SSO</c>).
+	/// </remarks>
 	private static string DescribeRefusal(HttpResponseMessage response, string site, string? credentialName, bool isGitHub)
 	{
 		bool rateLimited = response.Headers.TryGetValues("x-ratelimit-remaining", out IEnumerable<string>? remaining)
 			&& remaining.FirstOrDefault() == "0";
+		bool askedToWait = response.Headers.RetryAfter is not null;
+		bool needsSso = isGitHub && response.Headers.Contains("X-GitHub-SSO");
+		string limited = $"{site} is limiting how often it can be asked right now. Try again in a few minutes.";
 
 		return response.StatusCode switch
 		{
@@ -188,6 +220,11 @@ public static class AliasSourceLoader
 				$"{site} limits downloads made without a token, and the limit has been reached. Choose a GitHub credential for it, or try again in an hour.",
 			HttpStatusCode.Forbidden or HttpStatusCode.TooManyRequests when rateLimited =>
 				$"{site}'s download limit for the credential '{credentialName}' has been reached. Try again later.",
+			HttpStatusCode.TooManyRequests => limited,
+			HttpStatusCode.Forbidden when askedToWait => limited,
+			HttpStatusCode.Forbidden when needsSso && credentialName is not null =>
+				$"GitHub needs the credential '{credentialName}' authorized for this organization's single sign-on (SSO). " +
+				"On GitHub, authorize the token for the organization, then try again.",
 			HttpStatusCode.Forbidden when credentialName is not null =>
 				$"{site} does not let the credential '{credentialName}' read it." +
 				(isGitHub ? " A fine-grained GitHub token needs this repository, with Contents: Read-only." : string.Empty),
@@ -212,7 +249,7 @@ public static class AliasSourceLoader
 			return true;
 		}
 
-		string start = text.TrimStart('﻿', ' ', '\t', '\r', '\n');
+		string start = text.TrimStart('\uFEFF', ' ', '\t', '\r', '\n');
 		return start.StartsWith("<!DOCTYPE html", StringComparison.OrdinalIgnoreCase)
 			|| start.StartsWith("<html", StringComparison.OrdinalIgnoreCase);
 	}
@@ -220,7 +257,7 @@ public static class AliasSourceLoader
 	/// <summary>A file that was read - unless it holds no alias command at all, which means it is not an alias file.</summary>
 	private static AliasSourceLoad Checked(AliasSource source, string text)
 	{
-		text = text.TrimStart('﻿');
+		text = text.TrimStart('\uFEFF');
 
 		return VnasAliasFileWriter.CountCommands(text) > 0
 			? AliasSourceLoad.Read(source, text)

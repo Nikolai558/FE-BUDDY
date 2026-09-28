@@ -1,7 +1,3 @@
-using FeBuddy.Core.Application.Airac.Airports.Models;
-using FeBuddy.Core.Application.Airac.Airways.Models;
-using FeBuddy.Core.Application.Airac.Arrivals.Models;
-using FeBuddy.Core.Application.Airac.Departures.Models;
 using FeBuddy.Core.Application.Airac.WxStations;
 
 namespace FeBuddy.Harness;
@@ -24,9 +20,10 @@ internal static class HarnessSettings
 
 	/// <summary>
 	/// The folder the services write into, as the AIRAC Service's <c>AIRAC_&lt;cycle&gt;</c> folder
-	/// would be: alias files here, GeoJSON in its <c>Geojson</c> folder, and anything marked for
-	/// vNAS under <c>Upload_to_vNAS</c>. The harness calls each service directly, so there is no
-	/// cycle folder of its own.
+	/// would be: alias files in its <c>Aliases</c> folder, GeoJSON in its <c>Geojson</c> folder, and
+	/// GeoJSON marked for vNAS under <c>Upload_to_vNAS</c>. The harness calls each service directly,
+	/// so there is no cycle folder of its own - and no <c>vNAS_Alias.txt</c>: only the AIRAC Service
+	/// merges the alias files marked for vNAS into it.
 	/// </summary>
 	public const string OutputDirectory = @"C:\Users\ksand\Downloads\FE-Buddy-Output";
 
@@ -64,8 +61,9 @@ internal static class HarnessSettings
 			{ "GenerateAliasFile", "Y" },
 			{ "SplitAtAntimeridian", "Y" },
 
-			// Files marked for vNAS go under Upload_to_vNAS; only those in CrcDefaultsFor get the
-			// CRC ERAM defaults Feature, using the Crc.* values added by AddCrcDefaults below.
+			// GeoJSON files marked for vNAS go under Upload_to_vNAS; only those in CrcDefaultsFor get
+			// the CRC ERAM defaults Feature, using the Crc.* values added by AddCrcDefaults below. A
+			// marked alias file stays in Aliases: only the AIRAC Service merges it into vNAS_Alias.txt.
 			{ "UploadToVnas", AirwayHighLowFiles + ",Airways.txt" },
 			{ "CrcDefaultsFor", AirwayHighLowFiles },
 			{ "FilterByRoi", "N" },
@@ -126,8 +124,10 @@ internal static class HarnessSettings
 			{ "IncludeFebCustomProperties", "Y" },
 			{ "FebProperties", "faaId,icaoId,name,elev,respArtcc,tfcPtrnAlt,fssId,twrType,rwyId" },
 
-			// Files marked for vNAS go under Upload_to_vNAS; only those in CrcDefaultsFor get the
-			// CRC ERAM defaults Feature, using the Crc.* values added by AddAirportCrcDefaults below.
+			// GeoJSON files marked for vNAS go under Upload_to_vNAS; only those in CrcDefaultsFor get
+			// the CRC ERAM defaults Feature, using the Crc.* values added by AddAirportCrcDefaults
+			// below. A marked alias file stays in Aliases: only the AIRAC Service merges it into
+			// vNAS_Alias.txt.
 			{ "UploadToVnas", "Runways_Lines,Airports_Symbols,Airports_Text,Airports.txt" },
 			{ "CrcDefaultsFor", "Runways_Lines,Airports_Symbols,Airports_Text" },
 
@@ -196,9 +196,10 @@ internal static class HarnessSettings
 			{ "IncludeFebCustomProperties", "Y" },
 			{ "FebProperties", "dpName,pointId,arptId,artcc,amendmentNo,amendEffDate,waypoints" },
 
-			// Chosen per kind (a run writes thousands of files): each kind listed goes under
+			// Chosen per kind (a run writes thousands of files): each GeoJSON kind listed goes under
 			// Upload_to_vNAS, and only those in CrcDefaultsFor get the CRC ERAM defaults Feature,
-			// using the Crc.Departures.* values added by AddDepartureCrcDefaults below.
+			// using the Crc.Departures.* values added by AddDepartureCrcDefaults below. A marked alias
+			// file stays in Aliases: only the AIRAC Service merges it into vNAS_Alias.txt.
 			{ "UploadToVnas", "Departures_Lines,Departures_Symbols,Departures_Text,Departures.txt" },
 			{ "CrcDefaultsFor", "Departures_Lines,Departures_Symbols,Departures_Text" },
 
@@ -259,9 +260,10 @@ internal static class HarnessSettings
 			{ "IncludeFebCustomProperties", "Y" },
 			{ "FebProperties", "arrivalName,pointId,arptId,artcc,amendmentNo,amendEffDate,waypoints" },
 
-			// Chosen per kind (a run writes thousands of files): each kind listed goes under
+			// Chosen per kind (a run writes thousands of files): each GeoJSON kind listed goes under
 			// Upload_to_vNAS, and only those in CrcDefaultsFor get the CRC ERAM defaults Feature,
-			// using the Crc.Arrivals.* values added by AddArrivalCrcDefaults below.
+			// using the Crc.Arrivals.* values added by AddArrivalCrcDefaults below. A marked alias
+			// file stays in Aliases: only the AIRAC Service merges it into vNAS_Alias.txt.
 			{ "UploadToVnas", "Arrivals_Lines,Arrivals_Symbols,Arrivals_Text,Arrivals.txt" },
 			{ "CrcDefaultsFor", "Arrivals_Lines,Arrivals_Symbols,Arrivals_Text" },
 
@@ -311,9 +313,10 @@ internal static class HarnessSettings
 			{ "IncludeFebCustomProperties", "Y" },
 			{ "FebProperties", "navId,navType,name,freq,lowAltArtccId,highAltArtccId" },
 
-			// Files marked for vNAS go under Upload_to_vNAS; only those in CrcDefaultsFor get the
-			// CRC ERAM defaults Feature, using the Crc.NAVAIDs.* values added by
-			// AddNavaidCrcDefaults below.
+			// GeoJSON files marked for vNAS go under Upload_to_vNAS; only those in CrcDefaultsFor get
+			// the CRC ERAM defaults Feature, using the Crc.NAVAIDs.* values added by
+			// AddNavaidCrcDefaults below. A marked alias file stays in Aliases: only the AIRAC Service
+			// merges it into vNAS_Alias.txt.
 			{ "UploadToVnas", "NAVAIDs_Symbols,NAVAIDs_Text,Navaids.txt" },
 			{ "CrcDefaultsFor", "NAVAIDs_Symbols,NAVAIDs_Text" },
 
@@ -485,7 +488,7 @@ internal static class HarnessSettings
 			{ "GenerateChangesDocument", "Y" },
 			{ "GenerateProceduresJson", "Y" },
 			{ "GenerateAliasFile", "Y" },
-			{ "UploadToVnas", "" },          // "Faa_Chart_Recall.txt" writes it to Upload_to_vNAS instead of Aliases
+			{ "UploadToVnas", "" },          // "Faa_Chart_Recall.txt" marks it for vNAS_Alias.txt (AIRAC Service only); it stays in Aliases
 
 			// Additive inclusion: every ZOB airport (by RESP_ARTCC_ID), plus GRR and CID from
 			// elsewhere - exercises both the whole-facility path and the explicit-airport path in
@@ -515,14 +518,15 @@ internal static class HarnessSettings
 	/// <summary>
 	/// Builds the raw settings dictionary for <c>TelephonyService.Run</c>. The alias file is
 	/// Telephony's only output and covers every operator, so all there is to choose is whether it
-	/// goes to vNAS.
+	/// is marked for vNAS - which only an AIRAC Service run acts on, by merging it into
+	/// <c>vNAS_Alias.txt</c>.
 	/// </summary>
 	public static Dictionary<string, string> TelephonySettings()
 	{
 		Dictionary<string, string> settings = new()
 		{
 			{ "OutputDirectory", OutputDirectory },
-			{ "UploadToVnas", "" },          // "Telephony.txt" writes it to Upload_to_vNAS instead of Aliases
+			{ "UploadToVnas", "" },          // "Telephony.txt" marks it for vNAS_Alias.txt (AIRAC Service only); it stays in Aliases
 		};
 
 		return settings;

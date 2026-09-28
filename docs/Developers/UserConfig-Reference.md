@@ -5,7 +5,8 @@ Every setting FE-Buddy saves, where it lives, and which code reads it.
 **The file:** `%APPDATA%\FE-Buddy\UserConfig.json` - one nested JSON tree. Code addresses a value
 by its dotted path (`General.UpdateChannel`) through `UserConfigFile`, and constants for the keys
 read in more than one place are in `UserConfigKeys`. Before a node is saved, its previous state
-goes to `UserConfig.previous.json` (the one-step **Undo last save**).
+goes to `UserConfig.previous.json` (the one-step **Undo last save**). A settings import replaces
+the whole file instead - see [Settings export and import](#settings-export-and-import).
 
 **Values are strings.** Yes/no settings are `Y` / `N` (the readers also accept `true`); a blank or
 missing value means "use the default". Adding a key needs no migration: an old file simply lacks it.
@@ -16,15 +17,17 @@ what one run uses.
 
 ## General
 
-Written by **Settings** (except `NewsLastOpen`).
+Written by **Settings** (except `NewsLastOpen` and `LegacyGitHubTokenNoticeShown`).
 
 | Key | Values | Default | Read by |
 |---|---|---|---|
-| `UpdateChannel` | `Stable`, `ReleaseCandidate`, `Beta`, `Alpha` (the GUI offers Stable, Beta, Alpha) | `Stable` | launch version check, Settings |
-| `NewsLastOpen` | the newest News `PostId` seen, e.g. `2026-08-30.3` | none | launch News check. Written when the user opens News. |
+| `UpdateChannel` | `Stable`, `ReleaseCandidate`, `Beta`, `Alpha` | `Stable` | launch version check, Settings. Kept on this PC: never exported. |
+| `NewsLastOpen` | the newest News `PostId` seen, e.g. `2026-08-30.3` | none | launch News check. Written when the user opens News. Kept on this PC: never exported. |
 | `PrettyPrintGeojson` | `Y` / `N` | `N` | `OutputFormatting` (every GeoJSON writer) |
 | `DefaultOutputDirectory` | a folder path | the Desktop | every run, through `Shell/OutputPreferences`. An AIRAC Service run writes into `AIRAC_<cycle>` inside it; a file conversion into its own folder. |
 | `AddFeBuddyOutputFolder` | `Y` / `N` - put the `AIRAC_<cycle>` and conversion folders in a `FE-Buddy_Output` folder | `Y` | every run, through `Shell/OutputPreferences` |
+| `FeBuddyGitHub.CredentialId` | the id of the GitHub token credential FE-Buddy's own GitHub requests use | none (no token) | `GitHubAuth`. Kept on this PC: never exported. |
+| `LegacyGitHubTokenNoticeShown` | `Y` once the notice that 2.x's `FEBUDDY_GITHUB_TOKEN` variable is still set has been shown | none | `LegacyGitHubTokenNotice` at launch. Written when the notice is shown. Kept on this PC: never exported. |
 
 ## Services.AiracService
 
@@ -48,6 +51,20 @@ soon as it is set or cleared.
 Clearing the default ROI only sets `FilterByRoi` to `false`; the corners stay, so re-enabling it
 restores the last box. (`Coordindates` is misspelled in every saved file, so the key keeps the
 spelling - see [TODO](TODO.md).)
+
+## Services.MapService
+
+Written by the Map (`MapLayersState`, shared by the Map page and every map popup) the moment a
+choice is made - the Map has no Save button.
+
+| Key | Values | Default |
+|---|---|---|
+| `OutputGeojson` | the run-output GeoJSON files picked with the output picker's gear, `\|`-separated, each relative to the cycle's `AIRAC_<cycle>` folder, e.g. `Geojson\Airways_High_Lines.geojson\|Upload_to_vNAS\Geojson\ARTCC_High_Lines.geojson` (`UserConfigKeys.MapOutputGeojson`) | none |
+| `AiracLayers` | comma-separated live layers switched on: `ArtccBoundaries`, `ToweredAirports`, `Navaids` | none |
+| `Home` | the home view, `<lat>,<lon>,<zoom>` in the invariant culture, e.g. `34.05,-118.25,6.5` (`MapHome`); a value that does not parse is ignored | none: the contiguous US |
+
+The picks are relative, so they carry over to whichever cycle the map shows - and to another PC,
+where a file shows as missing until that PC has run it.
 
 ## Sub-service nodes
 
@@ -250,9 +267,14 @@ Each save first removes the whole `Sources` subtree (`RemoveSubtree`, backed by
 
 In a settings export, `FilePath` is a machine path (`UserConfigPortability`: any key ending in
 `FilePath`, like one ending in `Folder` or `Directory`): it is tokenized like a folder, and an
-import takes it only if the file exists on the importing PC (`UserConfigPortability.IsFile`); the
-import summary calls it "Custom alias file <n>". `Url` and `CredentialId` are shared as they
-are - a credential id matches nothing on another PC, so the user picks one of their own.
+import takes it only if the file exists on the importing PC (`UserConfigPortability.IsFile`).
+Otherwise that custom alias file is left out: this PC's entry at the same `<n>` is a different file,
+so it is not put in its place. The import summary calls it `Custom alias file <n>`. `Url` is
+shared as it is. `CredentialId` is a
+credential choice (`ConfigKeyScope.CredentialChoice`, any key ending in `CredentialId`): a
+credential id means nothing on another PC, so it is never exported and is ignored in an imported
+file. An import keeps this PC's choice for a source whose other keys it leaves unchanged (the same
+`Url` at the same `<n>`), and clears it otherwise, so a credential never ends up on another file.
 
 ## File conversion nodes
 
@@ -278,6 +300,48 @@ the folder is.
 | `OutputLayout` | ERAM only: `ByObject`, `ByFilter` | `ByObject` |
 | `DefaultsSource` | ERAM only: `Xml`, `XmlThenCard`, `Card` | `Xml` |
 
+## Settings export and import
+
+Settings ▸ **Export…** writes the settings to a file another FE-Buddy user can bring in with
+**Import…** (`UserConfigTransfer`). The file is the same nested tree as `UserConfig.json` under a
+small header:
+
+```json
+{ "format": "FE-Buddy.UserConfig", "formatVersion": 1, "appVersion": "3.0.0",
+  "exportedUtc": "2026-09-27T12:00:00Z", "settings": { "General": { ... }, "Services": { ... } } }
+```
+
+A plain `UserConfig.json` copied from another PC imports too. A file with a newer `formatVersion`,
+or larger than 2 MB, is refused. An export never overwrites one of FE-Buddy's own settings files.
+
+**Every key goes by its name** (`UserConfigPortability.Classify`), so a new setting is handled
+without being listed anywhere:
+
+| Scope | Keys | In an export | On import |
+|---|---|---|---|
+| Secret | under `Secrets`, or a name ending in `Token`, `Password`, `Secret`, `ApiKey`, `Credential` or `Credentials`, or called `Pat` | never | the file's is ignored; this PC's is kept |
+| Local | `General.UpdateChannel`, `NewsLastOpen`, `FeBuddyGitHub.CredentialId` and `LegacyGitHubTokenNoticeShown`, and anything outside `General` and `Services` | never | the file's is ignored; this PC's is kept |
+| Credential choice | a name ending in `CredentialId` | never | the file's is ignored; this PC's choice stays only where the settings beside it are unchanged (the same custom alias file at the same address), and is cleared otherwise |
+| Machine path | a name ending in `Folder`, `Directory` or `FilePath` (except `AddFeBuddyOutputFolder`) | with this user's Desktop, Documents or profile swapped for `%DESKTOP%`, `%DOCUMENTS%` or `%USERPROFILE%` (`PortablePathTokens`) | made this user's, then taken only where it works here - see below |
+| Shared | everything else under `General` and `Services` | as it is | as it is |
+
+A machine path is taken when: it is an output folder (a name containing `Output`) on a drive this
+PC has - FE-Buddy creates the folder when it writes; a folder FE-Buddy reads from that exists; or a
+file that exists. A network path is refused, unless it is this user's own Desktop, Documents or
+profile kept on a network share. Where it can't be taken, this PC keeps its own folder (or the
+default); a custom alias file is left out instead, since this PC's entry at the same number is a
+different file. The confirmation lists what is taken and what is not.
+
+**An import makes this PC's settings match the file.** A setting the file leaves out goes back to
+its default, folders included; only the Local and Secret keys, and the credential choices above,
+are kept. A key in the file that would nest under a kept key, or a kept key under it
+(`General.UpdateChannel.X`), is ignored. `UserConfigFile.ReplaceAll` writes the new file beside the
+old one and swaps it in with `File.Replace`, keeping the old file as
+`UserConfig.before-import.json`; a failed write changes nothing. It then deletes
+`UserConfig.previous.json`, since an **Undo last save** would put back a pre-import subtree, and
+every page that has been opened reads its values again (`ConfigPages.ReloadAll`,
+`MapLayersState.ReloadFromConfigIfCreated`).
+
 ## Adding a setting
 
 1. Pick its node: `General` for app-wide preferences, the sub-service's node for its own options.
@@ -286,3 +350,8 @@ the folder is.
 3. If more than one class reads it, add a constant to `UserConfigKeys`.
 4. If it is sent to Core, add it to the tab's `BuildSettingsBlock` and to the parser - and list it
    here and in [Settings blocks](Settings-Blocks.md).
+5. **Mind its name: it decides how the setting travels in an export** (see above). A name ending in
+   `Folder`, `Directory` or `FilePath` is a machine path, one ending in `CredentialId` a credential
+   choice, and one ending in `Token`, `Password` and the like is never exported at all. A yes/no
+   setting whose name happens to end in `Folder` must be added to `UserConfigPortability`'s
+   `NotFolderKeys`, and a setting that only makes sense on this PC to its `LocalKeys`.

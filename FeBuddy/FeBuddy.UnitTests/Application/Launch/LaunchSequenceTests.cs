@@ -2,6 +2,7 @@ using System.Net;
 
 using FeBuddy.Core.Application.Airac;
 using FeBuddy.Core.Application.Airac.Models;
+using FeBuddy.Core.Application.Airac.VnasAlias.Models;
 using FeBuddy.Core.Application.Launch;
 using FeBuddy.Core.Application.Launch.Models;
 using FeBuddy.Core.Application.News;
@@ -60,6 +61,7 @@ public sealed class LaunchSequenceTests : IDisposable
 		TempWorkspace.ConfigureForTesting(Path.Combine(_root, "temp"));
 		UserConfigFile.ConfigureForTesting(Path.Combine(_root, "config"));
 		AppEnvironment.ResetForTesting();
+		LegacyGitHubTokenNotice.ConfigureForTesting(() => []);
 		AiracCycleDataCache.ConfigureForTesting(new AiracCycleDataCache(
 			probe: (_, _) => Task.FromResult(AiracCyclePublicationState.Published),
 			download: (cycle, _) =>
@@ -74,6 +76,7 @@ public sealed class LaunchSequenceTests : IDisposable
 	{
 		AppEnvironment.HttpClientForTesting?.Dispose();
 		AppEnvironment.ResetForTesting();
+		LegacyGitHubTokenNotice.ConfigureForTesting(null);
 		AiracCycleDataCache.ConfigureForTesting(null);
 		UserConfigFile.ConfigureForTesting(null);
 		TempWorkspace.ConfigureForTesting(null);
@@ -158,6 +161,20 @@ public sealed class LaunchSequenceTests : IDisposable
 		Assert.Equal(new LaunchProgress(LaunchStep.Complete, LaunchStepStatus.Succeeded, "Launch complete"), progress.Reports[^1]);
 	}
 
+	/// <summary>Launch looks for FE-Buddy 2.x's GitHub token variable and leaves the one-time notice for the shell.</summary>
+	[Fact]
+	public async Task launch_finds_the_old_token_variable_for_the_one_time_notice()
+	{
+		EnvironmentVariableTarget[] forUser = [EnvironmentVariableTarget.User];
+		AppEnvironment.HttpClientForTesting = new HttpClient(new StubHttpHandler(Online));
+		LegacyGitHubTokenNotice.ConfigureForTesting(() => forUser);
+
+		await LaunchSequence.RunAsync("3.0.0");
+
+		Assert.Equal(forUser, LegacyGitHubTokenNotice.Take());
+		Assert.True(LegacyGitHubTokenNotice.HasBeenShown);
+	}
+
 	[Fact]
 	public async Task offline_launch_falls_back_to_the_local_clock_and_the_bundled_news()
 	{
@@ -192,8 +209,8 @@ public sealed class LaunchSequenceTests : IDisposable
 		Assert.Equal(
 			new[]
 			{
-				LaunchStep.ClearTempWorkspace, LaunchStep.ReadUserConfig, LaunchStep.CheckUtcTimeAndInternet,
-				LaunchStep.CheckVersion, LaunchStep.PrepareAiracData, LaunchStep.CheckNews,
+				LaunchStep.ClearTempWorkspace, LaunchStep.ReadUserConfig, LaunchStep.CheckLegacyGitHubToken,
+				LaunchStep.CheckUtcTimeAndInternet, LaunchStep.CheckVersion, LaunchStep.PrepareAiracData, LaunchStep.CheckNews,
 			}.Order(),
 			failed);
 		Assert.Contains(AppLog.Entries, e => e.Level == LogLevel.Warning && e.Message.Contains("step blew up. Continuing launch.", StringComparison.Ordinal));
@@ -343,6 +360,51 @@ public sealed class LaunchSequenceTests : IDisposable
 		{
 			AiracSharedDataLoader.ConfigureForTesting(null, null);
 		}
+	}
+
+	/// <summary>
+	/// With vNAS Alias Upload selected, the single-settings overload reads the custom alias files
+	/// before any sub-service runs: a readable one is merged into vNAS_Alias.txt, one that cannot be
+	/// read is left out with a warning, and the block's own parsing messages reach the run.
+	/// </summary>
+	[Fact]
+	public async Task airac_service_reads_the_custom_alias_files_first_when_vnas_alias_upload_is_selected()
+	{
+		AiracCycleInfo previous = new("2608", "06_Aug_2026", new DateOnly(2026, 8, 6));
+		AiracCycleInfo current = new("2609", "03_Sep_2026", new DateOnly(2026, 9, 3));
+		AiracCycleInfo next = new("2610", "01_Oct_2026", new DateOnly(2026, 10, 1));
+		await AiracCycleDataCache.Instance.PrepareCyclesAsync(previous, current, next);
+
+		Directory.CreateDirectory(_root);
+		string customFile = Path.Combine(_root, "ZOB-Alias.txt");
+		File.WriteAllText(customFile, ".zobtest .msg Hello from ZOB\r\n.zobtest2 .msg Again\r\n");
+		string missingFile = Path.Combine(_root, "Missing-Alias.txt");
+
+		List<AiracServiceProgress> reports = [];
+		AiracServiceResult result = await AiracService.RunAsync(
+			new AiracServiceSettings
+			{
+				SelectedCycle = current,
+				OutputDirectory = Path.Combine(_root, "output"),
+				VnasAlias = new Dictionary<string, string>
+				{
+					["Sources.1.FilePath"] = customFile,
+					["Sources.2.FilePath"] = missingFile,
+					["Colour"] = "blue",
+				},
+			},
+			new SynchronousProgress<AiracServiceProgress>(reports.Add));
+
+		Assert.Contains(reports, r => r.SubService == "vNAS Alias Upload" && r.Message == "Reading your custom alias files");
+
+		VnasAliasResult merged = result.VnasAlias!;
+		Assert.Equal(2, merged.CustomFileCount);
+		Assert.Equal(1, merged.CustomFilesMerged);
+		Assert.Equal(2, merged.CustomCommandCount);
+		Assert.Contains(".zobtest .msg Hello from ZOB", File.ReadAllText(merged.FilePath!), StringComparison.Ordinal);
+
+		Assert.Contains(result.Messages, m => m.Level == LogLevel.Warning && m.Text.Contains("'Colour'", StringComparison.Ordinal));
+		Assert.Contains(result.Messages, m => m.IsAdvisory && m.Text.Contains($"{missingFile} was not found", StringComparison.Ordinal));
 	}
 
 	private sealed class SynchronousProgress<T>(Action<T> report) : IProgress<T>

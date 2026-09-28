@@ -14,6 +14,18 @@ namespace FeBuddy.Core.Domain.Navaids;
 /// </remarks>
 public static class NavaidTypes
 {
+	/// <summary>The <c>NAV_TYPE</c> for a VOR.</summary>
+	public const string Vor = "VOR";
+
+	/// <summary>The <c>NAV_TYPE</c> for a VORTAC (a VOR and a TACAN together).</summary>
+	public const string Vortac = "VORTAC";
+
+	/// <summary>The <c>NAV_TYPE</c> for a VOR with DME.</summary>
+	public const string VorDme = "VOR/DME";
+
+	/// <summary>The <c>NAV_TYPE</c> for a TACAN.</summary>
+	public const string Tacan = "TACAN";
+
 	/// <summary>The <c>NAV_TYPE</c> for a fan marker, spelled with FE-Buddy's canonical single space.</summary>
 	public const string FanMarker = "FAN MARKER";
 
@@ -23,7 +35,7 @@ public static class NavaidTypes
 	/// </summary>
 	public static IReadOnlyList<string> All { get; } =
 	[
-		"VOR", "VORTAC", "VOR/DME", "VOT", "TACAN", "DME", "NDB", "NDB/DME",
+		Vor, Vortac, VorDme, "VOT", Tacan, "DME", "NDB", "NDB/DME",
 		"MARINE NDB", "MARINE NDB/DME", "UHF/NDB", FanMarker, "CONSOLAN",
 	];
 
@@ -36,11 +48,11 @@ public static class NavaidTypes
 	/// <summary>The CRC symbol style each type renders as by default. See <see cref="SymbolStyleFor"/>.</summary>
 	private static readonly IReadOnlyDictionary<string, string> SymbolStyles = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
 	{
-		["VOR"] = "vor",
-		["VORTAC"] = "vor",
-		["VOR/DME"] = "vor",
+		[Vor] = "vor",
+		[Vortac] = "vor",
+		[VorDme] = "vor",
 		["VOT"] = "vor",
-		["TACAN"] = "tacan",
+		[Tacan] = "tacan",
 		["DME"] = "tacan",
 		["NDB"] = "ndb",
 		["NDB/DME"] = "ndb",

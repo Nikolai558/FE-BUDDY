@@ -345,7 +345,7 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 	public const string GitHubRequestsDescription =
 		"Advanced - most people never need this. FE-Buddy checks for updates, reads News and downloads updates from " +
 		"its public GitHub repository, which works without a GitHub account. A GitHub token lifts GitHub's limit of " +
-		"60 requests an hour, or lets a developer test FE-Buddy against a private copy of its repository.";
+		"60 requests an hour.";
 
 	/// <summary>Whether FE-Buddy's own GitHub requests are sent with a GitHub token.</summary>
 	public bool UseGitHubToken
@@ -445,16 +445,12 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 		}
 		else
 		{
-			Toast.Warn("Not a GitHub token for github.com",
-				$"{saved.Name} is saved, but only a GitHub personal access token whose websites include github.com can be used here.");
+			Toast.Warn("Not a GitHub token for GitHub's API",
+				$"{saved.Name} is saved, but only a GitHub personal access token whose websites cover api.github.com (github.com does) can be used here.");
 		}
 	}
 
 	// ================= 6. UPDATES =================
-
-	/// <summary>The update channels, in the order the menu shows them: most finished first.</summary>
-	public IReadOnlyList<ReleaseChannel> Channels { get; } =
-		[ReleaseChannel.Stable, ReleaseChannel.ReleaseCandidate, ReleaseChannel.Beta, ReleaseChannel.Alpha];
 
 	/// <summary>Explains the channels under the Updates heading: each one includes every channel above it.</summary>
 	public const string UpdatesDescription =
@@ -547,6 +543,9 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 	/// <summary>The file-dialog filter for settings files.</summary>
 	private const string SettingsFileFilter = "FE-Buddy settings (*.json)|*.json|All files (*.*)|*.*";
 
+	/// <summary>How many folders the import confirmation lists under each heading before "…and N more".</summary>
+	private const int ImportListLength = 8;
+
 	/// <summary>Writes every saved setting that can leave this PC to a file the user picks.</summary>
 	public ICommand ExportCommand { get; }
 
@@ -585,7 +584,14 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 		string unsaved = Channel != version.Channel ? $" Save to check the {Channel.DisplayName()} channel instead." : string.Empty;
 		string current = version.CurrentVersion.TrimStart('v', 'V');
 
-		if (version.IsAheadOfLatestRelease)
+		if (version.RunningPreReleaseChannel is { } running)
+		{
+			Toast.Success("No update available",
+				$"v{current} is a {running.DisplayName()} release, newer than the latest {version.Channel.DisplayName()} release (v{version.LatestVersion}). " +
+				$"{version.Channel.DisplayName()} updates start again once one is newer than v{current}; to go back now, install " +
+				$"v{version.LatestVersion} from its release page.{unsaved}");
+		}
+		else if (version.IsAheadOfLatestRelease)
 		{
 			Toast.Success("No update available",
 				$"This development build (v{current}) is ahead of the latest {version.Channel.DisplayName()} release (v{version.LatestVersion}).{unsaved}");
@@ -701,7 +707,7 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 			string leftOut = result.LeftOutCount > 0 ? " Settings that only apply to this PC were left out." : string.Empty;
 			Toast.Success("Settings exported", $"{result.SettingCount} settings written to {Path.GetFileName(result.Path)}.{leftOut}");
 		}
-		catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+		catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or UserConfigTransferException)
 		{
 			AppLog.Warning("Settings", $"Could not export settings to '{dialog.FileName}': {ex.Message}");
 			Toast.Error("Export failed", ex.Message);
@@ -738,7 +744,9 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 
 		if (!plan.HasChanges)
 		{
-			Toast.Info("Nothing to import", $"{plan.Package.FileName} has the same settings as this PC.");
+			Toast.Info("Nothing to import", plan.SkippedFolders.Count > 0
+				? $"{plan.Package.FileName} has the same settings as this PC, apart from folders or files that do not work on this PC."
+				: $"{plan.Package.FileName} has the same settings as this PC.");
 			return;
 		}
 
@@ -760,14 +768,22 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 
 		// Every page built so far read its values once; have each read the imported ones.
 		OutputFormatting.LoadFromUserConfig();
-		ConfigPages.ReloadAll();
+		IReadOnlyList<string> notReloaded = ConfigPages.ReloadAll();
 		MapLayersState.ReloadFromConfigIfCreated();
 		DefaultRoiStore.NotifyReloaded();
 
 		string skipped = plan.SkippedFolders.Count > 0
-			? " Some of its folders do not work on this PC, so yours were kept."
+			? " Folders and files that do not work on this PC were not taken, as the import summary listed."
 			: string.Empty;
 		Toast.Success("Settings imported", $"{plan.ChangedCount} settings updated from {plan.Package.FileName}.{skipped}");
+
+		if (notReloaded.Count > 0)
+		{
+			// Saving on one of these would write its old values back over the import.
+			Toast.Warn("Restart FE-Buddy",
+				$"{JoinNames(notReloaded)} could not show the imported settings. Restart FE-Buddy before saving there, " +
+				"or the settings from before the import would be saved back.");
+		}
 	}
 
 	/// <summary>The import confirmation: what changes, what this PC keeps, and what is lost.</summary>
@@ -803,26 +819,12 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 				+ "but for identical output both PCs should run the same version.");
 		}
 
-		if (plan.AppliedFolders.Count > 0)
-		{
-			text.Append("\n\nFolders:");
-			foreach (ImportedFolder folder in plan.AppliedFolders)
-			{
-				string detail = folder.Path.Length == 0 ? folder.Note!
-					: folder.Note is null ? folder.Path
-					: $"{folder.Path} ({folder.Note})";
-				text.Append(CultureInfo.InvariantCulture, $"\n  • {folder.Label}: {detail}");
-			}
-		}
+		AppendList(text, "Folders and files:", plan.AppliedFolders, folder =>
+			folder.Path.Length == 0 ? folder.Note!
+			: folder.Note is null ? folder.Path
+			: $"{folder.Path} ({folder.Note})");
 
-		if (plan.SkippedFolders.Count > 0)
-		{
-			text.Append("\n\nFolders kept as they are on this PC:");
-			foreach (ImportedFolder folder in plan.SkippedFolders)
-			{
-				text.Append(CultureInfo.InvariantCulture, $"\n  • {folder.Label}: the file's {folder.Path} {folder.Note}");
-			}
-		}
+		AppendList(text, "Not taken, as they do not work on this PC:", plan.SkippedFolders, folder => $"the file's {folder.Path} {folder.Note}");
 
 		if (plan.KeptForThisPc.Count > 0)
 		{
@@ -838,6 +840,30 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 		text.Append(CultureInfo.InvariantCulture, $"\n\nYour current settings are kept in {Path.GetFileName(UserConfigFile.BeforeImportFilePath)} in case you want them back.");
 
 		return text.ToString();
+	}
+
+	/// <summary>
+	/// Adds a heading and one line per folder, the first <see cref="ImportListLength"/> of them, so a
+	/// file with many folders cannot grow the confirmation off the screen.
+	/// </summary>
+	private static void AppendList(StringBuilder text, string heading, IReadOnlyList<ImportedFolder> folders, Func<ImportedFolder, string> detail)
+	{
+		if (folders.Count == 0)
+		{
+			return;
+		}
+
+		text.Append(CultureInfo.InvariantCulture, $"\n\n{heading}");
+
+		foreach (ImportedFolder folder in folders.Take(ImportListLength))
+		{
+			text.Append(CultureInfo.InvariantCulture, $"\n  • {folder.Label}: {detail(folder)}");
+		}
+
+		if (folders.Count > ImportListLength)
+		{
+			text.Append(CultureInfo.InvariantCulture, $"\n  • …and {folders.Count - ImportListLength} more");
+		}
 	}
 
 	/// <summary>e.g. <c>Settings, Airways and Fixes</c>.</summary>

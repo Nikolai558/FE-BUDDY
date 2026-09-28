@@ -39,12 +39,16 @@ public sealed class WindowsCredentialVault : ICredentialVault
 			throw new ArgumentException($"Windows Credential Manager holds at most {MaxSecretBytes} bytes per entry.", nameof(secret));
 		}
 
-		IntPtr targetPtr = Marshal.StringToCoTaskMemUni(target);
-		IntPtr userPtr = Marshal.StringToCoTaskMemUni(userName);
-		IntPtr blobPtr = Marshal.AllocCoTaskMem(Math.Max(secret.Length, 1));
+		// Allocated inside the try, so running out of memory part-way still frees what was allocated.
+		IntPtr targetPtr = IntPtr.Zero;
+		IntPtr userPtr = IntPtr.Zero;
+		IntPtr blobPtr = IntPtr.Zero;
 
 		try
 		{
+			targetPtr = Marshal.StringToCoTaskMemUni(target);
+			userPtr = Marshal.StringToCoTaskMemUni(userName);
+			blobPtr = Marshal.AllocCoTaskMem(Math.Max(secret.Length, 1));
 			Marshal.Copy(secret, 0, blobPtr, secret.Length);
 
 			NativeCredential credential = new()
@@ -64,9 +68,14 @@ public sealed class WindowsCredentialVault : ICredentialVault
 		}
 		finally
 		{
-			// Do not leave a copy of the secret in freed memory.
-			Marshal.Copy(new byte[secret.Length], 0, blobPtr, secret.Length);
-			Marshal.FreeCoTaskMem(blobPtr);
+			if (blobPtr != IntPtr.Zero)
+			{
+				// Do not leave a copy of the secret in freed memory.
+				Marshal.Copy(new byte[secret.Length], 0, blobPtr, secret.Length);
+				Marshal.FreeCoTaskMem(blobPtr);
+			}
+
+			// Freeing IntPtr.Zero does nothing.
 			Marshal.FreeCoTaskMem(userPtr);
 			Marshal.FreeCoTaskMem(targetPtr);
 		}

@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Net;
 
 using FeBuddy.Core.Infrastructure.Configuration;
@@ -5,32 +6,37 @@ using FeBuddy.Core.Infrastructure.Credentials;
 using FeBuddy.Core.Infrastructure.Credentials.Models;
 using FeBuddy.Core.Infrastructure.GitHub.Models;
 using FeBuddy.Core.Infrastructure.Http;
+using FeBuddy.Core.Infrastructure.Logging;
 
 namespace FeBuddy.Core.Infrastructure.GitHub;
 
 /// <summary>
 /// The optional GitHub token for FE-Buddy's own GitHub requests: the version check, the News fetch
 /// and the update download. Not needed for normal use - releases and News live in the public
-/// repository (<see cref="GitHubRepository"/>) and every request works without one. A token helps
-/// in two edge cases: getting past GitHub's 60-requests-an-hour limit for requests without one, and
-/// letting a developer point FE-Buddy at a private repository while testing.
+/// repository (<see cref="GitHubRepository"/>) and every request works without one. A token only
+/// gets past GitHub's limit of 60 requests an hour for requests without one.
 /// </summary>
 /// <remarks>
 /// <para>
 /// Whether to use one is an advanced setting (Settings ▸ FE-Buddy's GitHub Requests): the id of a
 /// saved <see cref="CredentialKind.GitHubToken"/> credential, kept in
 /// <see cref="UserConfigKeys.FeBuddyGitHubCredentialId"/>. The token itself stays in Windows
-/// Credential Manager (see <see cref="CredentialStore"/>).
+/// Credential Manager (see <see cref="CredentialStore"/>), and only
+/// <see cref="TryAuthorize(HttpRequestMessage)"/> ever puts it on a request.
 /// </para>
 /// <para>
-/// When one is chosen, the requests are sent with it. If a request with it fails, it is tried once
-/// more without it, so a stale token can never stop FE-Buddy from finding updates.
+/// When one is chosen, the requests are sent with it. If a request with it fails in any way, it is
+/// tried once more without it, and a token Windows Credential Manager cannot read is treated as no
+/// token - so a stale token, or a broken Credential Manager, can never stop FE-Buddy from finding
+/// updates.
 /// </para>
 /// </remarks>
 public static class GitHubAuth
 {
 	/// <summary>What the log calls the token, instead of ever printing it.</summary>
 	public const string TokenDescription = "your GitHub credential";
+
+	private const string LogSource = "GitHub";
 
 	private const string RateLimitUrl = "https://api.github.com/rate_limit";
 
@@ -49,31 +55,67 @@ public static class GitHubAuth
 		: null;
 
 	/// <summary>
-	/// The token FE-Buddy's own GitHub requests are sent with: the chosen credential's, when it is a
-	/// GitHub token on this PC that may go to GitHub's API.
+	/// Adds the chosen GitHub token to one of FE-Buddy's own GitHub requests - when one is chosen,
+	/// it is a <see cref="CredentialKind.GitHubToken"/>, and it may be sent to the request's website
+	/// over HTTPS (<see cref="CredentialStore.Authorize(HttpRequestMessage, Guid)"/>'s rules).
 	/// </summary>
-	/// <returns>The token, or <see langword="null"/> to send the requests without one.</returns>
-	public static string? GetOptionalToken() => ChosenCredentialId is { } id ? Store.GetGitHubToken(id) : null;
+	/// <remarks>
+	/// Never throws for Credential Manager: a token it cannot read is logged and left off, and the
+	/// request goes without one.
+	/// </remarks>
+	/// <param name="request">The request to send.</param>
+	/// <returns>Whether the request now carries the token.</returns>
+	internal static bool TryAuthorize(HttpRequestMessage request)
+	{
+		ArgumentNullException.ThrowIfNull(request);
+
+		if (ChosenCredentialId is not { } id)
+		{
+			return false;
+		}
+
+		try
+		{
+			return Store.AuthorizeGitHubToken(request, id);
+		}
+		catch (Win32Exception ex)
+		{
+			AppLog.Warning(LogSource, $"Windows Credential Manager could not read {TokenDescription} ({ex.Message}); sending the request without it.");
+			return false;
+		}
+	}
 
 	/// <summary>Asks GitHub whether a saved GitHub token works, with a request that needs no permissions.</summary>
+	/// <param name="store">The credentials the token is saved in.</param>
 	/// <param name="id">The credential's id.</param>
 	/// <param name="httpClient">The client to use; <see langword="null"/> creates one.</param>
 	/// <param name="cancellationToken">Cancels the check.</param>
 	/// <returns>Whether GitHub accepted it, and a message for the user.</returns>
-	public static async Task<CredentialCheck> CheckTokenAsync(Guid id, HttpClient? httpClient = null, CancellationToken cancellationToken = default)
+	public static async Task<CredentialCheck> CheckTokenAsync(
+		CredentialStore store,
+		Guid id,
+		HttpClient? httpClient = null,
+		CancellationToken cancellationToken = default)
 	{
+		ArgumentNullException.ThrowIfNull(store);
+
 		using HttpClient? owned = httpClient is null ? FeBuddyHttp.CreateClient(TimeSpan.FromSeconds(10)) : null;
 		HttpClient client = httpClient ?? owned!;
 
 		using HttpRequestMessage request = new(HttpMethod.Get, RateLimitUrl);
 		request.Headers.Accept.ParseAdd("application/vnd.github+json");
 
-		switch (Store.Authorize(request, id))
+		CredentialUseResult use = store.Authorize(request, id);
+
+		if (use == CredentialUseResult.NotFound)
 		{
-			case CredentialUseResult.NotFound:
-				return new CredentialCheck(false, "This credential no longer exists.");
-			case CredentialUseResult.HostNotAllowed:
-				return new CredentialCheck(false, $"Its websites do not include github.com, so it cannot be sent to {CredentialHosts.GitHubApiHost}.");
+			return new CredentialCheck(false, "This credential no longer exists.");
+		}
+
+		if (use != CredentialUseResult.Applied)
+		{
+			return new CredentialCheck(false,
+				$"Its websites do not cover {CredentialHosts.GitHubApiHost}, GitHub's API, so it cannot be checked. Add github.com to its websites.");
 		}
 
 		try
@@ -94,8 +136,8 @@ public static class GitHubAuth
 	}
 
 	/// <summary>
-	/// Points <see cref="GetOptionalToken"/> at another store and chosen credential, or back at
-	/// <see cref="CredentialStore.Default"/> and the saved setting. Unit tests only.
+	/// Points <see cref="TryAuthorize(HttpRequestMessage)"/> at another store and chosen credential,
+	/// or back at <see cref="CredentialStore.Default"/> and the saved setting. Unit tests only.
 	/// </summary>
 	/// <param name="store">The store, or <see langword="null"/> for the real one.</param>
 	/// <param name="chosenId">The chosen credential; ignored when <paramref name="store"/> is <see langword="null"/>.</param>

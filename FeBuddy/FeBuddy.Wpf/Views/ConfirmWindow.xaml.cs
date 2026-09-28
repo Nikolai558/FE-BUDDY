@@ -15,11 +15,23 @@ namespace FeBuddy.Wpf.Views;
 /// </summary>
 public partial class ConfirmWindow : ChromeWindow
 {
+	/// <summary>
+	/// The height the rest of the window takes - the title bar, padding, heading and buttons - with
+	/// room to spare, so the message gets whatever of the screen is left.
+	/// </summary>
+	private const double ReservedHeight = 240;
+
+	/// <summary>The least the message area shrinks to, even on a very short screen.</summary>
+	private const double MinimumMessageHeight = 120;
+
 	private ConfirmWindow(ConfirmViewModel viewModel)
 	{
 		InitializeComponent();
 		DataContext = viewModel;
 		viewModel.CloseRequested += (_, _) => Close();
+
+		// A long message scrolls rather than pushing the buttons off the bottom of the screen.
+		MessageScroller.MaxHeight = Math.Max(MinimumMessageHeight, SystemParameters.WorkArea.Height - ReservedHeight);
 	}
 
 	/// <summary>

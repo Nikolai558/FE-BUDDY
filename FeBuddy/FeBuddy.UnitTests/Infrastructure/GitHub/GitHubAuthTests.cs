@@ -45,43 +45,67 @@ public sealed class GitHubAuthTests : IDisposable
 
 	// ============================ the token ============================
 
-	/// <summary>With no credential chosen, FE-Buddy's GitHub requests have no token.</summary>
+	/// <summary>With no credential chosen, FE-Buddy's GitHub requests go without a token.</summary>
 	[Fact]
-	public void no_chosen_credential_is_no_token()
+	public void no_chosen_credential_adds_no_token()
 	{
 		_store.Save(GitHubToken("ghp_abc"));
+		using HttpRequestMessage request = ApiRequest();
 
 		Assert.Null(GitHubAuth.ChosenCredentialId);
-		Assert.Null(GitHubAuth.GetOptionalToken());
+		Assert.False(GitHubAuth.TryAuthorize(request));
+		Assert.Null(request.Headers.Authorization);
 	}
 
-	/// <summary>The token is the chosen GitHub token's.</summary>
+	/// <summary>The chosen GitHub token goes on the request as a Bearer header.</summary>
 	[Fact]
-	public void the_token_is_the_chosen_credentials()
+	public void the_chosen_token_goes_on_the_request()
 	{
 		CredentialInfo chosen = _store.Save(GitHubToken("ghp_abc"));
 		GitHubAuth.ConfigureForTesting(_store, chosen.Id);
+		using HttpRequestMessage request = ApiRequest();
 
 		Assert.Equal(chosen.Id, GitHubAuth.ChosenCredentialId);
-		Assert.Equal("ghp_abc", GitHubAuth.GetOptionalToken());
+		Assert.True(GitHubAuth.TryAuthorize(request));
+		Assert.Equal("Bearer", request.Headers.Authorization!.Scheme);
+		Assert.Equal("ghp_abc", request.Headers.Authorization.Parameter);
+		Assert.Throws<ArgumentNullException>(() => GitHubAuth.TryAuthorize(null!));
 	}
 
-	/// <summary>A chosen credential that is gone, not a GitHub token, or not for GitHub's API gives no token.</summary>
+	/// <summary>
+	/// A chosen credential that is gone, not a GitHub token, not for GitHub's API, or asked for over
+	/// plain HTTP adds nothing.
+	/// </summary>
 	[Theory]
 	[InlineData("gone")]
 	[InlineData("token")]
 	[InlineData("elsewhere")]
-	public void a_chosen_credential_that_does_not_qualify_gives_no_token(string which)
+	[InlineData("http")]
+	public void a_chosen_credential_that_does_not_qualify_adds_nothing(string which)
 	{
 		Guid id = which switch
 		{
 			"token" => _store.Save(new CredentialDraft(null, "Api key", CredentialKind.Token, null, "abc", CredentialHosts.GitHubDefaults)).Id,
 			"elsewhere" => _store.Save(new CredentialDraft(null, "Elsewhere", CredentialKind.GitHubToken, null, "abc", ["example.com"])).Id,
+			"http" => _store.Save(GitHubToken("ghp_abc")).Id,
 			_ => Guid.NewGuid(),
 		};
 		GitHubAuth.ConfigureForTesting(_store, id);
+		using HttpRequestMessage request = which == "http" ? new(HttpMethod.Get, "http://api.github.com/rate_limit") : ApiRequest();
 
-		Assert.Null(GitHubAuth.GetOptionalToken());
+		Assert.False(GitHubAuth.TryAuthorize(request));
+		Assert.Null(request.Headers.Authorization);
+	}
+
+	/// <summary>A token Windows Credential Manager cannot read is left off the request - never thrown.</summary>
+	[Fact]
+	public void an_unreadable_token_is_left_off()
+	{
+		using IDisposable token = TestCredentials.UseUnreadableGitHubToken();
+		using HttpRequestMessage request = ApiRequest();
+
+		Assert.False(GitHubAuth.TryAuthorize(request));
+		Assert.Null(request.Headers.Authorization);
 	}
 
 	/// <summary>Outside tests, the chosen credential is the id saved in Settings; anything else is none.</summary>
@@ -115,7 +139,7 @@ public sealed class GitHubAuthTests : IDisposable
 			return new HttpResponseMessage(status);
 		}));
 
-		CredentialCheck check = await GitHubAuth.CheckTokenAsync(token.Id, client);
+		CredentialCheck check = await GitHubAuth.CheckTokenAsync(_store, token.Id, client);
 
 		Assert.Equal(new CredentialCheck(succeeded, message), check);
 		Assert.Equal("https://api.github.com/rate_limit", sent!.RequestUri!.ToString());
@@ -129,9 +153,27 @@ public sealed class GitHubAuthTests : IDisposable
 		CredentialInfo token = _store.Save(GitHubToken("ghp_abc"));
 		using HttpClient client = new(new StubHttpHandler(_ => throw new HttpRequestException("no route")));
 
-		CredentialCheck check = await GitHubAuth.CheckTokenAsync(token.Id, client);
+		CredentialCheck check = await GitHubAuth.CheckTokenAsync(_store, token.Id, client);
 
 		Assert.Equal(new CredentialCheck(false, "Could not reach GitHub: no route"), check);
+	}
+
+	/// <summary>The check uses the store it is given, not the one FE-Buddy's own requests read.</summary>
+	[Fact]
+	public async Task check_token_uses_the_store_it_is_given()
+	{
+		CredentialStore other = new(new InMemoryCredentialVault());
+		CredentialInfo token = other.Save(GitHubToken("ghp_other"));
+		HttpRequestMessage? sent = null;
+		using HttpClient client = new(new StubHttpHandler(request =>
+		{
+			sent = request;
+			return new HttpResponseMessage(HttpStatusCode.OK);
+		}));
+
+		Assert.True((await GitHubAuth.CheckTokenAsync(other, token.Id, client)).Succeeded);
+		Assert.Equal("ghp_other", sent!.Headers.Authorization!.Parameter);
+		await Assert.ThrowsAsync<ArgumentNullException>(() => GitHubAuth.CheckTokenAsync(null!, token.Id, client));
 	}
 
 	/// <summary>A removed credential, or one not allowed on GitHub's API, is never sent at all.</summary>
@@ -146,11 +188,15 @@ public sealed class GitHubAuthTests : IDisposable
 			return new HttpResponseMessage(HttpStatusCode.OK);
 		}));
 
-		Assert.Equal("This credential no longer exists.", (await GitHubAuth.CheckTokenAsync(Guid.NewGuid(), client)).Message);
-		Assert.StartsWith("Its websites do not include github.com", (await GitHubAuth.CheckTokenAsync(elsewhere.Id, client)).Message, StringComparison.Ordinal);
+		Assert.Equal("This credential no longer exists.", (await GitHubAuth.CheckTokenAsync(_store, Guid.NewGuid(), client)).Message);
+		Assert.Equal(
+			"Its websites do not cover api.github.com, GitHub's API, so it cannot be checked. Add github.com to its websites.",
+			(await GitHubAuth.CheckTokenAsync(_store, elsewhere.Id, client)).Message);
 		Assert.Equal(0, calls);
 	}
 
 	private static CredentialDraft GitHubToken(string token) =>
 		new(null, "GitHub " + Guid.NewGuid().ToString("N")[..6], CredentialKind.GitHubToken, null, token, CredentialHosts.GitHubDefaults);
+
+	private static HttpRequestMessage ApiRequest() => new(HttpMethod.Get, "https://api.github.com/rate_limit");
 }

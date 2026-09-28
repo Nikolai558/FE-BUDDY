@@ -14,8 +14,9 @@ repository root; the solution lives in `FeBuddy/`.
 
 | Branch | Holds |
 |---|---|
-| `v3-development` | FE-Buddy 3.x - where this code lives. Target pull requests here. CI runs on it. |
-| `development` | FE-Buddy 2.x (the repository's default branch until 3.0 ships). |
+| `v3-development` | FE-Buddy 3.x - the repository's default branch, where this code lives. Target pull requests here. CI runs on it. |
+| `releases` | What has been released. Only `v3-development` is merged into it, by a release pull request - see [Releasing](RELEASING.md). |
+| `development` | FE-Buddy 2.x. 2.9.3 was its last planned release. |
 
 ## Build and run
 
@@ -66,12 +67,16 @@ and `FeBuddy.Versioning`):
 ```
 
 Add `-Open` to open the HTML report (`FeBuddy/TestResults/CoverageReport/index.html`), which shows
-every uncovered line. `FeBuddy.Wpf`, the harness and the installer projects are not measured.
+every uncovered line. `FeBuddy.Wpf`, the harness and the installer projects are not measured -
+though the map's logic in `FeBuddy.Wpf` is tested (`FeBuddy.UnitTests/Wpf`).
+
+The Windows Credential Manager tests are reported as skipped in a session with no Windows sign-in
+behind it (a service account, some build agents), which has no Credential Manager.
 
 ## Code standards
 
 One `.editorconfig` (`FeBuddy/.editorconfig`) covers every project. Before you push, these should
-report nothing (except in `FeBuddy.Harness`, which is not held to the standard yet - see
+report nothing (`FeBuddy.Harness` is not yet held to the rest of the standard - see
 [TODO](TODO.md)):
 
 ```bash
@@ -123,7 +128,8 @@ also run the release checks - see [Releasing](RELEASING.md).
 - **`DEV-CleanBuild.bat`** (repository root) empties every project's `bin\` folder, for when a
   build gets confused.
 - **A GitHub token** (optional) - in Settings ▸ FE-Buddy's GitHub Requests, choose "Use a GitHub
-  token" and pick or add one. Update checks, News and update downloads are then sent with it (for
-  example to get past GitHub's 60-requests-an-hour limit, or to test against a private copy), and
-  tried once more without it if that fails. Nobody needs it for normal use, and the
-  `FEBUDDY_GITHUB_TOKEN` environment variable is not read. See [Credentials](Credentials.md).
+  token" and pick or add one. Update checks, News and update downloads are then sent with it (to
+  get past GitHub's 60-requests-an-hour limit), and tried once more without it if that fails in
+  any way. Nobody needs it for normal use, and the
+  `FEBUDDY_GITHUB_TOKEN` environment variable is never read (FE-Buddy only tells a 2.x user once
+  that it is still set). See [Credentials](Credentials.md).

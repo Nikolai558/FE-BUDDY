@@ -7,7 +7,8 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
 <!--
   Adding an entry: put one bullet under "## Unreleased" in the same pull request as the change.
   Write it for users, not developers: what changed and why they care, in one line. Issue numbers
-  become links ("Bug #215 - ..."). Put developer-only changes under a "(Dev notes)" bullet.
+  become links ("Bug #215 - ..."). Put developer-only changes under a "(Dev notes)" bullet. Link
+  a doc at the release's tag (blob/<version>/docs/...), never at a branch.
   Full guide: docs/Developers/RELEASING.md.
 -->
 
@@ -19,7 +20,7 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
 - FE-BUDDY 3.0 is a from-scratch rewrite with a new interface. This first alpha is for testers:
   expect rough edges, and keep 2.x handy. Not yet in 3.0: VRC `.sct2`, vERAM GeoMap and vSTARS
   XML output, ISR aliases and the combined all-SID/all-STAR files
-  ([Do I still need 2.x?](https://github.com/Nikolai558/FE-BUDDY/blob/v3-development/docs/Users/FAQ-and-Troubleshooting.md#do-i-still-need-fe-buddy-2x)).
+  ([Do I still need 2.x?](https://github.com/Nikolai558/FE-BUDDY/blob/3.0.0-alpha.1/docs/Users/FAQ-and-Troubleshooting.md#do-i-still-need-fe-buddy-2x)).
 
 ### Output
 - Everything for a cycle goes into one `AIRAC_<cycle>` folder: `Aliases`, `Geojson`,
@@ -92,6 +93,9 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
 - Map: check GeoJSON files, draw and edit your Region of Interest, and view the AIRAC layers.
 - Settings: import and export your settings, pick your update channel, and store a GitHub token
   securely in Windows Credential Manager (with a step-by-step token guide).
+- If you set `FEBUDDY_GITHUB_TOKEN` for FE-BUDDY 2.x, delete it: 3.0 doesn't use it, and Windows
+  keeps it as plain text. FE-BUDDY tells you once if it is still set
+  ([how to delete it](https://github.com/Nikolai558/FE-BUDDY/blob/3.0.0-alpha.1/docs/Users/FAQ-and-Troubleshooting.md#i-set-febuddy_github_token-for-fe-buddy-2x)).
 - The update window shows the notes for every release you are missing, then downloads and runs
   the installer for you.
 - Installs with the same Windows Installer (MSI) as 2.9 and upgrades an existing 2.9 install in place.

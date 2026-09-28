@@ -31,13 +31,16 @@ namespace FeBuddy.Core.Application.Updates;
 /// <para>
 /// Releases come from the public repository (<see cref="GitHubRepository"/>), where 2.x and
 /// 3.x releases share one list. The request is sent with the GitHub token the user chose
-/// (<see cref="GitHubAuth"/>), if any; a failed request with it is tried once more without it.
+/// (<see cref="GitHubAuth"/>), if any; a request with it that fails in any way is tried once more
+/// without it.
 /// </para>
 /// </remarks>
 public static partial class VersionCheck
 {
 	private const string LogSource = "VersionCheck";
-	private const string ReleasesUrl = GitHubRepository.ApiUrl + "/releases?per_page=30";
+	// GitHub's largest page. 2.x and 3.x releases share the list, so a smaller one could hold only
+	// pre-releases after a long run of them, and a Stable user would find no release at all.
+	private const string ReleasesUrl = GitHubRepository.ApiUrl + "/releases?per_page=100";
 
 	// SemVer precedence, for sorting releases newest first.
 	private static readonly Comparer<ProductVersion> Precedence = Comparer<ProductVersion>.Create((a, b) => a.ComparePrecedenceTo(b));
@@ -74,99 +77,96 @@ public static partial class VersionCheck
 
 		try
 		{
-			string? token = GitHubAuth.GetOptionalToken();
-			HttpResponseMessage response = await SendReleasesRequestAsync(client, token, cancellationToken).ConfigureAwait(false);
+			using HttpResponseMessage response = await SendReleasesRequestAsync(client, cancellationToken).ConfigureAwait(false);
 
-			// A stale token must never hide an update: try once more without it.
-			if (!response.IsSuccessStatusCode && token is not null)
+			if (!response.IsSuccessStatusCode)
 			{
-				AppLog.Warning(LogSource, $"The release check with {GitHubAuth.TokenDescription} returned {(int)response.StatusCode}; trying again without it.");
-				response.Dispose();
-				response = await SendReleasesRequestAsync(client, token: null, cancellationToken).ConfigureAwait(false);
+				AppLog.Warning(LogSource, $"GitHub releases API returned {(int)response.StatusCode}. Update state is unknown.");
+				return new VersionCheckResult(current, null, false, channel, CheckSucceeded: false, $"GitHub API returned {(int)response.StatusCode}.");
 			}
 
-			using (response)
+			await using Stream stream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
+			using JsonDocument document = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken).ConfigureAwait(false);
+
+			ProductVersion.TryParseTag(current, out ProductVersion? currentParsed);
+			var candidates = new List<(ProductVersion Parsed, ReleaseSummary Release, ReleaseInstaller? Installer)>();
+
+			foreach (JsonElement release in document.RootElement.EnumerateArray())
 			{
-				if (!response.IsSuccessStatusCode)
+				if (release.TryGetProperty("draft", out JsonElement draft) && draft.ValueKind == JsonValueKind.True)
 				{
-					AppLog.Warning(LogSource, $"GitHub releases API returned {(int)response.StatusCode}. Update state is unknown.");
-					return new VersionCheckResult(current, null, false, channel, CheckSucceeded: false, $"GitHub API returned {(int)response.StatusCode}.");
+					continue;
 				}
 
-				await using Stream stream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
-				using JsonDocument document = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken).ConfigureAwait(false);
-
-				ProductVersion.TryParseTag(current, out ProductVersion? currentParsed);
-				var candidates = new List<(ProductVersion Parsed, ReleaseSummary Release, ReleaseInstaller? Installer)>();
-
-				foreach (JsonElement release in document.RootElement.EnumerateArray())
+				string? tag = release.TryGetProperty("tag_name", out JsonElement tagElement) ? tagElement.GetString() : null;
+				if (!ProductVersion.TryParseTag(tag, out ProductVersion? parsed) || parsed!.Channel < channel)
 				{
-					if (release.TryGetProperty("draft", out JsonElement draft) && draft.ValueKind == JsonValueKind.True)
-					{
-						continue;
-					}
-
-					string? tag = release.TryGetProperty("tag_name", out JsonElement tagElement) ? tagElement.GetString() : null;
-					if (!ProductVersion.TryParseTag(tag, out ProductVersion? parsed) || parsed!.Channel < channel)
-					{
-						continue;
-					}
-
-					string? body = release.TryGetProperty("body", out JsonElement bodyElement) ? bodyElement.GetString() : null;
-					string? url = release.TryGetProperty("html_url", out JsonElement urlElement) ? urlElement.GetString() : null;
-					DateTimeOffset? published = release.TryGetProperty("published_at", out JsonElement publishedElement)
-						&& publishedElement.ValueKind == JsonValueKind.String
-						&& publishedElement.TryGetDateTimeOffset(out DateTimeOffset publishedAt)
-							? publishedAt
-							: null;
-
-					candidates.Add((parsed, new ReleaseSummary(
-						parsed.ToString(), published, parsed.IsPrerelease, StripInstallInstructions(body), url), FindInstaller(release)));
+					continue;
 				}
 
-				if (candidates.Count == 0)
+				string? body = release.TryGetProperty("body", out JsonElement bodyElement) ? bodyElement.GetString() : null;
+				string? url = release.TryGetProperty("html_url", out JsonElement urlElement) ? urlElement.GetString() : null;
+				DateTimeOffset? published = release.TryGetProperty("published_at", out JsonElement publishedElement)
+					&& publishedElement.ValueKind == JsonValueKind.String
+					&& publishedElement.TryGetDateTimeOffset(out DateTimeOffset publishedAt)
+						? publishedAt
+						: null;
+
+				candidates.Add((parsed, new ReleaseSummary(
+					parsed.ToString(), published, parsed.IsPrerelease, StripInstallInstructions(body), url), FindInstaller(release)));
+			}
+
+			if (candidates.Count == 0)
+			{
+				AppLog.Info(LogSource, $"No comparable release found on the {channel.DisplayName()} channel.");
+				return new VersionCheckResult(current, null, false, channel, CheckSucceeded: true, "No comparable release found.");
+			}
+
+			// On a tie the first one listed wins (GitHub lists newest first).
+			(ProductVersion best, ReleaseSummary latest, ReleaseInstaller? latestInstaller) = candidates[0];
+			foreach ((ProductVersion parsed, ReleaseSummary release, ReleaseInstaller? installer) in candidates)
+			{
+				if (parsed.ComparePrecedenceTo(best) > 0)
 				{
-					AppLog.Info(LogSource, $"No comparable release found on the {channel} channel.");
-					return new VersionCheckResult(current, null, false, channel, CheckSucceeded: true, "No comparable release found.");
+					(best, latest, latestInstaller) = (parsed, release, installer);
 				}
+			}
 
-				// On a tie the first one listed wins (GitHub lists newest first).
-				(ProductVersion best, ReleaseSummary latest, ReleaseInstaller? latestInstaller) = candidates[0];
-				foreach ((ProductVersion parsed, ReleaseSummary release, ReleaseInstaller? installer) in candidates)
-				{
-					if (parsed.ComparePrecedenceTo(best) > 0)
-					{
-						(best, latest, latestInstaller) = (parsed, release, installer);
-					}
-				}
+			int currentVsBest = currentParsed?.ComparePrecedenceTo(best) ?? 0;
+			bool updateAvailable = currentParsed is not null && currentVsBest < 0;
+			bool isAheadOfLatest = currentParsed is not null && currentVsBest > 0;
 
-				int currentVsBest = currentParsed?.ComparePrecedenceTo(best) ?? 0;
-				bool updateAvailable = currentParsed is not null && currentVsBest < 0;
-				bool isAheadOfLatest = currentParsed is not null && currentVsBest > 0;
+			// Ahead because the user moved to a more stable channel while on one of its published
+			// pre-releases (running 3.1.0-rc.1, now on Stable) - not a development build.
+			ReleaseChannel? preReleaseChannel = isAheadOfLatest && IsPublishedPreRelease(currentParsed!) && currentParsed!.Channel < channel
+				? currentParsed.Channel
+				: null;
 
-				List<ReleaseSummary> newer = updateAvailable
-					? [.. candidates
+			List<ReleaseSummary> newer = updateAvailable
+				? [.. candidates
 						.Where(c => c.Parsed.ComparePrecedenceTo(currentParsed!) > 0)
 						.OrderByDescending(c => c.Parsed, Precedence)
 						.ThenByDescending(c => c.Release.PublishedAt)
 						.Select(c => c.Release)]
-					: [];
+				: [];
 
-				string message = updateAvailable
-					? $"v{latest.Version} available on the {channel} channel ({newer.Count} newer release(s))."
-					: isAheadOfLatest
-						? $"Running a development build ahead of the latest {channel} release (v{latest.Version})."
-						: "You are running the latest version.";
+			string message = updateAvailable
+				? $"v{latest.Version} available on the {channel.DisplayName()} channel ({newer.Count} newer release(s))."
+				: preReleaseChannel is { } running
+					? $"Running a {running.DisplayName()} pre-release ahead of the latest {channel.DisplayName()} release (v{latest.Version})."
+				: isAheadOfLatest
+					? $"Running a development build ahead of the latest {channel.DisplayName()} release (v{latest.Version})."
+					: "You are running the latest version.";
 
-				AppLog.Info(LogSource, message);
-				return new VersionCheckResult(
-					current, latest.Version, updateAvailable, channel, CheckSucceeded: true, message,
-					LatestReleaseUrl: latest.Url, IsAheadOfLatestRelease: isAheadOfLatest)
-				{
-					NewerReleases = newer,
-					LatestInstaller = latestInstaller,
-				};
-			}
+			AppLog.Info(LogSource, message);
+			return new VersionCheckResult(
+				current, latest.Version, updateAvailable, channel, CheckSucceeded: true, message,
+				LatestReleaseUrl: latest.Url, IsAheadOfLatestRelease: isAheadOfLatest)
+			{
+				NewerReleases = newer,
+				LatestInstaller = latestInstaller,
+				RunningPreReleaseChannel = preReleaseChannel,
+			};
 		}
 		catch (Exception ex)
 		{
@@ -174,6 +174,14 @@ public static partial class VersionCheck
 			return new VersionCheckResult(current, null, false, channel, CheckSucceeded: false, ex.Message);
 		}
 	}
+
+	/// <summary>
+	/// Whether a pre-release carries one of the labels releases are published with - <c>alpha</c>,
+	/// <c>beta</c> or <c>rc</c> - rather than a development label such as <c>dev</c>.
+	/// </summary>
+	private static bool IsPublishedPreRelease(ProductVersion version) =>
+		version.IsPrerelease
+		&& version.SemVersion.PrereleaseIdentifiers[0].Value.ToUpperInvariant() is "ALPHA" or "BETA" or "RC";
 
 	// The release's first .msi asset with a usable name and download URL, if any.
 	private static ReleaseInstaller? FindInstaller(JsonElement release)
@@ -249,20 +257,51 @@ public static partial class VersionCheck
 	}
 
 	/// <summary>
-	/// Sends the GitHub releases request, optionally with a bearer token attached. Never throws
-	/// on a non-success status - the caller inspects <see cref="HttpResponseMessage.IsSuccessStatusCode"/>.
+	/// Sends the GitHub releases request: with the chosen GitHub token, if any, and - when that
+	/// fails in any way - once more without it, since a stale token must never hide an update.
+	/// Never throws on a non-success status - the caller inspects
+	/// <see cref="HttpResponseMessage.IsSuccessStatusCode"/>.
 	/// </summary>
-	private static async Task<HttpResponseMessage> SendReleasesRequestAsync(
-		HttpClient client, string? token, CancellationToken cancellationToken)
+	private static async Task<HttpResponseMessage> SendReleasesRequestAsync(HttpClient client, CancellationToken cancellationToken)
 	{
-		using HttpRequestMessage request = new(HttpMethod.Get, ReleasesUrl);
-		request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github+json"));
-		if (token is not null)
+		using (HttpRequestMessage request = NewReleasesRequest())
 		{
-			request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+			if (!GitHubAuth.TryAuthorize(request))
+			{
+				return await client.SendAsync(request, cancellationToken).ConfigureAwait(false);
+			}
+
+			string failure;
+
+			try
+			{
+				HttpResponseMessage response = await client.SendAsync(request, cancellationToken).ConfigureAwait(false);
+
+				if (response.IsSuccessStatusCode)
+				{
+					return response;
+				}
+
+				failure = $"GitHub answered {(int)response.StatusCode}";
+				response.Dispose();
+			}
+			catch (Exception ex) when (!cancellationToken.IsCancellationRequested)
+			{
+				failure = ex.Message;
+			}
+
+			AppLog.Warning(LogSource, $"The release check with {GitHubAuth.TokenDescription} failed ({failure}); trying again without it.");
 		}
 
-		return await client.SendAsync(request, cancellationToken).ConfigureAwait(false);
+		using HttpRequestMessage anonymous = NewReleasesRequest();
+		return await client.SendAsync(anonymous, cancellationToken).ConfigureAwait(false);
+	}
+
+	private static HttpRequestMessage NewReleasesRequest()
+	{
+		HttpRequestMessage request = new(HttpMethod.Get, ReleasesUrl);
+		request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github+json"));
+		return request;
 	}
 
 	[GeneratedRegex(@"^ {0,3}(?<hashes>#{1,6})[ \t]+(?<text>.*)$")]

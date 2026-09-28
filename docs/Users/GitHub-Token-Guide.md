@@ -113,15 +113,16 @@ credential…** next to a web address on the vNAS Alias Upload tab):
 3. **Token** - paste the token you copied.
 4. **Use only with these websites** - leave it as `github.com, githubusercontent.com`. FE-Buddy
    never sends the token anywhere else.
-5. **Save**, then press **Check** next to the credential. *GitHub accepted this token* means it
-   works.
+5. **Save**, then press **Check** next to the credential. *GitHub accepted this token* means the
+   token is valid; whether it can read your file shows in the next step.
 
 FE-Buddy keeps the token in Windows Credential Manager, encrypted with your Windows sign-in. It is
 never written to FE-Buddy's settings or to a settings export, and it is never shown again.
 
 Now choose it for your file on the vNAS Alias Upload tab and press **Check** there: it should say
 how many alias commands it read. One token can serve several files - an entry on GitHub with no
-credential is offered **Use <name>, like file N** when an earlier entry already has one.
+credential is offered, for example, **Use ZOB GitHub, like file 1** when an earlier entry already
+has one.
 
 ## When the token expires
 
@@ -145,6 +146,9 @@ What FE-Buddy's **Check** says, and what to do about it:
 | GitHub could not find it, or the credential … cannot see it | The repository isn't in the token's **Only select repositories** list; the token is still **Pending** approval; or the **Resource owner** is wrong | Edit the token on GitHub and add the repository, ask an organization owner to approve it, or make a new token with the organization as the owner |
 | GitHub refused the credential … mistyped, expired or revoked | The token expired, was deleted, or wasn't pasted in full | Regenerate it on GitHub and paste the new one into the credential |
 | GitHub does not let the credential … read it … Contents: Read-only | The token has no **Contents** permission | Edit the token on GitHub and set Contents to Read-only |
+| GitHub needs the credential … authorized for this organization's single sign-on (SSO) | The repository's organization uses SAML single sign-on | On GitHub, authorize the token for the organization (or ask an organization owner to), then press **Check** again |
+| GitHub is limiting how often it can be asked right now | Too many requests in a short time | Wait a few minutes and press **Check** again |
+| This address has a sign-in token (token=) in it | The address was copied from the browser while viewing a private file's raw text | Use the file's own page address (with `/blob/` in it), and choose your GitHub token as its credential |
 | … a GitHub page, not a file | The address is the repository's front page or a folder | Open the alias file itself on GitHub and copy that page's address (it has `/blob/` in it) |
 
 ## Keeping the token safe

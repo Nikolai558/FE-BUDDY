@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Threading;
 
 using FeBuddy.Wpf.Map.Models;
@@ -132,6 +133,19 @@ public partial class MapWorkspace : UserControl
 		if (_vm is not null && Map.GetHome() is { } home)
 		{
 			_vm.State.SetHome(home);
+		}
+	}
+
+	/// <summary>
+	/// Esc in the output picker closes the picker, and goes no further: the workspace's own Esc
+	/// cancels an ROI edit - and closes a map popup - which is not what Esc in a filter box means.
+	/// </summary>
+	private void OnOutputPickerKeyDown(object sender, KeyEventArgs e)
+	{
+		if (e.Key == Key.Escape)
+		{
+			OutputPopup.IsOpen = false;
+			e.Handled = true;
 		}
 	}
 

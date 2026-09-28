@@ -12,7 +12,7 @@ the Models/ rule, one type per file):
 | `FeBuddy.Wpf` | The desktop app. Its layout is in [FeBuddy.Wpf/README.md](FeBuddy.Wpf/README.md). |
 | `FeBuddy.Versioning` | The SemVer version and the update rule (`ProductVersion`, `UpdatePolicy`). netstandard2.0, so both Core and the installer's custom action can use it. See [VERSIONING.md](VERSIONING.md). |
 | `FeBuddy.Installer.CustomActions` | The MSI's one managed custom action, a thin wrapper over `UpdatePolicy`. net472, because WiX's custom-action host only loads .NET Framework. Not unit tested (it needs an MSI session). |
-| `FeBuddy.UnitTests` | Tests for Core and Versioning, in folders that mirror theirs. |
+| `FeBuddy.UnitTests` | Tests for Core and Versioning, in folders that mirror theirs, and for the app's map logic under `Wpf/`. |
 
 ## Three layers, one project
 
@@ -70,13 +70,25 @@ FeBuddy.Core/
 │   └── WxStations/   WxStationCountries (the included US/territory codes), WxStationLabels (the
 │                     Text second-line rule) and the WxStation model
 ├── Infrastructure/
-│   ├── Configuration/  UserConfigFile, UserConfigKeys, DevMode, OutputFormatting
+│   ├── Configuration/  UserConfigFile, UserConfigKeys, DevMode, OutputFormatting; settings export
+│   │   │               and import: UserConfigTransfer (export, and an import worked out before it
+│   │   │               is written), UserConfigPortability (which keys may leave this PC, by name),
+│   │   │               PortablePathTokens (%DESKTOP%, %DOCUMENTS%, %USERPROFILE%)
+│   │   └── Models/     ConfigKeyScope, UserConfigPackage, UserConfigImportPlan, ImportedFolder,
+│   │                   UserConfigExportResult, UserConfigTransferException
+│   ├── Credentials/    CredentialStore (the one way in: saved passwords and tokens, and applying
+│   │   │               one to a request), WindowsCredentialVault (Windows Credential Manager
+│   │   │               behind ICredentialVault), CredentialHosts, CredentialKindNames, UrlSecrets
+│   │   │               (a sign-in written into a web address). See Credentials.md
+│   │   └── Models/     CredentialInfo, CredentialDraft, CredentialKind, CredentialUseResult, VaultEntry
 │   ├── Dat/            DatFileReader: FAA .dat RADAR Video Maps
 │   ├── FileSystem/     AppPaths, TempWorkspace, ServiceOutputPaths (the FE-Buddy_Output layout)
 │   ├── Geojson/        CrcFeatureFactory, GeojsonFileWriter, GeojsonFileSet
 │   ├── GitHub/         GitHubAuth, GitHubRepository, GitHubFileUrl (a GitHub file's web address →
 │   │                   the contents API address that works for a private repository with a token)
-│   ├── Http/  Logging/  Markdown/  Platform/
+│   ├── Http/  Logging/  Markdown/
+│   ├── Platform/       AppVersion, InstalledProduct, UtcTimeCheck, LegacyGitHubTokenVariable (whether
+│   │                   2.x's FEBUDDY_GITHUB_TOKEN is set - never its value)
 │   ├── Nasr/           Download, availability, CSV reading, WaypointLocator
 │   │   ├── Models/     One row-model file per NASR CSV group
 │   │   └── Parsers/    One parser per group + NasrCsvParser (parses them all)
@@ -105,7 +117,8 @@ FeBuddy.Core/
     ├── Airac/          AiracService (entry point), AiracCycleDataCache, AiracSharedDataLoader
     │   │               (downloads the Wx Stations/Telephony data a run needs), AiracOutputPaths,
     │   │               FebProperties, DuplicateAliasReport (the run-level duplicate-alias-command
-    │   │               report)
+    │   │               report), AiracOutputCatalog (the cycle folders and GeoJSON files earlier
+    │   │               runs left, for the Map's output picker)
     │   ├── Airways/    One folder per sub-service, all shaped the same way
     │   ├── Airports/
     │   ├── Departures/
@@ -136,7 +149,7 @@ FeBuddy.Core/
     │   ├── DatToGeojson/
     │   ├── EramToGeojson/
     │   └── SctToGeojson/
-    ├── Launch/         LaunchSequence, AppEnvironment
+    ├── Launch/         LaunchSequence, AppEnvironment, LegacyGitHubTokenNotice
     ├── News/           NewsService
     ├── Settings/       Shared readers for the string settings dictionaries
     ├── Updates/        VersionCheck, UpdateInstaller
@@ -173,8 +186,9 @@ A class's suffix tells you what it does:
 
 ## How a run flows
 
-**At launch**, `LaunchSequence.RunAsync` clears the temp folder, reads the config, checks UTC
-time and internet access, then runs three steps concurrently: the version check, the News
+**At launch**, `LaunchSequence.RunAsync` clears the temp folder, reads the config, looks for FE-Buddy
+2.x's GitHub token variable (`LegacyGitHubTokenNotice`), checks UTC time and internet access, then
+runs three steps concurrently: the version check, the News
 fetch, and the AIRAC data step. The AIRAC step works out the previous, current and next cycles
 (`AiracCycleResolver`). It then has `AiracCycleDataCache` download and parse whichever of them the
 FAA has published (`NasrCycleDownloader` → `NasrCsvParser.ParseAllAsync`) and prune every
@@ -308,7 +322,7 @@ files per source (SCT2, ERAM).
 - **XML docs are required.** `GenerateDocumentationFile` is on, so any undocumented public
   member is a build warning (CS1591). Write a `<summary>`, plus `<param>` and `<returns>` where
   they apply. Comments explain *why*; don't point at planning docs or task numbers.
-- **Tests** in `FeBuddy.UnitTests` mirror Core's folders one-to-one.
+- **Tests** in `FeBuddy.UnitTests` mirror Core's folders one-to-one (and the app's, under `Wpf/`).
 
 Before you commit, run these from `FeBuddy/`:
 

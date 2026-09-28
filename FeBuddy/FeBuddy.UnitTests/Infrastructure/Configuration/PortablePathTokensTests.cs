@@ -60,6 +60,19 @@ public sealed class PortablePathTokensTests
 	public void expand_leaves_everything_else_alone(string value) =>
 		Assert.Equal(value, Bob.Expand(value));
 
+	/// <summary>Only a value that starts with one of the three tokens stands for the user's own folder.</summary>
+	[Theory]
+	[InlineData(@"%DESKTOP%\FE-Buddy", true)]
+	[InlineData(" %documents%", true)]
+	[InlineData(@"%USERPROFILE%/VATSIM", true)]
+	[InlineData(@"%DESKTOPS%\x", false)]
+	[InlineData(@"%APPDATA%\FE-Buddy", false)]
+	[InlineData(@"D:\VATSIM\%DESKTOP%", false)]
+	[InlineData(" ", false)]
+	[InlineData(null, false)]
+	public void starts_with_token_knows_the_users_own_folders(string? value, bool expected) =>
+		Assert.Equal(expected, PortablePathTokens.StartsWithToken(value));
+
 	/// <summary>A token with no folder on this PC is left unexpanded, rather than expanded to nothing.</summary>
 	[Fact]
 	public void expand_keeps_a_token_with_no_folder()

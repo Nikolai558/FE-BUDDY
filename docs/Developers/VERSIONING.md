@@ -67,9 +67,9 @@ The tag decides a release's **channel** (`FeBuddy.Versioning.ProductVersion.Chan
 
 A user's update channel (Settings > Updates, stored as `General.UpdateChannel`) is the **lowest**
 channel they accept: Stable is offered only stable releases, ReleaseCandidate adds `-rc`, Beta
-adds `-beta`, Alpha is offered everything. GitHub's "pre-release" checkbox is not consulted - the
-tag alone decides, exactly as in FE-Buddy 2.x's updater. (The Settings page does not offer
-ReleaseCandidate yet; the channel exists in `FeBuddy.Versioning` and is honoured if stored.)
+adds `-beta`, Alpha is offered everything. Settings offers all four, as Stable, Release Candidate,
+Beta and Alpha. GitHub's "pre-release" checkbox is not consulted - the tag alone decides, exactly
+as in FE-Buddy 2.x's updater.
 
 ---
 

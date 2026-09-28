@@ -114,6 +114,18 @@ public sealed class VnasAliasSettingsParserTests
 		Assert.StartsWith("Custom alias file 1", ex.Message, StringComparison.Ordinal);
 	}
 
+	/// <summary>An address with a secret written into it is refused - and the message never repeats the address.</summary>
+	[Theory]
+	[InlineData("https://raw.githubusercontent.com/o/r/main/a.txt?token=GHSAT0SECRET", "a sign-in token (token=)")]
+	[InlineData("https://bob:SECRET@example.com/a.txt", "a user name and password")]
+	public void an_address_with_a_secret_in_it_is_refused(string url, string expected)
+	{
+		ArgumentException ex = Assert.Throws<ArgumentException>(() => VnasAliasSettingsParser.Parse(Block(("Sources.1.Url", url))));
+
+		Assert.StartsWith($"Custom alias file 1's web address has {expected} in it.", ex.Message, StringComparison.Ordinal);
+		Assert.DoesNotContain("SECRET", ex.Message, StringComparison.Ordinal);
+	}
+
 	[Fact]
 	public void an_http_address_is_allowed_without_a_credential()
 	{

@@ -36,8 +36,8 @@ counter. The real version is at the top of FE-Buddy's window, and in `FE-BUDDY.e
 
 ### Which update channel should I use?
 
-**Stable**, unless a developer asks you to test something. Beta and Alpha get early versions that
-may be broken.
+**Stable**, unless a developer asks you to test something. Release Candidate adds versions that
+are in a final round of testing; Beta and Alpha get earlier versions that may be broken.
 
 ### Does FE-Buddy send my data anywhere?
 
@@ -45,6 +45,24 @@ No. It downloads the FAA's public data, checks GitHub for updates and news, down
 alias file you gave a web address for, and writes files on your PC. Your settings stay in
 `%APPDATA%\FE-Buddy\UserConfig.json`. A token or password you save in Settings ▸ Credentials is
 kept in Windows Credential Manager, and only ever sent to the websites you allow it for.
+
+### I set FEBUDDY_GITHUB_TOKEN for FE-Buddy 2.x
+
+FE-Buddy 3 doesn't use it. It keeps tokens in Windows Credential Manager, encrypted with your
+Windows sign-in, while an environment variable is plain text that any program you run can read.
+Delete it:
+
+1. Search the Start menu for **environment variables** and open *Edit environment variables for
+   your account*.
+2. Select `FEBUDDY_GITHUB_TOKEN` under *User variables*, press **Delete**, then **OK**. If it was set
+   for everyone on the PC, it is under *System variables* instead, which needs an administrator:
+   open *Edit the system environment variables*.
+3. If you no longer need the token, delete it on GitHub too (Settings ▸ Developer settings ▸
+   Personal access tokens).
+
+To have FE-Buddy use a GitHub token, add it in Settings ▸ Credentials and choose it under
+FE-Buddy's GitHub Requests. When FE-Buddy starts, it tells you once if the variable is still set -
+it looks for the name only and never reads the token.
 
 ### What happens if Wx Stations or Telephony can't download their data?
 
@@ -121,8 +139,15 @@ walks through the token settings step by step. The usual reasons:
 - **GitHub does not let the credential read it (403).** A fine-grained token must include this
   repository, with *Contents: Read-only*. With no token at all, a 403 can also mean GitHub's limit
   on downloads without a token was reached - choose a token, or try again in an hour.
-- **GitHub sent a web page, not an alias file.** The address is a repository or folder page, or
-  a sign-in page. Use the file's own address.
+- **GitHub needs the credential authorized for single sign-on (403).** The repository's
+  organization uses SAML single sign-on: on GitHub, authorize the token for the organization.
+- **GitHub is limiting how often it can be asked.** Too many requests in a short time - wait a few
+  minutes and try again.
+- **This is a GitHub page, not a file.** The address is a repository or folder page on GitHub.
+  Open the alias file on GitHub and copy that page's address (with `/blob/` in it).
+- **… sent a web page, not an alias file.** The website sent a page for people to read - a
+  sign-in page, say, or a file's page on a website other than GitHub - instead of the file itself.
+  Use the address of the file itself (on most websites, its "raw" or download link).
 
 ### The installer says this version cannot replace what's installed
 

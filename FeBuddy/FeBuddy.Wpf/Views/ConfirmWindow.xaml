@@ -1,9 +1,16 @@
+<!--
+    ConfirmWindow  -  a small themed confirm dialog. It grows with its message up to the height of
+    the screen's work area; past that the message scrolls, so the buttons always stay on screen.
+    The frame gives a self-sizing window's body all the height it asks for, so the message's own
+    limit is set in the code-behind; the window's MaxHeight only backs it up.
+-->
 <ctl:ChromeWindow x:Class="FeBuddy.Wpf.Views.ConfirmWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
         Title="{Binding Title}"
         Width="480" SizeToContent="Height"
+        MaxHeight="{Binding Height, Source={x:Static SystemParameters.WorkArea}}"
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize"
         ShowInTaskbar="False"
@@ -11,16 +18,25 @@
         Background="{StaticResource Brush.Bg.Base}">
 
     <Border Padding="24">
-        <StackPanel>
-            <TextBlock Text="{Binding Title}"
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <TextBlock Grid.Row="0" Text="{Binding Title}"
                        FontFamily="{StaticResource Font.Display}" FontSize="16" FontWeight="Bold"
                        Foreground="{StaticResource Brush.Text.Primary}" />
 
-            <TextBlock Text="{Binding Message}" TextWrapping="Wrap" Margin="0,12,0,0"
-                       Style="{StaticResource Text.Body}" />
+            <ScrollViewer x:Name="MessageScroller" Grid.Row="1" Margin="0,12,0,0"
+                          VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <TextBlock Text="{Binding Message}" TextWrapping="Wrap"
+                           Style="{StaticResource Text.Body}" />
+            </ScrollViewer>
 
             <!-- Cancel, then the alternative (only when there is one), then the primary confirm. -->
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,22,0,0">
+            <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,22,0,0">
                 <Button Content="{Binding CancelText}" Style="{StaticResource Button.Ghost}"
                         Command="{Binding CancelCommand}" MinWidth="96" Margin="0,0,10,0" />
                 <Button Content="{Binding AlternativeText}" Style="{StaticResource Button.Ghost}"
@@ -30,6 +46,6 @@
                         Command="{Binding ConfirmCommand}" MinWidth="140"
                         IsDefault="{Binding ConfirmIsDefault}" />
             </StackPanel>
-        </StackPanel>
+        </Grid>
     </Border>
 </ctl:ChromeWindow>

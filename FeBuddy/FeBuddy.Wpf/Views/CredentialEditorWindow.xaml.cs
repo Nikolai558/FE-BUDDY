@@ -10,8 +10,8 @@ namespace FeBuddy.Wpf.Views;
 
 /// <summary>
 /// Adds or edits one credential (<see cref="CredentialEditorViewModel"/>). A PasswordBox cannot be
-/// bound, which suits a secret: the window hands what is typed to the view-model, never the other
-/// way, and clears both when it closes.
+/// bound, which suits a secret: the view-model reads what is typed once, when saving, never the
+/// other way, and the box is cleared when the window closes.
 /// </summary>
 public partial class CredentialEditorWindow : ChromeWindow
 {
@@ -23,13 +23,13 @@ public partial class CredentialEditorWindow : ChromeWindow
 		_viewModel = viewModel;
 		DataContext = viewModel;
 
-		SecretBox.PasswordChanged += (_, _) => viewModel.Secret = SecretBox.Password;
+		viewModel.ReadSecret = () => SecretBox.Password;
 		viewModel.CloseRequested += (_, _) => Close();
 		Loaded += (_, _) => NameBox.Focus();
 		Closed += (_, _) =>
 		{
 			SecretBox.Clear();
-			viewModel.Secret = string.Empty;
+			viewModel.ReadSecret = () => string.Empty;
 		};
 	}
 

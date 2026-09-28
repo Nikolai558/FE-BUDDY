@@ -112,6 +112,26 @@ public sealed class UpdateInstallerTests : IDisposable
 		Assert.False(File.Exists(Path.Combine(UpdateInstaller.UpdatesDirectory, "FE-BUDDY-3.0.0.msi")));
 	}
 
+	/// <summary>
+	/// A failed download whose file cannot be cleared away - an earlier copy another program holds
+	/// open - still reports the download's own failure; the next launch clears the folder anyway.
+	/// </summary>
+	[Fact]
+	public async Task download_async_fails_even_when_the_old_file_cannot_be_cleared()
+	{
+		Directory.CreateDirectory(UpdateInstaller.UpdatesDirectory);
+		string destination = Path.Combine(UpdateInstaller.UpdatesDirectory, "FE-BUDDY-3.0.0.msi");
+		File.WriteAllBytes(destination, [1, 2, 3]);
+		using HttpClient client = new(new StubHttpHandler(_ => new HttpResponseMessage(HttpStatusCode.NotFound)));
+
+		using (new FileStream(destination, FileMode.Open, FileAccess.Read, FileShare.Read))
+		{
+			await Assert.ThrowsAsync<HttpRequestException>(() => UpdateInstaller.DownloadAsync(Installer(Payload.Length), httpClient: client));
+		}
+
+		Assert.True(File.Exists(destination));
+	}
+
 	[Fact]
 	public async Task download_async_with_a_token_downloads_through_the_assets_api()
 	{
@@ -148,6 +168,68 @@ public sealed class UpdateInstallerTests : IDisposable
 		Assert.Equal(Payload, await File.ReadAllBytesAsync(path));
 		Assert.Equal(2, sent.Count);
 		Assert.Null(sent[1].Headers.Authorization);
+	}
+
+	/// <summary>A download with the token that is cut short, or gets no answer, is tried once more from the public link.</summary>
+	[Theory]
+	[InlineData("cut short")]
+	[InlineData("no answer")]
+	public async Task download_async_token_download_fails_any_way_retries_the_public_url(string failure)
+	{
+		using IDisposable token = TestCredentials.UseGitHubToken("test-token");
+		List<HttpRequestMessage> sent = [];
+		using HttpClient client = new(new StubHttpHandler(request =>
+		{
+			sent.Add(request);
+			return request.Headers.Authorization is null ? Ok(Payload)
+				: failure == "cut short" ? OkWithoutLength(Payload[..1000])
+				: throw new HttpRequestException("connection reset");
+		}));
+
+		string path = await UpdateInstaller.DownloadAsync(Installer(Payload.Length), httpClient: client);
+
+		Assert.Equal(Payload, await File.ReadAllBytesAsync(path));
+		Assert.Equal(2, sent.Count);
+		Assert.Equal("https://github.com/Nikolai558/FE-BUDDY/releases/download/3.0.0/FE-BUDDY-3.0.0.msi", sent[1].RequestUri!.ToString());
+	}
+
+	/// <summary>A token Windows Credential Manager cannot read never stops the download: it comes from the public link.</summary>
+	[Fact]
+	public async Task download_async_unreadable_token_downloads_the_public_url()
+	{
+		using IDisposable token = TestCredentials.UseUnreadableGitHubToken();
+		List<HttpRequestMessage> sent = [];
+		using HttpClient client = new(new StubHttpHandler(request =>
+		{
+			sent.Add(request);
+			return Ok(Payload);
+		}));
+
+		string path = await UpdateInstaller.DownloadAsync(Installer(Payload.Length), httpClient: client);
+
+		Assert.Equal(Payload, await File.ReadAllBytesAsync(path));
+		Assert.Null(Assert.Single(sent).Headers.Authorization);
+	}
+
+	/// <summary>Cancelling during the download with the token stops it - it is not retried, and leaves no file.</summary>
+	[Fact]
+	public async Task download_async_cancelled_during_the_token_attempt_is_not_retried()
+	{
+		using IDisposable token = TestCredentials.UseGitHubToken("test-token");
+		using CancellationTokenSource cts = new();
+		int calls = 0;
+		using HttpClient client = new(new StubHttpHandler(_ =>
+		{
+			calls++;
+			cts.Cancel();
+			throw new TaskCanceledException();
+		}));
+
+		await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+			UpdateInstaller.DownloadAsync(Installer(Payload.Length), httpClient: client, cancellationToken: cts.Token));
+
+		Assert.Equal(1, calls);
+		Assert.False(File.Exists(Path.Combine(UpdateInstaller.UpdatesDirectory, "FE-BUDDY-3.0.0.msi")));
 	}
 
 	[Fact]

@@ -139,11 +139,6 @@ public sealed class MapCanvas : FrameworkElement
 		nameof(RoiEditing), typeof(bool), typeof(MapCanvas),
 		new PropertyMetadata(false, OnRoiChanged));
 
-	/// <summary>Identifies the <see cref="ShowGraticule"/> dependency property.</summary>
-	public static readonly DependencyProperty ShowGraticuleProperty = DependencyProperty.Register(
-		nameof(ShowGraticule), typeof(bool), typeof(MapCanvas),
-		new PropertyMetadata(true, OnMapDataChanged));
-
 	private static readonly DependencyPropertyKey CursorTextPropertyKey = DependencyProperty.RegisterReadOnly(
 		nameof(CursorText), typeof(string), typeof(MapCanvas), new PropertyMetadata(string.Empty));
 
@@ -195,14 +190,10 @@ public sealed class MapCanvas : FrameworkElement
 		set => SetValue(RoiEditingProperty, value);
 	}
 
-	/// <summary>Whether the latitude/longitude grid is drawn. On by default.</summary>
-	public bool ShowGraticule
-	{
-		get => (bool)GetValue(ShowGraticuleProperty);
-		set => SetValue(ShowGraticuleProperty, value);
-	}
-
-	/// <summary>Lat/lon under the pointer, e.g. <c>38.51203, -95.10412</c>. Empty when off-map.</summary>
+	/// <summary>
+	/// Lat/lon under the pointer, e.g. <c>38.51203, -95.10412</c>. Empty when the pointer is off the
+	/// map, or above or below the world when zoomed right out.
+	/// </summary>
 	public string CursorText => (string)GetValue(CursorTextProperty);
 
 	/// <summary>
@@ -230,14 +221,16 @@ public sealed class MapCanvas : FrameworkElement
 		WebMercator.LatToWorldY(bounds.North), WebMercator.LatToWorldY(bounds.South));
 
 	/// <summary>
-	/// Zooms and pans to show every shape in <paramref name="layers"/>. A layer over the 180th
-	/// meridian is framed the short way round.
+	/// Zooms and pans to show every shape in <paramref name="layers"/>. Shapes either side of the
+	/// 180th meridian - one line across it, or separate ones on each side - are framed the short
+	/// way round (<see cref="ProjectedLayer.Covering"/>).
 	/// </summary>
 	/// <param name="layers">The layers to show.</param>
 	/// <returns><see langword="false"/> when the layers hold nothing to frame.</returns>
 	public bool FrameLayers(IEnumerable<MapLayer> layers)
 	{
-		double x0 = double.MaxValue, x1 = double.MinValue, y0 = double.MaxValue, y1 = double.MinValue;
+		List<(double Min, double Max)> spans = [];
+		double y0 = double.MaxValue, y1 = double.MinValue;
 		foreach (MapLayer layer in layers)
 		{
 			ProjectedLayer projected = ProjectedLayer.For(layer);
@@ -246,18 +239,17 @@ public sealed class MapCanvas : FrameworkElement
 				continue;
 			}
 
-			x0 = Math.Min(x0, projected.MinX);
-			x1 = Math.Max(x1, projected.MaxX);
+			spans.AddRange(projected.XSpans);
 			y0 = Math.Min(y0, projected.MinY);
 			y1 = Math.Max(y1, projected.MaxY);
 		}
 
-		if (x0 > x1)
+		if (ProjectedLayer.Covering(spans) is not { } x)
 		{
 			return false;
 		}
 
-		FrameWorld(x0, x1, y0, y1);
+		FrameWorld(x.Min, x.Max, y0, y1);
 		return true;
 	}
 
@@ -376,9 +368,28 @@ public sealed class MapCanvas : FrameworkElement
 		WorldX(-marginPx), WorldX(ActualWidth + marginPx),
 		WorldY(-marginPx), WorldY(ActualHeight + marginPx));
 
-	/// <summary>The whole-world offsets at which something spanning x0..x1 shows in <paramref name="view"/>.</summary>
-	private static (int First, int Last) Copies(double x0, double x1, WorldRect view) =>
-		((int)Math.Ceiling(view.X0 - x1), (int)Math.Floor(view.X1 - x0));
+	/// <summary>
+	/// The whole-world offsets at which something spanning x0..x1 shows in <paramref name="view"/>:
+	/// every copy that overlaps it. A layer's shapes can sit anywhere in its span - a line drawn on
+	/// past the 180th meridian, and a shape just east of it, show side by side in different copies -
+	/// so one copy is never assumed to be enough; each shape is culled per copy by its caller.
+	/// </summary>
+	/// <remarks>
+	/// At most <c>MaxCopies</c> more than the view is wide are given, and the offsets stay small, so no
+	/// span - however wild (a damaged file's line wound round the world again and again) - can make a
+	/// caller loop for long. Real data spans at most about two worlds.
+	/// </remarks>
+	internal static (int First, int Last) Copies(double x0, double x1, WorldRect view)
+	{
+		const double MaxOffset = 1_000_000;
+		const int MaxCopies = 8;
+
+		int first = (int)Math.Clamp(Math.Ceiling(view.X0 - x1), -MaxOffset, MaxOffset);
+		int last = (int)Math.Clamp(Math.Floor(view.X1 - x0), -MaxOffset, MaxOffset);
+		int most = MaxCopies + (int)Math.Clamp(Math.Ceiling(view.X1 - view.X0), 0, MaxOffset);
+
+		return (first, (int)Math.Min(last, (long)first + most - 1));
+	}
 
 	// ============================= input ==================================
 
@@ -456,7 +467,11 @@ public sealed class MapCanvas : FrameworkElement
 		base.OnMouseMove(e);
 		Point pos = e.GetPosition(this);
 
-		SetValue(CursorTextPropertyKey, Format(WebMercator.WorldYToLat(WorldY(pos.Y)), WebMercator.NormalizeLon(WebMercator.WorldXToLon(WorldX(pos.X)))));
+		// Zoomed right out, the world is shorter than the map: the bands above and below it are no place at all.
+		double worldY = WorldY(pos.Y);
+		SetValue(CursorTextPropertyKey, worldY is >= 0.0 and <= 1.0
+			? Format(WebMercator.WorldYToLat(worldY), WebMercator.NormalizeLon(WebMercator.WorldXToLon(WorldX(pos.X))))
+			: string.Empty);
 
 		if (_drag == DragMode.None)
 		{
@@ -488,7 +503,9 @@ public sealed class MapCanvas : FrameworkElement
 				break;
 
 			case DragMode.MoveRoi:
-				double moveY = Math.Clamp(dy, -_draft.Y0, 1.0 - _draft.Y1);
+				// Up and down only as far as the world goes. A box already as tall as the world
+				// (pole to pole) cannot move up or down at all.
+				double moveY = _draft.Y1 - _draft.Y0 >= 1.0 ? 0.0 : Math.Clamp(dy, -_draft.Y0, 1.0 - _draft.Y1);
 				_draft = new WorldRect(_draft.X0 + dx, _draft.X1 + dx, _draft.Y0 + moveY, _draft.Y1 + moveY);
 				RedrawRoi();
 				break;
@@ -709,7 +726,7 @@ public sealed class MapCanvas : FrameworkElement
 	// ============================ rendering ================================
 
 	private Brush Theme(string key, Color fallback)
-		=> TryFindResource(key) as Brush ?? new SolidColorBrush(fallback);
+		=> TryFindResource(key) as Brush ?? FrozenBrush.Of(fallback);
 
 	/// <summary>Queues one full redraw for the next frame, however many changes ask for it.</summary>
 	private void InvalidateMap()
@@ -738,7 +755,7 @@ public sealed class MapCanvas : FrameworkElement
 		{
 			dc.DrawRectangle(Theme("Brush.Bg.Sunken", Color.FromRgb(0x07, 0x0B, 0x10)), null, new Rect(0, 0, ActualWidth, ActualHeight));
 
-			GraticuleLines? grid = ShowGraticule ? DrawGraticule(dc) : null;
+			GraticuleLines grid = DrawGraticule(dc);
 
 			if (BaseLayer is { } baseLayer)
 			{
@@ -753,10 +770,8 @@ public sealed class MapCanvas : FrameworkElement
 				}
 			}
 
-			if (grid is { } g)
-			{
-				DrawGraticuleLabels(dc, g);
-			}
+			// Over the layers, so no line hides a grid label.
+			DrawGraticuleLabels(dc, grid);
 		}
 
 		string hint = heldBack.Count == 0 ? string.Empty : "Zoom in to see " + string.Join(", ", heldBack.Distinct());
@@ -989,13 +1004,9 @@ public sealed class MapCanvas : FrameworkElement
 
 	private GraticuleLines DrawGraticule(DrawingContext dc)
 	{
-		SolidColorBrush lineBrush = new(Color.FromArgb(0x12, 0xFF, 0xFF, 0xFF));
-		lineBrush.Freeze();
-		Pen pen = new(lineBrush, 1);
+		Pen pen = new(FrozenBrush.Of(Color.FromArgb(0x12, 0xFF, 0xFF, 0xFF)), 1);
 		pen.Freeze();
-		SolidColorBrush strongBrush = new(Color.FromArgb(0x26, 0xFF, 0xFF, 0xFF));
-		strongBrush.Freeze();
-		Pen strong = new(strongBrush, 1);
+		Pen strong = new(FrozenBrush.Of(Color.FromArgb(0x26, 0xFF, 0xFF, 0xFF)), 1);
 		strong.Freeze();
 
 		// Aim for a line roughly every 100 pixels.
@@ -1204,18 +1215,23 @@ public sealed class MapCanvas : FrameworkElement
 		}
 	}
 
+	/// <summary>
+	/// Follows the new layer list. The list is usually the one every map shares, which outlives each
+	/// popup, so the map listens weakly: a closed popup's map is never kept alive, or kept redrawing,
+	/// by the list.
+	/// </summary>
 	private static void OnLayersChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
 	{
 		var map = (MapCanvas)d;
 
 		if (e.OldValue is INotifyCollectionChanged oldObservable)
 		{
-			oldObservable.CollectionChanged -= map.OnLayersCollectionChanged;
+			CollectionChangedEventManager.RemoveHandler(oldObservable, map.OnLayersCollectionChanged);
 		}
 
 		if (e.NewValue is INotifyCollectionChanged newObservable)
 		{
-			newObservable.CollectionChanged += map.OnLayersCollectionChanged;
+			CollectionChangedEventManager.AddHandler(newObservable, map.OnLayersCollectionChanged);
 		}
 
 		map.InvalidateMap();
@@ -1226,7 +1242,7 @@ public sealed class MapCanvas : FrameworkElement
 	// ============================== helpers ================================
 
 	/// <summary>An axis-aligned box in world units; x may run past 0..1 (see the class remarks).</summary>
-	private readonly record struct WorldRect(double X0, double X1, double Y0, double Y1)
+	internal readonly record struct WorldRect(double X0, double X1, double Y0, double Y1)
 	{
 		public WorldRect Shifted(int worlds) => this with { X0 = X0 + worlds, X1 = X1 + worlds };
 

@@ -26,7 +26,8 @@ FE-Buddy.
 | [FeBuddy.Wpf](Developers/FeBuddy.Wpf/README.md) | The app: layout, screens, the design system. |
 | [Settings blocks](Developers/Settings-Blocks.md) | Every key each sub-service's parser reads. |
 | [UserConfig.json reference](Developers/UserConfig-Reference.md) | Every saved setting, where it lives and who reads it. |
-| [Versioning](Developers/VERSIONING.md) | How versions are numbered, bumped and released. |
+| [Releasing](Developers/RELEASING.md) | Change-log entries, and how to make a release. |
+| [Versioning](Developers/VERSIONING.md) | How versions are numbered and bumped. |
 | [MSI version numbering](Developers/MSI-VERSION-NUMBERING.md) | Why Windows shows a different version number. |
 | [TODO](Developers/TODO.md) | Open work. |
 | [Developer notes](Developers/Developer_Notes.md) | The owner's design notebook: ideas and intentions, some not built yet. |
@@ -37,4 +38,5 @@ FE-Buddy.
 
 - **Releases and downloads:** [GitHub Releases](https://github.com/Nikolai558/FE-BUDDY/releases)
 - **Report a bug or ask for a feature:** [GitHub Issues](https://github.com/Nikolai558/FE-BUDDY/issues)
+- **Report a security vulnerability** (privately, not in Issues): [Security policy](SECURITY.md)
 - **The 2.x manual** (FE-Buddy 2.x only): [Users/Manual HTML](Users/Manual%20HTML/)

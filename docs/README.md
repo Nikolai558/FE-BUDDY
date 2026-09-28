@@ -26,6 +26,7 @@ FE-Buddy.
 | [FeBuddy.Wpf](Developers/FeBuddy.Wpf/README.md) | The app: layout, screens, the design system. |
 | [Settings blocks](Developers/Settings-Blocks.md) | Every key each sub-service's parser reads. |
 | [UserConfig.json reference](Developers/UserConfig-Reference.md) | Every saved setting, where it lives and who reads it. |
+| [Release checklist](Developers/Release-Checklist.md) | The release steps, one page, start to finish. |
 | [Releasing](Developers/RELEASING.md) | Change-log entries, and how to make a release. |
 | [Versioning](Developers/VERSIONING.md) | How versions are numbered and bumped. |
 | [MSI version numbering](Developers/MSI-VERSION-NUMBERING.md) | Why Windows shows a different version number. |

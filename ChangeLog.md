@@ -13,15 +13,6 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
 -->
 
 ## Unreleased
-- New File Names tab in the AIRAC Service: see every file a run will write, by folder, and give any
-  of them your own name (the Departures and Arrivals per-procedure files keep theirs). A file a
-  changed setting adds is flagged until you name it or choose to keep FE-Buddy's name.
-- Bug #241 - Airways High/Low: you now choose which file each airway type goes in - High, Low or
-  Both - instead of FE-Buddy guessing from published altitudes, which put V airways the FAA also
-  publishes in Hawaii (V6, V8, V23, …) on the high map. J and Q start in High, V and T in Low; any
-  other type needs your choice. The `Airways_Other` files are gone.
-- ARTCC boundaries made of several separate areas (ZOA's UNLIMITED UTA areas, ZMA's UNLIMITED
-  CTA/FIR sectors) are drawn as separate shapes again, instead of one line zig-zagging between them.
 
 ## 3.0.0-alpha.1
 - FE-BUDDY 3.0 is a from-scratch rewrite with a new interface. This first alpha is for testers:
@@ -34,6 +25,9 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
   `Publication_Docs` and `Upload_to_vNAS`. File names say what they hold, e.g.
   `Airports_Symbols.geojson`, `Airports.txt` (was `ISR_APT.txt`), `Navaids.txt` (was `ISR_NAVAID.txt`).
 - Every output has options: pick which files to write, how to split them, and what goes in them.
+- The File Names tab lists every file a run will write, by folder, and lets you give any of them
+  your own name (the Departures and Arrivals per-procedure files keep theirs). A file a changed
+  setting adds is flagged until you name it or choose to keep FE-BUDDY's name.
 - Maps can be limited to a Region of Interest (draw it on the Map).
 - Mark any file for vNAS and it goes into `Upload_to_vNAS`, with CRC-ERAM style defaults you set
   (brightness group, filters, line style, symbol, text size). Marked alias files and your own custom alias
@@ -60,8 +54,9 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
 ### Video maps (GeoJSON)
 - Airways: one symbol and one label per point, instead of one per airway where airways share a
   point (on a low-altitude map, about half the labels were stacked duplicates).
-  - Split them High / Low (airways with no published altitude get their own `Other` file) or one
-    file per designation (J, V, Q, T, ...), and leave out designations you don't need.
+  - Split them High / Low, choosing which file each airway type goes in (High, Low or Both; J and
+    Q start in High, V and T in Low), or one file per designation (J, V, Q, T, ...), and leave out
+    designations you don't need.
   - The DME-cutoff airway files are replaced by the Buffer Airway Waypoints option: lines stop short
     of each waypoint so they don't run through the symbols.
 - Runways: draws runways 2.x left out (about a third more in a typical area), including water

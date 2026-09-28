@@ -113,8 +113,8 @@ credential…** next to a web address on the vNAS Alias Upload tab):
 3. **Token** - paste the token you copied.
 4. **Use only with these websites** - leave it as `github.com, githubusercontent.com`. FE-Buddy
    never sends the token anywhere else.
-5. **Save**, then press **Check** next to the credential. *GitHub accepted this token* means it
-   works.
+5. **Save**, then press **Check** next to the credential. *GitHub accepted this token* means the
+   token is valid; whether it can read your file shows in the next step.
 
 FE-Buddy keeps the token in Windows Credential Manager, encrypted with your Windows sign-in. It is
 never written to FE-Buddy's settings or to a settings export, and it is never shown again.

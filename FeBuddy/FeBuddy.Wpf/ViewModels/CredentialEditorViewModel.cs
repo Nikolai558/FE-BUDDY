@@ -94,7 +94,7 @@ public sealed class CredentialEditorViewModel : ObservableObject
 	/// <summary>Whether the kind needs a user name.</summary>
 	public bool IsUsernamePassword => SelectedKind.Kind == CredentialKind.UsernamePassword;
 
-	/// <summary>Whether the kind is a GitHub token, which shows the GitHub guidance and the FE-Buddy option.</summary>
+	/// <summary>Whether the kind is a GitHub token, which shows the GitHub guidance.</summary>
 	public bool IsGitHubToken => SelectedKind.Kind == CredentialKind.GitHubToken;
 
 	/// <summary>The user name, for a user name and password.</summary>
@@ -105,10 +105,11 @@ public sealed class CredentialEditorViewModel : ObservableObject
 	}
 
 	/// <summary>
-	/// The password or token being typed. Set by the window from its password box, never bound
-	/// back to it, and cleared when the editor closes.
+	/// Reads the password or token typed so far. The window points it at its password box, so the
+	/// secret is read once, when saving - never copied on every keystroke, and never bound back to
+	/// the box.
 	/// </summary>
-	public string Secret { get; set; } = string.Empty;
+	public Func<string> ReadSecret { get; set; } = () => string.Empty;
 
 	/// <summary>The secret box's label, e.g. <c>Password</c>.</summary>
 	public string SecretLabel => SelectedKind.Kind switch
@@ -118,10 +119,14 @@ public sealed class CredentialEditorViewModel : ObservableObject
 		_ => "Token or API key",
 	};
 
-	/// <summary>The line under the secret box.</summary>
-	public string SecretHint => _existing is null
-		? $"Once saved, the {SelectedKind.Kind.SecretName()} is never shown again."
+	/// <summary>The line under the secret box. Changing an existing credential's type needs its secret typed again.</summary>
+	public string SecretHint =>
+		_existing is null ? $"Once saved, the {SelectedKind.Kind.SecretName()} is never shown again."
+		: _existing.Kind != SelectedKind.Kind ? $"Enter the {SelectedKind.Kind.SecretName()}: changing the type needs it typed again. It is never shown again."
 		: $"Leave empty to keep the saved {SelectedKind.Kind.SecretName()}. It is never shown again.";
+
+	/// <summary>The longest name the name box takes (<see cref="CredentialStore.MaxNameLength"/>).</summary>
+	public const int MaxNameLength = CredentialStore.MaxNameLength;
 
 	/// <summary>The websites the credential may be sent to, as the user types them.</summary>
 	public string HostsText
@@ -177,7 +182,7 @@ public sealed class CredentialEditorViewModel : ObservableObject
 		}
 
 		CredentialDraft draft = new(
-			_existing?.Id, Name, SelectedKind.Kind, UserName, Secret, hosts);
+			_existing?.Id, Name, SelectedKind.Kind, UserName, ReadSecret(), hosts);
 
 		try
 		{

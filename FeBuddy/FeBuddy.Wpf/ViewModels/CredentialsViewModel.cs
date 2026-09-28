@@ -171,6 +171,10 @@ public sealed class CredentialsViewModel : ObservableObject
 		});
 	}
 
+	/// <summary>
+	/// Checks one GitHub token with GitHub. The command discards the task, so every failure is
+	/// caught and shown here - none can go unnoticed.
+	/// </summary>
 	private async Task CheckAsync(CredentialRow? row)
 	{
 		if (row is null)
@@ -183,7 +187,7 @@ public sealed class CredentialsViewModel : ObservableObject
 
 		try
 		{
-			CredentialCheck check = await GitHubAuth.CheckTokenAsync(row.Info.Id);
+			CredentialCheck check = await GitHubAuth.CheckTokenAsync(_store, row.Info.Id);
 
 			if (check.Succeeded)
 			{
@@ -194,8 +198,9 @@ public sealed class CredentialsViewModel : ObservableObject
 				Toast.Warn($"{row.Name} did not work", check.Message);
 			}
 		}
-		catch (Win32Exception ex)
+		catch (Exception ex)
 		{
+			AppLog.Warning(LogSource, $"Checking the credential '{row.Name}' failed: {ex.Message}");
 			Toast.Error("Could not check the token", ex.Message);
 		}
 		finally

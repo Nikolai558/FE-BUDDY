@@ -185,6 +185,47 @@ public sealed class NewsServiceTests : IDisposable
 		Assert.Equal("2026-09-02.1", result.LatestPostId!.Value.ToString());
 	}
 
+	/// <summary>A fetch with the token that gets no answer at all is tried once more from the raw URL too.</summary>
+	[Fact]
+	public async Task check_async_token_fetch_throws_retries_the_raw_url_without_it()
+	{
+		using IDisposable token = TestCredentials.UseGitHubToken("test-token");
+		List<HttpRequestMessage> sent = [];
+		using HttpClient client = new(new StubHttpHandler(request =>
+		{
+			sent.Add(request);
+			return request.Headers.Authorization is null
+				? new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(SampleMarkdown) }
+				: throw new HttpRequestException("connection reset");
+		}));
+
+		NewsCheckResult result = await NewsService.CheckAsync(null, hasInternetConnection: true, client);
+
+		Assert.True(result.FromNetwork);
+		Assert.Equal(2, sent.Count);
+		Assert.Equal(NewsService.RawUrl, sent[1].RequestUri!.ToString());
+	}
+
+	/// <summary>A token Windows Credential Manager cannot read never stops News: it comes from the raw URL.</summary>
+	[Fact]
+	public async Task check_async_unreadable_token_fetches_the_raw_url()
+	{
+		using IDisposable token = TestCredentials.UseUnreadableGitHubToken();
+		List<HttpRequestMessage> sent = [];
+		using HttpClient client = new(new StubHttpHandler(request =>
+		{
+			sent.Add(request);
+			return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(SampleMarkdown) };
+		}));
+
+		NewsCheckResult result = await NewsService.CheckAsync(null, hasInternetConnection: true, client);
+
+		Assert.True(result.FromNetwork);
+		HttpRequestMessage request = Assert.Single(sent);
+		Assert.Equal(NewsService.RawUrl, request.RequestUri!.ToString());
+		Assert.Null(request.Headers.Authorization);
+	}
+
 	/// <summary>With no token chosen, a failed fetch falls back to the bundled copy rather than retrying.</summary>
 	[Fact]
 	public async Task check_async_unauthenticated_fails_no_token_falls_back_to_bundled_copy()

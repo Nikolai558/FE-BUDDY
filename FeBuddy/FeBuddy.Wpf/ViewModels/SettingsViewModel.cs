@@ -345,7 +345,7 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 	public const string GitHubRequestsDescription =
 		"Advanced - most people never need this. FE-Buddy checks for updates, reads News and downloads updates from " +
 		"its public GitHub repository, which works without a GitHub account. A GitHub token lifts GitHub's limit of " +
-		"60 requests an hour, or lets a developer test FE-Buddy against a private copy of its repository.";
+		"60 requests an hour.";
 
 	/// <summary>Whether FE-Buddy's own GitHub requests are sent with a GitHub token.</summary>
 	public bool UseGitHubToken
@@ -445,8 +445,8 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 		}
 		else
 		{
-			Toast.Warn("Not a GitHub token for github.com",
-				$"{saved.Name} is saved, but only a GitHub personal access token whose websites include github.com can be used here.");
+			Toast.Warn("Not a GitHub token for GitHub's API",
+				$"{saved.Name} is saved, but only a GitHub personal access token whose websites cover api.github.com (github.com does) can be used here.");
 		}
 	}
 

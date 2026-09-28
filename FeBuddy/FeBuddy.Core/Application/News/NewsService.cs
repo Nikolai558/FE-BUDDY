@@ -3,7 +3,6 @@ using System.Reflection;
 using System.Text.RegularExpressions;
 
 using FeBuddy.Core.Application.News.Models;
-using FeBuddy.Core.Application.Updates;
 using FeBuddy.Core.Infrastructure.GitHub;
 using FeBuddy.Core.Infrastructure.Http;
 using FeBuddy.Core.Infrastructure.Logging;
@@ -19,7 +18,7 @@ namespace FeBuddy.Core.Application.News;
 /// News.md is read from <see cref="GitHubRepository.Branch"/> of the public repository: from the
 /// raw URL, or - when the user chose a GitHub token (<see cref="GitHubAuth"/>) - through GitHub's
 /// Contents API with that token, since raw.githubusercontent.com doesn't reliably honor one. A
-/// failed fetch with the token is tried once more from the raw URL without it.
+/// fetch with the token that fails in any way is tried once more from the raw URL without it.
 /// </remarks>
 public static class NewsService
 {
@@ -185,24 +184,38 @@ public static class NewsService
 		try
 		{
 			// With a token, News comes through the Contents API, which honours it; without one, from
-			// the raw file. A failed fetch with the token is tried once more without it.
-			string? token = GitHubAuth.GetOptionalToken();
+			// the raw file. A fetch with the token that fails in any way is tried once more without it.
 			string? text = null;
 			string? failureReason = null;
 
-			if (token is not null)
+			using (HttpRequestMessage withToken = new(HttpMethod.Get, ContentsApiUrl))
 			{
-				(text, failureReason) = await TryFetchAsync(client, ContentsApiUrl, token, cancellationToken).ConfigureAwait(false);
+				// The Contents API returns JSON metadata (base64 content) unless explicitly asked for
+				// the raw file body this way.
+				withToken.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github.raw+json"));
 
-				if (text is null)
+				if (GitHubAuth.TryAuthorize(withToken))
 				{
-					AppLog.Warning(LogSource, $"Fetching News with {GitHubAuth.TokenDescription} failed ({failureReason}); trying again without it.");
+					try
+					{
+						(text, failureReason) = await TryFetchAsync(client, withToken, cancellationToken).ConfigureAwait(false);
+					}
+					catch (Exception ex) when (!cancellationToken.IsCancellationRequested)
+					{
+						failureReason = ex.Message;
+					}
+
+					if (text is null)
+					{
+						AppLog.Warning(LogSource, $"Fetching News with {GitHubAuth.TokenDescription} failed ({failureReason}); trying again without it.");
+					}
 				}
 			}
 
 			if (text is null)
 			{
-				(text, failureReason) = await TryFetchAsync(client, RawUrl, token: null, cancellationToken).ConfigureAwait(false);
+				using HttpRequestMessage anonymous = new(HttpMethod.Get, RawUrl);
+				(text, failureReason) = await TryFetchAsync(client, anonymous, cancellationToken).ConfigureAwait(false);
 			}
 
 			if (!string.IsNullOrWhiteSpace(text))
@@ -226,17 +239,8 @@ public static class NewsService
 	/// whether to retry.
 	/// </summary>
 	private static async Task<(string? Markdown, string? FailureReason)> TryFetchAsync(
-		HttpClient client, string url, string? token, CancellationToken cancellationToken)
+		HttpClient client, HttpRequestMessage request, CancellationToken cancellationToken)
 	{
-		using HttpRequestMessage request = new(HttpMethod.Get, url);
-		if (token is not null)
-		{
-			request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-			// Contents API returns JSON metadata (base64 content) unless explicitly asked for
-			// the raw file body this way.
-			request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github.raw+json"));
-		}
-
 		using HttpResponseMessage response = await client.SendAsync(request, cancellationToken).ConfigureAwait(false);
 		if (!response.IsSuccessStatusCode)
 		{

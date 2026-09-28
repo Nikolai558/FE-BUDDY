@@ -803,13 +803,14 @@ all three clear.
   Credential Manager, never in FE-Buddy's settings or an export, and a saved token is never shown
   again. **Add credential…**, **Edit…**, **Remove**, **Remove all**, and **Check** (asks GitHub
   whether a GitHub token still works). Changes here are saved straight away, not with Save.
+  Uninstalling FE-Buddy removes them; updating never does.
   To make a GitHub token with just the access FE-Buddy needs, follow
   [Creating a GitHub token for FE-Buddy](GitHub-Token-Guide.md) (also linked in the editor).
 - **FE-Buddy's GitHub Requests** (advanced - most people never need it) - whether FE-Buddy's own
   update checks, News and update downloads use a GitHub token. *Don't use a GitHub token* is the
   default and works for everyone. *Use a GitHub token* lets you pick one of your GitHub tokens (or
   **New GitHub token…**), to get past GitHub's limit of 60 requests an hour. If a request with the
-  token fails, FE-Buddy tries once more without it.
+  token fails, or Windows can't read the token, FE-Buddy goes ahead without it.
 
 ## Info
 

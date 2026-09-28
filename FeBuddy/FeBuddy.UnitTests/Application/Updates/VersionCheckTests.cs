@@ -195,6 +195,69 @@ public sealed class VersionCheckTests : IDisposable
 		Assert.Equal(2, callCount);
 	}
 
+	/// <summary>A check with the token that gets no answer at all is tried once more without it too.</summary>
+	[Fact]
+	public async Task version_check_token_request_throws_retries_without_it()
+	{
+		const string releasesJson = """[ { "tag_name": "v3.1.0", "prerelease": false, "draft": false } ]""";
+
+		using IDisposable token = TestCredentials.UseGitHubToken("test-token");
+		int callCount = 0;
+		using HttpClient client = new(new StubHttpHandler(request =>
+		{
+			callCount++;
+			return request.Headers.Authorization is null
+				? new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(releasesJson) }
+				: throw new HttpRequestException("connection reset");
+		}));
+
+		VersionCheckResult result = await VersionCheck.RunAsync("3.0.0", ReleaseChannel.Stable, hasInternetConnection: true, client);
+
+		Assert.True(result.CheckSucceeded);
+		Assert.Equal("3.1.0", result.LatestVersion);
+		Assert.Equal(2, callCount);
+	}
+
+	/// <summary>A token Windows Credential Manager cannot read never stops the check: it goes without it.</summary>
+	[Fact]
+	public async Task version_check_unreadable_token_checks_without_it()
+	{
+		const string releasesJson = """[ { "tag_name": "v3.1.0", "prerelease": false, "draft": false } ]""";
+
+		using IDisposable token = TestCredentials.UseUnreadableGitHubToken();
+		List<HttpRequestMessage> sent = [];
+		using HttpClient client = new(new StubHttpHandler(request =>
+		{
+			sent.Add(request);
+			return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(releasesJson) };
+		}));
+
+		VersionCheckResult result = await VersionCheck.RunAsync("3.0.0", ReleaseChannel.Stable, hasInternetConnection: true, client);
+
+		Assert.True(result.CheckSucceeded);
+		Assert.Null(Assert.Single(sent).Headers.Authorization);
+	}
+
+	/// <summary>Cancelling during the attempt with the token stops the check - it is not retried.</summary>
+	[Fact]
+	public async Task version_check_cancelled_during_the_token_attempt_is_not_retried()
+	{
+		using IDisposable token = TestCredentials.UseGitHubToken("test-token");
+		using CancellationTokenSource cts = new();
+		int callCount = 0;
+		using HttpClient client = new(new StubHttpHandler(_ =>
+		{
+			callCount++;
+			cts.Cancel();
+			throw new TaskCanceledException();
+		}));
+
+		VersionCheckResult result = await VersionCheck.RunAsync("3.0.0", ReleaseChannel.Stable, hasInternetConnection: true, client, cts.Token);
+
+		Assert.False(result.CheckSucceeded);
+		Assert.Equal(1, callCount);
+	}
+
 	/// <summary>
 	/// Drafts, releases without a tag and tags that are not strict SemVer (a four-part number
 	/// included) are skipped; a tag with or without a leading v parses; the winner's notes and URL

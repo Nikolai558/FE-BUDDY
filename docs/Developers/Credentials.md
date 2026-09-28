@@ -21,7 +21,8 @@ downloads from a protected website uses one.
   - "Check" asks GitHub whether a GitHub token still works.
   - "Remove all" clears every FE-Buddy credential.
 - **A full uninstall removes them** (custom action `RemoveFeBuddyCredentials`); an upgrade never
-  does.
+  does. The action runs after `InstallFinalize`, once the uninstall has succeeded, so an uninstall
+  that is cancelled or fails keeps them.
 
 ## Types
 
@@ -31,11 +32,22 @@ downloads from a protected website uses one.
 | GitHub personal access token | `Authorization: Bearer …` |
 | Token or API key | `Authorization: Bearer …` |
 
+`CredentialStore.Validate` checks every credential, however it is saved - from the editor or from
+code:
+- A name, of at most 100 characters (`CredentialStore.MaxNameLength`), not used by another credential.
+- For a user name and password, a user name without a colon: Basic sends `user:password`, so a
+  colon would split it in the wrong place.
+- The secret, when adding one or changing an existing credential's type.
+- At least one website, each one read the same way as in the editor (see below).
+
 ## Websites
 
 **Every credential names the websites it may be sent to, and FE-Buddy sends it nowhere else.**
 - A website covers itself and its subdomains: `github.com` covers `api.github.com`, but not
   `github.com.example.net`.
+- Websites are saved bare and lower case (`https://Files.Example.com/x` becomes
+  `files.example.com`), and each needs at least one dot, so a whole top-level domain such as `com`
+  can never be allowed.
 - A GitHub token starts with `github.com, githubusercontent.com`, which covers GitHub's API and its
   raw-file and download hosts.
 - A credential is only ever sent over **HTTPS**.
@@ -82,9 +94,9 @@ using HttpResponseMessage response = await client.SendAsync(request, cancellatio
     or `raw.githubusercontent.com` address into that one.
   - `raw.githubusercontent.com` does not reliably honour a token (see `NewsService`).
 - **Settings key names.** Name a key that holds a credential id so it is plainly an id, e.g.
-  `CredentialId`. Keys whose name ends in `Token`, `Password`, `Secret`, `ApiKey` or `Credential`,
-  or is `Pat`, are treated as secrets by settings export and import (`UserConfigPortability`) and
-  never leave the PC.
+  `CredentialId`. Keys whose name ends in `Token`, `Password`, `Secret`, `ApiKey`, `Credential` or
+  `Credentials`, is `Pat`, or sits under `Secrets`, are treated as secrets by settings export and
+  import (`UserConfigPortability`) and never leave the PC.
 
 ## Rules
 
@@ -92,6 +104,12 @@ using HttpResponseMessage response = await client.SendAsync(request, cancellatio
   credential instead.
 - **Never put a secret in a URL.** Query strings end up in logs and browser history.
 - **Never copy a secret into `UserConfig`, a file, or an environment variable.**
+- **Never let a record print a secret.** A record's generated `ToString` prints every member, so a
+  record that holds one must leave it out, as `CredentialDraft` does. `CredentialStore` keeps its
+  own secret-holding types as plain classes for the same reason.
+- **Keep secrets short-lived.** `CredentialStore` lists credentials without turning their secrets
+  into text, clears every byte buffer an entry passes through, and the credential editor reads its
+  password box once, when saving.
 
 ## FE-Buddy's own GitHub requests
 
@@ -101,8 +119,14 @@ using HttpResponseMessage response = await client.SendAsync(request, cancellatio
   GitHub token" (the default) or "Use a GitHub token" and which one.
   - Only the credential's id is saved, in `General.FeBuddyGitHub.CredentialId`. It is a local
     setting, so a settings export leaves it out.
-  - Only a GitHub personal access token whose websites include github.com can be chosen.
+  - Only a GitHub personal access token whose websites cover `api.github.com` (`github.com` does)
+    can be chosen.
 - **How it is used.** With a token chosen, the requests are sent with it: News through the Contents
-  API and the update download through the release-assets API, since both honour a token. A request
-  that fails with the token is tried once more without it, so an expired token never stops updates.
+  API and the update download through the release-assets API, since both honour a token.
+  - Only `GitHubAuth.TryAuthorize` puts the token on a request, through the store's own checks
+    (a GitHub token, HTTPS, one of its websites). Nothing reads the token out.
+  - A request with the token that fails in any way (refused, cut short, no answer) is tried once
+    more without it.
+  - A token Windows Credential Manager cannot read is logged and treated as no token.
+  - So neither an expired token nor a broken Credential Manager ever stops updates.
 - **No environment variable.** FE-Buddy 3 does not read `FEBUDDY_GITHUB_TOKEN`.

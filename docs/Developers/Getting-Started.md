@@ -123,7 +123,7 @@ also run the release checks - see [Releasing](RELEASING.md).
 - **`DEV-CleanBuild.bat`** (repository root) empties every project's `bin\` folder, for when a
   build gets confused.
 - **A GitHub token** (optional) - in Settings ▸ FE-Buddy's GitHub Requests, choose "Use a GitHub
-  token" and pick or add one. Update checks, News and update downloads are then sent with it (for
-  example to get past GitHub's 60-requests-an-hour limit, or to test against a private copy), and
-  tried once more without it if that fails. Nobody needs it for normal use, and the
+  token" and pick or add one. Update checks, News and update downloads are then sent with it (to
+  get past GitHub's 60-requests-an-hour limit), and tried once more without it if that fails in
+  any way. Nobody needs it for normal use, and the
   `FEBUDDY_GITHUB_TOKEN` environment variable is not read. See [Credentials](Credentials.md).

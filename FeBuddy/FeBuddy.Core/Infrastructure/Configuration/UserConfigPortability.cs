@@ -15,8 +15,8 @@ namespace FeBuddy.Core.Infrastructure.Configuration;
 /// name happens to end that way (<c>AddFeBuddyOutputFolder</c>) must be listed as not a folder.
 /// </para>
 /// <para>
-/// Credentials (a GitHub PAT, vNAS, VATSIM or VATUSA logins) are meant to live outside
-/// <c>UserConfig.json</c> - in their own store or in environment variables - so an export never
+/// Credentials (a GitHub PAT, vNAS, VATSIM or VATUSA logins) live outside <c>UserConfig.json</c>,
+/// in Windows Credential Manager (<see cref="Credentials.CredentialStore"/>), so an export never
 /// sees them. As a safety net, a key that looks like one is classified
 /// <see cref="ConfigKeyScope.Secret"/> from its name alone (ending in <c>Token</c>,
 /// <c>Password</c> and so on, called <c>Pat</c>, or under <c>Secrets</c>): it is never exported,

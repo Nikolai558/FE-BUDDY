@@ -65,6 +65,9 @@
       On a full uninstall - never an upgrade, like the folder cleanup in UninstallCleanup.wxs - remove
       the user's FE-Buddy credentials from Windows Credential Manager. Immediate, so it runs as the
       user whose credentials they are; Return="ignore" so a failure can never block an uninstall.
+      After InstallFinalize, so it runs only once the uninstall has succeeded: an uninstall that is
+      cancelled or fails rolls back with the credentials still there, since deleting one cannot be
+      undone.
     -->
     <CustomAction Id="RemoveFeBuddyCredentials"
                   BinaryRef="VersionPolicyCA"
@@ -73,7 +76,7 @@
                   Return="ignore" />
     <InstallExecuteSequence>
       <Custom Action="EnforceVersionPolicy" After="AppSearch" />
-      <Custom Action="RemoveFeBuddyCredentials" After="InstallInitialize"
+      <Custom Action="RemoveFeBuddyCredentials" After="InstallFinalize"
               Condition="REMOVE=&quot;ALL&quot; AND NOT UPGRADINGPRODUCTCODE" />
     </InstallExecuteSequence>
 

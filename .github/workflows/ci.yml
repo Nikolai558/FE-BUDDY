@@ -8,6 +8,14 @@
 # artifact - for testing, not a release). Build and Test are required checks on
 # both branches' rulesets. Releases are made by release-checks.yml and
 # release.yml - see docs/Developers/RELEASING.md.
+#
+# A pull request into v3-development that changes only Markdown (.md) files
+# outside the FeBuddy/ source folder - documentation, ChangeLog.md - skips
+# Build, Test and Installer. A skipped job counts as passed for a required
+# check, so the pull request can still merge. Markdown inside FeBuddy/ still
+# runs everything: News.md is built into the app and the tests read it.
+# CodeQL (codeql-analysis.yml) still runs on every pull request, because the
+# rulesets' code scanning rule blocks a merge until CodeQL has results for it.
 
 name: "CI"
 
@@ -25,9 +33,56 @@ permissions:
   contents: read
 
 jobs:
+  # Decides whether the jobs below run. Anything other than a pull request into
+  # v3-development always runs them.
+  changes:
+    name: Changes
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      pull-requests: read
+
+    outputs:
+      code: ${{ steps.files.outputs.code }}
+
+    steps:
+      - name: Check for changes besides documentation
+        id: files
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          if [ "$GITHUB_EVENT_NAME" != "pull_request" ] || [ "$GITHUB_BASE_REF" != "v3-development" ]; then
+            echo "code=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # A renamed file is listed under both names, so moving code to a .md name still counts.
+          files=$(gh api --paginate "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER/files" --jq '.[] | .filename, (.previous_filename // empty)')
+
+          # Anything unexpected - an empty list included - leaves code=true.
+          code=false
+          while IFS= read -r file; do
+            if [[ ! "$file" =~ \.[mM][dD]$ ]] || [[ "$file" == FeBuddy/* ]]; then
+              echo "Needs Build and Test: '$file'"
+              code=true
+              break
+            fi
+          done <<< "$files"
+
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+          if [ "$code" = "false" ]; then
+            echo "Only documentation (.md) changed, so Build, Test and Installer are skipped." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
   build:
     name: Build
     runs-on: windows-2025
+    needs: changes
+    # Skipped only when Changes succeeded and found nothing but documentation. If
+    # Changes itself fails, this still runs, so a broken check never skips the build.
+    if: ${{ !cancelled() && (needs.changes.result != 'success' || needs.changes.outputs.code != 'false') }}
 
     steps:
       - name: Checkout repository
@@ -44,6 +99,8 @@ jobs:
   test:
     name: Test
     runs-on: windows-2025
+    needs: changes
+    if: ${{ !cancelled() && (needs.changes.result != 'success' || needs.changes.outputs.code != 'false') }}
 
     steps:
       - name: Checkout repository
@@ -71,6 +128,8 @@ jobs:
   installer:
     name: Installer
     runs-on: windows-2025
+    needs: changes
+    if: ${{ !cancelled() && (needs.changes.result != 'success' || needs.changes.outputs.code != 'false') }}
 
     steps:
       - name: Checkout repository

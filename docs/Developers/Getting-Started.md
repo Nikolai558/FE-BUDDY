@@ -123,6 +123,12 @@ coverage gate; the report is a run artifact) and **Installer** (`build.ps1`; the
 artifact, kept one day, for testing only). CodeQL runs separately. Pull requests into `releases`
 also run the release checks - see [Releasing](RELEASING.md).
 
+A pull request into `v3-development` that changes only Markdown (`.md`) files outside `FeBuddy/`
+skips Build, Test and Installer. They show as skipped, which counts as passed, so the pull request
+can still merge. `News.md` is inside `FeBuddy/` and still runs everything, because it is built into
+the app and the tests read it. CodeQL runs on every pull request regardless: the code scanning
+rule blocks a merge until CodeQL has results.
+
 ## Handy extras
 
 - **`DEV-CleanBuild.bat`** (repository root) empties every project's `bin\` folder, for when a

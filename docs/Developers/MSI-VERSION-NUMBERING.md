@@ -35,8 +35,10 @@ real version by the `EnforceVersionPolicy` custom action - see [VERSIONING.md](V
 
 - The counter is computed by `FeBuddy/FeBuddy.Installer/Get-InstallerVersion.ps1`, called from
   `FeBuddy/build.ps1`. It is stored in `FeBuddy/FeBuddy.Installer/installer-version-counter.json`,
-  which the build advances on every run - **nobody hand-edits it**. Commit the advanced file with
-  each release so the next release gets a new number.
+  which the build advances on every run - **nobody hand-edits it**. The release workflow commits
+  the advanced file to `v3-development` after each release build (`releases` gets it with the next
+  release's pull request), so the next release gets a new number. Discard the change a local
+  build makes. See [Releasing](RELEASING.md).
 - The real version is `<Version>` in `FeBuddy/FeBuddy.Wpf/FeBuddy.Wpf.csproj`, the single place
   anyone bumps it. `build.ps1` reads it back from the built `FE-BUDDY.dll`'s Product version.
 - The upgrade/downgrade rule is `FeBuddy/FeBuddy.Versioning/UpdatePolicy.cs`, run at install time

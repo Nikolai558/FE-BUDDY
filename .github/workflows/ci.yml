@@ -1,11 +1,13 @@
 # CI for FE-BUDDY 3.0.
 #
 # Verifies that it compiles and the unit tests pass on every push and pull
-# request to v3-development, that the code coverage of FeBuddy.Core and
-# FeBuddy.Versioning has not dropped (the table is on each run's summary page;
-# the full HTML report is the "coverage-report" artifact), and that the MSI
-# still builds (the "installer" artifact - for testing, not a release). It does
-# NOT publish a release: there is no release workflow yet.
+# request to v3-development (and every pull request into releases), that the
+# code coverage of FeBuddy.Core and FeBuddy.Versioning has not dropped (the
+# table is on each run's summary page; the full HTML report is the
+# "coverage-report" artifact), and that the MSI still builds (the "installer"
+# artifact - for testing, not a release). Build and Test are required checks on
+# both branches' rulesets. Releases are made by release-checks.yml and
+# release.yml - see docs/Developers/RELEASING.md.
 
 name: "CI"
 
@@ -16,7 +18,7 @@ on:
     branches: [ v3-development ]
 
   pull_request:
-    branches: [ v3-development ]
+    branches: [ v3-development, releases ]
 
 jobs:
   build:

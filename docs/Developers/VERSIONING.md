@@ -145,8 +145,9 @@ updater cannot be changed, so every 3.x release must fit what it expects:
 
 - **Tag** - strict SemVer, e.g. `3.0.0` or `3.0.0-beta.1` (a leading `v` is fine). 2.x skips any
   tag it cannot parse.
-- **Asset** - the release must have the `.msi` attached (`FE-BUDDY-<version>.msi` from
-  `build.ps1`). 2.x only offers a release that has one.
+- **Asset** - the release must have the `.msi` attached (`FE-BUDDY-Setup.msi` from
+  `build.ps1`). 2.x only offers a release that has one; like 3.x, it takes any `.msi` asset,
+  whatever its name.
 - **Channel** - comes from the tag, so 2.x users on Alpha are offered `3.0.0-alpha.N`, and
   Stable users only `3.0.0`. Because `3.0.0` outranks any `2.9.x`, a later 2.x hotfix does not
   hold Stable users back from 3.x.
@@ -164,3 +165,6 @@ may change.
 - Testing before it is official → `-alpha.N` / `-beta.N` / `-rc.N` on the version you are
   **aiming** to release.
 - Bump only `<Version>` in `FeBuddy.Wpf.csproj`.
+- Each release is exactly one step after the last (`3.0.0-alpha.1 → alpha.2`, `beta.1`, `rc.1`
+  or `3.0.0` - never `alpha.4`); the release pre-flight enforces it. How to release:
+  [Releasing](RELEASING.md).

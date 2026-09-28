@@ -12,7 +12,7 @@ the Models/ rule, one type per file):
 | `FeBuddy.Wpf` | The desktop app. Its layout is in [FeBuddy.Wpf/README.md](FeBuddy.Wpf/README.md). |
 | `FeBuddy.Versioning` | The SemVer version and the update rule (`ProductVersion`, `UpdatePolicy`). netstandard2.0, so both Core and the installer's custom action can use it. See [VERSIONING.md](VERSIONING.md). |
 | `FeBuddy.Installer.CustomActions` | The MSI's one managed custom action, a thin wrapper over `UpdatePolicy`. net472, because WiX's custom-action host only loads .NET Framework. Not unit tested (it needs an MSI session). |
-| `FeBuddy.UnitTests` | Tests for Core and Versioning, in folders that mirror theirs. |
+| `FeBuddy.UnitTests` | Tests for Core and Versioning, in folders that mirror theirs, and for the app's map logic under `Wpf/`. |
 
 ## Three layers, one project
 
@@ -322,7 +322,7 @@ files per source (SCT2, ERAM).
 - **XML docs are required.** `GenerateDocumentationFile` is on, so any undocumented public
   member is a build warning (CS1591). Write a `<summary>`, plus `<param>` and `<returns>` where
   they apply. Comments explain *why*; don't point at planning docs or task numbers.
-- **Tests** in `FeBuddy.UnitTests` mirror Core's folders one-to-one.
+- **Tests** in `FeBuddy.UnitTests` mirror Core's folders one-to-one (and the app's, under `Wpf/`).
 
 Before you commit, run these from `FeBuddy/`:
 

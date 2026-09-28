@@ -33,6 +33,8 @@ first; for where code lives read [FeBuddy.Core structure](FeBuddy.Core-Structure
   data or writes output files itself.
 - **`FeBuddy.Versioning`** is netstandard2.0 so both Core (.NET 10) and the MSI's custom action
   (.NET Framework 4.7.2, all WiX's host can load) share one version rule.
+- **`FeBuddy.UnitTests`** tests Core and Versioning, and references `FeBuddy.Wpf` too, to test the
+  map's logic. The coverage gate measures Core and Versioning only.
 
 ## Launch
 

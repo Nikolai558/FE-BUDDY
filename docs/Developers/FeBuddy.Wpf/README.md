@@ -136,6 +136,10 @@ root - the same rule as `FeBuddy.Core`.
 - **A converter:** its own file in `Converters/`, instantiated once in `Theme/Theme.xaml`.
 - **Something every screen can use** (a store, a launcher, a notification): `Shell/`.
 - **A colour, font, radius or glyph:** `Theme/` - never a literal in a view.
+- **A test for the app's logic:** `FeBuddy.UnitTests/Wpf/`, in folders mirroring these (the app's
+  internals are visible to the tests). A test that creates a control runs its body through
+  `StaThread.Run`, since WPF controls need a thread of their own. The map's math, GeoJSON reader,
+  home view, ROI view-model and `MapCanvas` are covered today.
 
 ### Screens
 

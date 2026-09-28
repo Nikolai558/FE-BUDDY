@@ -391,7 +391,7 @@ public sealed class MapCanvas : FrameworkElement
 	/// span - however wild (a damaged file's line wound round the world again and again) - can make a
 	/// caller loop for long. Real data spans at most about two worlds.
 	/// </remarks>
-	private static (int First, int Last) Copies(double x0, double x1, WorldRect view)
+	internal static (int First, int Last) Copies(double x0, double x1, WorldRect view)
 	{
 		const double MaxOffset = 1_000_000;
 		const int MaxCopies = 8;
@@ -1260,7 +1260,7 @@ public sealed class MapCanvas : FrameworkElement
 	// ============================== helpers ================================
 
 	/// <summary>An axis-aligned box in world units; x may run past 0..1 (see the class remarks).</summary>
-	private readonly record struct WorldRect(double X0, double X1, double Y0, double Y1)
+	internal readonly record struct WorldRect(double X0, double X1, double Y0, double Y1)
 	{
 		public WorldRect Shifted(int worlds) => this with { X0 = X0 + worlds, X1 = X1 + worlds };
 

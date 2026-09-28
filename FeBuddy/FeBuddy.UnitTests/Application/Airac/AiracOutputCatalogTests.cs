@@ -1,3 +1,6 @@
+using System.Security.AccessControl;
+using System.Security.Principal;
+
 using FeBuddy.Core.Application.Airac;
 using FeBuddy.Core.Application.Airac.Models;
 
@@ -37,6 +40,34 @@ public sealed class AiracOutputCatalogTests : IDisposable
 		}
 
 		Assert.Equal(["2611", "2610", "2609"], AiracOutputCatalog.FindCycleIds(_output, addFeBuddyOutputFolder));
+	}
+
+	/// <summary>An output folder that cannot be listed has no cycles, rather than failing.</summary>
+	[Fact]
+	public void an_output_folder_that_cannot_be_read_has_no_cycles()
+	{
+		Directory.CreateDirectory(Path.Combine(_output, "AIRAC_2610"));
+
+		using (DenyListing(_output))
+		{
+			Assert.Empty(AiracOutputCatalog.FindCycleIds(_output, addFeBuddyOutputFolder: false));
+		}
+
+		Assert.Equal(["2610"], AiracOutputCatalog.FindCycleIds(_output, addFeBuddyOutputFolder: false));
+	}
+
+	/// <summary>A GeoJSON folder that cannot be listed gives nothing, and the other folder is still listed.</summary>
+	[Fact]
+	public void a_geojson_folder_that_cannot_be_read_does_not_hide_the_other()
+	{
+		string cycle = Path.Combine(_output, "AIRAC_2610");
+		Write(cycle, "Geojson", "Fixes_Symbols.geojson");
+		Write(cycle, Path.Combine("Upload_to_vNAS", "Geojson"), "ARTCC_High_Lines.geojson");
+
+		using (DenyListing(Path.Combine(cycle, "Geojson")))
+		{
+			Assert.Equal(["ARTCC_High_Lines"], AiracOutputCatalog.FindGeojsonFiles(cycle).Select(f => f.Name));
+		}
 	}
 
 	[Fact]
@@ -105,25 +136,11 @@ public sealed class AiracOutputCatalogTests : IDisposable
 		Write(cycle, Path.Combine("Geojson", "ZAB", "ABQ"), "ABQ_ADYOS_Lines.geojson");
 		string locked = Path.GetDirectoryName(Write(cycle, Path.Combine("Geojson", "ZOB", "CLE"), "CLE_ALPHE_Lines.geojson"))!;
 
-		DirectoryInfo lockedFolder = new(locked);
-		System.Security.AccessControl.DirectorySecurity security = lockedFolder.GetAccessControl();
-		System.Security.AccessControl.FileSystemAccessRule deny = new(
-			System.Security.Principal.WindowsIdentity.GetCurrent().User!,
-			System.Security.AccessControl.FileSystemRights.ListDirectory,
-			System.Security.AccessControl.AccessControlType.Deny);
-		security.AddAccessRule(deny);
-		lockedFolder.SetAccessControl(security);
-
-		try
+		using (DenyListing(locked))
 		{
 			IReadOnlyList<AiracOutputGeojsonFile> files = AiracOutputCatalog.FindGeojsonFiles(cycle);
 
 			Assert.Equal(["Fixes_Symbols", "ABQ_ADYOS_Lines"], files.Select(f => f.Name));
-		}
-		finally
-		{
-			security.RemoveAccessRule(deny);
-			lockedFolder.SetAccessControl(security);
 		}
 	}
 
@@ -148,5 +165,30 @@ public sealed class AiracOutputCatalogTests : IDisposable
 		string path = Path.Combine(directory, name);
 		File.WriteAllText(path, "{\"type\":\"FeatureCollection\",\"features\":[]}");
 		return path;
+	}
+
+	/// <summary>Stops the current user listing <paramref name="folder"/> until disposed, as a folder another account owns would.</summary>
+	private static IDisposable DenyListing(string folder) => new ListingDenied(new DirectoryInfo(folder));
+
+	private sealed class ListingDenied : IDisposable
+	{
+		private readonly DirectoryInfo _folder;
+		private readonly DirectorySecurity _security;
+		private readonly FileSystemAccessRule _deny;
+
+		public ListingDenied(DirectoryInfo folder)
+		{
+			_folder = folder;
+			_security = folder.GetAccessControl();
+			_deny = new FileSystemAccessRule(WindowsIdentity.GetCurrent().User!, FileSystemRights.ListDirectory, AccessControlType.Deny);
+			_security.AddAccessRule(_deny);
+			folder.SetAccessControl(_security);
+		}
+
+		public void Dispose()
+		{
+			_security.RemoveAccessRule(_deny);
+			_folder.SetAccessControl(_security);
+		}
 	}
 }

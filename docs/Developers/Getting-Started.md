@@ -67,7 +67,11 @@ and `FeBuddy.Versioning`):
 ```
 
 Add `-Open` to open the HTML report (`FeBuddy/TestResults/CoverageReport/index.html`), which shows
-every uncovered line. `FeBuddy.Wpf`, the harness and the installer projects are not measured.
+every uncovered line. `FeBuddy.Wpf`, the harness and the installer projects are not measured -
+though the map's logic in `FeBuddy.Wpf` is tested (`FeBuddy.UnitTests/Wpf`).
+
+The Windows Credential Manager tests are reported as skipped in a session with no Windows sign-in
+behind it (a service account, some build agents), which has no Credential Manager.
 
 ## Code standards
 

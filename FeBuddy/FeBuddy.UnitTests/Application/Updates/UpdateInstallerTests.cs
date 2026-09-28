@@ -112,6 +112,26 @@ public sealed class UpdateInstallerTests : IDisposable
 		Assert.False(File.Exists(Path.Combine(UpdateInstaller.UpdatesDirectory, "FE-BUDDY-3.0.0.msi")));
 	}
 
+	/// <summary>
+	/// A failed download whose file cannot be cleared away - an earlier copy another program holds
+	/// open - still reports the download's own failure; the next launch clears the folder anyway.
+	/// </summary>
+	[Fact]
+	public async Task download_async_fails_even_when_the_old_file_cannot_be_cleared()
+	{
+		Directory.CreateDirectory(UpdateInstaller.UpdatesDirectory);
+		string destination = Path.Combine(UpdateInstaller.UpdatesDirectory, "FE-BUDDY-3.0.0.msi");
+		File.WriteAllBytes(destination, [1, 2, 3]);
+		using HttpClient client = new(new StubHttpHandler(_ => new HttpResponseMessage(HttpStatusCode.NotFound)));
+
+		using (new FileStream(destination, FileMode.Open, FileAccess.Read, FileShare.Read))
+		{
+			await Assert.ThrowsAsync<HttpRequestException>(() => UpdateInstaller.DownloadAsync(Installer(Payload.Length), httpClient: client));
+		}
+
+		Assert.True(File.Exists(destination));
+	}
+
 	[Fact]
 	public async Task download_async_with_a_token_downloads_through_the_assets_api()
 	{

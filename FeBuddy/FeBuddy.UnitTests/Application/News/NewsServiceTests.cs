@@ -206,6 +206,38 @@ public sealed class NewsServiceTests : IDisposable
 		Assert.Equal(NewsService.RawUrl, sent[1].RequestUri!.ToString());
 	}
 
+	/// <summary>An empty answer to the fetch with the token counts as a failure, so the raw URL is tried without it.</summary>
+	[Fact]
+	public async Task check_async_token_fetch_with_an_empty_answer_retries_the_raw_url()
+	{
+		using IDisposable token = TestCredentials.UseGitHubToken("test-token");
+		List<HttpRequestMessage> sent = [];
+		using HttpClient client = new(new StubHttpHandler(request =>
+		{
+			sent.Add(request);
+			return new HttpResponseMessage(HttpStatusCode.OK)
+			{
+				Content = new StringContent(request.Headers.Authorization is null ? SampleMarkdown : "  "),
+			};
+		}));
+
+		NewsCheckResult result = await NewsService.CheckAsync(null, hasInternetConnection: true, client);
+
+		Assert.True(result.FromNetwork);
+		Assert.Equal(2, sent.Count);
+		Assert.Equal(NewsService.RawUrl, sent[1].RequestUri!.ToString());
+	}
+
+	/// <summary>A post with a heading and a PostId but no text is kept, with an empty title.</summary>
+	[Fact]
+	public void parse_a_post_with_no_text_has_an_empty_title()
+	{
+		NewsPost post = Assert.Single(NewsService.Parse("## 2026-09-02\n<!--\nPostId: 2026-09-02.1\n-->\n"));
+
+		Assert.Equal("2026-09-02", post.DateHeading);
+		Assert.Equal(string.Empty, post.Title);
+	}
+
 	/// <summary>A token Windows Credential Manager cannot read never stops News: it comes from the raw URL.</summary>
 	[Fact]
 	public async Task check_async_unreadable_token_fetches_the_raw_url()

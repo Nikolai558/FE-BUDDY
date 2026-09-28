@@ -131,7 +131,7 @@ public static class VnasAliasFileWriter
 		{
 			Add(messages, new ServiceMessage(LogLevel.Warning, LogSource,
 				$"{AiracOutputPaths.VnasAliasFileName} was not written: no custom alias file could be read, and no FE-Buddy alias file is marked for vNAS." +
-				DeleteEarlierFile(outputDirectory))
+				DeleteEarlierFile(outputDirectory).Sentence)
 			{ IsAdvisory = true });
 
 			return Result(null, customFiles.Count, 0, 0, [], 0, 0, messages, stopwatch);
@@ -249,26 +249,31 @@ public static class VnasAliasFileWriter
 
 	/// <summary>
 	/// Deletes the <c>vNAS_Alias.txt</c> an earlier run left, when this run writes none, so it cannot
-	/// be uploaded by mistake.
+	/// be uploaded by mistake. <see cref="AiracService"/> uses it too, for a run that rewrites alias
+	/// files without writing a new one.
 	/// </summary>
-	/// <returns>A sentence for the "not written" message saying what happened to it; empty when there was none.</returns>
-	private static string DeleteEarlierFile(string outputDirectory)
+	/// <param name="outputDirectory">The run's cycle folder.</param>
+	/// <returns>
+	/// A sentence for a "not written" message saying what happened to it (empty when there was none),
+	/// and whether it could not be deleted.
+	/// </returns>
+	internal static (string Sentence, bool Failed) DeleteEarlierFile(string outputDirectory)
 	{
 		string path = AiracOutputPaths.VnasAliasFilePath(outputDirectory);
 
 		if (!File.Exists(path))
 		{
-			return string.Empty;
+			return (string.Empty, false);
 		}
 
 		try
 		{
 			File.Delete(path);
-			return " The one an earlier run wrote was deleted, so it cannot be uploaded by mistake.";
+			return (" The one an earlier run wrote was deleted, so it cannot be uploaded by mistake.", false);
 		}
 		catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
 		{
-			return $" The one an earlier run wrote could not be deleted ({ex.Message}): do not upload it.";
+			return ($" The one an earlier run wrote could not be deleted ({ex.Message}): do not upload it.", true);
 		}
 	}
 

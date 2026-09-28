@@ -378,23 +378,26 @@ public sealed class MapCanvas : FrameworkElement
 		WorldY(-marginPx), WorldY(ActualHeight + marginPx));
 
 	/// <summary>
-	/// The whole-world offsets at which something spanning x0..x1 shows in <paramref name="view"/>.
-	/// Something wider than the view by a world or more shows whole in one copy, so only that one is
-	/// given; and the offsets stay small, so no span - however wild - can make a caller loop for ever.
+	/// The whole-world offsets at which something spanning x0..x1 shows in <paramref name="view"/>:
+	/// every copy that overlaps it. A layer's shapes can sit anywhere in its span - a line drawn on
+	/// past the 180th meridian, and a shape just east of it, show side by side in different copies -
+	/// so one copy is never assumed to be enough; each shape is culled per copy by its caller.
 	/// </summary>
+	/// <remarks>
+	/// At most <c>MaxCopies</c> more than the view is wide are given, and the offsets stay small, so no
+	/// span - however wild (a damaged file's line wound round the world again and again) - can make a
+	/// caller loop for long. Real data spans at most about two worlds.
+	/// </remarks>
 	private static (int First, int Last) Copies(double x0, double x1, WorldRect view)
 	{
 		const double MaxOffset = 1_000_000;
+		const int MaxCopies = 8;
 
-		if (x1 - x0 >= view.X1 - view.X0 + 1.0)
-		{
-			int k = (int)Math.Clamp(Math.Floor(view.X0 - x0), -MaxOffset, MaxOffset);
-			return (k, k);
-		}
+		int first = (int)Math.Clamp(Math.Ceiling(view.X0 - x1), -MaxOffset, MaxOffset);
+		int last = (int)Math.Clamp(Math.Floor(view.X1 - x0), -MaxOffset, MaxOffset);
+		int most = MaxCopies + (int)Math.Clamp(Math.Ceiling(view.X1 - view.X0), 0, MaxOffset);
 
-		return (
-			(int)Math.Clamp(Math.Ceiling(view.X0 - x1), -MaxOffset, MaxOffset),
-			(int)Math.Clamp(Math.Floor(view.X1 - x0), -MaxOffset, MaxOffset));
+		return (first, (int)Math.Min(last, (long)first + most - 1));
 	}
 
 	// ============================= input ==================================

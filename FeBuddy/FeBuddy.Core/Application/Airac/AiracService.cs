@@ -432,6 +432,23 @@ public static class AiracService
 
 			progress?.Report(new AiracServiceProgress(step, summary, settings.VnasAlias is not null ? 100 : null));
 		}
+		else if (aliasFiles.Length > 0)
+		{
+			// vNAS_Alias.txt is built from the run's alias files, so one an earlier run left is out of
+			// date once this run rewrites them without writing a new one. A run that writes no alias
+			// file leaves it alone, like any other earlier file ("Overwrite files").
+			(string sentence, bool failed) = VnasAliasFileWriter.DeleteEarlierFile(outputDirectory);
+
+			if (sentence.Length > 0)
+			{
+				ServiceMessage deleted = new(failed ? LogLevel.Warning : LogLevel.Info, LogSource,
+					$"No alias file is marked for vNAS, so {AiracOutputPaths.VnasAliasFileName} was not written.{sentence}")
+				{ IsAdvisory = true };
+
+				messages.Add(deleted);
+				AppLog.Write(deleted.Level, deleted.Source, deleted.Text);
+			}
+		}
 
 		if (!anySelected)
 		{

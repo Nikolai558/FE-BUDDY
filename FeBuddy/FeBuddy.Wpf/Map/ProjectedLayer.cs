@@ -107,7 +107,9 @@ internal sealed class ProjectedLayer
 	/// across the whole world.
 	/// </summary>
 	/// <remarks>
-	/// Each span is moved whole worlds to start in 0..1 and the overlapping ones joined; the widest
+	/// Each span is moved whole worlds to start in 0..1, and one that then runs past 1 - a line drawn
+	/// on across the 180th meridian - is split there, its end carried round to the start of the world,
+	/// so it joins the shapes it overlaps on that side. The overlapping ones are joined; the widest
 	/// gap left between them, going round the world, is the part not covered.
 	/// </remarks>
 	/// <param name="spans">Each shape's x range; x may run past 0..1.</param>
@@ -124,7 +126,17 @@ internal sealed class ProjectedLayer
 			}
 
 			double start = min - Math.Floor(min);
-			arcs.Add((start, start + (max - min)));
+			double end = start + (max - min);
+
+			if (end > 1.0)
+			{
+				arcs.Add((start, 1.0));
+				arcs.Add((0.0, end - 1.0));
+			}
+			else
+			{
+				arcs.Add((start, end));
+			}
 		}
 
 		if (arcs.Count == 0)

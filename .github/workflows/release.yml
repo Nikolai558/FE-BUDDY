@@ -34,8 +34,12 @@ jobs:
     if: github.ref == 'refs/heads/releases'
 
     steps:
+      # persist-credentials: false - checkout would otherwise leave this job's write-access token
+      # in the checkout's git config while build.ps1 runs. The steps that need a token pass one.
       - name: Checkout releases
         uses: actions/checkout@v6
+        with:
+          persist-credentials: false
 
       - name: Setup .NET SDK
         uses: actions/setup-dotnet@v5

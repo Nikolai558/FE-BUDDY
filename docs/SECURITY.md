@@ -60,7 +60,7 @@ release.
 | Version | Supported |
 | ------- | --------- |
 | 3.0.x, including its pre-releases | :white_check_mark: The latest release only |
-| 2.9.x | :white_check_mark: Until 3.0.0 is released |
+| 2.9.x | :warning: Critical security fixes only, until 3.0.0 is released |
 | < 2.9.0 | :x: |
 
 FE-BUDDY 2.9.3 is the last planned 2.x release. Please move to FE-BUDDY 3.x when you can: the

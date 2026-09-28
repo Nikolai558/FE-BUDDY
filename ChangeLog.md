@@ -12,6 +12,8 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
 -->
 
 ## Unreleased
+- ARTCC boundaries made of several separate areas (ZOA's UNLIMITED UTA areas, ZMA's UNLIMITED
+  CTA/FIR sectors) are drawn as separate shapes again, instead of one line zig-zagging between them.
 
 ## 3.0.0-alpha.1
 - FE-BUDDY 3.0 is a from-scratch rewrite with a new interface. This first alpha is for testers:

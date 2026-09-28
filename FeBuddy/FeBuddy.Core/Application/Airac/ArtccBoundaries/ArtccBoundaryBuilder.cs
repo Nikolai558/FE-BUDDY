@@ -21,6 +21,9 @@ public static class ArtccBoundaryBuilder
 {
 	private const string LogSource = "ArtccBoundaryBuilder";
 
+	/// <summary>The <c>ARB_SEG.BNDRY_PT_DESCRIP</c> phrase that marks a ring's last point.</summary>
+	private const string RingEndPhrase = "POINT OF BEGINNING";
+
 	/// <summary>
 	/// Reads every ARTCC boundary ring from <paramref name="allNasrCsvData"/>.
 	/// </summary>
@@ -32,9 +35,11 @@ public static class ArtccBoundaryBuilder
 	/// Locations come from <c>ARB_BASE</c>, keyed by <c>LOCATION_ID</c> (trimmed, upper-cased;
 	/// the first row wins for a duplicate ID). <c>ARB_SEG</c> rows are then walked in file order,
 	/// grouped by (LocationId, Altitude): within a group, a new ring starts at the group's first
-	/// row and again wherever <c>POINT_SEQ</c> is not greater than the previous row's - the low
+	/// row, again wherever <c>POINT_SEQ</c> is not greater than the previous row's - the low
 	/// value marks the start of a new feature (e.g. ZAK's UNLIMITED group is a CTA ring followed
-	/// by a FIR ring). A ring's <see cref="ArtccBoundaryRing.Type"/> is its first row's
+	/// by a FIR ring) - and again after any row whose <c>BNDRY_PT_DESCRIP</c> contains
+	/// "POINT OF BEGINNING", which ends a ring even when <c>POINT_SEQ</c> keeps counting up into
+	/// the next one (e.g. ZOA's UNLIMITED group is four UTA rings numbered 10 through 160). A ring's <see cref="ArtccBoundaryRing.Type"/> is its first row's
 	/// <c>TYPE</c>, trimmed.
 	/// </para>
 	/// <para>
@@ -161,8 +166,8 @@ public static class ArtccBoundaryBuilder
 
 	/// <summary>
 	/// Splits one (LocationId, Altitude) group's rows, in file order, into rings: a new ring
-	/// starts at the first row and again wherever <c>POINT_SEQ</c> is not greater than the
-	/// previous row's.
+	/// starts at the first row, again wherever <c>POINT_SEQ</c> is not greater than the previous
+	/// row's, and again after any row whose <c>BNDRY_PT_DESCRIP</c> ends its ring.
 	/// </summary>
 	private static IEnumerable<List<ArbSeg>> SplitIntoRings(IReadOnlyList<ArbSeg> rows)
 	{
@@ -179,6 +184,12 @@ public static class ArtccBoundaryBuilder
 
 			current.Add(row);
 			previousSeq = row.PointSeq;
+
+			if (EndsRing(row))
+			{
+				yield return current;
+				current = [];
+			}
 		}
 
 		if (current.Count > 0)
@@ -186,6 +197,15 @@ public static class ArtccBoundaryBuilder
 			yield return current;
 		}
 	}
+
+	/// <summary>
+	/// Whether <paramref name="row"/> is its ring's last point: its <c>BNDRY_PT_DESCRIP</c> says
+	/// the boundary runs "TO POINT OF BEGINNING". A group can hold several rings whose
+	/// <c>POINT_SEQ</c> keeps counting up across all of them (ZOA's UNLIMITED UTA group is four),
+	/// so this phrase is then the only sign of where one ring ends and the next begins.
+	/// </summary>
+	private static bool EndsRing(ArbSeg row) =>
+		row.BndryPtDescrip?.Contains(RingEndPhrase, StringComparison.OrdinalIgnoreCase) == true;
 
 	private static ArtccBoundaryLocation ToLocation(string locationId, ArbBase row) => new()
 	{

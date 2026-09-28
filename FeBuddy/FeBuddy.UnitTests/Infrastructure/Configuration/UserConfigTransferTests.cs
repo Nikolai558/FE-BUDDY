@@ -19,6 +19,10 @@ public sealed class UserConfigTransferTests : IDisposable
 	private const string DatFolderKey = "Services.FileConversions.DatToGeojson.SourceFolder";
 	private const string SctFolderKey = "Services.FileConversions.SctToGeojson.SourceFolder";
 	private const string EramFolderKey = "Services.FileConversions.EramToGeojson.SourceFolder";
+	private const string Url1 = "Services.AiracService.VnasAlias.Sources.1.Url";
+	private const string Url2 = "Services.AiracService.VnasAlias.Sources.2.Url";
+	private const string Credential1 = "Services.AiracService.VnasAlias.Sources.1.CredentialId";
+	private const string Credential2 = "Services.AiracService.VnasAlias.Sources.2.CredentialId";
 
 	private static readonly DateTimeOffset ExportedAt = new(2026, 9, 27, 12, 0, 0, TimeSpan.Zero);
 
@@ -80,14 +84,18 @@ public sealed class UserConfigTransferTests : IDisposable
 			[UserConfigKeys.UpdateChannel] = "Alpha",
 			[UserConfigKeys.NewsLastOpen] = "2026-09-01.1",
 			["Secrets.GitHub.Pat"] = "ghp_secret",
+			[Url1] = "https://github.com/vZOB/facility/blob/main/ZOB-Alias.txt",
+			[Credential1] = "0f8fad5bd9cb469fa16570867728950e",
 		};
 
 		UserConfigExportResult result = UserConfigTransfer.Export(ExportPath, values, "3.1.0", ExportedAt, Alice);
 
-		Assert.Equal(new UserConfigExportResult(ExportPath, SettingCount: 3, FolderCount: 2, LeftOutCount: 3), result);
+		Assert.Equal(new UserConfigExportResult(ExportPath, SettingCount: 4, FolderCount: 2, LeftOutCount: 4), result);
 
 		string text = File.ReadAllText(ExportPath);
 		Assert.DoesNotContain("ghp_secret", text, StringComparison.Ordinal);
+		Assert.Contains("ZOB-Alias.txt", text, StringComparison.Ordinal);
+		Assert.DoesNotContain("0f8fad5bd9cb469fa16570867728950e", text, StringComparison.Ordinal);
 		Assert.DoesNotContain("alice", text, StringComparison.OrdinalIgnoreCase);
 
 		JsonNode root = JsonNode.Parse(text)!;
@@ -478,6 +486,56 @@ public sealed class UserConfigTransferTests : IDisposable
 		Assert.Equal(
 			[("Custom alias file 2", "is not found on this PC"), ("Custom alias file 3", "is not a file on a drive of this PC")],
 			plan.SkippedFolders.Select(f => (f.Label, f.Note)));
+	}
+
+	/// <summary>
+	/// A credential choice never comes from the file. This PC's stays with a custom alias file the
+	/// import leaves at the same address, and goes when the address changes or the file is dropped.
+	/// </summary>
+	[Fact]
+	public void plan_keeps_this_pcs_credential_choice_only_where_the_address_is_unchanged()
+	{
+		const string Same = "https://github.com/vZOB/facility/blob/main/ZOB-Alias.txt";
+		const string Mine = "0f8fad5bd9cb469fa16570867728950e";
+		const string Theirs = "11111111222233334444555555555555";
+
+		UserConfigImportPlan plan = UserConfigTransfer.Plan(
+			Package(new()
+			{
+				[Url1] = Same,
+				[Credential1] = Theirs,
+				[Url2] = "https://github.com/vZOB/facility/blob/main/Other.txt",
+			}),
+			new Dictionary<string, string>
+			{
+				[Url1] = Same,
+				[Credential1] = Mine,
+				[Url2] = "https://github.com/vZOB/facility/blob/main/Old.txt",
+				[Credential2] = Mine,
+			},
+			Bob,
+			_ => true);
+
+		Assert.Equal(Mine, plan.Settings[Credential1]);
+		Assert.False(plan.Settings.ContainsKey(Credential2));
+		Assert.Contains(Credential1, plan.IgnoredKeys);
+
+		// Source 2's address and credential changed; source 1 is as it was.
+		Assert.Equal(2, plan.ChangedCount);
+	}
+
+	/// <summary>A source the file drops loses its credential choice with it.</summary>
+	[Fact]
+	public void plan_drops_the_credential_choice_of_a_dropped_source()
+	{
+		UserConfigImportPlan plan = UserConfigTransfer.Plan(
+			Package(new() { [ArtccKey] = "ZOB" }),
+			new Dictionary<string, string> { [Url1] = "https://example.com/a.txt", [Credential1] = "0f8fad5bd9cb469fa16570867728950e" },
+			Bob,
+			_ => true);
+
+		Assert.False(plan.Settings.ContainsKey(Url1));
+		Assert.False(plan.Settings.ContainsKey(Credential1));
 	}
 
 	/// <summary>The public overload plans against the live config and this PC's folders.</summary>

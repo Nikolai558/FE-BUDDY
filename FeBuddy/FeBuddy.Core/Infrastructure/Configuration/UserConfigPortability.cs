@@ -10,9 +10,10 @@ namespace FeBuddy.Core.Infrastructure.Configuration;
 /// <para>
 /// The rules work on key shape, so a setting added later is classified without anyone having to
 /// list it here: any key under <c>General</c> or <c>Services</c> is <see cref="ConfigKeyScope.Shared"/>
-/// unless it is named below, ends in <c>Folder</c>, <c>Directory</c> or <c>FilePath</c>
-/// (<see cref="ConfigKeyScope.MachinePath"/>), or looks like a credential. A yes/no setting whose
-/// name happens to end that way (<c>AddFeBuddyOutputFolder</c>) must be listed as not a folder.
+/// unless it is named below, ends in <c>CredentialId</c> (<see cref="ConfigKeyScope.CredentialChoice"/>),
+/// ends in <c>Folder</c>, <c>Directory</c> or <c>FilePath</c> (<see cref="ConfigKeyScope.MachinePath"/>),
+/// or looks like a credential. A yes/no setting whose name happens to end that way
+/// (<c>AddFeBuddyOutputFolder</c>) must be listed as not a folder.
 /// </para>
 /// <para>
 /// Credentials (a GitHub PAT, vNAS, VATSIM or VATUSA logins) live outside <c>UserConfig.json</c>,
@@ -30,6 +31,9 @@ public static class UserConfigPortability
 
 	/// <summary>How the name of a setting that holds a file's path ends.</summary>
 	private const string FileSuffix = "FilePath";
+
+	/// <summary>How the name of a setting that holds a saved credential's id ends.</summary>
+	private const string CredentialIdSuffix = "CredentialId";
 
 	private static readonly string[] SharedRoots = ["General", "Services"];
 
@@ -80,6 +84,11 @@ public static class UserConfigPortability
 		if (!SharedRoots.Contains(root, StringComparer.Ordinal) || LocalKeys.Contains(key))
 		{
 			return ConfigKeyScope.Local;
+		}
+
+		if (leaf.EndsWith(CredentialIdSuffix, StringComparison.Ordinal))
+		{
+			return ConfigKeyScope.CredentialChoice;
 		}
 
 		return FolderSuffixes.Any(s => leaf.EndsWith(s, StringComparison.Ordinal)) && !NotFolderKeys.Contains(key)

@@ -40,10 +40,10 @@ namespace FeBuddy.Wpf.ViewModels;
 /// </para>
 /// <para>
 /// A web address may name a saved credential (Settings ▸ Credentials). Only its id is saved with the
-/// tab, so the secret never reaches <c>UserConfig.json</c> or a settings export, and one credential
-/// serves as many files as need it - a row with none is offered the one an earlier row on the same
-/// website uses. <b>Check</b> reads a file straight away, so a mistyped address or a refused token
-/// shows up here rather than in the run.
+/// tab, so the secret never reaches <c>UserConfig.json</c>, and a settings export leaves even the id
+/// out (<c>ConfigKeyScope.CredentialChoice</c>). One credential serves as many files as need it - a
+/// row with none is offered the one an earlier row on the same website uses. <b>Check</b> reads a
+/// file straight away, so a mistyped address or a refused token shows up here rather than in the run.
 /// </para>
 /// <para>
 /// The list is saved as numbered keys, <c>Sources.1.FilePath</c>, <c>Sources.2.Url</c>,

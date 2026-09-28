@@ -14,8 +14,10 @@ downloads from a protected website uses one.
 - **One entry per credential**, named `FE-Buddy:credential:<id>`. It holds everything about the
   credential: name, type, user name, websites and the secret.
   - Users can see or delete the entries in Control Panel ▸ Credential Manager ▸ Windows Credentials.
-- **Settings save only the credential's id.** On another PC the id matches nothing, so an imported
-  or copied config never carries a secret, and the user picks one of their own credentials.
+- **Settings save only the credential's id.** On another PC the id matches nothing, so a settings
+  export leaves credential ids out altogether. An import keeps this PC's choice only for a setting
+  it leaves unchanged (the same custom alias file at the same address); anything else needs one of
+  this PC's credentials chosen again.
 - **Users manage them in Settings ▸ Credentials.**
   - Add, edit and remove. A saved secret is never shown again.
   - "Check" asks GitHub whether a GitHub token still works.
@@ -93,8 +95,9 @@ using HttpResponseMessage response = await client.SendAsync(request, cancellatio
     `Accept: application/vnd.github.raw`. `GitHubFileUrl.ToContentsApi` turns a file's `github.com`
     or `raw.githubusercontent.com` address into that one.
   - `raw.githubusercontent.com` does not reliably honour a token (see `NewsService`).
-- **Settings key names.** Name a key that holds a credential id so it is plainly an id, e.g.
-  `CredentialId`. Keys whose name ends in `Token`, `Password`, `Secret`, `ApiKey`, `Credential` or
+- **Settings key names.** End the name of a key that holds a credential id in `CredentialId`:
+  settings export then leaves it out, and import keeps this PC's choice only where the settings
+  beside it are unchanged (`ConfigKeyScope.CredentialChoice`). Keys whose name ends in `Token`, `Password`, `Secret`, `ApiKey`, `Credential` or
   `Credentials`, is `Pat`, or sits under `Secrets`, are treated as secrets by settings export and
   import (`UserConfigPortability`) and never leave the PC.
 

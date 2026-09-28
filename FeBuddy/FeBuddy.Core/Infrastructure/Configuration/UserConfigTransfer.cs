@@ -21,15 +21,17 @@ namespace FeBuddy.Core.Infrastructure.Configuration;
 /// </code>
 /// Each setting goes by its <see cref="UserConfigPortability.Classify(string)"/> scope: shared
 /// settings travel as they are, folders travel tokenized (<see cref="PortablePathTokens"/>), and
-/// PC-only state and credentials never go into the file.
+/// PC-only state, credentials and credential choices never go into the file.
 /// </para>
 /// <para>
 /// An import makes this PC's settings match the file's exactly: settings the file leaves out go
-/// back to their defaults, folders included. Only two things are kept: this PC's own state (the
-/// update channel and the like), which is never touched; and this PC's folder wherever the file's
-/// folder cannot work here (<see cref="Plan(UserConfigPackage)"/> says which). Folders are made
-/// this user's (<see cref="PortablePathTokens.Localize(string)"/>), so the other user's name is
-/// never imported. A plain <c>UserConfig.json</c> copied from another PC imports the same way.
+/// back to their defaults, folders included. Only three things are kept: this PC's own state (the
+/// update channel and the like), which is never touched; this PC's folder wherever the file's
+/// folder cannot work here (<see cref="Plan(UserConfigPackage)"/> says which); and this PC's
+/// credential choice for a setting the import leaves unchanged - a custom alias file at the same
+/// address keeps its credential, any other loses it. Folders are made this user's
+/// (<see cref="PortablePathTokens.Localize(string)"/>), so the other user's name is never
+/// imported. A plain <c>UserConfig.json</c> copied from another PC imports the same way.
 /// </para>
 /// <para>
 /// Import is two steps so the user sees what will happen first: <see cref="Plan(UserConfigPackage)"/>
@@ -285,6 +287,16 @@ public static class UserConfigTransfer
 			PlanFolder(key, package.Values.GetValueOrDefault(key), current.GetValueOrDefault(key), tokens, directoryExists, fileExists ?? File.Exists, settings, applied, skipped);
 		}
 
+		// A credential choice never comes from the file. This PC's stays only with a setting the import
+		// leaves as it is - the same custom alias file at the same address - so it never lands on another.
+		foreach (KeyValuePair<string, string> entry in current)
+		{
+			if (UserConfigPortability.Classify(entry.Key) == ConfigKeyScope.CredentialChoice && IsUnchangedBeside(entry.Key, current, settings))
+			{
+				settings[entry.Key] = entry.Value;
+			}
+		}
+
 		// An unset setting and a blank one both mean "the default", so neither counts as a change from the other.
 		int changed = current.Keys
 			.Union(settings.Keys, StringComparer.Ordinal)
@@ -379,6 +391,20 @@ public static class UserConfigTransfer
 			string? note = isOutput && !directoryExists(folder) ? "created when FE-Buddy first writes to it" : null;
 			applied.Add(new ImportedFolder(key, label, folder, note));
 		}
+	}
+
+	/// <summary>
+	/// Whether the import leaves every setting beside <paramref name="key"/> - under the same node,
+	/// such as the rest of <c>Sources.2</c> - as this PC has it.
+	/// </summary>
+	private static bool IsUnchangedBeside(string key, IReadOnlyDictionary<string, string> current, Dictionary<string, string> planned)
+	{
+		string node = key[..(key.LastIndexOf('.') + 1)];
+
+		return current.Keys
+			.Union(planned.Keys, StringComparer.Ordinal)
+			.Where(other => other.StartsWith(node, StringComparison.Ordinal) && other != key)
+			.All(other => (current.GetValueOrDefault(other) ?? string.Empty) == (planned.GetValueOrDefault(other) ?? string.Empty));
 	}
 
 	/// <summary>

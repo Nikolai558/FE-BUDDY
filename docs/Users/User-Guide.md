@@ -560,6 +560,9 @@ ticked on its tab's **Upload to vNAS** card.
     or what went wrong.
   - A file that isn't on this PC, or a credential that isn't (the settings came from another PC,
     say), is flagged under the row; choose your own.
+  - Credential choices are never included in a settings export. Importing settings keeps your
+    credential for a web address the import leaves as it was; any other web address needs its
+    credential chosen again.
 - **Every run reads the files fresh**, so an edit on GitHub is picked up next time.
 - **A file that can't be read is left out, not the whole run.** `vNAS_Alias.txt` is still written
   from the rest, and the Review tab warns which file was left out and why. Uploading that

@@ -30,9 +30,7 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
 
 ## 3.0.0-alpha.1
 - FE-BUDDY 3.0 is a from-scratch rewrite with a new interface. This first alpha is for testers:
-  expect rough edges, and keep 2.x handy. Not yet in 3.0: VRC `.sct2`, vERAM GeoMap and vSTARS
-  XML output, ISR aliases and the combined all-SID/all-STAR files
-  ([Do I still need 2.x?](https://github.com/Nikolai558/FE-BUDDY/blob/3.0.0-alpha.1/docs/Users/FAQ-and-Troubleshooting.md#do-i-still-need-fe-buddy-2x)).
+  expect rough edges, and keep 2.x handy.
 
 ### Output
 - Everything for a cycle goes into one `AIRAC_<cycle>` folder: `Aliases`, `Geojson`,

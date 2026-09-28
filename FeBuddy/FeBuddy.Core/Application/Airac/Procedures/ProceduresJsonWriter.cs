@@ -69,7 +69,7 @@ public static class ProceduresJsonWriter
 		string directory = AiracOutputPaths.PublicationDocsDirectory(settings.OutputDirectory);
 		Directory.CreateDirectory(directory);
 
-		string path = Path.Combine(directory, ProcedureOutputFiles.Json);
+		string path = Path.Combine(directory, settings.FileNames.FileName(ProcedureOutputFiles.Json));
 		File.WriteAllText(path, root.ToJsonString(SerializerOptions), new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
 
 		return new ProceduresJsonWriteResult(path, []);

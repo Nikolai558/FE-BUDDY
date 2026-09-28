@@ -76,7 +76,7 @@ public static class TelephonyAliasWriter
 		string directory = AiracOutputPaths.AliasDirectory(settings.OutputDirectory);
 		Directory.CreateDirectory(directory);
 
-		string path = Path.Combine(directory, TelephonyOutputFiles.Alias);
+		string path = Path.Combine(directory, settings.FileNames.FileName(TelephonyOutputFiles.Alias));
 
 		// UTF-8 without a BOM, like every other alias file.
 		File.WriteAllText(path, builder.ToString(), new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));

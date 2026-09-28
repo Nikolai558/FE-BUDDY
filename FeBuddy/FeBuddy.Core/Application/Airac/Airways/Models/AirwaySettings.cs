@@ -72,6 +72,12 @@ public sealed record AirwaySettings
 	/// </summary>
 	public VnasFileChoices Vnas { get; init; } = VnasFileChoices.None;
 
+	/// <summary>
+	/// The names the user gave files in place of FE-Buddy's, by file key. Not part of the settings
+	/// block: <see cref="AirwayService.Run"/> takes it from the AIRAC Service. Default: none renamed.
+	/// </summary>
+	public OutputFileNames FileNames { get; init; } = OutputFileNames.None;
+
 	/// <summary>The Region of Interest to filter and clip output to, or <see langword="null"/> for no ROI filtering.</summary>
 	public RegionOfInterest? Roi { get; init; }
 

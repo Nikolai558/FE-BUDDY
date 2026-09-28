@@ -5,6 +5,7 @@ using System.Windows.Threading;
 
 using FeBuddy.Wpf.Mvvm;
 using FeBuddy.Wpf.Shell;
+using FeBuddy.Wpf.ViewModels.Models;
 using FeBuddy.Wpf.ViewModels.ServiceTabs.Models;
 using FeBuddy.Wpf.ViewModels.ServiceTabs;
 using FeBuddy.Wpf.Views;
@@ -24,8 +25,9 @@ namespace FeBuddy.Wpf.ViewModels;
 
 /// <summary>
 /// The <b>AIRAC Services</b> screen: a General tab (cycle, facility, and which sub-services to
-/// produce), one tab per selected sub-service, a Preview Settings tab that summarises the lot and
-/// runs the service, and a Review tab for the run's outcome.
+/// produce), one tab per selected sub-service, a File Names tab to rename any of the files they
+/// write, a Preview Settings tab that summarises the lot and runs the service, and a Review tab for
+/// the run's outcome.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -44,6 +46,7 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 {
 	private readonly Dispatcher _dispatcher;
 	private readonly AiracGeneralTabViewModel _general;
+	private readonly FileNamesViewModel _fileNames = new();
 	private readonly ServicePreviewTabViewModel _preview;
 	private readonly ServiceRunReviewTabViewModel _runReview = new();
 	private readonly Dictionary<string, ServiceTabViewModel> _tabsByKey = new(StringComparer.OrdinalIgnoreCase);
@@ -61,21 +64,31 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 
 		_general = new AiracGeneralTabViewModel();
 		_general.SubServiceSelectionChanged += (_, _) => SyncSubServiceTabs();
-		_general.CycleChanged += (_, _) => _ = LoadCycleDataAsync();
+		_general.CycleChanged += (_, _) =>
+		{
+			_fileNames.RefreshFiles();
+			_ = LoadCycleDataAsync();
+		};
 
 		_preview = new ServicePreviewTabViewModel("Preview Settings", "Run AIRAC Service", RunCommand, () => Tabs);
+
+		_fileNames.AttachToService(
+			FilesTheRunWrites,
+			() => AiracOutputPaths.CycleFolderName(AppEnvironment.GetAiracCycle(_general.SelectedCyclePosition).AiracCycleId));
 
 		AiracCycleDataCache.Instance.StateChanged += (_, _) => _dispatcher.BeginInvoke(RefreshReadiness);
 		AppEnvironment.Changed += (_, _) => _dispatcher.BeginInvoke(RefreshReadiness);
 
 		// The vNAS Alias Upload tab lists what the other tabs put into vNAS_Alias.txt, and is only valid
-		// when something goes in; re-read it whenever the user moves between tabs, so its list and its
-		// dot in the rail follow edits made elsewhere.
+		// when something goes in; the File Names tab lists every file they write, and a new one needs a
+		// name. Re-read both whenever the user moves between tabs, so their lists and their dots in the
+		// rail follow edits made elsewhere.
 		PropertyChanged += (_, e) =>
 		{
 			if (e.PropertyName == nameof(SelectedTab))
 			{
 				VnasAliasTab?.RefreshFeBuddyAliasFiles();
+				_fileNames.RefreshFiles();
 			}
 		};
 
@@ -168,7 +181,7 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 
 	/// <summary>
 	/// Opens a tab for every selected sub-service and closes the rest, building each tab the first
-	/// time it is needed and reusing it afterwards.
+	/// time it is needed and reusing it afterwards. The File Names tab follows them while any is open.
 	/// </summary>
 	private void SyncSubServiceTabs()
 	{
@@ -202,10 +215,47 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 			open.Add(tab);
 		}
 
+		if (open.Count > 0)
+		{
+			open.Add(_fileNames);
+		}
+
 		RebuildTabs(open);
 		RefreshDownloadedDataStatus();
 		RefreshProceduresData();
 		VnasAliasTab?.RefreshFeBuddyAliasFiles();
+		_fileNames.RefreshFiles();
+	}
+
+	/// <summary>
+	/// Every file the selected sub-services' settings write right now, for the File Names tab: each
+	/// tab's own files, then the two the run itself writes - <c>Duplicate_Alias_Commands.txt</c>
+	/// whenever an alias file is written, and <c>vNAS_Alias.txt</c> when vNAS Alias Upload is
+	/// selected or an alias file is ticked for vNAS.
+	/// </summary>
+	/// <returns>The files.</returns>
+	private IEnumerable<OutputFileEntry> FilesTheRunWrites()
+	{
+		GeojsonSubServiceViewModel[] tabs = [.. Tabs.OfType<GeojsonSubServiceViewModel>()];
+
+		foreach (OutputFileEntry file in tabs.SelectMany(tab => tab.OutputFileEntries()))
+		{
+			yield return file;
+		}
+
+		if (tabs.Any(tab => tab.WritesAliasFile))
+		{
+			yield return OutputFileEntry.Renamable(AiracOutputPaths.DuplicateAliasReportFileName, string.Empty, "AIRAC Service");
+		}
+
+		bool aliasFileToVnas = AiracSubServices.All.Any(descriptor => descriptor.AliasFileName is { } aliasFile
+			&& TabFor<GeojsonSubServiceViewModel>(descriptor.Key) is { WritesAliasFile: true } tab
+			&& tab.IsMarkedForVnas(aliasFile));
+
+		if (VnasAliasTab is not null || aliasFileToVnas)
+		{
+			yield return OutputFileEntry.Renamable(AiracOutputPaths.VnasAliasFileName, AiracOutputPaths.VnasFolder, VnasAliasTab?.Title ?? "AIRAC Service");
+		}
 	}
 
 	private void RefreshReadiness()
@@ -327,15 +377,18 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 	/// </summary>
 	private async Task RunAsync()
 	{
-		// The vNAS Alias Upload tab's validity depends on what the other tabs tick for vNAS.
+		// The vNAS Alias Upload tab's validity depends on what the other tabs tick for vNAS, and the
+		// File Names tab's on which files they write.
 		VnasAliasTab?.RefreshFeBuddyAliasFiles();
+		_fileNames.RefreshFiles();
 
 		if (!TrySaveDirtyTabs() || !EnsureNoInvalidTabs())
 		{
 			return;
 		}
 
-		ServiceTabViewModel[] runnable = [.. Tabs.Where(t => t.IsRunnable && !ReferenceEquals(t, GeneralTab) && !ReferenceEquals(t, PreviewTab))];
+		ServiceTabViewModel[] runnable = [.. Tabs.Where(t => t.IsRunnable
+			&& !ReferenceEquals(t, GeneralTab) && !ReferenceEquals(t, _fileNames) && !ReferenceEquals(t, PreviewTab))];
 
 		if (runnable.Length == 0)
 		{
@@ -356,6 +409,7 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 			PrimaryFacility = UserConfigFile.GetValue(SettingsViewModel.ArtccKey)?.Trim() is { Length: > 0 } facility
 				? facility.ToUpperInvariant()
 				: null,
+			FileNames = _fileNames.BuildFileNamesBlock(),
 			Airways = AirwaysTab?.BuildSettingsBlock(),
 			Airports = AirportsTab?.BuildSettingsBlock(),
 			Departures = DeparturesTab?.BuildSettingsBlock(),
@@ -641,7 +695,7 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 
 		if (result.VnasAlias is { FilePath: not null } vnasAlias)
 		{
-			parts.Add($"{AiracOutputPaths.VnasAliasFileName} ({vnasAlias.CustomCommandCount + vnasAlias.FeBuddyCommandCount:N0} command(s))");
+			parts.Add($"{Path.GetFileName(vnasAlias.FilePath)} ({vnasAlias.CustomCommandCount + vnasAlias.FeBuddyCommandCount:N0} command(s))");
 		}
 
 		if (result.DuplicateAliasReport is { Duplicates.Count: > 0 } duplicateAliasReport)

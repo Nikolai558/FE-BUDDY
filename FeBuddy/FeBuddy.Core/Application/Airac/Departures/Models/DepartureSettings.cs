@@ -99,6 +99,13 @@ public sealed record DepartureSettings
 	/// </summary>
 	public VnasFileChoices Vnas { get; init; } = VnasFileChoices.None;
 
+	/// <summary>
+	/// The names the user gave files in place of FE-Buddy's, by file key. Not part of the settings
+	/// block: <see cref="DepartureService.Run"/> takes it from the AIRAC Service. Default: none
+	/// renamed. The per-procedure GeoJSON files are named from the FAA's data and cannot be renamed.
+	/// </summary>
+	public OutputFileNames FileNames { get; init; } = OutputFileNames.None;
+
 	/// <summary>Maximum decimal places for coordinates written to GeoJSON. Default 6.</summary>
 	public int CoordinatePrecision { get; init; } = 6;
 

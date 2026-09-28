@@ -90,6 +90,31 @@ nothing.
 CRC-ERAM defaults are only ever written to files marked for vNAS, since CRC reads its maps from
 vNAS. The keys are listed in each sub-service's `*OutputFiles` class.
 
+### New file names
+
+Renaming files is not a key in any sub-service's block. The File Names tab sends one more
+dictionary, `AiracServiceSettings.FileNames`, for the whole run: each renamed file's key and its new
+name **without an extension** - e.g. `Airways_High_Lines` = `ZOB High`, `Airways.txt` = `ZOB Airways`.
+`OutputFileNamesParser` reads it before anything is deleted or written, and `AiracService` hands the
+result (`OutputFileNames`) to every sub-service's `Run`. A harness or test calling a sub-service
+directly can pass one too; it is optional.
+
+- A renamed file keeps its folder and its extension: `ZOB High.geojson`, `ZOB Airways.txt`.
+- Every file key in the table above can be renamed except the Departures and Arrivals GeoJSON keys
+  (their files are named per procedure from the FAA's data). So can the files that have no vNAS key:
+  `Procedure_Changes.md`, `Procedures.json`, `vNAS_Alias.txt` and `Duplicate_Alias_Commands.txt` -
+  each one's key is its name.
+- An entry for any other key is a warning and is ignored; an entry with a blank name keeps
+  FE-Buddy's name.
+- A name that can't be used throws `ArgumentException` and the run stops before it starts: one
+  with `\ / : * ? " < > |` or a control character in it, ending in a dot or in `.geojson`, `.txt`,
+  `.md` or `.json`, a Windows device name (`CON`, `NUL`, `COM1`…), or longer than 100 characters
+  (surrounding spaces are trimmed first); or the same new name, with the same extension, for two
+  files. `OutputFileNames.Problem` holds the rules for one name; the File Names tab applies the same
+  ones, and also refuses a new name that is another file's FE-Buddy name.
+- The key still names the file everywhere else: `UploadToVnas`, `CrcDefaultsFor`, which alias file
+  is marked for vNAS, and how `Duplicate_Alias_Commands.txt` finds each command's ARTCC.
+
 ### CRC defaults
 
 Keys are `Crc.<Class>.<Kind>.<field>`, e.g. `Crc.High.Line.bcg`, `Crc.Airports.Symbol.style`.

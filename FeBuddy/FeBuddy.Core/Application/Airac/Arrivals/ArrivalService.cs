@@ -1,6 +1,7 @@
 using System.Diagnostics;
 
 using FeBuddy.Core.Application.Airac.Arrivals.Models;
+using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Application.Models;
 using FeBuddy.Core.Domain.Arrivals.Models;
 using FeBuddy.Core.Infrastructure.Geojson;
@@ -26,10 +27,14 @@ public static class ArrivalService
 	/// </summary>
 	/// <param name="allNasrCsvData">All parsed NASR CSV data. <c>Star</c> must not be null; FIX, NAV and APT are read for locations.</param>
 	/// <param name="arrivalSettings">The raw Arrivals settings dictionary.</param>
+	/// <param name="fileNames">The names the user gave files in place of FE-Buddy's, or <see langword="null"/> for none.</param>
 	/// <returns>What was built and written, plus timing and every message collected along the way.</returns>
 	/// <exception cref="ArgumentException">Thrown when a required setting is missing or invalid.</exception>
 	/// <exception cref="InvalidOperationException">Thrown when the STAR data has not been parsed.</exception>
-	public static ArrivalServiceResult Run(NasrCsvDataCollection allNasrCsvData, IReadOnlyDictionary<string, string> arrivalSettings)
+	public static ArrivalServiceResult Run(
+		NasrCsvDataCollection allNasrCsvData,
+		IReadOnlyDictionary<string, string> arrivalSettings,
+		OutputFileNames? fileNames = null)
 	{
 		ArgumentNullException.ThrowIfNull(allNasrCsvData);
 		ArgumentNullException.ThrowIfNull(arrivalSettings);
@@ -39,7 +44,7 @@ public static class ArrivalService
 
 		ArrivalSettingsParseResult parseResult = ArrivalSettingsParser.Parse(arrivalSettings);
 		messages.AddRange(parseResult.Messages);
-		ArrivalSettings settings = parseResult.Settings;
+		ArrivalSettings settings = parseResult.Settings with { FileNames = fileNames ?? OutputFileNames.None };
 
 		ArrivalProcedureReadResult readResult = ArrivalBuilder.ReadProcedures(allNasrCsvData);
 		messages.AddRange(readResult.Messages);

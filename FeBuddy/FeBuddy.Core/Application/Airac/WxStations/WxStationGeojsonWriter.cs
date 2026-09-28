@@ -106,10 +106,10 @@ public static class WxStationGeojsonWriter
 		WriteFile(collection, stations.Count, settings, WxStationOutputFiles.Text, files);
 	}
 
-	/// <summary>Writes one file, into the GeoJSON or vNAS folder as the user chose.</summary>
+	/// <summary>Writes one file, into the GeoJSON or vNAS folder as the user chose, under the name they chose.</summary>
 	private static void WriteFile(FeatureCollection collection, int renderedCount, WxStationSettings settings, string fileKey, GeojsonFileSet files)
 	{
 		string directory = AiracOutputPaths.FileDirectory(settings.OutputDirectory, isGeojson: true, settings.Vnas.IsUploaded(fileKey));
-		files.Write(collection, renderedCount, directory, $"{fileKey}.geojson");
+		files.Write(collection, renderedCount, directory, settings.FileNames.FileName(fileKey));
 	}
 }

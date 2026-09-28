@@ -3,6 +3,7 @@ using System.Text.Json;
 using FeBuddy.Core.Application.Airac;
 using FeBuddy.Core.Application.Airac.Airways;
 using FeBuddy.Core.Application.Airac.Airways.Models;
+using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Application.Models;
 using FeBuddy.Core.Infrastructure.Nasr.Models;
 
@@ -253,5 +254,27 @@ public sealed class AirwayServiceTests : IDisposable
 	public void feb_property_names_fall_back_to_the_enum_text()
 	{
 		Assert.Equal("99", FebProperties.Name((AirwayFebProperty)99));
+	}
+
+	[Fact]
+	public void a_renamed_geojson_file_and_alias_file_are_written_under_their_new_names()
+	{
+		// J1's segments carry no MaxAuthAlt, so AirwayClassifier files it under "Other", not "High".
+		OutputFileNames fileNames = new(new Dictionary<string, string>
+		{
+			["Airways_Other_Lines"] = "ZOB Other",
+			["Airways.txt"] = "ZOB Airways",
+		});
+
+		AirwayServiceResult result = AirwayService.Run(J1(), Settings(), fileNames);
+
+		string renamedLines = Assert.Single(result.GeojsonFilesWritten, p => p.EndsWith("ZOB Other.geojson", StringComparison.Ordinal));
+		Assert.True(File.Exists(renamedLines));
+		Assert.False(File.Exists(Path.Combine(Path.GetDirectoryName(renamedLines)!, "Airways_Other_Lines.geojson")));
+
+		Assert.NotNull(result.AliasFilePath);
+		Assert.EndsWith("ZOB Airways.txt", result.AliasFilePath, StringComparison.Ordinal);
+		Assert.True(File.Exists(result.AliasFilePath));
+		Assert.False(File.Exists(Path.Combine(Path.GetDirectoryName(result.AliasFilePath)!, "Airways.txt")));
 	}
 }

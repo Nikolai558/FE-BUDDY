@@ -1,5 +1,6 @@
 using System.Diagnostics;
 
+using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Application.Airac.Telephony.Models;
 using FeBuddy.Core.Application.Models;
 using FeBuddy.Core.Domain.Telephony.Models;
@@ -33,20 +34,25 @@ public static class TelephonyService
 	/// download failed.
 	/// </param>
 	/// <param name="telephonySettings">The raw Telephony settings dictionary.</param>
+	/// <param name="fileNames">The names the user gave files in place of FE-Buddy's, or <see langword="null"/> for none.</param>
 	/// <returns>What was built and written, plus timing and every message collected along the way.</returns>
 	/// <exception cref="ArgumentException">Thrown when a required setting is missing or invalid.</exception>
-	public static TelephonyServiceResult Run(TelephonyDataCollection? telephonyData, IReadOnlyDictionary<string, string> telephonySettings) =>
-		Run(telephonyData, telephonySettings, DateOnly.FromDateTime(DateTime.UtcNow));
+	public static TelephonyServiceResult Run(
+		TelephonyDataCollection? telephonyData,
+		IReadOnlyDictionary<string, string> telephonySettings,
+		OutputFileNames? fileNames = null) =>
+		Run(telephonyData, telephonySettings, DateOnly.FromDateTime(DateTime.UtcNow), fileNames);
 
 	/// <summary>
-	/// Same as <see cref="Run(TelephonyDataCollection?, IReadOnlyDictionary{string, string})"/>, with the
-	/// date a U.S. special call sign's expiration is compared with supplied, so tests do not depend on
-	/// the clock.
+	/// Same as <see cref="Run(TelephonyDataCollection?, IReadOnlyDictionary{string, string}, OutputFileNames?)"/>,
+	/// with the date a U.S. special call sign's expiration is compared with supplied, so tests do not
+	/// depend on the clock.
 	/// </summary>
 	internal static TelephonyServiceResult Run(
 		TelephonyDataCollection? telephonyData,
 		IReadOnlyDictionary<string, string> telephonySettings,
-		DateOnly today)
+		DateOnly today,
+		OutputFileNames? fileNames = null)
 	{
 		ArgumentNullException.ThrowIfNull(telephonySettings);
 
@@ -56,10 +62,13 @@ public static class TelephonyService
 		TelephonySettingsParseResult parseResult = TelephonySettingsParser.Parse(telephonySettings);
 		messages.AddRange(parseResult.Messages);
 
+		TelephonySettings settings = parseResult.Settings with { FileNames = fileNames ?? OutputFileNames.None };
+		string aliasFileName = settings.FileNames.FileName(TelephonyOutputFiles.Alias);
+
 		if (telephonyData is null)
 		{
 			messages.Add(new ServiceMessage(LogLevel.Warning, LogSource,
-				"There was no telephony data to build from, so Telephony.txt was not written."));
+				$"There was no telephony data to build from, so {aliasFileName} was not written."));
 
 			return Finish(stopwatch, messages, new TelephonyBuildResult([], 0, 0, 0, []), new TelephonyAliasGenerateResult(null, 0, 0));
 		}
@@ -67,14 +76,14 @@ public static class TelephonyService
 		TelephonyBuildResult buildResult = TelephonyBuilder.Read(telephonyData, today);
 		messages.AddRange(buildResult.Messages);
 
-		TelephonyAliasGenerateResult aliasResult = TelephonyAliasWriter.Generate(buildResult.Entries, parseResult.Settings);
+		TelephonyAliasGenerateResult aliasResult = TelephonyAliasWriter.Generate(buildResult.Entries, settings);
 
-		messages.Add(new ServiceMessage(LogLevel.Info, LogSource, SummaryText(buildResult, aliasResult)));
+		messages.Add(new ServiceMessage(LogLevel.Info, LogSource, SummaryText(buildResult, aliasResult, aliasFileName)));
 
 		if (aliasResult.FilePath is null)
 		{
 			messages.Add(new ServiceMessage(LogLevel.Warning, LogSource,
-				"The FAA telephony pages had no operator with both a designator and a telephony, so Telephony.txt was not written.")
+				$"The FAA telephony pages had no operator with both a designator and a telephony, so {aliasFileName} was not written.")
 			{
 				IsAdvisory = true
 			});
@@ -87,12 +96,12 @@ public static class TelephonyService
 	/// The one-line summary of the file: its commands, how many show more than one operator, and
 	/// what was left out and why.
 	/// </summary>
-	private static string SummaryText(TelephonyBuildResult build, TelephonyAliasGenerateResult alias)
+	private static string SummaryText(TelephonyBuildResult build, TelephonyAliasGenerateResult alias, string aliasFileName)
 	{
 		int icao = build.Entries.Count(entry => entry.Kind == TelephonyEntryKind.IcaoAssignment);
 		int special = build.Entries.Count - icao;
 
-		return $"{TelephonyOutputFiles.Alias}: {alias.CommandCount:N0} command(s) for {icao:N0} ICAO operator(s) and " +
+		return $"{aliasFileName}: {alias.CommandCount:N0} command(s) for {icao:N0} ICAO operator(s) and " +
 			$"{special:N0} U.S. special call sign(s); {alias.MergedCommandCount:N0} command(s) show more than one operator. " +
 			$"Left out: {build.NoDesignatorCount:N0} row(s) with no designator, {build.NoTelephonyCount:N0} with no telephony, " +
 			$"{build.ExpiredCount:N0} expired U.S. special call sign(s).";

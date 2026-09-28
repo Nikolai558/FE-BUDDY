@@ -1,5 +1,6 @@
 using FeBuddy.Core.Application.Airac.Fixes;
 using FeBuddy.Core.Application.Airac.Fixes.Models;
+using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Infrastructure.Nasr.Models;
 
 using FeBuddy.UnitTests.Application.Airac.Fixes.Fixtures;
@@ -133,5 +134,19 @@ public sealed class FixServiceTests : IDisposable
 		NasrCsvDataCollection data = FixTestData.Build([FixTestData.AcmeRow()]);
 
 		Assert.Throws<ArgumentException>(() => FixService.Run(data, Settings(("OutputBy", "Sideways"))));
+	}
+
+	[Fact]
+	public void a_renamed_geojson_file_is_written_under_its_new_name()
+	{
+		NasrCsvDataCollection data = FixTestData.Build(FixTestData.AllSampleRows());
+
+		OutputFileNames fileNames = new(new Dictionary<string, string> { ["Fix_Symbols"] = "ZOB Fix Symbols" });
+
+		FixServiceResult result = FixService.Run(data, Settings(), fileNames);
+
+		string renamed = Assert.Single(result.GeojsonFilesWritten, f => f.EndsWith("ZOB Fix Symbols.geojson", StringComparison.Ordinal));
+		Assert.True(File.Exists(renamed));
+		Assert.False(File.Exists(Path.Combine(Path.GetDirectoryName(renamed)!, "Fix_Symbols.geojson")));
 	}
 }

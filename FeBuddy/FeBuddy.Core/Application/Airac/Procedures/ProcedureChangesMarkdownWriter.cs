@@ -93,7 +93,7 @@ public static class ProcedureChangesMarkdownWriter
 		string directory = AiracOutputPaths.PublicationDocsDirectory(settings.OutputDirectory);
 		Directory.CreateDirectory(directory);
 
-		string path = Path.Combine(directory, ProcedureOutputFiles.Changes);
+		string path = Path.Combine(directory, settings.FileNames.FileName(ProcedureOutputFiles.Changes));
 		File.WriteAllText(path, builder.ToString(), new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
 
 		return new ProcedureChangesWriteResult(path, []);

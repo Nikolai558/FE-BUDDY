@@ -129,7 +129,7 @@ public static class ArtccBoundaryGeojsonWriter
 		}
 
 		string directory = AiracOutputPaths.FileDirectory(settings.OutputDirectory, isGeojson: true, settings.Vnas.IsUploaded(fileKey));
-		files.Write(collection, renderedCount, directory, $"{fileKey}.geojson");
+		files.Write(collection, renderedCount, directory, settings.FileNames.FileName(fileKey));
 	}
 
 	/// <summary>

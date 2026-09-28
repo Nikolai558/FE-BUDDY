@@ -107,7 +107,7 @@ public static class AirportAliasWriter
 		string directory = AiracOutputPaths.AliasDirectory(settings.OutputDirectory);
 		Directory.CreateDirectory(directory);
 
-		string path = Path.Combine(directory, AirportOutputFiles.Alias);
+		string path = Path.Combine(directory, settings.FileNames.FileName(AirportOutputFiles.Alias));
 
 		// UTF-8 without a BOM: CRC reads the file with File.ReadAllLines, which decodes UTF-8
 		// by default, and the feet marker is non-ASCII.

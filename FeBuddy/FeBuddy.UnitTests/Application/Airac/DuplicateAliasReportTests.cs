@@ -38,15 +38,18 @@ public sealed class DuplicateAliasReportTests : IDisposable
 		ProcedureTestData.AptBaseRow("NUL", respArtccId: null),
 	]);
 
-	/// <summary>Writes an alias file into its own sub-folder (so two files can share a name) and returns its path.</summary>
-	private string AliasFile(string fileName, params string[] lines)
+	/// <summary>
+	/// Writes an alias file into its own sub-folder (so two files can share a name) and returns it,
+	/// keyed by the FE-Buddy name it stands for.
+	/// </summary>
+	private AliasFileWritten AliasFile(string fileName, params string[] lines)
 	{
 		string folder = Path.Combine(_directory, Guid.NewGuid().ToString("N"));
 		Directory.CreateDirectory(folder);
 
 		string path = Path.Combine(folder, fileName);
 		File.WriteAllLines(path, lines);
-		return path;
+		return new AliasFileWritten(fileName, path);
 	}
 
 	[Theory]
@@ -63,16 +66,16 @@ public sealed class DuplicateAliasReportTests : IDisposable
 	[Fact]
 	public void a_command_shared_across_files_is_found_ignoring_case()
 	{
-		string departures = AliasFile("Departures.txt", ".orfNUTIYf .FF A B", "", ".orfOTHERf .FF C");
-		string arrivals = AliasFile("Arrivals.txt", ".ORFNUTIYF .FF D E");
+		AliasFileWritten departures = AliasFile("Departures.txt", ".orfNUTIYf .FF A B", "", ".orfOTHERf .FF C");
+		AliasFileWritten arrivals = AliasFile("Arrivals.txt", ".ORFNUTIYF .FF D E");
 
 		DuplicateAliasCommand duplicate = Assert.Single(DuplicateAliasReport.Find([departures, arrivals], Nasr()));
 
 		Assert.Equal(".orfNUTIYf", duplicate.Command);
 		Assert.Equal(
 			[
-				new DuplicateAliasLine("Departures.txt", ".orfNUTIYf .FF A B", "ZDC"),
-				new DuplicateAliasLine("Arrivals.txt", ".ORFNUTIYF .FF D E", "ZDC"),
+				new DuplicateAliasLine("Departures.txt", "Departures.txt", ".orfNUTIYf .FF A B", "ZDC"),
+				new DuplicateAliasLine("Arrivals.txt", "Arrivals.txt", ".ORFNUTIYF .FF D E", "ZDC"),
 			],
 			duplicate.Lines);
 	}
@@ -80,7 +83,7 @@ public sealed class DuplicateAliasReportTests : IDisposable
 	[Fact]
 	public void files_with_no_shared_command_have_no_duplicates()
 	{
-		string airways = AliasFile("Airways.txt", ".J60F .FF A B", ".J61F .FF C", "", "; a comment");
+		AliasFileWritten airways = AliasFile("Airways.txt", ".J60F .FF A B", ".J61F .FF C", "", "; a comment");
 
 		Assert.Empty(DuplicateAliasReport.Find([airways], Nasr()));
 	}
@@ -102,7 +105,7 @@ public sealed class DuplicateAliasReportTests : IDisposable
 	[InlineData("Navaids.txt", ".navDTW .echo x", null)]
 	public void each_line_is_tied_to_its_airports_artcc(string fileName, string line, string? expectedArtcc)
 	{
-		string file = AliasFile(fileName, line, line);
+		AliasFileWritten file = AliasFile(fileName, line, line);
 
 		DuplicateAliasCommand duplicate = Assert.Single(DuplicateAliasReport.Find([file], Nasr()));
 
@@ -112,7 +115,7 @@ public sealed class DuplicateAliasReportTests : IDisposable
 	[Fact]
 	public void missing_nasr_airport_data_leaves_every_line_without_an_artcc()
 	{
-		string file = AliasFile("Faa_Chart_Recall.txt", ".edwAPDc .OPENURL a", ".edwAPDc .OPENURL b");
+		AliasFileWritten file = AliasFile("Faa_Chart_Recall.txt", ".edwAPDc .OPENURL a", ".edwAPDc .OPENURL b");
 
 		DuplicateAliasCommand duplicate = Assert.Single(DuplicateAliasReport.Find([file], new NasrCsvDataCollection()));
 
@@ -122,12 +125,12 @@ public sealed class DuplicateAliasReportTests : IDisposable
 	[Fact]
 	public void the_report_lists_each_artcc_primary_facility_first_and_other_last()
 	{
-		string chartRecall = AliasFile("Faa_Chart_Recall.txt",
+		AliasFileWritten chartRecall = AliasFile("Faa_Chart_Recall.txt",
 			".edwAPDc .OPENURL https://aeronav.faa.gov/d-tpp/2609/00500AD.PDF  ; EDWARDS AFB-AIRPORT DIAGRAM",
 			".edwAPDc .OPENURL https://aeronav.faa.gov/d-tpp/2609/00500ADROGERSLAKEBED.PDF  ; EDWARDS AFB-AIRPORT DIAGRAM (ROGERS LAKEBED)",
 			".dtwAPDc .OPENURL a",
 			".dtwAPDc .OPENURL b");
-		string airways = AliasFile("Airways.txt", ".J60F .FF A", ".j60f .FF B");
+		AliasFileWritten airways = AliasFile("Airways.txt", ".J60F .FF A", ".j60f .FF B");
 
 		IReadOnlyList<DuplicateAliasCommand> duplicates = DuplicateAliasReport.Find([chartRecall, airways], Nasr());
 		string text = DuplicateAliasReport.Format(duplicates, [chartRecall, airways], "2609", "ZOB", Generated);
@@ -169,11 +172,11 @@ public sealed class DuplicateAliasReportTests : IDisposable
 	{
 		// .aptKDTW is KDTW's airport card in Airports.txt (ZOB), and - ignoring case - a chart
 		// command at the airport APT (ZME) in Faa_Chart_Recall.txt.
-		string airports = AliasFile("Airports.txt", ".aptKDTW .ECHO card");
-		string departures = AliasFile("Departures.txt", ".orfSAMEf .FF A");
-		string arrivals = AliasFile("Arrivals.txt", ".ORFSAMEF .FF B");
-		string chartRecall = AliasFile("Faa_Chart_Recall.txt", ".aptKDTW .OPENURL chart", ".edwAPDc .OPENURL a", ".edwAPDc .OPENURL b");
-		string[] files = [airports, departures, arrivals, chartRecall];
+		AliasFileWritten airports = AliasFile("Airports.txt", ".aptKDTW .ECHO card");
+		AliasFileWritten departures = AliasFile("Departures.txt", ".orfSAMEf .FF A");
+		AliasFileWritten arrivals = AliasFile("Arrivals.txt", ".ORFSAMEF .FF B");
+		AliasFileWritten chartRecall = AliasFile("Faa_Chart_Recall.txt", ".aptKDTW .OPENURL chart", ".edwAPDc .OPENURL a", ".edwAPDc .OPENURL b");
+		AliasFileWritten[] files = [airports, departures, arrivals, chartRecall];
 
 		IReadOnlyList<DuplicateAliasCommand> duplicates = DuplicateAliasReport.Find(files, Nasr());
 		string text = DuplicateAliasReport.Format(duplicates, files, "2609", null, Generated);
@@ -192,11 +195,11 @@ public sealed class DuplicateAliasReportTests : IDisposable
 	[Fact]
 	public void telephony_duplicates_are_grouped_under_telephony_with_the_explanatory_line_and_correct_group_order()
 	{
-		string airports = AliasFile("Airports.txt", ".aptDTW .ECHO one", ".aptDTW .ECHO two");
-		string chartRecall = AliasFile("Faa_Chart_Recall.txt", ".edwAPDc .OPENURL a", ".edwAPDc .OPENURL b");
-		string telephony = AliasFile("Telephony.txt", ".idAVA .echo card one", ".idAVA .echo card two");
-		string airways = AliasFile("Airways.txt", ".J60F .FF A", ".j60f .FF B");
-		string[] files = [airports, chartRecall, telephony, airways];
+		AliasFileWritten airports = AliasFile("Airports.txt", ".aptDTW .ECHO one", ".aptDTW .ECHO two");
+		AliasFileWritten chartRecall = AliasFile("Faa_Chart_Recall.txt", ".edwAPDc .OPENURL a", ".edwAPDc .OPENURL b");
+		AliasFileWritten telephony = AliasFile("Telephony.txt", ".idAVA .echo card one", ".idAVA .echo card two");
+		AliasFileWritten airways = AliasFile("Airways.txt", ".J60F .FF A", ".j60f .FF B");
+		AliasFileWritten[] files = [airports, chartRecall, telephony, airways];
 
 		IReadOnlyList<DuplicateAliasCommand> duplicates = DuplicateAliasReport.Find(files, Nasr());
 		string text = DuplicateAliasReport.Format(duplicates, files, "2609", "ZOB", Generated);
@@ -213,10 +216,32 @@ public sealed class DuplicateAliasReportTests : IDisposable
 		Assert.Equal(positions.Order(), positions);
 	}
 
+	/// <summary>
+	/// A file the user renamed is still read by its key - its ARTCCs found, its telephony grouped -
+	/// and the report names it as it was written.
+	/// </summary>
+	[Fact]
+	public void renamed_files_are_read_by_their_key_and_named_as_written()
+	{
+		AliasFileWritten departures = Renamed("Departures.txt", "ZDC SIDs.txt", ".orfSAMEf .FF A");
+		AliasFileWritten arrivals = AliasFile("Arrivals.txt", ".ORFSAMEF .FF B");
+		AliasFileWritten telephony = Renamed("Telephony.txt", "Callsigns.txt", ".idAVA .echo card one", ".idAVA .echo card two");
+		AliasFileWritten[] files = [departures, arrivals, telephony];
+
+		IReadOnlyList<DuplicateAliasCommand> duplicates = DuplicateAliasReport.Find(files, Nasr());
+		string text = DuplicateAliasReport.Format(duplicates, files, "2609", null, Generated);
+
+		Assert.Equal(new DuplicateAliasLine("Departures.txt", "ZDC SIDs.txt", ".orfSAMEf .FF A", "ZDC"), duplicates[0].Lines[0]);
+		Assert.Contains("Files checked: ZDC SIDs.txt, Arrivals.txt, Callsigns.txt", text, StringComparison.Ordinal);
+		Assert.Contains("Summary: 2 duplicate command(s) on 4 line(s) - ZDC 1, TELEPHONY 1", text, StringComparison.Ordinal);
+		Assert.Contains("TELEPHONY holds the commands from Callsigns.txt, which belong to an operator rather than an airport.", text, StringComparison.Ordinal);
+		Assert.Contains("\t\tCallsigns.txt  .idAVA .echo card one", text, StringComparison.Ordinal);
+	}
+
 	[Fact]
 	public void a_clean_run_says_there_is_nothing_to_fix()
 	{
-		string airways = AliasFile("Airways.txt", ".J60F .FF A");
+		AliasFileWritten airways = AliasFile("Airways.txt", ".J60F .FF A");
 
 		string text = DuplicateAliasReport.Format([], [airways], "2609", "ZOB", Generated);
 
@@ -226,7 +251,7 @@ public sealed class DuplicateAliasReportTests : IDisposable
 	[Fact]
 	public void write_puts_the_report_in_the_cycle_folder_as_utf8_without_a_bom()
 	{
-		string chartRecall = AliasFile("Faa_Chart_Recall.txt", ".edwAPDc .OPENURL a", ".EDWAPDC .OPENURL b");
+		AliasFileWritten chartRecall = AliasFile("Faa_Chart_Recall.txt", ".edwAPDc .OPENURL a", ".EDWAPDC .OPENURL b");
 		string cycleFolder = Path.Combine(_directory, "AIRAC_2609");
 
 		DuplicateAliasReportResult result = DuplicateAliasReport.Write([chartRecall], Nasr(), "2609", cycleFolder, "ZLA", Generated);
@@ -241,11 +266,29 @@ public sealed class DuplicateAliasReportTests : IDisposable
 	}
 
 	[Fact]
+	public void write_uses_the_name_the_user_gave_the_report()
+	{
+		AliasFileWritten airways = AliasFile("Airways.txt", ".J60F .FF A");
+		string cycleFolder = Path.Combine(_directory, "AIRAC_2609");
+
+		DuplicateAliasReportResult result = DuplicateAliasReport.Write([airways], Nasr(), "2609", cycleFolder, null, Generated, "ZOB Duplicates.txt");
+
+		Assert.Equal(Path.Combine(cycleFolder, "ZOB Duplicates.txt"), result.FilePath);
+		Assert.True(File.Exists(result.FilePath));
+		Assert.False(File.Exists(Path.Combine(cycleFolder, "Duplicate_Alias_Commands.txt")));
+	}
+
+	[Fact]
 	public void write_rejects_missing_arguments()
 	{
 		Assert.Throws<ArgumentNullException>(() => DuplicateAliasReport.Write(null!, Nasr(), "2609", _directory, null, Generated));
 		Assert.Throws<ArgumentNullException>(() => DuplicateAliasReport.Write([], null!, "2609", _directory, null, Generated));
 		Assert.Throws<ArgumentException>(() => DuplicateAliasReport.Write([], Nasr(), " ", _directory, null, Generated));
 		Assert.Throws<ArgumentException>(() => DuplicateAliasReport.Write([], Nasr(), "2609", "", null, Generated));
+		Assert.Throws<ArgumentException>(() => DuplicateAliasReport.Write([], Nasr(), "2609", _directory, null, Generated, " "));
 	}
+
+	/// <summary>Writes an alias file the user renamed, keyed by FE-Buddy's name for it.</summary>
+	private AliasFileWritten Renamed(string fileKey, string fileName, params string[] lines) =>
+		AliasFile(fileName, lines) with { FileKey = fileKey };
 }

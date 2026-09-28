@@ -41,6 +41,7 @@ The screen where you make files. It is a set of tabs down the left:
 |---|---|
 | **General** | Which cycle, and which sub-services (Airports, Airways, Departures, Arrivals, NAVAIDs, ARTCC Boundaries, Fixes, Wx Stations, Procedures, Telephony, vNAS Alias Upload). Always there. |
 | **Airports / Airways / Departures / Arrivals / NAVAIDs / ARTCC Boundaries / Fixes / Wx Stations / Procedures / Telephony / vNAS Alias Upload** | One tab per sub-service you ticked, with its settings. |
+| **File Names** | Every file the run will write, by folder, and a new name for any of them. Appears once a sub-service is ticked. |
 | **Preview Settings** | Everything the run will do, in plain words, and the **Run AIRAC Service** button. Appears once a sub-service is ticked. |
 | **Review** | What happened in the last run. Appears once you run. |
 
@@ -584,6 +585,39 @@ ticked on its tab's **Upload to vNAS** card.
 Without this tab ticked, `vNAS_Alias.txt` is still written whenever an FE-Buddy alias file is ticked
 for vNAS - it then holds FE-Buddy's aliases only, and the Review tab warns that uploading it would
 remove your facility's own aliases from vNAS.
+
+### File Names tab
+
+Every file the run will write, listed by the folder it goes in (`AIRAC_<cycle>`, `Aliases`,
+`Geojson`, `Upload_to_vNAS\Geojson` and so on), and a way to give any of them a name of your own.
+The tab appears, just before Preview Settings, once a sub-service is ticked.
+
+- **The list follows the other tabs.** It shows what their settings write as they are now: change
+  a setting on another tab (Airways by designation instead of by altitude, say, or a file ticked
+  for vNAS) and the list changes when you come back. A file is only written when it has something
+  in it, so a listed file may not appear after the run.
+- **Rename Files** - **No** (the default) keeps every file's FE-Buddy name. **Yes** puts a tick box
+  beside each file and a box for its new name under it.
+- **Type the new name without the extension.** FE-Buddy adds `.geojson`, `.txt`, `.md` or `.json`
+  itself, so `Airways_High_Lines.geojson` renamed `ZOB High` is written as `ZOB High.geojson`. A
+  renamed file stays in its folder.
+- **Untick a file to keep FE-Buddy's name.** Its box greys out. **Rename all** and **Rename none**
+  tick or untick every file at once.
+- **Every ticked file needs a name.** A file you have not seen here before - one a changed setting
+  on another tab just added - starts ticked with an empty box, so the tab turns red until you name
+  it or untick it.
+- **What a name can't be:** empty, a name with `\ / : * ? " < > |` in it, one ending in a dot or
+  in an extension, a name Windows keeps for itself (`CON`, `NUL`, `COM1` and so on), longer than
+  100 characters, or the name of another file in the list - two files can't share a name.
+- **Departures and Arrivals files keep their names.** A run writes one set per procedure, named
+  from the FAA's data (`<airport>_<procedure>_Lines.geojson`), so they are listed but can't be
+  renamed. Their alias files can.
+- Your choices are kept for every file, even one the current settings don't write, so a file that
+  drops off the list and comes back keeps its new name.
+- The other tabs still call each file by FE-Buddy's name. The Review tab, `vNAS_Alias.txt` and
+  `Duplicate_Alias_Commands.txt` use the new names.
+- **Overwrite files** leaves a file an earlier run wrote under its old name in place; choose
+  **Delete all files** to clear it out.
 
 ### Preview Settings tab
 

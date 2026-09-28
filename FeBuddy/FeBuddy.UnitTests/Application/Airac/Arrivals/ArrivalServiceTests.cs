@@ -3,6 +3,7 @@ using System.Text.Json;
 using FeBuddy.Core.Application.Airac;
 using FeBuddy.Core.Application.Airac.Arrivals;
 using FeBuddy.Core.Application.Airac.Arrivals.Models;
+using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Domain.Arrivals.Models;
 using FeBuddy.Core.Infrastructure.Geojson;
 using FeBuddy.Core.Infrastructure.Nasr.Models;
@@ -239,5 +240,24 @@ public sealed class ArrivalServiceTests : IDisposable
 		Assert.Equal(0, result.CommandCount);
 		Assert.Throws<ArgumentNullException>(() => ArrivalAliasWriter.Generate(null!, settings));
 		Assert.Throws<ArgumentNullException>(() => ArrivalAliasWriter.Generate([], null!));
+	}
+
+	[Fact]
+	public void a_renamed_alias_file_is_written_under_its_new_name_while_geojson_files_keep_their_usual_names()
+	{
+		OutputFileNames fileNames = new(new Dictionary<string, string> { ["Arrivals.txt"] = "ZLA Arrivals" });
+
+		ArrivalServiceResult result = ArrivalService.Run(ArrivalTestData.Blaid(), Settings(), fileNames);
+
+		string lines = Path.Combine(ProcedureDirectory(), "LAS_BLAID_STAR_Lines.geojson");
+		string symbols = Path.Combine(ProcedureDirectory(), "LAS_BLAID_STAR_Symbols.geojson");
+		string text = Path.Combine(ProcedureDirectory(), "LAS_BLAID_STAR_Text.geojson");
+
+		Assert.Equal([lines, symbols, text], result.GeojsonFilesWritten);
+		Assert.All(result.GeojsonFilesWritten, f => Assert.True(File.Exists(f)));
+
+		Assert.Equal(Path.Combine(_outputDirectory, "Aliases", "ZLA Arrivals.txt"), result.AliasFilePath);
+		Assert.True(File.Exists(result.AliasFilePath!));
+		Assert.False(File.Exists(Path.Combine(_outputDirectory, "Aliases", "Arrivals.txt")));
 	}
 }

@@ -1,3 +1,4 @@
+using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Domain.Crc.Models;
 using FeBuddy.Core.Infrastructure.FileSystem;
 
@@ -28,6 +29,10 @@ namespace FeBuddy.Core.Application.Airac;
 /// alias file is written to <c>Aliases</c>, and the ones marked for vNAS are copied, one after
 /// another, into <c>vNAS_Alias.txt</c> - below the user's own custom alias files when the vNAS Alias
 /// Upload sub-service is selected. A folder is created only when a file is written into it.
+/// </para>
+/// <para>
+/// The file names here are FE-Buddy's. The user can give most files a name of their own (the File
+/// Names tab, see <see cref="OutputFileNames"/>); a renamed file keeps its folder and its extension.
 /// </para>
 /// </remarks>
 public static class AiracOutputPaths
@@ -99,9 +104,10 @@ public static class AiracOutputPaths
 
 	/// <summary>The one alias file to upload to vNAS: <c>&lt;output&gt;\Upload_to_vNAS\vNAS_Alias.txt</c>.</summary>
 	/// <param name="outputDirectory">The folder the run writes into - the cycle folder, for an AIRAC Service run.</param>
+	/// <param name="fileName">The file's name, when the user gave it one of their own (see <see cref="OutputFileNames"/>).</param>
 	/// <returns>The file's full path.</returns>
-	public static string VnasAliasFilePath(string outputDirectory) =>
-		Path.Combine(outputDirectory, VnasFolder, VnasAliasFileName);
+	public static string VnasAliasFilePath(string outputDirectory, string fileName = VnasAliasFileName) =>
+		Path.Combine(outputDirectory, VnasFolder, fileName);
 
 	/// <summary>
 	/// The folder the Procedures sub-service's two documents go in:

@@ -1,5 +1,6 @@
 using System.Diagnostics;
 
+using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Application.Airac.Procedures.Models;
 using FeBuddy.Core.Application.Models;
 using FeBuddy.Core.Domain.Procedures.Models;
@@ -43,6 +44,7 @@ public static class ProcedureService
 	/// available - a deleted or re-added procedure is then listed without a link to its last chart.
 	/// </param>
 	/// <param name="procedureSettings">The raw Procedures settings dictionary.</param>
+	/// <param name="fileNames">The names the user gave files in place of FE-Buddy's, or <see langword="null"/> for none.</param>
 	/// <returns>What was built and written, plus timing and every message collected along the way.</returns>
 	/// <exception cref="ArgumentException">Thrown when a required setting is missing or invalid.</exception>
 	/// <exception cref="InvalidOperationException">
@@ -52,7 +54,8 @@ public static class ProcedureService
 		NasrCsvDataCollection nasr,
 		DtppMetafileDataCollection? dtpp,
 		DtppMetafileDataCollection? previousDtpp,
-		IReadOnlyDictionary<string, string> procedureSettings)
+		IReadOnlyDictionary<string, string> procedureSettings,
+		OutputFileNames? fileNames = null)
 	{
 		ArgumentNullException.ThrowIfNull(nasr);
 		ArgumentNullException.ThrowIfNull(procedureSettings);
@@ -62,7 +65,7 @@ public static class ProcedureService
 
 		ProcedureSettingsParseResult parseResult = ProcedureSettingsParser.Parse(procedureSettings);
 		messages.AddRange(parseResult.Messages);
-		ProcedureSettings settings = parseResult.Settings;
+		ProcedureSettings settings = parseResult.Settings with { FileNames = fileNames ?? OutputFileNames.None };
 
 		if (dtpp is null)
 		{
@@ -171,7 +174,7 @@ public static class ProcedureService
 	/// <summary>Builds and writes <c>Faa_Chart_Recall.txt</c> for every airport in the metafile.</summary>
 	private static AliasOutcome WriteAliasFile(DtppMetafileDataCollection dtpp, ProcedureSettings settings, List<ServiceMessage> messages)
 	{
-		ChartRecallBuildResult buildResult = ChartRecallAliasBuilder.Build(dtpp);
+		ChartRecallBuildResult buildResult = ChartRecallAliasBuilder.Build(dtpp, settings.FileNames.FileName(ProcedureOutputFiles.Alias));
 		messages.AddRange(buildResult.Messages);
 
 		ChartRecallAliasWriteResult writeResult = ChartRecallAliasWriter.Generate(buildResult.Lines, settings);

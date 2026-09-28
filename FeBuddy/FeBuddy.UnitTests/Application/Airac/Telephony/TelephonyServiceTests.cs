@@ -1,3 +1,4 @@
+using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Application.Airac.Telephony;
 using FeBuddy.Core.Application.Airac.Telephony.Models;
 using FeBuddy.Core.Application.Models;
@@ -175,5 +176,18 @@ public sealed class TelephonyServiceTests : IDisposable
 		Assert.Equal(1, result.IcaoAssignmentCount);
 		Assert.NotNull(result.AliasFilePath);
 		Assert.True(File.Exists(result.AliasFilePath));
+	}
+
+	[Fact]
+	public void a_renamed_alias_file_is_written_under_its_new_name()
+	{
+		OutputFileNames fileNames = new(new Dictionary<string, string> { ["Telephony.txt"] = "ZOB Telephony" });
+
+		TelephonyServiceResult result = TelephonyService.Run(MixedScenario(), Settings(), Today, fileNames);
+
+		Assert.Equal(Path.Combine(_outputDirectory, "Aliases", "ZOB Telephony.txt"), result.AliasFilePath);
+		Assert.True(File.Exists(result.AliasFilePath!));
+		Assert.False(File.Exists(Path.Combine(_outputDirectory, "Aliases", "Telephony.txt")));
+		Assert.Contains(result.Messages, m => m.Level == LogLevel.Info && m.Text.StartsWith("ZOB Telephony.txt:", StringComparison.Ordinal));
 	}
 }

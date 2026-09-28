@@ -1,3 +1,4 @@
+using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Application.Airac.Navaids;
 using FeBuddy.Core.Application.Airac.Navaids.Models;
 using FeBuddy.Core.Infrastructure.Nasr.Models;
@@ -125,5 +126,27 @@ public sealed class NavaidServiceTests : IDisposable
 		NasrCsvDataCollection data = NavaidTestData.Build([NavaidTestData.CgtRow()]);
 
 		Assert.Throws<ArgumentException>(() => NavaidService.Run(data, Settings(("OutputBy", "Sideways"))));
+	}
+
+	[Fact]
+	public void a_renamed_geojson_file_and_alias_file_are_written_under_their_new_names()
+	{
+		NasrCsvDataCollection data = NavaidTestData.Build(NavaidTestData.AllSampleRows());
+
+		OutputFileNames fileNames = new(new Dictionary<string, string>
+		{
+			["NAVAIDs_Symbols"] = "ZOB Navaid Symbols",
+			["Navaids.txt"] = "ZOB Navaids",
+		});
+
+		NavaidServiceResult result = NavaidService.Run(data, Settings(), fileNames);
+
+		string renamedSymbols = Assert.Single(result.GeojsonFilesWritten, f => f.EndsWith("ZOB Navaid Symbols.geojson", StringComparison.Ordinal));
+		Assert.True(File.Exists(renamedSymbols));
+		Assert.False(File.Exists(Path.Combine(Path.GetDirectoryName(renamedSymbols)!, "NAVAIDs_Symbols.geojson")));
+
+		Assert.Equal(Path.Combine(_outputDirectory, "Aliases", "ZOB Navaids.txt"), result.AliasFilePath);
+		Assert.True(File.Exists(result.AliasFilePath!));
+		Assert.False(File.Exists(Path.Combine(_outputDirectory, "Aliases", "Navaids.txt")));
 	}
 }

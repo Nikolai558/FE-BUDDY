@@ -13,6 +13,9 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
 -->
 
 ## Unreleased
+- New File Names tab in the AIRAC Service: see every file a run will write, by folder, and give any
+  of them your own name (the Departures and Arrivals per-procedure files keep theirs). A file a
+  changed setting adds is flagged until you name it or choose to keep FE-Buddy's name.
 
 ## 3.0.0-alpha.1
 - FE-BUDDY 3.0 is a from-scratch rewrite with a new interface. This first alpha is for testers:

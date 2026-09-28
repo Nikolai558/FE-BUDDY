@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Text;
 
+using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Application.Airac.VnasAlias.Models;
 using FeBuddy.Core.Application.Models;
 using FeBuddy.Core.Infrastructure.Logging;
@@ -44,6 +45,10 @@ namespace FeBuddy.Core.Application.Airac.VnasAlias;
 /// When there is nothing to merge, no file is written, and one an earlier run left in
 /// <c>Upload_to_vNAS</c> is deleted, so last run's file cannot be uploaded by mistake.
 /// </para>
+/// <para>
+/// The names are FE-Buddy's. A file the user renamed (the File Names tab) is written, and headed,
+/// under its new name - <c>vNAS_Alias.txt</c> itself included.
+/// </para>
 /// </remarks>
 public static class VnasAliasFileWriter
 {
@@ -65,18 +70,21 @@ public static class VnasAliasFileWriter
 	/// <param name="feBuddyAliasFiles">The full paths of FE-Buddy's alias files marked for vNAS, in the order to add them.</param>
 	/// <param name="cycleId">The AIRAC cycle the FE-Buddy files are for, e.g. <c>2610</c>.</param>
 	/// <param name="outputDirectory">The folder the run writes into - the cycle folder.</param>
+	/// <param name="fileName">The file's name, when the user gave it one of their own (see <see cref="OutputFileNames"/>).</param>
 	/// <returns>What was written, and every message.</returns>
 	/// <exception cref="IOException">Thrown when an FE-Buddy alias file cannot be read or the file cannot be written.</exception>
 	public static VnasAliasResult Write(
 		IReadOnlyList<AliasSourceLoad> customFiles,
 		IReadOnlyList<string> feBuddyAliasFiles,
 		string cycleId,
-		string outputDirectory)
+		string outputDirectory,
+		string fileName = AiracOutputPaths.VnasAliasFileName)
 	{
 		ArgumentNullException.ThrowIfNull(customFiles);
 		ArgumentNullException.ThrowIfNull(feBuddyAliasFiles);
 		ArgumentException.ThrowIfNullOrWhiteSpace(cycleId);
 		ArgumentException.ThrowIfNullOrWhiteSpace(outputDirectory);
+		ArgumentException.ThrowIfNullOrWhiteSpace(fileName);
 
 		Stopwatch stopwatch = Stopwatch.StartNew();
 		List<ServiceMessage> messages = [];
@@ -84,7 +92,7 @@ public static class VnasAliasFileWriter
 		foreach (AliasSourceLoad failed in customFiles.Where(f => !f.Succeeded))
 		{
 			Add(messages, new ServiceMessage(LogLevel.Warning, LogSource,
-				$"Left {failed.Source.DisplayName} out of {AiracOutputPaths.VnasAliasFileName}: {failed.Problem} " +
+				$"Left {failed.Source.DisplayName} out of {fileName}: {failed.Problem} " +
 				"Uploading the file without it would remove its aliases from vNAS.")
 			{ IsAdvisory = true });
 		}
@@ -102,7 +110,7 @@ public static class VnasAliasFileWriter
 				if (line.TrimStart().StartsWith(FeBuddySectionMarker, StringComparison.OrdinalIgnoreCase))
 				{
 					Add(messages, new ServiceMessage(LogLevel.Info, LogSource,
-						$"{file.Source.DisplayName} ends with FE-Buddy aliases from an earlier {AiracOutputPaths.VnasAliasFileName}; " +
+						$"{file.Source.DisplayName} ends with FE-Buddy aliases from an earlier {fileName}; " +
 						"only the lines above them were merged, so they are not added twice."));
 					break;
 				}
@@ -130,8 +138,8 @@ public static class VnasAliasFileWriter
 		if (custom.Count == 0 && feBuddy.Count == 0)
 		{
 			Add(messages, new ServiceMessage(LogLevel.Warning, LogSource,
-				$"{AiracOutputPaths.VnasAliasFileName} was not written: no custom alias file could be read, and no FE-Buddy alias file is marked for vNAS." +
-				DeleteEarlierFile(outputDirectory).Sentence)
+				$"{fileName} was not written: no custom alias file could be read, and no FE-Buddy alias file is marked for vNAS." +
+				DeleteEarlierFile(outputDirectory, fileName).Sentence)
 			{ IsAdvisory = true });
 
 			return Result(null, customFiles.Count, 0, 0, [], 0, 0, messages, stopwatch);
@@ -171,11 +179,11 @@ public static class VnasAliasFileWriter
 			}
 		}
 
-		string path = AiracOutputPaths.VnasAliasFilePath(outputDirectory);
+		string path = AiracOutputPaths.VnasAliasFilePath(outputDirectory, fileName);
 		Directory.CreateDirectory(Path.GetDirectoryName(path)!);
 		File.WriteAllText(path, builder.ToString(), new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
 
-		int duplicates = ReportDuplicates(custom, feBuddy, messages);
+		int duplicates = ReportDuplicates(custom, feBuddy, fileName, messages);
 
 		return Result(path, customFiles.Count, custom.Count, customCommands, [.. feBuddy.Select(f => f.Name)], feBuddyCommands, duplicates, messages, stopwatch);
 	}
@@ -199,6 +207,7 @@ public static class VnasAliasFileWriter
 	private static int ReportDuplicates(
 		IReadOnlyList<(string Name, IReadOnlyList<string> Lines)> custom,
 		IReadOnlyList<(string Name, IReadOnlyList<string> Lines)> feBuddy,
+		string fileName,
 		List<ServiceMessage> messages)
 	{
 		Dictionary<string, List<string>> filesByCommand = new(StringComparer.OrdinalIgnoreCase);
@@ -238,7 +247,7 @@ public static class VnasAliasFileWriter
 
 			Add(messages, new ServiceMessage(LogLevel.Warning, LogSource,
 				$"{duplicates.Length:N0} alias command(s) from your custom alias files are also in another file merged into " +
-				$"{AiracOutputPaths.VnasAliasFileName}, so CRC can only run one of each: {listed}" +
+				$"{fileName}, so CRC can only run one of each: {listed}" +
 				(duplicates.Length > DuplicatesListed ? ", ..." : string.Empty) +
 				". Remove the extra copies from your custom alias files, or untick the FE-Buddy file.")
 			{ IsAdvisory = true });
@@ -253,13 +262,14 @@ public static class VnasAliasFileWriter
 	/// files without writing a new one.
 	/// </summary>
 	/// <param name="outputDirectory">The run's cycle folder.</param>
+	/// <param name="fileName">The file's name - the one this run would have written it under.</param>
 	/// <returns>
 	/// A sentence for a "not written" message saying what happened to it (empty when there was none),
 	/// and whether it could not be deleted.
 	/// </returns>
-	internal static (string Sentence, bool Failed) DeleteEarlierFile(string outputDirectory)
+	internal static (string Sentence, bool Failed) DeleteEarlierFile(string outputDirectory, string fileName)
 	{
-		string path = AiracOutputPaths.VnasAliasFilePath(outputDirectory);
+		string path = AiracOutputPaths.VnasAliasFilePath(outputDirectory, fileName);
 
 		if (!File.Exists(path))
 		{

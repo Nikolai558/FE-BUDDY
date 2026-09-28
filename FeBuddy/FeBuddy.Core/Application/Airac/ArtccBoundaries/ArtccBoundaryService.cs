@@ -1,6 +1,7 @@
 using System.Diagnostics;
 
 using FeBuddy.Core.Application.Airac.ArtccBoundaries.Models;
+using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Application.Models;
 using FeBuddy.Core.Domain.ArtccBoundaries.Models;
 using FeBuddy.Core.Infrastructure.Geojson;
@@ -29,10 +30,14 @@ public static class ArtccBoundaryService
 	/// </summary>
 	/// <param name="allNasrCsvData">All parsed NASR CSV data. <c>Arb</c> must not be null.</param>
 	/// <param name="artccBoundarySettings">The raw ARTCC Boundaries settings block (see <see cref="ArtccBoundarySettingsParser"/> for the keys).</param>
+	/// <param name="fileNames">The names the user gave files in place of FE-Buddy's, or <see langword="null"/> for none.</param>
 	/// <returns>What was built and written, plus timing and every message collected along the way.</returns>
 	/// <exception cref="ArgumentException">Thrown when a required setting is missing or invalid.</exception>
 	/// <exception cref="InvalidOperationException">Thrown when <paramref name="allNasrCsvData"/>.Arb has not been parsed.</exception>
-	public static ArtccBoundaryServiceResult Run(NasrCsvDataCollection allNasrCsvData, IReadOnlyDictionary<string, string> artccBoundarySettings)
+	public static ArtccBoundaryServiceResult Run(
+		NasrCsvDataCollection allNasrCsvData,
+		IReadOnlyDictionary<string, string> artccBoundarySettings,
+		OutputFileNames? fileNames = null)
 	{
 		ArgumentNullException.ThrowIfNull(allNasrCsvData);
 		ArgumentNullException.ThrowIfNull(artccBoundarySettings);
@@ -43,18 +48,20 @@ public static class ArtccBoundaryService
 		ArtccBoundarySettingsParseResult parseResult = ArtccBoundarySettingsParser.Parse(artccBoundarySettings);
 		messages.AddRange(parseResult.Messages);
 
+		ArtccBoundarySettings settings = parseResult.Settings with { FileNames = fileNames ?? OutputFileNames.None };
+
 		ArtccBoundaryBuildAllResult buildResult = ArtccBoundaryBuilder.Read(allNasrCsvData);
 		messages.AddRange(buildResult.Messages);
 
 		IReadOnlyList<ArtccBoundaryRing> filteredRings =
-			ArtccBoundaryFilter.ByLocation(buildResult.Rings, parseResult.Settings.LocationFilter);
+			ArtccBoundaryFilter.ByLocation(buildResult.Rings, settings.LocationFilter);
 
 		int locationCount = filteredRings
 			.Select(ring => ring.Location.LocationId)
 			.Distinct(StringComparer.OrdinalIgnoreCase)
 			.Count();
 
-		GeojsonFileSet geojsonFiles = ArtccBoundaryGeojsonWriter.Generate(filteredRings, parseResult.Settings);
+		GeojsonFileSet geojsonFiles = ArtccBoundaryGeojsonWriter.Generate(filteredRings, settings);
 		int ringCount = geojsonFiles.RenderedFeatureCountsByFile.Values.Sum();
 
 		if (geojsonFiles.FilesWritten.Count == 0)

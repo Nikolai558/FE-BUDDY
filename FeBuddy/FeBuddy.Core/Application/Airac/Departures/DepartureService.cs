@@ -1,6 +1,7 @@
 using System.Diagnostics;
 
 using FeBuddy.Core.Application.Airac.Departures.Models;
+using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Application.Models;
 using FeBuddy.Core.Domain.Departures.Models;
 using FeBuddy.Core.Infrastructure.Geojson;
@@ -27,10 +28,14 @@ public static class DepartureService
 	/// </summary>
 	/// <param name="allNasrCsvData">All parsed NASR CSV data. <c>Dp</c> must not be null; FIX, NAV and APT are read for locations.</param>
 	/// <param name="departureSettings">The raw Departures settings dictionary.</param>
+	/// <param name="fileNames">The names the user gave files in place of FE-Buddy's, or <see langword="null"/> for none.</param>
 	/// <returns>What was built and written, plus timing and every message collected along the way.</returns>
 	/// <exception cref="ArgumentException">Thrown when a required setting is missing or invalid.</exception>
 	/// <exception cref="InvalidOperationException">Thrown when the DP data has not been parsed.</exception>
-	public static DepartureServiceResult Run(NasrCsvDataCollection allNasrCsvData, IReadOnlyDictionary<string, string> departureSettings)
+	public static DepartureServiceResult Run(
+		NasrCsvDataCollection allNasrCsvData,
+		IReadOnlyDictionary<string, string> departureSettings,
+		OutputFileNames? fileNames = null)
 	{
 		ArgumentNullException.ThrowIfNull(allNasrCsvData);
 		ArgumentNullException.ThrowIfNull(departureSettings);
@@ -40,7 +45,7 @@ public static class DepartureService
 
 		DepartureSettingsParseResult parseResult = DepartureSettingsParser.Parse(departureSettings);
 		messages.AddRange(parseResult.Messages);
-		DepartureSettings settings = parseResult.Settings;
+		DepartureSettings settings = parseResult.Settings with { FileNames = fileNames ?? OutputFileNames.None };
 
 		DepartureProcedureReadResult readResult = DepartureBuilder.ReadProcedures(allNasrCsvData);
 		messages.AddRange(readResult.Messages);

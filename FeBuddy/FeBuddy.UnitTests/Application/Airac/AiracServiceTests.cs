@@ -716,6 +716,97 @@ public sealed class AiracServiceTests : IDisposable
 		Assert.Contains("uploading it would remove your facility's own aliases from vNAS", onlyFeBuddy.Text, StringComparison.Ordinal);
 	}
 
+	/// <summary>
+	/// A renamed alias file is still the one UploadToVnas names by its key, so it goes into the vNAS
+	/// alias file - and that file, the duplicate report and every message use the new names.
+	/// </summary>
+	[Fact]
+	public async Task renamed_files_are_written_under_their_new_names_and_a_renamed_alias_file_still_goes_to_vnas()
+	{
+		AiracServiceSettings settings = new()
+		{
+			SelectedCycle = Cycle,
+			OutputDirectory = _output,
+			Telephony = new Dictionary<string, string> { ["UploadToVnas"] = "Telephony.txt" },
+			FileNames = new Dictionary<string, string>
+			{
+				["Telephony.txt"] = "ZOB Telephony",
+				["vNAS_Alias.txt"] = "ZOB vNAS",
+				["Duplicate_Alias_Commands.txt"] = "ZOB Duplicates",
+			},
+		};
+
+		AiracServiceResult result = await AiracService.RunAsync(
+			settings, new NasrCsvDataCollection(), new AiracSupplementalData { Telephony = OneOperator });
+
+		Assert.Equal(Path.Combine(CycleFolder, "Aliases", "ZOB Telephony.txt"), result.Telephony!.AliasFilePath);
+		Assert.Equal(Path.Combine(CycleFolder, "Upload_to_vNAS", "ZOB vNAS.txt"), result.VnasAlias!.FilePath);
+		Assert.Equal(["ZOB Telephony.txt"], result.VnasAlias.FeBuddyFiles);
+		Assert.Equal(Path.Combine(CycleFolder, "ZOB Duplicates.txt"), result.DuplicateAliasReport!.FilePath);
+
+		Assert.False(File.Exists(Path.Combine(CycleFolder, "Aliases", "Telephony.txt")));
+		Assert.False(File.Exists(VnasAliasFile));
+		Assert.False(File.Exists(Path.Combine(CycleFolder, "Duplicate_Alias_Commands.txt")));
+
+		Assert.Contains("; ----- ZOB Telephony.txt -----", File.ReadAllText(result.VnasAlias.FilePath!), StringComparison.Ordinal);
+		Assert.Contains("Files checked: ZOB Telephony.txt", File.ReadAllText(result.DuplicateAliasReport.FilePath), StringComparison.Ordinal);
+		Assert.Contains(result.Messages, m => m.Text.StartsWith("vNAS Alias Upload is not selected, so ZOB vNAS.txt holds only", StringComparison.Ordinal));
+	}
+
+	[Fact]
+	public async Task a_renamed_vnas_alias_file_an_earlier_run_left_is_deleted_under_its_new_name()
+	{
+		string renamed = Path.Combine(CycleFolder, "Upload_to_vNAS", "ZOB vNAS.txt");
+		Directory.CreateDirectory(Path.GetDirectoryName(renamed)!);
+		File.WriteAllText(renamed, ".old last run's aliases");
+
+		AiracServiceSettings settings = new()
+		{
+			SelectedCycle = Cycle,
+			OutputDirectory = _output,
+			Telephony = new Dictionary<string, string>(),
+			FileNames = new Dictionary<string, string> { ["vNAS_Alias.txt"] = "ZOB vNAS" },
+		};
+
+		AiracServiceResult result = await AiracService.RunAsync(
+			settings, new NasrCsvDataCollection(), new AiracSupplementalData { Telephony = OneOperator });
+
+		Assert.False(File.Exists(renamed));
+		Assert.Contains(result.Messages, m => m.Text.StartsWith("No alias file is marked for vNAS, so ZOB vNAS.txt was not written.", StringComparison.Ordinal));
+	}
+
+	[Fact]
+	public async Task a_new_name_for_no_file_is_a_warning_on_the_run()
+	{
+		AiracServiceSettings settings = AliasOnlySettings() with
+		{
+			FileNames = new Dictionary<string, string> { ["Departures_Lines"] = "Mine" },
+		};
+
+		AiracServiceResult result = await AiracService.RunAsync(settings, DepartureTestData.Dotss());
+
+		ServiceMessage warning = Assert.Single(result.Messages, m => m.Source == "OutputFileNamesParser");
+		Assert.Equal(LogLevel.Warning, warning.Level);
+	}
+
+	/// <summary>The names are checked before an earlier run's files are deleted, so a bad one costs nothing.</summary>
+	[Fact]
+	public async Task a_new_name_that_cannot_be_used_stops_the_run_before_anything_is_deleted()
+	{
+		string earlier = Path.Combine(CycleFolder, "earlier.txt");
+		Directory.CreateDirectory(CycleFolder);
+		File.WriteAllText(earlier, "an earlier run's file");
+
+		AiracServiceSettings settings = AliasOnlySettings(existingOutput: ExistingOutputAction.DeleteExisting) with
+		{
+			FileNames = new Dictionary<string, string> { ["Airports.txt"] = "Airports.txt" },
+		};
+
+		await Assert.ThrowsAsync<ArgumentException>(() => AiracService.RunAsync(settings, DepartureTestData.Dotss()));
+
+		Assert.True(File.Exists(earlier));
+	}
+
 	[Fact]
 	public async Task no_alias_file_marked_for_vnas_and_no_vnas_alias_block_writes_no_vnas_alias_txt()
 	{

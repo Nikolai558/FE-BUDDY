@@ -109,7 +109,12 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 	public bool ShowsStrata => OutputBy == AirwayGeojsonOutputBy.HighLow && Designations.Any(d => d.Included);
 
 	/// <summary>The files a designation can go in, for each row's drop-down on the High and Low Files card.</summary>
-	public IReadOnlyList<AirwayStratum> StratumValues { get; } = [AirwayStratum.High, AirwayStratum.Low, AirwayStratum.Both];
+	/// <remarks>
+	/// Static so the drop-downs bind it with <c>x:Static</c>: bound through the view's DataContext, it
+	/// went null while the view was swapped out for another tab, and each ComboBox then cleared its
+	/// selection back into the toggle - losing every saved choice.
+	/// </remarks>
+	public static IReadOnlyList<AirwayStratum> StratumValues { get; } = [AirwayStratum.High, AirwayStratum.Low, AirwayStratum.Both];
 
 	/// <summary>A multi-line description of the files the selected <see cref="OutputBy"/> writes.</summary>
 	public string OutputModeHint => OutputBy switch

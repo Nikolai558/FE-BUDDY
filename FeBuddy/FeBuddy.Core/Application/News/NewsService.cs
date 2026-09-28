@@ -10,7 +10,7 @@ using FeBuddy.Core.Infrastructure.Logging;
 namespace FeBuddy.Core.Application.News;
 
 /// <summary>
-/// Reads the FE-Buddy News document (<c>FeBuddy.Core/News.md</c>): fetched from GitHub raw
+/// Reads the FE-Buddy News document (<c>News.md</c> at the repository root): fetched from GitHub raw
 /// when online, falling back to the copy bundled into this assembly offline. Parses the posts
 /// for display on the Dashboard and reports how many are newer than the user last saw.
 /// </summary>
@@ -24,8 +24,11 @@ public static class NewsService
 {
 	private const string LogSource = "News";
 
-	/// <summary>Where News.md sits in the repository.</summary>
-	private const string NewsPath = "FeBuddy/FeBuddy.Core/News.md";
+	/// <summary>
+	/// Where News.md sits in the repository. 3.0.0-alpha.1 reads it from <c>FeBuddy/FeBuddy.Core/News.md</c>,
+	/// which keeps one last post telling those users to update.
+	/// </summary>
+	private const string NewsPath = "News.md";
 
 	/// <summary>The raw News markdown URL on GitHub (used when online, unauthenticated).</summary>
 	public const string RawUrl = GitHubRepository.RawUrl + "/" + NewsPath;
@@ -101,7 +104,8 @@ public static class NewsService
 	/// <summary>
 	/// Parses News markdown into posts, newest first. A post is a <c>## </c> heading, an
 	/// optional <c>&lt;!-- PostId: … --&gt;</c> comment, and the text up to the next <c>---</c>
-	/// rule. Posts without a parseable PostId are skipped.
+	/// rule. Its first line is its title, and is left out of its body. Posts without a parseable
+	/// PostId are skipped, with a warning in the log.
 	/// </summary>
 	/// <param name="markdown">The News document text.</param>
 	/// <returns>The parsed posts in document order (newest first, matching the file convention).</returns>
@@ -123,23 +127,27 @@ public static class NewsService
 				continue;
 			}
 
+			string dateHeading = heading.Groups[1].Value.Trim();
+
 			Match idMatch = PostIdPattern.Match(section);
 			if (!idMatch.Success
 				|| !NewsPostId.TryParse($"{idMatch.Groups[1].Value}.{idMatch.Groups[2].Value}", out NewsPostId id))
 			{
+				string found = idMatch.Success ? $"'{idMatch.Groups[1].Value}.{idMatch.Groups[2].Value}'" : "none";
+				AppLog.Warning(LogSource, $"News post '{dateHeading}' was skipped: its PostId ({found}) is not yyyy-mm-dd.# with # from 1.");
 				continue;
 			}
 
-			// Everything after the heading line, with the HTML comment block removed.
+			// Everything after the heading line, with the HTML comment block removed. Its first
+			// line is the title the card shows above it, so the body starts after that line.
 			string afterHeading = section[(heading.Index + heading.Length)..];
-			string body = Regex.Replace(afterHeading, @"<!--.*?-->", string.Empty, RegexOptions.Singleline).Trim();
+			string text = Regex.Replace(afterHeading, @"<!--.*?-->", string.Empty, RegexOptions.Singleline).Trim();
+			string[] lines = text.Split('\n', 2);
 
-			string title = body
-				.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-				.Select(line => line.Trim('*', ' ', '#'))
-				.FirstOrDefault(line => line.Length > 0) ?? string.Empty;
+			string title = lines[0].Trim().Trim('*', ' ', '#');
+			string body = lines.Length > 1 ? lines[1].Trim() : string.Empty;
 
-			posts.Add(new NewsPost(id, heading.Groups[1].Value.Trim(), title, body));
+			posts.Add(new NewsPost(id, dateHeading, title, body));
 		}
 
 		return [.. posts.OrderByDescending(p => p.Id)];

@@ -56,8 +56,8 @@ public readonly record struct NewsPostId(DateOnly Date, int Sequence) : ICompara
 /// </summary>
 /// <param name="Id">The post's <see cref="NewsPostId"/>.</param>
 /// <param name="DateHeading">The <c>## </c> heading text (usually the date).</param>
-/// <param name="Title">The first bold/emphasis line of the post, or an empty string.</param>
-/// <param name="Body">The remaining post text (markdown), trimmed.</param>
+/// <param name="Title">The post's first line, without its bold / heading marks, or an empty string.</param>
+/// <param name="Body">The post text after that first line (markdown), trimmed.</param>
 public sealed record NewsPost(NewsPostId Id, string DateHeading, string Title, string Body);
 
 /// <summary>

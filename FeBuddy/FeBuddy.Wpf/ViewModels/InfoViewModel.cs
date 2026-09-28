@@ -30,7 +30,8 @@ public sealed class InfoViewModel : ObservableObject
 	/// <summary>The links, in display order.</summary>
 	public ObservableCollection<Resource> Resources { get; } =
 	[
-		new("Manual", "How each tool works, field by field.", Links.Manual),
+		new("User Guide", "How each tool works, field by field.", Links.UserGuide),
+		new("FAQ / Troubleshooting", "Answers to common questions, and fixes for common problems.", Links.FaqAndTroubleshooting),
 		new("Change log", "What shipped in every release.", Links.ChangeLog),
 		new("Issues & requests", "Track bugs and feature ideas.", Links.Issues),
 	];

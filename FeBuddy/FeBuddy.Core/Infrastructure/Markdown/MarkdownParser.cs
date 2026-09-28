@@ -8,7 +8,7 @@ namespace FeBuddy.Core.Infrastructure.Markdown;
 
 /// <summary>
 /// A small, forgiving Markdown parser for the text FE-Buddy shows from GitHub - release notes in
-/// the update window. It covers what those bodies actually use, not all of CommonMark:
+/// the update window and News posts on the Dashboard. It covers what those bodies actually use, not all of CommonMark:
 /// <list type="bullet">
 /// <item>ATX headings, paragraphs (soft breaks joined, hard breaks kept), horizontal rules,
 /// fenced code, block quotes, and bullet / numbered lists nested by indentation.</item>
@@ -28,8 +28,13 @@ public static partial class MarkdownParser
 	/// When set, a <c>#123</c> reference becomes a link to this base plus the number
 	/// (e.g. <c>https://github.com/owner/repo/issues/</c>). When <see langword="null"/>, it stays plain text.
 	/// </param>
+	/// <param name="linkBase">
+	/// When set, a relative link - <c>[User Guide](../../docs/Users/User-Guide.md)</c> - resolves against
+	/// this address, the way GitHub resolves it against the page the Markdown lives on. When
+	/// <see langword="null"/>, a relative link stays plain text.
+	/// </param>
 	/// <returns>The parsed blocks, in document order.</returns>
-	public static IReadOnlyList<MarkdownBlock> Parse(string? markdown, string? issueUrlBase = null)
+	public static IReadOnlyList<MarkdownBlock> Parse(string? markdown, string? issueUrlBase = null, Uri? linkBase = null)
 	{
 		if (string.IsNullOrWhiteSpace(markdown))
 		{
@@ -42,25 +47,36 @@ public static partial class MarkdownParser
 			.Replace("\t", "    ", StringComparison.Ordinal)
 			.Split('\n');
 
-		return ParseBlocks(lines, issueUrlBase);
+		return ParseBlocks(lines, new LinkContext(issueUrlBase, linkBase));
 	}
 
 	/// <summary>Parses inline Markdown (one paragraph's worth) into styled spans.</summary>
 	/// <param name="text">The inline text.</param>
 	/// <param name="issueUrlBase">See <see cref="Parse"/>.</param>
+	/// <param name="linkBase">See <see cref="Parse"/>.</param>
 	/// <returns>The spans, with neighbours of the same style and link merged.</returns>
-	public static IReadOnlyList<MarkdownSpan> ParseInlines(string text, string? issueUrlBase = null)
+	public static IReadOnlyList<MarkdownSpan> ParseInlines(string text, string? issueUrlBase = null, Uri? linkBase = null)
 	{
 		ArgumentNullException.ThrowIfNull(text);
 
+		return ParseSpans(text, new LinkContext(issueUrlBase, linkBase));
+	}
+
+	/// <summary>Where <c>#123</c> references and relative links point, for one parse.</summary>
+	/// <param name="IssueUrlBase">See <see cref="Parse"/>.</param>
+	/// <param name="LinkBase">See <see cref="Parse"/>.</param>
+	private readonly record struct LinkContext(string? IssueUrlBase, Uri? LinkBase);
+
+	private static List<MarkdownSpan> ParseSpans(string text, LinkContext links)
+	{
 		var spans = new List<MarkdownSpan>();
-		ParseInline(text, MarkdownStyle.None, null, issueUrlBase, spans);
+		ParseInline(text, MarkdownStyle.None, null, links, spans);
 		return Merge(spans);
 	}
 
 	// ------------------------------------------------------------------ blocks
 
-	private static List<MarkdownBlock> ParseBlocks(IReadOnlyList<string> lines, string? issueUrlBase)
+	private static List<MarkdownBlock> ParseBlocks(IReadOnlyList<string> lines, LinkContext links)
 	{
 		var blocks = new List<MarkdownBlock>();
 		var paragraph = new List<string>();
@@ -69,7 +85,7 @@ public static partial class MarkdownParser
 		{
 			if (paragraph.Count > 0)
 			{
-				blocks.Add(new MarkdownParagraph(ParseInlines(JoinParagraph(paragraph), issueUrlBase)));
+				blocks.Add(new MarkdownParagraph(ParseSpans(JoinParagraph(paragraph), links)));
 				paragraph.Clear();
 			}
 		}
@@ -106,7 +122,7 @@ public static partial class MarkdownParser
 			{
 				FlushParagraph();
 				string text = ClosingHashesPattern().Replace(heading.Groups["text"].Value, string.Empty).Trim();
-				blocks.Add(new MarkdownHeading(heading.Groups["hashes"].Length, ParseInlines(text, issueUrlBase)));
+				blocks.Add(new MarkdownHeading(heading.Groups["hashes"].Length, ParseSpans(text, links)));
 				i++;
 				continue;
 			}
@@ -122,14 +138,14 @@ public static partial class MarkdownParser
 			if (QuotePattern().IsMatch(line))
 			{
 				FlushParagraph();
-				blocks.Add(ParseQuote(lines, ref i, issueUrlBase));
+				blocks.Add(ParseQuote(lines, ref i, links));
 				continue;
 			}
 
 			if (ListItemPattern().IsMatch(line))
 			{
 				FlushParagraph();
-				blocks.Add(ParseList(lines, ref i, issueUrlBase));
+				blocks.Add(ParseList(lines, ref i, links));
 				continue;
 			}
 
@@ -160,7 +176,7 @@ public static partial class MarkdownParser
 		return new MarkdownCodeBlock(string.Join('\n', code));
 	}
 
-	private static MarkdownQuote ParseQuote(IReadOnlyList<string> lines, ref int i, string? issueUrlBase)
+	private static MarkdownQuote ParseQuote(IReadOnlyList<string> lines, ref int i, LinkContext links)
 	{
 		var inner = new List<string>();
 
@@ -184,10 +200,10 @@ public static partial class MarkdownParser
 			i++;
 		}
 
-		return new MarkdownQuote(ParseBlocks(inner, issueUrlBase));
+		return new MarkdownQuote(ParseBlocks(inner, links));
 	}
 
-	private static MarkdownList ParseList(IReadOnlyList<string> lines, ref int i, string? issueUrlBase)
+	private static MarkdownList ParseList(IReadOnlyList<string> lines, ref int i, LinkContext links)
 	{
 		Match first = ListItemPattern().Match(lines[i]);
 		bool ordered = first.Groups["number"].Success;
@@ -252,7 +268,7 @@ public static partial class MarkdownParser
 				i++;
 			}
 
-			items.Add(new MarkdownListItem(ParseBlocks(itemLines, issueUrlBase)));
+			items.Add(new MarkdownListItem(ParseBlocks(itemLines, links)));
 
 			// Blank lines between items keep the list going; anything else after them ends it.
 			int following = NextNonBlank(lines, i);
@@ -352,7 +368,7 @@ public static partial class MarkdownParser
 
 	// ----------------------------------------------------------------- inlines
 
-	private static void ParseInline(string text, MarkdownStyle style, string? url, string? issueUrlBase, List<MarkdownSpan> spans)
+	private static void ParseInline(string text, MarkdownStyle style, string? url, LinkContext links, List<MarkdownSpan> spans)
 	{
 		var literal = new StringBuilder();
 
@@ -406,7 +422,7 @@ public static partial class MarkdownParser
 			if ((c == '[' || image) && TryParseLink(text, image ? i + 1 : i, out string label, out string href, out int end))
 			{
 				Flush();
-				string? target = url ?? SafeUrl(href);
+				string? target = url ?? SafeUrl(href, links.LinkBase);
 				if (label.Length == 0)
 				{
 					label = href;
@@ -418,7 +434,7 @@ public static partial class MarkdownParser
 				}
 				else
 				{
-					ParseInline(label, style, target, issueUrlBase, spans);
+					ParseInline(label, style, target, links, spans);
 				}
 
 				i = end;
@@ -451,13 +467,13 @@ public static partial class MarkdownParser
 				}
 			}
 
-			if (url is null && issueUrlBase is not null && c == '#' && IsWordStart(text, i))
+			if (url is null && links.IssueUrlBase is not null && c == '#' && IsWordStart(text, i))
 			{
 				Match issue = IssuePattern().Match(text, i);
 				if (issue.Success && issue.Index == i)
 				{
 					Flush();
-					spans.Add(new MarkdownSpan(issue.Value, style, issueUrlBase + issue.Groups["number"].Value));
+					spans.Add(new MarkdownSpan(issue.Value, style, links.IssueUrlBase + issue.Groups["number"].Value));
 					i += issue.Length;
 					continue;
 				}
@@ -485,7 +501,7 @@ public static partial class MarkdownParser
 						};
 
 					Flush();
-					ParseInline(text[(i + run)..close], style | added, url, issueUrlBase, spans);
+					ParseInline(text[(i + run)..close], style | added, url, links, spans);
 					i = close + width;
 					continue;
 				}
@@ -656,12 +672,25 @@ public static partial class MarkdownParser
 		return url;
 	}
 
-	/// <summary>Only absolute web and mail links are clickable; anything else renders as plain text.</summary>
-	private static string? SafeUrl(string href)
-		=> Uri.TryCreate(href, UriKind.Absolute, out Uri? uri)
-			&& (uri.Scheme == Uri.UriSchemeHttps || uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeMailto)
-				? href
-				: null;
+	/// <summary>
+	/// Only web and mail links are clickable - absolute ones, or relative ones resolved against
+	/// <paramref name="linkBase"/>; anything else renders as plain text.
+	/// </summary>
+	private static string? SafeUrl(string href, Uri? linkBase)
+	{
+		if (Uri.TryCreate(href, UriKind.Absolute, out Uri? uri) && IsWebOrMail(uri))
+		{
+			return href;
+		}
+
+		// An absolute href of another scheme resolves to itself here, and so is still refused.
+		return linkBase is not null && Uri.TryCreate(linkBase, href, out uri) && IsWebOrMail(uri)
+			? uri.AbsoluteUri
+			: null;
+	}
+
+	private static bool IsWebOrMail(Uri uri)
+		=> uri.Scheme == Uri.UriSchemeHttps || uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeMailto;
 
 	private static List<MarkdownSpan> Merge(List<MarkdownSpan> spans)
 	{

@@ -251,7 +251,10 @@ internal sealed class ProjectedRun
 	}
 }
 
-/// <summary>One projected point, with the label drawn in its place when it has one.</summary>
+/// <summary>
+/// One projected point, with its label when it has one: drawn in the point's place, or beside its
+/// symbol on a layer with <see cref="MapLayer.LabelBesideSymbol"/>.
+/// </summary>
 /// <param name="X">World x, in 0..1.</param>
 /// <param name="Y">World y.</param>
 /// <param name="Label">Its text, or <see langword="null"/> for a plain dot.</param>

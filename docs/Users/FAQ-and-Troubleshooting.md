@@ -36,8 +36,8 @@ counter. The real version is at the top of FE-Buddy's window, and in `FE-BUDDY.e
 
 ### Which update channel should I use?
 
-**Stable**, unless a developer asks you to test something. Beta and Alpha get early versions that
-may be broken.
+**Stable**, unless a developer asks you to test something. Release Candidate adds versions that
+are in a final round of testing; Beta and Alpha get earlier versions that may be broken.
 
 ### Does FE-Buddy send my data anywhere?
 
@@ -143,8 +143,11 @@ walks through the token settings step by step. The usual reasons:
   organization uses SAML single sign-on: on GitHub, authorize the token for the organization.
 - **GitHub is limiting how often it can be asked.** Too many requests in a short time - wait a few
   minutes and try again.
-- **GitHub sent a web page, not an alias file.** The address is a repository or folder page, or
-  a sign-in page. Use the file's own address.
+- **This is a GitHub page, not a file.** The address is a repository or folder page on GitHub.
+  Open the alias file on GitHub and copy that page's address (with `/blob/` in it).
+- **… sent a web page, not an alias file.** The website sent a page for people to read - a
+  sign-in page, say, or a file's page on a website other than GitHub - instead of the file itself.
+  Use the address of the file itself (on most websites, its "raw" or download link).
 
 ### The installer says this version cannot replace what's installed
 

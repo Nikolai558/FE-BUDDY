@@ -10,8 +10,10 @@ public enum ConfigKeyScope
 	Shared = 0,
 
 	/// <summary>
-	/// A folder on this PC. Exported with the user's own folders swapped for tokens (see
-	/// <see cref="PortablePathTokens"/>), and imported only when the folder exists on the importing PC.
+	/// A folder or file on this PC (a key ending in <c>Folder</c>, <c>Directory</c> or <c>FilePath</c>).
+	/// Exported with the user's own folders swapped for tokens (see <see cref="PortablePathTokens"/>),
+	/// and imported only where it works on the importing PC: an output folder needs only its drive, a
+	/// folder FE-Buddy reads from must exist, and so must a file.
 	/// </summary>
 	MachinePath = 1,
 

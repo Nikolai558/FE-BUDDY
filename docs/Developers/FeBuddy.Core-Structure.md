@@ -70,13 +70,25 @@ FeBuddy.Core/
 │   └── WxStations/   WxStationCountries (the included US/territory codes), WxStationLabels (the
 │                     Text second-line rule) and the WxStation model
 ├── Infrastructure/
-│   ├── Configuration/  UserConfigFile, UserConfigKeys, DevMode, OutputFormatting
+│   ├── Configuration/  UserConfigFile, UserConfigKeys, DevMode, OutputFormatting; settings export
+│   │   │               and import: UserConfigTransfer (export, and an import worked out before it
+│   │   │               is written), UserConfigPortability (which keys may leave this PC, by name),
+│   │   │               PortablePathTokens (%DESKTOP%, %DOCUMENTS%, %USERPROFILE%)
+│   │   └── Models/     ConfigKeyScope, UserConfigPackage, UserConfigImportPlan, ImportedFolder,
+│   │                   UserConfigExportResult, UserConfigTransferException
+│   ├── Credentials/    CredentialStore (the one way in: saved passwords and tokens, and applying
+│   │   │               one to a request), WindowsCredentialVault (Windows Credential Manager
+│   │   │               behind ICredentialVault), CredentialHosts, CredentialKindNames, UrlSecrets
+│   │   │               (a sign-in written into a web address). See Credentials.md
+│   │   └── Models/     CredentialInfo, CredentialDraft, CredentialKind, CredentialUseResult, VaultEntry
 │   ├── Dat/            DatFileReader: FAA .dat RADAR Video Maps
 │   ├── FileSystem/     AppPaths, TempWorkspace, ServiceOutputPaths (the FE-Buddy_Output layout)
 │   ├── Geojson/        CrcFeatureFactory, GeojsonFileWriter, GeojsonFileSet
 │   ├── GitHub/         GitHubAuth, GitHubRepository, GitHubFileUrl (a GitHub file's web address →
 │   │                   the contents API address that works for a private repository with a token)
-│   ├── Http/  Logging/  Markdown/  Platform/
+│   ├── Http/  Logging/  Markdown/
+│   ├── Platform/       AppVersion, InstalledProduct, UtcTimeCheck, LegacyGitHubTokenVariable (whether
+│   │                   2.x's FEBUDDY_GITHUB_TOKEN is set - never its value)
 │   ├── Nasr/           Download, availability, CSV reading, WaypointLocator
 │   │   ├── Models/     One row-model file per NASR CSV group
 │   │   └── Parsers/    One parser per group + NasrCsvParser (parses them all)
@@ -105,7 +117,8 @@ FeBuddy.Core/
     ├── Airac/          AiracService (entry point), AiracCycleDataCache, AiracSharedDataLoader
     │   │               (downloads the Wx Stations/Telephony data a run needs), AiracOutputPaths,
     │   │               FebProperties, DuplicateAliasReport (the run-level duplicate-alias-command
-    │   │               report)
+    │   │               report), AiracOutputCatalog (the cycle folders and GeoJSON files earlier
+    │   │               runs left, for the Map's output picker)
     │   ├── Airways/    One folder per sub-service, all shaped the same way
     │   ├── Airports/
     │   ├── Departures/

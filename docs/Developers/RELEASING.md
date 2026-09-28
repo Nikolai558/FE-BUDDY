@@ -15,8 +15,12 @@ feature branch --PR--> v3-development --PR--> releases --(automatic)--> draft re
   `v3-development`, by pull request; merging drafts the release. Nothing else can get in: the
   "Release source" check fails any other pull request.
 
-Don't put `dev` or `release` in a branch's name - the repository's rulesets stop anyone but an
-admin from creating a branch with those in it.
+The repository's rulesets protect exactly three branches - `v3-development`, `releases` and 2.x's
+`development` - and every tag. Apart from the rulesets' bypass list (the repository admins), nobody
+can push to those branches directly, force-push them, delete them or create them again: changes
+arrive only by pull request, as a merge commit, once the required checks pass (and `releases` also
+needs signed commits). Nobody else can create, move or delete a tag either. Any other branch name
+is fine.
 
 ## Writing a change-log entry
 
@@ -30,6 +34,8 @@ for users, not for developers:
 - **Bugs:** `Bug #215 - ` then what is fixed. `#215` becomes a link to the issue.
 - **Developer-only changes** (refactors, CI, tests) go under one `- (Dev notes)` bullet at the end
   of the section, indented two spaces.
+- **Link a doc at the release's tag**, e.g. `blob/3.0.0-alpha.2/docs/...`, never at a branch: a
+  branch keeps changing, and the notes don't. The link works once the release is published.
 - Past tense or plain statements; no "I" or "we".
 
 | Instead of | Write |
@@ -120,7 +126,8 @@ Nothing is public yet.
   **Set as the latest release** is ticked instead.
 
 Press **Publish release**. That creates the tag, and FE-Buddy starts offering the update to users
-on that release's channel (2.9 and later too).
+on that release's channel (2.9 and later too). Since the tag ruleset lets only its bypass list
+create tags, only a repository admin can publish; anyone else can review the draft.
 
 Don't merge another release pull request while a draft is waiting - publish or delete the draft
 first.

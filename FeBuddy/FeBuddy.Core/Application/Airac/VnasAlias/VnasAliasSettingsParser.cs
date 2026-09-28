@@ -127,7 +127,8 @@ public static class VnasAliasSettingsParser
 
 		if (filePath.Length == 0 && url.Length == 0)
 		{
-			// A row with only a credential left on it: nothing to read, so nothing to merge.
+			// A row with nothing in it at all: nothing to read, so nothing to merge. A row left with
+			// only a credential is a mistake worth saying, so it throws below.
 			if (credential.Length == 0)
 			{
 				return null;

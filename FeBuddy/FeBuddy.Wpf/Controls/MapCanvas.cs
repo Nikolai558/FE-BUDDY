@@ -202,7 +202,10 @@ public sealed class MapCanvas : FrameworkElement
 		set => SetValue(ShowGraticuleProperty, value);
 	}
 
-	/// <summary>Lat/lon under the pointer, e.g. <c>38.51203, -95.10412</c>. Empty when off-map.</summary>
+	/// <summary>
+	/// Lat/lon under the pointer, e.g. <c>38.51203, -95.10412</c>. Empty when the pointer is off the
+	/// map, or above or below the world when zoomed right out.
+	/// </summary>
 	public string CursorText => (string)GetValue(CursorTextProperty);
 
 	/// <summary>
@@ -476,7 +479,11 @@ public sealed class MapCanvas : FrameworkElement
 		base.OnMouseMove(e);
 		Point pos = e.GetPosition(this);
 
-		SetValue(CursorTextPropertyKey, Format(WebMercator.WorldYToLat(WorldY(pos.Y)), WebMercator.NormalizeLon(WebMercator.WorldXToLon(WorldX(pos.X)))));
+		// Zoomed right out, the world is shorter than the map: the bands above and below it are no place at all.
+		double worldY = WorldY(pos.Y);
+		SetValue(CursorTextPropertyKey, worldY is >= 0.0 and <= 1.0
+			? Format(WebMercator.WorldYToLat(worldY), WebMercator.NormalizeLon(WebMercator.WorldXToLon(WorldX(pos.X))))
+			: string.Empty);
 
 		if (_drag == DragMode.None)
 		{

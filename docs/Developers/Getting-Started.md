@@ -14,8 +14,9 @@ repository root; the solution lives in `FeBuddy/`.
 
 | Branch | Holds |
 |---|---|
-| `v3-development` | FE-Buddy 3.x - where this code lives. Target pull requests here. CI runs on it. |
-| `development` | FE-Buddy 2.x (the repository's default branch until 3.0 ships). |
+| `v3-development` | FE-Buddy 3.x - the repository's default branch, where this code lives. Target pull requests here. CI runs on it. |
+| `releases` | What has been released. Only `v3-development` is merged into it, by a release pull request - see [Releasing](RELEASING.md). |
+| `development` | FE-Buddy 2.x. 2.9.3 was its last planned release. |
 
 ## Build and run
 

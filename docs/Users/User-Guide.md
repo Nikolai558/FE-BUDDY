@@ -771,14 +771,44 @@ so when there are no duplicates, and the Review tab carries an advisory warning 
 
 ## Map
 
-- **Load GeoJSON…** - open one or more `.geojson` files to check them. Each gets its own colour in
-  the **Layers** list, where you can hide or remove it. A broken or empty file is skipped and
-  reported; the others still load. **Clear all** removes them; **Reset view** zooms back to the
-  US.
-- **Default Region of Interest** - the same default region as in Settings, edited in place: drag
-  a box on the small map or type the corners, then **Set ROI**. **Show default ROI** draws it on
-  the main map.
-- **Using the map:** drag to pan, scroll to zoom. The cursor's lat/lon shows in the corner.
+The map on the left, and a panel of cards on the right. Every map in FE-Buddy is this same screen:
+**Set ROI…** in Settings and **Pick on map…** on a sub-service tab open it in a window, with the
+same layers. The US state outlines are always drawn for reference.
+
+- **Using the map:** drag to pan (a right- or middle-drag pans too), scroll to zoom, double-click
+  to zoom in. The arrow keys pan and **+** / **-** zoom. The lat/lon under the pointer shows in the
+  top-right corner. A busy layer waits until you zoom in, and a note in the bottom-right corner
+  says which.
+- **Toolbar** (top left): **Edit ROI**, zoom in and out, **Home** (your home view), **Make this
+  view your home**, **Fit every layer on the map**, **Zoom to the ROI box**, and show or hide the
+  side panel. A map opens where the last one was left, or around the box it was opened to edit.
+- **Default Region of Interest** - the same default region as in Settings; saving it here updates
+  Settings too. **Edit ROI** (or the toolbar's) turns on drawing: drag to draw a box, drag its
+  handles to resize it, drag inside it to move it - or type the four corners. Then **Save**, or
+  **Cancel** (or **Esc**) to put the saved box back. **Clear**, then **Save**, removes it.
+  **Shift + drag** draws a box and saves it in one go, at any time. The chip says whether the box
+  is Saved, being edited, Unsaved or Not set, and the copy button copies its corners. A box can't
+  cross the 180° meridian - draw it on one side. In a **Set ROI…** or **Pick on map…** window the
+  button is **Use this ROI**, which hands the box back and closes the window; for a sub-service's
+  override, the default ROI is drawn dashed for comparison.
+- **AIRAC Cycle** - pick a cycle: the ones FE-Buddy has FAA data for (previous, current, next),
+  and any other with a run's output folder (*output only*). Both sections below follow it:
+  - **Live data** - **ARTCC Boundaries**, **Towered Airports** (runways appear as you zoom in) and
+    **VOR / VORTAC / TACAN**, drawn straight from the cycle's FAA data, no run needed.
+  - **Output of the AIRAC run** (e.g. *Output of the AIRAC 2610 run*) - the gear opens the cycle's
+    output folder: every GeoJSON file the run wrote, grouped by folder, with a filter box,
+    **All** / **None** (for the files the filter shows), **Look for new files** and **Open the
+    folder**. Only the files you tick are drawn. FE-Buddy remembers them by name, so pick another
+    cycle and the same files from that cycle's run are shown - or flagged *Not in the AIRAC 2611
+    output* when that run didn't write them.
+- **Your Files** - **Load GeoJSON…** opens one or more files from anywhere and zooms to them. Each
+  gets its own colour. A file that can't be drawn is flagged with the reason (for example *Not
+  valid JSON*, or *Coordinates are not longitude and latitude* for a file in another projection);
+  the others still load. **Clear all** takes them off. They stay until FE-Buddy closes.
+- Every file on the map - from the run output or your own - can be hidden, zoomed to or taken off
+  from its row.
+- **Home View** - where **Home** takes you, and where a map opens the first time: pan and zoom to
+  your airspace, then **Use current view**. **Reset** makes the contiguous US your home view again.
 
 ## Settings
 
@@ -787,11 +817,21 @@ top. While something is unsaved, "Unsaved changes" shows beside Save,
 **Settings** in the side menu gets an amber dot, and Save is live; once saved - or changed back -
 all three clear.
 
-- **Updates**
-  - **Channel** - *Stable* (the right choice for almost everyone), *Beta* or *Alpha*. Only pick
-    Beta or Alpha if a developer asks you to.
-  - **Check for updates now**, and **Get the latest stable installer** (opens the releases page -
-    use it to go back to stable from a pre-release).
+**Export…** and **Import…** (beside Save) share your setup - every FE-Buddy setting, the
+sub-service tabs' included - with another FE-Buddy user, such as the rest of your facility:
+
+- **Export…** saves your settings to a file. Folders under your Desktop, Documents or user folder
+  are written so they point to the same place on another PC. Your update channel, credentials and
+  credential choices, and the rest of what only applies to this PC, are left out.
+- **Import…** makes your settings match a file someone exported (or a `UserConfig.json` copied
+  from another PC). Before anything changes, it tells you how many settings change, which folders
+  and files it takes, which it doesn't because they don't work on this PC (this PC's are kept
+  instead), and which pages' unsaved changes would be lost. Your update channel and credentials
+  are never touched. Your current settings are kept in `UserConfig.before-import.json` in
+  `%APPDATA%\FE-Buddy`, in case you want them back.
+
+The cards, top to bottom:
+
 - **Facility Profile**
   - **Facility** - your ARTCC, picked from the current cycle's data. Procedures uses it as the
     facility whose section leads both of its documents, and every AIRAC Service run lists it first
@@ -799,8 +839,9 @@ all three clear.
   - **Default Output Directory** (your Desktop until you choose one) and **Add a FE-Buddy_Output
     folder inside that directory** (on by default). The line under them shows the folder a run of
     the current cycle would write to.
-- **Default Region of Interest** - **Set ROI…** opens the map picker; **Clear** turns it off.
-  Every sub-service uses it unless its own tab overrides it.
+- **Default Region of Interest** - **Set ROI…** opens the [map](#map) in a window: draw the box,
+  press **Use this ROI**, then **Save** here. **Clear** turns it off. Every sub-service uses it
+  unless its own tab overrides it.
 - **GeoJSON Files**
   - **Maximum Coordinate Precision** - 5, 6 or 7 decimal places. 6 (about 10 cm) suits most
     files; 7 is for high-precision airport tracing; 5 keeps files smallest.
@@ -819,6 +860,18 @@ all three clear.
   default and works for everyone. *Use a GitHub token* lets you pick one of your GitHub tokens (or
   **New GitHub token…**), to get past GitHub's limit of 60 requests an hour. If a request with the
   token fails, or Windows can't read the token, FE-Buddy goes ahead without it.
+- **Updates**
+  - **Channel** - the earliest stage of release you want to be offered. Each channel also offers
+    everything further along:
+    - *Stable* - stable releases only. The right choice for almost everyone.
+    - *Release Candidate* - adds release candidates: believed finished, in a final round of testing.
+    - *Beta* - adds betas: every planned feature is in, but testing is still under way.
+    - *Alpha* - every release, alphas included: early builds that may be unfinished or not work.
+
+    Only pick a channel other than Stable if a developer asks you to; the card says so while one
+    is chosen.
+  - **Check for updates now**, and **Get the latest stable installer** (opens the releases page -
+    use it to go back to stable from a pre-release).
 
 ## Info
 

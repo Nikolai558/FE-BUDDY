@@ -121,7 +121,8 @@ never written to FE-Buddy's settings or to a settings export, and it is never sh
 
 Now choose it for your file on the vNAS Alias Upload tab and press **Check** there: it should say
 how many alias commands it read. One token can serve several files - an entry on GitHub with no
-credential is offered **Use <name>, like file N** when an earlier entry already has one.
+credential is offered, for example, **Use ZOB GitHub, like file 1** when an earlier entry already
+has one.
 
 ## When the token expires
 

@@ -244,6 +244,13 @@ and addressed by dotted paths (`Services.AiracService.Geojson.Airways.OutputBy`)
   (`UserConfigFile.Save(nodePath)`), leaving every other section untouched.
 - **One-step undo.** Before a node is saved, its previous state is snapshotted to
   `UserConfig.previous.json`; **Undo last save** restores it.
+- **An import replaces the whole file**, the one write that is not per node. Settings ▸ Import…
+  works out the result first (`UserConfigTransfer.Plan`: what changes, which folders work on this
+  PC, what this PC keeps) and shows it; on confirm, `UserConfigFile.ReplaceAll` writes the new file
+  beside the old one and swaps it in with `File.Replace`, keeping the old one as
+  `UserConfig.before-import.json`. The undo snapshots are deleted - they describe settings that no
+  longer exist - and every open page reloads. Which settings travel, and how, is decided by each
+  key's name: see [Settings export and import](UserConfig-Reference.md#settings-export-and-import).
 - **Dirty means "different from saved".** Each settings screen keeps a `SavedStateSnapshot` of what
   it last saved or loaded, and compares its current values against it on every change. Change a
   value and change it back, and the tab is clean again. The snapshot is taken by running the tab's

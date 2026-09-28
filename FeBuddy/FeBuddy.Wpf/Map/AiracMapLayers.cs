@@ -161,7 +161,9 @@ internal static class AiracMapLayers
 
 	/// <summary>
 	/// Where a ring's ID goes: the average of its vertices, worked out the short way round so a
-	/// ring over the 180th meridian (Anchorage, Oakland Oceanic) is labelled inside itself.
+	/// ring over the 180th meridian (Anchorage, Oakland Oceanic) is labelled by itself, not on the
+	/// far side of the world. An average is only roughly the middle: a ring with a deep bend in it
+	/// can have its label just outside.
 	/// </summary>
 	private static GeoPoint? LabelPoint(IReadOnlyList<GeoPoint> points)
 	{

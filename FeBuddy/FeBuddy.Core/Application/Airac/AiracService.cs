@@ -40,12 +40,13 @@ namespace FeBuddy.Core.Application.Airac;
 /// <summary>
 /// The AIRAC Service: the GUI calls this once per "Run AIRAC Service". It runs each selected
 /// sub-service (Airways, Airports, Departures, Arrivals, NAVAIDs, ARTCC Boundaries, Fixes, Wx
-/// Stations, Procedures, Telephony) against one cycle's NASR data and gathers the results. Three
-/// need more than the NASR cycle: Wx Stations and Telephony read data that is not published per
-/// cycle at all - aviationweather.gov's station list and the FAA telephony pages - which the run
-/// downloads fresh every time (see <see cref="AiracSharedDataLoader"/>); Procedures also needs the
-/// selected cycle's (and the previous cycle's) FAA d-TPP Metafile (see
-/// <see cref="AiracCycleDataCache.GetDtppAsync"/>).
+/// Stations, Procedures, Telephony, vNAS Alias Upload) against one cycle's NASR data and gathers
+/// the results. Four need more than the NASR cycle: Wx Stations and Telephony read data that is
+/// not published per cycle at all - aviationweather.gov's station list and the FAA telephony
+/// pages - which the run downloads fresh every time (see <see cref="AiracSharedDataLoader"/>);
+/// Procedures also needs the selected cycle's (and the previous cycle's) FAA d-TPP Metafile (see
+/// <see cref="AiracCycleDataCache.GetDtppAsync"/>); and vNAS Alias Upload reads the user's own
+/// custom alias files, from this PC or the web (see <see cref="AliasSourceLoader"/>).
 /// </summary>
 /// <remarks>
 /// <para>
@@ -61,7 +62,10 @@ namespace FeBuddy.Core.Application.Airac;
 /// <para>
 /// Once every sub-service has run, the alias files the run wrote are checked together for
 /// commands more than one line uses (<see cref="DuplicateAliasReport"/>), and
-/// <c>Duplicate_Alias_Commands.txt</c> is written into the cycle folder.
+/// <c>Duplicate_Alias_Commands.txt</c> is written into the cycle folder. Then vNAS takes one
+/// alias file per facility, so the alias files marked for vNAS are merged - below the custom
+/// alias files when vNAS Alias Upload is selected - into <c>Upload_to_vNAS\vNAS_Alias.txt</c>
+/// (<see cref="VnasAliasFileWriter"/>).
 /// </para>
 /// </remarks>
 public static class AiracService
@@ -92,7 +96,9 @@ public static class AiracService
 	/// (awaiting an in-flight parse rather than starting a second one). When Procedures is selected
 	/// its d-TPP Metafiles come from the cache the same way; when Wx Stations or Telephony is
 	/// selected, the latest copy of its data is downloaded first (see
-	/// <see cref="AiracSharedDataLoader"/>), falling back on the last good copy.
+	/// <see cref="AiracSharedDataLoader"/>), falling back on the last good copy; and when vNAS Alias
+	/// Upload is selected, its custom alias files are read first (see <see cref="AliasSourceLoader"/>) -
+	/// one that cannot be read is left out of <c>vNAS_Alias.txt</c> with a warning.
 	/// </summary>
 	/// <param name="settings">The run's cross-cutting choices and per-sub-service settings blocks.</param>
 	/// <param name="progress">Optional per-sub-service progress for the run panel.</param>

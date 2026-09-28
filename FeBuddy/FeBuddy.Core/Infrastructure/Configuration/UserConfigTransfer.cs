@@ -106,7 +106,8 @@ public static class UserConfigTransfer
 					break;
 
 				case ConfigKeyScope.MachinePath:
-					// No folder chosen: nothing to share, and the importing PC keeps its own.
+					// No folder chosen: nothing to share. An import of the file puts the importing PC's
+					// folder back to the default, just as it is here.
 					break;
 
 				default:

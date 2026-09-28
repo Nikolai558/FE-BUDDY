@@ -17,7 +17,7 @@ below is relative to `FeBuddy/FeBuddy.Wpf/` in the repo unless stated otherwise.
   Procedures, Telephony and vNAS Alias Upload are sub-services of AIRAC Service**, not top-level screens. The library code is
   `FeBuddy.Core.Application.Airac.*`; the GUI reaches each one only as a tab on the AIRAC
   Services screen. In the same way, each
-  **file conversion** (DAT to GeoJSON, SCT2 to GeoJSON) is a tab on the File Conversions screen
+  **file conversion** (DAT, SCT2 and ERAM to GeoJSON) is a tab on the File Conversions screen
   (`FeBuddy.Core.Application.Conversions.*`).
 - On launch, `App.xaml.cs` starts `AppLog`'s file sink then runs
   `LaunchSequence` off the UI thread: clear `%TEMP%\FE-Buddy`, read
@@ -34,25 +34,30 @@ Theme/                design system - the only place colours, type and control
   Palette.xaml          look are defined
   Typography.xaml
   Icons.xaml            Segoe Fluent Icons glyph code-points
-  Controls.Buttons.xaml
-  Controls.Buttons.xaml  Primary/Ghost/Subtle, Card.Toggle, Copy.Button, caption
+  Controls.Buttons.xaml  Primary/Ghost/Subtle, Card.Toggle, Copy.Button, caption,
+                         the icon toggles and the map toolbar's Toggle.Tool
   Controls.Inputs.xaml   Field, Option, Toggle.Number, Progress; the themed ComboBox
                          is implicit, so every dropdown gets the dark popup and the
                          drop-down wheel scrolling without asking for a style
-  Controls.Surfaces.xaml Card, Divider, Chip, nav row
+  Controls.Surfaces.xaml Card (and Card.Popup), Divider, Chip (and Chip.State), nav
+                         row, and the Map.* styles: overlays, list rows, swatches
   Controls.Chrome.xaml   implicit ScrollBar (thin, theme-coloured) + ToolTip
                          (dark rounded popover, soft shadow, fade-in)
+  Controls.Window.xaml   implicit ChromeWindow style: every dialog window's frame
   Theme.xaml             merges the above; App.xaml merges only this
 
 Assets/               us-states.json (reference geography, not sample data)
 Behaviors/            attached properties a view opts into: FieldState (validation
                       look), WheelScroll, ComboBoxDropDownFocus, MaximizeToWorkArea
 Controls/             reusable controls: Card, SectionHeader, Option, CopyButton,
-                      FilterPicker, MarkdownView, MapCanvas, RoiEditor, and
+                      FilterPicker (+ FilterOption), MarkdownView, MapCanvas, and
                       ChromeWindow (the base for every dialog window)
 Converters/           one IValueConverter per file
-Map/                  GeoJSON reader (System.Text.Json), Web-Mercator, BaseMap
-  Models/               GeoPoint, GeoBounds, MapGeometry, MapLayer
+Map/                  GeoJsonReader (System.Text.Json), WebMercator, ProjectedLayer
+                      (a layer projected once, then cached), AiracMapLayers (the live
+                      layers built from a parsed cycle), BaseMap (the US states)
+  Models/               GeoPoint, GeoBounds, MapGeometry(Kind), MapLayer,
+                        MapPointShape, MapHome (the home view), MapViewState
 Mvvm/                 ObservableObject, RelayCommand
 Shell/                app-wide services: Toast, Links, BrowserLauncher,
                       DefaultRoiStore (the one saved default ROI), OutputPreferences
@@ -61,7 +66,13 @@ Shell/                app-wide services: Toast, Links, BrowserLauncher,
   Models/               ToastKind
 ViewModels/           ShellViewModel + one per screen; AiracSubServices is the
                       AIRAC sub-service catalogue; FileConversionsViewModel lists
-                      the conversions
+                      the conversions. The map: MapViewModel (one map workspace
+                      and the ROI it edits, an IRoiTarget - DefaultRoiTarget on
+                      the Map page), MapLayersState (the layers every map shares)
+                      with MapLayerToggle, OutputFileChoice and MapFileItem.
+                      Settings: CredentialsViewModel and CredentialEditorViewModel,
+                      and ConfigPages / IConfigPage (every page a settings import
+                      has to reload)
   Models/               small item and row view-models and records (HealthRow,
                         FebPropertyToggle, EramClassDefault (StyleFromFeatures
                         / AsksForStyle, for a class whose Symbol style lives on
@@ -85,9 +96,12 @@ Views/                ShellWindow (custom chrome) + Dashboard, TabbedServiceView
                       tab views (AiracGeneralTabView, AirportsView, AirwaysView,
                       DeparturesView, ArrivalsView, NavaidsView, ArtccBoundariesView, FixesView,
                       WxStationsView, ProceduresView, TelephonyView, VnasAliasView, DatToGeojsonView, SctToGeojsonView, EramToGeojsonView,
-                      ServicePreviewTabView, ServiceRunReviewTabView), Map, Settings, Info; UpdateWindow,
-                      ConfirmWindow (Confirm / Cancel, or a third choice between
-                      them), RoiPickerWindow
+                      ServicePreviewTabView, ServiceRunReviewTabView), MapView (the
+                      Map page: just a MapWorkspace), MapWorkspace (the one map
+                      screen), Settings, Info; UpdateWindow, ConfirmWindow (Confirm /
+                      Cancel, or a third choice between them; a long message
+                      scrolls), CredentialEditorWindow, RoiPickerWindow (a
+                      MapWorkspace in a window)
   Cards/                the cards every GeoJSON sub-service tab shares, RunCard
                         (the run button at the foot of the Preview Settings tab and
                         of every conversion tab) and SourceFilesCard (a conversion's
@@ -235,7 +249,13 @@ bar and page scroller are shared, and each screen's view-model says what differs
   - **The vNAS Alias Upload tab** (`VnasAliasViewModel`, key `VnasAlias`) is not a
     `GeojsonSubServiceViewModel`: it derives from `SubServiceSettingsViewModel` and implements
     `ISubServiceRunTarget` itself, and uses none of the shared cards. **Outputs** names
-    `Upload_to_vNAS\vNAS_Alias.txt` and how it is laid out. **Custom Alias Files** lists the
+    `Upload_to_vNAS\vNAS_Alias.txt` and how it is laid out. **FE-Buddy Alias Files** lists every
+    sub-service that can write an alias file (`SubServiceDescriptor.AliasFileName` in the
+    catalogue) and whether it goes into `vNAS_Alias.txt` as the other tabs stand now: not selected,
+    its alias file turned off, not ticked on its Upload to vNAS card, or added - with **Open tab**.
+    `AiracServiceViewModel` hands it the other tabs (`AttachToService`) and has it re-read them
+    (`RefreshFeBuddyAliasFiles`) whenever another tab is shown or the selection changes, and
+    before a run. **Custom Alias Files** lists the
     facility's own alias files (`AliasSourceRow`), merged in order - move up/down, remove, **Add
     file…** / **Browse…** for a file on this PC, **Add web address** for one on the web. A web
     address has a credential drop-down ("None" plus every saved credential, refreshed on
@@ -292,15 +312,18 @@ bar and page scroller are shared, and each screen's view-model says what differs
 - **Dashboard** - the verbatim description box + Discord link + next-cycle line,
   the News feed (from `NewsService`), and a live activity-log viewer over `AppLog`
   (filter chips with counts, minimizable).
-- **Map** - load your own GeoJSON (one layer per file, a layer list with
-  visibility / count / remove), and manage the one default ROI in place via the
-  shared `RoiEditor`. No ruler, no CRC display visualiser, no sample layers.
-- **Settings** - Updates (channel + tooltips + "check now" + rollback), Facility
-  Profile (one facility from the parsed cycle, default output dir - the Desktop until
-  one is saved - + FE-Buddy_Output toggle, with the cycle folder a run would write to),
-  Default Region of Interest (`RoiPickerWindow`), GeoJSON Files (feb.*
-  description, Maximum Coordinate Precision 5/6/7 dp). Everything persists to
-  `UserConfig.json`.
+- **Map** - `MapView`, which is just a `MapWorkspace` editing the saved default ROI; see
+  [The map](#the-map). No ruler, no CRC display visualiser, no sample layers.
+- **Settings** - Import… / Export… beside Save (`UserConfigTransfer`: a plan shown in
+  `ConfirmWindow` first, then every open `IConfigPage` reloads - `ConfigPages`), then the cards:
+  Facility Profile (one facility from the parsed cycle, default output dir - the Desktop until
+  one is saved - + FE-Buddy_Output toggle, with the cycle folder a run would write to), Default
+  Region of Interest (`RoiPickerWindow`), GeoJSON Files (feb.* description, Maximum Coordinate
+  Precision 5/6/7 dp, File Layout), Credentials (`CredentialsViewModel`, `CredentialEditorWindow`),
+  FE-Buddy's GitHub Requests (the GitHub token FE-Buddy's own requests use), and Updates (the four
+  channels with their tooltips, "check now" and "get the latest stable installer"). Everything but
+  Credentials persists to `UserConfig.json` with the page's Save; credentials live in Windows
+  Credential Manager and are saved as they change (see [Credentials](../Credentials.md)).
 - **Info** - Manual, Change log, Issues & requests as real links (About deleted).
 
 ### Shell extras
@@ -313,14 +336,30 @@ bar and page scroller are shared, and each screen's view-model says what differs
 
 ### The map
 
-`Controls/MapCanvas` is a from-scratch vector map: Web-Mercator projection, a
-pan (drag) / zoom (wheel) viewport, and `StreamGeometry` into `DrawingVisual`s.
-**No tiles, no network, no map SDK.** It takes a base `MapLayer` (US state
-outlines) plus overlay layers, renders standard GeoJSON (`Map/GeoJsonReader`), can
-rubber-band an ROI (corners via two-way `RoiSouthWest` / `RoiNorthEast`), and has
-a live cursor lat/lon read-out. `Controls/RoiEditor` composes it with the four
-corner boxes and a Set ROI / Cancel pair - the one ROI editor, hosted in place on
-the Map screen and inside `RoiPickerWindow` for the Settings and AIRAC dialogs.
+**One map screen.** `Views/MapWorkspace` is the map on the Map page (`MapView`) and in every map
+popup (`RoiPickerWindow`, for Settings' default ROI and each sub-service's "Pick on map…"). Its
+view-model, `MapViewModel`, holds the ROI being edited and where a saved one goes - an
+`IRoiTarget`: `DefaultRoiTarget` on the Map page (saved at once, through `DefaultRoiStore`), the
+picker's own target in a popup (handed back to the caller as the popup closes). Everything else on
+the map lives in `MapLayersState.Shared`, one instance for the whole app, so a popup shows the same
+layers as the Map page: the live AIRAC layers (`AiracMapLayers`, built from the parsed cycle when
+switched on), the run-output files picked with the output picker (`AiracOutputCatalog` lists a
+cycle's folder, off the UI thread), the user's own files, and the home view. Its choices are saved
+under `Services.MapService` (see [UserConfig.json reference](../UserConfig-Reference.md#servicesmapservice)).
+A map that closes leaves its view in `MapLayersState.LastView`, so the next one opens there.
+
+**The control.** `Controls/MapCanvas` is a from-scratch vector map: Web-Mercator projection
+(`Map/WebMercator`), a pan (drag) / zoom (wheel) viewport, and `StreamGeometry` into
+`DrawingVisual`s. **No tiles, no network, no map SDK.** It takes a base `MapLayer` (the US state
+outlines) plus the shared layer list, which it follows weakly (`CollectionChangedEventManager`) so
+a closed popup's map is not kept alive by it. The world repeats side by side: every layer is
+projected once into world units (`Map/ProjectedLayer`, lines unwrapped across the 180th meridian)
+and drawn once per copy of the world in view, and framing covers shapes on both sides of 180° the
+short way round (`ProjectedLayer.Covering`). A layer below its `MinZoom`, or with more points or
+labels in view than can usefully be drawn, waits until the user zooms in (`DensityHint`). The ROI
+box is two-way (`Roi`): drawn, moved and resized while `RoiEditing` is on, or with Shift + drag at
+any time (`RoiQuickDrawn`). Every file on the map, from a run's output or the user's own, is read
+by `Map/GeoJsonReader`, which says why a file cannot be drawn.
 
 ### Conventions
 

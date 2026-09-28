@@ -16,7 +16,7 @@ what one run uses.
 
 ## General
 
-Written by **Settings** (except `NewsLastOpen`).
+Written by **Settings** (except `NewsLastOpen` and `LegacyGitHubTokenNoticeShown`).
 
 | Key | Values | Default | Read by |
 |---|---|---|---|
@@ -25,6 +25,8 @@ Written by **Settings** (except `NewsLastOpen`).
 | `PrettyPrintGeojson` | `Y` / `N` | `N` | `OutputFormatting` (every GeoJSON writer) |
 | `DefaultOutputDirectory` | a folder path | the Desktop | every run, through `Shell/OutputPreferences`. An AIRAC Service run writes into `AIRAC_<cycle>` inside it; a file conversion into its own folder. |
 | `AddFeBuddyOutputFolder` | `Y` / `N` - put the `AIRAC_<cycle>` and conversion folders in a `FE-Buddy_Output` folder | `Y` | every run, through `Shell/OutputPreferences` |
+| `FeBuddyGitHub.CredentialId` | the id of the GitHub token credential FE-Buddy's own GitHub requests use | none (no token) | `GitHubAuth`. Kept on this PC: never exported. |
+| `LegacyGitHubTokenNoticeShown` | `Y` once the notice that 2.x's `FEBUDDY_GITHUB_TOKEN` variable is still set has been shown | none | `LegacyGitHubTokenNotice` at launch. Written when the notice is shown. Kept on this PC: never exported. |
 
 ## Services.AiracService
 

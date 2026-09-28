@@ -28,6 +28,13 @@ public static class UserConfigKeys
 	/// </summary>
 	public const string FeBuddyGitHubCredentialId = "General.FeBuddyGitHub.CredentialId";
 
+	/// <summary>
+	/// <c>Y</c> once FE-Buddy has told the user that FE-Buddy 2.x's <c>FEBUDDY_GITHUB_TOKEN</c>
+	/// environment variable is still set on this PC, so it never says so again. Kept on this PC: it is
+	/// about this PC's variable.
+	/// </summary>
+	public const string LegacyGitHubTokenNoticeShown = "General.LegacyGitHubTokenNoticeShown";
+
 	/// <summary>How many decimal places GeoJSON coordinates are rounded to, 0 to 15 (6 when unset).</summary>
 	public const string CoordinatePrecision = "Services.AiracService.CoordinatePrecision";
 

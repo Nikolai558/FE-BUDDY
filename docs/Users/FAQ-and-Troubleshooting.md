@@ -46,6 +46,24 @@ alias file you gave a web address for, and writes files on your PC. Your setting
 `%APPDATA%\FE-Buddy\UserConfig.json`. A token or password you save in Settings ▸ Credentials is
 kept in Windows Credential Manager, and only ever sent to the websites you allow it for.
 
+### I set FEBUDDY_GITHUB_TOKEN for FE-Buddy 2.x
+
+FE-Buddy 3 doesn't use it. It keeps tokens in Windows Credential Manager, encrypted with your
+Windows sign-in, while an environment variable is plain text that any program you run can read.
+Delete it:
+
+1. Search the Start menu for **environment variables** and open *Edit environment variables for
+   your account*.
+2. Select `FEBUDDY_GITHUB_TOKEN` under *User variables*, press **Delete**, then **OK**. If it was set
+   for everyone on the PC, it is under *System variables* instead, which needs an administrator:
+   open *Edit the system environment variables*.
+3. If you no longer need the token, delete it on GitHub too (Settings ▸ Developer settings ▸
+   Personal access tokens).
+
+To have FE-Buddy use a GitHub token, add it in Settings ▸ Credentials and choose it under
+FE-Buddy's GitHub Requests. When FE-Buddy starts, it tells you once if the variable is still set -
+it looks for the name only and never reads the token.
+
 ### What happens if Wx Stations or Telephony can't download their data?
 
 Wx Stations' station list and Telephony's FAA pages aren't part of the AIRAC cycle, so every AIRAC

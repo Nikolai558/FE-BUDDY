@@ -42,8 +42,9 @@ A step that fails is logged and degrades only the feature that needs it; launch 
 ```
 1. Clear %TEMP%\FE-Buddy            ─┐ first: the rest need the config,
 2. Read UserConfig.json             ─┘ and the AIRAC download uses the temp folder
-3. UTC time + internet check           the AIRAC step needs the date; every network step needs the internet flag
-4. ┌ Version check (GitHub releases)
+3. FE-Buddy 2.x token variable         needs the config (was the notice shown?); nothing needs it
+4. UTC time + internet check           the AIRAC step needs the date; every network step needs the internet flag
+5. ┌ Version check (GitHub releases)
    ├ AIRAC data (below)                 in parallel - none needs another
    └ News (News.md from GitHub)
 ```
@@ -52,6 +53,12 @@ Results are published on `AppEnvironment` (`HasInternetConnection`, `Version`, `
 event) and the AIRAC cache raises `StateChanged` as each cycle moves on. The view-models listen to
 both, so the window fills in as launch progresses: the top-centre status narrates the downloads,
 the Systems box turns green, the AIRAC Service screen unlocks.
+
+Step 3 looks for FE-Buddy 2.x's `FEBUDDY_GITHUB_TOKEN` environment variable, which held a GitHub
+token in plain text (`LegacyGitHubTokenNotice`, `LegacyGitHubTokenVariable`). It reads only the
+names of the variables Windows keeps in the registry, never the value. When the variable is set and
+the notice has not been shown on this PC, the shell shows it once, with a button to Windows'
+Environment Variables window, and saves `General.LegacyGitHubTokenNoticeShown`.
 
 ## The AIRAC data pipeline
 

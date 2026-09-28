@@ -129,4 +129,7 @@ using HttpResponseMessage response = await client.SendAsync(request, cancellatio
     more without it.
   - A token Windows Credential Manager cannot read is logged and treated as no token.
   - So neither an expired token nor a broken Credential Manager ever stops updates.
-- **No environment variable.** FE-Buddy 3 does not read `FEBUDDY_GITHUB_TOKEN`.
+- **No environment variable.** FE-Buddy 3 never reads `FEBUDDY_GITHUB_TOKEN`, which 2.x told users
+  to set. At launch it only checks whether that name is set (`LegacyGitHubTokenVariable` reads the
+  registry's variable names, never the value) and, if it is, tells the user once how to delete it
+  (`LegacyGitHubTokenNotice`, then `General.LegacyGitHubTokenNoticeShown` is saved).

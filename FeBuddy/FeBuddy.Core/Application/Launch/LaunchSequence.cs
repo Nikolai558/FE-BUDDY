@@ -23,6 +23,7 @@ namespace FeBuddy.Core.Application.Launch;
 /// <remarks>
 /// Steps run in dependency order, not list order: temp clear and config read first (the
 /// version check and News need the config; the AIRAC download uses the temp folder), then the
+/// check for FE-Buddy 2.x's GitHub token variable (it needs the config, nothing needs it), then the
 /// UTC time / internet check (AIRAC needs the time, and all three network steps use the
 /// internet flag), then version, AIRAC and News concurrently since none depends on another.
 /// </remarks>
@@ -62,6 +63,16 @@ public static class LaunchSequence
 				return true;
 			},
 			defaultValue: false);
+
+		// FE-Buddy 2.x kept a GitHub token in plain text in an environment variable. This needs the
+		// settings just read (whether the user has been told already); the shell tells them as soon
+		// as it can.
+		RunStep(
+			progress, LaunchStep.CheckLegacyGitHubToken, "Checking for FE-Buddy 2.x's GitHub token variable",
+			() => LegacyGitHubTokenNotice.Check(),
+			defaultValue: []);
+
+		AppEnvironment.RaiseChanged();
 
 		UtcTimeCheckResult time = await RunStepAsync(
 			progress, LaunchStep.CheckUtcTimeAndInternet, "Checking the clock and internet connection",

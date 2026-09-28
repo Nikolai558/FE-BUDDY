@@ -1,5 +1,8 @@
 using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Diagnostics;
 using System.Globalization;
+using System.IO;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Threading;
@@ -20,8 +23,9 @@ namespace FeBuddy.Wpf.ViewModels;
 
 /// <summary>
 /// Backs <c>ShellWindow</c>: navigation, the status-bar Zulu clock, the top-centre AIRAC
-/// status indicator, and the version chip / update state. Everything but navigation is driven
-/// by <see cref="AppEnvironment"/> and <see cref="AiracCycleDataCache"/>.
+/// status indicator, the version chip / update state, and the one-time notice about FE-Buddy 2.x's
+/// GitHub token variable. Everything but navigation is driven by <see cref="AppEnvironment"/> and
+/// <see cref="AiracCycleDataCache"/>.
 /// </summary>
 public sealed class ShellViewModel : ObservableObject
 {
@@ -88,6 +92,9 @@ public sealed class ShellViewModel : ObservableObject
 		RefreshVersionState();
 		RefreshAiracStatus();
 		RefreshSystemHealth();
+
+		// The launch sequence may have found the old token variable before this subscribed.
+		_dispatcher.InvokeAsync(ShowLegacyGitHubTokenNotice, DispatcherPriority.ApplicationIdle);
 	}
 
 	/// <summary>The main nav group: Dashboard, AIRAC Service, File Conversions, Map.</summary>
@@ -223,12 +230,80 @@ public sealed class ShellViewModel : ObservableObject
 		}
 	}
 
-	private void OnEnvironmentChanged(object? sender, EventArgs e) =>
+	private void OnEnvironmentChanged(object? sender, EventArgs e)
+	{
 		_dispatcher.BeginInvoke(() =>
 		{
 			RefreshVersionState();
 			RefreshSystemHealth();
 		});
+
+		// At idle, so the main window is on screen before the notice opens over it.
+		_dispatcher.InvokeAsync(ShowLegacyGitHubTokenNotice, DispatcherPriority.ApplicationIdle);
+	}
+
+	/// <summary>
+	/// Shows the one-time notice that FE-Buddy 2.x's <c>FEBUDDY_GITHUB_TOKEN</c> environment variable
+	/// is still set (<see cref="LegacyGitHubTokenNotice"/>), the first time launch has found it. The
+	/// user deletes it in Windows' own Environment Variables window: FE-Buddy never reads its value
+	/// and never deletes it.
+	/// </summary>
+	private static void ShowLegacyGitHubTokenNotice()
+	{
+		IReadOnlyList<EnvironmentVariableTarget> targets = LegacyGitHubTokenNotice.Take();
+
+		if (targets.Count == 0)
+		{
+			return;
+		}
+
+		Window? owner = Application.Current?.MainWindow is { IsVisible: true } main ? main : null;
+
+		if (ConfirmWindow.Show(owner, "Your FE-Buddy 2.x GitHub token is still on this PC", DescribeLegacyGitHubToken(targets),
+			confirmText: "Open Environment Variables", cancelText: "Close"))
+		{
+			OpenEnvironmentVariables();
+		}
+	}
+
+	/// <summary>The notice's text: where the variable is set, why it matters and how to delete it.</summary>
+	private static string DescribeLegacyGitHubToken(IReadOnlyList<EnvironmentVariableTarget> targets)
+	{
+		bool forUser = targets.Contains(EnvironmentVariableTarget.User);
+		bool forPc = targets.Contains(EnvironmentVariableTarget.Machine);
+
+		string where = forUser && forPc ? "for your Windows account and for everyone on this PC"
+			: forPc ? "for everyone on this PC"
+			: "for your Windows account";
+		string section = forUser && forPc ? "both User variables and System variables"
+			: forPc ? "System variables"
+			: "User variables";
+		string administrator = forPc ? " Deleting a system variable needs an administrator." : string.Empty;
+
+		return
+			$"FE-Buddy 2.x kept a GitHub token in the FEBUDDY_GITHUB_TOKEN environment variable, and it is still set {where}. " +
+			"FE-Buddy 3 never uses it, and Windows keeps it as plain text that any program you run can read.\n\n" +
+			$"To delete it, open Environment Variables, select FEBUDDY_GITHUB_TOKEN under {section} and press Delete.{administrator} " +
+			"If you no longer need the token, delete it on GitHub too. To have FE-Buddy use a GitHub token, add it in " +
+			"Settings ▸ Credentials, where Windows keeps it encrypted.\n\n" +
+			"FE-Buddy has not read the token, and will not show this again.";
+	}
+
+	/// <summary>Opens Windows' own Environment Variables window, where the user deletes the variable themselves.</summary>
+	private static void OpenEnvironmentVariables()
+	{
+		try
+		{
+			Process.Start(new ProcessStartInfo(Path.Combine(Environment.SystemDirectory, "rundll32.exe"), "sysdm.cpl,EditEnvironmentVariables")
+			{
+				UseShellExecute = false,
+			});
+		}
+		catch (Exception ex) when (ex is Win32Exception or InvalidOperationException)
+		{
+			Toast.Warn("Could not open Environment Variables", "Search the Start menu for \"environment variables\" instead.");
+		}
+	}
 
 	private void OnCycleStateChanged(object? sender, AiracCycleDataCacheEntry e) =>
 		_dispatcher.BeginInvoke(() =>

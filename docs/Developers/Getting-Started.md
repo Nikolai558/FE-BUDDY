@@ -126,4 +126,5 @@ also run the release checks - see [Releasing](RELEASING.md).
   token" and pick or add one. Update checks, News and update downloads are then sent with it (to
   get past GitHub's 60-requests-an-hour limit), and tried once more without it if that fails in
   any way. Nobody needs it for normal use, and the
-  `FEBUDDY_GITHUB_TOKEN` environment variable is not read. See [Credentials](Credentials.md).
+  `FEBUDDY_GITHUB_TOKEN` environment variable is never read (FE-Buddy only tells a 2.x user once
+  that it is still set). See [Credentials](Credentials.md).

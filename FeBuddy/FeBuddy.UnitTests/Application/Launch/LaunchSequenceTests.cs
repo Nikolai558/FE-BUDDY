@@ -60,6 +60,7 @@ public sealed class LaunchSequenceTests : IDisposable
 		TempWorkspace.ConfigureForTesting(Path.Combine(_root, "temp"));
 		UserConfigFile.ConfigureForTesting(Path.Combine(_root, "config"));
 		AppEnvironment.ResetForTesting();
+		LegacyGitHubTokenNotice.ConfigureForTesting(() => []);
 		AiracCycleDataCache.ConfigureForTesting(new AiracCycleDataCache(
 			probe: (_, _) => Task.FromResult(AiracCyclePublicationState.Published),
 			download: (cycle, _) =>
@@ -74,6 +75,7 @@ public sealed class LaunchSequenceTests : IDisposable
 	{
 		AppEnvironment.HttpClientForTesting?.Dispose();
 		AppEnvironment.ResetForTesting();
+		LegacyGitHubTokenNotice.ConfigureForTesting(null);
 		AiracCycleDataCache.ConfigureForTesting(null);
 		UserConfigFile.ConfigureForTesting(null);
 		TempWorkspace.ConfigureForTesting(null);
@@ -158,6 +160,20 @@ public sealed class LaunchSequenceTests : IDisposable
 		Assert.Equal(new LaunchProgress(LaunchStep.Complete, LaunchStepStatus.Succeeded, "Launch complete"), progress.Reports[^1]);
 	}
 
+	/// <summary>Launch looks for FE-Buddy 2.x's GitHub token variable and leaves the one-time notice for the shell.</summary>
+	[Fact]
+	public async Task launch_finds_the_old_token_variable_for_the_one_time_notice()
+	{
+		EnvironmentVariableTarget[] forUser = [EnvironmentVariableTarget.User];
+		AppEnvironment.HttpClientForTesting = new HttpClient(new StubHttpHandler(Online));
+		LegacyGitHubTokenNotice.ConfigureForTesting(() => forUser);
+
+		await LaunchSequence.RunAsync("3.0.0");
+
+		Assert.Equal(forUser, LegacyGitHubTokenNotice.Take());
+		Assert.True(LegacyGitHubTokenNotice.HasBeenShown);
+	}
+
 	[Fact]
 	public async Task offline_launch_falls_back_to_the_local_clock_and_the_bundled_news()
 	{
@@ -192,8 +208,8 @@ public sealed class LaunchSequenceTests : IDisposable
 		Assert.Equal(
 			new[]
 			{
-				LaunchStep.ClearTempWorkspace, LaunchStep.ReadUserConfig, LaunchStep.CheckUtcTimeAndInternet,
-				LaunchStep.CheckVersion, LaunchStep.PrepareAiracData, LaunchStep.CheckNews,
+				LaunchStep.ClearTempWorkspace, LaunchStep.ReadUserConfig, LaunchStep.CheckLegacyGitHubToken,
+				LaunchStep.CheckUtcTimeAndInternet, LaunchStep.CheckVersion, LaunchStep.PrepareAiracData, LaunchStep.CheckNews,
 			}.Order(),
 			failed);
 		Assert.Contains(AppLog.Entries, e => e.Level == LogLevel.Warning && e.Message.Contains("step blew up. Continuing launch.", StringComparison.Ordinal));

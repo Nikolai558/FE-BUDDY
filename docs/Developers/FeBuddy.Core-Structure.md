@@ -136,7 +136,7 @@ FeBuddy.Core/
     │   ├── DatToGeojson/
     │   ├── EramToGeojson/
     │   └── SctToGeojson/
-    ├── Launch/         LaunchSequence, AppEnvironment
+    ├── Launch/         LaunchSequence, AppEnvironment, LegacyGitHubTokenNotice
     ├── News/           NewsService
     ├── Settings/       Shared readers for the string settings dictionaries
     ├── Updates/        VersionCheck, UpdateInstaller
@@ -173,8 +173,9 @@ A class's suffix tells you what it does:
 
 ## How a run flows
 
-**At launch**, `LaunchSequence.RunAsync` clears the temp folder, reads the config, checks UTC
-time and internet access, then runs three steps concurrently: the version check, the News
+**At launch**, `LaunchSequence.RunAsync` clears the temp folder, reads the config, looks for FE-Buddy
+2.x's GitHub token variable (`LegacyGitHubTokenNotice`), checks UTC time and internet access, then
+runs three steps concurrently: the version check, the News
 fetch, and the AIRAC data step. The AIRAC step works out the previous, current and next cycles
 (`AiracCycleResolver`). It then has `AiracCycleDataCache` download and parse whichever of them the
 FAA has published (`NasrCycleDownloader` → `NasrCsvParser.ParseAllAsync`) and prune every

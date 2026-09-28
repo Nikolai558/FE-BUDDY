@@ -38,6 +38,7 @@ public static class UserConfigPortability
 		UserConfigKeys.UpdateChannel,
 		UserConfigKeys.NewsLastOpen,
 		UserConfigKeys.FeBuddyGitHubCredentialId,
+		UserConfigKeys.LegacyGitHubTokenNoticeShown,
 	};
 
 	private static readonly string[] SecretSuffixes = ["Token", "Password", "Secret", "ApiKey", "Credential", "Credentials"];

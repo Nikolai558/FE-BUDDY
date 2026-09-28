@@ -90,6 +90,9 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
 - Map: check GeoJSON files, draw and edit your Region of Interest, and view the AIRAC layers.
 - Settings: import and export your settings, pick your update channel, and store a GitHub token
   securely in Windows Credential Manager (with a step-by-step token guide).
+- If you set `FEBUDDY_GITHUB_TOKEN` for FE-BUDDY 2.x, delete it: 3.0 doesn't use it, and Windows
+  keeps it as plain text. FE-BUDDY tells you once if it is still set
+  ([how to delete it](https://github.com/Nikolai558/FE-BUDDY/blob/v3-development/docs/Users/FAQ-and-Troubleshooting.md#i-set-febuddy_github_token-for-fe-buddy-2x)).
 - The update window shows the notes for every release you are missing, then downloads and runs
   the installer for you.
 - Installs with the same Windows Installer (MSI) as 2.9 and upgrades an existing 2.9 install in place.

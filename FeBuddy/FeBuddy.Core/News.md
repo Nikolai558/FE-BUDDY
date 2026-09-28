@@ -3,46 +3,25 @@
 PostId format =  yyyy-mm-dd.#
   - Date/Time is always Zulu (GMT) time.
   - # = sequential number for the number of posts this day. The First post of the day is 1, while the third post is 3.
+
 -->
 
 News concerning all things FE-Buddy will be posted here with the most recent post at the top.
 
 ---
 
-## 2026-08-30
+## 2026-09-26
 <!--
-PostId: 2026-08-30.3
+PostId: 2026-09-30.1
 -->
 
-**Version 1.4.2 Released**
+**Version 3.0.0.alpha.1 Released!**
 
-Third post for the same day.
+Check it out [HERE](https://github.com/Nikolai558/FE-BUDDY/releases/tag/3.0.0-alpha.1)!!!
 
 ---
 
-## 2026-08-30
-<!--
-PostId: 2026-08-30.2
--->
+## 2026-09-26
 
-**Version 1.4.1 Released**
-
-Second post for the same day.
-
----
-
-## 2026-08-30
-<!--
-PostId: 2026-08-30.1
--->
-
-**Version 1.4 Released**
-
-First post of the day
-
----
-
-## 2026-08-25
-
-**New Feature Available**
-First test info
+**News Page Mage!**
+Nothing to really see here, move along...

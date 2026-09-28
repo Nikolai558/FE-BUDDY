@@ -3,14 +3,15 @@
   <!--
     FeBuddy.Wpf  -  the application's WPF front end.
     ===========================================================================
-    No UI NuGet packages: the MVVM helpers, converters, toast store and the
-    tabbed-service model are hand-rolled and live under /Infrastructure.
+    No UI NuGet packages: the MVVM helpers (Mvvm/), converters (Converters/),
+    toast store (Shell/) and the tabbed-service model (ViewModels/ServiceTabs/)
+    are hand-rolled.
 
     Every screen is wired to FeBuddy.Core - there is no sample data anywhere in
     the app. The AIRAC Service screen runs through
     FeBuddy.Core.Application.Airac.AiracService, which dispatches to its
     sub-services (Airways, Airports, Departures, Arrivals, NAVAIDs, ARTCC Boundaries, Fixes,
-    Wx Stations, Procedures).
+    Wx Stations, Procedures, Telephony, vNAS Alias Upload).
   -->
 
   <PropertyGroup>
@@ -53,6 +54,11 @@
   <ItemGroup>
     <!-- All of the app's data, services and settings come from here. -->
     <ProjectReference Include="..\FeBuddy.Core\FeBuddy.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The map's internal math (WebMercator, ProjectedLayer, ...) is unit tested directly. -->
+    <InternalsVisibleTo Include="FeBuddy.UnitTests" />
   </ItemGroup>
 
 </Project>

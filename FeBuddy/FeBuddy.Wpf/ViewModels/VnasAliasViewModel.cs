@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Globalization;
 using System.IO;
 using System.Windows;
@@ -21,6 +22,7 @@ using FeBuddy.Core.Infrastructure.Configuration;
 using FeBuddy.Core.Infrastructure.Credentials;
 using FeBuddy.Core.Infrastructure.Credentials.Models;
 using FeBuddy.Core.Infrastructure.GitHub;
+using FeBuddy.Core.Infrastructure.Logging;
 using FeBuddy.Core.Infrastructure.Nasr.Models;
 
 namespace FeBuddy.Wpf.ViewModels;
@@ -38,10 +40,10 @@ namespace FeBuddy.Wpf.ViewModels;
 /// </para>
 /// <para>
 /// A web address may name a saved credential (Settings ▸ Credentials). Only its id is saved with the
-/// tab, so the secret never reaches <c>UserConfig.json</c> or a settings export, and one credential
-/// serves as many files as need it - a row with none is offered the one an earlier row on the same
-/// website uses. <b>Check</b> reads a file straight away, so a mistyped address or a refused token
-/// shows up here rather than in the run.
+/// tab, so the secret never reaches <c>UserConfig.json</c>, and a settings export leaves even the id
+/// out (<c>ConfigKeyScope.CredentialChoice</c>). One credential serves as many files as need it - a
+/// row with none is offered the one an earlier row on the same website uses. <b>Check</b> reads a
+/// file straight away, so a mistyped address or a refused token shows up here rather than in the run.
 /// </para>
 /// <para>
 /// The list is saved as numbered keys, <c>Sources.1.FilePath</c>, <c>Sources.2.Url</c>,
@@ -53,12 +55,17 @@ public sealed class VnasAliasViewModel : SubServiceSettingsViewModel, ISubServic
 {
 	private const string Node = "Services.AiracService.VnasAlias";
 	private const string SourcesKey = "Sources";
+	private const string LogSource = "VnasAlias";
 
 	private readonly CredentialStore _store;
 	private readonly Dispatcher _dispatcher;
 	private bool _loading;
 	private Func<SubServiceDescriptor, ServiceTabViewModel?>? _openTabFor;
 	private Action<ServiceTabViewModel>? _showTab;
+
+	// The saved credentials, read once per change to the store rather than on every keystroke.
+	private Dictionary<Guid, CredentialInfo> _savedCredentials = [];
+	private string? _credentialsError;
 
 	/// <summary>Builds the tab over this user's credentials and restores its saved settings.</summary>
 	public VnasAliasViewModel()
@@ -399,7 +406,10 @@ public sealed class VnasAliasViewModel : SubServiceSettingsViewModel, ISubServic
 		}
 	}
 
-	/// <summary>Reads a row's file now, and shows what the run would get.</summary>
+	/// <summary>
+	/// Reads a row's file now, and shows what the run would get. A result for an address or
+	/// credential the user has changed since is dropped, so it never shows against the new one.
+	/// </summary>
 	/// <param name="row">The row.</param>
 	/// <returns>A task that completes when the row shows the result.</returns>
 	internal async Task CheckAsync(AliasSourceRow row)
@@ -410,20 +420,42 @@ public sealed class VnasAliasViewModel : SubServiceSettingsViewModel, ISubServic
 			return;
 		}
 
+		AliasSource source = row.ToSource();
 		row.IsChecking = true;
 
 		try
 		{
-			AliasSourceLoad load = await AliasSourceLoader.LoadAsync(row.ToSource(), _store);
+			AliasSourceLoad load = await AliasSourceLoader.LoadAsync(source, _store);
 
-			row.SetCheck(load.Succeeded, load.Succeeded
-				? $"Read {load.CommandCount:N0} alias command(s)."
-				: load.Problem ?? "It could not be read.");
+			if (IsStill(row, source))
+			{
+				row.SetCheck(load.Succeeded, load.Succeeded
+					? $"Read {load.CommandCount:N0} alias command(s)."
+					: load.Problem ?? "It could not be read.");
+			}
+		}
+		catch (Exception ex)
+		{
+			// The loader never throws for a file it cannot read; this keeps anything unexpected from
+			// taking FE-Buddy down, since the button's command does not wait for the check.
+			AppLog.Warning(LogSource, $"Checking {source.DisplayName} failed: {ex.Message}");
+
+			if (IsStill(row, source))
+			{
+				row.SetCheck(false, $"It could not be checked: {ex.Message}");
+			}
 		}
 		finally
 		{
 			row.IsChecking = false;
 		}
+	}
+
+	/// <summary>Whether the row still points at the file it had when a check started.</summary>
+	private static bool IsStill(AliasSourceRow row, AliasSource source)
+	{
+		AliasSource now = row.ToSource();
+		return now.Location == source.Location && now.CredentialId == source.CredentialId;
 	}
 
 	/// <summary>Adds a credential in the credential editor and chooses it for a row.</summary>
@@ -557,7 +589,14 @@ public sealed class VnasAliasViewModel : SubServiceSettingsViewModel, ISubServic
 			return "This is a GitHub page, not a file. Open the alias file on GitHub and copy that page's address (it has /blob/ in it).";
 		}
 
-		if (row.CredentialId != Guid.Empty && url.Scheme != Uri.UriSchemeHttps)
+		if (UrlSecrets.Describe(url) is { } secret)
+		{
+			return $"This address has {secret} in it. Remove it and choose a credential instead: web addresses are saved " +
+				"in FE-Buddy's settings and in settings exports.";
+		}
+
+		// A file on GitHub is downloaded from GitHub's API over https whatever the address says.
+		if (row.CredentialId != Guid.Empty && url.Scheme != Uri.UriSchemeHttps && GitHubFileUrl.ToContentsApi(url) is null)
 		{
 			return "A credential is only ever sent to an https:// address.";
 		}
@@ -571,8 +610,6 @@ public sealed class VnasAliasViewModel : SubServiceSettingsViewModel, ISubServic
 	/// </summary>
 	private void RefreshRowHints()
 	{
-		Dictionary<Guid, CredentialInfo> saved = _store.List().ToDictionary(info => info.Id);
-
 		foreach (AliasSourceRow row in Sources)
 		{
 			string location = row.Location.Trim();
@@ -580,7 +617,9 @@ public sealed class VnasAliasViewModel : SubServiceSettingsViewModel, ISubServic
 			row.Notice =
 				row.IsFile && Path.IsPathFullyQualified(location) && !File.Exists(location)
 					? "This file is not on this PC. It may have been moved or renamed."
-				: row.IsUrl && row.CredentialId != Guid.Empty && !saved.ContainsKey(row.CredentialId)
+				: row.IsUrl && row.CredentialId != Guid.Empty && _credentialsError is not null
+					? $"Windows Credential Manager could not be read, so its credential cannot be checked: {_credentialsError}"
+				: row.IsUrl && row.CredentialId != Guid.Empty && !_savedCredentials.ContainsKey(row.CredentialId)
 					? "Its credential is not on this PC: it was removed, or the settings came from another PC. Choose one of yours."
 				: null;
 
@@ -594,7 +633,7 @@ public sealed class VnasAliasViewModel : SubServiceSettingsViewModel, ISubServic
 			AliasSourceRow? lender = Sources
 				.TakeWhile(other => !ReferenceEquals(other, row))
 				.FirstOrDefault(other => other.IsUrl
-					&& saved.TryGetValue(other.CredentialId, out CredentialInfo? info)
+					&& _savedCredentials.TryGetValue(other.CredentialId, out CredentialInfo? info)
 					&& CredentialHosts.Allows(info.Hosts, host));
 
 			if (lender is not null && Credentials.FirstOrDefault(c => c.Id == lender.CredentialId) is { } choice)
@@ -611,12 +650,29 @@ public sealed class VnasAliasViewModel : SubServiceSettingsViewModel, ISubServic
 			: null;
 
 	/// <summary>
-	/// Brings the drop-down's credentials up to date without clearing it, so a row's chosen
-	/// credential stays chosen while the list changes around it.
+	/// Re-reads the saved credentials and brings the drop-down up to date without clearing it, so a
+	/// row's chosen credential stays chosen while the list changes around it. When Credential
+	/// Manager cannot be read, the tab still opens: the drop-down offers only None, and each row
+	/// that names a credential says why it cannot be checked.
 	/// </summary>
 	private void RefreshCredentials()
 	{
-		CredentialChoice.Sync(Credentials, [CredentialChoice.None, .. _store.List().Select(CredentialChoice.For)]);
+		IReadOnlyList<CredentialInfo> saved;
+
+		try
+		{
+			saved = _store.List();
+			_credentialsError = null;
+		}
+		catch (Win32Exception ex)
+		{
+			AppLog.Warning(LogSource, $"Could not read Windows Credential Manager: {ex.Message}");
+			saved = [];
+			_credentialsError = ex.Message;
+		}
+
+		_savedCredentials = saved.ToDictionary(info => info.Id);
+		CredentialChoice.Sync(Credentials, [CredentialChoice.None, .. saved.Select(CredentialChoice.For)]);
 		RefreshRowHints();
 	}
 

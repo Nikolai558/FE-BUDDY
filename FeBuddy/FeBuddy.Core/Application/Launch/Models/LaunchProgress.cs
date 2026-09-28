@@ -12,20 +12,26 @@ public enum LaunchStep
 	/// <summary>Read <c>UserConfig.json</c> into memory.</summary>
 	ReadUserConfig = 1,
 
+	/// <summary>
+	/// See whether FE-Buddy 2.x's <c>FEBUDDY_GITHUB_TOKEN</c> environment variable is still set,
+	/// for the one-time notice about it (<see cref="LegacyGitHubTokenNotice"/>).
+	/// </summary>
+	CheckLegacyGitHubToken = 2,
+
 	/// <summary>Establish UTC "now" from the network and decide whether the machine is online.</summary>
-	CheckUtcTimeAndInternet = 2,
+	CheckUtcTimeAndInternet = 3,
 
 	/// <summary>Ask GitHub whether a newer release exists on the user's channel.</summary>
-	CheckVersion = 3,
+	CheckVersion = 4,
 
 	/// <summary>Ensure the previous, current and next AIRAC cycles are downloaded and parsed.</summary>
-	PrepareAiracData = 4,
+	PrepareAiracData = 5,
 
 	/// <summary>Check for a newer News post.</summary>
-	CheckNews = 5,
+	CheckNews = 6,
 
 	/// <summary>The sequence has finished.</summary>
-	Complete = 6,
+	Complete = 7,
 }
 
 /// <summary>The state of a <see cref="LaunchStep"/> as it is reported.</summary>

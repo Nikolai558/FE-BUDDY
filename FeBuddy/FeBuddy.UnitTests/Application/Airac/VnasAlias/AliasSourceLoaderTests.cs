@@ -215,6 +215,81 @@ public sealed class AliasSourceLoaderTests : IDisposable
 		Assert.DoesNotContain(Secret, load.Problem, StringComparison.Ordinal);
 	}
 
+	/// <summary>
+	/// GitHub's other reasons for 403 are told apart from a missing permission: a short-term limit
+	/// on bursts of requests (Retry-After, or 429), and a token not authorized for an organization's
+	/// single sign-on.
+	/// </summary>
+	[Theory]
+	[InlineData(HttpStatusCode.Forbidden, "Retry-After", "60", true, "GitHub is limiting how often it can be asked right now")]
+	[InlineData(HttpStatusCode.TooManyRequests, null, null, false, "GitHub is limiting how often it can be asked right now")]
+	[InlineData(HttpStatusCode.Forbidden, "X-GitHub-SSO", "required; url=https://github.com/orgs/o/sso", true, "authorized for this organization's single sign-on (SSO)")]
+	[InlineData(HttpStatusCode.Forbidden, "X-GitHub-SSO", "required; url=https://github.com/orgs/o/sso", false, "It may need a credential")]
+	public async Task a_github_403_that_is_not_a_missing_permission_says_so(HttpStatusCode status, string? header, string? value, bool withCredential, string expected)
+	{
+		Guid? id = withCredential ? SaveGitHubToken() : null;
+		using HttpClient client = Client(_ =>
+		{
+			HttpResponseMessage response = new(status);
+
+			if (header is not null)
+			{
+				response.Headers.TryAddWithoutValidation(header, value);
+			}
+
+			return response;
+		});
+
+		AliasSourceLoad load = await AliasSourceLoader.LoadAsync(UrlSource("https://github.com/o/r/blob/main/a.txt", id), _store, client);
+
+		Assert.Contains(expected, load.Problem, StringComparison.Ordinal);
+		Assert.DoesNotContain("Contents: Read-only", load.Problem, StringComparison.Ordinal);
+	}
+
+	/// <summary>A Credential Manager that cannot be read fails the one file, with the reason - it never throws.</summary>
+	[Fact]
+	public async Task a_credential_manager_that_cannot_be_read_fails_the_file()
+	{
+		InMemoryCredentialVault vault = new();
+		CredentialStore store = new(vault);
+		Guid id = store.Save(new CredentialDraft(null, "ZOB GitHub", CredentialKind.GitHubToken, null, Secret, CredentialHosts.GitHubDefaults)).Id;
+		vault.Failure = new System.ComponentModel.Win32Exception(1312, "A specified logon session does not exist.");
+
+		AliasSourceLoad load = await AliasSourceLoader.LoadAsync(
+			UrlSource("https://github.com/o/r/blob/main/a.txt", id), store, Client(_ => throw new InvalidOperationException("never sent")));
+
+		Assert.Equal(
+			"Windows Credential Manager could not be read, so its credential could not be used: A specified logon session does not exist.",
+			load.Problem);
+	}
+
+	/// <summary>A download .NET cannot turn into text - it names a character set .NET does not know - fails the file, with the reason.</summary>
+	[Fact]
+	public async Task a_download_that_is_not_readable_text_fails_the_file()
+	{
+		using HttpClient client = Client(_ =>
+		{
+			HttpResponseMessage response = new(HttpStatusCode.OK) { Content = new ByteArrayContent(Encoding.UTF8.GetBytes(AliasText)) };
+			response.Content.Headers.TryAddWithoutValidation("Content-Type", "text/plain; charset=no-such-charset");
+			return response;
+		});
+
+		AliasSourceLoad load = await AliasSourceLoader.LoadAsync(UrlSource("https://example.com/a.txt"), _store, client);
+
+		Assert.StartsWith("example.com sent the file in a form FE-Buddy cannot read as text: ", load.Problem, StringComparison.Ordinal);
+	}
+
+	/// <summary>A download cut off part-way fails the file like one that could not be reached.</summary>
+	[Fact]
+	public async Task a_download_cut_off_part_way_says_so()
+	{
+		using HttpClient client = Client(_ => new HttpResponseMessage(HttpStatusCode.OK) { Content = new StreamContent(new FailingStream()) });
+
+		AliasSourceLoad load = await AliasSourceLoader.LoadAsync(UrlSource("https://example.com/a.txt"), _store, client);
+
+		Assert.StartsWith("Could not reach example.com: ", load.Problem, StringComparison.Ordinal);
+	}
+
 	[Fact]
 	public async Task a_forbidden_download_from_another_website_does_not_mention_github_tokens()
 	{
@@ -359,4 +434,16 @@ public sealed class AliasSourceLoaderTests : IDisposable
 	private static HttpClient Client(Func<HttpRequestMessage, HttpResponseMessage> responder) => new(new StubHttpHandler(responder));
 
 	private static HttpResponseMessage Text(string body) => new(HttpStatusCode.OK) { Content = new StringContent(body) };
+
+	/// <summary>A body whose connection drops as soon as it is read.</summary>
+	private sealed class FailingStream : MemoryStream
+	{
+		public override int Read(byte[] buffer, int offset, int count) => throw new IOException("The connection was reset.");
+
+		public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken) =>
+			throw new IOException("The connection was reset.");
+
+		public override ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default) =>
+			throw new IOException("The connection was reset.");
+	}
 }

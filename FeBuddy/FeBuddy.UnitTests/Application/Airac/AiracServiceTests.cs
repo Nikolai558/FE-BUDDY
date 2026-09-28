@@ -708,6 +708,12 @@ public sealed class AiracServiceTests : IDisposable
 		string written = File.ReadAllText(VnasAliasFile);
 		Assert.StartsWith("; ===== FE-Buddy aliases (AIRAC 2610) start here.", written, StringComparison.Ordinal);
 		Assert.Contains(File.ReadAllText(telephony).TrimEnd(), written, StringComparison.Ordinal);
+
+		// Without vNAS Alias Upload the file has no facility aliases, and the Review tab says what uploading it would do.
+		ServiceMessage onlyFeBuddy = Assert.Single(result.Messages, m => m.Text.StartsWith("vNAS Alias Upload is not selected", StringComparison.Ordinal));
+		Assert.True(onlyFeBuddy.IsAdvisory);
+		Assert.Equal(LogLevel.Warning, onlyFeBuddy.Level);
+		Assert.Contains("uploading it would remove your facility's own aliases from vNAS", onlyFeBuddy.Text, StringComparison.Ordinal);
 	}
 
 	[Fact]
@@ -725,6 +731,82 @@ public sealed class AiracServiceTests : IDisposable
 
 		Assert.Null(result.VnasAlias);
 		Assert.False(Directory.Exists(Path.Combine(CycleFolder, "Upload_to_vNAS")));
+	}
+
+	[Fact]
+	public async Task rewriting_alias_files_without_marking_any_for_vnas_deletes_an_earlier_vnas_alias_txt()
+	{
+		// An earlier run of this cycle marked Telephony for vNAS; this one does not.
+		Directory.CreateDirectory(Path.GetDirectoryName(VnasAliasFile)!);
+		File.WriteAllText(VnasAliasFile, ".old last run's aliases");
+
+		AiracServiceSettings settings = new()
+		{
+			SelectedCycle = Cycle,
+			OutputDirectory = _output,
+			Telephony = new Dictionary<string, string>(),
+		};
+
+		AiracServiceResult result = await AiracService.RunAsync(
+			settings, new NasrCsvDataCollection(), new AiracSupplementalData { Telephony = OneOperator });
+
+		Assert.Null(result.VnasAlias);
+		Assert.False(File.Exists(VnasAliasFile));
+
+		ServiceMessage deleted = Assert.Single(result.Messages, m => m.Text.StartsWith("No alias file is marked for vNAS", StringComparison.Ordinal));
+		Assert.True(deleted.IsAdvisory);
+		Assert.Equal(LogLevel.Info, deleted.Level);
+		Assert.Contains("The one an earlier run wrote was deleted", deleted.Text, StringComparison.Ordinal);
+	}
+
+	[Fact]
+	public async Task a_run_that_writes_no_alias_file_leaves_an_earlier_vnas_alias_txt_alone()
+	{
+		Directory.CreateDirectory(Path.GetDirectoryName(VnasAliasFile)!);
+		File.WriteAllText(VnasAliasFile, ".old last run's aliases");
+
+		AiracServiceSettings settings = new()
+		{
+			SelectedCycle = Cycle,
+			OutputDirectory = _output,
+			Fixes = new Dictionary<string, string>(),
+		};
+
+		AiracServiceResult result = await AiracService.RunAsync(settings, FixTestData.Build([FixTestData.AcmeRow()]));
+
+		Assert.Null(result.VnasAlias);
+		Assert.Equal(".old last run's aliases", File.ReadAllText(VnasAliasFile));
+		Assert.DoesNotContain(result.Messages, m => m.Text.StartsWith("No alias file is marked for vNAS", StringComparison.Ordinal));
+	}
+
+	[Fact]
+	public async Task an_earlier_vnas_alias_txt_that_cannot_be_deleted_is_a_warning()
+	{
+		Directory.CreateDirectory(Path.GetDirectoryName(VnasAliasFile)!);
+		File.WriteAllText(VnasAliasFile, ".old last run's aliases");
+
+		AiracServiceSettings settings = new()
+		{
+			SelectedCycle = Cycle,
+			OutputDirectory = _output,
+			Telephony = new Dictionary<string, string>(),
+		};
+
+		AiracServiceResult result;
+
+		// Held open without delete sharing, as another program might, so it cannot be deleted.
+		using (new FileStream(VnasAliasFile, FileMode.Open, FileAccess.Read, FileShare.Read))
+		{
+			result = await AiracService.RunAsync(
+				settings, new NasrCsvDataCollection(), new AiracSupplementalData { Telephony = OneOperator });
+		}
+
+		Assert.True(File.Exists(VnasAliasFile));
+
+		ServiceMessage notDeleted = Assert.Single(result.Messages, m => m.Text.StartsWith("No alias file is marked for vNAS", StringComparison.Ordinal));
+		Assert.Equal(LogLevel.Warning, notDeleted.Level);
+		Assert.Contains("could not be deleted", notDeleted.Text, StringComparison.Ordinal);
+		Assert.Contains("do not upload it", notDeleted.Text, StringComparison.Ordinal);
 	}
 
 	[Fact]
@@ -756,6 +838,7 @@ public sealed class AiracServiceTests : IDisposable
 		Assert.StartsWith(".FeUseOnly first" + Environment.NewLine + ".dtwdv .ECHO DTW" + Environment.NewLine, File.ReadAllText(VnasAliasFile), StringComparison.Ordinal);
 
 		Assert.Contains(result.Messages, m => m.IsAdvisory && m.Text.StartsWith("Left custom alias file 2 (Extra.txt) out", StringComparison.Ordinal));
+		Assert.DoesNotContain(result.Messages, m => m.Text.StartsWith("vNAS Alias Upload is not selected", StringComparison.Ordinal));
 
 		AiracServiceProgress done = reports.Last(p => p.SubService == "vNAS Alias Upload");
 		Assert.Equal(100, done.PercentComplete);

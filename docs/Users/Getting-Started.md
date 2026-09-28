@@ -17,8 +17,8 @@ Already have FE-Buddy 2.x? The 3.0 installer upgrades it in place.
 
 ## 2. First launch
 
-Open FE-Buddy. The window has a menu down the left (**Dashboard**, **AIRAC Service**, **Map**,
-then **Settings** and **Info**) and a status line across the top.
+Open FE-Buddy. The window has a menu down the left (**Dashboard**, **AIRAC Service**, **File
+Conversions**, **Map**, then **Settings** and **Info**) and a status line across the top.
 
 The first launch downloads the FAA data for three AIRAC cycles, which can take a few minutes.
 The top of the window shows what it is doing (`Downloading cycle 2610…`, `Parsing cycle 2610…`)
@@ -33,10 +33,10 @@ Open **Settings**:
    **Add a FE-Buddy_Output folder inside that directory** on, so files land in
    `Desktop\FE-Buddy_Output`. Each run of a cycle gets its own folder in there, such as
    `AIRAC_2610`.
-2. **Default Region of Interest** - press **Set ROI…** and drag a box around your ARTCC on the map,
-   a little bigger than your boundary. Everything FE-Buddy makes is then limited to that box.
-   You can skip this, but you will get the whole country.
-3. Press **Save**.
+2. **Default Region of Interest** - press **Set ROI…**, drag a box around your ARTCC on the map
+   that opens, a little bigger than your boundary, and press **Use this ROI**. Everything FE-Buddy
+   makes is then limited to that box. You can skip this, but you will get the whole country.
+3. Press **Save** at the top of Settings.
 
 ## 4. Your first run
 

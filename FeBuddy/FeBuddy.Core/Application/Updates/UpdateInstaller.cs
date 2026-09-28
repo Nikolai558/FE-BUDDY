@@ -17,8 +17,8 @@ namespace FeBuddy.Core.Application.Updates;
 /// The same design as FE-Buddy 2.x's updater: the download goes to the temporary workspace
 /// (<c>%TEMP%\FE-Buddy\Updates</c>, cleared on every launch). When the user chose a GitHub token
 /// (<see cref="GitHubAuth"/>), it comes through the releases-assets API with that token, and a
-/// failed download with it is tried once more from the public asset URL; otherwise it comes from
-/// the public asset URL.
+/// download with it that fails in any way is tried once more from the public asset URL; otherwise
+/// it comes from the public asset URL.
 /// </remarks>
 public static class UpdateInstaller
 {
@@ -67,26 +67,36 @@ public static class UpdateInstaller
 			AppLog.Info(LogSource, $"Downloading {fileName} from {installer.DownloadUrl}.");
 
 			// With a token, the installer comes through the release-assets API, which honours it; a
-			// failed download with it is tried once more from the public link, without it.
+			// download with it that fails in any way - refused, cut short, timed out - is tried once
+			// more from the public link, without it.
 			bool downloaded = false;
 
-			if (installer.AssetId > 0 && GitHubAuth.GetOptionalToken() is { } token)
+			if (installer.AssetId > 0)
 			{
-				try
+				using HttpRequestMessage withToken = new(HttpMethod.Get, AssetApiUrl + installer.AssetId);
+
+				// The by-id assets endpoint returns JSON metadata unless asked for the file itself.
+				withToken.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/octet-stream"));
+
+				if (GitHubAuth.TryAuthorize(withToken))
 				{
-					await DownloadToFileAsync(client, AssetApiUrl + installer.AssetId, token, installer.SizeBytes, destination, progress, cancellationToken)
-						.ConfigureAwait(false);
-					downloaded = true;
-				}
-				catch (HttpRequestException ex)
-				{
-					AppLog.Warning(LogSource, $"Downloading with {GitHubAuth.TokenDescription} failed ({ex.Message}); trying the public link without it.");
+					try
+					{
+						await DownloadToFileAsync(client, withToken, installer.SizeBytes, destination, progress, cancellationToken)
+							.ConfigureAwait(false);
+						downloaded = true;
+					}
+					catch (Exception ex) when (!cancellationToken.IsCancellationRequested)
+					{
+						AppLog.Warning(LogSource, $"Downloading with {GitHubAuth.TokenDescription} failed ({ex.Message}); trying the public link without it.");
+					}
 				}
 			}
 
 			if (!downloaded)
 			{
-				await DownloadToFileAsync(client, installer.DownloadUrl, token: null, installer.SizeBytes, destination, progress, cancellationToken)
+				using HttpRequestMessage anonymous = new(HttpMethod.Get, installer.DownloadUrl);
+				await DownloadToFileAsync(client, anonymous, installer.SizeBytes, destination, progress, cancellationToken)
 					.ConfigureAwait(false);
 			}
 
@@ -117,21 +127,12 @@ public static class UpdateInstaller
 
 	private static async Task DownloadToFileAsync(
 		HttpClient client,
-		string url,
-		string? token,
+		HttpRequestMessage request,
 		long knownSizeBytes,
 		string destination,
 		IProgress<DownloadProgress>? progress,
 		CancellationToken cancellationToken)
 	{
-		using HttpRequestMessage request = new(HttpMethod.Get, url);
-		if (token is not null)
-		{
-			// The by-id assets endpoint returns JSON metadata unless asked for the file itself.
-			request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-			request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/octet-stream"));
-		}
-
 		using HttpResponseMessage response = await client
 			.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken)
 			.ConfigureAwait(false);

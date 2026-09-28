@@ -4,7 +4,8 @@
 
 	FeBuddy.Core and FeBuddy.Versioning are measured (Core references Versioning, so the tests
 	reach both); the WPF shell, the Harness console and the installer projects are deliberately
-	out of scope.
+	out of scope. The tests do reach the WPF shell's map logic (FeBuddy.UnitTests/Wpf), but it is
+	not measured: most of the shell is XAML and view code that no unit test runs.
 -->
 <RunSettings>
 	<DataCollectionRunSettings>

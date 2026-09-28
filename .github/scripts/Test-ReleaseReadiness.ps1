@@ -39,10 +39,55 @@ $version = Get-ProjectVersion
 Write-Host "Version (FeBuddy.Wpf.csproj): $version"
 Write-Host ''
 
+# ------------------------------------------------------------------ the installer-counter token
+
+# First: on GitHub Actions the same token (RELEASE_COUNTER_PAT) also reads the releases below, so
+# when it is missing or expired this is the check that says so plainly.
+if ($env:RELEASE_COUNTER_TOKEN) {
+	$savedToken = $env:GH_TOKEN
+	$env:GH_TOKEN = $env:RELEASE_COUNTER_TOKEN
+	try {
+		$headers = gh api -i user
+		$tokenWorks = ($LASTEXITCODE -eq 0)
+		$canPush = if ($tokenWorks) { gh api "repos/$ReleaseRepository" --jq '.permissions.push' } else { 'false' }
+	}
+	finally {
+		$env:GH_TOKEN = $savedToken
+	}
+
+	$expiryLine = @($headers | Where-Object { $_ -match '^github-authentication-token-expiration:\s*(.+)$' })[0]
+	$expires = $null
+	if ($expiryLine -and ($expiryLine -replace ' UTC\s*$', ' +0000') -match '(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2}:\d{2}) ([+-]\d{2})(\d{2})') {
+		$expires = [DateTimeOffset]::Parse("$($Matches[1])T$($Matches[2])$($Matches[3]):$($Matches[4])", [Globalization.CultureInfo]::InvariantCulture)
+	}
+
+	if (-not $tokenWorks) {
+		Add-CheckResult 'Installer-counter token' 'Fail' 'The RELEASE_COUNTER_PAT secret does not work (expired or revoked?). Make a new token and update the secret.'
+	}
+	elseif ($canPush -ne 'true') {
+		Add-CheckResult 'Installer-counter token' 'Fail' "The RELEASE_COUNTER_PAT secret's account cannot push to $ReleaseRepository."
+	}
+	elseif ($expires -and $expires -lt [DateTimeOffset]::UtcNow.AddDays(7)) {
+		Add-CheckResult 'Installer-counter token' 'Fail' "The RELEASE_COUNTER_PAT secret expires $($expires.ToString('yyyy-MM-dd')). Renew it before releasing."
+	}
+	else {
+		$expiryText = if ($expires) { "expires $($expires.ToString('yyyy-MM-dd'))" } else { 'no expiry' }
+		Add-CheckResult 'Installer-counter token' 'Pass' $expiryText
+	}
+}
+elseif ($env:GITHUB_ACTIONS -eq 'true') {
+	Add-CheckResult 'Installer-counter token' 'Fail' 'The RELEASE_COUNTER_PAT secret is not set.'
+}
+else {
+	Add-CheckResult 'Installer-counter token' 'Skip' 'Checked on GitHub Actions only.'
+}
+
 # ------------------------------------------------------------------ GitHub: releases and tags
 
+# A failed lookup is reported as a failed check, not thrown, so every other check still runs.
 $releaseRows = gh api "repos/$ReleaseRepository/releases?per_page=100" --paginate --jq '.[] | [.tag_name, (.draft | tostring)] | @tsv'
-if ($LASTEXITCODE -ne 0) { throw "Could not list the releases of $ReleaseRepository (is gh signed in / GH_TOKEN set?)." }
+$releasesRead = ($LASTEXITCODE -eq 0)
+$cannotRead = "Could not read $ReleaseRepository's releases from GitHub - see the token check above, or sign in with gh when running it yourself."
 
 $releases = @($releaseRows | Where-Object { $_ } | ForEach-Object {
 		$parts = $_ -split "`t"
@@ -63,7 +108,10 @@ else {
 		'X.Y.Z-alpha.N / -beta.N / -rc.N (lowercase, N from 1, no -dev or +metadata).')
 }
 
-if ($tool['nextStep'] -eq 'true') {
+if (-not $releasesRead) {
+	Add-CheckResult 'One step after the last release' 'Fail' $cannotRead
+}
+elseif ($tool['nextStep'] -eq 'true') {
 	Add-CheckResult 'One step after the last release' 'Pass' "$previous -> $version"
 }
 elseif ($SkipVersionStep) {
@@ -75,14 +123,19 @@ else {
 }
 
 $sameRelease = @($releases | Where-Object { $_.Tag -eq $version })
-if ($sameRelease.Count -gt 0) {
+if (-not $releasesRead) {
+	Add-CheckResult 'Release does not exist yet' 'Fail' $cannotRead
+}
+elseif ($sameRelease.Count -gt 0) {
 	$kind = if ($sameRelease[0].Draft) { 'A draft release' } else { 'A release' }
 	Add-CheckResult 'Release does not exist yet' 'Fail' "$kind for $version already exists. Publish or delete it, or bump <Version>."
 }
 else {
 	$tagRefs = gh api "repos/$ReleaseRepository/git/matching-refs/tags/$version" --jq '.[].ref'
-	if ($LASTEXITCODE -ne 0) { throw "Could not look up tag $version." }
-	if (@($tagRefs) -contains "refs/tags/$version") {
+	if ($LASTEXITCODE -ne 0) {
+		Add-CheckResult 'Release does not exist yet' 'Fail' "Could not look up whether tag $version exists on GitHub."
+	}
+	elseif (@($tagRefs) -contains "refs/tags/$version") {
 		Add-CheckResult 'Release does not exist yet' 'Fail' "Tag $version already exists. Bump <Version>."
 	}
 	else {
@@ -124,46 +177,6 @@ if ($appXaml -match 'private\s+const\s+bool\s+DevModeEnabled\s*=\s*false\s*;') {
 }
 else {
 	Add-CheckResult 'Developer mode is off' 'Fail' 'App.DevModeEnabled (FeBuddy.Wpf\App.xaml.cs) must be false in a release.'
-}
-
-# The installer-counter token (the release workflow commits the counter to v3-development with it)
-if ($env:RELEASE_COUNTER_TOKEN) {
-	$savedToken = $env:GH_TOKEN
-	$env:GH_TOKEN = $env:RELEASE_COUNTER_TOKEN
-	try {
-		$headers = gh api -i user
-		$tokenWorks = ($LASTEXITCODE -eq 0)
-		$canPush = if ($tokenWorks) { gh api "repos/$ReleaseRepository" --jq '.permissions.push' } else { 'false' }
-	}
-	finally {
-		$env:GH_TOKEN = $savedToken
-	}
-
-	$expiryLine = @($headers | Where-Object { $_ -match '^github-authentication-token-expiration:\s*(.+)$' })[0]
-	$expires = $null
-	if ($expiryLine -and ($expiryLine -replace ' UTC\s*$', ' +0000') -match '(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2}:\d{2}) ([+-]\d{2})(\d{2})') {
-		$expires = [DateTimeOffset]::Parse("$($Matches[1])T$($Matches[2])$($Matches[3]):$($Matches[4])", [Globalization.CultureInfo]::InvariantCulture)
-	}
-
-	if (-not $tokenWorks) {
-		Add-CheckResult 'Installer-counter token' 'Fail' 'The RELEASE_COUNTER_PAT secret does not work (expired or revoked?). Make a new token and update the secret.'
-	}
-	elseif ($canPush -ne 'true') {
-		Add-CheckResult 'Installer-counter token' 'Fail' "The RELEASE_COUNTER_PAT secret's account cannot push to $ReleaseRepository."
-	}
-	elseif ($expires -and $expires -lt [DateTimeOffset]::UtcNow.AddDays(7)) {
-		Add-CheckResult 'Installer-counter token' 'Fail' "The RELEASE_COUNTER_PAT secret expires $($expires.ToString('yyyy-MM-dd')). Renew it before releasing."
-	}
-	else {
-		$expiryText = if ($expires) { "expires $($expires.ToString('yyyy-MM-dd'))" } else { 'no expiry' }
-		Add-CheckResult 'Installer-counter token' 'Pass' $expiryText
-	}
-}
-elseif ($env:GITHUB_ACTIONS -eq 'true') {
-	Add-CheckResult 'Installer-counter token' 'Fail' 'The RELEASE_COUNTER_PAT secret is not set.'
-}
-else {
-	Add-CheckResult 'Installer-counter token' 'Skip' 'Checked on GitHub Actions only.'
 }
 
 # ------------------------------------------------------------------ result

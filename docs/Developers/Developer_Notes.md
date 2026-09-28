@@ -207,7 +207,7 @@
 ### UPDATES
 
 - Allow users to select:
-  - Participate in `alpha`, `beta`, or `stable only` version updates.
+  - Participate in `alpha`, `beta`, `release candidate`, or `stable only` version updates.
     - `stable only` is selected by default.
 	- Saved as `General`.`UpdateChannel` in config file.
   - Rollback from an alpha or beta version to the latest stable version.

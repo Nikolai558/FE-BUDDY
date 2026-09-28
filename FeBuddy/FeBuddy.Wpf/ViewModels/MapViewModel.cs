@@ -49,7 +49,7 @@ public sealed class MapViewModel : ObservableObject
 
 		EditRoiCommand = new RelayCommand(() => IsEditingRoi = true);
 		SaveRoiCommand = new RelayCommand(SaveRoi, () => IsEditingRoi);
-		CancelRoiCommand = new RelayCommand(CancelRoi);
+		CancelRoiCommand = new RelayCommand(CancelRoi, () => IsEditingRoi);
 		ClearRoiCommand = new RelayCommand(ClearRoi, () => Target.CanClear && DraftRoi is not null);
 		ZoomToRoiCommand = new RelayCommand(() => FrameRequested?.Invoke(this, DraftRoi!.Value), () => DraftRoi is not null);
 
@@ -130,8 +130,8 @@ public sealed class MapViewModel : ObservableObject
 	}
 
 	/// <summary>
-	/// Whether the map is in ROI editing mode. Switching it off by hand is a cancel: an unsaved
-	/// box goes back to the saved one.
+	/// Whether the map is in ROI editing mode. Switching it off by hand is a cancel: the box and
+	/// all four fields go back to the saved ROI - a half-typed corner included.
 	/// </summary>
 	public bool IsEditingRoi
 	{
@@ -143,7 +143,7 @@ public sealed class MapViewModel : ObservableObject
 				return;
 			}
 
-			if (!value && IsRoiDirty)
+			if (!value)
 			{
 				ResetDraft();
 			}
@@ -180,7 +180,7 @@ public sealed class MapViewModel : ObservableObject
 
 	/// <summary>The four corners on one line, for the copy button; empty when there is no box.</summary>
 	public string CopyText => DraftRoi is { } b
-		? string.Create(CultureInfo.InvariantCulture, $"SW {b.South:0.####}, {b.West:0.####} / NE {b.North:0.####}, {b.East:0.####}")
+		? $"SW {Format(b.South)}, {Format(b.West)} / NE {Format(b.North)}, {Format(b.East)}"
 		: string.Empty;
 
 	/// <summary>Whether there is a box to copy or zoom to.</summary>
@@ -326,8 +326,11 @@ public sealed class MapViewModel : ObservableObject
 			IsEditingRoi = true;
 		}
 
+		// Only corners on the globe move the box - latitudes within ±90, longitudes within ±360 (a
+		// box drawn across the 180th meridian has one past ±180). Save then checks them properly.
 		if (TryParse(SwLat, out double swLat) && TryParse(SwLon, out double swLon)
-			&& TryParse(NeLat, out double neLat) && TryParse(NeLon, out double neLon))
+			&& TryParse(NeLat, out double neLat) && TryParse(NeLon, out double neLon)
+			&& IsLatitude(swLat) && IsLatitude(neLat) && IsLongitude(swLon) && IsLongitude(neLon))
 		{
 			_syncing = true;
 			DraftRoi = new GeoBounds(
@@ -360,7 +363,15 @@ public sealed class MapViewModel : ObservableObject
 	private static bool TryParse(string text, out double value) =>
 		double.TryParse(text.Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out value);
 
-	private static string Format(double value) => value.ToString("0.####", CultureInfo.InvariantCulture);
+	private static bool IsLatitude(double value) => value is >= -90.0 and <= 90.0;
+
+	private static bool IsLongitude(double value) => value is >= -360.0 and <= 360.0;
+
+	/// <summary>
+	/// A corner as the fields show it. Enough places that a saved ROI goes back into the fields -
+	/// and so is saved again - exactly as it was; a box drawn on the map has only 4.
+	/// </summary>
+	private static string Format(double value) => value.ToString("0.#########", CultureInfo.InvariantCulture);
 
 	private static GeoBounds? ToBounds(RegionOfInterest? roi) => roi is { } r
 		? new GeoBounds(new GeoPoint(r.SwLat, r.SwLon), new GeoPoint(r.NeLat, r.NeLon))

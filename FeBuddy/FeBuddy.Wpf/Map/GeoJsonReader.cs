@@ -15,6 +15,11 @@ namespace FeBuddy.Wpf.Map;
 /// <c>isSymbolDefaults</c> / <c>isTextDefaults</c> features (parked at latitude 180) are
 /// skipped - they carry settings, not map data.
 /// </para>
+/// <para>
+/// A coordinate that is not a pair of numbers, or is off the globe, is dropped, and so is a line
+/// or ring left with too few points to draw, and a geometry left with nothing - so a file whose
+/// coordinates are all unusable is reported as such rather than loading as nothing.
+/// </para>
 /// </summary>
 public static class GeoJsonReader
 {
@@ -23,7 +28,10 @@ public static class GeoJsonReader
 	/// <summary>Parses <paramref name="json"/> into a flat list of map geometries.</summary>
 	/// <param name="json">The GeoJSON text.</param>
 	/// <returns>Every Point, LineString and Polygon geometry found, in file order.</returns>
-	/// <exception cref="FormatException">The text is not usable GeoJSON.</exception>
+	/// <exception cref="FormatException">
+	/// The text is not usable GeoJSON. Its message is short enough to show beside the file - why it
+	/// cannot be drawn - with any detail in the inner exception.
+	/// </exception>
 	public static IReadOnlyList<MapGeometry> Read(string json)
 	{
 		JsonDocument doc;
@@ -33,33 +41,41 @@ public static class GeoJsonReader
 		}
 		catch (JsonException ex)
 		{
-			throw new FormatException("File is not valid JSON: " + ex.Message, ex);
+			throw new FormatException("Not valid JSON", ex);
 		}
 
 		using (doc)
 		{
 			var result = new List<MapGeometry>();
+			ReadState state = new();
+
 			try
 			{
-				ReadNode(doc.RootElement, label: null, result);
+				ReadNode(doc.RootElement, label: null, result, state);
 			}
 			catch (InvalidOperationException ex)
 			{
-				throw new FormatException("A coordinate is not a pair of numbers: " + ex.Message, ex);
+				throw new FormatException("Not laid out as GeoJSON", ex);
 			}
 
 			if (result.Count == 0)
 			{
-				throw new FormatException("No Point, LineString or Polygon geometry was found.");
+				// Coordinates that were all off the globe are most likely in another projection
+				// (metres, say), which the map cannot place.
+				throw new FormatException(state.DroppedPoints > 0
+					? "Coordinates are not longitude and latitude"
+					: "No map features in this file");
 			}
 
 			return result;
 		}
 	}
 
-	private static void ReadNode(JsonElement node, string? label, List<MapGeometry> into)
+	private static void ReadNode(JsonElement node, string? label, List<MapGeometry> into, ReadState state)
 	{
-		if (node.ValueKind != JsonValueKind.Object || !node.TryGetProperty("type", out var typeProp))
+		if (node.ValueKind != JsonValueKind.Object
+			|| !node.TryGetProperty("type", out var typeProp)
+			|| typeProp.ValueKind != JsonValueKind.String)
 		{
 			return;
 		}
@@ -71,7 +87,7 @@ public static class GeoJsonReader
 				{
 					foreach (var feature in features.EnumerateArray())
 					{
-						ReadNode(feature, label: null, into);
+						ReadNode(feature, label: null, into, state);
 					}
 				}
 
@@ -86,7 +102,7 @@ public static class GeoJsonReader
 
 				if (node.TryGetProperty("geometry", out var geometry))
 				{
-					ReadNode(geometry, ReadLabel(properties), into);
+					ReadNode(geometry, ReadLabel(properties), into, state);
 				}
 
 				break;
@@ -96,14 +112,14 @@ public static class GeoJsonReader
 				{
 					foreach (var g in geometries.EnumerateArray())
 					{
-						ReadNode(g, label, into);
+						ReadNode(g, label, into, state);
 					}
 				}
 
 				break;
 
 			default:
-				var parsed = ReadGeometry(typeProp.GetString(), node, label);
+				var parsed = ReadGeometry(typeProp.GetString(), node, label, state);
 				if (parsed is not null)
 				{
 					into.Add(parsed);
@@ -135,7 +151,8 @@ public static class GeoJsonReader
 		};
 	}
 
-	private static MapGeometry? ReadGeometry(string? type, JsonElement node, string? label)
+	/// <summary>One geometry, or <see langword="null"/> when nothing in it can be drawn.</summary>
+	private static MapGeometry? ReadGeometry(string? type, JsonElement node, string? label, ReadState state)
 	{
 		if (!node.TryGetProperty("coordinates", out var coords))
 		{
@@ -145,15 +162,15 @@ public static class GeoJsonReader
 		switch (type)
 		{
 			case "Point":
-				return ReadPoint(coords) is { } point
+				return ReadPoint(coords, state) is { } point
 					? new MapGeometry(MapGeometryKind.Point, [[point]], label)
 					: null;
 
 			case "MultiPoint":
 				List<IReadOnlyList<GeoPoint>> points = [];
-				foreach (var p in coords.EnumerateArray())
+				foreach (JsonElement p in Items(coords))
 				{
-					if (ReadPoint(p) is { } one)
+					if (ReadPoint(p, state) is { } one)
 					{
 						points.Add([one]);
 					}
@@ -162,55 +179,66 @@ public static class GeoJsonReader
 				return points.Count > 0 ? new MapGeometry(MapGeometryKind.Point, points, label) : null;
 
 			case "LineString":
-				return new MapGeometry(MapGeometryKind.Line, [ReadRun(coords)]);
+				return Build(MapGeometryKind.Line, [ReadRun(coords, state)]);
 
 			case "MultiLineString":
-				return new MapGeometry(MapGeometryKind.Line,
-					[.. coords.EnumerateArray().Select(ReadRun)]);
+				return Build(MapGeometryKind.Line, [.. Items(coords).Select(line => ReadRun(line, state))]);
 
 			case "Polygon":
-				return new MapGeometry(MapGeometryKind.Polygon,
-					[.. coords.EnumerateArray().Select(ReadRun)]);
+				return Build(MapGeometryKind.Polygon, [.. Items(coords).Select(ring => ReadRun(ring, state))]);
 
 			case "MultiPolygon":
-				var rings = new List<IReadOnlyList<GeoPoint>>();
-				foreach (var polygon in coords.EnumerateArray())
-				{
-					foreach (var ring in polygon.EnumerateArray())
-					{
-						rings.Add(ReadRun(ring));
-					}
-				}
-
-				return new MapGeometry(MapGeometryKind.Polygon, rings);
+				return Build(MapGeometryKind.Polygon, [.. Items(coords).SelectMany(Items).Select(ring => ReadRun(ring, state))]);
 
 			default:
 				return null;
 		}
 	}
 
-	private static IReadOnlyList<GeoPoint> ReadRun(JsonElement array)
+	/// <summary>
+	/// A line or polygon from the runs that can be drawn - at least two points for a line, three
+	/// for a ring - or <see langword="null"/> when none can.
+	/// </summary>
+	private static MapGeometry? Build(MapGeometryKind kind, List<IReadOnlyList<GeoPoint>> runs)
 	{
-		var run = new List<GeoPoint>();
-		foreach (var p in array.EnumerateArray())
-		{
-			if (ReadPoint(p) is { } point)
-			{
-				run.Add(point);
-			}
-		}
+		int fewest = kind == MapGeometryKind.Polygon ? 3 : 2;
+		List<IReadOnlyList<GeoPoint>> drawable = [.. runs.Where(run => run.Count >= fewest)];
 
-		return run;
+		return drawable.Count > 0 ? new MapGeometry(kind, drawable) : null;
 	}
 
-	/// <summary>Reads <c>[lon, lat, (elevation...)]</c>; a point off the planet (lat past ±90) is dropped.</summary>
-	private static GeoPoint? ReadPoint(JsonElement pair)
+	private static IReadOnlyList<GeoPoint> ReadRun(JsonElement array, ReadState state) =>
+		[.. Items(array).Select(p => ReadPoint(p, state)).OfType<GeoPoint>()];
+
+	/// <summary>An array's items; nothing when it is not an array.</summary>
+	private static IEnumerable<JsonElement> Items(JsonElement array) =>
+		array.ValueKind == JsonValueKind.Array ? array.EnumerateArray() : [];
+
+	/// <summary>
+	/// Reads <c>[lon, lat, (elevation...)]</c>. Anything else - not two numbers, a latitude past ±90,
+	/// a longitude that is not a number - is dropped and counted.
+	/// </summary>
+	private static GeoPoint? ReadPoint(JsonElement pair, ReadState state)
 	{
-		var e = pair.EnumerateArray();
-		e.MoveNext();
-		var lon = e.Current.GetDouble();
-		e.MoveNext();
-		var lat = e.Current.GetDouble();
-		return lat is >= -90.0 and <= 90.0 && double.IsFinite(lon) ? new GeoPoint(lat, lon) : null;
+		if (pair.ValueKind == JsonValueKind.Array
+			&& pair.GetArrayLength() >= 2
+			&& pair[0].ValueKind == JsonValueKind.Number
+			&& pair[1].ValueKind == JsonValueKind.Number
+			&& pair[0].TryGetDouble(out double lon)
+			&& pair[1].TryGetDouble(out double lat)
+			&& lat is >= -90.0 and <= 90.0
+			&& double.IsFinite(lon))
+		{
+			return new GeoPoint(lat, lon);
+		}
+
+		state.DroppedPoints++;
+		return null;
+	}
+
+	/// <summary>What one read has dropped along the way, to explain an empty result.</summary>
+	private sealed class ReadState
+	{
+		public int DroppedPoints { get; set; }
 	}
 }

@@ -12,8 +12,11 @@ namespace FeBuddy.Wpf.Map;
 /// </summary>
 internal static class WebMercator
 {
-	/// <summary>Latitude beyond which Mercator y runs to infinity.</summary>
-	public const double MaxLatitude = 85.051129;
+	/// <summary>
+	/// The latitude of the square world map's top and bottom edges (85.0511287798°): beyond it,
+	/// Mercator y runs to infinity. Worked out exactly, so it lands on y = 0 and 1 and not a hair past.
+	/// </summary>
+	public static readonly double MaxLatitude = Math.Atan(Math.Sinh(Math.PI)) * 180.0 / Math.PI;
 
 	/// <summary>The pixels-per-world-unit at zoom level 0 (one 256px tile shows the world).</summary>
 	public const double TileSize = 256.0;
@@ -24,12 +27,15 @@ internal static class WebMercator
 	/// <summary>Longitude to world x (0 at 180W, 1 at 180E).</summary>
 	public static double LonToWorldX(double lon) => (lon + 180.0) / 360.0;
 
-	/// <summary>Latitude to world y (0 at the top), clamped to <see cref="MaxLatitude"/>.</summary>
+	/// <summary>
+	/// Latitude to world y (0 at the top), clamped to <see cref="MaxLatitude"/> and so to 0..1 - a box
+	/// from pole to pole fills the world exactly, which a move of it relies on.
+	/// </summary>
 	public static double LatToWorldY(double lat)
 	{
 		var clamped = Math.Clamp(lat, -MaxLatitude, MaxLatitude);
 		var s = Math.Sin(clamped * Math.PI / 180.0);
-		return 0.5 - Math.Log((1.0 + s) / (1.0 - s)) / (4.0 * Math.PI);
+		return Math.Clamp(0.5 - Math.Log((1.0 + s) / (1.0 - s)) / (4.0 * Math.PI), 0.0, 1.0);
 	}
 
 	/// <summary>World x back to longitude. Not folded: x outside 0..1 gives a longitude past ±180.</summary>
@@ -44,6 +50,13 @@ internal static class WebMercator
 
 	/// <summary>Folds any longitude into -180 (inclusive) to 180 (exclusive).</summary>
 	public static double NormalizeLon(double lon) => ((((lon + 180.0) % 360.0) + 360.0) % 360.0) - 180.0;
+
+	/// <summary>
+	/// <paramref name="lon"/> moved whole turns of the globe to lie within 180 degrees of
+	/// <paramref name="previous"/>, so a line from one to the other runs the short way across the
+	/// 180th meridian. One step, so however far off a longitude is (a damaged file's 1e20), it never loops.
+	/// </summary>
+	public static double UnwrapLon(double lon, double previous) => previous + NormalizeLon(lon - previous);
 
 	/// <summary>The slippy-map zoom level for a scale, e.g. 256 px per world is zoom 0.</summary>
 	public static double ScaleToZoom(double scale) => Math.Log2(scale / TileSize);

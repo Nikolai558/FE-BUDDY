@@ -5,6 +5,7 @@ using FeBuddy.Core.Application.Airac.ArtccBoundaries;
 using FeBuddy.Core.Application.Airac.Navaids;
 using FeBuddy.Core.Domain.Airports.Models;
 using FeBuddy.Core.Domain.ArtccBoundaries.Models;
+using FeBuddy.Core.Domain.Navaids;
 using FeBuddy.Core.Domain.Navaids.Models;
 using FeBuddy.Core.Infrastructure.Nasr.Models;
 using FeBuddy.Wpf.Map.Models;
@@ -34,7 +35,10 @@ public enum AiracLayerKind
 internal static class AiracMapLayers
 {
 	/// <summary>The NAVAID types drawn: the VOR family and TACANs, the stations airways hang off.</summary>
-	private static readonly HashSet<string> VorTypes = new(StringComparer.OrdinalIgnoreCase) { "VOR", "VOR/DME", "VORTAC", "TACAN" };
+	private static readonly HashSet<string> VorTypes = new(StringComparer.OrdinalIgnoreCase)
+	{
+		NavaidTypes.Vor, NavaidTypes.VorDme, NavaidTypes.Vortac, NavaidTypes.Tacan,
+	};
 
 	/// <summary>The name shown next to a layer's switch.</summary>
 	/// <param name="kind">The layer.</param>
@@ -161,7 +165,9 @@ internal static class AiracMapLayers
 
 	/// <summary>
 	/// Where a ring's ID goes: the average of its vertices, worked out the short way round so a
-	/// ring over the 180th meridian (Anchorage, Oakland Oceanic) is labelled inside itself.
+	/// ring over the 180th meridian (Anchorage, Oakland Oceanic) is labelled by itself, not on the
+	/// far side of the world. An average is only roughly the middle: a ring with a deep bend in it
+	/// can have its label just outside.
 	/// </summary>
 	private static GeoPoint? LabelPoint(IReadOnlyList<GeoPoint> points)
 	{
@@ -170,17 +176,7 @@ internal static class AiracMapLayers
 
 		foreach (GeoPoint point in points)
 		{
-			double lon = point.Lon;
-			while (lon - previous > 180.0)
-			{
-				lon -= 360.0;
-			}
-
-			while (lon - previous < -180.0)
-			{
-				lon += 360.0;
-			}
-
+			double lon = WebMercator.UnwrapLon(point.Lon, previous);
 			lonSum += lon;
 			latSum += point.Lat;
 			previous = lon;
@@ -189,10 +185,5 @@ internal static class AiracMapLayers
 		return new GeoPoint(latSum / points.Count, WebMercator.NormalizeLon(lonSum / points.Count));
 	}
 
-	private static SolidColorBrush Frozen(AiracLayerKind kind)
-	{
-		SolidColorBrush brush = new(Color(kind));
-		brush.Freeze();
-		return brush;
-	}
+	private static SolidColorBrush Frozen(AiracLayerKind kind) => FrozenBrush.Of(Color(kind));
 }

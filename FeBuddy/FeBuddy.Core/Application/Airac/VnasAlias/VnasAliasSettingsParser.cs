@@ -2,6 +2,7 @@ using System.Globalization;
 
 using FeBuddy.Core.Application.Airac.VnasAlias.Models;
 using FeBuddy.Core.Application.Models;
+using FeBuddy.Core.Infrastructure.Credentials;
 using FeBuddy.Core.Infrastructure.Logging.Models;
 
 namespace FeBuddy.Core.Application.Airac.VnasAlias;
@@ -49,9 +50,9 @@ public static class VnasAliasSettingsParser
 	/// <param name="settings">The raw settings dictionary.</param>
 	/// <returns>The custom alias files, in merge order, plus any non-fatal parsing messages.</returns>
 	/// <exception cref="ArgumentException">
-	/// Thrown when a custom alias file has both or neither of a path and a web address, its path is
-	/// not a full path, its web address is not an <c>http</c> or <c>https</c> address, or its
-	/// credential id is not an id.
+	/// Thrown when a custom alias file has both a path and a web address, or only a credential; its
+	/// path is not a full path; its web address is not an <c>http</c> or <c>https</c> address, or has
+	/// a secret in it (<see cref="UrlSecrets"/>); or its credential id is not an id.
 	/// </exception>
 	public static VnasAliasSettingsParseResult Parse(IReadOnlyDictionary<string, string> settings)
 	{
@@ -126,7 +127,8 @@ public static class VnasAliasSettingsParser
 
 		if (filePath.Length == 0 && url.Length == 0)
 		{
-			// A row with only a credential left on it: nothing to read, so nothing to merge.
+			// A row with nothing in it at all: nothing to read, so nothing to merge. A row left with
+			// only a credential is a mistake worth saying, so it throws below.
 			if (credential.Length == 0)
 			{
 				return null;
@@ -154,6 +156,14 @@ public static class VnasAliasSettingsParser
 		if (!Uri.TryCreate(url, UriKind.Absolute, out Uri? uri) || (uri.Scheme != Uri.UriSchemeHttps && uri.Scheme != Uri.UriSchemeHttp))
 		{
 			throw new ArgumentException($"{label}'s web address '{url}' is not an http:// or https:// address.");
+		}
+
+		// Never echo the address here: it holds the secret.
+		if (UrlSecrets.Describe(uri) is { } secret)
+		{
+			throw new ArgumentException(
+				$"{label}'s web address has {secret} in it. Remove it and choose a credential instead: web addresses are " +
+				"saved in FE-Buddy's settings and in settings exports.");
 		}
 
 		Guid? credentialId = null;

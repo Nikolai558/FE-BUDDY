@@ -178,12 +178,42 @@ public sealed class VnasAliasFileWriterTests : IDisposable
 		Assert.Null(result.FilePath);
 		Assert.False(Directory.Exists(Path.Combine(_output, "Upload_to_vNAS")));
 		Assert.Equal(2, result.Messages.Count);
-		Assert.Contains("was not written", result.Messages[1].Text, StringComparison.Ordinal);
+		Assert.Equal(
+			"vNAS_Alias.txt was not written: no custom alias file could be read, and no FE-Buddy alias file is marked for vNAS.",
+			result.Messages[1].Text);
 		Assert.True(result.Messages[1].IsAdvisory);
 	}
 
 	[Fact]
-	public void a_command_in_more_than_one_file_is_reported_once_with_the_files_it_is_in()
+	public void nothing_to_merge_deletes_the_file_an_earlier_run_wrote()
+	{
+		VnasAliasFileWriter.Write([Read(1, "a.txt", ".a .ECHO a")], [], "2610", _output);
+		Assert.True(File.Exists(VnasAliasPath));
+
+		VnasAliasResult result = VnasAliasFileWriter.Write(
+			[AliasSourceLoad.Failed(new AliasSource(1, AliasSourceKind.File, @"C:\Gone.txt"), "C:\\Gone.txt was not found.")], [], "2610", _output);
+
+		Assert.Null(result.FilePath);
+		Assert.False(File.Exists(VnasAliasPath));
+		Assert.EndsWith("The one an earlier run wrote was deleted, so it cannot be uploaded by mistake.", result.Messages[^1].Text, StringComparison.Ordinal);
+	}
+
+	[Fact]
+	public void an_earlier_file_that_cannot_be_deleted_is_not_to_be_uploaded()
+	{
+		VnasAliasFileWriter.Write([Read(1, "a.txt", ".a .ECHO a")], [], "2610", _output);
+
+		using (File.Open(VnasAliasPath, FileMode.Open, FileAccess.Read, FileShare.None))
+		{
+			VnasAliasResult result = VnasAliasFileWriter.Write([], [], "2610", _output);
+
+			Assert.Contains("The one an earlier run wrote could not be deleted (", result.Messages[^1].Text, StringComparison.Ordinal);
+			Assert.EndsWith("): do not upload it.", result.Messages[^1].Text, StringComparison.Ordinal);
+		}
+	}
+
+	[Fact]
+	public void a_command_from_a_custom_file_in_another_file_is_reported_once_with_the_files_it_is_in()
 	{
 		VnasAliasResult result = VnasAliasFileWriter.Write(
 			[Read(1, "ZOB-Alias.txt", ".CLE .ECHO mine\r\n.cle .ECHO mine again\r\n.only .ECHO mine")],
@@ -195,8 +225,37 @@ public sealed class VnasAliasFileWriterTests : IDisposable
 
 		ServiceMessage warning = Assert.Single(result.Messages);
 		Assert.True(warning.IsAdvisory);
-		Assert.Contains("1 alias command(s) are in more than one of the files merged into vNAS_Alias.txt", warning.Text, StringComparison.Ordinal);
-		Assert.Contains(".CLE (ZOB-Alias.txt, Navaids.txt).", warning.Text, StringComparison.Ordinal);
+		Assert.Equal(
+			"1 alias command(s) from your custom alias files are also in another file merged into vNAS_Alias.txt, so CRC can only run " +
+			"one of each: .CLE (ZOB-Alias.txt, Navaids.txt). Remove the extra copies from your custom alias files, or untick the FE-Buddy file.",
+			warning.Text);
+	}
+
+	[Fact]
+	public void a_command_in_two_custom_files_is_reported()
+	{
+		VnasAliasResult result = VnasAliasFileWriter.Write(
+			[Read(1, "a.txt", ".same .ECHO a"), Read(2, "b.txt", ".same .ECHO b")], [], "2610", _output);
+
+		Assert.Equal(1, result.DuplicateCommandCount);
+		Assert.Contains(".same (a.txt, b.txt)", Assert.Single(result.Messages).Text, StringComparison.Ordinal);
+	}
+
+	/// <summary>
+	/// A command only FE-Buddy's own files share - ORF NUTIY, in NASR as both a DP and a STAR - is
+	/// already in Duplicate_Alias_Commands.txt, so the merge does not warn about it again.
+	/// </summary>
+	[Fact]
+	public void a_command_only_fe_buddy_files_share_is_not_reported()
+	{
+		VnasAliasResult result = VnasAliasFileWriter.Write(
+			[Read(1, "ZOB-Alias.txt", ".mine .ECHO mine")],
+			[FeBuddyFile("Departures.txt", ".orfNUTIYf .FF A"), FeBuddyFile("Arrivals.txt", ".orfNUTIYf .FF B")],
+			"2610",
+			_output);
+
+		Assert.Equal(0, result.DuplicateCommandCount);
+		Assert.Empty(result.Messages);
 	}
 
 	[Fact]

@@ -53,8 +53,12 @@ jobs:
     runs-on: windows-2025
 
     steps:
+      # No token is left in the checkout: build.ps1 runs the pull request's code, and the steps
+      # that need a token pass one.
       - name: Checkout repository
         uses: actions/checkout@v6
+        with:
+          persist-credentials: false
 
       - name: Setup .NET SDK
         uses: actions/setup-dotnet@v5

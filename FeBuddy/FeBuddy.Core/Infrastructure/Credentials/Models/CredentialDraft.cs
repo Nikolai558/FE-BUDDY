@@ -1,3 +1,6 @@
+using System.Globalization;
+using System.Text;
+
 namespace FeBuddy.Core.Infrastructure.Credentials.Models;
 
 /// <summary>A credential being added or edited, before <see cref="CredentialStore.Save(CredentialDraft)"/> stores it.</summary>
@@ -16,4 +19,19 @@ public sealed record CredentialDraft(
 	CredentialKind Kind,
 	string? UserName,
 	string? Secret,
-	IReadOnlyList<string> Hosts);
+	IReadOnlyList<string> Hosts)
+{
+	/// <summary>
+	/// What the draft's <see cref="object.ToString"/> prints: every member but the secret, so a log
+	/// line, a test failure or a debugger tooltip never shows it.
+	/// </summary>
+	private bool PrintMembers(StringBuilder builder)
+	{
+		string secret = Secret is null ? "null" : "(hidden)";
+		string hosts = Hosts is null ? "null" : $"[{string.Join(", ", Hosts)}]";
+
+		builder.Append(CultureInfo.InvariantCulture,
+			$"Id = {Id}, Name = {Name}, Kind = {Kind}, UserName = {UserName}, Secret = {secret}, Hosts = {hosts}");
+		return true;
+	}
+}

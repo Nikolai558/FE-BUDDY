@@ -14,14 +14,17 @@ downloads from a protected website uses one.
 - **One entry per credential**, named `FE-Buddy:credential:<id>`. It holds everything about the
   credential: name, type, user name, websites and the secret.
   - Users can see or delete the entries in Control Panel ▸ Credential Manager ▸ Windows Credentials.
-- **Settings save only the credential's id.** On another PC the id matches nothing, so an imported
-  or copied config never carries a secret, and the user picks one of their own credentials.
+- **Settings save only the credential's id.** On another PC the id matches nothing, so a settings
+  export leaves credential ids out altogether. An import keeps this PC's choice only for a setting
+  it leaves unchanged (the same custom alias file at the same address); anything else needs one of
+  this PC's credentials chosen again.
 - **Users manage them in Settings ▸ Credentials.**
   - Add, edit and remove. A saved secret is never shown again.
   - "Check" asks GitHub whether a GitHub token still works.
   - "Remove all" clears every FE-Buddy credential.
 - **A full uninstall removes them** (custom action `RemoveFeBuddyCredentials`); an upgrade never
-  does.
+  does. The action runs after `InstallFinalize`, once the uninstall has succeeded, so an uninstall
+  that is cancelled or fails keeps them.
 
 ## Types
 
@@ -31,11 +34,22 @@ downloads from a protected website uses one.
 | GitHub personal access token | `Authorization: Bearer …` |
 | Token or API key | `Authorization: Bearer …` |
 
+`CredentialStore.Validate` checks every credential, however it is saved - from the editor or from
+code:
+- A name, of at most 100 characters (`CredentialStore.MaxNameLength`), not used by another credential.
+- For a user name and password, a user name without a colon: Basic sends `user:password`, so a
+  colon would split it in the wrong place.
+- The secret, when adding one or changing an existing credential's type.
+- At least one website, each one read the same way as in the editor (see below).
+
 ## Websites
 
 **Every credential names the websites it may be sent to, and FE-Buddy sends it nowhere else.**
 - A website covers itself and its subdomains: `github.com` covers `api.github.com`, but not
   `github.com.example.net`.
+- Websites are saved bare and lower case (`https://Files.Example.com/x` becomes
+  `files.example.com`), and each needs at least one dot, so a whole top-level domain such as `com`
+  can never be allowed.
 - A GitHub token starts with `github.com, githubusercontent.com`, which covers GitHub's API and its
   raw-file and download hosts.
 - A credential is only ever sent over **HTTPS**.
@@ -81,17 +95,26 @@ using HttpResponseMessage response = await client.SendAsync(request, cancellatio
     `Accept: application/vnd.github.raw`. `GitHubFileUrl.ToContentsApi` turns a file's `github.com`
     or `raw.githubusercontent.com` address into that one.
   - `raw.githubusercontent.com` does not reliably honour a token (see `NewsService`).
-- **Settings key names.** Name a key that holds a credential id so it is plainly an id, e.g.
-  `CredentialId`. Keys whose name ends in `Token`, `Password`, `Secret`, `ApiKey` or `Credential`,
-  or is `Pat`, are treated as secrets by settings export and import (`UserConfigPortability`) and
-  never leave the PC.
+- **Settings key names.** End the name of a key that holds a credential id in `CredentialId`:
+  settings export then leaves it out, and import keeps this PC's choice only where the settings
+  beside it are unchanged (`ConfigKeyScope.CredentialChoice`). Keys whose name ends in `Token`, `Password`, `Secret`, `ApiKey`, `Credential` or
+  `Credentials`, is `Pat`, or sits under `Secrets`, are treated as secrets by settings export and
+  import (`UserConfigPortability`) and never leave the PC.
 
 ## Rules
 
 - **Never log, toast, show or put in an exception a secret or a whole request's headers.** Name the
   credential instead.
-- **Never put a secret in a URL.** Query strings end up in logs and browser history.
+- **Never put a secret in a URL.** Query strings end up in logs and browser history. A URL the
+  user types into a setting is checked with `UrlSecrets.Describe`, which finds a user name and
+  password or a sign-in token in the query; the vNAS Alias Upload tab and its parser refuse one.
 - **Never copy a secret into `UserConfig`, a file, or an environment variable.**
+- **Never let a record print a secret.** A record's generated `ToString` prints every member, so a
+  record that holds one must leave it out, as `CredentialDraft` does. `CredentialStore` keeps its
+  own secret-holding types as plain classes for the same reason.
+- **Keep secrets short-lived.** `CredentialStore` lists credentials without turning their secrets
+  into text, clears every byte buffer an entry passes through, and the credential editor reads its
+  password box once, when saving.
 
 ## FE-Buddy's own GitHub requests
 
@@ -101,8 +124,17 @@ using HttpResponseMessage response = await client.SendAsync(request, cancellatio
   GitHub token" (the default) or "Use a GitHub token" and which one.
   - Only the credential's id is saved, in `General.FeBuddyGitHub.CredentialId`. It is a local
     setting, so a settings export leaves it out.
-  - Only a GitHub personal access token whose websites include github.com can be chosen.
+  - Only a GitHub personal access token whose websites cover `api.github.com` (`github.com` does)
+    can be chosen.
 - **How it is used.** With a token chosen, the requests are sent with it: News through the Contents
-  API and the update download through the release-assets API, since both honour a token. A request
-  that fails with the token is tried once more without it, so an expired token never stops updates.
-- **No environment variable.** FE-Buddy 3 does not read `FEBUDDY_GITHUB_TOKEN`.
+  API and the update download through the release-assets API, since both honour a token.
+  - Only `GitHubAuth.TryAuthorize` puts the token on a request, through the store's own checks
+    (a GitHub token, HTTPS, one of its websites). Nothing reads the token out.
+  - A request with the token that fails in any way (refused, cut short, no answer) is tried once
+    more without it.
+  - A token Windows Credential Manager cannot read is logged and treated as no token.
+  - So neither an expired token nor a broken Credential Manager ever stops updates.
+- **No environment variable.** FE-Buddy 3 never reads `FEBUDDY_GITHUB_TOKEN`, which 2.x told users
+  to set. At launch it only checks whether that name is set (`LegacyGitHubTokenVariable` reads the
+  registry's variable names, never the value) and, if it is, tells the user once how to delete it
+  (`LegacyGitHubTokenNotice`, then `General.LegacyGitHubTokenNoticeShown` is saved).

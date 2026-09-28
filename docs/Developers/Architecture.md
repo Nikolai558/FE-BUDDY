@@ -33,6 +33,8 @@ first; for where code lives read [FeBuddy.Core structure](FeBuddy.Core-Structure
   data or writes output files itself.
 - **`FeBuddy.Versioning`** is netstandard2.0 so both Core (.NET 10) and the MSI's custom action
   (.NET Framework 4.7.2, all WiX's host can load) share one version rule.
+- **`FeBuddy.UnitTests`** tests Core and Versioning, and references `FeBuddy.Wpf` too, to test the
+  map's logic. The coverage gate measures Core and Versioning only.
 
 ## Launch
 
@@ -42,8 +44,9 @@ A step that fails is logged and degrades only the feature that needs it; launch 
 ```
 1. Clear %TEMP%\FE-Buddy            ─┐ first: the rest need the config,
 2. Read UserConfig.json             ─┘ and the AIRAC download uses the temp folder
-3. UTC time + internet check           the AIRAC step needs the date; every network step needs the internet flag
-4. ┌ Version check (GitHub releases)
+3. FE-Buddy 2.x token variable         needs the config (was the notice shown?); nothing needs it
+4. UTC time + internet check           the AIRAC step needs the date; every network step needs the internet flag
+5. ┌ Version check (GitHub releases)
    ├ AIRAC data (below)                 in parallel - none needs another
    └ News (News.md from GitHub)
 ```
@@ -52,6 +55,12 @@ Results are published on `AppEnvironment` (`HasInternetConnection`, `Version`, `
 event) and the AIRAC cache raises `StateChanged` as each cycle moves on. The view-models listen to
 both, so the window fills in as launch progresses: the top-centre status narrates the downloads,
 the Systems box turns green, the AIRAC Service screen unlocks.
+
+Step 3 looks for FE-Buddy 2.x's `FEBUDDY_GITHUB_TOKEN` environment variable, which held a GitHub
+token in plain text (`LegacyGitHubTokenNotice`, `LegacyGitHubTokenVariable`). It reads only the
+names of the variables Windows keeps in the registry, never the value. When the variable is set and
+the notice has not been shown on this PC, the shell shows it once, with a button to Windows'
+Environment Variables window, and saves `General.LegacyGitHubTokenNoticeShown`.
 
 ## The AIRAC data pipeline
 
@@ -218,10 +227,14 @@ every alias file marked for vNAS are merged into `vNAS_Alias.txt` (below).
   line every cycle. =====`, then each marked FE-Buddy alias file under `; ----- <name> -----`. A
   custom file that has the marker (last cycle's uploaded `vNAS_Alias.txt` reused as the custom
   file) is cut there, with an Info message. A custom file that could not be read is left out with
-  an advisory warning, and the file is still written from the rest; a command in more than one
-  merged file gets an advisory listing up to ten. UTF-8 without a BOM. With nothing to merge the
-  file is not written (`VnasAliasResult.FilePath` is `null`, with an advisory). The result is
-  `AiracServiceResult.VnasAlias`.
+  an advisory warning, and the file is still written from the rest; a command from a custom file
+  that another merged file has too gets an advisory listing up to ten (commands only FE-Buddy's
+  own files share are left to the duplicate report). UTF-8 without a BOM. With nothing to merge the
+  file is not written (`VnasAliasResult.FilePath` is `null`, with an advisory), and a
+  `vNAS_Alias.txt` an earlier run left is deleted, like the duplicate report, so it cannot be
+  uploaded by mistake. Without vNAS Alias Upload selected, the file holds FE-Buddy's aliases only,
+  and `AiracService` adds an advisory that uploading it would remove the facility's own aliases.
+  The result is `AiracServiceResult.VnasAlias`.
 
 ## Settings and persistence
 
@@ -233,6 +246,13 @@ and addressed by dotted paths (`Services.AiracService.Geojson.Airways.OutputBy`)
   (`UserConfigFile.Save(nodePath)`), leaving every other section untouched.
 - **One-step undo.** Before a node is saved, its previous state is snapshotted to
   `UserConfig.previous.json`; **Undo last save** restores it.
+- **An import replaces the whole file**, the one write that is not per node. Settings ▸ Import…
+  works out the result first (`UserConfigTransfer.Plan`: what changes, which folders work on this
+  PC, what this PC keeps) and shows it; on confirm, `UserConfigFile.ReplaceAll` writes the new file
+  beside the old one and swaps it in with `File.Replace`, keeping the old one as
+  `UserConfig.before-import.json`. The undo snapshots are deleted - they describe settings that no
+  longer exist - and every open page reloads. Which settings travel, and how, is decided by each
+  key's name: see [Settings export and import](UserConfig-Reference.md#settings-export-and-import).
 - **Dirty means "different from saved".** Each settings screen keeps a `SavedStateSnapshot` of what
   it last saved or loaded, and compares its current values against it on every change. Change a
   value and change it back, and the tab is clean again. The snapshot is taken by running the tab's
@@ -375,9 +395,10 @@ The FAA's data has quirks; these rules handle them. Each lives in one class.
 - **News** (`NewsService`). `FeBuddy/FeBuddy.Core/News.md` on `v3-development`, fetched from GitHub
   (the bundled copy when offline). Posts carry a `PostId` (`yyyy-mm-dd.N`); the newest is compared
   with `General.NewsLastOpen` to light up the News button.
-- Every GitHub request works anonymously; a GitHub token the user saved in Settings ▸ Credentials
-  is only a fallback after an anonymous request fails. Credentials live in Windows Credential
-  Manager, never in `UserConfig.json` - see [Credentials](Credentials.md).
+- Every GitHub request works anonymously. When the user chose a GitHub token (Settings ▸ FE-Buddy's
+  GitHub Requests), the update check, News and the update download are sent with it first, and
+  once more without it if that fails in any way (`GitHubAuth`). Credentials live in Windows
+  Credential Manager, never in `UserConfig.json` - see [Credentials](Credentials.md).
 
 ## Design decisions
 

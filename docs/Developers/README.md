@@ -45,7 +45,7 @@ All in `FeBuddy/FeBuddy.sln`:
 | `FeBuddy.Installer` | The MSI (WiX). | the published app, CustomActions |
 | `FeBuddy.Installer.CustomActions` | The MSI's one piece of code: enforce the upgrade rule. net472. | Versioning |
 | `FeBuddy.Harness` | A console app that runs the services with hard-coded settings - handy while developing. | Core |
-| `FeBuddy.UnitTests` | xUnit tests for Core and Versioning. | Core, Versioning |
+| `FeBuddy.UnitTests` | xUnit tests for Core and Versioning, and for the map's logic in the app. | Core, Versioning, Wpf |
 
 ## Where next
 

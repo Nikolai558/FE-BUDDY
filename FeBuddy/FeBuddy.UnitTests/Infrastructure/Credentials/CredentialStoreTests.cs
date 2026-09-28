@@ -124,9 +124,12 @@ public sealed class CredentialStoreTests : IDisposable
 	[InlineData("taken", CredentialKind.Token, null, "abc", "example.com", "There is already a credential called 'taken'.")]
 	[InlineData("TAKEN", CredentialKind.Token, null, "abc", "example.com", "There is already a credential called 'TAKEN'.")]
 	[InlineData("x", CredentialKind.UsernamePassword, " ", "abc", "example.com", "Enter the user name.")]
+	[InlineData("x", CredentialKind.UsernamePassword, "bob:ops", "abc", "example.com", "A user name cannot contain a colon (:).")]
 	[InlineData("x", CredentialKind.UsernamePassword, "bob", "", "example.com", "Enter the password.")]
 	[InlineData("x", CredentialKind.GitHubToken, null, " ", "github.com", "Enter the token.")]
 	[InlineData("x", CredentialKind.Token, null, "abc", "", "Name at least one website it may be used with.")]
+	[InlineData("x", CredentialKind.Token, null, "abc", "com", "'com' is not a website name such as github.com.")]
+	[InlineData("x", CredentialKind.Token, null, "abc", "not a host", "'not' is not a website name such as github.com.")]
 	public void validate_reports_each_rule(string name, CredentialKind kind, string? user, string secret, string hosts, string expected)
 	{
 		_store.Save(Token("taken", "abc", CredentialKind.Token, Example));
@@ -141,6 +144,63 @@ public sealed class CredentialStoreTests : IDisposable
 	[Fact]
 	public void validate_no_name_asks_for_one() =>
 		Assert.Equal("Give the credential a name.", _store.Validate(new CredentialDraft(null, null!, CredentialKind.Token, null, "abc", Example)));
+
+	/// <summary>A name may be up to <see cref="CredentialStore.MaxNameLength"/> characters, spaces around it aside.</summary>
+	[Fact]
+	public void validate_caps_the_name_length()
+	{
+		string longest = new('n', CredentialStore.MaxNameLength);
+
+		Assert.Null(_store.Validate(Token($"  {longest}  ", "abc", CredentialKind.Token, Example)));
+		Assert.Equal(
+			$"Keep the name to {CredentialStore.MaxNameLength} characters or fewer.",
+			_store.Validate(Token(longest + "n", "abc", CredentialKind.Token, Example)));
+	}
+
+	/// <summary>
+	/// Websites are saved the way the editor reads them - bare, lower case, without duplicates -
+	/// however the draft was made.
+	/// </summary>
+	[Fact]
+	public void save_normalizes_the_websites()
+	{
+		CredentialInfo saved = _store.Save(Token("Api", "abc", CredentialKind.Token, ["https://Files.Example.com/path", "*.example.org", "files.example.com"]));
+
+		Assert.Equal<string>(["files.example.com", "example.org"], saved.Hosts);
+		Assert.Equal<string>(["files.example.com", "example.org"], _store.Find(saved.Id)!.Hosts);
+	}
+
+	/// <summary>A credential saved by code can never be allowed on a whole top-level domain.</summary>
+	[Fact]
+	public void save_refuses_a_whole_top_level_domain()
+	{
+		ArgumentException ex = Assert.Throws<ArgumentException>(() => _store.Save(Token("Api", "abc", CredentialKind.Token, ["com"])));
+
+		Assert.StartsWith("'com' is not a website name", ex.Message, StringComparison.Ordinal);
+		Assert.Empty(_store.List());
+	}
+
+	/// <summary>A draft prints everything but its secret, so a log line or a test failure never shows it.</summary>
+	[Fact]
+	public void a_draft_never_prints_its_secret()
+	{
+		string printed = new CredentialDraft(null, "Api", CredentialKind.Token, null, "s3cret-value", Example).ToString();
+
+		Assert.DoesNotContain("s3cret-value", printed, StringComparison.Ordinal);
+		Assert.Contains("Secret = (hidden)", printed, StringComparison.Ordinal);
+		Assert.Contains("Hosts = [example.com]", printed, StringComparison.Ordinal);
+		Assert.Contains("Secret = null, Hosts = null", new CredentialDraft(null, "Api", CredentialKind.Token, null, null, null!).ToString(), StringComparison.Ordinal);
+	}
+
+	/// <summary>The bytes handed to the vault are cleared once written, so no copy of the secret lingers.</summary>
+	[Fact]
+	public void save_clears_the_bytes_it_wrote()
+	{
+		_store.Save(Token("Api", "abc", CredentialKind.Token, Example));
+
+		Assert.All(_vault.LastWriteBuffer!, b => Assert.Equal(0, b));
+		Assert.Equal("Bearer abc", Header(Assert.Single(_store.List()).Id, "https://example.com/"));
+	}
 
 	/// <summary>A credential that would not fit in one Credential Manager entry is refused.</summary>
 	[Fact]
@@ -173,25 +233,30 @@ public sealed class CredentialStoreTests : IDisposable
 
 	// ============================ FE-Buddy's GitHub token ============================
 
-	/// <summary>FE-Buddy's own GitHub requests get the chosen GitHub token's secret.</summary>
+	/// <summary>FE-Buddy's own GitHub requests get the chosen GitHub token as a Bearer header.</summary>
 	[Fact]
-	public void get_github_token_gives_a_github_tokens_secret()
+	public void authorize_github_token_adds_a_github_tokens_header()
 	{
 		CredentialInfo token = _store.Save(Token("GitHub", "ghp_abc", CredentialKind.GitHubToken, CredentialHosts.GitHubDefaults));
+		using HttpRequestMessage request = new(HttpMethod.Get, "https://api.github.com/rate_limit");
 
-		Assert.Equal("ghp_abc", _store.GetGitHubToken(token.Id));
-		Assert.Null(_store.GetGitHubToken(Guid.NewGuid()));
+		Assert.True(_store.AuthorizeGitHubToken(request, token.Id));
+		Assert.Equal("Bearer ghp_abc", $"{request.Headers.Authorization!.Scheme} {request.Headers.Authorization.Parameter}");
+		Assert.Throws<ArgumentNullException>(() => _store.AuthorizeGitHubToken(null!, token.Id));
 	}
 
-	/// <summary>A credential that is not a GitHub token for GitHub's API never gives one.</summary>
+	/// <summary>A credential that is gone, not a GitHub token, or not for GitHub's API never goes on one.</summary>
 	[Theory]
 	[InlineData(CredentialKind.GitHubToken, "example.com")]
 	[InlineData(CredentialKind.Token, "github.com")]
-	public void get_github_token_ignores_a_credential_that_does_not_qualify(CredentialKind kind, string host)
+	public void authorize_github_token_ignores_a_credential_that_does_not_qualify(CredentialKind kind, string host)
 	{
 		CredentialInfo saved = _store.Save(Token("Other", "abc", kind, [host]));
+		using HttpRequestMessage request = new(HttpMethod.Get, "https://api.github.com/rate_limit");
 
-		Assert.Null(_store.GetGitHubToken(saved.Id));
+		Assert.False(_store.AuthorizeGitHubToken(request, saved.Id));
+		Assert.False(_store.AuthorizeGitHubToken(request, Guid.NewGuid()));
+		Assert.Null(request.Headers.Authorization);
 	}
 
 	/// <summary>An entry saved while credentials could be marked for FE-Buddy's requests still reads.</summary>
@@ -200,9 +265,11 @@ public sealed class CredentialStoreTests : IDisposable
 	{
 		Guid id = Guid.NewGuid();
 		Plant(id, """{"version":1,"name":"Old","kind":"GitHubToken","hosts":["github.com"],"useForFeBuddyGitHub":true,"secret":"abc"}""");
+		using HttpRequestMessage request = new(HttpMethod.Get, "https://api.github.com/rate_limit");
 
 		Assert.Equal("Old", _store.Find(id)!.Name);
-		Assert.Equal("abc", _store.GetGitHubToken(id));
+		Assert.True(_store.AuthorizeGitHubToken(request, id));
+		Assert.Equal("abc", request.Headers.Authorization!.Parameter);
 	}
 
 	// ============================ authorize ============================
@@ -295,6 +362,8 @@ public sealed class CredentialStoreTests : IDisposable
 	[InlineData("null")]
 	[InlineData("""{"version":1,"name":"","kind":"Token","hosts":["example.com"],"secret":"abc"}""")]
 	[InlineData("""{"version":1,"name":"No secret","kind":"Token","hosts":["example.com"]}""")]
+	[InlineData("""{"version":1,"name":"Null secret","kind":"Token","hosts":["example.com"],"secret":null}""")]
+	[InlineData("""{"version":1,"name":"Odd secret","kind":"Token","hosts":["example.com"],"secret":{"text":"abc"}}""")]
 	[InlineData("""{"version":1,"name":"No hosts","kind":"Token","secret":"abc"}""")]
 	[InlineData("""{"version":1,"name":"Odd kind","kind":99,"hosts":["example.com"],"secret":"abc"}""")]
 	public void damaged_entries_are_skipped(string json)
@@ -303,9 +372,12 @@ public sealed class CredentialStoreTests : IDisposable
 		Plant(id, json);
 		_vault.Plant(CredentialStore.TargetPrefix + "not-a-guid", Encoding.UTF8.GetBytes("{}"));
 		CredentialInfo good = _store.Save(Token("Good", "abc", CredentialKind.Token, Example));
+		using HttpRequestMessage request = new(HttpMethod.Get, "https://example.com/");
 
 		Assert.Equivalent(good, Assert.Single(_store.List()));
 		Assert.Null(_store.Find(id));
+		Assert.Equal(CredentialUseResult.NotFound, _store.Authorize(request, id));
+		Assert.Null(request.Headers.Authorization);
 	}
 
 	/// <summary>The one store over Credential Manager is shared.</summary>

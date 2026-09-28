@@ -9,7 +9,10 @@ namespace FeBuddy.Core.Infrastructure.Configuration.Models;
 /// <param name="Settings">Every setting the config holds after the import, by dotted path.</param>
 /// <param name="ChangedCount">How many settings the import adds, changes or removes.</param>
 /// <param name="AppliedFolders">The folder settings the import changes: taken from the file, or cleared because the file has none.</param>
-/// <param name="SkippedFolders">The file's folders that cannot work on this PC, so this PC keeps its own; each with the reason.</param>
+/// <param name="SkippedFolders">
+/// The file's folders and files that cannot work on this PC, each with why and what happens instead:
+/// this PC keeps its own, the default is used, or - a custom alias file - it is left out.
+/// </param>
 /// <param name="KeptForThisPc">The names of this PC's own settings that the import leaves alone.</param>
 /// <param name="IgnoredKeys">Keys in the file that are never imported: PC-only state, credentials, unknown sections.</param>
 public sealed record UserConfigImportPlan(

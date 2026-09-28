@@ -195,6 +195,69 @@ public sealed class VersionCheckTests : IDisposable
 		Assert.Equal(2, callCount);
 	}
 
+	/// <summary>A check with the token that gets no answer at all is tried once more without it too.</summary>
+	[Fact]
+	public async Task version_check_token_request_throws_retries_without_it()
+	{
+		const string releasesJson = """[ { "tag_name": "v3.1.0", "prerelease": false, "draft": false } ]""";
+
+		using IDisposable token = TestCredentials.UseGitHubToken("test-token");
+		int callCount = 0;
+		using HttpClient client = new(new StubHttpHandler(request =>
+		{
+			callCount++;
+			return request.Headers.Authorization is null
+				? new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(releasesJson) }
+				: throw new HttpRequestException("connection reset");
+		}));
+
+		VersionCheckResult result = await VersionCheck.RunAsync("3.0.0", ReleaseChannel.Stable, hasInternetConnection: true, client);
+
+		Assert.True(result.CheckSucceeded);
+		Assert.Equal("3.1.0", result.LatestVersion);
+		Assert.Equal(2, callCount);
+	}
+
+	/// <summary>A token Windows Credential Manager cannot read never stops the check: it goes without it.</summary>
+	[Fact]
+	public async Task version_check_unreadable_token_checks_without_it()
+	{
+		const string releasesJson = """[ { "tag_name": "v3.1.0", "prerelease": false, "draft": false } ]""";
+
+		using IDisposable token = TestCredentials.UseUnreadableGitHubToken();
+		List<HttpRequestMessage> sent = [];
+		using HttpClient client = new(new StubHttpHandler(request =>
+		{
+			sent.Add(request);
+			return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(releasesJson) };
+		}));
+
+		VersionCheckResult result = await VersionCheck.RunAsync("3.0.0", ReleaseChannel.Stable, hasInternetConnection: true, client);
+
+		Assert.True(result.CheckSucceeded);
+		Assert.Null(Assert.Single(sent).Headers.Authorization);
+	}
+
+	/// <summary>Cancelling during the attempt with the token stops the check - it is not retried.</summary>
+	[Fact]
+	public async Task version_check_cancelled_during_the_token_attempt_is_not_retried()
+	{
+		using IDisposable token = TestCredentials.UseGitHubToken("test-token");
+		using CancellationTokenSource cts = new();
+		int callCount = 0;
+		using HttpClient client = new(new StubHttpHandler(_ =>
+		{
+			callCount++;
+			cts.Cancel();
+			throw new TaskCanceledException();
+		}));
+
+		VersionCheckResult result = await VersionCheck.RunAsync("3.0.0", ReleaseChannel.Stable, hasInternetConnection: true, client, cts.Token);
+
+		Assert.False(result.CheckSucceeded);
+		Assert.Equal(1, callCount);
+	}
+
 	/// <summary>
 	/// Drafts, releases without a tag and tags that are not strict SemVer (a four-part number
 	/// included) are skipped; a tag with or without a leading v parses; the winner's notes and URL
@@ -349,6 +412,50 @@ public sealed class VersionCheckTests : IDisposable
 		Assert.Equal(releaseTag, result.LatestVersion);
 		Assert.Equal(updateAvailable, result.UpdateAvailable);
 		Assert.Equal(ahead, result.IsAheadOfLatestRelease);
+	}
+
+	/// <summary>
+	/// Ahead of the chosen channel's latest release because the user moved to a more stable channel
+	/// while running one of its published pre-releases is said as that, not as a development build.
+	/// A development label (-dev), or an unreleased build on its own channel, is still a development build.
+	/// </summary>
+	[Theory]
+	[InlineData("3.1.0-rc.1", ReleaseChannel.Stable, "3.0.2", ReleaseChannel.ReleaseCandidate, "Running a Release Candidate pre-release ahead of the latest Stable release (v3.0.2).")]
+	[InlineData("3.1.0-beta.2", ReleaseChannel.ReleaseCandidate, "3.0.2", ReleaseChannel.Beta, "Running a Beta pre-release ahead of the latest Release Candidate release (v3.0.2).")]
+	[InlineData("3.1.0-dev", ReleaseChannel.Stable, "3.0.2", null, "Running a development build ahead of the latest Stable release (v3.0.2).")]
+	[InlineData("3.1.0-alpha.3", ReleaseChannel.Alpha, "3.1.0-alpha.2", null, "Running a development build ahead of the latest Alpha release (v3.1.0-alpha.2).")]
+	[InlineData("3.1.0", ReleaseChannel.Stable, "3.0.2", null, "Running a development build ahead of the latest Stable release (v3.0.2).")]
+	public async Task version_check_names_a_pre_release_ahead_of_a_more_stable_channel(
+		string current, ReleaseChannel channel, string releaseTag, ReleaseChannel? expectedPreRelease, string expectedMessage)
+	{
+		string releasesJson = $$"""[ { "tag_name": "{{releaseTag}}", "draft": false } ]""";
+		using HttpClient client = new(new StubHttpHandler(_ => new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(releasesJson) }));
+
+		VersionCheckResult result = await VersionCheck.RunAsync(current, channel, hasInternetConnection: true, client);
+
+		Assert.True(result.IsAheadOfLatestRelease);
+		Assert.Equal(expectedPreRelease, result.RunningPreReleaseChannel);
+		Assert.Equal(expectedMessage, result.Message);
+	}
+
+	/// <summary>
+	/// The check asks for GitHub's largest page of releases, so a long run of pre-releases cannot
+	/// hide every stable one; and the log names a channel as people read it.
+	/// </summary>
+	[Fact]
+	public async Task version_check_asks_for_100_releases_and_logs_the_channels_display_name()
+	{
+		string? url = null;
+		using HttpClient client = new(new StubHttpHandler(request =>
+		{
+			url = request.RequestUri!.ToString();
+			return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("[]") };
+		}));
+
+		await VersionCheck.RunAsync("3.0.0", ReleaseChannel.ReleaseCandidate, hasInternetConnection: true, client);
+
+		Assert.EndsWith("/releases?per_page=100", url, StringComparison.Ordinal);
+		Assert.Contains(AppLog.Entries, e => e.Message == "No comparable release found on the Release Candidate channel.");
 	}
 
 	/// <summary>

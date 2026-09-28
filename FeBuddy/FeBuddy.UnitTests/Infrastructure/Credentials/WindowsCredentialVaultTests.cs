@@ -11,13 +11,11 @@ namespace FeBuddy.UnitTests.Infrastructure.Credentials;
 /// prefix - and is removed afterwards, so the user's real credentials are never touched.
 /// </summary>
 /// <remarks>
-/// A session with no Windows sign-in behind it (some services) has no Credential Manager; the tests
-/// then stop early rather than fail, because that is the machine, not the code.
+/// A session with no Windows sign-in behind it (some services and build agents) has no Credential
+/// Manager: every test that calls it is then reported as skipped (<see cref="CredentialManagerFactAttribute"/>).
 /// </remarks>
 public sealed class WindowsCredentialVaultTests : IDisposable
 {
-	private const int NoLogonSession = 1312;
-
 	private readonly WindowsCredentialVault _vault = new();
 	private readonly string _prefix = $"FE-Buddy-Tests:{Guid.NewGuid():N}:";
 
@@ -38,16 +36,12 @@ public sealed class WindowsCredentialVaultTests : IDisposable
 	}
 
 	/// <summary>An entry written can be read, listed and removed; its bytes come back exactly.</summary>
-	[Fact]
+	[CredentialManagerFact]
 	public void write_read_enumerate_delete_round_trip()
 	{
 		byte[] secret = [0, 1, 2, 250, 255];
 
-		if (!TryWrite(_prefix + "one", "Test user", secret))
-		{
-			return;
-		}
-
+		_vault.Write(_prefix + "one", "Test user", secret);
 		_vault.Write(_prefix + "two", "Test user", []);
 
 		Assert.Equal(secret, _vault.Read(_prefix + "one"));
@@ -63,36 +57,29 @@ public sealed class WindowsCredentialVaultTests : IDisposable
 	}
 
 	/// <summary>Writing again replaces the entry.</summary>
-	[Fact]
+	[CredentialManagerFact]
 	public void write_replaces()
 	{
-		if (!TryWrite(_prefix + "entry", "Test user", [1]))
-		{
-			return;
-		}
-
+		_vault.Write(_prefix + "entry", "Test user", [1]);
 		_vault.Write(_prefix + "entry", "Test user", [2, 2]);
 
 		Assert.Equal([2, 2], _vault.Read(_prefix + "entry"));
 	}
 
 	/// <summary>Listing matches the exact prefix only, and nothing is an empty list.</summary>
-	[Fact]
+	[CredentialManagerFact]
 	public void enumerate_matches_the_exact_prefix()
 	{
 		Assert.Empty(_vault.Enumerate(_prefix));
 
-		if (!TryWrite(_prefix + "entry", "Test user", [1]))
-		{
-			return;
-		}
+		_vault.Write(_prefix + "entry", "Test user", [1]);
 
 		Assert.Empty(_vault.Enumerate(_prefix.ToUpperInvariant()));
 		Assert.Single(_vault.Enumerate(_prefix));
 	}
 
 	/// <summary>A missing entry reads as nothing.</summary>
-	[Fact]
+	[CredentialManagerFact]
 	public void read_missing_is_null() =>
 		Assert.Null(_vault.Read(_prefix + "missing"));
 
@@ -114,7 +101,7 @@ public sealed class WindowsCredentialVaultTests : IDisposable
 	}
 
 	/// <summary>A target Windows refuses (too long) surfaces as a Windows error.</summary>
-	[Fact]
+	[CredentialManagerFact]
 	public void windows_errors_surface()
 	{
 		string tooLong = _prefix + new string('x', 40_000);
@@ -122,19 +109,5 @@ public sealed class WindowsCredentialVaultTests : IDisposable
 		Assert.Throws<Win32Exception>(() => _vault.Write(tooLong, "Test user", [1]));
 		Assert.Throws<Win32Exception>(() => _vault.Read(tooLong));
 		Assert.Throws<Win32Exception>(() => _vault.Delete(tooLong));
-	}
-
-	/// <summary>Writes, or reports that this session has no Credential Manager.</summary>
-	private bool TryWrite(string target, string userName, byte[] secret)
-	{
-		try
-		{
-			_vault.Write(target, userName, secret);
-			return true;
-		}
-		catch (Win32Exception ex) when (ex.NativeErrorCode == NoLogonSession)
-		{
-			return false;
-		}
 	}
 }

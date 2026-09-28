@@ -37,6 +37,12 @@ public static class UserConfigFile
 	private const string PreviousFileName = "UserConfig.previous.json";
 	private const string BeforeImportFileName = "UserConfig.before-import.json";
 
+	/// <summary>
+	/// The most dotted parts a key may have. FE-Buddy's own keys have fewer than ten; the limit keeps
+	/// a settings file from another PC from nesting the JSON deeper than it can be written.
+	/// </summary>
+	private const int MaxKeyParts = 32;
+
 	private static readonly Lock Gate = new();
 	private static readonly Dictionary<string, string> Values = new(StringComparer.Ordinal);
 	private static readonly JsonSerializerOptions WriteOptions = new() { WriteIndented = true };
@@ -205,13 +211,22 @@ public static class UserConfigFile
 	/// the one write that is not per node, used by a settings import.
 	/// </summary>
 	/// <remarks>
-	/// The file being replaced is first copied to <see cref="BeforeImportFilePath"/>. The per-node
-	/// undo snapshots are deleted: they describe settings that no longer exist, so an "undo last
-	/// save" would otherwise put a pre-import subtree back into the imported file. Keys that
-	/// <see cref="TrySetValue"/> would refuse are dropped. The in-memory dictionary only changes
-	/// once the new file is on disk, so a failed write leaves memory and disk as they were.
+	/// <para>
+	/// The new file is written beside the old one first, then swapped in with
+	/// <see cref="File.Replace(string, string, string?)"/>, which keeps the file being replaced as
+	/// <see cref="BeforeImportFilePath"/> in the same step. So a write that fails - a full disk, say -
+	/// leaves <c>UserConfig.json</c>, and the settings in memory, exactly as they were.
+	/// </para>
+	/// <para>
+	/// Once the new file is in place, the per-node undo snapshots are deleted: they describe settings
+	/// that no longer exist, so an "undo last save" would otherwise put a pre-import subtree back into
+	/// the imported file. That, and re-reading the new file, always happen once the swap has. Keys
+	/// that <see cref="TrySetValue"/> would refuse are dropped.
+	/// </para>
 	/// </remarks>
 	/// <param name="values">Every setting the file should hold afterwards, by dotted path.</param>
+	/// <exception cref="IOException">The new file could not be written or swapped in; nothing was changed.</exception>
+	/// <exception cref="UnauthorizedAccessException">The same, for want of permission.</exception>
 	public static void ReplaceAll(IReadOnlyDictionary<string, string> values)
 	{
 		ArgumentNullException.ThrowIfNull(values);
@@ -228,22 +243,51 @@ public static class UserConfigFile
 
 		lock (Gate)
 		{
-			if (File.Exists(ConfigFilePath))
+			string incoming = ConfigFilePath + ".importing";
+
+			try
 			{
-				File.Copy(ConfigFilePath, BeforeImportFilePath, overwrite: true);
+				WriteObject(incoming, BuildTree(replacement));
+
+				if (File.Exists(ConfigFilePath))
+				{
+					File.Replace(incoming, ConfigFilePath, BeforeImportFilePath, ignoreMetadataErrors: true);
+				}
+				else
+				{
+					File.Move(incoming, ConfigFilePath);
+				}
+			}
+			catch
+			{
+				DeleteIfPresent(incoming);
+				throw;
 			}
 
-			WriteObject(ConfigFilePath, BuildTree(replacement));
-
-			if (File.Exists(PreviousFilePath))
+			if (!DeleteIfPresent(PreviousFilePath))
 			{
-				File.Delete(PreviousFilePath);
+				AppLog.Warning(LogSource, $"Could not delete '{PreviousFileName}', so Undo last save may put back a setting from before the import.");
 			}
 		}
 
 		ReadAll();
 
 		AppLog.Info(LogSource, $"Replaced every setting ({replacement.Count} values); the previous file is kept as '{BeforeImportFileName}'.");
+	}
+
+	/// <summary>Deletes a file if it is there.</summary>
+	/// <returns><see langword="false"/> when it is there and could not be deleted.</returns>
+	private static bool DeleteIfPresent(string path)
+	{
+		try
+		{
+			File.Delete(path);
+			return true;
+		}
+		catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+		{
+			return false;
+		}
 	}
 
 	/// <summary>
@@ -407,8 +451,8 @@ public static class UserConfigFile
 	}
 
 	/// <summary>
-	/// Whether <paramref name="dottedPath"/> can name a setting: not blank, and no empty segment
-	/// (no leading, trailing or doubled dot).
+	/// Whether <paramref name="dottedPath"/> can name a setting: not blank, no empty segment (no
+	/// leading, trailing or doubled dot), and at most <see cref="MaxKeyParts"/> parts.
 	/// </summary>
 	/// <param name="dottedPath">The candidate key.</param>
 	/// <returns><see langword="true"/> when the key is usable.</returns>
@@ -416,7 +460,8 @@ public static class UserConfigFile
 		!string.IsNullOrWhiteSpace(dottedPath)
 		&& !dottedPath.StartsWith('.')
 		&& !dottedPath.EndsWith('.')
-		&& !dottedPath.Contains("..", StringComparison.Ordinal);
+		&& !dottedPath.Contains("..", StringComparison.Ordinal)
+		&& dottedPath.Count(c => c == '.') < MaxKeyParts;
 
 	/// <summary>Builds a full nested JSON object from every entry in the flat dictionary.</summary>
 	internal static JsonObject BuildTree(IReadOnlyDictionary<string, string> values)

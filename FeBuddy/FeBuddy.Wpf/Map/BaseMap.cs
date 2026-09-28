@@ -44,15 +44,6 @@ public static class BaseMap
 		}
 	}
 
-	private static Brush ThemeBrush(string key, Color fallback)
-	{
-		if (Application.Current?.TryFindResource(key) is Brush brush)
-		{
-			return brush;
-		}
-
-		SolidColorBrush solid = new(fallback);
-		solid.Freeze();
-		return solid;
-	}
+	private static Brush ThemeBrush(string key, Color fallback) =>
+		Application.Current?.TryFindResource(key) as Brush ?? FrozenBrush.Of(fallback);
 }

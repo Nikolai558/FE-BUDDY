@@ -42,6 +42,14 @@ public record VersionCheckResult(
 	public IReadOnlyList<ReleaseSummary> NewerReleases { get; init; } = [];
 
 	/// <summary>
+	/// When <see cref="IsAheadOfLatestRelease"/> because the running version is a published
+	/// pre-release (an alpha, beta or release candidate) from a less stable channel than
+	/// <see cref="Channel"/> - the user moved to a more stable channel while running one - that
+	/// pre-release's channel. <see langword="null"/> otherwise, including for a development build.
+	/// </summary>
+	public ReleaseChannel? RunningPreReleaseChannel { get; init; }
+
+	/// <summary>
 	/// The <c>.msi</c> attached to the <see cref="LatestVersion"/> release, for the update window's
 	/// "Update now"; <see langword="null"/> when that release has none (older releases predate the
 	/// MSI) or the check did not complete.
@@ -82,8 +90,8 @@ public sealed record ReleaseSummary(
 /// <param name="FileName">The asset's file name, e.g. <c>FE-BUDDY-Setup.msi</c>.</param>
 /// <param name="DownloadUrl">The public download URL (<c>browser_download_url</c>).</param>
 /// <param name="AssetId">
-/// GitHub's asset id. Only used when the public URL fails and a token is set: the authenticated
-/// download goes through the releases-assets API, which is addressed by id.
+/// GitHub's asset id. Only used when a GitHub token is chosen: the download with it goes through the
+/// releases-assets API, which is addressed by id.
 /// </param>
 /// <param name="SizeBytes">The size GitHub reports, or 0 when it reports none.</param>
 public sealed record ReleaseInstaller(string FileName, string DownloadUrl, long AssetId, long SizeBytes);

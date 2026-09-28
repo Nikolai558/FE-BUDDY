@@ -40,12 +40,13 @@ namespace FeBuddy.Core.Application.Airac;
 /// <summary>
 /// The AIRAC Service: the GUI calls this once per "Run AIRAC Service". It runs each selected
 /// sub-service (Airways, Airports, Departures, Arrivals, NAVAIDs, ARTCC Boundaries, Fixes, Wx
-/// Stations, Procedures, Telephony) against one cycle's NASR data and gathers the results. Three
-/// need more than the NASR cycle: Wx Stations and Telephony read data that is not published per
-/// cycle at all - aviationweather.gov's station list and the FAA telephony pages - which the run
-/// downloads fresh every time (see <see cref="AiracSharedDataLoader"/>); Procedures also needs the
-/// selected cycle's (and the previous cycle's) FAA d-TPP Metafile (see
-/// <see cref="AiracCycleDataCache.GetDtppAsync"/>).
+/// Stations, Procedures, Telephony, vNAS Alias Upload) against one cycle's NASR data and gathers
+/// the results. Four need more than the NASR cycle: Wx Stations and Telephony read data that is
+/// not published per cycle at all - aviationweather.gov's station list and the FAA telephony
+/// pages - which the run downloads fresh every time (see <see cref="AiracSharedDataLoader"/>);
+/// Procedures also needs the selected cycle's (and the previous cycle's) FAA d-TPP Metafile (see
+/// <see cref="AiracCycleDataCache.GetDtppAsync"/>); and vNAS Alias Upload reads the user's own
+/// custom alias files, from this PC or the web (see <see cref="AliasSourceLoader"/>).
 /// </summary>
 /// <remarks>
 /// <para>
@@ -61,7 +62,10 @@ namespace FeBuddy.Core.Application.Airac;
 /// <para>
 /// Once every sub-service has run, the alias files the run wrote are checked together for
 /// commands more than one line uses (<see cref="DuplicateAliasReport"/>), and
-/// <c>Duplicate_Alias_Commands.txt</c> is written into the cycle folder.
+/// <c>Duplicate_Alias_Commands.txt</c> is written into the cycle folder. Then vNAS takes one
+/// alias file per facility, so the alias files marked for vNAS are merged - below the custom
+/// alias files when vNAS Alias Upload is selected - into <c>Upload_to_vNAS\vNAS_Alias.txt</c>
+/// (<see cref="VnasAliasFileWriter"/>).
 /// </para>
 /// </remarks>
 public static class AiracService
@@ -92,7 +96,9 @@ public static class AiracService
 	/// (awaiting an in-flight parse rather than starting a second one). When Procedures is selected
 	/// its d-TPP Metafiles come from the cache the same way; when Wx Stations or Telephony is
 	/// selected, the latest copy of its data is downloaded first (see
-	/// <see cref="AiracSharedDataLoader"/>), falling back on the last good copy.
+	/// <see cref="AiracSharedDataLoader"/>), falling back on the last good copy; and when vNAS Alias
+	/// Upload is selected, its custom alias files are read first (see <see cref="AliasSourceLoader"/>) -
+	/// one that cannot be read is left out of <c>vNAS_Alias.txt</c> with a warning.
 	/// </summary>
 	/// <param name="settings">The run's cross-cutting choices and per-sub-service settings blocks.</param>
 	/// <param name="progress">Optional per-sub-service progress for the run panel.</param>
@@ -412,12 +418,42 @@ public static class AiracService
 
 			messages.AddRange(vnasAliasResult.Messages);
 
+			// vNAS takes one alias file per facility, so uploading this one would drop the facility's own aliases.
+			if (settings.VnasAlias is null && vnasAliasResult.FilePath is not null)
+			{
+				ServiceMessage onlyFeBuddy = new(LogLevel.Warning, LogSource,
+					$"vNAS Alias Upload is not selected, so {AiracOutputPaths.VnasAliasFileName} holds only FE-Buddy's aliases. " +
+					"vNAS takes one alias file per facility, so uploading it would remove your facility's own aliases from vNAS. " +
+					"To keep them, select vNAS Alias Upload and add your facility's alias file.")
+				{ IsAdvisory = true };
+
+				messages.Add(onlyFeBuddy);
+				AppLog.Write(onlyFeBuddy.Level, onlyFeBuddy.Source, onlyFeBuddy.Text);
+			}
+
 			string summary = vnasAliasResult.FilePath is null
 				? $"{AiracOutputPaths.VnasAliasFileName} not written."
 				: $"{AiracOutputPaths.VnasAliasFileName}: {vnasAliasResult.CustomCommandCount:N0} custom command(s), " +
 					$"then {vnasAliasResult.FeBuddyCommandCount:N0} from {vnasAliasResult.FeBuddyFiles.Count} FE-Buddy alias file(s).";
 
 			progress?.Report(new AiracServiceProgress(step, summary, settings.VnasAlias is not null ? 100 : null));
+		}
+		else if (aliasFiles.Length > 0)
+		{
+			// vNAS_Alias.txt is built from the run's alias files, so one an earlier run left is out of
+			// date once this run rewrites them without writing a new one. A run that writes no alias
+			// file leaves it alone, like any other earlier file ("Overwrite files").
+			(string sentence, bool failed) = VnasAliasFileWriter.DeleteEarlierFile(outputDirectory);
+
+			if (sentence.Length > 0)
+			{
+				ServiceMessage deleted = new(failed ? LogLevel.Warning : LogLevel.Info, LogSource,
+					$"No alias file is marked for vNAS, so {AiracOutputPaths.VnasAliasFileName} was not written.{sentence}")
+				{ IsAdvisory = true };
+
+				messages.Add(deleted);
+				AppLog.Write(deleted.Level, deleted.Source, deleted.Text);
+			}
 		}
 
 		if (!anySelected)

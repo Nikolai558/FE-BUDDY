@@ -384,29 +384,39 @@ Numbered keys, one group per custom alias file (`<n>` from 1); files are merged 
 | Key | Values | Default |
 |---|---|---|
 | `Sources.<n>.FilePath` | full path of an alias file on this PC | none |
-| `Sources.<n>.Url` | `http://` or `https://` address of an alias file | none |
+| `Sources.<n>.Url` | `http://` or `https://` address of an alias file, with no sign-in written into it | none |
 | `Sources.<n>.CredentialId` | id of a saved credential (`CredentialStore`, `"N"` GUID format) to download `Url` with; only ever the id, never a secret | none |
 
 - Reads none of the keys every other AIRAC sub-service reads (it writes no GeoJSON and has no
   alias file of its own); `OutputDirectory` is accepted and ignored. Any other key, including an
   unknown field under `Sources.<n>.`, is a warning.
-- Each `<n>` needs exactly one of `FilePath` and `Url`: both or neither, a `FilePath` that is not
-  a full path, a `Url` that is not `http`/`https`, or a `CredentialId` that is not a GUID throws.
-  A `CredentialId` on a `FilePath` is ignored, with an Info message. No sources is fine (an Info
-  message) - `vNAS_Alias.txt` then holds only FE-Buddy's aliases. The GUI tab is only invalid when
-  there is nothing to merge at all: no source and no FE-Buddy alias file marked for vNAS.
+- Each `<n>` needs exactly one of `FilePath` and `Url`. These throw: both; neither, when the
+  group has a `CredentialId` (a group with nothing at all is skipped); a `FilePath` that is not a
+  full path; a `Url` that is not `http`/`https`, or that has a sign-in written into it - a user name
+  and password, or a token such as `?token=` (`UrlSecrets`; the message never repeats the address);
+  a `CredentialId` that is not a GUID. A `CredentialId` on a `FilePath` is ignored, with an Info
+  message. No sources is fine (an Info message) - `vNAS_Alias.txt` then holds only FE-Buddy's
+  aliases. The GUI tab is only invalid when there is nothing to merge at all: no source and no
+  FE-Buddy alias file marked for vNAS.
 - `AliasSourceLoader` reads every source before the sub-services run, with a 30-second timeout
   each. A GitHub file address (`github.com/{owner}/{repo}/blob|raw/{branch}/{path}`,
-  `raw.githubusercontent.com/{owner}/{repo}/{branch}/{path}` or `…/refs/heads/{branch}/{path}`) is
+  `raw.githubusercontent.com/{owner}/{repo}/{branch}/{path}`, and either with `refs/heads/{branch}`
+  or `refs/tags/{tag}` - GitHub's own Raw button gives `…/raw/refs/heads/{branch}/{path}`) is
   fetched through `https://api.github.com/repos/{owner}/{repo}/contents/{path}?ref={branch}` with
-  `Accept: application/vnd.github.raw` (`GitHubFileUrl`), so a private repository works with a
-  token; a GitHub repository or folder page is refused. Any other address is fetched as given.
+  `Accept: application/vnd.github.raw` (`GitHubFileUrl`; the branch is escaped for the query), so
+  a private repository works with a token; a GitHub repository or folder page is refused. Any other
+  address is fetched as given.
 - The credential is applied only through `CredentialStore.Authorize`. When it is not on this PC,
   the address is not `https`, or the credential is not allowed on that website, the file is not
-  downloaded at all - never anonymously instead. 401, 403 (including GitHub's anonymous rate limit
-  and a fine-grained token without Contents: Read-only), 404, an HTML page instead of a file, a
-  file with no alias commands, an unreachable site and a timeout each get their own message.
-- A source that can't be read never stops the run: it is left out of `vNAS_Alias.txt` with an
+  downloaded at all - never anonymously instead. An `http://github.com` file address may still
+  carry a credential, since the download goes to GitHub's API over https. 401; 403 (GitHub's
+  hourly limit without a token, a short-term limit with `Retry-After`, a token not authorized for
+  an organization's SSO, and a fine-grained token without Contents: Read-only); 429; 404; an HTML
+  page instead of a file; a download that is not readable text; a file with no alias commands; an
+  unreachable site; a timeout; and a Credential Manager that cannot be read each get their own
+  message.
+- A source that can't be read never stops the run, and the loader never throws for one - only
+  cancelling does: it is left out of `vNAS_Alias.txt` with an
   advisory warning, and the file is written from the rest. For the file's layout see
   [Architecture](Architecture.md#a-run-end-to-end); for the user's view, the
   [user guide](../Users/User-Guide.md#vnas-alias-upload-tab).

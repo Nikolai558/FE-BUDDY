@@ -15,15 +15,79 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
 
 ## 3.0.0-alpha.1
 - FE-BUDDY 3.0 is a from-scratch rewrite with a new interface. This first alpha is for testers:
-  expect rough edges, and keep 2.x handy - not every 2.x tool is in 3.0 yet
+  expect rough edges, and keep 2.x handy. Not yet in 3.0: VRC `.sct2`, vERAM GeoMap and vSTARS
+  XML output, ISR aliases and the combined all-SID/all-STAR files
   ([Do I still need 2.x?](https://github.com/Nikolai558/FE-BUDDY/blob/v3-development/docs/Users/FAQ-and-Troubleshooting.md#do-i-still-need-fe-buddy-2x)).
-- New AIRAC Service: downloads the FAA's data for a cycle and builds GeoJSON video maps and alias
-  files for your facility, limited to your Region of Interest and styled the way you choose.
-  - Sub-services: Airports, Airways, Departures, Arrivals, NAVAIDs, ARTCC Boundaries, Fixes,
-    Wx Stations, Procedures (d-TPP change briefings), Telephony and vNAS Alias Upload.
-  - Output goes into one `AIRAC_<cycle>` folder, with an `Upload_to_vNAS` folder ready to upload.
-- New File Conversions: DAT, SCT2 and vERAM files to GeoJSON.
-- New Map: check GeoJSON files, draw and edit your Region of Interest, and view live AIRAC layers.
+
+### Output
+- Everything for a cycle goes into one `AIRAC_<cycle>` folder: `Aliases`, `Geojson`,
+  `Publication_Docs` and `Upload_to_vNAS`. File names say what they hold, e.g.
+  `Airports_Symbols.geojson`, `Airports.txt` (was `ISR_APT.txt`), `Navaids.txt` (was `ISR_NAVAID.txt`).
+- Every output has options: pick which files to write, how to split them, and what goes in them.
+- Maps can be limited to a Region of Interest (draw it on the Map).
+- Mark any file for vNAS and it goes into `Upload_to_vNAS`, with CRC-ERAM style defaults you set
+  (brightness group, filters, line style, symbol, text size). Marked alias files and your own custom alias
+  files are combined into one `vNAS_Alias.txt`, each under a heading naming where it came from.
+- Coordinates are rounded rather than cut off, to 6 decimals by default (adjustable). Features can
+  also carry extra information for your own tools (`feb.*` properties) if you turn it on.
+
+### Aliases
+- Airport (`.aptLAX`), NAVAID (`.navABQ`) and telephony (`.idAAL`) commands show a labelled,
+  multi-line card. Airports add the facility type, longest runway, elevation, pattern altitude,
+  airspace class, FSS, CTAF and weather frequency.
+- Chart recall commands use the full runway (`.laxI24Lc` for RWY 24L; 2.x wrote `.LAXI4LC`, so
+  different runways could share one command), and visual approaches are spelled out per runway
+  (`.sfovQUIETBRIDGE28Rc`).
+- An identifier used by more than one NAVAID or airline is one command showing every match,
+  instead of duplicate commands. The duplicate-command report lists each duplicate's file and ARTCC.
+- NAVAIDs cover every FAA type, including VOTs, fan markers and marine NDBs (untick the ones you
+  don't want), and leave out NAVAIDs the FAA lists as shut down.
+- Telephony adds U.S. special call signs (e.g. `.idNASA`).
+- Departure and arrival fix commands are split into `Departures.txt` and `Arrivals.txt`, and each
+  airport's list has only the fixes of procedures that serve it.
+- The airway alias file can cover every FAA airway or only those in your Region of Interest.
+
+### Video maps (GeoJSON)
+- Airways: one symbol and one label per point, instead of one per airway where airways share a
+  point (on a low-altitude map, about half the labels were stacked duplicates).
+  - Split them High / Low (airways with no published altitude get their own `Other` file) or one
+    file per designation (J, V, Q, T, ...), and leave out designations you don't need.
+  - The DME-cutoff airway files are replaced by the Buffer Airway Waypoints option: lines stop short
+    of each waypoint so they don't run through the symbols.
+- Runways: draws runways 2.x left out (about a third more in a typical area), including water
+  runways.
+- Airport labels show the FAA ID (`BFL`) instead of the ICAO ID (`KBFL`), and names with `&` are
+  no longer written as `&amp;`.
+- NAVAIDs: one map for every type, or one map per type, replacing the separate VOR and NDB maps.
+- Fixes: one map, or split by fix use (waypoint, reporting point, VFR waypoint, ...), by chart,
+  or by chosen chart + fix use combinations.
+- ARTCC boundaries: split High / Low, High / Low / Unlimited, or one file per ARTCC and altitude
+  (so your own ARTCC can be styled apart from its neighbours), for every ARTCC or only the ones
+  you pick.
+- Wx station labels no longer end in a stray space.
+
+### SIDs and STARs
+- Each airport's procedures are in their own folder (`Geojson\<ARTCC>\<airport>\`), and each
+  procedure can have lines, fix symbols and fix labels (2.x drew lines only).
+- Pick which procedures to write: by ARTCC, by Region of Interest, and only those amended recently
+  if you like. Obstacle departures are optional.
+- Each segment is drawn once. 2.x repeated segments that transitions share, drawing about half
+  again as many lines.
+- Each airport's STAR map has only its own runway transitions (2.x also drew other airports',
+  e.g. SNA's DSNEE drew LGB's).
+
+### Procedure changes
+- One `Procedure_Changes.md` for all your facilities, with New, Changed and Deleted sections and a
+  link to every chart (and to the previous cycle's chart for deletions). A STAR serving several
+  airports is listed once, and continuation pages are folded into their chart.
+- Choose what it covers: whole facilities, airports in your Region of Interest, chosen airports or
+  single procedures, and which chart types (minimums, hot spots and LAHSO charts are off by default).
+- Catches deleted charts 2.x missed.
+- `Procedures.json` has the same information for other tools, with the fields you choose.
+
+### Everything else
+- File Conversions: DAT, SCT2 and vERAM files to GeoJSON.
+- Map: check GeoJSON files, draw and edit your Region of Interest, and view the AIRAC layers.
 - Settings: import and export your settings, pick your update channel, and store a GitHub token
   securely in Windows Credential Manager (with a step-by-step token guide).
 - The update window shows the notes for every release you are missing, then downloads and runs

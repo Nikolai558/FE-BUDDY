@@ -26,8 +26,10 @@ namespace FeBuddy.Core.Infrastructure.Configuration;
 /// <para>
 /// An import makes this PC's settings match the file's exactly: settings the file leaves out go
 /// back to their defaults, folders included. Only three things are kept: this PC's own state (the
-/// update channel and the like), which is never touched; this PC's folder wherever the file's
-/// folder cannot work here (<see cref="Plan(UserConfigPackage)"/> says which); and this PC's
+/// update channel and the like), which is never touched - a setting in the file that would nest
+/// under one of these, or they under it, is ignored; this PC's folder wherever the file's folder
+/// cannot work here (a custom alias file that is not on this PC is left out instead;
+/// <see cref="Plan(UserConfigPackage)"/> says which); and this PC's
 /// credential choice for a setting the import leaves unchanged - a custom alias file at the same
 /// address keeps its credential, any other loses it. Folders are made this user's
 /// (<see cref="PortablePathTokens.Localize(string)"/>), so the other user's name is never
@@ -54,8 +56,9 @@ public static class UserConfigTransfer
 	private static readonly JsonSerializerOptions WriteOptions = new() { WriteIndented = true };
 
 	/// <summary>Writes every saved setting that can leave this PC to <paramref name="path"/>.</summary>
-	/// <param name="path">The file to write. An existing file is replaced.</param>
+	/// <param name="path">The file to write. An existing file is replaced - but never one of FE-Buddy's own settings files.</param>
 	/// <returns>What was written.</returns>
+	/// <exception cref="UserConfigTransferException"><paramref name="path"/> is one of FE-Buddy's own settings files.</exception>
 	public static UserConfigExportResult Export(string path) =>
 		Export(path, UserConfigFile.SnapshotValues(), AppVersion.Current, DateTimeOffset.UtcNow, PortablePathTokens.ForCurrentUser());
 
@@ -66,6 +69,7 @@ public static class UserConfigTransfer
 	/// <param name="exportedUtc">When the export happened.</param>
 	/// <param name="tokens">How to tokenize folders.</param>
 	/// <returns>What was written.</returns>
+	/// <exception cref="UserConfigTransferException"><paramref name="path"/> is one of FE-Buddy's own settings files.</exception>
 	internal static UserConfigExportResult Export(
 		string path,
 		IReadOnlyDictionary<string, string> values,
@@ -74,6 +78,15 @@ public static class UserConfigTransfer
 		PortablePathTokens tokens)
 	{
 		ArgumentException.ThrowIfNullOrWhiteSpace(path);
+
+		// An export over UserConfig.json would turn the live settings into an export file.
+		string target = Path.GetFullPath(path);
+		string[] ownFiles = [UserConfigFile.ConfigFilePath, UserConfigFile.PreviousFilePath, UserConfigFile.BeforeImportFilePath];
+
+		if (ownFiles.Any(own => string.Equals(Path.GetFullPath(own), target, StringComparison.OrdinalIgnoreCase)))
+		{
+			throw new UserConfigTransferException($"'{Path.GetFileName(path)}' is one of FE-Buddy's own settings files. Export to a different file.");
+		}
 
 		Dictionary<string, string> exported = new(StringComparer.Ordinal);
 		int folders = 0;
@@ -160,18 +173,22 @@ public static class UserConfigTransfer
 	/// <exception cref="UserConfigTransferException">The text is not a settings file this version can import.</exception>
 	internal static UserConfigPackage Parse(string json, string fileName)
 	{
-		JsonNode? root;
-
 		try
 		{
-			root = JsonNode.Parse(json);
+			return ParseJson(json, fileName);
 		}
-		catch (JsonException ex)
+		catch (Exception ex) when (ex is JsonException or InvalidOperationException or ArgumentException)
 		{
+			// Some damage only shows while the file is read through, not when it is parsed: a name
+			// used twice in one object, text that is not valid Unicode, and the like.
 			throw new UserConfigTransferException($"'{fileName}' is not an FE-Buddy settings file: it is not valid JSON.", ex);
 		}
+	}
 
-		if (root is not JsonObject obj)
+	/// <summary><see cref="Parse"/> itself; any JSON damage it finds is thrown as the reader throws it.</summary>
+	private static UserConfigPackage ParseJson(string json, string fileName)
+	{
+		if (JsonNode.Parse(json) is not JsonObject obj)
 		{
 			throw NotASettingsFile(fileName);
 		}
@@ -255,6 +272,8 @@ public static class UserConfigTransfer
 			}
 		}
 
+		HashSet<string> keptForPc = [.. settings.Keys];
+
 		// A folder the file leaves out is cleared like any other setting, so this PC's folders are walked too.
 		SortedSet<string> folderKeys = new(
 			current.Keys.Where(key => UserConfigPortability.Classify(key) == ConfigKeyScope.MachinePath),
@@ -262,7 +281,9 @@ public static class UserConfigTransfer
 
 		foreach (KeyValuePair<string, string> entry in package.Values.OrderBy(e => e.Key, StringComparer.Ordinal))
 		{
-			ConfigKeyScope scope = UserConfigFile.IsValidKey(entry.Key)
+			// A key nested under one this PC keeps, or one this PC's kept key nests under, would
+			// overwrite it when the file is written: General.UpdateChannel.X would wipe the channel.
+			ConfigKeyScope scope = UserConfigFile.IsValidKey(entry.Key) && !Overlaps(entry.Key, keptForPc)
 				? UserConfigPortability.Classify(entry.Key)
 				: ConfigKeyScope.Local;
 
@@ -328,15 +349,17 @@ public static class UserConfigTransfer
 		AppLog.Info(
 			LogSource,
 			$"Imported settings from '{plan.Package.FileName}': {plan.ChangedCount} changed, "
-			+ $"{plan.AppliedFolders.Count} folders taken, {plan.SkippedFolders.Count} folders kept, {plan.IgnoredKeys.Count} entries ignored.");
+			+ $"{plan.AppliedFolders.Count} folders taken, {plan.SkippedFolders.Count} folders or files not taken, {plan.IgnoredKeys.Count} entries ignored.");
 	}
 
 	/// <summary>
 	/// Matches one folder setting to the file's. The file's folder, made this user's, is taken when
 	/// it works here: an output folder needs only its drive (FE-Buddy creates the folder when it
 	/// writes), a folder FE-Buddy reads from must exist, and so must a file (a custom alias file).
-	/// When it cannot work here, this PC keeps its own and the folder is listed as skipped. A folder
-	/// the file does not set goes back to the default.
+	/// When it cannot work here, it is listed as skipped, saying what happens instead: this PC keeps
+	/// its own folder, or the default when it has none; a custom alias file - one entry in a numbered
+	/// list, where this PC's entry at the same number is a different file - is left out. A folder the
+	/// file does not set goes back to the default.
 	/// </summary>
 	private static void PlanFolder(
 		string key,
@@ -366,32 +389,64 @@ public static class UserConfigTransfer
 
 		bool isFile = UserConfigPortability.IsFile(key);
 
+		// A token stands for this user's own Desktop, Documents or profile, which stays theirs even when
+		// Windows keeps it on a network share (folder redirection). Any other network path is refused.
+		bool isOnThisPc = PortablePathTokens.StartsWithToken(packaged) ? Path.IsPathFullyQualified(folder) : IsLocalDrivePath(folder);
+
 		string? problem =
-			!IsLocalDrivePath(folder) ? (isFile ? "is not a file on a drive of this PC" : "is not a folder on a drive of this PC")
+			!isOnThisPc ? (isFile ? "is not a file on a drive of this PC" : "is not a folder on a drive of this PC")
 			: isFile ? (fileExists(folder) ? null : "is not found on this PC")
 			: isOutput ? (directoryExists(Path.GetPathRoot(folder)!) ? null : "is on a drive this PC does not have")
 			: directoryExists(folder) ? null : "is not found on this PC";
 
 		if (problem is not null)
 		{
-			// Nothing here to match it with: keep this PC's own folder, if it has one.
-			if (mine is not null)
+			string instead;
+
+			if (IsListEntry(key))
+			{
+				instead = "so it is left out";
+			}
+			else if (!string.IsNullOrWhiteSpace(mine))
 			{
 				settings[key] = mine;
+				instead = isFile ? "so this PC's file is kept" : "so this PC's folder is kept";
+			}
+			else
+			{
+				instead = "so the default is used";
 			}
 
-			skipped.Add(new ImportedFolder(key, label, folder, problem));
+			skipped.Add(new ImportedFolder(key, label, folder, $"{problem}, {instead}"));
+			return;
+		}
+
+		// The same folder written differently (D:\feb, D:\FEB) is not a change.
+		if (string.Equals(mine, folder, StringComparison.OrdinalIgnoreCase))
+		{
+			settings[key] = mine!;
 			return;
 		}
 
 		settings[key] = folder;
 
-		if (!string.Equals(mine, folder, StringComparison.OrdinalIgnoreCase))
-		{
-			string? note = isOutput && !directoryExists(folder) ? "created when FE-Buddy first writes to it" : null;
-			applied.Add(new ImportedFolder(key, label, folder, note));
-		}
+		string? note = isOutput && !directoryExists(folder) ? "created when FE-Buddy first writes to it" : null;
+		applied.Add(new ImportedFolder(key, label, folder, note));
 	}
+
+	/// <summary>Whether <paramref name="key"/> is one entry of a numbered list, such as <c>Sources.2.FilePath</c>.</summary>
+	private static bool IsListEntry(string key)
+	{
+		string[] segments = key.Split('.');
+		return segments.Length >= 2 && segments[^2].Length > 0 && segments[^2].All(char.IsAsciiDigit);
+	}
+
+	/// <summary>
+	/// Whether <paramref name="key"/> is nested under one of <paramref name="kept"/>, or one of them
+	/// under it - so writing both would make one replace the other.
+	/// </summary>
+	private static bool Overlaps(string key, HashSet<string> kept) =>
+		kept.Any(k => key.StartsWith(k + ".", StringComparison.Ordinal) || k.StartsWith(key + ".", StringComparison.Ordinal));
 
 	/// <summary>
 	/// Whether the import leaves every setting beside <paramref name="key"/> - under the same node,

@@ -215,6 +215,10 @@ public sealed class UserConfigTransferTests : IDisposable
 	[InlineData("""{ "format": "FE-Buddy.UserConfig", "formatVersion": 1 }""", "has no settings")]
 	[InlineData("""{ "format": "FE-Buddy.UserConfig", "formatVersion": 99, "appVersion": "v9.0.0", "settings": {} }""", "FE-Buddy v9.0.0, which is newer")]
 	[InlineData("""{ "format": "FE-Buddy.UserConfig", "formatVersion": 99, "settings": {} }""", "a newer FE-Buddy")]
+	[InlineData("""{ "General": { "UpdateChannel": "Beta", "UpdateChannel": "Alpha" } }""", "not valid JSON")]
+	[InlineData("""{ "format": "FE-Buddy.UserConfig", "formatVersion": 1, "format": "again", "settings": {} }""", "not valid JSON")]
+	[InlineData("""{ "General": { "PrettyPrintGeojson": "\uD800" } }""", "not valid JSON")]
+	[InlineData("""{ "format": "FE-Buddy.UserConfig", "formatVersion": 1, "settings": { "General": { "A": "\uDC00x" } } }""", "not valid JSON")]
 	public void parse_refuses_what_it_cannot_import(string json, string expectedMessage)
 	{
 		UserConfigTransferException ex = Assert.Throws<UserConfigTransferException>(() => UserConfigTransfer.Parse(json, "x.json"));
@@ -281,6 +285,50 @@ public sealed class UserConfigTransferTests : IDisposable
 
 		// Only settings FE-Buddy has a name for are listed; the unknown Window section is kept but not named.
 		Assert.Equal<string>(["News read status", "Update channel"], plan.KeptForThisPc);
+	}
+
+	/// <summary>
+	/// A key in the file that would nest under one this PC keeps, or one this PC keeps would nest
+	/// under, is ignored - writing both would make one replace the other.
+	/// </summary>
+	[Fact]
+	public void plan_ignores_a_key_that_would_overwrite_one_this_pc_keeps()
+	{
+		Dictionary<string, string> current = new()
+		{
+			[UserConfigKeys.UpdateChannel] = "Beta",
+			[UserConfigKeys.FeBuddyGitHubCredentialId] = "0f8fad5bd9cb469fa16570867728950e",
+		};
+
+		UserConfigImportPlan plan = UserConfigTransfer.Plan(
+			Package(new()
+			{
+				[UserConfigKeys.UpdateChannel + ".Extra"] = "x",
+				["General.FeBuddyGitHub"] = "y",
+				[ArtccKey] = "ZOB",
+			}),
+			current,
+			Bob,
+			_ => true);
+
+		Assert.Equal("Beta", plan.Settings[UserConfigKeys.UpdateChannel]);
+		Assert.Equal("0f8fad5bd9cb469fa16570867728950e", plan.Settings[UserConfigKeys.FeBuddyGitHubCredentialId]);
+		Assert.Equal("ZOB", plan.Settings[ArtccKey]);
+		Assert.Contains(UserConfigKeys.UpdateChannel + ".Extra", plan.IgnoredKeys);
+		Assert.Contains("General.FeBuddyGitHub", plan.IgnoredKeys);
+	}
+
+	/// <summary>A key with more parts than any setting has is ignored, so the file can always be written.</summary>
+	[Fact]
+	public void plan_ignores_a_key_nested_too_deep_to_write()
+	{
+		string deep = "General." + string.Join('.', Enumerable.Repeat("a", 70));
+
+		UserConfigImportPlan plan = UserConfigTransfer.Plan(Package(new() { [deep] = "x", [ArtccKey] = "ZOB" }), new Dictionary<string, string>(), Bob, _ => true);
+
+		Assert.Contains(deep, plan.IgnoredKeys);
+		UserConfigTransfer.Apply(plan);
+		Assert.Equal("ZOB", UserConfigFile.GetValue(ArtccKey));
 	}
 
 	/// <summary>Importing a file that matches this PC changes nothing.</summary>
@@ -373,12 +421,12 @@ public sealed class UserConfigTransferTests : IDisposable
 			f =>
 			{
 				Assert.Equal(DatFolderKey, f.Key);
-				Assert.Equal("is not found on this PC", f.Note);
+				Assert.Equal("is not found on this PC, so this PC's folder is kept", f.Note);
 			},
 			f =>
 			{
 				Assert.Equal(SctFolderKey, f.Key);
-				Assert.Equal("is not a folder on a drive of this PC", f.Note);
+				Assert.Equal("is not a folder on a drive of this PC, so this PC's folder is kept", f.Note);
 			});
 
 		Assert.DoesNotContain(lookedUp, p => p.StartsWith(@"\\", StringComparison.Ordinal));
@@ -394,7 +442,7 @@ public sealed class UserConfigTransferTests : IDisposable
 			Package(new() { [UserConfigKeys.DefaultOutputDirectory] = @"Q:\Out" }), current, Bob, path => path != @"Q:\");
 
 		Assert.Equal(@"E:\Mine", plan.Settings[UserConfigKeys.DefaultOutputDirectory]);
-		Assert.Equal("is on a drive this PC does not have", Assert.Single(plan.SkippedFolders).Note);
+		Assert.Equal("is on a drive this PC does not have, so this PC's folder is kept", Assert.Single(plan.SkippedFolders).Note);
 		Assert.False(plan.HasChanges);
 	}
 
@@ -420,19 +468,23 @@ public sealed class UserConfigTransferTests : IDisposable
 		Assert.DoesNotContain(plan.Settings.Values, v => v.Contains("alice", StringComparison.OrdinalIgnoreCase));
 	}
 
-	/// <summary>A folder the file shares with this PC's current value is taken quietly, not listed as applied.</summary>
+	/// <summary>
+	/// A folder the file shares with this PC, however either writes it, stays exactly as this PC has
+	/// it: not listed as applied, and not counted as a change.
+	/// </summary>
 	[Fact]
-	public void plan_does_not_list_a_folder_that_is_already_set()
+	public void plan_does_not_list_or_count_a_folder_that_is_already_set()
 	{
 		Dictionary<string, string> current = new() { [DatFolderKey] = @"d:\vatsim\dat" };
 
 		UserConfigImportPlan plan = UserConfigTransfer.Plan(Package(new() { [DatFolderKey] = @"D:\VATSIM\DAT" }), current, Bob, _ => true);
 
 		Assert.Empty(plan.AppliedFolders);
-		Assert.Equal(@"D:\VATSIM\DAT", plan.Settings[DatFolderKey]);
+		Assert.Equal(@"d:\vatsim\dat", plan.Settings[DatFolderKey]);
+		Assert.False(plan.HasChanges);
 	}
 
-	/// <summary>A relative folder or a bare drive letter is not a full path, so it is skipped.</summary>
+	/// <summary>A relative folder or a bare drive letter is not a full path, so it is skipped - and with none on this PC, the default is used.</summary>
 	[Theory]
 	[InlineData(@"VATSIM\DAT")]
 	[InlineData("D:")]
@@ -444,7 +496,38 @@ public sealed class UserConfigTransferTests : IDisposable
 		UserConfigImportPlan plan = UserConfigTransfer.Plan(
 			Package(new() { [DatFolderKey] = folder }), new Dictionary<string, string>(), Bob, _ => true);
 
-		Assert.Equal("is not a folder on a drive of this PC", Assert.Single(plan.SkippedFolders).Note);
+		Assert.Equal("is not a folder on a drive of this PC, so the default is used", Assert.Single(plan.SkippedFolders).Note);
+		Assert.False(plan.Settings.ContainsKey(DatFolderKey));
+	}
+
+	/// <summary>
+	/// The user's own Desktop or Documents stays theirs when Windows keeps it on a network share
+	/// (folder redirection), so a folder in it is taken; any other network path is still refused.
+	/// </summary>
+	[Fact]
+	public void plan_takes_the_users_own_folders_when_they_are_redirected_to_a_share()
+	{
+		PortablePathTokens redirected = new(
+		[
+			(PortablePathTokens.DesktopToken, @"\\files\home\bob\Desktop"),
+			(PortablePathTokens.UserProfileToken, @"C:\Users\bob"),
+		]);
+
+		UserConfigImportPlan plan = UserConfigTransfer.Plan(
+			Package(new()
+			{
+				[UserConfigKeys.DefaultOutputDirectory] = @"%DESKTOP%\FEB",
+				[DatFolderKey] = @"%DESKTOP%\DAT",
+				[SctFolderKey] = @"\\files\home\bob\Desktop\SCT",
+			}),
+			new Dictionary<string, string>(),
+			redirected,
+			path => path is @"\\files\home" or @"\\files\home\bob\Desktop\DAT");
+
+		Assert.Equal(@"\\files\home\bob\Desktop\FEB", plan.Settings[UserConfigKeys.DefaultOutputDirectory]);
+		Assert.Equal(@"\\files\home\bob\Desktop\DAT", plan.Settings[DatFolderKey]);
+		Assert.False(plan.Settings.ContainsKey(SctFolderKey));
+		Assert.Equal(SctFolderKey, Assert.Single(plan.SkippedFolders).Key);
 	}
 
 	/// <summary>A drive path written with forward slashes is still a drive path.</summary>
@@ -458,7 +541,10 @@ public sealed class UserConfigTransferTests : IDisposable
 		Assert.Empty(plan.SkippedFolders);
 	}
 
-	/// <summary>A custom alias file is taken, made this user's, only when that file is on this PC.</summary>
+	/// <summary>
+	/// A custom alias file is taken, made this user's, only when that file is on this PC. One that is
+	/// not is left out, never swapped for this PC's entry at the same number, which is another file.
+	/// </summary>
 	[Fact]
 	public void plan_takes_a_file_only_when_it_exists_here()
 	{
@@ -479,12 +565,15 @@ public sealed class UserConfigTransferTests : IDisposable
 			fileExists: path => path == @"C:\Users\bob\Documents\ZOB-Alias.txt");
 
 		Assert.Equal(@"C:\Users\bob\Documents\ZOB-Alias.txt", plan.Settings[Found]);
-		Assert.Equal(@"C:\Mine\Alias.txt", plan.Settings[Missing]);
+		Assert.False(plan.Settings.ContainsKey(Missing));
 		Assert.False(plan.Settings.ContainsKey(Remote));
 
 		Assert.Equal("Custom alias file 1", Assert.Single(plan.AppliedFolders).Label);
 		Assert.Equal(
-			[("Custom alias file 2", "is not found on this PC"), ("Custom alias file 3", "is not a file on a drive of this PC")],
+			[
+				("Custom alias file 2", "is not found on this PC, so it is left out"),
+				("Custom alias file 3", "is not a file on a drive of this PC, so it is left out"),
+			],
 			plan.SkippedFolders.Select(f => (f.Label, f.Note)));
 	}
 
@@ -575,6 +664,90 @@ public sealed class UserConfigTransferTests : IDisposable
 
 		JsonNode backup = JsonNode.Parse(File.ReadAllText(UserConfigFile.BeforeImportFilePath))!;
 		Assert.Equal("ZNY", backup["Services"]!["AiracService"]!["UserArtccId"]!.GetValue<string>());
+	}
+
+	/// <summary>
+	/// A write that fails - here, UserConfig.json held open by another program - changes nothing: the
+	/// file on disk, the settings in memory, and no half-written file is left behind.
+	/// </summary>
+	[Fact]
+	public void apply_that_cannot_write_changes_nothing()
+	{
+		UserConfigFile.TrySetValue(ArtccKey, "ZNY");
+		UserConfigFile.Write();
+		string before = File.ReadAllText(UserConfigFile.ConfigFilePath);
+
+		UserConfigImportPlan plan = UserConfigTransfer.Plan(Package(new() { [ArtccKey] = "ZOB" }));
+
+		using (File.Open(UserConfigFile.ConfigFilePath, FileMode.Open, FileAccess.Read, FileShare.None))
+		{
+			Assert.ThrowsAny<IOException>(() => UserConfigTransfer.Apply(plan));
+		}
+
+		Assert.Equal(before, File.ReadAllText(UserConfigFile.ConfigFilePath));
+		Assert.Equal("ZNY", UserConfigFile.GetValue(ArtccKey));
+		Assert.Empty(Directory.GetFiles(UserConfigFile.Directory, "*.importing"));
+	}
+
+	/// <summary>
+	/// Once the new file is in place the import stands, even if the undo snapshots cannot be cleared:
+	/// that is only logged.
+	/// </summary>
+	[Fact]
+	public void apply_that_cannot_clear_the_undo_snapshot_still_imports()
+	{
+		UserConfigFile.TrySetValue(ArtccKey, "ZNY");
+		UserConfigFile.Save("Services");
+		Assert.True(File.Exists(UserConfigFile.PreviousFilePath));
+
+		using (File.Open(UserConfigFile.PreviousFilePath, FileMode.Open, FileAccess.Read, FileShare.None))
+		{
+			UserConfigTransfer.Apply(UserConfigTransfer.Plan(Package(new() { [ArtccKey] = "ZOB" })));
+		}
+
+		Assert.Equal("ZOB", UserConfigFile.GetValue(ArtccKey));
+		Assert.Contains(AppLog.Entries, e => e.Message.StartsWith("Could not delete 'UserConfig.previous.json'", StringComparison.Ordinal));
+	}
+
+	/// <summary>A second import keeps the file from just before it, replacing the first import's backup.</summary>
+	[Fact]
+	public void apply_twice_keeps_the_latest_file_as_the_backup()
+	{
+		UserConfigFile.TrySetValue(ArtccKey, "ZNY");
+		UserConfigFile.Write();
+
+		UserConfigTransfer.Apply(UserConfigTransfer.Plan(Package(new() { [ArtccKey] = "ZOB" })));
+		UserConfigTransfer.Apply(UserConfigTransfer.Plan(Package(new() { [ArtccKey] = "ZAU" })));
+
+		Assert.Equal("ZAU", UserConfigFile.GetValue(ArtccKey));
+		JsonNode backup = JsonNode.Parse(File.ReadAllText(UserConfigFile.BeforeImportFilePath))!;
+		Assert.Equal("ZOB", backup["Services"]!["AiracService"]!["UserArtccId"]!.GetValue<string>());
+	}
+
+	/// <summary>An import into a PC with no settings file yet writes one.</summary>
+	[Fact]
+	public void apply_with_no_file_yet_writes_one()
+	{
+		UserConfigTransfer.Apply(UserConfigTransfer.Plan(Package(new() { [ArtccKey] = "ZOB" })));
+
+		Assert.Equal("ZOB", UserConfigFile.GetValue(ArtccKey));
+		Assert.False(File.Exists(UserConfigFile.BeforeImportFilePath));
+	}
+
+	/// <summary>An export never replaces FE-Buddy's own settings files.</summary>
+	[Fact]
+	public void export_refuses_fe_buddys_own_settings_files()
+	{
+		UserConfigFile.TrySetValue(ArtccKey, "ZOB");
+		UserConfigFile.Write();
+
+		foreach (string own in new[] { UserConfigFile.ConfigFilePath, UserConfigFile.PreviousFilePath, UserConfigFile.BeforeImportFilePath })
+		{
+			UserConfigTransferException ex = Assert.Throws<UserConfigTransferException>(() => UserConfigTransfer.Export(own.ToUpperInvariant()));
+			Assert.EndsWith("is one of FE-Buddy's own settings files. Export to a different file.", ex.Message, StringComparison.Ordinal);
+		}
+
+		Assert.Equal("ZOB", JsonNode.Parse(File.ReadAllText(UserConfigFile.ConfigFilePath))!["Services"]!["AiracService"]!["UserArtccId"]!.GetValue<string>());
 	}
 
 	/// <summary>Export on one PC, import on another: the facility setup arrives and the folder follows the new user.</summary>

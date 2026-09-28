@@ -415,6 +415,50 @@ public sealed class VersionCheckTests : IDisposable
 	}
 
 	/// <summary>
+	/// Ahead of the chosen channel's latest release because the user moved to a more stable channel
+	/// while running one of its published pre-releases is said as that, not as a development build.
+	/// A development label (-dev), or an unreleased build on its own channel, is still a development build.
+	/// </summary>
+	[Theory]
+	[InlineData("3.1.0-rc.1", ReleaseChannel.Stable, "3.0.2", ReleaseChannel.ReleaseCandidate, "Running a Release Candidate pre-release ahead of the latest Stable release (v3.0.2).")]
+	[InlineData("3.1.0-beta.2", ReleaseChannel.ReleaseCandidate, "3.0.2", ReleaseChannel.Beta, "Running a Beta pre-release ahead of the latest Release Candidate release (v3.0.2).")]
+	[InlineData("3.1.0-dev", ReleaseChannel.Stable, "3.0.2", null, "Running a development build ahead of the latest Stable release (v3.0.2).")]
+	[InlineData("3.1.0-alpha.3", ReleaseChannel.Alpha, "3.1.0-alpha.2", null, "Running a development build ahead of the latest Alpha release (v3.1.0-alpha.2).")]
+	[InlineData("3.1.0", ReleaseChannel.Stable, "3.0.2", null, "Running a development build ahead of the latest Stable release (v3.0.2).")]
+	public async Task version_check_names_a_pre_release_ahead_of_a_more_stable_channel(
+		string current, ReleaseChannel channel, string releaseTag, ReleaseChannel? expectedPreRelease, string expectedMessage)
+	{
+		string releasesJson = $$"""[ { "tag_name": "{{releaseTag}}", "draft": false } ]""";
+		using HttpClient client = new(new StubHttpHandler(_ => new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(releasesJson) }));
+
+		VersionCheckResult result = await VersionCheck.RunAsync(current, channel, hasInternetConnection: true, client);
+
+		Assert.True(result.IsAheadOfLatestRelease);
+		Assert.Equal(expectedPreRelease, result.RunningPreReleaseChannel);
+		Assert.Equal(expectedMessage, result.Message);
+	}
+
+	/// <summary>
+	/// The check asks for GitHub's largest page of releases, so a long run of pre-releases cannot
+	/// hide every stable one; and the log names a channel as people read it.
+	/// </summary>
+	[Fact]
+	public async Task version_check_asks_for_100_releases_and_logs_the_channels_display_name()
+	{
+		string? url = null;
+		using HttpClient client = new(new StubHttpHandler(request =>
+		{
+			url = request.RequestUri!.ToString();
+			return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("[]") };
+		}));
+
+		await VersionCheck.RunAsync("3.0.0", ReleaseChannel.ReleaseCandidate, hasInternetConnection: true, client);
+
+		Assert.EndsWith("/releases?per_page=100", url, StringComparison.Ordinal);
+		Assert.Contains(AppLog.Entries, e => e.Message == "No comparable release found on the Release Candidate channel.");
+	}
+
+	/// <summary>
 	/// The running version must be strict SemVer too: a four-part assembly number such as
 	/// 2.8.1.0 cannot be compared, so no update is offered rather than a wrong one.
 	/// </summary>

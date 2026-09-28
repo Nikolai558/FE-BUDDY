@@ -19,6 +19,8 @@ using FeBuddy.Core.Application.Launch;
 using FeBuddy.Core.Application.Updates.Models;
 using FeBuddy.Core.Domain.Airac.Models;
 
+using FeBuddy.Versioning;
+
 namespace FeBuddy.Wpf.ViewModels;
 
 /// <summary>
@@ -350,6 +352,12 @@ public sealed class ShellViewModel : ObservableObject
 			UpdateTooltipBody = $"You are on v{version.CurrentVersion.TrimStart('v', 'V')}. Click the version to review and update.";
 			VersionBrushKey = _updateDeclinedThisSession ? "Brush.Warn" : "Brush.Accent.Text";
 		}
+		else if (version.RunningPreReleaseChannel is { } running)
+		{
+			UpdateTooltipTitle = $"Running a {running.DisplayName()} release";
+			UpdateTooltipBody = $"Newer than the latest {version.Channel.DisplayName()} release, v{version.LatestVersion}.";
+			VersionBrushKey = "Brush.Accent.Text";
+		}
 		else if (version.IsAheadOfLatestRelease)
 		{
 			UpdateTooltipTitle = "Running a development build";
@@ -430,6 +438,7 @@ public sealed class ShellViewModel : ObservableObject
 			null => new HealthRow("Updates", "checking…", StatusKind.Warn),
 			{ CheckSucceeded: false } => new HealthRow("Updates", "state unknown (offline)", StatusKind.Warn),
 			{ UpdateAvailable: true } v => new HealthRow("Updates", $"v{v.LatestVersion} available", StatusKind.Warn),
+			{ RunningPreReleaseChannel: { } running } v => new HealthRow("Updates", $"{running.DisplayName()} release — ahead of {v.Channel.DisplayName()}", StatusKind.Ok),
 			{ IsAheadOfLatestRelease: true } => new HealthRow("Updates", "dev build — ahead of release", StatusKind.Ok),
 			_ => new HealthRow("Updates", "latest version", StatusKind.Ok),
 		});

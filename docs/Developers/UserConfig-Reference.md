@@ -252,8 +252,10 @@ Each save first removes the whole `Sources` subtree (`RemoveSubtree`, backed by
 
 In a settings export, `FilePath` is a machine path (`UserConfigPortability`: any key ending in
 `FilePath`, like one ending in `Folder` or `Directory`): it is tokenized like a folder, and an
-import takes it only if the file exists on the importing PC (`UserConfigPortability.IsFile`); the
-import summary calls it "Custom alias file <n>". `Url` is shared as it is. `CredentialId` is a
+import takes it only if the file exists on the importing PC (`UserConfigPortability.IsFile`).
+Otherwise that custom alias file is left out: this PC's entry at the same `<n>` is a different file,
+so it is not put in its place. The import summary calls it "Custom alias file <n>". `Url` is
+shared as it is. `CredentialId` is a
 credential choice (`ConfigKeyScope.CredentialChoice`, any key ending in `CredentialId`): a
 credential id means nothing on another PC, so it is never exported and is ignored in an imported
 file. An import keeps this PC's choice for a source whose other keys it leaves unchanged (the same

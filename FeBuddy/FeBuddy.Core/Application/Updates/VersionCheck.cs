@@ -38,7 +38,9 @@ namespace FeBuddy.Core.Application.Updates;
 public static partial class VersionCheck
 {
 	private const string LogSource = "VersionCheck";
-	private const string ReleasesUrl = GitHubRepository.ApiUrl + "/releases?per_page=30";
+	// GitHub's largest page. 2.x and 3.x releases share the list, so a smaller one could hold only
+	// pre-releases after a long run of them, and a Stable user would find no release at all.
+	private const string ReleasesUrl = GitHubRepository.ApiUrl + "/releases?per_page=100";
 
 	// SemVer precedence, for sorting releases newest first.
 	private static readonly Comparer<ProductVersion> Precedence = Comparer<ProductVersion>.Create((a, b) => a.ComparePrecedenceTo(b));
@@ -116,7 +118,7 @@ public static partial class VersionCheck
 
 			if (candidates.Count == 0)
 			{
-				AppLog.Info(LogSource, $"No comparable release found on the {channel} channel.");
+				AppLog.Info(LogSource, $"No comparable release found on the {channel.DisplayName()} channel.");
 				return new VersionCheckResult(current, null, false, channel, CheckSucceeded: true, "No comparable release found.");
 			}
 
@@ -134,6 +136,12 @@ public static partial class VersionCheck
 			bool updateAvailable = currentParsed is not null && currentVsBest < 0;
 			bool isAheadOfLatest = currentParsed is not null && currentVsBest > 0;
 
+			// Ahead because the user moved to a more stable channel while on one of its published
+			// pre-releases (running 3.1.0-rc.1, now on Stable) - not a development build.
+			ReleaseChannel? preReleaseChannel = isAheadOfLatest && IsPublishedPreRelease(currentParsed!) && currentParsed!.Channel < channel
+				? currentParsed.Channel
+				: null;
+
 			List<ReleaseSummary> newer = updateAvailable
 				? [.. candidates
 						.Where(c => c.Parsed.ComparePrecedenceTo(currentParsed!) > 0)
@@ -143,9 +151,11 @@ public static partial class VersionCheck
 				: [];
 
 			string message = updateAvailable
-				? $"v{latest.Version} available on the {channel} channel ({newer.Count} newer release(s))."
+				? $"v{latest.Version} available on the {channel.DisplayName()} channel ({newer.Count} newer release(s))."
+				: preReleaseChannel is { } running
+					? $"Running a {running.DisplayName()} pre-release ahead of the latest {channel.DisplayName()} release (v{latest.Version})."
 				: isAheadOfLatest
-					? $"Running a development build ahead of the latest {channel} release (v{latest.Version})."
+					? $"Running a development build ahead of the latest {channel.DisplayName()} release (v{latest.Version})."
 					: "You are running the latest version.";
 
 			AppLog.Info(LogSource, message);
@@ -155,6 +165,7 @@ public static partial class VersionCheck
 			{
 				NewerReleases = newer,
 				LatestInstaller = latestInstaller,
+				RunningPreReleaseChannel = preReleaseChannel,
 			};
 		}
 		catch (Exception ex)
@@ -163,6 +174,14 @@ public static partial class VersionCheck
 			return new VersionCheckResult(current, null, false, channel, CheckSucceeded: false, ex.Message);
 		}
 	}
+
+	/// <summary>
+	/// Whether a pre-release carries one of the labels releases are published with - <c>alpha</c>,
+	/// <c>beta</c> or <c>rc</c> - rather than a development label such as <c>dev</c>.
+	/// </summary>
+	private static bool IsPublishedPreRelease(ProductVersion version) =>
+		version.IsPrerelease
+		&& version.SemVersion.PrereleaseIdentifiers[0].Value.ToUpperInvariant() is "ALPHA" or "BETA" or "RC";
 
 	// The release's first .msi asset with a usable name and download URL, if any.
 	private static ReleaseInstaller? FindInstaller(JsonElement release)

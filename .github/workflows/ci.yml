@@ -12,8 +12,9 @@
 # A pull request into v3-development that changes only Markdown (.md) files
 # outside the FeBuddy/ source folder - documentation, ChangeLog.md - skips
 # Build, Test and Installer. A skipped job counts as passed for a required
-# check, so the pull request can still merge. Markdown inside FeBuddy/ still
-# runs everything: News.md is built into the app and the tests read it.
+# check, so the pull request can still merge. Markdown inside FeBuddy/, and the
+# root News.md, still run everything: News.md is built into the app and the
+# tests read it.
 # CodeQL (codeql-analysis.yml) still runs on every pull request, because the
 # rulesets' code scanning rule blocks a merge until CodeQL has results for it.
 
@@ -64,7 +65,7 @@ jobs:
           # Anything unexpected - an empty list included - leaves code=true.
           code=false
           while IFS= read -r file; do
-            if [[ ! "$file" =~ \.[mM][dD]$ ]] || [[ "$file" == FeBuddy/* ]]; then
+            if [[ ! "$file" =~ \.[mM][dD]$ ]] || [[ "$file" == FeBuddy/* ]] || [[ "$file" == News.md ]]; then
               echo "Needs Build and Test: '$file'"
               code=true
               break

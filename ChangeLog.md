@@ -20,6 +20,13 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
   open in your output folder, or on the Desktop if you haven't set one (#253).
 - The Info screen's Manual link is now **User Guide** and opens the 3.0 guide. A new
   **FAQ / Troubleshooting** link opens the FAQ (#254).
+- Bug #259 - News posts on the Dashboard no longer show their title twice.
+- Bug #258 - Fixed a News post not showing when its PostId was invalid.
+- (Dev notes)
+  - News moved to `News.md` at the repository root (#260). `FeBuddy/FeBuddy.Core/News.md` now holds
+    only a final "please update" post for 3.0.0-alpha.1, which still reads that path.
+  - A News post with a missing or invalid PostId is logged as skipped instead of disappearing
+    silently, and a test now fails the build if any post in `News.md` has one.
 
 ## 3.0.0-alpha.1
 - FE-BUDDY 3.0 is a from-scratch rewrite with a new interface. This first alpha is for testers:

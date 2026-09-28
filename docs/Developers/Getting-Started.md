@@ -112,8 +112,9 @@ See [Releasing](RELEASING.md): add a `ChangeLog.md` entry with every user-facing
 release, bump `<Version>` and open a pull request from `v3-development` into `releases`. GitHub
 Actions checks it, builds the MSI and drafts the release to publish.
 
-Optionally post to News as well (`FeBuddy/FeBuddy.Core/News.md` - the format is at the top of the
-file); the app reads it from `v3-development` on GitHub.
+Optionally post to News as well (`News.md` at the repository root - the format is at the top of the
+file); the app reads it from `v3-development` on GitHub. `FeBuddy/FeBuddy.Core/News.md` is not
+News: it is a final notice for 3.0.0-alpha.1, which reads that path.
 
 ## Continuous integration
 
@@ -125,8 +126,8 @@ also run the release checks - see [Releasing](RELEASING.md).
 
 A pull request into `v3-development` that changes only Markdown (`.md`) files outside `FeBuddy/`
 skips Build, Test and Installer. They show as skipped, which counts as passed, so the pull request
-can still merge. `News.md` is inside `FeBuddy/` and still runs everything, because it is built into
-the app and the tests read it. CodeQL runs on every pull request regardless: the code scanning
+can still merge. The root `News.md` is the exception and still runs everything, because it is built
+into the app and the tests read it. CodeQL runs on every pull request regardless: the code scanning
 rule blocks a merge until CodeQL has results.
 
 ## Handy extras

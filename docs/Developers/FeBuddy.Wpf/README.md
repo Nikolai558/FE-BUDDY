@@ -78,7 +78,8 @@ ViewModels/           ShellViewModel + one per screen; AiracSubServices is the
                         / AsksForStyle, for a class whose Symbol style lives on
                         the Features instead of the card), VnasFileToggle,
                         SourceFileItem, AliasSourceRow (a vNAS Alias Upload
-                        custom alias file row), ...)
+                        custom alias file row), OutputFileEntry / FileNameFolder /
+                        FileNameRow (the File Names tab's files), ...)
   ServiceTabs/          the framework for a tabbed service screen:
                         TabbedServiceViewModel (the screen), ServiceTabViewModel
                         (a tab), SubServiceSettingsViewModel (a saved settings tab;
@@ -95,7 +96,7 @@ Views/                ShellWindow (custom chrome) + Dashboard, TabbedServiceView
                       (the AIRAC Services and File Conversions screens) and their
                       tab views (AiracGeneralTabView, AirportsView, AirwaysView,
                       DeparturesView, ArrivalsView, NavaidsView, ArtccBoundariesView, FixesView,
-                      WxStationsView, ProceduresView, TelephonyView, VnasAliasView, DatToGeojsonView, SctToGeojsonView, EramToGeojsonView,
+                      WxStationsView, ProceduresView, TelephonyView, VnasAliasView, FileNamesView, DatToGeojsonView, SctToGeojsonView, EramToGeojsonView,
                       ServicePreviewTabView, ServiceRunReviewTabView), MapView (the
                       Map page: just a MapWorkspace), MapWorkspace (the one map
                       screen), Settings, Info; UpdateWindow, ConfirmWindow (Confirm /
@@ -275,6 +276,22 @@ bar and page scroller are shared, and each screen's view-model says what differs
     a Credential Manager that cannot be read, is a non-blocking notice. `WriteToConfig` removes the `Sources` subtree before writing the list
     again. It is the eleventh and last sub-service in the catalogue. Its Review tab result gives
     `vNAS_Alias.txt`'s custom and FE-Buddy command counts (`AiracServiceResult.VnasAlias`).
+  - **File Names tab** (`FileNamesViewModel`, node `Services.AiracService.FileNames`) - not a
+    sub-service: `AiracServiceViewModel` puts it after the sub-service tabs, just before Preview
+    Settings, while any is open. It lists every file the run will write, grouped by folder
+    (`FileNameFolder` / `FileNameRow`): each tab's `GeojsonSubServiceViewModel.OutputFileEntries` -
+    Departures and Arrivals give their per-procedure files as one pattern row per kind that can't
+    be renamed, Procedures adds its two documents - then `Duplicate_Alias_Commands.txt` and
+    `vNAS_Alias.txt` when the run writes them. `AiracServiceViewModel` hands it that list
+    (`AttachToService`) and has it re-read it (`RefreshFiles`) whenever another tab is shown, the
+    selection or cycle changes, and before a run; the rows are rebuilt only when the list changed.
+    **Rename Files** is Yes / No (`RenameFiles`, default No). With Yes, each file has a tick box and
+    a new-name box (greyed out while unticked); a ticked file needs a name that passes
+    `OutputFileNames.Problem` and is not another file's name. Choices are kept by file key, files
+    not listed included, as a numbered list (`Files.<n>.Key` / `.Rename` / `.Name` - numbered because
+    `Airways.txt` has a dot in it); a ticked file with no name is not saved, so a file with no saved
+    choice starts ticked and empty, and the tab is invalid until it is named or unticked. The run
+    gets the ticked files' new names as `AiracServiceSettings.FileNames` (`BuildFileNamesBlock`).
   - **Preview Settings tab** - present once at least one sub-service is selected:
     every tab's settings as label/value rows (the General section names the run's
     `AIRAC_<cycle>` folder), notices naming any unsaved or invalid tab, and the single

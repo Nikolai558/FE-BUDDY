@@ -33,6 +33,10 @@ namespace FeBuddy.Core.Application.Airac;
 /// that writes an alias file, saying so when there is nothing to fix, so an older report is never
 /// left behind to mislead.
 /// </para>
+/// <para>
+/// A file is told apart by its key, FE-Buddy's name for it, so a file the user renamed (the File
+/// Names tab) is read the same way; the report names each file as it was written.
+/// </para>
 /// </remarks>
 public static class DuplicateAliasReport
 {
@@ -45,31 +49,34 @@ public static class DuplicateAliasReport
 	/// <summary>
 	/// Finds the duplicates in the given alias files and writes the report.
 	/// </summary>
-	/// <param name="aliasFilePaths">Every alias file the run wrote, in the order to check (and list) them.</param>
+	/// <param name="aliasFiles">Every alias file the run wrote, in the order to check (and list) them.</param>
 	/// <param name="nasr">The cycle's parsed NASR data; only <c>Apt</c> is read, for each airport's ARTCC.</param>
 	/// <param name="cycleId">The cycle the run was for, e.g. <c>2609</c>.</param>
 	/// <param name="outputDirectory">The cycle folder the report goes in.</param>
 	/// <param name="primaryFacility">The ARTCC listed first (the user's own facility), or <see langword="null"/> to list every ARTCC alphabetically.</param>
 	/// <param name="generatedUtc">When the report was made, for its heading.</param>
+	/// <param name="fileName">The report's name, when the user gave it one of their own (see <see cref="OutputFileNames"/>).</param>
 	/// <returns>The report's path and the duplicates it lists.</returns>
 	public static DuplicateAliasReportResult Write(
-		IReadOnlyList<string> aliasFilePaths,
+		IReadOnlyList<AliasFileWritten> aliasFiles,
 		NasrCsvDataCollection nasr,
 		string cycleId,
 		string outputDirectory,
 		string? primaryFacility,
-		DateTime generatedUtc)
+		DateTime generatedUtc,
+		string fileName = AiracOutputPaths.DuplicateAliasReportFileName)
 	{
-		ArgumentNullException.ThrowIfNull(aliasFilePaths);
+		ArgumentNullException.ThrowIfNull(aliasFiles);
 		ArgumentNullException.ThrowIfNull(nasr);
 		ArgumentException.ThrowIfNullOrWhiteSpace(cycleId);
 		ArgumentException.ThrowIfNullOrWhiteSpace(outputDirectory);
+		ArgumentException.ThrowIfNullOrWhiteSpace(fileName);
 
-		IReadOnlyList<DuplicateAliasCommand> duplicates = Find(aliasFilePaths, nasr);
-		string text = Format(duplicates, aliasFilePaths, cycleId, primaryFacility, generatedUtc);
+		IReadOnlyList<DuplicateAliasCommand> duplicates = Find(aliasFiles, nasr);
+		string text = Format(duplicates, aliasFiles, cycleId, primaryFacility, generatedUtc);
 
 		Directory.CreateDirectory(outputDirectory);
-		string path = Path.Combine(outputDirectory, AiracOutputPaths.DuplicateAliasReportFileName);
+		string path = Path.Combine(outputDirectory, fileName);
 		File.WriteAllText(path, text, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
 
 		return new DuplicateAliasReportResult(path, duplicates);
@@ -78,18 +85,18 @@ public static class DuplicateAliasReport
 	/// <summary>
 	/// Finds every command more than one line of the given alias files uses, ignoring case.
 	/// </summary>
-	/// <param name="aliasFilePaths">The alias files, in the order to check them.</param>
+	/// <param name="aliasFiles">The alias files, in the order to check them.</param>
 	/// <param name="nasr">The cycle's parsed NASR data, for each airport's ARTCC.</param>
 	/// <returns>The duplicated commands, in the order their first line was met.</returns>
-	internal static IReadOnlyList<DuplicateAliasCommand> Find(IReadOnlyList<string> aliasFilePaths, NasrCsvDataCollection nasr)
+	internal static IReadOnlyList<DuplicateAliasCommand> Find(IReadOnlyList<AliasFileWritten> aliasFiles, NasrCsvDataCollection nasr)
 	{
 		// Two passes rather than holding every line: an Airports.txt line is a few hundred
 		// characters and there are tens of thousands of them, but duplicates are rare.
 		Dictionary<string, int> counts = new(StringComparer.OrdinalIgnoreCase);
 
-		foreach (string path in aliasFilePaths)
+		foreach (AliasFileWritten file in aliasFiles)
 		{
-			foreach (string line in File.ReadLines(path))
+			foreach (string line in File.ReadLines(file.FilePath))
 			{
 				if (CommandOf(line) is { } command)
 				{
@@ -109,11 +116,11 @@ public static class DuplicateAliasReport
 		Dictionary<string, (string Spelling, List<DuplicateAliasLine> Lines)> linesByCommand = new(StringComparer.OrdinalIgnoreCase);
 		List<string> order = [];
 
-		foreach (string path in aliasFilePaths)
+		foreach (AliasFileWritten file in aliasFiles)
 		{
-			string fileName = Path.GetFileName(path);
+			string fileName = Path.GetFileName(file.FilePath);
 
-			foreach (string line in File.ReadLines(path))
+			foreach (string line in File.ReadLines(file.FilePath))
 			{
 				if (CommandOf(line) is not { } command || !duplicated.Contains(command))
 				{
@@ -127,7 +134,7 @@ public static class DuplicateAliasReport
 					order.Add(command);
 				}
 
-				entry.Lines.Add(new DuplicateAliasLine(fileName, line, artccs.For(fileName, command)));
+				entry.Lines.Add(new DuplicateAliasLine(file.FileKey, fileName, line, artccs.For(file.FileKey, command)));
 			}
 		}
 
@@ -151,7 +158,7 @@ public static class DuplicateAliasReport
 	/// <summary>Builds the report's text.</summary>
 	internal static string Format(
 		IReadOnlyList<DuplicateAliasCommand> duplicates,
-		IReadOnlyList<string> aliasFilePaths,
+		IReadOnlyList<AliasFileWritten> aliasFiles,
 		string cycleId,
 		string? primaryFacility,
 		DateTime generatedUtc)
@@ -165,7 +172,7 @@ public static class DuplicateAliasReport
 		report.AppendLine("run one of them. Commands are compared ignoring case, the way CRC matches them.");
 		report.AppendLine("Solutions are required at ARTCC level. Consult the FE-Buddy developers if unable to resolve at a local level.");
 		report.AppendLine();
-		report.AppendLine("Files checked: " + string.Join(", ", aliasFilePaths.Select(Path.GetFileName)));
+		report.AppendLine("Files checked: " + string.Join(", ", aliasFiles.Select(file => Path.GetFileName(file.FilePath))));
 		report.AppendLine();
 
 		if (duplicates.Count == 0)
@@ -182,7 +189,8 @@ public static class DuplicateAliasReport
 
 		if (groups.Any(group => group.Group == TelephonyGroup))
 		{
-			report.AppendLine($"{TelephonyGroup} holds the commands from {TelephonyOutputFiles.Alias}, which belong to an operator rather than an airport.");
+			string telephony = duplicates.SelectMany(duplicate => duplicate.Lines).First(IsTelephony).FileName;
+			report.AppendLine($"{TelephonyGroup} holds the commands from {telephony}, which belong to an operator rather than an airport.");
 		}
 
 		if (groups.Any(group => group.Group == OtherGroup))
@@ -245,9 +253,11 @@ public static class DuplicateAliasReport
 
 	/// <summary>The group a line is listed under: <see cref="TelephonyGroup"/> for a <c>Telephony.txt</c> line, else its ARTCC, else <see cref="OtherGroup"/>.</summary>
 	private static string GroupOf(DuplicateAliasLine line) =>
-		line.FileName.Equals(TelephonyOutputFiles.Alias, StringComparison.OrdinalIgnoreCase)
-			? TelephonyGroup
-			: line.ArtccId ?? OtherGroup;
+		IsTelephony(line) ? TelephonyGroup : line.ArtccId ?? OtherGroup;
+
+	/// <summary>Whether a line is from <c>Telephony.txt</c>, whatever the user named it.</summary>
+	private static bool IsTelephony(DuplicateAliasLine line) =>
+		line.FileKey.Equals(TelephonyOutputFiles.Alias, StringComparison.OrdinalIgnoreCase);
 
 	/// <summary>Where a group sorts: the primary facility, then every other ARTCC, then TELEPHONY, then OTHER.</summary>
 	private static int GroupRank(string group, string primaryFacility) => group switch
@@ -287,19 +297,21 @@ public static class DuplicateAliasReport
 			}
 		}
 
-		/// <summary>The ARTCC for a command in the named alias file, or <see langword="null"/> when it names no airport NASR lists.</summary>
-		public string? For(string fileName, string command)
+		/// <summary>The ARTCC for a command in an alias file, or <see langword="null"/> when it names no airport NASR lists.</summary>
+		/// <param name="fileKey">FE-Buddy's name for the alias file, e.g. <c>Airports.txt</c>.</param>
+		/// <param name="command">The command.</param>
+		public string? For(string fileKey, string command)
 		{
-			if (fileName.Equals(AirportOutputFiles.Alias, StringComparison.OrdinalIgnoreCase))
+			if (fileKey.Equals(AirportOutputFiles.Alias, StringComparison.OrdinalIgnoreCase))
 			{
 				// .aptDTW or .aptKDTW: the airport's FAA or ICAO identifier follows .apt.
 				string id = command.StartsWith(".apt", StringComparison.OrdinalIgnoreCase) ? command[4..] : string.Empty;
 				return _byFaaId.GetValueOrDefault(id) ?? _byIcaoId.GetValueOrDefault(id);
 			}
 
-			if (fileName.Equals(DepartureOutputFiles.Alias, StringComparison.OrdinalIgnoreCase)
-				|| fileName.Equals(ArrivalOutputFiles.Alias, StringComparison.OrdinalIgnoreCase)
-				|| fileName.Equals(ProcedureOutputFiles.Alias, StringComparison.OrdinalIgnoreCase))
+			if (fileKey.Equals(DepartureOutputFiles.Alias, StringComparison.OrdinalIgnoreCase)
+				|| fileKey.Equals(ArrivalOutputFiles.Alias, StringComparison.OrdinalIgnoreCase)
+				|| fileKey.Equals(ProcedureOutputFiles.Alias, StringComparison.OrdinalIgnoreCase))
 			{
 				return ForLowerCaseAirport(command);
 			}

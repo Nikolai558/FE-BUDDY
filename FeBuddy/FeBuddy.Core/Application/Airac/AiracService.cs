@@ -67,6 +67,10 @@ namespace FeBuddy.Core.Application.Airac;
 /// alias files when vNAS Alias Upload is selected - into <c>Upload_to_vNAS\vNAS_Alias.txt</c>
 /// (<see cref="VnasAliasFileWriter"/>).
 /// </para>
+/// <para>
+/// A file the user renamed (<see cref="AiracServiceSettings.FileNames"/>) is written under its new
+/// name wherever it goes; everything else still knows it by its key, FE-Buddy's name for it.
+/// </para>
 /// </remarks>
 public static class AiracService
 {
@@ -260,7 +264,10 @@ public static class AiracService
 	/// <param name="progress">Optional per-sub-service progress for the run panel.</param>
 	/// <param name="cancellationToken">Cancels before the next sub-service starts.</param>
 	/// <returns>The aggregated result: each sub-service's result plus a combined warning list.</returns>
-	/// <exception cref="ArgumentException">Thrown when <see cref="AiracServiceSettings.OutputDirectory"/> is blank.</exception>
+	/// <exception cref="ArgumentException">
+	/// Thrown when <see cref="AiracServiceSettings.OutputDirectory"/> is blank, or a new name in
+	/// <see cref="AiracServiceSettings.FileNames"/> can't be used. Nothing is deleted or written then.
+	/// </exception>
 	/// <exception cref="IOException">
 	/// Thrown when <see cref="ExistingOutputAction.DeleteExisting"/> cannot delete the cycle
 	/// folder (a file in it is open elsewhere, say). Nothing is written in that case, but the
@@ -278,6 +285,11 @@ public static class AiracService
 		ArgumentNullException.ThrowIfNull(supplementalData);
 		ArgumentException.ThrowIfNullOrWhiteSpace(settings.OutputDirectory, nameof(settings));
 
+		// Before anything is deleted or written: a new name that can't be used stops the run here.
+		OutputFileNamesParseResult fileNamesParse = OutputFileNamesParser.Parse(settings.FileNames);
+		OutputFileNames fileNames = fileNamesParse.FileNames;
+		string vnasAliasFileName = fileNames.FileName(AiracOutputPaths.VnasAliasFileName);
+
 		Stopwatch stopwatch = Stopwatch.StartNew();
 		string outputDirectory = settings.CycleOutputDirectory;
 		bool anySelected = settings.Airways is not null || settings.Airports is not null
@@ -288,9 +300,9 @@ public static class AiracService
 
 		// What getting the downloaded data produced (a fresh copy, an older copy and its age, or none)
 		// leads the run's messages, so the Review tab says it before anything built from that data.
-		List<ServiceMessage> messages = [.. supplementalData.Messages];
+		List<ServiceMessage> messages = [.. supplementalData.Messages, .. fileNamesParse.Messages];
 
-		foreach (ServiceMessage message in supplementalData.Messages)
+		foreach (ServiceMessage message in messages)
 		{
 			AppLog.Write(message.Level, message.Source, message.Text);
 		}
@@ -309,67 +321,72 @@ public static class AiracService
 
 		AirwayServiceResult? airwaysResult = await RunSubServiceAsync(
 			settings.Airways, "Airways", "Building airway GeoJSON and alias output",
-			block => AirwayService.Run(nasrData, block),
+			block => AirwayService.Run(nasrData, block, fileNames),
 			result => $"{result.AirwayCount} airway(s), {result.GeojsonFilesWritten.Count} GeoJSON file(s)").ConfigureAwait(false);
 
 		AirportServiceResult? airportsResult = await RunSubServiceAsync(
 			settings.Airports, "Airports", "Building airport GeoJSON and alias output",
-			block => AirportService.Run(nasrData, block),
+			block => AirportService.Run(nasrData, block, fileNames),
 			result => $"{result.AirportCount} airport(s), {result.GeojsonFilesWritten.Count} GeoJSON file(s)").ConfigureAwait(false);
 
 		DepartureServiceResult? departuresResult = await RunSubServiceAsync(
 			settings.Departures, "Departures", "Building departure procedure GeoJSON and alias output",
-			block => DepartureService.Run(nasrData, block),
+			block => DepartureService.Run(nasrData, block, fileNames),
 			result => $"{result.AirportProcedureCount} airport procedure(s), {result.GeojsonFilesWritten.Count} GeoJSON file(s)").ConfigureAwait(false);
 
 		ArrivalServiceResult? arrivalsResult = await RunSubServiceAsync(
 			settings.Arrivals, "Arrivals", "Building arrival procedure GeoJSON and alias output",
-			block => ArrivalService.Run(nasrData, block),
+			block => ArrivalService.Run(nasrData, block, fileNames),
 			result => $"{result.AirportProcedureCount} airport procedure(s), {result.GeojsonFilesWritten.Count} GeoJSON file(s)").ConfigureAwait(false);
 
 		NavaidServiceResult? navaidsResult = await RunSubServiceAsync(
 			settings.Navaids, "NAVAIDs", "Building NAVAID GeoJSON and alias output",
-			block => NavaidService.Run(nasrData, block),
+			block => NavaidService.Run(nasrData, block, fileNames),
 			result => $"{result.NavaidCount} NAVAID(s), {result.GeojsonFilesWritten.Count} GeoJSON file(s)").ConfigureAwait(false);
 
 		ArtccBoundaryServiceResult? artccBoundariesResult = await RunSubServiceAsync(
 			settings.ArtccBoundaries, "ARTCC Boundaries", "Building ARTCC boundary GeoJSON output",
-			block => ArtccBoundaryService.Run(nasrData, block),
+			block => ArtccBoundaryService.Run(nasrData, block, fileNames),
 			result => $"{result.LocationCount} ARTCC(s), {result.RingCount} boundary line(s), {result.GeojsonFilesWritten.Count} GeoJSON file(s)").ConfigureAwait(false);
 
 		FixServiceResult? fixesResult = await RunSubServiceAsync(
 			settings.Fixes, "Fixes", "Building fix GeoJSON output",
-			block => FixService.Run(nasrData, block),
+			block => FixService.Run(nasrData, block, fileNames),
 			result => $"{result.FixCount} fix(es), {result.GeojsonFilesWritten.Count} GeoJSON file(s)").ConfigureAwait(false);
 
 		WxStationServiceResult? wxStationsResult = await RunSubServiceAsync(
 			settings.WxStations, "Wx Stations", "Building weather station GeoJSON output",
-			block => WxStationService.Run(supplementalData.WxStations, block),
+			block => WxStationService.Run(supplementalData.WxStations, block, fileNames),
 			result => $"{result.StationCount} station(s), {result.GeojsonFilesWritten.Count} GeoJSON file(s)").ConfigureAwait(false);
 
 		ProcedureServiceResult? proceduresResult = await RunSubServiceAsync(
 			settings.Procedures, "Procedures", "Building procedure publication documents",
-			block => ProcedureService.Run(nasrData, supplementalData.Dtpp, supplementalData.PreviousDtpp, block),
+			block => ProcedureService.Run(nasrData, supplementalData.Dtpp, supplementalData.PreviousDtpp, block, fileNames),
 			result => $"{result.AirportCount} airport(s), {result.NewCount + result.ChangedCount + result.DeletedCount} change(s), {result.FilesWritten.Count} document(s)"
 				+ (result.AliasFilePath is not null ? $", {result.AliasCommandCount} FAA Chart Recall command(s)" : string.Empty)).ConfigureAwait(false);
 
 		TelephonyServiceResult? telephonyResult = await RunSubServiceAsync(
 			settings.Telephony, "Telephony", "Building the telephony alias file",
-			block => TelephonyService.Run(supplementalData.Telephony, block),
+			block => TelephonyService.Run(supplementalData.Telephony, block, fileNames),
 			result => $"{result.AliasCommandCount} command(s), {result.MergedCommandCount} showing more than one operator").ConfigureAwait(false);
 
-		// Every alias file this run wrote, in the order the sub-services ran, checked together for
-		// commands two lines share.
-		string[] aliasFiles = [.. new[]
-		{
-			airwaysResult?.AliasFilePath,
-			airportsResult?.AliasFilePath,
-			departuresResult?.AliasFilePath,
-			arrivalsResult?.AliasFilePath,
-			navaidsResult?.AliasFilePath,
-			proceduresResult?.AliasFilePath,
-			telephonyResult?.AliasFilePath,
-		}.OfType<string>()];
+		// Every alias file this run wrote, in the order the sub-services ran, with the block that asked
+		// for it. Each is known by its key - FE-Buddy's name for it - whatever the user named it.
+		AliasOutput[] aliasOutputs =
+		[
+			new(settings.Airways, AirwayOutputFiles.Alias, airwaysResult?.AliasFilePath),
+			new(settings.Airports, AirportOutputFiles.Alias, airportsResult?.AliasFilePath),
+			new(settings.Departures, DepartureOutputFiles.Alias, departuresResult?.AliasFilePath),
+			new(settings.Arrivals, ArrivalOutputFiles.Alias, arrivalsResult?.AliasFilePath),
+			new(settings.Navaids, NavaidOutputFiles.Alias, navaidsResult?.AliasFilePath),
+			new(settings.Procedures, ProcedureOutputFiles.Alias, proceduresResult?.AliasFilePath),
+			new(settings.Telephony, TelephonyOutputFiles.Alias, telephonyResult?.AliasFilePath),
+		];
+
+		// Checked together for commands two lines share.
+		AliasFileWritten[] aliasFiles = [.. aliasOutputs
+			.Where(output => output.Path is not null)
+			.Select(output => new AliasFileWritten(output.Key, output.Path!))];
 
 		DuplicateAliasReportResult? duplicateAliasReport = null;
 
@@ -380,7 +397,8 @@ public static class AiracService
 
 			duplicateAliasReport = await Task.Run(
 				() => DuplicateAliasReport.Write(
-					aliasFiles, nasrData, settings.SelectedCycle.AiracCycleId, outputDirectory, settings.PrimaryFacility, DateTime.UtcNow),
+					aliasFiles, nasrData, settings.SelectedCycle.AiracCycleId, outputDirectory, settings.PrimaryFacility, DateTime.UtcNow,
+					fileNames.FileName(AiracOutputPaths.DuplicateAliasReportFileName)),
 				cancellationToken).ConfigureAwait(false);
 
 			ServiceMessage reportMessage = DuplicateAliasMessage(duplicateAliasReport, aliasFiles.Length);
@@ -390,14 +408,7 @@ public static class AiracService
 
 		// vNAS takes one alias file, so the alias files marked for vNAS go into vNAS_Alias.txt,
 		// below the user's own custom alias files when vNAS Alias Upload is selected.
-		string[] vnasAliasFiles = [.. MarkedForVnas(
-			(settings.Airways, airwaysResult?.AliasFilePath),
-			(settings.Airports, airportsResult?.AliasFilePath),
-			(settings.Departures, departuresResult?.AliasFilePath),
-			(settings.Arrivals, arrivalsResult?.AliasFilePath),
-			(settings.Navaids, navaidsResult?.AliasFilePath),
-			(settings.Procedures, proceduresResult?.AliasFilePath),
-			(settings.Telephony, telephonyResult?.AliasFilePath))];
+		string[] vnasAliasFiles = [.. MarkedForVnas(aliasOutputs)];
 
 		VnasAliasResult? vnasAliasResult = null;
 
@@ -408,12 +419,12 @@ public static class AiracService
 			// Reported against the vNAS Alias Upload tab when it is selected; otherwise the file is
 			// simply part of the run.
 			string step = settings.VnasAlias is not null ? VnasAliasName : "AIRAC";
-			progress?.Report(new AiracServiceProgress(step, $"Writing {AiracOutputPaths.VnasAliasFileName}"));
+			progress?.Report(new AiracServiceProgress(step, $"Writing {vnasAliasFileName}"));
 
 			IReadOnlyList<AliasSourceLoad> customFiles = settings.VnasAlias is not null ? supplementalData.CustomAliasFiles ?? [] : [];
 
 			vnasAliasResult = await Task.Run(
-				() => VnasAliasFileWriter.Write(customFiles, vnasAliasFiles, settings.SelectedCycle.AiracCycleId, outputDirectory),
+				() => VnasAliasFileWriter.Write(customFiles, vnasAliasFiles, settings.SelectedCycle.AiracCycleId, outputDirectory, vnasAliasFileName),
 				cancellationToken).ConfigureAwait(false);
 
 			messages.AddRange(vnasAliasResult.Messages);
@@ -422,7 +433,7 @@ public static class AiracService
 			if (settings.VnasAlias is null && vnasAliasResult.FilePath is not null)
 			{
 				ServiceMessage onlyFeBuddy = new(LogLevel.Warning, LogSource,
-					$"vNAS Alias Upload is not selected, so {AiracOutputPaths.VnasAliasFileName} holds only FE-Buddy's aliases. " +
+					$"vNAS Alias Upload is not selected, so {vnasAliasFileName} holds only FE-Buddy's aliases. " +
 					"vNAS takes one alias file per facility, so uploading it would remove your facility's own aliases from vNAS. " +
 					"To keep them, select vNAS Alias Upload and add your facility's alias file.")
 				{ IsAdvisory = true };
@@ -432,8 +443,8 @@ public static class AiracService
 			}
 
 			string summary = vnasAliasResult.FilePath is null
-				? $"{AiracOutputPaths.VnasAliasFileName} not written."
-				: $"{AiracOutputPaths.VnasAliasFileName}: {vnasAliasResult.CustomCommandCount:N0} custom command(s), " +
+				? $"{vnasAliasFileName} not written."
+				: $"{vnasAliasFileName}: {vnasAliasResult.CustomCommandCount:N0} custom command(s), " +
 					$"then {vnasAliasResult.FeBuddyCommandCount:N0} from {vnasAliasResult.FeBuddyFiles.Count} FE-Buddy alias file(s).";
 
 			progress?.Report(new AiracServiceProgress(step, summary, settings.VnasAlias is not null ? 100 : null));
@@ -443,12 +454,12 @@ public static class AiracService
 			// vNAS_Alias.txt is built from the run's alias files, so one an earlier run left is out of
 			// date once this run rewrites them without writing a new one. A run that writes no alias
 			// file leaves it alone, like any other earlier file ("Overwrite files").
-			(string sentence, bool failed) = VnasAliasFileWriter.DeleteEarlierFile(outputDirectory);
+			(string sentence, bool failed) = VnasAliasFileWriter.DeleteEarlierFile(outputDirectory, vnasAliasFileName);
 
 			if (sentence.Length > 0)
 			{
 				ServiceMessage deleted = new(failed ? LogLevel.Warning : LogLevel.Info, LogSource,
-					$"No alias file is marked for vNAS, so {AiracOutputPaths.VnasAliasFileName} was not written.{sentence}")
+					$"No alias file is marked for vNAS, so {vnasAliasFileName} was not written.{sentence}")
 				{ IsAdvisory = true };
 
 				messages.Add(deleted);
@@ -525,15 +536,15 @@ public static class AiracService
 
 	/// <summary>
 	/// The alias files a sub-service wrote that its settings block marks for vNAS
-	/// (<c>UploadToVnas</c> names the alias file), in the order given.
+	/// (<c>UploadToVnas</c> names the alias file's key), in the order given.
 	/// </summary>
-	/// <param name="outputs">Each sub-service's settings block and the alias file it wrote, either of which may be <see langword="null"/>.</param>
+	/// <param name="outputs">Each sub-service's alias file.</param>
 	/// <returns>The full paths of the alias files marked for vNAS.</returns>
-	private static IEnumerable<string> MarkedForVnas(params (IReadOnlyDictionary<string, string>? Block, string? AliasFilePath)[] outputs)
+	private static IEnumerable<string> MarkedForVnas(IEnumerable<AliasOutput> outputs)
 	{
-		foreach ((IReadOnlyDictionary<string, string>? block, string? aliasFilePath) in outputs)
+		foreach ((IReadOnlyDictionary<string, string>? block, string key, string? path) in outputs)
 		{
-			if (block is null || aliasFilePath is null)
+			if (block is null || path is null)
 			{
 				continue;
 			}
@@ -542,9 +553,9 @@ public static class AiracService
 			Dictionary<string, string> caseInsensitive = new(block, StringComparer.OrdinalIgnoreCase);
 
 			if (SettingsValueReader.StringList(caseInsensitive, SubServiceSettingsReader.UploadToVnasKey)
-				.Contains(Path.GetFileName(aliasFilePath), StringComparer.OrdinalIgnoreCase))
+				.Contains(key, StringComparer.OrdinalIgnoreCase))
 			{
-				yield return aliasFilePath;
+				yield return path;
 			}
 		}
 	}
@@ -563,9 +574,15 @@ public static class AiracService
 
 		return new ServiceMessage(LogLevel.Warning, LogSource,
 			$"{report.Duplicates.Count:N0} alias command(s) are used by more than one line of this run's alias files, so CRC can only run " +
-			$"one of each. They are listed by ARTCC in {AiracOutputPaths.DuplicateAliasReportFileName} in the cycle folder.")
+			$"one of each. They are listed by ARTCC in {Path.GetFileName(report.FilePath)} in the cycle folder.")
 		{
 			IsAdvisory = true
 		};
 	}
+
+	/// <summary>A sub-service's alias file in a run.</summary>
+	/// <param name="Block">The sub-service's settings block, or <see langword="null"/> when it was not selected.</param>
+	/// <param name="Key">The alias file's key, FE-Buddy's name for it, e.g. <c>Airways.txt</c>.</param>
+	/// <param name="Path">Where it was written, or <see langword="null"/> when it was not.</param>
+	private sealed record AliasOutput(IReadOnlyDictionary<string, string>? Block, string Key, string? Path);
 }

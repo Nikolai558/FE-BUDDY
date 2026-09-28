@@ -75,6 +75,12 @@ public sealed record NavaidSettings
 	public VnasFileChoices Vnas { get; init; } = VnasFileChoices.None;
 
 	/// <summary>
+	/// The names the user gave files in place of FE-Buddy's, by file key. Not part of the settings
+	/// block: <see cref="NavaidService.Run"/> takes it from the AIRAC Service. Default: none renamed.
+	/// </summary>
+	public OutputFileNames FileNames { get; init; } = OutputFileNames.None;
+
+	/// <summary>
 	/// The Region of Interest the GeoJSON output is filtered to, or <see langword="null"/> for
 	/// no filtering. A NAVAID is in or out on its own coordinates; the alias file ignores this
 	/// entirely and always covers every included NAVAID.

@@ -1,5 +1,6 @@
 using System.Diagnostics;
 
+using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Application.Airac.Navaids.Models;
 using FeBuddy.Core.Application.Models;
 using FeBuddy.Core.Domain.Navaids.Models;
@@ -28,10 +29,14 @@ public static class NavaidService
 	/// </summary>
 	/// <param name="allNasrCsvData">All parsed NASR CSV data. <c>Nav</c> must not be null.</param>
 	/// <param name="navaidSettings">The raw NAVAIDs settings dictionary.</param>
+	/// <param name="fileNames">The names the user gave files in place of FE-Buddy's, or <see langword="null"/> for none.</param>
 	/// <returns>What was built and written, plus timing and every message collected along the way.</returns>
 	/// <exception cref="ArgumentException">Thrown when a required setting is missing or invalid.</exception>
 	/// <exception cref="InvalidOperationException">Thrown when <paramref name="allNasrCsvData"/>.Nav has not been parsed.</exception>
-	public static NavaidServiceResult Run(NasrCsvDataCollection allNasrCsvData, IReadOnlyDictionary<string, string> navaidSettings)
+	public static NavaidServiceResult Run(
+		NasrCsvDataCollection allNasrCsvData,
+		IReadOnlyDictionary<string, string> navaidSettings,
+		OutputFileNames? fileNames = null)
 	{
 		ArgumentNullException.ThrowIfNull(allNasrCsvData);
 		ArgumentNullException.ThrowIfNull(navaidSettings);
@@ -42,18 +47,20 @@ public static class NavaidService
 		NavaidSettingsParseResult parseResult = NavaidSettingsParser.Parse(navaidSettings);
 		messages.AddRange(parseResult.Messages);
 
+		NavaidSettings settings = parseResult.Settings with { FileNames = fileNames ?? OutputFileNames.None };
+
 		NavaidBuildAllResult buildResult = NavaidBuilder.BuildAll(allNasrCsvData);
 		messages.AddRange(buildResult.Messages);
 
 		// ExcludedTypes leaves a type out of everything; the ROI narrows the GeoJSON output only.
-		IReadOnlyList<Navaid> includedNavaids = NavaidFilter.ExcludeTypes(buildResult.Navaids, parseResult.Settings.ExcludedTypes);
-		IReadOnlyList<Navaid> navaidsInRoi = NavaidGeojsonWriter.FilterToRoi(includedNavaids, parseResult.Settings.Roi);
+		IReadOnlyList<Navaid> includedNavaids = NavaidFilter.ExcludeTypes(buildResult.Navaids, settings.ExcludedTypes);
+		IReadOnlyList<Navaid> navaidsInRoi = NavaidGeojsonWriter.FilterToRoi(includedNavaids, settings.Roi);
 
-		NavaidGeojsonGenerateResult geojsonResult = NavaidGeojsonWriter.Generate(navaidsInRoi, parseResult.Settings);
+		NavaidGeojsonGenerateResult geojsonResult = NavaidGeojsonWriter.Generate(navaidsInRoi, settings);
 		messages.AddRange(geojsonResult.Messages);
 
-		NavaidAliasGenerateResult? aliasResult = parseResult.Settings.GenerateAliasFile
-			? NavaidAliasWriter.Generate(includedNavaids, parseResult.Settings)
+		NavaidAliasGenerateResult? aliasResult = settings.GenerateAliasFile
+			? NavaidAliasWriter.Generate(includedNavaids, settings)
 			: null;
 
 		if (aliasResult is not null)
@@ -63,11 +70,11 @@ public static class NavaidService
 
 		// The ROI limits the GeoJSON only; a region with no NAVAIDs in it would otherwise end in
 		// a clean-looking run with no GeoJSON at all, so say why.
-		if (parseResult.Settings.GenerateGeojson && navaidsInRoi.Count == 0)
+		if (settings.GenerateGeojson && navaidsInRoi.Count == 0)
 		{
 			string text = includedNavaids.Count == 0
 				? "No NAVAIDs matched the configured filters, so no NAVAIDs GeoJSON files were written."
-				: parseResult.Settings.Roi is null
+				: settings.Roi is null
 					? "No NAVAIDs were found, so no NAVAIDs GeoJSON files were written."
 					: "No NAVAIDs are inside the region of interest, so no NAVAIDs GeoJSON files were written.";
 

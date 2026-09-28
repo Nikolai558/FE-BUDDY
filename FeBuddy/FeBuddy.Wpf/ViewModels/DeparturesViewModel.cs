@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Globalization;
+using System.IO;
 using System.Windows.Input;
 
 using FeBuddy.Wpf.Mvvm;
@@ -132,6 +133,17 @@ public sealed class DeparturesViewModel : GeojsonSubServiceViewModel, ISubServic
 			DepartureOutputFiles.KeyFor(kind), "Every procedure", suffix, $"every procedure's {suffix} file",
 			IsGeojson: true, [(CrcClassName, field)]);
 	}
+
+	/// <inheritdoc />
+	/// <remarks>
+	/// Each procedure's GeoJSON files are named from the FAA's data, so they are listed by the pattern
+	/// their names follow, and can't be renamed. The alias file can.
+	/// </remarks>
+	public override IEnumerable<OutputFileEntry> OutputFileEntries() =>
+		OutputFiles().Select(file => file.IsGeojson
+			? new OutputFileEntry(
+				file.Key, Path.Combine(FolderOf(file), "<ARTCC>", "<airport>"), $"<airport>_<procedure>_{file.Label}.geojson", Title, CanRename: false)
+			: OutputFileEntry.Renamable(file.Key, FolderOf(file), Title));
 
 	// ================= procedures =================
 

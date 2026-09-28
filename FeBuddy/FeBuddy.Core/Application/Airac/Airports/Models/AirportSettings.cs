@@ -54,6 +54,12 @@ public sealed record AirportSettings
 	public VnasFileChoices Vnas { get; init; } = VnasFileChoices.None;
 
 	/// <summary>
+	/// The names the user gave files in place of FE-Buddy's, by file key. Not part of the settings
+	/// block: <see cref="AirportService.Run"/> takes it from the AIRAC Service. Default: none renamed.
+	/// </summary>
+	public OutputFileNames FileNames { get; init; } = OutputFileNames.None;
+
+	/// <summary>
 	/// The Region of Interest the GeoJSON output is filtered to, or <see langword="null"/> for
 	/// no filtering. An airport is in or out as a whole, tested on its reference point; the
 	/// alias file ignores this entirely and always covers the full database.

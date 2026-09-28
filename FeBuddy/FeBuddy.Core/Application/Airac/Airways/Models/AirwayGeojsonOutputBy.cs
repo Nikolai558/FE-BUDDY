@@ -1,5 +1,3 @@
-using FeBuddy.Core.Domain.Airways.Models;
-
 namespace FeBuddy.Core.Application.Airac.Airways.Models;
 
 /// <summary>
@@ -11,8 +9,8 @@ public enum AirwayGeojsonOutputBy
 	None,
 
 	/// <summary>
-	/// Airways are grouped into High, Low, and Other files based on
-	/// <see cref="AirwayAltitudeClass"/>.
+	/// Airways are grouped into High and Low files by their designation: each designation goes in
+	/// the High file, the Low file, or both, as <see cref="AirwaySettings.DesignationStrata"/> says.
 	/// </summary>
 	HighLow,
 

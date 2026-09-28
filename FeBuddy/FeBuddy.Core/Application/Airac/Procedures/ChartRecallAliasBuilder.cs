@@ -68,8 +68,9 @@ public static class ChartRecallAliasBuilder
 	/// Builds every command from the metafile.
 	/// </summary>
 	/// <param name="dtpp">The selected cycle's parsed FAA d-TPP Metafile.</param>
+	/// <param name="fileName">The alias file's name for the summary, when the user gave it one of their own.</param>
 	/// <returns>The command lines, the counts behind the summary, and the summary and warning messages.</returns>
-	public static ChartRecallBuildResult Build(DtppMetafileDataCollection dtpp)
+	public static ChartRecallBuildResult Build(DtppMetafileDataCollection dtpp, string fileName = ProcedureOutputFiles.Alias)
 	{
 		ArgumentNullException.ThrowIfNull(dtpp);
 
@@ -185,7 +186,7 @@ public static class ChartRecallAliasBuilder
 			NamedAfterAirportCount = namedAfterAirport,
 		};
 
-		List<ServiceMessage> messages = [new ServiceMessage(LogLevel.Info, LogSource, SummaryText(summary))];
+		List<ServiceMessage> messages = [new ServiceMessage(LogLevel.Info, LogSource, SummaryText(summary, fileName))];
 		messages.AddRange(UnrecognizedWarnings(unrecognizedCharts));
 
 		return new ChartRecallBuildResult(lines, summary, messages);
@@ -209,9 +210,9 @@ public static class ChartRecallAliasBuilder
 		counts[key] = counts.GetValueOrDefault(key) + 1;
 
 	/// <summary>The one-line summary of the file: what got commands, what was left out and why.</summary>
-	private static string SummaryText(ChartRecallSummary summary)
+	private static string SummaryText(ChartRecallSummary summary, string fileName)
 	{
-		string text = $"{ProcedureOutputFiles.Alias}: {summary.CommandCount:N0} command(s) for {summary.AirportCount:N0} airport(s)";
+		string text = $"{fileName}: {summary.CommandCount:N0} command(s) for {summary.AirportCount:N0} airport(s)";
 
 		if (summary.CommandsByChartType.Count > 0)
 		{

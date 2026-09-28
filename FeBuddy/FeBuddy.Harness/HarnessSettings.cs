@@ -33,8 +33,7 @@ internal static class HarnessSettings
 	/// <summary>Every GeoJSON file a HighLow Airways run can write, by file key.</summary>
 	private const string AirwayHighLowFiles =
 		"Airways_High_Lines,Airways_High_Symbols,Airways_High_Text," +
-		"Airways_Low_Lines,Airways_Low_Symbols,Airways_Low_Text," +
-		"Airways_Other_Lines,Airways_Other_Symbols,Airways_Other_Text";
+		"Airways_Low_Lines,Airways_Low_Symbols,Airways_Low_Text";
 
 	/// <summary>
 	/// Mirrors the Settings "File layout" choice (<c>OutputFormatting.PrettyPrintGeojson</c>).
@@ -71,6 +70,13 @@ internal static class HarnessSettings
 			// Phase 3.3-3.7 settings. Defaults shown; omit any of these and the parser uses
 			// the same default.
 			{ "ExcludedDesignations", "" },   // e.g. "RN,SL" to drop those designations entirely (3.3)
+
+			// The High/Low file each designation goes in (OutputBy "HighLow" only). Leave all three
+			// out and J/Q go High, V/T Low; a designation in none of the lists is left out.
+			{ "HighDesignations", "J,Q" },
+			{ "LowDesignations", "V,T" },
+			{ "BothDesignations", "" },
+
 			{ "EmitLines", "Y" },             // per-kind output opt-out (3.4)
 			{ "EmitSymbols", "Y" },
 			{ "EmitText", "Y" },
@@ -92,6 +98,7 @@ internal static class HarnessSettings
 		AddCrcDefaults(settings, "Low", bcg: 2, filters: "2", lineStyle: "shortDashed", thickness: "1",
 			symbolStyle: "vor", symbolSize: "1", textSize: "1");
 
+		// Other: only a Designation file uses it, for an airway with no published altitude.
 		AddCrcDefaults(settings, "Other", bcg: 1, filters: "1", lineStyle: "longDashed", thickness: "1",
 			symbolStyle: "otherWaypoints", symbolSize: "1", textSize: "1");
 

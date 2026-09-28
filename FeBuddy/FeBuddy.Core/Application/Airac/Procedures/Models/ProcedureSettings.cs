@@ -50,6 +50,13 @@ public sealed record ProcedureSettings
 	public VnasFileChoices Vnas { get; init; } = VnasFileChoices.None;
 
 	/// <summary>
+	/// The names the user gave files in place of FE-Buddy's, by file key. Not part of the settings
+	/// block: <see cref="ProcedureService.Run"/> takes it from the AIRAC Service. Default: none
+	/// renamed.
+	/// </summary>
+	public OutputFileNames FileNames { get; init; } = OutputFileNames.None;
+
+	/// <summary>
 	/// Every included airport's every procedure is included whenever its
 	/// <c>ResponsibleArtcc</c> is one of these, trimmed and upper-cased. Default: none.
 	/// </summary>

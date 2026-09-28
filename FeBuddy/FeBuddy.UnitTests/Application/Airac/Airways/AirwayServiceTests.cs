@@ -3,6 +3,7 @@ using System.Text.Json;
 using FeBuddy.Core.Application.Airac;
 using FeBuddy.Core.Application.Airac.Airways;
 using FeBuddy.Core.Application.Airac.Airways.Models;
+using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Application.Models;
 using FeBuddy.Core.Infrastructure.Nasr.Models;
 
@@ -85,6 +86,83 @@ public sealed class AirwayServiceTests : IDisposable
 			yield return ($"Crc.{cls}.Text.xOffset", "0");
 			yield return ($"Crc.{cls}.Text.yOffset", "0");
 		}
+	}
+
+	/// <summary>
+	/// V6 as NASR publishes it: one ID for the contiguous U.S. and Hawaii, whose Hawaii segments carry
+	/// a 45,000 ft maximum - so its highest altitude says High (issue #241).
+	/// </summary>
+	private static NasrCsvDataCollection V6() =>
+		AirwayTestDataBuilder.Build(
+			fixes: [("AAAAA", 40.0, -80.0), ("CCCCC", 42.0, -82.0)],
+			navaids: [("ABC", 41.0, -81.0)],
+			awyId: "V6",
+			segments:
+			[
+				AirwayTestDataBuilder.Segment("V6", 10, "AAAAA", "WP", "ABC", maxAuthAlt: 17500),
+				AirwayTestDataBuilder.Segment("V6", 20, "ABC", "VOR/DME", "CCCCC", maxAuthAlt: 45000),
+				AirwayTestDataBuilder.Segment("V6", 30, "CCCCC", "WP", null),
+			]);
+
+	/// <summary>The High/Low file a designation goes in comes from the user's choice, not the airway's highest altitude.</summary>
+	[Fact]
+	public void a_v_airway_goes_in_the_low_files_whatever_its_highest_altitude()
+	{
+		AirwayServiceResult result = AirwayService.Run(V6(), Settings(("GenerateAliasFile", "N")));
+
+		Assert.Equal(
+			["Airways_Low_Lines.geojson", "Airways_Low_Symbols.geojson", "Airways_Low_Text.geojson"],
+			result.GeojsonFilesWritten.Select(Path.GetFileName));
+	}
+
+	[Theory]
+	[InlineData("HighDesignations", new[] { "High" })]
+	[InlineData("LowDesignations", new[] { "Low" })]
+	[InlineData("BothDesignations", new[] { "High", "Low" })]
+	public void each_designation_goes_in_the_files_chosen_for_it(string key, string[] groups)
+	{
+		AirwayServiceResult result = AirwayService.Run(V6(), Settings((key, "V"), ("GenerateAliasFile", "N"), ("EmitSymbols", "N"), ("EmitText", "N")));
+
+		Assert.Equal(groups.Select(group => $"Airways_{group}_Lines.geojson"), result.GeojsonFilesWritten.Select(Path.GetFileName));
+		Assert.Empty(result.Warnings);
+	}
+
+	/// <summary>A designation the user has not put in either file is left out of both, and the run says so.</summary>
+	[Fact]
+	public void a_designation_with_no_stratum_is_left_out_with_an_advisory()
+	{
+		AirwayServiceResult result = AirwayService.Run(V6(), Settings(("HighDesignations", "J"), ("GenerateAliasFile", "N")));
+
+		Assert.Empty(result.GeojsonFilesWritten);
+		ServiceMessage advisory = Assert.Single(result.Messages, m => m.Text.StartsWith("No High / Low file is chosen for V airways", StringComparison.Ordinal));
+		Assert.True(advisory.IsAdvisory);
+		Assert.Contains("(HighDesignations, LowDesignations or BothDesignations)", advisory.Text, StringComparison.Ordinal);
+	}
+
+	/// <summary>
+	/// A High file uses the High defaults for every airway in it - even one whose published altitudes
+	/// would class it Other - so a run needs, and reads, only the High defaults.
+	/// </summary>
+	[Fact]
+	public void a_high_file_uses_the_high_defaults_whatever_its_airways_altitude_class()
+	{
+		// J1 publishes no altitude at all, so its class is Other.
+		(string, string)[] highDefaults = [.. CrcDefaults().Where(entry => entry.Item1.StartsWith("Crc.High.", StringComparison.Ordinal))];
+
+		AirwayServiceResult result = AirwayService.Run(J1(), Settings(
+			[
+				.. highDefaults,
+				("UploadToVnas", "Airways_High_Lines"),
+				("CrcDefaultsFor", "Airways_High_Lines"),
+				("EmitSymbols", "N"),
+				("EmitText", "N"),
+				("GenerateAliasFile", "N"),
+			]));
+
+		JsonElement[] features = Features(Assert.Single(result.GeojsonFilesWritten));
+		Assert.True(features[0].GetProperty("properties").GetProperty("isLineDefaults").GetBoolean());
+		Assert.Equal(3, features[0].GetProperty("properties").GetProperty("bcg").GetInt32());
+		Assert.False(features[1].GetProperty("properties").TryGetProperty("bcg", out _));
 	}
 
 	private static JsonElement[] Features(string path)
@@ -253,5 +331,27 @@ public sealed class AirwayServiceTests : IDisposable
 	public void feb_property_names_fall_back_to_the_enum_text()
 	{
 		Assert.Equal("99", FebProperties.Name((AirwayFebProperty)99));
+	}
+
+	[Fact]
+	public void a_renamed_geojson_file_and_alias_file_are_written_under_their_new_names()
+	{
+		// J airways go in the High files by default.
+		OutputFileNames fileNames = new(new Dictionary<string, string>
+		{
+			["Airways_High_Lines"] = "ZOB High",
+			["Airways.txt"] = "ZOB Airways",
+		});
+
+		AirwayServiceResult result = AirwayService.Run(J1(), Settings(), fileNames);
+
+		string renamedLines = Assert.Single(result.GeojsonFilesWritten, p => p.EndsWith("ZOB High.geojson", StringComparison.Ordinal));
+		Assert.True(File.Exists(renamedLines));
+		Assert.False(File.Exists(Path.Combine(Path.GetDirectoryName(renamedLines)!, "Airways_High_Lines.geojson")));
+
+		Assert.NotNull(result.AliasFilePath);
+		Assert.EndsWith("ZOB Airways.txt", result.AliasFilePath, StringComparison.Ordinal);
+		Assert.True(File.Exists(result.AliasFilePath));
+		Assert.False(File.Exists(Path.Combine(Path.GetDirectoryName(result.AliasFilePath)!, "Airways.txt")));
 	}
 }

@@ -1,3 +1,4 @@
+using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Application.Airac.WxStations;
 using FeBuddy.Core.Application.Airac.WxStations.Models;
 using FeBuddy.Core.Infrastructure.WxStations.Models;
@@ -128,5 +129,19 @@ public sealed class WxStationServiceTests : IDisposable
 		WxStationDataCollection data = WxStationTestData.Build([WxStationTestData.DtwRow()]);
 
 		Assert.Throws<ArgumentException>(() => WxStationService.Run(data, Settings(("EmitSymbols", "N"), ("EmitText", "N"))));
+	}
+
+	[Fact]
+	public void a_renamed_geojson_file_is_written_under_its_new_name()
+	{
+		WxStationDataCollection data = WxStationTestData.Build([WxStationTestData.DtwRow()]);
+
+		OutputFileNames fileNames = new(new Dictionary<string, string> { ["Wx_Symbols"] = "ZOB Wx Symbols" });
+
+		WxStationServiceResult result = WxStationService.Run(data, Settings(), fileNames);
+
+		string renamed = Assert.Single(result.GeojsonFilesWritten, f => f.EndsWith("ZOB Wx Symbols.geojson", StringComparison.Ordinal));
+		Assert.True(File.Exists(renamed));
+		Assert.False(File.Exists(Path.Combine(Path.GetDirectoryName(renamed)!, "Wx_Symbols.geojson")));
 	}
 }

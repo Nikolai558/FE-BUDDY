@@ -2,6 +2,7 @@ using System.Text.Json;
 
 using FeBuddy.Core.Application.Airac.Airports;
 using FeBuddy.Core.Application.Airac.Airports.Models;
+using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Infrastructure.Nasr.Models;
 
 using FeBuddy.UnitTests.Application.Airac.Airports.Fixtures;
@@ -223,5 +224,25 @@ public sealed class AirportServiceTests : IDisposable
 
 		Assert.Null(result.FilePath);
 		Assert.Equal(0, result.CommandCount);
+	}
+
+	[Fact]
+	public void a_renamed_geojson_file_and_alias_file_are_written_under_their_new_names()
+	{
+		OutputFileNames fileNames = new(new Dictionary<string, string>
+		{
+			["Airports_Symbols"] = "ZOB Airport Symbols",
+			["Airports.txt"] = "ZOB Airports",
+		});
+
+		AirportServiceResult result = AirportService.Run(SeattleData(), Settings(), fileNames);
+
+		Assert.Equal(GeojsonPath("ZOB Airport Symbols.geojson"), Assert.Single(result.GeojsonFilesWritten, p => p.EndsWith("ZOB Airport Symbols.geojson", StringComparison.Ordinal)));
+		Assert.True(File.Exists(GeojsonPath("ZOB Airport Symbols.geojson")));
+		Assert.False(File.Exists(GeojsonPath("Airports_Symbols.geojson")));
+
+		Assert.Equal(Path.Combine(_outputDirectory, "Aliases", "ZOB Airports.txt"), result.AliasFilePath);
+		Assert.True(File.Exists(result.AliasFilePath!));
+		Assert.False(File.Exists(Path.Combine(_outputDirectory, "Aliases", "Airports.txt")));
 	}
 }

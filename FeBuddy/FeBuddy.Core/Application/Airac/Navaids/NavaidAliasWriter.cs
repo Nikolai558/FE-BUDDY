@@ -98,7 +98,7 @@ public static class NavaidAliasWriter
 		string directory = AiracOutputPaths.AliasDirectory(settings.OutputDirectory);
 		Directory.CreateDirectory(directory);
 
-		string path = Path.Combine(directory, NavaidOutputFiles.Alias);
+		string path = Path.Combine(directory, settings.FileNames.FileName(NavaidOutputFiles.Alias));
 
 		// UTF-8 without a BOM, like every other alias writer.
 		File.WriteAllText(path, builder.ToString(), new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));

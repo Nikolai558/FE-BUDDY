@@ -51,6 +51,12 @@ public sealed class AiracOutputPathsTests
 		Assert.Equal(Path.Combine(Output, "Upload_to_vNAS", "vNAS_Alias.txt"), AiracOutputPaths.VnasAliasFilePath(Output));
 	}
 
+	[Fact]
+	public void a_renamed_alias_file_for_vnas_stays_in_upload_to_vnas()
+	{
+		Assert.Equal(Path.Combine(Output, "Upload_to_vNAS", "ZOB.txt"), AiracOutputPaths.VnasAliasFilePath(Output, "ZOB.txt"));
+	}
+
 	[Theory]
 	[InlineData(CrcFeatureKind.Line, "Lines")]
 	[InlineData(CrcFeatureKind.Symbol, "Symbols")]

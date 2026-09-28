@@ -6,6 +6,7 @@ using FeBuddy.Wpf.Mvvm;
 using FeBuddy.Wpf.Shell;
 using FeBuddy.Wpf.ViewModels.Models;
 
+using FeBuddy.Core.Application.Airac;
 using FeBuddy.Core.Domain.Geo;
 using FeBuddy.Core.Domain.Geo.Models;
 
@@ -19,11 +20,11 @@ namespace FeBuddy.Wpf.ViewModels.ServiceTabs;
 /// </summary>
 /// <remarks>
 /// <para>
-/// Also the base for Procedures, which writes no GeoJSON at all: it still wants the Region of
-/// Interest override and the shared "keep at least one output on" plumbing, so it derives from
-/// this class too, with <see cref="EmitKeys"/> <c>(null, null, null)</c>, <see cref="HasAliasFile"/>
-/// <see langword="false"/>, and <see cref="OutputFiles"/> always empty - it never shows the GeoJSON
-/// Files, FE-Buddy Properties or Upload to vNAS / CRC ERAM Defaults cards.
+/// Also the base for Procedures and Telephony, which write no GeoJSON at all: they still want the
+/// shared alias file, Upload to vNAS and "keep at least one output on" plumbing (and Procedures the
+/// Region of Interest override), so they derive from this class too, with <see cref="EmitKeys"/>
+/// <c>(null, null, null)</c> and <see cref="OutputFiles"/> listing only the alias file - they never
+/// show the GeoJSON Files, FE-Buddy Properties or CRC ERAM Defaults cards.
 /// </para>
 /// <para>
 /// A derived tab builds <see cref="FebProperties"/> and the three CRC defaults lists in its
@@ -154,6 +155,15 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 	/// <returns><see langword="true"/> when it is written and ticked.</returns>
 	public bool IsMarkedForVnas(string fileKey) =>
 		UploadedFiles().Any(file => string.Equals(file.File.Key, fileKey, StringComparison.OrdinalIgnoreCase));
+
+	/// <summary>
+	/// Every file the tab's current settings write, for the File Names tab: its key, the folder it
+	/// goes in inside the cycle folder (a GeoJSON file ticked for vNAS goes under
+	/// <c>Upload_to_vNAS</c>), and FE-Buddy's name for it.
+	/// </summary>
+	/// <returns>The files, in the order the Upload to vNAS card lists them.</returns>
+	public virtual IEnumerable<OutputFileEntry> OutputFileEntries() =>
+		OutputFiles().Select(file => OutputFileEntry.Renamable(file.Key, FolderOf(file), Title));
 
 	/// <inheritdoc />
 	public CrcDefaultsScope CrcDefaultsScope
@@ -288,6 +298,21 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 	/// current settings do not write.
 	/// </summary>
 	protected IEnumerable<string> ChosenVnasFileKeys => _vnasFiles.Union(_crcFiles, StringComparer.OrdinalIgnoreCase);
+
+	/// <summary>
+	/// The folder a file goes in inside the cycle folder: <c>Aliases</c> for the alias file, otherwise
+	/// <c>Geojson</c>, or <c>Upload_to_vNAS\Geojson</c> while it is ticked for vNAS.
+	/// </summary>
+	/// <param name="file">One of the files <see cref="OutputFiles"/> lists.</param>
+	/// <returns>The folder, relative to the cycle folder.</returns>
+	protected string FolderOf(OutputFileOption file)
+	{
+		ArgumentNullException.ThrowIfNull(file);
+
+		return file.IsGeojson
+			? AiracOutputPaths.FileDirectory(string.Empty, isGeojson: true, _vnasFiles.Contains(file.Key))
+			: AiracOutputPaths.AliasFolder;
+	}
 
 	/// <summary>Where a CRC defaults row is saved under this tab's config node.</summary>
 	/// <param name="row">The row.</param>

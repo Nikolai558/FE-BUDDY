@@ -39,6 +39,13 @@ public sealed record AiracServiceSettings
 	public string? PrimaryFacility { get; init; }
 
 	/// <summary>
+	/// The new names the user gave output files (the File Names tab): each renamed file's key and
+	/// its new name without an extension, e.g. <c>Airways_High_Lines</c> = <c>ZOB High</c> (see
+	/// <see cref="OutputFileNames"/>). <see langword="null"/> or empty keeps every file's FE-Buddy name.
+	/// </summary>
+	public IReadOnlyDictionary<string, string>? FileNames { get; init; }
+
+	/// <summary>
 	/// The folder this run writes every file into, e.g.
 	/// <c>C:\Users\me\Desktop\FE-Buddy_Output\AIRAC_2610</c> (see <see cref="AiracOutputPaths"/>).
 	/// </summary>

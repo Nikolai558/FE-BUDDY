@@ -1,5 +1,6 @@
 using System.Diagnostics;
 
+using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Application.Airac.WxStations.Models;
 using FeBuddy.Core.Application.Models;
 using FeBuddy.Core.Domain.WxStations.Models;
@@ -35,9 +36,13 @@ public static class WxStationService
 	/// failed.
 	/// </param>
 	/// <param name="wxStationSettings">The raw Wx Stations settings dictionary.</param>
+	/// <param name="fileNames">The names the user gave files in place of FE-Buddy's, or <see langword="null"/> for none.</param>
 	/// <returns>What was built and written, plus timing and every message collected along the way.</returns>
 	/// <exception cref="ArgumentException">Thrown when a required setting is missing or invalid.</exception>
-	public static WxStationServiceResult Run(WxStationDataCollection? wxStationData, IReadOnlyDictionary<string, string> wxStationSettings)
+	public static WxStationServiceResult Run(
+		WxStationDataCollection? wxStationData,
+		IReadOnlyDictionary<string, string> wxStationSettings,
+		OutputFileNames? fileNames = null)
 	{
 		ArgumentNullException.ThrowIfNull(wxStationSettings);
 
@@ -67,13 +72,15 @@ public static class WxStationService
 			};
 		}
 
+		WxStationSettings settings = parseResult.Settings with { FileNames = fileNames ?? OutputFileNames.None };
+
 		WxStationBuildResult buildResult = WxStationBuilder.Read(wxStationData);
 		messages.AddRange(buildResult.Messages);
 
 		IReadOnlyList<WxStation> stationsInRoi =
-			WxStationGeojsonWriter.FilterToRoi(buildResult.Stations, parseResult.Settings.Roi);
+			WxStationGeojsonWriter.FilterToRoi(buildResult.Stations, settings.Roi);
 
-		WxStationGeojsonGenerateResult geojsonResult = WxStationGeojsonWriter.Generate(stationsInRoi, parseResult.Settings);
+		WxStationGeojsonGenerateResult geojsonResult = WxStationGeojsonWriter.Generate(stationsInRoi, settings);
 
 		// Covers every reason the run could end with nothing written: no stations at all, or an
 		// empty ROI.

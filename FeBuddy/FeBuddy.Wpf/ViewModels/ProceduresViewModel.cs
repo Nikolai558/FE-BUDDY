@@ -6,6 +6,7 @@ using FeBuddy.Wpf.ViewModels.Models;
 using FeBuddy.Wpf.ViewModels.ServiceTabs.Models;
 using FeBuddy.Wpf.ViewModels.ServiceTabs;
 
+using FeBuddy.Core.Application.Airac;
 using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Application.Airac.Procedures;
 using FeBuddy.Core.Application.Airac.Procedures.Models;
@@ -812,6 +813,26 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 		if (GenerateAliasFile)
 		{
 			yield return OutputFileOption.AliasFile(ProcedureOutputFiles.Alias);
+		}
+	}
+
+	/// <inheritdoc />
+	/// <remarks>The two documents as well as the alias file: they can be renamed, though they never go to vNAS.</remarks>
+	public override IEnumerable<OutputFileEntry> OutputFileEntries()
+	{
+		if (GenerateChangesDocument)
+		{
+			yield return OutputFileEntry.Renamable(ProcedureOutputFiles.Changes, AiracOutputPaths.PublicationDocsFolder, Title);
+		}
+
+		if (GenerateProceduresJson)
+		{
+			yield return OutputFileEntry.Renamable(ProcedureOutputFiles.Json, AiracOutputPaths.PublicationDocsFolder, Title);
+		}
+
+		foreach (OutputFileEntry file in base.OutputFileEntries())
+		{
+			yield return file;
 		}
 	}
 

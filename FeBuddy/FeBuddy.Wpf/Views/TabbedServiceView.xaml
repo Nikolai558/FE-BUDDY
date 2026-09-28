@@ -64,6 +64,9 @@
         <DataTemplate DataType="{x:Type vm:VnasAliasViewModel}">
             <local:VnasAliasView />
         </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:FileNamesViewModel}">
+            <local:FileNamesView />
+        </DataTemplate>
         <DataTemplate DataType="{x:Type vm:DatToGeojsonViewModel}">
             <local:DatToGeojsonView />
         </DataTemplate>

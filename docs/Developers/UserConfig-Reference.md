@@ -52,6 +52,23 @@ Clearing the default ROI only sets `FilterByRoi` to `false`; the corners stay, s
 restores the last box. (`Coordindates` is misspelled in every saved file, so the key keeps the
 spelling - see [TODO](TODO.md).)
 
+### Services.AiracService.FileNames
+
+The File Names tab (`FileNamesViewModel`), saved with **Save** on that tab. Each file's choice is
+kept by its file key, whether or not the current settings write it, as numbered keys - numbered
+because a key such as `Airways.txt` has a dot in it. Each save first removes the whole `Files`
+subtree (`RemoveSubtree`), so a list saved again with fewer files leaves no stale numbers.
+
+| Key | Values | Default |
+|---|---|---|
+| `RenameFiles` | `Y` / `N` - whether the user renames files at all | `N` |
+| `Files.<n>.Key` | a file key, e.g. `Airways_High_Lines` or `Airways.txt` (see [Settings blocks](Settings-Blocks.md#new-file-names)) | none |
+| `Files.<n>.Rename` | `Y` / `N` - whether that file is ticked for renaming | `Y` |
+| `Files.<n>.Name` | its new name, without an extension (kept while unticked, so ticking it again brings it back) | none |
+
+A file ticked with no name has no entry: that is the state of a file with no choice yet, which the
+tab flags while `RenameFiles` is `Y`, until the user names it or unticks it.
+
 ## Services.MapService
 
 Written by the Map (`MapLayersState`, shared by the Map page and every map popup) the moment a
@@ -139,6 +156,11 @@ tab reads them any more (the [file conversion nodes](#file-conversion-nodes) sti
 | `AliasRoiScope` | `All`, `RoiAirways` | `All` |
 | `SplitAtAntimeridian` | `Y` / `N` | `Y` |
 | `ExcludedDesignations` | comma-separated designations, e.g. `RN,SL` | none |
+| `HighDesignations`, `LowDesignations`, `BothDesignations` | comma-separated designations each High/Low file gets (the High and Low Files card), excluded ones' choices included | none of the three saved: `J,Q` High, `V,T` Low |
+
+With none of the three stratum keys saved (a first run, or a config from before they existed), J
+and Q start in High and V and T in Low; every other designation starts with no file and the tab
+asks for one. Once they are saved, only what they list has a file.
 
 ### Departures only
 

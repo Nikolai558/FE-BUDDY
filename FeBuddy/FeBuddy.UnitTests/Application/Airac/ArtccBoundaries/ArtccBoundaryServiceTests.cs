@@ -1,5 +1,6 @@
 using FeBuddy.Core.Application.Airac.ArtccBoundaries;
 using FeBuddy.Core.Application.Airac.ArtccBoundaries.Models;
+using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Infrastructure.Nasr.Models;
 
 using FeBuddy.UnitTests.Application.Airac.ArtccBoundaries.Fixtures;
@@ -96,4 +97,16 @@ public sealed class ArtccBoundaryServiceTests : IDisposable
 	[Fact]
 	public void invalid_settings_errors_propagate_from_run() =>
 		Assert.Throws<ArgumentException>(() => ArtccBoundaryService.Run(AllSamples(), Settings(("OutputBy", "Sideways"))));
+
+	[Fact]
+	public void a_renamed_geojson_file_is_written_under_its_new_name()
+	{
+		OutputFileNames fileNames = new(new Dictionary<string, string> { ["ARTCC-Boundary_High_Lines"] = "ZOB High Boundary" });
+
+		ArtccBoundaryServiceResult result = ArtccBoundaryService.Run(AllSamples(), Settings(), fileNames);
+
+		string renamed = Assert.Single(result.GeojsonFilesWritten, f => f.EndsWith("ZOB High Boundary.geojson", StringComparison.Ordinal));
+		Assert.True(File.Exists(renamed));
+		Assert.False(File.Exists(Path.Combine(Path.GetDirectoryName(renamed)!, "ARTCC-Boundary_High_Lines.geojson")));
+	}
 }

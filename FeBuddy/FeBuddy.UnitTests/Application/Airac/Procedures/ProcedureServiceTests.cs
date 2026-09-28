@@ -1,3 +1,4 @@
+using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Application.Airac.Procedures;
 using FeBuddy.Core.Application.Airac.Procedures.Models;
 using FeBuddy.Core.Infrastructure.Dtpp.Models;
@@ -282,5 +283,35 @@ public sealed class ProcedureServiceTests : IDisposable
 
 		Assert.Null(result.AliasFilePath);
 		Assert.Contains(result.Messages, m => m.IsAdvisory && m.Text.Contains("FAA Chart Recall alias file", StringComparison.Ordinal));
+	}
+
+	[Fact]
+	public void renamed_documents_and_the_alias_file_are_written_under_their_new_names()
+	{
+		(NasrCsvDataCollection nasr, DtppMetafileDataCollection dtpp) = TwoAirportScenario();
+
+		OutputFileNames fileNames = new(new Dictionary<string, string>
+		{
+			["Procedure_Changes.md"] = "ZOB Changes",
+			["Procedures.json"] = "ZOB Procedures",
+			["Faa_Chart_Recall.txt"] = "ZOB Chart Recall",
+		});
+
+		ProcedureServiceResult result = ProcedureService.Run(nasr, dtpp, null, Settings(), fileNames);
+
+		string publicationDocs = Path.Combine(_outputDirectory, "Publication_Docs");
+		Assert.Equal(
+			[Path.Combine(publicationDocs, "ZOB Changes.md"), Path.Combine(publicationDocs, "ZOB Procedures.json")],
+			result.FilesWritten);
+		Assert.All(result.FilesWritten, f => Assert.True(File.Exists(f)));
+		Assert.False(File.Exists(Path.Combine(publicationDocs, "Procedure_Changes.md")));
+		Assert.False(File.Exists(Path.Combine(publicationDocs, "Procedures.json")));
+
+		Assert.Equal(Path.Combine(_outputDirectory, "Aliases", "ZOB Chart Recall.txt"), result.AliasFilePath);
+		Assert.True(File.Exists(result.AliasFilePath!));
+		Assert.False(File.Exists(Path.Combine(_outputDirectory, "Aliases", "Faa_Chart_Recall.txt")));
+
+		// The summary names the file as it was written.
+		Assert.Contains(result.Messages, m => m.Text.StartsWith("ZOB Chart Recall.txt:", StringComparison.Ordinal));
 	}
 }

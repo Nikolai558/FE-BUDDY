@@ -1,14 +1,23 @@
 namespace FeBuddy.Core.Application.Airac.Models;
 
+/// <summary>An alias file a run wrote, to check for duplicate commands.</summary>
+/// <param name="FileKey">
+/// FE-Buddy's name for the file, e.g. <c>Airports.txt</c>: it says how to find each command's
+/// ARTCC, whatever the file is called.
+/// </param>
+/// <param name="FilePath">The file's full path, under the name the user gave it if they renamed it.</param>
+public sealed record AliasFileWritten(string FileKey, string FilePath);
+
 /// <summary>One line of an alias file that shares its command with another line.</summary>
-/// <param name="FileName">The alias file the line is in, e.g. <c>Faa_Chart_Recall.txt</c>.</param>
+/// <param name="FileKey">FE-Buddy's name for the alias file the line is in, e.g. <c>Faa_Chart_Recall.txt</c>.</param>
+/// <param name="FileName">The alias file's name as written, which is <paramref name="FileKey"/> unless the user renamed it.</param>
 /// <param name="Text">The whole line, as written.</param>
 /// <param name="ArtccId">
 /// The ARTCC responsible for the airport the line belongs to, e.g. <c>ZLA</c>; <see langword="null"/>
 /// when the line belongs to no airport FE-Buddy can tell (an airway or NAVAID command, or an
 /// airport NASR does not list).
 /// </param>
-public sealed record DuplicateAliasLine(string FileName, string Text, string? ArtccId);
+public sealed record DuplicateAliasLine(string FileKey, string FileName, string Text, string? ArtccId);
 
 /// <summary>An alias command more than one line uses, with every one of those lines.</summary>
 /// <param name="Command">The command as its first line spells it, e.g. <c>.edwAPDc</c>.</param>

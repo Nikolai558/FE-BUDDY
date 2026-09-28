@@ -64,25 +64,50 @@ public static class AirwayGeojsonWriter
 			return files;
 		}
 
-		foreach (var group in GroupAirways(airways, settings.OutputBy))
+		foreach ((string group, List<Airway> groupAirways) in GroupAirways(airways, settings))
 		{
-			AirwayAltitudeClass referenceClass = DetermineReferenceClass(group.Value);
+			// A High or Low file is its class, whatever each airway's published altitudes say.
+			AirwayAltitudeClass referenceClass = settings.OutputBy == AirwayGeojsonOutputBy.HighLow
+				? Enum.Parse<AirwayAltitudeClass>(group)
+				: DetermineReferenceClass(groupAirways);
 
 			List<Airway> orderedAirways =
-				[.. group.Value.OrderBy(a => a.AwyId, StringComparer.OrdinalIgnoreCase)];
+				[.. groupAirways.OrderBy(a => a.AwyId, StringComparer.OrdinalIgnoreCase)];
 
 			if (settings.EmitLines)
 			{
-				GenerateLines(orderedAirways, referenceClass, settings, group.Key, files);
+				GenerateLines(orderedAirways, referenceClass, settings, group, files);
 			}
 
-			GenerateSymbolsAndText(orderedAirways, referenceClass, settings, group.Key, files);
+			GenerateSymbolsAndText(orderedAirways, referenceClass, settings, group, files);
 		}
 
 		return files;
 	}
 
-	/// <summary>Writes one group's file of one kind, into the GeoJSON or vNAS folder as the user chose.</summary>
+	/// <summary>
+	/// The designations among <paramref name="airways"/> that have no High/Low file chosen, so are
+	/// left out of the High and Low files; none unless <see cref="AirwaySettings.OutputBy"/> is
+	/// <see cref="AirwayGeojsonOutputBy.HighLow"/>.
+	/// </summary>
+	/// <param name="airways">The airways to render.</param>
+	/// <param name="settings">The parsed Airways settings.</param>
+	/// <returns>The designations, in name order.</returns>
+	public static IReadOnlyList<string> DesignationsWithoutStratum(IReadOnlyList<Airway> airways, AirwaySettings settings)
+	{
+		ArgumentNullException.ThrowIfNull(airways);
+		ArgumentNullException.ThrowIfNull(settings);
+
+		return settings.OutputBy != AirwayGeojsonOutputBy.HighLow
+			? []
+			: [.. airways
+				.Select(airway => airway.Designation)
+				.Where(designation => !settings.DesignationStrata.ContainsKey(designation))
+				.Distinct(StringComparer.OrdinalIgnoreCase)
+				.Order(StringComparer.OrdinalIgnoreCase)];
+	}
+
+	/// <summary>Writes one group's file of one kind, into the GeoJSON or vNAS folder as the user chose, under the name they chose.</summary>
 	private static void WriteFile(
 		FeatureCollection collection,
 		int renderedCount,
@@ -91,37 +116,55 @@ public static class AirwayGeojsonWriter
 		GeojsonFileSet files)
 	{
 		string directory = AiracOutputPaths.FileDirectory(settings.OutputDirectory, isGeojson: true, settings.Vnas.IsUploaded(fileKey));
-		files.Write(collection, renderedCount, directory, $"{fileKey}.geojson");
+		files.Write(collection, renderedCount, directory, settings.FileNames.FileName(fileKey));
 	}
 
 	/// <summary>
-	/// Groups airways by altitude class ("High"/"Low"/"Other") or by designation, per
-	/// <paramref name="outputBy"/>.
+	/// Groups airways by designation, or - for High and Low files - into "High" and "Low" by the
+	/// stratum the user chose for each designation: an airway whose designation goes in Both is in
+	/// both groups, and one whose designation has no stratum is in neither.
 	/// </summary>
-	private static IEnumerable<KeyValuePair<string, List<Airway>>> GroupAirways(
+	private static IEnumerable<(string Group, List<Airway> Airways)> GroupAirways(
 		IReadOnlyList<Airway> airways,
-		AirwayGeojsonOutputBy outputBy)
+		AirwaySettings settings)
 	{
 		Dictionary<string, List<Airway>> groups = new(StringComparer.OrdinalIgnoreCase);
 
 		foreach (Airway airway in airways)
 		{
-			string key = outputBy == AirwayGeojsonOutputBy.HighLow
-				? airway.AltitudeClass.ToString()
-				: airway.Designation;
-
-			if (!groups.TryGetValue(key, out List<Airway>? list))
+			foreach (string key in GroupsOf(airway, settings))
 			{
-				list = [];
-				groups[key] = list;
-			}
+				if (!groups.TryGetValue(key, out List<Airway>? list))
+				{
+					list = [];
+					groups[key] = list;
+				}
 
-			list.Add(airway);
+				list.Add(airway);
+			}
 		}
 
 		return groups
 			.OrderBy(kvp => kvp.Key, StringComparer.OrdinalIgnoreCase)
-			.Select(kvp => kvp);
+			.Select(kvp => (kvp.Key, kvp.Value));
+	}
+
+	/// <summary>The groups one airway belongs to.</summary>
+	private static IEnumerable<string> GroupsOf(Airway airway, AirwaySettings settings)
+	{
+		if (settings.OutputBy != AirwayGeojsonOutputBy.HighLow)
+		{
+			return [airway.Designation];
+		}
+
+		return settings.DesignationStrata.TryGetValue(airway.Designation, out AirwayStratum stratum)
+			? stratum switch
+			{
+				AirwayStratum.High => [nameof(AirwayAltitudeClass.High)],
+				AirwayStratum.Low => [nameof(AirwayAltitudeClass.Low)],
+				_ => [nameof(AirwayAltitudeClass.High), nameof(AirwayAltitudeClass.Low)],
+			}
+			: [];
 	}
 
 	/// <summary>

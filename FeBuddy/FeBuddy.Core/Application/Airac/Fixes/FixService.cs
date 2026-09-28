@@ -1,6 +1,7 @@
 using System.Diagnostics;
 
 using FeBuddy.Core.Application.Airac.Fixes.Models;
+using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Application.Models;
 using FeBuddy.Core.Domain.Fixes;
 using FeBuddy.Core.Domain.Fixes.Models;
@@ -29,10 +30,14 @@ public static class FixService
 	/// </summary>
 	/// <param name="allNasrCsvData">All parsed NASR CSV data. <c>Fix</c> must not be null.</param>
 	/// <param name="fixSettings">The raw Fixes settings dictionary.</param>
+	/// <param name="fileNames">The names the user gave files in place of FE-Buddy's, or <see langword="null"/> for none.</param>
 	/// <returns>What was built and written, plus timing and every message collected along the way.</returns>
 	/// <exception cref="ArgumentException">Thrown when a required setting is missing or invalid.</exception>
 	/// <exception cref="InvalidOperationException">Thrown when <paramref name="allNasrCsvData"/>.Fix has not been parsed.</exception>
-	public static FixServiceResult Run(NasrCsvDataCollection allNasrCsvData, IReadOnlyDictionary<string, string> fixSettings)
+	public static FixServiceResult Run(
+		NasrCsvDataCollection allNasrCsvData,
+		IReadOnlyDictionary<string, string> fixSettings,
+		OutputFileNames? fileNames = null)
 	{
 		ArgumentNullException.ThrowIfNull(allNasrCsvData);
 		ArgumentNullException.ThrowIfNull(fixSettings);
@@ -43,15 +48,17 @@ public static class FixService
 		FixSettingsParseResult parseResult = FixSettingsParser.Parse(fixSettings);
 		messages.AddRange(parseResult.Messages);
 
+		FixSettings settings = parseResult.Settings with { FileNames = fileNames ?? OutputFileNames.None };
+
 		FixBuildAllResult buildResult = FixBuilder.Read(allNasrCsvData);
 		messages.AddRange(buildResult.Messages);
 
-		if (parseResult.Settings.OutputBy == FixOutputBy.ChartAndFixUse)
+		if (settings.OutputBy == FixOutputBy.ChartAndFixUse)
 		{
 			// Checked against every built fix, not just what survives the ROI: a combination that
 			// exists nowhere in the cycle is worth flagging on its own, separately from "nothing
 			// in this region".
-			foreach (FixCombination combination in parseResult.Settings.Combinations)
+			foreach (FixCombination combination in settings.Combinations)
 			{
 				bool matchesAny = buildResult.Fixes.Any(fix =>
 					FixCharts.TokensFor(fix.Charts).Contains(combination.Chart, StringComparer.OrdinalIgnoreCase)
@@ -66,9 +73,9 @@ public static class FixService
 			}
 		}
 
-		IReadOnlyList<Fix> fixesInRoi = FixGeojsonWriter.FilterToRoi(buildResult.Fixes, parseResult.Settings.Roi);
+		IReadOnlyList<Fix> fixesInRoi = FixGeojsonWriter.FilterToRoi(buildResult.Fixes, settings.Roi);
 
-		FixGeojsonGenerateResult geojsonResult = FixGeojsonWriter.Generate(fixesInRoi, parseResult.Settings);
+		FixGeojsonGenerateResult geojsonResult = FixGeojsonWriter.Generate(fixesInRoi, settings);
 
 		// Covers every reason the run could end with nothing written: no fixes at all, an empty
 		// ROI, or (in the Chart file layout) every chart present having been excluded.

@@ -78,7 +78,7 @@ public static class ArrivalAliasWriter
 		string directory = AiracOutputPaths.AliasDirectory(settings.OutputDirectory);
 		Directory.CreateDirectory(directory);
 
-		string path = Path.Combine(directory, ArrivalOutputFiles.Alias);
+		string path = Path.Combine(directory, settings.FileNames.FileName(ArrivalOutputFiles.Alias));
 		File.WriteAllText(path, builder.ToString(), new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
 
 		return new ArrivalAliasGenerateResult(path, commandCount, messages);

@@ -1,6 +1,7 @@
 using System.Diagnostics;
 
 using FeBuddy.Core.Application.Airac.Airways.Models;
+using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Application.Models;
 using FeBuddy.Core.Domain.Airways.Models;
 using FeBuddy.Core.Infrastructure.Geojson;
@@ -26,10 +27,14 @@ public static class AirwayService
 	/// </summary>
 	/// <param name="allNasrCsvData">All parsed NASR CSV data. <c>Awy</c> must not be null.</param>
 	/// <param name="airwaySettings">The raw Airways settings block (see <see cref="AirwaySettingsParser"/> for the keys).</param>
+	/// <param name="fileNames">The names the user gave files in place of FE-Buddy's, or <see langword="null"/> for none.</param>
 	/// <returns>What was built and written, plus timing and every warning collected along the way.</returns>
 	/// <exception cref="ArgumentException">Thrown when a required setting is missing or invalid.</exception>
 	/// <exception cref="InvalidOperationException">Thrown when <paramref name="allNasrCsvData"/>.Awy has not been parsed.</exception>
-	public static AirwayServiceResult Run(NasrCsvDataCollection allNasrCsvData, IReadOnlyDictionary<string, string> airwaySettings)
+	public static AirwayServiceResult Run(
+		NasrCsvDataCollection allNasrCsvData,
+		IReadOnlyDictionary<string, string> airwaySettings,
+		OutputFileNames? fileNames = null)
 	{
 		ArgumentNullException.ThrowIfNull(allNasrCsvData);
 		ArgumentNullException.ThrowIfNull(airwaySettings);
@@ -40,23 +45,39 @@ public static class AirwayService
 		AirwaySettingsParseResult parseResult = AirwaySettingsParser.Parse(airwaySettings);
 		messages.AddRange(parseResult.Messages);
 
-		AirwayBuildAllResult buildResult = AirwayBuilder.BuildAll(allNasrCsvData, parseResult.Settings);
+		AirwaySettings settings = parseResult.Settings with { FileNames = fileNames ?? OutputFileNames.None };
+
+		AirwayBuildAllResult buildResult = AirwayBuilder.BuildAll(allNasrCsvData, settings);
 		messages.AddRange(buildResult.Messages);
 
 		// The ROI limits the GeoJSON only. The alias file gets every built airway and applies its
 		// own AliasRoiScope - "All" really is all, "ROI airways only" narrows it.
 		IReadOnlyList<Airway> airwaysInRoi = [.. buildResult.Airways.Where(a => a.CrossesRoi)];
 
-		GeojsonFileSet geojsonFiles = AirwayGeojsonWriter.Generate(airwaysInRoi, parseResult.Settings);
+		GeojsonFileSet geojsonFiles = AirwayGeojsonWriter.Generate(airwaysInRoi, settings);
 
-		AirwayAliasGenerateResult? aliasResult = parseResult.Settings.GenerateAliasFile
-			? AirwayAliasWriter.Generate(buildResult.Airways, parseResult.Settings)
+		// With High and Low files, a designation the user has not put in either is left out of both.
+		IReadOnlyList<string> withoutStratum = AirwayGeojsonWriter.DesignationsWithoutStratum(airwaysInRoi, settings);
+
+		if (withoutStratum.Count > 0)
+		{
+			messages.Add(new ServiceMessage(LogLevel.Warning, "AirwayService",
+				$"No High / Low file is chosen for {string.Join(", ", withoutStratum)} airways, so they were left out of the Airways " +
+				$"GeoJSON. Choose High, Low or Both for each ({AirwaySettingsParser.HighDesignationsKey}, " +
+				$"{AirwaySettingsParser.LowDesignationsKey} or {AirwaySettingsParser.BothDesignationsKey}).")
+			{
+				IsAdvisory = true
+			});
+		}
+
+		AirwayAliasGenerateResult? aliasResult = settings.GenerateAliasFile
+			? AirwayAliasWriter.Generate(buildResult.Airways, settings)
 			: null;
 
 		// Filters that leave nothing to write would otherwise end in a clean-looking run, so say
 		// which requested output came out empty and why.
-		bool noGeojson = parseResult.Settings.OutputBy != AirwayGeojsonOutputBy.None && airwaysInRoi.Count == 0;
-		bool noAlias = parseResult.Settings.GenerateAliasFile && aliasResult?.FilePath is null;
+		bool noGeojson = settings.OutputBy != AirwayGeojsonOutputBy.None && airwaysInRoi.Count == 0;
+		bool noAlias = settings.GenerateAliasFile && aliasResult?.FilePath is null;
 
 		if (noGeojson || noAlias)
 		{

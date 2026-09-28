@@ -195,9 +195,10 @@ public sealed class VnasAliasViewModel : SubServiceSettingsViewModel, ISubServic
 			? $"{merged.FeBuddyCommandCount:N0} from {string.Join(", ", merged.FeBuddyFiles)}"
 			: "no FE-Buddy alias file ticked for vNAS";
 
+		// Named as it was written: the user may have renamed it on the File Names tab.
 		string summary = merged.FilePath is null
 			? $"{AiracOutputPaths.VnasAliasFileName} not written"
-			: $"{AiracOutputPaths.VnasAliasFileName}: {merged.CustomCommandCount:N0} command(s) from {merged.CustomFilesMerged} of " +
+			: $"{Path.GetFileName(merged.FilePath)}: {merged.CustomCommandCount:N0} command(s) from {merged.CustomFilesMerged} of " +
 				$"{merged.CustomFileCount} custom alias file(s), then {feBuddy}";
 
 		return new SubServiceRunResult(Title, summary, merged.Messages);

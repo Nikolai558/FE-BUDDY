@@ -134,12 +134,14 @@ Preview Settings ▸ Run AIRAC Service
   save any dirty tab (the user confirms)
   block if any tab is invalid
   each tab: BuildSettingsBlock()  ── Dictionary<string,string>
+  File Names tab: BuildFileNamesBlock()  ── new names, by file key
   AiracService.HasExistingOutput?  ── AIRAC_<cycle> has files: ask Overwrite / Delete all / Cancel
                                    ── AiracServiceSettings ─────►  AiracService.RunAsync(settings)
                                                                        gets the cycle's parsed data from the cache
+                                                                       OutputFileNamesParser.Parse(FileNames)
                                                                        deletes AIRAC_<cycle> first, if asked
                                                                        for each block present, OutputDirectory = AIRAC_<cycle>:
-                                                                         XxxService.Run(nasrData, block)
+                                                                         XxxService.Run(nasrData, block, fileNames)
                                                                            1. XxxSettingsParser.Parse   block → typed settings (+ warnings)
                                                                            2. XxxBuilder                NASR rows → domain objects
                                                                            3. XxxGeojsonWriter          → .geojson files
@@ -207,6 +209,13 @@ every alias file marked for vNAS are merged into `vNAS_Alias.txt` (below).
   (`OutputDirectory`), so it can be run on its own by the harness and the tests. If the folder
   already has files, the GUI asks before the run: overwrite them, or have the service
   permanently delete the folder first (`ExistingOutputAction`).
+- **A file can be renamed, but it is known by its key.** The File Names tab's new names reach Core
+  as one dictionary for the run (`AiracServiceSettings.FileNames`, see
+  [Settings blocks](Settings-Blocks.md#new-file-names)), not in any sub-service's block; each writer
+  asks `OutputFileNames.FileName(key)` for the name to write under. Everything else still names the
+  file by its key - FE-Buddy's name for it - so `UploadToVnas`, which alias files go into
+  `vNAS_Alias.txt` and how the duplicate report finds each command's ARTCC work whatever the file is
+  called.
 - **Duplicate alias commands are checked once, after every sub-service has run.** Once the run has
   written its alias files, `DuplicateAliasReport.Write` reads them all back and lists every command
   more than one of their lines uses - CRC can only run one - in
@@ -297,7 +306,11 @@ The FAA's data has quirks; these rules handle them. Each lives in one class.
 
 - **Airway classification** (`AirwayClassifier`). High, Low or Other from the **highest published
   altitude** on the airway (≥ 18,000 ft is High), not the name's letter - the letter is only a
-  convention. An airway is never split between files.
+  convention. It picks each airway's CRC-ERAM defaults in a designation file. It does **not**
+  decide the High and Low files: those go by designation, as the user chooses per designation
+  (High, Low or Both; `AirwaySettings.DesignationStrata`). A highest altitude misleads there -
+  NASR publishes some V airways under one ID in the contiguous U.S. and Hawaii, and Hawaii's
+  45,000 ft would put the mainland airway on the high map (issue #241).
 - **Designation** comes from the airway ID's leading letters (`J` in `J3`), never from NASR's
   `AWY_DESIGNATION` column (a `Q` airway can be listed as `RN`).
 - **Border markers** (`AirwayReferenceOnlyPoints`, `AirwayNormalizer`). NASR lists points like

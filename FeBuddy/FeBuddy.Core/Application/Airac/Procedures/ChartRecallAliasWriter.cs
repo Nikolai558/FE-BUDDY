@@ -41,7 +41,7 @@ public static class ChartRecallAliasWriter
 		string directory = AiracOutputPaths.AliasDirectory(settings.OutputDirectory);
 		Directory.CreateDirectory(directory);
 
-		string path = Path.Combine(directory, ProcedureOutputFiles.Alias);
+		string path = Path.Combine(directory, settings.FileNames.FileName(ProcedureOutputFiles.Alias));
 
 		// UTF-8 without a BOM, like every other alias file.
 		File.WriteAllText(path, builder.ToString(), new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));

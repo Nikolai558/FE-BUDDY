@@ -916,8 +916,8 @@ The cards, top to bottom:
 
 ## Info
 
-Links to the manual, the change log, and the issue tracker. (The manual link still opens the
-2.x manual; this guide is the 3.0 one.)
+Links to this user guide, the [FAQ and troubleshooting](FAQ-and-Troubleshooting.md) page, the
+change log, and the issue tracker.
 
 ## Updating FE-Buddy
 

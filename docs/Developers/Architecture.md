@@ -408,8 +408,8 @@ The FAA's data has quirks; these rules handle them. Each lives in one class.
 - **Installer policy.** The MSI's custom action applies `UpdatePolicy`: forward is always allowed; a
   downgrade only off a pre-release. The MSI's own version number is a disposable counter - see
   [MSI version numbering](MSI-VERSION-NUMBERING.md).
-- **News** (`NewsService`). `FeBuddy/FeBuddy.Core/News.md` on `v3-development`, fetched from GitHub
-  (the bundled copy when offline). Posts carry a `PostId` (`yyyy-mm-dd.N`); the newest is compared
+- **News** (`NewsService`). `News.md` at the repository root on `v3-development`, fetched from GitHub
+  (the copy built into FeBuddy.Core when offline). Posts carry a `PostId` (`yyyy-mm-dd.N`); the newest is compared
   with `General.NewsLastOpen` to light up the News button.
 - Every GitHub request works anonymously. When the user chose a GitHub token (Settings ▸ FE-Buddy's
   GitHub Requests), the update check, News and the update download are sent with it first, and

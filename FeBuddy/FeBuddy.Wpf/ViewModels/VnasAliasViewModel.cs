@@ -9,6 +9,7 @@ using System.Windows.Threading;
 using Microsoft.Win32;
 
 using FeBuddy.Wpf.Mvvm;
+using FeBuddy.Wpf.Shell;
 using FeBuddy.Wpf.ViewModels.Models;
 using FeBuddy.Wpf.ViewModels.ServiceTabs;
 using FeBuddy.Wpf.ViewModels.ServiceTabs.Models;
@@ -534,12 +535,9 @@ public sealed class VnasAliasViewModel : SubServiceSettingsViewModel, ISubServic
 			Title = "Choose your custom alias file",
 			Filter = "Alias files (*.txt)|*.txt|All files (*.*)|*.*",
 			Multiselect = multiselect,
+			InitialDirectory = OutputPreferences.BrowseDirectory(
+				!string.IsNullOrWhiteSpace(initial) && Path.IsPathFullyQualified(initial) ? Path.GetDirectoryName(initial) : null),
 		};
-
-		if (!string.IsNullOrWhiteSpace(initial) && Path.IsPathFullyQualified(initial) && Path.GetDirectoryName(initial) is { } folder && Directory.Exists(folder))
-		{
-			dialog.InitialDirectory = folder;
-		}
 
 		return dialog.ShowDialog(Owner) == true ? dialog.FileNames : [];
 	}

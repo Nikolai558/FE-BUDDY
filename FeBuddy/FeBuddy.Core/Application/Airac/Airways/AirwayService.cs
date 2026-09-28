@@ -56,6 +56,20 @@ public static class AirwayService
 
 		GeojsonFileSet geojsonFiles = AirwayGeojsonWriter.Generate(airwaysInRoi, settings);
 
+		// With High and Low files, a designation the user has not put in either is left out of both.
+		IReadOnlyList<string> withoutStratum = AirwayGeojsonWriter.DesignationsWithoutStratum(airwaysInRoi, settings);
+
+		if (withoutStratum.Count > 0)
+		{
+			messages.Add(new ServiceMessage(LogLevel.Warning, "AirwayService",
+				$"No High / Low file is chosen for {string.Join(", ", withoutStratum)} airways, so they were left out of the Airways " +
+				$"GeoJSON. Choose High, Low or Both for each ({AirwaySettingsParser.HighDesignationsKey}, " +
+				$"{AirwaySettingsParser.LowDesignationsKey} or {AirwaySettingsParser.BothDesignationsKey}).")
+			{
+				IsAdvisory = true
+			});
+		}
+
 		AirwayAliasGenerateResult? aliasResult = settings.GenerateAliasFile
 			? AirwayAliasWriter.Generate(buildResult.Airways, settings)
 			: null;

@@ -35,6 +35,18 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 	private static readonly (CrcFeatureKind Kind, EramFieldKind Field)[] FileKinds =
 		[(CrcFeatureKind.Line, EramFieldKind.Line), (CrcFeatureKind.Symbol, EramFieldKind.Symbol), (CrcFeatureKind.Text, EramFieldKind.Text)];
 
+	/// <summary>Each High/Low stratum and the key its designations are saved and sent under.</summary>
+	private static readonly (AirwayStratum Stratum, string Key)[] StratumKeys =
+	[
+		(AirwayStratum.High, AirwaySettingsParser.HighDesignationsKey),
+		(AirwayStratum.Low, AirwaySettingsParser.LowDesignationsKey),
+		(AirwayStratum.Both, AirwaySettingsParser.BothDesignationsKey),
+	];
+
+	// Which file each designation goes in: what was saved, plus the user's choices since - kept for
+	// designations the cycle does not have or the user has excluded, so they come back as they were.
+	private readonly Dictionary<string, AirwayStratum> _strata = new(StringComparer.OrdinalIgnoreCase);
+
 	private AirwayGeojsonOutputBy _outputBy = AirwayGeojsonOutputBy.HighLow;
 	private bool _bufferAirwayWaypoints;
 	private bool _aliasRoiAirwaysOnly;
@@ -82,6 +94,7 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 				MarkDirty();
 				OnPropertyChanged(nameof(OutputModeHint));
 				OnPropertyChanged(nameof(IsGeojsonOutputOn));
+				OnPropertyChanged(nameof(ShowsStrata));
 			}
 		}
 	}
@@ -89,16 +102,25 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 	/// <summary>Whether any GeoJSON is written, i.e. <see cref="OutputBy"/> is not <c>None</c>.</summary>
 	public bool IsGeojsonOutputOn => OutputBy != AirwayGeojsonOutputBy.None;
 
+	/// <summary>
+	/// Whether the High and Low Files card shows: the tab writes High and Low files, and at least one
+	/// designation is included to choose a file for.
+	/// </summary>
+	public bool ShowsStrata => OutputBy == AirwayGeojsonOutputBy.HighLow && Designations.Any(d => d.Included);
+
+	/// <summary>The files a designation can go in, for each row's drop-down on the High and Low Files card.</summary>
+	public IReadOnlyList<AirwayStratum> StratumValues { get; } = [AirwayStratum.High, AirwayStratum.Low, AirwayStratum.Both];
+
 	/// <summary>A multi-line description of the files the selected <see cref="OutputBy"/> writes.</summary>
 	public string OutputModeHint => OutputBy switch
 	{
 		AirwayGeojsonOutputBy.None =>
 			"Airway data will not be written to GeoJSON.\nThe alias file, if enabled, is unaffected.",
 		AirwayGeojsonOutputBy.HighLow =>
-			"One file set by altitude:\n" +
-			"  • Airways_High  — highest MAA ≥ 18,000 ft\n" +
-			"  • Airways_Low   — 0 < MAA < 18,000 ft\n" +
-			"  • Airways_Other — neither\n" +
+			"Two file sets:\n" +
+			"  • Airways_High\n" +
+			"  • Airways_Low\n" +
+			"Each airway type goes in High, Low or Both, as you choose on the High and Low Files card.\n" +
 			"Each set is _Lines + _Symbols + _Text.",
 		AirwayGeojsonOutputBy.Designation =>
 			"One file set per designation (derived from the AWY_ID, e.g. J / V / Q / T / AT):\n" +
@@ -129,9 +151,10 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 
 	/// <inheritdoc />
 	/// <remarks>
-	/// A row per file group - High / Low / Other, or each included designation - with its Lines,
-	/// Symbols and Text files, then the alias file. A High/Low file holds one altitude class, so
-	/// it needs only that class's CRC defaults; a designation file can hold all three.
+	/// A row per file group - High and Low (each only while an included designation goes in it), or
+	/// each included designation - with its Lines, Symbols and Text files, then the alias file. A
+	/// High or Low file uses its own class's CRC defaults for every airway in it; a designation file
+	/// can hold all three classes.
 	/// </remarks>
 	protected override IEnumerable<OutputFileOption> OutputFiles()
 	{
@@ -188,11 +211,16 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 		Designations.Clear();
 		foreach (string d in designations)
 		{
-			Designations.Add(new DesignationToggle(d, included: !excluded.Contains(d), MarkDirty));
+			Designations.Add(new DesignationToggle(
+				d, included: !excluded.Contains(d), _strata.TryGetValue(d, out AirwayStratum stratum) ? stratum : null, OnDesignationChanged));
 		}
 
-		// In Designation mode the files - and so the Upload to vNAS rows - come from this list.
+		OnPropertyChanged(nameof(ShowsStrata));
+
+		// The files - and so the Upload to vNAS rows - come from this list: in Designation mode one
+		// set per designation, with High and Low files only the ones its designations go in.
 		RefreshVnasFiles();
+		Revalidate();
 
 		// The list was empty when this tab snapshotted itself at construction, so the snapshot
 		// says "nothing excluded" while the config may well exclude several. Re-take it now the
@@ -247,6 +275,11 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 			["ExcludedDesignations"] = ExcludedDesignationsValue(),
 		};
 
+		foreach ((AirwayStratum stratum, string key) in StratumKeys)
+		{
+			s[key] = DesignationsIn(stratum);
+		}
+
 		AddSharedSettings(s);
 		return s;
 	}
@@ -261,17 +294,19 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 		_aliasRoiAirwaysOnly = string.Equals(Get("AliasRoiScope"), "RoiAirways", StringComparison.OrdinalIgnoreCase);
 		_splitAtAntimeridian = GetBool("SplitAtAntimeridian", true);
 		LoadSharedSettings();
+		LoadStrata();
 
-		// Re-apply the excluded set to any already-built designation toggles.
+		// Re-apply the excluded set and the strata to any already-built designation toggles.
 		HashSet<string> excluded = ParseExcludedFromConfig();
 		foreach (DesignationToggle toggle in Designations)
 		{
 			toggle.Included = !excluded.Contains(toggle.Designation);
+			toggle.Stratum = _strata.TryGetValue(toggle.Designation, out AirwayStratum stratum) ? stratum : null;
 		}
 
 		foreach (string name in new[]
 		{
-			nameof(OutputBy), nameof(OutputModeHint), nameof(IsGeojsonOutputOn),
+			nameof(OutputBy), nameof(OutputModeHint), nameof(IsGeojsonOutputOn), nameof(ShowsStrata),
 			nameof(BufferAirwayWaypoints), nameof(AliasRoiAirwaysOnly), nameof(SplitAtAntimeridian),
 		})
 		{
@@ -289,15 +324,41 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 		Set("AliasRoiScope", AliasRoiAirwaysOnly ? "RoiAirways" : "All");
 		Set("SplitAtAntimeridian", YesNo(SplitAtAntimeridian));
 		Set("ExcludedDesignations", ExcludedDesignationsValue());
+
+		foreach ((AirwayStratum stratum, string key) in StratumKeys)
+		{
+			Set(key, DesignationsIn(stratum));
+		}
+
 		SaveSharedSettings();
 	}
 
 	/// <inheritdoc />
+	/// <remarks>
+	/// With High and Low files, every included designation needs a file: one with none yet - any
+	/// but J, Q, V and T the first time, or one a new cycle adds - is flagged until the user picks.
+	/// </remarks>
 	protected override void Validate(ServiceValidation validation)
 	{
 		if (IsGeojsonOutputOn && !EmitLines && !EmitSymbols && !EmitText)
 		{
 			validation.Add("Lines, Symbols and Text are all off, but Output is not \"None\". Turn at least one back on, or set Output to \"None\".");
+		}
+
+		bool needsStrata = OutputBy == AirwayGeojsonOutputBy.HighLow;
+
+		foreach (DesignationToggle toggle in Designations)
+		{
+			toggle.StratumError = needsStrata && toggle.Included && toggle.Stratum is null ? "Choose High, Low or Both." : null;
+		}
+
+		string[] unchosen = [.. Designations.Where(d => d.StratumError is not null).Select(d => d.Designation)];
+
+		if (unchosen.Length > 0)
+		{
+			validation.Add(
+				$"Choose High, Low or Both for {string.Join(", ", unchosen)} on the High and Low Files card, " +
+				"or untick them under Designations to Include.");
 		}
 
 		ValidateSharedSettings(validation);
@@ -338,7 +399,7 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 		string includes = covered
 			+ (HasRoi ? ". GeoJSON: only the airways crossing the region, clipped to it." : ".");
 
-		ServicePreviewRow[] rows =
+		List<ServicePreviewRow> rows =
 		[
 			new ServicePreviewRow("GeoJSON output", OutputBy.ToString()),
 			new ServicePreviewRow("Alias file", aliasFile),
@@ -352,6 +413,11 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 			new ServicePreviewRow("Upload to vNAS", DescribeVnasFiles()),
 			new ServicePreviewRow("CRC ERAM defaults", DescribeCrcDefaults()),
 		];
+
+		if (OutputBy == AirwayGeojsonOutputBy.HighLow)
+		{
+			rows.Insert(1, new ServicePreviewRow("High and Low files", DescribeStrata()));
+		}
 
 		return [new ServicePreviewSection("Airways", rows)];
 	}
@@ -370,13 +436,34 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 			? string.Join(',', Designations.Where(d => !d.Included).Select(d => d.Designation))
 			: string.Join(',', ParseExcludedFromConfig().Order(StringComparer.OrdinalIgnoreCase));
 
-	/// <summary>The groups the GeoJSON is split into: the altitude classes, or each included designation.</summary>
+	/// <summary>
+	/// The groups the GeoJSON is split into: High and Low - each only while an included designation
+	/// goes in it - or each included designation.
+	/// </summary>
 	/// <returns>The group names, in display order.</returns>
 	private IEnumerable<string> FileGroups()
 	{
 		if (OutputBy == AirwayGeojsonOutputBy.HighLow)
 		{
-			return AltitudeClasses.Select(altitudeClass => altitudeClass.ToString());
+			// Before the cycle's designations load, the saved choices say which files there will be.
+			HashSet<string> excludedDesignations = ParseExcludedFromConfig();
+			AirwayStratum[] used = Designations.Count > 0
+				? [.. Designations.Where(d => d.Included && d.Stratum is not null).Select(d => d.Stratum!.Value)]
+				: [.. _strata.Where(pair => !excludedDesignations.Contains(pair.Key)).Select(pair => pair.Value)];
+
+			List<string> groups = [];
+
+			if (used.Any(stratum => stratum is AirwayStratum.High or AirwayStratum.Both))
+			{
+				groups.Add(nameof(AirwayStratum.High));
+			}
+
+			if (used.Any(stratum => stratum is AirwayStratum.Low or AirwayStratum.Both))
+			{
+				groups.Add(nameof(AirwayStratum.Low));
+			}
+
+			return groups;
 		}
 
 		if (Designations.Count > 0)
@@ -398,4 +485,79 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 
 	private ObservableCollection<EramClassDefault> BuildClassDefaults(EramFieldKind kind) =>
 		[.. AltitudeClasses.Select(altitudeClass => new EramClassDefault(altitudeClass.ToString(), kind, MarkDirty))];
+
+	/// <summary>
+	/// Reads which file each designation goes in. With none of the three keys saved - a first run,
+	/// or a config from before they existed - J and Q go High and V and T Low, and every other
+	/// designation waits for the user to choose.
+	/// </summary>
+	private void LoadStrata()
+	{
+		_strata.Clear();
+
+		if (StratumKeys.All(entry => Get(entry.Key) is null))
+		{
+			foreach ((string designation, AirwayStratum stratum) in AirwaySettings.DefaultDesignationStrata)
+			{
+				_strata[designation] = stratum;
+			}
+
+			return;
+		}
+
+		foreach ((AirwayStratum stratum, string key) in StratumKeys)
+		{
+			foreach (string designation in ParseList(Get(key)))
+			{
+				_strata[designation.ToUpperInvariant()] = stratum;
+			}
+		}
+	}
+
+	/// <summary>The designations that go in one stratum, as saved and sent: every choice, excluded designations' too.</summary>
+	/// <param name="stratum">The stratum.</param>
+	/// <returns>The comma-separated designations, in name order.</returns>
+	private string DesignationsIn(AirwayStratum stratum) =>
+		string.Join(',', _strata.Where(pair => pair.Value == stratum).Select(pair => pair.Key).Order(StringComparer.OrdinalIgnoreCase));
+
+	/// <summary>The included designations by file, for the Preview Settings tab.</summary>
+	/// <returns>e.g. <c>High: J, Q · Low: V, T · Both: Y</c>, naming any still without a file.</returns>
+	private string DescribeStrata()
+	{
+		if (Designations.Count == 0)
+		{
+			return "Waiting for the cycle's airway list";
+		}
+
+		DesignationToggle[] included = [.. Designations.Where(d => d.Included)];
+
+		List<string> parts =
+		[
+			.. StratumValues
+				.Select(stratum => (Stratum: stratum, Designations: included.Where(d => d.Stratum == stratum).Select(d => d.Designation).ToArray()))
+				.Where(entry => entry.Designations.Length > 0)
+				.Select(entry => $"{entry.Stratum}: {string.Join(", ", entry.Designations)}"),
+		];
+
+		string[] unchosen = [.. included.Where(d => d.Stratum is null).Select(d => d.Designation)];
+
+		if (unchosen.Length > 0)
+		{
+			parts.Add($"not chosen yet: {string.Join(", ", unchosen)}");
+		}
+
+		return parts.Count > 0 ? string.Join(" · ", parts) : "No airways";
+	}
+
+	/// <summary>A designation was included, excluded, or given a file: keep the choice, and re-check the tab.</summary>
+	private void OnDesignationChanged(DesignationToggle toggle)
+	{
+		if (toggle.Stratum is { } stratum)
+		{
+			_strata[toggle.Designation] = stratum;
+		}
+
+		OnPropertyChanged(nameof(ShowsStrata));
+		MarkDirty();
+	}
 }

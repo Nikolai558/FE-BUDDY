@@ -48,7 +48,8 @@ public sealed class AirwaySettingsParserTests
 		}
 	}
 
-	private static readonly string[] Classes = ["High", "Low", "Other"];
+	// The High/Low files, one per stratum. (Other is an altitude class only a designation file uses.)
+	private static readonly string[] Classes = ["High", "Low"];
 
 	private static readonly string[] Kinds = ["Lines", "Symbols", "Text"];
 
@@ -205,8 +206,8 @@ public sealed class AirwaySettingsParserTests
 
 		AirwaySettingsParseResult result = AirwaySettingsParser.Parse(settings);
 
-		Assert.Equal(10, result.Settings.Vnas.UploadFiles.Count);
-		Assert.Equal(9, result.Settings.Vnas.CrcDefaultsFiles.Count);
+		Assert.Equal(7, result.Settings.Vnas.UploadFiles.Count);
+		Assert.Equal(6, result.Settings.Vnas.CrcDefaultsFiles.Count);
 		Assert.Equal(3, result.Settings.LineDefaults[AirwayAltitudeClass.High].Filters[0]);
 		Assert.Equal("solid", result.Settings.LineDefaults[AirwayAltitudeClass.High].Style);
 	}
@@ -226,6 +227,79 @@ public sealed class AirwaySettingsParserTests
 		Assert.Equal([AirwayAltitudeClass.High], parsed.LineDefaults.Keys);
 		Assert.Equal([AirwayAltitudeClass.High], parsed.TextDefaults.Keys);
 		Assert.Empty(parsed.SymbolDefaults);
+	}
+
+	/// <summary>No High/Low file holds the Other class, so its defaults are never needed there - even for a stale choice naming one.</summary>
+	[Fact]
+	public void in_high_low_mode_the_other_class_is_never_required()
+	{
+		Dictionary<string, string> settings = MinimalValidSettings();
+		settings["UploadToVnas"] = "Airways_Other_Lines";
+		settings["CrcDefaultsFor"] = "Airways_Other_Lines";
+
+		AirwaySettings parsed = AirwaySettingsParser.Parse(settings).Settings;
+
+		Assert.Empty(parsed.LineDefaults);
+	}
+
+	/// <summary>With none of the three keys - a block from before they existed - J and Q are High, V and T Low.</summary>
+	[Fact]
+	public void with_no_stratum_keys_the_default_strata_apply()
+	{
+		AirwaySettings parsed = AirwaySettingsParser.Parse(MinimalValidSettings()).Settings;
+
+		Assert.Equal(AirwaySettings.DefaultDesignationStrata, parsed.DesignationStrata);
+		Assert.Equal(AirwayStratum.High, parsed.DesignationStrata["j"]);
+		Assert.Equal(AirwayStratum.Low, parsed.DesignationStrata["T"]);
+		Assert.False(parsed.DesignationStrata.ContainsKey("Y"));
+	}
+
+	/// <summary>Once any of the keys is given, the lists are taken as they are: a designation in none has no file.</summary>
+	[Fact]
+	public void the_stratum_keys_say_which_file_each_designation_goes_in()
+	{
+		Dictionary<string, string> settings = MinimalValidSettings();
+		settings["HighDesignations"] = "j, q, Y";
+		settings["LowDesignations"] = "V";
+		settings["BothDesignations"] = "zk";
+
+		AirwaySettingsParseResult result = AirwaySettingsParser.Parse(settings);
+
+		Assert.Equal(
+			new Dictionary<string, AirwayStratum>
+			{
+				["J"] = AirwayStratum.High,
+				["Q"] = AirwayStratum.High,
+				["Y"] = AirwayStratum.High,
+				["V"] = AirwayStratum.Low,
+				["ZK"] = AirwayStratum.Both,
+			},
+			result.Settings.DesignationStrata);
+		Assert.False(result.Settings.DesignationStrata.ContainsKey("T"));
+		Assert.Empty(result.Messages.WarningTexts());
+	}
+
+	[Fact]
+	public void a_blank_stratum_key_still_replaces_the_defaults()
+	{
+		Dictionary<string, string> settings = MinimalValidSettings();
+		settings["BothDesignations"] = "";
+
+		Assert.Empty(AirwaySettingsParser.Parse(settings).Settings.DesignationStrata);
+	}
+
+	[Fact]
+	public void a_designation_in_two_stratum_lists_throws()
+	{
+		Dictionary<string, string> settings = MinimalValidSettings();
+		settings["HighDesignations"] = "J";
+		settings["LowDesignations"] = "v,j";
+
+		ArgumentException ex = Assert.Throws<ArgumentException>(() => AirwaySettingsParser.Parse(settings));
+
+		Assert.Equal(
+			"Designation 'J' is in both HighDesignations and LowDesignations. List it once: BothDesignations writes it to the High and the Low files.",
+			ex.Message);
 	}
 
 	[Fact]
@@ -292,7 +366,7 @@ public sealed class AirwaySettingsParserTests
 		// No Symbol or Text keys at all: those files are not written, so they are not needed.
 		AirwaySettings parsed = AirwaySettingsParser.Parse(settings).Settings;
 
-		Assert.Equal(3, parsed.LineDefaults.Count);
+		Assert.Equal(2, parsed.LineDefaults.Count);
 		Assert.Empty(parsed.SymbolDefaults);
 		Assert.Empty(parsed.TextDefaults);
 	}
@@ -338,8 +412,8 @@ public sealed class AirwaySettingsParserTests
 		AirwaySettings parsed = AirwaySettingsParser.Parse(settings).Settings;
 
 		Assert.Empty(parsed.TextDefaults);
-		Assert.Equal(3, parsed.LineDefaults.Count);
-		Assert.Equal(3, parsed.SymbolDefaults.Count);
+		Assert.Equal(2, parsed.LineDefaults.Count);
+		Assert.Equal(2, parsed.SymbolDefaults.Count);
 	}
 
 	[Fact]
@@ -471,7 +545,7 @@ public sealed class AirwaySettingsParserTests
 	{
 		Dictionary<string, string> settings = MinimalValidSettings();
 		UploadEverythingWithCrcDefaults(settings);
-		settings["CrcDefaultsFor"] = "Airways_High_Symbols,Airways_Low_Symbols,Airways_Other_Symbols";
+		settings["CrcDefaultsFor"] = "Airways_High_Symbols,Airways_Low_Symbols";
 
 		foreach (string cls in Classes)
 		{
@@ -481,7 +555,7 @@ public sealed class AirwaySettingsParserTests
 		// No Line or Text keys at all: those files go to vNAS without defaults.
 		AirwaySettingsParseResult result = AirwaySettingsParser.Parse(settings);
 
-		Assert.Equal(3, result.Settings.SymbolDefaults.Count);
+		Assert.Equal(2, result.Settings.SymbolDefaults.Count);
 		Assert.Empty(result.Settings.LineDefaults);
 		Assert.Empty(result.Settings.TextDefaults);
 		Assert.Empty(result.Messages.WarningTexts());

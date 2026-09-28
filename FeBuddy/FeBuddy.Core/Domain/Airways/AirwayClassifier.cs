@@ -11,7 +11,10 @@ namespace FeBuddy.Core.Domain.Airways;
 /// <remarks>
 /// Classification comes from the published altitudes, not the airway's name: a name's letter
 /// (J, Q, V, T...) is only a convention, and some airways do not follow it. Each airway lands
-/// in exactly one class - it is never split across files by altitude.
+/// in exactly one class. The class picks an airway's CRC-ERAM defaults in a designation file;
+/// it does not decide the High and Low files, which go by designation as the user chooses -
+/// a highest altitude can mislead (a V airway published in Hawaii as well as the contiguous U.S.
+/// shares one ID, and Hawaii's 45,000 ft would make the whole airway High).
 /// </remarks>
 public static class AirwayClassifier
 {

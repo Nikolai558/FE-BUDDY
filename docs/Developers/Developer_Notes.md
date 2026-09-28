@@ -344,9 +344,8 @@ Second post for the same day.
 	  - `Geojson files will not be generated from Airway data.`
   - `High/Low` (default)
     - Tool tip or description:
-	  - `Airways_High_Lines.geojson = Airways that have a Maximum Authorized altitude of 18,000' or greater`
-	  - `Airways_Low_Lines.geojson = Airways that have a Maximum Authorized altitude greater than 0' but less than 18,000'`
-	  - `Airways_Other.geojson = Airways that do not meet the criteria of High/Low.`
+	  - `Airways_High_Lines.geojson` and `Airways_Low_Lines.geojson`: the user chooses the file for each included airway type (designation) on a card below Designations to Include - `High`, `Low` or `Both` (written to each).
+	  - Defaults when nothing is saved: J and Q High, V and T Low. Every other type is blank and must be chosen before the run.
   - `Designation`
     - Tool tip or description:
 	  - `Airways that share the same designation will be placed in the same file.`
@@ -602,12 +601,11 @@ public static class NewsChecker
   - `None`
     - continue
   - `High/Low`
-	- `Airways_High.geojson
-	  - Airways that have a Maximum Authorized altitude of 18,000' or greater
-	- `Airways_Low.geojson
-	  - Airways that have a Maximum Authorized altitude greater than 0' but less than 18,000'
-	- `Airways_Other.geojson
-	  - Airways that do not meet the criteria of High/Low.
+	- `Airways_High.geojson`
+	  - The airway types (designations) the user put in High or Both
+	- `Airways_Low.geojson`
+	  - The airway types the user put in Low or Both
+	- Defaults when nothing is saved: J and Q High, V and T Low; every other type must be chosen.
   - `Designation`
     - `Airways that share the same designation will be placed in the same file.`
       - `Examples:`

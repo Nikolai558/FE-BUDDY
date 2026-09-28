@@ -16,6 +16,10 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
 - New File Names tab in the AIRAC Service: see every file a run will write, by folder, and give any
   of them your own name (the Departures and Arrivals per-procedure files keep theirs). A file a
   changed setting adds is flagged until you name it or choose to keep FE-Buddy's name.
+- Bug #241 - Airways High/Low: you now choose which file each airway type goes in - High, Low or
+  Both - instead of FE-Buddy guessing from published altitudes, which put V airways the FAA also
+  publishes in Hawaii (V6, V8, V23, …) on the high map. J and Q start in High, V and T in Low; any
+  other type needs your choice. The `Airways_Other` files are gone.
 
 ## 3.0.0-alpha.1
 - FE-BUDDY 3.0 is a from-scratch rewrite with a new interface. This first alpha is for testers:

@@ -11,8 +11,8 @@ namespace FeBuddy.Core.Application.Airac.Airways;
 /// </summary>
 /// <remarks>
 /// A GeoJSON file's key is its name without <c>.geojson</c>: <c>Airways_&lt;group&gt;_&lt;kind&gt;</c>,
-/// where the group is an altitude class (<c>High</c>, <c>Low</c>, <c>Other</c>) or a designation
-/// (<c>J</c>, <c>V</c>, ...) depending on <c>OutputBy</c>, and the kind is <c>Lines</c>,
+/// where the group is <c>High</c> or <c>Low</c>, or a designation (<c>J</c>, <c>V</c>, ...),
+/// depending on <c>OutputBy</c>, and the kind is <c>Lines</c>,
 /// <c>Symbols</c> or <c>Text</c>. The alias file's key is its name.
 /// </remarks>
 public static partial class AirwayOutputFiles

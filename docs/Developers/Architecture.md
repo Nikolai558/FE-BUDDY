@@ -306,7 +306,11 @@ The FAA's data has quirks; these rules handle them. Each lives in one class.
 
 - **Airway classification** (`AirwayClassifier`). High, Low or Other from the **highest published
   altitude** on the airway (≥ 18,000 ft is High), not the name's letter - the letter is only a
-  convention. An airway is never split between files.
+  convention. It picks each airway's CRC-ERAM defaults in a designation file. It does **not**
+  decide the High and Low files: those go by designation, as the user chooses per designation
+  (High, Low or Both; `AirwaySettings.DesignationStrata`). A highest altitude misleads there -
+  NASR publishes some V airways under one ID in the contiguous U.S. and Hawaii, and Hawaii's
+  45,000 ft would put the mainland airway on the high map (issue #241).
 - **Designation** comes from the airway ID's leading letters (`J` in `J3`), never from NASR's
   `AWY_DESIGNATION` column (a `Q` airway can be listed as `RN`).
 - **Border markers** (`AirwayReferenceOnlyPoints`, `AirwayNormalizer`). NASR lists points like

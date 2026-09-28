@@ -152,11 +152,22 @@ naming the key.
 | `BufferAirwayWaypoints` | `Y` / `N` | `N` |
 | `SplitAtAntimeridian` | `Y` / `N` | `Y` |
 | `ExcludedDesignations` | list, e.g. `RN,SL` (upper-cased) | none |
+| `HighDesignations` | list of designations written to the `Airways_High` files only, e.g. `J,Q` | `J,Q` (see below) |
+| `LowDesignations` | list of designations written to the `Airways_Low` files only, e.g. `V,T` | `V,T` (see below) |
+| `BothDesignations` | list of designations written to both the High and the Low files | none |
 | `AliasRoiScope` | `All`, `RoiAirways` | `All` |
 
+- **High and Low files:** with `HighLow`, each airway goes in the file its designation is listed
+  for - not by its published altitudes. A designation may be in only one of the three lists (it
+  throws otherwise). One in none is left out of both files, with an advisory warning naming it.
+  With none of the three keys in the block at all, J and Q go High and V and T Low; once any of
+  them is present, the lists are taken as given. The GUI always sends all three. The lists are
+  ignored with `Designation` or `None`.
 - **CRC classes:** `High`, `Low`, `Other`, each with `Line`, `Symbol` and `Text`. With `HighLow`,
-  a file in `CrcDefaultsFor` needs only its own class (`Airways_High_Lines` needs `Crc.High.Line.*`);
-  with `Designation`, a file can hold every class, so it needs all three of its kind.
+  a file in `CrcDefaultsFor` needs only its own class (`Airways_High_Lines` needs `Crc.High.Line.*`),
+  which every airway in it uses whatever its published altitudes; `Other` is never needed. With
+  `Designation`, a file can hold every altitude class (the highest published altitude: 18,000 ft
+  or more High, below that Low, none Other), so it needs all three of its kind.
 - **`FebProperties`:** `awyId`, `pointId`, `waypoints`.
 - `OutputBy = None` writes no GeoJSON (so no CRC defaults are needed); any other value needs at
   least one `Emit…`.

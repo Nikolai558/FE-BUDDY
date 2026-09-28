@@ -6,8 +6,9 @@ namespace FeBuddy.Core.Domain.Airways.Models;
 /// </summary>
 /// <remarks>
 /// See <c>AirwayClassifier</c> for the exact classification rule. One airway is classified
-/// into exactly one of these three values; an airway is never split across files by
-/// altitude.
+/// into exactly one of these three values. It does not decide the Airways High and Low files -
+/// the user puts each designation in one or both - but the High and Low values also name those
+/// files' CRC-ERAM defaults, and in a designation file each airway gets its own class's.
 /// </remarks>
 public enum AirwayAltitudeClass
 {

@@ -51,6 +51,28 @@ public sealed record AirwaySettings
 	/// </summary>
 	public IReadOnlyCollection<string> ExcludedDesignations { get; init; } = [];
 
+	/// <summary>
+	/// Which file each designation's airways go in when <see cref="OutputBy"/> is
+	/// <see cref="AirwayGeojsonOutputBy.HighLow"/>: High, Low or Both, by designation (as
+	/// <see cref="Airway.Designation"/> spells it), ignoring case. A designation with no entry is
+	/// left out of the High and Low files. Unused otherwise. Default:
+	/// <see cref="DefaultDesignationStrata"/>.
+	/// </summary>
+	public IReadOnlyDictionary<string, AirwayStratum> DesignationStrata { get; init; } = DefaultDesignationStrata;
+
+	/// <summary>
+	/// The strata used when none is given: J and Q airways High, V and T airways Low. Every other
+	/// designation has none until the user chooses one.
+	/// </summary>
+	public static IReadOnlyDictionary<string, AirwayStratum> DefaultDesignationStrata { get; } =
+		new Dictionary<string, AirwayStratum>(StringComparer.OrdinalIgnoreCase)
+		{
+			["J"] = AirwayStratum.High,
+			["Q"] = AirwayStratum.High,
+			["V"] = AirwayStratum.Low,
+			["T"] = AirwayStratum.Low,
+		};
+
 	/// <summary>Emit the <c>_Lines</c> GeoJSON files. Default <see langword="true"/>.</summary>
 	public bool EmitLines { get; init; } = true;
 

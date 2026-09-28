@@ -13,6 +13,7 @@
              xmlns:awy="clr-namespace:FeBuddy.Core.Application.Airac.Airways.Models;assembly=FeBuddy.Core"
              xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
              xmlns:cards="clr-namespace:FeBuddy.Wpf.Views.Cards"
+             xmlns:bhv="clr-namespace:FeBuddy.Wpf.Behaviors"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance vm:AirwaysViewModel, IsDesignTimeCreatable=True}"
              d:DesignWidth="900" d:DesignHeight="1200">
@@ -28,7 +29,7 @@
     <!-- No ScrollViewer here: the tab host owns the one page-level scroller
          that every sub-service tab is laid out inside. A second scroller would
          steal the wheel and hide the lower sections. -->
-    <StackPanel>
+    <StackPanel x:Name="Root">
 
             <TextBlock Text="{Binding ValidationError}" Style="{StaticResource Text.Caption}"
                        Foreground="{StaticResource Brush.Danger}" TextWrapping="Wrap" Margin="0,0,0,12"
@@ -89,6 +90,37 @@
                         <ItemsControl.ItemTemplate>
                             <DataTemplate DataType="{x:Type m:DesignationToggle}">
                                 <CheckBox Content="{Binding Designation}" IsChecked="{Binding Included}" Margin="0,0,14,6" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </ctl:Card>
+
+            <!-- ============ High / Low files: the one each included designation goes in ============ -->
+            <!-- Shown for High and Low output once a designation is included. The same toggles as
+                 the card above; an excluded one's row collapses. A row with no file chosen is marked
+                 until the user picks one. -->
+            <ctl:Card Header="High and Low Files"
+                      Visibility="{Binding ShowsStrata, Converter={StaticResource BoolToVis}}">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8" TextWrapping="Wrap"
+                               MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
+                               Text="Choose the file each airway type goes in: High (Airways_High), Low (Airways_Low), or Both. J and Q start in High, and V and T in Low; any other type needs your choice before the run." />
+                    <ItemsControl ItemsSource="{Binding Designations}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="{x:Type m:DesignationToggle}">
+                                <DockPanel Margin="0,0,20,8"
+                                           Visibility="{Binding Included, Converter={StaticResource BoolToVis}}">
+                                    <TextBlock Text="{Binding Designation}" MinWidth="40" Margin="0,0,8,0" VerticalAlignment="Center"
+                                               Style="{StaticResource Text.Body.Strong}" FontFamily="{StaticResource Font.Mono}" />
+                                    <ComboBox Style="{StaticResource Themed.ComboBox}" Width="110"
+                                              ItemsSource="{Binding DataContext.StratumValues, ElementName=Root}"
+                                              SelectedItem="{Binding Stratum}"
+                                              bhv:FieldState.Error="{Binding StratumError}" />
+                                </DockPanel>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>

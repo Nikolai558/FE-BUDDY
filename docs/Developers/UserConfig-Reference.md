@@ -156,6 +156,11 @@ tab reads them any more (the [file conversion nodes](#file-conversion-nodes) sti
 | `AliasRoiScope` | `All`, `RoiAirways` | `All` |
 | `SplitAtAntimeridian` | `Y` / `N` | `Y` |
 | `ExcludedDesignations` | comma-separated designations, e.g. `RN,SL` | none |
+| `HighDesignations`, `LowDesignations`, `BothDesignations` | comma-separated designations each High/Low file gets (the High and Low Files card), excluded ones' choices included | none of the three saved: `J,Q` High, `V,T` Low |
+
+With none of the three stratum keys saved (a first run, or a config from before they existed), J
+and Q start in High and V and T in Low; every other designation starts with no file and the tab
+asks for one. Once they are saved, only what they list has a file.
 
 ### Departures only
 

@@ -20,11 +20,29 @@ public static class AirwaySettingsParser
 {
 	private const string LogSource = "AirwaySettingsParser";
 
+	/// <summary>The key listing the designations written to the High files only.</summary>
+	public const string HighDesignationsKey = "HighDesignations";
+
+	/// <summary>The key listing the designations written to the Low files only.</summary>
+	public const string LowDesignationsKey = "LowDesignations";
+
+	/// <summary>The key listing the designations written to both the High and the Low files.</summary>
+	public const string BothDesignationsKey = "BothDesignations";
+
+	/// <summary>Each High/Low stratum and the key listing its designations.</summary>
+	private static readonly (AirwayStratum Stratum, string Key)[] StratumKeys =
+	[
+		(AirwayStratum.High, HighDesignationsKey),
+		(AirwayStratum.Low, LowDesignationsKey),
+		(AirwayStratum.Both, BothDesignationsKey),
+	];
+
 	/// <summary>The keys only Airways reads, on top of <see cref="SubServiceSettingsReader.CommonKeys"/>.</summary>
 	private static readonly IReadOnlySet<string> OwnKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
 	{
 		"OutputBy", "BufferAirwayWaypoints", "SplitAtAntimeridian", "ExcludedDesignations",
 		"EmitLines", "EmitSymbols", "EmitText", "AliasRoiScope", "GenerateAliasFile",
+		HighDesignationsKey, LowDesignationsKey, BothDesignationsKey,
 	};
 
 	/// <summary>CRC defaults are set per altitude class (<c>Crc.High.Line.bcg</c>), and every class draws all three kinds.</summary>
@@ -102,6 +120,7 @@ public static class AirwaySettingsParser
 			ExcludedDesignations = SettingsValueReader.StringList(airwaySettings, "ExcludedDesignations")
 				.Select(designation => designation.ToUpperInvariant())
 				.ToHashSet(StringComparer.OrdinalIgnoreCase),
+			DesignationStrata = ReadDesignationStrata(airwaySettings),
 			EmitLines = emitLines,
 			EmitSymbols = emitSymbols,
 			EmitText = emitText,
@@ -124,9 +143,10 @@ public static class AirwaySettingsParser
 	/// for <paramref name="kind"/>.
 	/// </summary>
 	/// <remarks>
-	/// A High/Low file holds one class, so only its own class is needed. A designation file can
-	/// hold every class (its isDefaults Feature takes the majority class, the rest are written as
-	/// per-feature overrides), so any designation file of that kind needs all three.
+	/// A High or Low file uses its own class's defaults for every airway in it, so only that class
+	/// is needed - and never <see cref="AirwayAltitudeClass.Other"/>, which has no file. A
+	/// designation file can hold every class (its isDefaults Feature takes the majority class, the
+	/// rest are written as per-feature overrides), so any designation file of that kind needs all three.
 	/// </remarks>
 	private static bool NeedsCrcDefaults(
 		VnasFileChoices vnas,
@@ -134,6 +154,41 @@ public static class AirwaySettingsParser
 		AirwayAltitudeClass altitudeClass,
 		CrcFeatureKind kind) =>
 		outputBy == AirwayGeojsonOutputBy.HighLow
-			? vnas.HasCrcDefaults(AirwayOutputFiles.GeojsonKey(altitudeClass.ToString(), kind))
+			? altitudeClass != AirwayAltitudeClass.Other && vnas.HasCrcDefaults(AirwayOutputFiles.GeojsonKey(altitudeClass.ToString(), kind))
 			: vnas.CrcDefaultsFiles.Any(key => AirwayOutputFiles.IsKind(key, kind));
+
+	/// <summary>
+	/// Reads which file each designation goes in: <see cref="HighDesignationsKey"/>,
+	/// <see cref="LowDesignationsKey"/> and <see cref="BothDesignationsKey"/>, upper-cased. With none
+	/// of the three keys in the block at all - a block written before they existed - the defaults
+	/// apply (<see cref="AirwaySettings.DefaultDesignationStrata"/>); otherwise a designation in no
+	/// list has no file.
+	/// </summary>
+	/// <exception cref="ArgumentException">Thrown when a designation is in more than one list.</exception>
+	private static IReadOnlyDictionary<string, AirwayStratum> ReadDesignationStrata(IReadOnlyDictionary<string, string> airwaySettings)
+	{
+		if (!StratumKeys.Any(entry => airwaySettings.ContainsKey(entry.Key)))
+		{
+			return AirwaySettings.DefaultDesignationStrata;
+		}
+
+		Dictionary<string, AirwayStratum> strata = new(StringComparer.OrdinalIgnoreCase);
+
+		foreach ((AirwayStratum stratum, string key) in StratumKeys)
+		{
+			foreach (string designation in SettingsValueReader.StringList(airwaySettings, key).Select(entry => entry.ToUpperInvariant()))
+			{
+				if (strata.TryGetValue(designation, out AirwayStratum earlier) && earlier != stratum)
+				{
+					throw new ArgumentException(
+						$"Designation '{designation}' is in both {StratumKeys.First(entry => entry.Stratum == earlier).Key} and {key}. " +
+						$"List it once: {BothDesignationsKey} writes it to the High and the Low files.");
+				}
+
+				strata[designation] = stratum;
+			}
+		}
+
+		return strata;
+	}
 }

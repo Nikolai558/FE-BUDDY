@@ -128,9 +128,10 @@ be filled in.
 | Underline, Opaque | Yes / No | Text |
 | X offset, Y offset | any whole number | Text |
 
-Airways has a column per altitude class (High, Low, Other) - with High/Low files, just the class of
-each file chosen; with designation files, all three, since one file can hold airways of every
-class. Airports, Departures and Arrivals have one. NAVAIDs has one column with *All in one file*,
+Airways has a column per class (High, Low, Other) - with High/Low files, just High and/or Low, the
+class of each file chosen, used for every airway in it; with designation files, all three, since
+one file can hold airways of every altitude class (from the airway's highest published altitude:
+18,000 ft or more is High, below that Low, none Other). Airports, Departures and Arrivals have one. NAVAIDs has one column with *All in one file*,
 or one column per NAVAID type - style included - with *one pair per NAVAID type* (see the NAVAIDs
 tab). ARTCC Boundaries has a column per class - High and Low, or High, Low and Unlimited - or,
 with *one file per ARTCC and altitude*, one column per ARTCC and altitude (`ZOB-HIGH`, `ZOB-LOW`,
@@ -157,9 +158,8 @@ window is.
 ### Airways tab
 
 - **GeoJSON files** - how airways are split into files:
-  - **HighLow** - `Airways_High`, `Airways_Low`, `Airways_Other`, by the highest published
-    altitude on the airway: 18,000 ft or more is High, below that is Low, none is Other. An
-    airway is never split between files.
+  - **HighLow** - `Airways_High` and `Airways_Low`. You choose which one each airway type goes
+    in, or **Both**, on the **High and Low Files** card.
   - **Designation** - one set per designation taken from the airway ID: `Airways_J`,
     `Airways_V`, `Airways_Q`, …
   - **None** - no GeoJSON (the alias file only).
@@ -168,6 +168,13 @@ window is.
   line crosses the region).
 - **Designations to Include** - one checkbox per designation in the chosen cycle. Untick one to
   leave it out of everything. The list appears once the cycle's data is loaded.
+- **High and Low Files** (HighLow only) - a drop-down beside each included designation: **High**
+  (`Airways_High`), **Low** (`Airways_Low`) or **Both** (the airway is drawn in each). J and Q
+  start in High and V and T in Low. Every other type (A, B, G, R, Y, the oceanic routes, …) starts
+  blank and is marked until you choose, as is a type a new cycle adds - the tab turns red and the
+  run waits. The file goes by the type, not by the published altitudes: a V airway that the FAA
+  also publishes in Hawaii at 45,000 ft stays on the low map. An `Airways_High` or `Airways_Low`
+  file is only written when a type goes in it.
 - **Buffer Airway Waypoints** - lines stop a short distance before each waypoint (2.5 NM at a
   five-letter fix, 5 NM elsewhere) so they do not run through the symbols.
 - **Split GeoJSON at the Antimeridian** - a line that crosses ±180° longitude is split in two so

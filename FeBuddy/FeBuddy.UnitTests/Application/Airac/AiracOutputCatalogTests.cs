@@ -83,6 +83,51 @@ public sealed class AiracOutputCatalogTests : IDisposable
 	}
 
 	[Fact]
+	public void sub_folders_under_upload_to_vnas_are_listed_too()
+	{
+		string cycle = Path.Combine(_output, "AIRAC_2610");
+		Write(cycle, Path.Combine("Upload_to_vNAS", "Geojson", "ZOB", "CLE"), "CLE_ALPHE_Lines.geojson");
+		Write(cycle, Path.Combine("Upload_to_vNAS", "Geojson"), "ARTCC_High_Lines.geojson");
+
+		IReadOnlyList<AiracOutputGeojsonFile> files = AiracOutputCatalog.FindGeojsonFiles(cycle);
+
+		Assert.Equal(["ARTCC_High_Lines", "CLE_ALPHE_Lines"], files.Select(f => f.Name));
+		Assert.All(files, f => Assert.True(f.UploadToVnas));
+		Assert.Equal(Path.Combine("ZOB", "CLE"), files[1].SubFolder);
+	}
+
+	/// <summary>A sub-folder that cannot be read is skipped; every other file is still listed.</summary>
+	[Fact]
+	public void a_sub_folder_that_cannot_be_read_does_not_hide_the_rest()
+	{
+		string cycle = Path.Combine(_output, "AIRAC_2610");
+		Write(cycle, "Geojson", "Fixes_Symbols.geojson");
+		Write(cycle, Path.Combine("Geojson", "ZAB", "ABQ"), "ABQ_ADYOS_Lines.geojson");
+		string locked = Path.GetDirectoryName(Write(cycle, Path.Combine("Geojson", "ZOB", "CLE"), "CLE_ALPHE_Lines.geojson"))!;
+
+		DirectoryInfo lockedFolder = new(locked);
+		System.Security.AccessControl.DirectorySecurity security = lockedFolder.GetAccessControl();
+		System.Security.AccessControl.FileSystemAccessRule deny = new(
+			System.Security.Principal.WindowsIdentity.GetCurrent().User!,
+			System.Security.AccessControl.FileSystemRights.ListDirectory,
+			System.Security.AccessControl.AccessControlType.Deny);
+		security.AddAccessRule(deny);
+		lockedFolder.SetAccessControl(security);
+
+		try
+		{
+			IReadOnlyList<AiracOutputGeojsonFile> files = AiracOutputCatalog.FindGeojsonFiles(cycle);
+
+			Assert.Equal(["Fixes_Symbols", "ABQ_ADYOS_Lines"], files.Select(f => f.Name));
+		}
+		finally
+		{
+			security.RemoveAccessRule(deny);
+			lockedFolder.SetAccessControl(security);
+		}
+	}
+
+	[Fact]
 	public void a_file_carries_its_name_size_and_write_time()
 	{
 		string cycle = Path.Combine(_output, "AIRAC_2610");

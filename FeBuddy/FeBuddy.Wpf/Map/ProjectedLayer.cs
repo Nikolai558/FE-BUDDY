@@ -92,10 +92,84 @@ internal sealed class ProjectedLayer
 	/// <inheritdoc cref="MinX" />
 	public double MaxY { get; private set; }
 
+	/// <summary>The x range each line, ring and point covers, for <see cref="Covering"/>.</summary>
+	public IEnumerable<(double Min, double Max)> XSpans =>
+		Runs.Select(run => (run.MinX, run.MaxX)).Concat(Points.Select(point => (point.X, point.X)));
+
 	/// <summary>The projection of <paramref name="layer"/>, built on the first call.</summary>
 	/// <param name="layer">The layer.</param>
 	/// <returns>Its world-unit projection.</returns>
 	public static ProjectedLayer For(MapLayer layer) => Cache.GetValue(layer, static l => new ProjectedLayer(l));
+
+	/// <summary>
+	/// The narrowest x range that covers every span, going round the world where that is shorter:
+	/// shapes either side of the 180th meridian (the Aleutians, say) are covered across it, not
+	/// across the whole world.
+	/// </summary>
+	/// <remarks>
+	/// Each span is moved whole worlds to start in 0..1 and the overlapping ones joined; the widest
+	/// gap left between them, going round the world, is the part not covered.
+	/// </remarks>
+	/// <param name="spans">Each shape's x range; x may run past 0..1.</param>
+	/// <returns>The range, which may run past 1; <see langword="null"/> when there are no spans.</returns>
+	public static (double Min, double Max)? Covering(IEnumerable<(double Min, double Max)> spans)
+	{
+		List<(double Start, double End)> arcs = [];
+
+		foreach ((double min, double max) in spans)
+		{
+			if (max - min >= 1.0)
+			{
+				return (0.0, 1.0);   // one shape as wide as the world covers it all
+			}
+
+			double start = min - Math.Floor(min);
+			arcs.Add((start, start + (max - min)));
+		}
+
+		if (arcs.Count == 0)
+		{
+			return null;
+		}
+
+		arcs.Sort((a, b) => a.Start.CompareTo(b.Start));
+
+		List<(double Start, double End)> joined = [arcs[0]];
+		foreach ((double start, double end) in arcs.Skip(1))
+		{
+			if (start <= joined[^1].End)
+			{
+				joined[^1] = (joined[^1].Start, Math.Max(joined[^1].End, end));
+			}
+			else
+			{
+				joined.Add((start, end));
+			}
+		}
+
+		// The gap after each joined range: up to the next one's start, or round to the first's.
+		int widest = 0;
+		double widestGap = double.MinValue;
+		for (int i = 0; i < joined.Count; i++)
+		{
+			double next = i + 1 < joined.Count ? joined[i + 1].Start : joined[0].Start + 1.0;
+			double gap = next - joined[i].End;
+			if (gap > widestGap)
+			{
+				(widest, widestGap) = (i, gap);
+			}
+		}
+
+		if (widestGap <= 0.0)
+		{
+			return (0.0, 1.0);   // no gap anywhere: the shapes go all the way round
+		}
+
+		// Covered: from the range after the widest gap, round to the end of the one before it.
+		return widest + 1 < joined.Count
+			? (joined[widest + 1].Start, joined[widest].End + 1.0)
+			: (joined[0].Start, joined[widest].End);
+	}
 
 	private void Grow(double x, double y)
 	{
@@ -154,16 +228,7 @@ internal sealed class ProjectedRun
 		{
 			// Take the short way round: a jump of more than half the world is a crossing of the
 			// 180th meridian, not a line drawn back across every continent.
-			double lon = run[i].Lon;
-			while (lon - previousLon > 180.0)
-			{
-				lon -= 360.0;
-			}
-
-			while (lon - previousLon < -180.0)
-			{
-				lon += 360.0;
-			}
+			double lon = WebMercator.UnwrapLon(run[i].Lon, previousLon);
 
 			xs[i] = WebMercator.LonToWorldX(lon);
 			ys[i] = WebMercator.LatToWorldY(run[i].Lat);

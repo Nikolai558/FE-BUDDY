@@ -230,14 +230,16 @@ public sealed class MapCanvas : FrameworkElement
 		WebMercator.LatToWorldY(bounds.North), WebMercator.LatToWorldY(bounds.South));
 
 	/// <summary>
-	/// Zooms and pans to show every shape in <paramref name="layers"/>. A layer over the 180th
-	/// meridian is framed the short way round.
+	/// Zooms and pans to show every shape in <paramref name="layers"/>. Shapes either side of the
+	/// 180th meridian - one line across it, or separate ones on each side - are framed the short
+	/// way round (<see cref="ProjectedLayer.Covering"/>).
 	/// </summary>
 	/// <param name="layers">The layers to show.</param>
 	/// <returns><see langword="false"/> when the layers hold nothing to frame.</returns>
 	public bool FrameLayers(IEnumerable<MapLayer> layers)
 	{
-		double x0 = double.MaxValue, x1 = double.MinValue, y0 = double.MaxValue, y1 = double.MinValue;
+		List<(double Min, double Max)> spans = [];
+		double y0 = double.MaxValue, y1 = double.MinValue;
 		foreach (MapLayer layer in layers)
 		{
 			ProjectedLayer projected = ProjectedLayer.For(layer);
@@ -246,18 +248,17 @@ public sealed class MapCanvas : FrameworkElement
 				continue;
 			}
 
-			x0 = Math.Min(x0, projected.MinX);
-			x1 = Math.Max(x1, projected.MaxX);
+			spans.AddRange(projected.XSpans);
 			y0 = Math.Min(y0, projected.MinY);
 			y1 = Math.Max(y1, projected.MaxY);
 		}
 
-		if (x0 > x1)
+		if (ProjectedLayer.Covering(spans) is not { } x)
 		{
 			return false;
 		}
 
-		FrameWorld(x0, x1, y0, y1);
+		FrameWorld(x.Min, x.Max, y0, y1);
 		return true;
 	}
 
@@ -376,9 +377,25 @@ public sealed class MapCanvas : FrameworkElement
 		WorldX(-marginPx), WorldX(ActualWidth + marginPx),
 		WorldY(-marginPx), WorldY(ActualHeight + marginPx));
 
-	/// <summary>The whole-world offsets at which something spanning x0..x1 shows in <paramref name="view"/>.</summary>
-	private static (int First, int Last) Copies(double x0, double x1, WorldRect view) =>
-		((int)Math.Ceiling(view.X0 - x1), (int)Math.Floor(view.X1 - x0));
+	/// <summary>
+	/// The whole-world offsets at which something spanning x0..x1 shows in <paramref name="view"/>.
+	/// Something wider than the view by a world or more shows whole in one copy, so only that one is
+	/// given; and the offsets stay small, so no span - however wild - can make a caller loop for ever.
+	/// </summary>
+	private static (int First, int Last) Copies(double x0, double x1, WorldRect view)
+	{
+		const double MaxOffset = 1_000_000;
+
+		if (x1 - x0 >= view.X1 - view.X0 + 1.0)
+		{
+			int k = (int)Math.Clamp(Math.Floor(view.X0 - x0), -MaxOffset, MaxOffset);
+			return (k, k);
+		}
+
+		return (
+			(int)Math.Clamp(Math.Ceiling(view.X0 - x1), -MaxOffset, MaxOffset),
+			(int)Math.Clamp(Math.Floor(view.X1 - x0), -MaxOffset, MaxOffset));
+	}
 
 	// ============================= input ==================================
 
@@ -488,7 +505,9 @@ public sealed class MapCanvas : FrameworkElement
 				break;
 
 			case DragMode.MoveRoi:
-				double moveY = Math.Clamp(dy, -_draft.Y0, 1.0 - _draft.Y1);
+				// Up and down only as far as the world goes. A box already as tall as the world
+				// (pole to pole) cannot move up or down at all.
+				double moveY = _draft.Y1 - _draft.Y0 >= 1.0 ? 0.0 : Math.Clamp(dy, -_draft.Y0, 1.0 - _draft.Y1);
 				_draft = new WorldRect(_draft.X0 + dx, _draft.X1 + dx, _draft.Y0 + moveY, _draft.Y1 + moveY);
 				RedrawRoi();
 				break;
@@ -1204,18 +1223,23 @@ public sealed class MapCanvas : FrameworkElement
 		}
 	}
 
+	/// <summary>
+	/// Follows the new layer list. The list is usually the one every map shares, which outlives each
+	/// popup, so the map listens weakly: a closed popup's map is never kept alive, or kept redrawing,
+	/// by the list.
+	/// </summary>
 	private static void OnLayersChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
 	{
 		var map = (MapCanvas)d;
 
 		if (e.OldValue is INotifyCollectionChanged oldObservable)
 		{
-			oldObservable.CollectionChanged -= map.OnLayersCollectionChanged;
+			CollectionChangedEventManager.RemoveHandler(oldObservable, map.OnLayersCollectionChanged);
 		}
 
 		if (e.NewValue is INotifyCollectionChanged newObservable)
 		{
-			newObservable.CollectionChanged += map.OnLayersCollectionChanged;
+			CollectionChangedEventManager.AddHandler(newObservable, map.OnLayersCollectionChanged);
 		}
 
 		map.InvalidateMap();

@@ -170,17 +170,7 @@ internal static class AiracMapLayers
 
 		foreach (GeoPoint point in points)
 		{
-			double lon = point.Lon;
-			while (lon - previous > 180.0)
-			{
-				lon -= 360.0;
-			}
-
-			while (lon - previous < -180.0)
-			{
-				lon += 360.0;
-			}
-
+			double lon = WebMercator.UnwrapLon(point.Lon, previous);
 			lonSum += lon;
 			latSum += point.Lat;
 			previous = lon;

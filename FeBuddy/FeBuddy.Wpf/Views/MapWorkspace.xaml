@@ -245,7 +245,8 @@
                                    HorizontalOffset="4" VerticalOffset="6"
                                    IsOpen="{Binding State.IsOutputPickerOpen, Mode=TwoWay}"
                                    StaysOpen="False" AllowsTransparency="True" PopupAnimation="Fade">
-                                <ctl:Card Header="Output Files" Style="{StaticResource Card.Popup}" Width="440">
+                                <ctl:Card Header="Output Files" Style="{StaticResource Card.Popup}" Width="440"
+                                          KeyDown="OnOutputPickerKeyDown">
                                     <StackPanel>
                                         <TextBlock Text="{Binding State.OutputDirectory}" Style="{StaticResource Text.Caption}"
                                                    FontFamily="{StaticResource Font.Mono}" TextWrapping="Wrap" Margin="0,0,0,10" />

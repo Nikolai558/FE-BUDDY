@@ -63,6 +63,11 @@ public sealed class MapLayersState : ObservableObject
 	private readonly Dictionary<(string CycleId, AiracLayerKind Kind), IReadOnlyList<MapLayer>> _airacBuilt = [];
 	private int _userColorCursor;
 	private int _airacLoadVersion;
+	private int _cycleScanVersion;
+	private int _outputScanVersion;
+	private IReadOnlyList<string> _outputCycleIds = [];
+	private bool _outputDirectoryExists;
+	private bool _rebuildingCycles;
 	private CycleOption? _selectedCycle;
 	private string _airacStatus = string.Empty;
 	private bool _isAiracLoading;
@@ -98,7 +103,7 @@ public sealed class MapLayersState : ObservableObject
 		LoadFilesCommand = new RelayCommand(LoadFiles);
 		ClearFilesCommand = new RelayCommand(ClearUserFiles, () => HasUserFiles);
 		RefreshOutputsCommand = new RelayCommand(Refresh);
-		OpenOutputFolderCommand = new RelayCommand(OpenOutputFolder, () => Directory.Exists(OutputDirectory));
+		OpenOutputFolderCommand = new RelayCommand(OpenOutputFolder, () => _outputDirectoryExists);
 		SelectAllOutputsCommand = new RelayCommand(() => SetAllOutputs(true), () => OutputChoices.Count > 0);
 		SelectNoOutputsCommand = new RelayCommand(() => SetAllOutputs(false), () => _selectedOutputs.Count > 0);
 		ResetHomeCommand = new RelayCommand(ResetHome, () => HasCustomHome);
@@ -192,6 +197,14 @@ public sealed class MapLayersState : ObservableObject
 		get => _selectedCycle;
 		set
 		{
+			// While the list is brought up to date, a drop-down whose chosen item is replaced writes
+			// null back for a moment. That is not a choice - the rebuild picks the cycle again - so
+			// it must not drop every output file and AIRAC layer and load them all over again.
+			if (value is null && _rebuildingCycles)
+			{
+				return;
+			}
+
 			if (SetProperty(ref _selectedCycle, value))
 			{
 				foreach (MapLayerToggle toggle in AiracToggles)
@@ -331,13 +344,34 @@ public sealed class MapLayersState : ObservableObject
 	public ICommand SelectNoOutputsCommand { get; }
 
 	/// <summary>
-	/// Re-reads the cycle list and the chosen cycle's output folder. Cheap (a directory listing),
-	/// so each map calls it when it opens: a run that finished since shows up without a restart.
+	/// Re-reads the cycle list and the chosen cycle's output folder. Each map calls it when it opens,
+	/// so a run that finished since shows up without a restart. The folders are read off the UI
+	/// thread: a run can leave thousands of procedure files, in a folder OneDrive may keep online.
 	/// </summary>
-	public void Refresh()
+	public void Refresh() => _ = RefreshAsync();
+
+	private async Task RefreshAsync()
 	{
+		int version = ++_cycleScanVersion;
+		string directory = OutputPreferences.Directory;
+		bool addFolder = OutputPreferences.AddFeBuddyOutputFolder;
+
+		IReadOnlyList<string> ids = await Task.Run(() => AiracOutputCatalog.FindCycleIds(directory, addFolder));
+
+		if (version != _cycleScanVersion)
+		{
+			return;   // a newer refresh is on its way
+		}
+
+		_outputCycleIds = ids;
+		string? before = SelectedCycle?.Id;
 		RebuildCycles();
-		RefreshOutputs();
+
+		// A change of cycle reads its own folder; the same cycle is read again here.
+		if (SelectedCycle?.Id == before)
+		{
+			RefreshOutputs();
+		}
 	}
 
 	private void ReloadFromConfig()
@@ -400,7 +434,8 @@ public sealed class MapLayersState : ObservableObject
 			}
 		}
 
-		foreach (string id in AiracOutputCatalog.FindCycleIds(OutputPreferences.Directory, OutputPreferences.AddFeBuddyOutputFolder))
+		// The output folders as the last refresh found them: listing them is left to RefreshAsync, off the UI thread.
+		foreach (string id in _outputCycleIds)
 		{
 			labels.TryAdd(id, "output only");
 		}
@@ -415,10 +450,30 @@ public sealed class MapLayersState : ObservableObject
 		}
 
 		string? keep = SelectedCycle?.Id ?? CurrentCycleId();
-		Cycles.Clear();
-		foreach (CycleOption option in options)
+
+		// In place, not cleared and refilled, so the drop-down keeps its choice where it can.
+		_rebuildingCycles = true;
+		try
 		{
-			Cycles.Add(option);
+			for (int i = Cycles.Count - 1; i >= 0; i--)
+			{
+				if (!options.Contains(Cycles[i]))
+				{
+					Cycles.RemoveAt(i);
+				}
+			}
+
+			for (int i = 0; i < options.Count; i++)
+			{
+				if (i >= Cycles.Count || Cycles[i] != options[i])
+				{
+					Cycles.Insert(i, options[i]);
+				}
+			}
+		}
+		finally
+		{
+			_rebuildingCycles = false;
 		}
 
 		// Assign the field and notify directly: this is the same cycle, so there is nothing to reload.
@@ -484,6 +539,10 @@ public sealed class MapLayersState : ObservableObject
 	private async Task LoadAiracAsync()
 	{
 		int version = ++_airacLoadVersion;
+
+		// This call now owns the flag. A load it replaced must not leave it on - the early returns
+		// below load nothing - or later cache changes would never start a load.
+		IsAiracLoading = false;
 
 		if (SelectedCycle?.Id is not { } cycleId)
 		{
@@ -569,18 +628,32 @@ public sealed class MapLayersState : ObservableObject
 
 	// ========================== run output ==============================
 
-	private void RefreshOutputs()
+	private void RefreshOutputs() => _ = RefreshOutputsAsync();
+
+	/// <summary>
+	/// Lists the chosen cycle's output files off the UI thread, then brings the picker and the
+	/// picked files up to date. A newer listing (the cycle changed again) replaces this one.
+	/// </summary>
+	private async Task RefreshOutputsAsync()
 	{
+		int version = ++_outputScanVersion;
+		string directory = SelectedCycle?.Id is { } cycleId ? OutputPreferences.CycleDirectory(cycleId) : string.Empty;
+		OutputDirectory = directory;
+
 		IReadOnlyList<AiracOutputGeojsonFile> files = [];
-		if (SelectedCycle?.Id is { } cycleId)
+		bool exists = false;
+
+		if (directory.Length > 0)
 		{
-			OutputDirectory = OutputPreferences.CycleDirectory(cycleId);
-			files = AiracOutputCatalog.FindGeojsonFiles(OutputDirectory);
+			(files, exists) = await Task.Run(() => (AiracOutputCatalog.FindGeojsonFiles(directory), Directory.Exists(directory)));
 		}
-		else
+
+		if (version != _outputScanVersion)
 		{
-			OutputDirectory = string.Empty;
+			return;
 		}
+
+		_outputDirectoryExists = exists;
 
 		// The same files as last time (the usual case - every map re-reads the folder when it
 		// opens): keep the picker's list and view as they are, just check for rewritten files.
@@ -874,9 +947,11 @@ public sealed class MapLayersState : ObservableObject
 		}
 		catch (Exception ex) when (ex is FormatException or IOException or UnauthorizedAccessException)
 		{
+			// The reader's own message says why a file cannot be drawn, briefly enough for its row.
 			item.LoadedWriteUtc = writeUtc;
-			item.SetProblem(ex is FormatException ? "No map features in this file" : "Could not be read");
-			AppLog.Warning("Map", $"Could not read '{path}': {ex.Message}");
+			item.SetProblem(ex is FormatException ? ex.Message : "Could not be read");
+			string detail = ex.InnerException is { } inner ? $" ({inner.Message})" : string.Empty;
+			AppLog.Warning("Map", $"Could not read '{path}': {ex.Message}{detail}");
 		}
 	}
 

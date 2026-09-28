@@ -68,7 +68,8 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.RELEASE_COUNTER_PAT }}
           RELEASE_COUNTER_TOKEN: ${{ secrets.RELEASE_COUNTER_PAT }}
-        run: ./.github/scripts/Test-ReleaseReadiness.ps1 ${{ contains(github.event.pull_request.labels.*.name, 'skip-version-step') && '-SkipVersionStep' || '' }}
+          SKIP_VERSION_STEP: ${{ contains(github.event.pull_request.labels.*.name, 'skip-version-step') }}
+        run: ./.github/scripts/Test-ReleaseReadiness.ps1 -SkipVersionStep:($env:SKIP_VERSION_STEP -eq 'true')
 
       # Runs even when the checks above failed, so one run reports every problem.
       - name: Build, check the MSI and render the release notes

@@ -20,6 +20,10 @@ on:
   pull_request:
     branches: [ v3-development, releases ]
 
+# Build, test and package only - nothing here writes to the repository.
+permissions:
+  contents: read
+
 jobs:
   build:
     name: Build

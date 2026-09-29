@@ -4,6 +4,8 @@ Making a release is three things: **a change-log entry**, **a version number**, 
 requests**. GitHub Actions does the rest - it checks everything before you can merge, builds the
 installer, and drafts the release for you to publish.
 
+Just want the steps? Use the [Release checklist](Release-Checklist.md).
+
 ```
 feature branch --PR--> v3-development --PR--> releases --(automatic)--> draft release --(you)--> Publish
 ```

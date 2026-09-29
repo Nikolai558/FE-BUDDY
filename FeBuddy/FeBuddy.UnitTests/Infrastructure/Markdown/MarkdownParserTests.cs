@@ -364,6 +364,40 @@ public sealed class MarkdownParserTests
 		Assert.All(spans, s => Assert.Null(s.Url));
 	}
 
+	[Theory]
+	[InlineData("[guide](../../docs/Users/User-Guide.md)", "https://x.test/owner/repo/blob/main/docs/Users/User-Guide.md")]
+	[InlineData("[sibling](Other.md)", "https://x.test/owner/repo/blob/main/app/core/Other.md")]
+	[InlineData("[section](#posts)", "https://x.test/owner/repo/blob/main/app/core/News.md#posts")]
+	[InlineData("[abs](https://y.test/a)", "https://y.test/a")]
+	public void parse_inlines_relative_links_resolve_against_the_link_base(string text, string expected)
+	{
+		var span = Assert.Single(MarkdownParser.ParseInlines(text, linkBase: new Uri("https://x.test/owner/repo/blob/main/app/core/News.md")));
+
+		Assert.Equal(expected, span.Url);
+	}
+
+	[Theory]
+	[InlineData("[js](javascript:alert(1))")]
+	[InlineData("[file](file:///c:/x)")]
+	public void parse_inlines_unsafe_links_stay_unlinked_with_a_link_base(string text)
+	{
+		var spans = MarkdownParser.ParseInlines(text, linkBase: new Uri("https://x.test/a/News.md"));
+
+		Assert.All(spans, s => Assert.Null(s.Url));
+	}
+
+	[Fact]
+	public void parse_relative_links_resolve_in_every_block()
+	{
+		var blocks = MarkdownParser.Parse("# [h](h.md)\n\n- [item](i.md)\n\n> [quote](q.md)", linkBase: new Uri("https://x.test/d/News.md"));
+
+		Assert.Equal("https://x.test/d/h.md", Assert.Single(Assert.IsType<MarkdownHeading>(blocks[0]).Spans).Url);
+		var item = Assert.IsType<MarkdownParagraph>(Assert.Single(Assert.Single(Assert.IsType<MarkdownList>(blocks[1]).Items).Blocks));
+		Assert.Equal("https://x.test/d/i.md", Assert.Single(item.Spans).Url);
+		var quoted = Assert.IsType<MarkdownParagraph>(Assert.Single(Assert.IsType<MarkdownQuote>(blocks[2]).Blocks));
+		Assert.Equal("https://x.test/d/q.md", Assert.Single(quoted.Spans).Url);
+	}
+
 	[Fact]
 	public void parse_inlines_empty_link_label_shows_the_url()
 	{

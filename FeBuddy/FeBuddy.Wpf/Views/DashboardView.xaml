@@ -9,6 +9,8 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:FeBuddy.Wpf.ViewModels"
              xmlns:news="clr-namespace:FeBuddy.Core.Application.News.Models;assembly=FeBuddy.Core"
+             xmlns:newsSvc="clr-namespace:FeBuddy.Core.Application.News;assembly=FeBuddy.Core"
+             xmlns:app="clr-namespace:FeBuddy.Wpf.Shell"
              xmlns:log="clr-namespace:FeBuddy.Core.Infrastructure.Logging.Models;assembly=FeBuddy.Core"
              xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
              xmlns:bhv="clr-namespace:FeBuddy.Wpf.Behaviors"
@@ -28,8 +30,12 @@
                         <TextBlock Text="{Binding Title}" Style="{StaticResource Text.H2}"
                                    TextTrimming="CharacterEllipsis" />
                     </DockPanel>
-                    <TextBlock Text="{Binding Body, Converter={StaticResource MdToText}}" Style="{StaticResource Text.Prose}"
-                               Margin="0,8,0,0" />
+                    <!-- Rendered, not flattened, so its links open; a relative one resolves against
+                         News.md on GitHub, as it does there. -->
+                    <ctl:MarkdownView Markdown="{Binding Body}" Margin="0,8,0,0"
+                                      MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
+                                      IssueUrlBase="{x:Static app:Links.IssueUrlBase}"
+                                      LinkBase="{x:Static newsSvc:NewsService.PageUrl}" />
                 </StackPanel>
             </ctl:Card>
         </DataTemplate>

@@ -3,6 +3,7 @@ using System.Net;
 using FeBuddy.Core.Application.News;
 using FeBuddy.Core.Application.News.Models;
 using FeBuddy.Core.Infrastructure.Logging;
+using FeBuddy.Core.Infrastructure.Logging.Models;
 
 namespace FeBuddy.UnitTests.Application.News;
 
@@ -226,6 +227,64 @@ public sealed class NewsServiceTests : IDisposable
 		Assert.True(result.FromNetwork);
 		Assert.Equal(2, sent.Count);
 		Assert.Equal(NewsService.RawUrl, sent[1].RequestUri!.ToString());
+	}
+
+	/// <summary>News.md lives at the repository root; the app fetches and links it there.</summary>
+	[Fact]
+	public void news_is_read_from_the_repository_root()
+	{
+		Assert.Equal("https://raw.githubusercontent.com/Nikolai558/FE-BUDDY/v3-development/News.md", NewsService.RawUrl);
+		Assert.Equal("https://github.com/Nikolai558/FE-BUDDY/blob/v3-development/News.md", NewsService.PageUrl);
+	}
+
+	/// <summary>The card shows the title above the body, so the body starts after the title line.</summary>
+	[Fact]
+	public void parse_leaves_the_title_line_out_of_the_body()
+	{
+		NewsPost post = Assert.Single(NewsService.Parse("## 2026-09-26\n<!--\nPostId: 2026-09-26.1\n-->\n\n**News Page Made!**\nNothing to see here.\n"));
+
+		Assert.Equal("News Page Made!", post.Title);
+		Assert.Equal("Nothing to see here.", post.Body);
+	}
+
+	/// <summary>A post with only a title has an empty body.</summary>
+	[Fact]
+	public void parse_a_post_with_only_a_title_has_an_empty_body()
+	{
+		NewsPost post = Assert.Single(NewsService.Parse("## 2026-09-26\n<!--\nPostId: 2026-09-26.1\n-->\n\n# Just a title\n"));
+
+		Assert.Equal("Just a title", post.Title);
+		Assert.Equal(string.Empty, post.Body);
+	}
+
+	/// <summary>A post FE-Buddy cannot show - its PostId missing or malformed - is skipped with a warning, not silently.</summary>
+	[Theory]
+	[InlineData("PostId: 2026-09-30.0", "'2026-09-30.0'")]
+	[InlineData("PostId: 2026-09-30", "none")]
+	[InlineData("no id at all", "none")]
+	public void parse_warns_about_a_skipped_post(string idComment, string reported)
+	{
+		IReadOnlyList<NewsPost> posts = NewsService.Parse($"## 2026-09-26\n<!--\n{idComment}\n-->\n\n**Skipped**\n");
+
+		Assert.Empty(posts);
+		Assert.Contains(AppLog.Entries, e => e.Level == LogLevel.Warning
+			&& e.Message.Contains($"News post '2026-09-26' was skipped: its PostId ({reported})", StringComparison.Ordinal));
+	}
+
+	/// <summary>
+	/// Every post in the real News.md (the copy built into FeBuddy.Core) has a valid, unique PostId,
+	/// so a post that FE-Buddy would skip fails the build instead of quietly going missing.
+	/// </summary>
+	[Fact]
+	public void bundled_news_has_a_valid_unique_post_id_for_every_post()
+	{
+		string bundled = NewsService.GetBundledMarkdown();
+		int headings = bundled.Split('\n').Count(line => line.StartsWith("## ", StringComparison.Ordinal));
+
+		IReadOnlyList<NewsPost> posts = NewsService.Parse(bundled);
+
+		Assert.Equal(headings, posts.Count);
+		Assert.Equal(posts.Count, posts.Select(p => p.Id).Distinct().Count());
 	}
 
 	/// <summary>A post with a heading and a PostId but no text is kept, with an empty title.</summary>

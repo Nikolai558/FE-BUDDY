@@ -14,11 +14,27 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
 
 ## Unreleased
 
+## 3.0.0-alpha.2
+- Bug #251 - Fixed Airways losing its High and Low Files choices when you switched to another tab,
+  which left the tab flagged with errors that you couldn't clear by saving again.
+- Bug #256 - Links in News posts on the Dashboard can now be clicked, and posts show their formatting.
+- File and folder pickers (Map ▸ Load GeoJSON, File Conversions, Settings, custom alias files) now
+  open in your output folder, or on the Desktop if you haven't set one (#253).
+- The Info screen's Manual link is now **User Guide** and opens the 3.0 guide. A new
+  **FAQ / Troubleshooting** link opens the FAQ (#254).
+- Bug #259 - News posts on the Dashboard no longer show their title twice.
+- Bug #258 - Fixed a News post not showing when its PostId was invalid.
+- (Dev notes)
+  - News moved to `News.md` at the repository root (#260). `FeBuddy/FeBuddy.Core/News.md` now holds
+    only a final "please update" post for 3.0.0-alpha.1, which still reads that path.
+  - A News post with a missing or invalid PostId is logged as skipped instead of disappearing
+    silently, and a test now fails the build if any post in `News.md` has one.
+
+---
+
 ## 3.0.0-alpha.1
 - FE-BUDDY 3.0 is a from-scratch rewrite with a new interface. This first alpha is for testers:
-  expect rough edges, and keep 2.x handy. Not yet in 3.0: VRC `.sct2`, vERAM GeoMap and vSTARS
-  XML output, ISR aliases and the combined all-SID/all-STAR files
-  ([Do I still need 2.x?](https://github.com/Nikolai558/FE-BUDDY/blob/3.0.0-alpha.1/docs/Users/FAQ-and-Troubleshooting.md#do-i-still-need-fe-buddy-2x)).
+  expect rough edges, and keep 2.x handy.
 
 ### Output
 - Everything for a cycle goes into one `AIRAC_<cycle>` folder: `Aliases`, `Geojson`,
@@ -105,3 +121,5 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
   - Rewritten in WPF on .NET 10, with the logic in a separate, unit-tested FeBuddy.Core library.
   - Semantic versioning (alpha, beta, rc) shared by the app and the installer.
   - Automated release pipeline: pre-flight checks on the pull request, then a drafted release.
+
+---

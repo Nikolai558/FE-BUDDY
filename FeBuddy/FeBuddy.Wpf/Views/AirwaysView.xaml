@@ -117,7 +117,7 @@
                                     <TextBlock Text="{Binding Designation}" MinWidth="40" Margin="0,0,8,0" VerticalAlignment="Center"
                                                Style="{StaticResource Text.Body.Strong}" FontFamily="{StaticResource Font.Mono}" />
                                     <ComboBox Style="{StaticResource Themed.ComboBox}" Width="110"
-                                              ItemsSource="{Binding DataContext.StratumValues, ElementName=Root}"
+                                              ItemsSource="{x:Static vm:AirwaysViewModel.StratumValues}"
                                               SelectedItem="{Binding Stratum}"
                                               bhv:FieldState.Error="{Binding StratumError}" />
                                 </DockPanel>

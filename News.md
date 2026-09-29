@@ -7,19 +7,29 @@ PostId format =  yyyy-mm-dd.#
     only when its PostId is later than the newest one the user has already seen.
   - A post without a valid PostId (wrong format, or # of 0) is not shown in FE-Buddy.
   - Links can be relative to this file, which sits at the repository root: [User Guide](docs/Users/User-Guide.md).
-
 -->
 
 News concerning all things FE-Buddy will be posted here with the most recent post at the top.
 
 ---
 
-## 2026-09-26
+## 2026-09-29
 <!--
-PostId: 2026-09-30.2
+PostId: 2026-09-29.1
 -->
 
-**Version 3.0.0.alpha.1 Released!**
+**Version 3.0.0.alpha.2 Compiled!**
+
+Check it out [HERE](https://github.com/Nikolai558/FE-BUDDY/releases/tag/3.0.0-alpha.2)!!!
+
+---
+
+## 2026-09-28
+<!--
+PostId: 2026-09-28.1
+-->
+
+**Version 3.0.0.alpha.1 Compiled!**
 
 Check it out [HERE](https://github.com/Nikolai558/FE-BUDDY/releases/tag/3.0.0-alpha.1)!!!
 
@@ -30,5 +40,6 @@ Check it out [HERE](https://github.com/Nikolai558/FE-BUDDY/releases/tag/3.0.0-al
 PostId: 2026-09-26.1
 -->
 
-**News Page Mage!**
+**News Page Created!**
+
 Nothing to really see here, move along...

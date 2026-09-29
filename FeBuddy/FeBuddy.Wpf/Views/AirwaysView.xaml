@@ -39,8 +39,7 @@
             <!-- ============ outputs ============ -->
             <!-- GeoJSON is more than on / off here - the drop-down picks how the files are split,
                  None writes none - and the alias file can cover every airway or just the ROI's. -->
-            <cards:OutputsCard AliasFileName="Airways.txt"
-                               AliasDescription="Provides a command to draw all airway waypoints on an ERAM or STARS window.&#xA;Syntax: .&lt;awyId&gt;F  &#xA;Ex Output: .J3F .FF OAK RBL LKV IMB GEG">
+            <cards:OutputsCard AliasDescription="Provides a command to draw all airway waypoints on an ERAM or STARS window.&#xA;Syntax: .&lt;awyId&gt;F  &#xA;Ex Output: .J3F .FF OAK RBL LKV IMB GEG">
                 <cards:OutputsCard.GeojsonTemplate>
                     <DataTemplate>
                         <ctl:Option Description="{Binding OutputModeHint}">

@@ -319,10 +319,13 @@ files per source (SCT2, ERAM).
 - **One `.editorconfig`** at `FeBuddy/.editorconfig` covers every project: tabs, file-scoped
   namespaces, `PascalCase` for constants and `static readonly` fields, `_camelCase` for other
   private fields, and snake_case test method names.
+- **Every file is UTF-8 without a byte-order mark.** A test
+  (`Repository/FileEncodingTests`) fails if any file in the repository starts with a byte-order mark.
 - **XML docs are required.** `GenerateDocumentationFile` is on, so any undocumented public
   member is a build warning (CS1591). Write a `<summary>`, plus `<param>` and `<returns>` where
   they apply. Comments explain *why*; don't point at planning docs or task numbers.
 - **Tests** in `FeBuddy.UnitTests` mirror Core's folders one-to-one (and the app's, under `Wpf/`).
+  `Repository/` checks the repository's own files.
 
 Before you commit, run these from `FeBuddy/`:
 

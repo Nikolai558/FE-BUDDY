@@ -277,12 +277,6 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 
 	// ================= 3. GEOJSON FILES =================
 
-	/// <summary>Explains the FE-Buddy properties.</summary>
-	public const string FebPropertiesDescription =
-		"Include FE-Buddy Properties, when available. Custom GeoJSON property fields that increase file " +
-		"size but can be helpful for debugging or viewing data in a GeoJSON viewer in order to identify " +
-		"an object. Every FE-Buddy property is prefixed with feb.";
-
 	/// <summary>Explains the coordinate precision choice.</summary>
 	public const string CoordinatePrecisionDescription =
 		"Will round all coordinates in GeoJSON files to a maximum number of decimal points in order to " +

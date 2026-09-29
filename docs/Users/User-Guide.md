@@ -384,7 +384,8 @@ until it is.
   NASR coordinates fall inside the box on the Region of Interest card below.
 - **Procedures at Any Airport** - name a procedure - a STAR flown into several airports, say - to
   include it wherever the FAA charts it, whatever its chart type and whether or not that airport is
-  otherwise included.
+  otherwise included. Type its name or pick it from the list, then **Add**; **Cancel** clears the
+  box without adding it.
 - **Airport + Procedure** - specific airport-and-procedure pairs, for one chart at one airport and
   nothing else there; **Add**, **Edit** and **Delete** manage the list.
 - **Chart Types** - which kinds of chart a whole included airport (from Facilities, the region, or

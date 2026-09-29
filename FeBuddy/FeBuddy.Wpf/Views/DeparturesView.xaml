@@ -29,7 +29,6 @@
 
             <!-- ============ outputs ============ -->
             <cards:OutputsCard GeojsonDescription="Writes the departure procedure GeoJSON files selected below."
-                               AliasFileName="Departures.txt"
                                AliasDescription="Writes one alias command per airport and procedure that draws the procedure's points." />
 
             <!-- ============ which GeoJSON files ============ -->

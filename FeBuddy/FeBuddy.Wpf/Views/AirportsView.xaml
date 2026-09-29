@@ -27,7 +27,6 @@
 
             <!-- ============ outputs ============ -->
             <cards:OutputsCard GeojsonDescription="Writes the airport and runway GeoJSON files selected below."
-                               AliasFileName="Airports.txt"
                                AliasDescription="Writes one alias command per airport FAA ID, and one for airports with an ICAO ID." />
 
             <!-- ============ which GeoJSON files ============ -->

@@ -120,6 +120,7 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 		DeleteAirportCommand = new RelayCommand<string>(DeleteAirport);
 
 		AddProcedureCommand = new RelayCommand(AddProcedure, CanAddProcedure);
+		CancelProcedureCommand = new RelayCommand(() => NewProcedureText = string.Empty, () => _newProcedureText.Length > 0);
 		DeleteProcedureCommand = new RelayCommand<string>(DeleteProcedure);
 
 		AddPairCommand = new RelayCommand(BeginAddPair, () => HasDtppData);
@@ -414,6 +415,9 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 
 	/// <summary>Adds <see cref="NewProcedureText"/> (canonical spelling) to <see cref="ProcedureNames"/>.</summary>
 	public ICommand AddProcedureCommand { get; }
+
+	/// <summary>Clears <see cref="NewProcedureText"/> without adding it. The list is left as it is.</summary>
+	public ICommand CancelProcedureCommand { get; }
 
 	/// <summary>Removes a procedure name from <see cref="ProcedureNames"/>.</summary>
 	public ICommand DeleteProcedureCommand { get; }

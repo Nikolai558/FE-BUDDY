@@ -88,7 +88,8 @@ dotnet format whitespace FeBuddy/FeBuddy.sln --verify-no-changes
 ```
 
 The build must also have **zero warnings**: every public member needs XML docs, and a missing one
-is a warning. The rules themselves (layers, the Models/ rule, naming) are in
+is a warning. Save files as UTF-8 **without** a byte-order mark (Visual Studio sometimes adds one
+to a `.csproj`); a unit test fails on any file that has one. The rules themselves (layers, the Models/ rule, naming) are in
 [FeBuddy.Core structure](FeBuddy.Core-Structure.md#standards-and-checks).
 
 ## Build the installer

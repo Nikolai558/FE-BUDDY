@@ -142,7 +142,11 @@ root - the same rule as `FeBuddy.Core`.
   through `bhv:InlineCode.Text` instead of `Text` - it shows in the same code look as a News post's
   `code` (`InlineCode.ApplyLook`, which `MarkdownView` uses too). `ConfirmWindow`'s message and
   `GeojsonFilesCard`'s `Footnote` already render this way, so a message or footnote only needs the
-  backticks. In a CheckBox or RadioButton, put a TextBlock inside rather than using `Content`.
+  backticks. In a CheckBox or RadioButton, put a TextBlock inside rather than using `Content`
+  (the property is a TextBlock's).
+- **A file name in a CheckBox or RadioButton label:** plain `Content` is fine. The theme's CheckBox
+  and RadioButton have no access keys, so an underscore shows as written instead of being taken as
+  one (`Fix_Symbols.geojson` would otherwise show as `FixSymbols.geojson`).
 - **A test for the app's logic:** `FeBuddy.UnitTests/Wpf/`, in folders mirroring these (the app's
   internals are visible to the tests). A test that creates a control runs its body through
   `StaThread.Run`, since WPF controls need a thread of their own. The map's math, GeoJSON reader,
@@ -346,8 +350,8 @@ bar and page scroller are shared, and each screen's view-model says what differs
   `ConfirmWindow` first, then every open `IConfigPage` reloads - `ConfigPages`), then the cards:
   Facility Profile (one facility from the parsed cycle, default output dir - the Desktop until
   one is saved - + FE-Buddy_Output toggle, with the cycle folder a run would write to), Default
-  Region of Interest (`RoiPickerWindow`), GeoJSON Files (feb.* description, Maximum Coordinate
-  Precision 5/6/7 dp, File Layout), Credentials (`CredentialsViewModel`, `CredentialEditorWindow`),
+  Region of Interest (`RoiPickerWindow`), GeoJSON Files (Maximum Coordinate Precision 5/6/7 dp,
+  File Layout; FE-Buddy properties are chosen on each tab), Credentials (`CredentialsViewModel`, `CredentialEditorWindow`),
   FE-Buddy's GitHub Requests (the GitHub token FE-Buddy's own requests use), and Updates (the four
   channels with their tooltips, "check now" and "get the latest stable installer"). Everything but
   Credentials persists to `UserConfig.json` with the page's Save; credentials live in Windows

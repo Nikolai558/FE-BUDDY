@@ -17,6 +17,18 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
 ## Unreleased
 - Folder names and paths in on-screen descriptions and messages (`Upload_to_vNAS`, `Aliases`, the
   output folder in Settings, …) now show in a code font, the way `code` looks in News posts.
+- Tick boxes and options no longer hide the first underscore of a file name (`Fix_Symbols.geojson`
+  showed as `FixSymbols.geojson`).
+- Scroll bars can be grabbed anywhere across their width; before, only a sliver at their left edge
+  responded.
+- Procedures ▸ Procedures at Any Airport: the procedure box now shows what you type or pick, and a
+  new **Cancel** button clears it.
+- The Outputs cards' tick box now reads just **Alias file**, and the "At least one output must stay
+  on" note is gone (FE-BUDDY still stops you turning off the last output, and says why).
+- Settings ▸ GeoJSON Files no longer has an FE-Buddy Properties section: they are chosen on each
+  tab's FE-Buddy Properties card.
+- (Dev notes)
+  - Every file is UTF-8 without a byte-order mark, and a unit test now fails on any file that has one.
 
 ---
 

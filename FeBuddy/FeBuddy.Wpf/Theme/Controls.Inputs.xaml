@@ -18,8 +18,9 @@
 
         ComboBox     -> Themed.ComboBox (dark sunken box + dark popup, kills the
                         system blue bar, and carries the drop-down wheel-scroll
-                        behaviour). The keyed name still works for an explicit
-                        reference; a bare ComboBox now picks it up on its own.
+                        behaviour; IsEditable="True" gets a text box to type into).
+                        The keyed name still works for an explicit reference; a
+                        bare ComboBox now picks it up on its own.
         DatePicker   -> Themed.DatePicker (Field look + calendar glyph; its drop-down
                         is Themed.Calendar.DropDown)
         Calendar     -> Themed.Calendar (dark panel, amber today ring, amber-soft
@@ -200,8 +201,10 @@
                                        HorizontalAlignment="Center" VerticalAlignment="Center"
                                        Opacity="0" />
                         </Border>
+                        <!-- No access keys: labels are often file names, and an access key would
+                             swallow their first underscore (Fix_Symbols.geojson). -->
                         <ContentPresenter Margin="8,0,0,0" VerticalAlignment="Center"
-                                          RecognizesAccessKey="True"
+                                          RecognizesAccessKey="False"
                                           TextElement.Foreground="{TemplateBinding Foreground}"
                                           TextElement.FontFamily="{TemplateBinding FontFamily}"
                                           TextElement.FontSize="{TemplateBinding FontSize}" />
@@ -254,8 +257,9 @@
                             <Ellipse x:Name="Dot" Width="6" Height="6"
                                      Fill="{DynamicResource Brush.Accent}" Opacity="0" />
                         </Grid>
+                        <!-- No access keys, as for CheckBox: they would swallow a label's first underscore. -->
                         <ContentPresenter Margin="8,0,0,0" VerticalAlignment="Center"
-                                          RecognizesAccessKey="True"
+                                          RecognizesAccessKey="False"
                                           TextElement.Foreground="{TemplateBinding Foreground}"
                                           TextElement.FontFamily="{TemplateBinding FontFamily}"
                                           TextElement.FontSize="{TemplateBinding FontSize}" />
@@ -281,8 +285,10 @@
     </Style>
 
     <!-- ===================== COMBOBOX (implicit) ==================== -->
-    <!-- Non-editable, read-only template that mirrors Field: sunken box, amber
-         focus, dark popup, amber-soft selected row. No system blue anywhere. -->
+    <!-- A template that mirrors Field: sunken box, amber focus, dark popup, amber-soft
+         selected row. No system blue anywhere. A ComboBox with IsEditable="True" shows a
+         text box to type into (Tag is its placeholder, as on a Field); every other one
+         shows its selection. -->
     <Style x:Key="Themed.ComboBoxItem" TargetType="ComboBoxItem">
         <Setter Property="FontFamily" Value="{DynamicResource Font.Body}" />
         <Setter Property="FontSize" Value="13" />
@@ -314,6 +320,29 @@
         </Setter>
     </Style>
     <Style TargetType="ComboBoxItem" BasedOn="{StaticResource Themed.ComboBoxItem}" />
+
+    <!-- The text box an editable ComboBox types into: bare text on the combo's own fill, so the
+         combo's border, focus ring and error look stay the only frame. -->
+    <Style x:Key="Themed.ComboBox.EditableText" TargetType="TextBox">
+        <Setter Property="OverridesDefaultStyle" Value="True" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Primary}" />
+        <Setter Property="CaretBrush" Value="{DynamicResource Brush.Accent}" />
+        <Setter Property="SelectionBrush" Value="{DynamicResource Brush.Accent}" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="TextBox">
+                    <Border Background="{TemplateBinding Background}">
+                        <ScrollViewer x:Name="PART_ContentHost" VerticalAlignment="Center" Focusable="False"
+                                      HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Hidden" />
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
 
     <!-- Keyed AND implicit (see the BasedOn style right after it): every ComboBox in the app
          gets this template, its dark popup and the drop-down wheel-scroll behaviour without
@@ -368,6 +397,17 @@
                                           HorizontalAlignment="Left" VerticalAlignment="Center"
                                           TextElement.Foreground="{DynamicResource Brush.Text.Primary}" />
 
+                        <!-- Editable only. The text host keeps 2px before the caret, so the box sits
+                             2px left of the padding to line its text up with a selection's; its right
+                             margin leaves the chevron to the toggle, which opens the list. -->
+                        <TextBlock x:Name="Hint" Text="{TemplateBinding Tag}" Visibility="Collapsed" IsHitTestVisible="False"
+                                   Margin="{TemplateBinding Padding}" VerticalAlignment="Center"
+                                   Foreground="{DynamicResource Brush.Text.Tertiary}" />
+                        <TextBox x:Name="PART_EditableTextBox" Visibility="Collapsed"
+                                 Style="{StaticResource Themed.ComboBox.EditableText}"
+                                 Margin="9,1,30,1"
+                                 IsReadOnly="{Binding IsReadOnly, RelativeSource={RelativeSource TemplatedParent}}" />
+
                         <TextBlock x:Name="Chevron" Text="{DynamicResource Icon.Chevron.Down}" IsHitTestVisible="False"
                                    FontFamily="{DynamicResource Font.Icon}" FontSize="10"
                                    Foreground="{DynamicResource Brush.Text.Tertiary}"
@@ -396,6 +436,17 @@
                         </Popup>
                     </Grid>
                     <ControlTemplate.Triggers>
+                        <Trigger Property="IsEditable" Value="True">
+                            <Setter TargetName="ContentSite" Property="Visibility" Value="Collapsed" />
+                            <Setter TargetName="PART_EditableTextBox" Property="Visibility" Value="Visible" />
+                        </Trigger>
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="IsEditable" Value="True" />
+                                <Condition Property="Text" Value="" />
+                            </MultiTrigger.Conditions>
+                            <Setter TargetName="Hint" Property="Visibility" Value="Visible" />
+                        </MultiTrigger>
                         <Trigger Property="IsKeyboardFocusWithin" Value="True">
                             <Setter TargetName="Toggle" Property="BorderBrush" Value="{DynamicResource Brush.Accent}" />
                         </Trigger>

@@ -175,7 +175,15 @@ window is.
 
 - **Outputs:** GeoJSON, and `Airports.txt` - one alias command per airport's FAA ID, and one per
   ICAO ID where there is one. The alias file always covers every open airport; the region only
-  limits the GeoJSON.
+  limits the GeoJSON. Each command shows the airport's card in CRC: identifiers and name, tower
+  type, ARTCC, longest runway, elevation, pattern altitude, FSS, CTAF and weather, then:
+  - **ATNDCE HRS** - when the airport is attended: the hours of each schedule NASR publishes for
+    it, one per line. Only the hours are shown, not the months and days each schedule covers.
+  - **AIRSPACE** - the class airspace, and under it **HRS**: when that airspace is in effect,
+    broken after `SVC` and at every comma and semicolon, e.g. `CLASS D SVC` / `0600-2400` /
+    `OTHER TIMES CLASS G`.
+
+  Both hours labels show even when NASR publishes no hours.
 - **Files:** *Runways - Lines* (each airport's runway centrelines), *Airports - Symbols* (one per
   airport, at its reference point), *Airports - Text* (FAA ID and name).
 - **FE-Buddy properties:** `faaId`, `icaoId`, `name`, `elev`, `respArtcc`, `tfcPtrnAlt`, `fssId`,

@@ -272,6 +272,36 @@ public sealed class AirportBuilderTests
 		Assert.Equal("Bravo & Echo", airport.ClassAirspace);
 	}
 
+	/// <summary>
+	/// APT_ATT does not list an airport's schedules in order, and most of its HOUR values are blank;
+	/// the hours come out in SKED_SEQ_NO order, trimmed, blanks dropped.
+	/// </summary>
+	[Fact]
+	public void attendance_hours_come_in_schedule_order_and_airspace_hours_are_split_into_lines()
+	{
+		NasrCsvDataCollection data = AirportTestDataBuilder.Build(
+			airports: [AirportTestDataBuilder.Base("DCU"), AirportTestDataBuilder.Base("PDX")],
+			classAirspace: [AirportTestDataBuilder.ClassAirspaceRow("DCU", classD: "Y", airspaceHours: "CLASS D SVC 0600-2400; OTHER TIMES CLASS G")],
+			attendance:
+			[
+				AirportTestDataBuilder.AttendanceRow("DCU", 3, " 0800-1700 "),
+				AirportTestDataBuilder.AttendanceRow("DCU", 1, "0700-1900"),
+				AirportTestDataBuilder.AttendanceRow("DCU", 4, " "),
+				AirportTestDataBuilder.AttendanceRow("DCU", 2, null),
+				AirportTestDataBuilder.AttendanceRow("dcu", 5, "0700-1800"),
+			]);
+
+		IReadOnlyList<Airport> airports = AirportBuilder.BuildAll(data).Airports;
+
+		Assert.Equal(["0700-1900", "0800-1700", "0700-1800"], airports[0].AttendanceHours);
+		Assert.Equal(["CLASS D SVC", "0600-2400", "OTHER TIMES CLASS G"], airports[0].AirspaceHours);
+
+		// No APT_ATT or CLS_ARSP row: no hours, not an error.
+		Assert.Equal("PDX", airports[1].FaaId);
+		Assert.Empty(airports[1].AttendanceHours);
+		Assert.Empty(airports[1].AirspaceHours);
+	}
+
 	[Fact]
 	public void rows_without_an_identifier_are_ignored_and_a_duplicate_identifier_keeps_the_first()
 	{

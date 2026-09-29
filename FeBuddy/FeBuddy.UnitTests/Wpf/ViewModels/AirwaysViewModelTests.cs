@@ -194,6 +194,20 @@ public sealed class AirwaysViewModelTests : IDisposable
 		Assert.Equal(AirwayStratum.Low, Designation(tab, "V").Stratum);
 	}
 
+	/// <summary>A hand-edited config with no output on loads the defaults, as the tab's own guard would never allow it.</summary>
+	[Fact]
+	public void a_config_with_no_output_on_loads_the_defaults()
+	{
+		UserConfigFile.TrySetValue("Services.AiracService.Geojson.Airways.OutputBy", "None");
+		UserConfigFile.TrySetValue("Services.AiracService.Geojson.Airways.GenerateAliasFile", "N");
+
+		AirwaysViewModel tab = NewTab("J");
+
+		Assert.Equal(AirwayGeojsonOutputBy.HighLow, tab.OutputBy);
+		Assert.True(tab.GenerateAliasFile);
+		Assert.False(tab.IsDirty);
+	}
+
 	[Fact]
 	public void the_preview_says_which_types_go_in_each_file()
 	{

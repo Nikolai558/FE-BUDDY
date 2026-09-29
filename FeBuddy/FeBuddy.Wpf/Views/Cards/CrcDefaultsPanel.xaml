@@ -19,11 +19,16 @@
     which adds an Include box to the title; unticked, the rows grey out but keep their values. The
     AIRAC sub-services choose on the Upload to vNAS card instead and leave it off.
 
+    With several classes, each block is a Panel.Block box of its own inside the panel's Panel.Inset,
+    so thirteen NAVAID types read as thirteen boxes rather than one run of fields.
+
     The controls are a fixed width rather than Auto or star: the page fills the window, and an Auto
     column sizes to whatever is selected, so the boxes would all end up different widths. The label
-    column is shared by every block (SharedSizeGroup), so the blocks are all one width and line up
-    in columns when they wrap. The conditional rows start Collapsed (FallbackValue) until their
-    binding resolves: a row measured even once while visible keeps widening that shared column.
+    column is shared (SharedSizeGroup) by every block of every panel on the card - the card is the
+    size scope - so the blocks are all one width, line up in columns when they wrap, and a Symbols
+    panel is as wide as a Text panel with as many blocks. The conditional rows start Collapsed
+    (FallbackValue) until their binding resolves: a row measured even once while visible keeps
+    widening that shared column.
     The per-field ToolTips are worded from the settings validator - keep them verbatim.
 -->
 <UserControl x:Class="FeBuddy.Wpf.Views.Cards.CrcDefaultsPanel"
@@ -68,67 +73,83 @@
             </Setter>
         </Style>
 
+        <!-- One class's box: with several classes (NAVAID types, Airways High / Low / Other) each
+             sits in a Panel.Block of its own, so they read apart; with one, the panel is its box
+             already, so the block is flat. -->
+        <Style x:Key="ClassBox" TargetType="Border" BasedOn="{StaticResource Panel.Block}">
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding ShowClassNames, RelativeSource={RelativeSource AncestorType=cards:CrcDefaultsPanel}, FallbackValue=False}" Value="False">
+                    <Setter Property="Background" Value="Transparent" />
+                    <Setter Property="BorderThickness" Value="0" />
+                    <Setter Property="Padding" Value="0" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
         <!-- One class: its name, then a row per property its kind has. -->
         <DataTemplate x:Key="ClassBlock" DataType="{x:Type m:EramClassDefault}">
-            <StackPanel Margin="{Binding BlockMargin, RelativeSource={RelativeSource AncestorType=cards:CrcDefaultsPanel}}">
-                <ctl:SectionHeader Style="{StaticResource SectionHeader.Group}" Label="{Binding ClassName}" Margin="0,0,0,4"
-                                   Visibility="{Binding ShowClassNames, RelativeSource={RelativeSource AncestorType=cards:CrcDefaultsPanel}, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}" />
-                <HeaderedContentControl Style="{StaticResource Field}" Header="Filters">
-                    <ctl:FilterPicker Value="{Binding Filters, Mode=TwoWay}" bhv:FieldState.Error="{Binding FiltersError}" />
-                </HeaderedContentControl>
-                <HeaderedContentControl Style="{StaticResource Field}" Header="BCG">
-                    <ComboBox ItemsSource="{Binding BcgOptions}" SelectedItem="{Binding Bcg}"
-                              bhv:FieldState.Error="{Binding BcgError}"
-                              ToolTip="BCG group: an integer 1–40." />
-                </HeaderedContentControl>
-                <HeaderedContentControl Style="{StaticResource Field}" Header="Style"
-                                        Visibility="{Binding AsksForStyle, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}">
-                    <ComboBox ItemsSource="{Binding StyleOptions}" SelectedItem="{Binding Style}"
-                              bhv:FieldState.Error="{Binding StyleError}"
-                              ToolTip="Style: see the CRC GeoJSON concepts for the allowed values per kind." />
-                </HeaderedContentControl>
-                <HeaderedContentControl Style="{StaticResource Field}" Header="Thickness"
-                                        Visibility="{Binding ShowThickness, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}">
-                    <ComboBox ItemsSource="{Binding ThicknessOptions}" SelectedItem="{Binding Thickness}"
-                              bhv:FieldState.Error="{Binding ThicknessError}"
-                              ToolTip="Thickness: an integer 1–3." />
-                </HeaderedContentControl>
-                <HeaderedContentControl Style="{StaticResource Field}" Header="Size"
-                                        Visibility="{Binding ShowSize, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}">
-                    <ComboBox ItemsSource="{Binding SizeOptions}" SelectedItem="{Binding Size}"
-                              bhv:FieldState.Error="{Binding SizeError}"
-                              ToolTip="Size: an integer 1–4." />
-                </HeaderedContentControl>
-                <HeaderedContentControl Style="{StaticResource Field}" Header="Opaque"
-                                        Visibility="{Binding ShowTextOptions, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}">
-                    <ComboBox ItemsSource="{Binding YesNoOptions}" SelectedValuePath="Value" SelectedValue="{Binding Opaque}"
-                              bhv:FieldState.Error="{Binding OpaqueError}"
-                              ToolTip="Opaque: Yes or No." />
-                </HeaderedContentControl>
-                <HeaderedContentControl Style="{StaticResource Field}" Header="Underline"
-                                        Visibility="{Binding ShowTextOptions, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}">
-                    <ComboBox ItemsSource="{Binding YesNoOptions}" SelectedValuePath="Value" SelectedValue="{Binding Underline}"
-                              bhv:FieldState.Error="{Binding UnderlineError}"
-                              ToolTip="Underline: Yes or No." />
-                </HeaderedContentControl>
-                <HeaderedContentControl Style="{StaticResource Field}" Header="X offset"
-                                        Visibility="{Binding ShowTextOptions, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}">
-                    <TextBox Style="{StaticResource OffsetBox}"
-                             Text="{Binding XOffset, UpdateSourceTrigger=PropertyChanged}"
-                             bhv:FieldState.Error="{Binding XOffsetError}" />
-                </HeaderedContentControl>
-                <HeaderedContentControl Style="{StaticResource Field}" Header="Y offset"
-                                        Visibility="{Binding ShowTextOptions, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}">
-                    <TextBox Style="{StaticResource OffsetBox}"
-                             Text="{Binding YOffset, UpdateSourceTrigger=PropertyChanged}"
-                             bhv:FieldState.Error="{Binding YOffsetError}" />
-                </HeaderedContentControl>
-            </StackPanel>
+            <Border Style="{StaticResource ClassBox}"
+                    Margin="{Binding BlockMargin, RelativeSource={RelativeSource AncestorType=cards:CrcDefaultsPanel}}">
+                <StackPanel>
+                    <ctl:SectionHeader Style="{StaticResource SectionHeader.Group}" Label="{Binding ClassName}" Margin="0,0,0,4"
+                                       Visibility="{Binding ShowClassNames, RelativeSource={RelativeSource AncestorType=cards:CrcDefaultsPanel}, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}" />
+                    <HeaderedContentControl Style="{StaticResource Field}" Header="Filters">
+                        <ctl:FilterPicker Value="{Binding Filters, Mode=TwoWay}" bhv:FieldState.Error="{Binding FiltersError}" />
+                    </HeaderedContentControl>
+                    <HeaderedContentControl Style="{StaticResource Field}" Header="BCG">
+                        <ComboBox ItemsSource="{Binding BcgOptions}" SelectedItem="{Binding Bcg}"
+                                  bhv:FieldState.Error="{Binding BcgError}"
+                                  ToolTip="BCG group: an integer 1–40." />
+                    </HeaderedContentControl>
+                    <HeaderedContentControl Style="{StaticResource Field}" Header="Style"
+                                            Visibility="{Binding AsksForStyle, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}">
+                        <ComboBox ItemsSource="{Binding StyleOptions}" SelectedItem="{Binding Style}"
+                                  bhv:FieldState.Error="{Binding StyleError}"
+                                  ToolTip="Style: see the CRC GeoJSON concepts for the allowed values per kind." />
+                    </HeaderedContentControl>
+                    <HeaderedContentControl Style="{StaticResource Field}" Header="Thickness"
+                                            Visibility="{Binding ShowThickness, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}">
+                        <ComboBox ItemsSource="{Binding ThicknessOptions}" SelectedItem="{Binding Thickness}"
+                                  bhv:FieldState.Error="{Binding ThicknessError}"
+                                  ToolTip="Thickness: an integer 1–3." />
+                    </HeaderedContentControl>
+                    <HeaderedContentControl Style="{StaticResource Field}" Header="Size"
+                                            Visibility="{Binding ShowSize, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}">
+                        <ComboBox ItemsSource="{Binding SizeOptions}" SelectedItem="{Binding Size}"
+                                  bhv:FieldState.Error="{Binding SizeError}"
+                                  ToolTip="Size: an integer 1–4." />
+                    </HeaderedContentControl>
+                    <HeaderedContentControl Style="{StaticResource Field}" Header="Opaque"
+                                            Visibility="{Binding ShowTextOptions, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}">
+                        <ComboBox ItemsSource="{Binding YesNoOptions}" SelectedValuePath="Value" SelectedValue="{Binding Opaque}"
+                                  bhv:FieldState.Error="{Binding OpaqueError}"
+                                  ToolTip="Opaque: Yes or No." />
+                    </HeaderedContentControl>
+                    <HeaderedContentControl Style="{StaticResource Field}" Header="Underline"
+                                            Visibility="{Binding ShowTextOptions, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}">
+                        <ComboBox ItemsSource="{Binding YesNoOptions}" SelectedValuePath="Value" SelectedValue="{Binding Underline}"
+                                  bhv:FieldState.Error="{Binding UnderlineError}"
+                                  ToolTip="Underline: Yes or No." />
+                    </HeaderedContentControl>
+                    <HeaderedContentControl Style="{StaticResource Field}" Header="X offset"
+                                            Visibility="{Binding ShowTextOptions, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}">
+                        <TextBox Style="{StaticResource OffsetBox}"
+                                 Text="{Binding XOffset, UpdateSourceTrigger=PropertyChanged}"
+                                 bhv:FieldState.Error="{Binding XOffsetError}" />
+                    </HeaderedContentControl>
+                    <HeaderedContentControl Style="{StaticResource Field}" Header="Y offset"
+                                            Visibility="{Binding ShowTextOptions, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}">
+                        <TextBox Style="{StaticResource OffsetBox}"
+                                 Text="{Binding YOffset, UpdateSourceTrigger=PropertyChanged}"
+                                 bhv:FieldState.Error="{Binding YOffsetError}" />
+                    </HeaderedContentControl>
+                </StackPanel>
+            </Border>
         </DataTemplate>
     </UserControl.Resources>
 
     <Border Style="{StaticResource Panel.Inset}">
-        <StackPanel Grid.IsSharedSizeScope="True">
+        <StackPanel>
             <ctl:SectionHeader Style="{StaticResource SectionHeader.Group}" Label="{Binding Title, ElementName=Self}" Margin="0,0,0,8">
                 <ctl:SectionHeader.Aside>
                     <CheckBox Content="Include" IsChecked="{Binding IsIncluded, ElementName=Self}" Margin="16,0,0,0"

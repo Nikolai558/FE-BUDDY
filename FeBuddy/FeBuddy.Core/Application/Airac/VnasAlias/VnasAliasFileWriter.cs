@@ -11,35 +11,40 @@ using FeBuddy.Core.Infrastructure.Logging.Models;
 namespace FeBuddy.Core.Application.Airac.VnasAlias;
 
 /// <summary>
-/// Writes <c>Upload_to_vNAS\vNAS_Alias.txt</c>, the one alias file a facility uploads to vNAS: the
-/// user's own custom alias files first, then every FE-Buddy alias file marked for vNAS.
+/// Writes <c>Upload_to_vNAS\vNAS_Alias.txt</c>, the one alias file a facility uploads to vNAS: every
+/// FE-Buddy alias file marked for vNAS first, then the user's own custom alias files.
 /// </summary>
 /// <remarks>
 /// <para>
-/// vNAS takes a single alias file, so FE-Buddy's alias files cannot be uploaded on their own. The
-/// file is laid out as:
+/// vNAS takes a single alias file, so FE-Buddy's alias files cannot be uploaded on their own. CRC
+/// reads the file top to bottom and the last copy of a command wins, so the user's own files go last:
+/// a command of theirs replaces FE-Buddy's. The file is laid out as:
 /// </para>
 /// <code>
 /// .FeUseOnly ...                     the first .FeUseOnly line any custom file has, kept first
-/// (custom alias file 1)
-/// (custom alias file 2, ...)
 /// ; ===== FE-Buddy aliases (AIRAC 2610) start here ... =====   <see cref="FeBuddySectionMarker"/>
 /// ; ----- Airways.txt -----
 /// (Airways.txt)
 /// ; ----- Telephony.txt -----
 /// (Telephony.txt)
+/// ; ===== End of FE-Buddy aliases ... =====                    <see cref="FeBuddySectionEndMarker"/>
+///
+/// (custom alias file 1)
+/// (custom alias file 2, ...)
 /// </code>
 /// <para>
 /// A custom file is copied as it is, with two exceptions. A <c>.FeUseOnly</c> line must be the
 /// first line of an alias file, so only the first one found is kept, and it is moved to the top.
 /// And a custom file that is itself an old <c>vNAS_Alias.txt</c> - a facility that keeps the file it
-/// last uploaded as its custom file - is cut at <see cref="FeBuddySectionMarker"/>, so last cycle's
-/// FE-Buddy aliases are not merged in a second time.
+/// last uploaded as its custom file - loses its FE-Buddy section, from <see cref="FeBuddySectionMarker"/>
+/// to <see cref="FeBuddySectionEndMarker"/>, so last cycle's FE-Buddy aliases are not merged in a
+/// second time. A file from before the end line existed (FE-Buddy's section was last) loses
+/// everything from its start line down.
 /// </para>
 /// <para>
-/// A command from a custom file that another merged file has too is reported, as CRC runs only one
-/// of each. Commands FE-Buddy's own files share are left to <c>Duplicate_Alias_Commands.txt</c>,
-/// which already lists them.
+/// A command from a custom file that another merged file has too is reported, naming the files in
+/// the order they are merged, so the last one named is the copy CRC uses. Commands FE-Buddy's own
+/// files share are left to <c>Duplicate_Alias_Commands.txt</c>, which already lists them.
 /// </para>
 /// <para>
 /// When there is nothing to merge, no file is written, and one an earlier run left in
@@ -52,8 +57,11 @@ namespace FeBuddy.Core.Application.Airac.VnasAlias;
 /// </remarks>
 public static class VnasAliasFileWriter
 {
-	/// <summary>How the line that starts FE-Buddy's section begins; a custom file is cut where it has one.</summary>
+	/// <summary>How the line that starts FE-Buddy's section begins; a custom file loses its section from there.</summary>
 	public const string FeBuddySectionMarker = "; ===== FE-Buddy aliases";
+
+	/// <summary>How the line that ends FE-Buddy's section begins; a custom file's lines after it are kept.</summary>
+	public const string FeBuddySectionEndMarker = "; ===== End of FE-Buddy aliases";
 
 	private const string LogSource = "VnasAlias";
 	private const string FeUseOnlyCommand = ".FeUseOnly";
@@ -104,15 +112,30 @@ public static class VnasAliasFileWriter
 		foreach (AliasSourceLoad file in customFiles.Where(f => f.Succeeded))
 		{
 			List<string> lines = [];
+			bool inFeBuddySection = false;
+			bool hadFeBuddySection = false;
 
 			foreach (string line in SplitLines(file.Text!))
 			{
-				if (line.TrimStart().StartsWith(FeBuddySectionMarker, StringComparison.OrdinalIgnoreCase))
+				string trimmed = line.TrimStart();
+
+				if (trimmed.StartsWith(FeBuddySectionMarker, StringComparison.OrdinalIgnoreCase))
 				{
-					Add(messages, new ServiceMessage(LogLevel.Info, LogSource,
-						$"{file.Source.DisplayName} ends with FE-Buddy aliases from an earlier {fileName}; " +
-						"only the lines above them were merged, so they are not added twice."));
-					break;
+					inFeBuddySection = true;
+					hadFeBuddySection = true;
+					continue;
+				}
+
+				if (trimmed.StartsWith(FeBuddySectionEndMarker, StringComparison.OrdinalIgnoreCase))
+				{
+					inFeBuddySection = false;
+					hadFeBuddySection = true;
+					continue;
+				}
+
+				if (inFeBuddySection)
+				{
+					continue;
 				}
 
 				if (IsCommand(line, FeUseOnlyCommand))
@@ -122,6 +145,13 @@ public static class VnasAliasFileWriter
 				}
 
 				lines.Add(line);
+			}
+
+			if (hadFeBuddySection)
+			{
+				Add(messages, new ServiceMessage(LogLevel.Info, LogSource,
+					$"{file.Source.DisplayName} holds FE-Buddy aliases from an earlier {fileName}; " +
+					"they were left out, so they are not added twice."));
 			}
 
 			custom.Add((file.Source.FileName, TrimBlankEnds(lines)));
@@ -152,31 +182,34 @@ public static class VnasAliasFileWriter
 			builder.AppendLine(feUseOnly);
 		}
 
-		for (int i = 0; i < custom.Count; i++)
-		{
-			if (i > 0)
-			{
-				builder.AppendLine();
-			}
-
-			AppendLines(builder, custom[i].Lines);
-		}
-
 		if (feBuddy.Count > 0)
 		{
-			if (custom.Count > 0)
-			{
-				builder.AppendLine();
-			}
-
 			builder.AppendLine(CultureInfo.InvariantCulture,
-				$"{FeBuddySectionMarker} (AIRAC {cycleId}) start here. FE-Buddy replaces everything below this line every cycle. =====");
+				$"{FeBuddySectionMarker} (AIRAC {cycleId}) start here. FE-Buddy replaces everything down to the end line every cycle. =====");
 
 			foreach ((string name, IReadOnlyList<string> lines) in feBuddy)
 			{
 				builder.AppendLine(CultureInfo.InvariantCulture, $"; ----- {name} -----");
 				AppendLines(builder, lines);
 			}
+
+			builder.AppendLine(CultureInfo.InvariantCulture,
+				$"{FeBuddySectionEndMarker}. Your own aliases go below this line: CRC uses the last copy of a command, so yours replace FE-Buddy's. =====");
+		}
+
+		// One blank line before each custom file, except one that starts the file. A file left
+		// with nothing (an old vNAS_Alias.txt that was only FE-Buddy's section) adds nothing.
+		bool anythingAbove = feBuddy.Count > 0;
+
+		foreach (IReadOnlyList<string> lines in custom.Select(f => f.Lines).Where(lines => lines.Count > 0))
+		{
+			if (anythingAbove)
+			{
+				builder.AppendLine();
+			}
+
+			AppendLines(builder, lines);
+			anythingAbove = true;
 		}
 
 		string path = AiracOutputPaths.VnasAliasFilePath(outputDirectory, fileName);
@@ -199,10 +232,12 @@ public static class VnasAliasFileWriter
 	}
 
 	/// <summary>
-	/// Adds an advisory warning for every command a custom file has that another merged file has
-	/// too, and returns how many there are. A command repeated inside one file is that file's
-	/// business, and one only FE-Buddy's own files share is already in
-	/// <c>Duplicate_Alias_Commands.txt</c>, so neither is reported here.
+	/// Adds one advisory listing every command a custom file has that another merged file has too,
+	/// and returns how many there are. Each is listed with its files in the order they are merged,
+	/// so the last one named is the copy CRC uses - a custom file's, over FE-Buddy's. It is a notice,
+	/// not a warning: replacing one of FE-Buddy's commands is what the custom files are last for. A
+	/// command repeated inside one file is that file's business, and one only FE-Buddy's own files
+	/// share is already in <c>Duplicate_Alias_Commands.txt</c>, so neither is reported here.
 	/// </summary>
 	private static int ReportDuplicates(
 		IReadOnlyList<(string Name, IReadOnlyList<string> Lines)> custom,
@@ -215,7 +250,7 @@ public static class VnasAliasFileWriter
 		List<string> order = [];
 
 		IEnumerable<(string Name, IReadOnlyList<string> Lines, bool IsCustom)> files =
-			custom.Select(f => (f.Name, f.Lines, true)).Concat(feBuddy.Select(f => (f.Name, f.Lines, false)));
+			feBuddy.Select(f => (f.Name, f.Lines, false)).Concat(custom.Select(f => (f.Name, f.Lines, true)));
 
 		foreach ((string name, IReadOnlyList<string> lines, bool isCustom) in files)
 		{
@@ -245,11 +280,12 @@ public static class VnasAliasFileWriter
 				.Take(DuplicatesListed)
 				.Select(command => $"{command} ({string.Join(", ", filesByCommand[command])})"));
 
-			Add(messages, new ServiceMessage(LogLevel.Warning, LogSource,
+			Add(messages, new ServiceMessage(LogLevel.Info, LogSource,
 				$"{duplicates.Length:N0} alias command(s) from your custom alias files are also in another file merged into " +
-				$"{fileName}, so CRC can only run one of each: {listed}" +
+				$"{fileName}: {listed}" +
 				(duplicates.Length > DuplicatesListed ? ", ..." : string.Empty) +
-				". Remove the extra copies from your custom alias files, or untick the FE-Buddy file.")
+				". CRC uses the last copy of a command - the one from the last file named - and your custom alias files " +
+				"come after FE-Buddy's, so a command of yours replaces FE-Buddy's. To use FE-Buddy's instead, remove yours.")
 			{ IsAdvisory = true });
 		}
 
@@ -301,8 +337,8 @@ public static class VnasAliasFileWriter
 		if (path is not null)
 		{
 			AppLog.Success(LogSource,
-				$"Wrote {path}: {customCommands:N0} command(s) from {customFilesMerged} custom alias file(s), " +
-				$"then {feBuddyCommands:N0} from {feBuddyFiles.Count} FE-Buddy alias file(s).");
+				$"Wrote {path}: {feBuddyCommands:N0} command(s) from {feBuddyFiles.Count} FE-Buddy alias file(s), " +
+				$"then {customCommands:N0} from {customFilesMerged} custom alias file(s).");
 		}
 
 		stopwatch.Stop();

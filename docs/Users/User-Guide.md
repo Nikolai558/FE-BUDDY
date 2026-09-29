@@ -39,8 +39,8 @@ The screen where you make files. It is a set of tabs down the left:
 
 | Tab | What it is |
 |---|---|
-| **General** | Which cycle, and which sub-services (Airports, Airways, Departures, Arrivals, NAVAIDs, ARTCC Boundaries, Fixes, Wx Stations, Procedures, Telephony, vNAS Alias Upload). Always there. |
-| **Airports / Airways / Departures / Arrivals / NAVAIDs / ARTCC Boundaries / Fixes / Wx Stations / Procedures / Telephony / vNAS Alias Upload** | One tab per sub-service you ticked, with its settings. |
+| **General** | Which cycle, and which sub-services (ARTCC Boundaries, Airports, Airways, Arrivals, Departures, NAVAIDs, Fixes, Procedures, Telephony, Wx Stations, vNAS Alias Upload). Always there. |
+| **ARTCC Boundaries / Airports / Airways / Arrivals / Departures / NAVAIDs / Fixes / Procedures / Telephony / Wx Stations / vNAS Alias Upload** | One tab per sub-service you ticked, with its settings. |
 | **File Names** | Every file the run will write, by folder, and a new name for any of them. Appears once a sub-service is ticked. |
 | **Preview Settings** | Everything the run will do, in plain words, and the **Run AIRAC Service** button. Appears once a sub-service is ticked. |
 | **Review** | What happened in the last run. Appears once you run. |
@@ -142,6 +142,34 @@ the one class. Each class is its own block of boxes; blocks that
 do not fit across the window move to the next line, so every box stays on screen however narrow the
 window is.
 
+### ARTCC Boundaries tab
+
+- **Outputs:** GeoJSON Lines only, always written - there is no alias file and no Symbols or Text
+  file, so the tab has no Outputs or file-choice card: every ring is drawn as a line.
+- **ARTCCs** - a tick box per ARTCC with boundary data in the cycle, none ticked means all - the
+  same as the Departures and Arrivals ARTCC filter. NASR also publishes Canadian, foreign and
+  CERAP entries with no boundary lines of their own, so they are not offered.
+- **File Layout** - **High and Low** (the default) - `ARTCC-Boundary_High_Lines` and
+  `ARTCC-Boundary_Low_Lines`; an UNLIMITED ring is written into both. **High, Low and Unlimited** -
+  adds `ARTCC-Boundary_Unlimited_Lines`; each of the three files then holds one altitude only.
+  **One file per ARTCC and altitude** - `ARTCC-Boundary_<ARTCC>-<altitude>_Lines`, e.g.
+  `ARTCC-Boundary_ZOB-HIGH_Lines`, so your own ARTCC can be styled apart from its neighbours. Files
+  go straight in the Geojson folder - there are no per-airport sub-folders.
+- **Files:** *Lines* only - one closed line per boundary ring, running through its points in
+  published order back to its start. ZAK, ZAP and ZWY each have two rings sharing an altitude - a
+  CTA ring and a FIR ring.
+- **Split GeoJSON at the Antimeridian** - on by default, the same as Airways: ZAK, ZAN, ZAP and the
+  oceanic part of ZOA cross ±180° longitude, so a ring that does becomes a MultiLineString instead
+  of running off the edge of the map.
+- **FE-Buddy properties:** `locationId`, `locationName`, `locationType`, `icaoId`, `computerId`,
+  `altitude` (`HIGH`, `LOW` or `UNLIMITED`), `type` (`ARTCC`, `CTA`, `FIR`, `CTA/FIR` or `UTA` -
+  tells the overlapping oceanic CTA and FIR rings apart), `city`, `countryCode`.
+- **Region:** a ring is clipped at the region's edge, the same as Airways; a ring entirely outside
+  the region is left out.
+- **Upload to vNAS:** *High and Low* - `ARTCC-Boundary_High_Lines`, `ARTCC-Boundary_Low_Lines`.
+  *High, Low and Unlimited* - adds `ARTCC-Boundary_Unlimited_Lines`. *One file per ARTCC and
+  altitude* - each ARTCC-and-altitude file. There is no alias file to upload.
+
 ### Airports tab
 
 - **Outputs:** GeoJSON, and `Airports.txt` - one alias command per airport's FAA ID, and one per
@@ -188,33 +216,10 @@ window is.
 - An airway with a waypoint FE-Buddy cannot locate is left out entirely (a half-drawn airway is
   worse than none); the Review tab says which and why.
 
-### Departures tab
-
-- **Outputs:** GeoJSON, and `Departures.txt` - a command per airport and procedure that draws the
-  procedure's points.
-- **Files:** Lines (each airport's procedure, shared segments drawn once), Symbols (each point),
-  Text (each point's identifier). They are written per airport, in the cycle's GeoJSON folder:
-  `Geojson\<ARTCC>\<airport>\<airport>_<procedure>_Lines.geojson` (and `_Symbols`, `_Text`).
-- **Procedures:**
-  - **Include obstacle departures (ODPs)** - on by default; off gives SIDs only.
-  - **ARTCCs** - tick the ARTCCs you want; none ticked means all. **Clear** unticks them all.
-  - **Amendment Date** - keep every procedure, or only those amended within the last *N* cycles
-    (1 = this cycle), within the last *N* days, or on or after a date.
-- **How the Region Selects Departures:** *every departure for an airport inside the region*, or
-  *any departure with a point inside the region*. The region limits both the GeoJSON and the alias
-  file.
-- **FE-Buddy properties:** `dpName`, `pointId`, `arptId`, `artcc`, `amendmentNo`, `amendEffDate`,
-  `waypoints`.
-- **Upload to vNAS:** by kind, since a run writes thousands of files - every procedure's Lines,
-  Symbols or Text files - then `Departures.txt`. The `<ARTCC>\<airport>` folders are kept under
-  `Upload_to_vNAS\Geojson` too.
-- Procedures are named by their FAA computer code without the amendment digit (`DOTSS2.DOTSS` is
-  `DOTSS`), or by their name with punctuation removed when there is no code (`O'HARE` is `OHARE`).
-
 ### Arrivals tab
 
-The same shape as Departures, for STARs instead of SIDs, with no obstacle/SID split - so there is
-no "Include obstacle departures" equivalent here.
+The same shape as [Departures](#departures-tab) (next), for STARs instead of SIDs, with no
+obstacle/SID split - so there is no "Include obstacle departures" equivalent here.
 
 - **Outputs:** GeoJSON, and `Arrivals.txt` - a command per airport and procedure that draws the
   procedure's points.
@@ -241,6 +246,29 @@ no "Include obstacle departures" equivalent here.
   punctuation removed when there is no code.
 - A STAR is flown transition to body, so its points - and the alias command's fix list - list
   transitions first, then bodies (the reverse of a departure's order).
+
+### Departures tab
+
+- **Outputs:** GeoJSON, and `Departures.txt` - a command per airport and procedure that draws the
+  procedure's points.
+- **Files:** Lines (each airport's procedure, shared segments drawn once), Symbols (each point),
+  Text (each point's identifier). They are written per airport, in the cycle's GeoJSON folder:
+  `Geojson\<ARTCC>\<airport>\<airport>_<procedure>_Lines.geojson` (and `_Symbols`, `_Text`).
+- **Procedures:**
+  - **Include obstacle departures (ODPs)** - on by default; off gives SIDs only.
+  - **ARTCCs** - tick the ARTCCs you want; none ticked means all. **Clear** unticks them all.
+  - **Amendment Date** - keep every procedure, or only those amended within the last *N* cycles
+    (1 = this cycle), within the last *N* days, or on or after a date.
+- **How the Region Selects Departures:** *every departure for an airport inside the region*, or
+  *any departure with a point inside the region*. The region limits both the GeoJSON and the alias
+  file.
+- **FE-Buddy properties:** `dpName`, `pointId`, `arptId`, `artcc`, `amendmentNo`, `amendEffDate`,
+  `waypoints`.
+- **Upload to vNAS:** by kind, since a run writes thousands of files - every procedure's Lines,
+  Symbols or Text files - then `Departures.txt`. The `<ARTCC>\<airport>` folders are kept under
+  `Upload_to_vNAS\Geojson` too.
+- Procedures are named by their FAA computer code without the amendment digit (`DOTSS2.DOTSS` is
+  `DOTSS`), or by their name with punctuation removed when there is no code (`O'HARE` is `OHARE`).
 
 ### NAVAIDs tab
 
@@ -275,34 +303,6 @@ no "Include obstacle departures" equivalent here.
   *One pair per type* - each included type's `NAVAIDs_<Type>s_Symbols` / `_Text`, then
   `Navaids.txt`.
 
-### ARTCC Boundaries tab
-
-- **Outputs:** GeoJSON Lines only, always written - there is no alias file and no Symbols or Text
-  file, so the tab has no Outputs or file-choice card: every ring is drawn as a line.
-- **ARTCCs** - a tick box per ARTCC with boundary data in the cycle, none ticked means all - the
-  same as the Departures and Arrivals ARTCC filter. NASR also publishes Canadian, foreign and
-  CERAP entries with no boundary lines of their own, so they are not offered.
-- **File Layout** - **High and Low** (the default) - `ARTCC-Boundary_High_Lines` and
-  `ARTCC-Boundary_Low_Lines`; an UNLIMITED ring is written into both. **High, Low and Unlimited** -
-  adds `ARTCC-Boundary_Unlimited_Lines`; each of the three files then holds one altitude only.
-  **One file per ARTCC and altitude** - `ARTCC-Boundary_<ARTCC>-<altitude>_Lines`, e.g.
-  `ARTCC-Boundary_ZOB-HIGH_Lines`, so your own ARTCC can be styled apart from its neighbours. Files
-  go straight in the Geojson folder - there are no per-airport sub-folders.
-- **Files:** *Lines* only - one closed line per boundary ring, running through its points in
-  published order back to its start. ZAK, ZAP and ZWY each have two rings sharing an altitude - a
-  CTA ring and a FIR ring.
-- **Split GeoJSON at the Antimeridian** - on by default, the same as Airways: ZAK, ZAN, ZAP and the
-  oceanic part of ZOA cross ±180° longitude, so a ring that does becomes a MultiLineString instead
-  of running off the edge of the map.
-- **FE-Buddy properties:** `locationId`, `locationName`, `locationType`, `icaoId`, `computerId`,
-  `altitude` (`HIGH`, `LOW` or `UNLIMITED`), `type` (`ARTCC`, `CTA`, `FIR`, `CTA/FIR` or `UTA` -
-  tells the overlapping oceanic CTA and FIR rings apart), `city`, `countryCode`.
-- **Region:** a ring is clipped at the region's edge, the same as Airways; a ring entirely outside
-  the region is left out.
-- **Upload to vNAS:** *High and Low* - `ARTCC-Boundary_High_Lines`, `ARTCC-Boundary_Low_Lines`.
-  *High, Low and Unlimited* - adds `ARTCC-Boundary_Unlimited_Lines`. *One file per ARTCC and
-  altitude* - each ARTCC-and-altitude file. There is no alias file to upload.
-
 ### Fixes tab
 
 - **Outputs:** GeoJSON Symbols and Text only, always written - there is no alias file, so the tab
@@ -335,23 +335,6 @@ no "Include obstacle departures" equivalent here.
 - **Region:** a fix is included when its own coordinates are inside the region.
 - **Upload to vNAS:** a box per file the chosen File Layout writes - `Fix_Symbols` / `Fix_Text`
   for *All fixes in one file*, or each group's pair otherwise. There is no alias file to upload.
-
-### Wx Stations tab
-
-- **Outputs:** GeoJSON Symbols and Text only, always written - there is no alias file, so the tab
-  has no Outputs card. Tick **Symbols** and/or **Text** under GeoJSON files; at least one must
-  stay on.
-- **Files:** *Symbols* (one point per station, styled from the file's CRC ERAM defaults), *Text*
-  (the station's ICAO ID, then its IATA ID and site name where it has one, e.g. `KDTW` /
-  `DTW_Detroit/Metro Wayne Cnty`, otherwise just the site name). There is no Lines file.
-- **Station Data** - where the list comes from: aviationweather.gov's own station list, not the
-  NASR cycle. Every run downloads the latest list first, whichever cycle you run, and only falls
-  back to FE-Buddy's kept copy if that fails. It shows which stations are included (a US or
-  US-territory station with an ICAO ID that reports METAR and has usable coordinates) and the kept
-  copy's date, or that FE-Buddy has no copy yet - the first run then needs an internet connection.
-- **Region:** a station is included when its own coordinates are inside the region.
-- **Upload to vNAS:** `Wx_Symbols` and/or `Wx_Text`, whichever the tab writes. There is no alias
-  file to upload.
 
 ### Procedures tab
 
@@ -536,12 +519,30 @@ The Review tab names how many commands `Faa_Chart_Recall.txt` holds and for how 
   card.
 - **Upload to vNAS:** `Telephony.txt`, the only file there is.
 
+### Wx Stations tab
+
+- **Outputs:** GeoJSON Symbols and Text only, always written - there is no alias file, so the tab
+  has no Outputs card. Tick **Symbols** and/or **Text** under GeoJSON files; at least one must
+  stay on.
+- **Files:** *Symbols* (one point per station, styled from the file's CRC ERAM defaults), *Text*
+  (the station's ICAO ID, then its IATA ID and site name where it has one, e.g. `KDTW` /
+  `DTW_Detroit/Metro Wayne Cnty`, otherwise just the site name). There is no Lines file.
+- **Station Data** - where the list comes from: aviationweather.gov's own station list, not the
+  NASR cycle. Every run downloads the latest list first, whichever cycle you run, and only falls
+  back to FE-Buddy's kept copy if that fails. It shows which stations are included (a US or
+  US-territory station with an ICAO ID that reports METAR and has usable coordinates) and the kept
+  copy's date, or that FE-Buddy has no copy yet - the first run then needs an internet connection.
+- **Region:** a station is included when its own coordinates are inside the region.
+- **Upload to vNAS:** `Wx_Symbols` and/or `Wx_Text`, whichever the tab writes. There is no alias
+  file to upload.
+
 ### vNAS Alias Upload tab
 
 vNAS takes one alias file per facility, so your facility's own aliases and FE-Buddy's have to be
 merged into one file before every upload. This tab does that: it writes
-`Upload_to_vNAS\vNAS_Alias.txt` with your own alias files first, then every FE-Buddy alias file
-ticked on its tab's **Upload to vNAS** card.
+`Upload_to_vNAS\vNAS_Alias.txt` with every FE-Buddy alias file ticked on its tab's **Upload to
+vNAS** card, then your own alias files. CRC reads the file top to bottom and uses the last copy of
+a command, so a command in your own files replaces FE-Buddy's.
 
 - **Outputs** - `Upload_to_vNAS\vNAS_Alias.txt` only.
 - **FE-Buddy Alias Files** - every alias file FE-Buddy can write, and whether it goes in with the
@@ -579,16 +580,20 @@ ticked on its tab's **Upload to vNAS** card.
   again first. If nothing at all can go in, no `vNAS_Alias.txt` is written, and one an earlier run
   left in `Upload_to_vNAS` is deleted so it can't be uploaded by mistake.
 - **How the file is laid out:** a `.FeUseOnly` line, if any of your files has one, goes first (only
-  the first one found is kept); then each of your files, separated by a blank line; then the
-  line `; ===== FE-Buddy aliases (AIRAC <cycle>) start here. FE-Buddy replaces everything below
-  this line every cycle. =====`; then each ticked FE-Buddy alias file under a `; ----- <name> -----`
-  heading.
+  the first one found is kept); then the line `; ===== FE-Buddy aliases (AIRAC <cycle>) start
+  here. FE-Buddy replaces everything down to the end line every cycle. =====`; then each ticked
+  FE-Buddy alias file under a `; ----- <name> -----` heading; then the line `; ===== End of
+  FE-Buddy aliases. Your own aliases go below this line: … =====`; then each of your files,
+  separated by a blank line.
 - **Reusing last cycle's upload:** you can keep the `vNAS_Alias.txt` you uploaded last cycle as your
-  custom file. Everything from that marker line down is left out, so last cycle's FE-Buddy aliases
-  are replaced rather than added twice - just keep your own aliases above the line.
-- **Duplicates:** a command from your custom files that another merged file has too gets a warning
-  on the Review tab (the first ten are named), since CRC can only run one of each. Commands only
-  FE-Buddy's own files share are listed in `Duplicate_Alias_Commands.txt` instead.
+  custom file. Everything from the start line to the end line is left out, so last cycle's FE-Buddy
+  aliases are replaced rather than added twice - just keep your own aliases below the end line (or
+  above the start line). A file uploaded before the end line existed had FE-Buddy's aliases last:
+  everything from its start line down is left out.
+- **Duplicates:** a command from your custom files that another merged file has too is noted on the
+  Review tab (the first ten are named), with its files in the order they are merged - CRC uses the
+  copy from the last one named, which for a command of yours is yours. Commands only FE-Buddy's own
+  files share are listed in `Duplicate_Alias_Commands.txt` instead.
 
 Without this tab ticked, `vNAS_Alias.txt` is still written whenever an FE-Buddy alias file is ticked
 for vNAS - it then holds FE-Buddy's aliases only, and the Review tab warns that uploading it would
@@ -605,7 +610,8 @@ The tab appears, just before Preview Settings, once a sub-service is ticked.
   for vNAS) and the list changes when you come back. A file is only written when it has something
   in it, so a listed file may not appear after the run.
 - **Rename Files** - **No** (the default) keeps every file's FE-Buddy name. **Yes** puts a tick box
-  beside each file and a box for its new name under it.
+  beside each file and a box for its new name to its right (under it, when the window is too
+  narrow for both).
 - **Type the new name without the extension.** FE-Buddy adds `.geojson`, `.txt`, `.md` or `.json`
   itself, so `Airways_High_Lines.geojson` renamed `ZOB High` is written as `ZOB High.geojson`. A
   renamed file stays in its folder.
@@ -769,7 +775,7 @@ for an example of what it catches:
     ├── AIRAC_2610\
     │   ├── Duplicate_Alias_Commands.txt  (only when the run wrote at least one alias file)
     │   ├── Aliases\
-    │   │   └── Airports.txt, Airways.txt, Departures.txt, Arrivals.txt, Navaids.txt, Faa_Chart_Recall.txt, Telephony.txt
+    │   │   └── Airports.txt, Airways.txt, Arrivals.txt, Departures.txt, Navaids.txt, Faa_Chart_Recall.txt, Telephony.txt
     │   ├── Geojson\
     │   │   ├── Runways_Lines, Airports_Symbols, Airports_Text (.geojson)
     │   │   ├── Airways_<group>_Lines / _Symbols / _Text (.geojson)

@@ -13,8 +13,9 @@ below is relative to `FeBuddy/FeBuddy.Wpf/` in the repo unless stated otherwise.
 
 - references `FeBuddy.Core`; no other NuGet packages - the MVVM helpers
   (`ObservableObject`, `RelayCommand`) are hand-rolled in `Mvvm/`
-- **Airports, Airways, Departures, Arrivals, NAVAIDs, ARTCC Boundaries, Fixes, Wx Stations,
-  Procedures, Telephony and vNAS Alias Upload are sub-services of AIRAC Service**, not top-level screens. The library code is
+- **ARTCC Boundaries, Airports, Airways, Arrivals, Departures, NAVAIDs, Fixes, Procedures,
+  Telephony, Wx Stations and vNAS Alias Upload are sub-services of AIRAC Service** (in the order
+  the tab rail shows them), not top-level screens. The library code is
   `FeBuddy.Core.Application.Airac.*`; the GUI reaches each one only as a tab on the AIRAC
   Services screen. In the same way, each
   **file conversion** (DAT, SCT2 and ERAM to GeoJSON) is a tab on the File Conversions screen
@@ -51,8 +52,10 @@ Behaviors/            attached properties a view opts into: FieldState (validati
                       look), InlineCode (`code` look for text between backticks),
                       WheelScroll, ComboBoxDropDownFocus, MaximizeToWorkArea
 Controls/             reusable controls: Card, SectionHeader, Option, CopyButton,
-                      FilterPicker (+ FilterOption), MarkdownView, MapCanvas, and
-                      ChromeWindow (the base for every dialog window)
+                      FilterPicker (+ FilterOption), MarkdownView, MapCanvas,
+                      BesideOrBelow (a panel: its second child beside the first,
+                      or under it when the row is too narrow), and ChromeWindow
+                      (the base for every dialog window)
 Converters/           one IValueConverter per file
 Map/                  GeoJsonReader (System.Text.Json), WebMercator, ProjectedLayer
                       (a layer projected once, then cached), AiracMapLayers (the live
@@ -297,7 +300,8 @@ bar and page scroller are shared, and each screen's view-model says what differs
     (`AttachToService`) and has it re-read it (`RefreshFiles`) whenever another tab is shown, the
     selection or cycle changes, and before a run; the rows are rebuilt only when the list changed.
     **Rename Files** is Yes / No (`RenameFiles`, default No). With Yes, each file has a tick box and
-    a new-name box (greyed out while unticked); a ticked file needs a name that passes
+    a new-name box (greyed out while unticked) to its right, or under it in a narrow window
+    (`Controls/BesideOrBelow`); a ticked file needs a name that passes
     `OutputFileNames.Problem` and is not another file's name. Choices are kept by file key, files
     not listed included, as a numbered list (`Files.<n>.Key` / `.Rename` / `.Name` - numbered because
     `Airways.txt` has a dot in it); a ticked file with no name is not saved, so a file with no saved

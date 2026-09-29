@@ -27,6 +27,22 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
   on" note is gone (FE-BUDDY still stops you turning off the last output, and says why).
 - Settings ▸ GeoJSON Files no longer has an FE-Buddy Properties section: they are chosen on each
   tab's FE-Buddy Properties card.
+- `vNAS_Alias.txt` now has FE-BUDDY's aliases first, between a start line and an end line, and your
+  custom alias files after them. CRC uses the last copy of a command, so a command of yours now
+  replaces FE-BUDDY's instead of the other way round. A `vNAS_Alias.txt` you reuse as your custom
+  file, old layout or new, still has its FE-BUDDY aliases left out, and the Review tab lists the
+  commands yours replace.
+- The AIRAC Service sub-services are in a new order, on the General tab and in the tab rail: ARTCC
+  Boundaries, Airports, Airways, Arrivals, Departures, NAVAIDs, Fixes, Procedures, Telephony, Wx
+  Stations, vNAS Alias Upload.
+- CRC ERAM Defaults card: each file's panel is darker than the card, and with several types (the
+  NAVAID types, Airways High / Low / Other) each type has a box of its own. Panels side by side
+  line up.
+- Airways ▸ High and Low Files: each drop-down sits closer to its airway type.
+- File Names: the new-name box sits to the right of its file, and drops under it only when the
+  window is too narrow.
+- Airways: a hand-edited settings file with no output switched on now loads the defaults, as the
+  other tabs already did.
 - (Dev notes)
   - Every file is UTF-8 without a byte-order mark, and a unit test now fails on any file that has one.
 

@@ -5,8 +5,8 @@
     from the tab host's shared action bar, and the tab host owns the page's single scroller.
 
     The list is read from the other tabs each time this tab is shown - see FileNamesViewModel's
-    class remarks. Each row is two lines while renaming is on (the file, then its new-name box), so
-    it fits the narrowest window.
+    class remarks. While renaming is on, a file's new-name box sits beside it (ctl:BesideOrBelow),
+    or under it when the window is too narrow for both.
 -->
 <UserControl x:Class="FeBuddy.Wpf.Views.FileNamesView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -77,51 +77,56 @@
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate DataType="{x:Type m:FileNameRow}">
                                             <StackPanel>
-                                                <StackPanel Margin="0,6">
-                                                    <!-- the file, ticked for renaming while renaming is on -->
-                                                    <DockPanel>
-                                                        <Border DockPanel.Dock="Left" Margin="0,0,8,0" VerticalAlignment="Top"
-                                                                Visibility="{Binding DataContext.RenameFiles, ElementName=Root, Converter={StaticResource BoolToVis}}">
-                                                            <!-- Hidden, not collapsed, for a file that can't be renamed, so every name lines up. -->
-                                                            <CheckBox IsChecked="{Binding Rename}" ToolTip="Rename this file" Margin="0,1,0,0">
-                                                                <CheckBox.Style>
-                                                                    <Style TargetType="CheckBox" BasedOn="{StaticResource {x:Type CheckBox}}">
-                                                                        <Style.Triggers>
-                                                                            <DataTrigger Binding="{Binding CanRename}" Value="False">
-                                                                                <Setter Property="Visibility" Value="Hidden" />
-                                                                            </DataTrigger>
-                                                                        </Style.Triggers>
-                                                                    </Style>
-                                                                </CheckBox.Style>
-                                                            </CheckBox>
-                                                        </Border>
+                                                <!-- the file, ticked for renaming while renaming is on -->
+                                                <DockPanel Margin="0,6">
+                                                    <Border DockPanel.Dock="Left" Margin="0,0,8,0" VerticalAlignment="Top"
+                                                            Visibility="{Binding DataContext.RenameFiles, ElementName=Root, Converter={StaticResource BoolToVis}}">
+                                                        <!-- Hidden, not collapsed, for a file that can't be renamed, so every name lines up. -->
+                                                        <CheckBox IsChecked="{Binding Rename}" ToolTip="Rename this file" Margin="0,1,0,0">
+                                                            <CheckBox.Style>
+                                                                <Style TargetType="CheckBox" BasedOn="{StaticResource {x:Type CheckBox}}">
+                                                                    <Style.Triggers>
+                                                                        <DataTrigger Binding="{Binding CanRename}" Value="False">
+                                                                            <Setter Property="Visibility" Value="Hidden" />
+                                                                        </DataTrigger>
+                                                                    </Style.Triggers>
+                                                                </Style>
+                                                            </CheckBox.Style>
+                                                        </CheckBox>
+                                                    </Border>
+
+                                                    <!-- The new-name box beside the file when the row has room, under
+                                                         it (lined up with the file name) when it has not. A file that
+                                                         can't be renamed has no box, so its caption takes the whole row.
+                                                         440 fits the 360 box and the longest extension (.geojson), so
+                                                         every box is one width. -->
+                                                    <ctl:BesideOrBelow SideWidth="440" MainMinWidth="300">
                                                         <StackPanel>
                                                             <TextBlock Text="{Binding FileName}" Style="{StaticResource Text.Body}"
                                                                        FontFamily="{StaticResource Font.Mono}" TextWrapping="Wrap" />
                                                             <TextBlock Text="{Binding Caption}" Style="{StaticResource Text.Caption}" TextWrapping="Wrap" />
                                                         </StackPanel>
-                                                    </DockPanel>
 
-                                                    <!-- its new name: greyed out while unticked -->
-                                                    <StackPanel Margin="26,6,0,0" Visibility="{Binding DataContext.RenameFiles, ElementName=Root, Converter={StaticResource BoolToVis}}">
-                                                        <!-- The box takes nearly all the width up to 360, then stops; the
-                                                             extension sits right after it, lined up under the file name. -->
-                                                        <Grid Visibility="{Binding CanRename, Converter={StaticResource BoolToVis}}">
-                                                            <Grid.ColumnDefinitions>
-                                                                <ColumnDefinition Width="10*" MaxWidth="360" />
-                                                                <ColumnDefinition Width="Auto" />
-                                                                <ColumnDefinition Width="*" />
-                                                            </Grid.ColumnDefinitions>
-                                                            <TextBox Grid.Column="0" Text="{Binding NewName, UpdateSourceTrigger=PropertyChanged}" Tag="New name, without the extension"
-                                                                     IsEnabled="{Binding Rename}" bhv:FieldState.Error="{Binding Error}" />
-                                                            <TextBlock Grid.Column="1" Text="{Binding Extension}" Style="{StaticResource Text.Body}"
-                                                                       FontFamily="{StaticResource Font.Mono}" VerticalAlignment="Center" Margin="6,0,0,0" />
-                                                        </Grid>
-                                                        <TextBlock Text="{Binding Error}" Style="{StaticResource Text.Caption}" Foreground="{StaticResource Brush.Danger}"
-                                                                   TextWrapping="Wrap" Margin="0,4,0,0"
-                                                                   Visibility="{Binding HasError, Converter={StaticResource BoolToVis}}" />
-                                                    </StackPanel>
-                                                </StackPanel>
+                                                        <!-- its new name: greyed out while unticked -->
+                                                        <StackPanel Visibility="{Binding DataContext.RenameFiles, ElementName=Root, Converter={StaticResource BoolToVis}}">
+                                                            <!-- The box takes the width up to 360, then stops; the extension
+                                                                 sits right after it. -->
+                                                            <Grid Visibility="{Binding CanRename, Converter={StaticResource BoolToVis}}">
+                                                                <Grid.ColumnDefinitions>
+                                                                    <ColumnDefinition Width="*" MaxWidth="360" />
+                                                                    <ColumnDefinition Width="Auto" />
+                                                                </Grid.ColumnDefinitions>
+                                                                <TextBox Grid.Column="0" Text="{Binding NewName, UpdateSourceTrigger=PropertyChanged}" Tag="New name, without the extension"
+                                                                         IsEnabled="{Binding Rename}" bhv:FieldState.Error="{Binding Error}" />
+                                                                <TextBlock Grid.Column="1" Text="{Binding Extension}" Style="{StaticResource Text.Body}"
+                                                                           FontFamily="{StaticResource Font.Mono}" VerticalAlignment="Center" Margin="6,0,0,0" />
+                                                            </Grid>
+                                                            <TextBlock Text="{Binding Error}" Style="{StaticResource Text.Caption}" Foreground="{StaticResource Brush.Danger}"
+                                                                       TextWrapping="Wrap" Margin="0,4,0,0"
+                                                                       Visibility="{Binding HasError, Converter={StaticResource BoolToVis}}" />
+                                                        </StackPanel>
+                                                    </ctl:BesideOrBelow>
+                                                </DockPanel>
                                                 <Border Style="{StaticResource Divider}" />
                                             </StackPanel>
                                         </DataTemplate>

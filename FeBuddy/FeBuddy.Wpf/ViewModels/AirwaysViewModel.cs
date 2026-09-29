@@ -302,6 +302,15 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 		LoadSharedSettings();
 		LoadStrata();
 
+		// No GeoJSON and no alias file would leave the tab in a state its own guard forbids; a
+		// hand-edited config is the only way to get here, so fall back to the defaults, as the
+		// other tabs do.
+		if (_outputBy == AirwayGeojsonOutputBy.None && !GenerateAliasFile)
+		{
+			_outputBy = AirwayGeojsonOutputBy.HighLow;
+			GenerateAliasFile = true;
+		}
+
 		// Re-apply the excluded set and the strata to any already-built designation toggles.
 		HashSet<string> excluded = ParseExcludedFromConfig();
 		foreach (DesignationToggle toggle in Designations)

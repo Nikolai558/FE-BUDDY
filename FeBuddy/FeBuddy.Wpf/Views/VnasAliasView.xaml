@@ -36,7 +36,7 @@
                            Style="{StaticResource Text.Body}" Margin="0,4,0,0" />
                 <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,2,0,0"
                            MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
-                           Text="The single/combined alias file to upload to vNAS.&#xA;Includes your custom alias file(s) below, in order, then every FE-Buddy alias file you chose to Upload to vNAS.&#xA;FE-Buddy's aliases start under a marker line in the actual file, so if your chosen custom file is the vNAS_Alias.txt you uploaded in a previous cycle,&#xA;its old FE-Buddy aliases are left out rather than added twice." />
+                           Text="The single/combined alias file to upload to vNAS.&#xA;Includes every FE-Buddy alias file you chose to Upload to vNAS, then your custom alias file(s) below, in order.&#xA;CRC uses the last copy of a command, so a command in your custom files replaces FE-Buddy's.&#xA;FE-Buddy's aliases sit between a start and an end line in the actual file, so if your chosen custom file is the vNAS_Alias.txt you uploaded in a previous cycle,&#xA;its old FE-Buddy aliases are left out rather than added twice." />
             </StackPanel>
         </ctl:Card>
 
@@ -45,7 +45,7 @@
             <StackPanel>
                 <TextBlock Style="{StaticResource Text.Prose}" TextWrapping="Wrap" Margin="0,4,0,8"
                            MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
-                           Text="The alias files FE-Buddy adds below your custom aliases. Each one goes in when its sub-service is selected on the General tab, writes its alias file, and has it ticked on its Upload to vNAS card. This list shows those tabs' settings as they are now." />
+                           Text="The alias files FE-Buddy puts in ahead of your custom aliases. Each one goes in when its sub-service is selected on the General tab, writes its alias file, and has it ticked on its Upload to vNAS card. This list shows those tabs' settings as they are now." />
 
                 <ItemsControl ItemsSource="{Binding FeBuddyAliasFiles}">
                     <ItemsControl.ItemTemplate>

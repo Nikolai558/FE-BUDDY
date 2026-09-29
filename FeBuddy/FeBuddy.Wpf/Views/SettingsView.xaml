@@ -300,7 +300,7 @@
                                     </Style>
                                 </Button.Style>
                             </Button>
-                            <Button Style="{StaticResource Button.Ghost}" Content="Get the latest stable installer"
+                            <Button Style="{StaticResource Button.Ghost}" Content="Open the Releases Page"
                                     Command="{Binding RollbackCommand}" Margin="8,0,0,0" />
                         </StackPanel>
                     </StackPanel>

@@ -123,13 +123,14 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 			"Airway data will not be written to GeoJSON.\nThe alias file, if enabled, is unaffected.",
 		AirwayGeojsonOutputBy.HighLow =>
 			"Two file sets:\n" +
-			"  • Airways_High\n" +
-			"  • Airways_Low\n" +
-			"Each airway type goes in High, Low or Both, as you choose on the High and Low Files card.\n" +
+			"    • Airways_High\n" +
+			"    • Airways_Low\n" +
+			"Each airway type goes in either High or Low, as you choose.\n" +
 			"Each set is _Lines + _Symbols + _Text.",
 		AirwayGeojsonOutputBy.Designation =>
-			"One file set per designation (derived from the AWY_ID, e.g. J / V / Q / T / AT):\n" +
-			"  Airways_J, Airways_V, Airways_Q, …\n" +
+			"One file set per designation, derived from the AWY_ID prefix.\n" +
+		    "Ex: J / V / Q / T / AT):\n" +
+			"    Airways_J, Airways_V, Airways_Q, …\n" +
 			"Each set is _Lines + _Symbols + _Text.",
 		_ => string.Empty,
 	};

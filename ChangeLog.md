@@ -9,10 +9,14 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
   Write it for users, not developers: what changed and why they care, in one line. Issue numbers
   become links ("Bug #215 - ..."). Put developer-only changes under a "(Dev notes)" bullet. Link
   a doc at the release's tag (blob/<version>/docs/...), never at a branch.
+  Sections are separated by a "---" line, with a blank line above and below it (without the blank
+  line above, Markdown turns the line before it into a heading). The release notes leave it out.
   Full guide: docs/Developers/RELEASING.md.
 -->
 
 ## Unreleased
+
+---
 
 ## 3.0.0-alpha.2
 - Bug #251 - Fixed Airways losing its High and Low Files choices when you switched to another tab,

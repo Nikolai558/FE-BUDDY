@@ -67,8 +67,9 @@ it's official: `-alpha.N`, `-beta.N`, `-rc.N`. Details: [Versioning](VERSIONING.
 In one pull request - its own, or the last feature pull request before the release:
 
 1. **`ChangeLog.md`:** rename `## Unreleased` to `## <version>` (e.g. `## 3.0.0-alpha.2`), and add a
-   new, empty `## Unreleased` above it. Read the bullets through once more - they are the
-   release notes.
+   new, empty `## Unreleased` above it, with a `---` line between them. Sections are separated by
+   `---`, with a blank line above and below it; the release notes leave it out. Read the bullets
+   through once more - they are the release notes.
 2. **`FeBuddy/FeBuddy.Wpf/FeBuddy.Wpf.csproj`:** set `<Version>` to the same version. It is the
    only place the version lives.
 
@@ -111,6 +112,11 @@ Something failed? The summary says what and how to fix it. Fix it with a pull re
 
 Use **Create a merge commit**. If GitHub says commits need verified signatures, a repository admin
 can merge anyway with the bypass option once they have reviewed the changes.
+
+"This branch is out-of-date with the base branch" is expected: each release leaves a merge commit
+on `releases` that `v3-development` doesn't have. It doesn't block the merge. Don't click
+**Update branch** - that merges `releases` into `v3-development`, and changes only ever go the other
+way.
 
 Merging starts the **Release** workflow (the **Actions** tab). In about ten minutes it builds the
 MSI, commits the advanced installer counter to `v3-development`, and creates a **draft** release.

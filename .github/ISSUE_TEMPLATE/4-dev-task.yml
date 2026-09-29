@@ -1,7 +1,7 @@
 name: Development task
 description: For maintainers. Planned code work - UI, logic, build, or tests.
 title: "[TASK] - "
-labels: ["v3.x"]
+labels: ["task", "v3.x"]
 body:
   - type: dropdown
     id: kind

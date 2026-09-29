@@ -167,14 +167,16 @@ public sealed class EramGeoMapReaderTests
 	}
 
 	[Fact]
-	public void a_map_s_label_lines_are_read_and_blank_ones_are_none()
+	public void a_map_s_label_lines_and_menus_are_read_and_blank_ones_are_none()
 	{
 		EramGeoMapFile file = Parse(Records("""
-			<GeoMapRecord><GeomapId>CENTER</GeomapId><LabelLine1>CENTER</LabelLine1><LabelLine2>MAP</LabelLine2></GeoMapRecord>
-			<GeoMapRecord><GeomapId>OCP</GeomapId><LabelLine1> </LabelLine1><LabelLine2 /></GeoMapRecord>
+			<GeoMapRecord><GeomapId>CENTER</GeomapId><BCGMenuName>ZOB</BCGMenuName><FilterMenuName>ZOBF</FilterMenuName>
+			  <LabelLine1>CENTER</LabelLine1><LabelLine2>MAP</LabelLine2></GeoMapRecord>
+			<GeoMapRecord><GeomapId>OCP</GeomapId><BCGMenuName> </BCGMenuName><LabelLine1> </LabelLine1><LabelLine2 /></GeoMapRecord>
 			"""));
 
 		Assert.Equal([("CENTER", "MAP"), (null, null)], file.Maps.Select(m => (m.LabelLine1, m.LabelLine2)));
+		Assert.Equal([("ZOB", "ZOBF"), (null, null)], file.Maps.Select(m => (m.BcgMenuName, m.FilterMenuName)));
 	}
 
 	[Fact]

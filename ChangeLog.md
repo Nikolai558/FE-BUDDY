@@ -64,6 +64,9 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
   - Every label on a symbol is converted (only the first was before), text ERAM keeps hidden is
     left out (it used to be drawn), and an element with no filters at all shows at every filter
     setting (filter 0).
+  - `ConsoleCommandControl.txt` is back: with the export's `ConsoleCommandControl.xml` beside
+    `Geomaps.xml`, each run lists its brightness and filter menus - each button's label, position
+    and groups, and which maps use each menu - as the old tool did.
 - (Dev notes)
   - Every file is UTF-8 without a byte-order mark, and a unit test now fails on any file that has one.
 

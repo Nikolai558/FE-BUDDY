@@ -12,8 +12,8 @@ namespace FeBuddy.UnitTests.Application.Conversions.EramToGeojson;
 /// <summary>
 /// Runs the whole ERAM to GeoJSON conversion (<see cref="EramToGeojsonService.Run"/>) against
 /// small made-up Geomaps files written to a temp folder - in the original ERAM_2_GEOJSON tool's
-/// three layouts, named as it named them, and with each defaults source - and checks what lands on
-/// disk and what is reported.
+/// three layouts, named as it named them, and with each defaults source, plus the
+/// <c>ConsoleCommandControl.txt</c> rundown - and checks what lands on disk and what is reported.
 /// </summary>
 public sealed class EramToGeojsonServiceTests : IDisposable
 {
@@ -95,6 +95,22 @@ public sealed class EramToGeojsonServiceTests : IDisposable
 			<Geomaps_Records xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="Geomaps.xsd">
 			{records}
 			</Geomaps_Records>
+			""");
+
+	/// <summary>
+	/// A ConsoleCommandControl file in the source folder: a brightness menu (named
+	/// <paramref name="bcgMenu"/>, as <see cref="Record"/>'s maps use <c>DEFAULT</c>) with one button,
+	/// and a filter menu no map uses.
+	/// </summary>
+	private void WriteConsoleCommandControl(string fileName = "ConsoleCommandControl.xml", string bcgMenu = "DEFAULT") =>
+		File.WriteAllText(Path.Combine(Source, fileName), $"""
+			<ConsoleCommandControl_Records>
+			  <MapBrightnessMenu><BCGMenuName>{bcgMenu}</BCGMenuName>
+			    <MapBCGButton><MenuPosition>1</MenuPosition><Label>AAV</Label>
+			      <MapBCGGroups><MapBCGGroup>1</MapBCGGroup><MapBCGGroup>2</MapBCGGroup></MapBCGGroups></MapBCGButton>
+			  </MapBrightnessMenu>
+			  <MapFilterMenu><FilterMenuName>ZOB</FilterMenuName></MapFilterMenu>
+			</ConsoleCommandControl_Records>
 			""");
 
 	private Dictionary<string, string> Settings(params (string Key, string Value)[] entries)
@@ -482,14 +498,17 @@ public sealed class EramToGeojsonServiceTests : IDisposable
 		Directory.CreateDirectory(RootFolder);
 		File.WriteAllText(Path.Combine(RootFolder, "last.geojson"), "{}");
 		File.WriteAllText(Path.Combine(Source, "Airport.xml"), "<Airport_Records />");
+		List<ConversionProgress> reports = [];
 
 		SourceFilesConversionResult result = EramToGeojsonService.Run(new Dictionary<string, string>
 		{
 			["OutputDirectory"] = Output,
 			["SourceFiles"] = Path.Combine(Source, "Airport.xml"),
-		});
+		}, new InlineProgress(reports.Add));
 
-		Assert.Contains("is not an ERAM Geomaps file", Assert.Single(result.Files).Error);
+		string error = Assert.Single(result.Files).Error!;
+		Assert.Contains("is not an ERAM Geomaps file", error);
+		Assert.Equal(error, reports[^1].Message);
 		Assert.True(File.Exists(Path.Combine(RootFolder, "last.geojson")));
 	}
 
@@ -510,12 +529,14 @@ public sealed class EramToGeojsonServiceTests : IDisposable
 		Assert.Equal(folder.Message, files.Message);
 	}
 
+	/// <summary>The ConsoleCommandControl file is read, not left alone, so it is not listed with the rest.</summary>
 	[Fact]
 	public void a_folder_holding_a_whole_adaptation_export_converts_only_its_geomaps_file()
 	{
 		File.WriteAllText(Path.Combine(Source, "Airport.xml"), "<Airport_Records />");
 		File.WriteAllText(Path.Combine(Source, "Broken.xml"), "not xml");
 		File.WriteAllText(Path.Combine(Source, "Geomaps.xsd"), "<xsd:schema />");
+		WriteConsoleCommandControl();
 		WriteGeomaps(Object("OK", 1, LineDefaults + LineAB));
 
 		SourceFilesConversionResult result = EramToGeojsonService.Run(Settings());
@@ -524,7 +545,114 @@ public sealed class EramToGeojsonServiceTests : IDisposable
 		Assert.Equal("Geomaps.xml", Path.GetFileName(converted.SourcePath));
 		Assert.Equal(0, result.FailedCount);
 		Assert.Equal(RootFolder, result.OutputDirectory);
-		Assert.Contains(result.Messages, m => m.Level == LogLevel.Info && m.Text.Contains("2 other file(s)") && m.Text.Contains("Airport.xml, Broken.xml"));
+		Assert.Contains(result.Messages, m => m.Level == LogLevel.Info && m.Text.Contains("2 other file(s)") && m.Text.EndsWith("left alone: Airport.xml, Broken.xml"));
+	}
+
+	// ================= ConsoleCommandControl.txt =================
+
+	/// <summary>As the original tool did, with the file beside Geomaps.xml: the menus are listed beside the maps.</summary>
+	[Fact]
+	public void the_console_command_control_file_beside_geomaps_is_listed_in_console_command_control_txt()
+	{
+		WriteConsoleCommandControl();
+		WriteGeomaps(Object("OK", 1, LineDefaults + LineAB));
+		List<ConversionProgress> reports = [];
+
+		SourceFilesConversionResult result = EramToGeojsonService.Run(Settings(), new InlineProgress(reports.Add));
+
+		string rundown = Path.Combine(RootFolder, "ConsoleCommandControl.txt");
+		Assert.Equal([rundown], result.OtherFilesWritten);
+		Assert.Single(result.GeojsonFilesWritten);
+		Assert.Equal("1 GeoJSON file(s) written, plus ConsoleCommandControl.txt", reports[^1].Message);
+
+		string text = File.ReadAllText(rundown);
+		Assert.Contains("BCG Menu: DEFAULT\r\n\r\n\tUsed with:\tCENTER\r\n\r\n\tLabel:\t\tAAV\r\n\tPosition:\t1\r\n\tGroup:\t\t1, 2\r\n", text);
+		Assert.Contains("FilterMenu: ZOB\r\n\r\n\tUsed with:\tNone\r\n", text);
+	}
+
+	/// <summary>Found by what it holds, as the Geomaps file is, so a renamed one is found too.</summary>
+	[Fact]
+	public void a_picked_geomaps_file_finds_the_console_command_control_file_beside_it()
+	{
+		WriteConsoleCommandControl("ZOB_CCC.xml");
+		WriteGeomaps(Object("OK", 1, LineDefaults + LineAB));
+
+		SourceFilesConversionResult result = EramToGeojsonService.Run(new Dictionary<string, string>
+		{
+			["OutputDirectory"] = Output,
+			["SourceFiles"] = Path.Combine(Source, "Geomaps.xml"),
+		});
+
+		Assert.Equal("ConsoleCommandControl.txt", Path.GetFileName(Assert.Single(result.OtherFilesWritten)));
+		Assert.Contains("\tUsed with:\tCENTER", File.ReadAllText(Assert.Single(result.OtherFilesWritten)));
+	}
+
+	[Fact]
+	public void without_a_console_command_control_file_the_geojson_is_written_and_that_is_said()
+	{
+		WriteGeomaps(Object("OK", 1, LineDefaults + LineAB));
+
+		SourceFilesConversionResult result = EramToGeojsonService.Run(Settings());
+
+		Assert.Single(result.GeojsonFilesWritten);
+		Assert.Empty(result.OtherFilesWritten);
+		Assert.Contains(result.Messages, m => m.Level == LogLevel.Info && !m.IsAdvisory
+			&& m.Text == "There is no ConsoleCommandControl.xml beside Geomaps.xml, so no ConsoleCommandControl.txt was written.");
+	}
+
+	[Fact]
+	public void of_several_console_command_control_files_the_one_so_named_or_else_the_first_is_used()
+	{
+		WriteConsoleCommandControl("A.xml", bcgMenu: "FROM_A");
+		WriteConsoleCommandControl("ConsoleCommandControl.xml", bcgMenu: "FROM_CCC");
+		WriteGeomaps(Object("OK", 1, LineDefaults + LineAB));
+
+		SourceFilesConversionResult named = EramToGeojsonService.Run(Settings());
+
+		Assert.Contains("BCG Menu: FROM_CCC", File.ReadAllText(Assert.Single(named.OtherFilesWritten)));
+		Assert.Contains(named.Messages, m => m.IsAdvisory
+			&& m.Text == "2 ConsoleCommandControl files are beside Geomaps.xml (A.xml, ConsoleCommandControl.xml), so ConsoleCommandControl.xml was used.");
+
+		File.Delete(Path.Combine(Source, "ConsoleCommandControl.xml"));
+		WriteConsoleCommandControl("B.xml", bcgMenu: "FROM_B");
+
+		SourceFilesConversionResult first = EramToGeojsonService.Run(Settings());
+
+		Assert.Contains("BCG Menu: FROM_A", File.ReadAllText(Assert.Single(first.OtherFilesWritten)));
+		Assert.Contains(first.Messages, m => m.IsAdvisory && m.Text.EndsWith("(A.xml, B.xml), so A.xml was used."));
+	}
+
+	[Fact]
+	public void a_console_command_control_file_that_cannot_be_read_is_warned_about_and_the_geojson_stands()
+	{
+		File.WriteAllText(Path.Combine(Source, "ConsoleCommandControl.xml"), "<ConsoleCommandControl_Records><MapBrightnessMenu>");
+		WriteGeomaps(Object("OK", 1, LineDefaults + LineAB));
+
+		SourceFilesConversionResult result = EramToGeojsonService.Run(Settings());
+
+		Assert.Single(result.GeojsonFilesWritten);
+		Assert.Empty(result.OtherFilesWritten);
+		Assert.Equal(0, result.FailedCount);
+		Assert.Contains(result.Messages, m => m.IsAdvisory
+			&& m.Text.StartsWith("ConsoleCommandControl.xml could not be read, so no ConsoleCommandControl.txt was written: ConsoleCommandControl.xml is not well-formed XML"));
+	}
+
+	[Fact]
+	public void a_rundown_that_cannot_be_written_is_warned_about_and_the_geojson_stands()
+	{
+		Directory.CreateDirectory(RootFolder);
+		WriteConsoleCommandControl();
+		WriteGeomaps(Object("OK", 1, LineDefaults + LineAB));
+
+		SourceFilesConversionResult result;
+		using (new FileStream(Path.Combine(RootFolder, "ConsoleCommandControl.txt"), FileMode.Create, FileAccess.Write, FileShare.None))
+		{
+			result = EramToGeojsonService.Run(Settings());
+		}
+
+		Assert.Single(result.GeojsonFilesWritten);
+		Assert.Empty(result.OtherFilesWritten);
+		Assert.Contains(result.Messages, m => m.IsAdvisory && m.Text.StartsWith("ConsoleCommandControl.txt could not be written (open elsewhere?): "));
 	}
 
 	[Fact]

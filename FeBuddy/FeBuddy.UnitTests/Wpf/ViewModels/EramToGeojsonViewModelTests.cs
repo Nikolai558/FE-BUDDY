@@ -1,5 +1,7 @@
 using FeBuddy.Wpf.ViewModels;
+using FeBuddy.Wpf.ViewModels.ServiceTabs.Models;
 
+using FeBuddy.Core.Application.Conversions.Models;
 using FeBuddy.Core.Infrastructure.Configuration;
 using FeBuddy.Core.Infrastructure.Logging;
 
@@ -7,8 +9,8 @@ namespace FeBuddy.UnitTests.Wpf.ViewModels;
 
 /// <summary>
 /// Covers <see cref="EramToGeojsonViewModel"/>: a layout saved before the three loads as its
-/// nearest, one Geomaps file per run, what is sent to a run, and the <c>feb.*</c> check - against
-/// a throwaway config and folder.
+/// nearest, one Geomaps file per run, what is sent to a run, the <c>feb.*</c> check and the run
+/// summary - against a throwaway config and folder.
 /// </summary>
 [Collection("AppLog")]
 public sealed class EramToGeojsonViewModelTests : IDisposable
@@ -67,9 +69,11 @@ public sealed class EramToGeojsonViewModelTests : IDisposable
 		Directory.CreateDirectory(folder);
 		File.WriteAllText(Path.Combine(folder, "A.xml"), "<Geomaps_Records />");
 		File.WriteAllText(Path.Combine(folder, "Airport.xml"), "<Airport_Records />");
+		File.WriteAllText(Path.Combine(folder, "ConsoleCommandControl.xml"), "<ConsoleCommandControl_Records />");
 
 		EramToGeojsonViewModel tab = new() { SourceFolder = folder };
 		Assert.True(tab.OneSourceFileOnly);
+		Assert.Equal("1 Geomaps file in this folder.", tab.FolderSummary);
 		Assert.Null(tab.RunBlocker);
 
 		File.WriteAllText(Path.Combine(folder, "B.xml"), "<Geomaps_Records />");
@@ -116,6 +120,25 @@ public sealed class EramToGeojsonViewModelTests : IDisposable
 
 		Directory.CreateDirectory(Path.Combine(_root, "Out", "ERAM_TO_GEOJSON"));
 		Assert.True(tab.ConfirmRun(tab.BuildSettingsBlock(Path.Combine(_root, "Out"), addFeBuddyOutputFolder: false)));
+	}
+
+	/// <summary>ConsoleCommandControl.txt is named in the summary and listed with the GeoJSON on the Review tab.</summary>
+	[Fact]
+	public void the_run_summary_names_the_console_command_control_rundown()
+	{
+		string rundown = Path.Combine(_root, "Out", "ConsoleCommandControl.txt");
+		SourceFilesConversionResult result = new()
+		{
+			Messages = [],
+			Elapsed = TimeSpan.Zero,
+			OutputDirectory = Path.Combine(_root, "Out"),
+			Files = [new SourceFileConversion { SourcePath = "Geomaps.xml", OutputPaths = ["a.geojson", "b.geojson"], OtherOutputPaths = [rundown], FeaturesWritten = 5 }],
+		};
+
+		ConversionRunOutcome outcome = new EramToGeojsonViewModel().DescribeRun(result);
+
+		Assert.Equal("1 file(s) read, 2 GeoJSON file(s) written, 5 feature(s), plus ConsoleCommandControl.txt", outcome.Summary);
+		Assert.Equal(["a.geojson", "b.geojson", rundown], outcome.FilesWritten);
 	}
 
 	[Fact]

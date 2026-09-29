@@ -294,6 +294,12 @@ public abstract class FileConversionTabViewModel : ConversionTabViewModel, ISour
 			summary += $", {detail}";
 		}
 
+		// A file beside the GeoJSON (ERAM's ConsoleCommandControl.txt) is named.
+		if (conversion.OtherFilesWritten.Count > 0)
+		{
+			summary += $", plus {string.Join(", ", conversion.OtherFilesWritten.Select(Path.GetFileName))}";
+		}
+
 		if (conversion.FailedCount > 0)
 		{
 			summary += $", {conversion.FailedCount:N0} failed";
@@ -302,7 +308,7 @@ public abstract class FileConversionTabViewModel : ConversionTabViewModel, ISour
 		return new ConversionRunOutcome(
 			summary,
 			new SubServiceRunResult(Title, summary, conversion.Messages),
-			conversion.GeojsonFilesWritten,
+			[.. conversion.GeojsonFilesWritten, .. conversion.OtherFilesWritten],
 			Directory.Exists(conversion.OutputDirectory) ? conversion.OutputDirectory : null);
 	}
 

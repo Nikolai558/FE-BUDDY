@@ -41,7 +41,8 @@ namespace FeBuddy.Core.Infrastructure.Eram;
 /// Each of a symbol's own <c>GeoMapText</c>s becomes a Text element at the symbol (or where it
 /// says), carrying the symbol's <c>SymbolId</c>. An SAA's boundary segments become Line elements
 /// and its label a Text element, in the SAA's object, carrying its <c>SaaID</c>. A map's
-/// <c>LabelLine1</c> and <c>LabelLine2</c> are kept with its <c>GeomapId</c>.
+/// <c>LabelLine1</c> and <c>LabelLine2</c> are kept with its <c>GeomapId</c>, and so are the
+/// <c>BCGMenuName</c> and <c>FilterMenuName</c> it uses from <c>ConsoleCommandControl.xml</c>.
 /// </para>
 /// <para>
 /// The file is streamed one object at a time rather than loaded whole, as it can run to hundreds
@@ -75,22 +76,7 @@ public static class EramGeoMapReader
 	/// </summary>
 	/// <param name="path">The file to look at.</param>
 	/// <returns><see langword="true"/> when it starts with <c>&lt;Geomaps_Records&gt;</c>; <see langword="false"/> otherwise, or when it cannot be read.</returns>
-	public static bool IsGeoMapsFile(string path)
-	{
-		try
-		{
-			using FileStream stream = File.OpenRead(path);
-			using XmlReader reader = XmlReader.Create(stream, Settings);
-
-			// MoveToContent lands on the root element or throws, so its name is all there is to check.
-			reader.MoveToContent();
-			return reader.LocalName == RootElement;
-		}
-		catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or XmlException)
-		{
-			return false;
-		}
-	}
+	public static bool IsGeoMapsFile(string path) => EramXmlFile.HasRoot(path, RootElement);
 
 	/// <summary>Reads Geomaps XML from a stream.</summary>
 	/// <param name="stream">The XML.</param>
@@ -103,7 +89,7 @@ public static class EramGeoMapReader
 
 		try
 		{
-			using XmlReader reader = XmlReader.Create(stream, Settings);
+			using XmlReader reader = XmlReader.Create(stream, EramXmlFile.Settings);
 			return ReadRecords(reader, sourcePath);
 		}
 		catch (XmlException ex)
@@ -111,13 +97,6 @@ public static class EramGeoMapReader
 			throw new InvalidDataException($"{Path.GetFileName(sourcePath)} is not well-formed XML: {ex.Message}", ex);
 		}
 	}
-
-	private static XmlReaderSettings Settings => new()
-	{
-		IgnoreComments = true,
-		IgnoreWhitespace = true,
-		DtdProcessing = DtdProcessing.Prohibit,
-	};
 
 	private static EramGeoMapFile ReadRecords(XmlReader reader, string sourcePath)
 	{
@@ -175,7 +154,7 @@ public static class EramGeoMapReader
 					break;
 
 				// Its text is the next node; reading it here would move the reader past what follows.
-				case "GeomapId" or "LabelLine1" or "LabelLine2" when objects is not null:
+				case "GeomapId" or "LabelLine1" or "LabelLine2" or "BCGMenuName" or "FilterMenuName" when objects is not null:
 					field = reader.IsEmptyElement ? null : reader.LocalName;
 					break;
 
@@ -192,12 +171,19 @@ public static class EramGeoMapReader
 		return new EramGeoMapFile(sourcePath, maps, problems);
 	}
 
-	/// <summary>A map from its record's own fields; a blank label line is none.</summary>
+	/// <summary>A map from its record's own fields; a blank label line or menu name is none.</summary>
 	private static EramGeoMap Map(Dictionary<string, string> fields, List<EramGeoMapObject> objects) => new(
 		fields.GetValueOrDefault("GeomapId") ?? string.Empty,
-		fields.GetValueOrDefault("LabelLine1") is { Length: > 0 } line1 ? line1 : null,
-		fields.GetValueOrDefault("LabelLine2") is { Length: > 0 } line2 ? line2 : null,
-		objects);
+		Field(fields, "LabelLine1"),
+		Field(fields, "LabelLine2"),
+		objects)
+	{
+		BcgMenuName = Field(fields, "BCGMenuName"),
+		FilterMenuName = Field(fields, "FilterMenuName"),
+	};
+
+	private static string? Field(Dictionary<string, string> fields, string name) =>
+		fields.GetValueOrDefault(name) is { Length: > 0 } value ? value : null;
 
 	// ================= one object =================
 

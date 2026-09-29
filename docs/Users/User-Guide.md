@@ -729,10 +729,30 @@ after its `GeomapId` and the two lines of its button label: `CENTER_CENTER-MAP` 
 stand in for a label line the map has none of). Lines, symbols (and every label they have), text
 and SAA boundaries and labels are all converted.
 
+When the export's `ConsoleCommandControl.xml` is beside `Geomaps.xml`, the run also writes
+`ConsoleCommandControl.txt` in `ERAM_TO_GEOJSON`, as the original tool did: a rundown of the map
+menus on the ERAM console. It lists each brightness (BCG) menu and each filter menu with the maps
+that use it, then each of its buttons' label, menu position and groups:
+
+```
+BCG Menu: ZOB
+
+	Used with:	CENTER, OCP
+
+	Label:		AAV
+	Position:	1
+	Group:		1, 2
+```
+
+The file is found by what it holds, so a renamed one is found too. Without one the GeoJSON is still
+written and the Review tab says there was no rundown; one that cannot be read is listed there too.
+
 - **Source Files** - `Geomaps.xml` itself, or a remembered folder. The folder can be the whole
-  unzipped export: only its Geomaps file is converted, and the other files are listed on the
-  Review tab as left alone. **One Geomaps file per run**: the maps' folders are named after the
-  maps alone, so a second file's could land on the first's.
+  unzipped export: only its Geomaps file is converted, its ConsoleCommandControl file is read for
+  the rundown, and the other files are listed on the Review tab as left alone. Picking
+  `Geomaps.xml` finds the ConsoleCommandControl file beside it the same way. **One Geomaps file per
+  run**: the maps' folders are named after the maps alone, so a second file's could land on the
+  first's.
 - **Output Layout** - how the files are split (hover each on the tab to see the folders it writes):
   - **By Filters** - a folder per set of filters, with a file each for its lines, symbols and
     text: `CENTER_CENTER-MAP\Filter_01\Filter_01_Lines.geojson`, and
@@ -811,7 +831,8 @@ for an example of what it catches:
     │   └── <sector file name>\       ARTCC, …, GEO, LABELS, REGIONS (.geojson), SID\, STAR\
     └── ERAM_TO_GEOJSON\              emptied at the start of every ERAM run
         ├── <GeomapId>_<LabelLine1>-<LabelLine2>\   Filter_nn\ folders, or a file per look
-        └── <GeomapId>_<LabelLine1>-<LabelLine2>.geojson   (Raw: one file per map)
+        ├── <GeomapId>_<LabelLine1>-<LabelLine2>.geojson   (Raw: one file per map)
+        └── ConsoleCommandControl.txt (only with ConsoleCommandControl.xml beside Geomaps.xml)
 ```
 
 A GeoJSON file marked for vNAS goes to `Upload_to_vNAS` instead of, not as well as, `Geojson`. An

@@ -501,6 +501,9 @@ run**: a `SourceFolder` may hold the whole export, but only one Geomaps file - i
 are named in one message - and a `SourceFiles` list only one file; more throws. A picked file that
 is not a Geomaps file fails. Output goes to `ERAM_TO_GEOJSON` (inside `FE-Buddy_Output` with
 `AddFeBuddyOutputFolder`), which is emptied once the file has been read, before anything is written.
+A `ConsoleCommandControl_Records` file beside the Geomaps file (either source) is read too, never
+converted, and its map menus listed in `ERAM_TO_GEOJSON\ConsoleCommandControl.txt`; no key turns
+this on or off. The result's `OtherFilesWritten` holds that file.
 
 | Key | Values | Default |
 |---|---|---|

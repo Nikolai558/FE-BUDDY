@@ -17,7 +17,8 @@ namespace FeBuddy.Wpf.ViewModels;
 /// The <b>ERAM to GeoJSON</b> tab on the File Conversions screen: converts the
 /// <c>Geomaps.xml</c> of an ERAM adaptation export into CRC-ready GeoJSON in
 /// <c>ERAM_TO_GEOJSON</c>, in the original ERAM_2_GEOJSON tool's three layouts - By Filters, By
-/// Attributes and Raw - with its names.
+/// Attributes and Raw - with its names, plus its <c>ConsoleCommandControl.txt</c> rundown of the
+/// export's map menus when <c>ConsoleCommandControl.xml</c> is beside the Geomaps file.
 /// </summary>
 /// <remarks>
 /// <para>

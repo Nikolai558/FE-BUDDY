@@ -350,7 +350,10 @@ bar and page scroller are shared, and each screen's view-model says what differs
     and Text panels, shown only while the card is a source (`UsesCrcDefaults`); with the XML as
     the only source nothing on the card is required or sent. Before a run it asks to empty
     `ERAM_TO_GEOJSON` when anything is in it (`ConfirmRun`, which the File Conversions screen
-    calls for every tab). Goes through `EramToGeojsonService.Run`.
+    calls for every tab). Goes through `EramToGeojsonService.Run`, which also writes
+    `ConsoleCommandControl.txt` when the export's `ConsoleCommandControl.xml` is beside the
+    Geomaps file; the intro and layout tooltips say so, and the run summary names it
+    (`FileConversionTabViewModel.DescribeRun` lists a result's `OtherFilesWritten` with its GeoJSON).
 - **Dashboard** - the verbatim description box + Discord link + next-cycle line,
   the News feed (from `NewsService`), and a live activity-log viewer over `AppLog`
   (filter chips with counts, minimizable).

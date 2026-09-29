@@ -153,8 +153,9 @@ root - the same rule as `FeBuddy.Core`.
 - **A test for the app's logic:** `FeBuddy.UnitTests/Wpf/`, in folders mirroring these (the app's
   internals are visible to the tests). A test that creates a control runs its body through
   `StaThread.Run`, since WPF controls need a thread of their own. The map's math, GeoJSON reader,
-  home view, ROI view-model and `MapCanvas`, the File Names and Airways tabs' view-models, and
-  `InlineCode` are covered today.
+  home view, ROI view-model and `MapCanvas`, the File Names and Airways tabs' view-models, the
+  sub-service order, the Reset window's view-model, `BesideOrBelow` and `InlineCode` are covered
+  today.
 
 ### Screens
 
@@ -356,8 +357,11 @@ bar and page scroller are shared, and each screen's view-model says what differs
   one is saved - + FE-Buddy_Output toggle, with the cycle folder a run would write to), Default
   Region of Interest (`RoiPickerWindow`), GeoJSON Files (Maximum Coordinate Precision 5/6/7 dp,
   File Layout; FE-Buddy properties are chosen on each tab), Credentials (`CredentialsViewModel`, `CredentialEditorWindow`),
-  FE-Buddy's GitHub Requests (the GitHub token FE-Buddy's own requests use), and Updates (the four
-  channels with their tooltips, "check now" and "get the latest stable installer"). Everything but
+  FE-Buddy's GitHub Requests (the GitHub token FE-Buddy's own requests use), Updates (the four
+  channels with their tooltips, "check now" and "get the latest stable installer"), and Reset
+  FE-Buddy (`ResetWindow` / `ResetViewModel` ask what to keep; Settings saves a copy of the
+  settings if wanted, records the reset with Core's `AppDataReset` and restarts through
+  `Shell/AppRestart`; `App.OnStartup` carries it out before anything is opened). Everything but
   Credentials persists to `UserConfig.json` with the page's Save; credentials live in Windows
   Credential Manager and are saved as they change (see [Credentials](../Credentials.md)).
 - **Info** - Manual, Change log, Issues & requests as real links (About deleted).
@@ -366,7 +370,9 @@ bar and page scroller are shared, and each screen's view-model says what differs
 
 - **Toasts** - `Shell/Toast.cs` static store; hosted bottom-right.
 - **Border chrome** - FE-BUDDY tooltip shows update state only; the version chip is
-  a button that opens `UpdateWindow` when an update exists; the AIRAC status
+  a button that opens `UpdateWindow` when an update exists, and beside it a red update badge
+  takes turns between "Update available!" and the new version (amber and still after "Later";
+  `ShellViewModel.BadgeShowsVersion`, stepped by the Zulu clock's timer); the AIRAC status
   readout sits top-centre and narrates the launch pipeline.
 - **Zulu clock** in the status bar; **collapsible nav rail** (232 ⇄ 60).
 

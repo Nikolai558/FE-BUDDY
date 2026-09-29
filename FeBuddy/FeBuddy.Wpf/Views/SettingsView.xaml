@@ -1,6 +1,6 @@
 <!--
-    SettingsView  -  Facility Profile / Default ROI / GeoJSON Files / Credentials / FE-Buddy's GitHub Requests / Updates.
-    Everything persists to UserConfig.json.
+    SettingsView  -  Facility Profile / Default ROI / GeoJSON Files / Credentials / FE-Buddy's GitHub Requests / Updates /
+    Reset FE-Buddy. Everything persists to UserConfig.json.
 -->
 <UserControl x:Class="FeBuddy.Wpf.Views.SettingsView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -298,6 +298,17 @@
                             <Button Style="{StaticResource Button.Ghost}" Content="Open the Releases Page"
                                     Command="{Binding RollbackCommand}" Margin="8,0,0,0" />
                         </StackPanel>
+                    </StackPanel>
+                </ctl:Card>
+
+                <!-- ================= 7. RESET FE-BUDDY ================= -->
+                <!-- Last, away from everyday settings. The window it opens says what goes and asks what to keep. -->
+                <ctl:Card Header="Reset FE-Buddy">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,10"
+                                   Text="{Binding Source={x:Static vm:SettingsViewModel.ResetDescription}}" />
+                        <Button Style="{StaticResource Button.Ghost}" Content="Reset FE-Buddy…" HorizontalAlignment="Left"
+                                Command="{Binding ResetCommand}" />
                     </StackPanel>
                 </ctl:Card>
             </StackPanel>

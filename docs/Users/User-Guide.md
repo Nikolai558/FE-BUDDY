@@ -17,7 +17,8 @@ Every screen and every option in FE-Buddy 3.0. New to FE-Buddy? Start with
   **Updates**, with a coloured dot: green is fine, amber needs a look or is still working, red is
   not working. **Re-check** runs the checks again. When the menu is collapsed, just the dot shows.
 - **Top of the window.** On the left, **FE-BUDDY** and the version: hover it for the update
-  status, and it becomes a button when an update is available. In the middle, the **AIRAC
+  status. When an update is available, a red **Update available!** badge appears beside it (see
+  [Updating FE-Buddy](#updating-fe-buddy)). In the middle, the **AIRAC
   status**: it narrates the downloads at launch, then shows the current cycle and its effective
   date.
 - **Bottom of the window.** The time in Zulu.
@@ -920,6 +921,21 @@ The cards, top to bottom:
     is chosen.
   - **Check for updates now**, and **Get the latest stable installer** (opens the releases page -
     use it to go back to stable from a pre-release).
+- **Reset FE-Buddy** - start over as if FE-Buddy had just been installed. **Reset FE-Buddy…**
+  opens a window that says what goes and asks what to keep:
+  - **Always deleted:** the AIRAC data FE-Buddy has downloaded, the Telephony and Wx Station data,
+    its logs, and the backups of your settings (`UserConfig.previous.json` and
+    `UserConfig.before-import.json`).
+  - **Your settings** - *Keep my settings* (the default) or *Delete my settings*. Deleting them
+    offers **Save a copy of my settings first** (on to start with): you choose where, the Desktop
+    to begin with. **Import…** brings the copy back, all but this PC's own choices - the update
+    channel, the GitHub token, each web address's credential and which News posts you have read.
+  - **Saved credentials** (only when you have some) - keep them (the default) or delete them from
+    Windows Credential Manager. FE-Buddy never saves a copy of a token or password.
+  - Anything closing FE-Buddy would lose (a run in progress, unsaved changes) is listed too.
+
+  **Reset and restart** closes FE-Buddy and starts it again; the reset happens as it starts, and a
+  message says when it is done. Files in your output folder are never touched.
 
 ## Info
 
@@ -928,10 +944,13 @@ change log, and the issue tracker.
 
 ## Updating FE-Buddy
 
-When an update is available the version at the top of the window becomes a button. It opens the
+When an update is available, a red **Update available!** badge appears beside the version at the
+top of the window, taking turns with the new version's number (`v3.0.0-beta.1 available`). There
+is no pop-up: it waits there until you are ready. Click the badge (or the version) to open the
 update window: your version, the latest, and the release notes for everything in between.
 
 - **Update now** downloads the installer and runs it. FE-Buddy closes while it installs and opens
   again afterwards; your settings are kept. If you have unsaved changes or a run in progress, you
   are asked first.
-- **Later** closes the window; the version stays amber for the rest of the session as a reminder.
+- **Later** closes the window; the badge and the version stay amber for the rest of the session
+  as a reminder.

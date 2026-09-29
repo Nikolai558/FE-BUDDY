@@ -25,7 +25,7 @@ namespace FeBuddy.Wpf.ViewModels;
 
 /// <summary>
 /// Backs <c>ShellWindow</c>: navigation, the status-bar Zulu clock, the top-centre AIRAC
-/// status indicator, the version chip / update state, and the one-time notice about FE-Buddy 2.x's
+/// status indicator, the version chip and update badge, and the one-time notice about FE-Buddy 2.x's
 /// GitHub token variable. Everything but navigation is driven by <see cref="AppEnvironment"/> and
 /// <see cref="AiracCycleDataCache"/>.
 /// </summary>
@@ -38,6 +38,9 @@ public sealed class ShellViewModel : ObservableObject
 	private const string GlyphMap = ""; // MapPin
 	private const string GlyphSettings = ""; // Setting
 	private const string GlyphInfo = ""; // Info
+
+	/// <summary>How many seconds the update badge shows each of its two lines before the other.</summary>
+	private const int BadgeTurnSeconds = 3;
 
 	private readonly Dispatcher _dispatcher;
 
@@ -53,6 +56,9 @@ public sealed class ShellViewModel : ObservableObject
 	private string _versionBrushKey = "Brush.Accent.Text";
 	private string _updateTooltipTitle = "Checking for updates…";
 	private string _updateTooltipBody = string.Empty;
+	private string _updateBadgeVersionText = string.Empty;
+	private bool _badgeShowsVersion;
+	private int _badgeSeconds;
 
 	/// <summary>Builds the navigation, starts the Zulu clock, and follows the launch state.</summary>
 	public ShellViewModel()
@@ -69,7 +75,7 @@ public sealed class ShellViewModel : ObservableObject
 
 		SystemNav =
 		[
-			Nav("Settings", GlyphSettings, () => new SettingsViewModel(OpenUpdateWindow)),
+			Nav("Settings", GlyphSettings, () => new SettingsViewModel(OpenUpdateWindow, DescribeUnfinishedWork)),
 			Nav("Info",     GlyphInfo,     () => new InfoViewModel()),
 		];
 
@@ -81,10 +87,14 @@ public sealed class ShellViewModel : ObservableObject
 
 		PrimaryNav[0].IsActive = true;
 
-		// Zulu clock, ticked once a second on the UI thread.
+		// Zulu clock, ticked once a second on the UI thread; the update badge takes turns on the same beat.
 		UpdateZulu();
 		var clock = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
-		clock.Tick += (_, _) => UpdateZulu();
+		clock.Tick += (_, _) =>
+		{
+			UpdateZulu();
+			AdvanceUpdateBadge();
+		};
 		clock.Start();
 
 		// Live launch/pipeline state.
@@ -187,7 +197,7 @@ public sealed class ShellViewModel : ObservableObject
 		}
 	}
 
-	/// <summary><see langword="true"/> once the user has declined an available update this session - the version text turns amber.</summary>
+	/// <summary><see langword="true"/> once the user has declined an available update this session - the version text and the update badge turn amber.</summary>
 	public bool VersionIsWarning => _versionBrushKey == "Brush.Warn";
 
 	/// <summary>Title line of the FE-BUDDY caption tooltip - update state only.</summary>
@@ -202,6 +212,28 @@ public sealed class ShellViewModel : ObservableObject
 	{
 		get => _updateTooltipBody;
 		private set => SetProperty(ref _updateTooltipBody, value);
+	}
+
+	/// <summary>
+	/// The update badge's second line, e.g. <c>v3.0.0-beta.1 available</c>. The badge beside the
+	/// version shows only while <see cref="IsUpdateAvailable"/>, taking turns between "Update
+	/// available!" and this.
+	/// </summary>
+	public string UpdateBadgeVersionText
+	{
+		get => _updateBadgeVersionText;
+		private set => SetProperty(ref _updateBadgeVersionText, value);
+	}
+
+	/// <summary>
+	/// Whether the update badge is on its <see cref="UpdateBadgeVersionText"/> turn. It turns every
+	/// few seconds while the badge is red; once the user chooses "Later" (<see cref="VersionIsWarning"/>)
+	/// the badge goes amber and stays on "Update available!".
+	/// </summary>
+	public bool BadgeShowsVersion
+	{
+		get => _badgeShowsVersion;
+		private set => SetProperty(ref _badgeShowsVersion, value);
 	}
 
 	/// <summary>e.g. <c>1543Z  ·  Tue 30 Aug</c>.</summary>
@@ -349,7 +381,8 @@ public sealed class ShellViewModel : ObservableObject
 		else if (IsUpdateAvailable)
 		{
 			UpdateTooltipTitle = $"v{version.LatestVersion} available!";
-			UpdateTooltipBody = $"You are on v{version.CurrentVersion.TrimStart('v', 'V')}. Click the version to review and update.";
+			UpdateTooltipBody = $"You are on v{version.CurrentVersion.TrimStart('v', 'V')}. Click to review and update.";
+			UpdateBadgeVersionText = $"v{version.LatestVersion} available";
 			VersionBrushKey = _updateDeclinedThisSession ? "Brush.Warn" : "Brush.Accent.Text";
 		}
 		else if (version.RunningPreReleaseChannel is { } running)
@@ -519,6 +552,22 @@ public sealed class ShellViewModel : ObservableObject
 
 	private void UpdateZulu()
 		=> ZuluClock = DateTime.UtcNow.ToString("HHmm'Z'  ·  ddd dd MMM", CultureInfo.InvariantCulture);
+
+	/// <summary>One second on: the update badge changes line every <see cref="BadgeTurnSeconds"/> while it is red.</summary>
+	private void AdvanceUpdateBadge()
+	{
+		if (!IsUpdateAvailable || VersionIsWarning)
+		{
+			_badgeSeconds = 0;
+			BadgeShowsVersion = false;
+			return;
+		}
+
+		if (++_badgeSeconds % BadgeTurnSeconds == 0)
+		{
+			BadgeShowsVersion = !BadgeShowsVersion;
+		}
+	}
 
 	private NavItem Nav(string title, string glyph, Func<object> factory)
 		=> new(title, glyph, factory, OnActivated);

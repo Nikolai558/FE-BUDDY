@@ -43,6 +43,12 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
   window is too narrow.
 - Airways: a hand-edited settings file with no output switched on now loads the defaults, as the
   other tabs already did.
+- When an update is available, a red **Update available!** badge appears beside the version at
+  the top of the window, taking turns with the new version's number; click it to update. After
+  **Later** it turns amber for the rest of the session. There is still no pop-up.
+- Settings ▸ **Reset FE-Buddy** starts over as if FE-BUDDY had just been installed: it deletes the
+  downloaded AIRAC, Telephony and Wx Station data, logs and settings backups, and - if you choose -
+  your settings (offering to save a copy first) and saved credentials, then restarts.
 - (Dev notes)
   - Every file is UTF-8 without a byte-order mark, and a unit test now fails on any file that has one.
 

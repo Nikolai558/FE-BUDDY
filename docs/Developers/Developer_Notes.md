@@ -201,6 +201,10 @@
 - Tooltip on hover over the version number (`hasInternetConnection` dependent):
   - `You are running the latest version.`
   - `vX.X.X available! Go to SETTINGS > UPDATES.`
+- While an update is available, a solid red `Update available!` badge sits beside the version,
+  taking turns every 3 seconds with `vX.X.X available`; clicking it opens the update window. No
+  popup: a busy user dismisses popups without reading them. After `Later` it turns amber and stops
+  turning for the rest of the session.
 
 ## SETTINGS
 
@@ -214,6 +218,16 @@
   - Check for updates now (`hasInternetConnection` dependent).
 - Save button:
   - Writes settings to the `UserConfig` file.
+
+### RESET FE-BUDDY
+
+- The last card. `Reset FE-Buddy…` opens a window that lists what always goes (downloaded AIRAC,
+  Telephony and Wx Station data, logs, settings backups) and asks: keep or delete the settings
+  (deleting offers to save a copy first, anywhere but FE-Buddy's own folder), and - only when any
+  are saved - keep or delete the credentials. No copy of a credential is ever saved.
+- The reset is recorded (`AppDataReset.Request`) and FE-Buddy restarts; the new FE-Buddy carries
+  it out first thing at launch, before the log, the settings or a cycle is opened (see LAUNCH
+  PROCESSES).
 
 ### UNINSTALL
 
@@ -405,6 +419,12 @@ Second post for the same day.
     - Example: `"feb.AwyId"`
 
 ## LAUNCH PROCESSES
+
+### PENDING RESET
+
+- Before anything else (`App.OnStartup`): if Settings asked for a reset, `AppDataReset.RunPending`
+  waits for the FE-Buddy that asked to close, then empties `%APPDATA%\FE-Buddy` (keeping
+  `UserConfig.json` if chosen) and removes the credentials if chosen. A toast says it is done.
 
 ### READ UserConfig.json
 

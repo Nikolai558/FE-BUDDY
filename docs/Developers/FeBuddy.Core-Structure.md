@@ -82,7 +82,8 @@ FeBuddy.Core/
 │   │   │               (a sign-in written into a web address). See Credentials.md
 │   │   └── Models/     CredentialInfo, CredentialDraft, CredentialKind, CredentialUseResult, VaultEntry
 │   ├── Dat/            DatFileReader: FAA .dat RADAR Video Maps
-│   ├── FileSystem/     AppPaths, TempWorkspace, ServiceOutputPaths (the FE-Buddy_Output layout)
+│   ├── FileSystem/     AppPaths, TempWorkspace, ServiceOutputPaths (the FE-Buddy_Output layout),
+│   │                   AppDataReset (Settings ▸ Reset FE-Buddy, carried out at the next launch)
 │   ├── Geojson/        CrcFeatureFactory, GeojsonFileWriter, GeojsonFileSet
 │   ├── GitHub/         GitHubAuth, GitHubRepository, GitHubFileUrl (a GitHub file's web address →
 │   │                   the contents API address that works for a private repository with a token)

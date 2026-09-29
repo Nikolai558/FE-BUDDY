@@ -22,7 +22,7 @@
     <StackPanel>
 
         <TextBlock Style="{StaticResource Text.Prose}" Margin="0,0,0,14"
-                   Text="Converts FAA .dat RADAR Video Maps (RVMs) into CRC-ready GeoJSON: one .geojson file per map, named after it, in a DAT to GeoJSON folder inside your output directory." />
+                   bhv:InlineCode.Text="Converts FAA .dat RADAR Video Maps (RVMs) into CRC-ready GeoJSON: one .geojson file per map, named after it, in a `DAT to GeoJSON` folder inside your output directory." />
 
         <TextBlock Text="{Binding ValidationError}" Style="{StaticResource Text.Caption}"
                    Foreground="{StaticResource Brush.Danger}" TextWrapping="Wrap" Margin="0,0,0,12"

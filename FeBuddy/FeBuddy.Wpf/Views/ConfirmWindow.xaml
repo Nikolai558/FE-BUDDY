@@ -2,12 +2,14 @@
     ConfirmWindow  -  a small themed confirm dialog. It grows with its message up to the height of
     the screen's work area; past that the message scrolls, so the buttons always stay on screen.
     The frame gives a self-sizing window's body all the height it asks for, so the message's own
-    limit is set in the code-behind; the window's MaxHeight only backs it up.
+    limit is set in the code-behind; the window's MaxHeight only backs it up. A folder or path in
+    the message goes between backticks, and shows in the code look (bhv:InlineCode).
 -->
 <ctl:ChromeWindow x:Class="FeBuddy.Wpf.Views.ConfirmWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
+        xmlns:bhv="clr-namespace:FeBuddy.Wpf.Behaviors"
         Title="{Binding Title}"
         Width="480" SizeToContent="Height"
         MaxHeight="{Binding Height, Source={x:Static SystemParameters.WorkArea}}"
@@ -31,7 +33,7 @@
 
             <ScrollViewer x:Name="MessageScroller" Grid.Row="1" Margin="0,12,0,0"
                           VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                <TextBlock Text="{Binding Message}" TextWrapping="Wrap"
+                <TextBlock bhv:InlineCode.Text="{Binding Message}" TextWrapping="Wrap"
                            Style="{StaticResource Text.Body}" />
             </ScrollViewer>
 

@@ -30,7 +30,7 @@
             <cards:GeojsonFilesCard ShowLines="False"
                                     SymbolsDescription="One symbol per fix."
                                     TextDescription="A label per fix: its identifier."
-                                    Footnote="Files are written to Geojson\ in the cycle's folder." />
+                                    Footnote="Files are written to `Geojson\` in the cycle's folder." />
 
             <!-- ============ file layout ============ -->
             <ctl:Card Header="File Layout">

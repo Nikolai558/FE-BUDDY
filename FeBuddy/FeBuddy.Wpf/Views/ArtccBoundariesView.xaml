@@ -12,6 +12,7 @@
              xmlns:m="clr-namespace:FeBuddy.Wpf.ViewModels.Models"
              xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
              xmlns:cards="clr-namespace:FeBuddy.Wpf.Views.Cards"
+             xmlns:bhv="clr-namespace:FeBuddy.Wpf.Behaviors"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance vm:ArtccBoundariesViewModel}"
              d:DesignWidth="900" d:DesignHeight="1400">
@@ -40,7 +41,7 @@
                                  IsChecked="{Binding OutputByArtccAltitude, Mode=TwoWay}" />
                     <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,10,0,0"
                                MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
-                               Text="Files are written to Geojson\ in the cycle's folder." />
+                               bhv:InlineCode.Text="Files are written to `Geojson\` in the cycle's folder." />
                 </StackPanel>
             </ctl:Card>
 

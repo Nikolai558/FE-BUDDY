@@ -36,7 +36,8 @@ record. Add new items to the section they belong to.
 
 ## Testing
 
-- **Most of `FeBuddy.Wpf` has no automated tests.** Only the map's logic is tested
-  (`FeBuddy.UnitTests/Wpf`). The rest of its view-model logic (the settings blocks each tab builds,
-  dirty tracking, validation, the settings import wording) could be tested the same way, without a
-  window. Today the only check is running the app.
+- **Most of `FeBuddy.Wpf` has no automated tests.** Only the map's logic, the File Names and
+  Airways tabs' view-models and `InlineCode` are tested (`FeBuddy.UnitTests/Wpf`). The rest of its
+  view-model logic (the settings blocks each other tab builds, dirty tracking, validation, the
+  settings import wording) could be tested the same way, without a window. Today the only check is
+  running the app.

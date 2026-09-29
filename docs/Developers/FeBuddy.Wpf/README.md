@@ -48,7 +48,8 @@ Theme/                design system - the only place colours, type and control
 
 Assets/               us-states.json (reference geography, not sample data)
 Behaviors/            attached properties a view opts into: FieldState (validation
-                      look), WheelScroll, ComboBoxDropDownFocus, MaximizeToWorkArea
+                      look), InlineCode (`code` look for text between backticks),
+                      WheelScroll, ComboBoxDropDownFocus, MaximizeToWorkArea
 Controls/             reusable controls: Card, SectionHeader, Option, CopyButton,
                       FilterPicker (+ FilterOption), MarkdownView, MapCanvas, and
                       ChromeWindow (the base for every dialog window)
@@ -137,10 +138,16 @@ root - the same rule as `FeBuddy.Core`.
 - **A converter:** its own file in `Converters/`, instantiated once in `Theme/Theme.xaml`.
 - **Something every screen can use** (a store, a launcher, a notification): `Shell/`.
 - **A colour, font, radius or glyph:** `Theme/` - never a literal in a view.
+- **A folder name or path in on-screen text:** between backticks, with the TextBlock's text set
+  through `bhv:InlineCode.Text` instead of `Text` - it shows in the same code look as a News post's
+  `code` (`InlineCode.ApplyLook`, which `MarkdownView` uses too). `ConfirmWindow`'s message and
+  `GeojsonFilesCard`'s `Footnote` already render this way, so a message or footnote only needs the
+  backticks. In a CheckBox or RadioButton, put a TextBlock inside rather than using `Content`.
 - **A test for the app's logic:** `FeBuddy.UnitTests/Wpf/`, in folders mirroring these (the app's
   internals are visible to the tests). A test that creates a control runs its body through
   `StaThread.Run`, since WPF controls need a thread of their own. The map's math, GeoJSON reader,
-  home view, ROI view-model and `MapCanvas` are covered today.
+  home view, ROI view-model and `MapCanvas`, the File Names and Airways tabs' view-models, and
+  `InlineCode` are covered today.
 
 ### Screens
 

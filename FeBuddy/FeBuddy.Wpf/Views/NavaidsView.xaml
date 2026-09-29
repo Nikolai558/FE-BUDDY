@@ -36,7 +36,7 @@
             <cards:GeojsonFilesCard IsEnabled="{Binding GenerateGeojson}" ShowLines="False"
                                     SymbolsDescription="One symbol per NAVAID."
                                     TextDescription="A two-line label per NAVAID: its identifier, then its name and type."
-                                    Footnote="Files are written to Geojson\ in the cycle's folder." />
+                                    Footnote="Files are written to `Geojson\` in the cycle's folder." />
 
             <!-- ============ file layout ============ -->
             <ctl:Card Header="File Layout" IsEnabled="{Binding GenerateGeojson}">

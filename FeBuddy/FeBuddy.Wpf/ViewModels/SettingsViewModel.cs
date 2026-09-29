@@ -214,13 +214,16 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 		}
 	}
 
-	/// <summary>Where a run of the current cycle would write with the values on screen, e.g. <c>…\FE-Buddy_Output\AIRAC_2610</c>.</summary>
+	/// <summary>
+	/// Where a run of the current cycle would write with the values on screen, e.g.
+	/// <c>…\FE-Buddy_Output\AIRAC_2610</c> - between backticks, for the view's <c>bhv:InlineCode</c>.
+	/// </summary>
 	public string OutputFolderExample
 	{
 		get
 		{
 			string cycleId = AppEnvironment.GetAiracCycle(AiracCyclePosition.Current).AiracCycleId;
-			return $"A run of AIRAC cycle {cycleId} writes to {AiracOutputPaths.CycleDirectory(OutputDirectory, AddFeBuddyOutputFolder, cycleId)}";
+			return $"A run of AIRAC cycle {cycleId} writes to `{AiracOutputPaths.CycleDirectory(OutputDirectory, AddFeBuddyOutputFolder, cycleId)}`";
 		}
 	}
 
@@ -821,12 +824,13 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 				+ "but for identical output both PCs should run the same version.");
 		}
 
+		// Paths between backticks show in the code look (ConfirmWindow's bhv:InlineCode).
 		AppendList(text, "Folders and files:", plan.AppliedFolders, folder =>
 			folder.Path.Length == 0 ? folder.Note!
-			: folder.Note is null ? folder.Path
-			: $"{folder.Path} ({folder.Note})");
+			: folder.Note is null ? $"`{folder.Path}`"
+			: $"`{folder.Path}` ({folder.Note})");
 
-		AppendList(text, "Not taken, as they do not work on this PC:", plan.SkippedFolders, folder => $"the file's {folder.Path} {folder.Note}");
+		AppendList(text, "Not taken, as they do not work on this PC:", plan.SkippedFolders, folder => $"the file's `{folder.Path}` {folder.Note}");
 
 		if (plan.KeptForThisPc.Count > 0)
 		{

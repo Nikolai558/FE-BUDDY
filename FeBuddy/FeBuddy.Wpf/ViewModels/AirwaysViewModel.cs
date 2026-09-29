@@ -129,7 +129,7 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 			"Each set is _Lines + _Symbols + _Text.",
 		AirwayGeojsonOutputBy.Designation =>
 			"One file set per designation, derived from the AWY_ID prefix.\n" +
-		    "Ex: J / V / Q / T / AT):\n" +
+			"Ex: J / V / Q / T / AT:\n" +
 			"    Airways_J, Airways_V, Airways_Q, …\n" +
 			"Each set is _Lines + _Symbols + _Text.",
 		_ => string.Empty,

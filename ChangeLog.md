@@ -15,6 +15,8 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
 -->
 
 ## Unreleased
+- Folder names and paths in on-screen descriptions and messages (`Upload_to_vNAS`, `Aliases`, the
+  output folder in Settings, …) now show in a code font, the way `code` looks in News posts.
 
 ---
 

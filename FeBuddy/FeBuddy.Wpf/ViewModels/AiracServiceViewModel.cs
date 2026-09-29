@@ -498,12 +498,12 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 		ConfirmChoice choice = ConfirmWindow.ShowChoice(
 			Application.Current?.MainWindow,
 			$"AIRAC cycle {cycleId} already run",
-			$"Looks like AIRAC cycle {cycleId} has already been run at one point: {settings.CycleOutputDirectory} "
+			$"Looks like AIRAC cycle {cycleId} has already been run at one point: `{settings.CycleOutputDirectory}` "
 			+ "already has files in it. Select what you would like to happen:"
 			+ Environment.NewLine + Environment.NewLine
 			+ "Overwrite files - this run's files replace the old ones; any other old file is left as it is."
 			+ Environment.NewLine
-			+ $"Delete all files - everything in {AiracOutputPaths.CycleFolderName(cycleId)} is permanently deleted first, "
+			+ $"Delete all files - everything in `{AiracOutputPaths.CycleFolderName(cycleId)}` is permanently deleted first, "
 			+ "so it holds only this run's files.",
 			confirmText: "Overwrite files",
 			alternativeText: "Delete all files");

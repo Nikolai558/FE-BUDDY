@@ -30,6 +30,8 @@ function Get-ProjectVersion {
 
 # ChangeLog.md's "## <name>" sections in file order, each as @{ Name; Body } (Body trimmed, HTML
 # comments removed). Text before the first section (the file's introduction) is not returned.
+# The "---" lines that separate sections are dropped from the start and end of each Body, so an
+# "## Unreleased" holding only a separator is empty, and release notes don't end with a rule.
 function Get-ChangeLogSections {
 	$text = (Get-Content -Path $ChangeLogPath -Raw -Encoding UTF8) -replace '(?s)<!--.*?-->', ''
 	$sections = New-Object System.Collections.Generic.List[object]
@@ -46,7 +48,14 @@ function Get-ChangeLogSections {
 	}
 
 	foreach ($section in $sections) {
-		[pscustomobject]@{ Name = $section.Name; Body = ($section.Lines -join "`n").Trim() }
+		# Blank and "---" lines at either end are dropped; everything between them is kept as is.
+		$lines = $section.Lines
+		$first = 0
+		$last = $lines.Count - 1
+		while ($first -le $last -and $lines[$first].Trim() -in @('', '---')) { $first++ }
+		while ($last -ge $first -and $lines[$last].Trim() -in @('', '---')) { $last-- }
+		$body = if ($first -le $last) { ($lines[$first..$last] -join "`n").Trim() } else { '' }
+		[pscustomobject]@{ Name = $section.Name; Body = $body }
 	}
 }
 

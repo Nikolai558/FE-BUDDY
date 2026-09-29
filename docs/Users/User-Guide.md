@@ -178,7 +178,8 @@ window is.
   limits the GeoJSON. Each command shows the airport's card in CRC: identifiers and name, tower
   type, ARTCC, longest runway, elevation, pattern altitude, FSS, CTAF and weather, then:
   - **ATNDCE HRS** - when the airport is attended: the hours of each schedule NASR publishes for
-    it, one per line. Only the hours are shown, not the months and days each schedule covers.
+    it, one per line. Only the hours are shown, not the months and days each schedule covers. An
+    airport with no tower (`NON-ATCT`) shows the label with nothing beside it.
   - **AIRSPACE** - the class airspace, and under it **HRS**: when that airspace is in effect,
     broken after `SVC` and at every comma and semicolon, e.g. `CLASS D SVC` / `0600-2400` /
     `OTHER TIMES CLASS G`.

@@ -25,6 +25,7 @@ public static class AirportBuilder
 {
 	private const string LogSource = "AirportBuilder";
 	private const string PermanentlyClosedStatus = "CP";
+	private const string NonToweredCode = "NON-ATCT";
 
 	/// <summary>
 	/// Builds every eligible airport from the parsed NASR data.
@@ -118,7 +119,7 @@ public static class AirportBuilder
 				WeatherFrequencyUse = Normalize(weather?.FreqUse),
 				ClassAirspace = AirportFieldMaps.BuildClassAirspace(airspaceRow),
 				AirspaceHours = AirportFieldMaps.SplitAirspaceHours(airspaceRow?.AirspaceHrs),
-				AttendanceHours = BuildAttendanceHours(attendanceByAirport[id]),
+				AttendanceHours = IsNonTowered(row) ? [] : BuildAttendanceHours(attendanceByAirport[id]),
 				Runways = runways,
 				LongestRunway = SelectLongestRunway(runways)
 			});
@@ -162,6 +163,10 @@ public static class AirportBuilder
 
 	private static bool IsPermanentlyClosed(AptCsvDataModel.AptBase row) =>
 		(row.ArptStatus?.Trim() ?? string.Empty).Equals(PermanentlyClosedStatus, StringComparison.OrdinalIgnoreCase);
+
+	/// <summary>Whether the field has no tower (<c>TWR_TYPE_CODE</c> of <c>NON-ATCT</c>), so it gets no attendance hours.</summary>
+	private static bool IsNonTowered(AptCsvDataModel.AptBase row) =>
+		(row.TwrTypeCode?.Trim() ?? string.Empty).Equals(NonToweredCode, StringComparison.OrdinalIgnoreCase);
 
 	private static IReadOnlyList<AirportRunway> BuildRunways(
 		string airportId,

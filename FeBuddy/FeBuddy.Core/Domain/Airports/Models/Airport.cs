@@ -76,7 +76,8 @@ public sealed record Airport
 	/// When the airport is attended: each <c>APT_ATT.HOUR</c> published for it (e.g.
 	/// <c>0700-1900</c>, <c>ALL</c>, <c>UNATNDD</c>), in <c>SKED_SEQ_NO</c> order, trimmed, blank
 	/// ones left out. Only the hours are kept, not the months and days each schedule covers. Empty
-	/// when NASR publishes none.
+	/// when NASR publishes none, and always empty for a field with no tower (<c>TWR_TYPE_CODE</c> of
+	/// <c>NON-ATCT</c>).
 	/// </summary>
 	public IReadOnlyList<string> AttendanceHours { get; init; } = [];
 

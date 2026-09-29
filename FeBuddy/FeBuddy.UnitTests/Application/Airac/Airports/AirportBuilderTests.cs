@@ -302,6 +302,23 @@ public sealed class AirportBuilderTests
 		Assert.Empty(airports[1].AirspaceHours);
 	}
 
+	/// <summary>A field with no tower shows no attendance hours, whatever APT_ATT says; its airspace hours still show.</summary>
+	[Theory]
+	[InlineData("NON-ATCT")]
+	[InlineData(" non-atct ")]
+	public void a_field_with_no_tower_gets_no_attendance_hours_but_keeps_its_airspace_hours(string towerTypeCode)
+	{
+		NasrCsvDataCollection data = AirportTestDataBuilder.Build(
+			airports: [AirportTestDataBuilder.Base("OCF", towerTypeCode: towerTypeCode)],
+			classAirspace: [AirportTestDataBuilder.ClassAirspaceRow("OCF", classD: "Y", airspaceHours: "CLASS D 0700-2000; OTHER TIMES CLASS E")],
+			attendance: [AirportTestDataBuilder.AttendanceRow("OCF", 1, "0700-2000")]);
+
+		Airport airport = Assert.Single(AirportBuilder.BuildAll(data).Airports);
+
+		Assert.Empty(airport.AttendanceHours);
+		Assert.Equal(["CLASS D 0700-2000", "OTHER TIMES CLASS E"], airport.AirspaceHours);
+	}
+
 	[Fact]
 	public void rows_without_an_identifier_are_ignored_and_a_duplicate_identifier_keeps_the_first()
 	{

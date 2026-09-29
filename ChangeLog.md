@@ -67,9 +67,9 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
   - `ConsoleCommandControl.txt` is back: with the export's `ConsoleCommandControl.xml` beside
     `Geomaps.xml`, each run lists its brightness and filter menus - each button's label, position
     and groups, and which maps use each menu - as the old tool did.
-- `Airports.txt`: each airport's card now ends with its attendance hours (**ATNDCE HRS**) and,
-  moved down from the middle of the card, its airspace class with the hours that airspace is in
-  effect (**HRS**), one schedule per line.
+- `Airports.txt`: each airport's card now ends with its attendance hours (**ATNDCE HRS**, left
+  blank for an airport with no tower) and, moved down from the middle of the card, its airspace
+  class with the hours that airspace is in effect (**HRS**), one schedule per line.
 - (Dev notes)
   - Every file is UTF-8 without a byte-order mark, and a unit test now fails on any file that has one.
 

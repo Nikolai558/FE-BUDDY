@@ -34,7 +34,8 @@ namespace FeBuddy.Core.Application.Airac.Airports;
 /// <para>
 /// The attendance hours (<c>ATNDCE HRS:</c>) and the airspace hours (<c>HRS:</c>, under
 /// <c>AIRSPACE:</c>) can run to several lines: the first sits beside its label and the rest line
-/// up under it. Both labels are written even when NASR publishes no hours.
+/// up under it. Both labels are written even when there are no hours - as for a field with no
+/// tower, which is given no attendance hours.
 /// </para>
 /// <para>
 /// The file covers the entire airport database. Unlike the GeoJSON output it is deliberately

@@ -1,16 +1,15 @@
-## What changed
+<!-- What changed and why. "Fixes #123" closes the issue on merge. -->
 
-<!-- A sentence or two. "Fixes #123" closes the issue when this merges. -->
 
-## Checklist
 
-- [ ] Added one user-facing line under `## Unreleased` in `ChangeLog.md` - or this change is not something a user would notice
-- [ ] Builds, and the tests pass
+
+
+
 
 <!--
-  Change-log entries become the release notes users read, so write them for users: what changed
-  and why they care, in one line. How: docs/Developers/RELEASING.md#writing-a-change-log-entry
-
-  Making a release? Pull requests into `releases` must come from `v3-development`; the steps are in
-  docs/Developers/RELEASING.md.
+  Reminders (this comment doesn't show in the PR):
+  - Users will notice this change? Add one line under "## Unreleased" in ChangeLog.md.
+  - Changed how something works? Update the User Guide, FAQ, or in-app text to match.
+  - Changed the UI? A before/after screenshot helps.
+  - Making a release? PRs into `releases` must come from `v3-development`. See docs/Developers/RELEASING.md.
 -->

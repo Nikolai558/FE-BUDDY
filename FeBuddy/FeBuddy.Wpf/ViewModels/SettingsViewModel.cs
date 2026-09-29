@@ -231,12 +231,13 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 
 	/// <summary>Explains what an ROI is, under the Default Region of Interest heading.</summary>
 	public const string RoiExplainer =
-		"Region of Interest (ROI): a lat/lon axis-aligned rectangular region defined by southwest " +
-		"(bottom-left) and northeast (top-right) corners - a box defining the data you are interested in. " +
-		"Depending on the data type and operation, geometries may be clipped to the ROI or included in " +
-		"full when associated with an entity inside it. Make the box a little larger than your ARTCC " +
-		"boundary so nearby data still appears. Some operations let you override this ROI for specific " +
-		"files later.";
+		"Region of Interest (ROI):\n" +
+		"A lat/lon axis-aligned rectangular region defined by southwest (bottom-left) and northeast (top-right) corners -\n" +
+		"a box defining the data you are interested in.\n\n" +
+		"Depending on the data type and operation, geometries may be clipped/cropped " +
+		"to the ROI or included in full when associated with an entity inside it.\n\n" +
+		"Consider making your ROI a little larger than your ARTCC boundary so nearby data still appears.\n\n" +
+		"Some operations let you override this default ROI for specific files later using a custom ROI for that feature.";
 
 	/// <summary>
 	/// The default ROI on screen, or <see langword="null"/> when none is set. It becomes the saved

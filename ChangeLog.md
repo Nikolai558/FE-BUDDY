@@ -13,6 +13,8 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
 -->
 
 ## Unreleased
+
+## 3.0.0-alpha.2
 - Bug #251 - Fixed Airways losing its High and Low Files choices when you switched to another tab,
   which left the tab flagged with errors that you couldn't clear by saving again.
 - Bug #256 - Links in News posts on the Dashboard can now be clicked, and posts show their formatting.
@@ -27,6 +29,8 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
     only a final "please update" post for 3.0.0-alpha.1, which still reads that path.
   - A News post with a missing or invalid PostId is logged as skipped instead of disappearing
     silently, and a test now fails the build if any post in `News.md` has one.
+
+---
 
 ## 3.0.0-alpha.1
 - FE-BUDDY 3.0 is a from-scratch rewrite with a new interface. This first alpha is for testers:
@@ -117,3 +121,5 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
   - Rewritten in WPF on .NET 10, with the logic in a separate, unit-tested FeBuddy.Core library.
   - Semantic versioning (alpha, beta, rc) shared by the app and the installer.
   - Automated release pipeline: pre-flight checks on the pull request, then a drafted release.
+
+---

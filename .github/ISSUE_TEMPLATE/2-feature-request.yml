@@ -1,0 +1,61 @@
+name: Feature request
+description: Suggest a new feature, or an improvement to an existing one.
+title: "[FEAT REQ.] - "
+labels: ["feature", "v3.x"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the idea! Check the [open issues](https://github.com/Nikolai558/FE-BUDDY/issues) first in case someone already asked for it.
+        If so, add a 👍 or a comment there instead.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem would this solve?
+      description: What are you trying to do, and what makes it hard or slow today?
+      placeholder: e.g. Every cycle I have to hand-edit the airway files to remove ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: What would you like FE-BUDDY to do?
+      description: Describe how it would work. Mock-ups, sketches, or example output files help a lot.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Which part of FE-BUDDY?
+      multiple: true
+      options:
+        - Dashboard
+        - AIRAC Service (any sub-service)
+        - File Conversions
+        - Map
+        - Settings
+        - Updating or installing
+        - Something new
+        - Not sure
+
+  - type: input
+    id: who
+    attributes:
+      label: Who would use it?
+      description: Your role and facility help us understand how widely it applies.
+      placeholder: e.g. Facility engineer at ZLC, for CRC video maps
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: How do you handle it today?
+      description: Workarounds, other tools, or other approaches you've considered.
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Anything else?
+      description: Links, screenshots, example files, or FAA or vNAS references.

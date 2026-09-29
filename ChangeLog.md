@@ -49,6 +49,21 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
 - Settings ▸ **Reset FE-Buddy** starts over as if FE-BUDDY had just been installed: it deletes the
   downloaded AIRAC, Telephony and Wx Station data, logs and settings backups, and - if you choose -
   your settings (offering to save a copy first) and saved credentials, then restarts.
+- File Conversions ▸ ERAM to GeoJSON now writes the original ERAM_2_GEOJSON tool's layouts, with
+  its names:
+  - **By Filters** (`CENTER_CENTER-MAP\Filter_01\Filter_01_Lines.geojson`,
+    `Multi-Filter_02_03_08\…`), **By Attributes** (`BCG 01_Filters 01_Type AAV_Group 64_Object
+    ZOB3NM_Style Solid_Thick 1_Lines.geojson`) and **Raw** (`CENTER_CENTER-MAP.geojson`); hover a
+    layout on the tab to see its folders. They replace Object Type and Map Group and Filter Index
+    and Similar Attributes, which load as By Attributes and By Filters.
+  - Output goes to `ERAM_TO_GEOJSON` (was `ERAM to GeoJSON\<source file>`), which each run
+    empties first after asking you, and the tab takes one Geomaps file per run.
+  - The CRC ERAM Defaults still apply to every layout, and optional `feb.*` properties
+    (`feb.mapObjectType`, `feb.lineObjectId`, `feb.symbolId`, …) take the place of the old tool's
+    `E2G_*` ones.
+  - Every label on a symbol is converted (only the first was before), text ERAM keeps hidden is
+    left out (it used to be drawn), and an element with no filters at all shows at every filter
+    setting (filter 0).
 - (Dev notes)
   - Every file is UTF-8 without a byte-order mark, and a unit test now fails on any file that has one.
 

@@ -4,6 +4,9 @@
     host owns the page's single scroller. The Convert card at the foot of the page starts the
     run, and the outcome appears on the screen's Review tab.
 
+    The three layouts are the original ERAM_2_GEOJSON tool's, named as it named them; each one's
+    tooltip shows the folders and files it writes, in the code font.
+
     The radios sit inside ctl:Option wrappers, so each group is tied together by GroupName
     rather than by a shared parent.
 -->
@@ -15,15 +18,26 @@
              xmlns:vm="clr-namespace:FeBuddy.Wpf.ViewModels"
              xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
              xmlns:cards="clr-namespace:FeBuddy.Wpf.Views.Cards"
+             xmlns:bhv="clr-namespace:FeBuddy.Wpf.Behaviors"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance vm:EramToGeojsonViewModel}"
              d:DesignWidth="900" d:DesignHeight="1300">
 
+    <UserControl.Resources>
+        <!-- A layout's example tree, in the code font. -->
+        <Style x:Key="LayoutTree" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="{StaticResource Font.Mono}" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Margin" Value="0,6,0,0" />
+        </Style>
+    </UserControl.Resources>
+
     <!-- No ScrollViewer here: the tab host owns the one page-level scroller. -->
     <StackPanel>
 
-        <TextBlock Style="{StaticResource Text.Prose}" Margin="0,0,0,14"
-                   Text="Converts the Geomaps.xml of an ERAM adaptation export into CRC-ready GeoJSON: a folder per Geomaps file, named after it, holding a folder per GeoMap. Pick Geomaps.xml, or the unzipped export's folder - only its Geomaps file is converted." />
+        <TextBlock Style="{StaticResource Text.Prose}" Margin="0,0,0,14" TextWrapping="Wrap"
+                   MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
+                   bhv:InlineCode.Text="Converts the Geomaps.xml of an ERAM adaptation export into CRC-ready GeoJSON, in an `ERAM_TO_GEOJSON` folder in your output directory. Pick Geomaps.xml, or the unzipped export's folder - only its Geomaps file is converted. One Geomaps file per run: everything already in `ERAM_TO_GEOJSON` is deleted first, after you confirm." />
 
         <TextBlock Text="{Binding ValidationError}" Style="{StaticResource Text.Caption}"
                    Foreground="{StaticResource Brush.Danger}" TextWrapping="Wrap" Margin="0,0,0,12"
@@ -36,13 +50,54 @@
         <!-- ============ output layout ============ -->
         <ctl:Card Header="Output Layout">
             <StackPanel>
+                <TextBlock Style="{StaticResource Text.Caption}" Margin="0,4,0,8" TextWrapping="Wrap"
+                           MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
+                           bhv:InlineCode.Text="Each map is named after its GeomapId and button label, e.g. `CENTER_CENTER-MAP`. Hover a layout to see what it writes." />
+
                 <ctl:Option Margin="0,4,0,0"
-                            Description="A file per map object, named after its object type and map group (AIRWAY_3, SAA_53). Objects sharing a name share a file when their defaults agree.">
-                    <RadioButton GroupName="EramLayout" Content="Object Type and Map Group" IsChecked="{Binding LayoutByObject, Mode=TwoWay}" />
+                            Description="A folder per set of filters, holding one file each for its lines, symbols and text. The fewest files, with short names.">
+                    <RadioButton GroupName="EramLayout" Content="By Filters" IsChecked="{Binding LayoutByFilters, Mode=TwoWay}"
+                                 ToolTipService.InitialShowDelay="200" ToolTipService.ShowDuration="60000">
+                        <RadioButton.ToolTip>
+                            <ToolTip MaxWidth="1000">
+                                <StackPanel>
+                                    <TextBlock Text="By Filters" Style="{StaticResource Text.Body.Strong}" />
+                                    <TextBlock Style="{StaticResource LayoutTree}"
+                                               Text="ERAM_TO_GEOJSON\&#xA;    CENTER_CENTER-MAP\&#xA;        Filter_01\&#xA;            Filter_01_Lines.geojson&#xA;            Filter_01_Symbols.geojson&#xA;            Filter_01_Text.geojson&#xA;        Filter_04\&#xA;            Filter_04_Lines.geojson&#xA;        Multi-Filter_02_03_08\&#xA;            Multi-Filter_02_03_08_Lines.geojson" />
+                                </StackPanel>
+                            </ToolTip>
+                        </RadioButton.ToolTip>
+                    </RadioButton>
                 </ctl:Option>
                 <ctl:Option Margin="0,10,0,0"
-                            Description="Files grouped by filter, kind and look (FILTER 05\, MULTI FILTERS\), so everything in a file draws the same way.">
-                    <RadioButton GroupName="EramLayout" Content="Filter Index and Similar Attributes" IsChecked="{Binding LayoutByFilter, Mode=TwoWay}" />
+                            Description="A file for everything that looks the same, named after its BCG, filters, object type, map group, line object, style and so on. The most files, and the easiest to pick apart and rename.">
+                    <RadioButton GroupName="EramLayout" Content="By Attributes" IsChecked="{Binding LayoutByAttributes, Mode=TwoWay}"
+                                 ToolTipService.InitialShowDelay="200" ToolTipService.ShowDuration="60000">
+                        <RadioButton.ToolTip>
+                            <ToolTip MaxWidth="1000">
+                                <StackPanel>
+                                    <TextBlock Text="By Attributes" Style="{StaticResource Text.Body.Strong}" />
+                                    <TextBlock Style="{StaticResource LayoutTree}"
+                                               Text="ERAM_TO_GEOJSON\&#xA;    CENTER_CENTER-MAP\&#xA;        BCG 01_Filters 01_Type AAV_Group 64_Object ZOB3NM_Style Solid_Thick 1_Lines.geojson&#xA;        BCG 01_Filters 01_Type SupplementalLine_Group 48_Object AP_EAST_TOOTH_BOX_Style Solid_Thick 1_Lines.geojson&#xA;        BCG 02_Filters 02 03 08_Type SupplementalLine_Group 44_Object AP_PCT_BINNSLUCKE_Style ShortDashed_Thick 1_Lines.geojson" />
+                                </StackPanel>
+                            </ToolTip>
+                        </RadioButton.ToolTip>
+                    </RadioButton>
+                </ctl:Option>
+                <ctl:Option Margin="0,10,0,0"
+                            Description="One file per map, every feature carrying its own properties and no isDefaults features. The least to set up, and a reference to check the other layouts against.">
+                    <RadioButton GroupName="EramLayout" Content="Raw" IsChecked="{Binding LayoutRaw, Mode=TwoWay}"
+                                 ToolTipService.InitialShowDelay="200" ToolTipService.ShowDuration="60000">
+                        <RadioButton.ToolTip>
+                            <ToolTip MaxWidth="1000">
+                                <StackPanel>
+                                    <TextBlock Text="Raw" Style="{StaticResource Text.Body.Strong}" />
+                                    <TextBlock Style="{StaticResource LayoutTree}"
+                                               Text="ERAM_TO_GEOJSON\&#xA;    CENTER_CENTER-MAP.geojson&#xA;    OCP_OCP-MAPS.geojson" />
+                                </StackPanel>
+                            </ToolTip>
+                        </RadioButton.ToolTip>
+                    </RadioButton>
                 </ctl:Option>
             </StackPanel>
         </ctl:Card>
@@ -51,11 +106,11 @@
         <ctl:Card Header="CRC ERAM Defaults Source">
             <StackPanel>
                 <ctl:Option Margin="0,4,0,0"
-                            Description="Carry over as much as possible: each object's own Line, Symbol and Text defaults, and each element's own overrides. An object without defaults is listed on the Review tab.">
+                            Description="Carry over as much as possible: each object's own Line, Symbol and Text defaults, and each element's own values. An object whose defaults leave something out is listed on the Review tab.">
                     <RadioButton GroupName="EramDefaults" Content="From the XML" IsChecked="{Binding DefaultsFromXml, Mode=TwoWay}" />
                 </ctl:Option>
                 <ctl:Option Margin="0,10,0,0"
-                            Description="Use the XML's defaults, and the CRC ERAM Defaults below for any object that has none of its own - SAA objects, for one, carry no BCG or filters.">
+                            Description="Use the XML's defaults, and the CRC ERAM Defaults below for whatever they leave out - SAA objects, for one, carry no BCG or filters.">
                     <RadioButton GroupName="EramDefaults" Content="From the XML, filling gaps from the card" IsChecked="{Binding DefaultsFromXmlThenCard, Mode=TwoWay}" />
                 </ctl:Option>
                 <ctl:Option Margin="0,10,0,0"
@@ -69,10 +124,13 @@
         <cards:CrcDefaultsCard LinesTitle="GeoMap — Lines" SymbolsTitle="GeoMap — Symbols" TextTitle="GeoMap — Text" ShowInclude="True"
                                IncludeLines="{Binding IncludeCrcLineDefaults}" IncludeSymbols="{Binding IncludeCrcSymbolDefaults}"
                                IncludeText="{Binding IncludeCrcTextDefaults}"
-                               Note="The values written as the isDefaults feature at the top of each converted file. Untick Include on a panel to leave its defaults out." />
+                               Note="The look the converted files use: each file's isDefaults feature (By Filters, By Attributes), or every feature's own properties (Raw). Untick Include on a panel to leave its defaults out." />
+
+        <!-- ============ FE-Buddy properties ============ -->
+        <cards:FebPropertiesCard />
 
         <!-- ============ run ============ -->
         <cards:RunCard Blocker="{Binding RunBlocker}"
-                       Note="Unsaved settings are saved before the conversion starts. Existing files with the same name are replaced." />
+                       Note="Unsaved settings are saved before the conversion starts. Everything already in ERAM_TO_GEOJSON is deleted first - you are asked before anything goes." />
     </StackPanel>
 </UserControl>

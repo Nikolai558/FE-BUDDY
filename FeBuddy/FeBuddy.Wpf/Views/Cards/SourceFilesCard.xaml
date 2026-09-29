@@ -2,7 +2,8 @@
     SourceFilesCard  -  the first card on every file-conversion tab: what to convert. Either
     every matching file in a folder (remembered) or files picked one or several at a time (not
     remembered). Binds to the tab's view model through ISourceFileSettings; the tab's
-    FileTypeLabel supplies the wording (".dat", ".sct2 / .sct").
+    FileTypeLabel supplies the wording (".dat", ".sct2 / .sct"). A conversion that takes one
+    file per run (OneSourceFileOnly: ERAM's Geomaps file) is worded for one file.
 
     Usage:
         <cards:SourceFilesCard />
@@ -23,7 +24,18 @@
              cards on screen at once never steal each other's selection. -->
         <StackPanel>
             <RadioButton Margin="0,4,0,0" IsChecked="{Binding SourceIsFolder, Mode=TwoWay}"
-                         Content="{Binding FileTypeLabel}" ContentStringFormat="Every {0} file in a folder" />
+                         Content="{Binding FileTypeLabel}">
+                <RadioButton.Style>
+                    <Style TargetType="RadioButton" BasedOn="{StaticResource {x:Type RadioButton}}">
+                        <Setter Property="ContentStringFormat" Value="Every {0} file in a folder" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding OneSourceFileOnly}" Value="True">
+                                <Setter Property="ContentStringFormat" Value="The {0} file in a folder" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </RadioButton.Style>
+            </RadioButton>
             <StackPanel Margin="26,6,0,0" IsEnabled="{Binding SourceIsFolder}">
                 <DockPanel>
                     <Button DockPanel.Dock="Right" Style="{StaticResource Button.Ghost}" Content="Browse…"
@@ -36,11 +48,32 @@
                            Text="The folder is remembered. Files in its sub-folders are not included." />
             </StackPanel>
 
-            <RadioButton Content="Files I pick" Margin="0,14,0,0" IsChecked="{Binding SourceIsFiles, Mode=TwoWay}" />
+            <RadioButton Margin="0,14,0,0" IsChecked="{Binding SourceIsFiles, Mode=TwoWay}">
+                <RadioButton.Style>
+                    <Style TargetType="RadioButton" BasedOn="{StaticResource {x:Type RadioButton}}">
+                        <Setter Property="Content" Value="Files I pick" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding OneSourceFileOnly}" Value="True">
+                                <Setter Property="Content" Value="A file I pick" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </RadioButton.Style>
+            </RadioButton>
             <StackPanel Margin="26,6,0,0" IsEnabled="{Binding SourceIsFiles}">
                 <StackPanel Orientation="Horizontal">
-                    <Button Style="{StaticResource Button.Ghost}" Content="Add files…"
-                            Command="{Binding BrowseFilesCommand}" />
+                    <Button Command="{Binding BrowseFilesCommand}">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource Button.Ghost}">
+                                <Setter Property="Content" Value="Add files…" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding OneSourceFileOnly}" Value="True">
+                                        <Setter Property="Content" Value="Pick file…" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
                     <Button Style="{StaticResource Button.Ghost}" Content="Clear" Margin="8,0,0,0"
                             Command="{Binding ClearFilesCommand}" />
                 </StackPanel>
@@ -61,9 +94,19 @@
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
-                <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,2,0,0"
-                           MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
-                           Text="Pick one file or several at once. Picked files are not remembered once FE-Buddy closes." />
+                <TextBlock TextWrapping="Wrap" Margin="0,2,0,0"
+                           MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock" BasedOn="{StaticResource Text.Caption}">
+                            <Setter Property="Text" Value="Pick one file or several at once. Picked files are not remembered once FE-Buddy closes." />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding OneSourceFileOnly}" Value="True">
+                                    <Setter Property="Text" Value="One file per run: picking another replaces it. It is not remembered once FE-Buddy closes." />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
             </StackPanel>
         </StackPanel>
     </ctl:Card>

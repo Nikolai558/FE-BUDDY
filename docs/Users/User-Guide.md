@@ -723,39 +723,55 @@ are not carried over: CRC styles lines through the CRC defaults instead.
 
 ### ERAM to GeoJSON tab
 
-Converts the `Geomaps.xml` of an ERAM adaptation export into GeoJSON: a folder per Geomaps file,
-named after it, with a folder inside for each GeoMap (named after its `GeomapId`). Lines, symbols
-(and their labels), text and SAA boundaries and labels are all converted.
+Converts the `Geomaps.xml` of an ERAM adaptation export into GeoJSON, in an `ERAM_TO_GEOJSON`
+folder, laid out and named the way the original ERAM_2_GEOJSON tool did it. Each GeoMap is named
+after its `GeomapId` and the two lines of its button label: `CENTER_CENTER-MAP` (`LL1` / `LL2`
+stand in for a label line the map has none of). Lines, symbols (and every label they have), text
+and SAA boundaries and labels are all converted.
 
 - **Source Files** - `Geomaps.xml` itself, or a remembered folder. The folder can be the whole
   unzipped export: only its Geomaps file is converted, and the other files are listed on the
-  Review tab as left alone.
-- **Output Layout** - how the files are split:
-  - **Object Type and Map Group** - a file per map object, named after its type and map group
-    (`AIRWAY_3`, `SECTOR_12`, `SAA_53`). Objects that share a name share a file when their
-    defaults agree; otherwise the later one gets a numbered file (`AIRWAY_3 (2)`).
-  - **Filter Index and Similar Attributes** - files grouped by filter, kind and look, e.g.
-    `FILTER 05\FILTER 05__Line__BCG 3__Style solid__Thickness 1`. An element with several filters
-    goes under `MULTI FILTERS\`; one whose look cannot be fully worked out goes under
-    `MISSING DEFAULTS\`. Everything in a file draws the same way.
-- **CRC ERAM Defaults Source** - where each file's CRC defaults come from:
+  Review tab as left alone. **One Geomaps file per run**: the maps' folders are named after the
+  maps alone, so a second file's could land on the first's.
+- **Output Layout** - how the files are split (hover each on the tab to see the folders it writes):
+  - **By Filters** - a folder per set of filters, with a file each for its lines, symbols and
+    text: `CENTER_CENTER-MAP\Filter_01\Filter_01_Lines.geojson`, and
+    `Multi-Filter_02_03_08\Multi-Filter_02_03_08_Lines.geojson` for several filters. The fewest
+    files. Everything with those filters goes in, whatever it looks like: the file's CRC defaults
+    are the look most of it shares, and a feature that looks different carries what differs.
+  - **By Attributes** (the default) - a file for everything that looks the same, named after it:
+    `BCG 01_Filters 01_Type AAV_Group 64_Object ZOB3NM_Style Solid_Thick 1_Lines.geojson`, with
+    symbols `…_Style VOR_Font 1_Symbols` and text `…_Font 1_Underline F_X 0_Y 0_Text`. The most
+    files, and the easiest to pick apart and rename for your facility's GeoMaps.
+  - **Raw** - one file per map, straight in `ERAM_TO_GEOJSON`: `CENTER_CENTER-MAP.geojson`. Every
+    feature carries its own look and there are no defaults features; lines are not joined. Handy
+    as a reference to check the other layouts against in CRC.
+- **CRC ERAM Defaults Source** - where the look comes from:
   - **From the XML** - carry over as much as possible: each object's own Line, Symbol and Text
-    defaults, and each element's own overrides.
-  - **From the XML, filling gaps from the card** - the same, but an object with no usable defaults
-    of its own takes the CRC ERAM Defaults on the tab. SAA objects carry no BCG or filters of
+    defaults, with each element's own values laid over them.
+  - **From the XML, filling gaps from the card** - the same, but whatever an object's defaults
+    leave out comes from the CRC ERAM Defaults on the tab. SAA objects carry no BCG or filters of
     their own, so this is the choice that gives them a look in CRC.
   - **From the card only** - ignore the XML's styling and use the tab's CRC ERAM Defaults for
     everything.
 - **CRC ERAM Defaults** - Lines, Symbols and Text panels. They only show, and only need filling
   in, when the card is one of the sources.
-- **Convert GeoMaps** - saves any unsaved settings (you are asked first) and runs.
+- **FE-Buddy Properties** - optional `feb.*` properties naming where each feature came from:
+  `feb.mapObjectType`, `feb.mapGroupId`, `feb.lineObjectId`, `feb.symbolId` (on symbols and their
+  labels) and `feb.saaId`. CRC ignores them.
+- **Convert GeoMaps** - saves any unsaved settings (you are asked first) and runs. **Each run
+  empties `ERAM_TO_GEOJSON` first**, as the original tool did, so it holds only that run's files;
+  if there is anything in it, you are asked before it goes. Move out anything you want to keep.
 
-ERAM's style names become CRC's (`Solid` → `solid`, `RNAVOnlyWaypoint` → `rnavOnlyWaypoint`), and
-every value is checked against what CRC can draw - `DME` symbols, for example, have no CRC style.
-An object whose defaults are missing, incomplete or invalid is listed on the Review tab; a value
-CRC cannot draw is left out, so that feature takes its file's default. ERAM text has no opaque
-background, so its text is never opaque; ERAM's colours and display settings are not carried
-over. Line segments that meet are joined back into lines, including ones written backwards.
+ERAM's style names become CRC's inside the files (`Solid` → `solid`, `RNAVOnlyWaypoint` →
+`rnavOnlyWaypoint`); By Attributes names keep ERAM's spelling. Every value is checked against what
+CRC can draw - `DME` symbols, for example, have no CRC style. An object whose defaults are missing,
+incomplete or invalid is listed on the Review tab, and a value CRC cannot draw is left out. When
+neither an object nor its element gives any filters, the element shows at every filter setting
+(filter `0`), as ERAM shows it. Text ERAM keeps hidden (`DisplaySetting` false) is left out, and
+the Review tab says how much. ERAM text has no opaque background, so its text is never opaque;
+ERAM's colours are not carried over. Line segments that meet are joined back into lines, including
+ones written backwards.
 
 ## Output files
 
@@ -788,13 +804,14 @@ for an example of what it catches:
     │   ├── Publication_Docs\
     │   │   └── Procedure_Changes.md, Procedures.json
     │   └── Upload_to_vNAS\           (only the files marked for vNAS)
-    │       ├── vNAS_Alias.txt        your custom alias files, then the alias files marked for vNAS
+    │       ├── vNAS_Alias.txt        the alias files marked for vNAS, then your custom alias files
     │       └── Geojson\              the GeoJSON files marked for vNAS, laid out as above
     ├── DAT to GeoJSON\               <.dat file name>.geojson, one per converted map
     ├── SCT2 to GeoJSON\
     │   └── <sector file name>\       ARTCC, …, GEO, LABELS, REGIONS (.geojson), SID\, STAR\
-    └── ERAM to GeoJSON\
-        └── <Geomaps file name>\<GeomapId>\   <type>_<group>.geojson, or FILTER nn\ folders
+    └── ERAM_TO_GEOJSON\              emptied at the start of every ERAM run
+        ├── <GeomapId>_<LabelLine1>-<LabelLine2>\   Filter_nn\ folders, or a file per look
+        └── <GeomapId>_<LabelLine1>-<LabelLine2>.geojson   (Raw: one file per map)
 ```
 
 A GeoJSON file marked for vNAS goes to `Upload_to_vNAS` instead of, not as well as, `Geojson`. An

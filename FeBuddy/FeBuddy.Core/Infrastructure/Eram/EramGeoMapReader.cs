@@ -38,8 +38,10 @@ namespace FeBuddy.Core.Infrastructure.Eram;
 /// of <c>60</c> is accepted, as the FAA writes it where a value rounds up.
 /// </para>
 /// <para>
-/// A symbol's own <c>GeoMapText</c> becomes a Text element at the symbol (or where it says). An
-/// SAA's boundary segments become Line elements and its label a Text element, in the SAA's object.
+/// Each of a symbol's own <c>GeoMapText</c>s becomes a Text element at the symbol (or where it
+/// says), carrying the symbol's <c>SymbolId</c>. An SAA's boundary segments become Line elements
+/// and its label a Text element, in the SAA's object, carrying its <c>SaaID</c>. A map's
+/// <c>LabelLine1</c> and <c>LabelLine2</c> are kept with its <c>GeomapId</c>.
 /// </para>
 /// <para>
 /// The file is streamed one object at a time rather than loaded whole, as it can run to hundreds
@@ -130,25 +132,25 @@ public static class EramGeoMapReader
 
 		List<EramGeoMap> maps = [];
 		List<string> problems = [];
-		string? mapName = null;
+		Dictionary<string, string> fields = new(StringComparer.Ordinal);
 		List<EramGeoMapObject>? objects = null;
-		bool inMapId = false;
+		string? field = null;
 
 		while (reader.Read())
 		{
 			switch (reader.NodeType)
 			{
-				case XmlNodeType.Text when inMapId:
-					mapName = reader.Value.Trim();
+				case XmlNodeType.Text when field is not null:
+					fields[field] = reader.Value.Trim();
 					continue;
 
 				case XmlNodeType.EndElement:
-					inMapId = false;
+					field = null;
 
 					if (reader.LocalName == "GeoMapRecord" && objects is not null)
 					{
-						maps.Add(new EramGeoMap(mapName ?? string.Empty, objects));
-						mapName = null;
+						maps.Add(Map(fields, objects));
+						fields.Clear();
 						objects = null;
 					}
 
@@ -166,15 +168,15 @@ public static class EramGeoMapReader
 					// A record with no content closes itself: <GeoMapRecord />.
 					if (reader.IsEmptyElement)
 					{
-						maps.Add(new EramGeoMap(string.Empty, objects));
+						maps.Add(Map(fields, objects));
 						objects = null;
 					}
 
 					break;
 
 				// Its text is the next node; reading it here would move the reader past what follows.
-				case "GeomapId" when objects is not null:
-					inMapId = !reader.IsEmptyElement;
+				case "GeomapId" or "LabelLine1" or "LabelLine2" when objects is not null:
+					field = reader.IsEmptyElement ? null : reader.LocalName;
 					break;
 
 				case "GeoMapObjectType" when objects is not null:
@@ -190,6 +192,13 @@ public static class EramGeoMapReader
 		return new EramGeoMapFile(sourcePath, maps, problems);
 	}
 
+	/// <summary>A map from its record's own fields; a blank label line is none.</summary>
+	private static EramGeoMap Map(Dictionary<string, string> fields, List<EramGeoMapObject> objects) => new(
+		fields.GetValueOrDefault("GeomapId") ?? string.Empty,
+		fields.GetValueOrDefault("LabelLine1") is { Length: > 0 } line1 ? line1 : null,
+		fields.GetValueOrDefault("LabelLine2") is { Length: > 0 } line2 ? line2 : null,
+		objects);
+
 	// ================= one object =================
 
 	private static EramGeoMapObject ReadObject(XElement mapObject, List<string> problems)
@@ -201,7 +210,7 @@ public static class EramGeoMapReader
 			switch (child.Name.LocalName)
 			{
 				case "GeoMapLine":
-					AddLine(child, ReadProperties(child, problems), elements, problems);
+					AddLine(child, ReadProperties(child, problems), Value(child, "LineObjectId"), isSaa: false, elements, problems);
 					break;
 
 				case "GeoMapSymbol":
@@ -209,7 +218,7 @@ public static class EramGeoMapReader
 					break;
 
 				case "GeoMapText":
-					AddText(child, fallback: null, elements, problems);
+					AddText(child, fallback: null, objectId: null, elements, problems);
 					break;
 
 				case "GeoMapSaa":
@@ -227,12 +236,13 @@ public static class EramGeoMapReader
 			elements);
 	}
 
-	private static void AddLine(XElement line, EramProperties overrides, List<EramElement> elements, List<string> problems)
+	private static void AddLine(
+		XElement line, EramProperties overrides, string? objectId, bool isSaa, List<EramElement> elements, List<string> problems)
 	{
 		if (TryReadPosition(line, "StartLatitude", "StartLongitude", out Coordinate start)
 			&& TryReadPosition(line, "EndLatitude", "EndLongitude", out Coordinate end))
 		{
-			elements.Add(new EramElement(EramElementKind.Line, start, end, null, overrides));
+			elements.Add(new EramElement(EramElementKind.Line, start, end, null, overrides) { ObjectId = objectId, IsSaa = isSaa });
 			return;
 		}
 
@@ -247,16 +257,17 @@ public static class EramGeoMapReader
 			return;
 		}
 
-		elements.Add(new EramElement(EramElementKind.Symbol, position, null, null, ReadProperties(symbol, problems)));
+		string? symbolId = Value(symbol, "SymbolId");
+		elements.Add(new EramElement(EramElementKind.Symbol, position, null, null, ReadProperties(symbol, problems)) { ObjectId = symbolId });
 
-		// A symbol's own label is drawn at the symbol unless it gives a position of its own.
-		if (symbol.Element("GeoMapText") is { } label)
+		// Each of a symbol's own labels is drawn at the symbol unless it gives a position of its own.
+		foreach (XElement label in symbol.Elements("GeoMapText"))
 		{
-			AddText(label, position, elements, problems);
+			AddText(label, position, symbolId, elements, problems);
 		}
 	}
 
-	private static void AddText(XElement text, Coordinate? fallback, List<EramElement> elements, List<string> problems)
+	private static void AddText(XElement text, Coordinate? fallback, string? objectId, List<EramElement> elements, List<string> problems)
 	{
 		IReadOnlyList<string> lines = [.. text.Elements("GeoTextStrings").Elements("TextLine").Select(line => line.Value.TrimEnd())];
 
@@ -268,18 +279,20 @@ public static class EramGeoMapReader
 			return;
 		}
 
-		elements.Add(new EramElement(EramElementKind.Text, position, null, lines, ReadProperties(text, problems)));
+		elements.Add(new EramElement(EramElementKind.Text, position, null, lines, ReadProperties(text, problems)) { ObjectId = objectId });
 	}
 
 	private static void AddSaa(XElement saa, List<EramElement> elements, List<string> problems)
 	{
+		string? saaId = Value(saa, "SaaID");
+
 		if (saa.Element("GeoMapSaaBoundary") is { } boundary)
 		{
 			EramProperties overrides = ReadProperties(boundary, problems);
 
 			foreach (XElement segment in boundary.Elements("GeoSaaLinesSegments").Elements("GeoMapSaaLine"))
 			{
-				AddLine(segment, overrides, elements, problems);
+				AddLine(segment, overrides, saaId, isSaa: true, elements, problems);
 			}
 		}
 
@@ -287,12 +300,12 @@ public static class EramGeoMapReader
 		{
 			if (!TryReadPosition(label, "Latitude", "Longitude", out Coordinate position))
 			{
-				problems.Add($"Line {LineOf(label)}: SAA {Value(saa, "SaaID")}'s label has a missing or invalid position and was skipped.");
+				problems.Add($"Line {LineOf(label)}: SAA {saaId}'s label has a missing or invalid position and was skipped.");
 				return;
 			}
 
 			string[] lines = Value(label, "SaaLabel") is { } text ? [text] : [];
-			elements.Add(new EramElement(EramElementKind.Text, position, null, lines, ReadProperties(label, problems)));
+			elements.Add(new EramElement(EramElementKind.Text, position, null, lines, ReadProperties(label, problems)) { ObjectId = saaId, IsSaa = true });
 		}
 	}
 
@@ -314,6 +327,7 @@ public static class EramGeoMapReader
 			Underline = ReadBool(element, "Underline", problems),
 			XOffset = ReadInt(element, "XPixelOffset", problems),
 			YOffset = ReadInt(element, "YPixelOffset", problems),
+			Display = ReadBool(element, "DisplaySetting", problems),
 		};
 
 		return properties.IsEmpty ? EramProperties.None : properties;

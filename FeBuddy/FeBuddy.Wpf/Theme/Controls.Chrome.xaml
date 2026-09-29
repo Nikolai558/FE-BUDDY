@@ -116,6 +116,9 @@
         <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Secondary}" />
         <Setter Property="FontFamily" Value="{DynamicResource Font.Body}" />
         <Setter Property="FontSize" Value="12.5" />
+        <!-- Narrow enough to read as a note. A tool-tip that shows something wide - a folder
+             tree - sets its own: <ToolTip MaxWidth="1000">. -->
+        <Setter Property="MaxWidth" Value="320" />
         <Setter Property="RenderTransformOrigin" Value="0.5,0" />
         <Setter Property="RenderTransform">
             <Setter.Value>
@@ -130,7 +133,6 @@
                             BorderThickness="1"
                             CornerRadius="{DynamicResource Radius.Control}"
                             Padding="14,12"
-                            MaxWidth="320"
                             SnapsToDevicePixels="True">
                         <Border.Effect>
                             <DropShadowEffect BlurRadius="22" ShadowDepth="5" Direction="270"

@@ -273,7 +273,9 @@ the other files still convert. SCT2 to GeoJSON (`SctFileReader` → `SctGeojsonW
 to GeoJSON (`EramGeoMapReader` → `EramGeojsonWriter`, with `EramCrcProperties` turning ERAM's
 styling into validated CRC defaults and overrides) have the same shape. `ConversionFiles` takes an
 optional check on a folder's files, so ERAM picks `Geomaps.xml` out of a whole adaptation export
-(`EramGeoMapReader.IsGeoMapsFile`). Both write lines through
+(`EramGeoMapReader.IsGeoMapsFile`). ERAM differs in two ways: it takes one Geomaps file per run,
+and it empties its `ERAM_TO_GEOJSON` folder once the file has been read, writing the original
+ERAM_2_GEOJSON tool's By Filters / By Attributes / Raw layouts. Both write lines through
 `Domain/Geo/SegmentJoiner`, which joins two-point segments back into lines, merges repeats with
 `LineStringMerger` and splits them with `AntimeridianSplitter`.
 

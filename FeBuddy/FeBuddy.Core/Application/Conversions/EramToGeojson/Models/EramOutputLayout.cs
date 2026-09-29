@@ -1,17 +1,28 @@
 namespace FeBuddy.Core.Application.Conversions.EramToGeojson.Models;
 
-/// <summary>How the ERAM to GeoJSON conversion lays out its files.</summary>
+/// <summary>
+/// How the ERAM to GeoJSON conversion lays out its files - the three layouts of the original
+/// ERAM_2_GEOJSON tool, named as it named them. Every map is <c>&lt;GeomapId&gt;_&lt;LabelLine1&gt;-&lt;LabelLine2&gt;</c>,
+/// e.g. <c>CENTER_CENTER-MAP</c>.
+/// </summary>
 public enum EramOutputLayout
 {
 	/// <summary>
-	/// "Object Type and Map Group": a folder per GeoMap and a file per object, named
-	/// <c>&lt;MapObjectType&gt;_&lt;MapGroupId&gt;</c>. Objects sharing a name and defaults share a file.
+	/// A folder per map, then a folder per set of filters - <c>Filter_01\</c>, or
+	/// <c>Multi-Filter_02_03_08\</c> for several - holding <c>Filter_01_Lines</c>,
+	/// <c>Filter_01_Symbols</c> and <c>Filter_01_Text</c>.
 	/// </summary>
-	ByObject,
+	ByFilters,
 
 	/// <summary>
-	/// "Filter Index and Similar Attributes": a folder per GeoMap, then a file per filter, kind
-	/// and look, so everything in a file draws the same way.
+	/// A folder per map, then a file per shared look, named after it, e.g.
+	/// <c>BCG 01_Filters 01_Type AAV_Group 64_Object ZOB3NM_Style Solid_Thick 1_Lines</c>.
 	/// </summary>
-	ByFilter,
+	ByAttributes,
+
+	/// <summary>
+	/// One file per map, <c>CENTER_CENTER-MAP.geojson</c>, every Feature carrying its own
+	/// properties and no isDefaults Features.
+	/// </summary>
+	Raw,
 }

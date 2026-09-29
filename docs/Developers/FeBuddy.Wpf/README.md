@@ -153,9 +153,9 @@ root - the same rule as `FeBuddy.Core`.
 - **A test for the app's logic:** `FeBuddy.UnitTests/Wpf/`, in folders mirroring these (the app's
   internals are visible to the tests). A test that creates a control runs its body through
   `StaThread.Run`, since WPF controls need a thread of their own. The map's math, GeoJSON reader,
-  home view, ROI view-model and `MapCanvas`, the File Names and Airways tabs' view-models, the
-  sub-service order, the Reset window's view-model, `BesideOrBelow` and `InlineCode` are covered
-  today.
+  home view, ROI view-model and `MapCanvas`, the File Names, Airways and ERAM to GeoJSON tabs'
+  view-models, the sub-service order, the Reset window's view-model, `BesideOrBelow` and
+  `InlineCode` are covered today.
 
 ### Screens
 
@@ -340,12 +340,17 @@ bar and page scroller are shared, and each screen's view-model says what differs
     through `DatToGeojsonService.Run`.
   - **SCT2 to GeoJSON tab** - Lines and Labels panels, nothing of its own. Goes through
     `SctToGeojsonService.Run`.
-  - **ERAM to GeoJSON tab** - reads an ERAM adaptation export's `Geomaps.xml`; its folder
-    summary counts only Geomaps files (`IsSourceFile`), so the whole unzipped export can be the
-    source folder. The output layout (Object Type and Map Group / Filter Index and Similar
-    Attributes) and the CRC defaults source (XML / XML then card / card). Lines, Symbols and Text
-    panels, shown only while the card is a source (`UsesCrcDefaults`); with the XML as the only
-    source nothing on the card is required or sent. Goes through `EramToGeojsonService.Run`.
+  - **ERAM to GeoJSON tab** - reads an ERAM adaptation export's `Geomaps.xml`, one per run
+    (`OneSourceFileOnly`: the Source Files card is worded for one file, picking a file replaces
+    the last, and a folder holding two blocks the run); its folder summary counts only Geomaps
+    files (`IsSourceFile`), so the whole unzipped export can be the source folder. The output
+    layout - the original ERAM_2_GEOJSON tool's By Filters / By Attributes / Raw, each with its
+    folder tree as a tooltip - the CRC defaults source (XML / XML then card / card), and the
+    FE-Buddy Properties card (`IFebPropertySettings`, `EramFebPropertyOptions`). Lines, Symbols
+    and Text panels, shown only while the card is a source (`UsesCrcDefaults`); with the XML as
+    the only source nothing on the card is required or sent. Before a run it asks to empty
+    `ERAM_TO_GEOJSON` when anything is in it (`ConfirmRun`, which the File Conversions screen
+    calls for every tab). Goes through `EramToGeojsonService.Run`.
 - **Dashboard** - the verbatim description box + Discord link + next-cycle line,
   the News feed (from `NewsService`), and a live activity-log viewer over `AppLog`
   (filter chips with counts, minimizable).

@@ -97,7 +97,10 @@ public partial class App : Application
 	{
 		try
 		{
-			var path = Path.Combine(Path.GetTempPath(), "febuddy-wpf-crash.txt");
+			// Beside the day's log, so it is attached with it and removed on uninstall.
+			string directory = AppLog.LogDirectory;
+			Directory.CreateDirectory(directory);
+			var path = Path.Combine(directory, "febuddy-wpf-crash.txt");
 			var sb = new System.Text.StringBuilder();
 			for (Exception? ex = e.Exception; ex is not null; ex = ex.InnerException)
 			{

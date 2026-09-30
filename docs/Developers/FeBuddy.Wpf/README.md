@@ -22,7 +22,7 @@ below is relative to `FeBuddy/FeBuddy.Wpf/` in the repo unless stated otherwise.
   (`FeBuddy.Core.Application.Conversions.*`).
 - On launch, `App.xaml.cs` starts `AppLog`'s file sink then runs
   `LaunchSequence` off the UI thread: clear `%TEMP%\FE-Buddy`, read
-  `UserConfig.json`, look for FE-Buddy 2.x's GitHub token variable, UTC/internet check, version
+  `UserConfig.json`, look for FE-Buddy 2.x's GitHub token variable, delete 2.8.x's dead shortcuts, UTC/internet check, version
   check, the AIRAC data pipeline (`AiracCycleDataCache` - probe/download/parse
   previous/current/next), and the News check. Results land in `AppEnvironment`; every step
   narrates itself in the Dashboard activity log. When the token variable is found, `ShellViewModel`

@@ -72,6 +72,14 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
   class with the hours that airspace is in effect (**HRS**), one schedule per line.
 - AIRAC Service ▸ Review: after a quick run, the duplicate-alias-command check no longer stays on
   "working..." once the run has finished.
+- A crash report is now saved beside the logs, in `%APPDATA%\FE-Buddy\Logs\febuddy-wpf-crash.txt`,
+  instead of loose in `%TEMP%`, so uninstalling FE-BUDDY removes it. FE-BUDDY deletes the old
+  `%TEMP%` copy the next time it starts.
+- Uninstalling FE-BUDDY now also removes the install folder when an early 2.x build left its
+  `FE-BUDDY_LOG.txt` there.
+- If you first installed FE-BUDDY 2.8 or earlier, the extra, blank FE-BUDDY shortcut on your
+  Desktop and in your Start menu is now deleted when FE-BUDDY starts. It pointed at the old copy
+  of FE-BUDDY, which moving to the installer removed.
 - (Dev notes)
   - Every file is UTF-8 without a byte-order mark, and a unit test now fails on any file that has one.
 

@@ -117,10 +117,20 @@ public sealed class MapCanvas : FrameworkElement
 
 	// ======================= dependency properties =========================
 
-	/// <summary>Identifies the <see cref="BaseLayer"/> dependency property.</summary>
-	public static readonly DependencyProperty BaseLayerProperty = DependencyProperty.Register(
-		nameof(BaseLayer), typeof(MapLayer), typeof(MapCanvas),
+	/// <summary>Identifies the <see cref="BaseLayers"/> dependency property.</summary>
+	public static readonly DependencyProperty BaseLayersProperty = DependencyProperty.Register(
+		nameof(BaseLayers), typeof(IEnumerable<MapLayer>), typeof(MapCanvas),
 		new PropertyMetadata(null, OnMapDataChanged));
+
+	/// <summary>Identifies the <see cref="ShowGridlines"/> dependency property.</summary>
+	public static readonly DependencyProperty ShowGridlinesProperty = DependencyProperty.Register(
+		nameof(ShowGridlines), typeof(bool), typeof(MapCanvas),
+		new PropertyMetadata(true, OnMapDataChanged));
+
+	/// <summary>Identifies the <see cref="BaseOpacity"/> dependency property.</summary>
+	public static readonly DependencyProperty BaseOpacityProperty = DependencyProperty.Register(
+		nameof(BaseOpacity), typeof(double), typeof(MapCanvas),
+		new PropertyMetadata(1.0, OnMapDataChanged));
 
 	/// <summary>Identifies the <see cref="Layers"/> dependency property.</summary>
 	public static readonly DependencyProperty LayersProperty = DependencyProperty.Register(
@@ -154,11 +164,28 @@ public sealed class MapCanvas : FrameworkElement
 	/// <summary>Identifies the <see cref="DensityHint"/> dependency property.</summary>
 	public static readonly DependencyProperty DensityHintProperty = DensityHintPropertyKey.DependencyProperty;
 
-	/// <summary>The always-on background layer (state outlines), drawn under everything.</summary>
-	public MapLayer? BaseLayer
+	/// <summary>The background reference layers (US states, coastlines), drawn under everything.</summary>
+	public IEnumerable<MapLayer>? BaseLayers
 	{
-		get => (MapLayer?)GetValue(BaseLayerProperty);
-		set => SetValue(BaseLayerProperty, value);
+		get => (IEnumerable<MapLayer>?)GetValue(BaseLayersProperty);
+		set => SetValue(BaseLayersProperty, value);
+	}
+
+	/// <summary>Whether the latitude / longitude gridlines and their labels are drawn.</summary>
+	public bool ShowGridlines
+	{
+		get => (bool)GetValue(ShowGridlinesProperty);
+		set => SetValue(ShowGridlinesProperty, value);
+	}
+
+	/// <summary>
+	/// How strongly <see cref="BaseLayers"/> are drawn, 0 to 1. It applies to them as one group, so
+	/// where both of them draw the same line (the US coast) it is no stronger than anywhere else.
+	/// </summary>
+	public double BaseOpacity
+	{
+		get => (double)GetValue(BaseOpacityProperty);
+		set => SetValue(BaseOpacityProperty, value);
 	}
 
 	/// <summary>Overlay layers drawn on top of the base, in order.</summary>
@@ -758,11 +785,17 @@ public sealed class MapCanvas : FrameworkElement
 		{
 			dc.DrawRectangle(Theme("Brush.Bg.Sunken", Color.FromRgb(0x07, 0x0B, 0x10)), null, new Rect(0, 0, ActualWidth, ActualHeight));
 
-			GraticuleLines grid = DrawGraticule(dc);
+			GraticuleLines? grid = ShowGridlines ? DrawGraticule(dc) : null;
 
-			if (BaseLayer is { } baseLayer)
+			if (BaseLayers is { } baseLayers)
 			{
-				DrawLayer(dc, baseLayer, labels, heldBack);
+				dc.PushOpacity(Math.Clamp(BaseOpacity, 0.0, 1.0));
+				foreach (MapLayer layer in baseLayers)
+				{
+					DrawLayer(dc, layer, labels, heldBack);
+				}
+
+				dc.Pop();
 			}
 
 			if (Layers is { } layers)
@@ -776,7 +809,10 @@ public sealed class MapCanvas : FrameworkElement
 			DrawNullIsland(dc);
 
 			// Over the layers, so no line hides a grid label.
-			DrawGraticuleLabels(dc, grid);
+			if (grid is { } lines)
+			{
+				DrawGraticuleLabels(dc, lines);
+			}
 		}
 
 		string hint = heldBack.Count == 0 ? string.Empty : "Zoom in to see " + string.Join(", ", heldBack.Distinct());

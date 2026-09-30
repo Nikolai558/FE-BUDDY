@@ -61,7 +61,9 @@
                 CornerRadius="{StaticResource Radius.Control}" ClipToBounds="True">
             <Grid>
                 <ctl:MapCanvas x:Name="Map"
-                               BaseLayer="{Binding State.BaseLayer}"
+                               BaseLayers="{Binding State.BaseMapSettings.Layers}"
+                               BaseOpacity="{Binding State.BaseMapSettings.Opacity}"
+                               ShowGridlines="{Binding State.BaseMapSettings.ShowGridlines}"
                                Layers="{Binding State.Layers}"
                                Roi="{Binding DraftRoi, Mode=TwoWay}"
                                ReferenceRoi="{Binding ReferenceRoi}"
@@ -85,6 +87,40 @@
                         <Button Style="{StaticResource Button.Icon}" Content="{StaticResource Icon.Pin}" Click="OnSetHome" ToolTip="Make this view your home" />
                         <Button Style="{StaticResource Button.Icon}" Content="{StaticResource Icon.FitPage}" Click="OnFitLayers" ToolTip="Fit every layer on the map" />
                         <Button Style="{StaticResource Button.Icon}" Content="{StaticResource Icon.Crop}" Command="{Binding ZoomToRoiCommand}" ToolTip="Zoom to the ROI box" />
+                        <!-- Not clickable while the menu is open: the click that closes it (StaysOpen=False)
+                             would otherwise land here and open it again. -->
+                        <ToggleButton x:Name="BaseMapButton" Style="{StaticResource Toggle.Icon}" Content="{StaticResource Icon.Layers}"
+                                      VerticalAlignment="Center"
+                                      IsHitTestVisible="{Binding IsOpen, ElementName=BaseMapPopup, Converter={StaticResource InverseBool}}"
+                                      IsChecked="{Binding State.BaseMapSettings.IsMenuOpen}"
+                                      ToolTip="Base map: the US states, coastlines and gridlines drawn under everything" />
+                        <Popup x:Name="BaseMapPopup" PlacementTarget="{Binding ElementName=BaseMapButton}" Placement="Bottom"
+                               VerticalOffset="6"
+                               IsOpen="{Binding State.BaseMapSettings.IsMenuOpen, Mode=TwoWay}"
+                               StaysOpen="False" AllowsTransparency="True" PopupAnimation="Fade">
+                            <ctl:Card Header="Base Map" Style="{StaticResource Card.Popup}" Width="280">
+                                <StackPanel>
+                                    <ItemsControl ItemsSource="{Binding State.BaseMapSettings.Toggles}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate DataType="{x:Type vm:BaseMapToggle}">
+                                                <CheckBox Content="{Binding Name}" IsChecked="{Binding IsVisible}" Margin="0,0,0,8" />
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                    <CheckBox Content="Lat / lon gridlines" IsChecked="{Binding State.BaseMapSettings.ShowGridlines}" Margin="0,0,0,8" />
+                                    <DockPanel Margin="0,8,0,4">
+                                        <TextBlock DockPanel.Dock="Right" Text="{Binding State.BaseMapSettings.OpacityText}"
+                                                   Style="{StaticResource Text.Caption}" FontFamily="{StaticResource Font.Mono}" />
+                                        <TextBlock Text="Base map opacity" Style="{StaticResource Text.Caption}" />
+                                    </DockPanel>
+                                    <!-- A binding, not a bare x:Static: that hands Minimum an int, which it refuses. -->
+                                    <Slider Minimum="{Binding Source={x:Static vm:BaseMapSettings.MinOpacityPercent}}" Maximum="100"
+                                            SmallChange="5" LargeChange="10" TickFrequency="5" IsSnapToTickEnabled="True"
+                                            Value="{Binding State.BaseMapSettings.OpacityPercent}"
+                                            ToolTip="How strongly the US states and coastlines are drawn" />
+                                </StackPanel>
+                            </ctl:Card>
+                        </Popup>
                         <Border Style="{StaticResource Map.Overlay.Divider}" />
                         <ToggleButton Style="{StaticResource Toggle.Icon}" Content="{StaticResource Icon.Pane}" VerticalAlignment="Center"
                                       IsChecked="{Binding State.IsPanelOpen}" ToolTip="Show or hide the side panel" />
@@ -356,7 +392,7 @@
                     </ctl:Card>
 
                     <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="2,0,2,8"
-                               Text="The US state outlines are always drawn for reference. Dense layers wait until you zoom in; the map says which." />
+                               Text="The base map (US states, coastlines, gridlines) is set from the layers button on the map's toolbar. Dense layers wait until you zoom in; the map says which." />
                 </StackPanel>
             </ScrollViewer>
         </Border>

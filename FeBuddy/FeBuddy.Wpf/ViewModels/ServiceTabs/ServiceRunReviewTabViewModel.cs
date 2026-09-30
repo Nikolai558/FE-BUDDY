@@ -190,8 +190,18 @@ public sealed class ServiceRunReviewTabViewModel : ServiceTabViewModel
 	/// <param name="subService">The sub-service the report came from.</param>
 	/// <param name="message">What it reported.</param>
 	/// <param name="isComplete">Whether this report means that sub-service has finished.</param>
+	/// <remarks>
+	/// A report that lands once the run has ended is dropped: <see cref="CompleteRun"/> or
+	/// <see cref="FailRun"/> has already settled every step, and a late "working" report would
+	/// otherwise leave a step working after a finished run.
+	/// </remarks>
 	public void ReportStep(string subService, string message, bool isComplete)
 	{
+		if (!IsRunning)
+		{
+			return;
+		}
+
 		RunStep? step = Steps.FirstOrDefault(s => string.Equals(s.Name, subService, StringComparison.OrdinalIgnoreCase));
 
 		if (step is null)

@@ -154,8 +154,8 @@ root - the same rule as `FeBuddy.Core`.
   internals are visible to the tests). A test that creates a control runs its body through
   `StaThread.Run`, since WPF controls need a thread of their own. The map's math, GeoJSON reader,
   home view, ROI view-model and `MapCanvas`, the File Names, Airways and ERAM to GeoJSON tabs'
-  view-models, the sub-service order, the Reset window's view-model, `BesideOrBelow` and
-  `InlineCode` are covered today.
+  view-models, the sub-service order, the Reset window's view-model, the Review tab's run feed,
+  `BesideOrBelow` and `InlineCode` are covered today.
 
 ### Screens
 

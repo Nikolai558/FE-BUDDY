@@ -446,12 +446,13 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 
 		try
 		{
+			// Made here, on the UI thread, Progress<T> hands each report to the UI thread itself: one
+			// hop, queued ahead of this method's own continuation, so every report lands before
+			// CompleteRun. A second hop (a BeginInvoke in the handler) let the last report of a quick
+			// run - "Checking the alias files for duplicate commands" - land after CompleteRun and
+			// leave its step "working..." for good. The library reports 100 when a sub-service is done.
 			var progress = new Progress<AiracServiceProgress>(p =>
-				_dispatcher.BeginInvoke(() =>
-				{
-					// The library reports 100 when a sub-service is done with its work.
-					_runReview.ReportStep(p.SubService, p.Message, p.PercentComplete >= 100);
-				}));
+				_runReview.ReportStep(p.SubService, p.Message, p.PercentComplete >= 100));
 
 			AiracServiceResult result = await AiracService.RunAsync(settings, progress);
 

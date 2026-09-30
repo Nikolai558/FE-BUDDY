@@ -15,6 +15,25 @@ News concerning all things FE-Buddy will be posted here with the most recent pos
 
 ## 2026-09-29
 <!--
+PostId: 2026-09-29.2
+-->
+
+**Version 3.0.0-alpha.3 Compiled!**
+
+**On alpha.2?** It won't offer you alpha.3 until you open Settings ▸ Updates, choose **Alpha** and press **Save**.
+
+- Choose how far airway lines stop short of fixes and NAVAIDs
+- ERAM to GeoJSON writes the original ERAM_2_GEOJSON tool's layouts
+- Your custom aliases now replace FE-BUDDY's in `vNAS_Alias.txt`
+- **Update available!** badge, plus Reset and Uninstall in Settings
+- Lots of smaller fixes and polish
+
+Check it out [HERE](https://github.com/Nikolai558/FE-BUDDY/releases/tag/3.0.0-alpha.3)!!!
+
+---
+
+## 2026-09-29
+<!--
 PostId: 2026-09-29.1
 -->
 

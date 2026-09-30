@@ -5,9 +5,12 @@ Every FE-BUDDY 3.x release, newest first. When a release is made, its section he
 FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/FE-BUDDY/blob/2.9.3/ChangeLog.md).
 
 <!--
-  Adding an entry: put one bullet under "## Unreleased" in the same pull request as the change.
+  Adding an entry: put one bullet under "## Unreleased" in the same pull request as the change,
+  under the "### " heading it belongs to (add the heading if it isn't there yet; after a release,
+  "## Unreleased" starts empty, with no headings). Headings used so far: Updates, AIRAC Service,
+  File Conversions, Settings, Installing and uninstalling, Look and feel, Dev notes (always last).
   Write it for users, not developers: what changed and why they care, in one line. Issue numbers
-  become links ("Bug #215 - ..."). Put developer-only changes under a "(Dev notes)" bullet. Link
+  become links ("Bug #215 - ..."). Put developer-only changes under "### Dev notes". Link
   a doc at the release's tag (blob/<version>/docs/...), never at a branch.
   Sections are separated by a "---" line, with a blank line above and below it (without the blank
   line above, Markdown turns the line before it into a heading). The release notes leave it out.
@@ -15,94 +18,115 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
 -->
 
 ## Unreleased
-- Feature #110 - Airways ▸ Buffer Airway Waypoints: choose how far lines stop short of fixes and
-  of NAVAIDs (0 to 10 NM each; 2.5 NM and 5 NM to start with, as before).
-- Bug #275 - **Testers on 3.0.0-alpha.2 are not offered newer alphas. To get them, open
-  Settings ▸ Updates, choose Alpha and press Save** (or download the new alpha from the releases
-  page). 3.0.0-alpha.2 checks the Stable channel unless Alpha is saved, whatever you chose in
-  2.x, and pressing Save in Settings for anything else stored Stable too. From this version on,
-  the channel follows the version you're running until you choose one, and Save stores it only
-  when you change it. If you pressed Save on alpha.2 without choosing Alpha, Stable is still
-  saved after you update, so choose Alpha there once.
+
+---
+
+## 3.0.0-alpha.3
+### Updates
+- Bug #275 - **On 3.0.0-alpha.2? You won't be offered newer alphas until you open Settings ▸
+  Updates, choose Alpha and press Save** (or download the new alpha from the releases page).
+  - Why: alpha.2 checks the Stable channel unless Alpha is saved, whatever you chose in 2.x, and
+    pressing Save in Settings for any other reason saved Stable too.
+  - From this version on, the channel follows the version you're running until you choose one,
+    and Save stores the channel only when you change it.
+  - If you pressed Save on alpha.2 without choosing Alpha, Stable is still saved after you update,
+    so choose Alpha once more.
 - Feature #266 - Your update channel now matches the version you're running until you choose one
-  (an alpha is on Alpha, a beta on Beta, and so on). Saving a different channel in Settings ▸
-  Updates checks it straight away, and choosing a more stable channel while on a pre-release
-  offers to take you back to that channel's latest release (**Go back now**).
-- Bug #151 - GeoJSON lines from sector files and ERAM GeoMaps written backwards (each segment
-  ending where the one before it starts) are now joined into whole lines instead of one line per
-  segment, so the files are smaller and dashed lines no longer restart their pattern at every
-  segment.
-- Folder names and paths in on-screen descriptions and messages (`Upload_to_vNAS`, `Aliases`, the
-  output folder in Settings, …) now show in a code font, the way `code` looks in News posts.
-- Tick boxes and options no longer hide the first underscore of a file name (`Fix_Symbols.geojson`
-  showed as `FixSymbols.geojson`).
-- Scroll bars can be grabbed anywhere across their width; before, only a sliver at their left edge
-  responded.
+  (an alpha is on Alpha, a beta on Beta, and so on).
+  - Saving a different channel in Settings ▸ Updates checks it straight away.
+  - Choosing a more stable channel while on a pre-release offers to take you back to that
+    channel's latest release (**Go back now**).
+- When an update is available, a red **Update available!** badge appears beside the version at
+  the top of the window, taking turns with the new version's number. Click it to update. After
+  **Later** it turns amber for the rest of the session. There is still no pop-up.
+
+### AIRAC Service
+- Feature #110 - Airways ▸ Buffer Airway Waypoints: choose how far lines stop short of fixes and
+  of NAVAIDs (0 to 10 NM each; they start at 2.5 NM and 5 NM, as before).
+- `Airports.txt`: each airport's card now ends with:
+  - its attendance hours (**ATNDCE HRS**, left blank for an airport with no tower), and
+  - its airspace class with the hours that airspace is in effect (**HRS**), one schedule per line.
+    This used to be in the middle of the card.
+- `vNAS_Alias.txt` now lists FE-BUDDY's aliases first, between a start line and an end line, and
+  your custom alias files after them. CRC uses the last copy of a command, so **your commands now
+  replace FE-BUDDY's** instead of the other way round.
+  - Reusing a `vNAS_Alias.txt` (old layout or new) as your custom file still leaves its FE-BUDDY
+    aliases out.
+  - The Review tab lists the commands yours replace.
 - Procedures ▸ Procedures at Any Airport: the procedure box now shows what you type or pick, and a
   new **Cancel** button clears it.
-- The Outputs cards' tick box now reads just **Alias file**, and the "At least one output must stay
-  on" note is gone (FE-BUDDY still stops you turning off the last output, and says why).
-- Settings ▸ GeoJSON Files no longer has an FE-Buddy Properties section: they are chosen on each
-  tab's FE-Buddy Properties card.
-- `vNAS_Alias.txt` now has FE-BUDDY's aliases first, between a start line and an end line, and your
-  custom alias files after them. CRC uses the last copy of a command, so a command of yours now
-  replaces FE-BUDDY's instead of the other way round. A `vNAS_Alias.txt` you reuse as your custom
-  file, old layout or new, still has its FE-BUDDY aliases left out, and the Review tab lists the
-  commands yours replace.
-- The AIRAC Service sub-services are in a new order, on the General tab and in the tab rail: ARTCC
-  Boundaries, Airports, Airways, Arrivals, Departures, NAVAIDs, Fixes, Procedures, Telephony, Wx
-  Stations, vNAS Alias Upload.
-- CRC ERAM Defaults card: each file's panel is darker than the card, and with several types (the
-  NAVAID types, Airways High / Low / Other) each type has a box of its own. Panels side by side
-  line up.
-- Airways ▸ High and Low Files: each drop-down sits closer to its airway type.
-- File Names: the new-name box sits to the right of its file, and drops under it only when the
-  window is too narrow.
-- Airways: a hand-edited settings file with no output switched on now loads the defaults, as the
-  other tabs already did.
-- When an update is available, a red **Update available!** badge appears beside the version at
-  the top of the window, taking turns with the new version's number; click it to update. After
-  **Later** it turns amber for the rest of the session. There is still no pop-up.
-- Settings ▸ **Reset FE-Buddy** starts over as if FE-BUDDY had just been installed: it deletes the
-  downloaded AIRAC, Telephony and Wx Station data, logs and settings backups, and - if you choose -
-  your settings (offering to save a copy first) and saved credentials, then restarts.
-- File Conversions ▸ ERAM to GeoJSON now writes the original ERAM_2_GEOJSON tool's layouts, with
-  its names:
+- The sub-services are in a new order, on the General tab and in the tab rail: ARTCC Boundaries,
+  Airports, Airways, Arrivals, Departures, NAVAIDs, Fixes, Procedures, Telephony, Wx Stations,
+  vNAS Alias Upload.
+- Fixed: on the Review tab, the duplicate-alias-command check stayed on "working..." after a quick
+  run had finished.
+- Fixed: Airways didn't load the defaults from a hand-edited settings file with no output switched
+  on (the other tabs already did).
+
+### File Conversions
+- ERAM to GeoJSON now writes the same layouts as the original ERAM_2_GEOJSON tool, with the same
+  file names:
   - **By Filters** (`CENTER_CENTER-MAP\Filter_01\Filter_01_Lines.geojson`,
     `Multi-Filter_02_03_08\…`), **By Attributes** (`BCG 01_Filters 01_Type AAV_Group 64_Object
-    ZOB3NM_Style Solid_Thick 1_Lines.geojson`) and **Raw** (`CENTER_CENTER-MAP.geojson`); hover a
-    layout on the tab to see its folders. They replace Object Type and Map Group and Filter Index
-    and Similar Attributes, which load as By Attributes and By Filters.
-  - Output goes to `ERAM_TO_GEOJSON` (was `ERAM to GeoJSON\<source file>`), which each run
-    empties first after asking you, and the tab takes one Geomaps file per run.
-  - The CRC ERAM Defaults still apply to every layout, and optional `feb.*` properties
-    (`feb.mapObjectType`, `feb.lineObjectId`, `feb.symbolId`, …) take the place of the old tool's
-    `E2G_*` ones.
-  - Every label on a symbol is converted (only the first was before), text ERAM keeps hidden is
-    left out (it used to be drawn), and an element with no filters at all shows at every filter
-    setting (filter 0).
-  - `ConsoleCommandControl.txt` is back: with the export's `ConsoleCommandControl.xml` beside
-    `Geomaps.xml`, each run lists its brightness and filter menus - each button's label, position
-    and groups, and which maps use each menu - as the old tool did.
-- `Airports.txt`: each airport's card now ends with its attendance hours (**ATNDCE HRS**, left
-  blank for an airport with no tower) and, moved down from the middle of the card, its airspace
-  class with the hours that airspace is in effect (**HRS**), one schedule per line.
-- AIRAC Service ▸ Review: after a quick run, the duplicate-alias-command check no longer stays on
-  "working..." once the run has finished.
-- Feature #267 - **Uninstall FE-Buddy…**, on Settings' Reset FE-Buddy card, removes FE-BUDDY the same way
-  Windows does from Installed apps. It says first what goes (the program, its data, your settings and saved
-  credentials) and what stays (your output folder), and offers to save a copy of your settings.
-  If Windows can't remove a saved credential, the uninstall now says how to delete it yourself.
-- A crash report is now saved beside the logs, in `%APPDATA%\FE-Buddy\Logs\febuddy-wpf-crash.txt`,
-  instead of loose in `%TEMP%`, so uninstalling FE-BUDDY removes it. FE-BUDDY deletes the old
-  `%TEMP%` copy the next time it starts.
-- Uninstalling FE-BUDDY now also removes the install folder when an early 2.x build left its
+    ZOB3NM_Style Solid_Thick 1_Lines.geojson`) and **Raw** (`CENTER_CENTER-MAP.geojson`). Hover
+    over a layout on the tab to see its folders.
+  - These replace Object Type, Map Group, Filter Index and Similar Attributes. Saved settings that
+    used them load as By Attributes or By Filters.
+  - Output goes to `ERAM_TO_GEOJSON` (was `ERAM to GeoJSON\<source file>`). Each run asks before
+    emptying it, and converts one Geomaps file.
+  - The CRC ERAM Defaults still apply to every layout. Optional `feb.*` properties
+    (`feb.mapObjectType`, `feb.lineObjectId`, `feb.symbolId`, …) replace the old tool's `E2G_*`
+    ones.
+  - Every label on a symbol is converted (before, only the first was), text ERAM keeps hidden is
+    left out (it used to be drawn), and an element with no filters shows at every filter setting
+    (filter 0).
+  - `ConsoleCommandControl.txt` is back: put the export's `ConsoleCommandControl.xml` beside
+    `Geomaps.xml` and each run lists the brightness and filter menus - each button's label,
+    position and groups, and which maps use each menu - as the old tool did.
+- Bug #151 - Lines in sector files and ERAM GeoMaps that are written backwards (each segment ends
+  where the one before it starts) are now joined into whole lines instead of one line per segment.
+  The files are smaller, and dashed lines no longer restart their pattern at every segment.
+
+### Settings
+- **Reset FE-Buddy** starts over as if FE-BUDDY had just been installed. It deletes the downloaded
+  AIRAC, Telephony and Wx Station data, logs and settings backups, and - if you choose - your
+  settings (offering to save a copy first) and saved credentials, then restarts.
+- GeoJSON Files no longer has an FE-Buddy Properties section: choose them on each tab's FE-Buddy
+  Properties card instead.
+
+### Installing and uninstalling
+- Feature #267 - **Uninstall FE-Buddy…**, on Settings' Reset FE-Buddy card, removes FE-BUDDY the
+  same way Windows does from Installed apps.
+  - It first tells you what goes (the program, its data, your settings and saved credentials) and
+    what stays (your output folder), and offers to save a copy of your settings.
+  - If Windows can't remove a saved credential, it tells you how to delete it yourself.
+- Uninstalling now also removes the install folder when an early 2.x build left its
   `FE-BUDDY_LOG.txt` there.
 - If you first installed FE-BUDDY 2.8 or earlier, the extra, blank FE-BUDDY shortcut on your
   Desktop and in your Start menu is now deleted when FE-BUDDY starts. It pointed at the old copy
-  of FE-BUDDY, which moving to the installer removed.
-- (Dev notes)
-  - Every file is UTF-8 without a byte-order mark, and a unit test now fails on any file that has one.
+  of FE-BUDDY, which the move to the installer removed.
+- Crash reports are now saved with the logs, in `%APPDATA%\FE-Buddy\Logs\febuddy-wpf-crash.txt`,
+  instead of in `%TEMP%`, so uninstalling removes them. FE-BUDDY deletes the old `%TEMP%` copy the
+  next time it starts.
+
+### Look and feel
+- Folder names and paths in descriptions and messages (`Upload_to_vNAS`, `Aliases`, the output
+  folder in Settings, …) now show in a code font, like `code` in News posts.
+- The Outputs cards' tick box now reads just **Alias file**, and the "At least one output must stay
+  on" note is gone (FE-BUDDY still stops you turning off the last output, and says why).
+- CRC ERAM Defaults card: each file's panel is darker than the card, files with several types (the
+  NAVAID types, Airways High / Low / Other) have a box for each type, and panels side by side line
+  up.
+- Airways ▸ High and Low Files: each drop-down sits closer to its airway type.
+- File Names: the new-name box sits to the right of its file, and moves under it only when the
+  window is too narrow.
+- Scroll bars can be grabbed anywhere across their width (before, only a sliver at the left edge
+  worked).
+- Fixed: tick boxes and options hid the first underscore of a file name (`Fix_Symbols.geojson`
+  showed as `FixSymbols.geojson`).
+
+### Dev notes
+- Every file is UTF-8 without a byte-order mark, and a unit test now fails on any file that has one.
 
 ---
 

@@ -178,17 +178,13 @@
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
-                <!-- brand mark: a tiny radar scope.
+                <!-- brand mark: the FEB logo.
                      IsHitTestVisibleInChrome lets this strip receive hover so the
                      tooltips fire (the rest of the caption stays a drag handle). -->
                 <StackPanel Grid.Column="0" Orientation="Horizontal" Margin="16,0,0,0"
                             VerticalAlignment="Center"
                             shell:WindowChrome.IsHitTestVisibleInChrome="True">
-                    <Grid Width="18" Height="18">
-                        <Ellipse Stroke="{StaticResource Brush.Accent}" StrokeThickness="1.4" />
-                        <Ellipse Width="8" Height="8" Stroke="{StaticResource Brush.Accent}" StrokeThickness="1.2" Opacity="0.7" />
-                        <Path Data="M9,9 L17,4" Stroke="{StaticResource Brush.Accent}" StrokeThickness="1.4" />
-                    </Grid>
+                    <ctl:BrandMark Width="24" Height="24" />
 
                     <!-- Tooltip content is update state only. -->
                     <TextBlock Text="FE-BUDDY"

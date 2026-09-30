@@ -111,7 +111,7 @@
                     <RadioButton GroupName="EramDefaults" Content="From the XML" IsChecked="{Binding DefaultsFromXml, Mode=TwoWay}" />
                 </ctl:Option>
                 <ctl:Option Margin="0,10,0,0"
-                            Description="Use the XML's defaults, and the CRC ERAM Defaults below for whatever they leave out - SAA objects, for one, carry no BCG or filters.">
+                            Description="Use the XML's defaults, and the CRC ERAM Defaults below for whatever they leave out or give that CRC can't draw - SAA objects, for one, carry no BCG or filters.">
                     <RadioButton GroupName="EramDefaults" Content="From the XML, filling gaps from the card" IsChecked="{Binding DefaultsFromXmlThenCard, Mode=TwoWay}" />
                 </ctl:Option>
                 <ctl:Option Margin="0,10,0,0"

@@ -782,8 +782,9 @@ written and the Review tab says there was no rundown; one that cannot be read is
   - **From the XML** - carry over as much as possible: each object's own Line, Symbol and Text
     defaults, with each element's own values laid over them.
   - **From the XML, filling gaps from the card** - the same, but whatever an object's defaults
-    leave out comes from the CRC ERAM Defaults on the tab. SAA objects carry no BCG or filters of
-    their own, so this is the choice that gives them a look in CRC.
+    leave out, or give that CRC can't draw (a `DME` symbol style, say), comes from the CRC ERAM
+    Defaults on the tab. SAA objects carry no BCG or filters of their own, so this is the choice
+    that gives them a look in CRC.
   - **From the card only** - ignore the XML's styling and use the tab's CRC ERAM Defaults for
     everything.
 - **CRC ERAM Defaults** - Lines, Symbols and Text panels. They only show, and only need filling
@@ -797,8 +798,11 @@ written and the Review tab says there was no rundown; one that cannot be read is
 
 ERAM's style names become CRC's inside the files (`Solid` → `solid`, `RNAVOnlyWaypoint` →
 `rnavOnlyWaypoint`); By Attributes names keep ERAM's spelling. Every value is checked against what
-CRC can draw - `DME` symbols, for example, have no CRC style. An object whose defaults are missing,
-incomplete or invalid is listed on the Review tab, and a value CRC cannot draw is left out. When
+CRC can draw - `DME` symbols, for example, have no CRC style. A value CRC cannot draw is left out,
+and an object whose defaults are missing, incomplete or invalid is listed on the Review tab with
+what CRC will draw instead: from the XML, the value CRC assigns itself (a `vor` symbol, BCG 1); from
+the XML filling gaps from the card, the card's. An element's own value CRC cannot draw gives way to
+its object's. When
 neither an object nor its element gives any filters, the element shows at every filter setting
 (filter `0`), as ERAM shows it. Text ERAM keeps hidden (`DisplaySetting` false) is left out, and
 the Review tab says how much. ERAM text has no opaque background, so its text is never opaque;

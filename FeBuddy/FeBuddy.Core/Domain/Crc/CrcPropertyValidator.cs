@@ -62,6 +62,42 @@ public static class CrcPropertyValidator
 		"otherWaypoints", "airport", "satelliteAirport", "tacan"
 	];
 
+	/// <summary>
+	/// What CRC draws a Line with when neither the Feature nor its file's <c>isLineDefaults</c> sets
+	/// a property. <c>filters</c> is never auto-assigned.
+	/// </summary>
+	public static readonly IReadOnlyDictionary<string, string> LineAutoAssigned = new Dictionary<string, string>
+	{
+		["bcg"] = "1",
+		["style"] = "solid",
+		["thickness"] = "1",
+	};
+
+	/// <summary>
+	/// What CRC draws a Symbol with when neither the Feature nor its file's <c>isSymbolDefaults</c>
+	/// sets a property. <c>filters</c> is never auto-assigned.
+	/// </summary>
+	public static readonly IReadOnlyDictionary<string, string> SymbolAutoAssigned = new Dictionary<string, string>
+	{
+		["bcg"] = "1",
+		["style"] = "vor",
+		["size"] = "1",
+	};
+
+	/// <summary>
+	/// What CRC draws Text with when neither the Feature nor its file's <c>isTextDefaults</c> sets a
+	/// property. <c>filters</c> and <c>text</c> are never auto-assigned.
+	/// </summary>
+	public static readonly IReadOnlyDictionary<string, string> TextAutoAssigned = new Dictionary<string, string>
+	{
+		["bcg"] = "1",
+		["size"] = "1",
+		["underline"] = "false",
+		["xOffset"] = "0",
+		["yOffset"] = "0",
+		["opaque"] = "false",
+	};
+
 	/// <summary>Validates a Line Feature's CRC properties.</summary>
 	/// <param name="properties">The properties to check.</param>
 	/// <returns>Every violation found, or <see cref="CrcPropertyValidationResult.Success"/>.</returns>

@@ -51,9 +51,10 @@
             </StackPanel>
         </DataTemplate>
 
-        <!-- one error line -->
+        <!-- one error or advisory line. Here and in the message groups, a name or value between
+             backticks shows in the code look (bhv:InlineCode). -->
         <DataTemplate x:Key="ErrorRow">
-            <TextBlock Text="{Binding}" Style="{StaticResource Text.Prose}" Margin="0,3" />
+            <TextBlock bhv:InlineCode.Text="{Binding}" Style="{StaticResource Text.Prose}" Margin="0,3" />
         </DataTemplate>
 
         <!-- one group of a sub-service's messages: its heading (a severity, or e.g. an airway ID)
@@ -70,7 +71,7 @@
                     <ItemsControl ItemsSource="{Binding Messages}" Margin="0,4,0,0">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding}" Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,1" />
+                                <TextBlock bhv:InlineCode.Text="{Binding}" Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,1" />
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>

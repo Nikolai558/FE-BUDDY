@@ -3,7 +3,6 @@ using FeBuddy.Core.Application.Updates;
 using FeBuddy.Core.Application.Updates.Models;
 using FeBuddy.Core.Domain.Airac;
 using FeBuddy.Core.Domain.Airac.Models;
-using FeBuddy.Core.Infrastructure.Configuration;
 using FeBuddy.Core.Infrastructure.Platform;
 using FeBuddy.Core.Infrastructure.Platform.Models;
 

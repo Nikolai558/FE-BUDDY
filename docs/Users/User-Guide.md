@@ -778,7 +778,8 @@ written and the Review tab says there was no rundown; one that cannot be read is
   - **Raw** - one file per map, straight in `ERAM_TO_GEOJSON`: `CENTER_CENTER-MAP.geojson`. Every
     feature carries its own look and there are no defaults features; lines are not joined. Handy
     as a reference to check the other layouts against in CRC.
-- **CRC ERAM Defaults Source** - where the look comes from:
+- **CRC ERAM Defaults Source** - where the look comes from (hover each on the tab for what it does,
+  with an example):
   - **From the XML** - carry over as much as possible: each object's own Line, Symbol and Text
     defaults, with each element's own values laid over them.
   - **From the XML, filling gaps from the card** - the same, but whatever an object's defaults

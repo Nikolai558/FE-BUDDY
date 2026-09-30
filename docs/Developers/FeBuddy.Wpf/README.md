@@ -345,7 +345,8 @@ bar and page scroller are shared, and each screen's view-model says what differs
     the last, and a folder holding two blocks the run); its folder summary counts only Geomaps
     files (`IsSourceFile`), so the whole unzipped export can be the source folder. The output
     layout - the original ERAM_2_GEOJSON tool's By Filters / By Attributes / Raw, each with its
-    folder tree as a tooltip - the CRC defaults source (XML / XML then card / card), and the
+    folder tree as a tooltip - the CRC defaults source (XML / XML then card / card, each with a
+    plain-words tooltip and an example), and the
     FE-Buddy Properties card (`IFebPropertySettings`, `EramFebPropertyOptions`). Lines, Symbols
     and Text panels, shown only while the card is a source (`UsesCrcDefaults`); with the XML as
     the only source nothing on the card is required or sent. Before a run it asks to empty

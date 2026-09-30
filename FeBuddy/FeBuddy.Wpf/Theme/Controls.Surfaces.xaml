@@ -4,6 +4,7 @@
         ctl:Card        (implicit) the standard rounded panel, with an optional title
         Card.Warn       ctl:Card - amber: something the user should know before going on
         Card.Danger     ctl:Card - red: something failed or blocks the run
+        Card.Accent     ctl:Card - soft amber with an amber edge: a light, friendly heads-up
         Card.Popup      ctl:Card - a floating panel (flyout) with a drop shadow
         ctl:SectionHeader       (implicit) a card or section title
         SectionHeader.Group     ctl:SectionHeader - a heading for a group of controls in a card
@@ -118,6 +119,11 @@
 
     <Style x:Key="Card.Danger" TargetType="ctl:Card" BasedOn="{StaticResource {x:Type ctl:Card}}">
         <Setter Property="Background" Value="{DynamicResource Brush.Danger.Soft}" />
+    </Style>
+
+    <Style x:Key="Card.Accent" TargetType="ctl:Card" BasedOn="{StaticResource {x:Type ctl:Card}}">
+        <Setter Property="Background" Value="{DynamicResource Brush.Accent.Soft}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource Brush.Accent.Line}" />
     </Style>
 
     <!-- Floats above the page (the Systems flyout). The margin leaves the shadow room to

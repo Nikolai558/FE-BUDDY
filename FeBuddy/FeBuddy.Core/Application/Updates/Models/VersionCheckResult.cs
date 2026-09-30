@@ -57,16 +57,40 @@ public record VersionCheckResult(
 	public ReleaseInstaller? LatestInstaller { get; init; }
 
 	/// <summary>
+	/// The newest release on <see cref="Channel"/> - the one <see cref="LatestVersion"/> names - for the
+	/// update window when there are no <see cref="NewerReleases"/> (going back to it). <see langword="null"/>
+	/// when the check did not complete or found none.
+	/// </summary>
+	public ReleaseSummary? LatestRelease { get; init; }
+
+	/// <summary>
+	/// Whether the user can go back to <see cref="LatestVersion"/>: they are running a published
+	/// pre-release from a less stable channel than <see cref="Channel"/> (see
+	/// <see cref="RunningPreReleaseChannel"/>), and that channel's newest release is older. The
+	/// installer allows it, since the installed version is a pre-release.
+	/// </summary>
+	public bool CanGoBack => RunningPreReleaseChannel is not null && LatestVersion is not null;
+
+	/// <summary>
 	/// Parses the user's update channel from its stored name (<c>General.UpdateChannel</c>:
 	/// <c>Stable</c>, <c>ReleaseCandidate</c>, <c>Beta</c> or <c>Alpha</c>), falling back to
 	/// <see cref="ReleaseChannel.Stable"/> for a missing or unrecognized value.
 	/// </summary>
 	/// <param name="value">The stored channel name (case-insensitive).</param>
 	/// <returns>The parsed channel, or <see cref="ReleaseChannel.Stable"/>.</returns>
-	public static ReleaseChannel ParseChannel(string? value) =>
+	public static ReleaseChannel ParseChannel(string? value) => ParseChannel(value, ReleaseChannel.Stable);
+
+	/// <summary>
+	/// Parses the user's update channel from its stored name, falling back to <paramref name="fallback"/>
+	/// for a missing or unrecognized value.
+	/// </summary>
+	/// <param name="value">The stored channel name (case-insensitive).</param>
+	/// <param name="fallback">The channel when none is stored (<see cref="UpdateChannelSetting.DefaultFor"/>).</param>
+	/// <returns>The parsed channel, or <paramref name="fallback"/>.</returns>
+	public static ReleaseChannel ParseChannel(string? value, ReleaseChannel fallback) =>
 		Enum.GetValues<ReleaseChannel>()
 			.Where(channel => string.Equals(channel.ToString(), value?.Trim(), StringComparison.OrdinalIgnoreCase))
-			.DefaultIfEmpty(ReleaseChannel.Stable)
+			.DefaultIfEmpty(fallback)
 			.First();
 }
 

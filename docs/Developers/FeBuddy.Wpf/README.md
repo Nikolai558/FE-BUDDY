@@ -366,7 +366,9 @@ bar and page scroller are shared, and each screen's view-model says what differs
   Region of Interest (`RoiPickerWindow`), GeoJSON Files (Maximum Coordinate Precision 5/6/7 dp,
   File Layout; FE-Buddy properties are chosen on each tab), Credentials (`CredentialsViewModel`, `CredentialEditorWindow`),
   FE-Buddy's GitHub Requests (the GitHub token FE-Buddy's own requests use), Updates (the four
-  channels with their tooltips, "check now" and "get the latest stable installer"), and Reset
+  channels with their tooltips, "check now" and "open the releases page"; saving a new channel
+  checks it, and from a pre-release a more stable channel opens `UpdateWindow` in its "go back"
+  mode), and Reset
   FE-Buddy (`ResetWindow` / `ResetViewModel` ask what to keep; Settings saves a copy of the
   settings if wanted, records the reset with Core's `AppDataReset` and restarts through
   `Shell/AppRestart`; `App.OnStartup` carries it out before anything is opened), with an Uninstall

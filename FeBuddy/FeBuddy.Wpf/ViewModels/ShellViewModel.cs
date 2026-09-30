@@ -488,8 +488,9 @@ public sealed class ShellViewModel : ObservableObject
 
 	private void OpenUpdateWindow()
 	{
+		// An update, or - from Settings, after choosing a more stable channel - a release to go back to.
 		VersionCheckResult? version = AppEnvironment.Version;
-		if (version is null || !version.UpdateAvailable)
+		if (version is null || !(version.UpdateAvailable || version.CanGoBack))
 		{
 			return;
 		}
@@ -510,7 +511,8 @@ public sealed class ShellViewModel : ObservableObject
 			return;
 		}
 
-		if (vm.UserDeclined)
+		// Declining to go back leaves no update waiting, so nothing to colour.
+		if (vm.UserDeclined && !vm.IsGoingBack)
 		{
 			_updateDeclinedThisSession = true;
 			RefreshVersionState();

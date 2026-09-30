@@ -103,10 +103,8 @@ public static class AppEnvironment
 			LaunchUtcSource = time.Source;
 			RaiseChanged();
 
-			ReleaseChannel channel = VersionCheckResult.ParseChannel(
-				UserConfigFile.GetValue(UserConfigKeys.UpdateChannel));
-
 			string currentVersion = Version?.CurrentVersion ?? AppVersion.Current;
+			ReleaseChannel channel = UpdateChannelSetting.Read(currentVersion);
 
 			Version = await VersionCheck
 				.RunAsync(currentVersion, channel, time.HasInternetConnection, HttpClientForTesting, cancellationToken)

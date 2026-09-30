@@ -88,6 +88,7 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 	private bool _isCheckingForUpdates;
 
 	private ReleaseChannel _channel;
+	private ReleaseChannel _savedChannel;
 	private string? _selectedFacility;
 	private string _outputDir = string.Empty;
 	private bool _addFeBuddyFolder = true;
@@ -510,7 +511,10 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 		"Early builds with features still being worked on. Things may be unfinished, change from one build to the next, " +
 		"or not work at all.";
 
-	/// <summary>The update channel. <see cref="ReleaseChannel.Stable"/> unless the developers tell you otherwise.</summary>
+	/// <summary>
+	/// The update channel. Until the user chooses one, the channel of the build they are running
+	/// (<see cref="UpdateChannelSetting"/>); saving a different one checks it straight away.
+	/// </summary>
 	public ReleaseChannel Channel
 	{
 		get => _channel;
@@ -618,22 +622,24 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 			return;
 		}
 
-		if (version.UpdateAvailable)
+		// The check reads the saved channel; say so if the page shows a different, unsaved one.
+		bool isUnsaved = Channel != version.Channel;
+		string unsaved = isUnsaved ? $" Save to check the {Channel.DisplayName()} channel instead." : string.Empty;
+
+		// An update, or - running a pre-release on the more stable channel saved here - that channel's
+		// latest release to go back to (not while another channel waits to be saved).
+		if (version.UpdateAvailable || (version.CanGoBack && !isUnsaved))
 		{
 			_openUpdateWindow?.Invoke();
 			return;
 		}
 
-		// The check reads the saved channel; say so if the page shows a different, unsaved one.
-		string unsaved = Channel != version.Channel ? $" Save to check the {Channel.DisplayName()} channel instead." : string.Empty;
 		string current = version.CurrentVersion.TrimStart('v', 'V');
 
 		if (version.RunningPreReleaseChannel is { } running)
 		{
 			Toast.Success("No update available",
-				$"v{current} is a {running.DisplayName()} release, newer than the latest {version.Channel.DisplayName()} release (v{version.LatestVersion}). " +
-				$"{version.Channel.DisplayName()} updates start again once one is newer than v{current}; to go back now, install " +
-				$"v{version.LatestVersion} from its release page.{unsaved}");
+				$"v{current} is a {running.DisplayName()} release, newer than the latest {version.Channel.DisplayName()} release (v{version.LatestVersion}).{unsaved}");
 		}
 		else if (version.IsAheadOfLatestRelease)
 		{
@@ -652,7 +658,14 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 
 	private void Save()
 	{
-		UserConfigFile.TrySetValue(ChannelKey, Channel.ToString());
+		// Written only when changed: until the user picks one, the channel follows the running build.
+		bool channelChanged = Channel != _savedChannel;
+		if (channelChanged)
+		{
+			UserConfigFile.TrySetValue(ChannelKey, Channel.ToString());
+		}
+
+
 		UserConfigFile.TrySetValue(OutputDirKey, OutputDirectory);
 		UserConfigFile.TrySetValue(AddFolderKey, AddFeBuddyOutputFolder ? "Y" : "N");
 		UserConfigFile.TrySetValue(PrecisionKey, CoordinatePrecision.ToString(CultureInfo.InvariantCulture));
@@ -683,9 +696,17 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 		// Applied as soon as it is saved, so the next file written follows it without a restart.
 		OutputFormatting.PrettyPrintGeojson = PrettyPrintGeojson;
 
+		_savedChannel = Channel;
 		_savedState = SavedStateSnapshot.Of(CurrentValues());
 		IsDirty = false;
 		Toast.Success("Settings saved", "Written to UserConfig.json.");
+
+		// A new channel is checked straight away: its newer releases, or - running a pre-release after
+		// choosing a more stable channel - its latest release to go back to.
+		if (channelChanged && AppEnvironment.HasInternetConnection)
+		{
+			CheckForUpdates();
+		}
 	}
 
 	/// <summary>
@@ -694,7 +715,8 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 	/// </summary>
 	private void LoadFromConfig()
 	{
-		Channel = VersionCheckResult.ParseChannel(UserConfigFile.GetValue(ChannelKey));
+		Channel = UpdateChannelSetting.Read(AppVersion.Current);
+		_savedChannel = Channel;
 		SelectedFacility = Blank(UserConfigFile.GetValue(ArtccKey));
 		OutputDirectory = OutputPreferences.Directory;
 		AddFeBuddyOutputFolder = OutputPreferences.AddFeBuddyOutputFolder;

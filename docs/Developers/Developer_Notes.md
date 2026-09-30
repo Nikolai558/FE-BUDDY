@@ -212,10 +212,22 @@
 
 - Allow users to select:
   - Participate in `alpha`, `beta`, `release candidate`, or `stable only` version updates.
-    - `stable only` is selected by default.
-	- Saved as `General`.`UpdateChannel` in config file.
-  - Rollback from an alpha or beta version to the latest stable version.
-  - Check for updates now (`hasInternetConnection` dependent).
+    - Until the user chooses one, the channel matches the running build: an alpha is on Alpha, a
+      beta on Beta, a release candidate on Release Candidate, anything else on Stable
+      (`UpdateChannelSetting`).
+	- Saved as `General`.`UpdateChannel` in config file - only once the user changes it, so the
+	  default keeps following the build.
+  - Saving a different channel checks for updates on it straight away (`hasInternetConnection`
+    dependent): newer releases open the update window.
+  - Going back: running a pre-release and saving a more stable channel offers that channel's latest
+    release, which is older (`VersionCheckResult.CanGoBack`) - e.g. from `3.0.0-alpha.2`, saving
+    Stable offers `2.9.3`. The update window opens in its "go back" mode (heading, **Go back now**,
+    a warning that the pre-release's settings and features may not carry over) and installs it
+    through the same path as an update (`REINSTALLMODE=amus`, so a 2.x MSI installs completely).
+    Declining keeps the build and the channel; that channel's updates resume once it has a newer
+    release. Never offered at launch, only from Settings.
+  - Check for updates now (`hasInternetConnection` dependent). Also offers going back, as above.
+  - Open the Releases Page, for everyone.
 - Save button:
   - Writes settings to the `UserConfig` file.
 

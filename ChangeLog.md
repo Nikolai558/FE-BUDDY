@@ -29,6 +29,8 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
 
 ### Look and feel
 - Names and values in the Review tab's messages (`vor`, `bcg`) show in the code font.
+- Review tab: warnings and routine messages have a gap between each, and each group has a copy
+  button that copies all its messages, ready to paste.
 
 ---
 

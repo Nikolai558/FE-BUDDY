@@ -669,7 +669,8 @@ asks what to do first:
 - **Advisories** - output you might expect but will not find, and why (for example "nothing
   matched your filters").
 - **Results** - per sub-service, what it produced, with its warnings and routine messages each
-  behind a **Show** button.
+  behind a **Show** button. Each group of messages has a copy button beside its count, which
+  copies every message in it, a blank line between each - handy for pasting into a bug report.
 - **Output** - every file written (collapsed to a count; a Departures or Arrivals run writes
   thousands) and **Open output folder**, which opens the run's `AIRAC_<cycle>` folder.
 

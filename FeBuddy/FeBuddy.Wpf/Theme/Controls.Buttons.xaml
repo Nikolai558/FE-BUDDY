@@ -323,6 +323,8 @@
 
     <!-- =========================== COPY BUTTON ======================= -->
     <Style x:Key="Copy.Button" TargetType="{x:Type ctl:CopyButton}">
+        <!-- The default tooltip; a button that says more of what it copies sets its own. -->
+        <Setter Property="ToolTip" Value="Copy" />
         <Setter Property="Width" Value="24" />
         <Setter Property="Height" Value="20" />
         <Setter Property="Background" Value="Transparent" />

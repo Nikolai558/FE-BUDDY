@@ -21,11 +21,15 @@ public sealed class CopyButton : Button
 	/// <summary>Identifies the read-only <see cref="Copied"/> dependency property.</summary>
 	public static readonly DependencyProperty CopiedProperty = CopiedKey.DependencyProperty;
 
-	/// <summary>Creates the button with its "Copy" tooltip.</summary>
+	/// <summary>Creates the button. Its "Copy" tooltip comes from the Copy.Button style.</summary>
+	/// <remarks>
+	/// Not set here: a value set in the constructor is a local value, which outranks one set on the
+	/// button inside a template (a Review tab message group's "Copy these 3 messages"), so that
+	/// one would never show. A style's value gives way to both.
+	/// </remarks>
 	public CopyButton()
 	{
 		Click += OnClick;
-		ToolTip = "Copy";
 	}
 
 	/// <summary>Text placed on the clipboard when clicked.</summary>

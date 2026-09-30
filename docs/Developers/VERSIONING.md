@@ -69,7 +69,9 @@ A user's update channel (Settings > Updates, stored as `General.UpdateChannel`) 
 channel they accept: Stable is offered only stable releases, ReleaseCandidate adds `-rc`, Beta
 adds `-beta`, Alpha is offered everything. Settings offers all four, as Stable, Release Candidate,
 Beta and Alpha. GitHub's "pre-release" checkbox is not consulted - the tag alone decides, exactly
-as in FE-Buddy 2.x's updater.
+as in FE-Buddy 2.x's updater. Until the user chooses a channel, it is the running build's
+(`UpdateChannelSetting`: an alpha is on Alpha, a beta on Beta, an rc on Release Candidate, anything
+else - a `-dev` build included - on Stable); Settings saves it only once the user changes it.
 
 ---
 
@@ -98,9 +100,14 @@ check reports it as "ahead of the latest release", and `-dev` counts as the Alph
 - **The running version** is `FeBuddy.Core.Services.General.AppVersion.Current` - the entry
   assembly's Product version. Never `Assembly.GetName().Version`: it is numeric-only and does not
   compare correctly with a tag.
-- **The version check** (`VersionCheck`) reads the repo's last 30 releases, parses each tag as
+- **The version check** (`VersionCheck`) reads the repo's last 100 releases, parses each tag as
   strict SemVer (a leading `v` is allowed; anything else is skipped), keeps the releases on the
   user's channel, and compares by SemVer precedence (`FeBuddy.Versioning.ProductVersion`).
+- **Going back** - running a published pre-release after saving a more stable channel in
+  Settings, the check's newest release on that channel is older (`VersionCheckResult.CanGoBack`).
+  Settings then opens the update window in its "go back" mode, which installs that release
+  exactly like **Update now** below. Only from Settings (saving the channel, or Check for updates
+  now), never at launch.
 - **Update now** (the update window) downloads the latest release's `.msi` into
   `%TEMP%\FE-Buddy\Updates` (`UpdateInstaller`), runs `msiexec /i <msi> REINSTALLMODE=amus`
   elevated with its normal UI, and closes FE-Buddy so the files can be replaced; the MSI
@@ -127,10 +134,11 @@ Before installing, the MSI's `EnforceVersionPolicy` custom action compares the i
 **Rolling back** (the allowed downgrade) needs every file copied even though the installed ones
 are newer; otherwise Windows Installer skips them and then deletes them with the old product.
 3.x MSIs set `REINSTALLMODE=amus` for this, so rolling back to any 3.x release just works. Rolling
-back to a **2.x** release uses 2.x's MSI, which does not set it: run it as
-`msiexec /i FE-BUDDY-2.9.0.msi REINSTALLMODE=amus`, or uninstall 3.x first (2.x's "Revert to
-Latest Stable" does the latter). A plain `msiexec /i` of the 2.x MSI over 3.x leaves the install
-without `FE-BUDDY.exe`.
+back to a **2.x** release uses 2.x's MSI, which does not set it. FE-Buddy's own "go back" (above)
+passes it on the command line, so choosing Stable in Settings and **Go back now** installs 2.x
+completely. By hand, run it as `msiexec /i FE-BUDDY-2.9.0.msi REINSTALLMODE=amus`, or uninstall 3.x
+first (2.x's "Revert to Latest Stable" does the latter). A plain `msiexec /i` of the 2.x MSI over
+3.x leaves the install without `FE-BUDDY.exe`.
 
 The rule lives in `FeBuddy.Versioning` (netstandard2.0), shared by the app and by the custom
 action (net472, because WiX's custom-action host only loads .NET Framework). Its tests are in

@@ -21,7 +21,7 @@ Written by **Settings** (except `NewsLastOpen` and `LegacyGitHubTokenNoticeShown
 
 | Key | Values | Default | Read by |
 |---|---|---|---|
-| `UpdateChannel` | `Stable`, `ReleaseCandidate`, `Beta`, `Alpha` | `Stable` | launch version check, Settings. Kept on this PC: never exported. |
+| `UpdateChannel` | `Stable`, `ReleaseCandidate`, `Beta`, `Alpha` | none: the running build's channel (`UpdateChannelSetting`) | launch version check, Settings. Written only when the user changes it. Kept on this PC: never exported. |
 | `NewsLastOpen` | the newest News `PostId` seen, e.g. `2026-08-30.3` | none | launch News check. Written when the user opens News. Kept on this PC: never exported. |
 | `PrettyPrintGeojson` | `Y` / `N` | `N` | `OutputFormatting` (every GeoJSON writer) |
 | `DefaultOutputDirectory` | a folder path | the Desktop | every run, through `Shell/OutputPreferences`. An AIRAC Service run writes into `AIRAC_<cycle>` inside it; a file conversion into its own folder. |

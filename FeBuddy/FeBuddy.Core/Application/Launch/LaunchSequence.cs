@@ -119,7 +119,7 @@ public static class LaunchSequence
 		IProgress<LaunchProgress>? progress,
 		CancellationToken cancellationToken)
 	{
-		ReleaseChannel channel = VersionCheckResult.ParseChannel(UserConfigFile.GetValue(UserConfigKeys.UpdateChannel));
+		ReleaseChannel channel = UpdateChannelSetting.Read(currentVersion);
 
 		VersionCheckResult version = await RunStepAsync(
 			progress, LaunchStep.CheckVersion, "Checking for a newer version",

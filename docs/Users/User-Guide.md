@@ -965,9 +965,17 @@ The cards, top to bottom:
     - *Alpha* - every release, alphas included: early builds that may be unfinished or not work.
 
     Only pick a channel other than Stable if a developer asks you to; the card says so while one
-    is chosen.
-  - **Check for updates now**, and **Get the latest stable installer** (opens the releases page -
-    use it to go back to stable from a pre-release).
+    is chosen. Until you choose one, it matches the version you are running: an alpha is on Alpha,
+    a beta on Beta, and so on.
+
+    When you **Save** a different channel, FE-Buddy checks it straight away. If you are running a
+    pre-release (an alpha, beta or release candidate) and choose a more stable channel, it offers
+    to take you back to that channel's latest release - for example, from an alpha back to the
+    latest stable release. **Go back now** downloads and installs it; settings and features added
+    in the pre-release may not carry over. **Later** keeps the version you have, and updates on the
+    new channel start again once it has a newer release.
+  - **Check for updates now**, and **Open the Releases Page** (every FE-Buddy release, to download
+    one yourself).
 - **Reset FE-Buddy** - start over as if FE-Buddy had just been installed. **Reset FE-Buddy…**
   opens a window that says what goes and asks what to keep:
   - **Always deleted:** the AIRAC data FE-Buddy has downloaded, the Telephony and Wx Station data,

@@ -26,6 +26,11 @@ namespace FeBuddy.Wpf.ViewModels;
 /// warns if closing would lose unfinished work. A copy the MSI did not install (a dev build), a
 /// release with no MSI, or a failed download opens the release page instead. <b>Later</b>
 /// dismisses (and colours the version text amber for the session), or cancels a download.
+/// <para>
+/// The same window takes the user back (<see cref="IsGoingBack"/>): running a pre-release after
+/// choosing a more stable channel in Settings (<see cref="VersionCheckResult.CanGoBack"/>), it offers
+/// that channel's newest release, which is older, through the same download and installer.
+/// </para>
 /// </remarks>
 public sealed class UpdateWindowViewModel : ObservableObject
 {
@@ -44,8 +49,11 @@ public sealed class UpdateWindowViewModel : ObservableObject
 	private string? _progressText;
 	private string? _errorText;
 
-	/// <summary>Creates the view-model from a completed version check that found an update.</summary>
-	/// <param name="version">The version-check result. <see cref="VersionCheckResult.UpdateAvailable"/> is expected to be <see langword="true"/>.</param>
+	/// <summary>Creates the view-model from a completed version check that found an update, or a release to go back to.</summary>
+	/// <param name="version">
+	/// The version-check result: <see cref="VersionCheckResult.UpdateAvailable"/> or, to go back,
+	/// <see cref="VersionCheckResult.CanGoBack"/> is expected to be <see langword="true"/>.
+	/// </param>
 	/// <param name="isMsiInstalled">Whether this copy is the MSI-installed one (only that copy installs updates itself).</param>
 	/// <param name="unfinishedWork">Describes what closing FE-Buddy now would lose (a running job, unsaved edits); empty when nothing.</param>
 	public UpdateWindowViewModel(VersionCheckResult version, bool isMsiInstalled, Func<IReadOnlyList<string>> unfinishedWork)
@@ -57,13 +65,14 @@ public sealed class UpdateWindowViewModel : ObservableObject
 		_installer = version.LatestInstaller;
 		_unfinishedWork = unfinishedWork;
 
+		IsGoingBack = !version.UpdateAvailable && version.CanGoBack;
 		CurrentVersion = string.IsNullOrWhiteSpace(version.CurrentVersion) ? "dev" : version.CurrentVersion.TrimStart('v', 'V');
 		LatestVersion = version.LatestVersion ?? "unknown";
 		Channel = version.Channel.DisplayName();
 		ReleaseUrl = string.IsNullOrWhiteSpace(version.LatestReleaseUrl) ? ReleasesPage : version.LatestReleaseUrl!;
 
-		IReadOnlyList<ReleaseSummary> releases = version.NewerReleases.Count > 0
-			? version.NewerReleases
+		IReadOnlyList<ReleaseSummary> releases = version.NewerReleases.Count > 0 ? version.NewerReleases
+			: version.LatestRelease is { } latest ? [latest]
 			: [new ReleaseSummary(LatestVersion, null, false, null, ReleaseUrl)];
 
 		Releases = [.. releases.Select((release, index) => new ReleaseNotesItem(release, isFirst: index == 0))];
@@ -93,6 +102,18 @@ public sealed class UpdateWindowViewModel : ObservableObject
 	/// </summary>
 	public Func<IReadOnlyList<string>, bool>? ConfirmCloseWithUnfinishedWork { get; set; }
 
+	/// <summary>
+	/// <see langword="true"/> when the window takes the user back to <see cref="LatestVersion"/>, an
+	/// older release on the more stable channel they chose, rather than updating.
+	/// </summary>
+	public bool IsGoingBack { get; }
+
+	/// <summary>The window's heading.</summary>
+	public string Heading => IsGoingBack ? $"Go back to the latest {Channel} release" : "Update available";
+
+	/// <summary>The label beside <see cref="LatestVersion"/>.</summary>
+	public string LatestLabel => IsGoingBack ? "Go back to" : "Latest";
+
 	/// <summary>The running application version.</summary>
 	public string CurrentVersion { get; }
 
@@ -115,14 +136,15 @@ public sealed class UpdateWindowViewModel : ObservableObject
 	public bool CanInstall => _isMsiInstalled && _installer is not null && !_useReleasePage;
 
 	/// <summary>The main button's label.</summary>
-	public string UpdateButtonText => IsBusy ? "Downloading…" : CanInstall ? "Update now" : "Open release page";
+	public string UpdateButtonText => IsBusy ? "Downloading…" : !CanInstall ? "Open release page" : IsGoingBack ? "Go back now" : "Update now";
 
 	/// <summary>The secondary button's label: Later, or Cancel while downloading.</summary>
 	public string LaterButtonText => IsBusy ? "Cancel" : "Later";
 
 	/// <summary>What the main button will do.</summary>
 	public string FooterText =>
-		CanInstall ? "Update now downloads the installer and runs it. FE-Buddy closes while it installs and opens again when it finishes; your settings are kept."
+		CanInstall && IsGoingBack ? $"Go back now downloads the installer for v{LatestVersion} and runs it. FE-Buddy closes while it installs and opens again when it finishes. Settings and features added in the pre-release you are leaving may not carry over."
+		: CanInstall ? "Update now downloads the installer and runs it. FE-Buddy closes while it installs and opens again when it finishes; your settings are kept."
 		: !_isMsiInstalled ? "This copy of FE-Buddy was not installed by the FE-Buddy installer (a development build), so the update opens the release page instead."
 		: _installer is null ? "This release has no installer attached, so the update opens the release page."
 		: "Download the installer from the release page and run it; your settings are kept.";
@@ -238,7 +260,9 @@ public sealed class UpdateWindowViewModel : ObservableObject
 			AppLog.Info("UpdateInstaller", "Update cancelled at the administrator prompt.");
 			IsBusy = false;
 			ProgressText = null;
-			ErrorText = "Update cancelled - installing needs administrator permission. Choose Update now to try again.";
+			ErrorText = IsGoingBack
+				? "Cancelled - installing needs administrator permission. Choose Go back now to try again."
+				: "Update cancelled - installing needs administrator permission. Choose Update now to try again.";
 			return;
 		}
 		catch (Exception ex)
@@ -247,7 +271,9 @@ public sealed class UpdateWindowViewModel : ObservableObject
 			return;
 		}
 
-		AppLog.Info("UpdateInstaller", $"Started the installer for v{LatestVersion}; closing FE-Buddy.");
+		AppLog.Info("UpdateInstaller", IsGoingBack
+			? $"Started the installer to go back to v{LatestVersion}; closing FE-Buddy."
+			: $"Started the installer for v{LatestVersion}; closing FE-Buddy.");
 		InstallerStarted = true;
 		CloseRequested?.Invoke(this, EventArgs.Empty);
 	}

@@ -15,6 +15,17 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
 -->
 
 ## Unreleased
+- Bug #275 - **Testers on 3.0.0-alpha.2 are not offered newer alphas. To get them, open
+  Settings ▸ Updates, choose Alpha and press Save** (or download the new alpha from the releases
+  page). 3.0.0-alpha.2 checks the Stable channel unless Alpha is saved, whatever you chose in
+  2.x, and pressing Save in Settings for anything else stored Stable too. From this version on,
+  the channel follows the version you're running until you choose one, and Save stores it only
+  when you change it. If you pressed Save on alpha.2 without choosing Alpha, Stable is still
+  saved after you update, so choose Alpha there once.
+- Feature #266 - Your update channel now matches the version you're running until you choose one
+  (an alpha is on Alpha, a beta on Beta, and so on). Saving a different channel in Settings ▸
+  Updates checks it straight away, and choosing a more stable channel while on a pre-release
+  offers to take you back to that channel's latest release (**Go back now**).
 - Folder names and paths in on-screen descriptions and messages (`Upload_to_vNAS`, `Aliases`, the
   output folder in Settings, …) now show in a code font, the way `code` looks in News posts.
 - Tick boxes and options no longer hide the first underscore of a file name (`Fix_Symbols.geojson`

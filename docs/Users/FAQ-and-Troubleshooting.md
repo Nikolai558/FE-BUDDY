@@ -153,8 +153,8 @@ walks through the token settings step by step. The usual reasons:
 
 You are installing an **older stable** version over a newer one, which the installer blocks so a
 stable install never silently goes backwards. If you are on a pre-release (alpha, beta or rc),
-going back to the latest stable **is** allowed: use Settings ▸ Updates ▸
-**Get the latest stable installer**.
+going back to the latest stable **is** allowed: in Settings ▸ Updates choose **Stable**, **Save**,
+and choose **Go back now** in the window that opens.
 
 ### FE-Buddy crashed
 

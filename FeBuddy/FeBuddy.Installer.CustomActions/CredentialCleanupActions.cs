@@ -10,7 +10,7 @@ namespace FeBuddy.Installer.CustomActions;
 /// <summary>
 /// Removes FE-Buddy's saved credentials from Windows Credential Manager on a full uninstall, the way
 /// UninstallCleanup.wxs removes its data folders. Never on an upgrade (Package.wxs conditions it
-/// like the folder cleanup), so credentials survive every update.
+/// like the folder cleanup), so credentials survive every update. Any it cannot remove, it says so.
 /// </summary>
 /// <remarks>
 /// This project targets .NET Framework and cannot reference FeBuddy.Core, so the few native calls
@@ -26,7 +26,10 @@ public static class CredentialCleanupActions
 	private const int CredTypeGeneric = 1;
 	private const int ErrorNotFound = 1168;
 
-	/// <summary>Deletes every generic credential named <see cref="TargetPrefix"/>…; never fails the uninstall.</summary>
+	/// <summary>
+	/// Deletes every generic credential named <see cref="TargetPrefix"/>…; never fails the uninstall.
+	/// When any is left, the user is told how to delete it themselves.
+	/// </summary>
 	/// <param name="session">The installer session.</param>
 	/// <returns>Always <see cref="ActionResult.Success"/>: a credential left behind must not block an uninstall.</returns>
 	[CustomAction]
@@ -46,13 +49,45 @@ public static class CredentialCleanupActions
 			}
 
 			session.Log($"RemoveFeBuddyCredentials: removed {removed} of {targets.Count} credential(s).");
+
+			if (removed < targets.Count)
+			{
+				WarnCredentialsLeft(session);
+			}
 		}
 		catch (Exception ex)
 		{
 			session.Log($"RemoveFeBuddyCredentials: could not remove credentials, continuing. {ex}");
+			WarnCredentialsLeft(session);
 		}
 
 		return ActionResult.Success;
+	}
+
+	/// <summary>
+	/// Tells the user some credentials are still saved and how to delete them. Windows Installer
+	/// shows it only when the uninstall has a UI; a silent uninstall just logs it.
+	/// </summary>
+	private static void WarnCredentialsLeft(Session session)
+	{
+		const string Text =
+			"FE-BUDDY could not remove all of its saved credentials from Windows Credential Manager. " +
+			"To delete them yourself, open Credential Manager, choose Windows Credentials, and remove " +
+			"each entry whose name starts with FE-Buddy:credential:";
+
+		session.Log("RemoveFeBuddyCredentials: " + Text);
+
+		try
+		{
+			using Record record = new(0) { FormatString = Text };
+			session.Message(
+				InstallMessage.Warning | (InstallMessage)MessageButtons.OK | (InstallMessage)MessageIcon.Warning,
+				record);
+		}
+		catch (Exception ex)
+		{
+			session.Log($"RemoveFeBuddyCredentials: could not show the warning. {ex.Message}");
+		}
 	}
 
 	private static List<string> FindTargets()

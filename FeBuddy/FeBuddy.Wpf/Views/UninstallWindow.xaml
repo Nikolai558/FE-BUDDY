@@ -1,0 +1,103 @@
+<!--
+    UninstallWindow  -  Settings ▸ Uninstall FE-Buddy: what the uninstall removes and what it leaves,
+    the settings that are lost (with Save a copy first), and what closing now would lose. The body
+    scrolls on a short screen, so the buttons always stay on it. Backs onto UninstallViewModel.
+-->
+<ctl:ChromeWindow x:Class="FeBuddy.Wpf.Views.UninstallWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:FeBuddy.Wpf.ViewModels"
+        xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
+        mc:Ignorable="d"
+        d:DataContext="{d:DesignInstance vm:UninstallViewModel}"
+        Title="Uninstall FE-Buddy"
+        Width="560" SizeToContent="Height"
+        MaxHeight="{Binding Height, Source={x:Static SystemParameters.WorkArea}}"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False"
+        FontFamily="{StaticResource Font.Body}"
+        Background="{StaticResource Brush.Bg.Base}">
+
+    <Border Padding="24">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <TextBlock Grid.Row="0" Text="Uninstall FE-Buddy"
+                       FontFamily="{StaticResource Font.Display}" FontSize="18" FontWeight="Bold"
+                       Foreground="{StaticResource Brush.Text.Primary}" />
+
+            <ScrollViewer x:Name="Body" Grid.Row="1" Margin="0,10,0,0"
+                          VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource Text.Body}" TextWrapping="Wrap"
+                               Text="Windows removes FE-Buddy the same way it does from Settings ▸ Apps ▸ Installed apps." />
+
+                    <!-- ============ removed ============ -->
+                    <ctl:SectionHeader Style="{StaticResource SectionHeader.Group}" Label="Removed" Margin="0,16,0,6" />
+                    <ItemsControl ItemsSource="{Binding Removed}" Focusable="False">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Style="{StaticResource Text.Body}" TextWrapping="Wrap" Margin="0,0,0,2"
+                                           Text="{Binding StringFormat='•  {0}'}" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <!-- ============ kept ============ -->
+                    <ctl:SectionHeader Style="{StaticResource SectionHeader.Group}" Label="Not Touched" Margin="0,16,0,6" />
+                    <ItemsControl ItemsSource="{Binding Source={x:Static vm:UninstallViewModel.Kept}}" Focusable="False">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Style="{StaticResource Text.Body}" TextWrapping="Wrap" Margin="0,0,0,2"
+                                           Text="{Binding StringFormat='•  {0}'}" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <!-- ============ settings: only when there are some ============ -->
+                    <StackPanel Visibility="{Binding HasSettings, Converter={StaticResource BoolToVis}}">
+                        <ctl:SectionHeader Style="{StaticResource SectionHeader.Group}" Label="Your Settings" Margin="0,16,0,6" />
+                        <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap"
+                                   Foreground="{StaticResource Brush.Warn}"
+                                   Text="{Binding Source={x:Static vm:UninstallViewModel.SettingsLoss}, StringFormat='You lose: {0}'}" />
+                        <ctl:Option Margin="0,10,0,0" Description="{Binding Source={x:Static vm:UninstallViewModel.CopyNote}}">
+                            <CheckBox Content="Save a copy of my settings first" IsChecked="{Binding SaveCopyFirst}" />
+                        </ctl:Option>
+                    </StackPanel>
+
+                    <!-- ============ what closing now would lose ============ -->
+                    <StackPanel Visibility="{Binding HasUnfinishedWork, Converter={StaticResource BoolToVis}}">
+                        <ctl:SectionHeader Style="{StaticResource SectionHeader.Group}" Label="Also Lost When FE-Buddy Closes" Margin="0,16,0,6" />
+                        <ItemsControl ItemsSource="{Binding UnfinishedWork}" Focusable="False">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Style="{StaticResource Text.Body}" TextWrapping="Wrap" Margin="0,0,0,2"
+                                               Foreground="{StaticResource Brush.Warn}"
+                                               Text="{Binding StringFormat='•  {0}'}" />
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </StackPanel>
+            </ScrollViewer>
+
+            <TextBlock Grid.Row="2" Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,16,0,0"
+                       Text="{Binding Source={x:Static vm:UninstallViewModel.NextSteps}}" />
+
+            <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+                <Button Content="Cancel" Style="{StaticResource Button.Ghost}"
+                        Command="{Binding CancelCommand}" MinWidth="96" Margin="0,0,10,0" IsDefault="True" />
+                <Button Content="I understand, uninstall" Style="{StaticResource Button.Primary}"
+                        Command="{Binding ConfirmCommand}" MinWidth="150" />
+            </StackPanel>
+        </Grid>
+    </Border>
+</ctl:ChromeWindow>

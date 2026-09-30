@@ -369,7 +369,10 @@ bar and page scroller are shared, and each screen's view-model says what differs
   channels with their tooltips, "check now" and "get the latest stable installer"), and Reset
   FE-Buddy (`ResetWindow` / `ResetViewModel` ask what to keep; Settings saves a copy of the
   settings if wanted, records the reset with Core's `AppDataReset` and restarts through
-  `Shell/AppRestart`; `App.OnStartup` carries it out before anything is opened). Everything but
+  `Shell/AppRestart`; `App.OnStartup` carries it out before anything is opened), with an Uninstall
+  FE-Buddy… button across from Reset's (MSI installs only, `Button.Ghost.Danger`: `UninstallWindow` / `UninstallViewModel` say what goes, Settings
+  saves a copy of the settings if wanted, starts `msiexec` with Core's `AppUninstall` arguments -
+  not elevated - and shuts FE-Buddy down). Everything but
   Credentials persists to `UserConfig.json` with the page's Save; credentials live in Windows
   Credential Manager and are saved as they change (see [Credentials](../Credentials.md)).
 - **Info** - Manual, Change log, Issues & requests as real links (About deleted).

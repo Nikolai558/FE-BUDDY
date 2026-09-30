@@ -72,6 +72,10 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
   class with the hours that airspace is in effect (**HRS**), one schedule per line.
 - AIRAC Service ▸ Review: after a quick run, the duplicate-alias-command check no longer stays on
   "working..." once the run has finished.
+- Feature #267 - **Uninstall FE-Buddy…**, on Settings' Reset FE-Buddy card, removes FE-BUDDY the same way
+  Windows does from Installed apps. It says first what goes (the program, its data, your settings and saved
+  credentials) and what stays (your output folder), and offers to save a copy of your settings.
+  If Windows can't remove a saved credential, the uninstall now says how to delete it yourself.
 - A crash report is now saved beside the logs, in `%APPDATA%\FE-Buddy\Logs\febuddy-wpf-crash.txt`,
   instead of loose in `%TEMP%`, so uninstalling FE-BUDDY removes it. FE-BUDDY deletes the old
   `%TEMP%` copy the next time it starts.

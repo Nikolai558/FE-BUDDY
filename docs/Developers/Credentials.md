@@ -24,7 +24,8 @@ downloads from a protected website uses one.
   - "Remove all" clears every FE-Buddy credential.
 - **A full uninstall removes them** (custom action `RemoveFeBuddyCredentials`); an upgrade never
   does. The action runs after `InstallFinalize`, once the uninstall has succeeded, so an uninstall
-  that is cancelled or fails keeps them.
+  that is cancelled or fails keeps them. If it cannot remove one, it logs that and shows a warning
+  telling the user how to delete it in Credential Manager (a silent uninstall only logs it).
 
 ## Types
 

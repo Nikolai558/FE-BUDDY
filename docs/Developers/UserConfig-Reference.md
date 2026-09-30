@@ -319,8 +319,10 @@ the folder is.
 | `IncludeCrcTextDefaults` | `Y` / `N` - only a conversion that writes text (SCT2, ERAM) | `Y` |
 | `CrcEramPropertyDefaults.<row>.<field>` | the fields for the row's kind, as for the sub-services | none (the user must fill them) |
 | `CroppingDistance` | DAT only: NM, as typed; blank means no cropping | none |
-| `OutputLayout` | ERAM only: `ByObject`, `ByFilter` | `ByObject` |
+| `OutputLayout` | ERAM only: `ByFilters`, `ByAttributes`, `Raw`. An older `ByFilter` / `ByObject` loads as `ByFilters` / `ByAttributes` and is saved over at the next Save | `ByAttributes` |
 | `DefaultsSource` | ERAM only: `Xml`, `XmlThenCard`, `Card` | `Xml` |
+| `IncludeFebCustomProperties` | ERAM only: `Y` / `N` | `N` |
+| `FebProperties` | ERAM only: comma-separated `mapObjectType`, `mapGroupId`, `lineObjectId`, `symbolId`, `saaId` | none |
 
 ## Settings export and import
 

@@ -12,8 +12,9 @@ namespace FeBuddy.Core.Infrastructure.Eram.Models;
 /// conversion's job.
 /// </para>
 /// <para>
-/// ERAM's <c>Color</c> (always <c>White</c> in practice) and <c>DisplaySetting</c> have no CRC
-/// equivalent and are not kept. ERAM text has no opaque background setting.
+/// ERAM's <c>Color</c> (always <c>White</c> in practice) has no CRC equivalent and is not kept.
+/// <c>DisplaySetting</c> is (<see cref="Display"/>): text ERAM hides is left out of the
+/// conversion. ERAM text has no opaque background setting.
 /// </para>
 /// </remarks>
 public sealed record EramProperties
@@ -45,6 +46,9 @@ public sealed record EramProperties
 	/// <summary>Text offset down, in pixels (<c>YPixelOffset</c>).</summary>
 	public int? YOffset { get; init; }
 
+	/// <summary>Whether ERAM shows the text (<c>DisplaySetting</c>); <see langword="false"/> for a label it keeps hidden.</summary>
+	public bool? Display { get; init; }
+
 	/// <summary>Whether any property is set.</summary>
 	public bool IsEmpty => this == None;
 
@@ -60,7 +64,8 @@ public sealed record EramProperties
 		&& Size == other.Size
 		&& Underline == other.Underline
 		&& XOffset == other.XOffset
-		&& YOffset == other.YOffset;
+		&& YOffset == other.YOffset
+		&& Display == other.Display;
 
 	/// <inheritdoc />
 	public override int GetHashCode()
@@ -79,6 +84,7 @@ public sealed record EramProperties
 		hash.Add(Underline);
 		hash.Add(XOffset);
 		hash.Add(YOffset);
+		hash.Add(Display);
 		return hash.ToHashCode();
 	}
 }

@@ -29,7 +29,6 @@
 
             <!-- ============ outputs ============ -->
             <cards:OutputsCard GeojsonDescription="Writes the arrival procedure (STAR) GeoJSON files selected below."
-                               AliasFileName="Arrivals.txt"
                                AliasDescription="Writes one alias command per airport and procedure that draws the procedure's points." />
 
             <!-- ============ which GeoJSON files ============ -->
@@ -37,7 +36,7 @@
                                     LinesDescription="One line feature per airport and procedure, shared segments drawn once."
                                     SymbolsDescription="One symbol per point on the procedure."
                                     TextDescription="A label per point showing its identifier."
-                                    Footnote="Files are written to Geojson\&lt;ARTCC&gt;\&lt;airport&gt;\ in the cycle's folder, next to that airport's departures, as &lt;airport&gt;_&lt;procedure&gt;_STAR_Lines/Symbols/Text.geojson." />
+                                    Footnote="Files are written to `Geojson\&lt;ARTCC&gt;\&lt;airport&gt;\` in the cycle's folder, next to that airport's departures, as &lt;airport&gt;_&lt;procedure&gt;_STAR_Lines/Symbols/Text.geojson." />
 
             <!-- ============ FE-Buddy properties ============ -->
             <cards:FebPropertiesCard IsEnabled="{Binding GenerateGeojson}" />

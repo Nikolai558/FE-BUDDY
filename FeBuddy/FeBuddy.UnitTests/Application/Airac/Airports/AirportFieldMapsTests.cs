@@ -6,9 +6,10 @@ using FeBuddy.UnitTests.Application.Airac.Airports.Fixtures;
 namespace FeBuddy.UnitTests.Application.Airac.Airports;
 
 /// <summary>
-/// Covers the NASR-code-to-display-value translations and the class-airspace sentence builder:
-/// every published tower and facility code maps, an unpublished one passes through unchanged
-/// rather than being blanked, and one, two, and three flagged classes each read correctly.
+/// Covers the NASR-code-to-display-value translations, the class-airspace sentence builder and the
+/// airspace-hours splitter: every published tower and facility code maps, an unpublished one
+/// passes through unchanged rather than being blanked, one, two, and three flagged classes each
+/// read correctly, and airspace hours break into the lines the alias file shows.
 /// </summary>
 public sealed class AirportFieldMapsTests
 {
@@ -76,4 +77,26 @@ public sealed class AirportFieldMapsTests
 	[Fact]
 	public void a_null_row_has_no_class_airspace() =>
 		Assert.Null(AirportFieldMaps.BuildClassAirspace(null));
+
+	/// <summary>
+	/// A break after the first <c>SVC</c>, then at every comma and semicolon; lines trimmed, blank
+	/// ones dropped. The cases are from real <c>AIRSPACE_HRS</c> values. <paramref name="expected"/>
+	/// is the lines joined with <c>|</c>.
+	/// </summary>
+	[Theory]
+	[InlineData("CLASS D SVC 0700-2200 1 APR- 31 OCT; 0700-2000 1 NOV-31 MAR; OTHER TIMES CLASS E",
+		"CLASS D SVC|0700-2200 1 APR- 31 OCT|0700-2000 1 NOV-31 MAR|OTHER TIMES CLASS E")]
+	[InlineData("CLASS D SVC 0600-2100 MON-FRI, 0800-2000 SAT-SUN; OTHER TIMES CLASS E",
+		"CLASS D SVC|0600-2100 MON-FRI|0800-2000 SAT-SUN|OTHER TIMES CLASS E")]
+	[InlineData("CLASS D SVC 1500-2400Z++ FRI-MON;  1500-0600Z++ TUE-THU, CLSD ALL FED HOL EXP CLOSURE OR RDCD SVC PER NOTAM; OTHER TIMES CLASS G",
+		"CLASS D SVC|1500-2400Z++ FRI-MON|1500-0600Z++ TUE-THU|CLSD ALL FED HOL EXP CLOSURE OR RDCD SVC PER NOTAM|OTHER TIMES CLASS G")]
+	[InlineData("CLASS D 0700-2000; OTHER TIMES CLASS E", "CLASS D 0700-2000|OTHER TIMES CLASS E")]
+	[InlineData("CLASS D SVC; OTR TIMES CLASS E BY NOTAM.", "CLASS D SVC|OTR TIMES CLASS E BY NOTAM.")]
+	[InlineData(" 1100-0200Z UTC-4 ", "1100-0200Z UTC-4")]
+	[InlineData("CLASS D SVC 0600-2400;", "CLASS D SVC|0600-2400")]
+	[InlineData(" ; , ", "")]
+	[InlineData("", "")]
+	[InlineData(null, "")]
+	public void airspace_hours_break_after_svc_and_at_every_comma_and_semicolon(string? airspaceHours, string expected) =>
+		Assert.Equal(expected.Length == 0 ? [] : expected.Split('|'), AirportFieldMaps.SplitAirspaceHours(airspaceHours));
 }

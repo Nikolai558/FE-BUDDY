@@ -39,8 +39,7 @@
             <!-- ============ outputs ============ -->
             <!-- GeoJSON is more than on / off here - the drop-down picks how the files are split,
                  None writes none - and the alias file can cover every airway or just the ROI's. -->
-            <cards:OutputsCard AliasFileName="Airways.txt"
-                               AliasDescription="Provides a command to draw all airway waypoints on an ERAM or STARS window.&#xA;Syntax: .&lt;awyId&gt;F  &#xA;Ex Output: .J3F .FF OAK RBL LKV IMB GEG">
+            <cards:OutputsCard AliasDescription="Provides a command to draw all airway waypoints on an ERAM or STARS window.&#xA;Syntax: .&lt;awyId&gt;F  &#xA;Ex Output: .J3F .FF OAK RBL LKV IMB GEG">
                 <cards:OutputsCard.GeojsonTemplate>
                     <DataTemplate>
                         <ctl:Option Description="{Binding OutputModeHint}">
@@ -99,28 +98,34 @@
             <!-- ============ High / Low files: the one each included designation goes in ============ -->
             <!-- Shown for High and Low output once a designation is included. The same toggles as
                  the card above; an excluded one's row collapses. A row with no file chosen is marked
-                 until the user picks one. -->
+                 until the user picks one. Every row's label column is as wide as the longest
+                 designation (a shared size group), so the drop-downs line up and sit close to
+                 their labels. -->
             <ctl:Card Header="High and Low Files"
                       Visibility="{Binding ShowsStrata, Converter={StaticResource BoolToVis}}">
                 <StackPanel>
                     <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8" TextWrapping="Wrap"
                                MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
                                Text="Choose the file each airway type goes in: High (Airways_High), Low (Airways_Low), or Both. J and Q start in High, and V and T in Low; any other type needs your choice before the run." />
-                    <ItemsControl ItemsSource="{Binding Designations}">
+                    <ItemsControl ItemsSource="{Binding Designations}" Grid.IsSharedSizeScope="True">
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate>
                         </ItemsControl.ItemsPanel>
                         <ItemsControl.ItemTemplate>
                             <DataTemplate DataType="{x:Type m:DesignationToggle}">
-                                <DockPanel Margin="0,0,20,8"
-                                           Visibility="{Binding Included, Converter={StaticResource BoolToVis}}">
-                                    <TextBlock Text="{Binding Designation}" MinWidth="40" Margin="0,0,8,0" VerticalAlignment="Center"
+                                <Grid Margin="0,0,20,8"
+                                      Visibility="{Binding Included, Converter={StaticResource BoolToVis}}">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" SharedSizeGroup="Designation" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="{Binding Designation}" Margin="0,0,8,0" VerticalAlignment="Center"
                                                Style="{StaticResource Text.Body.Strong}" FontFamily="{StaticResource Font.Mono}" />
-                                    <ComboBox Style="{StaticResource Themed.ComboBox}" Width="110"
+                                    <ComboBox Grid.Column="1" Style="{StaticResource Themed.ComboBox}" Width="110"
                                               ItemsSource="{x:Static vm:AirwaysViewModel.StratumValues}"
                                               SelectedItem="{Binding Stratum}"
                                               bhv:FieldState.Error="{Binding StratumError}" />
-                                </DockPanel>
+                                </Grid>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>

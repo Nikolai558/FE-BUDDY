@@ -66,8 +66,9 @@ public sealed class FileConversionsViewModel : TabbedServiceViewModel
 	protected override ServiceTabViewModel? PostRunTab => _runReviewShown ? _runReview : null;
 
 	/// <summary>
-	/// Saves the tab if the user agrees, refuses to start while it is invalid, then runs the
-	/// conversion off the UI thread and shows how it went on the Review tab.
+	/// Saves the tab if the user agrees, refuses to start while it is invalid, asks anything the
+	/// tab needs to (<see cref="ConversionTabViewModel.ConfirmRun"/>), then runs the conversion off
+	/// the UI thread and shows how it went on the Review tab.
 	/// </summary>
 	/// <param name="conversion">The tab whose run button was pressed.</param>
 	private async Task RunAsync(ConversionTabViewModel conversion)
@@ -87,6 +88,11 @@ public sealed class FileConversionsViewModel : TabbedServiceViewModel
 
 		IReadOnlyDictionary<string, string> settings = conversion.BuildSettingsBlock(
 			OutputPreferences.Directory, OutputPreferences.AddFeBuddyOutputFolder);
+
+		if (!conversion.ConfirmRun(settings))
+		{
+			return;
+		}
 
 		SetRunning(true);
 		_runReview.BeginRun([]);

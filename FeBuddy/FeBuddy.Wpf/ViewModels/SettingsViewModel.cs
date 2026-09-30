@@ -23,6 +23,7 @@ using FeBuddy.Core.Infrastructure.Configuration;
 using FeBuddy.Core.Infrastructure.Configuration.Models;
 using FeBuddy.Core.Infrastructure.Credentials;
 using FeBuddy.Core.Infrastructure.Credentials.Models;
+using FeBuddy.Core.Infrastructure.FileSystem;
 using FeBuddy.Core.Infrastructure.Logging;
 using FeBuddy.Core.Infrastructure.Platform;
 
@@ -35,9 +36,10 @@ namespace FeBuddy.Wpf.ViewModels;
 
 /// <summary>
 /// SYSTEM ▸ Settings. Section order: Facility Profile, Default Region of Interest, GeoJSON Files,
-/// Credentials, FE-Buddy's GitHub Requests, Updates. Every value persists to <c>UserConfig.json</c>,
-/// except credentials, which live in Windows Credential Manager and are saved at once
-/// (<see cref="CredentialsViewModel"/>). FE-Buddy's GitHub Requests saves only the chosen token's id.
+/// Credentials, FE-Buddy's GitHub Requests, Updates, Reset FE-Buddy. Every value persists to
+/// <c>UserConfig.json</c>, except credentials, which live in Windows Credential Manager and are
+/// saved at once (<see cref="CredentialsViewModel"/>). FE-Buddy's GitHub Requests saves only the
+/// chosen token's id.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -52,6 +54,11 @@ namespace FeBuddy.Wpf.ViewModels;
 /// <para>
 /// Export and Import move every setting in the app (not only this page's) to and from a file,
 /// through <see cref="UserConfigTransfer"/>, so one user's setup can be handed to another.
+/// </para>
+/// <para>
+/// Reset FE-Buddy asks what to keep (<see cref="ResetViewModel"/>), saves a copy of the settings
+/// first if they go and the user wants one, records the reset (<see cref="AppDataReset"/>) and
+/// restarts FE-Buddy, which carries it out as it starts.
 /// </para>
 /// </remarks>
 public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IConfigPage
@@ -69,6 +76,7 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 
 	private readonly Dispatcher _dispatcher;
 	private readonly Action? _openUpdateWindow;
+	private readonly Func<IReadOnlyList<string>>? _describeUnfinishedWork;
 	private bool _isCheckingForUpdates;
 
 	private ReleaseChannel _channel;
@@ -90,10 +98,15 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 	/// owns it (it tracks a "Later" for the version chip); "Check for updates now" calls it when
 	/// the check finds an update.
 	/// </param>
-	public SettingsViewModel(Action? openUpdateWindow = null)
+	/// <param name="describeUnfinishedWork">
+	/// What closing FE-Buddy now would lose (a run in progress, unsaved edits on any page), for the
+	/// Reset FE-Buddy window. The shell knows every page, so it supplies it.
+	/// </param>
+	public SettingsViewModel(Action? openUpdateWindow = null, Func<IReadOnlyList<string>>? describeUnfinishedWork = null)
 	{
 		_dispatcher = Application.Current?.Dispatcher ?? Dispatcher.CurrentDispatcher;
 		_openUpdateWindow = openUpdateWindow;
+		_describeUnfinishedWork = describeUnfinishedWork;
 
 		RefreshGitHubTokens();
 		CredentialStore.Default.Changed += (_, _) => _dispatcher.BeginInvoke(RefreshGitHubTokens);
@@ -111,6 +124,7 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 		ExportCommand = new RelayCommand(Export);
 		ImportCommand = new RelayCommand(Import);
 		NewGitHubTokenCommand = new RelayCommand(NewGitHubToken);
+		ResetCommand = new RelayCommand(Reset);
 
 		AiracCycleDataCache.Instance.StateChanged += (_, _) => _dispatcher.BeginInvoke(RefreshFacilities);
 		RefreshFacilities();
@@ -214,13 +228,16 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 		}
 	}
 
-	/// <summary>Where a run of the current cycle would write with the values on screen, e.g. <c>…\FE-Buddy_Output\AIRAC_2610</c>.</summary>
+	/// <summary>
+	/// Where a run of the current cycle would write with the values on screen, e.g.
+	/// <c>…\FE-Buddy_Output\AIRAC_2610</c> - between backticks, for the view's <c>bhv:InlineCode</c>.
+	/// </summary>
 	public string OutputFolderExample
 	{
 		get
 		{
 			string cycleId = AppEnvironment.GetAiracCycle(AiracCyclePosition.Current).AiracCycleId;
-			return $"A run of AIRAC cycle {cycleId} writes to {AiracOutputPaths.CycleDirectory(OutputDirectory, AddFeBuddyOutputFolder, cycleId)}";
+			return $"A run of AIRAC cycle {cycleId} writes to `{AiracOutputPaths.CycleDirectory(OutputDirectory, AddFeBuddyOutputFolder, cycleId)}`";
 		}
 	}
 
@@ -273,12 +290,6 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 	public ICommand ClearRoiCommand { get; }
 
 	// ================= 3. GEOJSON FILES =================
-
-	/// <summary>Explains the FE-Buddy properties.</summary>
-	public const string FebPropertiesDescription =
-		"Include FE-Buddy Properties, when available. Custom GeoJSON property fields that increase file " +
-		"size but can be helpful for debugging or viewing data in a GeoJSON viewer in order to identify " +
-		"an object. Every FE-Buddy property is prefixed with feb.";
 
 	/// <summary>Explains the coordinate precision choice.</summary>
 	public const string CoordinatePrecisionDescription =
@@ -553,6 +564,17 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 	/// <summary>Reads a settings file the user picks, shows what it would change, and imports it once confirmed.</summary>
 	public ICommand ImportCommand { get; }
 
+	// ================= reset =================
+
+	/// <summary>Explains Reset FE-Buddy, on its card.</summary>
+	public const string ResetDescription =
+		"Start over as if FE-Buddy had just been installed. It deletes the AIRAC, Telephony and Wx Station " +
+		"data it has downloaded and its logs, and - if you choose - your settings and saved credentials, " +
+		"then restarts and downloads the AIRAC data again. Files in your output folder are not touched.";
+
+	/// <summary>Opens the Reset FE-Buddy window, and resets and restarts FE-Buddy once confirmed.</summary>
+	public ICommand ResetCommand { get; }
+
 	/// <inheritdoc />
 	public void ReloadFromConfig() => LoadFromConfig();
 
@@ -821,12 +843,13 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 				+ "but for identical output both PCs should run the same version.");
 		}
 
+		// Paths between backticks show in the code look (ConfirmWindow's bhv:InlineCode).
 		AppendList(text, "Folders and files:", plan.AppliedFolders, folder =>
 			folder.Path.Length == 0 ? folder.Note!
-			: folder.Note is null ? folder.Path
-			: $"{folder.Path} ({folder.Note})");
+			: folder.Note is null ? $"`{folder.Path}`"
+			: $"`{folder.Path}` ({folder.Note})");
 
-		AppendList(text, "Not taken, as they do not work on this PC:", plan.SkippedFolders, folder => $"the file's {folder.Path} {folder.Note}");
+		AppendList(text, "Not taken, as they do not work on this PC:", plan.SkippedFolders, folder => $"the file's `{folder.Path}` {folder.Note}");
 
 		if (plan.KeptForThisPc.Count > 0)
 		{
@@ -877,6 +900,104 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 		1 => names[0],
 		_ => $"{string.Join(", ", names.Take(names.Count - 1))} and {names[^1]}",
 	};
+
+	/// <summary>
+	/// Asks what the reset keeps, saves a copy of the settings first when they go and the user wants
+	/// one, then records the reset and restarts FE-Buddy, which carries it out as it starts.
+	/// </summary>
+	private void Reset()
+	{
+		Window? owner = Application.Current?.MainWindow;
+
+		ResetViewModel choices = new(
+			hasSettings: File.Exists(UserConfigFile.ConfigFilePath),
+			credentialCount: CountCredentials(),
+			unfinishedWork: _describeUnfinishedWork?.Invoke() ?? []);
+
+		new ResetWindow(choices) { Owner = owner }.ShowDialog();
+
+		if (!choices.Confirmed)
+		{
+			return;
+		}
+
+		if (choices.SavesCopy && !SaveSettingsCopy(owner))
+		{
+			return;
+		}
+
+		try
+		{
+			AppDataReset.Request(choices.BuildRequest(Environment.ProcessId));
+		}
+		catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+		{
+			AppLog.Warning("Settings", $"Could not record the reset: {ex.Message}");
+			Toast.Error("Could not reset FE-Buddy", ex.Message);
+			return;
+		}
+
+		AppRestart.Restart(owner, "the reset");
+	}
+
+	/// <summary>How many credentials are saved; 0 when Windows Credential Manager cannot be read.</summary>
+	private static int CountCredentials()
+	{
+		try
+		{
+			return CredentialStore.Default.List().Count;
+		}
+		catch (Win32Exception ex)
+		{
+			AppLog.Warning("Settings", $"Could not read Windows Credential Manager: {ex.Message}");
+			return 0;
+		}
+	}
+
+	/// <summary>
+	/// Copies <c>UserConfig.json</c> to where the user picks, before a reset deletes it. The copy is
+	/// the file as saved - a full backup, which Import reads back.
+	/// </summary>
+	/// <returns><see langword="true"/> once the copy is saved; <see langword="false"/> to stop the reset.</returns>
+	private static bool SaveSettingsCopy(Window? owner)
+	{
+		SaveFileDialog dialog = new()
+		{
+			Title = "Save a copy of your settings",
+			Filter = SettingsFileFilter,
+			DefaultExt = ".json",
+			AddExtension = true,
+			FileName = $"FE-Buddy Settings backup {DateTime.Now:yyyy-MM-dd}.json",
+			InitialDirectory = OutputPreferences.DefaultDirectory,
+		};
+
+		if (dialog.ShowDialog(owner) != true)
+		{
+			Toast.Info("Nothing was reset", "No copy of your settings was saved, so FE-Buddy was left as it is.");
+			return false;
+		}
+
+		// The reset empties FE-Buddy's own folder, so a copy saved in it would go too.
+		string folder = Path.GetFullPath(AppDataReset.RootDirectory).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
+		if (Path.GetFullPath(dialog.FileName).StartsWith(folder, StringComparison.OrdinalIgnoreCase))
+		{
+			Toast.Warn("Choose another folder", $"The reset empties {AppDataReset.RootDirectory}, copy and all. Nothing was reset.");
+			return false;
+		}
+
+		try
+		{
+			File.Copy(UserConfigFile.ConfigFilePath, dialog.FileName, overwrite: true);
+			AppLog.Info("Settings", $"Saved a copy of the settings to '{dialog.FileName}' before the reset.");
+			return true;
+		}
+		catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+		{
+			AppLog.Warning("Settings", $"Could not save a copy of the settings to '{dialog.FileName}': {ex.Message}");
+			Toast.Error("Could not save the copy", $"{ex.Message} Nothing was reset.");
+			return false;
+		}
+	}
 
 	private void RefreshFacilities()
 	{

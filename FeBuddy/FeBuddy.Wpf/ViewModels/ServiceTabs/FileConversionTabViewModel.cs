@@ -95,6 +95,10 @@ public abstract class FileConversionTabViewModel : ConversionTabViewModel, ISour
 	/// <returns><see langword="true"/> to count it.</returns>
 	protected virtual bool IsSourceFile(string path) => true;
 
+	/// <inheritdoc />
+	/// <remarks>Off unless a tab turns it on: most conversions take any number of files.</remarks>
+	public virtual bool OneSourceFileOnly => false;
+
 	// ================= source =================
 
 	/// <inheritdoc />
@@ -229,7 +233,12 @@ public abstract class FileConversionTabViewModel : ConversionTabViewModel, ISour
 		ConversionSourceType.Folder when string.IsNullOrWhiteSpace(SourceFolder) => "Pick the folder to convert.",
 		ConversionSourceType.Folder when _folderFileCount is null => "The source folder does not exist.",
 		ConversionSourceType.Folder when _folderFileCount == 0 => $"The source folder has no {FileTypeLabel} files in it.",
-		ConversionSourceType.Files when SourceFiles.Count == 0 => $"Pick at least one {FileTypeLabel} file to convert.",
+		ConversionSourceType.Folder when OneSourceFileOnly && _folderFileCount > 1 =>
+			$"The source folder has {_folderFileCount} {FileTypeLabel} files, and this conversion takes one per run. Choose \"A file I pick\" and pick it.",
+		ConversionSourceType.Files when SourceFiles.Count == 0 => OneSourceFileOnly
+			? $"Pick the {FileTypeLabel} file to convert."
+			: $"Pick at least one {FileTypeLabel} file to convert.",
+		ConversionSourceType.Files when OneSourceFileOnly && SourceFiles.Count > 1 => $"Pick one {FileTypeLabel} file: this conversion takes one per run.",
 		_ => null,
 	};
 
@@ -285,6 +294,12 @@ public abstract class FileConversionTabViewModel : ConversionTabViewModel, ISour
 			summary += $", {detail}";
 		}
 
+		// A file beside the GeoJSON (ERAM's ConsoleCommandControl.txt) is named.
+		if (conversion.OtherFilesWritten.Count > 0)
+		{
+			summary += $", plus {string.Join(", ", conversion.OtherFilesWritten.Select(Path.GetFileName))}";
+		}
+
 		if (conversion.FailedCount > 0)
 		{
 			summary += $", {conversion.FailedCount:N0} failed";
@@ -293,7 +308,7 @@ public abstract class FileConversionTabViewModel : ConversionTabViewModel, ISour
 		return new ConversionRunOutcome(
 			summary,
 			new SubServiceRunResult(Title, summary, conversion.Messages),
-			conversion.GeojsonFilesWritten,
+			[.. conversion.GeojsonFilesWritten, .. conversion.OtherFilesWritten],
 			Directory.Exists(conversion.OutputDirectory) ? conversion.OutputDirectory : null);
 	}
 
@@ -486,15 +501,21 @@ public abstract class FileConversionTabViewModel : ConversionTabViewModel, ISour
 
 		OpenFileDialog dialog = new()
 		{
-			Title = $"Select the {FileTypeLabel} files to convert",
+			Title = OneSourceFileOnly ? $"Select the {FileTypeLabel} file to convert" : $"Select the {FileTypeLabel} files to convert",
 			Filter = $"{FileDescription} ({patterns})|{patterns}|All files (*.*)|*.*",
-			Multiselect = true,
+			Multiselect = !OneSourceFileOnly,
 			InitialDirectory = OutputPreferences.BrowseDirectory(),
 		};
 
 		if (dialog.ShowDialog() != true)
 		{
 			return;
+		}
+
+		// One file per run: the file picked replaces the one before.
+		if (OneSourceFileOnly)
+		{
+			SourceFiles.Clear();
 		}
 
 		HashSet<string> already = new(SourceFiles.Select(f => f.Path), StringComparer.OrdinalIgnoreCase);

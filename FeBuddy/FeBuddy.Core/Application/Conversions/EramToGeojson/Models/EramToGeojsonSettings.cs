@@ -10,10 +10,10 @@ namespace FeBuddy.Core.Application.Conversions.EramToGeojson.Models;
 /// </summary>
 public sealed record EramToGeojsonSettings : ConversionSettings
 {
-	/// <summary>How the files are laid out. Default <see cref="EramOutputLayout.ByObject"/>.</summary>
-	public EramOutputLayout OutputLayout { get; init; } = EramOutputLayout.ByObject;
+	/// <summary>How the files are laid out. Default <see cref="EramOutputLayout.ByAttributes"/>.</summary>
+	public EramOutputLayout OutputLayout { get; init; } = EramOutputLayout.ByAttributes;
 
-	/// <summary>Where each file's CRC defaults come from. Default <see cref="EramDefaultsSource.Xml"/>.</summary>
+	/// <summary>Where the CRC defaults come from. Default <see cref="EramDefaultsSource.Xml"/>.</summary>
 	public EramDefaultsSource DefaultsSource { get; init; } = EramDefaultsSource.Xml;
 
 	/// <summary>
@@ -27,4 +27,10 @@ public sealed record EramToGeojsonSettings : ConversionSettings
 
 	/// <summary>The tab's CRC Text defaults, or <see langword="null"/>; see <see cref="LineDefaults"/>.</summary>
 	public CrcTextDefaults? TextDefaults { get; init; }
+
+	/// <summary>Whether Features carry the <see cref="FebProperties"/>.</summary>
+	public bool IncludeFebProperties { get; init; }
+
+	/// <summary>The <c>feb.*</c> properties chosen, in the order to write them; empty unless <see cref="IncludeFebProperties"/>.</summary>
+	public IReadOnlyList<EramFebProperty> FebProperties { get; init; } = [];
 }

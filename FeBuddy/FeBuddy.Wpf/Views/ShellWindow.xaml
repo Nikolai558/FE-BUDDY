@@ -238,6 +238,55 @@
                             </ControlTemplate>
                         </Button.Template>
                     </Button>
+
+                    <!-- Update badge: only while an update is available, and a button to the same
+                         update window. Solid red, taking turns between "Update available!" and the
+                         new version; after "Later", amber and still for the rest of the session. No
+                         popup: it waits in the title bar until the user is ready. Both lines are
+                         laid out, one hidden, so the badge keeps one width and nothing beside it
+                         moves when it turns. -->
+                    <Button Margin="8,0,0,0"
+                            Command="{Binding OpenUpdateWindowCommand}"
+                            Visibility="{Binding IsUpdateAvailable, Converter={StaticResource BoolToVis}}"
+                            AutomationProperties.Name="{Binding UpdateTooltipTitle}"
+                            ToolTipService.InitialShowDelay="300">
+                        <Button.ToolTip>
+                            <StackPanel MaxWidth="280">
+                                <TextBlock Text="{Binding UpdateTooltipTitle}" Style="{StaticResource Text.Body.Strong}" />
+                                <TextBlock Style="{StaticResource Text.Caption}" Margin="0,6,0,0" TextWrapping="Wrap"
+                                           Text="{Binding UpdateTooltipBody}" />
+                            </StackPanel>
+                        </Button.ToolTip>
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border x:Name="Badge" Style="{StaticResource Chip}" Cursor="Hand"
+                                        Background="{DynamicResource Brush.Danger}">
+                                    <Grid>
+                                        <TextBlock x:Name="Headline" Style="{StaticResource Chip.Text}" HorizontalAlignment="Center"
+                                                   Foreground="{DynamicResource Brush.Text.OnAccent}"
+                                                   Text="Update available!" />
+                                        <TextBlock x:Name="NewVersion" Style="{StaticResource Chip.Text}" HorizontalAlignment="Center"
+                                                   Foreground="{DynamicResource Brush.Text.OnAccent}"
+                                                   Text="{Binding UpdateBadgeVersionText}" Visibility="Hidden" />
+                                    </Grid>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <DataTrigger Binding="{Binding BadgeShowsVersion}" Value="True">
+                                        <Setter TargetName="Headline" Property="Visibility" Value="Hidden" />
+                                        <Setter TargetName="NewVersion" Property="Visibility" Value="Visible" />
+                                    </DataTrigger>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="Badge" Property="Opacity" Value="0.85" />
+                                    </Trigger>
+                                    <DataTrigger Binding="{Binding VersionIsWarning}" Value="True">
+                                        <Setter TargetName="Badge" Property="Background" Value="{DynamicResource Brush.Warn.Soft}" />
+                                        <Setter TargetName="Headline" Property="Foreground" Value="{DynamicResource Brush.Warn}" />
+                                        <Setter TargetName="NewVersion" Property="Foreground" Value="{DynamicResource Brush.Warn}" />
+                                    </DataTrigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
                 </StackPanel>
 
                 <!-- AIRAC status indicator, top-centre. Narrates the

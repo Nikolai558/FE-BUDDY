@@ -17,6 +17,9 @@ public sealed record SourceFilesConversionResult : ConversionServiceResult
 	public override IReadOnlyList<string> GeojsonFilesWritten => [.. Files.SelectMany(f => f.OutputPaths)];
 
 	/// <inheritdoc />
+	public override IReadOnlyList<string> OtherFilesWritten => [.. Files.SelectMany(f => f.OtherOutputPaths)];
+
+	/// <inheritdoc />
 	public override int FailedCount => Files.Count(f => f.Error is not null);
 
 	/// <summary>How many rendered Features were written, across every file.</summary>

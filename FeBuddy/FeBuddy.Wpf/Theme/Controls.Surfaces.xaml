@@ -7,7 +7,8 @@
         Card.Popup      ctl:Card - a floating panel (flyout) with a drop shadow
         ctl:SectionHeader       (implicit) a card or section title
         SectionHeader.Group     ctl:SectionHeader - a heading for a group of controls in a card
-        Panel.Inset     Border  - a hairline-bordered panel inside a card (a CRC defaults panel)
+        Panel.Inset     Border  - a darker, hairline-bordered panel inside a card (a CRC defaults panel)
+        Panel.Block     Border  - a lighter, bordered block inside a Panel.Inset (one NAVAID type's defaults)
         Divider         Border  - 1px hairline rule
         Chip / Chip.*   Border  - small status badge (pair with Chip.Text)
         Chip.Text       TextBlock - the label inside a chip
@@ -134,15 +135,29 @@
     </Style>
 
     <!-- ========================== INSET PANEL ======================== -->
-    <!-- A hairline-bordered panel inside a card, for a self-contained group that sits beside
-         others (the CRC ERAM defaults panels). The margin spaces panels in a WrapPanel. -->
+    <!-- A panel set into a card, a step darker than it, for a self-contained group that sits
+         beside others (the CRC ERAM defaults panels, a custom alias file). The margin spaces
+         panels in a WrapPanel. -->
     <Style x:Key="Panel.Inset" TargetType="Border">
+        <Setter Property="Background" Value="{DynamicResource Brush.Inset}" />
         <Setter Property="BorderBrush" Value="{DynamicResource Brush.Stroke}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="CornerRadius" Value="{DynamicResource Radius.Control}" />
         <Setter Property="Padding" Value="14,12" />
         <Setter Property="Margin" Value="0,0,12,12" />
         <Setter Property="VerticalAlignment" Value="Top" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+    </Style>
+
+    <!-- A block raised inside a Panel.Inset, a step lighter than the card, with a firmer edge:
+         one of several side-by-side groups in the panel (a CRC defaults panel's NAVAID types),
+         so each reads as its own box. -->
+    <Style x:Key="Panel.Block" TargetType="Border">
+        <Setter Property="Background" Value="{DynamicResource Brush.Inset.Block}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource Brush.Stroke.Strong}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="{DynamicResource Radius.Small}" />
+        <Setter Property="Padding" Value="10,8" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
     </Style>
 

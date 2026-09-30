@@ -446,12 +446,13 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 
 		try
 		{
+			// Made here, on the UI thread, Progress<T> hands each report to the UI thread itself: one
+			// hop, queued ahead of this method's own continuation, so every report lands before
+			// CompleteRun. A second hop (a BeginInvoke in the handler) let the last report of a quick
+			// run - "Checking the alias files for duplicate commands" - land after CompleteRun and
+			// leave its step "working..." for good. The library reports 100 when a sub-service is done.
 			var progress = new Progress<AiracServiceProgress>(p =>
-				_dispatcher.BeginInvoke(() =>
-				{
-					// The library reports 100 when a sub-service is done with its work.
-					_runReview.ReportStep(p.SubService, p.Message, p.PercentComplete >= 100);
-				}));
+				_runReview.ReportStep(p.SubService, p.Message, p.PercentComplete >= 100));
 
 			AiracServiceResult result = await AiracService.RunAsync(settings, progress);
 
@@ -498,12 +499,12 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 		ConfirmChoice choice = ConfirmWindow.ShowChoice(
 			Application.Current?.MainWindow,
 			$"AIRAC cycle {cycleId} already run",
-			$"Looks like AIRAC cycle {cycleId} has already been run at one point: {settings.CycleOutputDirectory} "
+			$"Looks like AIRAC cycle {cycleId} has already been run at one point: `{settings.CycleOutputDirectory}` "
 			+ "already has files in it. Select what you would like to happen:"
 			+ Environment.NewLine + Environment.NewLine
 			+ "Overwrite files - this run's files replace the old ones; any other old file is left as it is."
 			+ Environment.NewLine
-			+ $"Delete all files - everything in {AiracOutputPaths.CycleFolderName(cycleId)} is permanently deleted first, "
+			+ $"Delete all files - everything in `{AiracOutputPaths.CycleFolderName(cycleId)}` is permanently deleted first, "
 			+ "so it holds only this run's files.",
 			confirmText: "Overwrite files",
 			alternativeText: "Delete all files");

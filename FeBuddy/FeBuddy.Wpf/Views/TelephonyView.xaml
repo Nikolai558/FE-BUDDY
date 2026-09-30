@@ -14,6 +14,7 @@
              xmlns:vm="clr-namespace:FeBuddy.Wpf.ViewModels"
              xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
              xmlns:cards="clr-namespace:FeBuddy.Wpf.Views.Cards"
+             xmlns:bhv="clr-namespace:FeBuddy.Wpf.Behaviors"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance vm:TelephonyViewModel}"
              d:DesignWidth="900" d:DesignHeight="900">
@@ -31,13 +32,13 @@
             <!-- ============ outputs ============ -->
             <ctl:Card Header="Outputs">
                 <StackPanel>
-                    <TextBlock Text="Alias file (Telephony.txt)" Style="{StaticResource Text.Body}" Margin="0,4,0,0" />
+                    <TextBlock Text="Alias file" Style="{StaticResource Text.Body}" Margin="0,4,0,0" />
                     <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,2,0,10"
                                MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
                                Text="A card for every operator in the FAA telephony pages: its three-letter designator, telephony, company and country.&#xA;Type .id and either the designator from the data block or the telephony the pilot said,&#xA;Ex: .idAVA or .idAVIANCA&#xA;When one command fits more than one operator, it shows all of them." />
                     <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap"
                                MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
-                               Text="Written to Aliases\ in the cycle's folder. Ticked below, it is also added to Upload_to_vNAS\vNAS_Alias.txt." />
+                               bhv:InlineCode.Text="Written to `Aliases\` in the cycle's folder. Ticked below, it is also added to `Upload_to_vNAS\vNAS_Alias.txt`." />
                 </StackPanel>
             </ctl:Card>
 

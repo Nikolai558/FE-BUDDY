@@ -231,14 +231,19 @@ every alias file marked for vNAS are merged into `vNAS_Alias.txt` (below).
   alias file per facility, so once the duplicate report is written, `VnasAliasFileWriter.Write`
   builds it whenever an alias file is marked for vNAS (its block's `UploadToVnas` names it) or vNAS
   Alias Upload is selected: the first `.FeUseOnly` line any custom file has (moved to the top, the
-  rest dropped), each custom alias file in order separated by a blank line, then the marker line
-  `; ===== FE-Buddy aliases (AIRAC <cycle>) start here. FE-Buddy replaces everything below this
-  line every cycle. =====`, then each marked FE-Buddy alias file under `; ----- <name> -----`. A
-  custom file that has the marker (last cycle's uploaded `vNAS_Alias.txt` reused as the custom
-  file) is cut there, with an Info message. A custom file that could not be read is left out with
+  rest dropped), then the start line `; ===== FE-Buddy aliases (AIRAC <cycle>) start here. FE-Buddy
+  replaces everything down to the end line every cycle. =====`, each marked FE-Buddy alias file
+  under `; ----- <name> -----`, and the end line `; ===== End of FE-Buddy aliases. ... =====`
+  (`FeBuddySectionMarker` / `FeBuddySectionEndMarker`), then each custom alias file in order,
+  separated by a blank line. The custom files are last because CRC reads top to bottom and the
+  last copy of a command wins, so a facility's own command replaces FE-Buddy's. A custom file that
+  holds FE-Buddy's section (last cycle's uploaded `vNAS_Alias.txt` reused as the custom file) loses
+  it, from the start line to the end line - or to the end of the file, for one written before the
+  end line existed - with an Info message. A custom file that could not be read is left out with
   an advisory warning, and the file is still written from the rest; a command from a custom file
-  that another merged file has too gets an advisory listing up to ten (commands only FE-Buddy's
-  own files share are left to the duplicate report). UTF-8 without a BOM. With nothing to merge the
+  that another merged file has too gets an Info advisory listing up to ten, each with its files in
+  merge order (commands only FE-Buddy's own files share are left to the duplicate report). UTF-8
+  without a BOM. With nothing to merge the
   file is not written (`VnasAliasResult.FilePath` is `null`, with an advisory), and a
   `vNAS_Alias.txt` an earlier run left is deleted, like the duplicate report, so it cannot be
   uploaded by mistake. Without vNAS Alias Upload selected, the file holds FE-Buddy's aliases only,

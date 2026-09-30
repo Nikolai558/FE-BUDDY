@@ -10,7 +10,8 @@
     show hides itself.
 
     The panels sit side by side; the WrapPanel stacks them when the window is too narrow for all
-    three, so no panel is ever clipped.
+    three, so no panel is ever clipped. It is also the size scope for the panels' label column, so
+    every panel's blocks are one width.
 
     The File Conversions have no Upload to vNAS card: they set ShowInclude, which puts an Include
     box on each panel, bind IncludeLines / IncludeSymbols / IncludeText to their own flags, and
@@ -37,7 +38,7 @@
     <ctl:Card Header="CRC ERAM Defaults">
         <StackPanel>
             <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,0" Text="{Binding Note, ElementName=Self}" />
-            <WrapPanel Orientation="Horizontal" Margin="0,10,0,0">
+            <WrapPanel Orientation="Horizontal" Margin="0,10,0,0" Grid.IsSharedSizeScope="True">
                 <cards:CrcDefaultsPanel Title="{Binding LinesTitle, ElementName=Self}" Classes="{Binding LineDefaultsInUse}"
                                         ShowInclude="{Binding ShowInclude, ElementName=Self}"
                                         IsIncluded="{Binding IncludeLines, ElementName=Self}" />

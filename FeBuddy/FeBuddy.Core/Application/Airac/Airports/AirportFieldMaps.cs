@@ -6,7 +6,7 @@ namespace FeBuddy.Core.Application.Airac.Airports;
 
 /// <summary>
 /// The NASR-code-to-display-value translations the Airports sub-service applies, plus the
-/// class-airspace sentence builder.
+/// class-airspace sentence builder and the airspace-hours line splitter.
 /// </summary>
 /// <remarks>
 /// Kept apart from <see cref="AirportBuilder"/> so the mappings can be unit-tested directly and
@@ -16,6 +16,9 @@ namespace FeBuddy.Core.Application.Airac.Airports;
 /// </remarks>
 public static class AirportFieldMaps
 {
+	/// <summary>What ends the first line of <c>AIRSPACE_HRS</c>, e.g. <c>CLASS D SVC 0600-2400</c>.</summary>
+	private const string ServiceMarker = " SVC ";
+
 	private static readonly Dictionary<string, string> TowerTypes = new(StringComparer.OrdinalIgnoreCase)
 	{
 		["ATCT"] = "TWR",
@@ -86,6 +89,37 @@ public static class AirportFieldMaps
 			2 => $"{classes[0]} & {classes[1]}",
 			_ => JoinWithSerialAmpersand(classes),
 		};
+	}
+
+	/// <summary>
+	/// Splits <c>CLS_ARSP.AIRSPACE_HRS</c> into the lines the alias file shows: a line break after
+	/// the first <c>SVC</c>, then one at every comma and semicolon.
+	/// </summary>
+	/// <param name="airspaceHours">The raw <c>AIRSPACE_HRS</c>, or <see langword="null"/>.</param>
+	/// <returns>
+	/// The lines, trimmed, blank ones left out; empty when there is nothing. For example
+	/// <c>CLASS D SVC 0700-2200 1 APR- 31 OCT; 0700-2000 1 NOV-31 MAR; OTHER TIMES CLASS E</c>
+	/// becomes <c>CLASS D SVC</c>, <c>0700-2200 1 APR- 31 OCT</c>, <c>0700-2000 1 NOV-31 MAR</c>
+	/// and <c>OTHER TIMES CLASS E</c>. Without a <c>" SVC "</c>, the first line runs to the first
+	/// comma or semicolon.
+	/// </returns>
+	public static IReadOnlyList<string> SplitAirspaceHours(string? airspaceHours)
+	{
+		if (string.IsNullOrWhiteSpace(airspaceHours))
+		{
+			return [];
+		}
+
+		// The break goes after "SVC", so the service line reads "CLASS D SVC" and its hours start the next.
+		int service = airspaceHours.IndexOf(ServiceMarker, StringComparison.Ordinal);
+		int breakAt = service + ServiceMarker.Length - 1;
+
+		string[] parts = service < 0 ? [airspaceHours] : [airspaceHours[..breakAt], airspaceHours[breakAt..]];
+
+		return [.. parts
+			.SelectMany(part => part.Split([',', ';']))
+			.Select(line => line.Trim())
+			.Where(line => line.Length > 0)];
 	}
 
 	private static string JoinWithSerialAmpersand(IReadOnlyList<string> values)

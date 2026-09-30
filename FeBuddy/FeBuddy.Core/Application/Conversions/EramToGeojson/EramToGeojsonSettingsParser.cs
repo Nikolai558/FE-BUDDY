@@ -2,6 +2,7 @@ using FeBuddy.Core.Application.Conversions.EramToGeojson.Models;
 using FeBuddy.Core.Application.Models;
 using FeBuddy.Core.Application.Settings;
 using FeBuddy.Core.Domain.Crc.Models;
+using FeBuddy.Core.Infrastructure.Logging.Models;
 
 namespace FeBuddy.Core.Application.Conversions.EramToGeojson;
 
@@ -9,6 +10,12 @@ namespace FeBuddy.Core.Application.Conversions.EramToGeojson;
 /// Parses the raw <c>Dictionary&lt;string, string&gt;</c> the GUI (or <c>FeBuddy.Harness</c>)
 /// supplies for the ERAM to GeoJSON conversion into a typed, validated <see cref="EramToGeojsonSettings"/>.
 /// </summary>
+/// <remarks>
+/// <c>OutputLayout</c> is <c>ByFilters</c>, <c>ByAttributes</c> or <c>Raw</c>. The two layouts
+/// before them are still read, as their nearest: <c>ByFilter</c> as <c>ByFilters</c>, and
+/// <c>ByObject</c> (a file per object type and map group) as <c>ByAttributes</c>, whose names
+/// carry both.
+/// </remarks>
 public static class EramToGeojsonSettingsParser
 {
 	/// <summary>
@@ -25,6 +32,14 @@ public static class EramToGeojsonSettingsParser
 	/// </summary>
 	private static readonly IReadOnlySet<string> OwnKeys = new HashSet<string>(
 		ConversionSettingsReader.ConversionKeys.Concat(["OutputLayout", "DefaultsSource"]), StringComparer.OrdinalIgnoreCase);
+
+	/// <summary>The layouts before these three, and the one each is now read as.</summary>
+	private static readonly IReadOnlyDictionary<string, EramOutputLayout> RetiredLayouts =
+		new Dictionary<string, EramOutputLayout>(StringComparer.OrdinalIgnoreCase)
+		{
+			["ByFilter"] = EramOutputLayout.ByFilters,
+			["ByObject"] = EramOutputLayout.ByAttributes,
+		};
 
 	/// <summary>A GeoMap draws lines, symbols and text.</summary>
 	private static readonly IReadOnlyDictionary<string, CrcFeatureKind[]> CrcKindsByClass =
@@ -49,21 +64,22 @@ public static class EramToGeojsonSettingsParser
 		string outputDirectory = ConversionSettingsReader.ReadOutputDirectory(settings);
 		(string? sourceFolder, IReadOnlyList<string> sourceFiles) = ConversionSettingsReader.ReadSource(settings);
 
-		EramOutputLayout layout = SettingsValueReader.OptionalEnum(
-			settings, "OutputLayout", EramOutputLayout.ByObject,
-			hint: "Use \"ByObject\" (a file per object type and map group) or \"ByFilter\" (files by filter index and similar attributes).");
+		List<ServiceMessage> messages = [.. SubServiceSettingsReader.UnknownKeyWarnings(
+			settings, OwnKeys, CrcKindsByClass, LogSource,
+			labelSource: "each text keeps its own text from the GeoMap")];
+
+		EramOutputLayout layout = ReadLayout(settings, messages);
 
 		EramDefaultsSource source = SettingsValueReader.OptionalEnum(
 			settings, "DefaultsSource", EramDefaultsSource.Xml,
-			hint: "Use \"Xml\" (carry over the XML's defaults), \"XmlThenCard\" (the tab's defaults where an object has none) or \"Card\" (the tab's defaults only).");
+			hint: "Use \"Xml\" (carry over the XML's defaults), \"XmlThenCard\" (the tab's defaults where the XML gives none) or \"Card\" (the tab's defaults only).");
 
 		// The tab's defaults are read only when they can be used, and then only the kinds whose
 		// Include box is ticked.
 		bool usesCard = source != EramDefaultsSource.Xml;
 
-		IReadOnlyList<ServiceMessage> messages = SubServiceSettingsReader.UnknownKeyWarnings(
-			settings, OwnKeys, CrcKindsByClass, LogSource,
-			labelSource: "each text keeps its own text from the GeoMap");
+		(bool includeFeb, IReadOnlyList<EramFebProperty> febProperties) =
+			SubServiceSettingsReader.ReadFebProperties<EramFebProperty>(settings, example: "mapObjectType,lineObjectId,symbolId");
 
 		EramToGeojsonSettings parsed = new()
 		{
@@ -83,8 +99,25 @@ public static class EramToGeojsonSettingsParser
 			TextDefaults = usesCard && ConversionSettingsReader.ReadCrcInclude(settings, CrcFeatureKind.Text)
 				? CrcDefaultsReader.ReadText(settings, $"Crc.{CrcClassName}.Text")
 				: null,
+			IncludeFebProperties = includeFeb,
+			FebProperties = febProperties,
 		};
 
 		return new EramToGeojsonSettingsParseResult(parsed, messages);
+	}
+
+	/// <summary><c>OutputLayout</c>, reading a retired layout as its nearest with a note saying so.</summary>
+	private static EramOutputLayout ReadLayout(IReadOnlyDictionary<string, string> settings, List<ServiceMessage> messages)
+	{
+		if (settings.TryGetValue("OutputLayout", out string? saved) && RetiredLayouts.TryGetValue(saved.Trim(), out EramOutputLayout nearest))
+		{
+			messages.Add(new ServiceMessage(LogLevel.Info, LogSource,
+				$"OutputLayout \"{saved.Trim()}\" is no longer offered, so \"{nearest}\" was used. Choose a layout on the tab and save to stop this note."));
+			return nearest;
+		}
+
+		return SettingsValueReader.OptionalEnum(
+			settings, "OutputLayout", EramOutputLayout.ByAttributes,
+			hint: "Use \"ByFilters\" (a folder per set of filters), \"ByAttributes\" (a file per shared look) or \"Raw\" (one file per map).");
 	}
 }

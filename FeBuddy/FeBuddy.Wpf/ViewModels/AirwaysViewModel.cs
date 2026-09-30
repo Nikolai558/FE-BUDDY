@@ -129,7 +129,7 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 			"Each set is _Lines + _Symbols + _Text.",
 		AirwayGeojsonOutputBy.Designation =>
 			"One file set per designation, derived from the AWY_ID prefix.\n" +
-		    "Ex: J / V / Q / T / AT):\n" +
+			"Ex: J / V / Q / T / AT:\n" +
 			"    Airways_J, Airways_V, Airways_Q, …\n" +
 			"Each set is _Lines + _Symbols + _Text.",
 		_ => string.Empty,
@@ -301,6 +301,15 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 		_splitAtAntimeridian = GetBool("SplitAtAntimeridian", true);
 		LoadSharedSettings();
 		LoadStrata();
+
+		// No GeoJSON and no alias file would leave the tab in a state its own guard forbids; a
+		// hand-edited config is the only way to get here, so fall back to the defaults, as the
+		// other tabs do.
+		if (_outputBy == AirwayGeojsonOutputBy.None && !GenerateAliasFile)
+		{
+			_outputBy = AirwayGeojsonOutputBy.HighLow;
+			GenerateAliasFile = true;
+		}
 
 		// Re-apply the excluded set and the strata to any already-built designation toggles.
 		HashSet<string> excluded = ParseExcludedFromConfig();

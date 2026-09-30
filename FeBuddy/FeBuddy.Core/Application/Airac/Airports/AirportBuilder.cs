@@ -8,7 +8,7 @@ namespace FeBuddy.Core.Application.Airac.Airports;
 
 /// <summary>
 /// Assembles every <see cref="Airport"/> the Airports sub-service works with, pulling from
-/// <c>APT_BASE</c>, <c>APT_RWY</c>, <c>APT_RWY_END</c>, <c>FRQ</c> and <c>CLS_ARSP</c>.
+/// <c>APT_BASE</c>, <c>APT_RWY</c>, <c>APT_RWY_END</c>, <c>APT_ATT</c>, <c>FRQ</c> and <c>CLS_ARSP</c>.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -25,6 +25,7 @@ public static class AirportBuilder
 {
 	private const string LogSource = "AirportBuilder";
 	private const string PermanentlyClosedStatus = "CP";
+	private const string NonToweredCode = "NON-ATCT";
 
 	/// <summary>
 	/// Builds every eligible airport from the parsed NASR data.
@@ -77,6 +78,9 @@ public static class AirportBuilder
 		ILookup<string, AptCsvDataModel.AptRwyEnd> endsByAirportAndRunway = allNasrCsvData.Apt.AptRwyEnd
 			.ToLookup(e => RunwayKey(e.ArptId, e.RwyEndRwyId), StringComparer.OrdinalIgnoreCase);
 
+		ILookup<string, AptCsvDataModel.AptAtt> attendanceByAirport = allNasrCsvData.Apt.AptAtt
+			.ToLookup(a => a.ArptId?.Trim() ?? string.Empty, StringComparer.OrdinalIgnoreCase);
+
 		ILookup<string, FrqCsvDataModel.Frq> frequenciesByAirport = BuildFrequencyLookup(allNasrCsvData.Frq?.Frq ?? []);
 
 		Dictionary<string, ClsArspCsvDataModel.ClsArsp> airspaceByAirport = new(StringComparer.OrdinalIgnoreCase);
@@ -114,6 +118,8 @@ public static class AirportBuilder
 				WeatherFrequency = Normalize(weather?.Freq),
 				WeatherFrequencyUse = Normalize(weather?.FreqUse),
 				ClassAirspace = AirportFieldMaps.BuildClassAirspace(airspaceRow),
+				AirspaceHours = AirportFieldMaps.SplitAirspaceHours(airspaceRow?.AirspaceHrs),
+				AttendanceHours = IsNonTowered(row) ? [] : BuildAttendanceHours(attendanceByAirport[id]),
 				Runways = runways,
 				LongestRunway = SelectLongestRunway(runways)
 			});
@@ -145,8 +151,22 @@ public static class AirportBuilder
 			.ThenBy(r => r.RunwayId, StringComparer.Ordinal)
 			.FirstOrDefault();
 
+	/// <summary>
+	/// An airport's attendance hours: the <c>HOUR</c> of each of its <c>APT_ATT</c> rows, in
+	/// <c>SKED_SEQ_NO</c> order (the file does not list them in order), trimmed, blank ones left out.
+	/// </summary>
+	private static IReadOnlyList<string> BuildAttendanceHours(IEnumerable<AptCsvDataModel.AptAtt> rows) =>
+		[.. rows
+			.OrderBy(r => r.SkedSeqNo)
+			.Select(r => r.Hour?.Trim() ?? string.Empty)
+			.Where(hour => hour.Length > 0)];
+
 	private static bool IsPermanentlyClosed(AptCsvDataModel.AptBase row) =>
 		(row.ArptStatus?.Trim() ?? string.Empty).Equals(PermanentlyClosedStatus, StringComparison.OrdinalIgnoreCase);
+
+	/// <summary>Whether the field has no tower (<c>TWR_TYPE_CODE</c> of <c>NON-ATCT</c>), so it gets no attendance hours.</summary>
+	private static bool IsNonTowered(AptCsvDataModel.AptBase row) =>
+		(row.TwrTypeCode?.Trim() ?? string.Empty).Equals(NonToweredCode, StringComparison.OrdinalIgnoreCase);
 
 	private static IReadOnlyList<AirportRunway> BuildRunways(
 		string airportId,

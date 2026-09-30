@@ -15,6 +15,65 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
 -->
 
 ## Unreleased
+- Folder names and paths in on-screen descriptions and messages (`Upload_to_vNAS`, `Aliases`, the
+  output folder in Settings, …) now show in a code font, the way `code` looks in News posts.
+- Tick boxes and options no longer hide the first underscore of a file name (`Fix_Symbols.geojson`
+  showed as `FixSymbols.geojson`).
+- Scroll bars can be grabbed anywhere across their width; before, only a sliver at their left edge
+  responded.
+- Procedures ▸ Procedures at Any Airport: the procedure box now shows what you type or pick, and a
+  new **Cancel** button clears it.
+- The Outputs cards' tick box now reads just **Alias file**, and the "At least one output must stay
+  on" note is gone (FE-BUDDY still stops you turning off the last output, and says why).
+- Settings ▸ GeoJSON Files no longer has an FE-Buddy Properties section: they are chosen on each
+  tab's FE-Buddy Properties card.
+- `vNAS_Alias.txt` now has FE-BUDDY's aliases first, between a start line and an end line, and your
+  custom alias files after them. CRC uses the last copy of a command, so a command of yours now
+  replaces FE-BUDDY's instead of the other way round. A `vNAS_Alias.txt` you reuse as your custom
+  file, old layout or new, still has its FE-BUDDY aliases left out, and the Review tab lists the
+  commands yours replace.
+- The AIRAC Service sub-services are in a new order, on the General tab and in the tab rail: ARTCC
+  Boundaries, Airports, Airways, Arrivals, Departures, NAVAIDs, Fixes, Procedures, Telephony, Wx
+  Stations, vNAS Alias Upload.
+- CRC ERAM Defaults card: each file's panel is darker than the card, and with several types (the
+  NAVAID types, Airways High / Low / Other) each type has a box of its own. Panels side by side
+  line up.
+- Airways ▸ High and Low Files: each drop-down sits closer to its airway type.
+- File Names: the new-name box sits to the right of its file, and drops under it only when the
+  window is too narrow.
+- Airways: a hand-edited settings file with no output switched on now loads the defaults, as the
+  other tabs already did.
+- When an update is available, a red **Update available!** badge appears beside the version at
+  the top of the window, taking turns with the new version's number; click it to update. After
+  **Later** it turns amber for the rest of the session. There is still no pop-up.
+- Settings ▸ **Reset FE-Buddy** starts over as if FE-BUDDY had just been installed: it deletes the
+  downloaded AIRAC, Telephony and Wx Station data, logs and settings backups, and - if you choose -
+  your settings (offering to save a copy first) and saved credentials, then restarts.
+- File Conversions ▸ ERAM to GeoJSON now writes the original ERAM_2_GEOJSON tool's layouts, with
+  its names:
+  - **By Filters** (`CENTER_CENTER-MAP\Filter_01\Filter_01_Lines.geojson`,
+    `Multi-Filter_02_03_08\…`), **By Attributes** (`BCG 01_Filters 01_Type AAV_Group 64_Object
+    ZOB3NM_Style Solid_Thick 1_Lines.geojson`) and **Raw** (`CENTER_CENTER-MAP.geojson`); hover a
+    layout on the tab to see its folders. They replace Object Type and Map Group and Filter Index
+    and Similar Attributes, which load as By Attributes and By Filters.
+  - Output goes to `ERAM_TO_GEOJSON` (was `ERAM to GeoJSON\<source file>`), which each run
+    empties first after asking you, and the tab takes one Geomaps file per run.
+  - The CRC ERAM Defaults still apply to every layout, and optional `feb.*` properties
+    (`feb.mapObjectType`, `feb.lineObjectId`, `feb.symbolId`, …) take the place of the old tool's
+    `E2G_*` ones.
+  - Every label on a symbol is converted (only the first was before), text ERAM keeps hidden is
+    left out (it used to be drawn), and an element with no filters at all shows at every filter
+    setting (filter 0).
+  - `ConsoleCommandControl.txt` is back: with the export's `ConsoleCommandControl.xml` beside
+    `Geomaps.xml`, each run lists its brightness and filter menus - each button's label, position
+    and groups, and which maps use each menu - as the old tool did.
+- `Airports.txt`: each airport's card now ends with its attendance hours (**ATNDCE HRS**, left
+  blank for an airport with no tower) and, moved down from the middle of the card, its airspace
+  class with the hours that airspace is in effect (**HRS**), one schedule per line.
+- AIRAC Service ▸ Review: after a quick run, the duplicate-alias-command check no longer stays on
+  "working..." once the run has finished.
+- (Dev notes)
+  - Every file is UTF-8 without a byte-order mark, and a unit test now fails on any file that has one.
 
 ---
 

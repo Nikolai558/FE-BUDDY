@@ -121,6 +121,8 @@ Open an [issue](https://github.com/Nikolai558/FE-BUDDY/issues), or ask on the FE
 - [Cian Ormond](https://github.com/wiggleforlife) - .NET 6 Conversion Assistance
 - [Caelan Sayler](https://github.com/caesay) - .NET 6 Conversion Assistance
 - Ian Drake - FAA FOIA RVM Conversion source code reference
+- Jon Galad - v3.0 icon and logo design
+- Nick Shuster - v3.0 icon and logo design
 
 If your name is listed above and you'd like a different link attached to it, or if your name should
 be listed here but isn't, please let us know via a pull request or on our Discord. We want to make

@@ -213,8 +213,11 @@ window is.
   run waits. The file goes by the type, not by the published altitudes: a V airway that the FAA
   also publishes in Hawaii at 45,000 ft stays on the low map. An `Airways_High` or `Airways_Low`
   file is only written when a type goes in it.
-- **Buffer Airway Waypoints** - lines stop a short distance before each waypoint (2.5 NM at a
-  five-letter fix, 5 NM elsewhere) so they do not run through the symbols.
+- **Buffer Airway Waypoints** - lines stop a short distance before each waypoint so they do not
+  run through the symbols. Once ticked, choose how far: **Around fixes** (five-letter fixes,
+  2.5 NM to start with) and **Around NAVAIDs** (5 NM), each from 0 to 10 NM. A leg shorter than
+  the distances at its two ends added together isn't drawn, so larger distances remove more short
+  legs.
 - **Split GeoJSON at the Antimeridian** - a line that crosses ±180° longitude is split in two so
   it does not wrap across the whole map. Leave it on.
 - **FE-Buddy properties:** `awyId`, `pointId`, `waypoints`.

@@ -150,6 +150,8 @@ naming the key.
 | `EmitLines`, `EmitSymbols`, `EmitText` | `Y` / `N` | `Y` |
 | `GenerateAliasFile` | `Y` / `N` | `Y` |
 | `BufferAirwayWaypoints` | `Y` / `N` | `N` |
+| `FixBufferNm` | NM a buffered line stops short of a 5-character fix, `0`-`10` | `2.5` |
+| `NavaidBufferNm` | NM a buffered line stops short of any other waypoint (a NAVAID), `0`-`10` | `5` |
 | `SplitAtAntimeridian` | `Y` / `N` | `Y` |
 | `ExcludedDesignations` | list, e.g. `RN,SL` (upper-cased) | none |
 | `HighDesignations` | list of designations written to the `Airways_High` files only, e.g. `J,Q` | `J,Q` (see below) |
@@ -157,6 +159,10 @@ naming the key.
 | `BothDesignations` | list of designations written to both the High and the Low files | none |
 | `AliasRoiScope` | `All`, `RoiAirways` | `All` |
 
+- **Buffer distances:** `FixBufferNm` and `NavaidBufferNm` are read only when
+  `BufferAirwayWaypoints` is `Y` and `OutputBy` is not `None`; otherwise they are ignored, whatever
+  they hold. A value outside `0`-`10` throws. A leg shorter than the distances at its two ends
+  added together is dropped, with an `Info` message.
 - **High and Low files:** with `HighLow`, each airway goes in the file its designation is listed
   for - not by its published altitudes. A designation may be in only one of the three lists (it
   throws otherwise). One in none is left out of both files, with an advisory warning naming it.

@@ -23,11 +23,23 @@ public sealed record AirwaySettings
 	public required AirwayGeojsonOutputBy OutputBy { get; init; }
 
 	/// <summary>
-	/// When <see langword="true"/>, each airway leg is shortened by a fixed radius around its
-	/// endpoint waypoints (2.5 NM for 5-character fixes, 5 NM otherwise) so lines stop short
-	/// of waypoint symbols/text.
+	/// When <see langword="true"/>, each airway leg is shortened around its endpoint waypoints
+	/// (<see cref="FixBufferNm"/> for 5-character fixes, <see cref="NavaidBufferNm"/> otherwise) so
+	/// lines stop short of waypoint symbols/text.
 	/// </summary>
 	public required bool BufferAirwayWaypoints { get; init; }
+
+	/// <summary>
+	/// How far, in NM, a buffered line stops short of a 5-character fix. Default
+	/// <see cref="AirwayWaypointBuffer.DefaultFixRadiusNm"/>.
+	/// </summary>
+	public double FixBufferNm { get; init; } = AirwayWaypointBuffer.DefaultFixRadiusNm;
+
+	/// <summary>
+	/// How far, in NM, a buffered line stops short of any other waypoint (in practice a NAVAID).
+	/// Default <see cref="AirwayWaypointBuffer.DefaultNavaidRadiusNm"/>.
+	/// </summary>
+	public double NavaidBufferNm { get; init; } = AirwayWaypointBuffer.DefaultNavaidRadiusNm;
 
 	/// <summary>When <see langword="true"/>, Features carry the <c>feb.*</c> properties listed in <see cref="FebProperties"/>.</summary>
 	public required bool IncludeFebCustomProperties { get; init; }

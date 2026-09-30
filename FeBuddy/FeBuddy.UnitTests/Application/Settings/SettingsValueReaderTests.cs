@@ -50,6 +50,37 @@ public sealed class SettingsValueReaderTests
 		Assert.Contains("'Distance'", error.Message);
 	}
 
+	[Theory]
+	[InlineData(null, 2.5d)]
+	[InlineData("  ", 2.5d)]
+	[InlineData("0", 0d)]
+	[InlineData(" 7.25 ", 7.25d)]
+	[InlineData("10", 10d)]
+	public void decimal_in_range_reads_a_number_or_the_default(string? value, double expected)
+	{
+		Dictionary<string, string> settings = value is null ? [] : new() { ["Distance"] = value };
+
+		Assert.Equal(expected, SettingsValueReader.DecimalInRange(settings, "Distance", defaultValue: 2.5, minimum: 0, maximum: 10));
+	}
+
+	[Theory]
+	[InlineData("-0.5")]
+	[InlineData("10.01")]
+	[InlineData("ten")]
+	[InlineData("1,5")]
+	[InlineData("NaN")]
+	[InlineData("Infinity")]
+	public void decimal_in_range_rejects_out_of_range_and_non_numbers(string value)
+	{
+		Dictionary<string, string> settings = new() { ["Distance"] = value };
+
+		ArgumentException error = Assert.Throws<ArgumentException>(() =>
+			SettingsValueReader.DecimalInRange(settings, "Distance", defaultValue: 2.5, minimum: 0, maximum: 10));
+
+		Assert.Contains("'Distance'", error.Message);
+		Assert.Contains("from 0 to 10", error.Message);
+	}
+
 	[Fact]
 	public void required_int_list_reads_a_comma_list_and_rejects_an_empty_or_non_numeric_one()
 	{

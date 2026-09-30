@@ -15,6 +15,8 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
 -->
 
 ## Unreleased
+- Feature #110 - Airways ▸ Buffer Airway Waypoints: choose how far lines stop short of fixes and
+  of NAVAIDs (0 to 10 NM each; 2.5 NM and 5 NM to start with, as before).
 - Bug #275 - **Testers on 3.0.0-alpha.2 are not offered newer alphas. To get them, open
   Settings ▸ Updates, choose Alpha and press Save** (or download the new alpha from the releases
   page). 3.0.0-alpha.2 checks the Stable channel unless Alpha is saved, whatever you chose in

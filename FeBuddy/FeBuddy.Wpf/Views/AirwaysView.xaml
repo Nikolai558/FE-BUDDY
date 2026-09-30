@@ -138,6 +138,34 @@
                     <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
                                Text="Lines stop short of each waypoint so they don't run through the waypoint symbols." />
                     <CheckBox Content="Buffer airway waypoints" IsChecked="{Binding BufferAirwayWaypoints}" />
+                    <!-- How far the lines stop short: only while buffering is on. The label column is
+                         as wide as the longer label, so both boxes line up. -->
+                    <StackPanel Margin="0,8,0,0"
+                                Visibility="{Binding BufferAirwayWaypoints, Converter={StaticResource BoolToVis}}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <TextBlock Text="Around fixes" Style="{StaticResource Text.Body}" VerticalAlignment="Center" />
+                            <TextBox Grid.Column="1" Style="{StaticResource Field.Number}"
+                                     Text="{Binding FixBufferNm, UpdateSourceTrigger=PropertyChanged}"
+                                     bhv:FieldState.Error="{Binding FieldErrors[FixBufferNm]}" />
+                            <TextBlock Grid.Column="2" Text="NM" Style="{StaticResource Text.Body}" VerticalAlignment="Center" />
+                            <TextBlock Grid.Row="1" Text="Around NAVAIDs" Style="{StaticResource Text.Body}" VerticalAlignment="Center" Margin="0,6,0,0" />
+                            <TextBox Grid.Row="1" Grid.Column="1" Style="{StaticResource Field.Number}" Margin="8,6,8,0"
+                                     Text="{Binding NavaidBufferNm, UpdateSourceTrigger=PropertyChanged}"
+                                     bhv:FieldState.Error="{Binding FieldErrors[NavaidBufferNm]}" />
+                            <TextBlock Grid.Row="1" Grid.Column="2" Text="NM" Style="{StaticResource Text.Body}" VerticalAlignment="Center" Margin="0,6,0,0" />
+                        </Grid>
+                        <TextBlock Style="{StaticResource Text.Prose}" Margin="0,8,0,0"
+                                   Text="0 to 10 NM. A leg shorter than the distances at its two ends added together isn't drawn, so larger distances remove more short legs." />
+                    </StackPanel>
                 </StackPanel>
             </ctl:Card>
 

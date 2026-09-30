@@ -136,7 +136,7 @@ public sealed class VnasAliasViewModel : SubServiceSettingsViewModel, ISubServic
 			return added == 0
 				? $"None of FE-Buddy's alias files go into {AiracOutputPaths.VnasAliasFileName}, so it will hold only your custom aliases. " +
 					"To add one, select its sub-service on the General tab, and tick its alias file on that tab's Upload to vNAS card."
-				: $"{added} of {FeBuddyAliasFiles.Count} FE-Buddy alias files go in, below your custom aliases.";
+				: $"{added} of {FeBuddyAliasFiles.Count} FE-Buddy alias files go in, ahead of your custom aliases.";
 		}
 	}
 
@@ -193,14 +193,15 @@ public sealed class VnasAliasViewModel : SubServiceSettingsViewModel, ISubServic
 		}
 
 		string feBuddy = merged.FeBuddyFiles.Count > 0
-			? $"{merged.FeBuddyCommandCount:N0} from {string.Join(", ", merged.FeBuddyFiles)}"
+			? $"{merged.FeBuddyCommandCount:N0} command(s) from {string.Join(", ", merged.FeBuddyFiles)}"
 			: "no FE-Buddy alias file ticked for vNAS";
 
-		// Named as it was written: the user may have renamed it on the File Names tab.
+		// Named as it was written: the user may have renamed it on the File Names tab. In the
+		// file's own order: FE-Buddy's aliases, then the custom files.
 		string summary = merged.FilePath is null
 			? $"{AiracOutputPaths.VnasAliasFileName} not written"
-			: $"{Path.GetFileName(merged.FilePath)}: {merged.CustomCommandCount:N0} command(s) from {merged.CustomFilesMerged} of " +
-				$"{merged.CustomFileCount} custom alias file(s), then {feBuddy}";
+			: $"{Path.GetFileName(merged.FilePath)}: {feBuddy}, then {merged.CustomCommandCount:N0} command(s) from " +
+				$"{merged.CustomFilesMerged} of {merged.CustomFileCount} custom alias file(s)";
 
 		return new SubServiceRunResult(Title, summary, merged.Messages);
 	}
@@ -210,7 +211,7 @@ public sealed class VnasAliasViewModel : SubServiceSettingsViewModel, ISubServic
 	{
 		List<ServicePreviewRow> rows =
 		[
-			new ServicePreviewRow("Output", $"{OutputFile}: these files, then every FE-Buddy alias file ticked for vNAS"),
+			new ServicePreviewRow("Output", $"{OutputFile}: every FE-Buddy alias file ticked for vNAS, then these files"),
 		];
 
 		if (Sources.Count == 0)

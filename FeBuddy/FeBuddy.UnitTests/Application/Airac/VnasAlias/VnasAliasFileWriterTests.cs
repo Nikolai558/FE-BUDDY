@@ -8,13 +8,20 @@ using FeBuddy.Core.Infrastructure.Logging.Models;
 namespace FeBuddy.UnitTests.Application.Airac.VnasAlias;
 
 /// <summary>
-/// Covers <see cref="VnasAliasFileWriter"/>: <c>vNAS_Alias.txt</c> is the custom alias files, then
-/// FE-Buddy's marked alias files under one marker line; a <c>.FeUseOnly</c> line stays first; an old
-/// <c>vNAS_Alias.txt</c> used as a custom file loses its FE-Buddy section; commands in more than one
-/// file are reported; and a custom file that could not be read is left out with a warning.
+/// Covers <see cref="VnasAliasFileWriter"/>: <c>vNAS_Alias.txt</c> is FE-Buddy's marked alias files
+/// between a start and an end line, then the custom alias files, so CRC (last copy wins) uses the
+/// user's commands; a <c>.FeUseOnly</c> line stays first; an old <c>vNAS_Alias.txt</c> used as a
+/// custom file loses its FE-Buddy section, in either layout; commands in more than one file are
+/// reported; and a custom file that could not be read is left out with a warning.
 /// </summary>
 public sealed class VnasAliasFileWriterTests : IDisposable
 {
+	private const string Start2610 =
+		"; ===== FE-Buddy aliases (AIRAC 2610) start here. FE-Buddy replaces everything down to the end line every cycle. =====";
+
+	private const string End =
+		"; ===== End of FE-Buddy aliases. Your own aliases go below this line: CRC uses the last copy of a command, so yours replace FE-Buddy's. =====";
+
 	private readonly string _output = Path.Combine(Path.GetTempPath(), "FeBuddyTests_VnasAlias_" + Guid.NewGuid().ToString("N"));
 
 	public VnasAliasFileWriterTests() => Directory.CreateDirectory(Path.Combine(_output, "Aliases"));
@@ -24,7 +31,7 @@ public sealed class VnasAliasFileWriterTests : IDisposable
 	public void Dispose() => Directory.Delete(_output, recursive: true);
 
 	[Fact]
-	public void custom_files_come_first_then_fe_buddy_files_under_the_marker()
+	public void fe_buddy_files_come_first_between_the_markers_then_the_custom_files()
 	{
 		string airways = FeBuddyFile("Airways.txt", ".J60F .FF A B C\r\n");
 		string telephony = FeBuddyFile("Telephony.txt", "\r\n.idAVA .MSG AVIANCA\r\n.idAAL .MSG AMERICAN\r\n\r\n");
@@ -42,18 +49,19 @@ public sealed class VnasAliasFileWriterTests : IDisposable
 		Assert.Equal(
 			Lines(
 				".FeUseOnly keep me first",
-				"# ZOB",
-				"",
-				".dtwdv .ECHO DTW",
-				"",
-				".extra .ECHO extra",
-				"",
-				"; ===== FE-Buddy aliases (AIRAC 2610) start here. FE-Buddy replaces everything below this line every cycle. =====",
+				Start2610,
 				"; ----- Airways.txt -----",
 				".J60F .FF A B C",
 				"; ----- Telephony.txt -----",
 				".idAVA .MSG AVIANCA",
-				".idAAL .MSG AMERICAN"),
+				".idAAL .MSG AMERICAN",
+				End,
+				"",
+				"# ZOB",
+				"",
+				".dtwdv .ECHO DTW",
+				"",
+				".extra .ECHO extra"),
 			File.ReadAllText(VnasAliasPath));
 
 		Assert.Equal(2, result.CustomFileCount);
@@ -94,8 +102,9 @@ public sealed class VnasAliasFileWriterTests : IDisposable
 			File.ReadAllText(VnasAliasPath));
 	}
 
+	/// <summary>A file uploaded before the end line existed: FE-Buddy's section was last, so it runs to the end.</summary>
 	[Fact]
-	public void an_old_vnas_alias_file_used_as_a_custom_file_loses_its_fe_buddy_section()
+	public void an_old_vnas_alias_file_with_the_fe_buddy_section_last_loses_it()
 	{
 		string oldUpload = Lines(
 			".mine .ECHO mine",
@@ -107,16 +116,65 @@ public sealed class VnasAliasFileWriterTests : IDisposable
 		VnasAliasResult result = VnasAliasFileWriter.Write(
 			[Read(1, "ZOB-Alias.txt", oldUpload)], [FeBuddyFile("Airways.txt", ".J60F .FF NEW")], "2610", _output);
 
-		string written = File.ReadAllText(VnasAliasPath);
-		Assert.DoesNotContain("OLD", written, StringComparison.Ordinal);
-		Assert.DoesNotContain("2609", written, StringComparison.Ordinal);
-		Assert.StartsWith(Lines(".mine .ECHO mine", "") + "; ===== FE-Buddy aliases (AIRAC 2610)", written, StringComparison.Ordinal);
+		Assert.Equal(
+			Lines(Start2610, "; ----- Airways.txt -----", ".J60F .FF NEW", End, "", ".mine .ECHO mine"),
+			File.ReadAllText(VnasAliasPath));
 		Assert.Equal(1, result.CustomCommandCount);
 		Assert.Equal(0, result.DuplicateCommandCount);
 
 		ServiceMessage notice = Assert.Single(result.Messages);
 		Assert.Equal(LogLevel.Info, notice.Level);
-		Assert.Contains("custom alias file 1 (ZOB-Alias.txt) ends with FE-Buddy aliases", notice.Text, StringComparison.Ordinal);
+		Assert.Equal(
+			"custom alias file 1 (ZOB-Alias.txt) holds FE-Buddy aliases from an earlier vNAS_Alias.txt; they were left out, so they are not added twice.",
+			notice.Text);
+	}
+
+	/// <summary>A file in today's layout: only the lines outside FE-Buddy's section are the user's.</summary>
+	[Fact]
+	public void an_old_vnas_alias_file_with_the_fe_buddy_section_first_keeps_what_is_around_it()
+	{
+		string oldUpload = Lines(
+			".FeUseOnly mine",
+			"; ===== FE-Buddy aliases (AIRAC 2609) start here. FE-Buddy replaces everything down to the end line every cycle. =====",
+			"; ----- Airways.txt -----",
+			".J60F .FF OLD",
+			End,
+			"",
+			".mine .ECHO mine");
+
+		VnasAliasResult result = VnasAliasFileWriter.Write(
+			[Read(1, "ZOB-Alias.txt", oldUpload)], [FeBuddyFile("Airways.txt", ".J60F .FF NEW")], "2610", _output);
+
+		Assert.Equal(
+			Lines(".FeUseOnly mine", Start2610, "; ----- Airways.txt -----", ".J60F .FF NEW", End, "", ".mine .ECHO mine"),
+			File.ReadAllText(VnasAliasPath));
+		Assert.Equal(LogLevel.Info, Assert.Single(result.Messages).Level);
+	}
+
+	/// <summary>A facility that uploads the file, then uses it as next cycle's custom file, gets the same file back.</summary>
+	[Fact]
+	public void merging_the_written_file_again_gives_the_same_file()
+	{
+		string airways = FeBuddyFile("Airways.txt", ".J60F .FF A B C");
+		VnasAliasFileWriter.Write([Read(1, "ZOB-Alias.txt", ".FeUseOnly x\r\n.mine .ECHO mine\r\n\r\n.also .ECHO also")], [airways], "2610", _output);
+		string first = File.ReadAllText(VnasAliasPath);
+
+		VnasAliasFileWriter.Write([Read(1, "vNAS_Alias.txt", first)], [airways], "2610", _output);
+
+		Assert.Equal(first, File.ReadAllText(VnasAliasPath));
+	}
+
+	[Fact]
+	public void a_custom_file_that_was_only_fe_buddy_aliases_adds_nothing()
+	{
+		string oldUpload = Lines(
+			"; ===== FE-Buddy aliases (AIRAC 2609) start here. FE-Buddy replaces everything down to the end line every cycle. =====",
+			".J60F .FF OLD",
+			End);
+
+		VnasAliasFileWriter.Write([Read(1, "vNAS_Alias.txt", oldUpload)], [FeBuddyFile("Airways.txt", ".J60F .FF NEW")], "2610", _output);
+
+		Assert.Equal(Lines(Start2610, "; ----- Airways.txt -----", ".J60F .FF NEW", End), File.ReadAllText(VnasAliasPath));
 	}
 
 	[Fact]
@@ -125,10 +183,7 @@ public sealed class VnasAliasFileWriterTests : IDisposable
 		VnasAliasResult result = VnasAliasFileWriter.Write([], [FeBuddyFile("Navaids.txt", ".CLE .FF CLE")], "2610", _output);
 
 		Assert.Equal(
-			Lines(
-				"; ===== FE-Buddy aliases (AIRAC 2610) start here. FE-Buddy replaces everything below this line every cycle. =====",
-				"; ----- Navaids.txt -----",
-				".CLE .FF CLE"),
+			Lines(Start2610, "; ----- Navaids.txt -----", ".CLE .FF CLE", End),
 			File.ReadAllText(VnasAliasPath));
 		Assert.Equal(0, result.CustomFileCount);
 	}
@@ -155,7 +210,7 @@ public sealed class VnasAliasFileWriterTests : IDisposable
 
 		Assert.Equal(2, result.CustomFileCount);
 		Assert.Equal(1, result.CustomFilesMerged);
-		Assert.StartsWith(Lines(".b .ECHO b", ""), File.ReadAllText(VnasAliasPath), StringComparison.Ordinal);
+		Assert.EndsWith(Lines(End, "", ".b .ECHO b"), File.ReadAllText(VnasAliasPath), StringComparison.Ordinal);
 
 		ServiceMessage warning = Assert.Single(result.Messages);
 		Assert.Equal(LogLevel.Warning, warning.Level);
@@ -212,6 +267,7 @@ public sealed class VnasAliasFileWriterTests : IDisposable
 		}
 	}
 
+	/// <summary>The files are named in merge order, so the custom file - the copy CRC uses - comes last.</summary>
 	[Fact]
 	public void a_command_from_a_custom_file_in_another_file_is_reported_once_with_the_files_it_is_in()
 	{
@@ -223,12 +279,15 @@ public sealed class VnasAliasFileWriterTests : IDisposable
 
 		Assert.Equal(1, result.DuplicateCommandCount);
 
-		ServiceMessage warning = Assert.Single(result.Messages);
-		Assert.True(warning.IsAdvisory);
+		ServiceMessage notice = Assert.Single(result.Messages);
+		Assert.True(notice.IsAdvisory);
+		Assert.Equal(LogLevel.Info, notice.Level);
 		Assert.Equal(
-			"1 alias command(s) from your custom alias files are also in another file merged into vNAS_Alias.txt, so CRC can only run " +
-			"one of each: .CLE (ZOB-Alias.txt, Navaids.txt). Remove the extra copies from your custom alias files, or untick the FE-Buddy file.",
-			warning.Text);
+			"1 alias command(s) from your custom alias files are also in another file merged into vNAS_Alias.txt: " +
+			".CLE (Navaids.txt, ZOB-Alias.txt). CRC uses the last copy of a command - the one from the last file named - " +
+			"and your custom alias files come after FE-Buddy's, so a command of yours replaces FE-Buddy's. " +
+			"To use FE-Buddy's instead, remove yours.",
+			notice.Text);
 	}
 
 	[Fact]
@@ -268,7 +327,7 @@ public sealed class VnasAliasFileWriterTests : IDisposable
 
 		Assert.Equal(12, result.DuplicateCommandCount);
 		string text = Assert.Single(result.Messages).Text;
-		Assert.Contains(".c10 (a.txt, Airways.txt), ...", text, StringComparison.Ordinal);
+		Assert.Contains(".c10 (Airways.txt, a.txt), ...", text, StringComparison.Ordinal);
 		Assert.DoesNotContain(".c11", text, StringComparison.Ordinal);
 	}
 

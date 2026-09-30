@@ -15,6 +15,7 @@ using FeBuddy.Core.Infrastructure.Logging;
 using FeBuddy.Core.Infrastructure.Logging.Models;
 using FeBuddy.Core.Infrastructure.Nasr.Models;
 using FeBuddy.Core.Infrastructure.Nasr.Parsers;
+using FeBuddy.Core.Infrastructure.Platform;
 using FeBuddy.Core.Infrastructure.Platform.Models;
 using FeBuddy.Core.Infrastructure.SharedData.Models;
 using FeBuddy.Core.Infrastructure.Telephony.Models;
@@ -62,6 +63,7 @@ public sealed class LaunchSequenceTests : IDisposable
 		UserConfigFile.ConfigureForTesting(Path.Combine(_root, "config"));
 		AppEnvironment.ResetForTesting();
 		LegacyGitHubTokenNotice.ConfigureForTesting(() => []);
+		LegacySquirrelShortcuts.ConfigureForTesting([Path.Combine(_root, "desktop")], Path.Combine(_root, "squirrel", "FE-BUDDY.exe"));
 		AiracCycleDataCache.ConfigureForTesting(new AiracCycleDataCache(
 			probe: (_, _) => Task.FromResult(AiracCyclePublicationState.Published),
 			download: (cycle, _) =>
@@ -77,6 +79,7 @@ public sealed class LaunchSequenceTests : IDisposable
 		AppEnvironment.HttpClientForTesting?.Dispose();
 		AppEnvironment.ResetForTesting();
 		LegacyGitHubTokenNotice.ConfigureForTesting(null);
+		LegacySquirrelShortcuts.ConfigureForTesting(null, null);
 		AiracCycleDataCache.ConfigureForTesting(null);
 		UserConfigFile.ConfigureForTesting(null);
 		TempWorkspace.ConfigureForTesting(null);
@@ -210,7 +213,7 @@ public sealed class LaunchSequenceTests : IDisposable
 			new[]
 			{
 				LaunchStep.ClearTempWorkspace, LaunchStep.ReadUserConfig, LaunchStep.CheckLegacyGitHubToken,
-				LaunchStep.CheckUtcTimeAndInternet, LaunchStep.CheckVersion, LaunchStep.PrepareAiracData, LaunchStep.CheckNews,
+				LaunchStep.RemoveLegacyShortcuts, LaunchStep.CheckUtcTimeAndInternet, LaunchStep.CheckVersion, LaunchStep.PrepareAiracData, LaunchStep.CheckNews,
 			}.Order(),
 			failed);
 		Assert.Contains(AppLog.Entries, e => e.Level == LogLevel.Warning && e.Message.Contains("step blew up. Continuing launch.", StringComparison.Ordinal));

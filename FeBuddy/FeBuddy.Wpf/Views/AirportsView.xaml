@@ -27,17 +27,16 @@
 
             <!-- ============ outputs ============ -->
             <cards:OutputsCard GeojsonDescription="Writes the airport and runway GeoJSON files selected below."
-                               AliasFileName="Airports.txt"
                                AliasDescription="Writes one alias command per airport FAA ID, and one for airports with an ICAO ID." />
 
             <!-- ============ which GeoJSON files ============ -->
             <cards:GeojsonFilesCard IsEnabled="{Binding GenerateGeojson}"
                                     LinesLabel="Runways — Lines"
-                                    LinesDescription="One MultiLineString per airport holding that airport's runway centrelines."
+                                    LinesDescription="One MultiLineString Feature per airport holding that airport's runway centrelines. (1 file)"
                                     SymbolsLabel="Airports — Symbols"
-                                    SymbolsDescription="One symbol per airport, placed at its reference point."
+                                    SymbolsDescription="One symbol per airport, placed at its reference point. (1 file)"
                                     TextLabel="Airports — Text"
-                                    TextDescription="A label per airport showing the FAA ID and the airport name." />
+                                    TextDescription="A label per airport showing the FAA ID and the airport name. (1 file)" />
 
             <!-- ============ FE-Buddy properties ============ -->
             <cards:FebPropertiesCard IsEnabled="{Binding GenerateGeojson}" />

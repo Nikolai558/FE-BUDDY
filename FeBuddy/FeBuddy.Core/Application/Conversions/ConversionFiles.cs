@@ -23,6 +23,11 @@ internal static class ConversionFiles
 	/// are converted, and the rest are named in one message. Files picked one by one are never
 	/// filtered - picking a file says it is meant.
 	/// </param>
+	/// <param name="readAlongside">
+	/// Optionally, which of the files <paramref name="isSource"/> turns down the conversion still
+	/// reads beside its source (ERAM's <c>ConsoleCommandControl.xml</c>): not converted, and not
+	/// named as left alone.
+	/// </param>
 	/// <returns>The source files, in the order they will be converted.</returns>
 	/// <exception cref="ArgumentException">Thrown when the source folder does not exist.</exception>
 	public static IReadOnlyList<string> Resolve(
@@ -30,7 +35,8 @@ internal static class ConversionFiles
 		IReadOnlyList<string> extensions,
 		string logSource,
 		List<ServiceMessage> messages,
-		Func<string, bool>? isSource = null)
+		Func<string, bool>? isSource = null,
+		Func<string, bool>? readAlongside = null)
 	{
 		if (settings.SourceFolder is not { } folder)
 		{
@@ -51,13 +57,15 @@ internal static class ConversionFiles
 		if (isSource is not null && found.Length > 0)
 		{
 			string[] others = [.. found.Where(path => !isSource(path))];
+			found = [.. found.Except(others)];
 
-			if (others.Length > 0)
+			string[] leftAlone = [.. others.Where(path => readAlongside?.Invoke(path) != true)];
+
+			if (leftAlone.Length > 0)
 			{
-				found = [.. found.Except(others)];
 				messages.Add(new ServiceMessage(LogLevel.Info, logSource,
-					$"{others.Length:N0} other file(s) in {folder} are not what this conversion reads and were left alone: " +
-					string.Join(", ", others.Select(Path.GetFileName))));
+					$"{leftAlone.Length:N0} other file(s) in {folder} are not what this conversion reads and were left alone: " +
+					string.Join(", ", leftAlone.Select(Path.GetFileName))));
 			}
 		}
 

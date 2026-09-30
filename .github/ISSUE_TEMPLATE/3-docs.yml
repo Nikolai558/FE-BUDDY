@@ -1,0 +1,41 @@
+name: Documentation problem
+description: Something in the docs or the app's text is wrong, unclear, or missing.
+title: "[DOCS] - "
+labels: ["docs", "v3.x"]
+body:
+  - type: dropdown
+    id: where
+    attributes:
+      label: Where is it?
+      multiple: true
+      options:
+        - User Guide
+        - FAQ and troubleshooting
+        - Getting started
+        - GitHub token guide
+        - Glossary
+        - Text inside the app (tooltips, messages, descriptions)
+        - Developer docs
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: location
+    attributes:
+      label: Link or location
+      description: A link to the page and section, or where it appears in the app.
+      placeholder: e.g. User Guide > Airways, or the Settings page's update channel text
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What's wrong or missing?
+    validations:
+      required: true
+
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: Suggested fix
+      description: What it should say instead, if you know.

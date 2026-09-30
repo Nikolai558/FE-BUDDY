@@ -1,6 +1,6 @@
 <!--
-    SettingsView  -  Facility Profile / Default ROI / GeoJSON Files / Credentials / FE-Buddy's GitHub Requests / Updates.
-    Everything persists to UserConfig.json.
+    SettingsView  -  Facility Profile / Default ROI / GeoJSON Files / Credentials / FE-Buddy's GitHub Requests / Updates /
+    Reset FE-Buddy (with Uninstall FE-Buddy… across from its button). Everything persists to UserConfig.json.
 -->
 <UserControl x:Class="FeBuddy.Wpf.Views.SettingsView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -83,9 +83,10 @@
                                     Command="{Binding BrowseOutputCommand}" Margin="8,0,0,0" />
                             <TextBox Text="{Binding OutputDirectory, UpdateSourceTrigger=PropertyChanged}" />
                         </DockPanel>
-                        <CheckBox Content="Add a FE-Buddy__Output folder inside that directory"
-                                  IsChecked="{Binding AddFeBuddyOutputFolder}" Margin="0,8,0,0" />
-                        <TextBlock Text="{Binding OutputFolderExample}" Style="{StaticResource Text.Caption}"
+                        <CheckBox IsChecked="{Binding AddFeBuddyOutputFolder}" Margin="0,8,0,0">
+                            <TextBlock bhv:InlineCode.Text="Add a `FE-Buddy_Output` folder inside that directory" />
+                        </CheckBox>
+                        <TextBlock bhv:InlineCode.Text="{Binding OutputFolderExample}" Style="{StaticResource Text.Caption}"
                                    TextWrapping="Wrap" Margin="0,6,0,0" />
                     </StackPanel>
                 </ctl:Card>
@@ -110,13 +111,7 @@
                 <ctl:Card Header="GeoJSON Files">
                     <StackPanel>
 
-                        <ctl:SectionHeader Style="{StaticResource SectionHeader.Group}" Label="FE-Buddy Properties" Margin="0,4,0,0" />
-                        <TextBlock Text="{Binding Source={x:Static vm:SettingsViewModel.FebPropertiesDescription}}"
-                                   Style="{StaticResource Text.Prose}" Margin="0,4,0,0" />
-
-                        <Border Style="{StaticResource Divider}" Margin="0,14" />
-
-                        <ctl:SectionHeader Style="{StaticResource SectionHeader.Group}" Label="Maximum Coordinate Precision" />
+                        <ctl:SectionHeader Style="{StaticResource SectionHeader.Group}" Label="Maximum Coordinate Precision" Margin="0,4,0,0" />
                         <TextBlock Text="{Binding Source={x:Static vm:SettingsViewModel.CoordinatePrecisionDescription}}"
                                    Style="{StaticResource Text.Prose}" Margin="0,4,0,8" />
                         <StackPanel Orientation="Horizontal">
@@ -300,9 +295,26 @@
                                     </Style>
                                 </Button.Style>
                             </Button>
-                            <Button Style="{StaticResource Button.Ghost}" Content="Get the latest stable installer"
+                            <Button Style="{StaticResource Button.Ghost}" Content="Open the Releases Page"
                                     Command="{Binding RollbackCommand}" Margin="8,0,0,0" />
                         </StackPanel>
+                    </StackPanel>
+                </ctl:Card>
+
+                <!-- ================= 7. RESET FE-BUDDY ================= -->
+                <!-- Last, away from everyday settings. The window it opens says what goes and asks what to keep. -->
+                <ctl:Card Header="Reset FE-Buddy">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,10"
+                                   Text="{Binding Source={x:Static vm:SettingsViewModel.ResetDescription}}" />
+                        <!-- Uninstall sits across from Reset, only in the installed copy; the window it opens says what goes. -->
+                        <Grid>
+                            <Button Style="{StaticResource Button.Ghost}" Content="Reset FE-Buddy…" HorizontalAlignment="Left"
+                                    VerticalAlignment="Center" Command="{Binding ResetCommand}" />
+                            <Button Style="{StaticResource Button.Ghost.Danger}" Content="Uninstall FE-Buddy…" HorizontalAlignment="Right"
+                                    VerticalAlignment="Center" Command="{Binding UninstallCommand}"
+                                    Visibility="{Binding CanUninstall, Converter={StaticResource BoolToVis}}" />
+                        </Grid>
                     </StackPanel>
                 </ctl:Card>
             </StackPanel>

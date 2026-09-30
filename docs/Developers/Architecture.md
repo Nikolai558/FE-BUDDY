@@ -45,8 +45,9 @@ A step that fails is logged and degrades only the feature that needs it; launch 
 1. Clear %TEMP%\FE-Buddy            ─┐ first: the rest need the config,
 2. Read UserConfig.json             ─┘ and the AIRAC download uses the temp folder
 3. FE-Buddy 2.x token variable         needs the config (was the notice shown?); nothing needs it
-4. UTC time + internet check           the AIRAC step needs the date; every network step needs the internet flag
-5. ┌ Version check (GitHub releases)
+4. FE-Buddy 2.8.x dead shortcuts       nothing needs it
+5. UTC time + internet check           the AIRAC step needs the date; every network step needs the internet flag
+6. ┌ Version check (GitHub releases)
    ├ AIRAC data (below)                 in parallel - none needs another
    └ News (News.md from GitHub)
 ```
@@ -61,6 +62,12 @@ token in plain text (`LegacyGitHubTokenNotice`, `LegacyGitHubTokenVariable`). It
 names of the variables Windows keeps in the registry, never the value. When the variable is set and
 the notice has not been shown on this PC, the shell shows it once, with a button to Windows'
 Environment Variables window, and saves `General.LegacyGitHubTokenNoticeShown`.
+
+Step 4 deletes the `FE-BUDDY.lnk` that FE-Buddy 2.8.x's Squirrel install put on the user's Desktop
+and in their Start menu (`LegacySquirrelShortcuts`). The move to the MSI removes that copy of
+FE-Buddy but leaves both shortcuts, pointing at nothing, beside the MSI's own. Only a shortcut
+with that name, in those two per-user folders, that points at `%LOCALAPPDATA%\FE-BUDDY\FE-BUDDY.exe`
+while that file is missing is deleted.
 
 ## The AIRAC data pipeline
 
@@ -231,14 +238,19 @@ every alias file marked for vNAS are merged into `vNAS_Alias.txt` (below).
   alias file per facility, so once the duplicate report is written, `VnasAliasFileWriter.Write`
   builds it whenever an alias file is marked for vNAS (its block's `UploadToVnas` names it) or vNAS
   Alias Upload is selected: the first `.FeUseOnly` line any custom file has (moved to the top, the
-  rest dropped), each custom alias file in order separated by a blank line, then the marker line
-  `; ===== FE-Buddy aliases (AIRAC <cycle>) start here. FE-Buddy replaces everything below this
-  line every cycle. =====`, then each marked FE-Buddy alias file under `; ----- <name> -----`. A
-  custom file that has the marker (last cycle's uploaded `vNAS_Alias.txt` reused as the custom
-  file) is cut there, with an Info message. A custom file that could not be read is left out with
+  rest dropped), then the start line `; ===== FE-Buddy aliases (AIRAC <cycle>) start here. FE-Buddy
+  replaces everything down to the end line every cycle. =====`, each marked FE-Buddy alias file
+  under `; ----- <name> -----`, and the end line `; ===== End of FE-Buddy aliases. ... =====`
+  (`FeBuddySectionMarker` / `FeBuddySectionEndMarker`), then each custom alias file in order,
+  separated by a blank line. The custom files are last because CRC reads top to bottom and the
+  last copy of a command wins, so a facility's own command replaces FE-Buddy's. A custom file that
+  holds FE-Buddy's section (last cycle's uploaded `vNAS_Alias.txt` reused as the custom file) loses
+  it, from the start line to the end line - or to the end of the file, for one written before the
+  end line existed - with an Info message. A custom file that could not be read is left out with
   an advisory warning, and the file is still written from the rest; a command from a custom file
-  that another merged file has too gets an advisory listing up to ten (commands only FE-Buddy's
-  own files share are left to the duplicate report). UTF-8 without a BOM. With nothing to merge the
+  that another merged file has too gets an Info advisory listing up to ten, each with its files in
+  merge order (commands only FE-Buddy's own files share are left to the duplicate report). UTF-8
+  without a BOM. With nothing to merge the
   file is not written (`VnasAliasResult.FilePath` is `null`, with an advisory), and a
   `vNAS_Alias.txt` an earlier run left is deleted, like the duplicate report, so it cannot be
   uploaded by mistake. Without vNAS Alias Upload selected, the file holds FE-Buddy's aliases only,
@@ -318,9 +330,10 @@ The FAA's data has quirks; these rules handle them. Each lives in one class.
   blank `FROM_PT_TYPE` and collapsed out, so the airway runs straight between the real waypoints.
 - **Unresolvable waypoints exclude the whole airway.** An airway with a real waypoint that can't be
   located is left out entirely, with a warning naming it - a half-drawn airway is worse than none.
-- **Waypoint buffer** (`AirwayWaypointBuffer`). Optionally stops each leg 2.5 NM short of a
-  five-letter fix and 5 NM short of anything else, so lines don't run through symbols. It only
-  buffers real waypoints, never the vertices an antimeridian split or ROI clip creates.
+- **Waypoint buffer** (`AirwayWaypointBuffer`). Optionally stops each leg short of a five-letter
+  fix and of anything else (by default 2.5 NM and 5 NM; the user can choose 0-10 NM each), so
+  lines don't run through symbols. It only buffers real waypoints, never the vertices an
+  antimeridian split or ROI clip creates.
 - **Antimeridian** (`AntimeridianSplitter`). A line crossing ±180° is split into two so it does not
   draw across the whole map; the split never produces a zero-length line.
 - **Efficient LineString handling** (`LineStringMerger`). Paths that share segments (every body of a
@@ -395,7 +408,9 @@ The FAA's data has quirks; these rules handle them. Each lives in one class.
 - **`AppLog`** is the one log for the process. Every entry goes to the Dashboard's activity log and
   to `%APPDATA%\FE-Buddy\Logs\FE-Buddy_<date>.log` (kept 30 days). `Debug` entries are recorded
   only in developer mode.
-- A last-chance handler in `App` writes any unhandled exception to `%TEMP%\febuddy-wpf-crash.txt`.
+- A last-chance handler in `App` writes any unhandled exception to
+  `%APPDATA%\FE-Buddy\Logs\febuddy-wpf-crash.txt`, beside the logs. 3.0.0 alphas wrote it to
+  `%TEMP%`; `TempWorkspace.ClearOnLaunch` deletes that old copy.
 
 ## Updates and News
 

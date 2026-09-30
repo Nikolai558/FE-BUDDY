@@ -52,6 +52,8 @@ internal static class HarnessSettings
 			{ "OutputDirectory", OutputDirectory },
 			{ "OutputBy", "HighLow" },
 			{ "BufferAirwayWaypoints", "N" },
+			{ "FixBufferNm", "2.5" },         // 0-10 NM; read only when buffering
+			{ "NavaidBufferNm", "5" },
 
 			// FE-Buddy's own (non-CRC) properties. FebProperties is required when this is "Y".
 			{ "IncludeFebCustomProperties", "Y" },

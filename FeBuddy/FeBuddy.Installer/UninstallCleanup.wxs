@@ -12,6 +12,10 @@
   Each folder's path is recorded under HKCU\Software\FE-BUDDY when installing and read back on
   uninstall for util:RemoveFolderEx. Like 2.x's, this cleans the folders of the user who runs the
   uninstall; other users' profiles are not touched.
+
+  Also deletes FE-BUDDY_LOG.txt from the install folder: an early 2.x build logged beside the exe,
+  and that one file kept the folder from being removed. Only that name is deleted - the user
+  chooses the install folder, so the folder itself is never wiped.
 -->
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
      xmlns:util="http://wixtoolset.org/schemas/v4/wxs/util">
@@ -122,6 +126,19 @@
 
       </Directory>
     </StandardDirectory>
+
+    <DirectoryRef Id="INSTALLFOLDER">
+
+      <Component Id="InstallFolderCleanupComponent"
+                 Guid="6B0D3C2E-8F1A-4E57-9C4B-2D7A5E1F3B80">
+
+        <RemoveFile Id="RemoveLegacyInstallFolderLog"
+                    Name="FE-BUDDY_LOG.txt"
+                    On="both" />
+
+      </Component>
+
+    </DirectoryRef>
 
   </Fragment>
 

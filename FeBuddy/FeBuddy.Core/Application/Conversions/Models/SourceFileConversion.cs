@@ -12,6 +12,9 @@ public sealed record SourceFileConversion
 	/// <summary>Every GeoJSON file written for it; empty when it could not be read or had nothing to draw.</summary>
 	public IReadOnlyList<string> OutputPaths { get; init; } = [];
 
+	/// <summary>Every other file written for it - ERAM's <c>ConsoleCommandControl.txt</c>; usually empty.</summary>
+	public IReadOnlyList<string> OtherOutputPaths { get; init; } = [];
+
 	/// <summary>How many rendered Features were written, across its files.</summary>
 	public int FeaturesWritten { get; init; }
 

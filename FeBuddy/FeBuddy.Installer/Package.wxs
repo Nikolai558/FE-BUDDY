@@ -110,6 +110,7 @@
       <ComponentRef Id="AppDataCleanupComponent" />
       <ComponentRef Id="LocalAppDataCleanupComponent" />
       <ComponentRef Id="TempCleanupComponent" />
+      <ComponentRef Id="InstallFolderCleanupComponent" />
     </Feature>
 
   </Package>

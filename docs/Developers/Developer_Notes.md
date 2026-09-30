@@ -201,6 +201,10 @@
 - Tooltip on hover over the version number (`hasInternetConnection` dependent):
   - `You are running the latest version.`
   - `vX.X.X available! Go to SETTINGS > UPDATES.`
+- While an update is available, a solid red `Update available!` badge sits beside the version,
+  taking turns every 3 seconds with `vX.X.X available`; clicking it opens the update window. No
+  popup: a busy user dismisses popups without reading them. After `Later` it turns amber and stops
+  turning for the rest of the session.
 
 ## SETTINGS
 
@@ -208,18 +212,54 @@
 
 - Allow users to select:
   - Participate in `alpha`, `beta`, `release candidate`, or `stable only` version updates.
-    - `stable only` is selected by default.
-	- Saved as `General`.`UpdateChannel` in config file.
-  - Rollback from an alpha or beta version to the latest stable version.
-  - Check for updates now (`hasInternetConnection` dependent).
+    - Until the user chooses one, the channel matches the running build: an alpha is on Alpha, a
+      beta on Beta, a release candidate on Release Candidate, anything else on Stable
+      (`UpdateChannelSetting`).
+	- Saved as `General`.`UpdateChannel` in config file - only once the user changes it, so the
+	  default keeps following the build.
+  - Saving a different channel checks for updates on it straight away (`hasInternetConnection`
+    dependent): newer releases open the update window.
+  - Going back: running a pre-release and saving a more stable channel offers that channel's latest
+    release, which is older (`VersionCheckResult.CanGoBack`) - e.g. from `3.0.0-alpha.2`, saving
+    Stable offers `2.9.3`. The update window opens in its "go back" mode (heading, **Go back now**,
+    a warning that the pre-release's settings and features may not carry over) and installs it
+    through the same path as an update (`REINSTALLMODE=amus`, so a 2.x MSI installs completely).
+    Declining keeps the build and the channel; that channel's updates resume once it has a newer
+    release. Never offered at launch, only from Settings.
+  - Check for updates now (`hasInternetConnection` dependent). Also offers going back, as above.
+  - Open the Releases Page, for everyone.
 - Save button:
   - Writes settings to the `UserConfig` file.
 
+### RESET FE-BUDDY
+
+- The last card. `Reset FE-Buddy…` opens a window that lists what always goes (downloaded AIRAC,
+  Telephony and Wx Station data, logs, settings backups) and asks: keep or delete the settings
+  (deleting offers to save a copy first, anywhere but FE-Buddy's own folder), and - only when any
+  are saved - keep or delete the credentials. No copy of a credential is ever saved.
+- The reset is recorded (`AppDataReset.Request`) and FE-Buddy restarts; the new FE-Buddy carries
+  it out first thing at launch, before the log, the settings or a cycle is opened (see LAUNCH
+  PROCESSES).
+
 ### UNINSTALL
 
-- User selects to start the uninstall process.
-- Warning window should appear informing the user that their user settings will be lost, including ROI coordinates, geojson CRC ERAM default settings, etc.. and a "Cancel" or "I understand, please uninstall" options should be provided.
-  - Consider providing an option for the user to save the current userconfig.json for safe-keeping.
+- No card or description of its own: an `Uninstall FE-Buddy…` button on the Reset FE-Buddy card,
+  right-aligned across from `Reset FE-Buddy…` (`Button.Ghost.Danger`: a ghost button that fills red
+  on hover). Shown only in the copy the MSI installed (`AppEnvironment.IsMsiInstalled`) with a
+  recorded ProductCode.
+- It opens a window that lists what is removed (FE-Buddy, its downloaded data, logs and temp files,
+  the settings and their backups, the saved credentials) and what is not (the output folder, other
+  Windows accounts' FE-Buddy data), what the settings hold, and anything closing now would lose.
+  It offers **Save a copy of my settings first** (on by default; refused inside FE-Buddy's own
+  folder). Buttons: **Cancel** and **I understand, uninstall**.
+- Confirmed, FE-Buddy starts `msiexec /x {ProductCode}` (`AppUninstall`) **not elevated**, the way
+  Windows Settings starts it - Windows Installer asks for administrator permission itself. Started
+  elevated, a standard user entering an administrator's password would run the uninstall as that
+  administrator, and its cleanup would find the administrator's folders and credentials. FE-Buddy
+  then closes so the uninstall can remove its files.
+- The uninstall itself (the same from Windows Settings) runs the installer's cleanup:
+  `UninstallCleanup.wxs` and the `RemoveFeBuddyCredentials` custom action. Only the uninstalling
+  user's folders and credentials are cleaned.
 
 ### WINDOW STATE
 
@@ -405,6 +445,12 @@ Second post for the same day.
     - Example: `"feb.AwyId"`
 
 ## LAUNCH PROCESSES
+
+### PENDING RESET
+
+- Before anything else (`App.OnStartup`): if Settings asked for a reset, `AppDataReset.RunPending`
+  waits for the FE-Buddy that asked to close, then empties `%APPDATA%\FE-Buddy` (keeping
+  `UserConfig.json` if chosen) and removes the credentials if chosen. A toast says it is done.
 
 ### READ UserConfig.json
 

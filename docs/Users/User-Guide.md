@@ -17,7 +17,8 @@ Every screen and every option in FE-Buddy 3.0. New to FE-Buddy? Start with
   **Updates**, with a coloured dot: green is fine, amber needs a look or is still working, red is
   not working. **Re-check** runs the checks again. When the menu is collapsed, just the dot shows.
 - **Top of the window.** On the left, **FE-BUDDY** and the version: hover it for the update
-  status, and it becomes a button when an update is available. In the middle, the **AIRAC
+  status. When an update is available, a red **Update available!** badge appears beside it (see
+  [Updating FE-Buddy](#updating-fe-buddy)). In the middle, the **AIRAC
   status**: it narrates the downloads at launch, then shows the current cycle and its effective
   date.
 - **Bottom of the window.** The time in Zulu.
@@ -39,8 +40,8 @@ The screen where you make files. It is a set of tabs down the left:
 
 | Tab | What it is |
 |---|---|
-| **General** | Which cycle, and which sub-services (Airports, Airways, Departures, Arrivals, NAVAIDs, ARTCC Boundaries, Fixes, Wx Stations, Procedures, Telephony, vNAS Alias Upload). Always there. |
-| **Airports / Airways / Departures / Arrivals / NAVAIDs / ARTCC Boundaries / Fixes / Wx Stations / Procedures / Telephony / vNAS Alias Upload** | One tab per sub-service you ticked, with its settings. |
+| **General** | Which cycle, and which sub-services (ARTCC Boundaries, Airports, Airways, Arrivals, Departures, NAVAIDs, Fixes, Procedures, Telephony, Wx Stations, vNAS Alias Upload). Always there. |
+| **ARTCC Boundaries / Airports / Airways / Arrivals / Departures / NAVAIDs / Fixes / Procedures / Telephony / Wx Stations / vNAS Alias Upload** | One tab per sub-service you ticked, with its settings. |
 | **File Names** | Every file the run will write, by folder, and a new name for any of them. Appears once a sub-service is ticked. |
 | **Preview Settings** | Everything the run will do, in plain words, and the **Run AIRAC Service** button. Appears once a sub-service is ticked. |
 | **Review** | What happened in the last run. Appears once you run. |
@@ -142,11 +143,48 @@ the one class. Each class is its own block of boxes; blocks that
 do not fit across the window move to the next line, so every box stays on screen however narrow the
 window is.
 
+### ARTCC Boundaries tab
+
+- **Outputs:** GeoJSON Lines only, always written - there is no alias file and no Symbols or Text
+  file, so the tab has no Outputs or file-choice card: every ring is drawn as a line.
+- **ARTCCs** - a tick box per ARTCC with boundary data in the cycle, none ticked means all - the
+  same as the Departures and Arrivals ARTCC filter. NASR also publishes Canadian, foreign and
+  CERAP entries with no boundary lines of their own, so they are not offered.
+- **File Layout** - **High and Low** (the default) - `ARTCC-Boundary_High_Lines` and
+  `ARTCC-Boundary_Low_Lines`; an UNLIMITED ring is written into both. **High, Low and Unlimited** -
+  adds `ARTCC-Boundary_Unlimited_Lines`; each of the three files then holds one altitude only.
+  **One file per ARTCC and altitude** - `ARTCC-Boundary_<ARTCC>-<altitude>_Lines`, e.g.
+  `ARTCC-Boundary_ZOB-HIGH_Lines`, so your own ARTCC can be styled apart from its neighbours. Files
+  go straight in the Geojson folder - there are no per-airport sub-folders.
+- **Files:** *Lines* only - one closed line per boundary ring, running through its points in
+  published order back to its start. ZAK, ZAP and ZWY each have two rings sharing an altitude - a
+  CTA ring and a FIR ring.
+- **Split GeoJSON at the Antimeridian** - on by default, the same as Airways: ZAK, ZAN, ZAP and the
+  oceanic part of ZOA cross ±180° longitude, so a ring that does becomes a MultiLineString instead
+  of running off the edge of the map.
+- **FE-Buddy properties:** `locationId`, `locationName`, `locationType`, `icaoId`, `computerId`,
+  `altitude` (`HIGH`, `LOW` or `UNLIMITED`), `type` (`ARTCC`, `CTA`, `FIR`, `CTA/FIR` or `UTA` -
+  tells the overlapping oceanic CTA and FIR rings apart), `city`, `countryCode`.
+- **Region:** a ring is clipped at the region's edge, the same as Airways; a ring entirely outside
+  the region is left out.
+- **Upload to vNAS:** *High and Low* - `ARTCC-Boundary_High_Lines`, `ARTCC-Boundary_Low_Lines`.
+  *High, Low and Unlimited* - adds `ARTCC-Boundary_Unlimited_Lines`. *One file per ARTCC and
+  altitude* - each ARTCC-and-altitude file. There is no alias file to upload.
+
 ### Airports tab
 
 - **Outputs:** GeoJSON, and `Airports.txt` - one alias command per airport's FAA ID, and one per
   ICAO ID where there is one. The alias file always covers every open airport; the region only
-  limits the GeoJSON.
+  limits the GeoJSON. Each command shows the airport's card in CRC: identifiers and name, tower
+  type, ARTCC, longest runway, elevation, pattern altitude, FSS, CTAF and weather, then:
+  - **ATNDCE HRS** - when the airport is attended: the hours of each schedule NASR publishes for
+    it, one per line. Only the hours are shown, not the months and days each schedule covers. An
+    airport with no tower (`NON-ATCT`) shows the label with nothing beside it.
+  - **AIRSPACE** - the class airspace, and under it **HRS**: when that airspace is in effect,
+    broken after `SVC` and at every comma and semicolon, e.g. `CLASS D SVC` / `0600-2400` /
+    `OTHER TIMES CLASS G`.
+
+  Both hours labels show even when NASR publishes no hours.
 - **Files:** *Runways - Lines* (each airport's runway centrelines), *Airports - Symbols* (one per
   airport, at its reference point), *Airports - Text* (FAA ID and name).
 - **FE-Buddy properties:** `faaId`, `icaoId`, `name`, `elev`, `respArtcc`, `tfcPtrnAlt`, `fssId`,
@@ -175,8 +213,11 @@ window is.
   run waits. The file goes by the type, not by the published altitudes: a V airway that the FAA
   also publishes in Hawaii at 45,000 ft stays on the low map. An `Airways_High` or `Airways_Low`
   file is only written when a type goes in it.
-- **Buffer Airway Waypoints** - lines stop a short distance before each waypoint (2.5 NM at a
-  five-letter fix, 5 NM elsewhere) so they do not run through the symbols.
+- **Buffer Airway Waypoints** - lines stop a short distance before each waypoint so they do not
+  run through the symbols. Once ticked, choose how far: **Around fixes** (five-letter fixes,
+  2.5 NM to start with) and **Around NAVAIDs** (5 NM), each from 0 to 10 NM. A leg shorter than
+  the distances at its two ends added together isn't drawn, so larger distances remove more short
+  legs.
 - **Split GeoJSON at the Antimeridian** - a line that crosses ±180° longitude is split in two so
   it does not wrap across the whole map. Leave it on.
 - **FE-Buddy properties:** `awyId`, `pointId`, `waypoints`.
@@ -188,33 +229,10 @@ window is.
 - An airway with a waypoint FE-Buddy cannot locate is left out entirely (a half-drawn airway is
   worse than none); the Review tab says which and why.
 
-### Departures tab
-
-- **Outputs:** GeoJSON, and `Departures.txt` - a command per airport and procedure that draws the
-  procedure's points.
-- **Files:** Lines (each airport's procedure, shared segments drawn once), Symbols (each point),
-  Text (each point's identifier). They are written per airport, in the cycle's GeoJSON folder:
-  `Geojson\<ARTCC>\<airport>\<airport>_<procedure>_Lines.geojson` (and `_Symbols`, `_Text`).
-- **Procedures:**
-  - **Include obstacle departures (ODPs)** - on by default; off gives SIDs only.
-  - **ARTCCs** - tick the ARTCCs you want; none ticked means all. **Clear** unticks them all.
-  - **Amendment Date** - keep every procedure, or only those amended within the last *N* cycles
-    (1 = this cycle), within the last *N* days, or on or after a date.
-- **How the Region Selects Departures:** *every departure for an airport inside the region*, or
-  *any departure with a point inside the region*. The region limits both the GeoJSON and the alias
-  file.
-- **FE-Buddy properties:** `dpName`, `pointId`, `arptId`, `artcc`, `amendmentNo`, `amendEffDate`,
-  `waypoints`.
-- **Upload to vNAS:** by kind, since a run writes thousands of files - every procedure's Lines,
-  Symbols or Text files - then `Departures.txt`. The `<ARTCC>\<airport>` folders are kept under
-  `Upload_to_vNAS\Geojson` too.
-- Procedures are named by their FAA computer code without the amendment digit (`DOTSS2.DOTSS` is
-  `DOTSS`), or by their name with punctuation removed when there is no code (`O'HARE` is `OHARE`).
-
 ### Arrivals tab
 
-The same shape as Departures, for STARs instead of SIDs, with no obstacle/SID split - so there is
-no "Include obstacle departures" equivalent here.
+The same shape as [Departures](#departures-tab) (next), for STARs instead of SIDs, with no
+obstacle/SID split - so there is no "Include obstacle departures" equivalent here.
 
 - **Outputs:** GeoJSON, and `Arrivals.txt` - a command per airport and procedure that draws the
   procedure's points.
@@ -241,6 +259,29 @@ no "Include obstacle departures" equivalent here.
   punctuation removed when there is no code.
 - A STAR is flown transition to body, so its points - and the alias command's fix list - list
   transitions first, then bodies (the reverse of a departure's order).
+
+### Departures tab
+
+- **Outputs:** GeoJSON, and `Departures.txt` - a command per airport and procedure that draws the
+  procedure's points.
+- **Files:** Lines (each airport's procedure, shared segments drawn once), Symbols (each point),
+  Text (each point's identifier). They are written per airport, in the cycle's GeoJSON folder:
+  `Geojson\<ARTCC>\<airport>\<airport>_<procedure>_Lines.geojson` (and `_Symbols`, `_Text`).
+- **Procedures:**
+  - **Include obstacle departures (ODPs)** - on by default; off gives SIDs only.
+  - **ARTCCs** - tick the ARTCCs you want; none ticked means all. **Clear** unticks them all.
+  - **Amendment Date** - keep every procedure, or only those amended within the last *N* cycles
+    (1 = this cycle), within the last *N* days, or on or after a date.
+- **How the Region Selects Departures:** *every departure for an airport inside the region*, or
+  *any departure with a point inside the region*. The region limits both the GeoJSON and the alias
+  file.
+- **FE-Buddy properties:** `dpName`, `pointId`, `arptId`, `artcc`, `amendmentNo`, `amendEffDate`,
+  `waypoints`.
+- **Upload to vNAS:** by kind, since a run writes thousands of files - every procedure's Lines,
+  Symbols or Text files - then `Departures.txt`. The `<ARTCC>\<airport>` folders are kept under
+  `Upload_to_vNAS\Geojson` too.
+- Procedures are named by their FAA computer code without the amendment digit (`DOTSS2.DOTSS` is
+  `DOTSS`), or by their name with punctuation removed when there is no code (`O'HARE` is `OHARE`).
 
 ### NAVAIDs tab
 
@@ -275,34 +316,6 @@ no "Include obstacle departures" equivalent here.
   *One pair per type* - each included type's `NAVAIDs_<Type>s_Symbols` / `_Text`, then
   `Navaids.txt`.
 
-### ARTCC Boundaries tab
-
-- **Outputs:** GeoJSON Lines only, always written - there is no alias file and no Symbols or Text
-  file, so the tab has no Outputs or file-choice card: every ring is drawn as a line.
-- **ARTCCs** - a tick box per ARTCC with boundary data in the cycle, none ticked means all - the
-  same as the Departures and Arrivals ARTCC filter. NASR also publishes Canadian, foreign and
-  CERAP entries with no boundary lines of their own, so they are not offered.
-- **File Layout** - **High and Low** (the default) - `ARTCC-Boundary_High_Lines` and
-  `ARTCC-Boundary_Low_Lines`; an UNLIMITED ring is written into both. **High, Low and Unlimited** -
-  adds `ARTCC-Boundary_Unlimited_Lines`; each of the three files then holds one altitude only.
-  **One file per ARTCC and altitude** - `ARTCC-Boundary_<ARTCC>-<altitude>_Lines`, e.g.
-  `ARTCC-Boundary_ZOB-HIGH_Lines`, so your own ARTCC can be styled apart from its neighbours. Files
-  go straight in the Geojson folder - there are no per-airport sub-folders.
-- **Files:** *Lines* only - one closed line per boundary ring, running through its points in
-  published order back to its start. ZAK, ZAP and ZWY each have two rings sharing an altitude - a
-  CTA ring and a FIR ring.
-- **Split GeoJSON at the Antimeridian** - on by default, the same as Airways: ZAK, ZAN, ZAP and the
-  oceanic part of ZOA cross ±180° longitude, so a ring that does becomes a MultiLineString instead
-  of running off the edge of the map.
-- **FE-Buddy properties:** `locationId`, `locationName`, `locationType`, `icaoId`, `computerId`,
-  `altitude` (`HIGH`, `LOW` or `UNLIMITED`), `type` (`ARTCC`, `CTA`, `FIR`, `CTA/FIR` or `UTA` -
-  tells the overlapping oceanic CTA and FIR rings apart), `city`, `countryCode`.
-- **Region:** a ring is clipped at the region's edge, the same as Airways; a ring entirely outside
-  the region is left out.
-- **Upload to vNAS:** *High and Low* - `ARTCC-Boundary_High_Lines`, `ARTCC-Boundary_Low_Lines`.
-  *High, Low and Unlimited* - adds `ARTCC-Boundary_Unlimited_Lines`. *One file per ARTCC and
-  altitude* - each ARTCC-and-altitude file. There is no alias file to upload.
-
 ### Fixes tab
 
 - **Outputs:** GeoJSON Symbols and Text only, always written - there is no alias file, so the tab
@@ -336,23 +349,6 @@ no "Include obstacle departures" equivalent here.
 - **Upload to vNAS:** a box per file the chosen File Layout writes - `Fix_Symbols` / `Fix_Text`
   for *All fixes in one file*, or each group's pair otherwise. There is no alias file to upload.
 
-### Wx Stations tab
-
-- **Outputs:** GeoJSON Symbols and Text only, always written - there is no alias file, so the tab
-  has no Outputs card. Tick **Symbols** and/or **Text** under GeoJSON files; at least one must
-  stay on.
-- **Files:** *Symbols* (one point per station, styled from the file's CRC ERAM defaults), *Text*
-  (the station's ICAO ID, then its IATA ID and site name where it has one, e.g. `KDTW` /
-  `DTW_Detroit/Metro Wayne Cnty`, otherwise just the site name). There is no Lines file.
-- **Station Data** - where the list comes from: aviationweather.gov's own station list, not the
-  NASR cycle. Every run downloads the latest list first, whichever cycle you run, and only falls
-  back to FE-Buddy's kept copy if that fails. It shows which stations are included (a US or
-  US-territory station with an ICAO ID that reports METAR and has usable coordinates) and the kept
-  copy's date, or that FE-Buddy has no copy yet - the first run then needs an internet connection.
-- **Region:** a station is included when its own coordinates are inside the region.
-- **Upload to vNAS:** `Wx_Symbols` and/or `Wx_Text`, whichever the tab writes. There is no alias
-  file to upload.
-
 ### Procedures tab
 
 Builds from the FAA's **d-TPP Metafile** - the index behind the Digital Terminal Procedures
@@ -384,7 +380,8 @@ until it is.
   NASR coordinates fall inside the box on the Region of Interest card below.
 - **Procedures at Any Airport** - name a procedure - a STAR flown into several airports, say - to
   include it wherever the FAA charts it, whatever its chart type and whether or not that airport is
-  otherwise included.
+  otherwise included. Type its name or pick it from the list, then **Add**; **Cancel** clears the
+  box without adding it.
 - **Airport + Procedure** - specific airport-and-procedure pairs, for one chart at one airport and
   nothing else there; **Add**, **Edit** and **Delete** manage the list.
 - **Chart Types** - which kinds of chart a whole included airport (from Facilities, the region, or
@@ -535,12 +532,30 @@ The Review tab names how many commands `Faa_Chart_Recall.txt` holds and for how 
   card.
 - **Upload to vNAS:** `Telephony.txt`, the only file there is.
 
+### Wx Stations tab
+
+- **Outputs:** GeoJSON Symbols and Text only, always written - there is no alias file, so the tab
+  has no Outputs card. Tick **Symbols** and/or **Text** under GeoJSON files; at least one must
+  stay on.
+- **Files:** *Symbols* (one point per station, styled from the file's CRC ERAM defaults), *Text*
+  (the station's ICAO ID, then its IATA ID and site name where it has one, e.g. `KDTW` /
+  `DTW_Detroit/Metro Wayne Cnty`, otherwise just the site name). There is no Lines file.
+- **Station Data** - where the list comes from: aviationweather.gov's own station list, not the
+  NASR cycle. Every run downloads the latest list first, whichever cycle you run, and only falls
+  back to FE-Buddy's kept copy if that fails. It shows which stations are included (a US or
+  US-territory station with an ICAO ID that reports METAR and has usable coordinates) and the kept
+  copy's date, or that FE-Buddy has no copy yet - the first run then needs an internet connection.
+- **Region:** a station is included when its own coordinates are inside the region.
+- **Upload to vNAS:** `Wx_Symbols` and/or `Wx_Text`, whichever the tab writes. There is no alias
+  file to upload.
+
 ### vNAS Alias Upload tab
 
 vNAS takes one alias file per facility, so your facility's own aliases and FE-Buddy's have to be
 merged into one file before every upload. This tab does that: it writes
-`Upload_to_vNAS\vNAS_Alias.txt` with your own alias files first, then every FE-Buddy alias file
-ticked on its tab's **Upload to vNAS** card.
+`Upload_to_vNAS\vNAS_Alias.txt` with every FE-Buddy alias file ticked on its tab's **Upload to
+vNAS** card, then your own alias files. CRC reads the file top to bottom and uses the last copy of
+a command, so a command in your own files replaces FE-Buddy's.
 
 - **Outputs** - `Upload_to_vNAS\vNAS_Alias.txt` only.
 - **FE-Buddy Alias Files** - every alias file FE-Buddy can write, and whether it goes in with the
@@ -578,16 +593,20 @@ ticked on its tab's **Upload to vNAS** card.
   again first. If nothing at all can go in, no `vNAS_Alias.txt` is written, and one an earlier run
   left in `Upload_to_vNAS` is deleted so it can't be uploaded by mistake.
 - **How the file is laid out:** a `.FeUseOnly` line, if any of your files has one, goes first (only
-  the first one found is kept); then each of your files, separated by a blank line; then the
-  line `; ===== FE-Buddy aliases (AIRAC <cycle>) start here. FE-Buddy replaces everything below
-  this line every cycle. =====`; then each ticked FE-Buddy alias file under a `; ----- <name> -----`
-  heading.
+  the first one found is kept); then the line `; ===== FE-Buddy aliases (AIRAC <cycle>) start
+  here. FE-Buddy replaces everything down to the end line every cycle. =====`; then each ticked
+  FE-Buddy alias file under a `; ----- <name> -----` heading; then the line `; ===== End of
+  FE-Buddy aliases. Your own aliases go below this line: … =====`; then each of your files,
+  separated by a blank line.
 - **Reusing last cycle's upload:** you can keep the `vNAS_Alias.txt` you uploaded last cycle as your
-  custom file. Everything from that marker line down is left out, so last cycle's FE-Buddy aliases
-  are replaced rather than added twice - just keep your own aliases above the line.
-- **Duplicates:** a command from your custom files that another merged file has too gets a warning
-  on the Review tab (the first ten are named), since CRC can only run one of each. Commands only
-  FE-Buddy's own files share are listed in `Duplicate_Alias_Commands.txt` instead.
+  custom file. Everything from the start line to the end line is left out, so last cycle's FE-Buddy
+  aliases are replaced rather than added twice - just keep your own aliases below the end line (or
+  above the start line). A file uploaded before the end line existed had FE-Buddy's aliases last:
+  everything from its start line down is left out.
+- **Duplicates:** a command from your custom files that another merged file has too is noted on the
+  Review tab (the first ten are named), with its files in the order they are merged - CRC uses the
+  copy from the last one named, which for a command of yours is yours. Commands only FE-Buddy's own
+  files share are listed in `Duplicate_Alias_Commands.txt` instead.
 
 Without this tab ticked, `vNAS_Alias.txt` is still written whenever an FE-Buddy alias file is ticked
 for vNAS - it then holds FE-Buddy's aliases only, and the Review tab warns that uploading it would
@@ -604,7 +623,8 @@ The tab appears, just before Preview Settings, once a sub-service is ticked.
   for vNAS) and the list changes when you come back. A file is only written when it has something
   in it, so a listed file may not appear after the run.
 - **Rename Files** - **No** (the default) keeps every file's FE-Buddy name. **Yes** puts a tick box
-  beside each file and a box for its new name under it.
+  beside each file and a box for its new name to its right (under it, when the window is too
+  narrow for both).
 - **Type the new name without the extension.** FE-Buddy adds `.geojson`, `.txt`, `.md` or `.json`
   itself, so `Airways_High_Lines.geojson` renamed `ZOB High` is written as `ZOB High.geojson`. A
   renamed file stays in its folder.
@@ -715,39 +735,75 @@ are not carried over: CRC styles lines through the CRC defaults instead.
 
 ### ERAM to GeoJSON tab
 
-Converts the `Geomaps.xml` of an ERAM adaptation export into GeoJSON: a folder per Geomaps file,
-named after it, with a folder inside for each GeoMap (named after its `GeomapId`). Lines, symbols
-(and their labels), text and SAA boundaries and labels are all converted.
+Converts the `Geomaps.xml` of an ERAM adaptation export into GeoJSON, in an `ERAM_TO_GEOJSON`
+folder, laid out and named the way the original ERAM_2_GEOJSON tool did it. Each GeoMap is named
+after its `GeomapId` and the two lines of its button label: `CENTER_CENTER-MAP` (`LL1` / `LL2`
+stand in for a label line the map has none of). Lines, symbols (and every label they have), text
+and SAA boundaries and labels are all converted.
+
+When the export's `ConsoleCommandControl.xml` is beside `Geomaps.xml`, the run also writes
+`ConsoleCommandControl.txt` in `ERAM_TO_GEOJSON`, as the original tool did: a rundown of the map
+menus on the ERAM console. It lists each brightness (BCG) menu and each filter menu with the maps
+that use it, then each of its buttons' label, menu position and groups:
+
+```
+BCG Menu: ZOB
+
+	Used with:	CENTER, OCP
+
+	Label:		AAV
+	Position:	1
+	Group:		1, 2
+```
+
+The file is found by what it holds, so a renamed one is found too. Without one the GeoJSON is still
+written and the Review tab says there was no rundown; one that cannot be read is listed there too.
 
 - **Source Files** - `Geomaps.xml` itself, or a remembered folder. The folder can be the whole
-  unzipped export: only its Geomaps file is converted, and the other files are listed on the
-  Review tab as left alone.
-- **Output Layout** - how the files are split:
-  - **Object Type and Map Group** - a file per map object, named after its type and map group
-    (`AIRWAY_3`, `SECTOR_12`, `SAA_53`). Objects that share a name share a file when their
-    defaults agree; otherwise the later one gets a numbered file (`AIRWAY_3 (2)`).
-  - **Filter Index and Similar Attributes** - files grouped by filter, kind and look, e.g.
-    `FILTER 05\FILTER 05__Line__BCG 3__Style solid__Thickness 1`. An element with several filters
-    goes under `MULTI FILTERS\`; one whose look cannot be fully worked out goes under
-    `MISSING DEFAULTS\`. Everything in a file draws the same way.
-- **CRC ERAM Defaults Source** - where each file's CRC defaults come from:
+  unzipped export: only its Geomaps file is converted, its ConsoleCommandControl file is read for
+  the rundown, and the other files are listed on the Review tab as left alone. Picking
+  `Geomaps.xml` finds the ConsoleCommandControl file beside it the same way. **One Geomaps file per
+  run**: the maps' folders are named after the maps alone, so a second file's could land on the
+  first's.
+- **Output Layout** - how the files are split (hover each on the tab to see the folders it writes):
+  - **By Filters** - a folder per set of filters, with a file each for its lines, symbols and
+    text: `CENTER_CENTER-MAP\Filter_01\Filter_01_Lines.geojson`, and
+    `Multi-Filter_02_03_08\Multi-Filter_02_03_08_Lines.geojson` for several filters. The fewest
+    files. Everything with those filters goes in, whatever it looks like: the file's CRC defaults
+    are the look most of it shares, and a feature that looks different carries what differs.
+  - **By Attributes** (the default) - a file for everything that looks the same, named after it:
+    `BCG 01_Filters 01_Type AAV_Group 64_Object ZOB3NM_Style Solid_Thick 1_Lines.geojson`, with
+    symbols `…_Style VOR_Font 1_Symbols` and text `…_Font 1_Underline F_X 0_Y 0_Text`. The most
+    files, and the easiest to pick apart and rename for your facility's GeoMaps.
+  - **Raw** - one file per map, straight in `ERAM_TO_GEOJSON`: `CENTER_CENTER-MAP.geojson`. Every
+    feature carries its own look and there are no defaults features; lines are not joined. Handy
+    as a reference to check the other layouts against in CRC.
+- **CRC ERAM Defaults Source** - where the look comes from:
   - **From the XML** - carry over as much as possible: each object's own Line, Symbol and Text
-    defaults, and each element's own overrides.
-  - **From the XML, filling gaps from the card** - the same, but an object with no usable defaults
-    of its own takes the CRC ERAM Defaults on the tab. SAA objects carry no BCG or filters of
+    defaults, with each element's own values laid over them.
+  - **From the XML, filling gaps from the card** - the same, but whatever an object's defaults
+    leave out comes from the CRC ERAM Defaults on the tab. SAA objects carry no BCG or filters of
     their own, so this is the choice that gives them a look in CRC.
   - **From the card only** - ignore the XML's styling and use the tab's CRC ERAM Defaults for
     everything.
 - **CRC ERAM Defaults** - Lines, Symbols and Text panels. They only show, and only need filling
   in, when the card is one of the sources.
-- **Convert GeoMaps** - saves any unsaved settings (you are asked first) and runs.
+- **FE-Buddy Properties** - optional `feb.*` properties naming where each feature came from:
+  `feb.mapObjectType`, `feb.mapGroupId`, `feb.lineObjectId`, `feb.symbolId` (on symbols and their
+  labels) and `feb.saaId`. CRC ignores them.
+- **Convert GeoMaps** - saves any unsaved settings (you are asked first) and runs. **Each run
+  empties `ERAM_TO_GEOJSON` first**, as the original tool did, so it holds only that run's files;
+  if there is anything in it, you are asked before it goes. Move out anything you want to keep.
 
-ERAM's style names become CRC's (`Solid` → `solid`, `RNAVOnlyWaypoint` → `rnavOnlyWaypoint`), and
-every value is checked against what CRC can draw - `DME` symbols, for example, have no CRC style.
-An object whose defaults are missing, incomplete or invalid is listed on the Review tab; a value
-CRC cannot draw is left out, so that feature takes its file's default. ERAM text has no opaque
-background, so its text is never opaque; ERAM's colours and display settings are not carried
-over. Line segments that meet are joined back into lines, including ones written backwards.
+ERAM's style names become CRC's inside the files (`Solid` → `solid`, `RNAVOnlyWaypoint` →
+`rnavOnlyWaypoint`); By Attributes names keep ERAM's spelling. Every value is checked against what
+CRC can draw - `DME` symbols, for example, have no CRC style. An object whose defaults are missing,
+incomplete or invalid is listed on the Review tab, and a value CRC cannot draw is left out. When
+neither an object nor its element gives any filters, the element shows at every filter setting
+(filter `0`), as ERAM shows it. Text ERAM keeps hidden (`DisplaySetting` false) is left out, and
+the Review tab says how much. ERAM text has no opaque background, so its text is never opaque;
+ERAM's colours are not carried over. Line segments that meet are joined back into lines, including
+ones written backwards.
 
 ## Output files
 
@@ -768,7 +824,7 @@ for an example of what it catches:
     ├── AIRAC_2610\
     │   ├── Duplicate_Alias_Commands.txt  (only when the run wrote at least one alias file)
     │   ├── Aliases\
-    │   │   └── Airports.txt, Airways.txt, Departures.txt, Arrivals.txt, Navaids.txt, Faa_Chart_Recall.txt, Telephony.txt
+    │   │   └── Airports.txt, Airways.txt, Arrivals.txt, Departures.txt, Navaids.txt, Faa_Chart_Recall.txt, Telephony.txt
     │   ├── Geojson\
     │   │   ├── Runways_Lines, Airports_Symbols, Airports_Text (.geojson)
     │   │   ├── Airways_<group>_Lines / _Symbols / _Text (.geojson)
@@ -780,13 +836,15 @@ for an example of what it catches:
     │   ├── Publication_Docs\
     │   │   └── Procedure_Changes.md, Procedures.json
     │   └── Upload_to_vNAS\           (only the files marked for vNAS)
-    │       ├── vNAS_Alias.txt        your custom alias files, then the alias files marked for vNAS
+    │       ├── vNAS_Alias.txt        the alias files marked for vNAS, then your custom alias files
     │       └── Geojson\              the GeoJSON files marked for vNAS, laid out as above
     ├── DAT to GeoJSON\               <.dat file name>.geojson, one per converted map
     ├── SCT2 to GeoJSON\
     │   └── <sector file name>\       ARTCC, …, GEO, LABELS, REGIONS (.geojson), SID\, STAR\
-    └── ERAM to GeoJSON\
-        └── <Geomaps file name>\<GeomapId>\   <type>_<group>.geojson, or FILTER nn\ folders
+    └── ERAM_TO_GEOJSON\              emptied at the start of every ERAM run
+        ├── <GeomapId>_<LabelLine1>-<LabelLine2>\   Filter_nn\ folders, or a file per look
+        ├── <GeomapId>_<LabelLine1>-<LabelLine2>.geojson   (Raw: one file per map)
+        └── ConsoleCommandControl.txt (only with ConsoleCommandControl.xml beside Geomaps.xml)
 ```
 
 A GeoJSON file marked for vNAS goes to `Upload_to_vNAS` instead of, not as well as, `Geojson`. An
@@ -910,9 +968,46 @@ The cards, top to bottom:
     - *Alpha* - every release, alphas included: early builds that may be unfinished or not work.
 
     Only pick a channel other than Stable if a developer asks you to; the card says so while one
-    is chosen.
-  - **Check for updates now**, and **Get the latest stable installer** (opens the releases page -
-    use it to go back to stable from a pre-release).
+    is chosen. Until you choose one, it matches the version you are running: an alpha is on Alpha,
+    a beta on Beta, and so on.
+
+    When you **Save** a different channel, FE-Buddy checks it straight away. If you are running a
+    pre-release (an alpha, beta or release candidate) and choose a more stable channel, it offers
+    to take you back to that channel's latest release - for example, from an alpha back to the
+    latest stable release. **Go back now** downloads and installs it; settings and features added
+    in the pre-release may not carry over. **Later** keeps the version you have, and updates on the
+    new channel start again once it has a newer release.
+  - **Check for updates now**, and **Open the Releases Page** (every FE-Buddy release, to download
+    one yourself).
+- **Reset FE-Buddy** - start over as if FE-Buddy had just been installed. **Reset FE-Buddy…**
+  opens a window that says what goes and asks what to keep:
+  - **Always deleted:** the AIRAC data FE-Buddy has downloaded, the Telephony and Wx Station data,
+    its logs, and the backups of your settings (`UserConfig.previous.json` and
+    `UserConfig.before-import.json`).
+  - **Your settings** - *Keep my settings* (the default) or *Delete my settings*. Deleting them
+    offers **Save a copy of my settings first** (on to start with): you choose where, the Desktop
+    to begin with. **Import…** brings the copy back, all but this PC's own choices - the update
+    channel, the GitHub token, each web address's credential and which News posts you have read.
+  - **Saved credentials** (only when you have some) - keep them (the default) or delete them from
+    Windows Credential Manager. FE-Buddy never saves a copy of a token or password.
+  - Anything closing FE-Buddy would lose (a run in progress, unsaved changes) is listed too.
+
+  **Reset and restart** closes FE-Buddy and starts it again; the reset happens as it starts, and a
+  message says when it is done. Files in your output folder are never touched.
+- **Uninstall FE-Buddy…** (on the Reset FE-Buddy card, across from its button) - remove FE-Buddy from this PC, the same way
+  Windows does from **Settings ▸ Apps ▸ Installed apps**. It opens a window that says what goes:
+  - **Removed:** FE-Buddy itself (the program, its shortcuts and its Installed apps entry), the data
+    it has downloaded, its logs and temporary files, your settings and their backups, and your
+    saved credentials.
+  - **Not touched:** everything in your output folder, and FE-Buddy's settings in other people's
+    Windows accounts on the PC.
+  - **Save a copy of my settings first** (on to start with) - you choose where, the Desktop to
+    begin with. If you install FE-Buddy again, **Import…** brings it back.
+  - Anything closing FE-Buddy would lose (a run in progress, unsaved changes) is listed too.
+
+  **I understand, uninstall** closes FE-Buddy, and Windows asks you to confirm and for
+  administrator permission. Cancel there and nothing is removed. It isn't shown in a copy of
+  FE-Buddy that the installer didn't install (a development build, for example).
 
 ## Info
 
@@ -921,10 +1016,13 @@ change log, and the issue tracker.
 
 ## Updating FE-Buddy
 
-When an update is available the version at the top of the window becomes a button. It opens the
+When an update is available, a red **Update available!** badge appears beside the version at the
+top of the window, taking turns with the new version's number (`v3.0.0-beta.1 available`). There
+is no pop-up: it waits there until you are ready. Click the badge (or the version) to open the
 update window: your version, the latest, and the release notes for everything in between.
 
 - **Update now** downloads the installer and runs it. FE-Buddy closes while it installs and opens
   again afterwards; your settings are kept. If you have unsaved changes or a run in progress, you
   are asked first.
-- **Later** closes the window; the version stays amber for the rest of the session as a reminder.
+- **Later** closes the window; the badge and the version stay amber for the rest of the session
+  as a reminder.

@@ -444,8 +444,8 @@ public static class AiracService
 
 			string summary = vnasAliasResult.FilePath is null
 				? $"{vnasAliasFileName} not written."
-				: $"{vnasAliasFileName}: {vnasAliasResult.CustomCommandCount:N0} custom command(s), " +
-					$"then {vnasAliasResult.FeBuddyCommandCount:N0} from {vnasAliasResult.FeBuddyFiles.Count} FE-Buddy alias file(s).";
+				: $"{vnasAliasFileName}: {vnasAliasResult.FeBuddyCommandCount:N0} command(s) from {vnasAliasResult.FeBuddyFiles.Count} " +
+					$"FE-Buddy alias file(s), then {vnasAliasResult.CustomCommandCount:N0} custom command(s).";
 
 			progress?.Report(new AiracServiceProgress(step, summary, settings.VnasAlias is not null ? 100 : null));
 		}

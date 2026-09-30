@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
 
+using FeBuddy.Wpf.Behaviors;
 using FeBuddy.Wpf.Shell;
 
 using FeBuddy.Core.Infrastructure.Markdown;
@@ -282,13 +283,9 @@ public sealed class MarkdownView : Decorator
 
 		if (span.Style.HasFlag(MarkdownStyle.Code))
 		{
+			// The same look as InlineCode's, in the link's own colour when it is one.
 			styled.FontSize = 12;
-			styled.SetResourceReference(TextElement.FontFamilyProperty, "Font.Mono");
-			styled.SetResourceReference(TextElement.BackgroundProperty, "Brush.Stroke");
-			if (span.Url is null)
-			{
-				styled.SetResourceReference(TextElement.ForegroundProperty, "Brush.Text.Primary");
-			}
+			InlineCode.ApplyLook(styled, primaryText: span.Url is null);
 		}
 
 		if (span.Url is null)

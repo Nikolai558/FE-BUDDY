@@ -104,6 +104,8 @@ public sealed class EramGeoMapReaderTests
 			"""));
 
 		Assert.Equal(["ZXXMAP", string.Empty], file.Maps.Select(m => m.Name));
+		Assert.Equal("ZXX", file.Maps[0].LabelLine1);
+		Assert.Null(file.Maps[0].LabelLine2);
 		Assert.Empty(file.Maps[1].Objects);
 		Assert.Empty(file.Problems);
 		Assert.Equal("TEST.xml", file.SourcePath);
@@ -115,7 +117,7 @@ public sealed class EramGeoMapReaderTests
 		Assert.Equal(new EramProperties { Bcg = 1, Filters = [1, 2], Style = "Solid", Thickness = 2 }, sector.LineDefaults);
 		Assert.Equal(new EramProperties { Bcg = 3, Filters = [3], Style = "VOR", Size = 1 }, sector.SymbolDefaults);
 		Assert.Equal(
-			new EramProperties { Bcg = 4, Filters = [4], Size = 1, Underline = false, XOffset = 5, YOffset = -5 },
+			new EramProperties { Bcg = 4, Filters = [4], Size = 1, Underline = false, XOffset = 5, YOffset = -5, Display = true },
 			sector.TextDefaults);
 
 		Assert.Equal(
@@ -135,6 +137,46 @@ public sealed class EramGeoMapReaderTests
 		Assert.Equal(["ZXX"], sector.Elements[2].TextLines!);
 
 		Assert.Equal(["ZXX", "SECTOR 4"], sector.Elements[3].TextLines!);
+
+		// Each element's ERAM id: the line's, the symbol's (its own label carries it too), and none
+		// for a text of its own.
+		Assert.Equal(["ZXX01", "ZXX", "ZXX", null], sector.Elements.Select(e => e.ObjectId));
+		Assert.All(sector.Elements, e => Assert.False(e.IsSaa));
+	}
+
+	/// <summary>Every label a symbol has is read, each keeping its own DisplaySetting.</summary>
+	[Fact]
+	public void every_label_of_a_symbol_is_read_with_whether_it_shows()
+	{
+		EramGeoMapFile file = ParseObject("""
+			<GeoMapSymbol>
+			  <SymbolId>ZXX</SymbolId>
+			  <Latitude>40060000N</Latitude>
+			  <Longitude>100060000W</Longitude>
+			  <GeoMapText><GeoTextStrings><TextLine>ZXX</TextLine></GeoTextStrings></GeoMapText>
+			  <GeoMapText><DisplaySetting>false</DisplaySetting><GeoTextStrings><TextLine>HIDDEN</TextLine></GeoTextStrings></GeoMapText>
+			</GeoMapSymbol>
+			""");
+
+		IReadOnlyList<EramElement> elements = file.Maps[0].Objects[0].Elements;
+
+		Assert.Equal([EramElementKind.Symbol, EramElementKind.Text, EramElementKind.Text], elements.Select(e => e.Kind));
+		Assert.Null(elements[1].Overrides.Display);
+		Assert.False(elements[2].Overrides.Display);
+		Assert.Equal("ZXX", elements[2].ObjectId);
+	}
+
+	[Fact]
+	public void a_map_s_label_lines_and_menus_are_read_and_blank_ones_are_none()
+	{
+		EramGeoMapFile file = Parse(Records("""
+			<GeoMapRecord><GeomapId>CENTER</GeomapId><BCGMenuName>ZOB</BCGMenuName><FilterMenuName>ZOBF</FilterMenuName>
+			  <LabelLine1>CENTER</LabelLine1><LabelLine2>MAP</LabelLine2></GeoMapRecord>
+			<GeoMapRecord><GeomapId>OCP</GeomapId><BCGMenuName> </BCGMenuName><LabelLine1> </LabelLine1><LabelLine2 /></GeoMapRecord>
+			"""));
+
+		Assert.Equal([("CENTER", "MAP"), (null, null)], file.Maps.Select(m => (m.LabelLine1, m.LabelLine2)));
+		Assert.Equal([("ZOB", "ZOBF"), (null, null)], file.Maps.Select(m => (m.BcgMenuName, m.FilterMenuName)));
 	}
 
 	[Fact]
@@ -184,7 +226,9 @@ public sealed class EramGeoMapReaderTests
 		Assert.All(elements.Take(2), segment => Assert.Equal(new EramProperties { Style = "ShortDashed" }, segment.Overrides));
 		Assert.Equal(new Coordinate(-100.5, 40.5), elements[1].End);
 		Assert.Equal(["R0001"], elements[2].TextLines!);
-		Assert.Equal(new EramProperties { Size = 2 }, elements[2].Overrides);
+		Assert.Equal(new EramProperties { Size = 2, Display = false }, elements[2].Overrides);
+		Assert.Equal(["R0001", "R0001", "R0001", "NOLABEL"], elements.Select(e => e.ObjectId));
+		Assert.All(elements, e => Assert.True(e.IsSaa));
 
 		// A label with no text is kept; that it has nothing to show is the writer's to say.
 		Assert.Empty(elements[3].TextLines!);

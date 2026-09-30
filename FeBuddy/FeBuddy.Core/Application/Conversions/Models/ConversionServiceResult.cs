@@ -23,4 +23,10 @@ public abstract record ConversionServiceResult : ServiceResult
 
 	/// <summary>Full paths of every GeoJSON file written, across source files.</summary>
 	public abstract IReadOnlyList<string> GeojsonFilesWritten { get; }
+
+	/// <summary>
+	/// Full paths of every other file written - ERAM to GeoJSON's <c>ConsoleCommandControl.txt</c>.
+	/// Empty unless a conversion writes one.
+	/// </summary>
+	public virtual IReadOnlyList<string> OtherFilesWritten => [];
 }

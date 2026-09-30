@@ -1,0 +1,119 @@
+name: Bug report
+description: Something in FE-BUDDY doesn't work the way it should.
+title: "[BUG] - "
+labels: ["bug", "v3.x"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report this. Before you start, check the
+        [FAQ and troubleshooting page](https://github.com/Nikolai558/FE-BUDDY/blob/v3-development/docs/Users/FAQ-and-Troubleshooting.md)
+        and [open issues](https://github.com/Nikolai558/FE-BUDDY/issues) in case it's already covered.
+
+        One problem per report, please.
+
+  - type: input
+    id: version
+    attributes:
+      label: FE-BUDDY version
+      description: Shown in the version chip at the top of the FE-BUDDY window.
+      placeholder: e.g. 3.0.0-alpha.2
+    validations:
+      required: true
+
+  - type: dropdown
+    id: windows
+    attributes:
+      label: Windows version
+      options:
+        - Windows 11
+        - Windows 10
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Where in FE-BUDDY?
+      description: Pick every part of the app involved.
+      multiple: true
+      options:
+        - Dashboard
+        - AIRAC Service - General / running the service
+        - AIRAC Service - Airports
+        - AIRAC Service - Airways
+        - AIRAC Service - Arrivals
+        - AIRAC Service - ARTCC Boundaries
+        - AIRAC Service - Departures
+        - AIRAC Service - Fixes
+        - AIRAC Service - NAVAIDs
+        - AIRAC Service - Procedures
+        - AIRAC Service - Telephony
+        - AIRAC Service - Wx Stations
+        - AIRAC Service - vNAS Alias Upload
+        - AIRAC Service - File Names
+        - File Conversions - DAT to GeoJSON
+        - File Conversions - SCT2 to GeoJSON
+        - File Conversions - ERAM to GeoJSON
+        - Map
+        - Settings
+        - Updating or installing
+        - Other / not sure
+    validations:
+      required: true
+
+  - type: input
+    id: airac
+    attributes:
+      label: AIRAC cycle and facility
+      description: If it happened while working with AIRAC data, which cycle and which ARTCC or facility?
+      placeholder: e.g. 2610, ZLC
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Include the exact text of any error message.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: What you did, in order, so we can make it happen too. Include the settings you used.
+      placeholder: |
+        1. Open AIRAC Service > Airways
+        2. Turn on ...
+        3. Click Run AIRAC Service
+        4. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect to happen?
+    validations:
+      required: true
+
+  - type: textarea
+    id: attachments
+    attributes:
+      label: Log, screenshots, and files
+      description: |
+        Drag files into this box to attach them.
+        - **Log:** today's log is `%APPDATA%\FE-Buddy\Logs\FE-Buddy_<date>.log`. Paste that path into File Explorer's address bar to open it.
+        - **Crash on launch:** also attach `febuddy-wpf-crash.txt` from the same folder if it exists.
+        - **Screenshots** of the problem, and the input or output files involved if you can share them.
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before you submit
+      options:
+        - label: I searched the open issues and this hasn't been reported yet.
+          required: true
+        - label: Nothing I've attached contains a GitHub token, password, or other private information.
+          required: true

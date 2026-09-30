@@ -11,7 +11,9 @@ namespace FeBuddy.Core.Domain.Geo;
 /// <remarks>
 /// <para>
 /// Consecutive segments that meet become one path, including a segment written backwards (its end
-/// is where the path already is). The paths then go through <see cref="LineStringMerger"/>, so a
+/// is where the path already is) and a whole run written backwards (each segment ends where the
+/// path begins, so the path grows at its start). Only the path being built is extended; a segment
+/// that meets nothing but an earlier path starts a new one. The paths then go through <see cref="LineStringMerger"/>, so a
 /// segment drawn twice is drawn once, and <see cref="AntimeridianSplitter"/>, so nothing wraps
 /// round the map. The result is smaller, and a dashed style stays dashed instead of restarting
 /// its pattern at every segment.
@@ -45,6 +47,12 @@ public static class SegmentJoiner
 			{
 				// Written backwards, but it still continues the same line.
 				path.Add(from);
+			}
+			else if (path is not null && path[0].Key == to.Key)
+			{
+				// Ends where the line begins - a run written backwards (2-1, 3-2, 4-3) grows the line
+				// at its start.
+				path.Insert(0, from);
 			}
 			else
 			{

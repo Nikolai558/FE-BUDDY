@@ -14,10 +14,6 @@ public partial class OutputsCard : UserControl
 	public static readonly DependencyProperty GeojsonTemplateProperty = DependencyProperty.Register(
 		nameof(GeojsonTemplate), typeof(DataTemplate), typeof(OutputsCard), new PropertyMetadata(null));
 
-	/// <summary>Identifies the <see cref="AliasFileName"/> dependency property.</summary>
-	public static readonly DependencyProperty AliasFileNameProperty = DependencyProperty.Register(
-		nameof(AliasFileName), typeof(string), typeof(OutputsCard), new PropertyMetadata(string.Empty));
-
 	/// <summary>Identifies the <see cref="AliasDescription"/> dependency property.</summary>
 	public static readonly DependencyProperty AliasDescriptionProperty = DependencyProperty.Register(
 		nameof(AliasDescription), typeof(string), typeof(OutputsCard), new PropertyMetadata(null));
@@ -44,13 +40,6 @@ public partial class OutputsCard : UserControl
 	{
 		get => (DataTemplate?)GetValue(GeojsonTemplateProperty);
 		set => SetValue(GeojsonTemplateProperty, value);
-	}
-
-	/// <summary>The alias file's name, shown as "Alias file (Airports.txt)".</summary>
-	public string AliasFileName
-	{
-		get => (string)GetValue(AliasFileNameProperty);
-		set => SetValue(AliasFileNameProperty, value);
 	}
 
 	/// <summary>What the alias file holds, shown under its checkbox.</summary>

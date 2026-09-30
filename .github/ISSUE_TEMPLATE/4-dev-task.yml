@@ -1,0 +1,49 @@
+name: Development task
+description: For maintainers. Planned code work - UI, logic, build, or tests.
+title: "[TASK] - "
+labels: ["task", "v3.x"]
+body:
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Kind of work
+      multiple: true
+      options:
+        - UI (views, cards, styles)
+        - Logic (FeBuddy.Core)
+        - Installer or updater
+        - Build, CI, or release
+        - Tests
+        - Cleanup or refactor
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What needs to be done, and why?
+      description: What should be added, reworked, or removed.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps
+      description: The pieces of work needed to finish this.
+      placeholder: |
+        1.
+        2.
+        3.
+
+  - type: textarea
+    id: tests
+    attributes:
+      label: Tests needed
+      description: For logic changes, the tests needed to keep FeBuddy.Core's coverage up.
+
+  - type: textarea
+    id: references
+    attributes:
+      label: References
+      description: Related issues, files, docs, or FAA and vNAS references.

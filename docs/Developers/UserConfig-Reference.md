@@ -21,7 +21,7 @@ Written by **Settings** (except `NewsLastOpen` and `LegacyGitHubTokenNoticeShown
 
 | Key | Values | Default | Read by |
 |---|---|---|---|
-| `UpdateChannel` | `Stable`, `ReleaseCandidate`, `Beta`, `Alpha` | `Stable` | launch version check, Settings. Kept on this PC: never exported. |
+| `UpdateChannel` | `Stable`, `ReleaseCandidate`, `Beta`, `Alpha` | none: the running build's channel (`UpdateChannelSetting`) | launch version check, Settings. Written only when the user changes it. Kept on this PC: never exported. |
 | `NewsLastOpen` | the newest News `PostId` seen, e.g. `2026-08-30.3` | none | launch News check. Written when the user opens News. Kept on this PC: never exported. |
 | `PrettyPrintGeojson` | `Y` / `N` | `N` | `OutputFormatting` (every GeoJSON writer) |
 | `DefaultOutputDirectory` | a folder path | the Desktop | every run, through `Shell/OutputPreferences`. An AIRAC Service run writes into `AIRAC_<cycle>` inside it; a file conversion into its own folder. |
@@ -153,6 +153,7 @@ tab reads them any more (the [file conversion nodes](#file-conversion-nodes) sti
 |---|---|---|
 | `OutputBy` | `HighLow`, `Designation`, `None` | `HighLow` |
 | `BufferAirwayWaypoints` | `Y` / `N` | `N` |
+| `FixBufferNm`, `NavaidBufferNm` | NM a buffered line stops short of a 5-character fix / any other waypoint, `0`-`10`, as typed | `2.5`, `5` |
 | `AliasRoiScope` | `All`, `RoiAirways` | `All` |
 | `SplitAtAntimeridian` | `Y` / `N` | `Y` |
 | `ExcludedDesignations` | comma-separated designations, e.g. `RN,SL` | none |
@@ -319,8 +320,10 @@ the folder is.
 | `IncludeCrcTextDefaults` | `Y` / `N` - only a conversion that writes text (SCT2, ERAM) | `Y` |
 | `CrcEramPropertyDefaults.<row>.<field>` | the fields for the row's kind, as for the sub-services | none (the user must fill them) |
 | `CroppingDistance` | DAT only: NM, as typed; blank means no cropping | none |
-| `OutputLayout` | ERAM only: `ByObject`, `ByFilter` | `ByObject` |
+| `OutputLayout` | ERAM only: `ByFilters`, `ByAttributes`, `Raw`. An older `ByFilter` / `ByObject` loads as `ByFilters` / `ByAttributes` and is saved over at the next Save | `ByAttributes` |
 | `DefaultsSource` | ERAM only: `Xml`, `XmlThenCard`, `Card` | `Xml` |
+| `IncludeFebCustomProperties` | ERAM only: `Y` / `N` | `N` |
+| `FebProperties` | ERAM only: comma-separated `mapObjectType`, `mapGroupId`, `lineObjectId`, `symbolId`, `saaId` | none |
 
 ## Settings export and import
 

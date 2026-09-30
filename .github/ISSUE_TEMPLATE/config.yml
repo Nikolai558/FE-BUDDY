@@ -1,0 +1,11 @@
+blank_issues_enabled: true
+contact_links:
+  - name: User Guide
+    url: https://github.com/Nikolai558/FE-BUDDY/blob/v3-development/docs/Users/User-Guide.md
+    about: How each FE-BUDDY tool works, field by field.
+  - name: FAQ and troubleshooting
+    url: https://github.com/Nikolai558/FE-BUDDY/blob/v3-development/docs/Users/FAQ-and-Troubleshooting.md
+    about: Answers to common questions, and fixes for common problems.
+  - name: FE-BUDDY Discord
+    url: https://discord.gg/GB46aeauH4
+    about: Questions, help, and general discussion.

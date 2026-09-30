@@ -125,7 +125,7 @@ public sealed class AirportAliasWriterTests : IDisposable
 		string body = AirportAliasWriter.BuildCommandBody(
 			AirportTestDataBuilder.BuiltAirport(weatherFrequency: null, weatherFrequencyUse: null));
 
-		Assert.EndsWith("WX:" + Tab + Tab + Tab + Space, body);
+		Assert.Contains("WX:" + Tab + Tab + Tab + Space + NewLine, body);
 	}
 
 	[Fact]
@@ -134,7 +134,48 @@ public sealed class AirportAliasWriterTests : IDisposable
 		string body = AirportAliasWriter.BuildCommandBody(
 			AirportTestDataBuilder.BuiltAirport(weatherFrequency: "135.075", weatherFrequencyUse: "ASOS"));
 
-		Assert.EndsWith("WX:" + Tab + Tab + Tab + Space + "135.075 (ASOS)", body);
+		Assert.Contains("WX:" + Tab + Tab + Tab + Space + "135.075 (ASOS)" + NewLine, body);
+	}
+
+	/// <summary>
+	/// The whole card, as it was asked for: attendance hours after WX, then the airspace (moved down
+	/// from after PTRN ALT) with its hours, each extra line lined up under the first value. The
+	/// space in <c>ATNDCE HRS:</c> is <c>\s</c>, as in <c>FAC\sTYPE:</c>, so CRC keeps it.
+	/// </summary>
+	[Fact]
+	public void the_card_ends_with_the_attendance_hours_then_the_airspace_and_its_hours()
+	{
+		string body = AirportAliasWriter.BuildCommandBody(AirportTestDataBuilder.BuiltAirport(
+			faaId: "DTW",
+			icaoId: "KDTW",
+			name: "DETROIT METRO WAYNE COUNTY",
+			elevation: 645.2,
+			respArtccId: "ZOB",
+			fssId: "LAN",
+			classAirspace: "Bravo",
+			runways: [AirportTestDataBuilder.BuiltRunway("04R/22L", 12003, "CONC")],
+			attendanceHours: ["7a-9p", "Another Time"],
+			airspaceHours: ["CLASS D SVC", "1715-0100Z++ MON-FRI EXCEPT FED HOLS", "OTHER TIMES CLASS E"]));
+
+		Assert.Equal(
+			@".ECHO \nAPT:\t\t\tDTW - KDTW\n\t\t\t\tDETROIT METRO WAYNE COUNTY\n\t\t\t\tAIRPORT\nFAC\sTYPE:\t\s\s\sTWR" +
+			@"\nARTCC:\t\t\s\sZOB\nLONGEST\sRWY:\t04R/22L (12003′)\n\t\t\t\tCONC\nELEV:\t\t\s\s\s645.2′\nPTRN\sALT:\t\s\s\s" +
+			@"\nFSS:\t\t\tLAN\nCTAF:\t\t\s\s\s\nWX:\t\t\t\s\nATNDCE\sHRS:\t\s7a-9p\n\t\t\t\tAnother Time" +
+			@"\nAIRSPACE:\t\s\s\sBravo\n\t\sHRS:\t\s\s\sCLASS D SVC\n\t\t\t\t1715-0100Z++ MON-FRI EXCEPT FED HOLS" +
+			@"\n\t\t\t\tOTHER TIMES CLASS E",
+			body);
+	}
+
+	[Fact]
+	public void with_no_hours_both_hours_labels_are_still_printed()
+	{
+		string body = AirportAliasWriter.BuildCommandBody(AirportTestDataBuilder.BuiltAirport(classAirspace: null));
+
+		Assert.EndsWith(
+			NewLine + "ATNDCE" + Space + "HRS:" + Tab + Space +
+			NewLine + "AIRSPACE:" + Tab + Space + Space + Space +
+			NewLine + Tab + Space + "HRS:" + Tab + Space + Space + Space,
+			body);
 	}
 
 	[Fact]

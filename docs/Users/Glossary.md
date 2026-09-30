@@ -106,8 +106,8 @@ FE-Buddy only writes data inside (or crossing) it. Make it a little bigger than 
 
 **STAR** - Standard Terminal Arrival: a published arrival route into an airport.
 
-**Sub-service** - One kind of data the AIRAC Service can produce: Airports, Airways, Departures,
-Arrivals, NAVAIDs, ARTCC Boundaries, Fixes, Wx Stations, Procedures, Telephony or vNAS Alias
+**Sub-service** - One kind of data the AIRAC Service can produce: ARTCC Boundaries, Airports,
+Airways, Arrivals, Departures, NAVAIDs, Fixes, Procedures, Telephony, Wx Stations or vNAS Alias
 Upload. Each has its own tab and settings.
 
 **Telephony** - The sub-service that writes `Telephony.txt`: a `.id` command for every operator's
@@ -123,13 +123,14 @@ In CRC, these are GeoJSON files.
 for CRC to use. The files you mark for vNAS on a sub-service tab go in an `Upload_to_vNAS` folder,
 ready to upload: GeoJSON files as they are, alias files merged into **`vNAS_Alias.txt`**.
 
-**vNAS Alias Upload** - The sub-service that puts your facility's own alias files (custom alias
-files, on your PC or on the web) at the top of `vNAS_Alias.txt`. See the
+**vNAS Alias Upload** - The sub-service that adds your facility's own alias files (custom alias
+files, on your PC or on the web) to `vNAS_Alias.txt`, after FE-Buddy's. See the
 [user guide](User-Guide.md#vnas-alias-upload-tab).
 
 **`vNAS_Alias.txt`** - The one alias file a facility uploads to vNAS, written to `Upload_to_vNAS`:
-your custom alias files first (with vNAS Alias Upload), then a marker line, then every FE-Buddy
-alias file you marked for vNAS. Everything below the marker line is replaced every cycle.
+every FE-Buddy alias file you marked for vNAS between a start line and an end line, then your
+custom alias files (with vNAS Alias Upload). CRC uses the last copy of a command, so yours win.
+Everything between the two lines is replaced every cycle.
 
 **Wx Stations** - The sub-service that draws a symbol and a two-line label for every US (and
 territory) station that reports METAR. Like Procedures and Telephony, its data isn't the NASR

@@ -164,6 +164,7 @@ public static partial class VersionCheck
 				LatestReleaseUrl: latest.Url, IsAheadOfLatestRelease: isAheadOfLatest)
 			{
 				NewerReleases = newer,
+				LatestRelease = latest,
 				LatestInstaller = latestInstaller,
 				RunningPreReleaseChannel = preReleaseChannel,
 			};
@@ -179,7 +180,7 @@ public static partial class VersionCheck
 	/// Whether a pre-release carries one of the labels releases are published with - <c>alpha</c>,
 	/// <c>beta</c> or <c>rc</c> - rather than a development label such as <c>dev</c>.
 	/// </summary>
-	private static bool IsPublishedPreRelease(ProductVersion version) =>
+	internal static bool IsPublishedPreRelease(ProductVersion version) =>
 		version.IsPrerelease
 		&& version.SemVersion.PrereleaseIdentifiers[0].Value.ToUpperInvariant() is "ALPHA" or "BETA" or "RC";
 

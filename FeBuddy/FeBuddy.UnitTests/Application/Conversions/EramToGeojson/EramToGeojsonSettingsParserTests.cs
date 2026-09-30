@@ -4,8 +4,9 @@ using FeBuddy.Core.Application.Conversions.EramToGeojson.Models;
 namespace FeBuddy.UnitTests.Application.Conversions.EramToGeojson;
 
 /// <summary>
-/// Covers <see cref="EramToGeojsonSettingsParser"/>: the layout and defaults-source choices, and
-/// the tab's CRC defaults, read only when they can be used.
+/// Covers <see cref="EramToGeojsonSettingsParser"/>: the layout and defaults-source choices, the
+/// retired layouts read as their nearest, the <c>feb.*</c> properties, and the tab's CRC
+/// defaults, read only when they can be used.
 /// </summary>
 public sealed class EramToGeojsonSettingsParserTests
 {
@@ -37,23 +38,60 @@ public sealed class EramToGeojsonSettingsParserTests
 	];
 
 	[Fact]
-	public void defaults_to_a_file_per_object_with_defaults_from_the_xml()
+	public void defaults_to_by_attributes_with_defaults_from_the_xml_and_no_feb_properties()
 	{
 		EramToGeojsonSettingsParseResult result = EramToGeojsonSettingsParser.Parse(Settings());
 
-		Assert.Equal(EramOutputLayout.ByObject, result.Settings.OutputLayout);
+		Assert.Equal(EramOutputLayout.ByAttributes, result.Settings.OutputLayout);
 		Assert.Equal(EramDefaultsSource.Xml, result.Settings.DefaultsSource);
 		Assert.Equal(@"C:\GeoMaps", result.Settings.SourceFolder);
 		Assert.Null(result.Settings.LineDefaults);
+		Assert.False(result.Settings.IncludeFebProperties);
+		Assert.Empty(result.Settings.FebProperties);
 		Assert.Empty(result.Messages);
+	}
+
+	[Theory]
+	[InlineData("ByFilters", EramOutputLayout.ByFilters)]
+	[InlineData("byattributes", EramOutputLayout.ByAttributes)]
+	[InlineData("Raw", EramOutputLayout.Raw)]
+	public void each_layout_is_read(string value, EramOutputLayout expected)
+	{
+		EramToGeojsonSettingsParseResult result = EramToGeojsonSettingsParser.Parse(Settings(("OutputLayout", value)));
+
+		Assert.Equal(expected, result.Settings.OutputLayout);
+		Assert.Empty(result.Messages);
+	}
+
+	/// <summary>A layout saved before these three is read as its nearest, with a note, so an old setup still runs.</summary>
+	[Theory]
+	[InlineData("ByFilter", EramOutputLayout.ByFilters)]
+	[InlineData(" byobject ", EramOutputLayout.ByAttributes)]
+	public void a_retired_layout_is_read_as_its_nearest(string value, EramOutputLayout expected)
+	{
+		EramToGeojsonSettingsParseResult result = EramToGeojsonSettingsParser.Parse(Settings(("OutputLayout", value)));
+
+		Assert.Equal(expected, result.Settings.OutputLayout);
+		Assert.Contains("is no longer offered", Assert.Single(result.Messages).Text);
+	}
+
+	[Fact]
+	public void the_chosen_feb_properties_are_read()
+	{
+		EramToGeojsonSettings settings = EramToGeojsonSettingsParser.Parse(Settings(
+			("IncludeFebCustomProperties", "Y"), ("FebProperties", "lineObjectId,MapObjectType,saaId"))).Settings;
+
+		Assert.True(settings.IncludeFebProperties);
+		Assert.Equal([EramFebProperty.LineObjectId, EramFebProperty.MapObjectType, EramFebProperty.SaaId], settings.FebProperties);
+		Assert.Throws<ArgumentException>(() => EramToGeojsonSettingsParser.Parse(Settings(("IncludeFebCustomProperties", "Y"))));
 	}
 
 	[Fact]
 	public void the_tab_s_defaults_are_ignored_while_the_xml_is_the_source()
 	{
-		EramToGeojsonSettings settings = EramToGeojsonSettingsParser.Parse(Settings(AllCard(("OutputLayout", "byfilter")))).Settings;
+		EramToGeojsonSettings settings = EramToGeojsonSettingsParser.Parse(Settings(AllCard(("OutputLayout", "Raw")))).Settings;
 
-		Assert.Equal(EramOutputLayout.ByFilter, settings.OutputLayout);
+		Assert.Equal(EramOutputLayout.Raw, settings.OutputLayout);
 		Assert.Null(settings.LineDefaults);
 		Assert.Null(settings.SymbolDefaults);
 		Assert.Null(settings.TextDefaults);

@@ -22,6 +22,11 @@
     <Color x:Key="Color.Card">#0E1621</Color>         <!-- cards on the base surface -->
     <Color x:Key="Color.Card.Hover">#132131</Color>
     <Color x:Key="Color.Overlay">#12FFFFFF</Color>    <!-- ~7% white hover wash      -->
+    <!-- Nested surfaces inside a card (the CRC ERAM defaults): a panel set into the card a step
+         darker, and a block raised inside that panel a step lighter than the card, so each level
+         reads apart from the one around it and the sunken inputs still stand out on both. -->
+    <Color x:Key="Color.Inset">#0A111A</Color>        <!-- a panel inside a card     -->
+    <Color x:Key="Color.Inset.Block">#132030</Color>  <!-- a block inside that panel -->
 
     <SolidColorBrush x:Key="Brush.Bg.Base"   Color="{StaticResource Color.Bg.Base}" />
     <SolidColorBrush x:Key="Brush.Bg.Sunken" Color="{StaticResource Color.Bg.Sunken}" />
@@ -29,6 +34,8 @@
     <SolidColorBrush x:Key="Brush.Card"      Color="{StaticResource Color.Card}" />
     <SolidColorBrush x:Key="Brush.Card.Hover" Color="{StaticResource Color.Card.Hover}" />
     <SolidColorBrush x:Key="Brush.Overlay"   Color="{StaticResource Color.Overlay}" />
+    <SolidColorBrush x:Key="Brush.Inset"       Color="{StaticResource Color.Inset}" />
+    <SolidColorBrush x:Key="Brush.Inset.Block" Color="{StaticResource Color.Inset.Block}" />
 
     <!-- ============================= LINES ============================= -->
     <Color x:Key="Color.Stroke">#1E2C3B</Color>

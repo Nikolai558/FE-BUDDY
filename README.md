@@ -1,7 +1,7 @@
 # FE-BUDDY
 (Previously known as NASR2SCT)
 
-![FE-Buddy Logo](https://github.com/user-attachments/assets/69c021c7-6f0b-4e48-90c9-07fcfecb9dd5)
+<img src="docs/Media/Branding/FEB_256.png" alt="FE-Buddy Logo" width="160" height="160">
 
 ---
 

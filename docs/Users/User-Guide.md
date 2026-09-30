@@ -983,6 +983,20 @@ The cards, top to bottom:
 
   **Reset and restart** closes FE-Buddy and starts it again; the reset happens as it starts, and a
   message says when it is done. Files in your output folder are never touched.
+- **Uninstall FE-Buddy…** (on the Reset FE-Buddy card, across from its button) - remove FE-Buddy from this PC, the same way
+  Windows does from **Settings ▸ Apps ▸ Installed apps**. It opens a window that says what goes:
+  - **Removed:** FE-Buddy itself (the program, its shortcuts and its Installed apps entry), the data
+    it has downloaded, its logs and temporary files, your settings and their backups, and your
+    saved credentials.
+  - **Not touched:** everything in your output folder, and FE-Buddy's settings in other people's
+    Windows accounts on the PC.
+  - **Save a copy of my settings first** (on to start with) - you choose where, the Desktop to
+    begin with. If you install FE-Buddy again, **Import…** brings it back.
+  - Anything closing FE-Buddy would lose (a run in progress, unsaved changes) is listed too.
+
+  **I understand, uninstall** closes FE-Buddy, and Windows asks you to confirm and for
+  administrator permission. Cancel there and nothing is removed. It isn't shown in a copy of
+  FE-Buddy that the installer didn't install (a development build, for example).
 
 ## Info
 

@@ -1,6 +1,6 @@
 <!--
     SettingsView  -  Facility Profile / Default ROI / GeoJSON Files / Credentials / FE-Buddy's GitHub Requests / Updates /
-    Reset FE-Buddy. Everything persists to UserConfig.json.
+    Reset FE-Buddy (with Uninstall FE-Buddy… across from its button). Everything persists to UserConfig.json.
 -->
 <UserControl x:Class="FeBuddy.Wpf.Views.SettingsView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -307,8 +307,14 @@
                     <StackPanel>
                         <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,10"
                                    Text="{Binding Source={x:Static vm:SettingsViewModel.ResetDescription}}" />
-                        <Button Style="{StaticResource Button.Ghost}" Content="Reset FE-Buddy…" HorizontalAlignment="Left"
-                                Command="{Binding ResetCommand}" />
+                        <!-- Uninstall sits across from Reset, only in the installed copy; the window it opens says what goes. -->
+                        <Grid>
+                            <Button Style="{StaticResource Button.Ghost}" Content="Reset FE-Buddy…" HorizontalAlignment="Left"
+                                    VerticalAlignment="Center" Command="{Binding ResetCommand}" />
+                            <Button Style="{StaticResource Button.Ghost.Danger}" Content="Uninstall FE-Buddy…" HorizontalAlignment="Right"
+                                    VerticalAlignment="Center" Command="{Binding UninstallCommand}"
+                                    Visibility="{Binding CanUninstall, Converter={StaticResource BoolToVis}}" />
+                        </Grid>
                     </StackPanel>
                 </ctl:Card>
             </StackPanel>

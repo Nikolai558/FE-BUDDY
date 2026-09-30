@@ -23,8 +23,8 @@ namespace FeBuddy.Core.Application.Launch;
 /// <remarks>
 /// Steps run in dependency order, not list order: temp clear and config read first (the
 /// version check and News need the config; the AIRAC download uses the temp folder), then the
-/// check for FE-Buddy 2.x's GitHub token variable (it needs the config, nothing needs it), then the
-/// UTC time / internet check (AIRAC needs the time, and all three network steps use the
+/// check for FE-Buddy 2.x's GitHub token variable (it needs the config, nothing needs it) and the
+/// removal of 2.8.x's dead shortcuts (nothing needs it either), then the UTC time / internet check (AIRAC needs the time, and all three network steps use the
 /// internet flag), then version, AIRAC and News concurrently since none depends on another.
 /// </remarks>
 public static class LaunchSequence
@@ -71,6 +71,12 @@ public static class LaunchSequence
 			progress, LaunchStep.CheckLegacyGitHubToken, "Checking for FE-Buddy 2.x's GitHub token variable",
 			() => LegacyGitHubTokenNotice.Check(),
 			defaultValue: []);
+
+		// FE-Buddy 2.8.x's Desktop and Start menu shortcuts outlive the copy they open. Nothing needs this.
+		RunStep(
+			progress, LaunchStep.RemoveLegacyShortcuts, "Removing FE-Buddy 2.8.x's dead shortcuts",
+			() => LegacySquirrelShortcuts.RemoveDead(),
+			defaultValue: 0);
 
 		AppEnvironment.RaiseChanged();
 

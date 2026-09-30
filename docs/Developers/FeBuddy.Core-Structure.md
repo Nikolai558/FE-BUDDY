@@ -89,7 +89,8 @@ FeBuddy.Core/
 │   │                   the contents API address that works for a private repository with a token)
 │   ├── Http/  Logging/  Markdown/
 │   ├── Platform/       AppVersion, InstalledProduct, UtcTimeCheck, LegacyGitHubTokenVariable (whether
-│   │                   2.x's FEBUDDY_GITHUB_TOKEN is set - never its value)
+│   │                   2.x's FEBUDDY_GITHUB_TOKEN is set - never its value), LegacySquirrelShortcuts
+│   │                   (2.8.x's dead Desktop / Start menu shortcuts)
 │   ├── Nasr/           Download, availability, CSV reading, WaypointLocator
 │   │   ├── Models/     One row-model file per NASR CSV group
 │   │   └── Parsers/    One parser per group + NasrCsvParser (parses them all)
@@ -189,7 +190,8 @@ A class's suffix tells you what it does:
 ## How a run flows
 
 **At launch**, `LaunchSequence.RunAsync` clears the temp folder, reads the config, looks for FE-Buddy
-2.x's GitHub token variable (`LegacyGitHubTokenNotice`), checks UTC time and internet access, then
+2.x's GitHub token variable (`LegacyGitHubTokenNotice`), deletes 2.8.x's dead shortcuts
+(`LegacySquirrelShortcuts`), checks UTC time and internet access, then
 runs three steps concurrently: the version check, the News
 fetch, and the AIRAC data step. The AIRAC step works out the previous, current and next cycles
 (`AiracCycleResolver`). It then has `AiracCycleDataCache` download and parse whichever of them the

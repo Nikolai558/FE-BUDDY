@@ -161,7 +161,7 @@ going back to the latest stable **is** allowed: use Settings ▸ Updates ▸
 FE-Buddy writes what happened to two places. Please attach them when you
 [report the problem](https://github.com/Nikolai558/FE-BUDDY/issues):
 
-- `%TEMP%\febuddy-wpf-crash.txt` - the crash itself.
+- `%APPDATA%\FE-Buddy\Logs\febuddy-wpf-crash.txt` - the crash itself.
 - `%APPDATA%\FE-Buddy\Logs\FE-Buddy_<date>.log` - everything FE-Buddy did that day (logs are
   kept for 30 days).
 

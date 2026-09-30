@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Text;
@@ -16,6 +17,7 @@ using FeBuddy.Wpf.Views;
 using FeBuddy.Core.Application.Airac;
 using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Application.Launch;
+using FeBuddy.Core.Application.Updates;
 using FeBuddy.Core.Application.Updates.Models;
 using FeBuddy.Core.Domain.Airac.Models;
 using FeBuddy.Core.Domain.Geo.Models;
@@ -36,7 +38,8 @@ namespace FeBuddy.Wpf.ViewModels;
 
 /// <summary>
 /// SYSTEM ▸ Settings. Section order: Facility Profile, Default Region of Interest, GeoJSON Files,
-/// Credentials, FE-Buddy's GitHub Requests, Updates, Reset FE-Buddy. Every value persists to
+/// Credentials, FE-Buddy's GitHub Requests, Updates, Reset FE-Buddy (with Uninstall FE-Buddy…
+/// across from its button). Every value persists to
 /// <c>UserConfig.json</c>, except credentials, which live in Windows Credential Manager and are
 /// saved at once (<see cref="CredentialsViewModel"/>). FE-Buddy's GitHub Requests saves only the
 /// chosen token's id.
@@ -59,6 +62,11 @@ namespace FeBuddy.Wpf.ViewModels;
 /// Reset FE-Buddy asks what to keep (<see cref="ResetViewModel"/>), saves a copy of the settings
 /// first if they go and the user wants one, records the reset (<see cref="AppDataReset"/>) and
 /// restarts FE-Buddy, which carries it out as it starts.
+/// </para>
+/// <para>
+/// Uninstall FE-Buddy…, shown only in the MSI-installed copy, says what goes (<see cref="UninstallViewModel"/>),
+/// saves a copy of the settings first if the user wants one, starts Windows' uninstall
+/// (<see cref="AppUninstall"/>) and closes FE-Buddy.
 /// </para>
 /// </remarks>
 public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IConfigPage
@@ -100,7 +108,7 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 	/// </param>
 	/// <param name="describeUnfinishedWork">
 	/// What closing FE-Buddy now would lose (a run in progress, unsaved edits on any page), for the
-	/// Reset FE-Buddy window. The shell knows every page, so it supplies it.
+	/// Reset FE-Buddy and Uninstall FE-Buddy windows. The shell knows every page, so it supplies it.
 	/// </param>
 	public SettingsViewModel(Action? openUpdateWindow = null, Func<IReadOnlyList<string>>? describeUnfinishedWork = null)
 	{
@@ -125,6 +133,7 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 		ImportCommand = new RelayCommand(Import);
 		NewGitHubTokenCommand = new RelayCommand(NewGitHubToken);
 		ResetCommand = new RelayCommand(Reset);
+		UninstallCommand = new RelayCommand(Uninstall, () => CanUninstall);
 
 		AiracCycleDataCache.Instance.StateChanged += (_, _) => _dispatcher.BeginInvoke(RefreshFacilities);
 		RefreshFacilities();
@@ -575,6 +584,18 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 	/// <summary>Opens the Reset FE-Buddy window, and resets and restarts FE-Buddy once confirmed.</summary>
 	public ICommand ResetCommand { get; }
 
+	// ================= uninstall =================
+
+	/// <summary>
+	/// Whether this copy can uninstall itself: it is the one the installer installed, and the
+	/// installer recorded its ProductCode. Otherwise Uninstall FE-Buddy… is not shown.
+	/// </summary>
+	public bool CanUninstall { get; } =
+		AppEnvironment.IsMsiInstalled && AppUninstall.UninstallerArguments(InstalledProduct.ProductCode) is not null;
+
+	/// <summary>Opens the Uninstall FE-Buddy window, and starts Windows' uninstall and closes FE-Buddy once confirmed.</summary>
+	public ICommand UninstallCommand { get; }
+
 	/// <inheritdoc />
 	public void ReloadFromConfig() => LoadFromConfig();
 
@@ -921,7 +942,7 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 			return;
 		}
 
-		if (choices.SavesCopy && !SaveSettingsCopy(owner))
+		if (choices.SavesCopy && !SaveSettingsCopy(owner, "reset", "reset"))
 		{
 			return;
 		}
@@ -940,6 +961,54 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 		AppRestart.Restart(owner, "the reset");
 	}
 
+	/// <summary>
+	/// Says what the uninstall removes, saves a copy of the settings first when the user wants one,
+	/// then starts Windows' uninstall of this install and closes FE-Buddy so it can remove the files.
+	/// </summary>
+	private void Uninstall()
+	{
+		string? arguments = AppUninstall.UninstallerArguments(InstalledProduct.ProductCode);
+		if (!CanUninstall || arguments is null)
+		{
+			return;
+		}
+
+		Window? owner = Application.Current?.MainWindow;
+
+		UninstallViewModel choices = new(
+			hasSettings: File.Exists(UserConfigFile.ConfigFilePath),
+			credentialCount: CountCredentials(),
+			unfinishedWork: _describeUnfinishedWork?.Invoke() ?? []);
+
+		new UninstallWindow(choices) { Owner = owner }.ShowDialog();
+
+		if (!choices.Confirmed)
+		{
+			return;
+		}
+
+		if (choices.SavesCopy && !SaveSettingsCopy(owner, "uninstall", "uninstalled"))
+		{
+			return;
+		}
+
+		try
+		{
+			// Not elevated, as Windows starts it: Windows Installer asks for permission itself (see AppUninstall).
+			Process.Start(new ProcessStartInfo("msiexec.exe", arguments) { UseShellExecute = true });
+		}
+		catch (Exception ex) when (ex is Win32Exception or InvalidOperationException)
+		{
+			AppLog.Warning("Settings", $"Could not start the uninstall: {ex.Message}");
+			Toast.Error("Could not start the uninstall",
+				$"{ex.Message} Uninstall FE-Buddy from Windows Settings ▸ Apps ▸ Installed apps instead.");
+			return;
+		}
+
+		AppLog.Info("Settings", "Started Windows' uninstall of FE-Buddy; closing FE-Buddy.");
+		Application.Current?.Shutdown();
+	}
+
 	/// <summary>How many credentials are saved; 0 when Windows Credential Manager cannot be read.</summary>
 	private static int CountCredentials()
 	{
@@ -955,11 +1024,14 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 	}
 
 	/// <summary>
-	/// Copies <c>UserConfig.json</c> to where the user picks, before a reset deletes it. The copy is
-	/// the file as saved - a full backup, which Import reads back.
+	/// Copies <c>UserConfig.json</c> to where the user picks, before a reset or an uninstall deletes
+	/// it. The copy is the file as saved - a full backup, which Import reads back.
 	/// </summary>
-	/// <returns><see langword="true"/> once the copy is saved; <see langword="false"/> to stop the reset.</returns>
-	private static bool SaveSettingsCopy(Window? owner)
+	/// <param name="owner">The window the file dialog belongs to.</param>
+	/// <param name="action">What is about to happen, for messages: <c>reset</c> or <c>uninstall</c>.</param>
+	/// <param name="done">The same as a past participle: <c>reset</c> or <c>uninstalled</c>.</param>
+	/// <returns><see langword="true"/> once the copy is saved; <see langword="false"/> to stop.</returns>
+	private static bool SaveSettingsCopy(Window? owner, string action, string done)
 	{
 		SaveFileDialog dialog = new()
 		{
@@ -973,28 +1045,28 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 
 		if (dialog.ShowDialog(owner) != true)
 		{
-			Toast.Info("Nothing was reset", "No copy of your settings was saved, so FE-Buddy was left as it is.");
+			Toast.Info($"Nothing was {done}", "No copy of your settings was saved, so FE-Buddy was left as it is.");
 			return false;
 		}
 
-		// The reset empties FE-Buddy's own folder, so a copy saved in it would go too.
+		// Both empty FE-Buddy's own folder, so a copy saved in it would go too.
 		string folder = Path.GetFullPath(AppDataReset.RootDirectory).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
 		if (Path.GetFullPath(dialog.FileName).StartsWith(folder, StringComparison.OrdinalIgnoreCase))
 		{
-			Toast.Warn("Choose another folder", $"The reset empties {AppDataReset.RootDirectory}, copy and all. Nothing was reset.");
+			Toast.Warn("Choose another folder", $"The {action} empties {AppDataReset.RootDirectory}, copy and all. Nothing was {done}.");
 			return false;
 		}
 
 		try
 		{
 			File.Copy(UserConfigFile.ConfigFilePath, dialog.FileName, overwrite: true);
-			AppLog.Info("Settings", $"Saved a copy of the settings to '{dialog.FileName}' before the reset.");
+			AppLog.Info("Settings", $"Saved a copy of the settings to '{dialog.FileName}' before the {action}.");
 			return true;
 		}
 		catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
 		{
 			AppLog.Warning("Settings", $"Could not save a copy of the settings to '{dialog.FileName}': {ex.Message}");
-			Toast.Error("Could not save the copy", $"{ex.Message} Nothing was reset.");
+			Toast.Error("Could not save the copy", $"{ex.Message} Nothing was {done}.");
 			return false;
 		}
 	}

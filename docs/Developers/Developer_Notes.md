@@ -231,9 +231,23 @@
 
 ### UNINSTALL
 
-- User selects to start the uninstall process.
-- Warning window should appear informing the user that their user settings will be lost, including ROI coordinates, geojson CRC ERAM default settings, etc.. and a "Cancel" or "I understand, please uninstall" options should be provided.
-  - Consider providing an option for the user to save the current userconfig.json for safe-keeping.
+- No card or description of its own: an `Uninstall FE-Buddy…` button on the Reset FE-Buddy card,
+  right-aligned across from `Reset FE-Buddy…` (`Button.Ghost.Danger`: a ghost button that fills red
+  on hover). Shown only in the copy the MSI installed (`AppEnvironment.IsMsiInstalled`) with a
+  recorded ProductCode.
+- It opens a window that lists what is removed (FE-Buddy, its downloaded data, logs and temp files,
+  the settings and their backups, the saved credentials) and what is not (the output folder, other
+  Windows accounts' FE-Buddy data), what the settings hold, and anything closing now would lose.
+  It offers **Save a copy of my settings first** (on by default; refused inside FE-Buddy's own
+  folder). Buttons: **Cancel** and **I understand, uninstall**.
+- Confirmed, FE-Buddy starts `msiexec /x {ProductCode}` (`AppUninstall`) **not elevated**, the way
+  Windows Settings starts it - Windows Installer asks for administrator permission itself. Started
+  elevated, a standard user entering an administrator's password would run the uninstall as that
+  administrator, and its cleanup would find the administrator's folders and credentials. FE-Buddy
+  then closes so the uninstall can remove its files.
+- The uninstall itself (the same from Windows Settings) runs the installer's cleanup:
+  `UninstallCleanup.wxs` and the `RemoveFeBuddyCredentials` custom action. Only the uninstalling
+  user's folders and credentials are cleaned.
 
 ### WINDOW STATE
 

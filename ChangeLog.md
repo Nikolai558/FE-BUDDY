@@ -26,6 +26,10 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
   (an alpha is on Alpha, a beta on Beta, and so on). Saving a different channel in Settings ▸
   Updates checks it straight away, and choosing a more stable channel while on a pre-release
   offers to take you back to that channel's latest release (**Go back now**).
+- Bug #151 - GeoJSON lines from sector files and ERAM GeoMaps written backwards (each segment
+  ending where the one before it starts) are now joined into whole lines instead of one line per
+  segment, so the files are smaller and dashed lines no longer restart their pattern at every
+  segment.
 - Folder names and paths in on-screen descriptions and messages (`Upload_to_vNAS`, `Aliases`, the
   output folder in Settings, …) now show in a code font, the way `code` looks in News posts.
 - Tick boxes and options no longer hide the first underscore of a file name (`Fix_Symbols.geojson`

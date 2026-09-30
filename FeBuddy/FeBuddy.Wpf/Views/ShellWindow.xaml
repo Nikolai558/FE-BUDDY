@@ -184,7 +184,7 @@
                 <StackPanel Grid.Column="0" Orientation="Horizontal" Margin="16,0,0,0"
                             VerticalAlignment="Center"
                             shell:WindowChrome.IsHitTestVisibleInChrome="True">
-                    <ctl:BrandMark Width="24" Height="24" />
+                    <ctl:BrandMark Width="24" Height="24" MouseLeftButtonUp="OnBrandMarkClick" />
 
                     <!-- Tooltip content is update state only. -->
                     <TextBlock Text="FE-BUDDY"

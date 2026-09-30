@@ -54,6 +54,9 @@ public sealed class MapCanvas : FrameworkElement
 
 	private const double HandleSize = 8.0;
 
+	/// <summary>Zoomed in at least this far, 0°, 0° is marked (see <c>DrawNullIsland</c>).</summary>
+	private const double NullIslandMinZoom = 8.0;
+
 	// --- viewport ------------------------------------------------------------
 	private double _scale = 1_000;   // pixels per world unit
 	private double _centerX = 0.5;   // world-unit point at screen centre; x kept in 0..1
@@ -770,6 +773,8 @@ public sealed class MapCanvas : FrameworkElement
 				}
 			}
 
+			DrawNullIsland(dc);
+
 			// Over the layers, so no line hides a grid label.
 			DrawGraticuleLabels(dc, grid);
 		}
@@ -1075,6 +1080,47 @@ public sealed class MapCanvas : FrameworkElement
 			{
 				dc.DrawText(formatted, new Point(6, y - formatted.Height - 2));
 			}
+		}
+	}
+
+	// ---- null island ----
+
+	/// <summary>
+	/// Marks 0°, 0° once zoomed well in. Nothing real is there; a feature that lands on it almost
+	/// always has a coordinate that failed to parse, so the label says so.
+	/// </summary>
+	private void DrawNullIsland(DrawingContext dc)
+	{
+		if (Zoom < NullIslandMinZoom)
+		{
+			return;
+		}
+
+		const double Radius = 5.0;
+		double x = WebMercator.LonToWorldX(0.0), y = WebMercator.LatToWorldY(0.0);
+		WorldRect view = ViewWorld(200);
+		if (y < view.Y0 || y > view.Y1)
+		{
+			return;
+		}
+
+		Brush title = Theme("Brush.Text.Secondary", Color.FromRgb(0xB7, 0xC6, 0xD3));
+		Brush note = Theme("Brush.Text.Tertiary", Color.FromRgb(0x8B, 0x9D, 0xAD));
+		Brush land = FrozenBrush.Of(Color.FromArgb(0x40, 0xFF, 0xFF, 0xFF));
+		Pen shore = new(note, 1.2);
+		shore.Freeze();
+		FormattedText name = Text("NULL ISLAND", title);
+		FormattedText blurb = Text("No NASR data here. A fix at 0°, 0° is usually a parse error.", note);
+
+		(int first, int last) = Copies(x, x, view);
+		for (int k = first; k <= last; k++)
+		{
+			Point at = new(ScreenX(x + k), ScreenY(y));
+			dc.DrawEllipse(land, shore, at, Radius, Radius);
+
+			double left = at.X + Radius + 6;
+			dc.DrawText(name, new Point(left, at.Y - name.Height));
+			dc.DrawText(blurb, new Point(left, at.Y));
 		}
 	}
 

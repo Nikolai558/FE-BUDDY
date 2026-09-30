@@ -12,6 +12,7 @@ using FeBuddy.Core.Application.Airac;
 using FeBuddy.Core.Application.Launch;
 using FeBuddy.Core.Application.News;
 using FeBuddy.Core.Application.News.Models;
+using FeBuddy.Core.Domain.Airac;
 using FeBuddy.Core.Domain.Airac.Models;
 using FeBuddy.Core.Infrastructure.Configuration;
 using FeBuddy.Core.Infrastructure.Logging;
@@ -37,6 +38,7 @@ public sealed class DashboardViewModel : ObservableObject
 
 	private bool _newsButtonHighlighted;
 	private string _nextCycleLine = "Next AIRAC cycle: …";
+	private bool _cycleDayDismissed;
 	private bool _isLogCollapsed = true;
 	private LogLevel? _levelFilter;
 
@@ -53,6 +55,7 @@ public sealed class DashboardViewModel : ObservableObject
 		OpenDiscordCommand = new RelayCommand(() => BrowserLauncher.Open(Links.Discord));
 		SetLogFilterCommand = new RelayCommand<string>(SetLogFilter);
 		ToggleLogCommand = new RelayCommand(() => IsLogCollapsed = !IsLogCollapsed);
+		DismissCycleDayCommand = new RelayCommand(DismissCycleDay);
 
 		// Seed from whatever the log already holds, then follow it live.
 		foreach (LogEntry entry in AppLog.Entries.Reverse())
@@ -87,6 +90,9 @@ public sealed class DashboardViewModel : ObservableObject
 	/// <summary>Expands or collapses the activity log.</summary>
 	public ICommand ToggleLogCommand { get; }
 
+	/// <summary>Hides the cycle-day banner for the rest of the session.</summary>
+	public ICommand DismissCycleDayCommand { get; }
+
 	/// <summary>The Discord invite the description box links to.</summary>
 	public string DiscordUrl => Links.Discord;
 
@@ -99,6 +105,17 @@ public sealed class DashboardViewModel : ObservableObject
 		get => _nextCycleLine;
 		private set => SetProperty(ref _nextCycleLine, value);
 	}
+
+	/// <summary>
+	/// <see langword="true"/> on the day a new AIRAC cycle takes effect, until the user dismisses
+	/// the banner. Not persisted: it comes back on the next launch that day, and not again until
+	/// the next cycle.
+	/// </summary>
+	public bool ShowCycleDay => !_cycleDayDismissed && AiracCycleResolver.IsEffectiveDate(AppEnvironment.CheckedUtcDate);
+
+	/// <summary>The cycle-day banner's text, naming the cycle that took effect today.</summary>
+	public string CycleDayLine =>
+		$"Cycle {AppEnvironment.GetAiracCycle(AiracCyclePosition.Current).AiracCycleId} is in effect. May your diffs be small.";
 
 	/// <summary><see langword="true"/> when the newest News post is newer than <c>General.NewsLastOpen</c> - the News button draws attention.</summary>
 	public bool NewsButtonHighlighted
@@ -189,6 +206,10 @@ public sealed class DashboardViewModel : ObservableObject
 		{
 			RefreshNews();
 			RefreshNextCycleLine();
+
+			// The launch-time clock check can move CheckedUtcDate.
+			OnPropertyChanged(nameof(ShowCycleDay));
+			OnPropertyChanged(nameof(CycleDayLine));
 		});
 
 	private void OnCycleStateChanged(object? sender, AiracCycleDataCacheEntry e) =>
@@ -244,6 +265,12 @@ public sealed class DashboardViewModel : ObservableObject
 			UserConfigFile.Save("General");
 			NewsButtonHighlighted = false;
 		}
+	}
+
+	private void DismissCycleDay()
+	{
+		_cycleDayDismissed = true;
+		OnPropertyChanged(nameof(ShowCycleDay));
 	}
 
 	private void SetLogFilter(string? which)

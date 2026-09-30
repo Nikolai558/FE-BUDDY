@@ -13,4 +13,13 @@ public sealed record SubServiceMessageGroup(string Title, LogLevel Level, IReadO
 {
 	/// <summary>How many messages are in this group.</summary>
 	public int Count => Messages.Count;
+
+	/// <summary>
+	/// What the group's copy button puts on the clipboard: its messages, with a blank line between
+	/// each, as the Review tab spaces them.
+	/// </summary>
+	public string CopyText => string.Join(Environment.NewLine + Environment.NewLine, Messages);
+
+	/// <summary>The copy button's tooltip, e.g. <c>Copy these 3 messages</c>.</summary>
+	public string CopyToolTip => Count == 1 ? "Copy this message" : $"Copy these {Count:N0} messages";
 }

@@ -345,7 +345,8 @@ bar and page scroller are shared, and each screen's view-model says what differs
     the last, and a folder holding two blocks the run); its folder summary counts only Geomaps
     files (`IsSourceFile`), so the whole unzipped export can be the source folder. The output
     layout - the original ERAM_2_GEOJSON tool's By Filters / By Attributes / Raw, each with its
-    folder tree as a tooltip - the CRC defaults source (XML / XML then card / card), and the
+    folder tree as a tooltip - the CRC defaults source (XML / XML then card / card, each with a
+    plain-words tooltip and an example), and the
     FE-Buddy Properties card (`IFebPropertySettings`, `EramFebPropertyOptions`). Lines, Symbols
     and Text panels, shown only while the card is a source (`UsesCrcDefaults`); with the XML as
     the only source nothing on the card is required or sent. Before a run it asks to empty
@@ -430,11 +431,12 @@ by `Map/GeoJsonReader`, which says why a file cannot be drawn.
 
 ## Fonts
 
-The design uses **Montserrat** (headings) and **Jost** (body); neither ships with
-Windows, so the app currently falls back to Segoe UI. To use the real faces, drop
-the `.ttf` files in `FeBuddy/FeBuddy.Wpf/Assets/Fonts/` and change the two
-`FontFamily` values at the top of `FeBuddy/FeBuddy.Wpf/Theme/Typography.xaml` to e.g.
-`pack://application:,,,/Assets/Fonts/#Montserrat`.
+Everything is set in **Segoe UI**, Windows' own UI font: headings and the FE-BUDDY name
+in the title bar (`Font.Display`, bold there) as well as body text (`Font.Body`). It ships
+with Windows, so nothing is bundled and every PC shows the same letters. The theme was
+first drawn for Montserrat and Jost, but FE-Buddy always fell back to Segoe UI, and that
+look was kept. Code and paths use `Font.Mono` (Cascadia Mono, then Consolas). All four
+families are at the top of `FeBuddy/FeBuddy.Wpf/Theme/Typography.xaml`.
 
 ## Run
 

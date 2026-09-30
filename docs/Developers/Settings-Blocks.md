@@ -514,7 +514,7 @@ this on or off. The result's `OtherFilesWritten` holds that file.
 | Key | Values | Default |
 |---|---|---|
 | `OutputLayout` | `ByFilters` (`<map>\Filter_01\Filter_01_Lines.geojson`, `Multi-Filter_02_03_08\…`), `ByAttributes` (`<map>\BCG 01_Filters 01_Type AAV_Group 64_Object ZOB3NM_Style Solid_Thick 1_Lines.geojson`), `Raw` (`<map>.geojson`, every Feature carrying its own look). `ByFilter` and `ByObject`, from before, are read as `ByFilters` and `ByAttributes` with an Info note | `ByAttributes` |
-| `DefaultsSource` | `Xml` (carry over the XML's defaults and element values), `XmlThenCard` (the tab's defaults fill whatever the XML's leave out), `Card` (the tab's defaults only; the XML's styling is ignored) | `Xml` |
+| `DefaultsSource` | `Xml` (carry over the XML's defaults and element values), `XmlThenCard` (the tab's defaults fill whatever the XML's leave out, or give that CRC can't draw), `Card` (the tab's defaults only; the XML's styling is ignored) | `Xml` |
 | `IncludeFebCustomProperties` | `Y` / `N` | `N` |
 | `FebProperties` | comma-separated: `mapObjectType`, `mapGroupId`, `lineObjectId`, `symbolId`, `saaId` | none (required when `IncludeFebCustomProperties` is `Y`) |
 

@@ -18,6 +18,21 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
 -->
 
 ## Unreleased
+### File Conversions
+- ERAM to GeoJSON: the warnings about GeoMap defaults CRC can't use now name the value (`DME`, a
+  missing BCG) and say what CRC will draw instead (`vor`, BCG 1), without listing every valid style.
+- ERAM to GeoJSON ▸ **From the XML, filling gaps from the card** now also replaces an XML default
+  CRC can't draw (such as a `DME` symbol style) with the card's, and an element's own value CRC
+  can't draw now gives way to its object's default instead of CRC's.
+- ERAM to GeoJSON ▸ CRC ERAM Defaults Source: each option has a one-line description, and hovering
+  over it explains in plain words what it does, with an example.
+
+### Look and feel
+- Names and values in the Review tab's messages (`vor`, `bcg`) show in the code font.
+- Review tab: warnings and routine messages have a gap between each, and each group has a copy
+  button that copies all its messages, ready to paste.
+- FE-BUDDY is now set in Segoe UI everywhere, the font it has always shown. A PC with the
+  Montserrat or Jost fonts installed used to show those instead in places.
 
 ---
 

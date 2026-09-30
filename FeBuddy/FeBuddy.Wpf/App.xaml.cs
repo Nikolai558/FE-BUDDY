@@ -2,18 +2,23 @@ using System.IO;
 using System.Windows;
 using System.Windows.Threading;
 
+using FeBuddy.Wpf.Shell;
+
 using FeBuddy.Core.Application.Launch;
 using FeBuddy.Core.Infrastructure.Configuration;
+using FeBuddy.Core.Infrastructure.Credentials;
+using FeBuddy.Core.Infrastructure.FileSystem;
+using FeBuddy.Core.Infrastructure.FileSystem.Models;
 using FeBuddy.Core.Infrastructure.Logging;
 using FeBuddy.Core.Infrastructure.Platform;
 
 namespace FeBuddy.Wpf;
 
 /// <summary>
-/// Application entry point. Starts the shared application log's file sink and runs
-/// <see cref="LaunchSequence"/> off the UI thread (see <c>Developer_Notes.md</c> -&gt; LAUNCH PROCESSES), then
-/// keeps a last-chance handler that writes an unhandled exception to disk so a crash on a
-/// user's machine leaves a trace.
+/// Application entry point. Carries out a reset asked for in Settings (<see cref="AppDataReset"/>),
+/// starts the shared application log's file sink and runs <see cref="LaunchSequence"/> off the UI
+/// thread (see <c>Developer_Notes.md</c> -&gt; LAUNCH PROCESSES), then keeps a last-chance handler
+/// that writes an unhandled exception to disk so a crash on a user's machine leaves a trace.
 /// </summary>
 public partial class App : Application
 {
@@ -26,6 +31,9 @@ public partial class App : Application
 	/// <remarks><c>FeBuddy.Harness</c> has its own equivalent in <c>HarnessSettings.DevMode</c>.</remarks>
 	private const bool DevModeEnabled = false;
 
+	/// <summary>How long a reset waits for the FE-Buddy that asked for it to close.</summary>
+	private static readonly TimeSpan ResetWaitForExit = TimeSpan.FromSeconds(15);
+
 	/// <inheritdoc />
 	protected override void OnStartup(StartupEventArgs e)
 	{
@@ -34,10 +42,19 @@ public partial class App : Application
 
 		DispatcherUnhandledException += OnUnhandled;
 
+		// Before the log, the settings or any cycle is opened: a reset deletes them all.
+		AppDataResetResult? reset = AppDataReset.RunPending(CredentialStore.Default, ResetWaitForExit);
+
 		// One shared log stream for the whole app; the file sink also prunes stale log files.
 		AppLog.StartFileSink();
 
 		base.OnStartup(e);
+
+		if (reset is not null)
+		{
+			// At idle, so the main window and its toast host are on screen.
+			Dispatcher.InvokeAsync(() => ReportReset(reset), DispatcherPriority.ApplicationIdle);
+		}
 
 		// The launch sequence runs off the UI thread. A failure in any step degrades the
 		// dependent feature and is logged - it never blocks the window from showing.
@@ -59,11 +76,31 @@ public partial class App : Application
 		}
 	}
 
+	/// <summary>Says the reset is done, and what it could not delete, if anything.</summary>
+	private static void ReportReset(AppDataResetResult reset)
+	{
+		string settings = reset.SettingsKept ? "Your settings were kept." : "FE-Buddy is back to its default settings.";
+		string credentials = reset.CredentialsRemoved is { } removed ? $" {removed} saved credential(s) were removed." : string.Empty;
+
+		if (reset.NotDeleted.Count == 0)
+		{
+			Toast.Success("FE-Buddy was reset", $"{settings}{credentials} It is downloading the AIRAC data again.");
+		}
+		else
+		{
+			Toast.Warn("FE-Buddy was reset, but not completely",
+				$"Could not delete {string.Join(", ", reset.NotDeleted)}. See the log for why.{credentials}");
+		}
+	}
+
 	private static void OnUnhandled(object sender, DispatcherUnhandledExceptionEventArgs e)
 	{
 		try
 		{
-			var path = Path.Combine(Path.GetTempPath(), "febuddy-wpf-crash.txt");
+			// Beside the day's log, so it is attached with it and removed on uninstall.
+			string directory = AppLog.LogDirectory;
+			Directory.CreateDirectory(directory);
+			var path = Path.Combine(directory, "febuddy-wpf-crash.txt");
 			var sb = new System.Text.StringBuilder();
 			for (Exception? ex = e.Exception; ex is not null; ex = ex.InnerException)
 			{

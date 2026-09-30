@@ -5,10 +5,6 @@ record. Add new items to the section they belong to.
 
 ## Features
 
-- **A 3.0 user manual behind the app's Manual link.** `Links.Manual` (SYSTEM ▸ Info) still opens
-  the 2.x HTML manual in `docs/Users/Manual HTML/`. The 3.0 guide now exists at
-  [docs/Users/User-Guide.md](../Users/User-Guide.md); point the link there when you are happy
-  with it.
 - **Bundle the design fonts.** The theme is designed for Montserrat and Jost, neither of which
   ships with Windows, so the app falls back to Segoe UI. See the "Fonts" section of
   [FeBuddy.Wpf/README.md](FeBuddy.Wpf/README.md).
@@ -36,7 +32,8 @@ record. Add new items to the section they belong to.
 
 ## Testing
 
-- **Most of `FeBuddy.Wpf` has no automated tests.** Only the map's logic is tested
-  (`FeBuddy.UnitTests/Wpf`). The rest of its view-model logic (the settings blocks each tab builds,
-  dirty tracking, validation, the settings import wording) could be tested the same way, without a
-  window. Today the only check is running the app.
+- **Most of `FeBuddy.Wpf` has no automated tests.** Only the map's logic, the File Names, Airways
+  and ERAM to GeoJSON tabs' view-models, the sub-service order, the Reset window's view-model,
+  the Review tab's run feed, `BesideOrBelow` and `InlineCode` are tested (`FeBuddy.UnitTests/Wpf`). The rest of its view-model logic (the
+  settings blocks each other tab builds, dirty tracking, validation, the settings import wording)
+  could be tested the same way, without a window. Today the only check is running the app.

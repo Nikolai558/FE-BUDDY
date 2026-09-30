@@ -1,4 +1,4 @@
-﻿# FE-Buddy AWY GeoJSON Generator
+# FE-Buddy AWY GeoJSON Generator
 # Stage 0 Regression Test Plan
 
 > **Superseded - historical record.** This plan targets `AwyGeojsonGenerator`, which was ported

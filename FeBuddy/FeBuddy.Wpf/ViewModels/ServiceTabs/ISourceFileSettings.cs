@@ -14,6 +14,12 @@ public interface ISourceFileSettings
 	/// <summary>The kind of file, as the card words it, e.g. <c>.dat</c> or <c>.sct2 / .sct</c>.</summary>
 	string FileTypeLabel { get; }
 
+	/// <summary>
+	/// Whether the conversion takes one file per run (ERAM to GeoJSON): the card then asks for
+	/// "the" file, and picking a file replaces the one picked before.
+	/// </summary>
+	bool OneSourceFileOnly { get; }
+
 	/// <summary>Whether every matching file in <see cref="SourceFolder"/> is converted.</summary>
 	bool SourceIsFolder { get; set; }
 
@@ -32,7 +38,7 @@ public interface ISourceFileSettings
 	/// <summary>Picks <see cref="SourceFolder"/> with a folder dialog.</summary>
 	ICommand BrowseFolderCommand { get; }
 
-	/// <summary>Adds one or more files to <see cref="SourceFiles"/> with a file dialog.</summary>
+	/// <summary>Adds one or more files to <see cref="SourceFiles"/> with a file dialog - or, with <see cref="OneSourceFileOnly"/>, sets the one.</summary>
 	ICommand BrowseFilesCommand { get; }
 
 	/// <summary>Empties <see cref="SourceFiles"/>.</summary>

@@ -21,11 +21,17 @@ namespace FeBuddy.Core.Application.Airac.Airways;
 /// </remarks>
 public static class AirwayWaypointBuffer
 {
-	/// <summary>Buffer radius, in nautical miles, around a 5-character fix identifier.</summary>
-	public const double FixRadiusNm = 2.5;
+	/// <summary>Default buffer radius, in nautical miles, around a 5-character fix identifier.</summary>
+	public const double DefaultFixRadiusNm = 2.5;
 
-	/// <summary>Buffer radius, in nautical miles, around any other identifier (NAVAID, airport).</summary>
-	public const double OtherRadiusNm = 5.0;
+	/// <summary>Default buffer radius, in nautical miles, around any other identifier (in practice a NAVAID).</summary>
+	public const double DefaultNavaidRadiusNm = 5.0;
+
+	/// <summary>
+	/// Largest radius, in nautical miles, a user may choose. A leg shorter than its two radii
+	/// together is dropped, so a larger radius would remove most short airway legs.
+	/// </summary>
+	public const double MaxRadiusNm = 10.0;
 
 	/// <summary>Coordinate rounding precision (decimal places) used to match a leg endpoint back to a named waypoint.</summary>
 	private const int CoordinateMatchPrecision = 6;
@@ -36,21 +42,28 @@ public static class AirwayWaypointBuffer
 	/// <param name="lineStrings">The airway's current LineStrings (after antimeridian split / ROI clip, if any).</param>
 	/// <param name="airwayPoints">
 	/// The airway's real resolved waypoints - and only those. A leg endpoint that matches one
-	/// of them is buffered (2.5 NM for a 5-character fix, 5 NM otherwise, including a real fix
-	/// sitting exactly on +/-180). A leg endpoint that matches none of them is by definition
+	/// of them is buffered (<paramref name="fixRadiusNm"/> for a 5-character fix,
+	/// <paramref name="navaidRadiusNm"/> otherwise, including a real fix sitting exactly on +/-180). A leg endpoint that matches none of them is by definition
 	/// synthetic - a vertex the antimeridian split or ROI clip invented - and is <b>not</b>
 	/// buffered (radius 0), so an ROI-clipped airway reaches the ROI boundary instead of
 	/// stopping 5 NM inside it.
 	/// </param>
 	/// <param name="awyId">The airway identifier being processed (used only in warning text).</param>
+	/// <param name="fixRadiusNm">Radius around a 5-character fix, 0 to <see cref="MaxRadiusNm"/>.</param>
+	/// <param name="navaidRadiusNm">Radius around any other waypoint, 0 to <see cref="MaxRadiusNm"/>.</param>
 	/// <returns>The buffered legs, plus a warning for each leg dropped as too short to buffer.</returns>
+	/// <exception cref="ArgumentOutOfRangeException">Thrown when a radius is outside 0 to <see cref="MaxRadiusNm"/>.</exception>
 	public static AirwayBufferResult Buffer(
 		IReadOnlyList<LineString> lineStrings,
 		IReadOnlyList<AirwayPoint> airwayPoints,
-		string awyId)
+		string awyId,
+		double fixRadiusNm = DefaultFixRadiusNm,
+		double navaidRadiusNm = DefaultNavaidRadiusNm)
 	{
 		ArgumentNullException.ThrowIfNull(lineStrings);
 		ArgumentNullException.ThrowIfNull(airwayPoints);
+		RequireRadius(fixRadiusNm, nameof(fixRadiusNm));
+		RequireRadius(navaidRadiusNm, nameof(navaidRadiusNm));
 
 		Dictionary<(double Lon, double Lat), AirwayPoint> pointsByCoordinate = BuildCoordinateIndex(airwayPoints);
 
@@ -66,8 +79,8 @@ public static class AirwayWaypointBuffer
 				Coordinate start = coordinates[i];
 				Coordinate end = coordinates[i + 1];
 
-				double startRadius = RadiusFor(start, pointsByCoordinate);
-				double endRadius = RadiusFor(end, pointsByCoordinate);
+				double startRadius = RadiusFor(start, pointsByCoordinate, fixRadiusNm, navaidRadiusNm);
+				double endRadius = RadiusFor(end, pointsByCoordinate, fixRadiusNm, navaidRadiusNm);
 
 				Location startLocation = new(start.Y, start.X);
 				Location endLocation = new(end.Y, end.X);
@@ -106,14 +119,16 @@ public static class AirwayWaypointBuffer
 	}
 
 	/// <summary>
-	/// Determines the buffer radius for a leg endpoint: <see cref="FixRadiusNm"/> for a
-	/// matched 5-character fix, <see cref="OtherRadiusNm"/> for any other matched waypoint,
+	/// Determines the buffer radius for a leg endpoint: <paramref name="fixRadiusNm"/> for a
+	/// matched 5-character fix, <paramref name="navaidRadiusNm"/> for any other matched waypoint,
 	/// and <b>0</b> (no buffering) for an endpoint that matches no real waypoint - which is
 	/// exactly the definition of a synthetic antimeridian-split or ROI-clip vertex.
 	/// </summary>
 	private static double RadiusFor(
 		Coordinate coordinate,
-		Dictionary<(double Lon, double Lat), AirwayPoint> pointsByCoordinate)
+		Dictionary<(double Lon, double Lat), AirwayPoint> pointsByCoordinate,
+		double fixRadiusNm,
+		double navaidRadiusNm)
 	{
 		var key = (
 			Math.Round(NormalizeLongitude(coordinate.X), CoordinateMatchPrecision),
@@ -125,7 +140,16 @@ public static class AirwayWaypointBuffer
 			return 0.0;
 		}
 
-		return point.PointId.Length == 5 ? FixRadiusNm : OtherRadiusNm;
+		return point.PointId.Length == 5 ? fixRadiusNm : navaidRadiusNm;
+	}
+
+	/// <summary>Rejects a radius outside 0 to <see cref="MaxRadiusNm"/>, NaN included.</summary>
+	private static void RequireRadius(double radiusNm, string paramName)
+	{
+		if (!(radiusNm >= 0 && radiusNm <= MaxRadiusNm))
+		{
+			throw new ArgumentOutOfRangeException(paramName, radiusNm, $"Must be from 0 to {MaxRadiusNm} NM.");
+		}
 	}
 
 	/// <summary>

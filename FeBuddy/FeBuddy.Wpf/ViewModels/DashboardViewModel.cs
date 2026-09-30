@@ -27,10 +27,10 @@ public sealed class DashboardViewModel : ObservableObject
 {
 	/// <summary>The FE-Buddy description shown in the description box, word for word.</summary>
 	public const string DescriptionText =
-		"An application designed to assist VATUSA Facility Engineers with routine, tedious, and " +
-		"sometimes complex tasks, including the production and maintenance of AIRAC cycle release " +
-		"resources, alias files, and GeoJSON files (including file health checks), ERAM and STARS " +
-		"adaptation conversions; and other facility engineering workflows.";
+		"An application designed to assist VATUSA Facility Engineers with routine, " +
+		"tedious, and sometimes complex tasks, including the production and maintenance " +
+		"of AIRAC cycle release resources, alias files, and GeoJSON files, ERAM and STARS " +
+		"adaptation conversions for use in CRC; and other facility engineering workflows.";
 
 	private readonly Dispatcher _dispatcher;
 	private readonly ObservableCollection<LogEntry> _allLog = [];

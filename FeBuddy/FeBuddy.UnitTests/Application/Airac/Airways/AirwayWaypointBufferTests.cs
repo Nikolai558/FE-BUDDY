@@ -5,12 +5,14 @@ using FeBuddy.Core.Domain.Geo;
 
 using NetTopologySuite.Geometries;
 
+using Location = FeBuddy.Core.Domain.Geo.Models.Location;
+
 namespace FeBuddy.UnitTests.Application.Airac.Airways;
 
 /// <summary>
 /// Verifies <see cref="AirwayWaypointBuffer"/> buffers real waypoints only - including a real
 /// fix expressed on the opposite side of the antimeridian - and never buffers a synthetic
-/// antimeridian-split or ROI-clip vertex.
+/// antimeridian-split or ROI-clip vertex - and uses the distances it is given for fixes and NAVAIDs.
 /// </summary>
 public sealed class AirwayWaypointBufferTests
 {
@@ -96,4 +98,67 @@ public sealed class AirwayWaypointBufferTests
 		Assert.NotEqual(-80.0, buffered[0].X, precision: 6);
 		Assert.NotEqual(-81.0, buffered[^1].X, precision: 6);
 	}
+
+	[Fact]
+	public void the_chosen_distances_are_used_for_fixes_and_for_navaids()
+	{
+		// A 60 NM leg due north from a fix to a NAVAID.
+		AirwayPoint fix = Point("AAAAA", 40.0, -80.0);
+		AirwayPoint navaid = Point("ABC", 41.0, -80.0);
+
+		AirwayBufferResult result = AirwayWaypointBuffer.Buffer(
+			[Leg((-80.0, 40.0), (-80.0, 41.0))], [fix, navaid], "TEST", fixRadiusNm: 1.5, navaidRadiusNm: 7.25);
+
+		Coordinate[] buffered = Assert.Single(result.LineStrings).Coordinates;
+
+		Assert.Equal(1.5, DistanceNm(buffered[0], fix), precision: 3);
+		Assert.Equal(7.25, DistanceNm(buffered[^1], navaid), precision: 3);
+	}
+
+	[Fact]
+	public void a_distance_of_zero_leaves_that_end_where_it_was()
+	{
+		AirwayPoint fix = Point("AAAAA", 40.0, -80.0);
+		AirwayPoint navaid = Point("ABC", 41.0, -80.0);
+
+		AirwayBufferResult result = AirwayWaypointBuffer.Buffer(
+			[Leg((-80.0, 40.0), (-80.0, 41.0))], [fix, navaid], "TEST", fixRadiusNm: 0, navaidRadiusNm: 5);
+
+		Coordinate[] buffered = Assert.Single(result.LineStrings).Coordinates;
+
+		Assert.Equal(0.0, DistanceNm(buffered[0], fix), precision: 6);
+		Assert.Equal(5.0, DistanceNm(buffered[^1], navaid), precision: 3);
+	}
+
+	[Fact]
+	public void a_leg_is_dropped_only_when_shorter_than_its_chosen_distances_together()
+	{
+		// Two fixes 8 NM apart.
+		AirwayPoint a = Point("AAAAA", 40.0, -80.0);
+		AirwayPoint b = Point("BBBBB", 40.0 + (8.0 / 60.0), -80.0);
+		LineString leg = Leg((a.Longitude, a.Latitude), (b.Longitude, b.Latitude));
+
+		// 2.5 + 2.5 = 5 NM: kept. 4.5 + 4.5 = 9 NM: dropped, with an Info message.
+		Assert.Single(AirwayWaypointBuffer.Buffer([leg], [a, b], "TEST").LineStrings);
+
+		AirwayBufferResult dropped = AirwayWaypointBuffer.Buffer([leg], [a, b], "TEST", fixRadiusNm: 4.5, navaidRadiusNm: 4.5);
+
+		Assert.Empty(dropped.LineStrings);
+		Assert.Contains("9.0 NM", Assert.Single(dropped.Messages).Text);
+	}
+
+	[Theory]
+	[InlineData(-0.1, 5.0)]
+	[InlineData(10.01, 5.0)]
+	[InlineData(double.NaN, 5.0)]
+	[InlineData(2.5, -1.0)]
+	[InlineData(2.5, double.PositiveInfinity)]
+	public void a_distance_outside_zero_to_ten_nm_is_rejected(double fixRadiusNm, double navaidRadiusNm)
+	{
+		Assert.Throws<ArgumentOutOfRangeException>(() =>
+			AirwayWaypointBuffer.Buffer([], [], "TEST", fixRadiusNm, navaidRadiusNm));
+	}
+
+	private static double DistanceNm(Coordinate coordinate, AirwayPoint point) =>
+		GeoMath.Distance(new Location(coordinate.Y, coordinate.X), new Location(point.Latitude, point.Longitude), round: false);
 }

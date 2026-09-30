@@ -436,6 +436,51 @@ public sealed class VersionCheckTests : IDisposable
 		Assert.True(result.IsAheadOfLatestRelease);
 		Assert.Equal(expectedPreRelease, result.RunningPreReleaseChannel);
 		Assert.Equal(expectedMessage, result.Message);
+		Assert.Equal(expectedPreRelease is not null, result.CanGoBack);
+	}
+
+	/// <summary>
+	/// Running a pre-release after choosing Stable, the latest stable release - older, a 2.x one
+	/// today - is offered to go back to, with its notes and installer.
+	/// </summary>
+	[Fact]
+	public async Task version_check_offers_the_latest_stable_release_to_go_back_to_from_a_pre_release()
+	{
+		const string releasesJson = """
+		[
+		  { "tag_name": "3.0.0-alpha.2", "prerelease": true, "draft": false, "html_url": "https://example.test/a2",
+		    "assets": [ { "id": 7, "name": "FE-BUDDY-Setup.msi", "browser_download_url": "https://example.test/a2.msi", "size": 5 } ] },
+		  { "tag_name": "2.9.3", "prerelease": false, "draft": false, "html_url": "https://example.test/293", "body": "## Change log:\n- Fixes",
+		    "assets": [ { "id": 8, "name": "FE-BUDDY-2.9.3.msi", "browser_download_url": "https://example.test/293.msi", "size": 9 } ] },
+		  { "tag_name": "2.9.0", "prerelease": false, "draft": false }
+		]
+		""";
+		using HttpClient client = new(new StubHttpHandler(_ => new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(releasesJson) }));
+
+		VersionCheckResult result = await VersionCheck.RunAsync("3.0.0-alpha.2", ReleaseChannel.Stable, hasInternetConnection: true, client);
+
+		Assert.False(result.UpdateAvailable);
+		Assert.True(result.CanGoBack);
+		Assert.Equal(ReleaseChannel.Alpha, result.RunningPreReleaseChannel);
+		Assert.Equal("2.9.3", result.LatestVersion);
+		Assert.Empty(result.NewerReleases);
+		Assert.Equal(new ReleaseSummary("2.9.3", null, false, "## Change log:\n- Fixes", "https://example.test/293"), result.LatestRelease);
+		Assert.Equal(new ReleaseInstaller("FE-BUDDY-2.9.3.msi", "https://example.test/293.msi", 8, 9), result.LatestInstaller);
+	}
+
+	/// <summary>Up to date, or with an update waiting, there is nothing to go back to.</summary>
+	[Theory]
+	[InlineData("2.9.3")]
+	[InlineData("2.9.0")]
+	public async Task version_check_offers_nothing_to_go_back_to_on_the_running_builds_channel(string current)
+	{
+		const string releasesJson = """[ { "tag_name": "2.9.3", "draft": false } ]""";
+		using HttpClient client = new(new StubHttpHandler(_ => new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(releasesJson) }));
+
+		VersionCheckResult result = await VersionCheck.RunAsync(current, ReleaseChannel.Stable, hasInternetConnection: true, client);
+
+		Assert.False(result.CanGoBack);
+		Assert.Equal("2.9.3", result.LatestRelease!.Version);
 	}
 
 	/// <summary>
@@ -546,5 +591,16 @@ public sealed class VersionCheckTests : IDisposable
 	public void parse_channel_handles_stored_values(string? stored, ReleaseChannel expected)
 	{
 		Assert.Equal(expected, VersionCheckResult.ParseChannel(stored));
+	}
+
+	/// <summary>With a fallback, a missing or unrecognized value gives the fallback; a stored one still wins.</summary>
+	[Theory]
+	[InlineData(null, ReleaseChannel.Alpha)]
+	[InlineData(" ", ReleaseChannel.Alpha)]
+	[InlineData("nonsense", ReleaseChannel.Alpha)]
+	[InlineData("Stable", ReleaseChannel.Stable)]
+	public void parse_channel_falls_back_to_the_given_channel(string? stored, ReleaseChannel expected)
+	{
+		Assert.Equal(expected, VersionCheckResult.ParseChannel(stored, ReleaseChannel.Alpha));
 	}
 }

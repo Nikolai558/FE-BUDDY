@@ -29,7 +29,7 @@
             <cards:GeojsonFilesCard ShowLines="False"
                                     SymbolsDescription="One symbol per weather station."
                                     TextDescription="A two-line label per station: its ICAO ID, then its IATA ID and name (e.g. KDTW, DTW_Detroit/Metro Wayne Cnty)."
-                                    Footnote="Files are written to Geojson\ in the cycle's folder." />
+                                    Footnote="Files are written to `Geojson\` in the cycle's folder." />
 
             <!-- ============ station data ============ -->
             <ctl:Card Header="Station Data">

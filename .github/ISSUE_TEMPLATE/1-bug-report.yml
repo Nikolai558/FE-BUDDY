@@ -105,7 +105,7 @@ body:
       description: |
         Drag files into this box to attach them.
         - **Log:** today's log is `%APPDATA%\FE-Buddy\Logs\FE-Buddy_<date>.log`. Paste that path into File Explorer's address bar to open it.
-        - **Crash on launch:** also attach `%TEMP%\febuddy-wpf-crash.txt` if it exists.
+        - **Crash on launch:** also attach `febuddy-wpf-crash.txt` from the same folder if it exists.
         - **Screenshots** of the problem, and the input or output files involved if you can share them.
 
   - type: checkboxes

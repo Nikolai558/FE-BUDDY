@@ -13,15 +13,16 @@ below is relative to `FeBuddy/FeBuddy.Wpf/` in the repo unless stated otherwise.
 
 - references `FeBuddy.Core`; no other NuGet packages - the MVVM helpers
   (`ObservableObject`, `RelayCommand`) are hand-rolled in `Mvvm/`
-- **Airports, Airways, Departures, Arrivals, NAVAIDs, ARTCC Boundaries, Fixes, Wx Stations,
-  Procedures, Telephony and vNAS Alias Upload are sub-services of AIRAC Service**, not top-level screens. The library code is
+- **ARTCC Boundaries, Airports, Airways, Arrivals, Departures, NAVAIDs, Fixes, Procedures,
+  Telephony, Wx Stations and vNAS Alias Upload are sub-services of AIRAC Service** (in the order
+  the tab rail shows them), not top-level screens. The library code is
   `FeBuddy.Core.Application.Airac.*`; the GUI reaches each one only as a tab on the AIRAC
   Services screen. In the same way, each
   **file conversion** (DAT, SCT2 and ERAM to GeoJSON) is a tab on the File Conversions screen
   (`FeBuddy.Core.Application.Conversions.*`).
 - On launch, `App.xaml.cs` starts `AppLog`'s file sink then runs
   `LaunchSequence` off the UI thread: clear `%TEMP%\FE-Buddy`, read
-  `UserConfig.json`, look for FE-Buddy 2.x's GitHub token variable, UTC/internet check, version
+  `UserConfig.json`, look for FE-Buddy 2.x's GitHub token variable, delete 2.8.x's dead shortcuts, UTC/internet check, version
   check, the AIRAC data pipeline (`AiracCycleDataCache` - probe/download/parse
   previous/current/next), and the News check. Results land in `AppEnvironment`; every step
   narrates itself in the Dashboard activity log. When the token variable is found, `ShellViewModel`
@@ -48,10 +49,13 @@ Theme/                design system - the only place colours, type and control
 
 Assets/               us-states.json (reference geography, not sample data)
 Behaviors/            attached properties a view opts into: FieldState (validation
-                      look), WheelScroll, ComboBoxDropDownFocus, MaximizeToWorkArea
+                      look), InlineCode (`code` look for text between backticks),
+                      WheelScroll, ComboBoxDropDownFocus, MaximizeToWorkArea
 Controls/             reusable controls: Card, SectionHeader, Option, CopyButton,
-                      FilterPicker (+ FilterOption), MarkdownView, MapCanvas, and
-                      ChromeWindow (the base for every dialog window)
+                      FilterPicker (+ FilterOption), MarkdownView, MapCanvas,
+                      BesideOrBelow (a panel: its second child beside the first,
+                      or under it when the row is too narrow), and ChromeWindow
+                      (the base for every dialog window)
 Converters/           one IValueConverter per file
 Map/                  GeoJsonReader (System.Text.Json), WebMercator, ProjectedLayer
                       (a layer projected once, then cached), AiracMapLayers (the live
@@ -137,10 +141,21 @@ root - the same rule as `FeBuddy.Core`.
 - **A converter:** its own file in `Converters/`, instantiated once in `Theme/Theme.xaml`.
 - **Something every screen can use** (a store, a launcher, a notification): `Shell/`.
 - **A colour, font, radius or glyph:** `Theme/` - never a literal in a view.
+- **A folder name or path in on-screen text:** between backticks, with the TextBlock's text set
+  through `bhv:InlineCode.Text` instead of `Text` - it shows in the same code look as a News post's
+  `code` (`InlineCode.ApplyLook`, which `MarkdownView` uses too). `ConfirmWindow`'s message and
+  `GeojsonFilesCard`'s `Footnote` already render this way, so a message or footnote only needs the
+  backticks. In a CheckBox or RadioButton, put a TextBlock inside rather than using `Content`
+  (the property is a TextBlock's).
+- **A file name in a CheckBox or RadioButton label:** plain `Content` is fine. The theme's CheckBox
+  and RadioButton have no access keys, so an underscore shows as written instead of being taken as
+  one (`Fix_Symbols.geojson` would otherwise show as `FixSymbols.geojson`).
 - **A test for the app's logic:** `FeBuddy.UnitTests/Wpf/`, in folders mirroring these (the app's
   internals are visible to the tests). A test that creates a control runs its body through
   `StaThread.Run`, since WPF controls need a thread of their own. The map's math, GeoJSON reader,
-  home view, ROI view-model and `MapCanvas` are covered today.
+  home view, ROI view-model and `MapCanvas`, the File Names, Airways and ERAM to GeoJSON tabs'
+  view-models, the sub-service order, the Reset window's view-model, the Review tab's run feed,
+  `BesideOrBelow` and `InlineCode` are covered today.
 
 ### Screens
 
@@ -286,7 +301,8 @@ bar and page scroller are shared, and each screen's view-model says what differs
     (`AttachToService`) and has it re-read it (`RefreshFiles`) whenever another tab is shown, the
     selection or cycle changes, and before a run; the rows are rebuilt only when the list changed.
     **Rename Files** is Yes / No (`RenameFiles`, default No). With Yes, each file has a tick box and
-    a new-name box (greyed out while unticked); a ticked file needs a name that passes
+    a new-name box (greyed out while unticked) to its right, or under it in a narrow window
+    (`Controls/BesideOrBelow`); a ticked file needs a name that passes
     `OutputFileNames.Problem` and is not another file's name. Choices are kept by file key, files
     not listed included, as a numbered list (`Files.<n>.Key` / `.Rename` / `.Name` - numbered because
     `Airways.txt` has a dot in it); a ticked file with no name is not saved, so a file with no saved
@@ -324,12 +340,20 @@ bar and page scroller are shared, and each screen's view-model says what differs
     through `DatToGeojsonService.Run`.
   - **SCT2 to GeoJSON tab** - Lines and Labels panels, nothing of its own. Goes through
     `SctToGeojsonService.Run`.
-  - **ERAM to GeoJSON tab** - reads an ERAM adaptation export's `Geomaps.xml`; its folder
-    summary counts only Geomaps files (`IsSourceFile`), so the whole unzipped export can be the
-    source folder. The output layout (Object Type and Map Group / Filter Index and Similar
-    Attributes) and the CRC defaults source (XML / XML then card / card). Lines, Symbols and Text
-    panels, shown only while the card is a source (`UsesCrcDefaults`); with the XML as the only
-    source nothing on the card is required or sent. Goes through `EramToGeojsonService.Run`.
+  - **ERAM to GeoJSON tab** - reads an ERAM adaptation export's `Geomaps.xml`, one per run
+    (`OneSourceFileOnly`: the Source Files card is worded for one file, picking a file replaces
+    the last, and a folder holding two blocks the run); its folder summary counts only Geomaps
+    files (`IsSourceFile`), so the whole unzipped export can be the source folder. The output
+    layout - the original ERAM_2_GEOJSON tool's By Filters / By Attributes / Raw, each with its
+    folder tree as a tooltip - the CRC defaults source (XML / XML then card / card), and the
+    FE-Buddy Properties card (`IFebPropertySettings`, `EramFebPropertyOptions`). Lines, Symbols
+    and Text panels, shown only while the card is a source (`UsesCrcDefaults`); with the XML as
+    the only source nothing on the card is required or sent. Before a run it asks to empty
+    `ERAM_TO_GEOJSON` when anything is in it (`ConfirmRun`, which the File Conversions screen
+    calls for every tab). Goes through `EramToGeojsonService.Run`, which also writes
+    `ConsoleCommandControl.txt` when the export's `ConsoleCommandControl.xml` is beside the
+    Geomaps file; the intro and layout tooltips say so, and the run summary names it
+    (`FileConversionTabViewModel.DescribeRun` lists a result's `OtherFilesWritten` with its GeoJSON).
 - **Dashboard** - the verbatim description box + Discord link + next-cycle line,
   the News feed (from `NewsService`), and a live activity-log viewer over `AppLog`
   (filter chips with counts, minimizable).
@@ -339,10 +363,18 @@ bar and page scroller are shared, and each screen's view-model says what differs
   `ConfirmWindow` first, then every open `IConfigPage` reloads - `ConfigPages`), then the cards:
   Facility Profile (one facility from the parsed cycle, default output dir - the Desktop until
   one is saved - + FE-Buddy_Output toggle, with the cycle folder a run would write to), Default
-  Region of Interest (`RoiPickerWindow`), GeoJSON Files (feb.* description, Maximum Coordinate
-  Precision 5/6/7 dp, File Layout), Credentials (`CredentialsViewModel`, `CredentialEditorWindow`),
-  FE-Buddy's GitHub Requests (the GitHub token FE-Buddy's own requests use), and Updates (the four
-  channels with their tooltips, "check now" and "get the latest stable installer"). Everything but
+  Region of Interest (`RoiPickerWindow`), GeoJSON Files (Maximum Coordinate Precision 5/6/7 dp,
+  File Layout; FE-Buddy properties are chosen on each tab), Credentials (`CredentialsViewModel`, `CredentialEditorWindow`),
+  FE-Buddy's GitHub Requests (the GitHub token FE-Buddy's own requests use), Updates (the four
+  channels with their tooltips, "check now" and "open the releases page"; saving a new channel
+  checks it, and from a pre-release a more stable channel opens `UpdateWindow` in its "go back"
+  mode), and Reset
+  FE-Buddy (`ResetWindow` / `ResetViewModel` ask what to keep; Settings saves a copy of the
+  settings if wanted, records the reset with Core's `AppDataReset` and restarts through
+  `Shell/AppRestart`; `App.OnStartup` carries it out before anything is opened), with an Uninstall
+  FE-Buddy… button across from Reset's (MSI installs only, `Button.Ghost.Danger`: `UninstallWindow` / `UninstallViewModel` say what goes, Settings
+  saves a copy of the settings if wanted, starts `msiexec` with Core's `AppUninstall` arguments -
+  not elevated - and shuts FE-Buddy down). Everything but
   Credentials persists to `UserConfig.json` with the page's Save; credentials live in Windows
   Credential Manager and are saved as they change (see [Credentials](../Credentials.md)).
 - **Info** - Manual, Change log, Issues & requests as real links (About deleted).
@@ -351,7 +383,9 @@ bar and page scroller are shared, and each screen's view-model says what differs
 
 - **Toasts** - `Shell/Toast.cs` static store; hosted bottom-right.
 - **Border chrome** - FE-BUDDY tooltip shows update state only; the version chip is
-  a button that opens `UpdateWindow` when an update exists; the AIRAC status
+  a button that opens `UpdateWindow` when an update exists, and beside it a red update badge
+  takes turns between "Update available!" and the new version (amber and still after "Later";
+  `ShellViewModel.BadgeShowsVersion`, stepped by the Zulu clock's timer); the AIRAC status
   readout sits top-centre and narrates the launch pipeline.
 - **Zulu clock** in the status bar; **collapsible nav rail** (232 ⇄ 60).
 

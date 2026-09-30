@@ -13,20 +13,22 @@ namespace FeBuddy.UnitTests.Application.Airac.Airports.Fixtures;
 internal static class AirportTestDataBuilder
 {
 	/// <summary>
-	/// Builds a <see cref="NasrCsvDataCollection"/> holding only the given APT, FRQ and
-	/// CLS_ARSP rows.
+	/// Builds a <see cref="NasrCsvDataCollection"/> holding only the given APT (base, runway,
+	/// runway-end and attendance), FRQ and CLS_ARSP rows.
 	/// </summary>
 	public static NasrCsvDataCollection Build(
 		IEnumerable<AptCsvDataModel.AptBase>? airports = null,
 		IEnumerable<AptCsvDataModel.AptRwy>? runways = null,
 		IEnumerable<AptCsvDataModel.AptRwyEnd>? runwayEnds = null,
 		IEnumerable<FrqCsvDataModel.Frq>? frequencies = null,
-		IEnumerable<ClsArspCsvDataModel.ClsArsp>? classAirspace = null)
+		IEnumerable<ClsArspCsvDataModel.ClsArsp>? classAirspace = null,
+		IEnumerable<AptCsvDataModel.AptAtt>? attendance = null)
 	{
 		AptCsvDataCollection aptCollection = new();
 		aptCollection.AptBase.AddRange(airports ?? []);
 		aptCollection.AptRwy.AddRange(runways ?? []);
 		aptCollection.AptRwyEnd.AddRange(runwayEnds ?? []);
+		aptCollection.AptAtt.AddRange(attendance ?? []);
 
 		FrqCsvDataCollection frqCollection = new();
 		frqCollection.Frq.AddRange(frequencies ?? []);
@@ -135,14 +137,25 @@ internal static class AirportTestDataBuilder
 		string? classB = null,
 		string? classC = null,
 		string? classD = null,
-		string? classE = null) =>
+		string? classE = null,
+		string? airspaceHours = null) =>
 		new()
 		{
 			ArptId = arptId,
 			ClassBAirspace = classB,
 			ClassCAirspace = classC,
 			ClassDAirspace = classD,
-			ClassEAirspace = classE
+			ClassEAirspace = classE,
+			AirspaceHrs = airspaceHours
+		};
+
+	/// <summary>Builds one APT_ATT row: one of the airport's attendance schedules.</summary>
+	public static AptCsvDataModel.AptAtt AttendanceRow(string arptId, int sequence, string? hour) =>
+		new()
+		{
+			ArptId = arptId,
+			SkedSeqNo = sequence,
+			Hour = hour
 		};
 
 	/// <summary>
@@ -164,7 +177,9 @@ internal static class AirportTestDataBuilder
 		string? weatherFrequency = null,
 		string? weatherFrequencyUse = null,
 		string? classAirspace = null,
-		IReadOnlyList<AirportRunway>? runways = null)
+		IReadOnlyList<AirportRunway>? runways = null,
+		IReadOnlyList<string>? attendanceHours = null,
+		IReadOnlyList<string>? airspaceHours = null)
 	{
 		IReadOnlyList<AirportRunway> resolvedRunways = runways ?? [];
 
@@ -185,6 +200,8 @@ internal static class AirportTestDataBuilder
 			WeatherFrequency = weatherFrequency,
 			WeatherFrequencyUse = weatherFrequencyUse,
 			ClassAirspace = classAirspace,
+			AttendanceHours = attendanceHours ?? [],
+			AirspaceHours = airspaceHours ?? [],
 			Runways = resolvedRunways,
 			LongestRunway = AirportBuilder.SelectLongestRunway(resolvedRunways)
 		};

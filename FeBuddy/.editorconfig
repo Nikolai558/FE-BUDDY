@@ -1,6 +1,11 @@
 # FE-Buddy code style - one file for every project in the solution.
 root = true
 
+[*]
+# UTF-8 without a byte-order mark. dotnet format's whitespace check flags a C# file that has one;
+# FileEncodingTests (FeBuddy.UnitTests) catches every other file.
+charset = utf-8
+
 [*.cs]
 #### Naming styles ####
 

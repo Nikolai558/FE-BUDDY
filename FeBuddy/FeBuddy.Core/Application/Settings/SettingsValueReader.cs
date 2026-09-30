@@ -126,6 +126,38 @@ public static class SettingsValueReader
 		return parsed;
 	}
 
+	/// <summary>Reads a decimal number constrained to a range, falling back to a default.</summary>
+	/// <param name="settings">The raw settings block.</param>
+	/// <param name="key">The key to read.</param>
+	/// <param name="defaultValue">The value to use when the key is absent or blank.</param>
+	/// <param name="minimum">Lowest accepted value, inclusive.</param>
+	/// <param name="maximum">Highest accepted value, inclusive.</param>
+	/// <returns>The parsed number.</returns>
+	/// <exception cref="ArgumentException">Thrown when the value is not a number from <paramref name="minimum"/> to <paramref name="maximum"/>.</exception>
+	public static double DecimalInRange(
+		IReadOnlyDictionary<string, string> settings,
+		string key,
+		double defaultValue,
+		double minimum,
+		double maximum)
+	{
+		if (!settings.TryGetValue(key, out string? value) || string.IsNullOrWhiteSpace(value))
+		{
+			return defaultValue;
+		}
+
+		// Written as "not within" so NaN, which compares false either way, is rejected too.
+		if (!double.TryParse(value.Trim(), NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out double parsed)
+			|| !(parsed >= minimum && parsed <= maximum))
+		{
+			throw new ArgumentException(
+				$"'{key}' value '{value}' is not valid. Must be a number from {minimum.ToString(CultureInfo.InvariantCulture)} " +
+				$"to {maximum.ToString(CultureInfo.InvariantCulture)}.");
+		}
+
+		return parsed;
+	}
+
 	/// <summary>Reads a <c>Y</c>/<c>N</c> flag that must be present.</summary>
 	/// <param name="settings">The raw settings block.</param>
 	/// <param name="key">The key to read.</param>

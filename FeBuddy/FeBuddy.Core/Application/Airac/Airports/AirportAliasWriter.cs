@@ -11,7 +11,8 @@ namespace FeBuddy.Core.Application.Airac.Airports;
 /// <summary>
 /// Generates the <c>Airports.txt</c> alias file: an <c>.ECHO</c> command per airport that
 /// prints a single-screen summary of the field in CRC (identifiers, name, facility and tower
-/// type, ARTCC, longest runway, elevation, pattern altitude, airspace, FSS, CTAF and weather).
+/// type, ARTCC, longest runway, elevation, pattern altitude, FSS, CTAF, weather, attendance
+/// hours, and the class airspace with its hours).
 /// </summary>
 /// <remarks>
 /// <para>
@@ -30,6 +31,12 @@ namespace FeBuddy.Core.Application.Airac.Airports;
 ///     one physical line per command; CRC turns the escapes into a multi-line display.
 ///   </item>
 /// </list>
+/// <para>
+/// The attendance hours (<c>ATNDCE HRS:</c>) and the airspace hours (<c>HRS:</c>, under
+/// <c>AIRSPACE:</c>) can run to several lines: the first sits beside its label and the rest line
+/// up under it. Both labels are written even when there are no hours - as for a field with no
+/// tower, which is given no attendance hours.
+/// </para>
 /// <para>
 /// The file covers the entire airport database. Unlike the GeoJSON output it is deliberately
 /// never ROI-filtered: a controller typing <c>.aptXXX</c> expects an answer for any field, not
@@ -144,12 +151,34 @@ public static class AirportAliasWriter
 		body.Append(tab4).Append(airport.LongestRunway?.SurfaceType ?? string.Empty).Append(NewLineEscape);
 		body.Append("ELEV:").Append(tab2).Append(space3).Append(FormatFeet(airport.Elevation)).Append(NewLineEscape);
 		body.Append("PTRN").Append(SpaceEscape).Append("ALT:").Append(TabEscape).Append(space3).Append(FormatFeet(airport.TrafficPatternAltitude)).Append(NewLineEscape);
-		body.Append("AIRSPACE:").Append(TabEscape).Append(space3).Append(airport.ClassAirspace ?? string.Empty).Append(NewLineEscape);
 		body.Append("FSS:").Append(tab3).Append(airport.FssId ?? string.Empty).Append(NewLineEscape);
 		body.Append("CTAF:").Append(tab2).Append(space3).Append(airport.CtafFrequency ?? string.Empty).Append(NewLineEscape);
-		body.Append("WX:").Append(tab3).Append(SpaceEscape).Append(FormatWeather(airport));
+		body.Append("WX:").Append(tab3).Append(SpaceEscape).Append(FormatWeather(airport)).Append(NewLineEscape);
+		AppendLines(body, "ATNDCE" + SpaceEscape + "HRS:" + TabEscape + SpaceEscape, airport.AttendanceHours, tab4);
+		body.Append(NewLineEscape);
+		body.Append("AIRSPACE:").Append(TabEscape).Append(space3).Append(airport.ClassAirspace ?? string.Empty).Append(NewLineEscape);
+		AppendLines(body, TabEscape + SpaceEscape + "HRS:" + TabEscape + space3, airport.AirspaceHours, tab4);
 
 		return body.ToString();
+	}
+
+	/// <summary>
+	/// Appends a label with the first of <paramref name="lines"/> beside it and each of the rest on
+	/// a line of its own under it. The label is written even when there are no lines, so every card
+	/// has the same rows. No line break follows the last line.
+	/// </summary>
+	/// <param name="body">The command body being built.</param>
+	/// <param name="label">The label, escapes included, up to where its first value starts.</param>
+	/// <param name="lines">The values, one per display line.</param>
+	/// <param name="indent">What starts each line after the first, lining it up under the first value.</param>
+	private static void AppendLines(StringBuilder body, string label, IReadOnlyList<string> lines, string indent)
+	{
+		body.Append(label).Append(lines.Count > 0 ? lines[0] : string.Empty);
+
+		foreach (string line in lines.Skip(1))
+		{
+			body.Append(NewLineEscape).Append(indent).Append(line);
+		}
 	}
 
 	private static bool TryAppend(

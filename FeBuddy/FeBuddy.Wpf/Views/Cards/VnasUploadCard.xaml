@@ -19,6 +19,7 @@
              xmlns:m="clr-namespace:FeBuddy.Wpf.ViewModels.Models"
              xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
              xmlns:tabs="clr-namespace:FeBuddy.Wpf.ViewModels.ServiceTabs"
+             xmlns:bhv="clr-namespace:FeBuddy.Wpf.Behaviors"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance tabs:IVnasUploadSettings}"
              d:DesignWidth="820">
@@ -61,7 +62,7 @@
     <ctl:Card Header="Upload to vNAS">
         <StackPanel>
             <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
-                       Text="Tick the files you will upload to vNAS. A GeoJSON file is written to the cycle's Upload_to_vNAS folder instead of the usual one. vNAS takes one alias file, so a ticked alias file stays in Aliases and is added to Upload_to_vNAS\vNAS_Alias.txt, under your custom alias files when vNAS Alias Upload is selected." />
+                       bhv:InlineCode.Text="Tick the files you will upload to vNAS. The GeoJSON files are written to the cycle's `Upload_to_vNAS` folder.&#xA;vNAS takes one alias file, so a ticked alias file stays in `Aliases` and is added to `Upload_to_vNAS\vNAS_Alias.txt`, under your custom alias files when vNAS Alias Upload is selected." />
 
             <TextBlock Style="{StaticResource Text.Caption}" Text="This tab's settings write no files yet."
                        Visibility="{Binding HasOutputFiles, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />

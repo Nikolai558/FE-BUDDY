@@ -18,20 +18,26 @@ public enum LaunchStep
 	/// </summary>
 	CheckLegacyGitHubToken = 2,
 
+	/// <summary>
+	/// Delete the Desktop and Start menu shortcuts FE-Buddy 2.8.x left that no longer open anything
+	/// (<see cref="Infrastructure.Platform.LegacySquirrelShortcuts"/>).
+	/// </summary>
+	RemoveLegacyShortcuts = 3,
+
 	/// <summary>Establish UTC "now" from the network and decide whether the machine is online.</summary>
-	CheckUtcTimeAndInternet = 3,
+	CheckUtcTimeAndInternet = 4,
 
 	/// <summary>Ask GitHub whether a newer release exists on the user's channel.</summary>
-	CheckVersion = 4,
+	CheckVersion = 5,
 
 	/// <summary>Ensure the previous, current and next AIRAC cycles are downloaded and parsed.</summary>
-	PrepareAiracData = 5,
+	PrepareAiracData = 6,
 
 	/// <summary>Check for a newer News post.</summary>
-	CheckNews = 6,
+	CheckNews = 7,
 
 	/// <summary>The sequence has finished.</summary>
-	Complete = 7,
+	Complete = 8,
 }
 
 /// <summary>The state of a <see cref="LaunchStep"/> as it is reported.</summary>

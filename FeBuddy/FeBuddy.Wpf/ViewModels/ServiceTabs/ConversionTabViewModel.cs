@@ -64,6 +64,14 @@ public abstract class ConversionTabViewModel : SubServiceSettingsViewModel, IRun
 	/// </remarks>
 	public abstract string? RunBlocker { get; }
 
+	/// <summary>
+	/// Asks the user about anything the run will do that they should agree to first - ERAM to
+	/// GeoJSON empties its folder - just before it starts, on the UI thread. Nothing to ask by default.
+	/// </summary>
+	/// <param name="settings">The block the run will use.</param>
+	/// <returns><see langword="false"/> to not run.</returns>
+	public virtual bool ConfirmRun(IReadOnlyDictionary<string, string> settings) => true;
+
 	/// <summary>Builds the raw settings block the library's parser reads, from the tab as it stands.</summary>
 	/// <param name="outputDirectory">The run's output directory.</param>
 	/// <param name="addFeBuddyOutputFolder">Whether to wrap output in a <c>FE-Buddy_Output</c> folder.</param>

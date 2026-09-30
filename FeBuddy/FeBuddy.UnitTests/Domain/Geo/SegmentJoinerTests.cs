@@ -14,6 +14,7 @@ public sealed class SegmentJoinerTests
 	private static readonly Coordinate B = new(-100.0, 40.5);
 	private static readonly Coordinate C = new(-99.5, 40.5);
 	private static readonly Coordinate D = new(-99.5, 41.0);
+	private static readonly Coordinate E = new(-99.0, 41.0);
 
 	[Fact]
 	public void consecutive_segments_that_meet_become_one_line()
@@ -29,6 +30,42 @@ public sealed class SegmentJoinerTests
 		LineString line = Assert.Single(SegmentJoiner.Join([(A, B), (C, B), (C, D)]));
 
 		Assert.Equal([A, B, C, D], line.Coordinates);
+	}
+
+	[Fact]
+	public void a_run_written_backwards_becomes_one_line()
+	{
+		// Issue #151: 2-1, 3-2, 4-3 - each segment ends where the line so far begins.
+		LineString line = Assert.Single(SegmentJoiner.Join([(B, A), (C, B), (D, C)]));
+
+		Assert.Equal([D, C, B, A], line.Coordinates);
+	}
+
+	[Fact]
+	public void a_line_can_grow_at_its_start_and_then_its_end()
+	{
+		LineString line = Assert.Single(SegmentJoiner.Join([(B, C), (A, B), (C, D)]));
+
+		Assert.Equal([A, B, C, D], line.Coordinates);
+	}
+
+	[Fact]
+	public void a_loop_written_backwards_closes_into_one_line()
+	{
+		// The last segment meets both ends; continuing from the end closes the ring.
+		LineString line = Assert.Single(SegmentJoiner.Join([(B, A), (C, B), (A, C)]));
+
+		Assert.Equal([C, B, A, C], line.Coordinates);
+	}
+
+	[Fact]
+	public void a_segment_that_only_meets_an_earlier_line_starts_a_new_one()
+	{
+		// (A, B) ends where the first line begins, but (D, E) came in between.
+		IReadOnlyList<LineString> lines = SegmentJoiner.Join([(B, C), (D, E), (A, B)]);
+
+		Assert.Equal(3, lines.Count);
+		Assert.Contains(lines, line => line.Coordinates.SequenceEqual([A, B]));
 	}
 
 	[Fact]

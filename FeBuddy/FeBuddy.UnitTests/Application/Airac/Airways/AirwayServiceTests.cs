@@ -5,9 +5,12 @@ using FeBuddy.Core.Application.Airac.Airways;
 using FeBuddy.Core.Application.Airac.Airways.Models;
 using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Application.Models;
+using FeBuddy.Core.Domain.Geo;
 using FeBuddy.Core.Infrastructure.Nasr.Models;
 
 using FeBuddy.UnitTests.Application.Airac.Airways.Fixtures;
+
+using Location = FeBuddy.Core.Domain.Geo.Models.Location;
 
 namespace FeBuddy.UnitTests.Application.Airac.Airways;
 
@@ -171,6 +174,10 @@ public sealed class AirwayServiceTests : IDisposable
 		return [.. document.RootElement.GetProperty("features").EnumerateArray().Select(f => f.Clone())];
 	}
 
+	/// <summary>The distance, in NM, from a GeoJSON <c>[lon, lat]</c> position to a point.</summary>
+	private static double DistanceNm(JsonElement position, double lat, double lon) =>
+		GeoMath.Distance(new Location(position[1].GetDouble(), position[0].GetDouble()), new Location(lat, lon), round: false);
+
 	[Fact]
 	public void run_with_crc_defaults_and_a_roi_draws_only_the_points_inside_it()
 	{
@@ -219,6 +226,20 @@ public sealed class AirwayServiceTests : IDisposable
 		JsonElement start = Features(lines)[0].GetProperty("geometry").GetProperty("coordinates")[0][0];
 		Assert.NotEqual(-80.0, start[0].GetDouble());
 		Assert.NotEqual(40.0, start[1].GetDouble());
+	}
+
+	[Fact]
+	public void run_that_buffers_waypoints_uses_the_chosen_distances()
+	{
+		AirwayServiceResult result = AirwayService.Run(J1(), Settings(
+			[.. SouthEastRoi, ("BufferAirwayWaypoints", "Y"), ("FixBufferNm", "7.5"), ("NavaidBufferNm", "1"), ("GenerateAliasFile", "N")]));
+
+		// The AAAAA - ABC leg: 7.5 NM short of the fix, 1 NM short of the NAVAID.
+		string lines = Assert.Single(result.GeojsonFilesWritten, p => p.EndsWith("_Lines.geojson", StringComparison.Ordinal));
+		JsonElement leg = Features(lines)[0].GetProperty("geometry").GetProperty("coordinates")[0];
+
+		Assert.Equal(7.5, DistanceNm(leg[0], lat: 40.0, lon: -80.0), precision: 2);
+		Assert.Equal(1.0, DistanceNm(leg[leg.GetArrayLength() - 1], lat: 41.0, lon: -81.0), precision: 2);
 	}
 
 	[Fact]

@@ -87,7 +87,7 @@ public partial class CrcDefaultsPanel : UserControl
 	/// <summary>Width of one control; narrower when there are several class blocks.</summary>
 	public double CellWidth => (double)GetValue(CellWidthProperty);
 
-	/// <summary>Space around one class block: a gap to the next block when there are several.</summary>
+	/// <summary>Space around one class block: a gap to the next block's box when there are several.</summary>
 	public Thickness BlockMargin => (Thickness)GetValue(BlockMarginProperty);
 
 	/// <summary>Whether each block shows its class name: only when there is more than one class to tell apart.</summary>
@@ -100,7 +100,7 @@ public partial class CrcDefaultsPanel : UserControl
 		bool several = count > 1;
 
 		panel.SetValue(CellWidthKey, several ? MultiClassCellWidth : SingleClassCellWidth);
-		panel.SetValue(BlockMarginKey, several ? new Thickness(0, 0, 24, 10) : new Thickness(0));
+		panel.SetValue(BlockMarginKey, several ? new Thickness(0, 0, 10, 10) : new Thickness(0));
 		panel.SetValue(ShowClassNamesKey, several);
 
 		// No file of this kind gets CRC-ERAM defaults, so there is nothing to fill in.

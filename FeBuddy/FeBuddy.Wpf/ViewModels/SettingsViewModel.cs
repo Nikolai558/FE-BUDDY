@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Text;
@@ -16,6 +17,7 @@ using FeBuddy.Wpf.Views;
 using FeBuddy.Core.Application.Airac;
 using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Application.Launch;
+using FeBuddy.Core.Application.Updates;
 using FeBuddy.Core.Application.Updates.Models;
 using FeBuddy.Core.Domain.Airac.Models;
 using FeBuddy.Core.Domain.Geo.Models;
@@ -23,6 +25,7 @@ using FeBuddy.Core.Infrastructure.Configuration;
 using FeBuddy.Core.Infrastructure.Configuration.Models;
 using FeBuddy.Core.Infrastructure.Credentials;
 using FeBuddy.Core.Infrastructure.Credentials.Models;
+using FeBuddy.Core.Infrastructure.FileSystem;
 using FeBuddy.Core.Infrastructure.Logging;
 using FeBuddy.Core.Infrastructure.Platform;
 
@@ -35,9 +38,11 @@ namespace FeBuddy.Wpf.ViewModels;
 
 /// <summary>
 /// SYSTEM ▸ Settings. Section order: Facility Profile, Default Region of Interest, GeoJSON Files,
-/// Credentials, FE-Buddy's GitHub Requests, Updates. Every value persists to <c>UserConfig.json</c>,
-/// except credentials, which live in Windows Credential Manager and are saved at once
-/// (<see cref="CredentialsViewModel"/>). FE-Buddy's GitHub Requests saves only the chosen token's id.
+/// Credentials, FE-Buddy's GitHub Requests, Updates, Reset FE-Buddy (with Uninstall FE-Buddy…
+/// across from its button). Every value persists to
+/// <c>UserConfig.json</c>, except credentials, which live in Windows Credential Manager and are
+/// saved at once (<see cref="CredentialsViewModel"/>). FE-Buddy's GitHub Requests saves only the
+/// chosen token's id.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -52,6 +57,16 @@ namespace FeBuddy.Wpf.ViewModels;
 /// <para>
 /// Export and Import move every setting in the app (not only this page's) to and from a file,
 /// through <see cref="UserConfigTransfer"/>, so one user's setup can be handed to another.
+/// </para>
+/// <para>
+/// Reset FE-Buddy asks what to keep (<see cref="ResetViewModel"/>), saves a copy of the settings
+/// first if they go and the user wants one, records the reset (<see cref="AppDataReset"/>) and
+/// restarts FE-Buddy, which carries it out as it starts.
+/// </para>
+/// <para>
+/// Uninstall FE-Buddy…, shown only in the MSI-installed copy, says what goes (<see cref="UninstallViewModel"/>),
+/// saves a copy of the settings first if the user wants one, starts Windows' uninstall
+/// (<see cref="AppUninstall"/>) and closes FE-Buddy.
 /// </para>
 /// </remarks>
 public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IConfigPage
@@ -69,9 +84,11 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 
 	private readonly Dispatcher _dispatcher;
 	private readonly Action? _openUpdateWindow;
+	private readonly Func<IReadOnlyList<string>>? _describeUnfinishedWork;
 	private bool _isCheckingForUpdates;
 
 	private ReleaseChannel _channel;
+	private ReleaseChannel _savedChannel;
 	private string? _selectedFacility;
 	private string _outputDir = string.Empty;
 	private bool _addFeBuddyFolder = true;
@@ -90,10 +107,15 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 	/// owns it (it tracks a "Later" for the version chip); "Check for updates now" calls it when
 	/// the check finds an update.
 	/// </param>
-	public SettingsViewModel(Action? openUpdateWindow = null)
+	/// <param name="describeUnfinishedWork">
+	/// What closing FE-Buddy now would lose (a run in progress, unsaved edits on any page), for the
+	/// Reset FE-Buddy and Uninstall FE-Buddy windows. The shell knows every page, so it supplies it.
+	/// </param>
+	public SettingsViewModel(Action? openUpdateWindow = null, Func<IReadOnlyList<string>>? describeUnfinishedWork = null)
 	{
 		_dispatcher = Application.Current?.Dispatcher ?? Dispatcher.CurrentDispatcher;
 		_openUpdateWindow = openUpdateWindow;
+		_describeUnfinishedWork = describeUnfinishedWork;
 
 		RefreshGitHubTokens();
 		CredentialStore.Default.Changed += (_, _) => _dispatcher.BeginInvoke(RefreshGitHubTokens);
@@ -111,6 +133,8 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 		ExportCommand = new RelayCommand(Export);
 		ImportCommand = new RelayCommand(Import);
 		NewGitHubTokenCommand = new RelayCommand(NewGitHubToken);
+		ResetCommand = new RelayCommand(Reset);
+		UninstallCommand = new RelayCommand(Uninstall, () => CanUninstall);
 
 		AiracCycleDataCache.Instance.StateChanged += (_, _) => _dispatcher.BeginInvoke(RefreshFacilities);
 		RefreshFacilities();
@@ -214,13 +238,16 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 		}
 	}
 
-	/// <summary>Where a run of the current cycle would write with the values on screen, e.g. <c>…\FE-Buddy_Output\AIRAC_2610</c>.</summary>
+	/// <summary>
+	/// Where a run of the current cycle would write with the values on screen, e.g.
+	/// <c>…\FE-Buddy_Output\AIRAC_2610</c> - between backticks, for the view's <c>bhv:InlineCode</c>.
+	/// </summary>
 	public string OutputFolderExample
 	{
 		get
 		{
 			string cycleId = AppEnvironment.GetAiracCycle(AiracCyclePosition.Current).AiracCycleId;
-			return $"A run of AIRAC cycle {cycleId} writes to {AiracOutputPaths.CycleDirectory(OutputDirectory, AddFeBuddyOutputFolder, cycleId)}";
+			return $"A run of AIRAC cycle {cycleId} writes to `{AiracOutputPaths.CycleDirectory(OutputDirectory, AddFeBuddyOutputFolder, cycleId)}`";
 		}
 	}
 
@@ -231,12 +258,13 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 
 	/// <summary>Explains what an ROI is, under the Default Region of Interest heading.</summary>
 	public const string RoiExplainer =
-		"Region of Interest (ROI): a lat/lon axis-aligned rectangular region defined by southwest " +
-		"(bottom-left) and northeast (top-right) corners - a box defining the data you are interested in. " +
-		"Depending on the data type and operation, geometries may be clipped to the ROI or included in " +
-		"full when associated with an entity inside it. Make the box a little larger than your ARTCC " +
-		"boundary so nearby data still appears. Some operations let you override this ROI for specific " +
-		"files later.";
+		"Region of Interest (ROI):\n" +
+		"A lat/lon axis-aligned rectangular region defined by southwest (bottom-left) and northeast (top-right) corners -\n" +
+		"a box defining the data you are interested in.\n\n" +
+		"Depending on the data type and operation, geometries may be clipped/cropped " +
+		"to the ROI or included in full when associated with an entity inside it.\n\n" +
+		"Consider making your ROI a little larger than your ARTCC boundary so nearby data still appears.\n\n" +
+		"Some operations let you override this default ROI for specific files later using a custom ROI for that feature.";
 
 	/// <summary>
 	/// The default ROI on screen, or <see langword="null"/> when none is set. It becomes the saved
@@ -272,12 +300,6 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 	public ICommand ClearRoiCommand { get; }
 
 	// ================= 3. GEOJSON FILES =================
-
-	/// <summary>Explains the FE-Buddy properties.</summary>
-	public const string FebPropertiesDescription =
-		"Include FE-Buddy Properties, when available. Custom GeoJSON property fields that increase file " +
-		"size but can be helpful for debugging or viewing data in a GeoJSON viewer in order to identify " +
-		"an object. Every FE-Buddy property is prefixed with feb.";
 
 	/// <summary>Explains the coordinate precision choice.</summary>
 	public const string CoordinatePrecisionDescription =
@@ -489,7 +511,10 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 		"Early builds with features still being worked on. Things may be unfinished, change from one build to the next, " +
 		"or not work at all.";
 
-	/// <summary>The update channel. <see cref="ReleaseChannel.Stable"/> unless the developers tell you otherwise.</summary>
+	/// <summary>
+	/// The update channel. Until the user chooses one, the channel of the build they are running
+	/// (<see cref="UpdateChannelSetting"/>); saving a different one checks it straight away.
+	/// </summary>
 	public ReleaseChannel Channel
 	{
 		get => _channel;
@@ -552,6 +577,29 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 	/// <summary>Reads a settings file the user picks, shows what it would change, and imports it once confirmed.</summary>
 	public ICommand ImportCommand { get; }
 
+	// ================= reset =================
+
+	/// <summary>Explains Reset FE-Buddy, on its card.</summary>
+	public const string ResetDescription =
+		"Start over as if FE-Buddy had just been installed. It deletes the AIRAC, Telephony and Wx Station " +
+		"data it has downloaded and its logs, and - if you choose - your settings and saved credentials, " +
+		"then restarts and downloads the AIRAC data again. Files in your output folder are not touched.";
+
+	/// <summary>Opens the Reset FE-Buddy window, and resets and restarts FE-Buddy once confirmed.</summary>
+	public ICommand ResetCommand { get; }
+
+	// ================= uninstall =================
+
+	/// <summary>
+	/// Whether this copy can uninstall itself: it is the one the installer installed, and the
+	/// installer recorded its ProductCode. Otherwise Uninstall FE-Buddy… is not shown.
+	/// </summary>
+	public bool CanUninstall { get; } =
+		AppEnvironment.IsMsiInstalled && AppUninstall.UninstallerArguments(InstalledProduct.ProductCode) is not null;
+
+	/// <summary>Opens the Uninstall FE-Buddy window, and starts Windows' uninstall and closes FE-Buddy once confirmed.</summary>
+	public ICommand UninstallCommand { get; }
+
 	/// <inheritdoc />
 	public void ReloadFromConfig() => LoadFromConfig();
 
@@ -574,22 +622,24 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 			return;
 		}
 
-		if (version.UpdateAvailable)
+		// The check reads the saved channel; say so if the page shows a different, unsaved one.
+		bool isUnsaved = Channel != version.Channel;
+		string unsaved = isUnsaved ? $" Save to check the {Channel.DisplayName()} channel instead." : string.Empty;
+
+		// An update, or - running a pre-release on the more stable channel saved here - that channel's
+		// latest release to go back to (not while another channel waits to be saved).
+		if (version.UpdateAvailable || (version.CanGoBack && !isUnsaved))
 		{
 			_openUpdateWindow?.Invoke();
 			return;
 		}
 
-		// The check reads the saved channel; say so if the page shows a different, unsaved one.
-		string unsaved = Channel != version.Channel ? $" Save to check the {Channel.DisplayName()} channel instead." : string.Empty;
 		string current = version.CurrentVersion.TrimStart('v', 'V');
 
 		if (version.RunningPreReleaseChannel is { } running)
 		{
 			Toast.Success("No update available",
-				$"v{current} is a {running.DisplayName()} release, newer than the latest {version.Channel.DisplayName()} release (v{version.LatestVersion}). " +
-				$"{version.Channel.DisplayName()} updates start again once one is newer than v{current}; to go back now, install " +
-				$"v{version.LatestVersion} from its release page.{unsaved}");
+				$"v{current} is a {running.DisplayName()} release, newer than the latest {version.Channel.DisplayName()} release (v{version.LatestVersion}).{unsaved}");
 		}
 		else if (version.IsAheadOfLatestRelease)
 		{
@@ -608,7 +658,14 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 
 	private void Save()
 	{
-		UserConfigFile.TrySetValue(ChannelKey, Channel.ToString());
+		// Written only when changed: until the user picks one, the channel follows the running build.
+		bool channelChanged = Channel != _savedChannel;
+		if (channelChanged)
+		{
+			UserConfigFile.TrySetValue(ChannelKey, Channel.ToString());
+		}
+
+
 		UserConfigFile.TrySetValue(OutputDirKey, OutputDirectory);
 		UserConfigFile.TrySetValue(AddFolderKey, AddFeBuddyOutputFolder ? "Y" : "N");
 		UserConfigFile.TrySetValue(PrecisionKey, CoordinatePrecision.ToString(CultureInfo.InvariantCulture));
@@ -639,9 +696,17 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 		// Applied as soon as it is saved, so the next file written follows it without a restart.
 		OutputFormatting.PrettyPrintGeojson = PrettyPrintGeojson;
 
+		_savedChannel = Channel;
 		_savedState = SavedStateSnapshot.Of(CurrentValues());
 		IsDirty = false;
 		Toast.Success("Settings saved", "Written to UserConfig.json.");
+
+		// A new channel is checked straight away: its newer releases, or - running a pre-release after
+		// choosing a more stable channel - its latest release to go back to.
+		if (channelChanged && AppEnvironment.HasInternetConnection)
+		{
+			CheckForUpdates();
+		}
 	}
 
 	/// <summary>
@@ -650,7 +715,8 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 	/// </summary>
 	private void LoadFromConfig()
 	{
-		Channel = VersionCheckResult.ParseChannel(UserConfigFile.GetValue(ChannelKey));
+		Channel = UpdateChannelSetting.Read(AppVersion.Current);
+		_savedChannel = Channel;
 		SelectedFacility = Blank(UserConfigFile.GetValue(ArtccKey));
 		OutputDirectory = OutputPreferences.Directory;
 		AddFeBuddyOutputFolder = OutputPreferences.AddFeBuddyOutputFolder;
@@ -820,12 +886,13 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 				+ "but for identical output both PCs should run the same version.");
 		}
 
+		// Paths between backticks show in the code look (ConfirmWindow's bhv:InlineCode).
 		AppendList(text, "Folders and files:", plan.AppliedFolders, folder =>
 			folder.Path.Length == 0 ? folder.Note!
-			: folder.Note is null ? folder.Path
-			: $"{folder.Path} ({folder.Note})");
+			: folder.Note is null ? $"`{folder.Path}`"
+			: $"`{folder.Path}` ({folder.Note})");
 
-		AppendList(text, "Not taken, as they do not work on this PC:", plan.SkippedFolders, folder => $"the file's {folder.Path} {folder.Note}");
+		AppendList(text, "Not taken, as they do not work on this PC:", plan.SkippedFolders, folder => $"the file's `{folder.Path}` {folder.Note}");
 
 		if (plan.KeptForThisPc.Count > 0)
 		{
@@ -876,6 +943,155 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 		1 => names[0],
 		_ => $"{string.Join(", ", names.Take(names.Count - 1))} and {names[^1]}",
 	};
+
+	/// <summary>
+	/// Asks what the reset keeps, saves a copy of the settings first when they go and the user wants
+	/// one, then records the reset and restarts FE-Buddy, which carries it out as it starts.
+	/// </summary>
+	private void Reset()
+	{
+		Window? owner = Application.Current?.MainWindow;
+
+		ResetViewModel choices = new(
+			hasSettings: File.Exists(UserConfigFile.ConfigFilePath),
+			credentialCount: CountCredentials(),
+			unfinishedWork: _describeUnfinishedWork?.Invoke() ?? []);
+
+		new ResetWindow(choices) { Owner = owner }.ShowDialog();
+
+		if (!choices.Confirmed)
+		{
+			return;
+		}
+
+		if (choices.SavesCopy && !SaveSettingsCopy(owner, "reset", "reset"))
+		{
+			return;
+		}
+
+		try
+		{
+			AppDataReset.Request(choices.BuildRequest(Environment.ProcessId));
+		}
+		catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+		{
+			AppLog.Warning("Settings", $"Could not record the reset: {ex.Message}");
+			Toast.Error("Could not reset FE-Buddy", ex.Message);
+			return;
+		}
+
+		AppRestart.Restart(owner, "the reset");
+	}
+
+	/// <summary>
+	/// Says what the uninstall removes, saves a copy of the settings first when the user wants one,
+	/// then starts Windows' uninstall of this install and closes FE-Buddy so it can remove the files.
+	/// </summary>
+	private void Uninstall()
+	{
+		string? arguments = AppUninstall.UninstallerArguments(InstalledProduct.ProductCode);
+		if (!CanUninstall || arguments is null)
+		{
+			return;
+		}
+
+		Window? owner = Application.Current?.MainWindow;
+
+		UninstallViewModel choices = new(
+			hasSettings: File.Exists(UserConfigFile.ConfigFilePath),
+			credentialCount: CountCredentials(),
+			unfinishedWork: _describeUnfinishedWork?.Invoke() ?? []);
+
+		new UninstallWindow(choices) { Owner = owner }.ShowDialog();
+
+		if (!choices.Confirmed)
+		{
+			return;
+		}
+
+		if (choices.SavesCopy && !SaveSettingsCopy(owner, "uninstall", "uninstalled"))
+		{
+			return;
+		}
+
+		try
+		{
+			// Not elevated, as Windows starts it: Windows Installer asks for permission itself (see AppUninstall).
+			Process.Start(new ProcessStartInfo("msiexec.exe", arguments) { UseShellExecute = true });
+		}
+		catch (Exception ex) when (ex is Win32Exception or InvalidOperationException)
+		{
+			AppLog.Warning("Settings", $"Could not start the uninstall: {ex.Message}");
+			Toast.Error("Could not start the uninstall",
+				$"{ex.Message} Uninstall FE-Buddy from Windows Settings ▸ Apps ▸ Installed apps instead.");
+			return;
+		}
+
+		AppLog.Info("Settings", "Started Windows' uninstall of FE-Buddy; closing FE-Buddy.");
+		Application.Current?.Shutdown();
+	}
+
+	/// <summary>How many credentials are saved; 0 when Windows Credential Manager cannot be read.</summary>
+	private static int CountCredentials()
+	{
+		try
+		{
+			return CredentialStore.Default.List().Count;
+		}
+		catch (Win32Exception ex)
+		{
+			AppLog.Warning("Settings", $"Could not read Windows Credential Manager: {ex.Message}");
+			return 0;
+		}
+	}
+
+	/// <summary>
+	/// Copies <c>UserConfig.json</c> to where the user picks, before a reset or an uninstall deletes
+	/// it. The copy is the file as saved - a full backup, which Import reads back.
+	/// </summary>
+	/// <param name="owner">The window the file dialog belongs to.</param>
+	/// <param name="action">What is about to happen, for messages: <c>reset</c> or <c>uninstall</c>.</param>
+	/// <param name="done">The same as a past participle: <c>reset</c> or <c>uninstalled</c>.</param>
+	/// <returns><see langword="true"/> once the copy is saved; <see langword="false"/> to stop.</returns>
+	private static bool SaveSettingsCopy(Window? owner, string action, string done)
+	{
+		SaveFileDialog dialog = new()
+		{
+			Title = "Save a copy of your settings",
+			Filter = SettingsFileFilter,
+			DefaultExt = ".json",
+			AddExtension = true,
+			FileName = $"FE-Buddy Settings backup {DateTime.Now:yyyy-MM-dd}.json",
+			InitialDirectory = OutputPreferences.DefaultDirectory,
+		};
+
+		if (dialog.ShowDialog(owner) != true)
+		{
+			Toast.Info($"Nothing was {done}", "No copy of your settings was saved, so FE-Buddy was left as it is.");
+			return false;
+		}
+
+		// Both empty FE-Buddy's own folder, so a copy saved in it would go too.
+		string folder = Path.GetFullPath(AppDataReset.RootDirectory).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
+		if (Path.GetFullPath(dialog.FileName).StartsWith(folder, StringComparison.OrdinalIgnoreCase))
+		{
+			Toast.Warn("Choose another folder", $"The {action} empties {AppDataReset.RootDirectory}, copy and all. Nothing was {done}.");
+			return false;
+		}
+
+		try
+		{
+			File.Copy(UserConfigFile.ConfigFilePath, dialog.FileName, overwrite: true);
+			AppLog.Info("Settings", $"Saved a copy of the settings to '{dialog.FileName}' before the {action}.");
+			return true;
+		}
+		catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+		{
+			AppLog.Warning("Settings", $"Could not save a copy of the settings to '{dialog.FileName}': {ex.Message}");
+			Toast.Error("Could not save the copy", $"{ex.Message} Nothing was {done}.");
+			return false;
+		}
+	}
 
 	private void RefreshFacilities()
 	{

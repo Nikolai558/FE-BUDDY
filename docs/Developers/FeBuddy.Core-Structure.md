@@ -82,13 +82,15 @@ FeBuddy.Core/
 │   │   │               (a sign-in written into a web address). See Credentials.md
 │   │   └── Models/     CredentialInfo, CredentialDraft, CredentialKind, CredentialUseResult, VaultEntry
 │   ├── Dat/            DatFileReader: FAA .dat RADAR Video Maps
-│   ├── FileSystem/     AppPaths, TempWorkspace, ServiceOutputPaths (the FE-Buddy_Output layout)
+│   ├── FileSystem/     AppPaths, TempWorkspace, ServiceOutputPaths (the FE-Buddy_Output layout),
+│   │                   AppDataReset (Settings ▸ Reset FE-Buddy, carried out at the next launch)
 │   ├── Geojson/        CrcFeatureFactory, GeojsonFileWriter, GeojsonFileSet
 │   ├── GitHub/         GitHubAuth, GitHubRepository, GitHubFileUrl (a GitHub file's web address →
 │   │                   the contents API address that works for a private repository with a token)
 │   ├── Http/  Logging/  Markdown/
 │   ├── Platform/       AppVersion, InstalledProduct, UtcTimeCheck, LegacyGitHubTokenVariable (whether
-│   │                   2.x's FEBUDDY_GITHUB_TOKEN is set - never its value)
+│   │                   2.x's FEBUDDY_GITHUB_TOKEN is set - never its value), LegacySquirrelShortcuts
+│   │                   (2.8.x's dead Desktop / Start menu shortcuts)
 │   ├── Nasr/           Download, availability, CSV reading, WaypointLocator
 │   │   ├── Models/     One row-model file per NASR CSV group
 │   │   └── Parsers/    One parser per group + NasrCsvParser (parses them all)
@@ -111,7 +113,8 @@ FeBuddy.Core/
 │   │   │               and cached alongside its NASR CSVs. Feeds the Procedures sub-service
 │   │   ├── Models/     DtppMetafileXmlDataModel, DtppMetafileDataCollection, DtppDownloadOutcome
 │   │   └── Parsers/    DtppMetafileXmlParser
-│   ├── Eram/           EramGeoMapReader: an ERAM adaptation export's Geomaps.xml (streamed)
+│   ├── Eram/           EramGeoMapReader: an ERAM adaptation export's Geomaps.xml (streamed);
+│   │                   EramConsoleCommandControlReader: its ConsoleCommandControl.xml map menus
 │   └── Sct/            SctFileReader: VRC .sct2 / .sct sector files
 └── Application/
     ├── Airac/          AiracService (entry point), AiracCycleDataCache, AiracSharedDataLoader
@@ -187,7 +190,8 @@ A class's suffix tells you what it does:
 ## How a run flows
 
 **At launch**, `LaunchSequence.RunAsync` clears the temp folder, reads the config, looks for FE-Buddy
-2.x's GitHub token variable (`LegacyGitHubTokenNotice`), checks UTC time and internet access, then
+2.x's GitHub token variable (`LegacyGitHubTokenNotice`), deletes 2.8.x's dead shortcuts
+(`LegacySquirrelShortcuts`), checks UTC time and internet access, then
 runs three steps concurrently: the version check, the News
 fetch, and the AIRAC data step. The AIRAC step works out the previous, current and next cycles
 (`AiracCycleResolver`). It then has `AiracCycleDataCache` download and parse whichever of them the
@@ -272,7 +276,13 @@ the other files still convert. SCT2 to GeoJSON (`SctFileReader` → `SctGeojsonW
 to GeoJSON (`EramGeoMapReader` → `EramGeojsonWriter`, with `EramCrcProperties` turning ERAM's
 styling into validated CRC defaults and overrides) have the same shape. `ConversionFiles` takes an
 optional check on a folder's files, so ERAM picks `Geomaps.xml` out of a whole adaptation export
-(`EramGeoMapReader.IsGeoMapsFile`). Both write lines through
+(`EramGeoMapReader.IsGeoMapsFile`). ERAM differs in three ways: it takes one Geomaps file per run;
+it empties its `ERAM_TO_GEOJSON` folder once the file has been read, writing the original
+ERAM_2_GEOJSON tool's By Filters / By Attributes / Raw layouts; and it reads the
+`ConsoleCommandControl.xml` beside the Geomaps file (`EramConsoleCommandControlReader`, which
+`ConversionFiles` is told not to name as left alone) into the original tool's
+`ConsoleCommandControl.txt` (`EramConsoleCommandControlRundown`), reported through
+`ConversionServiceResult.OtherFilesWritten`. Both write lines through
 `Domain/Geo/SegmentJoiner`, which joins two-point segments back into lines, merges repeats with
 `LineStringMerger` and splits them with `AntimeridianSplitter`.
 
@@ -319,10 +329,13 @@ files per source (SCT2, ERAM).
 - **One `.editorconfig`** at `FeBuddy/.editorconfig` covers every project: tabs, file-scoped
   namespaces, `PascalCase` for constants and `static readonly` fields, `_camelCase` for other
   private fields, and snake_case test method names.
+- **Every file is UTF-8 without a byte-order mark.** A test
+  (`Repository/FileEncodingTests`) fails if any file in the repository starts with a byte-order mark.
 - **XML docs are required.** `GenerateDocumentationFile` is on, so any undocumented public
   member is a build warning (CS1591). Write a `<summary>`, plus `<param>` and `<returns>` where
   they apply. Comments explain *why*; don't point at planning docs or task numbers.
 - **Tests** in `FeBuddy.UnitTests` mirror Core's folders one-to-one (and the app's, under `Wpf/`).
+  `Repository/` checks the repository's own files.
 
 Before you commit, run these from `FeBuddy/`:
 

@@ -29,14 +29,13 @@
 
             <!-- ============ outputs ============ -->
             <cards:OutputsCard GeojsonDescription="Writes the NAVAID GeoJSON files selected below."
-                               AliasFileName="Navaids.txt"
-                               AliasDescription="Writes a .nav&lt;ID&gt; and a .nav&lt;name&gt; command per NAVAID that print its name, type, frequency and ARTCCs. NAVAIDs sharing a command are listed together." />
+                               AliasDescription="Writes a .nav&lt;ID&gt; and a .nav&lt;name&gt; command per NAVAID that print its name, type, frequency and ARTCCs.&#xA;NAVAIDs sharing a command are listed together." />
 
             <!-- ============ which GeoJSON files ============ -->
             <cards:GeojsonFilesCard IsEnabled="{Binding GenerateGeojson}" ShowLines="False"
                                     SymbolsDescription="One symbol per NAVAID."
                                     TextDescription="A two-line label per NAVAID: its identifier, then its name and type."
-                                    Footnote="Files are written to Geojson\ in the cycle's folder." />
+                                    Footnote="Files are written to `Geojson\` in the cycle's folder." />
 
             <!-- ============ file layout ============ -->
             <ctl:Card Header="File Layout" IsEnabled="{Binding GenerateGeojson}">

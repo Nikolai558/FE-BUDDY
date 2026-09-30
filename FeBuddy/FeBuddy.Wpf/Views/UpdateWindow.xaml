@@ -19,7 +19,7 @@
 
     <Border Padding="24">
         <StackPanel>
-            <TextBlock Text="Update available"
+            <TextBlock Text="{Binding Heading}"
                        FontFamily="{StaticResource Font.Display}" FontSize="18" FontWeight="Bold"
                        Foreground="{StaticResource Brush.Text.Primary}" />
             <!-- Only when more than one release behind. -->
@@ -40,7 +40,7 @@
                 <TextBlock Grid.Row="0" Grid.Column="0" Text="Installed" Style="{StaticResource Text.Caption}" Margin="0,0,16,4" />
                 <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding CurrentVersion, StringFormat=v{0}}" Style="{StaticResource Text.Body}" Margin="0,0,0,4" />
 
-                <TextBlock Grid.Row="1" Grid.Column="0" Text="Latest" Style="{StaticResource Text.Caption}" Margin="0,0,16,4" />
+                <TextBlock Grid.Row="1" Grid.Column="0" Text="{Binding LatestLabel}" Style="{StaticResource Text.Caption}" Margin="0,0,16,4" />
                 <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding LatestVersion, StringFormat=v{0}}" Style="{StaticResource Text.Body.Strong}" Margin="0,0,0,4" />
 
                 <TextBlock Grid.Row="2" Grid.Column="0" Text="Channel" Style="{StaticResource Text.Caption}" Margin="0,0,16,0" />

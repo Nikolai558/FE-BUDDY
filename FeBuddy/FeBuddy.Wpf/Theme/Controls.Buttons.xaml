@@ -6,6 +6,7 @@
 
         Button.Primary   amber fill, dark text        - the one main action
         Button.Ghost     hairline outline             - secondary actions
+        Button.Ghost.Danger  Ghost, red fill on hover - an action that removes things
         Button.Subtle    text only                    - tertiary / inline
         Card.Toggle      ToggleButton, full-width card row (systems widget)
         Button.Icon      square icon-only button, 32x32  - map toolbar, list rows
@@ -90,6 +91,44 @@
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="Root" Property="Background" Value="{DynamicResource Brush.Overlay}" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="Root" Property="Opacity" Value="0.8" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="Root" Property="Background" Value="{DynamicResource Brush.Bg.Sunken}" />
+                            <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Tertiary}" />
+                            <Setter Property="Cursor" Value="Arrow" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- ========================= GHOST DANGER ========================= -->
+    <!-- Button.Ghost at rest; on hover it fills red like Caption.Close, for an action that
+         removes things (Uninstall FE-Buddy…). -->
+    <Style x:Key="Button.Ghost.Danger" TargetType="Button" BasedOn="{StaticResource Button.Ghost}">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Root"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{DynamicResource Brush.Stroke.Strong}"
+                            BorderThickness="1"
+                            CornerRadius="{DynamicResource Radius.Control}"
+                            Padding="{TemplateBinding Padding}"
+                            SnapsToDevicePixels="True">
+                        <ContentPresenter HorizontalAlignment="Center"
+                                          VerticalAlignment="Center"
+                                          />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Root" Property="Background" Value="{DynamicResource Brush.Danger}" />
+                            <Setter TargetName="Root" Property="BorderBrush" Value="{DynamicResource Brush.Danger}" />
+                            <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Primary}" />
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
                             <Setter TargetName="Root" Property="Opacity" Value="0.8" />

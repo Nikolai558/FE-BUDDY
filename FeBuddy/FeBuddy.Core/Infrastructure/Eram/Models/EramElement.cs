@@ -19,4 +19,15 @@ public sealed record EramElement(
 	Coordinate Start,
 	Coordinate? End,
 	IReadOnlyList<string>? TextLines,
-	EramProperties Overrides);
+	EramProperties Overrides)
+{
+	/// <summary>
+	/// The element's ERAM id: a line's <c>LineObjectId</c>, a symbol's <c>SymbolId</c> (its own
+	/// labels carry it too), or an SAA piece's <c>SaaID</c>; <see langword="null"/> for a
+	/// <c>GeoMapText</c> of its own, or when the file gives none.
+	/// </summary>
+	public string? ObjectId { get; init; }
+
+	/// <summary>Whether the element is a piece of an SAA, so <see cref="ObjectId"/> is its <c>SaaID</c>.</summary>
+	public bool IsSaa { get; init; }
+}

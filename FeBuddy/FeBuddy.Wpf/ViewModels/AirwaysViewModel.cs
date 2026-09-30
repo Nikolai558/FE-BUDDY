@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Globalization;
 using System.Text.RegularExpressions;
 
 using FeBuddy.Wpf.ViewModels.Models;
@@ -49,6 +50,8 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 
 	private AirwayGeojsonOutputBy _outputBy = AirwayGeojsonOutputBy.HighLow;
 	private bool _bufferAirwayWaypoints;
+	private string _fixBufferNm = DefaultDistance(AirwayWaypointBuffer.DefaultFixRadiusNm);
+	private string _navaidBufferNm = DefaultDistance(AirwayWaypointBuffer.DefaultNavaidRadiusNm);
 	private bool _aliasRoiAirwaysOnly;
 	private bool _splitAtAntimeridian = true;
 
@@ -123,19 +126,26 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 			"Airway data will not be written to GeoJSON.\nThe alias file, if enabled, is unaffected.",
 		AirwayGeojsonOutputBy.HighLow =>
 			"Two file sets:\n" +
-			"  • Airways_High\n" +
-			"  • Airways_Low\n" +
-			"Each airway type goes in High, Low or Both, as you choose on the High and Low Files card.\n" +
+			"    • Airways_High\n" +
+			"    • Airways_Low\n" +
+			"Each airway type goes in either High or Low, as you choose.\n" +
 			"Each set is _Lines + _Symbols + _Text.",
 		AirwayGeojsonOutputBy.Designation =>
-			"One file set per designation (derived from the AWY_ID, e.g. J / V / Q / T / AT):\n" +
-			"  Airways_J, Airways_V, Airways_Q, …\n" +
+			"One file set per designation, derived from the AWY_ID prefix.\n" +
+			"Ex: J / V / Q / T / AT:\n" +
+			"    Airways_J, Airways_V, Airways_Q, …\n" +
 			"Each set is _Lines + _Symbols + _Text.",
 		_ => string.Empty,
 	};
 
 	/// <summary>Whether each line stops short of the waypoints at its ends, so it does not run through their symbols.</summary>
 	public bool BufferAirwayWaypoints { get => _bufferAirwayWaypoints; set { if (SetProperty(ref _bufferAirwayWaypoints, value)) MarkDirty(); } }
+
+	/// <summary>How far, in NM, a buffered line stops short of a 5-character fix, as typed. Saved.</summary>
+	public string FixBufferNm { get => _fixBufferNm; set { if (SetProperty(ref _fixBufferNm, value)) MarkDirty(); } }
+
+	/// <summary>How far, in NM, a buffered line stops short of a NAVAID (any other waypoint), as typed. Saved.</summary>
+	public string NavaidBufferNm { get => _navaidBufferNm; set { if (SetProperty(ref _navaidBufferNm, value)) MarkDirty(); } }
 
 	/// <summary>Which airways the alias file covers: <see langword="true"/> for ROI airways only, <see langword="false"/> for every FAA airway.</summary>
 	public bool AliasRoiAirwaysOnly { get => _aliasRoiAirwaysOnly; set { if (SetProperty(ref _aliasRoiAirwaysOnly, value)) MarkDirty(); } }
@@ -275,6 +285,8 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 		{
 			["OutputBy"] = OutputBy.ToString(),
 			["BufferAirwayWaypoints"] = YesNo(BufferAirwayWaypoints),
+			[AirwaySettingsParser.FixBufferKey] = FixBufferNm.Trim(),
+			[AirwaySettingsParser.NavaidBufferKey] = NavaidBufferNm.Trim(),
 			["AliasRoiScope"] = AliasRoiAirwaysOnly ? "RoiAirways" : "All",
 			["SplitAtAntimeridian"] = YesNo(SplitAtAntimeridian),
 			["ExcludedDesignations"] = ExcludedDesignationsValue(),
@@ -296,10 +308,21 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 	{
 		_outputBy = Enum.TryParse(Get("OutputBy"), true, out AirwayGeojsonOutputBy by) ? by : AirwayGeojsonOutputBy.HighLow;
 		_bufferAirwayWaypoints = GetBool("BufferAirwayWaypoints", false);
+		_fixBufferNm = Get(AirwaySettingsParser.FixBufferKey) ?? DefaultDistance(AirwayWaypointBuffer.DefaultFixRadiusNm);
+		_navaidBufferNm = Get(AirwaySettingsParser.NavaidBufferKey) ?? DefaultDistance(AirwayWaypointBuffer.DefaultNavaidRadiusNm);
 		_aliasRoiAirwaysOnly = string.Equals(Get("AliasRoiScope"), "RoiAirways", StringComparison.OrdinalIgnoreCase);
 		_splitAtAntimeridian = GetBool("SplitAtAntimeridian", true);
 		LoadSharedSettings();
 		LoadStrata();
+
+		// No GeoJSON and no alias file would leave the tab in a state its own guard forbids; a
+		// hand-edited config is the only way to get here, so fall back to the defaults, as the
+		// other tabs do.
+		if (_outputBy == AirwayGeojsonOutputBy.None && !GenerateAliasFile)
+		{
+			_outputBy = AirwayGeojsonOutputBy.HighLow;
+			GenerateAliasFile = true;
+		}
 
 		// Re-apply the excluded set and the strata to any already-built designation toggles.
 		HashSet<string> excluded = ParseExcludedFromConfig();
@@ -312,7 +335,8 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 		foreach (string name in new[]
 		{
 			nameof(OutputBy), nameof(OutputModeHint), nameof(IsGeojsonOutputOn), nameof(ShowsStrata),
-			nameof(BufferAirwayWaypoints), nameof(AliasRoiAirwaysOnly), nameof(SplitAtAntimeridian),
+			nameof(BufferAirwayWaypoints), nameof(FixBufferNm), nameof(NavaidBufferNm),
+			nameof(AliasRoiAirwaysOnly), nameof(SplitAtAntimeridian),
 		})
 		{
 			OnPropertyChanged(name);
@@ -326,6 +350,8 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 	{
 		Set("OutputBy", OutputBy.ToString());
 		Set("BufferAirwayWaypoints", YesNo(BufferAirwayWaypoints));
+		Set(AirwaySettingsParser.FixBufferKey, FixBufferNm.Trim());
+		Set(AirwaySettingsParser.NavaidBufferKey, NavaidBufferNm.Trim());
 		Set("AliasRoiScope", AliasRoiAirwaysOnly ? "RoiAirways" : "All");
 		Set("SplitAtAntimeridian", YesNo(SplitAtAntimeridian));
 		Set("ExcludedDesignations", ExcludedDesignationsValue());
@@ -355,6 +381,13 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 		foreach (DesignationToggle toggle in Designations)
 		{
 			toggle.StratumError = needsStrata && toggle.Included && toggle.Stratum is null ? "Choose High, Low or Both." : null;
+		}
+
+		// The distances only matter - and only show - while buffered GeoJSON is written.
+		if (IsGeojsonOutputOn && BufferAirwayWaypoints)
+		{
+			ValidateBufferDistance(validation, nameof(FixBufferNm), FixBufferNm, "fixes");
+			ValidateBufferDistance(validation, nameof(NavaidBufferNm), NavaidBufferNm, "NAVAIDs");
 		}
 
 		string[] unchosen = [.. Designations.Where(d => d.StratumError is not null).Select(d => d.Designation)];
@@ -412,7 +445,9 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 			new ServicePreviewRow("FE-Buddy properties", DescribeFebProperties()),
 			new ServicePreviewRow("Includes", includes),
 			new ServicePreviewRow("Excluded designations", string.IsNullOrEmpty(excluded) ? "none" : excluded),
-			new ServicePreviewRow("Buffer waypoints", BufferAirwayWaypoints ? "Yes" : "No"),
+			new ServicePreviewRow("Buffer waypoints", BufferAirwayWaypoints
+				? $"{FixBufferNm.Trim()} NM around fixes, {NavaidBufferNm.Trim()} NM around NAVAIDs"
+				: "No"),
 			new ServicePreviewRow("Split at antimeridian", SplitAtAntimeridian ? "Yes" : "No"),
 			new ServicePreviewRow("Region of interest", DescribeRoi()),
 			new ServicePreviewRow("Upload to vNAS", DescribeVnasFiles()),
@@ -430,6 +465,20 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 	// ================= helpers =================
 
 	private HashSet<string> ParseExcludedFromConfig() => ParseList(Get("ExcludedDesignations"));
+
+	/// <summary>A default buffer distance as the box shows it: <c>2.5</c>, <c>5</c>.</summary>
+	private static string DefaultDistance(double nm) => nm.ToString(CultureInfo.InvariantCulture);
+
+	/// <summary>Marks a buffer distance that is not a number from 0 to <see cref="AirwayWaypointBuffer.MaxRadiusNm"/>.</summary>
+	private static void ValidateBufferDistance(ServiceValidation validation, string field, string value, string around)
+	{
+		if (!double.TryParse(value.Trim(), NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out double nm)
+			|| !(nm >= 0 && nm <= AirwayWaypointBuffer.MaxRadiusNm))
+		{
+			validation.AddField(field,
+				$"Buffer Airway Waypoints: enter a distance around {around} from 0 to {AirwayWaypointBuffer.MaxRadiusNm:0} NM.");
+		}
+	}
 
 	/// <summary>
 	/// The excluded designations as saved and sent: from the toggles, or - before the cycle's list

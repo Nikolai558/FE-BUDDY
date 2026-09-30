@@ -150,6 +150,8 @@ naming the key.
 | `EmitLines`, `EmitSymbols`, `EmitText` | `Y` / `N` | `Y` |
 | `GenerateAliasFile` | `Y` / `N` | `Y` |
 | `BufferAirwayWaypoints` | `Y` / `N` | `N` |
+| `FixBufferNm` | NM a buffered line stops short of a 5-character fix, `0`-`10` | `2.5` |
+| `NavaidBufferNm` | NM a buffered line stops short of any other waypoint (a NAVAID), `0`-`10` | `5` |
 | `SplitAtAntimeridian` | `Y` / `N` | `Y` |
 | `ExcludedDesignations` | list, e.g. `RN,SL` (upper-cased) | none |
 | `HighDesignations` | list of designations written to the `Airways_High` files only, e.g. `J,Q` | `J,Q` (see below) |
@@ -157,6 +159,10 @@ naming the key.
 | `BothDesignations` | list of designations written to both the High and the Low files | none |
 | `AliasRoiScope` | `All`, `RoiAirways` | `All` |
 
+- **Buffer distances:** `FixBufferNm` and `NavaidBufferNm` are read only when
+  `BufferAirwayWaypoints` is `Y` and `OutputBy` is not `None`; otherwise they are ignored, whatever
+  they hold. A value outside `0`-`10` throws. A leg shorter than the distances at its two ends
+  added together is dropped, with an `Info` message.
 - **High and Low files:** with `HighLow`, each airway goes in the file its designation is listed
   for - not by its published altitudes. A designation may be in only one of the three lists (it
   throws otherwise). One in none is left out of both files, with an advisory warning naming it.
@@ -496,21 +502,32 @@ Extensions `.sct2` and `.sct`. No keys of its own.
 
 ## ERAM to GeoJSON (File Conversions)
 
-Extension `.xml`: the `Geomaps.xml` (`Geomaps_Records`) of an ERAM adaptation export. A
-`SourceFolder` may hold the whole export; only its Geomaps files are converted and the other XML
-files are named in one message. A picked file that is not a Geomaps file fails that file only.
+Extension `.xml`: the `Geomaps.xml` (`Geomaps_Records`) of an ERAM adaptation export. **One per
+run**: a `SourceFolder` may hold the whole export, but only one Geomaps file - its other XML files
+are named in one message - and a `SourceFiles` list only one file; more throws. A picked file that
+is not a Geomaps file fails. Output goes to `ERAM_TO_GEOJSON` (inside `FE-Buddy_Output` with
+`AddFeBuddyOutputFolder`), which is emptied once the file has been read, before anything is written.
+A `ConsoleCommandControl_Records` file beside the Geomaps file (either source) is read too, never
+converted, and its map menus listed in `ERAM_TO_GEOJSON\ConsoleCommandControl.txt`; no key turns
+this on or off. The result's `OtherFilesWritten` holds that file.
 
 | Key | Values | Default |
 |---|---|---|
-| `OutputLayout` | `ByObject` (a file per object, named `<MapObjectType>_<MapGroupId>`), `ByFilter` (files by filter index and similar attributes) | `ByObject` |
-| `DefaultsSource` | `Xml` (carry over the XML's defaults and element overrides), `XmlThenCard` (the tab's defaults where an object has none), `Card` (the tab's defaults only; the XML's styling is ignored) | `Xml` |
+| `OutputLayout` | `ByFilters` (`<map>\Filter_01\Filter_01_Lines.geojson`, `Multi-Filter_02_03_08\…`), `ByAttributes` (`<map>\BCG 01_Filters 01_Type AAV_Group 64_Object ZOB3NM_Style Solid_Thick 1_Lines.geojson`), `Raw` (`<map>.geojson`, every Feature carrying its own look). `ByFilter` and `ByObject`, from before, are read as `ByFilters` and `ByAttributes` with an Info note | `ByAttributes` |
+| `DefaultsSource` | `Xml` (carry over the XML's defaults and element values), `XmlThenCard` (the tab's defaults fill whatever the XML's leave out), `Card` (the tab's defaults only; the XML's styling is ignored) | `Xml` |
+| `IncludeFebCustomProperties` | `Y` / `N` | `N` |
+| `FebProperties` | comma-separated: `mapObjectType`, `mapGroupId`, `lineObjectId`, `symbolId`, `saaId` | none (required when `IncludeFebCustomProperties` is `Y`) |
 
+- `<map>` is `<GeomapId>_<LabelLine1>-<LabelLine2>` with the characters Windows forbids taken out,
+  `LL1` / `LL2` for a missing label line, and ` (2)` added when two maps would share a name.
 - **CRC class:** `GeoMap`, with `Line`, `Symbol` and `Text`: `Crc.GeoMap.Line.*`,
   `Crc.GeoMap.Symbol.*`, `Crc.GeoMap.Text.*`.
 - The tab's CRC defaults are read only when `DefaultsSource` is `XmlThenCard` or `Card`, and then
   only for kinds whose `IncludeCrc…Defaults` is `Y`. With `Xml` they are ignored.
+- An element with no filters from its object or itself gets filter `0` (shown at every setting).
 - ERAM text has no opaque background, so Text defaults taken from the XML always have `opaque`
-  off. ERAM's `Color` and `DisplaySetting` have no CRC equivalent and are not carried over.
+  off. ERAM's `Color` has no CRC equivalent and is not carried over; text whose `DisplaySetting` is
+  false is left out.
 
 ## An example (Airways, as the harness writes it)
 

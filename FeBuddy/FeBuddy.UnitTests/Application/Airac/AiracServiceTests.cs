@@ -901,7 +901,7 @@ public sealed class AiracServiceTests : IDisposable
 	}
 
 	[Fact]
-	public async Task the_vnas_alias_block_puts_the_custom_files_first_and_reports_its_progress()
+	public async Task the_vnas_alias_block_puts_the_custom_files_last_and_reports_its_progress()
 	{
 		AiracServiceSettings settings = new()
 		{
@@ -926,15 +926,17 @@ public sealed class AiracServiceTests : IDisposable
 
 		Assert.Equal(2, result.VnasAlias!.CustomFileCount);
 		Assert.Equal(1, result.VnasAlias.CustomFilesMerged);
-		Assert.StartsWith(".FeUseOnly first" + Environment.NewLine + ".dtwdv .ECHO DTW" + Environment.NewLine, File.ReadAllText(VnasAliasFile), StringComparison.Ordinal);
+		string written = File.ReadAllText(VnasAliasFile);
+		Assert.StartsWith(".FeUseOnly first" + Environment.NewLine + "; ===== FE-Buddy aliases (AIRAC ", written, StringComparison.Ordinal);
+		Assert.EndsWith(Environment.NewLine + Environment.NewLine + ".dtwdv .ECHO DTW" + Environment.NewLine, written, StringComparison.Ordinal);
 
 		Assert.Contains(result.Messages, m => m.IsAdvisory && m.Text.StartsWith("Left custom alias file 2 (Extra.txt) out", StringComparison.Ordinal));
 		Assert.DoesNotContain(result.Messages, m => m.Text.StartsWith("vNAS Alias Upload is not selected", StringComparison.Ordinal));
 
 		AiracServiceProgress done = reports.Last(p => p.SubService == "vNAS Alias Upload");
 		Assert.Equal(100, done.PercentComplete);
-		Assert.StartsWith("vNAS_Alias.txt: 1 custom command(s), then ", done.Message, StringComparison.Ordinal);
-		Assert.EndsWith(" from 1 FE-Buddy alias file(s).", done.Message, StringComparison.Ordinal);
+		Assert.StartsWith("vNAS_Alias.txt: ", done.Message, StringComparison.Ordinal);
+		Assert.EndsWith(" command(s) from 1 FE-Buddy alias file(s), then 1 custom command(s).", done.Message, StringComparison.Ordinal);
 	}
 
 	[Fact]

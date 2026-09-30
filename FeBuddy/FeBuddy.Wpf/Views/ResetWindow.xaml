@@ -1,0 +1,108 @@
+<!--
+    ResetWindow  -  Settings ▸ Reset FE-Buddy: what a reset always deletes, then the user's two
+    choices - keep or delete the settings (with Save a copy first while deleting), and, only when
+    any are saved, keep or delete the credentials. Keeping is selected for both. The body scrolls
+    on a short screen, so the buttons always stay on it. Backs onto ResetViewModel.
+-->
+<ctl:ChromeWindow x:Class="FeBuddy.Wpf.Views.ResetWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:FeBuddy.Wpf.ViewModels"
+        xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
+        mc:Ignorable="d"
+        d:DataContext="{d:DesignInstance vm:ResetViewModel}"
+        Title="Reset FE-Buddy"
+        Width="560" SizeToContent="Height"
+        MaxHeight="{Binding Height, Source={x:Static SystemParameters.WorkArea}}"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False"
+        FontFamily="{StaticResource Font.Body}"
+        Background="{StaticResource Brush.Bg.Base}">
+
+    <Border Padding="24">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <TextBlock Grid.Row="0" Text="Reset FE-Buddy"
+                       FontFamily="{StaticResource Font.Display}" FontSize="18" FontWeight="Bold"
+                       Foreground="{StaticResource Brush.Text.Primary}" />
+
+            <ScrollViewer x:Name="Body" Grid.Row="1" Margin="0,10,0,0"
+                          VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource Text.Body}" TextWrapping="Wrap"
+                               Text="FE-Buddy closes, deletes what it keeps on this PC, and starts again as if it had just been installed. It downloads the AIRAC data again as it starts. Files in your output folder are not touched." />
+
+                    <!-- ============ always ============ -->
+                    <ctl:SectionHeader Style="{StaticResource SectionHeader.Group}" Label="Always Deleted" Margin="0,16,0,6" />
+                    <ItemsControl ItemsSource="{Binding Source={x:Static vm:ResetViewModel.AlwaysDeleted}}" Focusable="False">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Style="{StaticResource Text.Body}" TextWrapping="Wrap" Margin="0,0,0,2"
+                                           Text="{Binding StringFormat='•  {0}'}" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <!-- ============ settings ============ -->
+                    <StackPanel Visibility="{Binding HasSettings, Converter={StaticResource BoolToVis}}">
+                        <ctl:SectionHeader Style="{StaticResource SectionHeader.Group}" Label="Your Settings" Margin="0,16,0,6" />
+                        <RadioButton GroupName="ResetSettings" Content="Keep my settings" Margin="0,2"
+                                     IsChecked="{Binding KeepSettings}" />
+                        <RadioButton GroupName="ResetSettings" Content="Delete my settings" Margin="0,2"
+                                     IsChecked="{Binding DeleteSettings}" />
+                        <StackPanel Margin="24,6,0,0" Visibility="{Binding DeletesSettings, Converter={StaticResource BoolToVis}}">
+                            <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap"
+                                       Foreground="{StaticResource Brush.Warn}"
+                                       Text="{Binding Source={x:Static vm:ResetViewModel.SettingsLoss}, StringFormat='You lose: {0}'}" />
+                            <ctl:Option Margin="0,10,0,0" Description="{Binding Source={x:Static vm:ResetViewModel.CopyNote}}">
+                                <CheckBox Content="Save a copy of my settings first" IsChecked="{Binding SaveCopyFirst}" />
+                            </ctl:Option>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!-- ============ credentials: only when any are saved ============ -->
+                    <StackPanel Visibility="{Binding HasCredentials, Converter={StaticResource BoolToVis}}">
+                        <ctl:SectionHeader Style="{StaticResource SectionHeader.Group}" Label="{Binding CredentialsHeader}" Margin="0,16,0,6" />
+                        <ctl:Option Description="They stay in Windows Credential Manager and show under Settings ▸ Credentials, ready to choose again.">
+                            <RadioButton GroupName="ResetCredentials" Content="Keep my saved credentials" Margin="0,2"
+                                         IsChecked="{Binding KeepCredentials}" />
+                        </ctl:Option>
+                        <ctl:Option Margin="0,6,0,0" Description="They are removed from Windows Credential Manager. FE-Buddy never saves a copy of a token or password.">
+                            <RadioButton GroupName="ResetCredentials" Content="Delete my saved credentials" Margin="0,2"
+                                         IsChecked="{Binding DeleteCredentials}" />
+                        </ctl:Option>
+                    </StackPanel>
+
+                    <!-- ============ what closing now would lose ============ -->
+                    <StackPanel Visibility="{Binding HasUnfinishedWork, Converter={StaticResource BoolToVis}}">
+                        <ctl:SectionHeader Style="{StaticResource SectionHeader.Group}" Label="Also Lost When FE-Buddy Closes" Margin="0,16,0,6" />
+                        <ItemsControl ItemsSource="{Binding UnfinishedWork}" Focusable="False">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Style="{StaticResource Text.Body}" TextWrapping="Wrap" Margin="0,0,0,2"
+                                               Foreground="{StaticResource Brush.Warn}"
+                                               Text="{Binding StringFormat='•  {0}'}" />
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </StackPanel>
+            </ScrollViewer>
+
+            <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,22,0,0">
+                <Button Content="Cancel" Style="{StaticResource Button.Ghost}"
+                        Command="{Binding CancelCommand}" MinWidth="96" Margin="0,0,10,0" />
+                <Button Content="Reset and restart" Style="{StaticResource Button.Primary}"
+                        Command="{Binding ConfirmCommand}" MinWidth="150" />
+            </StackPanel>
+        </Grid>
+    </Border>
+</ctl:ChromeWindow>

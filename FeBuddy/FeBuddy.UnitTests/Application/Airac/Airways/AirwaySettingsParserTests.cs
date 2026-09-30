@@ -141,6 +141,70 @@ public sealed class AirwaySettingsParserTests
 	}
 
 	[Fact]
+	public void buffer_distances_default_to_2_5_and_5_nm()
+	{
+		Dictionary<string, string> settings = MinimalValidSettings();
+		settings["BufferAirwayWaypoints"] = "Y";
+		settings["NavaidBufferNm"] = " ";
+
+		AirwaySettingsParseResult result = AirwaySettingsParser.Parse(settings);
+
+		Assert.Equal(2.5, result.Settings.FixBufferNm);
+		Assert.Equal(5.0, result.Settings.NavaidBufferNm);
+	}
+
+	[Theory]
+	[InlineData("0", "10", 0.0, 10.0)]
+	[InlineData(" 1.25 ", "7", 1.25, 7.0)]
+	public void buffer_distances_are_read_when_buffering(string fix, string navaid, double expectedFix, double expectedNavaid)
+	{
+		Dictionary<string, string> settings = MinimalValidSettings();
+		settings["BufferAirwayWaypoints"] = "Y";
+		settings["FixBufferNm"] = fix;
+		settings["NavaidBufferNm"] = navaid;
+
+		AirwaySettingsParseResult result = AirwaySettingsParser.Parse(settings);
+
+		Assert.Equal(expectedFix, result.Settings.FixBufferNm);
+		Assert.Equal(expectedNavaid, result.Settings.NavaidBufferNm);
+		Assert.Empty(result.Messages);
+	}
+
+	[Theory]
+	[InlineData("FixBufferNm", "10.01")]
+	[InlineData("FixBufferNm", "-1")]
+	[InlineData("NavaidBufferNm", "five")]
+	[InlineData("NavaidBufferNm", "NaN")]
+	public void a_buffer_distance_outside_zero_to_ten_throws_when_buffering(string key, string value)
+	{
+		Dictionary<string, string> settings = MinimalValidSettings();
+		settings["BufferAirwayWaypoints"] = "Y";
+		settings[key] = value;
+
+		ArgumentException error = Assert.Throws<ArgumentException>(() => AirwaySettingsParser.Parse(settings));
+
+		Assert.Contains($"'{key}'", error.Message);
+	}
+
+	[Theory]
+	[InlineData("N", "HighLow")]
+	[InlineData("Y", "None")]
+	public void buffer_distances_are_ignored_when_nothing_buffered_is_written(string buffer, string outputBy)
+	{
+		Dictionary<string, string> settings = MinimalValidSettings();
+		settings["OutputBy"] = outputBy;
+		settings["BufferAirwayWaypoints"] = buffer;
+		settings["FixBufferNm"] = "99";
+		settings["NavaidBufferNm"] = "not a number";
+
+		AirwaySettingsParseResult result = AirwaySettingsParser.Parse(settings);
+
+		Assert.Equal(2.5, result.Settings.FixBufferNm);
+		Assert.Equal(5.0, result.Settings.NavaidBufferNm);
+		Assert.Empty(result.Messages);
+	}
+
+	[Fact]
 	public void roi_filtering_requires_all_four_coordinates()
 	{
 		Dictionary<string, string> settings = MinimalValidSettings();

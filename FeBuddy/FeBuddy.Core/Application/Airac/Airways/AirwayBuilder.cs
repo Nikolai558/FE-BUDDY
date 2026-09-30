@@ -148,7 +148,7 @@ public static class AirwayBuilder
 			if (crossesRoi && settings.BufferAirwayWaypoints)
 			{
 				AirwayBufferResult bufferResult =
-					AirwayWaypointBuffer.Buffer(lineStrings, points, awyId);
+					AirwayWaypointBuffer.Buffer(lineStrings, points, awyId, settings.FixBufferNm, settings.NavaidBufferNm);
 
 				messages.AddRange(bufferResult.Messages);
 

@@ -29,6 +29,12 @@ public static class AirwaySettingsParser
 	/// <summary>The key listing the designations written to both the High and the Low files.</summary>
 	public const string BothDesignationsKey = "BothDesignations";
 
+	/// <summary>The key for how far, in NM, a buffered line stops short of a 5-character fix.</summary>
+	public const string FixBufferKey = "FixBufferNm";
+
+	/// <summary>The key for how far, in NM, a buffered line stops short of any other waypoint.</summary>
+	public const string NavaidBufferKey = "NavaidBufferNm";
+
 	/// <summary>Each High/Low stratum and the key listing its designations.</summary>
 	private static readonly (AirwayStratum Stratum, string Key)[] StratumKeys =
 	[
@@ -40,7 +46,7 @@ public static class AirwaySettingsParser
 	/// <summary>The keys only Airways reads, on top of <see cref="SubServiceSettingsReader.CommonKeys"/>.</summary>
 	private static readonly IReadOnlySet<string> OwnKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
 	{
-		"OutputBy", "BufferAirwayWaypoints", "SplitAtAntimeridian", "ExcludedDesignations",
+		"OutputBy", "BufferAirwayWaypoints", FixBufferKey, NavaidBufferKey, "SplitAtAntimeridian", "ExcludedDesignations",
 		"EmitLines", "EmitSymbols", "EmitText", "AliasRoiScope", "GenerateAliasFile",
 		HighDesignationsKey, LowDesignationsKey, BothDesignationsKey,
 	};
@@ -106,11 +112,21 @@ public static class AirwaySettingsParser
 				textDefaults[altitudeClass] = CrcDefaultsReader.ReadText(airwaySettings, $"Crc.{altitudeClass}.Text");
 		}
 
+		// The distances are read - and so can fail - only when buffered GeoJSON is actually written.
+		bool buffer = SettingsValueReader.YesNo(airwaySettings, "BufferAirwayWaypoints", defaultValue: false);
+		bool readsBufferDistances = writingGeojson && buffer;
+
 		AirwaySettings settings = new()
 		{
 			OutputDirectory = SettingsValueReader.RequiredString(airwaySettings, "OutputDirectory"),
 			OutputBy = outputBy,
-			BufferAirwayWaypoints = SettingsValueReader.YesNo(airwaySettings, "BufferAirwayWaypoints", defaultValue: false),
+			BufferAirwayWaypoints = buffer,
+			FixBufferNm = readsBufferDistances
+				? ReadBufferDistance(airwaySettings, FixBufferKey, AirwayWaypointBuffer.DefaultFixRadiusNm)
+				: AirwayWaypointBuffer.DefaultFixRadiusNm,
+			NavaidBufferNm = readsBufferDistances
+				? ReadBufferDistance(airwaySettings, NavaidBufferKey, AirwayWaypointBuffer.DefaultNavaidRadiusNm)
+				: AirwayWaypointBuffer.DefaultNavaidRadiusNm,
 			IncludeFebCustomProperties = includeFebProperties,
 			FebProperties = febProperties,
 			GenerateAliasFile = SettingsValueReader.YesNo(airwaySettings, "GenerateAliasFile", defaultValue: true),
@@ -137,6 +153,11 @@ public static class AirwaySettingsParser
 
 		return new AirwaySettingsParseResult(settings, messages);
 	}
+
+	/// <summary>Reads one buffer distance: 0 to <see cref="AirwayWaypointBuffer.MaxRadiusNm"/> NM, the default when absent or blank.</summary>
+	/// <exception cref="ArgumentException">Thrown when the value is not a number in that range.</exception>
+	private static double ReadBufferDistance(IReadOnlyDictionary<string, string> airwaySettings, string key, double defaultValue) =>
+		SettingsValueReader.DecimalInRange(airwaySettings, key, defaultValue, minimum: 0, maximum: AirwayWaypointBuffer.MaxRadiusNm);
 
 	/// <summary>
 	/// Whether a file that gets CRC-ERAM defaults needs <paramref name="altitudeClass"/>'s defaults

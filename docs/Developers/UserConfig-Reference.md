@@ -153,6 +153,7 @@ tab reads them any more (the [file conversion nodes](#file-conversion-nodes) sti
 |---|---|---|
 | `OutputBy` | `HighLow`, `Designation`, `None` | `HighLow` |
 | `BufferAirwayWaypoints` | `Y` / `N` | `N` |
+| `FixBufferNm`, `NavaidBufferNm` | NM a buffered line stops short of a 5-character fix / any other waypoint, `0`-`10`, as typed | `2.5`, `5` |
 | `AliasRoiScope` | `All`, `RoiAirways` | `All` |
 | `SplitAtAntimeridian` | `Y` / `N` | `Y` |
 | `ExcludedDesignations` | comma-separated designations, e.g. `RN,SL` | none |

@@ -330,9 +330,10 @@ The FAA's data has quirks; these rules handle them. Each lives in one class.
   blank `FROM_PT_TYPE` and collapsed out, so the airway runs straight between the real waypoints.
 - **Unresolvable waypoints exclude the whole airway.** An airway with a real waypoint that can't be
   located is left out entirely, with a warning naming it - a half-drawn airway is worse than none.
-- **Waypoint buffer** (`AirwayWaypointBuffer`). Optionally stops each leg 2.5 NM short of a
-  five-letter fix and 5 NM short of anything else, so lines don't run through symbols. It only
-  buffers real waypoints, never the vertices an antimeridian split or ROI clip creates.
+- **Waypoint buffer** (`AirwayWaypointBuffer`). Optionally stops each leg short of a five-letter
+  fix and of anything else (by default 2.5 NM and 5 NM; the user can choose 0-10 NM each), so
+  lines don't run through symbols. It only buffers real waypoints, never the vertices an
+  antimeridian split or ROI clip creates.
 - **Antimeridian** (`AntimeridianSplitter`). A line crossing ±180° is split into two so it does not
   draw across the whole map; the split never produces a zero-length line.
 - **Efficient LineString handling** (`LineStringMerger`). Paths that share segments (every body of a

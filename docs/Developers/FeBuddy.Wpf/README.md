@@ -431,11 +431,12 @@ by `Map/GeoJsonReader`, which says why a file cannot be drawn.
 
 ## Fonts
 
-The design uses **Montserrat** (headings) and **Jost** (body); neither ships with
-Windows, so the app currently falls back to Segoe UI. To use the real faces, drop
-the `.ttf` files in `FeBuddy/FeBuddy.Wpf/Assets/Fonts/` and change the two
-`FontFamily` values at the top of `FeBuddy/FeBuddy.Wpf/Theme/Typography.xaml` to e.g.
-`pack://application:,,,/Assets/Fonts/#Montserrat`.
+Everything is set in **Segoe UI**, Windows' own UI font: headings and the FE-BUDDY name
+in the title bar (`Font.Display`, bold there) as well as body text (`Font.Body`). It ships
+with Windows, so nothing is bundled and every PC shows the same letters. The theme was
+first drawn for Montserrat and Jost, but FE-Buddy always fell back to Segoe UI, and that
+look was kept. Code and paths use `Font.Mono` (Cascadia Mono, then Consolas). All four
+families are at the top of `FeBuddy/FeBuddy.Wpf/Theme/Typography.xaml`.
 
 ## Run
 

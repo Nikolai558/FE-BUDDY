@@ -5,9 +5,7 @@ record. Add new items to the section they belong to.
 
 ## Features
 
-- **Bundle the design fonts.** The theme is designed for Montserrat and Jost, neither of which
-  ships with Windows, so the app falls back to Segoe UI. See the "Fonts" section of
-  [FeBuddy.Wpf/README.md](FeBuddy.Wpf/README.md).
+Nothing open right now.
 
 ## Performance
 

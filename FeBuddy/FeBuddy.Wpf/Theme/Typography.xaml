@@ -1,14 +1,14 @@
 <!--
     Typography.xaml  -  type ramp.
     ===========================================================================
-    Two families:
-      * Display / headings : Montserrat (heavy, condensed feel)
-      * Body / UI          : Jost (geometric humanist sans)
-    Neither ships with Windows. Drop the .ttf files into /Assets/Fonts and change
-    the two FontFamily values below to e.g.
-        pack://application:,,,/Assets/Fonts/#Montserrat
-    Until then the comma-separated fallbacks (Segoe UI / Arial) keep everything
-    legible, so the app runs on a clean machine with no extra install.
+    One family, Segoe UI, Windows' own UI font, for both roles:
+      * Font.Display : headings and the FE-BUDDY name in the title bar (bold)
+      * Font.Body    : everything else
+    It ships with every supported Windows, so there is nothing to bundle or install,
+    and every PC shows the same letters. (The theme was first drawn for Montserrat
+    and Jost; FE-Buddy always fell back to Segoe UI, and that look was kept.) The two
+    keys stay separate so headings can take a face of their own later. Arial is only
+    a last resort.
 
     WPF's TextBlock has no letter-spacing; tight display tracking is approximated
     purely with weight + size. If it ever matters, switch the
@@ -22,8 +22,8 @@
                     xmlns:sys="clr-namespace:System;assembly=mscorlib"
                     xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls">
 
-    <FontFamily x:Key="Font.Display">Montserrat, Segoe UI, Arial</FontFamily>
-    <FontFamily x:Key="Font.Body">Jost, Segoe UI, Arial</FontFamily>
+    <FontFamily x:Key="Font.Display">Segoe UI, Arial</FontFamily>
+    <FontFamily x:Key="Font.Body">Segoe UI, Arial</FontFamily>
     <FontFamily x:Key="Font.Icon">Segoe Fluent Icons, Segoe MDL2 Assets</FontFamily>
     <FontFamily x:Key="Font.Mono">Cascadia Mono, Consolas, Courier New</FontFamily>
 

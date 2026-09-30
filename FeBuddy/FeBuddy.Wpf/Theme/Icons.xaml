@@ -47,6 +47,7 @@
     <sys:String x:Key="Icon.FitPage">&#xE9A6;</sys:String>
     <sys:String x:Key="Icon.Crop">&#xE7A8;</sys:String>        <!-- the ROI box -->
     <sys:String x:Key="Icon.Pane">&#xE8A0;</sys:String>        <!-- OpenPane: the side panel -->
+    <sys:String x:Key="Icon.Layers">&#xE81E;</sys:String>      <!-- MapLayers: the base-map menu -->
 
     <!-- Status -->
     <sys:String x:Key="Icon.Info">&#xE946;</sys:String>

@@ -47,7 +47,9 @@ Theme/                design system - the only place colours, type and control
   Controls.Window.xaml   implicit ChromeWindow style: every dialog window's frame
   Theme.xaml             merges the above; App.xaml merges only this
 
-Assets/               us-states.json (reference geography, not sample data)
+Assets/BaseMap/       us-states.json, coastlines.json (reference geography,
+                      not sample data; built from Natural Earth by
+                      FeBuddy/Tools/BuildBaseMap.cs)
 Behaviors/            attached properties a view opts into: FieldState (validation
                       look), InlineCode (`code` look for text between backticks),
                       WheelScroll, ComboBoxDropDownFocus, MaximizeToWorkArea
@@ -59,7 +61,8 @@ Controls/             reusable controls: Card, SectionHeader, Option, CopyButton
 Converters/           one IValueConverter per file
 Map/                  GeoJsonReader (System.Text.Json), WebMercator, ProjectedLayer
                       (a layer projected once, then cached), AiracMapLayers (the live
-                      layers built from a parsed cycle), BaseMap (the US states)
+                      layers built from a parsed cycle), BaseMap (the background
+                      reference layers)
   Models/               GeoPoint, GeoBounds, MapGeometry(Kind), MapLayer,
                         MapPointShape, MapHome (the home view), MapViewState
 Mvvm/                 ObservableObject, RelayCommand
@@ -406,8 +409,9 @@ A map that closes leaves its view in `MapLayersState.LastView`, so the next one 
 
 **The control.** `Controls/MapCanvas` is a from-scratch vector map: Web-Mercator projection
 (`Map/WebMercator`), a pan (drag) / zoom (wheel) viewport, and `StreamGeometry` into
-`DrawingVisual`s. **No tiles, no network, no map SDK.** It takes a base `MapLayer` (the US state
-outlines) plus the shared layer list, which it follows weakly (`CollectionChangedEventManager`) so
+`DrawingVisual`s. **No tiles, no network, no map SDK.** It takes the base layers (US states,
+coastlines, from `BaseMapSettings`) drawn at one opacity as a group, plus the shared
+layer list, which it follows weakly (`CollectionChangedEventManager`) so
 a closed popup's map is not kept alive by it. The world repeats side by side: every layer is
 projected once into world units (`Map/ProjectedLayer`, lines unwrapped across the 180th meridian)
 and drawn once per copy of the world in view, and framing covers shapes on both sides of 180° the

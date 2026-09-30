@@ -79,6 +79,9 @@ choice is made - the Map has no Save button.
 | `OutputGeojson` | the run-output GeoJSON files picked with the output picker's gear, `\|`-separated, each relative to the cycle's `AIRAC_<cycle>` folder, e.g. `Geojson\Airways_High_Lines.geojson\|Upload_to_vNAS\Geojson\ARTCC_High_Lines.geojson` (`UserConfigKeys.MapOutputGeojson`) | none |
 | `AiracLayers` | comma-separated live layers switched on: `ArtccBoundaries`, `ToweredAirports`, `Navaids` | none |
 | `Home` | the home view, `<lat>,<lon>,<zoom>` in the invariant culture, e.g. `34.05,-118.25,6.5` (`MapHome`); a value that does not parse is ignored | none: the contiguous US |
+| `BaseMapLayers` | comma-separated base-map layers drawn: `UsStates`, `Coastlines` (`BaseMapLayer`, `BaseMapSettings`); empty draws no base map | both |
+| `BaseMapOpacity` | the base map's opacity in percent, `10` to `100`; a value outside is clamped | `50` |
+| `Gridlines` | `Y` / `N` - whether the latitude / longitude gridlines and their labels are drawn | `Y` |
 
 The picks are relative, so they carry over to whichever cycle the map shows - and to another PC,
 where a file shows as missing until that PC has run it.

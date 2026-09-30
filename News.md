@@ -13,9 +13,9 @@ News concerning all things FE-Buddy will be posted here with the most recent pos
 
 ---
 
-## 2026-09-29
+## 2026-09-30
 <!--
-PostId: 2026-09-29.2
+PostId: 2026-09-30.1
 -->
 
 **Version 3.0.0-alpha.3 Compiled!**

@@ -119,6 +119,7 @@
         <Grid Margin="28">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
@@ -141,8 +142,24 @@
                 </StackPanel>
             </ctl:Card>
 
+            <!-- ========================= CYCLE DAY ========================= -->
+            <!-- Only on the day a new AIRAC cycle takes effect; dismissable for the session. -->
+            <ctl:Card Grid.Row="1" Style="{StaticResource Card.Accent}" Margin="0,16,0,0"
+                      Visibility="{Binding ShowCycleDay, Converter={StaticResource BoolToVis}}">
+                <DockPanel>
+                    <Button DockPanel.Dock="Right" Style="{StaticResource Button.Subtle}"
+                            Content="{StaticResource Icon.Cancel}" FontFamily="{StaticResource Font.Icon}" FontSize="10"
+                            Padding="7,4" VerticalAlignment="Center"
+                            Command="{Binding DismissCycleDayCommand}" ToolTip="Dismiss" />
+                    <TextBlock Style="{StaticResource Text.Body}" VerticalAlignment="Center">
+                        <Run Text="Happy AIRAC Day!" FontWeight="SemiBold" Foreground="{StaticResource Brush.Accent.Text}" />
+                        <Run Text="{Binding CycleDayLine, Mode=OneWay}" />
+                    </TextBlock>
+                </DockPanel>
+            </ctl:Card>
+
             <!-- ============================ NEWS ============================ -->
-            <DockPanel Grid.Row="1" Margin="0,20,0,0">
+            <DockPanel Grid.Row="2" Margin="0,20,0,0">
                 <DockPanel DockPanel.Dock="Top" Margin="2,0,0,10">
                     <Button DockPanel.Dock="Right" Content="News on GitHub"
                             Command="{Binding OpenNewsCommand}">
@@ -177,7 +194,7 @@
             </DockPanel>
 
             <!-- ======================== ACTIVITY LOG ======================== -->
-            <ctl:Card Grid.Row="2" Margin="0,18,0,0">
+            <ctl:Card Grid.Row="3" Margin="0,18,0,0">
                 <DockPanel>
                     <DockPanel DockPanel.Dock="Top">
                         <Button DockPanel.Dock="Right" Style="{StaticResource Button.Ghost}"

@@ -32,29 +32,41 @@ public static class AliasGuideWriter
 			: AliasGuideHtmlWriter.Write(guide, options);
 	}
 
-	/// <summary>Writes the guide to a file, UTF-8 without a byte order mark, replacing any file already there.</summary>
-	/// <param name="path">The file to write.</param>
+	/// <summary>
+	/// The file the guide is saved as in a format: <c>FE-Buddy Alias Command Guide.html</c> or
+	/// <c>FE-Buddy Alias Command Guide.md</c>. The user picks only the folder, never the name.
+	/// </summary>
 	/// <param name="format">Web page or Markdown.</param>
+	/// <returns>The file's name, with its extension.</returns>
+	public static string FileName(AliasGuideFormat format) =>
+		AliasGuideContent.Title + (format == AliasGuideFormat.Markdown ? ".md" : ".html");
+
+	/// <summary>
+	/// Writes the guide into a folder once for each format, under <see cref="FileName"/>, UTF-8
+	/// without a byte order mark, replacing a guide already there.
+	/// </summary>
+	/// <param name="folder">The folder to write into.</param>
+	/// <param name="formats">The formats to write; a format listed twice is written once.</param>
 	/// <param name="options">The facility, version and date the guide names.</param>
-	/// <exception cref="IOException">The file could not be written.</exception>
-	/// <exception cref="UnauthorizedAccessException">The file or its folder is not writable.</exception>
-	public static void Export(string path, AliasGuideFormat format, AliasGuideOptions options)
+	/// <returns>The files written, in the order of <paramref name="formats"/>.</returns>
+	/// <exception cref="IOException">A file could not be written.</exception>
+	/// <exception cref="UnauthorizedAccessException">A file or the folder is not writable.</exception>
+	public static IReadOnlyList<string> Export(string folder, IEnumerable<AliasGuideFormat> formats, AliasGuideOptions options)
 	{
-		ArgumentException.ThrowIfNullOrWhiteSpace(path);
+		ArgumentException.ThrowIfNullOrWhiteSpace(folder);
+		ArgumentNullException.ThrowIfNull(formats);
+		ArgumentNullException.ThrowIfNull(options);
 
-		File.WriteAllText(path, Write(format, options), new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
-	}
+		List<string> written = [];
 
-	/// <summary>The format a file name asks for: Markdown for <c>.md</c> or <c>.markdown</c>, a web page for anything else.</summary>
-	/// <param name="path">The file's name or path.</param>
-	/// <returns>The format to write it in.</returns>
-	public static AliasGuideFormat FormatFor(string path)
-	{
-		string extension = Path.GetExtension(path ?? string.Empty);
+		foreach (AliasGuideFormat format in formats.Distinct())
+		{
+			string path = Path.Combine(folder, FileName(format));
+			File.WriteAllText(path, Write(format, options), new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+			written.Add(path);
+		}
 
-		return extension.Equals(".md", StringComparison.OrdinalIgnoreCase) || extension.Equals(".markdown", StringComparison.OrdinalIgnoreCase)
-			? AliasGuideFormat.Markdown
-			: AliasGuideFormat.Html;
+		return written;
 	}
 
 	/// <summary>The version and date the footer credits, e.g. <c>v3.0.0 on 1 October 2026</c>.</summary>

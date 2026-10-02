@@ -106,7 +106,8 @@ Views/                ShellWindow (custom chrome) + Dashboard, TabbedServiceView
                       ServicePreviewTabView, ServiceRunReviewTabView), MapView (the
                       Map page: just a MapWorkspace), MapWorkspace (the one map
                       screen), Settings, Info (and WhatsNewView, which opens in its
-                      place); UpdateWindow, ConfirmWindow (Confirm /
+                      place); UpdateWindow, AliasGuideFormatWindow (Web, Markdown or
+                      both, for the alias command guide), ConfirmWindow (Confirm /
                       Cancel, or a third choice between them; a long message
                       scrolls), CredentialEditorWindow, RoiPickerWindow (a
                       MapWorkspace in a window)
@@ -158,8 +159,8 @@ root - the same rule as `FeBuddy.Core`.
   `StaThread.Run`, since WPF controls need a thread of their own. The map's math, GeoJSON reader,
   home view, ROI view-model and `MapCanvas`, the File Names, Airways and ERAM to GeoJSON tabs'
   view-models, the sub-service order, the Reset window's view-model, the Review tab's run feed,
-  the Info and What's New pages' view-models, `BesideOrBelow`, `InlineCode` and `InlineMarkdown`
-  are covered today.
+  the Info and What's New pages' view-models (and the alias command guide's format question),
+  `BesideOrBelow`, `InlineCode` and `InlineMarkdown` are covered today.
 
 ### Screens
 

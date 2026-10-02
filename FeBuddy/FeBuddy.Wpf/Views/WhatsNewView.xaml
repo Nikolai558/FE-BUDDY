@@ -102,12 +102,12 @@
                         <StackPanel>
                             <TextBlock Text="Alias Command Guide" Style="{StaticResource Text.H2}" />
                             <TextBlock Style="{StaticResource Text.Prose}" Margin="0,6,0,0"
-                                       Text="Show your controllers the new commands. Export a guide to every FE-Buddy alias command, with examples, as a web page (.html) or Markdown (.md) for your facility's website or wiki. Both are easy to edit." />
+                                       Text="Show your controllers the new commands. Export a guide to every FE-Buddy alias command, with examples, as a web page (.html), Markdown (.md) or both, for your facility's website or wiki. Each is easy to edit." />
                         </StackPanel>
                         <Button Style="{StaticResource Button.Primary}" HorizontalAlignment="Left" VerticalAlignment="Top"
                                 Content="Export FE-Buddy Alias Command Guide"
                                 Command="{Binding ExportGuideCommand}"
-                                ToolTip="Choose where to save it, and Web page or Markdown under Save as type" />
+                                ToolTip="Choose Web, Markdown or both, then the folder to save it in" />
                     </ctl:BesideOrBelow>
                 </ctl:Card>
 

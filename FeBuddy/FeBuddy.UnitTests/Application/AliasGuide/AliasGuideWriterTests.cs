@@ -7,10 +7,10 @@ using FeBuddy.Core.Application.AliasGuide.Models;
 namespace FeBuddy.UnitTests.Application.AliasGuide;
 
 /// <summary>
-/// Covers <see cref="AliasGuideWriter"/>: the format a file name asks for; the web page's sections,
+/// Covers <see cref="AliasGuideWriter"/>: each format's file name; the web page's sections,
 /// contents links, colour pills and footer; the Markdown's title, contents line, tables, lists and
-/// footer; how the facility, version and date are named; the heading anchors; and exporting to a
-/// file (UTF-8 with no byte order mark, replacing what is there).
+/// footer; how the facility, version and date are named; the heading anchors; and exporting into a
+/// folder (UTF-8 with no byte order mark, one file per format, replacing a guide already there).
 /// </summary>
 public sealed class AliasGuideWriterTests : IDisposable
 {
@@ -37,39 +37,24 @@ public sealed class AliasGuideWriterTests : IDisposable
 
 	private static string[] Lines(string text) => text.Split(Environment.NewLine);
 
-	private string TempFile(string name)
+	private string TempFile(string name) => Path.Combine(Folder(), name);
+
+	private string Folder()
 	{
 		Directory.CreateDirectory(_outputDirectory);
-		return Path.Combine(_outputDirectory, name);
+		return _outputDirectory;
 	}
 
 	private static string ReadBack(string path) => Encoding.UTF8.GetString(File.ReadAllBytes(path));
 
-	// ---- the format a file name asks for ----
+	// ---- the file names ----
 
 	[Theory]
-	[InlineData("guide.md")]
-	[InlineData("guide.MD")]
-	[InlineData("guide.markdown")]
-	[InlineData("guide.Markdown")]
-	[InlineData(@"C:\Guides\FE-Buddy Alias Command Guide.md")]
-	public void a_markdown_extension_asks_for_markdown(string path)
+	[InlineData(AliasGuideFormat.Html, "FE-Buddy Alias Command Guide.html")]
+	[InlineData(AliasGuideFormat.Markdown, "FE-Buddy Alias Command Guide.md")]
+	public void each_format_has_its_own_fixed_file_name(AliasGuideFormat format, string fileName)
 	{
-		Assert.Equal(AliasGuideFormat.Markdown, AliasGuideWriter.FormatFor(path));
-	}
-
-	[Theory]
-	[InlineData("guide.html")]
-	[InlineData("guide.htm")]
-	[InlineData("guide.txt")]
-	[InlineData("guide.md.html")]
-	[InlineData("guide.mdx")]
-	[InlineData("guide")]
-	[InlineData("")]
-	[InlineData(null)]
-	public void anything_else_asks_for_a_web_page(string? path)
-	{
-		Assert.Equal(AliasGuideFormat.Html, AliasGuideWriter.FormatFor(path!));
+		Assert.Equal(fileName, AliasGuideWriter.FileName(format));
 	}
 
 	// ---- the web page ----
@@ -428,52 +413,77 @@ public sealed class AliasGuideWriterTests : IDisposable
 	}
 
 	[Theory]
-	[InlineData(AliasGuideFormat.Html, "guide.html", '<')]
-	[InlineData(AliasGuideFormat.Markdown, "guide.md", '#')]
-	public void export_writes_the_guide_as_utf8_with_no_byte_order_mark(AliasGuideFormat format, string fileName, char firstCharacter)
+	[InlineData(AliasGuideFormat.Html, '<')]
+	[InlineData(AliasGuideFormat.Markdown, '#')]
+	public void export_writes_the_guide_into_the_folder_as_utf8_with_no_byte_order_mark(AliasGuideFormat format, char firstCharacter)
 	{
-		string path = TempFile(fileName);
+		string folder = Folder();
 		AliasGuideOptions options = Options();
 
-		AliasGuideWriter.Export(path, format, options);
+		string path = Assert.Single(AliasGuideWriter.Export(folder, [format], options));
 
-		byte[] bytes = File.ReadAllBytes(path);
-		Assert.Equal((byte)firstCharacter, bytes[0]);
+		Assert.Equal(Path.Combine(folder, AliasGuideWriter.FileName(format)), path);
+		Assert.Equal((byte)firstCharacter, File.ReadAllBytes(path)[0]);
 		Assert.Equal(AliasGuideWriter.Write(format, options), ReadBack(path));
+		Assert.Single(Directory.GetFiles(folder));
 	}
 
 	[Fact]
-	public void export_replaces_a_file_that_is_already_there()
+	public void export_writes_both_formats_side_by_side_in_the_order_asked()
 	{
-		string path = TempFile("guide.html");
+		string folder = Folder();
+
+		IReadOnlyList<string> written = AliasGuideWriter.Export(folder, [AliasGuideFormat.Markdown, AliasGuideFormat.Html, AliasGuideFormat.Markdown], Options());
+
+		Assert.Equal(
+			[Path.Combine(folder, "FE-Buddy Alias Command Guide.md"), Path.Combine(folder, "FE-Buddy Alias Command Guide.html")],
+			written);
+		Assert.Equal(Markdown(), ReadBack(written[0]));
+		Assert.Equal(Html(), ReadBack(written[1]));
+	}
+
+	[Fact]
+	public void export_replaces_a_guide_that_is_already_there()
+	{
+		string path = TempFile(AliasGuideWriter.FileName(AliasGuideFormat.Html));
 		File.WriteAllText(path, new string('x', 500_000));
 
-		AliasGuideWriter.Export(path, AliasGuideFormat.Html, Options());
+		AliasGuideWriter.Export(_outputDirectory, [AliasGuideFormat.Html], Options());
 
 		Assert.Equal(Html(), ReadBack(path));
+	}
+
+	[Fact]
+	public void export_with_no_formats_writes_nothing()
+	{
+		string folder = Folder();
+
+		Assert.Empty(AliasGuideWriter.Export(folder, [], Options()));
+		Assert.Empty(Directory.GetFiles(folder));
 	}
 
 	[Theory]
 	[InlineData("")]
 	[InlineData("   ")]
-	public void export_rejects_a_blank_path(string path)
+	public void export_rejects_a_blank_folder(string folder)
 	{
-		Assert.Throws<ArgumentException>(() => AliasGuideWriter.Export(path, AliasGuideFormat.Html, Options()));
+		Assert.Throws<ArgumentException>(() => AliasGuideWriter.Export(folder, [AliasGuideFormat.Html], Options()));
 	}
 
 	[Fact]
-	public void export_rejects_a_null_path()
+	public void export_rejects_a_null_folder_or_formats()
 	{
-		Assert.Throws<ArgumentNullException>(() => AliasGuideWriter.Export(null!, AliasGuideFormat.Html, Options()));
+		Assert.Throws<ArgumentNullException>(() => AliasGuideWriter.Export(null!, [AliasGuideFormat.Html], Options()));
+		Assert.Throws<ArgumentNullException>(() => AliasGuideWriter.Export(Folder(), null!, Options()));
 	}
 
 	[Fact]
 	public void export_with_null_options_writes_nothing()
 	{
-		string path = TempFile("guide.html");
+		string folder = Folder();
 
-		Assert.Throws<ArgumentNullException>(() => AliasGuideWriter.Export(path, AliasGuideFormat.Html, null!));
+		Assert.Throws<ArgumentNullException>(() => AliasGuideWriter.Export(folder, [AliasGuideFormat.Html, AliasGuideFormat.Markdown], null!));
 
-		Assert.False(File.Exists(path));
+		Assert.Empty(Directory.GetFiles(folder));
 	}
 }

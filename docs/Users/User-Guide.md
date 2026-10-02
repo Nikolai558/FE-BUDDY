@@ -1025,14 +1025,19 @@ title goes back to Info.
 **Export FE-Buddy Alias Command Guide**, on that page, saves a guide to every alias command
 FE-Buddy makes, written for controllers: what each command shows or opens, how it is built, and
 real examples, grouped as In-Scope Reference (`.apt`, `.nav`, `.id`), Data Display (airways,
-departures and arrivals) and Chart Recall. Choose where to save it, and under **Save as type**:
+departures and arrivals) and Chart Recall. First choose the format:
 
-- **Web page (.html)** - one dark page, with nothing else to download. The parts of a command to
+- **Web (.html)** - one dark page, with nothing else to download. The parts of a command to
   replace are coloured by what goes there (an airport ID, an approach type, a runway, ...). Its
   colours, fonts and sizes are variables at the top of its style sheet, and each section can be
   deleted on its own, so it is easy to fit to your facility's website.
 - **Markdown (.md)** - the same guide for a wiki or GitHub, with the parts to replace in
   `<angle brackets>` and the optional ones in `[square brackets]`.
+- **Both** - one of each, side by side.
+
+**Choose folder…** then asks only for the folder: the files are always named
+`FE-Buddy Alias Command Guide.html` and `FE-Buddy Alias Command Guide.md`. If the folder already
+has one, FE-Buddy asks before replacing it, since it may hold your own edits.
 
 The guide says the commands are merged into your facility's alias file, naming the facility from
 Settings ▸ Facility Profile when there is one. It doesn't depend on a run or a cycle, so you can

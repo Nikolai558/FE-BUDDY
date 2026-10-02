@@ -6,6 +6,7 @@ using Microsoft.Win32;
 
 using FeBuddy.Wpf.Mvvm;
 using FeBuddy.Wpf.Shell;
+using FeBuddy.Wpf.Views;
 
 using FeBuddy.Core.Application.AliasGuide;
 using FeBuddy.Core.Application.AliasGuide.Models;
@@ -26,9 +27,6 @@ namespace FeBuddy.Wpf.ViewModels;
 /// </remarks>
 public sealed class WhatsNewViewModel : ObservableObject
 {
-	/// <summary>The save dialog's file types; the one picked sets the guide's format.</summary>
-	private const string GuideFileFilter = "Web page (*.html)|*.html|Markdown (*.md)|*.md";
-
 	/// <summary>One row of the At a Glance table.</summary>
 	/// <param name="Subject">What is compared.</param>
 	/// <param name="Before">How FE-Buddy 2.x did it.</param>
@@ -75,7 +73,7 @@ public sealed class WhatsNewViewModel : ObservableObject
 	/// <summary>Returns to Info's links.</summary>
 	public ICommand BackCommand { get; }
 
-	/// <summary>Asks where to save the alias command guide, and as what, then writes it.</summary>
+	/// <summary>Asks what format to save the alias command guide in, then which folder, then writes it.</summary>
 	public ICommand ExportGuideCommand { get; }
 
 	/// <summary>FE-Buddy 2.x against 3.0, subject by subject.</summary>
@@ -180,20 +178,24 @@ public sealed class WhatsNewViewModel : ObservableObject
 	];
 
 	/// <summary>
-	/// Asks where to save the guide - as a web page or as Markdown, by the file type picked - and
-	/// writes it there, naming the user's facility when Settings ▸ Facility Profile has one.
+	/// Asks which format the guide is wanted in (web page, Markdown or both), then which folder,
+	/// and writes it there as <c>FE-Buddy Alias Command Guide.html</c> / <c>.md</c> - the user
+	/// never names the files. A guide already in that folder is only replaced once the user says
+	/// so, since it may hold their own edits. The guide names the user's facility when Settings ▸
+	/// Facility Profile has one.
 	/// </summary>
 	private void ExportGuide()
 	{
 		Window? owner = Application.Current?.MainWindow;
 
-		SaveFileDialog dialog = new()
+		if (AliasGuideFormatWindow.Ask(owner) is not { } formats)
 		{
-			Title = "Export FE-Buddy Alias Command Guide",
-			Filter = GuideFileFilter,
-			DefaultExt = ".html",
-			AddExtension = true,
-			FileName = "FE-Buddy Alias Command Guide",
+			return;
+		}
+
+		OpenFolderDialog dialog = new()
+		{
+			Title = "Choose the folder to save the FE-Buddy Alias Command Guide in",
 			InitialDirectory = OutputPreferences.BrowseDirectory(),
 		};
 
@@ -202,19 +204,36 @@ public sealed class WhatsNewViewModel : ObservableObject
 			return;
 		}
 
+		string folder = dialog.FolderName;
+		string[] names = [.. formats.Select(AliasGuideWriter.FileName)];
+		string[] existing = [.. names.Where(name => File.Exists(Path.Combine(folder, name)))];
+
+		if (existing.Length > 0
+			&& !ConfirmWindow.Show(
+				owner,
+				existing.Length == 1 ? "Replace the guide already there?" : "Replace the guides already there?",
+				$"{JoinCode(existing)} {(existing.Length == 1 ? "is" : "are")} already in `{folder}`. "
+				+ $"Replacing {(existing.Length == 1 ? "it" : "them")} loses any changes made to {(existing.Length == 1 ? "it" : "them")}.",
+				confirmText: "Replace"))
+		{
+			return;
+		}
+
 		string? facility = UserConfigFile.GetValue(SettingsViewModel.ArtccKey);
-		AliasGuideFormat format = AliasGuideWriter.FormatFor(dialog.FileName);
 
 		try
 		{
-			AliasGuideWriter.Export(dialog.FileName, format, new AliasGuideOptions(facility, AppVersion.Current, DateTime.UtcNow));
-			AppLog.Info("Info", $"Exported the alias command guide to '{dialog.FileName}'.");
-			Toast.Success("Alias command guide exported", $"{Path.GetFileName(dialog.FileName)} is ready to share or post on your facility's website.");
+			AliasGuideWriter.Export(folder, formats, new AliasGuideOptions(facility, AppVersion.Current, DateTime.UtcNow));
+			AppLog.Info("Info", $"Exported the alias command guide to '{folder}': {string.Join(", ", names)}.");
+			Toast.Success("Alias command guide exported", $"{string.Join(" and ", names)} saved to {folder}, ready to share or post on your facility's website.");
 		}
 		catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
 		{
-			AppLog.Warning("Info", $"Could not export the alias command guide to '{dialog.FileName}': {ex.Message}");
+			AppLog.Warning("Info", $"Could not export the alias command guide to '{folder}': {ex.Message}");
 			Toast.Error("Export failed", ex.Message);
 		}
 	}
+
+	/// <summary>File names in the code look, joined: <c>`a`</c>, or <c>`a` and `b`</c>.</summary>
+	private static string JoinCode(IReadOnlyList<string> names) => string.Join(" and ", names.Select(name => $"`{name}`"));
 }

@@ -32,8 +32,8 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
 - New **What's New in v3.0?** page: what changed since FE-Buddy 2.x at a glance, and the new chart
   recall commands with their approach type codes and examples.
 - **Export FE-Buddy Alias Command Guide** (on the What's New page) saves a guide to every FE-Buddy
-  alias command for your controllers, with real examples, as a web page or Markdown that is easy to
-  restyle and post on your facility's website.
+  alias command for your controllers, with real examples, as a web page, Markdown or both, easy to
+  restyle and post on your facility's website. You only pick the format and the folder.
 
 ### Look and feel
 - Names and values in the Review tab's messages (`vor`, `bcg`) show in the code font.

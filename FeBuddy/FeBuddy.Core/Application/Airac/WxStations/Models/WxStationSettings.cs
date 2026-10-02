@@ -47,7 +47,7 @@ public sealed record WxStationSettings
 	/// </summary>
 	public RegionOfInterest? Roi { get; init; }
 
-	/// <summary>Maximum decimal places for coordinates written to GeoJSON. Default 6.</summary>
+	/// <summary>Maximum decimal places for coordinates written to GeoJSON, or 0 to write them unrounded. Default 6.</summary>
 	public int CoordinatePrecision { get; init; } = 6;
 
 	/// <summary>

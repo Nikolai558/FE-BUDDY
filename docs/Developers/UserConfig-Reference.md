@@ -36,7 +36,7 @@ Written by **Settings** (except `NewsLastOpen` and `LegacyGitHubTokenNoticeShown
 | `AiracCycleId` | a cycle ID, e.g. `2610` | current cycle | General tab. The ID (not "previous/current/next") is saved; on load it is matched back to one of the three, or falls back to current. |
 | `SelectedSubServices` | comma-separated keys: `Airports`, `Airways`, `Departures`, `Arrivals`, `Navaids`, `ArtccBoundaries`, `Fixes`, `WxStations`, `Procedures`, `Telephony`, `VnasAlias` | none | General tab. Keys are stable identifiers - never rename one without migrating this value. |
 | `UserArtccId` | an ARTCC ID, e.g. `ZOB` | none | Settings ▸ Facility. Read by Procedures as its `PrimaryFacility` - the facility whose section leads both documents - and by `AiracService` as the run's own `PrimaryFacility`, listed first in `Duplicate_Alias_Commands.txt`. |
-| `CoordinatePrecision` | `0`-`15` (the GUI offers 5, 6, 7) | `6` | Settings; sent by every tab that writes GeoJSON, AIRAC and File Conversions alike. |
+| `CoordinatePrecision` | `1`-`15` decimal places, or `0` for Do not round (the GUI offers 5, 6, 7 and Do not round) | `6` | Settings; sent by every tab that writes GeoJSON, AIRAC and File Conversions alike. |
 
 ### Services.AiracService.DefaultRoi
 

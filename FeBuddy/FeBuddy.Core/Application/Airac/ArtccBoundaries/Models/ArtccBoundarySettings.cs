@@ -40,7 +40,7 @@ public sealed record ArtccBoundarySettings
 	/// <summary>Which <c>feb.*</c> properties to write when <see cref="IncludeFebCustomProperties"/> is <see langword="true"/>.</summary>
 	public IReadOnlyCollection<ArtccBoundaryFebProperty> FebProperties { get; init; } = [];
 
-	/// <summary>Maximum decimal places for coordinates written to GeoJSON. Default 6.</summary>
+	/// <summary>Maximum decimal places for coordinates written to GeoJSON, or 0 to write them unrounded. Default 6.</summary>
 	public int CoordinatePrecision { get; init; } = 6;
 
 	/// <summary>

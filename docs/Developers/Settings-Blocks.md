@@ -31,7 +31,7 @@ Parsers: `AirportSettingsParser`, `AirwaySettingsParser`, `DepartureSettingsPars
 | Key | Values | Default |
 |---|---|---|
 | `OutputDirectory` | folder path - the folder the run writes into (below) | **required** |
-| `CoordinatePrecision` | `0`-`15` decimal places | `6` |
+| `CoordinatePrecision` | `1`-`15` decimal places, or `0` not to round at all (`GeojsonFileWriter.NoRounding`): each coordinate is written exactly as held | `6` |
 | `IncludeFebCustomProperties` | `Y` / `N` | `N` |
 | `FebProperties` | list of `feb.*` names (below); **required** when the above is `Y` | none |
 | `UploadToVnas` | list of file keys (below) marked for vNAS: GeoJSON written under `Upload_to_vNAS`, an alias file merged into `vNAS_Alias.txt` | none |

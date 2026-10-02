@@ -40,6 +40,10 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
   alias command for your controllers, with real examples, as a web page, Markdown or both, easy to
   restyle and post on your facility's website. You only pick the format and the folder.
 
+### Settings
+- GeoJSON Files ▸ Maximum Coordinate Precision has a new **Do not round** option: FE-Buddy writes
+  every coordinate exactly as it is in the source data, never rounded or changed.
+
 ### Look and feel
 - Names and values in the Review tab's messages (`vor`, `bcg`) show in the code font.
 - Review tab: warnings and routine messages have a gap between each, and each group has a copy

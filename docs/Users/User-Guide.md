@@ -957,8 +957,11 @@ The cards, top to bottom:
   press **Use this ROI**, then **Save** here. **Clear** turns it off. Every sub-service uses it
   unless its own tab overrides it.
 - **GeoJSON Files**
-  - **Maximum Coordinate Precision** - 5, 6 or 7 decimal places. 6 (about 10 cm) suits most
-    files; 7 is for high-precision airport tracing; 5 keeps files smallest.
+  - **Maximum Coordinate Precision** - 5, 6 or 7 decimal places, or **Do not round**. 6 (about
+    10 cm) suits most files; 7 is for high-precision airport tracing; 5 keeps files smallest.
+    *Do not round* leaves every coordinate exactly as it is in the source data, with every decimal
+    place it has - the largest files; a coordinate converted from degrees, minutes and seconds
+    (SCT2, DAT and ERAM files) can run to many decimal places.
   - **File Layout** - *Single line* (smallest, the default) or *Pretty print* (readable in a
     text editor).
 - **Credentials** - sign-ins FE-Buddy uses to download from protected websites, such as a GitHub

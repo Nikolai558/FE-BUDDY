@@ -45,7 +45,10 @@ public static class OutputPreferences
 	public static bool AddFeBuddyOutputFolder =>
 		!string.Equals(UserConfigFile.GetValue(UserConfigKeys.AddFeBuddyOutputFolder), "N", StringComparison.OrdinalIgnoreCase);
 
-	/// <summary>Decimal places kept per GeoJSON coordinate: the saved value when it is 0-15, otherwise 6.</summary>
+	/// <summary>
+	/// Decimal places kept per GeoJSON coordinate: the saved value when it is 0-15, otherwise 6. 0 is
+	/// Do not round (<see cref="Core.Infrastructure.Geojson.GeojsonFileWriter.NoRounding"/>).
+	/// </summary>
 	public static int CoordinatePrecision =>
 		int.TryParse(UserConfigFile.GetValue(UserConfigKeys.CoordinatePrecision), NumberStyles.Integer, CultureInfo.InvariantCulture, out int saved)
 		&& saved is >= 0 and <= 15

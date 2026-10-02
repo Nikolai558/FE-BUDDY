@@ -306,7 +306,9 @@ and addressed by dotted paths (`Services.AiracService.Geojson.Airways.OutputBy`)
   chosen fan marker style), so the file's own CRC defaults carry none; a type with no mapped style
   (`CONSOLAN`, or one FE-Buddy does not recognize) is left with none, and a warning is reported once
   per such type.
-- **Coordinates** are rounded to the user's precision (0-15 decimal places, default 6).
+- **Coordinates** are rounded to the user's precision (1-15 decimal places, default 6) just before
+  writing, or not at all with Do not round (`0`, `GeojsonFileWriter.NoRounding`): each is then written
+  as the shortest text that reads back to the very same value.
 - **Layout.** Single-line by default (smaller files); pretty printed when the user chooses it or in
   developer mode.
 - **Empty files are not written.** A file whose features were all filtered out is skipped, and an

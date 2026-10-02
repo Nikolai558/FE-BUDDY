@@ -1,0 +1,286 @@
+<!--
+    WhatsNewView  -  Info ▸ What's New in v3.0?: FE-Buddy_3.0_Whats_New.md laid out as a page,
+    with the button that exports the FE-Buddy Alias Command Guide. Opens in place of Info's
+    cards; the arrow beside the title goes back to them.
+-->
+<UserControl x:Class="FeBuddy.Wpf.Views.WhatsNewView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:FeBuddy.Wpf.ViewModels"
+             xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
+             xmlns:bhv="clr-namespace:FeBuddy.Wpf.Behaviors"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance vm:WhatsNewViewModel}"
+             d:DesignWidth="900" d:DesignHeight="900">
+
+    <UserControl.Resources>
+
+        <!-- A command in a before-and-after pair: the mono font, in the code look. -->
+        <Style x:Key="Command" TargetType="TextBlock" BasedOn="{StaticResource Text.Body}">
+            <Setter Property="FontFamily" Value="{StaticResource Font.Mono}" />
+            <Setter Property="FontSize" Value="12.5" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+
+        <!-- A titled point: the title in a fixed column, its text beside it. -->
+        <DataTemplate x:Key="PointRow" DataType="{x:Type vm:WhatsNewViewModel+Point}">
+            <Grid Margin="0,0,0,10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="200" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="{Binding Title}" Style="{StaticResource Text.Body.Strong}" Margin="0,0,16,0" />
+                <TextBlock Grid.Column="1" bhv:InlineMarkdown.Text="{Binding Text}" Style="{StaticResource Text.Body}" />
+            </Grid>
+        </DataTemplate>
+
+        <!-- An approach type's code tile. -->
+        <DataTemplate x:Key="TypeTile" DataType="{x:Type vm:WhatsNewViewModel+TypeCode}">
+            <Border Style="{StaticResource Panel.Block}" Width="96" Margin="0,0,8,8">
+                <StackPanel HorizontalAlignment="Center">
+                    <TextBlock Text="{Binding Code}" HorizontalAlignment="Center"
+                               FontFamily="{StaticResource Font.Mono}" FontSize="20" FontWeight="SemiBold"
+                               Foreground="{StaticResource Brush.Accent.Text}" />
+                    <TextBlock Text="{Binding Type}" Style="{StaticResource Text.Caption}" HorizontalAlignment="Center" />
+                </StackPanel>
+            </Border>
+        </DataTemplate>
+
+        <ItemsPanelTemplate x:Key="TilePanel">
+            <WrapPanel />
+        </ItemsPanelTemplate>
+
+        <!-- A rule above every item but the first. -->
+        <Style x:Key="RowRule" TargetType="Border" BasedOn="{StaticResource Divider}">
+            <Setter Property="Margin" Value="0,0,0,12" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding RelativeSource={RelativeSource PreviousData}}" Value="{x:Null}">
+                    <Setter Property="Visibility" Value="Collapsed" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Background="{StaticResource Brush.Bg.Base}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- pinned page header: back to Info's cards, then the title -->
+        <Grid Grid.Row="0" Background="{StaticResource Brush.Bg.Base}">
+            <StackPanel Orientation="Horizontal" Margin="16,24,28,14">
+                <Button Style="{StaticResource Button.Icon}" VerticalAlignment="Center" Margin="0,4,4,0"
+                        Content="{StaticResource Icon.Chevron.Left}" FontFamily="{StaticResource Font.Icon}" FontSize="14"
+                        Command="{Binding BackCommand}" ToolTip="Back to Info" />
+                <TextBlock Text="What's New in v3.0" Style="{StaticResource Text.Display}" />
+            </StackPanel>
+            <Border Style="{StaticResource Divider}" VerticalAlignment="Bottom" />
+        </Grid>
+
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <StackPanel Margin="28,16,28,28">
+
+                <!-- ========================= INTRO ========================= -->
+                <ctl:Card>
+                    <StackPanel>
+                        <TextBlock Text="FE-Buddy 3.0 is a ground-up rewrite." Style="{StaticResource Text.H2}" />
+                        <TextBlock Style="{StaticResource Text.Prose}" Margin="0,8,0,0"
+                                   Text="Same job: turning each AIRAC cycle into CRC video maps and alias files. Now with a modern interface, far more control, and cleaner data." />
+                        <TextBlock Style="{StaticResource Text.Prose}" Margin="0,6,0,0"
+                                   Text="The goal: no outside scripts needed to get your files CRC-ready." />
+                        <TextBlock Style="{StaticResource Text.Prose}" Margin="0,6,0,0"
+                                   Text="It would take too long to explain every difference, but we can give you a quick look at the important stuff." />
+                    </StackPanel>
+                </ctl:Card>
+
+                <!-- ================== ALIAS COMMAND GUIDE ================== -->
+                <ctl:Card Style="{StaticResource Card.Accent}">
+                    <ctl:BesideOrBelow SideWidth="290" MainMinWidth="320" VerticalSpacing="14">
+                        <StackPanel>
+                            <TextBlock Text="Alias Command Guide" Style="{StaticResource Text.H2}" />
+                            <TextBlock Style="{StaticResource Text.Prose}" Margin="0,6,0,0"
+                                       Text="Show your controllers the new commands. Export a guide to every FE-Buddy alias command, with examples, as a web page (.html) or Markdown (.md) for your facility's website or wiki. Both are easy to edit." />
+                        </StackPanel>
+                        <Button Style="{StaticResource Button.Primary}" HorizontalAlignment="Left" VerticalAlignment="Top"
+                                Content="Export FE-Buddy Alias Command Guide"
+                                Command="{Binding ExportGuideCommand}"
+                                ToolTip="Choose where to save it, and Web page or Markdown under Save as type" />
+                    </ctl:BesideOrBelow>
+                </ctl:Card>
+
+                <!-- ====================== AT A GLANCE ====================== -->
+                <ctl:SectionHeader Label="At a Glance" Margin="0,8,0,0" />
+                <ctl:Card>
+                    <StackPanel>
+                        <Grid Margin="0,0,0,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="2*" />
+                                <ColumnDefinition Width="3*" />
+                                <ColumnDefinition Width="4*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="1" Text="FE-Buddy 2.x" Style="{StaticResource Text.Body.Strong}"
+                                       Foreground="{StaticResource Brush.Text.Tertiary}" />
+                            <TextBlock Grid.Column="2" Text="FE-Buddy 3.0" Style="{StaticResource Text.Body.Strong}"
+                                       Foreground="{StaticResource Brush.Accent.Text}" />
+                        </Grid>
+                        <ItemsControl ItemsSource="{Binding Glance}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="{x:Type vm:WhatsNewViewModel+GlanceRow}">
+                                    <StackPanel>
+                                        <Border Style="{StaticResource Divider}" />
+                                        <Grid Margin="0,10">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="2*" />
+                                                <ColumnDefinition Width="3*" />
+                                                <ColumnDefinition Width="4*" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="{Binding Subject}" Style="{StaticResource Text.Body.Strong}" Margin="0,0,16,0" />
+                                            <TextBlock Grid.Column="1" bhv:InlineMarkdown.Text="{Binding Before}" Style="{StaticResource Text.Body}"
+                                                       Foreground="{StaticResource Brush.Text.Tertiary}" Margin="0,0,16,0" />
+                                            <TextBlock Grid.Column="2" bhv:InlineMarkdown.Text="{Binding After}" Style="{StaticResource Text.Body}" />
+                                        </Grid>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </ctl:Card>
+
+                <!-- ================= FOR FACILITY ENGINEERS ================= -->
+                <ctl:SectionHeader Label="For Facility Engineers" Margin="0,8,0,0" />
+                <ctl:Card Padding="18,18,18,8">
+                    <ItemsControl ItemsSource="{Binding ForEngineers}" ItemTemplate="{StaticResource PointRow}" />
+                </ctl:Card>
+
+                <!-- ====================== BETTER MAPS ====================== -->
+                <ctl:SectionHeader Label="Better Maps" Margin="0,8,0,0" />
+                <ctl:Card Padding="18,18,18,8">
+                    <ItemsControl ItemsSource="{Binding BetterMaps}" ItemTemplate="{StaticResource PointRow}" />
+                </ctl:Card>
+
+                <!-- ===================== BETTER ALIASES ===================== -->
+                <ctl:SectionHeader Label="Better Aliases" Margin="0,8,0,0" />
+                <ctl:Card Padding="18,18,18,8">
+                    <ItemsControl ItemsSource="{Binding BetterAliases}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <DockPanel Margin="0,0,0,10">
+                                    <TextBlock DockPanel.Dock="Left" Text="•" Style="{StaticResource Text.Body}"
+                                               Foreground="{StaticResource Brush.Text.Tertiary}" Margin="2,0,10,0" />
+                                    <TextBlock bhv:InlineMarkdown.Text="{Binding}" Style="{StaticResource Text.Prose}" />
+                                </DockPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ctl:Card>
+
+                <!-- ================= CHART RECALL CHANGES ================= -->
+                <ctl:SectionHeader Label="Chart Recall Changes" Margin="0,8,0,0" />
+                <ctl:Card>
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource Text.Prose}"
+                                   Text="Reworked so commands are, on average, one character longer, but they are easier for new controllers to learn, take less mental parsing for seasoned controllers, have no duplicates, and cover more relevant procedures." />
+                        <ItemsControl ItemsSource="{Binding RecallRules}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="{x:Type vm:WhatsNewViewModel+RecallRule}">
+                                    <Border Style="{StaticResource Panel.Inset}" Margin="0,12,0,0" VerticalAlignment="Stretch">
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding Title}" Style="{StaticResource Text.Body.Strong}" />
+                                            <TextBlock bhv:InlineMarkdown.Text="{Binding Text}" Style="{StaticResource Text.Prose}" Margin="0,2,0,0" />
+                                            <ItemsControl ItemsSource="{Binding Changes}" Margin="0,4,0,0">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate DataType="{x:Type vm:WhatsNewViewModel+CommandChange}">
+                                                        <StackPanel Margin="0,6,0,0">
+                                                            <TextBlock x:Name="Procedure" Text="{Binding Procedure}" Style="{StaticResource Text.Caption}" />
+                                                            <WrapPanel>
+                                                                <TextBlock Text="{Binding Old}" Style="{StaticResource Command}"
+                                                                           Foreground="{StaticResource Brush.Text.Tertiary}"
+                                                                           TextDecorations="Strikethrough" ToolTip="FE-Buddy 2.x" />
+                                                                <TextBlock Text="{StaticResource Icon.Chevron.Right}" FontFamily="{StaticResource Font.Icon}"
+                                                                           FontSize="10" Foreground="{StaticResource Brush.Text.Tertiary}"
+                                                                           VerticalAlignment="Center" Margin="10,1,10,0" />
+                                                                <TextBlock Text="{Binding New}" Style="{StaticResource Command}" FontWeight="SemiBold"
+                                                                           Foreground="{StaticResource Brush.Accent.Text}" ToolTip="FE-Buddy 3.0" />
+                                                            </WrapPanel>
+                                                        </StackPanel>
+                                                        <DataTemplate.Triggers>
+                                                            <DataTrigger Binding="{Binding Procedure}" Value="">
+                                                                <Setter TargetName="Procedure" Property="Visibility" Value="Collapsed" />
+                                                            </DataTrigger>
+                                                        </DataTemplate.Triggers>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </ctl:Card>
+
+                <!-- ==================== IAP TYPE CODES ==================== -->
+                <ctl:SectionHeader Label="IAP Type Codes" Margin="0,8,0,0" />
+                <ctl:Card>
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource Text.Prose}"
+                                   Text="We trimmed the list of IAP types to those in common use throughout the FAA." />
+
+                        <ctl:SectionHeader Style="{StaticResource SectionHeader.Group}" Label="Base types" Margin="0,16,0,8" />
+                        <ItemsControl ItemsSource="{Binding BaseTypes}" ItemTemplate="{StaticResource TypeTile}"
+                                      ItemsPanel="{StaticResource TilePanel}" />
+
+                        <ctl:SectionHeader Style="{StaticResource SectionHeader.Group}" Label="*/DME variants" Margin="0,10,0,2" />
+                        <TextBlock bhv:InlineMarkdown.Text="Add `D` to the base IAP type code." Style="{StaticResource Text.Body}" Margin="0,0,0,8" />
+                        <ItemsControl ItemsSource="{Binding DmeTypes}" ItemTemplate="{StaticResource TypeTile}"
+                                      ItemsPanel="{StaticResource TilePanel}" />
+
+                        <ctl:SectionHeader Style="{StaticResource SectionHeader.Group}" Label="Back course variants" Margin="0,10,0,2" />
+                        <TextBlock bhv:InlineMarkdown.Text="Add `BC` to the base IAP type code, e.g. LOC BC is `LBC`." Style="{StaticResource Text.Body}" />
+
+                        <ctl:SectionHeader Style="{StaticResource SectionHeader.Group}" Label="Same-runway approach variants (X, Y, Z...)" Margin="0,16,0,2" />
+                        <TextBlock Text="Handled the same as in 2.x." Style="{StaticResource Text.Body}" />
+                    </StackPanel>
+                </ctl:Card>
+
+                <!-- ================= NEW COMMAND EXAMPLES ================= -->
+                <ctl:SectionHeader Label="New Command Examples" Margin="0,8,0,0" />
+                <ctl:Card Margin="0">
+                    <ItemsControl ItemsSource="{Binding Examples}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="{x:Type vm:WhatsNewViewModel+CommandExample}">
+                                <StackPanel>
+                                    <Border Style="{StaticResource RowRule}" />
+                                    <Grid Margin="0,0,0,12">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <Border Style="{StaticResource Chip}" Width="52" VerticalAlignment="Top" Margin="0,1,14,0">
+                                            <TextBlock Text="{Binding Airport}" Style="{StaticResource Chip.Text}" HorizontalAlignment="Center"
+                                                       FontFamily="{StaticResource Font.Mono}" />
+                                        </Border>
+                                        <StackPanel Grid.Column="1">
+                                            <TextBlock bhv:InlineMarkdown.Text="{Binding Procedure}" Style="{StaticResource Text.Body.Strong}" />
+                                            <TextBlock bhv:InlineMarkdown.Text="{Binding Commands}" Style="{StaticResource Text.Body}" Margin="0,4,0,0" />
+                                            <TextBlock x:Name="Note" bhv:InlineMarkdown.Text="{Binding Note}" Style="{StaticResource Text.Caption}"
+                                                       Margin="0,4,0,0" MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left" />
+                                        </StackPanel>
+                                    </Grid>
+                                </StackPanel>
+                                <DataTemplate.Triggers>
+                                    <DataTrigger Binding="{Binding Note}" Value="{x:Null}">
+                                        <Setter TargetName="Note" Property="Visibility" Value="Collapsed" />
+                                    </DataTrigger>
+                                </DataTemplate.Triggers>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ctl:Card>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

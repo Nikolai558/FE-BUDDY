@@ -1017,8 +1017,29 @@ The cards, top to bottom:
 
 ## Info
 
-Links to this user guide, the [FAQ and troubleshooting](FAQ-and-Troubleshooting.md) page, the
-change log, and the issue tracker.
+**What's New in v3.0?** (the amber card) opens a tour of what changed since FE-Buddy 2.x: a
+side-by-side comparison, what's new for facility engineers, in the maps and in the aliases, and
+the new chart recall commands with their approach type codes and examples. The arrow beside its
+title goes back to Info.
+
+**Export FE-Buddy Alias Command Guide**, on that page, saves a guide to every alias command
+FE-Buddy makes, written for controllers: what each command shows or opens, how it is built, and
+real examples, grouped as In-Scope Reference (`.apt`, `.nav`, `.id`), Data Display (airways,
+departures and arrivals) and Chart Recall. Choose where to save it, and under **Save as type**:
+
+- **Web page (.html)** - one dark page, with nothing else to download. The parts of a command to
+  replace are coloured by what goes there (an airport ID, an approach type, a runway, ...). Its
+  colours, fonts and sizes are variables at the top of its style sheet, and each section can be
+  deleted on its own, so it is easy to fit to your facility's website.
+- **Markdown (.md)** - the same guide for a wiki or GitHub, with the parts to replace in
+  `<angle brackets>` and the optional ones in `[square brackets]`.
+
+The guide says the commands are merged into your facility's alias file, naming the facility from
+Settings ▸ Facility Profile when there is one. It doesn't depend on a run or a cycle, so you can
+export it at any time.
+
+The other cards link to this user guide, the [FAQ and troubleshooting](FAQ-and-Troubleshooting.md)
+page, the change log, and the issue tracker.
 
 ## Updating FE-Buddy
 

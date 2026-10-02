@@ -247,7 +247,13 @@ public sealed class MarkdownView : Decorator
 		return text;
 	}
 
-	private static Inline BuildInline(MarkdownSpan span)
+	/// <summary>
+	/// One span as a WPF inline: bold, italic, struck through or code as the span says, and a link
+	/// that opens in the browser when it has one. <c>InlineMarkdown</c> uses it too.
+	/// </summary>
+	/// <param name="span">The span.</param>
+	/// <returns>The inline: a <see cref="Span"/>, or a <see cref="Hyperlink"/> around one.</returns>
+	internal static Inline BuildInline(MarkdownSpan span)
 	{
 		// Hard line breaks arrive as \n inside the span's text.
 		var styled = new Span();

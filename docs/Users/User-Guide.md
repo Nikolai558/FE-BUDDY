@@ -528,6 +528,15 @@ The Review tab names how many commands `Faa_Chart_Recall.txt` holds and for how 
   designator, or two operators' telephony only differ by spacing, one command shows every one of
   their cards, separated by `---`, the command's own operator first. Commands are listed
   alphabetically.
+- **Virtual Airlines** - your own virtual airlines, added to `Telephony.txt` after the FAA's
+  operators. **Add virtual airline** asks for its 3LD (three letters), telephony and virtual
+  organization; **Edit** and **Delete** change the list. Each gets the same two commands as an
+  operator, e.g. `.idDVA` and `.idDELTA`, and a card marked `--VA--`:
+  `\n--VA--\n3LD:\t\t\tDVA\nTELEPHONY:\t\s\sDELTA\nVIRTUAL ORG:\tDELTA VIRTUAL`. Two virtual
+  airlines may share a 3LD or a telephony, with each other or with a real operator; the command
+  then shows every card, real operators before virtual airlines - with Delta Virtual (DVA, DELTA)
+  listed, `.idDELTA` shows Delta Air Lines, then Delta Virtual. The same virtual airline can't be
+  listed twice.
 - **Region:** none - Telephony is not limited to a region; every operator in the FAA's pages gets a
   card.
 - **Upload to vNAS:** `Telephony.txt`, the only file there is.

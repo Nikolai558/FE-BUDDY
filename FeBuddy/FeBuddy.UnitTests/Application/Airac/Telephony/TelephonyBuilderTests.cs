@@ -9,8 +9,8 @@ namespace FeBuddy.UnitTests.Application.Airac.Telephony;
 /// Covers <see cref="TelephonyBuilder"/>: which register rows and U.S. special call signs get a
 /// card versus are counted as left out (no designator, no telephony, expired), the two date formats
 /// the FAA prints an expiration in, an unreadable expiration being kept with a warning, every value
-/// upper-cased and trimmed into <see cref="TelephonyEntry"/>, entry order (assignments then special
-/// call signs), and the null-argument check.
+/// upper-cased and trimmed into <see cref="TelephonyEntry"/>, entry order (assignments, then special
+/// call signs, then the user's virtual airlines), and the null-argument check.
 /// </summary>
 public sealed class TelephonyBuilderTests
 {
@@ -212,4 +212,64 @@ public sealed class TelephonyBuilderTests
 	[Fact]
 	public void read_rejects_a_null_data_argument() =>
 		Assert.Throws<ArgumentNullException>(() => TelephonyBuilder.Read(null!, Today));
+
+	// ---- virtual airlines ----
+
+	[Fact]
+	public void virtual_airlines_come_after_every_faa_entry_in_list_order()
+	{
+		TelephonyDataCollection data = Data(
+			[Assignment("SOME COMPANY", "UNITED STATES", "SOME TELEPHONY", "ABC")],
+			[SpecialCallSign("AIR SIX", "ARSIX", "SOME AGENCY", "N/A")]);
+		VirtualAirline[] virtualAirlines =
+		[
+			new("ZZV", "ZULU", "Zulu Virtual"),
+			new("AAV", "ALPHA", "Alpha Virtual"),
+		];
+
+		TelephonyBuildResult result = TelephonyBuilder.Read(data, Today, virtualAirlines);
+
+		Assert.Equal(
+			[TelephonyEntryKind.IcaoAssignment, TelephonyEntryKind.UsSpecialCallSign, TelephonyEntryKind.VirtualAirline, TelephonyEntryKind.VirtualAirline],
+			result.Entries.Select(entry => entry.Kind));
+		Assert.Equal(["ABC", "ARSIX", "ZZV", "AAV"], result.Entries.Select(entry => entry.Identifier));
+	}
+
+	[Fact]
+	public void a_virtual_airline_is_upper_cased_and_trimmed_into_an_entry_with_no_detail()
+	{
+		TelephonyDataCollection data = Data();
+
+		TelephonyEntry entry = Assert.Single(
+			TelephonyBuilder.Read(data, Today, [new VirtualAirline(" dva ", " delta ", " Delta Virtual ")]).Entries);
+
+		Assert.Equal(TelephonyEntryKind.VirtualAirline, entry.Kind);
+		Assert.Equal("DVA", entry.Identifier);
+		Assert.Equal("DELTA", entry.Telephony);
+		Assert.Equal("DELTA VIRTUAL", entry.Organization);
+		Assert.Equal(string.Empty, entry.Detail);
+	}
+
+	/// <summary>A virtual airline is never a row the FAA left out, so it is in none of the left-out counts and gives no message.</summary>
+	[Fact]
+	public void virtual_airlines_are_not_counted_as_left_out_and_add_no_messages()
+	{
+		TelephonyBuildResult result = TelephonyBuilder.Read(Data(), Today, [new VirtualAirline("DVA", "DELTA", "Delta Virtual")]);
+
+		Assert.Equal(0, result.NoDesignatorCount);
+		Assert.Equal(0, result.NoTelephonyCount);
+		Assert.Equal(0, result.ExpiredCount);
+		Assert.Empty(result.Messages);
+	}
+
+	[Fact]
+	public void no_virtual_airlines_null_or_omitted_adds_none()
+	{
+		TelephonyDataCollection data = Data([Assignment("SOME COMPANY", "UNITED STATES", "SOME TELEPHONY", "ABC")]);
+
+		Assert.Single(TelephonyBuilder.Read(data, Today).Entries);
+		Assert.Single(TelephonyBuilder.Read(data, Today, null).Entries);
+		Assert.Single(TelephonyBuilder.Read(data, Today, []).Entries);
+		Assert.DoesNotContain(TelephonyBuilder.Read(data, Today, null).Entries, entry => entry.Kind == TelephonyEntryKind.VirtualAirline);
+	}
 }

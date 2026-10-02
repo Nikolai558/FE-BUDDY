@@ -4,7 +4,9 @@
     action bar, and the tab host owns the page's single scroller.
 
     Telephony's only output is its alias file, which covers every operator, so there is no
-    choice to make about it - see TelephonyViewModel's class remarks.
+    choice to make about it - only the user's virtual airlines to add to it, listed on the
+    Virtual Airlines card the way the Fixes tab lists its combinations - see
+    TelephonyViewModel's class remarks.
 -->
 <UserControl x:Class="FeBuddy.Wpf.Views.TelephonyView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -12,6 +14,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:FeBuddy.Wpf.ViewModels"
+             xmlns:m="clr-namespace:FeBuddy.Wpf.ViewModels.Models"
              xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
              xmlns:cards="clr-namespace:FeBuddy.Wpf.Views.Cards"
              xmlns:bhv="clr-namespace:FeBuddy.Wpf.Behaviors"
@@ -35,10 +38,81 @@
                     <TextBlock Text="Alias file" Style="{StaticResource Text.Body}" Margin="0,4,0,0" />
                     <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,2,0,10"
                                MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
-                               Text="A card for every operator in the FAA telephony pages: its three-letter designator, telephony, company and country.&#xA;Type .id and either the designator from the data block or the telephony the pilot said,&#xA;Ex: .idAVA or .idAVIANCA&#xA;When one command fits more than one operator, it shows all of them." />
+                               Text="A card for every operator in the FAA telephony pages: its three-letter designator, telephony, company and country. Your virtual airlines (below) are added too.&#xA;Type .id and either the designator from the data block or the telephony the pilot said,&#xA;Ex: .idAVA or .idAVIANCA&#xA;When one command fits more than one operator, it shows all of them." />
                     <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap"
                                MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
                                bhv:InlineCode.Text="Written to `Aliases\` in the cycle's folder. Ticked below, it is also added to `Upload_to_vNAS\vNAS_Alias.txt`." />
+                </StackPanel>
+            </ctl:Card>
+
+            <!-- ============ virtual airlines ============ -->
+            <ctl:Card Header="Virtual Airlines">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
+                               bhv:InlineCode.Text="Add your own virtual airlines to `Telephony.txt`. Each gets a card marked `--VA--` with its 3LD, telephony and virtual organization, under `.id` and its 3LD, and `.id` and its telephony. When it shares a command with a real operator or another virtual airline, the command shows all of them, real operators first." />
+
+                    <TextBlock Style="{StaticResource Text.Caption}" Margin="0,0,0,8"
+                               Text="No virtual airlines yet."
+                               Visibility="{Binding HasVirtualAirlines, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
+
+                    <ItemsControl ItemsSource="{Binding VirtualAirlines}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="{x:Type m:VirtualAirlineItem}">
+                                <Border Margin="0,3" Padding="8,6" CornerRadius="{StaticResource Radius.Chip}"
+                                        Background="{StaticResource Brush.Bg.Sunken}">
+                                    <DockPanel>
+                                        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                                            <Button Content="Edit" Style="{StaticResource Button.Ghost}" Margin="8,0,0,0"
+                                                    Command="{Binding DataContext.EditVirtualAirlineCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                    CommandParameter="{Binding}" />
+                                            <Button Content="Delete" Style="{StaticResource Button.Ghost}" Margin="8,0,0,0"
+                                                    Command="{Binding DataContext.DeleteVirtualAirlineCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                    CommandParameter="{Binding}" />
+                                        </StackPanel>
+                                        <StackPanel VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding Label}" Style="{StaticResource Text.Body.Strong}" />
+                                            <TextBlock Text="{Binding Organization}" Style="{StaticResource Text.Body}" TextTrimming="CharacterEllipsis" />
+                                            <TextBlock Text="{Binding Commands}" Style="{StaticResource Text.Caption}" FontFamily="{StaticResource Font.Mono}" />
+                                        </StackPanel>
+                                    </DockPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <!-- editor row: wraps on a narrow window rather than running off it -->
+                    <StackPanel Margin="0,10,0,0" Visibility="{Binding IsEditingVirtualAirline, Converter={StaticResource BoolToVis}}">
+                        <WrapPanel>
+                            <StackPanel Margin="0,0,12,8">
+                                <TextBlock Text="3LD" Style="{StaticResource Text.FieldLabel}" Margin="0,0,0,4" />
+                                <TextBox Width="70" MaxLength="3" CharacterCasing="Upper" Tag="DVA"
+                                         Text="{Binding EditDesignator, UpdateSourceTrigger=PropertyChanged}" />
+                            </StackPanel>
+                            <StackPanel Margin="0,0,12,8">
+                                <TextBlock Text="Telephony" Style="{StaticResource Text.FieldLabel}" Margin="0,0,0,4" />
+                                <TextBox Width="180" CharacterCasing="Upper" Tag="DELTA"
+                                         Text="{Binding EditTelephony, UpdateSourceTrigger=PropertyChanged}" />
+                            </StackPanel>
+                            <StackPanel Margin="0,0,12,8">
+                                <TextBlock Text="Virtual organization" Style="{StaticResource Text.FieldLabel}" Margin="0,0,0,4" />
+                                <TextBox Width="220" Tag="Delta Virtual"
+                                         Text="{Binding EditOrganization, UpdateSourceTrigger=PropertyChanged}" />
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Bottom" Margin="0,0,0,8">
+                                <Button Content="{Binding ConfirmVirtualAirlineText}" Style="{StaticResource Button.Primary}"
+                                        Command="{Binding ConfirmVirtualAirlineCommand}" />
+                                <Button Content="Cancel" Style="{StaticResource Button.Ghost}"
+                                        Margin="8,0,0,0" Command="{Binding CancelVirtualAirlineCommand}" />
+                            </StackPanel>
+                        </WrapPanel>
+                        <TextBlock Text="{Binding VirtualAirlineEditorHint}" Style="{StaticResource Text.Caption}"
+                                   Foreground="{StaticResource Brush.Danger}"
+                                   Visibility="{Binding VirtualAirlineEditorHint, Converter={StaticResource StringToVis}}" />
+                    </StackPanel>
+
+                    <Button Content="Add virtual airline" Style="{StaticResource Button.Ghost}" HorizontalAlignment="Left"
+                            Margin="0,10,0,0" Command="{Binding AddVirtualAirlineCommand}"
+                            Visibility="{Binding IsEditingVirtualAirline, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
                 </StackPanel>
             </ctl:Card>
 

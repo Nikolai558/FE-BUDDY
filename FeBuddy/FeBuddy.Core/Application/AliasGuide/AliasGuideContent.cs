@@ -105,7 +105,8 @@ internal static class AliasGuideContent
 				new GuideCommand(
 					".id[i:operator 3LD or telephony]",
 					"Shows the aircraft operator's card: its three-letter designator (3LD), telephony, company and country. "
-					+ "A U.S. special call sign shows its agency and expiration date instead.",
+					+ "A U.S. special call sign shows its agency and expiration date instead, and a virtual airline your "
+					+ "facility added is marked `--VA--` and shows its virtual organization.",
 					[
 						"When entering the telephony, leave out spaces and special characters.",
 						"When several operators match, the card lists each of them.",

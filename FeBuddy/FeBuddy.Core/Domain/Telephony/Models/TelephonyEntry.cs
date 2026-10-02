@@ -14,6 +14,12 @@ public enum TelephonyEntryKind
 	/// operating agency and expiration date.
 	/// </summary>
 	UsSpecialCallSign,
+
+	/// <summary>
+	/// A virtual airline the user listed on the Telephony tab: a three-letter designator, its
+	/// telephony and its virtual organization. Its card is marked <c>--VA--</c>.
+	/// </summary>
+	VirtualAirline,
 }
 
 /// <summary>
@@ -22,10 +28,16 @@ public enum TelephonyEntryKind
 /// </summary>
 /// <param name="Kind">Where it comes from.</param>
 /// <param name="Identifier">
-/// The three-letter designator (<c>AVA</c>) for an ICAO assignment, or the identifier (<c>ARSIX</c>)
-/// for a U.S. special call sign.
+/// The three-letter designator (<c>AVA</c>) for an ICAO assignment or a virtual airline, or the
+/// identifier (<c>ARSIX</c>) for a U.S. special call sign.
 /// </param>
 /// <param name="Telephony">The spoken call sign, e.g. <c>AVIANCA</c>, <c>AIR SIX</c>.</param>
-/// <param name="Organization">The company (ICAO assignment) or operating agency (U.S. special call sign).</param>
-/// <param name="Detail">The country (ICAO assignment) or expiration date as printed, e.g. <c>24-FEB-2027</c> or <c>N/A</c> (U.S. special call sign).</param>
+/// <param name="Organization">
+/// The company (ICAO assignment), operating agency (U.S. special call sign) or virtual organization
+/// (virtual airline).
+/// </param>
+/// <param name="Detail">
+/// The country (ICAO assignment) or expiration date as printed, e.g. <c>24-FEB-2027</c> or
+/// <c>N/A</c> (U.S. special call sign); empty for a virtual airline.
+/// </param>
 public sealed record TelephonyEntry(TelephonyEntryKind Kind, string Identifier, string Telephony, string Organization, string Detail);

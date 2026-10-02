@@ -264,8 +264,21 @@ whose section leads both documents is not saved on this node at all - it is
 
 ### Telephony only
 
-No keys of its own. Telephony writes no GeoJSON at all - just its alias file, `Telephony.txt` (see
-[Settings blocks](Settings-Blocks.md#telephony)), which can't be turned off: a hand-edited
+| Key | Values | Default |
+|---|---|---|
+| `VirtualAirlines.<n>.Designator` | a virtual airline's three-letter designator, upper case (`<n>` from 1, in list order) | none |
+| `VirtualAirlines.<n>.Telephony` | its telephony, upper case | none |
+| `VirtualAirlines.<n>.Organization` | its virtual organization, as typed | none |
+
+The Virtual Airlines card writes the list whole on every save, renumbered from 1, so a deleted
+entry leaves no keys behind; the same keys go into the settings block (see
+[Settings blocks](Settings-Blocks.md#telephony)). A saved entry that can't be written (a hand-edited
+3LD that is not three letters, say) still shows on the card, and the tab is invalid until it is
+edited or deleted. They are ordinary settings in an export: they go with it, and an import replaces
+the list.
+
+Otherwise Telephony has no keys of its own. It writes no GeoJSON at all - just its alias file,
+`Telephony.txt` (see [Settings blocks](Settings-Blocks.md#telephony)), which can't be turned off: a hand-edited
 `GenerateAliasFile = N` is not honoured, and the tab falls back to `Y` on load. Its tab is still a
 `GeojsonSubServiceViewModel`, so it saves the ["keys every GeoJSON sub-service saves"](#keys-every-geojson-sub-service-saves)
 above except the `Emit…` keys (there is nothing to emit); it has no `CrcEramPropertyDefaults.*` rows

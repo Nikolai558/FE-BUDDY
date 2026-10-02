@@ -19,6 +19,11 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
 -->
 
 ## Unreleased
+### AIRAC Service
+- Telephony ▸ **Virtual Airlines**: add your facility's virtual airlines (3LD, telephony and
+  virtual organization) and each gets its own `.id` commands and a card marked `--VA--`, shown after
+  any real operator that shares the command.
+
 ### File Conversions
 - ERAM to GeoJSON: the warnings about GeoMap defaults CRC can't use now name the value (`DME`, a
   missing BCG) and say what CRC will draw instead (`vor`, BCG 1), without listing every valid style.

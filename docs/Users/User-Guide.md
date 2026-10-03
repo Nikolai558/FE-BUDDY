@@ -1037,15 +1037,20 @@ The cards, top to bottom:
 
 ## Info
 
-**What's New in v3.0?** (the amber card) opens a tour of what changed since FE-Buddy 2.x: a
-side-by-side comparison, what's new for facility engineers, in the maps and in the aliases, and
-the new chart recall commands with their approach type codes and examples. The arrow beside its
-title goes back to Info.
+The two amber cards open FE-Buddy's own pages; the arrow beside a page's title goes back.
 
-**Export FE-Buddy Alias Command Guide**, on that page, saves a guide to every alias command
-FE-Buddy makes, written for controllers: what each command shows or opens, how it is built, and
+**What's New in v3.0?** opens a tour of what changed since FE-Buddy 2.x: a side-by-side
+comparison, what's new for facility engineers, in the maps and in the aliases, and the new chart
+recall commands with their approach type codes and examples. Its Alias Command Guide card has the
+same **Export FE-Buddy Alias Command Guide** button as the guide's own page, and **View the
+guide →** opens that page (its arrow then goes back to What's New).
+
+**Alias Command Guide** shows the guide to every alias command FE-Buddy makes, written for
+controllers, exactly as it is exported: what each command shows or opens, how it is built, and
 real examples, grouped as In-Scope Reference (`.apt`, `.nav`, `.id`), Data Display (airways,
-departures and arrivals) and Chart Recall. First choose the format:
+departures and arrivals) and Chart Recall. The parts of a command to replace are coloured by what
+goes there, as in the exported web page. **Export FE-Buddy Alias Command Guide**, at the top,
+saves it for your facility's website. First choose the format:
 
 - **Web (.html)** - one dark page, with nothing else to download. The parts of a command to
   replace are coloured by what goes there (an airport ID, an approach type, a runway, ...). Its
@@ -1061,7 +1066,7 @@ has one, FE-Buddy asks before replacing it, since it may hold your own edits.
 
 The guide says the commands are merged into your facility's alias file, naming the facility from
 Settings ▸ Facility Profile when there is one. It doesn't depend on a run or a cycle, so you can
-export it at any time.
+read or export it at any time.
 
 The other cards link to this user guide, the [FAQ and troubleshooting](FAQ-and-Troubleshooting.md)
 page, the change log, and the issue tracker.

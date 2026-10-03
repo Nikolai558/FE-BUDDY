@@ -17,7 +17,7 @@ namespace FeBuddy.Core.Application.AliasGuide.Models;
 /// it shows the parts to type and the parts to replace.
 /// </param>
 /// <param name="Sections">The command sections, in order.</param>
-internal sealed record AliasGuideDocument(
+public sealed record AliasGuideDocument(
 	string Title,
 	string Lead,
 	GuideSection About,
@@ -29,41 +29,41 @@ internal sealed record AliasGuideDocument(
 /// <param name="Title">The section's heading.</param>
 /// <param name="Intro">The line under the heading, or <see langword="null"/> for none.</param>
 /// <param name="Blocks">The section's content, in order.</param>
-internal sealed record GuideSection(string Id, string Title, string? Intro, IReadOnlyList<GuideBlock> Blocks);
+public sealed record GuideSection(string Id, string Title, string? Intro, IReadOnlyList<GuideBlock> Blocks);
 
 /// <summary>One piece of a section's content.</summary>
-internal abstract record GuideBlock;
+public abstract record GuideBlock;
 
 /// <summary>A paragraph.</summary>
 /// <param name="Text">The paragraph's inline text.</param>
-internal sealed record GuideParagraph(string Text) : GuideBlock;
+public sealed record GuideParagraph(string Text) : GuideBlock;
 
 /// <summary>A heading inside a section.</summary>
 /// <param name="Text">The heading's plain text.</param>
-internal sealed record GuideHeading(string Text) : GuideBlock;
+public sealed record GuideHeading(string Text) : GuideBlock;
 
 /// <summary>A bulleted list.</summary>
 /// <param name="Items">Each item's inline text.</param>
-internal sealed record GuideList(IReadOnlyList<string> Items) : GuideBlock;
+public sealed record GuideList(IReadOnlyList<string> Items) : GuideBlock;
 
 /// <summary>A table of commands: syntax, description and examples, one row per command.</summary>
 /// <param name="Commands">The rows.</param>
-internal sealed record GuideCommandTable(IReadOnlyList<GuideCommand> Commands) : GuideBlock;
+public sealed record GuideCommandTable(IReadOnlyList<GuideCommand> Commands) : GuideBlock;
 
 /// <summary>A plain table, such as the approach type codes.</summary>
 /// <param name="Headers">The column headings.</param>
 /// <param name="Rows">Each row's cells, as inline text, as many as there are headings.</param>
-internal sealed record GuideTable(IReadOnlyList<string> Headers, IReadOnlyList<IReadOnlyList<string>> Rows) : GuideBlock;
+public sealed record GuideTable(IReadOnlyList<string> Headers, IReadOnlyList<IReadOnlyList<string>> Rows) : GuideBlock;
 
 /// <summary>One command: how it is written, what it does, and examples.</summary>
 /// <param name="Syntax">The command's pattern, in command markup, e.g. <c>.apt[a:FAA or ICAO airport ID]</c>.</param>
 /// <param name="Description">What the command does, as inline text.</param>
 /// <param name="Notes">Short notes shown under the description, as inline text; often none.</param>
 /// <param name="Examples">Real commands, in command markup, e.g. <c>.apt{a:DTW}</c>.</param>
-internal sealed record GuideCommand(string Syntax, string Description, IReadOnlyList<string> Notes, IReadOnlyList<string> Examples);
+public sealed record GuideCommand(string Syntax, string Description, IReadOnlyList<string> Notes, IReadOnlyList<string> Examples);
 
 /// <summary>What a part of a command stands for, which sets its colour in the web page.</summary>
-internal enum CommandPartKind
+public enum CommandPartKind
 {
 	/// <summary>Text typed exactly as shown: <c>.apt</c>, the <c>c</c> of a chart recall.</summary>
 	Typed,
@@ -92,16 +92,16 @@ internal enum CommandPartKind
 /// <param name="Kind">What the part stands for.</param>
 /// <param name="IsPlaceholder"><see langword="true"/> when the controller replaces it with a real value.</param>
 /// <param name="IsOptional"><see langword="true"/> when the part can be left out.</param>
-internal sealed record CommandPart(string Text, CommandPartKind Kind, bool IsPlaceholder, bool IsOptional);
+public sealed record CommandPart(string Text, CommandPartKind Kind, bool IsPlaceholder, bool IsOptional);
 
 /// <summary>One run of inline text.</summary>
 /// <param name="Text">The run's text, for plain and bold runs.</param>
 /// <param name="Style">How the run is shown.</param>
 /// <param name="Parts">The command parts, for a code run; empty otherwise.</param>
-internal sealed record InlineRun(string Text, InlineStyle Style, IReadOnlyList<CommandPart> Parts);
+public sealed record InlineRun(string Text, InlineStyle Style, IReadOnlyList<CommandPart> Parts);
 
 /// <summary>How a run of inline text is shown.</summary>
-internal enum InlineStyle
+public enum InlineStyle
 {
 	/// <summary>Plain text.</summary>
 	Plain,

@@ -19,13 +19,13 @@ namespace FeBuddy.Core.Application.AliasGuide;
 /// <c>.[a:airport ID][i:procedure]c</c> is a pattern and <c>.{a:dtw}{i:CLVIN}c</c> an example of it.
 /// </para>
 /// </remarks>
-internal static class CommandMarkup
+public static class CommandMarkup
 {
 	/// <summary>Splits command markup into its parts.</summary>
 	/// <param name="markup">The markup, e.g. <c>.apt[a:FAA or ICAO airport ID]</c>.</param>
 	/// <returns>The parts, in order.</returns>
 	/// <exception cref="FormatException">The markup has an unclosed bracket, an unknown kind or nothing inside a bracket.</exception>
-	internal static IReadOnlyList<CommandPart> Parse(string markup)
+	public static IReadOnlyList<CommandPart> Parse(string markup)
 	{
 		ArgumentNullException.ThrowIfNull(markup);
 
@@ -72,7 +72,7 @@ internal static class CommandMarkup
 	/// <summary>The command as a controller types it: every part's text, joined.</summary>
 	/// <param name="parts">The parts.</param>
 	/// <returns>e.g. <c>.dtwI22Lc</c> for an example.</returns>
-	internal static string Flatten(IEnumerable<CommandPart> parts) => string.Concat(parts.Select(part => part.Text));
+	public static string Flatten(IEnumerable<CommandPart> parts) => string.Concat(parts.Select(part => part.Text));
 
 	/// <summary>Reads one bracket's inside: <c>a:airport ID</c> or <c>p?:page</c>.</summary>
 	private static CommandPart ParseBracket(string markup, string inside, bool isPlaceholder)

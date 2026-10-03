@@ -9,12 +9,12 @@ namespace FeBuddy.UnitTests.Wpf.ViewModels;
 /// <summary>
 /// Covers <see cref="WhatsNewViewModel"/>: every chart recall command the page shows (the examples,
 /// the new form of each changed command, each approach type's code) is what <see cref="ChartRecallCodes"/>
-/// really gives, and Back runs what the page was given. The export button opens a dialog, so it is
-/// not run here.
+/// really gives, and Back and View the guide run what the page was given. The export button opens a
+/// dialog, so it is not run here.
 /// </summary>
 public sealed class WhatsNewViewModelTests
 {
-	private static WhatsNewViewModel Page() => new(() => { });
+	private static WhatsNewViewModel Page() => new(() => { }, () => { });
 
 	/// <summary>The commands a chart gets: a period, the airport in lower case, each code, then <c>c</c>.</summary>
 	private static string[] Commands(string airport, ChartRecallCodeResult result) =>
@@ -134,16 +134,28 @@ public sealed class WhatsNewViewModelTests
 		Assert.Equal(code + "9", Assert.Single(Approach(chartName).Codes));
 	}
 
-	// ---- Back and Export ----
+	// ---- Back, View the guide and Export ----
 
 	[Fact]
 	public void back_runs_the_action_the_page_was_given()
 	{
 		int calls = 0;
-		WhatsNewViewModel page = new(() => calls++);
+		WhatsNewViewModel page = new(() => calls++, () => { });
 
 		Assert.True(page.BackCommand.CanExecute(null));
 		page.BackCommand.Execute(null);
+
+		Assert.Equal(1, calls);
+	}
+
+	[Fact]
+	public void view_the_guide_runs_the_action_the_page_was_given()
+	{
+		int calls = 0;
+		WhatsNewViewModel page = new(() => { }, () => calls++);
+
+		Assert.True(page.OpenGuideCommand.CanExecute(null));
+		page.OpenGuideCommand.Execute(null);
 
 		Assert.Equal(1, calls);
 	}

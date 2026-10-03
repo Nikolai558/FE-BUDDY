@@ -8,7 +8,7 @@ namespace FeBuddy.Core.Application.AliasGuide;
 /// <summary>
 /// Writes the FE-Buddy Alias Command Guide: a controller's explanation of every alias command
 /// FE-Buddy makes, as a web page or as Markdown, for a facility to post on its own website
-/// (Info ▸ What's New in v3.0? ▸ Export FE-Buddy Alias Command Guide).
+/// (Export FE-Buddy Alias Command Guide, on Info ▸ Alias Command Guide and on Info ▸ What's New in v3.0?).
 /// </summary>
 /// <remarks>
 /// The content is <see cref="AliasGuideContent"/>; <see cref="AliasGuideHtmlWriter"/> and

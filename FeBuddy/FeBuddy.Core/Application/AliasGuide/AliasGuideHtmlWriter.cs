@@ -24,17 +24,6 @@ namespace FeBuddy.Core.Application.AliasGuide;
 /// </remarks>
 internal static class AliasGuideHtmlWriter
 {
-	/// <summary>The part kinds a controller replaces, in the order the colour key lists them.</summary>
-	private static readonly CommandPartKind[] KeyKinds =
-	[
-		CommandPartKind.Airport,
-		CommandPartKind.Identifier,
-		CommandPartKind.ApproachType,
-		CommandPartKind.Variant,
-		CommandPartKind.Runway,
-		CommandPartKind.Page,
-	];
-
 	private const string Styles = """
 		/* =====================================================================
 		   Make it yours: the colours, fonts and sizes are these variables.
@@ -152,7 +141,7 @@ internal static class AliasGuideHtmlWriter
 
 		html.AppendLine("<nav aria-label=\"Contents\">");
 		html.AppendLine($"<a href=\"#{guide.About.Id}\">{Escape(guide.About.Title)}</a>");
-		html.AppendLine("<a href=\"#notation\">How to read this guide</a>");
+		html.AppendLine($"<a href=\"#notation\">{Escape(AliasGuideContent.NotationTitle)}</a>");
 		foreach (GuideSection section in guide.Sections)
 		{
 			html.AppendLine($"<a href=\"#{section.Id}\">{Escape(section.Title)}</a>");
@@ -225,18 +214,18 @@ internal static class AliasGuideHtmlWriter
 	private static void AppendNotation(StringBuilder html, IReadOnlyList<string> notes)
 	{
 		html.AppendLine("<section id=\"notation\">");
-		html.AppendLine("<h2>How to read this guide</h2>");
+		html.AppendLine($"<h2>{Escape(AliasGuideContent.NotationTitle)}</h2>");
 		html.AppendLine("<ul class=\"legend\">");
-		html.AppendLine("<li><code class=\"cmd\">.apt</code> Plain text: type it exactly as shown.</li>");
-		html.AppendLine("<li><code class=\"cmd\"><span class=\"part k-ident\">Highlighted</span></code> Replace it with the real value. Its colour shows what goes there:");
+		html.AppendLine($"<li><code class=\"cmd\">.apt</code> {Escape(AliasGuideContent.TypedLegend)}</li>");
+		html.AppendLine($"<li><code class=\"cmd\"><span class=\"part k-ident\">Highlighted</span></code> {Escape(AliasGuideContent.PlaceholderLegend)}");
 		html.AppendLine("<ul class=\"key\">");
-		foreach (CommandPartKind kind in KeyKinds)
+		foreach (CommandPartKind kind in AliasGuideContent.KeyKinds)
 		{
 			html.AppendLine($"<li><code class=\"cmd\"><span class=\"part {KindClass(kind)}\">{Escape(AliasGuideContent.KindLabel(kind))}</span></code></li>");
 		}
 
 		html.AppendLine("</ul></li>");
-		html.AppendLine("<li><code class=\"cmd\"><span class=\"part k-page opt\">Dashed</span></code> Optional.</li>");
+		html.AppendLine($"<li><code class=\"cmd\"><span class=\"part k-page opt\">Dashed</span></code> {Escape(AliasGuideContent.OptionalLegend)}</li>");
 		html.AppendLine("</ul>");
 
 		foreach (string note in notes)

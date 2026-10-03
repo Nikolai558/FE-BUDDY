@@ -1,7 +1,7 @@
 <!--
-    InfoView  -  the What's New in v3.0? page and links to the manual, change log and issue
-    tracker, laid out as a card grid so the page fills its width. What's New opens in place of
-    the cards (WhatsNewView), with a way back.
+    InfoView  -  the What's New in v3.0? and Alias Command Guide pages, and links to the manual,
+    change log and issue tracker, laid out as a card grid so the page fills its width. A page opens
+    in place of the cards (WhatsNewView, AliasGuidePageView), with a way back.
 -->
 <UserControl x:Class="FeBuddy.Wpf.Views.InfoView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -19,17 +19,20 @@
         <DataTemplate DataType="{x:Type vm:WhatsNewViewModel}">
             <views:WhatsNewView />
         </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:AliasGuideViewModel}">
+            <views:AliasGuidePageView />
+        </DataTemplate>
     </UserControl.Resources>
 
     <Grid Background="{StaticResource Brush.Bg.Base}">
 
-        <!-- the cards, shown while What's New is closed -->
+        <!-- the cards, shown while no page is open -->
         <Grid>
             <Grid.Style>
                 <Style TargetType="Grid">
                     <Setter Property="Visibility" Value="Collapsed" />
                     <Style.Triggers>
-                        <DataTrigger Binding="{Binding WhatsNew}" Value="{x:Null}">
+                        <DataTrigger Binding="{Binding Page}" Value="{x:Null}">
                             <Setter Property="Visibility" Value="Visible" />
                         </DataTrigger>
                     </Style.Triggers>
@@ -60,7 +63,7 @@
                         <ItemsControl.ItemTemplate>
                             <DataTemplate DataType="{x:Type vm:InfoViewModel+Resource}">
                                 <ctl:Card Width="330" Height="176" Margin="0,0,16,16">
-                                    <!-- What's New is set apart in amber, like Card.Accent -->
+                                    <!-- FE-Buddy's own pages are set apart in amber, like Card.Accent -->
                                     <ctl:Card.Style>
                                         <Style TargetType="ctl:Card" BasedOn="{StaticResource {x:Type ctl:Card}}">
                                             <Style.Triggers>
@@ -91,7 +94,7 @@
             </ScrollViewer>
         </Grid>
 
-        <!-- What's New, in place of the cards while it is open -->
-        <ContentControl Content="{Binding WhatsNew}" Focusable="False" />
+        <!-- the open page, in place of the cards -->
+        <ContentControl Content="{Binding Page}" Focusable="False" />
     </Grid>
 </UserControl>

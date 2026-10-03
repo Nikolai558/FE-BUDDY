@@ -1,6 +1,7 @@
 <!--
-    AliasGuideFormatWindow  -  Info ▸ What's New ▸ Export FE-Buddy Alias Command Guide asks this
-    first: a web page, Markdown, or both. Choose folder… then asks where to save it; the files
+    AliasGuideFormatWindow  -  Export FE-Buddy Alias Command Guide (Info ▸ Alias Command Guide, or
+    What's New) asks this first: a web page, Markdown, or both. Choose folder… then asks where to
+    save it (AliasGuideExport); the files
     are always named FE-Buddy Alias Command Guide.html / .md. Backs onto AliasGuideFormatViewModel.
 -->
 <ctl:ChromeWindow x:Class="FeBuddy.Wpf.Views.AliasGuideFormatWindow"

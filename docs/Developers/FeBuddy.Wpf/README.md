@@ -57,6 +57,8 @@ Behaviors/            attached properties a view opts into: FieldState (validati
                       MaximizeToWorkArea
 Controls/             reusable controls: Card, SectionHeader, Option, CopyButton,
                       FilterPicker (+ FilterOption), MarkdownView, MapCanvas,
+                      AliasGuideDocumentView (the alias command guide, its parts
+                      coloured by kind from Palette.xaml's Brush.Command.*),
                       BesideOrBelow (a panel: its second child beside the first,
                       or under it when the row is too narrow), and ChromeWindow
                       (the base for every dialog window)
@@ -108,8 +110,9 @@ Views/                ShellWindow (custom chrome) + Dashboard, TabbedServiceView
                       WxStationsView, ProceduresView, TelephonyView, VnasAliasView, FileNamesView, DatToGeojsonView, SctToGeojsonView, EramToGeojsonView,
                       ServicePreviewTabView, ServiceRunReviewTabView), MapView (the
                       Map page: just a MapWorkspace), MapWorkspace (the one map
-                      screen), Settings, Info (and WhatsNewView, which opens in its
-                      place); UpdateWindow, AliasGuideFormatWindow (Web, Markdown or
+                      screen), Settings, Info (and WhatsNewView and AliasGuidePageView,
+                      which open in its place; the export both offer is
+                      AliasGuideExport); UpdateWindow, AliasGuideFormatWindow (Web, Markdown or
                       both, for the alias command guide), ConfirmWindow (Confirm /
                       Cancel, or a third choice between them; a long message
                       scrolls), CredentialEditorWindow, RoiPickerWindow (a
@@ -162,7 +165,7 @@ root - the same rule as `FeBuddy.Core`.
   `StaThread.Run`, since WPF controls need a thread of their own. The map's math, GeoJSON reader,
   home view, ROI view-model and `MapCanvas`, the File Names, Airways and ERAM to GeoJSON tabs'
   view-models, the sub-service order, the Reset window's view-model, the Review tab's run feed,
-  the Info and What's New pages' view-models (and the alias command guide's format question),
+  the Info, What's New and Alias Command Guide pages' view-models (and the guide's format question),
   `BesideOrBelow`, `InlineCode` and `InlineMarkdown` are covered today.
 
 ### Screens

@@ -147,9 +147,10 @@ FeBuddy.Core/
     │                         saved credential), VnasAliasFileWriter (merges them and every alias
     │                         file marked for vNAS into Upload_to_vNAS\vNAS_Alias.txt, after the
     │                         duplicate report); models: AliasSource, AliasSourceLoad, VnasAliasResult
-    ├── AliasGuide/     AliasGuideWriter: the FE-Buddy Alias Command Guide (Info ▸ What's New), a
-    │                   controller's explanation of every alias command, as a web page or Markdown.
-    │                   AliasGuideContent says it; AliasGuideHtmlWriter / AliasGuideMarkdownWriter
+    ├── AliasGuide/     AliasGuideWriter: the FE-Buddy Alias Command Guide (Info ▸ Alias Command
+    │                   Guide, and What's New), a controller's explanation of every alias command,
+    │                   as a web page or Markdown. AliasGuideContent says it (public, so the app's
+    │                   own page can show it too); AliasGuideHtmlWriter / AliasGuideMarkdownWriter
     │                   lay it out; CommandMarkup and GuideInline read its markup
     ├── Conversions/    ConversionSettingsReader and ConversionFiles (what every conversion
     │   │               shares), then one folder per file conversion

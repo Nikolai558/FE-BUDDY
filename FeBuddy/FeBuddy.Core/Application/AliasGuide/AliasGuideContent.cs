@@ -20,11 +20,39 @@ namespace FeBuddy.Core.Application.AliasGuide;
 /// example against <c>ChartRecallCodes</c>, so a change to the codes that the guide does not follow
 /// fails a test.
 /// </para>
+/// <para>
+/// Three things lay it out: <c>AliasGuideHtmlWriter</c> and <c>AliasGuideMarkdownWriter</c> for the
+/// export, and the app's Info ▸ Alias Command Guide page. The legend text below is shared by the web
+/// page and the app, which both show a part to replace as a coloured pill.
+/// </para>
 /// </remarks>
-internal static class AliasGuideContent
+public static class AliasGuideContent
 {
 	/// <summary>The guide's title.</summary>
-	internal const string Title = "FE-Buddy Alias Command Guide";
+	public const string Title = "FE-Buddy Alias Command Guide";
+
+	/// <summary>The heading of the part that explains how a command is shown.</summary>
+	public const string NotationTitle = "How to read this guide";
+
+	/// <summary>What plain text in a command means, where parts to replace are coloured pills.</summary>
+	public const string TypedLegend = "Plain text: type it exactly as shown.";
+
+	/// <summary>What a coloured pill means; the colour key follows it.</summary>
+	public const string PlaceholderLegend = "Replace it with the real value. Its colour shows what goes there:";
+
+	/// <summary>What a pill with a dashed edge means.</summary>
+	public const string OptionalLegend = "Optional.";
+
+	/// <summary>The part kinds a controller replaces, in the order the colour key lists them.</summary>
+	public static IReadOnlyList<CommandPartKind> KeyKinds { get; } =
+	[
+		CommandPartKind.Airport,
+		CommandPartKind.Identifier,
+		CommandPartKind.ApproachType,
+		CommandPartKind.Variant,
+		CommandPartKind.Runway,
+		CommandPartKind.Page,
+	];
 
 	/// <summary>Builds the guide.</summary>
 	/// <param name="facility">
@@ -32,7 +60,7 @@ internal static class AliasGuideContent
 	/// are used, so nothing in it can read as markup.
 	/// </param>
 	/// <returns>The guide's content.</returns>
-	internal static AliasGuideDocument Build(string? facility)
+	public static AliasGuideDocument Build(string? facility)
 	{
 		string facilityId = string.Concat((facility ?? string.Empty).Where(char.IsAsciiLetterOrDigit)).ToUpperInvariant();
 		string aliasFile = facilityId.Length == 0
@@ -54,7 +82,7 @@ internal static class AliasGuideContent
 	/// <summary>The colour key's name for each kind of part a controller replaces.</summary>
 	/// <param name="kind">The kind.</param>
 	/// <returns>e.g. <c>Airport ID</c>.</returns>
-	internal static string KindLabel(CommandPartKind kind) => kind switch
+	public static string KindLabel(CommandPartKind kind) => kind switch
 	{
 		CommandPartKind.Airport => "Airport ID",
 		CommandPartKind.Identifier => "ID or name",

@@ -6,13 +6,13 @@ namespace FeBuddy.Core.Application.AliasGuide;
 /// Reads the guide's inline text: <c>`code`</c> (which can hold command markup, see
 /// <see cref="CommandMarkup"/>) and <c>**bold**</c>. Nothing else is special.
 /// </summary>
-internal static class GuideInline
+public static class GuideInline
 {
 	/// <summary>Splits inline text into its runs.</summary>
 	/// <param name="text">The text, e.g. <c>Type **either** `.apt{a:DTW}` or `.apt{a:KDTW}`.</c></param>
 	/// <returns>The runs, in order, none of them empty.</returns>
 	/// <exception cref="FormatException">A backtick or <c>**</c> is never closed, or a code span's command markup is malformed.</exception>
-	internal static IReadOnlyList<InlineRun> Parse(string text)
+	public static IReadOnlyList<InlineRun> Parse(string text)
 	{
 		ArgumentNullException.ThrowIfNull(text);
 

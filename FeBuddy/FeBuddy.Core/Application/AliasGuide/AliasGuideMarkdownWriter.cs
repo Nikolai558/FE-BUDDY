@@ -16,8 +16,6 @@ namespace FeBuddy.Core.Application.AliasGuide;
 /// </remarks>
 internal static class AliasGuideMarkdownWriter
 {
-	private const string NotationTitle = "How to read this guide";
-
 	/// <summary>Writes the guide as Markdown.</summary>
 	/// <param name="guide">The guide's content.</param>
 	/// <param name="options">The version and date the guide names.</param>
@@ -31,7 +29,7 @@ internal static class AliasGuideMarkdownWriter
 		markdown.AppendLine(Inline(guide.Lead));
 		markdown.AppendLine();
 
-		IEnumerable<string> titles = [guide.About.Title, NotationTitle, .. guide.Sections.Select(section => section.Title)];
+		IEnumerable<string> titles = [guide.About.Title, AliasGuideContent.NotationTitle, .. guide.Sections.Select(section => section.Title)];
 		markdown.AppendLine("**Contents:** " + string.Join(" · ", titles.Select(title => $"[{title}](#{Slug(title)})")));
 
 		AppendSection(markdown, guide.About);
@@ -115,7 +113,7 @@ internal static class AliasGuideMarkdownWriter
 	private static void AppendNotation(StringBuilder markdown, IReadOnlyList<string> notes)
 	{
 		markdown.AppendLine();
-		markdown.AppendLine($"## {NotationTitle}");
+		markdown.AppendLine($"## {AliasGuideContent.NotationTitle}");
 		markdown.AppendLine();
 		markdown.AppendLine("- `.apt` Plain text: type it exactly as shown.");
 		markdown.AppendLine("- `<airport ID>` Angle brackets: replace them, and what is inside them, with the real value.");

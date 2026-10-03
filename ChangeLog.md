@@ -22,6 +22,11 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
 - Feature #286 - The activity log has a **Clear** button that empties it on screen and resets its
   counts, so after several runs you can see just the next one. The log file keeps every entry.
 
+### Info
+- The **Alias Command Guide** has its own Info page: read the whole guide in FE-Buddy, colours and
+  all, exactly as it exports, with the export button at the top. What's New keeps its export
+  button and adds **View the guide →**.
+
 ---
 
 ## 3.0.0-alpha.4

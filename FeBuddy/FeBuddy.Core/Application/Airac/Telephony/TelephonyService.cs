@@ -73,7 +73,7 @@ public static class TelephonyService
 			return Finish(stopwatch, messages, new TelephonyBuildResult([], 0, 0, 0, []), new TelephonyAliasGenerateResult(null, 0, 0));
 		}
 
-		TelephonyBuildResult buildResult = TelephonyBuilder.Read(telephonyData, today);
+		TelephonyBuildResult buildResult = TelephonyBuilder.Read(telephonyData, today, settings.VirtualAirlines);
 		messages.AddRange(buildResult.Messages);
 
 		TelephonyAliasGenerateResult aliasResult = TelephonyAliasWriter.Generate(buildResult.Entries, settings);
@@ -94,18 +94,25 @@ public static class TelephonyService
 
 	/// <summary>
 	/// The one-line summary of the file: its commands, how many show more than one operator, and
-	/// what was left out and why.
+	/// what was left out and why. Virtual airlines are named only when there are some.
 	/// </summary>
 	private static string SummaryText(TelephonyBuildResult build, TelephonyAliasGenerateResult alias, string aliasFileName)
 	{
-		int icao = build.Entries.Count(entry => entry.Kind == TelephonyEntryKind.IcaoAssignment);
-		int special = build.Entries.Count - icao;
+		int icao = Count(build, TelephonyEntryKind.IcaoAssignment);
+		int special = Count(build, TelephonyEntryKind.UsSpecialCallSign);
+		int virtualAirlines = Count(build, TelephonyEntryKind.VirtualAirline);
 
-		return $"{aliasFileName}: {alias.CommandCount:N0} command(s) for {icao:N0} ICAO operator(s) and " +
-			$"{special:N0} U.S. special call sign(s); {alias.MergedCommandCount:N0} command(s) show more than one operator. " +
+		string operators = virtualAirlines > 0
+			? $"{icao:N0} ICAO operator(s), {special:N0} U.S. special call sign(s) and {virtualAirlines:N0} virtual airline(s)"
+			: $"{icao:N0} ICAO operator(s) and {special:N0} U.S. special call sign(s)";
+
+		return $"{aliasFileName}: {alias.CommandCount:N0} command(s) for {operators}; " +
+			$"{alias.MergedCommandCount:N0} command(s) show more than one operator. " +
 			$"Left out: {build.NoDesignatorCount:N0} row(s) with no designator, {build.NoTelephonyCount:N0} with no telephony, " +
 			$"{build.ExpiredCount:N0} expired U.S. special call sign(s).";
 	}
+
+	private static int Count(TelephonyBuildResult build, TelephonyEntryKind kind) => build.Entries.Count(entry => entry.Kind == kind);
 
 	/// <summary>Stops the clock, copies every message to the shared application log, and assembles the result.</summary>
 	private static TelephonyServiceResult Finish(
@@ -121,14 +128,13 @@ public static class TelephonyService
 			AppLog.Write(message.Level, message.Source, message.Text);
 		}
 
-		int icao = build.Entries.Count(entry => entry.Kind == TelephonyEntryKind.IcaoAssignment);
-
 		return new TelephonyServiceResult
 		{
 			Messages = messages,
 			Elapsed = stopwatch.Elapsed,
-			IcaoAssignmentCount = icao,
-			SpecialCallSignCount = build.Entries.Count - icao,
+			IcaoAssignmentCount = Count(build, TelephonyEntryKind.IcaoAssignment),
+			SpecialCallSignCount = Count(build, TelephonyEntryKind.UsSpecialCallSign),
+			VirtualAirlineCount = Count(build, TelephonyEntryKind.VirtualAirline),
 			NoDesignatorCount = build.NoDesignatorCount,
 			NoTelephonyCount = build.NoTelephonyCount,
 			ExpiredCount = build.ExpiredCount,

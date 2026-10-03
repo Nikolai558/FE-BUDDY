@@ -18,6 +18,12 @@ namespace FeBuddy.Core.Infrastructure.Geojson;
 public static class GeojsonFileWriter
 {
 	/// <summary>
+	/// The precision that means "do not round" (Settings ▸ GeoJSON Files ▸ Do not round): every
+	/// coordinate is written exactly as it is held, with every decimal place it has.
+	/// </summary>
+	public const int NoRounding = 0;
+
+	/// <summary>
 	/// Serializes <paramref name="collection"/> to RFC 7946 GeoJSON and writes it to
 	/// <paramref name="directory"/>/<paramref name="fileName"/>.
 	/// </summary>
@@ -32,7 +38,8 @@ public static class GeojsonFileWriter
 	/// <param name="fileName">The file name to write, including extension.</param>
 	/// <param name="maxDecimalPlaces">
 	/// Maximum decimal places to keep for every coordinate, applied just before serialization.
-	/// A value of 0 or less means "do not round".
+	/// <see cref="NoRounding"/> (or less) means "do not round": each coordinate is serialized as
+	/// the shortest text that reads back to the very same value.
 	/// </param>
 	/// <returns>
 	/// The full path written, or <see langword="null"/> when
@@ -69,7 +76,7 @@ public static class GeojsonFileWriter
 
 		Directory.CreateDirectory(directory);
 
-		if (maxDecimalPlaces > 0)
+		if (maxDecimalPlaces > NoRounding)
 		{
 			RoundCoordinates(collection, maxDecimalPlaces);
 		}

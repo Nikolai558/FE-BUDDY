@@ -8,7 +8,8 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
   Adding an entry: put one bullet under "## Unreleased" in the same pull request as the change,
   under the "### " heading it belongs to (add the heading if it isn't there yet; after a release,
   "## Unreleased" starts empty, with no headings). Headings used so far: Updates, AIRAC Service,
-  File Conversions, Settings, Installing and uninstalling, Look and feel, Dev notes (always last).
+  File Conversions, Info, Settings, Installing and uninstalling, Look and feel, Dev notes (always
+  last).
   Write it for users, not developers: what changed and why they care, in one line. Issue numbers
   become links ("Bug #215 - ..."). Put developer-only changes under "### Dev notes". Link
   a doc at the release's tag (blob/<version>/docs/...), never at a branch.
@@ -16,8 +17,16 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
   line above, Markdown turns the line before it into a heading). The release notes leave it out.
   Full guide: docs/Developers/RELEASING.md.
 -->
-
 ## Unreleased
+
+---
+
+## 3.0.0-alpha.4
+### AIRAC Service
+- Telephony ▸ **Virtual Airlines**: add your facility's virtual airlines (3LD, telephony and
+  virtual organization) and each gets its own `.id` commands and a card marked `--VA--`, shown after
+  any real operator that shares the command.
+
 ### File Conversions
 - ERAM to GeoJSON: the warnings about GeoMap defaults CRC can't use now name the value (`DME`, a
   missing BCG) and say what CRC will draw instead (`vor`, BCG 1), without listing every valid style.
@@ -26,6 +35,17 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
   can't draw now gives way to its object's default instead of CRC's.
 - ERAM to GeoJSON ▸ CRC ERAM Defaults Source: each option has a one-line description, and hovering
   over it explains in plain words what it does, with an example.
+
+### Info
+- New **What's New in v3.0?** page: what changed since FE-Buddy 2.x at a glance, and the new chart
+  recall commands with their approach type codes and examples.
+- **Export FE-Buddy Alias Command Guide** (on the What's New page) saves a guide to every FE-Buddy
+  alias command for your controllers, with real examples, as a web page, Markdown or both, easy to
+  restyle and post on your facility's website. You only pick the format and the folder.
+
+### Settings
+- GeoJSON Files ▸ Maximum Coordinate Precision has a new **Do not round** option: FE-Buddy writes
+  every coordinate exactly as it is in the source data, never rounded or changed.
 
 ### Look and feel
 - Names and values in the Review tab's messages (`vor`, `bcg`) show in the code font.

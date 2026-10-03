@@ -11,9 +11,13 @@ namespace FeBuddy.Core.Application.Airac.Telephony;
 
 /// <summary>
 /// Reads the parsed FAA telephony pages into <see cref="TelephonyEntry"/> cards, leaving out the
-/// rows a command cannot be made for.
+/// rows a command cannot be made for, then adds the user's virtual airlines.
 /// </summary>
 /// <remarks>
+/// <para>
+/// The virtual airlines come last, in the user's order, so a command they share with a real
+/// operator shows the real operator's card first (see <c>TelephonyAliasWriter</c>).
+/// </para>
 /// <para>Left out, and counted for the run's summary:</para>
 /// <list type="bullet">
 ///   <item>a register row with no three-letter designator (the FAA prints <c>...</c> or <c>--</c>) - its telephony alone is not looked up;</item>
@@ -33,12 +37,14 @@ public static class TelephonyBuilder
 	private static readonly string[] ExpirationFormats = ["d-MMM-yyyy", "dd-MMM-yyyy"];
 
 	/// <summary>
-	/// Reads every row into an entry, or counts why it was left out.
+	/// Reads every row into an entry, or counts why it was left out, then adds an entry for each
+	/// virtual airline.
 	/// </summary>
 	/// <param name="data">The parsed pages.</param>
 	/// <param name="today">The date a U.S. special call sign's expiration is compared with.</param>
+	/// <param name="virtualAirlines">The user's virtual airlines, already checked by <see cref="TelephonySettingsParser"/>; <see langword="null"/> for none.</param>
 	/// <returns>The entries, the counts of rows left out, and any messages.</returns>
-	public static TelephonyBuildResult Read(TelephonyDataCollection data, DateOnly today)
+	public static TelephonyBuildResult Read(TelephonyDataCollection data, DateOnly today, IReadOnlyList<VirtualAirline>? virtualAirlines = null)
 	{
 		ArgumentNullException.ThrowIfNull(data);
 
@@ -96,6 +102,16 @@ public static class TelephonyBuilder
 				Upper(row.Telephony),
 				Upper(row.Agency),
 				Upper(row.ExpirationDate)));
+		}
+
+		foreach (VirtualAirline virtualAirline in virtualAirlines ?? [])
+		{
+			entries.Add(new TelephonyEntry(
+				TelephonyEntryKind.VirtualAirline,
+				Upper(virtualAirline.Designator),
+				Upper(virtualAirline.Telephony),
+				Upper(virtualAirline.Organization),
+				string.Empty));
 		}
 
 		return new TelephonyBuildResult(entries, noDesignator, noTelephony, expired, messages);

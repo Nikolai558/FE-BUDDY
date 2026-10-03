@@ -526,9 +526,9 @@ internal static class HarnessSettings
 
 	/// <summary>
 	/// Builds the raw settings dictionary for <c>TelephonyService.Run</c>. The alias file is
-	/// Telephony's only output and covers every operator, so all there is to choose is whether it
-	/// is marked for vNAS - which only an AIRAC Service run acts on, by merging it into
-	/// <c>vNAS_Alias.txt</c>.
+	/// Telephony's only output and covers every operator, so all there is to choose is the virtual
+	/// airlines to add to it and whether it is marked for vNAS - which only an AIRAC Service run acts
+	/// on, by merging it into <c>vNAS_Alias.txt</c>.
 	/// </summary>
 	public static Dictionary<string, string> TelephonySettings()
 	{
@@ -536,6 +536,15 @@ internal static class HarnessSettings
 		{
 			{ "OutputDirectory", OutputDirectory },
 			{ "UploadToVnas", "" },          // "Telephony.txt" marks it for vNAS_Alias.txt (AIRAC Service only); it stays in Aliases
+
+			// Virtual airlines, numbered from 1, each a --VA-- card after the FAA's operators. These two
+			// share .idDVA, and the first shares .idDELTA with Delta Air Lines (DAL).
+			{ "VirtualAirlines.1.Designator", "DVA" },
+			{ "VirtualAirlines.1.Telephony", "DELTA" },
+			{ "VirtualAirlines.1.Organization", "Delta Virtual" },
+			{ "VirtualAirlines.2.Designator", "DVA" },
+			{ "VirtualAirlines.2.Telephony", "DEVIL AIR" },
+			{ "VirtualAirlines.2.Organization", "Rustic Virtual" },
 		};
 
 		return settings;

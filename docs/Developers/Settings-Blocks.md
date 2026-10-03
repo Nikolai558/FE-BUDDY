@@ -31,7 +31,7 @@ Parsers: `AirportSettingsParser`, `AirwaySettingsParser`, `DepartureSettingsPars
 | Key | Values | Default |
 |---|---|---|
 | `OutputDirectory` | folder path - the folder the run writes into (below) | **required** |
-| `CoordinatePrecision` | `0`-`15` decimal places | `6` |
+| `CoordinatePrecision` | `1`-`15` decimal places, or `0` not to round at all (`GeojsonFileWriter.NoRounding`): each coordinate is written exactly as held | `6` |
 | `IncludeFebCustomProperties` | `Y` / `N` | `N` |
 | `FebProperties` | list of `feb.*` names (below); **required** when the above is `Y` | none |
 | `UploadToVnas` | list of file keys (below) marked for vNAS: GeoJSON written under `Upload_to_vNAS`, an alias file merged into `vNAS_Alias.txt` | none |
@@ -397,6 +397,9 @@ naming the key.
 |---|---|---|
 | `GenerateAliasFile` | `Y` / `N` - must stay `Y`; the alias file is Telephony's only output, so `N` throws | `Y` |
 | `UploadToVnas` | file key to merge into `Upload_to_vNAS\vNAS_Alias.txt`; the only one Telephony ever writes is `Telephony.txt` | none |
+| `VirtualAirlines.<n>.Designator` | a virtual airline's three-letter designator (`<n>` from 1) | none |
+| `VirtualAirlines.<n>.Telephony` | its telephony | none |
+| `VirtualAirlines.<n>.Organization` | its virtual organization | none |
 
 - Unlike every other AIRAC sub-service, there is no `FebProperties`, `CrcDefaultsFor` or `Crc.*`
   key, and no region of interest: Telephony writes no GeoJSON and covers every operator regardless
@@ -420,6 +423,17 @@ naming the key.
   command shows every one of their cards, separated by `\n---`, the command's own operator first.
   Commands are written in alphabetical order. For the controller-facing command and card rules, see
   the [user guide](../Users/User-Guide.md#telephony-tab).
+- **Virtual airlines** are numbered groups, read in number order and written after the FAA's
+  operators, so a command a virtual airline shares with a real operator shows the real operator's
+  card first. Each needs all three fields (`TelephonySettingsParser.VirtualAirlineProblem`, which the
+  tab uses too): a `Designator` of exactly three letters, a `Telephony` with a letter or digit, and an
+  `Organization`; otherwise the run throws, naming the number. A number with no fields is skipped;
+  one with the same three values as an earlier one (ignoring case) is written once, with an Info
+  message; an unknown field under `VirtualAirlines.<n>.` is a warning. Each gets an
+  `.id`-designator and an `.id`-telephony command, and a card marked `--VA--`:
+  `\n--VA--\n3LD:\t\t\tDVA\nTELEPHONY:\t\s\sDELTA\nVIRTUAL ORG:\tDELTA VIRTUAL`. Like every
+  Telephony value it is printed upper case. With no FAA telephony data, nothing is written - the
+  virtual airlines alone would replace every real operator's command in vNAS.
 
 ## vNAS Alias Upload
 

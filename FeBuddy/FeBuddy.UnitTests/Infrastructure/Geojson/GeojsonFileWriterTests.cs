@@ -1,3 +1,5 @@
+using System.Text.Json;
+
 using FeBuddy.Core.Domain.Geo;
 using FeBuddy.Core.Infrastructure.Configuration;
 using FeBuddy.Core.Infrastructure.Geojson;
@@ -70,6 +72,29 @@ public sealed class GeojsonFileWriterTests : IDisposable
 		string path = GeojsonFileWriter.Write(collection, renderedFeatureCount: 1, _directory, "NoPrec.geojson", maxDecimalPlaces: 0)!;
 
 		Assert.Contains("-80.12345678", File.ReadAllText(path));
+	}
+
+	/// <summary>
+	/// Do not round leaves a coordinate exactly as it was held - even one converted from degrees,
+	/// minutes and seconds, with every decimal place a double carries - so it reads back to the
+	/// very same value.
+	/// </summary>
+	[Fact]
+	public void do_not_round_writes_every_coordinate_back_to_its_exact_value()
+	{
+		double latitude = 41 + 24 / 60d + 42.08 / 3600;
+		double longitude = -(81 + 50 / 60d + 59.123 / 3600);
+		FeatureCollection collection =
+		[
+			new Feature(Wgs84.Factory.CreatePoint(new Coordinate(longitude, latitude)), new AttributesTable()),
+		];
+
+		string path = GeojsonFileWriter.Write(collection, renderedFeatureCount: 1, _directory, "Exact.geojson", GeojsonFileWriter.NoRounding)!;
+
+		using JsonDocument json = JsonDocument.Parse(File.ReadAllText(path));
+		JsonElement coordinates = json.RootElement.GetProperty("features")[0].GetProperty("geometry").GetProperty("coordinates");
+		Assert.Equal(longitude, coordinates[0].GetDouble());
+		Assert.Equal(latitude, coordinates[1].GetDouble());
 	}
 
 	[Fact]

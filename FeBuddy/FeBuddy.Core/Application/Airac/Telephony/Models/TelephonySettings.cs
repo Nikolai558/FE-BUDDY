@@ -8,14 +8,17 @@ namespace FeBuddy.Core.Application.Airac.Telephony.Models;
 /// (or <c>FeBuddy.Harness</c>) supplies.
 /// </summary>
 /// <remarks>
-/// Telephony has one output - its alias file, <c>Telephony.txt</c> - and nothing to choose about
-/// what it covers: every operator in the FAA pages gets its commands. No GeoJSON, no region of
-/// interest, no <c>feb.*</c> properties.
+/// Telephony has one output - its alias file, <c>Telephony.txt</c> - and every operator in the FAA
+/// pages gets its commands, with the user's own virtual airlines added after them. No GeoJSON, no
+/// region of interest, no <c>feb.*</c> properties.
 /// </remarks>
 public sealed record TelephonySettings
 {
 	/// <summary>The folder the run writes into - the <c>AIRAC_&lt;cycle&gt;</c> folder when run by the AIRAC Service.</summary>
 	public required string OutputDirectory { get; init; }
+
+	/// <summary>The user's virtual airlines, in list order, each written after the FAA's operators. Default: none.</summary>
+	public IReadOnlyList<VirtualAirline> VirtualAirlines { get; init; } = [];
 
 	/// <summary>
 	/// Whether the alias file goes to vNAS: copied into <c>Upload_to_vNAS\vNAS_Alias.txt</c> as well as

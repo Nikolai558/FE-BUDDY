@@ -121,9 +121,18 @@
                             <RadioButton GroupName="Precision" Content="6 dp" Margin="0,0,16,0" ToolTip="Airport layout tracing / CAB-like files."
                                          IsChecked="{Binding IsPrecision6, Mode=OneWay}"
                                          Command="{Binding SetPrecisionCommand}" CommandParameter="6" />
-                            <RadioButton GroupName="Precision" Content="7 dp" ToolTip="High-precision navigation and airport tracing."
+                            <RadioButton GroupName="Precision" Content="7 dp" Margin="0,0,16,0" ToolTip="High-precision navigation and airport tracing."
                                          IsChecked="{Binding IsPrecision7, Mode=OneWay}"
                                          Command="{Binding SetPrecisionCommand}" CommandParameter="7" />
+                            <RadioButton GroupName="Precision" Content="Do not round"
+                                         IsChecked="{Binding IsNoRounding, Mode=OneWay}"
+                                         Command="{Binding SetPrecisionCommand}" CommandParameter="0">
+                                <RadioButton.ToolTip>
+                                    <ToolTip MaxWidth="360">
+                                        <TextBlock Text="{Binding Source={x:Static vm:SettingsViewModel.NoRoundingToolTip}}" TextWrapping="Wrap" />
+                                    </ToolTip>
+                                </RadioButton.ToolTip>
+                            </RadioButton>
                         </StackPanel>
 
                         <Border Style="{StaticResource Divider}" Margin="0,14" />

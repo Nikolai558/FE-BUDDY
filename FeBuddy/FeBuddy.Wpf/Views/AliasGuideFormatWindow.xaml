@@ -1,0 +1,49 @@
+<!--
+    AliasGuideFormatWindow  -  Info ▸ What's New ▸ Export FE-Buddy Alias Command Guide asks this
+    first: a web page, Markdown, or both. Choose folder… then asks where to save it; the files
+    are always named FE-Buddy Alias Command Guide.html / .md. Backs onto AliasGuideFormatViewModel.
+-->
+<ctl:ChromeWindow x:Class="FeBuddy.Wpf.Views.AliasGuideFormatWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:FeBuddy.Wpf.ViewModels"
+        xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
+        mc:Ignorable="d"
+        d:DataContext="{d:DesignInstance vm:AliasGuideFormatViewModel, IsDesignTimeCreatable=True}"
+        Title="Export FE-Buddy Alias Command Guide"
+        Width="480" SizeToContent="Height"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False"
+        FontFamily="{StaticResource Font.Body}"
+        Background="{StaticResource Brush.Bg.Base}">
+
+    <Border Padding="24">
+        <StackPanel>
+            <TextBlock Text="Export FE-Buddy Alias Command Guide"
+                       FontFamily="{StaticResource Font.Display}" FontSize="16" FontWeight="Bold"
+                       Foreground="{StaticResource Brush.Text.Primary}" />
+            <TextBlock Style="{StaticResource Text.Body}" TextWrapping="Wrap" Margin="0,10,0,0"
+                       Text="Which format do you want? You choose the folder next." />
+
+            <ctl:Option Margin="0,16,0,0" Description="A dark web page, ready to post on your facility's website.">
+                <RadioButton GroupName="GuideFormat" Content="Web (.html)" IsChecked="{Binding IsWeb, Mode=TwoWay}" />
+            </ctl:Option>
+            <ctl:Option Margin="0,10,0,0" Description="For a wiki, GitHub, or any site that takes Markdown.">
+                <RadioButton GroupName="GuideFormat" Content="Markdown (.md)" IsChecked="{Binding IsMarkdown, Mode=TwoWay}" />
+            </ctl:Option>
+            <ctl:Option Margin="0,10,0,0" Description="One of each, side by side in the same folder.">
+                <RadioButton GroupName="GuideFormat" Content="Both" IsChecked="{Binding IsBoth, Mode=TwoWay}" />
+            </ctl:Option>
+
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,22,0,0">
+                <Button Content="Cancel" Style="{StaticResource Button.Ghost}"
+                        Command="{Binding CancelCommand}" MinWidth="96" Margin="0,0,10,0" />
+                <Button Content="Choose folder…" Style="{StaticResource Button.Primary}"
+                        Command="{Binding ContinueCommand}" IsDefault="True" MinWidth="140" />
+            </StackPanel>
+        </StackPanel>
+    </Border>
+</ctl:ChromeWindow>

@@ -26,6 +26,7 @@ using FeBuddy.Core.Infrastructure.Configuration.Models;
 using FeBuddy.Core.Infrastructure.Credentials;
 using FeBuddy.Core.Infrastructure.Credentials.Models;
 using FeBuddy.Core.Infrastructure.FileSystem;
+using FeBuddy.Core.Infrastructure.Geojson;
 using FeBuddy.Core.Infrastructure.Logging;
 using FeBuddy.Core.Infrastructure.Platform;
 
@@ -304,9 +305,18 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 	/// <summary>Explains the coordinate precision choice.</summary>
 	public const string CoordinatePrecisionDescription =
 		"Will round all coordinates in GeoJSON files to a maximum number of decimal points in order to " +
-		"save space but retain your desired level of accuracy.";
+		"save space but retain your desired level of accuracy, unless you choose Do not round.";
 
-	/// <summary>How many decimal places GeoJSON coordinates are rounded to.</summary>
+	/// <summary>The Do not round option's tooltip.</summary>
+	public const string NoRoundingToolTip =
+		"FE-Buddy will not round or change your coordinates at all: each one is written exactly as it is " +
+		"in the source data, with every decimal place it has. Files are larger, and a coordinate converted " +
+		"from degrees, minutes and seconds (SCT2, DAT and ERAM files) can run to many decimal places.";
+
+	/// <summary>
+	/// How many decimal places GeoJSON coordinates are rounded to, or
+	/// <see cref="GeojsonFileWriter.NoRounding"/> (0) for none at all.
+	/// </summary>
 	public int CoordinatePrecision
 	{
 		get => _coordinatePrecision;
@@ -317,6 +327,7 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 				OnPropertyChanged(nameof(IsPrecision5));
 				OnPropertyChanged(nameof(IsPrecision6));
 				OnPropertyChanged(nameof(IsPrecision7));
+				OnPropertyChanged(nameof(IsNoRounding));
 				MarkDirty();
 			}
 		}
@@ -331,7 +342,13 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 	/// <summary>Whether 7 decimal places is chosen.</summary>
 	public bool IsPrecision7 => CoordinatePrecision == 7;
 
-	/// <summary>Sets <see cref="CoordinatePrecision"/>. The command parameter is <c>"5"</c>, <c>"6"</c> or <c>"7"</c>.</summary>
+	/// <summary>Whether Do not round is chosen.</summary>
+	public bool IsNoRounding => CoordinatePrecision == GeojsonFileWriter.NoRounding;
+
+	/// <summary>
+	/// Sets <see cref="CoordinatePrecision"/>. The command parameter is <c>"5"</c>, <c>"6"</c> or
+	/// <c>"7"</c>, or <c>"0"</c> for Do not round.
+	/// </summary>
 	public ICommand SetPrecisionCommand { get; }
 
 	/// <summary>Explains the file-layout choice under its heading.</summary>

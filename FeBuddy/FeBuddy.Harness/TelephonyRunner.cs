@@ -29,14 +29,18 @@ internal sealed record TelephonyRun(IReadOnlyList<ServiceMessage> DownloadMessag
 internal static class TelephonyRunner
 {
 	/// <summary>
-	/// Downloads (or falls back on) the FAA telephony pages and runs the Telephony sub-service
-	/// against them using the settings in <see cref="HarnessSettings.TelephonySettings"/>.
+	/// Downloads (or falls back on) the FAA telephony pages - and the VATSIM-Radar Virtual Airline
+	/// List when the settings include it - and runs the Telephony sub-service against them using the
+	/// settings in <see cref="HarnessSettings.TelephonySettings"/>.
 	/// </summary>
 	/// <returns>What the downloads said and what the service built and wrote, for <see cref="ConsoleReport"/> to print.</returns>
 	public static async Task<TelephonyRun> RunAsync()
 	{
-		AiracSharedDataLoadResult<TelephonyDataCollection> loaded = await AiracSharedDataLoader.LoadTelephonyAsync().ConfigureAwait(false);
-		TelephonyServiceResult result = TelephonyService.Run(loaded.Data, HarnessSettings.TelephonySettings());
+		Dictionary<string, string> settings = HarnessSettings.TelephonySettings();
+		AiracSharedDataLoadResult<TelephonyDataCollection> loaded = await AiracSharedDataLoader
+			.LoadTelephonyAsync(TelephonySettingsParser.IncludesVatsimRadarList(settings))
+			.ConfigureAwait(false);
+		TelephonyServiceResult result = TelephonyService.Run(loaded.Data, settings);
 
 		return new TelephonyRun(loaded.Messages, result);
 	}

@@ -539,6 +539,22 @@ The Review tab names how many commands `Faa_Chart_Recall.txt` holds and for how 
   then shows every card, real operators before virtual airlines - with Delta Virtual (DVA, DELTA)
   listed, `.idDELTA` shows Delta Air Lines, then Delta Virtual. The same virtual airline can't be
   listed twice.
+
+  **Include the VATSIM-Radar Virtual Airline List** adds the virtual airlines VATSIM-Radar's
+  community keeps on GitHub (`VATSIM-Radar/data`, about 250 of them), each with its own `--VA--`
+  card after yours. Every run downloads the latest list first, and uses FE-Buddy's kept copy only if
+  it can't; ticking the box with no copy downloads one straight away, and **Download the latest
+  list** fetches it again. The card shows how old FE-Buddy's copy is and how many virtual airlines
+  it holds. Only the list's virtual airlines are used, and only ones that could be yours: an entry
+  whose 3LD isn't three letters (`C`, `PHENX`, `TROY`...) is left out, and the run names it.
+
+  With the list included, a virtual airline you add that is exactly the same as one on it (its 3LD,
+  telephony and virtual organization, ignoring case) is turned away with a warning, since the list
+  already writes it. One that differs at all - another virtual organization, say - is yours to add,
+  with a note that the list has one like it; both are written, so a command can show three or more
+  cards (`.idDELTA`: Delta Air Lines, your own Delta virtual airline, the list's Fly Delta Virtual).
+  One of yours already on the list (added before you ticked the box) is marked *Also on the
+  VATSIM-Radar list* and written once.
 - **Region:** none - Telephony is not limited to a region; every operator in the FAA's pages gets a
   card.
 - **Upload to vNAS:** `Telephony.txt`, the only file there is.

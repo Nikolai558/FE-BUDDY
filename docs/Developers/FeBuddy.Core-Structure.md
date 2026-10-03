@@ -103,10 +103,12 @@ FeBuddy.Core/
 │   │   ├── Models/     WxStationXmlDataModel, WxStationDataCollection
 │   │   └── Parsers/    WxStationXmlParser
 │   ├── Telephony/      TelephonyDownloader, TelephonyFiles - the FAA's telephony pages (JO 7340.2,
-│   │   │               Chapter 3, Sections 1 and 4), also not NASR; kept and refreshed the same way
-│   │   │               as WxStations/ above, under %APPDATA%\FE-Buddy\Telephony
-│   │   ├── Models/     TelephonyDataCollection, TelephonyHtmlDataModel, TelephonyRefreshResult
-│   │   └── Parsers/    TelephonyHtmlParser
+│   │   │               Chapter 3, Sections 1 and 4), also not NASR, and the VATSIM-Radar Virtual
+│   │   │               Airline List (GitHub) when the user includes it; kept and refreshed the same
+│   │   │               way as WxStations/ above, under %APPDATA%\FE-Buddy\Telephony
+│   │   ├── Models/     TelephonyDataCollection, TelephonyHtmlDataModel, TelephonyRefreshResult,
+│   │   │               VatsimRadarAirline
+│   │   └── Parsers/    TelephonyHtmlParser, VatsimRadarAirlineParser
 │   ├── Dtpp/           DtppFiles (the FAA d-TPP Metafile's name and download/chart/compare URLs)
 │   │   │               and DtppDownloader - unlike WxStationDownloader, the URL is keyed by cycle
 │   │   │               ID, so every cycle folder needs its own request; downloaded once per cycle
@@ -140,8 +142,9 @@ FeBuddy.Core/
     │   │                     APT_BASE/CLS_ARSP
     │   ├── Telephony/        No GeoJSON at all; writes only Telephony.txt (TelephonyBuilder,
     │   │                     TelephonyAliasWriter), covering every operator in the FAA's telephony
-    │   │                     pages (Infrastructure/Telephony), not a NASR CSV group. Runs last of
-    │   │                     the ten sub-services that build their own files
+    │   │                     pages (Infrastructure/Telephony), not a NASR CSV group, then the user's
+    │   │                     virtual airlines and the VATSIM-Radar list's (VatsimRadarVirtualAirlines).
+    │   │                     Runs last of the ten sub-services that build their own files
     │   └── VnasAlias/        vNAS Alias Upload: VnasAliasSettingsParser (the user's custom alias
     │                         files), AliasSourceLoader (reads each from this PC or the web, with a
     │                         saved credential), VnasAliasFileWriter (merges them and every alias

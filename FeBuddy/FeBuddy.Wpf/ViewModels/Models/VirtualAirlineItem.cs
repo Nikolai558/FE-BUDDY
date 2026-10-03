@@ -16,6 +16,7 @@ public sealed class VirtualAirlineItem(string designator, string telephony, stri
 	private string _designator = designator;
 	private string _telephony = telephony;
 	private string _organization = organization;
+	private bool _isOnVatsimRadarList;
 
 	/// <summary>Its three-letter designator, e.g. <c>DVA</c>.</summary>
 	public string Designator
@@ -47,6 +48,12 @@ public sealed class VirtualAirlineItem(string designator, string telephony, stri
 
 	/// <summary>Its virtual organization, e.g. <c>Delta Virtual</c>.</summary>
 	public string Organization { get => _organization; set => SetProperty(ref _organization, value); }
+
+	/// <summary>
+	/// Whether the VATSIM-Radar Virtual Airline List - included on the tab - has this very virtual
+	/// airline, so it is written once. Set by the tab.
+	/// </summary>
+	public bool IsOnVatsimRadarList { get => _isOnVatsimRadarList; set => SetProperty(ref _isOnVatsimRadarList, value); }
 
 	/// <summary>The list's first line, e.g. <c>DVA · DELTA</c>.</summary>
 	public string Label => $"{Designator} · {Telephony}";

@@ -11,7 +11,8 @@ public sealed record TelephonySettingsParseResult(TelephonySettings Settings, IR
 /// <summary>The outcome of reading the parsed FAA telephony pages into entries.</summary>
 /// <param name="Entries">
 /// Every operator that gets a card: ICAO assignments in register order, then U.S. special call
-/// signs in page order, then the user's virtual airlines in list order.
+/// signs in page order, then the user's virtual airlines in list order, then the VATSIM-Radar
+/// Virtual Airline List's when included.
 /// </param>
 /// <param name="NoDesignatorCount">
 /// Rows left out because they have no three-letter designator (register) or identifier (U.S.
@@ -25,7 +26,11 @@ public sealed record TelephonyBuildResult(
 	int NoDesignatorCount,
 	int NoTelephonyCount,
 	int ExpiredCount,
-	IReadOnlyList<ServiceMessage> Messages);
+	IReadOnlyList<ServiceMessage> Messages)
+{
+	/// <summary>How many of the virtual airlines in <see cref="Entries"/> came from the VATSIM-Radar Virtual Airline List.</summary>
+	public int VatsimRadarVirtualAirlineCount { get; init; }
+}
 
 /// <summary>The outcome of writing <c>Telephony.txt</c>.</summary>
 /// <param name="FilePath">The path written, or <see langword="null"/> when there was no entry to write.</param>
@@ -45,8 +50,11 @@ public sealed record TelephonyServiceResult : ServiceResult
 	/// <summary>How many U.S. special call signs got a card.</summary>
 	public required int SpecialCallSignCount { get; init; }
 
-	/// <summary>How many of the user's virtual airlines got a card.</summary>
+	/// <summary>How many virtual airlines got a card: the user's own, and the VATSIM-Radar list's when included.</summary>
 	public int VirtualAirlineCount { get; init; }
+
+	/// <summary>How many of <see cref="VirtualAirlineCount"/> came from the VATSIM-Radar Virtual Airline List.</summary>
+	public int VatsimRadarVirtualAirlineCount { get; init; }
 
 	/// <summary>Rows left out because they have no three-letter designator (register) or identifier (U.S. special call sign).</summary>
 	public required int NoDesignatorCount { get; init; }

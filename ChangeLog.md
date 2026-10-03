@@ -22,6 +22,13 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
 - Feature #286 - The activity log has a **Clear** button that empties it on screen and resets its
   counts, so after several runs you can see just the next one. The log file keeps every entry.
 
+### AIRAC Service
+- Telephony ▸ **Virtual Airlines**: **Include the VATSIM-Radar Virtual Airline List** adds the
+  virtual airlines VATSIM-Radar's community keeps on GitHub (about 250), each with its own `--VA--`
+  card after yours; every run downloads the latest list. With it included, a virtual airline you
+  add that is exactly the same as one on the list is turned away with a warning; one that differs
+  at all is added, with a note, and gets a card of its own.
+
 ### Info
 - The **Alias Command Guide** has its own Info page: read the whole guide in FE-Buddy, colours and
   all, exactly as it exports, with the export button at the top. What's New's card now points to

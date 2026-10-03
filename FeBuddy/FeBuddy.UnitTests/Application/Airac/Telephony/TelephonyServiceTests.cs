@@ -310,4 +310,45 @@ public sealed class TelephonyServiceTests : IDisposable
 		Assert.StartsWith("Virtual airline 1: ", ex.Message, StringComparison.Ordinal);
 		Assert.False(Directory.Exists(_outputDirectory));
 	}
+
+	// ---- the VATSIM-Radar Virtual Airline List ----
+
+	[Fact]
+	public void the_vatsim_radar_list_is_written_counted_and_named_in_the_summary_when_included()
+	{
+		TelephonyDataCollection data = Data([Assignment("DELTA AIR LINES, INC.", "UNITED STATES", "DELTA", "DAL")]);
+		data.VatsimRadarAirlines = [new VatsimRadarAirline("DAL", "Fly Delta Virtual", "Delta"), new VatsimRadarAirline("OCN", "vOCN", "Ocean")];
+
+		TelephonyServiceResult result = TelephonyService.Run(
+			data,
+			Settings(
+				("VirtualAirlines.1.Designator", "DVA"),
+				("VirtualAirlines.1.Telephony", "DELTA"),
+				("VirtualAirlines.1.Organization", "Delta Virtual"),
+				("IncludeVatsimRadarVirtualAirlines", "Y")),
+			Today);
+
+		Assert.Equal(3, result.VirtualAirlineCount);
+		Assert.Equal(2, result.VatsimRadarVirtualAirlineCount);
+		Assert.Contains(result.Messages, m => m.Level == LogLevel.Info
+			&& m.Text.Contains("and 3 virtual airline(s) (2 from the VATSIM-Radar list);", StringComparison.Ordinal));
+
+		// .idDELTA: Delta Air Lines, then the user's DVA, then the list's DAL.
+		string delta = Assert.Single(File.ReadAllLines(result.AliasFilePath!), line => line.StartsWith(".idDELTA ", StringComparison.Ordinal));
+		Assert.True(delta.IndexOf("DELTA AIR LINES", StringComparison.Ordinal) < delta.IndexOf("DELTA VIRTUAL", StringComparison.Ordinal));
+		Assert.True(delta.IndexOf("DELTA VIRTUAL", StringComparison.Ordinal) < delta.IndexOf("FLY DELTA VIRTUAL", StringComparison.Ordinal));
+	}
+
+	[Fact]
+	public void the_vatsim_radar_list_is_not_written_when_not_included()
+	{
+		TelephonyDataCollection data = Data([Assignment("DELTA AIR LINES, INC.", "UNITED STATES", "DELTA", "DAL")]);
+		data.VatsimRadarAirlines = [new VatsimRadarAirline("OCN", "vOCN", "Ocean")];
+
+		TelephonyServiceResult result = TelephonyService.Run(data, Settings(), Today);
+
+		Assert.Equal(0, result.VirtualAirlineCount);
+		Assert.Equal(0, result.VatsimRadarVirtualAirlineCount);
+		Assert.DoesNotContain(File.ReadAllLines(result.AliasFilePath!), line => line.StartsWith(".idOCEAN ", StringComparison.Ordinal));
+	}
 }

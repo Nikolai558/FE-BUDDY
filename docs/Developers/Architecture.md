@@ -104,7 +104,9 @@ schedule: Wx Stations' station list comes from aviationweather.gov, and Telephon
 Order JO 7340.2, Chapter 3, Sections 1 and 4 - the ICAO register and the U.S. special call signs)
 from the FAA's website. Each keeps one copy outside every cycle folder, under `%APPDATA%\FE-Buddy`
 (`SharedDataDownload.SharedDataDirectory`): `WxStations\stations.cache.xml` and
-`Telephony\telephony_register.html` / `us_special_call_signs.html`. Every AIRAC Service run that
+`Telephony\telephony_register.html` / `us_special_call_signs.html` - and, when the Telephony block
+includes it, `Telephony\vatsim_radar_airlines.json`, the VATSIM-Radar Virtual Airline List from
+GitHub (optional, like the U.S. special call signs). Every AIRAC Service run that
 includes Wx Stations or Telephony downloads the latest copy first
 (`AiracSharedDataLoader.LoadWxStationsAsync` / `LoadTelephonyAsync`, backed by
 `WxStationDownloader` / `TelephonyDownloader`), whichever cycle is run - not once per launch, the

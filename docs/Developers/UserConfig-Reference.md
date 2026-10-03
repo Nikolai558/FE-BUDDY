@@ -272,6 +272,7 @@ whose section leads both documents is not saved on this node at all - it is
 | `VirtualAirlines.<n>.Designator` | a virtual airline's three-letter designator, upper case (`<n>` from 1, in list order) | none |
 | `VirtualAirlines.<n>.Telephony` | its telephony, upper case | none |
 | `VirtualAirlines.<n>.Organization` | its virtual organization, as typed | none |
+| `IncludeVatsimRadarVirtualAirlines` | `Y` / `N` - the Virtual Airlines card's **Include the VATSIM-Radar Virtual Airline List** | `N` |
 
 The Virtual Airlines card writes the list whole on every save, renumbered from 1, so a deleted
 entry leaves no keys behind; the same keys go into the settings block (see

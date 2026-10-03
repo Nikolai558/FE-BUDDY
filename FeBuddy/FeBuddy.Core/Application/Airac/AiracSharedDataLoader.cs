@@ -12,9 +12,9 @@ using FeBuddy.Core.Infrastructure.WxStations.Parsers;
 namespace FeBuddy.Core.Application.Airac;
 
 /// <summary>
-/// Gets an AIRAC Service run the data that is not published per AIRAC cycle - the Wx Stations list
-/// and the FAA telephony pages - by downloading the latest copy and parsing it, and says what
-/// happened for the run's Review tab.
+/// Gets an AIRAC Service run the data that is not published per AIRAC cycle - the Wx Stations list,
+/// the FAA telephony pages and, when included, the VATSIM-Radar Virtual Airline List - by
+/// downloading the latest copy and parsing it, and says what happened for the run's Review tab.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -32,6 +32,7 @@ public static class AiracSharedDataLoader
 
 	private static Func<CancellationToken, Task<SharedDataRefreshResult>> _refreshWxStations = WxStationDownloader.RefreshAsync;
 	private static Func<CancellationToken, Task<TelephonyRefreshResult>> _refreshTelephony = TelephonyDownloader.RefreshAsync;
+	private static Func<CancellationToken, Task<SharedDataRefreshResult>> _refreshVatsimRadar = TelephonyDownloader.RefreshVatsimRadarAirlinesAsync;
 
 	/// <summary>
 	/// Replaces the real downloads the public <c>Load*Async</c> methods use - so a test of a whole
@@ -40,12 +41,15 @@ public static class AiracSharedDataLoader
 	/// </summary>
 	/// <param name="refreshWxStations">Stands in for <see cref="WxStationDownloader.RefreshAsync"/>.</param>
 	/// <param name="refreshTelephony">Stands in for <see cref="TelephonyDownloader.RefreshAsync"/>.</param>
+	/// <param name="refreshVatsimRadar">Stands in for <see cref="TelephonyDownloader.RefreshVatsimRadarAirlinesAsync"/>.</param>
 	internal static void ConfigureForTesting(
 		Func<CancellationToken, Task<SharedDataRefreshResult>>? refreshWxStations,
-		Func<CancellationToken, Task<TelephonyRefreshResult>>? refreshTelephony)
+		Func<CancellationToken, Task<TelephonyRefreshResult>>? refreshTelephony,
+		Func<CancellationToken, Task<SharedDataRefreshResult>>? refreshVatsimRadar = null)
 	{
 		_refreshWxStations = refreshWxStations ?? WxStationDownloader.RefreshAsync;
 		_refreshTelephony = refreshTelephony ?? TelephonyDownloader.RefreshAsync;
+		_refreshVatsimRadar = refreshVatsimRadar ?? TelephonyDownloader.RefreshVatsimRadarAirlinesAsync;
 	}
 
 	/// <summary>Downloads (or falls back on) and parses the Wx Stations list.</summary>
@@ -58,7 +62,17 @@ public static class AiracSharedDataLoader
 	/// <param name="cancellationToken">Cancels the downloads.</param>
 	/// <returns>The parsed pages, or <see langword="null"/> when there is no usable copy of the register, and the messages for the run.</returns>
 	public static Task<AiracSharedDataLoadResult<TelephonyDataCollection>> LoadTelephonyAsync(CancellationToken cancellationToken = default) =>
-		LoadTelephonyAsync(_refreshTelephony, DateTime.UtcNow, cancellationToken);
+		LoadTelephonyAsync(includeVatsimRadar: false, cancellationToken);
+
+	/// <summary>
+	/// Downloads (or falls back on) and parses the two FAA telephony pages and, when the run includes
+	/// it, the VATSIM-Radar Virtual Airline List - optional, like the U.S. special call signs.
+	/// </summary>
+	/// <param name="includeVatsimRadar">Whether the run includes the VATSIM-Radar list (see <c>TelephonySettingsParser.IncludesVatsimRadarList</c>).</param>
+	/// <param name="cancellationToken">Cancels the downloads.</param>
+	/// <returns>The parsed data, or <see langword="null"/> when there is no usable copy of the register, and the messages for the run.</returns>
+	public static Task<AiracSharedDataLoadResult<TelephonyDataCollection>> LoadTelephonyAsync(bool includeVatsimRadar, CancellationToken cancellationToken = default) =>
+		LoadTelephonyAsync(_refreshTelephony, includeVatsimRadar ? _refreshVatsimRadar : null, DateTime.UtcNow, cancellationToken);
 
 	/// <summary>
 	/// Same as <see cref="LoadWxStationsAsync(CancellationToken)"/>, with the download and the clock
@@ -93,8 +107,20 @@ public static class AiracSharedDataLoader
 	/// Same as <see cref="LoadTelephonyAsync(CancellationToken)"/>, with the downloads and the clock
 	/// supplied, so tests need neither the network nor a real date.
 	/// </summary>
+	internal static Task<AiracSharedDataLoadResult<TelephonyDataCollection>> LoadTelephonyAsync(
+		Func<CancellationToken, Task<TelephonyRefreshResult>> refresh,
+		DateTime nowUtc,
+		CancellationToken cancellationToken) =>
+		LoadTelephonyAsync(refresh, refreshVatsimRadar: null, nowUtc, cancellationToken);
+
+	/// <summary>
+	/// Same as <see cref="LoadTelephonyAsync(bool, CancellationToken)"/>, with the downloads and the
+	/// clock supplied - <paramref name="refreshVatsimRadar"/> <see langword="null"/> when the run does
+	/// not include the VATSIM-Radar list - so tests need neither the network nor a real date.
+	/// </summary>
 	internal static async Task<AiracSharedDataLoadResult<TelephonyDataCollection>> LoadTelephonyAsync(
 		Func<CancellationToken, Task<TelephonyRefreshResult>> refresh,
+		Func<CancellationToken, Task<SharedDataRefreshResult>>? refreshVatsimRadar,
 		DateTime nowUtc,
 		CancellationToken cancellationToken)
 	{
@@ -135,7 +161,44 @@ public static class AiracSharedDataLoader
 			}
 		}
 
+		if (refreshVatsimRadar is not null)
+		{
+			await AddVatsimRadarAsync(refreshVatsimRadar, data, messages, nowUtc, cancellationToken).ConfigureAwait(false);
+		}
+
 		return new AiracSharedDataLoadResult<TelephonyDataCollection>(data, messages);
+	}
+
+	/// <summary>
+	/// Downloads (or falls back on) the VATSIM-Radar Virtual Airline List and adds it to the run's
+	/// telephony data. Without a usable copy the run goes on, leaving the list out, with a warning.
+	/// </summary>
+	private static async Task AddVatsimRadarAsync(
+		Func<CancellationToken, Task<SharedDataRefreshResult>> refresh,
+		TelephonyDataCollection data,
+		List<ServiceMessage> messages,
+		DateTime nowUtc,
+		CancellationToken cancellationToken)
+	{
+		const string What = "VATSIM-Radar Virtual Airline List";
+		const string WithoutIt = "Telephony.txt leaves it out";
+
+		SharedDataRefreshResult refreshed = await refresh(cancellationToken).ConfigureAwait(false);
+		messages.Add(RefreshMessage(refreshed, TelephonySource, What, WithoutIt, nowUtc, required: false));
+
+		if (refreshed.FilePath is not { } path)
+		{
+			return;
+		}
+
+		try
+		{
+			data.VatsimRadarAirlines = [.. VatsimRadarAirlineParser.Parse(path)];
+		}
+		catch (Exception ex)
+		{
+			messages.Add(UnreadableCopyMessage(TelephonySource, What, ex, WithoutIt));
+		}
 	}
 
 	/// <summary>

@@ -11,12 +11,16 @@ namespace FeBuddy.Core.Application.Airac.Telephony;
 
 /// <summary>
 /// Reads the parsed FAA telephony pages into <see cref="TelephonyEntry"/> cards, leaving out the
-/// rows a command cannot be made for, then adds the user's virtual airlines.
+/// rows a command cannot be made for, then adds the user's virtual airlines and, when they include
+/// it, the VATSIM-Radar Virtual Airline List's.
 /// </summary>
 /// <remarks>
 /// <para>
-/// The virtual airlines come last, in the user's order, so a command they share with a real
-/// operator shows the real operator's card first (see <c>TelephonyAliasWriter</c>).
+/// The virtual airlines come last - the user's own in their order, then the VATSIM-Radar list's
+/// (see <see cref="VatsimRadarVirtualAirlines"/>) - so a command they share with a real operator
+/// shows the real operator's card first (see <c>TelephonyAliasWriter</c>). A list entry that is the
+/// same as one of the user's own is written once, as theirs; one that differs in its 3LD, telephony
+/// or virtual organization gets a card of its own.
 /// </para>
 /// <para>Left out, and counted for the run's summary:</para>
 /// <list type="bullet">
@@ -43,8 +47,13 @@ public static class TelephonyBuilder
 	/// <param name="data">The parsed pages.</param>
 	/// <param name="today">The date a U.S. special call sign's expiration is compared with.</param>
 	/// <param name="virtualAirlines">The user's virtual airlines, already checked by <see cref="TelephonySettingsParser"/>; <see langword="null"/> for none.</param>
+	/// <param name="includeVatsimRadar">Whether to add the VATSIM-Radar Virtual Airline List's virtual airlines (<see cref="TelephonyDataCollection.VatsimRadarAirlines"/>).</param>
 	/// <returns>The entries, the counts of rows left out, and any messages.</returns>
-	public static TelephonyBuildResult Read(TelephonyDataCollection data, DateOnly today, IReadOnlyList<VirtualAirline>? virtualAirlines = null)
+	public static TelephonyBuildResult Read(
+		TelephonyDataCollection data,
+		DateOnly today,
+		IReadOnlyList<VirtualAirline>? virtualAirlines = null,
+		bool includeVatsimRadar = false)
 	{
 		ArgumentNullException.ThrowIfNull(data);
 
@@ -104,18 +113,70 @@ public static class TelephonyBuilder
 				Upper(row.ExpirationDate)));
 		}
 
-		foreach (VirtualAirline virtualAirline in virtualAirlines ?? [])
+		IReadOnlyList<VirtualAirline> own = virtualAirlines ?? [];
+
+		foreach (VirtualAirline virtualAirline in own)
 		{
-			entries.Add(new TelephonyEntry(
-				TelephonyEntryKind.VirtualAirline,
-				Upper(virtualAirline.Designator),
-				Upper(virtualAirline.Telephony),
-				Upper(virtualAirline.Organization),
-				string.Empty));
+			entries.Add(VirtualAirlineEntry(virtualAirline));
 		}
 
-		return new TelephonyBuildResult(entries, noDesignator, noTelephony, expired, messages);
+		int vatsimRadarCount = includeVatsimRadar ? AddVatsimRadar(data, own, entries, messages) : 0;
+
+		return new TelephonyBuildResult(entries, noDesignator, noTelephony, expired, messages)
+		{
+			VatsimRadarVirtualAirlineCount = vatsimRadarCount,
+		};
 	}
+
+	/// <summary>
+	/// Adds the VATSIM-Radar list's virtual airlines that can be written and are not already the
+	/// user's own, saying which were left out and which were the user's already.
+	/// </summary>
+	/// <returns>How many were added.</returns>
+	private static int AddVatsimRadar(TelephonyDataCollection data, IReadOnlyList<VirtualAirline> own, List<TelephonyEntry> entries, List<ServiceMessage> messages)
+	{
+		VatsimRadarSelection selection = VatsimRadarVirtualAirlines.Select(data.VatsimRadarAirlines);
+		List<string> alreadyYours = [];
+		int added = 0;
+
+		foreach (VirtualAirline virtualAirline in selection.VirtualAirlines)
+		{
+			if (VatsimRadarVirtualAirlines.FindSame(own, virtualAirline.Designator, virtualAirline.Telephony, virtualAirline.Organization) is not null)
+			{
+				alreadyYours.Add($"{Upper(virtualAirline.Designator)} ({Upper(virtualAirline.Telephony)}, {Upper(virtualAirline.Organization)})");
+				continue;
+			}
+
+			entries.Add(VirtualAirlineEntry(virtualAirline));
+			added++;
+		}
+
+		if (selection.LeftOut.Count > 0)
+		{
+			messages.Add(new ServiceMessage(LogLevel.Info, LogSource,
+				$"{selection.LeftOut.Count:N0} virtual airline(s) on the {VatsimRadarVirtualAirlines.ListName} were left out: a 3LD that isn't " +
+				$"three letters, or a telephony with no letter or digit ({string.Join(", ", selection.LeftOut)})."));
+		}
+
+		if (alreadyYours.Count > 0)
+		{
+			string verb = alreadyYours.Count == 1 ? "is" : "are";
+
+			messages.Add(new ServiceMessage(LogLevel.Info, LogSource,
+				$"{alreadyYours.Count:N0} of your virtual airlines {verb} also on the {VatsimRadarVirtualAirlines.ListName}, so each was written " +
+				$"once, as yours: {string.Join("; ", alreadyYours)}."));
+		}
+
+		return added;
+	}
+
+	/// <summary>A virtual airline's card, every value upper case as the card prints it.</summary>
+	private static TelephonyEntry VirtualAirlineEntry(VirtualAirline virtualAirline) => new(
+		TelephonyEntryKind.VirtualAirline,
+		Upper(virtualAirline.Designator),
+		Upper(virtualAirline.Telephony),
+		Upper(virtualAirline.Organization),
+		string.Empty);
 
 	/// <summary>
 	/// Whether a U.S. special call sign expired before <paramref name="today"/>. No expiration

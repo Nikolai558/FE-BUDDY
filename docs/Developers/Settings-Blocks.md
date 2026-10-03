@@ -400,6 +400,7 @@ naming the key.
 | `VirtualAirlines.<n>.Designator` | a virtual airline's three-letter designator (`<n>` from 1) | none |
 | `VirtualAirlines.<n>.Telephony` | its telephony | none |
 | `VirtualAirlines.<n>.Organization` | its virtual organization | none |
+| `IncludeVatsimRadarVirtualAirlines` | `Y` / `N` - also write the VATSIM-Radar Virtual Airline List's virtual airlines | `N` |
 
 - Unlike every other AIRAC sub-service, there is no `FebProperties`, `CrcDefaultsFor` or `Crc.*`
   key, and no region of interest: Telephony writes no GeoJSON and covers every operator regardless
@@ -434,6 +435,17 @@ naming the key.
   `\n--VA--\n3LD:\t\t\tDVA\nTELEPHONY:\t\s\sDELTA\nVIRTUAL ORG:\tDELTA VIRTUAL`. Like every
   Telephony value it is printed upper case. With no FAA telephony data, nothing is written - the
   virtual airlines alone would replace every real operator's command in vNAS.
+- **The VATSIM-Radar Virtual Airline List** (`IncludeVatsimRadarVirtualAirlines = Y`) is
+  VATSIM-Radar's `custom-data/airlines.json` on GitHub. The AIRAC Service asks the block before the
+  run (`TelephonySettingsParser.IncludesVatsimRadarList`) and downloads it with the FAA pages into
+  `%APPDATA%\FE-Buddy\Telephony\vatsim_radar_airlines.json`; like the U.S. special call signs it is
+  optional - with no usable copy, `Telephony.txt` leaves it out, with an advisory warning. Only
+  entries with `"virtual": true` are read (`icao` the 3LD, `callsign` the telephony, `name` the
+  virtual organization), and only those that pass `VirtualAirlineProblem` are written - the rest
+  are left out, named in an Info message. They come after the block's own virtual airlines, each
+  once and sorted by 3LD, telephony and organization (`VatsimRadarVirtualAirlines.Select`); one with
+  the same three values as one of the block's own (ignoring case) is written once, as the block's,
+  with an Info message. One that differs in any value is written too, with a card of its own.
 
 ## vNAS Alias Upload
 

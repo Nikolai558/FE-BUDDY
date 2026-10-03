@@ -17,12 +17,14 @@ namespace FeBuddy.Core.Application.Airac.Telephony;
 /// <remarks>
 /// <para>
 /// Telephony's only output is its alias file, so there is little to read: where to write, whether
-/// the file goes to vNAS, and the user's virtual airlines - numbered, merged in number order:
+/// the file goes to vNAS, the user's virtual airlines - numbered, merged in number order - and
+/// whether the VATSIM-Radar Virtual Airline List is merged too:
 /// </para>
 /// <code>
-/// VirtualAirlines.1.Designator   = DVA
-/// VirtualAirlines.1.Telephony    = DELTA
-/// VirtualAirlines.1.Organization = Delta Virtual
+/// VirtualAirlines.1.Designator      = DVA
+/// VirtualAirlines.1.Telephony       = DELTA
+/// VirtualAirlines.1.Organization    = Delta Virtual
+/// IncludeVatsimRadarVirtualAirlines = Y
 /// </code>
 /// <para>
 /// The shared keys every sub-service tab sends (region of interest, coordinate precision, FE-Buddy
@@ -43,12 +45,16 @@ public static class TelephonySettingsParser
 	/// <summary>A virtual airline's virtual organization, under <see cref="VirtualAirlinesPrefix"/> and its number.</summary>
 	public const string OrganizationKey = "Organization";
 
+	/// <summary>Whether the VATSIM-Radar Virtual Airline List is written too: <c>Y</c> or <c>N</c> (the default).</summary>
+	public const string IncludeVatsimRadarKey = "IncludeVatsimRadarVirtualAirlines";
+
 	private const string LogSource = "TelephonySettingsParser";
 
 	/// <summary>The keys only Telephony reads, on top of <see cref="SubServiceSettingsReader.CommonKeys"/>.</summary>
 	private static readonly IReadOnlySet<string> OwnKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
 	{
 		"GenerateAliasFile",
+		IncludeVatsimRadarKey,
 	};
 
 	/// <summary>Telephony writes no GeoJSON, so it draws from no CRC-ERAM defaults class at all.</summary>
@@ -91,6 +97,7 @@ public static class TelephonySettingsParser
 			telephonySettings, TelephonyOutputFiles.Alias, isGeojsonFileKey: _ => false, example: TelephonyOutputFiles.Alias);
 
 		IReadOnlyList<VirtualAirline> virtualAirlines = ReadVirtualAirlines(telephonySettings, messages, out HashSet<string> virtualAirlineKeys);
+		bool includeVatsimRadar = SettingsValueReader.YesNo(telephonySettings, IncludeVatsimRadarKey, defaultValue: false);
 
 		messages.AddRange(SubServiceSettingsReader.UnknownKeyWarnings(
 			telephonySettings.Where(entry => !virtualAirlineKeys.Contains(entry.Key)).ToDictionary(StringComparer.OrdinalIgnoreCase),
@@ -101,10 +108,32 @@ public static class TelephonySettingsParser
 		{
 			OutputDirectory = outputDirectory,
 			VirtualAirlines = virtualAirlines,
+			IncludeVatsimRadarVirtualAirlines = includeVatsimRadar,
 			Vnas = vnas,
 		};
 
 		return new TelephonySettingsParseResult(settings, messages);
+	}
+
+	/// <summary>
+	/// Whether a Telephony settings block includes the VATSIM-Radar Virtual Airline List, so the AIRAC
+	/// Service knows to download it before the run. A value that is neither <c>Y</c> nor <c>N</c> counts
+	/// as no here; <see cref="Parse"/> is what reports it.
+	/// </summary>
+	/// <param name="telephonySettings">The raw settings block.</param>
+	/// <returns><see langword="true"/> for <c>Y</c>.</returns>
+	public static bool IncludesVatsimRadarList(IReadOnlyDictionary<string, string> telephonySettings)
+	{
+		ArgumentNullException.ThrowIfNull(telephonySettings);
+
+		try
+		{
+			return SettingsValueReader.YesNo(telephonySettings, IncludeVatsimRadarKey, defaultValue: false);
+		}
+		catch (ArgumentException)
+		{
+			return false;
+		}
 	}
 
 	/// <summary>

@@ -3,6 +3,7 @@ using System.Text;
 
 using FeBuddy.Core.Infrastructure.FileSystem;
 using FeBuddy.Core.Infrastructure.Logging;
+using FeBuddy.Core.Infrastructure.SharedData.Models;
 using FeBuddy.Core.Infrastructure.Telephony;
 using FeBuddy.Core.Infrastructure.Telephony.Models;
 
@@ -14,7 +15,8 @@ namespace FeBuddy.UnitTests.Infrastructure.Telephony;
 /// <see cref="TelephonyDownloader.RefreshFromUrlsAsync"/> - the same code path the real
 /// <see cref="TelephonyDownloader.RefreshAsync"/> uses, with only the URLs and kept-copy paths
 /// swapped out. The register and U.S. special call signs pages are independent: one page's success
-/// or failure never affects the other's kept copy.
+/// or failure never affects the other's kept copy. The VATSIM-Radar Virtual Airline List goes the
+/// same way through <see cref="TelephonyDownloader.RefreshVatsimRadarAirlinesFromUrlAsync"/>.
 /// </summary>
 [Collection("AppLog")]
 public sealed class TelephonyDownloaderTests : IDisposable
@@ -243,6 +245,57 @@ public sealed class TelephonyDownloaderTests : IDisposable
 			registerListener.Close();
 			specialListener.Stop();
 			specialListener.Close();
+		}
+	}
+
+	// ---- the VATSIM-Radar Virtual Airline List ----
+
+	private const string ValidVatsimRadarJson =
+		"""[{ "icao": "DAL", "name": "Fly Delta Virtual", "callsign": "Delta", "virtual": true }]""";
+
+	[Fact]
+	public async Task the_vatsim_radar_list_downloads_fresh()
+	{
+		(HttpListener listener, string url, _) = StartServer(ValidVatsimRadarJson);
+
+		try
+		{
+			string path = Path.Combine(_testRoot, "vatsim_radar_airlines.json");
+
+			SharedDataRefreshResult result = await TelephonyDownloader.RefreshVatsimRadarAirlinesFromUrlAsync(url, path, CancellationToken.None);
+
+			Assert.Equal(path, result.FilePath);
+			Assert.Null(result.FailureReason);
+			Assert.Equal(ValidVatsimRadarJson, File.ReadAllText(path));
+		}
+		finally
+		{
+			listener.Stop();
+			listener.Close();
+		}
+	}
+
+	[Fact]
+	public async Task a_vatsim_radar_payload_that_is_not_the_list_fails_validation_and_keeps_the_existing_copy()
+	{
+		(HttpListener listener, string url, _) = StartServer(NotThePage);
+
+		try
+		{
+			string path = Path.Combine(_testRoot, "vatsim_radar_airlines.json");
+			Directory.CreateDirectory(_testRoot);
+			File.WriteAllText(path, ValidVatsimRadarJson);
+
+			SharedDataRefreshResult result = await TelephonyDownloader.RefreshVatsimRadarAirlinesFromUrlAsync(url, path, CancellationToken.None);
+
+			Assert.Equal(path, result.FilePath);
+			Assert.NotNull(result.FailureReason);
+			Assert.Equal(ValidVatsimRadarJson, File.ReadAllText(path));
+		}
+		finally
+		{
+			listener.Stop();
+			listener.Close();
 		}
 	}
 }

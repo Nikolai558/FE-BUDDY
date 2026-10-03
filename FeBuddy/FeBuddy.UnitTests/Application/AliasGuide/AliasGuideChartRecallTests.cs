@@ -61,7 +61,7 @@ public sealed class AliasGuideChartRecallTests
 	};
 
 	private static string Markdown() =>
-		AliasGuideWriter.Write(AliasGuideFormat.Markdown, new AliasGuideOptions("ZOB", "3.0.0", new DateTime(2026, 10, 1, 12, 0, 0, DateTimeKind.Utc)));
+		AliasGuideWriter.Write(AliasGuideFormat.Markdown, new AliasGuideOptions("3.0.0", new DateTime(2026, 10, 1, 12, 0, 0, DateTimeKind.Utc)));
 
 	[Theory]
 	[MemberData(nameof(Examples))]

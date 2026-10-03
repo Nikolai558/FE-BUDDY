@@ -4,6 +4,7 @@ using System.Windows.Documents;
 using System.Windows.Shapes;
 
 using FeBuddy.Wpf.Behaviors;
+using FeBuddy.Wpf.Shell;
 
 using FeBuddy.Core.Application.AliasGuide;
 using FeBuddy.Core.Application.AliasGuide.Models;
@@ -27,9 +28,11 @@ namespace FeBuddy.Wpf.Controls;
 /// in running text it is a run on the soft fill instead, which keeps it on the sentence's baseline.
 /// </para>
 /// <para>
-/// A command's examples sit beside its syntax and description when the card is wide enough
-/// (<see cref="BesideOrBelow"/>), and under them when it is not; a long command wraps between its
-/// parts, never inside one.
+/// A command table has the web page's Syntax, Description and Example columns
+/// (<see cref="CommandTablePanel"/>). A command never wraps: the Syntax and Example columns are as
+/// wide as their longest line, a syntax breaks only where the guide does, and the description takes
+/// the rest of the width and wraps. When the card is too narrow for that, each command's syntax,
+/// description and examples sit one under another.
 /// </para>
 /// </remarks>
 public sealed class AliasGuideDocumentView : Decorator
@@ -66,7 +69,6 @@ public sealed class AliasGuideDocumentView : Decorator
 		lead.Margin = new Thickness(0, 0, 0, 14);
 		root.Children.Add(lead);
 
-		root.Children.Add(SectionCard(guide.About));
 		root.Children.Add(NotationCard(guide.ReadingNotes));
 
 		foreach (GuideSection section in guide.Sections)
@@ -122,7 +124,13 @@ public sealed class AliasGuideDocumentView : Decorator
 	{
 		StackPanel body = new();
 
-		body.Children.Add(LegendRow(CommandLine([new CommandPart(".apt", CommandPartKind.Typed, false, false)], CommandSize, wrap: false), AliasGuideContent.TypedLegend));
+		TextBlock typed = new() { TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 4, 0, 4) };
+		typed.SetResourceReference(StyleProperty, "Text.Body");
+		typed.Inlines.Add(new Run(AliasGuideContent.TypedLegend + " \""));
+		typed.Inlines.Add(InlineCommand([new CommandPart(".apt", CommandPartKind.Typed, false, false)]));
+		typed.Inlines.Add(new Run("\""));
+		body.Children.Add(typed);
+
 		body.Children.Add(LegendRow(Pill(new CommandPart("Highlighted", CommandPartKind.Identifier, true, false), CommandSize), AliasGuideContent.PlaceholderLegend));
 
 		WrapPanel key = new() { Margin = new Thickness(0, 2, 0, 4) };
@@ -191,26 +199,25 @@ public sealed class AliasGuideDocumentView : Decorator
 		return panel;
 	}
 
-	/// <summary>One row per command: its syntax and description, its notes, and its examples beside or under them.</summary>
-	private static StackPanel CommandTable(GuideCommandTable table)
+	/// <summary>
+	/// The web page's command table: a heading row, then a row per command - its syntax, a line per
+	/// line of it; its description and notes; and its examples, one to a line.
+	/// </summary>
+	private static CommandTablePanel CommandTable(GuideCommandTable table)
 	{
-		StackPanel panel = new();
+		CommandTablePanel panel = new();
+		panel.SetResourceReference(CommandTablePanel.RuleBrushProperty, "Brush.Stroke");
 
-		for (int i = 0; i < table.Commands.Count; i++)
+		panel.Children.Add(HeaderCell("Syntax"));
+		panel.Children.Add(HeaderCell("Description"));
+		panel.Children.Add(HeaderCell("Example"));
+
+		foreach (GuideCommand command in table.Commands)
 		{
-			GuideCommand command = table.Commands[i];
+			panel.Children.Add(Lines(command.Syntax, SyntaxSize, spacing: 2));
 
-			if (i > 0)
-			{
-				panel.Children.Add(Divider(new Thickness(0, 14, 0, 14)));
-			}
-
-			StackPanel main = new();
-			main.Children.Add(CommandLine(CommandMarkup.Parse(command.Syntax), SyntaxSize, wrap: true));
-
-			TextBlock description = Prose(command.Description, "Text.Body");
-			description.Margin = new Thickness(0, 8, 0, 0);
-			main.Children.Add(description);
+			StackPanel description = new();
+			description.Children.Add(Prose(command.Description, "Text.Body"));
 
 			if (command.Notes.Count > 0)
 			{
@@ -221,29 +228,26 @@ public sealed class AliasGuideDocumentView : Decorator
 					notes.Children.Add(Note(note));
 				}
 
-				main.Children.Add(notes);
+				description.Children.Add(notes);
 			}
 
-			StackPanel side = new();
-			TextBlock label = new() { Text = command.Examples.Count == 1 ? "EXAMPLE" : "EXAMPLES" };
-			label.SetResourceReference(StyleProperty, "Text.Label");
-			side.Children.Add(label);
+			panel.Children.Add(description);
+			panel.Children.Add(Lines(command.Examples, CommandSize, spacing: 6));
+		}
 
-			foreach (string example in command.Examples)
-			{
-				FrameworkElement line = CommandLine(CommandMarkup.Parse(example), CommandSize, wrap: true);
-				line.Margin = new Thickness(0, 6, 0, 0);
-				side.Children.Add(line);
-			}
+		return panel;
+	}
 
-			panel.Children.Add(new BesideOrBelow
-			{
-				SideWidth = 250,
-				MainMinWidth = 320,
-				HorizontalSpacing = 28,
-				VerticalSpacing = 12,
-				Children = { main, side },
-			});
+	/// <summary>Commands, or the lines of one, each in command markup, one under another.</summary>
+	private static StackPanel Lines(IReadOnlyList<string> lines, double size, double spacing)
+	{
+		StackPanel panel = new();
+
+		for (int i = 0; i < lines.Count; i++)
+		{
+			FrameworkElement line = CommandLine(CommandMarkup.Parse(lines[i]), size);
+			line.Margin = new Thickness(0, i > 0 ? spacing : 0, 0, 0);
+			panel.Children.Add(line);
 		}
 
 		return panel;
@@ -272,7 +276,7 @@ public sealed class AliasGuideDocumentView : Decorator
 	/// <summary>A table cell: one that is just a command shows it as pills, like a command's examples; anything else is text.</summary>
 	private static UIElement Cell(string text) =>
 		GuideInline.Parse(text) is [{ Style: InlineStyle.Code } only] && only.Parts.Any(part => part.Kind != CommandPartKind.Typed)
-			? CommandLine(only.Parts, CommandSize, wrap: true)
+			? CommandLine(only.Parts, CommandSize)
 			: Prose(text, "Text.Body");
 
 	private static TextBlock HeaderCell(string header)
@@ -310,7 +314,7 @@ public sealed class AliasGuideDocumentView : Decorator
 
 	// ---------------------------------------------------------------- inlines
 
-	/// <summary>Inline text in a TextBlock: plain, bold, and code - a command coloured part by part.</summary>
+	/// <summary>Inline text in a TextBlock: plain, bold, code (a command coloured part by part), links and line breaks.</summary>
 	private static TextBlock Prose(string text, string styleKey)
 	{
 		TextBlock block = new() { TextWrapping = TextWrapping.Wrap };
@@ -323,11 +327,22 @@ public sealed class AliasGuideDocumentView : Decorator
 				InlineStyle.Bold => Bold(run.Text),
 				InlineStyle.Code when run.Parts.Any(part => part.Kind != CommandPartKind.Typed) => InlineCommand(run.Parts),
 				InlineStyle.Code => Code(run.Text),
+				InlineStyle.Link => Link(run.Text, run.Url!),
+				InlineStyle.LineBreak => new LineBreak(),
 				_ => new Run(run.Text),
 			});
 		}
 
 		return block;
+	}
+
+	/// <summary>A link that opens in the browser, in the accent colour, as MarkdownView shows one.</summary>
+	private static Hyperlink Link(string text, string url)
+	{
+		Hyperlink link = new(new Run(text)) { ToolTip = url };
+		link.SetResourceReference(TextElement.ForegroundProperty, "Brush.Accent");
+		link.Click += (_, _) => BrowserLauncher.Open(url);
+		return link;
 	}
 
 	/// <summary>
@@ -374,10 +389,10 @@ public sealed class AliasGuideDocumentView : Decorator
 		return run;
 	}
 
-	/// <summary>A command's parts side by side: typed text as it is, every other part a pill.</summary>
-	private static FrameworkElement CommandLine(IReadOnlyList<CommandPart> parts, double size, bool wrap)
+	/// <summary>A command's parts side by side, never wrapped: typed text as it is, every other part a pill.</summary>
+	private static StackPanel CommandLine(IReadOnlyList<CommandPart> parts, double size)
 	{
-		Panel line = wrap ? new WrapPanel() : new StackPanel { Orientation = Orientation.Horizontal };
+		StackPanel line = new() { Orientation = Orientation.Horizontal };
 
 		foreach (CommandPart part in parts)
 		{

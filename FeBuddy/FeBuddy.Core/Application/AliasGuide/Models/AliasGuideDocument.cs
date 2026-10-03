@@ -1,17 +1,17 @@
 namespace FeBuddy.Core.Application.AliasGuide.Models;
 
 /// <summary>
-/// The alias command guide's content, which <c>AliasGuideHtmlWriter</c> and
-/// <c>AliasGuideMarkdownWriter</c> each lay out in their own format.
+/// The alias command guide's content, which <c>AliasGuideHtmlWriter</c>,
+/// <c>AliasGuideMarkdownWriter</c> and the app's Info ▸ Alias Command Guide page each lay out in
+/// their own way.
 /// </summary>
 /// <remarks>
-/// Every piece of text is inline text (see <c>GuideInline</c>): <c>`code`</c> and
-/// <c>**bold**</c>, where a code span can hold command markup (see <c>CommandMarkup</c>), e.g.
-/// <c>`.apt{a:DTW}`</c>.
+/// Every piece of text is inline text (see <c>GuideInline</c>): <c>`code`</c>, <c>**bold**</c>,
+/// <c>[a link](url)</c> and line breaks, where a code span can hold command markup (see
+/// <c>CommandMarkup</c>), e.g. <c>`.apt{a:DTW}`</c>.
 /// </remarks>
 /// <param name="Title">The guide's title.</param>
 /// <param name="Lead">The line under the title.</param>
-/// <param name="About">The opening section, about alias commands in general.</param>
 /// <param name="ReadingNotes">
 /// The notes every format adds to its own "How to read this guide" section, after explaining how
 /// it shows the parts to type and the parts to replace.
@@ -20,7 +20,6 @@ namespace FeBuddy.Core.Application.AliasGuide.Models;
 public sealed record AliasGuideDocument(
 	string Title,
 	string Lead,
-	GuideSection About,
 	IReadOnlyList<string> ReadingNotes,
 	IReadOnlyList<GuideSection> Sections);
 
@@ -56,11 +55,14 @@ public sealed record GuideCommandTable(IReadOnlyList<GuideCommand> Commands) : G
 public sealed record GuideTable(IReadOnlyList<string> Headers, IReadOnlyList<IReadOnlyList<string>> Rows) : GuideBlock;
 
 /// <summary>One command: how it is written, what it does, and examples.</summary>
-/// <param name="Syntax">The command's pattern, in command markup, e.g. <c>.apt[a:FAA or ICAO airport ID]</c>.</param>
+/// <param name="Syntax">
+/// The command's pattern, in command markup, one string per line it is shown on: <c>.apt</c> then
+/// <c>[a:FAA or ICAO airport ID]</c>. Nothing breaks a line anywhere else.
+/// </param>
 /// <param name="Description">What the command does, as inline text.</param>
 /// <param name="Notes">Short notes shown under the description, as inline text; often none.</param>
-/// <param name="Examples">Real commands, in command markup, e.g. <c>.apt{a:DTW}</c>.</param>
-public sealed record GuideCommand(string Syntax, string Description, IReadOnlyList<string> Notes, IReadOnlyList<string> Examples);
+/// <param name="Examples">Real commands, in command markup, each on a line of its own, e.g. <c>.apt{a:DTW}</c>.</param>
+public sealed record GuideCommand(IReadOnlyList<string> Syntax, string Description, IReadOnlyList<string> Notes, IReadOnlyList<string> Examples);
 
 /// <summary>What a part of a command stands for, which sets its colour in the web page.</summary>
 public enum CommandPartKind
@@ -95,10 +97,11 @@ public enum CommandPartKind
 public sealed record CommandPart(string Text, CommandPartKind Kind, bool IsPlaceholder, bool IsOptional);
 
 /// <summary>One run of inline text.</summary>
-/// <param name="Text">The run's text, for plain and bold runs.</param>
+/// <param name="Text">The run's text: what a plain, bold or link run shows, a code run's markup, or <c>\n</c> for a line break.</param>
 /// <param name="Style">How the run is shown.</param>
 /// <param name="Parts">The command parts, for a code run; empty otherwise.</param>
-public sealed record InlineRun(string Text, InlineStyle Style, IReadOnlyList<CommandPart> Parts);
+/// <param name="Url">Where a link run goes; <see langword="null"/> for any other run.</param>
+public sealed record InlineRun(string Text, InlineStyle Style, IReadOnlyList<CommandPart> Parts, string? Url = null);
 
 /// <summary>How a run of inline text is shown.</summary>
 public enum InlineStyle
@@ -111,4 +114,10 @@ public enum InlineStyle
 
 	/// <summary>A command or code, in the mono font.</summary>
 	Code,
+
+	/// <summary>A link: its text, going to <see cref="InlineRun.Url"/>.</summary>
+	Link,
+
+	/// <summary>The end of a line: what follows starts a new one.</summary>
+	LineBreak,
 }

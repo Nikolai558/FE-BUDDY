@@ -8,7 +8,6 @@ using FeBuddy.Wpf.Views;
 
 using FeBuddy.Core.Application.AliasGuide;
 using FeBuddy.Core.Application.AliasGuide.Models;
-using FeBuddy.Core.Infrastructure.Configuration;
 using FeBuddy.Core.Infrastructure.Logging;
 using FeBuddy.Core.Infrastructure.Platform;
 
@@ -63,7 +62,7 @@ public static class AliasGuideExport
 
 		try
 		{
-			AliasGuideWriter.Export(folder, formats, new AliasGuideOptions(Facility, AppVersion.Current, DateTime.UtcNow));
+			AliasGuideWriter.Export(folder, formats, new AliasGuideOptions(AppVersion.Current, DateTime.UtcNow));
 			AppLog.Info("Info", $"Exported the alias command guide to '{folder}': {string.Join(", ", names)}.");
 			Toast.Success("Alias command guide exported", $"{string.Join(" and ", names)} saved to {folder}, ready to share or post on your facility's website.");
 		}
@@ -73,12 +72,6 @@ public static class AliasGuideExport
 			Toast.Error("Export failed", ex.Message);
 		}
 	}
-
-	/// <summary>
-	/// The facility the guide names (Settings ▸ Facility Profile), read when it is shown or
-	/// exported; <see langword="null"/> when none is set.
-	/// </summary>
-	public static string? Facility => UserConfigFile.GetValue(SettingsViewModel.ArtccKey);
 
 	/// <summary>File names in the code look, joined: <c>`a`</c>, or <c>`a` and `b`</c>.</summary>
 	private static string JoinCode(IReadOnlyList<string> names) => string.Join(" and ", names.Select(name => $"`{name}`"));

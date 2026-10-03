@@ -1053,9 +1053,11 @@ goes there, as in the exported web page. **Export FE-Buddy Alias Command Guide**
 saves it for your facility's website. First choose the format:
 
 - **Web (.html)** - one dark page, with nothing else to download. The parts of a command to
-  replace are coloured by what goes there (an airport ID, an approach type, a runway, ...). Its
-  colours, fonts and sizes are variables at the top of its style sheet, and each section can be
-  deleted on its own, so it is easy to fit to your facility's website.
+  replace are coloured by what goes there (an airport ID, an approach type, a runway, ...). A
+  command never wraps: the Syntax and Example columns are as wide as their longest command, and
+  the description takes the rest. Its colours, fonts and sizes are variables at the top of its
+  style sheet, and each section can be deleted on its own, so it is easy to fit to your
+  facility's website.
 - **Markdown (.md)** - the same guide for a wiki or GitHub, with the parts to replace in
   `<angle brackets>` and the optional ones in `[square brackets]`.
 - **Both** - one of each, side by side.
@@ -1064,9 +1066,8 @@ saves it for your facility's website. First choose the format:
 `FE-Buddy Alias Command Guide.html` and `FE-Buddy Alias Command Guide.md`. If the folder already
 has one, FE-Buddy asks before replacing it, since it may hold your own edits.
 
-The guide says the commands are merged into your facility's alias file, naming the facility from
-Settings ▸ Facility Profile when there is one. It doesn't depend on a run or a cycle, so you can
-read or export it at any time.
+The guide doesn't depend on a run or a cycle, so you can read or export it at any time; its last
+line says the day it was exported (*Page updated on …*).
 
 The other cards link to this user guide, the [FAQ and troubleshooting](FAQ-and-Troubleshooting.md)
 page, the change log, and the issue tracker.

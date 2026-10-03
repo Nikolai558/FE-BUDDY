@@ -26,6 +26,11 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
 - The **Alias Command Guide** has its own Info page: read the whole guide in FE-Buddy, colours and
   all, exactly as it exports, with the export button at the top. What's New keeps its export
   button and adds **View the guide →**.
+- The guide never wraps a command: its Syntax and Example columns are as wide as their longest
+  command, a syntax is split into lines only between its parts, and the description takes the
+  rest of the width. The web page, the Markdown and the app's page all match, with reworded notes
+  and descriptions, a link to FE-Buddy at the top, no About section, and *Page updated on …* at
+  the bottom.
 
 ---
 

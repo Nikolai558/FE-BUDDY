@@ -15,8 +15,8 @@ namespace FeBuddy.Wpf.ViewModels;
 /// <param name="back">Returns to where the page was opened from: Info's cards, or What's New.</param>
 public sealed class AliasGuideViewModel(Action back) : ObservableObject
 {
-	/// <summary>The guide, naming the user's facility when Settings ▸ Facility Profile has one.</summary>
-	public AliasGuideDocument Document { get; } = AliasGuideContent.Build(AliasGuideExport.Facility);
+	/// <summary>The guide, as the export writes it.</summary>
+	public AliasGuideDocument Document { get; } = AliasGuideContent.Build();
 
 	/// <summary>Returns to where the page was opened from.</summary>
 	public ICommand BackCommand { get; } = new RelayCommand(back);

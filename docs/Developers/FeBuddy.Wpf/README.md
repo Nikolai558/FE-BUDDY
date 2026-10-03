@@ -60,7 +60,10 @@ Controls/             reusable controls: Card, SectionHeader, Option, CopyButton
                       AliasGuideDocumentView (the alias command guide, its parts
                       coloured by kind from Palette.xaml's Brush.Command.*),
                       BesideOrBelow (a panel: its second child beside the first,
-                      or under it when the row is too narrow), and ChromeWindow
+                      or under it when the row is too narrow), CommandTablePanel
+                      (the guide's Syntax / Description / Example columns, the
+                      outer two never wrapped, or each row stacked when too
+                      narrow), and ChromeWindow
                       (the base for every dialog window)
 Converters/           one IValueConverter per file
 Map/                  GeoJsonReader (System.Text.Json), WebMercator, ProjectedLayer
@@ -166,7 +169,7 @@ root - the same rule as `FeBuddy.Core`.
   home view, ROI view-model and `MapCanvas`, the File Names, Airways and ERAM to GeoJSON tabs'
   view-models, the sub-service order, the Reset window's view-model, the Review tab's run feed,
   the Info, What's New and Alias Command Guide pages' view-models (and the guide's format question),
-  `BesideOrBelow`, `InlineCode` and `InlineMarkdown` are covered today.
+  `BesideOrBelow`, `CommandTablePanel`, `InlineCode` and `InlineMarkdown` are covered today.
 
 ### Screens
 

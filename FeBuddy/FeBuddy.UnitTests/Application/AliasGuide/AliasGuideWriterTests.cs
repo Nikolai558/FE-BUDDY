@@ -8,9 +8,10 @@ namespace FeBuddy.UnitTests.Application.AliasGuide;
 
 /// <summary>
 /// Covers <see cref="AliasGuideWriter"/>: each format's file name; the web page's sections,
-/// contents links, colour pills and footer; the Markdown's title, contents line, tables, lists and
-/// footer; how the facility, version and date are named; the heading anchors; and exporting into a
-/// folder (UTF-8 with no byte order mark, one file per format, replacing a guide already there).
+/// contents links, lead, colour pills, columns that never wrap and footer; the Markdown's title,
+/// contents line, tables, lists and footer; how the version and date are named; the heading
+/// anchors; and exporting into a folder (UTF-8 with no byte order mark, one file per format,
+/// replacing a guide already there).
 /// </summary>
 public sealed class AliasGuideWriterTests : IDisposable
 {
@@ -29,7 +30,7 @@ public sealed class AliasGuideWriterTests : IDisposable
 		}
 	}
 
-	private static AliasGuideOptions Options(string? facility = "ZOB", string version = "3.0.0") => new(facility, version, GeneratedUtc);
+	private static AliasGuideOptions Options(string version = "3.0.0") => new(version, GeneratedUtc);
 
 	private static string Html(AliasGuideOptions? options = null) => AliasGuideWriter.Write(AliasGuideFormat.Html, options ?? Options());
 
@@ -71,7 +72,6 @@ public sealed class AliasGuideWriterTests : IDisposable
 	}
 
 	[Theory]
-	[InlineData("about")]
 	[InlineData("notation")]
 	[InlineData("isr")]
 	[InlineData("data-display")]
@@ -90,23 +90,31 @@ public sealed class AliasGuideWriterTests : IDisposable
 		string html = Html();
 		string[] anchors = [.. html.Split("href=\"#").Skip(1).Select(rest => rest[..rest.IndexOf('"')])];
 
-		Assert.Equal(["about", "notation", "isr", "data-display", "chart-recall"], anchors);
+		Assert.Equal(["notation", "isr", "data-display", "chart-recall"], anchors);
 		Assert.All(anchors, anchor => Assert.Contains($"<section id=\"{anchor}\">", html));
 	}
 
 	[Fact]
-	public void the_web_page_says_which_alias_file_the_commands_are_merged_into()
+	public void the_web_page_lead_links_to_fe_buddy()
 	{
-		Assert.Contains("merged into the ZOB alias file", Html());
+		Assert.Contains(
+			$"<p class=\"lead\">These alias commands are made by <a href=\"{RepositoryUrl}\">FE-Buddy</a> every AIRAC cycle.</p>",
+			Html());
 	}
 
 	[Fact]
-	public void the_web_page_footer_credits_fe_buddy_with_its_version_and_the_date()
+	public void the_web_page_footer_says_when_it_was_updated_and_its_opening_comment_credits_fe_buddy()
 	{
 		string html = Html();
 
-		Assert.Contains($"<footer>Made with <a href=\"{RepositoryUrl}\">FE-Buddy</a> v3.0.0 on 1 October 2026.</footer>", html);
+		Assert.Contains("<footer>Page updated on 1 October 2026.</footer>", html);
 		Assert.Contains("made by FE-Buddy v3.0.0 on 1 October 2026.", html);
+	}
+
+	[Fact]
+	public void the_web_page_says_plain_text_is_typed_as_shown_with_an_example_in_quotes()
+	{
+		Assert.Contains("<li>Plain text, typed exactly as shown. For example: \"<code class=\"cmd\">.apt</code>\"</li>", Html());
 	}
 
 	[Fact]
@@ -138,9 +146,42 @@ public sealed class AliasGuideWriterTests : IDisposable
 	}
 
 	[Fact]
-	public void a_long_command_can_wrap_between_its_parts()
+	public void a_command_never_wraps_and_the_syntax_and_example_columns_fit_their_longest_line()
 	{
-		Assert.Contains("<wbr>", Html());
+		string html = Html();
+
+		Assert.Contains(".commands .syntax, .commands .examples { width: 1%; white-space: nowrap; }", html);
+		Assert.DoesNotContain("<wbr>", html);
+		Assert.DoesNotContain("white-space: normal", html);
+	}
+
+	[Fact]
+	public void a_syntax_breaks_only_where_the_guide_says()
+	{
+		string html = Html();
+
+		Assert.Contains(
+			"<td class=\"syntax\"><code class=\"cmd\">.apt<br><span class=\"part k-airport\" title=\"Airport ID\">FAA or ICAO airport ID</span></code></td>",
+			html);
+		Assert.Contains(
+			"<td class=\"syntax\"><code class=\"cmd\">.<span class=\"part k-airport\" title=\"Airport ID\">airport ID</span>"
+			+ "<span class=\"part k-ident\" title=\"ID or name\">arrival</span><br>f</code></td>",
+			html);
+	}
+
+	[Fact]
+	public void each_example_is_a_command_of_its_own_in_the_examples_cell()
+	{
+		Assert.Contains(
+			"<td class=\"examples\"><code class=\"cmd\">.apt<span class=\"part k-airport\" title=\"Airport ID\">DTW</span></code>"
+			+ "<code class=\"cmd\">.apt<span class=\"part k-airport\" title=\"Airport ID\">KDTW</span></code></td>",
+			Html());
+	}
+
+	[Fact]
+	public void a_line_break_in_a_paragraph_is_a_br()
+	{
+		Assert.Contains("<p><strong>Procedure names.</strong><br>A departure goes by", Html());
 	}
 
 	[Fact]
@@ -156,10 +197,10 @@ public sealed class AliasGuideWriterTests : IDisposable
 	public void code_with_a_pill_in_it_is_a_cmd_with_no_background_of_its_own()
 	{
 		const string command =
-			"<code class=\"cmd\">.<wbr>"
-			+ "<span class=\"part k-airport\" title=\"Airport ID\">dtw</span><wbr>"
-			+ "<span class=\"part k-type\" title=\"Approach type\">I</span><wbr>"
-			+ "<span class=\"part k-runway\" title=\"Runway\">22L</span><wbr>c</code>";
+			"<code class=\"cmd\">."
+			+ "<span class=\"part k-airport\" title=\"Airport ID\">dtw</span>"
+			+ "<span class=\"part k-type\" title=\"Approach type\">I</span>"
+			+ "<span class=\"part k-runway\" title=\"Runway\">22L</span>c</code>";
 
 		// "at DTW is" puts it in the sentence, not the Example column.
 		Assert.Contains("at DTW is " + command, Html());
@@ -185,21 +226,24 @@ public sealed class AliasGuideWriterTests : IDisposable
 	}
 
 	[Fact]
-	public void the_web_page_escapes_the_apostrophe_when_there_is_no_facility()
+	public void the_web_page_escapes_apostrophes_and_quotes_in_text()
 	{
-		Assert.Contains("merged into your facility&#39;s alias file.", Html(Options(facility: null)));
+		string html = Html();
+
+		Assert.Contains("Shows the airport&#39;s card", html);
+		Assert.Contains("Commands are not case-sensitive: &quot;<code class=\"cmd\">", html);
 	}
 
 	// ---- the Markdown ----
 
 	[Fact]
-	public void the_markdown_starts_with_the_title_then_the_lead()
+	public void the_markdown_starts_with_the_title_then_the_lead_linking_to_fe_buddy()
 	{
 		string markdown = Markdown();
 
 		Assert.StartsWith("# FE-Buddy Alias Command Guide", markdown, StringComparison.Ordinal);
 		Assert.Equal(
-			"These alias commands are made by FE-Buddy every AIRAC cycle and merged into the ZOB alias file.",
+			$"These alias commands are made by [FE-Buddy]({RepositoryUrl}) every AIRAC cycle.",
 			Lines(markdown)[2]);
 	}
 
@@ -208,11 +252,10 @@ public sealed class AliasGuideWriterTests : IDisposable
 	{
 		string contents = Assert.Single(Lines(Markdown()), line => line.StartsWith("**Contents:**", StringComparison.Ordinal));
 
-		Assert.Contains("[About alias commands](#about-alias-commands)", contents);
-		Assert.Contains("[How to read this guide](#how-to-read-this-guide)", contents);
-		Assert.Contains("[In-Scope Reference (ISR)](#in-scope-reference-isr)", contents);
-		Assert.Contains("[Data Display](#data-display)", contents);
-		Assert.Contains("[Chart Recall](#chart-recall)", contents);
+		Assert.Equal(
+			"**Contents:** [How to read this guide](#how-to-read-this-guide) · [In-Scope Reference (ISR)](#in-scope-reference-isr) · "
+			+ "[Data Display](#data-display) · [Chart Recall](#chart-recall)",
+			contents);
 	}
 
 	[Fact]
@@ -233,11 +276,12 @@ public sealed class AliasGuideWriterTests : IDisposable
 	}
 
 	[Fact]
-	public void a_command_row_shows_its_syntax_with_angle_brackets_and_each_example_on_a_line_of_its_own()
+	public void a_command_row_shows_each_syntax_line_and_each_example_on_a_line_of_its_own()
 	{
 		string markdown = Markdown();
 
-		Assert.Contains("| `.apt<FAA or ICAO airport ID>` |", markdown);
+		Assert.Contains("| `.apt`<br>`<FAA or ICAO airport ID>` |", markdown);
+		Assert.Contains("| `.<airport ID><arrival>`<br>`f` |", markdown);
 		Assert.Contains("`.aptDTW`<br>`.aptKDTW`", markdown);
 	}
 
@@ -246,8 +290,14 @@ public sealed class AliasGuideWriterTests : IDisposable
 	{
 		string markdown = Markdown();
 
-		Assert.Contains("`.<airport ID><approach type>[variant]<runway>c`", markdown);
-		Assert.Contains("`.<airport ID><chart code>c[page]`", markdown);
+		Assert.Contains("`.<airport ID>`<br>`<approach type>`<br>`[variant]`<br>`<runway>`<br>`c`", markdown);
+		Assert.Contains("`.<airport ID>`<br>`<chart code>`<br>`c`<br>`[page]`", markdown);
+	}
+
+	[Fact]
+	public void a_line_break_in_a_markdown_paragraph_is_a_br()
+	{
+		Assert.Contains(Lines(Markdown()), line => line.StartsWith("**Procedure names.**<br>A departure goes by", StringComparison.Ordinal));
 	}
 
 	[Fact]
@@ -280,16 +330,19 @@ public sealed class AliasGuideWriterTests : IDisposable
 	{
 		string[] lines = Lines(Markdown());
 
-		Assert.Contains("- `.apt` Plain text: type it exactly as shown.", lines);
+		Assert.Contains("- Plain text, typed exactly as shown. For example: \"`.apt`\"", lines);
 		Assert.Contains(lines, line => line.StartsWith("- `<airport ID>` Angle brackets:", StringComparison.Ordinal));
 		Assert.Contains(lines, line => line.StartsWith("- `[page]` Square brackets: optional.", StringComparison.Ordinal));
-		Assert.Contains(lines, line => line.StartsWith("- Commands are not case-sensitive: `.aptdtw` works the same as `.aptDTW`.", StringComparison.Ordinal));
+		Assert.Contains("- Commands are not case-sensitive: \"`.aptdtw`\" works the same as \"`.aptDTW`\".", lines);
 	}
 
 	[Fact]
-	public void the_markdown_ends_with_the_credit_line()
+	public void the_markdown_ends_by_saying_when_the_page_was_updated()
 	{
-		Assert.Contains($"*Made with [FE-Buddy]({RepositoryUrl}) v3.0.0 on 1 October 2026.*", Lines(Markdown()));
+		string[] lines = Lines(Markdown());
+
+		Assert.Equal("*Page updated on 1 October 2026.*", lines[^2]);
+		Assert.Empty(lines[^1]);
 	}
 
 	[Theory]
@@ -303,32 +356,6 @@ public sealed class AliasGuideWriterTests : IDisposable
 		Assert.Equal(expected, AliasGuideMarkdownWriter.Slug(heading));
 	}
 
-	// ---- the facility ----
-
-	[Theory]
-	[InlineData(null, "your facility's alias file")]
-	[InlineData("", "your facility's alias file")]
-	[InlineData("  ", "your facility's alias file")]
-	[InlineData("@#!", "your facility's alias file")]
-	[InlineData("ZOB", "the ZOB alias file")]
-	[InlineData(" zob\n", "the ZOB alias file")]
-	[InlineData("Z`O*B", "the ZOB alias file")]
-	public void the_facility_is_named_by_its_letters_and_digits_only(string? facility, string expected)
-	{
-		string[] lines = Lines(Markdown(Options(facility)));
-
-		Assert.Contains($"These alias commands are made by FE-Buddy every AIRAC cycle and merged into {expected}.", lines);
-	}
-
-	[Fact]
-	public void a_facility_with_markup_characters_cannot_break_either_format()
-	{
-		AliasGuideOptions options = Options("Z`O*B");
-
-		Assert.Contains("merged into the ZOB alias file.", Html(options));
-		Assert.Contains("merged into the ZOB alias file.", Markdown(options));
-	}
-
 	// ---- the version and date ----
 
 	[Theory]
@@ -338,19 +365,19 @@ public sealed class AliasGuideWriterTests : IDisposable
 	[InlineData("", " on 1 October 2026")]
 	public void the_credit_has_a_v_before_a_version_that_is_a_number(string version, string expected)
 	{
-		Assert.Equal(expected, AliasGuideWriter.Credit(Options(version: version)));
+		Assert.Equal(expected, AliasGuideWriter.Credit(Options(version)));
 	}
 
 	[Theory]
 	[InlineData("3.0.0", "v3.0.0 on 1 October 2026")]
 	[InlineData("3.0.0-alpha.3", "v3.0.0-alpha.3 on 1 October 2026")]
 	[InlineData("dev", "dev on 1 October 2026")]
-	public void both_footers_carry_the_credit(string version, string credit)
+	public void the_web_pages_opening_comment_carries_the_credit_and_the_markdown_does_not(string version, string credit)
 	{
-		AliasGuideOptions options = Options(version: version);
+		AliasGuideOptions options = Options(version);
 
-		Assert.Contains($"</a> {credit}.</footer>", Html(options));
-		Assert.Contains($"*Made with [FE-Buddy]({RepositoryUrl}) {credit}.*", Lines(Markdown(options)));
+		Assert.Contains($"  FE-Buddy Alias Command Guide, made by FE-Buddy {credit}.", Lines(Html(options)));
+		Assert.DoesNotContain(credit, Markdown(options));
 	}
 
 	[Fact]
@@ -362,9 +389,10 @@ public sealed class AliasGuideWriterTests : IDisposable
 		{
 			CultureInfo.CurrentCulture = new CultureInfo("fr-FR");
 
-			string credit = AliasGuideWriter.Credit(new AliasGuideOptions("ZOB", "3.0.0", new DateTime(2027, 3, 9, 23, 59, 0, DateTimeKind.Utc)));
+			AliasGuideOptions options = new("3.0.0", new DateTime(2027, 3, 9, 23, 59, 0, DateTimeKind.Utc));
 
-			Assert.Equal("v3.0.0 on 9 March 2027", credit);
+			Assert.Equal("v3.0.0 on 9 March 2027", AliasGuideWriter.Credit(options));
+			Assert.Equal("Page updated on 9 March 2027.", AliasGuideWriter.Updated(options));
 		}
 		finally
 		{

@@ -1,7 +1,6 @@
 using System.Text;
 
 using FeBuddy.Core.Application.AliasGuide.Models;
-using FeBuddy.Core.Infrastructure.GitHub;
 
 namespace FeBuddy.Core.Application.AliasGuide;
 
@@ -12,13 +11,14 @@ namespace FeBuddy.Core.Application.AliasGuide;
 /// <remarks>
 /// Markdown has no colour, so a part the controller replaces is written in the usual command-line
 /// way instead: <c>&lt;airport ID&gt;</c>, or <c>[page]</c> when it is optional. Command tables are
-/// Markdown tables, with a cell's notes and examples on lines of their own (<c>&lt;br&gt;</c>).
+/// Markdown tables, with a syntax's lines and a cell's notes and examples on lines of their own
+/// (<c>&lt;br&gt;</c>). How wide a column is, and whether it wraps, is up to whatever shows the file.
 /// </remarks>
 internal static class AliasGuideMarkdownWriter
 {
 	/// <summary>Writes the guide as Markdown.</summary>
 	/// <param name="guide">The guide's content.</param>
-	/// <param name="options">The version and date the guide names.</param>
+	/// <param name="options">The date the guide names.</param>
 	/// <returns>The Markdown text.</returns>
 	internal static string Write(AliasGuideDocument guide, AliasGuideOptions options)
 	{
@@ -29,10 +29,9 @@ internal static class AliasGuideMarkdownWriter
 		markdown.AppendLine(Inline(guide.Lead));
 		markdown.AppendLine();
 
-		IEnumerable<string> titles = [guide.About.Title, AliasGuideContent.NotationTitle, .. guide.Sections.Select(section => section.Title)];
+		IEnumerable<string> titles = [AliasGuideContent.NotationTitle, .. guide.Sections.Select(section => section.Title)];
 		markdown.AppendLine("**Contents:** " + string.Join(" · ", titles.Select(title => $"[{title}](#{Slug(title)})")));
 
-		AppendSection(markdown, guide.About);
 		AppendNotation(markdown, guide.ReadingNotes);
 
 		foreach (GuideSection section in guide.Sections)
@@ -43,7 +42,7 @@ internal static class AliasGuideMarkdownWriter
 		markdown.AppendLine();
 		markdown.AppendLine("---");
 		markdown.AppendLine();
-		markdown.AppendLine($"*Made with [FE-Buddy]({GitHubRepository.WebUrl}) {AliasGuideWriter.Credit(options)}.*");
+		markdown.AppendLine($"*{AliasGuideWriter.Updated(options)}*");
 
 		return markdown.ToString();
 	}
@@ -115,7 +114,7 @@ internal static class AliasGuideMarkdownWriter
 		markdown.AppendLine();
 		markdown.AppendLine($"## {AliasGuideContent.NotationTitle}");
 		markdown.AppendLine();
-		markdown.AppendLine("- `.apt` Plain text: type it exactly as shown.");
+		markdown.AppendLine($"- {AliasGuideContent.TypedLegend} \"`.apt`\"");
 		markdown.AppendLine("- `<airport ID>` Angle brackets: replace them, and what is inside them, with the real value.");
 		markdown.AppendLine("- `[page]` Square brackets: optional. Replace them in the same way, or leave them out.");
 
@@ -136,7 +135,7 @@ internal static class AliasGuideMarkdownWriter
 
 			AppendRow(markdown,
 			[
-				Code(CommandMarkup.Parse(command.Syntax)),
+				string.Join("<br>", command.Syntax.Select(line => Code(CommandMarkup.Parse(line)))),
 				string.Join("<br>", description),
 				string.Join("<br>", command.Examples.Select(example => Code(CommandMarkup.Parse(example)))),
 			]);
@@ -149,10 +148,13 @@ internal static class AliasGuideMarkdownWriter
 	/// <summary>Inline text for a table cell, where a <c>|</c> would end the cell.</summary>
 	private static string Cell(string text) => Inline(text).Replace("|", "\\|", StringComparison.Ordinal);
 
+	/// <summary>Inline text as Markdown; a line break is a <c>&lt;br&gt;</c>, which a table cell can hold too.</summary>
 	private static string Inline(string text) => string.Concat(GuideInline.Parse(text).Select(run => run.Style switch
 	{
 		InlineStyle.Bold => $"**{run.Text}**",
 		InlineStyle.Code => Code(run.Parts),
+		InlineStyle.Link => $"[{run.Text}]({run.Url})",
+		InlineStyle.LineBreak => "<br>",
 		_ => run.Text,
 	}));
 

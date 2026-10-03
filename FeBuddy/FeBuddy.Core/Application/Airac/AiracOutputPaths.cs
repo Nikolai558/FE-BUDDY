@@ -47,8 +47,8 @@ public static class AiracOutputPaths
 	public const string VnasFolder = "Upload_to_vNAS";
 
 	/// <summary>
-	/// The one alias file to upload to vNAS, inside <see cref="VnasFolder"/>: the user's custom alias
-	/// files, then every alias file marked for vNAS.
+	/// The one alias file to upload to vNAS, inside <see cref="VnasFolder"/>: every alias file marked
+	/// for vNAS, then the user's custom alias files.
 	/// </summary>
 	public const string VnasAliasFileName = "vNAS_Alias.txt";
 

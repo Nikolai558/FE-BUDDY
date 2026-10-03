@@ -1,7 +1,7 @@
 <!--
     VnasAliasView  -  the vNAS Alias Upload sub-service tab inside the AIRAC Service screen: the
-    facility's own custom alias files, merged into the top of Upload_to_vNAS\vNAS_Alias.txt above
-    every FE-Buddy alias file ticked for vNAS. Save / Undo / Previous / Next / Preview settings come
+    facility's own custom alias files, merged into Upload_to_vNAS\vNAS_Alias.txt after every
+    FE-Buddy alias file ticked for vNAS, so theirs win. Save / Undo / Previous / Next / Preview settings come
     from the tab host's shared action bar, and the tab host owns the page's single scroller.
 
     Each custom alias file is a file on this PC or a web address with an optional saved credential

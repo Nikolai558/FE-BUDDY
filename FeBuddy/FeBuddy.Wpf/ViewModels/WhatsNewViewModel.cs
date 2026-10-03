@@ -9,9 +9,8 @@ namespace FeBuddy.Wpf.ViewModels;
 /// Alias Command Guide page (Info ▸ Alias Command Guide), where the guide is exported.
 /// </summary>
 /// <remarks>
-/// The content is <c>FE-Buddy_3.0_Whats_New.md</c>, at the repository's root, laid out as a page;
-/// change the two together. Text uses inline Markdown (<c>**bold**</c>, <c>*italic*</c>,
-/// <c>`code`</c>) for <c>InlineMarkdown</c> to show.
+/// The page's content lives here, not in a file. Text uses inline Markdown (<c>**bold**</c>,
+/// <c>*italic*</c>, <c>`code`</c>) for <c>InlineMarkdown</c> to show.
 /// </remarks>
 /// <param name="back">Returns to Info's cards.</param>
 /// <param name="openGuide">Opens Info ▸ Alias Command Guide, the guide's own page.</param>

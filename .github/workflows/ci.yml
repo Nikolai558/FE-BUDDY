@@ -142,8 +142,8 @@ jobs:
           dotnet-version: '10.x'
 
       # Publishes the app and builds the MSI exactly as a release would. The installer
-      # counter it advances stays in this runner's checkout (see
-      # docs/Developers/MSI-VERSION-NUMBERING.md).
+      # counter it advances stays in this runner's checkout (see "The MSI's own version
+      # number" in docs/Developers/VERSIONING.md).
       - name: Build MSI
         shell: pwsh
         run: ./FeBuddy/build.ps1

@@ -1,67 +1,75 @@
 # Getting started
 
-This walks you from nothing to your first set of files. It takes about ten minutes, most of it
-waiting for the FAA data to download the first time.
+## What FE-Buddy does
+
+Every 28 days the FAA publishes new aeronautical data: new airways, moved fixes, amended procedures.
+If you are a facility engineer for a VATSIM ARTCC, your video maps and alias files need to follow.
+FE-Buddy downloads the data and writes the files for you:
+
+- **GeoJSON video maps** for CRC - airports and runways, airways, SIDs and STARs, NAVAIDs, fixes,
+  ARTCC boundaries and weather stations.
+- **Alias files** of dot-commands for controllers - airport, NAVAID and airline information, the
+  fixes of an airway or procedure, and FAA chart recall.
+- **One `vNAS_Alias.txt`**, ready to upload, with your facility's own aliases merged in.
+- **Procedure change reports** for the airports you care about.
+
+You choose what to make and how it looks, and a **Region of Interest** keeps the maps to your area.
+FE-Buddy remembers your choices, so each new cycle is a couple of clicks. It also converts FAA `.dat`
+video maps, VRC sector files and ERAM GeoMaps to GeoJSON, and has a map for checking GeoJSON files.
+
+Some 2.x tools aren't in 3.0 yet; see [Do I still need FE-Buddy 2.x?](FAQ-and-Troubleshooting.md#do-i-still-need-fe-buddy-2x)
 
 ## 1. Install
 
-1. Download `FE-BUDDY-Setup.msi` from the newest release on
-   [GitHub Releases](https://github.com/Nikolai558/FE-BUDDY/releases).
-2. Run it. Windows may ask for administrator permission - FE-Buddy installs for everyone on the
-   PC, into `Program Files\FE-BUDDY`, with a Start menu and a desktop shortcut.
+Download `FE-BUDDY-Setup.msi` from the newest release on
+[GitHub Releases](https://github.com/Nikolai558/FE-BUDDY/releases) and run it. It upgrades
+FE-Buddy 2.9 or later in place.
 
-**You need:** Windows 10 or 11 (64-bit) and an internet connection. Nothing else - FE-Buddy
-carries everything it needs.
-
-Already have FE-Buddy 2.x? The 3.0 installer upgrades it in place.
+You need Windows 10 or 11 (64-bit) and an internet connection; FE-Buddy brings everything else.
 
 ## 2. First launch
 
-Open FE-Buddy. The window has a menu down the left (**Dashboard**, **AIRAC Service**, **File
-Conversions**, **Map**, then **Settings** and **Info**) and a status line across the top.
+The window has a menu down the left - **Dashboard**, **AIRAC Service**, **File Conversions**,
+**Map**, then **Settings** and **Info** - and a status line across the top.
 
-The first launch downloads the FAA data for three AIRAC cycles, which can take a few minutes.
-The top of the window shows what it is doing (`Downloading cycle 2610…`, `Parsing cycle 2610…`)
-and settles on the current cycle when it is done. Later launches reuse what was downloaded and are
-much quicker.
+The first launch downloads the FAA data for the previous, current and next AIRAC cycles (the next
+once the FAA has published it), which can take a few minutes. The top of the window says what it's doing and settles on the current cycle
+when it's done. Later launches reuse the download and are much quicker.
 
-## 3. Settings - do these once
+## 3. Settings - once
 
 Open **Settings**:
 
-1. **Default Output Directory** - where your files go. The default is your Desktop, with
-   **Add a FE-Buddy_Output folder inside that directory** on, so files land in
-   `Desktop\FE-Buddy_Output`. Each run of a cycle gets its own folder in there, such as
-   `AIRAC_2610`.
-2. **Default Region of Interest** - press **Set ROI…**, drag a box around your ARTCC on the map
-   that opens, a little bigger than your boundary, and press **Use this ROI**. Everything FE-Buddy
-   makes is then limited to that box. You can skip this, but you will get the whole country.
-3. Press **Save** at the top of Settings.
+1. **Default Output Directory** - where your files go. It starts as your Desktop, with **Add a
+   FE-Buddy_Output folder inside that directory** on, so files land in `Desktop\FE-Buddy_Output`. Each cycle gets its own
+   folder in there, such as `AIRAC_2610`.
+2. **Default Region of Interest** - press **Set ROI…**, drag a box a little bigger than your ARTCC,
+   and press **Use this ROI**. You can skip this, but you'll get the whole country.
+3. Press **Save**.
 
 ## 4. Your first run
 
-1. Open **AIRAC Service**.
-2. On the **General** tab, leave the cycle on **Current** and tick **Airways** (tick others too if
-   you like). A tab for each one appears in the rail on the left.
-3. Open the **Airways** tab. The defaults are sensible. Near the end, the **Upload to vNAS** card
-   lets you tick the files you will upload to vNAS: a GeoJSON file goes in the `Upload_to_vNAS`
-   folder, and an alias file is added to `Upload_to_vNAS\vNAS_Alias.txt` (tick **vNAS Alias
-   Upload** on the General tab to add your facility's own aliases after FE-Buddy's, where they
-   win over FE-Buddy's).
-   If you tick a GeoJSON file, choose whether it gets CRC-ERAM defaults, and fill every box on the
-   **CRC ERAM Defaults** card that appears. Press **Save**.
-4. Open **Preview Settings**. It spells out what the run will do and where. Press **Run AIRAC
-   Service**. (If you have run this cycle before, FE-Buddy asks whether to overwrite the old
-   files or delete them first.)
-5. The **Review** tab shows progress and, when it finishes, what was written. Press
-   **Open output folder** to see your files.
+1. Open **AIRAC Service**. On the **General** tab, leave the cycle on **Current** and tick
+   **Airways** (and anything else you like). Each one you tick gets a tab.
+2. Open the **Airways** tab. On **High and Low Files**, choose High, Low or Both for each airway type
+   that's still blank (J and Q start in High, V and T in Low), or untick the types you don't want
+   under **Designations to Include**; the tab stays red until you do. Near the end, on **Upload to
+   vNAS**, tick the files you'll upload to vNAS. If you tick a GeoJSON file, choose whether it gets CRC-ERAM defaults,
+   then fill every box on the **CRC ERAM Defaults** card that appears. Press **Save**.
+3. Open **Preview Settings**, check what the run will do, and press **Run AIRAC Service**.
+4. The **Review** tab shows progress, then what was written. **Open output folder** takes you to
+   your files.
 
-## 5. Next cycle
+To add your facility's own aliases to `vNAS_Alias.txt`, tick **vNAS Alias Upload** on the General
+tab and add your files on its tab.
 
-Every 28 days: open FE-Buddy, go to **AIRAC Service**, check the cycle, press **Run AIRAC
-Service** on the Preview Settings tab. Your settings are remembered.
+## 5. Every cycle after
+
+Open FE-Buddy, go to **AIRAC Service**, check the cycle, and press **Run AIRAC Service** on the
+Preview Settings tab. Your settings are remembered.
 
 ## Where next
 
-- The [user guide](User-Guide.md) explains every option.
-- Words you don't know are in the [glossary](Glossary.md).
+- [User guide](User-Guide.md) - every screen and option.
+- [FAQ and troubleshooting](FAQ-and-Troubleshooting.md) - when something looks wrong.
+- [Glossary](Glossary.md) - AIRAC, NASR, CRC and the rest.

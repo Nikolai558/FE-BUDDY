@@ -2,137 +2,82 @@
 
 The words FE-Buddy and its documentation use, in plain terms.
 
-**AIRAC cycle** - The FAA (and every other aviation authority) updates its aeronautical data on a
-fixed 28-day schedule called AIRAC (Aeronautical Information Regulation And Control). Each
-28-day period is a *cycle*, named by year and number: `2610` is the 10th cycle of 2026. The
-*current* cycle is the one in effect today; the *previous* one just ended; the *next* one starts
-on its *effective date*.
+**AIRAC cycle** - The fixed 28-day schedule on which the FAA (and every aviation authority) updates
+its aeronautical data. Each cycle is named by year and number: `2610` is the 10th cycle of 2026. The
+*current* cycle is in effect today; the *next* one starts on its *effective date*.
 
-**Alias file** - A text file of dot-commands for CRC. A controller types a short command
-(`.J3F`) and CRC expands it into something longer (the list of fixes on airway J3). FE-Buddy
-writes `Airports.txt`, `Airways.txt`, `Departures.txt`, `Arrivals.txt`, `Navaids.txt`,
-`Telephony.txt` and Procedures' `Faa_Chart_Recall.txt` (see **FAA Chart Recall**).
+**Alias file** - A text file of dot-commands for CRC. A controller types a short command (`.J3F`) and
+CRC runs what it stands for (draw the fixes of airway J3).
 
-**Antimeridian** - The line of ±180° longitude, on the far side of the world from Greenwich. A
-line crossing it has to be split in two or it draws the long way round, across the whole map.
+**Antimeridian** - The ±180° line of longitude. A line crossing it has to be split in two, or it
+draws the long way round the whole map.
 
-**ARTCC** - Air Route Traffic Control Center: the facility that controls a large area of
-airspace, like Cleveland Center (ZOB). On VATSIM, each ARTCC has its own facility files.
+**ARTCC** - Air Route Traffic Control Center: the facility controlling a large area of airspace, like
+Cleveland Center (ZOB).
 
-**ARTCC Boundaries** - The sub-service that draws each ARTCC's lateral boundary as lines, split by
-altitude structure (HIGH, LOW, UNLIMITED); an oceanic ARTCC like ZAK, ZAP or ZWY draws a CTA ring
-and a FIR ring at the same altitude. No alias file - a boundary line carries no label to write
-one from.
+**BCG** - Brightness Control Group: the CRC setting (1-40) for which brightness knob controls a map
+element.
 
-**BCG** - Brightness Control Group: a CRC setting (1-40) that decides which brightness knob on
-the scope controls a map element.
+**CRC** - Consolidated Radar Client, the radar client VATSIM controllers use. It draws GeoJSON video
+maps and runs alias commands.
 
-**CRC** - The radar client VATSIM controllers use (Consolidated Radar Client). It displays
-GeoJSON video maps and runs alias commands.
+**CRC ERAM defaults** - The styles (BCG, filters, line style, symbol, size and so on) CRC should use
+for everything in a GeoJSON file, stored in one hidden feature at the top of the file. The AIRAC
+Service writes them only into files marked for vNAS; File Conversions write them into each converted
+file unless you untick **Include**.
 
-**CRC ERAM defaults** - The styles (BCG, filters, line style, thickness, symbol, size, text
-options) CRC should use for everything in a GeoJSON file, stored in one hidden feature at the top
-of the file. A feature can still override them individually. FE-Buddy writes them only into files
-marked for vNAS.
+**d-TPP Metafile** - The FAA's index of every chart in the Digital Terminal Procedures Publication -
+approach plates, SIDs, STARs, airport diagrams. Published each cycle, but only 15-18 days before it
+starts. Procedures is built from it.
 
-**d-TPP Metafile** - The FAA's index of every chart in the Digital Terminal Procedures Publication
-(d-TPP) - approach plates, SIDs, STARs, airport diagrams and the rest - published once per AIRAC
-cycle, but only 15-18 days before the cycle's effective date, so the next cycle's copy is often
-missing. Procedures builds its documents and its alias file from it, joined to NASR for each
-airport's ARTCC, coordinates and airspace class.
+**Designation** - The letters at the front of an airway ID: `J` in J3, `V` in V23.
 
-**Designation** - The letters at the front of an airway ID: `J` in J3, `V` in V23, `Q` in Q100.
-Roughly, J and Q are high altitude, V and T are low - but FE-Buddy classifies by the published
-altitudes, not the letter.
+**FAA Chart Recall** - `Faa_Chart_Recall.txt`, Procedures' alias file: commands that open the FAA's
+current charts, a page each, such as `.dtwI22Lc` for DTW's ILS OR LOC RWY 22L.
 
-**Duplicate alias report** - `Duplicate_Alias_Commands.txt`, written after every AIRAC Service run
-that writes at least one alias file: every alias command used by more than one line across all of
-that run's alias files, since CRC can only run one of them. Grouped by ARTCC, your own facility
-first, then Telephony commands, then anything else that names no airport.
+**FE-Buddy properties (`feb.*`)** - Optional extra fields on each GeoJSON feature, such as an airway's
+ID. Handy for checking a file; CRC ignores them.
 
-**Effective date** - The day a cycle takes over from the one before.
+**Filters** - The CRC setting (0-40) that groups map elements, so a controller can turn groups on and
+off.
 
-**FAA Chart Recall** - `Faa_Chart_Recall.txt`, one of Procedures' outputs: a command that opens
-each page of every current chart at every airport in the d-TPP Metafile, e.g. `.dtwI22Lc` for
-DTW's ILS OR LOC RWY 22L. Covers every airport regardless of the Procedures tab's other settings.
-See the [user guide](User-Guide.md#faa-chart-recall-commands) for how the commands are built.
+**Fix** - A named point used for navigation, such as `DOTSS`.
 
-**FE-Buddy properties (`feb.*`)** - Extra fields FE-Buddy can add to each GeoJSON feature, such
-as the airway ID or the airport name. Useful for checking a file; CRC ignores them.
+**GeoJSON** - A standard file format for map shapes - points, lines and areas - with properties.
+CRC's video maps are GeoJSON.
 
-**Filters** - A CRC setting: the numbered map filters (0-40) an element belongs to, so a
-controller can turn groups of map elements on and off.
+**METAR** - A routine hourly weather report from an airport or weather station.
 
-**Fix / waypoint** - A named point used for navigation, like `DOTSS`. Five-letter names are
-*fixes* (intersections); NAVAIDs (VORs, NDBs) and airports are points too.
+**NASR** - The FAA's National Airspace System Resources data: every US airport, runway, airway, fix,
+NAVAID and procedure, published as CSV files each AIRAC cycle. Most of FE-Buddy is built from it.
 
-**Fixes** - The sub-service that draws a symbol and a label for every NASR fix - reporting
-points, waypoints, military points and the rest - split all in one file, by fix use, by chart, or
-by chart and fix use. No alias file - a fix's label is always its own identifier.
+**NAVAID** - A ground-based radio aid a pilot navigates by, such as a VOR, VORTAC or NDB.
 
-**GeoJSON** - A standard file format for map shapes: points, lines and polygons with
-properties. CRC's video maps are GeoJSON files.
+**ODP** - Obstacle Departure Procedure: a departure that keeps aircraft clear of terrain and
+obstacles, as opposed to a SID.
 
-**METAR** - A routine weather report for an airport or station - wind, visibility, sky condition,
-temperature and altimeter setting - issued every hour. Wx Stations includes only stations that
-report METAR.
-
-**NASR** - The FAA's National Airspace System Resources data: every airport, runway, airway,
-fix, NAVAID and procedure in the US, published as a set of CSV files every AIRAC cycle.
-FE-Buddy downloads it from the FAA and builds everything from it.
-
-**NAVAID** - Navigational aid: a ground-based transmitter a pilot navigates by, such as a VOR,
-VORTAC or NDB. FE-Buddy writes a symbol, a label and alias commands for each NAVAID NASR publishes
-(except ones marked SHUTDOWN), for the NAVAID types you tick.
-
-**ODP** - Obstacle Departure Procedure: a departure procedure that exists to keep aircraft clear
-of terrain and obstacles, as opposed to a SID.
-
-**Output folder** - Where FE-Buddy writes your files (Settings ▸ Default Output Directory). Each
-run of a cycle writes into its own `AIRAC_<cycle>` folder there.
-
-**Procedures** - The sub-service that writes two documents from the FAA's d-TPP Metafile instead of
-GeoJSON: `Procedure_Changes.md` (what changed this cycle, with links to the FAA's charts) and
-`Procedures.json` (every included airport's current charts) - plus the FAA Chart Recall alias file,
-which covers every airport in the metafile regardless of what the documents are limited to. Like Wx
-Stations, its data is not the NASR cycle.
+**Output folder** - Where FE-Buddy writes your files (Settings ▸ Default Output Directory). Each cycle
+gets its own `AIRAC_<cycle>` folder there.
 
 **Region of Interest (ROI)** - A box on the map, set by its south-west and north-east corners.
-FE-Buddy only writes data inside (or crossing) it. Make it a little bigger than your ARTCC.
+FE-Buddy's maps keep only what is inside or crossing it. Make it a little bigger than your ARTCC.
 
-**Run** - One press of **Run AIRAC Service**: every ticked sub-service makes its files.
+**SID** - Standard Instrument Departure: a published departure route.
 
-**SID** - Standard Instrument Departure: a published departure route from an airport.
+**STAR** - Standard Terminal Arrival: a published arrival route.
 
-**STAR** - Standard Terminal Arrival: a published arrival route into an airport.
+**Sub-service** - One kind of output the AIRAC Service makes: ARTCC Boundaries, Airports, Airways,
+Arrivals, Departures, NAVAIDs, Fixes, Procedures, Telephony, Wx Stations or vNAS Alias Upload. Each
+has its own tab. See the [user guide](User-Guide.md#airac-service).
 
-**Sub-service** - One kind of data the AIRAC Service can produce: ARTCC Boundaries, Airports,
-Airways, Arrivals, Departures, NAVAIDs, Fixes, Procedures, Telephony, Wx Stations or vNAS Alias
-Upload. Each has its own tab and settings.
+**Telephony** - An airline or operator's spoken call sign, such as `DELTA`. Also the sub-service
+that writes `.id` commands for each operator's designator and telephony.
 
-**Telephony** - The sub-service that writes `Telephony.txt`: a `.id` command for every operator's
-three-letter designator or identifier, and another for its telephony (the spoken call sign), from
-FAA Order JO 7340.2, Chapter 3 - the ICAO register and the U.S. special call signs. No GeoJSON, and
-like Wx Stations and Procedures, its data isn't the NASR cycle. See the
-[user guide](User-Guide.md#telephony-tab).
+**Video map** - The map background on a controller's scope: airways, airports, boundaries. In CRC,
+these are GeoJSON files.
 
-**Video map** - The map background on a controller's scope: airways, airports, boundaries.
-In CRC, these are GeoJSON files.
+**vNAS** - VATSIM's system for ARTCC facility data. You upload FE-Buddy's files to vNAS for CRC to
+use; the files you mark for it go in an `Upload_to_vNAS` folder.
 
-**vNAS** - VATSIM's system for ARTCC facility data. You upload the files FE-Buddy makes to vNAS
-for CRC to use. The files you mark for vNAS on a sub-service tab go in an `Upload_to_vNAS` folder,
-ready to upload: GeoJSON files as they are, alias files merged into **`vNAS_Alias.txt`**.
-
-**vNAS Alias Upload** - The sub-service that adds your facility's own alias files (custom alias
-files, on your PC or on the web) to `vNAS_Alias.txt`, after FE-Buddy's. See the
-[user guide](User-Guide.md#vnas-alias-upload-tab).
-
-**`vNAS_Alias.txt`** - The one alias file a facility uploads to vNAS, written to `Upload_to_vNAS`:
-every FE-Buddy alias file you marked for vNAS between a start line and an end line, then your
-custom alias files (with vNAS Alias Upload). CRC uses the last copy of a command, so yours win.
-Everything between the two lines is replaced every cycle.
-
-**Wx Stations** - The sub-service that draws a symbol and a two-line label for every US (and
-territory) station that reports METAR. Like Procedures and Telephony, its data isn't the NASR
-cycle - it comes from aviationweather.gov's own station list instead. No alias file - a station's
-label is always its own ICAO ID, then its IATA ID and site name.
+**`vNAS_Alias.txt`** - The one alias file a facility uploads to vNAS: every FE-Buddy alias file you
+marked for vNAS, then your facility's own. CRC uses the last copy of a command, so yours win.

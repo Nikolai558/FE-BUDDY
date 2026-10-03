@@ -7,9 +7,9 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
 <!--
   Adding an entry: put one bullet under "## Unreleased" in the same pull request as the change,
   under the "### " heading it belongs to (add the heading if it isn't there yet; after a release,
-  "## Unreleased" starts empty, with no headings). Headings used so far: Updates, AIRAC Service,
-  File Conversions, Info, Settings, Installing and uninstalling, Look and feel, Dev notes (always
-  last).
+  "## Unreleased" starts empty, with no headings). Headings used so far: Updates, Dashboard,
+  AIRAC Service, File Conversions, Info, Settings, Installing and uninstalling, Look and feel,
+  Dev notes (always last).
   Write it for users, not developers: what changed and why they care, in one line. Issue numbers
   become links ("Bug #215 - ..."). Put developer-only changes under "### Dev notes". Link
   a doc at the release's tag (blob/<version>/docs/...), never at a branch.
@@ -28,6 +28,8 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
   card after yours; every run downloads the latest list. With it included, a virtual airline you
   add that is exactly the same as one on the list is turned away with a warning; one that differs
   at all is added, with a note, and gets a card of its own.
+- The **Upload to vNAS** card now gets the order right: a ticked alias file goes into
+  `vNAS_Alias.txt` ahead of your custom alias files, so yours win.
 
 ### Info
 - The **Alias Command Guide** has its own Info page: read the whole guide in FE-Buddy, colours and
@@ -46,6 +48,13 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
   your controllers on real charts, procedures, airways and ISR cards. They type the command; it
   turns green or red, says what looks missing or out of place ("Looks like you forgot to include
   the variant Y and the runway ID suffix R"), then shows the right command and how it's built.
+
+### Dev notes
+- The documentation is shorter and checked against the code: fewer pages (Settings blocks and the
+  UserConfig reference are one Settings reference; the Core and app structure pages are one Code
+  structure page; the release checklist is part of Releasing; MSI version numbering is part of
+  Versioning), and the planning archive, the old design notes, the 2.x manual and the root
+  `FE-Buddy_3.0_Whats_New.md` are gone.
 
 ---
 

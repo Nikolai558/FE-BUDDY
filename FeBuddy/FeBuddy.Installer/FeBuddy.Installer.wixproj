@@ -12,7 +12,7 @@
     <AcceptEula>wix7</AcceptEula>
 
     <!-- The MSI's internal ProductVersion - a counter with no meaning beyond "different from
-         what is installed" (docs/Developers/MSI-VERSION-NUMBERING.md). build.ps1 passes
+         what is installed" (docs/Developers/VERSIONING.md). build.ps1 passes
          /p:InstallerVersion from Get-InstallerVersion.ps1; this default is for a hand build. -->
     <InstallerVersion Condition="'$(InstallerVersion)' == ''">1.0.0</InstallerVersion>
     <InstallerPlatform>x64</InstallerPlatform>

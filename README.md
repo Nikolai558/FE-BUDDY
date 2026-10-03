@@ -124,6 +124,7 @@ Open an [issue](https://github.com/Nikolai558/FE-BUDDY/issues), or ask on the FE
 - Ian Drake - FAA FOIA RVM Conversion source code reference
 - Jon Galad - v3.0 icon and logo design
 - Nick Shuster - v3.0 icon and logo design
+- [Natural Earth](https://www.naturalearthdata.com) - The map's base layers (US states and coastlines, public domain)
 
 If your name is listed above and you'd like a different link attached to it, or if your name should
 be listed here but isn't, please let us know via a pull request or on our Discord. We want to make

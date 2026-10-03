@@ -887,15 +887,21 @@ so when there are no duplicates, and the Review tab carries an advisory warning 
 
 The map on the left, and a panel of cards on the right. Every map in FE-Buddy is this same screen:
 **Set ROI…** in Settings and **Pick on map…** on a sub-service tab open it in a window, with the
-same layers. The US state outlines are always drawn for reference.
+same layers. Under everything is the **base map**, there to steer by: US states and territories, and the
+world's coastlines and largest lakes.
 
 - **Using the map:** drag to pan (a right- or middle-drag pans too), scroll to zoom, double-click
   to zoom in. The arrow keys pan and **+** / **-** zoom. The lat/lon under the pointer shows in the
   top-right corner. A busy layer waits until you zoom in, and a note in the bottom-right corner
   says which.
 - **Toolbar** (top left): **Edit ROI**, zoom in and out, **Home** (your home view), **Make this
-  view your home**, **Fit every layer on the map**, **Zoom to the ROI box**, and show or hide the
-  side panel. A map opens where the last one was left, or around the box it was opened to edit.
+  view your home**, **Fit every layer on the map**, **Zoom to the ROI box**, the **base map** menu,
+  and show or hide the side panel. A map opens where the last one was left, or around the box it
+  was opened to edit.
+- **Base map** (the layers button on the toolbar): tick **US states** and/or **Coastlines & lakes**
+  (untick both for no base map), turn the **Lat / lon gridlines** on or off, and set the base map's
+  **Opacity** (50% to start) so it stays in the background. Your choices apply to every map and
+  are remembered.
 - **Default Region of Interest** - the same default region as in Settings; saving it here updates
   Settings too. **Edit ROI** (or the toolbar's) turns on drawing: drag to draw a box, drag its
   handles to resize it, drag inside it to move it - or type the four corners. Then **Save**, or

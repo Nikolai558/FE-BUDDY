@@ -28,15 +28,15 @@ namespace FeBuddy.Wpf.ViewModels;
 /// What is on the map, shared by every map in the app: the Map page and each map popup (the
 /// Settings default ROI and every sub-service's "Pick on map…") show the same layers, so a
 /// popup is a true replica of the Map page. Holds three kinds of layer, drawn in this order
-/// over the US-states outline:
+/// over the background reference layers (<see cref="BaseMapSettings"/>):
 /// <list type="number">
 /// <item>live layers built from the parsed AIRAC cycle - ARTCC boundaries, towered airports,
 /// VORs (<see cref="AiracToggles"/>);</item>
 /// <item>GeoJSON files an earlier run wrote, chosen in the output picker (<see cref="OutputFiles"/>);</item>
 /// <item>GeoJSON files the user opened from anywhere (<see cref="UserFiles"/>).</item>
 /// </list>
-/// The chosen output files, the live-layer switches and the home view are saved under
-/// <c>Services.MapService</c>.
+/// The chosen output files, the live-layer switches, the base-map choices and the home view are
+/// saved under <c>Services.MapService</c>.
 /// </summary>
 public sealed class MapLayersState : ObservableObject
 {
@@ -87,6 +87,7 @@ public sealed class MapLayersState : ObservableObject
 		_selectedOutputs = new(Split(UserConfigFile.GetValue(OutputKey), '|'), StringComparer.OrdinalIgnoreCase);
 		HashSet<string> airacOn = new(Split(UserConfigFile.GetValue(AiracKey), ','), StringComparer.OrdinalIgnoreCase);
 		_home = MapHome.Parse(UserConfigFile.GetValue(HomeKey));
+		BaseMapSettings = new BaseMapSettings(_dispatcher);
 
 		AiracToggles =
 		[
@@ -123,7 +124,7 @@ public sealed class MapLayersState : ObservableObject
 	public static MapLayersState Shared => _shared ??= new MapLayersState();
 
 	/// <summary>
-	/// Re-reads the home view, the live-layer switches and the chosen output files after a
+	/// Re-reads the home view, the base map, the live-layer switches and the chosen output files after a
 	/// settings import replaced <c>UserConfig</c>. Does nothing until a map has been opened: the
 	/// state is read fresh then.
 	/// </summary>
@@ -132,8 +133,8 @@ public sealed class MapLayersState : ObservableObject
 	/// <summary>Raised when the maps should frame some layers (a file just loaded, or its zoom button).</summary>
 	public event EventHandler<IReadOnlyList<MapLayer>>? FrameLayersRequested;
 
-	/// <summary>The reference outline (US states), always drawn so there is something to steer by.</summary>
-	public MapLayer? BaseLayer => BaseMap.UsStates;
+	/// <summary>The background reference layers (US states, coastlines), how strongly they are drawn, and the gridlines.</summary>
+	public BaseMapSettings BaseMapSettings { get; }
 
 	/// <summary>The draw list every map binds to, rebuilt by <see cref="SyncLayers"/>.</summary>
 	public ObservableCollection<MapLayer> Layers { get; } = [];
@@ -370,6 +371,7 @@ public sealed class MapLayersState : ObservableObject
 	private void ReloadFromConfig()
 	{
 		Home = MapHome.Parse(UserConfigFile.GetValue(HomeKey));
+		BaseMapSettings.ReloadFromConfig();
 		HashSet<string> airacOn = new(Split(UserConfigFile.GetValue(AiracKey), ','), StringComparer.OrdinalIgnoreCase);
 
 		// Set every switch without saving each one back: the file already holds these values.

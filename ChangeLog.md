@@ -18,6 +18,8 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
   Full guide: docs/Developers/RELEASING.md.
 -->
 ## Unreleased
+
+## 3.0.0-alpha.5
 ### Dashboard
 - Feature #286 - The activity log has a **Clear** button that empties it on screen and resets its
   counts, so after several runs you can see just the next one. The log file keeps every entry.

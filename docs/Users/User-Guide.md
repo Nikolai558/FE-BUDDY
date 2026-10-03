@@ -32,7 +32,9 @@ Every screen and every option in FE-Buddy 3.0. New to FE-Buddy? Start with
   you have not seen; opening News marks them read.
 - **Activity log** - what FE-Buddy has been doing this session: downloads, runs, anything that
   went wrong. The chips (All, Info, Success, Warning, Error) filter it and show a count each. It
-  starts collapsed; picking a chip opens it.
+  starts collapsed; picking a chip opens it. **Clear** empties it on screen and sets the counts back
+  to 0, so the next run starts on a clean list. The log file (`%APPDATA%\FE-Buddy\Logs`) is not
+  touched and keeps every entry, so nothing is lost.
 
 ## AIRAC Service
 

@@ -137,6 +137,79 @@ public sealed class AppLogTests : IDisposable
 		Assert.True(File.Exists(recentFile));
 	}
 
+	/// <summary>Before any clear, <see cref="AppLog.DisplayEntries"/> holds every recorded entry.</summary>
+	[Fact]
+	public void display_entries_match_entries_until_cleared()
+	{
+		AppLog.Info("s", "one");
+		AppLog.Warning("s", "two");
+
+		Assert.Equal(AppLog.Entries, AppLog.DisplayEntries);
+	}
+
+	/// <summary>
+	/// <see cref="AppLog.ClearDisplay"/> empties the display only: <see cref="AppLog.Entries"/> keeps
+	/// everything, and entries written afterwards show up on the display.
+	/// </summary>
+	[Fact]
+	public void clear_display_drops_earlier_entries_from_display_only()
+	{
+		AppLog.Info("s", "before one");
+		AppLog.Warning("s", "before two");
+
+		AppLog.ClearDisplay();
+
+		Assert.Empty(AppLog.DisplayEntries);
+		Assert.Equal(2, AppLog.Entries.Count);
+
+		AppLog.Success("s", "after");
+
+		LogEntry shown = Assert.Single(AppLog.DisplayEntries);
+		Assert.Equal("after", shown.Message);
+		Assert.Equal(["before one", "before two", "after"], AppLog.Entries.Select(e => e.Message));
+	}
+
+	/// <summary>A second clear moves the display start up to the newest entry again.</summary>
+	[Fact]
+	public void clear_display_twice_starts_from_the_latest_clear()
+	{
+		AppLog.Info("s", "one");
+		AppLog.ClearDisplay();
+		AppLog.Info("s", "two");
+		AppLog.ClearDisplay();
+		AppLog.Info("s", "three");
+
+		Assert.Equal(["three"], AppLog.DisplayEntries.Select(e => e.Message));
+	}
+
+	/// <summary>Clearing the display never touches the log file: entries before and after reach it.</summary>
+	[Fact]
+	public void clear_display_leaves_the_log_file_unchanged()
+	{
+		AppLog.StartFileSink();
+		AppLog.Info("s", "before the clear");
+		AppLog.ClearDisplay();
+		AppLog.Info("s", "after the clear");
+		AppLog.FlushForTesting();
+
+		string contents = File.ReadAllText(AppLog.GetLogFilePath(DateTime.UtcNow));
+		Assert.Contains("before the clear", contents);
+		Assert.Contains("after the clear", contents);
+	}
+
+	/// <summary><see cref="AppLog.ConfigureForTesting"/> resets the display start with the entries.</summary>
+	[Fact]
+	public void configure_for_testing_resets_the_display_start()
+	{
+		AppLog.Info("s", "one");
+		AppLog.ClearDisplay();
+
+		AppLog.ConfigureForTesting(_logDirectory);
+		AppLog.Info("s", "fresh");
+
+		Assert.Equal(["fresh"], AppLog.DisplayEntries.Select(e => e.Message));
+	}
+
 	/// <summary><see cref="AppLog.Error"/> records at <see cref="LogLevel.Error"/>.</summary>
 	[Fact]
 	public void error_records_an_error_entry()

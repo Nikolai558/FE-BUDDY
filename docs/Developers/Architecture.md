@@ -409,7 +409,8 @@ The FAA's data has quirks; these rules handle them. Each lives in one class.
   find on disk; the Review tab shows those in their own card.
 - **`AppLog`** is the one log for the process. Every entry goes to the Dashboard's activity log and
   to `%APPDATA%\FE-Buddy\Logs\FE-Buddy_<date>.log` (kept 30 days). `Debug` entries are recorded
-  only in developer mode.
+  only in developer mode. The Dashboard reads `DisplayEntries`, the entries since the last
+  `ClearDisplay` (its **Clear** button); `Entries` and the file always keep everything.
 - A last-chance handler in `App` writes any unhandled exception to
   `%APPDATA%\FE-Buddy\Logs\febuddy-wpf-crash.txt`, beside the logs. 3.0.0 alphas wrote it to
   `%TEMP%`; `TempWorkspace.ClearOnLaunch` deletes that old copy.

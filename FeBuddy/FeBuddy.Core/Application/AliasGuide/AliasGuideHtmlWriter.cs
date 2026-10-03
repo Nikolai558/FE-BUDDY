@@ -27,7 +27,8 @@ namespace FeBuddy.Core.Application.AliasGuide;
 /// </remarks>
 internal static class AliasGuideHtmlWriter
 {
-	private const string Styles = """
+	/// <summary>The page's style sheet; the Alias Command Practice page starts from it too.</summary>
+	internal const string Styles = """
 		/* =====================================================================
 		   Make it yours: the colours, fonts and sizes are these variables.
 		   ===================================================================== */
@@ -326,7 +327,7 @@ internal static class AliasGuideHtmlWriter
 	/// A command in a table cell, its lines (each in command markup) one under another, with no code
 	/// background of its own.
 	/// </summary>
-	private static string Command(IReadOnlyList<string> lines) =>
+	internal static string Command(IReadOnlyList<string> lines) =>
 		$"<code class=\"cmd\">{string.Join("<br>", lines.Select(line => Parts(CommandMarkup.Parse(line))))}</code>";
 
 	/// <summary>
@@ -334,7 +335,7 @@ internal static class AliasGuideHtmlWriter
 	/// <c>&lt;br&gt;</c> runs. Code with a pill in it has no background of its own (the pills set it
 	/// apart), so it never looks boxed twice.
 	/// </summary>
-	private static string Inline(string text)
+	internal static string Inline(string text)
 	{
 		StringBuilder html = new();
 
@@ -358,7 +359,7 @@ internal static class AliasGuideHtmlWriter
 	/// A command's parts, side by side: typed text as it is, and every other part as a pill in its
 	/// kind's colour. Nothing between them lets a line break there.
 	/// </summary>
-	private static string Parts(IReadOnlyList<CommandPart> parts)
+	internal static string Parts(IReadOnlyList<CommandPart> parts)
 	{
 		StringBuilder html = new();
 

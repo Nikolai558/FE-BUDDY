@@ -148,10 +148,12 @@ FeBuddy.Core/
     │                         file marked for vNAS into Upload_to_vNAS\vNAS_Alias.txt, after the
     │                         duplicate report); models: AliasSource, AliasSourceLoad, VnasAliasResult
     ├── AliasGuide/     AliasGuideWriter: the FE-Buddy Alias Command Guide (Info ▸ Alias Command
-    │                   Guide, and What's New), a controller's explanation of every alias command,
-    │                   as a web page or Markdown. AliasGuideContent says it (public, so the app's
-    │                   own page can show it too); AliasGuideHtmlWriter / AliasGuideMarkdownWriter
-    │                   lay it out; CommandMarkup and GuideInline read its markup
+    │                   Guide), a controller's explanation of every alias command, as a web page
+    │                   or Markdown. AliasGuideContent says it (public, so the app's own page can
+    │                   show it too); AliasGuideHtmlWriter / AliasGuideMarkdownWriter lay it out;
+    │                   CommandMarkup and GuideInline read its markup. AliasPracticeWriter: the
+    │                   Alias Command Practice web page, a quiz on real charts and procedures
+    │                   (AliasPracticeContent), run by AliasPractice.js, built in as a resource
     ├── Conversions/    ConversionSettingsReader and ConversionFiles (what every conversion
     │   │               shares), then one folder per file conversion
     │   ├── DatToGeojson/

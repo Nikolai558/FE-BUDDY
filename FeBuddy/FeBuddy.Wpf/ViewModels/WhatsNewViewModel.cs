@@ -5,9 +5,8 @@ using FeBuddy.Wpf.Mvvm;
 namespace FeBuddy.Wpf.ViewModels;
 
 /// <summary>
-/// Info ▸ What's New in v3.0?: what FE-Buddy 3.0 changed from 2.x, with a way to the Alias Command
-/// Guide page and the button that exports the guide (<see cref="AliasGuideExport"/>) for a
-/// facility's website.
+/// Info ▸ What's New in v3.0?: what FE-Buddy 3.0 changed from 2.x, with a card pointing to the
+/// Alias Command Guide page (Info ▸ Alias Command Guide), where the guide is exported.
 /// </summary>
 /// <remarks>
 /// The content is <c>FE-Buddy_3.0_Whats_New.md</c>, at the repository's root, laid out as a page;
@@ -56,11 +55,8 @@ public sealed class WhatsNewViewModel(Action back, Action openGuide) : Observabl
 	/// <summary>Returns to Info's cards.</summary>
 	public ICommand BackCommand { get; } = new RelayCommand(back);
 
-	/// <summary>Opens the Alias Command Guide page, to read the guide before exporting it.</summary>
+	/// <summary>Opens the Alias Command Guide page.</summary>
 	public ICommand OpenGuideCommand { get; } = new RelayCommand(openGuide);
-
-	/// <summary>Asks what format to save the alias command guide in, then which folder, then writes it (<see cref="AliasGuideExport"/>).</summary>
-	public ICommand ExportGuideCommand { get; } = new RelayCommand(AliasGuideExport.Run);
 
 	/// <summary>FE-Buddy 2.x against 3.0, subject by subject.</summary>
 	public IReadOnlyList<GlanceRow> Glance { get; } =

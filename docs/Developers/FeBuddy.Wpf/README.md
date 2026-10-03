@@ -114,8 +114,9 @@ Views/                ShellWindow (custom chrome) + Dashboard, TabbedServiceView
                       ServicePreviewTabView, ServiceRunReviewTabView), MapView (the
                       Map page: just a MapWorkspace), MapWorkspace (the one map
                       screen), Settings, Info (and WhatsNewView and AliasGuidePageView,
-                      which open in its place; the export both offer is
-                      AliasGuideExport); UpdateWindow, AliasGuideFormatWindow (Web, Markdown or
+                      which open in its place; the guide page's two exports, the
+                      guide and the Alias Command Practice, are AliasGuideExport);
+                      UpdateWindow, AliasGuideFormatWindow (Web, Markdown or
                       both, for the alias command guide), ConfirmWindow (Confirm /
                       Cancel, or a third choice between them; a long message
                       scrolls), CredentialEditorWindow, RoiPickerWindow (a

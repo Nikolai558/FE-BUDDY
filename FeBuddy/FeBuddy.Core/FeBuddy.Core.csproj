@@ -12,6 +12,8 @@
     <!-- Bundled News fallback used offline / when the GitHub fetch fails. News.md lives at the
          repository root; LogicalName keeps the resource name NewsService looks for. -->
     <EmbeddedResource Include="..\..\News.md" Link="News.md" LogicalName="FeBuddy.Core.News.md" />
+    <!-- The script of the Alias Command Practice page, which AliasPracticeWriter writes into it. -->
+    <EmbeddedResource Include="Application\AliasGuide\AliasPractice.js" LogicalName="FeBuddy.Core.AliasPractice.js" />
   </ItemGroup>
 
   <ItemGroup>

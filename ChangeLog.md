@@ -24,8 +24,8 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
 
 ### Info
 - The **Alias Command Guide** has its own Info page: read the whole guide in FE-Buddy, colours and
-  all, exactly as it exports, with the export button at the top. What's New keeps its export
-  button and adds **View the guide →**.
+  all, exactly as it exports, with the export button at the top. What's New's card now points to
+  it (Info ▸ Alias Command Guide) with **View the guide →**, instead of exporting the guide itself.
 - The guide never wraps a command: its Syntax and Example columns are as wide as their longest
   command, a syntax is split into lines only between its parts, and the description takes the
   rest of the width. The web page, the Markdown and the app's page all match, with reworded notes
@@ -35,6 +35,10 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
   on a line of its own, what each In-Scope Reference card shows as a list, and procedure names
   explained one rule to a bullet. The web page's own source is indented like an outline, so it is
   easier to edit by hand too.
+- New **Export Alias Command Practice** on the Alias Command Guide page: a web page that quizzes
+  your controllers on real charts, procedures, airways and ISR cards. They type the command; it
+  turns green or red, says what looks missing or out of place ("Looks like you forgot to include
+  the variant Y and the runway ID suffix R"), then shows the right command and how it's built.
 
 ---
 

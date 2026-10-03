@@ -1041,9 +1041,9 @@ The two amber cards open FE-Buddy's own pages; the arrow beside a page's title g
 
 **What's New in v3.0?** opens a tour of what changed since FE-Buddy 2.x: a side-by-side
 comparison, what's new for facility engineers, in the maps and in the aliases, and the new chart
-recall commands with their approach type codes and examples. Its Alias Command Guide card has the
-same **Export FE-Buddy Alias Command Guide** button as the guide's own page, and **View the
-guide →** opens that page (its arrow then goes back to What's New).
+recall commands with their approach type codes and examples. Its Alias Command Guide card points
+you to Info ▸ Alias Command Guide, where the guide is exported; **View the guide →** opens it
+(its arrow then goes back to What's New).
 
 **Alias Command Guide** shows the guide to every alias command FE-Buddy makes, written for
 controllers, exactly as it is exported: what each command shows or opens, how it is built, and
@@ -1066,8 +1066,18 @@ saves it for your facility's website. First choose the format:
 `FE-Buddy Alias Command Guide.html` and `FE-Buddy Alias Command Guide.md`. If the folder already
 has one, FE-Buddy asks before replacing it, since it may hold your own edits.
 
-The guide doesn't depend on a run or a cycle, so you can read or export it at any time; its last
-line says the day it was exported (*Page updated on …*).
+**Export Alias Command Practice**, under it, saves a web page that quizzes your controllers:
+`FE-Buddy Alias Command Practice.html`, in the folder you choose. Each question names a real
+chart, procedure, airway or ISR card and what to do with it (recall the chart, display the
+fixes, display the ISR); they type the command and press Enter. Spaces at either end don't
+matter, and neither does case. A right answer turns green; a wrong one turns red and says what
+looks missing or out of place, such as *Looks like you forgot to include the full runway number
+16*. Either way it shows the right command, how each part of it is built, and what is worth
+knowing about that chart. They can practise one section at a time, and go back over the ones
+they missed. The page is self-contained, like the guide, so it can go on your facility's website.
+
+Neither depends on a run or a cycle, so you can read or export them at any time; the last line of
+each says the day it was exported (*Page updated on …*).
 
 The other cards link to this user guide, the [FAQ and troubleshooting](FAQ-and-Troubleshooting.md)
 page, the change log, and the issue tracker.

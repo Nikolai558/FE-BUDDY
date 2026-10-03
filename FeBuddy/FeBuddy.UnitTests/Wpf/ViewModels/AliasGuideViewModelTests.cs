@@ -6,8 +6,8 @@ using FeBuddy.Core.Application.AliasGuide.Models;
 namespace FeBuddy.UnitTests.Wpf.ViewModels;
 
 /// <summary>
-/// Covers <see cref="AliasGuideViewModel"/>: the page shows the guide the export writes, and Back
-/// runs what the page was given. The export button opens a dialog, so it is not run here.
+/// Covers <see cref="AliasGuideViewModel"/>: the page shows the guide the export writes, Back runs
+/// what the page was given, and both exports are there.
 /// </summary>
 public sealed class AliasGuideViewModelTests
 {
@@ -34,6 +34,15 @@ public sealed class AliasGuideViewModelTests
 		page.BackCommand.Execute(null);
 
 		Assert.Equal(1, calls);
+	}
+
+	/// <summary>Both open dialogs, so they are not run here.</summary>
+	[Fact]
+	public void the_guide_and_the_practice_page_can_both_be_exported()
+	{
+		AliasGuideViewModel page = new(() => { });
+
 		Assert.True(page.ExportGuideCommand.CanExecute(null));
+		Assert.True(page.ExportPracticeCommand.CanExecute(null));
 	}
 }

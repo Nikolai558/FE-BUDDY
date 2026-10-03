@@ -9,8 +9,7 @@ namespace FeBuddy.UnitTests.Wpf.ViewModels;
 /// <summary>
 /// Covers <see cref="WhatsNewViewModel"/>: every chart recall command the page shows (the examples,
 /// the new form of each changed command, each approach type's code) is what <see cref="ChartRecallCodes"/>
-/// really gives, and Back and View the guide run what the page was given. The export button opens a
-/// dialog, so it is not run here.
+/// really gives, and Back and View the guide run what the page was given.
 /// </summary>
 public sealed class WhatsNewViewModelTests
 {
@@ -158,11 +157,5 @@ public sealed class WhatsNewViewModelTests
 		page.OpenGuideCommand.Execute(null);
 
 		Assert.Equal(1, calls);
-	}
-
-	[Fact]
-	public void the_page_has_an_export_command_that_can_run()
-	{
-		Assert.True(Page().ExportGuideCommand.CanExecute(null));
 	}
 }

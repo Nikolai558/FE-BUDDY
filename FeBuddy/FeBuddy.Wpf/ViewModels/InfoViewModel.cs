@@ -32,7 +32,7 @@ public sealed class InfoViewModel : ObservableObject
 		[
 			new("What's New in v3.0?", "What changed since FE-Buddy 2.x, and the new chart recall commands.",
 				new RelayCommand(ShowWhatsNew), IsFeatured: true),
-			new("Alias Command Guide", "Every FE-Buddy alias command, explained for your controllers. Export it for your facility's website.",
+			new("Alias Command Guide", "Every FE-Buddy alias command, explained for your controllers. Export it, and a practice page, for your facility's website.",
 				new RelayCommand(() => ShowGuide(back: ShowCards)), IsFeatured: true),
 			Link("User Guide", "How each tool works, field by field.", Links.UserGuide),
 			Link("FAQ / Troubleshooting", "Answers to common questions, and fixes for common problems.", Links.FaqAndTroubleshooting),

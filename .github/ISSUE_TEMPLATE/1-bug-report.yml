@@ -6,107 +6,42 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for taking the time to report this. Before you start, check the
-        [FAQ and troubleshooting page](https://github.com/Nikolai558/FE-BUDDY/blob/v3-development/docs/Users/FAQ-and-Troubleshooting.md)
-        and [open issues](https://github.com/Nikolai558/FE-BUDDY/issues) in case it's already covered.
-
-        One problem per report, please.
-
-  - type: input
-    id: version
-    attributes:
-      label: FE-BUDDY version
-      description: Shown in the version chip at the top of the FE-BUDDY window.
-      placeholder: e.g. 3.0.0-alpha.2
-    validations:
-      required: true
-
-  - type: dropdown
-    id: windows
-    attributes:
-      label: Windows version
-      options:
-        - Windows 11
-        - Windows 10
-        - Other
-    validations:
-      required: true
-
-  - type: dropdown
-    id: area
-    attributes:
-      label: Where in FE-BUDDY?
-      description: Pick every part of the app involved.
-      multiple: true
-      options:
-        - Dashboard
-        - AIRAC Service - General / running the service
-        - AIRAC Service - Airports
-        - AIRAC Service - Airways
-        - AIRAC Service - Arrivals
-        - AIRAC Service - ARTCC Boundaries
-        - AIRAC Service - Departures
-        - AIRAC Service - Fixes
-        - AIRAC Service - NAVAIDs
-        - AIRAC Service - Procedures
-        - AIRAC Service - Telephony
-        - AIRAC Service - Wx Stations
-        - AIRAC Service - vNAS Alias Upload
-        - AIRAC Service - File Names
-        - File Conversions - DAT to GeoJSON
-        - File Conversions - SCT2 to GeoJSON
-        - File Conversions - ERAM to GeoJSON
-        - Map
-        - Settings
-        - Updating or installing
-        - Other / not sure
-    validations:
-      required: true
-
-  - type: input
-    id: airac
-    attributes:
-      label: AIRAC cycle and facility
-      description: If it happened while working with AIRAC data, which cycle and which ARTCC or facility?
-      placeholder: e.g. 2610, ZLC
+        Thanks for reporting this! **Only the first box is required**, and a sentence or two is plenty.
+        If you're not sure about something, leave it out. We'll ask if we need more.
 
   - type: textarea
     id: what-happened
     attributes:
-      label: What happened?
-      description: Include the exact text of any error message.
+      label: What went wrong?
+      description: What happened, and what you expected to happen instead. Rough notes are fine.
+      placeholder: |
+        e.g. I ran the AIRAC Service for ZLC with Airways turned on. It finished, but V21 is missing
+        from the airway file. I expected V21 to be there like it was last cycle.
+
+        If you saw an error message, paste its exact text here.
     validations:
       required: true
 
   - type: textarea
     id: steps
     attributes:
-      label: Steps to reproduce
-      description: What you did, in order, so we can make it happen too. Include the settings you used.
+      label: Steps to reproduce (optional)
+      description: If you remember what you clicked, list it here so we can make it happen too.
       placeholder: |
         1. Open AIRAC Service > Airways
         2. Turn on ...
         3. Click Run AIRAC Service
         4. ...
-    validations:
-      required: true
-
-  - type: textarea
-    id: expected
-    attributes:
-      label: What did you expect to happen?
-    validations:
-      required: true
 
   - type: textarea
     id: attachments
     attributes:
-      label: Log, screenshots, and files
+      label: Log, screenshots, and files (optional)
       description: |
-        Drag files into this box to attach them.
+        Drag files into this box, or paste a screenshot with Ctrl+V.
         - **Log:** today's log is `%APPDATA%\FE-Buddy\Logs\FE-Buddy_<date>.log`. Paste that path into File Explorer's address bar to open it.
         - **Crash on launch:** also attach `febuddy-wpf-crash.txt` from the same folder if it exists.
-        - **Screenshots** of the problem, and the input or output files involved if you can share them.
+      placeholder: Drop files or screenshots here.
 
   - type: checkboxes
     id: checks

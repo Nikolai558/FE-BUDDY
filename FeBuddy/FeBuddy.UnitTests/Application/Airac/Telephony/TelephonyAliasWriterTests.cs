@@ -11,7 +11,8 @@ namespace FeBuddy.UnitTests.Application.Airac.Telephony;
 /// newlines, tabs or spaces holding a column - plus Telephony's own merge rules: a telephony that
 /// spells another operator's designator, two telephonies that only differ by spaces, an identifier
 /// equal to its own telephony getting one command instead of two, and commands written in ordinal
-/// alphabetical order.
+/// alphabetical order. A virtual airline's card is marked <c>--VA--</c>, and one that shares a
+/// command with a real operator is written after it under that command.
 /// </summary>
 public sealed class TelephonyAliasWriterTests : IDisposable
 {
@@ -45,6 +46,9 @@ public sealed class TelephonyAliasWriterTests : IDisposable
 	private static TelephonyEntry Special(string identifier, string telephony, string agency, string expires) =>
 		new(TelephonyEntryKind.UsSpecialCallSign, identifier, telephony, agency, expires);
 
+	private static TelephonyEntry Va(string designator, string telephony, string organization) =>
+		new(TelephonyEntryKind.VirtualAirline, designator, telephony, organization, string.Empty);
+
 	// ---- BuildCard ----
 
 	[Fact]
@@ -68,6 +72,19 @@ public sealed class TelephonyAliasWriterTests : IDisposable
 
 		Assert.Equal(
 			@"\nID:\t\t\t\sARSIX\nTELEPHONY:\t\s\sAIR SIX\nAGENCY:\t\t\sNYC ENVIRONMENTAL PROTECTION (NEW WINDSOR, NY)\nEXPIRES:\t\t24-FEB-2027",
+			card);
+	}
+
+	/// <summary>The <c>--VA--</c> line is what tells a virtual airline's card from a real operator's.</summary>
+	[Fact]
+	public void build_card_produces_the_exact_virtual_airline_escapes()
+	{
+		TelephonyEntry entry = Va("DVA", "DELTA", "DELTA VIRTUAL");
+
+		string card = TelephonyAliasWriter.BuildCard(entry);
+
+		Assert.Equal(
+			@"\n--VA--\n3LD:\t\t\tDVA\nTELEPHONY:\t\s\sDELTA\nVIRTUAL ORG:\tDELTA VIRTUAL",
 			card);
 	}
 
@@ -192,5 +209,67 @@ public sealed class TelephonyAliasWriterTests : IDisposable
 		Assert.StartsWith(".idALPHAOPERATOR ", lines[1]);
 		Assert.StartsWith(".idZULUOPERATOR ", lines[2]);
 		Assert.StartsWith(".idZZZ ", lines[3]);
+	}
+
+	// ---- virtual airlines ----
+
+	/// <summary>
+	/// A real operator, and two virtual airlines that share its telephony and, with each other, a 3LD:
+	/// every command lists its own operators first (the 3LD's), then those whose telephony spells it,
+	/// the real operator before the virtual airlines, and the file stays alphabetical.
+	/// </summary>
+	[Fact]
+	public void a_virtual_airline_is_written_after_the_real_operator_and_every_command_is_listed_in_order()
+	{
+		TelephonyEntry[] entries =
+		[
+			Icao("DAL", "DELTA", "DELTA AIR LINES, INC.", "UNITED STATES"),
+			Va("DVA", "DELTA", "DELTA VIRTUAL"),
+			Va("DVA", "DEVIL AIR", "RUSTIC VIRTUAL"),
+		];
+
+		TelephonyAliasGenerateResult result = TelephonyAliasWriter.Generate(entries, Settings());
+
+		string[] expectedLines =
+		[
+			@".idDAL .echo \n3LD:\t\t\tDAL\nTELEPHONY:\t\s\sDELTA\nCOMPANY:\t\tDELTA AIR LINES, INC.\nCOUNTRY:\t\tUNITED STATES",
+			@".idDELTA .echo \n3LD:\t\t\tDAL\nTELEPHONY:\t\s\sDELTA\nCOMPANY:\t\tDELTA AIR LINES, INC.\nCOUNTRY:\t\tUNITED STATES\n---\n--VA--\n3LD:\t\t\tDVA\nTELEPHONY:\t\s\sDELTA\nVIRTUAL ORG:\tDELTA VIRTUAL",
+			@".idDEVILAIR .echo \n--VA--\n3LD:\t\t\tDVA\nTELEPHONY:\t\s\sDEVIL AIR\nVIRTUAL ORG:\tRUSTIC VIRTUAL",
+			@".idDVA .echo \n--VA--\n3LD:\t\t\tDVA\nTELEPHONY:\t\s\sDELTA\nVIRTUAL ORG:\tDELTA VIRTUAL\n---\n--VA--\n3LD:\t\t\tDVA\nTELEPHONY:\t\s\sDEVIL AIR\nVIRTUAL ORG:\tRUSTIC VIRTUAL",
+		];
+
+		Assert.Equal(string.Concat(expectedLines.Select(line => line + Environment.NewLine)), File.ReadAllText(result.FilePath!));
+		Assert.Equal(4, result.CommandCount);
+		Assert.Equal(2, result.MergedCommandCount); // .idDELTA and .idDVA
+	}
+
+	/// <summary>The 3LD of a virtual airline can be a real operator's: <c>.idAVA</c> shows the real card, then the virtual one.</summary>
+	[Fact]
+	public void a_virtual_airline_that_uses_a_real_operators_3ld_is_listed_after_it_under_that_command()
+	{
+		TelephonyEntry avianca = Icao("AVA", "AVIANCA", "AEROVIAS DEL CONTINENTE AMERICANO S.A.", "COLOMBIA");
+		TelephonyEntry virtualAirline = Va("AVA", "AVA VIRTUAL AIR", "X");
+
+		TelephonyAliasGenerateResult result = TelephonyAliasWriter.Generate([avianca, virtualAirline], Settings());
+		string[] lines = File.ReadAllLines(result.FilePath!);
+
+		string expectedBody = TelephonyAliasWriter.BuildCard(avianca) + @"\n---" + TelephonyAliasWriter.BuildCard(virtualAirline);
+		Assert.Equal($".idAVA .echo {expectedBody}", lines[0]);
+		Assert.Equal(
+			[".idAVA ", ".idAVAVIRTUALAIR ", ".idAVIANCA "],
+			lines.Select(line => line[..(line.IndexOf(' ') + 1)]));
+		Assert.Equal(3, result.CommandCount);
+		Assert.Equal(1, result.MergedCommandCount);
+	}
+
+	/// <summary>Like <c>NASA</c> for a U.S. special call sign: a telephony that spells the 3LD adds no second command.</summary>
+	[Fact]
+	public void a_virtual_airline_whose_telephony_spells_its_3ld_gets_one_command()
+	{
+		TelephonyAliasGenerateResult result = TelephonyAliasWriter.Generate([Va("NAS", "NAS", "NAS VIRTUAL")], Settings());
+
+		Assert.Equal(1, result.CommandCount);
+		Assert.Equal(0, result.MergedCommandCount);
+		Assert.StartsWith(@".idNAS .echo \n--VA--", Assert.Single(File.ReadAllLines(result.FilePath!)));
 	}
 }

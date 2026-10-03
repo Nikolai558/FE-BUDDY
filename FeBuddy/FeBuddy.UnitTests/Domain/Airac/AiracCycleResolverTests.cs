@@ -88,6 +88,19 @@ public sealed class AiracCycleResolverTests
 		Assert.Equal(28, next.EffectiveDateUtc.DayNumber - current.EffectiveDateUtc.DayNumber);
 	}
 
+	[Theory]
+	[InlineData("2026-10-01", true)]  // 2610
+	[InlineData("2025-01-23", true)]  // before the reference cycle
+	[InlineData("2027-01-21", true)]  // across a year boundary
+	[InlineData("2026-09-30", false)] // the day before
+	[InlineData("2026-10-02", false)] // the day after
+	public void an_effective_date_is_recognised_only_on_the_day_a_cycle_starts(string date, bool expected)
+	{
+		DateOnly dateUtc = DateOnly.Parse(date, System.Globalization.CultureInfo.InvariantCulture);
+
+		Assert.Equal(expected, AiracCycleResolver.IsEffectiveDate(dateUtc));
+	}
+
 	[Fact]
 	public void an_unknown_position_is_rejected()
 	{

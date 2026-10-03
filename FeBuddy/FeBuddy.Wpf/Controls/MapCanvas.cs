@@ -54,6 +54,9 @@ public sealed class MapCanvas : FrameworkElement
 
 	private const double HandleSize = 8.0;
 
+	/// <summary>Zoomed in at least this far, 0°, 0° is marked (see <c>DrawNullIsland</c>).</summary>
+	private const double NullIslandMinZoom = 8.0;
+
 	// --- viewport ------------------------------------------------------------
 	private double _scale = 1_000;   // pixels per world unit
 	private double _centerX = 0.5;   // world-unit point at screen centre; x kept in 0..1
@@ -114,10 +117,20 @@ public sealed class MapCanvas : FrameworkElement
 
 	// ======================= dependency properties =========================
 
-	/// <summary>Identifies the <see cref="BaseLayer"/> dependency property.</summary>
-	public static readonly DependencyProperty BaseLayerProperty = DependencyProperty.Register(
-		nameof(BaseLayer), typeof(MapLayer), typeof(MapCanvas),
+	/// <summary>Identifies the <see cref="BaseLayers"/> dependency property.</summary>
+	public static readonly DependencyProperty BaseLayersProperty = DependencyProperty.Register(
+		nameof(BaseLayers), typeof(IEnumerable<MapLayer>), typeof(MapCanvas),
 		new PropertyMetadata(null, OnMapDataChanged));
+
+	/// <summary>Identifies the <see cref="ShowGridlines"/> dependency property.</summary>
+	public static readonly DependencyProperty ShowGridlinesProperty = DependencyProperty.Register(
+		nameof(ShowGridlines), typeof(bool), typeof(MapCanvas),
+		new PropertyMetadata(true, OnMapDataChanged));
+
+	/// <summary>Identifies the <see cref="BaseOpacity"/> dependency property.</summary>
+	public static readonly DependencyProperty BaseOpacityProperty = DependencyProperty.Register(
+		nameof(BaseOpacity), typeof(double), typeof(MapCanvas),
+		new PropertyMetadata(1.0, OnMapDataChanged));
 
 	/// <summary>Identifies the <see cref="Layers"/> dependency property.</summary>
 	public static readonly DependencyProperty LayersProperty = DependencyProperty.Register(
@@ -151,11 +164,28 @@ public sealed class MapCanvas : FrameworkElement
 	/// <summary>Identifies the <see cref="DensityHint"/> dependency property.</summary>
 	public static readonly DependencyProperty DensityHintProperty = DensityHintPropertyKey.DependencyProperty;
 
-	/// <summary>The always-on background layer (state outlines), drawn under everything.</summary>
-	public MapLayer? BaseLayer
+	/// <summary>The background reference layers (US states, coastlines), drawn under everything.</summary>
+	public IEnumerable<MapLayer>? BaseLayers
 	{
-		get => (MapLayer?)GetValue(BaseLayerProperty);
-		set => SetValue(BaseLayerProperty, value);
+		get => (IEnumerable<MapLayer>?)GetValue(BaseLayersProperty);
+		set => SetValue(BaseLayersProperty, value);
+	}
+
+	/// <summary>Whether the latitude / longitude gridlines and their labels are drawn.</summary>
+	public bool ShowGridlines
+	{
+		get => (bool)GetValue(ShowGridlinesProperty);
+		set => SetValue(ShowGridlinesProperty, value);
+	}
+
+	/// <summary>
+	/// How strongly <see cref="BaseLayers"/> are drawn, 0 to 1. It applies to them as one group, so
+	/// where both of them draw the same line (the US coast) it is no stronger than anywhere else.
+	/// </summary>
+	public double BaseOpacity
+	{
+		get => (double)GetValue(BaseOpacityProperty);
+		set => SetValue(BaseOpacityProperty, value);
 	}
 
 	/// <summary>Overlay layers drawn on top of the base, in order.</summary>
@@ -755,11 +785,17 @@ public sealed class MapCanvas : FrameworkElement
 		{
 			dc.DrawRectangle(Theme("Brush.Bg.Sunken", Color.FromRgb(0x07, 0x0B, 0x10)), null, new Rect(0, 0, ActualWidth, ActualHeight));
 
-			GraticuleLines grid = DrawGraticule(dc);
+			GraticuleLines? grid = ShowGridlines ? DrawGraticule(dc) : null;
 
-			if (BaseLayer is { } baseLayer)
+			if (BaseLayers is { } baseLayers)
 			{
-				DrawLayer(dc, baseLayer, labels, heldBack);
+				dc.PushOpacity(Math.Clamp(BaseOpacity, 0.0, 1.0));
+				foreach (MapLayer layer in baseLayers)
+				{
+					DrawLayer(dc, layer, labels, heldBack);
+				}
+
+				dc.Pop();
 			}
 
 			if (Layers is { } layers)
@@ -770,8 +806,13 @@ public sealed class MapCanvas : FrameworkElement
 				}
 			}
 
+			DrawNullIsland(dc);
+
 			// Over the layers, so no line hides a grid label.
-			DrawGraticuleLabels(dc, grid);
+			if (grid is { } lines)
+			{
+				DrawGraticuleLabels(dc, lines);
+			}
 		}
 
 		string hint = heldBack.Count == 0 ? string.Empty : "Zoom in to see " + string.Join(", ", heldBack.Distinct());
@@ -1075,6 +1116,47 @@ public sealed class MapCanvas : FrameworkElement
 			{
 				dc.DrawText(formatted, new Point(6, y - formatted.Height - 2));
 			}
+		}
+	}
+
+	// ---- null island ----
+
+	/// <summary>
+	/// Marks 0°, 0° once zoomed well in. Nothing real is there; a feature that lands on it almost
+	/// always has a coordinate that failed to parse, so the label says so.
+	/// </summary>
+	private void DrawNullIsland(DrawingContext dc)
+	{
+		if (Zoom < NullIslandMinZoom)
+		{
+			return;
+		}
+
+		const double Radius = 5.0;
+		double x = WebMercator.LonToWorldX(0.0), y = WebMercator.LatToWorldY(0.0);
+		WorldRect view = ViewWorld(200);
+		if (y < view.Y0 || y > view.Y1)
+		{
+			return;
+		}
+
+		Brush title = Theme("Brush.Text.Secondary", Color.FromRgb(0xB7, 0xC6, 0xD3));
+		Brush note = Theme("Brush.Text.Tertiary", Color.FromRgb(0x8B, 0x9D, 0xAD));
+		Brush land = FrozenBrush.Of(Color.FromArgb(0x40, 0xFF, 0xFF, 0xFF));
+		Pen shore = new(note, 1.2);
+		shore.Freeze();
+		FormattedText name = Text("NULL ISLAND", title);
+		FormattedText blurb = Text("No NASR data here. A fix at 0°, 0° is usually a parse error.", note);
+
+		(int first, int last) = Copies(x, x, view);
+		for (int k = first; k <= last; k++)
+		{
+			Point at = new(ScreenX(x + k), ScreenY(y));
+			dc.DrawEllipse(land, shore, at, Radius, Radius);
+
+			double left = at.X + Radius + 6;
+			dc.DrawText(name, new Point(left, at.Y - name.Height));
+			dc.DrawText(blurb, new Point(left, at.Y));
 		}
 	}
 

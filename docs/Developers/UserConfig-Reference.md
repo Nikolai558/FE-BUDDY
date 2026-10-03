@@ -36,7 +36,7 @@ Written by **Settings** (except `NewsLastOpen` and `LegacyGitHubTokenNoticeShown
 | `AiracCycleId` | a cycle ID, e.g. `2610` | current cycle | General tab. The ID (not "previous/current/next") is saved; on load it is matched back to one of the three, or falls back to current. |
 | `SelectedSubServices` | comma-separated keys: `Airports`, `Airways`, `Departures`, `Arrivals`, `Navaids`, `ArtccBoundaries`, `Fixes`, `WxStations`, `Procedures`, `Telephony`, `VnasAlias` | none | General tab. Keys are stable identifiers - never rename one without migrating this value. |
 | `UserArtccId` | an ARTCC ID, e.g. `ZOB` | none | Settings ▸ Facility. Read by Procedures as its `PrimaryFacility` - the facility whose section leads both documents - and by `AiracService` as the run's own `PrimaryFacility`, listed first in `Duplicate_Alias_Commands.txt`. |
-| `CoordinatePrecision` | `0`-`15` (the GUI offers 5, 6, 7) | `6` | Settings; sent by every tab that writes GeoJSON, AIRAC and File Conversions alike. |
+| `CoordinatePrecision` | `1`-`15` decimal places, or `0` for Do not round (the GUI offers 5, 6, 7 and Do not round) | `6` | Settings; sent by every tab that writes GeoJSON, AIRAC and File Conversions alike. |
 
 ### Services.AiracService.DefaultRoi
 
@@ -79,6 +79,9 @@ choice is made - the Map has no Save button.
 | `OutputGeojson` | the run-output GeoJSON files picked with the output picker's gear, `\|`-separated, each relative to the cycle's `AIRAC_<cycle>` folder, e.g. `Geojson\Airways_High_Lines.geojson\|Upload_to_vNAS\Geojson\ARTCC_High_Lines.geojson` (`UserConfigKeys.MapOutputGeojson`) | none |
 | `AiracLayers` | comma-separated live layers switched on: `ArtccBoundaries`, `ToweredAirports`, `Navaids` | none |
 | `Home` | the home view, `<lat>,<lon>,<zoom>` in the invariant culture, e.g. `34.05,-118.25,6.5` (`MapHome`); a value that does not parse is ignored | none: the contiguous US |
+| `BaseMapLayers` | comma-separated base-map layers drawn: `UsStates`, `Coastlines` (`BaseMapLayer`, `BaseMapSettings`); empty draws no base map | both |
+| `BaseMapOpacity` | the base map's opacity in percent, `10` to `100`; a value outside is clamped | `50` |
+| `Gridlines` | `Y` / `N` - whether the latitude / longitude gridlines and their labels are drawn | `Y` |
 
 The picks are relative, so they carry over to whichever cycle the map shows - and to another PC,
 where a file shows as missing until that PC has run it.
@@ -264,8 +267,21 @@ whose section leads both documents is not saved on this node at all - it is
 
 ### Telephony only
 
-No keys of its own. Telephony writes no GeoJSON at all - just its alias file, `Telephony.txt` (see
-[Settings blocks](Settings-Blocks.md#telephony)), which can't be turned off: a hand-edited
+| Key | Values | Default |
+|---|---|---|
+| `VirtualAirlines.<n>.Designator` | a virtual airline's three-letter designator, upper case (`<n>` from 1, in list order) | none |
+| `VirtualAirlines.<n>.Telephony` | its telephony, upper case | none |
+| `VirtualAirlines.<n>.Organization` | its virtual organization, as typed | none |
+
+The Virtual Airlines card writes the list whole on every save, renumbered from 1, so a deleted
+entry leaves no keys behind; the same keys go into the settings block (see
+[Settings blocks](Settings-Blocks.md#telephony)). A saved entry that can't be written (a hand-edited
+3LD that is not three letters, say) still shows on the card, and the tab is invalid until it is
+edited or deleted. They are ordinary settings in an export: they go with it, and an import replaces
+the list.
+
+Otherwise Telephony has no keys of its own. It writes no GeoJSON at all - just its alias file,
+`Telephony.txt` (see [Settings blocks](Settings-Blocks.md#telephony)), which can't be turned off: a hand-edited
 `GenerateAliasFile = N` is not honoured, and the tab falls back to `Y` on load. Its tab is still a
 `GeojsonSubServiceViewModel`, so it saves the ["keys every GeoJSON sub-service saves"](#keys-every-geojson-sub-service-saves)
 above except the `Emit…` keys (there is nothing to emit); it has no `CrcEramPropertyDefaults.*` rows

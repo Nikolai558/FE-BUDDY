@@ -6,7 +6,8 @@
 
     The three layouts are the original ERAM_2_GEOJSON tool's, named as it named them; each one's
     tooltip shows the folders and files it writes, in the code font, with the
-    ConsoleCommandControl.txt rundown written beside the maps in every layout.
+    ConsoleCommandControl.txt rundown written beside the maps in every layout. Each defaults
+    source has a one-line description and a tooltip saying what it does, with an example.
 
     The radios sit inside ctl:Option wrappers, so each group is tied together by GroupName
     rather than by a shared parent.
@@ -30,6 +31,15 @@
             <Setter Property="FontFamily" Value="{StaticResource Font.Mono}" />
             <Setter Property="FontSize" Value="12" />
             <Setter Property="Margin" Value="0,6,0,0" />
+        </Style>
+
+        <!-- A defaults-source tooltip's paragraphs, and its bullet points (the text hangs off the bullet). -->
+        <Style x:Key="TipLine" TargetType="TextBlock">
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="Margin" Value="0,6,0,0" />
+        </Style>
+        <Style x:Key="TipBullet" TargetType="DockPanel">
+            <Setter Property="Margin" Value="4,4,0,0" />
         </Style>
     </UserControl.Resources>
 
@@ -104,19 +114,100 @@
         </ctl:Card>
 
         <!-- ============ CRC defaults source ============ -->
+        <!-- One line under each option; its tooltip says in plain words what it does, with an example. -->
         <ctl:Card Header="CRC ERAM Defaults Source">
             <StackPanel>
+                <TextBlock Style="{StaticResource Text.Caption}" Margin="0,4,0,8" TextWrapping="Wrap"
+                           MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
+                           Text="Where each line, symbol and label gets its BCG, filters and look. Hover an option to see what it does, with an example." />
+
                 <ctl:Option Margin="0,4,0,0"
-                            Description="Carry over as much as possible: each object's own Line, Symbol and Text defaults, and each element's own values. An object whose defaults leave something out is listed on the Review tab.">
-                    <RadioButton GroupName="EramDefaults" Content="From the XML" IsChecked="{Binding DefaultsFromXml, Mode=TwoWay}" />
+                            Description="Use the XML's styling; CRC fills in what's missing or can't be drawn.">
+                    <RadioButton GroupName="EramDefaults" Content="From the XML" IsChecked="{Binding DefaultsFromXml, Mode=TwoWay}"
+                                 ToolTipService.InitialShowDelay="200" ToolTipService.ShowDuration="60000">
+                        <RadioButton.ToolTip>
+                            <ToolTip MaxWidth="460">
+                                <StackPanel>
+                                    <TextBlock Text="From the XML" Style="{StaticResource Text.Body.Strong}" />
+                                    <TextBlock Style="{StaticResource TipLine}" Text="Use the styling in Geomaps.xml, the way ERAM has it." />
+                                    <DockPanel Style="{StaticResource TipBullet}">
+                                        <TextBlock Text="•" Margin="0,0,8,0" />
+                                        <TextBlock TextWrapping="Wrap" Text="Each group's defaults are used, plus any value a single item sets for itself." />
+                                    </DockPanel>
+                                    <DockPanel Style="{StaticResource TipBullet}">
+                                        <TextBlock Text="•" Margin="0,0,8,0" />
+                                        <TextBlock TextWrapping="Wrap"
+                                                   bhv:InlineCode.Text="If the XML leaves a value out, or has one CRC can't draw, FE-Buddy leaves it blank and CRC uses its own fallback: BCG 1, `solid` lines, `vor` symbols, size 1." />
+                                    </DockPanel>
+                                    <DockPanel Style="{StaticResource TipBullet}">
+                                        <TextBlock Text="•" Margin="0,0,8,0" />
+                                        <TextBlock TextWrapping="Wrap" Text="Anything with no filters at all shows at every filter setting (filter 0)." />
+                                    </DockPanel>
+                                    <TextBlock Style="{StaticResource TipLine}"
+                                               bhv:InlineCode.Text="Example: `DME` symbols are drawn as `vor`. SAA lines, which have no BCG or filters in the XML, get BCG 1 and show at every filter setting." />
+                                </StackPanel>
+                            </ToolTip>
+                        </RadioButton.ToolTip>
+                    </RadioButton>
                 </ctl:Option>
                 <ctl:Option Margin="0,10,0,0"
-                            Description="Use the XML's defaults, and the CRC ERAM Defaults below for whatever they leave out - SAA objects, for one, carry no BCG or filters.">
-                    <RadioButton GroupName="EramDefaults" Content="From the XML, filling gaps from the card" IsChecked="{Binding DefaultsFromXmlThenCard, Mode=TwoWay}" />
+                            Description="Use the XML's styling; the card fills in what's missing or can't be drawn.">
+                    <RadioButton GroupName="EramDefaults" Content="From the XML, filling gaps from the card" IsChecked="{Binding DefaultsFromXmlThenCard, Mode=TwoWay}"
+                                 ToolTipService.InitialShowDelay="200" ToolTipService.ShowDuration="60000">
+                        <RadioButton.ToolTip>
+                            <ToolTip MaxWidth="460">
+                                <StackPanel>
+                                    <TextBlock Text="From the XML, filling gaps from the card" Style="{StaticResource Text.Body.Strong}" />
+                                    <TextBlock Style="{StaticResource TipLine}"
+                                               Text="The same as From the XML, except the CRC ERAM Defaults card below fills the gaps instead of CRC." />
+                                    <DockPanel Style="{StaticResource TipBullet}">
+                                        <TextBlock Text="•" Margin="0,0,8,0" />
+                                        <TextBlock TextWrapping="Wrap" Text="Everything the XML does have is kept." />
+                                    </DockPanel>
+                                    <DockPanel Style="{StaticResource TipBullet}">
+                                        <TextBlock Text="•" Margin="0,0,8,0" />
+                                        <TextBlock TextWrapping="Wrap" Text="Anything it leaves out, or has that CRC can't draw, comes from the card - filters included." />
+                                    </DockPanel>
+                                    <DockPanel Style="{StaticResource TipBullet}">
+                                        <TextBlock Text="•" Margin="0,0,8,0" />
+                                        <TextBlock TextWrapping="Wrap" Text="A panel with Include unticked isn't used; CRC fills that kind's gaps, as in From the XML." />
+                                    </DockPanel>
+                                    <TextBlock Style="{StaticResource TipLine}"
+                                               bhv:InlineCode.Text="Example: with the card's symbol style set to `tacan`, `DME` symbols become `tacan` instead of `vor`. SAA lines get the card's BCG and filters." />
+                                </StackPanel>
+                            </ToolTip>
+                        </RadioButton.ToolTip>
+                    </RadioButton>
                 </ctl:Option>
                 <ctl:Option Margin="0,10,0,0"
-                            Description="Ignore the XML's styling and use the CRC ERAM Defaults below for everything.">
-                    <RadioButton GroupName="EramDefaults" Content="From the card only" IsChecked="{Binding DefaultsFromCard, Mode=TwoWay}" />
+                            Description="Ignore the XML's styling and use the card below for everything.">
+                    <RadioButton GroupName="EramDefaults" Content="From the card only" IsChecked="{Binding DefaultsFromCard, Mode=TwoWay}"
+                                 ToolTipService.InitialShowDelay="200" ToolTipService.ShowDuration="60000">
+                        <RadioButton.ToolTip>
+                            <ToolTip MaxWidth="460">
+                                <StackPanel>
+                                    <TextBlock Text="From the card only" Style="{StaticResource Text.Body.Strong}" />
+                                    <TextBlock Style="{StaticResource TipLine}"
+                                               Text="Ignore the XML's styling and use the CRC ERAM Defaults card below for everything." />
+                                    <DockPanel Style="{StaticResource TipBullet}">
+                                        <TextBlock Text="•" Margin="0,0,8,0" />
+                                        <TextBlock TextWrapping="Wrap"
+                                                   Text="Every line gets the card's Line values, every symbol its Symbol values and every label its Text values - BCG and filters included." />
+                                    </DockPanel>
+                                    <DockPanel Style="{StaticResource TipBullet}">
+                                        <TextBlock Text="•" Margin="0,0,8,0" />
+                                        <TextBlock TextWrapping="Wrap" Text="The XML still supplies where things are and what the labels say." />
+                                    </DockPanel>
+                                    <DockPanel Style="{StaticResource TipBullet}">
+                                        <TextBlock Text="•" Margin="0,0,8,0" />
+                                        <TextBlock TextWrapping="Wrap" Text="A panel with Include unticked leaves that kind to CRC's fallbacks, shown at every filter setting." />
+                                    </DockPanel>
+                                    <TextBlock Style="{StaticResource TipLine}"
+                                               bhv:InlineCode.Text="Example: with the Line panel set to BCG 5, filter 3 and `shortDashed`, every line in every map is BCG 5, filter 3, short-dashed. By Filters then puts all the lines in one `Filter_03` folder." />
+                                </StackPanel>
+                            </ToolTip>
+                        </RadioButton.ToolTip>
+                    </RadioButton>
                 </ctl:Option>
             </StackPanel>
         </ctl:Card>

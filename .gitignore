@@ -348,3 +348,6 @@ MigrationBackup/
 
 # Ionide (cross platform F# VS Code tools) working folder
 .ionide/
+
+# Design source files (e.g. the Illustrator logo master) stay out of the repo
+*.ai

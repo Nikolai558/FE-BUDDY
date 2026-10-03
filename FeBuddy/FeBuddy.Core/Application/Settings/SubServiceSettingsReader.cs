@@ -38,7 +38,10 @@ public static partial class SubServiceSettingsReader
 		"FilterByRoi", "RoiSwLat", "RoiSwLon", "RoiNeLat", "RoiNeLon",
 	};
 
-	/// <summary>Reads <c>CoordinatePrecision</c>: decimal places kept per coordinate, 0-15, default 6.</summary>
+	/// <summary>
+	/// Reads <c>CoordinatePrecision</c>: decimal places kept per coordinate, 1-15, or
+	/// <see cref="Infrastructure.Geojson.GeojsonFileWriter.NoRounding"/> (0) to write them unrounded. Default 6.
+	/// </summary>
 	/// <param name="settings">The raw settings block.</param>
 	/// <returns>The precision.</returns>
 	/// <exception cref="ArgumentException">Thrown when the value is not an integer from 0 to 15.</exception>

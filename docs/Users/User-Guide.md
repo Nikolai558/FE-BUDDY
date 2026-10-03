@@ -528,6 +528,15 @@ The Review tab names how many commands `Faa_Chart_Recall.txt` holds and for how 
   designator, or two operators' telephony only differ by spacing, one command shows every one of
   their cards, separated by `---`, the command's own operator first. Commands are listed
   alphabetically.
+- **Virtual Airlines** - your own virtual airlines, added to `Telephony.txt` after the FAA's
+  operators. **Add virtual airline** asks for its 3LD (three letters), telephony and virtual
+  organization; **Edit** and **Delete** change the list. Each gets the same two commands as an
+  operator, e.g. `.idDVA` and `.idDELTA`, and a card marked `--VA--`:
+  `\n--VA--\n3LD:\t\t\tDVA\nTELEPHONY:\t\s\sDELTA\nVIRTUAL ORG:\tDELTA VIRTUAL`. Two virtual
+  airlines may share a 3LD or a telephony, with each other or with a real operator; the command
+  then shows every card, real operators before virtual airlines - with Delta Virtual (DVA, DELTA)
+  listed, `.idDELTA` shows Delta Air Lines, then Delta Virtual. The same virtual airline can't be
+  listed twice.
 - **Region:** none - Telephony is not limited to a region; every operator in the FAA's pages gets a
   card.
 - **Upload to vNAS:** `Telephony.txt`, the only file there is.
@@ -669,7 +678,8 @@ asks what to do first:
 - **Advisories** - output you might expect but will not find, and why (for example "nothing
   matched your filters").
 - **Results** - per sub-service, what it produced, with its warnings and routine messages each
-  behind a **Show** button.
+  behind a **Show** button. Each group of messages has a copy button beside its count, which
+  copies every message in it, a blank line between each - handy for pasting into a bug report.
 - **Output** - every file written (collapsed to a count; a Departures or Arrivals run writes
   thousands) and **Open output folder**, which opens the run's `AIRAC_<cycle>` folder.
 
@@ -778,12 +788,14 @@ written and the Review tab says there was no rundown; one that cannot be read is
   - **Raw** - one file per map, straight in `ERAM_TO_GEOJSON`: `CENTER_CENTER-MAP.geojson`. Every
     feature carries its own look and there are no defaults features; lines are not joined. Handy
     as a reference to check the other layouts against in CRC.
-- **CRC ERAM Defaults Source** - where the look comes from:
+- **CRC ERAM Defaults Source** - where the look comes from (hover each on the tab for what it does,
+  with an example):
   - **From the XML** - carry over as much as possible: each object's own Line, Symbol and Text
     defaults, with each element's own values laid over them.
   - **From the XML, filling gaps from the card** - the same, but whatever an object's defaults
-    leave out comes from the CRC ERAM Defaults on the tab. SAA objects carry no BCG or filters of
-    their own, so this is the choice that gives them a look in CRC.
+    leave out, or give that CRC can't draw (a `DME` symbol style, say), comes from the CRC ERAM
+    Defaults on the tab. SAA objects carry no BCG or filters of their own, so this is the choice
+    that gives them a look in CRC.
   - **From the card only** - ignore the XML's styling and use the tab's CRC ERAM Defaults for
     everything.
 - **CRC ERAM Defaults** - Lines, Symbols and Text panels. They only show, and only need filling
@@ -797,8 +809,11 @@ written and the Review tab says there was no rundown; one that cannot be read is
 
 ERAM's style names become CRC's inside the files (`Solid` → `solid`, `RNAVOnlyWaypoint` →
 `rnavOnlyWaypoint`); By Attributes names keep ERAM's spelling. Every value is checked against what
-CRC can draw - `DME` symbols, for example, have no CRC style. An object whose defaults are missing,
-incomplete or invalid is listed on the Review tab, and a value CRC cannot draw is left out. When
+CRC can draw - `DME` symbols, for example, have no CRC style. A value CRC cannot draw is left out,
+and an object whose defaults are missing, incomplete or invalid is listed on the Review tab with
+what CRC will draw instead: from the XML, the value CRC assigns itself (a `vor` symbol, BCG 1); from
+the XML filling gaps from the card, the card's. An element's own value CRC cannot draw gives way to
+its object's. When
 neither an object nor its element gives any filters, the element shows at every filter setting
 (filter `0`), as ERAM shows it. Text ERAM keeps hidden (`DisplaySetting` false) is left out, and
 the Review tab says how much. ERAM text has no opaque background, so its text is never opaque;
@@ -872,15 +887,21 @@ so when there are no duplicates, and the Review tab carries an advisory warning 
 
 The map on the left, and a panel of cards on the right. Every map in FE-Buddy is this same screen:
 **Set ROI…** in Settings and **Pick on map…** on a sub-service tab open it in a window, with the
-same layers. The US state outlines are always drawn for reference.
+same layers. Under everything is the **base map**, there to steer by: US states and territories, and the
+world's coastlines and largest lakes.
 
 - **Using the map:** drag to pan (a right- or middle-drag pans too), scroll to zoom, double-click
   to zoom in. The arrow keys pan and **+** / **-** zoom. The lat/lon under the pointer shows in the
   top-right corner. A busy layer waits until you zoom in, and a note in the bottom-right corner
   says which.
 - **Toolbar** (top left): **Edit ROI**, zoom in and out, **Home** (your home view), **Make this
-  view your home**, **Fit every layer on the map**, **Zoom to the ROI box**, and show or hide the
-  side panel. A map opens where the last one was left, or around the box it was opened to edit.
+  view your home**, **Fit every layer on the map**, **Zoom to the ROI box**, the **base map** menu,
+  and show or hide the side panel. A map opens where the last one was left, or around the box it
+  was opened to edit.
+- **Base map** (the layers button on the toolbar): tick **US states** and/or **Coastlines & lakes**
+  (untick both for no base map), turn the **Lat / lon gridlines** on or off, and set the base map's
+  **Opacity** (50% to start) so it stays in the background. Your choices apply to every map and
+  are remembered.
 - **Default Region of Interest** - the same default region as in Settings; saving it here updates
   Settings too. **Edit ROI** (or the toolbar's) turns on drawing: drag to draw a box, drag its
   handles to resize it, drag inside it to move it - or type the four corners. Then **Save**, or
@@ -942,8 +963,11 @@ The cards, top to bottom:
   press **Use this ROI**, then **Save** here. **Clear** turns it off. Every sub-service uses it
   unless its own tab overrides it.
 - **GeoJSON Files**
-  - **Maximum Coordinate Precision** - 5, 6 or 7 decimal places. 6 (about 10 cm) suits most
-    files; 7 is for high-precision airport tracing; 5 keeps files smallest.
+  - **Maximum Coordinate Precision** - 5, 6 or 7 decimal places, or **Do not round**. 6 (about
+    10 cm) suits most files; 7 is for high-precision airport tracing; 5 keeps files smallest.
+    *Do not round* leaves every coordinate exactly as it is in the source data, with every decimal
+    place it has - the largest files; a coordinate converted from degrees, minutes and seconds
+    (SCT2, DAT and ERAM files) can run to many decimal places.
   - **File Layout** - *Single line* (smallest, the default) or *Pretty print* (readable in a
     text editor).
 - **Credentials** - sign-ins FE-Buddy uses to download from protected websites, such as a GitHub
@@ -1011,8 +1035,34 @@ The cards, top to bottom:
 
 ## Info
 
-Links to this user guide, the [FAQ and troubleshooting](FAQ-and-Troubleshooting.md) page, the
-change log, and the issue tracker.
+**What's New in v3.0?** (the amber card) opens a tour of what changed since FE-Buddy 2.x: a
+side-by-side comparison, what's new for facility engineers, in the maps and in the aliases, and
+the new chart recall commands with their approach type codes and examples. The arrow beside its
+title goes back to Info.
+
+**Export FE-Buddy Alias Command Guide**, on that page, saves a guide to every alias command
+FE-Buddy makes, written for controllers: what each command shows or opens, how it is built, and
+real examples, grouped as In-Scope Reference (`.apt`, `.nav`, `.id`), Data Display (airways,
+departures and arrivals) and Chart Recall. First choose the format:
+
+- **Web (.html)** - one dark page, with nothing else to download. The parts of a command to
+  replace are coloured by what goes there (an airport ID, an approach type, a runway, ...). Its
+  colours, fonts and sizes are variables at the top of its style sheet, and each section can be
+  deleted on its own, so it is easy to fit to your facility's website.
+- **Markdown (.md)** - the same guide for a wiki or GitHub, with the parts to replace in
+  `<angle brackets>` and the optional ones in `[square brackets]`.
+- **Both** - one of each, side by side.
+
+**Choose folder…** then asks only for the folder: the files are always named
+`FE-Buddy Alias Command Guide.html` and `FE-Buddy Alias Command Guide.md`. If the folder already
+has one, FE-Buddy asks before replacing it, since it may hold your own edits.
+
+The guide says the commands are merged into your facility's alias file, naming the facility from
+Settings ▸ Facility Profile when there is one. It doesn't depend on a run or a cycle, so you can
+export it at any time.
+
+The other cards link to this user guide, the [FAQ and troubleshooting](FAQ-and-Troubleshooting.md)
+page, the change log, and the issue tracker.
 
 ## Updating FE-Buddy
 

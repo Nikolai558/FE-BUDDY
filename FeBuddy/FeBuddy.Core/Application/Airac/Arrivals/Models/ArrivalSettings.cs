@@ -103,7 +103,7 @@ public sealed record ArrivalSettings
 	/// </summary>
 	public OutputFileNames FileNames { get; init; } = OutputFileNames.None;
 
-	/// <summary>Maximum decimal places for coordinates written to GeoJSON. Default 6.</summary>
+	/// <summary>Maximum decimal places for coordinates written to GeoJSON, or 0 to write them unrounded. Default 6.</summary>
 	public int CoordinatePrecision { get; init; } = 6;
 
 	/// <summary>CRC line property defaults. Populated when <c>Arrivals_Lines</c> gets CRC-ERAM defaults.</summary>

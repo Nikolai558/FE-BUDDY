@@ -53,6 +53,14 @@ public static class AiracCycleResolver
 		return ForEffectiveDate(ReferenceEffectiveDate.AddDays((cyclesSinceReference + offset) * DaysPerCycle));
 	}
 
+	/// <summary>
+	/// Whether an AIRAC cycle becomes effective on <paramref name="dateUtc"/>.
+	/// </summary>
+	/// <param name="dateUtc">The date to check, in UTC (see <see cref="GetCycle"/>).</param>
+	/// <returns><see langword="true"/> when a new cycle takes effect that day.</returns>
+	public static bool IsEffectiveDate(DateOnly dateUtc) =>
+		GetCycle(AiracCyclePosition.Current, dateUtc).EffectiveDateUtc == dateUtc;
+
 	private static AiracCycleInfo ForEffectiveDate(DateOnly effectiveDate)
 	{
 		// The year's first cycle takes effect within its first 28 days, so the cycle number is

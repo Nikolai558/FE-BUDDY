@@ -2,6 +2,7 @@ using FeBuddy.Wpf.ViewModels.ServiceTabs;
 using FeBuddy.Wpf.ViewModels.ServiceTabs.Models;
 
 using FeBuddy.Core.Application.Conversions.Models;
+using FeBuddy.Core.Infrastructure.Logging.Models;
 
 namespace FeBuddy.UnitTests.Wpf.ViewModels;
 
@@ -55,6 +56,20 @@ public sealed class ServiceRunReviewTabViewModelTests
 		RunStep step = Assert.Single(review.Steps);
 		Assert.Equal(RunStepStatus.Finished, step.Status);
 		Assert.Equal("Airports complete", step.Detail);
+	}
+
+	/// <summary>A group's copy button copies its messages, a blank line between each, backticks kept for pasting as code.</summary>
+	[Fact]
+	public void a_message_group_copies_its_messages_a_blank_line_apart()
+	{
+		SubServiceMessageGroup group = new("Warning", LogLevel.Warning, ["First `vor`.", "Second."]);
+
+		Assert.Equal($"First `vor`.{Environment.NewLine}{Environment.NewLine}Second.", group.CopyText);
+		Assert.Equal("Copy these 2 messages", group.CopyToolTip);
+
+		SubServiceMessageGroup one = new("Info", LogLevel.Info, ["Only."]);
+		Assert.Equal("Only.", one.CopyText);
+		Assert.Equal("Copy this message", one.CopyToolTip);
 	}
 
 	[Fact]

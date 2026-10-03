@@ -1,3 +1,6 @@
+using System.Globalization;
+
+using FeBuddy.Core.Application.Conversions.EramToGeojson.Models;
 using FeBuddy.Core.Application.Settings;
 using FeBuddy.Core.Domain.Crc;
 using FeBuddy.Core.Domain.Crc.Models;
@@ -16,25 +19,18 @@ namespace FeBuddy.Core.Application.Conversions.EramToGeojson;
 /// ERAM spells styles its own way (<c>Solid</c>, <c>ShortDashed</c>, <c>RNAVOnlyWaypoint</c>);
 /// CRC's names are the same words in camelCase, so they are matched ignoring case. ERAM text has
 /// no opaque background, so its Text defaults always have <c>opaque</c> off. Every value is checked
-/// against what CRC can draw: a defaults set with a missing or invalid value is not used at all
-/// (CRC defaults are never guessed), and an invalid override value is left out so the feature
-/// takes its file's default instead.
+/// against what CRC can draw: a defaults set with a missing or invalid value is not used as CRC
+/// defaults (they are never guessed) - <see cref="Gaps"/> says what keeps it from being - and an
+/// invalid value is taken out (<see cref="Usable"/>) before it is laid over anything, so what it
+/// would have covered shows through.
 /// </remarks>
 internal static class EramCrcProperties
 {
 	/// <summary>Complete, valid Line defaults from ERAM properties.</summary>
 	/// <param name="properties">An object's <c>LineDefaults</c>, or <see langword="null"/> when it has none.</param>
-	/// <param name="problem">Why they cannot be used, when they cannot.</param>
-	/// <returns>The defaults, or <see langword="null"/> when they are missing, incomplete or invalid.</returns>
-	public static CrcLineDefaults? LineDefaults(EramProperties? properties, out string? problem)
-	{
-		if (!TryRequire(properties, "LineDefaults", out problem, ("Bcg", properties?.Bcg), ("Filters", properties?.Filters),
-			("Style", properties?.Style), ("Thickness", properties?.Thickness)))
-		{
-			return null;
-		}
-
-		CrcLineDefaults defaults = new()
+	/// <returns>The defaults, or <see langword="null"/> when they are missing, incomplete or invalid (see <see cref="Gaps"/>).</returns>
+	public static CrcLineDefaults? LineDefaults(EramProperties? properties) =>
+		Gaps(EramElementKind.Line, properties).Count > 0 ? null : new CrcLineDefaults
 		{
 			Bcg = properties!.Bcg!.Value,
 			Filters = properties.Filters!,
@@ -42,22 +38,11 @@ internal static class EramCrcProperties
 			Thickness = properties.Thickness!.Value,
 		};
 
-		return Valid(CrcPropertyValidator.ValidateLineDefaults(defaults), "LineDefaults", ref problem) ? defaults : null;
-	}
-
 	/// <summary>Complete, valid Symbol defaults from ERAM properties.</summary>
 	/// <param name="properties">An object's <c>SymbolDefaults</c>, or <see langword="null"/> when it has none.</param>
-	/// <param name="problem">Why they cannot be used, when they cannot.</param>
-	/// <returns>The defaults, or <see langword="null"/> when they are missing, incomplete or invalid.</returns>
-	public static CrcSymbolDefaults? SymbolDefaults(EramProperties? properties, out string? problem)
-	{
-		if (!TryRequire(properties, "SymbolDefaults", out problem, ("Bcg", properties?.Bcg), ("Filters", properties?.Filters),
-			("Style", properties?.Style), ("Size", properties?.Size)))
-		{
-			return null;
-		}
-
-		CrcSymbolDefaults defaults = new()
+	/// <returns>The defaults, or <see langword="null"/> when they are missing, incomplete or invalid (see <see cref="Gaps"/>).</returns>
+	public static CrcSymbolDefaults? SymbolDefaults(EramProperties? properties) =>
+		Gaps(EramElementKind.Symbol, properties).Count > 0 ? null : new CrcSymbolDefaults
 		{
 			Bcg = properties!.Bcg!.Value,
 			Filters = properties.Filters!,
@@ -65,23 +50,11 @@ internal static class EramCrcProperties
 			Size = properties.Size!.Value,
 		};
 
-		return Valid(CrcPropertyValidator.ValidateSymbolDefaults(defaults), "SymbolDefaults", ref problem) ? defaults : null;
-	}
-
 	/// <summary>Complete, valid Text defaults from ERAM properties.</summary>
 	/// <param name="properties">An object's <c>TextDefaults</c>, or <see langword="null"/> when it has none.</param>
-	/// <param name="problem">Why they cannot be used, when they cannot.</param>
-	/// <returns>The defaults, or <see langword="null"/> when they are missing, incomplete or invalid.</returns>
-	public static CrcTextDefaults? TextDefaults(EramProperties? properties, out string? problem)
-	{
-		if (!TryRequire(properties, "TextDefaults", out problem, ("Bcg", properties?.Bcg), ("Filters", properties?.Filters),
-			("Size", properties?.Size), ("Underline", properties?.Underline),
-			("XOffset", properties?.XOffset), ("YOffset", properties?.YOffset)))
-		{
-			return null;
-		}
-
-		CrcTextDefaults defaults = new()
+	/// <returns>The defaults, or <see langword="null"/> when they are missing, incomplete or invalid (see <see cref="Gaps"/>).</returns>
+	public static CrcTextDefaults? TextDefaults(EramProperties? properties) =>
+		Gaps(EramElementKind.Text, properties).Count > 0 ? null : new CrcTextDefaults
 		{
 			Bcg = properties!.Bcg!.Value,
 			Filters = properties.Filters!,
@@ -92,8 +65,60 @@ internal static class EramCrcProperties
 			YOffset = properties.YOffset!.Value,
 		};
 
-		return Valid(CrcPropertyValidator.ValidateTextDefaults(defaults), "TextDefaults", ref problem) ? defaults : null;
+	/// <summary>
+	/// What keeps ERAM properties from being complete CRC defaults of a kind: each property CRC's
+	/// defaults of that kind need that they lack, or hold with a value CRC can't draw.
+	/// </summary>
+	/// <param name="kind">Which defaults: Line, Symbol or Text.</param>
+	/// <param name="properties">An object's defaults, or <see langword="null"/> when it has none.</param>
+	/// <returns>Each such property, in CRC's order; empty when the defaults are complete and valid.</returns>
+	public static IReadOnlyList<EramDefaultsGap> Gaps(EramElementKind kind, EramProperties? properties)
+	{
+		EramProperties values = properties ?? EramProperties.None;
+		Dictionary<string, string> invalid = new(StringComparer.Ordinal);
+		Overrides(kind, values, (property, value) => invalid[property] = value);
+
+		return [.. Required(kind, values)
+			.Where(required => required.Value is null || invalid.ContainsKey(required.Property))
+			.Select(required => new EramDefaultsGap(required.Property, required.Value is null ? null : invalid[required.Property]))];
 	}
+
+	/// <summary>
+	/// The properties with every value CRC can't draw for <paramref name="kind"/> taken out, so that
+	/// when they are laid over other values (<see cref="Over"/>), those show through instead.
+	/// </summary>
+	/// <param name="kind">What the properties are for; decides which properties apply.</param>
+	/// <param name="properties">An element's own values, or an object's defaults.</param>
+	/// <returns>The same values less the invalid ones; <paramref name="properties"/> itself when all are valid.</returns>
+	public static EramProperties Usable(EramElementKind kind, EramProperties properties)
+	{
+		HashSet<string> invalid = new(StringComparer.Ordinal);
+		Overrides(kind, properties, (property, _) => invalid.Add(property));
+
+		return invalid.Count == 0 ? properties : properties with
+		{
+			Bcg = invalid.Contains("bcg") ? null : properties.Bcg,
+			Filters = invalid.Contains("filters") ? null : properties.Filters,
+			Style = invalid.Contains("style") ? null : properties.Style,
+			Thickness = invalid.Contains("thickness") ? null : properties.Thickness,
+			Size = invalid.Contains("size") ? null : properties.Size,
+		};
+	}
+
+	/// <summary>
+	/// What CRC draws a property of a kind with when nothing sets it (see
+	/// <see cref="CrcPropertyValidator.LineAutoAssigned"/>), or <see langword="null"/> for
+	/// <c>filters</c>, which CRC never assigns.
+	/// </summary>
+	/// <param name="kind">Line, Symbol or Text.</param>
+	/// <param name="property">The CRC property, e.g. <c>style</c>.</param>
+	/// <returns>The value, as CRC writes it (<c>vor</c>, <c>1</c>, <c>false</c>).</returns>
+	public static string? AutoAssigned(EramElementKind kind, string property) => (kind switch
+	{
+		EramElementKind.Line => CrcPropertyValidator.LineAutoAssigned,
+		EramElementKind.Symbol => CrcPropertyValidator.SymbolAutoAssigned,
+		_ => CrcPropertyValidator.TextAutoAssigned,
+	}).GetValueOrDefault(property);
 
 	/// <summary>CRC defaults as ERAM properties, so an element's overrides can be laid over them.</summary>
 	/// <param name="defaults">The Line, Symbol or Text defaults, or <see langword="null"/>.</param>
@@ -135,9 +160,9 @@ internal static class EramCrcProperties
 	/// </summary>
 	/// <param name="kind">What the element draws; decides which properties apply.</param>
 	/// <param name="overrides">The element's own values.</param>
-	/// <param name="dropped">Told of each value left out, as <c>name="value"</c>.</param>
+	/// <param name="dropped">Told of each value left out: the CRC property (<c>style</c>) and the value (<c>DME</c>).</param>
 	/// <returns>The attributes, in CRC's order; empty when the element sets nothing usable.</returns>
-	public static AttributesTable Overrides(EramElementKind kind, EramProperties overrides, Action<string> dropped)
+	public static AttributesTable Overrides(EramElementKind kind, EramProperties overrides, Action<string, string> dropped)
 	{
 		AttributesTable table = [];
 
@@ -151,7 +176,7 @@ internal static class EramCrcProperties
 			}
 			else
 			{
-				dropped($"Filters=\"{string.Join(',', filters)}\"");
+				dropped("filters", string.Join(',', filters));
 			}
 		}
 
@@ -181,7 +206,7 @@ internal static class EramCrcProperties
 	/// <summary>An ERAM style in CRC's spelling, or the value unchanged when CRC has no such style.</summary>
 	private static string? Style(string? style, IReadOnlyList<string> valid) => SettingsValueReader.NormalizeStyle(style, valid);
 
-	private static void AddStyle(AttributesTable table, string? style, IReadOnlyList<string> valid, Action<string> dropped)
+	private static void AddStyle(AttributesTable table, string? style, IReadOnlyList<string> valid, Action<string, string> dropped)
 	{
 		if (style is null)
 		{
@@ -196,11 +221,11 @@ internal static class EramCrcProperties
 		}
 		else
 		{
-			dropped($"Style=\"{style}\"");
+			dropped("style", style);
 		}
 	}
 
-	private static void Add<T>(AttributesTable table, string name, T? value, Func<T, bool> isValid, Action<string> dropped)
+	private static void Add<T>(AttributesTable table, string name, T? value, Func<T, bool> isValid, Action<string, string> dropped)
 		where T : struct
 	{
 		if (value is not { } set)
@@ -214,31 +239,21 @@ internal static class EramCrcProperties
 		}
 		else
 		{
-			dropped($"{char.ToUpperInvariant(name[0])}{name[1..]}=\"{set}\"");
+			dropped(name, Convert.ToString(set, CultureInfo.InvariantCulture)!);
 		}
 	}
 
-	private static bool TryRequire(EramProperties? properties, string element, out string? problem, params (string Name, object? Value)[] values)
+	/// <summary>The properties CRC defaults of a kind need, in CRC's order, with the values <paramref name="properties"/> hold.</summary>
+	private static (string Property, object? Value)[] Required(EramElementKind kind, EramProperties properties) => kind switch
 	{
-		if (properties is null)
-		{
-			problem = $"it has no {element}";
-			return false;
-		}
-
-		string[] missing = [.. values.Where(value => value.Value is null).Select(value => value.Name)];
-		problem = missing.Length > 0 ? $"its {element} have no {string.Join(", ", missing)}" : null;
-		return missing.Length == 0;
-	}
-
-	private static bool Valid(CrcPropertyValidationResult result, string element, ref string? problem)
-	{
-		if (result.IsValid)
-		{
-			return true;
-		}
-
-		problem = $"its {element} are not values CRC can draw ({string.Join(" ", result.Errors)})";
-		return false;
-	}
+		EramElementKind.Line =>
+			[("bcg", properties.Bcg), ("filters", properties.Filters), ("style", properties.Style), ("thickness", properties.Thickness)],
+		EramElementKind.Symbol =>
+			[("bcg", properties.Bcg), ("filters", properties.Filters), ("style", properties.Style), ("size", properties.Size)],
+		_ =>
+			[
+				("bcg", properties.Bcg), ("filters", properties.Filters), ("size", properties.Size), ("underline", properties.Underline),
+				("xOffset", properties.XOffset), ("yOffset", properties.YOffset),
+			],
+	};
 }

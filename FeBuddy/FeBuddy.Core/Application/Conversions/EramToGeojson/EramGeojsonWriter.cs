@@ -146,13 +146,14 @@ public static class EramGeojsonWriter
 					}
 
 					EramProperties own = bases.UseOverrides ? element.Overrides : EramProperties.None;
-					EramProperties look = EramCrcProperties.Over(bases.For(element.Kind), own);
-					look = look with { Filters = look.Filters ?? AlwaysShown };
 
-					// An element's own unusable value is said once per element; an unusable default
-					// has already been said once for its object, so it is left out quietly here.
-					EramCrcProperties.Overrides(element.Kind, own, value => Dropped(context, element, value, messages));
-					AttributesTable attributes = EramCrcProperties.Overrides(element.Kind, look, _ => { });
+					// An element's own value CRC can't draw is said once per element, then taken out so
+					// its defaults' value shows through. An unusable default has already been said once
+					// for its object, so it is left out quietly here.
+					EramCrcProperties.Overrides(element.Kind, own, (property, value) => Dropped(context, element, property, value, messages));
+					EramProperties look = EramCrcProperties.Over(bases.For(element.Kind), EramCrcProperties.Usable(element.Kind, own));
+					look = look with { Filters = look.Filters ?? AlwaysShown };
+					AttributesTable attributes = EramCrcProperties.Overrides(element.Kind, look, (_, _) => { });
 
 					drawn.Add(new Drawn(element, mapObject, look, Complete(element.Kind, look), attributes, Feb(element, mapObject, settings)));
 				}
@@ -250,26 +251,33 @@ public static class EramGeojsonWriter
 				return EramCrcProperties.AsEram(fromCard);
 			}
 
-			// The card fills whatever the XML leaves out, filters included.
+			// The card fills whatever the XML leaves out, filters included, and whatever it gives that
+			// CRC can't draw.
 			if (settings.DefaultsSource == EramDefaultsSource.XmlThenCard && fromCard is not null)
 			{
-				if (Complete(kind, fromXml, out string? gap) is null)
+				IReadOnlyList<EramDefaultsGap> filled = EramCrcProperties.Gaps(kind, fromXml);
+
+				if (filled.Count > 0)
 				{
 					messages.Add(new ServiceMessage(LogLevel.Info, LogSource,
-						$"{context}: {gap}, so the CRC {kind} defaults set on the tab fill in what it leaves out."));
+						$"{context}: {DefaultsProblem(kind, fromXml, filled)}. " +
+						$"The CRC {kind} defaults set on the tab fill {(filled is [{ Property: not "filters" }] ? "it" : "them")} in."));
 				}
 
-				return EramCrcProperties.Over(EramCrcProperties.AsEram(fromCard), fromXml ?? EramProperties.None);
+				return EramCrcProperties.Over(EramCrcProperties.AsEram(fromCard), EramCrcProperties.Usable(kind, fromXml ?? EramProperties.None));
 			}
 
 			// Defaults with no filters show at every filter setting - filter 0 - as ERAM shows them.
-			if (Complete(kind, fromXml is null ? null : fromXml with { Filters = fromXml.Filters ?? AlwaysShown }, out string? problem) is null)
+			EramProperties xml = fromXml ?? EramProperties.None;
+			IReadOnlyList<EramDefaultsGap> gaps = EramCrcProperties.Gaps(kind, xml with { Filters = xml.Filters ?? AlwaysShown });
+
+			if (gaps.Count > 0)
 			{
 				messages.Add(new ServiceMessage(LogLevel.Warning, LogSource,
-					$"{context}: {problem}, so its {Plural(kind)} have only what each sets itself; CRC draws the rest with its own defaults."));
+					$"{context}: {DefaultsProblem(kind, fromXml, gaps)}. {LeftBlank(kind, gaps)}"));
 			}
 
-			return fromXml ?? EramProperties.None;
+			return xml;
 		}
 
 		return new Bases(
@@ -280,14 +288,11 @@ public static class EramGeojsonWriter
 	}
 
 	/// <summary>A look as complete CRC defaults of its kind, or <see langword="null"/> when it cannot be one.</summary>
-	private static object? Complete(EramElementKind kind, EramProperties look) => Complete(kind, look, out _);
-
-	/// <summary>A look as complete CRC defaults of its kind, or <see langword="null"/> and why when it cannot be one (or there is none).</summary>
-	private static object? Complete(EramElementKind kind, EramProperties? look, out string? problem) => kind switch
+	private static object? Complete(EramElementKind kind, EramProperties look) => kind switch
 	{
-		EramElementKind.Line => EramCrcProperties.LineDefaults(look, out problem),
-		EramElementKind.Symbol => EramCrcProperties.SymbolDefaults(look, out problem),
-		_ => EramCrcProperties.TextDefaults(look, out problem),
+		EramElementKind.Line => EramCrcProperties.LineDefaults(look),
+		EramElementKind.Symbol => EramCrcProperties.SymbolDefaults(look),
+		_ => EramCrcProperties.TextDefaults(look),
 	};
 
 	private static AttributesTable Feb(EramElement element, EramGeoMapObject mapObject, EramToGeojsonSettings settings)
@@ -578,7 +583,90 @@ public static class EramGeojsonWriter
 		return unique;
 	}
 
-	private static void Dropped(string context, EramElement element, string value, List<ServiceMessage> messages) =>
+	// ================= messages =================
+
+	private static void Dropped(string context, EramElement element, string property, string value, List<ServiceMessage> messages) =>
 		messages.Add(new ServiceMessage(LogLevel.Warning, LogSource,
-			$"{context}: a {element.Kind} element's {value} is not a value CRC can draw and was left out."));
+			$"{context}: a {element.Kind} element's {PropertyName(property)} `{value}` is not a value CRC can draw. " +
+			$"FE-Buddy left it out, so the element takes the {PropertyName(property)} its defaults give instead."));
+
+	/// <summary>
+	/// What is wrong with an object's defaults of one kind: <c>it has no LineDefaults</c>,
+	/// <c>its LineDefaults have no BCG</c>, <c>its SymbolDefaults (symbol style `DME`) are not values
+	/// CRC can draw</c>, or both of the last two.
+	/// </summary>
+	/// <param name="kind">Line, Symbol or Text.</param>
+	/// <param name="defaults">The object's defaults as the XML gives them, or <see langword="null"/> when it gives none.</param>
+	/// <param name="gaps">What they lack, or hold but CRC can't draw.</param>
+	private static string DefaultsProblem(EramElementKind kind, EramProperties? defaults, IReadOnlyList<EramDefaultsGap> gaps)
+	{
+		string name = $"{kind}Defaults";
+
+		if (defaults is null)
+		{
+			return $"it has no {name}";
+		}
+
+		string[] missing = [.. gaps.Where(gap => gap.Value is null).Select(gap => PropertyName(gap.Property))];
+		string[] invalid = [.. gaps.Where(gap => gap.Value is not null).Select(gap => $"{PropertyName(gap.Property)} `{gap.Value}`")];
+		string kindName = kind.ToString().ToLowerInvariant();
+
+		return (missing.Length, invalid.Length) switch
+		{
+			(_, 0) => $"its {name} have no {Join(missing, "or")}",
+			(0, _) => $"its {name} ({kindName} {string.Join(", ", invalid)}) are not values CRC can draw",
+			_ => $"its {name} have no {Join(missing, "or")}, and CRC can't draw their {kindName} {Join(invalid, "and")}",
+		};
+	}
+
+	/// <summary>
+	/// What CRC does with what the defaults leave out: its own value for each property it can
+	/// assign, and nothing for <c>filters</c>, so elements without their own don't show.
+	/// </summary>
+	private static string LeftBlank(EramElementKind kind, IReadOnlyList<EramDefaultsGap> gaps)
+	{
+		string[] assigned = [.. gaps.Select(gap => gap.Property).Where(property => EramCrcProperties.AutoAssigned(kind, property) is not null)];
+		string[] values = [.. assigned.Select(property => $"`{EramCrcProperties.AutoAssigned(kind, property)}`")];
+		List<string> sentences = [];
+
+		if (assigned.Length == 1)
+		{
+			sentences.Add($"FE-Buddy left the `{assigned[0]}` property blank and therefore, CRC will auto-assign " +
+				$"{WithArticle(assigned[0])} to it which is likely to be {values[0]}.");
+		}
+		else if (assigned.Length > 1)
+		{
+			sentences.Add($"FE-Buddy left the {Join([.. assigned.Select(property => $"`{property}`")], "and")} properties blank and therefore, " +
+				$"CRC will auto-assign them, which are likely to be {Join(values, "and")} respectively.");
+		}
+
+		if (assigned.Length < gaps.Count)
+		{
+			sentences.Add($"FE-Buddy left the `filters` property blank, and CRC can't auto-assign filters, so {Plural(kind)} " +
+				"that don't set their own won't show.");
+		}
+
+		return string.Join(' ', sentences);
+	}
+
+	/// <summary>How a CRC property reads in a message: <c>BCG</c>, <c>style</c>, <c>X offset</c>.</summary>
+	private static string PropertyName(string property) => property switch
+	{
+		"bcg" => "BCG",
+		"xOffset" => "X offset",
+		"yOffset" => "Y offset",
+		_ => property,
+	};
+
+	/// <summary>A property with its article: <c>a BCG</c>, <c>a style</c>, <c>an X offset</c>.</summary>
+	private static string WithArticle(string property) => property is "underline" or "xOffset"
+		? $"an {PropertyName(property)}"
+		: $"a {PropertyName(property)}";
+
+	/// <summary><c>a</c>, <c>a or b</c>, <c>a, b or c</c>.</summary>
+	private static string Join(string[] items, string conjunction) => items.Length switch
+	{
+		1 => items[0],
+		_ => $"{string.Join(", ", items[..^1])} {conjunction} {items[^1]}",
+	};
 }

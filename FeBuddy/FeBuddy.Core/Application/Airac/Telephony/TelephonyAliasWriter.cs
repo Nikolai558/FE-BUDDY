@@ -23,8 +23,11 @@ namespace FeBuddy.Core.Application.Airac.Telephony;
 /// designator (<c>AVA</c> is AVIANCA's designator and another operator's telephony), or two
 /// telephonies that only differ by spaces (<c>RYAN AIR</c>, <c>RYANAIR</c>) - the command is written
 /// once, showing every one of their cards joined by <c>\n---</c>, the way <c>Navaids.txt</c> handles
-/// a shared NAVAID identifier. The operator whose designator or identifier the command is comes
-/// first, then those whose telephony spells it. Commands are written in alphabetical order.
+/// a shared NAVAID identifier. The operators whose designator or identifier the command is come
+/// first, then those whose telephony spells it; within each, the FAA's operators come before the
+/// user's virtual airlines (which <c>TelephonyBuilder</c> lists last), so the virtual airline DVA
+/// with telephony DELTA shows under <c>.idDELTA</c> after Delta Air Lines. Commands are written in
+/// alphabetical order.
 /// </para>
 /// <para>
 /// Like <c>Airports.txt</c>, a card's line breaks and column alignment are the literal two-character
@@ -47,6 +50,9 @@ public static class TelephonyAliasWriter
 
 	/// <summary>The literal text joining two operators' cards under one shared command.</summary>
 	private const string CardSeparator = @"\n---";
+
+	/// <summary>The line a virtual airline's card starts with, so it is never taken for a real operator.</summary>
+	private const string VirtualAirlineMark = "--VA--";
 
 	/// <summary>
 	/// Writes the alias file for every entry.
@@ -119,8 +125,10 @@ public static class TelephonyAliasWriter
 
 	/// <summary>
 	/// One operator's card, starting with a line break so it sits below the command in CRC:
-	/// <c>3LD</c> / <c>TELEPHONY</c> / <c>COMPANY</c> / <c>COUNTRY</c> for an ICAO assignment, and
-	/// <c>ID</c> / <c>TELEPHONY</c> / <c>AGENCY</c> / <c>EXPIRES</c> for a U.S. special call sign.
+	/// <c>3LD</c> / <c>TELEPHONY</c> / <c>COMPANY</c> / <c>COUNTRY</c> for an ICAO assignment,
+	/// <c>ID</c> / <c>TELEPHONY</c> / <c>AGENCY</c> / <c>EXPIRES</c> for a U.S. special call sign, and
+	/// a <c>--VA--</c> line then <c>3LD</c> / <c>TELEPHONY</c> / <c>VIRTUAL ORG</c> for a virtual
+	/// airline: <c>\n--VA--\n3LD:\t\t\tDVA\nTELEPHONY:\t\s\sDELTA\nVIRTUAL ORG:\tDELTA VIRTUAL</c>.
 	/// </summary>
 	/// <param name="entry">The operator.</param>
 	/// <returns>The card, escapes included.</returns>
@@ -139,6 +147,13 @@ public static class TelephonyAliasWriter
 			AppendLine(card, "TELEPHONY:", tab + space2, entry.Telephony);
 			AppendLine(card, "COMPANY:", tab2, entry.Organization);
 			AppendLine(card, "COUNTRY:", tab2, entry.Detail);
+		}
+		else if (entry.Kind == TelephonyEntryKind.VirtualAirline)
+		{
+			card.Append(NewLineEscape).Append(VirtualAirlineMark);
+			AppendLine(card, "3LD:", tab3, entry.Identifier);
+			AppendLine(card, "TELEPHONY:", tab + space2, entry.Telephony);
+			AppendLine(card, "VIRTUAL ORG:", tab, entry.Organization);
 		}
 		else
 		{

@@ -2,8 +2,9 @@
     ServiceRunReviewTabView  -  the Review tab: everything about what happened when the
     service was run. It appears at the very end of the rail once a run has started, and shows
     how far each sub-service has got, anything that went wrong, the advisories, each
-    sub-service's results with its warnings and routine notices (each collapsed behind a toggle), and
-    the way out to the files. The sub-service tabs hold settings only.
+    sub-service's results with its warnings and routine notices (each collapsed behind a toggle,
+    in groups that can each be copied), and the way out to the files. The sub-service tabs hold
+    settings only.
 -->
 <UserControl x:Class="FeBuddy.Wpf.Views.ServiceRunReviewTabView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -51,26 +52,31 @@
             </StackPanel>
         </DataTemplate>
 
-        <!-- one error line -->
+        <!-- one error or advisory line. Here and in the message groups, a name or value between
+             backticks shows in the code look (bhv:InlineCode). -->
         <DataTemplate x:Key="ErrorRow">
-            <TextBlock Text="{Binding}" Style="{StaticResource Text.Prose}" Margin="0,3" />
+            <TextBlock bhv:InlineCode.Text="{Binding}" Style="{StaticResource Text.Prose}" Margin="0,3" />
         </DataTemplate>
 
         <!-- one group of a sub-service's messages: its heading (a severity, or e.g. an airway ID)
-             with the count on the right, then the messages -->
+             with the count and a copy button (every message in the group) on the right, then the
+             messages, a gap between each -->
         <DataTemplate x:Key="MessageGroup" DataType="{x:Type tabm:SubServiceMessageGroup}">
             <Border Margin="0,4" Padding="10" CornerRadius="{StaticResource Radius.Chip}"
                     Background="{StaticResource Brush.Bg.Sunken}">
                 <StackPanel>
                     <DockPanel>
+                        <ctl:CopyButton DockPanel.Dock="Right" Style="{StaticResource Copy.Button}" VerticalAlignment="Center"
+                                        Margin="6,0,0,0" Value="{Binding CopyText}" ToolTip="{Binding CopyToolTip}"
+                                        ToolTipService.InitialShowDelay="200" />
                         <TextBlock DockPanel.Dock="Right" Text="{Binding Count, StringFormat={}{0} msg}"
-                                   Style="{StaticResource Text.Caption}" />
-                        <TextBlock Text="{Binding Title}" Style="{StaticResource Text.Body.Strong}" />
+                                   Style="{StaticResource Text.Caption}" VerticalAlignment="Center" />
+                        <TextBlock Text="{Binding Title}" Style="{StaticResource Text.Body.Strong}" VerticalAlignment="Center" />
                     </DockPanel>
                     <ItemsControl ItemsSource="{Binding Messages}" Margin="0,4,0,0">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding}" Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,1" />
+                                <TextBlock bhv:InlineCode.Text="{Binding}" Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,4" />
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>

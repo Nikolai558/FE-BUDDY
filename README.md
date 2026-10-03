@@ -1,7 +1,8 @@
 # FE-BUDDY
-(Previously known as NASR2SCT)
 
-![FE-Buddy Logo](https://github.com/user-attachments/assets/69c021c7-6f0b-4e48-90c9-07fcfecb9dd5)
+<p align="center">
+  <img width="500" height="500" alt="FE-Buddy" src="https://github.com/user-attachments/assets/949c76bc-d20d-4a89-874c-c6d74757c0f8" />
+</p>
 
 ---
 
@@ -121,6 +122,9 @@ Open an [issue](https://github.com/Nikolai558/FE-BUDDY/issues), or ask on the FE
 - [Cian Ormond](https://github.com/wiggleforlife) - .NET 6 Conversion Assistance
 - [Caelan Sayler](https://github.com/caesay) - .NET 6 Conversion Assistance
 - Ian Drake - FAA FOIA RVM Conversion source code reference
+- Jon Galad - v3.0 icon and logo design
+- Nick Shuster - v3.0 icon and logo design
+- [Natural Earth](https://www.naturalearthdata.com) - The map's base layers (US states and coastlines, public domain)
 
 If your name is listed above and you'd like a different link attached to it, or if your name should
 be listed here but isn't, please let us know via a pull request or on our Discord. We want to make

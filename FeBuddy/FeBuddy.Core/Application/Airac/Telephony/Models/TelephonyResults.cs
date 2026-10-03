@@ -9,7 +9,10 @@ namespace FeBuddy.Core.Application.Airac.Telephony.Models;
 public sealed record TelephonySettingsParseResult(TelephonySettings Settings, IReadOnlyList<ServiceMessage> Messages);
 
 /// <summary>The outcome of reading the parsed FAA telephony pages into entries.</summary>
-/// <param name="Entries">Every operator that gets a card: ICAO assignments in register order, then U.S. special call signs in page order.</param>
+/// <param name="Entries">
+/// Every operator that gets a card: ICAO assignments in register order, then U.S. special call
+/// signs in page order, then the user's virtual airlines in list order.
+/// </param>
 /// <param name="NoDesignatorCount">
 /// Rows left out because they have no three-letter designator (register) or identifier (U.S.
 /// special call sign).
@@ -41,6 +44,9 @@ public sealed record TelephonyServiceResult : ServiceResult
 
 	/// <summary>How many U.S. special call signs got a card.</summary>
 	public required int SpecialCallSignCount { get; init; }
+
+	/// <summary>How many of the user's virtual airlines got a card.</summary>
+	public int VirtualAirlineCount { get; init; }
 
 	/// <summary>Rows left out because they have no three-letter designator (register) or identifier (U.S. special call sign).</summary>
 	public required int NoDesignatorCount { get; init; }

@@ -47,10 +47,14 @@ Theme/                design system - the only place colours, type and control
   Controls.Window.xaml   implicit ChromeWindow style: every dialog window's frame
   Theme.xaml             merges the above; App.xaml merges only this
 
-Assets/               us-states.json (reference geography, not sample data)
+Assets/BaseMap/       us-states.json, coastlines.json (reference geography,
+                      not sample data; built from Natural Earth by
+                      FeBuddy/Tools/BuildBaseMap.cs)
 Behaviors/            attached properties a view opts into: FieldState (validation
                       look), InlineCode (`code` look for text between backticks),
-                      WheelScroll, ComboBoxDropDownFocus, MaximizeToWorkArea
+                      InlineMarkdown (a line of **bold**, *italic* and `code`, the
+                      way MarkdownView shows it), WheelScroll, ComboBoxDropDownFocus,
+                      MaximizeToWorkArea
 Controls/             reusable controls: Card, SectionHeader, Option, CopyButton,
                       FilterPicker (+ FilterOption), MarkdownView, MapCanvas,
                       BesideOrBelow (a panel: its second child beside the first,
@@ -59,7 +63,8 @@ Controls/             reusable controls: Card, SectionHeader, Option, CopyButton
 Converters/           one IValueConverter per file
 Map/                  GeoJsonReader (System.Text.Json), WebMercator, ProjectedLayer
                       (a layer projected once, then cached), AiracMapLayers (the live
-                      layers built from a parsed cycle), BaseMap (the US states)
+                      layers built from a parsed cycle), BaseMap (the background
+                      reference layers)
   Models/               GeoPoint, GeoBounds, MapGeometry(Kind), MapLayer,
                         MapPointShape, MapHome (the home view), MapViewState
 Mvvm/                 ObservableObject, RelayCommand
@@ -103,7 +108,9 @@ Views/                ShellWindow (custom chrome) + Dashboard, TabbedServiceView
                       WxStationsView, ProceduresView, TelephonyView, VnasAliasView, FileNamesView, DatToGeojsonView, SctToGeojsonView, EramToGeojsonView,
                       ServicePreviewTabView, ServiceRunReviewTabView), MapView (the
                       Map page: just a MapWorkspace), MapWorkspace (the one map
-                      screen), Settings, Info; UpdateWindow, ConfirmWindow (Confirm /
+                      screen), Settings, Info (and WhatsNewView, which opens in its
+                      place); UpdateWindow, AliasGuideFormatWindow (Web, Markdown or
+                      both, for the alias command guide), ConfirmWindow (Confirm /
                       Cancel, or a third choice between them; a long message
                       scrolls), CredentialEditorWindow, RoiPickerWindow (a
                       MapWorkspace in a window)
@@ -155,7 +162,8 @@ root - the same rule as `FeBuddy.Core`.
   `StaThread.Run`, since WPF controls need a thread of their own. The map's math, GeoJSON reader,
   home view, ROI view-model and `MapCanvas`, the File Names, Airways and ERAM to GeoJSON tabs'
   view-models, the sub-service order, the Reset window's view-model, the Review tab's run feed,
-  `BesideOrBelow` and `InlineCode` are covered today.
+  the Info and What's New pages' view-models (and the alias command guide's format question),
+  `BesideOrBelow`, `InlineCode` and `InlineMarkdown` are covered today.
 
 ### Screens
 
@@ -345,7 +353,8 @@ bar and page scroller are shared, and each screen's view-model says what differs
     the last, and a folder holding two blocks the run); its folder summary counts only Geomaps
     files (`IsSourceFile`), so the whole unzipped export can be the source folder. The output
     layout - the original ERAM_2_GEOJSON tool's By Filters / By Attributes / Raw, each with its
-    folder tree as a tooltip - the CRC defaults source (XML / XML then card / card), and the
+    folder tree as a tooltip - the CRC defaults source (XML / XML then card / card, each with a
+    plain-words tooltip and an example), and the
     FE-Buddy Properties card (`IFebPropertySettings`, `EramFebPropertyOptions`). Lines, Symbols
     and Text panels, shown only while the card is a source (`UsesCrcDefaults`); with the XML as
     the only source nothing on the card is required or sent. Before a run it asks to empty
@@ -405,8 +414,9 @@ A map that closes leaves its view in `MapLayersState.LastView`, so the next one 
 
 **The control.** `Controls/MapCanvas` is a from-scratch vector map: Web-Mercator projection
 (`Map/WebMercator`), a pan (drag) / zoom (wheel) viewport, and `StreamGeometry` into
-`DrawingVisual`s. **No tiles, no network, no map SDK.** It takes a base `MapLayer` (the US state
-outlines) plus the shared layer list, which it follows weakly (`CollectionChangedEventManager`) so
+`DrawingVisual`s. **No tiles, no network, no map SDK.** It takes the base layers (US states,
+coastlines, from `BaseMapSettings`) drawn at one opacity as a group, plus the shared
+layer list, which it follows weakly (`CollectionChangedEventManager`) so
 a closed popup's map is not kept alive by it. The world repeats side by side: every layer is
 projected once into world units (`Map/ProjectedLayer`, lines unwrapped across the 180th meridian)
 and drawn once per copy of the world in view, and framing covers shapes on both sides of 180° the
@@ -430,11 +440,12 @@ by `Map/GeoJsonReader`, which says why a file cannot be drawn.
 
 ## Fonts
 
-The design uses **Montserrat** (headings) and **Jost** (body); neither ships with
-Windows, so the app currently falls back to Segoe UI. To use the real faces, drop
-the `.ttf` files in `FeBuddy/FeBuddy.Wpf/Assets/Fonts/` and change the two
-`FontFamily` values at the top of `FeBuddy/FeBuddy.Wpf/Theme/Typography.xaml` to e.g.
-`pack://application:,,,/Assets/Fonts/#Montserrat`.
+Everything is set in **Segoe UI**, Windows' own UI font: headings and the FE-BUDDY name
+in the title bar (`Font.Display`, bold there) as well as body text (`Font.Body`). It ships
+with Windows, so nothing is bundled and every PC shows the same letters. The theme was
+first drawn for Montserrat and Jost, but FE-Buddy always fell back to Segoe UI, and that
+look was kept. Code and paths use `Font.Mono` (Cascadia Mono, then Consolas). All four
+families are at the top of `FeBuddy/FeBuddy.Wpf/Theme/Typography.xaml`.
 
 ## Run
 

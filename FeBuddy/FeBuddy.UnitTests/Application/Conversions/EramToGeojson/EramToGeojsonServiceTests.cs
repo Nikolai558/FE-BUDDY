@@ -225,7 +225,10 @@ public sealed class EramToGeojsonServiceTests : IDisposable
 		Assert.Equal("BCG 04_Filters 04_Type BARE_Group 1_Object L1_Style none_Thick none_Lines.geojson", Path.GetFileName(path));
 		JsonElement feature = Assert.Single(Features(path));
 		Assert.Equal(["bcg", "filters"], Names(feature));
-		Assert.Contains(result.Warnings, w => w.Contains("CENTER / BARE_1: it has no LineDefaults"));
+		Assert.Contains(
+			"Geomaps.xml: CENTER / BARE_1: it has no LineDefaults. FE-Buddy left the `bcg`, `style` and `thickness` properties blank " +
+			"and therefore, CRC will auto-assign them, which are likely to be `1`, `solid` and `1` respectively.",
+			result.Warnings);
 	}
 
 	// ================= By Filters =================
@@ -371,18 +374,22 @@ public sealed class EramToGeojsonServiceTests : IDisposable
 		Assert.False(Has(features[2], "feb.lineObjectId"));
 	}
 
+	/// <summary>An element's own value CRC can't draw is left out, and its object's value shows through instead of CRC's.</summary>
 	[Fact]
-	public void an_element_s_own_bad_value_is_left_out_with_a_warning()
+	public void an_element_s_own_bad_value_is_left_out_and_its_defaults_value_used()
 	{
-		WriteGeomaps(Object("RUNWAY", 2, LineDefaults + TextDefaults +
+		WriteGeomaps(Object("RUNWAY", 2, LineDefaults + TextDefaults.Replace("<FontSize>1</FontSize>", "<FontSize>3</FontSize>", StringComparison.Ordinal) +
 			Text("40000000N", "100000000W", "24L", "<FontSize>9</FontSize><XPixelOffset>9</XPixelOffset>")));
 
 		SourceFilesConversionResult result = EramToGeojsonService.Run(Settings(("OutputLayout", "Raw")));
 		JsonElement feature = Assert.Single(Features(Assert.Single(result.GeojsonFilesWritten)));
 
-		Assert.False(Has(feature, "size"));
+		Assert.Equal(3, Properties(feature).GetProperty("size").GetInt32());
 		Assert.Equal(9, Properties(feature).GetProperty("xOffset").GetInt32());
-		Assert.Contains(result.Warnings, w => w.Contains("a Text element's Size=\"9\" is not a value CRC can draw and was left out"));
+		Assert.Contains(
+			"Geomaps.xml: CENTER / RUNWAY_2: a Text element's size `9` is not a value CRC can draw. " +
+			"FE-Buddy left it out, so the element takes the size its defaults give instead.",
+			result.Warnings);
 	}
 
 	// ================= defaults source =================
@@ -396,8 +403,59 @@ public sealed class EramToGeojsonServiceTests : IDisposable
 
 		SourceFilesConversionResult result = EramToGeojsonService.Run(Settings());
 
-		Assert.Contains(result.Warnings, w => w.Contains("Geomaps.xml: CENTER / PARTIAL_1: its LineDefaults have no Style"));
+		Assert.Equal(
+			"Geomaps.xml: CENTER / PARTIAL_1: its LineDefaults have no style. FE-Buddy left the `style` property blank and therefore, " +
+			"CRC will auto-assign a style to it which is likely to be `solid`.",
+			Assert.Single(result.Warnings));
 		Assert.Equal("BCG 01_Filters 01_Type PARTIAL_Group 1_Object ZOB3NM_Style none_Thick 1_Lines.geojson", Path.GetFileName(result.GeojsonFilesWritten[0]));
+	}
+
+	/// <summary>The warnings ZOB's GeoMaps give: a symbol style CRC has no match for, and SAA defaults with no BCG.</summary>
+	[Fact]
+	public void from_the_xml_a_default_crc_cannot_draw_or_does_not_have_says_what_crc_draws_instead()
+	{
+		WriteGeomaps(
+			Object("DME", 3, SymbolDefaults.Replace("<SymbolStyle>VOR</SymbolStyle>", "<SymbolStyle>DME</SymbolStyle>", StringComparison.Ordinal) + SymbolA),
+			Object("SAA", 8, TextDefaults.Replace("<BCGGroup>3</BCGGroup>", string.Empty, StringComparison.Ordinal) + TextA));
+
+		SourceFilesConversionResult result = EramToGeojsonService.Run(Settings(("OutputLayout", "Raw")));
+
+		Assert.Equal(
+			[
+				"Geomaps.xml: CENTER / DME_3: its SymbolDefaults (symbol style `DME`) are not values CRC can draw. " +
+				"FE-Buddy left the `style` property blank and therefore, CRC will auto-assign a style to it which is likely to be `vor`.",
+				"Geomaps.xml: CENTER / SAA_8: its TextDefaults have no BCG. " +
+				"FE-Buddy left the `bcg` property blank and therefore, CRC will auto-assign a BCG to it which is likely to be `1`.",
+			],
+			result.Warnings);
+
+		// What the warning says: every other value is carried, the one CRC can't use is not.
+		JsonElement[] features = Features(Assert.Single(result.GeojsonFilesWritten));
+		Assert.Equal(["bcg", "filters", "size"], Names(features[0]));
+		Assert.Equal(["text", "filters", "size", "underline", "xOffset", "yOffset"], Names(features[1]));
+	}
+
+	[Theory]
+	[InlineData(
+		"<DefaultSymbolProperties><SymbolStyle>DME</SymbolStyle><FontSize>9</FontSize><GeoSymbolFilters><FilterGroup>2</FilterGroup></GeoSymbolFilters></DefaultSymbolProperties>",
+		"its SymbolDefaults have no BCG, and CRC can't draw their symbol style `DME` and size `9`. FE-Buddy left the `bcg`, `style` and `size` " +
+		"properties blank and therefore, CRC will auto-assign them, which are likely to be `1`, `vor` and `1` respectively.")]
+	[InlineData(
+		"<DefaultSymbolProperties><SymbolStyle>VOR</SymbolStyle><BCGGroup>2</BCGGroup><FontSize>1</FontSize><GeoSymbolFilters><FilterGroup>41</FilterGroup></GeoSymbolFilters></DefaultSymbolProperties>",
+		"its SymbolDefaults (symbol filters `41`) are not values CRC can draw. FE-Buddy left the `filters` property blank, and CRC can't " +
+		"auto-assign filters, so symbols that don't set their own won't show.")]
+	[InlineData(
+		"<DefaultSymbolProperties><SymbolStyle>VOR</SymbolStyle><BCGGroup>0</BCGGroup><FontSize>1</FontSize><GeoSymbolFilters><FilterGroup>41</FilterGroup></GeoSymbolFilters></DefaultSymbolProperties>",
+		"its SymbolDefaults (symbol BCG `0`, filters `41`) are not values CRC can draw. FE-Buddy left the `bcg` property blank and therefore, " +
+		"CRC will auto-assign a BCG to it which is likely to be `1`. FE-Buddy left the `filters` property blank, and CRC can't auto-assign " +
+		"filters, so symbols that don't set their own won't show.")]
+	public void the_warning_names_each_gap_and_what_crc_does_with_it(string defaults, string expected)
+	{
+		WriteGeomaps(Object("MIXED", 2, defaults + SymbolA));
+
+		SourceFilesConversionResult result = EramToGeojsonService.Run(Settings(("OutputLayout", "Raw")));
+
+		Assert.Equal($"Geomaps.xml: CENTER / MIXED_2: {expected}", Assert.Single(result.Warnings));
 	}
 
 	[Fact]
@@ -421,7 +479,25 @@ public sealed class EramToGeojsonServiceTests : IDisposable
 				"BCG 11_Filters 11_Type SAA_Group 4_Object R0001_Style ShortDashed_Thick 1_Lines.geojson",
 			],
 			result.GeojsonFilesWritten.Select(Path.GetFileName));
-		Assert.Contains(result.Messages, m => m.Level == LogLevel.Info && m.Text.Contains("CENTER / SAA_4: its LineDefaults have no Bcg, Filters"));
+		Assert.Contains(result.Messages, m => m.Level == LogLevel.Info
+			&& m.Text == "Geomaps.xml: CENTER / SAA_4: its LineDefaults have no BCG or filters. The CRC Line defaults set on the tab fill them in.");
+		Assert.Empty(result.Warnings);
+	}
+
+	/// <summary>A default CRC can't draw is a gap too: the card fills it rather than leaving it to CRC.</summary>
+	[Fact]
+	public void from_the_xml_then_the_card_replaces_a_default_crc_cannot_draw()
+	{
+		WriteGeomaps(Object("DME", 3,
+			SymbolDefaults.Replace("<SymbolStyle>VOR</SymbolStyle>", "<SymbolStyle>DME</SymbolStyle>", StringComparison.Ordinal) + SymbolA));
+
+		SourceFilesConversionResult result = EramToGeojsonService.Run(CardSettings("XmlThenCard", ("OutputLayout", "Raw")));
+
+		JsonElement feature = Assert.Single(Features(Assert.Single(result.GeojsonFilesWritten)));
+		Assert.Equal("ndb", Properties(feature).GetProperty("style").GetString());
+		Assert.Equal(2, Properties(feature).GetProperty("bcg").GetInt32());
+		Assert.Contains(result.Messages, m => m.Level == LogLevel.Info
+			&& m.Text == "Geomaps.xml: CENTER / DME_3: its SymbolDefaults (symbol style `DME`) are not values CRC can draw. The CRC Symbol defaults set on the tab fill it in.");
 		Assert.Empty(result.Warnings);
 	}
 

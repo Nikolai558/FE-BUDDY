@@ -13,7 +13,7 @@ public abstract record ConversionSettings
 	/// <summary>Whether to put the output inside a <c>FE-Buddy_Output</c> folder. Default <see langword="true"/>.</summary>
 	public bool AddFeBuddyOutputFolder { get; init; } = true;
 
-	/// <summary>Decimal places kept per coordinate, 0-15. Default 6.</summary>
+	/// <summary>Decimal places kept per coordinate, 1-15, or 0 to write them unrounded. Default 6.</summary>
 	public int CoordinatePrecision { get; init; } = 6;
 
 	/// <summary>

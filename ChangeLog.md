@@ -31,6 +31,10 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
   rest of the width. The web page, the Markdown and the app's page all match, with reworded notes
   and descriptions, a link to FE-Buddy at the top, no About section, and *Page updated on …* at
   the bottom.
+- The guide is easier to scan: short points in bold with bullets under them, each example command
+  on a line of its own, what each In-Scope Reference card shows as a list, and procedure names
+  explained one rule to a bullet. The web page's own source is indented like an outline, so it is
+  easier to edit by hand too.
 
 ---
 

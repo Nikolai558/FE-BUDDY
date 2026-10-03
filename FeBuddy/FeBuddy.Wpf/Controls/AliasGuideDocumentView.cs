@@ -23,9 +23,10 @@ namespace FeBuddy.Wpf.Controls;
 /// <para>
 /// Built in code from the guide's blocks, like <see cref="MarkdownView"/>, and themed through
 /// resource references only: a part takes <c>Brush.Command.&lt;Kind&gt;</c> and its <c>.Soft</c> fill
-/// from Palette.xaml. In a command's syntax, its examples, the colour key and a table cell that is
-/// just a command, each part is a pill with a <c>.Line</c> edge (dashed when the part is optional);
-/// in running text it is a run on the soft fill instead, which keeps it on the sentence's baseline.
+/// from Palette.xaml. In a command's syntax, its examples, the colour key and a table cell or bullet
+/// that is just a command, each part is a pill with a <c>.Line</c> edge (dashed when the part is
+/// optional); in running text it is a run on the soft fill instead, which keeps it on the
+/// sentence's baseline. Lists nest as the guide nests them, each level indented under its bullet.
 /// </para>
 /// <para>
 /// A command table has the web page's Syntax, Description and Example columns
@@ -47,6 +48,9 @@ public sealed class AliasGuideDocumentView : Decorator
 
 	/// <summary>The font size of a command's syntax, at the head of its row.</summary>
 	private const double SyntaxSize = 13.5;
+
+	/// <summary>A bullet at each depth of a list, the last for any deeper.</summary>
+	private static readonly string[] Bullets = ["•", "◦", "▪"];
 
 	/// <summary>The guide to show.</summary>
 	public AliasGuideDocument? Document
@@ -99,7 +103,7 @@ public sealed class AliasGuideDocumentView : Decorator
 			FrameworkElement element = block switch
 			{
 				GuideHeading heading => Heading(heading.Text),
-				GuideList list => BulletList(list),
+				GuideList list => BulletList(list.Items, "Text.Prose"),
 				GuideCommandTable commands => CommandTable(commands),
 				GuideTable table => Table(table),
 				GuideParagraph paragraph => Prose(paragraph.Text, "Text.Prose"),
@@ -120,7 +124,7 @@ public sealed class AliasGuideDocumentView : Decorator
 	}
 
 	/// <summary>"How to read this guide": what plain text, a pill and a dashed pill mean, the colour key, then the notes.</summary>
-	private static Card NotationCard(IReadOnlyList<string> notes)
+	private static Card NotationCard(IReadOnlyList<GuideListItem> notes)
 	{
 		StackPanel body = new();
 
@@ -145,12 +149,9 @@ public sealed class AliasGuideDocumentView : Decorator
 		body.Children.Add(key);
 		body.Children.Add(LegendRow(Pill(new CommandPart("Dashed", CommandPartKind.Page, true, true), CommandSize), AliasGuideContent.OptionalLegend));
 
-		foreach (string note in notes)
-		{
-			TextBlock text = Prose(note, "Text.Prose");
-			text.Margin = new Thickness(0, 10, 0, 0);
-			body.Children.Add(text);
-		}
+		StackPanel list = BulletList(notes, "Text.Prose");
+		list.Margin = new Thickness(0, 12, 0, 0);
+		body.Children.Add(list);
 
 		return new Card { Header = AliasGuideContent.NotationTitle, Content = body };
 	}
@@ -178,21 +179,36 @@ public sealed class AliasGuideDocumentView : Decorator
 		return heading;
 	}
 
-	private static StackPanel BulletList(GuideList list)
+	/// <summary>
+	/// Bullets, each one's own bullets indented under it - •, then ◦, then ▪, as the web page marks
+	/// them. A bullet that is just a command shows it as pills, centred on its bullet.
+	/// </summary>
+	private static StackPanel BulletList(IReadOnlyList<GuideListItem> items, string styleKey, int depth = 0)
 	{
 		StackPanel panel = new();
 
-		foreach (string item in list.Items)
+		foreach (GuideListItem item in items)
 		{
 			DockPanel row = new() { Margin = new Thickness(0, 0, 0, 6) };
+			FrameworkElement text = TextOrCommand(item.Text, styleKey);
 
-			TextBlock bullet = new() { Text = "•", Margin = new Thickness(2, 0, 10, 0) };
-			bullet.SetResourceReference(StyleProperty, "Text.Body");
+			TextBlock bullet = new() { Text = Bullets[Math.Min(depth, Bullets.Length - 1)], Margin = new Thickness(2, 0, 10, 0) };
+			bullet.SetResourceReference(StyleProperty, styleKey);
 			bullet.SetResourceReference(TextBlock.ForegroundProperty, "Brush.Text.Tertiary");
+			bullet.VerticalAlignment = text is TextBlock || item.Items.Count > 0 ? VerticalAlignment.Top : VerticalAlignment.Center;
 			DockPanel.SetDock(bullet, Dock.Left);
 			row.Children.Add(bullet);
 
-			row.Children.Add(Prose(item, "Text.Prose"));
+			StackPanel content = new() { Children = { text } };
+
+			if (item.Items.Count > 0)
+			{
+				StackPanel nested = BulletList(item.Items, styleKey, depth + 1);
+				nested.Margin = new Thickness(0, 6, 0, 0);
+				content.Children.Add(nested);
+			}
+
+			row.Children.Add(content);
 			panel.Children.Add(row);
 		}
 
@@ -201,7 +217,8 @@ public sealed class AliasGuideDocumentView : Decorator
 
 	/// <summary>
 	/// The web page's command table: a heading row, then a row per command - its syntax, a line per
-	/// line of it; its description and notes; and its examples, one to a line.
+	/// line of it; its description, its details as bullets, and its notes; and its examples, one to
+	/// a line.
 	/// </summary>
 	private static CommandTablePanel CommandTable(GuideCommandTable table)
 	{
@@ -218,6 +235,13 @@ public sealed class AliasGuideDocumentView : Decorator
 
 			StackPanel description = new();
 			description.Children.Add(Prose(command.Description, "Text.Body"));
+
+			if (command.Details.Count > 0)
+			{
+				StackPanel details = BulletList([.. command.Details.Select(detail => new GuideListItem(detail, []))], "Text.Body");
+				details.Margin = new Thickness(0, 6, 0, 0);
+				description.Children.Add(details);
+			}
 
 			if (command.Notes.Count > 0)
 			{
@@ -267,17 +291,20 @@ public sealed class AliasGuideDocumentView : Decorator
 		foreach (IReadOnlyList<string> row in table.Rows)
 		{
 			panel.Children.Add(Divider(new Thickness(0)));
-			panel.Children.Add(TableRow(table.Headers.Count, [.. row.Select(Cell)]));
+			panel.Children.Add(TableRow(table.Headers.Count, [.. row.Select(cell => TextOrCommand(cell, "Text.Body"))]));
 		}
 
 		return panel;
 	}
 
-	/// <summary>A table cell: one that is just a command shows it as pills, like a command's examples; anything else is text.</summary>
-	private static UIElement Cell(string text) =>
+	/// <summary>
+	/// A table cell or a bullet: one that is just a command shows it as pills, like a command's
+	/// examples; anything else is inline text.
+	/// </summary>
+	private static FrameworkElement TextOrCommand(string text, string styleKey) =>
 		GuideInline.Parse(text) is [{ Style: InlineStyle.Code } only] && only.Parts.Any(part => part.Kind != CommandPartKind.Typed)
 			? CommandLine(only.Parts, CommandSize)
-			: Prose(text, "Text.Body");
+			: Prose(text, styleKey);
 
 	private static TextBlock HeaderCell(string header)
 	{

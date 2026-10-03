@@ -20,7 +20,7 @@ public sealed class AliasGuideViewModelTests
 
 		Assert.Equal(exported.Title, page.Document.Title);
 		Assert.Equal(exported.Lead, page.Document.Lead);
-		Assert.Equal(exported.ReadingNotes, page.Document.ReadingNotes);
+		Assert.Equal(exported.ReadingNotes.Select(note => note.Text), page.Document.ReadingNotes.Select(note => note.Text));
 		Assert.Equal(exported.Sections.Select(section => section.Title), page.Document.Sections.Select(section => section.Title));
 		Assert.Contains("every AIRAC cycle", page.Document.Lead, StringComparison.Ordinal);
 	}

@@ -13,14 +13,14 @@ namespace FeBuddy.Core.Application.AliasGuide.Models;
 /// <param name="Title">The guide's title.</param>
 /// <param name="Lead">The line under the title.</param>
 /// <param name="ReadingNotes">
-/// The notes every format adds to its own "How to read this guide" section, after explaining how
-/// it shows the parts to type and the parts to replace.
+/// The bullets every format adds to its own "How to read this guide" section, after explaining
+/// how it shows the parts to type and the parts to replace.
 /// </param>
 /// <param name="Sections">The command sections, in order.</param>
 public sealed record AliasGuideDocument(
 	string Title,
 	string Lead,
-	IReadOnlyList<string> ReadingNotes,
+	IReadOnlyList<GuideListItem> ReadingNotes,
 	IReadOnlyList<GuideSection> Sections);
 
 /// <summary>One section of the guide, with its own heading and link target.</summary>
@@ -41,9 +41,17 @@ public sealed record GuideParagraph(string Text) : GuideBlock;
 /// <param name="Text">The heading's plain text.</param>
 public sealed record GuideHeading(string Text) : GuideBlock;
 
-/// <summary>A bulleted list.</summary>
-/// <param name="Items">Each item's inline text.</param>
-public sealed record GuideList(IReadOnlyList<string> Items) : GuideBlock;
+/// <summary>A bulleted list, whose bullets can have bullets of their own.</summary>
+/// <param name="Items">The top-level bullets.</param>
+public sealed record GuideList(IReadOnlyList<GuideListItem> Items) : GuideBlock;
+
+/// <summary>
+/// One bullet: a short point, then the bullets under it - often a lead-in such as "ILS OR LOC RWY
+/// 22L at DTW is both:" with each command on a bullet of its own.
+/// </summary>
+/// <param name="Text">The bullet's inline text.</param>
+/// <param name="Items">The bullets nested under it; often none.</param>
+public sealed record GuideListItem(string Text, IReadOnlyList<GuideListItem> Items);
 
 /// <summary>A table of commands: syntax, description and examples, one row per command.</summary>
 /// <param name="Commands">The rows.</param>
@@ -59,10 +67,16 @@ public sealed record GuideTable(IReadOnlyList<string> Headers, IReadOnlyList<IRe
 /// The command's pattern, in command markup, one string per line it is shown on: <c>.apt</c> then
 /// <c>[a:FAA or ICAO airport ID]</c>. Nothing breaks a line anywhere else.
 /// </param>
-/// <param name="Description">What the command does, as inline text.</param>
+/// <param name="Description">What the command does, as inline text, e.g. <c>Shows the airport's card:</c>.</param>
+/// <param name="Details">What the description lists, one bullet each, as inline text; often none.</param>
 /// <param name="Notes">Short notes shown under the description, as inline text; often none.</param>
 /// <param name="Examples">Real commands, in command markup, each on a line of its own, e.g. <c>.apt{a:DTW}</c>.</param>
-public sealed record GuideCommand(IReadOnlyList<string> Syntax, string Description, IReadOnlyList<string> Notes, IReadOnlyList<string> Examples);
+public sealed record GuideCommand(
+	IReadOnlyList<string> Syntax,
+	string Description,
+	IReadOnlyList<string> Details,
+	IReadOnlyList<string> Notes,
+	IReadOnlyList<string> Examples);
 
 /// <summary>What a part of a command stands for, which sets its colour in the web page.</summary>
 public enum CommandPartKind

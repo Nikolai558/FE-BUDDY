@@ -38,6 +38,13 @@ public sealed class AliasGuideWriterTests : IDisposable
 
 	private static string[] Lines(string text) => text.Split(Environment.NewLine);
 
+	/// <summary>The lines without their indent, for checking what the web page says rather than how its source is laid out.</summary>
+	private static string[] Trimmed(string text) => [.. Lines(text).Select(line => line.Trim())];
+
+	/// <summary>The lines from the first that is <paramref name="first"/> (trimmed), as many as <paramref name="count"/>.</summary>
+	private static string[] LinesFrom(string[] lines, string first, int count) =>
+		[.. lines.SkipWhile(line => line.Trim() != first).Take(count)];
+
 	private string TempFile(string name) => Path.Combine(Folder(), name);
 
 	private string Folder()
@@ -158,30 +165,78 @@ public sealed class AliasGuideWriterTests : IDisposable
 	[Fact]
 	public void a_syntax_breaks_only_where_the_guide_says()
 	{
-		string html = Html();
+		string[] lines = Trimmed(Html());
 
 		Assert.Contains(
 			"<td class=\"syntax\"><code class=\"cmd\">.apt<br><span class=\"part k-airport\" title=\"Airport ID\">FAA or ICAO airport ID</span></code></td>",
-			html);
+			lines);
 		Assert.Contains(
-			"<td class=\"syntax\"><code class=\"cmd\">.<span class=\"part k-airport\" title=\"Airport ID\">airport ID</span>"
+			"<td class=\"syntax\"><code class=\"cmd\">.<span class=\"part k-airport\" title=\"Airport ID\">airport ID</span><br>"
 			+ "<span class=\"part k-ident\" title=\"ID or name\">arrival</span><br>f</code></td>",
-			html);
+			lines);
 	}
 
 	[Fact]
-	public void each_example_is_a_command_of_its_own_in_the_examples_cell()
+	public void each_example_is_a_command_on_a_line_of_its_own_in_the_examples_cell()
 	{
-		Assert.Contains(
-			"<td class=\"examples\"><code class=\"cmd\">.apt<span class=\"part k-airport\" title=\"Airport ID\">DTW</span></code>"
-			+ "<code class=\"cmd\">.apt<span class=\"part k-airport\" title=\"Airport ID\">KDTW</span></code></td>",
-			Html());
+		Assert.Equal(
+			[
+				"<td class=\"examples\">",
+				"<code class=\"cmd\">.apt<span class=\"part k-airport\" title=\"Airport ID\">DTW</span></code>",
+				"<code class=\"cmd\">.apt<span class=\"part k-airport\" title=\"Airport ID\">KDTW</span></code>",
+				"</td>",
+			],
+			LinesFrom(Trimmed(Html()), "<td class=\"examples\">", 4));
+	}
+
+	[Fact]
+	public void a_commands_details_are_bullets_under_its_description()
+	{
+		Assert.Equal(
+			[
+				"<p>Shows the airport&#39;s card:</p>",
+				"<ul>",
+				"<li>FAA and ICAO IDs, name, tower type and ARTCC</li>",
+				"<li>Longest runway, elevation and traffic pattern altitude</li>",
+				"<li>FSS, CTAF and weather frequency</li>",
+				"<li>Attended hours (for towered airspace only)</li>",
+				"<li>Class of airspace, with the hours it is in effect</li>",
+				"</ul>",
+			],
+			LinesFrom(Trimmed(Html()), "<p>Shows the airport&#39;s card:</p>", 8));
+	}
+
+	/// <summary>A bullet with bullets of its own has its text on a line, then its list under it, each level two spaces in.</summary>
+	[Fact]
+	public void a_nested_list_is_nested_lists_its_source_indented_like_an_outline()
+	{
+		string[] lines = LinesFrom(Lines(Html()), "<strong>One command per approach</strong>", 12);
+		int indent = lines[0].Length - lines[0].TrimStart().Length;
+
+		Assert.Equal(
+			[
+				"<strong>One command per approach</strong>",
+				"<ul>",
+				"  <li>",
+				"    A chart for more than one approach has a command for each:",
+				"    <ul>",
+				"      <li>",
+				"        ILS OR LOC RWY 22L at DTW is both:",
+				"        <ul>",
+				"          <li><code class=\"cmd\">.<span class=\"part k-airport\" title=\"Airport ID\">dtw</span><span class=\"part k-type\" title=\"Approach type\">I</span><span class=\"part k-runway\" title=\"Runway\">22L</span>c</code></li>",
+				"          <li><code class=\"cmd\">.<span class=\"part k-airport\" title=\"Airport ID\">dtw</span><span class=\"part k-type\" title=\"Approach type\">L</span><span class=\"part k-runway\" title=\"Runway\">22L</span>c</code></li>",
+				"        </ul>",
+				"      </li>",
+			],
+			lines.Select(line => line[indent..]));
 	}
 
 	[Fact]
 	public void a_line_break_in_a_paragraph_is_a_br()
 	{
-		Assert.Contains("<p><strong>Procedure names.</strong><br>A departure goes by", Html());
+		Assert.Contains(
+			"<p>FE-Buddy uses the eight approach types in common use across the FAA.<br>A <code>/DME</code> approach adds",
+			Html());
 	}
 
 	[Fact]
@@ -189,7 +244,7 @@ public sealed class AliasGuideWriterTests : IDisposable
 	{
 		string html = Html();
 
-		Assert.Contains("<code>DOTSS2.DOTSS</code>", html);
+		Assert.Contains("<code>ROG4.RZC</code>", html);
 		Assert.Contains("<code>AALAN.BLAID2</code>", html);
 	}
 
@@ -198,12 +253,11 @@ public sealed class AliasGuideWriterTests : IDisposable
 	{
 		const string command =
 			"<code class=\"cmd\">."
-			+ "<span class=\"part k-airport\" title=\"Airport ID\">dtw</span>"
-			+ "<span class=\"part k-type\" title=\"Approach type\">I</span>"
-			+ "<span class=\"part k-runway\" title=\"Runway\">22L</span>c</code>";
+			+ "<span class=\"part k-airport\" title=\"Airport ID\">anc</span>"
+			+ "<span class=\"part k-ident\" title=\"ID or name\">TURNAGAIN</span>c</code>";
 
-		// "at DTW is" puts it in the sentence, not the Example column.
-		Assert.Contains("at DTW is " + command, Html());
+		// "at ANC is" puts it in the sentence, not the Example column.
+		Assert.Contains("at ANC is " + command, Html());
 	}
 
 	[Fact]
@@ -231,7 +285,7 @@ public sealed class AliasGuideWriterTests : IDisposable
 		string html = Html();
 
 		Assert.Contains("Shows the airport&#39;s card", html);
-		Assert.Contains("Commands are not case-sensitive: &quot;<code class=\"cmd\">", html);
+		Assert.Contains("Only a GPS approach with no &quot;RNAV&quot; in its name", html);
 	}
 
 	// ---- the Markdown ----
@@ -281,8 +335,17 @@ public sealed class AliasGuideWriterTests : IDisposable
 		string markdown = Markdown();
 
 		Assert.Contains("| `.apt`<br>`<FAA or ICAO airport ID>` |", markdown);
-		Assert.Contains("| `.<airport ID><arrival>`<br>`f` |", markdown);
+		Assert.Contains("| `.<airport ID>`<br>`<arrival>`<br>`f` |", markdown);
 		Assert.Contains("`.aptDTW`<br>`.aptKDTW`", markdown);
+	}
+
+	[Fact]
+	public void a_commands_details_follow_its_description_each_after_a_bullet()
+	{
+		Assert.Contains(
+			"| Shows the NAVAID's card:<br>• ID, name, type and frequency<br>• The ARTCCs it is in, for high and low altitude airspace"
+			+ "<br>*When entering the name, leave out spaces and special characters.*",
+			Markdown());
 	}
 
 	[Fact]
@@ -297,7 +360,21 @@ public sealed class AliasGuideWriterTests : IDisposable
 	[Fact]
 	public void a_line_break_in_a_markdown_paragraph_is_a_br()
 	{
-		Assert.Contains(Lines(Markdown()), line => line.StartsWith("**Procedure names.**<br>A departure goes by", StringComparison.Ordinal));
+		Assert.Contains(
+			Lines(Markdown()),
+			line => line.StartsWith("FE-Buddy uses the eight approach types in common use across the FAA.<br>A `/DME` approach adds", StringComparison.Ordinal));
+	}
+
+	/// <summary>Data Display's procedure names end their example in its <c>f</c>, Chart Recall's in its <c>c</c>.</summary>
+	[Fact]
+	public void each_sections_procedure_names_end_in_that_sections_own_command()
+	{
+		string[] lines = Lines(Markdown());
+		const string prefix = "- A chart with no computer code is spelled out in full instead";
+
+		Assert.Equal(
+			["`.ancTURNAGAINf`.", "`.ancTURNAGAINc`."],
+			lines.Where(line => line.StartsWith(prefix, StringComparison.Ordinal)).Select(line => line[(line.LastIndexOf(' ') + 1)..]));
 	}
 
 	[Fact]
@@ -318,22 +395,38 @@ public sealed class AliasGuideWriterTests : IDisposable
 	}
 
 	[Fact]
-	public void a_list_is_markdown_bullets()
+	public void a_nested_list_is_markdown_bullets_each_level_two_spaces_in()
 	{
-		string[] lines = Lines(Markdown());
-
-		Assert.Contains(lines, line => line.StartsWith("- **One command per approach.**", StringComparison.Ordinal));
+		Assert.Equal(
+			[
+				"- **One command per approach**",
+				"  - A chart for more than one approach has a command for each:",
+				"    - ILS OR LOC RWY 22L at DTW is both:",
+				"      - `.dtwI22Lc`",
+				"      - `.dtwL22Lc`",
+				"- **Variant letters** (X, Y, Z...)",
+			],
+			LinesFrom(Lines(Markdown()), "- **One command per approach**", 6));
 	}
 
 	[Fact]
 	public void how_to_read_this_guide_explains_the_markdown_brackets_then_the_shared_notes()
 	{
-		string[] lines = Lines(Markdown());
+		string[] lines = LinesFrom(Lines(Markdown()), "## How to read this guide", 12);
 
-		Assert.Contains("- Plain text, typed exactly as shown. For example: \"`.apt`\"", lines);
-		Assert.Contains(lines, line => line.StartsWith("- `<airport ID>` Angle brackets:", StringComparison.Ordinal));
-		Assert.Contains(lines, line => line.StartsWith("- `[page]` Square brackets: optional.", StringComparison.Ordinal));
-		Assert.Contains("- Commands are not case-sensitive: \"`.aptdtw`\" works the same as \"`.aptDTW`\".", lines);
+		Assert.Equal("- Plain text, typed exactly as shown. For example: \"`.apt`\"", lines[2]);
+		Assert.StartsWith("- `<airport ID>` Angle brackets:", lines[3], StringComparison.Ordinal);
+		Assert.StartsWith("- `[page]` Square brackets: optional.", lines[4], StringComparison.Ordinal);
+		Assert.Equal(
+			[
+				"- **Commands are not case-sensitive**",
+				"  - These two work the same:",
+				"    - `.aptdtw`",
+				"    - `.aptDTW`",
+				"- **Airport IDs**",
+				"  - Use the FAA ID, not the ICAO ID, unless the command says otherwise. For example, `DTW`, not `KDTW`.",
+			],
+			lines[5..11]);
 	}
 
 	[Fact]

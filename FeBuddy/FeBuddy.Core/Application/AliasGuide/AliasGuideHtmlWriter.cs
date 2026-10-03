@@ -20,8 +20,9 @@ namespace FeBuddy.Core.Application.AliasGuide;
 /// </para>
 /// <para>
 /// Every colour, font and size is a variable at the top of the style sheet, and the comment at the
-/// top of the page says so, so the page is easy to restyle by hand. On a narrow screen a command
-/// table's rows stack; a table still too wide for the screen scrolls sideways.
+/// top of the page says so, so the page is easy to restyle by hand. The page's source is indented
+/// like an outline, a nested list included, so it is just as easy to edit. On a narrow screen a
+/// command table's rows stack; a table still too wide for the screen scrolls sideways.
 /// </para>
 /// </remarks>
 internal static class AliasGuideHtmlWriter
@@ -82,6 +83,7 @@ internal static class AliasGuideHtmlWriter
 		th, td { padding: .7rem .75rem; border-bottom: 1px solid var(--border); vertical-align: top; }
 		tr:last-child td { border-bottom: 0; }
 		td p { margin: 0; }
+		td ul { margin: .35rem 0 0; padding-left: 1.25rem; }
 		/* A command never wraps: Syntax and Example are as wide as their longest line, and the description has the rest. */
 		.commands .syntax, .commands .examples { width: 1%; white-space: nowrap; }
 		.examples code { display: block; margin-bottom: .35rem; }
@@ -138,19 +140,20 @@ internal static class AliasGuideHtmlWriter
 		html.AppendLine("<body>");
 		html.AppendLine("<main>");
 
-		html.AppendLine("<header>");
-		html.AppendLine($"<h1>{Escape(guide.Title)}</h1>");
-		html.AppendLine($"<p class=\"lead\">{Inline(guide.Lead)}</p>");
-		html.AppendLine("</header>");
+		Line(html, 1, "<header>");
+		Line(html, 2, $"<h1>{Escape(guide.Title)}</h1>");
+		Line(html, 2, $"<p class=\"lead\">{Inline(guide.Lead)}</p>");
+		Line(html, 1, "</header>");
 
-		html.AppendLine("<nav aria-label=\"Contents\">");
-		html.AppendLine($"<a href=\"#notation\">{Escape(AliasGuideContent.NotationTitle)}</a>");
+		html.AppendLine();
+		Line(html, 1, "<nav aria-label=\"Contents\">");
+		Line(html, 2, $"<a href=\"#notation\">{Escape(AliasGuideContent.NotationTitle)}</a>");
 		foreach (GuideSection section in guide.Sections)
 		{
-			html.AppendLine($"<a href=\"#{section.Id}\">{Escape(section.Title)}</a>");
+			Line(html, 2, $"<a href=\"#{section.Id}\">{Escape(section.Title)}</a>");
 		}
 
-		html.AppendLine("</nav>");
+		Line(html, 1, "</nav>");
 
 		AppendNotation(html, guide.ReadingNotes);
 
@@ -159,7 +162,8 @@ internal static class AliasGuideHtmlWriter
 			AppendSection(html, section);
 		}
 
-		html.AppendLine($"<footer>{Escape(AliasGuideWriter.Updated(options))}</footer>");
+		html.AppendLine();
+		Line(html, 1, $"<footer>{Escape(AliasGuideWriter.Updated(options))}</footer>");
 		html.AppendLine("</main>");
 		html.AppendLine("</body>");
 		html.AppendLine("</html>");
@@ -167,14 +171,18 @@ internal static class AliasGuideHtmlWriter
 		return html.ToString();
 	}
 
+	/// <summary>One line of the page, indented two spaces a level so its source reads like an outline.</summary>
+	private static void Line(StringBuilder html, int depth, string text) => html.Append(' ', depth * 2).AppendLine(text);
+
 	private static void AppendSection(StringBuilder html, GuideSection section)
 	{
-		html.AppendLine($"<section id=\"{section.Id}\">");
-		html.AppendLine($"<h2>{Escape(section.Title)}</h2>");
+		html.AppendLine();
+		Line(html, 1, $"<section id=\"{section.Id}\">");
+		Line(html, 2, $"<h2>{Escape(section.Title)}</h2>");
 
 		if (section.Intro is { } intro)
 		{
-			html.AppendLine($"<p class=\"intro\">{Inline(intro)}</p>");
+			Line(html, 2, $"<p class=\"intro\">{Inline(intro)}</p>");
 		}
 
 		foreach (GuideBlock block in section.Blocks)
@@ -182,21 +190,15 @@ internal static class AliasGuideHtmlWriter
 			switch (block)
 			{
 				case GuideParagraph paragraph:
-					html.AppendLine($"<p>{Inline(paragraph.Text)}</p>");
+					Line(html, 2, $"<p>{Inline(paragraph.Text)}</p>");
 					break;
 
 				case GuideHeading heading:
-					html.AppendLine($"<h3>{Escape(heading.Text)}</h3>");
+					Line(html, 2, $"<h3>{Escape(heading.Text)}</h3>");
 					break;
 
 				case GuideList list:
-					html.AppendLine("<ul>");
-					foreach (string item in list.Items)
-					{
-						html.AppendLine($"<li>{Inline(item)}</li>");
-					}
-
-					html.AppendLine("</ul>");
+					AppendList(html, 2, list.Items);
 					break;
 
 				case GuideCommandTable commands:
@@ -209,78 +211,115 @@ internal static class AliasGuideHtmlWriter
 			}
 		}
 
-		html.AppendLine("</section>");
+		Line(html, 1, "</section>");
+	}
+
+	/// <summary>
+	/// A bulleted list, each bullet's own bullets nested in it. A bullet with none is one line; one
+	/// with some has its text on a line of its own, then its list.
+	/// </summary>
+	private static void AppendList(StringBuilder html, int depth, IReadOnlyList<GuideListItem> items)
+	{
+		Line(html, depth, "<ul>");
+
+		foreach (GuideListItem item in items)
+		{
+			if (item.Items.Count == 0)
+			{
+				Line(html, depth + 1, $"<li>{Inline(item.Text)}</li>");
+				continue;
+			}
+
+			Line(html, depth + 1, "<li>");
+			Line(html, depth + 2, Inline(item.Text));
+			AppendList(html, depth + 2, item.Items);
+			Line(html, depth + 1, "</li>");
+		}
+
+		Line(html, depth, "</ul>");
 	}
 
 	/// <summary>The "How to read this guide" section: how the page shows each part, the colour key, then the shared notes.</summary>
-	private static void AppendNotation(StringBuilder html, IReadOnlyList<string> notes)
+	private static void AppendNotation(StringBuilder html, IReadOnlyList<GuideListItem> notes)
 	{
-		html.AppendLine("<section id=\"notation\">");
-		html.AppendLine($"<h2>{Escape(AliasGuideContent.NotationTitle)}</h2>");
-		html.AppendLine("<ul class=\"legend\">");
-		html.AppendLine($"<li>{Escape(AliasGuideContent.TypedLegend)} \"<code class=\"cmd\">.apt</code>\"</li>");
-		html.AppendLine($"<li><code class=\"cmd\"><span class=\"part k-ident\">Highlighted</span></code> {Escape(AliasGuideContent.PlaceholderLegend)}");
-		html.AppendLine("<ul class=\"key\">");
+		html.AppendLine();
+		Line(html, 1, "<section id=\"notation\">");
+		Line(html, 2, $"<h2>{Escape(AliasGuideContent.NotationTitle)}</h2>");
+		Line(html, 2, "<ul class=\"legend\">");
+		Line(html, 3, $"<li>{Escape(AliasGuideContent.TypedLegend)} \"<code class=\"cmd\">.apt</code>\"</li>");
+		Line(html, 3, "<li>");
+		Line(html, 4, $"<code class=\"cmd\"><span class=\"part k-ident\">Highlighted</span></code> {Escape(AliasGuideContent.PlaceholderLegend)}");
+		Line(html, 4, "<ul class=\"key\">");
 		foreach (CommandPartKind kind in AliasGuideContent.KeyKinds)
 		{
-			html.AppendLine($"<li><code class=\"cmd\"><span class=\"part {KindClass(kind)}\">{Escape(AliasGuideContent.KindLabel(kind))}</span></code></li>");
+			Line(html, 5, $"<li><code class=\"cmd\"><span class=\"part {KindClass(kind)}\">{Escape(AliasGuideContent.KindLabel(kind))}</span></code></li>");
 		}
 
-		html.AppendLine("</ul></li>");
-		html.AppendLine($"<li><code class=\"cmd\"><span class=\"part k-page opt\">Dashed</span></code> {Escape(AliasGuideContent.OptionalLegend)}</li>");
-		html.AppendLine("</ul>");
-
-		foreach (string note in notes)
-		{
-			html.AppendLine($"<p>{Inline(note)}</p>");
-		}
-
-		html.AppendLine("</section>");
+		Line(html, 4, "</ul>");
+		Line(html, 3, "</li>");
+		Line(html, 3, $"<li><code class=\"cmd\"><span class=\"part k-page opt\">Dashed</span></code> {Escape(AliasGuideContent.OptionalLegend)}</li>");
+		Line(html, 2, "</ul>");
+		AppendList(html, 2, notes);
+		Line(html, 1, "</section>");
 	}
 
+	/// <summary>A command table: per command a row of its syntax, its description (its details and notes under it) and its examples.</summary>
 	private static void AppendCommands(StringBuilder html, GuideCommandTable table)
 	{
-		html.AppendLine("<div class=\"table-wrap\">");
-		html.AppendLine("<table class=\"commands\">");
-		html.AppendLine("<thead><tr><th>Syntax</th><th>Description</th><th>Example</th></tr></thead>");
-		html.AppendLine("<tbody>");
+		Line(html, 2, "<div class=\"table-wrap\">");
+		Line(html, 3, "<table class=\"commands\">");
+		Line(html, 4, "<thead><tr><th>Syntax</th><th>Description</th><th>Example</th></tr></thead>");
+		Line(html, 4, "<tbody>");
 
 		foreach (GuideCommand command in table.Commands)
 		{
-			html.AppendLine("<tr>");
-			html.AppendLine($"<td class=\"syntax\">{Command(command.Syntax)}</td>");
+			Line(html, 5, "<tr>");
+			Line(html, 6, $"<td class=\"syntax\">{Command(command.Syntax)}</td>");
+			Line(html, 6, "<td>");
+			Line(html, 7, $"<p>{Inline(command.Description)}</p>");
 
-			StringBuilder description = new($"<p>{Inline(command.Description)}</p>");
-			foreach (string note in command.Notes)
+			if (command.Details.Count > 0)
 			{
-				description.Append($"<span class=\"note\">{Inline(note)}</span>");
+				AppendList(html, 7, [.. command.Details.Select(detail => new GuideListItem(detail, []))]);
 			}
 
-			html.AppendLine($"<td>{description}</td>");
-			html.AppendLine($"<td class=\"examples\">{string.Concat(command.Examples.Select(example => Command([example])))}</td>");
-			html.AppendLine("</tr>");
+			foreach (string note in command.Notes)
+			{
+				Line(html, 7, $"<span class=\"note\">{Inline(note)}</span>");
+			}
+
+			Line(html, 6, "</td>");
+			Line(html, 6, "<td class=\"examples\">");
+			foreach (string example in command.Examples)
+			{
+				Line(html, 7, Command([example]));
+			}
+
+			Line(html, 6, "</td>");
+			Line(html, 5, "</tr>");
 		}
 
-		html.AppendLine("</tbody>");
-		html.AppendLine("</table>");
-		html.AppendLine("</div>");
+		Line(html, 4, "</tbody>");
+		Line(html, 3, "</table>");
+		Line(html, 2, "</div>");
 	}
 
+	/// <summary>A plain table, a row to a line.</summary>
 	private static void AppendTable(StringBuilder html, GuideTable table)
 	{
-		html.AppendLine("<div class=\"table-wrap\">");
-		html.AppendLine("<table>");
-		html.AppendLine($"<thead><tr>{string.Concat(table.Headers.Select(header => $"<th>{Escape(header)}</th>"))}</tr></thead>");
-		html.AppendLine("<tbody>");
+		Line(html, 2, "<div class=\"table-wrap\">");
+		Line(html, 3, "<table>");
+		Line(html, 4, $"<thead><tr>{string.Concat(table.Headers.Select(header => $"<th>{Escape(header)}</th>"))}</tr></thead>");
+		Line(html, 4, "<tbody>");
 
 		foreach (IReadOnlyList<string> row in table.Rows)
 		{
-			html.AppendLine($"<tr>{string.Concat(row.Select(cell => $"<td>{Inline(cell)}</td>"))}</tr>");
+			Line(html, 5, $"<tr>{string.Concat(row.Select(cell => $"<td>{Inline(cell)}</td>"))}</tr>");
 		}
 
-		html.AppendLine("</tbody>");
-		html.AppendLine("</table>");
-		html.AppendLine("</div>");
+		Line(html, 4, "</tbody>");
+		Line(html, 3, "</table>");
+		Line(html, 2, "</div>");
 	}
 
 	/// <summary>

@@ -11,8 +11,9 @@ namespace FeBuddy.Core.Application.AliasGuide;
 /// <remarks>
 /// Markdown has no colour, so a part the controller replaces is written in the usual command-line
 /// way instead: <c>&lt;airport ID&gt;</c>, or <c>[page]</c> when it is optional. Command tables are
-/// Markdown tables, with a syntax's lines and a cell's notes and examples on lines of their own
-/// (<c>&lt;br&gt;</c>). How wide a column is, and whether it wraps, is up to whatever shows the file.
+/// Markdown tables, with a syntax's lines and a cell's details, notes and examples on lines of their
+/// own (<c>&lt;br&gt;</c>); any other list is a Markdown list, nested as the guide nests it. How wide
+/// a column is, and whether it wraps, is up to whatever shows the file.
 /// </remarks>
 internal static class AliasGuideMarkdownWriter
 {
@@ -84,11 +85,7 @@ internal static class AliasGuideMarkdownWriter
 					break;
 
 				case GuideList list:
-					foreach (string item in list.Items)
-					{
-						markdown.AppendLine($"- {Inline(item)}");
-					}
-
+					AppendList(markdown, list.Items, 0);
 					break;
 
 				case GuideCommandTable commands:
@@ -108,8 +105,18 @@ internal static class AliasGuideMarkdownWriter
 		}
 	}
 
+	/// <summary>A bulleted list, each bullet's own bullets indented two spaces under it.</summary>
+	private static void AppendList(StringBuilder markdown, IReadOnlyList<GuideListItem> items, int depth)
+	{
+		foreach (GuideListItem item in items)
+		{
+			markdown.Append(' ', depth * 2).AppendLine($"- {Inline(item.Text)}");
+			AppendList(markdown, item.Items, depth + 1);
+		}
+	}
+
 	/// <summary>The "How to read this guide" section: how Markdown shows each part, then the shared notes.</summary>
-	private static void AppendNotation(StringBuilder markdown, IReadOnlyList<string> notes)
+	private static void AppendNotation(StringBuilder markdown, IReadOnlyList<GuideListItem> notes)
 	{
 		markdown.AppendLine();
 		markdown.AppendLine($"## {AliasGuideContent.NotationTitle}");
@@ -117,13 +124,13 @@ internal static class AliasGuideMarkdownWriter
 		markdown.AppendLine($"- {AliasGuideContent.TypedLegend} \"`.apt`\"");
 		markdown.AppendLine("- `<airport ID>` Angle brackets: replace them, and what is inside them, with the real value.");
 		markdown.AppendLine("- `[page]` Square brackets: optional. Replace them in the same way, or leave them out.");
-
-		foreach (string note in notes)
-		{
-			markdown.AppendLine($"- {Inline(note)}");
-		}
+		AppendList(markdown, notes, 0);
 	}
 
+	/// <summary>
+	/// A command table. A table cell holds no list, so a description's details follow it on lines
+	/// of their own, each after a bullet (<c>•</c>), and then its notes in italics.
+	/// </summary>
 	private static void AppendCommands(StringBuilder markdown, GuideCommandTable table)
 	{
 		AppendRow(markdown, ["Syntax", "Description", "Example"]);
@@ -131,7 +138,12 @@ internal static class AliasGuideMarkdownWriter
 
 		foreach (GuideCommand command in table.Commands)
 		{
-			IEnumerable<string> description = [Cell(command.Description), .. command.Notes.Select(note => $"*{Cell(note)}*")];
+			IEnumerable<string> description =
+			[
+				Cell(command.Description),
+				.. command.Details.Select(detail => $"• {Cell(detail)}"),
+				.. command.Notes.Select(note => $"*{Cell(note)}*"),
+			];
 
 			AppendRow(markdown,
 			[

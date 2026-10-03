@@ -22,28 +22,15 @@ body:
     id: description
     attributes:
       label: What needs to be done, and why?
-      description: What should be added, reworked, or removed.
-    validations:
-      required: true
-
-  - type: textarea
-    id: steps
-    attributes:
-      label: Steps
-      description: The pieces of work needed to finish this.
       placeholder: |
+        What should be added, reworked, or removed, and why.
+
+        Steps:
         1.
         2.
-        3.
 
-  - type: textarea
-    id: tests
-    attributes:
-      label: Tests needed
-      description: For logic changes, the tests needed to keep FeBuddy.Core's coverage up.
+        Tests needed: (for logic changes, to keep FeBuddy.Core's coverage up)
 
-  - type: textarea
-    id: references
-    attributes:
-      label: References
-      description: Related issues, files, docs, or FAA and vNAS references.
+        References: (related issues, files, docs, or FAA and vNAS references)
+    validations:
+      required: true

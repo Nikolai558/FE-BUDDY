@@ -1,66 +1,144 @@
-# How FE-Buddy works
+# Developer guide
 
-This page explains FE-Buddy's code in plain terms first, then points you to the detailed pages.
-You do not need to know C# to read the first half.
+Start here. This page explains FE-Buddy's code in a few minutes, then how to build, run, test and
+package it. Paths are relative to the repository root; the solution is `FeBuddy/FeBuddy.sln`.
 
-## The short version
+## How it works, in short
 
-Think of FE-Buddy as a small factory with a control panel.
+1. **At launch** FE-Buddy downloads the FAA's NASR data - CSV files of every airport, airway, fix
+   and procedure, published every 28 days - for the previous, current and next AIRAC cycles, and
+   reads it into memory.
+2. **The user picks** sub-services (Airports, Airways, …) on the AIRAC Service screen and sets their
+   options. Each tab turns its options into a flat `key = value` dictionary: the **settings block**.
+3. **The library builds.** For each sub-service it parses the block, turns FAA rows into objects (an
+   airway with its waypoints in order), and writes GeoJSON and alias files. Alias files meant for
+   vNAS are merged, with the facility's own, into one `vNAS_Alias.txt`.
+4. **A result comes back** - files written, warnings, what was skipped and why - and the app shows
+   it on the Review tab.
 
-1. **Raw material comes in.** Every 28 days the FAA publishes a zip of CSV spreadsheets (the
-   *NASR* data): every airport, runway, airway, fix and procedure in the US. At launch, FE-Buddy
-   downloads the zips for three cycles (last, this, next), unpacks them into a cache on disk,
-   and reads every spreadsheet into memory.
-2. **The user fills in an order form.** On the AIRAC Service screen they tick what they want
-   (ARTCC Boundaries, Airports, Airways, Arrivals, Departures, NAVAIDs, Fixes, Procedures,
-   Telephony, Wx Stations, vNAS Alias Upload) and set the options - which files, which styles,
-   which area.
-   Each tab turns its options into a simple list of `key = value` settings, the same format the
-   test harness uses.
-3. **The factory builds.** For each ticked item, the library checks the settings, finds the right
-   rows in the FAA data, and turns them into real objects - an airway with its waypoints in order,
-   an airport with its runways - fixing the FAA's quirks along the way (border markers that are
-   not real waypoints, procedures named by an amendment code, and so on).
-4. **The goods are packaged.** Writers turn those objects into GeoJSON files (map shapes CRC can
-   draw, with the styling CRC needs) and alias files (dot-commands), and put them in the user's
-   output folder. vNAS takes one alias file per facility, so the alias files meant for vNAS are
-   finally merged, under the facility's own custom alias files, into one `vNAS_Alias.txt`.
-5. **A receipt comes back.** Everything that happened - files written, warnings, things skipped
-   and why - is returned to the app, which shows it on the Review tab and in the activity log.
-
-The **library** (`FeBuddy.Core`) is the factory: it has no windows and never asks the user
-anything. The **app** (`FeBuddy.Wpf`) is the control panel: it shows screens, saves settings, and
-hands the library a settings list. Keeping them apart means the same factory can be driven by the
-app, by the console **harness** (`FeBuddy.Harness`) and by the **tests**.
+The library, `FeBuddy.Core`, never shows a window or asks the user anything, so the app, a console
+harness and the tests all drive it the same way.
 
 ## The projects
 
-All in `FeBuddy/FeBuddy.sln`:
+| Project | What it is |
+|---|---|
+| `FeBuddy.Core` | The library: FAA data, the AIRAC sub-services, the file conversions, GeoJSON and alias writing, settings, credentials, logging, updates. |
+| `FeBuddy.Wpf` | The app, `FE-BUDDY.exe`: MVVM screens over Core. |
+| `FeBuddy.Versioning` | The version number and the upgrade rule, shared by Core and the installer (netstandard2.0). |
+| `FeBuddy.Installer` | The MSI (WiX). |
+| `FeBuddy.Installer.CustomActions` | The MSI's code: enforce the upgrade rule, and remove saved credentials on uninstall (net472). |
+| `FeBuddy.Harness` | A console app that runs the services with settings written in code. |
+| `FeBuddy.UnitTests` | xUnit tests for Core, Versioning and the app's view-models and controls. |
 
-| Project | Is | Depends on |
-|---|---|---|
-| `FeBuddy.Core` | The library: FAA data, the AIRAC services, GeoJSON and alias writing, config, logging, updates. | Versioning, NetTopologySuite, CsvHelper |
-| `FeBuddy.Wpf` | The desktop app (`FE-BUDDY.exe`): screens, view-models, the design system. | Core |
-| `FeBuddy.Versioning` | FE-Buddy's version number and the upgrade rule, shared with the installer. netstandard2.0. | Semver |
-| `FeBuddy.Installer` | The MSI (WiX). | the published app, CustomActions |
-| `FeBuddy.Installer.CustomActions` | The MSI's one piece of code: enforce the upgrade rule. net472. | Versioning |
-| `FeBuddy.Harness` | A console app that runs the services with hard-coded settings - handy while developing. | Core |
-| `FeBuddy.UnitTests` | xUnit tests for Core and Versioning, and for the map's logic in the app. | Core, Versioning, Wpf |
+## Branches
+
+| Branch | Holds |
+|---|---|
+| `v3-development` | FE-Buddy 3.x, the default branch. Pull requests go here. |
+| `releases` | What has been released. Only `v3-development` is merged into it - see [Releasing](RELEASING.md). |
+| `development` | FE-Buddy 2.x. 2.9.3 was its last planned release. |
+
+## Build and run
+
+You need Windows and the **.NET 10 SDK**; NuGet restores everything else, including WiX.
+
+```bash
+dotnet build FeBuddy/FeBuddy.sln
+```
+
+```bash
+dotnet run --project FeBuddy/FeBuddy.Wpf
+```
+
+A development build uses `%APPDATA%\FE-Buddy` like an installed copy: `UserConfig.json`, the FAA
+data in `AiracCycles`, and the logs.
+
+**Developer mode** is `DevModeEnabled` in `FeBuddy.Wpf/App.xaml.cs`, a code constant. Turn it on
+for a troubleshooting build: GeoJSON is pretty printed and Debug log entries are kept. Keep it off
+in a release; the release checks fail if it's on.
+
+## The harness
+
+`FeBuddy.Harness` runs services from the console with settings written in code - the quickest loop
+while working on the library.
+
+1. Point `NasrSourceDirectory` in `FeBuddy.Harness/HarnessSettings.cs` at an unzipped NASR CSV set
+   (`https://nfdc.faa.gov/webContent/28DaySub/extra/<date>_CSV.zip`, or a cycle folder copied out of
+   `%APPDATA%\FE-Buddy\AiracCycles`), and set `OutputDirectory`.
+2. Edit the settings blocks there ([Settings reference](Settings-Reference.md)), and comment or
+   uncomment runners in `Program.cs`.
+3. Run it:
+
+```bash
+dotnet run --project FeBuddy/FeBuddy.Harness
+```
+
+## Checks before you push
+
+```bash
+dotnet build FeBuddy/FeBuddy.sln
+```
+
+```bash
+dotnet format whitespace FeBuddy/FeBuddy.sln --verify-no-changes
+```
+
+```bash
+dotnet format style FeBuddy/FeBuddy.sln --severity info --verify-no-changes
+```
+
+```bash
+./FeBuddy/coverage.ps1 -MinimumLineCoverage 95 -MinimumBranchCoverage 90
+```
+
+- **Zero warnings.** Every public member needs XML docs; a missing one is a warning.
+- **The format checks report no changes.** One `.editorconfig` (`FeBuddy/.editorconfig`) covers
+  every project: tabs, file-scoped namespaces, `_camelCase` private fields, snake_case test names.
+- **Coverage** of `FeBuddy.Core` and `FeBuddy.Versioning` stays at 95% of lines and 90% of
+  branches - CI fails below that. `-Open` opens the report, which shows every uncovered line.
+- **UTF-8 without a byte-order mark.** A test fails on any file that has one (Visual Studio sometimes
+  adds one to a `.csproj`).
+
+`dotnet test FeBuddy/FeBuddy.UnitTests` runs the tests alone. The Credential Manager tests are
+skipped in a session with no Windows sign-in behind it, such as some build agents.
+
+## Building the installer
+
+```bash
+./FeBuddy/build.ps1
+```
+
+(or double-click `FeBuddy/build.cmd`). It publishes the app self-contained for win-x64, builds the
+MSI and copies it to `FeBuddy/releases/FE-BUDDY-Setup.msi`. It also advances
+`FeBuddy/FeBuddy.Installer/installer-version-counter.json`: discard that change, since only the
+release workflow commits it ([why](VERSIONING.md#the-msis-own-version-number)).
+
+## Continuous integration
+
+`.github/workflows/ci.yml` runs on pushes and pull requests to `v3-development` and pull requests
+into `releases`: **Build**, **Test** (the coverage gate) and **Installer** (the MSI, kept a day for
+testing). CodeQL runs separately, on pull requests and pushes to both branches, and weekly. A pull
+request into `v3-development` that changes only `.md` files outside `FeBuddy/` skips Build, Test
+and Installer - except the root `News.md`, which is built into the app.
+
+## Odds and ends
+
+- **`DEV-CleanBuild.bat`** (repository root) empties every project's `bin\` folder, for when a build
+  gets confused.
+- **News** is `News.md` at the repository root (its format is at the top of the file); the app reads
+  it from `v3-development`. `FeBuddy/FeBuddy.Core/News.md` is not News: it is a final notice for
+  3.0.0-alpha.1, which reads that path.
+- **A change-log entry** goes in `ChangeLog.md` with every change a user would notice - see
+  [Releasing](RELEASING.md#writing-a-change-log-entry).
 
 ## Where next
 
-| To... | Read |
+| To… | Read |
 |---|---|
-| build, run and test it | [Getting started](Getting-Started.md) |
-| see the detailed picture (launch, the data pipeline, a run end to end, design decisions) | [Architecture](Architecture.md) |
-| find or add code in the library | [FeBuddy.Core structure](FeBuddy.Core-Structure.md) |
-| find or add code in the app | [FeBuddy.Wpf](FeBuddy.Wpf/README.md) |
-| know every settings key a sub-service reads | [Settings blocks](Settings-Blocks.md) |
-| know every saved setting | [UserConfig.json reference](UserConfig-Reference.md) |
-| use a saved password or token in a feature | [Credentials](Credentials.md) |
-| cut a release | [Release checklist](Release-Checklist.md) (the steps), [Releasing](RELEASING.md) (the details), then [Versioning](VERSIONING.md) for the numbering rules |
+| understand launch, the data pipeline and a run | [Architecture](Architecture.md) |
+| find or add code | [Code structure](Code-Structure.md) |
+| look up a settings key | [Settings reference](Settings-Reference.md) |
+| use a saved password or token | [Credentials](Credentials.md) |
+| make a release | [Releasing](RELEASING.md) and [Versioning](VERSIONING.md) |
 | pick something up | [TODO](TODO.md) |
-
-The standards every project follows (one `.editorconfig`, required XML docs, the Models/ rule,
-one type per file, the coverage gate) are listed at the end of the
-[Core structure page](FeBuddy.Core-Structure.md#standards-and-checks).

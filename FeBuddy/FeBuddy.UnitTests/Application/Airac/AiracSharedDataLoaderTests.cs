@@ -14,7 +14,8 @@ namespace FeBuddy.UnitTests.Application.Airac;
 /// Exercises <see cref="AiracSharedDataLoader"/>'s internal overloads with fake refresh functions,
 /// a fixed clock and small real files on disk: the fresh/stale/no-copy/unreadable-copy message and
 /// data shapes for both Wx Stations (required) and Telephony (register required, special call
-/// signs optional), and <see cref="AiracSharedDataLoader.DescribeAge"/>'s boundaries.
+/// signs and the VATSIM-Radar Virtual Airline List optional - the list only when included), and
+/// <see cref="AiracSharedDataLoader.DescribeAge"/>'s boundaries.
 /// </summary>
 public sealed class AiracSharedDataLoaderTests : IDisposable
 {
@@ -176,6 +177,94 @@ public sealed class AiracSharedDataLoaderTests : IDisposable
 		Assert.All(result.Messages, m => Assert.Equal(LogLevel.Info, m.Level));
 		Assert.Equal("Downloaded the latest FAA telephony register.", result.Messages[0].Text);
 		Assert.Equal("Downloaded the latest FAA U.S. special call signs.", result.Messages[1].Text);
+	}
+
+	// ---- Telephony: the VATSIM-Radar Virtual Airline List ----
+
+	private const string ValidVatsimRadarJson =
+		"""[{ "icao": "DAL", "name": "Fly Delta Virtual", "callsign": "Delta", "virtual": true }]""";
+
+	private TelephonyRefreshResult FreshPages() => new(
+		new SharedDataRefreshResult(WriteFile("register.html", ValidRegisterHtml), NowUtc, FailureReason: null),
+		new SharedDataRefreshResult(WriteFile("special.html", ValidSpecialCallSignsHtml), NowUtc, FailureReason: null));
+
+	[Fact]
+	public async Task the_vatsim_radar_list_when_included_and_fresh_is_added_with_an_info_message()
+	{
+		string listPath = WriteFile("airlines.json", ValidVatsimRadarJson);
+
+		AiracSharedDataLoadResult<TelephonyDataCollection> result = await AiracSharedDataLoader.LoadTelephonyAsync(
+			Refresh(FreshPages()), Refresh(new SharedDataRefreshResult(listPath, NowUtc, FailureReason: null)), NowUtc, CancellationToken.None);
+
+		Assert.Equal(new VatsimRadarAirline("DAL", "Fly Delta Virtual", "Delta"), Assert.Single(result.Data!.VatsimRadarAirlines));
+		Assert.Equal(3, result.Messages.Count);
+		Assert.Equal("Downloaded the latest VATSIM-Radar Virtual Airline List.", result.Messages[2].Text);
+		Assert.Equal(LogLevel.Info, result.Messages[2].Level);
+	}
+
+	[Fact]
+	public async Task the_vatsim_radar_list_when_not_included_is_not_there_and_says_nothing()
+	{
+		AiracSharedDataLoadResult<TelephonyDataCollection> result = await AiracSharedDataLoader.LoadTelephonyAsync(
+			Refresh(FreshPages()), refreshVatsimRadar: null, NowUtc, CancellationToken.None);
+
+		Assert.Empty(result.Data!.VatsimRadarAirlines);
+		Assert.Equal(2, result.Messages.Count);
+	}
+
+	/// <summary>The list is optional, like the U.S. special call signs: without it the run goes on, with an advisory warning.</summary>
+	[Fact]
+	public async Task the_vatsim_radar_list_with_no_copy_is_left_out_with_an_advisory_warning_and_the_run_goes_on()
+	{
+		AiracSharedDataLoadResult<TelephonyDataCollection> result = await AiracSharedDataLoader.LoadTelephonyAsync(
+			Refresh(FreshPages()), Refresh(new SharedDataRefreshResult(null, null, "list download failed")), NowUtc, CancellationToken.None);
+
+		Assert.NotNull(result.Data);
+		Assert.Single(result.Data!.Assignments);
+		Assert.Empty(result.Data.VatsimRadarAirlines);
+
+		ServiceMessage warning = result.Messages[2];
+		Assert.Equal(LogLevel.Warning, warning.Level);
+		Assert.True(warning.IsAdvisory);
+		Assert.Contains("list download failed", warning.Text, StringComparison.Ordinal);
+		Assert.Contains("Telephony.txt leaves it out", warning.Text, StringComparison.Ordinal);
+	}
+
+	[Fact]
+	public async Task a_vatsim_radar_copy_that_cannot_be_read_is_left_out_with_an_error()
+	{
+		string listPath = WriteFile("airlines.json", UnparsableHtml);
+
+		AiracSharedDataLoadResult<TelephonyDataCollection> result = await AiracSharedDataLoader.LoadTelephonyAsync(
+			Refresh(FreshPages()), Refresh(new SharedDataRefreshResult(listPath, NowUtc.AddDays(-2), "list download failed")), NowUtc, CancellationToken.None);
+
+		Assert.Empty(result.Data!.VatsimRadarAirlines);
+		Assert.Equal(4, result.Messages.Count);
+		Assert.True(result.Messages[2].IsAdvisory);
+		Assert.Equal(LogLevel.Error, result.Messages[3].Level);
+		Assert.Contains("VATSIM-Radar Virtual Airline List can't be read", result.Messages[3].Text, StringComparison.Ordinal);
+	}
+
+	[Fact]
+	public async Task with_no_register_the_vatsim_radar_list_is_not_downloaded_at_all()
+	{
+		bool asked = false;
+		TelephonyRefreshResult refreshed = new(
+			new SharedDataRefreshResult(null, null, "register download failed"),
+			new SharedDataRefreshResult(null, null, "special call signs download failed"));
+
+		AiracSharedDataLoadResult<TelephonyDataCollection> result = await AiracSharedDataLoader.LoadTelephonyAsync(
+			Refresh(refreshed),
+			_ =>
+			{
+				asked = true;
+				return Task.FromResult(new SharedDataRefreshResult(null, null, "unused"));
+			},
+			NowUtc,
+			CancellationToken.None);
+
+		Assert.Null(result.Data);
+		Assert.False(asked);
 	}
 
 	// ---- Telephony: both pages stale ----

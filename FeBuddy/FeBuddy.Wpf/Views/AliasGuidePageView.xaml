@@ -1,0 +1,74 @@
+<!--
+    AliasGuidePageView  -  Info ▸ Alias Command Guide: the guide to every FE-Buddy alias command,
+    shown exactly as it is exported (ctl:AliasGuideDocumentView), with the buttons that export it
+    and the Alias Command Practice page at the top. Opens in place of Info's cards (or from What's
+    New); the arrow beside the title goes back.
+-->
+<UserControl x:Class="FeBuddy.Wpf.Views.AliasGuidePageView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:FeBuddy.Wpf.ViewModels"
+             xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance vm:AliasGuideViewModel}"
+             d:DesignWidth="900" d:DesignHeight="900">
+
+    <Grid Background="{StaticResource Brush.Bg.Base}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- pinned page header: back, then the title -->
+        <Grid Grid.Row="0" Background="{StaticResource Brush.Bg.Base}">
+            <StackPanel Orientation="Horizontal" Margin="16,24,28,14">
+                <Button Style="{StaticResource Button.Icon}" VerticalAlignment="Center" Margin="0,4,4,0"
+                        Content="{StaticResource Icon.Chevron.Left}" FontFamily="{StaticResource Font.Icon}" FontSize="14"
+                        Command="{Binding BackCommand}" ToolTip="Back" />
+                <TextBlock Text="Alias Command Guide" Style="{StaticResource Text.Display}" />
+            </StackPanel>
+            <Border Style="{StaticResource Divider}" VerticalAlignment="Bottom" />
+        </Grid>
+
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <StackPanel Margin="28,16,28,28">
+
+                <!-- ======================== EXPORTS ======================== -->
+                <ctl:Card Style="{StaticResource Card.Accent}">
+                    <StackPanel>
+                        <ctl:BesideOrBelow SideWidth="300" MainMinWidth="320" VerticalSpacing="14">
+                            <StackPanel>
+                                <TextBlock Text="Share it with your controllers" Style="{StaticResource Text.H2}" />
+                                <TextBlock Style="{StaticResource Text.Prose}" Margin="0,6,0,0"
+                                           Text="This is the guide FE-Buddy exports: every FE-Buddy alias command, with real examples. Export it as a web page (.html), Markdown (.md) or both, for your facility's website or wiki. Each is easy to edit." />
+                            </StackPanel>
+                            <Button Style="{StaticResource Button.Primary}" VerticalAlignment="Top"
+                                    Content="Export FE-Buddy Alias Command Guide"
+                                    Command="{Binding ExportGuideCommand}"
+                                    ToolTip="Choose Web, Markdown or both, then the folder to save it in" />
+                        </ctl:BesideOrBelow>
+
+                        <Border Style="{StaticResource Divider}" Margin="0,16" />
+
+                        <ctl:BesideOrBelow SideWidth="300" MainMinWidth="320" VerticalSpacing="14">
+                            <StackPanel>
+                                <TextBlock Text="Let them practice" Style="{StaticResource Text.H2}" />
+                                <TextBlock Style="{StaticResource Text.Prose}" Margin="0,6,0,0"
+                                           Text="Alias Command Practice is a web page that quizzes your controllers on real charts, procedures and ISR cards. They type the command; it says whether it's right, and when it isn't, what looks missing or out of place." />
+                            </StackPanel>
+                            <Button Style="{StaticResource Button.Primary}" VerticalAlignment="Top"
+                                    Content="Export Alias Command Practice"
+                                    Command="{Binding ExportPracticeCommand}"
+                                    ToolTip="Choose the folder to save the practice page (.html) in" />
+                        </ctl:BesideOrBelow>
+                    </StackPanel>
+                </ctl:Card>
+
+                <!-- ======================== THE GUIDE ======================== -->
+                <ctl:AliasGuideDocumentView Document="{Binding Document}" />
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

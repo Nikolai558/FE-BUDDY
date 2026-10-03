@@ -20,7 +20,7 @@ or:
 
 Please include as much as you can:
 
-* The affected FE-BUDDY version (shown in the title bar).
+* The affected FE-BUDDY version (shown at the top of its window).
 * A description of the vulnerability.
 * Steps to reproduce it.
 * The potential security impact.
@@ -41,8 +41,8 @@ not. For FE-BUDDY, for example:
   readable by another user.
 * **Updates and installing** - anything that could make FE-BUDDY download or run an installer
   that is not an official FE-BUDDY release, or abuse the installer's administrator rights.
-* **Files and downloads** - a crafted file (DAT, SCT2, vERAM, alias or settings file) or a crafted
-  download (FAA data, News, custom alias sources) that makes FE-BUDDY run code, or read or write
+* **Files and downloads** - a crafted file (DAT, SCT2, ERAM, alias or settings file) or a crafted
+  download (FAA data, News, custom alias files) that makes FE-BUDDY run code, or read or write
   files outside the folders it should.
 * **This repository and its release process** - for example a GitHub Actions workflow that could
   leak a secret or publish something it should not.

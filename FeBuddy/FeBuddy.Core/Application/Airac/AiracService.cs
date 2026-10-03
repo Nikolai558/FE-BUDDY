@@ -136,9 +136,13 @@ public static class AiracService
 
 		if (settings.Telephony is not null)
 		{
-			progress?.Report(new AiracServiceProgress("AIRAC", "Downloading the latest FAA telephony pages"));
+			bool includeVatsimRadar = TelephonySettingsParser.IncludesVatsimRadarList(settings.Telephony);
+
+			progress?.Report(new AiracServiceProgress("AIRAC", includeVatsimRadar
+				? "Downloading the latest FAA telephony pages and VATSIM-Radar Virtual Airline List"
+				: "Downloading the latest FAA telephony pages"));
 			AiracSharedDataLoadResult<TelephonyDataCollection> loaded =
-				await AiracSharedDataLoader.LoadTelephonyAsync(cancellationToken).ConfigureAwait(false);
+				await AiracSharedDataLoader.LoadTelephonyAsync(includeVatsimRadar, cancellationToken).ConfigureAwait(false);
 
 			telephonyData = loaded.Data;
 			supplementalMessages.AddRange(loaded.Messages);

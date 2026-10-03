@@ -1,4 +1,5 @@
 using FeBuddy.Core.Application.AliasGuide.Models;
+using FeBuddy.Core.Infrastructure.GitHub;
 
 namespace FeBuddy.Core.Application.AliasGuide;
 
@@ -16,45 +17,71 @@ namespace FeBuddy.Core.Application.AliasGuide;
 /// version. Change both together.
 /// </para>
 /// <para>
+/// It is written to be scanned, not read through: a short point in bold, the bullets under it, and
+/// each example command on a line of its own after a lead-in such as "is both:". A list in a
+/// command's description (<see cref="GuideCommand.Details"/>) does the same for what a card shows.
+/// </para>
+/// <para>
 /// Every example is a real command from AIRAC 2609's files. The tests check each chart recall
 /// example against <c>ChartRecallCodes</c>, so a change to the codes that the guide does not follow
 /// fails a test.
 /// </para>
+/// <para>
+/// Three things lay it out: <c>AliasGuideHtmlWriter</c> and <c>AliasGuideMarkdownWriter</c> for the
+/// export, and the app's Info ▸ Alias Command Guide page. The legend text below is shared by the web
+/// page and the app, which both show a part to replace as a coloured pill.
+/// </para>
 /// </remarks>
-internal static class AliasGuideContent
+public static class AliasGuideContent
 {
 	/// <summary>The guide's title.</summary>
-	internal const string Title = "FE-Buddy Alias Command Guide";
+	public const string Title = "FE-Buddy Alias Command Guide";
+
+	/// <summary>The heading of the part that explains how a command is shown.</summary>
+	public const string NotationTitle = "How to read this guide";
+
+	/// <summary>
+	/// What plain text in a command means, where parts to replace are coloured pills. Each format
+	/// follows it with <c>".apt"</c>, in quotes.
+	/// </summary>
+	public const string TypedLegend = "Plain text, typed exactly as shown. For example:";
+
+	/// <summary>What a coloured pill means; the colour key follows it.</summary>
+	public const string PlaceholderLegend = "Replace it with the real value. Its colour shows what goes there:";
+
+	/// <summary>What a pill with a dashed edge means.</summary>
+	public const string OptionalLegend = "Optional.";
+
+	/// <summary>The part kinds a controller replaces, in the order the colour key lists them.</summary>
+	public static IReadOnlyList<CommandPartKind> KeyKinds { get; } =
+	[
+		CommandPartKind.Airport,
+		CommandPartKind.Identifier,
+		CommandPartKind.ApproachType,
+		CommandPartKind.Variant,
+		CommandPartKind.Runway,
+		CommandPartKind.Page,
+	];
 
 	/// <summary>Builds the guide.</summary>
-	/// <param name="facility">
-	/// The user's facility, e.g. <c>ZOB</c>, or <see langword="null"/>. Only its letters and digits
-	/// are used, so nothing in it can read as markup.
-	/// </param>
 	/// <returns>The guide's content.</returns>
-	internal static AliasGuideDocument Build(string? facility)
-	{
-		string facilityId = string.Concat((facility ?? string.Empty).Where(char.IsAsciiLetterOrDigit)).ToUpperInvariant();
-		string aliasFile = facilityId.Length == 0
-			? "your facility's alias file"
-			: $"the {facilityId} alias file";
-
-		return new AliasGuideDocument(
-			Title,
-			$"These alias commands are made by FE-Buddy every AIRAC cycle and merged into {aliasFile}.",
-			About(),
-			[
-				"Commands are not case-sensitive: `.apt{a:dtw}` works the same as `.apt{a:DTW}`. The capitals in this guide only make each part easier to see.",
-				"An airport ID is its FAA ID (`{a:DTW}`), not its ICAO ID (`{a:KDTW}`), unless the command says otherwise.",
-				"Finish every command with Enter.",
-			],
-			[InScopeReference(), DataDisplay(), ChartRecall()]);
-	}
+	public static AliasGuideDocument Build() => new(
+		Title,
+		$"These alias commands are made by [FE-Buddy]({GitHubRepository.WebUrl}) every AIRAC cycle.",
+		[
+			Item("**Commands are not case-sensitive**",
+				Item("These two work the same:",
+					Item("`.apt{a:dtw}`"),
+					Item("`.apt{a:DTW}`"))),
+			Item("**Airport IDs**",
+				Item("Use the FAA ID, not the ICAO ID, unless the command says otherwise. For example, `{a:DTW}`, not `{a:KDTW}`.")),
+		],
+		[InScopeReference(), DataDisplay(), ChartRecall()]);
 
 	/// <summary>The colour key's name for each kind of part a controller replaces.</summary>
 	/// <param name="kind">The kind.</param>
 	/// <returns>e.g. <c>Airport ID</c>.</returns>
-	internal static string KindLabel(CommandPartKind kind) => kind switch
+	public static string KindLabel(CommandPartKind kind) => kind switch
 	{
 		CommandPartKind.Airport => "Airport ID",
 		CommandPartKind.Identifier => "ID or name",
@@ -65,48 +92,48 @@ internal static class AliasGuideContent
 		_ => "Typed as shown",
 	};
 
-	private static GuideSection About() => new(
-		"about",
-		"About alias commands",
-		null,
-		[
-			new GuideParagraph("An alias command is a shortcut you type into CRC. Every one starts with a period."),
-			new GuideParagraph(
-				"CRC also has its own built-in commands, which this guide does not cover; the CRC documentation explains those. "
-				+ "Your facility may have custom commands of its own as well. When one has the same name as an FE-Buddy command, "
-				+ "your facility's command is the one you get."),
-			new GuideParagraph(
-				"Which of the commands below you have depends on the FE-Buddy files your facility uploads, so some may not be there."),
-		]);
+	/// <summary>A bullet, with the bullets under it.</summary>
+	private static GuideListItem Item(string text, params GuideListItem[] items) => new(text, items);
 
 	private static GuideSection InScopeReference() => new(
 		"isr",
 		"In-Scope Reference (ISR)",
-		"Information cards for airports, NAVAIDs and aircraft operators. They are not limited to your facility's area.",
+		"Information cards for airports, NAVAIDs and airlines (may include Virtual Airlines, if your FE has set it up).",
 		[
 			new GuideCommandTable(
 			[
 				new GuideCommand(
-					".apt[a:FAA or ICAO airport ID]",
-					"Shows the airport's card: its FAA and ICAO IDs, name, tower type, ARTCC, longest runway, elevation, "
-					+ "traffic pattern altitude, FSS, CTAF, weather frequency, attended hours, and its class of airspace "
-					+ "with the hours it is in effect.",
+					[".apt", "[a:FAA or ICAO airport ID]"],
+					"Shows the airport's card:",
+					[
+						"FAA and ICAO IDs, name, tower type and ARTCC",
+						"Longest runway, elevation and traffic pattern altitude",
+						"FSS, CTAF and weather frequency",
+						"Attended hours (for towered airspace only)",
+						"Class of airspace, with the hours it is in effect",
+					],
 					[],
 					[".apt{a:DTW}", ".apt{a:KDTW}"]),
 				new GuideCommand(
-					".nav[i:NAVAID ID or name]",
-					"Shows the NAVAID's card: its ID, name, type and frequency, and the ARTCCs it is in for high and low "
-					+ "altitude airspace.",
+					[".nav", "[i:NAVAID ID or name]"],
+					"Shows the NAVAID's card:",
+					[
+						"ID, name, type and frequency",
+						"The ARTCCs it is in, for high and low altitude airspace",
+					],
 					[
 						"When entering the name, leave out spaces and special characters.",
 						"When several NAVAIDs share the ID or name, the card lists each of them.",
 					],
 					[".nav{i:CGT}", ".nav{i:CHICAGOHEIGHTS}"]),
 				new GuideCommand(
-					".id[i:operator 3LD or telephony]",
-					"Shows the aircraft operator's card: its three-letter designator (3LD), telephony, company and country. "
-					+ "A U.S. special call sign shows its agency and expiration date instead, and a virtual airline your "
-					+ "facility added is marked `--VA--` and shows its virtual organization.",
+					[".id", "[i:operator 3LD or telephony]"],
+					"Shows the aircraft operator's card:",
+					[
+						"Three-letter designator (3LD), telephony, company and country",
+						"A U.S. special call sign: its agency and expiration date instead",
+						"A virtual airline your facility added: marked `--VA--`, with its virtual organization",
+					],
 					[
 						"When entering the telephony, leave out spaces and special characters.",
 						"When several operators match, the card lists each of them.",
@@ -124,27 +151,43 @@ internal static class AliasGuideContent
 			new GuideCommandTable(
 			[
 				new GuideCommand(
-					".[i:airway ID]F",
+					[".[i:airway ID]", "f"],
 					"Shows every fix on the airway, NAVAIDs and airports included.",
+					[],
 					["CRC STARS & ERAM."],
 					[".{i:J60}F"]),
 				new GuideCommand(
-					".[a:airport ID][i:departure]f",
+					[".[a:airport ID]", "[i:departure]", "f"],
 					"Shows every fix on the departure procedure (a SID or an obstacle departure), NAVAIDs included, with "
 					+ "all of its transitions.",
+					[],
 					["CRC STARS & ERAM."],
 					[".{a:dtw}{i:CLVIN}f"]),
 				new GuideCommand(
-					".[a:airport ID][i:arrival]f",
+					[".[a:airport ID]", "[i:arrival]", "f"],
 					"Shows every fix on the arrival procedure (STAR), NAVAIDs included, with all of its transitions.",
+					[],
 					["CRC STARS & ERAM."],
 					[".{a:dtw}{i:GRAYT}f"]),
 			]),
-			new GuideParagraph(
-				"**Procedure names.** A departure goes by the first part of its FAA computer code and an arrival by the "
-				+ "second, without the version number: `DOTSS2.DOTSS` is `DOTSS`, and `AALAN.BLAID2` is `BLAID`. A "
-				+ "procedure with no computer code goes by its name, letters and digits only."),
+			new GuideParagraph("**Procedure Names**"),
+			ProcedureNames('f'),
 		]);
+
+	/// <summary>
+	/// How a departure or an arrival is named in a command, shared by Data Display and Chart Recall;
+	/// its last example is that section's own command, ending in <paramref name="suffix"/>.
+	/// </summary>
+	private static GuideList ProcedureNames(char suffix) => new(
+	[
+		Item("A departure name is the first part of its FAA computer code without the version number. For example: "
+			+ "`ROG4.RZC` is `ROG`."),
+		Item("An arrival name is the second part of its FAA computer code, without the version number. For example: "
+			+ "`AALAN.BLAID2` is `BLAID`."),
+		Item("A chart with no computer code is spelled out in full instead, without its version number, bracketed "
+			+ "words, or the words RNAV, OBSTACLE and COPTER; spaces and punctuation are also removed. For example, "
+			+ $"`TURNAGAIN EIGHT` at ANC is `.{{a:anc}}{{i:TURNAGAIN}}{suffix}`."),
+	]);
 
 	private static GuideSection ChartRecall() => new(
 		"chart-recall",
@@ -155,37 +198,42 @@ internal static class AliasGuideContent
 			new GuideCommandTable(
 			[
 				new GuideCommand(
-					".[a:airport ID][t:approach type][v?:variant][r:runway]c",
+					[".[a:airport ID]", "[t:approach type]", "[v?:variant]", "[r:runway]", "c"],
 					"An instrument approach. The approach type codes are below.",
+					[],
 					[],
 					[".{a:dtw}{t:I}{r:22L}c", ".{a:dtw}{t:L}{v:Z}{r:04L}c", ".{a:lax}{t:R}{v:Y}{r:24L}c"]),
 				new GuideCommand(
-					".[a:airport ID]v[i:visual name][r:runway]c",
-					"A charted visual approach: a lower-case `v`, then the approach's name with spaces and punctuation "
-					+ "left out.",
+					[".[a:airport ID]", "v", "[i:visual name]", "[r:runway]", "c"],
+					"A charted visual approach: a lower-case `v` (for \"Visual\"), then the approach's name with spaces "
+					+ "and punctuation left out.",
+					[],
 					[],
 					[".{a:sfo}v{i:QUIETBRIDGE}{r:28R}c", ".{a:mry}v{i:RACEWAY}{r:28L}c"]),
 				new GuideCommand(
-					".[a:airport ID][i:procedure]c",
+					[".[a:airport ID]", "[i:procedure]", "c"],
 					"A departure, an obstacle departure or an arrival (STAR).",
+					[],
 					[],
 					[".{a:dtw}{i:CLVIN}c", ".{a:dtw}{i:GRAYT}c", ".{a:anc}{i:TURNAGAIN}c"]),
 				new GuideCommand(
-					".[a:airport ID][i:chart]c",
+					[".[a:airport ID]", "[i:chart]", "c"],
 					"Another of the airport's charts, such as its airport diagram. The chart codes are below.",
+					[],
 					[],
 					[".{a:dtw}{i:APD}c", ".{a:lax}{i:HS}c"]),
 				new GuideCommand(
-					".[a:airport ID][i:chart code]c[p?:page]",
+					[".[a:airport ID]", "[i:chart code]", "c", "[p?:page]"],
 					"Page 2 or later of a chart with more than one page: the page number goes after the `c`.",
+					[],
 					[],
 					[".{a:dtw}{i:CLVIN}c{p:2}"]),
 			]),
 
 			new GuideHeading("Approach type codes"),
 			new GuideParagraph(
-				"FE-Buddy uses the eight approach types in common use across the FAA. A `/DME` approach adds `D` to its "
-				+ "type's code, and a back course adds `BC`."),
+				"FE-Buddy uses the eight approach types in common use across the FAA.\nA `/DME` approach adds `D` to its "
+				+ "type's code, while a back course approach adds `BC`."),
 			new GuideTable(
 				["Approach", "Code", "Example"],
 				[
@@ -208,23 +256,40 @@ internal static class AliasGuideContent
 			new GuideHeading("Reading an approach's command"),
 			new GuideList(
 			[
-				"**One command per approach.** A chart for more than one approach has a command for each: ILS OR LOC "
-				+ "RWY 22L at DTW is `.{a:dtw}{t:I}{r:22L}c` and `.{a:dtw}{t:L}{r:22L}c`.",
-				"**Variant letters** (X, Y, Z...) come after the type code. One the FAA prints on only one approach of "
-				+ "such a chart applies to all of them: ILS Z OR LOC RWY 04L is `.{a:dtw}{t:I}{v:Z}{r:04L}c` and "
-				+ "`.{a:dtw}{t:L}{v:Z}{r:04L}c`.",
-				"**Runways** are written exactly as the chart's name prints them: RNAV (RNP) Z RWY 07R at LAX is "
-				+ "`.{a:lax}{t:R}{v:Z}{r:07R}c`. A chart for two runways has a command for each: TIPP TOE VISUAL RWY "
-				+ "28L/R at SFO is `.{a:sfo}v{i:TIPPTOE}{r:28L}c` and `.{a:sfo}v{i:TIPPTOE}{r:28R}c`.",
-				"**Circling approaches** keep their letter where the runway would be: VOR-A at PDX is "
-				+ "`.{a:pdx}{t:O}{v:A}c`.",
-				"**RNAV** is `{t:R}` whatever its brackets say, (GPS) or (RNP). Only a GPS approach with no RNAV in "
-				+ "its name is `{t:G}`.",
+				Item("**One command per approach**",
+					Item("A chart for more than one approach has a command for each:",
+						Item("ILS OR LOC RWY 22L at DTW is both:",
+							Item("`.{a:dtw}{t:I}{r:22L}c`"),
+							Item("`.{a:dtw}{t:L}{r:22L}c`")))),
+				Item("**Variant letters** (X, Y, Z...)",
+					Item("Come after the type code."),
+					Item("If the FAA indicates the variant on only one of the approaches on the same chart, the command "
+						+ "applies the variant to both:",
+						Item("ILS Z OR LOC RWY 04L is both:",
+							Item("`.{a:dtw}{t:I}{v:Z}{r:04L}c`"),
+							Item("`.{a:dtw}{t:L}{v:Z}{r:04L}c`")))),
+				Item("**Runways** are written exactly as the chart's name prints them",
+					Item("RNAV (RNP) Z RWY 07R at LAX is:",
+						Item("`.{a:lax}{t:R}{v:Z}{r:07R}c`")),
+					Item("A chart for two runways has a command for each",
+						Item("TIPP TOE VISUAL RWY 28L/R at SFO is both:",
+							Item("`.{a:sfo}v{i:TIPPTOE}{r:28L}c`"),
+							Item("`.{a:sfo}v{i:TIPPTOE}{r:28R}c`")))),
+				Item("**Circling approaches**",
+					Item("Keep their letter where the runway would be, for example VOR-A at PDX is:",
+						Item("`.{a:pdx}{t:O}{v:A}c`"))),
+				Item("**RNAV**",
+					Item("`{t:R}` = RNAV, regardless of what the brackets say, (GPS) or (RNP)"),
+					Item("Only a GPS approach with no \"RNAV\" in its name is `{t:G}`.")),
 			]),
 
 			new GuideHeading("Charted visual approaches"),
-			new GuideParagraph(
-				"The approach's name in full, without the words VISUAL and RWY, spaces or punctuation, then its runway."),
+			new GuideList(
+			[
+				Item("The approach's name is spelled out in full, without the words VISUAL and RWY; spaces and punctuation "
+					+ "are removed."),
+				Item("Its runway comes right after the name."),
+			]),
 			new GuideTable(
 				["Airport", "Chart", "Command"],
 				[
@@ -234,14 +299,7 @@ internal static class AliasGuideContent
 				]),
 
 			new GuideHeading("Departures, obstacle departures and arrivals"),
-			new GuideParagraph(
-				"The chart's FAA computer code without its version number: the first part for a departure, the "
-				+ "second for an arrival. The CLVIN THREE (RNAV) departure at DTW is `.{a:dtw}{i:CLVIN}c`, and the "
-				+ "GRAYT TWO (RNAV) arrival is `.{a:dtw}{i:GRAYT}c`."),
-			new GuideParagraph(
-				"A chart with no computer code is spelled out in full instead, without its version number, its "
-				+ "bracketed words, the words RNAV, OBSTACLE and COPTER, spaces or punctuation: TURNAGAIN EIGHT at ANC "
-				+ "is `.{a:anc}{i:TURNAGAIN}c`."),
+			ProcedureNames('c'),
 
 			new GuideHeading("Other charts"),
 			new GuideTable(
@@ -261,14 +319,14 @@ internal static class AliasGuideContent
 			new GuideHeading("Charts with no command"),
 			new GuideList(
 			[
-				"High-altitude (HI-) and COPTER charts",
-				"PRM approaches",
-				"Category II and III approaches, and other special-authorization approaches",
-				"CONVERGING approaches",
-				"GLS approaches (the other approaches on the same chart still have a command)",
-				"Numbered approaches, such as VOR-1",
-				"Attention All Users pages (AAUP)",
-				"Alternate minimums",
+				Item("High-altitude (HI-) and COPTER charts"),
+				Item("PRM approaches"),
+				Item("Category II and III approaches, and other special-authorization approaches"),
+				Item("CONVERGING approaches"),
+				Item("GLS approaches (the other approaches on the same chart still have a command)"),
+				Item("Numbered approaches, such as VOR-1"),
+				Item("Attention All Users pages (AAUP)"),
+				Item("Alternate minimums"),
 			]),
 		]);
 }

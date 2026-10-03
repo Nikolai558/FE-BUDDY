@@ -183,7 +183,7 @@ public sealed class ShellViewModel : ObservableObject
 	/// <summary>
 	/// Resource key for the version text brush: <c>Brush.Accent.Text</c> normally, or
 	/// <c>Brush.Warn</c> for the rest of the session once the user declines an available
-	/// update (Developer_Notes TITLE BAR).
+	/// update.
 	/// </summary>
 	public string VersionBrushKey
 	{

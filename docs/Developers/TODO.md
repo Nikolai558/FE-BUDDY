@@ -1,39 +1,30 @@
 # TODO
 
-Open work only. When an item is done, delete it from this list - the commit that did it is the
-record. Add new items to the section they belong to.
-
-## Features
-
-Nothing open right now.
+Open work only. When an item is done, delete it - the commit is the record.
 
 ## Performance
 
-- **Parse only the NASR groups the sub-services read.** `AiracCycleDataCache` parses every NASR
-  CSV group, but Airports, Airways, Departures, Arrivals, NAVAIDs, ARTCC Boundaries, Fixes and
-  Procedures only read APT, ARB, AWY, CLS_ARSP, DP, FIX, FRQ, NAV and STAR. Parsing just those would
-  cut memory and launch time. (Marked `TODO (perf)` in `AiracCycleDataCache.cs`.)
+- **Parse only the NASR groups the sub-services read.** `AiracCycleDataCache` parses every NASR CSV
+  group, but the sub-services only read APT, ARB, AWY, CLS_ARSP, DP, FIX, FRQ, NAV and STAR. Parsing
+  just those would cut memory and launch time (`TODO (perf)` in `AiracCycleDataCache.cs`).
 
 ## Tidy-ups
 
-- **Misspelled config keys.** `DefaultCoordindates` and `OverrideCoordindates` in
-  `UserConfig.json` are misspelled, and every saved config holds them that way. Renaming them
-  needs a one-time migration that copies the old keys to the new ones.
+- **Misspelled config keys.** `DefaultCoordindates` and `OverrideCoordindates` are misspelled in
+  every saved `UserConfig.json`. Renaming them needs a one-time migration from the old keys.
 - **`DefaultRoi.FilterByRoi` is saved as `true` / `false`**, while every other yes/no setting is
-  `Y` / `N`. Harmless (both are read correctly), but inconsistent; fold it into the same migration.
+  `Y` / `N`. Harmless, but fold it into the same migration.
 
 ## Standards
 
-- **Bring `FeBuddy.Harness` to the standard.** Every other project requires XML docs and has no
-  planning-doc references; the harness does not yet (today: no XML docs are required there, and
-  comments like "Phase 3.3-3.7 settings").
+- **Bring `FeBuddy.Harness` up to the standard.** It doesn't require XML docs yet, and still has
+  planning-doc comments ("Phase 3.3-3.7 settings" in `HarnessSettings.cs`).
 
 ## Testing
 
-- **Most of `FeBuddy.Wpf` has no automated tests.** Only the map's logic, the File Names, Airways
-  and ERAM to GeoJSON tabs' view-models, the sub-service order, the Reset window's view-model,
-  the Review tab's run feed, the Info and What's New pages' view-models (and the alias command
-  guide's format question), `BesideOrBelow`,
-  `InlineCode` and `InlineMarkdown` are tested (`FeBuddy.UnitTests/Wpf`). The rest of its view-model logic (the
-  settings blocks each other tab builds, dirty tracking, validation, the settings import wording)
-  could be tested the same way, without a window. Today the only check is running the app.
+- **Test more of `FeBuddy.Wpf`.** Tested today (`FeBuddy.UnitTests/Wpf`): the map's logic and
+  `MapCanvas`, `BesideOrBelow`, `CommandTablePanel`, `InlineCode`, `InlineMarkdown`, and the view-models
+  of the Airways, File Names, Telephony and ERAM to GeoJSON tabs, the sub-service order, the Review
+  tab, Info, What's New, the Alias Command Guide, the Reset, Uninstall and update windows. The rest of
+  the view-model logic - the other tabs' settings blocks, dirty tracking, validation - could be
+  tested the same way, without a window.

@@ -1,31 +1,20 @@
-using System.IO;
-using System.Windows;
 using System.Windows.Input;
 
-using Microsoft.Win32;
-
 using FeBuddy.Wpf.Mvvm;
-using FeBuddy.Wpf.Shell;
-using FeBuddy.Wpf.Views;
-
-using FeBuddy.Core.Application.AliasGuide;
-using FeBuddy.Core.Application.AliasGuide.Models;
-using FeBuddy.Core.Infrastructure.Configuration;
-using FeBuddy.Core.Infrastructure.Logging;
-using FeBuddy.Core.Infrastructure.Platform;
 
 namespace FeBuddy.Wpf.ViewModels;
 
 /// <summary>
-/// Info ▸ What's New in v3.0?: what FE-Buddy 3.0 changed from 2.x, and the button that exports the
-/// FE-Buddy Alias Command Guide (<see cref="AliasGuideWriter"/>) for a facility's website.
+/// Info ▸ What's New in v3.0?: what FE-Buddy 3.0 changed from 2.x, with a card pointing to the
+/// Alias Command Guide page (Info ▸ Alias Command Guide), where the guide is exported.
 /// </summary>
 /// <remarks>
-/// The content is <c>FE-Buddy_3.0_Whats_New.md</c>, at the repository's root, laid out as a page;
-/// change the two together. Text uses inline Markdown (<c>**bold**</c>, <c>*italic*</c>,
-/// <c>`code`</c>) for <c>InlineMarkdown</c> to show.
+/// The page's content lives here, not in a file. Text uses inline Markdown (<c>**bold**</c>,
+/// <c>*italic*</c>, <c>`code`</c>) for <c>InlineMarkdown</c> to show.
 /// </remarks>
-public sealed class WhatsNewViewModel : ObservableObject
+/// <param name="back">Returns to Info's cards.</param>
+/// <param name="openGuide">Opens Info ▸ Alias Command Guide, the guide's own page.</param>
+public sealed class WhatsNewViewModel(Action back, Action openGuide) : ObservableObject
 {
 	/// <summary>One row of the At a Glance table.</summary>
 	/// <param name="Subject">What is compared.</param>
@@ -62,19 +51,11 @@ public sealed class WhatsNewViewModel : ObservableObject
 	/// <param name="Note">Why it is written that way, or <see langword="null"/>.</param>
 	public sealed record CommandExample(string Airport, string Procedure, string Commands, string? Note);
 
-	/// <summary>Creates the page.</summary>
-	/// <param name="back">Returns to Info's links.</param>
-	public WhatsNewViewModel(Action back)
-	{
-		BackCommand = new RelayCommand(back);
-		ExportGuideCommand = new RelayCommand(ExportGuide);
-	}
+	/// <summary>Returns to Info's cards.</summary>
+	public ICommand BackCommand { get; } = new RelayCommand(back);
 
-	/// <summary>Returns to Info's links.</summary>
-	public ICommand BackCommand { get; }
-
-	/// <summary>Asks what format to save the alias command guide in, then which folder, then writes it.</summary>
-	public ICommand ExportGuideCommand { get; }
+	/// <summary>Opens the Alias Command Guide page.</summary>
+	public ICommand OpenGuideCommand { get; } = new RelayCommand(openGuide);
 
 	/// <summary>FE-Buddy 2.x against 3.0, subject by subject.</summary>
 	public IReadOnlyList<GlanceRow> Glance { get; } =
@@ -177,63 +158,4 @@ public sealed class WhatsNewViewModel : ObservableObject
 		new("SFO", "QUIET BRIDGE *charted* VISUAL RWY 28R", "`.sfovQUIETBRIDGE28Rc`", null),
 	];
 
-	/// <summary>
-	/// Asks which format the guide is wanted in (web page, Markdown or both), then which folder,
-	/// and writes it there as <c>FE-Buddy Alias Command Guide.html</c> / <c>.md</c> - the user
-	/// never names the files. A guide already in that folder is only replaced once the user says
-	/// so, since it may hold their own edits. The guide names the user's facility when Settings ▸
-	/// Facility Profile has one.
-	/// </summary>
-	private void ExportGuide()
-	{
-		Window? owner = Application.Current?.MainWindow;
-
-		if (AliasGuideFormatWindow.Ask(owner) is not { } formats)
-		{
-			return;
-		}
-
-		OpenFolderDialog dialog = new()
-		{
-			Title = "Choose the folder to save the FE-Buddy Alias Command Guide in",
-			InitialDirectory = OutputPreferences.BrowseDirectory(),
-		};
-
-		if (dialog.ShowDialog(owner) != true)
-		{
-			return;
-		}
-
-		string folder = dialog.FolderName;
-		string[] names = [.. formats.Select(AliasGuideWriter.FileName)];
-		string[] existing = [.. names.Where(name => File.Exists(Path.Combine(folder, name)))];
-
-		if (existing.Length > 0
-			&& !ConfirmWindow.Show(
-				owner,
-				existing.Length == 1 ? "Replace the guide already there?" : "Replace the guides already there?",
-				$"{JoinCode(existing)} {(existing.Length == 1 ? "is" : "are")} already in `{folder}`. "
-				+ $"Replacing {(existing.Length == 1 ? "it" : "them")} loses any changes made to {(existing.Length == 1 ? "it" : "them")}.",
-				confirmText: "Replace"))
-		{
-			return;
-		}
-
-		string? facility = UserConfigFile.GetValue(SettingsViewModel.ArtccKey);
-
-		try
-		{
-			AliasGuideWriter.Export(folder, formats, new AliasGuideOptions(facility, AppVersion.Current, DateTime.UtcNow));
-			AppLog.Info("Info", $"Exported the alias command guide to '{folder}': {string.Join(", ", names)}.");
-			Toast.Success("Alias command guide exported", $"{string.Join(" and ", names)} saved to {folder}, ready to share or post on your facility's website.");
-		}
-		catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-		{
-			AppLog.Warning("Info", $"Could not export the alias command guide to '{folder}': {ex.Message}");
-			Toast.Error("Export failed", ex.Message);
-		}
-	}
-
-	/// <summary>File names in the code look, joined: <c>`a`</c>, or <c>`a` and `b`</c>.</summary>
-	private static string JoinCode(IReadOnlyList<string> names) => string.Join(" and ", names.Select(name => $"`{name}`"));
 }

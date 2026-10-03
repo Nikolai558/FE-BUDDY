@@ -3,11 +3,24 @@ using FeBuddy.Core.Infrastructure.SharedData;
 namespace FeBuddy.Core.Infrastructure.Telephony;
 
 /// <summary>
-/// The two FAA telephony pages FE-Buddy reads, where it keeps its copies of them, and where they are
-/// downloaded from - both from FAA Order JO 7340.2, Chapter 3.
+/// The two FAA telephony pages FE-Buddy reads - both from FAA Order JO 7340.2, Chapter 3 - and the
+/// VATSIM-Radar Virtual Airline List a user can choose to add: where FE-Buddy keeps its copies of
+/// them, and where they are downloaded from.
 /// </summary>
 public static class TelephonyFiles
 {
+	/// <summary>
+	/// The kept copy's name of the VATSIM-Radar Virtual Airline List: the airlines VATSIM-Radar's
+	/// community keeps for VATSIM, its virtual airlines among them (see <see cref="VatsimRadarAirlinesUrl"/>).
+	/// </summary>
+	public const string VatsimRadarAirlinesFileName = "vatsim_radar_airlines.json";
+
+	/// <summary>
+	/// Where the VATSIM-Radar Virtual Airline List is downloaded from: <c>custom-data/airlines.json</c>
+	/// in the <c>VATSIM-Radar/data</c> repository on GitHub.
+	/// </summary>
+	public const string VatsimRadarAirlinesUrl = "https://raw.githubusercontent.com/VATSIM-Radar/data/main/custom-data/airlines.json";
+
 	/// <summary>
 	/// The kept copy's name of Chapter 3, Section 1, "Aircraft Company/Telephony/Three-Letter
 	/// Designator Encode" - the whole ICAO register: every company, its country, its telephony and
@@ -39,4 +52,7 @@ public static class TelephonyFiles
 
 	/// <summary>The U.S. special call signs' kept copy: <c>%APPDATA%\FE-Buddy\Telephony\us_special_call_signs.html</c>.</summary>
 	public static string SpecialCallSignsFilePath => Path.Combine(SharedDirectory, SpecialCallSignsFileName);
+
+	/// <summary>The VATSIM-Radar list's kept copy: <c>%APPDATA%\FE-Buddy\Telephony\vatsim_radar_airlines.json</c>.</summary>
+	public static string VatsimRadarAirlinesFilePath => Path.Combine(SharedDirectory, VatsimRadarAirlinesFileName);
 }

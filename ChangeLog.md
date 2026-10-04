@@ -18,6 +18,8 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
   Full guide: docs/Developers/RELEASING.md.
 -->
 ## Unreleased
+
+## 3.0.0-beta.1
 ### Installing and uninstalling
 - FE-BUDDY removes an old FE-BUDDY 2.x it finds still installed (one that never moved to 2.9.x's
   installer, or that was there when you installed 3.x by hand), so you no longer end up with two

@@ -169,6 +169,14 @@ public sealed class MapViewModel : ObservableObject
 		? IsRoiDirty ? "Unsaved" : "Editing"
 		: Target.Current is null ? "Not set" : "Saved";
 
+	/// <summary>
+	/// That no ROI is set and how to set one, shown on the ROI card until one is saved; empty while
+	/// editing or once there is one.
+	/// </summary>
+	public string RoiNotSetHint => !IsEditingRoi && Target.Current is null
+		? $"ROI has not been set, yet.\nPlease press Edit ROI, drag a box on the map, then press {Target.SaveLabel}."
+		: string.Empty;
+
 	/// <summary>The chip colour for <see cref="RoiState"/>: Accent, Warn, Positive or Neutral (see Chip.State).</summary>
 	public string RoiStateKind => RoiState switch
 	{
@@ -347,6 +355,7 @@ public sealed class MapViewModel : ObservableObject
 		OnPropertyChanged(nameof(IsRoiDirty));
 		OnPropertyChanged(nameof(RoiState));
 		OnPropertyChanged(nameof(RoiStateKind));
+		OnPropertyChanged(nameof(RoiNotSetHint));
 		OnPropertyChanged(nameof(CopyText));
 		OnPropertyChanged(nameof(HasDraftRoi));
 		CommandManager.InvalidateRequerySuggested();

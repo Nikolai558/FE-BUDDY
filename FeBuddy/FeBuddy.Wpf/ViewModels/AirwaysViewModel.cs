@@ -161,8 +161,8 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 		(OutputBy == AirwayGeojsonOutputBy.None ? 0 : 1) + (GenerateAliasFile ? 1 : 0);
 
 	/// <inheritdoc />
-	protected override string NoDefaultRoiHint =>
-		"No default ROI is set, so every airway is included. Set one in Settings, or override it here.";
+	protected override string NoRoiEffect =>
+		"every airway is included";
 
 	/// <inheritdoc />
 	/// <remarks>

@@ -95,7 +95,7 @@ public sealed class TelephonyViewModel : GeojsonSubServiceViewModel, ISubService
 	protected override int EnabledOutputCount => 1;
 
 	/// <inheritdoc />
-	protected override string NoDefaultRoiHint => "Telephony is not limited to a region.";
+	protected override string NoRoiEffect => "nothing changes: Telephony is not limited to a region";
 
 	/// <inheritdoc />
 	/// <remarks>Telephony writes no GeoJSON at all.</remarks>

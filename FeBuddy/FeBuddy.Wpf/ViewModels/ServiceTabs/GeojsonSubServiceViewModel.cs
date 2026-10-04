@@ -237,15 +237,17 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 	public string NeLon { get => _neLon; set { if (SetProperty(ref _neLon, value)) MarkDirty(); } }
 
 	/// <inheritdoc />
-	/// <remarks>The shared default ROI's corners if one is set, otherwise <see cref="NoDefaultRoiHint"/>.</remarks>
+	/// <remarks>
+	/// The shared default ROI's corners if one is set, otherwise that none is, what that means for
+	/// this tab (<see cref="NoRoiEffect"/>), and how to set one.
+	/// </remarks>
 	public string RoiFallbackHint => DefaultRoiStore.Load() is { } roi
 		? $"Using the default ROI: SW {roi.SwLat:0.####}, {roi.SwLon:0.####} / NE {roi.NeLat:0.####}, {roi.NeLon:0.####}"
-		: NoDefaultRoiHint;
+		: $"ROI has not been set, yet, so {NoRoiEffect}.\n" +
+		  $"Please set the default ROI in Settings or on the Map page, or tick the box above to give {Title} its own.";
 
-	/// <summary>
-	/// Whether a region limits the output: this tab's override, or else the shared default ROI.
-	/// With neither, the run covers everything.
-	/// </summary>
+	/// <inheritdoc />
+	/// <remarks>With neither, the run covers everything.</remarks>
 	public bool HasRoi => OverrideRoi || DefaultRoiStore.Load() is not null;
 
 	/// <inheritdoc />
@@ -267,10 +269,10 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 	// ================= for the derived tab =================
 
 	/// <summary>
-	/// What <see cref="RoiFallbackHint"/> says when no default ROI is set: what the run covers
-	/// instead, e.g. that every airway is included.
+	/// What the run covers when no ROI is set, for <see cref="RoiFallbackHint"/>: a clause that
+	/// follows "so", e.g. <c>every airway is included</c>.
 	/// </summary>
-	protected abstract string NoDefaultRoiHint { get; }
+	protected abstract string NoRoiEffect { get; }
 
 	/// <summary>
 	/// The keys the three GeoJSON file choices are saved and sent under. The same key serves the
@@ -640,7 +642,7 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 
 		return DefaultRoiStore.Load() is { } roi
 			? $"Default ROI: SW {roi.SwLat:0.####}, {roi.SwLon:0.####} / NE {roi.NeLat:0.####}, {roi.NeLon:0.####}"
-			: "None set - no geographic limit";
+			: "ROI has not been set, yet - no geographic limit";
 	}
 
 	// ================= private =================

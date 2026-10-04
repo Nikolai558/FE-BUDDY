@@ -69,7 +69,7 @@ Written by Settings, except `NewsLastOpen` and `LegacyGitHubTokenNoticeShown`.
 |---|---|---|
 | `AiracCycleId` | a cycle ID, e.g. `2610`, matched back to previous, current or next on load | the current cycle |
 | `SelectedSubServices` | comma-separated: `Airports`, `Airways`, `Departures`, `Arrivals`, `Navaids`, `ArtccBoundaries`, `Fixes`, `WxStations`, `Procedures`, `Telephony`, `VnasAlias`. Never rename one without migrating this value | none |
-| `UserArtccId` | the Settings ▸ Facility Profile ARTCC, e.g. `ZOB`. The run's `PrimaryFacility` (first in `Duplicate_Alias_Commands.txt`, and Procedures' leading section) | none |
+| `UserArtccId` | the Settings ▸ Facility Profile ARTCC, e.g. `ZOB`. The run's `PrimaryFacility` (first in `Duplicate_Alias_Commands.txt`, and Procedures' leading section), and the ARTCC ticked on Departures, Arrivals, ARTCC Boundaries and Procedures until each is first saved | none |
 | `CoordinatePrecision` | `1`-`15` decimal places, or `0` for Do not round (the app offers 5, 6, 7 and Do not round) | `6` |
 | `DefaultRoi.FilterByRoi` | `true` / `false` - not `Y` / `N` | `false` |
 | `DefaultRoi.DefaultCoordindates.SwLat`, `.SwLon`, `.NeLat`, `.NeLon` | decimal degrees | none |
@@ -284,7 +284,7 @@ unknown-key warning).
 | `GenerateAliasFile` | | `Y` / `N` | `Y` |
 | `EmitLines`, `EmitSymbols`, `EmitText` | | `Y` / `N` | `Y` |
 | `IncludeObstacleDepartures` | | `Y` / `N` - Departures only | `Y` |
-| `ArtccFilter` | | list of ARTCC IDs; empty means all | none |
+| `ArtccFilter` | | list of ARTCC IDs; empty means all | saved: the Facility Profile ARTCC, until first saved |
 | `AmendmentFilter` | `Amendment.Filter` | `None`, `Cycles`, `Days`, `Date` | `None` |
 | `AmendedWithinCycles` | `Amendment.WithinCycles` | 1-1000 (1 = the selected cycle); **required** with `Cycles` | saved: `1` |
 | `AmendedWithinDays` | `Amendment.WithinDays` | 1-36500, back from today; **required** with `Days` | saved: `30` |
@@ -324,7 +324,7 @@ unknown-key warning).
 | Block key | Saved as | Values | Default |
 |---|---|---|---|
 | `OutputBy` | | `HighLow`, `HighLowUnlimited`, `ArtccAltitude` | `HighLow` |
-| `LocationFilter` | | list of ARTCC IDs; empty means every one with boundary data | none |
+| `LocationFilter` | | list of ARTCC IDs; empty means every one with boundary data | saved: the Facility Profile ARTCC, until first saved |
 | `SplitAtAntimeridian` | | `Y` / `N` | `Y` |
 
 - No `GenerateGeojson`, `GenerateAliasFile` or `Emit…`: it always writes Lines only.

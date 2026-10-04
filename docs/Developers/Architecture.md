@@ -28,9 +28,13 @@ needs it; launch never stops.
 1. Clear `%TEMP%\FE-Buddy`, then read `UserConfig.json`.
 2. Look for FE-Buddy 2.x's `FEBUDDY_GITHUB_TOKEN` variable - its name only, never its value - and,
    if it is set, show a one-time notice (`LegacyGitHubTokenNotice`).
-3. Delete FE-Buddy 2.8.x's dead Desktop and Start menu shortcuts (`LegacySquirrelShortcuts`).
-4. Get the UTC time and check the internet connection.
-5. In parallel: the version check, the AIRAC data (below) and News.
+3. Uninstall a copy of FE-Buddy 2.x that Squirrel installed in `%LOCALAPPDATA%\FE-BUDDY`, by running
+   its own `Update.exe --uninstall`, or remove its Installed apps entry if `Update.exe` is gone
+   (`LegacySquirrelInstall`). It never runs from inside that folder, and a failure is tried again at
+   the next launch.
+4. Delete FE-Buddy 2.x's dead Desktop and Start menu shortcuts (`LegacySquirrelShortcuts`).
+5. Get the UTC time and check the internet connection.
+6. In parallel: the version check, the AIRAC data (below) and News.
 
 Results land on `AppEnvironment`, and the AIRAC cache raises `StateChanged` as each cycle moves on.
 The view-models listen, so the window fills in as launch goes: the status narrates the downloads,

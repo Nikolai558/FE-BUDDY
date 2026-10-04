@@ -30,10 +30,21 @@
         <StackPanel>
             <CheckBox Content="{Binding Title}" ContentStringFormat="Override the default ROI for {0}"
                       IsChecked="{Binding OverrideRoi}" Margin="0,4,0,0" />
-            <TextBlock Text="{Binding RoiFallbackHint}" Style="{StaticResource Text.Caption}" TextWrapping="Wrap"
+            <!-- the default ROI in use, or (in amber) that none is set and how to set one -->
+            <TextBlock Text="{Binding RoiFallbackHint}" TextWrapping="Wrap"
                        Margin="20,4,0,0"
                        MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
-                       Visibility="{Binding OverrideRoi, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
+                       Visibility="{Binding OverrideRoi, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}">
+                <TextBlock.Style>
+                    <Style TargetType="TextBlock" BasedOn="{StaticResource Text.Caption}">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding HasRoi}" Value="False">
+                                <Setter Property="Foreground" Value="{StaticResource Brush.Warn}" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+            </TextBlock>
             <StackPanel Margin="20,8,0,0" IsEnabled="{Binding OverrideRoi}">
                 <Grid>
                     <Grid.ColumnDefinitions>

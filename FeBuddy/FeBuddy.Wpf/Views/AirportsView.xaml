@@ -27,7 +27,7 @@
 
             <!-- ============ outputs ============ -->
             <cards:OutputsCard GeojsonDescription="Writes the airport and runway GeoJSON files selected below."
-                               AliasDescription="Writes one alias command per airport FAA ID, and one for airports with an ICAO ID." />
+                               AliasDescription="Writes one alias command per airport FAA ID, and one more for an airport whose ICAO ID is different." />
 
             <!-- ============ which GeoJSON files ============ -->
             <cards:GeojsonFilesCard IsEnabled="{Binding GenerateGeojson}"

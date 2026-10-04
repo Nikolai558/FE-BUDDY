@@ -79,8 +79,8 @@ public sealed class FixesViewModel : GeojsonSubServiceViewModel, ISubServiceRunT
 	protected override int EnabledOutputCount => 1;
 
 	/// <inheritdoc />
-	protected override string NoDefaultRoiHint =>
-		"No default ROI is set, so the GeoJSON covers every fix. Set one in Settings, or override it here.";
+	protected override string NoRoiEffect =>
+		"the GeoJSON covers every fix";
 
 	/// <inheritdoc />
 	/// <remarks>Fixes has no Lines file: only Symbols and Text are ever written.</remarks>

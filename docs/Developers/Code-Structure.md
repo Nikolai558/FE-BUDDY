@@ -60,7 +60,7 @@ FeBuddy.Core/
 │   ├── GitHub/           GitHubAuth, GitHubRepository, GitHubFileUrl
 │   ├── Http/ Logging/ Markdown/   FeBuddyHttp, AppLog, MarkdownParser
 │   ├── Platform/         AppVersion, InstalledProduct, UtcTimeCheck, LegacyGitHubTokenVariable,
-│   │                     LegacySquirrelShortcuts
+│   │                     LegacySquirrelInstall, LegacySquirrelShortcuts
 │   ├── Nasr/             NasrCycleDownloader, AiracCycleAvailability, NasrCsvReader, WaypointLocator;
 │   │                     Models/ and Parsers/ hold one row model and one parser per NASR CSV group
 │   ├── SharedData/       SharedDataDownload: download, check and swap in data kept outside the

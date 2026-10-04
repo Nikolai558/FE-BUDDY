@@ -107,7 +107,7 @@ class, so different files can look different:
 Each ARTCC's boundary as lines. No Symbols, Text or alias file.
 
 - **ARTCCs** - tick the ones you want; none means all. Only ARTCCs with boundary lines in the cycle
-  are listed.
+  are listed. Your Facility Profile ARTCC is ticked until you first save the tab.
 - **File Layout:**
   - **High and Low** (the default) - `ARTCC-Boundary_High_Lines` and `ARTCC-Boundary_Low_Lines`. An
     UNLIMITED boundary goes in both.
@@ -124,7 +124,7 @@ Each ARTCC's boundary as lines. No Symbols, Text or alias file.
 
 - **Files** - Runways (lines), Airports symbols, and Airports text (FAA ID and name). An airport is
   included when its reference point is in the region.
-- **`Airports.txt`** - a command for each airport's FAA ID, and its ICAO ID if it has one, showing
+- **`Airports.txt`** - a command for each airport's FAA ID, and its ICAO ID if that's different, showing
   its card in CRC: identifiers and name, tower type, ARTCC, longest runway, elevation, pattern
   altitude, FSS, CTAF, weather, attended hours, and its airspace class with the hours it's in effect.
   It covers every open airport; the region only limits the GeoJSON.
@@ -158,10 +158,12 @@ covers STARs. Otherwise the two tabs work the same.
   (`LAS_BLAID_STAR_Lines.geojson`), so a SID and a STAR with the same name never overwrite each other.
 - **Alias file** - `Departures.txt` or `Arrivals.txt`: a command per airport and procedure that draws
   its fixes. A STAR lists its transitions first, then its bodies.
-- **ARTCCs** - tick the ones you want; none means all. A STAR serving airports in two ARTCCs goes
-  with each airport's own ARTCC.
+- **ARTCCs** - tick the ones you want; none means all. Your facility from Settings ▸ Facility Profile
+  is ticked until you first save the tab. A STAR serving airports in two ARTCCs goes with each
+  airport's own ARTCC.
 - **Amendment Date** - every procedure, or only those amended in the last *N* cycles, the last *N*
-  days, or since a date.
+  days, or since a date. Cycles count back from the selected cycle, which is the first: with 2610
+  selected, the last 4 cycles are 2607 to 2610.
 - **How the Region Selects…** - every procedure of an airport in the region, or any procedure with
   a point in it. The region limits the alias file too.
 - **Names** - a procedure is named by its FAA computer code without the version number
@@ -383,7 +385,7 @@ stay), **Delete all files** (the folder is emptied first - not to the Recycle Bi
 
 Progress, then **Errors**, **Advisories** (output you might expect but won't find, and why),
 **Results** for each sub-service (each group of messages has a copy button, handy for a bug report),
-and **Output**: every file written, with **Open output folder**.
+and **Output**: how many files were written, with **Open output folder**.
 
 ## File Conversions
 
@@ -401,7 +403,8 @@ FAA `.dat` RADAR Video Maps, one `.geojson` each, with the same name.
 - **CRC ERAM Defaults** - Lines only. **Include** (on to start) gives every map the same look;
   untick it to leave the look to CRC.
 - **Cropping** - keep only what's within this many NM of the map's point of tangency (its centre).
-  Blank converts the whole map. A line crossing the edge is cut there, not dropped.
+  Blank converts the whole map. A line crossing the edge is cut there, not dropped. The distance
+  applies to every file in the run, so convert maps that need different distances separately.
 
 ### SCT2 to GeoJSON
 
@@ -509,7 +512,8 @@ someone else - every setting except this PC's own (update channel, credentials, 
 read). An import shows what will change first, and keeps your old settings as
 `UserConfig.before-import.json`.
 
-- **Facility Profile** - your ARTCC (listed first by Procedures and the duplicate report), and the
+- **Facility Profile** - your ARTCC (ticked to start on the tabs that pick ARTCCs, and listed first
+  by Procedures and the duplicate report), and the
   **Default Output Directory** - the Desktop to start - with **Add a FE-Buddy_Output folder inside
   that directory** (on).
 - **Default Region of Interest** - **Set ROI…** opens the map. Every tab uses it unless it overrides

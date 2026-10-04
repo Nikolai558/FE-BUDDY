@@ -18,6 +18,23 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
   Full guide: docs/Developers/RELEASING.md.
 -->
 ## Unreleased
+### AIRAC Service
+- Airports no longer warns about 108 airports outside the US whose ICAO ID is the same as their FAA
+  ID. Each still gets its one command, and its card shows the ID once (`CYAM`, not `CYAM - CYAM`).
+- Departures, Arrivals and ARTCC Boundaries start with your Settings ▸ Facility Profile ARTCC
+  ticked, as Procedures already did, until you first save the tab.
+- Departures and Arrivals explain **Amendment Date**, with an example of what "the last 4 cycles"
+  keeps and leaves out.
+- When no Region of Interest is set, each tab, Settings and the Map page say so in amber, with how
+  to set one.
+- The Review tab's **Output** card shows how many files the run wrote and **Open output folder**;
+  the file list and its **Show files** button are gone.
+
+### File Conversions
+- DAT to GeoJSON warns that the cropping distance applies to every file in the conversion, since a
+  set of RVMs often needs different distances.
+
+---
 
 ## 3.0.0-beta.1
 ### Installing and uninstalling
@@ -25,6 +42,8 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
   installer, or that was there when you installed 3.x by hand), so you no longer end up with two
   FE-BUDDYs in Installed apps, on the Desktop and in the Start menu. It also removes a leftover
   "FE-BUDDY 2.x" entry in Installed apps that could no longer be uninstalled.
+
+---
 
 ## 3.0.0-alpha.5
 ### Dashboard

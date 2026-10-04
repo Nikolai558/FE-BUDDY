@@ -64,8 +64,8 @@ public sealed class ArtccBoundariesViewModel : GeojsonSubServiceViewModel, ISubS
 	protected override int EnabledOutputCount => 1;
 
 	/// <inheritdoc />
-	protected override string NoDefaultRoiHint =>
-		"No default ROI is set, so every boundary is drawn in full. Set one in Settings, or override it here.";
+	protected override string NoRoiEffect =>
+		"every boundary is drawn in full";
 
 	/// <inheritdoc />
 	/// <remarks>ARTCC Boundaries has no file choices: it always writes Lines only.</remarks>
@@ -124,7 +124,7 @@ public sealed class ArtccBoundariesViewModel : GeojsonSubServiceViewModel, ISubS
 	/// </remarks>
 	public void LoadCycleDependentLists(NasrCsvDataCollection data)
 	{
-		_savedLocationFilter = ParseList(Get("LocationFilter"));
+		_savedLocationFilter = ParseArtccListOrFacility(Get("LocationFilter"));
 
 		string[] locationIds = [.. (data.Arb?.ArbSeg ?? [])
 			.Select(s => (s.LocationId ?? string.Empty).Trim().ToUpperInvariant())
@@ -162,7 +162,7 @@ public sealed class ArtccBoundariesViewModel : GeojsonSubServiceViewModel, ISubS
 		RefreshVnasFiles();
 
 		// The lists were empty when this tab snapshotted itself at construction; re-take the
-		// snapshot now they reflect what is actually saved.
+		// snapshot now they reflect what is actually saved (or the Settings facility).
 		ResyncSavedState();
 	}
 
@@ -225,7 +225,7 @@ public sealed class ArtccBoundariesViewModel : GeojsonSubServiceViewModel, ISubS
 
 		// Re-apply the saved location filter to any already-built toggles, without a dirty check
 		// per toggle; ClearDirty below re-takes the snapshot once.
-		_savedLocationFilter = ParseList(Get("LocationFilter"));
+		_savedLocationFilter = ParseArtccListOrFacility(Get("LocationFilter"));
 		_suppressLocationChanges = true;
 		try
 		{

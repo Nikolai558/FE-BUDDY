@@ -52,7 +52,7 @@
             <ctl:Card Header="ARTCCs">
                 <StackPanel>
                     <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
-                               Text="Pick the ARTCCs whose boundaries you want. Leave all unticked to include every one." />
+                               Text="Pick the ARTCCs whose boundaries you want. Leave all unticked to include every one. Your facility from Settings ▸ Facility Profile is ticked until you first save this tab." />
                     <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap"
                                MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
                                Text="ARTCCs appear once the selected cycle's data is loaded."

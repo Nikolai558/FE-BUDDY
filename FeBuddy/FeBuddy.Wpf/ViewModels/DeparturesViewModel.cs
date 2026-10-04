@@ -92,8 +92,8 @@ public sealed class DeparturesViewModel : GeojsonSubServiceViewModel, ISubServic
 		(GenerateGeojson ? 1 : 0) + (GenerateAliasFile ? 1 : 0);
 
 	/// <inheritdoc />
-	protected override string NoDefaultRoiHint =>
-		"No default ROI is set, so every departure procedure is included. Set one in Settings, or override it here.";
+	protected override string NoRoiEffect =>
+		"every departure procedure is included";
 
 	/// <inheritdoc />
 	/// <remarks>
@@ -229,7 +229,7 @@ public sealed class DeparturesViewModel : GeojsonSubServiceViewModel, ISubServic
 	/// <remarks>Builds the ARTCC toggle list from the cycle's <c>DP_BASE</c>.</remarks>
 	public void LoadCycleDependentLists(NasrCsvDataCollection data)
 	{
-		_savedArtccFilter = ParseList(Get("ArtccFilter"));
+		_savedArtccFilter = ParseArtccListOrFacility(Get("ArtccFilter"));
 
 		string[] artccs = [.. (data.Dp?.DpBase ?? [])
 			.Select(d => d.Artcc?.Trim().ToUpperInvariant() ?? string.Empty)
@@ -244,7 +244,7 @@ public sealed class DeparturesViewModel : GeojsonSubServiceViewModel, ISubServic
 		}
 
 		// The list was empty when this tab snapshotted itself at construction; re-take the
-		// snapshot now the toggles reflect what is actually saved.
+		// snapshot now the toggles reflect what is actually saved (or the Settings facility).
 		ResyncSavedState();
 	}
 
@@ -351,7 +351,7 @@ public sealed class DeparturesViewModel : GeojsonSubServiceViewModel, ISubServic
 
 		// Re-apply the saved ARTCC filter to any already-built toggles, without a dirty check
 		// per toggle; ClearDirty below re-takes the snapshot once.
-		_savedArtccFilter = ParseList(Get("ArtccFilter"));
+		_savedArtccFilter = ParseArtccListOrFacility(Get("ArtccFilter"));
 		_suppressArtccChanges = true;
 		try
 		{

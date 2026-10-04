@@ -23,7 +23,7 @@ Some 2.x tools aren't in 3.0 yet; see [Do I still need FE-Buddy 2.x?](FAQ-and-Tr
 
 Download `FE-BUDDY-Setup.msi` from the newest release on
 [GitHub Releases](https://github.com/Nikolai558/FE-BUDDY/releases) and run it. It upgrades
-FE-Buddy 2.9 or later in place.
+FE-Buddy 2.9 or later in place, and FE-Buddy removes an older 2.x the first time it starts.
 
 You need Windows 10 or 11 (64-bit) and an internet connection; FE-Buddy brings everything else.
 

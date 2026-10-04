@@ -48,7 +48,7 @@
 
                     <ctl:SectionHeader Style="{StaticResource SectionHeader.Group}" Label="ARTCCs" Margin="0,14,0,0" />
                     <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
-                               Text="Pick the ARTCCs whose departures you want. Leave all unticked to include every ARTCC." />
+                               Text="Pick the ARTCCs whose departures you want. Leave all unticked to include every ARTCC. Your facility from Settings ▸ Facility Profile is ticked until you first save this tab." />
                     <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap"
                                MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
                                Text="ARTCCs appear once the selected cycle's data is loaded."
@@ -70,20 +70,25 @@
                     <!-- Amendment-date filter. One radio per mode; each mode's input is live only
                          while its radio is checked, and keeps its value when another is picked. -->
                     <ctl:SectionHeader Style="{StaticResource SectionHeader.Group}" Label="Amendment Date" Margin="0,14,0,0" />
+                    <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,2"
+                               Text="Every procedure has an amendment date: the day its current version took effect. Choose how recent that has to be, to keep only the departures that changed lately." />
                     <RadioButton GroupName="DepartureAmendment" Content="Any amendment date" Margin="0,6,0,0"
+                                 ToolTip="Every departure, however long ago it was last amended."
                                  IsChecked="{Binding AmendmentAny, Mode=TwoWay}" />
                     <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
                         <RadioButton GroupName="DepartureAmendment" Content="Amended within the last" VerticalAlignment="Center"
+                                     ToolTip="Only departures amended in the selected cycle or the cycles just before it. 1 is the selected cycle only, 2 adds the cycle before it, and so on."
                                      IsChecked="{Binding AmendmentByCycles, Mode=TwoWay}" />
                         <TextBox Style="{StaticResource Field.Number}"
                                  IsEnabled="{Binding AmendmentByCycles}"
                                  Text="{Binding AmendedWithinCycles, UpdateSourceTrigger=PropertyChanged}"
                                  bhv:FieldState.Error="{Binding FieldErrors[AmendedWithinCycles]}" />
                         <TextBlock Text="cycles" Style="{StaticResource Text.Body}" VerticalAlignment="Center" />
-                        <TextBlock Text="(1 = this cycle)" Style="{StaticResource Text.Caption}" VerticalAlignment="Center" Margin="6,0,0,0" />
+                        <TextBlock Text="(1 = the selected cycle)" Style="{StaticResource Text.Caption}" VerticalAlignment="Center" Margin="6,0,0,0" />
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
                         <RadioButton GroupName="DepartureAmendment" Content="Amended within the last" VerticalAlignment="Center"
+                                     ToolTip="Only departures amended in the last so many days, counting back from today."
                                      IsChecked="{Binding AmendmentByDays, Mode=TwoWay}" />
                         <TextBox Style="{StaticResource Field.Number}"
                                  IsEnabled="{Binding AmendmentByDays}"
@@ -93,6 +98,7 @@
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
                         <RadioButton GroupName="DepartureAmendment" Content="Amended on or after" VerticalAlignment="Center"
+                                     ToolTip="Only departures amended on this date or later."
                                      IsChecked="{Binding AmendmentByDate, Mode=TwoWay}" />
                         <DatePicker Width="160" Margin="8,0,0,0" VerticalAlignment="Center"
                                     IsEnabled="{Binding AmendmentByDate}"
@@ -100,7 +106,9 @@
                                     bhv:FieldState.Error="{Binding FieldErrors[AmendedOnOrAfter]}" />
                     </StackPanel>
                     <TextBlock Style="{StaticResource Text.Prose}" Margin="0,8,0,0"
-                               Text="Filters on the date the procedure's current amendment became effective. Days count back from today." />
+                               Text="Cycles count back from the cycle selected on the General tab, which counts as the first. Days count back from today." />
+                    <TextBlock Style="{StaticResource Text.Prose}" Margin="0,6,0,0"
+                               Text="For example, with cycle 2610 selected, &quot;the last 4 cycles&quot; covers cycles 2607 to 2610. A departure last amended in 2606 is left out of this run's files; &quot;the last 5 cycles&quot; would keep it." />
                 </StackPanel>
             </ctl:Card>
 

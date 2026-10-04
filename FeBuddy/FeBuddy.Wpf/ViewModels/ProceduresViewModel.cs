@@ -188,8 +188,8 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 		(GenerateChangesDocument ? 1 : 0) + (GenerateProceduresJson ? 1 : 0) + (GenerateAliasFile ? 1 : 0);
 
 	/// <inheritdoc />
-	protected override string NoDefaultRoiHint =>
-		"No default ROI is set, so \"Also include every airport inside the region of interest\" has nothing to select unless you override it here.";
+	protected override string NoRoiEffect =>
+		"\"Also include every airport inside the region of interest\" has nothing to select";
 
 	/// <inheritdoc />
 	/// <remarks>Procedures writes no GeoJSON at all.</remarks>

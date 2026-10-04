@@ -300,6 +300,25 @@ public abstract class SubServiceSettingsViewModel : ServiceTabViewModel, IConfig
 			StringComparer.OrdinalIgnoreCase);
 
 	/// <summary>
+	/// Splits a saved ARTCC list or, while the tab has never saved one, gives the facility chosen in
+	/// Settings ▸ Facility Profile, so a new tab starts on the user's own ARTCC rather than every
+	/// ARTCC. A saved empty list stays empty: the user chose every ARTCC.
+	/// </summary>
+	/// <param name="saved">The saved value, or <see langword="null"/> when none has been saved.</param>
+	/// <returns>The entries; empty when nothing is saved and no facility is set.</returns>
+	protected static HashSet<string> ParseArtccListOrFacility(string? saved)
+	{
+		if (saved is not null)
+		{
+			return ParseList(saved);
+		}
+
+		string? facility = UserConfigFile.GetValue(SettingsViewModel.ArtccKey)?.Trim();
+
+		return string.IsNullOrEmpty(facility) ? ParseList(null) : ParseList(facility);
+	}
+
+	/// <summary>
 	/// Called after <see cref="ReloadFromConfig"/> has reloaded this tab from the config (a
 	/// discard, an undo or an import). The base does nothing.
 	/// </summary>

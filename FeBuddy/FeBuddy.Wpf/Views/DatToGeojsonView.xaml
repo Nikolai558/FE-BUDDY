@@ -49,6 +49,14 @@
                 </StackPanel>
                 <TextBlock Style="{StaticResource Text.Prose}" Margin="0,8,0,0"
                            Text="Leave blank to convert the whole map. Lines that cross the distance are cut exactly where they meet it. The point of tangency is the one the .dat file itself defines, so each map is cropped around its own." />
+
+                <!-- One distance for the whole run, while a set of RVMs often needs several. -->
+                <Border Style="{StaticResource Chip.Warn}" HorizontalAlignment="Left" Padding="10,8" Margin="0,10,0,0">
+                    <TextBlock Style="{StaticResource Text.Prose}">
+                        <Run Text="Be careful:" FontWeight="SemiBold" Foreground="{StaticResource Brush.Warn}" />
+                        <Run Text="this distance applies to every file in this conversion - every .dat file in the folder, or every file you picked. A set of RVMs often needs different distances, so convert maps that need another distance on their own." />
+                    </TextBlock>
+                </Border>
             </StackPanel>
         </ctl:Card>
 

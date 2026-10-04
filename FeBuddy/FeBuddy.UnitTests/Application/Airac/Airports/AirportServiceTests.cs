@@ -176,8 +176,9 @@ public sealed class AirportServiceTests : IDisposable
 			SeattleData(AirportTestDataBuilder.Base("KSEA", name: "CLASHING FIELD")),
 			Settings(("GenerateGeojson", "N")));
 
+		// The airport's own FAA ID wins over SEA's ICAO ID.
 		Assert.Equal(4, result.AliasCommandCount);
-		Assert.Contains(result.Warnings, w => w.Contains("'.aptKSEA' was already written", StringComparison.Ordinal));
+		Assert.Contains(result.Warnings, w => w.Contains(".aptKSEA (kept for KSEA)", StringComparison.Ordinal));
 	}
 
 	[Fact]

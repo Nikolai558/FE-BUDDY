@@ -289,10 +289,15 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 	/// <summary>Whether a default ROI is set on screen.</summary>
 	public bool HasDefaultRoi => DefaultRoi is not null;
 
-	/// <summary>The default ROI's corners on one line, or that none is set.</summary>
+	/// <summary>The default ROI's corners on one line, or <see cref="RoiNotSetHint"/> when none is set.</summary>
 	public string DefaultRoiSummary => DefaultRoi is { } r
 		? $"SW {r.SwLat:0.####}, {r.SwLon:0.####}    ·    NE {r.NeLat:0.####}, {r.NeLon:0.####}"
-		: "No default ROI is set.";
+		: RoiNotSetHint;
+
+	/// <summary>What the Default Region of Interest card says while no ROI is set.</summary>
+	public const string RoiNotSetHint =
+		"ROI has not been set, yet.\n" +
+		"Please press Set ROI…, draw a box around your area on the map and press Use this ROI, then press Save at the top of this page.";
 
 	/// <summary>Opens the ROI picker; what the user confirms is saved with the rest of the page by <see cref="SaveCommand"/>.</summary>
 	public ICommand EditRoiCommand { get; }

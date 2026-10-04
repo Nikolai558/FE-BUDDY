@@ -55,6 +55,7 @@ public sealed class LaunchSequenceTests : IDisposable
 
 	private readonly string _root = Path.Combine(Path.GetTempPath(), "FeBuddyTests_Launch_" + Guid.NewGuid().ToString("N"));
 	private readonly List<string> _preparedCycles = [];
+	private readonly List<string> _squirrelRuns = [];
 
 	public LaunchSequenceTests()
 	{
@@ -64,6 +65,14 @@ public sealed class LaunchSequenceTests : IDisposable
 		AppEnvironment.ResetForTesting();
 		LegacyGitHubTokenNotice.ConfigureForTesting(() => []);
 		LegacySquirrelShortcuts.ConfigureForTesting([Path.Combine(_root, "desktop")], Path.Combine(_root, "squirrel", "FE-BUDDY.exe"));
+		LegacySquirrelInstall.ConfigureForTesting(
+			Path.Combine(_root, "squirrel"),
+			@"Software\FeBuddyTests_LaunchNoSuchKey_" + Guid.NewGuid().ToString("N"),
+			(file, args, _) =>
+			{
+				_squirrelRuns.Add($"{file} {args}");
+				return 0;
+			});
 		AiracCycleDataCache.ConfigureForTesting(new AiracCycleDataCache(
 			probe: (_, _) => Task.FromResult(AiracCyclePublicationState.Published),
 			download: (cycle, _) =>
@@ -80,6 +89,7 @@ public sealed class LaunchSequenceTests : IDisposable
 		AppEnvironment.ResetForTesting();
 		LegacyGitHubTokenNotice.ConfigureForTesting(null);
 		LegacySquirrelShortcuts.ConfigureForTesting(null, null);
+		LegacySquirrelInstall.ConfigureForTesting(null, null, null);
 		AiracCycleDataCache.ConfigureForTesting(null);
 		UserConfigFile.ConfigureForTesting(null);
 		TempWorkspace.ConfigureForTesting(null);
@@ -178,6 +188,22 @@ public sealed class LaunchSequenceTests : IDisposable
 		Assert.True(LegacyGitHubTokenNotice.HasBeenShown);
 	}
 
+	/// <summary>Launch runs the uninstaller of a copy of FE-Buddy 2.x that Squirrel left, and does nothing without one.</summary>
+	[Fact]
+	public async Task launch_uninstalls_fe_buddy_2x_left_by_squirrel()
+	{
+		AppEnvironment.HttpClientForTesting = new HttpClient(new StubHttpHandler(Online));
+
+		await LaunchSequence.RunAsync("3.0.0");
+		Assert.Empty(_squirrelRuns);
+
+		string updateExe = Path.Combine(Directory.CreateDirectory(Path.Combine(_root, "squirrel")).FullName, "Update.exe");
+		File.WriteAllText(updateExe, "exe");
+
+		await LaunchSequence.RunAsync("3.0.0");
+		Assert.Equal($"{updateExe} --uninstall", Assert.Single(_squirrelRuns));
+	}
+
 	[Fact]
 	public async Task offline_launch_falls_back_to_the_local_clock_and_the_bundled_news()
 	{
@@ -213,7 +239,7 @@ public sealed class LaunchSequenceTests : IDisposable
 			new[]
 			{
 				LaunchStep.ClearTempWorkspace, LaunchStep.ReadUserConfig, LaunchStep.CheckLegacyGitHubToken,
-				LaunchStep.RemoveLegacyShortcuts, LaunchStep.CheckUtcTimeAndInternet, LaunchStep.CheckVersion, LaunchStep.PrepareAiracData, LaunchStep.CheckNews,
+				LaunchStep.RemoveLegacySquirrelInstall, LaunchStep.RemoveLegacyShortcuts, LaunchStep.CheckUtcTimeAndInternet, LaunchStep.CheckVersion, LaunchStep.PrepareAiracData, LaunchStep.CheckNews,
 			}.Order(),
 			failed);
 		Assert.Contains(AppLog.Entries, e => e.Level == LogLevel.Warning && e.Message.Contains("step blew up. Continuing launch.", StringComparison.Ordinal));

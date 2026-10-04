@@ -13,6 +13,21 @@ News concerning all things FE-Buddy will be posted here with the most recent pos
 
 ---
 
+## 2026-10-04
+<!--
+PostId: 2026-10-04.1
+-->
+
+**Version 3.0.0-alpha.5 Compiled!**
+
+- **Alias Command Guide** has its own Info page, plus a new **Alias Command Practice** quiz to export
+- Include **VATSIM-Radar's Virtual Airline List** in Telephony
+- **Clear** button on the Dashboard activity log
+
+Check it out [HERE](https://github.com/Nikolai558/FE-BUDDY/releases/tag/3.0.0-alpha.5)!!!
+
+---
+
 ## 2026-10-03
 <!--
 PostId: 2026-10-03.1

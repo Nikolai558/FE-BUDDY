@@ -12,9 +12,10 @@ namespace FeBuddy.Wpf.ViewModels;
 /// </summary>
 /// <remarks>
 /// A page opens in place of the cards (<see cref="Page"/>). What's New links to the Alias Command
-/// Guide; the guide's back arrow then returns to What's New rather than the cards.
+/// Guide; the guide's back arrow then returns to What's New rather than the cards. Choosing Info in
+/// the side nav always shows the cards.
 /// </remarks>
-public sealed class InfoViewModel : ObservableObject
+public sealed class InfoViewModel : ObservableObject, IOpensAtStart
 {
 	private object? _page;
 
@@ -53,6 +54,10 @@ public sealed class InfoViewModel : ObservableObject
 		get => _page;
 		private set => SetProperty(ref _page, value);
 	}
+
+	/// <inheritdoc />
+	/// <remarks>Back to the cards.</remarks>
+	public void ReturnToStart() => ShowCards();
 
 	private void ShowCards() => Page = null;
 

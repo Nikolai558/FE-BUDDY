@@ -43,7 +43,7 @@
             <ctl:Option Margin="0,10,0,0" Description="{Binding AliasDescription, ElementName=Self}">
                 <CheckBox Content="Alias file" IsChecked="{Binding GenerateAliasFile}" />
             </ctl:Option>
-            <ContentPresenter Margin="20,6,0,0" IsEnabled="{Binding GenerateAliasFile}"
+            <ContentPresenter Margin="26,6,0,0" IsEnabled="{Binding GenerateAliasFile}"
                               Content="{Binding AliasOptions, ElementName=Self}">
                 <ContentPresenter.Style>
                     <Style TargetType="ContentPresenter">

@@ -73,7 +73,7 @@
                     <RadioButton GroupName="ArrivalAmendment" Content="Any amendment date" Margin="0,6,0,0"
                                  ToolTip="Every arrival, however long ago it was last amended."
                                  IsChecked="{Binding AmendmentAny, Mode=TwoWay}" />
-                    <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                    <WrapPanel Margin="0,6,0,0">
                         <RadioButton GroupName="ArrivalAmendment" Content="Amended within the last" VerticalAlignment="Center"
                                      ToolTip="Only arrivals amended in the selected cycle or the cycles just before it. 1 is the selected cycle only, 2 adds the cycle before it, and so on."
                                      IsChecked="{Binding AmendmentByCycles, Mode=TwoWay}" />
@@ -83,8 +83,8 @@
                                  bhv:FieldState.Error="{Binding FieldErrors[AmendedWithinCycles]}" />
                         <TextBlock Text="cycles" Style="{StaticResource Text.Body}" VerticalAlignment="Center" />
                         <TextBlock Text="(1 = the selected cycle)" Style="{StaticResource Text.Caption}" VerticalAlignment="Center" Margin="6,0,0,0" />
-                    </StackPanel>
-                    <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                    </WrapPanel>
+                    <WrapPanel Margin="0,6,0,0">
                         <RadioButton GroupName="ArrivalAmendment" Content="Amended within the last" VerticalAlignment="Center"
                                      ToolTip="Only arrivals amended in the last so many days, counting back from today."
                                      IsChecked="{Binding AmendmentByDays, Mode=TwoWay}" />
@@ -93,8 +93,8 @@
                                  Text="{Binding AmendedWithinDays, UpdateSourceTrigger=PropertyChanged}"
                                  bhv:FieldState.Error="{Binding FieldErrors[AmendedWithinDays]}" />
                         <TextBlock Text="days" Style="{StaticResource Text.Body}" VerticalAlignment="Center" />
-                    </StackPanel>
-                    <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                    </WrapPanel>
+                    <WrapPanel Margin="0,6,0,0">
                         <RadioButton GroupName="ArrivalAmendment" Content="Amended on or after" VerticalAlignment="Center"
                                      ToolTip="Only arrivals amended on this date or later."
                                      IsChecked="{Binding AmendmentByDate, Mode=TwoWay}" />
@@ -102,7 +102,7 @@
                                     IsEnabled="{Binding AmendmentByDate}"
                                     SelectedDate="{Binding AmendedOnOrAfter, Mode=TwoWay}" SelectedDateFormat="Short"
                                     bhv:FieldState.Error="{Binding FieldErrors[AmendedOnOrAfter]}" />
-                    </StackPanel>
+                    </WrapPanel>
                     <TextBlock Style="{StaticResource Text.Prose}" Margin="0,8,0,0"
                                Text="Cycles count back from the cycle selected on the General tab, which counts as the first. Days count back from today." />
                     <TextBlock Style="{StaticResource Text.Prose}" Margin="0,6,0,0"

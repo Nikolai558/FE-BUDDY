@@ -40,7 +40,7 @@
                                 <TextBlock Text="{TemplateBinding Title}"
                                            Margin="16,0,0,0" VerticalAlignment="Center"
                                            FontFamily="{DynamicResource Font.Display}"
-                                           FontSize="12" FontWeight="Bold"
+                                           FontSize="13" FontWeight="Bold"
                                            Foreground="{DynamicResource Brush.Text.Primary}" />
 
                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right"

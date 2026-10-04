@@ -29,7 +29,7 @@
         <!-- A layout's example tree, in the code font. -->
         <Style x:Key="LayoutTree" TargetType="TextBlock">
             <Setter Property="FontFamily" Value="{StaticResource Font.Mono}" />
-            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontSize" Value="13" />
             <Setter Property="Margin" Value="0,6,0,0" />
         </Style>
 

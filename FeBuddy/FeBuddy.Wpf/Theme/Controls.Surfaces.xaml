@@ -271,7 +271,7 @@
          variant (Brush.Positive / Brush.Warn / Brush.Accent.Text / ...). -->
     <Style x:Key="Chip.Text" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{DynamicResource Font.Body}" />
-        <Setter Property="FontSize" Value="10.5" />
+        <Setter Property="FontSize" Value="11.5" />
         <Setter Property="FontWeight" Value="Bold" />
         <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Secondary}" />
     </Style>
@@ -372,7 +372,7 @@
                                              VerticalAlignment="Center" Margin="8,0,0,0"
                                              Visibility="Collapsed" />
                                     <TextBlock Text="{Binding Title}"
-                                               FontFamily="{DynamicResource Font.Body}" FontSize="13"
+                                               FontFamily="{DynamicResource Font.Body}" FontSize="14.5"
                                                TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
                                 </DockPanel>
                             </Grid>

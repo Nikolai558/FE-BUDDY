@@ -44,7 +44,7 @@
                     <RadioButton GroupName="FixOutputBy" Margin="0,6,0,0"
                                  Content="One file per chart (e.g. Fix_ENROUTE-LOW_Symbols.geojson)"
                                  IsChecked="{Binding OutputByChart, Mode=TwoWay}" />
-                    <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="24,2,0,6"
+                    <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="26,2,0,6"
                                MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
                                Text="A fix on several charts goes into each of their files; fixes on no chart go into Fix_NO-CHART." />
                     <RadioButton GroupName="FixOutputBy" Margin="0,0,0,0"

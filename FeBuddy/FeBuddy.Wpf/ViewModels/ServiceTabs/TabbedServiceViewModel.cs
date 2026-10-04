@@ -27,7 +27,7 @@ namespace FeBuddy.Wpf.ViewModels.ServiceTabs;
 /// Cancelling that prompt keeps the user where they are rather than silently discarding edits.
 /// </para>
 /// </remarks>
-public abstract class TabbedServiceViewModel : ObservableObject
+public abstract class TabbedServiceViewModel : ObservableObject, IOpensAtStart
 {
 	private ServiceTabViewModel? _selectedTab;
 	private bool _isRunning;
@@ -125,6 +125,13 @@ public abstract class TabbedServiceViewModel : ObservableObject
 
 	/// <summary>The selected tab's title, for the content header.</summary>
 	public string SelectedTabTitle => SelectedTab?.Title ?? string.Empty;
+
+	/// <inheritdoc />
+	/// <remarks>
+	/// Selects the first tab, as a click on it in the rail would: no tab is left with unsaved edits
+	/// lost, since every tab keeps its own.
+	/// </remarks>
+	public void ReturnToStart() => SelectedTab = Tabs.FirstOrDefault();
 
 	/// <summary>
 	/// The permanent first tab - the service's own settings and the sub-service picker - or

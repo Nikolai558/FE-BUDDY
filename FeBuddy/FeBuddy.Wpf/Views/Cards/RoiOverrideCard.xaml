@@ -32,7 +32,7 @@
                       IsChecked="{Binding OverrideRoi}" Margin="0,4,0,0" />
             <!-- the default ROI in use, or (in amber) that none is set and how to set one -->
             <TextBlock Text="{Binding RoiFallbackHint}" TextWrapping="Wrap"
-                       Margin="20,4,0,0"
+                       Margin="26,4,0,0"
                        MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
                        Visibility="{Binding OverrideRoi, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}">
                 <TextBlock.Style>
@@ -45,11 +45,11 @@
                     </Style>
                 </TextBlock.Style>
             </TextBlock>
-            <StackPanel Margin="20,8,0,0" IsEnabled="{Binding OverrideRoi}">
+            <StackPanel Margin="26,8,0,0" IsEnabled="{Binding OverrideRoi}">
                 <Grid>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto" /><ColumnDefinition Width="160" />
-                        <ColumnDefinition Width="Auto" /><ColumnDefinition Width="160" />
+                        <ColumnDefinition Width="Auto" /><ColumnDefinition Width="140" />
+                        <ColumnDefinition Width="Auto" /><ColumnDefinition Width="140" />
                     </Grid.ColumnDefinitions>
                     <Grid.RowDefinitions><RowDefinition /><RowDefinition /></Grid.RowDefinitions>
                     <TextBlock Text="NE lat" Style="{StaticResource Text.Caption}" VerticalAlignment="Center" Margin="0,0,8,4" />

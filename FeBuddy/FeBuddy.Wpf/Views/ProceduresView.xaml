@@ -36,15 +36,15 @@
             <ctl:Card Header="Outputs">
                 <StackPanel>
                     <CheckBox Content="Procedure_Changes.md" IsChecked="{Binding GenerateChangesDocument}" Margin="0,4,0,0" />
-                    <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="24,2,0,10"
+                    <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="26,2,0,10"
                                MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
                                Text="A briefing of every added, changed and deleted procedure at the airports you pick, grouped by facility, busiest airspace first, with links to the FAA's compare PDFs and charts." />
                     <CheckBox Content="Procedures.json" IsChecked="{Binding GenerateProceduresJson}" Margin="0,0,0,0" />
-                    <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="24,2,0,10"
+                    <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="26,2,0,10"
                                MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
                                Text="Every current chart at the airports you pick, with the fields chosen below." />
                     <CheckBox Content="Alias file" IsChecked="{Binding GenerateAliasFile}" Margin="0,0,0,0" />
-                    <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="24,2,0,10"
+                    <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="26,2,0,10"
                                MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
                                Text="FAA Chart Recall: a command that opens each page of every chart at every airport in the d-TPP metafile,&#xA;Ex: .dtwI22Lc for ILS OR LOC RWY 22L at DTW.&#xA;The choices below pick what the documents cover; they never limit the alias file." />
                     <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap"

@@ -119,7 +119,7 @@ FeBuddy.Wpf/
 ├── Assets/BaseMap/      us-states.json, coastlines.json (from Natural Earth, built by
 │                        FeBuddy/Tools/BuildBaseMap.cs)
 ├── Behaviors/           attached properties a view opts into (FieldState, InlineCode, InlineMarkdown,
-│                        WheelScroll, ComboBoxDropDownFocus), and MaximizeToWorkArea, a window hook
+│                        WheelScroll, ScrollToTop, ComboBoxDropDownFocus), and MaximizeToWorkArea, a window hook
 │                        the chrome windows install from code
 ├── Controls/            Card, SectionHeader, Option, CopyButton, FilterPicker, MarkdownView, MapCanvas,
 │                        AliasGuideDocumentView, BesideOrBelow, CommandTablePanel, ChromeWindow, BrandMark
@@ -143,7 +143,9 @@ FeBuddy.Wpf/
 
 ### How the screens are built
 
-- **Navigation** is a `ContentControl` with a `DataTemplate` per view-model.
+- **Navigation** is a `ContentControl` with a `DataTemplate` per view-model. Each page's view-model
+  is built once and kept; a page with places inside it (`IOpensAtStart`: the tabbed screens, Info)
+  goes back to its first tab or main page each time it is chosen in the side nav.
 - **AIRAC Service and File Conversions are one view**, `TabbedServiceView`; each screen's
   view-model says what differs. Tabs are data (`TabbedServiceViewModel`), not hand-placed XAML.
 - **A sub-service tab** derives from `GeojsonSubServiceViewModel`, which brings the shared cards'
@@ -169,13 +171,16 @@ FeBuddy.Wpf/
   dictionary to a sibling silently resolves to `UnsetValue`. Views can use `StaticResource`.
 - **Code-style text** (a folder, a file name) goes between backticks with the TextBlock's text set
   through `bhv:InlineCode.Text`. `ConfirmWindow` messages and card footnotes already do this.
-- **A file name in a CheckBox or RadioButton** can be plain `Content`: the theme's versions have no
-  access keys, so an underscore shows as written.
+- **A CheckBox is square and a RadioButton round:** use a CheckBox when any number can be ticked, a
+  RadioButton group when only one can. A plain-text label wraps when there's no room, so it can be
+  long. A file name can be plain `Content`: the theme's versions have no access keys, so an
+  underscore shows as written.
 - **A two-way ComboBox in a template** is safest with its items from `x:Static`, as `AirwaysView`'s
   High and Low Files drop-downs do. Whatever it binds to, test switching to another tab and back:
   bug #251 lost the Airways choices that way.
 - **Fonts:** Segoe UI throughout (`Font.Display`, `Font.Body`), Cascadia Mono then Consolas for code
   (`Font.Mono`), and Segoe Fluent Icons for glyphs (`Font.Icon`), set in `Theme/Typography.xaml`.
+  Body text is 14.5, captions 12.5; a size outside the `Text.*` styles keeps to the same scale.
 - **Window chrome** uses `WindowChrome` without `AllowsTransparency`, so snapping and the system
   shadow still work.
 

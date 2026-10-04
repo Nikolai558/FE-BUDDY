@@ -54,14 +54,14 @@
                         Background="{StaticResource Brush.Text.Tertiary}" />
 
                 <TextBlock Grid.Column="1" Text="{Binding UtcTimestamp, StringFormat=HH:mm:ss}"
-                           FontFamily="{StaticResource Font.Mono}" FontSize="11"
+                           FontFamily="{StaticResource Font.Mono}" FontSize="12"
                            Foreground="{StaticResource Brush.Text.Tertiary}" VerticalAlignment="Center" />
-                <TextBlock Grid.Column="1" Text="Z" FontFamily="{StaticResource Font.Mono}" FontSize="9"
+                <TextBlock Grid.Column="1" Text="Z" FontFamily="{StaticResource Font.Mono}" FontSize="10"
                            Foreground="{StaticResource Brush.Text.Tertiary}" VerticalAlignment="Center"
                            HorizontalAlignment="Right" Margin="0,0,-8,0" />
 
                 <TextBlock Grid.Column="2" Text="{Binding Source}"
-                           FontFamily="{StaticResource Font.Mono}" FontSize="11"
+                           FontFamily="{StaticResource Font.Mono}" FontSize="12"
                            Foreground="{StaticResource Brush.Text.Secondary}" VerticalAlignment="Center"
                            Margin="16,0,12,0" MinWidth="120" />
 
@@ -148,7 +148,7 @@
                       Visibility="{Binding ShowCycleDay, Converter={StaticResource BoolToVis}}">
                 <DockPanel>
                     <Button DockPanel.Dock="Right" Style="{StaticResource Button.Subtle}"
-                            Content="{StaticResource Icon.Cancel}" FontFamily="{StaticResource Font.Icon}" FontSize="10"
+                            Content="{StaticResource Icon.Cancel}" FontFamily="{StaticResource Font.Icon}" FontSize="11"
                             Padding="7,4" VerticalAlignment="Center"
                             Command="{Binding DismissCycleDayCommand}" ToolTip="Dismiss" />
                     <TextBlock Style="{StaticResource Text.Body}" VerticalAlignment="Center">
@@ -222,36 +222,36 @@
                             <RadioButton Style="{StaticResource LogChip}" IsChecked="{Binding FilterIsAll, Mode=OneWay}"
                                          Command="{Binding SetLogFilterCommand}" CommandParameter="All">
                                 <TextBlock>
-                                    <Run Text="All " Foreground="{StaticResource Brush.Text.Secondary}" FontWeight="SemiBold" FontSize="11" />
-                                    <Run Text="{Binding AllCount, Mode=OneWay}" Foreground="{StaticResource Brush.Text.Tertiary}" FontSize="11" />
+                                    <Run Text="All " Foreground="{StaticResource Brush.Text.Secondary}" FontWeight="SemiBold" FontSize="12" />
+                                    <Run Text="{Binding AllCount, Mode=OneWay}" Foreground="{StaticResource Brush.Text.Tertiary}" FontSize="12" />
                                 </TextBlock>
                             </RadioButton>
                             <RadioButton Style="{StaticResource LogChip}" IsChecked="{Binding FilterIsInfo, Mode=OneWay}"
                                          Command="{Binding SetLogFilterCommand}" CommandParameter="Info">
                                 <TextBlock>
-                                    <Run Text="Info " Foreground="{StaticResource Brush.Text.Tertiary}" FontWeight="SemiBold" FontSize="11" />
-                                    <Run Text="{Binding InfoCount, Mode=OneWay}" Foreground="{StaticResource Brush.Text.Tertiary}" FontSize="11" />
+                                    <Run Text="Info " Foreground="{StaticResource Brush.Text.Tertiary}" FontWeight="SemiBold" FontSize="12" />
+                                    <Run Text="{Binding InfoCount, Mode=OneWay}" Foreground="{StaticResource Brush.Text.Tertiary}" FontSize="12" />
                                 </TextBlock>
                             </RadioButton>
                             <RadioButton Style="{StaticResource LogChip}" IsChecked="{Binding FilterIsSuccess, Mode=OneWay}"
                                          Command="{Binding SetLogFilterCommand}" CommandParameter="Success">
                                 <TextBlock>
-                                    <Run Text="Success " Foreground="{StaticResource Brush.Positive}" FontWeight="SemiBold" FontSize="11" />
-                                    <Run Text="{Binding SuccessCount, Mode=OneWay}" Foreground="{StaticResource Brush.Text.Tertiary}" FontSize="11" />
+                                    <Run Text="Success " Foreground="{StaticResource Brush.Positive}" FontWeight="SemiBold" FontSize="12" />
+                                    <Run Text="{Binding SuccessCount, Mode=OneWay}" Foreground="{StaticResource Brush.Text.Tertiary}" FontSize="12" />
                                 </TextBlock>
                             </RadioButton>
                             <RadioButton Style="{StaticResource LogChip}" IsChecked="{Binding FilterIsWarning, Mode=OneWay}"
                                          Command="{Binding SetLogFilterCommand}" CommandParameter="Warning">
                                 <TextBlock>
-                                    <Run Text="Warning " Foreground="{StaticResource Brush.Warn}" FontWeight="SemiBold" FontSize="11" />
-                                    <Run Text="{Binding WarningCount, Mode=OneWay}" Foreground="{StaticResource Brush.Text.Tertiary}" FontSize="11" />
+                                    <Run Text="Warning " Foreground="{StaticResource Brush.Warn}" FontWeight="SemiBold" FontSize="12" />
+                                    <Run Text="{Binding WarningCount, Mode=OneWay}" Foreground="{StaticResource Brush.Text.Tertiary}" FontSize="12" />
                                 </TextBlock>
                             </RadioButton>
                             <RadioButton Style="{StaticResource LogChip}" IsChecked="{Binding FilterIsError, Mode=OneWay}"
                                          Command="{Binding SetLogFilterCommand}" CommandParameter="Error">
                                 <TextBlock>
-                                    <Run Text="Error " Foreground="{StaticResource Brush.Danger}" FontWeight="SemiBold" FontSize="11" />
-                                    <Run Text="{Binding ErrorCount, Mode=OneWay}" Foreground="{StaticResource Brush.Text.Tertiary}" FontSize="11" />
+                                    <Run Text="Error " Foreground="{StaticResource Brush.Danger}" FontWeight="SemiBold" FontSize="12" />
+                                    <Run Text="{Binding ErrorCount, Mode=OneWay}" Foreground="{StaticResource Brush.Text.Tertiary}" FontSize="12" />
                                 </TextBlock>
                             </RadioButton>
                         </WrapPanel>

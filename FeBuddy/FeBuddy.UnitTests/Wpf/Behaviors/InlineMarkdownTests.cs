@@ -63,7 +63,7 @@ public sealed class InlineMarkdownTests
 			Span code = Assert.IsType<Span>(inlines[1]);
 			Run run = Assert.IsType<Run>(Assert.Single(code.Inlines));
 			Assert.Equal("Upload_to_vNAS", run.Text);
-			Assert.Equal(12, code.FontSize, precision: 6);
+			Assert.Equal(13, code.FontSize, precision: 6);
 		});
 	}
 

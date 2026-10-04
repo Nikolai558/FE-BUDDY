@@ -42,7 +42,8 @@ Where you make files. The tabs run down the left:
 | **Preview Settings** | What the run will do, and the **Run AIRAC Service** button. |
 | **Review** | What the last run did. |
 
-The screen waits until the AIRAC data has downloaded.
+The screen waits until the AIRAC data has downloaded. Choosing AIRAC Service in the menu always opens
+the General tab; the other tabs keep what you've typed.
 
 ### Saving
 
@@ -491,6 +492,8 @@ A map for checking GeoJSON files and setting your Region of Interest. **Set ROIâ
 
 - **Toolbar** - Edit ROI, zoom, Home, make this view your home, fit every layer, zoom to the ROI, the
   base map, and the side panel. A map opens where the last one was left.
+- **Zoom** - the box beside the zoom buttons shows the zoom as a percentage of your home view
+  (Home is 100%); type one and press Enter. The wheel zooms 25% a notch, or 1% with **Shift** held.
 - **Base map** - US states, coastlines and lakes, gridlines, and their opacity. Your choices apply to
   every map.
 - **Default Region of Interest** - **Edit ROI**, drag a box (or type its corners), then **Save**.

@@ -40,13 +40,13 @@
         <!-- ============ cropping ============ -->
         <ctl:Card Header="Cropping">
             <StackPanel>
-                <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                <WrapPanel Margin="0,4,0,0">
                     <TextBlock Text="Keep what lies within" Style="{StaticResource Text.Body}" VerticalAlignment="Center" />
                     <TextBox Style="{StaticResource Field.Number}"
                              Text="{Binding CroppingDistance, UpdateSourceTrigger=PropertyChanged}"
                              bhv:FieldState.Error="{Binding FieldErrors[CroppingDistance]}" />
                     <TextBlock Text="NM of the map's point of tangency" Style="{StaticResource Text.Body}" VerticalAlignment="Center" />
-                </StackPanel>
+                </WrapPanel>
                 <TextBlock Style="{StaticResource Text.Prose}" Margin="0,8,0,0"
                            Text="Leave blank to convert the whole map. Lines that cross the distance are cut exactly where they meet it. The point of tangency is the one the .dat file itself defines, so each map is cropped around its own." />
 

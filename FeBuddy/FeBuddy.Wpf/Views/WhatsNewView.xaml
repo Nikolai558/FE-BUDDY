@@ -21,7 +21,7 @@
         <!-- A command in a before-and-after pair: the mono font, in the code look. -->
         <Style x:Key="Command" TargetType="TextBlock" BasedOn="{StaticResource Text.Body}">
             <Setter Property="FontFamily" Value="{StaticResource Font.Mono}" />
-            <Setter Property="FontSize" Value="12.5" />
+            <Setter Property="FontSize" Value="14" />
             <Setter Property="VerticalAlignment" Value="Center" />
         </Style>
 
@@ -42,7 +42,7 @@
             <Border Style="{StaticResource Panel.Block}" Width="96" Margin="0,0,8,8">
                 <StackPanel HorizontalAlignment="Center">
                     <TextBlock Text="{Binding Code}" HorizontalAlignment="Center"
-                               FontFamily="{StaticResource Font.Mono}" FontSize="20" FontWeight="SemiBold"
+                               FontFamily="{StaticResource Font.Mono}" FontSize="22" FontWeight="SemiBold"
                                Foreground="{StaticResource Brush.Accent.Text}" />
                     <TextBlock Text="{Binding Type}" Style="{StaticResource Text.Caption}" HorizontalAlignment="Center" />
                 </StackPanel>
@@ -74,7 +74,7 @@
         <Grid Grid.Row="0" Background="{StaticResource Brush.Bg.Base}">
             <StackPanel Orientation="Horizontal" Margin="16,24,28,14">
                 <Button Style="{StaticResource Button.Icon}" VerticalAlignment="Center" Margin="0,4,4,0"
-                        Content="{StaticResource Icon.Chevron.Left}" FontFamily="{StaticResource Font.Icon}" FontSize="14"
+                        Content="{StaticResource Icon.Chevron.Left}" FontFamily="{StaticResource Font.Icon}" FontSize="15.5"
                         Command="{Binding BackCommand}" ToolTip="Back to Info" />
                 <TextBlock Text="What's New in v3.0" Style="{StaticResource Text.Display}" />
             </StackPanel>
@@ -201,7 +201,7 @@
                                                                            Foreground="{StaticResource Brush.Text.Tertiary}"
                                                                            TextDecorations="Strikethrough" ToolTip="FE-Buddy 2.x" />
                                                                 <TextBlock Text="{StaticResource Icon.Chevron.Right}" FontFamily="{StaticResource Font.Icon}"
-                                                                           FontSize="10" Foreground="{StaticResource Brush.Text.Tertiary}"
+                                                                           FontSize="11" Foreground="{StaticResource Brush.Text.Tertiary}"
                                                                            VerticalAlignment="Center" Margin="10,1,10,0" />
                                                                 <TextBlock Text="{Binding New}" Style="{StaticResource Command}" FontWeight="SemiBold"
                                                                            Foreground="{StaticResource Brush.Accent.Text}" ToolTip="FE-Buddy 3.0" />

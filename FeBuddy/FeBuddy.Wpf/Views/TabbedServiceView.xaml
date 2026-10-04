@@ -169,8 +169,9 @@
                     <Border Style="{StaticResource Divider}" VerticalAlignment="Bottom" />
                 </Grid>
 
+                <!-- one scroller for every tab, so a tab change scrolls it back to the top -->
                 <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
-                              bhv:WheelScroll.Amplify="3">
+                              bhv:WheelScroll.Amplify="3" bhv:ScrollToTop.When="{Binding SelectedTab}">
                     <StackPanel Margin="28,18,28,0">
                         <TextBlock Text="{Binding SelectedTabTitle}" Style="{StaticResource Text.H2}"
                                    Margin="0,0,0,14" />

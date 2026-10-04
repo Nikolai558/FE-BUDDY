@@ -81,7 +81,7 @@
                              IsChecked="{Binding CrcDefaultsScope, Converter={StaticResource EnumToBool}, ConverterParameter=AllVnasFiles}" />
                 <RadioButton GroupName="VnasCrcDefaults" Content="Specific files" Margin="0,3"
                              IsChecked="{Binding CrcDefaultsScope, Converter={StaticResource EnumToBool}, ConverterParameter=SpecificFiles}" />
-                <ItemsControl Margin="20,4,0,0" ItemsSource="{Binding CrcFileRows}" ItemTemplate="{StaticResource CrcRow}"
+                <ItemsControl Margin="26,4,0,0" ItemsSource="{Binding CrcFileRows}" ItemTemplate="{StaticResource CrcRow}"
                               Visibility="{Binding IsCrcDefaultsSpecific, Converter={StaticResource BoolToVis}}" />
             </StackPanel>
         </StackPanel>

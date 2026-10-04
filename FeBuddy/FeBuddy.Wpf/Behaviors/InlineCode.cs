@@ -21,14 +21,14 @@ namespace FeBuddy.Wpf.Behaviors;
 /// </para>
 /// <para>
 /// Code text is sized from the TextBlock's own font size, at the ratio <c>MarkdownView</c> uses
-/// (12 against its 13), so it suits a caption as well as body text. <see cref="ApplyLook"/> is the
+/// (13 against its 14.5), so it suits a caption as well as body text. <see cref="ApplyLook"/> is the
 /// one place the look itself is set; <c>MarkdownView</c> uses it too.
 /// </para>
 /// </remarks>
 public static class InlineCode
 {
-	/// <summary>The code text's size against the text around it: MarkdownView's 12 against its 13.</summary>
-	private const double SizeRatio = 12.0 / 13.0;
+	/// <summary>The code text's size against the text around it: MarkdownView's 13 against its 14.5.</summary>
+	private const double SizeRatio = 13.0 / 14.5;
 
 	/// <summary>The text, with each part to show as code between backticks.</summary>
 	public static readonly DependencyProperty TextProperty =

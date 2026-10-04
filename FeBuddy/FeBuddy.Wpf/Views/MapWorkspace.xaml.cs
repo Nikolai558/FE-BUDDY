@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -10,8 +11,8 @@ namespace FeBuddy.Wpf.Views;
 
 /// <summary>
 /// The one map screen, hosted by the Map page and by every map popup. See MapWorkspace.xaml.
-/// Its code-behind only does what is purely about the map control: the toolbar's zoom buttons,
-/// framing on request, handing a Shift + drag box to the view-model, and carrying the view
+/// Its code-behind only does what is purely about the map control: the toolbar's zoom buttons and
+/// zoom box, framing on request, handing a Shift + drag box to the view-model, and carrying the view
 /// (centre and zoom) from one map to the next so a popup opens where the Map page was looking.
 /// </summary>
 public partial class MapWorkspace : UserControl
@@ -125,6 +126,42 @@ public partial class MapWorkspace : UserControl
 	private void OnZoomIn(object sender, RoutedEventArgs e) => Map.ZoomBy(2.0);
 
 	private void OnZoomOut(object sender, RoutedEventArgs e) => Map.ZoomBy(0.5);
+
+	/// <summary>
+	/// Enter zooms to the percentage typed (a number, with or without %); Esc puts the current
+	/// zoom back. Either way the box then shows the map's real zoom, which a limit may have capped.
+	/// </summary>
+	private void OnZoomBoxKeyDown(object sender, KeyEventArgs e)
+	{
+		if (e.Key == Key.Enter)
+		{
+			string typed = ZoomBox.Text.Replace("%", string.Empty, StringComparison.Ordinal).Trim();
+
+			if (double.TryParse(typed, NumberStyles.Number, CultureInfo.CurrentCulture, out double percent))
+			{
+				Map.ZoomToPercent(percent);
+			}
+
+			// After the redraw that reports the new zoom.
+			Dispatcher.BeginInvoke(DispatcherPriority.Background, () =>
+			{
+				ShowCurrentZoom();
+				ZoomBox.SelectAll();
+			});
+			e.Handled = true;
+		}
+		else if (e.Key == Key.Escape)
+		{
+			ShowCurrentZoom();
+			Map.Focus();
+			e.Handled = true;
+		}
+	}
+
+	/// <summary>Leaving the box without Enter drops what was typed.</summary>
+	private void OnZoomBoxLostFocus(object sender, KeyboardFocusChangedEventArgs e) => ShowCurrentZoom();
+
+	private void ShowCurrentZoom() => ZoomBox.GetBindingExpression(TextBox.TextProperty)?.UpdateTarget();
 
 	private void OnHome(object sender, RoutedEventArgs e) => GoHome();
 

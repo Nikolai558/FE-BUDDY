@@ -96,7 +96,7 @@
                     <RadioButton GroupName="NavaidSymbolStyle" Margin="0,3,0,0"
                                  Content="Style each NAVAID by its type"
                                  IsChecked="{Binding StyleByNavaidType, Mode=TwoWay}" />
-                    <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="24,2,0,4"
+                    <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="26,2,0,4"
                                MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
                                Text="VOR, VORTAC, VOR/DME and VOT draw as vor; TACAN and DME as tacan; NDB types as ndb. The CRC ERAM Defaults card then asks for no Symbols style." />
                     <RadioButton GroupName="NavaidSymbolStyle" Margin="0,3,0,0"

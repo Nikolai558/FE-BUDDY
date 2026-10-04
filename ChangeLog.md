@@ -8,7 +8,7 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
   Adding an entry: put one bullet under "## Unreleased" in the same pull request as the change,
   under the "### " heading it belongs to (add the heading if it isn't there yet; after a release,
   "## Unreleased" starts empty, with no headings). Headings used so far: Updates, Dashboard,
-  AIRAC Service, File Conversions, Info, Settings, Installing and uninstalling, Look and feel,
+  AIRAC Service, File Conversions, Map, Info, Settings, Installing and uninstalling, Look and feel,
   Dev notes (always last).
   Write it for users, not developers: what changed and why they care, in one line. Issue numbers
   become links ("Bug #215 - ..."). Put developer-only changes under "### Dev notes". Link
@@ -33,6 +33,19 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
 ### File Conversions
 - DAT to GeoJSON warns that the cropping distance applies to every file in the conversion, since a
   set of RVMs often needs different distances.
+
+### Map
+- The toolbar shows the zoom as a percentage of your home view (Home is 100%); type one and press
+  Enter to go to it. Hold **Shift** while turning the wheel to zoom 1% at a time.
+- In a narrow window the toolbar wraps onto a second row instead of hiding its last buttons.
+
+### Look and feel
+- All text is 10% larger.
+- Checkboxes are square and radio buttons round, so a choice of one is easy to tell from a choice
+  of several. A long option label wraps onto a second line in a narrow window instead of being cut
+  off.
+- Choosing AIRAC Service, File Conversions or Info in the menu opens it at its start (the first tab,
+  or Info's main page), and every tab opens scrolled to the top.
 
 ---
 

@@ -15,6 +15,21 @@ News concerning all things FE-Buddy will be posted here with the most recent pos
 
 ## 2026-10-04
 <!--
+PostId: 2026-10-04.2
+-->
+
+**Version 3.0.0-beta.1 Compiled!**
+
+FE-Buddy 3.0 is out of alpha! 🎉 This is the first beta, so keep the feedback coming.
+
+- Still have an old **FE-Buddy 2.x** installed alongside 3.x? FE-Buddy now cleans it up for you: no more two FE-Buddys in Installed apps, on the Desktop and in the Start menu
+
+Check it out [HERE](https://github.com/Nikolai558/FE-BUDDY/releases/tag/3.0.0-beta.1)!!!
+
+---
+
+## 2026-10-04
+<!--
 PostId: 2026-10-04.1
 -->
 

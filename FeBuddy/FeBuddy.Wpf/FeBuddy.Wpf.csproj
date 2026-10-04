@@ -33,7 +33,7 @@
          numeric AssemblyVersion/FileVersion the SDK also derives from it drop the pre-release tag,
          so nothing compares with those. -dev marks an unreleased build: it outranks every 2.x
          release, so the version check reports "ahead of the latest release". -->
-    <Version>3.0.0-alpha.5</Version>
+    <Version>3.0.0-beta.1</Version>
     <!-- Keep the Product version exactly <Version> - no "+<commit hash>" build metadata. -->
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
     <Nullable>enable</Nullable>

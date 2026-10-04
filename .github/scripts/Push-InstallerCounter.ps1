@@ -4,7 +4,7 @@
 
 .DESCRIPTION
 	build.ps1 advances FeBuddy\FeBuddy.Installer\installer-version-counter.json on every build (see
-	docs/Developers/MSI-VERSION-NUMBERING.md). After a release build, this commits the advanced file
+	docs/Developers/VERSIONING.md). After a release build, this commits the advanced file
 	to v3-development - and only there: `releases` receives it with the next release's pull request,
 	so the next release builds with the next number.
 

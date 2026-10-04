@@ -81,6 +81,30 @@
     <SolidColorBrush x:Key="Brush.Warn.Soft"     Color="#1FFBBF5C" />
     <SolidColorBrush x:Key="Brush.Danger.Soft"   Color="#1FF26D6D" />
 
+    <!-- ========================= COMMAND PARTS ======================== -->
+    <!-- The alias command guide's pills (Info ▸ Alias Command Guide), one hue per kind of part a
+         controller replaces - the same colours as the exported web page's part variables, so
+         the page and the export look alike. Each kind has its text colour, a soft fill and a line
+         for the pill's edge; Controls/AliasGuideDocumentView picks them by kind. -->
+    <SolidColorBrush x:Key="Brush.Command.Airport"         Color="#5EC8F2" />
+    <SolidColorBrush x:Key="Brush.Command.Airport.Soft"    Color="#1F5EC8F2" />
+    <SolidColorBrush x:Key="Brush.Command.Airport.Line"    Color="#805EC8F2" />
+    <SolidColorBrush x:Key="Brush.Command.Identifier"      Color="{StaticResource Color.Accent}" />
+    <SolidColorBrush x:Key="Brush.Command.Identifier.Soft" Color="#1FF4B740" />
+    <SolidColorBrush x:Key="Brush.Command.Identifier.Line" Color="#80F4B740" />
+    <SolidColorBrush x:Key="Brush.Command.ApproachType"      Color="#4ADE80" />
+    <SolidColorBrush x:Key="Brush.Command.ApproachType.Soft" Color="#1F4ADE80" />
+    <SolidColorBrush x:Key="Brush.Command.ApproachType.Line" Color="#804ADE80" />
+    <SolidColorBrush x:Key="Brush.Command.Variant"         Color="#C084FC" />
+    <SolidColorBrush x:Key="Brush.Command.Variant.Soft"    Color="#1FC084FC" />
+    <SolidColorBrush x:Key="Brush.Command.Variant.Line"    Color="#80C084FC" />
+    <SolidColorBrush x:Key="Brush.Command.Runway"          Color="#FB7185" />
+    <SolidColorBrush x:Key="Brush.Command.Runway.Soft"     Color="#1FFB7185" />
+    <SolidColorBrush x:Key="Brush.Command.Runway.Line"     Color="#80FB7185" />
+    <SolidColorBrush x:Key="Brush.Command.Page"            Color="#94A3B8" />
+    <SolidColorBrush x:Key="Brush.Command.Page.Soft"       Color="#1F94A3B8" />
+    <SolidColorBrush x:Key="Brush.Command.Page.Line"       Color="#8094A3B8" />
+
     <!-- ======================== SHAPE / RADIUS ======================== -->
     <!-- Kept as CornerRadius resources so every rounded element agrees. -->
     <CornerRadius x:Key="Radius.Card">16</CornerRadius>

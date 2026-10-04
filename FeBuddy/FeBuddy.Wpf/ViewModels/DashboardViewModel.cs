@@ -42,7 +42,7 @@ public sealed class DashboardViewModel : ObservableObject
 	private bool _isLogCollapsed = true;
 	private LogLevel? _levelFilter;
 
-	/// <summary>Creates the view-model, seeds the log from <see cref="AppLog"/>, and starts following it.</summary>
+	/// <summary>Creates the view-model, seeds the log from <see cref="AppLog.DisplayEntries"/>, and starts following it.</summary>
 	public DashboardViewModel()
 	{
 		_dispatcher = Application.Current?.Dispatcher ?? Dispatcher.CurrentDispatcher;
@@ -55,10 +55,11 @@ public sealed class DashboardViewModel : ObservableObject
 		OpenDiscordCommand = new RelayCommand(() => BrowserLauncher.Open(Links.Discord));
 		SetLogFilterCommand = new RelayCommand<string>(SetLogFilter);
 		ToggleLogCommand = new RelayCommand(() => IsLogCollapsed = !IsLogCollapsed);
+		ClearLogCommand = new RelayCommand(ClearLog);
 		DismissCycleDayCommand = new RelayCommand(DismissCycleDay);
 
-		// Seed from whatever the log already holds, then follow it live.
-		foreach (LogEntry entry in AppLog.Entries.Reverse())
+		// Seed from whatever the log already holds since the last Clear, then follow it live.
+		foreach (LogEntry entry in AppLog.DisplayEntries.Reverse())
 		{
 			_allLog.Add(entry);
 		}
@@ -89,6 +90,9 @@ public sealed class DashboardViewModel : ObservableObject
 
 	/// <summary>Expands or collapses the activity log.</summary>
 	public ICommand ToggleLogCommand { get; }
+
+	/// <summary>Empties the activity log on screen. The log file keeps every entry.</summary>
+	public ICommand ClearLogCommand { get; }
 
 	/// <summary>Hides the cycle-day banner for the rest of the session.</summary>
 	public ICommand DismissCycleDayCommand { get; }
@@ -287,6 +291,15 @@ public sealed class DashboardViewModel : ObservableObject
 		// Picking a chip is asking to see those entries, so open the log; the user can still
 		// minimize it again.
 		IsLogCollapsed = false;
+	}
+
+	private void ClearLog()
+	{
+		// AppLog remembers the clear, so the next Dashboard (one is made per navigation) seeds
+		// from after it. Every entry is cleared, whatever the filter shows; the filter stays.
+		AppLog.ClearDisplay();
+		_allLog.Clear();
+		RaiseLogCounts();
 	}
 
 	private void RaiseLogCounts()

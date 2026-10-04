@@ -14,7 +14,7 @@
 	   .../releases/latest/download/FE-BUDDY-Setup.msi always finds the latest stable release's
 	   installer. The version is the release's tag (and the MSI's ProductSemVer property).
 
-	See docs/Developers/VERSIONING.md and docs/Developers/MSI-VERSION-NUMBERING.md. publish\ and
+	See docs/Developers/VERSIONING.md. publish\ and
 	releases\ are gitignored and recreated on every run.
 
 .EXAMPLE

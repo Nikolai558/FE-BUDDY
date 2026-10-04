@@ -9,7 +9,7 @@
 ## [DOWNLOAD](https://github.com/Nikolai558/FE-BUDDY/releases)
 
 FE-Buddy 3.x installs from `FE-BUDDY-Setup.msi` on the [Releases](https://github.com/Nikolai558/FE-BUDDY/releases)
-page. It upgrades an existing 2.x install in place. What changed in each release: [ChangeLog.md](ChangeLog.md).
+page. It upgrades an existing 2.9 or later install in place. What changed in each release: [ChangeLog.md](ChangeLog.md).
 
 ---
 
@@ -30,38 +30,38 @@ Every 28 days the FAA publishes new aeronautical data; FE-Buddy downloads it and
 files a facility needs - **GeoJSON video maps** for CRC and **alias files** of dot-commands - limited
 to your facility's area and styled the way you choose.
 
-FE-Buddy 3.0 is a from-scratch rewrite. Today it produces:
+FE-Buddy 3.0 is a from-scratch rewrite. It makes:
 
 | | GeoJSON | Alias file |
 |---|---|---|
-| **ARTCC Boundaries** | Every ARTCC's lateral boundary, by high/low altitude, high/low/unlimited, or one file per ARTCC | *(no alias file)* |
-| **Airports** | airport symbols and labels, runway lines | `Airports.txt` |
-| **Airways** | airway lines, waypoint symbols and labels - by high/low altitude or by designation | `Airways.txt` |
+| **ARTCC Boundaries** | Every ARTCC's boundary, by high/low altitude, high/low/unlimited, or one file per ARTCC and altitude | - |
+| **Airports** | Airport symbols and labels, runway lines | `Airports.txt` |
+| **Airways** | Airway lines, waypoint symbols and labels - by high/low altitude or by designation | `Airways.txt` |
 | **Arrivals** | STARs, per airport | `Arrivals.txt` |
 | **Departures** | SIDs (and ODPs if you want them), per airport | `Departures.txt` |
-| **NAVAIDs** | VOR, NDB, TACAN and the rest of the NASR NAVAID types | `Navaids.txt` |
-| **Fixes** | A symbol and a label for every NASR fix, all in one file, by fix use, by chart, or by chart and fix use | *(no alias file)* |
-| **Procedures** | *(no GeoJSON)* - `Procedure_Changes.md` and `Procedures.json` instead, from the FAA's d-TPP Metafile, not NASR | `Faa_Chart_Recall.txt` |
-| **Telephony** | *(no GeoJSON)* | `Telephony.txt` - operators by designator and by spoken telephony |
-| **Wx Stations** | A symbol and a two-line label for every US METAR-reporting station - source: aviationweather.gov, not NASR | *(no alias file)* |
-| **vNAS Alias Upload** | *(no GeoJSON)* | `vNAS_Alias.txt` - the alias files you mark for vNAS, then your facility's own |
+| **NAVAIDs** | VOR, NDB, TACAN and every other NASR NAVAID type | `Navaids.txt` |
+| **Fixes** | Every NASR fix, in one file, by fix use, by chart, or by chart and fix use | - |
+| **Procedures** | - (`Procedure_Changes.md` and `Procedures.json` instead, from the FAA's d-TPP Metafile) | `Faa_Chart_Recall.txt` |
+| **Telephony** | - | `Telephony.txt` - operators by designator and by spoken telephony, plus virtual airlines |
+| **Wx Stations** | Every US and US-territory station that reports METAR, from aviationweather.gov | - |
+| **vNAS Alias Upload** | - | `vNAS_Alias.txt` - the alias files you mark for vNAS, then your facility's own |
 
-plus DAT, SCT2 and ERAM GeoMap conversions to GeoJSON, and a map to check GeoJSON files and set your
-Region of Interest. Some 2.x tools (SCT2 to DXF, vSTARS and FAA GeoMap conversions, GeoJSON
-clean-up, procedure ISRs) are not in 3.0 yet - see [Do I still need 2.x?](docs/Users/FAQ-and-Troubleshooting.md#do-i-still-need-fe-buddy-2x)
+It also converts FAA `.dat` video maps, VRC sector files and ERAM GeoMaps to GeoJSON, has a map to
+check GeoJSON files and set your Region of Interest, and exports an Alias Command Guide and practice
+quiz for your controllers. Some 2.x tools aren't in 3.0 yet - see
+[Do I still need 2.x?](docs/Users/FAQ-and-Troubleshooting.md#do-i-still-need-fe-buddy-2x)
 
 ---
 
 ### INSTRUCTIONS
 
-- **New to FE-Buddy?** [FE-Buddy in plain English](docs/Users/README.md), then
-  [Getting started](docs/Users/Getting-Started.md).
+- **New to FE-Buddy?** [Getting started](docs/Users/Getting-Started.md).
 - **Every screen and option:** the [user guide](docs/Users/User-Guide.md).
 - **Something wrong?** [FAQ and troubleshooting](docs/Users/FAQ-and-Troubleshooting.md).
 
 FE-Buddy 2.x: [instructions](https://docs.google.com/presentation/d/e/2PACX-1vRMd6PIRrj0lPb4sAi9KB7iM3u5zn0dyUVLqEcD9m2e71nf0UPyEmkOs4ZwYsQdl7smopjdvw_iWEyP/embed)
 and [reducing CRC output before vNAS upload](https://docs.google.com/presentation/d/e/2PACX-1vQ2y4m6S31lMc6DuJ9HxzW3k76w6fWrVDxomRQSwGiCS176g5kMrdRpTJi_pSwgEndRbvOXG9w5aoyM/embed)
-(Google Slides), and the [2.x manual](docs/Users/Manual%20HTML/).
+(Google Slides).
 
 ---
 
@@ -76,12 +76,9 @@ Nothing else - FE-Buddy carries its own .NET runtime.
 
 ## Documentation
 
-Everything lives in [`docs/`](docs/README.md):
-
-| For | Start with |
-|---|---|
-| Users | [FE-Buddy in plain English](docs/Users/README.md) · [Getting started](docs/Users/Getting-Started.md) · [User guide](docs/Users/User-Guide.md) · [Glossary](docs/Users/Glossary.md) · [FAQ](docs/Users/FAQ-and-Troubleshooting.md) |
-| Developers | [How FE-Buddy works](docs/Developers/README.md) · [Getting started](docs/Developers/Getting-Started.md) · [Architecture](docs/Developers/Architecture.md) · [Versioning](docs/Developers/VERSIONING.md) · [TODO](docs/Developers/TODO.md) |
+Everything is in [`docs/`](docs/README.md). Users: [Getting started](docs/Users/Getting-Started.md) ·
+[User guide](docs/Users/User-Guide.md) · [FAQ](docs/Users/FAQ-and-Troubleshooting.md) ·
+[Glossary](docs/Users/Glossary.md). Developers: [Developer guide](docs/Developers/README.md).
 
 ---
 
@@ -95,9 +92,8 @@ dotnet run --project FeBuddy/FeBuddy.Wpf
 dotnet test FeBuddy/FeBuddy.UnitTests
 ```
 
-`FeBuddy/build.ps1` (or `build.cmd`) builds the MSI into `FeBuddy/releases/`. The details - the
-harness, the coverage gate, code standards, releasing - are in
-[Developer getting started](docs/Developers/Getting-Started.md).
+The harness, the checks, building the installer and releasing are in the
+[Developer guide](docs/Developers/README.md).
 
 ---
 

@@ -30,8 +30,8 @@ namespace FeBuddy.Wpf.ViewModels;
 
 /// <summary>
 /// The <b>vNAS Alias Upload</b> sub-service tab inside the AIRAC Service screen: the facility's own
-/// custom alias files - on this PC, or on the web (GitHub, private or public) - merged into the top of
-/// <c>Upload_to_vNAS\vNAS_Alias.txt</c>, above every FE-Buddy alias file ticked for vNAS.
+/// custom alias files - on this PC, or on the web (GitHub, private or public) - merged into
+/// <c>Upload_to_vNAS\vNAS_Alias.txt</c> after every FE-Buddy alias file ticked for vNAS, so theirs win.
 /// </summary>
 /// <remarks>
 /// <para>

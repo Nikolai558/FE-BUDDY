@@ -4,9 +4,9 @@ using FeBuddy.Core.Application.AliasGuide.Models;
 namespace FeBuddy.UnitTests.Application.AliasGuide;
 
 /// <summary>
-/// Covers <see cref="GuideInline"/>: plain, <c>**bold**</c> and <c>`code`</c> runs (a code run
-/// carrying its command parts), the order they come in, and the text that is a format exception
-/// rather than quietly shown wrong.
+/// Covers <see cref="GuideInline"/>: plain, <c>**bold**</c>, <c>`code`</c> (a code run carrying
+/// its command parts), <c>[link](url)</c> and line break runs, the order they come in, and the
+/// text that is a format exception rather than quietly shown wrong.
 /// </summary>
 public sealed class GuideInlineTests
 {
@@ -84,6 +84,45 @@ public sealed class GuideInlineTests
 	}
 
 	[Fact]
+	public void text_in_square_brackets_then_a_url_in_round_ones_is_a_link_run()
+	{
+		IReadOnlyList<InlineRun> runs = GuideInline.Parse("Made by [FE-Buddy](https://example.com/fe-buddy) every cycle.");
+
+		Assert.Equal(
+			[
+				("Made by ", InlineStyle.Plain, (string?)null),
+				("FE-Buddy", InlineStyle.Link, "https://example.com/fe-buddy"),
+				(" every cycle.", InlineStyle.Plain, null),
+			],
+			runs.Select(run => (run.Text, run.Style, run.Url)));
+		Assert.All(runs, run => Assert.Empty(run.Parts));
+	}
+
+	[Fact]
+	public void a_newline_is_a_line_break_run()
+	{
+		IReadOnlyList<InlineRun> runs = GuideInline.Parse("**Procedure names.**\nA departure");
+
+		Assert.Equal(
+			[
+				("Procedure names.", InlineStyle.Bold),
+				("\n", InlineStyle.LineBreak),
+				("A departure", InlineStyle.Plain),
+			],
+			runs.Select(run => (run.Text, run.Style)));
+	}
+
+	[Fact]
+	public void square_brackets_inside_code_are_command_markup_not_a_link()
+	{
+		InlineRun run = Assert.Single(GuideInline.Parse("`.[a:airport ID]c`"));
+
+		Assert.Equal(InlineStyle.Code, run.Style);
+		Assert.Null(run.Url);
+		Assert.Equal(3, run.Parts.Count);
+	}
+
+	[Fact]
 	public void no_text_has_no_runs()
 	{
 		Assert.Empty(GuideInline.Parse(string.Empty));
@@ -95,6 +134,10 @@ public sealed class GuideInlineTests
 	[InlineData("Nothing between `` the backticks")]
 	[InlineData("Nothing between **** the asterisks")]
 	[InlineData("Code with bad markup: `[q:x]`")]
+	[InlineData("A [link with no url")]
+	[InlineData("A [link](with an unclosed url")]
+	[InlineData("A link with no text: [](https://example.com)")]
+	[InlineData("A link with no url: [text]()")]
 	public void unclosed_empty_or_malformed_markup_is_a_format_exception(string text)
 	{
 		Assert.Throws<FormatException>(() => GuideInline.Parse(text));

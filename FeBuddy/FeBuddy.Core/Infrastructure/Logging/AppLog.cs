@@ -33,6 +33,7 @@ public static class AppLog
 	private static Task _fileWriterTask = Task.CompletedTask;
 	private static string _logDirectory = GetDefaultLogDirectory();
 	private static bool _fileSinkStarted;
+	private static int _displayStart;
 
 	/// <summary>
 	/// Raised once for every entry that is recorded (after it has been added to
@@ -52,6 +53,21 @@ public static class AppLog
 			lock (Gate)
 			{
 				return [.. RecordedEntries];
+			}
+		}
+	}
+
+	/// <summary>
+	/// The entries the Dashboard activity log shows: every entry recorded since the last
+	/// <see cref="ClearDisplay"/> (or since launch), oldest first. Returns a snapshot.
+	/// </summary>
+	public static IReadOnlyList<LogEntry> DisplayEntries
+	{
+		get
+		{
+			lock (Gate)
+			{
+				return [.. RecordedEntries.Skip(_displayStart)];
 			}
 		}
 	}
@@ -142,6 +158,19 @@ public static class AppLog
 	public static void Error(string source, string message) => Write(LogLevel.Error, source, message);
 
 	/// <summary>
+	/// Empties <see cref="DisplayEntries"/>, so the Dashboard activity log starts over from the
+	/// next entry. <see cref="Entries"/> and the log file keep every entry: this only moves the
+	/// point the display reads from.
+	/// </summary>
+	public static void ClearDisplay()
+	{
+		lock (Gate)
+		{
+			_displayStart = RecordedEntries.Count;
+		}
+	}
+
+	/// <summary>
 	/// Starts the background file sink and prunes log files older than
 	/// <paramref name="retentionDays"/> days. Call once from the launch sequence. Calling it
 	/// again is a no-op except that pruning runs again.
@@ -227,6 +256,7 @@ public static class AppLog
 		lock (Gate)
 		{
 			RecordedEntries.Clear();
+			_displayStart = 0;
 			EntryAdded = null;
 			_logDirectory = logDirectory ?? GetDefaultLogDirectory();
 			_fileChannel = CreateChannel();

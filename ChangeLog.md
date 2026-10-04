@@ -7,9 +7,9 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
 <!--
   Adding an entry: put one bullet under "## Unreleased" in the same pull request as the change,
   under the "### " heading it belongs to (add the heading if it isn't there yet; after a release,
-  "## Unreleased" starts empty, with no headings). Headings used so far: Updates, AIRAC Service,
-  File Conversions, Info, Settings, Installing and uninstalling, Look and feel, Dev notes (always
-  last).
+  "## Unreleased" starts empty, with no headings). Headings used so far: Updates, Dashboard,
+  AIRAC Service, File Conversions, Info, Settings, Installing and uninstalling, Look and feel,
+  Dev notes (always last).
   Write it for users, not developers: what changed and why they care, in one line. Issue numbers
   become links ("Bug #215 - ..."). Put developer-only changes under "### Dev notes". Link
   a doc at the release's tag (blob/<version>/docs/...), never at a branch.
@@ -18,6 +18,45 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
   Full guide: docs/Developers/RELEASING.md.
 -->
 ## Unreleased
+
+## 3.0.0-alpha.5
+### Dashboard
+- Feature #286 - The activity log has a **Clear** button that empties it on screen and resets its
+  counts, so after several runs you can see just the next one. The log file keeps every entry.
+
+### AIRAC Service
+- Telephony ▸ **Virtual Airlines**: **Include the VATSIM-Radar Virtual Airline List** adds the
+  virtual airlines VATSIM-Radar's community keeps on GitHub (about 250), each with its own `--VA--`
+  card after yours; every run downloads the latest list. With it included, a virtual airline you
+  add that is exactly the same as one on the list is turned away with a warning; one that differs
+  at all is added, with a note, and gets a card of its own.
+- The **Upload to vNAS** card now gets the order right: a ticked alias file goes into
+  `vNAS_Alias.txt` ahead of your custom alias files, so yours win.
+
+### Info
+- The **Alias Command Guide** has its own Info page: read the whole guide in FE-Buddy, colours and
+  all, exactly as it exports, with the export button at the top. What's New's card now points to
+  it (Info ▸ Alias Command Guide) with **View the guide →**, instead of exporting the guide itself.
+- The guide never wraps a command: its Syntax and Example columns are as wide as their longest
+  command, a syntax is split into lines only between its parts, and the description takes the
+  rest of the width. The web page, the Markdown and the app's page all match, with reworded notes
+  and descriptions, a link to FE-Buddy at the top, no About section, and *Page updated on …* at
+  the bottom.
+- The guide is easier to scan: short points in bold with bullets under them, each example command
+  on a line of its own, what each In-Scope Reference card shows as a list, and procedure names
+  explained one rule to a bullet. The web page's own source is indented like an outline, so it is
+  easier to edit by hand too.
+- New **Export Alias Command Practice** on the Alias Command Guide page: a web page that quizzes
+  your controllers on real charts, procedures, airways and ISR cards. They type the command; it
+  turns green or red, says what looks missing or out of place ("Looks like you forgot to include
+  the variant Y and the runway ID suffix R"), then shows the right command and how it's built.
+
+### Dev notes
+- The documentation is shorter and checked against the code: fewer pages (Settings blocks and the
+  UserConfig reference are one Settings reference; the Core and app structure pages are one Code
+  structure page; the release checklist is part of Releasing; MSI version numbering is part of
+  Versioning), and the planning archive, the old design notes, the 2.x manual and the root
+  `FE-Buddy_3.0_Whats_New.md` are gone.
 
 ---
 

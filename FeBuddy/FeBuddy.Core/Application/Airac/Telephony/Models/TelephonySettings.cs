@@ -21,6 +21,12 @@ public sealed record TelephonySettings
 	public IReadOnlyList<VirtualAirline> VirtualAirlines { get; init; } = [];
 
 	/// <summary>
+	/// Whether the VATSIM-Radar Virtual Airline List's virtual airlines are written too, after the
+	/// user's own (see <see cref="VatsimRadarVirtualAirlines"/>). Default: no.
+	/// </summary>
+	public bool IncludeVatsimRadarVirtualAirlines { get; init; }
+
+	/// <summary>
 	/// Whether the alias file goes to vNAS: copied into <c>Upload_to_vNAS\vNAS_Alias.txt</c> as well as
 	/// written to the <c>Aliases</c> folder. Its only possible file key is <c>Telephony.txt</c>.
 	/// </summary>

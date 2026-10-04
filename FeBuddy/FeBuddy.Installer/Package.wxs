@@ -1,5 +1,5 @@
 <!--
-  FE-Buddy's MSI. See docs/Developers/VERSIONING.md and docs/Developers/MSI-VERSION-NUMBERING.md.
+  FE-Buddy's MSI. See docs/Developers/VERSIONING.md.
 
   UpgradeCode, Package Id, Name and Manufacturer are FE-Buddy 2.x's, unchanged: that is what makes
   this MSI a major upgrade of an installed 2.x (2.9 and later) - it replaces it in place, keeping
@@ -18,7 +18,7 @@
 
     <!--
       AllowDowngrades="yes": Package/@Version is a monotonic counter, not the real product version
-      (see docs/Developers/MSI-VERSION-NUMBERING.md), so it carries no upgrade/downgrade meaning
+      (see docs/Developers/VERSIONING.md), so it carries no upgrade/downgrade meaning
       and WiX's stock "never downgrade" check cannot be used. The real rule (block stable -> older
       stable; allow rolling back off a pre-release) is enforced below by EnforceVersionPolicy and
       the VERSIONPOLICY_BLOCKED LaunchCondition, on the real SemVer version.

@@ -13,6 +13,22 @@ News concerning all things FE-Buddy will be posted here with the most recent pos
 
 ---
 
+## 2026-10-03
+<!--
+PostId: 2026-10-03.1
+-->
+
+**Version 3.0.0-alpha.4 Compiled!**
+
+- New **What's New in v3.0?** page under Info
+- Export an **Alias Command Guide** for your controllers (web page or Markdown)
+- Add your facility's **Virtual Airlines** to Telephony
+- New look: FEB logo and a Natural Earth base map
+
+Check it out [HERE](https://github.com/Nikolai558/FE-BUDDY/releases/tag/3.0.0-alpha.4)!!!
+
+---
+
 ## 2026-09-30
 <!--
 PostId: 2026-09-30.1

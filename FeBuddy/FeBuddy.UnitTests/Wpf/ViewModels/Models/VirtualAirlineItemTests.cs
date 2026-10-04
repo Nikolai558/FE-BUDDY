@@ -92,7 +92,22 @@ public sealed class VirtualAirlineItemTests
 		item.Designator = "DVA";
 		item.Telephony = "DELTA";
 		item.Organization = "Delta Virtual";
+		item.IsOnVatsimRadarList = false;
 
 		Assert.Empty(raised);
+	}
+
+	[Fact]
+	public void it_starts_off_the_vatsim_radar_list_and_reports_being_put_on_it()
+	{
+		VirtualAirlineItem item = new("DAL", "DELTA", "Fly Delta Virtual");
+		List<string?> raised = Watch(item);
+
+		Assert.False(item.IsOnVatsimRadarList);
+
+		item.IsOnVatsimRadarList = true;
+
+		Assert.True(item.IsOnVatsimRadarList);
+		Assert.Equal([nameof(VirtualAirlineItem.IsOnVatsimRadarList)], raised);
 	}
 }

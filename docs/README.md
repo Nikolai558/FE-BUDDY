@@ -1,43 +1,31 @@
 # FE-Buddy documentation
 
-Pick the section that fits you.
+## Using FE-Buddy
 
-## I use FE-Buddy
-
-You maintain a VATSIM ARTCC's facility files and want to get GeoJSON maps and alias files out of
-FE-Buddy.
-
-| Read | When |
+| Page | For |
 |---|---|
-| [FE-Buddy in plain English](Users/README.md) | You're new and want the two-minute version: what it does and why. |
-| [Getting started](Users/Getting-Started.md) | Install it and make your first files. |
-| [User guide](Users/User-Guide.md) | Every screen and every option, in detail. |
-| [Glossary](Users/Glossary.md) | What AIRAC, NASR, ROI, CRC, GeoJSON and the rest mean. |
-| [FAQ and troubleshooting](Users/FAQ-and-Troubleshooting.md) | Something looks wrong, or you have a question. |
+| [Getting started](Users/Getting-Started.md) | What FE-Buddy does, installing it, and your first files. |
+| [User guide](Users/User-Guide.md) | Every screen and option. |
+| [FAQ and troubleshooting](Users/FAQ-and-Troubleshooting.md) | Common questions, and what to do when something looks wrong. |
+| [GitHub token guide](Users/GitHub-Token-Guide.md) | A token for a custom alias file in a private GitHub repository. |
+| [Glossary](Users/Glossary.md) | AIRAC, NASR, CRC, ROI and the rest. |
 
-## I work on FE-Buddy's code
+## Working on FE-Buddy's code
 
-| Read | When |
+| Page | For |
 |---|---|
-| [How FE-Buddy works](Developers/README.md) | Start here: the whole program in plain terms, then where to go next. |
-| [Developer getting started](Developers/Getting-Started.md) | Build it, run it, test it, make an installer. |
-| [Architecture](Developers/Architecture.md) | The detailed picture: projects, launch, the data pipeline, a run from click to file. |
-| [FeBuddy.Core structure](Developers/FeBuddy.Core-Structure.md) | Where code lives in the library, and the rules for adding more. |
-| [FeBuddy.Wpf](Developers/FeBuddy.Wpf/README.md) | The app: layout, screens, the design system. |
-| [Settings blocks](Developers/Settings-Blocks.md) | Every key each sub-service's parser reads. |
-| [UserConfig.json reference](Developers/UserConfig-Reference.md) | Every saved setting, where it lives and who reads it. |
-| [Release checklist](Developers/Release-Checklist.md) | The release steps, one page, start to finish. |
-| [Releasing](Developers/RELEASING.md) | Change-log entries, and how to make a release. |
-| [Versioning](Developers/VERSIONING.md) | How versions are numbered and bumped. |
-| [MSI version numbering](Developers/MSI-VERSION-NUMBERING.md) | Why Windows shows a different version number. |
+| [Developer guide](Developers/README.md) | Start here: how it works in short, then build, run, test and the checks. |
+| [Architecture](Developers/Architecture.md) | Launch, the FAA data, a run from click to file, and the design decisions. |
+| [Code structure](Developers/Code-Structure.md) | Where code lives, and where new code goes. |
+| [Settings reference](Developers/Settings-Reference.md) | Every settings-block key and every saved setting. |
+| [Credentials](Developers/Credentials.md) | Saved passwords and tokens, and how a feature uses one. |
+| [Releasing](Developers/RELEASING.md) | Change-log entries, and making a release step by step. |
+| [Versioning](Developers/VERSIONING.md) | Version numbers, update channels and the installer. |
 | [TODO](Developers/TODO.md) | Open work. |
-| [Developer notes](Developers/Developer_Notes.md) | The owner's design notebook: ideas and intentions, some not built yet. |
-| [Reference](Developers/Reference/README.md) | Third-party source kept for reading (e.g. CRC's alias parser). |
-| [Archive](Developers/Archive/README.md) | Finished planning documents, kept for history. |
+| [Reference](Developers/Reference/README.md) | CRC's alias parser, kept for reading. |
 
 ## Elsewhere
 
-- **Releases and downloads:** [GitHub Releases](https://github.com/Nikolai558/FE-BUDDY/releases)
-- **Report a bug or ask for a feature:** [GitHub Issues](https://github.com/Nikolai558/FE-BUDDY/issues)
-- **Report a security vulnerability** (privately, not in Issues): [Security policy](SECURITY.md)
-- **The 2.x manual** (FE-Buddy 2.x only): [Users/Manual HTML](Users/Manual%20HTML/)
+- **Downloads:** [GitHub Releases](https://github.com/Nikolai558/FE-BUDDY/releases)
+- **Bugs and feature requests:** [GitHub Issues](https://github.com/Nikolai558/FE-BUDDY/issues)
+- **Security vulnerabilities** (privately, not in Issues): [Security policy](SECURITY.md)

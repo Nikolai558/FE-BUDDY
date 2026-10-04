@@ -4,15 +4,19 @@ namespace FeBuddy.Core.Application.AliasGuide;
 
 /// <summary>
 /// Reads the guide's inline text: <c>`code`</c> (which can hold command markup, see
-/// <see cref="CommandMarkup"/>) and <c>**bold**</c>. Nothing else is special.
+/// <see cref="CommandMarkup"/>), <c>**bold**</c>, <c>[a link](url)</c> and a line break
+/// (<c>\n</c>). Nothing else is special.
 /// </summary>
-internal static class GuideInline
+public static class GuideInline
 {
 	/// <summary>Splits inline text into its runs.</summary>
 	/// <param name="text">The text, e.g. <c>Type **either** `.apt{a:DTW}` or `.apt{a:KDTW}`.</c></param>
 	/// <returns>The runs, in order, none of them empty.</returns>
-	/// <exception cref="FormatException">A backtick or <c>**</c> is never closed, or a code span's command markup is malformed.</exception>
-	internal static IReadOnlyList<InlineRun> Parse(string text)
+	/// <exception cref="FormatException">
+	/// A backtick, <c>**</c> or link is never closed or has nothing in it, or a code span's command
+	/// markup is malformed.
+	/// </exception>
+	public static IReadOnlyList<InlineRun> Parse(string text)
 	{
 		ArgumentNullException.ThrowIfNull(text);
 
@@ -32,7 +36,7 @@ internal static class GuideInline
 		{
 			if (text[i] == '`')
 			{
-				int close = Close(text, i, "`");
+				int close = Close(text, i, "`", "`");
 				FlushPlain(i);
 				string code = text[(i + 1)..close];
 				runs.Add(new InlineRun(code, InlineStyle.Code, CommandMarkup.Parse(code)));
@@ -40,10 +44,24 @@ internal static class GuideInline
 			}
 			else if (string.CompareOrdinal(text, i, "**", 0, 2) == 0)
 			{
-				int close = Close(text, i, "**");
+				int close = Close(text, i, "**", "**");
 				FlushPlain(i);
 				runs.Add(new InlineRun(text[(i + 2)..close], InlineStyle.Bold, []));
 				i = plainStart = close + 2;
+			}
+			else if (text[i] == '[')
+			{
+				int textEnd = Close(text, i, "[", "](");
+				int urlEnd = Close(text, textEnd + 1, "(", ")");
+				FlushPlain(i);
+				runs.Add(new InlineRun(text[(i + 1)..textEnd], InlineStyle.Link, [], Url: text[(textEnd + 2)..urlEnd]));
+				i = plainStart = urlEnd + 1;
+			}
+			else if (text[i] == '\n')
+			{
+				FlushPlain(i);
+				runs.Add(new InlineRun("\n", InlineStyle.LineBreak, []));
+				i = plainStart = i + 1;
 			}
 			else
 			{
@@ -55,13 +73,13 @@ internal static class GuideInline
 		return runs;
 	}
 
-	/// <summary>Where the marker opened at <paramref name="open"/> closes.</summary>
-	private static int Close(string text, int open, string marker)
+	/// <summary>Where the <paramref name="opener"/> at <paramref name="open"/> is closed by <paramref name="closer"/>.</summary>
+	private static int Close(string text, int open, string opener, string closer)
 	{
-		int close = text.IndexOf(marker, open + marker.Length, StringComparison.Ordinal);
+		int close = text.IndexOf(closer, open + opener.Length, StringComparison.Ordinal);
 
-		return close > open + marker.Length
+		return close > open + opener.Length
 			? close
-			: throw new FormatException($"'{marker}' at {open} in '{text}' is never closed, or closes on nothing.");
+			: throw new FormatException($"'{opener}' at {open} in '{text}' is never closed, or closes on nothing.");
 	}
 }

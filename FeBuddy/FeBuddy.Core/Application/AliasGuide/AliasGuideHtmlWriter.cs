@@ -2,7 +2,6 @@ using System.Net;
 using System.Text;
 
 using FeBuddy.Core.Application.AliasGuide.Models;
-using FeBuddy.Core.Infrastructure.GitHub;
 
 namespace FeBuddy.Core.Application.AliasGuide;
 
@@ -12,30 +11,24 @@ namespace FeBuddy.Core.Application.AliasGuide;
 /// </summary>
 /// <remarks>
 /// <para>
-/// Each command table has a Syntax, a Description and an Example column. A part the controller
-/// replaces is a pill coloured by what it stands for (<c>&lt;span class="part k-airport"&gt;</c>),
-/// with a dashed edge when it is optional; text typed as shown is plain.
+/// Each command table has a Syntax, a Description and an Example column. A command never wraps:
+/// the Syntax and Example columns are as wide as their longest line, a syntax breaks only where the
+/// content does (<c>&lt;br&gt;</c>), and the description takes the rest of the width and wraps. A
+/// part the controller replaces is a pill coloured by what it stands for
+/// (<c>&lt;span class="part k-airport"&gt;</c>), with a dashed edge when it is optional; text typed
+/// as shown is plain.
 /// </para>
 /// <para>
 /// Every colour, font and size is a variable at the top of the style sheet, and the comment at the
-/// top of the page says so, so the page is easy to restyle by hand. On a narrow screen a command
-/// table's rows stack and a long command wraps between its parts; any other table scrolls sideways.
+/// top of the page says so, so the page is easy to restyle by hand. The page's source is indented
+/// like an outline, a nested list included, so it is just as easy to edit. On a narrow screen a
+/// command table's rows stack; a table still too wide for the screen scrolls sideways.
 /// </para>
 /// </remarks>
 internal static class AliasGuideHtmlWriter
 {
-	/// <summary>The part kinds a controller replaces, in the order the colour key lists them.</summary>
-	private static readonly CommandPartKind[] KeyKinds =
-	[
-		CommandPartKind.Airport,
-		CommandPartKind.Identifier,
-		CommandPartKind.ApproachType,
-		CommandPartKind.Variant,
-		CommandPartKind.Runway,
-		CommandPartKind.Page,
-	];
-
-	private const string Styles = """
+	/// <summary>The page's style sheet; the Alias Command Practice page starts from it too.</summary>
+	internal const string Styles = """
 		/* =====================================================================
 		   Make it yours: the colours, fonts and sizes are these variables.
 		   ===================================================================== */
@@ -91,6 +84,9 @@ internal static class AliasGuideHtmlWriter
 		th, td { padding: .7rem .75rem; border-bottom: 1px solid var(--border); vertical-align: top; }
 		tr:last-child td { border-bottom: 0; }
 		td p { margin: 0; }
+		td ul { margin: .35rem 0 0; padding-left: 1.25rem; }
+		/* A command never wraps: Syntax and Example are as wide as their longest line, and the description has the rest. */
+		.commands .syntax, .commands .examples { width: 1%; white-space: nowrap; }
 		.examples code { display: block; margin-bottom: .35rem; }
 		.note { display: inline-block; margin: .45rem .4rem 0 0; padding: .05rem .6rem; border: 1px solid var(--border);
 		        border-radius: 999px; font-size: .8rem; color: var(--text-muted); }
@@ -100,14 +96,14 @@ internal static class AliasGuideHtmlWriter
 		.legend li { margin: .4rem 0; }
 		footer { color: var(--text-muted); font-size: .85rem; text-align: center; margin-top: 2rem; }
 
-		/* Narrow screens: each command's syntax, description and examples stack, and a long
-		   command wraps between its parts. */
+		/* Narrow screens: each command's syntax, description and examples stack. A command still
+		   never wraps; one too wide for the screen scrolls sideways with its table. */
 		@media (max-width: 720px) {
 		  section { padding: 1rem; }
-		  code.cmd { white-space: normal; }
 		  .commands thead { display: none; }
 		  .commands, .commands tbody, .commands tr, .commands td { display: block; }
 		  .commands td { border: 0; padding: .3rem 0; }
+		  .commands .syntax, .commands .examples { width: auto; }
 		  .commands tr { border-bottom: 1px solid var(--border); padding: .6rem 0; }
 		}
 		""";
@@ -145,22 +141,21 @@ internal static class AliasGuideHtmlWriter
 		html.AppendLine("<body>");
 		html.AppendLine("<main>");
 
-		html.AppendLine("<header>");
-		html.AppendLine($"<h1>{Escape(guide.Title)}</h1>");
-		html.AppendLine($"<p class=\"lead\">{Inline(guide.Lead)}</p>");
-		html.AppendLine("</header>");
+		Line(html, 1, "<header>");
+		Line(html, 2, $"<h1>{Escape(guide.Title)}</h1>");
+		Line(html, 2, $"<p class=\"lead\">{Inline(guide.Lead)}</p>");
+		Line(html, 1, "</header>");
 
-		html.AppendLine("<nav aria-label=\"Contents\">");
-		html.AppendLine($"<a href=\"#{guide.About.Id}\">{Escape(guide.About.Title)}</a>");
-		html.AppendLine("<a href=\"#notation\">How to read this guide</a>");
+		html.AppendLine();
+		Line(html, 1, "<nav aria-label=\"Contents\">");
+		Line(html, 2, $"<a href=\"#notation\">{Escape(AliasGuideContent.NotationTitle)}</a>");
 		foreach (GuideSection section in guide.Sections)
 		{
-			html.AppendLine($"<a href=\"#{section.Id}\">{Escape(section.Title)}</a>");
+			Line(html, 2, $"<a href=\"#{section.Id}\">{Escape(section.Title)}</a>");
 		}
 
-		html.AppendLine("</nav>");
+		Line(html, 1, "</nav>");
 
-		AppendSection(html, guide.About);
 		AppendNotation(html, guide.ReadingNotes);
 
 		foreach (GuideSection section in guide.Sections)
@@ -168,7 +163,8 @@ internal static class AliasGuideHtmlWriter
 			AppendSection(html, section);
 		}
 
-		html.AppendLine($"<footer>Made with <a href=\"{GitHubRepository.WebUrl}\">FE-Buddy</a> {Escape(credit)}.</footer>");
+		html.AppendLine();
+		Line(html, 1, $"<footer>{Escape(AliasGuideWriter.Updated(options))}</footer>");
 		html.AppendLine("</main>");
 		html.AppendLine("</body>");
 		html.AppendLine("</html>");
@@ -176,14 +172,18 @@ internal static class AliasGuideHtmlWriter
 		return html.ToString();
 	}
 
+	/// <summary>One line of the page, indented two spaces a level so its source reads like an outline.</summary>
+	private static void Line(StringBuilder html, int depth, string text) => html.Append(' ', depth * 2).AppendLine(text);
+
 	private static void AppendSection(StringBuilder html, GuideSection section)
 	{
-		html.AppendLine($"<section id=\"{section.Id}\">");
-		html.AppendLine($"<h2>{Escape(section.Title)}</h2>");
+		html.AppendLine();
+		Line(html, 1, $"<section id=\"{section.Id}\">");
+		Line(html, 2, $"<h2>{Escape(section.Title)}</h2>");
 
 		if (section.Intro is { } intro)
 		{
-			html.AppendLine($"<p class=\"intro\">{Inline(intro)}</p>");
+			Line(html, 2, $"<p class=\"intro\">{Inline(intro)}</p>");
 		}
 
 		foreach (GuideBlock block in section.Blocks)
@@ -191,21 +191,15 @@ internal static class AliasGuideHtmlWriter
 			switch (block)
 			{
 				case GuideParagraph paragraph:
-					html.AppendLine($"<p>{Inline(paragraph.Text)}</p>");
+					Line(html, 2, $"<p>{Inline(paragraph.Text)}</p>");
 					break;
 
 				case GuideHeading heading:
-					html.AppendLine($"<h3>{Escape(heading.Text)}</h3>");
+					Line(html, 2, $"<h3>{Escape(heading.Text)}</h3>");
 					break;
 
 				case GuideList list:
-					html.AppendLine("<ul>");
-					foreach (string item in list.Items)
-					{
-						html.AppendLine($"<li>{Inline(item)}</li>");
-					}
-
-					html.AppendLine("</ul>");
+					AppendList(html, 2, list.Items);
 					break;
 
 				case GuideCommandTable commands:
@@ -218,88 +212,130 @@ internal static class AliasGuideHtmlWriter
 			}
 		}
 
-		html.AppendLine("</section>");
+		Line(html, 1, "</section>");
+	}
+
+	/// <summary>
+	/// A bulleted list, each bullet's own bullets nested in it. A bullet with none is one line; one
+	/// with some has its text on a line of its own, then its list.
+	/// </summary>
+	private static void AppendList(StringBuilder html, int depth, IReadOnlyList<GuideListItem> items)
+	{
+		Line(html, depth, "<ul>");
+
+		foreach (GuideListItem item in items)
+		{
+			if (item.Items.Count == 0)
+			{
+				Line(html, depth + 1, $"<li>{Inline(item.Text)}</li>");
+				continue;
+			}
+
+			Line(html, depth + 1, "<li>");
+			Line(html, depth + 2, Inline(item.Text));
+			AppendList(html, depth + 2, item.Items);
+			Line(html, depth + 1, "</li>");
+		}
+
+		Line(html, depth, "</ul>");
 	}
 
 	/// <summary>The "How to read this guide" section: how the page shows each part, the colour key, then the shared notes.</summary>
-	private static void AppendNotation(StringBuilder html, IReadOnlyList<string> notes)
+	private static void AppendNotation(StringBuilder html, IReadOnlyList<GuideListItem> notes)
 	{
-		html.AppendLine("<section id=\"notation\">");
-		html.AppendLine("<h2>How to read this guide</h2>");
-		html.AppendLine("<ul class=\"legend\">");
-		html.AppendLine("<li><code class=\"cmd\">.apt</code> Plain text: type it exactly as shown.</li>");
-		html.AppendLine("<li><code class=\"cmd\"><span class=\"part k-ident\">Highlighted</span></code> Replace it with the real value. Its colour shows what goes there:");
-		html.AppendLine("<ul class=\"key\">");
-		foreach (CommandPartKind kind in KeyKinds)
+		html.AppendLine();
+		Line(html, 1, "<section id=\"notation\">");
+		Line(html, 2, $"<h2>{Escape(AliasGuideContent.NotationTitle)}</h2>");
+		Line(html, 2, "<ul class=\"legend\">");
+		Line(html, 3, $"<li>{Escape(AliasGuideContent.TypedLegend)} \"<code class=\"cmd\">.apt</code>\"</li>");
+		Line(html, 3, "<li>");
+		Line(html, 4, $"<code class=\"cmd\"><span class=\"part k-ident\">Highlighted</span></code> {Escape(AliasGuideContent.PlaceholderLegend)}");
+		Line(html, 4, "<ul class=\"key\">");
+		foreach (CommandPartKind kind in AliasGuideContent.KeyKinds)
 		{
-			html.AppendLine($"<li><code class=\"cmd\"><span class=\"part {KindClass(kind)}\">{Escape(AliasGuideContent.KindLabel(kind))}</span></code></li>");
+			Line(html, 5, $"<li><code class=\"cmd\"><span class=\"part {KindClass(kind)}\">{Escape(AliasGuideContent.KindLabel(kind))}</span></code></li>");
 		}
 
-		html.AppendLine("</ul></li>");
-		html.AppendLine("<li><code class=\"cmd\"><span class=\"part k-page opt\">Dashed</span></code> Optional.</li>");
-		html.AppendLine("</ul>");
-
-		foreach (string note in notes)
-		{
-			html.AppendLine($"<p>{Inline(note)}</p>");
-		}
-
-		html.AppendLine("</section>");
+		Line(html, 4, "</ul>");
+		Line(html, 3, "</li>");
+		Line(html, 3, $"<li><code class=\"cmd\"><span class=\"part k-page opt\">Dashed</span></code> {Escape(AliasGuideContent.OptionalLegend)}</li>");
+		Line(html, 2, "</ul>");
+		AppendList(html, 2, notes);
+		Line(html, 1, "</section>");
 	}
 
+	/// <summary>A command table: per command a row of its syntax, its description (its details and notes under it) and its examples.</summary>
 	private static void AppendCommands(StringBuilder html, GuideCommandTable table)
 	{
-		html.AppendLine("<div class=\"table-wrap\">");
-		html.AppendLine("<table class=\"commands\">");
-		html.AppendLine("<thead><tr><th>Syntax</th><th>Description</th><th>Example</th></tr></thead>");
-		html.AppendLine("<tbody>");
+		Line(html, 2, "<div class=\"table-wrap\">");
+		Line(html, 3, "<table class=\"commands\">");
+		Line(html, 4, "<thead><tr><th>Syntax</th><th>Description</th><th>Example</th></tr></thead>");
+		Line(html, 4, "<tbody>");
 
 		foreach (GuideCommand command in table.Commands)
 		{
-			html.AppendLine("<tr>");
-			html.AppendLine($"<td>{Command(command.Syntax)}</td>");
+			Line(html, 5, "<tr>");
+			Line(html, 6, $"<td class=\"syntax\">{Command(command.Syntax)}</td>");
+			Line(html, 6, "<td>");
+			Line(html, 7, $"<p>{Inline(command.Description)}</p>");
 
-			StringBuilder description = new($"<p>{Inline(command.Description)}</p>");
-			foreach (string note in command.Notes)
+			if (command.Details.Count > 0)
 			{
-				description.Append($"<span class=\"note\">{Inline(note)}</span>");
+				AppendList(html, 7, [.. command.Details.Select(detail => new GuideListItem(detail, []))]);
 			}
 
-			html.AppendLine($"<td>{description}</td>");
-			html.AppendLine($"<td class=\"examples\">{string.Concat(command.Examples.Select(Command))}</td>");
-			html.AppendLine("</tr>");
+			foreach (string note in command.Notes)
+			{
+				Line(html, 7, $"<span class=\"note\">{Inline(note)}</span>");
+			}
+
+			Line(html, 6, "</td>");
+			Line(html, 6, "<td class=\"examples\">");
+			foreach (string example in command.Examples)
+			{
+				Line(html, 7, Command([example]));
+			}
+
+			Line(html, 6, "</td>");
+			Line(html, 5, "</tr>");
 		}
 
-		html.AppendLine("</tbody>");
-		html.AppendLine("</table>");
-		html.AppendLine("</div>");
+		Line(html, 4, "</tbody>");
+		Line(html, 3, "</table>");
+		Line(html, 2, "</div>");
 	}
 
+	/// <summary>A plain table, a row to a line.</summary>
 	private static void AppendTable(StringBuilder html, GuideTable table)
 	{
-		html.AppendLine("<div class=\"table-wrap\">");
-		html.AppendLine("<table>");
-		html.AppendLine($"<thead><tr>{string.Concat(table.Headers.Select(header => $"<th>{Escape(header)}</th>"))}</tr></thead>");
-		html.AppendLine("<tbody>");
+		Line(html, 2, "<div class=\"table-wrap\">");
+		Line(html, 3, "<table>");
+		Line(html, 4, $"<thead><tr>{string.Concat(table.Headers.Select(header => $"<th>{Escape(header)}</th>"))}</tr></thead>");
+		Line(html, 4, "<tbody>");
 
 		foreach (IReadOnlyList<string> row in table.Rows)
 		{
-			html.AppendLine($"<tr>{string.Concat(row.Select(cell => $"<td>{Inline(cell)}</td>"))}</tr>");
+			Line(html, 5, $"<tr>{string.Concat(row.Select(cell => $"<td>{Inline(cell)}</td>"))}</tr>");
 		}
 
-		html.AppendLine("</tbody>");
-		html.AppendLine("</table>");
-		html.AppendLine("</div>");
+		Line(html, 4, "</tbody>");
+		Line(html, 3, "</table>");
+		Line(html, 2, "</div>");
 	}
 
-	/// <summary>A command in a table cell: its parts, with no code background of its own.</summary>
-	private static string Command(string markup) => $"<code class=\"cmd\">{Parts(CommandMarkup.Parse(markup))}</code>";
+	/// <summary>
+	/// A command in a table cell, its lines (each in command markup) one under another, with no code
+	/// background of its own.
+	/// </summary>
+	internal static string Command(IReadOnlyList<string> lines) =>
+		$"<code class=\"cmd\">{string.Join("<br>", lines.Select(line => Parts(CommandMarkup.Parse(line))))}</code>";
 
 	/// <summary>
-	/// Inline text: plain, <c>&lt;strong&gt;</c> and <c>&lt;code&gt;</c> runs. Code with a pill in it
-	/// has no background of its own (the pills set it apart), so it never looks boxed twice.
+	/// Inline text: plain, <c>&lt;strong&gt;</c>, <c>&lt;code&gt;</c>, <c>&lt;a&gt;</c> and
+	/// <c>&lt;br&gt;</c> runs. Code with a pill in it has no background of its own (the pills set it
+	/// apart), so it never looks boxed twice.
 	/// </summary>
-	private static string Inline(string text)
+	internal static string Inline(string text)
 	{
 		StringBuilder html = new();
 
@@ -310,6 +346,8 @@ internal static class AliasGuideHtmlWriter
 				InlineStyle.Bold => $"<strong>{Escape(run.Text)}</strong>",
 				InlineStyle.Code when run.Parts.Any(part => part.Kind != CommandPartKind.Typed) => $"<code class=\"cmd\">{Parts(run.Parts)}</code>",
 				InlineStyle.Code => $"<code>{Parts(run.Parts)}</code>",
+				InlineStyle.Link => $"<a href=\"{Escape(run.Url!)}\">{Escape(run.Text)}</a>",
+				InlineStyle.LineBreak => "<br>",
 				_ => Escape(run.Text),
 			});
 		}
@@ -318,21 +356,15 @@ internal static class AliasGuideHtmlWriter
 	}
 
 	/// <summary>
-	/// A command's parts: typed text as it is, and every other part as a pill in its kind's colour.
-	/// A <c>&lt;wbr&gt;</c> between parts lets a long command wrap on a narrow screen, where it is
-	/// allowed to (pills sit side by side with no space for a line to break at).
+	/// A command's parts, side by side: typed text as it is, and every other part as a pill in its
+	/// kind's colour. Nothing between them lets a line break there.
 	/// </summary>
-	private static string Parts(IReadOnlyList<CommandPart> parts)
+	internal static string Parts(IReadOnlyList<CommandPart> parts)
 	{
 		StringBuilder html = new();
 
 		foreach (CommandPart part in parts)
 		{
-			if (html.Length > 0)
-			{
-				html.Append("<wbr>");
-			}
-
 			if (part.Kind == CommandPartKind.Typed)
 			{
 				html.Append(Escape(part.Text));

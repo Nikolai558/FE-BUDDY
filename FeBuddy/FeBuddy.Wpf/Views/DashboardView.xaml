@@ -197,21 +197,26 @@
             <ctl:Card Grid.Row="3" Margin="0,18,0,0">
                 <DockPanel>
                     <DockPanel DockPanel.Dock="Top">
-                        <Button DockPanel.Dock="Right" Style="{StaticResource Button.Ghost}"
-                                Command="{Binding ToggleLogCommand}">
-                            <TextBlock>
-                                <TextBlock.Style>
-                                    <Style TargetType="TextBlock">
-                                        <Setter Property="Text" Value="Minimize" />
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding IsLogCollapsed}" Value="True">
-                                                <Setter Property="Text" Value="Expand" />
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </TextBlock.Style>
-                            </TextBlock>
-                        </Button>
+                        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                            <Button Style="{StaticResource Button.Ghost}" Content="Clear" Margin="0,0,8,0"
+                                    Command="{Binding ClearLogCommand}"
+                                    ToolTip="Clears the Dashboard display. The log file is unchanged." />
+                            <Button Style="{StaticResource Button.Ghost}"
+                                    Command="{Binding ToggleLogCommand}">
+                                <TextBlock>
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Text" Value="Minimize" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsLogCollapsed}" Value="True">
+                                                    <Setter Property="Text" Value="Expand" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </Button>
+                        </StackPanel>
 
                         <WrapPanel VerticalAlignment="Center">
                             <RadioButton Style="{StaticResource LogChip}" IsChecked="{Binding FilterIsAll, Mode=OneWay}"

@@ -1,7 +1,8 @@
 <!--
-    WhatsNewView  -  Info ▸ What's New in v3.0?: FE-Buddy_3.0_Whats_New.md laid out as a page,
-    with the button that exports the FE-Buddy Alias Command Guide. Opens in place of Info's
-    cards; the arrow beside the title goes back to them.
+    WhatsNewView  -  Info ▸ What's New in v3.0?: what FE-Buddy 3.0 changed from 2.x, laid out as a
+    page (the content is WhatsNewViewModel's), with a card pointing to Info ▸ Alias Command Guide
+    (and a link that opens it). Opens in place of Info's cards; the arrow beside the title goes back
+    to them.
 -->
 <UserControl x:Class="FeBuddy.Wpf.Views.WhatsNewView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -98,17 +99,17 @@
 
                 <!-- ================== ALIAS COMMAND GUIDE ================== -->
                 <ctl:Card Style="{StaticResource Card.Accent}">
-                    <ctl:BesideOrBelow SideWidth="290" MainMinWidth="320" VerticalSpacing="14">
-                        <StackPanel>
-                            <TextBlock Text="Alias Command Guide" Style="{StaticResource Text.H2}" />
-                            <TextBlock Style="{StaticResource Text.Prose}" Margin="0,6,0,0"
-                                       Text="Show your controllers the new commands. Export a guide to every FE-Buddy alias command, with examples, as a web page (.html), Markdown (.md) or both, for your facility's website or wiki. Each is easy to edit." />
-                        </StackPanel>
-                        <Button Style="{StaticResource Button.Primary}" HorizontalAlignment="Left" VerticalAlignment="Top"
-                                Content="Export FE-Buddy Alias Command Guide"
-                                Command="{Binding ExportGuideCommand}"
-                                ToolTip="Choose Web, Markdown or both, then the folder to save it in" />
-                    </ctl:BesideOrBelow>
+                    <StackPanel>
+                        <TextBlock Text="Check out the Alias Command Guide" Style="{StaticResource Text.H2}" />
+                        <TextBlock Style="{StaticResource Text.Prose}" Margin="0,6,0,0"
+                                   Text="Every FE-Buddy alias command, explained for your controllers with real examples. Find it at Info ▸ Alias Command Guide, where you can also export it for your facility's website, along with a practice page your controllers can quiz themselves on." />
+                        <Button HorizontalAlignment="Left" Margin="0,6,0,0"
+                                Style="{StaticResource Button.Subtle}" Padding="0,4,0,0"
+                                Foreground="{StaticResource Brush.Accent}"
+                                Content="View the guide →"
+                                Command="{Binding OpenGuideCommand}"
+                                ToolTip="Open Info ▸ Alias Command Guide" />
+                    </StackPanel>
                 </ctl:Card>
 
                 <!-- ====================== AT A GLANCE ====================== -->

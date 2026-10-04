@@ -362,6 +362,42 @@ public sealed class TelephonySettingsParserTests
 		Assert.Empty(result.Messages);
 	}
 
+	// ---- IncludeVatsimRadarVirtualAirlines ----
+
+	[Theory]
+	[InlineData(null, false)]
+	[InlineData("", false)]
+	[InlineData("N", false)]
+	[InlineData("Y", true)]
+	[InlineData("y", true)]
+	public void the_vatsim_radar_list_is_included_only_when_asked_and_its_key_is_not_unknown(string? value, bool expected)
+	{
+		Dictionary<string, string> settings = MinimalValidSettings();
+
+		if (value is not null)
+		{
+			settings["IncludeVatsimRadarVirtualAirlines"] = value;
+		}
+
+		TelephonySettingsParseResult result = TelephonySettingsParser.Parse(settings);
+
+		Assert.Equal(expected, result.Settings.IncludeVatsimRadarVirtualAirlines);
+		Assert.Equal(expected, TelephonySettingsParser.IncludesVatsimRadarList(settings));
+		Assert.Empty(result.Messages);
+	}
+
+	/// <summary>The run's settings check says what is wrong; the question asked before the downloads just takes it as a no.</summary>
+	[Fact]
+	public void a_vatsim_radar_value_that_is_neither_y_nor_n_is_an_error_to_parse_and_a_no_to_download()
+	{
+		Dictionary<string, string> settings = MinimalValidSettings();
+		settings["IncludeVatsimRadarVirtualAirlines"] = "maybe";
+
+		Assert.Throws<ArgumentException>(() => TelephonySettingsParser.Parse(settings));
+		Assert.False(TelephonySettingsParser.IncludesVatsimRadarList(settings));
+		Assert.Throws<ArgumentNullException>(() => TelephonySettingsParser.IncludesVatsimRadarList(null!));
+	}
+
 	// ---- VirtualAirlineProblem ----
 
 	[Theory]

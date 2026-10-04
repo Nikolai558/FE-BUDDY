@@ -18,6 +18,11 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
   Full guide: docs/Developers/RELEASING.md.
 -->
 ## Unreleased
+### Installing and uninstalling
+- FE-BUDDY removes an old FE-BUDDY 2.x it finds still installed (one that never moved to 2.9.x's
+  installer, or that was there when you installed 3.x by hand), so you no longer end up with two
+  FE-BUDDYs in Installed apps, on the Desktop and in the Start menu. It also removes a leftover
+  "FE-BUDDY 2.x" entry in Installed apps that could no longer be uninstalled.
 
 ## 3.0.0-alpha.5
 ### Dashboard

@@ -23,8 +23,9 @@ namespace FeBuddy.Core.Application.Launch;
 /// <remarks>
 /// Steps run in dependency order, not list order: temp clear and config read first (the
 /// version check and News need the config; the AIRAC download uses the temp folder), then the
-/// check for FE-Buddy 2.x's GitHub token variable (it needs the config, nothing needs it) and the
-/// removal of 2.8.x's dead shortcuts (nothing needs it either), then the UTC time / internet check (AIRAC needs the time, and all three network steps use the
+/// check for FE-Buddy 2.x's GitHub token variable (it needs the config, nothing needs it), the
+/// removal of 2.x's old Squirrel install and then of 2.x's dead shortcuts (the uninstall leaves its
+/// shortcuts behind; nothing needs either), then the UTC time / internet check (AIRAC needs the time, and all three network steps use the
 /// internet flag), then version, AIRAC and News concurrently since none depends on another.
 /// </remarks>
 public static class LaunchSequence
@@ -72,9 +73,17 @@ public static class LaunchSequence
 			() => LegacyGitHubTokenNotice.Check(),
 			defaultValue: []);
 
-		// FE-Buddy 2.8.x's Desktop and Start menu shortcuts outlive the copy they open. Nothing needs this.
+		// A copy of FE-Buddy 2.x that Squirrel installed can still be here when 3.x arrived without
+		// 2.9.x's MSI - two FE-Buddys on the PC. Usually just a File.Exists; nothing needs this.
 		RunStep(
-			progress, LaunchStep.RemoveLegacyShortcuts, "Removing FE-Buddy 2.8.x's dead shortcuts",
+			progress, LaunchStep.RemoveLegacySquirrelInstall, "Removing FE-Buddy 2.x's old install",
+			() => LegacySquirrelInstall.Remove(),
+			defaultValue: LegacySquirrelCleanupResult.NotFound);
+
+		// FE-Buddy 2.x's Desktop and Start menu shortcuts outlive the copy they open - including the
+		// ones Squirrel's uninstaller just left. Nothing needs this.
+		RunStep(
+			progress, LaunchStep.RemoveLegacyShortcuts, "Removing FE-Buddy 2.x's dead shortcuts",
 			() => LegacySquirrelShortcuts.RemoveDead(),
 			defaultValue: 0);
 

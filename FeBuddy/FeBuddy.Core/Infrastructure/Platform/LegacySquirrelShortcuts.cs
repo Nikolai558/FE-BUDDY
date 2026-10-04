@@ -5,11 +5,11 @@ using FeBuddy.Core.Infrastructure.Logging;
 namespace FeBuddy.Core.Infrastructure.Platform;
 
 /// <summary>
-/// The shortcuts FE-Buddy 2.8.x and earlier left behind. Those versions were installed by Squirrel
-/// into <c>%LOCALAPPDATA%\FE-BUDDY</c>, which put an <c>FE-BUDDY.lnk</c> on the user's Desktop and in
-/// their Start menu. Moving to the MSI removes that copy of FE-Buddy but not the two shortcuts: they
-/// sit beside the MSI's own and, once the copy is gone, open nothing. Nothing else removes them - the
-/// uninstaller only knows the MSI's shortcuts.
+/// The shortcuts FE-Buddy 2.x left behind. Up to 2.9.0 it was installed by Squirrel into
+/// <c>%LOCALAPPDATA%\FE-BUDDY</c>, which put an <c>FE-BUDDY.lnk</c> on the user's Desktop and in
+/// their Start menu. Removing that copy (2.9.x's MSI, or <see cref="LegacySquirrelInstall"/>) runs
+/// Squirrel's uninstaller, which leaves the two shortcuts: they sit beside the MSI's own and, once the
+/// copy is gone, open nothing. Nothing else removes them - the uninstaller only knows the MSI's shortcuts.
 /// </summary>
 /// <remarks>
 /// Only a shortcut with exactly that name, in exactly those two folders, pointing at the old copy's
@@ -82,7 +82,7 @@ public static class LegacySquirrelShortcuts
 			{
 				File.Delete(shortcut);
 				removed++;
-				AppLog.Info(LogSource, $"Deleted '{shortcut}', a shortcut FE-Buddy 2.8.x left that no longer opens anything.");
+				AppLog.Info(LogSource, $"Deleted '{shortcut}', a shortcut FE-Buddy 2.x left that no longer opens anything.");
 			}
 			catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
 			{

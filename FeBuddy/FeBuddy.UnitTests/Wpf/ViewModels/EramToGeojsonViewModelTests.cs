@@ -102,6 +102,22 @@ public sealed class EramToGeojsonViewModelTests : IDisposable
 		Assert.Null(tab.ValidationError);
 	}
 
+	/// <summary>Raw Plus is a layout of its own: picking it unpicks the others, and it is saved and sent by name.</summary>
+	[Fact]
+	public void raw_plus_is_picked_saved_and_sent_by_name()
+	{
+		EramToGeojsonViewModel tab = new();
+		Assert.True(tab.LayoutByAttributes);
+
+		tab.LayoutRawPlus = true;
+
+		Assert.False(tab.LayoutByAttributes);
+		Assert.False(tab.LayoutRaw);
+		Assert.Equal("RawPlus", tab.BuildSettingsBlock(Path.Combine(_root, "Out"), addFeBuddyOutputFolder: true)["OutputLayout"]);
+		Assert.True(tab.Save());
+		Assert.True(new EramToGeojsonViewModel().LayoutRawPlus);
+	}
+
 	[Fact]
 	public void feb_properties_on_with_none_picked_needs_fixing()
 	{

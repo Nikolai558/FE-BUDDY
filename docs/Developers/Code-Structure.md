@@ -56,7 +56,8 @@ FeBuddy.Core/
 │   ├── Credentials/      CredentialStore, WindowsCredentialVault, CredentialHosts, UrlSecrets
 │   │                     (see Credentials.md)
 │   ├── FileSystem/       AppPaths, TempWorkspace, ServiceOutputPaths, AppDataReset
-│   ├── Geojson/          CrcFeatureFactory, GeojsonFileWriter, GeojsonFileSet
+│   ├── Geojson/          CrcFeatureFactory, GeojsonFileWriter, GeojsonFileSet, SymbolFeatureMerger,
+│   │                     AttributesSignature
 │   ├── GitHub/           GitHubAuth, GitHubRepository, GitHubFileUrl
 │   ├── Http/ Logging/ Markdown/   FeBuddyHttp, AppLog, MarkdownParser
 │   ├── Platform/         AppVersion, InstalledProduct, UtcTimeCheck, LegacyGitHubTokenVariable,

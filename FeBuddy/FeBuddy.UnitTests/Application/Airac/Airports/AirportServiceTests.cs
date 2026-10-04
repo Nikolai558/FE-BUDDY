@@ -75,7 +75,8 @@ public sealed class AirportServiceTests : IDisposable
 		Assert.Equal(
 			[GeojsonPath("Airports_Symbols.geojson"), GeojsonPath("Airports_Text.geojson"), GeojsonPath("Runways_Lines.geojson")],
 			result.GeojsonFilesWritten);
-		Assert.Equal(2, result.GeojsonFeatureCountsByFile[GeojsonPath("Airports_Symbols.geojson")]);
+		// Neither airport carries a property of its own, so their symbols are one MultiPoint Feature.
+		Assert.Equal(1, result.GeojsonFeatureCountsByFile[GeojsonPath("Airports_Symbols.geojson")]);
 		Assert.Equal(1, result.GeojsonFeatureCountsByFile[GeojsonPath("Runways_Lines.geojson")]);
 
 		// One .apt command per identifier: SEA, KSEA, PAE, KPAE.

@@ -68,7 +68,8 @@ public sealed class ArrivalServiceTests : IDisposable
 		Assert.Equal([lines, symbols, text], result.GeojsonFilesWritten);
 		int pointCount = ArrivalTestData.BlaidFixes.Count + ArrivalTestData.BlaidNavaids.Count;
 		Assert.Equal(1, result.GeojsonFeatureCountsByFile[lines]);
-		Assert.Equal(pointCount, result.GeojsonFeatureCountsByFile[symbols]);
+		// No point carries a property of its own, so the symbols are one MultiPoint Feature; each label stays its own.
+		Assert.Equal(1, result.GeojsonFeatureCountsByFile[symbols]);
 		Assert.Equal(pointCount, result.GeojsonFeatureCountsByFile[text]);
 
 		Assert.Equal(1, result.AliasCommandCount);

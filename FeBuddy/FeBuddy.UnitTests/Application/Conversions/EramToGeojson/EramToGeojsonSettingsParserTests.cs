@@ -55,6 +55,7 @@ public sealed class EramToGeojsonSettingsParserTests
 	[InlineData("ByFilters", EramOutputLayout.ByFilters)]
 	[InlineData("byattributes", EramOutputLayout.ByAttributes)]
 	[InlineData("Raw", EramOutputLayout.Raw)]
+	[InlineData("RawPlus", EramOutputLayout.RawPlus)]
 	public void each_layout_is_read(string value, EramOutputLayout expected)
 	{
 		EramToGeojsonSettingsParseResult result = EramToGeojsonSettingsParser.Parse(Settings(("OutputLayout", value)));

@@ -456,7 +456,7 @@ file fails that file only.
 
 | Block key | Values | Default |
 |---|---|---|
-| `OutputLayout` | `ByFilters`, `ByAttributes`, `Raw` (an older `ByFilter` / `ByObject` reads as `ByFilters` / `ByAttributes`) | `ByAttributes` |
+| `OutputLayout` | `ByFilters`, `ByAttributes`, `Raw`, `RawPlus` (an older `ByFilter` / `ByObject` reads as `ByFilters` / `ByAttributes`) | `ByAttributes` |
 | `DefaultsSource` | `Xml`, `XmlThenCard`, `Card` | `Xml` |
 | `IncludeFebCustomProperties` | `Y` / `N` | `N` |
 | `FebProperties` | `mapObjectType`, `mapGroupId`, `lineObjectId`, `symbolId`, `saaId`; **required** with the above `Y` | none |

@@ -29,10 +29,18 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
   to set one.
 - The Review tab's **Output** card shows how many files the run wrote and **Open output folder**;
   the file list and its **Show files** button are gone.
+- Symbols that carry exactly the same properties are written as one feature (a MultiPoint), so
+  Symbols files are much smaller: without FE-Buddy Properties, a whole Airports or Fixes Symbols file
+  is one feature. Labels stay one feature each.
 
 ### File Conversions
 - DAT to GeoJSON warns that the cropping distance applies to every file in the conversion, since a
   set of RVMs often needs different distances.
+- ERAM to GeoJSON has a new **Raw Plus** layout: Raw's one file per map with every feature carrying
+  its own look, but lines that share every property are joined and so are symbols, into far fewer
+  features.
+- ERAM to GeoJSON's By Filters and By Attributes layouts group matching symbols into one feature
+  too. Raw still writes one feature per element.
 
 ### Map
 - The toolbar shows the zoom as a percentage of your home view (Home is 100%); type one and press

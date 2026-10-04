@@ -17,8 +17,8 @@ namespace FeBuddy.Wpf.ViewModels;
 /// The <b>ERAM to GeoJSON</b> tab on the File Conversions screen: converts the
 /// <c>Geomaps.xml</c> of an ERAM adaptation export into CRC-ready GeoJSON in
 /// <c>ERAM_TO_GEOJSON</c>, in the original ERAM_2_GEOJSON tool's three layouts - By Filters, By
-/// Attributes and Raw - with its names, plus its <c>ConsoleCommandControl.txt</c> rundown of the
-/// export's map menus when <c>ConsoleCommandControl.xml</c> is beside the Geomaps file.
+/// Attributes and Raw - with its names, or Raw Plus, plus its <c>ConsoleCommandControl.txt</c>
+/// rundown of the export's map menus when <c>ConsoleCommandControl.xml</c> is beside the Geomaps file.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -37,7 +37,7 @@ public sealed class EramToGeojsonViewModel : FileConversionTabViewModel, IFebPro
 {
 	private const string Node = "Services.FileConversions.EramToGeojson";
 
-	/// <summary>The layouts before these three, as the tab saved them, and the one each is now read as.</summary>
+	/// <summary>The layouts before these, as the tab saved them, and the one each is now read as.</summary>
 	private static readonly IReadOnlyDictionary<string, EramOutputLayout> RetiredLayouts =
 		new Dictionary<string, EramOutputLayout>(StringComparer.OrdinalIgnoreCase)
 		{
@@ -99,11 +99,18 @@ public sealed class EramToGeojsonViewModel : FileConversionTabViewModel, IFebPro
 		set { if (value) SetOutputLayout(EramOutputLayout.ByAttributes); }
 	}
 
-	/// <summary>One file per map, every Feature carrying its own properties.</summary>
+	/// <summary>One file per map, one Feature per element, each carrying its own properties.</summary>
 	public bool LayoutRaw
 	{
 		get => _outputLayout == EramOutputLayout.Raw;
 		set { if (value) SetOutputLayout(EramOutputLayout.Raw); }
+	}
+
+	/// <summary>Raw, with lines that carry the same properties joined and symbols that do grouped.</summary>
+	public bool LayoutRawPlus
+	{
+		get => _outputLayout == EramOutputLayout.RawPlus;
+		set { if (value) SetOutputLayout(EramOutputLayout.RawPlus); }
 	}
 
 	// ================= CRC defaults source =================
@@ -258,7 +265,7 @@ public sealed class EramToGeojsonViewModel : FileConversionTabViewModel, IFebPro
 	{
 		foreach (string name in new[]
 		{
-			nameof(LayoutByFilters), nameof(LayoutByAttributes), nameof(LayoutRaw),
+			nameof(LayoutByFilters), nameof(LayoutByAttributes), nameof(LayoutRaw), nameof(LayoutRawPlus),
 			nameof(DefaultsFromXml), nameof(DefaultsFromXmlThenCard), nameof(DefaultsFromCard), nameof(UsesCrcDefaults),
 			nameof(HasCrcDefaultsInUse),
 		})

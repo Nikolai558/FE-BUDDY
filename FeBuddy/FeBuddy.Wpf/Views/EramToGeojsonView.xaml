@@ -4,7 +4,8 @@
     host owns the page's single scroller. The Convert card at the foot of the page starts the
     run, and the outcome appears on the screen's Review tab.
 
-    The three layouts are the original ERAM_2_GEOJSON tool's, named as it named them; each one's
+    The first three layouts are the original ERAM_2_GEOJSON tool's, named as it named them, and Raw
+    Plus is Raw with matching lines joined and symbols grouped; each one's
     tooltip shows the folders and files it writes, in the code font, with the
     ConsoleCommandControl.txt rundown written beside the maps in every layout. Each defaults
     source has a one-line description and a tooltip saying what it does, with an example.
@@ -96,13 +97,28 @@
                     </RadioButton>
                 </ctl:Option>
                 <ctl:Option Margin="0,10,0,0"
-                            Description="One file per map, every feature carrying its own properties and no isDefaults features. The least to set up, and a reference to check the other layouts against.">
+                            Description="One file per map, one feature per element, each carrying its own properties, and no isDefaults features. The least to set up, and a reference to check the other layouts against.">
                     <RadioButton GroupName="EramLayout" Content="Raw" IsChecked="{Binding LayoutRaw, Mode=TwoWay}"
                                  ToolTipService.InitialShowDelay="200" ToolTipService.ShowDuration="60000">
                         <RadioButton.ToolTip>
                             <ToolTip MaxWidth="1000">
                                 <StackPanel>
                                     <TextBlock Text="Raw" Style="{StaticResource Text.Body.Strong}" />
+                                    <TextBlock Style="{StaticResource LayoutTree}"
+                                               Text="ERAM_TO_GEOJSON\&#xA;    CENTER_CENTER-MAP.geojson&#xA;    OCP_OCP-MAPS.geojson&#xA;    ConsoleCommandControl.txt" />
+                                </StackPanel>
+                            </ToolTip>
+                        </RadioButton.ToolTip>
+                    </RadioButton>
+                </ctl:Option>
+                <ctl:Option Margin="0,10,0,0"
+                            Description="Raw's one file per map, every feature carrying its own properties, but lines that share every property are joined and symbols that share every property are grouped into one feature. Far fewer features than Raw, still nothing to set up.">
+                    <RadioButton GroupName="EramLayout" Content="Raw Plus" IsChecked="{Binding LayoutRawPlus, Mode=TwoWay}"
+                                 ToolTipService.InitialShowDelay="200" ToolTipService.ShowDuration="60000">
+                        <RadioButton.ToolTip>
+                            <ToolTip MaxWidth="1000">
+                                <StackPanel>
+                                    <TextBlock Text="Raw Plus" Style="{StaticResource Text.Body.Strong}" />
                                     <TextBlock Style="{StaticResource LayoutTree}"
                                                Text="ERAM_TO_GEOJSON\&#xA;    CENTER_CENTER-MAP.geojson&#xA;    OCP_OCP-MAPS.geojson&#xA;    ConsoleCommandControl.txt" />
                                 </StackPanel>
@@ -216,7 +232,7 @@
         <cards:CrcDefaultsCard LinesTitle="GeoMap — Lines" SymbolsTitle="GeoMap — Symbols" TextTitle="GeoMap — Text" ShowInclude="True"
                                IncludeLines="{Binding IncludeCrcLineDefaults}" IncludeSymbols="{Binding IncludeCrcSymbolDefaults}"
                                IncludeText="{Binding IncludeCrcTextDefaults}"
-                               Note="The look the converted files use: each file's isDefaults feature (By Filters, By Attributes), or every feature's own properties (Raw). Untick Include on a panel to leave its defaults out." />
+                               Note="The look the converted files use: each file's isDefaults feature (By Filters, By Attributes), or every feature's own properties (Raw, Raw Plus). Untick Include on a panel to leave its defaults out." />
 
         <!-- ============ FE-Buddy properties ============ -->
         <cards:FebPropertiesCard />

@@ -97,7 +97,11 @@ public sealed class WxStationGeojsonWriterTests : IDisposable
 				Path.Combine(_outputDirectory, "Geojson", "Wx_Text.geojson"),
 			],
 			result.Files.FilesWritten);
-		Assert.Equal(2, FeaturesOf(result.Files.FilesWritten[0]).Count);
+		// Neither carries a property of its own, so their symbols are one MultiPoint Feature; each label stays its own.
+		JsonElement symbols = Assert.Single(FeaturesOf(result.Files.FilesWritten[0])).GetProperty("geometry");
+		Assert.Equal("MultiPoint", symbols.GetProperty("type").GetString());
+		Assert.Equal(2, symbols.GetProperty("coordinates").GetArrayLength());
+		Assert.Equal(2, FeaturesOf(result.Files.FilesWritten[1]).Count);
 	}
 
 	[Fact]

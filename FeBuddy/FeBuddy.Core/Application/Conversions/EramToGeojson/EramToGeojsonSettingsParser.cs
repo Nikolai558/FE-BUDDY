@@ -11,8 +11,8 @@ namespace FeBuddy.Core.Application.Conversions.EramToGeojson;
 /// supplies for the ERAM to GeoJSON conversion into a typed, validated <see cref="EramToGeojsonSettings"/>.
 /// </summary>
 /// <remarks>
-/// <c>OutputLayout</c> is <c>ByFilters</c>, <c>ByAttributes</c> or <c>Raw</c>. The two layouts
-/// before them are still read, as their nearest: <c>ByFilter</c> as <c>ByFilters</c>, and
+/// <c>OutputLayout</c> is <c>ByFilters</c>, <c>ByAttributes</c>, <c>Raw</c> or <c>RawPlus</c>. The two
+/// layouts before them are still read, as their nearest: <c>ByFilter</c> as <c>ByFilters</c>, and
 /// <c>ByObject</c> (a file per object type and map group) as <c>ByAttributes</c>, whose names
 /// carry both.
 /// </remarks>
@@ -33,7 +33,7 @@ public static class EramToGeojsonSettingsParser
 	private static readonly IReadOnlySet<string> OwnKeys = new HashSet<string>(
 		ConversionSettingsReader.ConversionKeys.Concat(["OutputLayout", "DefaultsSource"]), StringComparer.OrdinalIgnoreCase);
 
-	/// <summary>The layouts before these three, and the one each is now read as.</summary>
+	/// <summary>The layouts before these, and the one each is now read as.</summary>
 	private static readonly IReadOnlyDictionary<string, EramOutputLayout> RetiredLayouts =
 		new Dictionary<string, EramOutputLayout>(StringComparer.OrdinalIgnoreCase)
 		{
@@ -118,6 +118,7 @@ public static class EramToGeojsonSettingsParser
 
 		return SettingsValueReader.OptionalEnum(
 			settings, "OutputLayout", EramOutputLayout.ByAttributes,
-			hint: "Use \"ByFilters\" (a folder per set of filters), \"ByAttributes\" (a file per shared look) or \"Raw\" (one file per map).");
+			hint: "Use \"ByFilters\" (a folder per set of filters), \"ByAttributes\" (a file per shared look), \"Raw\" (one file per map) " +
+				"or \"RawPlus\" (one file per map, matching lines joined and symbols grouped).");
 	}
 }

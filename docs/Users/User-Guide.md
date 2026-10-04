@@ -68,9 +68,12 @@ Upload have their own; see their sections.
 
 - **Outputs** - GeoJSON files, the alias file, or both. (To make nothing, untick the sub-service.)
   ARTCC Boundaries, Fixes and Wx Stations have no alias file, so no Outputs card.
-- **What Files Do You Want?** - which of **Lines**, **Symbols** and **Text** to write.
+- **What Files Do You Want?** - which of **Lines**, **Symbols** and **Text** to write. Symbols that
+  carry exactly the same properties are written as one feature (a MultiPoint), so a Symbols file
+  stays small; labels are always one feature each.
 - **FE-Buddy Properties** - extra `feb.*` fields on each feature, such as an airway's ID, handy when
-  checking a file. Each has a tooltip. CRC ignores them.
+  checking a file. Each has a tooltip. CRC ignores them. A property that differs from point to point,
+  such as an ID, keeps each symbol a feature of its own.
 - **Region of Interest** - Settings' **Default Region of Interest**, unless you tick **Override the
   default ROI** and give the tab its own box (type the corners or **Pick on map…**). With no region,
   the run covers the whole country.
@@ -437,8 +440,13 @@ original ERAM_2_GEOJSON tool did. Each map is named after its `GeomapId` and but
     `Multi-Filter_02_03_08\…`. The fewest files.
   - **By Attributes** (the default) - a file per look, named after it. The most files, and the
     easiest to pick apart and rename for your GeoMaps.
-  - **Raw** - one file per map, every feature carrying its own look. A reference to check the others
-    against in CRC.
+  - **Raw** - one file per map, one feature per element, every feature carrying its own look. A
+    reference to check the others against in CRC.
+  - **Raw Plus** - Raw's one file per map with every feature carrying its own look, but lines that
+    share every property are joined and so are symbols, into far fewer features.
+
+  In every layout but Raw, lines that share every property are joined and symbols that do are one
+  feature (a MultiPoint); labels are always one feature each.
 - **CRC ERAM Defaults Source** - **From the XML**, **From the XML, filling gaps from the card**, or
   **From the card only**. Hover each for an example. SAA objects have no BCG or filters of their own,
   so filling gaps from the card is what gives them a look. The CRC ERAM Defaults card only shows

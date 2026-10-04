@@ -213,6 +213,10 @@ The FAA's data has quirks. Each rule lives in one class.
 - **Antimeridian** (`AntimeridianSplitter`): a line crossing ±180° is split in two.
 - **Shared segments** (`LineStringMerger`): paths that share segments are merged into the fewest,
   longest lines that draw each segment once - smaller files, and dashes stay dashed.
+- **Symbol groups** (`SymbolFeatureMerger`, run by `GeojsonFileSet` on every file): symbols whose
+  properties match exactly (`AttributesSignature`) become one MultiPoint Feature in the place of the
+  first, a repeated point drawn once. Labels and isDefaults Features are never grouped. Only ERAM's
+  Raw layout opts out, so it stays one Feature per element.
 - **Procedure names** (`DepartureNaming`, `ArrivalNaming`): the FAA computer code without its version
   digit, matched against `AMENDMENT_NO` rather than cut at the first digit (`DOTSS2.DOTSS` → `DOTSS`,
   `1U71.LUNDI` → `1U7`). A STAR's code reads `TRANSITION.PROCEDURE`, so `AALAN.BLAID2` → `BLAID`. With

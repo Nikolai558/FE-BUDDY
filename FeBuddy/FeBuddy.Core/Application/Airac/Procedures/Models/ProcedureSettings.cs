@@ -11,8 +11,8 @@ namespace FeBuddy.Core.Application.Airac.Procedures.Models;
 /// </summary>
 /// <remarks>
 /// <para>
-/// Unlike every other AIRAC sub-service, there is no GeoJSON and no <c>feb.*</c> properties. The
-/// outputs are two documents, <c>Procedure_Changes.md</c> and <c>Procedures.json</c>, written to
+/// As with Telephony, there is no GeoJSON and no <c>feb.*</c> properties. The outputs are two
+/// documents, <c>Procedure_Changes.md</c> and <c>Procedures.json</c>, written to
 /// <see cref="AiracOutputPaths.PublicationDocsFolder"/>, and the FAA Chart Recall alias file,
 /// <c>Faa_Chart_Recall.txt</c>, written where every alias file goes.
 /// </para>
@@ -41,13 +41,6 @@ public sealed record ProcedureSettings
 	/// <see langword="true"/>.
 	/// </summary>
 	public bool GenerateAliasFile { get; init; } = true;
-
-	/// <summary>
-	/// Whether the alias file goes to vNAS: copied into <c>Upload_to_vNAS\vNAS_Alias.txt</c> as well as
-	/// written to the <c>Aliases</c> folder. Its only possible file key is <c>Faa_Chart_Recall.txt</c>;
-	/// nothing Procedures writes carries CRC-ERAM defaults.
-	/// </summary>
-	public VnasFileChoices Vnas { get; init; } = VnasFileChoices.None;
 
 	/// <summary>
 	/// The names the user gave files in place of FE-Buddy's, by file key. Not part of the settings

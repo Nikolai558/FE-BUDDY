@@ -1,6 +1,6 @@
 using FeBuddy.Core.Application.Airac;
+using FeBuddy.Core.Application.Airac.ConcatenateAliases.Models;
 using FeBuddy.Core.Application.Airac.Models;
-using FeBuddy.Core.Application.Airac.VnasAlias.Models;
 using FeBuddy.Core.Application.Models;
 using FeBuddy.Core.Domain.Airac.Models;
 using FeBuddy.Core.Infrastructure.Dtpp.Models;
@@ -21,10 +21,12 @@ using FeBuddy.UnitTests.Application.Airac.WxStations.Fixtures;
 namespace FeBuddy.UnitTests.Application.Airac;
 
 /// <summary>
-/// Exercises the <see cref="AiracService"/> orchestrator: it dispatches each sub-service
-/// (Airways, Airports, Departures) whose block is present and aggregates its result, writes every
-/// sub-service into the one <c>AIRAC_&lt;cycle&gt;</c> folder, handles an earlier run's files as
-/// asked, and is a safe no-op (with a warning) when nothing is selected.
+/// Exercises the <see cref="AiracService"/> orchestrator: it dispatches each sub-service whose
+/// block is present, with the supplemental data it needs, and aggregates its result, writes every
+/// sub-service into the one <c>AIRAC_&lt;cycle&gt;</c> folder with the duplicate-alias report,
+/// combines the alias files into <c>Combined_Alias.txt</c> as Concatenate Aliases asks, writes
+/// renamed files under their new names, handles an earlier run's files as asked, and is a safe
+/// no-op (with a warning) when nothing is selected.
 /// </summary>
 public sealed class AiracServiceTests : IDisposable
 {
@@ -65,7 +67,7 @@ public sealed class AiracServiceTests : IDisposable
 			Airways = null,
 		};
 
-		AiracServiceResult result = await AiracService.RunAsync(settings, new NasrCsvDataCollection());
+		AiracServiceResult result = await AiracService.RunAsync(settings, new NasrCsvDataCollection(), new AiracSupplementalData());
 
 		Assert.Null(result.Airways);
 		Assert.Contains(result.Warnings, w => w.Contains("no sub-service", StringComparison.OrdinalIgnoreCase));
@@ -87,21 +89,17 @@ public sealed class AiracServiceTests : IDisposable
 		{
 			SelectedCycle = Cycle,
 			OutputDirectory = _output,
-			// OutputBy=None keeps the run in memory - no files are written by this test.
-			Airways = new Dictionary<string, string>
-			{
-				{ "OutputBy", "None" },
-				{ "GenerateAliasFile", "N" },
-			},
+			// GeoJSON off: only the alias file is written.
+			Airways = new Dictionary<string, string> { { "GenerateGeojson", "N" } },
 		};
 
-		AiracServiceResult result = await AiracService.RunAsync(settings, data);
+		AiracServiceResult result = await AiracService.RunAsync(settings, data, new AiracSupplementalData());
 
 		Assert.NotNull(result.Airways);
 		Assert.Equal(1, result.Airways!.AirwayCount);
 		Assert.Empty(result.Airways.GeojsonFilesWritten);
 		Assert.Empty(result.Airways.ExcludedAirwayIds);
-		Assert.False(Directory.Exists(result.OutputDirectory));
+		Assert.Equal(Path.Combine(CycleFolder, "Aliases", "Airways.txt"), result.Airways.AliasFilePath);
 	}
 
 	[Fact]
@@ -111,7 +109,7 @@ public sealed class AiracServiceTests : IDisposable
 		AiracServiceSettings settings = AliasOnlySettings();
 
 		List<AiracServiceProgress> reports = [];
-		AiracServiceResult result = await AiracService.RunAsync(settings, data, new SynchronousProgress(reports.Add));
+		AiracServiceResult result = await AiracService.RunAsync(settings, data, new AiracSupplementalData(), new SynchronousProgress(reports.Add));
 
 		Assert.Null(result.Airways);
 		Assert.Equal(1, result.Airports!.AirportCount);
@@ -124,13 +122,13 @@ public sealed class AiracServiceTests : IDisposable
 		Assert.Equal(100, reports[^2].PercentComplete);
 
 		await Assert.ThrowsAnyAsync<OperationCanceledException>(
-			() => AiracService.RunAsync(settings, data, cancellationToken: new CancellationToken(canceled: true)));
+			() => AiracService.RunAsync(settings, data, new AiracSupplementalData(), cancellationToken: new CancellationToken(canceled: true)));
 	}
 
 	[Fact]
 	public async Task every_sub_service_writes_into_the_one_cycle_folder()
 	{
-		AiracServiceResult result = await AiracService.RunAsync(AliasOnlySettings(), DepartureTestData.Dotss());
+		AiracServiceResult result = await AiracService.RunAsync(AliasOnlySettings(), DepartureTestData.Dotss(), new AiracSupplementalData());
 
 		Assert.Equal(CycleFolder, result.OutputDirectory);
 		Assert.Equal(Path.Combine(CycleFolder, "Aliases", "Airports.txt"), result.Airports!.AliasFilePath);
@@ -179,7 +177,7 @@ public sealed class AiracServiceTests : IDisposable
 			Arrivals = new Dictionary<string, string> { { "GenerateGeojson", "N" } },
 		};
 
-		AiracServiceResult result = await AiracService.RunAsync(settings, data);
+		AiracServiceResult result = await AiracService.RunAsync(settings, data, new AiracSupplementalData());
 
 		Assert.NotNull(result.DuplicateAliasReport);
 		Assert.NotEmpty(result.DuplicateAliasReport!.Duplicates);
@@ -199,7 +197,7 @@ public sealed class AiracServiceTests : IDisposable
 			Arrivals = new Dictionary<string, string> { { "GenerateGeojson", "N" } },
 		};
 
-		AiracServiceResult result = await AiracService.RunAsync(settings, ArrivalTestData.Blaid());
+		AiracServiceResult result = await AiracService.RunAsync(settings, ArrivalTestData.Blaid(), new AiracSupplementalData());
 
 		Assert.Null(result.Departures);
 		Assert.NotNull(result.Arrivals);
@@ -222,7 +220,7 @@ public sealed class AiracServiceTests : IDisposable
 			Arrivals = new Dictionary<string, string> { { "GenerateAliasFile", "N" } },
 		};
 
-		AiracServiceResult result = await AiracService.RunAsync(settings, ArrivalTestData.Blaid());
+		AiracServiceResult result = await AiracService.RunAsync(settings, ArrivalTestData.Blaid(), new AiracSupplementalData());
 
 		Assert.Equal(1, result.Arrivals!.AirportProcedureCount);
 		string linesFile = Path.Combine(CycleFolder, "Geojson", "ZLA", "LAS", "LAS_BLAID_STAR_Lines.geojson");
@@ -242,7 +240,7 @@ public sealed class AiracServiceTests : IDisposable
 			Arrivals = new Dictionary<string, string> { { "GenerateGeojson", "N" } },
 		};
 
-		await AiracService.RunAsync(settings, ArrivalTestData.Blaid());
+		await AiracService.RunAsync(settings, ArrivalTestData.Blaid(), new AiracSupplementalData());
 
 		// DeleteExisting only runs when something is selected: Arrivals alone must still trigger it.
 		Assert.False(File.Exists(stale));
@@ -254,7 +252,7 @@ public sealed class AiracServiceTests : IDisposable
 	{
 		AiracServiceSettings settings = AliasOnlySettings() with { Arrivals = null };
 
-		AiracServiceResult result = await AiracService.RunAsync(settings, DepartureTestData.Dotss());
+		AiracServiceResult result = await AiracService.RunAsync(settings, DepartureTestData.Dotss(), new AiracSupplementalData());
 
 		Assert.Null(result.Arrivals);
 	}
@@ -269,7 +267,7 @@ public sealed class AiracServiceTests : IDisposable
 			Navaids = new Dictionary<string, string> { { "GenerateGeojson", "N" } },
 		};
 
-		AiracServiceResult result = await AiracService.RunAsync(settings, NavaidTestData.Build([NavaidTestData.CgtRow()]));
+		AiracServiceResult result = await AiracService.RunAsync(settings, NavaidTestData.Build([NavaidTestData.CgtRow()]), new AiracSupplementalData());
 
 		Assert.Null(result.Arrivals);
 		Assert.NotNull(result.Navaids);
@@ -292,7 +290,7 @@ public sealed class AiracServiceTests : IDisposable
 			Navaids = new Dictionary<string, string> { { "GenerateAliasFile", "N" } },
 		};
 
-		AiracServiceResult result = await AiracService.RunAsync(settings, NavaidTestData.Build([NavaidTestData.CgtRow()]));
+		AiracServiceResult result = await AiracService.RunAsync(settings, NavaidTestData.Build([NavaidTestData.CgtRow()]), new AiracSupplementalData());
 
 		string symbolsFile = Path.Combine(CycleFolder, "Geojson", "NAVAIDs_Symbols.geojson");
 		Assert.Contains(symbolsFile, result.Navaids!.GeojsonFilesWritten);
@@ -311,7 +309,7 @@ public sealed class AiracServiceTests : IDisposable
 			Navaids = new Dictionary<string, string> { { "GenerateGeojson", "N" } },
 		};
 
-		await AiracService.RunAsync(settings, NavaidTestData.Build([NavaidTestData.CgtRow()]));
+		await AiracService.RunAsync(settings, NavaidTestData.Build([NavaidTestData.CgtRow()]), new AiracSupplementalData());
 
 		// DeleteExisting only runs when something is selected: NAVAIDs alone must still trigger it.
 		Assert.False(File.Exists(stale));
@@ -323,7 +321,7 @@ public sealed class AiracServiceTests : IDisposable
 	{
 		AiracServiceSettings settings = AliasOnlySettings() with { Navaids = null };
 
-		AiracServiceResult result = await AiracService.RunAsync(settings, DepartureTestData.Dotss());
+		AiracServiceResult result = await AiracService.RunAsync(settings, DepartureTestData.Dotss(), new AiracSupplementalData());
 
 		Assert.Null(result.Navaids);
 	}
@@ -342,7 +340,7 @@ public sealed class AiracServiceTests : IDisposable
 			ArtccBoundaries = new Dictionary<string, string>(),
 		};
 
-		AiracServiceResult result = await AiracService.RunAsync(settings, data);
+		AiracServiceResult result = await AiracService.RunAsync(settings, data, new AiracSupplementalData());
 
 		Assert.NotNull(result.ArtccBoundaries);
 		Assert.Equal(1, result.ArtccBoundaries!.LocationCount);
@@ -369,7 +367,7 @@ public sealed class AiracServiceTests : IDisposable
 			[ArtccBoundaryTestData.ZobBaseRow()],
 			ArtccBoundaryTestData.ZobHighRows());
 
-		await AiracService.RunAsync(settings, data);
+		await AiracService.RunAsync(settings, data, new AiracSupplementalData());
 
 		// DeleteExisting only runs when something is selected: ARTCC Boundaries alone must still trigger it.
 		Assert.False(File.Exists(stale));
@@ -381,7 +379,7 @@ public sealed class AiracServiceTests : IDisposable
 	{
 		AiracServiceSettings settings = AliasOnlySettings() with { ArtccBoundaries = null };
 
-		AiracServiceResult result = await AiracService.RunAsync(settings, DepartureTestData.Dotss());
+		AiracServiceResult result = await AiracService.RunAsync(settings, DepartureTestData.Dotss(), new AiracSupplementalData());
 
 		Assert.Null(result.ArtccBoundaries);
 	}
@@ -398,7 +396,7 @@ public sealed class AiracServiceTests : IDisposable
 			Fixes = new Dictionary<string, string>(),
 		};
 
-		AiracServiceResult result = await AiracService.RunAsync(settings, data);
+		AiracServiceResult result = await AiracService.RunAsync(settings, data, new AiracSupplementalData());
 
 		Assert.Null(result.ArtccBoundaries);
 		Assert.NotNull(result.Fixes);
@@ -417,7 +415,7 @@ public sealed class AiracServiceTests : IDisposable
 			Fixes = new Dictionary<string, string>(),
 		};
 
-		AiracServiceResult result = await AiracService.RunAsync(settings, data);
+		AiracServiceResult result = await AiracService.RunAsync(settings, data, new AiracSupplementalData());
 
 		string symbolsFile = Path.Combine(CycleFolder, "Geojson", "Fix_Symbols.geojson");
 		Assert.Contains(symbolsFile, result.Fixes!.GeojsonFilesWritten);
@@ -436,7 +434,7 @@ public sealed class AiracServiceTests : IDisposable
 			Fixes = new Dictionary<string, string>(),
 		};
 
-		await AiracService.RunAsync(settings, FixTestData.Build([FixTestData.AcmeRow()]));
+		await AiracService.RunAsync(settings, FixTestData.Build([FixTestData.AcmeRow()]), new AiracSupplementalData());
 
 		// DeleteExisting only runs when something is selected: Fixes alone must still trigger it.
 		Assert.False(File.Exists(stale));
@@ -448,7 +446,7 @@ public sealed class AiracServiceTests : IDisposable
 	{
 		AiracServiceSettings settings = AliasOnlySettings() with { Fixes = null };
 
-		AiracServiceResult result = await AiracService.RunAsync(settings, DepartureTestData.Dotss());
+		AiracServiceResult result = await AiracService.RunAsync(settings, DepartureTestData.Dotss(), new AiracSupplementalData());
 
 		Assert.Null(result.Fixes);
 	}
@@ -465,7 +463,7 @@ public sealed class AiracServiceTests : IDisposable
 			WxStations = new Dictionary<string, string>(),
 		};
 
-		AiracServiceResult result = await AiracService.RunAsync(settings, new NasrCsvDataCollection(), wxData);
+		AiracServiceResult result = await AiracService.RunAsync(settings, new NasrCsvDataCollection(), new AiracSupplementalData { WxStations = wxData });
 
 		Assert.Null(result.Fixes);
 		Assert.NotNull(result.WxStations);
@@ -484,7 +482,7 @@ public sealed class AiracServiceTests : IDisposable
 			WxStations = new Dictionary<string, string>(),
 		};
 
-		AiracServiceResult result = await AiracService.RunAsync(settings, new NasrCsvDataCollection(), wxData);
+		AiracServiceResult result = await AiracService.RunAsync(settings, new NasrCsvDataCollection(), new AiracSupplementalData { WxStations = wxData });
 
 		string symbolsFile = Path.Combine(CycleFolder, "Geojson", "Wx_Symbols.geojson");
 		Assert.Contains(symbolsFile, result.WxStations!.GeojsonFilesWritten);
@@ -505,7 +503,7 @@ public sealed class AiracServiceTests : IDisposable
 			WxStations = new Dictionary<string, string>(),
 		};
 
-		await AiracService.RunAsync(settings, new NasrCsvDataCollection(), wxData);
+		await AiracService.RunAsync(settings, new NasrCsvDataCollection(), new AiracSupplementalData { WxStations = wxData });
 
 		// DeleteExisting only runs when something is selected: Wx Stations alone must still trigger it.
 		Assert.False(File.Exists(stale));
@@ -517,13 +515,13 @@ public sealed class AiracServiceTests : IDisposable
 	{
 		AiracServiceSettings settings = AliasOnlySettings() with { WxStations = null };
 
-		AiracServiceResult result = await AiracService.RunAsync(settings, DepartureTestData.Dotss(), wxStationData: null);
+		AiracServiceResult result = await AiracService.RunAsync(settings, DepartureTestData.Dotss(), new AiracSupplementalData());
 
 		Assert.Null(result.WxStations);
 	}
 
 	[Fact]
-	public async Task the_two_argument_overload_with_a_wx_stations_block_completes_with_the_wx_warning_and_zero_stations()
+	public async Task a_wx_stations_block_with_no_station_data_completes_with_the_wx_warning_and_zero_stations()
 	{
 		AiracServiceSettings settings = new()
 		{
@@ -532,11 +530,10 @@ public sealed class AiracServiceTests : IDisposable
 			WxStations = new Dictionary<string, string>(),
 		};
 
-		// The two-argument RunAsync(settings, nasrData) overload passes no Wx station data at all
-		// (WxStationService.Run receives a null WxStationDataCollection). That no longer throws: the
-		// run completes with zero stations, nothing written, and a warning saying there was nothing
-		// to build from.
-		AiracServiceResult result = await AiracService.RunAsync(settings, new NasrCsvDataCollection());
+		// No Wx station data at all (WxStationService.Run receives a null WxStationDataCollection):
+		// the run completes with zero stations, nothing written, and a warning saying there was
+		// nothing to build from.
+		AiracServiceResult result = await AiracService.RunAsync(settings, new NasrCsvDataCollection(), new AiracSupplementalData());
 
 		Assert.NotNull(result.WxStations);
 		Assert.Equal(0, result.WxStations!.StationCount);
@@ -546,10 +543,10 @@ public sealed class AiracServiceTests : IDisposable
 			m.Text.Contains("no weather station data to build from", StringComparison.Ordinal));
 	}
 
-	// ---- the AiracSupplementalData overload ----
+	// ---- supplemental data ----
 
 	[Fact]
-	public async Task the_supplemental_data_overload_is_the_real_implementation_the_others_delegate_to()
+	public async Task the_wx_station_data_reaches_the_wx_stations_sub_service()
 	{
 		WxStationDataCollection wxData = WxStationTestData.Build([WxStationTestData.DtwRow()]);
 
@@ -567,26 +564,6 @@ public sealed class AiracServiceTests : IDisposable
 		Assert.Equal(1, result.WxStations!.StationCount);
 	}
 
-	[Fact]
-	public async Task the_wx_station_data_overload_delegates_to_the_supplemental_data_overload()
-	{
-		// Both overloads must reach WxStationService with the same data - the three-argument
-		// overload just wraps it in an AiracSupplementalData with everything else left null.
-		WxStationDataCollection wxData = WxStationTestData.Build([WxStationTestData.DtwRow()]);
-
-		AiracServiceSettings settings = new()
-		{
-			SelectedCycle = Cycle,
-			OutputDirectory = _output,
-			WxStations = new Dictionary<string, string>(),
-		};
-
-		AiracServiceResult viaWxOverload = await AiracService.RunAsync(settings, new NasrCsvDataCollection(), wxData);
-		AiracServiceResult viaSupplementalOverload = await AiracService.RunAsync(
-			settings, new NasrCsvDataCollection(), new AiracSupplementalData { WxStations = wxData });
-
-		Assert.Equal(viaSupplementalOverload.WxStations!.StationCount, viaWxOverload.WxStations!.StationCount);
-	}
 
 	[Fact]
 	public async Task run_async_rejects_a_null_supplemental_data()
@@ -663,7 +640,7 @@ public sealed class AiracServiceTests : IDisposable
 			Telephony = new Dictionary<string, string>(),
 		};
 
-		AiracServiceResult result = await AiracService.RunAsync(settings, new NasrCsvDataCollection());
+		AiracServiceResult result = await AiracService.RunAsync(settings, new NasrCsvDataCollection(), new AiracSupplementalData());
 
 		Assert.NotNull(result.Telephony);
 		Assert.Null(result.Telephony!.AliasFilePath);
@@ -672,7 +649,7 @@ public sealed class AiracServiceTests : IDisposable
 			m.Text.Contains("no telephony data to build from", StringComparison.Ordinal));
 	}
 
-	// ---- vNAS_Alias.txt ----
+	// ---- Combined_Alias.txt ----
 
 	private static TelephonyDataCollection OneOperator => new()
 	{
@@ -682,16 +659,17 @@ public sealed class AiracServiceTests : IDisposable
 		],
 	};
 
-	private string VnasAliasFile => Path.Combine(CycleFolder, "Upload_to_vNAS", "vNAS_Alias.txt");
+	private string CombinedAliasFile => Path.Combine(CycleFolder, "Aliases", "Combined_Alias.txt");
 
 	[Fact]
-	public async Task an_alias_file_marked_for_vnas_stays_in_aliases_and_is_copied_into_vnas_alias_txt()
+	public async Task every_alias_file_the_run_writes_goes_into_combined_alias_txt_in_aliases()
 	{
 		AiracServiceSettings settings = new()
 		{
 			SelectedCycle = Cycle,
 			OutputDirectory = _output,
-			Telephony = new Dictionary<string, string> { ["uploadtovnas"] = "telephony.TXT" },
+			Telephony = new Dictionary<string, string>(),
+			ConcatenateAliases = new Dictionary<string, string>(),
 		};
 
 		AiracServiceResult result = await AiracService.RunAsync(
@@ -700,38 +678,33 @@ public sealed class AiracServiceTests : IDisposable
 		string telephony = Path.Combine(CycleFolder, "Aliases", "Telephony.txt");
 		Assert.Equal(telephony, result.Telephony!.AliasFilePath);
 
-		Assert.NotNull(result.VnasAlias);
-		Assert.Equal(VnasAliasFile, result.VnasAlias!.FilePath);
-		Assert.Equal(["Telephony.txt"], result.VnasAlias.FeBuddyFiles);
-		Assert.Equal(0, result.VnasAlias.CustomFileCount);
+		Assert.NotNull(result.CombinedAlias);
+		Assert.Equal(CombinedAliasFile, result.CombinedAlias!.FilePath);
+		Assert.Equal(["Telephony.txt"], result.CombinedAlias.FeBuddyFiles);
+		Assert.Equal(0, result.CombinedAlias.CustomFileCount);
 
-		string written = File.ReadAllText(VnasAliasFile);
+		string written = File.ReadAllText(CombinedAliasFile);
 		Assert.StartsWith("; ===== FE-Buddy aliases (AIRAC 2610) start here.", written, StringComparison.Ordinal);
 		Assert.Contains(File.ReadAllText(telephony).TrimEnd(), written, StringComparison.Ordinal);
 
-		// Without vNAS Alias Upload the file has no facility aliases, and the Review tab says what uploading it would do.
-		ServiceMessage onlyFeBuddy = Assert.Single(result.Messages, m => m.Text.StartsWith("vNAS Alias Upload is not selected", StringComparison.Ordinal));
-		Assert.True(onlyFeBuddy.IsAdvisory);
-		Assert.Equal(LogLevel.Warning, onlyFeBuddy.Level);
-		Assert.Contains("uploading it would remove your facility's own aliases from vNAS", onlyFeBuddy.Text, StringComparison.Ordinal);
+		// The combined file is not one of the alias files the duplicate report checks.
+		Assert.Contains("Files checked: Telephony.txt" + Environment.NewLine, File.ReadAllText(result.DuplicateAliasReport!.FilePath), StringComparison.Ordinal);
 	}
 
-	/// <summary>
-	/// A renamed alias file is still the one UploadToVnas names by its key, so it goes into the vNAS
-	/// alias file - and that file, the duplicate report and every message use the new names.
-	/// </summary>
+	/// <summary>A renamed alias file still goes into the combined file - and that file, the duplicate report and every message use the new names.</summary>
 	[Fact]
-	public async Task renamed_files_are_written_under_their_new_names_and_a_renamed_alias_file_still_goes_to_vnas()
+	public async Task renamed_files_are_written_under_their_new_names_and_a_renamed_alias_file_is_still_combined()
 	{
 		AiracServiceSettings settings = new()
 		{
 			SelectedCycle = Cycle,
 			OutputDirectory = _output,
-			Telephony = new Dictionary<string, string> { ["UploadToVnas"] = "Telephony.txt" },
+			Telephony = new Dictionary<string, string>(),
+			ConcatenateAliases = new Dictionary<string, string> { ["combinealiasfiles"] = "y" },
 			FileNames = new Dictionary<string, string>
 			{
 				["Telephony.txt"] = "ZOB Telephony",
-				["vNAS_Alias.txt"] = "ZOB vNAS",
+				["Combined_Alias.txt"] = "ZOB vNAS",
 				["Duplicate_Alias_Commands.txt"] = "ZOB Duplicates",
 			},
 		};
@@ -740,23 +713,22 @@ public sealed class AiracServiceTests : IDisposable
 			settings, new NasrCsvDataCollection(), new AiracSupplementalData { Telephony = OneOperator });
 
 		Assert.Equal(Path.Combine(CycleFolder, "Aliases", "ZOB Telephony.txt"), result.Telephony!.AliasFilePath);
-		Assert.Equal(Path.Combine(CycleFolder, "Upload_to_vNAS", "ZOB vNAS.txt"), result.VnasAlias!.FilePath);
-		Assert.Equal(["ZOB Telephony.txt"], result.VnasAlias.FeBuddyFiles);
+		Assert.Equal(Path.Combine(CycleFolder, "Aliases", "ZOB vNAS.txt"), result.CombinedAlias!.FilePath);
+		Assert.Equal(["ZOB Telephony.txt"], result.CombinedAlias.FeBuddyFiles);
 		Assert.Equal(Path.Combine(CycleFolder, "ZOB Duplicates.txt"), result.DuplicateAliasReport!.FilePath);
 
 		Assert.False(File.Exists(Path.Combine(CycleFolder, "Aliases", "Telephony.txt")));
-		Assert.False(File.Exists(VnasAliasFile));
+		Assert.False(File.Exists(CombinedAliasFile));
 		Assert.False(File.Exists(Path.Combine(CycleFolder, "Duplicate_Alias_Commands.txt")));
 
-		Assert.Contains("; ----- ZOB Telephony.txt -----", File.ReadAllText(result.VnasAlias.FilePath!), StringComparison.Ordinal);
+		Assert.Contains("; ----- ZOB Telephony.txt -----", File.ReadAllText(result.CombinedAlias.FilePath!), StringComparison.Ordinal);
 		Assert.Contains("Files checked: ZOB Telephony.txt", File.ReadAllText(result.DuplicateAliasReport.FilePath), StringComparison.Ordinal);
-		Assert.Contains(result.Messages, m => m.Text.StartsWith("vNAS Alias Upload is not selected, so ZOB vNAS.txt holds only", StringComparison.Ordinal));
 	}
 
 	[Fact]
-	public async Task a_renamed_vnas_alias_file_an_earlier_run_left_is_deleted_under_its_new_name()
+	public async Task a_renamed_combined_file_an_earlier_run_left_is_deleted_under_its_new_name()
 	{
-		string renamed = Path.Combine(CycleFolder, "Upload_to_vNAS", "ZOB vNAS.txt");
+		string renamed = Path.Combine(CycleFolder, "Aliases", "ZOB vNAS.txt");
 		Directory.CreateDirectory(Path.GetDirectoryName(renamed)!);
 		File.WriteAllText(renamed, ".old last run's aliases");
 
@@ -765,16 +737,15 @@ public sealed class AiracServiceTests : IDisposable
 			SelectedCycle = Cycle,
 			OutputDirectory = _output,
 			Telephony = new Dictionary<string, string>(),
-			FileNames = new Dictionary<string, string> { ["vNAS_Alias.txt"] = "ZOB vNAS" },
+			FileNames = new Dictionary<string, string> { ["Combined_Alias.txt"] = "ZOB vNAS" },
 		};
 
 		AiracServiceResult result = await AiracService.RunAsync(
 			settings, new NasrCsvDataCollection(), new AiracSupplementalData { Telephony = OneOperator });
 
 		Assert.False(File.Exists(renamed));
-		Assert.Contains(result.Messages, m => m.Text.StartsWith("No alias file is marked for vNAS, so ZOB vNAS.txt was not written.", StringComparison.Ordinal));
+		Assert.Contains(result.Messages, m => m.Text.StartsWith("Concatenate Aliases is not in the run, so ZOB vNAS.txt was not written.", StringComparison.Ordinal));
 	}
-
 	[Fact]
 	public async Task a_new_name_for_no_file_is_a_warning_on_the_run()
 	{
@@ -783,7 +754,7 @@ public sealed class AiracServiceTests : IDisposable
 			FileNames = new Dictionary<string, string> { ["Departures_Lines"] = "Mine" },
 		};
 
-		AiracServiceResult result = await AiracService.RunAsync(settings, DepartureTestData.Dotss());
+		AiracServiceResult result = await AiracService.RunAsync(settings, DepartureTestData.Dotss(), new AiracSupplementalData());
 
 		ServiceMessage warning = Assert.Single(result.Messages, m => m.Source == "OutputFileNamesParser");
 		Assert.Equal(LogLevel.Warning, warning.Level);
@@ -802,13 +773,13 @@ public sealed class AiracServiceTests : IDisposable
 			FileNames = new Dictionary<string, string> { ["Airports.txt"] = "Airports.txt" },
 		};
 
-		await Assert.ThrowsAsync<ArgumentException>(() => AiracService.RunAsync(settings, DepartureTestData.Dotss()));
+		await Assert.ThrowsAsync<ArgumentException>(() => AiracService.RunAsync(settings, DepartureTestData.Dotss(), new AiracSupplementalData()));
 
 		Assert.True(File.Exists(earlier));
 	}
 
 	[Fact]
-	public async Task no_alias_file_marked_for_vnas_and_no_vnas_alias_block_writes_no_vnas_alias_txt()
+	public async Task without_concatenate_aliases_no_combined_file_is_written()
 	{
 		AiracServiceSettings settings = new()
 		{
@@ -820,41 +791,46 @@ public sealed class AiracServiceTests : IDisposable
 		AiracServiceResult result = await AiracService.RunAsync(
 			settings, new NasrCsvDataCollection(), new AiracSupplementalData { Telephony = OneOperator });
 
-		Assert.Null(result.VnasAlias);
-		Assert.False(Directory.Exists(Path.Combine(CycleFolder, "Upload_to_vNAS")));
+		Assert.Null(result.CombinedAlias);
+		Assert.False(File.Exists(CombinedAliasFile));
 	}
 
 	[Fact]
-	public async Task rewriting_alias_files_without_marking_any_for_vnas_deletes_an_earlier_vnas_alias_txt()
+	public async Task with_combining_off_no_combined_file_is_written_and_an_earlier_one_is_deleted()
 	{
-		// An earlier run of this cycle marked Telephony for vNAS; this one does not.
-		Directory.CreateDirectory(Path.GetDirectoryName(VnasAliasFile)!);
-		File.WriteAllText(VnasAliasFile, ".old last run's aliases");
+		Directory.CreateDirectory(Path.GetDirectoryName(CombinedAliasFile)!);
+		File.WriteAllText(CombinedAliasFile, ".old last run's aliases");
 
 		AiracServiceSettings settings = new()
 		{
 			SelectedCycle = Cycle,
 			OutputDirectory = _output,
 			Telephony = new Dictionary<string, string>(),
+			ConcatenateAliases = new Dictionary<string, string> { ["CombineAliasFiles"] = "N", ["Sources.1.FilePath"] = "not even a full path" },
 		};
 
+		List<AiracServiceProgress> reports = [];
 		AiracServiceResult result = await AiracService.RunAsync(
-			settings, new NasrCsvDataCollection(), new AiracSupplementalData { Telephony = OneOperator });
+			settings, new NasrCsvDataCollection(), new AiracSupplementalData { Telephony = OneOperator }, new SynchronousProgress(reports.Add));
 
-		Assert.Null(result.VnasAlias);
-		Assert.False(File.Exists(VnasAliasFile));
+		Assert.Null(result.CombinedAlias);
+		Assert.False(File.Exists(CombinedAliasFile));
 
-		ServiceMessage deleted = Assert.Single(result.Messages, m => m.Text.StartsWith("No alias file is marked for vNAS", StringComparison.Ordinal));
+		ServiceMessage deleted = Assert.Single(result.Messages, m => m.Text.StartsWith("Combining is off on the Concatenate Aliases tab, so Combined_Alias.txt was not written.", StringComparison.Ordinal));
 		Assert.True(deleted.IsAdvisory);
 		Assert.Equal(LogLevel.Info, deleted.Level);
 		Assert.Contains("The one an earlier run wrote was deleted", deleted.Text, StringComparison.Ordinal);
+
+		AiracServiceProgress done = reports.Last(p => p.SubService == "Concatenate Aliases");
+		Assert.Equal(100, done.PercentComplete);
+		Assert.Equal("Combining is off, so Combined_Alias.txt was not written.", done.Message);
 	}
 
 	[Fact]
-	public async Task a_run_that_writes_no_alias_file_leaves_an_earlier_vnas_alias_txt_alone()
+	public async Task a_run_that_writes_no_alias_file_leaves_an_earlier_combined_file_alone()
 	{
-		Directory.CreateDirectory(Path.GetDirectoryName(VnasAliasFile)!);
-		File.WriteAllText(VnasAliasFile, ".old last run's aliases");
+		Directory.CreateDirectory(Path.GetDirectoryName(CombinedAliasFile)!);
+		File.WriteAllText(CombinedAliasFile, ".old last run's aliases");
 
 		AiracServiceSettings settings = new()
 		{
@@ -863,18 +839,18 @@ public sealed class AiracServiceTests : IDisposable
 			Fixes = new Dictionary<string, string>(),
 		};
 
-		AiracServiceResult result = await AiracService.RunAsync(settings, FixTestData.Build([FixTestData.AcmeRow()]));
+		AiracServiceResult result = await AiracService.RunAsync(settings, FixTestData.Build([FixTestData.AcmeRow()]), new AiracSupplementalData());
 
-		Assert.Null(result.VnasAlias);
-		Assert.Equal(".old last run's aliases", File.ReadAllText(VnasAliasFile));
-		Assert.DoesNotContain(result.Messages, m => m.Text.StartsWith("No alias file is marked for vNAS", StringComparison.Ordinal));
+		Assert.Null(result.CombinedAlias);
+		Assert.Equal(".old last run's aliases", File.ReadAllText(CombinedAliasFile));
+		Assert.DoesNotContain(result.Messages, m => m.Text.Contains("was not written.", StringComparison.Ordinal));
 	}
 
 	[Fact]
-	public async Task an_earlier_vnas_alias_txt_that_cannot_be_deleted_is_a_warning()
+	public async Task an_earlier_combined_file_that_cannot_be_deleted_is_a_warning()
 	{
-		Directory.CreateDirectory(Path.GetDirectoryName(VnasAliasFile)!);
-		File.WriteAllText(VnasAliasFile, ".old last run's aliases");
+		Directory.CreateDirectory(Path.GetDirectoryName(CombinedAliasFile)!);
+		File.WriteAllText(CombinedAliasFile, ".old last run's aliases");
 
 		AiracServiceSettings settings = new()
 		{
@@ -886,29 +862,29 @@ public sealed class AiracServiceTests : IDisposable
 		AiracServiceResult result;
 
 		// Held open without delete sharing, as another program might, so it cannot be deleted.
-		using (new FileStream(VnasAliasFile, FileMode.Open, FileAccess.Read, FileShare.Read))
+		using (new FileStream(CombinedAliasFile, FileMode.Open, FileAccess.Read, FileShare.Read))
 		{
 			result = await AiracService.RunAsync(
 				settings, new NasrCsvDataCollection(), new AiracSupplementalData { Telephony = OneOperator });
 		}
 
-		Assert.True(File.Exists(VnasAliasFile));
+		Assert.True(File.Exists(CombinedAliasFile));
 
-		ServiceMessage notDeleted = Assert.Single(result.Messages, m => m.Text.StartsWith("No alias file is marked for vNAS", StringComparison.Ordinal));
+		ServiceMessage notDeleted = Assert.Single(result.Messages, m => m.Text.StartsWith("Concatenate Aliases is not in the run", StringComparison.Ordinal));
 		Assert.Equal(LogLevel.Warning, notDeleted.Level);
 		Assert.Contains("could not be deleted", notDeleted.Text, StringComparison.Ordinal);
 		Assert.Contains("do not upload it", notDeleted.Text, StringComparison.Ordinal);
 	}
 
 	[Fact]
-	public async Task the_vnas_alias_block_puts_the_custom_files_last_and_reports_its_progress()
+	public async Task the_concatenate_aliases_block_puts_the_custom_files_last_and_reports_its_progress()
 	{
 		AiracServiceSettings settings = new()
 		{
 			SelectedCycle = Cycle,
 			OutputDirectory = _output,
-			Telephony = new Dictionary<string, string> { ["UploadToVnas"] = "Telephony.txt" },
-			VnasAlias = new Dictionary<string, string> { ["Sources.1.FilePath"] = @"C:\ZOB-Alias.txt" },
+			Telephony = new Dictionary<string, string>(),
+			ConcatenateAliases = new Dictionary<string, string> { ["Sources.1.FilePath"] = @"C:\ZOB-Alias.txt" },
 		};
 
 		AiracSupplementalData supplemental = new()
@@ -924,29 +900,28 @@ public sealed class AiracServiceTests : IDisposable
 		List<AiracServiceProgress> reports = [];
 		AiracServiceResult result = await AiracService.RunAsync(settings, new NasrCsvDataCollection(), supplemental, new SynchronousProgress(reports.Add));
 
-		Assert.Equal(2, result.VnasAlias!.CustomFileCount);
-		Assert.Equal(1, result.VnasAlias.CustomFilesMerged);
-		string written = File.ReadAllText(VnasAliasFile);
+		Assert.Equal(2, result.CombinedAlias!.CustomFileCount);
+		Assert.Equal(1, result.CombinedAlias.CustomFilesMerged);
+		string written = File.ReadAllText(CombinedAliasFile);
 		Assert.StartsWith(".FeUseOnly first" + Environment.NewLine + "; ===== FE-Buddy aliases (AIRAC ", written, StringComparison.Ordinal);
 		Assert.EndsWith(Environment.NewLine + Environment.NewLine + ".dtwdv .ECHO DTW" + Environment.NewLine, written, StringComparison.Ordinal);
 
 		Assert.Contains(result.Messages, m => m.IsAdvisory && m.Text.StartsWith("Left custom alias file 2 (Extra.txt) out", StringComparison.Ordinal));
-		Assert.DoesNotContain(result.Messages, m => m.Text.StartsWith("vNAS Alias Upload is not selected", StringComparison.Ordinal));
 
-		AiracServiceProgress done = reports.Last(p => p.SubService == "vNAS Alias Upload");
+		AiracServiceProgress done = reports.Last(p => p.SubService == "Concatenate Aliases");
 		Assert.Equal(100, done.PercentComplete);
-		Assert.StartsWith("vNAS_Alias.txt: ", done.Message, StringComparison.Ordinal);
+		Assert.StartsWith("Combined_Alias.txt: ", done.Message, StringComparison.Ordinal);
 		Assert.EndsWith(" command(s) from 1 FE-Buddy alias file(s), then 1 custom command(s).", done.Message, StringComparison.Ordinal);
 	}
 
 	[Fact]
-	public async Task a_vnas_alias_block_alone_counts_as_something_selected()
+	public async Task a_concatenate_aliases_block_alone_counts_as_something_selected()
 	{
 		AiracServiceSettings settings = new()
 		{
 			SelectedCycle = Cycle,
 			OutputDirectory = _output,
-			VnasAlias = new Dictionary<string, string>(),
+			ConcatenateAliases = new Dictionary<string, string>(),
 		};
 
 		List<AiracServiceProgress> reports = [];
@@ -954,8 +929,8 @@ public sealed class AiracServiceTests : IDisposable
 			settings, new NasrCsvDataCollection(), new AiracSupplementalData(), new SynchronousProgress(reports.Add));
 
 		Assert.DoesNotContain(result.Messages, m => m.Text.Contains("no sub-service selected", StringComparison.Ordinal));
-		Assert.Null(result.VnasAlias!.FilePath);
-		Assert.Contains("vNAS_Alias.txt not written.", reports.Last().Message, StringComparison.Ordinal);
+		Assert.Null(result.CombinedAlias!.FilePath);
+		Assert.Contains("Combined_Alias.txt not written.", reports.Last().Message, StringComparison.Ordinal);
 	}
 
 	// ---- Procedures ----
@@ -974,7 +949,7 @@ public sealed class AiracServiceTests : IDisposable
 
 		// No Dtpp is supplied, so the Procedures sub-service completes with its advisory (see
 		// below) and writes nothing - but DeleteExisting must still fire beforehand.
-		await AiracService.RunAsync(settings, new NasrCsvDataCollection());
+		await AiracService.RunAsync(settings, new NasrCsvDataCollection(), new AiracSupplementalData());
 
 		Assert.False(File.Exists(stale));
 	}
@@ -989,7 +964,7 @@ public sealed class AiracServiceTests : IDisposable
 			Procedures = new Dictionary<string, string> { ["Facilities"] = "ZOB" },
 		};
 
-		AiracServiceResult result = await AiracService.RunAsync(settings, new NasrCsvDataCollection());
+		AiracServiceResult result = await AiracService.RunAsync(settings, new NasrCsvDataCollection(), new AiracSupplementalData());
 
 		Assert.Null(result.Airways);
 		Assert.Null(result.Airports);
@@ -1012,10 +987,10 @@ public sealed class AiracServiceTests : IDisposable
 			Procedures = new Dictionary<string, string> { ["Facilities"] = "ZOB" },
 		};
 
-		// The two-argument overload supplies no supplemental data at all, so Dtpp is null: the
-		// Procedures sub-service must complete with its advisory rather than throwing, even
-		// though the NasrCsvDataCollection below has no Apt/ClsArsp parsed.
-		AiracServiceResult result = await AiracService.RunAsync(settings, new NasrCsvDataCollection());
+		// Empty supplemental data has no Dtpp: the Procedures sub-service must complete with its
+		// advisory rather than throwing, even though the NasrCsvDataCollection below has no
+		// Apt/ClsArsp parsed.
+		AiracServiceResult result = await AiracService.RunAsync(settings, new NasrCsvDataCollection(), new AiracSupplementalData());
 
 		Assert.NotNull(result.Procedures);
 		Assert.Empty(result.Procedures!.FilesWritten);
@@ -1079,7 +1054,7 @@ public sealed class AiracServiceTests : IDisposable
 	public async Task without_the_fe_buddy_output_folder_the_cycle_folder_sits_in_the_output_directory()
 	{
 		AiracServiceResult result = await AiracService.RunAsync(
-			AliasOnlySettings(addFeBuddyOutputFolder: false), DepartureTestData.Dotss());
+			AliasOnlySettings(addFeBuddyOutputFolder: false), DepartureTestData.Dotss(), new AiracSupplementalData());
 
 		Assert.Equal(Path.Combine(_output, "AIRAC_2610"), result.OutputDirectory);
 		Assert.True(File.Exists(Path.Combine(_output, "AIRAC_2610", "Aliases", "Airports.txt")));
@@ -1095,7 +1070,7 @@ public sealed class AiracServiceTests : IDisposable
 		Directory.CreateDirectory(CycleFolder);
 		Assert.False(AiracService.HasExistingOutput(settings));
 
-		await AiracService.RunAsync(settings, DepartureTestData.Dotss());
+		await AiracService.RunAsync(settings, DepartureTestData.Dotss(), new AiracSupplementalData());
 		Assert.True(AiracService.HasExistingOutput(settings));
 	}
 
@@ -1104,7 +1079,7 @@ public sealed class AiracServiceTests : IDisposable
 	{
 		string stale = WriteStaleFile();
 
-		await AiracService.RunAsync(AliasOnlySettings(), DepartureTestData.Dotss());
+		await AiracService.RunAsync(AliasOnlySettings(), DepartureTestData.Dotss(), new AiracSupplementalData());
 
 		Assert.True(File.Exists(stale));
 		Assert.True(File.Exists(Path.Combine(CycleFolder, "Aliases", "Airports.txt")));
@@ -1116,7 +1091,7 @@ public sealed class AiracServiceTests : IDisposable
 		string stale = WriteStaleFile();
 
 		await AiracService.RunAsync(
-			AliasOnlySettings(existingOutput: ExistingOutputAction.DeleteExisting), DepartureTestData.Dotss());
+			AliasOnlySettings(existingOutput: ExistingOutputAction.DeleteExisting), DepartureTestData.Dotss(), new AiracSupplementalData());
 
 		Assert.False(File.Exists(stale));
 		Assert.False(Directory.Exists(Path.GetDirectoryName(stale)));
@@ -1133,7 +1108,7 @@ public sealed class AiracServiceTests : IDisposable
 			Departures = null,
 		};
 
-		await AiracService.RunAsync(settings, new NasrCsvDataCollection());
+		await AiracService.RunAsync(settings, new NasrCsvDataCollection(), new AiracSupplementalData());
 
 		Assert.True(File.Exists(stale));
 	}
@@ -1152,9 +1127,9 @@ public sealed class AiracServiceTests : IDisposable
 			OutputDirectory = _output,
 		};
 
-		await Assert.ThrowsAsync<ArgumentNullException>(() => AiracService.RunAsync((AiracServiceSettings)null!, new NasrCsvDataCollection()));
-		await Assert.ThrowsAsync<ArgumentNullException>(() => AiracService.RunAsync(settings, (NasrCsvDataCollection)null!));
-		await Assert.ThrowsAsync<ArgumentException>(() => AiracService.RunAsync(settings with { OutputDirectory = " " }, new NasrCsvDataCollection()));
+		await Assert.ThrowsAsync<ArgumentNullException>(() => AiracService.RunAsync((AiracServiceSettings)null!, new NasrCsvDataCollection(), new AiracSupplementalData()));
+		await Assert.ThrowsAsync<ArgumentNullException>(() => AiracService.RunAsync(settings, (NasrCsvDataCollection)null!, new AiracSupplementalData()));
+		await Assert.ThrowsAsync<ArgumentException>(() => AiracService.RunAsync(settings with { OutputDirectory = " " }, new NasrCsvDataCollection(), new AiracSupplementalData()));
 		Assert.Throws<ArgumentNullException>(() => AiracService.HasExistingOutput(null!));
 	}
 

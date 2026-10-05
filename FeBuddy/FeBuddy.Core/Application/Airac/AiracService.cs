@@ -8,6 +8,8 @@ using FeBuddy.Core.Application.Airac.Arrivals;
 using FeBuddy.Core.Application.Airac.Arrivals.Models;
 using FeBuddy.Core.Application.Airac.ArtccBoundaries;
 using FeBuddy.Core.Application.Airac.ArtccBoundaries.Models;
+using FeBuddy.Core.Application.Airac.ConcatenateAliases;
+using FeBuddy.Core.Application.Airac.ConcatenateAliases.Models;
 using FeBuddy.Core.Application.Airac.Departures;
 using FeBuddy.Core.Application.Airac.Departures.Models;
 using FeBuddy.Core.Application.Airac.Fixes;
@@ -19,12 +21,9 @@ using FeBuddy.Core.Application.Airac.Procedures;
 using FeBuddy.Core.Application.Airac.Procedures.Models;
 using FeBuddy.Core.Application.Airac.Telephony;
 using FeBuddy.Core.Application.Airac.Telephony.Models;
-using FeBuddy.Core.Application.Airac.VnasAlias;
-using FeBuddy.Core.Application.Airac.VnasAlias.Models;
 using FeBuddy.Core.Application.Airac.WxStations;
 using FeBuddy.Core.Application.Airac.WxStations.Models;
 using FeBuddy.Core.Application.Models;
-using FeBuddy.Core.Application.Settings;
 using FeBuddy.Core.Domain.Airac;
 using FeBuddy.Core.Domain.Airac.Models;
 using FeBuddy.Core.Infrastructure.Credentials;
@@ -40,12 +39,12 @@ namespace FeBuddy.Core.Application.Airac;
 /// <summary>
 /// The AIRAC Service: the GUI calls this once per "Run AIRAC Service". It runs each selected
 /// sub-service (Airways, Airports, Departures, Arrivals, NAVAIDs, ARTCC Boundaries, Fixes, Wx
-/// Stations, Procedures, Telephony, vNAS Alias Upload) against one cycle's NASR data and gathers
+/// Stations, Procedures, Telephony, Concatenate Aliases) against one cycle's NASR data and gathers
 /// the results. Four need more than the NASR cycle: Wx Stations and Telephony read data that is
 /// not published per cycle at all - aviationweather.gov's station list and the FAA telephony
 /// pages - which the run downloads fresh every time (see <see cref="AiracSharedDataLoader"/>);
 /// Procedures also needs the selected cycle's (and the previous cycle's) FAA d-TPP Metafile (see
-/// <see cref="AiracCycleDataCache.GetDtppAsync"/>); and vNAS Alias Upload reads the user's own
+/// <see cref="AiracCycleDataCache.GetDtppAsync"/>); and Concatenate Aliases reads the user's own
 /// custom alias files, from this PC or the web (see <see cref="AliasSourceLoader"/>).
 /// </summary>
 /// <remarks>
@@ -63,9 +62,9 @@ namespace FeBuddy.Core.Application.Airac;
 /// Once every sub-service has run, the alias files the run wrote are checked together for
 /// commands more than one line uses (<see cref="DuplicateAliasReport"/>), and
 /// <c>Duplicate_Alias_Commands.txt</c> is written into the cycle folder. Then vNAS takes one
-/// alias file per facility, so the alias files marked for vNAS are merged - below the custom
-/// alias files when vNAS Alias Upload is selected - into <c>Upload_to_vNAS\vNAS_Alias.txt</c>
-/// (<see cref="VnasAliasFileWriter"/>).
+/// alias file per facility, so when Concatenate Aliases is in the run and combining is on, every
+/// alias file the run wrote is merged, followed by the custom alias files, into
+/// <c>Aliases\Combined_Alias.txt</c> (<see cref="CombinedAliasFileWriter"/>).
 /// </para>
 /// <para>
 /// A file the user renamed (<see cref="AiracServiceSettings.FileNames"/>) is written under its new
@@ -76,8 +75,8 @@ public static class AiracService
 {
 	private const string LogSource = "AiracService";
 
-	/// <summary>The vNAS Alias Upload sub-service's name in progress reports: its tab's title.</summary>
-	private const string VnasAliasName = "vNAS Alias Upload";
+	/// <summary>The Concatenate Aliases sub-service's name in progress reports: its tab's title.</summary>
+	private const string ConcatenateAliasesName = "Concatenate Aliases";
 
 	/// <summary>
 	/// Whether the run's cycle folder already holds anything - an earlier run of the same cycle
@@ -100,9 +99,10 @@ public static class AiracService
 	/// (awaiting an in-flight parse rather than starting a second one). When Procedures is selected
 	/// its d-TPP Metafiles come from the cache the same way; when Wx Stations or Telephony is
 	/// selected, the latest copy of its data is downloaded first (see
-	/// <see cref="AiracSharedDataLoader"/>), falling back on the last good copy; and when vNAS Alias
-	/// Upload is selected, its custom alias files are read first (see <see cref="AliasSourceLoader"/>) -
-	/// one that cannot be read is left out of <c>vNAS_Alias.txt</c> with a warning.
+	/// <see cref="AiracSharedDataLoader"/>), falling back on the last good copy; and when Concatenate
+	/// Aliases is selected and combining, its custom alias files are read first (see
+	/// <see cref="AliasSourceLoader"/>) - one that cannot be read is left out of <c>Combined_Alias.txt</c>
+	/// with a warning.
 	/// </summary>
 	/// <param name="settings">The run's cross-cutting choices and per-sub-service settings blocks.</param>
 	/// <param name="progress">Optional per-sub-service progress for the run panel.</param>
@@ -171,15 +171,19 @@ public static class AiracService
 
 		IReadOnlyList<AliasSourceLoad>? customAliasFiles = null;
 
-		if (settings.VnasAlias is not null)
+		if (settings.ConcatenateAliases is not null)
 		{
-			progress?.Report(new AiracServiceProgress(VnasAliasName, "Reading your custom alias files"));
-			VnasAliasSettingsParseResult parsed = VnasAliasSettingsParser.Parse(settings.VnasAlias);
+			ConcatenateAliasesSettingsParseResult parsed = ConcatenateAliasesSettingsParser.Parse(settings.ConcatenateAliases);
 			supplementalMessages.AddRange(parsed.Messages);
 
-			customAliasFiles = await AliasSourceLoader
-				.LoadAllAsync(parsed.Sources, CredentialStore.Default, cancellationToken: cancellationToken)
-				.ConfigureAwait(false);
+			if (parsed.Combine)
+			{
+				progress?.Report(new AiracServiceProgress(ConcatenateAliasesName, "Reading your custom alias files"));
+
+				customAliasFiles = await AliasSourceLoader
+					.LoadAllAsync(parsed.Sources, CredentialStore.Default, cancellationToken: cancellationToken)
+					.ConfigureAwait(false);
+			}
 		}
 
 		AiracSupplementalData supplementalData = new()
@@ -196,74 +200,19 @@ public static class AiracService
 	}
 
 	/// <summary>
-	/// Runs every selected sub-service against the supplied parsed cycle data, with no Wx station
-	/// data: a selected Wx Stations sub-service writes nothing, saying it had no data. Kept for
-	/// callers from before Wx Stations existed.
-	/// </summary>
-	/// <param name="settings">The run's cross-cutting choices and per-sub-service settings blocks.</param>
-	/// <param name="nasrData">
-	/// The parsed NASR CSV data for <see cref="AiracServiceSettings.SelectedCycle"/>.
-	/// </param>
-	/// <param name="progress">Optional per-sub-service progress for the run panel.</param>
-	/// <param name="cancellationToken">Cancels before the next sub-service starts.</param>
-	/// <returns>The aggregated result: each sub-service's result plus a combined warning list.</returns>
-	/// <exception cref="ArgumentException">Thrown when <see cref="AiracServiceSettings.OutputDirectory"/> is blank.</exception>
-	/// <exception cref="IOException">
-	/// Thrown when <see cref="ExistingOutputAction.DeleteExisting"/> cannot delete the cycle
-	/// folder (a file in it is open elsewhere, say). Nothing is written in that case, but the
-	/// files deleted before the failure stay deleted.
-	/// </exception>
-	public static Task<AiracServiceResult> RunAsync(
-		AiracServiceSettings settings,
-		NasrCsvDataCollection nasrData,
-		IProgress<AiracServiceProgress>? progress = null,
-		CancellationToken cancellationToken = default) =>
-		RunAsync(settings, nasrData, wxStationData: null, progress, cancellationToken);
-
-	/// <summary>
-	/// Runs every selected sub-service against the supplied parsed cycle data and Wx station data.
-	/// Delegates to the overload that also accepts a d-TPP Metafile, wrapping
-	/// <paramref name="wxStationData"/> in an <see cref="AiracSupplementalData"/> with everything
-	/// else left <see langword="null"/>. Kept for callers from before Procedures existed.
-	/// </summary>
-	/// <param name="settings">The run's cross-cutting choices and per-sub-service settings blocks.</param>
-	/// <param name="nasrData">
-	/// The parsed NASR CSV data for <see cref="AiracServiceSettings.SelectedCycle"/>.
-	/// </param>
-	/// <param name="wxStationData">
-	/// The parsed Wx station data, or <see langword="null"/> when there is none. Only read when
-	/// <see cref="AiracServiceSettings.WxStations"/> is not <see langword="null"/>.
-	/// </param>
-	/// <param name="progress">Optional per-sub-service progress for the run panel.</param>
-	/// <param name="cancellationToken">Cancels before the next sub-service starts.</param>
-	/// <returns>The aggregated result: each sub-service's result plus a combined warning list.</returns>
-	/// <exception cref="ArgumentException">Thrown when <see cref="AiracServiceSettings.OutputDirectory"/> is blank.</exception>
-	/// <exception cref="IOException">
-	/// Thrown when <see cref="ExistingOutputAction.DeleteExisting"/> cannot delete the cycle
-	/// folder (a file in it is open elsewhere, say). Nothing is written in that case, but the
-	/// files deleted before the failure stay deleted.
-	/// </exception>
-	public static Task<AiracServiceResult> RunAsync(
-		AiracServiceSettings settings,
-		NasrCsvDataCollection nasrData,
-		WxStationDataCollection? wxStationData,
-		IProgress<AiracServiceProgress>? progress = null,
-		CancellationToken cancellationToken = default) =>
-		RunAsync(settings, nasrData, new AiracSupplementalData { WxStations = wxStationData }, progress, cancellationToken);
-
-	/// <summary>
 	/// Runs every selected sub-service against the supplied parsed cycle data and supplemental
-	/// data (Wx station data, the FAA telephony pages and, when Procedures is selected, the FAA
-	/// d-TPP Metafile). This is the real implementation every other <c>RunAsync</c> overload
-	/// delegates to.
+	/// data (Wx station data, the FAA telephony pages, the FAA d-TPP Metafiles when Procedures is
+	/// selected, and the custom alias files when Concatenate Aliases combines). The other
+	/// <c>RunAsync</c> loads all of that first, then calls this.
 	/// </summary>
 	/// <param name="settings">The run's cross-cutting choices and per-sub-service settings blocks.</param>
 	/// <param name="nasrData">
 	/// The parsed NASR CSV data for <see cref="AiracServiceSettings.SelectedCycle"/>.
 	/// </param>
 	/// <param name="supplementalData">
-	/// The Wx station, telephony and d-TPP Metafile data the selected sub-services need beyond the
-	/// NASR data, and what getting it produced for the Review tab (added to the run's messages).
+	/// The Wx station, telephony and d-TPP Metafile data and the custom alias files the selected
+	/// sub-services need beyond the NASR data, and what getting it produced for the Review tab
+	/// (added to the run's messages).
 	/// </param>
 	/// <param name="progress">Optional per-sub-service progress for the run panel.</param>
 	/// <param name="cancellationToken">Cancels before the next sub-service starts.</param>
@@ -292,7 +241,7 @@ public static class AiracService
 		// Before anything is deleted or written: a new name that can't be used stops the run here.
 		OutputFileNamesParseResult fileNamesParse = OutputFileNamesParser.Parse(settings.FileNames);
 		OutputFileNames fileNames = fileNamesParse.FileNames;
-		string vnasAliasFileName = fileNames.FileName(AiracOutputPaths.VnasAliasFileName);
+		string combinedAliasFileName = fileNames.FileName(AiracOutputPaths.CombinedAliasFileName);
 
 		Stopwatch stopwatch = Stopwatch.StartNew();
 		string outputDirectory = settings.CycleOutputDirectory;
@@ -300,7 +249,7 @@ public static class AiracService
 			|| settings.Departures is not null || settings.Arrivals is not null || settings.Navaids is not null
 			|| settings.ArtccBoundaries is not null || settings.Fixes is not null || settings.WxStations is not null
 			|| settings.Procedures is not null || settings.Telephony is not null
-			|| settings.VnasAlias is not null;
+			|| settings.ConcatenateAliases is not null;
 
 		// What getting the downloaded data produced (a fresh copy, an older copy and its age, or none)
 		// leads the run's messages, so the Review tab says it before anything built from that data.
@@ -374,20 +323,20 @@ public static class AiracService
 			block => TelephonyService.Run(supplementalData.Telephony, block, fileNames),
 			result => $"{result.AliasCommandCount} command(s), {result.MergedCommandCount} showing more than one operator").ConfigureAwait(false);
 
-		// Every alias file this run wrote, in the order the sub-services ran, with the block that asked
-		// for it. Each is known by its key - FE-Buddy's name for it - whatever the user named it.
-		AliasOutput[] aliasOutputs =
+		// Every alias file this run wrote, in the order the sub-services ran: checked together for
+		// commands two lines share, then combined. Each is known by its key - FE-Buddy's name for it -
+		// whatever the user named it.
+		(string Key, string? Path)[] aliasOutputs =
 		[
-			new(settings.Airways, AirwayOutputFiles.Alias, airwaysResult?.AliasFilePath),
-			new(settings.Airports, AirportOutputFiles.Alias, airportsResult?.AliasFilePath),
-			new(settings.Departures, DepartureOutputFiles.Alias, departuresResult?.AliasFilePath),
-			new(settings.Arrivals, ArrivalOutputFiles.Alias, arrivalsResult?.AliasFilePath),
-			new(settings.Navaids, NavaidOutputFiles.Alias, navaidsResult?.AliasFilePath),
-			new(settings.Procedures, ProcedureOutputFiles.Alias, proceduresResult?.AliasFilePath),
-			new(settings.Telephony, TelephonyOutputFiles.Alias, telephonyResult?.AliasFilePath),
+			(AirwayOutputFiles.Alias, airwaysResult?.AliasFilePath),
+			(AirportOutputFiles.Alias, airportsResult?.AliasFilePath),
+			(DepartureOutputFiles.Alias, departuresResult?.AliasFilePath),
+			(ArrivalOutputFiles.Alias, arrivalsResult?.AliasFilePath),
+			(NavaidOutputFiles.Alias, navaidsResult?.AliasFilePath),
+			(ProcedureOutputFiles.Alias, proceduresResult?.AliasFilePath),
+			(TelephonyOutputFiles.Alias, telephonyResult?.AliasFilePath),
 		];
 
-		// Checked together for commands two lines share.
 		AliasFileWritten[] aliasFiles = [.. aliasOutputs
 			.Where(output => output.Path is not null)
 			.Select(output => new AliasFileWritten(output.Key, output.Path!))];
@@ -410,64 +359,56 @@ public static class AiracService
 			AppLog.Write(reportMessage.Level, reportMessage.Source, reportMessage.Text);
 		}
 
-		// vNAS takes one alias file, so the alias files marked for vNAS go into vNAS_Alias.txt,
-		// below the user's own custom alias files when vNAS Alias Upload is selected.
-		string[] vnasAliasFiles = [.. MarkedForVnas(aliasOutputs)];
+		// vNAS takes one alias file, so every alias file the run wrote goes into Combined_Alias.txt, then
+		// the user's own custom alias files - while Concatenate Aliases is in the run and combining.
+		bool combine = settings.ConcatenateAliases is not null && ConcatenateAliasesSettingsParser.CombinesAliasFiles(settings.ConcatenateAliases);
+		CombinedAliasResult? combinedAliasResult = null;
 
-		VnasAliasResult? vnasAliasResult = null;
-
-		if (settings.VnasAlias is not null || vnasAliasFiles.Length > 0)
+		if (combine)
 		{
 			cancellationToken.ThrowIfCancellationRequested();
+			progress?.Report(new AiracServiceProgress(ConcatenateAliasesName, $"Writing {combinedAliasFileName}"));
 
-			// Reported against the vNAS Alias Upload tab when it is selected; otherwise the file is
-			// simply part of the run.
-			string step = settings.VnasAlias is not null ? VnasAliasName : "AIRAC";
-			progress?.Report(new AiracServiceProgress(step, $"Writing {vnasAliasFileName}"));
+			IReadOnlyList<AliasSourceLoad> customFiles = supplementalData.CustomAliasFiles ?? [];
+			string[] feBuddyFiles = [.. aliasFiles.Select(file => file.FilePath)];
 
-			IReadOnlyList<AliasSourceLoad> customFiles = settings.VnasAlias is not null ? supplementalData.CustomAliasFiles ?? [] : [];
-
-			vnasAliasResult = await Task.Run(
-				() => VnasAliasFileWriter.Write(customFiles, vnasAliasFiles, settings.SelectedCycle.AiracCycleId, outputDirectory, vnasAliasFileName),
+			combinedAliasResult = await Task.Run(
+				() => CombinedAliasFileWriter.Write(customFiles, feBuddyFiles, settings.SelectedCycle.AiracCycleId, outputDirectory, combinedAliasFileName),
 				cancellationToken).ConfigureAwait(false);
 
-			messages.AddRange(vnasAliasResult.Messages);
+			messages.AddRange(combinedAliasResult.Messages);
 
-			// vNAS takes one alias file per facility, so uploading this one would drop the facility's own aliases.
-			if (settings.VnasAlias is null && vnasAliasResult.FilePath is not null)
+			string summary = combinedAliasResult.FilePath is null
+				? $"{combinedAliasFileName} not written."
+				: $"{combinedAliasFileName}: {combinedAliasResult.FeBuddyCommandCount:N0} command(s) from {combinedAliasResult.FeBuddyFiles.Count} " +
+					$"FE-Buddy alias file(s), then {combinedAliasResult.CustomCommandCount:N0} custom command(s).";
+
+			progress?.Report(new AiracServiceProgress(ConcatenateAliasesName, summary, 100));
+		}
+		else
+		{
+			if (settings.ConcatenateAliases is not null)
 			{
-				ServiceMessage onlyFeBuddy = new(LogLevel.Warning, LogSource,
-					$"vNAS Alias Upload is not selected, so {vnasAliasFileName} holds only FE-Buddy's aliases. " +
-					"vNAS takes one alias file per facility, so uploading it would remove your facility's own aliases from vNAS. " +
-					"To keep them, select vNAS Alias Upload and add your facility's alias file.")
-				{ IsAdvisory = true };
-
-				messages.Add(onlyFeBuddy);
-				AppLog.Write(onlyFeBuddy.Level, onlyFeBuddy.Source, onlyFeBuddy.Text);
+				progress?.Report(new AiracServiceProgress(ConcatenateAliasesName, $"Combining is off, so {combinedAliasFileName} was not written.", 100));
 			}
 
-			string summary = vnasAliasResult.FilePath is null
-				? $"{vnasAliasFileName} not written."
-				: $"{vnasAliasFileName}: {vnasAliasResult.FeBuddyCommandCount:N0} command(s) from {vnasAliasResult.FeBuddyFiles.Count} " +
-					$"FE-Buddy alias file(s), then {vnasAliasResult.CustomCommandCount:N0} custom command(s).";
-
-			progress?.Report(new AiracServiceProgress(step, summary, settings.VnasAlias is not null ? 100 : null));
-		}
-		else if (aliasFiles.Length > 0)
-		{
-			// vNAS_Alias.txt is built from the run's alias files, so one an earlier run left is out of
+			// Combined_Alias.txt is built from the run's alias files, so one an earlier run left is out of
 			// date once this run rewrites them without writing a new one. A run that writes no alias
 			// file leaves it alone, like any other earlier file ("Overwrite files").
-			(string sentence, bool failed) = VnasAliasFileWriter.DeleteEarlierFile(outputDirectory, vnasAliasFileName);
-
-			if (sentence.Length > 0)
+			if (aliasFiles.Length > 0)
 			{
-				ServiceMessage deleted = new(failed ? LogLevel.Warning : LogLevel.Info, LogSource,
-					$"No alias file is marked for vNAS, so {vnasAliasFileName} was not written.{sentence}")
-				{ IsAdvisory = true };
+				(string sentence, bool failed) = CombinedAliasFileWriter.DeleteEarlierFile(outputDirectory, combinedAliasFileName);
 
-				messages.Add(deleted);
-				AppLog.Write(deleted.Level, deleted.Source, deleted.Text);
+				if (sentence.Length > 0)
+				{
+					string why = settings.ConcatenateAliases is null ? "Concatenate Aliases is not in the run" : "Combining is off on the Concatenate Aliases tab";
+					ServiceMessage deleted = new(failed ? LogLevel.Warning : LogLevel.Info, LogSource,
+						$"{why}, so {combinedAliasFileName} was not written.{sentence}")
+					{ IsAdvisory = true };
+
+					messages.Add(deleted);
+					AppLog.Write(deleted.Level, deleted.Source, deleted.Text);
+				}
 			}
 		}
 
@@ -496,7 +437,7 @@ public static class AiracService
 			WxStations = wxStationsResult,
 			Procedures = proceduresResult,
 			Telephony = telephonyResult,
-			VnasAlias = vnasAliasResult,
+			CombinedAlias = combinedAliasResult,
 		};
 
 		// Runs one sub-service if it was selected (its settings block is not null), reporting
@@ -539,32 +480,6 @@ public static class AiracService
 	}
 
 	/// <summary>
-	/// The alias files a sub-service wrote that its settings block marks for vNAS
-	/// (<c>UploadToVnas</c> names the alias file's key), in the order given.
-	/// </summary>
-	/// <param name="outputs">Each sub-service's alias file.</param>
-	/// <returns>The full paths of the alias files marked for vNAS.</returns>
-	private static IEnumerable<string> MarkedForVnas(IEnumerable<AliasOutput> outputs)
-	{
-		foreach ((IReadOnlyDictionary<string, string>? block, string key, string? path) in outputs)
-		{
-			if (block is null || path is null)
-			{
-				continue;
-			}
-
-			// The block's keys match ignoring case, whatever dictionary the caller built.
-			Dictionary<string, string> caseInsensitive = new(block, StringComparer.OrdinalIgnoreCase);
-
-			if (SettingsValueReader.StringList(caseInsensitive, SubServiceSettingsReader.UploadToVnasKey)
-				.Contains(key, StringComparer.OrdinalIgnoreCase))
-			{
-				yield return path;
-			}
-		}
-	}
-
-	/// <summary>
 	/// What the run panel says about the duplicate alias report: an advisory warning when there is
 	/// something to fix, otherwise a note that the files were checked.
 	/// </summary>
@@ -583,10 +498,4 @@ public static class AiracService
 			IsAdvisory = true
 		};
 	}
-
-	/// <summary>A sub-service's alias file in a run.</summary>
-	/// <param name="Block">The sub-service's settings block, or <see langword="null"/> when it was not selected.</param>
-	/// <param name="Key">The alias file's key, FE-Buddy's name for it, e.g. <c>Airways.txt</c>.</param>
-	/// <param name="Path">Where it was written, or <see langword="null"/> when it was not.</param>
-	private sealed record AliasOutput(IReadOnlyDictionary<string, string>? Block, string Key, string? Path);
 }

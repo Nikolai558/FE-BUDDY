@@ -1,8 +1,8 @@
 using System.Net;
 
 using FeBuddy.Core.Application.Airac;
+using FeBuddy.Core.Application.Airac.ConcatenateAliases.Models;
 using FeBuddy.Core.Application.Airac.Models;
-using FeBuddy.Core.Application.Airac.VnasAlias.Models;
 using FeBuddy.Core.Application.Launch;
 using FeBuddy.Core.Application.Launch.Models;
 using FeBuddy.Core.Application.News;
@@ -245,6 +245,35 @@ public sealed class LaunchSequenceTests : IDisposable
 		Assert.Contains(AppLog.Entries, e => e.Level == LogLevel.Warning && e.Message.Contains("step blew up. Continuing launch.", StringComparison.Ordinal));
 	}
 
+	/// <summary>Issue #299: an alpha tester who updates keeps the Alpha channel the first launch saved.</summary>
+	[Fact]
+	public async Task the_first_launch_saves_the_update_channel_and_an_update_keeps_it()
+	{
+		AppEnvironment.HttpClientForTesting = new HttpClient(new StubHttpHandler(Online));
+
+		await LaunchSequence.RunAsync("3.0.0-alpha.5");
+		Assert.Equal("Alpha", UserConfigFile.GetValue(UserConfigKeys.UpdateChannel));
+
+		LaunchResult afterUpdate = await LaunchSequence.RunAsync("3.0.0-beta.1");
+
+		Assert.Equal(ReleaseChannel.Alpha, afterUpdate.Version.Channel);
+		Assert.Equal("Alpha", UserConfigFile.GetValue(UserConfigKeys.UpdateChannel));
+	}
+
+	/// <summary>A settings file that can't be read isn't written to at launch, which would replace it.</summary>
+	[Fact]
+	public async Task launch_leaves_a_settings_file_it_cannot_read_alone()
+	{
+		AppEnvironment.HttpClientForTesting = new HttpClient(new StubHttpHandler(Online));
+		Directory.CreateDirectory(UserConfigFile.Directory);
+		File.WriteAllText(UserConfigFile.ConfigFilePath, "{ not json");
+
+		LaunchResult result = await LaunchSequence.RunAsync("3.0.0-alpha.5");
+
+		Assert.Equal(ReleaseChannel.Alpha, result.Version.Channel);
+		Assert.Equal("{ not json", File.ReadAllText(UserConfigFile.ConfigFilePath));
+	}
+
 	[Fact]
 	public async Task recheck_refreshes_the_online_state_and_version()
 	{
@@ -392,12 +421,12 @@ public sealed class LaunchSequenceTests : IDisposable
 	}
 
 	/// <summary>
-	/// With vNAS Alias Upload selected, the single-settings overload reads the custom alias files
-	/// before any sub-service runs: a readable one is merged into vNAS_Alias.txt, one that cannot be
-	/// read is left out with a warning, and the block's own parsing messages reach the run.
+	/// With Concatenate Aliases selected, the single-settings overload reads the custom alias files
+	/// before any sub-service runs: a readable one is merged into Combined_Alias.txt, one that cannot
+	/// be read is left out with a warning, and the block's own parsing messages reach the run.
 	/// </summary>
 	[Fact]
-	public async Task airac_service_reads_the_custom_alias_files_first_when_vnas_alias_upload_is_selected()
+	public async Task airac_service_reads_the_custom_alias_files_first_when_concatenate_aliases_is_selected()
 	{
 		AiracCycleInfo previous = new("2608", "06_Aug_2026", new DateOnly(2026, 8, 6));
 		AiracCycleInfo current = new("2609", "03_Sep_2026", new DateOnly(2026, 9, 3));
@@ -415,7 +444,7 @@ public sealed class LaunchSequenceTests : IDisposable
 			{
 				SelectedCycle = current,
 				OutputDirectory = Path.Combine(_root, "output"),
-				VnasAlias = new Dictionary<string, string>
+				ConcatenateAliases = new Dictionary<string, string>
 				{
 					["Sources.1.FilePath"] = customFile,
 					["Sources.2.FilePath"] = missingFile,
@@ -424,9 +453,9 @@ public sealed class LaunchSequenceTests : IDisposable
 			},
 			new SynchronousProgress<AiracServiceProgress>(reports.Add));
 
-		Assert.Contains(reports, r => r.SubService == "vNAS Alias Upload" && r.Message == "Reading your custom alias files");
+		Assert.Contains(reports, r => r.SubService == "Concatenate Aliases" && r.Message == "Reading your custom alias files");
 
-		VnasAliasResult merged = result.VnasAlias!;
+		CombinedAliasResult merged = result.CombinedAlias!;
 		Assert.Equal(2, merged.CustomFileCount);
 		Assert.Equal(1, merged.CustomFilesMerged);
 		Assert.Equal(2, merged.CustomCommandCount);
@@ -434,6 +463,34 @@ public sealed class LaunchSequenceTests : IDisposable
 
 		Assert.Contains(result.Messages, m => m.Level == LogLevel.Warning && m.Text.Contains("'Colour'", StringComparison.Ordinal));
 		Assert.Contains(result.Messages, m => m.IsAdvisory && m.Text.Contains($"{missingFile} was not found", StringComparison.Ordinal));
+	}
+
+	/// <summary>With combining off, the custom alias files are not read at all, and no combined file is written.</summary>
+	[Fact]
+	public async Task airac_service_does_not_read_the_custom_alias_files_while_combining_is_off()
+	{
+		AiracCycleInfo previous = new("2608", "06_Aug_2026", new DateOnly(2026, 8, 6));
+		AiracCycleInfo current = new("2609", "03_Sep_2026", new DateOnly(2026, 9, 3));
+		AiracCycleInfo next = new("2610", "01_Oct_2026", new DateOnly(2026, 10, 1));
+		await AiracCycleDataCache.Instance.PrepareCyclesAsync(previous, current, next);
+
+		List<AiracServiceProgress> reports = [];
+		AiracServiceResult result = await AiracService.RunAsync(
+			new AiracServiceSettings
+			{
+				SelectedCycle = current,
+				OutputDirectory = Path.Combine(_root, "output"),
+				ConcatenateAliases = new Dictionary<string, string>
+				{
+					["CombineAliasFiles"] = "N",
+					["Sources.1.FilePath"] = Path.Combine(_root, "Missing-Alias.txt"),
+				},
+			},
+			new SynchronousProgress<AiracServiceProgress>(reports.Add));
+
+		Assert.DoesNotContain(reports, r => r.Message == "Reading your custom alias files");
+		Assert.Null(result.CombinedAlias);
+		Assert.DoesNotContain(result.Messages, m => m.Text.Contains("was not found", StringComparison.Ordinal));
 	}
 
 	private sealed class SynchronousProgress<T>(Action<T> report) : IProgress<T>

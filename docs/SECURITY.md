@@ -9,16 +9,8 @@ disclosed.
 **Please do not report security vulnerabilities through public GitHub Issues, Discussions, or
 Pull Requests.**
 
-FE-BUDDY has GitHub's **Private Vulnerability Reporting** enabled. To report a vulnerability
-privately, use **[Report a vulnerability](https://github.com/Nikolai558/FE-BUDDY/security/advisories/new)**,
-or:
-
-1. Go to the FE-BUDDY repository on GitHub.
-2. Select the **Security** tab.
-3. Select **Advisories**, then **Report a vulnerability**.
-4. Fill in and submit the report.
-
-Please include as much as you can:
+Use **[Report a vulnerability](https://github.com/Nikolai558/FE-BUDDY/security/advisories/new)**
+(GitHub's private vulnerability reporting). Please include as much as you can:
 
 * The affected FE-BUDDY version (shown at the top of its window).
 * A description of the vulnerability.
@@ -63,8 +55,9 @@ release.
 | 2.9.x | :warning: Critical security fixes only, until 3.0.0 is released |
 | < 2.9.0 | :x: |
 
-FE-BUDDY 2.9.3 is the last planned 2.x release. Please move to FE-BUDDY 3.x when you can: the
-in-app updater offers it, or download it from [Releases](https://github.com/Nikolai558/FE-BUDDY/releases).
+FE-BUDDY 2.9.3 is the last planned 2.x release. Please move to FE-BUDDY 3.x when you can: download it
+from [Releases](https://github.com/Nikolai558/FE-BUDDY/releases). 2.9.x's updater offers it once
+3.0.0 is out, or now on its Alpha channel.
 
 ## Verifying a download
 

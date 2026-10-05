@@ -28,7 +28,7 @@ public sealed record ArrivalSettings
 	/// <summary>Emit <c>&lt;ARPT&gt;_&lt;CODE&gt;_STAR_Lines.geojson</c> - one MultiLineString per airport and procedure.</summary>
 	public bool EmitLines { get; init; } = true;
 
-	/// <summary>Emit <c>&lt;ARPT&gt;_&lt;CODE&gt;_STAR_Symbols.geojson</c> - one Point per procedure point.</summary>
+	/// <summary>Emit <c>&lt;ARPT&gt;_&lt;CODE&gt;_STAR_Symbols.geojson</c> - a symbol per procedure point.</summary>
 	public bool EmitSymbols { get; init; } = true;
 
 	/// <summary>Emit <c>&lt;ARPT&gt;_&lt;CODE&gt;_STAR_Text.geojson</c> - one labelled Point per procedure point.</summary>
@@ -91,10 +91,10 @@ public sealed record ArrivalSettings
 	public IReadOnlyCollection<ArrivalFebProperty> FebProperties { get; init; } = [];
 
 	/// <summary>
-	/// Which kinds of file go to vNAS, and which of those get CRC-ERAM defaults, by file key (see
+	/// Which kinds of GeoJSON file get CRC-ERAM defaults (<c>CrcDefaultsFor</c>), by file key (see
 	/// <see cref="ArrivalOutputFiles"/>). Default: none.
 	/// </summary>
-	public VnasFileChoices Vnas { get; init; } = VnasFileChoices.None;
+	public CrcDefaultsFiles CrcDefaultsFiles { get; init; } = CrcDefaultsFiles.None;
 
 	/// <summary>
 	/// The names the user gave files in place of FE-Buddy's, by file key. Not part of the settings

@@ -30,11 +30,11 @@
                             SnapsToDevicePixels="True">
                         <DockPanel>
                             <TextBlock DockPanel.Dock="Right" Text="{DynamicResource Icon.Chevron.Down}"
-                                       FontFamily="{DynamicResource Font.Icon}" FontSize="10"
+                                       FontFamily="{DynamicResource Font.Icon}" FontSize="11"
                                        Foreground="{DynamicResource Brush.Text.Tertiary}"
                                        VerticalAlignment="Center" Margin="8,0,0,0" />
                             <TextBlock Text="{Binding DisplayText, ElementName=Self}"
-                                       FontFamily="{DynamicResource Font.Body}" FontSize="13"
+                                       FontFamily="{DynamicResource Font.Body}" FontSize="14.5"
                                        Foreground="{DynamicResource Brush.Text.Primary}"
                                        TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
                         </DockPanel>

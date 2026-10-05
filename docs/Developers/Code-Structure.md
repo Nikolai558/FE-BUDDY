@@ -56,11 +56,12 @@ FeBuddy.Core/
 │   ├── Credentials/      CredentialStore, WindowsCredentialVault, CredentialHosts, UrlSecrets
 │   │                     (see Credentials.md)
 │   ├── FileSystem/       AppPaths, TempWorkspace, ServiceOutputPaths, AppDataReset
-│   ├── Geojson/          CrcFeatureFactory, GeojsonFileWriter, GeojsonFileSet
+│   ├── Geojson/          CrcFeatureFactory, GeojsonFileWriter, GeojsonFileSet, SymbolFeatureMerger,
+│   │                     AttributesSignature
 │   ├── GitHub/           GitHubAuth, GitHubRepository, GitHubFileUrl
 │   ├── Http/ Logging/ Markdown/   FeBuddyHttp, AppLog, MarkdownParser
 │   ├── Platform/         AppVersion, InstalledProduct, UtcTimeCheck, LegacyGitHubTokenVariable,
-│   │                     LegacySquirrelShortcuts
+│   │                     LegacySquirrelInstall, LegacySquirrelShortcuts
 │   ├── Nasr/             NasrCycleDownloader, AiracCycleAvailability, NasrCsvReader, WaypointLocator;
 │   │                     Models/ and Parsers/ hold one row model and one parser per NASR CSV group
 │   ├── SharedData/       SharedDataDownload: download, check and swap in data kept outside the
@@ -78,8 +79,8 @@ FeBuddy.Core/
     │   ├── Airports/ Airways/ Departures/ Arrivals/ Navaids/ ArtccBoundaries/ Fixes/
     │   │   WxStations/ Procedures/ Telephony/
     │   │                 one folder per sub-service (see "Adding a sub-service" below)
-    │   └── VnasAlias/    vNAS Alias Upload: VnasAliasSettingsParser, AliasSourceLoader,
-    │                     VnasAliasFileWriter
+    │   └── ConcatenateAliases/
+    │                     ConcatenateAliasesSettingsParser, AliasSourceLoader, CombinedAliasFileWriter
     ├── AliasGuide/       the Alias Command Guide (AliasGuideContent, AliasGuideHtmlWriter,
     │                     AliasGuideMarkdownWriter) and the Alias Command Practice page
     │                     (AliasPracticeContent, AliasPracticeWriter, AliasPractice.js, built in)
@@ -116,13 +117,14 @@ FeBuddy.Wpf/
 ├── App.xaml(.cs)        startup: a pending reset, the log, then LaunchSequence off the UI thread
 ├── Theme/               the design system - the only place colours, fonts and control looks are
 │                        defined (Palette, Typography, Icons, Controls.*.xaml), merged by Theme.xaml
-├── Assets/BaseMap/      us-states.json, coastlines.json (from Natural Earth, built by
-│                        FeBuddy/Tools/BuildBaseMap.cs)
+├── Assets/              FE-BUDDY.ico, Brand/ (the logo's sizes) and BaseMap/ (us-states.json,
+│                        coastlines.json, from Natural Earth, built by FeBuddy/Tools/BuildBaseMap.cs)
 ├── Behaviors/           attached properties a view opts into (FieldState, InlineCode, InlineMarkdown,
-│                        WheelScroll, ComboBoxDropDownFocus), and MaximizeToWorkArea, a window hook
-│                        the chrome windows install from code
-├── Controls/            Card, SectionHeader, Option, CopyButton, FilterPicker, MarkdownView, MapCanvas,
-│                        AliasGuideDocumentView, BesideOrBelow, CommandTablePanel, ChromeWindow, BrandMark
+│                        WheelScroll, ScrollToTop, ComboBoxDropDownFocus), and MaximizeToWorkArea, a
+│                        window hook the chrome windows install from code
+├── Controls/            Card, SectionHeader, Option, CopyButton, FilterPicker, MarkdownView,
+│                        MapCanvas, AliasGuideDocumentView, BesideOrBelow, CommandTablePanel,
+│                        ChromeWindow, BrandMark
 ├── Converters/          one IValueConverter per file
 ├── Map/                 GeoJsonReader, WebMercator, ProjectedLayer, AiracMapLayers, BaseMap
 ├── Mvvm/                ObservableObject, RelayCommand
@@ -134,28 +136,38 @@ FeBuddy.Wpf/
 │   └── ServiceTabs/     the tabbed-screen framework: TabbedServiceViewModel, ServiceTabViewModel,
 │                        SubServiceSettingsViewModel, GeojsonSubServiceViewModel,
 │                        ConversionTabViewModel and FileConversionTabViewModel, the Preview
-│                        Settings and Review tabs, and the card interfaces (IOutputSettings, …)
+│                        Settings and Review tabs, the General tab's SubServiceRow, validation
+│                        (ServiceValidation, ServiceAreas), the card interfaces (IOutputSettings, …)
 └── Views/               ShellWindow, TabbedServiceView (both tabbed screens), one view per tab,
     │                    MapWorkspace (every map), the dialog windows
-    └── Cards/           the shared cards (Outputs, What Files Do You Want?, FE-Buddy Properties,
-                         Region of Interest, Upload to vNAS, CRC ERAM Defaults, Source Files, Run)
+    └── Cards/           the shared cards (Attention, Outputs, What Files Do You Want?, FE-Buddy
+                         Properties, Region of Interest, CRC ERAM Defaults, Source Files, Run);
+                         CrcFileChoice, the AIRAC tabs' choice of files at the top of CRC ERAM
+                         Defaults; and OutputStatusRow, an output's On/Off line
 ```
 
 ### How the screens are built
 
-- **Navigation** is a `ContentControl` with a `DataTemplate` per view-model.
+- **Navigation** is a `ContentControl` with a `DataTemplate` per view-model. Each page's view-model
+  is built once and kept; a page with places inside it (`IOpensAtStart`: the tabbed screens, Info)
+  goes back to its first tab or main page each time it is chosen in the side nav.
 - **AIRAC Service and File Conversions are one view**, `TabbedServiceView`; each screen's
   view-model says what differs. Tabs are data (`TabbedServiceViewModel`), not hand-placed XAML.
 - **A sub-service tab** derives from `GeojsonSubServiceViewModel`, which brings the shared cards'
-  logic: outputs, file choices, `feb.*` properties, ROI override, vNAS files and CRC defaults. A tab
-  without some of them says so (`HasAliasFile` false, a null `EmitKeys` entry). vNAS Alias Upload
-  is the exception: it derives from `SubServiceSettingsViewModel` and uses none of the shared cards.
+  logic: outputs, file choices, `feb.*` properties, ROI override, and which files get CRC defaults.
+  A tab without some of them says so (`HasAliasFile` false, a null `EmitKeys` entry). Which outputs
+  are on comes from the sub-service's row on the General tab (`SubServiceRow`, read through
+  `ISubServiceOutputs`), so the tab's own save and undo never change them. A sub-service left out
+  keeps its tab, greyed out (`ServiceTabViewModel.IsAvailable`). Concatenate Aliases is the exception:
+  it derives from `SubServiceSettingsViewModel`, uses none of the shared cards and has no row.
 - **A conversion tab** derives from `FileConversionTabViewModel` (on `ConversionTabViewModel`):
   source files, CRC defaults and its own run button.
 - **Saving.** Each tab saves its own config node. "Unsaved" means different from the last save:
   `SubServiceSettingsViewModel` runs the tab's own `WriteToConfig()` into a buffer and compares it
-  with the last saved values (`SavedStateSnapshot`). Validation is continuous, shown on the field
-  through `FieldState`.
+  with the last saved values (`SavedStateSnapshot`). Validation is continuous. A problem belongs to
+  a box (`AddField`, shown on it through `FieldState`) or to a whole card (`AddArea` with a
+  `ServiceAreas` key, which the card binds as its own `FieldState.Error`). `AttentionCard` lists
+  every problem at the top of the tab, and a `Card` holding one is outlined (`Card.NeedsAttention`).
 - **One map.** `Views/MapWorkspace` is the Map page and every map window (`RoiPickerWindow`).
   `MapViewModel` holds the box being edited and where it goes (`IRoiTarget`); everything else lives
   in `MapLayersState.Shared`, so every map shows the same layers. `Controls/MapCanvas` is a
@@ -169,13 +181,16 @@ FeBuddy.Wpf/
   dictionary to a sibling silently resolves to `UnsetValue`. Views can use `StaticResource`.
 - **Code-style text** (a folder, a file name) goes between backticks with the TextBlock's text set
   through `bhv:InlineCode.Text`. `ConfirmWindow` messages and card footnotes already do this.
-- **A file name in a CheckBox or RadioButton** can be plain `Content`: the theme's versions have no
-  access keys, so an underscore shows as written.
+- **A CheckBox is square and a RadioButton round:** use a CheckBox when any number can be ticked, a
+  RadioButton group when only one can. A plain-text label wraps when there's no room, so it can be
+  long. A file name can be plain `Content`: the theme's versions have no access keys, so an
+  underscore shows as written.
 - **A two-way ComboBox in a template** is safest with its items from `x:Static`, as `AirwaysView`'s
   High and Low Files drop-downs do. Whatever it binds to, test switching to another tab and back:
   bug #251 lost the Airways choices that way.
 - **Fonts:** Segoe UI throughout (`Font.Display`, `Font.Body`), Cascadia Mono then Consolas for code
   (`Font.Mono`), and Segoe Fluent Icons for glyphs (`Font.Icon`), set in `Theme/Typography.xaml`.
+  Body text is 14.5, captions 12.5; a size outside the `Text.*` styles keeps to the same scale.
 - **Window chrome** uses `WindowChrome` without `AllowsTransparency`, so snapping and the system
   shadow still work.
 
@@ -199,7 +214,8 @@ Say, Preferred Routes:
    `PreferredRouteOutputFiles` and a `Models/` folder. Read the shared keys with
    `SubServiceSettingsReader`, put files where `AiracOutputPaths` says, add its block to
    `AiracServiceSettings` and its run to `AiracService`.
-2. **App:** an entry in `ViewModels/AiracSubServices.cs`; a `PreferredRoutesViewModel` deriving
+2. **App:** an entry in `ViewModels/AiracSubServices.cs`, with the outputs it offers (its columns on
+   the General tab) and its tooltip text; a `PreferredRoutesViewModel` deriving
    from `GeojsonSubServiceViewModel` and implementing `ISubServiceRunTarget`; a `PreferredRoutesView`
    built from the shared cards, with its `DataTemplate` in `Views/TabbedServiceView.xaml`; and, in
    `AiracServiceViewModel`, a tab accessor (`TabFor<PreferredRoutesViewModel>(…)`) and the line that

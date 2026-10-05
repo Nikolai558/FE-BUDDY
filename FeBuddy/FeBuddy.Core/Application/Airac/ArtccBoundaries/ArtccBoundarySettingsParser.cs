@@ -14,9 +14,9 @@ namespace FeBuddy.Core.Application.Airac.ArtccBoundaries;
 /// </summary>
 /// <remarks>
 /// The only place in the ARTCC Boundaries sub-service that touches the raw dictionary; everything
-/// downstream works with <see cref="ArtccBoundarySettings"/>. Unlike every other AIRAC sub-service,
-/// there is no <c>GenerateGeojson</c> toggle and no <c>GenerateAliasFile</c>: the sub-service
-/// always writes GeoJSON Lines and has no alias file.
+/// downstream works with <see cref="ArtccBoundarySettings"/>. Like Fixes and Wx Stations, there is
+/// no <c>GenerateGeojson</c> toggle and no <c>GenerateAliasFile</c>: the sub-service always writes
+/// GeoJSON Lines and has no alias file.
 /// </remarks>
 public static class ArtccBoundarySettingsParser
 {
@@ -66,17 +66,15 @@ public static class ArtccBoundarySettingsParser
 		RegionOfInterest? roi = SubServiceSettingsReader.ReadRoi(artccBoundarySettings);
 		int coordinatePrecision = SubServiceSettingsReader.ReadCoordinatePrecision(artccBoundarySettings);
 
-		// No alias file, so aliasFileKey is null: no UploadToVnas/CrcDefaultsFor entry can name one.
-		VnasFileChoices vnas = SubServiceSettingsReader.ReadVnasFiles(
-			artccBoundarySettings, aliasFileKey: null, ArtccBoundaryOutputFiles.IsGeojsonKey,
+		CrcDefaultsFiles crcFiles = SubServiceSettingsReader.ReadCrcDefaultsFiles(
+			artccBoundarySettings, ArtccBoundaryOutputFiles.IsGeojsonKey,
 			example: $"{ArtccBoundaryOutputFiles.KeyFor(ArtccBoundaryOutputFiles.HighClass)}, {ArtccBoundaryOutputFiles.KeyFor(ArtccBoundaryOutputFiles.LowClass)}");
 
 		// Read from the keys chosen for CRC-ERAM defaults, whatever OutputBy is: a class not
-		// actually written under the current mode simply goes unused, same as an unused
-		// UploadToVnas entry.
+		// actually written under the current mode simply goes unused.
 		Dictionary<string, CrcLineDefaults> lineDefaults = new(StringComparer.OrdinalIgnoreCase);
 
-		foreach (string key in vnas.CrcDefaultsFiles)
+		foreach (string key in crcFiles.Files)
 		{
 			if (ArtccBoundaryOutputFiles.TryParseKey(key, out string className))
 			{
@@ -103,7 +101,7 @@ public static class ArtccBoundarySettingsParser
 			SplitAtAntimeridian = splitAtAntimeridian,
 			IncludeFebCustomProperties = includeFebProperties,
 			FebProperties = febProperties,
-			Vnas = vnas,
+			CrcDefaultsFiles = crcFiles,
 			Roi = roi,
 			CoordinatePrecision = coordinatePrecision,
 			LineDefaults = lineDefaults,

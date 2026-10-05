@@ -10,7 +10,8 @@ using NetTopologySuite.Geometries;
 namespace FeBuddy.Core.Application.Airac.Airports;
 
 /// <summary>
-/// Generates the Airports GeoJSON output: <c>Airports_Symbols.geojson</c>,
+/// Generates the Airports GeoJSON output: <c>Airports_Symbols.geojson</c> (a symbol per airport,
+/// those with the same properties grouped into one Feature, see <see cref="GeojsonFileSet"/>),
 /// <c>Airports_Text.geojson</c> (one Point per airport) and <c>Runways_Lines.geojson</c> (one
 /// MultiLineString per airport that has drawable runways).
 /// </summary>
@@ -21,9 +22,8 @@ namespace FeBuddy.Core.Application.Airac.Airports;
 /// into a file whose airport did not.
 /// </para>
 /// <para>
-/// Each file goes in the GeoJSON folder, or the vNAS one when the user marked it for vNAS (see
-/// <see cref="AirportOutputFiles"/>). Only a file chosen for CRC-ERAM defaults gets an
-/// isDefaults Feature.
+/// Each file goes in the GeoJSON folder. Only a file chosen for CRC-ERAM defaults
+/// (<c>CrcDefaultsFor</c>, see <see cref="AirportOutputFiles"/>) gets an isDefaults Feature.
 /// </para>
 /// </remarks>
 public static class AirportGeojsonWriter
@@ -64,7 +64,7 @@ public static class AirportGeojsonWriter
 		return files;
 	}
 
-	/// <summary>Writes one file, into the GeoJSON or vNAS folder as the user chose, under the name they chose.</summary>
+	/// <summary>Writes one file, into the GeoJSON folder, under the name the user chose.</summary>
 	private static void WriteFile(
 		FeatureCollection collection,
 		int renderedCount,
@@ -72,7 +72,7 @@ public static class AirportGeojsonWriter
 		string fileKey,
 		GeojsonFileSet files)
 	{
-		string directory = AiracOutputPaths.FileDirectory(settings.OutputDirectory, isGeojson: true, settings.Vnas.IsUploaded(fileKey));
+		string directory = AiracOutputPaths.GeojsonDirectory(settings.OutputDirectory);
 		files.Write(collection, renderedCount, directory, settings.FileNames.FileName(fileKey));
 	}
 
@@ -94,7 +94,7 @@ public static class AirportGeojsonWriter
 	{
 		FeatureCollection collection = [];
 
-		if (settings.Vnas.HasCrcDefaults(AirportOutputFiles.AirportsSymbols))
+		if (settings.CrcDefaultsFiles.HasCrcDefaults(AirportOutputFiles.AirportsSymbols))
 		{
 			collection.Add(CrcFeatureFactory.CreateDefaultsFeature(settings.SymbolDefaults[AirportCrcClass.Airports]));
 		}
@@ -117,7 +117,7 @@ public static class AirportGeojsonWriter
 	{
 		FeatureCollection collection = [];
 
-		if (settings.Vnas.HasCrcDefaults(AirportOutputFiles.AirportsText))
+		if (settings.CrcDefaultsFiles.HasCrcDefaults(AirportOutputFiles.AirportsText))
 		{
 			collection.Add(CrcFeatureFactory.CreateDefaultsFeature(settings.TextDefaults[AirportCrcClass.Airports]));
 		}
@@ -145,7 +145,7 @@ public static class AirportGeojsonWriter
 	{
 		FeatureCollection collection = [];
 
-		if (settings.Vnas.HasCrcDefaults(AirportOutputFiles.RunwaysLines))
+		if (settings.CrcDefaultsFiles.HasCrcDefaults(AirportOutputFiles.RunwaysLines))
 		{
 			collection.Add(CrcFeatureFactory.CreateDefaultsFeature(settings.LineDefaults[AirportCrcClass.Runways]));
 		}

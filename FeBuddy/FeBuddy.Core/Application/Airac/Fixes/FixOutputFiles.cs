@@ -7,8 +7,8 @@ using FeBuddy.Core.Domain.Crc.Models;
 namespace FeBuddy.Core.Application.Airac.Fixes;
 
 /// <summary>
-/// The files the Fixes sub-service writes, by file key - the name the <c>UploadToVnas</c> and
-/// <c>CrcDefaultsFor</c> settings use (see <see cref="VnasFileChoices"/>).
+/// The files the Fixes sub-service writes, by file key - the name the <c>CrcDefaultsFor</c>
+/// setting (see <see cref="CrcDefaultsFiles"/>) and the File Names tab use.
 /// </summary>
 /// <remarks>
 /// A file's key is its name without <c>.geojson</c>. There is no alias file.

@@ -18,17 +18,17 @@ using DomainFixUses = FeBuddy.Core.Domain.Fixes.FixUses;
 namespace FeBuddy.Wpf.ViewModels;
 
 /// <summary>
-/// The <b>Fixes</b> sub-service tab inside the AIRAC Service screen: which outputs to write, how
-/// the GeoJSON is laid out (one merged file set, one per fix use, one per chart, or one per
-/// chart + fix use combination the user lists), which fix uses/charts/combinations to include, the
-/// optional region of interest, which FE-Buddy properties and the CRC ERAM defaults.
+/// The <b>Fixes</b> sub-service tab inside the AIRAC Service screen: how the GeoJSON is laid out
+/// (one merged file set, one per fix use, one per chart, or one per chart + fix use combination the
+/// user lists), which fix uses/charts/combinations to include, the optional region of interest,
+/// which FE-Buddy properties and the CRC ERAM defaults.
 /// </summary>
 /// <remarks>
 /// Save, Undo and navigation come from the tab host's action bar; the run is launched by
 /// <b>Run AIRAC Service</b> on the Preview Settings tab, and its results are shown on the Review
 /// tab, described by this tab through <see cref="ISubServiceRunTarget"/>. Unlike most other AIRAC
-/// sub-services, there is no <c>GenerateGeojson</c> toggle and no alias file: the sub-service
-/// always writes GeoJSON.
+/// sub-services, it has no alias file and no Outputs card, and its settings block has no
+/// <c>GenerateGeojson</c>: while included, the sub-service always writes GeoJSON.
 /// </remarks>
 public sealed class FixesViewModel : GeojsonSubServiceViewModel, ISubServiceRunTarget
 {
@@ -76,11 +76,8 @@ public sealed class FixesViewModel : GeojsonSubServiceViewModel, ISubServiceRunT
 	// ================= outputs =================
 
 	/// <inheritdoc />
-	protected override int EnabledOutputCount => 1;
-
-	/// <inheritdoc />
-	protected override string NoDefaultRoiHint =>
-		"No default ROI is set, so the GeoJSON covers every fix. Set one in Settings, or override it here.";
+	protected override string NoRoiEffect =>
+		"the GeoJSON covers every fix";
 
 	/// <inheritdoc />
 	/// <remarks>Fixes has no Lines file: only Symbols and Text are ever written.</remarks>
@@ -333,7 +330,7 @@ public sealed class FixesViewModel : GeojsonSubServiceViewModel, ISubServiceRunT
 
 		// The per-fix-use and per-chart files exist only now; list them even when the tab has
 		// unsaved edits (the resync below then does nothing).
-		RefreshVnasFiles();
+		RefreshOutputFiles();
 
 		// The lists were empty when this tab snapshotted itself at construction; re-take the
 		// snapshot now they reflect what is actually saved.
@@ -401,7 +398,6 @@ public sealed class FixesViewModel : GeojsonSubServiceViewModel, ISubServiceRunT
 
 		rows.Add(new ServicePreviewRow("FE-Buddy properties", DescribeFebProperties()));
 		rows.Add(new ServicePreviewRow("Region of interest", DescribeRoi()));
-		rows.Add(new ServicePreviewRow("Upload to vNAS", DescribeVnasFiles()));
 		rows.Add(new ServicePreviewRow("CRC ERAM defaults", DescribeCrcDefaults()));
 
 		return [new ServicePreviewSection("Fixes", rows)];
@@ -470,22 +466,24 @@ public sealed class FixesViewModel : GeojsonSubServiceViewModel, ISubServiceRunT
 	{
 		if (!EmitSymbols && !EmitText)
 		{
-			validation.Add("Neither Symbols nor Text is selected. Turn at least one back on, or deselect Fixes on the General tab.");
+			validation.AddArea(
+				ServiceAreas.GeojsonFiles,
+				"Neither Symbols nor Text is selected. Turn at least one back on, or untick Fixes under Include on the General tab.");
 		}
 
 		if (_outputBy == FixOutputBy.FixUse && FixUses.Count > 0 && FixUses.All(t => !t.IsSelected))
 		{
-			validation.Add("No fix uses are ticked. Tick at least one, or choose another file layout.");
+			validation.AddArea(ServiceAreas.FixUses, "No fix uses are ticked. Tick at least one, or choose another file layout.");
 		}
 
 		if (_outputBy == FixOutputBy.Chart && Charts.Count > 0 && Charts.All(t => !t.IsSelected))
 		{
-			validation.Add("No charts are ticked. Tick at least one, or choose another file layout.");
+			validation.AddArea(ServiceAreas.Charts, "No charts are ticked. Tick at least one, or choose another file layout.");
 		}
 
 		if (_outputBy == FixOutputBy.ChartAndFixUse && Combinations.Count == 0)
 		{
-			validation.Add("Add at least one chart + fix use combination, or choose another file layout.");
+			validation.AddArea(ServiceAreas.Combinations, "Add at least one chart + fix use combination, or choose another file layout.");
 		}
 
 		ValidateSharedSettings(validation);

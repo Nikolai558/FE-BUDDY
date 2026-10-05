@@ -59,7 +59,7 @@ public static class WxStationSettingsParser
 		{
 			throw new ArgumentException(
 				"'EmitSymbols' and 'EmitText' are both \"N\", so the Wx Stations sub-service would produce nothing. " +
-				"Turn at least one back on, or deselect Wx Stations.");
+				"Turn at least one back on, or leave Wx Stations out of the run.");
 		}
 
 		List<ServiceMessage> messages = [];
@@ -76,20 +76,19 @@ public static class WxStationSettingsParser
 		RegionOfInterest? roi = SubServiceSettingsReader.ReadRoi(wxStationSettings);
 		int coordinatePrecision = SubServiceSettingsReader.ReadCoordinatePrecision(wxStationSettings);
 
-		// No alias file, so aliasFileKey is null: no UploadToVnas/CrcDefaultsFor entry can name one.
-		VnasFileChoices vnas = SubServiceSettingsReader.ReadVnasFiles(
-			wxStationSettings, aliasFileKey: null, WxStationOutputFiles.IsGeojsonKey,
+		CrcDefaultsFiles crcFiles = SubServiceSettingsReader.ReadCrcDefaultsFiles(
+			wxStationSettings, WxStationOutputFiles.IsGeojsonKey,
 			example: $"{WxStationOutputFiles.Symbols}, {WxStationOutputFiles.Text}");
 
 		Dictionary<string, CrcSymbolDefaults> symbolDefaults = new(StringComparer.OrdinalIgnoreCase);
 		Dictionary<string, CrcTextDefaults> textDefaults = new(StringComparer.OrdinalIgnoreCase);
 
-		if (emitSymbols && vnas.HasCrcDefaults(WxStationOutputFiles.Symbols))
+		if (emitSymbols && crcFiles.HasCrcDefaults(WxStationOutputFiles.Symbols))
 		{
 			symbolDefaults[WxStationOutputFiles.AllClass] = CrcDefaultsReader.ReadSymbol(wxStationSettings, $"Crc.{WxStationOutputFiles.AllClass}.Symbol");
 		}
 
-		if (emitText && vnas.HasCrcDefaults(WxStationOutputFiles.Text))
+		if (emitText && crcFiles.HasCrcDefaults(WxStationOutputFiles.Text))
 		{
 			textDefaults[WxStationOutputFiles.AllClass] = CrcDefaultsReader.ReadText(wxStationSettings, $"Crc.{WxStationOutputFiles.AllClass}.Text");
 		}
@@ -103,7 +102,7 @@ public static class WxStationSettingsParser
 			OutputDirectory = outputDirectory,
 			EmitSymbols = emitSymbols,
 			EmitText = emitText,
-			Vnas = vnas,
+			CrcDefaultsFiles = crcFiles,
 			Roi = roi,
 			CoordinatePrecision = coordinatePrecision,
 			SymbolDefaults = symbolDefaults,

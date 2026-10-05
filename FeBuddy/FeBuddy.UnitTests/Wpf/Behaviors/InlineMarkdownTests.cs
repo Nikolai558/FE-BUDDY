@@ -55,15 +55,15 @@ public sealed class InlineMarkdownTests
 		{
 			TextBlock text = new();
 
-			InlineMarkdown.SetText(text, "Saved in `Upload_to_vNAS` now");
+			InlineMarkdown.SetText(text, "Saved in `Combined_Alias.txt` now");
 
 			Inline[] inlines = [.. text.Inlines];
 			Assert.Equal(3, inlines.Length);
 
 			Span code = Assert.IsType<Span>(inlines[1]);
 			Run run = Assert.IsType<Run>(Assert.Single(code.Inlines));
-			Assert.Equal("Upload_to_vNAS", run.Text);
-			Assert.Equal(12, code.FontSize, precision: 6);
+			Assert.Equal("Combined_Alias.txt", run.Text);
+			Assert.Equal(13, code.FontSize, precision: 6);
 		});
 	}
 
@@ -76,9 +76,9 @@ public sealed class InlineMarkdownTests
 
 			Assert.Null(InlineMarkdown.GetText(text));
 
-			InlineMarkdown.SetText(text, "Only what **you** pick, in `Upload_to_vNAS`.");
+			InlineMarkdown.SetText(text, "Only what **you** pick, in `Combined_Alias.txt`.");
 
-			Assert.Equal("Only what **you** pick, in `Upload_to_vNAS`.", InlineMarkdown.GetText(text));
+			Assert.Equal("Only what **you** pick, in `Combined_Alias.txt`.", InlineMarkdown.GetText(text));
 		});
 	}
 

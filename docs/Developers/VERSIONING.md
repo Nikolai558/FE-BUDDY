@@ -42,9 +42,11 @@ The tag decides a release's **channel** (`ProductVersion.Channel`):
 
 The user's channel (Settings ▸ Updates, `General.UpdateChannel`) is the least stable they accept:
 Stable gets only stable releases, Release Candidate adds `-rc`, Beta adds `-beta`, Alpha gets
-everything. GitHub's pre-release checkbox is never consulted. Until the user chooses, the channel
-follows the running build (`UpdateChannelSetting`): an alpha is on Alpha, a beta on Beta, an rc on
-Release Candidate, anything else on Stable.
+everything. GitHub's pre-release checkbox is never consulted. The first launch saves the running
+build's channel (`UpdateChannelSetting.SaveDefaultIfUnset`): an alpha is on Alpha, a beta on Beta,
+an rc on Release Candidate, a stable release on Stable. A `-dev` build saves nothing. After that only
+Settings changes it, so an update never does: an alpha tester stays on Alpha through 3.0.0, and
+someone on Beta who installs an alpha by hand stays on Beta.
 
 ## Where the version lives
 
@@ -61,8 +63,10 @@ Everything else comes from it:
 | GitHub release tag | `3.0.0-alpha.1` | the version check (3.x's, and 2.x's) |
 
 `IncludeSourceRevisionInInformationalVersion` is `false`, so the Product version is exactly
-`<Version>`, with no `+<commit>` on the end. An unreleased build carries `-dev` (`3.0.0-dev`): it is
-ahead of every 2.x release, and its tag counts as Alpha, though its default update channel is Stable.
+`<Version>`, with no `+<commit>` on the end. Between releases it stays at the last release's version
+(step 2 of [Releasing](RELEASING.md#part-1---get-v3-development-ready) changes it). A `-dev` version
+(`3.0.0-dev`) is ahead of every 2.x release, and its tag counts as Alpha, though its default update
+channel is Stable.
 
 ## How the app uses it
 

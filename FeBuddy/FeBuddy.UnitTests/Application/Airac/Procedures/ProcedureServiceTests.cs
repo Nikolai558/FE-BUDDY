@@ -241,11 +241,11 @@ public sealed class ProcedureServiceTests : IDisposable
 	}
 
 	[Fact]
-	public void an_alias_file_marked_for_vnas_still_goes_in_the_aliases_folder()
+	public void the_alias_file_goes_in_the_aliases_folder()
 	{
 		(NasrCsvDataCollection nasr, DtppMetafileDataCollection dtpp) = TwoAirportScenario();
 
-		ProcedureServiceResult result = ProcedureService.Run(nasr, dtpp, null, Settings(("UploadToVnas", "Faa_Chart_Recall.txt")));
+		ProcedureServiceResult result = ProcedureService.Run(nasr, dtpp, null, Settings());
 
 		Assert.Equal(Path.Combine(_outputDirectory, "Aliases", "Faa_Chart_Recall.txt"), result.AliasFilePath);
 	}

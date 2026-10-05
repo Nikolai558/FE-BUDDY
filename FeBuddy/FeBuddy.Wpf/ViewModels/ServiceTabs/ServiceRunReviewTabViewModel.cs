@@ -21,7 +21,7 @@ namespace FeBuddy.Wpf.ViewModels.ServiceTabs;
 /// anything that went wrong at <see cref="LogLevel.Error"/> level, the advisories
 /// (<see cref="ServiceMessage.IsAdvisory"/>) that explain missing output such as "nothing
 /// matched your filters", each sub-service's results with its warnings and its routine notices
-/// collapsed behind a toggle, and the files written with the way out to the output folder.
+/// collapsed behind a toggle, and how many files were written with the way out to the output folder.
 /// </remarks>
 public sealed class ServiceRunReviewTabViewModel : ServiceTabViewModel
 {
@@ -30,7 +30,6 @@ public sealed class ServiceRunReviewTabViewModel : ServiceTabViewModel
 	private string? _summary;
 	private string? _outputDirectory;
 	private double _elapsedSeconds;
-	private bool _isFileListCollapsed = true;
 
 	private readonly Stopwatch _stopwatch = new();
 
@@ -38,7 +37,6 @@ public sealed class ServiceRunReviewTabViewModel : ServiceTabViewModel
 	public ServiceRunReviewTabViewModel()
 	{
 		OpenOutputFolderCommand = new RelayCommand(OpenOutputFolder, () => OutputDirectory is not null);
-		ToggleFileListCommand = new RelayCommand(() => IsFileListCollapsed = !IsFileListCollapsed);
 
 		// Keeps the Has* flags honest however the collections are filled.
 		Errors.CollectionChanged += (_, _) => OnPropertyChanged(nameof(HasErrors));
@@ -80,7 +78,7 @@ public sealed class ServiceRunReviewTabViewModel : ServiceTabViewModel
 	/// <summary>Whether any sub-service reported results.</summary>
 	public bool HasResults => Results.Count > 0;
 
-	/// <summary>Every file the run wrote, across sub-services.</summary>
+	/// <summary>Every file the run wrote, across sub-services. The tab shows how many.</summary>
 	public ObservableCollection<string> FilesWritten { get; } = [];
 
 	/// <summary>Whether the run wrote anything.</summary>
@@ -145,20 +143,6 @@ public sealed class ServiceRunReviewTabViewModel : ServiceTabViewModel
 	/// <summary>Opens the folder the run wrote into.</summary>
 	public ICommand OpenOutputFolderCommand { get; }
 
-	/// <summary>Expands or minimizes the list of written files.</summary>
-	public ICommand ToggleFileListCommand { get; }
-
-	/// <summary>
-	/// Whether the list of written files is minimized to its count. Starts minimized on every
-	/// run and is deliberately not persisted, like the Dashboard activity log: a Departures run
-	/// alone writes thousands of files, so the list is there to dig into, not to read by default.
-	/// </summary>
-	public bool IsFileListCollapsed
-	{
-		get => _isFileListCollapsed;
-		set => SetProperty(ref _isFileListCollapsed, value);
-	}
-
 	/// <summary>Starts a run: seeds one step per sub-service and clears the last run's outcome.</summary>
 	/// <param name="subServiceNames">The sub-services taking part, in run order.</param>
 	public void BeginRun(IEnumerable<string> subServiceNames)
@@ -177,7 +161,6 @@ public sealed class ServiceRunReviewTabViewModel : ServiceTabViewModel
 		Summary = null;
 		OutputDirectory = null;
 		ElapsedSeconds = 0;
-		IsFileListCollapsed = true;
 		IsRunning = true;
 		HasRun = false;
 

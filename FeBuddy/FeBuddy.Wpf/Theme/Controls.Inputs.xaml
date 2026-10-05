@@ -11,8 +11,8 @@
     Implicit styles (no x:Key) so a bare control never falls back to the OS look:
         TextBox      -> Field
         PasswordBox  -> the Field look (no placeholder: put the hint beside it)
-        CheckBox     -> 16px sunken box, amber when checked
-        RadioButton  -> 16px sunken disc, amber dot when checked
+        CheckBox     -> 18px square sunken box (Radius.Box), amber when checked
+        RadioButton  -> 18px round sunken disc, amber dot when checked
     A control that sets its own Style="{StaticResource ...}" (Nav.Item,
     LogChip) opts out of these automatically.
 
@@ -42,7 +42,7 @@
                 <ControlTemplate TargetType="ctl:Option">
                     <StackPanel>
                         <ContentPresenter />
-                        <TextBlock x:Name="Description" Margin="20,4,0,0"
+                        <TextBlock x:Name="Description" Margin="26,4,0,0"
                                    Style="{DynamicResource Text.Prose}"
                                    Text="{TemplateBinding Description}" />
                     </StackPanel>
@@ -63,7 +63,7 @@
     <!-- Placeholder text: set the TextBox's Tag, e.g. Tag="e.g. 44.512". -->
     <Style x:Key="Field" TargetType="TextBox">
         <Setter Property="FontFamily" Value="{DynamicResource Font.Body}" />
-        <Setter Property="FontSize" Value="13" />
+        <Setter Property="FontSize" Value="14.5" />
         <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Primary}" />
         <Setter Property="CaretBrush" Value="{DynamicResource Brush.Accent}" />
         <Setter Property="SelectionBrush" Value="{DynamicResource Brush.Accent}" />
@@ -92,7 +92,7 @@
                                            VerticalAlignment="Center"
                                            Visibility="Collapsed"
                                            FontFamily="{DynamicResource Font.Body}"
-                                           FontSize="13"
+                                           FontSize="14.5"
                                            Foreground="{DynamicResource Brush.Text.Tertiary}" />
                             </Border>
                             <ScrollViewer x:Name="PART_ContentHost"
@@ -121,7 +121,7 @@
          like the OS control. -->
     <Style TargetType="PasswordBox">
         <Setter Property="FontFamily" Value="{DynamicResource Font.Body}" />
-        <Setter Property="FontSize" Value="13" />
+        <Setter Property="FontSize" Value="14.5" />
         <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Primary}" />
         <Setter Property="CaretBrush" Value="{DynamicResource Brush.Accent}" />
         <Setter Property="SelectionBrush" Value="{DynamicResource Brush.Accent}" />
@@ -252,35 +252,52 @@
     </Style>
 
     <!-- ===================== CHECKBOX (implicit) ===================== -->
+    <!-- A square: any number of them can be ticked. A RadioButton (below) is a circle: one of its
+         group. Keep the two shapes apart. -->
     <Style TargetType="CheckBox">
         <Setter Property="FontFamily" Value="{DynamicResource Font.Body}" />
-        <Setter Property="FontSize" Value="13" />
+        <Setter Property="FontSize" Value="14.5" />
         <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Primary}" />
         <Setter Property="Cursor" Value="Hand" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="CheckBox">
-                    <StackPanel Orientation="Horizontal" Background="Transparent">
-                        <Border x:Name="Box" Width="16" Height="16" VerticalAlignment="Center"
-                                CornerRadius="{DynamicResource Radius.Small}"
-                                Background="{DynamicResource Brush.Bg.Sunken}"
-                                BorderBrush="{DynamicResource Brush.Stroke.Strong}"
-                                BorderThickness="1" SnapsToDevicePixels="True">
-                            <TextBlock x:Name="Glyph" Text="{DynamicResource Icon.Check}"
-                                       FontFamily="{DynamicResource Font.Icon}" FontSize="10"
-                                       Foreground="{DynamicResource Brush.Text.OnAccent}"
-                                       HorizontalAlignment="Center" VerticalAlignment="Center"
-                                       Opacity="0" />
-                        </Border>
-                        <!-- No access keys: labels are often file names, and an access key would
-                             swallow their first underscore (Fix_Symbols.geojson). -->
-                        <ContentPresenter Margin="8,0,0,0" VerticalAlignment="Center"
-                                          RecognizesAccessKey="False"
-                                          TextElement.Foreground="{TemplateBinding Foreground}"
-                                          TextElement.FontFamily="{TemplateBinding FontFamily}"
-                                          TextElement.FontSize="{TemplateBinding FontSize}" />
-                    </StackPanel>
+                    <!-- The label has the rest of the row and a plain-text one wraps, so a long label
+                         in a narrow window goes onto a second line instead of being cut off. The box
+                         sits beside its first line. -->
+                    <Grid Background="Transparent">
+                        <Grid VerticalAlignment="{TemplateBinding VerticalContentAlignment}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Border x:Name="Box" Width="18" Height="18" VerticalAlignment="Top" Margin="0,1,0,0"
+                                    CornerRadius="{DynamicResource Radius.Box}"
+                                    Background="{DynamicResource Brush.Bg.Sunken}"
+                                    BorderBrush="{DynamicResource Brush.Stroke.Strong}"
+                                    BorderThickness="1" SnapsToDevicePixels="True">
+                                <TextBlock x:Name="Glyph" Text="{DynamicResource Icon.Check}"
+                                           FontFamily="{DynamicResource Font.Icon}" FontSize="11"
+                                           Foreground="{DynamicResource Brush.Text.OnAccent}"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"
+                                           Opacity="0" />
+                            </Border>
+                            <!-- No access keys: labels are often file names, and an access key would
+                                 swallow their first underscore (Fix_Symbols.geojson). -->
+                            <ContentPresenter Grid.Column="1" Margin="8,0,0,0" VerticalAlignment="Center"
+                                              RecognizesAccessKey="False"
+                                              TextElement.Foreground="{TemplateBinding Foreground}"
+                                              TextElement.FontFamily="{TemplateBinding FontFamily}"
+                                              TextElement.FontSize="{TemplateBinding FontSize}">
+                                <ContentPresenter.Resources>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="TextWrapping" Value="Wrap" />
+                                    </Style>
+                                </ContentPresenter.Resources>
+                            </ContentPresenter>
+                        </Grid>
+                    </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsChecked" Value="True">
                             <Setter TargetName="Box" Property="Background" Value="{DynamicResource Brush.Accent}" />
@@ -313,29 +330,42 @@
          are unaffected. -->
     <Style TargetType="RadioButton">
         <Setter Property="FontFamily" Value="{DynamicResource Font.Body}" />
-        <Setter Property="FontSize" Value="13" />
+        <Setter Property="FontSize" Value="14.5" />
         <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Primary}" />
         <Setter Property="Cursor" Value="Hand" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="RadioButton">
-                    <StackPanel Orientation="Horizontal" Background="Transparent">
-                        <Grid Width="16" Height="16" VerticalAlignment="Center">
-                            <Ellipse x:Name="Disc"
-                                     Fill="{DynamicResource Brush.Bg.Sunken}"
-                                     Stroke="{DynamicResource Brush.Stroke.Strong}"
-                                     StrokeThickness="1" />
-                            <Ellipse x:Name="Dot" Width="6" Height="6"
-                                     Fill="{DynamicResource Brush.Accent}" Opacity="0" />
+                    <!-- Laid out as CheckBox: a plain-text label wraps, the disc beside its first line. -->
+                    <Grid Background="Transparent">
+                        <Grid VerticalAlignment="{TemplateBinding VerticalContentAlignment}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Grid Width="18" Height="18" VerticalAlignment="Top" Margin="0,1,0,0">
+                                <Ellipse x:Name="Disc"
+                                         Fill="{DynamicResource Brush.Bg.Sunken}"
+                                         Stroke="{DynamicResource Brush.Stroke.Strong}"
+                                         StrokeThickness="1" />
+                                <Ellipse x:Name="Dot" Width="8" Height="8"
+                                         Fill="{DynamicResource Brush.Accent}" Opacity="0" />
+                            </Grid>
+                            <!-- No access keys, as for CheckBox: they would swallow a label's first underscore. -->
+                            <ContentPresenter Grid.Column="1" Margin="8,0,0,0" VerticalAlignment="Center"
+                                              RecognizesAccessKey="False"
+                                              TextElement.Foreground="{TemplateBinding Foreground}"
+                                              TextElement.FontFamily="{TemplateBinding FontFamily}"
+                                              TextElement.FontSize="{TemplateBinding FontSize}">
+                                <ContentPresenter.Resources>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="TextWrapping" Value="Wrap" />
+                                    </Style>
+                                </ContentPresenter.Resources>
+                            </ContentPresenter>
                         </Grid>
-                        <!-- No access keys, as for CheckBox: they would swallow a label's first underscore. -->
-                        <ContentPresenter Margin="8,0,0,0" VerticalAlignment="Center"
-                                          RecognizesAccessKey="False"
-                                          TextElement.Foreground="{TemplateBinding Foreground}"
-                                          TextElement.FontFamily="{TemplateBinding FontFamily}"
-                                          TextElement.FontSize="{TemplateBinding FontSize}" />
-                    </StackPanel>
+                    </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsChecked" Value="True">
                             <Setter TargetName="Disc" Property="Stroke" Value="{DynamicResource Brush.Accent}" />
@@ -363,7 +393,7 @@
          shows its selection. -->
     <Style x:Key="Themed.ComboBoxItem" TargetType="ComboBoxItem">
         <Setter Property="FontFamily" Value="{DynamicResource Font.Body}" />
-        <Setter Property="FontSize" Value="13" />
+        <Setter Property="FontSize" Value="14.5" />
         <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Primary}" />
         <Setter Property="Padding" Value="10,7" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
@@ -426,7 +456,7 @@
          jump the whole list. -->
     <Style x:Key="Themed.ComboBox" TargetType="ComboBox">
         <Setter Property="FontFamily" Value="{DynamicResource Font.Body}" />
-        <Setter Property="FontSize" Value="13" />
+        <Setter Property="FontSize" Value="14.5" />
         <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Primary}" />
         <Setter Property="Background" Value="{DynamicResource Brush.Bg.Sunken}" />
         <Setter Property="BorderBrush" Value="{DynamicResource Brush.Stroke.Strong}" />
@@ -481,7 +511,7 @@
                                  IsReadOnly="{Binding IsReadOnly, RelativeSource={RelativeSource TemplatedParent}}" />
 
                         <TextBlock x:Name="Chevron" Text="{DynamicResource Icon.Chevron.Down}" IsHitTestVisible="False"
-                                   FontFamily="{DynamicResource Font.Icon}" FontSize="10"
+                                   FontFamily="{DynamicResource Font.Icon}" FontSize="11"
                                    Foreground="{DynamicResource Brush.Text.Tertiary}"
                                    HorizontalAlignment="Right" VerticalAlignment="Center"
                                    Margin="0,0,11,0" />
@@ -564,7 +594,7 @@
          focus ring, which the control has no property for. -->
     <Style x:Key="Themed.CalendarDayButton" TargetType="CalendarDayButton">
         <Setter Property="FontFamily" Value="{DynamicResource Font.Body}" />
-        <Setter Property="FontSize" Value="12.5" />
+        <Setter Property="FontSize" Value="14" />
         <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Primary}" />
         <Setter Property="Width" Value="32" />
         <Setter Property="Height" Value="30" />
@@ -632,7 +662,7 @@
     <!-- A month (year view) or a year (decade view). -->
     <Style x:Key="Themed.CalendarButton" TargetType="CalendarButton">
         <Setter Property="FontFamily" Value="{DynamicResource Font.Body}" />
-        <Setter Property="FontSize" Value="12.5" />
+        <Setter Property="FontSize" Value="14" />
         <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Primary}" />
         <Setter Property="Width" Value="52" />
         <Setter Property="Height" Value="44" />
@@ -698,7 +728,7 @@
                         <DataTemplate x:Key="{x:Static CalendarItem.DayTitleTemplateResourceKey}">
                             <TextBlock Text="{Binding}" Margin="0,4,0,6"
                                        HorizontalAlignment="Center" VerticalAlignment="Center"
-                                       FontFamily="{DynamicResource Font.Body}" FontSize="11" FontWeight="SemiBold"
+                                       FontFamily="{DynamicResource Font.Body}" FontSize="12" FontWeight="SemiBold"
                                        Foreground="{DynamicResource Brush.Text.Tertiary}" />
                         </DataTemplate>
                     </ControlTemplate.Resources>
@@ -726,7 +756,7 @@
                                                 Width="30" Height="28" Cursor="Hand">
                                             <ContentPresenter x:Name="Glyph" HorizontalAlignment="Center" VerticalAlignment="Center"
                                                               TextElement.FontFamily="{DynamicResource Font.Icon}"
-                                                              TextElement.FontSize="11"
+                                                              TextElement.FontSize="12"
                                                               TextElement.Foreground="{DynamicResource Brush.Text.Secondary}" />
                                         </Border>
                                         <ControlTemplate.Triggers>
@@ -745,7 +775,7 @@
                                                 Padding="10,4" Cursor="Hand">
                                             <ContentPresenter x:Name="Text" HorizontalAlignment="Center" VerticalAlignment="Center"
                                                               TextElement.FontFamily="{DynamicResource Font.Body}"
-                                                              TextElement.FontSize="13"
+                                                              TextElement.FontSize="14.5"
                                                               TextElement.FontWeight="SemiBold"
                                                               TextElement.Foreground="{DynamicResource Brush.Text.Primary}" />
                                         </Border>
@@ -881,7 +911,7 @@
          the parts DatePicker's code looks for; it puts the calendar into PART_Popup itself. -->
     <Style x:Key="Themed.DatePickerTextBox" TargetType="DatePickerTextBox">
         <Setter Property="FontFamily" Value="{DynamicResource Font.Body}" />
-        <Setter Property="FontSize" Value="13" />
+        <Setter Property="FontSize" Value="14.5" />
         <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Primary}" />
         <Setter Property="CaretBrush" Value="{DynamicResource Brush.Accent}" />
         <Setter Property="SelectionBrush" Value="{DynamicResource Brush.Accent}" />
@@ -895,7 +925,7 @@
                         <ContentControl x:Name="PART_Watermark" Focusable="False" IsHitTestVisible="False"
                                         Margin="{TemplateBinding Padding}" VerticalAlignment="Center"
                                         Visibility="Collapsed"
-                                        FontFamily="{DynamicResource Font.Body}" FontSize="13"
+                                        FontFamily="{DynamicResource Font.Body}" FontSize="14.5"
                                         Foreground="{DynamicResource Brush.Text.Tertiary}" />
                         <ScrollViewer x:Name="PART_ContentHost" Margin="{TemplateBinding Padding}"
                                       VerticalAlignment="Center" />
@@ -912,7 +942,7 @@
 
     <Style x:Key="Themed.DatePicker" TargetType="DatePicker">
         <Setter Property="FontFamily" Value="{DynamicResource Font.Body}" />
-        <Setter Property="FontSize" Value="13" />
+        <Setter Property="FontSize" Value="14.5" />
         <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Primary}" />
         <Setter Property="Background" Value="{DynamicResource Brush.Bg.Sunken}" />
         <Setter Property="BorderBrush" Value="{DynamicResource Brush.Stroke.Strong}" />
@@ -947,7 +977,7 @@
                                     <ControlTemplate TargetType="Button">
                                         <Border x:Name="Box" Background="Transparent" Padding="0,0,11,0">
                                             <TextBlock x:Name="Glyph" Text="{DynamicResource Icon.Calendar}"
-                                                       FontFamily="{DynamicResource Font.Icon}" FontSize="13"
+                                                       FontFamily="{DynamicResource Font.Icon}" FontSize="14.5"
                                                        Foreground="{DynamicResource Brush.Text.Tertiary}"
                                                        VerticalAlignment="Center" />
                                         </Border>
@@ -999,7 +1029,7 @@
         <Setter Property="Margin" Value="0,0,4,4" />
         <Setter Property="Cursor" Value="Hand" />
         <Setter Property="FontFamily" Value="{DynamicResource Font.Mono}" />
-        <Setter Property="FontSize" Value="12" />
+        <Setter Property="FontSize" Value="13" />
         <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Secondary}" />
         <Setter Property="Template">
             <Setter.Value>

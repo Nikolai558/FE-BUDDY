@@ -7,10 +7,10 @@ using FeBuddy.Core.Infrastructure.Nasr.Models;
 namespace FeBuddy.Harness;
 
 /// <summary>
-/// Exercises the Procedures service exactly the way the GUI "Run" button will: parse
-/// <see cref="HarnessSettings.DtppMetafileFile"/>, build the settings dictionary, call the one
-/// public entry point, and hand the result back for reporting. Contains no Procedures logic of its
-/// own.
+/// Exercises the Procedures service the way an AIRAC Service run does, from a local metafile:
+/// parse <see cref="HarnessSettings.DtppMetafileFile"/>, build the settings dictionary, call the
+/// one public entry point, and hand the result back for reporting. Contains no Procedures logic of
+/// its own.
 /// </summary>
 /// <remarks>
 /// The harness has no previous cycle's metafile to hand it, so <c>previousDtpp</c> is always

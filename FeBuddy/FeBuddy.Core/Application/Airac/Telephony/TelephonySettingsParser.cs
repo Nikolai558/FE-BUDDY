@@ -1,6 +1,5 @@
 using System.Globalization;
 
-using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Application.Airac.Telephony.Models;
 using FeBuddy.Core.Application.Models;
 using FeBuddy.Core.Application.Settings;
@@ -16,9 +15,9 @@ namespace FeBuddy.Core.Application.Airac.Telephony;
 /// </summary>
 /// <remarks>
 /// <para>
-/// Telephony's only output is its alias file, so there is little to read: where to write, whether
-/// the file goes to vNAS, the user's virtual airlines - numbered, merged in number order - and
-/// whether the VATSIM-Radar Virtual Airline List is merged too:
+/// Telephony's only output is its alias file, so there is little to read: where to write, the
+/// user's virtual airlines - numbered, merged in number order - and whether the VATSIM-Radar
+/// Virtual Airline List is merged too:
 /// </para>
 /// <code>
 /// VirtualAirlines.1.Designator      = DVA
@@ -80,7 +79,7 @@ public static class TelephonySettingsParser
 		{
 			throw new ArgumentException(
 				"'GenerateAliasFile' is \"N\", but the alias file is the Telephony sub-service's only output, so it would produce " +
-				"nothing. Turn it back on, or deselect Telephony.");
+				"nothing. Turn it back on, or leave Telephony out of the run.");
 		}
 
 		List<ServiceMessage> messages = [];
@@ -90,11 +89,6 @@ public static class TelephonySettingsParser
 			messages.Add(new ServiceMessage(LogLevel.Warning, LogSource,
 				"'IncludeFebCustomProperties' is \"Y\", but Telephony writes no GeoJSON, so it has no FE-Buddy properties to add; it was ignored."));
 		}
-
-		// Nothing Telephony writes is GeoJSON, so the alias file is the only key UploadToVnas may
-		// name, and CrcDefaultsFor none at all.
-		VnasFileChoices vnas = SubServiceSettingsReader.ReadVnasFiles(
-			telephonySettings, TelephonyOutputFiles.Alias, isGeojsonFileKey: _ => false, example: TelephonyOutputFiles.Alias);
 
 		IReadOnlyList<VirtualAirline> virtualAirlines = ReadVirtualAirlines(telephonySettings, messages, out HashSet<string> virtualAirlineKeys);
 		bool includeVatsimRadar = SettingsValueReader.YesNo(telephonySettings, IncludeVatsimRadarKey, defaultValue: false);
@@ -109,7 +103,6 @@ public static class TelephonySettingsParser
 			OutputDirectory = outputDirectory,
 			VirtualAirlines = virtualAirlines,
 			IncludeVatsimRadarVirtualAirlines = includeVatsimRadar,
-			Vnas = vnas,
 		};
 
 		return new TelephonySettingsParseResult(settings, messages);

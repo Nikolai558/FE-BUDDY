@@ -18,8 +18,8 @@ namespace FeBuddy.Wpf.ViewModels.ServiceTabs;
 /// sub-services, and one Preview Settings tab that runs them all together. File Conversions has
 /// neither - every conversion is always on the rail and runs on its own from its own tab. Data
 /// Viewers and File Health Services are expected to take one of those two shapes, and AIRAC
-/// Service alone is expected to reach roughly twenty sub-services - so tabs are data, created
-/// and destroyed as the screen needs them, never hand-placed in XAML.
+/// Service alone is expected to reach roughly twenty sub-services - so tabs are data, built in
+/// code and put in the rail as the screen needs them, never hand-placed in XAML.
 /// </para>
 /// <para>
 /// Navigation goes through <see cref="NextCommand"/> / <see cref="PreviousCommand"/> /
@@ -27,7 +27,7 @@ namespace FeBuddy.Wpf.ViewModels.ServiceTabs;
 /// Cancelling that prompt keeps the user where they are rather than silently discarding edits.
 /// </para>
 /// </remarks>
-public abstract class TabbedServiceViewModel : ObservableObject
+public abstract class TabbedServiceViewModel : ObservableObject, IOpensAtStart
 {
 	private ServiceTabViewModel? _selectedTab;
 	private bool _isRunning;
@@ -83,7 +83,7 @@ public abstract class TabbedServiceViewModel : ObservableObject
 		}
 	}
 
-	/// <summary>The open tabs, in rail order: General, the selected sub-services, Preview Settings, then Review after a run.</summary>
+	/// <summary>The tabs in the rail, in order: General, the sub-services (greyed out while left out), Preview Settings, then Review after a run.</summary>
 	public ObservableCollection<ServiceTabViewModel> Tabs { get; } = [];
 
 	/// <summary>Saves the selected tab (validates first).</summary>
@@ -126,6 +126,13 @@ public abstract class TabbedServiceViewModel : ObservableObject
 	/// <summary>The selected tab's title, for the content header.</summary>
 	public string SelectedTabTitle => SelectedTab?.Title ?? string.Empty;
 
+	/// <inheritdoc />
+	/// <remarks>
+	/// Selects the first tab, as a click on it in the rail would: no tab is left with unsaved edits
+	/// lost, since every tab keeps its own.
+	/// </remarks>
+	public void ReturnToStart() => SelectedTab = Tabs.FirstOrDefault();
+
 	/// <summary>
 	/// The permanent first tab - the service's own settings and the sub-service picker - or
 	/// <see langword="null"/> for a screen whose sub-services are always on the rail.
@@ -133,8 +140,8 @@ public abstract class TabbedServiceViewModel : ObservableObject
 	protected virtual ServiceTabViewModel? GeneralTab => null;
 
 	/// <summary>
-	/// The settings-preview tab that runs every sub-service together, present once at least one
-	/// is open; or <see langword="null"/> for a screen whose sub-services each run from their own tab.
+	/// The settings-preview tab that runs every sub-service together, present while at least one
+	/// takes part; or <see langword="null"/> for a screen whose sub-services each run from their own tab.
 	/// </summary>
 	protected virtual ServicePreviewTabViewModel? PreviewTab => null;
 
@@ -145,17 +152,18 @@ public abstract class TabbedServiceViewModel : ObservableObject
 	protected virtual ServiceTabViewModel? PostRunTab => null;
 
 	/// <summary>
-	/// Reconciles <see cref="Tabs"/> with the sub-service tabs that should currently be open.
+	/// Reconciles <see cref="Tabs"/> with the sub-service tabs that should currently be in the rail.
 	/// Existing tab instances are kept (so their state and their place in the rail survive), the
 	/// Preview Settings and Review tabs are added or removed to match, and the selection is moved
-	/// only if the tab it pointed at is gone.
+	/// only if the tab it pointed at is gone or greyed out.
 	/// </summary>
-	/// <param name="subServiceTabs">The tabs for the open sub-services, in display order.</param>
+	/// <param name="subServiceTabs">The sub-service tabs for the rail, greyed-out ones included, in display order.</param>
 	protected void RebuildTabs(IEnumerable<ServiceTabViewModel> subServiceTabs)
 	{
 		List<ServiceTabViewModel> desired = [.. subServiceTabs];
 
-		if (desired.Count > 0 && PreviewTab is { } preview)
+		// Preview Settings runs what takes part, so it is there only while something does.
+		if (desired.Any(tab => tab.IsAvailable) && PreviewTab is { } preview)
 		{
 			desired.Add(preview);
 		}
@@ -188,7 +196,7 @@ public abstract class TabbedServiceViewModel : ObservableObject
 			}
 		}
 
-		if (SelectedTab is null || !Tabs.Contains(SelectedTab))
+		if (SelectedTab is null || !Tabs.Contains(SelectedTab) || !SelectedTab.IsAvailable)
 		{
 			SelectedTab = Tabs.FirstOrDefault();
 		}
@@ -219,21 +227,37 @@ public abstract class TabbedServiceViewModel : ObservableObject
 		return save && tab.Save();
 	}
 
-	private bool CanStep(int direction)
+	private bool CanStep(int direction) => StepTarget(direction) is not null;
+
+	/// <summary>The next tab that takes part, in <paramref name="direction"/>; greyed-out tabs are stepped over.</summary>
+	private ServiceTabViewModel? StepTarget(int direction)
 	{
 		int index = SelectedTab is null ? -1 : Tabs.IndexOf(SelectedTab);
-		int target = index + direction;
-		return index >= 0 && target >= 0 && target < Tabs.Count;
+
+		if (index < 0)
+		{
+			return null;
+		}
+
+		for (int target = index + direction; target >= 0 && target < Tabs.Count; target += direction)
+		{
+			if (Tabs[target].IsAvailable)
+			{
+				return Tabs[target];
+			}
+		}
+
+		return null;
 	}
 
 	private void Step(int direction)
 	{
-		if (!CanStep(direction) || !ConfirmLeave(SelectedTab))
+		if (StepTarget(direction) is not { } target || !ConfirmLeave(SelectedTab))
 		{
 			return;
 		}
 
-		SelectedTab = Tabs[Tabs.IndexOf(SelectedTab!) + direction];
+		SelectedTab = target;
 	}
 
 	private void GoToPreview()

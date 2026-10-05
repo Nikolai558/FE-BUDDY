@@ -148,6 +148,19 @@ public sealed class InfoViewModelTests : IDisposable
 		Assert.Null(info.Page);
 	}
 
+	/// <summary>Choosing Info in the side nav shows the cards, whichever page was open.</summary>
+	[Fact]
+	public void returning_to_the_start_shows_the_cards()
+	{
+		InfoViewModel info = new();
+		info.Resources[0].Open.Execute(null);
+		Assert.IsType<WhatsNewViewModel>(info.Page).OpenGuideCommand.Execute(null);
+
+		((IOpensAtStart)info).ReturnToStart();
+
+		Assert.Null(info.Page);
+	}
+
 	[Fact]
 	public void a_page_can_be_opened_again_after_going_back()
 	{

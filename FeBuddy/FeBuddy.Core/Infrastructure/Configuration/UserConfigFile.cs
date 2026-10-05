@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
+using FeBuddy.Core.Infrastructure.Configuration.Models;
 using FeBuddy.Core.Infrastructure.FileSystem;
 using FeBuddy.Core.Infrastructure.Logging;
 
@@ -80,7 +81,8 @@ public static class UserConfigFile
 	/// was there. A missing or unreadable file leaves the dictionary empty and logs a warning
 	/// rather than throwing - this is the launch read path.
 	/// </summary>
-	public static void ReadAll()
+	/// <returns>Whether the file was read, missing or unreadable.</returns>
+	public static UserConfigReadResult ReadAll()
 	{
 		lock (Gate)
 		{
@@ -91,7 +93,7 @@ public static class UserConfigFile
 			if (!File.Exists(path))
 			{
 				AppLog.Warning(LogSource, $"No config file at '{path}'. Using defaults for every setting.");
-				return;
+				return UserConfigReadResult.Missing;
 			}
 
 			try
@@ -102,16 +104,17 @@ public static class UserConfigFile
 				if (root is JsonObject obj)
 				{
 					FlattenInto(obj, prefix: string.Empty, Values);
+					return UserConfigReadResult.Read;
 				}
-				else
-				{
-					AppLog.Warning(LogSource, $"Config file '{path}' is not a JSON object. Using defaults.");
-				}
+
+				AppLog.Warning(LogSource, $"Config file '{path}' is not a JSON object. Using defaults.");
+				return UserConfigReadResult.Unreadable;
 			}
 			catch (Exception ex)
 			{
 				Values.Clear();
 				AppLog.Warning(LogSource, $"Could not read config file '{path}': {ex.Message}. Using defaults.");
+				return UserConfigReadResult.Unreadable;
 			}
 		}
 	}
@@ -182,7 +185,7 @@ public static class UserConfigFile
 	/// entries are numbered keys, before it is written again with fewer entries. Does <b>not</b>
 	/// persist - call <see cref="Save(string)"/> to write it to disk.
 	/// </summary>
-	/// <param name="dottedPath">The dotted path to remove, e.g. <c>Services.AiracService.VnasAlias.Sources</c>.</param>
+	/// <param name="dottedPath">The dotted path to remove, e.g. <c>Services.AiracService.ConcatenateAliases.Sources</c>.</param>
 	/// <returns>How many values were removed.</returns>
 	public static int RemoveValues(string dottedPath)
 	{
@@ -298,7 +301,7 @@ public static class UserConfigFile
 	/// refreshed from disk.
 	/// </summary>
 	/// <param name="nodePath">
-	/// The dotted path of the node to save, e.g. <c>Services.AiracService.Geojson.Airways</c>.
+	/// The dotted path of the node to save, e.g. <c>Services.AiracService.Airways</c>.
 	/// </param>
 	public static void Save(string nodePath)
 	{

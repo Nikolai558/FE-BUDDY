@@ -63,13 +63,13 @@ public static class NavaidSettingsParser
 		bool generateAliasFile = SettingsValueReader.YesNo(navaidSettings, "GenerateAliasFile", defaultValue: true);
 
 		// Selecting the sub-service and then turning off both of its outputs asks for a run that
-		// writes nothing. The GUI blocks this at the tab; the parser is the backstop for the
-		// harness and for a hand-edited UserConfig.
+		// writes nothing. The GUI blocks this on the General tab; the parser is the backstop for
+		// the harness and for a hand-edited UserConfig.
 		if (!generateGeojson && !generateAliasFile)
 		{
 			throw new ArgumentException(
 				"GenerateGeojson and GenerateAliasFile are both \"N\", so the NAVAIDs sub-service would produce nothing. " +
-				"Turn one back on, or deselect NAVAIDs.");
+				"Turn one back on, or leave NAVAIDs out of the run.");
 		}
 
 		bool emitSymbols = SettingsValueReader.YesNo(navaidSettings, "EmitSymbols", defaultValue: true);
@@ -111,9 +111,9 @@ public static class NavaidSettingsParser
 		RegionOfInterest? roi = SubServiceSettingsReader.ReadRoi(navaidSettings);
 		int coordinatePrecision = SubServiceSettingsReader.ReadCoordinatePrecision(navaidSettings);
 
-		VnasFileChoices vnas = SubServiceSettingsReader.ReadVnasFiles(
-			navaidSettings, NavaidOutputFiles.Alias, NavaidOutputFiles.IsGeojsonKey,
-			example: $"{NavaidOutputFiles.Symbols}, {NavaidOutputFiles.Alias}");
+		CrcDefaultsFiles crcFiles = SubServiceSettingsReader.ReadCrcDefaultsFiles(
+			navaidSettings, NavaidOutputFiles.IsGeojsonKey,
+			example: $"{NavaidOutputFiles.Symbols}, {NavaidOutputFiles.Text}");
 
 		Dictionary<string, CrcSymbolDefaults> symbolDefaults = new(StringComparer.OrdinalIgnoreCase);
 		Dictionary<string, CrcTextDefaults> textDefaults = new(StringComparer.OrdinalIgnoreCase);
@@ -125,7 +125,7 @@ public static class NavaidSettingsParser
 			// SymbolStyleBy only means anything for the merged All-mode Symbols file.
 			symbolStyleBy = SettingsValueReader.OptionalEnum(navaidSettings, "SymbolStyleBy", NavaidSymbolStyleBy.Type);
 
-			bool symbolsGetCrcDefaults = generateGeojson && emitSymbols && vnas.HasCrcDefaults(NavaidOutputFiles.Symbols);
+			bool symbolsGetCrcDefaults = generateGeojson && emitSymbols && crcFiles.HasCrcDefaults(NavaidOutputFiles.Symbols);
 
 			if (symbolsGetCrcDefaults)
 			{
@@ -133,7 +133,7 @@ public static class NavaidSettingsParser
 					navaidSettings, $"Crc.{NavaidOutputFiles.AllClass}.Symbol", readStyle: symbolStyleBy == NavaidSymbolStyleBy.File);
 			}
 
-			if (generateGeojson && emitText && vnas.HasCrcDefaults(NavaidOutputFiles.Text))
+			if (generateGeojson && emitText && crcFiles.HasCrcDefaults(NavaidOutputFiles.Text))
 			{
 				textDefaults[NavaidOutputFiles.AllClass] = CrcDefaultsReader.ReadText(navaidSettings, $"Crc.{NavaidOutputFiles.AllClass}.Text");
 			}
@@ -164,7 +164,7 @@ public static class NavaidSettingsParser
 			// a type FE-Buddy does not recognize still gets the defaults its file needs.
 			HashSet<string> excludedTokens = excludedTypes.Select(NavaidTypes.Token).ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-			foreach (string key in vnas.CrcDefaultsFiles)
+			foreach (string key in crcFiles.Files)
 			{
 				if (!NavaidOutputFiles.TryParseTypeKey(key, out string token, out CrcFeatureKind kind)
 					|| excludedTokens.Contains(token)
@@ -213,7 +213,7 @@ public static class NavaidSettingsParser
 			FanMarkerStyle = fanMarkerStyle,
 			IncludeFebCustomProperties = includeFebProperties,
 			FebProperties = febProperties,
-			Vnas = vnas,
+			CrcDefaultsFiles = crcFiles,
 			Roi = roi,
 			CoordinatePrecision = coordinatePrecision,
 			SymbolDefaults = symbolDefaults,

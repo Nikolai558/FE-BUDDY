@@ -8,11 +8,12 @@ using FeBuddy.Core.Domain.Navaids;
 namespace FeBuddy.Core.Application.Airac.Navaids;
 
 /// <summary>
-/// The files the NAVAIDs sub-service writes, by file key - the name the <c>UploadToVnas</c> and
-/// <c>CrcDefaultsFor</c> settings use (see <see cref="VnasFileChoices"/>).
+/// The files the NAVAIDs sub-service writes, by file key - the name the <c>CrcDefaultsFor</c>
+/// setting (see <see cref="CrcDefaultsFiles"/>) and the File Names tab use.
 /// </summary>
 /// <remarks>
-/// A GeoJSON file's key is its name without <c>.geojson</c>; the alias file's is its name.
+/// A GeoJSON file's key is its name without <c>.geojson</c>; the alias file's is its name. Only a
+/// GeoJSON key can go in <c>CrcDefaultsFor</c>.
 /// <para>
 /// <see cref="NavaidOutputBy.All"/> writes at most <see cref="Symbols"/> and <see cref="Text"/>.
 /// <see cref="NavaidOutputBy.Type"/> instead writes a pair per NAVAID type present, keyed by

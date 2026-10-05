@@ -18,13 +18,15 @@ Cleveland Center (ZOB).
 **BCG** - Brightness Control Group: the CRC setting (1-40) for which brightness knob controls a map
 element.
 
+**`Combined_Alias.txt`** - The one alias file a facility uploads to vNAS: every alias file the run
+made, then your facility's own. Written by the Concatenate Aliases tab.
+
 **CRC** - Consolidated Radar Client, the radar client VATSIM controllers use. It draws GeoJSON video
 maps and runs alias commands.
 
-**CRC ERAM defaults** - The styles (BCG, filters, line style, symbol, size and so on) CRC should use
-for everything in a GeoJSON file, stored in one hidden feature at the top of the file. The AIRAC
-Service writes them only into files marked for vNAS; File Conversions write them into each converted
-file unless you untick **Include**.
+**CRC ERAM defaults** - The look (BCG, filters, line style, symbol, size and so on) CRC gives a
+GeoJSON file's features, usually stored in one hidden feature at the top of the file. Set on each
+tab's CRC ERAM Defaults card.
 
 **d-TPP Metafile** - The FAA's index of every chart in the Digital Terminal Procedures Publication -
 approach plates, SIDs, STARs, airport diagrams. Published each cycle, but only 15-18 days before it
@@ -67,7 +69,7 @@ FE-Buddy's maps keep only what is inside or crossing it. Make it a little bigger
 **STAR** - Standard Terminal Arrival: a published arrival route.
 
 **Sub-service** - One kind of output the AIRAC Service makes: ARTCC Boundaries, Airports, Airways,
-Arrivals, Departures, NAVAIDs, Fixes, Procedures, Telephony, Wx Stations or vNAS Alias Upload. Each
+Arrivals, Departures, NAVAIDs, Fixes, Procedures, Telephony, Wx Stations or Concatenate Aliases. Each
 has its own tab. See the [user guide](User-Guide.md#airac-service).
 
 **Telephony** - An airline or operator's spoken call sign, such as `DELTA`. Also the sub-service
@@ -76,8 +78,5 @@ that writes `.id` commands for each operator's designator and telephony.
 **Video map** - The map background on a controller's scope: airways, airports, boundaries. In CRC,
 these are GeoJSON files.
 
-**vNAS** - VATSIM's system for ARTCC facility data. You upload FE-Buddy's files to vNAS for CRC to
-use; the files you mark for it go in an `Upload_to_vNAS` folder.
-
-**`vNAS_Alias.txt`** - The one alias file a facility uploads to vNAS: every FE-Buddy alias file you
-marked for vNAS, then your facility's own. CRC uses the last copy of a command, so yours win.
+**vNAS** - VATSIM's system for ARTCC facility data. You upload FE-Buddy's GeoJSON files and
+`Combined_Alias.txt` to vNAS for CRC to use.

@@ -200,9 +200,13 @@ public abstract class FileConversionTabViewModel : ConversionTabViewModel, ISour
 	public ObservableCollection<EramClassDefault> TextDefaults { get; }
 
 	/// <inheritdoc />
+	/// <remarks>While the card is in use (<see cref="UsesCrcDefaults"/>).</remarks>
+	public bool ShowsCrcDefaultsCard => UsesCrcDefaults;
+
+	/// <inheritdoc />
 	/// <remarks>
-	/// While the card is in use (<see cref="UsesCrcDefaults"/>). A conversion has no Upload to vNAS
-	/// card: each panel's Include box picks whether its kind gets the defaults.
+	/// While the card is in use (<see cref="UsesCrcDefaults"/>). A conversion has no choice of files:
+	/// each panel's Include box picks whether its kind gets the defaults.
 	/// </remarks>
 	public bool HasCrcDefaultsInUse => UsesCrcDefaults;
 
@@ -395,7 +399,7 @@ public abstract class FileConversionTabViewModel : ConversionTabViewModel, ISour
 
 		if (CrcRows().Any(row => row.IsRequired && row.HasMissingValues))
 		{
-			validation.Add(CrcDefaultsIncompleteMessage);
+			validation.AddArea(ServiceAreas.CrcDefaults, CrcDefaultsIncompleteMessage);
 		}
 	}
 

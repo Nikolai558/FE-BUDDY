@@ -25,7 +25,7 @@
         <Grid Grid.Row="0" Background="{StaticResource Brush.Bg.Base}">
             <StackPanel Orientation="Horizontal" Margin="16,24,28,14">
                 <Button Style="{StaticResource Button.Icon}" VerticalAlignment="Center" Margin="0,4,4,0"
-                        Content="{StaticResource Icon.Chevron.Left}" FontFamily="{StaticResource Font.Icon}" FontSize="14"
+                        Content="{StaticResource Icon.Chevron.Left}" FontFamily="{StaticResource Font.Icon}" FontSize="15.5"
                         Command="{Binding BackCommand}" ToolTip="Back" />
                 <TextBlock Text="Alias Command Guide" Style="{StaticResource Text.Display}" />
             </StackPanel>

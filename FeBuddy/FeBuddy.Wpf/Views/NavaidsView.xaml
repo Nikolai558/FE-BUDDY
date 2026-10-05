@@ -22,10 +22,7 @@
          steal the wheel and hide the lower sections. -->
     <StackPanel>
 
-            <TextBlock Text="{Binding ValidationError}" Style="{StaticResource Text.Caption}"
-                       Foreground="{StaticResource Brush.Danger}" TextWrapping="Wrap" Margin="0,0,0,12"
-                       MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
-                       Visibility="{Binding ValidationError, Converter={StaticResource StringToVis}}" />
+            <cards:AttentionCard />
 
             <!-- ============ outputs ============ -->
             <cards:OutputsCard GeojsonDescription="Writes the NAVAID GeoJSON files selected below."
@@ -53,7 +50,7 @@
             <cards:FebPropertiesCard IsEnabled="{Binding GenerateGeojson}" />
 
             <!-- ============ NAVAID types ============ -->
-            <ctl:Card Header="NAVAID Types">
+            <ctl:Card Header="NAVAID Types" bhv:FieldState.Error="{Binding FieldErrors[NavaidTypes]}">
                 <StackPanel>
                     <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
                                Text="Tick the NAVAID types you want. Unticked types are left out of the GeoJSON and the alias file." />
@@ -85,9 +82,6 @@
                 </cards:RoiOverrideCard.AdditionalContent>
             </cards:RoiOverrideCard>
 
-            <!-- ============ upload to vNAS ============ -->
-            <cards:VnasUploadCard />
-
             <!-- ============ symbol style ============ -->
             <ctl:Card Header="NAVAID Symbol Style" Visibility="{Binding ShowSymbolStyleChoice, Converter={StaticResource BoolToVis}}">
                 <StackPanel>
@@ -96,7 +90,7 @@
                     <RadioButton GroupName="NavaidSymbolStyle" Margin="0,3,0,0"
                                  Content="Style each NAVAID by its type"
                                  IsChecked="{Binding StyleByNavaidType, Mode=TwoWay}" />
-                    <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="24,2,0,4"
+                    <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="26,2,0,4"
                                MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
                                Text="VOR, VORTAC, VOR/DME and VOT draw as vor; TACAN and DME as tacan; NDB types as ndb. The CRC ERAM Defaults card then asks for no Symbols style." />
                     <RadioButton GroupName="NavaidSymbolStyle" Margin="0,3,0,0"
@@ -113,7 +107,11 @@
                 </StackPanel>
             </ctl:Card>
 
-            <!-- ============ CRC ERAM defaults ============ -->
-            <cards:CrcDefaultsCard SymbolsTitle="NAVAIDs — Symbols" TextTitle="NAVAIDs — Text" />
+            <!-- ============ CRC ERAM defaults: which files get them, and their values ============ -->
+            <cards:CrcDefaultsCard SymbolsTitle="NAVAIDs — Symbols" TextTitle="NAVAIDs — Text">
+                <cards:CrcDefaultsCard.Choice>
+                    <cards:CrcFileChoice />
+                </cards:CrcDefaultsCard.Choice>
+            </cards:CrcDefaultsCard>
     </StackPanel>
 </UserControl>

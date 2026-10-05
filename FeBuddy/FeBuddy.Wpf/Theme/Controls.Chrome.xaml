@@ -115,7 +115,7 @@
         <Setter Property="VerticalOffset" Value="9" />
         <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Secondary}" />
         <Setter Property="FontFamily" Value="{DynamicResource Font.Body}" />
-        <Setter Property="FontSize" Value="12.5" />
+        <Setter Property="FontSize" Value="14" />
         <!-- Narrow enough to read as a note. A tool-tip that shows something wide - a folder
              tree - sets its own: <ToolTip MaxWidth="1000">. -->
         <Setter Property="MaxWidth" Value="320" />

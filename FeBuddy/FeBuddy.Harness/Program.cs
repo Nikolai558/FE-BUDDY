@@ -44,7 +44,7 @@ internal static class Program
 			// ConsoleReport.PrintAirwayServiceResult("Airways: HighLow GeoJSON + Alias", geojsonResult);
 
 			// var aliasOnlyResult = AirwayAliasRunner.Run(allNasrCsvData);
-			// ConsoleReport.PrintAirwayServiceResult("Airways: Alias-only (OutputBy = None)", aliasOnlyResult);
+			// ConsoleReport.PrintAirwayServiceResult("Airways: Alias-only (GenerateGeojson = N)", aliasOnlyResult);
 
 			// AirportServiceResult airportResult = AirportRunner.Run(allNasrCsvData);
 			// ConsoleReport.PrintAirportServiceResult("Airports: GeoJSON + Alias", airportResult);

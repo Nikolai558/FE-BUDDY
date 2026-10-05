@@ -17,7 +17,7 @@
 
     The File Conversions choose each kind's defaults on the panel itself: they turn on ShowInclude,
     which adds an Include box to the title; unticked, the rows grey out but keep their values. The
-    AIRAC sub-services choose on the Upload to vNAS card instead and leave it off.
+    AIRAC sub-services choose files at the top of the card instead (CrcFileChoice) and leave it off.
 
     With several classes, each block is a Panel.Block box of its own inside the panel's Panel.Inset,
     so thirteen NAVAID types read as thirteen boxes rather than one run of fields.
@@ -117,7 +117,7 @@
                                             Visibility="{Binding ShowSize, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}">
                         <ComboBox ItemsSource="{Binding SizeOptions}" SelectedItem="{Binding Size}"
                                   bhv:FieldState.Error="{Binding SizeError}"
-                                  ToolTip="Size: an integer 1–4." />
+                                  ToolTip="Size: 1–4 for symbols, 0–5 for text." />
                     </HeaderedContentControl>
                     <HeaderedContentControl Style="{StaticResource Field}" Header="Opaque"
                                             Visibility="{Binding ShowTextOptions, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}">

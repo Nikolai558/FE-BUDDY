@@ -24,7 +24,8 @@ namespace FeBuddy.Wpf.Controls;
 /// </para>
 /// <para>
 /// Mouse: left-drag pans (right- and middle-drag always pan too), the wheel zooms about the
-/// pointer, a double-click zooms in. <b>Shift + left-drag</b> draws an ROI box at any time and
+/// pointer (25% a notch, or 1% with Shift held), a double-click zooms in. The zoom is reported as
+/// <see cref="ZoomPercent"/>, against the home view. <b>Shift + left-drag</b> draws an ROI box at any time and
 /// raises <see cref="RoiQuickDrawn"/> on release. With <see cref="RoiEditing"/> on, a left-drag
 /// draws a new box, drags the box's handles to resize it, or drags inside it to move it.
 /// Keys: arrows pan, + and - zoom.
@@ -56,6 +57,12 @@ public sealed class MapCanvas : FrameworkElement
 
 	/// <summary>Zoomed in at least this far, 0°, 0° is marked (see <c>DrawNullIsland</c>).</summary>
 	private const double NullIslandMinZoom = 8.0;
+
+	/// <summary>How much one wheel notch zooms, and how much with Shift held.</summary>
+	private const double WheelStep = 1.25, FineWheelStep = 1.01;
+
+	/// <summary>What <see cref="ResetView"/> frames, and Home shows when no home view is saved.</summary>
+	private static readonly GeoBounds ContiguousUs = new(new GeoPoint(24.0, -125.0), new GeoPoint(50.0, -66.0));
 
 	// --- viewport ------------------------------------------------------------
 	private double _scale = 1_000;   // pixels per world unit
@@ -164,6 +171,17 @@ public sealed class MapCanvas : FrameworkElement
 	/// <summary>Identifies the <see cref="DensityHint"/> dependency property.</summary>
 	public static readonly DependencyProperty DensityHintProperty = DensityHintPropertyKey.DependencyProperty;
 
+	/// <summary>Identifies the <see cref="HomeZoom"/> dependency property.</summary>
+	public static readonly DependencyProperty HomeZoomProperty = DependencyProperty.Register(
+		nameof(HomeZoom), typeof(double), typeof(MapCanvas),
+		new PropertyMetadata(double.NaN, (d, _) => ((MapCanvas)d).UpdateZoomPercent()));
+
+	private static readonly DependencyPropertyKey ZoomPercentPropertyKey = DependencyProperty.RegisterReadOnly(
+		nameof(ZoomPercent), typeof(double), typeof(MapCanvas), new PropertyMetadata(100.0));
+
+	/// <summary>Identifies the <see cref="ZoomPercent"/> dependency property.</summary>
+	public static readonly DependencyProperty ZoomPercentProperty = ZoomPercentPropertyKey.DependencyProperty;
+
 	/// <summary>The background reference layers (US states, coastlines), drawn under everything.</summary>
 	public IEnumerable<MapLayer>? BaseLayers
 	{
@@ -232,6 +250,23 @@ public sealed class MapCanvas : FrameworkElement
 	/// </summary>
 	public string DensityHint => (string)GetValue(DensityHintProperty);
 
+	/// <summary>
+	/// The zoom level that is 100% in <see cref="ZoomPercent"/>: the home view's.
+	/// <see cref="double.NaN"/> when no home view is saved, for the zoom that frames the contiguous
+	/// US at the map's size, which is where Home goes then.
+	/// </summary>
+	public double HomeZoom
+	{
+		get => (double)GetValue(HomeZoomProperty);
+		set => SetValue(HomeZoomProperty, value);
+	}
+
+	/// <summary>
+	/// How close the map is zoomed, as a percentage of the home view's zoom: at 200% everything is
+	/// drawn twice as large. Exactly 100 after Home.
+	/// </summary>
+	public double ZoomPercent => (double)GetValue(ZoomPercentProperty);
+
 	private double Zoom => WebMercator.ScaleToZoom(_scale);
 
 	private double MinScale => Math.Max(WebMercator.TileSize, ActualHeight * 0.9);
@@ -241,8 +276,7 @@ public sealed class MapCanvas : FrameworkElement
 	// ============================ public API ===============================
 
 	/// <summary>Frames the contiguous US.</summary>
-	public void ResetView()
-		=> FrameBounds(new GeoBounds(new GeoPoint(24.0, -125.0), new GeoPoint(50.0, -66.0)));
+	public void ResetView() => FrameBounds(ContiguousUs);
 
 	/// <summary>Zooms and pans so <paramref name="bounds"/> fills the view with a margin.</summary>
 	/// <param name="bounds">The area to show.</param>
@@ -286,6 +320,21 @@ public sealed class MapCanvas : FrameworkElement
 	/// <summary>Zooms about the centre of the view.</summary>
 	/// <param name="factor">Above 1 zooms in, below 1 zooms out.</param>
 	public void ZoomBy(double factor) => ZoomAbout(new Point(ActualWidth / 2.0, ActualHeight / 2.0), factor);
+
+	/// <summary>
+	/// Zooms about the centre of the view to <paramref name="percent"/> of the home view's zoom
+	/// (<see cref="ZoomPercent"/>), within the map's limits. Anything not above 0 is ignored.
+	/// </summary>
+	/// <param name="percent">e.g. 250 to draw everything two and a half times as large as the home view.</param>
+	public void ZoomToPercent(double percent)
+	{
+		if (!double.IsFinite(percent) || percent <= 0 || !_framed || ReferenceScale() is not { } reference)
+		{
+			return;
+		}
+
+		ZoomBy(reference * percent / 100.0 / _scale);
+	}
 
 	/// <summary>Centres the map on <paramref name="home"/> at its zoom level.</summary>
 	/// <param name="home">The point and zoom to show.</param>
@@ -331,15 +380,46 @@ public sealed class MapCanvas : FrameworkElement
 			return;
 		}
 
-		double worldW = Math.Max(x1 - x0, 1e-7);
-		double worldH = Math.Max(y1 - y0, 1e-7);
-
 		_centerX = (x0 + x1) / 2.0;
 		_centerY = (y0 + y1) / 2.0;
-		_scale = Math.Min(Math.Min(ActualWidth / worldW, ActualHeight / worldH) * 0.88, WebMercator.ZoomToScale(12));
+		_scale = FitScale(x1 - x0, y1 - y0);
 		_framed = true;
 		ClampView();
 		InvalidateMap();
+	}
+
+	/// <summary>The scale that fits a world-unit area in view with a margin, no closer than zoom 12.</summary>
+	private double FitScale(double worldWidth, double worldHeight) => Math.Min(
+		Math.Min(ActualWidth / Math.Max(worldWidth, 1e-7), ActualHeight / Math.Max(worldHeight, 1e-7)) * 0.88,
+		WebMercator.ZoomToScale(12));
+
+	/// <summary>
+	/// The scale <see cref="ZoomPercent"/> calls 100%: where Home goes, kept within the map's limits
+	/// as Home's own view is. <see langword="null"/> before the map has a size to fit the US into.
+	/// </summary>
+	private double? ReferenceScale()
+	{
+		if (!double.IsNaN(HomeZoom))
+		{
+			return Math.Clamp(WebMercator.ZoomToScale(HomeZoom), MinScale, MaxScale);
+		}
+
+		if (ActualWidth < 1 || ActualHeight < 1)
+		{
+			return null;
+		}
+
+		double width = WebMercator.LonToWorldX(ContiguousUs.East) - WebMercator.LonToWorldX(ContiguousUs.West);
+		double height = WebMercator.LatToWorldY(ContiguousUs.South) - WebMercator.LatToWorldY(ContiguousUs.North);
+		return Math.Clamp(FitScale(width, height), MinScale, MaxScale);
+	}
+
+	private void UpdateZoomPercent()
+	{
+		if (_framed && ReferenceScale() is { } reference)
+		{
+			SetValue(ZoomPercentPropertyKey, _scale / reference * 100.0);
+		}
 	}
 
 	// ========================== visual plumbing ============================
@@ -623,7 +703,8 @@ public sealed class MapCanvas : FrameworkElement
 	protected override void OnMouseWheel(MouseWheelEventArgs e)
 	{
 		base.OnMouseWheel(e);
-		ZoomAbout(e.GetPosition(this), Math.Pow(1.25, e.Delta / 120.0));
+		double step = Keyboard.Modifiers.HasFlag(ModifierKeys.Shift) ? FineWheelStep : WheelStep;
+		ZoomAbout(e.GetPosition(this), Math.Pow(step, e.Delta / 120.0));
 		e.Handled = true;
 	}
 
@@ -777,6 +858,9 @@ public sealed class MapCanvas : FrameworkElement
 		{
 			return;
 		}
+
+		// Every change of view ends here, so the zoom read-out follows it.
+		UpdateZoomPercent();
 
 		List<string> heldBack = [];
 		LabelPlacer labels = new();
@@ -1030,7 +1114,7 @@ public sealed class MapCanvas : FrameworkElement
 			FontStyles.Normal, FontWeights.Medium, FontStretches.Normal);
 
 		FormattedText formatted = new(
-			text, CultureInfo.InvariantCulture, FlowDirection.LeftToRight, _labelFace, 11, brush,
+			text, CultureInfo.InvariantCulture, FlowDirection.LeftToRight, _labelFace, 12, brush,
 			VisualTreeHelper.GetDpi(this).PixelsPerDip)
 		{
 			TextAlignment = TextAlignment.Left,

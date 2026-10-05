@@ -4,7 +4,8 @@ namespace FeBuddy.Core.Infrastructure.GitHub;
 
 /// <summary>
 /// Turns the address of a file on GitHub - as copied from the browser, or its "Raw" link - into the
-/// GitHub API address that downloads it, so a private repository's file can be read with a token.
+/// GitHub API address that downloads it, so a private repository's file can be read with a token;
+/// and into the one form FE-Buddy shows, the Raw link (<see cref="ToRawLink"/>).
 /// </summary>
 /// <remarks>
 /// <para>
@@ -75,6 +76,36 @@ public static class GitHubFileUrl
 		}
 
 		return null;
+	}
+
+	/// <summary>
+	/// The file's Raw link - <c>https://github.com/{owner}/{repo}/raw/refs/heads/{branch}/{path}</c>,
+	/// the address GitHub's own Raw button gives (<c>refs/tags/</c> for a tag) - from any address of a
+	/// file on GitHub. A file's page (<c>/blob/</c>) or a <c>raw.githubusercontent.com</c> address
+	/// becomes the Raw link; anything after the path (<c>?plain=1</c>, <c>#L10</c>) is left off.
+	/// </summary>
+	/// <param name="url">A file's address on GitHub.</param>
+	/// <returns>
+	/// The Raw link, or <see langword="null"/> when <paramref name="url"/> is not a file on GitHub.
+	/// A plain branch name is taken as a branch, as GitHub's own links do.
+	/// </returns>
+	public static Uri? ToRawLink(Uri url)
+	{
+		ArgumentNullException.ThrowIfNull(url);
+
+		if (ToContentsApi(url) is null)
+		{
+			return null;
+		}
+
+		string[] parts = url.AbsolutePath.Split('/', StringSplitOptions.RemoveEmptyEntries);
+		string[] rest = url.Host.Equals(RawHost, StringComparison.OrdinalIgnoreCase) ? parts[2..] : parts[3..];
+
+		bool isRefsForm = rest[0].Equals("refs", StringComparison.OrdinalIgnoreCase)
+			&& (rest[1].Equals("heads", StringComparison.OrdinalIgnoreCase) || rest[1].Equals("tags", StringComparison.OrdinalIgnoreCase));
+		string[] fromRef = isRefsForm ? [rest[1].ToLowerInvariant(), .. rest[2..]] : ["heads", .. rest];
+
+		return new Uri($"https://{WebHost}/{parts[0]}/{parts[1]}/raw/refs/{string.Join('/', fromRef)}");
 	}
 
 	/// <summary>

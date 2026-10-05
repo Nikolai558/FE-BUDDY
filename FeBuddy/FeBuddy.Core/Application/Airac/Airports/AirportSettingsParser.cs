@@ -34,13 +34,6 @@ public static class AirportSettingsParser
 			[nameof(AirportCrcClass.Runways)] = [CrcFeatureKind.Line],
 		};
 
-	/// <summary>Properties that used to be offered, and why they were withdrawn.</summary>
-	private static readonly IReadOnlyDictionary<string, string> RetiredFebProperties =
-		new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-		{
-			["lat"] = "every Feature's geometry already carries its coordinates.",
-			["lon"] = "every Feature's geometry already carries its coordinates.",
-		};
 
 	/// <summary>
 	/// Parses and validates <paramref name="airportSettings"/> into a typed
@@ -62,13 +55,13 @@ public static class AirportSettingsParser
 		bool generateAliasFile = SettingsValueReader.YesNo(airportSettings, "GenerateAliasFile", defaultValue: true);
 
 		// Selecting the sub-service and then turning off both of its outputs asks for a run
-		// that writes nothing. The GUI blocks this at the tab; the parser is the backstop for
-		// the harness and for a hand-edited UserConfig.
+		// that writes nothing. The GUI blocks this on the General tab; the parser is the backstop
+		// for the harness and for a hand-edited UserConfig.
 		if (!generateGeojson && !generateAliasFile)
 		{
 			throw new ArgumentException(
 				"GenerateGeojson and GenerateAliasFile are both \"N\", so the Airports sub-service would produce nothing. " +
-				"Turn one back on, or deselect Airports.");
+				"Turn one back on, or leave Airports out of the run.");
 		}
 
 		bool emitSymbols = SettingsValueReader.YesNo(airportSettings, "EmitAirportSymbols", defaultValue: true);
@@ -83,15 +76,14 @@ public static class AirportSettingsParser
 		}
 
 		(bool includeFebProperties, IReadOnlyList<AirportFebProperty> febProperties) =
-			SubServiceSettingsReader.ReadFebProperties<AirportFebProperty>(
-				airportSettings, example: "faaId,icaoId,elev", RetiredFebProperties);
+			SubServiceSettingsReader.ReadFebProperties<AirportFebProperty>(airportSettings, example: "faaId,icaoId,elev");
 
 		RegionOfInterest? roi = SubServiceSettingsReader.ReadRoi(airportSettings);
 		int coordinatePrecision = SubServiceSettingsReader.ReadCoordinatePrecision(airportSettings);
 
-		VnasFileChoices vnas = SubServiceSettingsReader.ReadVnasFiles(
-			airportSettings, AirportOutputFiles.Alias, AirportOutputFiles.IsGeojsonKey,
-			example: $"{AirportOutputFiles.AirportsSymbols}, {AirportOutputFiles.Alias}");
+		CrcDefaultsFiles crcFiles = SubServiceSettingsReader.ReadCrcDefaultsFiles(
+			airportSettings, AirportOutputFiles.IsGeojsonKey,
+			example: $"{AirportOutputFiles.AirportsSymbols}, {AirportOutputFiles.RunwaysLines}");
 
 		// A file's defaults are needed only when it gets CRC-ERAM defaults AND is actually
 		// written; only then are its values required.
@@ -99,19 +91,19 @@ public static class AirportSettingsParser
 		Dictionary<AirportCrcClass, CrcSymbolDefaults> symbolDefaults = [];
 		Dictionary<AirportCrcClass, CrcTextDefaults> textDefaults = [];
 
-		if (generateGeojson && emitSymbols && vnas.HasCrcDefaults(AirportOutputFiles.AirportsSymbols))
+		if (generateGeojson && emitSymbols && crcFiles.HasCrcDefaults(AirportOutputFiles.AirportsSymbols))
 		{
 			symbolDefaults[AirportCrcClass.Airports] =
 				CrcDefaultsReader.ReadSymbol(airportSettings, $"Crc.{AirportCrcClass.Airports}.Symbol");
 		}
 
-		if (generateGeojson && emitText && vnas.HasCrcDefaults(AirportOutputFiles.AirportsText))
+		if (generateGeojson && emitText && crcFiles.HasCrcDefaults(AirportOutputFiles.AirportsText))
 		{
 			textDefaults[AirportCrcClass.Airports] =
 				CrcDefaultsReader.ReadText(airportSettings, $"Crc.{AirportCrcClass.Airports}.Text");
 		}
 
-		if (generateGeojson && emitRunways && vnas.HasCrcDefaults(AirportOutputFiles.RunwaysLines))
+		if (generateGeojson && emitRunways && crcFiles.HasCrcDefaults(AirportOutputFiles.RunwaysLines))
 		{
 			lineDefaults[AirportCrcClass.Runways] =
 				CrcDefaultsReader.ReadLine(airportSettings, $"Crc.{AirportCrcClass.Runways}.Line");
@@ -131,7 +123,7 @@ public static class AirportSettingsParser
 			GenerateAliasFile = generateAliasFile,
 			IncludeFebCustomProperties = includeFebProperties,
 			FebProperties = febProperties,
-			Vnas = vnas,
+			CrcDefaultsFiles = crcFiles,
 			Roi = roi,
 			CoordinatePrecision = coordinatePrecision,
 			LineDefaults = lineDefaults,

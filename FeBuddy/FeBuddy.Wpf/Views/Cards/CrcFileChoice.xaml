@@ -1,0 +1,60 @@
+<!--
+    CrcFileChoice  -  the top of an AIRAC sub-service's CRC ERAM Defaults card: which of the GeoJSON
+    files the tab's settings write get CRC-ERAM defaults - none (the default), every one, or the
+    ones ticked, a row per file group. The panels below it then show the values those files need.
+    Binds to the tab's view model through ICrcDefaultsChoice.
+
+    The File Conversions choose on the panels themselves (CrcDefaultsCard.ShowInclude) and never
+    show this.
+
+    Usage:
+        <cards:CrcDefaultsCard LinesTitle="Runways — Lines">
+            <cards:CrcDefaultsCard.Choice>
+                <cards:CrcFileChoice />
+            </cards:CrcDefaultsCard.Choice>
+        </cards:CrcDefaultsCard>
+-->
+<UserControl x:Class="FeBuddy.Wpf.Views.Cards.CrcFileChoice"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:m="clr-namespace:FeBuddy.Wpf.ViewModels.Models"
+             xmlns:tabs="clr-namespace:FeBuddy.Wpf.ViewModels.ServiceTabs"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance tabs:ICrcDefaultsChoice}"
+             d:DesignWidth="820">
+    <StackPanel>
+        <RadioButton GroupName="CrcDefaultsScope" Content="No CRC-ERAM defaults" Margin="0,3"
+                     IsChecked="{Binding CrcDefaultsScope, Converter={StaticResource EnumToBool}, ConverterParameter=None}" />
+        <RadioButton GroupName="CrcDefaultsScope" Content="Every GeoJSON file this tab writes" Margin="0,3"
+                     IsChecked="{Binding CrcDefaultsScope, Converter={StaticResource EnumToBool}, ConverterParameter=AllGeojsonFiles}" />
+        <RadioButton GroupName="CrcDefaultsScope" Content="Specific files" Margin="0,3"
+                     IsChecked="{Binding CrcDefaultsScope, Converter={StaticResource EnumToBool}, ConverterParameter=SpecificFiles}" />
+
+        <!-- a row per file group: its label on the left, then a box per file -->
+        <ItemsControl Margin="26,4,0,0" ItemsSource="{Binding CrcFileRows}"
+                      Visibility="{Binding IsCrcDefaultsSpecific, Converter={StaticResource BoolToVis}}">
+            <ItemsControl.ItemTemplate>
+                <DataTemplate DataType="{x:Type m:CrcFileRow}">
+                    <DockPanel Margin="0,2">
+                        <TextBlock DockPanel.Dock="Left" Width="120" Text="{Binding Label}"
+                                   Style="{StaticResource Text.FieldLabel}" VerticalAlignment="Center" />
+                        <ItemsControl ItemsSource="{Binding Files}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="{x:Type m:CrcFileToggle}">
+                                    <CheckBox Content="{Binding Label}" IsChecked="{Binding HasCrcDefaults}" Margin="0,3,14,3" />
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </DockPanel>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+    </StackPanel>
+</UserControl>

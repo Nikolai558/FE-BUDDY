@@ -10,8 +10,7 @@ namespace FeBuddy.Core.Infrastructure.Dtpp;
 
 /// <summary>
 /// Downloads and places one AIRAC cycle's FAA d-TPP Metafile (<see cref="DtppFiles.FileName"/>)
-/// into that cycle's cache folder, alongside its NASR CSVs and (if downloaded) its Wx Stations
-/// file.
+/// into that cycle's cache folder, alongside its NASR CSVs.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -23,9 +22,8 @@ namespace FeBuddy.Core.Infrastructure.Dtpp;
 /// <para>
 /// A cycle folder that already has <see cref="DtppFiles.FileName"/> is left alone -
 /// <see cref="EnsureCycleHasMetafileAsync"/> returns <see cref="DtppDownloadOutcome.AlreadyPresent"/>
-/// without touching the network - so a folder from before this feature existed, or one whose
-/// earlier attempt failed, is filled in (or retried) at the next launch, while a folder that
-/// already succeeded is never re-downloaded.
+/// without touching the network - so a folder whose earlier attempt failed is retried at the next
+/// launch, while a folder that already succeeded is never re-downloaded.
 /// </para>
 /// <para>
 /// The FAA publishes a cycle's metafile only about 15-18 days before its effective date (see

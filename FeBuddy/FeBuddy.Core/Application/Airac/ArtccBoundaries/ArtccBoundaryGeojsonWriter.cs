@@ -16,8 +16,8 @@ namespace FeBuddy.Core.Application.Airac.ArtccBoundaries;
 /// <remarks>
 /// Each file is named <c>ARTCC-Boundary_&lt;group&gt;_Lines.geojson</c> (its name without the
 /// extension is its file key, see <see cref="ArtccBoundaryOutputFiles"/>) and goes in the GeoJSON
-/// folder, or the vNAS one when the user marked it for vNAS. Only a file chosen for CRC-ERAM
-/// defaults gets an isDefaults Feature.
+/// folder. Only a file chosen for CRC-ERAM defaults (<c>CrcDefaultsFor</c>) gets an isDefaults
+/// Feature.
 /// </remarks>
 public static class ArtccBoundaryGeojsonWriter
 {
@@ -106,7 +106,7 @@ public static class ArtccBoundaryGeojsonWriter
 	{
 		FeatureCollection collection = [];
 
-		if (settings.Vnas.HasCrcDefaults(fileKey))
+		if (settings.CrcDefaultsFiles.HasCrcDefaults(fileKey))
 		{
 			collection.Add(CrcFeatureFactory.CreateDefaultsFeature(settings.LineDefaults[className]));
 		}
@@ -128,7 +128,7 @@ public static class ArtccBoundaryGeojsonWriter
 			renderedCount++;
 		}
 
-		string directory = AiracOutputPaths.FileDirectory(settings.OutputDirectory, isGeojson: true, settings.Vnas.IsUploaded(fileKey));
+		string directory = AiracOutputPaths.GeojsonDirectory(settings.OutputDirectory);
 		files.Write(collection, renderedCount, directory, settings.FileNames.FileName(fileKey));
 	}
 

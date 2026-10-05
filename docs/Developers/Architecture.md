@@ -25,12 +25,18 @@ FeBuddy.Wpf (FE-BUDDY.exe)   FeBuddy.Harness   FeBuddy.UnitTests
 runs `LaunchSequence.RunAsync` off the UI thread. A step that fails is logged and only disables what
 needs it; launch never stops.
 
-1. Clear `%TEMP%\FE-Buddy`, then read `UserConfig.json`.
+1. Clear `%TEMP%\FE-Buddy`, read `UserConfig.json` and, at the first launch, save the update
+   channel (`UpdateChannelSetting.SaveDefaultIfUnset`;
+   [Versioning](VERSIONING.md#pre-releases-and-channels)).
 2. Look for FE-Buddy 2.x's `FEBUDDY_GITHUB_TOKEN` variable - its name only, never its value - and,
    if it is set, show a one-time notice (`LegacyGitHubTokenNotice`).
-3. Delete FE-Buddy 2.8.x's dead Desktop and Start menu shortcuts (`LegacySquirrelShortcuts`).
-4. Get the UTC time and check the internet connection.
-5. In parallel: the version check, the AIRAC data (below) and News.
+3. Uninstall a copy of FE-Buddy 2.x that Squirrel installed in `%LOCALAPPDATA%\FE-BUDDY`, by running
+   its own `Update.exe --uninstall`, or remove its Installed apps entry if `Update.exe` is gone
+   (`LegacySquirrelInstall`). It never runs from inside that folder, and a failure is tried again at
+   the next launch.
+4. Delete FE-Buddy 2.x's dead Desktop and Start menu shortcuts (`LegacySquirrelShortcuts`).
+5. Get the UTC time and check the internet connection.
+6. In parallel: the version check, the AIRAC data (below) and News.
 
 Results land on `AppEnvironment`, and the AIRAC cache raises `StateChanged` as each cycle moves on.
 The view-models listen, so the window fills in as launch goes: the status narrates the downloads,
@@ -78,8 +84,9 @@ Asking for a cycle while it parses waits for that parse rather than starting ano
   with a warning.
 - **The d-TPP Metafile** is keyed by cycle, so each cycle folder gets its own
   (`DtppDownloader.EnsureCycleHasMetafileAsync`). The FAA posts it only 15-18 days before the cycle
-  starts; a 404 is `NotYetPublished`, retried at the next launch. `AiracCycleDataCache.GetDtppAsync`
-  returns `null` when there is no copy, and Procedures treats that as an advisory, not an error.
+  starts; a 404 is `NotYetPublished`, retried at the next launch, and the General tab shows the
+  cycle as *partial*. `AiracCycleDataCache.GetDtppAsync` returns `null` when there is no copy, and
+  Procedures treats that as an advisory, not an error.
 
 ## A run
 
@@ -92,16 +99,16 @@ Preview Settings ▸ Run AIRAC Service
         │  AiracServiceSettings
         ▼
 AiracService.RunAsync
-  the cycle's parsed data from the cache; the shared data the selected sub-services need
+  the cycle's parsed data from the cache; the shared data the included sub-services need
   delete AIRAC_<cycle> first, if asked
-  for each selected sub-service, OutputDirectory = AIRAC_<cycle>:
+  for each included sub-service, OutputDirectory = AIRAC_<cycle>:
       XxxService.Run(data, block, fileNames)
         1. XxxSettingsParser.Parse    block → typed settings + warnings
         2. XxxBuilder                 FAA rows → domain objects
         3. XxxGeojsonWriter           → .geojson files
         4. XxxAliasWriter             → alias .txt
   DuplicateAliasReport.Write          → Duplicate_Alias_Commands.txt
-  VnasAliasFileWriter.Write           → Upload_to_vNAS\vNAS_Alias.txt
+  CombinedAliasFileWriter.Write       → Aliases\Combined_Alias.txt
         │  AiracServiceResult
         ▼
 Review tab: each tab's DescribeRunResult(result)
@@ -118,7 +125,7 @@ Not every sub-service has all four steps:
 | Wx Stations | aviationweather.gov | Symbols and Text | no |
 | Procedures | d-TPP Metafile, joined to NASR | no - writes `Procedure_Changes.md` and `Procedures.json` | `Faa_Chart_Recall.txt`, for every airport in the metafile |
 | Telephony | FAA telephony pages (and virtual airlines) | no | `Telephony.txt` |
-| vNAS Alias Upload | the user's custom alias files | no | merges into `vNAS_Alias.txt` |
+| Concatenate Aliases | the run's alias files and the user's custom alias files | no | combines them into `Combined_Alias.txt` |
 
 - **The settings block is the contract.** Every tab, and the harness, hands Core a flat
   `Dictionary<string, string>` ([Settings reference](Settings-Reference.md)). Core never sees a
@@ -137,18 +144,21 @@ Not every sub-service has all four steps:
   alphabetically, then `TELEPHONY`, then `OTHER` (airways, NAVAIDs, and anything with no known
   ARTCC). It is written whenever an
   alias file was written, even with no duplicates, so an old report never misleads.
-- **`vNAS_Alias.txt`** is written last, whenever an alias file is marked for vNAS or vNAS Alias
-  Upload is selected. vNAS takes one alias file per facility, so `VnasAliasFileWriter` writes:
+- **Every file is ready for vNAS**, so nothing is marked for upload: GeoJSON goes in `Geojson`,
+  alias files in `Aliases`.
+- **`Combined_Alias.txt`** is written last, into `Aliases`, while Concatenate Aliases is in the run
+  and combining (`CombineAliasFiles`, on by default). vNAS takes one alias file per facility, so
+  `CombinedAliasFileWriter` writes:
   1. the first `.FeUseOnly` line any custom file has;
   2. a start line, `; ===== FE-Buddy aliases (AIRAC <cycle>) start here. …`;
-  3. each marked FE-Buddy alias file under `; ----- <name> -----`;
+  3. each alias file the run wrote, under `; ----- <name> -----`;
   4. an end line, `; ===== End of FE-Buddy aliases. …`;
   5. each custom alias file, in order.
 
   CRC uses the last copy of a command, so the facility's own commands win. A custom file holding
   FE-Buddy's section (last cycle's upload, reused) loses everything from the start line to the end
-  line. An unreadable custom file is left out with an advisory. With nothing to merge, no file is
-  written and an old one is deleted, so it can't be uploaded by mistake.
+  line. An unreadable custom file is left out with an advisory. When no combined file is written but
+  the run rewrote alias files, an old one is deleted, so it can't be uploaded by mistake.
 - **File conversions** run one service each (`DatToGeojsonService`, `SctToGeojsonService`,
   `EramToGeojsonService`), one source file at a time through `ConversionFiles`: an unreadable file
   fails alone. Each writes into its own folder beside the `AIRAC_<cycle>` folders
@@ -157,7 +167,7 @@ Not every sub-service has all four steps:
 ## Settings
 
 - **`UserConfig.json`** is one JSON tree, read at launch and addressed by dotted paths
-  (`Services.AiracService.Geojson.Airways.OutputBy`).
+  (`Services.AiracService.Airways.OutputBy`).
 - **Each tab saves only its own node** (`UserConfigFile.Save(nodePath)`). Before it does, the node's
   old state goes to `UserConfig.previous.json` for **Undo last save**.
 - **An import replaces the whole file** (`UserConfigFile.ReplaceAll`), keeping the old one as
@@ -174,8 +184,9 @@ Not every sub-service has all four steps:
   each feature. Every value is checked first (`CrcPropertyValidator`), so FE-Buddy never writes a
   value CRC can't draw. See
   [CRC GeoJSON concepts](https://github.com/KCSanders7070/CRC_GeoJson_Concepts/blob/main/CRC_Geojsons.md).
-- **In the AIRAC Service, defaults only go on vNAS files**, since CRC reads its maps from vNAS
-  (`VnasFileChoices`). A file conversion writes them when its panel's **Include** is ticked.
+- **In the AIRAC Service, the top of each tab's CRC ERAM Defaults card picks the files** that get
+  defaults - none (the default), every GeoJSON file, or specific files - sent as `CrcDefaultsFor`.
+  A file conversion writes them when its panel's **Include** is ticked.
 - **Defaults are never guessed.** An empty value a chosen file needs is a validation error.
 - **A symbol's style can live on each feature.** `CrcSymbolDefaults.Style` may be `null`: NAVAIDs'
   merged Symbols file styled by type gives each feature its own style (`NavaidTypes.SymbolStyleFor`).
@@ -209,6 +220,10 @@ The FAA's data has quirks. Each rule lives in one class.
 - **Antimeridian** (`AntimeridianSplitter`): a line crossing ±180° is split in two.
 - **Shared segments** (`LineStringMerger`): paths that share segments are merged into the fewest,
   longest lines that draw each segment once - smaller files, and dashes stay dashed.
+- **Symbol groups** (`SymbolFeatureMerger`, run by `GeojsonFileSet` on every file): symbols whose
+  properties match exactly (`AttributesSignature`) become one MultiPoint Feature in the place of the
+  first, a repeated point drawn once. Labels and isDefaults Features are never grouped. Only ERAM's
+  Raw layout opts out, so it stays one Feature per element.
 - **Procedure names** (`DepartureNaming`, `ArrivalNaming`): the FAA computer code without its version
   digit, matched against `AMENDMENT_NO` rather than cut at the first digit (`DOTSS2.DOTSS` → `DOTSS`,
   `1U71.LUNDI` → `1U7`). A STAR's code reads `TRANSITION.PROCEDURE`, so `AALAN.BLAID2` → `BLAID`. With
@@ -230,9 +245,9 @@ The FAA's data has quirks. Each rule lives in one class.
   ring) and after a point described "POINT OF BEGINNING" (ZOA's four UTA rings in one run). A ring is
   closed back to its first point. A location with no `ARB_SEG` rows - the Canadian, foreign and
   CERAP entries - draws nothing.
-- **Fix use and chart names** (`FixTokens`): `FIX_USE_CODE` maps to a name (`WP` → `WYPNT`); `CHARTS`
-  splits on commas, each name collapsing punctuation and spaces to `-` (`ENROUTE LOW` →
-  `ENROUTE-LOW`); a fix on no chart is `NO-CHART`.
+- **Fix use and chart names** (`FixUses`, `FixCharts`): `FIX_USE_CODE` maps to a name (`WP` →
+  `WYPNT`); `CHARTS` splits on commas, each name collapsing punctuation and spaces to `-`
+  (`ENROUTE LOW` → `ENROUTE-LOW`); a fix on no chart is `NO-CHART`.
 - **Wx stations** (`WxStationBuilder`): a US or US-territory station with an ICAO ID that reports
   METAR and has real coordinates (the feed's `-99.99` placeholder is left out).
 - **Alias text uses `\t`, `\n` and `\s`**, never real tabs, newlines or spaces: CRC splits an alias on
@@ -275,13 +290,13 @@ Argued out once; don't re-open them without a reason.
 - **One library, three layers, no DI.** Folders, not projects. A swappable piece takes a delegate or
   parameter where a test needs it.
 - **The settings block is a plain dictionary**, read by the same parsers whoever builds it. Unknown
-  keys warn rather than fail, so retired keys fade out; no fallbacks are kept for renamed settings.
+  keys warn rather than fail. No fallbacks are kept for renamed settings.
 - **Nothing is shown that isn't built.** No screen shows sample data.
 - **CRC defaults are never guessed.**
 - **Developer mode is a code constant** (`App.DevModeEnabled`), never a user setting. Pretty
   printing is a user setting, forced on in developer mode.
 - **"Unsaved" means different from the last save**, everywhere.
-- **The Review tab is the one place** for a run's results, warnings and files.
+- **The Review tab is the one place** for a run's results, warnings and output folder.
 - **Every sub-service is a tab of the AIRAC Service**, and every file conversion a tab of File
   Conversions, built from the same shared cards where they apply.
 - **Output folders are laid out in one place** (`ServiceOutputPaths`), so AIRAC output and

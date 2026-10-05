@@ -20,10 +20,7 @@
          steal the wheel and hide the lower sections. -->
     <StackPanel>
 
-            <TextBlock Text="{Binding ValidationError}" Style="{StaticResource Text.Caption}"
-                       Foreground="{StaticResource Brush.Danger}" TextWrapping="Wrap" Margin="0,0,0,12"
-                       MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
-                       Visibility="{Binding ValidationError, Converter={StaticResource StringToVis}}" />
+            <cards:AttentionCard />
 
             <!-- ============ which GeoJSON files ============ -->
             <cards:GeojsonFilesCard ShowLines="False"
@@ -53,10 +50,11 @@
                 </cards:RoiOverrideCard.AdditionalContent>
             </cards:RoiOverrideCard>
 
-            <!-- ============ upload to vNAS ============ -->
-            <cards:VnasUploadCard />
-
-            <!-- ============ CRC ERAM defaults ============ -->
-            <cards:CrcDefaultsCard SymbolsTitle="Wx Stations — Symbols" TextTitle="Wx Stations — Text" />
+            <!-- ============ CRC ERAM defaults: which files get them, and their values ============ -->
+            <cards:CrcDefaultsCard SymbolsTitle="Wx Stations — Symbols" TextTitle="Wx Stations — Text">
+                <cards:CrcDefaultsCard.Choice>
+                    <cards:CrcFileChoice />
+                </cards:CrcDefaultsCard.Choice>
+            </cards:CrcDefaultsCard>
     </StackPanel>
 </UserControl>

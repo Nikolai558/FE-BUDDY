@@ -23,8 +23,8 @@ public sealed class InlineCodeTests
 	public void several_code_parts_and_code_at_either_end_split_cleanly()
 	{
 		Assert.Equal(
-			[("Aliases", true), (" and ", false), ("Upload_to_vNAS", true)],
-			InlineCode.Split("`Aliases` and `Upload_to_vNAS`"));
+			[("Aliases", true), (" and ", false), ("Combined_Alias.txt", true)],
+			InlineCode.Split("`Aliases` and `Combined_Alias.txt`"));
 	}
 
 	[Theory]
@@ -49,23 +49,23 @@ public sealed class InlineCodeTests
 		Assert.Throws<ArgumentNullException>(() => InlineCode.Split(null!));
 	}
 
-	/// <summary>Each part becomes a run; only the code runs are sized from the TextBlock (12/13 of it).</summary>
+	/// <summary>Each part becomes a run; only the code runs are sized from the TextBlock (13/14.5 of it).</summary>
 	[Fact]
 	public void the_text_block_gets_a_run_per_part_with_code_sized_from_it()
 	{
 		StaThread.Run(() =>
 		{
-			TextBlock text = new() { FontSize = 13 };
+			TextBlock text = new() { FontSize = 14.5 };
 
 			InlineCode.SetText(text, "Written to `Aliases\\` in the cycle's folder.");
 
 			Run[] runs = [.. text.Inlines.Cast<Run>()];
 			Assert.Equal(["Written to ", "Aliases\\", " in the cycle's folder."], runs.Select(run => run.Text));
-			Assert.Equal(12, runs[1].FontSize, precision: 6);
+			Assert.Equal(13, runs[1].FontSize, precision: 6);
 			Assert.Equal("Written to `Aliases\\` in the cycle's folder.", InlineCode.GetText(text));
 
-			text.FontSize = 11.5;
-			Assert.Equal(11.5 * 12 / 13, runs[1].FontSize, precision: 6);
+			text.FontSize = 12.5;
+			Assert.Equal(12.5 * 13 / 14.5, runs[1].FontSize, precision: 6);
 
 			InlineCode.SetText(text, null);
 			Assert.Empty(text.Inlines);

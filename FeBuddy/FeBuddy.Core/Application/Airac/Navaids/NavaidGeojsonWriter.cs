@@ -13,8 +13,8 @@ using NetTopologySuite.Features;
 namespace FeBuddy.Core.Application.Airac.Navaids;
 
 /// <summary>
-/// Generates the NAVAIDs GeoJSON output: Symbols and Text only, one Point per NAVAID. There is no
-/// Lines file.
+/// Generates the NAVAIDs GeoJSON output: Symbols and Text only, a symbol and a label per NAVAID.
+/// There is no Lines file.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -26,8 +26,8 @@ namespace FeBuddy.Core.Application.Airac.Navaids;
 /// <para>
 /// The ROI limits this output only: the caller filters with <see cref="FilterToRoi"/> before
 /// calling <see cref="Generate"/>, while <see cref="NavaidAliasWriter"/> covers every included
-/// NAVAID regardless of the ROI. Each file goes in the GeoJSON folder, or the vNAS one when the
-/// user marked it for vNAS. Only a file chosen for CRC-ERAM defaults gets an isDefaults Feature.
+/// NAVAID regardless of the ROI. Each file goes in the GeoJSON folder. Only a file chosen for
+/// CRC-ERAM defaults (<c>CrcDefaultsFor</c>) gets an isDefaults Feature.
 /// </para>
 /// <para>
 /// A merged <see cref="NavaidOutputBy.All"/> Symbols file that gets CRC-ERAM defaults and has
@@ -107,7 +107,7 @@ public static class NavaidGeojsonWriter
 		return new NavaidGeojsonGenerateResult(files, messages);
 	}
 
-	/// <summary>Writes one file, into the GeoJSON or vNAS folder as the user chose, under the name they chose.</summary>
+	/// <summary>Writes one file, into the GeoJSON folder, under the name the user chose.</summary>
 	private static void WriteFile(
 		FeatureCollection collection,
 		int renderedCount,
@@ -115,7 +115,7 @@ public static class NavaidGeojsonWriter
 		string fileKey,
 		GeojsonFileSet files)
 	{
-		string directory = AiracOutputPaths.FileDirectory(settings.OutputDirectory, isGeojson: true, settings.Vnas.IsUploaded(fileKey));
+		string directory = AiracOutputPaths.GeojsonDirectory(settings.OutputDirectory);
 		files.Write(collection, renderedCount, directory, settings.FileNames.FileName(fileKey));
 	}
 
@@ -128,7 +128,7 @@ public static class NavaidGeojsonWriter
 		List<ServiceMessage> messages)
 	{
 		FeatureCollection collection = [];
-		bool crcDefaults = settings.Vnas.HasCrcDefaults(fileKey);
+		bool crcDefaults = settings.CrcDefaultsFiles.HasCrcDefaults(fileKey);
 
 		if (crcDefaults)
 		{
@@ -183,7 +183,7 @@ public static class NavaidGeojsonWriter
 	{
 		FeatureCollection collection = [];
 
-		if (settings.Vnas.HasCrcDefaults(fileKey))
+		if (settings.CrcDefaultsFiles.HasCrcDefaults(fileKey))
 		{
 			collection.Add(CrcFeatureFactory.CreateDefaultsFeature(settings.TextDefaults[crcClass]));
 		}

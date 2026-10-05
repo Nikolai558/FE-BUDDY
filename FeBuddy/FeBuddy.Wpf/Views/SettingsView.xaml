@@ -1,6 +1,7 @@
 <!--
     SettingsView  -  Facility Profile / Default ROI / GeoJSON Files / Credentials / FE-Buddy's GitHub Requests / Updates /
-    Reset FE-Buddy (with Uninstall FE-Buddy… across from its button). Everything persists to UserConfig.json.
+    Reset FE-Buddy (with Uninstall FE-Buddy… across from its button). Everything persists to UserConfig.json
+    but the credentials, which go to Windows Credential Manager.
 -->
 <UserControl x:Class="FeBuddy.Wpf.Views.SettingsView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -101,8 +102,20 @@
                                     Command="{Binding ClearRoiCommand}" Margin="8,0,0,0" />
                             <Button DockPanel.Dock="Right" Style="{StaticResource Button.Primary}" Content="Set ROI…"
                                     Command="{Binding EditRoiCommand}" MinWidth="110" />
-                            <TextBlock Text="{Binding DefaultRoiSummary}" Style="{StaticResource Text.Caption}"
-                                       FontFamily="{StaticResource Font.Mono}" VerticalAlignment="Center" />
+                            <!-- the corners in the code look, or (in amber) that none is set and how to set one -->
+                            <TextBlock Text="{Binding DefaultRoiSummary}" VerticalAlignment="Center" TextWrapping="Wrap">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock" BasedOn="{StaticResource Text.Caption}">
+                                        <Setter Property="FontFamily" Value="{StaticResource Font.Mono}" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding HasDefaultRoi}" Value="False">
+                                                <Setter Property="FontFamily" Value="{StaticResource Font.Body}" />
+                                                <Setter Property="Foreground" Value="{StaticResource Brush.Warn}" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
                         </DockPanel>
                     </StackPanel>
                 </ctl:Card>

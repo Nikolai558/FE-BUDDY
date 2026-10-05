@@ -138,10 +138,10 @@ FeBuddy.Wpf/
 │                        Settings and Review tabs, and the card interfaces (IOutputSettings, …)
 └── Views/               ShellWindow, TabbedServiceView (both tabbed screens), one view per tab,
     │                    MapWorkspace (every map), the dialog windows
-    └── Cards/           the shared cards (Outputs, What Files Do You Want?, FE-Buddy Properties,
-                         Region of Interest, CRC ERAM Defaults, Source Files, Run); CrcFileChoice,
-                         the AIRAC tabs' choice of files at the top of CRC ERAM Defaults; and
-                         OutputStatusRow, an output's On/Off line
+    └── Cards/           the shared cards (Attention, Outputs, What Files Do You Want?, FE-Buddy
+                         Properties, Region of Interest, CRC ERAM Defaults, Source Files, Run);
+                         CrcFileChoice, the AIRAC tabs' choice of files at the top of CRC ERAM
+                         Defaults; and OutputStatusRow, an output's On/Off line
 ```
 
 ### How the screens are built
@@ -162,8 +162,10 @@ FeBuddy.Wpf/
   source files, CRC defaults and its own run button.
 - **Saving.** Each tab saves its own config node. "Unsaved" means different from the last save:
   `SubServiceSettingsViewModel` runs the tab's own `WriteToConfig()` into a buffer and compares it
-  with the last saved values (`SavedStateSnapshot`). Validation is continuous, shown on the field
-  through `FieldState`.
+  with the last saved values (`SavedStateSnapshot`). Validation is continuous. A problem belongs to
+  a box (`AddField`, shown on it through `FieldState`) or to a whole card (`AddArea` with a
+  `ServiceAreas` key, which the card binds as its own `FieldState.Error`). `AttentionCard` lists
+  every problem at the top of the tab, and a `Card` holding one is outlined (`Card.NeedsAttention`).
 - **One map.** `Views/MapWorkspace` is the Map page and every map window (`RoiPickerWindow`).
   `MapViewModel` holds the box being edited and where it goes (`IRoiTarget`); everything else lives
   in `MapLayersState.Shared`, so every map shows the same layers. `Controls/MapCanvas` is a

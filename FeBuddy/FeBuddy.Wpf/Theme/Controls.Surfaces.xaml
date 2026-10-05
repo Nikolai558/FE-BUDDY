@@ -65,7 +65,9 @@
     <!-- Every card in the app is a ctl:Card, so this style is the one place its look is set.
          Cards stack with Margin's 16px gap below each one; a card placed by a Grid or WrapPanel
          sets its own Margin, which is layout and not look. The title is a SectionHeader, which
-         owns the title's font and casing; a card with no Header shows no title row. -->
+         owns the title's font and casing; a card with no Header shows no title row.
+         A card holding a validation problem (NeedsAttention) gets a red outline, drawn over its
+         edge so the layout doesn't move, and NEEDS ATTENTION beside its title. -->
     <Style TargetType="ctl:Card">
         <Setter Property="Background" Value="{DynamicResource Brush.Card}" />
         <!-- Brush.Stroke.Strong, not Brush.Stroke: the lighter hairline is almost invisible
@@ -80,24 +82,41 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ctl:Card">
-                    <Border Background="{TemplateBinding Background}"
-                            BorderBrush="{TemplateBinding BorderBrush}"
-                            BorderThickness="{TemplateBinding BorderThickness}"
-                            CornerRadius="{DynamicResource Radius.Card}"
-                            Padding="{TemplateBinding Padding}"
-                            SnapsToDevicePixels="True">
-                        <DockPanel>
-                            <ctl:SectionHeader x:Name="Title" DockPanel.Dock="Top"
-                                               Label="{TemplateBinding Header}" />
-                            <ContentPresenter />
-                        </DockPanel>
-                    </Border>
+                    <Grid SnapsToDevicePixels="True">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="{DynamicResource Radius.Card}"
+                                Padding="{TemplateBinding Padding}"
+                                SnapsToDevicePixels="True">
+                            <DockPanel>
+                                <ctl:SectionHeader x:Name="Title" DockPanel.Dock="Top"
+                                                   Label="{TemplateBinding Header}">
+                                    <ctl:SectionHeader.Aside>
+                                        <!-- the title's own font, so showing it can't change the row's height -->
+                                        <TextBlock x:Name="AttentionLabel" Text="NEEDS ATTENTION"
+                                                   Style="{DynamicResource Text.SectionHeader}"
+                                                   Foreground="{DynamicResource Brush.Danger}"
+                                                   Visibility="Collapsed" />
+                                    </ctl:SectionHeader.Aside>
+                                </ctl:SectionHeader>
+                                <ContentPresenter />
+                            </DockPanel>
+                        </Border>
+                        <Border x:Name="AttentionOutline" BorderBrush="{DynamicResource Brush.Danger}"
+                                BorderThickness="2" CornerRadius="{DynamicResource Radius.Card}"
+                                IsHitTestVisible="False" Visibility="Collapsed" />
+                    </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="Header" Value="{x:Null}">
                             <Setter TargetName="Title" Property="Visibility" Value="Collapsed" />
                         </Trigger>
                         <Trigger Property="Header" Value="">
                             <Setter TargetName="Title" Property="Visibility" Value="Collapsed" />
+                        </Trigger>
+                        <Trigger Property="NeedsAttention" Value="True">
+                            <Setter TargetName="AttentionOutline" Property="Visibility" Value="Visible" />
+                            <Setter TargetName="AttentionLabel" Property="Visibility" Value="Visible" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>

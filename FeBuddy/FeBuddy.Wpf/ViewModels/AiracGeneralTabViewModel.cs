@@ -333,6 +333,25 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 
 	private static string? Normalize(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
+	/// <summary>What a cycle row's state means, for its colour.</summary>
+	public enum CycleStatus
+	{
+		/// <summary>Still being checked, downloaded or parsed.</summary>
+		Working,
+
+		/// <summary>Everything is ready.</summary>
+		Ready,
+
+		/// <summary>The NASR data is ready but the d-TPP Metafile isn't.</summary>
+		Partial,
+
+		/// <summary>The cycle could not be prepared.</summary>
+		Failed,
+
+		/// <summary>The FAA hasn't published the cycle yet.</summary>
+		NotYetPublished,
+	}
+
 	/// <summary>One cycle row in the cycle menu, with its live cache state.</summary>
 	/// <param name="position">Which cycle relative to today this row is.</param>
 	/// <param name="onSelected">Called when the user picks this row.</param>
@@ -340,6 +359,9 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 	{
 		private string _label = position.ToString();
 		private string _state = string.Empty;
+		private CycleStatus _status;
+		private string? _dtppNote;
+		private string? _toolTip;
 		private bool _isSelected = position == AiracCyclePosition.Current;
 
 		/// <summary>Which cycle relative to today this row is.</summary>
@@ -369,11 +391,35 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 			private set => SetProperty(ref _label, value);
 		}
 
-		/// <summary><c>ready</c> / <c>parsing…</c> / <c>failed</c> / <c>not yet published</c>.</summary>
+		/// <summary><c>ready</c> / <c>partial</c> / <c>parsing…</c> / <c>failed</c> / <c>not yet published</c>.</summary>
 		public string State
 		{
 			get => _state;
 			private set => SetProperty(ref _state, value);
+		}
+
+		/// <summary>What <see cref="State"/> means, for its colour.</summary>
+		public CycleStatus Status
+		{
+			get => _status;
+			private set => SetProperty(ref _status, value);
+		}
+
+		/// <summary>The red note beside a <see cref="CycleStatus.Partial"/> cycle; <see langword="null"/> otherwise.</summary>
+		public string? DtppNote
+		{
+			get => _dtppNote;
+			private set => SetProperty(ref _dtppNote, value);
+		}
+
+		/// <summary>
+		/// The row's tooltip while it is <see cref="CycleStatus.Partial"/>: what the missing metafile
+		/// is, when to expect it, and what can't be made until then. <see langword="null"/> otherwise.
+		/// </summary>
+		public string? ToolTip
+		{
+			get => _toolTip;
+			private set => SetProperty(ref _toolTip, value);
 		}
 
 		/// <summary>Re-reads this row's label and cache state.</summary>
@@ -382,10 +428,15 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 			AiracCycleInfo info = AppEnvironment.GetAiracCycle(Position);
 			Label = $"{Position}  —  {info.AiracCycleId}  ·  eff {info.EffectiveDateUtc:dd MMM yyyy}";
 
+			// The metafile is fetched before a cycle is parsed, so once the cycle is ready, a
+			// missing metafile stays missing until the next launch.
 			AiracCycleDataCacheEntry? entry = AiracCycleDataCache.Instance.GetEntry(info.AiracCycleId);
+			bool missingDtpp = entry?.State == CycleDataState.Ready
+				&& AiracCycleDataCache.Instance.FindDtppFile(info.AiracCycleId) is null;
+
 			State = entry?.State switch
 			{
-				CycleDataState.Ready => "ready",
+				CycleDataState.Ready => missingDtpp ? "partial" : "ready",
 				CycleDataState.Parsing => "parsing…",
 				CycleDataState.Downloading => "downloading…",
 				CycleDataState.Downloaded => "parsing…",
@@ -393,6 +444,46 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 				CycleDataState.NotYetPublished => "not yet published",
 				_ => "preparing…",
 			};
+
+			Status = entry?.State switch
+			{
+				CycleDataState.Ready => missingDtpp ? CycleStatus.Partial : CycleStatus.Ready,
+				CycleDataState.Failed => CycleStatus.Failed,
+				CycleDataState.NotYetPublished => CycleStatus.NotYetPublished,
+				_ => CycleStatus.Working,
+			};
+
+			DtppNote = missingDtpp ? "d-TPP Metafile not available yet" : null;
+			ToolTip = missingDtpp ? DescribeMissingDtpp(info, AppEnvironment.CheckedUtcDate) : null;
+		}
+
+		/// <summary>The tooltip for a cycle whose NASR data is ready but whose d-TPP Metafile isn't.</summary>
+		/// <param name="cycle">The cycle.</param>
+		/// <param name="today">Today's UTC date, to say whether the metafile is still to come or overdue.</param>
+		/// <returns>The tooltip text.</returns>
+		internal static string DescribeMissingDtpp(AiracCycleInfo cycle, DateOnly today)
+		{
+			// The FAA posts the metafile 15-18 days before the cycle takes effect.
+			DateOnly from = cycle.EffectiveDateUtc.AddDays(-18);
+			DateOnly to = cycle.EffectiveDateUtc.AddDays(-15);
+
+			string when = to >= today
+				? $"The FAA posts it 15-18 days before the cycle takes effect, so expect it between {from:dd MMM} and {to:dd MMM yyyy}. " +
+					"FE-Buddy looks for it at every launch, so restart FE-Buddy after that."
+				: $"The FAA usually posts it 15-18 days before the cycle takes effect ({from:dd MMM} to {to:dd MMM yyyy}), so it " +
+					"should be out by now and the download may have failed. FE-Buddy tries again at every launch, so restart FE-Buddy to try now.";
+
+			return
+				$"Cycle {cycle.AiracCycleId}'s NASR data is ready, but its d-TPP Metafile isn't. The metafile is the FAA's index of " +
+				"charts (approach plates, SIDs, STARs, airport diagrams); the Procedures sub-service is built from it." +
+				Environment.NewLine + Environment.NewLine +
+				when +
+				Environment.NewLine + Environment.NewLine +
+				"Until then, with this cycle selected:" + Environment.NewLine +
+				"• Procedures writes none of its files: Procedure_Changes.md, Procedures.json and Faa_Chart_Recall.txt " +
+				"(so Combined_Alias.txt has no chart recall commands)." + Environment.NewLine +
+				"• On the Procedures tab you can't add procedures or airport + procedure pairs." + Environment.NewLine +
+				"Every other sub-service runs as normal.";
 		}
 	}
 }

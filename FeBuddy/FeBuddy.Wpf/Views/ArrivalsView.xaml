@@ -22,10 +22,7 @@
          steal the wheel and hide the lower sections. -->
     <StackPanel>
 
-            <TextBlock Text="{Binding ValidationError}" Style="{StaticResource Text.Caption}"
-                       Foreground="{StaticResource Brush.Danger}" TextWrapping="Wrap" Margin="0,0,0,12"
-                       MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
-                       Visibility="{Binding ValidationError, Converter={StaticResource StringToVis}}" />
+            <cards:AttentionCard />
 
             <!-- ============ outputs ============ -->
             <cards:OutputsCard GeojsonDescription="Writes the arrival procedure (STAR) GeoJSON files selected below."

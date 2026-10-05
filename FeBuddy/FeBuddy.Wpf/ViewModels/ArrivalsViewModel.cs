@@ -364,7 +364,8 @@ public sealed class ArrivalsViewModel : GeojsonSubServiceViewModel, ISubServiceR
 	{
 		if (GenerateGeojson && !EmitLines && !EmitSymbols && !EmitText)
 		{
-			validation.Add(
+			validation.AddArea(
+				ServiceAreas.GeojsonFiles,
 				"GeoJSON is on but none of its files are selected. Turn on Lines, Symbols or Text, "
 				+ "or turn GeoJSON off for Arrivals on the General tab.");
 		}

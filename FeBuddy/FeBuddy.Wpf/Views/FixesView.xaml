@@ -12,6 +12,7 @@
              xmlns:m="clr-namespace:FeBuddy.Wpf.ViewModels.Models"
              xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
              xmlns:cards="clr-namespace:FeBuddy.Wpf.Views.Cards"
+             xmlns:bhv="clr-namespace:FeBuddy.Wpf.Behaviors"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance vm:FixesViewModel}"
              d:DesignWidth="900" d:DesignHeight="1900">
@@ -21,10 +22,7 @@
          steal the wheel and hide the lower sections. -->
     <StackPanel>
 
-            <TextBlock Text="{Binding ValidationError}" Style="{StaticResource Text.Caption}"
-                       Foreground="{StaticResource Brush.Danger}" TextWrapping="Wrap" Margin="0,0,0,12"
-                       MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
-                       Visibility="{Binding ValidationError, Converter={StaticResource StringToVis}}" />
+            <cards:AttentionCard />
 
             <!-- ============ which GeoJSON files ============ -->
             <cards:GeojsonFilesCard ShowLines="False"
@@ -57,7 +55,7 @@
             <cards:FebPropertiesCard />
 
             <!-- ============ fix uses ============ -->
-            <ctl:Card Header="Fix Uses" Visibility="{Binding ShowFixUses, Converter={StaticResource BoolToVis}}">
+            <ctl:Card Header="Fix Uses" bhv:FieldState.Error="{Binding FieldErrors[FixUses]}" Visibility="{Binding ShowFixUses, Converter={StaticResource BoolToVis}}">
                 <StackPanel>
                     <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
                                Text="Tick the fix uses you want a file for." />
@@ -82,7 +80,7 @@
             </ctl:Card>
 
             <!-- ============ charts ============ -->
-            <ctl:Card Header="Charts" Visibility="{Binding ShowCharts, Converter={StaticResource BoolToVis}}">
+            <ctl:Card Header="Charts" bhv:FieldState.Error="{Binding FieldErrors[Charts]}" Visibility="{Binding ShowCharts, Converter={StaticResource BoolToVis}}">
                 <StackPanel>
                     <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
                                Text="Tick the charts you want a file for." />
@@ -107,7 +105,7 @@
             </ctl:Card>
 
             <!-- ============ combinations ============ -->
-            <ctl:Card Header="Combinations" Visibility="{Binding ShowCombinations, Converter={StaticResource BoolToVis}}">
+            <ctl:Card Header="Combinations" bhv:FieldState.Error="{Binding FieldErrors[Combinations]}" Visibility="{Binding ShowCombinations, Converter={StaticResource BoolToVis}}">
                 <StackPanel>
                     <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
                                Text="Each combination writes the fixes that are on that chart and have that fix use." />

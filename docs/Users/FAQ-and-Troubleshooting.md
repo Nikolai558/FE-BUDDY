@@ -75,8 +75,15 @@ The FAA hasn't released it. It usually appears a few weeks early; FE-Buddy check
 
 ### A tab is red and I can't run
 
-Something on it is missing or invalid. The field is outlined in red; hover it to see why. Most often
-it's an empty **CRC ERAM Defaults** box.
+Something on it is missing or invalid. Click the tab with the red dot: the red box at its top lists
+each problem, and the cards to fix are outlined in red. Most often it's an empty **CRC ERAM
+Defaults** box.
+
+### The cycle says "partial"
+
+Its NASR data is ready, but the FAA hasn't posted its d-TPP Metafile yet (it does 15-18 days before
+the cycle starts). Everything runs except Procedures' files. FE-Buddy fetches it at the next launch
+after it's out; hover the cycle for the dates.
 
 ### My GeoJSON files have no CRC ERAM defaults
 

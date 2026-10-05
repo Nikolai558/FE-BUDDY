@@ -283,9 +283,11 @@ public sealed class FileNamesViewModel : SubServiceSettingsViewModel
 
 		if (invalid.Length > 0)
 		{
-			validation.Add($"{invalid[0].FileName}: {invalid[0].Error}" + (invalid.Length > 1
-				? $" {invalid.Length - 1} more file name(s) need attention too - see the marked boxes."
-				: string.Empty));
+			validation.AddArea(
+				ServiceAreas.OutputFiles,
+				$"{invalid[0].FileName}: {invalid[0].Error}" + (invalid.Length > 1
+					? $" {invalid.Length - 1} more file name(s) need attention too - see the marked boxes."
+					: string.Empty));
 		}
 	}
 

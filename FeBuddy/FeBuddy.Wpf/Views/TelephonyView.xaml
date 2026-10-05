@@ -27,10 +27,7 @@
          steal the wheel and hide the lower sections. -->
     <StackPanel>
 
-            <TextBlock Text="{Binding ValidationError}" Style="{StaticResource Text.Caption}"
-                       Foreground="{StaticResource Brush.Danger}" TextWrapping="Wrap" Margin="0,0,0,12"
-                       MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
-                       Visibility="{Binding ValidationError, Converter={StaticResource StringToVis}}" />
+            <cards:AttentionCard />
 
             <!-- ============ outputs ============ -->
             <ctl:Card Header="Outputs">
@@ -47,7 +44,7 @@
             </ctl:Card>
 
             <!-- ============ virtual airlines ============ -->
-            <ctl:Card Header="Virtual Airlines">
+            <ctl:Card Header="Virtual Airlines" bhv:FieldState.Error="{Binding FieldErrors[VirtualAirlines]}">
                 <StackPanel>
                     <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
                                bhv:InlineCode.Text="Add virtual airlines to `Telephony.txt`. Each gets a card marked `--VA--` with its 3LD, telephony and virtual organization, under `.id` and its 3LD, and `.id` and its telephony. When it shares a command with a real operator or another virtual airline, the command shows all of them, real operators first." />

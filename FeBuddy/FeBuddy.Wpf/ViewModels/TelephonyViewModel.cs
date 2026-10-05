@@ -441,7 +441,7 @@ public sealed class TelephonyViewModel : GeojsonSubServiceViewModel, ISubService
 
 			if (TelephonySettingsParser.VirtualAirlineProblem(item.Designator, item.Telephony, item.Organization) is { } problem)
 			{
-				validation.Add($"Virtual airline {i + 1} ({item.Designator}): {problem}. Edit or delete it.");
+				validation.AddArea(ServiceAreas.VirtualAirlines, $"Virtual airline {i + 1} ({item.Designator}): {problem}. Edit or delete it.");
 			}
 		}
 	}

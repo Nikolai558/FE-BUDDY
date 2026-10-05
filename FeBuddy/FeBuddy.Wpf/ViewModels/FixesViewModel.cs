@@ -466,22 +466,24 @@ public sealed class FixesViewModel : GeojsonSubServiceViewModel, ISubServiceRunT
 	{
 		if (!EmitSymbols && !EmitText)
 		{
-			validation.Add("Neither Symbols nor Text is selected. Turn at least one back on, or untick Fixes under Include on the General tab.");
+			validation.AddArea(
+				ServiceAreas.GeojsonFiles,
+				"Neither Symbols nor Text is selected. Turn at least one back on, or untick Fixes under Include on the General tab.");
 		}
 
 		if (_outputBy == FixOutputBy.FixUse && FixUses.Count > 0 && FixUses.All(t => !t.IsSelected))
 		{
-			validation.Add("No fix uses are ticked. Tick at least one, or choose another file layout.");
+			validation.AddArea(ServiceAreas.FixUses, "No fix uses are ticked. Tick at least one, or choose another file layout.");
 		}
 
 		if (_outputBy == FixOutputBy.Chart && Charts.Count > 0 && Charts.All(t => !t.IsSelected))
 		{
-			validation.Add("No charts are ticked. Tick at least one, or choose another file layout.");
+			validation.AddArea(ServiceAreas.Charts, "No charts are ticked. Tick at least one, or choose another file layout.");
 		}
 
 		if (_outputBy == FixOutputBy.ChartAndFixUse && Combinations.Count == 0)
 		{
-			validation.Add("Add at least one chart + fix use combination, or choose another file layout.");
+			validation.AddArea(ServiceAreas.Combinations, "Add at least one chart + fix use combination, or choose another file layout.");
 		}
 
 		ValidateSharedSettings(validation);

@@ -62,6 +62,13 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
 - A custom alias file on this PC with no alias commands in it can't be saved.
 - Airways no longer has **None** under "split into". Turn GeoJSON off for Airways on the General tab
   instead.
+- On the General tab, a cycle whose NASR data is ready but whose d-TPP Metafile isn't out yet reads
+  *partial* in amber, with a red note. Hovering it says when the FAA usually posts it and what
+  waits for it: Procedures' files, and adding procedures on the Procedures tab. *Ready* is green and
+  *failed* red.
+- A tab with problems lists all of them in a red box at its top, not just the first, and outlines
+  each card with a problem in red, marked **Needs attention**.
+- Preview Settings tells you to click the tabs with a red dot on the left to see what to fix.
 
 ### File Conversions
 - DAT to GeoJSON warns that the cropping distance applies to every file in the conversion, since a

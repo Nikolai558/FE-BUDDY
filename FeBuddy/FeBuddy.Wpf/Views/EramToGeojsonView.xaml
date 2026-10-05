@@ -51,10 +51,7 @@
                    MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
                    bhv:InlineCode.Text="Converts the Geomaps.xml of an ERAM adaptation export into CRC-ready GeoJSON, in an `ERAM_TO_GEOJSON` folder in your output directory. Pick Geomaps.xml, or the unzipped export's folder - only its Geomaps file is converted. When the export's ConsoleCommandControl.xml is beside it, ConsoleCommandControl.txt lists its brightness (BCG) and filter menus: each button's label, position and groups, and which maps use each menu. One Geomaps file per run: everything already in `ERAM_TO_GEOJSON` is deleted first, after you confirm." />
 
-        <TextBlock Text="{Binding ValidationError}" Style="{StaticResource Text.Caption}"
-                   Foreground="{StaticResource Brush.Danger}" TextWrapping="Wrap" Margin="0,0,0,12"
-                   MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
-                   Visibility="{Binding ValidationError, Converter={StaticResource StringToVis}}" />
+        <cards:AttentionCard />
 
         <!-- ============ source ============ -->
         <cards:SourceFilesCard />

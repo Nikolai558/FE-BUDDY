@@ -207,7 +207,7 @@ public sealed class EramToGeojsonViewModel : FileConversionTabViewModel, IFebPro
 	{
 		if (IncludeFebCustomProperties && FebProperties.All(p => !p.IsSelected))
 		{
-			validation.Add("FE-Buddy properties are on but none are selected. Pick at least one, or switch them off.");
+			validation.AddArea(ServiceAreas.FebProperties, "FE-Buddy properties are on but none are selected. Pick at least one, or switch them off.");
 		}
 	}
 

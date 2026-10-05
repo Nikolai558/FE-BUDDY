@@ -303,14 +303,17 @@ public sealed class NavaidsViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 	{
 		if (GenerateGeojson && !EmitSymbols && !EmitText)
 		{
-			validation.Add(
+			validation.AddArea(
+				ServiceAreas.GeojsonFiles,
 				"GeoJSON is on but neither Symbols nor Text is selected. Turn at least one back on, "
 				+ "or turn GeoJSON off for NAVAIDs on the General tab.");
 		}
 
 		if (Types.Count > 0 && Types.All(t => !t.IsSelected))
 		{
-			validation.Add("No NAVAID types are ticked. Tick at least one, or untick NAVAIDs under Include on the General tab.");
+			validation.AddArea(
+				ServiceAreas.NavaidTypes,
+				"No NAVAID types are ticked. Tick at least one, or untick NAVAIDs under Include on the General tab.");
 		}
 
 		if (ShowFanMarkerStyle && string.IsNullOrWhiteSpace(FanMarkerStyle))

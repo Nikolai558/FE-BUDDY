@@ -354,7 +354,9 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 	{
 		if (GenerateGeojson && !EmitLines && !EmitSymbols && !EmitText)
 		{
-			validation.Add("GeoJSON is on but none of its files are selected. Turn on Lines, Symbols or Text, or turn GeoJSON off for Airways on the General tab.");
+			validation.AddArea(
+				ServiceAreas.GeojsonFiles,
+				"GeoJSON is on but none of its files are selected. Turn on Lines, Symbols or Text, or turn GeoJSON off for Airways on the General tab.");
 		}
 
 		bool needsStrata = GenerateGeojson && OutputBy == AirwayGeojsonOutputBy.HighLow;
@@ -375,7 +377,8 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 
 		if (unchosen.Length > 0)
 		{
-			validation.Add(
+			validation.AddArea(
+				ServiceAreas.HighAndLowFiles,
 				$"Choose High, Low or Both for {string.Join(", ", unchosen)} on the High and Low Files card, " +
 				"or untick them under Designations to Include.");
 		}

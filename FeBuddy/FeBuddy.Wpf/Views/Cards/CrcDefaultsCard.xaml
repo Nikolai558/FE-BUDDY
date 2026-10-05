@@ -33,12 +33,13 @@
              xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
              xmlns:cards="clr-namespace:FeBuddy.Wpf.Views.Cards"
              xmlns:tabs="clr-namespace:FeBuddy.Wpf.ViewModels.ServiceTabs"
+             xmlns:bhv="clr-namespace:FeBuddy.Wpf.Behaviors"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance tabs:ICrcDefaultsSettings}"
              d:DesignWidth="900"
              x:Name="Self"
              Visibility="{Binding ShowsCrcDefaultsCard, Converter={StaticResource BoolToVis}}">
-    <ctl:Card Header="CRC ERAM Defaults">
+    <ctl:Card Header="CRC ERAM Defaults" bhv:FieldState.Error="{Binding FieldErrors[CrcDefaults]}">
         <StackPanel>
             <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,0" Text="{Binding Note, ElementName=Self}" />
 

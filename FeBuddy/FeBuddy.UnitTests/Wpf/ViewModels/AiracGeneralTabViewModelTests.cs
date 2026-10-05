@@ -2,15 +2,22 @@ using FeBuddy.Wpf.ViewModels;
 using FeBuddy.Wpf.ViewModels.ServiceTabs;
 using FeBuddy.Wpf.ViewModels.ServiceTabs.Models;
 
+using FeBuddy.Core.Application.Airac;
+using FeBuddy.Core.Application.Launch;
+using FeBuddy.Core.Domain.Airac;
+using FeBuddy.Core.Domain.Airac.Models;
 using FeBuddy.Core.Infrastructure.Configuration;
+using FeBuddy.Core.Infrastructure.Dtpp;
 using FeBuddy.Core.Infrastructure.Logging;
+using FeBuddy.Core.Infrastructure.Nasr.Models;
 
 namespace FeBuddy.UnitTests.Wpf.ViewModels;
 
 /// <summary>
 /// Covers the General tab's table (<see cref="AiracGeneralTabViewModel"/>, <see cref="SubServiceRow"/>):
 /// everything included and on to start, the outputs a sub-service doesn't offer always off, the
-/// last output kept on, and where the choices are saved - against a throwaway config.
+/// last output kept on, and where the choices are saved - against a throwaway config. Also the
+/// cycle rows' states, including a cycle that is ready but has no d-TPP Metafile yet.
 /// </summary>
 [Collection("AppLog")]
 public sealed class AiracGeneralTabViewModelTests : IDisposable
@@ -26,9 +33,11 @@ public sealed class AiracGeneralTabViewModelTests : IDisposable
 		UserConfigFile.ConfigureForTesting(Path.Combine(_root, "config"));
 	}
 
-	/// <summary>Restores the real config and log, and deletes the folder.</summary>
+	/// <summary>Restores the real cycle cache, clock, config and log, and deletes the folder.</summary>
 	public void Dispose()
 	{
+		AiracCycleDataCache.ConfigureForTesting(null);
+		AppEnvironment.ResetForTesting();
 		UserConfigFile.ConfigureForTesting(null);
 		AppLog.ConfigureForTesting(null);
 
@@ -181,5 +190,94 @@ public sealed class AiracGeneralTabViewModelTests : IDisposable
 		Assert.Equal("N", airports.BuildSettingsBlock()["GenerateGeojson"]);
 		Assert.Equal(["Airports.txt"], airports.OutputFileEntries().Select(file => file.Key));
 		Assert.False(airports.IsDirty);
+	}
+
+	/// <summary>On 5 Oct 2026 the cycles are 2609, 2610 and 2611; only 2611 is missing its metafile.</summary>
+	[Fact]
+	public async Task a_ready_cycle_without_its_d_tpp_metafile_reads_partial_with_a_note_and_a_tooltip()
+	{
+		await PrepareCyclesAsync(new DateTime(2026, 10, 5, 12, 0, 0, DateTimeKind.Utc), withDtpp: id => id != "2611");
+
+		AiracGeneralTabViewModel general = new();
+		AiracGeneralTabViewModel.CycleOption current = general.CycleOptions.Single(o => o.Position == AiracCyclePosition.Current);
+		AiracGeneralTabViewModel.CycleOption next = general.CycleOptions.Single(o => o.Position == AiracCyclePosition.Next);
+
+		Assert.Equal("ready", current.State);
+		Assert.Equal(AiracGeneralTabViewModel.CycleStatus.Ready, current.Status);
+		Assert.Null(current.DtppNote);
+		Assert.Null(current.ToolTip);
+
+		Assert.Equal("partial", next.State);
+		Assert.Equal(AiracGeneralTabViewModel.CycleStatus.Partial, next.Status);
+		Assert.Equal("d-TPP Metafile not available yet", next.DtppNote);
+		Assert.StartsWith("Cycle 2611's NASR data is ready, but its d-TPP Metafile isn't.", next.ToolTip, StringComparison.Ordinal);
+	}
+
+	[Fact]
+	public void a_cycle_still_being_prepared_is_working_and_has_no_tooltip()
+	{
+		AiracGeneralTabViewModel general = new();
+
+		Assert.All(general.CycleOptions, option =>
+		{
+			Assert.Equal(AiracGeneralTabViewModel.CycleStatus.Working, option.Status);
+			Assert.Null(option.DtppNote);
+			Assert.Null(option.ToolTip);
+		});
+	}
+
+	[Fact]
+	public void the_tooltip_gives_the_dates_to_expect_the_metafile_and_what_waits_for_it()
+	{
+		AiracCycleInfo next = AiracCycleResolver.GetCycle(AiracCyclePosition.Next, new DateOnly(2026, 10, 5));
+		DateOnly from = next.EffectiveDateUtc.AddDays(-18);
+		DateOnly to = next.EffectiveDateUtc.AddDays(-15);
+
+		string tip = AiracGeneralTabViewModel.CycleOption.DescribeMissingDtpp(next, new DateOnly(2026, 10, 5));
+
+		Assert.Contains($"expect it between {from:dd MMM} and {to:dd MMM yyyy}", tip, StringComparison.Ordinal);
+		Assert.Contains("Procedure_Changes.md, Procedures.json and Faa_Chart_Recall.txt", tip, StringComparison.Ordinal);
+		Assert.Contains("you can't add procedures or airport + procedure pairs", tip, StringComparison.Ordinal);
+		Assert.DoesNotContain("should be out by now", tip, StringComparison.Ordinal);
+	}
+
+	/// <summary>Past the FAA's usual window, the metafile should exist: the download probably failed.</summary>
+	[Fact]
+	public void past_the_usual_dates_the_tooltip_says_the_download_may_have_failed()
+	{
+		AiracCycleInfo current = AiracCycleResolver.GetCycle(AiracCyclePosition.Current, new DateOnly(2026, 10, 5));
+
+		string tip = AiracGeneralTabViewModel.CycleOption.DescribeMissingDtpp(current, new DateOnly(2026, 10, 5));
+
+		Assert.Contains("should be out by now and the download may have failed", tip, StringComparison.Ordinal);
+		Assert.DoesNotContain("expect it between", tip, StringComparison.Ordinal);
+	}
+
+	/// <summary>
+	/// Fixes the launch clock at <paramref name="utcNow"/> and prepares the three cycles from it, each
+	/// in its own folder, writing a d-TPP Metafile into the folders <paramref name="withDtpp"/> picks.
+	/// </summary>
+	private async Task PrepareCyclesAsync(DateTime utcNow, Func<string, bool> withDtpp)
+	{
+		AppEnvironment.LaunchUtcNow = utcNow;
+
+		AiracCycleDataCache.ConfigureForTesting(new AiracCycleDataCache(
+			probe: (_, _) => Task.FromResult(AiracCyclePublicationState.Published),
+			download: (cycle, _) => Task.FromResult(Directory.CreateDirectory(Path.Combine(_root, "cycles", cycle.AiracCycleId)).FullName),
+			parse: (_, _) => Task.FromResult(new NasrCsvDataCollection()),
+			ensureDtpp: (cycleDirectory, cycleId, _) =>
+			{
+				if (withDtpp(cycleId))
+				{
+					File.WriteAllText(Path.Combine(cycleDirectory, DtppFiles.FileName), string.Empty);
+				}
+
+				return Task.CompletedTask;
+			}));
+
+		await AiracCycleDataCache.Instance.PrepareCyclesAsync(
+			AppEnvironment.GetAiracCycle(AiracCyclePosition.Previous),
+			AppEnvironment.GetAiracCycle(AiracCyclePosition.Current),
+			AppEnvironment.GetAiracCycle(AiracCyclePosition.Next));
 	}
 }

@@ -569,12 +569,12 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 	{
 		if (IncludeFebCustomProperties && FebProperties.All(p => !p.IsSelected))
 		{
-			validation.Add("FE-Buddy properties are on but none are selected. Pick at least one, or switch them off.");
+			validation.AddArea(ServiceAreas.FebProperties, "FE-Buddy properties are on but none are selected. Pick at least one, or switch them off.");
 		}
 
 		if (IsCrcDefaultsSpecific && HasGeojsonFiles && !CrcFiles().Any())
 		{
-			validation.Add(NoCrcFilesMessage);
+			validation.AddArea(ServiceAreas.CrcDefaults, NoCrcFilesMessage);
 		}
 
 		// Only the rows a file that gets CRC-ERAM defaults needs; any other row is never read,
@@ -586,7 +586,7 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 
 		if (AllCrcRows().Any(row => row.IsRequired && row.HasMissingValues))
 		{
-			validation.Add(CrcDefaultsIncompleteMessage);
+			validation.AddArea(ServiceAreas.CrcDefaults, CrcDefaultsIncompleteMessage);
 		}
 
 		ValidateRoiOverride(validation);
@@ -673,8 +673,8 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 		}
 
 		// Each corner is reported against its own box so the empty one highlights. The two
-		// library checks below look at the set as a whole, so they stay tab-level messages -
-		// and they only make sense once all four boxes actually have something in them.
+		// library checks below look at the set as a whole, so they belong to the card - and they
+		// only make sense once all four boxes actually have something in them.
 		bool hasAllCorners = validation.RequireValue("SwLat", SwLat, "Southwest latitude is required when overriding the ROI.");
 		hasAllCorners &= validation.RequireValue("SwLon", SwLon, "Southwest longitude is required when overriding the ROI.");
 		hasAllCorners &= validation.RequireValue("NeLat", NeLat, "Northeast latitude is required when overriding the ROI.");
@@ -687,14 +687,14 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 
 		if (!RoiFilter.IsCoordinateValidFormat(SwLat, SwLon, NeLat, NeLon, out string? formatError))
 		{
-			validation.Add($"ROI override: {formatError}");
+			validation.AddArea(ServiceAreas.Roi, $"ROI override: {formatError}");
 			return;
 		}
 
 		if (TryReadOverrideCorners() is { } corners
 			&& !RoiFilter.IsCoordinatesRelativePositionValid(corners.SwLat, corners.SwLon, corners.NeLat, corners.NeLon, out string? positionError))
 		{
-			validation.Add($"ROI override: {positionError}");
+			validation.AddArea(ServiceAreas.Roi, $"ROI override: {positionError}");
 		}
 	}
 

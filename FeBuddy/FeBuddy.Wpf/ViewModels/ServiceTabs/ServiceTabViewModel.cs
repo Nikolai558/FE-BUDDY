@@ -14,12 +14,14 @@ namespace FeBuddy.Wpf.ViewModels.ServiceTabs;
 /// validation state, collapsed into <see cref="Status"/>. Validation is continuous rather than
 /// save-time, so a tab turns amber the moment the user edits it and red the moment a value goes
 /// missing or invalid - which is what makes the rail usable as an at-a-glance checklist when a
-/// service has twenty sub-services open.
+/// service has twenty sub-services open. Inside a red tab, <see cref="ValidationErrors"/> lists
+/// every problem at the top, and the card each one is on is outlined.
 /// </remarks>
 public abstract class ServiceTabViewModel : ObservableObject
 {
 	private bool _isDirty;
 	private string? _validationError;
+	private IReadOnlyList<string> _validationErrors = [];
 	private ServiceTabStatus _status = ServiceTabStatus.Ok;
 	private bool _isAvailable = true;
 	private string? _unavailableToolTip;
@@ -104,6 +106,26 @@ public abstract class ServiceTabViewModel : ObservableObject
 	/// <summary>Whether <see cref="ValidationError"/> is set.</summary>
 	public bool HasValidationError => ValidationError is not null;
 
+	/// <summary>Every validation failure on this tab, in order, for the list at its top; empty when valid.</summary>
+	public IReadOnlyList<string> ValidationErrors
+	{
+		get => _validationErrors;
+		private set
+		{
+			if (!_validationErrors.SequenceEqual(value, StringComparer.Ordinal))
+			{
+				_validationErrors = value;
+				OnPropertyChanged();
+				OnPropertyChanged(nameof(ValidationSummary));
+			}
+		}
+	}
+
+	/// <summary>The line above <see cref="ValidationErrors"/>: how many things need fixing, and where to look.</summary>
+	public string ValidationSummary => ValidationErrors.Count == 1
+		? "One thing on this tab needs your attention. Its area is outlined in red below."
+		: $"{ValidationErrors.Count} things on this tab need your attention. Their areas are outlined in red below.";
+
 	/// <summary>How the rail should present this tab. Derived from dirty + validation state.</summary>
 	public ServiceTabStatus Status
 	{
@@ -143,13 +165,15 @@ public abstract class ServiceTabViewModel : ObservableObject
 		Validate(validation);
 
 		FieldErrors.Replace(validation.FieldErrors);
+		ValidationErrors = [.. validation.Messages];
 		ValidationError = validation.Messages.FirstOrDefault();
 		UpdateStatus();
 	}
 
 	/// <summary>
-	/// Collects this tab's validation failures. Add a plain message for a tab-level problem, or
-	/// a field message so the offending box highlights. The base reports nothing.
+	/// Collects this tab's validation failures. Add an area message for a problem with a whole card
+	/// (<see cref="ServiceAreas"/>), or a field message so the offending box highlights. Either way
+	/// the card it is on is outlined. The base reports nothing.
 	/// </summary>
 	/// <param name="validation">The collector to add failures to.</param>
 	protected virtual void Validate(ServiceValidation validation)

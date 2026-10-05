@@ -22,10 +22,7 @@
          steal the wheel and hide the lower sections. -->
     <StackPanel x:Name="Root">
 
-            <TextBlock Text="{Binding ValidationError}" Style="{StaticResource Text.Caption}"
-                       Foreground="{StaticResource Brush.Danger}" TextWrapping="Wrap" Margin="0,0,0,12"
-                       MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
-                       Visibility="{Binding ValidationError, Converter={StaticResource StringToVis}}" />
+            <cards:AttentionCard />
 
             <!-- ============ outputs ============ -->
             <!-- The GeoJSON can be split two ways, and the alias file can cover every airway or just the ROI's.
@@ -91,7 +88,7 @@
                  until the user picks one. Every row's label column is as wide as the longest
                  designation (a shared size group), so the drop-downs line up and sit close to
                  their labels. -->
-            <ctl:Card Header="High and Low Files"
+            <ctl:Card Header="High and Low Files" bhv:FieldState.Error="{Binding FieldErrors[HighAndLowFiles]}"
                       Visibility="{Binding ShowsStrata, Converter={StaticResource BoolToVis}}">
                 <StackPanel>
                     <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8" TextWrapping="Wrap"

@@ -377,7 +377,7 @@ public sealed class ConcatenateAliasesViewModel : SubServiceSettingsViewModel, I
 
 			if (row.Error is { } error)
 			{
-				validation.Add($"Custom alias file {row.Number}: {error}");
+				validation.AddArea(ServiceAreas.CustomAliasFiles, $"Custom alias file {row.Number}: {error}");
 			}
 		}
 	}

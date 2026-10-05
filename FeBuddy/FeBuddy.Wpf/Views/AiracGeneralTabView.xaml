@@ -5,6 +5,9 @@
     the file, where its settings are, or that the sub-service doesn't make that kind of file. Save /
     navigation come from the tab host's action bar.
 
+    Each cycle shows its state in colour. A cycle whose NASR data is ready but whose d-TPP
+    Metafile isn't reads "partial", with a red note and a tooltip saying what that holds back.
+
     The table's columns line up through SharedSizeGroup on a stock Grid per row, so nothing is
     measured or rebuilt by hand.
 -->
@@ -55,12 +58,49 @@
                 <ItemsControl ItemsSource="{Binding CycleOptions}" Margin="0,4,0,0">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
-                            <DockPanel Margin="0,3">
-                                <TextBlock DockPanel.Dock="Right" Text="{Binding State}"
-                                           Style="{StaticResource Text.Caption}" VerticalAlignment="Center" />
-                                <RadioButton GroupName="AiracCycle" Content="{Binding Label}"
+                            <!-- A partial cycle (no d-TPP Metafile yet) explains itself when hovered
+                                 anywhere on its row; the transparent background makes the gaps count. -->
+                            <DockPanel Margin="0,3" Background="Transparent">
+                                <DockPanel.ToolTip>
+                                    <ToolTip MaxWidth="460" Content="{Binding ToolTip}" />
+                                </DockPanel.ToolTip>
+                                <DockPanel.Style>
+                                    <Style TargetType="DockPanel">
+                                        <Setter Property="ToolTipService.IsEnabled" Value="False" />
+                                        <Setter Property="ToolTipService.InitialShowDelay" Value="250" />
+                                        <Setter Property="ToolTipService.ShowDuration" Value="60000" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Status}" Value="Partial">
+                                                <Setter Property="ToolTipService.IsEnabled" Value="True" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </DockPanel.Style>
+                                <!-- ready green, partial amber, failed red; anything else the caption grey -->
+                                <TextBlock DockPanel.Dock="Right" Text="{Binding State}" VerticalAlignment="Center">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource Text.Caption}">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Status}" Value="Ready">
+                                                    <Setter Property="Foreground" Value="{StaticResource Brush.Positive}" />
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Status}" Value="Partial">
+                                                    <Setter Property="Foreground" Value="{StaticResource Brush.Warn}" />
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Status}" Value="Failed">
+                                                    <Setter Property="Foreground" Value="{StaticResource Brush.Danger}" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                                <RadioButton DockPanel.Dock="Left" GroupName="AiracCycle" Content="{Binding Label}"
                                              Foreground="{StaticResource Brush.Text.Primary}"
                                              IsChecked="{Binding IsSelected, Mode=TwoWay}" />
+                                <TextBlock Text="{Binding DtppNote}" Style="{StaticResource Text.Caption}"
+                                           Foreground="{StaticResource Brush.Danger}" VerticalAlignment="Center"
+                                           Margin="12,0"
+                                           Visibility="{Binding DtppNote, Converter={StaticResource StringToVis}}" />
                             </DockPanel>
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>

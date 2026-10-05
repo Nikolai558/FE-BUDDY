@@ -14,4 +14,7 @@ public interface IGeojsonFileChoices
 
 	/// <summary>Write the <c>_Text</c> file.</summary>
 	bool EmitText { get; set; }
+
+	/// <summary>The tab's validation messages; the card is outlined while <see cref="ServiceAreas.GeojsonFiles"/> has one.</summary>
+	ServiceFieldErrors FieldErrors { get; }
 }

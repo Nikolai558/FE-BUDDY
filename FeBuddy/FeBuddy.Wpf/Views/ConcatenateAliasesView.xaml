@@ -17,6 +17,7 @@
              xmlns:vm="clr-namespace:FeBuddy.Wpf.ViewModels"
              xmlns:m="clr-namespace:FeBuddy.Wpf.ViewModels.Models"
              xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
+             xmlns:cards="clr-namespace:FeBuddy.Wpf.Views.Cards"
              xmlns:bhv="clr-namespace:FeBuddy.Wpf.Behaviors"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance vm:ConcatenateAliasesViewModel}"
@@ -26,10 +27,7 @@
          that every sub-service tab is laid out inside. -->
     <StackPanel x:Name="Root">
 
-        <TextBlock Text="{Binding ValidationError}" Style="{StaticResource Text.Caption}"
-                   Foreground="{StaticResource Brush.Danger}" TextWrapping="Wrap" Margin="0,0,0,12"
-                   MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
-                   Visibility="{Binding ValidationError, Converter={StaticResource StringToVis}}" />
+        <cards:AttentionCard />
 
         <!-- ============ combine ============ -->
         <ctl:Card Header="Combine Alias Files">
@@ -98,7 +96,7 @@
         </ctl:Card>
 
         <!-- ============ custom alias files ============ -->
-        <ctl:Card Header="Custom Alias Files" IsEnabled="{Binding CombineAliasFiles}">
+        <ctl:Card Header="Custom Alias Files" bhv:FieldState.Error="{Binding FieldErrors[CustomAliasFiles]}" IsEnabled="{Binding CombineAliasFiles}">
             <StackPanel>
                 <TextBlock Style="{StaticResource Text.Prose}" TextWrapping="Wrap" Margin="0,4,0,8"
                            MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"

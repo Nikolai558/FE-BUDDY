@@ -14,10 +14,11 @@
              xmlns:m="clr-namespace:FeBuddy.Wpf.ViewModels.Models"
              xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
              xmlns:tabs="clr-namespace:FeBuddy.Wpf.ViewModels.ServiceTabs"
+             xmlns:bhv="clr-namespace:FeBuddy.Wpf.Behaviors"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance tabs:IFebPropertySettings}"
              d:DesignWidth="820">
-    <ctl:Card Header="FE-Buddy Properties">
+    <ctl:Card Header="FE-Buddy Properties" bhv:FieldState.Error="{Binding FieldErrors[FebProperties]}">
         <StackPanel>
             <ctl:Option Margin="0,4,0,0"
                         Description="Custom Geojson Property fields that increases file size but can be helpful for debugging or viewing data in a geojson viewer in order to identify object. Every FE-Buddy property will be prefixed with &quot;feb.&quot; as to not conflict with standard CRC properties.">

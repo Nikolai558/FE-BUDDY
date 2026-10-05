@@ -156,7 +156,9 @@ public sealed class WxStationsViewModel : GeojsonSubServiceViewModel, ISubServic
 	{
 		if (!EmitSymbols && !EmitText)
 		{
-			validation.Add("Neither Symbols nor Text is selected. Turn at least one back on, or untick Wx Stations under Include on the General tab.");
+			validation.AddArea(
+				ServiceAreas.GeojsonFiles,
+				"Neither Symbols nor Text is selected. Turn at least one back on, or untick Wx Stations under Include on the General tab.");
 		}
 
 		ValidateSharedSettings(validation);

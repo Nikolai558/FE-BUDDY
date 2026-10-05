@@ -742,17 +742,22 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 
 		if (!hasInclusionSource)
 		{
-			validation.Add("Pick at least one facility, airport or procedure for the documents to include.");
+			validation.AddArea(
+				ServiceAreas.DocumentSelection,
+				"Pick at least one facility, airport or procedure for the documents to include.");
 		}
 
 		if (hasWholeAirportSource && ChartTypeToggles.All(t => !t.IsSelected))
 		{
-			validation.Add("No chart types are ticked. Tick at least one chart type below, so the facilities, airports or region you picked actually include something.");
+			validation.AddArea(
+				ServiceAreas.ChartTypes,
+				"No chart types are ticked. Tick at least one chart type below, so the facilities, airports or region you picked actually include something.");
 		}
 
 		if (_includeRoiAirports && !HasRoi)
 		{
-			validation.Add(
+			validation.AddArea(
+				ServiceAreas.Roi,
 				"Set a region of interest below (or a default one in Settings), or untick "
 				+ "'Also include every airport inside the region of interest'.");
 		}

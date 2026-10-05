@@ -167,7 +167,8 @@ public sealed class AirportsViewModel : GeojsonSubServiceViewModel, ISubServiceR
 	{
 		if (GenerateGeojson && !EmitSymbols && !EmitText && !EmitLines)
 		{
-			validation.Add(
+			validation.AddArea(
+				ServiceAreas.GeojsonFiles,
 				"GeoJSON is on but none of its files are selected. Turn on Symbols, Text or Runway lines, "
 				+ "or turn GeoJSON off for Airports on the General tab.");
 		}

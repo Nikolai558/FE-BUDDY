@@ -50,13 +50,16 @@ the General tab; the other tabs keep what you've typed.
 Each tab saves on its own. The bar above and below each tab has **Previous**, **Next** and
 **Preview settings**, **Save**, **Undo all changes** (drops unsaved edits) and **Undo last save**
 (goes back to the save before). A tab gets an **amber** dot beside its name with unsaved edits, and
-a **red** dot when something is missing or invalid: the field is outlined in red, and hovering it
-says why.
+a **red** dot when something is missing or invalid. A red tab lists every problem in a red box at its
+top, and outlines each card with a problem in red, marked **Needs attention**; a box that's wrong is
+outlined too, and hovering it says why. Preview Settings names the red tabs.
 
 ### General tab
 
-- **Cycle** - Previous, Current or Next, each with its effective date and status. The next cycle
-  says *not yet published* until the FAA releases it, a few weeks early.
+- **Cycle** - Previous, Current or Next, each with its effective date and status: *ready* (green),
+  *partial* (amber), *failed* (red), or *not yet published* until the FAA releases it, a few weeks
+  early. *Partial* means the NASR data is ready but the [d-TPP Metafile](#procedures-tab) isn't, so
+  Procedures writes nothing for that cycle; hover the row for when to expect it.
 - **Sub-Services** - a table: **Include** ticks the sub-services to run (all of them to start), and
   the columns turn each one's files on or off: **Alias**, **GeoJSON**, and Procedures' **Procedure
   Changes** and **Procedures JSON**. A box a sub-service doesn't have is greyed out. An included

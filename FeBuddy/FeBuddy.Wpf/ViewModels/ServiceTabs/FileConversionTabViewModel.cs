@@ -399,7 +399,7 @@ public abstract class FileConversionTabViewModel : ConversionTabViewModel, ISour
 
 		if (CrcRows().Any(row => row.IsRequired && row.HasMissingValues))
 		{
-			validation.Add(CrcDefaultsIncompleteMessage);
+			validation.AddArea(ServiceAreas.CrcDefaults, CrcDefaultsIncompleteMessage);
 		}
 	}
 

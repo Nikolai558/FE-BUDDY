@@ -1,6 +1,7 @@
 using System.Text.Json.Nodes;
 
 using FeBuddy.Core.Infrastructure.Configuration;
+using FeBuddy.Core.Infrastructure.Configuration.Models;
 using FeBuddy.Core.Infrastructure.Logging;
 using FeBuddy.Core.Infrastructure.Logging.Models;
 
@@ -56,7 +57,7 @@ public sealed class UserConfigFileTests : IDisposable
 		UserConfigFile.Write();
 
 		// Force a fresh read from disk.
-		UserConfigFile.ReadAll();
+		Assert.Equal(UserConfigReadResult.Read, UserConfigFile.ReadAll());
 
 		Assert.Equal("Stable", UserConfigFile.GetValue("General.UpdateChannel"));
 		Assert.Equal("ZOA", UserConfigFile.GetValue("Services.AiracService.UserArtccId"));
@@ -73,7 +74,7 @@ public sealed class UserConfigFileTests : IDisposable
 	{
 		Assert.False(File.Exists(UserConfigFile.ConfigFilePath));
 
-		UserConfigFile.ReadAll();
+		Assert.Equal(UserConfigReadResult.Missing, UserConfigFile.ReadAll());
 
 		Assert.Null(UserConfigFile.GetValue("General.UpdateChannel"));
 	}
@@ -182,7 +183,7 @@ public sealed class UserConfigFileTests : IDisposable
 		Directory.CreateDirectory(_directory);
 		File.WriteAllText(UserConfigFile.ConfigFilePath, "[1, 2]");
 
-		UserConfigFile.ReadAll();
+		Assert.Equal(UserConfigReadResult.Unreadable, UserConfigFile.ReadAll());
 
 		Assert.Empty(UserConfigFile.SnapshotValues());
 		Assert.Contains(AppLog.Entries, e => e.Level == LogLevel.Warning && e.Message.Contains("is not a JSON object", StringComparison.Ordinal));
@@ -196,7 +197,7 @@ public sealed class UserConfigFileTests : IDisposable
 		Directory.CreateDirectory(_directory);
 		File.WriteAllText(UserConfigFile.ConfigFilePath, "{ not json");
 
-		UserConfigFile.ReadAll();
+		Assert.Equal(UserConfigReadResult.Unreadable, UserConfigFile.ReadAll());
 
 		Assert.Null(UserConfigFile.GetValue("General.UpdateChannel"));
 		Assert.Contains(AppLog.Entries, e => e.Level == LogLevel.Warning && e.Message.Contains("Could not read config file", StringComparison.Ordinal));

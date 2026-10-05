@@ -18,6 +18,12 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
   Full guide: docs/Developers/RELEASING.md.
 -->
 ## Unreleased
+### Updates
+- Bug #299 - Updating no longer changes your update channel. The first launch keeps the channel of
+  the version you installed, and only Settings ▸ Updates changes it, so an Alpha tester stays on
+  Alpha through the betas and 3.0.0. **Alpha testers:** the clean uninstall clears your channel and a
+  beta starts you on Beta, so choose **Alpha** in Settings ▸ Updates and Save once.
+
 ### Installing
 - Uninstall FE-Buddy completely, removing its settings, before installing this version: settings
   saved by beta.1 aren't read. A settings backup from beta.1 still imports, but the AIRAC Service's

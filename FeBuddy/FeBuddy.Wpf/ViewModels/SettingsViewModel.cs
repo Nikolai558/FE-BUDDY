@@ -534,8 +534,9 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 		"or not work at all.";
 
 	/// <summary>
-	/// The update channel. Until the user chooses one, the channel of the build they are running
-	/// (<see cref="UpdateChannelSetting"/>); saving a different one checks it straight away.
+	/// The update channel: the saved one, which the first launch set to the build's own
+	/// (<see cref="UpdateChannelSetting"/>). Only this changes it; saving a different one checks it
+	/// straight away.
 	/// </summary>
 	public ReleaseChannel Channel
 	{
@@ -680,13 +681,10 @@ public sealed class SettingsViewModel : ObservableObject, IHasUnsavedChanges, IC
 
 	private void Save()
 	{
-		// Written only when changed: until the user picks one, the channel follows the running build.
+		// Always written, so the channel shown is the one kept even where launch couldn't save it (a
+		// development build). Only a change is checked straight away.
 		bool channelChanged = Channel != _savedChannel;
-		if (channelChanged)
-		{
-			UserConfigFile.TrySetValue(ChannelKey, Channel.ToString());
-		}
-
+		UserConfigFile.TrySetValue(ChannelKey, Channel.ToString());
 
 		UserConfigFile.TrySetValue(OutputDirKey, OutputDirectory);
 		UserConfigFile.TrySetValue(AddFolderKey, AddFeBuddyOutputFolder ? "Y" : "N");

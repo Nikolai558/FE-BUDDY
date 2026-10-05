@@ -50,11 +50,12 @@ restores. Settings' own **Save** writes the whole file, with no undo copy.
 
 ### General
 
-Written by Settings, except `NewsLastOpen` and `LegacyGitHubTokenNoticeShown`.
+Written by Settings, except `NewsLastOpen`, `LegacyGitHubTokenNoticeShown`, and the first
+`UpdateChannel`.
 
 | Key | Values | Default |
 |---|---|---|
-| `UpdateChannel` | `Stable`, `ReleaseCandidate`, `Beta`, `Alpha`. Saved only once the user changes it | the running build's channel (`UpdateChannelSetting`) |
+| `UpdateChannel` | `Stable`, `ReleaseCandidate`, `Beta`, `Alpha`. Saved by the first launch (not a `-dev` build's), then changed only in Settings | the running build's channel (`UpdateChannelSetting`) |
 | `NewsLastOpen` | the newest News `PostId` the user has seen, e.g. `2026-08-30.3` | none |
 | `PrettyPrintGeojson` | `Y` / `N` (`OutputFormatting`) | `N` |
 | `DefaultOutputDirectory` | a folder | the Desktop |

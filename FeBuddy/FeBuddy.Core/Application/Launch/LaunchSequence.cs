@@ -7,6 +7,7 @@ using FeBuddy.Core.Application.Updates;
 using FeBuddy.Core.Application.Updates.Models;
 using FeBuddy.Core.Domain.Airac.Models;
 using FeBuddy.Core.Infrastructure.Configuration;
+using FeBuddy.Core.Infrastructure.Configuration.Models;
 using FeBuddy.Core.Infrastructure.FileSystem;
 using FeBuddy.Core.Infrastructure.Logging;
 using FeBuddy.Core.Infrastructure.Platform;
@@ -56,11 +57,15 @@ public static class LaunchSequence
 			progress, LaunchStep.ReadUserConfig, "Reading saved settings",
 			() =>
 			{
-				UserConfigFile.ReadAll();
+				UserConfigReadResult read = UserConfigFile.ReadAll();
 
 				// App-wide output preferences are applied as soon as they are readable, so any
 				// file written this session follows them.
 				OutputFormatting.LoadFromUserConfig();
+
+				// The first launch keeps the running build's update channel, so no later update
+				// can move the user to another one; only Settings does.
+				UpdateChannelSetting.SaveDefaultIfUnset(currentVersion, read);
 				return true;
 			},
 			defaultValue: false);

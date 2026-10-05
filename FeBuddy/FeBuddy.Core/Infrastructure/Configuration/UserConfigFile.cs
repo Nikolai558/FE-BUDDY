@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
+using FeBuddy.Core.Infrastructure.Configuration.Models;
 using FeBuddy.Core.Infrastructure.FileSystem;
 using FeBuddy.Core.Infrastructure.Logging;
 
@@ -80,7 +81,8 @@ public static class UserConfigFile
 	/// was there. A missing or unreadable file leaves the dictionary empty and logs a warning
 	/// rather than throwing - this is the launch read path.
 	/// </summary>
-	public static void ReadAll()
+	/// <returns>Whether the file was read, missing or unreadable.</returns>
+	public static UserConfigReadResult ReadAll()
 	{
 		lock (Gate)
 		{
@@ -91,7 +93,7 @@ public static class UserConfigFile
 			if (!File.Exists(path))
 			{
 				AppLog.Warning(LogSource, $"No config file at '{path}'. Using defaults for every setting.");
-				return;
+				return UserConfigReadResult.Missing;
 			}
 
 			try
@@ -102,16 +104,17 @@ public static class UserConfigFile
 				if (root is JsonObject obj)
 				{
 					FlattenInto(obj, prefix: string.Empty, Values);
+					return UserConfigReadResult.Read;
 				}
-				else
-				{
-					AppLog.Warning(LogSource, $"Config file '{path}' is not a JSON object. Using defaults.");
-				}
+
+				AppLog.Warning(LogSource, $"Config file '{path}' is not a JSON object. Using defaults.");
+				return UserConfigReadResult.Unreadable;
 			}
 			catch (Exception ex)
 			{
 				Values.Clear();
 				AppLog.Warning(LogSource, $"Could not read config file '{path}': {ex.Message}. Using defaults.");
+				return UserConfigReadResult.Unreadable;
 			}
 		}
 	}

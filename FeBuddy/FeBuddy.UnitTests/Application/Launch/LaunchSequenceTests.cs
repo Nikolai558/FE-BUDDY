@@ -245,6 +245,35 @@ public sealed class LaunchSequenceTests : IDisposable
 		Assert.Contains(AppLog.Entries, e => e.Level == LogLevel.Warning && e.Message.Contains("step blew up. Continuing launch.", StringComparison.Ordinal));
 	}
 
+	/// <summary>Issue #299: an alpha tester who updates keeps the Alpha channel the first launch saved.</summary>
+	[Fact]
+	public async Task the_first_launch_saves_the_update_channel_and_an_update_keeps_it()
+	{
+		AppEnvironment.HttpClientForTesting = new HttpClient(new StubHttpHandler(Online));
+
+		await LaunchSequence.RunAsync("3.0.0-alpha.5");
+		Assert.Equal("Alpha", UserConfigFile.GetValue(UserConfigKeys.UpdateChannel));
+
+		LaunchResult afterUpdate = await LaunchSequence.RunAsync("3.0.0-beta.1");
+
+		Assert.Equal(ReleaseChannel.Alpha, afterUpdate.Version.Channel);
+		Assert.Equal("Alpha", UserConfigFile.GetValue(UserConfigKeys.UpdateChannel));
+	}
+
+	/// <summary>A settings file that can't be read isn't written to at launch, which would replace it.</summary>
+	[Fact]
+	public async Task launch_leaves_a_settings_file_it_cannot_read_alone()
+	{
+		AppEnvironment.HttpClientForTesting = new HttpClient(new StubHttpHandler(Online));
+		Directory.CreateDirectory(UserConfigFile.Directory);
+		File.WriteAllText(UserConfigFile.ConfigFilePath, "{ not json");
+
+		LaunchResult result = await LaunchSequence.RunAsync("3.0.0-alpha.5");
+
+		Assert.Equal(ReleaseChannel.Alpha, result.Version.Channel);
+		Assert.Equal("{ not json", File.ReadAllText(UserConfigFile.ConfigFilePath));
+	}
+
 	[Fact]
 	public async Task recheck_refreshes_the_online_state_and_version()
 	{

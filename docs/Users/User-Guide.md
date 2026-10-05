@@ -178,6 +178,9 @@ the cycle is *partial*, and the run goes ahead without Procedures' files.
   **Airports** you list (FAA or ICAO ID), plus every airport in the region if ticked; **Procedures at
   Any Airport**, by name; and **Airport + Procedure** pairs. **Chart Types** sets which kinds of chart
   a whole airport adds; a procedure picked by name is always included.
+- **Airports** takes a list: type or paste up to 100 IDs, separated by spaces, commas or new lines,
+  and press Enter or **Add**. Any it can't add stay in the box, with why underneath: not an airport
+  this cycle, already listed, or already included by a ticked facility or the region.
 - **Procedures.json Fields** - the optional fields the JSON carries.
 - **Region of Interest** - only decides which airports *Also include every airport inside the region
   of interest* adds. Nothing is clipped.

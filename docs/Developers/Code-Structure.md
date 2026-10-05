@@ -120,8 +120,9 @@ FeBuddy.Wpf/
 ├── Assets/              FE-BUDDY.ico, Brand/ (the logo's sizes) and BaseMap/ (us-states.json,
 │                        coastlines.json, from Natural Earth, built by FeBuddy/Tools/BuildBaseMap.cs)
 ├── Behaviors/           attached properties a view opts into (FieldState, InlineCode, InlineMarkdown,
-│                        WheelScroll, ScrollToTop, BringIntoView, ComboBoxDropDownFocus), and
-│                        MaximizeToWorkArea, a window hook the chrome windows install from code
+│                        WheelScroll, ScrollToTop, BringIntoView, PasteOnOneLine,
+│                        ComboBoxDropDownFocus), and MaximizeToWorkArea, a window hook the chrome
+│                        windows install from code
 ├── Controls/            Card, SectionHeader, Option, CopyButton, FilterPicker, MarkdownView,
 │                        MapCanvas, AliasGuideDocumentView, BesideOrBelow, CommandTablePanel,
 │                        ChromeWindow, BrandMark

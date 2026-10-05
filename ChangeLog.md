@@ -22,6 +22,10 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
 - Feature #308 - On the General tab, a sub-service's **Include** now matches its files: untick its
   last file and it's left out, tick a file and it's back in. Unticking **Include** unticks its files,
   and ticking it ticks them all.
+- Feature #309 - Procedures ▸ Airports takes a list: type or paste up to 100 FAA or ICAO IDs
+  (separated by spaces, commas or new lines) and press **Enter** or **Add**. Any it can't add stay in
+  the box with the reason under it: not an airport this cycle, already listed, or already included
+  by a ticked facility or the region of interest.
 
 ### File Conversions
 - File Conversions opens on a picker: choose the **Source** (FAA Radar Video Map .dat files, Legacy

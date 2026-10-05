@@ -619,6 +619,12 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 			: "ROI has not been set, yet - no geographic limit";
 	}
 
+	/// <summary>
+	/// The region the run uses: the override's corners (<see langword="null"/> while they don't all
+	/// parse), otherwise the default ROI, otherwise <see langword="null"/>.
+	/// </summary>
+	protected RegionOfInterest? RoiInUse() => OverrideRoi ? TryReadOverrideCorners() : DefaultRoiStore.Load();
+
 	// ================= private =================
 
 	private IEnumerable<EramClassDefault> AllCrcRows() => LineDefaults.Concat(SymbolDefaults).Concat(TextDefaults);

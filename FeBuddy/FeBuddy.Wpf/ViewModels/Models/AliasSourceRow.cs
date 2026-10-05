@@ -1,8 +1,11 @@
 using System.Windows.Input;
 
 using FeBuddy.Wpf.Mvvm;
+using FeBuddy.Wpf.Shell;
 
 using FeBuddy.Core.Application.Airac.ConcatenateAliases.Models;
+using FeBuddy.Core.Infrastructure.Credentials;
+using FeBuddy.Core.Infrastructure.GitHub;
 
 namespace FeBuddy.Wpf.ViewModels.Models;
 
@@ -11,8 +14,15 @@ namespace FeBuddy.Wpf.ViewModels.Models;
 /// saved credential to download it with.
 /// </summary>
 /// <remarks>
+/// <para>
 /// The row holds only a credential's id - the secret never leaves <c>CredentialStore</c>. Its
 /// commands call back into the tab, which owns the list, the dialogs and the save contract.
+/// </para>
+/// <para>
+/// A GitHub address is shown as the file's Raw link (<see cref="TidyLocation"/>), whatever form it
+/// was pasted in. When <b>Check</b> finds GitHub refused or hid the file, the row asks whether the
+/// repository is private and points to the GitHub token guide (<see cref="Troubleshooting"/>).
+/// </para>
 /// </remarks>
 public sealed class AliasSourceRow : ObservableObject
 {
@@ -28,6 +38,7 @@ public sealed class AliasSourceRow : ObservableObject
 	private bool _isChecking;
 	private CredentialChoice? _suggestion;
 	private string? _suggestionSource;
+	private AliasTroubleshooting _troubleshooting;
 
 	/// <summary>Creates a row.</summary>
 	/// <param name="owner">The tab the row belongs to.</param>
@@ -48,6 +59,10 @@ public sealed class AliasSourceRow : ObservableObject
 		MoveUpCommand = new RelayCommand(() => _owner.Move(this, -1), () => Number > 1);
 		MoveDownCommand = new RelayCommand(() => _owner.Move(this, +1), () => Number < _owner.Sources.Count);
 		RemoveCommand = new RelayCommand(() => _owner.Remove(this));
+		AnswerPrivateCommand = new RelayCommand(() => Troubleshooting = AliasTroubleshooting.Private);
+		AnswerPublicCommand = new RelayCommand(() => Troubleshooting = AliasTroubleshooting.Public);
+		OpenTokenGuideCommand = new RelayCommand(() => BrowserLauncher.Open(Links.GitHubTokenGuide));
+		OpenTokenTroubleshootingCommand = new RelayCommand(() => BrowserLauncher.Open(Links.GitHubTokenGuideTroubleshooting));
 	}
 
 	/// <summary>Whether it is a file on this PC or a web address.</summary>
@@ -78,7 +93,7 @@ public sealed class AliasSourceRow : ObservableObject
 	/// <summary>What the location box asks for when it is empty.</summary>
 	public string Placeholder => IsFile
 		? @"e.g. C:\Users\me\Documents\ZOB-Alias.txt"
-		: "e.g. https://github.com/vZOB/facility/blob/main/ZOB-Alias.txt";
+		: "e.g. https://github.com/vZOB/facility/raw/refs/heads/main/ZOB-Alias.txt";
 
 	/// <summary>The file's full path, or the web address.</summary>
 	public string Location
@@ -195,6 +210,37 @@ public sealed class AliasSourceRow : ObservableObject
 	public string CheckLabel => IsChecking ? "Checking…" : "Check";
 
 	/// <summary>
+	/// What the row offers after GitHub refused or hid the file on <b>Check</b>; cleared by any edit
+	/// and by the next check.
+	/// </summary>
+	public AliasTroubleshooting Troubleshooting
+	{
+		get => _troubleshooting;
+		internal set
+		{
+			if (SetProperty(ref _troubleshooting, value))
+			{
+				OnPropertyChanged(nameof(AsksIfPrivate));
+				OnPropertyChanged(nameof(ShowsPrivateHelp));
+				OnPropertyChanged(nameof(ShowsPublicHelp));
+				OnPropertyChanged(nameof(ShowsCredentialHelp));
+			}
+		}
+	}
+
+	/// <summary>Whether the row is asking if the repository is private.</summary>
+	public bool AsksIfPrivate => Troubleshooting == AliasTroubleshooting.AskIfPrivate;
+
+	/// <summary>Whether the row shows how to read a private repository: with a GitHub token.</summary>
+	public bool ShowsPrivateHelp => Troubleshooting == AliasTroubleshooting.Private;
+
+	/// <summary>Whether the row shows what to check in the address of a public repository's file.</summary>
+	public bool ShowsPublicHelp => Troubleshooting == AliasTroubleshooting.Public;
+
+	/// <summary>Whether the row shows what to check about the credential GitHub refused.</summary>
+	public bool ShowsCredentialHelp => Troubleshooting == AliasTroubleshooting.CredentialRefused;
+
+	/// <summary>
 	/// A credential an earlier web address already uses that may be sent to this one's website too,
 	/// offered while this one has none - "the same token as file 1".
 	/// </summary>
@@ -227,18 +273,51 @@ public sealed class AliasSourceRow : ObservableObject
 	/// <summary>Takes this file off the list.</summary>
 	public ICommand RemoveCommand { get; }
 
+	/// <summary>Answers "yes, the repository is private".</summary>
+	public ICommand AnswerPrivateCommand { get; }
+
+	/// <summary>Answers "no, the repository is public".</summary>
+	public ICommand AnswerPublicCommand { get; }
+
+	/// <summary>Opens the GitHub token guide.</summary>
+	public ICommand OpenTokenGuideCommand { get; }
+
+	/// <summary>Opens the GitHub token guide's "If something goes wrong" section.</summary>
+	public ICommand OpenTokenTroubleshootingCommand { get; }
+
 	/// <summary>The row as the library sees it.</summary>
 	/// <returns>The custom alias file.</returns>
 	public AliasSource ToSource() =>
 		new(Number, Kind, Location.Trim(), IsUrl && CredentialId != Guid.Empty ? CredentialId : null);
 
+	/// <summary>
+	/// Shows a GitHub address as the file's Raw link, the form GitHub's Raw button gives
+	/// (<c>…/raw/refs/heads/main/…</c>) - for a file's page (<c>…/blob/main/…</c>), say. Leaves any
+	/// other address alone, and one with a secret in it, so the row can say why that can't be saved.
+	/// </summary>
+	internal void TidyLocation()
+	{
+		string location = Location.Trim();
+
+		if (IsUrl
+			&& Uri.TryCreate(location, UriKind.Absolute, out Uri? url)
+			&& UrlSecrets.Describe(url) is null
+			&& GitHubFileUrl.ToRawLink(url) is { } raw
+			&& raw.AbsoluteUri != location)
+		{
+			Location = raw.AbsoluteUri;
+		}
+	}
+
 	/// <summary>Shows what a <b>Check</b> found.</summary>
 	/// <param name="succeeded">Whether the file was read.</param>
 	/// <param name="message">What to show.</param>
-	internal void SetCheck(bool succeeded, string message)
+	/// <param name="troubleshooting">What to offer next, after GitHub refused or hid the file.</param>
+	internal void SetCheck(bool succeeded, string message, AliasTroubleshooting troubleshooting = AliasTroubleshooting.None)
 	{
 		CheckSucceeded = succeeded;
 		CheckMessage = message;
+		Troubleshooting = troubleshooting;
 	}
 
 	/// <summary>Offers a credential another row uses, or stops offering one.</summary>
@@ -262,6 +341,7 @@ public sealed class AliasSourceRow : ObservableObject
 	{
 		CheckMessage = null;
 		CheckSucceeded = false;
+		Troubleshooting = AliasTroubleshooting.None;
 	}
 }
 

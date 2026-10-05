@@ -128,8 +128,8 @@ What **Check** says, and what to do:
 | GitHub does not let the credential … read it … Contents: Read-only | The token has no **Contents** permission | Edit the token on GitHub: Contents, Read-only |
 | GitHub needs the credential … authorized for this organization's single sign-on (SSO) | The organization uses SAML single sign-on | Authorize the token for the organization on GitHub, then **Check** again |
 | GitHub is limiting how often it can be asked right now | Too many requests in a short time | Wait a few minutes and **Check** again |
-| This address has a sign-in token (token=) in it | The address was copied while viewing a private file's raw text | Use the file's own page (with `/blob/` in it), and choose your token as its credential |
-| … a GitHub page, not a file | The address is a repository's front page or a folder | Open the alias file itself on GitHub and copy that address (with `/blob/` in it) |
+| This address has a sign-in token (token=) in it | The address was copied while viewing a private file's raw text | Use the file's page or its Raw link without the `token=`, and choose your token as its credential |
+| … a GitHub page, not a file | The address is a repository's front page or a folder | Open the alias file itself on GitHub and copy its address, or its Raw link |
 
 Without any token, a 403 can also mean GitHub's hourly limit for anonymous downloads was reached:
 choose a token, or try again in an hour.

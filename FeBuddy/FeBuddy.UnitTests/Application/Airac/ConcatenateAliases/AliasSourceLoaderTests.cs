@@ -182,18 +182,22 @@ public sealed class AliasSourceLoaderTests : IDisposable
 		Assert.Contains("is not allowed to be sent to gitlab.com", load.Problem, StringComparison.Ordinal);
 	}
 
+	/// <summary>
+	/// What to do, and whether it is a matter of access - a credential needed, or one that can't read
+	/// the file (GitHub's 404 for a private repository included) - rather than a limit or an error.
+	/// </summary>
 	[Theory]
-	[InlineData(HttpStatusCode.Unauthorized, true, false, "refused the credential 'ZOB GitHub'")]
-	[InlineData(HttpStatusCode.Unauthorized, false, false, "needs a credential")]
-	[InlineData(HttpStatusCode.Forbidden, false, true, "limits downloads made without a token")]
-	[InlineData(HttpStatusCode.TooManyRequests, false, true, "limits downloads made without a token")]
-	[InlineData(HttpStatusCode.Forbidden, true, true, "download limit for the credential 'ZOB GitHub'")]
-	[InlineData(HttpStatusCode.Forbidden, true, false, "Contents: Read-only")]
-	[InlineData(HttpStatusCode.Forbidden, false, false, "It may need a credential")]
-	[InlineData(HttpStatusCode.NotFound, false, false, "if the repository is private, choose a GitHub credential")]
-	[InlineData(HttpStatusCode.NotFound, true, false, "or the credential 'ZOB GitHub' cannot see it")]
-	[InlineData(HttpStatusCode.InternalServerError, true, false, "GitHub answered 500")]
-	public async Task a_refused_github_download_says_what_to_do(HttpStatusCode status, bool withCredential, bool rateLimited, string expected)
+	[InlineData(HttpStatusCode.Unauthorized, true, false, "refused the credential 'ZOB GitHub'", true)]
+	[InlineData(HttpStatusCode.Unauthorized, false, false, "needs a credential", true)]
+	[InlineData(HttpStatusCode.Forbidden, false, true, "limits downloads made without a token", false)]
+	[InlineData(HttpStatusCode.TooManyRequests, false, true, "limits downloads made without a token", false)]
+	[InlineData(HttpStatusCode.Forbidden, true, true, "download limit for the credential 'ZOB GitHub'", false)]
+	[InlineData(HttpStatusCode.Forbidden, true, false, "Contents: Read-only", true)]
+	[InlineData(HttpStatusCode.Forbidden, false, false, "It may need a credential", true)]
+	[InlineData(HttpStatusCode.NotFound, false, false, "if the repository is private, choose a GitHub credential", true)]
+	[InlineData(HttpStatusCode.NotFound, true, false, "or the credential 'ZOB GitHub' cannot see it", true)]
+	[InlineData(HttpStatusCode.InternalServerError, true, false, "GitHub answered 500", false)]
+	public async Task a_refused_github_download_says_what_to_do(HttpStatusCode status, bool withCredential, bool rateLimited, string expected, bool denied)
 	{
 		Guid? id = withCredential ? SaveGitHubToken() : null;
 		using HttpClient client = Client(_ =>
@@ -213,6 +217,7 @@ public sealed class AliasSourceLoaderTests : IDisposable
 		Assert.False(load.Succeeded);
 		Assert.Contains(expected, load.Problem, StringComparison.Ordinal);
 		Assert.DoesNotContain(Secret, load.Problem, StringComparison.Ordinal);
+		Assert.Equal(denied, load.IsAccessDenied);
 	}
 
 	/// <summary>
@@ -221,11 +226,11 @@ public sealed class AliasSourceLoaderTests : IDisposable
 	/// single sign-on.
 	/// </summary>
 	[Theory]
-	[InlineData(HttpStatusCode.Forbidden, "Retry-After", "60", true, "GitHub is limiting how often it can be asked right now")]
-	[InlineData(HttpStatusCode.TooManyRequests, null, null, false, "GitHub is limiting how often it can be asked right now")]
-	[InlineData(HttpStatusCode.Forbidden, "X-GitHub-SSO", "required; url=https://github.com/orgs/o/sso", true, "authorized for this organization's single sign-on (SSO)")]
-	[InlineData(HttpStatusCode.Forbidden, "X-GitHub-SSO", "required; url=https://github.com/orgs/o/sso", false, "It may need a credential")]
-	public async Task a_github_403_that_is_not_a_missing_permission_says_so(HttpStatusCode status, string? header, string? value, bool withCredential, string expected)
+	[InlineData(HttpStatusCode.Forbidden, "Retry-After", "60", true, "GitHub is limiting how often it can be asked right now", false)]
+	[InlineData(HttpStatusCode.TooManyRequests, null, null, false, "GitHub is limiting how often it can be asked right now", false)]
+	[InlineData(HttpStatusCode.Forbidden, "X-GitHub-SSO", "required; url=https://github.com/orgs/o/sso", true, "authorized for this organization's single sign-on (SSO)", true)]
+	[InlineData(HttpStatusCode.Forbidden, "X-GitHub-SSO", "required; url=https://github.com/orgs/o/sso", false, "It may need a credential", true)]
+	public async Task a_github_403_that_is_not_a_missing_permission_says_so(HttpStatusCode status, string? header, string? value, bool withCredential, string expected, bool denied)
 	{
 		Guid? id = withCredential ? SaveGitHubToken() : null;
 		using HttpClient client = Client(_ =>
@@ -244,6 +249,7 @@ public sealed class AliasSourceLoaderTests : IDisposable
 
 		Assert.Contains(expected, load.Problem, StringComparison.Ordinal);
 		Assert.DoesNotContain("Contents: Read-only", load.Problem, StringComparison.Ordinal);
+		Assert.Equal(denied, load.IsAccessDenied);
 	}
 
 	/// <summary>A Credential Manager that cannot be read fails the one file, with the reason - it never throws.</summary>
@@ -299,6 +305,7 @@ public sealed class AliasSourceLoaderTests : IDisposable
 		AliasSourceLoad load = await AliasSourceLoader.LoadAsync(UrlSource("https://example.com/a.txt", id), _store, client);
 
 		Assert.Equal("example.com does not let the credential 'Example key' read it.", load.Problem);
+		Assert.True(load.IsAccessDenied);
 	}
 
 	[Fact]
@@ -309,10 +316,11 @@ public sealed class AliasSourceLoaderTests : IDisposable
 		AliasSourceLoad load = await AliasSourceLoader.LoadAsync(UrlSource("https://example.com/a.txt"), _store, client);
 
 		Assert.Contains("example.com could not find it (404 Not Found)", load.Problem, StringComparison.Ordinal);
+		Assert.False(load.IsAccessDenied);
 	}
 
 	[Theory]
-	[InlineData("text/html", ".not really html", "https://raw.githubusercontent.com/o/r/main/a.txt", "(on GitHub, the file's page")]
+	[InlineData("text/html", ".not really html", "https://raw.githubusercontent.com/o/r/main/a.txt", "(on GitHub, the file's Raw link)")]
 	[InlineData("text/plain", "\uFEFF  <!DOCTYPE html><html></html>", "https://example.com/a.txt", "Use the address of the file itself.")]
 	[InlineData("text/plain", "\r\n<html><body>Sign in</body></html>", "https://example.com/a.txt", "sent a web page")]
 	public async Task a_web_page_is_not_an_alias_file(string mediaType, string body, string url, string expected)

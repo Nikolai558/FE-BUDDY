@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Globalization;
 using System.IO;
+using System.Net.Http;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Threading;
@@ -60,8 +61,16 @@ public sealed class ConcatenateAliasesViewModel : SubServiceSettingsViewModel, I
 	private const string SourcesKey = "Sources";
 	private const string LogSource = "ConcatenateAliases";
 
+	private const string NoAliasCommandsMessage =
+		"It has no alias commands (lines starting with a dot), so it isn't an alias file. Choose your facility's alias file.";
+
 	private readonly CredentialStore _store;
+	private readonly HttpClient? _httpClient;
 	private readonly Dispatcher _dispatcher;
+
+	// Whether each file on this PC holds an alias command, as last read, with when it was written and
+	// its size - so validating as the user types doesn't read every file again.
+	private readonly Dictionary<string, (DateTime Written, long Length, bool HasCommands)> _localFileChecks = new(StringComparer.OrdinalIgnoreCase);
 	private bool _loading;
 	private bool _combineAliasFiles = true;
 	private Func<SubServiceDescriptor, ServiceTabViewModel?>? _openTabFor;
@@ -79,9 +88,11 @@ public sealed class ConcatenateAliasesViewModel : SubServiceSettingsViewModel, I
 
 	/// <summary>Builds the tab over <paramref name="store"/> and restores its saved settings.</summary>
 	/// <param name="store">The credentials a web address can be downloaded with.</param>
-	internal ConcatenateAliasesViewModel(CredentialStore store)
+	/// <param name="httpClient">What <b>Check</b> downloads with; <see langword="null"/> makes one per check.</param>
+	internal ConcatenateAliasesViewModel(CredentialStore store, HttpClient? httpClient = null)
 	{
 		_store = store;
+		_httpClient = httpClient;
 		_dispatcher = Application.Current?.Dispatcher ?? Dispatcher.CurrentDispatcher;
 
 		AddFileCommand = new RelayCommand(AddFiles);
@@ -362,7 +373,7 @@ public sealed class ConcatenateAliasesViewModel : SubServiceSettingsViewModel, I
 		// The custom alias files are only read while combining, so only then held against the user.
 		foreach (AliasSourceRow row in Sources)
 		{
-			row.Error = CombineAliasFiles ? ErrorOf(row) : null;
+			row.Error = CombineAliasFiles ? ErrorOf(row) ?? LocalFileErrorOf(row) : null;
 
 			if (row.Error is { } error)
 			{
@@ -445,13 +456,17 @@ public sealed class ConcatenateAliasesViewModel : SubServiceSettingsViewModel, I
 	}
 
 	/// <summary>
-	/// Reads a row's file now, and shows what the run would get. A result for an address or
-	/// credential the user has changed since is dropped, so it never shows against the new one.
+	/// Reads a row's file now, and shows what the run would get - and, when GitHub refused or hid it,
+	/// what to try (<see cref="AliasSourceRow.Troubleshooting"/>). A GitHub address is turned into its
+	/// Raw link first. A result for an address or credential the user has changed since is dropped,
+	/// so it never shows against the new one.
 	/// </summary>
 	/// <param name="row">The row.</param>
 	/// <returns>A task that completes when the row shows the result.</returns>
 	internal async Task CheckAsync(AliasSourceRow row)
 	{
+		row.TidyLocation();
+
 		if (ErrorOf(row) is { } error)
 		{
 			row.SetCheck(false, error);
@@ -463,13 +478,14 @@ public sealed class ConcatenateAliasesViewModel : SubServiceSettingsViewModel, I
 
 		try
 		{
-			AliasSourceLoad load = await AliasSourceLoader.LoadAsync(source, _store);
+			AliasSourceLoad load = await AliasSourceLoader.LoadAsync(source, _store, _httpClient);
 
 			if (IsStill(row, source))
 			{
-				row.SetCheck(load.Succeeded, load.Succeeded
-					? $"Read {load.CommandCount:N0} alias command(s)."
-					: load.Problem ?? "It could not be read.");
+				row.SetCheck(
+					load.Succeeded,
+					load.Succeeded ? $"Read {load.CommandCount:N0} alias command(s)." : load.Problem ?? "It could not be read.",
+					TroubleshootingFor(load));
 			}
 		}
 		catch (Exception ex)
@@ -487,6 +503,19 @@ public sealed class ConcatenateAliasesViewModel : SubServiceSettingsViewModel, I
 		{
 			row.IsChecking = false;
 		}
+	}
+
+	/// <summary>
+	/// What to offer after a check: when GitHub refused or hid the file, whether the repository is
+	/// private (no credential chosen) or what to check about the credential; otherwise nothing.
+	/// </summary>
+	private static AliasTroubleshooting TroubleshootingFor(AliasSourceLoad load)
+	{
+		bool onGitHub = Uri.TryCreate(load.Source.Location, UriKind.Absolute, out Uri? url) && GitHubFileUrl.ToContentsApi(url) is not null;
+
+		return !load.IsAccessDenied || !onGitHub ? AliasTroubleshooting.None
+			: load.Source.CredentialId is null ? AliasTroubleshooting.AskIfPrivate
+			: AliasTroubleshooting.CredentialRefused;
 	}
 
 	/// <summary>Whether the row still points at the file it had when a check started.</summary>
@@ -621,7 +650,7 @@ public sealed class ConcatenateAliasesViewModel : SubServiceSettingsViewModel, I
 
 		if (GitHubFileUrl.IsPageButNotFile(url))
 		{
-			return "This is a GitHub page, not a file. Open the alias file on GitHub and copy that page's address (it has /blob/ in it).";
+			return "This is a GitHub page, not a file. Open the alias file itself on GitHub and copy its address, or its Raw link.";
 		}
 
 		if (UrlSecrets.Describe(url) is { } secret)
@@ -637,6 +666,45 @@ public sealed class ConcatenateAliasesViewModel : SubServiceSettingsViewModel, I
 		}
 
 		return null;
+	}
+
+	/// <summary>
+	/// Why a file on this PC can't be saved for what it holds: a file with no alias command in it is
+	/// not an alias file. One that isn't there, or can't be read, only gets a notice (see
+	/// <see cref="RefreshRowHints"/>): the run says what happened to it.
+	/// </summary>
+	private string? LocalFileErrorOf(AliasSourceRow row)
+	{
+		string path = row.Location.Trim();
+
+		if (!row.IsFile || !Path.IsPathFullyQualified(path))
+		{
+			return null;
+		}
+
+		try
+		{
+			FileInfo file = new(path);
+
+			if (!file.Exists)
+			{
+				return null;
+			}
+
+			if (!_localFileChecks.TryGetValue(path, out (DateTime Written, long Length, bool HasCommands) known)
+				|| known.Written != file.LastWriteTimeUtc
+				|| known.Length != file.Length)
+			{
+				known = (file.LastWriteTimeUtc, file.Length, CombinedAliasFileWriter.CountCommands(File.ReadAllText(path)) > 0);
+				_localFileChecks[path] = known;
+			}
+
+			return known.HasCommands ? null : NoAliasCommandsMessage;
+		}
+		catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+		{
+			return null;
+		}
 	}
 
 	/// <summary>

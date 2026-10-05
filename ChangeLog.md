@@ -54,6 +54,12 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
   while a sub-service makes an alias file.
 - With no custom alias files, the Review tab warns that `Combined_Alias.txt` holds only FE-Buddy's
   aliases, since uploading it would remove your facility's own from vNAS.
+- A custom alias file's GitHub address is shown as its Raw link (`…/raw/refs/heads/main/…`) once
+  you leave the box, whichever form you pasted.
+- When **Check** finds GitHub won't show a custom alias file, it asks whether the repository is
+  private and points you to the GitHub token guide - or, with a credential chosen, to the guide's
+  troubleshooting.
+- A custom alias file on this PC with no alias commands in it can't be saved.
 - Airways no longer has **None** under "split into". Turn GeoJSON off for Airways on the General tab
   instead.
 

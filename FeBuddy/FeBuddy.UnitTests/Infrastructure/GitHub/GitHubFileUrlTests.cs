@@ -4,11 +4,13 @@ namespace FeBuddy.UnitTests.Infrastructure.GitHub;
 
 /// <summary>
 /// Covers <see cref="GitHubFileUrl"/>: every way a user can copy a file's address from GitHub becomes
-/// the API address that downloads it, and a GitHub page that is not a file is recognised as such.
+/// the API address that downloads it and the Raw link FE-Buddy shows, and a GitHub page that is not a
+/// file is recognised as such.
 /// </summary>
 public sealed class GitHubFileUrlTests
 {
 	private const string Api = "https://api.github.com/repos/vZOB/facility/contents/aliases/ZOB-Alias.txt?ref=main";
+	private const string Raw = "https://github.com/vZOB/facility/raw/refs/heads/main/aliases/ZOB-Alias.txt";
 
 	[Theory]
 	[InlineData("https://github.com/vZOB/facility/blob/main/aliases/ZOB-Alias.txt")]
@@ -79,10 +81,39 @@ public sealed class GitHubFileUrlTests
 		Assert.False(GitHubFileUrl.IsPageButNotFile(relative));
 	}
 
+	/// <summary>Every form a file's address comes in is shown as its Raw link, the one GitHub's Raw button gives.</summary>
+	[Theory]
+	[InlineData("https://github.com/vZOB/facility/blob/main/aliases/ZOB-Alias.txt")]
+	[InlineData("https://www.github.com/vZOB/facility/blob/main/aliases/ZOB-Alias.txt")]
+	[InlineData("https://GitHub.com/vZOB/facility/BLOB/main/aliases/ZOB-Alias.txt")]
+	[InlineData("https://github.com/vZOB/facility/raw/main/aliases/ZOB-Alias.txt")]
+	[InlineData("https://github.com/vZOB/facility/blob/main/aliases/ZOB-Alias.txt?plain=1#L10")]
+	[InlineData("https://raw.githubusercontent.com/vZOB/facility/main/aliases/ZOB-Alias.txt")]
+	[InlineData("https://raw.githubusercontent.com/vZOB/facility/refs/heads/main/aliases/ZOB-Alias.txt")]
+	[InlineData("https://github.com/vZOB/facility/raw/refs/heads/main/aliases/ZOB-Alias.txt")]
+	[InlineData("https://github.com/vZOB/facility/blob/refs/heads/main/aliases/ZOB-Alias.txt")]
+	public void a_file_address_becomes_its_raw_link(string url) =>
+		Assert.Equal(Raw, GitHubFileUrl.ToRawLink(new Uri(url))!.AbsoluteUri);
+
+	[Theory]
+	[InlineData("https://github.com/o/r/blob/refs/tags/v1.2/a.txt", "https://github.com/o/r/raw/refs/tags/v1.2/a.txt")]
+	[InlineData("https://raw.githubusercontent.com/o/r/REFS/TAGS/v1.2/a.txt", "https://github.com/o/r/raw/refs/tags/v1.2/a.txt")]
+	[InlineData("https://github.com/o/r/blob/main/My%20Aliases/ZOB%20Alias.txt", "https://github.com/o/r/raw/refs/heads/main/My%20Aliases/ZOB%20Alias.txt")]
+	public void a_tag_stays_a_tag_and_an_escaped_path_stays_escaped(string url, string expected) =>
+		Assert.Equal(expected, GitHubFileUrl.ToRawLink(new Uri(url))!.AbsoluteUri);
+
+	[Theory]
+	[InlineData("https://github.com/Nikolai558/test-repo/tree/main/aliases")]
+	[InlineData("https://github.com/Nikolai558/test-repo/blob/main")]
+	[InlineData("https://example.com/vZOB/facility/blob/main/ZOB-Alias.txt")]
+	public void an_address_that_is_not_a_file_on_github_has_no_raw_link(string url) =>
+		Assert.Null(GitHubFileUrl.ToRawLink(new Uri(url)));
+
 	[Fact]
 	public void null_is_refused()
 	{
 		Assert.Throws<ArgumentNullException>(() => GitHubFileUrl.ToContentsApi(null!));
 		Assert.Throws<ArgumentNullException>(() => GitHubFileUrl.IsPageButNotFile(null!));
+		Assert.Throws<ArgumentNullException>(() => GitHubFileUrl.ToRawLink(null!));
 	}
 }

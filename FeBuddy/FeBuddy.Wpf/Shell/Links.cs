@@ -30,6 +30,9 @@ public static class Links
 	/// </summary>
 	public const string GitHubTokenGuide = "https://github.com/Nikolai558/FE-BUDDY/blob/v3-development/docs/Users/GitHub-Token-Guide.md";
 
+	/// <summary>The guide's "If something goes wrong" section: what each refusal means, and the fix.</summary>
+	public const string GitHubTokenGuideTroubleshooting = GitHubTokenGuide + "#if-something-goes-wrong";
+
 	/// <summary>The issue tracker with a trailing slash, for turning a <c>#123</c> reference into a link.</summary>
 	public const string IssueUrlBase = Issues + "/";
 }

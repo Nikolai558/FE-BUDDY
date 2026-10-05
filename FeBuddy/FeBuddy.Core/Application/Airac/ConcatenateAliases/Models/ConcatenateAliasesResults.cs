@@ -15,7 +15,11 @@ public sealed record ConcatenateAliasesSettingsParseResult(IReadOnlyList<AliasSo
 /// <param name="Source">The file that was read.</param>
 /// <param name="Text">Its text, or <see langword="null"/> when it could not be read.</param>
 /// <param name="Problem">Why it could not be read, or <see langword="null"/> when it was.</param>
-public sealed record AliasSourceLoad(AliasSource Source, string? Text, string? Problem)
+/// <param name="IsAccessDenied">
+/// Whether the website refused it or hid it - it needs a credential, or the one given can't read it
+/// (for GitHub, a private repository answers "not found" to anyone who can't see it).
+/// </param>
+public sealed record AliasSourceLoad(AliasSource Source, string? Text, string? Problem, bool IsAccessDenied = false)
 {
 	/// <summary>Whether the file was read.</summary>
 	public bool Succeeded => Text is not null;
@@ -34,6 +38,12 @@ public sealed record AliasSourceLoad(AliasSource Source, string? Text, string? P
 	/// <param name="problem">Why, for the user.</param>
 	/// <returns>The load.</returns>
 	public static AliasSourceLoad Failed(AliasSource source, string problem) => new(source, null, problem);
+
+	/// <summary>A file the website refused or hid: it needs a credential, or the one given can't read it.</summary>
+	/// <param name="source">The file.</param>
+	/// <param name="problem">Why, for the user.</param>
+	/// <returns>The load.</returns>
+	public static AliasSourceLoad Denied(AliasSource source, string problem) => new(source, null, problem, IsAccessDenied: true);
 }
 
 /// <summary>

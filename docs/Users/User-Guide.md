@@ -348,12 +348,17 @@ is greyed out while no sub-service makes an alias file.
   **Open tab** jumps to its sub-service.
 - **Custom Alias Files** - your own files, merged in the order listed (greyed out while combining is
   off):
-  - **Add file…** for a file on this PC, **Add web address** for one on the web (`https://`). On
-    GitHub, use the file's own page (with `/blob/` in it) or its Raw link. An address with a password
-    or token written into it is refused - choose a credential instead.
+  - **Add file…** for a file on this PC, **Add web address** for one on the web (`https://`). A
+    file on this PC must hold alias commands (lines starting with a dot), or the tab can't be saved.
+    On GitHub, paste the file's page or its Raw link; leaving the box shows it as the Raw link
+    (`…/raw/refs/heads/main/…`). An address with a password or token written into it is refused -
+    choose a credential instead.
   - **Credential** - for a private GitHub repository, a GitHub token that can read it
     ([how to make one](GitHub-Token-Guide.md)).
-  - **Check** reads the file now and says how many commands it has, or what's wrong.
+  - **Check** reads the file now and says how many commands it has, or what's wrong. When GitHub
+    won't show the file, it asks whether the repository is private: if it is, it points you to the
+    token guide; if a credential is chosen, to the guide's
+    [troubleshooting](GitHub-Token-Guide.md#if-something-goes-wrong).
 - Every run reads the files fresh. A file that can't be read is left out, with a warning: don't
   upload until it's fixed, or its aliases disappear from vNAS.
 - A `.FeUseOnly` line in your files moves to the top.

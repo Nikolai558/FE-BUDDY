@@ -93,7 +93,8 @@ warning is under **Results** ▸ Airways.
 ### My custom alias file can't be read
 
 The run leaves it out of `Combined_Alias.txt` and the Review tab says why - don't upload until it's
-fixed. **Check** on the Concatenate Aliases tab tries again. For GitHub's messages and what to do, see
+fixed. **Check** on the Concatenate Aliases tab tries again, and when GitHub won't show the file it
+asks whether the repository is private and what to do next. For GitHub's messages, see
 [If something goes wrong](GitHub-Token-Guide.md#if-something-goes-wrong). On other websites, use the
 address of the file itself (its raw or download link), not a page about it.
 

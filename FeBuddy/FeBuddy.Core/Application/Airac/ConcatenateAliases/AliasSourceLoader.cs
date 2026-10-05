@@ -113,7 +113,7 @@ public static class AliasSourceLoader
 		if (GitHubFileUrl.IsPageButNotFile(url))
 		{
 			return AliasSourceLoad.Failed(source,
-				"The address is a GitHub page, not a file. Open the alias file on GitHub and copy the address of its page (it has /blob/ in it).");
+				"The address is a GitHub page, not a file. Open the alias file itself on GitHub and copy its address, or its Raw link.");
 		}
 
 		Uri? gitHubApi = GitHubFileUrl.ToContentsApi(url);
@@ -179,11 +179,12 @@ public static class AliasSourceLoader
 				return IsWebPage(response, text)
 					? AliasSourceLoad.Failed(source,
 						$"{site} sent a web page, not an alias file. Use the address of the file itself" +
-						(url.Host.Contains("github", StringComparison.OrdinalIgnoreCase) ? " (on GitHub, the file's page, with /blob/ in its address)." : "."))
+						(url.Host.Contains("github", StringComparison.OrdinalIgnoreCase) ? " (on GitHub, the file's Raw link)." : "."))
 					: Checked(source, text);
 			}
 
-			return AliasSourceLoad.Failed(source, DescribeRefusal(response, site, credentialName, gitHubApi is not null));
+			(string problem, bool denied) = DescribeRefusal(response, site, credentialName, gitHubApi is not null);
+			return denied ? AliasSourceLoad.Denied(source, problem) : AliasSourceLoad.Failed(source, problem);
 		}
 		catch (Exception ex) when (ex is HttpRequestException or IOException)
 		{
@@ -195,14 +196,18 @@ public static class AliasSourceLoader
 		}
 	}
 
-	/// <summary>Why a website refused the download, and what to do about it.</summary>
+	/// <summary>
+	/// Why a website refused the download, and what to do about it; and whether it was a matter of
+	/// access - a credential needed, or one that can't read the file - rather than a limit or an error.
+	/// </summary>
 	/// <remarks>
 	/// GitHub answers 403 for more than a missing permission, so its other reasons are told apart
 	/// first: the hourly limit (<c>x-ratelimit-remaining: 0</c>), a short-term limit on bursts of
 	/// requests (<c>Retry-After</c>), and a token not yet authorized for an organization's single
-	/// sign-on (<c>X-GitHub-SSO</c>).
+	/// sign-on (<c>X-GitHub-SSO</c>). GitHub answers 404 for a private repository the request can't
+	/// see, so that is a matter of access too.
 	/// </remarks>
-	private static string DescribeRefusal(HttpResponseMessage response, string site, string? credentialName, bool isGitHub)
+	private static (string Problem, bool Denied) DescribeRefusal(HttpResponseMessage response, string site, string? credentialName, bool isGitHub)
 	{
 		bool rateLimited = response.Headers.TryGetValues("x-ratelimit-remaining", out IEnumerable<string>? remaining)
 			&& remaining.FirstOrDefault() == "0";
@@ -210,7 +215,15 @@ public static class AliasSourceLoader
 		bool needsSso = isGitHub && response.Headers.Contains("X-GitHub-SSO");
 		string limited = $"{site} is limiting how often it can be asked right now. Try again in a few minutes.";
 
-		return response.StatusCode switch
+		bool denied = response.StatusCode switch
+		{
+			HttpStatusCode.Unauthorized => true,
+			HttpStatusCode.Forbidden => !rateLimited && !askedToWait,
+			HttpStatusCode.NotFound => isGitHub,
+			_ => false,
+		};
+
+		string problem = response.StatusCode switch
 		{
 			HttpStatusCode.Unauthorized when credentialName is not null =>
 				$"{site} refused the credential '{credentialName}'. It may be mistyped, expired or revoked: edit it in Settings ▸ Credentials.",
@@ -238,6 +251,8 @@ public static class AliasSourceLoader
 				$"{site} could not find it (404 Not Found). Check the address.",
 			_ => $"{site} answered {(int)response.StatusCode} {response.ReasonPhrase}.",
 		};
+
+		return (problem, denied);
 	}
 
 	/// <summary>Whether a download is a web page (a sign-in page, a file's HTML view) rather than a text file.</summary>

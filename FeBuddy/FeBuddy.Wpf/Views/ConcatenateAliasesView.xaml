@@ -105,7 +105,7 @@
                            Text="Your facility's own alias files, added after FE-Buddy's. Every run reads them fresh, so an edit on GitHub is picked up next time. A file that can't be read is left out and the run warns you - uploading the result would remove its aliases from vNAS, so check the Review tab first." />
                 <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,0,0,10"
                            MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
-                           Text="To add one, choose Add file… for a file on this PC, or Add web address for one on the web. On GitHub, paste the address of the file's page (…/blob/main/…) or its Raw link. For a private repository, choose a GitHub token that can read it, or add one with New credential…; one credential can serve several files. Credentials are kept in Settings ▸ Credentials, never in FE-Buddy's settings. Check reads a file straight away, the way the run will." />
+                           Text="To add one, choose Add file… for a file on this PC, or Add web address for one on the web. On GitHub, paste the address of the file's page or its Raw link; FE-Buddy shows it as the Raw link (…/raw/refs/heads/main/…). For a private repository, choose a GitHub token that can read it, or add one with New credential…; one credential can serve several files. Credentials are kept in Settings ▸ Credentials, never in FE-Buddy's settings. Check reads a file straight away, the way the run will." />
 
                 <TextBlock Style="{StaticResource Text.Caption}" Margin="0,0,0,8" TextWrapping="Wrap" Foreground="{StaticResource Brush.Warn}"
                            MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
@@ -136,7 +136,8 @@
                                         <Button DockPanel.Dock="Right" Style="{StaticResource Button.Ghost}" Content="Browse…" Margin="8,0,0,0"
                                                 Command="{Binding BrowseCommand}"
                                                 Visibility="{Binding IsFile, Converter={StaticResource BoolToVis}}" />
-                                        <TextBox Text="{Binding Location, UpdateSourceTrigger=PropertyChanged}" Tag="{Binding Placeholder}" />
+                                        <TextBox Text="{Binding Location, UpdateSourceTrigger=PropertyChanged}" Tag="{Binding Placeholder}"
+                                                 LostFocus="OnLocationLostFocus" />
                                     </DockPanel>
 
                                     <!-- the credential to download it with (web addresses only) -->
@@ -188,6 +189,33 @@
                                             </TextBlock.Style>
                                         </TextBlock>
                                     </DockPanel>
+
+                                    <!-- after GitHub refused or hid the file: a question, then the help that fits -->
+                                    <StackPanel Margin="0,10,0,0" Visibility="{Binding AsksIfPrivate, Converter={StaticResource BoolToVis}}">
+                                        <TextBlock Style="{StaticResource Text.Body}" TextWrapping="Wrap"
+                                                   Text="Is the repository private - do you have to sign in to GitHub to see this file?" />
+                                        <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                                            <Button Style="{StaticResource Button.Ghost}" Content="Yes, it's private" Margin="0,0,8,0"
+                                                    Command="{Binding AnswerPrivateCommand}" />
+                                            <Button Style="{StaticResource Button.Ghost}" Content="No, it's public"
+                                                    Command="{Binding AnswerPublicCommand}" />
+                                        </StackPanel>
+                                    </StackPanel>
+                                    <StackPanel Margin="0,10,0,0" Visibility="{Binding ShowsPrivateHelp, Converter={StaticResource BoolToVis}}">
+                                        <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap"
+                                                   Text="A private repository needs a GitHub token that can read it. The GitHub token guide shows how to make one in a few minutes; then choose it under Credential above, or add it with New credential…" />
+                                        <Button Style="{StaticResource Button.Ghost}" HorizontalAlignment="Left" Margin="0,6,0,0"
+                                                Content="Open the GitHub token guide" Command="{Binding OpenTokenGuideCommand}" />
+                                    </StackPanel>
+                                    <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,10,0,0"
+                                               Text="Then the address is most likely wrong. Open the file on GitHub and copy its address again, or its Raw link. To be sure the repository is public, open the address while signed out of GitHub: GitHub shows the file only if it is."
+                                               Visibility="{Binding ShowsPublicHelp, Converter={StaticResource BoolToVis}}" />
+                                    <StackPanel Margin="0,10,0,0" Visibility="{Binding ShowsCredentialHelp, Converter={StaticResource BoolToVis}}">
+                                        <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap"
+                                                   Text="Check the credential: the GitHub token needs this repository, with Contents: Read-only, and it may have expired. The guide's troubleshooting section says what each message means, and the fix." />
+                                        <Button Style="{StaticResource Button.Ghost}" HorizontalAlignment="Left" Margin="0,6,0,0"
+                                                Content="Open the guide's troubleshooting" Command="{Binding OpenTokenTroubleshootingCommand}" />
+                                    </StackPanel>
                                 </StackPanel>
                             </Border>
                         </DataTemplate>

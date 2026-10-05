@@ -11,35 +11,38 @@ PostId format =  yyyy-mm-dd.#
 
 News concerning all things FE-Buddy will be posted here with the most recent post at the top.
 
+## 2026-10-5
+<!--
+PostId: 2026-10-05.1
+-->
+
+**Version 3.0.0-beta.2 Compiled!**
+
+Built from your beta.1 feedback
+
+- **Uninstall FE-Buddy completely (removing its settings) before installing** - beta.1's settings aren't read
+- The **General** tab is now one table: pick the sub-services and the files each one makes
+- **Upload to vNAS is gone**, all files are assumed to be uploaded to vNAS
+- **Concatenate Aliases** builds the one `Combined_Alias.txt` to upload to vNAS
+- Each tab lists its problems at the top and outlines the cards to fix in red
+- Much smaller Symbols files, a new ERAM **Raw Plus** layout, and zoom shown as a percentage on the map
+- Text is generally 10% larger and more readable
+
+Check it out [HERE](https://github.com/Nikolai558/FE-BUDDY/releases/tag/3.0.0-beta.2)!!!
+
 ---
 
 ## 2026-10-04
 <!--
-PostId: 2026-10-04.2
+PostId: 2026-10-03.1
 -->
 
-**Version 3.0.0-beta.1 Compiled!**
+**Version 3.0.0-beta.1**
 
-FE-Buddy 3.0 is out of alpha! 🎉 This is the first beta, so keep the feedback coming.
-
-- Still have an old **FE-Buddy 2.x** installed alongside 3.x? FE-Buddy now cleans it up for you: no more two FE-Buddys in Installed apps, on the Desktop and in the Start menu
+- Small beta release
+- Special thanks to Matthew Kramer & Dave Wagner for initial feedback!
 
 Check it out [HERE](https://github.com/Nikolai558/FE-BUDDY/releases/tag/3.0.0-beta.1)!!!
-
----
-
-## 2026-10-04
-<!--
-PostId: 2026-10-04.1
--->
-
-**Version 3.0.0-alpha.5 Compiled!**
-
-- **Alias Command Guide** has its own Info page, plus a new **Alias Command Practice** quiz to export
-- Include **VATSIM-Radar's Virtual Airline List** in Telephony
-- **Clear** button on the Dashboard activity log
-
-Check it out [HERE](https://github.com/Nikolai558/FE-BUDDY/releases/tag/3.0.0-alpha.5)!!!
 
 ---
 

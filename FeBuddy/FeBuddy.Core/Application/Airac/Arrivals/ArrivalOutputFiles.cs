@@ -7,8 +7,7 @@ namespace FeBuddy.Core.Application.Airac.Arrivals;
 
 /// <summary>
 /// The files the Arrivals sub-service writes: their file keys - the names the
-/// <c>UploadToVnas</c> and <c>CrcDefaultsFor</c> settings use (see <see cref="VnasFileChoices"/>) -
-/// and where each one goes.
+/// <c>CrcDefaultsFor</c> setting uses (see <see cref="CrcDefaultsFiles"/>) - and where each one goes.
 /// </summary>
 /// <remarks>
 /// A run writes up to three GeoJSON files per airport + procedure, often thousands in all, so
@@ -44,22 +43,18 @@ public static class ArrivalOutputFiles
 	/// <returns>The file key.</returns>
 	public static string KeyFor(CrcFeatureKind kind) => $"Arrivals_{AiracOutputPaths.FileKindSuffix(kind)}";
 
-	/// <summary>
-	/// The folder one airport's files of one kind go in, e.g.
-	/// <c>…\Geojson\ZLA\LAS</c> (or under <c>Upload_to_vNAS</c> when that kind is marked for vNAS).
-	/// </summary>
+	/// <summary>The folder one airport's files go in, e.g. <c>…\Geojson\ZLA\LAS</c>.</summary>
 	/// <param name="settings">The parsed settings.</param>
 	/// <param name="airportProcedure">The airport + procedure being written.</param>
-	/// <param name="kind">The kind of file.</param>
 	/// <returns>The directory.</returns>
 	/// <remarks>
 	/// Unlike Departures, this reads <see cref="ArrivalAirportProcedure.Artcc"/> - the ARTCC of
 	/// this airport's copy of the arrival - not a single procedure-level ARTCC, because a STAR can
 	/// be shared by two centres (see <see cref="ArrivalProcedure.ArtccFor"/>).
 	/// </remarks>
-	internal static string GeojsonDirectory(ArrivalSettings settings, ArrivalAirportProcedure airportProcedure, CrcFeatureKind kind) =>
+	internal static string GeojsonDirectory(ArrivalSettings settings, ArrivalAirportProcedure airportProcedure) =>
 		Path.Combine(
-			AiracOutputPaths.FileDirectory(settings.OutputDirectory, isGeojson: true, settings.Vnas.IsUploaded(KeyFor(kind))),
+			AiracOutputPaths.GeojsonDirectory(settings.OutputDirectory),
 			airportProcedure.Artcc,
 			airportProcedure.AirportId);
 

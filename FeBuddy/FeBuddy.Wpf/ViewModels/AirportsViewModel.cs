@@ -21,8 +21,6 @@ public sealed class AirportsViewModel : GeojsonSubServiceViewModel, ISubServiceR
 {
 	private const string Node = "Services.AiracService.Airports";
 
-	private bool _generateGeojson = true;
-
 	/// <summary>Builds the tab and restores its saved settings.</summary>
 	public AirportsViewModel()
 	{
@@ -40,33 +38,9 @@ public sealed class AirportsViewModel : GeojsonSubServiceViewModel, ISubServiceR
 	/// <inheritdoc />
 	public override string Title => "Airports";
 
-	/// <summary>Whether this run writes GeoJSON for airports and runways.</summary>
-	public bool GenerateGeojson
-	{
-		get => _generateGeojson;
-		set
-		{
-			if (!value && !CanTurnOffOutput())
-			{
-				// The value never changed, but the control already did - put it back.
-				RestoreRejectedToggle(nameof(GenerateGeojson));
-				return;
-			}
-
-			if (SetProperty(ref _generateGeojson, value))
-			{
-				MarkDirty();
-			}
-		}
-	}
-
 	/// <inheritdoc />
-	protected override int EnabledOutputCount =>
-		(GenerateGeojson ? 1 : 0) + (GenerateAliasFile ? 1 : 0);
-
-	/// <inheritdoc />
-	protected override string NoDefaultRoiHint =>
-		"No default ROI is set, so GeoJSON covers every airport. Set one in Settings, or override it here.";
+	protected override string NoRoiEffect =>
+		"the GeoJSON covers every airport";
 
 	/// <inheritdoc />
 	/// <remarks>The files are named for what they hold: <c>Runways_Lines</c>, <c>Airports_Symbols</c>, <c>Airports_Text</c>.</remarks>
@@ -163,7 +137,6 @@ public sealed class AirportsViewModel : GeojsonSubServiceViewModel, ISubServiceR
 				GenerateAliasFile ? "Airports.txt, every open airport in NASR - the region never limits the alias file" : "No"),
 			new ServicePreviewRow("FE-Buddy properties", DescribeFebProperties()),
 			new ServicePreviewRow("Region of interest", DescribeRoi()),
-			new ServicePreviewRow("Upload to vNAS", DescribeVnasFiles()),
 			new ServicePreviewRow("CRC ERAM defaults", DescribeCrcDefaults()),
 		];
 
@@ -182,36 +155,22 @@ public sealed class AirportsViewModel : GeojsonSubServiceViewModel, ISubServiceR
 	/// <inheritdoc />
 	protected override void LoadFromConfig()
 	{
-		_generateGeojson = GetBool("GenerateGeojson", true);
 		LoadSharedSettings();
-
-		// Both outputs off would leave the tab in a state its own guard forbids; a hand-edited
-		// config is the only way to get here, so fall back to the default rather than honour it.
-		if (!_generateGeojson && !GenerateAliasFile)
-		{
-			_generateGeojson = true;
-			GenerateAliasFile = true;
-		}
-
-		OnPropertyChanged(nameof(GenerateGeojson));
 		ClearDirty();
 	}
 
 	/// <inheritdoc />
-	protected override void WriteToConfig()
-	{
-		Set("GenerateGeojson", YesNo(GenerateGeojson));
-		SaveSharedSettings();
-	}
+	protected override void WriteToConfig() => SaveSharedSettings();
 
 	/// <inheritdoc />
 	protected override void Validate(ServiceValidation validation)
 	{
 		if (GenerateGeojson && !EmitSymbols && !EmitText && !EmitLines)
 		{
-			validation.Add(
+			validation.AddArea(
+				ServiceAreas.GeojsonFiles,
 				"GeoJSON is on but none of its files are selected. Turn on Symbols, Text or Runway lines, "
-				+ "or switch GeoJSON off.");
+				+ "or turn GeoJSON off for Airports on the General tab.");
 		}
 
 		ValidateSharedSettings(validation);

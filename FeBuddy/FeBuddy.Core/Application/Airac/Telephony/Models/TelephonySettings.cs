@@ -27,12 +27,6 @@ public sealed record TelephonySettings
 	public bool IncludeVatsimRadarVirtualAirlines { get; init; }
 
 	/// <summary>
-	/// Whether the alias file goes to vNAS: copied into <c>Upload_to_vNAS\vNAS_Alias.txt</c> as well as
-	/// written to the <c>Aliases</c> folder. Its only possible file key is <c>Telephony.txt</c>.
-	/// </summary>
-	public VnasFileChoices Vnas { get; init; } = VnasFileChoices.None;
-
-	/// <summary>
 	/// The names the user gave files in place of FE-Buddy's, by file key. Not part of the settings
 	/// block: <see cref="TelephonyService"/> takes it from the AIRAC Service. Default: none renamed.
 	/// </summary>

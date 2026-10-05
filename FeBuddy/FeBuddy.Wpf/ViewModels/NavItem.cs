@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Windows.Input;
 
 using FeBuddy.Wpf.Mvvm;
 
@@ -17,7 +18,7 @@ namespace FeBuddy.Wpf.ViewModels;
 /// <param name="title">The row's label.</param>
 /// <param name="glyph">Icon glyph from <c>Icons.xaml</c>.</param>
 /// <param name="viewModelFactory">Builds the section's view-model on first activation.</param>
-/// <param name="onActivated">Called when this row becomes the active one.</param>
+/// <param name="onActivated">Called when this row becomes the active one, and when it is clicked again while active.</param>
 public sealed class NavItem(
 	string title,
 	string glyph,
@@ -28,6 +29,7 @@ public sealed class NavItem(
 	private readonly Action<NavItem> _onActivated = onActivated;
 	private object? _viewModel;
 	private bool _isActive;
+	private ICommand? _clickCommand;
 
 	/// <summary>The row's label.</summary>
 	public string Title { get; } = title;
@@ -59,6 +61,18 @@ public sealed class NavItem(
 			}
 		}
 	}
+
+	/// <summary>
+	/// Bound to the row's click. A click on the row already on screen changes nothing on the
+	/// RadioButton, so this is what takes that page back to its start too.
+	/// </summary>
+	public ICommand ClickCommand => _clickCommand ??= new RelayCommand(() =>
+	{
+		if (IsActive)
+		{
+			_onActivated(this);
+		}
+	});
 
 	/// <summary>Builds the section's view-model and, when it can hold unsaved edits, follows them for the dot.</summary>
 	/// <returns>The view-model.</returns>

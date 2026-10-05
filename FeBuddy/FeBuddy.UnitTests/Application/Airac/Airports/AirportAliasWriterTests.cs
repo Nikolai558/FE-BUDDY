@@ -1,6 +1,8 @@
 using FeBuddy.Core.Application.Airac.Airports;
 using FeBuddy.Core.Application.Airac.Airports.Models;
+using FeBuddy.Core.Application.Models;
 using FeBuddy.Core.Domain.Airports.Models;
+using FeBuddy.Core.Infrastructure.Logging.Models;
 
 using FeBuddy.UnitTests.Application.Airac.Airports.Fixtures;
 
@@ -117,6 +119,74 @@ public sealed class AirportAliasWriterTests : IDisposable
 
 		Assert.Equal(1, result.CommandCount);
 		Assert.DoesNotContain(".aptK", File.ReadAllText(result.FilePath!));
+	}
+
+	/// <summary>
+	/// Many airports outside the US have their ICAO ID as their FAA ID too (CYAM/CYAM in NASR).
+	/// They get one command and no warning; until beta.1 every cycle warned about 108 of them.
+	/// </summary>
+	[Fact]
+	public void an_icao_id_equal_to_the_faa_id_gives_one_command_one_identifier_and_no_message()
+	{
+		Airport airport = AirportTestDataBuilder.BuiltAirport(faaId: "CYAM", icaoId: "cyam");
+
+		Assert.Contains("APT:" + Tab + Tab + Tab + "CYAM" + NewLine, AirportAliasWriter.BuildCommandBody(airport));
+
+		AirportAliasGenerateResult result = AirportAliasWriter.Generate([airport], Settings());
+
+		Assert.Equal(1, result.CommandCount);
+		Assert.Empty(result.Messages);
+		Assert.Single(File.ReadAllLines(result.FilePath!));
+	}
+
+	[Fact]
+	public void an_icao_id_that_is_another_airports_faa_id_is_skipped_with_one_warning_naming_both()
+	{
+		// ABC sorts first, so without claiming every FAA ID first its ICAO command would take
+		// .aptXYZ from airport XYZ itself.
+		Airport first = AirportTestDataBuilder.BuiltAirport(faaId: "ABC", icaoId: "XYZ");
+		Airport owner = AirportTestDataBuilder.BuiltAirport(faaId: "XYZ", icaoId: null);
+
+		AirportAliasGenerateResult result = AirportAliasWriter.Generate([first, owner], Settings());
+
+		Assert.Equal(2, result.CommandCount);
+
+		string[] lines = File.ReadAllLines(result.FilePath!);
+		Assert.Contains(lines, l => l.StartsWith(".aptABC ", StringComparison.Ordinal));
+		Assert.Single(lines, l => l.StartsWith(".aptXYZ ", StringComparison.Ordinal) && l.Contains(Tab + "XYZ" + NewLine, StringComparison.Ordinal));
+
+		ServiceMessage warning = Assert.Single(result.Messages, m => m.Level == LogLevel.Warning);
+		Assert.Equal("1 airport alias command was skipped because another airport already uses it: .aptXYZ (kept for XYZ).", warning.Text);
+
+		ServiceMessage detail = Assert.Single(result.Messages, m => m.Level == LogLevel.Info);
+		Assert.Equal("Airport 'ABC': alias command '.aptXYZ' is already used by airport 'XYZ', so it was skipped.", detail.Text);
+	}
+
+	[Fact]
+	public void many_clashes_list_five_in_the_warning_and_count_the_rest()
+	{
+		List<Airport> airports = [AirportTestDataBuilder.BuiltAirport(faaId: "OWN", icaoId: "KOWN")];
+		airports.AddRange(Enumerable.Range(1, 7).Select(i => AirportTestDataBuilder.BuiltAirport(faaId: $"A{i}", icaoId: "KOWN")));
+
+		AirportAliasGenerateResult result = AirportAliasWriter.Generate(airports, Settings());
+
+		ServiceMessage warning = Assert.Single(result.Messages, m => m.Level == LogLevel.Warning);
+		Assert.StartsWith("7 airport alias commands were skipped because other airports already use them: .aptKOWN (kept for ", warning.Text);
+		Assert.EndsWith(" and 2 more.", warning.Text);
+		Assert.Equal(7, result.Messages.Count(m => m.Level == LogLevel.Info));
+	}
+
+	[Fact]
+	public void two_airports_with_the_same_faa_id_keep_the_first()
+	{
+		Airport first = AirportTestDataBuilder.BuiltAirport(faaId: "DUP", name: "FIRST FIELD");
+		Airport second = AirportTestDataBuilder.BuiltAirport(faaId: "DUP", name: "SECOND FIELD");
+
+		AirportAliasGenerateResult result = AirportAliasWriter.Generate([first, second], Settings());
+
+		string line = Assert.Single(File.ReadAllLines(result.FilePath!));
+		Assert.Contains("FIRST FIELD", line);
+		Assert.Single(result.Messages, m => m.Level == LogLevel.Warning);
 	}
 
 	[Fact]

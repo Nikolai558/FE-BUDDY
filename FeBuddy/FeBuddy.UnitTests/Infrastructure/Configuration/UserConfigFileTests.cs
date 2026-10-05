@@ -1,6 +1,7 @@
 using System.Text.Json.Nodes;
 
 using FeBuddy.Core.Infrastructure.Configuration;
+using FeBuddy.Core.Infrastructure.Configuration.Models;
 using FeBuddy.Core.Infrastructure.Logging;
 using FeBuddy.Core.Infrastructure.Logging.Models;
 
@@ -13,7 +14,7 @@ namespace FeBuddy.UnitTests.Infrastructure.Configuration;
 [Collection("AppLog")]
 public sealed class UserConfigFileTests : IDisposable
 {
-	private const string AirwaysNode = "Services.AiracService.Geojson.Airways";
+	private const string AirwaysNode = "Services.AiracService.Airways";
 	private const string GeneralNode = "General";
 
 	private readonly string _directory =
@@ -56,7 +57,7 @@ public sealed class UserConfigFileTests : IDisposable
 		UserConfigFile.Write();
 
 		// Force a fresh read from disk.
-		UserConfigFile.ReadAll();
+		Assert.Equal(UserConfigReadResult.Read, UserConfigFile.ReadAll());
 
 		Assert.Equal("Stable", UserConfigFile.GetValue("General.UpdateChannel"));
 		Assert.Equal("ZOA", UserConfigFile.GetValue("Services.AiracService.UserArtccId"));
@@ -64,7 +65,7 @@ public sealed class UserConfigFileTests : IDisposable
 
 		JsonNode root = JsonNode.Parse(File.ReadAllText(UserConfigFile.ConfigFilePath))!;
 		Assert.Equal("ZOA", root["Services"]!["AiracService"]!["UserArtccId"]!.GetValue<string>());
-		Assert.Equal("HighLow", root["Services"]!["AiracService"]!["Geojson"]!["Airways"]!["OutputBy"]!.GetValue<string>());
+		Assert.Equal("HighLow", root["Services"]!["AiracService"]!["Airways"]!["OutputBy"]!.GetValue<string>());
 	}
 
 	/// <summary>A missing config file on the launch read path yields defaults, not an exception.</summary>
@@ -73,7 +74,7 @@ public sealed class UserConfigFileTests : IDisposable
 	{
 		Assert.False(File.Exists(UserConfigFile.ConfigFilePath));
 
-		UserConfigFile.ReadAll();
+		Assert.Equal(UserConfigReadResult.Missing, UserConfigFile.ReadAll());
 
 		Assert.Null(UserConfigFile.GetValue("General.UpdateChannel"));
 	}
@@ -95,7 +96,7 @@ public sealed class UserConfigFileTests : IDisposable
 	[Fact]
 	public void remove_values_drops_a_subtree_and_nothing_beside_it()
 	{
-		const string Node = "Services.AiracService.VnasAlias";
+		const string Node = "Services.AiracService.ConcatenateAliases";
 		UserConfigFile.TrySetValue(Node + ".Sources.1.Url", "https://example.com/a.txt");
 		UserConfigFile.TrySetValue(Node + ".Sources.2.FilePath", @"C:\b.txt");
 		UserConfigFile.TrySetValue(Node + ".SourcesNote", "kept: only its name starts the same");
@@ -128,7 +129,7 @@ public sealed class UserConfigFileTests : IDisposable
 		UserConfigFile.Save(AirwaysNode);
 
 		JsonNode root = JsonNode.Parse(File.ReadAllText(UserConfigFile.ConfigFilePath))!;
-		Assert.Equal("Designation", root["Services"]!["AiracService"]!["Geojson"]!["Airways"]!["OutputBy"]!.GetValue<string>());
+		Assert.Equal("Designation", root["Services"]!["AiracService"]!["Airways"]!["OutputBy"]!.GetValue<string>());
 
 		// The General value was in memory but not part of the saved node, so it is not on disk.
 		Assert.Null(root["General"]);
@@ -182,7 +183,7 @@ public sealed class UserConfigFileTests : IDisposable
 		Directory.CreateDirectory(_directory);
 		File.WriteAllText(UserConfigFile.ConfigFilePath, "[1, 2]");
 
-		UserConfigFile.ReadAll();
+		Assert.Equal(UserConfigReadResult.Unreadable, UserConfigFile.ReadAll());
 
 		Assert.Empty(UserConfigFile.SnapshotValues());
 		Assert.Contains(AppLog.Entries, e => e.Level == LogLevel.Warning && e.Message.Contains("is not a JSON object", StringComparison.Ordinal));
@@ -196,7 +197,7 @@ public sealed class UserConfigFileTests : IDisposable
 		Directory.CreateDirectory(_directory);
 		File.WriteAllText(UserConfigFile.ConfigFilePath, "{ not json");
 
-		UserConfigFile.ReadAll();
+		Assert.Equal(UserConfigReadResult.Unreadable, UserConfigFile.ReadAll());
 
 		Assert.Null(UserConfigFile.GetValue("General.UpdateChannel"));
 		Assert.Contains(AppLog.Entries, e => e.Level == LogLevel.Warning && e.Message.Contains("Could not read config file", StringComparison.Ordinal));
@@ -270,7 +271,7 @@ public sealed class UserConfigFileTests : IDisposable
 		UserConfigFile.Save(AirwaysNode);
 
 		JsonNode root = JsonNode.Parse(File.ReadAllText(UserConfigFile.ConfigFilePath))!;
-		Assert.Null(root["Services"]!["AiracService"]!["Geojson"]!["Airways"]);
+		Assert.Null(root["Services"]!["AiracService"]!["Airways"]);
 		Assert.True(UserConfigFile.CanUndo(AirwaysNode));
 	}
 

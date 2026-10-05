@@ -44,10 +44,10 @@ public sealed record ArtccBoundarySettings
 	public int CoordinatePrecision { get; init; } = 6;
 
 	/// <summary>
-	/// Which files go to vNAS, and which of those get CRC-ERAM defaults, by file key (see
+	/// Which GeoJSON files get CRC-ERAM defaults (<c>CrcDefaultsFor</c>), by file key (see
 	/// <see cref="ArtccBoundaryOutputFiles"/>). Default: none.
 	/// </summary>
-	public VnasFileChoices Vnas { get; init; } = VnasFileChoices.None;
+	public CrcDefaultsFiles CrcDefaultsFiles { get; init; } = CrcDefaultsFiles.None;
 
 	/// <summary>
 	/// The names the user gave files in place of FE-Buddy's, by file key. Not part of the settings
@@ -64,7 +64,7 @@ public sealed record ArtccBoundarySettings
 	/// <see cref="ArtccBoundaryOutputFiles.TryParseKey"/>): <see cref="ArtccBoundaryOutputFiles.HighClass"/>,
 	/// <see cref="ArtccBoundaryOutputFiles.LowClass"/>, <see cref="ArtccBoundaryOutputFiles.UnlimitedClass"/>,
 	/// or a <c>LocationId-ALTITUDE</c> class. Holds every class a file in
-	/// <see cref="VnasFileChoices.CrcDefaultsFiles"/> needs.
+	/// <see cref="CrcDefaultsFiles"/> needs.
 	/// </summary>
 	public IReadOnlyDictionary<string, CrcLineDefaults> LineDefaults { get; init; } =
 		new Dictionary<string, CrcLineDefaults>(StringComparer.OrdinalIgnoreCase);

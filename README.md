@@ -9,7 +9,8 @@
 ## [DOWNLOAD](https://github.com/Nikolai558/FE-BUDDY/releases)
 
 FE-Buddy 3.x installs from `FE-BUDDY-Setup.msi` on the [Releases](https://github.com/Nikolai558/FE-BUDDY/releases)
-page. It upgrades an existing 2.9 or later install in place. What changed in each release: [ChangeLog.md](ChangeLog.md).
+page. It upgrades an existing 2.9 or later install in place, and removes an older 2.x the first time
+it starts. What changed in each release: [ChangeLog.md](ChangeLog.md).
 
 ---
 
@@ -44,7 +45,7 @@ FE-Buddy 3.0 is a from-scratch rewrite. It makes:
 | **Procedures** | - (`Procedure_Changes.md` and `Procedures.json` instead, from the FAA's d-TPP Metafile) | `Faa_Chart_Recall.txt` |
 | **Telephony** | - | `Telephony.txt` - operators by designator and by spoken telephony, plus virtual airlines |
 | **Wx Stations** | Every US and US-territory station that reports METAR, from aviationweather.gov | - |
-| **vNAS Alias Upload** | - | `vNAS_Alias.txt` - the alias files you mark for vNAS, then your facility's own |
+| **Concatenate Aliases** | - | `Combined_Alias.txt` - every alias file the run makes, then your facility's own, as one file for vNAS |
 
 It also converts FAA `.dat` video maps, VRC sector files and ERAM GeoMaps to GeoJSON, has a map to
 check GeoJSON files and set your Region of Interest, and exports an Alias Command Guide and practice

@@ -21,10 +21,7 @@
         <TextBlock Style="{StaticResource Text.Prose}" Margin="0,0,0,14"
                    Text="Converts VRC sector files (.sct2 / .sct) into CRC-ready GeoJSON: a folder per sector file, named after it, holding its ARTCC boundaries, airways, GEO, labels and regions, and a file per SID and STAR diagram." />
 
-        <TextBlock Text="{Binding ValidationError}" Style="{StaticResource Text.Caption}"
-                   Foreground="{StaticResource Brush.Danger}" TextWrapping="Wrap" Margin="0,0,0,12"
-                   MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
-                   Visibility="{Binding ValidationError, Converter={StaticResource StringToVis}}" />
+        <cards:AttentionCard />
 
         <!-- ============ source ============ -->
         <cards:SourceFilesCard />

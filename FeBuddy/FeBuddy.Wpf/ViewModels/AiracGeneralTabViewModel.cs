@@ -14,19 +14,28 @@ using FeBuddy.Core.Infrastructure.Configuration;
 namespace FeBuddy.Wpf.ViewModels;
 
 /// <summary>
-/// The AIRAC Service <b>General</b> tab: the cycle menu and the sub-service
-/// picker that decides which other tabs exist.
+/// The AIRAC Service <b>General</b> tab: the cycle menu, and the table of sub-services - which are
+/// in the run, and which of their outputs each makes.
 /// </summary>
 /// <remarks>
+/// <para>
 /// It is a settings tab like any other - it owns the <c>Services.AiracService</c> subtree, is dirty
-/// until saved, and has the same one-step undo. Ticking a sub-service opens its tab immediately
-/// (the user asked for it, so they should see it), but the selection is only persisted on save like
-/// every other setting on this tab.
+/// until saved, and has the same one-step undo. Ticking a sub-service brings its tab back from grey
+/// straight away (the user asked for it, so they should see it), but like every other setting on
+/// this tab it is only kept once saved.
+/// </para>
+/// <para>
+/// The table owns each sub-service's outputs; its tab reads them (<see cref="ISubServiceOutputs"/>).
+/// They are saved under this tab's <c>Outputs</c> node, never inside a sub-service's own node, so
+/// saving or undoing a sub-service tab can't change them. Nothing saved means everything included
+/// and every output on.
+/// </para>
 /// </remarks>
 public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 {
 	private const string Node = "Services.AiracService";
 	private const string SelectedSubServicesKey = "SelectedSubServices";
+	private const string OutputsNode = "Outputs";
 
 	private bool _loading;
 	private bool _isReady;
@@ -34,7 +43,7 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 	private AiracCyclePosition _selectedCyclePosition = AiracCyclePosition.Current;
 	private AiracCyclePosition _cyclePositionBeforeReload = AiracCyclePosition.Current;
 
-	/// <summary>Builds the tab and restores the saved cycle and sub-service selection.</summary>
+	/// <summary>Builds the tab and restores the saved cycle and sub-services.</summary>
 	public AiracGeneralTabViewModel()
 	{
 		CycleOptions =
@@ -44,19 +53,21 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 			new(AiracCyclePosition.Next, p => SelectedCyclePosition = p),
 		];
 
-		HashSet<string> selectedKeys = ParseSelectedKeysFromConfig();
-
-		SubServices = new ObservableCollection<SubServiceSelection>(
+		SubServices = new ObservableCollection<SubServiceRow>(
 			AiracSubServices.All
+				.Where(d => d.Outputs != SubServiceOutputKinds.None)
 				.OrderBy(d => d.Order)
-				.Select(d => new SubServiceSelection(d, selectedKeys.Contains(d.Key), OnSubServiceToggled)));
+				.Select(d => new SubServiceRow(d, OnSubServicesChanged)));
 
 		LoadFromConfig();
 		RefreshCycleOptions();
 	}
 
-	/// <summary>Raised when the user ticks or unticks a sub-service, so the host can open or close its tab.</summary>
-	public event EventHandler? SubServiceSelectionChanged;
+	/// <summary>
+	/// Raised when the user includes or leaves out a sub-service or turns one of its outputs on or
+	/// off, so the host can grey out or bring back tabs and follow the files the run will write.
+	/// </summary>
+	public event EventHandler? SubServicesChanged;
 
 	/// <summary>Raised when the user picks a different cycle, so the host can load that cycle's parsed data.</summary>
 	public event EventHandler? CycleChanged;
@@ -73,12 +84,22 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 	/// <summary>The three selectable cycles with their live cache state.</summary>
 	public ObservableCollection<CycleOption> CycleOptions { get; }
 
-	/// <summary>Every sub-service the AIRAC Service knows about, ticked or not.</summary>
-	public ObservableCollection<SubServiceSelection> SubServices { get; }
+	/// <summary>The table: every sub-service that makes output of its own, included or not, in rail order.</summary>
+	public ObservableCollection<SubServiceRow> SubServices { get; }
 
-	/// <summary>The ticked sub-services, in rail order.</summary>
-	public IEnumerable<SubServiceSelection> SelectedSubServices =>
-		SubServices.Where(s => s.IsSelected).OrderBy(s => s.Descriptor.Order);
+	/// <summary>The included sub-services, in rail order.</summary>
+	public IEnumerable<SubServiceRow> IncludedSubServices => SubServices.Where(s => s.IsIncluded);
+
+	/// <summary>A sub-service's row, or <see langword="null"/> for one that isn't in the table (Concatenate Aliases).</summary>
+	/// <param name="key">The sub-service key from <see cref="AiracSubServices"/>.</param>
+	/// <returns>The row.</returns>
+	public SubServiceRow? RowFor(string key) =>
+		SubServices.FirstOrDefault(row => string.Equals(row.Key, key, StringComparison.OrdinalIgnoreCase));
+
+	/// <summary>Whether a sub-service is in the table and included.</summary>
+	/// <param name="key">The sub-service key from <see cref="AiracSubServices"/>.</param>
+	/// <returns><see langword="true"/> when it takes part in the run.</returns>
+	public bool IsIncluded(string key) => RowFor(key) is { IsIncluded: true };
 
 	/// <summary>Which cycle (relative to today) the run uses.</summary>
 	public AiracCyclePosition SelectedCyclePosition
@@ -162,12 +183,12 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 	/// <inheritdoc />
 	public override IReadOnlyList<ServicePreviewSection> BuildPreviewSummary()
 	{
-		string[] selected = [.. SelectedSubServices.Select(s => s.DisplayName)];
+		string[] included = [.. IncludedSubServices.Select(s => $"{s.DisplayName} ({DescribeOutputs(s.OutputsOn)})")];
 
 		ServicePreviewRow[] rows =
 		[
 			new ServicePreviewRow("Cycle", SelectedCycleLabel),
-			new ServicePreviewRow("Sub-services", selected.Length == 0 ? "none" : string.Join(", ", selected)),
+			new ServicePreviewRow("Sub-services", included.Length == 0 ? "none" : string.Join(", ", included)),
 			new ServicePreviewRow("Output folder",
 				OutputPreferences.CycleDirectory(AppEnvironment.GetAiracCycle(SelectedCyclePosition).AiracCycleId)),
 		];
@@ -185,13 +206,16 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 		{
 			SelectedCyclePosition = ResolveSavedCyclePosition();
 
-			HashSet<string> keys = ParseSelectedKeysFromConfig();
-			foreach (SubServiceSelection selection in SubServices)
+			// Nothing saved yet: everything is in.
+			string? savedSelection = Get(SelectedSubServicesKey);
+			HashSet<string>? included = savedSelection is null ? null : ParseList(savedSelection);
+
+			foreach (SubServiceRow row in SubServices)
 			{
-				selection.IsSelected = keys.Contains(selection.Key);
+				row.Load(included?.Contains(row.Key) ?? true, ReadOutputs(row));
 			}
 
-			OnPropertyChanged(nameof(SelectedSubServices));
+			OnPropertyChanged(nameof(IncludedSubServices));
 		}
 		finally
 		{
@@ -203,14 +227,14 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 
 	/// <inheritdoc />
 	/// <remarks>
-	/// This tab's settings drive the rest of the screen: the ticked sub-services decide which
-	/// tabs are open, and the cycle decides which data is loaded. Both are restored with their
-	/// events suppressed, so discarding changes here has to re-announce them or the rail keeps
-	/// showing tabs the user just took back.
+	/// This tab's settings drive the rest of the screen: the included sub-services decide which
+	/// tabs are greyed out, their outputs what the tabs write, and the cycle which data is loaded.
+	/// They are restored with their events suppressed, so discarding changes here has to
+	/// re-announce them or the rail keeps showing what the user just took back.
 	/// </remarks>
 	protected override void OnReloadedFromConfig()
 	{
-		SubServiceSelectionChanged?.Invoke(this, EventArgs.Empty);
+		SubServicesChanged?.Invoke(this, EventArgs.Empty);
 
 		if (_selectedCyclePosition != _cyclePositionBeforeReload)
 		{
@@ -222,10 +246,18 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 	protected override void WriteToConfig()
 	{
 		Set("AiracCycleId", AppEnvironment.GetAiracCycle(SelectedCyclePosition).AiracCycleId);
-		Set(SelectedSubServicesKey, string.Join(',', SelectedSubServices.Select(s => s.Key)));
+		Set(SelectedSubServicesKey, string.Join(',', IncludedSubServices.Select(s => s.Key)));
+
+		foreach (SubServiceRow row in SubServices)
+		{
+			foreach (SubServiceOutputKinds kind in OfferedKinds(row))
+			{
+				Set($"{OutputsNode}.{row.Key}.{kind}", YesNo(row.OutputsOn.HasFlag(kind)));
+			}
+		}
 	}
 
-	private void OnSubServiceToggled()
+	private void OnSubServicesChanged()
 	{
 		if (_loading)
 		{
@@ -233,12 +265,45 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 		}
 
 		MarkDirty();
-		OnPropertyChanged(nameof(SelectedSubServices));
-		SubServiceSelectionChanged?.Invoke(this, EventArgs.Empty);
+		OnPropertyChanged(nameof(IncludedSubServices));
+		SubServicesChanged?.Invoke(this, EventArgs.Empty);
 	}
 
-	private static HashSet<string> ParseSelectedKeysFromConfig() =>
-		ParseList(UserConfigFile.GetValue($"{Node}.{SelectedSubServicesKey}"));
+	private static IEnumerable<SubServiceOutputKinds> OfferedKinds(SubServiceRow row) =>
+		Enum.GetValues<SubServiceOutputKinds>().Where(kind => kind != SubServiceOutputKinds.None && row.Descriptor.Outputs.HasFlag(kind));
+
+	/// <summary>A row's saved outputs; an output with nothing saved is on.</summary>
+	private SubServiceOutputKinds ReadOutputs(SubServiceRow row)
+	{
+		SubServiceOutputKinds on = SubServiceOutputKinds.None;
+
+		foreach (SubServiceOutputKinds kind in OfferedKinds(row))
+		{
+			string? saved = Get($"{OutputsNode}.{row.Key}.{kind}");
+
+			if (saved is null || IsYes(saved))
+			{
+				on |= kind;
+			}
+		}
+
+		return on;
+	}
+
+
+	private static bool IsYes(string value) =>
+		value.Trim().Equals("Y", StringComparison.OrdinalIgnoreCase) || value.Trim().Equals("true", StringComparison.OrdinalIgnoreCase);
+
+	/// <summary>e.g. <c>Alias, GeoJSON</c>.</summary>
+	private static string DescribeOutputs(SubServiceOutputKinds on)
+	{
+		List<string> names = [];
+		if (on.HasFlag(SubServiceOutputKinds.Alias)) names.Add("Alias");
+		if (on.HasFlag(SubServiceOutputKinds.Geojson)) names.Add("GeoJSON");
+		if (on.HasFlag(SubServiceOutputKinds.ProcedureChanges)) names.Add("Procedure Changes");
+		if (on.HasFlag(SubServiceOutputKinds.ProceduresJson)) names.Add("Procedures JSON");
+		return string.Join(", ", names);
+	}
 
 	/// <summary>
 	/// Maps the saved cycle id back onto previous / current / next. The id is saved rather than the
@@ -268,6 +333,25 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 
 	private static string? Normalize(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
+	/// <summary>What a cycle row's state means, for its colour.</summary>
+	public enum CycleStatus
+	{
+		/// <summary>Still being checked, downloaded or parsed.</summary>
+		Working,
+
+		/// <summary>Everything is ready.</summary>
+		Ready,
+
+		/// <summary>The NASR data is ready but the d-TPP Metafile isn't.</summary>
+		Partial,
+
+		/// <summary>The cycle could not be prepared.</summary>
+		Failed,
+
+		/// <summary>The FAA hasn't published the cycle yet.</summary>
+		NotYetPublished,
+	}
+
 	/// <summary>One cycle row in the cycle menu, with its live cache state.</summary>
 	/// <param name="position">Which cycle relative to today this row is.</param>
 	/// <param name="onSelected">Called when the user picks this row.</param>
@@ -275,6 +359,9 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 	{
 		private string _label = position.ToString();
 		private string _state = string.Empty;
+		private CycleStatus _status;
+		private string? _dtppNote;
+		private string? _toolTip;
 		private bool _isSelected = position == AiracCyclePosition.Current;
 
 		/// <summary>Which cycle relative to today this row is.</summary>
@@ -304,11 +391,35 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 			private set => SetProperty(ref _label, value);
 		}
 
-		/// <summary><c>ready</c> / <c>parsing…</c> / <c>failed</c> / <c>not yet published</c>.</summary>
+		/// <summary><c>ready</c> / <c>partial</c> / <c>parsing…</c> / <c>failed</c> / <c>not yet published</c>.</summary>
 		public string State
 		{
 			get => _state;
 			private set => SetProperty(ref _state, value);
+		}
+
+		/// <summary>What <see cref="State"/> means, for its colour.</summary>
+		public CycleStatus Status
+		{
+			get => _status;
+			private set => SetProperty(ref _status, value);
+		}
+
+		/// <summary>The red note beside a <see cref="CycleStatus.Partial"/> cycle; <see langword="null"/> otherwise.</summary>
+		public string? DtppNote
+		{
+			get => _dtppNote;
+			private set => SetProperty(ref _dtppNote, value);
+		}
+
+		/// <summary>
+		/// The row's tooltip while it is <see cref="CycleStatus.Partial"/>: what the missing metafile
+		/// is, when to expect it, and what can't be made until then. <see langword="null"/> otherwise.
+		/// </summary>
+		public string? ToolTip
+		{
+			get => _toolTip;
+			private set => SetProperty(ref _toolTip, value);
 		}
 
 		/// <summary>Re-reads this row's label and cache state.</summary>
@@ -317,10 +428,15 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 			AiracCycleInfo info = AppEnvironment.GetAiracCycle(Position);
 			Label = $"{Position}  —  {info.AiracCycleId}  ·  eff {info.EffectiveDateUtc:dd MMM yyyy}";
 
+			// The metafile is fetched before a cycle is parsed, so once the cycle is ready, a
+			// missing metafile stays missing until the next launch.
 			AiracCycleDataCacheEntry? entry = AiracCycleDataCache.Instance.GetEntry(info.AiracCycleId);
+			bool missingDtpp = entry?.State == CycleDataState.Ready
+				&& AiracCycleDataCache.Instance.FindDtppFile(info.AiracCycleId) is null;
+
 			State = entry?.State switch
 			{
-				CycleDataState.Ready => "ready",
+				CycleDataState.Ready => missingDtpp ? "partial" : "ready",
 				CycleDataState.Parsing => "parsing…",
 				CycleDataState.Downloading => "downloading…",
 				CycleDataState.Downloaded => "parsing…",
@@ -328,6 +444,46 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 				CycleDataState.NotYetPublished => "not yet published",
 				_ => "preparing…",
 			};
+
+			Status = entry?.State switch
+			{
+				CycleDataState.Ready => missingDtpp ? CycleStatus.Partial : CycleStatus.Ready,
+				CycleDataState.Failed => CycleStatus.Failed,
+				CycleDataState.NotYetPublished => CycleStatus.NotYetPublished,
+				_ => CycleStatus.Working,
+			};
+
+			DtppNote = missingDtpp ? "d-TPP Metafile not available yet" : null;
+			ToolTip = missingDtpp ? DescribeMissingDtpp(info, AppEnvironment.CheckedUtcDate) : null;
+		}
+
+		/// <summary>The tooltip for a cycle whose NASR data is ready but whose d-TPP Metafile isn't.</summary>
+		/// <param name="cycle">The cycle.</param>
+		/// <param name="today">Today's UTC date, to say whether the metafile is still to come or overdue.</param>
+		/// <returns>The tooltip text.</returns>
+		internal static string DescribeMissingDtpp(AiracCycleInfo cycle, DateOnly today)
+		{
+			// The FAA posts the metafile 15-18 days before the cycle takes effect.
+			DateOnly from = cycle.EffectiveDateUtc.AddDays(-18);
+			DateOnly to = cycle.EffectiveDateUtc.AddDays(-15);
+
+			string when = to >= today
+				? $"The FAA posts it 15-18 days before the cycle takes effect, so expect it between {from:dd MMM} and {to:dd MMM yyyy}. " +
+					"FE-Buddy looks for it at every launch, so restart FE-Buddy after that."
+				: $"The FAA usually posts it 15-18 days before the cycle takes effect ({from:dd MMM} to {to:dd MMM yyyy}), so it " +
+					"should be out by now and the download may have failed. FE-Buddy tries again at every launch, so restart FE-Buddy to try now.";
+
+			return
+				$"Cycle {cycle.AiracCycleId}'s NASR data is ready, but its d-TPP Metafile isn't. The metafile is the FAA's index of " +
+				"charts (approach plates, SIDs, STARs, airport diagrams); the Procedures sub-service is built from it." +
+				Environment.NewLine + Environment.NewLine +
+				when +
+				Environment.NewLine + Environment.NewLine +
+				"Until then, with this cycle selected:" + Environment.NewLine +
+				"• Procedures writes none of its files: Procedure_Changes.md, Procedures.json and Faa_Chart_Recall.txt " +
+				"(so Combined_Alias.txt has no chart recall commands)." + Environment.NewLine +
+				"• On the Procedures tab you can't add procedures or airport + procedure pairs." + Environment.NewLine +
+				"Every other sub-service runs as normal.";
 		}
 	}
 }

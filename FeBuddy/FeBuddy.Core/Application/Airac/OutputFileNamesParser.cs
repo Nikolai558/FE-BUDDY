@@ -36,7 +36,7 @@ public static class OutputFileNamesParser
 		AirwayOutputFiles.Alias, AirportOutputFiles.Alias, DepartureOutputFiles.Alias, ArrivalOutputFiles.Alias,
 		NavaidOutputFiles.Alias, ProcedureOutputFiles.Alias, TelephonyOutputFiles.Alias,
 		ProcedureOutputFiles.Changes, ProcedureOutputFiles.Json,
-		AiracOutputPaths.VnasAliasFileName, AiracOutputPaths.DuplicateAliasReportFileName,
+		AiracOutputPaths.CombinedAliasFileName, AiracOutputPaths.DuplicateAliasReportFileName,
 	], StringComparer.OrdinalIgnoreCase);
 
 	/// <summary>Reads the block.</summary>

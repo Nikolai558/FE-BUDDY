@@ -85,26 +85,52 @@ public static class AirportAliasWriter
 		}
 
 		StringBuilder builder = new();
-		HashSet<string> writtenCommands = new(StringComparer.OrdinalIgnoreCase);
 		int commandCount = 0;
+
+		// Every FAA ID is claimed before any ICAO command is written, so an airport's own FAA ID
+		// always beats another airport's ICAO ID, whatever the sort order.
+		Dictionary<string, Airport> ownerOf = new(StringComparer.OrdinalIgnoreCase);
+
+		foreach (Airport airport in airports)
+		{
+			ownerOf.TryAdd(airport.FaaId, airport);
+		}
+
+		List<(string Identifier, Airport Skipped, Airport Owner)> clashes = [];
 
 		foreach (Airport airport in airports.OrderBy(a => a.FaaId, StringComparer.OrdinalIgnoreCase))
 		{
 			string body = BuildCommandBody(airport);
 
-			if (TryAppend(builder, writtenCommands, airport.FaaId, body, airport, messages))
+			if (ReferenceEquals(ownerOf[airport.FaaId], airport))
 			{
+				Append(builder, airport.FaaId, body);
 				commandCount++;
+			}
+			else
+			{
+				clashes.Add((airport.FaaId, airport, ownerOf[airport.FaaId]));
 			}
 
 			// The ICAO command repeats the identical body under the second identifier, so
 			// .aptKSEA and .aptSEA both work and show the same card.
-			if (airport.IcaoId is { } icaoId
-				&& TryAppend(builder, writtenCommands, icaoId, body, airport, messages))
+			if (DistinctIcaoId(airport) is not { } icaoId)
 			{
+				continue;
+			}
+
+			if (ownerOf.TryAdd(icaoId, airport))
+			{
+				Append(builder, icaoId, body);
 				commandCount++;
 			}
+			else
+			{
+				clashes.Add((icaoId, airport, ownerOf[icaoId]));
+			}
 		}
+
+		ReportClashes(clashes, messages);
 
 		if (commandCount == 0)
 		{
@@ -130,7 +156,7 @@ public static class AirportAliasWriter
 	/// <returns>The <c>.ECHO</c> body, escapes included.</returns>
 	internal static string BuildCommandBody(Airport airport)
 	{
-		string displayLine = airport.IcaoId is { } icaoId
+		string displayLine = DistinctIcaoId(airport) is { } icaoId
 			? $"{airport.FaaId} - {icaoId}"
 			: airport.FaaId;
 
@@ -181,27 +207,47 @@ public static class AirportAliasWriter
 		}
 	}
 
-	private static bool TryAppend(
-		StringBuilder builder,
-		HashSet<string> writtenCommands,
-		string identifier,
-		string body,
-		Airport airport,
-		List<ServiceMessage> messages)
-	{
-		string command = $".apt{identifier}";
+	/// <summary>
+	/// The airport's ICAO ID when it is a second identifier, or <see langword="null"/>. Many
+	/// airports outside the US have their ICAO ID as their FAA ID too (<c>CYAM</c>/<c>CYAM</c>),
+	/// and those get one command and one identifier on the card.
+	/// </summary>
+	private static string? DistinctIcaoId(Airport airport) =>
+		airport.IcaoId is { } icaoId && !string.Equals(icaoId, airport.FaaId, StringComparison.OrdinalIgnoreCase)
+			? icaoId
+			: null;
 
-		if (!writtenCommands.Add(command))
+	private static void Append(StringBuilder builder, string identifier, string body) =>
+		builder.Append(".apt").Append(identifier).Append(' ').Append(body).AppendLine();
+
+	/// <summary>
+	/// Reports identifiers two airports both claim as one warning, with each skipped command as a
+	/// routine message under it. None occur in the FAA's data today; this keeps a future clash
+	/// visible without filling the Review tab.
+	/// </summary>
+	private static void ReportClashes(List<(string Identifier, Airport Skipped, Airport Owner)> clashes, List<ServiceMessage> messages)
+	{
+		const int Listed = 5;
+
+		if (clashes.Count == 0)
 		{
-			// Not expected to occur in real NASR data; caught so a future identifier clash
-			// surfaces as a message instead of two aliases silently fighting over one command.
-			messages.Add(new ServiceMessage(LogLevel.Warning, LogSource,
-				$"Airport '{airport.FaaId}': alias command '{command}' was already written by another airport and was skipped."));
-			return false;
+			return;
 		}
 
-		builder.Append(command).Append(' ').Append(body).AppendLine();
-		return true;
+		IEnumerable<string> examples = clashes.Take(Listed).Select(c => $".apt{c.Identifier} (kept for {c.Owner.FaaId})");
+		string list = string.Join(", ", examples) + (clashes.Count > Listed ? $" and {clashes.Count - Listed} more" : string.Empty);
+
+		string summary = clashes.Count == 1
+			? $"1 airport alias command was skipped because another airport already uses it: {list}."
+			: $"{clashes.Count} airport alias commands were skipped because other airports already use them: {list}.";
+
+		messages.Add(new ServiceMessage(LogLevel.Warning, LogSource, summary));
+
+		foreach ((string identifier, Airport skipped, Airport owner) in clashes)
+		{
+			messages.Add(new ServiceMessage(LogLevel.Info, LogSource,
+				$"Airport '{skipped.FaaId}': alias command '.apt{identifier}' is already used by airport '{owner.FaaId}', so it was skipped."));
+		}
 	}
 
 	/// <summary>

@@ -88,10 +88,26 @@ public record VersionCheckResult(
 	/// <param name="fallback">The channel when none is stored (<see cref="UpdateChannelSetting.DefaultFor"/>).</param>
 	/// <returns>The parsed channel, or <paramref name="fallback"/>.</returns>
 	public static ReleaseChannel ParseChannel(string? value, ReleaseChannel fallback) =>
-		Enum.GetValues<ReleaseChannel>()
-			.Where(channel => string.Equals(channel.ToString(), value?.Trim(), StringComparison.OrdinalIgnoreCase))
-			.DefaultIfEmpty(fallback)
-			.First();
+		TryParseChannel(value, out ReleaseChannel channel) ? channel : fallback;
+
+	/// <summary>Parses the user's update channel from its stored name, if it is one.</summary>
+	/// <param name="value">The stored channel name (case-insensitive).</param>
+	/// <param name="channel">The parsed channel, or <see cref="ReleaseChannel.Stable"/> when <paramref name="value"/> isn't one.</param>
+	/// <returns><see langword="true"/> when <paramref name="value"/> names a channel.</returns>
+	public static bool TryParseChannel(string? value, out ReleaseChannel channel)
+	{
+		foreach (ReleaseChannel candidate in Enum.GetValues<ReleaseChannel>())
+		{
+			if (string.Equals(candidate.ToString(), value?.Trim(), StringComparison.OrdinalIgnoreCase))
+			{
+				channel = candidate;
+				return true;
+			}
+		}
+
+		channel = ReleaseChannel.Stable;
+		return false;
+	}
 }
 
 /// <summary>One GitHub release, as shown in the update window.</summary>

@@ -32,7 +32,6 @@ public sealed class NavaidsViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 	private const string Node = "Services.AiracService.Navaids";
 	private const string ShutdownStatus = "SHUTDOWN";
 
-	private bool _generateGeojson = true;
 	private NavaidOutputBy _outputBy = NavaidOutputBy.All;
 	private NavaidSymbolStyleBy _symbolStyleBy = NavaidSymbolStyleBy.Type;
 	private string _fanMarkerStyle = string.Empty;
@@ -60,33 +59,9 @@ public sealed class NavaidsViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 
 	// ================= outputs =================
 
-	/// <summary>Whether this run writes GeoJSON for the NAVAIDs.</summary>
-	public bool GenerateGeojson
-	{
-		get => _generateGeojson;
-		set
-		{
-			if (!value && !CanTurnOffOutput())
-			{
-				// The value never changed, but the control already did - put it back.
-				RestoreRejectedToggle(nameof(GenerateGeojson));
-				return;
-			}
-
-			if (SetProperty(ref _generateGeojson, value))
-			{
-				MarkDirty();
-			}
-		}
-	}
-
 	/// <inheritdoc />
-	protected override int EnabledOutputCount =>
-		(GenerateGeojson ? 1 : 0) + (GenerateAliasFile ? 1 : 0);
-
-	/// <inheritdoc />
-	protected override string NoDefaultRoiHint =>
-		"No default ROI is set, so the GeoJSON covers every NAVAID. Set one in Settings, or override it here.";
+	protected override string NoRoiEffect =>
+		"the GeoJSON covers every NAVAID";
 
 	/// <inheritdoc />
 	/// <remarks>NAVAIDs has no Lines file: only Symbols and Text are ever written.</remarks>
@@ -276,7 +251,6 @@ public sealed class NavaidsViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 			rows.Add(new ServicePreviewRow("Symbol style", DescribeSymbolStyle()));
 		}
 
-		rows.Add(new ServicePreviewRow("Upload to vNAS", DescribeVnasFiles()));
 		rows.Add(new ServicePreviewRow("CRC ERAM defaults", DescribeCrcDefaults()));
 
 		return [new ServicePreviewSection("NAVAIDs", rows)];
@@ -287,20 +261,11 @@ public sealed class NavaidsViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 	/// <inheritdoc />
 	protected override void LoadFromConfig()
 	{
-		_generateGeojson = GetBool("GenerateGeojson", true);
 		_outputBy = Enum.TryParse(Get("OutputBy"), true, out NavaidOutputBy outputBy) ? outputBy : NavaidOutputBy.All;
 		_symbolStyleBy = Enum.TryParse(Get("SymbolStyleBy"), true, out NavaidSymbolStyleBy styleBy) ? styleBy : NavaidSymbolStyleBy.Type;
 		_fanMarkerStyle = CanonicalStyle(Get("FanMarkerStyle"));
 
 		LoadSharedSettings();
-
-		// Both outputs off would leave the tab in a state its own guard forbids; a hand-edited
-		// config is the only way to get here, so fall back to the default rather than honour it.
-		if (!_generateGeojson && !GenerateAliasFile)
-		{
-			_generateGeojson = true;
-			GenerateAliasFile = true;
-		}
 
 		// Re-apply the saved exclusion list to any already-built toggles, without a dirty check
 		// per toggle; ClearDirty below re-takes the snapshot once.
@@ -326,7 +291,6 @@ public sealed class NavaidsViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 	/// <inheritdoc />
 	protected override void WriteToConfig()
 	{
-		Set("GenerateGeojson", YesNo(GenerateGeojson));
 		Set("OutputBy", _outputBy.ToString());
 		Set("ExcludedTypes", string.Join(',', ExcludedTypeNames()));
 		Set("SymbolStyleBy", _symbolStyleBy.ToString());
@@ -339,14 +303,17 @@ public sealed class NavaidsViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 	{
 		if (GenerateGeojson && !EmitSymbols && !EmitText)
 		{
-			validation.Add(
+			validation.AddArea(
+				ServiceAreas.GeojsonFiles,
 				"GeoJSON is on but neither Symbols nor Text is selected. Turn at least one back on, "
-				+ "or switch GeoJSON off.");
+				+ "or turn GeoJSON off for NAVAIDs on the General tab.");
 		}
 
 		if (Types.Count > 0 && Types.All(t => !t.IsSelected))
 		{
-			validation.Add("No NAVAID types are ticked. Tick at least one, or deselect NAVAIDs on the General tab.");
+			validation.AddArea(
+				ServiceAreas.NavaidTypes,
+				"No NAVAID types are ticked. Tick at least one, or untick NAVAIDs under Include on the General tab.");
 		}
 
 		if (ShowFanMarkerStyle && string.IsNullOrWhiteSpace(FanMarkerStyle))
@@ -543,6 +510,14 @@ public sealed class NavaidsViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 		MarkDirty();
 	}
 
+	/// <inheritdoc />
+	/// <remarks>The NAVAID Symbol Style card shows only while GeoJSON is on.</remarks>
+	protected override void OnOutputsChanged()
+	{
+		base.OnOutputsChanged();
+		RaiseVisibilityFlags();
+	}
+
 	private void RaiseVisibilityFlags()
 	{
 		OnPropertyChanged(nameof(ShowSymbolStyleChoice));
@@ -553,7 +528,7 @@ public sealed class NavaidsViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 	{
 		foreach (string name in new[]
 		{
-			nameof(GenerateGeojson), nameof(OutputAllInOne), nameof(OutputByType),
+			nameof(OutputAllInOne), nameof(OutputByType),
 			nameof(StyleByNavaidType), nameof(StyleForWholeFile), nameof(FanMarkerStyle),
 		})
 		{

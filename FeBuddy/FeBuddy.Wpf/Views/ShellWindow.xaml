@@ -87,7 +87,7 @@
                     <Border x:Name="IconChip" Grid.Column="0" Width="28" Height="28" CornerRadius="9"
                             VerticalAlignment="Top" Background="{StaticResource Brush.Accent.Soft}">
                         <TextBlock x:Name="Glyph" Text="{StaticResource Icon.Info}"
-                                   FontFamily="{StaticResource Font.Icon}" FontSize="13"
+                                   FontFamily="{StaticResource Font.Icon}" FontSize="14.5"
                                    Foreground="{StaticResource Brush.Accent}"
                                    HorizontalAlignment="Center" VerticalAlignment="Center" />
                     </Border>
@@ -97,7 +97,7 @@
                                    Visibility="{Binding HasMessage, Converter={StaticResource BoolToVis}}" />
                     </StackPanel>
                     <Button Grid.Column="2" Style="{StaticResource Button.Subtle}"
-                            Content="{StaticResource Icon.Cancel}" FontFamily="{StaticResource Font.Icon}" FontSize="10"
+                            Content="{StaticResource Icon.Cancel}" FontFamily="{StaticResource Font.Icon}" FontSize="11"
                             Padding="7,4" VerticalAlignment="Top"
                             Command="{Binding DismissCommand}" ToolTip="Dismiss" />
                 </Grid>
@@ -139,19 +139,19 @@
              when the rail is collapsed; a tooltip carries the name instead. -->
         <DataTemplate x:Key="NavRow" DataType="{x:Type vm:NavItem}">
             <RadioButton Style="{StaticResource Nav.Item}" GroupName="FebNav"
-                         IsChecked="{Binding IsActive, Mode=TwoWay}"
+                         IsChecked="{Binding IsActive, Mode=TwoWay}" Command="{Binding ClickCommand}"
                          ToolTip="{Binding Title}">
                 <StackPanel Orientation="Horizontal">
                     <TextBlock Text="{Binding Glyph}"
                                FontFamily="{StaticResource Font.Icon}"
-                               FontSize="15"
+                               FontSize="16.5"
                                Width="20"
                                TextAlignment="Left"
                                VerticalAlignment="Center" />
                     <TextBlock Text="{Binding Title}"
                                Margin="10,0,0,0"
                                FontFamily="{StaticResource Font.Body}"
-                               FontSize="13"
+                               FontSize="14.5"
                                FontWeight="Medium"
                                VerticalAlignment="Center"
                                Visibility="{Binding DataContext.NavCollapsed, RelativeSource={RelativeSource AncestorType={x:Type Window}}, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
@@ -190,7 +190,7 @@
                     <TextBlock Text="FE-BUDDY"
                                Margin="10,0,0,0"
                                FontFamily="{StaticResource Font.Display}"
-                               FontSize="13"
+                               FontSize="14.5"
                                FontWeight="Bold"
                                Foreground="{StaticResource Brush.Text.Primary}"
                                VerticalAlignment="Center"
@@ -290,7 +290,7 @@
                 <TextBlock Grid.Column="1"
                            Text="{Binding AiracStatus}"
                            HorizontalAlignment="Center" VerticalAlignment="Center"
-                           FontFamily="{StaticResource Font.Body}" FontSize="12" FontWeight="Medium"
+                           FontFamily="{StaticResource Font.Body}" FontSize="13" FontWeight="Medium"
                            Foreground="{StaticResource Brush.Text.Secondary}" />
 
                 <!-- caption buttons -->
@@ -360,7 +360,7 @@
                         <Grid DockPanel.Dock="Top" Margin="10,10,8,0">
                             <Button Style="{StaticResource Caption.Button}" HorizontalAlignment="Right"
                                     Command="{Binding ToggleNavCommand}" ToolTip="Collapse / expand nav">
-                                <TextBlock FontFamily="{StaticResource Font.Icon}" FontSize="11">
+                                <TextBlock FontFamily="{StaticResource Font.Icon}" FontSize="12">
                                     <TextBlock.Style>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="Text" Value="{StaticResource Icon.Chevron.Left}" />
@@ -424,15 +424,15 @@
                                         </Ellipse.Style>
                                     </Ellipse>
                                     <TextBlock DockPanel.Dock="Right" Text="{StaticResource Icon.Chevron.Up}"
-                                               FontFamily="{StaticResource Font.Icon}" FontSize="8"
+                                               FontFamily="{StaticResource Font.Icon}" FontSize="9"
                                                Foreground="{StaticResource Brush.Text.Tertiary}"
                                                VerticalAlignment="Center" />
                                     <StackPanel Margin="9,0,0,0">
                                         <TextBlock Text="Systems" FontFamily="{StaticResource Font.Body}"
-                                                   FontSize="12" FontWeight="SemiBold"
+                                                   FontSize="13" FontWeight="SemiBold"
                                                    Foreground="{StaticResource Brush.Text.Primary}" />
                                         <TextBlock Text="{Binding HealthSummary}" Style="{StaticResource Text.Caption}"
-                                                   FontSize="10.5" />
+                                                   FontSize="11.5" />
                                     </StackPanel>
                                 </DockPanel>
                             </ToggleButton>

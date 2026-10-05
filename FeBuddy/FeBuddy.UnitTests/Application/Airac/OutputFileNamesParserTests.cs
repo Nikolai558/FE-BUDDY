@@ -42,7 +42,7 @@ public sealed class OutputFileNamesParserTests
 	[InlineData("Telephony.txt")]
 	[InlineData("Procedure_Changes.md")]
 	[InlineData("Procedures.json")]
-	[InlineData("vNAS_Alias.txt")]
+	[InlineData("Combined_Alias.txt")]
 	[InlineData("Duplicate_Alias_Commands.txt")]
 	[InlineData("duplicate_alias_commands.TXT")]
 	public void a_file_a_run_writes_can_be_renamed(string key)

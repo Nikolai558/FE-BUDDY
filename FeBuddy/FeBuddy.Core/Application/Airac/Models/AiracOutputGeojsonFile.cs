@@ -10,14 +10,12 @@ namespace FeBuddy.Core.Application.Airac.Models;
 /// The folder below <c>Geojson</c> it sits in, e.g. <c>ZOB\CLE</c> for a departure, or empty
 /// for a file at the top.
 /// </param>
-/// <param name="UploadToVnas">Whether it is in <c>Upload_to_vNAS</c>.</param>
 /// <param name="SizeBytes">The file's size.</param>
 /// <param name="LastWriteUtc">When it was last written.</param>
 public sealed record AiracOutputGeojsonFile(
 	string FullPath,
 	string RelativePath,
 	string SubFolder,
-	bool UploadToVnas,
 	long SizeBytes,
 	DateTime LastWriteUtc)
 {

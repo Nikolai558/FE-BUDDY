@@ -26,19 +26,30 @@
              d:DataContext="{d:DesignInstance tabs:IRoiOverrideSettings}"
              d:DesignWidth="820"
              x:Name="Self">
-    <ctl:Card Header="Region of Interest">
+    <ctl:Card Header="Region of Interest" bhv:FieldState.Error="{Binding FieldErrors[Roi]}">
         <StackPanel>
             <CheckBox Content="{Binding Title}" ContentStringFormat="Override the default ROI for {0}"
                       IsChecked="{Binding OverrideRoi}" Margin="0,4,0,0" />
-            <TextBlock Text="{Binding RoiFallbackHint}" Style="{StaticResource Text.Caption}" TextWrapping="Wrap"
-                       Margin="20,4,0,0"
+            <!-- the default ROI in use, or (in amber) that none is set and how to set one -->
+            <TextBlock Text="{Binding RoiFallbackHint}" TextWrapping="Wrap"
+                       Margin="26,4,0,0"
                        MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
-                       Visibility="{Binding OverrideRoi, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}" />
-            <StackPanel Margin="20,8,0,0" IsEnabled="{Binding OverrideRoi}">
+                       Visibility="{Binding OverrideRoi, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}">
+                <TextBlock.Style>
+                    <Style TargetType="TextBlock" BasedOn="{StaticResource Text.Caption}">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding HasRoi}" Value="False">
+                                <Setter Property="Foreground" Value="{StaticResource Brush.Warn}" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+            </TextBlock>
+            <StackPanel Margin="26,8,0,0" IsEnabled="{Binding OverrideRoi}">
                 <Grid>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto" /><ColumnDefinition Width="160" />
-                        <ColumnDefinition Width="Auto" /><ColumnDefinition Width="160" />
+                        <ColumnDefinition Width="Auto" /><ColumnDefinition Width="140" />
+                        <ColumnDefinition Width="Auto" /><ColumnDefinition Width="140" />
                     </Grid.ColumnDefinitions>
                     <Grid.RowDefinitions><RowDefinition /><RowDefinition /></Grid.RowDefinitions>
                     <TextBlock Text="NE lat" Style="{StaticResource Text.Caption}" VerticalAlignment="Center" Margin="0,0,8,4" />

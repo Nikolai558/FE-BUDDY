@@ -17,9 +17,19 @@ public sealed class ServiceValidation
 	/// <summary>Whether anything failed.</summary>
 	public bool HasErrors => _messages.Count > 0;
 
-	/// <summary>Records a tab-level failure with no single input to blame.</summary>
-	/// <param name="message">The message shown above the tab's content.</param>
-	public void Add(string message) => _messages.Add(message);
+	/// <summary>
+	/// Records a failure that belongs to a part of the tab rather than one input, such as no
+	/// GeoJSON files ticked. The view outlines that part by binding its card's
+	/// <c>FieldState.Error</c> to <c>FieldErrors[areaKey]</c>. Unlike <see cref="AddField"/>, every
+	/// message is kept, since one area can have several things wrong.
+	/// </summary>
+	/// <param name="areaKey">The key the area's card binds to, e.g. <c>GeojsonFiles</c>.</param>
+	/// <param name="message">The message shown at the top of the tab.</param>
+	public void AddArea(string areaKey, string message)
+	{
+		_fieldErrors.TryAdd(areaKey, message);
+		_messages.Add(message);
+	}
 
 	/// <summary>
 	/// Records a failure against one input, so that box highlights and carries the message as its

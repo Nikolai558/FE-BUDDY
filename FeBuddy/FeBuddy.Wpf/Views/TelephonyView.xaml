@@ -27,26 +27,24 @@
          steal the wheel and hide the lower sections. -->
     <StackPanel>
 
-            <TextBlock Text="{Binding ValidationError}" Style="{StaticResource Text.Caption}"
-                       Foreground="{StaticResource Brush.Danger}" TextWrapping="Wrap" Margin="0,0,0,12"
-                       MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
-                       Visibility="{Binding ValidationError, Converter={StaticResource StringToVis}}" />
+            <cards:AttentionCard />
 
             <!-- ============ outputs ============ -->
             <ctl:Card Header="Outputs">
                 <StackPanel>
-                    <TextBlock Text="Alias file" Style="{StaticResource Text.Body}" Margin="0,4,0,0" />
-                    <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,2,0,10"
-                               MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
+                    <TextBlock Style="{StaticResource Text.Caption}" Margin="0,4,0,10" TextWrapping="Wrap"
+                               Text="Telephony writes only an alias file, so it is on whenever Telephony is included on the General tab." />
+                    <cards:OutputStatusRow Label="Alias file" IsOn="{Binding GenerateAliasFile}" />
+                    <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,10"
                                Text="A card for every operator in the FAA telephony pages: its three-letter designator, telephony, company and country. Your virtual airlines (below) are added too.&#xA;Type .id and either the designator from the data block or the telephony the pilot said,&#xA;Ex: .idAVA or .idAVIANCA&#xA;When one command fits more than one operator, it shows all of them." />
                     <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap"
                                MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
-                               bhv:InlineCode.Text="Written to `Aliases\` in the cycle's folder. Ticked below, it is also added to `Upload_to_vNAS\vNAS_Alias.txt`." />
+                               bhv:InlineCode.Text="Written to `Aliases\` in the cycle's folder. The Concatenate Aliases tab also adds it to `Aliases\Combined_Alias.txt`." />
                 </StackPanel>
             </ctl:Card>
 
             <!-- ============ virtual airlines ============ -->
-            <ctl:Card Header="Virtual Airlines">
+            <ctl:Card Header="Virtual Airlines" bhv:FieldState.Error="{Binding FieldErrors[VirtualAirlines]}">
                 <StackPanel>
                     <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
                                bhv:InlineCode.Text="Add virtual airlines to `Telephony.txt`. Each gets a card marked `--VA--` with its 3LD, telephony and virtual organization, under `.id` and its 3LD, and `.id` and its telephony. When it shares a command with a real operator or another virtual airline, the command shows all of them, real operators first." />
@@ -152,7 +150,5 @@
                 </StackPanel>
             </ctl:Card>
 
-            <!-- ============ upload to vNAS (the alias file only) ============ -->
-            <cards:VnasUploadCard />
     </StackPanel>
 </UserControl>

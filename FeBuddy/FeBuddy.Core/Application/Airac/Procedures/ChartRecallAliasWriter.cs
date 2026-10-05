@@ -10,8 +10,8 @@ namespace FeBuddy.Core.Application.Airac.Procedures;
 /// </summary>
 /// <remarks>
 /// The file goes in the cycle folder's <c>Aliases</c> folder (see
-/// <see cref="AiracOutputPaths.AliasDirectory"/>), like every other alias file; when the user marked it
-/// for vNAS it is also copied into <c>vNAS_Alias.txt</c>.
+/// <see cref="AiracOutputPaths.AliasDirectory"/>), like every other alias file; an AIRAC Service run
+/// with Concatenate Aliases also copies it into <c>Combined_Alias.txt</c>.
 /// </remarks>
 public static class ChartRecallAliasWriter
 {
@@ -19,7 +19,7 @@ public static class ChartRecallAliasWriter
 	/// Writes the alias file.
 	/// </summary>
 	/// <param name="lines">The command lines, in the order to write them.</param>
-	/// <param name="settings">The parsed Procedures settings; <see cref="ProcedureSettings.OutputDirectory"/> and <see cref="ProcedureSettings.Vnas"/> are read.</param>
+	/// <param name="settings">The parsed Procedures settings; <see cref="ProcedureSettings.OutputDirectory"/> and <see cref="ProcedureSettings.FileNames"/> are read.</param>
 	/// <returns>The path written (or <see langword="null"/> when there was no line to write) and the command count.</returns>
 	public static ChartRecallAliasWriteResult Generate(IReadOnlyList<ChartRecallAliasLine> lines, ProcedureSettings settings)
 	{

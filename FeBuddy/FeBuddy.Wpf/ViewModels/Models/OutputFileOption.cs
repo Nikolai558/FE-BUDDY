@@ -2,10 +2,11 @@ namespace FeBuddy.Wpf.ViewModels.Models;
 
 /// <summary>
 /// One file (or, for Departures, Arrivals and NAVAIDs, one kind of file) a sub-service tab's
-/// current settings will write - a choice on the Upload to vNAS card.
+/// current settings will write: a GeoJSON file is a choice on the CRC ERAM Defaults card, and every
+/// file is listed on the File Names tab.
 /// </summary>
 /// <param name="Key">The file key Core names it by, e.g. <c>Airways_High_Lines</c> or <c>Airways.txt</c>.</param>
-/// <param name="Group">The card row it sits in, e.g. <c>High</c>, <c>J</c> or <c>Alias file</c>.</param>
+/// <param name="Group">The card row it sits in, e.g. <c>High</c> or <c>J</c>.</param>
 /// <param name="Label">Its checkbox label within that row, e.g. <c>Lines</c>.</param>
 /// <param name="DisplayName">How the Preview Settings tab names it, e.g. <c>Airways_High_Lines</c>.</param>
 /// <param name="IsGeojson">Whether it is GeoJSON, so can carry CRC-ERAM defaults.</param>

@@ -11,7 +11,7 @@
     the app. The AIRAC Service screen runs through
     FeBuddy.Core.Application.Airac.AiracService, which dispatches to its
     sub-services (Airways, Airports, Departures, Arrivals, NAVAIDs, ARTCC Boundaries, Fixes,
-    Wx Stations, Procedures, Telephony, vNAS Alias Upload).
+    Wx Stations, Procedures, Telephony, Concatenate Aliases).
   -->
 
   <PropertyGroup>

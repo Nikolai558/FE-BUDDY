@@ -12,4 +12,7 @@ public interface IFebPropertySettings
 
 	/// <summary>One toggle per <c>feb.*</c> property this sub-service can write.</summary>
 	ObservableCollection<FebPropertyToggle> FebProperties { get; }
+
+	/// <summary>The tab's validation messages; the card is outlined while <see cref="ServiceAreas.FebProperties"/> has one.</summary>
+	ServiceFieldErrors FieldErrors { get; }
 }

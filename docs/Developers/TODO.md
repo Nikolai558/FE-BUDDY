@@ -8,13 +8,6 @@ Open work only. When an item is done, delete it - the commit is the record.
   group, but the sub-services only read APT, ARB, AWY, CLS_ARSP, DP, FIX, FRQ, NAV and STAR. Parsing
   just those would cut memory and launch time (`TODO (perf)` in `AiracCycleDataCache.cs`).
 
-## Tidy-ups
-
-- **Misspelled config keys.** `DefaultCoordindates` and `OverrideCoordindates` are misspelled in
-  every saved `UserConfig.json`. Renaming them needs a one-time migration from the old keys.
-- **`DefaultRoi.FilterByRoi` is saved as `true` / `false`**, while every other yes/no setting is
-  `Y` / `N`. Harmless, but fold it into the same migration.
-
 ## Standards
 
 - **Bring `FeBuddy.Harness` up to the standard.** It doesn't require XML docs yet, and still has

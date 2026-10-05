@@ -51,11 +51,8 @@ public sealed class WxStationsViewModel : GeojsonSubServiceViewModel, ISubServic
 	// ================= outputs =================
 
 	/// <inheritdoc />
-	protected override int EnabledOutputCount => 1;
-
-	/// <inheritdoc />
-	protected override string NoDefaultRoiHint =>
-		"No default ROI is set, so the GeoJSON covers every station. Set one in Settings, or override it here.";
+	protected override string NoRoiEffect =>
+		"the GeoJSON covers every station";
 
 	/// <inheritdoc />
 	/// <remarks>Wx Stations has no Lines file: only Symbols and Text are ever written.</remarks>
@@ -136,7 +133,6 @@ public sealed class WxStationsViewModel : GeojsonSubServiceViewModel, ISubServic
 			new ServicePreviewRow("GeoJSON files", DescribeGeojsonFiles()),
 			new ServicePreviewRow("Station data", StationDataStatus),
 			new ServicePreviewRow("Region of interest", DescribeRoi()),
-			new ServicePreviewRow("Upload to vNAS", DescribeVnasFiles()),
 			new ServicePreviewRow("CRC ERAM defaults", DescribeCrcDefaults()),
 		];
 
@@ -160,7 +156,9 @@ public sealed class WxStationsViewModel : GeojsonSubServiceViewModel, ISubServic
 	{
 		if (!EmitSymbols && !EmitText)
 		{
-			validation.Add("Neither Symbols nor Text is selected. Turn at least one back on, or deselect Wx Stations on the General tab.");
+			validation.AddArea(
+				ServiceAreas.GeojsonFiles,
+				"Neither Symbols nor Text is selected. Turn at least one back on, or untick Wx Stations under Include on the General tab.");
 		}
 
 		ValidateSharedSettings(validation);

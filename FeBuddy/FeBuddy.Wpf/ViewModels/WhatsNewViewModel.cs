@@ -64,7 +64,7 @@ public sealed class WhatsNewViewModel(Action back, Action openGuide) : Observabl
 		new("Output files include...", "Everything; the FE has no control", "Only what **you** pick, with more control over format and filters"),
 		new("Output files include...", "VRC, vSTARS and vERAM files", "Only CRC files, or those that may actually be useful"),
 		new("Map coverage", "Whole country", "**Your** Region of Interest"),
-		new("vNAS upload preparation", "Assembled by hand or with external scripts", "Output to an `Upload_to_vNAS` folder with **your** own CRC ERAM defaults, file names, etc."),
+		new("vNAS upload preparation", "Assembled by hand or with external scripts", "Every file ready for vNAS, with **your** own CRC ERAM defaults, file names, etc."),
 		new("Visualizing maps", "Outside tools, and only after the output is complete", "Built-in map that can visualize **before** you run the AIRAC Service"),
 		new("Sharing your preferences", "Uh... what preferences?!", "Export/import your preferences and settings"),
 		new("Merging FEB alias commands with your custom commands", "Not available", "Not only available, but it can reach out to your GitHub repo for the current file(s), even a private repo (using your GitHub token)"),
@@ -81,7 +81,7 @@ public sealed class WhatsNewViewModel(Action back, Action openGuide) : Observabl
 	[
 		new("Pick what you need", "11 sub-services, each with its own options."),
 		new("Region of Interest", "Draw one box and your maps stay in your area. Commands like `.apt`, `.nav` and chart recalls still cover the whole FAA."),
-		new("vNAS-ready", "Mark files for upload. GeoJSON can carry your CRC ERAM defaults; alias files merge with your facility's own (local or private GitHub) into one `vNAS_Alias.txt`. Your commands win."),
+		new("vNAS-ready", "Every file is ready to upload. GeoJSON can carry your CRC ERAM defaults; alias files combine with your facility's own (local or private GitHub) into one `Combined_Alias.txt`. Your commands win."),
 		new("Procedure changes", "`Procedure_Changes.md` lists New, Changed and Deleted charts with links."),
 		new("Set once", "Settings are remembered. Preview shows what will happen; Review shows what did. Share your settings with others."),
 	];

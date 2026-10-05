@@ -22,7 +22,7 @@
              d:DataContext="{d:DesignInstance tabs:IGeojsonFileChoices}"
              d:DesignWidth="820"
              x:Name="Self">
-    <ctl:Card Header="What Files Do You Want?">
+    <ctl:Card Header="What Files Do You Want?" bhv:FieldState.Error="{Binding FieldErrors[GeojsonFiles]}">
         <StackPanel>
             <ctl:Option Margin="0,4,0,0" Description="{Binding LinesDescription, ElementName=Self}"
                         Visibility="{Binding ShowLines, ElementName=Self, Converter={StaticResource BoolToVis}}">

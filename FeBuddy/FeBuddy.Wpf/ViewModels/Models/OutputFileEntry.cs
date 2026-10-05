@@ -9,7 +9,7 @@ namespace FeBuddy.Wpf.ViewModels.Models;
 /// <c>Departures_Lines</c>.
 /// </param>
 /// <param name="Folder">
-/// Its folder inside the cycle folder, e.g. <c>Geojson</c> or <c>Upload_to_vNAS\Geojson</c>; empty
+/// Its folder inside the cycle folder, e.g. <c>Geojson</c> or <c>Aliases</c>; empty
 /// for the cycle folder itself.
 /// </param>
 /// <param name="FileName">

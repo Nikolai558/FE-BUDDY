@@ -10,8 +10,8 @@ publishes it, a few weeks early, you can pick **Next** on the General tab and ge
 ### Where are my files?
 
 In an `AIRAC_<cycle>` folder (such as `AIRAC_2610`) in your output folder - Settings ▸ Default
-Output Directory, inside `FE-Buddy_Output` if that's on. GeoJSON is in `Geojson`, alias files in
-`Aliases`, and what you marked for vNAS in `Upload_to_vNAS`. **Open output folder** on the Review
+Output Directory, inside `FE-Buddy_Output` if that's on. GeoJSON is in `Geojson`, and alias files,
+`Combined_Alias.txt` with them, in `Aliases`. **Open output folder** on the Review
 tab goes straight there. See [Output files](User-Guide.md#output-files).
 
 ### FE-Buddy says the cycle has already been run
@@ -75,14 +75,21 @@ The FAA hasn't released it. It usually appears a few weeks early; FE-Buddy check
 
 ### A tab is red and I can't run
 
-Something on it is missing or invalid. The field is outlined in red; hover it to see why. Most often
-it's an empty **CRC ERAM Defaults** box.
+Something on it is missing or invalid. Click the tab with the red dot: the red box at its top lists
+each problem, and the cards to fix are outlined in red. Most often it's an empty **CRC ERAM
+Defaults** box.
+
+### The cycle says "partial"
+
+Its NASR data is ready, but the FAA hasn't posted its d-TPP Metafile yet (it does 15-18 days before
+the cycle starts). Everything runs except Procedures' files. FE-Buddy fetches it at the next launch
+after it's out; hover the cycle for the dates.
 
 ### My GeoJSON files have no CRC ERAM defaults
 
-In the AIRAC Service, only files marked for vNAS get them: tick the file on the **Upload to vNAS**
-card and choose it for CRC-ERAM defaults. In File Conversions, tick **Include** on the CRC ERAM
-Defaults card.
+In the AIRAC Service, none get them to start with: on the tab's **CRC ERAM Defaults** card, choose
+every GeoJSON file or specific ones, and fill in the boxes. In File Conversions, tick **Include** on
+the CRC ERAM Defaults card.
 
 ### A file I expected is missing
 
@@ -92,8 +99,9 @@ warning is under **Results** ▸ Airways.
 
 ### My custom alias file can't be read
 
-The run leaves it out of `vNAS_Alias.txt` and the Review tab says why - don't upload until it's
-fixed. **Check** on the vNAS Alias Upload tab tries again. For GitHub's messages and what to do, see
+The run leaves it out of `Combined_Alias.txt` and the Review tab says why - don't upload until it's
+fixed. **Check** on the Concatenate Aliases tab tries again, and when GitHub won't show the file it
+asks whether the repository is private and what to do next. For GitHub's messages, see
 [If something goes wrong](GitHub-Token-Guide.md#if-something-goes-wrong). On other websites, use the
 address of the file itself (its raw or download link), not a page about it.
 

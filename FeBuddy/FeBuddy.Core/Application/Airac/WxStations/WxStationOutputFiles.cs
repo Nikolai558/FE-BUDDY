@@ -1,8 +1,9 @@
 namespace FeBuddy.Core.Application.Airac.WxStations;
 
 /// <summary>
-/// The files the Wx Stations sub-service writes, by file key - the name the <c>UploadToVnas</c>
-/// and <c>CrcDefaultsFor</c> settings use (see <see cref="FeBuddy.Core.Application.Airac.Models.VnasFileChoices"/>).
+/// The files the Wx Stations sub-service writes, by file key - the name the <c>CrcDefaultsFor</c>
+/// setting (see <see cref="FeBuddy.Core.Application.Airac.Models.CrcDefaultsFiles"/>) and the File
+/// Names tab use.
 /// </summary>
 /// <remarks>
 /// A file's key is its name without <c>.geojson</c>. There is no alias file and no per-group

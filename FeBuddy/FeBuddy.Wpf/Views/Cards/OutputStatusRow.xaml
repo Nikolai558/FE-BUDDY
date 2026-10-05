@@ -1,0 +1,45 @@
+<!--
+    OutputStatusRow  -  one of a sub-service's outputs on its Outputs card: an On / Off chip, its
+    name, and what it writes underneath. Outputs are turned on and off on the General tab, so the
+    row only shows the state; the card says where to change it.
+
+    Usage:
+        <cards:OutputStatusRow Label="Alias file" IsOn="{Binding GenerateAliasFile}"
+                               Description="Writes one alias command per airport ..." />
+-->
+<UserControl x:Class="FeBuddy.Wpf.Views.Cards.OutputStatusRow"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Name="Self">
+    <StackPanel>
+        <DockPanel>
+            <Border DockPanel.Dock="Left" VerticalAlignment="Center" Margin="0,0,10,0" MinWidth="40">
+                <Border.Style>
+                    <Style TargetType="Border" BasedOn="{StaticResource Chip.State}">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsOn, ElementName=Self}" Value="True">
+                                <Setter Property="Tag" Value="Positive" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
+                <TextBlock HorizontalAlignment="Center">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock" BasedOn="{StaticResource Chip.State.Text}">
+                            <Setter Property="Text" Value="Off" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsOn, ElementName=Self}" Value="True">
+                                    <Setter Property="Text" Value="On" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+            </Border>
+            <TextBlock Text="{Binding Label, ElementName=Self}" Style="{StaticResource Text.Body}"
+                       Foreground="{StaticResource Brush.Text.Primary}" VerticalAlignment="Center" />
+        </DockPanel>
+        <TextBlock Text="{Binding Description, ElementName=Self}" Style="{StaticResource Text.Prose}" Margin="0,4,0,0"
+                   Visibility="{Binding Description, ElementName=Self, Converter={StaticResource StringToVis}}" />
+    </StackPanel>
+</UserControl>

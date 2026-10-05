@@ -22,10 +22,7 @@
          steal the wheel and hide the lower sections. -->
     <StackPanel>
 
-            <TextBlock Text="{Binding ValidationError}" Style="{StaticResource Text.Caption}"
-                       Foreground="{StaticResource Brush.Danger}" TextWrapping="Wrap" Margin="0,0,0,12"
-                       MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
-                       Visibility="{Binding ValidationError, Converter={StaticResource StringToVis}}" />
+            <cards:AttentionCard />
 
             <!-- ============ file layout ============ -->
             <ctl:Card Header="File Layout">
@@ -52,7 +49,7 @@
             <ctl:Card Header="ARTCCs">
                 <StackPanel>
                     <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
-                               Text="Pick the ARTCCs whose boundaries you want. Leave all unticked to include every one." />
+                               Text="Pick the ARTCCs whose boundaries you want. Leave all unticked to include every one. Your facility from Settings ▸ Facility Profile is ticked until you first save this tab." />
                     <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap"
                                MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
                                Text="ARTCCs appear once the selected cycle's data is loaded."
@@ -90,8 +87,11 @@
                 </cards:RoiOverrideCard.AdditionalContent>
             </cards:RoiOverrideCard>
 
-            <!-- ============ upload to vNAS, then the CRC ERAM defaults those files carry ============ -->
-            <cards:VnasUploadCard />
-            <cards:CrcDefaultsCard LinesTitle="ARTCC Boundaries — Lines" />
+            <!-- ============ CRC ERAM defaults: which files get them, and their values ============ -->
+            <cards:CrcDefaultsCard LinesTitle="ARTCC Boundaries — Lines">
+                <cards:CrcDefaultsCard.Choice>
+                    <cards:CrcFileChoice />
+                </cards:CrcDefaultsCard.Choice>
+            </cards:CrcDefaultsCard>
     </StackPanel>
 </UserControl>

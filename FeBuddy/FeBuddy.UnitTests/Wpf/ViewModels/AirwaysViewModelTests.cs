@@ -1,5 +1,7 @@
 using FeBuddy.Wpf.ViewModels;
 using FeBuddy.Wpf.ViewModels.Models;
+using FeBuddy.Wpf.ViewModels.ServiceTabs;
+using FeBuddy.Wpf.ViewModels.ServiceTabs.Models;
 
 using FeBuddy.Core.Application.Airac.Airways.Models;
 using FeBuddy.Core.Infrastructure.Configuration;
@@ -140,21 +142,22 @@ public sealed class AirwaysViewModelTests : IDisposable
 		Assert.Equal("ZK", block["ExcludedDesignations"]);
 	}
 
-	/// <summary>A High or Low file is listed - for vNAS, and for renaming - only while an included type goes in it.</summary>
+	/// <summary>A High or Low file is listed - for CRC-ERAM defaults, and for renaming - only while an included type goes in it.</summary>
 	[Fact]
 	public void only_the_files_an_included_type_goes_in_are_listed()
 	{
 		AirwaysViewModel tab = NewTab("J", "V");
 
-		Assert.Equal(["High", "Low", "Alias file"], tab.VnasFileRows.Select(row => row.Label));
+		Assert.Equal(["High", "Low"], tab.CrcFileRows.Select(row => row.Label));
 
 		Designation(tab, "J").Included = false;
 
-		Assert.Equal(["Low", "Alias file"], tab.VnasFileRows.Select(row => row.Label));
+		Assert.Equal(["Low"], tab.CrcFileRows.Select(row => row.Label));
+		Assert.DoesNotContain(tab.OutputFileEntries(), file => file.Key.StartsWith("Airways_High", StringComparison.Ordinal));
 
 		Designation(tab, "V").Stratum = AirwayStratum.Both;
 
-		Assert.Equal(["High", "Low", "Alias file"], tab.VnasFileRows.Select(row => row.Label));
+		Assert.Equal(["High", "Low"], tab.CrcFileRows.Select(row => row.Label));
 	}
 
 	/// <summary>The choices are saved, and a type a later cycle adds is flagged until the user chooses.</summary>
@@ -168,9 +171,9 @@ public sealed class AirwaysViewModelTests : IDisposable
 
 		// The defaults for Q and T are kept too, though this cycle has neither.
 		UserConfigFile.ReadAll();
-		Assert.Equal("Q", UserConfigFile.GetValue("Services.AiracService.Geojson.Airways.HighDesignations"));
-		Assert.Equal("T,V,Y", UserConfigFile.GetValue("Services.AiracService.Geojson.Airways.LowDesignations"));
-		Assert.Equal("J", UserConfigFile.GetValue("Services.AiracService.Geojson.Airways.BothDesignations"));
+		Assert.Equal("Q", UserConfigFile.GetValue("Services.AiracService.Airways.HighDesignations"));
+		Assert.Equal("T,V,Y", UserConfigFile.GetValue("Services.AiracService.Airways.LowDesignations"));
+		Assert.Equal("J", UserConfigFile.GetValue("Services.AiracService.Airways.BothDesignations"));
 
 		AirwaysViewModel reloaded = NewTab("J", "Q", "V", "Y", "ZK");
 
@@ -186,7 +189,7 @@ public sealed class AirwaysViewModelTests : IDisposable
 	[Fact]
 	public void after_a_save_the_defaults_no_longer_apply()
 	{
-		UserConfigFile.TrySetValue("Services.AiracService.Geojson.Airways.LowDesignations", "V");
+		UserConfigFile.TrySetValue("Services.AiracService.Airways.LowDesignations", "V");
 
 		AirwaysViewModel tab = NewTab("J", "V");
 
@@ -194,18 +197,33 @@ public sealed class AirwaysViewModelTests : IDisposable
 		Assert.Equal(AirwayStratum.Low, Designation(tab, "V").Stratum);
 	}
 
-	/// <summary>A hand-edited config with no output on loads the defaults, as the tab's own guard would never allow it.</summary>
+	/// <summary>With GeoJSON off on the General tab, the run is told so and the strata card hides.</summary>
 	[Fact]
-	public void a_config_with_no_output_on_loads_the_defaults()
+	public void geojson_off_on_the_general_tab_sends_generate_geojson_n()
 	{
-		UserConfigFile.TrySetValue("Services.AiracService.Geojson.Airways.OutputBy", "None");
-		UserConfigFile.TrySetValue("Services.AiracService.Geojson.Airways.GenerateAliasFile", "N");
-
 		AirwaysViewModel tab = NewTab("J");
+		Assert.Equal("Y", tab.BuildSettingsBlock()["GenerateGeojson"]);
+		Assert.True(tab.ShowsStrata);
 
-		Assert.Equal(AirwayGeojsonOutputBy.HighLow, tab.OutputBy);
-		Assert.True(tab.GenerateAliasFile);
+		SubServiceRow row = new(AiracSubServices.All.Single(d => d.Key == AiracSubServices.AirwaysKey), () => { });
+		row.Load(included: true, SubServiceOutputKinds.Alias);
+		tab.AttachOutputs(row);
+
+		Assert.False(tab.GenerateGeojson);
+		Assert.False(tab.ShowsStrata);
+		Assert.Equal("N", tab.BuildSettingsBlock()["GenerateGeojson"]);
+		Assert.Equal("HighLow", tab.BuildSettingsBlock()["OutputBy"]);
+		Assert.Equal(["Airways.txt"], tab.OutputFileEntries().Select(file => file.Key));
 		Assert.False(tab.IsDirty);
+	}
+
+	/// <summary>An unknown saved split (a typo, or a number) falls back to High and Low files.</summary>
+	[Fact]
+	public void an_unknown_saved_split_loads_as_high_and_low()
+	{
+		UserConfigFile.TrySetValue("Services.AiracService.Airways.OutputBy", "7");
+
+		Assert.Equal(AirwayGeojsonOutputBy.HighLow, NewTab("J").OutputBy);
 	}
 
 	[Fact]

@@ -67,79 +67,88 @@
                                Layers="{Binding State.Layers}"
                                Roi="{Binding DraftRoi, Mode=TwoWay}"
                                ReferenceRoi="{Binding ReferenceRoi}"
-                               RoiEditing="{Binding IsEditingRoi}" />
+                               RoiEditing="{Binding IsEditingRoi}"
+                               HomeZoom="{Binding State.Home.Zoom, FallbackValue=NaN}" />
 
-                <!-- toolbar -->
-                <Border Style="{StaticResource Map.Overlay}" HorizontalAlignment="Left" VerticalAlignment="Top">
-                    <StackPanel Orientation="Horizontal">
-                        <ToggleButton Style="{StaticResource Toggle.Tool}" IsChecked="{Binding IsEditingRoi}"
-                                      ToolTip="Draw, move or resize the ROI box. Shift + drag draws and saves a box at any time.">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="{StaticResource Icon.Crop}" FontFamily="{StaticResource Font.Icon}"
-                                           VerticalAlignment="Center" Margin="0,0,8,0" />
-                                <TextBlock Text="Edit ROI" VerticalAlignment="Center" />
-                            </StackPanel>
-                        </ToggleButton>
-                        <Border Style="{StaticResource Map.Overlay.Divider}" />
-                        <Button Style="{StaticResource Button.Icon}" Content="{StaticResource Icon.ZoomIn}" Click="OnZoomIn" ToolTip="Zoom in (+)" />
-                        <Button Style="{StaticResource Button.Icon}" Content="{StaticResource Icon.ZoomOut}" Click="OnZoomOut" ToolTip="Zoom out (-)" />
-                        <Button Style="{StaticResource Button.Icon}" Content="{StaticResource Icon.Home}" Click="OnHome" ToolTip="Go to your home view" />
-                        <Button Style="{StaticResource Button.Icon}" Content="{StaticResource Icon.Pin}" Click="OnSetHome" ToolTip="Make this view your home" />
-                        <Button Style="{StaticResource Button.Icon}" Content="{StaticResource Icon.FitPage}" Click="OnFitLayers" ToolTip="Fit every layer on the map" />
-                        <Button Style="{StaticResource Button.Icon}" Content="{StaticResource Icon.Crop}" Command="{Binding ZoomToRoiCommand}" ToolTip="Zoom to the ROI box" />
-                        <!-- Not clickable while the menu is open: the click that closes it (StaysOpen=False)
-                             would otherwise land here and open it again. -->
-                        <ToggleButton x:Name="BaseMapButton" Style="{StaticResource Toggle.Icon}" Content="{StaticResource Icon.Layers}"
-                                      VerticalAlignment="Center"
-                                      IsHitTestVisible="{Binding IsOpen, ElementName=BaseMapPopup, Converter={StaticResource InverseBool}}"
-                                      IsChecked="{Binding State.BaseMapSettings.IsMenuOpen}"
-                                      ToolTip="Base map: the US states, coastlines and gridlines drawn under everything" />
-                        <Popup x:Name="BaseMapPopup" PlacementTarget="{Binding ElementName=BaseMapButton}" Placement="Bottom"
-                               VerticalOffset="6"
-                               IsOpen="{Binding State.BaseMapSettings.IsMenuOpen, Mode=TwoWay}"
-                               StaysOpen="False" AllowsTransparency="True" PopupAnimation="Fade">
-                            <ctl:Card Header="Base Map" Style="{StaticResource Card.Popup}" Width="280">
-                                <StackPanel>
-                                    <ItemsControl ItemsSource="{Binding State.BaseMapSettings.Toggles}">
-                                        <ItemsControl.ItemTemplate>
-                                            <DataTemplate DataType="{x:Type vm:BaseMapToggle}">
-                                                <CheckBox Content="{Binding Name}" IsChecked="{Binding IsVisible}" Margin="0,0,0,8" />
-                                            </DataTemplate>
-                                        </ItemsControl.ItemTemplate>
-                                    </ItemsControl>
-                                    <CheckBox Content="Lat / lon gridlines" IsChecked="{Binding State.BaseMapSettings.ShowGridlines}" Margin="0,0,0,8" />
-                                    <DockPanel Margin="0,8,0,4">
-                                        <TextBlock DockPanel.Dock="Right" Text="{Binding State.BaseMapSettings.OpacityText}"
-                                                   Style="{StaticResource Text.Caption}" FontFamily="{StaticResource Font.Mono}" />
-                                        <TextBlock Text="Base map opacity" Style="{StaticResource Text.Caption}" />
-                                    </DockPanel>
-                                    <!-- A binding, not a bare x:Static: that hands Minimum an int, which it refuses. -->
-                                    <Slider Minimum="{Binding Source={x:Static vm:BaseMapSettings.MinOpacityPercent}}" Maximum="100"
-                                            SmallChange="5" LargeChange="10" TickFrequency="5" IsSnapToTickEnabled="True"
-                                            Value="{Binding State.BaseMapSettings.OpacityPercent}"
-                                            ToolTip="How strongly the US states and coastlines are drawn" />
+                <!-- toolbar, with the editing banner under it. The toolbar wraps onto a second row when
+                     the map is too narrow for it, rather than hiding its last buttons. -->
+                <StackPanel HorizontalAlignment="Left" VerticalAlignment="Top">
+                    <Border Style="{StaticResource Map.Overlay}" HorizontalAlignment="Left">
+                        <WrapPanel>
+                            <ToggleButton Style="{StaticResource Toggle.Tool}" IsChecked="{Binding IsEditingRoi}"
+                                          ToolTip="Draw, move or resize the ROI box. Shift + drag draws and saves a box at any time.">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="{StaticResource Icon.Crop}" FontFamily="{StaticResource Font.Icon}"
+                                               VerticalAlignment="Center" Margin="0,0,8,0" />
+                                    <TextBlock Text="Edit ROI" VerticalAlignment="Center" />
                                 </StackPanel>
-                            </ctl:Card>
-                        </Popup>
-                        <Border Style="{StaticResource Map.Overlay.Divider}" />
-                        <ToggleButton Style="{StaticResource Toggle.Icon}" Content="{StaticResource Icon.Pane}" VerticalAlignment="Center"
-                                      IsChecked="{Binding State.IsPanelOpen}" ToolTip="Show or hide the side panel" />
-                    </StackPanel>
-                </Border>
+                            </ToggleButton>
+                            <Border Style="{StaticResource Map.Overlay.Divider}" />
+                            <Button Style="{StaticResource Button.Icon}" Content="{StaticResource Icon.ZoomIn}" Click="OnZoomIn" ToolTip="Zoom in (+)" />
+                            <Button Style="{StaticResource Button.Icon}" Content="{StaticResource Icon.ZoomOut}" Click="OnZoomOut" ToolTip="Zoom out (-)" />
+                            <!-- the zoom against the home view (100%); type one and press Enter -->
+                            <TextBox x:Name="ZoomBox" Width="80" Height="32" Padding="8,0" Margin="2,0,4,0"
+                                     VerticalAlignment="Center" HorizontalContentAlignment="Right"
+                                     Text="{Binding ZoomPercent, ElementName=Map, Mode=OneWay, StringFormat={}{0:N0}%}"
+                                     KeyDown="OnZoomBoxKeyDown" LostKeyboardFocus="OnZoomBoxLostFocus"
+                                     ToolTip="Zoom, as a percentage of your home view (100%). Type one and press Enter. Shift + the mouse wheel zooms 1% at a time." />
+                            <Button Style="{StaticResource Button.Icon}" Content="{StaticResource Icon.Home}" Click="OnHome" ToolTip="Go to your home view" />
+                            <Button Style="{StaticResource Button.Icon}" Content="{StaticResource Icon.Pin}" Click="OnSetHome" ToolTip="Make this view your home" />
+                            <Button Style="{StaticResource Button.Icon}" Content="{StaticResource Icon.FitPage}" Click="OnFitLayers" ToolTip="Fit every layer on the map" />
+                            <Button Style="{StaticResource Button.Icon}" Content="{StaticResource Icon.Crop}" Command="{Binding ZoomToRoiCommand}" ToolTip="Zoom to the ROI box" />
+                            <!-- Not clickable while the menu is open: the click that closes it (StaysOpen=False)
+                                 would otherwise land here and open it again. -->
+                            <ToggleButton x:Name="BaseMapButton" Style="{StaticResource Toggle.Icon}" Content="{StaticResource Icon.Layers}"
+                                          VerticalAlignment="Center"
+                                          IsHitTestVisible="{Binding IsOpen, ElementName=BaseMapPopup, Converter={StaticResource InverseBool}}"
+                                          IsChecked="{Binding State.BaseMapSettings.IsMenuOpen}"
+                                          ToolTip="Base map: the US states, coastlines and gridlines drawn under everything" />
+                            <Popup x:Name="BaseMapPopup" PlacementTarget="{Binding ElementName=BaseMapButton}" Placement="Bottom"
+                                   VerticalOffset="6"
+                                   IsOpen="{Binding State.BaseMapSettings.IsMenuOpen, Mode=TwoWay}"
+                                   StaysOpen="False" AllowsTransparency="True" PopupAnimation="Fade">
+                                <ctl:Card Header="Base Map" Style="{StaticResource Card.Popup}" Width="280">
+                                    <StackPanel>
+                                        <ItemsControl ItemsSource="{Binding State.BaseMapSettings.Toggles}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate DataType="{x:Type vm:BaseMapToggle}">
+                                                    <CheckBox Content="{Binding Name}" IsChecked="{Binding IsVisible}" Margin="0,0,0,8" />
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                        <CheckBox Content="Lat / lon gridlines" IsChecked="{Binding State.BaseMapSettings.ShowGridlines}" Margin="0,0,0,8" />
+                                        <DockPanel Margin="0,8,0,4">
+                                            <TextBlock DockPanel.Dock="Right" Text="{Binding State.BaseMapSettings.OpacityText}"
+                                                       Style="{StaticResource Text.Caption}" FontFamily="{StaticResource Font.Mono}" />
+                                            <TextBlock Text="Base map opacity" Style="{StaticResource Text.Caption}" />
+                                        </DockPanel>
+                                        <!-- A binding, not a bare x:Static: that hands Minimum an int, which it refuses. -->
+                                        <Slider Minimum="{Binding Source={x:Static vm:BaseMapSettings.MinOpacityPercent}}" Maximum="100"
+                                                SmallChange="5" LargeChange="10" TickFrequency="5" IsSnapToTickEnabled="True"
+                                                Value="{Binding State.BaseMapSettings.OpacityPercent}"
+                                                ToolTip="How strongly the US states and coastlines are drawn" />
+                                    </StackPanel>
+                                </ctl:Card>
+                            </Popup>
+                            <Border Style="{StaticResource Map.Overlay.Divider}" />
+                            <ToggleButton Style="{StaticResource Toggle.Icon}" Content="{StaticResource Icon.Pane}" VerticalAlignment="Center"
+                                          IsChecked="{Binding State.IsPanelOpen}" ToolTip="Show or hide the side panel" />
+                        </WrapPanel>
+                    </Border>
+
+                    <Border Style="{StaticResource Map.Overlay.Accent}" HorizontalAlignment="Left"
+                            Margin="12,0,12,12" MaxWidth="330"
+                            Visibility="{Binding IsEditingRoi, Converter={StaticResource BoolToVis}}">
+                        <TextBlock Style="{StaticResource Text.Caption}" Foreground="{StaticResource Brush.Accent.Text}" TextWrapping="Wrap"
+                                   Text="Drag to draw a box, drag its handles to resize, drag inside to move. Right-drag pans. Esc cancels." />
+                    </Border>
+                </StackPanel>
 
                 <!-- cursor read-out -->
                 <Border Style="{StaticResource Map.Overlay.Chip}" HorizontalAlignment="Right" VerticalAlignment="Top"
                         Visibility="{Binding CursorText, ElementName=Map, Converter={StaticResource StringToVis}}">
                     <TextBlock Text="{Binding CursorText, ElementName=Map}" Style="{StaticResource Text.Caption}"
                                FontFamily="{StaticResource Font.Mono}" />
-                </Border>
-
-                <!-- editing banner, just under the toolbar -->
-                <Border Style="{StaticResource Map.Overlay.Accent}" HorizontalAlignment="Left" VerticalAlignment="Top"
-                        Margin="12,62,12,12" MaxWidth="330"
-                        Visibility="{Binding IsEditingRoi, Converter={StaticResource BoolToVis}}">
-                    <TextBlock Style="{StaticResource Text.Caption}" Foreground="{StaticResource Brush.Accent.Text}" TextWrapping="Wrap"
-                               Text="Drag to draw a box, drag its handles to resize, drag inside to move. Right-drag pans. Esc cancels." />
                 </Border>
 
                 <!-- held-back layers -->
@@ -171,6 +180,10 @@
                             </DockPanel>
 
                             <TextBlock Text="{Binding Target.Description}" Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,0,0,12" />
+
+                            <TextBlock Text="{Binding RoiNotSetHint}" Style="{StaticResource Text.Caption}" Foreground="{StaticResource Brush.Warn}"
+                                       TextWrapping="Wrap" Margin="0,0,0,12"
+                                       Visibility="{Binding RoiNotSetHint, Converter={StaticResource StringToVis}}" />
 
                             <Grid>
                                 <Grid.ColumnDefinitions>

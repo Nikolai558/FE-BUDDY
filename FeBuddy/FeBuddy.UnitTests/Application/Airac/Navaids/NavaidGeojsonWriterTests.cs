@@ -14,7 +14,7 @@ namespace FeBuddy.UnitTests.Application.Airac.Navaids;
 /// Covers <see cref="NavaidGeojsonWriter"/>: All-mode vs. Type-mode file grouping, the ROI filter,
 /// which <c>feb.*</c> properties land on the Symbols file vs. the Text file, when a per-Feature
 /// <c>style</c> is written (only a merged All-mode Symbols file with CRC defaults and
-/// <c>SymbolStyleBy=Type</c>), and vNAS folder routing.
+/// <c>SymbolStyleBy=Type</c>), and that every file goes in the GeoJSON folder.
 /// </summary>
 public sealed class NavaidGeojsonWriterTests : IDisposable
 {
@@ -71,7 +71,11 @@ public sealed class NavaidGeojsonWriterTests : IDisposable
 				Path.Combine(_outputDirectory, "Geojson", "NAVAIDs_Text.geojson"),
 			],
 			result.Files.FilesWritten);
-		Assert.Equal(2, FeaturesOf(result.Files.FilesWritten[0]).Count);
+		// Neither carries a property of its own, so their symbols are one MultiPoint Feature; each label stays its own.
+		JsonElement symbols = Assert.Single(FeaturesOf(result.Files.FilesWritten[0])).GetProperty("geometry");
+		Assert.Equal("MultiPoint", symbols.GetProperty("type").GetString());
+		Assert.Equal(2, symbols.GetProperty("coordinates").GetArrayLength());
+		Assert.Equal(2, FeaturesOf(result.Files.FilesWritten[1]).Count);
 	}
 
 	[Fact]
@@ -236,7 +240,7 @@ public sealed class NavaidGeojsonWriterTests : IDisposable
 		{
 			SymbolStyleBy = styleBy,
 			FanMarkerStyle = fanMarkerStyle,
-			Vnas = new VnasFileChoices([NavaidOutputFiles.Symbols], [NavaidOutputFiles.Symbols]),
+			CrcDefaultsFiles = new CrcDefaultsFiles([NavaidOutputFiles.Symbols]),
 			SymbolDefaults = new Dictionary<string, CrcSymbolDefaults>(StringComparer.OrdinalIgnoreCase)
 			{
 				[NavaidOutputFiles.AllClass] = SymbolDefaults(classStyle),
@@ -303,7 +307,7 @@ public sealed class NavaidGeojsonWriterTests : IDisposable
 		NavaidSettings settings = Settings() with
 		{
 			OutputBy = NavaidOutputBy.Type,
-			Vnas = new VnasFileChoices(["NAVAIDs_VORTACs_Symbols"], ["NAVAIDs_VORTACs_Symbols"]),
+			CrcDefaultsFiles = new CrcDefaultsFiles(["NAVAIDs_VORTACs_Symbols"]),
 			SymbolDefaults = new Dictionary<string, CrcSymbolDefaults>(StringComparer.OrdinalIgnoreCase)
 			{
 				["VORTAC"] = SymbolDefaults("vor"),
@@ -339,35 +343,43 @@ public sealed class NavaidGeojsonWriterTests : IDisposable
 		Assert.False(features[0].GetProperty("properties").TryGetProperty("style", out _));
 	}
 
-	// ---- vNAS folder routing ----
+	// ---- GeoJSON folder ----
 
 	[Fact]
-	public void a_file_marked_for_vnas_goes_under_upload_to_vnas_while_others_do_not()
+	public void a_file_chosen_for_crc_defaults_goes_in_the_geojson_folder_like_the_others()
 	{
-		NavaidSettings settings = Settings() with
-		{
-			Vnas = new VnasFileChoices(["NAVAIDs_Symbols"], []),
-		};
+		NavaidSettings settings = AllModeSymbolsWithCrcDefaults(classStyle: "vor", NavaidSymbolStyleBy.File, fanMarkerStyle: null);
 
 		NavaidGeojsonGenerateResult result = NavaidGeojsonWriter.Generate([NavaidTestData.Cgt()], settings);
 
-		Assert.Contains(result.Files.FilesWritten, f => f.Contains("Upload_to_vNAS", StringComparison.Ordinal) && f.EndsWith("NAVAIDs_Symbols.geojson", StringComparison.Ordinal));
-		Assert.Contains(result.Files.FilesWritten, f => !f.Contains("Upload_to_vNAS", StringComparison.Ordinal) && f.EndsWith("NAVAIDs_Text.geojson", StringComparison.Ordinal));
+		Assert.Equal(
+			[
+				Path.Combine(_outputDirectory, "Geojson", "NAVAIDs_Symbols.geojson"),
+				Path.Combine(_outputDirectory, "Geojson", "NAVAIDs_Text.geojson"),
+			],
+			result.Files.FilesWritten);
+		Assert.True(SymbolFeatures(result)[0].GetProperty("properties").GetProperty("isSymbolDefaults").GetBoolean());
 	}
 
 	[Fact]
-	public void type_mode_routes_each_types_files_to_vnas_independently()
+	public void type_mode_gives_each_types_files_crc_defaults_independently_in_the_geojson_folder()
 	{
 		NavaidSettings settings = Settings() with
 		{
 			OutputBy = NavaidOutputBy.Type,
-			Vnas = new VnasFileChoices(["NAVAIDs_VORTACs_Symbols"], []),
+			CrcDefaultsFiles = new CrcDefaultsFiles(["NAVAIDs_VORTACs_Symbols"]),
+			SymbolDefaults = new Dictionary<string, CrcSymbolDefaults>(StringComparer.OrdinalIgnoreCase)
+			{
+				["VORTAC"] = SymbolDefaults("vor"),
+			},
 		};
 
 		NavaidGeojsonGenerateResult result = NavaidGeojsonWriter.Generate(
 			[NavaidTestData.Cgt(), NavaidTestData.AaCedar()], settings);
 
-		Assert.Contains(result.Files.FilesWritten, f => f.Contains("Upload_to_vNAS", StringComparison.Ordinal) && f.EndsWith("NAVAIDs_VORTACs_Symbols.geojson", StringComparison.Ordinal));
-		Assert.Contains(result.Files.FilesWritten, f => !f.Contains("Upload_to_vNAS", StringComparison.Ordinal) && f.EndsWith("NAVAIDs_NDBs_Symbols.geojson", StringComparison.Ordinal));
+		string geojson = Path.Combine(_outputDirectory, "Geojson");
+		Assert.All(result.Files.FilesWritten, f => Assert.Equal(geojson, Path.GetDirectoryName(f)));
+		Assert.True(FeaturesOf(Path.Combine(geojson, "NAVAIDs_VORTACs_Symbols.geojson"))[0].GetProperty("properties").TryGetProperty("isSymbolDefaults", out _));
+		Assert.False(FeaturesOf(Path.Combine(geojson, "NAVAIDs_NDBs_Symbols.geojson"))[0].GetProperty("properties").TryGetProperty("isSymbolDefaults", out _));
 	}
 }

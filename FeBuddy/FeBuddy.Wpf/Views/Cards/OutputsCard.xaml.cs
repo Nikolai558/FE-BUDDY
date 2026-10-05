@@ -10,9 +10,9 @@ public partial class OutputsCard : UserControl
 	public static readonly DependencyProperty GeojsonDescriptionProperty = DependencyProperty.Register(
 		nameof(GeojsonDescription), typeof(string), typeof(OutputsCard), new PropertyMetadata(null));
 
-	/// <summary>Identifies the <see cref="GeojsonTemplate"/> dependency property.</summary>
-	public static readonly DependencyProperty GeojsonTemplateProperty = DependencyProperty.Register(
-		nameof(GeojsonTemplate), typeof(DataTemplate), typeof(OutputsCard), new PropertyMetadata(null));
+	/// <summary>Identifies the <see cref="GeojsonOptions"/> dependency property.</summary>
+	public static readonly DependencyProperty GeojsonOptionsProperty = DependencyProperty.Register(
+		nameof(GeojsonOptions), typeof(object), typeof(OutputsCard), new PropertyMetadata(null));
 
 	/// <summary>Identifies the <see cref="AliasDescription"/> dependency property.</summary>
 	public static readonly DependencyProperty AliasDescriptionProperty = DependencyProperty.Register(
@@ -25,24 +25,21 @@ public partial class OutputsCard : UserControl
 	/// <summary>Creates the card.</summary>
 	public OutputsCard() => InitializeComponent();
 
-	/// <summary>What the "GeoJSON files" checkbox writes. Unused when <see cref="GeojsonTemplate"/> is set.</summary>
+	/// <summary>What the GeoJSON files are, shown under their row.</summary>
 	public string? GeojsonDescription
 	{
 		get => (string?)GetValue(GeojsonDescriptionProperty);
 		set => SetValue(GeojsonDescriptionProperty, value);
 	}
 
-	/// <summary>
-	/// Replaces the "GeoJSON files" checkbox for a tab whose GeoJSON choice is more than on / off.
-	/// Its DataContext is the tab's view model.
-	/// </summary>
-	public DataTemplate? GeojsonTemplate
+	/// <summary>Optional controls under the GeoJSON files, greyed out while they are off.</summary>
+	public object? GeojsonOptions
 	{
-		get => (DataTemplate?)GetValue(GeojsonTemplateProperty);
-		set => SetValue(GeojsonTemplateProperty, value);
+		get => GetValue(GeojsonOptionsProperty);
+		set => SetValue(GeojsonOptionsProperty, value);
 	}
 
-	/// <summary>What the alias file holds, shown under its checkbox.</summary>
+	/// <summary>What the alias file holds, shown under its row.</summary>
 	public string? AliasDescription
 	{
 		get => (string?)GetValue(AliasDescriptionProperty);

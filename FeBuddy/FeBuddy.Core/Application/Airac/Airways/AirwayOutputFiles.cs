@@ -6,14 +6,15 @@ using FeBuddy.Core.Domain.Crc.Models;
 namespace FeBuddy.Core.Application.Airac.Airways;
 
 /// <summary>
-/// The files the Airways sub-service writes, by file key - the name the <c>UploadToVnas</c> and
-/// <c>CrcDefaultsFor</c> settings use (see <see cref="VnasFileChoices"/>).
+/// The files the Airways sub-service writes, by file key - the name the <c>CrcDefaultsFor</c>
+/// setting (see <see cref="CrcDefaultsFiles"/>) and the File Names tab use.
 /// </summary>
 /// <remarks>
 /// A GeoJSON file's key is its name without <c>.geojson</c>: <c>Airways_&lt;group&gt;_&lt;kind&gt;</c>,
 /// where the group is <c>High</c> or <c>Low</c>, or a designation (<c>J</c>, <c>V</c>, ...),
 /// depending on <c>OutputBy</c>, and the kind is <c>Lines</c>,
-/// <c>Symbols</c> or <c>Text</c>. The alias file's key is its name.
+/// <c>Symbols</c> or <c>Text</c>. The alias file's key is its name. Only a GeoJSON key can go in
+/// <c>CrcDefaultsFor</c>.
 /// </remarks>
 public static partial class AirwayOutputFiles
 {

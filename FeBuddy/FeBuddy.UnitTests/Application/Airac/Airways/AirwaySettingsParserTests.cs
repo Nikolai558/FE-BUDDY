@@ -6,7 +6,7 @@ namespace FeBuddy.UnitTests.Application.Airac.Airways;
 
 /// <summary>
 /// Covers <see cref="AirwaySettingsParser"/>: required and optional keys, yes/no values, the ROI,
-/// the vNAS file keys, which CRC defaults are required, and the Airways-only settings.
+/// the CrcDefaultsFor file keys, which CRC defaults are required, and the Airways-only settings.
 /// </summary>
 public sealed class AirwaySettingsParserTests
 {
@@ -53,11 +53,10 @@ public sealed class AirwaySettingsParserTests
 
 	private static readonly string[] Kinds = ["Lines", "Symbols", "Text"];
 
-	/// <summary>Marks every HighLow file for vNAS, and every GeoJSON one for CRC-ERAM defaults.</summary>
-	private static void UploadEverythingWithCrcDefaults(Dictionary<string, string> settings)
+	/// <summary>Chooses every HighLow GeoJSON file for CRC-ERAM defaults.</summary>
+	private static void ChooseEveryFileForCrcDefaults(Dictionary<string, string> settings)
 	{
 		string[] geojson = [.. Classes.SelectMany(cls => Kinds.Select(kind => $"Airways_{cls}_{kind}"))];
-		settings["UploadToVnas"] = string.Join(',', [.. geojson, "Airways.txt"]);
 		settings["CrcDefaultsFor"] = string.Join(',', geojson);
 	}
 
@@ -77,11 +76,34 @@ public sealed class AirwaySettingsParserTests
 		Assert.Throws<ArgumentException>(() => AirwaySettingsParser.Parse(settings));
 	}
 
+	/// <summary>How the files are split only matters while they are written.</summary>
+	[Fact]
+	public void output_by_is_not_needed_with_geojson_off()
+	{
+		Dictionary<string, string> settings = new() { { "OutputDirectory", @"C:\Output" }, { "GenerateGeojson", "N" } };
+
+		AirwaySettings parsed = AirwaySettingsParser.Parse(settings).Settings;
+
+		Assert.False(parsed.GenerateGeojson);
+		Assert.True(parsed.GenerateAliasFile);
+	}
+
+	[Fact]
+	public void geojson_and_alias_file_both_off_throws()
+	{
+		Dictionary<string, string> settings = MinimalValidSettings();
+		settings["GenerateGeojson"] = "N";
+		settings["GenerateAliasFile"] = "N";
+
+		ArgumentException error = Assert.Throws<ArgumentException>(() => AirwaySettingsParser.Parse(settings));
+
+		Assert.Contains("would produce nothing", error.Message, StringComparison.Ordinal);
+	}
+
 	[Theory]
 	[InlineData("HighLow", AirwayGeojsonOutputBy.HighLow)]
 	[InlineData("highlow", AirwayGeojsonOutputBy.HighLow)]
 	[InlineData("Designation", AirwayGeojsonOutputBy.Designation)]
-	[InlineData("None", AirwayGeojsonOutputBy.None)]
 	public void output_by_parses_case_insensitively(string value, AirwayGeojsonOutputBy expected)
 	{
 		Dictionary<string, string> settings = MinimalValidSettings();
@@ -111,8 +133,7 @@ public sealed class AirwaySettingsParserTests
 		Assert.Empty(result.Settings.FebProperties);
 		Assert.True(result.Settings.GenerateAliasFile);
 		Assert.True(result.Settings.SplitAtAntimeridian);
-		Assert.Empty(result.Settings.Vnas.UploadFiles);
-		Assert.Empty(result.Settings.Vnas.CrcDefaultsFiles);
+		Assert.Empty(result.Settings.CrcDefaultsFiles.Files);
 		Assert.Null(result.Settings.Roi);
 	}
 
@@ -187,12 +208,12 @@ public sealed class AirwaySettingsParserTests
 	}
 
 	[Theory]
-	[InlineData("N", "HighLow")]
-	[InlineData("Y", "None")]
-	public void buffer_distances_are_ignored_when_nothing_buffered_is_written(string buffer, string outputBy)
+	[InlineData("N", "Y")]
+	[InlineData("Y", "N")]
+	public void buffer_distances_are_ignored_when_nothing_buffered_is_written(string buffer, string generateGeojson)
 	{
 		Dictionary<string, string> settings = MinimalValidSettings();
-		settings["OutputBy"] = outputBy;
+		settings["GenerateGeojson"] = generateGeojson;
 		settings["BufferAirwayWaypoints"] = buffer;
 		settings["FixBufferNm"] = "99";
 		settings["NavaidBufferNm"] = "not a number";
@@ -249,7 +270,7 @@ public sealed class AirwaySettingsParserTests
 	public void crc_defaults_require_filters_for_every_class_and_kind()
 	{
 		Dictionary<string, string> settings = MinimalValidSettings();
-		UploadEverythingWithCrcDefaults(settings);
+		ChooseEveryFileForCrcDefaults(settings);
 		// No Crc.* keys supplied at all.
 
 		Assert.Throws<ArgumentException>(() => AirwaySettingsParser.Parse(settings));
@@ -259,7 +280,7 @@ public sealed class AirwaySettingsParserTests
 	public void crc_defaults_parse_successfully_when_fully_specified()
 	{
 		Dictionary<string, string> settings = MinimalValidSettings();
-		UploadEverythingWithCrcDefaults(settings);
+		ChooseEveryFileForCrcDefaults(settings);
 
 		foreach (string cls in Classes)
 		{
@@ -270,8 +291,7 @@ public sealed class AirwaySettingsParserTests
 
 		AirwaySettingsParseResult result = AirwaySettingsParser.Parse(settings);
 
-		Assert.Equal(7, result.Settings.Vnas.UploadFiles.Count);
-		Assert.Equal(6, result.Settings.Vnas.CrcDefaultsFiles.Count);
+		Assert.Equal(6, result.Settings.CrcDefaultsFiles.Files.Count);
 		Assert.Equal(3, result.Settings.LineDefaults[AirwayAltitudeClass.High].Filters[0]);
 		Assert.Equal("solid", result.Settings.LineDefaults[AirwayAltitudeClass.High].Style);
 	}
@@ -280,11 +300,10 @@ public sealed class AirwaySettingsParserTests
 	public void in_high_low_mode_only_the_classes_of_the_chosen_files_are_required()
 	{
 		Dictionary<string, string> settings = MinimalValidSettings();
-		settings["UploadToVnas"] = "Airways_High_Lines,Airways_Low_Lines,Airways_High_Text";
 		settings["CrcDefaultsFor"] = "Airways_High_Lines,airways_high_text";
 		AddCrcDefaults(settings, "High", "Line");
 		AddCrcDefaults(settings, "High", "Text");
-		// No Low or Other keys: Airways_Low_Lines goes to vNAS without defaults.
+		// No Low or Other keys: the Low files are written without defaults.
 
 		AirwaySettings parsed = AirwaySettingsParser.Parse(settings).Settings;
 
@@ -298,7 +317,6 @@ public sealed class AirwaySettingsParserTests
 	public void in_high_low_mode_the_other_class_is_never_required()
 	{
 		Dictionary<string, string> settings = MinimalValidSettings();
-		settings["UploadToVnas"] = "Airways_Other_Lines";
 		settings["CrcDefaultsFor"] = "Airways_Other_Lines";
 
 		AirwaySettings parsed = AirwaySettingsParser.Parse(settings).Settings;
@@ -306,7 +324,7 @@ public sealed class AirwaySettingsParserTests
 		Assert.Empty(parsed.LineDefaults);
 	}
 
-	/// <summary>With none of the three keys - a block from before they existed - J and Q are High, V and T Low.</summary>
+	/// <summary>With none of the three keys, J and Q are High and V and T Low.</summary>
 	[Fact]
 	public void with_no_stratum_keys_the_default_strata_apply()
 	{
@@ -373,7 +391,6 @@ public sealed class AirwaySettingsParserTests
 		// the rest are per-feature overrides, so all three are needed.
 		Dictionary<string, string> settings = MinimalValidSettings();
 		settings["OutputBy"] = "Designation";
-		settings["UploadToVnas"] = "Airways_J_Lines,Airways_V_Symbols";
 		settings["CrcDefaultsFor"] = "Airways_J_Lines";
 		AddCrcDefaults(settings, "High", "Line");
 		AddCrcDefaults(settings, "Low", "Line");
@@ -392,23 +409,25 @@ public sealed class AirwaySettingsParserTests
 	[InlineData("Airways_High_Lines")]
 	[InlineData("airways_j_symbols")]
 	[InlineData("Airways_AT_Text")]
-	[InlineData("Airways.txt")]
-	public void airways_file_keys_are_accepted_for_vnas(string key)
+	public void airways_geojson_file_keys_are_accepted_for_crc_defaults(string key)
 	{
 		Dictionary<string, string> settings = MinimalValidSettings();
-		settings["UploadToVnas"] = key;
+		settings["GenerateGeojson"] = "N"; // no GeoJSON is written, so none of the files' defaults are needed
+		settings["CrcDefaultsFor"] = key;
 
-		Assert.True(AirwaySettingsParser.Parse(settings).Settings.Vnas.IsUploaded(key));
+		Assert.True(AirwaySettingsParser.Parse(settings).Settings.CrcDefaultsFiles.HasCrcDefaults(key));
 	}
 
+	/// <summary>Only an Airways GeoJSON file can get CRC-ERAM defaults: not another sub-service's, not the alias file.</summary>
 	[Theory]
 	[InlineData("Airways_High")]
 	[InlineData("Airways_J2_Lines")]
 	[InlineData("Runways_Lines")]
-	public void a_key_that_is_not_an_airways_file_is_rejected_for_vnas(string key)
+	[InlineData("Airways.txt")]
+	public void a_key_that_is_not_an_airways_geojson_file_is_rejected_for_crc_defaults(string key)
 	{
 		Dictionary<string, string> settings = MinimalValidSettings();
-		settings["UploadToVnas"] = key;
+		settings["CrcDefaultsFor"] = key;
 
 		ArgumentException ex = Assert.Throws<ArgumentException>(() => AirwaySettingsParser.Parse(settings));
 		Assert.Contains(key, ex.Message);
@@ -418,7 +437,7 @@ public sealed class AirwaySettingsParserTests
 	public void crc_defaults_are_only_required_for_the_kinds_being_emitted()
 	{
 		Dictionary<string, string> settings = MinimalValidSettings();
-		UploadEverythingWithCrcDefaults(settings);
+		ChooseEveryFileForCrcDefaults(settings);
 		settings["EmitSymbols"] = "N";
 		settings["EmitText"] = "N";
 
@@ -439,7 +458,7 @@ public sealed class AirwaySettingsParserTests
 	public void crc_defaults_reject_an_out_of_range_value_with_a_clear_message()
 	{
 		Dictionary<string, string> settings = MinimalValidSettings();
-		UploadEverythingWithCrcDefaults(settings);
+		ChooseEveryFileForCrcDefaults(settings);
 
 		foreach (string cls in Classes)
 		{
@@ -458,7 +477,7 @@ public sealed class AirwaySettingsParserTests
 	public void a_text_default_missing_x_offset_throws_naming_the_key_only_when_text_is_emitted()
 	{
 		Dictionary<string, string> settings = MinimalValidSettings();
-		UploadEverythingWithCrcDefaults(settings);
+		ChooseEveryFileForCrcDefaults(settings);
 
 		foreach (string cls in Classes)
 		{
@@ -544,7 +563,7 @@ public sealed class AirwaySettingsParserTests
 	}
 
 	[Fact]
-	public void all_three_emit_flags_off_throws_unless_output_by_is_none()
+	public void all_three_emit_flags_off_throws_unless_geojson_is_off()
 	{
 		Dictionary<string, string> settings = MinimalValidSettings();
 		settings["EmitLines"] = "N";
@@ -553,7 +572,7 @@ public sealed class AirwaySettingsParserTests
 
 		Assert.Throws<ArgumentException>(() => AirwaySettingsParser.Parse(settings));
 
-		settings["OutputBy"] = "None";
+		settings["GenerateGeojson"] = "N";
 		AirwaySettings parsed = AirwaySettingsParser.Parse(settings).Settings;
 		Assert.False(parsed.EmitLines);
 	}
@@ -608,7 +627,6 @@ public sealed class AirwaySettingsParserTests
 	public void only_the_files_chosen_for_crc_defaults_have_their_defaults_read()
 	{
 		Dictionary<string, string> settings = MinimalValidSettings();
-		UploadEverythingWithCrcDefaults(settings);
 		settings["CrcDefaultsFor"] = "Airways_High_Symbols,Airways_Low_Symbols";
 
 		foreach (string cls in Classes)
@@ -616,7 +634,7 @@ public sealed class AirwaySettingsParserTests
 			AddCrcDefaults(settings, cls, "Symbol");
 		}
 
-		// No Line or Text keys at all: those files go to vNAS without defaults.
+		// No Line or Text keys at all: those files are written without defaults.
 		AirwaySettingsParseResult result = AirwaySettingsParser.Parse(settings);
 
 		Assert.Equal(2, result.Settings.SymbolDefaults.Count);
@@ -629,7 +647,6 @@ public sealed class AirwaySettingsParserTests
 	public void crc_defaults_for_a_kind_that_is_not_emitted_are_not_required()
 	{
 		Dictionary<string, string> settings = MinimalValidSettings();
-		UploadEverythingWithCrcDefaults(settings);
 		settings["CrcDefaultsFor"] = "Airways_High_Text";
 		settings["EmitText"] = "N";
 		// No Crc.*.Text.* keys: text files are not written, so their defaults are not needed.
@@ -640,11 +657,11 @@ public sealed class AirwaySettingsParserTests
 	}
 
 	[Fact]
-	public void crc_defaults_are_not_required_when_output_by_is_none()
+	public void crc_defaults_are_not_required_when_geojson_is_off()
 	{
 		Dictionary<string, string> settings = MinimalValidSettings();
-		settings["OutputBy"] = "None";
-		UploadEverythingWithCrcDefaults(settings);
+		settings["GenerateGeojson"] = "N";
+		ChooseEveryFileForCrcDefaults(settings);
 		// No Crc.* keys at all: no GeoJSON is written, so no defaults are needed.
 
 		AirwaySettings parsed = AirwaySettingsParser.Parse(settings).Settings;
@@ -652,22 +669,6 @@ public sealed class AirwaySettingsParserTests
 		Assert.Empty(parsed.LineDefaults);
 		Assert.Empty(parsed.SymbolDefaults);
 		Assert.Empty(parsed.TextDefaults);
-	}
-
-	[Theory]
-	[InlineData("IncludeCrcEramPropertyDefaults")]
-	[InlineData("IncludeCrcSymbolDefaults")]
-	[InlineData("AddFeBuddyOutputFolder")]
-	public void a_retired_key_produces_a_warning_and_changes_nothing(string key)
-	{
-		Dictionary<string, string> settings = MinimalValidSettings();
-		settings[key] = "Y";
-
-		AirwaySettingsParseResult result = AirwaySettingsParser.Parse(settings);
-
-		Assert.Contains(result.Messages.WarningTexts(), w => w.Contains(key));
-		Assert.Empty(result.Settings.Vnas.CrcDefaultsFiles);
-		Assert.Empty(result.Settings.SymbolDefaults);
 	}
 
 	// ---- FE-Buddy (feb.*) properties ------------------------------------
@@ -718,17 +719,5 @@ public sealed class AirwaySettingsParserTests
 
 		Assert.Empty(result.Settings.FebProperties);
 		Assert.DoesNotContain(result.Messages.WarningTexts(), w => w.Contains("FebProperties"));
-	}
-
-	[Fact]
-	public void the_retired_waypoint_ids_key_produces_an_unknown_key_warning()
-	{
-		Dictionary<string, string> settings = MinimalValidSettings();
-		settings["IncludeAirwayWaypointIds"] = "Y";
-
-		AirwaySettingsParseResult result = AirwaySettingsParser.Parse(settings);
-
-		Assert.Contains(result.Messages.WarningTexts(), w => w.Contains("IncludeAirwayWaypointIds"));
-		Assert.Empty(result.Settings.FebProperties);
 	}
 }

@@ -24,10 +24,10 @@ using FeBuddy.Core.Infrastructure.Nasr.Models;
 namespace FeBuddy.Wpf.ViewModels;
 
 /// <summary>
-/// The <b>AIRAC Services</b> screen: a General tab (cycle, facility, and which sub-services to
-/// produce), one tab per selected sub-service, a File Names tab to rename any of the files they
-/// write, a Preview Settings tab that summarises the lot and runs the service, and a Review tab for
-/// the run's outcome.
+/// The <b>AIRAC Services</b> screen: a General tab (the cycle, and the table of sub-services and
+/// their outputs), a tab per sub-service, a File Names tab to rename any of the files they write, a
+/// Preview Settings tab that summarises the lot and runs the service, and a Review tab for the
+/// run's outcome.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -37,9 +37,11 @@ namespace FeBuddy.Wpf.ViewModels;
 /// the run itself.
 /// </para>
 /// <para>
-/// A sub-service tab is created the first time the user selects it and then kept for the session,
-/// so unticking and re-ticking does not throw away what they typed. Its saved settings are never
-/// touched by unticking - only the tab goes away.
+/// Every sub-service has a tab in the rail from the start, each reading its outputs from its row
+/// on the General tab. A sub-service left out there is greyed out (<see cref="ServiceTabViewModel.IsAvailable"/>)
+/// and skipped by the run, its checks and the Preview Settings tab, but keeps what was typed on it.
+/// Concatenate Aliases isn't in the table: its tab is greyed out while no included sub-service makes
+/// an alias file.
 /// </para>
 /// </remarks>
 public sealed class AiracServiceViewModel : TabbedServiceViewModel
@@ -63,14 +65,14 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 		RunCommand = new RelayCommand(async () => await RunAsync(), () => !IsRunning && IsReady);
 
 		_general = new AiracGeneralTabViewModel();
-		_general.SubServiceSelectionChanged += (_, _) => SyncSubServiceTabs();
+		_general.SubServicesChanged += (_, _) => SyncSubServiceTabs();
 		_general.CycleChanged += (_, _) =>
 		{
 			_fileNames.RefreshFiles();
 			_ = LoadCycleDataAsync();
 		};
 
-		_preview = new ServicePreviewTabViewModel("Preview Settings", "Run AIRAC Service", RunCommand, () => Tabs);
+		_preview = new ServicePreviewTabViewModel("Preview Settings", "Run AIRAC Service", RunCommand, () => Tabs.Where(t => t.IsAvailable));
 
 		_fileNames.AttachToService(
 			FilesTheRunWrites,
@@ -79,19 +81,19 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 		AiracCycleDataCache.Instance.StateChanged += (_, _) => _dispatcher.BeginInvoke(RefreshReadiness);
 		AppEnvironment.Changed += (_, _) => _dispatcher.BeginInvoke(RefreshReadiness);
 
-		// The vNAS Alias Upload tab lists what the other tabs put into vNAS_Alias.txt, and is only valid
-		// when something goes in; the File Names tab lists every file they write, and a new one needs a
-		// name. Re-read both whenever the user moves between tabs, so their lists and their dots in the
-		// rail follow edits made elsewhere.
+		// The Concatenate Aliases tab lists what the other tabs put into Combined_Alias.txt; the File
+		// Names tab lists every file they write, and a new one needs a name. Re-read both whenever the
+		// user moves between tabs, so their lists and their dots in the rail follow edits made elsewhere.
 		PropertyChanged += (_, e) =>
 		{
 			if (e.PropertyName == nameof(SelectedTab))
 			{
-				VnasAliasTab?.RefreshFeBuddyAliasFiles();
+				ConcatenateAliasesTab?.RefreshFeBuddyAliasFiles();
 				_fileNames.RefreshFiles();
 			}
 		};
 
+		BuildSubServiceTabs();
 		SyncSubServiceTabs();
 		RefreshReadiness();
 		_ = LoadCycleDataAsync();
@@ -155,19 +157,23 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 	/// <summary>The Telephony tab while it is open, otherwise <see langword="null"/>.</summary>
 	private TelephonyViewModel? TelephonyTab => TabFor<TelephonyViewModel>(AiracSubServices.TelephonyKey);
 
-	/// <summary>The vNAS Alias Upload tab while it is open, otherwise <see langword="null"/>.</summary>
-	private VnasAliasViewModel? VnasAliasTab => TabFor<VnasAliasViewModel>(AiracSubServices.VnasAliasKey);
+	/// <summary>The Concatenate Aliases tab while it is open, otherwise <see langword="null"/>.</summary>
+	private ConcatenateAliasesViewModel? ConcatenateAliasesTab => TabFor<ConcatenateAliasesViewModel>(AiracSubServices.ConcatenateAliasesKey);
 
-	/// <summary>The open tabs that take part in a run.</summary>
+	/// <summary>Every sub-service tab that runs: for readiness and the cycle's lists, which every tab follows.</summary>
 	private IReadOnlyList<ISubServiceRunTarget> RunTargets =>
 		[.. Tabs.OfType<ISubServiceRunTarget>()];
 
-	/// <summary>Returns an open sub-service tab of the expected type, or <see langword="null"/>.</summary>
+	/// <summary>The sub-service tabs that take part in a run: the included ones.</summary>
+	private IReadOnlyList<ISubServiceRunTarget> IncludedRunTargets =>
+		[.. Tabs.Where(t => t.IsAvailable).OfType<ISubServiceRunTarget>()];
+
+	/// <summary>Returns an included sub-service's tab of the expected type, or <see langword="null"/>.</summary>
 	/// <typeparam name="T">The tab's view-model type.</typeparam>
 	/// <param name="key">The sub-service key from <see cref="AiracSubServices"/>.</param>
-	/// <returns>The tab, when it is both selected and built.</returns>
+	/// <returns>The tab, while it takes part in the run.</returns>
 	private T? TabFor<T>(string key) where T : class =>
-		IsSelected(key) && _tabsByKey.TryGetValue(key, out ServiceTabViewModel? tab)
+		_tabsByKey.TryGetValue(key, out ServiceTabViewModel? tab) && tab.IsAvailable
 			? tab as T
 			: null;
 
@@ -177,66 +183,111 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 		_ => "Waiting for AIRAC data to finish downloading and parsing. This service will be available in a moment.",
 	};
 
-	private bool IsSelected(string key) => _general.SelectedSubServices.Any(s => string.Equals(s.Key, key, StringComparison.OrdinalIgnoreCase));
+	/// <summary>
+	/// Builds every sub-service's tab, once: each takes its outputs from its row on the General tab,
+	/// and tells the screen when the files it writes change, which can bring Concatenate Aliases in.
+	/// </summary>
+	private void BuildSubServiceTabs()
+	{
+		foreach (SubServiceDescriptor descriptor in AiracSubServices.All.OrderBy(d => d.Order))
+		{
+			ServiceTabViewModel tab = descriptor.CreateTab();
+			_tabsByKey[descriptor.Key] = tab;
+
+			if (tab is GeojsonSubServiceViewModel subService)
+			{
+				if (_general.RowFor(descriptor.Key) is { } row)
+				{
+					subService.AttachOutputs(row);
+				}
+
+				subService.FilesChanged += (_, _) => RefreshConcatenateAliasesAvailability();
+			}
+
+			if (tab is ISubServiceRunTarget target)
+			{
+				target.SetReadiness(IsReady);
+			}
+
+			if (tab is ConcatenateAliasesViewModel concatenate)
+			{
+				concatenate.AttachToService(
+					d => TabFor<ServiceTabViewModel>(d.Key),
+					shown => SelectedTab = shown);
+			}
+		}
+	}
 
 	/// <summary>
-	/// Opens a tab for every selected sub-service and closes the rest, building each tab the first
-	/// time it is needed and reusing it afterwards. The File Names tab follows them while any is open.
+	/// Puts every sub-service's tab in the rail, greying out the ones left out on the General tab.
+	/// The File Names tab follows them while any is included.
 	/// </summary>
 	private void SyncSubServiceTabs()
 	{
-		List<ServiceTabViewModel> open = [];
+		List<ServiceTabViewModel> tabs = [];
 
-		foreach (SubServiceSelection selection in _general.SelectedSubServices)
+		foreach (SubServiceDescriptor descriptor in AiracSubServices.All.OrderBy(d => d.Order))
 		{
-			if (!_tabsByKey.TryGetValue(selection.Key, out ServiceTabViewModel? tab))
+			ServiceTabViewModel tab = _tabsByKey[descriptor.Key];
+
+			if (_general.RowFor(descriptor.Key) is { } row)
 			{
-				tab = selection.Descriptor.CreateTab();
-				_tabsByKey[selection.Key] = tab;
-
-				if (tab is ISubServiceRunTarget target)
-				{
-					target.SetReadiness(IsReady);
-
-					if (_parsedForSelectedCycle is { } data)
-					{
-						target.LoadCycleDependentLists(data);
-					}
-				}
-
-				if (tab is VnasAliasViewModel vnasAlias)
-				{
-					vnasAlias.AttachToService(
-						descriptor => TabFor<ServiceTabViewModel>(descriptor.Key),
-						shown => SelectedTab = shown);
-				}
+				tab.SetAvailability(row.IsIncluded,
+					$"{descriptor.Help?.Summary}\nIt's left out of the run. To include it, tick {descriptor.DisplayName} under Include on the General tab.");
 			}
 
-			open.Add(tab);
+			tabs.Add(tab);
 		}
 
-		if (open.Count > 0)
+		RefreshConcatenateAliasesAvailability();
+
+		if (_general.IncludedSubServices.Any())
 		{
-			open.Add(_fileNames);
+			tabs.Add(_fileNames);
 		}
 
-		RebuildTabs(open);
+		RebuildTabs(tabs);
 		RefreshDownloadedDataStatus();
 		RefreshProceduresData();
-		VnasAliasTab?.RefreshFeBuddyAliasFiles();
+		ConcatenateAliasesTab?.RefreshFeBuddyAliasFiles();
 		_fileNames.RefreshFiles();
 	}
 
 	/// <summary>
-	/// Every file the selected sub-services' settings write right now, for the File Names tab: each
-	/// tab's own files, then the two the run itself writes - <c>Duplicate_Alias_Commands.txt</c>
-	/// whenever an alias file is written, and <c>vNAS_Alias.txt</c> when vNAS Alias Upload is
-	/// selected or an alias file is ticked for vNAS.
+	/// Brings Concatenate Aliases in while an included sub-service makes an alias file, and greys it
+	/// out otherwise: it has nothing of FE-Buddy's to combine.
+	/// </summary>
+	private void RefreshConcatenateAliasesAvailability()
+	{
+		if (!_tabsByKey.TryGetValue(AiracSubServices.ConcatenateAliasesKey, out ServiceTabViewModel? concatenate))
+		{
+			return;
+		}
+
+		bool anyAliasFile = _tabsByKey.Values.Where(t => t.IsAvailable).OfType<GeojsonSubServiceViewModel>().Any(tab => tab.WritesAliasFile);
+		bool wasAvailable = concatenate.IsAvailable;
+
+		concatenate.SetAvailability(anyAliasFile,
+			$"{AiracSubServices.All.Single(d => d.Key == AiracSubServices.ConcatenateAliasesKey).Help?.Summary}\n" +
+			"No alias file is being made. To make one, tick a sub-service and its Alias box on the General tab.");
+
+		// Left on a tab that just went grey, go back to the start.
+		if (wasAvailable && !anyAliasFile && ReferenceEquals(SelectedTab, concatenate))
+		{
+			SelectedTab = Tabs.FirstOrDefault();
+		}
+	}
+
+	/// <summary>
+	/// Every file the included sub-services' settings write right now, for the File Names tab: each
+	/// tab's own files, then the two the run itself writes whenever an alias file is written -
+	/// <c>Duplicate_Alias_Commands.txt</c>, and <c>Combined_Alias.txt</c> while Concatenate Aliases
+	/// combines them.
 	/// </summary>
 	/// <returns>The files.</returns>
 	private IEnumerable<OutputFileEntry> FilesTheRunWrites()
 	{
-		GeojsonSubServiceViewModel[] tabs = [.. Tabs.OfType<GeojsonSubServiceViewModel>()];
+		GeojsonSubServiceViewModel[] tabs = [.. Tabs.Where(t => t.IsAvailable).OfType<GeojsonSubServiceViewModel>()];
 
 		foreach (OutputFileEntry file in tabs.SelectMany(tab => tab.OutputFileEntries()))
 		{
@@ -248,13 +299,9 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 			yield return OutputFileEntry.Renamable(AiracOutputPaths.DuplicateAliasReportFileName, string.Empty, "AIRAC Service");
 		}
 
-		bool aliasFileToVnas = AiracSubServices.All.Any(descriptor => descriptor.AliasFileName is { } aliasFile
-			&& TabFor<GeojsonSubServiceViewModel>(descriptor.Key) is { WritesAliasFile: true } tab
-			&& tab.IsMarkedForVnas(aliasFile));
-
-		if (VnasAliasTab is not null || aliasFileToVnas)
+		if (ConcatenateAliasesTab is { CombineAliasFiles: true } combine)
 		{
-			yield return OutputFileEntry.Renamable(AiracOutputPaths.VnasAliasFileName, AiracOutputPaths.VnasFolder, VnasAliasTab?.Title ?? "AIRAC Service");
+			yield return OutputFileEntry.Renamable(AiracOutputPaths.CombinedAliasFileName, AiracOutputPaths.AliasFolder, combine.Title);
 		}
 	}
 
@@ -377,9 +424,9 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 	/// </summary>
 	private async Task RunAsync()
 	{
-		// The vNAS Alias Upload tab's validity depends on what the other tabs tick for vNAS, and the
-		// File Names tab's on which files they write.
-		VnasAliasTab?.RefreshFeBuddyAliasFiles();
+		// The Concatenate Aliases tab lists the alias files the other tabs make, and the File Names
+		// tab's validity depends on which files they write.
+		ConcatenateAliasesTab?.RefreshFeBuddyAliasFiles();
 		_fileNames.RefreshFiles();
 
 		if (!TrySaveDirtyTabs() || !EnsureNoInvalidTabs())
@@ -387,12 +434,12 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 			return;
 		}
 
-		ServiceTabViewModel[] runnable = [.. Tabs.Where(t => t.IsRunnable
+		ServiceTabViewModel[] runnable = [.. Tabs.Where(t => t.IsAvailable && t.IsRunnable
 			&& !ReferenceEquals(t, GeneralTab) && !ReferenceEquals(t, _fileNames) && !ReferenceEquals(t, PreviewTab))];
 
 		if (runnable.Length == 0)
 		{
-			Toast.Warn("Nothing to run", "Select a sub-service with settings on the General tab first.");
+			Toast.Warn("Nothing to run", "Include a sub-service on the General tab first.");
 			return;
 		}
 
@@ -420,7 +467,7 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 			WxStations = WxStationsTab?.BuildSettingsBlock(),
 			Procedures = ProceduresTab?.BuildSettingsBlock(),
 			Telephony = TelephonyTab?.BuildSettingsBlock(),
-			VnasAlias = VnasAliasTab?.BuildSettingsBlock(),
+			ConcatenateAliases = ConcatenateAliasesTab?.BuildSettingsBlock(),
 		};
 
 		if (AiracService.HasExistingOutput(settings))
@@ -433,9 +480,9 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 			settings = settings with { ExistingOutput = existingOutput };
 		}
 
-		IReadOnlyList<ISubServiceRunTarget> targets = RunTargets;
+		IReadOnlyList<ISubServiceRunTarget> targets = IncludedRunTargets;
 		string[] runningTabTitles = [.. Tabs
-			.Where(t => t is ISubServiceRunTarget)
+			.Where(t => t.IsAvailable && t is ISubServiceRunTarget)
 			.Select(t => t.Title)];
 
 		IsRunning = true;
@@ -614,9 +661,9 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 			files.Add(duplicateAliasReport.FilePath);
 		}
 
-		if (result.VnasAlias?.FilePath is { } vnasAlias)
+		if (result.CombinedAlias?.FilePath is { } combinedAlias)
 		{
-			files.Add(vnasAlias);
+			files.Add(combinedAlias);
 		}
 
 		return [.. files];
@@ -694,9 +741,9 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 			parts.Add($"{telephony.AliasCommandCount:N0} telephony command(s)");
 		}
 
-		if (result.VnasAlias is { FilePath: not null } vnasAlias)
+		if (result.CombinedAlias is { FilePath: not null } combinedAlias)
 		{
-			parts.Add($"{Path.GetFileName(vnasAlias.FilePath)} ({vnasAlias.CustomCommandCount + vnasAlias.FeBuddyCommandCount:N0} command(s))");
+			parts.Add($"{Path.GetFileName(combinedAlias.FilePath)} ({combinedAlias.CustomCommandCount + combinedAlias.FeBuddyCommandCount:N0} command(s))");
 		}
 
 		if (result.DuplicateAliasReport is { Duplicates.Count: > 0 } duplicateAliasReport)
@@ -709,11 +756,11 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 			: $"Cycle {cycleId}: {string.Join(", ", parts)}.";
 	}
 
-	/// <summary>Offers to save every dirty tab in one prompt, as the settings-save contract requires.</summary>
+	/// <summary>Offers to save every dirty tab that takes part in one prompt, as the settings-save contract requires.</summary>
 	/// <returns><see langword="true"/> when nothing is left unsaved.</returns>
 	private bool TrySaveDirtyTabs()
 	{
-		ServiceTabViewModel[] dirty = [.. Tabs.Where(t => t.IsDirty)];
+		ServiceTabViewModel[] dirty = [.. Tabs.Where(t => t.IsAvailable && t.IsDirty)];
 
 		if (dirty.Length == 0)
 		{
@@ -744,11 +791,11 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 		return true;
 	}
 
-	/// <summary>Blocks the run while any tab still has a validation failure, and shows the first one.</summary>
+	/// <summary>Blocks the run while any tab that takes part still has a validation failure, and shows the first one.</summary>
 	/// <returns><see langword="true"/> when every tab is valid.</returns>
 	private bool EnsureNoInvalidTabs()
 	{
-		ServiceTabViewModel? invalid = Tabs.FirstOrDefault(t => t.Status == ServiceTabStatus.Invalid);
+		ServiceTabViewModel? invalid = Tabs.FirstOrDefault(t => t.IsAvailable && t.Status == ServiceTabStatus.Invalid);
 
 		if (invalid is null)
 		{

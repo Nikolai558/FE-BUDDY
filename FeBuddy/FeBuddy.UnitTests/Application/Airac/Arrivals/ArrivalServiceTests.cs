@@ -15,7 +15,7 @@ namespace FeBuddy.UnitTests.Application.Airac.Arrivals;
 /// <summary>
 /// Runs the whole Arrivals pipeline (<see cref="ArrivalService.Run"/>) against the BLAID2 fixture
 /// and checks what lands on disk, and where: the three GeoJSON files per airport + procedure, the
-/// alias file, the vNAS folder, and the warnings when there is nothing to write.
+/// alias file, and the warnings when there is nothing to write.
 /// </summary>
 public sealed class ArrivalServiceTests : IDisposable
 {
@@ -45,10 +45,8 @@ public sealed class ArrivalServiceTests : IDisposable
 		return settings;
 	}
 
-	private string ProcedureDirectory(bool uploadToVnas = false) =>
-		uploadToVnas
-			? Path.Combine(_outputDirectory, "Upload_to_vNAS", "Geojson", "ZLA", "LAS")
-			: Path.Combine(_outputDirectory, "Geojson", "ZLA", "LAS");
+	private string ProcedureDirectory() =>
+		Path.Combine(_outputDirectory, "Geojson", "ZLA", "LAS");
 
 	[Fact]
 	public void run_writes_lines_symbols_and_text_for_each_airport_procedure_plus_the_alias_file()
@@ -68,7 +66,8 @@ public sealed class ArrivalServiceTests : IDisposable
 		Assert.Equal([lines, symbols, text], result.GeojsonFilesWritten);
 		int pointCount = ArrivalTestData.BlaidFixes.Count + ArrivalTestData.BlaidNavaids.Count;
 		Assert.Equal(1, result.GeojsonFeatureCountsByFile[lines]);
-		Assert.Equal(pointCount, result.GeojsonFeatureCountsByFile[symbols]);
+		// No point carries a property of its own, so the symbols are one MultiPoint Feature; each label stays its own.
+		Assert.Equal(1, result.GeojsonFeatureCountsByFile[symbols]);
 		Assert.Equal(pointCount, result.GeojsonFeatureCountsByFile[text]);
 
 		Assert.Equal(1, result.AliasCommandCount);
@@ -80,7 +79,6 @@ public sealed class ArrivalServiceTests : IDisposable
 	public void run_puts_crc_defaults_first_and_feb_properties_on_every_feature_when_asked()
 	{
 		ArrivalServiceResult result = ArrivalService.Run(ArrivalTestData.Blaid(), Settings(
-			("UploadToVnas", "Arrivals_Lines,Arrivals_Symbols,Arrivals_Text"),
 			("CrcDefaultsFor", "Arrivals_Lines,Arrivals_Symbols,Arrivals_Text"),
 			("Crc.Arrivals.Line.bcg", "3"), ("Crc.Arrivals.Line.filters", "3"),
 			("Crc.Arrivals.Line.style", "solid"), ("Crc.Arrivals.Line.thickness", "1"),
@@ -116,23 +114,29 @@ public sealed class ArrivalServiceTests : IDisposable
 	}
 
 	[Fact]
-	public void a_kind_marked_for_vnas_goes_under_upload_to_vnas_in_its_artcc_and_airport_folders()
+	public void every_kind_goes_in_its_artcc_and_airport_folders_and_only_the_chosen_ones_get_crc_defaults()
 	{
 		ArrivalServiceResult result = ArrivalService.Run(ArrivalTestData.Blaid(), Settings(
-			("UploadToVnas", "Arrivals_Lines,Arrivals.txt"),
+			("CrcDefaultsFor", "Arrivals_Symbols"),
+			("Crc.Arrivals.Symbol.bcg", "3"), ("Crc.Arrivals.Symbol.filters", "3"),
+			("Crc.Arrivals.Symbol.style", "vor"), ("Crc.Arrivals.Symbol.size", "1"),
 			("EmitText", "N")));
 
 		Assert.Equal(
 			[
-				Path.Combine(ProcedureDirectory(uploadToVnas: true), "LAS_BLAID_STAR_Lines.geojson"),
+				Path.Combine(ProcedureDirectory(), "LAS_BLAID_STAR_Lines.geojson"),
 				Path.Combine(ProcedureDirectory(), "LAS_BLAID_STAR_Symbols.geojson"),
 			],
 			result.GeojsonFilesWritten);
 		Assert.Equal(Path.Combine(_outputDirectory, "Aliases", "Arrivals.txt"), result.AliasFilePath);
 
-		// Uploaded without defaults: the procedure's one Feature, and no isLineDefaults before it.
+		// Written without defaults: the procedure's one Feature, and no isLineDefaults before it.
 		using JsonDocument lines = JsonDocument.Parse(File.ReadAllText(result.GeojsonFilesWritten[0]));
 		Assert.Single(lines.RootElement.GetProperty("features").EnumerateArray());
+
+		// Chosen for defaults: the isSymbolDefaults Feature comes first.
+		using JsonDocument symbols = JsonDocument.Parse(File.ReadAllText(result.GeojsonFilesWritten[1]));
+		Assert.True(symbols.RootElement.GetProperty("features")[0].GetProperty("properties").GetProperty("isSymbolDefaults").GetBoolean());
 	}
 
 	[Fact]

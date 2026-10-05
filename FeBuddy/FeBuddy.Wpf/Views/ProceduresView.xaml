@@ -4,9 +4,8 @@
     action bar, and the tab host owns the page's single scroller.
 
     Unlike every other AIRAC sub-service tab, this one writes no GeoJSON and has no FE-Buddy
-    properties or CRC cards - see ProceduresViewModel's class remarks. Its Upload to vNAS card
-    offers only the alias file, so it shows only while the alias file is on. The selection cards
-    pick what the two documents cover, so they grey out while neither document is on.
+    properties or CRC cards - see ProceduresViewModel's class remarks. The selection cards pick
+    what the two documents cover, so they grey out while neither document is on.
 -->
 <UserControl x:Class="FeBuddy.Wpf.Views.ProceduresView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -27,29 +26,22 @@
          steal the wheel and hide the lower sections. -->
     <StackPanel>
 
-            <TextBlock Text="{Binding ValidationError}" Style="{StaticResource Text.Caption}"
-                       Foreground="{StaticResource Brush.Danger}" TextWrapping="Wrap" Margin="0,0,0,12"
-                       MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
-                       Visibility="{Binding ValidationError, Converter={StaticResource StringToVis}}" />
+            <cards:AttentionCard />
 
             <!-- ============ outputs ============ -->
             <ctl:Card Header="Outputs">
                 <StackPanel>
-                    <CheckBox Content="Procedure_Changes.md" IsChecked="{Binding GenerateChangesDocument}" Margin="0,4,0,0" />
-                    <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="24,2,0,10"
-                               MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
-                               Text="A briefing of every added, changed and deleted procedure at the airports you pick, grouped by facility, busiest airspace first, with links to the FAA's compare PDFs and charts." />
-                    <CheckBox Content="Procedures.json" IsChecked="{Binding GenerateProceduresJson}" Margin="0,0,0,0" />
-                    <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="24,2,0,10"
-                               MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
-                               Text="Every current chart at the airports you pick, with the fields chosen below." />
-                    <CheckBox Content="Alias file" IsChecked="{Binding GenerateAliasFile}" Margin="0,0,0,0" />
-                    <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="24,2,0,10"
-                               MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
-                               Text="FAA Chart Recall: a command that opens each page of every chart at every airport in the d-TPP metafile,&#xA;Ex: .dtwI22Lc for ILS OR LOC RWY 22L at DTW.&#xA;The choices below pick what the documents cover; they never limit the alias file." />
+                    <TextBlock Style="{StaticResource Text.Caption}" Margin="0,4,0,10" TextWrapping="Wrap"
+                               Text="Turn these on or off on the General tab." />
+                    <cards:OutputStatusRow Label="Procedure_Changes.md" IsOn="{Binding GenerateChangesDocument}"
+                                           Description="A briefing of every added, changed and deleted procedure at the airports you pick, grouped by facility, busiest airspace first, with links to the FAA's compare PDFs and charts." />
+                    <cards:OutputStatusRow Margin="0,12,0,0" Label="Procedures.json" IsOn="{Binding GenerateProceduresJson}"
+                                           Description="Every current chart at the airports you pick, with the fields chosen below." />
+                    <cards:OutputStatusRow Margin="0,12,0,10" Label="Alias file" IsOn="{Binding GenerateAliasFile}"
+                                           Description="FAA Chart Recall: a command that opens each page of every chart at every airport in the d-TPP metafile,&#xA;Ex: .dtwI22Lc for ILS OR LOC RWY 22L at DTW.&#xA;The choices below pick what the documents cover; they never limit the alias file." />
                     <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap"
                                MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
-                               bhv:InlineCode.Text="The documents are written to `Publication_Docs\` in the cycle's folder, and the alias file to `Aliases\`. Ticked below, it is also added to `Upload_to_vNAS\vNAS_Alias.txt`." />
+                               bhv:InlineCode.Text="The documents are written to `Publication_Docs\` in the cycle's folder, and the alias file to `Aliases\`. The Concatenate Aliases tab also adds the alias file to `Aliases\Combined_Alias.txt`." />
                 </StackPanel>
             </ctl:Card>
 
@@ -82,7 +74,7 @@
             </ctl:Card>
 
             <!-- ============ facilities ============ -->
-            <ctl:Card Header="Facilities" IsEnabled="{Binding GeneratesDocument}">
+            <ctl:Card Header="Facilities" bhv:FieldState.Error="{Binding FieldErrors[DocumentSelection]}" IsEnabled="{Binding GeneratesDocument}">
                 <StackPanel>
                     <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
                                Text="Include every airport these ARTCCs are responsible for." />
@@ -106,7 +98,7 @@
             </ctl:Card>
 
             <!-- ============ airports ============ -->
-            <ctl:Card Header="Airports" IsEnabled="{Binding GeneratesDocument}">
+            <ctl:Card Header="Airports" bhv:FieldState.Error="{Binding FieldErrors[DocumentSelection]}" IsEnabled="{Binding GeneratesDocument}">
                 <StackPanel>
                     <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
                                Text="Include every procedure at these airports." />
@@ -142,7 +134,7 @@
             </ctl:Card>
 
             <!-- ============ procedures at any airport ============ -->
-            <ctl:Card Header="Procedures at Any Airport" IsEnabled="{Binding GeneratesDocument}">
+            <ctl:Card Header="Procedures at Any Airport" bhv:FieldState.Error="{Binding FieldErrors[DocumentSelection]}" IsEnabled="{Binding GeneratesDocument}">
                 <StackPanel>
                     <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
                                Text="Include a procedure wherever it appears, e.g. a STAR that serves several airports." />
@@ -194,7 +186,7 @@
             </ctl:Card>
 
             <!-- ============ airport + procedure ============ -->
-            <ctl:Card Header="Airport + Procedure" IsEnabled="{Binding GeneratesDocument}">
+            <ctl:Card Header="Airport + Procedure" bhv:FieldState.Error="{Binding FieldErrors[DocumentSelection]}" IsEnabled="{Binding GeneratesDocument}">
                 <StackPanel>
                     <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
                                Text="Include one procedure at one airport." />
@@ -261,7 +253,7 @@
             </ctl:Card>
 
             <!-- ============ chart types ============ -->
-            <ctl:Card Header="Chart Types" IsEnabled="{Binding GeneratesDocument}">
+            <ctl:Card Header="Chart Types" bhv:FieldState.Error="{Binding FieldErrors[ChartTypes]}" IsEnabled="{Binding GeneratesDocument}">
                 <StackPanel>
                     <TextBlock Style="{StaticResource Text.Prose}" TextWrapping="Wrap" Margin="0,4,0,8"
                                MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
@@ -306,7 +298,5 @@
                 </cards:RoiOverrideCard.AdditionalContent>
             </cards:RoiOverrideCard>
 
-            <!-- ============ upload to vNAS (the alias file only) ============ -->
-            <cards:VnasUploadCard Visibility="{Binding GenerateAliasFile, Converter={StaticResource BoolToVis}}" />
     </StackPanel>
 </UserControl>

@@ -21,9 +21,8 @@ public sealed class OutputFileChoice(AiracOutputGeojsonFile file, bool isSelecte
 	/// <summary>The file name without its extension.</summary>
 	public string Name => File.Name;
 
-	/// <summary>The folder group it is listed under, e.g. <c>Upload to vNAS · ZOB\CLE</c>.</summary>
-	public string Group => (File.UploadToVnas ? "Upload to vNAS" : "GeoJSON")
-		+ (File.SubFolder.Length > 0 ? $"  ·  {File.SubFolder}" : string.Empty);
+	/// <summary>The folder group it is listed under, e.g. <c>GeoJSON · ZOB\CLE</c>.</summary>
+	public string Group => "GeoJSON" + (File.SubFolder.Length > 0 ? $"  ·  {File.SubFolder}" : string.Empty);
 
 	/// <summary>Its size, e.g. <c>1.4 MB</c>.</summary>
 	public string SizeText => File.SizeBytes switch

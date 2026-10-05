@@ -3,8 +3,8 @@ using FeBuddy.Wpf.ViewModels;
 namespace FeBuddy.UnitTests.Wpf.ViewModels;
 
 /// <summary>
-/// Covers <see cref="AiracSubServices"/>: the order the General tab's picker and the tab rail show
-/// the sub-services in, which the vNAS Alias Upload tab also lists FE-Buddy's alias files in.
+/// Covers <see cref="AiracSubServices"/>: the order the General tab's table and the tab rail show
+/// the sub-services in, which the Concatenate Aliases tab also lists FE-Buddy's alias files in.
 /// </summary>
 public sealed class AiracSubServicesTests
 {
@@ -14,13 +14,13 @@ public sealed class AiracSubServicesTests
 		Assert.Equal(
 			[
 				"ARTCC Boundaries", "Airports", "Airways", "Arrivals", "Departures", "NAVAIDs",
-				"Fixes", "Procedures", "Telephony", "Wx Stations", "vNAS Alias Upload",
+				"Fixes", "Procedures", "Telephony", "Wx Stations", "Concatenate Aliases",
 			],
 			AiracSubServices.All.Select(s => s.DisplayName));
 	}
 
 	/// <summary>
-	/// The picker and the rail sort by Order, the vNAS Alias Upload tab walks the list as it is, so
+	/// The table and the rail sort by Order, the Concatenate Aliases tab walks the list as it is, so
 	/// the two must agree.
 	/// </summary>
 	[Fact]

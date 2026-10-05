@@ -21,7 +21,7 @@ namespace FeBuddy.Wpf.ViewModels;
 /// <remarks>
 /// <para>
 /// The list is read from the other tabs' settings as they are now, each time the tab is shown (see
-/// <see cref="GeojsonSubServiceViewModel.OutputFileEntries"/>), as the vNAS Alias Upload tab reads
+/// <see cref="GeojsonSubServiceViewModel.OutputFileEntries"/>), as the Concatenate Aliases tab reads
 /// its alias files. A file's choice - whether to rename it, and its new name - is kept by file key,
 /// including files the current settings do not write, so a file that drops off the list and comes
 /// back keeps its choice.
@@ -283,9 +283,11 @@ public sealed class FileNamesViewModel : SubServiceSettingsViewModel
 
 		if (invalid.Length > 0)
 		{
-			validation.Add($"{invalid[0].FileName}: {invalid[0].Error}" + (invalid.Length > 1
-				? $" {invalid.Length - 1} more file name(s) need attention too - see the marked boxes."
-				: string.Empty));
+			validation.AddArea(
+				ServiceAreas.OutputFiles,
+				$"{invalid[0].FileName}: {invalid[0].Error}" + (invalid.Length > 1
+					? $" {invalid.Length - 1} more file name(s) need attention too - see the marked boxes."
+					: string.Empty));
 		}
 	}
 

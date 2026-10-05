@@ -24,10 +24,7 @@
         <TextBlock Style="{StaticResource Text.Prose}" Margin="0,0,0,14"
                    bhv:InlineCode.Text="Converts FAA .dat RADAR Video Maps (RVMs) into CRC-ready GeoJSON: one .geojson file per map, named after it, in a `DAT to GeoJSON` folder inside your output directory." />
 
-        <TextBlock Text="{Binding ValidationError}" Style="{StaticResource Text.Caption}"
-                   Foreground="{StaticResource Brush.Danger}" TextWrapping="Wrap" Margin="0,0,0,12"
-                   MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
-                   Visibility="{Binding ValidationError, Converter={StaticResource StringToVis}}" />
+        <cards:AttentionCard />
 
         <!-- ============ source ============ -->
         <cards:SourceFilesCard />
@@ -40,15 +37,23 @@
         <!-- ============ cropping ============ -->
         <ctl:Card Header="Cropping">
             <StackPanel>
-                <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                <WrapPanel Margin="0,4,0,0">
                     <TextBlock Text="Keep what lies within" Style="{StaticResource Text.Body}" VerticalAlignment="Center" />
                     <TextBox Style="{StaticResource Field.Number}"
                              Text="{Binding CroppingDistance, UpdateSourceTrigger=PropertyChanged}"
                              bhv:FieldState.Error="{Binding FieldErrors[CroppingDistance]}" />
                     <TextBlock Text="NM of the map's point of tangency" Style="{StaticResource Text.Body}" VerticalAlignment="Center" />
-                </StackPanel>
+                </WrapPanel>
                 <TextBlock Style="{StaticResource Text.Prose}" Margin="0,8,0,0"
                            Text="Leave blank to convert the whole map. Lines that cross the distance are cut exactly where they meet it. The point of tangency is the one the .dat file itself defines, so each map is cropped around its own." />
+
+                <!-- One distance for the whole run, while a set of RVMs often needs several. -->
+                <Border Style="{StaticResource Chip.Warn}" HorizontalAlignment="Left" Padding="10,8" Margin="0,10,0,0">
+                    <TextBlock Style="{StaticResource Text.Prose}">
+                        <Run Text="Be careful:" FontWeight="SemiBold" Foreground="{StaticResource Brush.Warn}" />
+                        <Run Text="this distance applies to every file in this conversion - every .dat file in the folder, or every file you picked. A set of RVMs often needs different distances, so convert maps that need another distance on their own." />
+                    </TextBlock>
+                </Border>
             </StackPanel>
         </ctl:Card>
 

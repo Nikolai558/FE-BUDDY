@@ -99,6 +99,70 @@ public sealed class MapCanvasTests
 			Assert.Equal(before, map.GetView());
 		});
 
+	/// <summary>With no home view saved, the contiguous US (where Home goes then) is 100%.</summary>
+	[Fact]
+	public void the_contiguous_us_is_100_percent_when_no_home_is_saved() =>
+		StaThread.Run(() =>
+		{
+			MapCanvas map = Framed();
+			map.ZoomBy(3);
+			Redrawn();
+			Assert.Equal(300, map.ZoomPercent, 3);
+
+			map.ResetView();
+			Redrawn();
+
+			Assert.Equal(100, map.ZoomPercent, 3);
+		});
+
+	[Fact]
+	public void zooming_to_a_percentage_lands_on_it_and_a_saved_home_is_the_new_100() =>
+		StaThread.Run(() =>
+		{
+			MapCanvas map = Framed();
+
+			map.ZoomToPercent(250);
+			Redrawn();
+			Assert.Equal(250, map.ZoomPercent, 3);
+
+			map.HomeZoom = 6;
+			map.GoTo(new MapHome(41.4, -81.8, 6));
+			Redrawn();
+			Assert.Equal(100, map.ZoomPercent, 3);
+
+			map.ZoomBy(2);
+			Redrawn();
+			Assert.Equal(200, map.ZoomPercent, 3);
+		});
+
+	[Theory]
+	[InlineData(0)]
+	[InlineData(-50)]
+	[InlineData(double.NaN)]
+	[InlineData(double.PositiveInfinity)]
+	public void a_percentage_that_is_not_above_zero_changes_nothing(double percent) =>
+		StaThread.Run(() =>
+		{
+			MapCanvas map = Framed();
+			MapViewState? before = map.GetView();
+
+			map.ZoomToPercent(percent);
+
+			Assert.Equal(before, map.GetView());
+		});
+
+	/// <summary>The map's limits cap a percentage: zoom 18 is as close as it goes.</summary>
+	[Fact]
+	public void a_percentage_past_the_closest_zoom_stops_there() =>
+		StaThread.Run(() =>
+		{
+			MapCanvas map = Framed();
+
+			map.ZoomToPercent(1e12);
+
+			Assert.Equal(18, WebMercator.ScaleToZoom(map.GetView()!.Value.Scale), 6);
+		});
+
 	/// <summary>
 	/// A map listens to its layer list weakly: a closed popup's map is let go while the list every
 	/// map shares lives on.
@@ -139,6 +203,20 @@ public sealed class MapCanvasTests
 		map.Arrange(new Rect(0, 0, 900, 560));
 		return map;
 	}
+
+	/// <summary>
+	/// A sized map looking at the contiguous US, as a map in a window opens. Laid out by hand, a map
+	/// gets no size-changed call, so it is framed here.
+	/// </summary>
+	private static MapCanvas Framed()
+	{
+		MapCanvas map = Sized();
+		map.ResetView();
+		return map;
+	}
+
+	/// <summary>Lets the queued redraw run; it is what reports the zoom.</summary>
+	private static void Redrawn() => Dispatcher.CurrentDispatcher.Invoke(() => { }, DispatcherPriority.ContextIdle);
 
 	private static MapLayer Layer(params MapGeometry[] geometries) => new("test", geometries, Brushes.OrangeRed);
 

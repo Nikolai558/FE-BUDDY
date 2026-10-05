@@ -1,15 +1,14 @@
 using System.Text;
 
-using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Application.Airac.Procedures;
 using FeBuddy.Core.Application.Airac.Procedures.Models;
 
 namespace FeBuddy.UnitTests.Application.Airac.Procedures;
 
 /// <summary>
-/// Covers <see cref="ChartRecallAliasWriter"/>: the file lands in the <c>Aliases</c> folder, even
-/// when marked for vNAS, one line per command in order, UTF-8 without a BOM,
-/// and nothing is written when there is no command.
+/// Covers <see cref="ChartRecallAliasWriter"/>: the file lands in the <c>Aliases</c> folder, one
+/// line per command in order, UTF-8 without a BOM, and nothing is written when there is no
+/// command.
 /// </summary>
 public sealed class ChartRecallAliasWriterTests : IDisposable
 {
@@ -24,10 +23,9 @@ public sealed class ChartRecallAliasWriterTests : IDisposable
 		}
 	}
 
-	private ProcedureSettings Settings(bool uploadToVnas = false) => new()
+	private ProcedureSettings Settings() => new()
 	{
 		OutputDirectory = _outputDirectory,
-		Vnas = uploadToVnas ? new VnasFileChoices([ProcedureOutputFiles.Alias], []) : VnasFileChoices.None,
 	};
 
 	private static readonly ChartRecallAliasLine[] TwoLines =
@@ -50,15 +48,6 @@ public sealed class ChartRecallAliasWriterTests : IDisposable
 
 		Assert.Equal(Path.Combine(_outputDirectory, "Aliases", "Faa_Chart_Recall.txt"), result.FilePath);
 		Assert.Equal(2, result.CommandCount);
-	}
-
-	[Fact]
-	public void a_file_marked_for_vnas_still_goes_in_the_aliases_folder()
-	{
-		ChartRecallAliasWriteResult result = ChartRecallAliasWriter.Generate(TwoLines, Settings(uploadToVnas: true));
-
-		Assert.Equal(Path.Combine(_outputDirectory, "Aliases", "Faa_Chart_Recall.txt"), result.FilePath);
-		Assert.False(Directory.Exists(Path.Combine(_outputDirectory, "Upload_to_vNAS")));
 	}
 
 	[Fact]

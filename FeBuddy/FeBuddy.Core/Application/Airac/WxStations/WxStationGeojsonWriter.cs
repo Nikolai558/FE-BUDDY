@@ -19,8 +19,8 @@ namespace FeBuddy.Core.Application.Airac.WxStations;
 /// </para>
 /// <para>
 /// The ROI limits this output only: the caller filters with <see cref="FilterToRoi"/> before
-/// calling <see cref="Generate"/>. Each file goes in the GeoJSON folder, or the vNAS one when the
-/// user marked it for vNAS. Only a file chosen for CRC-ERAM defaults gets an isDefaults Feature.
+/// calling <see cref="Generate"/>. Each file goes in the GeoJSON folder. Only a file chosen for
+/// CRC-ERAM defaults (<c>CrcDefaultsFor</c>) gets an isDefaults Feature.
 /// </para>
 /// </remarks>
 public static class WxStationGeojsonWriter
@@ -71,7 +71,7 @@ public static class WxStationGeojsonWriter
 	{
 		FeatureCollection collection = [];
 
-		if (settings.Vnas.HasCrcDefaults(WxStationOutputFiles.Symbols))
+		if (settings.CrcDefaultsFiles.HasCrcDefaults(WxStationOutputFiles.Symbols))
 		{
 			collection.Add(CrcFeatureFactory.CreateDefaultsFeature(settings.SymbolDefaults[WxStationOutputFiles.AllClass]));
 		}
@@ -88,7 +88,7 @@ public static class WxStationGeojsonWriter
 	{
 		FeatureCollection collection = [];
 
-		if (settings.Vnas.HasCrcDefaults(WxStationOutputFiles.Text))
+		if (settings.CrcDefaultsFiles.HasCrcDefaults(WxStationOutputFiles.Text))
 		{
 			collection.Add(CrcFeatureFactory.CreateDefaultsFeature(settings.TextDefaults[WxStationOutputFiles.AllClass]));
 		}
@@ -106,10 +106,10 @@ public static class WxStationGeojsonWriter
 		WriteFile(collection, stations.Count, settings, WxStationOutputFiles.Text, files);
 	}
 
-	/// <summary>Writes one file, into the GeoJSON or vNAS folder as the user chose, under the name they chose.</summary>
+	/// <summary>Writes one file, into the GeoJSON folder, under the name the user chose.</summary>
 	private static void WriteFile(FeatureCollection collection, int renderedCount, WxStationSettings settings, string fileKey, GeojsonFileSet files)
 	{
-		string directory = AiracOutputPaths.FileDirectory(settings.OutputDirectory, isGeojson: true, settings.Vnas.IsUploaded(fileKey));
+		string directory = AiracOutputPaths.GeojsonDirectory(settings.OutputDirectory);
 		files.Write(collection, renderedCount, directory, settings.FileNames.FileName(fileKey));
 	}
 }

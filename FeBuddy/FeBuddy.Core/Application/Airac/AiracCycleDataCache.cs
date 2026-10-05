@@ -60,8 +60,7 @@ public sealed class AiracCycleDataCacheEntry
 /// <para>
 /// Data that is not published per cycle - the Wx Stations list and the FAA telephony pages - is not
 /// kept here at all: every AIRAC Service run downloads the latest copy of it into one shared folder
-/// (see <see cref="Infrastructure.SharedData.SharedDataDownload"/>). A Wx Stations file an older
-/// FE-Buddy left in a cycle folder is deleted when the cycle is prepared.
+/// (see <see cref="Infrastructure.SharedData.SharedDataDownload"/>).
 /// </para>
 /// <para>
 /// Each pipeline step is a parameter, so tests can run the pipeline without the FAA or real CSV
@@ -112,11 +111,6 @@ public sealed class AiracCycleDataCache(
 	private readonly List<AiracCycleDataCacheEntry> _entries = [];
 	private readonly Dictionary<string, Task<NasrCsvDataCollection>> _flights = new(StringComparer.OrdinalIgnoreCase);
 
-	/// <summary>
-	/// The Wx Stations file an older FE-Buddy kept in every cycle folder, before the one shared copy
-	/// replaced it (see <see cref="DeleteRetiredCycleFiles"/>).
-	/// </summary>
-	internal const string RetiredWxStationsFileName = "stations.cache.xml";
 
 	/// <summary>
 	/// Creates a cache wired to the real FAA download, the real NASR CSV parser, and the real
@@ -446,7 +440,6 @@ public sealed class AiracCycleDataCache(
 		}
 
 		entry.CycleDirectory = cycleDirectory;
-		DeleteRetiredCycleFiles(cycleDirectory);
 
 		// Runs for an already-cached cycle too (the NASR download above just resolved instantly
 		// from disk), which is what fills in a next cycle's metafile once the FAA publishes it, at
@@ -457,29 +450,6 @@ public sealed class AiracCycleDataCache(
 		return true;
 	}
 
-	/// <summary>
-	/// Deletes the per-cycle Wx Stations file an older FE-Buddy kept in every cycle folder
-	/// (<see cref="RetiredWxStationsFileName"/>); the station list now lives in one shared folder,
-	/// refreshed on every run. Best-effort: a file that cannot be deleted is only clutter, and goes
-	/// with its cycle folder once that cycle is no longer offered.
-	/// </summary>
-	private static void DeleteRetiredCycleFiles(string cycleDirectory)
-	{
-		string retired = Path.Combine(cycleDirectory, RetiredWxStationsFileName);
-
-		try
-		{
-			if (File.Exists(retired))
-			{
-				File.Delete(retired);
-				AppLog.Info(LogSource, $"Deleted the retired per-cycle Wx Stations file '{retired}'.");
-			}
-		}
-		catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-		{
-			AppLog.Warning(LogSource, $"Could not delete the retired per-cycle Wx Stations file '{retired}': {ex.Message}");
-		}
-	}
 
 	/// <summary>
 	/// Ensures <paramref name="cycleDirectory"/> has its FAA d-TPP Metafile. Never fails or

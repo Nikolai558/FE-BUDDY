@@ -7,9 +7,9 @@ namespace FeBuddy.Core.Application.Airac;
 
 /// <summary>
 /// Finds what earlier AIRAC Service runs left on disk: the <c>AIRAC_&lt;cycle&gt;</c> folders in
-/// the output directory, and the GeoJSON files inside one of them (both the ordinary
-/// <c>Geojson</c> folder and <c>Upload_to_vNAS\Geojson</c>, see <see cref="AiracOutputPaths"/>).
-/// The Map screen lists these so the user can put a run's output on the map.
+/// the output directory, and the GeoJSON files inside one of them (its <c>Geojson</c> folder, see
+/// <see cref="AiracOutputPaths"/>). The Map screen lists these so the user can put a run's output
+/// on the map.
 /// </summary>
 public static class AiracOutputCatalog
 {
@@ -46,50 +46,42 @@ public static class AiracOutputCatalog
 	}
 
 	/// <summary>
-	/// Every <c>.geojson</c> file a run of one cycle wrote, ordinary folder first. Within each,
-	/// the files at the top come first, then each sub-folder's (Departures and Arrivals write
-	/// one per procedure under <c>&lt;ARTCC&gt;\&lt;airport&gt;</c>), all in name order.
+	/// Every <c>.geojson</c> file a run of one cycle wrote into its <c>Geojson</c> folder: the files
+	/// at the top come first, then each sub-folder's (Departures and Arrivals write one per
+	/// procedure under <c>&lt;ARTCC&gt;\&lt;airport&gt;</c>), all in name order.
 	/// </summary>
 	/// <param name="cycleDirectory">The cycle's folder, from <see cref="AiracOutputPaths.CycleDirectory"/>.</param>
-	/// <returns>The files; empty when neither folder exists or they cannot be read. A sub-folder that cannot be read is skipped.</returns>
+	/// <returns>The files; empty when the folder does not exist or cannot be read. A sub-folder that cannot be read is skipped.</returns>
 	public static IReadOnlyList<AiracOutputGeojsonFile> FindGeojsonFiles(string cycleDirectory)
 	{
-		List<AiracOutputGeojsonFile> files = [];
-		AddFolder(cycleDirectory, uploadToVnas: false, files);
-		AddFolder(cycleDirectory, uploadToVnas: true, files);
-		return files;
-	}
-
-	private static void AddFolder(string cycleDirectory, bool uploadToVnas, List<AiracOutputGeojsonFile> into)
-	{
-		string folder = AiracOutputPaths.FileDirectory(cycleDirectory, isGeojson: true, uploadToVnas);
+		string folder = AiracOutputPaths.GeojsonDirectory(cycleDirectory);
 
 		try
 		{
 			if (!Directory.Exists(folder))
 			{
-				return;
+				return [];
 			}
 
 			// Sub-folders that cannot be read are skipped, rather than losing every other file with them.
 			string root = Path.GetFullPath(folder);
 			EnumerationOptions everyFolder = new() { RecurseSubdirectories = true, IgnoreInaccessible = true };
-			into.AddRange(new DirectoryInfo(root).EnumerateFiles("*.geojson", everyFolder)
+			return [.. new DirectoryInfo(root).EnumerateFiles("*.geojson", everyFolder)
 				.Select(file => (File: file, SubFolder: Path.GetRelativePath(root, file.DirectoryName!)))
 				.Select(f => new AiracOutputGeojsonFile(
 					f.File.FullName,
 					Path.GetRelativePath(cycleDirectory, f.File.FullName),
 					f.SubFolder == "." ? string.Empty : f.SubFolder,
-					uploadToVnas,
 					f.File.Length,
 					f.File.LastWriteTimeUtc))
 				.OrderBy(f => f.SubFolder.Length == 0 ? 0 : 1)
 				.ThenBy(f => f.SubFolder, StringComparer.OrdinalIgnoreCase)
-				.ThenBy(f => f.Name, StringComparer.OrdinalIgnoreCase));
+				.ThenBy(f => f.Name, StringComparer.OrdinalIgnoreCase)];
 		}
 		catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
 		{
 			// A folder that vanished or cannot be read simply has nothing to list.
+			return [];
 		}
 	}
 

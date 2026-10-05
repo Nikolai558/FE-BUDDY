@@ -42,9 +42,11 @@ The tag decides a release's **channel** (`ProductVersion.Channel`):
 
 The user's channel (Settings ▸ Updates, `General.UpdateChannel`) is the least stable they accept:
 Stable gets only stable releases, Release Candidate adds `-rc`, Beta adds `-beta`, Alpha gets
-everything. GitHub's pre-release checkbox is never consulted. Until the user chooses, the channel
-follows the running build (`UpdateChannelSetting`): an alpha is on Alpha, a beta on Beta, an rc on
-Release Candidate, anything else on Stable.
+everything. GitHub's pre-release checkbox is never consulted. The first launch saves the running
+build's channel (`UpdateChannelSetting.SaveDefaultIfUnset`): an alpha is on Alpha, a beta on Beta,
+an rc on Release Candidate, a stable release on Stable. A `-dev` build saves nothing. After that only
+Settings changes it, so an update never does: an alpha tester stays on Alpha through 3.0.0, and
+someone on Beta who installs an alpha by hand stays on Beta.
 
 ## Where the version lives
 

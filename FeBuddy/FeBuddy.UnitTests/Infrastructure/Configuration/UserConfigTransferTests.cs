@@ -19,10 +19,10 @@ public sealed class UserConfigTransferTests : IDisposable
 	private const string DatFolderKey = "Services.FileConversions.DatToGeojson.SourceFolder";
 	private const string SctFolderKey = "Services.FileConversions.SctToGeojson.SourceFolder";
 	private const string EramFolderKey = "Services.FileConversions.EramToGeojson.SourceFolder";
-	private const string Url1 = "Services.AiracService.VnasAlias.Sources.1.Url";
-	private const string Url2 = "Services.AiracService.VnasAlias.Sources.2.Url";
-	private const string Credential1 = "Services.AiracService.VnasAlias.Sources.1.CredentialId";
-	private const string Credential2 = "Services.AiracService.VnasAlias.Sources.2.CredentialId";
+	private const string Url1 = "Services.AiracService.ConcatenateAliases.Sources.1.Url";
+	private const string Url2 = "Services.AiracService.ConcatenateAliases.Sources.2.Url";
+	private const string Credential1 = "Services.AiracService.ConcatenateAliases.Sources.1.CredentialId";
+	private const string Credential2 = "Services.AiracService.ConcatenateAliases.Sources.2.CredentialId";
 
 	private static readonly DateTimeOffset ExportedAt = new(2026, 9, 27, 12, 0, 0, TimeSpan.Zero);
 
@@ -548,9 +548,9 @@ public sealed class UserConfigTransferTests : IDisposable
 	[Fact]
 	public void plan_takes_a_file_only_when_it_exists_here()
 	{
-		const string Found = "Services.AiracService.VnasAlias.Sources.1.FilePath";
-		const string Missing = "Services.AiracService.VnasAlias.Sources.2.FilePath";
-		const string Remote = "Services.AiracService.VnasAlias.Sources.3.FilePath";
+		const string Found = "Services.AiracService.ConcatenateAliases.Sources.1.FilePath";
+		const string Missing = "Services.AiracService.ConcatenateAliases.Sources.2.FilePath";
+		const string Remote = "Services.AiracService.ConcatenateAliases.Sources.3.FilePath";
 
 		UserConfigImportPlan plan = UserConfigTransfer.Plan(
 			Package(new()

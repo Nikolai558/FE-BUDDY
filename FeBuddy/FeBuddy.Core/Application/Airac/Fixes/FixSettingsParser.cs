@@ -111,9 +111,8 @@ public static class FixSettingsParser
 		RegionOfInterest? roi = SubServiceSettingsReader.ReadRoi(fixSettings);
 		int coordinatePrecision = SubServiceSettingsReader.ReadCoordinatePrecision(fixSettings);
 
-		// No alias file, so aliasFileKey is null: no UploadToVnas/CrcDefaultsFor entry can name one.
-		VnasFileChoices vnas = SubServiceSettingsReader.ReadVnasFiles(
-			fixSettings, aliasFileKey: null, FixOutputFiles.IsGeojsonKey,
+		CrcDefaultsFiles crcFiles = SubServiceSettingsReader.ReadCrcDefaultsFiles(
+			fixSettings, FixOutputFiles.IsGeojsonKey,
 			example: $"{FixOutputFiles.Symbols}, {FixOutputFiles.Text}");
 
 		Dictionary<string, CrcSymbolDefaults> symbolDefaults = new(StringComparer.OrdinalIgnoreCase);
@@ -121,12 +120,12 @@ public static class FixSettingsParser
 
 		if (outputBy == FixOutputBy.All)
 		{
-			if (emitSymbols && vnas.HasCrcDefaults(FixOutputFiles.Symbols))
+			if (emitSymbols && crcFiles.HasCrcDefaults(FixOutputFiles.Symbols))
 			{
 				symbolDefaults[FixOutputFiles.AllClass] = CrcDefaultsReader.ReadSymbol(fixSettings, $"Crc.{FixOutputFiles.AllClass}.Symbol");
 			}
 
-			if (emitText && vnas.HasCrcDefaults(FixOutputFiles.Text))
+			if (emitText && crcFiles.HasCrcDefaults(FixOutputFiles.Text))
 			{
 				textDefaults[FixOutputFiles.AllClass] = CrcDefaultsReader.ReadText(fixSettings, $"Crc.{FixOutputFiles.AllClass}.Text");
 			}
@@ -145,7 +144,7 @@ public static class FixSettingsParser
 			// Read from the keys chosen for CRC-ERAM defaults rather than from a fixed group list,
 			// so a group FE-Buddy did not anticipate (an unrecognized fix use, or any chart name)
 			// still gets the defaults its file needs.
-			foreach (string key in vnas.CrcDefaultsFiles)
+			foreach (string key in crcFiles.Files)
 			{
 				if (!FixOutputFiles.TryParseGroupKey(key, out string group, out CrcFeatureKind kind) || IsExcludedGroup(group))
 				{
@@ -197,7 +196,7 @@ public static class FixSettingsParser
 			Combinations = combinations,
 			IncludeFebCustomProperties = includeFebProperties,
 			FebProperties = febProperties,
-			Vnas = vnas,
+			CrcDefaultsFiles = crcFiles,
 			Roi = roi,
 			CoordinatePrecision = coordinatePrecision,
 			SymbolDefaults = symbolDefaults,

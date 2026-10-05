@@ -18,6 +18,10 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
   Full guide: docs/Developers/RELEASING.md.
 -->
 ## Unreleased
+
+---
+
+## 3.0.0-beta.2
 ### Updates
 - Bug #299 - Updating no longer changes your update channel. The first launch keeps the channel of
   the version you installed, and only Settings ▸ Updates changes it, so an Alpha tester stays on

@@ -1,4 +1,4 @@
-using FeBuddy.Core.Application.Airac.VnasAlias.Models;
+using FeBuddy.Core.Application.Airac.ConcatenateAliases.Models;
 using FeBuddy.Core.Application.Models;
 using FeBuddy.Core.Infrastructure.Dtpp;
 using FeBuddy.Core.Infrastructure.Dtpp.Models;
@@ -10,7 +10,8 @@ namespace FeBuddy.Core.Application.Airac.Models;
 /// <summary>
 /// The data <c>AiracService.RunAsync</c> needs beyond the selected cycle's parsed NASR CSVs: the
 /// Wx Stations list and the FAA telephony pages (not published per cycle - every run downloads the
-/// latest), and the FAA d-TPP Metafile for the selected cycle and the cycle before it.
+/// latest), the FAA d-TPP Metafile for the selected cycle and the cycle before it, and the user's
+/// custom alias files for Concatenate Aliases.
 /// </summary>
 public sealed record AiracSupplementalData
 {
@@ -46,7 +47,7 @@ public sealed record AiracSupplementalData
 
 	/// <summary>
 	/// The user's custom alias files as they were read (or why each could not be), in merge order.
-	/// Only read when <see cref="AiracServiceSettings.VnasAlias"/> is not <see langword="null"/>;
+	/// Only read when <see cref="AiracServiceSettings.ConcatenateAliases"/> is not <see langword="null"/>;
 	/// <see langword="null"/> merges none.
 	/// </summary>
 	public IReadOnlyList<AliasSourceLoad>? CustomAliasFiles { get; init; }

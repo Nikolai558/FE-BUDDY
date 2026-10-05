@@ -10,8 +10,8 @@ namespace FeBuddy.Core.Application.Airac.Airways;
 /// draws every waypoint on it (e.g. <c>.J3F .FF OAK RBL LKV IMB GEG</c>).
 /// </summary>
 /// <remarks>
-/// The file goes in the output folder's <c>Aliases</c> folder; when the user marked it for vNAS it is
-/// also copied into <c>vNAS_Alias.txt</c> (see <see cref="AiracOutputPaths"/>).
+/// The file goes in the output folder's <c>Aliases</c> folder; an AIRAC Service run with Concatenate
+/// Aliases also copies it into <c>Combined_Alias.txt</c> (see <see cref="AiracOutputPaths"/>).
 /// </remarks>
 public static class AirwayAliasWriter
 {
@@ -27,7 +27,7 @@ public static class AirwayAliasWriter
 	/// <returns>The path written (or <see langword="null"/> if nothing to write) and the line count.</returns>
 	/// <remarks>
 	/// Written whenever <see cref="AirwaySettings.GenerateAliasFile"/> is
-	/// <see langword="true"/>, independently of <see cref="AirwaySettings.OutputBy"/> - the
+	/// <see langword="true"/>, independently of <see cref="AirwaySettings.GenerateGeojson"/> - the
 	/// alias file is a separate user choice from GeoJSON generation.
 	/// </remarks>
 	public static AirwayAliasGenerateResult Generate(IReadOnlyList<Airway> airways, AirwaySettings settings)

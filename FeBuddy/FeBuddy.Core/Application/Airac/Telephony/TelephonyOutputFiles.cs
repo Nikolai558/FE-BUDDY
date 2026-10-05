@@ -6,6 +6,6 @@ namespace FeBuddy.Core.Application.Airac.Telephony;
 /// </summary>
 public static class TelephonyOutputFiles
 {
-	/// <summary>The alias file (<c>TelephonyAliasWriter</c>) - also its file key on the Upload to vNAS card.</summary>
+	/// <summary>The alias file (<c>TelephonyAliasWriter</c>) - also its file key on the File Names tab.</summary>
 	public const string Alias = "Telephony.txt";
 }

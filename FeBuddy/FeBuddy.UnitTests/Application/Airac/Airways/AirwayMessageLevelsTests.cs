@@ -82,8 +82,7 @@ public sealed class AirwayMessageLevelsTests : IDisposable
 		AirwayServiceResult result = AirwayService.Run(data, new Dictionary<string, string>
 		{
 			{ "OutputDirectory", _output },
-			{ "OutputBy", "None" },
-			{ "GenerateAliasFile", "N" },
+			{ "GenerateGeojson", "N" },
 		});
 
 		Assert.Contains(result.Messages, m => m.Level == LogLevel.Warning && m.Text.Contains("J146") && m.Text.Contains("excluded from all output"));

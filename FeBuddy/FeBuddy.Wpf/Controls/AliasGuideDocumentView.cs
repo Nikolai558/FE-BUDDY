@@ -44,10 +44,10 @@ public sealed class AliasGuideDocumentView : Decorator
 		new PropertyMetadata(null, (d, _) => ((AliasGuideDocumentView)d).Rebuild()));
 
 	/// <summary>The font size of a command in running text, a table or an example.</summary>
-	private const double CommandSize = 12.5;
+	private const double CommandSize = 14;
 
 	/// <summary>The font size of a command's syntax, at the head of its row.</summary>
-	private const double SyntaxSize = 13.5;
+	private const double SyntaxSize = 15;
 
 	/// <summary>A bullet at each depth of a list, the last for any deeper.</summary>
 	private static readonly string[] Bullets = ["•", "◦", "▪"];

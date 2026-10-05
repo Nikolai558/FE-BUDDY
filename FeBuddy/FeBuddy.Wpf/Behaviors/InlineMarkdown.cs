@@ -8,7 +8,7 @@ using FeBuddy.Core.Infrastructure.Markdown;
 namespace FeBuddy.Wpf.Behaviors;
 
 /// <summary>
-/// <c>bhv:InlineMarkdown.Text="Only what **you** pick, in `Upload_to_vNAS`."</c> on a
+/// <c>bhv:InlineMarkdown.Text="Only what **you** pick, in `Combined_Alias.txt`."</c> on a
 /// <see cref="TextBlock"/> - one line of inline Markdown (<c>**bold**</c>, <c>*italic*</c>,
 /// <c>`code`</c>, links), shown the way <see cref="MarkdownView"/> shows a paragraph's text but in
 /// the TextBlock's own style. The What's New page uses it for its table cells and lists.

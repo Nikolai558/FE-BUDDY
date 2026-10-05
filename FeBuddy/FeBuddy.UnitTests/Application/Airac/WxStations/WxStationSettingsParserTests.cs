@@ -7,7 +7,7 @@ namespace FeBuddy.UnitTests.Application.Airac.WxStations;
 /// Covers <see cref="WxStationSettingsParser"/>: the documented defaults, the "both Emit flags
 /// off" guard, the <c>IncludeFebCustomProperties</c> warning (Wx Stations has no <c>feb.*</c>
 /// properties), unknown-key warnings for settings only other sub-services have, where CRC-ERAM
-/// defaults are read from, and reuse of the shared ROI/precision/vNAS readers.
+/// defaults are read from, and reuse of the shared ROI/precision/CrcDefaultsFor readers.
 /// </summary>
 public sealed class WxStationSettingsParserTests
 {
@@ -41,7 +41,6 @@ public sealed class WxStationSettingsParserTests
 
 	private static void MarkForCrcDefaults(Dictionary<string, string> settings, params string[] keys)
 	{
-		settings["UploadToVnas"] = string.Join(',', keys);
 		settings["CrcDefaultsFor"] = string.Join(',', keys);
 	}
 
@@ -59,7 +58,7 @@ public sealed class WxStationSettingsParserTests
 		Assert.Empty(result.Messages);
 		Assert.True(result.Settings.EmitSymbols);
 		Assert.True(result.Settings.EmitText);
-		Assert.Empty(result.Settings.Vnas.UploadFiles);
+		Assert.Empty(result.Settings.CrcDefaultsFiles.Files);
 		Assert.Empty(result.Settings.SymbolDefaults);
 		Assert.Empty(result.Settings.TextDefaults);
 		Assert.Null(result.Settings.Roi);
@@ -136,24 +135,27 @@ public sealed class WxStationSettingsParserTests
 		Assert.Contains(result.Messages.WarningTexts(), w => w.Contains("TotallyMadeUpKey"));
 	}
 
-	[Fact]
-	public void upload_to_vnas_naming_an_alias_looking_key_throws_because_there_is_no_alias_file()
+	/// <summary>Only a Wx Stations GeoJSON file can get CRC-ERAM defaults: Wx Stations has no alias file, and no other sub-service's file counts.</summary>
+	[Theory]
+	[InlineData("WxStations.txt")]
+	[InlineData("Fix_Symbols")]
+	public void crc_defaults_for_naming_a_key_that_is_not_a_wx_stations_geojson_file_throws(string key)
 	{
 		Dictionary<string, string> settings = MinimalValidSettings();
-		settings["UploadToVnas"] = "WxStations.txt";
+		settings["CrcDefaultsFor"] = key;
 
 		ArgumentException ex = Assert.Throws<ArgumentException>(() => WxStationSettingsParser.Parse(settings));
-		Assert.Contains("WxStations.txt", ex.Message);
+		Assert.Contains(key, ex.Message);
 	}
 
 	[Fact]
-	public void crc_defaults_for_entry_not_in_upload_to_vnas_throws()
+	public void crc_defaults_for_a_file_that_is_written_requires_its_values()
 	{
 		Dictionary<string, string> settings = MinimalValidSettings();
 		settings["CrcDefaultsFor"] = WxStationOutputFiles.Symbols;
 
 		ArgumentException ex = Assert.Throws<ArgumentException>(() => WxStationSettingsParser.Parse(settings));
-		Assert.Contains(WxStationOutputFiles.Symbols, ex.Message);
+		Assert.Contains($"Crc.{WxStationOutputFiles.AllClass}.Symbol.", ex.Message);
 	}
 
 	// ---- CRC defaults ----
@@ -188,7 +190,6 @@ public sealed class WxStationSettingsParserTests
 	public void crc_defaults_are_only_read_for_the_files_chosen_in_crc_defaults_for()
 	{
 		Dictionary<string, string> settings = MinimalValidSettings();
-		settings["UploadToVnas"] = $"{WxStationOutputFiles.Symbols},{WxStationOutputFiles.Text}";
 		settings["CrcDefaultsFor"] = WxStationOutputFiles.Symbols;
 		AddSymbolDefaults(settings, $"Crc.{WxStationOutputFiles.AllClass}.Symbol");
 		// No Crc.Wx.Text.* keys supplied - if the parser tried to read them, this would throw.
@@ -252,7 +253,7 @@ public sealed class WxStationSettingsParserTests
 		Assert.Contains(result.Messages.WarningTexts(), w => w.Contains($"Crc.{WxStationOutputFiles.AllClass}.Text.text"));
 	}
 
-	// ---- ROI / precision / vNAS reuse ----
+	// ---- ROI / precision / CrcDefaultsFor reuse ----
 
 	[Fact]
 	public void roi_is_parsed_when_filter_by_roi_is_set()
@@ -282,15 +283,16 @@ public sealed class WxStationSettingsParserTests
 	}
 
 	[Fact]
-	public void vnas_files_are_read_via_the_shared_reader()
+	public void crc_defaults_files_are_read_via_the_shared_reader()
 	{
 		Dictionary<string, string> settings = MinimalValidSettings();
-		settings["UploadToVnas"] = WxStationOutputFiles.Symbols;
+		MarkForCrcDefaults(settings, WxStationOutputFiles.Symbols);
+		AddSymbolDefaults(settings, $"Crc.{WxStationOutputFiles.AllClass}.Symbol");
 
 		WxStationSettings parsed = WxStationSettingsParser.Parse(settings).Settings;
 
-		Assert.True(parsed.Vnas.IsUploaded(WxStationOutputFiles.Symbols));
-		Assert.False(parsed.Vnas.IsUploaded(WxStationOutputFiles.Text));
+		Assert.True(parsed.CrcDefaultsFiles.HasCrcDefaults(WxStationOutputFiles.Symbols));
+		Assert.False(parsed.CrcDefaultsFiles.HasCrcDefaults(WxStationOutputFiles.Text));
 	}
 
 	[Fact]

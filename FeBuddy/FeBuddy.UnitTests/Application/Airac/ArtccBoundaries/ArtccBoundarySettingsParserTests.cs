@@ -41,7 +41,7 @@ public sealed class ArtccBoundarySettingsParserTests
 		Assert.Empty(result.Settings.LocationFilter);
 		Assert.False(result.Settings.IncludeFebCustomProperties);
 		Assert.Empty(result.Settings.FebProperties);
-		Assert.Empty(result.Settings.Vnas.UploadFiles);
+		Assert.Empty(result.Settings.CrcDefaultsFiles.Files);
 		Assert.Empty(result.Settings.LineDefaults);
 		Assert.Equal(6, result.Settings.CoordinatePrecision);
 	}
@@ -99,7 +99,6 @@ public sealed class ArtccBoundarySettingsParserTests
 	{
 		Dictionary<string, string> settings = MinimalValidSettings();
 		string highKey = ArtccBoundaryOutputFiles.KeyFor(ArtccBoundaryOutputFiles.HighClass);
-		settings["UploadToVnas"] = highKey;
 		settings["CrcDefaultsFor"] = highKey;
 		AddLineDefaults(settings, $"Crc.{ArtccBoundaryOutputFiles.HighClass}.Line");
 
@@ -115,7 +114,6 @@ public sealed class ArtccBoundarySettingsParserTests
 		Dictionary<string, string> settings = MinimalValidSettings();
 		settings["OutputBy"] = "ArtccAltitude";
 		string key = ArtccBoundaryOutputFiles.KeyFor("ZOB", "HIGH");
-		settings["UploadToVnas"] = key;
 		settings["CrcDefaultsFor"] = key;
 		AddLineDefaults(settings, "Crc.ZOB-HIGH.Line");
 
@@ -130,7 +128,6 @@ public sealed class ArtccBoundarySettingsParserTests
 	{
 		Dictionary<string, string> settings = MinimalValidSettings();
 		string highKey = ArtccBoundaryOutputFiles.KeyFor(ArtccBoundaryOutputFiles.HighClass);
-		settings["UploadToVnas"] = highKey;
 		settings["CrcDefaultsFor"] = highKey;
 		settings["Crc.High.Line.bcg"] = "3";
 		settings["Crc.High.Line.filters"] = "3";
@@ -147,8 +144,6 @@ public sealed class ArtccBoundarySettingsParserTests
 	{
 		Dictionary<string, string> settings = MinimalValidSettings();
 		string highKey = ArtccBoundaryOutputFiles.KeyFor(ArtccBoundaryOutputFiles.HighClass);
-		string lowKey = ArtccBoundaryOutputFiles.KeyFor(ArtccBoundaryOutputFiles.LowClass);
-		settings["UploadToVnas"] = $"{highKey},{lowKey}";
 		settings["CrcDefaultsFor"] = highKey;
 		AddLineDefaults(settings, $"Crc.{ArtccBoundaryOutputFiles.HighClass}.Line");
 		// No Crc.Low.Line.* keys supplied - if the parser tried to read them, this would throw.
@@ -175,15 +170,18 @@ public sealed class ArtccBoundarySettingsParserTests
 		Assert.Contains(result.Messages.WarningTexts(), w => w.Contains(key));
 	}
 
-	[Fact]
-	public void upload_to_vnas_naming_an_alias_looking_key_throws_because_there_is_no_alias_file()
+	/// <summary>Only an ARTCC Boundaries GeoJSON file can get CRC-ERAM defaults: there is no alias file, and no other sub-service's file counts.</summary>
+	[Theory]
+	[InlineData("ArtccBoundaries.txt")]
+	[InlineData("Airways_High_Lines")]
+	public void crc_defaults_for_naming_a_key_that_is_not_an_artcc_boundaries_geojson_file_throws(string key)
 	{
 		Dictionary<string, string> settings = MinimalValidSettings();
-		settings["UploadToVnas"] = "ArtccBoundaries.txt";
+		settings["CrcDefaultsFor"] = key;
 
 		ArgumentException ex = Assert.Throws<ArgumentException>(() => ArtccBoundarySettingsParser.Parse(settings));
 
-		Assert.Contains("ArtccBoundaries.txt", ex.Message, StringComparison.Ordinal);
+		Assert.Contains(key, ex.Message, StringComparison.Ordinal);
 	}
 
 	[Fact]

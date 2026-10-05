@@ -18,7 +18,11 @@ public partial class CrcDefaultsCard : UserControl
 	/// <summary>Identifies the <see cref="Note"/> dependency property.</summary>
 	public static readonly DependencyProperty NoteProperty = Register(
 		nameof(Note),
-		"The values written as the isDefaults feature at the top of each vNAS file chosen for CRC-ERAM defaults. Every box shown must be filled in.");
+		"CRC-ERAM defaults are an isDefaults feature at the top of a GeoJSON file: the look CRC gives every feature in it. Choose which of this tab's files get them; every box shown below must be filled in.");
+
+	/// <summary>Identifies the <see cref="Choice"/> dependency property.</summary>
+	public static readonly DependencyProperty ChoiceProperty = DependencyProperty.Register(
+		nameof(Choice), typeof(object), typeof(CrcDefaultsCard), new PropertyMetadata(null));
 
 	/// <summary>Identifies the <see cref="ShowInclude"/> dependency property.</summary>
 	public static readonly DependencyProperty ShowIncludeProperty = DependencyProperty.Register(
@@ -38,6 +42,12 @@ public partial class CrcDefaultsCard : UserControl
 
 	/// <summary>The line under the header saying what the values are for.</summary>
 	public string Note { get => (string)GetValue(NoteProperty); set => SetValue(NoteProperty, value); }
+
+	/// <summary>
+	/// What goes between the note and the panels: an AIRAC sub-service's <see cref="CrcFileChoice"/>.
+	/// Nothing by default.
+	/// </summary>
+	public object? Choice { get => GetValue(ChoiceProperty); set => SetValue(ChoiceProperty, value); }
 
 	/// <summary>Whether each panel has an Include box (the File Conversions). Off by default.</summary>
 	public bool ShowInclude { get => (bool)GetValue(ShowIncludeProperty); set => SetValue(ShowIncludeProperty, value); }

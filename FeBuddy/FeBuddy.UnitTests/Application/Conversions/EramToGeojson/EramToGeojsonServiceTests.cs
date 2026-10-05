@@ -12,8 +12,9 @@ namespace FeBuddy.UnitTests.Application.Conversions.EramToGeojson;
 /// <summary>
 /// Runs the whole ERAM to GeoJSON conversion (<see cref="EramToGeojsonService.Run"/>) against
 /// small made-up Geomaps files written to a temp folder - in the original ERAM_2_GEOJSON tool's
-/// three layouts, named as it named them, and with each defaults source, plus the
-/// <c>ConsoleCommandControl.txt</c> rundown - and checks what lands on disk and what is reported.
+/// three layouts, named as it named them, and Raw Plus (matching symbols grouped where the layout
+/// does it), with each defaults source, plus the <c>ConsoleCommandControl.txt</c> rundown - and
+/// checks what lands on disk and what is reported.
 /// </summary>
 public sealed class EramToGeojsonServiceTests : IDisposable
 {
@@ -318,6 +319,80 @@ public sealed class EramToGeojsonServiceTests : IDisposable
 		Assert.Equal(["text", "bcg", "filters", "size", "underline", "xOffset", "yOffset"], Names(features[3]));
 		Assert.Equal(3, Properties(features[3]).GetProperty("size").GetInt32());
 		Assert.Equal(["24L", "6R"], Properties(features[3]).GetProperty("text").EnumerateArray().Select(t => t.GetString()));
+	}
+
+	/// <summary>Raw is the reference the other layouts are checked against, so even matching symbols stay one Feature each.</summary>
+	[Fact]
+	public void raw_keeps_every_symbol_a_feature_of_its_own()
+	{
+		WriteGeomaps(Object("NAVAID", 1, SymbolDefaults + SymbolA + Symbol("ZXY", "41000000N", "100000000W")));
+
+		SourceFilesConversionResult result = EramToGeojsonService.Run(Settings(("OutputLayout", "Raw")));
+		JsonElement[] features = Features(Assert.Single(result.GeojsonFilesWritten));
+
+		Assert.Equal(2, features.Length);
+		Assert.All(features, feature => Assert.Equal("Point", feature.GetProperty("geometry").GetProperty("type").GetString()));
+		Assert.Equal(2, result.FeaturesWritten);
+	}
+
+	// ================= Raw Plus =================
+
+	[Fact]
+	public void raw_plus_is_raws_file_with_matching_lines_joined_and_matching_symbols_grouped()
+	{
+		WriteGeomaps(Object("ALL", 1, LineDefaults + SymbolDefaults + TextDefaults + LineAB + LineBC + SymbolA +
+			Symbol("ZXY", "41000000N", "100000000W") + TextA + Text("41000000N", "100000000W", "ZXY")));
+
+		SourceFilesConversionResult result = EramToGeojsonService.Run(Settings(("OutputLayout", "RawPlus")));
+		string path = Path.Combine(RootFolder, "CENTER_CENTER-MAP.geojson");
+
+		Assert.Equal([path], result.GeojsonFilesWritten);
+
+		// No isDefaults Feature: every Feature carries its whole look, as in Raw.
+		JsonElement[] features = Features(path);
+		Assert.Equal(4, features.Length);
+		Assert.Equal(4, result.FeaturesWritten);
+
+		// The two segments meet and look alike: one three-point line.
+		Assert.Equal("MultiLineString", features[0].GetProperty("geometry").GetProperty("type").GetString());
+		Assert.Equal(3, features[0].GetProperty("geometry").GetProperty("coordinates")[0].GetArrayLength());
+		Assert.Equal(["bcg", "filters", "style", "thickness"], Names(features[0]));
+
+		// The two symbols look alike: one MultiPoint.
+		Assert.Equal("MultiPoint", features[1].GetProperty("geometry").GetProperty("type").GetString());
+		Assert.Equal(2, features[1].GetProperty("geometry").GetProperty("coordinates").GetArrayLength());
+		Assert.Equal(["bcg", "filters", "style", "size"], Names(features[1]));
+
+		// Each label stays a Feature of its own.
+		Assert.Equal("ZXX", Properties(features[2]).GetProperty("text")[0].GetString());
+		Assert.Equal("ZXY", Properties(features[3]).GetProperty("text")[0].GetString());
+	}
+
+	/// <summary>A <c>feb.*</c> property that differs, such as each symbol's ID, keeps the symbols apart.</summary>
+	[Fact]
+	public void raw_plus_keeps_symbols_apart_when_a_feb_property_differs()
+	{
+		WriteGeomaps(Object("NAVAID", 1, SymbolDefaults + SymbolA + Symbol("ZXY", "41000000N", "100000000W")));
+
+		SourceFilesConversionResult result = EramToGeojsonService.Run(Settings(
+			("OutputLayout", "RawPlus"), ("IncludeFebCustomProperties", "Y"), ("FebProperties", "symbolId")));
+		JsonElement[] features = Features(Assert.Single(result.GeojsonFilesWritten));
+
+		Assert.Equal(["ZXX", "ZXY"], features.Select(feature => Properties(feature).GetProperty("feb.symbolId").GetString()));
+	}
+
+	[Fact]
+	public void by_filters_groups_symbols_that_say_the_same()
+	{
+		WriteGeomaps(Object("NAVAID", 1, SymbolDefaults + SymbolA + Symbol("ZXY", "41000000N", "100000000W")));
+
+		SourceFilesConversionResult result = EramToGeojsonService.Run(Settings(("OutputLayout", "ByFilters")));
+		JsonElement[] features = Features(Assert.Single(result.GeojsonFilesWritten));
+
+		Assert.Equal(2, features.Length);
+		Assert.True(Properties(features[0]).GetProperty("isSymbolDefaults").GetBoolean());
+		Assert.Equal("MultiPoint", features[1].GetProperty("geometry").GetProperty("type").GetString());
+		Assert.Equal(1, result.FeaturesWritten);
 	}
 
 	// ================= maps, text and properties =================

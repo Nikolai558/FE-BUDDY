@@ -14,7 +14,8 @@ namespace FeBuddy.UnitTests.Application.Airac.ArtccBoundaries;
 /// <summary>
 /// Covers <see cref="ArtccBoundaryGeojsonWriter"/>: how <see cref="ArtccBoundaryOutputBy"/> groups
 /// rings into files, that a closed ring is written as a LineString, the antimeridian split, ROI
-/// clipping, CRC Line defaults, <c>feb.*</c> properties, and vNAS folder routing.
+/// clipping, CRC Line defaults, <c>feb.*</c> properties, and that every file goes in the GeoJSON
+/// folder.
 /// </summary>
 public sealed class ArtccBoundaryGeojsonWriterTests : IDisposable
 {
@@ -245,9 +246,7 @@ public sealed class ArtccBoundaryGeojsonWriterTests : IDisposable
 		{
 			OutputBy = ArtccBoundaryOutputBy.HighLowUnlimited,
 			Roi = roi,
-			Vnas = new VnasFileChoices(
-				uploadFiles: [ArtccBoundaryOutputFiles.KeyFor(ArtccBoundaryOutputFiles.UnlimitedClass)],
-				crcDefaultsFiles: [ArtccBoundaryOutputFiles.KeyFor(ArtccBoundaryOutputFiles.UnlimitedClass)]),
+			CrcDefaultsFiles = new CrcDefaultsFiles([ArtccBoundaryOutputFiles.KeyFor(ArtccBoundaryOutputFiles.UnlimitedClass)]),
 			LineDefaults = new Dictionary<string, CrcLineDefaults>(StringComparer.OrdinalIgnoreCase)
 			{
 				[ArtccBoundaryOutputFiles.UnlimitedClass] = LineDefaults(3),
@@ -269,9 +268,7 @@ public sealed class ArtccBoundaryGeojsonWriterTests : IDisposable
 		ArtccBoundarySettings settings = Settings() with
 		{
 			OutputBy = ArtccBoundaryOutputBy.HighLowUnlimited,
-			Vnas = new VnasFileChoices(
-				uploadFiles: [ArtccBoundaryOutputFiles.KeyFor(ArtccBoundaryOutputFiles.HighClass), ArtccBoundaryOutputFiles.KeyFor(ArtccBoundaryOutputFiles.LowClass)],
-				crcDefaultsFiles: [ArtccBoundaryOutputFiles.KeyFor(ArtccBoundaryOutputFiles.HighClass)]),
+			CrcDefaultsFiles = new CrcDefaultsFiles([ArtccBoundaryOutputFiles.KeyFor(ArtccBoundaryOutputFiles.HighClass)]),
 			LineDefaults = new Dictionary<string, CrcLineDefaults>(StringComparer.OrdinalIgnoreCase)
 			{
 				[ArtccBoundaryOutputFiles.HighClass] = LineDefaults(3),
@@ -363,20 +360,26 @@ public sealed class ArtccBoundaryGeojsonWriterTests : IDisposable
 		}
 	}
 
-	// ---- vNAS folder routing ----
+	// ---- GeoJSON folder ----
 
 	[Fact]
-	public void a_file_marked_for_vnas_goes_under_upload_to_vnas_while_others_do_not()
+	public void a_file_chosen_for_crc_defaults_goes_in_the_geojson_folder_like_the_others()
 	{
 		ArtccBoundarySettings settings = Settings() with
 		{
 			OutputBy = ArtccBoundaryOutputBy.HighLowUnlimited,
-			Vnas = new VnasFileChoices([ArtccBoundaryOutputFiles.KeyFor(ArtccBoundaryOutputFiles.HighClass)], []),
+			CrcDefaultsFiles = new CrcDefaultsFiles([ArtccBoundaryOutputFiles.KeyFor(ArtccBoundaryOutputFiles.HighClass)]),
+			LineDefaults = new Dictionary<string, CrcLineDefaults>(StringComparer.OrdinalIgnoreCase)
+			{
+				[ArtccBoundaryOutputFiles.HighClass] = LineDefaults(3),
+			},
 		};
 
 		GeojsonFileSet result = ArtccBoundaryGeojsonWriter.Generate(ZobRings(), settings);
 
-		Assert.Contains(result.FilesWritten, f => f.Contains("Upload_to_vNAS", StringComparison.Ordinal) && f.EndsWith("ARTCC-Boundary_High_Lines.geojson", StringComparison.Ordinal));
-		Assert.Contains(result.FilesWritten, f => !f.Contains("Upload_to_vNAS", StringComparison.Ordinal) && f.EndsWith("ARTCC-Boundary_Low_Lines.geojson", StringComparison.Ordinal));
+		Assert.NotEmpty(result.FilesWritten);
+		Assert.All(result.FilesWritten, f => Assert.Equal(Path.Combine(_outputDirectory, "Geojson"), Path.GetDirectoryName(f)));
+		Assert.Contains(result.FilesWritten, f => f.EndsWith("ARTCC-Boundary_High_Lines.geojson", StringComparison.Ordinal));
+		Assert.Contains(result.FilesWritten, f => f.EndsWith("ARTCC-Boundary_Low_Lines.geojson", StringComparison.Ordinal));
 	}
 }

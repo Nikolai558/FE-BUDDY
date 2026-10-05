@@ -18,7 +18,8 @@ namespace FeBuddy.Core.Application.Conversions.EramToGeojson;
 
 /// <summary>
 /// Writes one converted ERAM <c>Geomaps.xml</c> into <c>…\ERAM_TO_GEOJSON\</c>, in the layouts
-/// and with the names of the original ERAM_2_GEOJSON tool (<see cref="EramOutputLayout"/>).
+/// and with the names of the original ERAM_2_GEOJSON tool, or as Raw Plus
+/// (<see cref="EramOutputLayout"/>).
 /// </summary>
 /// <remarks>
 /// <para>
@@ -37,14 +38,19 @@ namespace FeBuddy.Core.Application.Conversions.EramToGeojson;
 /// - symbols <c>…_Style Vor_Font 1_Symbols</c>, text <c>…_Font 1_Underline F_X 0_Y 0_Text</c>. Everything
 /// in a file looks the same, so its isDefaults Feature describes it all and no Feature overrides it.</item>
 /// <item><b>Raw</b>: <c>&lt;map&gt;.geojson</c> beside the map folders, one Feature per element
-/// (lines are not joined), each carrying its whole look and no isDefaults Feature.</item>
+/// (lines are not joined, symbols not grouped), each carrying its whole look and no isDefaults
+/// Feature.</item>
+/// <item><b>Raw Plus</b>: Raw's file and properties, with lines that carry the same properties
+/// joined and symbols that do grouped.</item>
 /// </list>
 /// <para>
 /// A look missing a value CRC needs (a BCG, say, from neither the XML nor the tab) cannot be an
 /// isDefaults Feature: its Features carry what they have, and CRC falls back to its own defaults
 /// for the rest (By Attributes names the missing values <c>none</c>). Text ERAM keeps hidden
 /// (<c>DisplaySetting</c> false) is left out. The chosen <c>feb.*</c> properties go on every
-/// Feature; lines are joined (<see cref="SegmentJoiner"/>) only where those match too.
+/// Feature. In every layout but Raw, lines are joined (<see cref="SegmentJoiner"/>) and symbols
+/// grouped into MultiPoint Features (<see cref="SymbolFeatureMerger"/>) only where everything they
+/// carry matches, <c>feb.*</c> included; a label is always a Feature of its own.
 /// </para>
 /// </remarks>
 public static class EramGeojsonWriter
@@ -167,6 +173,10 @@ public static class EramGeojsonWriter
 
 				case EramOutputLayout.ByAttributes:
 					WriteByAttributes(drawn, Path.Combine(root, mapName), files);
+					break;
+
+				case EramOutputLayout.RawPlus:
+					WriteRawPlus(drawn, root, mapName, files);
 					break;
 
 				default:
@@ -324,7 +334,7 @@ public static class EramGeojsonWriter
 				// The look most of the file's Features share is its isDefaults Feature.
 				object? defaults = items
 					.Where(item => item.Complete is not null)
-					.GroupBy(item => Signature(DefaultsAttributes(item.Complete!)))
+					.GroupBy(item => AttributesSignature.Of(DefaultsAttributes(item.Complete!)))
 					.OrderByDescending(group => group.Count())
 					.Select(group => group.First().Complete)
 					.FirstOrDefault();
@@ -400,8 +410,9 @@ public static class EramGeojsonWriter
 	private static string StyleName(string? style) =>
 		style is { Length: > 0 } name ? char.ToUpperInvariant(name[0]) + name[1..] : "none";
 
-	// ================= Raw =================
+	// ================= Raw and Raw Plus =================
 
+	/// <summary>One Feature per element, as the original tool wrote them: the reference the other layouts are checked against.</summary>
 	private static void WriteRaw(List<Drawn> drawn, string root, string mapName, GeojsonFileSet files)
 	{
 		FeatureCollection collection = [];
@@ -415,12 +426,28 @@ public static class EramGeojsonWriter
 			collection.Add(new Feature(geometry, Properties(item, item.Attributes)));
 		}
 
-		files.Write(collection, collection.Count, root, $"{mapName}.geojson");
+		files.Write(collection, collection.Count, root, $"{mapName}.geojson", groupSymbols: false);
+	}
+
+	/// <summary>Raw's file and properties, with lines that carry the same properties joined and symbols that do grouped.</summary>
+	private static void WriteRawPlus(List<Drawn> drawn, string root, string mapName, GeojsonFileSet files)
+	{
+		FileBuilder file = new(defaults: null);
+
+		foreach (Drawn item in drawn)
+		{
+			file.Add(item, item.Attributes);
+		}
+
+		file.WriteTo(files, root, $"{mapName}.geojson");
 	}
 
 	// ================= one output file =================
 
-	/// <summary>One file being built: its isDefaults Feature, its lines grouped by what they carry, and its points.</summary>
+	/// <summary>
+	/// One file being built: its isDefaults Feature, its lines grouped by what they carry, and its
+	/// points. The file set groups the symbols among the points as it writes them.
+	/// </summary>
 	private sealed class FileBuilder(object? defaults)
 	{
 		private readonly List<(string Key, AttributesTable Attributes, List<(Coordinate Start, Coordinate End)> Segments)> _lines = [];
@@ -433,7 +460,7 @@ public static class EramGeojsonWriter
 
 			if (item.Kind == EramElementKind.Line)
 			{
-				string key = Signature(attributes);
+				string key = AttributesSignature.Of(attributes);
 				int index = _lines.FindIndex(group => group.Key == key);
 
 				if (index < 0)
@@ -540,12 +567,6 @@ public static class EramGeojsonWriter
 
 	private static bool SameValue(object? a, object? b) =>
 		a is int[] left && b is int[] right ? left.SequenceEqual(right) : Equals(a, b);
-
-	/// <summary>The same values always give the same key, so Features carrying the same things can be told apart from the rest.</summary>
-	private static string Signature(AttributesTable attributes) =>
-		string.Join(';', attributes.GetNames().Select(name => attributes[name] is int[] values
-			? $"{name}={string.Join(',', values)}"
-			: $"{name}={attributes[name]}"));
 
 	// ================= names =================
 

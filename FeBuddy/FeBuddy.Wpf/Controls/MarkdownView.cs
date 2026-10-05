@@ -144,10 +144,10 @@ public sealed class MarkdownView : Decorator
 		text.SetResourceReference(TextBlock.FontFamilyProperty, "Font.Display");
 		text.FontSize = heading.Level switch
 		{
-			1 => 17,
-			2 => 15,
-			3 => 13.5,
-			_ => 13,
+			1 => 18.5,
+			2 => 16.5,
+			3 => 15,
+			_ => 14.5,
 		};
 		text.FontWeight = heading.Level == 1 ? FontWeights.Bold : FontWeights.SemiBold;
 		text.LineHeight = double.NaN;
@@ -194,7 +194,7 @@ public sealed class MarkdownView : Decorator
 		var text = new TextBlock
 		{
 			Text = code.Text,
-			FontSize = 12,
+			FontSize = 13,
 			TextWrapping = TextWrapping.Wrap,
 		};
 		text.SetResourceReference(TextBlock.FontFamilyProperty, "Font.Mono");
@@ -290,7 +290,7 @@ public sealed class MarkdownView : Decorator
 		if (span.Style.HasFlag(MarkdownStyle.Code))
 		{
 			// The same look as InlineCode's, in the link's own colour when it is one.
-			styled.FontSize = 12;
+			styled.FontSize = 13;
 			InlineCode.ApplyLook(styled, primaryText: span.Url is null);
 		}
 

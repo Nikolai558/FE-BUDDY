@@ -22,6 +22,9 @@ public enum ReleaseChannel
 	/// <summary>An <c>-rc.N</c> release. Believed ready to ship.</summary>
 	ReleaseCandidate = 2,
 
-	/// <summary>A release with no pre-release tag. The default channel.</summary>
+	/// <summary>
+	/// A release with no pre-release tag. The channel a stable release or a development build starts
+	/// on; a pre-release starts on its own (FE-Buddy's <c>UpdateChannelSetting</c>).
+	/// </summary>
 	Stable = 3,
 }

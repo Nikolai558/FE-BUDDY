@@ -25,7 +25,7 @@
         <Setter Property="Background" Value="{DynamicResource Brush.Accent}" />
         <Setter Property="Foreground" Value="{DynamicResource Brush.Text.OnAccent}" />
         <Setter Property="FontFamily" Value="{DynamicResource Font.Body}" />
-        <Setter Property="FontSize" Value="13" />
+        <Setter Property="FontSize" Value="14.5" />
         <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="Padding" Value="16,9" />
         <Setter Property="Cursor" Value="Hand" />
@@ -69,7 +69,7 @@
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Primary}" />
         <Setter Property="FontFamily" Value="{DynamicResource Font.Body}" />
-        <Setter Property="FontSize" Value="13" />
+        <Setter Property="FontSize" Value="14.5" />
         <Setter Property="FontWeight" Value="Medium" />
         <Setter Property="Padding" Value="15,8" />
         <Setter Property="Cursor" Value="Hand" />
@@ -185,7 +185,7 @@
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Secondary}" />
         <Setter Property="FontFamily" Value="{DynamicResource Font.Body}" />
-        <Setter Property="FontSize" Value="13" />
+        <Setter Property="FontSize" Value="14.5" />
         <Setter Property="FontWeight" Value="Medium" />
         <Setter Property="Padding" Value="10,6" />
         <Setter Property="Cursor" Value="Hand" />
@@ -223,7 +223,7 @@
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Secondary}" />
         <Setter Property="FontFamily" Value="{DynamicResource Font.Icon}" />
-        <Setter Property="FontSize" Value="14" />
+        <Setter Property="FontSize" Value="15.5" />
         <Setter Property="Cursor" Value="Hand" />
         <Setter Property="Template">
             <Setter.Value>
@@ -253,7 +253,7 @@
     <Style x:Key="Button.Icon.Small" TargetType="Button" BasedOn="{StaticResource Button.Icon}">
         <Setter Property="Width" Value="26" />
         <Setter Property="Height" Value="26" />
-        <Setter Property="FontSize" Value="11" />
+        <Setter Property="FontSize" Value="12" />
     </Style>
 
     <!-- Button.Icon as a ToggleButton: stays highlighted while its popup is open. -->
@@ -263,7 +263,7 @@
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Secondary}" />
         <Setter Property="FontFamily" Value="{DynamicResource Font.Icon}" />
-        <Setter Property="FontSize" Value="13" />
+        <Setter Property="FontSize" Value="14.5" />
         <Setter Property="Cursor" Value="Hand" />
         <Setter Property="Template">
             <Setter.Value>
@@ -295,7 +295,7 @@
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Primary}" />
         <Setter Property="FontFamily" Value="{DynamicResource Font.Body}" />
-        <Setter Property="FontSize" Value="13" />
+        <Setter Property="FontSize" Value="14.5" />
         <Setter Property="FontWeight" Value="Medium" />
         <Setter Property="Cursor" Value="Hand" />
         <Setter Property="Template">
@@ -335,7 +335,7 @@
                 <ControlTemplate TargetType="{x:Type ctl:CopyButton}">
                     <Border x:Name="Root" Background="{TemplateBinding Background}" CornerRadius="5">
                         <TextBlock x:Name="Glyph" Text="{DynamicResource Icon.Copy}"
-                                   FontFamily="{DynamicResource Font.Icon}" FontSize="11"
+                                   FontFamily="{DynamicResource Font.Icon}" FontSize="12"
                                    Foreground="{DynamicResource Brush.Text.Tertiary}"
                                    HorizontalAlignment="Center" VerticalAlignment="Center" />
                     </Border>
@@ -363,7 +363,7 @@
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Tertiary}" />
         <Setter Property="FontFamily" Value="{DynamicResource Font.Icon}" />
-        <Setter Property="FontSize" Value="10" />
+        <Setter Property="FontSize" Value="11" />
         <Setter Property="Cursor" Value="Hand" />
         <Setter Property="Template">
             <Setter.Value>

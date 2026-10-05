@@ -20,7 +20,7 @@ namespace FeBuddy.Wpf.ViewModels;
 /// </summary>
 /// <remarks>
 /// Unlike every other AIRAC sub-service, ARTCC Boundaries writes GeoJSON Lines only: there is no
-/// output toggle, no file-kind choice and no alias file. Save, Undo and navigation come from the
+/// Outputs card, no file-kind choice and no alias file. Save, Undo and navigation come from the
 /// tab host's action bar; the run is launched by <b>Run AIRAC Service</b> on the Preview Settings
 /// tab, and its results are shown on the Review tab, described by this tab through
 /// <see cref="ISubServiceRunTarget"/>.
@@ -61,11 +61,8 @@ public sealed class ArtccBoundariesViewModel : GeojsonSubServiceViewModel, ISubS
 	// ================= outputs =================
 
 	/// <inheritdoc />
-	protected override int EnabledOutputCount => 1;
-
-	/// <inheritdoc />
-	protected override string NoDefaultRoiHint =>
-		"No default ROI is set, so every boundary is drawn in full. Set one in Settings, or override it here.";
+	protected override string NoRoiEffect =>
+		"every boundary is drawn in full";
 
 	/// <inheritdoc />
 	/// <remarks>ARTCC Boundaries has no file choices: it always writes Lines only.</remarks>
@@ -124,7 +121,7 @@ public sealed class ArtccBoundariesViewModel : GeojsonSubServiceViewModel, ISubS
 	/// </remarks>
 	public void LoadCycleDependentLists(NasrCsvDataCollection data)
 	{
-		_savedLocationFilter = ParseList(Get("LocationFilter"));
+		_savedLocationFilter = ParseArtccListOrFacility(Get("LocationFilter"));
 
 		string[] locationIds = [.. (data.Arb?.ArbSeg ?? [])
 			.Select(s => (s.LocationId ?? string.Empty).Trim().ToUpperInvariant())
@@ -159,10 +156,10 @@ public sealed class ArtccBoundariesViewModel : GeojsonSubServiceViewModel, ISubS
 
 		// The per-ARTCC files exist only now; list them even when the tab has unsaved edits (the
 		// resync below then does nothing).
-		RefreshVnasFiles();
+		RefreshOutputFiles();
 
 		// The lists were empty when this tab snapshotted itself at construction; re-take the
-		// snapshot now they reflect what is actually saved.
+		// snapshot now they reflect what is actually saved (or the Settings facility).
 		ResyncSavedState();
 	}
 
@@ -207,7 +204,6 @@ public sealed class ArtccBoundariesViewModel : GeojsonSubServiceViewModel, ISubS
 			new ServicePreviewRow("Split at antimeridian", SplitAtAntimeridian ? "Yes" : "No"),
 			new ServicePreviewRow("FE-Buddy properties", DescribeFebProperties()),
 			new ServicePreviewRow("Region of interest", HasRoi ? $"{DescribeRoi()}; lines are clipped at its edge" : DescribeRoi()),
-			new ServicePreviewRow("Upload to vNAS", DescribeVnasFiles()),
 			new ServicePreviewRow("CRC ERAM defaults", DescribeCrcDefaults()),
 		];
 
@@ -225,7 +221,7 @@ public sealed class ArtccBoundariesViewModel : GeojsonSubServiceViewModel, ISubS
 
 		// Re-apply the saved location filter to any already-built toggles, without a dirty check
 		// per toggle; ClearDirty below re-takes the snapshot once.
-		_savedLocationFilter = ParseList(Get("LocationFilter"));
+		_savedLocationFilter = ParseArtccListOrFacility(Get("LocationFilter"));
 		_suppressLocationChanges = true;
 		try
 		{

@@ -1,7 +1,7 @@
 # Creating a GitHub token for FE-Buddy
 
 FE-Buddy needs a GitHub token only to read a file from a **private** GitHub repository - usually
-your facility's custom alias file, on the vNAS Alias Upload tab. A public repository needs no token.
+your facility's custom alias file, on the Concatenate Aliases tab. A public repository needs no token.
 
 This guide makes a **fine-grained personal access token** that can do as little as possible: read
 the files of the repositories you pick, for a limited time. FE-Buddy never writes to GitHub.
@@ -18,8 +18,8 @@ the files of the repositories you pick, for a limited time. FE-Buddy never write
 | Repository permissions | **Contents: Read-only**, nothing else |
 | Account permissions | None |
 
-Then paste the token into FE-Buddy (Settings ▸ Credentials, or **New credential…** on the vNAS Alias
-Upload tab) and press **Check**.
+Then paste the token into FE-Buddy (Settings ▸ Credentials, or **New credential…** on the Concatenate
+Aliases tab) and press **Check**.
 
 ## Step by step
 
@@ -52,9 +52,8 @@ alias files.
 
 ![Repository access set to Only select repositories, with one repository selected](Media/GitHub-Token/02-repository-access.png)
 
-Don't choose **All repositories**. **Public repositories** is only for a token in Settings ▸
-FE-Buddy's GitHub Requests, which just lifts GitHub's limit of 60 requests an hour for FE-Buddy's
-update checks.
+Don't choose **All repositories**. **Public repositories** is only for the optional token in
+Settings ▸ FE-Buddy's GitHub Requests.
 
 ### 4. Permissions: Contents, read-only
 
@@ -86,7 +85,7 @@ starts with `github_pat_` - **once only**, so copy it straight away.
 ### 6. Save it in FE-Buddy
 
 In FE-Buddy's credential editor (Settings ▸ Credentials ▸ **Add credential…**, or **New credential…**
-on the vNAS Alias Upload tab):
+on the Concatenate Aliases tab):
 
 ![FE-Buddy's Add Credential window, set to GitHub personal access token](Media/GitHub-Token/05-fe-buddy-credential-editor.png)
 
@@ -100,7 +99,7 @@ on the vNAS Alias Upload tab):
 FE-Buddy keeps the token in Windows Credential Manager, encrypted with your Windows sign-in. It's
 never written to FE-Buddy's settings or exports, and never shown again.
 
-Now choose it for your file on the vNAS Alias Upload tab and press **Check** there: it should say
+Now choose it for your file on the Concatenate Aliases tab and press **Check** there: it should say
 how many alias commands it read. One token can serve several files - a later GitHub file with no
 credential is offered, for example, **Use ZOB GitHub, like file 1**.
 
@@ -118,7 +117,7 @@ files that use it.
 
 ## If something goes wrong
 
-What **Check** says, and what to do:
+What FE-Buddy says, and what to do:
 
 | FE-Buddy says | Most likely | Fix |
 |---|---|---|
@@ -128,16 +127,12 @@ What **Check** says, and what to do:
 | GitHub does not let the credential … read it … Contents: Read-only | The token has no **Contents** permission | Edit the token on GitHub: Contents, Read-only |
 | GitHub needs the credential … authorized for this organization's single sign-on (SSO) | The organization uses SAML single sign-on | Authorize the token for the organization on GitHub, then **Check** again |
 | GitHub is limiting how often it can be asked right now | Too many requests in a short time | Wait a few minutes and **Check** again |
-| This address has a sign-in token (token=) in it | The address was copied while viewing a private file's raw text | Use the file's own page (with `/blob/` in it), and choose your token as its credential |
-| … a GitHub page, not a file | The address is a repository's front page or a folder | Open the alias file itself on GitHub and copy that address (with `/blob/` in it) |
-
-Without any token, a 403 can also mean GitHub's hourly limit for anonymous downloads was reached:
-choose a token, or try again in an hour.
+| This address has a sign-in token (token=) in it | The address was copied while viewing a private file's raw text | Use the file's page or its Raw link without the `token=`, and choose your token as its credential |
+| GitHub limits downloads made without a token, and the limit has been reached | No token chosen, and GitHub's 60-an-hour limit is used up | Choose your GitHub token for the file, or try again in an hour |
+| … a GitHub page, not a file | The address is a repository's front page or a folder | Open the alias file itself on GitHub and copy its address, or its Raw link |
 
 ## Keeping the token safe
 
 - Treat it like a password: don't paste it into Discord, an email or a shared document.
 - If it may have leaked, delete it on GitHub (the token's page ▸ **Delete**) and make a new one. A
   deleted token stops working at once.
-- One token per purpose is easiest - for example one for your alias file and, only if you need it, a
-  public-repositories-only one for FE-Buddy's update checks.

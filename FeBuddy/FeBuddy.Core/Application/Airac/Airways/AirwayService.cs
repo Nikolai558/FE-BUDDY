@@ -76,7 +76,7 @@ public static class AirwayService
 
 		// Filters that leave nothing to write would otherwise end in a clean-looking run, so say
 		// which requested output came out empty and why.
-		bool noGeojson = settings.OutputBy != AirwayGeojsonOutputBy.None && airwaysInRoi.Count == 0;
+		bool noGeojson = settings.GenerateGeojson && airwaysInRoi.Count == 0;
 		bool noAlias = settings.GenerateAliasFile && aliasResult?.FilePath is null;
 
 		if (noGeojson || noAlias)

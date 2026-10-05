@@ -167,7 +167,6 @@ public sealed class NavaidSettingsParserTests
 
 	private static void MarkSymbolsForCrcDefaults(Dictionary<string, string> settings)
 	{
-		settings["UploadToVnas"] = "NAVAIDs_Symbols";
 		settings["CrcDefaultsFor"] = "NAVAIDs_Symbols";
 	}
 
@@ -289,7 +288,6 @@ public sealed class NavaidSettingsParserTests
 	{
 		Dictionary<string, string> settings = MinimalValidSettings();
 		settings["OutputBy"] = "Type";
-		settings["UploadToVnas"] = "NAVAIDs_VORTACs_Symbols";
 		settings["CrcDefaultsFor"] = "NAVAIDs_VORTACs_Symbols";
 		AddSymbolDefaults(settings, "Crc.VORTAC.Symbol", withStyle: true);
 
@@ -305,7 +303,6 @@ public sealed class NavaidSettingsParserTests
 	{
 		Dictionary<string, string> settings = MinimalValidSettings();
 		settings["OutputBy"] = "Type";
-		settings["UploadToVnas"] = "NAVAIDs_VORs_Symbols,NAVAIDs_VORs_Text";
 		settings["CrcDefaultsFor"] = "NAVAIDs_VORs_Symbols,NAVAIDs_VORs_Text";
 		AddSymbolDefaults(settings, "Crc.VOR.Symbol", withStyle: true);
 		AddTextDefaults(settings, "Crc.VOR.Text");
@@ -322,7 +319,6 @@ public sealed class NavaidSettingsParserTests
 	{
 		Dictionary<string, string> settings = MinimalValidSettings();
 		settings["OutputBy"] = "Type";
-		settings["UploadToVnas"] = "NAVAIDs_FOOs_Symbols";
 		settings["CrcDefaultsFor"] = "NAVAIDs_FOOs_Symbols";
 		AddSymbolDefaults(settings, "Crc.FOO.Symbol", withStyle: true);
 
@@ -338,7 +334,6 @@ public sealed class NavaidSettingsParserTests
 		Dictionary<string, string> settings = MinimalValidSettings();
 		settings["OutputBy"] = "Type";
 		settings["ExcludedTypes"] = "VOR";
-		settings["UploadToVnas"] = "NAVAIDs_VORs_Symbols";
 		settings["CrcDefaultsFor"] = "NAVAIDs_VORs_Symbols";
 		// No Crc.VOR.Symbol.* keys supplied - if the parser tried to read them, this would throw.
 
@@ -352,7 +347,6 @@ public sealed class NavaidSettingsParserTests
 	{
 		Dictionary<string, string> settings = MinimalValidSettings();
 		settings["OutputBy"] = "Type";
-		settings["UploadToVnas"] = "NAVAIDs_VOR-DMEs_Symbols";
 		settings["CrcDefaultsFor"] = "NAVAIDs_VOR-DMEs_Symbols";
 		AddSymbolDefaults(settings, "Crc.VOR-DME.Symbol", withStyle: true);
 
@@ -367,7 +361,6 @@ public sealed class NavaidSettingsParserTests
 	{
 		Dictionary<string, string> settings = MinimalValidSettings();
 		settings["GenerateGeojson"] = "N";
-		settings["UploadToVnas"] = "NAVAIDs_Symbols,NAVAIDs_Text";
 		settings["CrcDefaultsFor"] = "NAVAIDs_Symbols,NAVAIDs_Text";
 		// No Crc.* keys at all.
 
@@ -375,6 +368,20 @@ public sealed class NavaidSettingsParserTests
 
 		Assert.Empty(parsed.SymbolDefaults);
 		Assert.Empty(parsed.TextDefaults);
+	}
+
+	/// <summary>Only a NAVAIDs GeoJSON file can get CRC-ERAM defaults: not another sub-service's, not the alias file.</summary>
+	[Theory]
+	[InlineData("Navaids.txt")]
+	[InlineData("Airways_High_Lines")]
+	public void crc_defaults_for_naming_a_key_that_is_not_a_navaids_geojson_file_throws(string key)
+	{
+		Dictionary<string, string> settings = MinimalValidSettings();
+		settings["CrcDefaultsFor"] = key;
+
+		ArgumentException ex = Assert.Throws<ArgumentException>(() => NavaidSettingsParser.Parse(settings));
+
+		Assert.Contains(key, ex.Message);
 	}
 
 	[Fact]

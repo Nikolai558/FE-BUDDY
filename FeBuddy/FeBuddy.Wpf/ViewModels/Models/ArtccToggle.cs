@@ -19,7 +19,7 @@ public sealed class ArtccToggle(string artcc, bool isSelected, Action onChanged)
 	/// <summary>The ARTCC identifier, e.g. <c>ZSE</c>.</summary>
 	public string Artcc { get; } = artcc;
 
-	/// <summary><see langword="true"/> to include this ARTCC's departures.</summary>
+	/// <summary>Whether the ARTCC is ticked; what that means is up to the tab.</summary>
 	public bool IsSelected
 	{
 		get => _isSelected;

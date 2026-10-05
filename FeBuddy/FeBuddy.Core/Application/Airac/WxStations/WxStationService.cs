@@ -16,9 +16,9 @@ namespace FeBuddy.Core.Application.Airac.WxStations;
 /// </summary>
 /// <remarks>
 /// The only Wx Stations type <c>AiracService</c> and <c>FeBuddy.Harness</c> call directly; every
-/// other type in this folder is a step of this pipeline. Unlike every other AIRAC sub-service,
-/// its data does not come from a NASR CSV cycle - it comes from aviationweather.gov's live station
-/// list, which every AIRAC Service run downloads into one kept copy (see
+/// other type in this folder is a step of this pipeline. Like Telephony's, its data does not come
+/// from a NASR CSV cycle - it comes from aviationweather.gov's live station list, which every
+/// AIRAC Service run downloads into one kept copy (see
 /// <see cref="Infrastructure.WxStations.WxStationDownloader"/>), supplied here already parsed.
 /// There is no alias file.
 /// </remarks>

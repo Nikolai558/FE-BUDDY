@@ -26,6 +26,9 @@ public interface IRoiOverrideSettings
 	/// <summary>What the run uses when the override is off, shown under the checkbox.</summary>
 	string RoiFallbackHint { get; }
 
+	/// <summary>Whether a region limits the output: the override, or else the default ROI.</summary>
+	bool HasRoi { get; }
+
 	/// <summary>Per-field validation messages, keyed by property name (<c>SwLat</c> ...).</summary>
 	ServiceFieldErrors FieldErrors { get; }
 

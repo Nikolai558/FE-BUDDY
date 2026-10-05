@@ -155,7 +155,6 @@ public sealed class AirwayServiceTests : IDisposable
 		AirwayServiceResult result = AirwayService.Run(J1(), Settings(
 			[
 				.. highDefaults,
-				("UploadToVnas", "Airways_High_Lines"),
 				("CrcDefaultsFor", "Airways_High_Lines"),
 				("EmitSymbols", "N"),
 				("EmitText", "N"),
@@ -190,7 +189,6 @@ public sealed class AirwayServiceTests : IDisposable
 			[
 				.. CrcDefaults(),
 				.. SouthEastRoi,
-				("UploadToVnas", everyFile),
 				("CrcDefaultsFor", everyFile),
 				("GenerateAliasFile", "N"),
 			]));
@@ -198,7 +196,7 @@ public sealed class AirwayServiceTests : IDisposable
 		Assert.Equal(1, result.AirwayCount);
 		Assert.Empty(result.Warnings);
 		Assert.All(result.GeojsonFilesWritten, path =>
-			Assert.Equal(Path.Combine(_outputDirectory, "Upload_to_vNAS", "Geojson"), Path.GetDirectoryName(path)));
+			Assert.Equal(Path.Combine(_outputDirectory, "Geojson"), Path.GetDirectoryName(path)));
 
 		string symbols = Assert.Single(result.GeojsonFilesWritten, p => p.EndsWith("_Symbols.geojson", StringComparison.Ordinal));
 		JsonElement[] features = Features(symbols);
@@ -284,13 +282,13 @@ public sealed class AirwayServiceTests : IDisposable
 	}
 
 	[Theory]
-	[InlineData("HighLow", "RoiAirways", "no Airways GeoJSON or alias files were written")]
-	[InlineData("HighLow", "All", "no Airways GeoJSON files were written")]
-	[InlineData("None", "RoiAirways", "no Airways alias file was written")]
-	public void run_whose_filters_leave_nothing_says_which_output_is_missing(string outputBy, string aliasScope, string expected)
+	[InlineData("Y", "RoiAirways", "no Airways GeoJSON or alias files were written")]
+	[InlineData("Y", "All", "no Airways GeoJSON files were written")]
+	[InlineData("N", "RoiAirways", "no Airways alias file was written")]
+	public void run_whose_filters_leave_nothing_says_which_output_is_missing(string generateGeojson, string aliasScope, string expected)
 	{
 		AirwayServiceResult result = AirwayService.Run(J1(), Settings(
-			[.. FarAwayRoi, ("OutputBy", outputBy), ("AliasRoiScope", aliasScope)]));
+			[.. FarAwayRoi, ("GenerateGeojson", generateGeojson), ("AliasRoiScope", aliasScope)]));
 
 		ServiceMessage advisory = Assert.Single(result.Messages, m => m.IsAdvisory);
 		Assert.Contains(expected, advisory.Text, StringComparison.Ordinal);
@@ -309,7 +307,7 @@ public sealed class AirwayServiceTests : IDisposable
 				AirwayTestDataBuilder.Segment("123", 20, "BBBBB", "WP", null),
 			]);
 
-		AirwayServiceResult result = AirwayService.Run(data, Settings(("OutputBy", "None"), ("GenerateAliasFile", "N")));
+		AirwayServiceResult result = AirwayService.Run(data, Settings(("GenerateGeojson", "N")));
 
 		Assert.Contains(result.Warnings, w => w.Contains("Airway '123': its ID has no leading letters", StringComparison.Ordinal));
 	}
@@ -329,7 +327,7 @@ public sealed class AirwayServiceTests : IDisposable
 				AirwayTestDataBuilder.Segment("J3", 50, "EEEEE", "WP", null),
 			]);
 
-		AirwayServiceResult result = AirwayService.Run(data, Settings(("OutputBy", "None"), ("GenerateAliasFile", "N")));
+		AirwayServiceResult result = AirwayService.Run(data, Settings(("GenerateGeojson", "N")));
 
 		Assert.Contains("J3", result.ExcludedAirwayIds);
 		// Every unresolved ID is reported, not just the first.

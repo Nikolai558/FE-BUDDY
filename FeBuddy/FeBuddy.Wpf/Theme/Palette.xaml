@@ -110,6 +110,8 @@
     <CornerRadius x:Key="Radius.Card">16</CornerRadius>
     <CornerRadius x:Key="Radius.Control">10</CornerRadius>
     <CornerRadius x:Key="Radius.Small">7</CornerRadius>
+    <!-- A checkbox: square with barely softened corners, so it never reads as a radio button's circle. -->
+    <CornerRadius x:Key="Radius.Box">3</CornerRadius>
     <!-- Chips / badges / status highlights: a soft-cornered rectangle, never an oval. -->
     <CornerRadius x:Key="Radius.Chip">6</CornerRadius>
 

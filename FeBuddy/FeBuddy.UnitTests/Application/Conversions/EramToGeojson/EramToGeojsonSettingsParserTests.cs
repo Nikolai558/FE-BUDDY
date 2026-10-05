@@ -5,8 +5,7 @@ namespace FeBuddy.UnitTests.Application.Conversions.EramToGeojson;
 
 /// <summary>
 /// Covers <see cref="EramToGeojsonSettingsParser"/>: the layout and defaults-source choices, the
-/// retired layouts read as their nearest, the <c>feb.*</c> properties, and the tab's CRC
-/// defaults, read only when they can be used.
+/// <c>feb.*</c> properties, and the tab's CRC defaults, read only when they can be used.
 /// </summary>
 public sealed class EramToGeojsonSettingsParserTests
 {
@@ -55,24 +54,13 @@ public sealed class EramToGeojsonSettingsParserTests
 	[InlineData("ByFilters", EramOutputLayout.ByFilters)]
 	[InlineData("byattributes", EramOutputLayout.ByAttributes)]
 	[InlineData("Raw", EramOutputLayout.Raw)]
+	[InlineData("RawPlus", EramOutputLayout.RawPlus)]
 	public void each_layout_is_read(string value, EramOutputLayout expected)
 	{
 		EramToGeojsonSettingsParseResult result = EramToGeojsonSettingsParser.Parse(Settings(("OutputLayout", value)));
 
 		Assert.Equal(expected, result.Settings.OutputLayout);
 		Assert.Empty(result.Messages);
-	}
-
-	/// <summary>A layout saved before these three is read as its nearest, with a note, so an old setup still runs.</summary>
-	[Theory]
-	[InlineData("ByFilter", EramOutputLayout.ByFilters)]
-	[InlineData(" byobject ", EramOutputLayout.ByAttributes)]
-	public void a_retired_layout_is_read_as_its_nearest(string value, EramOutputLayout expected)
-	{
-		EramToGeojsonSettingsParseResult result = EramToGeojsonSettingsParser.Parse(Settings(("OutputLayout", value)));
-
-		Assert.Equal(expected, result.Settings.OutputLayout);
-		Assert.Contains("is no longer offered", Assert.Single(result.Messages).Text);
 	}
 
 	[Fact]

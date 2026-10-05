@@ -6,12 +6,12 @@ namespace FeBuddy.Core.Application.Airac.Models;
 /// </summary>
 /// <remarks>
 /// <para>
-/// A file is named by its key, as for <see cref="VnasFileChoices"/>: a GeoJSON file's name without
+/// A file is named by its key, as for <see cref="CrcDefaultsFiles"/>: a GeoJSON file's name without
 /// <c>.geojson</c> (e.g. <c>Airways_High_Lines</c>), or any other file's whole name (e.g.
-/// <c>Airways.txt</c>, <c>Procedure_Changes.md</c>, <c>vNAS_Alias.txt</c>). A new name has no
+/// <c>Airways.txt</c>, <c>Procedure_Changes.md</c>, <c>Combined_Alias.txt</c>). A new name has no
 /// extension: the file keeps its own, so <c>Airways_High_Lines</c> renamed <c>ZOB High</c> is written
 /// as <c>ZOB High.geojson</c>. Only the name changes. The file stays in its folder, and its key still
-/// names it everywhere else (<c>UploadToVnas</c>, <c>CrcDefaultsFor</c>).
+/// names it everywhere else (<c>CrcDefaultsFor</c>, say).
 /// </para>
 /// <para>
 /// Departures and Arrivals write a GeoJSON file per procedure, named from the FAA's data, so those

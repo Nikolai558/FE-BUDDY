@@ -8,8 +8,8 @@ namespace FeBuddy.Wpf.Controls;
 /// Lookless: the indent and the description's text style live in the Option style in
 /// Theme/Controls.Inputs.xaml. Spacing between rows is layout, so it stays on the Option's Margin.
 /// <code>
-/// &lt;ctl:Option Description="Writes one alias command per airport."&gt;
-///     &lt;CheckBox Content="Alias file" IsChecked="{Binding GenerateAliasFile}" /&gt;
+/// &lt;ctl:Option Description="Every FE-Buddy property is prefixed with feb. ..."&gt;
+///     &lt;CheckBox Content="Include FE-Buddy Properties, when available." IsChecked="{Binding IncludeFebCustomProperties}" /&gt;
 /// &lt;/ctl:Option&gt;
 /// </code>
 /// </summary>

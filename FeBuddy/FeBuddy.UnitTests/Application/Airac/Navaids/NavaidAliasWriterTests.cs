@@ -1,4 +1,3 @@
-using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Application.Airac.Navaids;
 using FeBuddy.Core.Application.Airac.Navaids.Models;
 using FeBuddy.Core.Domain.Navaids.Models;
@@ -166,11 +165,9 @@ public sealed class NavaidAliasWriterTests : IDisposable
 	}
 
 	[Fact]
-	public void the_alias_file_stays_in_the_aliases_folder_when_marked_for_vnas()
+	public void the_alias_file_goes_in_the_aliases_folder()
 	{
-		NavaidSettings settings = Settings() with { Vnas = new VnasFileChoices([NavaidOutputFiles.Alias], []) };
-
-		NavaidAliasGenerateResult result = NavaidAliasWriter.Generate([NavaidTestData.Cgt()], settings);
+		NavaidAliasGenerateResult result = NavaidAliasWriter.Generate([NavaidTestData.Cgt()], Settings());
 
 		Assert.Equal(Path.Combine(_outputDirectory, "Aliases", "Navaids.txt"), result.FilePath);
 	}

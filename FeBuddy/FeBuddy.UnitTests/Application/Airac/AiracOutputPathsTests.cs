@@ -27,16 +27,10 @@ public sealed class AiracOutputPathsTests
 		Assert.Equal(expected, AiracOutputPaths.CycleDirectory(Output, addFeBuddyOutputFolder, "2610"));
 	}
 
-	[Theory]
-	[InlineData(false, false, new string[0])]
-	[InlineData(true, false, new[] { "Geojson" })]
-	[InlineData(false, true, new[] { "Upload_to_vNAS" })]
-	[InlineData(true, true, new[] { "Upload_to_vNAS", "Geojson" })]
-	public void a_file_goes_in_geojson_and_or_upload_to_vnas(bool isGeojson, bool uploadToVnas, string[] folders)
+	[Fact]
+	public void every_geojson_file_goes_in_geojson()
 	{
-		Assert.Equal(
-			Path.Combine([Output, .. folders]),
-			AiracOutputPaths.FileDirectory(Output, isGeojson, uploadToVnas));
+		Assert.Equal(Path.Combine(Output, "Geojson"), AiracOutputPaths.GeojsonDirectory(Output));
 	}
 
 	[Fact]
@@ -46,15 +40,15 @@ public sealed class AiracOutputPathsTests
 	}
 
 	[Fact]
-	public void the_one_alias_file_for_vnas_is_in_upload_to_vnas()
+	public void the_combined_alias_file_is_in_aliases()
 	{
-		Assert.Equal(Path.Combine(Output, "Upload_to_vNAS", "vNAS_Alias.txt"), AiracOutputPaths.VnasAliasFilePath(Output));
+		Assert.Equal(Path.Combine(Output, "Aliases", "Combined_Alias.txt"), AiracOutputPaths.CombinedAliasFilePath(Output));
 	}
 
 	[Fact]
-	public void a_renamed_alias_file_for_vnas_stays_in_upload_to_vnas()
+	public void a_renamed_combined_alias_file_stays_in_aliases()
 	{
-		Assert.Equal(Path.Combine(Output, "Upload_to_vNAS", "ZOB.txt"), AiracOutputPaths.VnasAliasFilePath(Output, "ZOB.txt"));
+		Assert.Equal(Path.Combine(Output, "Aliases", "ZOB.txt"), AiracOutputPaths.CombinedAliasFilePath(Output, "ZOB.txt"));
 	}
 
 	[Theory]

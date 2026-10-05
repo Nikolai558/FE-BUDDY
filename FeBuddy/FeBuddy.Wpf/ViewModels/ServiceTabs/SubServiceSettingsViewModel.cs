@@ -15,7 +15,7 @@ namespace FeBuddy.Wpf.ViewModels.ServiceTabs;
 /// <remarks>
 /// A derived menu:
 /// <list type="bullet">
-///   <item>returns its subtree path from <see cref="NodePath"/> (e.g. <c>Services.AiracService.Geojson.Airways</c>),</item>
+///   <item>returns its subtree path from <see cref="NodePath"/> (e.g. <c>Services.AiracService.Airways</c>),</item>
 ///   <item>returns its rail label from <see cref="ServiceTabViewModel.Title"/>,</item>
 ///   <item>calls <see cref="LoadFromConfig"/> from its own constructor,</item>
 ///   <item>calls <see cref="ServiceTabViewModel.MarkDirty"/> from every bound setting's setter,</item>
@@ -48,7 +48,7 @@ public abstract class SubServiceSettingsViewModel : ServiceTabViewModel, IConfig
 	/// <summary>Raised after a successful <see cref="Save"/>.</summary>
 	public event EventHandler? Saved;
 
-	/// <summary>The dotted <c>UserConfig</c> path this menu owns, e.g. <c>Services.AiracService.Geojson.Airways</c>.</summary>
+	/// <summary>The dotted <c>UserConfig</c> path this menu owns, e.g. <c>Services.AiracService.Airways</c>.</summary>
 	public abstract string NodePath { get; }
 
 	/// <inheritdoc />
@@ -173,63 +173,6 @@ public abstract class SubServiceSettingsViewModel : ServiceTabViewModel, IConfig
 	}
 
 	/// <summary>
-	/// How many of this menu's outputs are currently switched on (GeoJSON, the alias file, and
-	/// so on). Overridden by a menu that has more than one output to offer.
-	/// </summary>
-	protected virtual int EnabledOutputCount => 1;
-
-	/// <summary>
-	/// Guards the last remaining output against being switched off.
-	/// </summary>
-	/// <returns>
-	/// <see langword="true"/> when the output may be switched off; <see langword="false"/> when
-	/// it is the last one, in which case the user is told why.
-	/// </returns>
-	/// <remarks>
-	/// A sub-service with every output off would be selected but produce nothing, which reads as
-	/// a bug rather than as a choice. Deselecting the sub-service on the General tab is the way
-	/// to produce nothing for it, and the message says so.
-	/// </remarks>
-	protected bool CanTurnOffOutput()
-	{
-		if (EnabledOutputCount > 1)
-		{
-			return true;
-		}
-
-		Toast.Warn(
-			"Keep one output",
-			$"{Title} needs at least one output switched on. To produce nothing for {Title}, "
-			+ "deselect it on the General tab.");
-
-		return false;
-	}
-
-	/// <summary>
-	/// Puts a rejected toggle back where it was, after <see cref="CanTurnOffOutput"/> has
-	/// refused the change.
-	/// </summary>
-	/// <param name="propertyName">The property the control is bound to.</param>
-	/// <remarks>
-	/// The notification is posted rather than raised inline: raising it while WPF is still
-	/// pushing the new value into the source can leave the control showing the value the
-	/// view-model just refused. Posting lets that transfer finish first, so the checkbox
-	/// visibly snaps back.
-	/// </remarks>
-	protected void RestoreRejectedToggle(string propertyName)
-	{
-		System.Windows.Threading.Dispatcher? dispatcher = System.Windows.Application.Current?.Dispatcher;
-
-		if (dispatcher is null)
-		{
-			OnPropertyChanged(propertyName);
-			return;
-		}
-
-		dispatcher.BeginInvoke(() => OnPropertyChanged(propertyName));
-	}
-
-	/// <summary>
 	/// Writes one of this menu's values, relative to <see cref="NodePath"/>.
 	/// </summary>
 	/// <param name="key">The key under this menu's node, e.g. <c>GenerateAliasFile</c>.</param>
@@ -300,14 +243,33 @@ public abstract class SubServiceSettingsViewModel : ServiceTabViewModel, IConfig
 			StringComparer.OrdinalIgnoreCase);
 
 	/// <summary>
+	/// Splits a saved ARTCC list or, while the tab has never saved one, gives the facility chosen in
+	/// Settings ▸ Facility Profile, so a new tab starts on the user's own ARTCC rather than every
+	/// ARTCC. A saved empty list stays empty: the user chose every ARTCC.
+	/// </summary>
+	/// <param name="saved">The saved value, or <see langword="null"/> when none has been saved.</param>
+	/// <returns>The entries; empty when nothing is saved and no facility is set.</returns>
+	protected static HashSet<string> ParseArtccListOrFacility(string? saved)
+	{
+		if (saved is not null)
+		{
+			return ParseList(saved);
+		}
+
+		string? facility = UserConfigFile.GetValue(SettingsViewModel.ArtccKey)?.Trim();
+
+		return string.IsNullOrEmpty(facility) ? ParseList(null) : ParseList(facility);
+	}
+
+	/// <summary>
 	/// Called after <see cref="ReloadFromConfig"/> has reloaded this tab from the config (a
 	/// discard, an undo or an import). The base does nothing.
 	/// </summary>
 	/// <remarks>
 	/// <see cref="LoadFromConfig"/> restores values with its change events suppressed, which is
-	/// right while a tab is being built but leaves anything driven by those values - the open
-	/// tab rail, the loaded cycle - still showing the discarded state. A tab whose settings
-	/// reach outside itself re-announces them here.
+	/// right while a tab is being built but leaves anything driven by those values - which tabs
+	/// are greyed out in the rail, the loaded cycle - still showing the discarded state. A tab
+	/// whose settings reach outside itself re-announces them here.
 	/// </remarks>
 	protected virtual void OnReloadedFromConfig()
 	{

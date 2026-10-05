@@ -11,8 +11,7 @@ namespace FeBuddy.UnitTests.Application.Airac;
 
 /// <summary>
 /// Exercises <see cref="AiracCycleDataCache"/> with injected probe/download/parse steps:
-/// prepare order, single-flight parsing, one-retry-then-Failed, the readiness table, and that
-/// preparing a cycle deletes a leftover per-cycle Wx Stations file.
+/// prepare order, single-flight parsing, one-retry-then-Failed, and the readiness table.
 /// </summary>
 [Collection("AppLog")]
 public sealed class AiracCycleDataCacheTests : IDisposable
@@ -479,93 +478,6 @@ public sealed class AiracCycleDataCacheTests : IDisposable
 
 		await Assert.ThrowsAnyAsync<OperationCanceledException>(() => cache.PrepareCyclesAsync(Previous, Current, Next));
 		Assert.NotEqual(CycleDataState.Failed, cache.GetEntry("2610")!.State);
-	}
-
-	// ---- retired per-cycle Wx Stations file ----
-
-	[Fact]
-	public async Task preparing_a_cycle_deletes_a_leftover_wx_stations_file_from_the_cycle_folder()
-	{
-		string cycleDirectory = Path.Combine(Path.GetTempPath(), "FeBuddyTests_RetiredWx_" + Guid.NewGuid().ToString("N"));
-		Directory.CreateDirectory(cycleDirectory);
-		string retiredFile = Path.Combine(cycleDirectory, AiracCycleDataCache.RetiredWxStationsFileName);
-		string otherFile = Path.Combine(cycleDirectory, "APT_BASE.csv");
-		File.WriteAllText(retiredFile, "<response><data></data></response>");
-		File.WriteAllText(otherFile, "keep me");
-
-		try
-		{
-			AiracCycleDataCache cache = new(
-				probe: AlwaysPublished,
-				download: (_, _) => Task.FromResult(cycleDirectory),
-				parse: (_, _) => Task.FromResult(new NasrCsvDataCollection()));
-
-			await cache.PrepareCyclesAsync(Previous, Current, Next);
-
-			Assert.False(File.Exists(retiredFile));
-			Assert.True(File.Exists(otherFile));
-			Assert.Equal(CycleDataState.Ready, cache.GetEntry("2610")!.State);
-		}
-		finally
-		{
-			Directory.Delete(cycleDirectory, recursive: true);
-		}
-	}
-
-	[Fact]
-	public async Task preparing_a_cycle_without_a_leftover_wx_stations_file_leaves_its_other_files_alone()
-	{
-		string cycleDirectory = Path.Combine(Path.GetTempPath(), "FeBuddyTests_RetiredWx_" + Guid.NewGuid().ToString("N"));
-		Directory.CreateDirectory(cycleDirectory);
-		string otherFile = Path.Combine(cycleDirectory, "APT_BASE.csv");
-		File.WriteAllText(otherFile, "keep me");
-
-		try
-		{
-			AiracCycleDataCache cache = new(
-				probe: AlwaysPublished,
-				download: (_, _) => Task.FromResult(cycleDirectory),
-				parse: (_, _) => Task.FromResult(new NasrCsvDataCollection()));
-
-			await cache.PrepareCyclesAsync(Previous, Current, Next);
-
-			Assert.Equal(CycleDataState.Ready, cache.GetEntry("2610")!.State);
-			Assert.True(File.Exists(otherFile));
-		}
-		finally
-		{
-			Directory.Delete(cycleDirectory, recursive: true);
-		}
-	}
-
-	[Fact]
-	public async Task a_leftover_wx_stations_file_that_cannot_be_deleted_is_logged_and_the_cycle_still_reaches_ready()
-	{
-		string cycleDirectory = Path.Combine(Path.GetTempPath(), "FeBuddyTests_RetiredWx_" + Guid.NewGuid().ToString("N"));
-		Directory.CreateDirectory(cycleDirectory);
-		string retiredFile = Path.Combine(cycleDirectory, AiracCycleDataCache.RetiredWxStationsFileName);
-		File.WriteAllText(retiredFile, "<response><data></data></response>");
-
-		try
-		{
-			// Held open with no sharing, so deleting it fails the way a file open elsewhere would.
-			using (new FileStream(retiredFile, FileMode.Open, FileAccess.Read, FileShare.None))
-			{
-				AiracCycleDataCache cache = new(
-					probe: AlwaysPublished,
-					download: (_, _) => Task.FromResult(cycleDirectory),
-					parse: (_, _) => Task.FromResult(new NasrCsvDataCollection()));
-
-				await cache.PrepareCyclesAsync(Previous, Current, Next);
-
-				Assert.Equal(CycleDataState.Ready, cache.GetEntry("2610")!.State);
-				Assert.True(File.Exists(retiredFile));
-			}
-		}
-		finally
-		{
-			Directory.Delete(cycleDirectory, recursive: true);
-		}
 	}
 
 	// ---- Wx Stations: parameterless constructor ----

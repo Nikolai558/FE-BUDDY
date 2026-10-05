@@ -21,14 +21,14 @@ namespace FeBuddy.Wpf.ViewModels;
 
 /// <summary>
 /// The <b>Telephony</b> sub-service tab inside the AIRAC Service screen: the <c>Telephony.txt</c>
-/// alias file, the user's virtual airlines merged into it, and whether it goes to vNAS.
+/// alias file and the user's virtual airlines merged into it.
 /// </summary>
 /// <remarks>
 /// <para>
 /// The alias file is Telephony's only output, and it covers every operator in the FAA telephony
 /// pages; the only thing to add is the Virtual Airlines card's list, each one written as a card of
 /// its own marked <c>--VA--</c>, after the FAA's operators. The tab still derives from
-/// <see cref="GeojsonSubServiceViewModel"/> for the alias file and the Upload to vNAS card, with
+/// <see cref="GeojsonSubServiceViewModel"/> for the alias file plumbing, with
 /// <see cref="EmitKeys"/> <c>(null, null, null)</c> and one output that cannot be turned off.
 /// </para>
 /// <para>
@@ -91,11 +91,7 @@ public sealed class TelephonyViewModel : GeojsonSubServiceViewModel, ISubService
 	// ================= outputs =================
 
 	/// <inheritdoc />
-	/// <remarks>The alias file is the only output, so it can never be turned off here.</remarks>
-	protected override int EnabledOutputCount => 1;
-
-	/// <inheritdoc />
-	protected override string NoDefaultRoiHint => "Telephony is not limited to a region.";
+	protected override string NoRoiEffect => "nothing changes: Telephony is not limited to a region";
 
 	/// <inheritdoc />
 	/// <remarks>Telephony writes no GeoJSON at all.</remarks>
@@ -395,7 +391,6 @@ public sealed class TelephonyViewModel : GeojsonSubServiceViewModel, ISubService
 				: "None"),
 			new ServicePreviewRow("VATSIM-Radar list", IncludeVatsimRadarList ? $"Included. {VatsimRadarListStatus}" : "Not included"),
 			new ServicePreviewRow("Telephony data", TelephonyDataStatus),
-			new ServicePreviewRow("Upload to vNAS", DescribeVnasFiles()),
 		];
 
 		return [new ServicePreviewSection("Telephony", rows)];
@@ -407,13 +402,6 @@ public sealed class TelephonyViewModel : GeojsonSubServiceViewModel, ISubService
 	protected override void LoadFromConfig()
 	{
 		LoadSharedSettings();
-
-		// The alias file is the only output and the tab has no switch for it, so a hand-edited "N"
-		// would leave the tab producing nothing; fall back to the default rather than honour it.
-		if (!GenerateAliasFile)
-		{
-			GenerateAliasFile = true;
-		}
 
 		// The field, not the property: restoring a saved choice is no reason to download the list.
 		_includeVatsimRadarList = GetBool(TelephonySettingsParser.IncludeVatsimRadarKey, defaultValue: false);
@@ -453,7 +441,7 @@ public sealed class TelephonyViewModel : GeojsonSubServiceViewModel, ISubService
 
 			if (TelephonySettingsParser.VirtualAirlineProblem(item.Designator, item.Telephony, item.Organization) is { } problem)
 			{
-				validation.Add($"Virtual airline {i + 1} ({item.Designator}): {problem}. Edit or delete it.");
+				validation.AddArea(ServiceAreas.VirtualAirlines, $"Virtual airline {i + 1} ({item.Designator}): {problem}. Edit or delete it.");
 			}
 		}
 	}

@@ -7,7 +7,7 @@ using FeBuddy.Core.Infrastructure.Nasr.Models;
 namespace FeBuddy.Harness;
 
 /// <summary>
-/// Exercises the Airways service with <c>OutputBy = None</c> so only the alias file is
+/// Exercises the Airways service with <c>GenerateGeojson = N</c> so only the alias file is
 /// generated, proving the alias file is independent of GeoJSON generation.
 /// </summary>
 internal static class AirwayAliasRunner

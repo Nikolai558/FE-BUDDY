@@ -22,8 +22,7 @@ public static class WxStationFiles
 
 	/// <summary>
 	/// Where the gzip-compressed source is downloaded from: aviationweather.gov's live station
-	/// cache, unlike every other AIRAC sub-service's data, which comes from a NASR 28-day
-	/// subscription cycle.
+	/// cache, not a 28-day subscription cycle like the NASR data.
 	/// </summary>
 	public const string DownloadUrl = "https://aviationweather.gov/data/cache/stations.cache.xml.gz";
 }

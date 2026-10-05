@@ -8,9 +8,8 @@ using FeBuddy.Core.Infrastructure.Logging;
 namespace FeBuddy.UnitTests.Wpf.ViewModels;
 
 /// <summary>
-/// Covers <see cref="EramToGeojsonViewModel"/>: a layout saved before the three loads as its
-/// nearest, one Geomaps file per run, what is sent to a run, the <c>feb.*</c> check and the run
-/// summary - against a throwaway config and folder.
+/// Covers <see cref="EramToGeojsonViewModel"/>: the saved layout, one Geomaps file per run, what is
+/// sent to a run, the <c>feb.*</c> check and the run summary - against a throwaway config and folder.
 /// </summary>
 [Collection("AppLog")]
 public sealed class EramToGeojsonViewModelTests : IDisposable
@@ -42,11 +41,12 @@ public sealed class EramToGeojsonViewModelTests : IDisposable
 		}
 	}
 
+	/// <summary>By Attributes to start; a saved layout loads, and an unknown one (a typo) falls back.</summary>
 	[Theory]
-	[InlineData("ByObject", true, false)]
-	[InlineData("ByFilter", false, true)]
 	[InlineData(null, true, false)]
-	public void a_layout_saved_before_the_three_loads_as_its_nearest(string? saved, bool byAttributes, bool byFilters)
+	[InlineData("ByFilters", false, true)]
+	[InlineData("Sideways", true, false)]
+	public void the_saved_layout_loads_and_by_attributes_is_the_default(string? saved, bool byAttributes, bool byFilters)
 	{
 		if (saved is not null)
 		{
@@ -102,6 +102,22 @@ public sealed class EramToGeojsonViewModelTests : IDisposable
 		Assert.Null(tab.ValidationError);
 	}
 
+	/// <summary>Raw Plus is a layout of its own: picking it unpicks the others, and it is saved and sent by name.</summary>
+	[Fact]
+	public void raw_plus_is_picked_saved_and_sent_by_name()
+	{
+		EramToGeojsonViewModel tab = new();
+		Assert.True(tab.LayoutByAttributes);
+
+		tab.LayoutRawPlus = true;
+
+		Assert.False(tab.LayoutByAttributes);
+		Assert.False(tab.LayoutRaw);
+		Assert.Equal("RawPlus", tab.BuildSettingsBlock(Path.Combine(_root, "Out"), addFeBuddyOutputFolder: true)["OutputLayout"]);
+		Assert.True(tab.Save());
+		Assert.True(new EramToGeojsonViewModel().LayoutRawPlus);
+	}
+
 	[Fact]
 	public void feb_properties_on_with_none_picked_needs_fixing()
 	{
@@ -122,7 +138,7 @@ public sealed class EramToGeojsonViewModelTests : IDisposable
 		Assert.True(tab.ConfirmRun(tab.BuildSettingsBlock(Path.Combine(_root, "Out"), addFeBuddyOutputFolder: false)));
 	}
 
-	/// <summary>ConsoleCommandControl.txt is named in the summary and listed with the GeoJSON on the Review tab.</summary>
+	/// <summary>ConsoleCommandControl.txt is named in the summary and counted with the GeoJSON among the files written.</summary>
 	[Fact]
 	public void the_run_summary_names_the_console_command_control_rundown()
 	{

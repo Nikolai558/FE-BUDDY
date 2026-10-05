@@ -2,8 +2,8 @@ namespace FeBuddy.Core.Application.Conversions.EramToGeojson.Models;
 
 /// <summary>
 /// How the ERAM to GeoJSON conversion lays out its files - the three layouts of the original
-/// ERAM_2_GEOJSON tool, named as it named them. Every map is <c>&lt;GeomapId&gt;_&lt;LabelLine1&gt;-&lt;LabelLine2&gt;</c>,
-/// e.g. <c>CENTER_CENTER-MAP</c>.
+/// ERAM_2_GEOJSON tool, named as it named them, and Raw Plus. Every map is
+/// <c>&lt;GeomapId&gt;_&lt;LabelLine1&gt;-&lt;LabelLine2&gt;</c>, e.g. <c>CENTER_CENTER-MAP</c>.
 /// </summary>
 public enum EramOutputLayout
 {
@@ -21,8 +21,14 @@ public enum EramOutputLayout
 	ByAttributes,
 
 	/// <summary>
-	/// One file per map, <c>CENTER_CENTER-MAP.geojson</c>, every Feature carrying its own
-	/// properties and no isDefaults Features.
+	/// One file per map, <c>CENTER_CENTER-MAP.geojson</c>, one Feature per element, each carrying
+	/// its own properties, and no isDefaults Features.
 	/// </summary>
 	Raw,
+
+	/// <summary>
+	/// Raw's one file per map with every Feature carrying its own properties, but lines that carry
+	/// the same properties are joined and symbols that do are grouped into one Feature.
+	/// </summary>
+	RawPlus,
 }

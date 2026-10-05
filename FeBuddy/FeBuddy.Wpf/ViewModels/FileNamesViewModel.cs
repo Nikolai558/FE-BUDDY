@@ -15,13 +15,13 @@ namespace FeBuddy.Wpf.ViewModels;
 
 /// <summary>
 /// The <b>File Names</b> tab inside the AIRAC Service screen, just before Preview Settings: every file
-/// the selected sub-services will write, by folder, and - when the user chooses to rename files - a
+/// the included sub-services will write, by folder, and - when the user chooses to rename files - a
 /// name of their own for any of them.
 /// </summary>
 /// <remarks>
 /// <para>
 /// The list is read from the other tabs' settings as they are now, each time the tab is shown (see
-/// <see cref="GeojsonSubServiceViewModel.OutputFileEntries"/>), as the vNAS Alias Upload tab reads
+/// <see cref="GeojsonSubServiceViewModel.OutputFileEntries"/>), as the Concatenate Aliases tab reads
 /// its alias files. A file's choice - whether to rename it, and its new name - is kept by file key,
 /// including files the current settings do not write, so a file that drops off the list and comes
 /// back keeps its choice.
@@ -112,7 +112,7 @@ public sealed class FileNamesViewModel : SubServiceSettingsViewModel
 	/// <summary>
 	/// Lets the tab see what the AIRAC Service's other tabs will write, and the cycle folder it goes in.
 	/// </summary>
-	/// <param name="listFiles">Every file the selected sub-services' settings write right now.</param>
+	/// <param name="listFiles">Every file the included sub-services' settings write right now.</param>
 	/// <param name="cycleFolderName">The selected cycle's folder name, e.g. <c>AIRAC_2610</c>.</param>
 	internal void AttachToService(Func<IEnumerable<OutputFileEntry>> listFiles, Func<string> cycleFolderName)
 	{
@@ -283,9 +283,11 @@ public sealed class FileNamesViewModel : SubServiceSettingsViewModel
 
 		if (invalid.Length > 0)
 		{
-			validation.Add($"{invalid[0].FileName}: {invalid[0].Error}" + (invalid.Length > 1
-				? $" {invalid.Length - 1} more file name(s) need attention too - see the marked boxes."
-				: string.Empty));
+			validation.AddArea(
+				ServiceAreas.OutputFiles,
+				$"{invalid[0].FileName}: {invalid[0].Error}" + (invalid.Length > 1
+					? $" {invalid.Length - 1} more file name(s) need attention too - see the marked boxes."
+					: string.Empty));
 		}
 	}
 

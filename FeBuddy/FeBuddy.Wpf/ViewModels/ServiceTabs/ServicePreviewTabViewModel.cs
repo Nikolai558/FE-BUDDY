@@ -44,7 +44,7 @@ public sealed class ServicePreviewTabViewModel(
 	/// <summary>The rundown, one section per contributing tab.</summary>
 	public ObservableCollection<ServicePreviewSection> Sections { get; } = [];
 
-	/// <summary>Set when a tab is invalid, naming the tabs that need fixing first.</summary>
+	/// <summary>Set when a tab is invalid, naming the tabs that need fixing first and how to find what to fix.</summary>
 	public string? BlockingIssue
 	{
 		get => _blockingIssue;
@@ -98,11 +98,13 @@ public sealed class ServicePreviewTabViewModel(
 
 		BlockingIssue = invalid.Length == 0
 			? null
-			: $"Fix the highlighted settings on {Join(invalid)} before running.";
+			: $"{Join(invalid)} {(invalid.Length == 1 ? "needs" : "need")} fixing before the run. In the list of tabs on the left, " +
+				$"click {(invalid.Length == 1 ? "the tab" : "each tab")} with a red dot: the red box at its top lists what to fix, " +
+				"and each area to fix is outlined in red.";
 
 		UnsavedNotice = dirty.Length == 0
 			? null
-			: $"{Join(dirty)} {(dirty.Length == 1 ? "has" : "have")} unsaved changes. They are saved before the run starts.";
+			: $"{Join(dirty)} {(dirty.Length == 1 ? "has" : "have")} unsaved changes (an amber dot in the list on the left). They are saved before the run starts.";
 	}
 
 	/// <inheritdoc />

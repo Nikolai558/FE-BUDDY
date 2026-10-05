@@ -5,9 +5,9 @@ using FeBuddy.Core.Infrastructure.Nasr.Models;
 namespace FeBuddy.Harness;
 
 /// <summary>
-/// Exercises the Departures service exactly the way the GUI "Run" button will: build the
-/// settings dictionary, call the one public entry point, and hand the result back for
-/// reporting. Contains no departure logic of its own.
+/// Exercises the Departures service the way an AIRAC Service run does: build the settings
+/// dictionary, call the one public entry point, and hand the result back for reporting. Contains
+/// no departure logic of its own.
 /// </summary>
 internal static class DepartureRunner
 {

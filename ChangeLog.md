@@ -8,7 +8,7 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
   Adding an entry: put one bullet under "## Unreleased" in the same pull request as the change,
   under the "### " heading it belongs to (add the heading if it isn't there yet; after a release,
   "## Unreleased" starts empty, with no headings). Headings used so far: Updates, Dashboard,
-  AIRAC Service, File Conversions, Info, Settings, Installing and uninstalling, Look and feel,
+  AIRAC Service, File Conversions, Map, Info, Settings, Installing and uninstalling, Look and feel,
   Dev notes (always last).
   Write it for users, not developers: what changed and why they care, in one line. Issue numbers
   become links ("Bug #215 - ..."). Put developer-only changes under "### Dev notes". Link
@@ -19,12 +19,113 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
 -->
 ## Unreleased
 
+---
+
+## 3.0.0-beta.2
+### Updates
+- Bug #299 - Updating no longer changes your update channel. The first launch keeps the channel of
+  the version you installed, and only Settings ▸ Updates changes it, so an Alpha tester stays on
+  Alpha through the betas and 3.0.0. **Alpha testers:** the clean uninstall clears your channel and a
+  beta starts you on Beta, so choose **Alpha** in Settings ▸ Updates and Save once.
+
+### Installing
+- Uninstall FE-Buddy completely, removing its settings, before installing this version: settings
+  saved by beta.1 aren't read. A settings backup from beta.1 still imports, but the AIRAC Service's
+  renamed settings (the General tab's outputs, CRC-ERAM default choices, Region of Interest corners,
+  Airways and Concatenate Aliases) come back at their defaults.
+
+### AIRAC Service
+- Airports no longer warns about 108 airports outside the US whose ICAO ID is the same as their FAA
+  ID. Each still gets its one command, and its card shows the ID once (`CYAM`, not `CYAM - CYAM`).
+- Departures, Arrivals and ARTCC Boundaries start with your Settings ▸ Facility Profile ARTCC
+  ticked, as Procedures already did, until you first save the tab.
+- Departures and Arrivals explain **Amendment Date**, with an example of what "the last 4 cycles"
+  keeps and leaves out.
+- When no Region of Interest is set, each tab, Settings and the Map page say so in amber, with how
+  to set one.
+- The Review tab's **Output** card shows how many files the run wrote and **Open output folder**;
+  the file list and its **Show files** button are gone.
+- Symbols that carry exactly the same properties are written as one feature (a MultiPoint), so
+  Symbols files are much smaller: without FE-Buddy Properties, a whole Airports or Fixes Symbols file
+  is one feature. Labels stay one feature each.
+- The General tab's sub-services are a table: **Include**, then **Alias**, **GeoJSON**,
+  **Procedure Changes** and **Procedures JSON**. It replaces the on/off switches on each tab's
+  Outputs card, which now just shows what's on. Everything is ticked until you first save. A file a
+  sub-service doesn't make is greyed out, and each box has a tooltip.
+- A sub-service left out stays in the list to the left, greyed out, with a tooltip saying what it
+  is and how to include it.
+- The Upload to vNAS card is gone: every file is ready for vNAS. GeoJSON always goes in `Geojson`
+  and alias files in `Aliases`; there is no `Upload_to_vNAS` folder.
+- CRC-ERAM defaults are chosen at the top of each tab's **CRC ERAM Defaults** card - none (the
+  default), every GeoJSON file, or specific files - and can go on any GeoJSON file.
+- vNAS Alias Upload is now **Concatenate Aliases**. It combines every alias file the run makes, then
+  your own, into `Aliases\Combined_Alias.txt`, which you can rename on the File Names tab. Combining
+  is on until you turn it off. The tab is no longer ticked on the General tab: it comes in by itself
+  while a sub-service makes an alias file.
+- With no custom alias files, the Review tab warns that `Combined_Alias.txt` holds only FE-Buddy's
+  aliases, since uploading it would remove your facility's own from vNAS.
+- A custom alias file's GitHub address is shown as its Raw link (`…/raw/refs/heads/main/…`) once
+  you leave the box, whichever form you pasted.
+- When **Check** finds GitHub won't show a custom alias file, it asks whether the repository is
+  private and points you to the GitHub token guide - or, with a credential chosen, to the guide's
+  troubleshooting.
+- A custom alias file on this PC with no alias commands in it can't be saved.
+- Airways no longer has **None** under "split into". Turn GeoJSON off for Airways on the General tab
+  instead.
+- On the General tab, a cycle whose NASR data is ready but whose d-TPP Metafile isn't out yet reads
+  *partial* in amber, with a red note. Hovering it says when the FAA usually posts it and what
+  waits for it: Procedures' files, and adding procedures on the Procedures tab. *Ready* is green and
+  *failed* red.
+- A tab with problems lists all of them in a red box at its top, not just the first, and outlines
+  each card with a problem in red, marked **Needs attention**.
+- Preview Settings tells you to click the tabs with a red dot on the left to see what to fix.
+
+### File Conversions
+- DAT to GeoJSON warns that the cropping distance applies to every file in the conversion, since a
+  set of RVMs often needs different distances.
+- ERAM to GeoJSON has a new **Raw Plus** layout: Raw's one file per map with every feature carrying
+  its own look, but lines that share every property are joined and so are symbols, into far fewer
+  features.
+- ERAM to GeoJSON's By Filters and By Attributes layouts group matching symbols into one feature
+  too. Raw still writes one feature per element.
+
+### Map
+- The toolbar shows the zoom as a percentage of your home view (Home is 100%); type one and press
+  Enter to go to it. Hold **Shift** while turning the wheel to zoom 1% at a time.
+- In a narrow window the toolbar wraps onto a second row instead of hiding its last buttons.
+
+### Look and feel
+- All text is 10% larger.
+- Checkboxes are square and radio buttons round, so a choice of one is easy to tell from a choice
+  of several. A long option label wraps onto a second line in a narrow window instead of being cut
+  off.
+- Choosing AIRAC Service, File Conversions or Info in the menu opens it at its start (the first tab,
+  or Info's main page), and every tab opens scrolled to the top.
+
+### Dev notes
+- Airways' settings block takes `GenerateGeojson` like every other sub-service; `OutputBy` is only
+  `HighLow` or `Designation`.
+- Renamed to match today's names: config nodes `Services.AiracService.Airways` and
+  `.ConcatenateAliases`; keys `CrcDefaultsScope`, `CrcDefaultsFiles`, `Roi.OverrideCorners`,
+  `DefaultRoi.Corners`, and `DefaultRoi.FilterByRoi` as `Y`/`N`. In code, `VnasAlias*` became
+  `ConcatenateAliases*` and `CombinedAlias*`.
+- Removed the fallbacks for beta.1's settings (the tabs' own output keys, `AllVnasFiles`, the
+  `vNAS_Alias.txt` rename, Airways' `None`, ERAM's `ByFilter`/`ByObject`, Airports' `lat`/`lon`), the
+  clean-up of the retired per-cycle `stations.cache.xml`, and the two `AiracService.RunAsync`
+  overloads without supplemental data.
+- Removed the unused placeholder sub-service tab (`PlaceholderSubServiceViewModel`/`View`) and
+  `SubServiceDescriptor.IsImplemented`, which every sub-service set to `true`.
+
+---
+
 ## 3.0.0-beta.1
 ### Installing and uninstalling
 - FE-BUDDY removes an old FE-BUDDY 2.x it finds still installed (one that never moved to 2.9.x's
   installer, or that was there when you installed 3.x by hand), so you no longer end up with two
   FE-BUDDYs in Installed apps, on the Desktop and in the Start menu. It also removes a leftover
   "FE-BUDDY 2.x" entry in Installed apps that could no longer be uninstalled.
+
+---
 
 ## 3.0.0-alpha.5
 ### Dashboard

@@ -584,6 +584,10 @@ public sealed class ShellViewModel : ObservableObject
 			}
 		}
 
+		// Every visit starts at the page's start - AIRAC Service's General tab, Info's cards - not
+		// where the user left it. The page keeps its settings and edits.
+		(item.CreatedViewModel as IOpensAtStart)?.ReturnToStart();
+
 		Current = item.ViewModel;
 	}
 }

@@ -5,9 +5,9 @@ using FeBuddy.Core.Infrastructure.Nasr.Models;
 namespace FeBuddy.Harness;
 
 /// <summary>
-/// Exercises the ARTCC Boundaries service exactly the way the GUI "Run" button will: build the
-/// settings dictionary, call the one public entry point, and hand the result back for reporting.
-/// Contains no ARTCC boundary logic of its own.
+/// Exercises the ARTCC Boundaries service the way an AIRAC Service run does: build the settings
+/// dictionary, call the one public entry point, and hand the result back for reporting. Contains
+/// no ARTCC boundary logic of its own.
 /// </summary>
 internal static class ArtccBoundaryRunner
 {

@@ -69,10 +69,10 @@ public sealed record NavaidSettings
 	public IReadOnlyCollection<NavaidFebProperty> FebProperties { get; init; } = [];
 
 	/// <summary>
-	/// Which files go to vNAS, and which of those get CRC-ERAM defaults, by file key (see
+	/// Which GeoJSON files get CRC-ERAM defaults (<c>CrcDefaultsFor</c>), by file key (see
 	/// <see cref="NavaidOutputFiles"/>). Default: none.
 	/// </summary>
-	public VnasFileChoices Vnas { get; init; } = VnasFileChoices.None;
+	public CrcDefaultsFiles CrcDefaultsFiles { get; init; } = CrcDefaultsFiles.None;
 
 	/// <summary>
 	/// The names the user gave files in place of FE-Buddy's, by file key. Not part of the settings

@@ -56,13 +56,13 @@ public static class DepartureSettingsParser
 		bool generateGeojson = SettingsValueReader.YesNo(departureSettings, "GenerateGeojson", defaultValue: true);
 		bool generateAliasFile = SettingsValueReader.YesNo(departureSettings, "GenerateAliasFile", defaultValue: true);
 
-		// The GUI blocks this at the tab; the parser is the backstop for the harness and for a
-		// hand-edited UserConfig.
+		// The GUI blocks this on the General tab; the parser is the backstop for the harness and
+		// for a hand-edited UserConfig.
 		if (!generateGeojson && !generateAliasFile)
 		{
 			throw new ArgumentException(
 				"GenerateGeojson and GenerateAliasFile are both \"N\", so the Departures sub-service would produce nothing. " +
-				"Turn one back on, or deselect Departures.");
+				"Turn one back on, or leave Departures out of the run.");
 		}
 
 		bool emitLines = SettingsValueReader.YesNo(departureSettings, "EmitLines", defaultValue: true);
@@ -111,9 +111,9 @@ public static class DepartureSettingsParser
 
 		int coordinatePrecision = SubServiceSettingsReader.ReadCoordinatePrecision(departureSettings);
 
-		VnasFileChoices vnas = SubServiceSettingsReader.ReadVnasFiles(
-			departureSettings, DepartureOutputFiles.Alias, DepartureOutputFiles.IsGeojsonKey,
-			example: $"{DepartureOutputFiles.Lines}, {DepartureOutputFiles.Alias}");
+		CrcDefaultsFiles crcFiles = SubServiceSettingsReader.ReadCrcDefaultsFiles(
+			departureSettings, DepartureOutputFiles.IsGeojsonKey,
+			example: $"{DepartureOutputFiles.Lines}, {DepartureOutputFiles.Symbols}");
 
 		// A kind's defaults are needed only when its files get CRC-ERAM defaults AND are actually
 		// written; only then are its values required.
@@ -123,13 +123,13 @@ public static class DepartureSettingsParser
 
 		const DepartureCrcClass cls = DepartureCrcClass.Departures;
 
-		if (generateGeojson && emitLines && vnas.HasCrcDefaults(DepartureOutputFiles.Lines))
+		if (generateGeojson && emitLines && crcFiles.HasCrcDefaults(DepartureOutputFiles.Lines))
 			lineDefaults[cls] = CrcDefaultsReader.ReadLine(departureSettings, $"Crc.{cls}.Line");
 
-		if (generateGeojson && emitSymbols && vnas.HasCrcDefaults(DepartureOutputFiles.Symbols))
+		if (generateGeojson && emitSymbols && crcFiles.HasCrcDefaults(DepartureOutputFiles.Symbols))
 			symbolDefaults[cls] = CrcDefaultsReader.ReadSymbol(departureSettings, $"Crc.{cls}.Symbol");
 
-		if (generateGeojson && emitText && vnas.HasCrcDefaults(DepartureOutputFiles.Text))
+		if (generateGeojson && emitText && crcFiles.HasCrcDefaults(DepartureOutputFiles.Text))
 			textDefaults[cls] = CrcDefaultsReader.ReadText(departureSettings, $"Crc.{cls}.Text");
 
 		IReadOnlyList<ServiceMessage> messages = SubServiceSettingsReader.UnknownKeyWarnings(
@@ -154,7 +154,7 @@ public static class DepartureSettingsParser
 			RoiMode = roiMode,
 			IncludeFebCustomProperties = includeFebProperties,
 			FebProperties = febProperties,
-			Vnas = vnas,
+			CrcDefaultsFiles = crcFiles,
 			CoordinatePrecision = coordinatePrecision,
 			LineDefaults = lineDefaults,
 			SymbolDefaults = symbolDefaults,

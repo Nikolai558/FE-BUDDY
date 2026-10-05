@@ -91,10 +91,6 @@ public sealed class TelephonyViewModel : GeojsonSubServiceViewModel, ISubService
 	// ================= outputs =================
 
 	/// <inheritdoc />
-	/// <remarks>The alias file is the only output, so it can never be turned off here.</remarks>
-	protected override int EnabledOutputCount => 1;
-
-	/// <inheritdoc />
 	protected override string NoRoiEffect => "nothing changes: Telephony is not limited to a region";
 
 	/// <inheritdoc />
@@ -407,13 +403,6 @@ public sealed class TelephonyViewModel : GeojsonSubServiceViewModel, ISubService
 	protected override void LoadFromConfig()
 	{
 		LoadSharedSettings();
-
-		// The alias file is the only output and the tab has no switch for it, so a hand-edited "N"
-		// would leave the tab producing nothing; fall back to the default rather than honour it.
-		if (!GenerateAliasFile)
-		{
-			GenerateAliasFile = true;
-		}
 
 		// The field, not the property: restoring a saved choice is no reason to download the list.
 		_includeVatsimRadarList = GetBool(TelephonySettingsParser.IncludeVatsimRadarKey, defaultValue: false);

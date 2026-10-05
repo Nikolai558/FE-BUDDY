@@ -75,41 +75,33 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 	public override string Title => "Airways";
 
 	/// <summary>The choices for <see cref="OutputBy"/>, in the order the menu shows them.</summary>
-	public IReadOnlyList<AirwayGeojsonOutputBy> OutputByValues { get; } =
-		[AirwayGeojsonOutputBy.HighLow, AirwayGeojsonOutputBy.Designation, AirwayGeojsonOutputBy.None];
+	/// <remarks>Static, for the drop-down to bind with <c>x:Static</c> (see <see cref="StratumValues"/>).</remarks>
+	public static IReadOnlyList<AirwayGeojsonOutputBy> OutputByValues { get; } =
+		[AirwayGeojsonOutputBy.HighLow, AirwayGeojsonOutputBy.Designation];
 
-	/// <summary>How airway GeoJSON is split into files, or <c>None</c> for no GeoJSON.</summary>
+	/// <summary>
+	/// How airway GeoJSON is split into files. GeoJSON itself is turned on and off on the General tab;
+	/// while it is off, the run is sent <c>None</c>.
+	/// </summary>
 	public AirwayGeojsonOutputBy OutputBy
 	{
 		get => _outputBy;
 		set
 		{
-			// Choosing "None" switches the GeoJSON output off, so it is guarded like any other
-			// output: it cannot be the one that leaves this sub-service producing nothing.
-			if (value == AirwayGeojsonOutputBy.None && !GenerateAliasFile && !CanTurnOffOutput())
-			{
-				RestoreRejectedToggle(nameof(OutputBy));
-				return;
-			}
-
-			if (SetProperty(ref _outputBy, value))
+			if (value != AirwayGeojsonOutputBy.None && SetProperty(ref _outputBy, value))
 			{
 				MarkDirty();
 				OnPropertyChanged(nameof(OutputModeHint));
-				OnPropertyChanged(nameof(IsGeojsonOutputOn));
 				OnPropertyChanged(nameof(ShowsStrata));
 			}
 		}
 	}
 
-	/// <summary>Whether any GeoJSON is written, i.e. <see cref="OutputBy"/> is not <c>None</c>.</summary>
-	public bool IsGeojsonOutputOn => OutputBy != AirwayGeojsonOutputBy.None;
-
 	/// <summary>
 	/// Whether the High and Low Files card shows: the tab writes High and Low files, and at least one
 	/// designation is included to choose a file for.
 	/// </summary>
-	public bool ShowsStrata => OutputBy == AirwayGeojsonOutputBy.HighLow && Designations.Any(d => d.Included);
+	public bool ShowsStrata => GenerateGeojson && OutputBy == AirwayGeojsonOutputBy.HighLow && Designations.Any(d => d.Included);
 
 	/// <summary>The files a designation can go in, for each row's drop-down on the High and Low Files card.</summary>
 	/// <remarks>
@@ -122,8 +114,6 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 	/// <summary>A multi-line description of the files the selected <see cref="OutputBy"/> writes.</summary>
 	public string OutputModeHint => OutputBy switch
 	{
-		AirwayGeojsonOutputBy.None =>
-			"Airway data will not be written to GeoJSON.\nThe alias file, if enabled, is unaffected.",
 		AirwayGeojsonOutputBy.HighLow =>
 			"Two file sets:\n" +
 			"    • Airways_High\n" +
@@ -157,10 +147,6 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 	public ObservableCollection<DesignationToggle> Designations { get; } = [];
 
 	/// <inheritdoc />
-	protected override int EnabledOutputCount =>
-		(OutputBy == AirwayGeojsonOutputBy.None ? 0 : 1) + (GenerateAliasFile ? 1 : 0);
-
-	/// <inheritdoc />
 	protected override string NoRoiEffect =>
 		"every airway is included";
 
@@ -173,7 +159,7 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 	/// </remarks>
 	protected override IEnumerable<OutputFileOption> OutputFiles()
 	{
-		if (IsGeojsonOutputOn)
+		if (GenerateGeojson)
 		{
 			bool[] emitted = [EmitLines, EmitSymbols, EmitText];
 
@@ -283,7 +269,7 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 	{
 		Dictionary<string, string> s = new(StringComparer.OrdinalIgnoreCase)
 		{
-			["OutputBy"] = OutputBy.ToString(),
+			["OutputBy"] = (GenerateGeojson ? OutputBy : AirwayGeojsonOutputBy.None).ToString(),
 			["BufferAirwayWaypoints"] = YesNo(BufferAirwayWaypoints),
 			[AirwaySettingsParser.FixBufferKey] = FixBufferNm.Trim(),
 			[AirwaySettingsParser.NavaidBufferKey] = NavaidBufferNm.Trim(),
@@ -304,9 +290,20 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 	// ================= save contract =================
 
 	/// <inheritdoc />
+	/// <remarks>The High and Low Files card shows only while GeoJSON is on.</remarks>
+	protected override void OnOutputsChanged()
+	{
+		base.OnOutputsChanged();
+		OnPropertyChanged(nameof(ShowsStrata));
+	}
+
+	/// <inheritdoc />
 	protected override void LoadFromConfig()
 	{
-		_outputBy = Enum.TryParse(Get("OutputBy"), true, out AirwayGeojsonOutputBy by) ? by : AirwayGeojsonOutputBy.HighLow;
+		// None was the GeoJSON switch before the General tab had one (it reads that); here it is the default split.
+		_outputBy = Enum.TryParse(Get("OutputBy"), true, out AirwayGeojsonOutputBy by) && by != AirwayGeojsonOutputBy.None
+			? by
+			: AirwayGeojsonOutputBy.HighLow;
 		_bufferAirwayWaypoints = GetBool("BufferAirwayWaypoints", false);
 		_fixBufferNm = Get(AirwaySettingsParser.FixBufferKey) ?? DefaultDistance(AirwayWaypointBuffer.DefaultFixRadiusNm);
 		_navaidBufferNm = Get(AirwaySettingsParser.NavaidBufferKey) ?? DefaultDistance(AirwayWaypointBuffer.DefaultNavaidRadiusNm);
@@ -314,15 +311,6 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 		_splitAtAntimeridian = GetBool("SplitAtAntimeridian", true);
 		LoadSharedSettings();
 		LoadStrata();
-
-		// No GeoJSON and no alias file would leave the tab in a state its own guard forbids; a
-		// hand-edited config is the only way to get here, so fall back to the defaults, as the
-		// other tabs do.
-		if (_outputBy == AirwayGeojsonOutputBy.None && !GenerateAliasFile)
-		{
-			_outputBy = AirwayGeojsonOutputBy.HighLow;
-			GenerateAliasFile = true;
-		}
 
 		// Re-apply the excluded set and the strata to any already-built designation toggles.
 		HashSet<string> excluded = ParseExcludedFromConfig();
@@ -334,7 +322,7 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 
 		foreach (string name in new[]
 		{
-			nameof(OutputBy), nameof(OutputModeHint), nameof(IsGeojsonOutputOn), nameof(ShowsStrata),
+			nameof(OutputBy), nameof(OutputModeHint), nameof(ShowsStrata),
 			nameof(BufferAirwayWaypoints), nameof(FixBufferNm), nameof(NavaidBufferNm),
 			nameof(AliasRoiAirwaysOnly), nameof(SplitAtAntimeridian),
 		})
@@ -371,12 +359,12 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 	/// </remarks>
 	protected override void Validate(ServiceValidation validation)
 	{
-		if (IsGeojsonOutputOn && !EmitLines && !EmitSymbols && !EmitText)
+		if (GenerateGeojson && !EmitLines && !EmitSymbols && !EmitText)
 		{
-			validation.Add("Lines, Symbols and Text are all off, but Output is not \"None\". Turn at least one back on, or set Output to \"None\".");
+			validation.Add("GeoJSON is on but none of its files are selected. Turn on Lines, Symbols or Text, or turn GeoJSON off for Airways on the General tab.");
 		}
 
-		bool needsStrata = OutputBy == AirwayGeojsonOutputBy.HighLow;
+		bool needsStrata = GenerateGeojson && OutputBy == AirwayGeojsonOutputBy.HighLow;
 
 		foreach (DesignationToggle toggle in Designations)
 		{
@@ -384,7 +372,7 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 		}
 
 		// The distances only matter - and only show - while buffered GeoJSON is written.
-		if (IsGeojsonOutputOn && BufferAirwayWaypoints)
+		if (GenerateGeojson && BufferAirwayWaypoints)
 		{
 			ValidateBufferDistance(validation, nameof(FixBufferNm), FixBufferNm, "fixes");
 			ValidateBufferDistance(validation, nameof(NavaidBufferNm), NavaidBufferNm, "NAVAIDs");
@@ -439,7 +427,7 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 
 		List<ServicePreviewRow> rows =
 		[
-			new ServicePreviewRow("GeoJSON output", OutputBy.ToString()),
+			new ServicePreviewRow("GeoJSON output", GenerateGeojson ? OutputBy.ToString() : "No"),
 			new ServicePreviewRow("Alias file", aliasFile),
 			new ServicePreviewRow("File kinds", fileKinds.Count > 0 ? string.Join(", ", fileKinds) : "none"),
 			new ServicePreviewRow("FE-Buddy properties", DescribeFebProperties()),
@@ -454,7 +442,7 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 			new ServicePreviewRow("CRC ERAM defaults", DescribeCrcDefaults()),
 		];
 
-		if (OutputBy == AirwayGeojsonOutputBy.HighLow)
+		if (GenerateGeojson && OutputBy == AirwayGeojsonOutputBy.HighLow)
 		{
 			rows.Insert(1, new ServicePreviewRow("High and Low files", DescribeStrata()));
 		}

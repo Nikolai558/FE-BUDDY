@@ -1,7 +1,12 @@
 <!--
-    AiracGeneralTabView  -  the General tab of the AIRAC Service screen: which cycle
-    and which sub-services to produce output for. Ticking a sub-service
-    opens its own tab in the rail; Save / navigation come from the tab host's action bar.
+    AiracGeneralTabView  -  the General tab of the AIRAC Service screen: which cycle, and the table of
+    sub-services - which are in the run, and which of their outputs each makes. A sub-service left
+    out is greyed out in the rail rather than taken away. Every box has a tooltip: the sub-service or
+    the file, where its settings are, or that the sub-service doesn't make that kind of file. Save /
+    navigation come from the tab host's action bar.
+
+    The table's columns line up through SharedSizeGroup on a stock Grid per row, so nothing is
+    measured or rebuilt by hand.
 -->
 <UserControl x:Class="FeBuddy.Wpf.Views.AiracGeneralTabView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -9,10 +14,31 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:FeBuddy.Wpf.ViewModels"
+             xmlns:tabs="clr-namespace:FeBuddy.Wpf.ViewModels.ServiceTabs"
              xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance vm:AiracGeneralTabViewModel}"
              d:DesignWidth="820" d:DesignHeight="700">
+
+    <UserControl.Resources>
+        <!-- a column heading, centred over its boxes -->
+        <Style x:Key="ColumnHeading" TargetType="TextBlock" BasedOn="{StaticResource Text.Label}">
+            <Setter Property="TextAlignment" Value="Center" />
+            <Setter Property="HorizontalAlignment" Value="Center" />
+            <Setter Property="VerticalAlignment" Value="Bottom" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+        </Style>
+
+        <!-- an output's box: centred in its column (the 8 makes up for the label gap a box keeps on
+             its right), with its tooltip shown even while greyed out -->
+        <Style x:Key="OutputBox" TargetType="CheckBox" BasedOn="{StaticResource {x:Type CheckBox}}">
+            <Setter Property="HorizontalAlignment" Value="Center" />
+            <Setter Property="Margin" Value="8,0,0,0" />
+            <Setter Property="ToolTipService.ShowOnDisabled" Value="True" />
+            <Setter Property="ToolTipService.InitialShowDelay" Value="250" />
+            <Setter Property="ToolTipService.ShowDuration" Value="60000" />
+        </Style>
+    </UserControl.Resources>
 
     <!-- No ScrollViewer here: the tab host owns the one page-level scroller. -->
     <StackPanel>
@@ -47,21 +73,57 @@
 
         <!-- ============ sub-services ============ -->
         <ctl:Card Header="Sub-Services">
-            <StackPanel>
-                <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,10"
-                           Text="Tick the data you want this cycle to produce. Each one opens its own tab where you choose its settings and output files." />
+            <StackPanel Grid.IsSharedSizeScope="True">
+                <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,12"
+                           Text="Tick the sub-services this run includes, and the files each one makes. Each file's settings are on its sub-service's tab, in the list to the left. Hover a box to see what it is." />
+
+                <!-- the headings -->
+                <Grid Margin="0,0,0,6">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" MinWidth="140" SharedSizeGroup="SubService" />
+                        <ColumnDefinition Width="56" />
+                        <ColumnDefinition Width="56" />
+                        <ColumnDefinition Width="68" />
+                        <ColumnDefinition Width="68" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="Include" Style="{StaticResource ColumnHeading}" HorizontalAlignment="Left" TextAlignment="Left" />
+                    <TextBlock Grid.Column="1" Text="Alias" Style="{StaticResource ColumnHeading}" />
+                    <TextBlock Grid.Column="2" Text="GeoJSON" Style="{StaticResource ColumnHeading}" />
+                    <TextBlock Grid.Column="3" Text="Procedure&#xA;Changes" Style="{StaticResource ColumnHeading}" />
+                    <TextBlock Grid.Column="4" Text="Procedures&#xA;JSON" Style="{StaticResource ColumnHeading}" />
+                </Grid>
+                <Border Style="{StaticResource Divider}" Margin="0,0,0,4" />
+
                 <ItemsControl ItemsSource="{Binding SubServices}">
                     <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <DockPanel Margin="0,4">
-                                <TextBlock DockPanel.Dock="Right" Text="{Binding Hint}"
-                                           Style="{StaticResource Text.Caption}" VerticalAlignment="Center"
-                                           Visibility="{Binding Hint, Converter={StaticResource StringToVis}}" />
-                                <CheckBox Content="{Binding DisplayName}" IsChecked="{Binding IsSelected, Mode=TwoWay}" />
-                            </DockPanel>
+                        <DataTemplate DataType="{x:Type tabs:SubServiceRow}">
+                            <Grid Margin="0,5">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" MinWidth="140" SharedSizeGroup="SubService" />
+                                    <ColumnDefinition Width="56" />
+                                    <ColumnDefinition Width="56" />
+                                    <ColumnDefinition Width="68" />
+                                    <ColumnDefinition Width="68" />
+                                </Grid.ColumnDefinitions>
+                                <CheckBox Content="{Binding DisplayName}" IsChecked="{Binding IsIncluded}" VerticalAlignment="Center"
+                                          Margin="0,0,6,0" ToolTip="{Binding IncludeToolTip}"
+                                          ToolTipService.InitialShowDelay="250" ToolTipService.ShowDuration="60000" />
+                                <CheckBox Grid.Column="1" Style="{StaticResource OutputBox}"
+                                          IsChecked="{Binding Alias}" IsEnabled="{Binding CanEditAlias}" ToolTip="{Binding AliasToolTip}" />
+                                <CheckBox Grid.Column="2" Style="{StaticResource OutputBox}"
+                                          IsChecked="{Binding Geojson}" IsEnabled="{Binding CanEditGeojson}" ToolTip="{Binding GeojsonToolTip}" />
+                                <CheckBox Grid.Column="3" Style="{StaticResource OutputBox}"
+                                          IsChecked="{Binding ProcedureChanges}" IsEnabled="{Binding CanEditProcedureChanges}" ToolTip="{Binding ProcedureChangesToolTip}" />
+                                <CheckBox Grid.Column="4" Style="{StaticResource OutputBox}"
+                                          IsChecked="{Binding ProceduresJson}" IsEnabled="{Binding CanEditProceduresJson}" ToolTip="{Binding ProceduresJsonToolTip}" />
+                            </Grid>
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
+
+                <TextBlock Style="{StaticResource Text.Caption}" Margin="0,10,0,0" TextWrapping="Wrap"
+                           MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
+                           Text="A sub-service left out is greyed out in the list to the left and keeps its settings for next time. An included one keeps at least one file on. vNAS Alias Upload comes in by itself once an alias file is ticked for vNAS." />
             </StackPanel>
         </ctl:Card>
     </StackPanel>

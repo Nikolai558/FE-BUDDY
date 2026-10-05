@@ -10,21 +10,12 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:FeBuddy.Wpf.ViewModels"
              xmlns:m="clr-namespace:FeBuddy.Wpf.ViewModels.Models"
-             xmlns:awy="clr-namespace:FeBuddy.Core.Application.Airac.Airways.Models;assembly=FeBuddy.Core"
              xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
              xmlns:cards="clr-namespace:FeBuddy.Wpf.Views.Cards"
              xmlns:bhv="clr-namespace:FeBuddy.Wpf.Behaviors"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance vm:AirwaysViewModel, IsDesignTimeCreatable=True}"
              d:DesignWidth="900" d:DesignHeight="1200">
-
-    <UserControl.Resources>
-        <ObjectDataProvider x:Key="OutputByValues" MethodName="GetValues" ObjectType="{x:Type awy:AirwayGeojsonOutputBy}">
-            <ObjectDataProvider.MethodParameters>
-                <x:Type TypeName="awy:AirwayGeojsonOutputBy" />
-            </ObjectDataProvider.MethodParameters>
-        </ObjectDataProvider>
-    </UserControl.Resources>
 
     <!-- No ScrollViewer here: the tab host owns the one page-level scroller
          that every sub-service tab is laid out inside. A second scroller would
@@ -37,23 +28,22 @@
                        Visibility="{Binding ValidationError, Converter={StaticResource StringToVis}}" />
 
             <!-- ============ outputs ============ -->
-            <!-- GeoJSON is more than on / off here - the drop-down picks how the files are split,
-                 None writes none - and the alias file can cover every airway or just the ROI's. -->
-            <cards:OutputsCard AliasDescription="Provides a command to draw all airway waypoints on an ERAM or STARS window.&#xA;Syntax: .&lt;awyId&gt;F  &#xA;Ex Output: .J3F .FF OAK RBL LKV IMB GEG">
-                <cards:OutputsCard.GeojsonTemplate>
-                    <DataTemplate>
-                        <ctl:Option Description="{Binding OutputModeHint}">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="GeoJSON files" Style="{StaticResource Text.Body}"
-                                           Foreground="{StaticResource Brush.Text.Primary}"
-                                           VerticalAlignment="Center" Margin="0,0,12,0" />
-                                <ComboBox Style="{StaticResource Themed.ComboBox}"
-                                          ItemsSource="{Binding Source={StaticResource OutputByValues}}"
-                                          SelectedItem="{Binding OutputBy}" Width="180" />
-                            </StackPanel>
-                        </ctl:Option>
-                    </DataTemplate>
-                </cards:OutputsCard.GeojsonTemplate>
+            <!-- The GeoJSON can be split two ways, and the alias file can cover every airway or just the ROI's.
+                 The split choices come from x:Static, as the strata do (bug #251). -->
+            <cards:OutputsCard GeojsonDescription="Writes the airway GeoJSON files selected below, split into files as chosen here."
+                               AliasDescription="Provides a command to draw all airway waypoints on an ERAM or STARS window.&#xA;Syntax: .&lt;awyId&gt;F  &#xA;Ex Output: .J3F .FF OAK RBL LKV IMB GEG">
+                <cards:OutputsCard.GeojsonOptions>
+                    <ctl:Option Description="{Binding OutputModeHint}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Split into" Style="{StaticResource Text.Body}"
+                                       Foreground="{StaticResource Brush.Text.Primary}"
+                                       VerticalAlignment="Center" Margin="0,0,12,0" />
+                            <ComboBox Style="{StaticResource Themed.ComboBox}"
+                                      ItemsSource="{x:Static vm:AirwaysViewModel.OutputByValues}"
+                                      SelectedItem="{Binding OutputBy}" Width="180" />
+                        </StackPanel>
+                    </ctl:Option>
+                </cards:OutputsCard.GeojsonOptions>
                 <cards:OutputsCard.AliasOptions>
                     <StackPanel>
                         <RadioButton GroupName="AliasScope" Content="All FAA airways"
@@ -66,13 +56,13 @@
             </cards:OutputsCard>
 
             <!-- ============ which GeoJSON files ============ -->
-            <cards:GeojsonFilesCard IsEnabled="{Binding IsGeojsonOutputOn}"
+            <cards:GeojsonFilesCard IsEnabled="{Binding GenerateGeojson}"
                                     LinesDescription="One line feature per airway, running through its waypoints in order. Airway gaps resolved via a MultiLineString feature."
                                     SymbolsDescription="One symbol per waypoint, styled as a VOR, NDB or intersection. A waypoint shared by several airways is drawn once."
                                     TextDescription="A label per waypoint showing its identifier." />
 
             <!-- ============ FE-Buddy properties ============ -->
-            <cards:FebPropertiesCard IsEnabled="{Binding IsGeojsonOutputOn}" />
+            <cards:FebPropertiesCard IsEnabled="{Binding GenerateGeojson}" />
 
             <!-- ============ designations ============ -->
             <ctl:Card Header="Designations to Include">
@@ -133,7 +123,7 @@
             </ctl:Card>
 
             <!-- ============ buffer airway waypoints ============ -->
-            <ctl:Card Header="Buffer Airway Waypoints" IsEnabled="{Binding IsGeojsonOutputOn}">
+            <ctl:Card Header="Buffer Airway Waypoints" IsEnabled="{Binding GenerateGeojson}">
                 <StackPanel>
                     <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
                                Text="Lines stop short of each waypoint so they don't run through the waypoint symbols." />
@@ -170,7 +160,7 @@
             </ctl:Card>
 
             <!-- ============ antimeridian ============ -->
-            <ctl:Card Header="Split GeoJSON at the Antimeridian" IsEnabled="{Binding IsGeojsonOutputOn}">
+            <ctl:Card Header="Split GeoJSON at the Antimeridian" IsEnabled="{Binding GenerateGeojson}">
                 <StackPanel>
                     <TextBlock Style="{StaticResource Text.Prose}" Margin="0,4,0,8"
                                Text="A line that crosses ±180° longitude is split into two LineStrings so it does not visually wrap across the whole map. Leave this on unless a downstream tool needs the un-split geometry." />

@@ -67,7 +67,7 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 	private readonly HashSet<string> _crcFiles = new(StringComparer.OrdinalIgnoreCase);
 	private readonly HashSet<(string ClassName, EramFieldKind Kind)> _crcRowsInUse = [];
 
-	private bool _generateAliasFile = true;
+	private ISubServiceOutputs _outputs = new EveryOutput();
 	private bool _emitLines = true;
 	private bool _emitSymbols = true;
 	private bool _emitText = true;
@@ -89,26 +89,35 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 		DefaultRoiStore.Changed += (_, _) => RaiseRoiFallback();
 	}
 
+	/// <summary>Raised whenever the files the tab's settings write may have changed, so the screen can follow them.</summary>
+	public event EventHandler? FilesChanged;
+
 	// ================= outputs and files =================
 
-	/// <inheritdoc />
-	public bool GenerateAliasFile
-	{
-		get => _generateAliasFile;
-		set
-		{
-			if (!value && !CanTurnOffOutput())
-			{
-				// The value never changed, but the control already did - put it back.
-				RestoreRejectedToggle(nameof(GenerateAliasFile));
-				return;
-			}
+	/// <summary>
+	/// Which outputs are on, from the General tab's table. A tab built on its own (a test) has
+	/// every output on.
+	/// </summary>
+	public ISubServiceOutputs Outputs => _outputs;
 
-			if (SetProperty(ref _generateAliasFile, value))
-			{
-				MarkDirty();
-			}
-		}
+	/// <inheritdoc />
+	/// <remarks>Turned on and off on the General tab.</remarks>
+	public bool GenerateAliasFile => HasAliasFile && _outputs.Alias;
+
+	/// <inheritdoc />
+	/// <remarks>Turned on and off on the General tab. Always off for a sub-service with no GeoJSON choice.</remarks>
+	public virtual bool GenerateGeojson => _outputs.Geojson;
+
+	/// <summary>Takes the tab's outputs from the General tab's row for it, and follows them.</summary>
+	/// <param name="outputs">The row.</param>
+	public void AttachOutputs(ISubServiceOutputs outputs)
+	{
+		ArgumentNullException.ThrowIfNull(outputs);
+
+		_outputs.PropertyChanged -= OnOutputsChanged;
+		_outputs = outputs;
+		_outputs.PropertyChanged += OnOutputsChanged;
+		OnOutputsChanged();
 	}
 
 	/// <inheritdoc />
@@ -284,9 +293,24 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 
 	/// <summary>
 	/// Whether the sub-service has an alias file. When <see langword="false"/> (ARTCC Boundaries),
-	/// <see cref="GenerateAliasFile"/> is always off and is never saved or sent.
+	/// <see cref="GenerateAliasFile"/> is always off and is never sent.
 	/// </summary>
 	protected virtual bool HasAliasFile => true;
+
+	/// <summary>
+	/// After the General tab turns an output on or off: the properties that follow from the outputs
+	/// are announced, the file lists rebuilt and the tab re-checked. The tab isn't marked unsaved:
+	/// the outputs are the General tab's to save.
+	/// </summary>
+	/// <remarks>A tab with outputs of its own to announce (<c>GenerateGeojson</c>) overrides this and calls the base.</remarks>
+	protected virtual void OnOutputsChanged()
+	{
+		OnPropertyChanged(nameof(GenerateAliasFile));
+		OnPropertyChanged(nameof(GenerateGeojson));
+		OnPropertyChanged(nameof(WritesAliasFile));
+		RefreshVnasFiles();
+		Revalidate();
+	}
 
 	/// <summary>
 	/// Every file the tab's current settings write, in the order the Upload to vNAS card lists
@@ -434,6 +458,8 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 			OnPropertyChanged(nameof(SymbolDefaultsInUse));
 			OnPropertyChanged(nameof(TextDefaultsInUse));
 		}
+
+		FilesChanged?.Invoke(this, EventArgs.Empty);
 	}
 
 	/// <summary>
@@ -442,7 +468,6 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 	/// </summary>
 	protected void LoadSharedSettings()
 	{
-		_generateAliasFile = HasAliasFile && GetBool("GenerateAliasFile", true);
 		_emitLines = EmitKeys.Lines is { } linesKey && GetBool(linesKey, true);
 		_emitSymbols = EmitKeys.Symbols is { } symbolsKey && GetBool(symbolsKey, true);
 		_emitText = EmitKeys.Text is { } textKey && GetBool(textKey, true);
@@ -480,7 +505,7 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 
 		foreach (string name in new[]
 		{
-			nameof(GenerateAliasFile), nameof(EmitLines), nameof(EmitSymbols), nameof(EmitText),
+			nameof(EmitLines), nameof(EmitSymbols), nameof(EmitText),
 			nameof(IncludeFebCustomProperties), nameof(CrcDefaultsScope), nameof(IsCrcDefaultsSpecific),
 			nameof(OverrideRoi), nameof(SwLat), nameof(SwLon), nameof(NeLat), nameof(NeLon),
 		})
@@ -494,11 +519,6 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 	/// <summary>Writes the shared settings. Call from <see cref="SubServiceSettingsViewModel.WriteToConfig"/>.</summary>
 	protected void SaveSharedSettings()
 	{
-		if (HasAliasFile)
-		{
-			Set("GenerateAliasFile", YesNo(GenerateAliasFile));
-		}
-
 		foreach ((string? key, bool emit) in EmitChoices())
 		{
 			if (key is not null)
@@ -755,5 +775,21 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 	{
 		OnPropertyChanged(nameof(RoiFallbackHint));
 		OnPropertyChanged(nameof(HasRoi));
+	}
+
+	private void OnOutputsChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e) => OnOutputsChanged();
+
+	/// <summary>Every output on, never changing: the outputs of a tab not attached to a General tab.</summary>
+	private sealed class EveryOutput : ObservableObject, ISubServiceOutputs
+	{
+		public bool IsIncluded => true;
+
+		public bool Alias => true;
+
+		public bool Geojson => true;
+
+		public bool ProcedureChanges => true;
+
+		public bool ProceduresJson => true;
 	}
 }

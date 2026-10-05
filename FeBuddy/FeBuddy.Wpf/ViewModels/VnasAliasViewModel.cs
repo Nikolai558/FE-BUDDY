@@ -135,7 +135,7 @@ public sealed class VnasAliasViewModel : SubServiceSettingsViewModel, ISubServic
 
 			return added == 0
 				? $"None of FE-Buddy's alias files go into {AiracOutputPaths.VnasAliasFileName}, so it will hold only your custom aliases. " +
-					"To add one, select its sub-service on the General tab, and tick its alias file on that tab's Upload to vNAS card."
+					"To add one, include its sub-service and its alias file on the General tab, and tick the alias file on that tab's Upload to vNAS card."
 				: $"{added} of {FeBuddyAliasFiles.Count} FE-Buddy alias files go in, ahead of your custom aliases.";
 		}
 	}
@@ -321,8 +321,7 @@ public sealed class VnasAliasViewModel : SubServiceSettingsViewModel, ISubServic
 		{
 			validation.Add(
 				$"{AiracOutputPaths.VnasAliasFileName} would be empty: there is no custom alias file, and no FE-Buddy alias file is ticked " +
-				"for vNAS. Add a custom alias file, tick an alias file on a sub-service's Upload to vNAS card, or deselect vNAS Alias " +
-				"Upload on the General tab.");
+				"for vNAS. Add a custom alias file, or tick an alias file on a sub-service's Upload to vNAS card.");
 		}
 
 		foreach (AliasSourceRow row in Sources)
@@ -342,7 +341,7 @@ public sealed class VnasAliasViewModel : SubServiceSettingsViewModel, ISubServic
 	/// Lets the tab see the AIRAC Service's other tabs, to list which alias files they put into
 	/// <c>vNAS_Alias.txt</c>, and open one.
 	/// </summary>
-	/// <param name="openTabFor">The sub-service's tab when it is selected on the General tab, otherwise <see langword="null"/>.</param>
+	/// <param name="openTabFor">The sub-service's tab when it is included on the General tab, otherwise <see langword="null"/>.</param>
 	/// <param name="showTab">Shows a tab.</param>
 	internal void AttachToService(Func<SubServiceDescriptor, ServiceTabViewModel?> openTabFor, Action<ServiceTabViewModel> showTab)
 	{
@@ -363,8 +362,8 @@ public sealed class VnasAliasViewModel : SubServiceSettingsViewModel, ISubServic
 
 			(string status, bool added) = tab switch
 			{
-				null => ("Not selected on the General tab", false),
-				GeojsonSubServiceViewModel { WritesAliasFile: false } => ("Alias file turned off on its Outputs card", false),
+				null => ("Not included on the General tab", false),
+				GeojsonSubServiceViewModel { WritesAliasFile: false } => ("Alias file turned off on the General tab", false),
 				GeojsonSubServiceViewModel geojson when !geojson.IsMarkedForVnas(fileName) => ("Not ticked on its Upload to vNAS card", false),
 				_ => ($"Added to {AiracOutputPaths.VnasAliasFileName}", true),
 			};

@@ -348,13 +348,20 @@
          Each row carries a status dot: amber for unsaved edits, red for a missing
          or invalid value, nothing at all when the tab is settled.
          A tab that is set apart (IsSetApart: the Review tab) gets a divider above it, so
-         the settings tabs read as one group and the run's outcome as another. -->
+         the settings tabs read as one group and the run's outcome as another.
+         A tab that doesn't take part (IsAvailable false: a sub-service left out on the General
+         tab) stays in its place, greyed out and unclickable, with no status dot; hovering it
+         says what it is and how to bring it in. -->
     <Style x:Key="Tab.Rail.Item" TargetType="ListBoxItem">
         <Setter Property="Margin" Value="0,1" />
         <Setter Property="Padding" Value="0" />
         <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Secondary}" />
         <Setter Property="Cursor" Value="Hand" />
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="IsEnabled" Value="{Binding IsAvailable}" />
+        <Setter Property="ToolTip" Value="{Binding UnavailableToolTip}" />
+        <Setter Property="ToolTipService.ShowOnDisabled" Value="True" />
+        <Setter Property="ToolTipService.InitialShowDelay" Value="250" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ListBoxItem">
@@ -400,6 +407,12 @@
                             <Setter TargetName="Dot" Property="Fill" Value="{DynamicResource Brush.Danger}" />
                             <Setter TargetName="Dot" Property="ToolTip" Value="Something here needs fixing" />
                         </DataTrigger>
+                        <!-- after the status triggers, so a greyed-out tab never shows a dot -->
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="Root" Property="Opacity" Value="0.38" />
+                            <Setter TargetName="Dot" Property="Visibility" Value="Collapsed" />
+                            <Setter Property="Cursor" Value="Arrow" />
+                        </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>

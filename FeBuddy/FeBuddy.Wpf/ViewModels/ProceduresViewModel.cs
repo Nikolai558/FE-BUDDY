@@ -34,8 +34,7 @@ namespace FeBuddy.Wpf.ViewModels;
 /// <para>
 /// Unlike every other AIRAC sub-service, Procedures writes no GeoJSON and has no FE-Buddy
 /// properties - it still derives from <see cref="GeojsonSubServiceViewModel"/> for the alias file,
-/// the Upload to vNAS card, the Region of Interest override plumbing and the shared "keep at least
-/// one output on" pattern (<see cref="EnabledOutputCount"/>), but never shows the GeoJSON Files,
+/// the Upload to vNAS card and the Region of Interest override plumbing, but never shows the GeoJSON Files,
 /// FE-Buddy Properties or CRC ERAM Defaults cards: <see cref="EmitKeys"/> is
 /// <c>(null, null, null)</c>, and <see cref="OutputFiles"/> offers only the alias file.
 /// </para>
@@ -76,8 +75,6 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 		(ProcedureChartTypes.Lah, "LAHSO"),
 	];
 
-	private bool _generateChangesDocument = true;
-	private bool _generateProceduresJson = true;
 	private bool _includeRoiAirports;
 	private bool _suppressListChanges;
 
@@ -140,52 +137,24 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 
 	// ================= outputs =================
 
-	/// <summary>Whether to write <c>Procedure_Changes.md</c>.</summary>
-	public bool GenerateChangesDocument
-	{
-		get => _generateChangesDocument;
-		set
-		{
-			if (!value && !CanTurnOffOutput())
-			{
-				RestoreRejectedToggle(nameof(GenerateChangesDocument));
-				return;
-			}
+	/// <summary>Whether <c>Procedure_Changes.md</c> is written. Turned on and off on the General tab.</summary>
+	public bool GenerateChangesDocument => Outputs.ProcedureChanges;
 
-			if (SetProperty(ref _generateChangesDocument, value))
-			{
-				OnPropertyChanged(nameof(GeneratesDocument));
-				MarkDirty();
-			}
-		}
-	}
-
-	/// <summary>Whether to write <c>Procedures.json</c>. Its Fields card shows only while this is on.</summary>
-	public bool GenerateProceduresJson
-	{
-		get => _generateProceduresJson;
-		set
-		{
-			if (!value && !CanTurnOffOutput())
-			{
-				RestoreRejectedToggle(nameof(GenerateProceduresJson));
-				return;
-			}
-
-			if (SetProperty(ref _generateProceduresJson, value))
-			{
-				OnPropertyChanged(nameof(GeneratesDocument));
-				MarkDirty();
-			}
-		}
-	}
+	/// <summary>Whether <c>Procedures.json</c> is written. Turned on and off on the General tab; its Fields card shows only while it is on.</summary>
+	public bool GenerateProceduresJson => Outputs.ProceduresJson;
 
 	/// <summary>Whether either document is on - the facility, airport, procedure and chart type choices only matter then.</summary>
-	public bool GeneratesDocument => _generateChangesDocument || _generateProceduresJson;
+	public bool GeneratesDocument => GenerateChangesDocument || GenerateProceduresJson;
 
 	/// <inheritdoc />
-	protected override int EnabledOutputCount =>
-		(GenerateChangesDocument ? 1 : 0) + (GenerateProceduresJson ? 1 : 0) + (GenerateAliasFile ? 1 : 0);
+	/// <remarks>The two documents, and what follows from them: the cards that pick what they cover.</remarks>
+	protected override void OnOutputsChanged()
+	{
+		base.OnOutputsChanged();
+		OnPropertyChanged(nameof(GenerateChangesDocument));
+		OnPropertyChanged(nameof(GenerateProceduresJson));
+		OnPropertyChanged(nameof(GeneratesDocument));
+	}
 
 	/// <inheritdoc />
 	protected override string NoRoiEffect =>
@@ -628,8 +597,8 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 	{
 		Dictionary<string, string> s = new(StringComparer.OrdinalIgnoreCase)
 		{
-			["GenerateChangesDocument"] = YesNo(_generateChangesDocument),
-			["GenerateProceduresJson"] = YesNo(_generateProceduresJson),
+			["GenerateChangesDocument"] = YesNo(GenerateChangesDocument),
+			["GenerateProceduresJson"] = YesNo(GenerateProceduresJson),
 			["Facilities"] = string.Join(',', SelectedFacilityIds()),
 			// Read fresh from Settings rather than this tab's own config - see the class remarks.
 			["PrimaryFacility"] = UserConfigFile.GetValue(SettingsViewModel.ArtccKey) ?? string.Empty,
@@ -674,17 +643,7 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 		_suppressListChanges = true;
 		try
 		{
-			_generateChangesDocument = GetBool("GenerateChangesDocument", true);
-			_generateProceduresJson = GetBool("GenerateProceduresJson", true);
 			_includeRoiAirports = GetBool("IncludeRoiAirports", false);
-
-			// Every output off would leave the tab in a state its own guard forbids; a hand-edited
-			// config is the only way to get here, so fall back to the defaults rather than honour it.
-			if (!_generateChangesDocument && !_generateProceduresJson && !GetBool("GenerateAliasFile", true))
-			{
-				_generateChangesDocument = true;
-				_generateProceduresJson = true;
-			}
 
 			bool hasSavedFacilities = Get("Facilities") is not null;
 			_savedFacilities = ParseList(Get("Facilities"));
@@ -753,8 +712,6 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 	/// <inheritdoc />
 	protected override void WriteToConfig()
 	{
-		Set("GenerateChangesDocument", YesNo(_generateChangesDocument));
-		Set("GenerateProceduresJson", YesNo(_generateProceduresJson));
 		Set("Facilities", string.Join(',', SelectedFacilityIds()));
 		Set("IncludeRoiAirports", YesNo(_includeRoiAirports));
 		Set("Airports", string.Join(',', Airports));
@@ -768,11 +725,6 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 	/// <inheritdoc />
 	protected override void Validate(ServiceValidation validation)
 	{
-		if (!_generateChangesDocument && !_generateProceduresJson && !GenerateAliasFile)
-		{
-			validation.Add("Neither document nor the alias file is selected. Turn at least one back on, or deselect Procedures on the General tab.");
-		}
-
 		// The choices below only pick what the documents cover; the alias file covers every airport.
 		if (GeneratesDocument)
 		{
@@ -1092,9 +1044,6 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 
 	private void RaiseOwnSettingProperties()
 	{
-		OnPropertyChanged(nameof(GenerateChangesDocument));
-		OnPropertyChanged(nameof(GenerateProceduresJson));
-		OnPropertyChanged(nameof(GeneratesDocument));
 		OnPropertyChanged(nameof(IncludeRoiAirports));
 		OnPropertyChanged(nameof(PrimaryFacilityCaption));
 	}
@@ -1136,8 +1085,8 @@ public sealed class ProceduresViewModel : GeojsonSubServiceViewModel, ISubServic
 	private string DescribeDocuments()
 	{
 		List<string> docs = [];
-		if (_generateChangesDocument) docs.Add("Procedure_Changes.md");
-		if (_generateProceduresJson) docs.Add("Procedures.json");
+		if (GenerateChangesDocument) docs.Add("Procedure_Changes.md");
+		if (GenerateProceduresJson) docs.Add("Procedures.json");
 
 		return docs.Count > 0 ? string.Join(", ", docs) : "None";
 	}

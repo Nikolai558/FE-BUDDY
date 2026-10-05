@@ -14,19 +14,41 @@ using FeBuddy.Core.Infrastructure.Configuration;
 namespace FeBuddy.Wpf.ViewModels;
 
 /// <summary>
-/// The AIRAC Service <b>General</b> tab: the cycle menu and the sub-service
-/// picker that decides which other tabs exist.
+/// The AIRAC Service <b>General</b> tab: the cycle menu, and the table of sub-services - which are
+/// in the run, and which of their outputs each makes.
 /// </summary>
 /// <remarks>
+/// <para>
 /// It is a settings tab like any other - it owns the <c>Services.AiracService</c> subtree, is dirty
-/// until saved, and has the same one-step undo. Ticking a sub-service opens its tab immediately
-/// (the user asked for it, so they should see it), but the selection is only persisted on save like
-/// every other setting on this tab.
+/// until saved, and has the same one-step undo. Ticking a sub-service brings its tab back from grey
+/// straight away (the user asked for it, so they should see it), but like every other setting on
+/// this tab it is only kept once saved.
+/// </para>
+/// <para>
+/// The table owns each sub-service's outputs; its tab reads them (<see cref="ISubServiceOutputs"/>).
+/// They are saved under this tab's <c>Outputs</c> node, never inside a sub-service's own node, so
+/// saving or undoing a sub-service tab can't change them. Nothing saved means everything included
+/// and every output on. Settings from before the table was here kept the outputs on each tab
+/// (<c>GenerateGeojson</c>, <c>GenerateAliasFile</c>, …, and Airways' <c>OutputBy</c> = <c>None</c>);
+/// those are read until the table is first saved.
+/// </para>
 /// </remarks>
 public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 {
 	private const string Node = "Services.AiracService";
 	private const string SelectedSubServicesKey = "SelectedSubServices";
+	private const string OutputsNode = "Outputs";
+
+	/// <summary>The node, under this tab's, where each sub-service kept its outputs before the table: read until it is saved.</summary>
+	private static readonly IReadOnlyDictionary<string, string> LegacyOutputNodes = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+	{
+		[AiracSubServices.AirportsKey] = "Airports",
+		[AiracSubServices.AirwaysKey] = "Geojson.Airways",
+		[AiracSubServices.ArrivalsKey] = "Arrivals",
+		[AiracSubServices.DeparturesKey] = "Departures",
+		[AiracSubServices.NavaidsKey] = "Navaids",
+		[AiracSubServices.ProceduresKey] = "Procedures",
+	};
 
 	private bool _loading;
 	private bool _isReady;
@@ -34,7 +56,7 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 	private AiracCyclePosition _selectedCyclePosition = AiracCyclePosition.Current;
 	private AiracCyclePosition _cyclePositionBeforeReload = AiracCyclePosition.Current;
 
-	/// <summary>Builds the tab and restores the saved cycle and sub-service selection.</summary>
+	/// <summary>Builds the tab and restores the saved cycle and sub-services.</summary>
 	public AiracGeneralTabViewModel()
 	{
 		CycleOptions =
@@ -44,19 +66,21 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 			new(AiracCyclePosition.Next, p => SelectedCyclePosition = p),
 		];
 
-		HashSet<string> selectedKeys = ParseSelectedKeysFromConfig();
-
-		SubServices = new ObservableCollection<SubServiceSelection>(
+		SubServices = new ObservableCollection<SubServiceRow>(
 			AiracSubServices.All
+				.Where(d => d.Outputs != SubServiceOutputKinds.None)
 				.OrderBy(d => d.Order)
-				.Select(d => new SubServiceSelection(d, selectedKeys.Contains(d.Key), OnSubServiceToggled)));
+				.Select(d => new SubServiceRow(d, OnSubServicesChanged)));
 
 		LoadFromConfig();
 		RefreshCycleOptions();
 	}
 
-	/// <summary>Raised when the user ticks or unticks a sub-service, so the host can open or close its tab.</summary>
-	public event EventHandler? SubServiceSelectionChanged;
+	/// <summary>
+	/// Raised when the user includes or leaves out a sub-service or turns one of its outputs on or
+	/// off, so the host can grey out or bring back tabs and follow the files the run will write.
+	/// </summary>
+	public event EventHandler? SubServicesChanged;
 
 	/// <summary>Raised when the user picks a different cycle, so the host can load that cycle's parsed data.</summary>
 	public event EventHandler? CycleChanged;
@@ -73,12 +97,22 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 	/// <summary>The three selectable cycles with their live cache state.</summary>
 	public ObservableCollection<CycleOption> CycleOptions { get; }
 
-	/// <summary>Every sub-service the AIRAC Service knows about, ticked or not.</summary>
-	public ObservableCollection<SubServiceSelection> SubServices { get; }
+	/// <summary>The table: every sub-service that makes output of its own, included or not, in rail order.</summary>
+	public ObservableCollection<SubServiceRow> SubServices { get; }
 
-	/// <summary>The ticked sub-services, in rail order.</summary>
-	public IEnumerable<SubServiceSelection> SelectedSubServices =>
-		SubServices.Where(s => s.IsSelected).OrderBy(s => s.Descriptor.Order);
+	/// <summary>The included sub-services, in rail order.</summary>
+	public IEnumerable<SubServiceRow> IncludedSubServices => SubServices.Where(s => s.IsIncluded);
+
+	/// <summary>A sub-service's row, or <see langword="null"/> for one that isn't in the table (vNAS Alias Upload).</summary>
+	/// <param name="key">The sub-service key from <see cref="AiracSubServices"/>.</param>
+	/// <returns>The row.</returns>
+	public SubServiceRow? RowFor(string key) =>
+		SubServices.FirstOrDefault(row => string.Equals(row.Key, key, StringComparison.OrdinalIgnoreCase));
+
+	/// <summary>Whether a sub-service is in the table and included.</summary>
+	/// <param name="key">The sub-service key from <see cref="AiracSubServices"/>.</param>
+	/// <returns><see langword="true"/> when it takes part in the run.</returns>
+	public bool IsIncluded(string key) => RowFor(key) is { IsIncluded: true };
 
 	/// <summary>Which cycle (relative to today) the run uses.</summary>
 	public AiracCyclePosition SelectedCyclePosition
@@ -162,12 +196,12 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 	/// <inheritdoc />
 	public override IReadOnlyList<ServicePreviewSection> BuildPreviewSummary()
 	{
-		string[] selected = [.. SelectedSubServices.Select(s => s.DisplayName)];
+		string[] included = [.. IncludedSubServices.Select(s => $"{s.DisplayName} ({DescribeOutputs(s.OutputsOn)})")];
 
 		ServicePreviewRow[] rows =
 		[
 			new ServicePreviewRow("Cycle", SelectedCycleLabel),
-			new ServicePreviewRow("Sub-services", selected.Length == 0 ? "none" : string.Join(", ", selected)),
+			new ServicePreviewRow("Sub-services", included.Length == 0 ? "none" : string.Join(", ", included)),
 			new ServicePreviewRow("Output folder",
 				OutputPreferences.CycleDirectory(AppEnvironment.GetAiracCycle(SelectedCyclePosition).AiracCycleId)),
 		];
@@ -185,13 +219,16 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 		{
 			SelectedCyclePosition = ResolveSavedCyclePosition();
 
-			HashSet<string> keys = ParseSelectedKeysFromConfig();
-			foreach (SubServiceSelection selection in SubServices)
+			// Nothing saved yet: everything is in.
+			string? savedSelection = Get(SelectedSubServicesKey);
+			HashSet<string>? included = savedSelection is null ? null : ParseList(savedSelection);
+
+			foreach (SubServiceRow row in SubServices)
 			{
-				selection.IsSelected = keys.Contains(selection.Key);
+				row.Load(included?.Contains(row.Key) ?? true, ReadOutputs(row));
 			}
 
-			OnPropertyChanged(nameof(SelectedSubServices));
+			OnPropertyChanged(nameof(IncludedSubServices));
 		}
 		finally
 		{
@@ -203,14 +240,14 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 
 	/// <inheritdoc />
 	/// <remarks>
-	/// This tab's settings drive the rest of the screen: the ticked sub-services decide which
-	/// tabs are open, and the cycle decides which data is loaded. Both are restored with their
-	/// events suppressed, so discarding changes here has to re-announce them or the rail keeps
-	/// showing tabs the user just took back.
+	/// This tab's settings drive the rest of the screen: the included sub-services decide which
+	/// tabs are greyed out, their outputs what the tabs write, and the cycle which data is loaded.
+	/// They are restored with their events suppressed, so discarding changes here has to
+	/// re-announce them or the rail keeps showing what the user just took back.
 	/// </remarks>
 	protected override void OnReloadedFromConfig()
 	{
-		SubServiceSelectionChanged?.Invoke(this, EventArgs.Empty);
+		SubServicesChanged?.Invoke(this, EventArgs.Empty);
 
 		if (_selectedCyclePosition != _cyclePositionBeforeReload)
 		{
@@ -222,10 +259,18 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 	protected override void WriteToConfig()
 	{
 		Set("AiracCycleId", AppEnvironment.GetAiracCycle(SelectedCyclePosition).AiracCycleId);
-		Set(SelectedSubServicesKey, string.Join(',', SelectedSubServices.Select(s => s.Key)));
+		Set(SelectedSubServicesKey, string.Join(',', IncludedSubServices.Select(s => s.Key)));
+
+		foreach (SubServiceRow row in SubServices)
+		{
+			foreach (SubServiceOutputKinds kind in OfferedKinds(row))
+			{
+				Set($"{OutputsNode}.{row.Key}.{kind}", YesNo(row.OutputsOn.HasFlag(kind)));
+			}
+		}
 	}
 
-	private void OnSubServiceToggled()
+	private void OnSubServicesChanged()
 	{
 		if (_loading)
 		{
@@ -233,12 +278,66 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 		}
 
 		MarkDirty();
-		OnPropertyChanged(nameof(SelectedSubServices));
-		SubServiceSelectionChanged?.Invoke(this, EventArgs.Empty);
+		OnPropertyChanged(nameof(IncludedSubServices));
+		SubServicesChanged?.Invoke(this, EventArgs.Empty);
 	}
 
-	private static HashSet<string> ParseSelectedKeysFromConfig() =>
-		ParseList(UserConfigFile.GetValue($"{Node}.{SelectedSubServicesKey}"));
+	private static IEnumerable<SubServiceOutputKinds> OfferedKinds(SubServiceRow row) =>
+		Enum.GetValues<SubServiceOutputKinds>().Where(kind => kind != SubServiceOutputKinds.None && row.Descriptor.Outputs.HasFlag(kind));
+
+	/// <summary>A row's saved outputs: this tab's own, else what its tab saved before the table, else on.</summary>
+	private SubServiceOutputKinds ReadOutputs(SubServiceRow row)
+	{
+		SubServiceOutputKinds on = SubServiceOutputKinds.None;
+
+		foreach (SubServiceOutputKinds kind in OfferedKinds(row))
+		{
+			string? saved = Get($"{OutputsNode}.{row.Key}.{kind}") ?? LegacyOutput(row.Key, kind);
+
+			if (saved is null || IsYes(saved))
+			{
+				on |= kind;
+			}
+		}
+
+		return on;
+	}
+
+	/// <summary>An output as its tab saved it before the table was here, or <see langword="null"/> when it never did.</summary>
+	private string? LegacyOutput(string key, SubServiceOutputKinds kind)
+	{
+		if (!LegacyOutputNodes.TryGetValue(key, out string? node))
+		{
+			return null;
+		}
+
+		return kind switch
+		{
+			SubServiceOutputKinds.Alias => Get($"{node}.GenerateAliasFile"),
+
+			// Airways had no GeoJSON switch: its "how the files are split" choice had None.
+			SubServiceOutputKinds.Geojson when key == AiracSubServices.AirwaysKey =>
+				Get($"{node}.OutputBy") is { } outputBy && outputBy.Trim().Equals("None", StringComparison.OrdinalIgnoreCase) ? "N" : null,
+
+			SubServiceOutputKinds.Geojson => Get($"{node}.GenerateGeojson"),
+			SubServiceOutputKinds.ProcedureChanges => Get($"{node}.GenerateChangesDocument"),
+			_ => Get($"{node}.GenerateProceduresJson"),
+		};
+	}
+
+	private static bool IsYes(string value) =>
+		value.Trim().Equals("Y", StringComparison.OrdinalIgnoreCase) || value.Trim().Equals("true", StringComparison.OrdinalIgnoreCase);
+
+	/// <summary>e.g. <c>Alias, GeoJSON</c>.</summary>
+	private static string DescribeOutputs(SubServiceOutputKinds on)
+	{
+		List<string> names = [];
+		if (on.HasFlag(SubServiceOutputKinds.Alias)) names.Add("Alias");
+		if (on.HasFlag(SubServiceOutputKinds.Geojson)) names.Add("GeoJSON");
+		if (on.HasFlag(SubServiceOutputKinds.ProcedureChanges)) names.Add("Procedure Changes");
+		if (on.HasFlag(SubServiceOutputKinds.ProceduresJson)) names.Add("Procedures JSON");
+		return string.Join(", ", names);
+	}
 
 	/// <summary>
 	/// Maps the saved cycle id back onto previous / current / next. The id is saved rather than the

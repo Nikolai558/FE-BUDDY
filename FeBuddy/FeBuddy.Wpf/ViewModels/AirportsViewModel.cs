@@ -21,8 +21,6 @@ public sealed class AirportsViewModel : GeojsonSubServiceViewModel, ISubServiceR
 {
 	private const string Node = "Services.AiracService.Airports";
 
-	private bool _generateGeojson = true;
-
 	/// <summary>Builds the tab and restores its saved settings.</summary>
 	public AirportsViewModel()
 	{
@@ -39,30 +37,6 @@ public sealed class AirportsViewModel : GeojsonSubServiceViewModel, ISubServiceR
 
 	/// <inheritdoc />
 	public override string Title => "Airports";
-
-	/// <summary>Whether this run writes GeoJSON for airports and runways.</summary>
-	public bool GenerateGeojson
-	{
-		get => _generateGeojson;
-		set
-		{
-			if (!value && !CanTurnOffOutput())
-			{
-				// The value never changed, but the control already did - put it back.
-				RestoreRejectedToggle(nameof(GenerateGeojson));
-				return;
-			}
-
-			if (SetProperty(ref _generateGeojson, value))
-			{
-				MarkDirty();
-			}
-		}
-	}
-
-	/// <inheritdoc />
-	protected override int EnabledOutputCount =>
-		(GenerateGeojson ? 1 : 0) + (GenerateAliasFile ? 1 : 0);
 
 	/// <inheritdoc />
 	protected override string NoRoiEffect =>
@@ -182,27 +156,12 @@ public sealed class AirportsViewModel : GeojsonSubServiceViewModel, ISubServiceR
 	/// <inheritdoc />
 	protected override void LoadFromConfig()
 	{
-		_generateGeojson = GetBool("GenerateGeojson", true);
 		LoadSharedSettings();
-
-		// Both outputs off would leave the tab in a state its own guard forbids; a hand-edited
-		// config is the only way to get here, so fall back to the default rather than honour it.
-		if (!_generateGeojson && !GenerateAliasFile)
-		{
-			_generateGeojson = true;
-			GenerateAliasFile = true;
-		}
-
-		OnPropertyChanged(nameof(GenerateGeojson));
 		ClearDirty();
 	}
 
 	/// <inheritdoc />
-	protected override void WriteToConfig()
-	{
-		Set("GenerateGeojson", YesNo(GenerateGeojson));
-		SaveSharedSettings();
-	}
+	protected override void WriteToConfig() => SaveSharedSettings();
 
 	/// <inheritdoc />
 	protected override void Validate(ServiceValidation validation)
@@ -211,7 +170,7 @@ public sealed class AirportsViewModel : GeojsonSubServiceViewModel, ISubServiceR
 		{
 			validation.Add(
 				"GeoJSON is on but none of its files are selected. Turn on Symbols, Text or Runway lines, "
-				+ "or switch GeoJSON off.");
+				+ "or turn GeoJSON off for Airports on the General tab.");
 		}
 
 		ValidateSharedSettings(validation);

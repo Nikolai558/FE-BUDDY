@@ -1,5 +1,7 @@
 using FeBuddy.Wpf.ViewModels;
 using FeBuddy.Wpf.ViewModels.Models;
+using FeBuddy.Wpf.ViewModels.ServiceTabs;
+using FeBuddy.Wpf.ViewModels.ServiceTabs.Models;
 
 using FeBuddy.Core.Application.Airac.Airways.Models;
 using FeBuddy.Core.Infrastructure.Configuration;
@@ -194,18 +196,39 @@ public sealed class AirwaysViewModelTests : IDisposable
 		Assert.Equal(AirwayStratum.Low, Designation(tab, "V").Stratum);
 	}
 
-	/// <summary>A hand-edited config with no output on loads the defaults, as the tab's own guard would never allow it.</summary>
+	/// <summary>
+	/// "None" was the GeoJSON switch before the General tab had one: it loads as High and Low files,
+	/// and while the General tab has GeoJSON off the run is sent None, with the strata card hidden.
+	/// </summary>
 	[Fact]
-	public void a_config_with_no_output_on_loads_the_defaults()
+	public void geojson_off_on_the_general_tab_sends_none_and_an_old_none_loads_as_high_and_low()
 	{
 		UserConfigFile.TrySetValue("Services.AiracService.Geojson.Airways.OutputBy", "None");
-		UserConfigFile.TrySetValue("Services.AiracService.Geojson.Airways.GenerateAliasFile", "N");
+		AirwaysViewModel tab = NewTab("J");
+		Assert.Equal(AirwayGeojsonOutputBy.HighLow, tab.OutputBy);
+		Assert.True(tab.ShowsStrata);
+
+		SubServiceRow row = new(AiracSubServices.All.Single(d => d.Key == AiracSubServices.AirwaysKey), () => { });
+		row.Load(included: true, SubServiceOutputKinds.Alias);
+		tab.AttachOutputs(row);
+
+		Assert.False(tab.GenerateGeojson);
+		Assert.False(tab.ShowsStrata);
+		Assert.Equal("None", tab.BuildSettingsBlock()["OutputBy"]);
+		Assert.Equal(["Airways.txt"], tab.OutputFileEntries().Select(file => file.Key));
+		Assert.False(tab.IsDirty);
+	}
+
+	/// <summary>None is never one of the split choices: GeoJSON is turned off on the General tab.</summary>
+	[Fact]
+	public void none_is_not_a_split_choice()
+	{
+		Assert.DoesNotContain(AirwayGeojsonOutputBy.None, AirwaysViewModel.OutputByValues);
 
 		AirwaysViewModel tab = NewTab("J");
+		tab.OutputBy = AirwayGeojsonOutputBy.None;
 
 		Assert.Equal(AirwayGeojsonOutputBy.HighLow, tab.OutputBy);
-		Assert.True(tab.GenerateAliasFile);
-		Assert.False(tab.IsDirty);
 	}
 
 	[Fact]

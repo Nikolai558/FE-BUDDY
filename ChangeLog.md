@@ -32,6 +32,16 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
 - Symbols that carry exactly the same properties are written as one feature (a MultiPoint), so
   Symbols files are much smaller: without FE-Buddy Properties, a whole Airports or Fixes Symbols file
   is one feature. Labels stay one feature each.
+- The General tab's sub-services are a table: **Include**, then **Alias**, **GeoJSON**,
+  **Procedure Changes** and **Procedures JSON**. It replaces the on/off switches on each tab's
+  Outputs card, which now just shows what's on. Everything is ticked until you first save. A file a
+  sub-service doesn't make is greyed out, and each box has a tooltip.
+- A sub-service left out stays in the list to the left, greyed out, with a tooltip saying what it
+  is and how to include it.
+- vNAS Alias Upload is no longer ticked on the General tab. It comes in by itself once an alias file
+  is ticked on an Upload to vNAS card.
+- Airways no longer has **None** under "split into". Turn GeoJSON off for Airways on the General tab
+  instead; a saved None still works.
 
 ### File Conversions
 - DAT to GeoJSON warns that the cropping distance applies to every file in the conversion, since a

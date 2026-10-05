@@ -61,9 +61,6 @@ public sealed class ArtccBoundariesViewModel : GeojsonSubServiceViewModel, ISubS
 	// ================= outputs =================
 
 	/// <inheritdoc />
-	protected override int EnabledOutputCount => 1;
-
-	/// <inheritdoc />
 	protected override string NoRoiEffect =>
 		"every boundary is drawn in full";
 

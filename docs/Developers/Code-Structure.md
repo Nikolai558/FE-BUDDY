@@ -139,7 +139,8 @@ FeBuddy.Wpf/
 └── Views/               ShellWindow, TabbedServiceView (both tabbed screens), one view per tab,
     │                    MapWorkspace (every map), the dialog windows
     └── Cards/           the shared cards (Outputs, What Files Do You Want?, FE-Buddy Properties,
-                         Region of Interest, Upload to vNAS, CRC ERAM Defaults, Source Files, Run)
+                         Region of Interest, Upload to vNAS, CRC ERAM Defaults, Source Files, Run), and
+                         OutputStatusRow, an output's On/Off line
 ```
 
 ### How the screens are built
@@ -151,8 +152,11 @@ FeBuddy.Wpf/
   view-model says what differs. Tabs are data (`TabbedServiceViewModel`), not hand-placed XAML.
 - **A sub-service tab** derives from `GeojsonSubServiceViewModel`, which brings the shared cards'
   logic: outputs, file choices, `feb.*` properties, ROI override, vNAS files and CRC defaults. A tab
-  without some of them says so (`HasAliasFile` false, a null `EmitKeys` entry). vNAS Alias Upload
-  is the exception: it derives from `SubServiceSettingsViewModel` and uses none of the shared cards.
+  without some of them says so (`HasAliasFile` false, a null `EmitKeys` entry). Which outputs are
+  on comes from the sub-service's row on the General tab (`SubServiceRow`, read through
+  `ISubServiceOutputs`), so the tab's own save and undo never change them. A sub-service left out
+  keeps its tab, greyed out (`ServiceTabViewModel.IsAvailable`). vNAS Alias Upload is the exception:
+  it derives from `SubServiceSettingsViewModel`, uses none of the shared cards and has no row.
 - **A conversion tab** derives from `FileConversionTabViewModel` (on `ConversionTabViewModel`):
   source files, CRC defaults and its own run button.
 - **Saving.** Each tab saves its own config node. "Unsaved" means different from the last save:
@@ -205,7 +209,8 @@ Say, Preferred Routes:
    `PreferredRouteOutputFiles` and a `Models/` folder. Read the shared keys with
    `SubServiceSettingsReader`, put files where `AiracOutputPaths` says, add its block to
    `AiracServiceSettings` and its run to `AiracService`.
-2. **App:** an entry in `ViewModels/AiracSubServices.cs`; a `PreferredRoutesViewModel` deriving
+2. **App:** an entry in `ViewModels/AiracSubServices.cs`, with the outputs it offers (its columns on
+   the General tab) and its tooltip text; a `PreferredRoutesViewModel` deriving
    from `GeojsonSubServiceViewModel` and implementing `ISubServiceRunTarget`; a `PreferredRoutesView`
    built from the shared cards, with its `DataTemplate` in `Views/TabbedServiceView.xaml`; and, in
    `AiracServiceViewModel`, a tab accessor (`TabFor<PreferredRoutesViewModel>(…)`) and the line that

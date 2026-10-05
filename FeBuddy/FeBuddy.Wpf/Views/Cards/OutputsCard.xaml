@@ -1,13 +1,11 @@
 <!--
-    OutputsCard  -  the first card on every sub-service tab: what the sub-service produces.
-    A GeoJSON row, then the alias file. Turning off the last output that is on is refused with
-    a toast (SubServiceSettingsViewModel.CanTurnOffOutput), so the card needn't say so.
-    Binds to the tab's view model through IOutputSettings; the tab supplies the wording.
+    OutputsCard  -  the first card on the tabs that write GeoJSON and an alias file: whether each is
+    on, and what it writes. They are turned on and off on the General tab, so the card shows the
+    state and says where to change it. Binds to the tab's view model through IOutputSettings; the
+    tab supplies the wording.
 
-    The GeoJSON row is a "GeoJSON files" checkbox bound to GenerateGeojson unless the tab
-    supplies its own GeojsonTemplate (Airways: a drop-down of how the files are split).
-    AliasOptions, when set, shows indented under the alias file and greys out with it
-    (Airways: which airways the alias file covers).
+    GeojsonOptions and AliasOptions, when set, show under their output and grey out while it is off
+    (Airways: how the GeoJSON is split into files, and which airways the alias file covers).
 
     Usage:
         <cards:OutputsCard GeojsonDescription="Writes the airport and runway GeoJSON files selected below."
@@ -26,35 +24,31 @@
              d:DesignWidth="820"
              x:Name="Self">
     <UserControl.Resources>
-        <!-- the GeoJSON row when the tab doesn't supply its own: a plain on / off -->
-        <DataTemplate x:Key="GeojsonCheckBox">
-            <ctl:Option Description="{Binding GeojsonDescription, RelativeSource={RelativeSource AncestorType=cards:OutputsCard}}">
-                <CheckBox Content="GeoJSON files" IsChecked="{Binding GenerateGeojson}" />
-            </ctl:Option>
-        </DataTemplate>
+        <!-- an output's own options: indented under it, hidden when the tab has none -->
+        <Style x:Key="OutputOptions" TargetType="ContentPresenter">
+            <Setter Property="Margin" Value="50,8,0,0" />
+            <Style.Triggers>
+                <Trigger Property="Content" Value="{x:Null}">
+                    <Setter Property="Visibility" Value="Collapsed" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
     </UserControl.Resources>
 
     <ctl:Card Header="Outputs">
         <StackPanel>
-            <ContentControl Margin="0,4,0,0" Focusable="False" Content="{Binding}"
-                            ContentTemplate="{Binding GeojsonTemplate, ElementName=Self,
-                                                      TargetNullValue={StaticResource GeojsonCheckBox}}" />
+            <TextBlock Style="{StaticResource Text.Caption}" Margin="0,4,0,10" TextWrapping="Wrap"
+                       Text="Turn these on or off on the General tab." />
 
-            <ctl:Option Margin="0,10,0,0" Description="{Binding AliasDescription, ElementName=Self}">
-                <CheckBox Content="Alias file" IsChecked="{Binding GenerateAliasFile}" />
-            </ctl:Option>
-            <ContentPresenter Margin="26,6,0,0" IsEnabled="{Binding GenerateAliasFile}"
-                              Content="{Binding AliasOptions, ElementName=Self}">
-                <ContentPresenter.Style>
-                    <Style TargetType="ContentPresenter">
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding AliasOptions, ElementName=Self}" Value="{x:Null}">
-                                <Setter Property="Visibility" Value="Collapsed" />
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </ContentPresenter.Style>
-            </ContentPresenter>
+            <cards:OutputStatusRow Label="GeoJSON files" IsOn="{Binding GenerateGeojson}"
+                                   Description="{Binding GeojsonDescription, ElementName=Self}" />
+            <ContentPresenter Style="{StaticResource OutputOptions}" IsEnabled="{Binding GenerateGeojson}"
+                              Content="{Binding GeojsonOptions, ElementName=Self}" />
+
+            <cards:OutputStatusRow Margin="0,12,0,0" Label="Alias file" IsOn="{Binding GenerateAliasFile}"
+                                   Description="{Binding AliasDescription, ElementName=Self}" />
+            <ContentPresenter Style="{StaticResource OutputOptions}" IsEnabled="{Binding GenerateAliasFile}"
+                              Content="{Binding AliasOptions, ElementName=Self}" />
         </StackPanel>
     </ctl:Card>
 </UserControl>

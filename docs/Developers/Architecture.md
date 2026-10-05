@@ -96,9 +96,9 @@ Preview Settings ▸ Run AIRAC Service
         │  AiracServiceSettings
         ▼
 AiracService.RunAsync
-  the cycle's parsed data from the cache; the shared data the selected sub-services need
+  the cycle's parsed data from the cache; the shared data the included sub-services need
   delete AIRAC_<cycle> first, if asked
-  for each selected sub-service, OutputDirectory = AIRAC_<cycle>:
+  for each included sub-service, OutputDirectory = AIRAC_<cycle>:
       XxxService.Run(data, block, fileNames)
         1. XxxSettingsParser.Parse    block → typed settings + warnings
         2. XxxBuilder                 FAA rows → domain objects
@@ -142,7 +142,7 @@ Not every sub-service has all four steps:
   ARTCC). It is written whenever an
   alias file was written, even with no duplicates, so an old report never misleads.
 - **`vNAS_Alias.txt`** is written last, whenever an alias file is marked for vNAS or vNAS Alias
-  Upload is selected. vNAS takes one alias file per facility, so `VnasAliasFileWriter` writes:
+  Upload is in the run. vNAS takes one alias file per facility, so `VnasAliasFileWriter` writes:
   1. the first `.FeUseOnly` line any custom file has;
   2. a start line, `; ===== FE-Buddy aliases (AIRAC <cycle>) start here. …`;
   3. each marked FE-Buddy alias file under `; ----- <name> -----`;

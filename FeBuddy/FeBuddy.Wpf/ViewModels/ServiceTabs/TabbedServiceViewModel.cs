@@ -162,7 +162,8 @@ public abstract class TabbedServiceViewModel : ObservableObject, IOpensAtStart
 	{
 		List<ServiceTabViewModel> desired = [.. subServiceTabs];
 
-		if (desired.Count > 0 && PreviewTab is { } preview)
+		// Preview Settings runs what takes part, so it is there only while something does.
+		if (desired.Any(tab => tab.IsAvailable) && PreviewTab is { } preview)
 		{
 			desired.Add(preview);
 		}
@@ -195,7 +196,7 @@ public abstract class TabbedServiceViewModel : ObservableObject, IOpensAtStart
 			}
 		}
 
-		if (SelectedTab is null || !Tabs.Contains(SelectedTab))
+		if (SelectedTab is null || !Tabs.Contains(SelectedTab) || !SelectedTab.IsAvailable)
 		{
 			SelectedTab = Tabs.FirstOrDefault();
 		}
@@ -226,21 +227,37 @@ public abstract class TabbedServiceViewModel : ObservableObject, IOpensAtStart
 		return save && tab.Save();
 	}
 
-	private bool CanStep(int direction)
+	private bool CanStep(int direction) => StepTarget(direction) is not null;
+
+	/// <summary>The next tab that takes part, in <paramref name="direction"/>; greyed-out tabs are stepped over.</summary>
+	private ServiceTabViewModel? StepTarget(int direction)
 	{
 		int index = SelectedTab is null ? -1 : Tabs.IndexOf(SelectedTab);
-		int target = index + direction;
-		return index >= 0 && target >= 0 && target < Tabs.Count;
+
+		if (index < 0)
+		{
+			return null;
+		}
+
+		for (int target = index + direction; target >= 0 && target < Tabs.Count; target += direction)
+		{
+			if (Tabs[target].IsAvailable)
+			{
+				return Tabs[target];
+			}
+		}
+
+		return null;
 	}
 
 	private void Step(int direction)
 	{
-		if (!CanStep(direction) || !ConfirmLeave(SelectedTab))
+		if (StepTarget(direction) is not { } target || !ConfirmLeave(SelectedTab))
 		{
 			return;
 		}
 
-		SelectedTab = Tabs[Tabs.IndexOf(SelectedTab!) + direction];
+		SelectedTab = target;
 	}
 
 	private void GoToPreview()

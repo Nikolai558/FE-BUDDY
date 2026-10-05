@@ -45,7 +45,7 @@
             <StackPanel>
                 <TextBlock Style="{StaticResource Text.Prose}" TextWrapping="Wrap" Margin="0,4,0,8"
                            MaxWidth="{StaticResource Layout.Prose.MaxWidth}" HorizontalAlignment="Left"
-                           Text="The alias files FE-Buddy puts in ahead of your custom aliases. Each one goes in when its sub-service is selected on the General tab, writes its alias file, and has it ticked on its Upload to vNAS card. This list shows those tabs' settings as they are now." />
+                           Text="The alias files FE-Buddy puts in ahead of your custom aliases. Each one goes in when its sub-service and its alias file are included on the General tab, and the alias file is ticked on that tab's Upload to vNAS card. This list shows those tabs' settings as they are now." />
 
                 <ItemsControl ItemsSource="{Binding FeBuddyAliasFiles}">
                     <ItemsControl.ItemTemplate>
@@ -53,7 +53,7 @@
                             <StackPanel>
                                 <DockPanel Margin="0,6">
                                     <Button DockPanel.Dock="Right" Style="{StaticResource Button.Ghost}" Content="Open tab" Margin="8,0,0,0"
-                                            VerticalAlignment="Center" ToolTip="Go to this sub-service's tab, to change its Outputs or Upload to vNAS card."
+                                            VerticalAlignment="Center" ToolTip="Go to this sub-service's tab, to change its Upload to vNAS card."
                                             Command="{Binding OpenTabCommand}"
                                             Visibility="{Binding CanOpenTab, Converter={StaticResource BoolToVis}}" />
                                     <StackPanel VerticalAlignment="Center">

@@ -51,9 +51,6 @@ public sealed class WxStationsViewModel : GeojsonSubServiceViewModel, ISubServic
 	// ================= outputs =================
 
 	/// <inheritdoc />
-	protected override int EnabledOutputCount => 1;
-
-	/// <inheritdoc />
 	protected override string NoRoiEffect =>
 		"the GeoJSON covers every station";
 
@@ -160,7 +157,7 @@ public sealed class WxStationsViewModel : GeojsonSubServiceViewModel, ISubServic
 	{
 		if (!EmitSymbols && !EmitText)
 		{
-			validation.Add("Neither Symbols nor Text is selected. Turn at least one back on, or deselect Wx Stations on the General tab.");
+			validation.Add("Neither Symbols nor Text is selected. Turn at least one back on, or untick Wx Stations under Include on the General tab.");
 		}
 
 		ValidateSharedSettings(validation);

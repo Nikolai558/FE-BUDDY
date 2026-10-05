@@ -76,9 +76,6 @@ public sealed class FixesViewModel : GeojsonSubServiceViewModel, ISubServiceRunT
 	// ================= outputs =================
 
 	/// <inheritdoc />
-	protected override int EnabledOutputCount => 1;
-
-	/// <inheritdoc />
 	protected override string NoRoiEffect =>
 		"the GeoJSON covers every fix";
 
@@ -470,7 +467,7 @@ public sealed class FixesViewModel : GeojsonSubServiceViewModel, ISubServiceRunT
 	{
 		if (!EmitSymbols && !EmitText)
 		{
-			validation.Add("Neither Symbols nor Text is selected. Turn at least one back on, or deselect Fixes on the General tab.");
+			validation.Add("Neither Symbols nor Text is selected. Turn at least one back on, or untick Fixes under Include on the General tab.");
 		}
 
 		if (_outputBy == FixOutputBy.FixUse && FixUses.Count > 0 && FixUses.All(t => !t.IsSelected))

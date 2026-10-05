@@ -35,7 +35,6 @@ public sealed class DeparturesViewModel : GeojsonSubServiceViewModel, ISubServic
 	private const int MaxAmendedWithinCycles = 1000;
 	private const int MaxAmendedWithinDays = 36500;
 
-	private bool _generateGeojson = true;
 	private bool _includeObstacleDepartures = true;
 	private DepartureRoiMode _roiMode = DepartureRoiMode.Airport;
 	private DepartureAmendmentFilter _amendmentFilter = DepartureAmendmentFilter.None;
@@ -66,30 +65,6 @@ public sealed class DeparturesViewModel : GeojsonSubServiceViewModel, ISubServic
 	public override string Title => "Departures";
 
 	// ================= outputs =================
-
-	/// <summary>Whether this run writes GeoJSON for the departure procedures.</summary>
-	public bool GenerateGeojson
-	{
-		get => _generateGeojson;
-		set
-		{
-			if (!value && !CanTurnOffOutput())
-			{
-				// The value never changed, but the control already did - put it back.
-				RestoreRejectedToggle(nameof(GenerateGeojson));
-				return;
-			}
-
-			if (SetProperty(ref _generateGeojson, value))
-			{
-				MarkDirty();
-			}
-		}
-	}
-
-	/// <inheritdoc />
-	protected override int EnabledOutputCount =>
-		(GenerateGeojson ? 1 : 0) + (GenerateAliasFile ? 1 : 0);
 
 	/// <inheritdoc />
 	protected override string NoRoiEffect =>
@@ -337,17 +312,8 @@ public sealed class DeparturesViewModel : GeojsonSubServiceViewModel, ISubServic
 	/// <inheritdoc />
 	protected override void LoadFromConfig()
 	{
-		_generateGeojson = GetBool("GenerateGeojson", true);
 		_includeObstacleDepartures = GetBool("IncludeObstacleDepartures", true);
 		LoadSharedSettings();
-
-		// Both outputs off would leave the tab in a state its own guard forbids; a hand-edited
-		// config is the only way to get here, so fall back to the default rather than honour it.
-		if (!_generateGeojson && !GenerateAliasFile)
-		{
-			_generateGeojson = true;
-			GenerateAliasFile = true;
-		}
 
 		// Re-apply the saved ARTCC filter to any already-built toggles, without a dirty check
 		// per toggle; ClearDirty below re-takes the snapshot once.
@@ -388,7 +354,6 @@ public sealed class DeparturesViewModel : GeojsonSubServiceViewModel, ISubServic
 	/// <inheritdoc />
 	protected override void WriteToConfig()
 	{
-		Set("GenerateGeojson", YesNo(GenerateGeojson));
 		Set("IncludeObstacleDepartures", YesNo(IncludeObstacleDepartures));
 		Set("ArtccFilter", string.Join(',', SelectedArtccs()));
 		Set("Roi.Mode", _roiMode.ToString());
@@ -406,7 +371,7 @@ public sealed class DeparturesViewModel : GeojsonSubServiceViewModel, ISubServic
 		{
 			validation.Add(
 				"GeoJSON is on but none of its files are selected. Turn on Lines, Symbols or Text, "
-				+ "or switch GeoJSON off.");
+				+ "or turn GeoJSON off for Departures on the General tab.");
 		}
 
 		ValidateAmendmentFilter(validation);
@@ -602,7 +567,7 @@ public sealed class DeparturesViewModel : GeojsonSubServiceViewModel, ISubServic
 	{
 		foreach (string name in new[]
 		{
-			nameof(GenerateGeojson), nameof(IncludeObstacleDepartures),
+			nameof(IncludeObstacleDepartures),
 			nameof(RoiModeAirport), nameof(RoiModeWaypoint),
 			nameof(AmendmentAny), nameof(AmendmentByCycles), nameof(AmendmentByDays), nameof(AmendmentByDate),
 			nameof(AmendedWithinCycles), nameof(AmendedWithinDays), nameof(AmendedOnOrAfter),

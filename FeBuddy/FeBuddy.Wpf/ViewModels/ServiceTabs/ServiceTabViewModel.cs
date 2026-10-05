@@ -21,6 +21,8 @@ public abstract class ServiceTabViewModel : ObservableObject
 	private bool _isDirty;
 	private string? _validationError;
 	private ServiceTabStatus _status = ServiceTabStatus.Ok;
+	private bool _isAvailable = true;
+	private string? _unavailableToolTip;
 
 	/// <summary>The tab's label in the rail, e.g. <c>General</c> or <c>Airways</c>.</summary>
 	public abstract string Title { get; }
@@ -42,6 +44,34 @@ public abstract class ServiceTabViewModel : ObservableObject
 	/// whose backend does not exist yet. Such a tab is never counted as blocking a run.
 	/// </summary>
 	public virtual bool IsRunnable => true;
+
+	/// <summary>
+	/// Whether the tab takes part: <see langword="false"/> for a sub-service left out on the General
+	/// tab. Such a tab stays in the rail, greyed out and unclickable, with
+	/// <see cref="UnavailableToolTip"/> saying what it is and how to bring it in; it is skipped by
+	/// the run, its checks and the Preview Settings tab.
+	/// </summary>
+	public bool IsAvailable
+	{
+		get => _isAvailable;
+		private set => SetProperty(ref _isAvailable, value);
+	}
+
+	/// <summary>What a greyed-out tab is and how to bring it in, for its tooltip in the rail; <see langword="null"/> while available.</summary>
+	public string? UnavailableToolTip
+	{
+		get => _unavailableToolTip;
+		private set => SetProperty(ref _unavailableToolTip, value);
+	}
+
+	/// <summary>Greys the tab out with a tooltip saying why, or brings it back.</summary>
+	/// <param name="available">Whether the tab takes part.</param>
+	/// <param name="whyNot">The tooltip while it doesn't: what it is, and how to bring it in.</param>
+	public void SetAvailability(bool available, string? whyNot = null)
+	{
+		IsAvailable = available;
+		UnavailableToolTip = available ? null : whyNot;
+	}
 
 	/// <summary><see langword="true"/> when the tab has edits the user has not saved.</summary>
 	public bool IsDirty

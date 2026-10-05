@@ -68,7 +68,8 @@ Written by Settings, except `NewsLastOpen` and `LegacyGitHubTokenNoticeShown`.
 | Key | Values | Default |
 |---|---|---|
 | `AiracCycleId` | a cycle ID, e.g. `2610`, matched back to previous, current or next on load | the current cycle |
-| `SelectedSubServices` | comma-separated: `Airports`, `Airways`, `Departures`, `Arrivals`, `Navaids`, `ArtccBoundaries`, `Fixes`, `WxStations`, `Procedures`, `Telephony`, `VnasAlias`. Never rename one without migrating this value | none |
+| `SelectedSubServices` | the sub-services included on the General tab, comma-separated: `Airports`, `Airways`, `Departures`, `Arrivals`, `Navaids`, `ArtccBoundaries`, `Fixes`, `WxStations`, `Procedures`, `Telephony`. Never rename one without migrating this value. A `VnasAlias` saved by an older version is ignored: that tab comes in by itself | every sub-service |
+| `Outputs.<sub-service>.<output>` | `Y` / `N`: the General tab's table, e.g. `Outputs.Airports.Geojson`. `<output>` is `Alias`, `Geojson`, `ProcedureChanges` or `ProceduresJson`, and only those the sub-service makes are saved | `Y`; until first saved, what the tab saved before the table (`GenerateGeojson`, `GenerateAliasFile`, `GenerateChangesDocument`, `GenerateProceduresJson`; Airways' `OutputBy = None` meant GeoJSON off) |
 | `UserArtccId` | the Settings ▸ Facility Profile ARTCC, e.g. `ZOB`. The run's `PrimaryFacility` (first in `Duplicate_Alias_Commands.txt`, and Procedures' leading section), and the ARTCC ticked on Departures, Arrivals, ARTCC Boundaries and Procedures until each is first saved | none |
 | `CoordinatePrecision` | `1`-`15` decimal places, or `0` for Do not round (the app offers 5, 6, 7 and Do not round) | `6` |
 | `DefaultRoi.FilterByRoi` | `true` / `false` - not `Y` / `N` | `false` |
@@ -146,6 +147,9 @@ none of them.
 - The app sends the override box when a tab overrides the ROI, otherwise the default ROI.
 - `Vnas.UploadFiles` and `Vnas.CrcFiles` keep every choice, even for files the current settings
   don't write, so a file switched off and on keeps its choice. A run sends only the files written.
+- A sub-service's outputs (`GenerateGeojson`, `GenerateAliasFile`, and Procedures' two documents) are
+  set on the General tab and saved there, under `Services.AiracService.Outputs` - never in the
+  sub-service's own node, so saving or undoing its tab can't change them.
 
 ### Where files go
 
@@ -238,8 +242,8 @@ values as `CrcEramPropertyDefaults.<row>.<field>`.
 
 | Block key | Saved as | Values | Default |
 |---|---|---|---|
-| `GenerateGeojson` | | `Y` / `N` | `Y` |
-| `GenerateAliasFile` | | `Y` / `N` | `Y` |
+| `GenerateGeojson` | `Outputs.Airports.Geojson` (General tab) | `Y` / `N` | `Y` |
+| `GenerateAliasFile` | `Outputs.Airports.Alias` (General tab) | `Y` / `N` | `Y` |
 | `EmitRunwayLines`, `EmitAirportSymbols`, `EmitAirportText` | | `Y` / `N` | `Y` |
 
 - **`FebProperties`:** `faaId`, `icaoId`, `name`, `elev`, `respArtcc`, `tfcPtrnAlt`, `fssId`, `twrType`,
@@ -251,9 +255,9 @@ values as `CrcEramPropertyDefaults.<row>.<field>`.
 
 | Block key | Saved as | Values | Default |
 |---|---|---|---|
-| `OutputBy` | | `HighLow`, `Designation`, `None` | **required** (saved: `HighLow`) |
+| `OutputBy` | | `HighLow`, `Designation`, `None`; the app sends `None` while GeoJSON is off on the General tab (`Outputs.Airways.Geojson`) | **required** (saved: `HighLow`) |
 | `EmitLines`, `EmitSymbols`, `EmitText` | | `Y` / `N` | `Y` |
-| `GenerateAliasFile` | | `Y` / `N` | `Y` |
+| `GenerateAliasFile` | `Outputs.Airways.Alias` (General tab) | `Y` / `N` | `Y` |
 | `AliasRoiScope` | | `All`, `RoiAirways` | `All` |
 | `BufferAirwayWaypoints` | | `Y` / `N` | `N` |
 | `FixBufferNm` | | NM short of a five-letter fix, `0`-`10` | `2.5` |
@@ -280,8 +284,8 @@ unknown-key warning).
 
 | Block key | Saved as | Values | Default |
 |---|---|---|---|
-| `GenerateGeojson` | | `Y` / `N` | `Y` |
-| `GenerateAliasFile` | | `Y` / `N` | `Y` |
+| `GenerateGeojson` | `Outputs.<Departures/Arrivals>.Geojson` (General tab) | `Y` / `N` | `Y` |
+| `GenerateAliasFile` | `Outputs.<Departures/Arrivals>.Alias` (General tab) | `Y` / `N` | `Y` |
 | `EmitLines`, `EmitSymbols`, `EmitText` | | `Y` / `N` | `Y` |
 | `IncludeObstacleDepartures` | | `Y` / `N` - Departures only | `Y` |
 | `ArtccFilter` | | list of ARTCC IDs; empty means all | saved: the Facility Profile ARTCC, until first saved |
@@ -301,8 +305,8 @@ unknown-key warning).
 
 | Block key | Saved as | Values | Default |
 |---|---|---|---|
-| `GenerateGeojson` | | `Y` / `N` | `Y` |
-| `GenerateAliasFile` | | `Y` / `N` | `Y` |
+| `GenerateGeojson` | `Outputs.Navaids.Geojson` (General tab) | `Y` / `N` | `Y` |
+| `GenerateAliasFile` | `Outputs.Navaids.Alias` (General tab) | `Y` / `N` | `Y` |
 | `EmitSymbols`, `EmitText` | | `Y` / `N` (there is no Lines file) | `Y` |
 | `OutputBy` | | `All`, `Type` | `All` |
 | `ExcludedTypes` | | list of NASR `NAV_TYPE` names, left out of the GeoJSON and the alias file | none |
@@ -363,9 +367,9 @@ tab's ROI override if it has one, otherwise the default ROI.
 
 | Block key | Saved as | Values | Default |
 |---|---|---|---|
-| `GenerateChangesDocument` | | `Y` / `N` - `Procedure_Changes.md` | `Y` |
-| `GenerateProceduresJson` | | `Y` / `N` - `Procedures.json` | `Y` |
-| `GenerateAliasFile` | | `Y` / `N` - `Faa_Chart_Recall.txt` | `Y` |
+| `GenerateChangesDocument` | `Outputs.Procedures.ProcedureChanges` (General tab) | `Y` / `N` - `Procedure_Changes.md` | `Y` |
+| `GenerateProceduresJson` | `Outputs.Procedures.ProceduresJson` (General tab) | `Y` / `N` - `Procedures.json` | `Y` |
+| `GenerateAliasFile` | `Outputs.Procedures.Alias` (General tab) | `Y` / `N` - `Faa_Chart_Recall.txt` | `Y` |
 | `Facilities` | | list of ARTCC IDs whose airports are included | saved: the Facility Profile ARTCC, until first saved |
 | `PrimaryFacility` | not saved (`Services.AiracService.UserArtccId`) | the ARTCC whose section leads both documents | none |
 | `IncludeRoiAirports` | | `Y` / `N` - include every airport inside the ROI; needs a ROI | `N` |
@@ -392,7 +396,7 @@ tab's ROI override if it has one, otherwise the default ROI.
 
 | Block key | Saved as | Values | Default |
 |---|---|---|---|
-| `GenerateAliasFile` | | must be `Y`: `Telephony.txt` is Telephony's only output | `Y` |
+| `GenerateAliasFile` | not saved: always `Y` while Telephony is included | must be `Y`: `Telephony.txt` is Telephony's only output | `Y` |
 | `VirtualAirlines.<n>.Designator` | | a virtual airline's three-letter designator (`<n>` from 1) | none |
 | `VirtualAirlines.<n>.Telephony` | | its telephony | none |
 | `VirtualAirlines.<n>.Organization` | | its virtual organization | none |

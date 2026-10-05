@@ -36,8 +36,8 @@ Where you make files. The tabs run down the left:
 
 | Tab | What it is |
 |---|---|
-| **General** | The cycle, and which sub-services to run. |
-| One per sub-service | That sub-service's settings. Appears when you tick it. |
+| **General** | The cycle, and which sub-services to run and the files each makes. |
+| One per sub-service | That sub-service's settings. Greyed out while it's left out on General. |
 | **File Names** | Every file the run will write, and new names for any of them. |
 | **Preview Settings** | What the run will do, and the **Run AIRAC Service** button. |
 | **Review** | What the last run did. |
@@ -57,17 +57,21 @@ says why.
 
 - **Cycle** - Previous, Current or Next, each with its effective date and status. The next cycle
   says *not yet published* until the FAA releases it, a few weeks early.
-- **Sub-Services** - tick what to make: ARTCC Boundaries, Airports, Airways, Arrivals, Departures,
-  NAVAIDs, Fixes, Procedures, Telephony, Wx Stations, vNAS Alias Upload. Unticking one keeps its
-  settings for next time.
+- **Sub-Services** - a table: **Include** ticks the sub-services to run (all of them to start), and
+  the columns turn each one's files on or off: **Alias**, **GeoJSON**, and Procedures' **Procedure
+  Changes** and **Procedures JSON**. A box a sub-service doesn't have is greyed out. An included
+  sub-service keeps at least one file on; to make nothing, untick it under Include. Hover a box for
+  what the file is. A sub-service left out is greyed out in the list to the left and keeps its
+  settings; hovering it says how to bring it back. vNAS Alias Upload isn't in the table: its tab comes
+  in once an alias file is ticked for vNAS.
 
 ### The cards most tabs share
 
 The tabs that write GeoJSON are built from the same cards. Procedures, Telephony and vNAS Alias
 Upload have their own; see their sections.
 
-- **Outputs** - GeoJSON files, the alias file, or both. (To make nothing, untick the sub-service.)
-  ARTCC Boundaries, Fixes and Wx Stations have no alias file, so no Outputs card.
+- **Outputs** - whether the GeoJSON files and the alias file are on (set on the General tab), and
+  what each writes. ARTCC Boundaries, Fixes and Wx Stations have no alias file, so no Outputs card.
 - **What Files Do You Want?** - which of **Lines**, **Symbols** and **Text** to write. Symbols that
   carry exactly the same properties are written as one feature (a MultiPoint), so a Symbols file
   stays small; labels are always one feature each.
@@ -135,13 +139,12 @@ Each ARTCC's boundary as lines. No Symbols, Text or alias file.
 
 ### Airways tab
 
-- **GeoJSON files:**
+- **GeoJSON files** - split into:
   - **HighLow** - `Airways_High` and `Airways_Low`. The **High and Low Files** card says which file
     each airway type goes in: High, Low or Both. J and Q start in High and V and T in Low; any other
     type starts blank, and the tab stays red until you choose. It goes by type, not by published
     altitude.
   - **Designation** - one set per designation: `Airways_J`, `Airways_V`, `Airways_Q`, …
-  - **None** - no GeoJSON, just the alias file.
 - **`Airways.txt`** - a command per airway that draws its fixes, e.g. `.J3F`. Choose **All FAA
   airways** or **ROI airways only**.
 - **Designations to Include** - untick one to leave it out of everything.
@@ -215,7 +218,7 @@ Built from the FAA's **d-TPP Metafile** - the index of approach plates, SIDs, ST
 diagrams and the rest - not NASR. The FAA posts it only 15-18 days before a cycle starts, so the next
 cycle's is often missing; the run still goes ahead, just without Procedures' files.
 
-- **Outputs** - any of:
+- **Outputs** - any of these, turned on and off on the General tab:
   - **Procedure Changes document** (`Procedure_Changes.md`) - what changed this cycle at the airports
     you pick.
   - **Procedures.json** - every current chart at the airports you pick.
@@ -310,7 +313,7 @@ Writes `Telephony.txt`, with every operator in the FAA's list; it isn't limited 
 - **Telephony Data** - FAA Order JO 7340.2, Chapter 3: the ICAO register and the U.S. special call
   signs. Every run downloads the latest, falling back on FE-Buddy's kept copy if it can't. Left out:
   an entry with no three-letter designator or no telephony, and an expired special call sign.
-- **Outputs** - the alias file. Each operator gets an `.id` command for its designator and another
+- **Outputs** - the alias file, on whenever Telephony is included. Each operator gets an `.id` command for its designator and another
   for its telephony: `.idAVA` and `.idAVIANCA` (just one when they're the same, `.idNASA`). The card
   shows the designator, telephony, company and country - for a special call sign, the identifier,
   telephony, agency and expiry. When operators share a command, it shows each card.

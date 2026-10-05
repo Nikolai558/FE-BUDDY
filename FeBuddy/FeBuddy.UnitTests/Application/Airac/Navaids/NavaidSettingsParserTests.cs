@@ -385,18 +385,6 @@ public sealed class NavaidSettingsParserTests
 	}
 
 	[Fact]
-	public void a_stale_upload_to_vnas_key_produces_a_warning_and_changes_nothing()
-	{
-		Dictionary<string, string> settings = MinimalValidSettings();
-		settings["UploadToVnas"] = "NAVAIDs_Symbols,Navaids.txt";
-
-		NavaidSettingsParseResult result = NavaidSettingsParser.Parse(settings);
-
-		Assert.Contains(result.Messages.WarningTexts(), w => w.Contains("UploadToVnas"));
-		Assert.Empty(result.Settings.CrcDefaultsFiles.Files);
-	}
-
-	[Fact]
 	public void an_unrecognized_key_produces_a_warning_and_does_not_throw()
 	{
 		Dictionary<string, string> settings = MinimalValidSettings();

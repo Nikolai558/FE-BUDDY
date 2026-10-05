@@ -1,20 +1,20 @@
 using System.Text;
 
-using FeBuddy.Core.Application.Airac.VnasAlias;
-using FeBuddy.Core.Application.Airac.VnasAlias.Models;
+using FeBuddy.Core.Application.Airac.ConcatenateAliases;
+using FeBuddy.Core.Application.Airac.ConcatenateAliases.Models;
 using FeBuddy.Core.Application.Models;
 using FeBuddy.Core.Infrastructure.Logging.Models;
 
-namespace FeBuddy.UnitTests.Application.Airac.VnasAlias;
+namespace FeBuddy.UnitTests.Application.Airac.ConcatenateAliases;
 
 /// <summary>
-/// Covers <see cref="VnasAliasFileWriter"/>: <c>Combined_Alias.txt</c> is FE-Buddy's alias files
+/// Covers <see cref="CombinedAliasFileWriter"/>: <c>Combined_Alias.txt</c> is FE-Buddy's alias files
 /// between a start and an end line, then the custom alias files, so CRC (last copy wins) uses the
 /// user's commands; a <c>.FeUseOnly</c> line stays first; an old combined file used as a
 /// custom file loses its FE-Buddy section, in either layout; commands in more than one file are
 /// reported; and a custom file that could not be read is left out with a warning.
 /// </summary>
-public sealed class VnasAliasFileWriterTests : IDisposable
+public sealed class CombinedAliasFileWriterTests : IDisposable
 {
 	private const string Start2610 =
 		"; ===== FE-Buddy aliases (AIRAC 2610) start here. FE-Buddy replaces everything down to the end line every cycle. =====";
@@ -22,11 +22,11 @@ public sealed class VnasAliasFileWriterTests : IDisposable
 	private const string End =
 		"; ===== End of FE-Buddy aliases. Your own aliases go below this line: CRC uses the last copy of a command, so yours replace FE-Buddy's. =====";
 
-	private readonly string _output = Path.Combine(Path.GetTempPath(), "FeBuddyTests_VnasAlias_" + Guid.NewGuid().ToString("N"));
+	private readonly string _output = Path.Combine(Path.GetTempPath(), "FeBuddyTests_CombinedAlias_" + Guid.NewGuid().ToString("N"));
 
-	public VnasAliasFileWriterTests() => Directory.CreateDirectory(Path.Combine(_output, "Aliases"));
+	public CombinedAliasFileWriterTests() => Directory.CreateDirectory(Path.Combine(_output, "Aliases"));
 
-	private string VnasAliasPath => Path.Combine(_output, "Aliases", "Combined_Alias.txt");
+	private string CombinedAliasPath => Path.Combine(_output, "Aliases", "Combined_Alias.txt");
 
 	public void Dispose() => Directory.Delete(_output, recursive: true);
 
@@ -36,7 +36,7 @@ public sealed class VnasAliasFileWriterTests : IDisposable
 		string airways = FeBuddyFile("Airways.txt", ".J60F .FF A B C\r\n");
 		string telephony = FeBuddyFile("Telephony.txt", "\r\n.idAVA .MSG AVIANCA\r\n.idAAL .MSG AMERICAN\r\n\r\n");
 
-		VnasAliasResult result = VnasAliasFileWriter.Write(
+		CombinedAliasResult result = CombinedAliasFileWriter.Write(
 			[
 				Read(1, "ZOB-Alias.txt", ".FeUseOnly keep me first\r\n# ZOB\r\n\r\n.dtwdv .ECHO DTW\r\n\r\n\r\n"),
 				Read(2, "Extra.txt", "\n\n.extra .ECHO extra\n"),
@@ -45,7 +45,7 @@ public sealed class VnasAliasFileWriterTests : IDisposable
 			"2610",
 			_output);
 
-		Assert.Equal(VnasAliasPath, result.FilePath);
+		Assert.Equal(CombinedAliasPath, result.FilePath);
 		Assert.Equal(
 			Lines(
 				".FeUseOnly keep me first",
@@ -62,7 +62,7 @@ public sealed class VnasAliasFileWriterTests : IDisposable
 				".dtwdv .ECHO DTW",
 				"",
 				".extra .ECHO extra"),
-			File.ReadAllText(VnasAliasPath));
+			File.ReadAllText(CombinedAliasPath));
 
 		Assert.Equal(2, result.CustomFileCount);
 		Assert.Equal(2, result.CustomFilesMerged);
@@ -76,9 +76,9 @@ public sealed class VnasAliasFileWriterTests : IDisposable
 	[Fact]
 	public void the_file_is_utf8_without_a_byte_order_mark()
 	{
-		VnasAliasFileWriter.Write([Read(1, "a.txt", "\uFEFF.é .ECHO é")], [], "2610", _output);
+		CombinedAliasFileWriter.Write([Read(1, "a.txt", "\uFEFF.é .ECHO é")], [], "2610", _output);
 
-		byte[] bytes = File.ReadAllBytes(VnasAliasPath);
+		byte[] bytes = File.ReadAllBytes(CombinedAliasPath);
 
 		Assert.Equal((byte)'.', bytes[0]);
 		Assert.Equal(Lines(".é .ECHO é"), Encoding.UTF8.GetString(bytes));
@@ -87,7 +87,7 @@ public sealed class VnasAliasFileWriterTests : IDisposable
 	[Fact]
 	public void only_the_first_fe_use_only_line_is_kept_and_it_goes_first()
 	{
-		VnasAliasFileWriter.Write(
+		CombinedAliasFileWriter.Write(
 			[
 				Read(1, "a.txt", ".a .ECHO a"),
 				Read(2, "b.txt", "  .FEUSEONLY from b\r\n.b .ECHO b"),
@@ -99,12 +99,12 @@ public sealed class VnasAliasFileWriterTests : IDisposable
 
 		Assert.Equal(
 			Lines("  .FEUSEONLY from b", ".a .ECHO a", "", ".b .ECHO b", "", ".c .ECHO c"),
-			File.ReadAllText(VnasAliasPath));
+			File.ReadAllText(CombinedAliasPath));
 	}
 
 	/// <summary>A file uploaded before the end line existed: FE-Buddy's section was last, so it runs to the end.</summary>
 	[Fact]
-	public void an_old_vnas_alias_file_with_the_fe_buddy_section_last_loses_it()
+	public void an_old_combined_alias_file_with_the_fe_buddy_section_last_loses_it()
 	{
 		string oldUpload = Lines(
 			".mine .ECHO mine",
@@ -113,12 +113,12 @@ public sealed class VnasAliasFileWriterTests : IDisposable
 			"; ----- Airways.txt -----",
 			".J60F .FF OLD");
 
-		VnasAliasResult result = VnasAliasFileWriter.Write(
+		CombinedAliasResult result = CombinedAliasFileWriter.Write(
 			[Read(1, "ZOB-Alias.txt", oldUpload)], [FeBuddyFile("Airways.txt", ".J60F .FF NEW")], "2610", _output);
 
 		Assert.Equal(
 			Lines(Start2610, "; ----- Airways.txt -----", ".J60F .FF NEW", End, "", ".mine .ECHO mine"),
-			File.ReadAllText(VnasAliasPath));
+			File.ReadAllText(CombinedAliasPath));
 		Assert.Equal(1, result.CustomCommandCount);
 		Assert.Equal(0, result.DuplicateCommandCount);
 
@@ -131,7 +131,7 @@ public sealed class VnasAliasFileWriterTests : IDisposable
 
 	/// <summary>A file in today's layout: only the lines outside FE-Buddy's section are the user's.</summary>
 	[Fact]
-	public void an_old_vnas_alias_file_with_the_fe_buddy_section_first_keeps_what_is_around_it()
+	public void an_old_combined_alias_file_with_the_fe_buddy_section_first_keeps_what_is_around_it()
 	{
 		string oldUpload = Lines(
 			".FeUseOnly mine",
@@ -142,12 +142,12 @@ public sealed class VnasAliasFileWriterTests : IDisposable
 			"",
 			".mine .ECHO mine");
 
-		VnasAliasResult result = VnasAliasFileWriter.Write(
+		CombinedAliasResult result = CombinedAliasFileWriter.Write(
 			[Read(1, "ZOB-Alias.txt", oldUpload)], [FeBuddyFile("Airways.txt", ".J60F .FF NEW")], "2610", _output);
 
 		Assert.Equal(
 			Lines(".FeUseOnly mine", Start2610, "; ----- Airways.txt -----", ".J60F .FF NEW", End, "", ".mine .ECHO mine"),
-			File.ReadAllText(VnasAliasPath));
+			File.ReadAllText(CombinedAliasPath));
 		Assert.Equal(LogLevel.Info, Assert.Single(result.Messages).Level);
 	}
 
@@ -156,12 +156,12 @@ public sealed class VnasAliasFileWriterTests : IDisposable
 	public void merging_the_written_file_again_gives_the_same_file()
 	{
 		string airways = FeBuddyFile("Airways.txt", ".J60F .FF A B C");
-		VnasAliasFileWriter.Write([Read(1, "ZOB-Alias.txt", ".FeUseOnly x\r\n.mine .ECHO mine\r\n\r\n.also .ECHO also")], [airways], "2610", _output);
-		string first = File.ReadAllText(VnasAliasPath);
+		CombinedAliasFileWriter.Write([Read(1, "ZOB-Alias.txt", ".FeUseOnly x\r\n.mine .ECHO mine\r\n\r\n.also .ECHO also")], [airways], "2610", _output);
+		string first = File.ReadAllText(CombinedAliasPath);
 
-		VnasAliasFileWriter.Write([Read(1, "vNAS_Alias.txt", first)], [airways], "2610", _output);
+		CombinedAliasFileWriter.Write([Read(1, "Combined_Alias.txt", first)], [airways], "2610", _output);
 
-		Assert.Equal(first, File.ReadAllText(VnasAliasPath));
+		Assert.Equal(first, File.ReadAllText(CombinedAliasPath));
 	}
 
 	[Fact]
@@ -172,34 +172,34 @@ public sealed class VnasAliasFileWriterTests : IDisposable
 			".J60F .FF OLD",
 			End);
 
-		VnasAliasFileWriter.Write([Read(1, "vNAS_Alias.txt", oldUpload)], [FeBuddyFile("Airways.txt", ".J60F .FF NEW")], "2610", _output);
+		CombinedAliasFileWriter.Write([Read(1, "Combined_Alias.txt", oldUpload)], [FeBuddyFile("Airways.txt", ".J60F .FF NEW")], "2610", _output);
 
-		Assert.Equal(Lines(Start2610, "; ----- Airways.txt -----", ".J60F .FF NEW", End), File.ReadAllText(VnasAliasPath));
+		Assert.Equal(Lines(Start2610, "; ----- Airways.txt -----", ".J60F .FF NEW", End), File.ReadAllText(CombinedAliasPath));
 	}
 
 	[Fact]
 	public void fe_buddy_files_alone_have_just_the_fe_buddy_section()
 	{
-		VnasAliasResult result = VnasAliasFileWriter.Write([], [FeBuddyFile("Navaids.txt", ".CLE .FF CLE")], "2610", _output);
+		CombinedAliasResult result = CombinedAliasFileWriter.Write([], [FeBuddyFile("Navaids.txt", ".CLE .FF CLE")], "2610", _output);
 
 		Assert.Equal(
 			Lines(Start2610, "; ----- Navaids.txt -----", ".CLE .FF CLE", End),
-			File.ReadAllText(VnasAliasPath));
+			File.ReadAllText(CombinedAliasPath));
 		Assert.Equal(0, result.CustomFileCount);
 	}
 
 	[Fact]
 	public void custom_files_alone_have_no_fe_buddy_section()
 	{
-		VnasAliasFileWriter.Write([Read(1, "a.txt", ".a .ECHO a")], [], "2610", _output);
+		CombinedAliasFileWriter.Write([Read(1, "a.txt", ".a .ECHO a")], [], "2610", _output);
 
-		Assert.Equal(Lines(".a .ECHO a"), File.ReadAllText(VnasAliasPath));
+		Assert.Equal(Lines(".a .ECHO a"), File.ReadAllText(CombinedAliasPath));
 	}
 
 	[Fact]
 	public void a_custom_file_that_could_not_be_read_is_left_out_with_an_advisory_warning()
 	{
-		VnasAliasResult result = VnasAliasFileWriter.Write(
+		CombinedAliasResult result = CombinedAliasFileWriter.Write(
 			[
 				AliasSourceLoad.Failed(new AliasSource(1, AliasSourceKind.Url, "https://github.com/o/r/blob/main/ZOB-Alias.txt"), "GitHub refused the credential 'ZOB GitHub'."),
 				Read(2, "b.txt", ".b .ECHO b"),
@@ -210,7 +210,7 @@ public sealed class VnasAliasFileWriterTests : IDisposable
 
 		Assert.Equal(2, result.CustomFileCount);
 		Assert.Equal(1, result.CustomFilesMerged);
-		Assert.EndsWith(Lines(End, "", ".b .ECHO b"), File.ReadAllText(VnasAliasPath), StringComparison.Ordinal);
+		Assert.EndsWith(Lines(End, "", ".b .ECHO b"), File.ReadAllText(CombinedAliasPath), StringComparison.Ordinal);
 
 		ServiceMessage warning = Assert.Single(result.Messages);
 		Assert.Equal(LogLevel.Warning, warning.Level);
@@ -224,14 +224,14 @@ public sealed class VnasAliasFileWriterTests : IDisposable
 	[Fact]
 	public void nothing_to_merge_writes_no_file_and_says_why()
 	{
-		VnasAliasResult result = VnasAliasFileWriter.Write(
+		CombinedAliasResult result = CombinedAliasFileWriter.Write(
 			[AliasSourceLoad.Failed(new AliasSource(1, AliasSourceKind.File, @"C:\Gone.txt"), "C:\\Gone.txt was not found.")],
 			[],
 			"2610",
 			_output);
 
 		Assert.Null(result.FilePath);
-		Assert.False(File.Exists(VnasAliasPath));
+		Assert.False(File.Exists(CombinedAliasPath));
 		Assert.Equal(2, result.Messages.Count);
 		Assert.Equal(
 			"Combined_Alias.txt was not written: no custom alias file could be read, and the run wrote no alias file.",
@@ -242,25 +242,25 @@ public sealed class VnasAliasFileWriterTests : IDisposable
 	[Fact]
 	public void nothing_to_merge_deletes_the_file_an_earlier_run_wrote()
 	{
-		VnasAliasFileWriter.Write([Read(1, "a.txt", ".a .ECHO a")], [], "2610", _output);
-		Assert.True(File.Exists(VnasAliasPath));
+		CombinedAliasFileWriter.Write([Read(1, "a.txt", ".a .ECHO a")], [], "2610", _output);
+		Assert.True(File.Exists(CombinedAliasPath));
 
-		VnasAliasResult result = VnasAliasFileWriter.Write(
+		CombinedAliasResult result = CombinedAliasFileWriter.Write(
 			[AliasSourceLoad.Failed(new AliasSource(1, AliasSourceKind.File, @"C:\Gone.txt"), "C:\\Gone.txt was not found.")], [], "2610", _output);
 
 		Assert.Null(result.FilePath);
-		Assert.False(File.Exists(VnasAliasPath));
+		Assert.False(File.Exists(CombinedAliasPath));
 		Assert.EndsWith("The one an earlier run wrote was deleted, so it cannot be uploaded by mistake.", result.Messages[^1].Text, StringComparison.Ordinal);
 	}
 
 	[Fact]
 	public void an_earlier_file_that_cannot_be_deleted_is_not_to_be_uploaded()
 	{
-		VnasAliasFileWriter.Write([Read(1, "a.txt", ".a .ECHO a")], [], "2610", _output);
+		CombinedAliasFileWriter.Write([Read(1, "a.txt", ".a .ECHO a")], [], "2610", _output);
 
-		using (File.Open(VnasAliasPath, FileMode.Open, FileAccess.Read, FileShare.None))
+		using (File.Open(CombinedAliasPath, FileMode.Open, FileAccess.Read, FileShare.None))
 		{
-			VnasAliasResult result = VnasAliasFileWriter.Write([], [], "2610", _output);
+			CombinedAliasResult result = CombinedAliasFileWriter.Write([], [], "2610", _output);
 
 			Assert.Contains("The one an earlier run wrote could not be deleted (", result.Messages[^1].Text, StringComparison.Ordinal);
 			Assert.EndsWith("): do not upload it.", result.Messages[^1].Text, StringComparison.Ordinal);
@@ -271,7 +271,7 @@ public sealed class VnasAliasFileWriterTests : IDisposable
 	[Fact]
 	public void a_command_from_a_custom_file_in_another_file_is_reported_once_with_the_files_it_is_in()
 	{
-		VnasAliasResult result = VnasAliasFileWriter.Write(
+		CombinedAliasResult result = CombinedAliasFileWriter.Write(
 			[Read(1, "ZOB-Alias.txt", ".CLE .ECHO mine\r\n.cle .ECHO mine again\r\n.only .ECHO mine")],
 			[FeBuddyFile("Navaids.txt", ".CLE .FF CLE"), FeBuddyFile("Airports.txt", ".aptCLE .FF CLE")],
 			"2610",
@@ -293,7 +293,7 @@ public sealed class VnasAliasFileWriterTests : IDisposable
 	[Fact]
 	public void a_command_in_two_custom_files_is_reported()
 	{
-		VnasAliasResult result = VnasAliasFileWriter.Write(
+		CombinedAliasResult result = CombinedAliasFileWriter.Write(
 			[Read(1, "a.txt", ".same .ECHO a"), Read(2, "b.txt", ".same .ECHO b")], [], "2610", _output);
 
 		Assert.Equal(1, result.DuplicateCommandCount);
@@ -307,7 +307,7 @@ public sealed class VnasAliasFileWriterTests : IDisposable
 	[Fact]
 	public void a_command_only_fe_buddy_files_share_is_not_reported()
 	{
-		VnasAliasResult result = VnasAliasFileWriter.Write(
+		CombinedAliasResult result = CombinedAliasFileWriter.Write(
 			[Read(1, "ZOB-Alias.txt", ".mine .ECHO mine")],
 			[FeBuddyFile("Departures.txt", ".orfNUTIYf .FF A"), FeBuddyFile("Arrivals.txt", ".orfNUTIYf .FF B")],
 			"2610",
@@ -322,7 +322,7 @@ public sealed class VnasAliasFileWriterTests : IDisposable
 	{
 		string commands = string.Join("\r\n", Enumerable.Range(1, 12).Select(i => $".c{i} .ECHO {i}"));
 
-		VnasAliasResult result = VnasAliasFileWriter.Write(
+		CombinedAliasResult result = CombinedAliasFileWriter.Write(
 			[Read(1, "a.txt", commands)], [FeBuddyFile("Airways.txt", commands)], "2610", _output);
 
 		Assert.Equal(12, result.DuplicateCommandCount);
@@ -337,16 +337,16 @@ public sealed class VnasAliasFileWriterTests : IDisposable
 	[InlineData(".a", 1)]
 	[InlineData("  .a .ECHO\r\n# .b\r\n; .c\r\n\t.d x\n.e", 3)]
 	public void count_commands_counts_lines_starting_with_a_dot(string text, int expected) =>
-		Assert.Equal(expected, VnasAliasFileWriter.CountCommands(text));
+		Assert.Equal(expected, CombinedAliasFileWriter.CountCommands(text));
 
 	[Fact]
 	public void bad_arguments_are_refused()
 	{
-		Assert.Throws<ArgumentNullException>(() => VnasAliasFileWriter.Write(null!, [], "2610", _output));
-		Assert.Throws<ArgumentNullException>(() => VnasAliasFileWriter.Write([], null!, "2610", _output));
-		Assert.Throws<ArgumentException>(() => VnasAliasFileWriter.Write([], [], " ", _output));
-		Assert.Throws<ArgumentException>(() => VnasAliasFileWriter.Write([], [], "2610", ""));
-		Assert.Throws<ArgumentNullException>(() => VnasAliasFileWriter.CountCommands(null!));
+		Assert.Throws<ArgumentNullException>(() => CombinedAliasFileWriter.Write(null!, [], "2610", _output));
+		Assert.Throws<ArgumentNullException>(() => CombinedAliasFileWriter.Write([], null!, "2610", _output));
+		Assert.Throws<ArgumentException>(() => CombinedAliasFileWriter.Write([], [], " ", _output));
+		Assert.Throws<ArgumentException>(() => CombinedAliasFileWriter.Write([], [], "2610", ""));
+		Assert.Throws<ArgumentNullException>(() => CombinedAliasFileWriter.CountCommands(null!));
 	}
 
 	private static AliasSourceLoad Read(int number, string fileName, string text) =>

@@ -1,15 +1,15 @@
 <!--
-    VnasAliasView  -  the Concatenate Aliases sub-service tab inside the AIRAC Service screen
-    (key VnasAlias, from its old name): whether to combine every alias file the run writes into
-    Aliases\Combined_Alias.txt, which FE-Buddy alias files go in, and the facility's own custom
-    alias files, added after them so theirs win. The custom files grey out while combining is off.
+    ConcatenateAliasesView  -  the Concatenate Aliases sub-service tab inside the AIRAC Service screen:
+    whether to combine every alias file the run writes into Aliases\Combined_Alias.txt, which
+    FE-Buddy alias files go in, and the facility's own custom alias files, added after them so
+    theirs win. The custom files grey out while combining is off.
     Save / Undo / Previous / Next / Preview settings come from the tab host's shared action bar, and
     the tab host owns the page's single scroller.
 
     Each custom alias file is a file on this PC or a web address with an optional saved credential
-    (Settings ▸ Credentials) - see VnasAliasViewModel's class remarks.
+    (Settings ▸ Credentials) - see ConcatenateAliasesViewModel's class remarks.
 -->
-<UserControl x:Class="FeBuddy.Wpf.Views.VnasAliasView"
+<UserControl x:Class="FeBuddy.Wpf.Views.ConcatenateAliasesView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -19,7 +19,7 @@
              xmlns:ctl="clr-namespace:FeBuddy.Wpf.Controls"
              xmlns:bhv="clr-namespace:FeBuddy.Wpf.Behaviors"
              mc:Ignorable="d"
-             d:DataContext="{d:DesignInstance vm:VnasAliasViewModel}"
+             d:DataContext="{d:DesignInstance vm:ConcatenateAliasesViewModel}"
              d:DesignWidth="900" d:DesignHeight="900">
 
     <!-- No ScrollViewer here: the tab host owns the one page-level scroller

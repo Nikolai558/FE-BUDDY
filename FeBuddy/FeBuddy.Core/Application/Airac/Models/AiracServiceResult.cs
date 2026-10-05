@@ -2,12 +2,12 @@ using FeBuddy.Core.Application.Airac.Airports.Models;
 using FeBuddy.Core.Application.Airac.Airways.Models;
 using FeBuddy.Core.Application.Airac.Arrivals.Models;
 using FeBuddy.Core.Application.Airac.ArtccBoundaries.Models;
+using FeBuddy.Core.Application.Airac.ConcatenateAliases.Models;
 using FeBuddy.Core.Application.Airac.Departures.Models;
 using FeBuddy.Core.Application.Airac.Fixes.Models;
 using FeBuddy.Core.Application.Airac.Navaids.Models;
 using FeBuddy.Core.Application.Airac.Procedures.Models;
 using FeBuddy.Core.Application.Airac.Telephony.Models;
-using FeBuddy.Core.Application.Airac.VnasAlias.Models;
 using FeBuddy.Core.Application.Airac.WxStations.Models;
 using FeBuddy.Core.Application.Models;
 
@@ -95,5 +95,5 @@ public sealed record AiracServiceResult : ServiceResult
 	/// What writing <c>Aliases\Combined_Alias.txt</c> produced, or <see langword="null"/> when it was
 	/// not written: Concatenate Aliases was not in the run, or its combining was off.
 	/// </summary>
-	public VnasAliasResult? VnasAlias { get; init; }
+	public CombinedAliasResult? CombinedAlias { get; init; }
 }

@@ -171,9 +171,9 @@ public sealed class AirwaysViewModelTests : IDisposable
 
 		// The defaults for Q and T are kept too, though this cycle has neither.
 		UserConfigFile.ReadAll();
-		Assert.Equal("Q", UserConfigFile.GetValue("Services.AiracService.Geojson.Airways.HighDesignations"));
-		Assert.Equal("T,V,Y", UserConfigFile.GetValue("Services.AiracService.Geojson.Airways.LowDesignations"));
-		Assert.Equal("J", UserConfigFile.GetValue("Services.AiracService.Geojson.Airways.BothDesignations"));
+		Assert.Equal("Q", UserConfigFile.GetValue("Services.AiracService.Airways.HighDesignations"));
+		Assert.Equal("T,V,Y", UserConfigFile.GetValue("Services.AiracService.Airways.LowDesignations"));
+		Assert.Equal("J", UserConfigFile.GetValue("Services.AiracService.Airways.BothDesignations"));
 
 		AirwaysViewModel reloaded = NewTab("J", "Q", "V", "Y", "ZK");
 
@@ -189,7 +189,7 @@ public sealed class AirwaysViewModelTests : IDisposable
 	[Fact]
 	public void after_a_save_the_defaults_no_longer_apply()
 	{
-		UserConfigFile.TrySetValue("Services.AiracService.Geojson.Airways.LowDesignations", "V");
+		UserConfigFile.TrySetValue("Services.AiracService.Airways.LowDesignations", "V");
 
 		AirwaysViewModel tab = NewTab("J", "V");
 
@@ -197,16 +197,12 @@ public sealed class AirwaysViewModelTests : IDisposable
 		Assert.Equal(AirwayStratum.Low, Designation(tab, "V").Stratum);
 	}
 
-	/// <summary>
-	/// "None" was the GeoJSON switch before the General tab had one: it loads as High and Low files,
-	/// and while the General tab has GeoJSON off the run is sent None, with the strata card hidden.
-	/// </summary>
+	/// <summary>With GeoJSON off on the General tab, the run is told so and the strata card hides.</summary>
 	[Fact]
-	public void geojson_off_on_the_general_tab_sends_none_and_an_old_none_loads_as_high_and_low()
+	public void geojson_off_on_the_general_tab_sends_generate_geojson_n()
 	{
-		UserConfigFile.TrySetValue("Services.AiracService.Geojson.Airways.OutputBy", "None");
 		AirwaysViewModel tab = NewTab("J");
-		Assert.Equal(AirwayGeojsonOutputBy.HighLow, tab.OutputBy);
+		Assert.Equal("Y", tab.BuildSettingsBlock()["GenerateGeojson"]);
 		Assert.True(tab.ShowsStrata);
 
 		SubServiceRow row = new(AiracSubServices.All.Single(d => d.Key == AiracSubServices.AirwaysKey), () => { });
@@ -215,21 +211,19 @@ public sealed class AirwaysViewModelTests : IDisposable
 
 		Assert.False(tab.GenerateGeojson);
 		Assert.False(tab.ShowsStrata);
-		Assert.Equal("None", tab.BuildSettingsBlock()["OutputBy"]);
+		Assert.Equal("N", tab.BuildSettingsBlock()["GenerateGeojson"]);
+		Assert.Equal("HighLow", tab.BuildSettingsBlock()["OutputBy"]);
 		Assert.Equal(["Airways.txt"], tab.OutputFileEntries().Select(file => file.Key));
 		Assert.False(tab.IsDirty);
 	}
 
-	/// <summary>None is never one of the split choices: GeoJSON is turned off on the General tab.</summary>
+	/// <summary>An unknown saved split (a typo, or a number) falls back to High and Low files.</summary>
 	[Fact]
-	public void none_is_not_a_split_choice()
+	public void an_unknown_saved_split_loads_as_high_and_low()
 	{
-		Assert.DoesNotContain(AirwayGeojsonOutputBy.None, AirwaysViewModel.OutputByValues);
+		UserConfigFile.TrySetValue("Services.AiracService.Airways.OutputBy", "7");
 
-		AirwaysViewModel tab = NewTab("J");
-		tab.OutputBy = AirwayGeojsonOutputBy.None;
-
-		Assert.Equal(AirwayGeojsonOutputBy.HighLow, tab.OutputBy);
+		Assert.Equal(AirwayGeojsonOutputBy.HighLow, NewTab("J").OutputBy);
 	}
 
 	[Fact]

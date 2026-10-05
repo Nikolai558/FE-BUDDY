@@ -105,7 +105,7 @@ AiracService.RunAsync
         3. XxxGeojsonWriter           → .geojson files
         4. XxxAliasWriter             → alias .txt
   DuplicateAliasReport.Write          → Duplicate_Alias_Commands.txt
-  VnasAliasFileWriter.Write           → Aliases\Combined_Alias.txt
+  CombinedAliasFileWriter.Write       → Aliases\Combined_Alias.txt
         │  AiracServiceResult
         ▼
 Review tab: each tab's DescribeRunResult(result)
@@ -146,7 +146,7 @@ Not every sub-service has all four steps:
   names.
 - **`Combined_Alias.txt`** is written last, into `Aliases`, while Concatenate Aliases is in the run
   and combining (`CombineAliasFiles`, on by default). vNAS takes one alias file per facility, so
-  `VnasAliasFileWriter` writes:
+  `CombinedAliasFileWriter` writes:
   1. the first `.FeUseOnly` line any custom file has;
   2. a start line, `; ===== FE-Buddy aliases (AIRAC <cycle>) start here. …`;
   3. each alias file the run wrote, under `; ----- <name> -----`;
@@ -165,7 +165,7 @@ Not every sub-service has all four steps:
 ## Settings
 
 - **`UserConfig.json`** is one JSON tree, read at launch and addressed by dotted paths
-  (`Services.AiracService.Geojson.Airways.OutputBy`).
+  (`Services.AiracService.Airways.OutputBy`).
 - **Each tab saves only its own node** (`UserConfigFile.Save(nodePath)`). Before it does, the node's
   old state goes to `UserConfig.previous.json` for **Undo last save**.
 - **An import replaces the whole file** (`UserConfigFile.ReplaceAll`), keeping the old one as
@@ -182,8 +182,9 @@ Not every sub-service has all four steps:
   each feature. Every value is checked first (`CrcPropertyValidator`), so FE-Buddy never writes a
   value CRC can't draw. See
   [CRC GeoJSON concepts](https://github.com/KCSanders7070/CRC_GeoJson_Concepts/blob/main/CRC_Geojsons.md).
-- **In the AIRAC Service, defaults only go on vNAS files**, since CRC reads its maps from vNAS
-  (`VnasFileChoices`). A file conversion writes them when its panel's **Include** is ticked.
+- **In the AIRAC Service, defaults go on the GeoJSON files the user picks** on each tab's CRC ERAM
+  Defaults card (`CrcDefaultsFor`, read as `CrcDefaultsFiles`). A file conversion writes them when
+  its panel's **Include** is ticked.
 - **Defaults are never guessed.** An empty value a chosen file needs is a validation error.
 - **A symbol's style can live on each feature.** `CrcSymbolDefaults.Style` may be `null`: NAVAIDs'
   merged Symbols file styled by type gives each feature its own style (`NavaidTypes.SymbolStyleFor`).
@@ -287,7 +288,7 @@ Argued out once; don't re-open them without a reason.
 - **One library, three layers, no DI.** Folders, not projects. A swappable piece takes a delegate or
   parameter where a test needs it.
 - **The settings block is a plain dictionary**, read by the same parsers whoever builds it. Unknown
-  keys warn rather than fail, so retired keys fade out; no fallbacks are kept for renamed settings.
+  keys warn rather than fail. No fallbacks are kept for renamed settings.
 - **Nothing is shown that isn't built.** No screen shows sample data.
 - **CRC defaults are never guessed.**
 - **Developer mode is a code constant** (`App.DevModeEnabled`), never a user setting. Pretty

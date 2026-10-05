@@ -8,9 +8,8 @@ using FeBuddy.Core.Infrastructure.Logging;
 namespace FeBuddy.UnitTests.Wpf.ViewModels;
 
 /// <summary>
-/// Covers <see cref="EramToGeojsonViewModel"/>: a layout saved before the three loads as its
-/// nearest, one Geomaps file per run, what is sent to a run, the <c>feb.*</c> check and the run
-/// summary - against a throwaway config and folder.
+/// Covers <see cref="EramToGeojsonViewModel"/>: the saved layout, one Geomaps file per run, what is
+/// sent to a run, the <c>feb.*</c> check and the run summary - against a throwaway config and folder.
 /// </summary>
 [Collection("AppLog")]
 public sealed class EramToGeojsonViewModelTests : IDisposable
@@ -42,11 +41,12 @@ public sealed class EramToGeojsonViewModelTests : IDisposable
 		}
 	}
 
+	/// <summary>By Attributes to start; a saved layout loads, and an unknown one (a typo) falls back.</summary>
 	[Theory]
-	[InlineData("ByObject", true, false)]
-	[InlineData("ByFilter", false, true)]
 	[InlineData(null, true, false)]
-	public void a_layout_saved_before_the_three_loads_as_its_nearest(string? saved, bool byAttributes, bool byFilters)
+	[InlineData("ByFilters", false, true)]
+	[InlineData("Sideways", true, false)]
+	public void the_saved_layout_loads_and_by_attributes_is_the_default(string? saved, bool byAttributes, bool byFilters)
 	{
 		if (saved is not null)
 		{

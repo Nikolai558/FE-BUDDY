@@ -56,14 +56,10 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 
 	private const string OverrideRoiKey = "Roi.OverrideDefaultRoi";
 
-	// "Coordindates" is misspelled in every saved config, so the key keeps the spelling.
-	private const string OverrideCornersNode = "Roi.OverrideCoordindates";
+	private const string OverrideCornersNode = "Roi.OverrideCorners";
 
-	// Under Vnas, where the Upload to vNAS card kept them. The card's own list of the files to upload
-	// is gone - every file is ready for vNAS now - so a save drops it.
-	private const string CrcDefaultsScopeKey = "Vnas.CrcDefaults";
-	private const string CrcFilesKey = "Vnas.CrcFiles";
-	private const string RetiredUploadFilesKey = "Vnas.UploadFiles";
+	private const string CrcDefaultsScopeKey = "CrcDefaultsScope";
+	private const string CrcFilesKey = "CrcDefaultsFiles";
 
 	private readonly HashSet<string> _crcFiles = new(StringComparer.OrdinalIgnoreCase);
 	private readonly HashSet<(string ClassName, EramFieldKind Kind)> _crcRowsInUse = [];
@@ -327,7 +323,7 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 	/// <summary>Where a CRC defaults row is saved under this tab's config node.</summary>
 	/// <param name="row">The row.</param>
 	/// <returns>The row's key prefix, e.g. <c>CrcEramPropertyDefaults.Airports_Symbol</c>.</returns>
-	protected virtual string CrcConfigPrefix(EramClassDefault row) => $"CrcEramPropertyDefaults.{row.ClassName}_{row.Kind}";
+	private static string CrcConfigPrefix(EramClassDefault row) => $"CrcEramPropertyDefaults.{row.ClassName}_{row.Kind}";
 
 	/// <summary>
 	/// Adds CRC defaults rows after construction, for a tab whose classes come from the cycle's
@@ -445,12 +441,10 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 		_crcFiles.Clear();
 		_crcFiles.UnionWith(ParseList(Get(CrcFilesKey)));
 
-		// By name only; anything else (a number, a typo) falls back to no CRC-ERAM defaults. Every
-		// GeoJSON file was "AllVnasFiles" while only files marked for vNAS could get them.
+		// By name only; anything else (a number, a typo) falls back to no CRC-ERAM defaults.
 		string? savedScope = Get(CrcDefaultsScopeKey)?.Trim();
-		_crcDefaultsScope = "AllVnasFiles".Equals(savedScope, StringComparison.OrdinalIgnoreCase)
-			? CrcDefaultsScope.AllGeojsonFiles
-			: Enum.GetValues<CrcDefaultsScope>().FirstOrDefault(scope => scope.ToString().Equals(savedScope, StringComparison.OrdinalIgnoreCase));
+		_crcDefaultsScope = Enum.GetValues<CrcDefaultsScope>()
+			.FirstOrDefault(scope => scope.ToString().Equals(savedScope, StringComparison.OrdinalIgnoreCase));
 
 		// Rebuild the toggles from the reloaded choices on the next refresh.
 		_filesSignature = null;
@@ -497,7 +491,6 @@ public abstract class GeojsonSubServiceViewModel : SubServiceSettingsViewModel,
 
 		// Every choice, written or not, so a file switched off and on again keeps it.
 		Set(CrcFilesKey, string.Join(',', _crcFiles.Order(StringComparer.OrdinalIgnoreCase)));
-		RemoveSubtree(RetiredUploadFilesKey);
 
 		foreach (EramClassDefault row in AllCrcRows())
 		{

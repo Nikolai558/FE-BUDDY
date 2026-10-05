@@ -1,4 +1,4 @@
-namespace FeBuddy.Core.Application.Airac.VnasAlias.Models;
+namespace FeBuddy.Core.Application.Airac.ConcatenateAliases.Models;
 
 /// <summary>Where a custom alias file comes from.</summary>
 public enum AliasSourceKind

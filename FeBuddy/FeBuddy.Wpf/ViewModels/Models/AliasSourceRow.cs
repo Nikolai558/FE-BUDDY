@@ -2,7 +2,7 @@ using System.Windows.Input;
 
 using FeBuddy.Wpf.Mvvm;
 
-using FeBuddy.Core.Application.Airac.VnasAlias.Models;
+using FeBuddy.Core.Application.Airac.ConcatenateAliases.Models;
 
 namespace FeBuddy.Wpf.ViewModels.Models;
 
@@ -16,7 +16,7 @@ namespace FeBuddy.Wpf.ViewModels.Models;
 /// </remarks>
 public sealed class AliasSourceRow : ObservableObject
 {
-	private readonly VnasAliasViewModel _owner;
+	private readonly ConcatenateAliasesViewModel _owner;
 
 	private int _number;
 	private string _location;
@@ -34,7 +34,7 @@ public sealed class AliasSourceRow : ObservableObject
 	/// <param name="kind">A file on this PC, or a web address.</param>
 	/// <param name="location">The file's path, or the web address.</param>
 	/// <param name="credentialId">The credential to download it with; <see cref="Guid.Empty"/> for none.</param>
-	internal AliasSourceRow(VnasAliasViewModel owner, AliasSourceKind kind, string location, Guid credentialId)
+	internal AliasSourceRow(ConcatenateAliasesViewModel owner, AliasSourceKind kind, string location, Guid credentialId)
 	{
 		_owner = owner;
 		Kind = kind;

@@ -88,7 +88,7 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 		{
 			if (e.PropertyName == nameof(SelectedTab))
 			{
-				VnasAliasTab?.RefreshFeBuddyAliasFiles();
+				ConcatenateAliasesTab?.RefreshFeBuddyAliasFiles();
 				_fileNames.RefreshFiles();
 			}
 		};
@@ -158,7 +158,7 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 	private TelephonyViewModel? TelephonyTab => TabFor<TelephonyViewModel>(AiracSubServices.TelephonyKey);
 
 	/// <summary>The Concatenate Aliases tab while it is open, otherwise <see langword="null"/>.</summary>
-	private VnasAliasViewModel? VnasAliasTab => TabFor<VnasAliasViewModel>(AiracSubServices.VnasAliasKey);
+	private ConcatenateAliasesViewModel? ConcatenateAliasesTab => TabFor<ConcatenateAliasesViewModel>(AiracSubServices.ConcatenateAliasesKey);
 
 	/// <summary>Every sub-service tab that runs: for readiness and the cycle's lists, which every tab follows.</summary>
 	private IReadOnlyList<ISubServiceRunTarget> RunTargets =>
@@ -201,7 +201,7 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 					subService.AttachOutputs(row);
 				}
 
-				subService.FilesChanged += (_, _) => RefreshVnasAliasAvailability();
+				subService.FilesChanged += (_, _) => RefreshConcatenateAliasesAvailability();
 			}
 
 			if (tab is ISubServiceRunTarget target)
@@ -209,9 +209,9 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 				target.SetReadiness(IsReady);
 			}
 
-			if (tab is VnasAliasViewModel vnasAlias)
+			if (tab is ConcatenateAliasesViewModel concatenate)
 			{
-				vnasAlias.AttachToService(
+				concatenate.AttachToService(
 					d => TabFor<ServiceTabViewModel>(d.Key),
 					shown => SelectedTab = shown);
 			}
@@ -239,7 +239,7 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 			tabs.Add(tab);
 		}
 
-		RefreshVnasAliasAvailability();
+		RefreshConcatenateAliasesAvailability();
 
 		if (_general.IncludedSubServices.Any())
 		{
@@ -249,7 +249,7 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 		RebuildTabs(tabs);
 		RefreshDownloadedDataStatus();
 		RefreshProceduresData();
-		VnasAliasTab?.RefreshFeBuddyAliasFiles();
+		ConcatenateAliasesTab?.RefreshFeBuddyAliasFiles();
 		_fileNames.RefreshFiles();
 	}
 
@@ -257,22 +257,22 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 	/// Brings Concatenate Aliases in while an included sub-service makes an alias file, and greys it
 	/// out otherwise: it has nothing of FE-Buddy's to combine.
 	/// </summary>
-	private void RefreshVnasAliasAvailability()
+	private void RefreshConcatenateAliasesAvailability()
 	{
-		if (!_tabsByKey.TryGetValue(AiracSubServices.VnasAliasKey, out ServiceTabViewModel? vnasAlias))
+		if (!_tabsByKey.TryGetValue(AiracSubServices.ConcatenateAliasesKey, out ServiceTabViewModel? concatenate))
 		{
 			return;
 		}
 
 		bool anyAliasFile = _tabsByKey.Values.Where(t => t.IsAvailable).OfType<GeojsonSubServiceViewModel>().Any(tab => tab.WritesAliasFile);
-		bool wasAvailable = vnasAlias.IsAvailable;
+		bool wasAvailable = concatenate.IsAvailable;
 
-		vnasAlias.SetAvailability(anyAliasFile,
-			$"{AiracSubServices.All.Single(d => d.Key == AiracSubServices.VnasAliasKey).Help?.Summary}\n" +
+		concatenate.SetAvailability(anyAliasFile,
+			$"{AiracSubServices.All.Single(d => d.Key == AiracSubServices.ConcatenateAliasesKey).Help?.Summary}\n" +
 			"No alias file is being made. To make one, tick a sub-service and its Alias box on the General tab.");
 
 		// Left on a tab that just went grey, go back to the start.
-		if (wasAvailable && !anyAliasFile && ReferenceEquals(SelectedTab, vnasAlias))
+		if (wasAvailable && !anyAliasFile && ReferenceEquals(SelectedTab, concatenate))
 		{
 			SelectedTab = Tabs.FirstOrDefault();
 		}
@@ -299,7 +299,7 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 			yield return OutputFileEntry.Renamable(AiracOutputPaths.DuplicateAliasReportFileName, string.Empty, "AIRAC Service");
 		}
 
-		if (VnasAliasTab is { CombineAliasFiles: true } combine)
+		if (ConcatenateAliasesTab is { CombineAliasFiles: true } combine)
 		{
 			yield return OutputFileEntry.Renamable(AiracOutputPaths.CombinedAliasFileName, AiracOutputPaths.AliasFolder, combine.Title);
 		}
@@ -426,7 +426,7 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 	{
 		// The Concatenate Aliases tab lists the alias files the other tabs make, and the File Names
 		// tab's validity depends on which files they write.
-		VnasAliasTab?.RefreshFeBuddyAliasFiles();
+		ConcatenateAliasesTab?.RefreshFeBuddyAliasFiles();
 		_fileNames.RefreshFiles();
 
 		if (!TrySaveDirtyTabs() || !EnsureNoInvalidTabs())
@@ -467,7 +467,7 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 			WxStations = WxStationsTab?.BuildSettingsBlock(),
 			Procedures = ProceduresTab?.BuildSettingsBlock(),
 			Telephony = TelephonyTab?.BuildSettingsBlock(),
-			VnasAlias = VnasAliasTab?.BuildSettingsBlock(),
+			ConcatenateAliases = ConcatenateAliasesTab?.BuildSettingsBlock(),
 		};
 
 		if (AiracService.HasExistingOutput(settings))
@@ -661,9 +661,9 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 			files.Add(duplicateAliasReport.FilePath);
 		}
 
-		if (result.VnasAlias?.FilePath is { } vnasAlias)
+		if (result.CombinedAlias?.FilePath is { } combinedAlias)
 		{
-			files.Add(vnasAlias);
+			files.Add(combinedAlias);
 		}
 
 		return [.. files];
@@ -741,9 +741,9 @@ public sealed class AiracServiceViewModel : TabbedServiceViewModel
 			parts.Add($"{telephony.AliasCommandCount:N0} telephony command(s)");
 		}
 
-		if (result.VnasAlias is { FilePath: not null } vnasAlias)
+		if (result.CombinedAlias is { FilePath: not null } combinedAlias)
 		{
-			parts.Add($"{Path.GetFileName(vnasAlias.FilePath)} ({vnasAlias.CustomCommandCount + vnasAlias.FeBuddyCommandCount:N0} command(s))");
+			parts.Add($"{Path.GetFileName(combinedAlias.FilePath)} ({combinedAlias.CustomCommandCount + combinedAlias.FeBuddyCommandCount:N0} command(s))");
 		}
 
 		if (result.DuplicateAliasReport is { Duplicates.Count: > 0 } duplicateAliasReport)

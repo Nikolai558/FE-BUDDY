@@ -8,7 +8,6 @@ using FeBuddy.Wpf.ViewModels.Models;
 using FeBuddy.Wpf.ViewModels.ServiceTabs;
 using FeBuddy.Wpf.ViewModels.ServiceTabs.Models;
 
-using FeBuddy.Core.Application.Airac;
 using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Infrastructure.Configuration;
 
@@ -45,9 +44,6 @@ public sealed class FileNamesViewModel : SubServiceSettingsViewModel
 	private const string RenameFilesKey = "RenameFiles";
 	private const string FilesKey = "Files";
 	private const string KeyField = "Key";
-
-	// The combined alias file's key until every file became a vNAS file: a name given to it then is kept.
-	private const string RetiredCombinedAliasKey = "vNAS_Alias.txt";
 	private const string RenameField = "Rename";
 	private const string NameField = "Name";
 
@@ -382,9 +378,8 @@ public sealed class FileNamesViewModel : SubServiceSettingsViewModel
 			}
 
 			string rename = fields.GetValueOrDefault(RenameField, "Y");
-			string currentKey = fileKey.Equals(RetiredCombinedAliasKey, StringComparison.OrdinalIgnoreCase) ? AiracOutputPaths.CombinedAliasFileName : fileKey;
 
-			yield return (currentKey, new FileNameChoice(
+			yield return (fileKey, new FileNameChoice(
 				rename.Equals("Y", StringComparison.OrdinalIgnoreCase) || rename.Equals("true", StringComparison.OrdinalIgnoreCase),
 				fields.GetValueOrDefault(NameField, string.Empty)));
 		}

@@ -25,7 +25,7 @@ namespace FeBuddy.Wpf.ViewModels;
 /// </summary>
 public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRunTarget
 {
-	private const string Node = "Services.AiracService.Geojson.Airways";
+	private const string Node = "Services.AiracService.Airways";
 
 	private static readonly Regex AirwayIdPattern = new(@"^Airway '([^']+)':", RegexOptions.Compiled);
 
@@ -79,16 +79,13 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 	public static IReadOnlyList<AirwayGeojsonOutputBy> OutputByValues { get; } =
 		[AirwayGeojsonOutputBy.HighLow, AirwayGeojsonOutputBy.Designation];
 
-	/// <summary>
-	/// How airway GeoJSON is split into files. GeoJSON itself is turned on and off on the General tab;
-	/// while it is off, the run is sent <c>None</c>.
-	/// </summary>
+	/// <summary>How airway GeoJSON is split into files. GeoJSON itself is turned on and off on the General tab.</summary>
 	public AirwayGeojsonOutputBy OutputBy
 	{
 		get => _outputBy;
 		set
 		{
-			if (value != AirwayGeojsonOutputBy.None && SetProperty(ref _outputBy, value))
+			if (SetProperty(ref _outputBy, value))
 			{
 				MarkDirty();
 				OnPropertyChanged(nameof(OutputModeHint));
@@ -190,10 +187,6 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 		}
 	}
 
-	/// <inheritdoc />
-	/// <remarks>Airways keeps one row per altitude class, grouped by kind: <c>CrcEramPropertyDefaults.Lines.Airway_High_Lines</c>.</remarks>
-	protected override string CrcConfigPrefix(EramClassDefault row) =>
-		$"CrcEramPropertyDefaults.{row.Kind}s.Airway_{row.ClassName}_{row.Kind}s";
 
 	// ================= parent hooks =================
 
@@ -269,7 +262,8 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 	{
 		Dictionary<string, string> s = new(StringComparer.OrdinalIgnoreCase)
 		{
-			["OutputBy"] = (GenerateGeojson ? OutputBy : AirwayGeojsonOutputBy.None).ToString(),
+			["GenerateGeojson"] = YesNo(GenerateGeojson),
+			["OutputBy"] = OutputBy.ToString(),
 			["BufferAirwayWaypoints"] = YesNo(BufferAirwayWaypoints),
 			[AirwaySettingsParser.FixBufferKey] = FixBufferNm.Trim(),
 			[AirwaySettingsParser.NavaidBufferKey] = NavaidBufferNm.Trim(),
@@ -300,8 +294,7 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 	/// <inheritdoc />
 	protected override void LoadFromConfig()
 	{
-		// None was the GeoJSON switch before the General tab had one (it reads that); here it is the default split.
-		_outputBy = Enum.TryParse(Get("OutputBy"), true, out AirwayGeojsonOutputBy by) && by != AirwayGeojsonOutputBy.None
+		_outputBy = Enum.TryParse(Get("OutputBy"), true, out AirwayGeojsonOutputBy by) && Enum.IsDefined(by)
 			? by
 			: AirwayGeojsonOutputBy.HighLow;
 		_bufferAirwayWaypoints = GetBool("BufferAirwayWaypoints", false);
@@ -528,9 +521,8 @@ public sealed class AirwaysViewModel : GeojsonSubServiceViewModel, ISubServiceRu
 		[.. AltitudeClasses.Select(altitudeClass => new EramClassDefault(altitudeClass.ToString(), kind, MarkDirty))];
 
 	/// <summary>
-	/// Reads which file each designation goes in. With none of the three keys saved - a first run,
-	/// or a config from before they existed - J and Q go High and V and T Low, and every other
-	/// designation waits for the user to choose.
+	/// Reads which file each designation goes in. With none of the three keys saved - a first run -
+	/// J and Q go High and V and T Low, and every other designation waits for the user to choose.
 	/// </summary>
 	private void LoadStrata()
 	{

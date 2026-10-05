@@ -16,9 +16,9 @@ using FeBuddy.Wpf.ViewModels.ServiceTabs.Models;
 using FeBuddy.Wpf.Views;
 
 using FeBuddy.Core.Application.Airac;
+using FeBuddy.Core.Application.Airac.ConcatenateAliases;
+using FeBuddy.Core.Application.Airac.ConcatenateAliases.Models;
 using FeBuddy.Core.Application.Airac.Models;
-using FeBuddy.Core.Application.Airac.VnasAlias;
-using FeBuddy.Core.Application.Airac.VnasAlias.Models;
 using FeBuddy.Core.Infrastructure.Configuration;
 using FeBuddy.Core.Infrastructure.Credentials;
 using FeBuddy.Core.Infrastructure.Credentials.Models;
@@ -29,10 +29,10 @@ using FeBuddy.Core.Infrastructure.Nasr.Models;
 namespace FeBuddy.Wpf.ViewModels;
 
 /// <summary>
-/// The <b>Concatenate Aliases</b> sub-service tab inside the AIRAC Service screen (key and config node
-/// <c>VnasAlias</c>, from its old name, vNAS Alias Upload): whether to combine every alias file the run
-/// writes into <c>Aliases\Combined_Alias.txt</c>, and the facility's own custom alias files - on this
-/// PC, or on the web (GitHub, private or public) - to add after them, so theirs win.
+/// The <b>Concatenate Aliases</b> sub-service tab inside the AIRAC Service screen: whether to combine
+/// every alias file the run writes into <c>Aliases\Combined_Alias.txt</c>, and the facility's own
+/// custom alias files - on this PC, or on the web (GitHub, private or public) - to add after them, so
+/// theirs win.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -50,15 +50,15 @@ namespace FeBuddy.Wpf.ViewModels;
 /// </para>
 /// <para>
 /// The list is saved as numbered keys, <c>Sources.1.FilePath</c>, <c>Sources.2.Url</c>,
-/// <c>Sources.2.CredentialId</c> and so on (see <see cref="VnasAliasSettingsParser"/>); the settings
-/// block the run gets is the same keys.
+/// <c>Sources.2.CredentialId</c> and so on (see <see cref="ConcatenateAliasesSettingsParser"/>); the
+/// settings block the run gets is the same keys.
 /// </para>
 /// </remarks>
-public sealed class VnasAliasViewModel : SubServiceSettingsViewModel, ISubServiceRunTarget
+public sealed class ConcatenateAliasesViewModel : SubServiceSettingsViewModel, ISubServiceRunTarget
 {
-	private const string Node = "Services.AiracService.VnasAlias";
+	private const string Node = "Services.AiracService.ConcatenateAliases";
 	private const string SourcesKey = "Sources";
-	private const string LogSource = "VnasAlias";
+	private const string LogSource = "ConcatenateAliases";
 
 	private readonly CredentialStore _store;
 	private readonly Dispatcher _dispatcher;
@@ -72,14 +72,14 @@ public sealed class VnasAliasViewModel : SubServiceSettingsViewModel, ISubServic
 	private string? _credentialsError;
 
 	/// <summary>Builds the tab over this user's credentials and restores its saved settings.</summary>
-	public VnasAliasViewModel()
+	public ConcatenateAliasesViewModel()
 		: this(CredentialStore.Default)
 	{
 	}
 
 	/// <summary>Builds the tab over <paramref name="store"/> and restores its saved settings.</summary>
 	/// <param name="store">The credentials a web address can be downloaded with.</param>
-	internal VnasAliasViewModel(CredentialStore store)
+	internal ConcatenateAliasesViewModel(CredentialStore store)
 	{
 		_store = store;
 		_dispatcher = Application.Current?.Dispatcher ?? Dispatcher.CurrentDispatcher;
@@ -177,14 +177,14 @@ public sealed class VnasAliasViewModel : SubServiceSettingsViewModel, ISubServic
 
 	/// <inheritdoc />
 	/// <remarks>
-	/// The block goes on <see cref="AiracServiceSettings.VnasAlias"/>. The custom alias files go in
+	/// The block goes on <see cref="AiracServiceSettings.ConcatenateAliases"/>. The custom alias files go in
 	/// only while combining: nothing else reads them.
 	/// </remarks>
 	public IReadOnlyDictionary<string, string> BuildSettingsBlock()
 	{
 		Dictionary<string, string> block = new(StringComparer.OrdinalIgnoreCase)
 		{
-			[VnasAliasSettingsParser.CombineAliasFilesKey] = YesNo(CombineAliasFiles),
+			[ConcatenateAliasesSettingsParser.CombineAliasFilesKey] = YesNo(CombineAliasFiles),
 		};
 
 		if (!CombineAliasFiles)
@@ -220,7 +220,7 @@ public sealed class VnasAliasViewModel : SubServiceSettingsViewModel, ISubServic
 	{
 		ArgumentNullException.ThrowIfNull(result);
 
-		if (result.VnasAlias is not { } merged)
+		if (result.CombinedAlias is not { } merged)
 		{
 			return CombineAliasFiles
 				? null
@@ -311,9 +311,9 @@ public sealed class VnasAliasViewModel : SubServiceSettingsViewModel, ISubServic
 
 			foreach (Dictionary<string, string> fields in byNumber.Values)
 			{
-				string filePath = fields.GetValueOrDefault(VnasAliasSettingsParser.FilePathKey, string.Empty);
-				string url = fields.GetValueOrDefault(VnasAliasSettingsParser.UrlKey, string.Empty);
-				Guid credentialId = Guid.TryParse(fields.GetValueOrDefault(VnasAliasSettingsParser.CredentialIdKey), out Guid id) ? id : Guid.Empty;
+				string filePath = fields.GetValueOrDefault(ConcatenateAliasesSettingsParser.FilePathKey, string.Empty);
+				string url = fields.GetValueOrDefault(ConcatenateAliasesSettingsParser.UrlKey, string.Empty);
+				Guid credentialId = Guid.TryParse(fields.GetValueOrDefault(ConcatenateAliasesSettingsParser.CredentialIdKey), out Guid id) ? id : Guid.Empty;
 
 				// A row whose file did not come across in a settings import has nothing left to read.
 				if (filePath.Length > 0)
@@ -327,7 +327,7 @@ public sealed class VnasAliasViewModel : SubServiceSettingsViewModel, ISubServic
 			}
 
 			Renumber();
-			_combineAliasFiles = GetBool(VnasAliasSettingsParser.CombineAliasFilesKey, true);
+			_combineAliasFiles = GetBool(ConcatenateAliasesSettingsParser.CombineAliasFilesKey, true);
 			OnPropertyChanged(nameof(CombineAliasFiles));
 		}
 		finally
@@ -342,7 +342,7 @@ public sealed class VnasAliasViewModel : SubServiceSettingsViewModel, ISubServic
 	/// <inheritdoc />
 	protected override void WriteToConfig()
 	{
-		Set(VnasAliasSettingsParser.CombineAliasFilesKey, YesNo(CombineAliasFiles));
+		Set(ConcatenateAliasesSettingsParser.CombineAliasFilesKey, YesNo(CombineAliasFiles));
 
 		// The list is written whole: a removed row must not leave its numbered keys behind.
 		RemoveSubtree(SourcesKey);
@@ -585,19 +585,19 @@ public sealed class VnasAliasViewModel : SubServiceSettingsViewModel, ISubServic
 
 		if (row.IsFile)
 		{
-			yield return (prefix + VnasAliasSettingsParser.FilePathKey, row.Location.Trim());
+			yield return (prefix + ConcatenateAliasesSettingsParser.FilePathKey, row.Location.Trim());
 			yield break;
 		}
 
-		yield return (prefix + VnasAliasSettingsParser.UrlKey, row.Location.Trim());
+		yield return (prefix + ConcatenateAliasesSettingsParser.UrlKey, row.Location.Trim());
 
 		if (row.CredentialId != Guid.Empty)
 		{
-			yield return (prefix + VnasAliasSettingsParser.CredentialIdKey, row.CredentialId.ToString("N"));
+			yield return (prefix + ConcatenateAliasesSettingsParser.CredentialIdKey, row.CredentialId.ToString("N"));
 		}
 	}
 
-	/// <summary>Why a row cannot be saved - the same rules <see cref="VnasAliasSettingsParser"/> applies - or <see langword="null"/>.</summary>
+	/// <summary>Why a row cannot be saved - the same rules <see cref="ConcatenateAliasesSettingsParser"/> applies - or <see langword="null"/>.</summary>
 	private static string? ErrorOf(AliasSourceRow row)
 	{
 		string location = row.Location.Trim();

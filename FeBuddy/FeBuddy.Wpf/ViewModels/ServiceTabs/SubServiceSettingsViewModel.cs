@@ -15,7 +15,7 @@ namespace FeBuddy.Wpf.ViewModels.ServiceTabs;
 /// <remarks>
 /// A derived menu:
 /// <list type="bullet">
-///   <item>returns its subtree path from <see cref="NodePath"/> (e.g. <c>Services.AiracService.Geojson.Airways</c>),</item>
+///   <item>returns its subtree path from <see cref="NodePath"/> (e.g. <c>Services.AiracService.Airways</c>),</item>
 ///   <item>returns its rail label from <see cref="ServiceTabViewModel.Title"/>,</item>
 ///   <item>calls <see cref="LoadFromConfig"/> from its own constructor,</item>
 ///   <item>calls <see cref="ServiceTabViewModel.MarkDirty"/> from every bound setting's setter,</item>
@@ -48,7 +48,7 @@ public abstract class SubServiceSettingsViewModel : ServiceTabViewModel, IConfig
 	/// <summary>Raised after a successful <see cref="Save"/>.</summary>
 	public event EventHandler? Saved;
 
-	/// <summary>The dotted <c>UserConfig</c> path this menu owns, e.g. <c>Services.AiracService.Geojson.Airways</c>.</summary>
+	/// <summary>The dotted <c>UserConfig</c> path this menu owns, e.g. <c>Services.AiracService.Airways</c>.</summary>
 	public abstract string NodePath { get; }
 
 	/// <inheritdoc />

@@ -1,18 +1,17 @@
 using System.Globalization;
 
-using FeBuddy.Core.Application.Airac.VnasAlias.Models;
+using FeBuddy.Core.Application.Airac.ConcatenateAliases.Models;
 using FeBuddy.Core.Application.Models;
 using FeBuddy.Core.Application.Settings;
 using FeBuddy.Core.Infrastructure.Credentials;
 using FeBuddy.Core.Infrastructure.Logging.Models;
 
-namespace FeBuddy.Core.Application.Airac.VnasAlias;
+namespace FeBuddy.Core.Application.Airac.ConcatenateAliases;
 
 /// <summary>
 /// Parses the raw <c>Dictionary&lt;string, string&gt;</c> the GUI (or <c>FeBuddy.Harness</c>)
-/// supplies for the Concatenate Aliases sub-service (key <c>VnasAlias</c>, its name before it was
-/// renamed): whether to combine the run's alias files into <c>Combined_Alias.txt</c>, and the user's
-/// custom alias files to add after them.
+/// supplies for the Concatenate Aliases sub-service: whether to combine the run's alias files into
+/// <c>Combined_Alias.txt</c>, and the user's custom alias files to add after them.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -31,7 +30,7 @@ namespace FeBuddy.Core.Application.Airac.VnasAlias;
 /// combining is off, the custom alias files are not read or checked: nothing would use them.
 /// </para>
 /// </remarks>
-public static class VnasAliasSettingsParser
+public static class ConcatenateAliasesSettingsParser
 {
 	/// <summary>Whether to combine the alias files into <c>Combined_Alias.txt</c>: <c>Y</c> (the default) or <c>N</c>.</summary>
 	public const string CombineAliasFilesKey = "CombineAliasFiles";
@@ -48,7 +47,7 @@ public static class VnasAliasSettingsParser
 	/// <summary>The id of the saved credential to download a web address with, under <see cref="SourcesPrefix"/> and its number.</summary>
 	public const string CredentialIdKey = "CredentialId";
 
-	private const string LogSource = "VnasAliasSettingsParser";
+	private const string LogSource = "ConcatenateAliasesSettingsParser";
 
 	/// <summary>Keys the AIRAC Service sets on every block, which this sub-service does not need.</summary>
 	private static readonly HashSet<string> IgnoredKeys = new(StringComparer.OrdinalIgnoreCase) { "OutputDirectory" };
@@ -77,7 +76,7 @@ public static class VnasAliasSettingsParser
 	/// full path; its web address is not an <c>http</c> or <c>https</c> address, or has a secret in it
 	/// (<see cref="UrlSecrets"/>); or its credential id is not an id.
 	/// </exception>
-	public static VnasAliasSettingsParseResult Parse(IReadOnlyDictionary<string, string> settings)
+	public static ConcatenateAliasesSettingsParseResult Parse(IReadOnlyDictionary<string, string> settings)
 	{
 		bool combine = CombinesAliasFiles(settings);
 
@@ -115,7 +114,7 @@ public static class VnasAliasSettingsParser
 
 		if (!combine)
 		{
-			return new VnasAliasSettingsParseResult([], messages, Combine: false);
+			return new ConcatenateAliasesSettingsParseResult([], messages, Combine: false);
 		}
 
 		List<AliasSource> sources = [];
@@ -139,7 +138,7 @@ public static class VnasAliasSettingsParser
 			{ IsAdvisory = true });
 		}
 
-		return new VnasAliasSettingsParseResult(sources, messages);
+		return new ConcatenateAliasesSettingsParseResult(sources, messages);
 	}
 
 	/// <summary>Reads one custom alias file's fields.</summary>

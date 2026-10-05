@@ -61,8 +61,8 @@
         <DataTemplate DataType="{x:Type vm:TelephonyViewModel}">
             <local:TelephonyView />
         </DataTemplate>
-        <DataTemplate DataType="{x:Type vm:VnasAliasViewModel}">
-            <local:VnasAliasView />
+        <DataTemplate DataType="{x:Type vm:ConcatenateAliasesViewModel}">
+            <local:ConcatenateAliasesView />
         </DataTemplate>
         <DataTemplate DataType="{x:Type vm:FileNamesViewModel}">
             <local:FileNamesView />

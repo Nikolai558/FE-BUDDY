@@ -399,20 +399,7 @@ public sealed class ProcedureSettingsParserTests
 		Assert.Null(parsed.Roi);
 	}
 
-	// ---- UploadToVnas / CrcDefaultsFor ----
-
-	/// <summary>Every file is a vNAS file now, so a saved <c>UploadToVnas</c> is no longer read, and says so.</summary>
-	[Fact]
-	public void a_stale_upload_to_vnas_key_produces_a_warning_and_changes_nothing()
-	{
-		Dictionary<string, string> settings = MinimalValidSettings();
-		settings["UploadToVnas"] = "Faa_Chart_Recall.txt";
-
-		ProcedureSettingsParseResult result = ProcedureSettingsParser.Parse(settings);
-
-		Assert.Contains(result.Messages.WarningTexts(), w => w.Contains("'UploadToVnas'"));
-		Assert.True(result.Settings.GenerateAliasFile);
-	}
+	// ---- CrcDefaultsFor ----
 
 	/// <summary>Procedures writes no GeoJSON, so <c>CrcDefaultsFor</c> has nothing to choose among; the shared key is accepted and ignored.</summary>
 	[Fact]

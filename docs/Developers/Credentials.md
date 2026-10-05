@@ -48,8 +48,9 @@ website can never collect a user's token.
 ## Using a credential in a feature
 
 Everything goes through `CredentialStore` (`FeBuddy.Core/Infrastructure/Credentials`); a feature
-never reads or stores a secret itself. Concatenate Aliases is the working example: `VnasAliasViewModel`
-offers the drop-down and saves `Sources.<n>.CredentialId`, and `AliasSourceLoader` downloads with it.
+never reads or stores a secret itself. Concatenate Aliases is the working example:
+`ConcatenateAliasesViewModel` offers the drop-down and saves `Sources.<n>.CredentialId`, and
+`AliasSourceLoader` downloads with it.
 
 ```csharp
 CredentialStore store = CredentialStore.Default;

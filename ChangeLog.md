@@ -18,6 +18,12 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
   Full guide: docs/Developers/RELEASING.md.
 -->
 ## Unreleased
+### Installing
+- Uninstall FE-Buddy completely, removing its settings, before installing this version: settings
+  saved by beta.1 aren't read. A settings backup from beta.1 still imports, but the AIRAC Service's
+  renamed settings (the General tab's outputs, CRC-ERAM default choices, Region of Interest corners,
+  Airways and Concatenate Aliases) come back at their defaults.
+
 ### AIRAC Service
 - Airports no longer warns about 108 airports outside the US whose ICAO ID is the same as their FAA
   ID. Each still gets its one command, and its card shows the ID once (`CYAM`, not `CYAM - CYAM`).
@@ -41,16 +47,15 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
 - The Upload to vNAS card is gone: every file is ready for vNAS. GeoJSON always goes in `Geojson`
   and alias files in `Aliases`; there is no `Upload_to_vNAS` folder.
 - CRC-ERAM defaults are chosen at the top of each tab's **CRC ERAM Defaults** card - none (the
-  default), every GeoJSON file, or specific files - and can go on any GeoJSON file. A saved "every
-  vNAS file" choice now covers every GeoJSON file.
+  default), every GeoJSON file, or specific files - and can go on any GeoJSON file.
 - vNAS Alias Upload is now **Concatenate Aliases**. It combines every alias file the run makes, then
-  your own, into `Aliases\Combined_Alias.txt`, which you can rename on the File Names tab (a name you
-  gave `vNAS_Alias.txt` carries over). Combining is on until you turn it off. The tab is no longer
-  ticked on the General tab: it comes in by itself while a sub-service makes an alias file.
+  your own, into `Aliases\Combined_Alias.txt`, which you can rename on the File Names tab. Combining
+  is on until you turn it off. The tab is no longer ticked on the General tab: it comes in by itself
+  while a sub-service makes an alias file.
 - With no custom alias files, the Review tab warns that `Combined_Alias.txt` holds only FE-Buddy's
   aliases, since uploading it would remove your facility's own from vNAS.
 - Airways no longer has **None** under "split into". Turn GeoJSON off for Airways on the General tab
-  instead; a saved None still works.
+  instead.
 
 ### File Conversions
 - DAT to GeoJSON warns that the cropping distance applies to every file in the conversion, since a
@@ -73,6 +78,18 @@ FE-BUDDY 2.x's history is in the [2.x change log](https://github.com/Nikolai558/
   off.
 - Choosing AIRAC Service, File Conversions or Info in the menu opens it at its start (the first tab,
   or Info's main page), and every tab opens scrolled to the top.
+
+### Dev notes
+- Airways' settings block takes `GenerateGeojson` like every other sub-service; `OutputBy` is only
+  `HighLow` or `Designation`.
+- Renamed to match today's names: config nodes `Services.AiracService.Airways` and
+  `.ConcatenateAliases`; keys `CrcDefaultsScope`, `CrcDefaultsFiles`, `Roi.OverrideCorners`,
+  `DefaultRoi.Corners`, and `DefaultRoi.FilterByRoi` as `Y`/`N`. In code, `VnasAlias*` became
+  `ConcatenateAliases*` and `CombinedAlias*`.
+- Removed the fallbacks for beta.1's settings (the tabs' own output keys, `AllVnasFiles`, the
+  `vNAS_Alias.txt` rename, Airways' `None`, ERAM's `ByFilter`/`ByObject`, Airports' `lat`/`lon`), the
+  clean-up of the retired per-cycle `stations.cache.xml`, and the two `AiracService.RunAsync`
+  overloads without supplemental data.
 
 ---
 

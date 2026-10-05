@@ -19,7 +19,10 @@ public sealed record AirwaySettings
 	/// </summary>
 	public required string OutputDirectory { get; init; }
 
-	/// <summary>How to group airways into GeoJSON files. <see cref="AirwayGeojsonOutputBy.None"/> generates no GeoJSON.</summary>
+	/// <summary>Whether to write the GeoJSON files. Default <see langword="true"/>.</summary>
+	public bool GenerateGeojson { get; init; } = true;
+
+	/// <summary>How to group airways into GeoJSON files.</summary>
 	public required AirwayGeojsonOutputBy OutputBy { get; init; }
 
 	/// <summary>

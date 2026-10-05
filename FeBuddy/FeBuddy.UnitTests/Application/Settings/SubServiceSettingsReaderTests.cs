@@ -2,14 +2,12 @@ using FeBuddy.Core.Application.Airac.Models;
 using FeBuddy.Core.Application.Models;
 using FeBuddy.Core.Application.Settings;
 using FeBuddy.Core.Domain.Crc.Models;
-using FeBuddy.Core.Infrastructure.Logging.Models;
 
 namespace FeBuddy.UnitTests.Application.Settings;
 
 /// <summary>
 /// Covers <see cref="SubServiceSettingsReader.ReadCrcDefaultsFiles"/>: the list defaults to empty,
-/// and only a sub-service's own GeoJSON files are accepted. Also that a key no sub-service reads
-/// any more (<c>UploadToVnas</c>) is warned about as unrecognized.
+/// and only a sub-service's own GeoJSON files are accepted.
 /// </summary>
 public sealed class SubServiceSettingsReaderTests
 {
@@ -65,23 +63,5 @@ public sealed class SubServiceSettingsReaderTests
 			labelSource: "each thing is labelled with its own ID");
 
 		Assert.Empty(warnings);
-	}
-
-	/// <summary>A saved <c>UploadToVnas</c> from before every file became a vNAS file is no longer read, and says so.</summary>
-	[Fact]
-	public void a_stale_upload_to_vnas_key_gets_an_unrecognized_setting_warning()
-	{
-		IReadOnlyList<ServiceMessage> warnings = SubServiceSettingsReader.UnknownKeyWarnings(
-			Settings(("UploadToVnas", "Things_Lines,Things.txt")),
-			new HashSet<string>(),
-			new Dictionary<string, CrcFeatureKind[]>(),
-			source: "ThingsSettingsParser",
-			labelSource: "each thing is labelled with its own ID");
-
-		ServiceMessage warning = Assert.Single(warnings);
-
-		Assert.Equal(LogLevel.Warning, warning.Level);
-		Assert.Equal("ThingsSettingsParser", warning.Source);
-		Assert.Equal("Unrecognized setting 'UploadToVnas' was ignored.", warning.Text);
 	}
 }

@@ -1,12 +1,12 @@
 using FeBuddy.Core.Application.Models;
 
-namespace FeBuddy.Core.Application.Airac.VnasAlias.Models;
+namespace FeBuddy.Core.Application.Airac.ConcatenateAliases.Models;
 
 /// <summary>The outcome of parsing the raw Concatenate Aliases settings dictionary.</summary>
 /// <param name="Sources">The user's custom alias files, in the order they are merged; none while combining is off.</param>
 /// <param name="Messages">Non-fatal parsing messages (e.g. unrecognized keys that were ignored).</param>
 /// <param name="Combine">Whether to combine the alias files into <c>Combined_Alias.txt</c>.</param>
-public sealed record VnasAliasSettingsParseResult(IReadOnlyList<AliasSource> Sources, IReadOnlyList<ServiceMessage> Messages, bool Combine = true);
+public sealed record ConcatenateAliasesSettingsParseResult(IReadOnlyList<AliasSource> Sources, IReadOnlyList<ServiceMessage> Messages, bool Combine = true);
 
 /// <summary>
 /// What reading one custom alias file produced: its text, or why it could not be read. A problem is
@@ -21,7 +21,7 @@ public sealed record AliasSourceLoad(AliasSource Source, string? Text, string? P
 	public bool Succeeded => Text is not null;
 
 	/// <summary>How many alias commands it holds (lines starting with a dot); 0 when it could not be read.</summary>
-	public int CommandCount => Text is null ? 0 : VnasAliasFileWriter.CountCommands(Text);
+	public int CommandCount => Text is null ? 0 : CombinedAliasFileWriter.CountCommands(Text);
 
 	/// <summary>A file that was read.</summary>
 	/// <param name="source">The file.</param>
@@ -40,7 +40,7 @@ public sealed record AliasSourceLoad(AliasSource Source, string? Text, string? P
 /// What writing <c>Combined_Alias.txt</c> produced: the file, what went into it, and every message along
 /// the way - including the custom alias files that could not be read and were left out.
 /// </summary>
-public sealed record VnasAliasResult : ServiceResult
+public sealed record CombinedAliasResult : ServiceResult
 {
 	/// <summary>Full path of <c>Combined_Alias.txt</c>, or <see langword="null"/> when there was nothing to put in it.</summary>
 	public string? FilePath { get; init; }

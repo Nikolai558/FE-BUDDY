@@ -344,18 +344,6 @@ public sealed class FixSettingsParserTests
 		Assert.Contains($"Crc.{FixOutputFiles.AllClass}.Symbol.", ex.Message);
 	}
 
-	[Fact]
-	public void a_stale_upload_to_vnas_key_produces_a_warning_and_changes_nothing()
-	{
-		Dictionary<string, string> settings = MinimalValidSettings();
-		settings["UploadToVnas"] = $"{FixOutputFiles.Symbols},{FixOutputFiles.Text}";
-
-		FixSettingsParseResult result = FixSettingsParser.Parse(settings);
-
-		Assert.Contains(result.Messages.WarningTexts(), w => w.Contains("UploadToVnas"));
-		Assert.Empty(result.Settings.CrcDefaultsFiles.Files);
-	}
-
 	// ---- CRC defaults: All layout ----
 
 	private static void MarkForCrcDefaults(Dictionary<string, string> settings, params string[] keys)

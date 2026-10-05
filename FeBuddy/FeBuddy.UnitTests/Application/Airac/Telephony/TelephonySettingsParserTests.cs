@@ -7,8 +7,8 @@ namespace FeBuddy.UnitTests.Application.Airac.Telephony;
 
 /// <summary>
 /// Covers <see cref="TelephonySettingsParser"/>: the required <c>OutputDirectory</c>, the
-/// "GenerateAliasFile is N" guard (Telephony's only output), <c>UploadToVnas</c> (no longer read, so
-/// a warning) and <c>CrcDefaultsFor</c> (accepted and ignored: Telephony writes no GeoJSON), the
+/// "GenerateAliasFile is N" guard (Telephony's only output), <c>CrcDefaultsFor</c> (accepted and
+/// ignored: Telephony writes no GeoJSON), the
 /// <c>IncludeFebCustomProperties</c> warning (Telephony writes no GeoJSON), unknown-key warnings, and
 /// silent acceptance of the shared ROI/precision/<c>feb.*</c> keys Telephony does not itself read -
 /// plus the numbered <c>VirtualAirlines.&lt;n&gt;.*</c> keys (number order, trimming, blank and
@@ -62,20 +62,7 @@ public sealed class TelephonySettingsParserTests
 		Assert.Empty(result.Messages);
 	}
 
-	// ---- UploadToVnas / CrcDefaultsFor ----
-
-	/// <summary>Every file is a vNAS file now, so a saved <c>UploadToVnas</c> is no longer read, and says so.</summary>
-	[Fact]
-	public void a_stale_upload_to_vnas_key_produces_a_warning_and_changes_nothing()
-	{
-		Dictionary<string, string> settings = MinimalValidSettings();
-		settings["UploadToVnas"] = "Telephony.txt";
-
-		TelephonySettingsParseResult result = TelephonySettingsParser.Parse(settings);
-
-		Assert.Contains(result.Messages.WarningTexts(), w => w.Contains("'UploadToVnas'"));
-		Assert.Equal(@"C:\Output", result.Settings.OutputDirectory);
-	}
+	// ---- CrcDefaultsFor ----
 
 	/// <summary>Telephony writes no GeoJSON, so <c>CrcDefaultsFor</c> has nothing to choose among; the shared key is accepted and ignored.</summary>
 	[Fact]

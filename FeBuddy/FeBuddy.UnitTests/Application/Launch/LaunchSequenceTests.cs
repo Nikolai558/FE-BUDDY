@@ -1,8 +1,8 @@
 using System.Net;
 
 using FeBuddy.Core.Application.Airac;
+using FeBuddy.Core.Application.Airac.ConcatenateAliases.Models;
 using FeBuddy.Core.Application.Airac.Models;
-using FeBuddy.Core.Application.Airac.VnasAlias.Models;
 using FeBuddy.Core.Application.Launch;
 using FeBuddy.Core.Application.Launch.Models;
 using FeBuddy.Core.Application.News;
@@ -415,7 +415,7 @@ public sealed class LaunchSequenceTests : IDisposable
 			{
 				SelectedCycle = current,
 				OutputDirectory = Path.Combine(_root, "output"),
-				VnasAlias = new Dictionary<string, string>
+				ConcatenateAliases = new Dictionary<string, string>
 				{
 					["Sources.1.FilePath"] = customFile,
 					["Sources.2.FilePath"] = missingFile,
@@ -426,7 +426,7 @@ public sealed class LaunchSequenceTests : IDisposable
 
 		Assert.Contains(reports, r => r.SubService == "Concatenate Aliases" && r.Message == "Reading your custom alias files");
 
-		VnasAliasResult merged = result.VnasAlias!;
+		CombinedAliasResult merged = result.CombinedAlias!;
 		Assert.Equal(2, merged.CustomFileCount);
 		Assert.Equal(1, merged.CustomFilesMerged);
 		Assert.Equal(2, merged.CustomCommandCount);
@@ -451,7 +451,7 @@ public sealed class LaunchSequenceTests : IDisposable
 			{
 				SelectedCycle = current,
 				OutputDirectory = Path.Combine(_root, "output"),
-				VnasAlias = new Dictionary<string, string>
+				ConcatenateAliases = new Dictionary<string, string>
 				{
 					["CombineAliasFiles"] = "N",
 					["Sources.1.FilePath"] = Path.Combine(_root, "Missing-Alias.txt"),
@@ -460,7 +460,7 @@ public sealed class LaunchSequenceTests : IDisposable
 			new SynchronousProgress<AiracServiceProgress>(reports.Add));
 
 		Assert.DoesNotContain(reports, r => r.Message == "Reading your custom alias files");
-		Assert.Null(result.VnasAlias);
+		Assert.Null(result.CombinedAlias);
 		Assert.DoesNotContain(result.Messages, m => m.Text.Contains("was not found", StringComparison.Ordinal));
 	}
 

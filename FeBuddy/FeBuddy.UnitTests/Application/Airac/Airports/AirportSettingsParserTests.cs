@@ -115,19 +115,6 @@ public sealed class AirportSettingsParserTests
 		Assert.Contains("notAProperty", ex.Message);
 	}
 
-	[Theory]
-	[InlineData("lat")]
-	[InlineData("LON")]
-	public void a_retired_coordinate_feb_property_throws_explaining_why(string name)
-	{
-		Dictionary<string, string> settings = MinimalValidSettings();
-		settings["IncludeFebCustomProperties"] = "Y";
-		settings["FebProperties"] = $"faaId,{name}";
-
-		ArgumentException ex = Assert.Throws<ArgumentException>(() => AirportSettingsParser.Parse(settings));
-		Assert.Contains("geometry already carries", ex.Message);
-	}
-
 	[Fact]
 	public void known_feb_property_names_parse_to_their_enum_values()
 	{
@@ -339,22 +326,5 @@ public sealed class AirportSettingsParserTests
 		Assert.Empty(parsed.LineDefaults);
 		Assert.Empty(parsed.SymbolDefaults);
 		Assert.Empty(parsed.TextDefaults);
-	}
-
-	[Theory]
-	[InlineData("IncludeCrcEramPropertyDefaults")]
-	[InlineData("IncludeCrcLineDefaults")]
-	[InlineData("AddFeBuddyOutputFolder")]
-	[InlineData("UploadToVnas")]
-	public void a_retired_key_produces_a_warning_and_changes_nothing(string key)
-	{
-		Dictionary<string, string> settings = MinimalValidSettings();
-		settings[key] = "Y";
-
-		AirportSettingsParseResult result = AirportSettingsParser.Parse(settings);
-
-		Assert.Contains(result.Messages, m => m.Level == LogLevel.Warning && m.Text.Contains(key));
-		Assert.Empty(result.Settings.CrcDefaultsFiles.Files);
-		Assert.Empty(result.Settings.LineDefaults);
 	}
 }

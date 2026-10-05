@@ -89,16 +89,11 @@ public static partial class SubServiceSettingsReader
 	/// <typeparam name="TProperty">The sub-service's property enum.</typeparam>
 	/// <param name="settings">The raw settings block.</param>
 	/// <param name="example">A sample list for the error message, e.g. <c>awyId,pointId</c>.</param>
-	/// <param name="retiredNames">
-	/// Names that used to be offered, each with the reason it was withdrawn, so a stale saved
-	/// setting gets an explanation rather than "not a known property".
-	/// </param>
 	/// <returns>Whether properties are included, and which - distinct, in the order listed.</returns>
 	/// <exception cref="ArgumentException">Thrown when the list is empty or names an unknown property.</exception>
 	public static (bool Include, IReadOnlyList<TProperty> Properties) ReadFebProperties<TProperty>(
 		IReadOnlyDictionary<string, string> settings,
-		string example,
-		IReadOnlyDictionary<string, string>? retiredNames = null)
+		string example)
 		where TProperty : struct, Enum
 	{
 		if (!SettingsValueReader.YesNo(settings, "IncludeFebCustomProperties", defaultValue: false))
@@ -119,10 +114,6 @@ public static partial class SubServiceSettingsReader
 
 		foreach (string name in names)
 		{
-			if (retiredNames is not null && retiredNames.TryGetValue(name, out string? reason))
-			{
-				throw new ArgumentException($"'FebProperties' entry '{name}' is no longer offered: {reason} Remove it from the list.");
-			}
 
 			if (!FebProperties.TryParse(name, out TProperty property))
 			{

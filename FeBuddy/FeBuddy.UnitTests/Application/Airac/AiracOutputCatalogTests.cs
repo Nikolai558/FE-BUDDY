@@ -96,13 +96,13 @@ public sealed class AiracOutputCatalogTests : IDisposable
 			files.Select(f => f.RelativePath));
 	}
 
-	/// <summary>Only the cycle's <c>Geojson</c> folder is listed, not a folder an earlier version wrote GeoJSON to.</summary>
+	/// <summary>Only the cycle's <c>Geojson</c> folder is listed: a GeoJSON file anywhere else in the cycle folder is not a run's.</summary>
 	[Fact]
 	public void geojson_files_outside_the_geojson_folder_are_not_listed()
 	{
 		string cycle = Path.Combine(_output, "AIRAC_2610");
 		Write(cycle, "Geojson", "Fixes_Symbols.geojson");
-		Write(cycle, Path.Combine("Upload_to_vNAS", "Geojson"), "ARTCC_High_Lines.geojson");
+		Write(cycle, Path.Combine("Aliases", "Geojson"), "ARTCC_High_Lines.geojson");
 		Write(cycle, string.Empty, "Stray.geojson");
 
 		Assert.Equal(["Fixes_Symbols"], AiracOutputCatalog.FindGeojsonFiles(cycle).Select(f => f.Name));

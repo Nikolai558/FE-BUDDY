@@ -1,6 +1,6 @@
-using FeBuddy.Core.Application.Airac.VnasAlias.Models;
+using FeBuddy.Core.Application.Airac.ConcatenateAliases.Models;
 
-namespace FeBuddy.UnitTests.Application.Airac.VnasAlias;
+namespace FeBuddy.UnitTests.Application.Airac.ConcatenateAliases;
 
 /// <summary>Covers how messages name a custom alias file: its number and file name, never the whole address.</summary>
 public sealed class AliasSourceTests

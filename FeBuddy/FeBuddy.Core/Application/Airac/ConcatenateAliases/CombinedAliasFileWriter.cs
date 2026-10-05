@@ -2,13 +2,13 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Text;
 
+using FeBuddy.Core.Application.Airac.ConcatenateAliases.Models;
 using FeBuddy.Core.Application.Airac.Models;
-using FeBuddy.Core.Application.Airac.VnasAlias.Models;
 using FeBuddy.Core.Application.Models;
 using FeBuddy.Core.Infrastructure.Logging;
 using FeBuddy.Core.Infrastructure.Logging.Models;
 
-namespace FeBuddy.Core.Application.Airac.VnasAlias;
+namespace FeBuddy.Core.Application.Airac.ConcatenateAliases;
 
 /// <summary>
 /// Writes <c>Aliases\Combined_Alias.txt</c>, the one alias file a facility uploads to vNAS: every
@@ -55,7 +55,7 @@ namespace FeBuddy.Core.Application.Airac.VnasAlias;
 /// under its new name - <c>Combined_Alias.txt</c> itself included.
 /// </para>
 /// </remarks>
-public static class VnasAliasFileWriter
+public static class CombinedAliasFileWriter
 {
 	/// <summary>How the line that starts FE-Buddy's section begins; a custom file loses its section from there.</summary>
 	public const string FeBuddySectionMarker = "; ===== FE-Buddy aliases";
@@ -63,7 +63,7 @@ public static class VnasAliasFileWriter
 	/// <summary>How the line that ends FE-Buddy's section begins; a custom file's lines after it are kept.</summary>
 	public const string FeBuddySectionEndMarker = "; ===== End of FE-Buddy aliases";
 
-	private const string LogSource = "VnasAlias";
+	private const string LogSource = "CombinedAliasFileWriter";
 	private const string FeUseOnlyCommand = ".FeUseOnly";
 	private const int DuplicatesListed = 10;
 
@@ -80,7 +80,7 @@ public static class VnasAliasFileWriter
 	/// <param name="fileName">The file's name, when the user gave it one of their own (see <see cref="OutputFileNames"/>).</param>
 	/// <returns>What was written, and every message.</returns>
 	/// <exception cref="IOException">Thrown when an FE-Buddy alias file cannot be read or the file cannot be written.</exception>
-	public static VnasAliasResult Write(
+	public static CombinedAliasResult Write(
 		IReadOnlyList<AliasSourceLoad> customFiles,
 		IReadOnlyList<string> feBuddyAliasFiles,
 		string cycleId,
@@ -322,7 +322,7 @@ public static class VnasAliasFileWriter
 		}
 	}
 
-	private static VnasAliasResult Result(
+	private static CombinedAliasResult Result(
 		string? path,
 		int customFileCount,
 		int customFilesMerged,
@@ -342,7 +342,7 @@ public static class VnasAliasFileWriter
 
 		stopwatch.Stop();
 
-		return new VnasAliasResult
+		return new CombinedAliasResult
 		{
 			FilePath = path,
 			CustomFileCount = customFileCount,

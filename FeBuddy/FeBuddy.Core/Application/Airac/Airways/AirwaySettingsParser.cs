@@ -46,7 +46,7 @@ public static class AirwaySettingsParser
 	/// <summary>The keys only Airways reads, on top of <see cref="SubServiceSettingsReader.CommonKeys"/>.</summary>
 	private static readonly IReadOnlySet<string> OwnKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
 	{
-		"OutputBy", "BufferAirwayWaypoints", FixBufferKey, NavaidBufferKey, "SplitAtAntimeridian", "ExcludedDesignations",
+		"GenerateGeojson", "OutputBy", "BufferAirwayWaypoints", FixBufferKey, NavaidBufferKey, "SplitAtAntimeridian", "ExcludedDesignations",
 		"EmitLines", "EmitSymbols", "EmitText", "AliasRoiScope", "GenerateAliasFile",
 		HighDesignationsKey, LowDesignationsKey, BothDesignationsKey,
 	};
@@ -72,19 +72,32 @@ public static class AirwaySettingsParser
 	{
 		ArgumentNullException.ThrowIfNull(airwaySettings);
 
-		AirwayGeojsonOutputBy outputBy = SettingsValueReader.RequiredEnum<AirwayGeojsonOutputBy>(airwaySettings, "OutputBy");
-		bool writingGeojson = outputBy != AirwayGeojsonOutputBy.None;
+		bool writingGeojson = SettingsValueReader.YesNo(airwaySettings, "GenerateGeojson", defaultValue: true);
+		bool generateAliasFile = SettingsValueReader.YesNo(airwaySettings, "GenerateAliasFile", defaultValue: true);
+
+		// Selecting the sub-service and then turning off both of its outputs asks for a run that
+		// writes nothing. The GUI blocks this; the parser is the backstop for the harness.
+		if (!writingGeojson && !generateAliasFile)
+		{
+			throw new ArgumentException(
+				"GenerateGeojson and GenerateAliasFile are both \"N\", so the Airways sub-service would produce nothing. " +
+				"Turn one back on, or deselect Airways.");
+		}
+
+		// How the files are split only matters while they are written.
+		AirwayGeojsonOutputBy outputBy = writingGeojson
+			? SettingsValueReader.RequiredEnum<AirwayGeojsonOutputBy>(airwaySettings, "OutputBy")
+			: AirwayGeojsonOutputBy.HighLow;
 
 		bool emitLines = SettingsValueReader.YesNo(airwaySettings, "EmitLines", defaultValue: true);
 		bool emitSymbols = SettingsValueReader.YesNo(airwaySettings, "EmitSymbols", defaultValue: true);
 		bool emitText = SettingsValueReader.YesNo(airwaySettings, "EmitText", defaultValue: true);
 
-		// All three kinds off is only meaningful when nothing is being written anyway.
 		if (writingGeojson && !emitLines && !emitSymbols && !emitText)
 		{
 			throw new ArgumentException(
-				"EmitLines, EmitSymbols and EmitText are all \"N\", but OutputBy is not \"None\". " +
-				"Turn at least one kind back on, or set OutputBy to \"None\".");
+				"EmitLines, EmitSymbols and EmitText are all \"N\", but GenerateGeojson is \"Y\". " +
+				"Turn at least one kind back on, or set GenerateGeojson to \"N\".");
 		}
 
 		(bool includeFebProperties, IReadOnlyList<AirwayFebProperty> febProperties) =
@@ -119,6 +132,7 @@ public static class AirwaySettingsParser
 		AirwaySettings settings = new()
 		{
 			OutputDirectory = SettingsValueReader.RequiredString(airwaySettings, "OutputDirectory"),
+			GenerateGeojson = writingGeojson,
 			OutputBy = outputBy,
 			BufferAirwayWaypoints = buffer,
 			FixBufferNm = readsBufferDistances
@@ -129,7 +143,7 @@ public static class AirwaySettingsParser
 				: AirwayWaypointBuffer.DefaultNavaidRadiusNm,
 			IncludeFebCustomProperties = includeFebProperties,
 			FebProperties = febProperties,
-			GenerateAliasFile = SettingsValueReader.YesNo(airwaySettings, "GenerateAliasFile", defaultValue: true),
+			GenerateAliasFile = generateAliasFile,
 			SplitAtAntimeridian = SettingsValueReader.YesNo(airwaySettings, "SplitAtAntimeridian", defaultValue: true),
 			CrcDefaultsFiles = crcFiles,
 			Roi = SubServiceSettingsReader.ReadRoi(airwaySettings),
@@ -181,9 +195,9 @@ public static class AirwaySettingsParser
 	/// <summary>
 	/// Reads which file each designation goes in: <see cref="HighDesignationsKey"/>,
 	/// <see cref="LowDesignationsKey"/> and <see cref="BothDesignationsKey"/>, upper-cased. With none
-	/// of the three keys in the block at all - a block written before they existed - the defaults
-	/// apply (<see cref="AirwaySettings.DefaultDesignationStrata"/>); otherwise a designation in no
-	/// list has no file.
+	/// of the three keys in the block at all, the defaults apply
+	/// (<see cref="AirwaySettings.DefaultDesignationStrata"/>); otherwise a designation in no list has
+	/// no file.
 	/// </summary>
 	/// <exception cref="ArgumentException">Thrown when a designation is in more than one list.</exception>
 	private static IReadOnlyDictionary<string, AirwayStratum> ReadDesignationStrata(IReadOnlyDictionary<string, string> airwaySettings)

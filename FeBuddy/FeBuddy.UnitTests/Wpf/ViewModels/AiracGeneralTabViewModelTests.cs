@@ -10,8 +10,7 @@ namespace FeBuddy.UnitTests.Wpf.ViewModels;
 /// <summary>
 /// Covers the General tab's table (<see cref="AiracGeneralTabViewModel"/>, <see cref="SubServiceRow"/>):
 /// everything included and on to start, the outputs a sub-service doesn't offer always off, the
-/// last output kept on, where the choices are saved, and the outputs each tab saved before the
-/// table, read until it is first saved - against a throwaway config.
+/// last output kept on, and where the choices are saved - against a throwaway config.
 /// </summary>
 [Collection("AppLog")]
 public sealed class AiracGeneralTabViewModelTests : IDisposable
@@ -57,14 +56,14 @@ public sealed class AiracGeneralTabViewModelTests : IDisposable
 
 	/// <summary>Concatenate Aliases makes nothing of its own, so it is not a row; it comes in by itself.</summary>
 	[Fact]
-	public void the_table_lists_every_sub_service_but_vnas_alias_upload_in_rail_order()
+	public void the_table_lists_every_sub_service_but_concatenate_aliases_in_rail_order()
 	{
 		AiracGeneralTabViewModel general = new();
 
 		Assert.Equal(
-			[.. AiracSubServices.All.Where(d => d.Key != AiracSubServices.VnasAliasKey).Select(d => d.DisplayName)],
+			[.. AiracSubServices.All.Where(d => d.Key != AiracSubServices.ConcatenateAliasesKey).Select(d => d.DisplayName)],
 			general.SubServices.Select(row => row.DisplayName));
-		Assert.Null(general.RowFor(AiracSubServices.VnasAliasKey));
+		Assert.Null(general.RowFor(AiracSubServices.ConcatenateAliasesKey));
 	}
 
 	[Fact]
@@ -138,28 +137,6 @@ public sealed class AiracGeneralTabViewModelTests : IDisposable
 		Assert.False(Row(reloaded, AiracSubServices.AirportsKey).Geojson);
 		Assert.False(Row(reloaded, AiracSubServices.ProceduresKey).ProceduresJson);
 		Assert.True(Row(reloaded, AiracSubServices.ProceduresKey).ProcedureChanges);
-	}
-
-	/// <summary>Before the table, each tab saved its own outputs - Airways' "None" split was its GeoJSON switch.</summary>
-	[Fact]
-	public void outputs_saved_by_the_tabs_before_the_table_are_read_until_it_is_saved()
-	{
-		UserConfigFile.TrySetValue($"{Node}.SelectedSubServices", "Airports,Airways,Procedures,VnasAlias");
-		UserConfigFile.TrySetValue($"{Node}.Airports.GenerateGeojson", "N");
-		UserConfigFile.TrySetValue($"{Node}.Geojson.Airways.OutputBy", "None");
-		UserConfigFile.TrySetValue($"{Node}.Procedures.GenerateChangesDocument", "N");
-		UserConfigFile.TrySetValue($"{Node}.Procedures.GenerateAliasFile", "N");
-
-		AiracGeneralTabViewModel general = new();
-
-		Assert.Equal(["Airports", "Airways", "Procedures"], general.IncludedSubServices.Select(row => row.Key));
-		Assert.Equal(SubServiceOutputKinds.Alias, Row(general, AiracSubServices.AirportsKey).OutputsOn);
-		Assert.Equal(SubServiceOutputKinds.Alias, Row(general, AiracSubServices.AirwaysKey).OutputsOn);
-		Assert.Equal(SubServiceOutputKinds.ProceduresJson, Row(general, AiracSubServices.ProceduresKey).OutputsOn);
-
-		// Once the table has its own, the old ones no longer count.
-		UserConfigFile.TrySetValue($"{Node}.Outputs.Airports.Geojson", "Y");
-		Assert.True(Row(new AiracGeneralTabViewModel(), AiracSubServices.AirportsKey).Geojson);
 	}
 
 	/// <summary>Settings edited by hand with every output off would make nothing: they load with every output on.</summary>

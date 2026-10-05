@@ -34,13 +34,6 @@ public static class AirportSettingsParser
 			[nameof(AirportCrcClass.Runways)] = [CrcFeatureKind.Line],
 		};
 
-	/// <summary>Properties that used to be offered, and why they were withdrawn.</summary>
-	private static readonly IReadOnlyDictionary<string, string> RetiredFebProperties =
-		new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-		{
-			["lat"] = "every Feature's geometry already carries its coordinates.",
-			["lon"] = "every Feature's geometry already carries its coordinates.",
-		};
 
 	/// <summary>
 	/// Parses and validates <paramref name="airportSettings"/> into a typed
@@ -83,8 +76,7 @@ public static class AirportSettingsParser
 		}
 
 		(bool includeFebProperties, IReadOnlyList<AirportFebProperty> febProperties) =
-			SubServiceSettingsReader.ReadFebProperties<AirportFebProperty>(
-				airportSettings, example: "faaId,icaoId,elev", RetiredFebProperties);
+			SubServiceSettingsReader.ReadFebProperties<AirportFebProperty>(airportSettings, example: "faaId,icaoId,elev");
 
 		RegionOfInterest? roi = SubServiceSettingsReader.ReadRoi(airportSettings);
 		int coordinatePrecision = SubServiceSettingsReader.ReadCoordinatePrecision(airportSettings);

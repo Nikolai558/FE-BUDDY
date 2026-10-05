@@ -28,9 +28,7 @@ namespace FeBuddy.Wpf.ViewModels;
 /// The table owns each sub-service's outputs; its tab reads them (<see cref="ISubServiceOutputs"/>).
 /// They are saved under this tab's <c>Outputs</c> node, never inside a sub-service's own node, so
 /// saving or undoing a sub-service tab can't change them. Nothing saved means everything included
-/// and every output on. Settings from before the table was here kept the outputs on each tab
-/// (<c>GenerateGeojson</c>, <c>GenerateAliasFile</c>, …, and Airways' <c>OutputBy</c> = <c>None</c>);
-/// those are read until the table is first saved.
+/// and every output on.
 /// </para>
 /// </remarks>
 public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
@@ -38,17 +36,6 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 	private const string Node = "Services.AiracService";
 	private const string SelectedSubServicesKey = "SelectedSubServices";
 	private const string OutputsNode = "Outputs";
-
-	/// <summary>The node, under this tab's, where each sub-service kept its outputs before the table: read until it is saved.</summary>
-	private static readonly IReadOnlyDictionary<string, string> LegacyOutputNodes = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-	{
-		[AiracSubServices.AirportsKey] = "Airports",
-		[AiracSubServices.AirwaysKey] = "Geojson.Airways",
-		[AiracSubServices.ArrivalsKey] = "Arrivals",
-		[AiracSubServices.DeparturesKey] = "Departures",
-		[AiracSubServices.NavaidsKey] = "Navaids",
-		[AiracSubServices.ProceduresKey] = "Procedures",
-	};
 
 	private bool _loading;
 	private bool _isReady;
@@ -285,14 +272,14 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 	private static IEnumerable<SubServiceOutputKinds> OfferedKinds(SubServiceRow row) =>
 		Enum.GetValues<SubServiceOutputKinds>().Where(kind => kind != SubServiceOutputKinds.None && row.Descriptor.Outputs.HasFlag(kind));
 
-	/// <summary>A row's saved outputs: this tab's own, else what its tab saved before the table, else on.</summary>
+	/// <summary>A row's saved outputs; an output with nothing saved is on.</summary>
 	private SubServiceOutputKinds ReadOutputs(SubServiceRow row)
 	{
 		SubServiceOutputKinds on = SubServiceOutputKinds.None;
 
 		foreach (SubServiceOutputKinds kind in OfferedKinds(row))
 		{
-			string? saved = Get($"{OutputsNode}.{row.Key}.{kind}") ?? LegacyOutput(row.Key, kind);
+			string? saved = Get($"{OutputsNode}.{row.Key}.{kind}");
 
 			if (saved is null || IsYes(saved))
 			{
@@ -303,27 +290,6 @@ public sealed class AiracGeneralTabViewModel : SubServiceSettingsViewModel
 		return on;
 	}
 
-	/// <summary>An output as its tab saved it before the table was here, or <see langword="null"/> when it never did.</summary>
-	private string? LegacyOutput(string key, SubServiceOutputKinds kind)
-	{
-		if (!LegacyOutputNodes.TryGetValue(key, out string? node))
-		{
-			return null;
-		}
-
-		return kind switch
-		{
-			SubServiceOutputKinds.Alias => Get($"{node}.GenerateAliasFile"),
-
-			// Airways had no GeoJSON switch: its "how the files are split" choice had None.
-			SubServiceOutputKinds.Geojson when key == AiracSubServices.AirwaysKey =>
-				Get($"{node}.OutputBy") is { } outputBy && outputBy.Trim().Equals("None", StringComparison.OrdinalIgnoreCase) ? "N" : null,
-
-			SubServiceOutputKinds.Geojson => Get($"{node}.GenerateGeojson"),
-			SubServiceOutputKinds.ProcedureChanges => Get($"{node}.GenerateChangesDocument"),
-			_ => Get($"{node}.GenerateProceduresJson"),
-		};
-	}
 
 	private static bool IsYes(string value) =>
 		value.Trim().Equals("Y", StringComparison.OrdinalIgnoreCase) || value.Trim().Equals("true", StringComparison.OrdinalIgnoreCase);

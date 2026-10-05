@@ -76,11 +76,34 @@ public sealed class AirwaySettingsParserTests
 		Assert.Throws<ArgumentException>(() => AirwaySettingsParser.Parse(settings));
 	}
 
+	/// <summary>How the files are split only matters while they are written.</summary>
+	[Fact]
+	public void output_by_is_not_needed_with_geojson_off()
+	{
+		Dictionary<string, string> settings = new() { { "OutputDirectory", @"C:\Output" }, { "GenerateGeojson", "N" } };
+
+		AirwaySettings parsed = AirwaySettingsParser.Parse(settings).Settings;
+
+		Assert.False(parsed.GenerateGeojson);
+		Assert.True(parsed.GenerateAliasFile);
+	}
+
+	[Fact]
+	public void geojson_and_alias_file_both_off_throws()
+	{
+		Dictionary<string, string> settings = MinimalValidSettings();
+		settings["GenerateGeojson"] = "N";
+		settings["GenerateAliasFile"] = "N";
+
+		ArgumentException error = Assert.Throws<ArgumentException>(() => AirwaySettingsParser.Parse(settings));
+
+		Assert.Contains("would produce nothing", error.Message, StringComparison.Ordinal);
+	}
+
 	[Theory]
 	[InlineData("HighLow", AirwayGeojsonOutputBy.HighLow)]
 	[InlineData("highlow", AirwayGeojsonOutputBy.HighLow)]
 	[InlineData("Designation", AirwayGeojsonOutputBy.Designation)]
-	[InlineData("None", AirwayGeojsonOutputBy.None)]
 	public void output_by_parses_case_insensitively(string value, AirwayGeojsonOutputBy expected)
 	{
 		Dictionary<string, string> settings = MinimalValidSettings();
@@ -185,12 +208,12 @@ public sealed class AirwaySettingsParserTests
 	}
 
 	[Theory]
-	[InlineData("N", "HighLow")]
-	[InlineData("Y", "None")]
-	public void buffer_distances_are_ignored_when_nothing_buffered_is_written(string buffer, string outputBy)
+	[InlineData("N", "Y")]
+	[InlineData("Y", "N")]
+	public void buffer_distances_are_ignored_when_nothing_buffered_is_written(string buffer, string generateGeojson)
 	{
 		Dictionary<string, string> settings = MinimalValidSettings();
-		settings["OutputBy"] = outputBy;
+		settings["GenerateGeojson"] = generateGeojson;
 		settings["BufferAirwayWaypoints"] = buffer;
 		settings["FixBufferNm"] = "99";
 		settings["NavaidBufferNm"] = "not a number";
@@ -301,7 +324,7 @@ public sealed class AirwaySettingsParserTests
 		Assert.Empty(parsed.LineDefaults);
 	}
 
-	/// <summary>With none of the three keys - a block from before they existed - J and Q are High, V and T Low.</summary>
+	/// <summary>With none of the three keys, J and Q are High and V and T Low.</summary>
 	[Fact]
 	public void with_no_stratum_keys_the_default_strata_apply()
 	{
@@ -389,7 +412,7 @@ public sealed class AirwaySettingsParserTests
 	public void airways_geojson_file_keys_are_accepted_for_crc_defaults(string key)
 	{
 		Dictionary<string, string> settings = MinimalValidSettings();
-		settings["OutputBy"] = "None"; // no GeoJSON is written, so none of the files' defaults are needed
+		settings["GenerateGeojson"] = "N"; // no GeoJSON is written, so none of the files' defaults are needed
 		settings["CrcDefaultsFor"] = key;
 
 		Assert.True(AirwaySettingsParser.Parse(settings).Settings.CrcDefaultsFiles.HasCrcDefaults(key));
@@ -540,7 +563,7 @@ public sealed class AirwaySettingsParserTests
 	}
 
 	[Fact]
-	public void all_three_emit_flags_off_throws_unless_output_by_is_none()
+	public void all_three_emit_flags_off_throws_unless_geojson_is_off()
 	{
 		Dictionary<string, string> settings = MinimalValidSettings();
 		settings["EmitLines"] = "N";
@@ -549,7 +572,7 @@ public sealed class AirwaySettingsParserTests
 
 		Assert.Throws<ArgumentException>(() => AirwaySettingsParser.Parse(settings));
 
-		settings["OutputBy"] = "None";
+		settings["GenerateGeojson"] = "N";
 		AirwaySettings parsed = AirwaySettingsParser.Parse(settings).Settings;
 		Assert.False(parsed.EmitLines);
 	}
@@ -634,10 +657,10 @@ public sealed class AirwaySettingsParserTests
 	}
 
 	[Fact]
-	public void crc_defaults_are_not_required_when_output_by_is_none()
+	public void crc_defaults_are_not_required_when_geojson_is_off()
 	{
 		Dictionary<string, string> settings = MinimalValidSettings();
-		settings["OutputBy"] = "None";
+		settings["GenerateGeojson"] = "N";
 		ChooseEveryFileForCrcDefaults(settings);
 		// No Crc.* keys at all: no GeoJSON is written, so no defaults are needed.
 
@@ -646,23 +669,6 @@ public sealed class AirwaySettingsParserTests
 		Assert.Empty(parsed.LineDefaults);
 		Assert.Empty(parsed.SymbolDefaults);
 		Assert.Empty(parsed.TextDefaults);
-	}
-
-	[Theory]
-	[InlineData("IncludeCrcEramPropertyDefaults")]
-	[InlineData("IncludeCrcSymbolDefaults")]
-	[InlineData("AddFeBuddyOutputFolder")]
-	[InlineData("UploadToVnas")]
-	public void a_retired_key_produces_a_warning_and_changes_nothing(string key)
-	{
-		Dictionary<string, string> settings = MinimalValidSettings();
-		settings[key] = "Y";
-
-		AirwaySettingsParseResult result = AirwaySettingsParser.Parse(settings);
-
-		Assert.Contains(result.Messages.WarningTexts(), w => w.Contains(key));
-		Assert.Empty(result.Settings.CrcDefaultsFiles.Files);
-		Assert.Empty(result.Settings.SymbolDefaults);
 	}
 
 	// ---- FE-Buddy (feb.*) properties ------------------------------------
@@ -713,17 +719,5 @@ public sealed class AirwaySettingsParserTests
 
 		Assert.Empty(result.Settings.FebProperties);
 		Assert.DoesNotContain(result.Messages.WarningTexts(), w => w.Contains("FebProperties"));
-	}
-
-	[Fact]
-	public void the_retired_waypoint_ids_key_produces_an_unknown_key_warning()
-	{
-		Dictionary<string, string> settings = MinimalValidSettings();
-		settings["IncludeAirwayWaypointIds"] = "Y";
-
-		AirwaySettingsParseResult result = AirwaySettingsParser.Parse(settings);
-
-		Assert.Contains(result.Messages.WarningTexts(), w => w.Contains("IncludeAirwayWaypointIds"));
-		Assert.Empty(result.Settings.FebProperties);
 	}
 }

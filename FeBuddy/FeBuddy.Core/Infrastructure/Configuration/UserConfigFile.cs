@@ -182,7 +182,7 @@ public static class UserConfigFile
 	/// entries are numbered keys, before it is written again with fewer entries. Does <b>not</b>
 	/// persist - call <see cref="Save(string)"/> to write it to disk.
 	/// </summary>
-	/// <param name="dottedPath">The dotted path to remove, e.g. <c>Services.AiracService.VnasAlias.Sources</c>.</param>
+	/// <param name="dottedPath">The dotted path to remove, e.g. <c>Services.AiracService.ConcatenateAliases.Sources</c>.</param>
 	/// <returns>How many values were removed.</returns>
 	public static int RemoveValues(string dottedPath)
 	{
@@ -298,7 +298,7 @@ public static class UserConfigFile
 	/// refreshed from disk.
 	/// </summary>
 	/// <param name="nodePath">
-	/// The dotted path of the node to save, e.g. <c>Services.AiracService.Geojson.Airways</c>.
+	/// The dotted path of the node to save, e.g. <c>Services.AiracService.Airways</c>.
 	/// </param>
 	public static void Save(string nodePath)
 	{

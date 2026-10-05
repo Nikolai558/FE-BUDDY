@@ -1,12 +1,12 @@
 using System.Net;
 using System.Text;
 
-using FeBuddy.Core.Application.Airac.VnasAlias;
-using FeBuddy.Core.Application.Airac.VnasAlias.Models;
+using FeBuddy.Core.Application.Airac.ConcatenateAliases;
+using FeBuddy.Core.Application.Airac.ConcatenateAliases.Models;
 using FeBuddy.Core.Infrastructure.Credentials;
 using FeBuddy.Core.Infrastructure.Credentials.Models;
 
-namespace FeBuddy.UnitTests.Application.Airac.VnasAlias;
+namespace FeBuddy.UnitTests.Application.Airac.ConcatenateAliases;
 
 /// <summary>
 /// Covers <see cref="AliasSourceLoader"/>: reading a custom alias file from this PC or the web; a

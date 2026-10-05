@@ -1,4 +1,4 @@
-using FeBuddy.Core.Application.Airac.VnasAlias.Models;
+using FeBuddy.Core.Application.Airac.ConcatenateAliases.Models;
 using FeBuddy.Core.Application.Models;
 using FeBuddy.Core.Infrastructure.Dtpp;
 using FeBuddy.Core.Infrastructure.Dtpp.Models;
@@ -46,7 +46,7 @@ public sealed record AiracSupplementalData
 
 	/// <summary>
 	/// The user's custom alias files as they were read (or why each could not be), in merge order.
-	/// Only read when <see cref="AiracServiceSettings.VnasAlias"/> is not <see langword="null"/>;
+	/// Only read when <see cref="AiracServiceSettings.ConcatenateAliases"/> is not <see langword="null"/>;
 	/// <see langword="null"/> merges none.
 	/// </summary>
 	public IReadOnlyList<AliasSourceLoad>? CustomAliasFiles { get; init; }

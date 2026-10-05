@@ -37,13 +37,6 @@ public sealed class EramToGeojsonViewModel : FileConversionTabViewModel, IFebPro
 {
 	private const string Node = "Services.FileConversions.EramToGeojson";
 
-	/// <summary>The layouts before these, as the tab saved them, and the one each is now read as.</summary>
-	private static readonly IReadOnlyDictionary<string, EramOutputLayout> RetiredLayouts =
-		new Dictionary<string, EramOutputLayout>(StringComparer.OrdinalIgnoreCase)
-		{
-			["ByFilter"] = EramOutputLayout.ByFilters,
-			["ByObject"] = EramOutputLayout.ByAttributes,
-		};
 
 	private EramOutputLayout _outputLayout = EramOutputLayout.ByAttributes;
 	private EramDefaultsSource _defaultsSource = EramDefaultsSource.Xml;
@@ -186,10 +179,7 @@ public sealed class EramToGeojsonViewModel : FileConversionTabViewModel, IFebPro
 	/// <inheritdoc />
 	protected override void LoadOwnSettings()
 	{
-		string? layout = Get("OutputLayout")?.Trim();
-		_outputLayout = layout is not null && RetiredLayouts.TryGetValue(layout, out EramOutputLayout nearest)
-			? nearest
-			: Parse(layout, EramOutputLayout.ByAttributes);
+		_outputLayout = Parse(Get("OutputLayout"), EramOutputLayout.ByAttributes);
 		_defaultsSource = Parse(Get("DefaultsSource"), EramDefaultsSource.Xml);
 		_includeFebCustomProperties = GetBool("IncludeFebCustomProperties", false);
 

@@ -11,8 +11,8 @@ namespace FeBuddy.UnitTests.Wpf.ViewModels;
 /// <summary>
 /// Covers the CRC ERAM Defaults card's choice of files on a GeoJSON sub-service tab
 /// (<see cref="GeojsonSubServiceViewModel"/>, through the Airports tab): none to start, any GeoJSON
-/// file the tab writes, what the run is sent, and the choices saved while files had to be marked for
-/// vNAS - against a throwaway config.
+/// file the tab writes, what the run is sent, and where the choice is saved - against a throwaway
+/// config.
 /// </summary>
 [Collection("AppLog")]
 public sealed class CrcDefaultsChoiceTests : IDisposable
@@ -47,7 +47,6 @@ public sealed class CrcDefaultsChoiceTests : IDisposable
 	private static CrcFileToggle File(GeojsonSubServiceViewModel tab, string key) =>
 		tab.CrcFileRows.SelectMany(row => row.Files).Single(file => file.Key == key);
 
-	/// <summary>Every file is ready for vNAS, so the run is never told which to upload.</summary>
 	[Fact]
 	public void no_file_gets_crc_eram_defaults_to_start_and_every_geojson_file_is_offered()
 	{
@@ -58,9 +57,7 @@ public sealed class CrcDefaultsChoiceTests : IDisposable
 		Assert.False(tab.HasCrcDefaultsInUse);
 		Assert.Equal(["Runways_Lines", "Airports_Symbols", "Airports_Text"], tab.CrcFileRows.SelectMany(row => row.Files).Select(file => file.Key));
 
-		IReadOnlyDictionary<string, string> block = tab.BuildSettingsBlock();
-		Assert.Equal(string.Empty, block["CrcDefaultsFor"]);
-		Assert.False(block.ContainsKey("UploadToVnas"));
+		Assert.Equal(string.Empty, tab.BuildSettingsBlock()["CrcDefaultsFor"]);
 	}
 
 	[Fact]
@@ -106,25 +103,22 @@ public sealed class CrcDefaultsChoiceTests : IDisposable
 		Assert.Equal(string.Empty, tab.BuildSettingsBlock()["CrcDefaultsFor"]);
 	}
 
-	/// <summary>
-	/// "Every vNAS file" was saved as AllVnasFiles; it loads as every GeoJSON file. The Upload to vNAS
-	/// card's own list goes on the next save.
-	/// </summary>
 	[Fact]
-	public void a_choice_saved_with_the_upload_to_vnas_card_loads_and_a_save_drops_its_upload_list()
+	public void the_choice_is_saved_under_the_tab_and_read_back()
 	{
-		UserConfigFile.TrySetValue($"{Node}.Vnas.CrcDefaults", "AllVnasFiles");
-		UserConfigFile.TrySetValue($"{Node}.Vnas.UploadFiles", "Airports_Symbols,Airports.txt");
-
-		AirportsViewModel tab = new();
-
-		Assert.Equal(CrcDefaultsScope.AllGeojsonFiles, tab.CrcDefaultsScope);
-		Assert.False(tab.IsDirty);
-
+		AirportsViewModel tab = new() { CrcDefaultsScope = CrcDefaultsScope.SpecificFiles };
+		File(tab, "Airports_Text").HasCrcDefaults = true;
+		File(tab, "Airports_Symbols").HasCrcDefaults = true;
 		tab.CrcDefaultsScope = CrcDefaultsScope.None;
+
 		Assert.True(tab.Save());
 
-		Assert.Equal("None", UserConfigFile.GetValue($"{Node}.Vnas.CrcDefaults"));
-		Assert.Null(UserConfigFile.GetValue($"{Node}.Vnas.UploadFiles"));
+		Assert.Equal("None", UserConfigFile.GetValue($"{Node}.CrcDefaultsScope"));
+		Assert.Equal("Airports_Symbols,Airports_Text", UserConfigFile.GetValue($"{Node}.CrcDefaultsFiles"));
+
+		AirportsViewModel reloaded = new();
+		Assert.Equal(CrcDefaultsScope.None, reloaded.CrcDefaultsScope);
+		reloaded.CrcDefaultsScope = CrcDefaultsScope.SpecificFiles;
+		Assert.Equal("Airports_Symbols,Airports_Text", reloaded.BuildSettingsBlock()["CrcDefaultsFor"]);
 	}
 }

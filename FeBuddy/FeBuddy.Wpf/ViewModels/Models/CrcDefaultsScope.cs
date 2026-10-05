@@ -4,10 +4,7 @@ namespace FeBuddy.Wpf.ViewModels.Models;
 /// The answer to the CRC ERAM Defaults card's question: which of the GeoJSON files a tab writes get
 /// CRC-ERAM defaults.
 /// </summary>
-/// <remarks>
-/// Saved by name, so a renamed value must still load under its old name: <see cref="AllGeojsonFiles"/>
-/// was <c>AllVnasFiles</c> while only files marked for vNAS could get CRC-ERAM defaults.
-/// </remarks>
+/// <remarks>Saved by name, so renaming a value loses that choice from saved settings.</remarks>
 public enum CrcDefaultsScope
 {
 	/// <summary>None of them.</summary>

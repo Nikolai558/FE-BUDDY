@@ -1,13 +1,13 @@
 using System.ComponentModel;
 using System.Net;
 
-using FeBuddy.Core.Application.Airac.VnasAlias.Models;
+using FeBuddy.Core.Application.Airac.ConcatenateAliases.Models;
 using FeBuddy.Core.Infrastructure.Credentials;
 using FeBuddy.Core.Infrastructure.Credentials.Models;
 using FeBuddy.Core.Infrastructure.GitHub;
 using FeBuddy.Core.Infrastructure.Http;
 
-namespace FeBuddy.Core.Application.Airac.VnasAlias;
+namespace FeBuddy.Core.Application.Airac.ConcatenateAliases;
 
 /// <summary>
 /// Reads the user's custom alias files: from this PC, or downloaded - with a saved credential when
@@ -259,7 +259,7 @@ public static class AliasSourceLoader
 	{
 		text = text.TrimStart('\uFEFF');
 
-		return VnasAliasFileWriter.CountCommands(text) > 0
+		return CombinedAliasFileWriter.CountCommands(text) > 0
 			? AliasSourceLoad.Read(source, text)
 			: AliasSourceLoad.Failed(source, "It has no alias commands (lines starting with a dot), so it does not look like an alias file.");
 	}

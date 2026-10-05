@@ -33,7 +33,8 @@ public sealed class AirwayAliasWriterTests : IDisposable
 	private AirwaySettings Settings(AliasRoiScope scope = AliasRoiScope.All, RegionOfInterest? roi = null) => new()
 	{
 		OutputDirectory = _outputDirectory,
-		OutputBy = AirwayGeojsonOutputBy.None,
+		GenerateGeojson = false,
+		OutputBy = AirwayGeojsonOutputBy.HighLow,
 		BufferAirwayWaypoints = false,
 		IncludeFebCustomProperties = false,
 		FebProperties = [],
@@ -67,7 +68,8 @@ public sealed class AirwayAliasWriterTests : IDisposable
 		AirwaySettings minimal = new()
 		{
 			OutputDirectory = @"C:\unused",
-			OutputBy = AirwayGeojsonOutputBy.None,
+			GenerateGeojson = false,
+			OutputBy = AirwayGeojsonOutputBy.HighLow,
 			BufferAirwayWaypoints = false,
 			IncludeFebCustomProperties = false,
 			FebProperties = [],

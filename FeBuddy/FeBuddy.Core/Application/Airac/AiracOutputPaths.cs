@@ -16,7 +16,7 @@ namespace FeBuddy.Core.Application.Airac;
 /// AIRAC_2610\
 /// ├── Duplicate_Alias_Commands.txt      the alias commands the run's alias files share
 /// ├── Aliases\                          every alias file (Airways.txt, Faa_Chart_Recall.txt, ...)
-/// │   └── Combined_Alias.txt            all of them in one, for vNAS (see VnasAliasFileWriter)
+/// │   └── Combined_Alias.txt            all of them in one, for vNAS (see CombinedAliasFileWriter)
 /// ├── Geojson\                          every GeoJSON file
 /// └── Publication_Docs\                 the Procedures sub-service's two documents
 /// </code>

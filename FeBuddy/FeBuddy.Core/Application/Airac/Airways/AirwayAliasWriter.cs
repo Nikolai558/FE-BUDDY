@@ -27,7 +27,7 @@ public static class AirwayAliasWriter
 	/// <returns>The path written (or <see langword="null"/> if nothing to write) and the line count.</returns>
 	/// <remarks>
 	/// Written whenever <see cref="AirwaySettings.GenerateAliasFile"/> is
-	/// <see langword="true"/>, independently of <see cref="AirwaySettings.OutputBy"/> - the
+	/// <see langword="true"/>, independently of <see cref="AirwaySettings.GenerateGeojson"/> - the
 	/// alias file is a separate user choice from GeoJSON generation.
 	/// </remarks>
 	public static AirwayAliasGenerateResult Generate(IReadOnlyList<Airway> airways, AirwaySettings settings)

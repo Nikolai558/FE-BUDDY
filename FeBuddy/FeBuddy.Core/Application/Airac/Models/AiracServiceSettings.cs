@@ -118,5 +118,5 @@ public sealed record AiracServiceSettings
 	/// or <see langword="null"/> when Concatenate Aliases is not in this run, which then writes no
 	/// combined file.
 	/// </summary>
-	public IReadOnlyDictionary<string, string>? VnasAlias { get; init; }
+	public IReadOnlyDictionary<string, string>? ConcatenateAliases { get; init; }
 }

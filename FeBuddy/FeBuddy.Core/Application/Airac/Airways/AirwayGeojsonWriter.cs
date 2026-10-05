@@ -58,7 +58,7 @@ public static class AirwayGeojsonWriter
 
 		GeojsonFileSet files = new(settings.CoordinatePrecision);
 
-		if (settings.OutputBy == AirwayGeojsonOutputBy.None || airways.Count == 0)
+		if (!settings.GenerateGeojson || airways.Count == 0)
 		{
 			return files;
 		}
@@ -86,7 +86,8 @@ public static class AirwayGeojsonWriter
 
 	/// <summary>
 	/// The designations among <paramref name="airways"/> that have no High/Low file chosen, so are
-	/// left out of the High and Low files; none unless <see cref="AirwaySettings.OutputBy"/> is
+	/// left out of the High and Low files; none unless GeoJSON is written
+	/// (<see cref="AirwaySettings.GenerateGeojson"/>) and <see cref="AirwaySettings.OutputBy"/> is
 	/// <see cref="AirwayGeojsonOutputBy.HighLow"/>.
 	/// </summary>
 	/// <param name="airways">The airways to render.</param>
@@ -97,7 +98,7 @@ public static class AirwayGeojsonWriter
 		ArgumentNullException.ThrowIfNull(airways);
 		ArgumentNullException.ThrowIfNull(settings);
 
-		return settings.OutputBy != AirwayGeojsonOutputBy.HighLow
+		return !settings.GenerateGeojson || settings.OutputBy != AirwayGeojsonOutputBy.HighLow
 			? []
 			: [.. airways
 				.Select(airway => airway.Designation)

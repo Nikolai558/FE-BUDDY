@@ -127,7 +127,7 @@ public sealed class AiracServiceViewModelTests : IDisposable
 		UserConfigFile.TrySetValue("Services.AiracService.SelectedSubServices", "Airports");
 		AiracServiceViewModel screen = new();
 		FileNamesViewModel fileNames = Assert.IsType<FileNamesViewModel>(TabTitled(screen, "File Names"));
-		VnasAliasViewModel concatenate = Assert.IsType<VnasAliasViewModel>(TabTitled(screen, "Concatenate Aliases"));
+		ConcatenateAliasesViewModel concatenate = Assert.IsType<ConcatenateAliasesViewModel>(TabTitled(screen, "Concatenate Aliases"));
 
 		fileNames.RefreshFiles();
 		FileNameFolder aliases = fileNames.Folders.Single(folder => folder.Folder.EndsWith(@"\Aliases", StringComparison.Ordinal));

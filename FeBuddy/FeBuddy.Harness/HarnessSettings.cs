@@ -49,7 +49,8 @@ internal static class HarnessSettings
 		Dictionary<string, string> settings = new()
 		{
 			{ "OutputDirectory", OutputDirectory },
-			{ "OutputBy", "HighLow" },
+			{ "GenerateGeojson", "Y" },
+			{ "OutputBy", "HighLow" },       // or "Designation"
 			{ "BufferAirwayWaypoints", "N" },
 			{ "FixBufferNm", "2.5" },         // 0-10 NM; read only when buffering
 			{ "NavaidBufferNm", "5" },
@@ -534,13 +535,13 @@ internal static class HarnessSettings
 	}
 
 	/// <summary>
-	/// Settings for exercising the alias-only path (<c>OutputBy = None</c>, alias file still
-	/// generated), matching the "written even when OutputBy = None" contract.
+	/// Settings for exercising the alias-only path (<c>GenerateGeojson = N</c>, alias file still
+	/// generated), matching the "written even when GenerateGeojson = N" contract.
 	/// </summary>
 	public static Dictionary<string, string> AliasOnlySettings()
 	{
 		Dictionary<string, string> settings = AirwaySettings();
-		settings["OutputBy"] = "None";
+		settings["GenerateGeojson"] = "N";
 		settings["GenerateAliasFile"] = "Y";
 		return settings;
 	}

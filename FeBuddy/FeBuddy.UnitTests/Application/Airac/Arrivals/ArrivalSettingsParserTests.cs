@@ -513,23 +513,6 @@ public sealed class ArrivalSettingsParserTests
 		Assert.Empty(parsed.TextDefaults);
 	}
 
-	[Theory]
-	[InlineData("IncludeCrcEramPropertyDefaults")]
-	[InlineData("IncludeCrcTextDefaults")]
-	[InlineData("AddFeBuddyOutputFolder")]
-	[InlineData("UploadToVnas")]
-	public void a_retired_key_produces_a_warning_and_changes_nothing(string key)
-	{
-		Dictionary<string, string> settings = MinimalValidSettings();
-		settings[key] = "Y";
-
-		ArrivalSettingsParseResult result = ArrivalSettingsParser.Parse(settings);
-
-		Assert.Contains(result.Messages, m => m.Level == LogLevel.Warning && m.Text.Contains(key));
-		Assert.Empty(result.Settings.CrcDefaultsFiles.Files);
-		Assert.Empty(result.Settings.TextDefaults);
-	}
-
 	[Fact]
 	public void feb_custom_properties_on_with_an_empty_list_throws()
 	{

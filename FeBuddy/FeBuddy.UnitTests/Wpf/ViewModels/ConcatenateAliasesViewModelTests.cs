@@ -10,17 +10,17 @@ using FeBuddy.Core.Infrastructure.Logging;
 namespace FeBuddy.UnitTests.Wpf.ViewModels;
 
 /// <summary>
-/// Covers the Concatenate Aliases tab (<see cref="VnasAliasViewModel"/>): combining is on to start
+/// Covers the Concatenate Aliases tab (<see cref="ConcatenateAliasesViewModel"/>): combining is on to start
 /// and saved, which FE-Buddy alias files go into <c>Combined_Alias.txt</c>, and what the run is sent
 /// while combining is off - against a throwaway config and an empty credential store.
 /// </summary>
 [Collection("AppLog")]
-public sealed class VnasAliasViewModelTests : IDisposable
+public sealed class ConcatenateAliasesViewModelTests : IDisposable
 {
 	private readonly string _root = Path.Combine(Path.GetTempPath(), "FeBuddyTests_Concatenate_" + Guid.NewGuid().ToString("N"));
 
 	/// <summary>Points the config and the log at a throwaway folder.</summary>
-	public VnasAliasViewModelTests()
+	public ConcatenateAliasesViewModelTests()
 	{
 		AppLog.ConfigureForTesting(Path.Combine(_root, "logs"));
 		UserConfigFile.ConfigureForTesting(Path.Combine(_root, "config"));
@@ -42,12 +42,12 @@ public sealed class VnasAliasViewModelTests : IDisposable
 		}
 	}
 
-	private static VnasAliasViewModel NewTab() => new(new CredentialStore(new InMemoryCredentialVault()));
+	private static ConcatenateAliasesViewModel NewTab() => new(new CredentialStore(new InMemoryCredentialVault()));
 
 	/// <summary>A tab with one custom alias file, a web address.</summary>
-	private static VnasAliasViewModel TabWithCustomFile(string url)
+	private static ConcatenateAliasesViewModel TabWithCustomFile(string url)
 	{
-		VnasAliasViewModel tab = NewTab();
+		ConcatenateAliasesViewModel tab = NewTab();
 		tab.AddUrlCommand.Execute(null);
 		tab.Sources[0].Location = url;
 		return tab;
@@ -56,11 +56,11 @@ public sealed class VnasAliasViewModelTests : IDisposable
 	[Fact]
 	public void combining_is_on_to_start_and_the_run_gets_the_custom_files()
 	{
-		VnasAliasViewModel tab = TabWithCustomFile("https://example.com/ZOB-Alias.txt");
+		ConcatenateAliasesViewModel tab = TabWithCustomFile("https://example.com/ZOB-Alias.txt");
 
 		Assert.True(tab.CombineAliasFiles);
 		Assert.Equal("Concatenate Aliases", tab.Title);
-		Assert.Equal(@"Aliases\Combined_Alias.txt", VnasAliasViewModel.OutputFile);
+		Assert.Equal(@"Aliases\Combined_Alias.txt", ConcatenateAliasesViewModel.OutputFile);
 
 		IReadOnlyDictionary<string, string> block = tab.BuildSettingsBlock();
 		Assert.Equal("Y", block["CombineAliasFiles"]);
@@ -71,7 +71,7 @@ public sealed class VnasAliasViewModelTests : IDisposable
 	[Fact]
 	public void with_combining_off_the_custom_files_are_not_sent_or_checked()
 	{
-		VnasAliasViewModel tab = TabWithCustomFile(string.Empty);
+		ConcatenateAliasesViewModel tab = TabWithCustomFile(string.Empty);
 		Assert.Equal("Custom alias file 1: Enter the file's web address.", tab.ValidationError);
 
 		tab.CombineAliasFiles = false;
@@ -90,12 +90,12 @@ public sealed class VnasAliasViewModelTests : IDisposable
 	[Fact]
 	public void the_choice_is_saved_and_read_back()
 	{
-		VnasAliasViewModel tab = NewTab();
+		ConcatenateAliasesViewModel tab = NewTab();
 		tab.CombineAliasFiles = false;
 
 		Assert.True(tab.Save());
 
-		Assert.Equal("N", UserConfigFile.GetValue("Services.AiracService.VnasAlias.CombineAliasFiles"));
+		Assert.Equal("N", UserConfigFile.GetValue("Services.AiracService.ConcatenateAliases.CombineAliasFiles"));
 		Assert.False(NewTab().CombineAliasFiles);
 	}
 
@@ -110,7 +110,7 @@ public sealed class VnasAliasViewModelTests : IDisposable
 		arrivals.AttachOutputs(general.RowFor(AiracSubServices.ArrivalsKey)!);
 		general.RowFor(AiracSubServices.ArrivalsKey)!.Alias = false;
 
-		VnasAliasViewModel tab = NewTab();
+		ConcatenateAliasesViewModel tab = NewTab();
 		tab.AttachToService(
 			d => d.Key switch
 			{
@@ -133,7 +133,7 @@ public sealed class VnasAliasViewModelTests : IDisposable
 		Assert.False(tab.HasNoFeBuddyAliasFiles);
 	}
 
-	private static (string Status, bool IsAdded) Status(VnasAliasViewModel tab, string fileName)
+	private static (string Status, bool IsAdded) Status(ConcatenateAliasesViewModel tab, string fileName)
 	{
 		FeBuddyAliasFileRow row = tab.FeBuddyAliasFiles.Single(file => file.FileName == fileName);
 		return (row.Status, row.IsAdded);

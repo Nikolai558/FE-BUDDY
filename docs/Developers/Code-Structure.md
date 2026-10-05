@@ -79,8 +79,8 @@ FeBuddy.Core/
     │   ├── Airports/ Airways/ Departures/ Arrivals/ Navaids/ ArtccBoundaries/ Fixes/
     │   │   WxStations/ Procedures/ Telephony/
     │   │                 one folder per sub-service (see "Adding a sub-service" below)
-    │   └── VnasAlias/    Concatenate Aliases: VnasAliasSettingsParser, AliasSourceLoader,
-    │                     VnasAliasFileWriter
+    │   └── ConcatenateAliases/
+    │                     ConcatenateAliasesSettingsParser, AliasSourceLoader, CombinedAliasFileWriter
     ├── AliasGuide/       the Alias Command Guide (AliasGuideContent, AliasGuideHtmlWriter,
     │                     AliasGuideMarkdownWriter) and the Alias Command Practice page
     │                     (AliasPracticeContent, AliasPracticeWriter, AliasPractice.js, built in)

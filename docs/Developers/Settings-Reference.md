@@ -31,14 +31,13 @@ says so; a blank there means the same name.
 - A missing optional key uses its default. A missing **required** key, or a bad value, throws
   `ArgumentException` naming the key, which stops an AIRAC Service run there (the tabs' own checks
   normally prevent it).
-- An unknown block key is a warning on the Review tab, not an error. That is how a retired key in
-  an old harness or config fades out.
+- An unknown block key is a warning on the Review tab, not an error.
 - A saved key that is missing means "use the default", so adding a setting needs no migration.
 
 Parsers: `AirportSettingsParser`, `AirwaySettingsParser`, `DepartureSettingsParser`,
 `ArrivalSettingsParser`, `NavaidSettingsParser`, `ArtccBoundarySettingsParser`, `FixSettingsParser`,
 `WxStationSettingsParser`, `ProcedureSettingsParser`, `TelephonySettingsParser`,
-`VnasAliasSettingsParser`, `DatToGeojsonSettingsParser`, `SctToGeojsonSettingsParser` and
+`ConcatenateAliasesSettingsParser`, `DatToGeojsonSettingsParser`, `SctToGeojsonSettingsParser` and
 `EramToGeojsonSettingsParser`. Shared readers: `SubServiceSettingsReader`, `CrcDefaultsReader`,
 `ConversionSettingsReader` and `SettingsValueReader`.
 
@@ -68,17 +67,16 @@ Written by Settings, except `NewsLastOpen` and `LegacyGitHubTokenNoticeShown`.
 | Key | Values | Default |
 |---|---|---|
 | `AiracCycleId` | a cycle ID, e.g. `2610`, matched back to previous, current or next on load | the current cycle |
-| `SelectedSubServices` | the sub-services included on the General tab, comma-separated: `Airports`, `Airways`, `Departures`, `Arrivals`, `Navaids`, `ArtccBoundaries`, `Fixes`, `WxStations`, `Procedures`, `Telephony`. Never rename one without migrating this value. A `VnasAlias` saved by an older version is ignored: that tab comes in by itself | every sub-service |
-| `Outputs.<sub-service>.<output>` | `Y` / `N`: the General tab's table, e.g. `Outputs.Airports.Geojson`. `<output>` is `Alias`, `Geojson`, `ProcedureChanges` or `ProceduresJson`, and only those the sub-service makes are saved | `Y`; until first saved, what the tab saved before the table (`GenerateGeojson`, `GenerateAliasFile`, `GenerateChangesDocument`, `GenerateProceduresJson`; Airways' `OutputBy = None` meant GeoJSON off) |
+| `SelectedSubServices` | the sub-services included on the General tab, comma-separated: `Airports`, `Airways`, `Departures`, `Arrivals`, `Navaids`, `ArtccBoundaries`, `Fixes`, `WxStations`, `Procedures`, `Telephony`. Concatenate Aliases isn't in the table: its tab comes in by itself | every sub-service |
+| `Outputs.<sub-service>.<output>` | `Y` / `N`: the General tab's table, e.g. `Outputs.Airports.Geojson`. `<output>` is `Alias`, `Geojson`, `ProcedureChanges` or `ProceduresJson`, and only those the sub-service makes are saved | `Y` |
 | `UserArtccId` | the Settings ▸ Facility Profile ARTCC, e.g. `ZOB`. The run's `PrimaryFacility` (first in `Duplicate_Alias_Commands.txt`, and Procedures' leading section), and the ARTCC ticked on Departures, Arrivals, ARTCC Boundaries and Procedures until each is first saved | none |
 | `CoordinatePrecision` | `1`-`15` decimal places, or `0` for Do not round (the app offers 5, 6, 7 and Do not round) | `6` |
-| `DefaultRoi.FilterByRoi` | `true` / `false` - not `Y` / `N` | `false` |
-| `DefaultRoi.DefaultCoordindates.SwLat`, `.SwLon`, `.NeLat`, `.NeLon` | decimal degrees | none |
+| `DefaultRoi.FilterByRoi` | `Y` / `N` | `N` |
+| `DefaultRoi.Corners.SwLat`, `.SwLon`, `.NeLat`, `.NeLon` | decimal degrees | none |
 
 The default ROI is saved by `DefaultRoiStore`: by the Map as soon as it is set or cleared, by
-Settings when **Save** is pressed. Clearing it only sets `FilterByRoi` to `false`, so the corners
-come back next time.
-`Coordindates` is misspelled in every saved file, so the key keeps the spelling (see [TODO](TODO.md)).
+Settings when **Save** is pressed. Clearing it only sets `FilterByRoi` to `N`, so the corners come
+back next time.
 
 ### Services.AiracService.FileNames
 
@@ -113,7 +111,7 @@ Saved by the Map (`MapLayersState`) the moment a choice is made; the Map has no 
 | Tab | Node |
 |---|---|
 | Airports | `Services.AiracService.Airports` |
-| Airways | `Services.AiracService.Geojson.Airways` |
+| Airways | `Services.AiracService.Airways` |
 | Departures | `Services.AiracService.Departures` |
 | Arrivals | `Services.AiracService.Arrivals` |
 | NAVAIDs | `Services.AiracService.Navaids` |
@@ -122,7 +120,7 @@ Saved by the Map (`MapLayersState`) the moment a choice is made; the Map has no 
 | Wx Stations | `Services.AiracService.WxStations` |
 | Procedures | `Services.AiracService.Procedures` |
 | Telephony | `Services.AiracService.Telephony` |
-| Concatenate Aliases | `Services.AiracService.VnasAlias` (its name was vNAS Alias Upload) |
+| Concatenate Aliases | `Services.AiracService.ConcatenateAliases` |
 | DAT to GeoJSON | `Services.FileConversions.DatToGeojson` |
 | SCT2 to GeoJSON | `Services.FileConversions.SctToGeojson` |
 | ERAM to GeoJSON | `Services.FileConversions.EramToGeojson` |
@@ -138,17 +136,14 @@ none of them.
 | `CoordinatePrecision` | `Services.AiracService.CoordinatePrecision` | `1`-`15`, or `0` not to round (`GeojsonFileWriter.NoRounding`) | `6` |
 | `IncludeFebCustomProperties` | | `Y` / `N` | `N` |
 | `FebProperties` | | list of the sub-service's `feb.*` names; **required** when the above is `Y` | none |
-| `CrcDefaultsFor` | `Vnas.CrcDefaults` (`None`, `AllGeojsonFiles`, `SpecificFiles`) and `Vnas.CrcFiles` | list of the sub-service's GeoJSON [file keys](#file-keys) that get CRC-ERAM defaults | none |
+| `CrcDefaultsFor` | `CrcDefaultsScope` (`None`, `AllGeojsonFiles`, `SpecificFiles`) and `CrcDefaultsFiles` | list of the sub-service's GeoJSON [file keys](#file-keys) that get CRC-ERAM defaults | none |
 | `FilterByRoi` | `Roi.OverrideDefaultRoi` | `Y` / `N` | `N` |
-| `RoiSwLat`, `RoiSwLon`, `RoiNeLat`, `RoiNeLon` | `Roi.OverrideCoordindates.SwLat`, `.SwLon`, `.NeLat`, `.NeLon` | decimal degrees; **required** with `FilterByRoi = Y` | none |
+| `RoiSwLat`, `RoiSwLon`, `RoiNeLat`, `RoiNeLon` | `Roi.OverrideCorners.SwLat`, `.SwLon`, `.NeLat`, `.NeLon` | decimal degrees; **required** with `FilterByRoi = Y` | none |
 | `Crc.<Class>.<Kind>.<field>` | `CrcEramPropertyDefaults.<row>.<field>` | see [CRC defaults](#crc-defaults) | none |
 
 - The app sends the override box when a tab overrides the ROI, otherwise the default ROI.
-- `Vnas.CrcFiles` keeps every choice, even for files the current settings don't write, so a file
+- `CrcDefaultsFiles` keeps every choice, even for files the current settings don't write, so a file
   switched off and on keeps its choice. A run sends only the files written.
-- Every file is ready for vNAS, so nothing is marked for it any more. A saved `AllVnasFiles` loads as
-  `AllGeojsonFiles`; a save drops `Vnas.UploadFiles`; and an `UploadToVnas` block key is warned about
-  as unrecognized.
 - A sub-service's outputs (`GenerateGeojson`, `GenerateAliasFile`, and Procedures' two documents) are
   set on the General tab and saved there, under `Services.AiracService.Outputs` - never in the
   sub-service's own node, so saving or undoing its tab can't change them.
@@ -206,8 +201,7 @@ tests.
   `OutputFileNames.Problem` holds the rules; the File Names tab also refuses another file's
   FE-Buddy name.
 - Everything else still knows the file by its key: `CrcDefaultsFor`, the combined alias file and the
-  duplicate report. The File Names tab carries a name given to `vNAS_Alias.txt`, the combined file's
-  old key, over to `Combined_Alias.txt`.
+  duplicate report.
 
 ## CRC defaults
 
@@ -223,7 +217,7 @@ values as `CrcEramPropertyDefaults.<row>.<field>`.
 | Tab | Classes (block) | Rows (saved) |
 |---|---|---|
 | Airports | `Runways` (Line), `Airports` (Symbol, Text) | `Runways_Line`, `Airports_Symbol`, `Airports_Text` |
-| Airways | `High`, `Low`, `Other`, each Line, Symbol, Text | `Lines.Airway_<Class>_Lines`, `Symbols.Airway_<Class>_Symbols`, `Texts.Airway_<Class>_Texts` |
+| Airways | `High`, `Low`, `Other`, each Line, Symbol, Text | `High_Line`, `High_Symbol`, `High_Text`, … `Other_Text` |
 | Departures, Arrivals | `Departures` / `Arrivals`, each Line, Symbol, Text | `Departures_Line`, … / `Arrivals_Line`, … |
 | NAVAIDs | `NAVAIDs`, or one per type token (`VOR`, `VORTAC`, `VOR-DME`, `VOT`, `TACAN`, `DME`, `NDB`, `NDB-DME`, `MARINE-NDB`, `MARINE-NDB-DME`, `UHF-NDB`, `FAN-MARKER`, `CONSOLAN`); Symbol, Text | `NAVAIDs_Symbol`, `NAVAIDs_Text`, or `<Token>_Symbol`, `<Token>_Text` |
 | ARTCC Boundaries | `High`, `Low` (and `Unlimited`), or one per ARTCC and altitude (`ZOB-HIGH`); Line only | `High_Line`, `Low_Line`, `Unlimited_Line`, or `ZOB-HIGH_Line`, … |
@@ -257,7 +251,8 @@ values as `CrcEramPropertyDefaults.<row>.<field>`.
 
 | Block key | Saved as | Values | Default |
 |---|---|---|---|
-| `OutputBy` | | `HighLow`, `Designation`, `None`; the app sends `None` while GeoJSON is off on the General tab (`Outputs.Airways.Geojson`) | **required** (saved: `HighLow`) |
+| `GenerateGeojson` | `Outputs.Airways.Geojson` (General tab) | `Y` / `N` | `Y` |
+| `OutputBy` | | `HighLow`, `Designation` | **required** while `GenerateGeojson = Y` (saved: `HighLow`) |
 | `EmitLines`, `EmitSymbols`, `EmitText` | | `Y` / `N` | `Y` |
 | `GenerateAliasFile` | `Outputs.Airways.Alias` (General tab) | `Y` / `N` | `Y` |
 | `AliasRoiScope` | | `All`, `RoiAirways` | `All` |
@@ -269,8 +264,9 @@ values as `CrcEramPropertyDefaults.<row>.<field>`.
 | `HighDesignations`, `LowDesignations`, `BothDesignations` | | lists: the designations in the High file, the Low file, or both | `J,Q` High, `V,T` Low |
 
 - **`FebProperties`:** `awyId`, `pointId`, `waypoints`.
-- `OutputBy = None` writes no GeoJSON; any other value needs at least one `Emit…`.
-- The buffer distances are read only when `BufferAirwayWaypoints = Y` and `OutputBy` isn't `None`.
+- `GenerateGeojson` and `GenerateAliasFile` can't both be `N`, and `GenerateGeojson = Y` needs at
+  least one `Emit…`.
+- The buffer distances are read only when `BufferAirwayWaypoints = Y` and `GenerateGeojson = Y`.
 - **High and Low files:** with `HighLow`, an airway goes in the file its designation is listed
   for, not by its published altitudes. A designation may be in only one list. One in none is left
   out of both files, with an advisory. With none of the three keys present, J and Q go High and V
@@ -468,7 +464,7 @@ file fails that file only.
 
 | Block key | Values | Default |
 |---|---|---|
-| `OutputLayout` | `ByFilters`, `ByAttributes`, `Raw`, `RawPlus` (an older `ByFilter` / `ByObject` reads as `ByFilters` / `ByAttributes`) | `ByAttributes` |
+| `OutputLayout` | `ByFilters`, `ByAttributes`, `Raw`, `RawPlus` | `ByAttributes` |
 | `DefaultsSource` | `Xml`, `XmlThenCard`, `Card` | `Xml` |
 | `IncludeFebCustomProperties` | `Y` / `N` | `N` |
 | `FebProperties` | `mapObjectType`, `mapGroupId`, `lineObjectId`, `symbolId`, `saaId`; **required** with the above `Y` | none |

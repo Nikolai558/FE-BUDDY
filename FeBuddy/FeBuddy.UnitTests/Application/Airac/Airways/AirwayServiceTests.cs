@@ -282,13 +282,13 @@ public sealed class AirwayServiceTests : IDisposable
 	}
 
 	[Theory]
-	[InlineData("HighLow", "RoiAirways", "no Airways GeoJSON or alias files were written")]
-	[InlineData("HighLow", "All", "no Airways GeoJSON files were written")]
-	[InlineData("None", "RoiAirways", "no Airways alias file was written")]
-	public void run_whose_filters_leave_nothing_says_which_output_is_missing(string outputBy, string aliasScope, string expected)
+	[InlineData("Y", "RoiAirways", "no Airways GeoJSON or alias files were written")]
+	[InlineData("Y", "All", "no Airways GeoJSON files were written")]
+	[InlineData("N", "RoiAirways", "no Airways alias file was written")]
+	public void run_whose_filters_leave_nothing_says_which_output_is_missing(string generateGeojson, string aliasScope, string expected)
 	{
 		AirwayServiceResult result = AirwayService.Run(J1(), Settings(
-			[.. FarAwayRoi, ("OutputBy", outputBy), ("AliasRoiScope", aliasScope)]));
+			[.. FarAwayRoi, ("GenerateGeojson", generateGeojson), ("AliasRoiScope", aliasScope)]));
 
 		ServiceMessage advisory = Assert.Single(result.Messages, m => m.IsAdvisory);
 		Assert.Contains(expected, advisory.Text, StringComparison.Ordinal);
@@ -307,7 +307,7 @@ public sealed class AirwayServiceTests : IDisposable
 				AirwayTestDataBuilder.Segment("123", 20, "BBBBB", "WP", null),
 			]);
 
-		AirwayServiceResult result = AirwayService.Run(data, Settings(("OutputBy", "None"), ("GenerateAliasFile", "N")));
+		AirwayServiceResult result = AirwayService.Run(data, Settings(("GenerateGeojson", "N")));
 
 		Assert.Contains(result.Warnings, w => w.Contains("Airway '123': its ID has no leading letters", StringComparison.Ordinal));
 	}
@@ -327,7 +327,7 @@ public sealed class AirwayServiceTests : IDisposable
 				AirwayTestDataBuilder.Segment("J3", 50, "EEEEE", "WP", null),
 			]);
 
-		AirwayServiceResult result = AirwayService.Run(data, Settings(("OutputBy", "None"), ("GenerateAliasFile", "N")));
+		AirwayServiceResult result = AirwayService.Run(data, Settings(("GenerateGeojson", "N")));
 
 		Assert.Contains("J3", result.ExcludedAirwayIds);
 		// Every unresolved ID is reported, not just the first.

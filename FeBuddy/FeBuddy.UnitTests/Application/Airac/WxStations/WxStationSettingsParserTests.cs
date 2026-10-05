@@ -158,18 +158,6 @@ public sealed class WxStationSettingsParserTests
 		Assert.Contains($"Crc.{WxStationOutputFiles.AllClass}.Symbol.", ex.Message);
 	}
 
-	[Fact]
-	public void a_stale_upload_to_vnas_key_produces_a_warning_and_changes_nothing()
-	{
-		Dictionary<string, string> settings = MinimalValidSettings();
-		settings["UploadToVnas"] = $"{WxStationOutputFiles.Symbols},{WxStationOutputFiles.Text}";
-
-		WxStationSettingsParseResult result = WxStationSettingsParser.Parse(settings);
-
-		Assert.Contains(result.Messages.WarningTexts(), w => w.Contains("UploadToVnas"));
-		Assert.Empty(result.Settings.CrcDefaultsFiles.Files);
-	}
-
 	// ---- CRC defaults ----
 
 	[Fact]
